@@ -119,16 +119,54 @@ fn design_setup() -> DesignPoint<HeapBacking> {
     design_point()
 }
 
-#[library_benchmark]
-#[bench::one(setup = design_setup)]
-fn ir_part_end_to_end(mut dp: DesignPoint<HeapBacking>) -> u64 {
-    let part = dp.part(0, 10, &mut draws());
+/// The design point's stores dropped outside the measurement, which counts the part alone.
+fn discard(dp: DesignPoint<HeapBacking>) {
+    drop(black_box(dp));
+}
+
+/// A part of `members` split, its origin re-keyed, and landed alone.
+fn part_alone(mut dp: DesignPoint<HeapBacking>, members: u32) -> DesignPoint<HeapBacking> {
+    let part = dp.part(0, members, &mut draws());
     let lv = levels();
     let origin = dp.origin;
     dp.table.rekey(origin, &dp.kind, &lv);
     let mut index = std::mem::take(&mut dp.index);
     let landed = land(&mut dp.tenb(&NoKinks, &lv), &mut index, vec![part]);
-    black_box(landed.rows)
+    black_box(landed.rows);
+    dp.index = index;
+    dp
+}
+
+#[library_benchmark]
+#[bench::ten(args = (design_setup(),), teardown = discard)]
+fn ir_part_end_to_end(dp: DesignPoint<HeapBacking>) -> DesignPoint<HeapBacking> {
+    part_alone(dp, 10)
+}
+
+#[library_benchmark]
+#[bench::one(args = (design_setup(),), teardown = discard)]
+fn ir_part_lone(dp: DesignPoint<HeapBacking>) -> DesignPoint<HeapBacking> {
+    part_alone(dp, 1)
+}
+
+/// The members of each part in a batch: eight members leaving one cell alone and landing in one cell together.
+const BATCH: [u32; 8] = [1; 8];
+
+#[library_benchmark]
+#[bench::eight(args = (design_setup(),), teardown = discard)]
+fn ir_parts_batched(mut dp: DesignPoint<HeapBacking>) -> DesignPoint<HeapBacking> {
+    let mut streams: Vec<Draws> = (0..8)
+        .map(|i| Draws::new(stream_key(Seed::new(1), "POP.bench"), Subject::new(SubjectTag::World, 0), i, 0))
+        .collect();
+    let parts = dp.parts(&BATCH, &mut streams);
+    let lv = levels();
+    let origin = dp.origin;
+    dp.table.rekey(origin, &dp.kind, &lv);
+    let mut index = std::mem::take(&mut dp.index);
+    let landed = land(&mut dp.tenb(&NoKinks, &lv), &mut index, parts);
+    black_box(landed.rows);
+    dp.index = index;
+    dp
 }
 
 fn spread_setup() -> (Vec<u64>, Vec<(u64, u64)>) {
@@ -145,7 +183,15 @@ fn ir_seller_spread((units, purchases): (Vec<u64>, Vec<(u64, u64)>)) -> u64 {
 
 library_benchmark_group!(
     name = pop,
-    benchmarks = [ir_step_of, ir_landing_key, ir_screen_candidate, ir_part_end_to_end, ir_seller_spread]
+    benchmarks = [
+        ir_step_of,
+        ir_landing_key,
+        ir_screen_candidate,
+        ir_part_end_to_end,
+        ir_part_lone,
+        ir_parts_batched,
+        ir_seller_spread
+    ]
 );
 
 main!(library_benchmark_groups = pop);

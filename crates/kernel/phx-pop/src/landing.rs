@@ -10,7 +10,7 @@ use phx_store::{AddressSpace, Backing};
 
 use crate::check::{LineKinks, View, check};
 use crate::consts::STEPS_PER_WORD;
-use crate::join::{Landing, join};
+use crate::join::{Landing, join, join_batch};
 use crate::key::{KeyId, KeyInterner, KeyRecord};
 use crate::kind::PopKindDecl;
 use crate::part::{Part, PartId};
@@ -105,6 +105,10 @@ impl Landed {
     }
 
     pub(crate) fn joined(&mut self, part: PartId, cell: PartyId, done: &crate::join::Joined) {
+        self.joined_all(&[part], cell, done);
+    }
+
+    pub(crate) fn joined_all(&mut self, parts: &[PartId], cell: PartyId, done: &crate::join::Joined) {
         self.rows += u64::from(done.rows);
         self.holder_list_changes += u64::from(done.holder_list_changes);
         for (i, e) in done.erased.iter().enumerate() {
@@ -113,7 +117,7 @@ impl Landed {
                 None => self.erased.push(*e),
             }
         }
-        self.resolved.push((part, cell));
+        self.resolved.extend(parts.iter().map(|p| (*p, cell)));
     }
 }
 
@@ -230,11 +234,14 @@ pub fn land<B: Backing, L: Backing>(
     }
     let mut parts: Vec<Option<Part>> = parts.into_iter().map(Some).collect();
     targeted.sort_unstable_by_key(|(cell, id, _, _)| (*cell, *id));
-    for (cell, id, i, slot) in targeted {
-        let Some(part) = parts.get_mut(i).and_then(Option::take) else { continue };
-        let done = join(ctx.ledger, ctx.table, ctx.place, &Landing { part: id, target: slot }, part);
-        landed.landings += 1;
-        landed.joined(id, cell, &done);
+    for bound in targeted.chunk_by(|a, b| a.0 == b.0) {
+        let Some((cell, _, _, slot)) = bound.first().copied() else { continue };
+        let batch: Vec<Part> =
+            bound.iter().filter_map(|(_, _, i, _)| parts.get_mut(*i).and_then(Option::take)).collect();
+        let ids: Vec<PartId> = batch.iter().map(|p| p.id).collect();
+        let done = join_batch(ctx.ledger, ctx.table, ctx.place, slot, batch);
+        landed.landings += phx_rand::float::len_u64(ids.len());
+        landed.joined_all(&ids, cell, &done);
     }
     unbound.sort_unstable_by_key(|(id, _)| *id);
     let mut clusters: BTreeMap<Cluster, Vec<(PartyId, Slot)>> = BTreeMap::new();

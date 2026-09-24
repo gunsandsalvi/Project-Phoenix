@@ -9,10 +9,19 @@ const POP: &str = "phx-pop";
 const LEDGER: &str = "phx-ledger";
 /// The population's splits and landings: a split made at an apply sub-step, a landing at 10b, each by phx-pop alone
 /// until the world's apply and 10b call it through the population's own entry points.
-const PARTS: &[&str] = &["split", "land", "join", "rekey_flagged", "take_whole", "set_key"];
+const PARTS: &[&str] =
+    &["split", "split_batch", "land", "join", "join_batch", "rekey_flagged", "take_whole", "set_key"];
 /// The ledger's moves of a cell's rows and holdings into a part and back, which only the population's splits and
 /// landings ask for.
-const MOVES: &[&str] = &["detach_row", "attach_row", "detach_holding", "attach_holding"];
+const MOVES: &[&str] = &[
+    "detach_row",
+    "detach_rows",
+    "detach_rows_batch",
+    "attach_row",
+    "attach_rows",
+    "detach_holding",
+    "attach_holding",
+];
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();
@@ -108,6 +117,8 @@ mod tests {
         assert_eq!(found("fn f() { phx_pop::landing::land(&mut ctx, &mut index, parts); }"), 1);
         assert_eq!(found("fn f() { let p = phx_pop::split::split(&mut c, s, id, &spec, d); }"), 1);
         assert_eq!(found("fn f() { books.ledger.attach_row(t, 0, s, row); }"), 1);
+        assert_eq!(found("fn f() { l.detach_rows_batch(t, 0, s, &plans); }"), 1);
+        assert_eq!(found("fn f() { phx_pop::join::join_batch(l, t, 0, s, parts); }"), 1);
         assert_eq!(found("fn f() { let l = Landing { part, target }; }"), 1);
         assert_eq!(found("fn f() { let s = text.split(','); }"), 0, "another crate's own word");
         assert_eq!(found("#[cfg(test)] mod tests { fn f() { phx_pop::landing::land(); } }"), 0);

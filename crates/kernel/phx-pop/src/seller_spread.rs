@@ -102,11 +102,7 @@ pub fn spread(d: &mut Draws, units: &[u64], purchases: &[(u64, u64)]) -> Spread 
                 }
             }
         } else {
-            let mut one = vec![0_u64; counts.len()];
-            multivariate_hypergeometric(d, &counts, 1, &mut one);
-            let Some(j) = one.iter().position(|drawn| *drawn == 1) else {
-                violation!(clause = "REP.22", "a purchase drawn by lot from none left");
-            };
+            let j = crate::pick::one_of(d, &counts);
             let (Some((quantity, _)), Some(count)) = (purchases.get(j), counts.get_mut(j)) else { break };
             *count -= 1;
             unfilled += one_by_lot(d, &mut left, &mut sold, *quantity);

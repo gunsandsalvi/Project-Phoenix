@@ -256,6 +256,7 @@ pub fn phx_ledger::apply::Ledger<B>::attach_rows(&mut self, &mut dyn phx_ledger:
 pub fn phx_ledger::apply::Ledger<B>::detach_holding(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_id::ids::InstrumentId, u32, phx_num::round::Round) -> phx_ledger::holding::CellHolding
 pub fn phx_ledger::apply::Ledger<B>::detach_row(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, (phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare, phx_num::round::Round) -> phx_ledger::part::DetachedRow
 pub fn phx_ledger::apply::Ledger<B>::detach_rows(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &[((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)], phx_num::round::Round) -> alloc::vec::Vec<phx_ledger::part::DetachedRow>
+pub fn phx_ledger::apply::Ledger<B>::detach_rows_batch(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &[phx_ledger::part::RowPlan<'_>]) -> alloc::vec::Vec<alloc::vec::Vec<phx_ledger::part::DetachedRow>>
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::contract_process(&mut self, &mut dyn phx_ledger::apply::Holders, &[phx_ledger::fails::Fail], phx_id::day::Day)
 pub fn phx_ledger::apply::Ledger<B>::cure(&mut self, &mut dyn phx_ledger::apply::Holders, phx_id::ids::LineId, phx_ledger::algebra::Side, phx_id::ids::PartyId)
@@ -932,6 +933,8 @@ pub struct phx_ledger::part::RowShare
 pub phx_ledger::part::RowShare::count: u32
 pub phx_ledger::part::RowShare::own_balance: i64
 pub fn phx_ledger::part::cell_holdings(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<phx_ledger::holding::CellHolding>
+pub fn phx_ledger::part::merge_rows(alloc::vec::Vec<phx_ledger::part::DetachedRow>) -> alloc::vec::Vec<phx_ledger::part::DetachedRow>
+pub type phx_ledger::part::RowPlan<'a> = (&'a [((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)], phx_num::round::Round)
 pub mod phx_ledger::pending
 pub struct phx_ledger::pending::Closed
 pub phx_ledger::pending::Closed::issuers: alloc::collections::btree::set::BTreeSet<phx_id::ids::PartyId>

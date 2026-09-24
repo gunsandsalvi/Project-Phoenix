@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 
@@ -165,14 +167,22 @@ impl Profile {
     /// # Errors
     /// Bytes that end early, run on, or hold a value outside its group.
     pub fn decode(layout: &ProfileLayout, bytes: &[u8]) -> Result<Profile, String> {
+        Profile::read_from(layout, &bytes, bytes.len())
+    }
+
+    /// A profile read back from `len` bytes of a source, in place.
+    ///
+    /// # Errors
+    /// Bytes that end early, run on, or hold a value outside its group.
+    pub fn read_from<S: ByteSource>(layout: &ProfileLayout, bytes: &S, len: usize) -> Result<Profile, String> {
         let mut at = 0;
         let mut groups = Vec::with_capacity(layout.groups.len());
         for shape in &layout.groups {
             let mut g = Vec::new();
-            group(shape, &bytes, &mut at, Some(&mut g))?;
+            group(shape, bytes, &mut at, Some(&mut g))?;
             groups.push(g);
         }
-        if at != bytes.len() {
+        if at != len {
             return Err("a profile's bytes run on past its groups".to_owned());
         }
         Ok(Profile { groups })
@@ -203,14 +213,15 @@ impl ByteSource for WordBytes<'_> {
             return None;
         }
         let w = self.words.get(at / size_of::<u64>())?;
-        w.to_le_bytes().get(at % size_of::<u64>()).copied()
+        let shift = (at % size_of::<u64>()) * usize::try_from(u8::BITS).ok()?;
+        (w >> shift).to_le_bytes().first().copied()
     }
 }
 
 /// One group's values held read from `at`, into `out` where one is given and passed over otherwise.
-fn group(
+fn group<S: ByteSource + ?Sized>(
     shape: &GroupShape,
-    bytes: &dyn ByteSource,
+    bytes: &S,
     at: &mut usize,
     mut out: Option<&mut Vec<(u32, u32)>>,
 ) -> Result<(), String> {
@@ -225,6 +236,9 @@ fn group(
         }
     } else {
         let held = read(bytes, at)?;
+        if let (Some(o), Ok(n)) = (out.as_deref_mut(), usize::try_from(held)) {
+            o.reserve(n);
+        }
         let mut last: u32 = 0;
         for i in 0..held {
             let gap = read(bytes, at)?;
@@ -242,11 +256,115 @@ fn group(
     Ok(())
 }
 
+/// A profile's bytes with members moved at joint values, read and written in one pass: `deltas` in (group, value)
+/// order, each value's count moved by its delta; a value nobody holds any more is dropped and a new one is written in
+/// its place in order.
+///
+/// # Errors
+/// Bytes that end early, run on or hold a value outside its group; a delta outside the groups, out of order, or taking
+/// more members from a value than hold it.
+pub fn shifted<S: ByteSource + ?Sized>(
+    layout: &ProfileLayout,
+    bytes: &S,
+    len: usize,
+    deltas: &[(usize, u32, i64)],
+) -> Result<Vec<u8>, String> {
+    if deltas.windows(2).any(|w| matches!(w, [a, b] if (a.0, a.1) >= (b.0, b.1))) {
+        return Err("profile deltas out of order".to_owned());
+    }
+    let mut at = 0;
+    let mut out = Vec::with_capacity(len + deltas.len() * 2);
+    let mut body = Vec::new();
+    let mut rest = deltas;
+    for (gi, shape) in layout.groups.iter().enumerate() {
+        let here = rest.iter().take_while(|(g, _, _)| *g == gi).count();
+        let (mine, later) = rest.split_at(here);
+        rest = later;
+        if let Some((_, v, _)) = mine.iter().find(|(_, v, _)| *v >= shape.values) {
+            return Err(format!("profile value {v} outside a group of {}", shape.values));
+        }
+        let mut pending = mine.iter().peekable();
+        if shape.dense {
+            for v in 0..shape.values {
+                let mut n = i64::from(read(bytes, &mut at)?);
+                if let Some((_, _, d)) = pending.next_if(|(_, dv, _)| *dv == v) {
+                    n += d;
+                }
+                varint(&mut out, moved(n)?);
+            }
+        } else {
+            let held = read(bytes, &mut at)?;
+            body.clear();
+            let (mut count, mut last_in, mut last_out) = (0_u32, 0_u32, 0_u32);
+            let emit = |body: &mut Vec<u8>, v: u32, n: u32, last_out: &mut u32, count: &mut u32| {
+                if n > 0 {
+                    varint(body, v - *last_out);
+                    varint(body, n);
+                    *last_out = v;
+                    *count += 1;
+                }
+            };
+            for i in 0..held {
+                let gap = read(bytes, &mut at)?;
+                let v = last_in.checked_add(gap).ok_or("a profile value past its group")?;
+                if v >= shape.values || (i > 0 && gap == 0) {
+                    return Err(format!("profile value {v} out of order or outside a group of {}", shape.values));
+                }
+                let n = read(bytes, &mut at)?;
+                last_in = v;
+                while let Some((_, dv, d)) = pending.next_if(|(_, dv, _)| *dv < v) {
+                    emit(&mut body, *dv, moved(*d)?, &mut last_out, &mut count);
+                }
+                let mut n = i64::from(n);
+                if let Some((_, _, d)) = pending.next_if(|(_, dv, _)| *dv == v) {
+                    n += d;
+                }
+                emit(&mut body, v, moved(n)?, &mut last_out, &mut count);
+            }
+            for (_, dv, d) in pending {
+                emit(&mut body, *dv, moved(*d)?, &mut last_out, &mut count);
+            }
+            varint(&mut out, count);
+            out.extend_from_slice(&body);
+        }
+    }
+    if !rest.is_empty() {
+        return Err("a profile delta outside the kind's groups".to_owned());
+    }
+    if at != len {
+        return Err("a profile's bytes run on past its groups".to_owned());
+    }
+    Ok(out)
+}
+
+/// Profile moves in (group, value) order, those at one value added together, as `shifted` reads them.
+#[must_use]
+pub fn net(mut deltas: Vec<(usize, u32, i64)>) -> Vec<(usize, u32, i64)> {
+    deltas.sort_unstable_by_key(|(g, v, _)| (*g, *v));
+    deltas.dedup_by(|later, first| {
+        let same = (later.0, later.1) == (first.0, first.1);
+        if same {
+            first.2 += later.2;
+        }
+        same
+    });
+    deltas
+}
+
+/// A count after its members moved: never below nought, and within a count's width.
+fn moved(n: i64) -> Result<u32, String> {
+    u32::try_from(n).map_err(|_| format!("a profile value's members moved to {n}"))
+}
+
 /// One group's values held, read from a profile's bytes without decoding the groups around it.
 ///
 /// # Errors
 /// Bytes that end early or hold a value outside its group.
-pub fn read_group(layout: &ProfileLayout, bytes: &dyn ByteSource, which: usize) -> Result<Vec<(u32, u32)>, String> {
+pub fn read_group<S: ByteSource + ?Sized>(
+    layout: &ProfileLayout,
+    bytes: &S,
+    which: usize,
+) -> Result<Vec<(u32, u32)>, String> {
     let mut at = 0;
     for shape in layout.groups.iter().take(which) {
         group(shape, bytes, &mut at, None)?;
@@ -279,7 +397,7 @@ fn varint(out: &mut Vec<u8>, mut n: u32) {
     }
 }
 
-fn read(bytes: &dyn ByteSource, at: &mut usize) -> Result<u32, String> {
+fn read<S: ByteSource + ?Sized>(bytes: &S, at: &mut usize) -> Result<u32, String> {
     let mut n: u64 = 0;
     let mut shift = 0;
     loop {
@@ -294,6 +412,18 @@ fn read(bytes: &dyn ByteSource, at: &mut usize) -> Result<u32, String> {
             return Err("a profile count past its width".to_owned());
         }
     }
+}
+
+/// The first `len` bytes of words packed low byte first: the words' own memory where the machine keeps a word's low byte
+/// first, so a profile is read in place; a copy otherwise.
+#[must_use]
+pub fn packed_bytes(words: &[u64], len: usize) -> Cow<'_, [u8]> {
+    if cfg!(target_endian = "little")
+        && let Some(b) = phx_store::as_bytes(words).get(..len)
+    {
+        return Cow::Borrowed(b);
+    }
+    Cow::Owned(from_words(words, len))
 }
 
 /// Bytes packed into words, low byte first, the last word padded with noughts; its byte count is kept apart.
@@ -386,5 +516,49 @@ mod tests {
         }
         assert_eq!(Profile::decode(&shapes, &prof.encode(&shapes)), Ok(prof.clone()));
         assert!(std::panic::catch_unwind(move || prof.remove(2, 2, weight + 1)).is_err(), "more than hold a value");
+    }
+
+    #[test]
+    fn shifted_equals_decode_edit_encode() {
+        let l = layout();
+        let mut d = Draws::new(stream_key(Seed::new(9), "profile.shift"), Subject::new(SubjectTag::World, 0), 0, 0);
+        for _ in 0..200 {
+            let mut p = Profile::empty(&l);
+            for (g, shape) in l.groups.iter().enumerate() {
+                for _ in 0..below_u64(&mut d, 12) {
+                    let v = u32::try_from(below_u64(&mut d, u64::from(shape.values))).unwrap();
+                    p.add(&l, g, v, u32::try_from(below_u64(&mut d, 300)).unwrap() + 1);
+                }
+            }
+            let mut deltas = Vec::new();
+            let mut edited = p.clone();
+            for (g, shape) in l.groups.iter().enumerate() {
+                for v in 0..shape.values {
+                    if below_u64(&mut d, 4) != 0 {
+                        continue;
+                    }
+                    let held = i64::from(p.count(g, v));
+                    // Members added, or taken away up to all that hold the value.
+                    let taken = i64::try_from(below_u64(&mut d, u64::try_from(held).unwrap() + 1)).unwrap();
+                    let delta = if below_u64(&mut d, 2) == 0 { taken } else { -taken };
+                    if delta == 0 {
+                        continue;
+                    }
+                    if delta > 0 {
+                        edited.add(&l, g, v, u32::try_from(delta).unwrap());
+                    } else {
+                        edited.remove(g, v, u32::try_from(-delta).unwrap());
+                    }
+                    deltas.push((g, v, delta));
+                }
+            }
+            let bytes = p.encode(&l);
+            let got = super::shifted(&l, &bytes.as_slice(), bytes.len(), &deltas).unwrap();
+            assert_eq!(got, edited.encode(&l));
+        }
+        let p = Profile::empty(&l);
+        let bytes = p.encode(&l);
+        assert!(super::shifted(&l, &bytes.as_slice(), bytes.len(), &[(1, 3, -1)]).is_err(), "members nobody holds");
+        assert!(super::shifted(&l, &bytes.as_slice(), bytes.len(), &[(1, 3, 1), (0, 2, 1)]).is_err(), "out of order");
     }
 }

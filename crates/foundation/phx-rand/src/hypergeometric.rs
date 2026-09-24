@@ -154,8 +154,17 @@ mod tests {
 
     #[test]
     fn hypergeometric_exact() {
-        // Inversion (m ≤ 10), HRUA with successes the smaller and the larger, and a sample beyond half.
-        let cases = [(50_u64, 20_u64, 10_u64), (1000, 300, 100), (1000, 700, 100), (200, 60, 150), (40, 39, 25)];
+        // One draw (m = 1), inversion (m ≤ 10), HRUA with successes the smaller and the larger, and a sample beyond
+        // half.
+        let cases = [
+            (7_u64, 3_u64, 1_u64),
+            (50, 20, 10),
+            (1000, 300, 100),
+            (1000, 700, 100),
+            (200, 60, 150),
+            (40, 39, 25),
+            (200, 199, 199),
+        ];
         for (i, (total, s, m)) in cases.into_iter().enumerate() {
             let mut d = draws("hypergeometric", i);
             let xs: Vec<u64> = (0..100_000).map(|_| hypergeometric(&mut d, total, s, m)).collect();

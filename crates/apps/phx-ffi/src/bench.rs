@@ -11,7 +11,7 @@ use phx_rand::{
 
 use phx_pop::check::{View, check};
 use phx_pop::join::{Landing, join};
-use phx_pop::landing::{LandingIndex, landing_key};
+use phx_pop::landing::{LandingIndex, land, landing_key};
 use phx_pop::synthetic::{NoKinks, design_point, levels};
 use phx_store::SystemBacking;
 
@@ -299,45 +299,87 @@ fn kernels(run: &mut Run<'_>, pool: &Pool) {
     run.target("gather of 512 MB of intents", "GB/s", bytes / secs / 1e9, &Target::AtLeast(4.0));
 }
 
-/// A part end to end at the design point, by component, each against its share of the budget's 2.5 µs: split (rows,
+/// Nanoseconds a part takes at the design point, measured on one core: a lone part's four components — split (rows,
 /// profiles and positions divided), the origin re-keyed, the key looked up and checked, and the join with its holder
-/// lists. Parts of one member each leave a cell of two hundred for its twin.
-fn parts(run: &mut Run<'_>) {
-    let mut dp = design_point::<SystemBacking>();
+/// lists — and parts leaving one cell and landing in one cell in batches of eight, split, re-keyed and landed together.
+struct PartCosts {
+    lone: [u64; 4],
+    lone_parts: u32,
+    batched: u64,
+    batched_parts: u32,
+}
+
+/// Parts of one member each in a batch; a batch of one member each is the batch's cheapest part, since every row
+/// still reads its leavers.
+const BATCH: [u32; 8] = [1; 8];
+const LONE_PARTS: u32 = 150;
+const BATCHES: u32 = 16;
+
+fn part_costs(clock: &Mono) -> Option<PartCosts> {
     let lv = levels();
     let kinks = NoKinks;
-    let mut spent = [0_u64; 4];
-    let n: u32 = 150;
-    for i in 0..n {
+    let mut dp = design_point::<SystemBacking>();
+    let mut lone = [0_u64; 4];
+    for i in 0..LONE_PARTS {
         let mut d = Draws::new(stream_key(Seed::new(1), "REP.bench"), Subject::new(SubjectTag::World, 0), i, 0);
-        let t0 = run.now();
+        let t0 = clock.now_ns();
         let part = dp.part(i, 1, &mut d);
-        let t1 = run.now();
+        let t1 = clock.now_ns();
         let origin = dp.origin;
         dp.table.rekey(origin, &dp.kind, &lv);
-        let t2 = run.now();
+        let t2 = clock.now_ns();
         let view = View::of_part(&part, &dp.keys, &dp.kind, &lv);
-        let phx_num::Missing::Present(key) = view.key else { return };
+        let phx_num::Missing::Present(key) = view.key else { return None };
         let lk = landing_key(key, &view.steps, &view.sig);
         let target = dp.index.candidates(lk).into_iter().find(|(_, slot)| {
             check(&view, &View::of_cell(&dp.table, *slot, &dp.ledger, &dp.kind, &lv), &kinks).is_ok()
         });
-        let t3 = run.now();
-        let Some((_, slot)) = target else { return };
+        let t3 = clock.now_ns();
+        let (_, slot) = target?;
         let landing = Landing { part: part.id, target: slot };
         black_box(join(&mut dp.ledger, &mut dp.table, 0, &landing, part).rows);
-        let t4 = run.now();
-        for (s, (a, b)) in spent.iter_mut().zip([(t0, t1), (t1, t2), (t2, t3), (t3, t4)]) {
+        let t4 = clock.now_ns();
+        for (s, (a, b)) in lone.iter_mut().zip([(t0, t1), (t1, t2), (t2, t3), (t3, t4)]) {
             *s += b - a;
         }
     }
-    let per = |ns: u64| to_f64(ns) / f64::from(n) / 1e3;
-    let [split, rekey, lookup, joined] = spent;
-    run.target("a part's split: rows, profiles and positions", "µs", per(split), &Target::AtMost(1.0));
-    run.target("a part's origin re-keyed", "µs", per(rekey), &Target::AtMost(0.2));
-    run.target("a part's key, lookup and check", "µs", per(lookup), &Target::AtMost(0.4));
-    run.target("a part's join and holder lists", "µs", per(joined), &Target::AtMost(0.9));
-    run.target("a part end to end", "µs", per(split + rekey + lookup + joined), &Target::AtMost(2.5));
+    let mut dp = design_point::<SystemBacking>();
+    let mut batched = 0;
+    for b in 0..BATCHES {
+        let mut streams: Vec<Draws> = (0..8)
+            .map(|i| {
+                Draws::new(stream_key(Seed::new(1), "REP.bench"), Subject::new(SubjectTag::World, 1), b * 8 + i, 0)
+            })
+            .collect();
+        let t0 = clock.now_ns();
+        let parts = dp.parts(&BATCH, &mut streams);
+        let origin = dp.origin;
+        dp.table.rekey(origin, &dp.kind, &lv);
+        let mut index = std::mem::take(&mut dp.index);
+        black_box(land(&mut dp.tenb(&kinks, &lv), &mut index, parts).rows);
+        batched += clock.now_ns() - t0;
+        dp.index = index;
+    }
+    Some(PartCosts { lone, lone_parts: LONE_PARTS, batched, batched_parts: BATCHES * 8 })
+}
+
+/// A part's costs against its share of the budget's 2.5 µs, measured on the fastest core like the samplers.
+fn parts(run: &mut Run<'_>, pool: &Pool) {
+    let clock = &run.clock;
+    let Some(costs) = pool.on_every_worker(|| part_costs(clock)).into_iter().next().flatten() else {
+        run.line("targets", "a part", "not measured: the design point's part found no target".to_owned(), None);
+        return;
+    };
+    let per = |ns: u64, n: u32| to_f64(ns) / f64::from(n) / 1e3;
+    let [split, rekey, lookup, joined] = costs.lone;
+    let n = costs.lone_parts;
+    run.target("a part's split: rows, profiles and positions", "µs", per(split, n), &Target::AtMost(1.0));
+    run.target("a part's origin re-keyed", "µs", per(rekey, n), &Target::AtMost(0.2));
+    run.target("a part's key, lookup and check", "µs", per(lookup, n), &Target::AtMost(0.4));
+    run.target("a part's join and holder lists", "µs", per(joined, n), &Target::AtMost(0.9));
+    run.target("a part end to end", "µs", per(split + rekey + lookup + joined, n), &Target::AtMost(2.5));
+    let each = per(costs.batched, costs.batched_parts);
+    run.target("a part in a batch of eight, end to end", "µs", each, &Target::AtMost(2.5));
 }
 
 /// Core rates sampled at one moment of the run, shown and kept for the report.
@@ -400,7 +442,7 @@ pub fn run(device: &DeviceInfo, host: &dyn BenchHost, report_path: &str) -> Resu
     }
 
     kernels(&mut run, &pool);
-    parts(&mut run);
+    parts(&mut run, &micro_pool);
     let (_, fast_end) = sample_rates(&mut run, &mut rates, "end", &spec.cores);
     run.target("pool fast-core-seconds per second at the end", "", fast_end, &Target::AtLeast(3.0));
 

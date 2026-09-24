@@ -1,6 +1,7 @@
 use phx_core::Weight;
 use phx_id::Slot;
 use phx_ledger::apply::Ledger;
+use phx_ledger::part::merge_rows;
 use phx_macros::clause;
 use phx_num::{Missing, capacity_exceeded, violation};
 use phx_store::Backing;
@@ -56,39 +57,73 @@ pub fn join<B: Backing, L: Backing>(
     if landing.part != part.id {
         violation!(clause = "REP.8", "a landing applied to another part than its own", origin = part.id.origin.get());
     }
-    let target = landing.target;
-    let weight = table.weight(target);
-    let mut done = Joined::default();
-    for (i, joining) in part.positions.iter().enumerate() {
-        let held = table.position(target, i);
-        done.erased.push(erased(part.weight, *joining, weight, held));
-        table.set_position(target, i, add(held, *joining));
+    join_batch(ledger, table, place, landing.target, vec![part])
+}
+
+/// Parts bound for one cell join it together, in the order given, leaving the cell as joining them one by one would:
+/// weights, totals and exposures add; the profile is moved in one pass; the parts' rows are merged per line side and
+/// attached once, each line's holder list changing at most once; and each part's erased dispersion is taken against
+/// the cell as the parts before it left it.
+#[clause("REP.8", "REP.14", "REP.15")]
+pub fn join_batch<B: Backing, L: Backing>(
+    ledger: &mut Ledger<L>,
+    table: &mut CellTable<B>,
+    place: u16,
+    target: Slot,
+    parts: Vec<Part>,
+) -> Joined {
+    let mut weight = table.weight(target);
+    let mut held: Vec<i64> = (0..table.positions()).map(|i| table.position(target, i)).collect();
+    let mut exposures: Vec<Missing<i64>> = (0..table.review_kinds()).map(|j| table.exposure(target, j)).collect();
+    let mut done = Joined { erased: vec![0.0; held.len()], ..Joined::default() };
+    let mut deltas: Vec<(usize, u32, i64)> = Vec::new();
+    let mut rows = Vec::new();
+    let mut holdings = Vec::new();
+    let groups = table.profile_layout().groups.len();
+    for part in parts {
+        if part.positions.len() != held.len() {
+            violation!(clause = "REP.20", "a part of other positions than its cell's", part = part.positions.len());
+        }
+        for ((h, joining), e) in held.iter_mut().zip(&part.positions).zip(done.erased.iter_mut()) {
+            *e += erased(part.weight, *joining, weight, *h);
+            *h = add(*h, *joining);
+        }
+        for (j, (e, joining)) in exposures.iter_mut().zip(&part.exposures).enumerate() {
+            *e = match (*e, joining) {
+                (Missing::Present(e), Missing::Present(x)) => Missing::Present(add(e, *x)),
+                (Missing::Absent, Missing::Absent) => Missing::Absent,
+                _ => violation!(clause = "REP.21", "a landing between exposures kept and absent", review = j),
+            };
+        }
+        for g in 0..groups {
+            deltas.extend(part.profile.held(g).iter().map(|(v, n)| (g, *v, i64::from(*n))));
+        }
+        let Some(joined) = weight.get().checked_add(part.weight.get()) else {
+            capacity_exceeded!("members of a cell", u32::MAX, weight.get());
+        };
+        weight = Weight::new(joined);
+        let Some(n) = u32::try_from(part.rows.len()).ok().and_then(|n| done.rows.checked_add(n)) else {
+            capacity_exceeded!("rows of a batch", u32::MAX, done.rows);
+        };
+        done.rows = n;
+        rows.extend(part.rows);
+        holdings.extend(part.holdings);
     }
-    let layout = table.profile_layout().clone();
-    let mut profile = table.profile(target);
-    for g in 0..layout.groups.len() {
-        for (v, n) in part.profile.held(g) {
-            profile.add(&layout, g, *v, *n);
+    for (i, h) in held.into_iter().enumerate() {
+        table.set_position(target, i, h);
+    }
+    for (j, e) in exposures.into_iter().enumerate() {
+        if let Missing::Present(x) = e {
+            table.set_exposure(target, j, x);
         }
     }
-    table.set_profile(target, &profile);
-    for (j, joining) in part.exposures.iter().enumerate() {
-        match (table.exposure(target, j), joining) {
-            (Missing::Present(e), Missing::Present(x)) => table.set_exposure(target, j, add(e, *x)),
-            (Missing::Absent, Missing::Absent) => {}
-            _ => violation!(clause = "REP.21", "a landing between exposures kept and absent", review = j),
-        }
-    }
-    done.rows = u32::try_from(part.rows.len()).unwrap_or_else(|_| capacity_exceeded!("rows of a part", u32::MAX, 0));
-    done.holder_list_changes += ledger.attach_rows(table, place, target, part.rows);
-    for holding in part.holdings {
+    table.shift_profile(target, &crate::profile::net(deltas));
+    done.holder_list_changes += ledger.attach_rows(table, place, target, merge_rows(rows));
+    for holding in holdings {
         if ledger.attach_holding(table, place, target, holding) {
             done.holder_list_changes += 1;
         }
     }
-    let Some(joined) = weight.get().checked_add(part.weight.get()) else {
-        capacity_exceeded!("members of a cell", u32::MAX, weight.get());
-    };
-    table.set_weight(target, Weight::new(joined));
+    table.set_weight(target, weight);
     done
 }

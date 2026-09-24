@@ -24,6 +24,41 @@ pub struct DetachedRow {
     pub arrears_since: Missing<Day>,
 }
 
+/// One part's rows leaving a cell: the members leaving each line side, and the rounding their shares take.
+pub type RowPlan<'a> = (&'a [((LineId, Side), RowShare)], Round);
+
+/// Several parts' rows as one per line side, so parts joining one cell together attach each line once: members and
+/// words add; rows of other payment records, price points or arrears never merge.
+#[clause("REP.8", "REP.14")]
+#[must_use]
+pub fn merge_rows(mut rows: Vec<DetachedRow>) -> Vec<DetachedRow> {
+    // Rows of one line side add, which no order changes, so the sort need not keep their order.
+    rows.sort_unstable_by_key(|d| (d.line(), d.side() == Side::Liability));
+    let mut out: Vec<DetachedRow> = Vec::with_capacity(rows.len());
+    for d in rows {
+        match out.last_mut() {
+            Some(last) if (last.line(), last.side()) == (d.line(), d.side()) => {
+                let line = d.line();
+                if (last.row.record, last.row.point, last.arrears_since) != (d.row.record, d.row.point, d.arrears_since)
+                {
+                    violation!(clause = "REP.8", "rows of other records, points or arrears merged", line = line.get());
+                }
+                let Some(count) = last.row.count.checked_add(d.row.count) else {
+                    capacity_exceeded!("members of a row", u32::MAX, last.row.count);
+                };
+                last.row.count = count;
+                last.optional = Optional {
+                    balance: sum(last.optional.balance, d.optional.balance, line),
+                    pending: sum(last.optional.pending, d.optional.pending, line),
+                    amount: sum(last.optional.amount, d.optional.amount, line),
+                };
+            }
+            _ => out.push(d),
+        }
+    }
+    out
+}
+
 impl DetachedRow {
     /// A row as the opening places it on a cell: its members, their role within the cell and its words, with a clean
     /// record, for data that stands in for an opening's.
@@ -133,6 +168,74 @@ impl<B: Backing> Ledger<B> {
             .collect();
         out.sort_unstable_by_key(|(i, _)| *i);
         out.into_iter().map(|(_, d)| d).collect()
+    }
+
+    /// Members leave a cell's rows for several parts in turn, as `detach_rows` for each plan in order would leave them,
+    /// with the rows read once and each written once: every share is taken from the row as the plans before it left
+    /// it, the rows staying are rewritten at the end and the rows left whole are taken out last first.
+    #[clause("REP.8", "REP.9", "REP.14")]
+    pub fn detach_rows_batch(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        plans: &[RowPlan<'_>],
+    ) -> Vec<Vec<DetachedRow>> {
+        let party = arenas.party(holder);
+        // Each row as the plans so far left it, whether its words changed, and whether it left whole.
+        let mut views: Vec<(RowView, bool, bool)> =
+            rows::rows(arenas, holder).into_iter().map(|v| (v, false, false)).collect();
+        let mut out = Vec::with_capacity(plans.len());
+        for (plan, rounding) in plans {
+            let mut detached = Vec::with_capacity(plan.len());
+            for ((line, side), share) in *plan {
+                let Some((view, changed, gone)) =
+                    views.iter_mut().find(|(v, _, gone)| !*gone && v.row.line == *line && v.side() == *side)
+                else {
+                    violation!(clause = "REG.14", "a row left that its holder does not have", line = line.get());
+                };
+                let of = view.row.count;
+                if share.count == 0 || share.count > of {
+                    violation!(
+                        clause = "REP.9",
+                        "members leaving a row that does not hold them",
+                        leaving = share.count,
+                        of = of
+                    );
+                }
+                let since = match self.arrears.since(ArrearsKey::new(*line, *side, party)) {
+                    Some(d) => Missing::Present(d),
+                    None => Missing::Absent,
+                };
+                if share.count == of {
+                    *gone = true;
+                    detached.push(DetachedRow { row: view.row, optional: view.optional, arrears_since: since });
+                    continue;
+                }
+                let (bl, bs) = word_share(view.optional.balance, share.own_balance, *share, of, *rounding);
+                let (pl, ps) = word_share(view.optional.pending, 0, *share, of, *rounding);
+                let (al, a_s) = word_share(view.optional.amount, 0, *share, of, *rounding);
+                let mut leaving = view.row;
+                leaving.count = share.count;
+                view.row.count = of - share.count;
+                view.optional = Optional { balance: bs, pending: ps, amount: a_s };
+                *changed = true;
+                let optional = Optional { balance: bl, pending: pl, amount: al };
+                detached.push(DetachedRow { row: leaving, optional, arrears_since: since });
+            }
+            out.push(detached);
+        }
+        for (view, _, _) in views.iter().filter(|(_, changed, gone)| *changed && !*gone) {
+            rows::rewrite(arenas, holder, view, view.optional);
+        }
+        let mut gone: Vec<RowView> = views.into_iter().filter(|(_, _, gone)| *gone).map(|(v, _, _)| v).collect();
+        gone.sort_unstable_by_key(|v| core::cmp::Reverse(v.at));
+        for v in gone {
+            let (line, side) = (v.row.line, v.side());
+            let _ = self.lines.unplace_row(arenas, table, holder, line, side);
+            self.arrears.remove(ArrearsKey::new(line, side, party));
+        }
+        out
     }
 
     fn detach_view(
@@ -461,5 +564,37 @@ mod tests {
         l.attach_holding(&mut cells, 1, b, rest);
         assert_eq!(cell_holdings(&cells, b), [h(6, 600, 1_205)]);
         assert_eq!(l.instruments.holders(fund).count(), 1, "the holder list follows the holding");
+    }
+
+    #[test]
+    fn merge_rows_adds_by_line_side_and_keeps_records_apart() {
+        use phx_id::LineId;
+
+        use crate::rows::Optional;
+
+        let row = |line: u32, side, count, balance: i64| {
+            let optional = Optional { balance: Missing::Present(balance), ..Optional::NONE };
+            DetachedRow::opening(LineId::new(line), side, 0, count, optional)
+        };
+        let merged = super::merge_rows(vec![
+            row(4, Side::Liability, 3, 300),
+            row(2, Side::Asset, 5, 50),
+            row(4, Side::Liability, 7, 700),
+            row(4, Side::Asset, 1, 10),
+        ]);
+        let got: Vec<(u32, Side, u32, Missing<i64>)> =
+            merged.iter().map(|d| (d.line().get(), d.side(), d.row.count, d.optional.balance)).collect();
+        assert_eq!(
+            got,
+            [
+                (2, Side::Asset, 5, Missing::Present(50)),
+                (4, Side::Asset, 1, Missing::Present(10)),
+                (4, Side::Liability, 10, Missing::Present(1_000)),
+            ]
+        );
+        let mut late = row(4, Side::Liability, 2, 20);
+        late.arrears_since = Missing::Present(phx_id::Day::new(9));
+        let refused = std::panic::catch_unwind(|| super::merge_rows(vec![row(4, Side::Liability, 3, 300), late]));
+        assert!(refused.is_err(), "rows in arrears since other days never merge");
     }
 }

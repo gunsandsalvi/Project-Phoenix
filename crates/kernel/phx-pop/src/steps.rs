@@ -61,6 +61,12 @@ impl StepTable {
         if s <= 0 {
             return Step::MISSING;
         }
+        // Both sides in a word when they fit: the scale is positive, so a boundary's product overflowing a word lies
+        // beyond the total on the boundary's own side, and the comparison stays exact.
+        let word = i64::try_from(pow10(self.exp)).ok().and_then(|p| total.checked_mul(p));
+        if let (Some(lhs), Ok(s)) = (word, i64::try_from(s)) {
+            return Step(self.count(|b| b.checked_mul(s).map_or(b < 0, |rhs| rhs <= lhs)));
+        }
         let Some(lhs) = i128::from(total).checked_mul(pow10(self.exp)) else {
             phx_num::violation!(clause = "REP.20", "a position too large to compare with its steps", total = total);
         };
@@ -140,5 +146,33 @@ mod tests {
         assert_eq!(t.step_scaled(5, Missing::Present(0)), Step::MISSING, "no scale to measure against");
         assert_eq!(t.step_scaled(-5, Missing::Present(-1)), Step::MISSING);
         assert!(StepTable::new(&Partition { exp: 0, bounds: (0..i64::from(u16::MAX)).collect() }).is_err());
+    }
+
+    #[test]
+    fn step_scaled_word_path_matches_wide_arithmetic() {
+        use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
+        fn signed(d: &mut Draws, below: u64) -> i64 {
+            let x = i64::try_from(below_u64(d, below)).unwrap();
+            if below_u64(d, 2) == 0 { x } else { -x }
+        }
+        let mut d = Draws::new(stream_key(Seed::new(3), "steps.wide"), Subject::new(SubjectTag::World, 0), 0, 0);
+        // Small values, values whose products need more than a word, and values near a word's edge.
+        let magnitudes = [1_000_u64, 1 << 31, 1 << 62];
+        for i in 0..30_000 {
+            let m = magnitudes[i % magnitudes.len()];
+            let mut bounds: Vec<i64> = (0..5).map(|_| signed(&mut d, m)).collect();
+            bounds.sort_unstable();
+            bounds.dedup();
+            let t = table(2, &bounds);
+            let total = signed(&mut d, m);
+            let scale = i128::from(below_u64(&mut d, m) + 1);
+            let lhs = i128::from(total) * 100;
+            let want = bounds.iter().filter(|b| i128::from(**b) * scale <= lhs).count();
+            assert_eq!(
+                usize::from(t.step_scaled(total, Missing::Present(scale)).get()),
+                want,
+                "{total} {scale} {bounds:?}"
+            );
+        }
     }
 }

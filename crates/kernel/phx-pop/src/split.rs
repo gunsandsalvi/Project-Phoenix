@@ -2,12 +2,12 @@ use phx_core::Weight;
 use phx_id::{LineId, Slot};
 use phx_ledger::algebra::Side;
 use phx_ledger::apply::Ledger;
-use phx_ledger::part::{RowShare, cell_holdings};
+use phx_ledger::part::{RowPlan, RowShare, cell_holdings};
 use phx_ledger::rows;
 use phx_macros::clause;
 use phx_num::round::{Round, split_total};
 use phx_num::{Missing, violation};
-use phx_rand::{Draws, hypergeometric, multivariate_hypergeometric, pick_without_replacement};
+use phx_rand::{Draws, below_u64, hypergeometric, multivariate_hypergeometric, pick_without_replacement};
 use phx_store::Backing;
 
 use crate::key::KeyInterner;
@@ -61,6 +61,10 @@ fn share(total: i64, own: i64, count: u32, weight: u32, r: Round) -> (i64, i64) 
 
 /// How many of `holding` members of a cell of `weight` are among `k` leaving, drawn without replacement.
 fn leavers(d: &mut Draws, weight: u32, holding: u32, k: u32) -> u32 {
+    if k == 1 {
+        // One member leaving holds the row with chance holding ÷ weight, which one uniform integer decides exactly.
+        return u32::from(below_u64(d, u64::from(weight)) < u64::from(holding));
+    }
     let x = hypergeometric(d, u64::from(weight), u64::from(holding), u64::from(k));
     let Ok(x) = u32::try_from(x) else {
         violation!(clause = "REP.14", "more leavers drawn than a row holds", drawn = x);
@@ -68,28 +72,32 @@ fn leavers(d: &mut Draws, weight: u32, holding: u32, k: u32) -> u32 {
     x
 }
 
-/// The leaving members' profile values, taken from the cell's: the groups the event determined as it gives them,
-/// every other group drawn without replacement from the cell's counts.
-fn split_profile<B: Backing>(
-    table: &mut CellTable<B>,
-    slot: Slot,
+/// The leaving members' profile values, taken from the cell's as the splits before left it: the groups the event
+/// determined as it gives them, every other group drawn without replacement from the cell's counts. What leaves is
+/// taken from `origin` and noted in `deltas`, so the cell's profile is written once for all its splits.
+fn split_profile(
+    layout: &crate::profile::ProfileLayout,
+    origin: &mut crate::profile::Profile,
+    deltas: &mut Vec<(usize, u32, i64)>,
     spec: &SplitSpec<'_>,
     d: &mut Draws,
 ) -> crate::profile::Profile {
     let k = spec.count;
-    let layout = table.profile_layout().clone();
-    let mut origin = table.profile(slot);
-    let mut profile = crate::profile::Profile::empty(&layout);
+    let mut profile = crate::profile::Profile::empty(layout);
     for g in 0..layout.groups.len() {
-        let taken: Vec<(u32, u64)> = if let Some((_, values)) = spec.given.iter().find(|(given, _)| *given == g) {
+        let mut taken: Vec<(u32, u64)> = if let Some((_, values)) = spec.given.iter().find(|(given, _)| *given == g) {
             values.to_vec()
         } else {
             let held = origin.held(g);
             let counts: Vec<u64> = held.iter().map(|(_, n)| u64::from(*n)).collect();
             let mut out = vec![0_u64; counts.len()];
-            // Both draws are the same multivariate hypergeometric; members one by one cost less when fewer leave than
-            // there are values to draw over.
-            if u64::from(k) < phx_rand::float::len_u64(counts.len()) {
+            // All three draws are the same multivariate hypergeometric: one member is one uniform over the members,
+            // found by a scan; a few members one by one; many members value by value.
+            if k == 1 {
+                if let Some(slot) = out.get_mut(crate::pick::one_of(d, &counts)) {
+                    *slot = 1;
+                }
+            } else if u64::from(k) < phx_rand::float::len_u64(counts.len()) {
                 pick_without_replacement(d, &counts, u64::from(k), &mut out);
             } else {
                 multivariate_hypergeometric(d, &counts, u64::from(k), &mut out);
@@ -99,15 +107,16 @@ fn split_profile<B: Backing>(
         if taken.iter().map(|(_, n)| n).sum::<u64>() != u64::from(k) {
             violation!(clause = "REP.14", "a group's leaving members other than the part's weight", group = g);
         }
+        taken.sort_unstable_by_key(|(v, _)| *v);
         for (v, n) in taken {
-            let Ok(n) = u32::try_from(n) else {
+            let (Ok(n), Ok(by)) = (u32::try_from(n), i64::try_from(n)) else {
                 violation!(clause = "REP.14", "more members leaving a value than a cell holds", value = v);
             };
             origin.remove(g, v, n);
-            profile.add(&layout, g, v, n);
+            profile.add(layout, g, v, n);
+            deltas.push((g, v, -by));
         }
     }
-    table.set_profile(slot, &origin);
     profile
 }
 
@@ -123,44 +132,124 @@ pub fn split<B: Backing, L: Backing>(
     spec: &SplitSpec<'_>,
     d: &mut Draws,
 ) -> Parted {
+    let mut one = [(id, *spec, d)];
+    split_batch(at, slot, &mut one).pop().unwrap_or(Parted::Whole)
+}
+
+/// Several splits from one cell at one apply sub-step, in the order given, leaving the cell and the parts as splitting
+/// them one by one would: each draws from the cell as the splits before it left it, and the cell's profile is read
+/// once and written once.
+#[clause("REP.8", "REP.9", "REP.14", "REP.23")]
+pub fn split_batch<B: Backing, L: Backing>(
+    at: &mut Cells<'_, B, L>,
+    slot: Slot,
+    splits: &mut [(PartId, SplitSpec<'_>, &mut Draws)],
+) -> Vec<Parted> {
     let (ledger, table, place, keys) = (&mut *at.ledger, &mut *at.table, at.place, at.keys);
-    let weight = table.weight(slot).get();
-    let k = spec.count;
-    if k == 0 || k > weight {
-        violation!(clause = "REP.14", "a split of no members or more than the cell holds", count = k, weight = weight);
-    }
-    if k == weight {
-        return Parted::Whole;
-    }
-    let profile = split_profile(table, slot, spec, d);
-    let held: Vec<(LineId, Side, u32)> =
+    let layout = table.profile_layout().clone();
+    let mut origin = table.profile(slot);
+    let mut deltas = Vec::new();
+    // The cell's rows as the splits so far left them: the members each holds, a row gone once none do.
+    let mut held: Vec<(LineId, Side, u32)> =
         rows::iter(&*table, slot).map(|r| (r.row.line, r.side(), r.row.count)).collect();
+    let mut plans: Vec<(Vec<RowLeaving>, Round)> = Vec::with_capacity(splits.len());
+    let mut out = Vec::with_capacity(splits.len());
+    for (id, spec, d) in splits.iter_mut() {
+        let d: &mut Draws = d;
+        let weight = table.weight(slot).get();
+        let k = spec.count;
+        if k == 0 || k > weight {
+            violation!(
+                clause = "REP.14",
+                "a split of no members or more than the cell holds",
+                count = k,
+                weight = weight
+            );
+        }
+        if k == weight {
+            out.push(Parted::Whole);
+            continue;
+        }
+        let profile = split_profile(&layout, &mut origin, &mut deltas, spec, d);
+        plans.push((plan_rows(&mut held, spec, weight, d), spec.rounding));
+        let mut holdings = Vec::new();
+        for h in cell_holdings(&*table, slot) {
+            let x = leavers(d, weight, h.count, k);
+            if x > 0 {
+                holdings.push(ledger.detach_holding(table, place, slot, h.instrument, x, spec.rounding));
+            }
+        }
+        let (positions, exposures) = split_totals(table, slot, spec, weight);
+        let rates = (0..table.rate_kinds()).map(|r| table.rate(slot, r)).collect();
+        let attention = (0..table.review_kinds()).map(|j| table.attention(slot, j)).collect();
+        table.set_weight(slot, Weight::new(weight - k));
+        out.push(Parted::Part(Box::new(Part {
+            id: *id,
+            from: slot,
+            weight: Weight::new(k),
+            key: keys.record(table.hot(slot).key_id),
+            sig: table.sig(slot),
+            positions,
+            rates,
+            exposures,
+            attention,
+            profile,
+            rows: Vec::new(),
+            holdings,
+        })));
+    }
+    let borrowed: Vec<RowPlan<'_>> = plans.iter().map(|(p, r)| (p.as_slice(), *r)).collect();
+    let mut detached = ledger.detach_rows_batch(table, place, slot, &borrowed).into_iter();
+    for parted in &mut out {
+        if let Parted::Part(p) = parted {
+            p.rows = detached.next().unwrap_or_default();
+        }
+    }
+    table.shift_profile(slot, &crate::profile::net(deltas));
+    out
+}
+
+/// The members leaving one line side of a cell's row.
+type RowLeaving = ((LineId, Side), RowShare);
+
+/// The members one split takes from each of the cell's rows as the splits before it left them: the event's own rows as
+/// it gives them, every other row's drawn from the members holding it; `held` is left with what stays.
+fn plan_rows(held: &mut Vec<(LineId, Side, u32)>, spec: &SplitSpec<'_>, weight: u32, d: &mut Draws) -> Vec<RowLeaving> {
     for ((line, side), _) in spec.rows {
         if !held.iter().any(|(l, s, _)| (l, s) == (line, side)) {
             violation!(clause = "REP.23", "a split naming a row its cell does not hold", line = line.get());
         }
     }
     let mut plan = Vec::with_capacity(held.len());
-    for (line, side, count) in held {
-        if count > weight {
+    for (line, side, count) in held.iter_mut() {
+        if *count > weight {
             violation!(clause = "REP.31", "a row of more members than its cell", line = line.get());
         }
-        let share = match spec.rows.iter().find(|(at, _)| *at == (line, side)) {
+        let share = match spec.rows.iter().find(|(at, _)| *at == (*line, *side)) {
             Some((_, s)) => *s,
-            None => RowShare { count: leavers(d, weight, count, k), own_balance: 0 },
+            None => RowShare { count: leavers(d, weight, *count, spec.count), own_balance: 0 },
         };
         if share.count > 0 {
-            plan.push(((line, side), share));
+            plan.push(((*line, *side), share));
+            let Some(rest) = count.checked_sub(share.count) else {
+                violation!(clause = "REP.9", "more members leaving a row than hold it", line = line.get());
+            };
+            *count = rest;
         }
     }
-    let detached = ledger.detach_rows(table, place, slot, &plan, spec.rounding);
-    let mut holdings = Vec::new();
-    for h in cell_holdings(&*table, slot) {
-        let x = leavers(d, weight, h.count, k);
-        if x > 0 {
-            holdings.push(ledger.detach_holding(table, place, slot, h.instrument, x, spec.rounding));
-        }
-    }
+    held.retain(|(_, _, count)| *count > 0);
+    plan
+}
+
+/// A split's shares of the cell's positions and review exposures, the stayers keeping the rest: their own amounts
+/// leave whole, and reviewers who acted leave with no exposure.
+fn split_totals<B: Backing>(
+    table: &mut CellTable<B>,
+    slot: Slot,
+    spec: &SplitSpec<'_>,
+    weight: u32,
+) -> (Vec<i64>, Vec<Missing<i64>>) {
+    let k = spec.count;
     let n = table.positions();
     let mut positions = Vec::with_capacity(n);
     for i in 0..n {
@@ -169,7 +258,7 @@ pub fn split<B: Backing, L: Backing>(
         table.set_position(slot, i, staying);
         positions.push(leaving);
     }
-    let mut exposures = Vec::new();
+    let mut exposures = Vec::with_capacity(table.review_kinds());
     for j in 0..table.review_kinds() {
         exposures.push(match table.exposure(slot, j) {
             Missing::Present(_) if spec.reviewed == Missing::Present(j) => Missing::Present(0),
@@ -181,23 +270,7 @@ pub fn split<B: Backing, L: Backing>(
             Missing::Absent => Missing::Absent,
         });
     }
-    let rates = (0..table.rate_kinds()).map(|r| table.rate(slot, r)).collect();
-    let attention = (0..table.review_kinds()).map(|j| table.attention(slot, j)).collect();
-    table.set_weight(slot, Weight::new(weight - k));
-    Parted::Part(Box::new(Part {
-        id,
-        from: slot,
-        weight: Weight::new(k),
-        key: keys.record(table.hot(slot).key_id),
-        sig: table.sig(slot),
-        positions,
-        rates,
-        exposures,
-        attention,
-        profile,
-        rows: detached,
-        holdings,
-    }))
+    (positions, exposures)
 }
 
 #[cfg(test)]
@@ -322,6 +395,32 @@ mod tests {
         // variance of 50 × 0.1 × 0.9 × 50 ÷ 99, so the mean of 400 trials lies within 0.3 of it but once in 10⁴.
         let mean = phx_rand::float::from_u64(sick_young) / phx_rand::float::from_u64(u64::from(trials));
         assert!((mean - 5.0).abs() < 0.3, "{mean}");
+    }
+
+    #[test]
+    fn one_member_leaves_by_its_share() {
+        let kind = kind();
+        let mut space = AddressSpace::empty();
+        let mut bk = books(&mut space);
+        let (keys, _) = keys(&kind, 1, 1);
+        let (tab, slot) = cell(&mut space, &kind, &mut bk, &keys);
+        let (layout, origin) = (tab.profile_layout().clone(), tab.profile(slot));
+        let trials = 20_000_u32;
+        let (mut sick_young, mut loan) = (0_u64, 0_u64);
+        let mut d = draws("DEM.death", 0);
+        for _ in 0..trials {
+            let (mut held, mut deltas) = (origin.clone(), Vec::new());
+            let got = super::split_profile(&layout, &mut held, &mut deltas, &plain(1), &mut d);
+            assert_eq!(got.members(AGE_HEALTH), 1);
+            sick_young += u64::from(got.count(AGE_HEALTH, 1));
+            loan += u64::from(super::leavers(&mut d, 100, 30, 1));
+        }
+        // The member is (young, ill) with chance 10 ÷ 100 and holds the loan with chance 30 ÷ 100. Over 20 000 trials
+        // the counts' standard deviations are √(20 000 × 0.1 × 0.9) ≈ 42.4 and √(20 000 × 0.3 × 0.7) ≈ 64.8, so each
+        // lies within 6.1 of them of its mean but for a chance below 10⁻⁹.
+        let within = |x: u64, mean: f64, sd: f64| (phx_rand::float::from_u64(x) - mean).abs() < 6.1 * sd;
+        assert!(within(sick_young, 2_000.0, 42.5), "{sick_young}");
+        assert!(within(loan, 6_000.0, 64.9), "{loan}");
     }
 
     #[test]

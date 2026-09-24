@@ -751,6 +751,11 @@ the row's words, its payment record and its arrears, and attached to the cell it
 lines, so no line's side counts move between the split and the landing. What a flow moved for the reached members
 alone — its amount on their funds row, its move of the position its kink lies on — leaves with them whole before the
 rest is shared.
+**Split batches**: the splits one apply sub-step makes from one cell are made together, in the order their events
+were decided. Each draws from the cell as the splits before it left it, so the parts are the ones splitting one by
+one would make; the cell's profile is read once and written once, and each of its rows is read once and rewritten once
+however many parts leave it. A single member leaving is one uniform draw — over the cell's members for each profile
+group, and over the row's for each row — rather than a hypergeometric.
 At 10b a part either lands in a cell — its identity resolves to that cell and the records naming it are re-pointed
 through back-pointers — or becomes a cell with a permanent identity. Members pinned by open business (§4.2) land only
 with identical items. A change that applies to every member of a cell alike (a key rule changing) **re-keys** the
@@ -787,7 +792,8 @@ stance from the origin it lived in — and never averaged (REP.16).
 
   so no join averages a key or crosses a kink (REP.8, REP.16).
 - **Batches**: parts are sorted by landing key at 10b; all parts bound for one target are checked against its state at
-  10b's start and joined together in one pass over its rows.
+  10b's start and joined together: their rows merged per line side and attached in one pass, its profile moved in one
+  pass, each line's holder list changed at most once. A batch leaves the target as joining its parts one by one would.
 - **Clusters**: parts that find no target are grouped by landing key; within a group, in canonical order (origin
   cell's identity, then the part's sequence within it), each part joins the first new cell it passes the check with,
   or starts one. New cells per day are counted (§13.2).
@@ -824,7 +830,9 @@ Profiles are counted per role, jointly within declared groups (REP.32, REP.33). 
 by contract terms where they belong: a mortgage's and a dwelling policy's collateral description names zone and class,
 so a flood's draws meet the right mortgages and policies (§7.10). Others are attachments joint in the role's group: a
 policy's cover with health and age, a member's pension scheme with its employment, a policy's renewal band. Lists are
-compactly encoded: dense small histograms, delta and varint coding, one-byte counts with an escape. From Stage 6 the
+compactly encoded: dense small histograms, delta and varint coding, one-byte counts with an escape. A split or a join
+moves a profile in one pass over its bytes, read in place from the arena's words, never decoded into lists and
+encoded again. From Stage 6 the
 adult role's education record is its own group, and participation (its searching value carrying the month band the
 search began) and retirement are components joint with the employment attachment; a child role carries its
 schooling, its compulsory stage a read of birth year and the law. The labour-market state and skill are reads

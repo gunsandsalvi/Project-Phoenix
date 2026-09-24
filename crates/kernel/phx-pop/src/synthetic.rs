@@ -29,7 +29,7 @@ use crate::kind::PopKindDecl;
 use crate::landing::{LandingIndex, TenB, hold_key};
 use crate::part::{Part, PartId};
 use crate::profile::Profile;
-use crate::split::{Cells, Parted, SplitSpec, split};
+use crate::split::{Cells, Parted, SplitSpec, split, split_batch};
 use crate::steps::StepTable;
 use crate::table::{CellTable, NewCell};
 
@@ -238,6 +238,35 @@ impl<B: Backing> DesignPoint<B> {
         }
     }
 
+    /// Parts of the members given split from the first cell together, each drawn from its own stream.
+    pub fn parts(&mut self, members: &[u32], streams: &mut [Draws]) -> Vec<Part> {
+        let origin = self.table.party(self.origin);
+        let mut batch: Vec<(PartId, SplitSpec<'_>, &mut Draws)> = members
+            .iter()
+            .zip(streams.iter_mut())
+            .zip(0_u32..)
+            .map(|((k, d), seq)| {
+                let spec = SplitSpec {
+                    count: *k,
+                    given: &[],
+                    rows: &[],
+                    own: &[],
+                    reviewed: Missing::Absent,
+                    rounding: Round::HalfEven,
+                };
+                (PartId { origin, seq }, spec, d)
+            })
+            .collect();
+        let mut cells = Cells { ledger: &mut self.ledger, table: &mut self.table, place: 0, keys: &self.keys };
+        split_batch(&mut cells, self.origin, &mut batch)
+            .into_iter()
+            .map(|p| match p {
+                Parted::Part(p) => *p,
+                Parted::Whole => violation!(clause = "REP.8", "a design-point part of every member"),
+            })
+            .collect()
+    }
+
     /// What 10b works on, over the design point's stores.
     pub fn tenb<'a>(&'a mut self, kinks: &'a NoKinks, levels: &'a [u8]) -> TenB<'a, B, B> {
         TenB {
@@ -283,5 +312,104 @@ mod tests {
         let landed = land(&mut dp.tenb(&kinks, &lv), &mut index, vec![p]);
         assert_eq!((landed.landings, landed.new_cells, landed.holder_list_changes), (1, 0, 0));
         assert!(landed.moved.iter().all(|m| *m == 0));
+    }
+
+    #[test]
+    fn a_batch_joins_as_its_parts_one_by_one() {
+        use phx_ledger::rows::rows;
+
+        use crate::join::{Joined, Landing, join, join_batch};
+
+        let parts = |dp: &mut super::DesignPoint<HeapBacking<4096>>| -> Vec<Part> {
+            (0..6_u32).map(|i| dp.part(i, 1 + i * 7, &mut draws("REP.bench", i))).collect()
+        };
+        let (mut a, mut b) = (design_point::<HeapBacking<4096>>(), design_point::<HeapBacking<4096>>());
+        let (pa, pb) = (parts(&mut a), parts(&mut b));
+        assert_eq!(pa, pb, "the same draws make the same parts");
+        let batch = join_batch(&mut a.ledger, &mut a.table, 0, a.target, pa);
+        let mut one_by_one = Joined { erased: vec![0.0; b.table.positions()], ..Joined::default() };
+        for p in pb {
+            let d = join(&mut b.ledger, &mut b.table, 0, &Landing { part: p.id, target: b.target }, p);
+            one_by_one.rows += d.rows;
+            one_by_one.holder_list_changes += d.holder_list_changes;
+            for (t, e) in one_by_one.erased.iter_mut().zip(d.erased) {
+                *t += e;
+            }
+        }
+        assert_eq!(batch, one_by_one);
+        let (ta, tb) = (a.target, b.target);
+        assert_eq!(a.table.weight(ta), b.table.weight(tb));
+        assert_eq!(a.table.profile(ta), b.table.profile(tb));
+        for i in 0..a.table.positions() {
+            assert_eq!(a.table.position(ta, i), b.table.position(tb, i));
+        }
+        let view = |t: &crate::table::CellTable<HeapBacking<4096>>, s| {
+            rows(t, s).iter().map(|v| (v.row, v.optional)).collect::<Vec<_>>()
+        };
+        assert_eq!(view(&a.table, ta), view(&b.table, tb), "every row's members and words");
+    }
+
+    #[test]
+    fn a_batch_splits_as_its_splits_one_by_one() {
+        // Small parts, and large ones that take some rows whole.
+        for counts in [[1_u32, 9, 3, 40, 1], [150, 1, 45, 2, 1]] {
+            batch_equals_one_by_one(&counts);
+        }
+    }
+
+    fn batch_equals_one_by_one(counts: &[u32; 5]) {
+        use phx_ledger::rows::rows;
+        use phx_num::Missing;
+        use phx_num::round::Round;
+
+        use crate::part::PartId;
+        use crate::split::{Cells, Parted, SplitSpec, split, split_batch};
+
+        let spec = |count| SplitSpec {
+            count,
+            given: &[],
+            rows: &[],
+            own: &[],
+            reviewed: Missing::Absent,
+            rounding: Round::HalfEven,
+        };
+        let (mut a, mut b) = (design_point::<HeapBacking<4096>>(), design_point::<HeapBacking<4096>>());
+        let id = |dp: &super::DesignPoint<HeapBacking<4096>>, seq| PartId { origin: dp.table.party(dp.origin), seq };
+        let mut streams: Vec<phx_rand::Draws> = (0..5).map(|i| draws("DEM.death", i)).collect();
+        let mut batch: Vec<(PartId, SplitSpec<'_>, &mut phx_rand::Draws)> = streams
+            .iter_mut()
+            .zip(counts)
+            .enumerate()
+            .map(|(i, (d, k))| (id(&a, u32::try_from(i).unwrap()), spec(*k), d))
+            .collect();
+        let origin = a.origin;
+        let got = split_batch(
+            &mut Cells { ledger: &mut a.ledger, table: &mut a.table, place: 0, keys: &a.keys },
+            origin,
+            &mut batch,
+        );
+        let origin_b = b.origin;
+        let want: Vec<Parted> = counts
+            .iter()
+            .enumerate()
+            .map(|(i, k)| {
+                let seq = u32::try_from(i).unwrap();
+                let pid = id(&b, seq);
+                split(
+                    &mut Cells { ledger: &mut b.ledger, table: &mut b.table, place: 0, keys: &b.keys },
+                    origin_b,
+                    pid,
+                    &spec(*k),
+                    &mut draws("DEM.death", seq),
+                )
+            })
+            .collect();
+        assert_eq!(got, want, "the same parts");
+        assert_eq!(a.table.weight(origin), b.table.weight(origin_b));
+        assert_eq!(a.table.profile(origin), b.table.profile(origin_b));
+        let view = |t: &crate::table::CellTable<HeapBacking<4096>>, s| {
+            rows(t, s).iter().map(|v| (v.row, v.optional)).collect::<Vec<_>>()
+        };
+        assert_eq!(view(&a.table, origin), view(&b.table, origin_b));
     }
 }

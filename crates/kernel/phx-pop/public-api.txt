@@ -141,6 +141,7 @@ pub phx_pop::join::Landing::part: phx_pop::part::PartId
 pub phx_pop::join::Landing::target: phx_id::ids::Slot
 pub fn phx_pop::join::erased(phx_core::weight::Weight, i64, phx_core::weight::Weight, i64) -> f64
 pub fn phx_pop::join::join<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_ledger::apply::Ledger<L>, &mut phx_pop::table::CellTable<B>, u16, &phx_pop::join::Landing, phx_pop::part::Part) -> phx_pop::join::Joined
+pub fn phx_pop::join::join_batch<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_ledger::apply::Ledger<L>, &mut phx_pop::table::CellTable<B>, u16, phx_id::ids::Slot, alloc::vec::Vec<phx_pop::part::Part>) -> phx_pop::join::Joined
 pub mod phx_pop::key
 pub struct phx_pop::key::KeyField
 pub phx_pop::key::KeyField::bits: u32
@@ -287,6 +288,7 @@ pub struct phx_pop::part::PartId
 pub phx_pop::part::PartId::origin: phx_id::ids::PartyId
 pub phx_pop::part::PartId::seq: u32
 pub mod phx_pop::pick
+pub fn phx_pop::pick::one_of(&mut phx_rand::draws::Draws, &[u64]) -> usize
 pub fn phx_pop::pick::pick_hit(&mut phx_rand::draws::Draws, &phx_pop::profile::Profile, &phx_pop::profile::ProfileLayout, usize, &[(u32, u64)]) -> alloc::vec::Vec<alloc::vec::Vec<(u32, u64)>>
 pub fn phx_pop::pick::weighted(&mut phx_rand::draws::Draws, &[u64]) -> usize
 pub mod phx_pop::pooled
@@ -312,6 +314,7 @@ pub fn phx_pop::profile::Profile::encode(&self, &phx_pop::profile::ProfileLayout
 pub fn phx_pop::profile::Profile::entries(&self) -> usize
 pub fn phx_pop::profile::Profile::held(&self, usize) -> &[(u32, u32)]
 pub fn phx_pop::profile::Profile::members(&self, usize) -> u64
+pub fn phx_pop::profile::Profile::read_from<S: phx_pop::profile::ByteSource>(&phx_pop::profile::ProfileLayout, &S, usize) -> core::result::Result<phx_pop::profile::Profile, alloc::string::String>
 pub fn phx_pop::profile::Profile::remove(&mut self, usize, u32, u32)
 pub struct phx_pop::profile::ProfileLayout
 pub phx_pop::profile::ProfileLayout::groups: alloc::vec::Vec<phx_pop::profile::GroupShape>
@@ -329,7 +332,10 @@ pub fn &[u8]::byte(&self, usize) -> core::option::Option<u8>
 impl phx_pop::profile::ByteSource for phx_pop::profile::WordBytes<'_>
 pub fn phx_pop::profile::WordBytes<'_>::byte(&self, usize) -> core::option::Option<u8>
 pub fn phx_pop::profile::from_words(&[u64], usize) -> alloc::vec::Vec<u8>
-pub fn phx_pop::profile::read_group(&phx_pop::profile::ProfileLayout, &dyn phx_pop::profile::ByteSource, usize) -> core::result::Result<alloc::vec::Vec<(u32, u32)>, alloc::string::String>
+pub fn phx_pop::profile::net(alloc::vec::Vec<(usize, u32, i64)>) -> alloc::vec::Vec<(usize, u32, i64)>
+pub fn phx_pop::profile::packed_bytes(&[u64], usize) -> alloc::borrow::Cow<'_, [u8]>
+pub fn phx_pop::profile::read_group<S: phx_pop::profile::ByteSource + ?core::marker::Sized>(&phx_pop::profile::ProfileLayout, &S, usize) -> core::result::Result<alloc::vec::Vec<(u32, u32)>, alloc::string::String>
+pub fn phx_pop::profile::shifted<S: phx_pop::profile::ByteSource + ?core::marker::Sized>(&phx_pop::profile::ProfileLayout, &S, usize, &[(usize, u32, i64)]) -> core::result::Result<alloc::vec::Vec<u8>, alloc::string::String>
 pub fn phx_pop::profile::to_words(&[u8]) -> alloc::vec::Vec<u64>
 pub mod phx_pop::rekey
 pub struct phx_pop::rekey::KeyClock
@@ -405,6 +411,7 @@ pub phx_pop::split::SplitSpec::reviewed: phx_num::missing::Missing<usize>
 pub phx_pop::split::SplitSpec::rounding: phx_num::round::Round
 pub phx_pop::split::SplitSpec::rows: &'a [((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)]
 pub fn phx_pop::split::split<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::split::Cells<'_, B, L>, phx_id::ids::Slot, phx_pop::part::PartId, &phx_pop::split::SplitSpec<'_>, &mut phx_rand::draws::Draws) -> phx_pop::split::Parted
+pub fn phx_pop::split::split_batch<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::split::Cells<'_, B, L>, phx_id::ids::Slot, &mut [(phx_pop::part::PartId, phx_pop::split::SplitSpec<'_>, &mut phx_rand::draws::Draws)]) -> alloc::vec::Vec<phx_pop::split::Parted>
 pub mod phx_pop::steps
 #[repr(transparent)] pub struct phx_pop::steps::Step(_)
 impl phx_pop::steps::Step
@@ -431,6 +438,7 @@ pub phx_pop::synthetic::DesignPoint::table: phx_pop::table::CellTable<B>
 pub phx_pop::synthetic::DesignPoint::target: phx_id::ids::Slot
 impl<B: phx_store::backing::Backing> phx_pop::synthetic::DesignPoint<B>
 pub fn phx_pop::synthetic::DesignPoint<B>::part(&mut self, u32, u32, &mut phx_rand::draws::Draws) -> phx_pop::part::Part
+pub fn phx_pop::synthetic::DesignPoint<B>::parts(&mut self, &[u32], &mut [phx_rand::draws::Draws]) -> alloc::vec::Vec<phx_pop::part::Part>
 pub fn phx_pop::synthetic::DesignPoint<B>::tenb<'a>(&'a mut self, &'a phx_pop::synthetic::NoKinks, &'a [u8]) -> phx_pop::landing::TenB<'a, B, B>
 impl<B: phx_store::backing::Backing> core::fmt::Debug for phx_pop::synthetic::DesignPoint<B>
 pub fn phx_pop::synthetic::DesignPoint<B>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
@@ -512,6 +520,7 @@ pub fn phx_pop::table::CellTable<B>::set_rate(&mut self, phx_id::ids::Slot, usiz
 pub fn phx_pop::table::CellTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_pop::table::CellTable<B>::set_sig(&mut self, phx_id::ids::Slot, &[u64])
 pub fn phx_pop::table::CellTable<B>::set_weight(&mut self, phx_id::ids::Slot, phx_core::weight::Weight)
+pub fn phx_pop::table::CellTable<B>::shift_profile(&mut self, phx_id::ids::Slot, &[(usize, u32, i64)])
 pub fn phx_pop::table::CellTable<B>::sig(&self, phx_id::ids::Slot) -> alloc::vec::Vec<u64>
 pub fn phx_pop::table::CellTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_pop::table::CellTable<B>::steps(&self, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &[u8]) -> alloc::vec::Vec<phx_pop::steps::Step>

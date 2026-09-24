@@ -89,7 +89,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_num.ir_split_total"
-value = 194
+value = 85
 direction = "down"
 
 # phx-rand's samplers, each from a fresh draw cursor; rejection samplers count the rejections their fixed address meets.
@@ -321,15 +321,25 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_screen_candidate"
-value = 3489306
+value = 3349723
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_end_to_end"
-value = 337351
+value = 260841
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_part_lone"
+value = 177483
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_parts_batched"
+value = 531947
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_seller_spread"
-value = 3117624
+value = 2542216
 direction = "down"

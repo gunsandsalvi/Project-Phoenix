@@ -4,6 +4,27 @@ use phx_rand::{Draws, Fenwick, below_u64, pick_without_replacement};
 
 use crate::profile::{Profile, ProfileLayout};
 
+/// One member drawn uniformly from categories holding `counts`, as its category's index: one uniform over the members,
+/// found by a scan, which is a multivariate hypergeometric draw of one.
+#[clause("CHN.7")]
+#[must_use]
+pub fn one_of(d: &mut Draws, counts: &[u64]) -> usize {
+    let Some(total) = counts.iter().try_fold(0_u64, |t, c| t.checked_add(*c)) else {
+        violation!(clause = "Law 7", "a population overflows");
+    };
+    if total == 0 {
+        violation!(clause = "CHN.2", "one drawn from none");
+    }
+    let mut rest = below_u64(d, total);
+    for (i, c) in counts.iter().enumerate() {
+        if rest < *c {
+            return i;
+        }
+        rest -= c;
+    }
+    violation!(clause = "CHN.2", "a draw beyond its categories", total = total)
+}
+
 /// The joint values the members a hit reaches hold in each group of their role: in the hazard's own group they are
 /// the values the hit was drawn at; in the role's other groups, which are counted apart from it, they are picked
 /// without replacement from each group's counts. Values within a group stay joint, since a group's value is one

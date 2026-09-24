@@ -13,7 +13,7 @@ use crate::individual::{ExtList, Extension};
 use crate::key::KeyId;
 use crate::kind::{PopKindDecl, Scale};
 use crate::landing::landing_key;
-use crate::profile::{Profile, ProfileLayout, WordBytes, from_words, read_group, to_words};
+use crate::profile::{Profile, ProfileLayout, packed_bytes, read_group, shifted, to_words};
 use crate::steps::{Step, StepTable};
 
 /// The lists a cell keeps in its chunk's arena: relationship rows, holdings, profiles, and the standing rates too
@@ -486,7 +486,7 @@ impl<B: Backing> CellTable<B> {
         let Ok(n) = usize::try_from(*len) else {
             violation!(clause = "REP.32", "a profile longer than this machine's words", slot = slot.get());
         };
-        match Profile::decode(&self.layout.profiles, &from_words(packed, n)) {
+        match Profile::read_from(&self.layout.profiles, &&*packed_bytes(packed, n), n) {
             Ok(p) => p,
             Err(_) => violation!(clause = "REP.32", "a cell's profile does not read back", slot = slot.get()),
         }
@@ -502,7 +502,7 @@ impl<B: Backing> CellTable<B> {
         let Ok(n) = usize::try_from(*len) else {
             violation!(clause = "REP.32", "a profile longer than this machine's words", slot = slot.get());
         };
-        match read_group(&self.layout.profiles, &WordBytes { words: packed, len: n }, group) {
+        match read_group(&self.layout.profiles, &&*packed_bytes(packed, n), group) {
             Ok(g) => g,
             Err(_) => violation!(clause = "REP.32", "a cell's profile does not read back", slot = slot.get()),
         }
@@ -511,8 +511,32 @@ impl<B: Backing> CellTable<B> {
     /// The cell's profiles written into its arena: their byte count, then their bytes packed into words.
     pub fn set_profile(&mut self, slot: Slot, profile: &Profile) {
         let bytes = profile.encode(&self.layout.profiles);
-        let mut words = vec![phx_rand::float::len_u64(bytes.len())];
-        words.extend(to_words(&bytes));
+        self.store_profile(slot, &bytes);
+    }
+
+    /// Members moved at joint values of a cell's profile, in one pass over its bytes: `deltas` in (group, value) order.
+    #[clause("REP.14", "REP.32")]
+    pub fn shift_profile(&mut self, slot: Slot, deltas: &[(usize, u32, i64)]) {
+        if deltas.is_empty() {
+            return;
+        }
+        let words = self.words(slot, CellList::Profiles);
+        let Some((len, packed)) = words.split_first() else {
+            violation!(clause = "REP.32", "a cell with no profile", slot = slot.get());
+        };
+        let Ok(n) = usize::try_from(*len) else {
+            violation!(clause = "REP.32", "a profile longer than this machine's words", slot = slot.get());
+        };
+        let Ok(bytes) = shifted(&self.layout.profiles, &&*packed_bytes(packed, n), n, deltas) else {
+            violation!(clause = "REP.14", "a profile's members moved past what it holds", slot = slot.get());
+        };
+        self.store_profile(slot, &bytes);
+    }
+
+    fn store_profile(&mut self, slot: Slot, bytes: &[u8]) {
+        let mut words = Vec::with_capacity(1 + bytes.len().div_ceil(size_of::<u64>()));
+        words.push(phx_rand::float::len_u64(bytes.len()));
+        words.extend(to_words(bytes));
         self.edit_list(slot, CellList::Profiles, |arena, list| {
             arena.remove(list, 0, list.len);
             arena.append(list, &words);

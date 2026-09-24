@@ -31,30 +31,65 @@ pub enum Round {
 #[clause("Law 7")]
 #[must_use]
 pub fn div_round(n: i128, d: i128, r: Round) -> i128 {
-    if d <= 0 {
+    rounded(n, d, r)
+}
+
+/// The signed integers a rounded division runs in: a word where the product fits one, two otherwise.
+trait Signed: Copy + Ord + crate::violation::Key + core::ops::Sub<Output = Self> {
+    const ZERO: Self;
+    const ONE: Self;
+    const TWO: Self;
+    fn div_euclid(self, d: Self) -> Self;
+    fn rem_euclid(self, d: Self) -> Self;
+    fn checked_add(self, d: Self) -> Option<Self>;
+}
+
+macro_rules! signed {
+    ($t:ty) => {
+        impl Signed for $t {
+            const ZERO: $t = 0;
+            const ONE: $t = 1;
+            const TWO: $t = 2;
+            fn div_euclid(self, d: $t) -> $t {
+                <$t>::div_euclid(self, d)
+            }
+            fn rem_euclid(self, d: $t) -> $t {
+                <$t>::rem_euclid(self, d)
+            }
+            fn checked_add(self, d: $t) -> Option<$t> {
+                <$t>::checked_add(self, d)
+            }
+        }
+    };
+}
+signed!(i64);
+signed!(i128);
+
+fn rounded<T: Signed>(n: T, d: T, r: Round) -> T {
+    if d <= T::ZERO {
         violation!(clause = "Law 7", "a rounded division needs a positive divisor", n = n, d = d);
     }
     let floor = n.div_euclid(d);
     let rem = n.rem_euclid(d);
-    if rem == 0 {
+    if rem == T::ZERO {
         return floor;
     }
     let up = match r {
         Round::Floor => false,
         Round::Ceil => true,
-        Round::TowardZero | Round::InFavourOf(Side::Payer) => n < 0,
-        Round::InFavourOf(Side::Payee) => n > 0,
+        Round::TowardZero | Round::InFavourOf(Side::Payer) => n < T::ZERO,
+        Round::InFavourOf(Side::Payee) => n > T::ZERO,
         Round::HalfAwayFromZero | Round::HalfEven => match rem.cmp(&(d - rem)) {
             Ordering::Less => false,
             Ordering::Greater => true,
-            Ordering::Equal if r == Round::HalfAwayFromZero => n > 0,
-            Ordering::Equal => floor.rem_euclid(2) != 0,
+            Ordering::Equal if r == Round::HalfAwayFromZero => n > T::ZERO,
+            Ordering::Equal => floor.rem_euclid(T::TWO) != T::ZERO,
         },
     };
     if !up {
         return floor;
     }
-    floor.checked_add(1).unwrap_or_else(|| violation!(clause = "Law 7", "a rounded quotient overflows", n = n))
+    floor.checked_add(T::ONE).unwrap_or_else(|| violation!(clause = "Law 7", "a rounded quotient overflows", n = n))
 }
 
 /// A total split between those leaving and those staying, `leaving = round(k·total/w)`; the two always sum to the
@@ -65,7 +100,12 @@ pub fn split_total(total: i64, k: u64, w: u64, r: Round) -> (i64, i64) {
     if w == 0 || k > w {
         violation!(clause = "REP.9", "a split takes a share of a positive whole", k = k, w = w);
     }
-    let leaving = div_round(i128::from(total) * i128::from(k), i128::from(w), r);
+    // In a word when the product fits one, which is the same division.
+    let product = i64::try_from(k).ok().and_then(|k| total.checked_mul(k));
+    let leaving = match (product, i64::try_from(w)) {
+        (Some(p), Ok(w)) => i128::from(rounded(p, w, r)),
+        _ => div_round(i128::from(total) * i128::from(k), i128::from(w), r),
+    };
     let Ok(leaving) = i64::try_from(leaving) else {
         violation!(clause = "Law 7", "a share of a total exceeds the total", total = total);
     };
@@ -194,5 +234,29 @@ mod tests {
     fn per_member_times_count_is_checked() {
         assert_eq!(per_member_times_count(-12, Count::new(5)), -60);
         assert_eq!(violated_clause(|| per_member_times_count(i64::MAX, Count::new(2))), "Law 7");
+    }
+
+    #[test]
+    fn split_total_in_a_word_matches_wide_arithmetic() {
+        // Totals and counts spread over many magnitudes, from small to where the product needs two words.
+        let mut x: u64 = 0x9E37_79B9_7F4A_7C15;
+        let mut next = || {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            x
+        };
+        for _ in 0..50_000 {
+            let bits = u32::try_from(next() % 62 + 1).unwrap();
+            let total = i64::try_from(next() >> (64 - bits)).unwrap() * if next() % 2 == 0 { 1 } else { -1 };
+            let w = next() % 1_000_000 + 1;
+            let k = next() % (w + 1);
+            for r in ALL {
+                let wide = div_round(i128::from(total) * i128::from(k), i128::from(w), r);
+                let (leaving, staying) = split_total(total, k, w, r);
+                assert_eq!(i128::from(leaving), wide, "total={total} k={k} w={w} {r:?}");
+                assert_eq!(leaving + staying, total);
+            }
+        }
     }
 }

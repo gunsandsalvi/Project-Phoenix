@@ -137,4 +137,19 @@ mod tests {
         assert!(chi_square_counts(&first_picks, &exact));
         assert!(chi_square_counts(&first_mvh, &exact));
     }
+
+    #[test]
+    fn one_pick_is_proportional_to_counts() {
+        let counts = [7_u64, 0, 20, 3, 10];
+        let mut d = draws("picks.one", 0);
+        let mut picked = Vec::with_capacity(100_000);
+        let mut out = [0_u64; 5];
+        for _ in 0..100_000 {
+            pick_without_replacement(&mut d, &counts, 1, &mut out);
+            assert_eq!(out.iter().sum::<u64>(), 1);
+            picked.push(out.iter().position(|x| *x == 1).map_or(u64::MAX, |i| u64::try_from(i).unwrap()));
+        }
+        let probs: Vec<f64> = counts.iter().map(|c| from_u64(*c) / 40.0).collect();
+        assert!(crate::testing::chi_square_passes(&picked, &probs));
+    }
 }
