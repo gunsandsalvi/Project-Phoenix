@@ -2,16 +2,19 @@ use core::f64::consts::TAU;
 
 use libm::{cos, floor, sin};
 use phx_macros::clause;
-use phx_rand::{Draws, open_unit};
+use phx_rand::{Draws, below_u64};
 
 use crate::consts::{FADE_CUBIC, FADE_QUARTIC, FADE_QUINTIC};
 
-/// One octave's lattice of unit gradients, `cols × rows` cells, drawn once per map attempt.
+/// One octave's lattice of unit gradients at its `cols × rows` corners, repeating beyond them, drawn once per map
+/// attempt. Each corner keeps its gradient as one of a byte's worth of evenly spaced directions, so the finest
+/// octaves, a million corners each, stay small.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Lattice {
     cols: u32,
     rows: u32,
-    grads: Vec<(f64, f64)>,
+    directions: Vec<(f64, f64)>,
+    corners: Vec<u8>,
 }
 
 /// The improved fade of gradient noise, `6t⁵ − 15t⁴ + 10t³`, whose first and second derivatives vanish at the
@@ -34,24 +37,28 @@ fn lerp(a: f64, b: f64, t: f64) -> f64 {
 }
 
 impl Lattice {
-    /// A lattice with a gradient at each of its `(cols + 1) × (rows + 1)` corners, each at a uniformly drawn angle.
+    /// A lattice with a gradient at each of its `cols × rows` corners, each at a uniformly drawn direction.
     #[must_use]
     pub fn draw(cols: u32, rows: u32, d: &mut Draws) -> Lattice {
-        let corners = (u64::from(cols) + 1) * (u64::from(rows) + 1);
-        let grads = (0..corners)
-            .map(|_| {
-                let angle = TAU * open_unit(d);
+        let count = u64::from(u8::MAX) + 1;
+        let directions = (0..count)
+            .map(|k| {
+                let angle = TAU * phx_rand::float::from_u64(k) / phx_rand::float::from_u64(count);
                 (cos(angle), sin(angle))
             })
             .collect();
-        Lattice { cols, rows, grads }
+        let corners = (0..u64::from(cols) * u64::from(rows))
+            .map(|_| u8::try_from(below_u64(d, count)).unwrap_or(u8::MAX))
+            .collect();
+        Lattice { cols, rows, directions, corners }
     }
 
     /// The gradient at a corner, the lattice repeating beyond its square.
     fn grad(&self, cx: i64, cy: i64) -> (f64, f64) {
         let (x, y) = (cx.rem_euclid(i64::from(self.cols)), cy.rem_euclid(i64::from(self.rows)));
-        let at = y * (i64::from(self.cols) + 1) + x;
-        usize::try_from(at).ok().and_then(|i| self.grads.get(i)).copied().unwrap_or((0.0, 0.0))
+        let at = y * i64::from(self.cols) + x;
+        let direction = usize::try_from(at).ok().and_then(|i| self.corners.get(i)).map(|k| usize::from(*k));
+        direction.and_then(|k| self.directions.get(k)).copied().unwrap_or((0.0, 0.0))
     }
 
     /// The noise at a point, a coordinate of 1 spanning the lattice's square, which repeats beyond it: zero at every
