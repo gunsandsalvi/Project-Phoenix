@@ -146,20 +146,6 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// How far, in parts per thousand, a country's land may stray from its share, and a region from its country's
-    /// mean.
-    pub SHARE_TOLERANCE = "GEO.share_tolerance_per_mille" {
-        kind: Shape, value: Count, clause: "GEO.3", scope: Shared,
-        shape: standing("a construction condition: regions of like size, as GEO.3 asks, and countries holding their shares of the land, which no mechanism of the world adjusts")
-    }
-}
-
-declare_prim! {
-    /// The most rounds in which a partition's handicaps are moved toward its parts' targets.
-    pub PARTITION_ROUNDS = "GEO.partition_rounds" { kind: Resolution, value: Count, clause: "GEO.3", scope: Shared }
-}
-
-declare_prim! {
     /// Zones across the three countries, shared among them in their population shares.
     pub ZONES = "GEO.zones" { kind: Resolution, value: Count, clause: "GEO.3", scope: Shared }
 }
@@ -502,8 +488,6 @@ pub struct GeoPrims {
     pub river_tiles: Prim<Count>,
     pub rugged_m: Prim<Count>,
     pub river_crossing_m: Prim<Count>,
-    pub share_tolerance: Prim<Count>,
-    pub partition_rounds: Prim<Count>,
     pub zones: Prim<Count>,
     pub zone_min_tiles: Prim<Count>,
     pub zone_max_tiles: Prim<Count>,
@@ -559,8 +543,6 @@ impl GeoPrims {
             river_tiles: d.prim(&RIVER_TILES),
             rugged_m: d.prim(&RUGGED_M),
             river_crossing_m: d.prim(&RIVER_CROSSING_M),
-            share_tolerance: d.prim(&SHARE_TOLERANCE),
-            partition_rounds: d.prim(&PARTITION_ROUNDS),
             zones: d.prim(&ZONES),
             zone_min_tiles: d.prim(&ZONE_MIN_TILES),
             zone_max_tiles: d.prim(&ZONE_MAX_TILES),

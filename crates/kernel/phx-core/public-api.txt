@@ -937,6 +937,7 @@ impl phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
 pub fn phx_core::register::values::Table1::axis(&self) -> &[i64]
 pub fn phx_core::register::values::Table1::max_over(&self, &[i64]) -> core::result::Result<core::option::Option<i64>, phx_core::register::values::OutsideAxes>
+pub fn phx_core::register::values::Table1::values(&self) -> &[i64]
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>
@@ -2343,6 +2344,7 @@ impl phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
 pub fn phx_core::register::values::Table1::axis(&self) -> &[i64]
 pub fn phx_core::register::values::Table1::max_over(&self, &[i64]) -> core::result::Result<core::option::Option<i64>, phx_core::register::values::OutsideAxes>
+pub fn phx_core::register::values::Table1::values(&self) -> &[i64]
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>

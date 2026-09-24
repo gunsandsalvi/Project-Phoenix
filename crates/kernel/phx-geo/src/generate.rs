@@ -9,7 +9,7 @@ use phx_rand::Draws;
 use crate::consts::{PER_MILLE, PER_MILLE_F64, WHOLE_PERCENT};
 use crate::grid::{DIRECTIONS, Grid};
 use crate::hydrology::{drainage, upstream};
-use crate::partition::{Partition, StepCost, components, merge_small, partition, pick_seeds};
+use crate::partition::{StepCost, apportion, components, split};
 use crate::relief::{ReliefParams, erode, raw, to_curve};
 use crate::tile::{LAND, Region, Tile, WATER, Zone};
 
@@ -56,8 +56,6 @@ pub struct MapParams {
     pub zones: u64,
     pub zone_min_tiles: u64,
     pub zone_max_tiles: u64,
-    pub share_tolerance_per_mille: u64,
-    pub partition_rounds: u64,
     pub mainland_floor_percent: u64,
     pub max_attempts: u64,
 }
@@ -93,25 +91,6 @@ impl Map {
         self.tiles.get(index).is_some_and(Tile::is_land)
             && self.upstream.get(index).is_some_and(|u| *u >= self.river_tiles)
     }
-}
-
-/// Whole numbers in proportion to `weights` summing to `total`, by largest remainder, ties to the earlier.
-#[must_use]
-pub fn apportion(total: u64, weights: &[u64]) -> Vec<u64> {
-    let sum: u64 = weights.iter().sum();
-    if sum == 0 {
-        return vec![0; weights.len()];
-    }
-    let mut out: Vec<u64> = weights.iter().map(|w| total * w / sum).collect();
-    let mut rest: Vec<(u64, usize)> = weights.iter().enumerate().map(|(i, w)| (total * w % sum, i)).collect();
-    rest.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
-    let left = total - out.iter().sum::<u64>();
-    for (_, i) in rest.into_iter().take(usize::try_from(left).unwrap_or(usize::MAX)) {
-        if let Some(x) = out.get_mut(i) {
-            *x += 1;
-        }
-    }
-    out
 }
 
 fn to_i16(x: f64) -> i16 {
@@ -238,7 +217,8 @@ fn surface(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Result<Surface, Str
             (if *h < lo { *h } else { lo }, if *h > hi { *h } else { hi })
         });
         elevation.push(to_i16(hs.iter().sum::<f64>() / per_tile));
-        let range = Fixed::<0>::from_f64(hi - lo, Round::HalfEven).map(Fixed::raw).ok().and_then(|r| u16::try_from(r).ok());
+        let range =
+            Fixed::<0>::from_f64(hi - lo, Round::HalfEven).map(Fixed::raw).ok().and_then(|r| u16::try_from(r).ok());
         let Some(r) = range else { return Err("a tile's relief beyond sixteen bits of metres".to_owned()) };
         relief.push(r);
     }
@@ -293,9 +273,8 @@ impl<'a> Ground<'a> {
     }
 }
 
-/// The countries: grown over the mainland from seeds on it and sized to their shares of all the land, the islands
-/// joining the nearest; refused when a country's land strays from its share by more than the tolerance, or holds less
-/// of its land on the mainland than the declared floor.
+/// The countries: all the land split in their shares; refused when a country holds less of its land on the mainland
+/// than the declared floor.
 fn countries(
     p: &MapParams,
     grid: &Grid,
@@ -307,13 +286,7 @@ fn countries(
     let (label, sizes) = components(grid, land);
     let mainland = sizes.iter().enumerate().fold(0, |best, (i, s)| if *s > at(&sizes, best) { i } else { best });
     let on_mainland: Vec<bool> = label.iter().map(|l| *l == Some(mainland)).collect();
-    let seeds = pick_seeds(&tiles_of(grid, &on_mainland), p.split.len(), draws);
-    let targets = apportion(p.land_tiles, &p.split);
-    let over = Partition { eligible: &on_mainland, joiners: land, seeds: &seeds, targets: &targets };
-    let (owner, within) = partition(grid, &over, p.share_tolerance_per_mille, p.partition_rounds, lot, step);
-    if !within {
-        return Err("the countries' land strays from their shares beyond the tolerance".to_owned());
-    }
+    let owner = split(grid, land, &p.split, lot, step, draws);
     for c in 0..p.split.len() {
         let all = count(owner.iter().filter(|o| **o == Some(c)).count());
         let main = count(owner.iter().zip(&on_mainland).filter(|(o, m)| **o == Some(c) && **m).count());
@@ -324,30 +297,25 @@ fn countries(
     Ok((owner, on_mainland))
 }
 
-/// The tiles of `mask`, in identity order.
-fn tiles_of(grid: &Grid, mask: &[bool]) -> Vec<TileId> {
-    mask.iter().zip(0..).filter(|(m, _)| **m).map(|(_, i)| grid.tile(i)).collect()
+/// Each part's tiles, in identity order.
+fn tiles_by_part(grid: &Grid, owner: &[Option<usize>], parts: usize) -> Vec<Vec<TileId>> {
+    let mut out = vec![Vec::new(); parts];
+    for (i, o) in owner.iter().enumerate() {
+        if let Some(tiles) = o.and_then(|part| out.get_mut(part)) {
+            tiles.push(grid.tile(i));
+        }
+    }
+    out
 }
 
-/// Where a part's seeds are drawn: its mainland tiles, so no part starts stranded on an island, or all its tiles when
-/// none of them is on the mainland.
-fn seedable(grid: &Grid, mask: &[bool], on_mainland: &[bool]) -> Vec<TileId> {
-    let main: Vec<bool> = mask.iter().zip(on_mainland).map(|(a, b)| *a && *b).collect();
-    let tiles = tiles_of(grid, &main);
-    if tiles.is_empty() { tiles_of(grid, mask) } else { tiles }
-}
-
-/// Regions and zones, grown by the ground's step costs within each country and region: regions seeded on the
-/// mainland, of like size and balanced to it within the tolerance, and zones below the least size merging into their
-/// smallest neighbour, or the nearest zone from an island; refused when a region strays from its share, is in two
-/// pieces on the mainland, or a zone falls outside its declared size.
+/// The regions and zones: each country's land split into regions of like size, each region's into its zones; refused
+/// when a region is in more than one piece on the mainland, or a zone falls outside its declared size.
 struct Places {
     regions: Vec<Region>,
     zones: Vec<Zone>,
     zone_of: Vec<Option<ZoneId>>,
 }
 
-#[allow(clippy::too_many_arguments)]
 fn places(
     p: &MapParams,
     grid: &Grid,
@@ -361,38 +329,28 @@ fn places(
     let mut out = Places { regions: Vec::new(), zones: Vec::new(), zone_of: vec![None; grid.len()] };
     for c in 0..p.split.len() {
         let in_country: Vec<bool> = owner.iter().map(|o| *o == Some(c)).collect();
-        let tiles = tiles_of(grid, &in_country);
         let regions = usize::try_from(p.regions.get(c).copied().unwrap_or(0)).map_err(|e| e.to_string())?;
-        let targets = apportion(count(tiles.len()), &vec![1; regions]);
-        let seeds = pick_seeds(&seedable(grid, &in_country, on_mainland), regions, draws);
-        let over = Partition { eligible: &in_country, joiners: &in_country, seeds: &seeds, targets: &targets };
-        let (region, within) = partition(grid, &over, p.share_tolerance_per_mille, p.partition_rounds, lot, step);
-        if !within {
-            return Err(format!("country {c}'s regions stray from like size beyond the tolerance"));
-        }
-        let sizes: Vec<u64> = (0..regions).map(|r| count(region.iter().filter(|o| **o == Some(r)).count())).collect();
+        let region = split(grid, &in_country, &vec![1; regions], lot, step, draws);
+        let region_tiles = tiles_by_part(grid, &region, regions);
+        let sizes: Vec<u64> = region_tiles.iter().map(|t| count(t.len())).collect();
         let zone_counts = apportion(zones_by_country.get(c).copied().unwrap_or(0), &sizes);
-        for r in 0..regions {
-            let in_region: Vec<bool> = region.iter().map(|o| *o == Some(r)).collect();
+        for (r, r_tiles) in region_tiles.iter().enumerate() {
+            let mut in_region = vec![false; grid.len()];
+            for t in r_tiles {
+                if let Some(m) = in_region.get_mut(grid.index(*t)) {
+                    *m = true;
+                }
+            }
             let on_main: Vec<bool> = in_region.iter().zip(on_mainland).map(|(a, b)| *a && *b).collect();
             if components(grid, &on_main).1.len() > 1 {
                 return Err(format!("region {r} of country {c} is in more than one piece on the mainland"));
             }
             let region_id = RegionId::new(u16::try_from(out.regions.len()).map_err(|e| e.to_string())?);
             out.regions.push(Region { country: CountryId::new(u8::try_from(c).map_err(|e| e.to_string())?) });
-            let r_tiles = tiles_of(grid, &in_region);
             let zones = usize::try_from(zone_counts.get(r).copied().unwrap_or(0)).map_err(|e| e.to_string())?;
-            let z_targets = apportion(count(r_tiles.len()), &vec![1; zones]);
-            let z_seeds = pick_seeds(&r_tiles, zones, draws);
-            let over = Partition { eligible: &in_region, joiners: &in_region, seeds: &z_seeds, targets: &z_targets };
-            let (mut zone, _) = partition(grid, &over, p.share_tolerance_per_mille, p.partition_rounds, lot, step);
-            merge_small(grid, &mut zone, zones, p.zone_min_tiles);
-            for z in 0..zones {
-                let z_tiles = tiles_of(grid, &zone.iter().map(|o| *o == Some(z)).collect::<Vec<_>>());
+            let zone = split(grid, &in_region, &vec![1; zones], lot, step, draws);
+            for z_tiles in tiles_by_part(grid, &zone, zones) {
                 let size = count(z_tiles.len());
-                if size == 0 {
-                    continue;
-                }
                 if size < p.zone_min_tiles || size > p.zone_max_tiles {
                     return Err(format!(
                         "a zone of {size} tiles, outside {} to {}",
@@ -428,8 +386,7 @@ fn attempt(p: &MapParams, climate: &dyn Fn(ClimateInput) -> u8, draws: &mut Draw
     let outlet: Vec<bool> = s.land.iter().map(|l| !l).collect();
     let routes = drainage(&grid, &heights, &outlet);
     let upstream = upstream(&routes);
-    let river: Vec<bool> =
-        upstream.iter().zip(&s.land).map(|(u, l)| *l && *u >= p.river_tiles).collect();
+    let river: Vec<bool> = upstream.iter().zip(&s.land).map(|(u, l)| *l && *u >= p.river_tiles).collect();
     let ground = Ground::new(&grid, &s, &river, p.rugged_m, p.river_crossing_m);
     let step = |a: TileId, b: TileId| ground.step(a, b);
     let to_sea = sea_distance(&grid, &s.land);
@@ -488,8 +445,8 @@ pub(crate) mod tests {
     use phx_rand::{Draws, Seed, Subject, SubjectTag};
 
     use super::{HeightCurve, MapParams, TerrainClass, apportion, generate};
-    use crate::relief::ReliefParams;
     use crate::partition::components;
+    use crate::relief::ReliefParams;
 
     const MAP: StreamDecl = StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
 
@@ -529,8 +486,6 @@ pub(crate) mod tests {
             zones,
             zone_min_tiles: 4,
             zone_max_tiles: 60,
-            share_tolerance_per_mille: 100,
-            partition_rounds: 32,
             mainland_floor_percent: 60,
             max_attempts: 50,
         }
@@ -555,7 +510,7 @@ pub(crate) mod tests {
             map.tiles.iter().all(|t| t.is_land() == t.zone().is_some()),
             "every land tile, and only land, has a zone"
         );
-        assert!(map.regions.len() == 11 && map.zones.len() <= 45, "zones merge, never split");
+        assert!(map.regions.len() == 11 && map.zones.len() == 45, "every region and zone declared");
         let plains = map.tiles.iter().filter(|t| t.is_land() && t.terrain == 0).count();
         assert!(plains > 0, "some land is plain");
         assert!(map.upstream.iter().any(|u| *u >= 10), "water gathers into rivers");

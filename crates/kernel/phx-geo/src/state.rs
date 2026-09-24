@@ -9,9 +9,9 @@ use crate::deposits::{Deposit, draw, everywhere};
 use crate::distance::ZoneDistances;
 use crate::exposure::exposure;
 use crate::generate::{HeightCurve, Map, MapParams, TerrainClass, generate};
-use crate::relief::ReliefParams;
 use crate::hazards::HAZARDS;
 use crate::prims::GeoPrims;
+use crate::relief::ReliefParams;
 
 /// The stream each map attempt draws from, subject the attempt's number.
 pub const MAP_STREAM: StreamDecl =
@@ -112,8 +112,6 @@ pub fn params(p: &GeoPrims, r: &Register, a: &Allotment) -> Result<MapParams, St
         zones: p.zones.shared(r).get(),
         zone_min_tiles: p.zone_min_tiles.shared(r).get(),
         zone_max_tiles: p.zone_max_tiles.shared(r).get(),
-        share_tolerance_per_mille: p.share_tolerance.shared(r).get(),
-        partition_rounds: p.partition_rounds.shared(r).get(),
         mainland_floor_percent: p.mainland_floor.shared(r).get(),
         max_attempts: MAP_MAX_ATTEMPTS,
     })

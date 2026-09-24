@@ -80,35 +80,36 @@ struct Fields {
 /// at the edges.
 #[clause("GEO.10")]
 #[must_use]
-pub fn raw(p: &ReliefParams, fine: &Grid, d: &mut Draws) -> Vec<f64> {
+pub fn raw(p: &ReliefParams, fine: &Grid, draws: &mut Draws) -> Vec<f64> {
     let fields = Fields {
-        relief: octaves(p.base_cells, p.base_cells, p.octaves, d),
-        warp_u: octaves(p.base_cells, p.base_cells, p.octaves, d),
-        warp_v: octaves(p.base_cells, p.base_cells, p.octaves, d),
-        ridges: octaves(p.base_cells, p.base_cells, p.octaves, d),
-        plates: plates(p.plates, d),
+        relief: octaves(p.base_cells, p.base_cells, p.octaves, draws),
+        warp_u: octaves(p.base_cells, p.base_cells, p.octaves, draws),
+        warp_v: octaves(p.base_cells, p.base_cells, p.octaves, draws),
+        ridges: octaves(p.base_cells, p.base_cells, p.octaves, draws),
+        plates: plates(p.plates, draws),
     };
     let span = f64::from(fine.width);
     (0..fine.len())
         .map(|index| {
-            let (x, y) = fine.xy(fine.tile(index));
-            let (u, v) = ((f64::from(x) + HALF) / span, (f64::from(y) + HALF) / span);
+            let (col, row) = fine.xy(fine.tile(index));
+            let (east, south) = ((f64::from(col) + HALF) / span, (f64::from(row) + HALF) / span);
             let (wu, wv) = (
-                u + p.warp * fractal(&fields.warp_u, p.roughness, u, v),
-                v + p.warp * fractal(&fields.warp_v, p.roughness, u, v),
+                east + p.warp * fractal(&fields.warp_u, p.roughness, east, south),
+                south + p.warp * fractal(&fields.warp_v, p.roughness, east, south),
             );
             let (plate, uplift) = match nearest_two(&fields.plates, wu, wv) {
-                Some((a, b, border)) => {
+                Some((own, other, border)) => {
                     let near = exp(-border / p.belt);
-                    let crust = a.base * (1.0 - near) + (a.base + b.base) * HALF * near;
-                    let apart = sqrt((b.u - a.u) * (b.u - a.u) + (b.v - a.v) * (b.v - a.v));
-                    let converging = ((a.du - b.du) * (b.u - a.u) + (a.dv - b.dv) * (b.v - a.v)) / apart;
+                    let crust = own.base * (1.0 - near) + (own.base + other.base) * HALF * near;
+                    let apart = sqrt((other.u - own.u) * (other.u - own.u) + (other.v - own.v) * (other.v - own.v));
+                    let converging =
+                        ((own.du - other.du) * (other.u - own.u) + (own.dv - other.dv) * (other.v - own.v)) / apart;
                     (crust, if converging > 0.0 { converging * near } else { 0.0 })
                 }
                 None => (0.0, 0.0),
             };
             let ridge = 1.0 - fractal(&fields.ridges, p.roughness, wu, wv).abs();
-            let (du, dv) = (u - HALF, v - HALF);
+            let (du, dv) = (east - HALF, south - HALF);
             p.plate_weight * plate
                 + fractal(&fields.relief, p.roughness, wu, wv)
                 + p.mountain_weight * uplift * (1.0 + ridge)

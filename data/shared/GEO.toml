@@ -233,19 +233,3 @@ source = "assumed"
 source_ref = "Crossing onto a river costs as much as 20 km of plain: before bridges, rivers bounded lands and parishes."
 value = 20000
 
-[[primitive]]
-id = "GEO.partition_rounds"
-kind = "RESOLUTION"
-owner = "GEO"
-source = "assumed"
-source_ref = "Each round moves a border by the rows its parts are off, so a few rounds settle it; the rest are spare."
-value = 48
-
-[[primitive]]
-id = "GEO.share_tolerance_per_mille"
-kind = "SHAPE"
-owner = "GEO"
-source = "assumed"
-source_ref = "Each country's land within 5% of its share, and each region within 5% of its country's mean."
-shape = "standing:a construction condition: regions of like size, as GEO.3 asks, and countries holding their shares of the land, which no mechanism of the world adjusts"
-value = 50

@@ -9,7 +9,7 @@ const GEO: &str = "phx-geo";
 /// The map's geometry: what only `phx-geo` builds, and what no other crate keeps a copy of.
 const GEOMETRY: &[&str] = &["Tile", "Zone", "Region", "Grid", "Map", "Segment", "GeoState"];
 /// The map's builders.
-const BUILDERS: &[&str] = &["generate", "grow", "join_nearest", "pick_seeds", "sea_distance"];
+const BUILDERS: &[&str] = &["generate", "split", "sea_distance"];
 /// Ways of moving a site after its party is placed.
 const SITE_MOVES: &[&str] = &["set_site", "write_site", "move_site"];
 
