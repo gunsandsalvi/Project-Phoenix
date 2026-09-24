@@ -83,8 +83,13 @@ pub fn rekey_flagged<B: Backing, L: Backing>(
             index.remove(old, party);
             index.insert(new, party, slot);
         }
+        // Most cells hold their landing key alone, and need no view to learn that no other cell takes them.
+        let others: Vec<_> = index.candidates(new).into_iter().filter(|(p, _)| *p != party).collect();
+        if others.is_empty() {
+            continue;
+        }
         let me = View::of_cell(ctx.table, slot, ctx.ledger, ctx.kind, ctx.levels);
-        let target = index.candidates(new).into_iter().filter(|(p, _)| *p != party).find(|(_, s)| {
+        let target = others.into_iter().find(|(_, s)| {
             check(&me, &View::of_cell(ctx.table, *s, ctx.ledger, ctx.kind, ctx.levels), ctx.kinks).is_ok()
         });
         if let Some((to, at)) = target {

@@ -31,24 +31,26 @@ pub struct RankRead {
     pub demote: Vec<Slot>,
 }
 
-/// A row's per-member value of the measure, as a total over its members, compared exactly.
+/// A row's per-member value of the measure, as a total over its members, compared exactly, with its histogram bin.
 #[derive(Clone, Copy, Debug)]
 struct Value {
     total: i64,
     weight: u32,
+    bin: usize,
 }
 
 impl Value {
-    fn cmp(self, other: Value) -> Ordering {
-        (i128::from(self.total) * i128::from(other.weight)).cmp(&(i128::from(other.total) * i128::from(self.weight)))
+    fn new(total: i64, weight: u32) -> Value {
+        // The bin is the per-member value's sign and bit length, so bins are in the values' order.
+        let per = total.div_euclid(i64::from(weight));
+        let bits = usize::try_from(u64::BITS - per.unsigned_abs().leading_zeros()).unwrap_or(0);
+        let middle = RANK_BINS / 2;
+        let bin = if per < 0 { middle - bits } else { middle + bits };
+        Value { total, weight, bin }
     }
 
-    /// Its histogram bin: the per-member value's sign and bit length, so bins are in the values' order.
-    fn bin(self) -> usize {
-        let per = self.total.div_euclid(i64::from(self.weight));
-        let bits = usize::try_from(u64::BITS - per.unsigned_abs().leading_zeros()).unwrap_or(0);
-        let width = usize::try_from(u64::BITS).unwrap_or(0) + 1;
-        if per < 0 { width - bits } else { width + bits }
+    fn cmp(self, other: Value) -> Ordering {
+        (i128::from(self.total) * i128::from(other.weight)).cmp(&(i128::from(other.total) * i128::from(self.weight)))
     }
 }
 
@@ -60,7 +62,7 @@ fn rows<B: Backing>(table: &CellTable<B>, measure: usize) -> Vec<RankRow> {
     table
         .slots()
         .map(|s| {
-            let v = Value { total: table.position(s, measure), weight: table.weight(s).get() };
+            let v = Value::new(table.position(s, measure), table.weight(s).get());
             (table.party(s), s, v, table.hot(s).is_individual())
         })
         .collect()
@@ -68,13 +70,7 @@ fn rows<B: Backing>(table: &CellTable<B>, measure: usize) -> Vec<RankRow> {
 
 /// The rows at the edge of the top `rank` members, highest first, and the members strictly above it. One pass builds a
 /// histogram of members by bin, never sorting the population; only the rows of the bin the edge falls in are ordered.
-fn edge(all: &[RankRow], rank: u64) -> (Vec<RankRow>, Missing<Value>, u64) {
-    let mut members = [0_u64; RANK_BINS];
-    for (_, _, v, _) in all {
-        if let Some(m) = members.get_mut(v.bin()) {
-            *m += u64::from(v.weight);
-        }
-    }
+fn edge(all: &[RankRow], members: &[u64; RANK_BINS], rank: u64) -> (Vec<RankRow>, Missing<Value>, u64) {
     let mut above = 0_u64;
     let mut at_bin = Missing::Absent;
     for b in (0..RANK_BINS).rev() {
@@ -86,7 +82,7 @@ fn edge(all: &[RankRow], rank: u64) -> (Vec<RankRow>, Missing<Value>, u64) {
         above += m;
     }
     let Missing::Present(b) = at_bin else { return (Vec::new(), Missing::Absent, above) };
-    let mut in_bin: Vec<RankRow> = all.iter().copied().filter(|r| r.2.bin() == b).collect();
+    let mut in_bin: Vec<RankRow> = all.iter().copied().filter(|r| r.2.bin == b).collect();
     in_bin.sort_by(|x, y| y.2.cmp(x.2).then(x.0.cmp(&y.0)));
     // Walk down the bin to the value at which the rank is reached; the rows holding it are the edge.
     let mut edge_value = Missing::Absent;
@@ -100,7 +96,7 @@ fn edge(all: &[RankRow], rank: u64) -> (Vec<RankRow>, Missing<Value>, u64) {
         above += m;
     }
     let Missing::Present(v) = edge_value else { return (Vec::new(), Missing::Absent, above) };
-    let at: Vec<RankRow> = all.iter().copied().filter(|r| r.2.cmp(v) == Ordering::Equal).collect();
+    let at: Vec<RankRow> = in_bin.iter().copied().filter(|r| r.2.cmp(v) == Ordering::Equal).collect();
     (at, Missing::Present(v), above)
 }
 
@@ -118,8 +114,15 @@ pub fn read_ranks<B: Backing>(
         violation!(clause = "REP.29", "a demotion rank not below the promotion rank", promote = ranks.promote);
     }
     let all = rows(table, ranks.measure);
+    // One pass over the rows: members by bin, which both ranks' edges read.
+    let mut members = [0_u64; RANK_BINS];
+    for (_, _, v, _) in &all {
+        if let Some(m) = members.get_mut(v.bin) {
+            *m += u64::from(v.weight);
+        }
+    }
     let mut read = RankRead::default();
-    let (at, edge_value, above) = edge(&all, ranks.promote);
+    let (at, edge_value, above) = edge(&all, &members, ranks.promote);
     if let Missing::Present(v) = edge_value {
         for (_, slot, value, individual) in &all {
             if !individual && value.cmp(v) == Ordering::Greater {
@@ -156,7 +159,7 @@ pub fn read_ranks<B: Backing>(
             }
         }
     }
-    let (_, demote_edge, _) = edge(&all, ranks.demote);
+    let (_, demote_edge, _) = edge(&all, &members, ranks.demote);
     if let Missing::Present(v) = demote_edge {
         for (party, slot, value, individual) in &all {
             if *individual && value.cmp(v) == Ordering::Less && !stays(*party) {

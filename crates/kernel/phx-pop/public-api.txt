@@ -70,6 +70,8 @@ pub const phx_pop::consts::KEY_BITS: u32
 pub const phx_pop::consts::KEY_WORDS: usize
 pub const phx_pop::consts::LADDER_DEN: u64
 pub const phx_pop::consts::LADDER_NUM: u64
+pub const phx_pop::consts::POPULATION_CHUNK: u32
+pub const phx_pop::consts::POPULATION_DRAWN: usize
 pub const phx_pop::consts::RANK_BINS: usize
 pub const phx_pop::consts::STEPS_PER_WORD: usize
 pub const phx_pop::consts::VARINT_BITS: u32
@@ -183,6 +185,7 @@ impl phx_store::pod::__seal::Sealed for phx_pop::key::KeyId
 pub struct phx_pop::key::KeyInterner
 impl phx_pop::key::KeyInterner
 pub fn phx_pop::key::KeyInterner::apply(&mut self, &phx_exec::keyed::KeyedReduce<phx_pop::key::KeyRecord, i64>)
+pub fn phx_pop::key::KeyInterner::hold(&mut self, phx_pop::key::KeyRecord, i64)
 pub fn phx_pop::key::KeyInterner::id(&self, &phx_pop::key::KeyRecord) -> phx_num::missing::Missing<phx_pop::key::KeyId>
 pub fn phx_pop::key::KeyInterner::is_empty(&self) -> bool
 pub fn phx_pop::key::KeyInterner::len(&self) -> usize
@@ -507,6 +510,7 @@ impl phx_pop::check::LineKinks for phx_pop::synthetic::NoKinks
 pub fn phx_pop::synthetic::NoKinks::points(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> alloc::vec::Vec<i64>
 pub fn phx_pop::synthetic::design_point<B: phx_store::backing::Backing>() -> phx_pop::synthetic::DesignPoint<B>
 pub fn phx_pop::synthetic::levels() -> [u8; 30]
+pub fn phx_pop::synthetic::population<B: phx_store::backing::Backing>(u32, &mut phx_rand::draws::Draws) -> phx_pop::synthetic::DesignPoint<B>
 pub mod phx_pop::table
 pub enum phx_pop::table::CellList
 pub phx_pop::table::CellList::Holdings

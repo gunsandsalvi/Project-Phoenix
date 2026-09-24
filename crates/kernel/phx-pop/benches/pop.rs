@@ -13,20 +13,26 @@
 use std::hint::black_box;
 
 use gungraun::{library_benchmark, library_benchmark_group, main};
+use phx_core::agenda::{Agenda, AgendaTableSpec};
 use phx_core::register::values::Partition;
 use phx_core::{GroupDecl, KinkRegistry, PopEntry, PopItem, ProfileComponent, RoleDecl, Weight};
 use phx_id::{Day, PartyId, Slot, TableId};
 use phx_num::Missing;
 use phx_pop::envelope::rung;
+use phx_pop::index::Index;
 use phx_pop::key::KeyId;
 use phx_pop::kind::PopKindDecl;
+use phx_pop::landing::Landed;
 use phx_pop::landing::{land, landing_key};
 use phx_pop::profile::Profile;
+use phx_pop::promote::{Ranks, read_ranks};
+use phx_pop::renumber;
 use phx_pop::screen::{Process, ScreenCounters, screen_candidate};
 use phx_pop::seller_spread::spread;
 use phx_pop::steps::{Step, StepTable};
-use phx_pop::synthetic::{DesignPoint, NoKinks, design_point, levels};
+use phx_pop::synthetic::{DesignPoint, NoKinks, design_point, levels, population};
 use phx_pop::table::{CellTable, NewCell};
+use phx_pop::tolerance::{estimate, sweep};
 use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
 use phx_store::{AddressSpace, HeapBacking};
 
@@ -169,6 +175,76 @@ fn ir_parts_batched(mut dp: DesignPoint<HeapBacking>) -> DesignPoint<HeapBacking
     dp
 }
 
+/// A thousand cells over four chunks, for 10b's representation work per cell.
+const POPULATION: u32 = 1_000;
+
+fn population_setup() -> DesignPoint<HeapBacking> {
+    population(POPULATION, &mut draws())
+}
+
+#[library_benchmark]
+#[bench::thousand(args = (population_setup(),), teardown = discard)]
+fn ir_index_rebuild(dp: DesignPoint<HeapBacking>) -> DesignPoint<HeapBacking> {
+    black_box(Index::rebuild(&dp.table).cells());
+    dp
+}
+
+#[library_benchmark]
+#[bench::thousand(args = (population_setup(),), teardown = discard)]
+fn ir_rank_read(dp: DesignPoint<HeapBacking>) -> DesignPoint<HeapBacking> {
+    let ranks = Ranks { measure: 0, promote: 5_000, demote: 20_000 };
+    black_box(read_ranks(&dp.table, ranks, &|_| false, &mut draws()).promote.len());
+    dp
+}
+
+#[library_benchmark]
+#[bench::thousand(args = (population_setup(),), teardown = discard)]
+fn ir_gap_estimate(dp: DesignPoint<HeapBacking>) -> DesignPoint<HeapBacking> {
+    let lv = levels();
+    let est = estimate(&dp.table, &dp.index, &dp.kind, &lv, &[], 100, &mut draws());
+    black_box(est.pairs.iter().sum::<u32>());
+    dp
+}
+
+#[library_benchmark]
+#[bench::thousand(args = (population_setup(),), teardown = discard)]
+fn ir_widen_sweep(mut dp: DesignPoint<HeapBacking>) -> DesignPoint<HeapBacking> {
+    let mut lv = levels();
+    lv[0] = 1;
+    let mut index = std::mem::take(&mut dp.index);
+    let mut landed = Landed::default();
+    black_box(sweep(&mut dp.tenb(&NoKinks, &lv), &mut index, &mut landed));
+    black_box(landed.landings);
+    dp.index = index;
+    dp
+}
+
+fn renumber_setup() -> (DesignPoint<HeapBacking>, Agenda<HeapBacking>) {
+    let dp = population_setup();
+    let spec = [AgendaTableSpec { table: dp.table.id(), max_rows: POPULATION.next_power_of_two(), reasons: 1 }];
+    let mut agenda = Agenda::new(&mut AddressSpace::empty(), Day::new(0), &spec, 1 << 12).unwrap();
+    agenda.grow(dp.table.id(), POPULATION.next_power_of_two());
+    (dp, agenda)
+}
+
+#[library_benchmark]
+#[bench::thousand(setup = renumber_setup, teardown = discard_renumbered)]
+fn ir_renumber(
+    (mut dp, mut agenda): (DesignPoint<HeapBacking>, Agenda<HeapBacking>),
+) -> (DesignPoint<HeapBacking>, Agenda<HeapBacking>) {
+    let lv = levels();
+    let mut index = std::mem::take(&mut dp.index);
+    let swaps = renumber::plan(&dp.tenb(&NoKinks, &lv), 0..usize::MAX);
+    renumber::apply(&mut dp.tenb(&NoKinks, &lv), &mut index, &mut agenda, &swaps);
+    black_box(swaps.len());
+    dp.index = index;
+    (dp, agenda)
+}
+
+fn discard_renumbered(state: (DesignPoint<HeapBacking>, Agenda<HeapBacking>)) {
+    drop(black_box(state));
+}
+
 fn spread_setup() -> (Vec<u64>, Vec<(u64, u64)>) {
     let mut d = draws();
     let units = (0..50).map(|_| below_u64(&mut d, 40) + 1).collect();
@@ -180,6 +256,11 @@ fn spread_setup() -> (Vec<u64>, Vec<(u64, u64)>) {
 fn ir_seller_spread((units, purchases): (Vec<u64>, Vec<(u64, u64)>)) -> u64 {
     black_box(spread(&mut draws(), &units, &purchases).phases)
 }
+
+library_benchmark_group!(
+    name = rep,
+    benchmarks = [ir_index_rebuild, ir_rank_read, ir_gap_estimate, ir_widen_sweep, ir_renumber]
+);
 
 library_benchmark_group!(
     name = pop,
@@ -194,4 +275,4 @@ library_benchmark_group!(
     ]
 );
 
-main!(library_benchmark_groups = pop);
+main!(library_benchmark_groups = pop, rep);

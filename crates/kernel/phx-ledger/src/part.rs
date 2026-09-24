@@ -329,8 +329,7 @@ impl<B: Backing> Ledger<B> {
         };
         // What each slot holds now was the other's before the swap, and its lists still name the other.
         let (at_a, at_b) = (lines(a), lines(b));
-        let (held_a, held_b) =
-            (crate::holding::instruments_of(arenas, a), crate::holding::instruments_of(arenas, b));
+        let (held_a, held_b) = (crate::holding::instruments_of(arenas, a), crate::holding::instruments_of(arenas, b));
         for (line, sides) in &at_a {
             self.lines.delist(table, b, *line, sides);
         }

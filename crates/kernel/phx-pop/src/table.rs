@@ -124,6 +124,7 @@ struct Layout {
     profiles: ProfileLayout,
 }
 
+#[inline]
 fn at(slot: Slot) -> usize {
     let Ok(i) = usize::try_from(slot.get()) else {
         capacity_exceeded!("index width", usize::MAX, slot.get());
@@ -139,6 +140,7 @@ fn put<T: phx_store::Pod, B: Backing>(column: &mut Column<T, B>, slot: Slot, val
     }
 }
 
+#[inline]
 fn read<T: phx_store::Pod, B: Backing>(column: &Column<T, B>, slot: Slot) -> T {
     let Some(v) = column.get(slot) else {
         violation!(clause = "PTY.10", "a read of a cell row no party holds", slot = slot.get());
@@ -329,17 +331,20 @@ impl<B: Backing> CellTable<B> {
         Day::new(read(&self.created, slot))
     }
 
+    #[inline]
     pub fn hot(&self, slot: Slot) -> HotRecord {
         self.live(slot);
         read(&self.hot, slot)
     }
 
+    #[inline]
     pub fn weight(&self, slot: Slot) -> Weight {
         self.hot(slot).weight()
     }
 
     /// A position's total, by its place in the kind's order.
     #[must_use]
+    #[inline]
     pub fn position(&self, slot: Slot, i: usize) -> i64 {
         if i >= self.layout.positions {
             violation!(clause = "REP.20", "a position the kind does not hold", position = i);
@@ -354,6 +359,7 @@ impl<B: Backing> CellTable<B> {
         read(column, slot)
     }
 
+    #[inline]
     pub fn set_position(&mut self, slot: Slot, i: usize, total: i64) {
         if i >= self.layout.positions {
             violation!(clause = "REP.20", "a position the kind does not hold", position = i);

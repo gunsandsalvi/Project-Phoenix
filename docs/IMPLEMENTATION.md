@@ -4533,11 +4533,49 @@ in a batch of eight; how many parts share a cell on a day is measured once the w
 - promotion by a money threshold;
 - renumbering that changes an identity.
 
+- As built:
+  - the landing index keeps four cells inline per landing key and spills the rest to a side map, so the record holds
+    no pointer: 64 bytes a key measured, against the design's 50 a cell (`index::Index`); a load rebuilds it from the
+    cells' landing keys, and the tests hold it equal to the one kept through a day's splits, landings and re-keys;
+  - the gap estimate evaluates each decision's pure form (`tolerance::GapForm`, its total over a cell's members in
+    its own unit and its scale's position) on sampled cells and their partners apart and together; the gap is the
+    difference of the totals per member as a share of the scale, so a decision straight in its inputs shows none
+    (REP.36). Stage 0 declares no continuous decision, so every gap is nought and widening goes by the declared order,
+    then by lot;
+  - narrowing picks, among positions above their base partition, the one whose widening gap at the current level is
+    largest: the gap a merge causes is read where the representation can observe it, as a measure of how steep the
+    decisions are there;
+  - a rank read bins members by the per-member value's sign and bit length in one pass and orders only the rows of
+    the edge bin; individuals at the edge keep their places and the rest of the rank is drawn by lot among the edge
+    cells' members, in order of identity. The demotion rank reads the same histogram;
+  - promotion splits members out one at a time and places each in an individual row, its share of the cell's holdings
+    becoming one lot at the pooled cost it took (`Ledger::attach_holding_as_lot`); a cell whose every member rises
+    carries its identity on as the last individual. Demotion pools an individual's lots at their cost
+    (`Ledger::detach_lots_pooled`) and lands it as any part; a pledged holding cannot be pooled, so an individual with
+    one is kept by the rank read's `stays`, with those holding a public instrument and the player;
+  - renumbering permutes a chunk range's live rows among the slots they already hold, by key and then identity, free
+    slots staying where they are: each swap moves the rows' columns and arena lists (and an individual's lots when its
+    chunk changes) and remaps the ledger's holder lists (`Ledger::swap_holders`), the index, the directory and the
+    agenda (`Agenda::swap_rows`) for those two rows alone;
+  - the world keeps no cell yet, so the day's 10b tolerance control, the monthly rank read, the light days'
+    narrowing and renumbering, the kinds' levels as state and the counters are wired when it does (S0.25); LC-0-47 to
+    LC-0-50 report not yet until then;
+  - the kernels are measured over a synthetic population of a thousand cells (`synthetic::population`): the index
+    rebuild at 1 045 instructions a cell, the rank read 1 174 a row, the gap estimate 33 000 a sample, a widening
+    sweep 42 000 a cell with its joins, renumbering 25 000 a row moved (F-032 to F-034).
+
 **Done when**
-- [ ] The index, tolerance control, promotion, renumbering and measures exist, with the tests
+- [x] The index, tolerance control, promotion, renumbering and measures exist, with the tests
   passing.
-- [ ] LC-0-47 to LC-0-50 are registered.
-- [ ] Two reviews are done.
+- [x] LC-0-47 to LC-0-50 are registered.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found:
+  - an individual's lots left in its old chunk's arena when renumbering moved it to another (now carried);
+  - every re-keyed cell building its landing view though no other cell held its key (now only when one does);
+  - a key held once more through a whole keyed reduction (now directly);
+  - a rank read computing each row's bin in five passes (now once), and the index reading its spill map for keys
+    with room inline (now not);
+  - the lone part rising 2% with the real index in place of the ordered map that stood in for it, whose ratchet
+    rises with the owner's review.
 
 ---
 
@@ -15518,6 +15556,9 @@ the final build within the budget on the phone.
 | F-029 | S0.23 | build, 2026-09-24 | A part end to end at the design point costs 337 351 instructions (`phx_pop.ir_part_end_to_end`, ten members of two hundred with forty rows, 150 profile entries and thirty positions) and 17.4 µs a one-member part on the build machine; 12.2 µs on the phone, against 2.5 µs (F-001) | each split and join decodes and re-encodes both cells' profiles; a row's words go through the arena's list reference on every write; every row draws its leavers by its own hypergeometric; the check and the join each read the cell's rows into views; small vectors are allocated throughout | judged on the phone at S0.26 against F-001; the remedies of N8.7 in order. Taken since: batches per origin and per target (one read and one write of a cell's profile and rows), profiles moved in one pass, one-draw leavers, word arithmetic — a lone part 177 483 instructions and a part in a batch of eight 66 500; what remains is the rows' reads and writes, the positions' shares and the allocations of small vectors | open |
 | F-030 | S0.23 | build, 2026-09-24 | A seller cell's spread of fifty members and 450 purchases costs 3.1 million instructions (`phx_pop.ir_seller_spread`) against 3 µs | members whose stock is below the largest purchase left end every phase after one purchase, so a cell of small stocks spreads purchase by purchase, each finding the active members afresh | the phases per spread are counted from S0.25 (`phx_pop.spread_phases`) and judged on the phone at S0.26; each purchase drawn by lot is now one uniform draw, which took the spread to 2.54 million | open |
 | F-031 | S0.23 | build, 2026-09-24 | A part's rows belong to no holder between its split and 10b, so a due falling on one of them at stage 7 of the same day is not read by the settlement stream | parts land only at 10b, and the stream reads holders' rows | S0.25, when the world first splits cells: a split before stage 7 keeps a dated row on its origin until 10b, or its part lands at 7a | open |
+| F-032 | S0.24 | build, 2026-09-24 | A widening sweep costs 42 000 instructions a cell over a thousand synthetic cells (`phx_pop.ir_widen_sweep`), against 300 ns a cell and the joins | every cell's step vector is recomputed from its totals, about 8 000 instructions a cell, and the cells a widening unites join as whole parts, detaching and attaching every row | judged on the phone at S0.26; the remedy of N8.7 first: the base steps kept per cell so a widening shifts them, and whole-cell joins made in place | open |
+| F-033 | S0.24 | build, 2026-09-24 | A rank read costs 1 174 instructions a row (`phx_pop.ir_rank_read`), against 2 ns a row and 5 ms a month for about a million rows | rows are gathered with their identities before the histogram, and ties at the edge draw a hypergeometric per edge cell | judged on the phone at S0.26; the read runs once a month, so its cost is at most one day's | open |
+| F-034 | S0.24 | build, 2026-09-24 | A gap estimate costs 33 000 instructions a sampled cell over thirty positions (`phx_pop.ir_gap_estimate`), about 330 ms for the design's 10⁴ samples against 20 ms | each position's partner key is hashed from the whole step vector again and looked up in the index | judged on the phone at S0.26; the landing key updated for one changed step, and the sample sized to the budget (REP.18) | open |
 
 ---
 

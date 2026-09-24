@@ -51,6 +51,11 @@ pub const INDEX_INLINE: usize = 4;
 /// A rank read's histogram bins: a per-member value's sign and bit length, sixty-five lengths either side of nought.
 pub const RANK_BINS: usize = 130;
 
+/// The rows per chunk of a synthetic population, so a thousand cells span chunks as the world's do.
+pub const POPULATION_CHUNK: u32 = 256;
+/// The positions a synthetic population's cells draw; the rest they hold alike.
+pub const POPULATION_DRAWN: usize = 6;
+
 #[cfg(test)]
 mod tests {
     #[test]

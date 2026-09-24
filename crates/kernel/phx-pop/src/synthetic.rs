@@ -14,13 +14,13 @@ use phx_ledger::rows::{BALANCE, Optional};
 use phx_ledger::terms::TermsId;
 use phx_num::round::Round;
 use phx_num::{Missing, capacity_exceeded, violation};
-use phx_rand::Draws;
+use phx_rand::{Draws, below_u64};
 use phx_store::{AddressSpace, Backing};
 
 use crate::check::LineKinks;
 use crate::consts::{
     DESIGN_ENTRIES_PER_ROLE, DESIGN_PER_MEMBER, DESIGN_POSITIONS, DESIGN_ROW_BALANCE, DESIGN_ROW_MEMBERS, DESIGN_ROWS,
-    DESIGN_TEN, DESIGN_THREE, DESIGN_WEIGHT,
+    DESIGN_TEN, DESIGN_THREE, DESIGN_WEIGHT, POPULATION_CHUNK, POPULATION_DRAWN,
 };
 use crate::index::Index;
 use crate::key::{KeyInterner, KeyRecord};
@@ -120,7 +120,12 @@ fn kind() -> PopKindDecl {
 
 /// A design-point cell: its members spread over seventy-five joint values in each role, a hundred a member in every
 /// position, and a row on each line.
-fn cell<B: Backing>(d: &mut DesignPoint<B>, key: KeyRecord, lines: &[LineId]) -> Slot {
+fn cell<B: Backing>(
+    d: &mut DesignPoint<B>,
+    key: KeyRecord,
+    lines: &[LineId],
+    per_member: &[i64; DESIGN_POSITIONS],
+) -> Slot {
     hold_key(&mut d.keys, key, 1);
     let Missing::Present(id) = d.keys.id(&key) else {
         violation!(clause = "REP.19", "a key held and not interned");
@@ -136,10 +141,13 @@ fn cell<B: Backing>(d: &mut DesignPoint<B>, key: KeyRecord, lines: &[LineId]) ->
             left -= n;
         }
     }
-    let Some(total) = i64::from(DESIGN_WEIGHT).checked_mul(DESIGN_PER_MEMBER) else {
-        capacity_exceeded!("a design-point total", i64::MAX, DESIGN_WEIGHT);
-    };
-    let positions = [total; DESIGN_POSITIONS];
+    let mut positions = [0_i64; DESIGN_POSITIONS];
+    for (total, each) in positions.iter_mut().zip(per_member) {
+        let Some(t) = i64::from(DESIGN_WEIGHT).checked_mul(*each) else {
+            capacity_exceeded!("a design-point total", i64::MAX, DESIGN_WEIGHT);
+        };
+        *total = t;
+    }
     let party = PartyId::new(d.directory.next());
     let new = NewCell {
         party,
@@ -194,9 +202,54 @@ pub fn design_point<B: Backing>() -> DesignPoint<B> {
         target: Slot::new(0),
     };
     let key = KeyRecord::default();
-    d.target = cell(&mut d, key, &lines);
-    d.origin = cell(&mut d, key, &lines);
+    d.target = cell(&mut d, key, &lines, &[DESIGN_PER_MEMBER; DESIGN_POSITIONS]);
+    d.origin = cell(&mut d, key, &lines, &[DESIGN_PER_MEMBER; DESIGN_POSITIONS]);
     d
+}
+
+/// A population of `cells` design-point cells over a few rows each, for measuring what 10b's representation work
+/// costs per cell: each cell's composition and first positions drawn, so some share landing keys and most do not, and
+/// the cells added in no order of key.
+#[must_use]
+pub fn population<B: Backing>(cells: u32, d: &mut Draws) -> DesignPoint<B> {
+    let mut space = AddressSpace::empty();
+    let keys = HolderKeys::new(1);
+    let rows = cells.next_power_of_two();
+    let mut ledger = Ledger::new(
+        Instruments::new(&mut space, rows, rows, rows, keys),
+        Lines::new(&mut space, rows, rows, rows, keys),
+    );
+    let loan = ledger.lines.declare_money(LOAN).index();
+    let lines: Vec<LineId> =
+        (0..DESIGN_THREE).map(|_| ledger.lines.open(loan, TermsId::new(0), Missing::Absent)).collect();
+    let kind = kind();
+    let table = CellTable::new(&mut space, &kind, TableId::new(1), rows, POPULATION_CHUNK);
+    let mut p = DesignPoint {
+        space,
+        ledger,
+        table,
+        keys: KeyInterner::new(),
+        directory: Directory::new(),
+        kind,
+        index: Index::new(),
+        origin: Slot::new(0),
+        target: Slot::new(0),
+    };
+    for _ in 0..cells {
+        let mut key = KeyRecord::default();
+        let Ok(composition) = u32::try_from(below_u64(d, u64::from(DESIGN_THREE))) else {
+            violation!(clause = "REP.19", "a composition past its values");
+        };
+        p.kind.key.set(&mut key, 0, composition);
+        // The first positions drawn over their three steps, the rest alike: some cells share a landing key, most do
+        // not, and widening one position unites some.
+        let mut per_member = [DESIGN_PER_MEMBER; DESIGN_POSITIONS];
+        for each in per_member.iter_mut().take(POPULATION_DRAWN) {
+            *each = i64::try_from(below_u64(d, u64::from(DESIGN_THREE))).unwrap_or(0) * DESIGN_PER_MEMBER;
+        }
+        let _ = cell(&mut p, key, &lines, &per_member);
+    }
+    p
 }
 
 impl<B: Backing> DesignPoint<B> {

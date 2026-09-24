@@ -126,3 +126,51 @@ pub const LC_0_46: Check = live_check! {
     from_step: "S0.23",
     check: costs_reported,
 };
+
+/// The cells carried never exceed the cell budget at any close.
+fn within_cell_budget(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// Every party within the promotion rank an individual at each monthly read; none with a public instrument in a cell.
+fn ranks_carried(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// The representation's measures reported every day, with the share of each population at weight one.
+fn measures_reported(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// The identity hash equal immediately before and after each renumbering slice.
+fn renumbering_changes_no_identity(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+pub const LC_0_47: Check = live_check! {
+    id: "LC-0-47",
+    title: "The cells carried never exceed the cell budget at any close",
+    from_step: "S0.24",
+    check: within_cell_budget,
+};
+
+pub const LC_0_48: Check = live_check! {
+    id: "LC-0-48",
+    title: "Every party within the promotion rank is an individual, and no individual with a public instrument is in a cell",
+    from_step: "S0.24",
+    check: ranks_carried,
+};
+
+pub const LC_0_49: Check = live_check! {
+    id: "LC-0-49",
+    title: "The representation's measures are reported every day, with the share of each population at weight one",
+    from_step: "S0.24",
+    check: measures_reported,
+};
+
+pub const LC_0_50: Check = live_check! {
+    id: "LC-0-50",
+    title: "The identity hash is equal immediately before and after each renumbering slice",
+    from_step: "S0.24",
+    check: renumbering_changes_no_identity,
+};

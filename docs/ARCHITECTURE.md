@@ -919,7 +919,14 @@ without end in both directions.
   declared full sweep, budgeted on the heavy day (§13.2). Narrowing runs on declared light days and stops when the
   cells carried reach a declared share of the budget, so a heavy day's new cells rarely trigger widening.
 - **Promotion** reads ranks monthly and at every issuance of a public instrument (REP.2, REP.29), and runs at 5d for
-  the members a declared decision promotes (`seek_buyer`, spec Appendix E 35).
+  the members a declared decision promotes (`seek_buyer`, spec Appendix E 35). A rank read is one pass building a
+  histogram of members by bin (the per-member value's sign and bit length); only the edge bin's rows are ordered. A
+  promoted member's share of each pooled holding becomes one lot at its pooled cost, and a demoted individual's lots
+  pool at their cost, so no cost moves either way.
+- **Narrowing** reads the same estimate as widening: among positions above their base partition, the one whose next
+  merge would cause the largest gap is divided, since a merge's gap is what the representation can observe.
+- **Renumbering** permutes a range's live rows among the slots they hold, by swaps that remap every reference to the
+  two rows swapped (§7.2).
 - **The world runs once** (spec Appendix E 36): there is no weight-one run, and no run at another resolution or seed
   to compare with. The representation is judged by the run's own macro results against real economies' (N3, N4),
   and REP.15's costs, measured at each landing, are its error bar.
@@ -1298,7 +1305,7 @@ headroom, this document's margin for the estimates' error.
 | Lines (kind, terms id, side counts, next due day, holder list; Stage 2's invoice lines are a few thousand) | 3 M | 32 | 96 MB |
 | Loan lines' balance totals per arrears stage (Stage 2) | 0.3 M × 4 | 8 | 10 MB |
 | Interned keys and terms with their sharded hash | 1.5 M | 72 | 108 MB |
-| Landing index (sharded; `PartyId` and slot per candidate) | 0.95 M | 50 | 48 MB |
+| Landing index (sharded; four `PartyId`s and slots inline per key, the rest spilled) | 0.95 M | 64 | 61 MB |
 | Agenda: next days per (row, reason), one calendar entry per row | 0.95 M × 16 | 5.5 | 85 MB |
 | Group aggregates and pieces | — | — | 60 MB |
 | Kind tables of individuals and their facets | 0.15 M | 1.5 KB | 225 MB |
@@ -1312,11 +1319,11 @@ headroom, this document's margin for the estimates' error.
 | Renumbering slice, save buffers | — | — | 94 MB |
 | Views and tracers | — | — | 60 MB |
 | Android process baseline | — | — | 250 MB |
-| **Total** | | | **4 322 MB** |
+| **Total** | | | **4 335 MB** |
 
-Through Stage 1 the design point peaks at about 4.07 GB against 4.5 GB — the run head in every household record from
-Stage 0 adds 6 MB and Stage 0's pensions in payment 20 MB with slack — so 9.5% headroom, just short of the required
-10%. Stage 2 adds about 251 MB — invoice rows with their holder-list entries and slack 104 MB, filed accounts 48 MB,
+Through Stage 1 the design point peaks at about 4.08 GB against 4.5 GB — the run head in every household record from
+Stage 0 adds 6 MB, Stage 0's pensions in payment 20 MB with slack, and the landing index as measured (64 bytes a key)
+13 MB more than designed — so 9.3% headroom, just short of the required 10%. Stage 2 adds about 251 MB — invoice rows with their holder-list entries and slack 104 MB, filed accounts 48 MB,
 household cells 45 MB, estates 31 MB, listings 13 MB, loan lines' stage totals 10 MB — to about **4.32 GB**: 4%
 headroom, short of the required 10% (a peak of at most 4 050 MB), as the plan's F-005 records. Stage 3 adds about
 240 MB — institutions' positions and their lots 104 MB, households' holding rows 30 MB, individuals' deviations from

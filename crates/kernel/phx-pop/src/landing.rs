@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use phx_core::Directory;
-use phx_exec::{KeyedReduce, mix64};
+use phx_exec::mix64;
 use phx_id::{Day, PartyId, RowRef, Slot};
 use phx_ledger::apply::Ledger;
 use phx_macros::clause;
@@ -123,7 +123,7 @@ impl Landed {
 
 /// A key held by one more cell, or one fewer, reduced into the interner at once.
 pub(crate) fn hold_key(keys: &mut KeyInterner, key: KeyRecord, by: i64) {
-    keys.apply(&KeyedReduce::run(None, &[vec![(key, by)]], |a, v| *a += v));
+    keys.hold(key, by);
 }
 
 /// The part's landing key, when some cell holds its key; a key no cell holds has no candidate.

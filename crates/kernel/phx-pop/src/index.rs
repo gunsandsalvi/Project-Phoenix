@@ -135,7 +135,10 @@ impl Index {
     fn all(&self, landing: u64) -> Vec<(PartyId, Slot)> {
         let Some(c) = self.keys.get(landing) else { return Vec::new() };
         let mut out: Vec<(PartyId, Slot)> = c.inline().collect();
-        if let Some(rest) = self.spilled.get(landing) {
+        // Only a key whose inline cells are all taken can have spilled any.
+        if out.len() == INDEX_INLINE
+            && let Some(rest) = self.spilled.get(landing)
+        {
             out.extend(rest.iter().copied());
         }
         out

@@ -238,15 +238,20 @@ impl KeyInterner {
     /// no longer held frees its own.
     pub fn apply(&mut self, changes: &KeyedReduce<KeyRecord, i64>) {
         for (key, delta) in changes.shards.iter().flatten() {
-            match self.index.get(*key).copied() {
-                Some(id) => self.change(id, *key, *delta),
-                None if *delta > 0 => {
-                    let id = self.take_id(*key);
-                    self.change(id, *key, *delta);
-                }
-                None if *delta == 0 => {}
-                None => violation!(clause = "REP.19", "a key released that no cell holds", by = *delta),
+            self.hold(*key, *delta);
+        }
+    }
+
+    /// One key held by `delta` more cells, or fewer, as one change of a reduction applies it.
+    pub fn hold(&mut self, key: KeyRecord, delta: i64) {
+        match self.index.get(key).copied() {
+            Some(id) => self.change(id, key, delta),
+            None if delta > 0 => {
+                let id = self.take_id(key);
+                self.change(id, key, delta);
             }
+            None if delta == 0 => {}
+            None => violation!(clause = "REP.19", "a key released that no cell holds", by = delta),
         }
     }
 

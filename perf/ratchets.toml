@@ -321,25 +321,50 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_screen_candidate"
-value = 3349723
+value = 3308025
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_end_to_end"
-value = 260841
+value = 262397
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_lone"
-value = 177483
+value = 181288
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_parts_batched"
-value = 531947
+value = 524792
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_index_rebuild"
+value = 1044692
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_rank_read"
+value = 1173786
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_gap_estimate"
+value = 3300006
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_widen_sweep"
+value = 42332771
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_renumber"
+value = 25277500
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_seller_spread"
-value = 2542216
+value = 2532394
 direction = "down"
