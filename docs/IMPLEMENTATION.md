@@ -2792,7 +2792,7 @@ comments; a civil day count outside the calendar.
 
 ### S0.15 — `phx-ledger` II: money, accounts, instructions and settlement
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: MON.1, MON.2, MON.3, MON.16; SET.1, SET.2, SET.3; MON.4 *(part: banknotes as holdings; withdrawal
@@ -2930,11 +2930,18 @@ caller; the rule keeps them so, and refuses a leg digest built outside the apply
 - a rounding residue on nobody.
 
 **Done when**
-- [ ] Money, instructions, the apply routine, fails with their contract process, accounting effects and the three
+- [x] Money, instructions, the apply routine, fails with their contract process, accounting effects and the three
   families exist, with the tests passing.
-- [ ] LC-0-18 to LC-0-22 are registered.
-- [ ] PC-25 is registered.
-- [ ] Two reviews are done.
+- [x] LC-0-18 to LC-0-22 are registered.
+- [x] PC-25 is registered.
+- [x] Two reviews are done.
+
+The build run on db09dd3 (perf/build-run/db09dd32f01f.json) ran as S0.14's did — a year settled and two run, assembly
+8.0 s, 47 MiB peak, no finding — with every live check passing and LC-0-16 to LC-0-22 waiting
+for the world's books (S0.16). The reviews found and fixed: a failing instruction's leg found by its account, with the
+first leg as a fallback, now found exactly; a disposal's cost carried out of the lots and dropped, now kept for the
+accounts; every leg in a currency counted as money, which would have refused a loan's accrual at 2a, now money only
+on money lines and banknotes; row openings counted one-sided; the ledger's writers public, now crate-private.
 
 ---
 
