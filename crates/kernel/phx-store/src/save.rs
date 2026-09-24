@@ -5,7 +5,7 @@ use phx_macros::clause;
 use phx_num::{Missing, violation};
 
 use crate::backing::AddressSpace;
-use crate::consts::{ENCODE_BLOCK, SAVE_READ_STEP, VA_BUDGET, ZSTD_LEVEL};
+use crate::consts::{ENCODE_BLOCK, SAVE_READ_STEP, VA_BUDGET};
 use crate::descriptor::{FieldDescriptor, Transform};
 use crate::encode::{DecodeError, decode_rows, encode_rows, rows_in};
 use crate::pod::{Pod, as_bytes, as_bytes_mut, from_bytes};
@@ -58,6 +58,51 @@ impl Write for Counted<'_> {
     }
 }
 
+/// A store's compression: zstd, except under the interpreter that checks this crate's unsafe code, which cannot run a
+/// foreign library and so reads and writes the stream as it stands.
+#[cfg(not(miri))]
+mod frame {
+    use std::io::{self, BufReader, Read, Write};
+
+    use crate::consts::ZSTD_LEVEL;
+
+    pub type Compress<W> = zstd::stream::write::Encoder<'static, W>;
+    pub type Decompress<'a> = zstd::stream::read::Decoder<'static, BufReader<&'a mut dyn Read>>;
+
+    pub fn compress<W: Write>(sink: W) -> io::Result<Compress<W>> {
+        zstd::stream::write::Encoder::new(sink, ZSTD_LEVEL)
+    }
+
+    pub fn finish<W: Write>(c: Compress<W>) -> io::Result<W> {
+        c.finish()
+    }
+
+    pub fn decompress(source: &mut dyn Read) -> io::Result<Decompress<'_>> {
+        zstd::stream::read::Decoder::new(source)
+    }
+}
+
+#[cfg(miri)]
+mod frame {
+    use std::io::{self, Read, Write};
+
+    pub type Compress<W> = W;
+    pub type Decompress<'a> = &'a mut dyn Read;
+
+    pub fn compress<W: Write>(sink: W) -> io::Result<W> {
+        Ok(sink)
+    }
+
+    pub fn finish<W: Write>(mut c: W) -> io::Result<W> {
+        c.flush()?;
+        Ok(c)
+    }
+
+    pub fn decompress(source: &mut dyn Read) -> io::Result<Decompress<'_>> {
+        Ok(source)
+    }
+}
+
 /// One store written as a zstd stream: what saves write never fails the world; the first error the sink returns is
 /// kept and reported when the store is finished.
 pub struct Writer<'a> {
@@ -68,7 +113,7 @@ pub struct Writer<'a> {
 
 /// Where a writer's bytes go: a store's compressed stream, or a hash of a value's encoding as it stands.
 enum Out<'a> {
-    Store(zstd::stream::write::Encoder<'static, Counted<'a>>),
+    Store(frame::Compress<Counted<'a>>),
     Hash(&'a mut crate::hash::LogicalHasher),
 }
 
@@ -84,7 +129,7 @@ impl<'a> Writer<'a> {
     /// # Errors
     /// When no compression context can be made.
     pub fn new(sink: &'a mut dyn Write) -> io::Result<Writer<'a>> {
-        let out = zstd::stream::write::Encoder::new(Counted { inner: sink, bytes: 0 }, ZSTD_LEVEL)?;
+        let out = frame::compress(Counted { inner: sink, bytes: 0 })?;
         Ok(Writer { out: Out::Store(out), failed: None, raw: 0 })
     }
 
@@ -127,7 +172,7 @@ impl<'a> Writer<'a> {
             return Err(e);
         }
         match self.out {
-            Out::Store(out) => Ok((out.finish()?.bytes, self.raw)),
+            Out::Store(out) => Ok((frame::finish(out)?.bytes, self.raw)),
             Out::Hash(_) => Ok((0, self.raw)),
         }
     }
@@ -142,7 +187,7 @@ pub fn hash_saved<T: Saved>(value: &T, h: &mut crate::hash::LogicalHasher) {
 
 /// One store read back from its zstd stream, reserving what it rebuilds in its own address space.
 pub struct Reader<'a> {
-    input: zstd::stream::read::Decoder<'static, io::BufReader<&'a mut dyn Read>>,
+    input: frame::Decompress<'a>,
     space: AddressSpace,
     names: Vec<&'static str>,
 }
@@ -159,7 +204,7 @@ impl<'a> Reader<'a> {
     /// # Errors
     /// When no decompression context can be made.
     pub fn new(source: &'a mut dyn Read) -> io::Result<Reader<'a>> {
-        Ok(Reader { input: zstd::stream::read::Decoder::new(source)?, space: AddressSpace::empty(), names: Vec::new() })
+        Ok(Reader { input: frame::decompress(source)?, space: AddressSpace::empty(), names: Vec::new() })
     }
 
     /// Fills a buffer from the store.
