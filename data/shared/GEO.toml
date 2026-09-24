@@ -138,3 +138,11 @@ owner = "GEO"
 source = "measured"
 source_ref = "The Earth's mean radius, 6,371,008.8 m (IUGG; Moritz, Geodetic Reference System 1980), times pi over 180: 111,195 m to a degree of latitude."
 value = 111195
+
+[[primitive]]
+id = "GEO.south_latitude"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "assumed"
+source_ref = "The owner's placement of the map (plan §12, 2026-09-24): its south edge at 35°N, so the map spans 35°N to 58.3°N, a temperate continent like Europe's, from Mediterranean to boreal."
+value = 35.0

@@ -2453,21 +2453,28 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-geo/src/tile.rs` | `Tile` (12 bytes): `elevation_m: i16`, `surface: u8`, `terrain: u8`, `climate: u8`, `_pad: [u8; 3]`, `zone: MaybeZone(u32)` (sea has none); coordinates are derived from the tile's id; country and region are read through the zone table |
-| `src/zones.rs` | `Zone { region, centroid: TileId }`, `Region { country }` |
+| `crates/kernel/phx-geo/src/tile.rs` | `Tile` (12 bytes): `elevation_m: i16`, `surface: u8`, `terrain: u8`, `climate: u8`, padding, `zone: u32` (sea has none); coordinates derive from the tile's id; `Zone { region, centroid, tiles }`, `Region { country }` |
+| `src/grid.rs` | the grid, its 8-neighbourhood, centres, three-dimensional leg lengths rounded to whole metres |
+| `src/noise.rs` | gradient noise over the map stream's draws, pure |
+| `src/partition.rs` | components, seeded region growing with target sizes, islands joining the nearest, small parts merging into their smallest neighbour |
+| `src/generate.rs` | `generate(&MapParams, climate, draws) -> Map`: attempts, conditions, rejections |
+| `src/distance.rs` | `ZoneDistances`, per country over its land as a compact graph, none across a border; `dijkstra`; `path_length(a, b)` by A* on demand |
+| `src/climate.rs` | climate classes by latitude, distance to the sea and elevation; each region's monthly marginals weighted by its tiles |
 | `src/exposure.rs` | one exposure column per declared hazard (Law 10) |
-| `src/generate.rs` | `generate_map(opening_ctx, &MapParams) -> Result<Map, Rejection>` |
-| `src/noise.rs` | gradient noise over Philox, pure |
-| `src/partition.rs` | seeded region growing with target sizes |
-| `src/distance.rs` | `ZoneDistances`, per country, none across a border; `path_length(a, b)` by A* on demand |
-| `src/deposits.rs` | `Deposit { tile, resource, grade: Fixed<3>, opening: QtyRaw or unbounded, extracted: QtyRaw }` |
-| `src/stock.rs` | `StockByTileClass` and the (zone, class) index of holdings, empty until S0.25 |
+| `src/hazards.rs` | the declared hazards (flood, storm, earthquake, drought), each with its event kind and six tables |
+| `src/deposits.rs` | `Deposit { tile, resource, grade: Fixed<3>, opening: Finite(qty) or Unbounded }`; the refusal of a resource on every terrain |
+| `src/stock.rs` | stock per (tile, class) and the (zone, class) index of holdings, empty until S0.25 |
 | `src/network.rs` | the declared extension point for the transport and power network, empty until S1.07 fills it (GEO.4) |
-| `src/weather.rs` | the 3a handler |
-| `src/catastrophe.rs` | the 3a handler |
-| `crates/kernel/phx-core/src/{handler,system,columns,events}.rs`, `crates/assembly/phx-world/src/day.rs` | the first handlers dispatched: a handler's body registered with its declaration, run over its table's chunks with its context built per chunk (kernel tables on the day's thread, ARCHITECTURE §6.3), traced rows stamped with their writers, event intents recorded at the apply point; retires S0.11's stop on a sub-step with a handler |
-| `src/audit.rs` | the GEO.11 and GEO.12 families, declared through `phx-core` |
-| `data/shared/GEO.toml` | projection, tile size, grid, sea level, roughness, octaves; land shares and regions per country from the setup (S0.27's `regions.rs`), so regions are of like size; zones per country in the same shares; construction conditions; climate classes and their seasonal parameters; exposure tables by terrain, elevation, water and climate (TECHNOLOGY); resource kinds with grade distributions and densities per terrain (ENDOWMENT) |
+| `src/weather.rs` | the 3a handler on the region table |
+| `src/catastrophe.rs` | the 3a handler on the country table |
+| `src/audit.rs` | the GEO.11 and GEO.12 families; the deposit table's facts |
+| `src/prims.rs`, `src/state.rs`, `src/system.rs` | GEO's primitives; `GeoState`, compiled at the opening's map phase and given to GEO's handlers and families; the system, its items and its tables |
+| `crates/kernel/phx-core/src/{handler,system,columns,events}.rs`, `crates/assembly/phx-world/src/day.rs` | the first handlers dispatched: a handler's body registered with its declaration, run over its table's chunks with its context built per chunk (kernel tables on the day's thread, architecture §6.3), traced rows stamped with their writers, event intents recorded at the apply point; retires S0.11's stop on a sub-step with a handler |
+| `crates/foundation/phx-rand/src/quantile.rs` | the gamma, beta and Weibull quantiles the weather's marginals need |
+| `crates/apps/phx-cli/src/checks/geo.rs`, `crates/apps/phx-check/src/rules/places.rs` | LC-0-11 to LC-0-15; PC-23 |
+| `data/shared/GEO.toml` | resolution, the relief's SHAPEs, terrain classes, construction conditions, the coastal distance, metres per degree, and the owner's south edge |
+| `data/shared/GEO_climate.toml`, `tools/data/climate.py`, `tools/data/climate_sites.toml` | the climate tables, measured from NASA POWER's daily reanalysis (1991–2020) at 71 places of the Old World, the places' days kept in `data/sources/raw/power/` |
+| `data/shared/GEO_hazards.toml`, `tools/data/hazards.py` | the hazard tables (rates from EM-DAT over the World Bank's land area; exposure from terrain and the measured climate) and the deposits, the assumed ones with their reasons (F-010) |
 
 **Design**
 
@@ -2513,6 +2520,13 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
   - each struck tile's severity comes from the declared distribution for its exposure;
   - the event records the struck tiles and severities as details.
 - **Stock per (tile, class)** is created empty and filled from S0.25.
+- **As built**: the owner places the map by its south edge; its north edge is the south edge plus the map's height
+  over the metres in a degree (a map 2,590 km high spans 23.3°). Climate classes are nine five-degree bands from
+  25°N, each coastal (under 50 km from the sea), inland (to 300 km), interior and highland (above a threshold
+  elevation per band). Sunshine is carried as the day's clear-sky index, the daily measure the reanalysis records.
+  Weather and catastrophes are public events (CHN.4) recorded at stage 3's apply, dated 3a: one per region and
+  variable a day, one per footprint. Regions are seeded on the mainland, zones over all their region's land, and a
+  zone below its least size merges into its smallest neighbour, or into the nearest zone from an island.
 
 **Unit tests**
 - `noise_is_pure_and_seeded`.
@@ -2536,8 +2550,9 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 
 **Budget**:
 - Map generation ≤ 10 s on the phone, judged at S0.26; the x86 benchmark of this block's review was 0.6–1 s for the
-  distances on 4 cores.
-- The map ≤ 80 MB: tiles, exposure columns, distances and deposits.
+  distances on 4 cores. Measured on the build machine, one thread: the map 1.2 s at its first attempt, the zone
+  distances 2.0 s, the whole assembly 3.1 s; the distances' parallel measure arrives with the pool.
+- The map ≤ 80 MB: tiles, exposure columns, distances and deposits. Measured: 7.4 MB (`phx_geo.map_bytes`, ratcheted).
 - Weather and catastrophes ≤ 1 ms a day.
 - Counters: `phx_geo.map_bytes`, `phx_geo.generation_attempts`, `phx_geo.astar_calls`.
 
@@ -15087,6 +15102,7 @@ the final build within the budget on the phone.
 | F-008 | S0.27 | derivation, 2026-09-23 | The country-group profiles derived from the published series leave gaps: the BIS reports policy rates for 2 developing economies (too few for a profile), the OECD's social spending covers its members (4 emerging, no developing), and no source with world coverage gives home ownership. The IMF's household and firm debt are to GDP where GEN.15 names debt to income and to value added. Risk appetite has no country-level source in hand | none: missing data | the owner: a source for each gap (candidates: IMF IFS policy rates, ILO World Social Protection Report expenditure, census tenure tables via IPUMS; the Global Preferences Survey for risk taking), or those derived values left undrawn for the groups that lack them; decided before S0.16 reads the policy rate and S0.25 the rest | open |
 | F-008 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
 | F-009 | S0.04 | build, 2026-09-23 | `pick_without_replacement` builds its Fenwick tree on the heap at each call (5 863 instructions for 8 picks from 64 categories, `phx_rand.ir_pick_without_replacement`, most of it the allocation), as S0.04 designs it; §2.8 allows no heap allocation per row in a handler | none: an engineering cost | S0.23, where picks first run per row: the tree comes from the chunk arena's scratch, rebuilt in place | open |
+| F-010 | S0.13 | build, 2026-09-24 | GEO's exposure tables, spreads, severities and deposits are assumed, each with its reason (data/shared/GEO_hazards.toml): the rates are EM-DAT's world means per tile, but their split across exposure classes (a quarter, one and four), the footprints' spread and the share destroyed have no published source in hand, and the deposits' densities, grades and sizes wait for the resources GDS declares | none: missing data | S1.05, which brings the resources and their data (USGS mineral commodity summaries and deposit databases); for the hazards, a regional loss or footprint dataset (EM-DAT's affected areas, Munich Re NatCatSERVICE, the Global Flood Database) when one is chosen | open |
 
 ---
 
@@ -15124,6 +15140,7 @@ the final build within the budget on the phone.
 | Slow distributions (GEN.10, spec Appendix E 38) | held, not regrown: income, wealth and firm sizes credited while the world keeps them and moves their members; no decades runs | 2026-09-23 |
 | What the run has not produced (spec Appendix E 39) | never blocks a gate: listed as not yet seen with the run's length, its mechanism shown at logic level; only the budget blocks | 2026-09-23 |
 | Measuring the representation (spec Appendix E 40) | only at the play resolution, in the one run; the valve's effect measured in the running world | 2026-09-23 |
+| The map's placement (GEO.18) | its south edge at 35°N; the map's 2,590 km of height then span 35°N to 58.3°N, a temperate continent like Europe's | 2026-09-24 |
 | Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
 
 ---

@@ -859,6 +859,13 @@ drawn from their tenant side (REP.23), and each hit tenant receives a notice occ
 back as parts; an insured loss opens a **claim** message to the insurer; a mortgage whose collateral is lost stays a
 loan with its collateral description marked lost, and its lender reads that on its next review (REG.9, BNK.17).
 
+The map, its zone distances, the regions' climates, the exposure columns and the deposits are compiled once, at the
+opening's map phase, into `phx-geo`'s own state, which its handlers and families share read-only; what changes day by
+day is kept in its kernel tables (a region's weather latents, a finite deposit's extracted and remaining quantities)
+and hashed with the world. Weather is drawn per region and catastrophes per country at 3a, and both are recorded as
+public events at stage 3's apply: a variable's value per region a day, and a footprint's struck tiles with their
+severities. The losses at owners (the two levels above) join them when stock is placed.
+
 ### 7.11 Tolerance control and promotion
 
 - **Tolerance control** (REP.28) runs at 10b **on the day the cells carried exceed the budget**: it merges steps
