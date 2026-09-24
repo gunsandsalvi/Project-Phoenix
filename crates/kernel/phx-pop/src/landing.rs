@@ -33,8 +33,7 @@ mod tests {
     use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
 
     use super::landing_key;
-    use crate::consts::STEPS_PER_WORD;
-use crate::key::KeyId;
+    use crate::key::KeyId;
     use crate::steps::{Step, StepTable};
 
     fn step(n: u16) -> Step {
