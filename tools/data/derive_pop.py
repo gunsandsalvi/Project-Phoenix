@@ -562,11 +562,87 @@ def banking(level: str, members: set, m: dict) -> list:
                   table2(range(len(parts)), [0, 1], rows, "refuse"))]
 
 
+# ---- Pensions ----------------------------------------------------------------------------------------------------
+
+def pensions(members_of: dict, m: dict) -> dict:
+    pag = pd.read_csv(RAW / "oecd" / "pensions.csv")
+    pag = pag[pag.year >= FIRST_YEAR]
+    rules = pag[pag.measure.isin(["pension_age", "replacement_rate"])].sort_values("year")
+    rules = rules.groupby(["iso3", "measure", "sex"]).value.last().reset_index()
+    prot = pd.read_csv(RAW / "ilo" / "protection.csv")
+    prot = prot[prot.year >= FIRST_YEAR].sort_values("year").groupby(["iso3", "function", "sex"]).share.last()
+    prot = prot.reset_index()
+    x = gdp_per_head()
+    occ = pag[pag.measure == "occupational_income"].rename(columns={"value": "v"})
+    occ = last_value(occ.assign(value=occ.v / 100))
+    funds = pd.read_csv(RAW / "wb" / "GFDD.DI.13.csv")
+    funds = last_value(funds.assign(value=funds.value / 100))
+    out = {}
+    for level, members in members_of.items():
+        pool, note = members, ""
+        if rules[rules.iso3.isin(members)].iso3.nunique() < MIN_COUNTRIES:
+            pool = members | members_of["emerging"]
+            pooled = sorted(rules[rules.iso3.isin(pool)].iso3.unique())
+            note = (f" The group's own members report too few ({rules[rules.iso3.isin(members)].iso3.nunique()}), so, "
+                    f"as the owner decided, they are pooled with the emerging group's: {', '.join(pooled)}; an "
+                    f"assumption, recorded.")
+        entries = []
+        for measure, pid, what, places in [
+            ("pension_age", "SOC.pension_age", "the current normal pension age of a worker entering at 22, years", 2),
+            ("replacement_rate", "SOC.replacement_rate", "the gross replacement rate of mandatory schemes for a "
+                                                         "worker on average earnings, share of pre-retirement "
+                                                         "earnings", 6),
+        ]:
+            r = rules[(rules.measure == measure) & rules.iso3.isin(pool)]
+            med = [r[r.sex == sex].value.median() / (100 if measure == "replacement_rate" else 1) for sex in "FM"]
+            n = r.iso3.nunique()
+            ref = (f"By sex (female, male), {what}: the median over {n} economies at their latest year 2015-2025, "
+                   f"from {fetched(m, 'pensions')}.{note} The state pension's rule at its flat point; its "
+                   f"earnings-related part waits for SOC.")
+            entries.append(entry(pid, "POLICY", "SOC", "assumed" if note else "measured", ref,
+                                 f"{{ axis = [0, 1], values = [{num(med[0], places)}, {num(med[1], places)}], "
+                                 f"outside = \"refuse\" }}"))
+        for function, pid, what in [("pension", "SOC.pension_coverage", "persons above the statutory pensionable age "
+                                                                         "receiving an old-age pension"),
+                                    ("disab", "SOC.disability_benefit_coverage", "persons with severe disabilities "
+                                                                                 "receiving a disability benefit")]:
+            p = prot[(prot.function == function) & prot.iso3.isin(members)]
+            counts = p.groupby("sex").iso3.nunique()
+            by_sex = min(counts.get("F", 0), counts.get("M", 0)) >= MIN_COUNTRIES
+            med = [p[p.sex == (sex if by_sex else "T")].share.median() for sex in "FM"]
+            n = int(min(counts.get("F", 0), counts.get("M", 0)) if by_sex else counts.get("T", 0))
+            how = "each sex's" if by_sex else "both sexes' together, too few economies reporting them apart,"
+            ref = (f"Share of {what}, by sex (female, male): {how} median over {n} economies of the group at "
+                   f"their latest year 2015-2025, from the ILO's Social Security Inquiry and its modelled estimates "
+                   f"(SDG indicator 1.3.1), {fetched(m, 'pensions')}. The group's standard at every drawn value.")
+            entries.append(entry(pid, "ENDOWMENT", "SOC", "measured", ref,
+                                 f"{{ axis = [0, 1], values = [{num(med[0])}, {num(med[1])}], outside = \"refuse\" }}"))
+        a, b, n, span = standard_or_fit(occ, members, x)
+        where = (f"the Theil-Sen line in the log of GDP per head across {n} economies of GDP per head {span[0]:,.0f} to "
+                 f"{span[1]:,.0f}, as the owner decided for values a group lacks" if span else
+                 f"the median over the group's {n} economies, with no slope")
+        ref = (f"The logit of the share of the disposable income of people over 65 that comes from occupational "
+               f"pensions, as a line in the log of GDP per head (PPP, constant 2021 dollars), the intercept and slope: "
+               f"{where}; each economy at its latest year 2015-2025, from {fetched(m, 'pensions', 'wdi')}. The "
+               f"opening's defined-benefit pensions in payment are drawn to it; their amounts' spread, indexation and "
+               f"survivors' shares have no source here.")
+        pen = [entry("PEN.occupational_income_share", "ENDOWMENT", "PEN", "measured", ref,
+                     f"{{ axis = [0, 1], values = [{num(a)}, {num(b)}], outside = \"refuse\" }}")]
+        f = funds[funds.index.isin(members)]
+        ref = (f"Pension funds' assets to GDP: the median over the group's {len(f)} economies at their latest year "
+               f"2015-2025, from {fetched(m, 'pensions')} (GFDD.DI.13). How much of them back defined-benefit schemes "
+               f"has no source here with world coverage.")
+        pen.append(entry("PEN.fund_assets_to_gdp", "ENDOWMENT", "PEN", "measured", ref, f'"{num(float(f.median()))}"'))
+        out[level] = (entries, pen)
+    return out
+
+
 def main() -> None:
     g = groups()
     m = manifest()
     members_of = {level: set(g[g.level == level].iso3) for level in sorted(set(LEVELS.values()))}
     hh = households(members_of, m)
+    pen = pensions(members_of, m)
     for level, members in members_of.items():
         dem = demography(level, members, m) + hh[level] + education(level, members, m)
         write(level, "DEM", f"# The {level} group's demography and households (spec POP.3, POP.4, GEN.2), derived "
@@ -583,7 +659,12 @@ def main() -> None:
         bnk = banking(level, members, m)
         write(level, "BNK", f"# The {level} group's accounts and borrowing (spec GEN.2, BNK), derived by "
                             "tools/data/derive_pop.py; never edited by hand.", bnk)
-        print(level, [e.split('"')[1] for e in dem + money + lab + hsg + bnk])
+        soc, occ = pen[level]
+        write(level, "SOC", f"# The {level} group's state pension and benefit coverage (spec GEN.2, SOC), derived by "
+                            "tools/data/derive_pop.py; never edited by hand.", soc)
+        write(level, "PEN", f"# The {level} group's pensions in payment and pension funds (spec GEN.2, PEN), derived "
+                            "by tools/data/derive_pop.py; never edited by hand.", occ)
+        print(level, [e.split('"')[1] for e in dem + money + lab + hsg + bnk + soc + occ])
 
 
 if __name__ == "__main__":

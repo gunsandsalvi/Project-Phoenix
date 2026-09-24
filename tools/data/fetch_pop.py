@@ -458,7 +458,55 @@ def findex(cache: Path, manifest: dict, iso3: set) -> None:
                                      "url": FINDEX_URL.format(code="<series>")}
 
 
-SOURCES = {"housing": housing, "findex": findex, "wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares,
+PAG_URL = "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SPD,DSD_PAG@DF_PAG,/all?format=csvfile"
+PAG = {"CRPLF22": "pension_age", "GPRR100": "replacement_rate", "OCOP": "occupational_income", "PTOP": "public_income"}
+
+
+def pensions(cache: Path, manifest: dict, iso3: set) -> None:
+    """The OECD's pension ages and gross replacement rates of mandatory schemes for a worker entering at 22 on
+    average earnings, by sex, and the shares of the over-65s' income from public and occupational transfers; the
+    ILO's shares of persons above pensionable age receiving an old-age pension and of the severely disabled
+    receiving a disability benefit; and pension funds' assets to GDP."""
+    pag = []
+    with cached(cache, "oecd_pag.csv", PAG_URL).open(encoding="utf-8-sig") as f:
+        for r in csv.DictReader(f):
+            if r["MEASURE"] in PAG and r["REF_AREA"] in iso3 and r["OBS_VALUE"] \
+                    and r["OPTIONALITY"] in ("M", "_Z") and int(r["TIME_PERIOD"]) >= 2010:
+                pag.append((r["REF_AREA"], int(r["TIME_PERIOD"]), PAG[r["MEASURE"]], r["SEX"], r["OBS_VALUE"]))
+    manifest["series"]["oecd/pensions"] = {
+        "title": "Current normal pension age for a worker entering at 22 (years, by sex), gross replacement rate of "
+                 "mandatory schemes at average earnings (% of pre-retirement earnings, by sex), and public and "
+                 "occupational transfers' shares of the disposable income of people over 65 (%), OECD Pensions at a "
+                 "Glance (DF_PAG)",
+        "rows": table(RAW / "oecd" / "pensions.csv", ["iso3", "year", "measure", "sex", "value"], pag),
+    }
+    cov = []
+    for r in ilo_rows(cache, "DF_SDG_0131_SEX_SOC_RT"):
+        if r["FREQ"] == "A" and r["REF_AREA"] in iso3 and r["SEX"] in ("SEX_M", "SEX_F", "SEX_T") \
+                and r["SOC"] in ("SOC_CONTIG_PENSION", "SOC_CONTIG_DISAB") and r["OBS_VALUE"]:
+            cov.append((r["REF_AREA"], int(r["TIME_PERIOD"]), r["SOC"][len("SOC_CONTIG_"):].lower(), r["SEX"][4:],
+                        f"{float(r['OBS_VALUE']) / 100:.4f}", r["SOURCE"]))
+    manifest["series"]["ilo/protection"] = {
+        "title": "Persons above statutory pensionable age receiving an old-age pension, and persons with severe "
+                 "disabilities receiving a disability benefit, share, by sex (SDG indicator 1.3.1, "
+                 "DF_SDG_0131_SEX_SOC_RT), ILOSTAT",
+        "rows": table(RAW / "ilo" / "protection.csv", ["iso3", "year", "function", "sex", "share", "source"], cov),
+    }
+    page = json.loads(get("https://api.worldbank.org/v2/country/all/indicator/GFDD.DI.13?format=json"
+                          "&date=2010:2025&per_page=20000&source=32"))
+    funds = [(r["countryiso3code"], int(r["date"]), r["value"]) for r in page[1] or []
+             if r["value"] is not None and r["countryiso3code"] in iso3]
+    manifest["series"]["wb/GFDD.DI.13"] = {
+        "title": "Pension fund assets to GDP (%), World Bank Global Financial Development Database",
+        "rows": table(RAW / "wb" / "GFDD.DI.13.csv", ["iso3", "year", "value"], funds),
+    }
+    manifest["sources"]["pensions"] = {
+        "title": "OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD",
+        "url": f"{PAG_URL}; {ILO.format(flow='DF_SDG_0131_SEX_SOC_RT')}",
+    }
+
+
+SOURCES = {"pensions": pensions, "housing": housing, "findex": findex, "wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares,
            "ilo_employment": ilo_employment, "wcde": wcde}
 
 
