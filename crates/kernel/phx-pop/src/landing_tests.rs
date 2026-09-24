@@ -8,14 +8,13 @@ use phx_ledger::rows::rows;
 use phx_num::Missing;
 
 use crate::check::{Refused, RowFacts, View, check};
-use crate::fixture::{MapIndex, Points, Spec, Ten};
+use crate::fixture::{PLAIN, Points, Spec, Ten};
+use crate::index::Index;
 use crate::key::KeyId;
 use crate::landing::{Landed, LandingIndex, land};
 use crate::part::Part;
 use crate::rekey::{KeyClock, clock_day, clocks_ended, rekey_flagged, set_key};
 use crate::steps::StepTable;
-
-const PLAIN: Spec = Spec { weight: 100, income: 10_000, deposit: 50_000, loan: None };
 
 type Rows = Vec<(LineId, u32, Missing<i64>)>;
 
@@ -76,7 +75,7 @@ fn check_refuses_hash_collision() {
     let (b, sb) = ten.add(1, Spec { income: 6_000, ..PLAIN });
     let (_, sa) = ten.add(1, PLAIN);
     let p = ten.split(sa, 0, 20, "DEM.death");
-    let mut collided = MapIndex::default();
+    let mut collided = Index::new();
     collided.insert(ten.table.hot(sa).landing_key, b, sb);
     let landed = land(&mut ten.tenb(), &mut collided, vec![p]);
     assert_eq!((landed.landings, landed.new_cells), (0, 1), "a new cell rather than a join across steps");
@@ -277,4 +276,26 @@ fn key_clocks_share_one_reason() {
     let clocks = [(KeyClock { attr: 0, end_value: 0 }, d(12))];
     assert_eq!(clocks_ended(&ten.kind.key, key, &clocks, d(11)), key, "before its end, as it was");
     assert_eq!(clocks_ended(&ten.kind.key, key, &clocks, d(12)), ten.key(0), "on it, the declared end value");
+}
+
+#[test]
+fn index_kept_through_a_day_equals_one_rebuilt() {
+    let mut ten = Ten::new();
+    let _ = ten.add(1, PLAIN);
+    let (_, s1) = ten.add(1, PLAIN);
+    let (_, s2) = ten.add(1, Spec { income: 6_000, ..PLAIN });
+    let (_, s3) = ten.add(2, PLAIN);
+    let mut parts: Vec<Part> = vec![
+        ten.split(s1, 0, 10, "DEM.death"),
+        ten.split(s2, 0, 20, "DEM.death"),
+        ten.split(s3, 0, 7, "DEM.death"),
+        ten.split(s1, 1, 60, "DEM.illness"),
+    ];
+    let mut key = ten.key(3);
+    std::mem::swap(&mut parts[2].key, &mut key);
+    let mut index = std::mem::take(&mut ten.index);
+    let mut landed = land(&mut ten.tenb(), &mut index, parts);
+    let _ = rekey_flagged(&mut ten.tenb(), &mut index, &[s1, s2, s3], &mut landed);
+    assert!(landed.new_cells > 0 && landed.landings > 0, "the day both joined and made cells");
+    assert_eq!(index.entries(), Index::rebuild(&ten.table).entries(), "the index a load rebuilds is the one kept");
 }

@@ -45,6 +45,9 @@ pub const DESIGN_TEN: u32 = 10;
 /// A profile group's third component's values, and the design point's compositions.
 pub const DESIGN_THREE: u32 = 3;
 
+/// The cells a landing key holds inline in the landing index before the rest spill past them.
+pub const INDEX_INLINE: usize = 4;
+
 #[cfg(test)]
 mod tests {
     #[test]

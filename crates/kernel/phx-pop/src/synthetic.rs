@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use phx_core::register::values::Partition;
 use phx_core::{
     Directory, GroupDecl, KeyAttrDecl, KinkRegistry, PopEntry, PopItem, PositionDecl, PositionOf, ProfileComponent,
@@ -24,6 +22,7 @@ use crate::consts::{
     DESIGN_ENTRIES_PER_ROLE, DESIGN_PER_MEMBER, DESIGN_POSITIONS, DESIGN_ROW_BALANCE, DESIGN_ROW_MEMBERS, DESIGN_ROWS,
     DESIGN_TEN, DESIGN_THREE, DESIGN_WEIGHT,
 };
+use crate::index::Index;
 use crate::key::{KeyInterner, KeyRecord};
 use crate::kind::PopKindDecl;
 use crate::landing::{LandingIndex, TenB, hold_key};
@@ -51,31 +50,6 @@ const LOAN: LineKindDecl = LineKindDecl {
     dated: false,
 };
 
-/// A landing index kept in ordered maps, for measuring a part's lookup away from the world's sharded index.
-#[derive(Debug, Default)]
-pub struct OrderedIndex {
-    cells: BTreeMap<u64, BTreeMap<PartyId, Slot>>,
-}
-
-impl LandingIndex for OrderedIndex {
-    fn candidates(&self, landing: u64) -> Vec<(PartyId, Slot)> {
-        match self.cells.get(&landing) {
-            Some(c) => c.iter().map(|(p, s)| (*p, *s)).collect(),
-            None => Vec::new(),
-        }
-    }
-
-    fn insert(&mut self, landing: u64, party: PartyId, slot: Slot) {
-        self.cells.entry(landing).or_default().insert(party, slot);
-    }
-
-    fn remove(&mut self, landing: u64, party: PartyId) {
-        if let Some(c) = self.cells.get_mut(&landing) {
-            c.remove(&party);
-        }
-    }
-}
-
 /// Lines with no kinks between their members.
 #[derive(Debug)]
 pub struct NoKinks;
@@ -95,7 +69,7 @@ pub struct DesignPoint<B: Backing> {
     pub keys: KeyInterner,
     pub directory: Directory,
     pub kind: PopKindDecl,
-    pub index: OrderedIndex,
+    pub index: Index,
     pub origin: Slot,
     pub target: Slot,
 }
@@ -215,7 +189,7 @@ pub fn design_point<B: Backing>() -> DesignPoint<B> {
         keys: KeyInterner::new(),
         directory: Directory::new(),
         kind,
-        index: OrderedIndex::default(),
+        index: Index::new(),
         origin: Slot::new(0),
         target: Slot::new(0),
     };

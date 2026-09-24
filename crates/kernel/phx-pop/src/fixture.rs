@@ -196,28 +196,6 @@ pub(crate) fn draws(tag: &str, i: u32) -> Draws {
     Draws::new(stream_key(Seed::new(11), tag), Subject::new(SubjectTag::Party, 7), i, 0)
 }
 
-/// A landing index kept in a map, cells in order of identity under each landing key.
-#[derive(Debug, Default)]
-pub(crate) struct MapIndex {
-    pub cells: std::collections::BTreeMap<u64, std::collections::BTreeMap<PartyId, Slot>>,
-}
-
-impl crate::landing::LandingIndex for MapIndex {
-    fn candidates(&self, landing: u64) -> Vec<(PartyId, Slot)> {
-        self.cells.get(&landing).map(|c| c.iter().map(|(p, s)| (*p, *s)).collect()).unwrap_or_default()
-    }
-
-    fn insert(&mut self, landing: u64, party: PartyId, slot: Slot) {
-        self.cells.entry(landing).or_default().insert(party, slot);
-    }
-
-    fn remove(&mut self, landing: u64, party: PartyId) {
-        if let Some(c) = self.cells.get_mut(&landing) {
-            c.remove(&party);
-        }
-    }
-}
-
 /// Line kinks as a list of points per line side.
 #[derive(Debug, Default)]
 pub(crate) struct Points(pub Vec<(LineId, Side, i64)>);
@@ -236,9 +214,12 @@ pub(crate) struct Ten {
     pub keys: KeyInterner,
     pub directory: phx_core::Directory,
     pub kind: PopKindDecl,
-    pub index: MapIndex,
+    pub index: crate::index::Index,
     pub kinks: Points,
 }
+
+/// A cell of a hundred members spending one a day, earning a hundred each, with a deposit and no loan.
+pub(crate) const PLAIN: Spec = Spec { weight: 100, income: 10_000, deposit: 50_000, loan: None };
 
 /// A cell to add: its weight, income, deposit, and loan if it has one.
 #[derive(Clone, Copy, Debug)]
@@ -262,7 +243,7 @@ impl Ten {
             keys: KeyInterner::new(),
             directory: phx_core::Directory::new(),
             kind,
-            index: MapIndex::default(),
+            index: crate::index::Index::new(),
             kinks: Points::default(),
         }
     }

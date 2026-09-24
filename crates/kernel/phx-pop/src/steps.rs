@@ -23,6 +23,13 @@ impl Step {
     pub const fn is_missing(self) -> bool {
         self.0 == u16::MAX
     }
+
+    /// The step this one merges with when its position widens one level, or none for a missing step: steps pair as
+    /// 2k and 2k + 1, so a level's pairs merge by a shift.
+    #[must_use]
+    pub const fn sibling(self) -> Option<Step> {
+        if self.is_missing() { None } else { Some(Step(self.0 ^ 1)) }
+    }
 }
 
 /// A position's base partition on the member's own scale, non-uniform where a response is steep, and the coarser
