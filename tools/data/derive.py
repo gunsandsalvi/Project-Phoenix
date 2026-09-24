@@ -31,6 +31,7 @@ RAW = ROOT / "data" / "sources" / "raw"
 PROFILES = ROOT / "data" / "profiles"
 NAMES = ROOT / "data" / "names"
 EXP = 6
+FIRST_YEAR = 2015
 MIN_COUNTRIES = 10
 MIN_PAIRS = 10
 
@@ -75,6 +76,7 @@ VALUES = [
     ("GEN.deposit_rate", "identity", ["wdi/FR.INR.DPST"], "% a year", None),
     ("GEN.investment", "logit_percent", ["wb/NE.GDI.FTOT.ZS"], "% of GDP", None),
     ("GEN.growth", "log_growth_percent", ["wb/NY.GDP.MKTP.KD.ZG"], "% a year", None),
+    ("GEN.home_ownership", "logit_share", ["housing/home_ownership"], "share of households owning their home", None),
 ]
 
 # The values each setup choice pins, by level (spec GEN.14, GEN.15); risk appetite moves a PREFERENCE, not a value.
@@ -87,8 +89,30 @@ CHOICES = {
 DEGREES = ["low", "medium", "high"]
 
 
+def home_ownership() -> pd.DataFrame:
+    """Each economy's share of households owning their home, from the best source it has, in the owner's order
+    (plan section 12): the OECD Affordable Housing Database's owners outright and with a mortgage (households);
+    ECLAC's owners (households); Eurostat's persons in owner households; and, for economies with none of these, the
+    DHS surveys' share of adults 15-49 owning a house alone or jointly, the mean of women's and men's where both are
+    surveyed, a person-level proxy for household ownership."""
+    ahd = pd.read_csv(RAW / "oecd" / "ahd_tenure.csv")
+    ahd = ahd[ahd.tenure.isin(["own_outright", "own_mortgage"])].groupby(["iso3", "year"]).share.sum().reset_index()
+    cep = pd.read_csv(RAW / "cepalstat" / "tenure.csv")
+    cep = cep[cep.tenure == "owner"][["iso3", "year", "share"]]
+    es = pd.read_csv(RAW / "eurostat" / "tenure.csv")
+    es = es[es.tenure == "OWN"][["iso3", "year", "share"]]
+    dhs = pd.read_csv(RAW / "dhs" / "house_owners.csv").groupby(["iso3", "year"]).share.mean().reset_index()
+    out, taken = [], set()
+    for d in (ahd, cep, es, dhs):
+        d = d[d.year >= FIRST_YEAR]
+        d = d[~d.iso3.isin(taken)]
+        out.append(d)
+        taken |= set(d.iso3)
+    return pd.concat(out).rename(columns={"share": "value"})
+
+
 def latest(series: str) -> pd.DataFrame:
-    d = pd.read_csv(RAW / f"{series}.csv")
+    d = home_ownership() if series == "housing/home_ownership" else pd.read_csv(RAW / f"{series}.csv")
     d = d.sort_values("year").groupby("iso3").last().reset_index()
     return d.rename(columns={"value": series, "year": f"{series}@year"})
 

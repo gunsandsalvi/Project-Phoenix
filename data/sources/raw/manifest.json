@@ -5,6 +5,30 @@
       "rows": 425,
       "title": "Central bank policy rate (%, end of year), BIS"
     },
+    "cepalstat/tenure": {
+      "rows": 552,
+      "title": "Households by tenure status of the dwelling (owner, tenant, other forms), national, share of households, ECLAC CEPALSTAT indicator 166 (household surveys)"
+    },
+    "dhs/house_owners": {
+      "rows": 208,
+      "title": "Women and men aged 15-49 who own a house, alone or jointly: 100% less those who do not own one and those who do not know, DHS Program API (WE_OWNA_*_HNO, WE_OWNA_*_HDK)"
+    },
+    "eurostat/tenure": {
+      "rows": 2646,
+      "title": "Persons by tenure status of their household (OWN, OWN_L with a mortgage or loan, OWN_NL, RENT, RENT_MKT, RENT_FR reduced or free), share of persons, Eurostat EU-SILC ilc_lvho02"
+    },
+    "findex/account.t.d": {
+      "rows": 705,
+      "title": "Account (% age 15+), World Bank Global Findex"
+    },
+    "findex/fin17a": {
+      "rows": 664,
+      "title": "Saved at a bank or similar financial institution (% age 15+), World Bank Global Findex"
+    },
+    "findex/fin22a": {
+      "rows": 521,
+      "title": "Borrowed from a formal bank or similar financial institution (% age 15+), World Bank Global Findex"
+    },
     "ilo/disability": {
       "rows": 6395,
       "title": "Population aged 15 and over with a disability and in total, thousands, by sex and age band (DF_POP_XWAP_SEX_AGE_DSB_NB), ILOSTAT"
@@ -28,6 +52,14 @@
     "imf/NFC_LS": {
       "rows": 823,
       "title": "Nonfinancial corporate debt, loans and debt securities (% of GDP), IMF Global Debt Database"
+    },
+    "oecd/ahd_cost": {
+      "rows": 996,
+      "title": "Median mortgage burden (principal and interest) of owners with a mortgage and rent burden of tenants, share of disposable income, by year, OECD Affordable Housing Database HC1.2.A1"
+    },
+    "oecd/ahd_tenure": {
+      "rows": 2583,
+      "title": "Households by tenure (own outright, owner with mortgage, rent private, rent subsidised, other), share of households, by year, OECD Affordable Housing Database HM1.3.A1"
     },
     "owid/labor-share-of-gdp": {
       "rows": 1023,
@@ -199,6 +231,16 @@
       "release": "2026-09-16",
       "title": "BIS, central bank policy rates, bulk CSV",
       "url": "https://data.bis.org/static/bulk/WS_CBPOL_csv_flat.zip"
+    },
+    "findex": {
+      "fetched": "2026-09-24",
+      "title": "World Bank Global Findex Database (API source 28)",
+      "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2010:2025&per_page=20000&source=28"
+    },
+    "housing": {
+      "fetched": "2026-09-24",
+      "title": "OECD Affordable Housing Database (HM1.3, HC1.2); Eurostat SDMX API (ilc_lvho02); ECLAC CEPALSTAT API (indicator 166); DHS Program API",
+      "url": "https://webfs.oecd.org/Els-com/Affordable_Housing_Database/<file>; https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ilc_lvho02?format=SDMX-CSV&startPeriod=2015; https://api-cepalstat.cepal.org/; https://api.dhsprogram.com/"
     },
     "ilo_disability": {
       "fetched": "2026-09-24",

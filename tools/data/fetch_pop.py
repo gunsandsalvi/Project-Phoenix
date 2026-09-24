@@ -303,7 +303,162 @@ def wcde(cache: Path, manifest: dict, iso3: set) -> None:
     }
 
 
-SOURCES = {"wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares,
+# Names other publishers give economies, where the World Bank's differ: the only hand-kept mapping, each checked.
+ALIASES = {
+    "Korea": "KOR", "Republic of Korea": "KOR", "Slovakia": "SVK", "Turkey": "TUR", "Czech Republic": "CZE",
+    "Bolivia (Plurinational State of)": "BOL", "Venezuela (Bolivarian Republic of)": "VEN", "Venezuela": "VEN",
+    "Bahamas": "BHS", "Saint Kitts and Nevis": "KNA", "Saint Lucia": "LCA", "Saint Vincent and the Grenadines": "VCT",
+    "Russia": "RUS", "Egypt": "EGY", "Iran": "IRN",
+}
+EUROSTAT_GEO = {"EL": "GRC", "UK": "GBR", "XK": "XKX"}
+
+
+def iso3_by_name() -> dict:
+    by_name = {r["name"]: r["iso3"] for r in csv.DictReader((RAW / "wb" / "countries.csv").open())}
+    return {**by_name, **ALIASES}
+
+
+AHD = "https://webfs.oecd.org/Els-com/Affordable_Housing_Database/"
+AHD_TENURE = {"Own outright": "own_outright", "Owner with mortgage": "own_mortgage", "Rent (private)": "rent_private",
+              "Rent (subsidised)": "rent_subsidised", "Other, unknown": "other"}
+AHD_COST = {"Owner with mortgage": "mortgage_burden", "Rent (private and subsidized)": "rent_burden",
+            "Rent (private and subsidised)": "rent_burden"}
+
+
+def ahd_by_year(path: Path, sheet: str, labels: dict, scale: float, unmatched: set) -> list:
+    """An Affordable Housing Database annex sheet: an economy's name, then one row per measure with a value per
+    year from its header row; '..' and blanks are missing."""
+    import openpyxl
+    names = iso3_by_name()
+    rows = list(openpyxl.load_workbook(path, read_only=True, data_only=True)[sheet].iter_rows(values_only=True))
+    header = next(r for r in rows if sum(isinstance(c, int) and 2000 <= c <= 2100 for c in r) > 3)
+    years = {i: c for i, c in enumerate(header) if isinstance(c, int) and 2000 <= c <= 2100}
+    out, country = [], None
+    for r in rows[rows.index(header) + 1:]:
+        first = r[0].strip() if isinstance(r[0], str) else ""
+        if first and first not in labels:
+            country = names.get(first)
+            if country is None and len(first) < 60:
+                unmatched.add(first)
+        label = next((c.strip() for c in r[:2] if isinstance(c, str) and c.strip() in labels), None)
+        if label is None or country is None:
+            continue
+        for i, year in years.items():
+            v = r[i] if i < len(r) else None
+            if isinstance(v, (int, float)):
+                out.append((country, year, labels[label], f"{v * scale:.6f}"))
+    return out
+
+
+def housing(cache: Path, manifest: dict, iso3: set) -> None:
+    """Tenure and housing costs: the OECD Affordable Housing Database's tenure shares of households and median
+    mortgage and rent burdens by year; Eurostat's tenure shares of persons; ECLAC's owners, tenants and other forms
+    of tenancy among households; and the DHS surveys' women and men owning a house alone or jointly."""
+    unmatched = set()
+    tenure = ahd_by_year(cached(cache, "ahd_hm13.xlsx", AHD + "HM1-3-Housing-tenures.xlsx"), "HM1.3.A1",
+                         AHD_TENURE, 0.01, unmatched)
+    cost = ahd_by_year(cached(cache, "ahd_hc12.xlsx", AHD + "HC1-2-Housing-costs-over-income.xlsx"), "HC12_A1",
+                       AHD_COST, 1.0, unmatched)
+    manifest["series"]["oecd/ahd_tenure"] = {
+        "title": "Households by tenure (own outright, owner with mortgage, rent private, rent subsidised, other), share "
+                 "of households, by year, OECD Affordable Housing Database HM1.3.A1",
+        "rows": table(RAW / "oecd" / "ahd_tenure.csv", ["iso3", "year", "tenure", "share"],
+                      [r for r in tenure if r[0] in iso3]),
+    }
+    manifest["series"]["oecd/ahd_cost"] = {
+        "title": "Median mortgage burden (principal and interest) of owners with a mortgage and rent burden of tenants, "
+                 "share of disposable income, by year, OECD Affordable Housing Database HC1.2.A1",
+        "rows": table(RAW / "oecd" / "ahd_cost.csv", ["iso3", "year", "measure", "share"],
+                      [r for r in cost if r[0] in iso3]),
+    }
+    two = {r["iso2"]: r["iso3"] for r in csv.DictReader((RAW / "wb" / "countries.csv").open()) if r["iso2"]}
+    url = ("https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ilc_lvho02?format=SDMX-CSV"
+           "&startPeriod=2015")
+    es = []
+    with cached(cache, "eurostat_lvho02.csv", url).open(encoding="utf-8-sig") as f:
+        for r in csv.DictReader(f):
+            iso = EUROSTAT_GEO.get(r["geo"], two.get(r["geo"]))
+            if r["rskpovth"] == "TOTAL" and r["hhcomp"] == "TOTAL" and r["unit"] == "PC" and iso in iso3 \
+                    and r["OBS_VALUE"]:
+                es.append((iso, int(r["TIME_PERIOD"]), r["tenure"], f"{float(r['OBS_VALUE']) / 100:.4f}"))
+    manifest["series"]["eurostat/tenure"] = {
+        "title": "Persons by tenure status of their household (OWN, OWN_L with a mortgage or loan, OWN_NL, RENT, "
+                 "RENT_MKT, RENT_FR reduced or free), share of persons, Eurostat EU-SILC ilc_lvho02",
+        "rows": table(RAW / "eurostat" / "tenure.csv", ["iso3", "year", "tenure", "share"], es),
+    }
+    cep = json.loads(cached(cache, "cepal166.json",
+                            "https://api-cepalstat.cepal.org/cepalstat/api/v1/indicator/166/data?lang=en&format=json")
+                     .read_text())["body"]
+    dims = {d["id"]: {m["id"]: m["name"] for m in d["members"]} for d in cep["dimensions"]}
+    names = iso3_by_name()
+    tenure_of = {"Owner": "owner", "Tenat": "tenant", "Other forms of tenancy": "other"}
+    cp = []
+    for r in cep["data"]:
+        if dims[326].get(r["dim_326"]) != "National" or dims[1412].get(r["dim_1412"]) not in tenure_of:
+            continue
+        name = dims[208].get(r["dim_208"])
+        iso = names.get(name)
+        if iso is None:
+            unmatched.add(name)
+            continue
+        year = int(dims[29117][r["dim_29117"]])
+        if iso in iso3 and year >= 2010 and r["value"] not in (None, ""):
+            cp.append((iso, year, tenure_of[dims[1412][r["dim_1412"]]], f"{float(r['value']) / 100:.4f}"))
+    manifest["series"]["cepalstat/tenure"] = {
+        "title": "Households by tenure status of the dwelling (owner, tenant, other forms), national, share of "
+                 "households, ECLAC CEPALSTAT indicator 166 (household surveys)",
+        "rows": table(RAW / "cepalstat" / "tenure.csv", ["iso3", "year", "tenure", "share"], cp),
+    }
+    dhs_iso = {c["DHS_CountryCode"]: c["ISO3_CountryCode"] for c in json.loads(cached(
+        cache, "dhs_countries.json", "https://api.dhsprogram.com/rest/dhs/countries?f=json").read_text())["Data"]}
+    dhs = json.loads(cached(cache, "dhs_house.json",
+                            "https://api.dhsprogram.com/rest/dhs/data?indicatorIds=WE_OWNA_W_HNO,WE_OWNA_W_HDK,"
+                            "WE_OWNA_M_HNO,WE_OWNA_M_HDK&surveyYearStart=2010&breakdown=national&perpage=5000&f=json")
+                     .read_text())["Data"]
+    parts = {}
+    for r in dhs:
+        if r["IsPreferred"] and r["IsTotal"]:
+            key = (dhs_iso.get(r["DHS_CountryCode"]), int(r["SurveyYear"]), "women" if "_W_" in r["IndicatorId"] else "men")
+            parts.setdefault(key, {})[r["IndicatorId"][-3:]] = r["Value"]
+    dh = [(*k, f"{(100 - v['HNO'] - v.get('HDK', 0)) / 100:.4f}") for k, v in parts.items() if "HNO" in v]
+    manifest["series"]["dhs/house_owners"] = {
+        "title": "Women and men aged 15-49 who own a house, alone or jointly: 100% less those who do not own one "
+                 "and those who do not know, DHS Program API (WE_OWNA_*_HNO, WE_OWNA_*_HDK)",
+        "rows": table(RAW / "dhs" / "house_owners.csv", ["iso3", "year", "sex", "share"],
+                      [r for r in dh if r[0] in iso3]),
+    }
+    if unmatched:
+        log(f"names matched to no economy (aggregates or not in the World Bank's list): {sorted(unmatched)}")
+    manifest["sources"]["housing"] = {
+        "title": "OECD Affordable Housing Database (HM1.3, HC1.2); Eurostat SDMX API (ilc_lvho02); ECLAC CEPALSTAT API "
+                 "(indicator 166); DHS Program API",
+        "url": f"{AHD}<file>; {url}; https://api-cepalstat.cepal.org/; https://api.dhsprogram.com/",
+    }
+
+
+FINDEX = {
+    "account.t.d": "Account (% age 15+)",
+    "fin17a": "Saved at a bank or similar financial institution (% age 15+)",
+    "fin22a": "Borrowed from a formal bank or similar financial institution (% age 15+)",
+}
+FINDEX_URL = "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date=2010:2025&per_page=20000&source=28"
+
+
+def findex(cache: Path, manifest: dict, iso3: set) -> None:
+    """Adults with an account, who saved at a bank and who borrowed from one, by survey wave."""
+    for code, title in FINDEX.items():
+        page = json.loads(get(FINDEX_URL.format(code=code)))
+        rows = [(r["country"]["id"], int(r["date"]), f"{r['value'] / 100:.4f}") for r in page[1] or []
+                if r["value"] is not None and r["country"]["id"] in iso3]
+        manifest["series"][f"findex/{code}"] = {
+            "title": f"{title}, World Bank Global Findex",
+            "rows": table(RAW / "findex" / f"{code}.csv", ["iso3", "year", "share"], rows),
+        }
+    manifest["sources"]["findex"] = {"title": "World Bank Global Findex Database (API source 28)",
+                                     "url": FINDEX_URL.format(code="<series>")}
+
+
+SOURCES = {"housing": housing, "findex": findex, "wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares,
            "ilo_employment": ilo_employment, "wcde": wcde}
 
 

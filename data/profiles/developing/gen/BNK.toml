@@ -1,0 +1,9 @@
+# The developing group's accounts and borrowing (spec GEN.2, BNK), derived by tools/data/derive_pop.py; never edited by hand.
+
+[[primitive]]
+id = "BNK.accounts_and_borrowing"
+kind = "ENDOWMENT"
+owner = "BNK"
+source = "measured"
+source_ref = "Logits of three shares of adults 15 and over as lines in the log of GDP per head (PPP, constant 2021 dollars), the columns intercept and slope: 0 holding an account at a bank or other financial institution or a mobile money provider; 1 having saved at a bank in the past year; 2 having borrowed from a bank in the past year. Each economy at its latest survey wave 2015-2025; the group's median with no slope where at least 10 economies report it, otherwise the Theil-Sen line across all (account t d: the median over 56 economies; fin17a: the median over 56 economies; fin22a: the median over 56 economies), from World Bank Global Findex Database (API source 28) (fetched 2026-09-24); World Bank, World Development Indicators, bulk CSV (fetched 2026-09-23)."
+value = { rows = [0, 1, 2], columns = [0, 1], values = [[-0.009200, 0.000000], [-2.282303, 0.000000], [-2.604566, 0.000000]], outside = "refuse" }
