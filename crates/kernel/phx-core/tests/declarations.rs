@@ -49,7 +49,8 @@ declare_message! {
 
 declare_hazard! {
     pub INJURY = "LAB.injury" {
-        acts_on: Role("household", "person"), rate: "LAB.injury_rate", axes: ["LAB.occupation"], outcome: "LAB.injured",
+        acts_on: Role("household", "person"), rate: "LAB.injury_rate", axes: ["LAB.occupation"], changes: [YearStart, Policy("LAB.injury_rules")],
+        outcome: "LAB.injured",
         scheme: Scheduled, stream: "LAB.injury", source: "occupational injury statistics", clause: "CHN.2",
     }
 }

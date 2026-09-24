@@ -307,8 +307,8 @@ value = 1123989366
 direction = "down"
 
 # phx-pop's reads for every landing part: a thousand members' steps on a partition of sixty-four boundaries, and a
-# thousand landing keys over sixteen steps and a word of signature, as the build machine measures them until CI's
-# first run.
+# thousand landing keys over sixteen steps and a word of signature; and the screen's thousand candidate days of one
+# cell of 170 members in three values (F-027).
 [[ratchet]]
 counter = "phx_pop.ir_step_of"
 value = 76282
@@ -317,4 +317,9 @@ direction = "down"
 [[ratchet]]
 counter = "phx_pop.ir_landing_key"
 value = 341086
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_screen_candidate"
+value = 3525279
 direction = "down"

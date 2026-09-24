@@ -24,7 +24,7 @@ const fn tile_hazard(name: &'static str, rate: &'static str, source: &'static st
     HazardDecl {
         name,
         acts_on: ActsOn::Tile,
-        rate: RateFn { table: rate, axes: &["GEO.exposure"] },
+        rate: RateFn { table: rate, axes: &["GEO.exposure"], changes: &[] },
         outcome: name,
         scheme: DrawScheme::Daily,
         stream: CATASTROPHE_STREAM,

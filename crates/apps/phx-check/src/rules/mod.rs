@@ -30,6 +30,7 @@ mod prints;
 mod random_crates;
 mod rayon_libc;
 mod register_reads;
+mod screening;
 mod statics;
 mod substeps;
 mod unsafe_code;
@@ -150,6 +151,12 @@ pub const RULES: &[Rule] = &[
         title: "a cell's columns written by the population's typed writes alone",
         since: "S0.21",
         run: cell_writes::run,
+    },
+    Rule {
+        id: "PC-31",
+        title: "members screened by the population's 3b screen alone",
+        since: "S0.22",
+        run: screening::run,
     },
     Rule { id: "PC-75", title: "a border closed in the markets' reach alone", since: "S0.18", run: borders::run },
 ];

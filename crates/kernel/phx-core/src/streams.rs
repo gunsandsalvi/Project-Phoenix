@@ -149,6 +149,17 @@ impl Streams {
         }
         Draws::new(e.key, subject, 0, KEYED_ORDINAL)
     }
+
+    /// A keyed stream's draws for a subject and one of the things it is drawn for, by that thing's place: a cell's
+    /// phase in each of its schedules is its own, and the same whenever read.
+    #[must_use]
+    pub fn open_keyed_at(&self, decl: &StreamDecl, subject: Subject, place: u32) -> Draws {
+        let e = self.entry(decl);
+        if !e.decl.keyed {
+            violation!(clause = "CHN.6", "a stream drawn by day opened as keyed");
+        }
+        Draws::new(e.key, subject, place, KEYED_ORDINAL)
+    }
 }
 
 /// A stream opened for the observer that is not the observer's.
@@ -235,6 +246,9 @@ mod tests {
         let subject = Subject::new(SubjectTag::Party, 9);
         let (mut a, mut b) = (streams.open_keyed(&phase, subject), streams.open_keyed(&phase, subject));
         assert_eq!(open_unit(&mut a).to_bits(), open_unit(&mut b).to_bits());
+        let third = open_unit(&mut streams.open_keyed_at(&phase, subject, 3)).to_bits();
+        assert_eq!(third, open_unit(&mut streams.open_keyed_at(&phase, subject, 3)).to_bits());
+        assert_ne!(third, open_unit(&mut streams.open_keyed_at(&phase, subject, 4)).to_bits(), "each place its own");
         assert!(std::panic::catch_unwind(|| streams.open(&phase, subject, Day::new(1), 0)).is_err());
     }
 }

@@ -63,7 +63,7 @@ pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{
     Ctx, CtxParts, DrawsFrom, Emits, FactStore, HandlerDecl, IntentDef, Intents, Opened, Reads, RunChunk, Writes,
 };
-pub use hazards::{ActsOn, DrawScheme, EnvelopeRule, HazardDecl, RateFn, annual_to_daily};
+pub use hazards::{ActsOn, DrawScheme, EnvelopeRule, HazardDecl, RateChange, RateFn, annual_to_daily};
 pub use kind_tables::{FacetDecl, KindTable, ListKind, NewIndividual, RunHead};
 pub use kinds::{Feature, KindDecl, KindId, KindTableRef, LEGAL_FORMS, LegalForm};
 pub use kinks::{KinkDecl, KinkOn, KinkRegistry, KinkSource};

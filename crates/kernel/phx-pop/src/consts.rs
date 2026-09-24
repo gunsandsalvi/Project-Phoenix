@@ -18,6 +18,14 @@ pub const VARINT_MORE: u8 = 0x80;
 /// Bits of a number each varint byte carries.
 pub const VARINT_BITS: u32 = 7;
 
+/// The weight ladder's ratio, five quarters: a rung is the last one's weight and a quarter more.
+pub const LADDER_NUM: u64 = 5;
+/// See `LADDER_NUM`.
+pub const LADDER_DEN: u64 = 4;
+
+/// One unit of review exposure, −ln(1 − a) summed over days, in the fixed point a cell's exposure column keeps.
+pub const EXPOSURE_ONE: f64 = 4_294_967_296.0;
+
 #[cfg(test)]
 mod tests {
     #[test]

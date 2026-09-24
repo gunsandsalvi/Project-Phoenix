@@ -17,13 +17,26 @@ pub const phx_pop::audit::REPRESENTATION: phx_core::family::FamilyDecl
 pub fn phx_pop::audit::representation<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot) -> alloc::vec::Vec<phx_core::family::Gap>
 pub mod phx_pop::consts
 pub const phx_pop::consts::DENSE_MAX_VALUES: u32
+pub const phx_pop::consts::EXPOSURE_ONE: f64
 pub const phx_pop::consts::HOT_LEAD: usize
 pub const phx_pop::consts::HOT_STEPS: usize
 pub const phx_pop::consts::KEY_BITS: u32
 pub const phx_pop::consts::KEY_WORDS: usize
+pub const phx_pop::consts::LADDER_DEN: u64
+pub const phx_pop::consts::LADDER_NUM: u64
 pub const phx_pop::consts::STEPS_PER_WORD: usize
 pub const phx_pop::consts::VARINT_BITS: u32
 pub const phx_pop::consts::VARINT_MORE: u8
+pub mod phx_pop::envelope
+pub enum phx_pop::envelope::Booking
+pub phx_pop::envelope::Booking::Candidate(phx_id::day::Day)
+pub phx_pop::envelope::Booking::Redraw(phx_id::day::Day)
+pub fn phx_pop::envelope::candidate(&mut phx_rand::draws::Draws, &[u64], &[f64], f64, u64, &mut [u64]) -> bool
+pub fn phx_pop::envelope::candidate_outcomes(&mut phx_rand::draws::Draws, &[u64], &[&[f64]], f64, u64, &mut [u64]) -> bool
+pub fn phx_pop::envelope::chance(&[u64], &[f64]) -> f64
+pub fn phx_pop::envelope::envelope(f64, u64) -> f64
+pub fn phx_pop::envelope::next_booking(&mut phx_rand::draws::Draws, phx_id::day::Day, f64, phx_num::missing::Missing<phx_id::day::Day>) -> phx_num::missing::Missing<phx_pop::envelope::Booking>
+pub fn phx_pop::envelope::rung(u32) -> u64
 pub mod phx_pop::holder
 pub mod phx_pop::hot
 #[repr(C)] pub struct phx_pop::hot::HotRecord
@@ -139,6 +152,27 @@ pub phx_pop::kind::Position::unit: &'static str
 pub phx_pop::kind::Position::writer: &'static str
 pub mod phx_pop::landing
 pub fn phx_pop::landing::landing_key(phx_pop::key::KeyId, &[phx_pop::steps::Step], &[u64]) -> u64
+pub mod phx_pop::occasion
+pub enum phx_pop::occasion::Reaches
+pub phx_pop::occasion::Reaches::Carried
+pub phx_pop::occasion::Reaches::Carried::since: phx_id::day::Day
+pub phx_pop::occasion::Reaches::Decided
+pub struct phx_pop::occasion::Occasion
+pub phx_pop::occasion::Occasion::count: u32
+pub phx_pop::occasion::Occasion::decision: &'static str
+pub phx_pop::occasion::Occasion::kind: phx_core::occasions::OccasionKind
+pub phx_pop::occasion::Occasion::profile_value: u32
+pub phx_pop::occasion::Occasion::row: phx_id::ids::Slot
+pub fn phx_pop::occasion::reaches(phx_core::occasions::OccasionKind, bool, phx_id::day::Day) -> phx_pop::occasion::Reaches
+pub mod phx_pop::overlap
+pub struct phx_pop::overlap::Overlap
+pub phx_pop::overlap::Overlap::by_set: alloc::vec::Vec<u64>
+impl phx_pop::overlap::Overlap
+pub fn phx_pop::overlap::Overlap::allocate(u64, &[u64], &mut [phx_rand::draws::Draws]) -> phx_pop::overlap::Overlap
+pub fn phx_pop::overlap::Overlap::hit_by(&self, usize) -> u64
+pub mod phx_pop::pick
+pub fn phx_pop::pick::pick_hit(&mut phx_rand::draws::Draws, &phx_pop::profile::Profile, &phx_pop::profile::ProfileLayout, usize, &[(u32, u64)]) -> alloc::vec::Vec<alloc::vec::Vec<(u32, u64)>>
+pub fn phx_pop::pick::weighted(&mut phx_rand::draws::Draws, &[u64]) -> usize
 pub mod phx_pop::profile
 pub struct phx_pop::profile::GroupShape
 pub phx_pop::profile::GroupShape::dense: bool
@@ -159,8 +193,47 @@ pub struct phx_pop::profile::ProfileLayout
 pub phx_pop::profile::ProfileLayout::groups: alloc::vec::Vec<phx_pop::profile::GroupShape>
 impl phx_pop::profile::ProfileLayout
 pub fn phx_pop::profile::ProfileLayout::new(&[phx_pop::kind::Group]) -> phx_pop::profile::ProfileLayout
+pub struct phx_pop::profile::WordBytes<'a>
+pub phx_pop::profile::WordBytes::len: usize
+pub phx_pop::profile::WordBytes::words: &'a [u64]
+impl phx_pop::profile::ByteSource for phx_pop::profile::WordBytes<'_>
+pub fn phx_pop::profile::WordBytes<'_>::byte(&self, usize) -> core::option::Option<u8>
+pub trait phx_pop::profile::ByteSource
+pub fn phx_pop::profile::ByteSource::byte(&self, usize) -> core::option::Option<u8>
+impl phx_pop::profile::ByteSource for &[u8]
+pub fn &[u8]::byte(&self, usize) -> core::option::Option<u8>
+impl phx_pop::profile::ByteSource for phx_pop::profile::WordBytes<'_>
+pub fn phx_pop::profile::WordBytes<'_>::byte(&self, usize) -> core::option::Option<u8>
 pub fn phx_pop::profile::from_words(&[u64], usize) -> alloc::vec::Vec<u8>
+pub fn phx_pop::profile::read_group(&phx_pop::profile::ProfileLayout, &dyn phx_pop::profile::ByteSource, usize) -> core::result::Result<alloc::vec::Vec<(u32, u32)>, alloc::string::String>
 pub fn phx_pop::profile::to_words(&[u8]) -> alloc::vec::Vec<u64>
+pub mod phx_pop::review
+pub fn phx_pop::review::accrued(i64, i64, u32) -> i64
+pub fn phx_pop::review::after_review(i64, u64, phx_core::weight::Weight) -> i64
+pub fn phx_pop::review::erased_at_review(i64, phx_core::weight::Weight, u64, i64, u64) -> f64
+pub fn phx_pop::review::phase(&mut phx_rand::draws::Draws, phx_core::calendar::period::Period) -> phx_core::schedule::Phase
+pub fn phx_pop::review::review_chance(i64, phx_core::weight::Weight) -> f64
+pub fn phx_pop::review::reviewers(&mut phx_rand::draws::Draws, &[u64], i64, phx_core::weight::Weight, &mut [u64])
+pub fn phx_pop::review::wake_day(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::RunsOn, phx_id::day::Day) -> phx_id::day::Day
+pub mod phx_pop::screen
+pub struct phx_pop::screen::Hit
+pub phx_pop::screen::Hit::by_value: alloc::vec::Vec<(u32, u64)>
+pub phx_pop::screen::Hit::exposed: u64
+pub phx_pop::screen::Hit::row: phx_id::ids::Slot
+pub struct phx_pop::screen::Process<'a>
+pub phx_pop::screen::Process::envelope: &'a phx_pop::screen::EnvelopeFn
+pub phx_pop::screen::Process::group: usize
+pub phx_pop::screen::Process::rate: &'a dyn core::ops::function::Fn(u32, phx_id::day::Day) -> f64
+impl core::fmt::Debug for phx_pop::screen::Process<'_>
+pub fn phx_pop::screen::Process<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_pop::screen::ScreenCounters
+pub phx_pop::screen::ScreenCounters::candidates: u64
+pub phx_pop::screen::ScreenCounters::dense_evals: u64
+pub phx_pop::screen::ScreenCounters::redraws: u64
+pub fn phx_pop::screen::book<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::screen::Process<'_>, phx_id::day::Day, &mut phx_rand::draws::Draws, &mut phx_pop::screen::ScreenCounters) -> phx_num::missing::Missing<phx_pop::envelope::Booking>
+pub fn phx_pop::screen::screen_candidate<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::screen::Process<'_>, phx_id::day::Day, u64, &mut phx_rand::draws::Draws, &mut phx_pop::screen::ScreenCounters) -> (core::option::Option<phx_pop::screen::Hit>, phx_num::missing::Missing<phx_pop::envelope::Booking>)
+pub fn phx_pop::screen::screen_daily<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::screen::Process<'_>, phx_id::day::Day, &mut phx_rand::draws::Draws, &mut phx_pop::screen::ScreenCounters) -> core::option::Option<phx_pop::screen::Hit>
+pub type phx_pop::screen::EnvelopeFn = dyn core::ops::function::Fn(&[u32], phx_id::day::Day) -> (f64, phx_num::missing::Missing<phx_id::day::Day>)
 pub mod phx_pop::sig
 pub struct phx_pop::sig::SigGroup
 pub phx_pop::sig::SigGroup::bits: u32
@@ -239,6 +312,7 @@ pub fn phx_pop::table::CellTable<B>::new(&mut phx_store::backing::AddressSpace, 
 pub fn phx_pop::table::CellTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_pop::table::CellTable<B>::position(&self, phx_id::ids::Slot, usize) -> i64
 pub fn phx_pop::table::CellTable<B>::profile(&self, phx_id::ids::Slot) -> phx_pop::profile::Profile
+pub fn phx_pop::table::CellTable<B>::profile_group(&self, phx_id::ids::Slot, usize) -> alloc::vec::Vec<(u32, u32)>
 pub fn phx_pop::table::CellTable<B>::profile_layout(&self) -> &phx_pop::profile::ProfileLayout
 pub fn phx_pop::table::CellTable<B>::rate(&self, phx_id::ids::Slot, usize) -> phx_num::missing::Missing<i64>
 pub fn phx_pop::table::CellTable<B>::rekey(&mut self, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &[u8])

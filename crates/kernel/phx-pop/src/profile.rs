@@ -169,26 +169,7 @@ impl Profile {
         let mut groups = Vec::with_capacity(layout.groups.len());
         for shape in &layout.groups {
             let mut g = Vec::new();
-            if shape.dense {
-                for v in 0..shape.values {
-                    let n = read(bytes, &mut at)?;
-                    if n > 0 {
-                        g.push((v, n));
-                    }
-                }
-            } else {
-                let held = read(bytes, &mut at)?;
-                let mut last: u32 = 0;
-                for i in 0..held {
-                    let gap = read(bytes, &mut at)?;
-                    let v = last.checked_add(gap).ok_or("a profile value past its group")?;
-                    if v >= shape.values || (i > 0 && gap == 0) {
-                        return Err(format!("profile value {v} out of order or outside a group of {}", shape.values));
-                    }
-                    g.push((v, read(bytes, &mut at)?));
-                    last = v;
-                }
-            }
+            group(shape, &bytes, &mut at, Some(&mut g))?;
             groups.push(g);
         }
         if at != bytes.len() {
@@ -196,6 +177,86 @@ impl Profile {
         }
         Ok(Profile { groups })
     }
+}
+
+/// Bytes read one at a time, from a slice or from words packed low byte first.
+pub trait ByteSource {
+    fn byte(&self, at: usize) -> Option<u8>;
+}
+
+impl ByteSource for &[u8] {
+    fn byte(&self, at: usize) -> Option<u8> {
+        self.get(at).copied()
+    }
+}
+
+/// The first `len` bytes packed into words, read in place.
+#[derive(Clone, Copy, Debug)]
+pub struct WordBytes<'a> {
+    pub words: &'a [u64],
+    pub len: usize,
+}
+
+impl ByteSource for WordBytes<'_> {
+    fn byte(&self, at: usize) -> Option<u8> {
+        if at >= self.len {
+            return None;
+        }
+        let w = self.words.get(at / size_of::<u64>())?;
+        w.to_le_bytes().get(at % size_of::<u64>()).copied()
+    }
+}
+
+/// One group's values held read from `at`, into `out` where one is given and passed over otherwise.
+fn group(
+    shape: &GroupShape,
+    bytes: &dyn ByteSource,
+    at: &mut usize,
+    mut out: Option<&mut Vec<(u32, u32)>>,
+) -> Result<(), String> {
+    if shape.dense {
+        for v in 0..shape.values {
+            let n = read(bytes, at)?;
+            if let Some(o) = out.as_deref_mut()
+                && n > 0
+            {
+                o.push((v, n));
+            }
+        }
+    } else {
+        let held = read(bytes, at)?;
+        let mut last: u32 = 0;
+        for i in 0..held {
+            let gap = read(bytes, at)?;
+            let v = last.checked_add(gap).ok_or("a profile value past its group")?;
+            if v >= shape.values || (i > 0 && gap == 0) {
+                return Err(format!("profile value {v} out of order or outside a group of {}", shape.values));
+            }
+            let n = read(bytes, at)?;
+            if let Some(o) = out.as_deref_mut() {
+                o.push((v, n));
+            }
+            last = v;
+        }
+    }
+    Ok(())
+}
+
+/// One group's values held, read from a profile's bytes without decoding the groups around it.
+///
+/// # Errors
+/// Bytes that end early or hold a value outside its group.
+pub fn read_group(layout: &ProfileLayout, bytes: &dyn ByteSource, which: usize) -> Result<Vec<(u32, u32)>, String> {
+    let mut at = 0;
+    for shape in layout.groups.iter().take(which) {
+        group(shape, bytes, &mut at, None)?;
+    }
+    let Some(shape) = layout.groups.get(which) else {
+        return Err(format!("profile group {which} outside the kind's groups"));
+    };
+    let mut out = Vec::new();
+    group(shape, bytes, &mut at, Some(&mut out))?;
+    Ok(out)
 }
 
 fn len32(n: usize) -> u32 {
@@ -218,11 +279,11 @@ fn varint(out: &mut Vec<u8>, mut n: u32) {
     }
 }
 
-fn read(bytes: &[u8], at: &mut usize) -> Result<u32, String> {
+fn read(bytes: &dyn ByteSource, at: &mut usize) -> Result<u32, String> {
     let mut n: u64 = 0;
     let mut shift = 0;
     loop {
-        let Some(b) = bytes.get(*at) else { return Err("a profile's bytes end early".to_owned()) };
+        let Some(b) = bytes.byte(*at) else { return Err("a profile's bytes end early".to_owned()) };
         *at += 1;
         n |= u64::from(b & !VARINT_MORE) << shift;
         if b & VARINT_MORE == 0 {
@@ -285,6 +346,10 @@ mod tests {
         assert_eq!(Profile::decode(&l, &bytes), Ok(p.clone()));
         let words = to_words(&bytes);
         assert_eq!(Profile::decode(&l, &from_words(&words, bytes.len())), Ok(p.clone()), "through words");
+        let in_place = super::WordBytes { words: &words, len: bytes.len() };
+        for g in 0..3 {
+            assert_eq!(super::read_group(&l, &in_place, g).as_deref(), Ok(p.held(g)), "group {g} read alone");
+        }
         assert_eq!(
             Profile::decode(&l, &bytes[..bytes.len() - 1]).map(|_| ()),
             Err("a profile's bytes end early".to_owned())

@@ -5,17 +5,27 @@
     reason = "gungraun's harness prints and exits; a setup that fails is a broken benchmark"
 )]
 
-//! A thousand members' steps on a partition of sixty-four boundaries, and a thousand landing keys over sixteen steps
-//! and a word of signature: the reads a landing makes for every part.
+//! A thousand members' steps on a partition of sixty-four boundaries, a thousand landing keys over sixteen steps and a
+//! word of signature, the reads a landing makes for every part; and a thousand candidate days of one cell of 170
+//! members in three values, the screen's work on every row the agenda brings to 3b.
 
 use std::hint::black_box;
 
 use gungraun::{library_benchmark, library_benchmark_group, main};
 use phx_core::register::values::Partition;
+use phx_core::{GroupDecl, KinkRegistry, PopEntry, PopItem, ProfileComponent, RoleDecl, Weight};
+use phx_id::{Day, PartyId, Slot, TableId};
+use phx_num::Missing;
+use phx_pop::envelope::rung;
 use phx_pop::key::KeyId;
+use phx_pop::kind::PopKindDecl;
 use phx_pop::landing::landing_key;
+use phx_pop::profile::Profile;
+use phx_pop::screen::{Process, ScreenCounters, screen_candidate};
 use phx_pop::steps::{Step, StepTable};
+use phx_pop::table::{CellTable, NewCell};
 use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
+use phx_store::{AddressSpace, HeapBacking};
 
 const MEMBERS: u64 = 1_000;
 const BOUNDARIES: i64 = 64;
@@ -45,6 +55,51 @@ fn keys_setup() -> Vec<(KeyId, Vec<Step>, [u64; 1])> {
         .collect()
 }
 
+const AGE: &[ProfileComponent] = &[ProfileComponent { name: "age_band", values: 3 }];
+
+fn cell_setup() -> (CellTable<HeapBacking>, Slot) {
+    let entry = |item| PopEntry { system: "DEM", kind: "household", item };
+    let entries = [
+        entry(PopItem::Role(RoleDecl { name: "person", clause: "REP.26" })),
+        entry(PopItem::ProfileGroup(GroupDecl { name: "age", role: "person", components: AGE, clause: "REP.32" })),
+    ];
+    let steps = |_: &'static str| StepTable::new(&Partition { exp: 0, bounds: [1].into() });
+    let kind = PopKindDecl::compile("household", &entries, &KinkRegistry::default(), &steps).unwrap();
+    let mut space = AddressSpace::empty();
+    let mut table = CellTable::new(&mut space, &kind, TableId::new(1), 64, 8);
+    let layout = table.profile_layout().clone();
+    let mut p = Profile::empty(&layout);
+    for (v, n) in [(0, 100), (1, 50), (2, 20)] {
+        p.add(&layout, 0, v, n);
+    }
+    let new = NewCell {
+        party: PartyId::new(1),
+        created: Day::new(0),
+        weight: Weight::new(170),
+        key: KeyId::new(0),
+        positions: &[],
+        profile: &p,
+    };
+    let slot = table.add(&mut space, new, &kind, &[]);
+    (table, slot)
+}
+
+#[library_benchmark]
+#[bench::thousand(setup = cell_setup)]
+fn ir_screen_candidate((table, slot): (CellTable<HeapBacking>, Slot)) -> u64 {
+    let rates = [0.0004, 0.0012, 0.003];
+    let rate = |v: u32, _: Day| *rates.get(usize::try_from(v).unwrap()).unwrap();
+    let window = |_: &[u32], _: Day| (0.003, Missing::Absent);
+    let process = Process { group: 0, rate: &rate, envelope: &window };
+    let mut counters = ScreenCounters::default();
+    let stream = stream_key(Seed::new(1), "DEM.illness");
+    for day in 0..u32::try_from(MEMBERS).unwrap() {
+        let mut d = Draws::new(stream, Subject::new(SubjectTag::Party, 1), day, 0);
+        let _ = black_box(screen_candidate(&table, slot, &process, Day::new(day), rung(170), &mut d, &mut counters));
+    }
+    counters.candidates
+}
+
 #[library_benchmark]
 #[bench::thousand(setup = steps_setup)]
 fn ir_step_of((table, values): (StepTable, Vec<i64>)) -> u64 {
@@ -57,6 +112,6 @@ fn ir_landing_key(parts: Vec<(KeyId, Vec<Step>, [u64; 1])>) -> u64 {
     parts.into_iter().fold(0, |acc, (k, s, sig)| acc ^ landing_key(k, black_box(&s), &sig))
 }
 
-library_benchmark_group!(name = pop, benchmarks = [ir_step_of, ir_landing_key]);
+library_benchmark_group!(name = pop, benchmarks = [ir_step_of, ir_landing_key, ir_screen_candidate]);
 
 main!(library_benchmark_groups = pop);

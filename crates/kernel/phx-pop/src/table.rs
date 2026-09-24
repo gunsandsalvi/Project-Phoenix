@@ -13,7 +13,7 @@ use crate::individual::{ExtList, Extension};
 use crate::key::KeyId;
 use crate::kind::{PopKindDecl, Scale};
 use crate::landing::landing_key;
-use crate::profile::{Profile, ProfileLayout, from_words, to_words};
+use crate::profile::{Profile, ProfileLayout, WordBytes, from_words, read_group, to_words};
 use crate::steps::{Step, StepTable};
 
 /// The lists a cell keeps in its chunk's arena: relationship rows, holdings, profiles, and the standing rates too
@@ -470,6 +470,22 @@ impl<B: Backing> CellTable<B> {
         };
         match Profile::decode(&self.layout.profiles, &from_words(packed, n)) {
             Ok(p) => p,
+            Err(_) => violation!(clause = "REP.32", "a cell's profile does not read back", slot = slot.get()),
+        }
+    }
+
+    /// One profile group's values held by the cell's members, read in place without decoding its other groups.
+    #[must_use]
+    pub fn profile_group(&self, slot: Slot, group: usize) -> Vec<(u32, u32)> {
+        let words = self.words(slot, CellList::Profiles);
+        let Some((len, packed)) = words.split_first() else {
+            violation!(clause = "REP.32", "a cell with no profile", slot = slot.get());
+        };
+        let Ok(n) = usize::try_from(*len) else {
+            violation!(clause = "REP.32", "a profile longer than this machine's words", slot = slot.get());
+        };
+        match read_group(&self.layout.profiles, &WordBytes { words: packed, len: n }, group) {
+            Ok(g) => g,
             Err(_) => violation!(clause = "REP.32", "a cell's profile does not read back", slot = slot.get()),
         }
     }

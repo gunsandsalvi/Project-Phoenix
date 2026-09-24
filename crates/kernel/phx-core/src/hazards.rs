@@ -21,11 +21,25 @@ pub enum ActsOn {
     },
 }
 
-/// A hazard's rate: a table primitive read at declared axes of the thing it acts on.
+/// A date on which a rate's inputs can change though its row is not visited, which ends the validity of the
+/// envelope its candidate days were drawn at.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RateChange {
+    /// The first day of each year, when tables read by age or by year roll on.
+    YearStart,
+    /// A policy value's effective day.
+    Policy(&'static str),
+    /// The row's next review by the named schedule.
+    Review(&'static str),
+}
+
+/// A hazard's rate: a table primitive read at declared axes of the thing it acts on, and the dates its inputs can
+/// change without a visit; a change of profile values comes only with a visit, which draws afresh.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RateFn {
     pub table: &'static str,
     pub axes: &'static [&'static str],
+    pub changes: &'static [RateChange],
 }
 
 /// How a scheduled hazard bounds its rate over a row's profile values.

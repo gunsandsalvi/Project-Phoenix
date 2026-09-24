@@ -728,6 +728,10 @@ pub phx_core::hazards::DrawScheme::Scheduled
 pub phx_core::hazards::DrawScheme::Scheduled::envelope: phx_core::hazards::EnvelopeRule
 pub enum phx_core::hazards::EnvelopeRule
 pub phx_core::hazards::EnvelopeRule::MaxOverProfile
+pub enum phx_core::hazards::RateChange
+pub phx_core::hazards::RateChange::Policy(&'static str)
+pub phx_core::hazards::RateChange::Review(&'static str)
+pub phx_core::hazards::RateChange::YearStart
 pub struct phx_core::hazards::HazardDecl
 pub phx_core::hazards::HazardDecl::acts_on: phx_core::hazards::ActsOn
 pub phx_core::hazards::HazardDecl::clause: &'static str
@@ -741,6 +745,7 @@ impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::hazards::RateFn
 pub phx_core::hazards::RateFn::axes: &'static [&'static str]
+pub phx_core::hazards::RateFn::changes: &'static [phx_core::hazards::RateChange]
 pub phx_core::hazards::RateFn::table: &'static str
 pub fn phx_core::hazards::annual_to_daily(f64, u32) -> f64
 pub mod phx_core::kind_tables
@@ -1510,6 +1515,7 @@ pub fn phx_core::streams::Streams::len(&self) -> usize
 pub fn phx_core::streams::Streams::new(phx_rand::key::Seed, &[phx_core::streams::StreamDecl]) -> core::result::Result<phx_core::streams::Streams, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::streams::Streams::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day, u8) -> phx_rand::draws::Draws
 pub fn phx_core::streams::Streams::open_keyed(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject) -> phx_rand::draws::Draws
+pub fn phx_core::streams::Streams::open_keyed_at(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, u32) -> phx_rand::draws::Draws
 pub trait phx_core::streams::StreamDef
 pub const phx_core::streams::StreamDef::DECL: phx_core::streams::StreamDecl
 pub mod phx_core::substep
@@ -1939,6 +1945,10 @@ pub phx_core::Purpose::Taste
 pub phx_core::Purpose::ThirdPartyHarm
 pub phx_core::Purpose::TypeAtBirth
 pub phx_core::Purpose::Weather
+pub enum phx_core::RateChange
+pub phx_core::RateChange::Policy(&'static str)
+pub phx_core::RateChange::Review(&'static str)
+pub phx_core::RateChange::YearStart
 pub enum phx_core::ReprClass
 pub phx_core::ReprClass::Individual
 pub phx_core::ReprClass::Key
@@ -2784,6 +2794,7 @@ pub phx_core::RateDecl::name: &'static str
 pub phx_core::RateDecl::unit: &'static str
 pub struct phx_core::RateFn
 pub phx_core::RateFn::axes: &'static [&'static str]
+pub phx_core::RateFn::changes: &'static [phx_core::hazards::RateChange]
 pub phx_core::RateFn::table: &'static str
 pub struct phx_core::ReadTrace
 pub phx_core::ReadTrace::duplicate_opens: usize
@@ -2893,6 +2904,7 @@ pub fn phx_core::streams::Streams::len(&self) -> usize
 pub fn phx_core::streams::Streams::new(phx_rand::key::Seed, &[phx_core::streams::StreamDecl]) -> core::result::Result<phx_core::streams::Streams, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::streams::Streams::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day, u8) -> phx_rand::draws::Draws
 pub fn phx_core::streams::Streams::open_keyed(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject) -> phx_rand::draws::Draws
+pub fn phx_core::streams::Streams::open_keyed_at(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, u32) -> phx_rand::draws::Draws
 pub struct phx_core::SubStepInfo
 pub phx_core::SubStepInfo::business_only: bool
 pub phx_core::SubStepInfo::kind: phx_core::substep::SubStepKind

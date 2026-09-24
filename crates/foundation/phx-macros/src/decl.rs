@@ -574,14 +574,45 @@ fn acts_on(e: &Expr) -> syn::Result<TokenStream> {
     }
 }
 
+/// The dates a rate can change without a visit: `YearStart`, `Policy("…")` or `Review("…")`.
+fn rate_changes(e: &Expr) -> syn::Result<Vec<TokenStream>> {
+    let Expr::Array(a) = e else {
+        return Err(syn::Error::new_spanned(e, "expected a list of the dates the rate can change"));
+    };
+    a.elems
+        .iter()
+        .map(|c| match c {
+            Expr::Path(p) if p.path.is_ident("YearStart") => Ok(quote! { ::phx_core::hazards::RateChange::YearStart }),
+            Expr::Call(ExprCall { func, args, .. }) => {
+                let name = match args.iter().collect::<Vec<_>>().as_slice() {
+                    [one] => string(one)?,
+                    _ => return Err(syn::Error::new_spanned(c, "one name")),
+                };
+                match func.as_ref() {
+                    Expr::Path(p) if p.path.is_ident("Policy") => {
+                        Ok(quote! { ::phx_core::hazards::RateChange::Policy(#name) })
+                    }
+                    Expr::Path(p) if p.path.is_ident("Review") => {
+                        Ok(quote! { ::phx_core::hazards::RateChange::Review(#name) })
+                    }
+                    _ => Err(syn::Error::new_spanned(c, "expected `Policy(\"…\")` or `Review(\"…\")`")),
+                }
+            }
+            _ => Err(syn::Error::new_spanned(c, "expected `YearStart`, `Policy(\"…\")` or `Review(\"…\")`")),
+        })
+        .collect()
+}
+
 fn hazard(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
     let span = d.name.span();
-    let fields = d.fields(&["acts_on", "rate", "axes", "outcome", "scheme", "stream", "clause", "source"])?;
+    let fields =
+        d.fields(&["acts_on", "rate", "axes", "changes", "outcome", "scheme", "stream", "clause", "source"])?;
     qualified(&d.id)?;
     let acts_on = acts_on(required(&fields, "acts_on", span)?)?;
     let rate = string(required(&fields, "rate", span)?)?;
     qualified(&rate)?;
     let axes = strings(required(&fields, "axes", span)?)?;
+    let changes = rate_changes(required(&fields, "changes", span)?)?;
     let outcome = string(required(&fields, "outcome", span)?)?;
     let scheme = match variant(required(&fields, "scheme", span)?, &["Scheduled", "Daily"])? {
         s if s == "Scheduled" => quote! {
@@ -603,7 +634,7 @@ fn hazard(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
             ::phx_core::hazards::HazardDecl {
                 name: #id,
                 acts_on: #acts_on,
-                rate: ::phx_core::hazards::RateFn { table: #rate, axes: &[#(#axes),*] },
+                rate: ::phx_core::hazards::RateFn { table: #rate, axes: &[#(#axes),*], changes: &[#(#changes),*] },
                 outcome: #outcome,
                 scheme: #scheme,
                 stream: #stream,

@@ -384,7 +384,7 @@ mod tests {
             d.hazard(HazardDecl {
                 name: "DEM.death",
                 acts_on: ActsOn::Role { kind: "household", role: "person" },
-                rate: RateFn { table: "DEM.mortality_table", axes: &["DEM.age"] },
+                rate: RateFn { table: "DEM.mortality_table", axes: &["DEM.age"], changes: &[] },
                 outcome: "DEM.dies",
                 scheme: DrawScheme::Daily,
                 stream: "DEM.illness",

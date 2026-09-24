@@ -4009,7 +4009,7 @@ saves read back to their closes' hashes and the thirteen injections each lit the
 
 ### S0.22 — `phx-pop` II: screening, reviews and occasions
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - PROCESS: REP.7, REP.12; REP.21 *(part: review days, review exposure and the count reviewing; attention as a
@@ -4146,11 +4146,32 @@ at 3a (S0.13); a process without a declared draw scheme is refused at assembly.
 - a whole cell deciding a lumpy decision at once (REP.16);
 - a review drawn on a day its decision point does not run.
 
+- As built:
+  - a hazard's rate declares the dates its inputs can change without a visit (`RateChange`: a year's start, a policy
+    value's effective day, the row's review), which end its envelope's validity; a candidate on or after that day is
+    a redraw on that day, and that day is screened at the new envelope;
+  - the screen is `screen.rs`'s candidate, redraw and daily functions over a cell, returning its hits per value,
+    its next booking and its counts; which agenda reason a process books, and recording each occurrence's event at
+    3b's apply, are the world's when it keeps cells (S0.25);
+  - a phase is a keyed draw by the cell and its schedule's place (`Streams::open_keyed_at`); the wake of a surprise
+    is the next day the point runs, which the agenda books;
+  - a need or notice on a day its point does not run is carried from that day (`occasion::reaches`); the pin it
+    becomes in a part's key is the parts' (S0.23);
+  - a hit reaches members whose values in the role's other groups are picked without replacement; victims are
+    drawn in proportion to units or members; which systems a process's hits reach, and victims' outcomes, come with
+    the processes that name them (S4.03);
+  - `phx_pop.ir_screen_candidate` is ratcheted (F-027); the per-day counters are measured once cells exist (S0.25).
+
 **Done when**
-- [ ] Screening, reviews, occasions and overlaps work, with the tests passing.
-- [ ] LC-0-39 to LC-0-42 are registered.
-- [ ] PC-31 is registered.
-- [ ] Two reviews are done.
+- [x] Screening, reviews, occasions and overlaps work, with the tests passing.
+- [x] LC-0-39 to LC-0-42 are registered.
+- [x] PC-31 is registered.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found:
+  - a candidate on the last day of its envelope's validity drawn at rates that may already have changed (now a
+    redraw on that day, which is screened at the new envelope);
+  - the surprise's wake missing (now the next day the point runs);
+  - a candidate decoding the cell's every profile group to read one (now one group read in place), and its cost
+    otherwise left unmeasured (now a ratcheted bench, F-027).
 
 ---
 
@@ -15434,6 +15455,8 @@ the final build within the budget on the phone.
 | F-024 | S0.18 | build, 2026-09-24 | The market forms exist as functions under unit tests and nothing in the Stage 0 world meets a market, so LC-0-30 to LC-0-32 report "not yet"; a linked call gives flows and prices but not yet its matches between lenders and borrowers, and a posted market prints each seller's sales but declares no mark of its own | no system posts in a market before the firms' prices; the money market's matching and a posted market's mark are their first users' | S1.03 (the first posted meetings and their mark), S3.01 (the money market's matches) | open |
 | F-025 | S0.19 | build, 2026-09-24 | A position's carrying basis is not stored with it: an opening position takes the first basis its legal form is permitted for what it is held for, read each time, and a debt owed is at amortised cost; a holding's purpose is read from its instrument family (a contract or debt to collect, a share or fund unit to trade, a real asset to use) | no party yet acquires a position by its own decision, so no basis is chosen at acquisition | the first acquisition decisions (S1.03's purchases, S3.02's securities), which store the chosen basis in the holding's or row's flags | open |
 | F-026 | S0.19 | build, 2026-09-24 | Equity accounts, claims and tallies are ordered maps keyed by party, about 40 bytes per equity account against the budget's 16 | the few owned parties of Stage 0 do not need a column | S0.21's population tables, where millions of firms keep one: the account a column of the party's table | open |
+| F-027 | S0.22 | build, 2026-09-24 | A scheduled candidate day costs about 3 500 instructions (`phx_pop.ir_screen_candidate`, a thousand candidates of one cell of 170 members in three values), where the review's prototype measured 174 ns | the envelope is recomputed on each candidate, two to three transcendentals are drawn per day, and the day's values and counts are gathered into small vectors | judged on the phone at S0.26; if the budget is missed, the envelope kept with the booking and the day's reads made without allocating | open |
+| F-028 | S0.22 | build, 2026-09-24 | Carrying a cell's mean review exposure over-counts reviews by about 12% against members each carrying their own, reviewing monthly at 2% a day over two years (`review_count_bias_measured`) | the concavity of 1 − e^(−x): reviewers who stay and the others share one mean | REP.21 accepts it; S1.01's attention is where its size is read against the decisions it moves, and LC-0-46 reports the dispersion erased at each review | open |
 
 ---
 

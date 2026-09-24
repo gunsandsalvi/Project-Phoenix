@@ -29,3 +29,51 @@ pub const LC_0_38: Check = live_check! {
     from_step: "S0.21",
     check: landing_keys_current,
 };
+
+/// Every hazard's realised hit rate over the run within its sampling error of its declared rate.
+fn realised_rates(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// No cell visited on a day it had no agenda entry.
+fn only_the_active(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// Every hazard occurrence's event recorded at the sub-step that drew it.
+fn hazards_recorded(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// Carried needs and notices decided on the first day their decision point ran.
+fn carried_decided(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+pub const LC_0_39: Check = live_check! {
+    id: "LC-0-39",
+    title: "Every hazard's realised hit rate is within its sampling error of its declared rate",
+    from_step: "S0.22",
+    check: realised_rates,
+};
+
+pub const LC_0_40: Check = live_check! {
+    id: "LC-0-40",
+    title: "No cell is visited on a day it had no agenda entry",
+    from_step: "S0.22",
+    check: only_the_active,
+};
+
+pub const LC_0_41: Check = live_check! {
+    id: "LC-0-41",
+    title: "Every hazard occurrence has its event recorded at the sub-step that drew it",
+    from_step: "S0.22",
+    check: hazards_recorded,
+};
+
+pub const LC_0_42: Check = live_check! {
+    id: "LC-0-42",
+    title: "Carried needs and notices are decided on the first day their decision point runs",
+    from_step: "S0.22",
+    check: carried_decided,
+};
