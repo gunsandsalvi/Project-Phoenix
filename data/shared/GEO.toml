@@ -1,0 +1,140 @@
+# GEO's map: its resolution, the SHAPEs its relief is generated with, the terrain classes, and the construction
+# conditions. The climate tables are GEO_climate.toml's, the hazards' and deposits' GEO_hazards.toml's.
+
+[[primitive]]
+id = "GEO.tile_m"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "The owner's map (plan §12, 2026-09-23): tiles of 10 km, the same map subdivided at a finer resolution."
+value = 10000
+
+[[primitive]]
+id = "GEO.zones"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "The plan's zones (S0.13): 2,000 across the three countries, about 20 tiles each, the place at which members of cells are carried."
+value = 2000
+
+[[primitive]]
+id = "GEO.zone_min_tiles"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "A zone of fewer than 5 tiles (500 km2) is too small to hold a town and its hinterland; the construction condition rejects a map that makes one."
+value = 5
+
+[[primitive]]
+id = "GEO.zone_max_tiles"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "A zone of more than 150 tiles (15,000 km2), seven times the mean, is too large for its members to share one place; the construction condition rejects a map that makes one."
+value = 150
+
+[[primitive]]
+id = "GEO.sea_share"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Four tenths of the rectangle under the sea, so the land is one continent with coasts on every side and room for islands."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.4
+
+[[primitive]]
+id = "GEO.base_cells"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Four cells across the coarsest octave: a continent with a few large landforms rather than one dome or scattered islands."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 4
+
+[[primitive]]
+id = "GEO.octaves"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Seven octaves, the finest about a tile across, so the relief varies from tile to tile."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 7
+
+[[primitive]]
+id = "GEO.roughness"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Each octave half the last's weight: the fractal relief of real terrain, whose spectra fall by about half an octave's amplitude per doubling of frequency."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.5
+
+[[primitive]]
+id = "GEO.falloff"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "The height's fall from the centre that keeps the sea at the map's edges."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 1.5
+
+[[primitive]]
+id = "GEO.max_elevation_m"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "The highest point at 4,000 m, as in the Alps or the Caucasus."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 4000
+
+[[primitive]]
+id = "GEO.max_depth_m"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "The deepest sea at 5,000 m, an ocean basin's."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 5000
+
+[[primitive]]
+id = "GEO.mainland_floor_percent"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "At least four fifths of a country's land on the mainland."
+shape = "standing:a construction condition: a country scattered over islands has no land market or road across it, and no mechanism joins them"
+value = 80
+
+[[primitive]]
+id = "GEO.terrain_max_elevation"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Plains up to 200 m, hills to 800 m, uplands to 2,000 m, mountains above: the classes of the usual physiographic divisions."
+shape = "standing:terrain classes are how the relief is read by exposure and deposits; no mechanism classifies ground"
+value = { axis = [0, 1, 2, 3], values = [200, 800, 2000, 32767], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.terrain_max_slope"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "A plain's steepest rise to a neighbour at most 5 per thousand (50 m over 10 km), hills' 20, uplands' 60; steeper ground is mountains."
+shape = "standing:terrain classes are how the relief is read by exposure and deposits; no mechanism classifies ground"
+value = { axis = [0, 1, 2, 3], values = [5, 20, 60, 1000000], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.coast_m"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Within 20 km of the sea a tile takes the coastal exposure: storm surge and coastal flooding reach that far inland on low coasts."
+value = 20000
+
+[[primitive]]
+id = "GEO.metres_per_degree"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "measured"
+source_ref = "The Earth's mean radius, 6,371,008.8 m (IUGG; Moritz, Geodetic Reference System 1980), times pi over 180: 111,195 m to a degree of latitude."
+value = 111195

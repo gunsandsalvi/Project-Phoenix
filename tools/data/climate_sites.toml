@@ -1,0 +1,190 @@
+# The climate classes of the map and the places each is measured at, from NASA POWER's daily reanalysis, 1991-2020.
+#
+# A lowland class is a latitude band of five degrees and a distance to the sea: coastal (under 50 km), inland (50 to
+# 300 km) or interior (beyond 300 km); a highland class is the band's mountains. The places are the Old World's,
+# from the Atlantic coast to Central Asia and Siberia, two to a class where two fit. A class's number is its place in
+# this file, from 0.
+
+bands = [25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0]
+distances_km = [0, 50, 300]
+kinds = ["coastal", "inland", "interior"]
+
+[[class]]
+band = 25.0
+kind = "coastal"
+sites = [{ name = "Laayoune", lat = 27.15, lon = -13.20 }, { name = "Hurghada", lat = 27.26, lon = 33.81 }]
+
+[[class]]
+band = 25.0
+kind = "inland"
+sites = [{ name = "Qena", lat = 26.16, lon = 32.72 }, { name = "Asyut", lat = 27.18, lon = 31.18 }]
+
+[[class]]
+band = 25.0
+kind = "interior"
+sites = [{ name = "Adrar", lat = 27.87, lon = -0.29 }, { name = "Sabha", lat = 27.04, lon = 14.43 }]
+
+[[class]]
+band = 30.0
+kind = "coastal"
+sites = [{ name = "Casablanca", lat = 33.57, lon = -7.59 }, { name = "Tel Aviv", lat = 32.08, lon = 34.78 }]
+
+[[class]]
+band = 30.0
+kind = "inland"
+sites = [{ name = "Marrakesh", lat = 31.63, lon = -8.01 }, { name = "Cairo", lat = 30.04, lon = 31.24 }]
+
+[[class]]
+band = 30.0
+kind = "interior"
+sites = [{ name = "Ghardaia", lat = 32.49, lon = 3.67 }, { name = "Baghdad", lat = 33.31, lon = 44.36 }]
+
+[[class]]
+band = 35.0
+kind = "coastal"
+sites = [{ name = "Lisbon", lat = 38.72, lon = -9.14 }, { name = "Athens", lat = 37.98, lon = 23.73 }]
+
+[[class]]
+band = 35.0
+kind = "inland"
+sites = [{ name = "Seville", lat = 37.39, lon = -5.98 }, { name = "Ankara", lat = 39.93, lon = 32.86 }]
+
+[[class]]
+band = 35.0
+kind = "interior"
+sites = [{ name = "Ashgabat", lat = 37.96, lon = 58.33 }, { name = "Samarkand", lat = 39.65, lon = 66.96 }]
+
+[[class]]
+band = 40.0
+kind = "coastal"
+sites = [{ name = "Bilbao", lat = 43.26, lon = -2.93 }, { name = "Rome", lat = 41.90, lon = 12.50 }]
+
+[[class]]
+band = 40.0
+kind = "inland"
+sites = [{ name = "Zaragoza", lat = 41.65, lon = -0.88 }, { name = "Bucharest", lat = 44.43, lon = 26.10 }]
+
+[[class]]
+band = 40.0
+kind = "interior"
+sites = [{ name = "Tashkent", lat = 41.30, lon = 69.24 }, { name = "Shymkent", lat = 42.32, lon = 69.60 }]
+
+[[class]]
+band = 45.0
+kind = "coastal"
+sites = [{ name = "Brest", lat = 48.39, lon = -4.49 }, { name = "Odesa", lat = 46.48, lon = 30.73 }]
+
+[[class]]
+band = 45.0
+kind = "inland"
+sites = [{ name = "Paris", lat = 48.86, lon = 2.35 }, { name = "Lyon", lat = 45.76, lon = 4.84 }]
+
+[[class]]
+band = 45.0
+kind = "interior"
+sites = [{ name = "Budapest", lat = 47.50, lon = 19.04 }, { name = "Lviv", lat = 49.84, lon = 24.03 }]
+
+[[class]]
+band = 50.0
+kind = "coastal"
+sites = [{ name = "Dublin", lat = 53.35, lon = -6.26 }, { name = "Plymouth", lat = 50.37, lon = -4.14 }]
+
+[[class]]
+band = 50.0
+kind = "inland"
+sites = [{ name = "Berlin", lat = 52.52, lon = 13.40 }, { name = "Cologne", lat = 50.94, lon = 6.96 }]
+
+[[class]]
+band = 50.0
+kind = "interior"
+sites = [{ name = "Warsaw", lat = 52.23, lon = 21.01 }, { name = "Kyiv", lat = 50.45, lon = 30.52 }]
+
+[[class]]
+band = 55.0
+kind = "coastal"
+sites = [{ name = "Gothenburg", lat = 57.71, lon = 11.97 }, { name = "Edinburgh", lat = 55.95, lon = -3.19 }]
+
+[[class]]
+band = 55.0
+kind = "inland"
+sites = [{ name = "Jonkoping", lat = 57.78, lon = 14.16 }, { name = "Vilnius", lat = 54.69, lon = 25.28 }]
+
+[[class]]
+band = 55.0
+kind = "interior"
+sites = [{ name = "Moscow", lat = 55.76, lon = 37.62 }, { name = "Yekaterinburg", lat = 56.84, lon = 60.61 }]
+
+[[class]]
+band = 60.0
+kind = "coastal"
+sites = [{ name = "Bergen", lat = 60.39, lon = 5.32 }, { name = "Trondheim", lat = 63.43, lon = 10.39 }]
+
+[[class]]
+band = 60.0
+kind = "inland"
+sites = [{ name = "Tampere", lat = 61.50, lon = 23.76 }, { name = "Joensuu", lat = 62.60, lon = 29.76 }]
+
+[[class]]
+band = 60.0
+kind = "interior"
+sites = [{ name = "Syktyvkar", lat = 61.67, lon = 50.84 }, { name = "Surgut", lat = 61.25, lon = 73.40 }]
+
+[[class]]
+band = 65.0
+kind = "coastal"
+sites = [{ name = "Bodo", lat = 67.28, lon = 14.40 }, { name = "Tromso", lat = 69.65, lon = 18.96 }]
+
+[[class]]
+band = 65.0
+kind = "inland"
+sites = [{ name = "Rovaniemi", lat = 66.50, lon = 25.73 }, { name = "Kiruna", lat = 67.86, lon = 20.23 }]
+
+[[class]]
+band = 65.0
+kind = "interior"
+sites = [{ name = "Vilyuysk", lat = 63.75, lon = 121.62 }, { name = "Verkhoyansk", lat = 67.55, lon = 133.39 }]
+
+[[class]]
+band = 25.0
+kind = "highland"
+sites = [{ name = "Shiraz", lat = 29.59, lon = 52.58 }]
+
+[[class]]
+band = 30.0
+kind = "highland"
+sites = [{ name = "Kerman", lat = 30.28, lon = 57.08 }, { name = "High Atlas", lat = 31.20, lon = -7.87 }]
+
+[[class]]
+band = 35.0
+kind = "highland"
+sites = [{ name = "Sierra Nevada", lat = 37.09, lon = -3.40 }, { name = "Van", lat = 38.50, lon = 43.38 }]
+
+[[class]]
+band = 40.0
+kind = "highland"
+sites = [{ name = "Pyrenees", lat = 42.55, lon = 1.55 }, { name = "Gyumri", lat = 40.79, lon = 43.85 }]
+
+[[class]]
+band = 45.0
+kind = "highland"
+sites = [{ name = "Bernese Alps", lat = 46.55, lon = 7.98 }, { name = "Dolomites", lat = 46.55, lon = 11.85 }]
+
+[[class]]
+band = 50.0
+kind = "highland"
+sites = [{ name = "Krkonose", lat = 50.74, lon = 15.74 }, { name = "Ore Mountains", lat = 50.43, lon = 12.95 }]
+
+[[class]]
+band = 55.0
+kind = "highland"
+sites = [{ name = "Cairngorms", lat = 57.08, lon = -3.67 }, { name = "Southern Urals", lat = 54.60, lon = 59.10 }]
+
+[[class]]
+band = 60.0
+kind = "highland"
+sites = [{ name = "Jotunheimen", lat = 61.63, lon = 8.30 }, { name = "Dovrefjell", lat = 62.28, lon = 9.40 }]
+
+[[class]]
+band = 65.0
+kind = "highland"
+sites = [{ name = "Abisko", lat = 68.35, lon = 18.83 }, { name = "Polar Urals", lat = 66.90, lon = 65.50 }]

@@ -1,0 +1,241 @@
+# GEO's hazard and deposit tables, written by tools/data/hazards.py; do not edit.
+
+[[primitive]]
+id = "GEO.flood_exposure_inland"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Exposure class of an inland tile to floods by terrain and climate class, read from the measured climate: floods on plains of humid classes (under 85% dry days), storms by the climate's mean wind scale (3.5 and 5 m/s), earthquakes by relief, droughts by dry days (70% and 85%)."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], values = [[0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.flood_exposure_coastal"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Exposure class of a coastal tile to floods: as inland, with floods on low coasts and storms one class higher."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], values = [[1, 1, 1, 2, 1, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.flood_rate"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "estimated"
+source_ref = "Yearly chance a flood starts on a tile, by exposure class: EM-DAT's 155.2 a year (Flood, 1994-2023, via Our World in Data) over the world's 129,763,686 km2 of land (2023, World Bank AG.LND.TOTL.K2) in tiles of 100 km2, scaled by a quarter, one and four from sheltered to exposed ground."
+value = { axis = [0, 1, 2], values = [2.989e-05, 0.00011958, 0.00047831], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.flood_spread"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Chance a flood spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground."
+value = { axis = [0, 1, 2], values = [0.15, 0.25, 0.32], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.flood_severity_a"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "First shape of the share of what stands on a struck tile a flood destroys, by exposure class: most is damaged, little destroyed, mean shares [0.01, 0.03, 0.08]."
+value = { axis = [0, 1, 2], values = [0.8, 0.8, 0.8], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.flood_severity_b"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Second shape of the share a flood destroys, by exposure class, giving the mean shares [0.01, 0.03, 0.08]."
+value = { axis = [0, 1, 2], values = [79.2, 25.87, 9.2], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.storm_exposure_inland"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Exposure class of an inland tile to storms by terrain and climate class, read from the measured climate: floods on plains of humid classes (under 85% dry days), storms by the climate's mean wind scale (3.5 and 5 m/s), earthquakes by relief, droughts by dry days (70% and 85%)."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], values = [[2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 0, 2, 1, 1, 2, 2, 1, 2, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 2, 1, 1], [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 0, 2, 1, 1, 2, 2, 1, 2, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 2, 1, 1], [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 0, 2, 1, 1, 2, 2, 1, 2, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 2, 1, 1], [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 0, 2, 1, 1, 2, 2, 1, 2, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 2, 1, 1]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.storm_exposure_coastal"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Exposure class of a coastal tile to storms: as inland, with floods on low coasts and storms one class higher."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], values = [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2, 2, 2]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.storm_rate"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "estimated"
+source_ref = "Yearly chance a storm starts on a tile, by exposure class: EM-DAT's 101.4 a year (Extreme weather, 1994-2023, via Our World in Data) over the world's 129,763,686 km2 of land (2023, World Bank AG.LND.TOTL.K2) in tiles of 100 km2, scaled by a quarter, one and four from sheltered to exposed ground."
+value = { axis = [0, 1, 2], values = [1.954e-05, 7.817e-05, 0.00031267], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.storm_spread"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Chance a storm spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground."
+value = { axis = [0, 1, 2], values = [0.2, 0.3, 0.36], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.storm_severity_a"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "First shape of the share of what stands on a struck tile a storm destroys, by exposure class: most is damaged, little destroyed, mean shares [0.005, 0.02, 0.05]."
+value = { axis = [0, 1, 2], values = [0.8, 0.8, 0.8], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.storm_severity_b"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Second shape of the share a storm destroys, by exposure class, giving the mean shares [0.005, 0.02, 0.05]."
+value = { axis = [0, 1, 2], values = [159.2, 39.2, 15.2], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.earthquake_exposure_inland"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Exposure class of an inland tile to earthquakes by terrain and climate class, read from the measured climate: floods on plains of humid classes (under 85% dry days), storms by the climate's mean wind scale (3.5 and 5 m/s), earthquakes by relief, droughts by dry days (70% and 85%)."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], values = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.earthquake_exposure_coastal"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Exposure class of a coastal tile to earthquakes: as inland, with floods on low coasts and storms one class higher."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], values = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.earthquake_rate"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "estimated"
+source_ref = "Yearly chance an earthquake starts on a tile, by exposure class: EM-DAT's 26.6 a year (Earthquake, 1994-2023, via Our World in Data) over the world's 129,763,686 km2 of land (2023, World Bank AG.LND.TOTL.K2) in tiles of 100 km2, scaled by a quarter, one and four from sheltered to exposed ground."
+value = { axis = [0, 1, 2], values = [5.13e-06, 2.052e-05, 8.21e-05], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.earthquake_spread"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Chance a earthquake spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground."
+value = { axis = [0, 1, 2], values = [0.1, 0.25, 0.33], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.earthquake_severity_a"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "First shape of the share of what stands on a struck tile a earthquake destroys, by exposure class: most is damaged, little destroyed, mean shares [0.01, 0.05, 0.15]."
+value = { axis = [0, 1, 2], values = [0.6, 0.6, 0.6], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.earthquake_severity_b"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Second shape of the share a earthquake destroys, by exposure class, giving the mean shares [0.01, 0.05, 0.15]."
+value = { axis = [0, 1, 2], values = [59.4, 11.4, 3.4], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.drought_exposure_inland"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Exposure class of an inland tile to droughts by terrain and climate class, read from the measured climate: floods on plains of humid classes (under 85% dry days), storms by the climate's mean wind scale (3.5 and 5 m/s), earthquakes by relief, droughts by dry days (70% and 85%)."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], values = [[2, 2, 2, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0], [2, 2, 2, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0], [2, 2, 2, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0], [2, 2, 2, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.drought_exposure_coastal"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Exposure class of a coastal tile to droughts: as inland, with floods on low coasts and storms one class higher."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], values = [[2, 2, 2, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0], [2, 2, 2, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0], [2, 2, 2, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0], [2, 2, 2, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 0, 0]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.drought_rate"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "estimated"
+source_ref = "Yearly chance a drought starts on a tile, by exposure class: EM-DAT's 25.3 a year (Drought, 1994-2023, via Our World in Data) over the world's 129,763,686 km2 of land (2023, World Bank AG.LND.TOTL.K2) in tiles of 100 km2, scaled by a quarter, one and four from sheltered to exposed ground."
+value = { axis = [0, 1, 2], values = [4.87e-06, 1.95e-05, 7.799e-05], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.drought_spread"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Chance a drought spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground."
+value = { axis = [0, 1, 2], values = [0.3, 0.36, 0.39], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.drought_severity_a"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "First shape of the share of what stands on a struck tile a drought destroys, by exposure class: most is damaged, little destroyed, mean shares [0.02, 0.05, 0.12]."
+value = { axis = [0, 1, 2], values = [1.0, 1.0, 1.0], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.drought_severity_b"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Second shape of the share a drought destroys, by exposure class, giving the mean shares [0.02, 0.05, 0.12]."
+value = { axis = [0, 1, 2], values = [49.0, 19.0, 7.33], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.deposit_density"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "assumed"
+source_ref = "Chance a tile holds a deposit, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone) and terrain class: ores and stone in raised ground, coal in plains and hills, oil and gas in sedimentary lowlands; none is present on every terrain. The resources' own data come with the goods that extract them."
+value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3], values = [[0.0, 0.002, 0.006, 0.012], [0.004, 0.006, 0.003, 0.0], [0.004, 0.002, 0.0005, 0.0], [0.0, 0.03, 0.05, 0.08]], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.deposit_grade_mu"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "assumed"
+source_ref = "Mean of a deposit's log grade, a quality index around one, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone)."
+value = { axis = [0, 1, 2, 3], values = [0.0, 0.0, 0.0, 0.0], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.deposit_grade_sigma"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "assumed"
+source_ref = "Standard deviation of a deposit's log grade, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone)."
+value = { axis = [0, 1, 2, 3], values = [0.8, 0.5, 0.6, 0.3], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.deposit_quantity_mu"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "assumed"
+source_ref = "Mean of a finite deposit's log opening quantity in tonnes (ore about ten million, coal fifty million), by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone)."
+value = { axis = [0, 1, 2, 3], values = [16.1, 17.7, 16.1, 0.0], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.deposit_quantity_sigma"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "assumed"
+source_ref = "Standard deviation of a finite deposit's log opening quantity: deposit sizes span orders of magnitude, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone)."
+value = { axis = [0, 1, 2, 3], values = [1.5, 1.5, 2.0, 0.0], outside = "refuse" }
+
+[[primitive]]
+id = "GEO.deposit_unbounded"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "assumed"
+source_ref = "Whether a resource's deposits are unbounded, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone): building stone is, at the scale of a world's quarries."
+value = { axis = [0, 1, 2, 3], values = [0, 0, 0, 1], outside = "refuse" }
