@@ -15,6 +15,9 @@ pub struct Grid {
 /// The eight neighbours' offsets, in one fixed order.
 const AROUND: [(i64, i64); 8] = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)];
 
+/// How many neighbours a tile away from the edges has.
+pub const DIRECTIONS: usize = AROUND.len();
+
 impl Grid {
     #[must_use]
     pub fn len(&self) -> usize {
@@ -61,6 +64,14 @@ impl Grid {
             let ny = u32::try_from(i64::from(y) + dy).ok().filter(|v| *v < self.height)?;
             Some(self.at(nx, ny))
         })
+    }
+
+    /// Which of the eight directions leads from `a` to its neighbour `b`, if `b` is one.
+    #[must_use]
+    pub fn direction(&self, a: TileId, b: TileId) -> Option<usize> {
+        let ((ax, ay), (bx, by)) = (self.xy(a), self.xy(b));
+        let offset = (i64::from(bx) - i64::from(ax), i64::from(by) - i64::from(ay));
+        AROUND.iter().position(|d| *d == offset)
     }
 
     /// A tile's centre, in metres from the grid's corner.

@@ -7,9 +7,9 @@ use phx_num::{Fixed, Round, capacity_exceeded, violation};
 use phx_rand::Draws;
 
 use crate::consts::{PER_MILLE, PER_MILLE_F64, WHOLE_PERCENT};
-use crate::grid::Grid;
+use crate::grid::{DIRECTIONS, Grid};
 use crate::hydrology::{drainage, upstream};
-use crate::partition::{StepCost, balance, components, grow, join_nearest, merge_small, pick_seeds};
+use crate::partition::{Partition, StepCost, components, merge_small, partition, pick_seeds};
 use crate::relief::{ReliefParams, erode, raw, to_curve};
 use crate::tile::{LAND, Region, Tile, WATER, Zone};
 
@@ -57,6 +57,7 @@ pub struct MapParams {
     pub zone_min_tiles: u64,
     pub zone_max_tiles: u64,
     pub share_tolerance_per_mille: u64,
+    pub partition_rounds: u64,
     pub mainland_floor_percent: u64,
     pub max_attempts: u64,
 }
@@ -258,29 +259,43 @@ fn terrain(p: &MapParams, s: &Surface) -> Vec<u8> {
 
 /// What a step between neighbours costs a growing country, region or zone: its length over the ground, lengthened by
 /// the relief it climbs into, and by a river it crosses onto, so fronts wait at ridges and rivers and borders form
-/// there.
+/// there. Each tile's eight steps are worked out once, as every partition takes them many times.
 struct Ground<'a> {
     grid: &'a Grid,
-    elevation: &'a [i16],
-    relief: &'a [u16],
-    river: &'a [bool],
-    rugged_m: u64,
-    crossing_m: u64,
+    steps: Vec<u64>,
 }
 
-impl Ground<'_> {
+impl<'a> Ground<'a> {
+    fn new(grid: &'a Grid, s: &Surface, river: &[bool], rugged_m: u64, crossing_m: u64) -> Self {
+        let mut steps = vec![0; grid.len() * DIRECTIONS];
+        for ia in 0..grid.len() {
+            let a = grid.tile(ia);
+            for b in grid.neighbours(a) {
+                let ib = grid.index(b);
+                let leg = grid.length_m(a, at(&s.elevation, ia), b, at(&s.elevation, ib));
+                let rugged = leg * (rugged_m + u64::from(at(&s.relief, ib))) / rugged_m;
+                let crossing = if at(river, ib) && !at(river, ia) { crossing_m } else { 0 };
+                if let Some(d) = grid.direction(a, b)
+                    && let Some(slot) = steps.get_mut(ia * DIRECTIONS + d)
+                {
+                    *slot = rugged + crossing;
+                }
+            }
+        }
+        Ground { grid, steps }
+    }
+
     fn step(&self, a: TileId, b: TileId) -> u64 {
-        let (ia, ib) = (self.grid.index(a), self.grid.index(b));
-        let leg = self.grid.length_m(a, at(self.elevation, ia), b, at(self.elevation, ib));
-        let rugged = leg * (self.rugged_m + u64::from(at(self.relief, ib))) / self.rugged_m;
-        let crossing = if at(self.river, ib) && !at(self.river, ia) { self.crossing_m } else { 0 };
-        rugged + crossing
+        let Some(d) = self.grid.direction(a, b) else {
+            violation!(clause = "GEO.2", "a step between tiles that are not neighbours");
+        };
+        at(&self.steps, self.grid.index(a) * DIRECTIONS + d)
     }
 }
 
-/// The countries: grown on the mainland to their shares of it, the islands joining the nearest, then balanced to
-/// their shares of all the land; refused when a country's land strays from its share by more than the tolerance, or
-/// holds less of its land on the mainland than the declared floor.
+/// The countries: grown over the mainland from seeds on it and sized to their shares of all the land, the islands
+/// joining the nearest; refused when a country's land strays from its share by more than the tolerance, or holds less
+/// of its land on the mainland than the declared floor.
 fn countries(
     p: &MapParams,
     grid: &Grid,
@@ -292,13 +307,11 @@ fn countries(
     let (label, sizes) = components(grid, land);
     let mainland = sizes.iter().enumerate().fold(0, |best, (i, s)| if *s > at(&sizes, best) { i } else { best });
     let on_mainland: Vec<bool> = label.iter().map(|l| *l == Some(mainland)).collect();
-    let tiles: Vec<TileId> = on_mainland.iter().zip(0..).filter(|(m, _)| **m).map(|(_, i)| grid.tile(i)).collect();
-    let targets = apportion(count(tiles.len()), &p.split);
-    let seeds = pick_seeds(&tiles, p.split.len(), draws);
-    let mut owner = grow(grid, &on_mainland, &seeds, &targets, lot, step);
-    join_nearest(grid, &mut owner, land, lot);
-    let shares = apportion(p.land_tiles, &p.split);
-    if !balance(grid, &mut owner, &seeds, &shares, p.share_tolerance_per_mille, lot) {
+    let seeds = pick_seeds(&tiles_of(grid, &on_mainland), p.split.len(), draws);
+    let targets = apportion(p.land_tiles, &p.split);
+    let over = Partition { eligible: &on_mainland, joiners: land, seeds: &seeds, targets: &targets };
+    let (owner, within) = partition(grid, &over, p.share_tolerance_per_mille, p.partition_rounds, lot, step);
+    if !within {
         return Err("the countries' land strays from their shares beyond the tolerance".to_owned());
     }
     for c in 0..p.split.len() {
@@ -352,9 +365,9 @@ fn places(
         let regions = usize::try_from(p.regions.get(c).copied().unwrap_or(0)).map_err(|e| e.to_string())?;
         let targets = apportion(count(tiles.len()), &vec![1; regions]);
         let seeds = pick_seeds(&seedable(grid, &in_country, on_mainland), regions, draws);
-        let mut region = grow(grid, &in_country, &seeds, &targets, lot, step);
-        join_nearest(grid, &mut region, &in_country, lot);
-        if !balance(grid, &mut region, &seeds, &targets, p.share_tolerance_per_mille, lot) {
+        let over = Partition { eligible: &in_country, joiners: &in_country, seeds: &seeds, targets: &targets };
+        let (region, within) = partition(grid, &over, p.share_tolerance_per_mille, p.partition_rounds, lot, step);
+        if !within {
             return Err(format!("country {c}'s regions stray from like size beyond the tolerance"));
         }
         let sizes: Vec<u64> = (0..regions).map(|r| count(region.iter().filter(|o| **o == Some(r)).count())).collect();
@@ -371,8 +384,8 @@ fn places(
             let zones = usize::try_from(zone_counts.get(r).copied().unwrap_or(0)).map_err(|e| e.to_string())?;
             let z_targets = apportion(count(r_tiles.len()), &vec![1; zones]);
             let z_seeds = pick_seeds(&r_tiles, zones, draws);
-            let mut zone = grow(grid, &in_region, &z_seeds, &z_targets, lot, step);
-            join_nearest(grid, &mut zone, &in_region, lot);
+            let over = Partition { eligible: &in_region, joiners: &in_region, seeds: &z_seeds, targets: &z_targets };
+            let (mut zone, _) = partition(grid, &over, p.share_tolerance_per_mille, p.partition_rounds, lot, step);
             merge_small(grid, &mut zone, zones, p.zone_min_tiles);
             for z in 0..zones {
                 let z_tiles = tiles_of(grid, &zone.iter().map(|o| *o == Some(z)).collect::<Vec<_>>());
@@ -417,14 +430,7 @@ fn attempt(p: &MapParams, climate: &dyn Fn(ClimateInput) -> u8, draws: &mut Draw
     let upstream = upstream(&routes);
     let river: Vec<bool> =
         upstream.iter().zip(&s.land).map(|(u, l)| *l && *u >= p.river_tiles).collect();
-    let ground = Ground {
-        grid: &grid,
-        elevation: &s.elevation,
-        relief: &s.relief,
-        river: &river,
-        rugged_m: p.rugged_m,
-        crossing_m: p.river_crossing_m,
-    };
+    let ground = Ground::new(&grid, &s, &river, p.rugged_m, p.river_crossing_m);
     let step = |a: TileId, b: TileId| ground.step(a, b);
     let to_sea = sea_distance(&grid, &s.land);
     let (owner, on_mainland) = countries(p, &grid, &s.land, &lot, &step, draws)?;
@@ -524,6 +530,7 @@ pub(crate) mod tests {
             zone_min_tiles: 4,
             zone_max_tiles: 60,
             share_tolerance_per_mille: 100,
+            partition_rounds: 32,
             mainland_floor_percent: 60,
             max_attempts: 50,
         }
@@ -558,7 +565,7 @@ pub(crate) mod tests {
                 .iter()
                 .map(|t| t.zone().map(phx_id::ZoneId::get) == Some(u32::try_from(z).unwrap()))
                 .collect();
-            assert!((5..=60).contains(&u64::from(zone.tiles)));
+            assert!((p.zone_min_tiles..=p.zone_max_tiles).contains(&u64::from(zone.tiles)));
             assert!(mask[map.grid.index(zone.centroid)], "a zone's centroid is its own tile");
             assert!(!components(&map.grid, &mask).1.is_empty(), "zone {z} holds land");
         }

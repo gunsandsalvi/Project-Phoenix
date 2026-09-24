@@ -155,6 +155,11 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// The most rounds in which a partition's handicaps are moved toward its parts' targets.
+    pub PARTITION_ROUNDS = "GEO.partition_rounds" { kind: Resolution, value: Count, clause: "GEO.3", scope: Shared }
+}
+
+declare_prim! {
     /// Zones across the three countries, shared among them in their population shares.
     pub ZONES = "GEO.zones" { kind: Resolution, value: Count, clause: "GEO.3", scope: Shared }
 }
@@ -498,6 +503,7 @@ pub struct GeoPrims {
     pub rugged_m: Prim<Count>,
     pub river_crossing_m: Prim<Count>,
     pub share_tolerance: Prim<Count>,
+    pub partition_rounds: Prim<Count>,
     pub zones: Prim<Count>,
     pub zone_min_tiles: Prim<Count>,
     pub zone_max_tiles: Prim<Count>,
@@ -554,6 +560,7 @@ impl GeoPrims {
             rugged_m: d.prim(&RUGGED_M),
             river_crossing_m: d.prim(&RIVER_CROSSING_M),
             share_tolerance: d.prim(&SHARE_TOLERANCE),
+            partition_rounds: d.prim(&PARTITION_ROUNDS),
             zones: d.prim(&ZONES),
             zone_min_tiles: d.prim(&ZONE_MIN_TILES),
             zone_max_tiles: d.prim(&ZONE_MAX_TILES),

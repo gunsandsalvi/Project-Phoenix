@@ -234,6 +234,14 @@ source_ref = "Crossing onto a river costs as much as 20 km of plain: before brid
 value = 20000
 
 [[primitive]]
+id = "GEO.partition_rounds"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "Each round moves a border by the rows its parts are off, so a few rounds settle it; the rest are spare."
+value = 48
+
+[[primitive]]
 id = "GEO.share_tolerance_per_mille"
 kind = "SHAPE"
 owner = "GEO"
