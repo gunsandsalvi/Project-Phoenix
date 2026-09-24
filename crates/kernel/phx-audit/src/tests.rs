@@ -72,6 +72,7 @@ impl Hand {
             trace: self.trace,
             books: &NoBooks,
             markets: &NoMarkets,
+            accounts: &NoAccounts,
         };
         let record = audit.close(close, &mut findings);
         assert_eq!((record.families, record.findings), (2, findings.len()));
@@ -80,6 +81,25 @@ impl Hand {
 }
 
 /// Books with nothing in them, for a close whose families read none.
+/// Accounts with no party.
+#[derive(Debug)]
+struct NoAccounts;
+
+impl phx_core::AccountsAudit for NoAccounts {
+    fn parties(&self) -> usize {
+        0
+    }
+    fn equity(&self, _: usize) -> Vec<phx_core::Gap> {
+        Vec::new()
+    }
+    fn claims(&self) -> (u64, Vec<phx_core::Gap>) {
+        (0, Vec::new())
+    }
+    fn periods(&self, _: phx_id::Day) -> (u64, Vec<phx_core::Gap>) {
+        (0, Vec::new())
+    }
+}
+
 /// A tape with nothing on it.
 #[derive(Debug)]
 struct NoMarkets;

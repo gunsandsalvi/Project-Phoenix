@@ -21,6 +21,7 @@ pub struct CloseInputs<'a> {
     pub trace: Option<ReadTrace>,
     pub books: &'a dyn phx_core::BooksAudit,
     pub markets: &'a dyn phx_core::MarketsAudit,
+    pub accounts: &'a dyn phx_core::AccountsAudit,
 }
 
 /// One close: its day, how many families ran, the rows they checked, and the findings they recorded.
@@ -97,6 +98,7 @@ impl Audit {
             books: c.books,
             legs: self.stream.digests(),
             markets: c.markets,
+            accounts: c.accounts,
         };
         let mut rows_checked = 0;
         for family in &self.families {

@@ -73,6 +73,7 @@ pub const MONEY_SUBSTEPS: &[SubStep] = &[
 pub struct DayBook {
     pub fails: Vec<Fail>,
     pub effects: Vec<EffectRec>,
+    pub dues: Vec<crate::effects::DueRec>,
     pub disposed: Vec<DisposedRec>,
     moved: BTreeMap<(u8, PartyId), (i128, i128)>,
 }
@@ -575,6 +576,12 @@ impl<B: Backing> Ledger<B> {
         }
     }
 
+    /// The day's book so far, for the accounts to read.
+    #[must_use]
+    pub fn day_book(&self) -> &DayBook {
+        &self.day
+    }
+
     /// The day's fails and effects, handed to the close; instructions live until then, and no identity recurs, so the
     /// applied set starts again.
     pub fn close(&mut self) -> DayBook {
@@ -598,6 +605,11 @@ impl<B: Backing> Ledger<B> {
     /// A fail the day's settlement found without applying an instruction: a payment the fixed point removed.
     pub(crate) fn record_fail(&mut self, f: Fail) {
         self.day.fails.push(f);
+    }
+
+    /// A due that fell today, and what became of it, for the accounts.
+    pub(crate) fn record_due(&mut self, d: crate::effects::DueRec) {
+        self.day.dues.push(d);
     }
 
     /// The rows in arrears.

@@ -1,6 +1,7 @@
 // The declaration macros name this crate by its path, here as everywhere else.
 extern crate self as phx_core;
 
+pub mod accounting;
 pub mod agenda;
 pub mod calendar;
 pub mod columns;
@@ -33,6 +34,7 @@ pub mod system;
 pub mod touched;
 pub mod weight;
 
+pub use accounting::{CarryingBasis, HeldFor, Permitted};
 pub use agenda::{Agenda, AgendaCounters, AgendaTableSpec, TableToday, TodayAgenda};
 pub use calendar::bizday::BusinessDayConvention;
 pub use calendar::daycount::{DayCount, day_fraction};
@@ -53,8 +55,8 @@ pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
 };
 pub use family::{
-    AUDIT_SUBSTEP, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx, FamilyDecl, FamilyMode, Gap,
-    InjectTarget, LegDigest, LegRecords, MarketsAudit, ReadTrace, Span, rolling_slice,
+    AUDIT_SUBSTEP, AccountsAudit, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx, FamilyDecl, FamilyMode,
+    Gap, InjectTarget, LegDigest, LegRecords, MarketsAudit, ReadTrace, Span, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{

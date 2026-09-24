@@ -12,6 +12,7 @@ mod day_arithmetic;
 mod dependencies;
 mod documents;
 mod draws;
+mod equity;
 mod expect_count;
 mod expect_reason;
 mod hand_pod;
@@ -136,6 +137,12 @@ pub const RULES: &[Rule] = &[
         title: "prints made by the markets alone, and nothing converted into one",
         since: "S0.18",
         run: prints::run,
+    },
+    Rule {
+        id: "PC-29",
+        title: "no statement stored, and equity accounts written by the accounts alone from declared effects",
+        since: "S0.19",
+        run: equity::run,
     },
     Rule { id: "PC-75", title: "a border closed in the markets' reach alone", since: "S0.18", run: borders::run },
 ];

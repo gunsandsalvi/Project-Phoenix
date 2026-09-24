@@ -162,6 +162,7 @@ pub phx_ledger::apply::Located::Live::slot: phx_id::ids::Slot
 pub phx_ledger::apply::Located::Live::table: u16
 pub struct phx_ledger::apply::DayBook
 pub phx_ledger::apply::DayBook::disposed: alloc::vec::Vec<phx_ledger::apply::DisposedRec>
+pub phx_ledger::apply::DayBook::dues: alloc::vec::Vec<phx_ledger::effects::DueRec>
 pub phx_ledger::apply::DayBook::effects: alloc::vec::Vec<phx_ledger::effects::EffectRec>
 pub phx_ledger::apply::DayBook::fails: alloc::vec::Vec<phx_ledger::fails::Fail>
 impl phx_ledger::apply::DayBook
@@ -186,6 +187,7 @@ impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::apply(&mut self, &mut dyn phx_ledger::apply::Holders, phx_ledger::apply::ApplyAt, phx_ledger::instruction::Instruction, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::apply::Ledger<B>::arrears(&self) -> &phx_ledger::contract_process::Arrears
 pub fn phx_ledger::apply::Ledger<B>::close(&mut self) -> phx_ledger::apply::DayBook
+pub fn phx_ledger::apply::Ledger<B>::day_book(&self) -> &phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::Ledger<B>::fails(&self) -> &[phx_ledger::fails::Fail]
 pub fn phx_ledger::apply::Ledger<B>::new(phx_ledger::instrument::Instruments<B>, phx_ledger::line::Lines<B>) -> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::next_id(&mut self, phx_id::day::Day) -> phx_ledger::instruction::InstructionId
@@ -404,6 +406,17 @@ pub phx_ledger::dues::DueReasons::principal: phx_ledger::instruction::ReasonId
 impl phx_ledger::dues::DueReasons
 pub fn phx_ledger::dues::DueReasons::declare(&mut phx_ledger::instruction::Reasons) -> phx_ledger::dues::DueReasons
 pub mod phx_ledger::effects
+pub enum phx_ledger::effects::DueOutcome
+pub phx_ledger::effects::DueOutcome::Failed
+pub phx_ledger::effects::DueOutcome::Pending
+pub phx_ledger::effects::DueOutcome::Settled
+pub struct phx_ledger::effects::DueRec
+pub phx_ledger::effects::DueRec::interest: phx_num::money::Money
+pub phx_ledger::effects::DueRec::line: phx_id::ids::LineId
+pub phx_ledger::effects::DueRec::outcome: phx_ledger::effects::DueOutcome
+pub phx_ledger::effects::DueRec::payee: phx_id::ids::PartyId
+pub phx_ledger::effects::DueRec::payer: phx_id::ids::PartyId
+pub phx_ledger::effects::DueRec::principal: phx_num::money::Money
 pub struct phx_ledger::effects::EffectRec
 pub phx_ledger::effects::EffectRec::amount: phx_num::money::Money
 pub phx_ledger::effects::EffectRec::effect: phx_ledger::instruction::Effect

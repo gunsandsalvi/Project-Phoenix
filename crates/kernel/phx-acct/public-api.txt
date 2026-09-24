@@ -1,0 +1,167 @@
+pub mod phx_acct
+pub mod phx_acct::accounts
+pub struct phx_acct::accounts::Accounts
+pub phx_acct::accounts::Accounts::claims: phx_acct::accrual::Claims
+pub phx_acct::accounts::Accounts::equity: phx_acct::equity::EquityAccounts
+impl phx_acct::accounts::Accounts
+pub fn phx_acct::accounts::Accounts::close_day(&self, &phx_ledger::apply::DayBook)
+pub fn phx_acct::accounts::Accounts::closed(&self) -> &[phx_acct::accounts::Closed]
+pub fn phx_acct::accounts::Accounts::end_day(&mut self)
+pub fn phx_acct::accounts::Accounts::form_of(&self, &str) -> phx_num::missing::Missing<&str>
+pub fn phx_acct::accounts::Accounts::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_acct::accounts::Accounts::net_assets<B: phx_store::backing::Backing>(&self, &phx_ledger::books::Books<B>, phx_id::ids::PartyId) -> core::result::Result<i128, alloc::string::String>
+pub fn phx_acct::accounts::Accounts::open<B: phx_store::backing::Backing>(alloc::vec::Vec<phx_core::accounting::Permitted>, alloc::collections::btree::map::BTreeMap<&'static str, alloc::string::String>, &dyn core::ops::function::Fn(&str) -> bool, &phx_ledger::books::Books<B>, &dyn core::ops::function::Fn(phx_id::ids::PartyId) -> phx_num::money::Ccy, u32) -> phx_acct::accounts::Accounts
+pub fn phx_acct::accounts::Accounts::post_day(&mut self, &phx_ledger::apply::DayBook, u32)
+pub fn phx_acct::accounts::Accounts::tally_of(&self, phx_id::ids::PartyId) -> phx_num::missing::Missing<phx_acct::accounts::Tally>
+pub struct phx_acct::accounts::Closed
+pub phx_acct::accounts::Closed::capital: i128
+pub phx_acct::accounts::Closed::closed: i64
+pub phx_acct::accounts::Closed::income: i128
+pub phx_acct::accounts::Closed::opened: i64
+pub phx_acct::accounts::Closed::party: phx_id::ids::PartyId
+pub struct phx_acct::accounts::Tally
+pub phx_acct::accounts::Tally::capital: i128
+pub phx_acct::accounts::Tally::income: i128
+pub phx_acct::accounts::Tally::opened: i64
+pub mod phx_acct::accrual
+pub struct phx_acct::accrual::Claims
+impl phx_acct::accrual::Claims
+pub fn phx_acct::accrual::Claims::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_acct::accrual::Claims::lines(&self) -> usize
+pub fn phx_acct::accrual::Claims::mismatches(&self) -> alloc::vec::Vec<(phx_id::ids::LineId, i128, i128)>
+pub fn phx_acct::accrual::Claims::of(&self, phx_id::ids::PartyId) -> (i128, i128)
+pub fn phx_acct::accrual::Claims::post(&mut self, &phx_ledger::effects::DueRec) -> [phx_acct::equity::EquityEvent; 2]
+pub fn phx_acct::accrual::Claims::totals(&self) -> (i128, i128)
+pub mod phx_acct::audit
+pub struct phx_acct::audit::AccountsView<'a, B: phx_store::backing::Backing>
+pub phx_acct::audit::AccountsView::accounts: &'a phx_acct::accounts::Accounts
+pub phx_acct::audit::AccountsView::books: &'a phx_ledger::books::Books<B>
+impl<'a, B: phx_store::backing::Backing> phx_acct::audit::AccountsView<'a, B>
+pub fn phx_acct::audit::AccountsView<'a, B>::new(&'a phx_ledger::books::Books<B>, &'a phx_acct::accounts::Accounts) -> phx_acct::audit::AccountsView<'a, B>
+impl<B: phx_store::backing::Backing> core::fmt::Debug for phx_acct::audit::AccountsView<'_, B>
+pub fn phx_acct::audit::AccountsView<'_, B>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<B: phx_store::backing::Backing> phx_core::family::AccountsAudit for phx_acct::audit::AccountsView<'_, B>
+pub fn phx_acct::audit::AccountsView<'_, B>::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
+pub fn phx_acct::audit::AccountsView<'_, B>::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_acct::audit::AccountsView<'_, B>::parties(&self) -> usize
+pub fn phx_acct::audit::AccountsView<'_, B>::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
+pub struct phx_acct::audit::Claims
+impl phx_core::family::AuditFamily for phx_acct::audit::Claims
+pub fn phx_acct::audit::Claims::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_acct::audit::Claims::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_acct::audit::Claims::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub struct phx_acct::audit::Equity
+impl phx_core::family::AuditFamily for phx_acct::audit::Equity
+pub fn phx_acct::audit::Equity::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_acct::audit::Equity::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_acct::audit::Equity::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub struct phx_acct::audit::Periods
+impl phx_core::family::AuditFamily for phx_acct::audit::Periods
+pub fn phx_acct::audit::Periods::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
+pub fn phx_acct::audit::Periods::decl(&self) -> phx_core::family::FamilyDecl
+pub fn phx_acct::audit::Periods::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub const phx_acct::audit::CLAIMS: phx_core::family::FamilyDecl
+pub const phx_acct::audit::EQUITY: phx_core::family::FamilyDecl
+pub const phx_acct::audit::PERIODS: phx_core::family::FamilyDecl
+pub fn phx_acct::audit::families() -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>
+pub mod phx_acct::basis
+pub struct phx_acct::basis::AcctPrims
+pub phx_acct::basis::AcctPrims::carrying_bases: phx_core::register::Prim<alloc::vec::Vec<phx_core::accounting::Permitted>>
+impl phx_acct::basis::AcctPrims
+pub fn phx_acct::basis::AcctPrims::declare(&mut phx_core::system::Declarations) -> phx_acct::basis::AcctPrims
+pub const phx_acct::basis::CARRYING_BASES: phx_core::register::PrimDecl
+pub fn phx_acct::basis::at_opening(&[phx_core::accounting::Permitted], &str, phx_core::accounting::HeldFor) -> phx_num::missing::Missing<phx_core::accounting::CarryingBasis>
+pub fn phx_acct::basis::choose(&[phx_core::accounting::Permitted], &str, phx_core::accounting::HeldFor, phx_core::accounting::CarryingBasis) -> core::result::Result<phx_core::accounting::CarryingBasis, phx_core::accounting::CarryingBasis>
+pub fn phx_acct::basis::held_for(phx_ledger::instrument::InstrumentFamily) -> phx_core::accounting::HeldFor
+pub mod phx_acct::consolidate
+pub struct phx_acct::consolidate::Consolidated
+pub phx_acct::consolidate::Consolidated::assets: i128
+pub phx_acct::consolidate::Consolidated::eliminated: i128
+pub phx_acct::consolidate::Consolidated::liabilities: i128
+pub phx_acct::consolidate::Consolidated::minority: i128
+pub struct phx_acct::consolidate::Member
+pub phx_acct::consolidate::Member::assets: i128
+pub phx_acct::consolidate::Member::claims: alloc::vec::Vec<phx_acct::consolidate::MemberClaim>
+pub phx_acct::consolidate::Member::liabilities: i128
+pub phx_acct::consolidate::Member::owned: u32
+pub phx_acct::consolidate::Member::party: phx_id::ids::PartyId
+pub phx_acct::consolidate::Member::whole: u32
+pub struct phx_acct::consolidate::MemberClaim
+pub phx_acct::consolidate::MemberClaim::amount: i64
+pub phx_acct::consolidate::MemberClaim::counterparty: phx_id::ids::PartyId
+pub phx_acct::consolidate::MemberClaim::line: phx_id::ids::LineId
+pub fn phx_acct::consolidate::consolidate(&[phx_acct::consolidate::Member], phx_num::round::Round) -> phx_acct::consolidate::Consolidated
+pub mod phx_acct::equity
+pub enum phx_acct::equity::EquityKind
+pub phx_acct::equity::EquityKind::Capital
+pub phx_acct::equity::EquityKind::Distribution
+pub phx_acct::equity::EquityKind::Income
+pub phx_acct::equity::EquityKind::Revaluation
+pub struct phx_acct::equity::EquityAccount
+impl phx_acct::equity::EquityAccount
+pub fn phx_acct::equity::EquityAccount::balance(&self) -> i64
+pub fn phx_acct::equity::EquityAccount::ccy(&self) -> phx_num::money::Ccy
+pub struct phx_acct::equity::EquityAccounts
+impl phx_acct::equity::EquityAccounts
+pub fn phx_acct::equity::EquityAccounts::is_empty(&self) -> bool
+pub fn phx_acct::equity::EquityAccounts::len(&self) -> usize
+pub fn phx_acct::equity::EquityAccounts::of(&self, phx_id::ids::PartyId) -> phx_num::missing::Missing<phx_acct::equity::EquityAccount>
+pub fn phx_acct::equity::EquityAccounts::parties(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::PartyId> + '_
+pub struct phx_acct::equity::EquityEvent
+impl phx_acct::equity::EquityEvent
+pub fn phx_acct::equity::EquityEvent::amount(&self) -> i64
+pub fn phx_acct::equity::EquityEvent::from_effect(&phx_ledger::effects::EffectRec) -> phx_num::missing::Missing<phx_acct::equity::EquityEvent>
+pub fn phx_acct::equity::EquityEvent::kind(&self) -> phx_acct::equity::EquityKind
+pub fn phx_acct::equity::EquityEvent::party(&self) -> phx_id::ids::PartyId
+pub mod phx_acct::position
+pub struct phx_acct::position::Held
+pub phx_acct::position::Held::amortised: phx_num::missing::Missing<i64>
+pub phx_acct::position::Held::cost: i64
+pub phx_acct::position::Held::depreciation: i64
+pub phx_acct::position::Held::written_down: i64
+pub fn phx_acct::position::carrying(phx_core::accounting::CarryingBasis, &phx_acct::position::Held, phx_num::missing::Missing<i64>) -> phx_num::missing::Missing<i64>
+pub fn phx_acct::position::income_from_mark(phx_core::accounting::CarryingBasis, phx_num::missing::Missing<i64>, phx_num::missing::Missing<i64>) -> phx_num::missing::Missing<i64>
+pub fn phx_acct::position::unrealised(phx_num::missing::Missing<i64>, phx_num::missing::Missing<i64>) -> phx_num::missing::Missing<i64>
+pub mod phx_acct::statement
+pub struct phx_acct::statement::Statement
+pub phx_acct::statement::Statement::capital: phx_num::missing::Missing<i128>
+pub phx_acct::statement::Statement::equity: phx_num::missing::Missing<i64>
+pub phx_acct::statement::Statement::income: phx_num::missing::Missing<i128>
+pub phx_acct::statement::Statement::net_assets: phx_num::missing::Missing<i128>
+pub phx_acct::statement::Statement::party: phx_id::ids::PartyId
+pub phx_acct::statement::Statement::payable: i128
+pub phx_acct::statement::Statement::receivable: i128
+pub fn phx_acct::statement::statement<B: phx_store::backing::Backing>(&phx_acct::accounts::Accounts, &phx_ledger::books::Books<B>, phx_id::ids::PartyId) -> phx_acct::statement::Statement
+pub mod phx_acct::valuer
+pub enum phx_acct::valuer::Label
+pub phx_acct::valuer::Label::Extrapolated
+pub phx_acct::valuer::Label::Interpolated
+pub phx_acct::valuer::Label::Traded
+pub struct phx_acct::valuer::Point
+pub phx_acct::valuer::Point::label: phx_acct::valuer::Label
+pub phx_acct::valuer::Point::tenor: u32
+pub phx_acct::valuer::Point::value: i64
+pub struct phx_acct::valuer::Rests
+pub phx_acct::valuer::Rests::age: u32
+pub phx_acct::valuer::Rests::day: phx_id::day::Day
+pub phx_acct::valuer::Rests::market: phx_id::ids::MarketId
+pub phx_acct::valuer::Rests::price: phx_num::price::PriceRaw
+pub struct phx_acct::valuer::Valuation
+pub phx_acct::valuer::Valuation::day: phx_id::day::Day
+pub phx_acct::valuer::Valuation::method: &'static str
+pub phx_acct::valuer::Valuation::points: alloc::vec::Vec<phx_acct::valuer::Point>
+pub phx_acct::valuer::Valuation::rests_on: alloc::vec::Vec<phx_acct::valuer::Rests>
+pub phx_acct::valuer::Valuation::valuer: &'static str
+pub struct phx_acct::valuer::ValuerDecl
+pub phx_acct::valuer::ValuerDecl::curve: phx_acct::valuer::Curve
+pub phx_acct::valuer::ValuerDecl::method: &'static str
+pub phx_acct::valuer::ValuerDecl::name: &'static str
+pub phx_acct::valuer::ValuerDecl::rounding: phx_num::round::Round
+pub fn phx_acct::valuer::linear_flat(&[(u32, i64)], &[u32], phx_num::round::Round) -> alloc::vec::Vec<phx_acct::valuer::Point>
+pub fn phx_acct::valuer::value(&phx_acct::valuer::ValuerDecl, phx_id::day::Day, &[(u32, i64)], alloc::vec::Vec<phx_acct::valuer::Rests>, &[u32]) -> phx_num::missing::Missing<phx_acct::valuer::Valuation>
+pub type phx_acct::valuer::Curve = fn(&[(u32, i64)], &[u32], phx_num::round::Round) -> alloc::vec::Vec<phx_acct::valuer::Point>
+pub mod phx_acct::writedown
+pub struct phx_acct::writedown::Written
+pub phx_acct::writedown::Written::income: i64
+pub phx_acct::writedown::Written::written_down: i64
+pub fn phx_acct::writedown::write_to(i64, i64, i64) -> phx_acct::writedown::Written

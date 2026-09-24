@@ -538,6 +538,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
+name = "phx-acct"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-market",
+ "phx-num",
+ "phx-rand",
+ "phx-store",
+ "trybuild",
+]
+
+[[package]]
 name = "phx-audit"
 version = "0.1.0"
 dependencies = [
@@ -568,6 +583,7 @@ name = "phx-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "phx-acct",
  "phx-core",
  "phx-exec",
  "phx-geo",
@@ -723,6 +739,7 @@ dependencies = [
 name = "phx-world"
 version = "0.1.0"
 dependencies = [
+ "phx-acct",
  "phx-audit",
  "phx-core",
  "phx-exec",

@@ -227,6 +227,23 @@ fn markets_report(w: Inspector<'_>) -> serde_json::Value {
     })
 }
 
+/// What the accounts hold at the run's end: the equity accounts, the unpaid claims, and the periods closed on its
+/// last posting.
+fn accounts_report(w: Inspector<'_>) -> serde_json::Value {
+    let a = w.accounts();
+    let (receivable, payable) = a.claims.totals();
+    json!({
+        "equity_accounts": a.equity.len(),
+        "equity_total": a.equity.parties().filter_map(|p| match a.equity.of(p) {
+            phx_num::Missing::Present(x) => Some(i128::from(x.balance())),
+            phx_num::Missing::Absent => None,
+        }).sum::<i128>().to_string(),
+        "receivable": receivable.to_string(),
+        "payable": payable.to_string(),
+        "claim_entries": a.claims.lines(),
+    })
+}
+
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
@@ -294,6 +311,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "opening": opening_report(w),
         "settlement": settlement_report(w),
         "markets": markets_report(w),
+        "accounts": accounts_report(w),
         "peak_resident_bytes": peak,
         "memory_budget_bytes": WORLD_BYTES,
         "reserved_bytes": w.bytes_reserved(),

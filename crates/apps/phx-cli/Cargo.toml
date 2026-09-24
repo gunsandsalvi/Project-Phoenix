@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap.workspace = true
+phx-acct = { path = "../../kernel/phx-acct" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
 phx-geo = { path = "../../kernel/phx-geo" }

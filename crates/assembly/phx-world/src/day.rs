@@ -54,9 +54,10 @@ const APPLY_POINTS: [SubStep; 23] = [
     SubStep::S10f,
 ];
 
-/// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, and stage 2's
-/// contract process at 2d, over the fails of the days since it last ran.
-pub const KERNEL_WORK: [SubStep; 2] = [SubStep::S1b, SubStep::S2d];
+/// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, stage 2's
+/// contract process at 2d, over the fails of the days since it last ran, and 9b's accounts, posting the day's settled
+/// money.
+pub const KERNEL_WORK: [SubStep; 3] = [SubStep::S1b, SubStep::S2d, SubStep::S9b];
 
 /// The audit's sub-step, which runs every day.
 pub const AUDIT_AT: SubStep = AUDIT_SUBSTEP;
@@ -140,6 +141,10 @@ impl World {
             }
             if info.step == SubStep::S7c {
                 dues = self.books.settle_day(&self.due, day, &self.calendar, &self.closed, self.audit.stream());
+            }
+            if info.step == SubStep::S9b {
+                let period = crate::registry::period_of(&self.calendar, day);
+                self.accounts.post_day(self.books.ledger.day_book(), period);
             }
             if info.step == AUDIT_AT {
                 self.close(day, dues);
@@ -231,6 +236,7 @@ impl World {
     #[clause("N1")]
     fn close(&mut self, day: Day, dues: DaySettlement) {
         let book = self.books.close();
+        self.accounts.close_day(&book);
         self.settlements.push(Settled { day, measure: book.measure(), dues, fails: book.fails.clone() });
         self.unprocessed.extend(book.fails);
         let mut reads = ReadTrace::default();
@@ -252,8 +258,10 @@ impl World {
             trace,
             books: &self.books,
             markets: &self.markets,
+            accounts: &phx_acct::audit::AccountsView::new(&self.books, &self.accounts),
         };
         let record = self.audit.close(inputs, &mut self.findings);
+        self.accounts.end_day();
         self.metrics.closes.push(record);
     }
 }

@@ -72,6 +72,12 @@ impl<'a> Inspector<'a> {
         &self.world.books
     }
 
+    /// The parties' accounts: their equity accounts, recognised claims and the period's tallies.
+    #[must_use]
+    pub fn accounts(&self) -> &phx_acct::accounts::Accounts {
+        &self.world.accounts
+    }
+
     /// The markets: their public tape, the linked calls' bases, and the measures of every day a market met.
     #[must_use]
     pub fn markets(&self) -> &phx_market::markets::Markets {

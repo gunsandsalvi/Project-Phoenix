@@ -14,6 +14,7 @@ use crate::check::FailCause;
 use crate::consts::RUN_SAMPLE_PERIOD;
 use crate::due::DueLines;
 use crate::dues::Found;
+use crate::effects::{DueOutcome, DueRec};
 use crate::fails::Fail;
 use crate::fixed_point::FixedPoint;
 use crate::instruction::{AccountRef, Denom, DueRow, Instruction, LegKind, LegRec, RowOp};
@@ -124,6 +125,19 @@ impl<B: Backing> Books<B> {
         (read, broken)
     }
 
+    /// A due that fell today recorded for the accounts: the interest in it, which the payee earned today, and the
+    /// principal it repays, with what became of it.
+    fn record_due(&mut self, p: &Payment, outcome: DueOutcome) {
+        self.ledger.record_due(DueRec {
+            line: p.line,
+            payer: p.payer,
+            payee: p.payee,
+            interest: phx_num::Money::new(p.amount - p.principal, p.ccy),
+            principal: phx_num::Money::new(p.principal, p.ccy),
+            outcome,
+        });
+    }
+
     /// A payment the fixed point failed, recorded for the contract process.
     fn fail_payment(&mut self, p: &Payment, day: Day) {
         let reason = if p.principal != 0 { self.dues.principal } else { self.dues.payment };
@@ -156,6 +170,7 @@ impl<B: Backing> Books<B> {
                 let Some(p) = self.payment(holder, &row, day, calendar, found) else { continue };
                 let route = self.effects(&p, found);
                 if closed.holds(p.payer, &crate::stream::issuers(&route)) {
+                    self.record_due(&p, DueOutcome::Pending);
                     continue;
                 }
                 if fixed.failed.contains(&p.key()) {
@@ -164,9 +179,11 @@ impl<B: Backing> Books<B> {
                         g.failed_payers.insert(p.payer);
                     }
                     self.fail_payment(&p, day);
+                    self.record_due(&p, DueOutcome::Failed);
                     continue;
                 }
                 g.settled += 1;
+                self.record_due(&p, DueOutcome::Settled);
                 let _ = self.book(&mut g.given, &route, 1);
                 let (from, to) = (self.settles_at(p.payer, p.ccy, found), self.settles_at(p.payee, p.ccy, found));
                 if from != to {

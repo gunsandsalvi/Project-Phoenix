@@ -9,8 +9,8 @@ use crate::algebra::Side;
 use crate::books::Books;
 use crate::instruction::{AccountRef, Denom, Effect, LegKind, LegRec, ReasonDecl, ReasonId, Reasons, RowOp};
 
-/// The reasons a contract's dues are paid for: its payments, which are income and expense, and its principal repaid,
-/// which moves a claim into money.
+/// The reasons a contract's dues are paid for: its payments, which settle the receivable and payable its due made
+/// when it fell, the income having been earned then, and its principal repaid, which moves a claim into money.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DueReasons {
     pub payment: ReasonId,
@@ -20,7 +20,7 @@ pub struct DueReasons {
 impl DueReasons {
     pub fn declare(reasons: &mut Reasons) -> DueReasons {
         let payment =
-            ReasonDecl { name: "contract payment", order: 0, paid: Effect::Expense, received: Effect::Revenue };
+            ReasonDecl { name: "contract payment", order: 0, paid: Effect::Liability, received: Effect::Asset };
         let principal =
             ReasonDecl { name: "principal repaid", order: 1, paid: Effect::Liability, received: Effect::Asset };
         DueReasons { payment: reasons.declare(payment), principal: reasons.declare(principal) }

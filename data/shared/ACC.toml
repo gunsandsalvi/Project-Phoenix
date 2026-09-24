@@ -1,0 +1,27 @@
+# The accounting standard: what each legal form may carry its positions at.
+
+[[primitive]]
+id = "ACC.carrying_bases"
+kind = "POLICY"
+owner = "ACC"
+decided_by = "accounting standard-setter"
+source = "assumed"
+source_ref = "As the international standards generally frame it (IFRS 9, IAS 2, IAS 16): a claim held to collect its contractual cash flows at amortised cost, or at fair value where the holder elects it; a position held to trade at fair value; stock held for sale at the lower of cost and net realisable value; an asset held for use at cost less depreciation, or revalued to fair value. Every form the law declares follows the one standard, the basis first listed being the one a holder takes where it has not chosen."
+value = [
+  { form = "central bank", purpose = "collect", bases = ["amortised_cost", "fair_value"] },
+  { form = "central bank", purpose = "trade", bases = ["fair_value"] },
+  { form = "central bank", purpose = "sell", bases = ["lower_of_cost_and_realisable"] },
+  { form = "central bank", purpose = "use", bases = ["cost_less_depreciation", "fair_value"] },
+  { form = "treasury", purpose = "collect", bases = ["amortised_cost", "fair_value"] },
+  { form = "treasury", purpose = "trade", bases = ["fair_value"] },
+  { form = "treasury", purpose = "sell", bases = ["lower_of_cost_and_realisable"] },
+  { form = "treasury", purpose = "use", bases = ["cost_less_depreciation", "fair_value"] },
+  { form = "bank", purpose = "collect", bases = ["amortised_cost", "fair_value"] },
+  { form = "bank", purpose = "trade", bases = ["fair_value"] },
+  { form = "bank", purpose = "sell", bases = ["lower_of_cost_and_realisable"] },
+  { form = "bank", purpose = "use", bases = ["cost_less_depreciation", "fair_value"] },
+  { form = "company", purpose = "collect", bases = ["amortised_cost", "fair_value"] },
+  { form = "company", purpose = "trade", bases = ["fair_value"] },
+  { form = "company", purpose = "sell", bases = ["lower_of_cost_and_realisable"] },
+  { form = "company", purpose = "use", bases = ["cost_less_depreciation", "fair_value"] },
+]

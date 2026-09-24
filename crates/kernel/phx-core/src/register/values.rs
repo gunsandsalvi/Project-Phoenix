@@ -45,6 +45,8 @@ pub enum ValueType {
     },
     Calendar,
     LegalForms,
+    /// The carrying bases each legal form may use for each purpose.
+    CarryingBases,
     /// A country group's joint profile, its numbers to `exp` places.
     Profile {
         exp: u8,
@@ -329,6 +331,7 @@ pub enum PrimValue {
     PointTable(PointTable),
     Calendar(CountryRules),
     LegalForms(Vec<LegalForm>),
+    CarryingBases(Vec<crate::accounting::Permitted>),
     Profile(JointProfile),
 }
 
@@ -522,6 +525,42 @@ fn legal_forms(v: &Value) -> Result<Vec<LegalForm>, String> {
     Ok(forms)
 }
 
+/// The carrying bases the standard permits: per legal form and purpose, the bases in the standard's order.
+fn carrying_bases(v: &Value) -> Result<Vec<crate::accounting::Permitted>, String> {
+    use crate::accounting::{CarryingBasis, HeldFor, Permitted};
+    let list = v.as_array().ok_or("carrying bases are not a list")?;
+    let mut out: Vec<Permitted> = Vec::with_capacity(list.len());
+    for entry in list {
+        let t = table(entry)?;
+        let purpose = match text(t, "purpose")? {
+            "collect" => HeldFor::Collect,
+            "trade" => HeldFor::Trade,
+            "sell" => HeldFor::Sell,
+            "use" => HeldFor::Use,
+            other => return Err(format!("`{other}` is not a purpose a position is held for")),
+        };
+        let bases = names(t, "bases")?
+            .iter()
+            .map(|b| match b.as_str() {
+                "fair_value" => Ok(CarryingBasis::FairValue),
+                "amortised_cost" => Ok(CarryingBasis::AmortisedCost),
+                "lower_of_cost_and_realisable" => Ok(CarryingBasis::LowerOfCostAndRealisable),
+                "cost_less_depreciation" => Ok(CarryingBasis::CostLessDepreciation),
+                other => Err(format!("`{other}` is not a carrying basis")),
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        if bases.is_empty() {
+            return Err("a purpose with no basis permitted".to_owned());
+        }
+        let form = text(t, "form")?.to_owned();
+        if out.iter().any(|p| p.form == form && p.held_for == purpose) {
+            return Err(format!("the bases of `{form}` for one purpose listed twice"));
+        }
+        out.push(Permitted { form, held_for: purpose, bases });
+    }
+    Ok(out)
+}
+
 fn scaled_rows(t: &toml::Table, exp: u8, width: usize) -> Result<Vec<i64>, String> {
     let rows = t.get("values").and_then(Value::as_array).ok_or("no list `values`")?;
     let mut out = Vec::new();
@@ -586,6 +625,7 @@ pub fn parse(v: &Value, ty: ValueType, period: Option<RatePeriod>) -> Result<Pri
         }
         ValueType::Calendar => Ok(PrimValue::Calendar(calendar(v)?)),
         ValueType::LegalForms => Ok(PrimValue::LegalForms(legal_forms(v)?)),
+        ValueType::CarryingBases => Ok(PrimValue::CarryingBases(carrying_bases(v)?)),
         ValueType::Profile { exp } => Ok(PrimValue::Profile(crate::register::profile::parse(v, exp, decimal)?)),
     }
 }
@@ -658,6 +698,7 @@ read_ref!(Distribution, Distribution, ValueType::Distribution { .. });
 read_ref!(PointTable, PointTable, ValueType::PointTable { .. });
 read_ref!(CountryRules, Calendar, ValueType::Calendar);
 read_ref!(Vec<LegalForm>, LegalForms, ValueType::LegalForms);
+read_ref!(Vec<crate::accounting::Permitted>, CarryingBases, ValueType::CarryingBases);
 read_ref!(JointProfile, Profile, ValueType::Profile { .. });
 
 #[cfg(test)]

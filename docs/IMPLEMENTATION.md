@@ -3565,7 +3565,7 @@ million rows and found nothing. No market met, as none is declared before S1.03.
 
 ### S0.19 — `phx-acct`: books, carrying bases, valuations and statements
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: ACC.1, ACC.2, ACC.3, ACC.4, ACC.6.
@@ -3601,7 +3601,10 @@ million rows and found nothing. No market met, as none is declared before S1.03.
 | `src/statement.rs` | statements as reads |
 | `src/consolidate.rs` | a group's consolidated statement, a pure read over the members a group fact names |
 | `src/writedown.rs` | write-downs and reversals up to original cost |
-| `src/audit.rs` | the Accounts family |
+| `src/audit.rs` | the Accounts families (`ACC.equity`, `ACC.periods`, `ACC.claims`) and `AccountsView`, which reads the accounts against the books for the audit |
+| `src/accounts.rs` | `Accounts`: the equity accounts, the claims and each period's tallies, opened over the opening's books and posted at 9b; `net_assets` reads a party's positions at their carrying values |
+| `crates/kernel/phx-core/src/accounting.rs` | `CarryingBasis`, `HeldFor` and `Permitted`, the vocabulary `ACC.carrying_bases` is written in |
+| `data/shared/ACC.toml` | `ACC.carrying_bases`, the standard's bases per legal form and purpose |
 
 **Design**
 
@@ -3628,6 +3631,23 @@ million rows and found nothing. No market met, as none is declared before S1.03.
   stores nothing; each member keeps its own books. The group fact is written from S3.05.
 - **Foreign-currency positions** do not exist before FX (Stage 5), which adds the translation.
 - **The Accounts family**: ACC.10, incrementally and rolling; ACC.11 per statement period; ACC.12 line by line.
+- As built:
+  - A due's interest is recognised the day it falls: settlement records each due with what became of it (settled,
+    failed or pending). The accounts post it as income to the payee and expense to the payer, with a receivable and
+    a payable naming each other that a settled due clears. Its payment then moves money against those claims, so
+    `contract payment` is declared as moving a liability and an asset, not as income.
+  - The accounts post the day's book at 9b, after the day's money settled. The close stops the run if anything was
+    recorded after that posting. Periods are calendar months: a posting in a new month closes the last one for
+    ACC.11.
+  - Every party of a kind whose legal form has owners keeps an equity account in its site's country's currency.
+  - An opening position is carried on the first basis its form is permitted for what it is held for, since nobody
+    chose one (F-025). A debt owed is carried at amortised cost.
+  - Nothing charges depreciation or writes a position down yet, so both read as nothing charged. Nothing
+    consolidates or values yet: the group fact is S3.05's, and the first valuer is S1's loan book.
+  - The Accounts family is three families, one per invariant:
+    - `ACC.equity`: ACC.10, rolling over a 30-day cycle;
+    - `ACC.periods`: ACC.11, on each period closed;
+    - `ACC.claims`: ACC.12, every close.
 
 **Unit tests**
 - `bank_bond_two_bases`.
@@ -3642,8 +3662,11 @@ million rows and found nothing. No market met, as none is declared before S1.03.
 **Live checks**
 - `LC-0-33`: Accounts is clean for every party with an equity account, from the institutions of S0.16 on.
 - `LC-0-34`: receivables equal payables across the world (ACC.12).
+- As built, LC-0-33 also reads every equity account against its party's positions at the run's end, and LC-0-34
+  the world's totals then.
 
 **Budget**: carrying values on read; statements at period ends; 16 bytes of equity account per party with owners.
+As built, the accounts are kept in ordered maps keyed by party, more than 16 bytes each (F-026).
 
 **Guards**: PC-29: no stored field in a statement; no crate but `phx-acct` writes an equity account; no equity event
 without a declared accounting effect.
@@ -15335,6 +15358,8 @@ the final build within the budget on the phone.
 | F-022 | S0.17 | build, 2026-09-24 | Levies, standing flows (plain and indexed), the pooled-flow rule's kinks and its split requests, the move to a procedure line over a side of many holders, and the waterfall exist as functions under unit tests; no 7a stream reads a levy or a standing flow yet, and a procedure line needs the line's other side to have one holder | nothing declares a levy, a standing flow or a kink yet, and no procedure opens | their first users: standing flows and the pairing S0.25, levies S1.11, kinks S0.21 and S0.23, procedures S2.03, the waterfall S0.25 (`sys-est`); each user step's live checks cover them | open |
 | F-023 | S0.18 | build machine, 2026-09-24 | The linked call on the money market's declared size costs 1.92 billion instructions cold and 1.12 billion warm (`phx_market.ir_linked_call_cold`, `_warm`): the warm start needs 475 pivots against 27 084, but choosing each borrower's price within its potentials' range, a search from each node whose range is wider than a point, is most of the warm count | the prices' ranges searched node by node over the whole residual graph | S3.01, whose budget the money market's call is measured against on the phone: the ranges searched only over each node's tight component | open |
 | F-024 | S0.18 | build, 2026-09-24 | The market forms exist as functions under unit tests and nothing in the Stage 0 world meets a market, so LC-0-30 to LC-0-32 report "not yet"; a linked call gives flows and prices but not yet its matches between lenders and borrowers, and a posted market prints each seller's sales but declares no mark of its own | no system posts in a market before the firms' prices; the money market's matching and a posted market's mark are their first users' | S1.03 (the first posted meetings and their mark), S3.01 (the money market's matches) | open |
+| F-025 | S0.19 | build, 2026-09-24 | A position's carrying basis is not stored with it: an opening position takes the first basis its legal form is permitted for what it is held for, read each time, and a debt owed is at amortised cost; a holding's purpose is read from its instrument family (a contract or debt to collect, a share or fund unit to trade, a real asset to use) | no party yet acquires a position by its own decision, so no basis is chosen at acquisition | the first acquisition decisions (S1.03's purchases, S3.02's securities), which store the chosen basis in the holding's or row's flags | open |
+| F-026 | S0.19 | build, 2026-09-24 | Equity accounts, claims and tallies are ordered maps keyed by party, about 40 bytes per equity account against the budget's 16 | the few owned parties of Stage 0 do not need a column | S0.21's population tables, where millions of firms keep one: the account a column of the party's table | open |
 
 ---
 

@@ -11,6 +11,21 @@ pub use phx_core::declare_prim
 pub use phx_core::declare_record
 pub use phx_core::declare_rule
 pub use phx_core::declare_stream
+pub mod phx_core::accounting
+pub enum phx_core::accounting::CarryingBasis
+pub phx_core::accounting::CarryingBasis::AmortisedCost
+pub phx_core::accounting::CarryingBasis::CostLessDepreciation
+pub phx_core::accounting::CarryingBasis::FairValue
+pub phx_core::accounting::CarryingBasis::LowerOfCostAndRealisable
+pub enum phx_core::accounting::HeldFor
+pub phx_core::accounting::HeldFor::Collect
+pub phx_core::accounting::HeldFor::Sell
+pub phx_core::accounting::HeldFor::Trade
+pub phx_core::accounting::HeldFor::Use
+pub struct phx_core::accounting::Permitted
+pub phx_core::accounting::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBasis>
+pub phx_core::accounting::Permitted::form: alloc::string::String
+pub phx_core::accounting::Permitted::held_for: phx_core::accounting::HeldFor
 pub mod phx_core::agenda
 pub struct phx_core::agenda::Agenda<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
@@ -427,6 +442,7 @@ pub phx_core::family::FamilyMode::Rolling
 pub phx_core::family::FamilyMode::Rolling::cycle_days: u16
 pub phx_core::family::FamilyMode::Streaming
 pub struct phx_core::family::AuditInputs<'a>
+pub phx_core::family::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
 pub phx_core::family::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_core::family::AuditInputs::calendar: &'a phx_core::calendar::Calendar
 pub phx_core::family::AuditInputs::day: phx_id::day::Day
@@ -444,6 +460,7 @@ pub phx_core::family::AuditInputs::touched: &'a phx_core::touched::TouchedRows
 pub phx_core::family::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::family::FamilyCtx<'a>
 impl<'a> phx_core::family::FamilyCtx<'a>
+pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
 pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
@@ -490,6 +507,11 @@ pub phx_core::family::Span::start: usize
 impl phx_core::family::Span
 pub fn phx_core::family::Span::iter(self) -> impl core::iter::traits::iterator::Iterator<Item = usize>
 pub const phx_core::family::AUDIT_SUBSTEP: phx_core::substep::SubStep
+pub trait phx_core::family::AccountsAudit: core::fmt::Debug
+pub fn phx_core::family::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
+pub fn phx_core::family::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::AccountsAudit::parties(&self) -> usize
+pub fn phx_core::family::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub trait phx_core::family::AuditFamily: core::marker::Send + core::marker::Sync
 pub fn phx_core::family::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
 pub fn phx_core::family::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
@@ -1017,6 +1039,7 @@ pub phx_core::register::values::Outside::Edge
 pub phx_core::register::values::Outside::Refuse
 pub enum phx_core::register::values::PrimValue
 pub phx_core::register::values::PrimValue::Calendar(phx_core::calendar::rules::CountryRules)
+pub phx_core::register::values::PrimValue::CarryingBases(alloc::vec::Vec<phx_core::accounting::Permitted>)
 pub phx_core::register::values::PrimValue::Count(phx_num::qty::Count)
 pub phx_core::register::values::PrimValue::Date(phx_id::day::Date)
 pub phx_core::register::values::PrimValue::Distribution(phx_core::register::values::Distribution)
@@ -1033,6 +1056,7 @@ pub phx_core::register::values::PrimValue::Table1(phx_core::register::values::Ta
 pub phx_core::register::values::PrimValue::Table2(phx_core::register::values::Table2)
 pub enum phx_core::register::values::ValueType
 pub phx_core::register::values::ValueType::Calendar
+pub phx_core::register::values::ValueType::CarryingBases
 pub phx_core::register::values::ValueType::Count
 pub phx_core::register::values::ValueType::Date
 pub phx_core::register::values::ValueType::Distribution
@@ -1101,6 +1125,10 @@ pub trait phx_core::register::values::PrimType
 pub type phx_core::register::values::PrimType::Read<'a>
 pub fn phx_core::register::values::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>
 pub fn phx_core::register::values::PrimType::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::accounting::Permitted>
+pub type alloc::vec::Vec<phx_core::accounting::Permitted>::Read<'a> = &'a alloc::vec::Vec<phx_core::accounting::Permitted>
+pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::accounting::Permitted>>
+pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub type alloc::vec::Vec<phx_core::kinds::LegalForm>::Read<'a> = &'a alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::kinds::LegalForm>>
@@ -1497,6 +1525,11 @@ pub phx_core::BusinessDayConvention::ModifiedFollowing
 pub phx_core::BusinessDayConvention::ModifiedPreceding
 pub phx_core::BusinessDayConvention::Preceding
 pub phx_core::BusinessDayConvention::Unadjusted
+pub enum phx_core::CarryingBasis
+pub phx_core::CarryingBasis::AmortisedCost
+pub phx_core::CarryingBasis::CostLessDepreciation
+pub phx_core::CarryingBasis::FairValue
+pub phx_core::CarryingBasis::LowerOfCostAndRealisable
 pub enum phx_core::Concerns
 pub phx_core::Concerns::Instrument(phx_id::ids::InstrumentId)
 pub phx_core::Concerns::Line(phx_id::ids::LineId)
@@ -1584,6 +1617,11 @@ pub phx_core::FindingOwner::Market(phx_id::ids::MarketId)
 pub phx_core::FindingOwner::Party(phx_id::ids::PartyId)
 pub phx_core::FindingOwner::Run
 pub phx_core::FindingOwner::Tile(phx_id::ids::TileId)
+pub enum phx_core::HeldFor
+pub phx_core::HeldFor::Collect
+pub phx_core::HeldFor::Sell
+pub phx_core::HeldFor::Trade
+pub phx_core::HeldFor::Use
 pub enum phx_core::HolidayRule
 pub phx_core::HolidayRule::EasterOffset
 pub phx_core::HolidayRule::EasterOffset::days: i32
@@ -1671,6 +1709,7 @@ pub fn phx_core::register::PrimPeriod::period(self) -> phx_core::calendar::perio
 pub fn phx_core::register::PrimPeriod::rate_period(self) -> core::option::Option<phx_num::rate::RatePeriod>
 pub enum phx_core::PrimValue
 pub phx_core::PrimValue::Calendar(phx_core::calendar::rules::CountryRules)
+pub phx_core::PrimValue::CarryingBases(alloc::vec::Vec<phx_core::accounting::Permitted>)
 pub phx_core::PrimValue::Count(phx_num::qty::Count)
 pub phx_core::PrimValue::Date(phx_id::day::Date)
 pub phx_core::PrimValue::Distribution(phx_core::register::values::Distribution)
@@ -1801,6 +1840,7 @@ pub phx_core::Unit::Money(phx_num::money::Ccy)
 pub phx_core::Unit::Qty(phx_num::qty::UnitId)
 pub enum phx_core::ValueType
 pub phx_core::ValueType::Calendar
+pub phx_core::ValueType::CarryingBases
 pub phx_core::ValueType::Count
 pub phx_core::ValueType::Date
 pub phx_core::ValueType::Distribution
@@ -1884,6 +1924,7 @@ pub phx_core::Apportioned::party: phx_id::ids::PartyId
 pub phx_core::Apportioned::realised: u64
 pub phx_core::Apportioned::stratum: alloc::string::String
 pub struct phx_core::AuditInputs<'a>
+pub phx_core::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
 pub phx_core::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_core::AuditInputs::calendar: &'a phx_core::calendar::Calendar
 pub phx_core::AuditInputs::day: phx_id::day::Day
@@ -2128,6 +2169,7 @@ pub phx_core::FactDecl::unit: phx_num::missing::Missing<&'static str>
 pub phx_core::FactDecl::value: phx_core::facts::FactType
 pub struct phx_core::FamilyCtx<'a>
 impl<'a> phx_core::family::FamilyCtx<'a>
+pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
 pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
@@ -2386,6 +2428,10 @@ pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx
 pub fn phx_core::calendar::period::Period::month_count(self) -> u16
 pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>
 pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>
+pub struct phx_core::Permitted
+pub phx_core::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBasis>
+pub phx_core::Permitted::form: alloc::string::String
+pub phx_core::Permitted::held_for: phx_core::accounting::HeldFor
 pub struct phx_core::Phase
 impl phx_core::schedule::Phase
 pub fn phx_core::schedule::Phase::offset_days(self) -> u16
@@ -2622,6 +2668,11 @@ pub const phx_core::PHASES: [phx_core::streams::OpeningPhase; 5]
 pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
+pub trait phx_core::AccountsAudit: core::fmt::Debug
+pub fn phx_core::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
+pub fn phx_core::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::AccountsAudit::parties(&self) -> usize
+pub fn phx_core::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub trait phx_core::AuditFamily: core::marker::Send + core::marker::Sync
 pub fn phx_core::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
 pub fn phx_core::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
@@ -2722,6 +2773,10 @@ pub trait phx_core::PrimType
 pub type phx_core::PrimType::Read<'a>
 pub fn phx_core::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>
 pub fn phx_core::PrimType::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::accounting::Permitted>
+pub type alloc::vec::Vec<phx_core::accounting::Permitted>::Read<'a> = &'a alloc::vec::Vec<phx_core::accounting::Permitted>
+pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::accounting::Permitted>>
+pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub type alloc::vec::Vec<phx_core::kinds::LegalForm>::Read<'a> = &'a alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::kinds::LegalForm>>

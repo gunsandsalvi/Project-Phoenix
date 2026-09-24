@@ -16,6 +16,7 @@ pub struct KernelPrims {
     pub opening: GenPrims,
     pub geo: phx_geo::GeoPrims,
     pub market: phx_market::reach::MarketPrims,
+    pub acct: phx_acct::basis::AcctPrims,
 }
 
 impl KernelPrims {
@@ -28,6 +29,7 @@ impl KernelPrims {
             opening: GenPrims::declare(d),
             geo: phx_geo::GeoPrims::declare(d),
             market: phx_market::reach::MarketPrims::declare(d),
+            acct: phx_acct::basis::AcctPrims::declare(d),
         }
     }
 }

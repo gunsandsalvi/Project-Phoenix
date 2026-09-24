@@ -115,12 +115,45 @@ fn open(
     )
 }
 
-/// The families of the kernel crates that keep the world's map, books and markets, over what they read.
+/// The month a day falls in, counted from the calendar's year nought: the period the accounts close by.
+pub(crate) fn period_of(calendar: &phx_core::Calendar, day: phx_id::Day) -> u32 {
+    let date = calendar.date(day);
+    let months = i64::from(date.year()) * i64::from(phx_core::consts::MONTHS_PER_YEAR) + i64::from(date.month());
+    let Ok(period) = u32::try_from(months) else {
+        phx_num::violation!(clause = "ACC.11", "a period before the calendar's year nought", year = date.year());
+    };
+    period
+}
+
+/// Every party of a kind whose legal form has owners keeps an equity account, opened on the opening's books, each in
+/// the currency of the country its site lies in.
+fn open_accounts(
+    d: &Declarations,
+    kernel: &KernelPrims,
+    c: &Compiled,
+    books: &phx_ledger::books::Books,
+    geo: &GeoState,
+) -> phx_acct::accounts::Accounts {
+    let law = kernel.legal_forms.shared(&c.register);
+    let owned = |form: &str| law.iter().any(|f| f.name == form && !f.owners.is_empty());
+    let forms = d.kinds.iter().map(|(_, k)| (k.name, k.legal_form.to_owned())).collect();
+    let ccy_of = |party: phx_id::PartyId| {
+        let Missing::Present(country) = geo.country_of(books.parties.site(party)) else {
+            phx_num::violation!(clause = "PTY.5", "a party sited on no country's land", party = party.get());
+        };
+        phx_ledger::opening::currency(country)
+    };
+    let permitted = kernel.acct.carrying_bases.shared(&c.register).clone();
+    phx_acct::accounts::Accounts::open(permitted, forms, &owned, books, &ccy_of, period_of(&c.calendar, c.day_zero))
+}
+
+/// The families of the kernel crates that keep the world's map, books, markets and accounts, over what they read.
 fn crate_families(geo: &Arc<phx_geo::GeoState>, countries: usize) -> Vec<Box<dyn phx_core::AuditFamily>> {
     let mut families: Vec<Box<dyn phx_core::AuditFamily>> =
         vec![Box::new(phx_geo::audit::Places { geo: Arc::clone(geo), countries }), Box::new(phx_geo::audit::Deposits)];
     families.extend(phx_ledger::audit::families());
     families.push(Box::new(phx_market::audit::Prices));
+    families.extend(phx_acct::audit::families());
     families
 }
 
@@ -172,6 +205,7 @@ pub fn assemble(
     let geo = Arc::new(open_map(&kernel, &c, &game, &d)?);
     let countries = u32::try_from(game.countries.len()).map_err(|e| one(e.to_string()))?;
     let (books, report) = open(&mut d, &kernel, &c, &game, &geo);
+    let accounts = open_accounts(&d, &kernel, &c, &books, &geo);
     let mut families = kernel_families();
     families.extend(std::mem::take(&mut d.families).into_iter().map(|(_, f)| f));
     families.extend(crate_families(&geo, game.countries.len()));
@@ -215,6 +249,7 @@ pub fn assemble(
         settling_years,
         books,
         markets: phx_market::markets::Markets::default(),
+        accounts,
         report,
         unprocessed: Vec::new(),
         due: phx_ledger::due::DueLines::default(),

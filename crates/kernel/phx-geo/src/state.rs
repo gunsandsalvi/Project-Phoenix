@@ -1,6 +1,7 @@
 use phx_core::{OpeningCtx, OpeningPhase, Purpose, Register, StreamDecl};
-use phx_id::TileId;
+use phx_id::{CountryId, TileId};
 use phx_macros::clause;
+use phx_num::Missing;
 use phx_rand::{Subject, SubjectTag};
 
 use crate::climate::{ClimateRule, RegionClimate, cell1, exp_of, scaled};
@@ -211,6 +212,21 @@ impl GeoState {
         let regions = crate::climate::regions(p, r, &map);
         let distances = ZoneDistances::measure(&map);
         Ok(GeoState { params: map_params, map, distances, regions, hazards, deposits, weather_kinds })
+    }
+
+    /// The country a tile's land lies in, by its zone's region; water and a tile off the map lie in none.
+    pub fn country_of(&self, tile: TileId) -> Missing<CountryId> {
+        let m = &self.map;
+        let found = m
+            .tiles
+            .get(m.grid.index(tile))
+            .and_then(crate::tile::Tile::zone)
+            .and_then(|z| m.zones.get(usize::try_from(z.get()).ok()?))
+            .and_then(|z| m.regions.get(usize::from(z.region.get())));
+        match found {
+            Some(r) => Missing::Present(r.country),
+            None => Missing::Absent,
+        }
     }
 
     /// Bytes the map holds: tiles, exposure columns, distances and deposits.

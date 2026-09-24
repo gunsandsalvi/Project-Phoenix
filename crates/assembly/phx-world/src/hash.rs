@@ -14,6 +14,7 @@ pub fn world_hash(world: &World) -> u128 {
     world.books.parties.directory().hash_into(&mut h);
     world.books.hash_into(&mut h);
     world.markets.hash_into(&mut h);
+    world.accounts.hash_into(&mut h);
     world.records.hash_into(&mut h);
     world.events.hash_into(&mut h);
     for t in &world.tables {

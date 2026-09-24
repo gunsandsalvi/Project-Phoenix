@@ -403,6 +403,7 @@ pub phx_geo::state::GeoState::weather_kinds: alloc::vec::Vec<u16>
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize
+pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub struct phx_geo::state::HazardState
 pub phx_geo::state::HazardState::by_country: alloc::vec::Vec<alloc::vec::Vec<alloc::vec::Vec<phx_id::ids::TileId>>>
 pub phx_geo::state::HazardState::event_kind: u16
@@ -556,5 +557,6 @@ pub phx_geo::GeoState::weather_kinds: alloc::vec::Vec<u16>
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize
+pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub const phx_geo::ITEMS: &[phx_core::facts::ItemDecl]
 pub fn phx_geo::tables(&phx_geo::state::GeoState, u32) -> alloc::vec::Vec<phx_core::columns::KernelTable>

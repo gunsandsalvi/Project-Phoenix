@@ -1,3 +1,4 @@
+pub mod accounts;
 pub mod geo;
 pub mod ledger;
 pub mod markets;
@@ -71,5 +72,7 @@ pub const CHECKS: &[Check] = &[
     markets::LC_0_30,
     markets::LC_0_31,
     markets::LC_0_32,
+    accounts::LC_0_33,
+    accounts::LC_0_34,
     ledger::LC_0_61,
 ];

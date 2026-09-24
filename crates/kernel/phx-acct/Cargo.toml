@@ -1,0 +1,23 @@
+[package]
+name = "phx-acct"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+phx-core = { path = "../phx-core" }
+phx-id = { path = "../../foundation/phx-id" }
+phx-ledger = { path = "../phx-ledger" }
+phx-macros = { path = "../../foundation/phx-macros" }
+phx-market = { path = "../phx-market" }
+phx-num = { path = "../../foundation/phx-num" }
+phx-rand = { path = "../../foundation/phx-rand" }
+phx-store = { path = "../phx-store" }
+
+[dev-dependencies]
+trybuild.workspace = true
+
+[lints]
+workspace = true

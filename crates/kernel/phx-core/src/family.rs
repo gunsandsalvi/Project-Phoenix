@@ -101,6 +101,20 @@ pub trait MarketsAudit: core::fmt::Debug {
     fn prices(&self, day: Day) -> (u64, Vec<Gap>);
 }
 
+/// The parties' accounts as the audit reads them: each party's equity account against a read of its positions at
+/// their carrying values, the receivables against the payables line by line, and each period's income against its
+/// equity's change. The accounts kernel implements it over the books.
+pub trait AccountsAudit: core::fmt::Debug {
+    /// Parties with an equity account, by index.
+    fn parties(&self) -> usize;
+    /// One party's equity account against its positions, or its read as unreadable.
+    fn equity(&self, party: usize) -> Vec<Gap>;
+    /// The receivables against the payables, line by line: the lines checked, and each gap.
+    fn claims(&self) -> (u64, Vec<Gap>);
+    /// Each closed period's income against its equity's change: the parties checked, and each gap.
+    fn periods(&self, day: Day) -> (u64, Vec<Gap>);
+}
+
 /// The audit's own record of the day's settled legs, kept apart from the books they moved.
 pub trait LegRecords: core::fmt::Debug {
     /// The instructions recorded today, each in each denomination it moved.
@@ -134,6 +148,7 @@ pub struct AuditInputs<'a> {
     pub books: &'a dyn BooksAudit,
     pub legs: &'a dyn LegRecords,
     pub markets: &'a dyn MarketsAudit,
+    pub accounts: &'a dyn AccountsAudit,
 }
 
 /// What a family may read: only through `&self`, so checking changes nothing.
@@ -225,6 +240,12 @@ impl<'a> FamilyCtx<'a> {
     #[must_use]
     pub fn books(&self) -> &dyn BooksAudit {
         self.inputs.books
+    }
+
+    /// The parties' accounts.
+    #[must_use]
+    pub fn accounts(&self) -> &dyn AccountsAudit {
+        self.inputs.accounts
     }
 
     /// The markets' public tape.
