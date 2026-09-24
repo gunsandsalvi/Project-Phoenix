@@ -234,6 +234,20 @@ impl<B: Backing> Instruments<B> {
         }
     }
 
+    /// A holder entering the instrument's holder list with a holding joined from a part.
+    pub(crate) fn enlist(&mut self, table: u16, holder: Slot, id: InstrumentId) {
+        let mut list = self.list(id);
+        self.lists.enter(id.get(), &mut list, table, holder);
+        self.holders.set(Slot::new(id.get()), list);
+    }
+
+    /// A holder leaving the instrument's holder list with a holding that left whole for a part.
+    pub(crate) fn unlist(&mut self, table: u16, holder: Slot, id: InstrumentId) {
+        let mut list = self.list(id);
+        self.lists.leave(id.get(), &mut list, table, holder);
+        self.holders.set(Slot::new(id.get()), list);
+    }
+
     /// Units that leave a holding, its holder leaving the instrument's holder list with its last unit.
     pub(crate) fn dispose(
         &mut self,

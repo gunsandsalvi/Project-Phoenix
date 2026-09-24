@@ -437,6 +437,22 @@ impl<B: Backing> Lines<B> {
         new: NewRow,
     ) {
         let NewRow { side, within, count, point, optional } = new;
+        let row = RelRow { line, count, record: 0, point, role: role(side, within), flags: 0 };
+        self.place_row(arenas, table, holder, row, optional);
+        self.adjust(line, side, i64::from(count));
+    }
+
+    /// A row put into its holder's rows as it is, into the due-day run if its line is dated, the holder entering the
+    /// line's list with its first listed row there; the line's side counts are the caller's.
+    pub(crate) fn place_row(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        row: RelRow,
+        optional: Optional,
+    ) {
+        let (line, side) = (row.line, rows::side_of(row.role));
         let decl = *self.kind(self.row(line).kind).side(side);
         let kind = arenas.kind();
         if !decl.holder_kinds.contains(&kind) {
@@ -450,7 +466,6 @@ impl<B: Backing> Lines<B> {
             violation!(clause = "REG.14", "a second row of one holder on one side of a line", line = line.get());
         }
         let listed_before = self.listed(line, &rows_now);
-        let row = RelRow { line, count, record: 0, point, role: role(side, within), flags: 0 };
         if self.dated(line) {
             let mut head = arenas.run_head(holder);
             let at = usize_of(head.offset + head.len);
@@ -467,7 +482,6 @@ impl<B: Backing> Lines<B> {
         } else {
             rows::append(arenas, holder, row, optional);
         }
-        self.adjust(line, side, i64::from(count));
         if decl.holder_list && !listed_before {
             let mut r = self.row(line);
             self.lists.enter(line.get(), &mut r.holders, table, holder);
@@ -481,7 +495,7 @@ impl<B: Backing> Lines<B> {
         rows.iter().any(|r| r.row.line == line && kind.side(r.side()).holder_list)
     }
 
-    fn find(arenas: &dyn HolderArenas, holder: Slot, line: LineId, side: Side) -> RowView {
+    pub(crate) fn find(arenas: &dyn HolderArenas, holder: Slot, line: LineId, side: Side) -> RowView {
         let Some(view) = rows::iter(arenas, holder).find(|r| r.row.line == line && r.side() == side) else {
             violation!(clause = "REG.14", "a row read that its holder does not have", line = line.get());
         };
@@ -534,6 +548,20 @@ impl<B: Backing> Lines<B> {
         line: LineId,
         side: Side,
     ) {
+        let view = self.unplace_row(arenas, table, holder, line, side);
+        self.adjust(line, side, -i64::from(view.row.count));
+    }
+
+    /// A holder's row taken out of its rows and its due-day run, the holder leaving the line's list with its last
+    /// listed row there; the line's side counts are the caller's. Returns the row as it was.
+    pub(crate) fn unplace_row(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        line: LineId,
+        side: Side,
+    ) -> RowView {
         let view = Self::find(arenas, holder, line, side);
         let listed_before = self.listed(line, &rows::rows(arenas, holder));
         rows::remove(arenas, holder, &view);
@@ -545,12 +573,12 @@ impl<B: Backing> Lines<B> {
             head.len -= width;
         }
         arenas.set_run_head(holder, head);
-        self.adjust(line, side, -i64::from(view.row.count));
         if listed_before && !self.listed(line, &rows::rows(arenas, holder)) {
             let mut r = self.row(line);
             self.lists.leave(line.get(), &mut r.holders, table, holder);
             self.set(line, r);
         }
+        view
     }
 
     /// Each line's kind, flags, terms, side counts and next due day, in identity order; its holder list is an index

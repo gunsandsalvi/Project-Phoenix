@@ -23,6 +23,7 @@ pub mod lien;
 pub mod line;
 pub mod money;
 pub mod opening;
+pub mod part;
 pub mod pending;
 pub mod pooled;
 pub mod positions;

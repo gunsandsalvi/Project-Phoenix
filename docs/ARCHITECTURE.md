@@ -335,7 +335,8 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
 - **Loans** carry balances; a row's members share its terms, vintage and payment record, so its per-member balance
   is exact. Members of one line whose payment records diverge are drawn out (REP.23) and split.
 - **Fails** become fail records with the reason and the line; the owner of the line kind reads them at its declared
-  sub-step (§6.1). **Payment records** combine at landing by a declared rule; lenders' and suppliers' views read them
+  sub-step (§6.1). **Payment records** never combine: a landing joins a part's row only to a row of the same record
+  and the same arrears, so every row keeps the record its members share; lenders' and suppliers' views read them
   (REP.8).
 - **Holdings** of instruments are rows in the holder's arena; each instrument keeps its holders sorted, so coupons,
   dividends, bail-ins and REG.13's audit read holders directly (REG.4). A cell's are `{instrument u32, count u32,
@@ -745,6 +746,11 @@ pins them (§4.2). A change only to a profile or an attachment — a job taken a
 applied to the row's counts in place.
 
 **Parts** are rows with **day-local identities**: a part carries only its own profile entries, rows and positions.
+Its rows and holdings are detached from the cell by the ledger (`phx_ledger::part`), each with its members' share of
+the row's words, its payment record and its arrears, and attached to the cell it lands in; its members stay on their
+lines, so no line's side counts move between the split and the landing. What a flow moved for the reached members
+alone — its amount on their funds row, its move of the position its kink lies on — leaves with them whole before the
+rest is shared.
 At 10b a part either lands in a cell — its identity resolves to that cell and the records naming it are re-pointed
 through back-pointers — or becomes a cell with a permanent identity. Members pinned by open business (§4.2) land only
 with identical items. A change that applies to every member of a cell alike (a key rule changing) **re-keys** the

@@ -841,6 +841,7 @@ pub phx_core::kinks::KinkDecl::points: u16
 pub phx_core::kinks::KinkDecl::source: phx_core::kinks::KinkSource
 pub struct phx_core::kinks::KinkRegistry
 impl phx_core::kinks::KinkRegistry
+pub fn phx_core::kinks::KinkRegistry::get(&self, usize) -> core::option::Option<&phx_core::kinks::KinkDecl>
 pub fn phx_core::kinks::KinkRegistry::on(&self, phx_core::kinks::KinkOn) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::kinks::KinkDecl> + '_
 pub fn phx_core::kinks::KinkRegistry::register(&mut self, phx_core::kinks::KinkDecl) -> core::result::Result<(), alloc::string::String>
 pub mod phx_core::map
@@ -2591,6 +2592,7 @@ pub phx_core::KinkDecl::points: u16
 pub phx_core::KinkDecl::source: phx_core::kinks::KinkSource
 pub struct phx_core::KinkRegistry
 impl phx_core::kinks::KinkRegistry
+pub fn phx_core::kinks::KinkRegistry::get(&self, usize) -> core::option::Option<&phx_core::kinks::KinkDecl>
 pub fn phx_core::kinks::KinkRegistry::on(&self, phx_core::kinks::KinkOn) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::kinks::KinkDecl> + '_
 pub fn phx_core::kinks::KinkRegistry::register(&mut self, phx_core::kinks::KinkDecl) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::LegDigest

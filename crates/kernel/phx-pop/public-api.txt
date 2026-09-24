@@ -170,9 +170,36 @@ pub phx_pop::overlap::Overlap::by_set: alloc::vec::Vec<u64>
 impl phx_pop::overlap::Overlap
 pub fn phx_pop::overlap::Overlap::allocate(u64, &[u64], &mut [phx_rand::draws::Draws]) -> phx_pop::overlap::Overlap
 pub fn phx_pop::overlap::Overlap::hit_by(&self, usize) -> u64
+pub mod phx_pop::pairing
+pub fn phx_pop::pairing::pair(&mut phx_rand::draws::Draws, &[u64], u64) -> alloc::vec::Vec<u64>
+pub mod phx_pop::part
+pub struct phx_pop::part::Part
+pub phx_pop::part::Part::attention: alloc::vec::Vec<phx_num::missing::Missing<phx_pop::table::Attention>>
+pub phx_pop::part::Part::exposures: alloc::vec::Vec<phx_num::missing::Missing<i64>>
+pub phx_pop::part::Part::from: phx_id::ids::Slot
+pub phx_pop::part::Part::holdings: alloc::vec::Vec<phx_ledger::holding::CellHolding>
+pub phx_pop::part::Part::id: phx_pop::part::PartId
+pub phx_pop::part::Part::key: phx_pop::key::KeyRecord
+pub phx_pop::part::Part::positions: alloc::vec::Vec<i64>
+pub phx_pop::part::Part::profile: phx_pop::profile::Profile
+pub phx_pop::part::Part::rates: alloc::vec::Vec<phx_num::missing::Missing<i64>>
+pub phx_pop::part::Part::rows: alloc::vec::Vec<phx_ledger::part::DetachedRow>
+pub phx_pop::part::Part::sig: alloc::vec::Vec<u64>
+pub phx_pop::part::Part::weight: phx_core::weight::Weight
+pub struct phx_pop::part::PartId
+pub phx_pop::part::PartId::origin: phx_id::ids::PartyId
+pub phx_pop::part::PartId::seq: u32
 pub mod phx_pop::pick
 pub fn phx_pop::pick::pick_hit(&mut phx_rand::draws::Draws, &phx_pop::profile::Profile, &phx_pop::profile::ProfileLayout, usize, &[(u32, u64)]) -> alloc::vec::Vec<alloc::vec::Vec<(u32, u64)>>
 pub fn phx_pop::pick::weighted(&mut phx_rand::draws::Draws, &[u64]) -> usize
+pub mod phx_pop::pooled
+pub struct phx_pop::pooled::PooledSplit
+pub phx_pop::pooled::PooledSplit::count: u32
+pub phx_pop::pooled::PooledSplit::own: alloc::vec::Vec<(usize, i64)>
+pub phx_pop::pooled::PooledSplit::rows: alloc::vec::Vec<((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)>
+impl phx_pop::pooled::PooledSplit
+pub fn phx_pop::pooled::PooledSplit::spec(&self, phx_num::round::Round) -> phx_pop::split::SplitSpec<'_>
+pub fn phx_pop::pooled::pooled_split(&phx_ledger::split_request::SplitRequest, u8, &phx_core::kinks::KinkRegistry, &phx_pop::kind::PopKindDecl) -> phx_pop::pooled::PooledSplit
 pub mod phx_pop::profile
 pub struct phx_pop::profile::GroupShape
 pub phx_pop::profile::GroupShape::dense: bool
@@ -250,6 +277,23 @@ pub fn phx_pop::sig::SigLayout::groups(&self) -> &[phx_pop::sig::SigGroup]
 pub fn phx_pop::sig::SigLayout::new(&[&'static str], &phx_core::kinks::KinkRegistry) -> phx_pop::sig::SigLayout
 pub fn phx_pop::sig::SigLayout::set(&self, &mut [u64], usize, u16)
 pub fn phx_pop::sig::SigLayout::words(&self) -> usize
+pub mod phx_pop::split
+pub enum phx_pop::split::Parted
+pub phx_pop::split::Parted::Part(alloc::boxed::Box<phx_pop::part::Part>)
+pub phx_pop::split::Parted::Whole
+pub struct phx_pop::split::Cells<'a, B: phx_store::backing::Backing, L: phx_store::backing::Backing>
+pub phx_pop::split::Cells::keys: &'a phx_pop::key::KeyInterner
+pub phx_pop::split::Cells::ledger: &'a mut phx_ledger::apply::Ledger<L>
+pub phx_pop::split::Cells::place: u16
+pub phx_pop::split::Cells::table: &'a mut phx_pop::table::CellTable<B>
+pub struct phx_pop::split::SplitSpec<'a>
+pub phx_pop::split::SplitSpec::count: u32
+pub phx_pop::split::SplitSpec::given: &'a [(usize, &'a [(u32, u64)])]
+pub phx_pop::split::SplitSpec::own: &'a [(usize, i64)]
+pub phx_pop::split::SplitSpec::reviewed: phx_num::missing::Missing<usize>
+pub phx_pop::split::SplitSpec::rounding: phx_num::round::Round
+pub phx_pop::split::SplitSpec::rows: &'a [((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)]
+pub fn phx_pop::split::split<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::split::Cells<'_, B, L>, phx_id::ids::Slot, phx_pop::part::PartId, &phx_pop::split::SplitSpec<'_>, &mut phx_rand::draws::Draws) -> phx_pop::split::Parted
 pub mod phx_pop::steps
 #[repr(transparent)] pub struct phx_pop::steps::Step(_)
 impl phx_pop::steps::Step
@@ -311,13 +355,16 @@ pub fn phx_pop::table::CellTable<B>::make_individual(&mut self, phx_id::ids::Slo
 pub fn phx_pop::table::CellTable<B>::new(&mut phx_store::backing::AddressSpace, &phx_pop::kind::PopKindDecl, phx_id::ids::TableId, u32, u32) -> phx_pop::table::CellTable<B>
 pub fn phx_pop::table::CellTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_pop::table::CellTable<B>::position(&self, phx_id::ids::Slot, usize) -> i64
+pub fn phx_pop::table::CellTable<B>::positions(&self) -> usize
 pub fn phx_pop::table::CellTable<B>::profile(&self, phx_id::ids::Slot) -> phx_pop::profile::Profile
 pub fn phx_pop::table::CellTable<B>::profile_group(&self, phx_id::ids::Slot, usize) -> alloc::vec::Vec<(u32, u32)>
 pub fn phx_pop::table::CellTable<B>::profile_layout(&self) -> &phx_pop::profile::ProfileLayout
 pub fn phx_pop::table::CellTable<B>::rate(&self, phx_id::ids::Slot, usize) -> phx_num::missing::Missing<i64>
+pub fn phx_pop::table::CellTable<B>::rate_kinds(&self) -> usize
 pub fn phx_pop::table::CellTable<B>::rekey(&mut self, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &[u8])
 pub fn phx_pop::table::CellTable<B>::relayout(&mut self, &phx_pop::kind::PopKindDecl)
 pub fn phx_pop::table::CellTable<B>::remove(&mut self, phx_id::ids::Slot)
+pub fn phx_pop::table::CellTable<B>::review_kinds(&self) -> usize
 pub fn phx_pop::table::CellTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
 pub fn phx_pop::table::CellTable<B>::set_attention(&mut self, phx_id::ids::Slot, usize, phx_pop::table::Attention)
 pub fn phx_pop::table::CellTable<B>::set_exposure(&mut self, phx_id::ids::Slot, usize, i64)

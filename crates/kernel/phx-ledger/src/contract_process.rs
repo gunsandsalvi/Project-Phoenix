@@ -37,7 +37,26 @@ pub struct Arrears {
     since: BTreeMap<ArrearsKey, Day>,
 }
 
+impl ArrearsKey {
+    #[must_use]
+    pub fn new(line: LineId, side: Side, party: PartyId) -> ArrearsKey {
+        ArrearsKey { line, side: side_code(side), party }
+    }
+}
+
 impl Arrears {
+    /// A row's arrears carried to another holder, begun on the day they began where the row was.
+    pub(crate) fn begin(&mut self, key: ArrearsKey, since: Day) {
+        if self.since.insert(key, since).is_some() {
+            violation!(clause = "SET.3", "arrears begun twice on one row", line = key.line.get());
+        }
+    }
+
+    /// A row's arrears leaving with it, if it had any.
+    pub(crate) fn remove(&mut self, key: ArrearsKey) {
+        self.since.remove(&key);
+    }
+
     #[must_use]
     pub fn since(&self, key: ArrearsKey) -> Option<Day> {
         self.since.get(&key).copied()

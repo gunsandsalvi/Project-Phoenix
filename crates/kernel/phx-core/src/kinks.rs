@@ -53,6 +53,12 @@ impl KinkRegistry {
         Ok(())
     }
 
+    /// A kink by its place in the order registered, as a split request names it.
+    #[must_use]
+    pub fn get(&self, index: usize) -> Option<&KinkDecl> {
+        self.kinks.get(index)
+    }
+
     /// The kinks on a position or per-member amount, in the order registered.
     pub fn on(&self, on: KinkOn) -> impl Iterator<Item = &KinkDecl> + '_ {
         self.kinks.iter().filter(move |k| k.on == on)

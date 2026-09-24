@@ -11,7 +11,8 @@ use crate::holding::{Disposal, Lot, LotOrder, acquire, basis, dispose, holding, 
 use crate::lien::Liens;
 use crate::units::{NamedUnit, named, transfer};
 
-type Heap = HeapBacking<4096>;
+pub(crate) type Heap = HeapBacking<4096>;
+pub(crate) type Table = KindTable<Heap>;
 
 pub(crate) fn table(space: &mut AddressSpace, kind: &'static str, id: u16) -> KindTable<Heap> {
     KindTable::new(space, kind, TableId::new(id), 64, 16, 0)

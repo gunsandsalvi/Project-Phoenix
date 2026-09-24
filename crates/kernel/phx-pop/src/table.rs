@@ -349,6 +349,24 @@ impl<B: Backing> CellTable<B> {
         column.set(slot, total);
     }
 
+    /// How many positions the kind keeps.
+    #[must_use]
+    pub fn positions(&self) -> usize {
+        self.layout.positions
+    }
+
+    /// How many standing rates the kind keeps.
+    #[must_use]
+    pub fn rate_kinds(&self) -> usize {
+        self.rates.len()
+    }
+
+    /// How many kinds of lumpy decision the kind reviews.
+    #[must_use]
+    pub fn review_kinds(&self) -> usize {
+        self.exposures.len()
+    }
+
     /// The cell's kink signature, a word per column.
     #[must_use]
     pub fn sig(&self, slot: Slot) -> Vec<u64> {

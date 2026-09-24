@@ -4184,7 +4184,7 @@ alone.
 
 ### S0.23 — `phx-pop` III: splits, parts, pooled flows, landing, re-keying and the seller spread
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - PROCESS: REP.8, REP.9, REP.23, REP.36; REP.22 *(part: counts, capacity by lot and the seller spread; tastes are
