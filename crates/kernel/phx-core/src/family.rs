@@ -120,8 +120,13 @@ pub trait AccountsAudit: core::fmt::Debug {
 pub trait CellsAudit: core::fmt::Debug {
     /// Cells over every population table, by index.
     fn cells(&self) -> usize;
-    /// One cell's weight, and each of its profile groups' counts against it.
+    /// One cell's weight, each of its profile groups' counts against it, and each of its rows' and holdings' members
+    /// within it.
     fn representation(&self, cell: usize) -> Vec<Gap>;
+    /// Each population's cells' weights against its population.
+    fn populations(&self) -> Vec<Gap>;
+    /// Any total the day's landings moved.
+    fn landings(&self) -> Vec<Gap>;
 }
 
 /// The audit's own record of the day's settled legs, kept apart from the books they moved.

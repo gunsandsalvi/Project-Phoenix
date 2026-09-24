@@ -3,16 +3,20 @@ use phx_core::{
     declare_family,
 };
 use phx_id::Slot;
+use phx_ledger::part::cell_holdings;
+use phx_ledger::rows;
 use phx_macros::clause;
 use phx_store::Backing;
 
+use crate::landing::Landed;
 use crate::table::CellTable;
 
 declare_family! { pub REPRESENTATION = "REP.representation" { mode: Rolling { cycle_days: 30 }, clause: "REP.14" } }
 
-/// A cell's weight and its profiles: it stands for at least one member, and each profile group counts every member
-/// of its role, which every member of the cell holds, so each group sums to the weight.
-#[clause("REP.14", "REP.17")]
+/// A cell's weight, its profiles and its attachments: it stands for at least one member; each profile group counts
+/// every member of its role, which every member of the cell holds, so each group sums to the weight; and no row or
+/// holding is held by more members than the cell has.
+#[clause("REP.14", "REP.17", "REP.31")]
 #[must_use]
 pub fn representation<B: Backing>(table: &CellTable<B>, slot: Slot) -> Vec<Gap> {
     let owner = FindingOwner::Party(table.party(slot));
@@ -33,13 +37,28 @@ pub fn representation<B: Backing>(table: &CellTable<B>, slot: Slot) -> Vec<Gap> 
             gaps.push(Gap { owner, size: counted - weight, unit: Unit::Count, detail });
         }
     }
+    let holdings = cell_holdings(table, slot);
+    let attached = rows::iter(table, slot)
+        .map(|r| (format!("line {}", r.row.line.get()), r.row.count))
+        .chain(holdings.iter().map(|h| (format!("instrument {}", h.instrument.get()), h.count)));
+    for (what, count) in attached {
+        let over = i128::from(count) - weight;
+        if over > 0 {
+            let detail =
+                format!("cell {}: {what} held by {count} members of a weight of {weight}", table.party(slot).get());
+            gaps.push(Gap { owner, size: over, unit: Unit::Count, detail });
+        }
+    }
     gaps
 }
 
 /// The population's cell tables as the audit reads them: every slot each table has handed out, table after table,
-/// so a rolling slice is found by arithmetic and a freed slot is checked as nothing.
+/// so a rolling slice is found by arithmetic and a freed slot is checked as nothing; each kind's population; and the
+/// day's landings in each table.
 pub struct CellsView<'a, B: Backing> {
     tables: &'a [CellTable<B>],
+    populations: &'a [(&'static str, u64)],
+    landed: &'a [Landed],
 }
 
 impl<B: Backing> core::fmt::Debug for CellsView<'_, B> {
@@ -50,8 +69,12 @@ impl<B: Backing> core::fmt::Debug for CellsView<'_, B> {
 
 impl<'a, B: Backing> CellsView<'a, B> {
     #[must_use]
-    pub fn new(tables: &'a [CellTable<B>]) -> CellsView<'a, B> {
-        CellsView { tables }
+    pub fn new(
+        tables: &'a [CellTable<B>],
+        populations: &'a [(&'static str, u64)],
+        landed: &'a [Landed],
+    ) -> CellsView<'a, B> {
+        CellsView { tables, populations, landed }
     }
 }
 
@@ -82,9 +105,46 @@ impl<B: Backing> CellsAudit for CellsView<'_, B> {
         }
         phx_num::violation!(clause = "N1", "a cell read past the cells kept", index = cell);
     }
+
+    /// Each table's weights summed against its kind's population; a kind whose population the world does not give
+    /// cannot be shown whole, which is a gap of its own.
+    fn populations(&self) -> Vec<Gap> {
+        let mut gaps = Vec::new();
+        for t in self.tables {
+            let weights: i128 = t.slots().map(|s| i128::from(t.weight(s).get())).sum();
+            let Some((_, population)) = self.populations.iter().find(|(k, _)| *k == t.kind()) else {
+                let detail = format!("`{}`: {weights} members and no population to hold them to", t.kind());
+                gaps.push(Gap { owner: FindingOwner::Table(t.id()), size: weights, unit: Unit::Count, detail });
+                continue;
+            };
+            if weights != i128::from(*population) {
+                let detail = format!("`{}`: weights sum to {weights} of a population of {population}", t.kind());
+                gaps.push(Gap {
+                    owner: FindingOwner::Table(t.id()),
+                    size: weights - i128::from(*population),
+                    unit: Unit::Count,
+                    detail,
+                });
+            }
+        }
+        gaps
+    }
+
+    /// Each position total the day's landings moved in a table.
+    fn landings(&self) -> Vec<Gap> {
+        let mut gaps = Vec::new();
+        for (t, landed) in self.tables.iter().zip(self.landed) {
+            for (i, by) in landed.moved.iter().enumerate().filter(|(_, by)| **by != 0) {
+                let detail = format!("`{}`: the day's landings moved position {i} by {by}", t.kind());
+                gaps.push(Gap { owner: FindingOwner::Table(t.id()), size: i128::from(*by), unit: Unit::Count, detail });
+            }
+        }
+        gaps
+    }
 }
 
-/// Every cell's weight against its profile counts, a slice of the cells a day.
+/// Every cell's weight against its profile counts and attachments, a slice of the cells a day; every day, each
+/// population's weights against it and the day's landings against the totals they joined.
 #[derive(Debug)]
 pub struct Representation;
 
@@ -96,18 +156,17 @@ impl AuditFamily for Representation {
     fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
         let cells = ctx.cells();
         let span = ctx.rolling(cells.cells());
-        for i in span.iter() {
-            for g in cells.representation(i) {
-                findings.record(Finding {
-                    family: REPRESENTATION.name,
-                    clause: REPRESENTATION.clause,
-                    owner: g.owner,
-                    size: g.size,
-                    unit: g.unit,
-                    day: ctx.day(),
-                    detail: g.detail,
-                });
-            }
+        let whole = cells.populations().into_iter().chain(cells.landings());
+        for g in span.iter().flat_map(|i| cells.representation(i)).chain(whole) {
+            findings.record(Finding {
+                family: REPRESENTATION.name,
+                clause: REPRESENTATION.clause,
+                owner: g.owner,
+                size: g.size,
+                unit: g.unit,
+                day: ctx.day(),
+                detail: g.detail,
+            });
         }
         phx_rand::float::len_u64(span.end - span.start)
     }
@@ -193,7 +252,11 @@ mod tests {
         t.set_profile(s, &p);
         let gaps = representation(&t, s);
         assert_eq!(gaps.iter().map(|g| g.size).collect::<Vec<_>>(), [-1], "one child uncounted");
-        let view = super::CellsView::new(std::slice::from_ref(&t));
+        let view = super::CellsView::new(std::slice::from_ref(&t), &[("household", 10)], &[]);
         assert_eq!((phx_core::CellsAudit::cells(&view), phx_core::CellsAudit::representation(&view, 0).len()), (1, 1));
+        assert!(phx_core::CellsAudit::populations(&view).is_empty(), "ten members of a population of ten");
+        let short = super::CellsView::new(std::slice::from_ref(&t), &[("household", 12)], &[]);
+        let gaps = phx_core::CellsAudit::populations(&short);
+        assert_eq!(gaps.iter().map(|g| g.size).collect::<Vec<_>>(), [-2], "two households nowhere");
     }
 }

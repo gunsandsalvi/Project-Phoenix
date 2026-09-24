@@ -2,11 +2,13 @@ pub mod phx_pop
 pub mod phx_pop::audit
 pub struct phx_pop::audit::CellsView<'a, B: phx_store::backing::Backing>
 impl<'a, B: phx_store::backing::Backing> phx_pop::audit::CellsView<'a, B>
-pub fn phx_pop::audit::CellsView<'a, B>::new(&'a [phx_pop::table::CellTable<B>]) -> phx_pop::audit::CellsView<'a, B>
+pub fn phx_pop::audit::CellsView<'a, B>::new(&'a [phx_pop::table::CellTable<B>], &'a [(&'static str, u64)], &'a [phx_pop::landing::Landed]) -> phx_pop::audit::CellsView<'a, B>
 impl<B: phx_store::backing::Backing> core::fmt::Debug for phx_pop::audit::CellsView<'_, B>
 pub fn phx_pop::audit::CellsView<'_, B>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<B: phx_store::backing::Backing> phx_core::family::CellsAudit for phx_pop::audit::CellsView<'_, B>
 pub fn phx_pop::audit::CellsView<'_, B>::cells(&self) -> usize
+pub fn phx_pop::audit::CellsView<'_, B>::landings(&self) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_pop::audit::CellsView<'_, B>::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_pop::audit::CellsView<'_, B>::representation(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub struct phx_pop::audit::Representation
 impl phx_core::family::AuditFamily for phx_pop::audit::Representation
@@ -46,9 +48,20 @@ pub fn phx_pop::check::View::of_cell<B: phx_store::backing::Backing, L: phx_stor
 pub fn phx_pop::check::View::of_part(&phx_pop::part::Part, &phx_pop::key::KeyInterner, &phx_pop::kind::PopKindDecl, &[u8]) -> phx_pop::check::View
 pub trait phx_pop::check::LineKinks
 pub fn phx_pop::check::LineKinks::points(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> alloc::vec::Vec<i64>
+impl phx_pop::check::LineKinks for phx_pop::synthetic::NoKinks
+pub fn phx_pop::synthetic::NoKinks::points(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> alloc::vec::Vec<i64>
 pub fn phx_pop::check::check(&phx_pop::check::View, &phx_pop::check::View, &dyn phx_pop::check::LineKinks) -> core::result::Result<(), phx_pop::check::Refused>
 pub mod phx_pop::consts
 pub const phx_pop::consts::DENSE_MAX_VALUES: u32
+pub const phx_pop::consts::DESIGN_ENTRIES_PER_ROLE: u32
+pub const phx_pop::consts::DESIGN_PER_MEMBER: i64
+pub const phx_pop::consts::DESIGN_POSITIONS: usize
+pub const phx_pop::consts::DESIGN_ROWS: u32
+pub const phx_pop::consts::DESIGN_ROW_BALANCE: i64
+pub const phx_pop::consts::DESIGN_ROW_MEMBERS: u32
+pub const phx_pop::consts::DESIGN_TEN: u32
+pub const phx_pop::consts::DESIGN_THREE: u32
+pub const phx_pop::consts::DESIGN_WEIGHT: u32
 pub const phx_pop::consts::EXPOSURE_ONE: f64
 pub const phx_pop::consts::HOT_LEAD: usize
 pub const phx_pop::consts::HOT_STEPS: usize
@@ -208,6 +221,7 @@ pub struct phx_pop::landing::Landed
 pub phx_pop::landing::Landed::erased: alloc::vec::Vec<f64>
 pub phx_pop::landing::Landed::holder_list_changes: u64
 pub phx_pop::landing::Landed::landings: u64
+pub phx_pop::landing::Landed::moved: alloc::vec::Vec<i64>
 pub phx_pop::landing::Landed::new_cells: u64
 pub phx_pop::landing::Landed::parts: u64
 pub phx_pop::landing::Landed::resolved: alloc::vec::Vec<(phx_pop::part::PartId, phx_id::ids::PartyId)>
@@ -229,6 +243,10 @@ pub trait phx_pop::landing::LandingIndex
 pub fn phx_pop::landing::LandingIndex::candidates(&self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>
 pub fn phx_pop::landing::LandingIndex::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
 pub fn phx_pop::landing::LandingIndex::remove(&mut self, u64, phx_id::ids::PartyId)
+impl phx_pop::landing::LandingIndex for phx_pop::synthetic::OrderedIndex
+pub fn phx_pop::synthetic::OrderedIndex::candidates(&self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>
+pub fn phx_pop::synthetic::OrderedIndex::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
+pub fn phx_pop::synthetic::OrderedIndex::remove(&mut self, u64, phx_id::ids::PartyId)
 pub fn phx_pop::landing::land<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut dyn phx_pop::landing::LandingIndex, alloc::vec::Vec<phx_pop::part::Part>) -> phx_pop::landing::Landed
 pub fn phx_pop::landing::landing_key(phx_pop::key::KeyId, &[phx_pop::steps::Step], &[u64]) -> u64
 pub mod phx_pop::occasion
@@ -400,6 +418,32 @@ pub fn phx_pop::steps::StepTable::new(&phx_core::register::values::Partition) ->
 pub fn phx_pop::steps::StepTable::step_of(&self, i64) -> phx_pop::steps::Step
 pub fn phx_pop::steps::StepTable::step_scaled(&self, i64, phx_num::missing::Missing<i128>) -> phx_pop::steps::Step
 pub fn phx_pop::steps::StepTable::steps(&self) -> usize
+pub mod phx_pop::synthetic
+pub struct phx_pop::synthetic::DesignPoint<B: phx_store::backing::Backing>
+pub phx_pop::synthetic::DesignPoint::directory: phx_core::directory::Directory
+pub phx_pop::synthetic::DesignPoint::index: phx_pop::synthetic::OrderedIndex
+pub phx_pop::synthetic::DesignPoint::keys: phx_pop::key::KeyInterner
+pub phx_pop::synthetic::DesignPoint::kind: phx_pop::kind::PopKindDecl
+pub phx_pop::synthetic::DesignPoint::ledger: phx_ledger::apply::Ledger<B>
+pub phx_pop::synthetic::DesignPoint::origin: phx_id::ids::Slot
+pub phx_pop::synthetic::DesignPoint::space: phx_store::backing::AddressSpace
+pub phx_pop::synthetic::DesignPoint::table: phx_pop::table::CellTable<B>
+pub phx_pop::synthetic::DesignPoint::target: phx_id::ids::Slot
+impl<B: phx_store::backing::Backing> phx_pop::synthetic::DesignPoint<B>
+pub fn phx_pop::synthetic::DesignPoint<B>::part(&mut self, u32, u32, &mut phx_rand::draws::Draws) -> phx_pop::part::Part
+pub fn phx_pop::synthetic::DesignPoint<B>::tenb<'a>(&'a mut self, &'a phx_pop::synthetic::NoKinks, &'a [u8]) -> phx_pop::landing::TenB<'a, B, B>
+impl<B: phx_store::backing::Backing> core::fmt::Debug for phx_pop::synthetic::DesignPoint<B>
+pub fn phx_pop::synthetic::DesignPoint<B>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_pop::synthetic::NoKinks
+impl phx_pop::check::LineKinks for phx_pop::synthetic::NoKinks
+pub fn phx_pop::synthetic::NoKinks::points(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> alloc::vec::Vec<i64>
+pub struct phx_pop::synthetic::OrderedIndex
+impl phx_pop::landing::LandingIndex for phx_pop::synthetic::OrderedIndex
+pub fn phx_pop::synthetic::OrderedIndex::candidates(&self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>
+pub fn phx_pop::synthetic::OrderedIndex::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
+pub fn phx_pop::synthetic::OrderedIndex::remove(&mut self, u64, phx_id::ids::PartyId)
+pub fn phx_pop::synthetic::design_point<B: phx_store::backing::Backing>() -> phx_pop::synthetic::DesignPoint<B>
+pub fn phx_pop::synthetic::levels() -> [u8; 30]
 pub mod phx_pop::table
 pub enum phx_pop::table::CellList
 pub phx_pop::table::CellList::Holdings

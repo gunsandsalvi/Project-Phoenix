@@ -30,6 +30,8 @@ pub const PENDING: u8 = 1 << 1;
 pub const AMOUNT: u8 = 1 << 2;
 
 const ROW: usize = words_of::<RelRow>();
+/// The optional words a row can carry: balance, pending and amount.
+const OPTIONAL_WORDS: usize = crate::consts::ROW_OPTIONAL_WORDS;
 
 /// The optional words of a row, each present only when its line kind declares it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -48,13 +50,15 @@ impl Optional {
     }
 
     fn words(self) -> Vec<u64> {
-        [self.balance, self.pending, self.amount]
-            .into_iter()
-            .filter_map(|m| match m {
-                Missing::Present(v) => Some(v.cast_unsigned()),
-                Missing::Absent => None,
-            })
-            .collect()
+        self.present().collect()
+    }
+
+    /// The words present, in their order.
+    fn present(self) -> impl Iterator<Item = u64> {
+        [self.balance, self.pending, self.amount].into_iter().filter_map(|m| match m {
+            Missing::Present(v) => Some(v.cast_unsigned()),
+            Missing::Absent => None,
+        })
     }
 }
 
@@ -187,9 +191,20 @@ pub(crate) fn rewrite(arenas: &mut dyn HolderArenas, holder: Slot, view: &RowVie
     if optional.flags() != view.row.flags & (BALANCE | PENDING | AMOUNT) {
         violation!(clause = "REG.14", "a row's optional words changed in place", line = view.row.line.get());
     }
-    let mut words = to_words(&view.row);
-    words.extend(optional.words());
-    arenas.overwrite(holder, ListKind::RelationshipRows, view.at, &words);
+    // A row is at most its head and three optional words, so it is written from the stack.
+    let mut words = [0_u64; ROW + OPTIONAL_WORDS];
+    let head = to_words(&view.row);
+    let mut n = 0;
+    for w in head.iter().copied().chain(optional.present()) {
+        if let Some(slot) = words.get_mut(n) {
+            *slot = w;
+        }
+        n += 1;
+    }
+    let Some(written) = words.get(..n) else {
+        violation!(clause = "REG.14", "a row wider than its head and optional words", line = view.row.line.get());
+    };
+    arenas.overwrite(holder, ListKind::RelationshipRows, view.at, written);
 }
 
 /// A row removed from its holder's run.

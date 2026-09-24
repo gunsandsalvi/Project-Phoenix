@@ -4079,8 +4079,7 @@ saves read back to their closes' hashes and the thirteen injections each lit the
     (a part split by any other cause takes its share of the exposure, S0.23); reviewers who do not act stay, and
     the cell's mean then stands for members whose true exposures differ — the approximation REP.21 accepts. Its cost
     is reported as it is incurred (REP.15): at each review draw and each landing, the dispersion of exposure that the
-    mean erases (`review::erased_at_review`) is added to the representation's cost measures (S0.24's live check),
-    not only measured in a unit test.
+    mean erases (`review::erased_at_review`) is added to LC-0-46's measures, not only measured in a unit test.
   - A **surprise** (VAL.4) that bears on a decision kind wakes the cell for that kind on the next day its point runs
     (REP.35), through the agenda.
 - **Needs and notices** reach particular members on their own day. On a day their decision point does not run
@@ -4352,14 +4351,44 @@ change at 10b.
 - a seller member selling units it did not hold;
 - a landing order that depends on the thread count.
 
+- As built:
+  - the ledger moves a cell's rows and holdings into a part and back (`phx_ledger::part`: `detach_rows`,
+    `attach_rows`, `detach_holding`, `attach_holding`), each row with its members' share of every word, its payment
+    record and its arrears, a row read once per part; members stay on their lines, so no side count moves
+    (architecture §4.5, §7.5);
+  - payment records never combine: the check refuses a row of another record, arrears or price point, so the
+    declared rule is that only equal records join (architecture §4.5);
+  - the check also requires equal standing rates and attention and review exposures kept on both or neither: a
+    landing never averages a decision; S1.01, which first sets rates and attention, decides whether and how they join;
+  - a split draws a row's leaving members from the cell's members independently of their profile values, since no
+    attachment is yet a profile component; S1.01's employment attachment makes the draw joint within the role's group;
+  - a part carries its origin's kink signature; the rules that give kinks their points (S1.11, taxes) write a part's
+    band when a flow carries it across one, and until then every signature is empty;
+  - a pooled flow's `SplitRequest` carries its funds row and per-member amounts, so what it moved for the reached
+    members leaves with them whole (`pooled::pooled_split`);
+  - the landing index is a trait (`landing::LandingIndex`) that S0.24's sharded index implements; the day's 10b
+    runner, its flags for re-keying and the counters' per-day records are the world's once it keeps cells (S0.25);
+  - a small split draws members one by one (`pick_without_replacement`) when fewer leave than there are values, and
+    the inversion hypergeometric reads its first probability as a product when it is the chance of no success;
+  - the Representation family also checks each population's weights (REP.13), each row's and holding's members
+    within its cell's (REP.31), and the day's landings against the totals they joined (REP.14); lines' sides are the
+    Contracts family's (S0.14); a finding about a table as a whole is owned by the table (`FindingOwner::Table`);
+  - the design point's cells (`synthetic.rs`) feed `phx_pop.ir_part_end_to_end` and the phone's part benchmark, by
+    component; the seller spread is `phx_pop.ir_seller_spread` (F-001, F-029, F-030).
+
 **Done when**
-- [ ] Splits, pooled flows, landing, clusters, re-keying, pairings, the seller spread and tiles work, with the tests
+- [x] Splits, pooled flows, landing, clusters, re-keying, pairings, the seller spread and tiles work, with the tests
   passing.
-- [ ] LC-0-43 to LC-0-46 are registered.
+- [x] LC-0-43 to LC-0-46 are registered.
 - [ ] The part's micro-benchmark has run on the phone and the owner has committed its report; F-001 is updated with
   the phone's figures.
-- [ ] PC-32 is registered.
-- [ ] Two reviews are done.
+- [x] PC-32 is registered.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found:
+  - a part landing through a view built twice per part (now once);
+  - a part's cost left to the design (now measured by component, F-029): every row found by reading the cell's rows
+    again (now once per part), a row rewritten through two allocations (now from the stack), a hypergeometric per
+    value of every group (now members one by one when few leave) and six log-gammas per small draw (now a product);
+  - a part's rows paid by nobody between its split and 10b (F-031).
 
 ---
 
@@ -15435,7 +15464,7 @@ the final build within the budget on the phone.
 
 | Id | Step | Day | What was measured, where | Mechanism suspected | Addressed by | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| F-001 | S0.23 | review, 2026-09-23 | A part end to end at 12.1 µs against 2.5 µs: the review's untuned prototype on one x86 core at 2.1 GHz (rows 1.8, profiles and positions 2.0, re-key 0.5, redraws 2.2, key and check 1.0, join and holder lists 4.0, and 0.6 the prototype did not attribute). The redraws are now S0.22's line, so the part like for like is 9.9 µs, and a ledger's risk case at 12.1 µs overstates it by a fifth | none: the representation's cost. At 4 µs the median day is about 1.07 s (with due-day runs for every dated row kind, S0.17) | S0.23's implementation and its phone micro-benchmark (S0.07's bench), then S0.26; the remedies of N8.7 in order | open |
+| F-001 | S0.23 | review, 2026-09-23; build, 2026-09-24 | A part end to end at 12.1 µs against 2.5 µs: the review's untuned prototype on one x86 core at 2.1 GHz (rows 1.8, profiles and positions 2.0, re-key 0.5, redraws 2.2, key and check 1.0, join and holder lists 4.0, and 0.6 the prototype did not attribute). The redraws are now S0.22's line, so the part like for like is 9.9 µs, and a ledger's risk case at 12.1 µs overstates it by a fifth. S0.23's implementation on the build machine: 17.4 µs a part of one member at the design point (split 8.7, re-key 1.0, key, lookup and check 2.9, join and holder lists 4.8), F-029; the phone's figures are the owner's run | none: the representation's cost. At 4 µs the median day is about 1.07 s (with due-day runs for every dated row kind, S0.17) | S0.23's implementation and its phone micro-benchmark (S0.07's bench), then S0.26; the remedies of N8.7 in order | open |
 | F-002 | S0.22, S0.23 | review, 2026-09-23 | A candidate at 174 ns (target 100), a redraw at 140 ns (target 30), a seller spread at 4.1 µs (target 0.8), same prototype. Targets raised to 180 ns, 150 ns and 3 µs, and redraws cut by the weight ladder; architecture §13.2's projected median day then became 981 ms (2% headroom), a heavy Monday 2 025 ms (misses by 1%), figures since superseded by due-day runs and Stage 0's pensions in payment: 924 ms and 2 063 ms at Stage 1 (architecture §13.2) | none: the representation's cost | S0.26 on the phone; N8.7 | open |
 | F-003 | Stage 3 ledger (§6) | planning, 2026-09-23 | Stage 3, with its representation choices (participation per asset class in the key and holdings as counted rows; the linked call warm-started over a pruned network; registered instrument outlooks and values computed on new prints and shared; closed-form claim values), adds about 53 ms to an ordinary business day — the linked call 3–5 ms of wall time per country, undivided; households' `choose_holdings` about 30 k reviews at 80 ns and 10 k choices at about 1 µs; registered outlooks and values 6 ms — about 86 ms to a heavy one, and about 240 MB at peak (institutions' positions and their lots at 32 B, 104 MB; households' holding rows 30 MB; individuals' deviations 19 MB; keys a third more with participation 18 MB; household cells 11 MB). Through Stage 3 the median weekday projects at about 1 063 ms (6% over the budget; 1 135 ms before due-day runs for every dated row kind, S0.17), a heavy Monday at about 2 303 ms (15% over) and the peak at about 4 562 MB (1.4% over 4.5 GB, with Stage 0's pensions in payment and the run head); a fund-run day adds about 60 ms (150 ms at F-001's measured part cost) | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate; S1.16's measurements, then each gate; N8.7's remedies in order, representation and traversal first; the owner if none suffices | open |
 | F-004 | Stage 4 ledger (§7) | planning, 2026-09-23 | Stage 4 adds about 387 MB (policy and scheme rows with their attachments, pots and slack about 230 MB) and 102 ms to a business day (146 ms heavy; derivative marks and margin 25 ms, derivative meetings 32 ms), with the representation choices its reviews took: no holder lists on retail lines, no DC membership rows, derivative rows without `amount`, scheme membership as an attachment, actuaries once per model point, due-day runs for every dated row kind. Through Stage 4 the median weekday projects at about 1 165 ms (16.5% over), the heavy Monday about 2 455 ms (23% over) and the peak about 4 949 MB (10% over the 4.5 GB budget itself); an insurer's resolution day adds about 45 ms, a widely held firm's takeover about 50 ms | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate; S1.16's measurements, then each gate; N8.7's remedies in order; the owner if none suffices | open |
@@ -15464,6 +15493,9 @@ the final build within the budget on the phone.
 | F-026 | S0.19 | build, 2026-09-24 | Equity accounts, claims and tallies are ordered maps keyed by party, about 40 bytes per equity account against the budget's 16 | the few owned parties of Stage 0 do not need a column | S0.21's population tables, where millions of firms keep one: the account a column of the party's table | open |
 | F-027 | S0.22 | build, 2026-09-24 | A scheduled candidate day costs about 3 500 instructions (`phx_pop.ir_screen_candidate`, a thousand candidates of one cell of 170 members in three values), where the review's prototype measured 174 ns | the envelope is recomputed on each candidate, two to three transcendentals are drawn per day, and the day's values and counts are gathered into small vectors | judged on the phone at S0.26; if the budget is missed, the envelope kept with the booking and the day's reads made without allocating | open |
 | F-028 | S0.22 | build, 2026-09-24 | Carrying a cell's mean review exposure over-counts reviews by about 12% against members each carrying their own, reviewing monthly at 2% a day over two years (`review_count_bias_measured`) | the concavity of 1 − e^(−x): reviewers who stay and the others share one mean | REP.21 accepts it; S1.01's attention is where its size is read against the decisions it moves, and LC-0-46 reports the dispersion erased at each review | open |
+| F-029 | S0.23 | build, 2026-09-24 | A part end to end at the design point costs 337 351 instructions (`phx_pop.ir_part_end_to_end`, ten members of two hundred with forty rows, 150 profile entries and thirty positions) and 17.4 µs a one-member part on the build machine, against 2.5 µs | each split and join decodes and re-encodes both cells' profiles; a row's words go through the arena's list reference on every write; every row draws its leavers by its own hypergeometric; the check and the join each read the cell's rows into views; small vectors are allocated throughout | judged on the phone at S0.26 against F-001; the remedies of N8.7 in order, starting with profiles and rows kept in the part's day arena and written back once | open |
+| F-030 | S0.23 | build, 2026-09-24 | A seller cell's spread of fifty members and 450 purchases costs 3.1 million instructions (`phx_pop.ir_seller_spread`) against 3 µs | members whose stock is below the largest purchase left end every phase after one purchase, so a cell of small stocks spreads purchase by purchase, each finding the active members afresh | the phases per spread are counted from S0.25 (`phx_pop.spread_phases`) and judged on the phone at S0.26 | open |
+| F-031 | S0.23 | build, 2026-09-24 | A part's rows belong to no holder between its split and 10b, so a due falling on one of them at stage 7 of the same day is not read by the settlement stream | parts land only at 10b, and the stream reads holders' rows | S0.25, when the world first splits cells: a split before stage 7 keeps a dated row on its origin until 10b, or its part lands at 7a | open |
 
 ---
 

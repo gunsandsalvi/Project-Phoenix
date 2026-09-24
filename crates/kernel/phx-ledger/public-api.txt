@@ -252,8 +252,10 @@ pub fn phx_ledger::apply::Ledger<B>::settle(&mut self, &mut dyn phx_ledger::appl
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::attach_holding(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_ledger::holding::CellHolding) -> bool
 pub fn phx_ledger::apply::Ledger<B>::attach_row(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_ledger::part::DetachedRow) -> bool
+pub fn phx_ledger::apply::Ledger<B>::attach_rows(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, alloc::vec::Vec<phx_ledger::part::DetachedRow>) -> u32
 pub fn phx_ledger::apply::Ledger<B>::detach_holding(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_id::ids::InstrumentId, u32, phx_num::round::Round) -> phx_ledger::holding::CellHolding
 pub fn phx_ledger::apply::Ledger<B>::detach_row(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, (phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare, phx_num::round::Round) -> phx_ledger::part::DetachedRow
+pub fn phx_ledger::apply::Ledger<B>::detach_rows(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &[((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)], phx_num::round::Round) -> alloc::vec::Vec<phx_ledger::part::DetachedRow>
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::contract_process(&mut self, &mut dyn phx_ledger::apply::Holders, &[phx_ledger::fails::Fail], phx_id::day::Day)
 pub fn phx_ledger::apply::Ledger<B>::cure(&mut self, &mut dyn phx_ledger::apply::Holders, phx_id::ids::LineId, phx_ledger::algebra::Side, phx_id::ids::PartyId)
@@ -457,6 +459,7 @@ pub fn phx_ledger::commitment::empty_kinds(&[phx_ledger::commitment::CommitmentK
 pub mod phx_ledger::consts
 pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::HOLDER_SHARDS: u32
+pub const phx_ledger::consts::ROW_OPTIONAL_WORDS: usize
 pub const phx_ledger::consts::RUN_SAMPLE_PERIOD: u32
 pub const phx_ledger::consts::TERMS_SHARDS: u32
 pub mod phx_ledger::contract_process
@@ -923,6 +926,7 @@ pub phx_ledger::part::DetachedRow::optional: phx_ledger::rows::Optional
 pub phx_ledger::part::DetachedRow::row: phx_ledger::rows::RelRow
 impl phx_ledger::part::DetachedRow
 pub fn phx_ledger::part::DetachedRow::line(&self) -> phx_id::ids::LineId
+pub fn phx_ledger::part::DetachedRow::opening(phx_id::ids::LineId, phx_ledger::algebra::Side, u8, u32, phx_ledger::rows::Optional) -> phx_ledger::part::DetachedRow
 pub fn phx_ledger::part::DetachedRow::side(&self) -> phx_ledger::algebra::Side
 pub struct phx_ledger::part::RowShare
 pub phx_ledger::part::RowShare::count: u32

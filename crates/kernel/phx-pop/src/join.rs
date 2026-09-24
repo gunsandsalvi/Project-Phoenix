@@ -79,12 +79,8 @@ pub fn join<B: Backing, L: Backing>(
             _ => violation!(clause = "REP.21", "a landing between exposures kept and absent", review = j),
         }
     }
-    for row in part.rows {
-        done.rows += 1;
-        if ledger.attach_row(table, place, target, row) {
-            done.holder_list_changes += 1;
-        }
-    }
+    done.rows = u32::try_from(part.rows.len()).unwrap_or_else(|_| capacity_exceeded!("rows of a part", u32::MAX, 0));
+    done.holder_list_changes += ledger.attach_rows(table, place, target, part.rows);
     for holding in part.holdings {
         if ledger.attach_holding(table, place, target, holding) {
             done.holder_list_changes += 1;

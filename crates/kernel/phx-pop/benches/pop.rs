@@ -6,8 +6,9 @@
 )]
 
 //! A thousand members' steps on a partition of sixty-four boundaries, a thousand landing keys over sixteen steps and a
-//! word of signature, the reads a landing makes for every part; and a thousand candidate days of one cell of 170
-//! members in three values, the screen's work on every row the agenda brings to 3b.
+//! word of signature, the reads a landing makes for every part; a thousand candidate days of one cell of 170 members
+//! in three values, the screen's work on every row the agenda brings to 3b; a part end to end at the design point,
+//! split, its origin re-keyed, looked up, checked and joined; and a seller cell of fifty members' spread.
 
 use std::hint::black_box;
 
@@ -19,10 +20,12 @@ use phx_num::Missing;
 use phx_pop::envelope::rung;
 use phx_pop::key::KeyId;
 use phx_pop::kind::PopKindDecl;
-use phx_pop::landing::landing_key;
+use phx_pop::landing::{land, landing_key};
 use phx_pop::profile::Profile;
 use phx_pop::screen::{Process, ScreenCounters, screen_candidate};
+use phx_pop::seller_spread::spread;
 use phx_pop::steps::{Step, StepTable};
+use phx_pop::synthetic::{DesignPoint, NoKinks, design_point, levels};
 use phx_pop::table::{CellTable, NewCell};
 use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
 use phx_store::{AddressSpace, HeapBacking};
@@ -112,6 +115,37 @@ fn ir_landing_key(parts: Vec<(KeyId, Vec<Step>, [u64; 1])>) -> u64 {
     parts.into_iter().fold(0, |acc, (k, s, sig)| acc ^ landing_key(k, black_box(&s), &sig))
 }
 
-library_benchmark_group!(name = pop, benchmarks = [ir_step_of, ir_landing_key, ir_screen_candidate]);
+fn design_setup() -> DesignPoint<HeapBacking> {
+    design_point()
+}
+
+#[library_benchmark]
+#[bench::one(setup = design_setup)]
+fn ir_part_end_to_end(mut dp: DesignPoint<HeapBacking>) -> u64 {
+    let part = dp.part(0, 10, &mut draws());
+    let lv = levels();
+    let origin = dp.origin;
+    dp.table.rekey(origin, &dp.kind, &lv);
+    let mut index = std::mem::take(&mut dp.index);
+    let landed = land(&mut dp.tenb(&NoKinks, &lv), &mut index, vec![part]);
+    black_box(landed.rows)
+}
+
+fn spread_setup() -> (Vec<u64>, Vec<(u64, u64)>) {
+    let mut d = draws();
+    let units = (0..50).map(|_| below_u64(&mut d, 40) + 1).collect();
+    (units, vec![(1, 300), (2, 120), (5, 30)])
+}
+
+#[library_benchmark]
+#[bench::fifty(setup = spread_setup)]
+fn ir_seller_spread((units, purchases): (Vec<u64>, Vec<(u64, u64)>)) -> u64 {
+    black_box(spread(&mut draws(), &units, &purchases).phases)
+}
+
+library_benchmark_group!(
+    name = pop,
+    benchmarks = [ir_step_of, ir_landing_key, ir_screen_candidate, ir_part_end_to_end, ir_seller_spread]
+);
 
 main!(library_benchmark_groups = pop);

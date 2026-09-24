@@ -26,6 +26,25 @@ pub const LADDER_DEN: u64 = 4;
 /// One unit of review exposure, −ln(1 − a) summed over days, in the fixed point a cell's exposure column keeps.
 pub const EXPOSURE_ONE: f64 = 4_294_967_296.0;
 
+/// The design point's cell a part is measured on: its relationship rows.
+pub const DESIGN_ROWS: u32 = 40;
+/// Its joint profile values held in each of its two roles.
+pub const DESIGN_ENTRIES_PER_ROLE: u32 = 75;
+/// Its positions.
+pub const DESIGN_POSITIONS: usize = 30;
+/// Its members.
+pub const DESIGN_WEIGHT: u32 = 200;
+/// The members holding each of its rows.
+pub const DESIGN_ROW_MEMBERS: u32 = 50;
+/// Each row's balance, in smallest units.
+pub const DESIGN_ROW_BALANCE: i64 = 5_000;
+/// Each position's total per member, a hundred of its scale.
+pub const DESIGN_PER_MEMBER: i64 = 100;
+/// A profile group's first two components' values: ten each.
+pub const DESIGN_TEN: u32 = 10;
+/// A profile group's third component's values, and the design point's compositions.
+pub const DESIGN_THREE: u32 = 3;
+
 #[cfg(test)]
 mod tests {
     #[test]

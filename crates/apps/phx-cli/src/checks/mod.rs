@@ -84,5 +84,9 @@ pub const CHECKS: &[Check] = &[
     population::LC_0_40,
     population::LC_0_41,
     population::LC_0_42,
+    population::LC_0_43,
+    population::LC_0_44,
+    population::LC_0_45,
+    population::LC_0_46,
     ledger::LC_0_61,
 ];

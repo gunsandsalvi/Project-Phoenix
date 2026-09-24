@@ -31,5 +31,6 @@ pub mod seller_spread;
 pub mod sig;
 pub mod split;
 pub mod steps;
+pub mod synthetic;
 pub mod table;
 pub mod tiles;

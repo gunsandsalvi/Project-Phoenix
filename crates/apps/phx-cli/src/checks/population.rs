@@ -77,3 +77,52 @@ pub const LC_0_42: Check = live_check! {
     from_step: "S0.22",
     check: carried_decided,
 };
+
+/// The Representation family's close: weights sum to each population, attachments within members, every close.
+fn representation_whole(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// Sampled landings re-checked against both sides' kinks from their records.
+fn no_kink_crossed(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// Sampled landings' straight rules' totals unchanged at the moment of landing, to a smallest unit per member.
+fn straight_rules_exact(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+/// The representation's costs reported each day: dispersion erased per landing and per pooled flow, and splits,
+/// landings and new cells.
+fn costs_reported(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet(NO_CELLS)
+}
+
+pub const LC_0_43: Check = live_check! {
+    id: "LC-0-43",
+    title: "Weights sum to each population, lines' sides are equal and attachments reconcile with profiles, every close",
+    from_step: "S0.23",
+    check: representation_whole,
+};
+
+pub const LC_0_44: Check = live_check! {
+    id: "LC-0-44",
+    title: "No landing crossed a kink: sampled landings re-checked against both sides' kinks",
+    from_step: "S0.23",
+    check: no_kink_crossed,
+};
+
+pub const LC_0_45: Check = live_check! {
+    id: "LC-0-45",
+    title: "Sampled landings leave every straight rule's total unchanged to a smallest unit per member",
+    from_step: "S0.23",
+    check: straight_rules_exact,
+};
+
+pub const LC_0_46: Check = live_check! {
+    id: "LC-0-46",
+    title: "The representation's costs are reported per day: dispersion erased, splits, landings and new cells",
+    from_step: "S0.23",
+    check: costs_reported,
+};

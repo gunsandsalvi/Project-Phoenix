@@ -1,4 +1,4 @@
-use phx_id::{CountryId, Day, InstrumentId, LineId, MarketId, PartyId, TileId};
+use phx_id::{CountryId, Day, InstrumentId, LineId, MarketId, PartyId, TableId, TileId};
 use phx_num::{Ccy, UnitId};
 
 /// What a finding is about.
@@ -12,6 +12,9 @@ pub enum FindingOwner {
     Country(CountryId),
     /// An event, by its identity, when no party it concerns can own the finding.
     Event(u64),
+    /// A table of parties as a whole, when what is found is its members' sum: a population against its weights, the
+    /// day's landings against the totals they joined.
+    Table(TableId),
     /// The run's own conduct, such as what the read trace found, which no party owns.
     Run,
 }

@@ -9,7 +9,7 @@ use phx_store::Backing;
 use crate::check::{View, check};
 use crate::join::{Landing, join};
 use crate::key::{KeyLayout, KeyRecord};
-use crate::landing::{Landed, LandingIndex, TenB, hold_key};
+use crate::landing::{Landed, LandingIndex, TenB, hold_key, totals};
 use crate::part::{Part, PartId};
 
 /// A cell's key changed for all its members alike: the new key held once more and the old once fewer, the cell keeping
@@ -90,11 +90,14 @@ pub fn rekey_flagged<B: Backing, L: Backing>(
         if let Some((to, at)) = target {
             index.remove(new, party);
             let key = ctx.keys.record(ctx.table.hot(slot).key_id);
+            landed.count(&totals(ctx.table, slot), -1);
+            landed.count(&totals(ctx.table, at), -1);
             let part = take_whole(ctx, slot);
             let id = part.id;
             let done = join(ctx.ledger, ctx.table, ctx.place, &Landing { part: id, target: at }, part);
             ctx.directory.end(party, ctx.today, Missing::Present(to));
             hold_key(ctx.keys, key, -1);
+            landed.count(&totals(ctx.table, at), 1);
             landed.landings += 1;
             landed.joined(id, to, &done);
         }

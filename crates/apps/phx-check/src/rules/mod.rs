@@ -19,6 +19,7 @@ mod expect_reason;
 mod hand_pod;
 mod id_default;
 mod interfaces;
+mod landing;
 mod layering;
 mod ledger_writes;
 mod literals;
@@ -157,6 +158,12 @@ pub const RULES: &[Rule] = &[
         title: "members screened by the population's 3b screen alone",
         since: "S0.22",
         run: screening::run,
+    },
+    Rule {
+        id: "PC-32",
+        title: "members split and landed by the population alone, a cell's totals changed at 10b by a landing alone",
+        since: "S0.23",
+        run: landing::run,
     },
     Rule { id: "PC-75", title: "a border closed in the markets' reach alone", since: "S0.18", run: borders::run },
 ];

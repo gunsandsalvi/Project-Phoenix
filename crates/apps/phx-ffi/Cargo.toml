@@ -19,7 +19,10 @@ bindgen = ["uniffi/cli"]
 
 [dependencies]
 phx-exec = { path = "../../kernel/phx-exec" }
+phx-num = { path = "../../foundation/phx-num" }
+phx-pop = { path = "../../kernel/phx-pop" }
 phx-rand = { path = "../../foundation/phx-rand" }
+phx-store = { path = "../../kernel/phx-store" }
 uniffi.workspace = true
 
 [lints]

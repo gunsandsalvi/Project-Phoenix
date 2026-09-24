@@ -112,6 +112,7 @@ fn join_adds_everything_exactly() {
     let profile = ten.table.profile(sb);
     assert_eq!(profile.members(0), u64::from(after_b.0), "profile counts added with the weight");
     assert!(landed.erased.first().is_some_and(|e| *e >= 0.0));
+    assert!(landed.moved.iter().all(|m| *m == 0), "the audit's reading of the same: {:?}", landed.moved);
 }
 
 #[test]
@@ -192,6 +193,7 @@ fn clusters_canonical() {
     let mut index = std::mem::take(&mut ten.index);
     let landed = land(&mut ten.tenb(), &mut index, parts);
     assert_eq!((landed.new_cells, landed.landings), (1, 1), "the second joins the cell the first started");
+    assert_eq!(landed.moved, [0]);
     let first = landed.resolved.first().map(|(id, _)| id.seq);
     assert_eq!(first, Some(0), "clusters form in order of the parts' identities, whatever their order in the day");
 }
@@ -255,6 +257,7 @@ fn rekey_on_step_crossing() {
     let mut landed = Landed::default();
     let rekeys = rekey_flagged(&mut ten.tenb(), &mut index, &[sa], &mut landed);
     assert_eq!((rekeys, landed.landings), (1, 1));
+    assert_eq!(landed.moved, [0], "a whole cell's landing moves no total");
     assert!(!ten.table.is_live(sa), "a lands in b whole");
     assert_eq!(state(&ten, b).0, 200);
     assert!(

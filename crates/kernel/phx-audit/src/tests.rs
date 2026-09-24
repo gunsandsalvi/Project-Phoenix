@@ -126,6 +126,12 @@ impl phx_core::CellsAudit for NoCells {
     fn representation(&self, _: usize) -> Vec<phx_core::Gap> {
         Vec::new()
     }
+    fn populations(&self) -> Vec<phx_core::Gap> {
+        Vec::new()
+    }
+    fn landings(&self) -> Vec<phx_core::Gap> {
+        Vec::new()
+    }
 }
 
 /// A tape with nothing on it.

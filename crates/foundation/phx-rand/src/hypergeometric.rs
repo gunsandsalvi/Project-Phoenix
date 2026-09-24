@@ -44,7 +44,13 @@ fn hin(d: &mut Draws, total: u64, good: u64, m: u64) -> u64 {
     let hi = if m < good { m } else { good };
     let (nf, sf, mf) = (exact(total), exact(good), exact(m));
     let lof = from_u64(lo);
-    let p_lo = exp(ln_choose(sf, lof) + ln_choose(nf - sf, mf - lof) - ln_choose(nf, mf));
+    // With no success the least a sample holds, its chance is the product of drawing a failure each time, m terms
+    // for a sample small enough to be drawn by inversion; otherwise from the binomial coefficients' logarithms.
+    let p_lo = if lo == 0 {
+        (0..m).map(from_u64).fold(1.0, |p, i| p * (nf - sf - i) / (nf - i))
+    } else {
+        exp(ln_choose(sf, lof) + ln_choose(nf - sf, mf - lof) - ln_choose(nf, mf))
+    };
     loop {
         let mut target = open_unit(d);
         let mut count = lo;

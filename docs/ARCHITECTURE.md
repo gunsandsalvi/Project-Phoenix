@@ -779,8 +779,11 @@ stance from the origin it lived in — and never averaged (REP.16).
   identities, never slots, so renumbering cannot change where a part lands. Cells may share a key while their lines'
   kinks or pins differ. A part looks up its key and takes the first candidate that passes the **check**:
   - the same key id, signature and full step vector, compared exactly, since a hash only proposes;
-  - then the kinks of either side's lines — a payment due, a credit limit, the insured limit — read from the
-    candidate's own rows (contiguous),
+  - the same standing rates and attention, which a landing never averages, and review exposures kept on both or
+    neither;
+  - then, for every line side both hold, the same payment record, arrears and price point, and the kinks of the
+    line — a credit limit, the insured limit — read from the candidate's own rows (contiguous), a payment falling due
+    showing as a record that differs,
 
   so no join averages a key or crosses a kink (REP.8, REP.16).
 - **Batches**: parts are sorted by landing key at 10b; all parts bound for one target are checked against its state at

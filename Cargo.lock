@@ -636,7 +636,10 @@ name = "phx-ffi"
 version = "0.1.0"
 dependencies = [
  "phx-exec",
+ "phx-num",
+ "phx-pop",
  "phx-rand",
+ "phx-store",
  "uniffi",
 ]
 

@@ -13,3 +13,5 @@ pub const HOLDER_SHARDS: u32 = 8;
 /// One holder in this many has its run read in full against its rows each day, the holders whose slot is congruent
 /// to the day, so every holder is read within this many days.
 pub const RUN_SAMPLE_PERIOD: u32 = 64;
+/// The optional words a relationship row can carry: its balance, its pending amount and its amount.
+pub const ROW_OPTIONAL_WORDS: usize = 3;

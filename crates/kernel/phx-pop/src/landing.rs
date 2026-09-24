@@ -5,7 +5,7 @@ use phx_exec::{KeyedReduce, mix64};
 use phx_id::{Day, PartyId, RowRef, Slot};
 use phx_ledger::apply::Ledger;
 use phx_macros::clause;
-use phx_num::{Missing, violation};
+use phx_num::{Missing, capacity_exceeded, violation};
 use phx_store::{AddressSpace, Backing};
 
 use crate::check::{LineKinks, View, check};
@@ -83,9 +83,27 @@ pub struct Landed {
     pub erased: Vec<f64>,
     /// Each part's cell, by the part's identity, for re-pointing the records that name it.
     pub resolved: Vec<(PartId, PartyId)>,
+    /// Per position, what the day's landings moved of the totals they joined: the audit's, which only nought passes.
+    pub moved: Vec<i64>,
 }
 
 impl Landed {
+    /// The totals of the positions of what joins, taken before as negatives and after as positives.
+    pub(crate) fn count(&mut self, totals: &[i64], sign: i64) {
+        for (i, t) in totals.iter().enumerate() {
+            let by = sign * t;
+            match self.moved.get_mut(i) {
+                Some(m) => {
+                    let Some(next) = m.checked_add(by) else {
+                        violation!(clause = "Law 7", "a landing's moved total overflows", position = i);
+                    };
+                    *m = next;
+                }
+                None => self.moved.push(by),
+            }
+        }
+    }
+
     pub(crate) fn joined(&mut self, part: PartId, cell: PartyId, done: &crate::join::Joined) {
         self.rows += u64::from(done.rows);
         self.holder_list_changes += u64::from(done.holder_list_changes);
@@ -151,13 +169,9 @@ fn new_cell<B: Backing, L: Backing>(
             ctx.table.set_attention(slot, j, *x);
         }
     }
-    let mut done = crate::join::Joined::default();
-    for row in part.rows {
-        done.rows += 1;
-        if ctx.ledger.attach_row(ctx.table, ctx.place, slot, row) {
-            done.holder_list_changes += 1;
-        }
-    }
+    let rows = u32::try_from(part.rows.len()).unwrap_or_else(|_| capacity_exceeded!("rows of a part", u32::MAX, 0));
+    let entered = ctx.ledger.attach_rows(ctx.table, ctx.place, slot, part.rows);
+    let mut done = crate::join::Joined { rows, holder_list_changes: entered, erased: Vec::new() };
     for holding in part.holdings {
         if ctx.ledger.attach_holding(ctx.table, ctx.place, slot, holding) {
             done.holder_list_changes += 1;
@@ -182,33 +196,37 @@ pub fn land<B: Backing, L: Backing>(
     parts: Vec<Part>,
 ) -> Landed {
     let mut landed = Landed { parts: phx_rand::float::len_u64(parts.len()), ..Landed::default() };
-    let mut order: Vec<(Missing<u64>, PartId, usize)> = parts
-        .iter()
-        .enumerate()
-        .map(|(i, p)| (landing_of(&View::of_part(p, ctx.keys, ctx.kind, ctx.levels)), p.id, i))
-        .collect();
+    let views: Vec<View> = parts.iter().map(|p| View::of_part(p, ctx.keys, ctx.kind, ctx.levels)).collect();
+    let mut order: Vec<(Missing<u64>, PartId, usize)> =
+        parts.iter().zip(&views).enumerate().map(|(i, (p, v))| (landing_of(v), p.id, i)).collect();
     order.sort_unstable_by_key(|(lk, id, _)| (*lk == Missing::Absent, lk_value(*lk), *id));
     let mut cells: BTreeMap<Slot, View> = BTreeMap::new();
     let mut targeted: Vec<(PartyId, PartId, usize, Slot)> = Vec::new();
     let mut unbound: Vec<(PartId, usize)> = Vec::new();
     for (lk, id, i) in &order {
-        let Some(part) = parts.get(*i) else { continue };
+        let Some(view) = views.get(*i) else { continue };
         let found = match lk {
-            Missing::Present(k) => {
-                let view = View::of_part(part, ctx.keys, ctx.kind, ctx.levels);
-                index.candidates(*k).into_iter().find(|(_, slot)| {
-                    let cell = cells
-                        .entry(*slot)
-                        .or_insert_with(|| View::of_cell(ctx.table, *slot, ctx.ledger, ctx.kind, ctx.levels));
-                    check(&view, cell, ctx.kinks).is_ok()
-                })
-            }
+            Missing::Present(k) => index.candidates(*k).into_iter().find(|(_, slot)| {
+                let cell = cells
+                    .entry(*slot)
+                    .or_insert_with(|| View::of_cell(ctx.table, *slot, ctx.ledger, ctx.kind, ctx.levels));
+                check(view, cell, ctx.kinks).is_ok()
+            }),
             Missing::Absent => None,
         };
         match found {
             Some((cell, slot)) => targeted.push((cell, *id, *i, slot)),
             None => unbound.push((*id, *i)),
         }
+    }
+    for p in &parts {
+        landed.count(&p.positions, -1);
+    }
+    let mut touched: Vec<Slot> = targeted.iter().map(|(_, _, _, slot)| *slot).collect();
+    touched.sort_unstable();
+    touched.dedup();
+    for slot in &touched {
+        landed.count(&totals(ctx.table, *slot), -1);
     }
     let mut parts: Vec<Option<Part>> = parts.into_iter().map(Some).collect();
     targeted.sort_unstable_by_key(|(cell, id, _, _)| (*cell, *id));
@@ -236,9 +254,18 @@ pub fn land<B: Backing, L: Backing>(
         } else {
             let slot = new_cell(ctx, index, part, &mut landed);
             clusters.entry(group).or_default().push((ctx.table.party(slot), slot));
+            touched.push(slot);
         }
     }
+    for slot in touched {
+        landed.count(&totals(ctx.table, slot), 1);
+    }
     landed
+}
+
+/// A cell's position totals, in the kind's order.
+pub(crate) fn totals<B: Backing>(table: &CellTable<B>, slot: Slot) -> Vec<i64> {
+    (0..table.positions()).map(|i| table.position(slot, i)).collect()
 }
 
 fn lk_value(lk: Missing<u64>) -> u64 {

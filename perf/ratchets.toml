@@ -145,7 +145,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_rand.ir_hypergeometric_hin"
-value = 1675
+value = 601
 direction = "down"
 
 [[ratchet]]
@@ -155,7 +155,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_rand.ir_multivariate_hypergeometric"
-value = 7998
+value = 6853
 direction = "down"
 
 [[ratchet]]
@@ -289,7 +289,7 @@ direction = "down"
 # accounts. CI's runner holds the ratchet at its own measure, which is above the build machine's.
 [[ratchet]]
 counter = "phx_ledger.ir_settle_day_16"
-value = 351930
+value = 336118
 direction = "down"
 
 # phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
@@ -316,10 +316,20 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_landing_key"
-value = 341086
+value = 339086
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_screen_candidate"
-value = 3525279
+value = 3489306
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_part_end_to_end"
+value = 337351
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.ir_seller_spread"
+value = 3117624
 direction = "down"

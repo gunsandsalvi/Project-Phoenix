@@ -25,6 +25,14 @@ pub struct DetachedRow {
 }
 
 impl DetachedRow {
+    /// A row as the opening places it on a cell: its members, their role within the cell and its words, with a clean
+    /// record, for data that stands in for an opening's.
+    #[must_use]
+    pub fn opening(line: LineId, side: Side, within: u8, count: u32, optional: Optional) -> DetachedRow {
+        let row = RelRow { line, count, record: 0, point: 0, role: rows::role(side, within), flags: optional.flags() };
+        DetachedRow { row, optional, arrears_since: Missing::Absent }
+    }
+
     pub fn line(&self) -> LineId {
         self.row.line
     }
@@ -96,6 +104,47 @@ impl<B: Backing> Ledger<B> {
         rounding: Round,
     ) -> DetachedRow {
         let view: RowView = crate::line::Lines::<B>::find(arenas, holder, line, side);
+        self.detach_view(arenas, table, holder, view, share, rounding)
+    }
+
+    /// Members leave several of a cell's rows at once, each row read once: the rows are taken last first, so a row
+    /// that leaves whole moves none of those still to come.
+    #[clause("REP.8", "REP.9", "REP.14")]
+    pub fn detach_rows(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        plan: &[((LineId, Side), RowShare)],
+        rounding: Round,
+    ) -> Vec<DetachedRow> {
+        let views = rows::rows(arenas, holder);
+        let mut found: Vec<(usize, RowView, RowShare)> = Vec::with_capacity(plan.len());
+        for (i, ((line, side), share)) in plan.iter().enumerate() {
+            let Some(view) = views.iter().find(|r| r.row.line == *line && r.side() == *side) else {
+                violation!(clause = "REG.14", "a row left that its holder does not have", line = line.get());
+            };
+            found.push((i, *view, *share));
+        }
+        found.sort_unstable_by_key(|(_, view, _)| core::cmp::Reverse(view.at));
+        let mut out: Vec<(usize, DetachedRow)> = found
+            .into_iter()
+            .map(|(i, view, share)| (i, self.detach_view(arenas, table, holder, view, share, rounding)))
+            .collect();
+        out.sort_unstable_by_key(|(i, _)| *i);
+        out.into_iter().map(|(_, d)| d).collect()
+    }
+
+    fn detach_view(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        view: RowView,
+        share: RowShare,
+        rounding: Round,
+    ) -> DetachedRow {
+        let (line, side) = (view.row.line, view.side());
         let of = view.row.count;
         if share.count == 0 || share.count > of {
             violation!(
@@ -140,8 +189,50 @@ impl<B: Backing> Ledger<B> {
         detached: DetachedRow,
     ) -> bool {
         let (line, side) = (detached.line(), detached.side());
-        let key = ArrearsKey::new(line, side, arenas.party(holder));
         let found = rows::iter(arenas, holder).find(|r| r.row.line == line && r.side() == side);
+        self.attach_view(arenas, table, holder, found, detached)
+    }
+
+    /// Several of a part's rows join a cell, its rows read once: rows it holds take their counts and words in place,
+    /// then the rows new to it are placed. Returns how many lines' lists it entered.
+    #[clause("REP.8", "REP.14")]
+    pub fn attach_rows(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        detached: Vec<DetachedRow>,
+    ) -> u32 {
+        let views = rows::rows(arenas, holder);
+        let mut new = Vec::new();
+        for d in detached {
+            match views.iter().find(|r| r.row.line == d.line() && r.side() == d.side()) {
+                // A row held takes its members in place, its width unchanged, so the views stay where they were.
+                Some(view) => {
+                    let _ = self.attach_view(arenas, table, holder, Some(*view), d);
+                }
+                None => new.push(d),
+            }
+        }
+        let mut entered = 0;
+        for d in new {
+            if self.attach_view(arenas, table, holder, None, d) {
+                entered += 1;
+            }
+        }
+        entered
+    }
+
+    fn attach_view(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        found: Option<RowView>,
+        detached: DetachedRow,
+    ) -> bool {
+        let (line, side) = (detached.line(), detached.side());
+        let key = ArrearsKey::new(line, side, arenas.party(holder));
         let Some(mut view) = found else {
             let entered = self.lines.place_row(arenas, table, holder, detached.row, detached.optional);
             if let Missing::Present(d) = detached.arrears_since {
