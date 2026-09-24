@@ -47,7 +47,7 @@ pub(crate) fn hash_geo(h: &mut LogicalHasher, geo: &phx_geo::GeoState, tables: &
 }
 
 /// The world's hash over its logical content, store by store in the order a save writes them: the day and what it
-/// carries over, the directory and books, the markets, the accounts, the records, the events, and the map with the
+/// carries over, the directory and books, the population's keys and levels, the markets, the accounts, the records, the events, and the map with the
 /// kernel's tables. Metrics, findings, layout and derived indexes are outside it.
 #[clause("SET.15")]
 #[must_use]
@@ -55,6 +55,7 @@ pub fn world_hash(world: &World) -> u128 {
     let mut h = LogicalHasher::new(HASH_KEY);
     hash_world_store(&mut h, world.today, &world.unprocessed, &world.queue, &world.bindings, &world.closed);
     hash_books(&mut h, &world.books);
+    world.population.hash_into(&mut h);
     world.markets.hash_into(&mut h);
     world.accounts.hash_into(&mut h);
     hash_records(&mut h, &world.records);

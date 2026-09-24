@@ -56,7 +56,7 @@ pub fn representation<B: Backing>(table: &CellTable<B>, slot: Slot) -> Vec<Gap> 
 /// so a rolling slice is found by arithmetic and a freed slot is checked as nothing; each kind's population; and the
 /// day's landings in each table.
 pub struct CellsView<'a, B: Backing> {
-    tables: &'a [CellTable<B>],
+    tables: Vec<&'a CellTable<B>>,
     populations: &'a [(&'static str, u64)],
     landed: &'a [Landed],
 }
@@ -70,7 +70,7 @@ impl<B: Backing> core::fmt::Debug for CellsView<'_, B> {
 impl<'a, B: Backing> CellsView<'a, B> {
     #[must_use]
     pub fn new(
-        tables: &'a [CellTable<B>],
+        tables: Vec<&'a CellTable<B>>,
         populations: &'a [(&'static str, u64)],
         landed: &'a [Landed],
     ) -> CellsView<'a, B> {
@@ -87,12 +87,12 @@ fn slots(t: &CellTable<impl Backing>) -> usize {
 
 impl<B: Backing> CellsAudit for CellsView<'_, B> {
     fn cells(&self) -> usize {
-        self.tables.iter().map(slots).sum()
+        self.tables.iter().map(|t| slots(t)).sum()
     }
 
     fn representation(&self, cell: usize) -> Vec<Gap> {
         let mut at = cell;
-        for t in self.tables {
+        for t in &self.tables {
             let n = slots(t);
             if at < n {
                 let Ok(raw) = u32::try_from(at) else {
@@ -110,7 +110,7 @@ impl<B: Backing> CellsAudit for CellsView<'_, B> {
     /// cannot be shown whole, which is a gap of its own.
     fn populations(&self) -> Vec<Gap> {
         let mut gaps = Vec::new();
-        for t in self.tables {
+        for t in &self.tables {
             let weights: i128 = t.slots().map(|s| i128::from(t.weight(s).get())).sum();
             let Some((_, population)) = self.populations.iter().find(|(k, _)| *k == t.kind()) else {
                 let detail = format!("`{}`: {weights} members and no population to hold them to", t.kind());
@@ -173,10 +173,10 @@ impl AuditFamily for Representation {
 
     /// A member taken off one profile value and nowhere added: the group counts one fewer than the weight.
     fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
-        let Some(tables) = target.cells().downcast_mut::<Vec<CellTable>>() else {
+        let Some(tables) = target.cells().downcast_mut::<Vec<Box<dyn phx_ledger::holder::CellHolders>>>() else {
             return Err("the save's cells are not the population's tables".to_owned());
         };
-        for t in tables {
+        for t in tables.iter_mut().filter_map(|c| c.as_any_mut().downcast_mut::<CellTable>()) {
             let Some(slot) = t.slots().next() else { continue };
             let mut profile = t.profile(slot);
             let groups = t.profile_layout().groups.len();
@@ -252,10 +252,10 @@ mod tests {
         t.set_profile(s, &p);
         let gaps = representation(&t, s);
         assert_eq!(gaps.iter().map(|g| g.size).collect::<Vec<_>>(), [-1], "one child uncounted");
-        let view = super::CellsView::new(std::slice::from_ref(&t), &[("household", 10)], &[]);
+        let view = super::CellsView::new(vec![&t], &[("household", 10)], &[]);
         assert_eq!((phx_core::CellsAudit::cells(&view), phx_core::CellsAudit::representation(&view, 0).len()), (1, 1));
         assert!(phx_core::CellsAudit::populations(&view).is_empty(), "ten members of a population of ten");
-        let short = super::CellsView::new(std::slice::from_ref(&t), &[("household", 12)], &[]);
+        let short = super::CellsView::new(vec![&t], &[("household", 12)], &[]);
         let gaps = phx_core::CellsAudit::populations(&short);
         assert_eq!(gaps.iter().map(|g| g.size).collect::<Vec<_>>(), [-2], "two households nowhere");
     }

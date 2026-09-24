@@ -2,7 +2,7 @@ pub mod phx_pop
 pub mod phx_pop::audit
 pub struct phx_pop::audit::CellsView<'a, B: phx_store::backing::Backing>
 impl<'a, B: phx_store::backing::Backing> phx_pop::audit::CellsView<'a, B>
-pub fn phx_pop::audit::CellsView<'a, B>::new(&'a [phx_pop::table::CellTable<B>], &'a [(&'static str, u64)], &'a [phx_pop::landing::Landed]) -> phx_pop::audit::CellsView<'a, B>
+pub fn phx_pop::audit::CellsView<'a, B>::new(alloc::vec::Vec<&'a phx_pop::table::CellTable<B>>, &'a [(&'static str, u64)], &'a [phx_pop::landing::Landed]) -> phx_pop::audit::CellsView<'a, B>
 impl<B: phx_store::backing::Backing> core::fmt::Debug for phx_pop::audit::CellsView<'_, B>
 pub fn phx_pop::audit::CellsView<'_, B>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<B: phx_store::backing::Backing> phx_core::family::CellsAudit for phx_pop::audit::CellsView<'_, B>
@@ -194,6 +194,9 @@ pub fn phx_pop::key::KeyInterner::record(&self, phx_pop::key::KeyId) -> phx_pop:
 pub fn phx_pop::key::KeyInterner::refs(&self, phx_pop::key::KeyId) -> u32
 impl core::default::Default for phx_pop::key::KeyInterner
 pub fn phx_pop::key::KeyInterner::default() -> phx_pop::key::KeyInterner
+impl phx_store::save::Saved for phx_pop::key::KeyInterner
+pub fn phx_pop::key::KeyInterner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_pop::key::KeyInterner, phx_store::save::LoadError>
+pub fn phx_pop::key::KeyInterner::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_pop::key::KeyLayout
 impl phx_pop::key::KeyLayout
 pub fn phx_pop::key::KeyLayout::fields(&self) -> &[phx_pop::key::KeyField]
@@ -347,6 +350,29 @@ pub phx_pop::pooled::PooledSplit::rows: alloc::vec::Vec<((phx_id::ids::LineId, p
 impl phx_pop::pooled::PooledSplit
 pub fn phx_pop::pooled::PooledSplit::spec(&self, phx_num::round::Round) -> phx_pop::split::SplitSpec<'_>
 pub fn phx_pop::pooled::pooled_split(&phx_ledger::split_request::SplitRequest, u8, &phx_core::kinks::KinkRegistry, &phx_pop::kind::PopKindDecl) -> phx_pop::pooled::PooledSplit
+pub mod phx_pop::population
+pub struct phx_pop::population::PopKind
+pub phx_pop::population::PopKind::decl: phx_pop::kind::PopKindDecl
+pub phx_pop::population::PopKind::index: phx_pop::index::Index
+pub phx_pop::population::PopKind::keys: phx_pop::key::KeyInterner
+pub phx_pop::population::PopKind::levels: alloc::vec::Vec<u8>
+pub phx_pop::population::PopKind::place: u16
+pub struct phx_pop::population::Population
+pub phx_pop::population::Population::kinds: alloc::vec::Vec<phx_pop::population::PopKind>
+pub phx_pop::population::Population::landed: alloc::vec::Vec<phx_pop::landing::Landed>
+pub phx_pop::population::Population::members: alloc::vec::Vec<(&'static str, u64)>
+impl phx_pop::population::Population
+pub fn phx_pop::population::Population::compile(&[&'static str], &[phx_core::pop::PopEntry], &phx_core::kinks::KinkRegistry, &dyn core::ops::function::Fn(&'static str) -> core::result::Result<phx_pop::steps::StepTable, alloc::string::String>) -> core::result::Result<alloc::vec::Vec<phx_pop::kind::PopKindDecl>, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_pop::population::Population::count(&mut self, usize, u64, u64)
+pub fn phx_pop::population::Population::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_pop::population::Population::load_from(&mut self, &mut phx_store::save::Reader<'_>) -> core::result::Result<(), phx_store::save::LoadError>
+pub fn phx_pop::population::Population::new(alloc::vec::Vec<phx_pop::kind::PopKindDecl>, u16) -> phx_pop::population::Population
+pub fn phx_pop::population::Population::restore<B: phx_store::backing::Backing + 'static>(&mut self, &mut [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>])
+pub fn phx_pop::population::Population::save_to(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_pop::population::Population::table<B: phx_store::backing::Backing + 'static>(&[alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], usize) -> &phx_pop::table::CellTable<B>
+pub fn phx_pop::population::Population::table_mut<B: phx_store::backing::Backing + 'static>(&mut [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], usize) -> &mut phx_pop::table::CellTable<B>
+pub fn phx_pop::population::Population::tables<B: phx_store::backing::Backing + core::fmt::Debug + 'static>(&[phx_pop::kind::PopKindDecl], &mut phx_store::backing::AddressSpace, u16, u32, u32) -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>> where phx_pop::table::CellTable<B>: core::marker::Send + core::marker::Sync
+pub fn phx_pop::population::Population::view<'a, B: phx_store::backing::Backing + 'static>(&'a self, &'a [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>]) -> phx_pop::audit::CellsView<'a, B>
 pub mod phx_pop::profile
 pub struct phx_pop::profile::GroupShape
 pub phx_pop::profile::GroupShape::dense: bool
@@ -589,6 +615,12 @@ pub fn phx_pop::table::CellTable<B>::swap_rows(&mut self, phx_id::ids::Slot, phx
 pub fn phx_pop::table::CellTable<B>::weight(&self, phx_id::ids::Slot) -> phx_core::weight::Weight
 pub fn phx_pop::table::CellTable<B>::words(&self, phx_id::ids::Slot, phx_pop::table::CellList) -> &[u64]
 pub fn phx_pop::table::CellTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
+impl<B: phx_store::backing::Backing + core::fmt::Debug + 'static> phx_ledger::holder::CellHolders for phx_pop::table::CellTable<B> where phx_pop::table::CellTable<B>: core::marker::Send + core::marker::Sync
+pub fn phx_pop::table::CellTable<B>::as_any(&self) -> &dyn core::any::Any
+pub fn phx_pop::table::CellTable<B>::as_any_mut(&mut self) -> &mut dyn core::any::Any
+pub fn phx_pop::table::CellTable<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_pop::table::CellTable<B>::load_like(&self, &mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>, phx_store::save::LoadError>
+pub fn phx_pop::table::CellTable<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_pop::table::CellTable<B>
 pub fn phx_pop::table::CellTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
 impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderArenas for phx_pop::table::CellTable<B>
@@ -601,6 +633,8 @@ pub fn phx_pop::table::CellTable<B>::remove(&mut self, phx_id::ids::Slot, phx_co
 pub fn phx_pop::table::CellTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
 pub fn phx_pop::table::CellTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_pop::table::CellTable<B>::table(&self) -> phx_id::ids::TableId
+impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderTable for phx_pop::table::CellTable<B>
+pub fn phx_pop::table::CellTable<B>::live(&self) -> alloc::boxed::Box<(dyn core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_)>
 impl<B: phx_store::backing::Backing> phx_ledger::positions::PayerPositions for phx_pop::table::CellTable<B>
 pub fn phx_pop::table::CellTable<B>::kinks_into(&self, phx_id::ids::Slot, &mut alloc::vec::Vec<phx_ledger::pooled::Kink>)
 pub fn phx_pop::table::CellTable<B>::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128

@@ -111,10 +111,9 @@ impl<B: Backing> Books<B> {
     /// and how many were read.
     fn runs_broken(&self, due: &DueLines, day: Day, scanned: &BTreeSet<(u16, Slot)>) -> (u64, u64) {
         let (mut read, mut broken) = (0_u64, 0_u64);
-        for kind in self.parties.kinds() {
-            let place = self.parties.place(kind);
-            let table = self.parties.table(place);
-            for slot in table.slots().filter(|s| s.get() % RUN_SAMPLE_PERIOD == day.get() % RUN_SAMPLE_PERIOD) {
+        for place in self.parties.places() {
+            let table = self.parties.holder(place);
+            for slot in table.live().filter(|s| s.get() % RUN_SAMPLE_PERIOD == day.get() % RUN_SAMPLE_PERIOD) {
                 let t = runs::truth(table, slot, day, due, &self.ledger.lines);
                 read += 1;
                 if !t.holds || (t.due > 0 && !scanned.contains(&(place, slot))) {
@@ -165,7 +164,7 @@ impl<B: Backing> Books<B> {
         let (due, day, calendar) = today;
         let mut g = Gathered::default();
         for &(place, slot) in &streamed.scanned {
-            let holder = self.parties.table(place).party(slot);
+            let holder = self.parties.holder(place).party(slot);
             for row in self.due_rows_of(holder, due) {
                 let Some(p) = self.payment(holder, &row, day, calendar, found) else { continue };
                 let route = self.effects(&p, found);
@@ -363,7 +362,7 @@ impl<B: Backing> Books<B> {
     /// and the verdicts read: each scanned holder's payments through a closed issuer held pending.
     fn hold_all(&mut self, streamed: &DayRecords, (due, day, calendar): Today<'_>, closed: &Closed, found: &mut Found) {
         for &(place, slot) in &streamed.scanned {
-            let holder = self.parties.table(place).party(slot);
+            let holder = self.parties.holder(place).party(slot);
             for row in self.due_rows_of(holder, due) {
                 let Some(p) = self.payment(holder, &row, day, calendar, found) else { continue };
                 let route = self.effects(&p, found);
@@ -406,7 +405,7 @@ impl<B: Backing> Books<B> {
             }
             let (place, slot) = self.parties.row(*party);
             let row =
-                crate::rows::iter(self.parties.table(place), slot).find(|r| r.row.line == *line && r.side() == *side);
+                crate::rows::iter(self.parties.holder(place), slot).find(|r| r.row.line == *line && r.side() == *side);
             if let Some(Missing::Present(b)) = row.map(|r| r.optional.balance) {
                 out.insert((*line, *party, *side), i128::from(b));
             }

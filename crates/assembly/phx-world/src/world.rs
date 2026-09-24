@@ -44,6 +44,8 @@ pub struct World {
     pub(crate) today: Day,
     pub(crate) settling_years: Count,
     pub(crate) books: phx_ledger::books::Books,
+    /// The population kinds: their declarations, keys, landing indexes and step levels; their cells are the books'.
+    pub(crate) population: phx_pop::population::Population,
     pub(crate) markets: phx_market::markets::Markets,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,

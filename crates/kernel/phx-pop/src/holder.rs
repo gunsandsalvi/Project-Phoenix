@@ -3,7 +3,7 @@ use phx_core::schema::{FactColumn, TableSchema};
 use phx_core::{ListKind, RunHead};
 use phx_id::{LineId, PartyId, Slot, TableId};
 use phx_ledger::algebra::Side;
-use phx_ledger::holder::HolderArenas;
+use phx_ledger::holder::{CellHolders, HolderArenas, HolderTable};
 use phx_ledger::pooled::Kink;
 use phx_ledger::positions::PayerPositions;
 use phx_ledger::rows::{self, RowView};
@@ -138,6 +138,39 @@ impl<B: Backing> PayerPositions for CellTable<B> {
     /// A cell's rows carry no rate of their own: its standing rates are the cell's, per member.
     fn standing_rate(&self, _: Slot, _: &RowView) -> Missing<i64> {
         Missing::Absent
+    }
+}
+
+impl<B: Backing> HolderTable for CellTable<B> {
+    fn live(&self) -> Box<dyn Iterator<Item = Slot> + '_> {
+        Box::new(self.slots())
+    }
+}
+
+/// The books keep a population's table beside the kind tables, saving, reading back and hashing it with theirs.
+impl<B: Backing + core::fmt::Debug + 'static> CellHolders for CellTable<B>
+where
+    CellTable<B>: Send + Sync,
+{
+    fn save_to(&self, w: &mut phx_store::Writer<'_>) {
+        phx_store::Saved::save(self, w);
+    }
+
+    fn load_like(&self, r: &mut phx_store::Reader<'_>) -> Result<Box<dyn CellHolders>, phx_store::LoadError> {
+        let t: CellTable<B> = phx_store::Saved::load(r)?;
+        Ok(Box::new(t))
+    }
+
+    fn hash_into(&self, h: &mut phx_store::LogicalHasher) {
+        phx_store::hash_saved(self, h);
+    }
+
+    fn as_any(&self) -> &dyn core::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
+        self
     }
 }
 

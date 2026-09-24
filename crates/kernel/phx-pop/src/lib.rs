@@ -25,6 +25,7 @@ pub mod pairing;
 pub mod part;
 pub mod pick;
 pub mod pooled;
+pub mod population;
 pub mod profile;
 pub mod promote;
 pub mod rekey;

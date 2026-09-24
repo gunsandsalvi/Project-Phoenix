@@ -18,7 +18,7 @@ use crate::world::World;
 use manifest::{Manifest, StoreEntry, hex};
 
 /// The stores of a save, in the order the world hash reads them.
-pub const STORES: [&str; 7] = ["world", "books", "markets", "accounts", "records", "events", "geo"];
+pub const STORES: [&str; 8] = ["world", "books", "population", "markets", "accounts", "records", "events", "geo"];
 /// The run's own record beside the world: its metrics, findings, settlements, the opening's report and the trace.
 pub const RUN: &str = "run";
 
@@ -72,6 +72,8 @@ pub(crate) struct RunRecord {
 pub(crate) struct BuildContext {
     pub names: Vec<&'static str>,
     pub declared: phx_ledger::books::Books,
+    /// The population kinds, over which a save's keys and levels are read back.
+    pub pop: Vec<phx_pop::kind::PopKindDecl>,
     pub record_kinds: Vec<RecordKindDecl>,
     pub permitted: Vec<phx_core::Permitted>,
     pub forms: std::collections::BTreeMap<&'static str, String>,
@@ -122,6 +124,7 @@ impl World {
                 self.closed.save(w);
             }
             "books" => self.books.save_to(w),
+            "population" => self.population.save_to(w),
             "markets" => self.markets.save(w),
             "accounts" => self.accounts.save_to(w),
             "records" => self.records.save_to(w),
@@ -145,6 +148,7 @@ impl World {
         match name {
             "world" => hash_world_store(h, self.today, &self.unprocessed, &self.queue, &self.bindings, &self.closed),
             "books" => hash_books(h, &self.books),
+            "population" => self.population.hash_into(h),
             "markets" => self.markets.hash_into(h),
             "accounts" => self.accounts.hash_into(h),
             "records" => hash_records(h, &self.records),
@@ -244,9 +248,11 @@ impl World {
 
     /// What reading this world's saves needs from its build.
     pub(crate) fn build_context(&self) -> BuildContext {
+        let pop: Vec<phx_pop::kind::PopKindDecl> = self.population.kinds.iter().map(|k| k.decl.clone()).collect();
         BuildContext {
             names: self.names.clone(),
-            declared: self.books.declared(crate::opening::books::size()),
+            declared: self.books.declared(crate::opening::books::size(), crate::opening::books::cell_tables(&pop)),
+            pop,
             record_kinds: self.records.kinds().to_vec(),
             permitted: self.accounts.permitted().to_vec(),
             forms: self.accounts.forms().clone(),
@@ -265,13 +271,22 @@ fn read_and_hash(dir: &Path, name: &str, ctx: &mut BuildContext, hs: &mut [&mut 
             }
         }
         "books" => {
-            let mut declared = Some(ctx.declared.declared(crate::opening::books::size()));
+            let tables = crate::opening::books::cell_tables(&ctx.pop);
+            let mut declared = Some(ctx.declared.declared(crate::opening::books::size(), tables));
             let books = read_store(dir, name, &names, &mut |r| {
                 let d = declared.take().ok_or_else(|| LoadError::Invalid("the books read twice".to_owned()))?;
                 phx_ledger::books::Books::load_from(r, d)
             })?;
             for h in hs.iter_mut() {
                 hash_books(h, &books);
+            }
+        }
+        "population" => {
+            let first = ctx.declared.parties.first_cell_place();
+            let mut population = phx_pop::population::Population::new(ctx.pop.clone(), first);
+            read_store(dir, name, &names, &mut |r| population.load_from(r))?;
+            for h in hs.iter_mut() {
+                population.hash_into(h);
             }
         }
         "markets" => {

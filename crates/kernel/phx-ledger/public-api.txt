@@ -358,8 +358,9 @@ pub fn phx_ledger::books::Books<B>::new(&[&'static str], phx_ledger::books::Book
 pub fn phx_ledger::books::Books<B>::open(&mut self, phx_ledger::instruction::ReasonId, alloc::vec::Vec<phx_ledger::instruction::LegRec>, u64, &mut phx_core::contribution::GenReport)
 pub fn phx_ledger::books::Books<B>::row_on(&self, phx_id::ids::PartyId, &str) -> core::option::Option<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 pub fn phx_ledger::books::Books<B>::rows_of(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
+pub fn phx_ledger::books::Books<B>::with_cells(&[&'static str], usize, impl core::ops::function::FnOnce(&mut phx_store::backing::AddressSpace, u16) -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>>, phx_ledger::books::BooksSize) -> phx_ledger::books::Books<B>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
-pub fn phx_ledger::books::Books<B>::declared(&self, phx_ledger::books::BooksSize) -> phx_ledger::books::Books<B>
+pub fn phx_ledger::books::Books<B>::declared(&self, phx_ledger::books::BooksSize, impl core::ops::function::FnOnce(&mut phx_store::backing::AddressSpace, u16) -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>>) -> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::load_from(&mut phx_store::save::Reader<'_>, phx_ledger::books::Books<B>) -> core::result::Result<phx_ledger::books::Books<B>, phx_store::save::LoadError>
 pub fn phx_ledger::books::Books<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
@@ -385,10 +386,16 @@ pub struct phx_ledger::books::Parties<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Parties<B>
 pub fn phx_ledger::books::Parties<B>::arenas(&self) -> alloc::vec::Vec<&dyn phx_ledger::holder::HolderArenas>
 pub fn phx_ledger::books::Parties<B>::begin(&mut self, &str, phx_id::ids::TileId, phx_id::day::Day) -> phx_id::ids::PartyId
+pub fn phx_ledger::books::Parties<B>::cells(&self) -> &[alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>]
+pub fn phx_ledger::books::Parties<B>::cells_mut(&mut self) -> (&mut alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>>, &mut phx_core::directory::Directory, &mut phx_store::backing::AddressSpace)
 pub fn phx_ledger::books::Parties<B>::directory(&self) -> &phx_core::directory::Directory
+pub fn phx_ledger::books::Parties<B>::first_cell_place(&self) -> u16
+pub fn phx_ledger::books::Parties<B>::holder(&self, u16) -> &dyn phx_ledger::holder::HolderTable
+pub fn phx_ledger::books::Parties<B>::holders(&self) -> impl core::iter::traits::iterator::Iterator<Item = &dyn phx_ledger::holder::HolderTable> + '_
 pub fn phx_ledger::books::Parties<B>::kinds(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
 pub fn phx_ledger::books::Parties<B>::of_kind(&self, &str) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::PartyId> + '_
 pub fn phx_ledger::books::Parties<B>::place(&self, &str) -> u16
+pub fn phx_ledger::books::Parties<B>::places(&self) -> impl core::iter::traits::iterator::Iterator<Item = u16> + use<B>
 pub fn phx_ledger::books::Parties<B>::row(&self, phx_id::ids::PartyId) -> (u16, phx_id::ids::Slot)
 pub fn phx_ledger::books::Parties<B>::site(&self, phx_id::ids::PartyId) -> phx_id::ids::TileId
 pub fn phx_ledger::books::Parties<B>::table(&self, u16) -> &phx_core::kind_tables::KindTable<B>
@@ -570,6 +577,12 @@ impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderLists<B>
 pub fn phx_ledger::holder::HolderLists<B>::iter(&self, u32, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
 pub fn phx_ledger::holder::HolderLists<B>::keys(&self) -> phx_ledger::holder::HolderKeys
 pub fn phx_ledger::holder::HolderLists<B>::new(&mut phx_store::backing::AddressSpace, u32, phx_ledger::holder::HolderKeys) -> phx_ledger::holder::HolderLists<B>
+pub trait phx_ledger::holder::CellHolders: phx_ledger::holder::HolderTable + core::fmt::Debug + core::marker::Send + core::marker::Sync
+pub fn phx_ledger::holder::CellHolders::as_any(&self) -> &dyn core::any::Any
+pub fn phx_ledger::holder::CellHolders::as_any_mut(&mut self) -> &mut dyn core::any::Any
+pub fn phx_ledger::holder::CellHolders::hash_into(&self, &mut phx_store::hash::LogicalHasher)
+pub fn phx_ledger::holder::CellHolders::load_like(&self, &mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>, phx_store::save::LoadError>
+pub fn phx_ledger::holder::CellHolders::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub trait phx_ledger::holder::HolderArenas
 pub fn phx_ledger::holder::HolderArenas::append(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, &[u64])
 pub fn phx_ledger::holder::HolderArenas::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
@@ -592,6 +605,10 @@ pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot,
 pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
 pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_core::kind_tables::KindTable<B>::table(&self) -> phx_id::ids::TableId
+pub trait phx_ledger::holder::HolderTable: phx_ledger::holder::HolderArenas + phx_ledger::positions::PayerPositions
+pub fn phx_ledger::holder::HolderTable::live(&self) -> alloc::boxed::Box<(dyn core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_)>
+impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderTable for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::live(&self) -> alloc::boxed::Box<(dyn core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_)>
 pub mod phx_ledger::holding
 pub enum phx_ledger::holding::LotOrder
 pub phx_ledger::holding::LotOrder::FirstIn

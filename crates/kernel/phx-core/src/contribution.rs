@@ -136,6 +136,8 @@ pub struct Opening<'a> {
     pub countries: &'a [OpeningCountry],
     pub report: &'a mut GenReport,
     pub books: &'a mut dyn Any,
+    /// The population kinds' keys, landing indexes and levels, beside the books that keep their cells.
+    pub population: &'a mut dyn Any,
 }
 
 impl core::fmt::Debug for Opening<'_> {

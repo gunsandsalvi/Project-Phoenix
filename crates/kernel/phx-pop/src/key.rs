@@ -288,6 +288,32 @@ impl KeyInterner {
     }
 }
 
+/// A save keeps each identity's record and count and the free identities; the index from record to identity is
+/// rebuilt from them on reading.
+impl phx_store::Saved for KeyInterner {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        self.records.save(w);
+        self.refs.save(w);
+        self.free.save(w);
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<KeyInterner, phx_store::LoadError> {
+        let records: Vec<KeyRecord> = Vec::load(r)?;
+        let refs: Vec<u32> = Vec::load(r)?;
+        let free: std::collections::BTreeSet<u32> = std::collections::BTreeSet::load(r)?;
+        if records.len() != refs.len() {
+            return Err(phx_store::LoadError::Invalid("key records and their counts differ in number".to_owned()));
+        }
+        let mut index = KernelMap::new();
+        for (i, (record, n)) in (0_u32..).zip(records.iter().zip(&refs)) {
+            if *n > 0 {
+                index.insert(*record, KeyId(i));
+            }
+        }
+        Ok(KeyInterner { records, refs, free, index })
+    }
+}
+
 fn slot(id: KeyId) -> usize {
     let Ok(i) = usize::try_from(id.0) else {
         capacity_exceeded!("key identities", usize::MAX, id.0);

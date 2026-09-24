@@ -25,8 +25,6 @@ struct Target<'a> {
     tables: &'a mut [KernelTable],
     own: &'a mut [(&'static str, OwnState)],
     stream: &'a mut dyn AuditStream,
-    /// The world's cell tables: none, until the population is opened.
-    cells: Vec<phx_pop::table::CellTable>,
 }
 
 impl InjectTarget for Target<'_> {
@@ -101,7 +99,7 @@ impl InjectTarget for Target<'_> {
     }
 
     fn cells(&mut self) -> &mut dyn Any {
-        &mut self.cells
+        self.books.parties.cells_mut().0
     }
 
     fn own(&mut self, system: &str) -> Option<&mut dyn Any> {
@@ -149,7 +147,6 @@ impl World {
             tables: &mut self.tables,
             own: &mut self.own,
             stream,
-            cells: Vec::new(),
         };
         injected.inject(&mut target)?;
         let before = self.findings.len();

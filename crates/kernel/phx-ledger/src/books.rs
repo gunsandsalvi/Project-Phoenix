@@ -12,16 +12,17 @@ use phx_store::{AddressSpace, Backing, SystemBacking};
 use crate::apply::{ApplyAt, DayBook, Holders, Ledger, Located};
 use crate::dues::DueReasons;
 use crate::fails::Fail;
-use crate::holder::{HolderArenas, HolderKeys};
+use crate::holder::{CellHolders, HolderArenas, HolderKeys, HolderTable};
 use crate::instruction::{Instruction, InstructionId, LegKind, LegRec, ReasonId};
 use crate::instrument::Instruments;
 use crate::line::Lines;
 
-/// The world's parties of individual kinds: one kind table each, by its place among them, and the directory that
-/// finds a party's row and follows an ended party to its successor.
+/// The world's parties: one kind table for each individual kind, then one cell table for each population kind, each
+/// by its place among them, and the directory that finds a party's row and follows an ended party to its successor.
 #[derive(Debug)]
 pub struct Parties<B: Backing = SystemBacking> {
     tables: Vec<KindTable<B>>,
+    cells: Vec<Box<dyn CellHolders>>,
     directory: Directory,
     space: AddressSpace,
 }
@@ -30,27 +31,75 @@ impl<B: Backing> Parties<B> {
     /// A holder table's place by its kind.
     #[must_use]
     pub fn place(&self, kind: &str) -> u16 {
-        let Some(i) = self.tables.iter().position(|t| t.kind() == kind) else {
+        let Some(i) = self.holders().position(|t| t.kind() == kind) else {
             violation!(clause = "PTY.9", "a party of a kind the world keeps no table for");
         };
-        let Ok(place) = u16::try_from(i) else {
-            capacity_exceeded!("holder tables", u16::MAX, i);
-        };
-        place
+        place16(i)
     }
 
     fn place_of(&self, table: TableId) -> u16 {
-        let Some(i) = self.tables.iter().position(|t| t.id() == table) else {
+        let Some(i) = self.holders().position(|t| t.table() == table) else {
             violation!(
                 clause = "PTY.10",
                 "a party whose row is in a table the world does not keep",
                 table = table.get()
             );
         };
-        let Ok(place) = u16::try_from(i) else {
-            capacity_exceeded!("holder tables", u16::MAX, i);
+        place16(i)
+    }
+
+    /// Every holder table in place order: the kind tables, then the cell tables.
+    pub fn holders(&self) -> impl Iterator<Item = &dyn HolderTable> + '_ {
+        let kinds = self.tables.iter().map(|t| -> &dyn HolderTable { t });
+        kinds.chain(self.cells.iter().map(|c| -> &dyn HolderTable { &**c }))
+    }
+
+    /// Every holder table's place.
+    pub fn places(&self) -> impl Iterator<Item = u16> + use<B> {
+        (0..self.tables.len() + self.cells.len()).map(place16)
+    }
+
+    /// A holder table by its place, of either sort.
+    #[must_use]
+    pub fn holder(&self, place: u16) -> &dyn HolderTable {
+        let i = usize::from(place);
+        if let Some(t) = self.tables.get(i) {
+            return t;
+        }
+        let Some(c) = i.checked_sub(self.tables.len()).and_then(|j| self.cells.get(j)) else {
+            violation!(clause = "PTY.10", "a holder table's place beyond the tables", place = place);
         };
-        place
+        &**c
+    }
+
+    fn holder_mut(&mut self, place: u16) -> &mut dyn HolderTable {
+        let i = usize::from(place);
+        let kinds = self.tables.len();
+        if let Some(t) = self.tables.get_mut(i) {
+            return t;
+        }
+        let Some(c) = i.checked_sub(kinds).and_then(|j| self.cells.get_mut(j)) else {
+            violation!(clause = "PTY.10", "a holder table's place beyond the tables", place = place);
+        };
+        &mut **c
+    }
+
+    /// The population's cell tables, in place order after the kind tables.
+    #[must_use]
+    pub fn cells(&self) -> &[Box<dyn CellHolders>] {
+        &self.cells
+    }
+
+    /// The first cell table's place.
+    #[must_use]
+    pub fn first_cell_place(&self) -> u16 {
+        place16(self.tables.len())
+    }
+
+    /// The cell tables with the directory and the address space, apart, so the population can split and land cells,
+    /// begin and end their parties and grow their arenas at once.
+    pub fn cells_mut(&mut self) -> (&mut Vec<Box<dyn CellHolders>>, &mut Directory, &mut AddressSpace) {
+        (&mut self.cells, &mut self.directory, &mut self.space)
     }
 
     /// A party begun in its kind's table, sited on a tile, by a named beginning on a day: its identity is the next the
@@ -101,7 +150,7 @@ impl<B: Backing> Parties<B> {
     /// Every holder table, by its place, as the ledger's families read them.
     #[must_use]
     pub fn arenas(&self) -> Vec<&dyn HolderArenas> {
-        self.tables.iter().map(|t| -> &dyn HolderArenas { t }).collect()
+        self.holders().map(|t| -> &dyn HolderArenas { t }).collect()
     }
 
     #[must_use]
@@ -109,7 +158,7 @@ impl<B: Backing> Parties<B> {
         &self.directory
     }
 
-    /// The kinds the world keeps tables for, in their places' order.
+    /// The individual kinds the world keeps tables for, in their places' order.
     pub fn kinds(&self) -> impl Iterator<Item = &'static str> + '_ {
         self.tables.iter().map(KindTable::kind)
     }
@@ -133,11 +182,15 @@ impl<B: Backing> Holders for Parties<B> {
     }
 
     fn arenas(&mut self, table: u16) -> &mut dyn HolderArenas {
-        let Some(t) = self.tables.get_mut(usize::from(table)) else {
-            violation!(clause = "PTY.10", "a holder table's place beyond the tables", place = table);
-        };
-        t
+        self.holder_mut(table)
     }
+}
+
+fn place16(i: usize) -> u16 {
+    let Ok(place) = u16::try_from(i) else {
+        capacity_exceeded!("holder tables", u16::MAX, i);
+    };
+    place
 }
 
 /// The world's books: the ledger and the parties whose rows it moves, and the counterparties' drawn sizes the
@@ -177,15 +230,34 @@ impl<B: Backing> Books<B> {
     /// Empty books with a kind table for each individual kind, in the order given.
     #[must_use]
     pub fn new(kinds: &[&'static str], size: BooksSize) -> Books<B> {
+        Books::with_cells(kinds, 0, |_, _| Vec::new(), size)
+    }
+
+    /// Empty books with a kind table for each individual kind, then `cells` cell tables, which `make` builds in the
+    /// books' address space from the first cell table's identity on.
+    #[must_use]
+    pub fn with_cells(
+        kinds: &[&'static str],
+        cells: usize,
+        make: impl FnOnce(&mut AddressSpace, u16) -> Vec<Box<dyn CellHolders>>,
+        size: BooksSize,
+    ) -> Books<B> {
         let mut space = AddressSpace::empty();
-        let Ok(n) = u16::try_from(kinds.len()) else {
-            capacity_exceeded!("holder tables", u16::MAX, kinds.len());
-        };
+        let n = place16(kinds.len());
         let tables = (0..n)
             .zip(kinds)
             .map(|(i, kind)| KindTable::new(&mut space, kind, TableId::new(i), size.rows, size.rows_per_chunk, 0))
             .collect();
-        let keys = HolderKeys::new(n);
+        let tables_of_cells = make(&mut space, n);
+        if tables_of_cells.len() != cells {
+            violation!(
+                clause = "REP.1",
+                "cell tables other than the books were made for",
+                made = tables_of_cells.len()
+            );
+        }
+        let cells = tables_of_cells;
+        let keys = HolderKeys::new(place16(kinds.len() + cells.len()));
         let mut ledger = Ledger::new(
             Instruments::new(&mut space, size.instruments, size.per_chunk, size.blocks, keys),
             Lines::new(&mut space, size.lines, size.per_chunk, size.blocks, keys),
@@ -193,7 +265,7 @@ impl<B: Backing> Books<B> {
         let dues = DueReasons::declare(&mut ledger.reasons);
         Books {
             ledger,
-            parties: Parties { tables, directory: Directory::new(), space },
+            parties: Parties { tables, cells, directory: Directory::new(), space },
             drawn: BTreeMap::new(),
             dues,
             opened: 0,
@@ -245,7 +317,7 @@ impl<B: Backing> Books<B> {
     #[must_use]
     pub fn rows_of(&self, party: PartyId) -> Vec<(LineId, Side)> {
         let (place, slot) = self.parties.row(party);
-        crate::rows::rows(self.parties.table(place), slot).iter().map(|r| (r.row.line, r.side())).collect()
+        crate::rows::rows(self.parties.holder(place), slot).iter().map(|r| (r.row.line, r.side())).collect()
     }
 
     /// A party's row on a line of the named kind, if it holds one.
@@ -259,7 +331,7 @@ impl<B: Backing> Books<B> {
     #[must_use]
     pub fn equity(&self, party: PartyId) -> i128 {
         let (place, slot) = self.parties.row(party);
-        let table = self.parties.table(place);
+        let table = self.parties.holder(place);
         let rows = crate::rows::rows(table, slot).into_iter().filter_map(|r| match r.optional.balance {
             phx_num::Missing::Present(b) => Some(i128::from(b)),
             phx_num::Missing::Absent => None,
@@ -290,6 +362,9 @@ impl<B: Backing> Books<B> {
                     }
                 }
             }
+        }
+        for c in &self.parties.cells {
+            c.hash_into(h);
         }
         self.ledger.instruments.hash_into(h);
         self.ledger.lines.hash_into(h);
@@ -333,6 +408,9 @@ impl<B: Backing> Books<B> {
     pub fn save_to(&self, w: &mut phx_store::Writer<'_>) {
         use phx_store::Saved as _;
         self.parties.tables.save(w);
+        for c in &self.parties.cells {
+            c.save_to(w);
+        }
         self.parties.directory.save(w);
         self.ledger.save_to(w);
         self.drawn.save(w);
@@ -356,23 +434,35 @@ impl<B: Backing> Books<B> {
         if kinds_differ {
             return Err(phx_store::LoadError::Invalid("kind tables other than the build's".to_owned()));
         }
+        let mut cells = Vec::with_capacity(parties.cells.len());
+        for like in &parties.cells {
+            let c = like.load_like(r)?;
+            if c.kind() != like.kind() || c.table() != like.table() {
+                return Err(phx_store::LoadError::Invalid("cell tables other than the build's".to_owned()));
+            }
+            cells.push(c);
+        }
         drop(parties);
         let directory = Directory::load(r)?;
         let ledger = Ledger::load_from(r, ledger, keys)?;
         let drawn = BTreeMap::load(r)?;
         let opened = u32::load(r)?;
         let space = r.take_space();
-        let mut books = Books { ledger, parties: Parties { tables, directory, space }, drawn, dues, opened };
+        let mut books = Books { ledger, parties: Parties { tables, cells, directory, space }, drawn, dues, opened };
         books.relist();
         Ok(books)
     }
 
     /// Empty books of these books' kinds and sizes, carrying their declarations: line kinds, reasons, instrument
-    /// events and due reasons, as a save of these books is read back over.
+    /// events and due reasons, as a save of these books is read back over; `make` builds their empty cell tables.
     #[must_use]
-    pub fn declared(&self, size: BooksSize) -> Books<B> {
+    pub fn declared(
+        &self,
+        size: BooksSize,
+        make: impl FnOnce(&mut AddressSpace, u16) -> Vec<Box<dyn CellHolders>>,
+    ) -> Books<B> {
         let kinds: Vec<&'static str> = self.parties.kinds().collect();
-        let mut out = Books::new(&kinds, size);
+        let mut out = Books::with_cells(&kinds, self.parties.cells.len(), make, size);
         out.ledger.lines.copy_decls(&self.ledger.lines);
         out.ledger.reasons = self.ledger.reasons.clone();
         out.ledger.events = self.ledger.events.clone();
@@ -383,8 +473,8 @@ impl<B: Backing> Books<B> {
     /// Every holder put back on the holder lists of the instruments it holds and the lines it has rows on.
     fn relist(&mut self) {
         let Books { ledger, parties, .. } = self;
-        for (place, table) in (0_u16..).zip(&parties.tables) {
-            for slot in table.slots() {
+        for (place, table) in (0_u16..).zip(parties.holders()) {
+            for slot in table.live() {
                 for (instrument, _) in crate::holding::bases(table, slot) {
                     ledger.instruments.relist(place, slot, instrument);
                 }

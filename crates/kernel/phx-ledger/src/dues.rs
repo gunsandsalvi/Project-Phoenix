@@ -56,7 +56,7 @@ impl<B: Backing> Books<B> {
         else {
             return None;
         };
-        crate::rows::iter(self.parties.table(table), slot).find(|r| r.row.line == line && r.side() == side)
+        crate::rows::iter(self.parties.holder(table), slot).find(|r| r.row.line == line && r.side() == side)
     }
 
     /// A line's holders, in its holder list's order.
@@ -64,7 +64,7 @@ impl<B: Backing> Books<B> {
         let keys = self.ledger.lines.keys();
         self.ledger.lines.holders(line).map(move |k| {
             let (place, slot) = keys.split(k);
-            self.parties.table(place).party(slot)
+            self.parties.holder(place).party(slot)
         })
     }
 

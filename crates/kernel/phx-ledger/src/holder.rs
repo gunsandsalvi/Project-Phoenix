@@ -89,6 +89,33 @@ impl<B: Backing> HolderArenas for KindTable<B> {
     }
 }
 
+/// A holder table as the books keep it: its arenas, what the pooled-flow rule reads of its payers, and its live rows.
+/// The kind tables of individuals are one; the population's cell tables are the other, known here only by it.
+pub trait HolderTable: HolderArenas + crate::positions::PayerPositions {
+    /// The live rows, in slot order.
+    fn live(&self) -> Box<dyn Iterator<Item = Slot> + '_>;
+}
+
+impl<B: Backing> HolderTable for KindTable<B> {
+    fn live(&self) -> Box<dyn Iterator<Item = Slot> + '_> {
+        Box::new(self.slots())
+    }
+}
+
+/// A population's cell table as the books keep it beside the kind tables: saved, read back and hashed with the
+/// books, and reached as its own type by the population, which alone knows it.
+pub trait CellHolders: HolderTable + core::fmt::Debug + Send + Sync {
+    fn save_to(&self, w: &mut phx_store::Writer<'_>);
+    /// A table of this one's type read from a save.
+    ///
+    /// # Errors
+    /// When the store is damaged.
+    fn load_like(&self, r: &mut phx_store::Reader<'_>) -> Result<Box<dyn CellHolders>, phx_store::LoadError>;
+    fn hash_into(&self, h: &mut phx_store::LogicalHasher);
+    fn as_any(&self) -> &dyn core::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any;
+}
+
 /// A holder as a line's or instrument's holder list keeps it: its table in the high bits and its slot below, the
 /// split set by how many holder tables the world has, so a list names holders of any table in one sorted order.
 #[clause("REG.4")]

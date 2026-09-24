@@ -13,7 +13,6 @@ use crate::due::DueLines;
 use crate::dues::{Found, row_leg};
 use crate::instruction::{AccountRef, LegKind, LegRec};
 use crate::pending::Closed;
-use crate::positions::PayerPositions;
 use crate::rows::RowView;
 use crate::runs;
 
@@ -90,7 +89,7 @@ impl<B: Backing> Books<B> {
     /// A holder's due rows, whether or not its head was read today: the rows of its segment on lines due today.
     pub(crate) fn due_rows_of(&self, party: PartyId, due: &DueLines) -> Vec<RowView> {
         let Located::Live { table, slot, .. } = self.parties.locate(party) else { return Vec::new() };
-        let arenas = self.parties.table(table);
+        let arenas = self.parties.holder(table);
         runs::segment(arenas, slot, arenas.run_head(slot)).filter(|r| due.is_due(r.row.line)).collect()
     }
 
@@ -214,7 +213,7 @@ impl<B: Backing> Books<B> {
             Missing::Present(f) => f.limit.amt(),
             Missing::Absent => 0,
         };
-        let positions = self.parties.table(table);
+        let positions = self.parties.holder(table);
         let weight = i128::from(positions.weight(slot));
         Record { account, funds: positions.per_member_funds(slot, account, facility) * weight, debit: 0, credit: 0 }
     }
@@ -253,10 +252,9 @@ impl<B: Backing> Books<B> {
         found: &mut Found,
     ) -> DayRecords {
         let mut out = DayRecords::default();
-        for kind in self.parties.kinds() {
-            let place = self.parties.place(kind);
-            let table = self.parties.table(place);
-            for slot in table.slots() {
+        for place in self.parties.places() {
+            let table = self.parties.holder(place);
+            for slot in table.live() {
                 out.heads_read += 1;
                 let Some((rows, read)) = runs::due_rows(table, slot, day, due) else { continue };
                 out.scanned.push((place, slot));

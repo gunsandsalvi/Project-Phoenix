@@ -275,6 +275,7 @@ pub phx_core::contribution::Opening::countries: &'a [phx_core::contribution::Ope
 pub phx_core::contribution::Opening::ctx: phx_core::contribution::OpeningCtx<'a>
 pub phx_core::contribution::Opening::date: phx_id::day::Date
 pub phx_core::contribution::Opening::day: phx_id::day::Day
+pub phx_core::contribution::Opening::population: &'a mut dyn core::any::Any
 pub phx_core::contribution::Opening::register: &'a phx_core::register::Register
 pub phx_core::contribution::Opening::report: &'a mut phx_core::contribution::GenReport
 impl core::fmt::Debug for phx_core::contribution::Opening<'_>
@@ -1424,6 +1425,7 @@ pub fn phx_core::register::PrimDecl::owner(&self) -> core::result::Result<phx_id
 pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::register::Register
 impl phx_core::register::Register
+pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
 pub fn phx_core::register::Register::standing_shapes(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
@@ -2678,6 +2680,7 @@ pub phx_core::Opening::countries: &'a [phx_core::contribution::OpeningCountry]
 pub phx_core::Opening::ctx: phx_core::contribution::OpeningCtx<'a>
 pub phx_core::Opening::date: phx_id::day::Date
 pub phx_core::Opening::day: phx_id::day::Day
+pub phx_core::Opening::population: &'a mut dyn core::any::Any
 pub phx_core::Opening::register: &'a phx_core::register::Register
 pub phx_core::Opening::report: &'a mut phx_core::contribution::GenReport
 impl core::fmt::Debug for phx_core::contribution::Opening<'_>
@@ -2846,6 +2849,7 @@ pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::O
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub struct phx_core::Register
 impl phx_core::register::Register
+pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
 pub fn phx_core::register::Register::standing_shapes(&self) -> alloc::vec::Vec<(&'static str, &'static str)>

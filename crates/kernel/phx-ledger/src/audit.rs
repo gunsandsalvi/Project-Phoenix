@@ -189,7 +189,7 @@ where
         use crate::apply::{Holders, Located};
         match self.parties.locate(party) {
             Located::Live { party, table, slot } => {
-                self.ledger.position(self.parties.table(table), party, slot, account)
+                self.ledger.position(self.parties.holder(table), party, slot, account)
             }
             // What an ended party held passed on when it ended, so it holds nothing.
             Located::Ended => 0,

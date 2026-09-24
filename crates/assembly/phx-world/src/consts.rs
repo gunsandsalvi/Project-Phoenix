@@ -18,6 +18,11 @@ pub const WHOLE: u64 = 100;
 pub const KIND_ROWS: u32 = 1 << 18;
 /// Rows of a kind table per chunk, as the population's tables chunk theirs.
 pub const KIND_ROWS_PER_CHUNK: u32 = 1 << 12;
+/// Rows each population kind's cell table reserves: room for several times the cells the design point carries, in
+/// address space committed only as rows are written.
+pub const CELL_ROWS: u32 = 1 << 23;
+/// Rows of a cell table per chunk.
+pub const CELL_ROWS_PER_CHUNK: u32 = 1 << 12;
 /// Instruments the books reserve room for.
 pub const INSTRUMENTS: u32 = 1 << 20;
 /// Lines the books reserve room for: the individuals' contracts now, and the cells' from the population's steps.
@@ -28,7 +33,7 @@ pub const BOOK_ROWS_PER_CHUNK: u32 = 1 << 14;
 pub const HOLDER_BLOCKS: u32 = 1 << 20;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 1;
+pub const SAVE_FORMAT: u32 = 2;
 /// The file every save writes last, which makes it complete.
 pub const SAVE_MANIFEST: &str = "manifest.json";
 /// The suffix a save's directory carries until it is complete.

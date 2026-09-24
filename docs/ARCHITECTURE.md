@@ -606,6 +606,12 @@ of these kinds (the promoted, the player) are rows of weight one flagged `indivi
 **extension facet** for state only individuals have. Institutions are rows of the kernel's kind tables of individuals
 (§4.1), never cells.
 
+The books keep the cell tables beside the kind tables, one holder place each after the kind tables', known to
+`phx-ledger` only through its traits (`HolderTable`, `CellHolders`), so the settlement stream, the holder lists, the
+directory and the saves reach cells as they reach individuals; `phx-pop` reaches its own tables by their type. What
+the tables do not hold — each kind's compiled declaration, interned keys, landing index, step levels and members
+counted by event — is the world's `Population`, which the opening's contributions are handed beside the books.
+
 A cell row keeps a **landing-hot record** of one 64-byte line — landing key (key id and step vector hashed), weight,
 flags, the leading steps and the three leading position totals — and, in columns, the other positions as `i64`
 totals in declared fixed-point units (REP.20), the key-rule kink signature in whole words, its width compiled from the
@@ -1222,7 +1228,9 @@ world on the phone. CI never runs the world.
   the audit's own sink, as if they had settled.
 - **Stores** of a save, each one file, in the order the world hash reads them:
   - `world`: the day, the fails waiting for the contract process, the player's queue, bindings, the closed fact;
-  - `books`: the directory, the kind tables and the ledger;
+  - `books`: the kind tables, the population's cell tables, the directory and the ledger;
+  - `population`: each population kind's interned keys with their counts and free identities, its step levels,
+    and each kind's members as the events that began and ended them count them;
   - `markets`;
   - `accounts`;
   - `records`;
@@ -1242,6 +1250,7 @@ world on the phone. CI never runs the world.
   - instruments' and lines' holder lists, from holdings and rows;
   - the due wheel, from the lines' next due days;
   - the terms interner's index, from its entries;
+  - each population kind's key index, from its key records, and its landing index, from its cells;
   - the tape's last print per market;
   - the accounts' claims per party;
   - the calendar's window;

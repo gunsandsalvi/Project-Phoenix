@@ -265,7 +265,7 @@ impl World {
             books: &self.books,
             markets: &self.markets,
             accounts: &phx_acct::audit::AccountsView::new(&self.books, &self.accounts),
-            cells: &phx_pop::audit::CellsView::<phx_store::SystemBacking>::new(&[], &[], &[]),
+            cells: &self.population.view::<phx_store::SystemBacking>(self.books.parties.cells()),
             own: &self.own,
         };
         let record = self.audit.close(inputs, &mut self.findings);

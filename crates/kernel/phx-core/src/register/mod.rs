@@ -396,6 +396,20 @@ impl Register {
         d
     }
 
+    /// A shared partition by its identifier, as a population kind's positions name the steps they are cut into.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is not one shared partition.
+    pub fn partition(&self, id: &str) -> Result<&values::Partition, String> {
+        let Some(i) = self.decls.iter().position(|d| d.id == id) else {
+            return Err(format!("no primitive `{id}` is declared"));
+        };
+        match self.stored.get(i) {
+            Some(Stored::Shared(PrimValue::Partition(p))) => Ok(p),
+            _ => Err(format!("`{id}` is not one shared partition")),
+        }
+    }
+
     /// The standing SHAPEs and their reasons.
     #[clause("NUM.7")]
     #[must_use]
