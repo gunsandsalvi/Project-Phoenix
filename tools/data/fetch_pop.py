@@ -243,7 +243,68 @@ def wid_shares(cache: Path, manifest: dict, iso3: set) -> None:
     }
 
 
-SOURCES = {"wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares}
+def ilo_employment(cache: Path, manifest: dict, iso3: set) -> None:
+    """Employed persons by sex and occupation (ISCO-08 major groups) and by status in employment (ICSE-93), from
+    labour force surveys and censuses; the ILO's modelled estimates are left out."""
+    specs = [
+        ("DF_EMP_TEMP_SEX_OCU_NB", "OCU", "OCU_ISCO08_", "occupation",
+         "Employed persons by sex and ISCO-08 major group, thousands (DF_EMP_TEMP_SEX_OCU_NB), ILOSTAT"),
+        ("DF_EMP_TEMP_SEX_STE_NB", "STE", "STE_ICSE93_", "status",
+         "Employed persons by sex and ICSE-93 status in employment, thousands (DF_EMP_TEMP_SEX_STE_NB), ILOSTAT"),
+    ]
+    for flow, dim, prefix, name, title in specs:
+        rows = []
+        for r in ilo_rows(cache, flow):
+            if r["FREQ"] != "A" or r["REF_AREA"] not in iso3 or r["SEX"] not in ("SEX_M", "SEX_F") \
+                    or not r[dim].startswith(prefix) or not r["OBS_VALUE"] or "Modelled" in r["SOURCE"]:
+                continue
+            rows.append((r["REF_AREA"], int(r["TIME_PERIOD"]), r["SEX"][4:], r[dim][len(prefix):], r["OBS_VALUE"],
+                         r["SOURCE"]))
+        manifest["series"][f"ilo/{name}"] = {
+            "title": title,
+            "rows": table(RAW / "ilo" / f"{name}.csv", ["iso3", "year", "sex", "class", "employed", "source"], rows),
+        }
+    manifest["sources"]["ilo_employment"] = {"title": "ILOSTAT SDMX API", "url": ILO.format(flow="<dataflow>")}
+
+
+WCDE_URL = "https://wicshiny2023.iiasa.ac.at/wcde-data/wcde-v3-batch/2/prop.rds"
+WCDE_YEAR = 2020
+WCDE_LEVELS = ["No Education", "Incomplete Primary", "Primary", "Lower Secondary", "Upper Secondary",
+               "Short Post Secondary", "Bachelor", "Master and higher"]
+
+
+def wcde(cache: Path, manifest: dict, iso3: set) -> None:
+    """Educational attainment by five-year age group and sex, the Wittgenstein Centre's reconstruction for 2020 (the
+    last year before its projections begin), countries matched by their UN M49 codes through WPP's locations."""
+    import pyreadr
+    d = next(iter(pyreadr.read_r(str(cached(cache, "wcde_prop.rds", WCDE_URL))).values()))
+    m49 = {}
+    for r in rows_of(cached(cache, WPP_FILES["indicators"], WPP + WPP_FILES["indicators"])):
+        if r["ISO3_code"]:
+            m49[int(r["LocID"])] = r["ISO3_code"]
+    d = d[(d.year == WCDE_YEAR) & d.sex.isin(["Male", "Female"]) & d.education.isin(WCDE_LEVELS)]
+    rows = []
+    for r in d.itertuples():
+        iso = m49.get(int(r.country_code))
+        if iso in iso3:
+            rows.append((iso, r.sex[0], int(r.age.split("--")[0].rstrip("+")), WCDE_LEVELS.index(r.education),
+                         f"{r.prop:.2f}"))
+    manifest["series"]["wcde/attainment"] = {
+        "title": f"Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower "
+                 f"secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher), % of each "
+                 f"five-year age group from 15 and sex, {WCDE_YEAR}, Wittgenstein Centre Human Capital Data Explorer "
+                 f"v3, SSP2",
+        "rows": table(RAW / "wcde" / "attainment.csv", ["iso3", "sex", "age", "level", "percent"], rows),
+    }
+    manifest["sources"]["wcde"] = {
+        "title": "Wittgenstein Centre for Demography and Global Human Capital, Human Capital Data Explorer v3 (2023), "
+                 "batch file",
+        "url": WCDE_URL,
+    }
+
+
+SOURCES = {"wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares,
+           "ilo_employment": ilo_employment, "wcde": wcde}
 
 
 def main() -> None:

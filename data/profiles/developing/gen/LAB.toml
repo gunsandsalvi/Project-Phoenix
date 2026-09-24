@@ -1,0 +1,17 @@
+# The developing group's employment by occupation and status (spec GEN.2, LAB), derived by tools/data/derive_pop.py; never edited by hand.
+
+[[primitive]]
+id = "LAB.occupation_shares"
+kind = "ENDOWMENT"
+owner = "LAB"
+source = "measured"
+source_ref = "Share of the employed by ISCO-08 major group (rows: 0 armed forces, 1 managers, 2 professionals, 3 technicians and associate professionals, 4 clerical support, 5 service and sales, 6 skilled agricultural, forestry and fishery, 7 craft and related trades, 8 plant and machine operators and assemblers, 9 elementary occupations), by sex (columns: female, male): the median over the group's 61 economies of each share at their latest survey or census 2010-2025 (a class it does not report counted as none), the medians rescaled to sum to one, from ILOSTAT SDMX API (fetched 2026-09-24). The group's standard at every drawn value."
+value = { rows = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], columns = [0, 1], values = [[0.000000, 0.005364], [0.010937, 0.019373], [0.058147, 0.059368], [0.025963, 0.033473], [0.014978, 0.013964], [0.239500, 0.141917], [0.464733, 0.394757], [0.050186, 0.131863], [0.006321, 0.074643], [0.129235, 0.125278]], outside = "refuse" }
+
+[[primitive]]
+id = "LAB.status_shares"
+kind = "ENDOWMENT"
+owner = "LAB"
+source = "measured"
+source_ref = "Share of the employed by status in employment, ICSE-93 (rows: 1 employees, 2 employers, 3 own-account workers, 4 members of producers' cooperatives, 5 contributing family workers), by sex (columns: female, male): the median over the group's 66 economies of each share at their latest survey or census 2010-2025 (a class it does not report counted as none), the medians rescaled to sum to one, from ILOSTAT SDMX API (fetched 2026-09-24). The group's standard at every drawn value."
+value = { rows = [1, 2, 3, 4, 5], columns = [0, 1], values = [[0.283815, 0.427631], [0.019097, 0.043067], [0.502438, 0.446427], [0.000000, 0.000000], [0.194651, 0.082876]], outside = "refuse" }

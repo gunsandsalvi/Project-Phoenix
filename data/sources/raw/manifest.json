@@ -9,6 +9,14 @@
       "rows": 6395,
       "title": "Population aged 15 and over with a disability and in total, thousands, by sex and age band (DF_POP_XWAP_SEX_AGE_DSB_NB), ILOSTAT"
     },
+    "ilo/occupation": {
+      "rows": 31925,
+      "title": "Employed persons by sex and ISCO-08 major group, thousands (DF_EMP_TEMP_SEX_OCU_NB), ILOSTAT"
+    },
+    "ilo/status": {
+      "rows": 18176,
+      "title": "Employed persons by sex and ICSE-93 status in employment, thousands (DF_EMP_TEMP_SEX_STE_NB), ILOSTAT"
+    },
     "imf/GGXWDG_NGDP": {
       "rows": 2083,
       "title": "General government gross debt (% of GDP), IMF World Economic Outlook"
@@ -84,6 +92,10 @@
     "wb/NY.GDP.MKTP.KD.ZG": {
       "rows": 2271,
       "title": "GDP growth (annual %), World Bank WDI"
+    },
+    "wcde/attainment": {
+      "rows": 55320,
+      "title": "Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher), % of each five-year age group from 15 and sex, 2020, Wittgenstein Centre Human Capital Data Explorer v3, SSP2"
     },
     "wdi/FB.BNK.CAPA.ZS": {
       "rows": 1469,
@@ -193,6 +205,11 @@
       "title": "ILOSTAT SDMX API",
       "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
     },
+    "ilo_employment": {
+      "fetched": "2026-09-24",
+      "title": "ILOSTAT SDMX API",
+      "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
+    },
     "imf": {
       "title": "IMF DataMapper API",
       "url": "https://www.imf.org/external/datamapper/api/v1/<series>"
@@ -215,6 +232,11 @@
       "fetched": "2026-09-24",
       "title": "World Bank API (GFDD and WDI series)",
       "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}"
+    },
+    "wcde": {
+      "fetched": "2026-09-24",
+      "title": "Wittgenstein Centre for Demography and Global Human Capital, Human Capital Data Explorer v3 (2023), batch file",
+      "url": "https://wicshiny2023.iiasa.ac.at/wcde-data/wcde-v3-batch/2/prop.rds"
     },
     "wdi": {
       "countries": "WDICountry.csv: every economy with an income group (FY2026 classification)",

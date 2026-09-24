@@ -391,19 +391,84 @@ def income_wealth(level: str, members: set, m: dict) -> list:
     return out
 
 
+# ---- Education, occupation, status -------------------------------------------------------------------------------
+
+EDUCATION_AGES = list(range(15, 101, 5))
+
+
+def education(level: str, members: set, m: dict) -> list:
+    e = pd.read_csv(RAW / "wcde" / "attainment.csv")
+    e = e[e.iso3.isin(members)]
+    n = e.iso3.nunique()
+    out = []
+    for sex, name in [("F", "female"), ("M", "male")]:
+        x = e[e.sex == sex].pivot_table(index=["iso3", "age"], columns="level", values="percent")
+        x = x.div(x.sum(axis=1), axis=0)
+        standard = x.groupby("age").median()
+        standard = standard.div(standard.sum(axis=1), axis=0).reindex(EDUCATION_AGES)
+        ref = (f"Share of {name}s in each five-year age group from its first age (rows; 100: 100 and over) by highest "
+               f"level of education (columns: none, incomplete primary, primary, lower secondary, upper secondary, "
+               f"short post-secondary, bachelor, master and higher): the median over the group's {n} economies of "
+               f"each share in 2020, rescaled to sum to one, from {fetched(m, 'wcde')}. The group's standard at every "
+               f"drawn value.")
+        out.append(entry(f"DEM.education_{name}", "ENDOWMENT", "DEM", "measured", ref,
+                         table2(EDUCATION_AGES, range(8), standard.to_numpy(), "edge")))
+    return out
+
+
+def latest_survey(d: pd.DataFrame) -> pd.DataFrame:
+    """Each economy's latest year, and within it the source reporting the most rows, then by name."""
+    d = d[d.year == d.groupby("iso3").year.transform("max")]
+    size = d.groupby(["iso3", "source"]).size().rename("n").reset_index()
+    size = size.sort_values(["iso3", "n", "source"], ascending=[True, False, True]).groupby("iso3").head(1)
+    return d.merge(size[["iso3", "source"]], on=["iso3", "source"])
+
+
+def employment(level: str, members: set, m: dict) -> list:
+    out = []
+    for name, pid, classes, what in [
+        ("occupation", "LAB.occupation_shares", [str(c) for c in range(10)],
+         "ISCO-08 major group (rows: 0 armed forces, 1 managers, 2 professionals, 3 technicians and associate "
+         "professionals, 4 clerical support, 5 service and sales, 6 skilled agricultural, forestry and fishery, 7 "
+         "craft and related trades, 8 plant and machine operators and assemblers, 9 elementary occupations)"),
+        ("status", "LAB.status_shares", ["1", "2", "3", "4", "5"],
+         "status in employment, ICSE-93 (rows: 1 employees, 2 employers, 3 own-account workers, 4 members of "
+         "producers' cooperatives, 5 contributing family workers)"),
+    ]:
+        d = pd.read_csv(RAW / "ilo" / f"{name}.csv", dtype={"class": str})
+        d = latest_survey(d[d.iso3.isin(members) & d["class"].isin(classes)])
+        cols = []
+        for sex in ("F", "M"):
+            x = d[d.sex == sex].pivot_table(index="iso3", columns="class", values="employed").reindex(columns=classes)
+            x = x.fillna(0).div(x.fillna(0).sum(axis=1), axis=0)
+            med = x.median()
+            cols.append((med / med.sum()).to_numpy())
+        n = d.iso3.nunique()
+        ref = (f"Share of the employed by {what}, by sex (columns: female, male): the median over the group's {n} "
+               f"economies of each share at their latest survey or census 2010-2025 (a class it does not report "
+               f"counted as none), the medians rescaled to sum to one, from {fetched(m, 'ilo_employment')}. The "
+               f"group's standard at every drawn value.")
+        out.append(entry(pid, "ENDOWMENT", "LAB", "measured", ref,
+                         table2([int(c) for c in classes], [0, 1], np.column_stack(cols), "refuse")))
+    return out
+
+
 def main() -> None:
     g = groups()
     m = manifest()
     members_of = {level: set(g[g.level == level].iso3) for level in sorted(set(LEVELS.values()))}
     hh = households(members_of, m)
     for level, members in members_of.items():
-        dem = demography(level, members, m) + hh[level]
+        dem = demography(level, members, m) + hh[level] + education(level, members, m)
         write(level, "DEM", f"# The {level} group's demography and households (spec POP.3, POP.4, GEN.2), derived "
                             "by tools/data/derive_pop.py; never edited by hand.", dem)
         money = income_wealth(level, members, m)
         write(level, "HH", f"# The {level} group's shapes of income and wealth (spec GEN.2), derived by "
                            "tools/data/derive_pop.py; never edited by hand.", money)
-        print(level, [e.split('"')[1] for e in dem + money])
+        lab = employment(level, members, m)
+        write(level, "LAB", f"# The {level} group's employment by occupation and status (spec GEN.2, LAB), derived "
+                            "by tools/data/derive_pop.py; never edited by hand.", lab)
+        print(level, [e.split('"')[1] for e in dem + money + lab])
 
 
 if __name__ == "__main__":
