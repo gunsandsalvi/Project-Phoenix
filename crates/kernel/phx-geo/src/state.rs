@@ -8,7 +8,8 @@ use crate::consts::MAP_MAX_ATTEMPTS;
 use crate::deposits::{Deposit, draw, everywhere};
 use crate::distance::ZoneDistances;
 use crate::exposure::exposure;
-use crate::generate::{Map, MapParams, TerrainClass, generate};
+use crate::generate::{HeightCurve, Map, MapParams, TerrainClass, generate};
+use crate::relief::ReliefParams;
 use crate::hazards::HAZARDS;
 use crate::prims::GeoPrims;
 
@@ -57,14 +58,18 @@ fn count(n: u64) -> Result<u32, String> {
     u32::try_from(n).map_err(|e| e.to_string())
 }
 
+fn curve(t: &phx_core::Table1) -> HeightCurve {
+    HeightCurve { axis: t.axis().to_vec(), metres: t.values().to_vec() }
+}
+
 /// The map's parameters, read from the register and the allotment.
 ///
 /// # Errors
 /// A value beyond its field's width, or terrain tables of unequal lengths.
 pub fn params(p: &GeoPrims, r: &Register, a: &Allotment) -> Result<MapParams, String> {
-    let (elevation, slope) = (p.terrain_elevation.shared(r), p.terrain_slope.shared(r));
-    if elevation.axis() != slope.axis() {
-        return Err("the terrain classes' elevation and slope tables list different classes".to_owned());
+    let (elevation, relief) = (p.terrain_elevation.shared(r), p.terrain_relief.shared(r));
+    if elevation.axis() != relief.axis() {
+        return Err("the terrain classes' elevation and relief tables list different classes".to_owned());
     }
     let terrain = elevation
         .axis()
@@ -72,26 +77,42 @@ pub fn params(p: &GeoPrims, r: &Register, a: &Allotment) -> Result<MapParams, St
         .map(|c| {
             Ok(TerrainClass {
                 max_elevation_m: i16::try_from(cell1(elevation, *c)).map_err(|e| e.to_string())?,
-                max_slope_permille: u32::try_from(cell1(slope, *c)).map_err(|e| e.to_string())?,
+                max_relief_m: u32::try_from(cell1(relief, *c)).map_err(|e| e.to_string())?,
             })
         })
         .collect::<Result<Vec<_>, String>>()?;
-    Ok(MapParams {
-        land_tiles: a.land.iter().sum(),
-        tile_m: count(p.tile_m.shared(r).get())?,
-        sea_share: p.sea_share.shared(r).to_f64(),
+    let relief_params = ReliefParams {
         base_cells: count(p.base_cells.shared(r).get())?,
         octaves: u8::try_from(p.octaves.shared(r).get()).map_err(|e| e.to_string())?,
         roughness: p.roughness.shared(r).to_f64(),
         falloff: p.falloff.shared(r).to_f64(),
-        max_elevation_m: phx_rand::float::from_u64(p.max_elevation_m.shared(r).get()),
-        max_depth_m: phx_rand::float::from_u64(p.max_depth_m.shared(r).get()),
+        plates: count(p.plates.shared(r).get())?,
+        belt: p.plate_belt.shared(r).to_f64(),
+        plate_weight: p.plate_weight.shared(r).to_f64(),
+        mountain_weight: p.mountain_weight.shared(r).to_f64(),
+        warp: p.warp.shared(r).to_f64(),
+        erosion_passes: count(p.erosion_passes.shared(r).get())?,
+        erosion_rate: p.erosion_rate.shared(r).to_f64(),
+        area_exponent: p.area_exponent.shared(r).to_f64(),
+    };
+    Ok(MapParams {
+        land_tiles: a.land.iter().sum(),
+        tile_m: count(p.tile_m.shared(r).get())?,
+        sea_share: p.sea_share.shared(r).to_f64(),
+        cells_per_tile: count(p.relief_cells.shared(r).get())?,
+        relief: relief_params,
+        land_heights: curve(p.land_heights.shared(r)),
+        sea_depths: curve(p.sea_depths.shared(r)),
         terrain,
+        river_tiles: count(p.river_tiles.shared(r).get())?,
+        rugged_m: p.rugged_m.shared(r).get(),
+        river_crossing_m: p.river_crossing_m.shared(r).get(),
         split: a.land.clone(),
         regions: a.regions.clone(),
         zones: p.zones.shared(r).get(),
         zone_min_tiles: p.zone_min_tiles.shared(r).get(),
         zone_max_tiles: p.zone_max_tiles.shared(r).get(),
+        share_tolerance_per_mille: p.share_tolerance.shared(r).get(),
         mainland_floor_percent: p.mainland_floor.shared(r).get(),
         max_attempts: MAP_MAX_ATTEMPTS,
     })
@@ -109,7 +130,7 @@ fn hazard(
     let (Some(tables), Some(spec)) = (p.hazards.get(index), HAZARDS.get(index)) else {
         return Err(format!("hazard {index} has no tables"));
     };
-    let [_, _, rate_decl, spread_decl, a_decl, b_decl] = spec.tables;
+    let [_, _, _, rate_decl, spread_decl, a_decl, b_decl] = spec.tables;
     let rate_table = tables.rate.shared(r);
     let classes = rate_table.axis();
     if classes.iter().zip(0_i64..).any(|(c, i)| *c != i) {

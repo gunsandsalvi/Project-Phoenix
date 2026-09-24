@@ -47,18 +47,110 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// The highest point's elevation, in metres.
-    pub MAX_ELEVATION_M = "GEO.max_elevation_m" {
+    /// Relief cells across a tile: the relief is generated, eroded and measured this much finer than the tiles.
+    pub RELIEF_CELLS = "GEO.relief_cells_per_tile" { kind: Resolution, value: Count, clause: "GEO.18", scope: Shared }
+}
+
+declare_prim! {
+    /// Tectonic plates the relief is raised from.
+    pub PLATES = "GEO.plates" {
         kind: Shape, value: Count, clause: "GEO.10", scope: Shared,
         shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
     }
 }
 
 declare_prim! {
-    /// The deepest sea's depth, in metres.
-    pub MAX_DEPTH_M = "GEO.max_depth_m" {
+    /// The width of a plate boundary's influence, as a share of the map's side: mountain belts and crust blends.
+    pub PLATE_BELT = "GEO.plate_belt" {
+        kind: Shape, value: Fixed { exp: 3 }, clause: "GEO.10", scope: Shared,
+        shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
+    }
+}
+
+declare_prim! {
+    /// How much the plates' crust weighs in the relief against the fractal noise.
+    pub PLATE_WEIGHT = "GEO.plate_weight" {
+        kind: Shape, value: Fixed { exp: 2 }, clause: "GEO.10", scope: Shared,
+        shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
+    }
+}
+
+declare_prim! {
+    /// How much converging plates raise their mountain belts.
+    pub MOUNTAIN_WEIGHT = "GEO.mountain_weight" {
+        kind: Shape, value: Fixed { exp: 2 }, clause: "GEO.10", scope: Shared,
+        shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
+    }
+}
+
+declare_prim! {
+    /// How far the plane is warped before the relief is read, as a share of the map's side: bays, capes and bends.
+    pub WARP = "GEO.warp" {
+        kind: Shape, value: Fixed { exp: 3 }, clause: "GEO.10", scope: Shared,
+        shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
+    }
+}
+
+declare_prim! {
+    /// Passes of fluvial erosion over the relief.
+    pub EROSION_PASSES = "GEO.erosion_passes" {
         kind: Shape, value: Count, clause: "GEO.10", scope: Shared,
         shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
+    }
+}
+
+declare_prim! {
+    /// The stream-power law's rate, per pass, in the relief's own units.
+    pub EROSION_RATE = "GEO.erosion_rate" {
+        kind: Shape, value: Fixed { exp: 5 }, clause: "GEO.10", scope: Shared,
+        shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
+    }
+}
+
+declare_prim! {
+    /// The stream-power law's exponent of the area draining through a cell.
+    pub AREA_EXPONENT = "GEO.erosion_area_exponent" {
+        kind: Shape, value: Fixed { exp: 2 }, clause: "GEO.10", scope: Shared,
+        shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
+    }
+}
+
+declare_prim! {
+    /// The land's heights in metres at each part per thousand of its area, lowest first, measured over the analogue
+    /// region.
+    pub LAND_HEIGHTS = "GEO.land_heights" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 0 }, clause: "GEO.10", scope: Shared
+    }
+}
+
+declare_prim! {
+    /// The sea's heights in metres (below zero) at each part per thousand of its area, deepest first.
+    pub SEA_DEPTHS = "GEO.sea_depths" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 0 }, clause: "GEO.10", scope: Shared
+    }
+}
+
+declare_prim! {
+    /// The tiles a tile's drainage must gather for it to carry a river.
+    pub RIVER_TILES = "GEO.river_tiles" { kind: Resolution, value: Count, clause: "GEO.7", scope: Shared }
+}
+
+declare_prim! {
+    /// The relief in metres that doubles a step's cost to a growing country, region or zone.
+    pub RUGGED_M = "GEO.rugged_m" { kind: Technology, value: Count, clause: "GEO.3", scope: Shared }
+}
+
+declare_prim! {
+    /// The metres of travel a river crossing adds to a growing country, region or zone.
+    pub RIVER_CROSSING_M = "GEO.river_crossing_m" { kind: Technology, value: Count, clause: "GEO.3", scope: Shared }
+}
+
+declare_prim! {
+    /// How far, in parts per thousand, a country's land may stray from its share, and a region from its country's
+    /// mean.
+    pub SHARE_TOLERANCE = "GEO.share_tolerance_per_mille" {
+        kind: Shape, value: Count, clause: "GEO.3", scope: Shared,
+        shape: standing("a construction condition: regions of like size, as GEO.3 asks, and countries holding their shares of the land, which no mechanism of the world adjusts")
     }
 }
 
@@ -108,8 +200,8 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// Each terrain class's steepest slope to a neighbour, in parts per thousand, by class.
-    pub TERRAIN_SLOPE = "GEO.terrain_max_slope" {
+    /// Each terrain class's greatest relief within a tile, the range of its heights in metres, by class.
+    pub TERRAIN_RELIEF = "GEO.terrain_max_relief" {
         kind: Shape, value: Table1 { axis_exp: 0, exp: 0 }, clause: "GEO.1", scope: Shared,
         shape: standing("terrain classes are how the relief is read by exposure and deposits; no mechanism classifies ground")
     }
@@ -255,12 +347,13 @@ declare_prim! {
     }
 }
 
-/// Declares a hazard's six tables: its exposure class inland and on the coast by terrain and climate class, and by
+/// Declares a hazard's seven tables: its exposure class inland, on the coast and on a river by terrain and climate
+/// class, and by
 /// exposure class its yearly chance of starting on a tile, its chance of spreading to a neighbour, and the two shapes
 /// of the share of what stands there it destroys.
 macro_rules! hazard_prims {
-    ($inland:ident = $i:literal, $coastal:ident = $c:literal, $rate:ident = $r:literal, $spread:ident = $s:literal,
-     $sa:ident = $a:literal, $sb:ident = $b:literal) => {
+    ($inland:ident = $i:literal, $coastal:ident = $c:literal, $river:ident = $v:literal, $rate:ident = $r:literal,
+     $spread:ident = $s:literal, $sa:ident = $a:literal, $sb:ident = $b:literal) => {
         declare_prim! {
             /// The hazard's exposure class of an inland tile, by terrain class and climate class.
             pub $inland = $i {
@@ -270,6 +363,12 @@ macro_rules! hazard_prims {
         declare_prim! {
             /// The hazard's exposure class of a coastal tile, by terrain class and climate class.
             pub $coastal = $c {
+                kind: Technology, value: Table2 { row_exp: 0, column_exp: 0, exp: 0 }, clause: "GEO.7", scope: Shared
+            }
+        }
+        declare_prim! {
+            /// The hazard's exposure class of a tile a river runs through, by terrain class and climate class.
+            pub $river = $v {
                 kind: Technology, value: Table2 { row_exp: 0, column_exp: 0, exp: 0 }, clause: "GEO.7", scope: Shared
             }
         }
@@ -303,6 +402,7 @@ macro_rules! hazard_prims {
 hazard_prims!(
     FLOOD_INLAND = "GEO.flood_exposure_inland",
     FLOOD_COASTAL = "GEO.flood_exposure_coastal",
+    FLOOD_RIVER = "GEO.flood_exposure_river",
     FLOOD_RATE = "GEO.flood_rate",
     FLOOD_SPREAD = "GEO.flood_spread",
     FLOOD_SEVERITY_A = "GEO.flood_severity_a",
@@ -311,6 +411,7 @@ hazard_prims!(
 hazard_prims!(
     STORM_INLAND = "GEO.storm_exposure_inland",
     STORM_COASTAL = "GEO.storm_exposure_coastal",
+    STORM_RIVER = "GEO.storm_exposure_river",
     STORM_RATE = "GEO.storm_rate",
     STORM_SPREAD = "GEO.storm_spread",
     STORM_SEVERITY_A = "GEO.storm_severity_a",
@@ -319,6 +420,7 @@ hazard_prims!(
 hazard_prims!(
     QUAKE_INLAND = "GEO.earthquake_exposure_inland",
     QUAKE_COASTAL = "GEO.earthquake_exposure_coastal",
+    QUAKE_RIVER = "GEO.earthquake_exposure_river",
     QUAKE_RATE = "GEO.earthquake_rate",
     QUAKE_SPREAD = "GEO.earthquake_spread",
     QUAKE_SEVERITY_A = "GEO.earthquake_severity_a",
@@ -327,6 +429,7 @@ hazard_prims!(
 hazard_prims!(
     DROUGHT_INLAND = "GEO.drought_exposure_inland",
     DROUGHT_COASTAL = "GEO.drought_exposure_coastal",
+    DROUGHT_RIVER = "GEO.drought_exposure_river",
     DROUGHT_RATE = "GEO.drought_rate",
     DROUGHT_SPREAD = "GEO.drought_spread",
     DROUGHT_SEVERITY_A = "GEO.drought_severity_a",
@@ -338,6 +441,7 @@ hazard_prims!(
 pub struct HazardPrims {
     pub inland: Prim<Table2>,
     pub coastal: Prim<Table2>,
+    pub river: Prim<Table2>,
     pub rate: Prim<Table1>,
     pub spread: Prim<Table1>,
     pub severity_a: Prim<Table1>,
@@ -379,8 +483,21 @@ pub struct GeoPrims {
     pub octaves: Prim<Count>,
     pub roughness: Prim<Fixed<2>>,
     pub falloff: Prim<Fixed<2>>,
-    pub max_elevation_m: Prim<Count>,
-    pub max_depth_m: Prim<Count>,
+    pub relief_cells: Prim<Count>,
+    pub plates: Prim<Count>,
+    pub plate_belt: Prim<Fixed<3>>,
+    pub plate_weight: Prim<Fixed<2>>,
+    pub mountain_weight: Prim<Fixed<2>>,
+    pub warp: Prim<Fixed<3>>,
+    pub erosion_passes: Prim<Count>,
+    pub erosion_rate: Prim<Fixed<5>>,
+    pub area_exponent: Prim<Fixed<2>>,
+    pub land_heights: Prim<Table1>,
+    pub sea_depths: Prim<Table1>,
+    pub river_tiles: Prim<Count>,
+    pub rugged_m: Prim<Count>,
+    pub river_crossing_m: Prim<Count>,
+    pub share_tolerance: Prim<Count>,
     pub zones: Prim<Count>,
     pub zone_min_tiles: Prim<Count>,
     pub zone_max_tiles: Prim<Count>,
@@ -388,7 +505,7 @@ pub struct GeoPrims {
     pub south_latitude: Prim<Fixed<1>>,
     pub metres_per_degree: Prim<Count>,
     pub terrain_elevation: Prim<Table1>,
-    pub terrain_slope: Prim<Table1>,
+    pub terrain_relief: Prim<Table1>,
     pub climate_lowland: Prim<Table2>,
     pub highland_elevation: Prim<Table1>,
     pub highland_class: Prim<Table1>,
@@ -403,10 +520,11 @@ impl GeoPrims {
         let hazards = crate::hazards::HAZARDS
             .iter()
             .map(|h| {
-                let [inland, coastal, rate, spread, severity_a, severity_b] = h.tables;
+                let [inland, coastal, river, rate, spread, severity_a, severity_b] = h.tables;
                 HazardPrims {
                     inland: d.prim(inland),
                     coastal: d.prim(coastal),
+                    river: d.prim(river),
                     rate: d.prim(rate),
                     spread: d.prim(spread),
                     severity_a: d.prim(severity_a),
@@ -421,8 +539,21 @@ impl GeoPrims {
             octaves: d.prim(&OCTAVES),
             roughness: d.prim(&ROUGHNESS),
             falloff: d.prim(&FALLOFF),
-            max_elevation_m: d.prim(&MAX_ELEVATION_M),
-            max_depth_m: d.prim(&MAX_DEPTH_M),
+            relief_cells: d.prim(&RELIEF_CELLS),
+            plates: d.prim(&PLATES),
+            plate_belt: d.prim(&PLATE_BELT),
+            plate_weight: d.prim(&PLATE_WEIGHT),
+            mountain_weight: d.prim(&MOUNTAIN_WEIGHT),
+            warp: d.prim(&WARP),
+            erosion_passes: d.prim(&EROSION_PASSES),
+            erosion_rate: d.prim(&EROSION_RATE),
+            area_exponent: d.prim(&AREA_EXPONENT),
+            land_heights: d.prim(&LAND_HEIGHTS),
+            sea_depths: d.prim(&SEA_DEPTHS),
+            river_tiles: d.prim(&RIVER_TILES),
+            rugged_m: d.prim(&RUGGED_M),
+            river_crossing_m: d.prim(&RIVER_CROSSING_M),
+            share_tolerance: d.prim(&SHARE_TOLERANCE),
             zones: d.prim(&ZONES),
             zone_min_tiles: d.prim(&ZONE_MIN_TILES),
             zone_max_tiles: d.prim(&ZONE_MAX_TILES),
@@ -430,7 +561,7 @@ impl GeoPrims {
             south_latitude: d.prim(&SOUTH_LATITUDE),
             metres_per_degree: d.prim(&METRES_PER_DEGREE),
             terrain_elevation: d.prim(&TERRAIN_ELEVATION),
-            terrain_slope: d.prim(&TERRAIN_SLOPE),
+            terrain_relief: d.prim(&TERRAIN_RELIEF),
             climate_lowland: d.prim(&CLIMATE_LOWLAND),
             highland_elevation: d.prim(&HIGHLAND_ELEVATION),
             highland_class: d.prim(&HIGHLAND_CLASS),

@@ -20,16 +20,13 @@ fn fade(t: f64) -> f64 {
     t * t * t * (t * (t * FADE_QUINTIC - FADE_QUARTIC) + FADE_CUBIC)
 }
 
-/// The cell a coordinate falls in, the far edge belonging to the last cell.
-fn cell(coord: f64, cells: u32) -> u32 {
-    if coord >= f64::from(cells) {
-        return cells - 1;
-    }
-    let whole = phx_num::Fixed::<0>::from_f64(floor(coord), phx_num::Round::Floor).map(phx_num::Fixed::raw);
-    let Some(c) = whole.ok().and_then(|w| u32::try_from(w).ok()) else {
-        phx_num::violation!(clause = "GEO.10", "a noise coordinate off its lattice");
+/// The whole part of a coordinate, and what is left of it in the cell.
+fn split(coord: f64) -> (i64, f64) {
+    let whole = floor(coord);
+    let Ok(w) = phx_num::Fixed::<0>::from_f64(whole, phx_num::Round::Floor).map(phx_num::Fixed::raw) else {
+        phx_num::violation!(clause = "GEO.10", "a noise coordinate beyond a whole number's width");
     };
-    c
+    (w, coord - whole)
 }
 
 fn lerp(a: f64, b: f64, t: f64) -> f64 {
@@ -50,19 +47,19 @@ impl Lattice {
         Lattice { cols, rows, grads }
     }
 
-    fn grad(&self, cx: u32, cy: u32) -> (f64, f64) {
-        let at = u64::from(cy) * (u64::from(self.cols) + 1) + u64::from(cx);
+    /// The gradient at a corner, the lattice repeating beyond its square.
+    fn grad(&self, cx: i64, cy: i64) -> (f64, f64) {
+        let (x, y) = (cx.rem_euclid(i64::from(self.cols)), cy.rem_euclid(i64::from(self.rows)));
+        let at = y * (i64::from(self.cols) + 1) + x;
         usize::try_from(at).ok().and_then(|i| self.grads.get(i)).copied().unwrap_or((0.0, 0.0))
     }
 
-    /// The noise at a point, each coordinate in `[0, 1]` across the lattice: zero at every corner, smooth between.
+    /// The noise at a point, a coordinate of 1 spanning the lattice's square, which repeats beyond it: zero at every
+    /// corner, smooth between.
     #[must_use]
     pub fn at(&self, across: f64, down: f64) -> f64 {
-        let col = across * f64::from(self.cols);
-        let row = down * f64::from(self.rows);
-        let (cx, cy) = (cell(col, self.cols), cell(row, self.rows));
-        let (tx, ty) = (col - f64::from(cx), row - f64::from(cy));
-        let dot = |gx: u32, gy: u32, dx: f64, dy: f64| {
+        let ((cx, tx), (cy, ty)) = (split(across * f64::from(self.cols)), split(down * f64::from(self.rows)));
+        let dot = |gx: i64, gy: i64, dx: f64, dy: f64| {
             let (a, b) = self.grad(gx, gy);
             a * dx + b * dy
         };

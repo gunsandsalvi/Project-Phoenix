@@ -79,24 +79,6 @@ shape = "standing:the ground is given: plate tectonics, erosion and the making o
 value = 1.5
 
 [[primitive]]
-id = "GEO.max_elevation_m"
-kind = "SHAPE"
-owner = "GEO"
-source = "assumed"
-source_ref = "The highest point at 4,000 m, as in the Alps or the Caucasus."
-shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
-value = 4000
-
-[[primitive]]
-id = "GEO.max_depth_m"
-kind = "SHAPE"
-owner = "GEO"
-source = "assumed"
-source_ref = "The deepest sea at 5,000 m, an ocean basin's."
-shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
-value = 5000
-
-[[primitive]]
 id = "GEO.mainland_floor_percent"
 kind = "SHAPE"
 owner = "GEO"
@@ -115,13 +97,13 @@ shape = "standing:terrain classes are how the relief is read by exposure and dep
 value = { axis = [0, 1, 2, 3], values = [200, 800, 2000, 32767], outside = "refuse" }
 
 [[primitive]]
-id = "GEO.terrain_max_slope"
+id = "GEO.terrain_max_relief"
 kind = "SHAPE"
 owner = "GEO"
 source = "assumed"
-source_ref = "A plain's steepest rise to a neighbour at most 5 per thousand (50 m over 10 km), hills' 20, uplands' 60; steeper ground is mountains."
+source_ref = "A plain's heights within its tile span at most 100 m, hills' 300 m, uplands' 800 m; rougher ground is mountains: relief within about 10 km, the measure of the usual landform classifications (plains, hills, plateaus, mountains)."
 shape = "standing:terrain classes are how the relief is read by exposure and deposits; no mechanism classifies ground"
-value = { axis = [0, 1, 2, 3], values = [5, 20, 60, 1000000], outside = "refuse" }
+value = { axis = [0, 1, 2, 3], values = [100, 300, 800, 32767], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.coast_m"
@@ -146,3 +128,116 @@ owner = "GEO"
 source = "assumed"
 source_ref = "The owner's placement of the map (plan §12, 2026-09-24): its south edge at 35°N, so the map spans 35°N to 58.3°N, a temperate continent like Europe's, from Mediterranean to boreal."
 value = 35.0
+
+[[primitive]]
+id = "GEO.relief_cells_per_tile"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "Four relief cells across a tile, 2.5 km each: fine enough for a tile's relief and its rivers' valleys to be read within it, and for erosion to cut valleys narrower than a tile."
+value = 4
+
+[[primitive]]
+id = "GEO.plates"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Fourteen plates under a continent of 2,600 km: Europe's is a mosaic of a dozen or so blocks and microplates, whose sutures are its mountain belts."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 14
+
+[[primitive]]
+id = "GEO.plate_belt"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "A boundary's belt reaches about 90 km each side, the half-width of a mountain belt such as the Alps."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.035
+
+[[primitive]]
+id = "GEO.plate_weight"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "The crust's level weighs about half the fractal relief, so plates set the continent's shape and the noise its detail."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.45
+
+[[primitive]]
+id = "GEO.mountain_weight"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Converging plates raise belts that rise above the continent's own relief, as young ranges do."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.9
+
+[[primitive]]
+id = "GEO.warp"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "The plane warped by up to about 150 km before the relief is read: coasts and belts bend and fold rather than following the noise's lattice."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.06
+
+[[primitive]]
+id = "GEO.erosion_passes"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Eight passes of fluvial erosion: enough for the main rivers to cut their valleys and for the drainage to organise into basins."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 8
+
+[[primitive]]
+id = "GEO.erosion_rate"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "The stream-power rate per pass, in the raw relief's units: large rivers cut down to near their outlet's level while small streams barely incise."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.004
+
+[[primitive]]
+id = "GEO.erosion_area_exponent"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Incision grows with the square root of the area drained: the stream-power law's usual exponent (m/n about 0.5; Whipple and Tucker 1999)."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.5
+
+[[primitive]]
+id = "GEO.river_tiles"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "A tile carries a river when 25 tiles (2,500 km2) drain through it: a river of regional note, wide enough to need bridges and to flood its plain."
+value = 25
+
+[[primitive]]
+id = "GEO.rugged_m"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "400 m of relief doubles the cost of crossing a tile: rugged ground slows movement and settlement, so borders tend to follow it."
+value = 400
+
+[[primitive]]
+id = "GEO.river_crossing_m"
+kind = "TECHNOLOGY"
+owner = "GEO"
+source = "assumed"
+source_ref = "Crossing onto a river costs as much as 20 km of plain: before bridges, rivers bounded lands and parishes."
+value = 20000
+
+[[primitive]]
+id = "GEO.share_tolerance_per_mille"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Each country's land within 5% of its share, and each region within 5% of its country's mean."
+shape = "standing:a construction condition: regions of like size, as GEO.3 asks, and countries holding their shares of the land, which no mechanism of the world adjusts"
+value = 50

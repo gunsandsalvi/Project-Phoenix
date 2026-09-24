@@ -333,29 +333,12 @@ mod tests {
         use phx_rand::{Seed, Subject, SubjectTag};
 
         use super::ZoneDistances;
-        use crate::generate::{MapParams, TerrainClass, generate};
+        use crate::generate::generate;
+        use crate::generate::tests::small;
 
         const MAP: StreamDecl =
             StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
-        let p = MapParams {
-            land_tiles: 400,
-            tile_m: 10_000,
-            sea_share: 0.4,
-            base_cells: 3,
-            octaves: 3,
-            roughness: 0.5,
-            falloff: 2.0,
-            max_elevation_m: 2_000.0,
-            max_depth_m: 3_000.0,
-            terrain: vec![TerrainClass { max_elevation_m: i16::MAX, max_slope_permille: u32::MAX }],
-            split: vec![60, 40],
-            regions: vec![3, 3],
-            zones: 20,
-            zone_min_tiles: 4,
-            zone_max_tiles: 60,
-            mainland_floor_percent: 50,
-            max_attempts: 50,
-        };
+        let p = small(400, vec![60, 40], vec![3, 3], 20);
         let streams = Streams::new(Seed::new(3), &[MAP]).unwrap();
         let map = generate(&p, &|_| 0, &|a| streams.open(&MAP, Subject::new(SubjectTag::World, a), Day::new(0), 0));
         let d = ZoneDistances::measure(&map);

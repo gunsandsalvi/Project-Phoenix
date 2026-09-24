@@ -6,18 +6,19 @@ use phx_macros::clause;
 use phx_num::{Fixed, Round, capacity_exceeded, violation};
 use phx_rand::Draws;
 
-use crate::consts::{HALF, PER_MILLE, WHOLE_PERCENT};
+use crate::consts::{PER_MILLE, PER_MILLE_F64, WHOLE_PERCENT};
 use crate::grid::Grid;
-use crate::noise::{fractal, octaves};
-use crate::partition::{components, grow, join_nearest, merge_small, pick_seeds};
+use crate::hydrology::{drainage, upstream};
+use crate::partition::{StepCost, balance, components, grow, join_nearest, merge_small, pick_seeds};
+use crate::relief::{ReliefParams, erode, raw, to_curve};
 use crate::tile::{LAND, Region, Tile, WATER, Zone};
 
-/// A terrain class: the first class whose elevation and slope ceilings a land tile keeps is its class; the last
-/// class takes every tile the others leave.
+/// A terrain class: the first class whose elevation and in-tile relief ceilings a land tile keeps is its class; the
+/// last class takes every tile the others leave.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TerrainClass {
     pub max_elevation_m: i16,
-    pub max_slope_permille: u32,
+    pub max_relief_m: u32,
 }
 
 /// What a tile's climate class is read from: how far north it lies across the map, from 0 at the south edge to 1 at
@@ -29,24 +30,33 @@ pub struct ClimateInput {
     pub sea_distance_m: u64,
 }
 
+/// A measured distribution of heights: points in parts per thousand of the cells, and the metres at each.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HeightCurve {
+    pub axis: Vec<i64>,
+    pub metres: Vec<i64>,
+}
+
 /// What a map is generated from, every value read from the register.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MapParams {
     pub land_tiles: u64,
     pub tile_m: u32,
     pub sea_share: f64,
-    pub base_cells: u32,
-    pub octaves: u8,
-    pub roughness: f64,
-    pub falloff: f64,
-    pub max_elevation_m: f64,
-    pub max_depth_m: f64,
+    pub cells_per_tile: u32,
+    pub relief: ReliefParams,
+    pub land_heights: HeightCurve,
+    pub sea_depths: HeightCurve,
     pub terrain: Vec<TerrainClass>,
+    pub river_tiles: u32,
+    pub rugged_m: u64,
+    pub river_crossing_m: u64,
     pub split: Vec<u64>,
     pub regions: Vec<u64>,
     pub zones: u64,
     pub zone_min_tiles: u64,
     pub zone_max_tiles: u64,
+    pub share_tolerance_per_mille: u64,
     pub mainland_floor_percent: u64,
     pub max_attempts: u64,
 }
@@ -58,16 +68,30 @@ pub struct Rejection {
     pub condition: String,
 }
 
-/// The accepted map: its grid and tiles, its zones and regions, and every attempt rejected before it.
+/// The accepted map: its grid and tiles, each tile's relief within it, where each tile drains and how many tiles
+/// drain through it, its zones and regions, and every attempt rejected before it.
 #[clause("GEO.1", "GEO.3", "GEO.10")]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Map {
     pub grid: Grid,
     pub tiles: Vec<Tile>,
+    pub relief_m: Vec<u16>,
+    pub drains_to: Vec<Option<TileId>>,
+    pub upstream: Vec<u32>,
+    pub river_tiles: u32,
     pub zones: Vec<Zone>,
     pub regions: Vec<Region>,
     pub rejections: Vec<Rejection>,
     pub attempt: u64,
+}
+
+impl Map {
+    /// Whether a tile carries a river: enough land drains through it.
+    #[must_use]
+    pub fn is_river(&self, index: usize) -> bool {
+        self.tiles.get(index).is_some_and(Tile::is_land)
+            && self.upstream.get(index).is_some_and(|u| *u >= self.river_tiles)
+    }
 }
 
 /// Whole numbers in proportion to `weights` summing to `total`, by largest remainder, ties to the earlier.
@@ -160,77 +184,109 @@ fn count(n: usize) -> u64 {
     u64::try_from(n).unwrap_or(u64::MAX)
 }
 
-/// The height field: the fractal noise, less a falloff from the centre that puts the sea at the edges.
-fn heights(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Vec<f64> {
-    let layers = octaves(p.base_cells, p.base_cells, p.octaves, draws);
-    let span = f64::from(grid.width);
-    (0..grid.len())
-        .map(|index| {
-            let (x, y) = grid.xy(grid.tile(index));
-            let (across, down) = ((f64::from(x) + HALF) / span, (f64::from(y) + HALF) / span);
-            let (du, dv) = (across - HALF, down - HALF);
-            fractal(&layers, p.roughness, across, down) - p.falloff * (du * du + dv * dv)
-        })
-        .collect()
+/// The fine cells of each tile, `cells` across and down.
+fn cells_of(fine: Grid, tile_grid: &Grid, cells: u32, tile: usize) -> impl Iterator<Item = usize> {
+    let (tx, ty) = tile_grid.xy(tile_grid.tile(tile));
+    (0..cells).flat_map(move |dy| (0..cells).map(move |dx| fine.index(fine.at(tx * cells + dx, ty * cells + dy))))
 }
 
-/// The declared number of highest tiles as land, and the elevations: land scaled from the sea level to the highest
-/// point, water from the sea level to the deepest.
-fn surface(p: &MapParams, height: &[f64]) -> Result<(Vec<bool>, Vec<i16>), String> {
-    let mut ranked: Vec<(f64, usize)> = height.iter().copied().zip(0..).collect();
+/// The relief: raw heights on the fine grid, the declared number of tiles of highest mean as land, rivers cutting the
+/// land to the sea, then the land's cells ranked onto the measured land heights and the sea's onto the measured
+/// depths; each tile's elevation the mean of its cells and its relief their range.
+struct Surface {
+    land: Vec<bool>,
+    elevation: Vec<i16>,
+    relief: Vec<u16>,
+}
+
+fn surface(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Result<Surface, String> {
+    let cells = p.cells_per_tile;
+    let fine = Grid { width: grid.width * cells, height: grid.height * cells, tile_m: grid.tile_m / cells };
+    let mut height = raw(&p.relief, &fine, draws);
+    let per_tile = phx_rand::float::from_u64(u64::from(cells * cells));
+    let mean = |h: &[f64], t: usize| cells_of(fine, grid, cells, t).map(|c| at(h, c)).sum::<f64>() / per_tile;
+    let mut ranked: Vec<(f64, usize)> = (0..grid.len()).map(|t| (mean(&height, t), t)).collect();
     ranked.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
     let land_count = usize::try_from(p.land_tiles).map_err(|e| e.to_string())?;
-    let mut land = vec![false; height.len()];
-    for (_, index) in ranked.iter().take(land_count) {
-        if let Some(l) = land.get_mut(*index) {
+    if ranked.len() <= land_count {
+        return Err("no sea at the declared sea share".to_owned());
+    }
+    let mut land = vec![false; grid.len()];
+    for (_, t) in ranked.iter().take(land_count) {
+        if let Some(l) = land.get_mut(*t) {
             *l = true;
         }
     }
-    let level = ranked.get(land_count).map(|r| r.0).ok_or("no sea at the declared sea share")?;
-    let top = ranked.first().map(|r| r.0).ok_or("an empty map")?;
-    let bottom = ranked.last().map(|r| r.0).ok_or("an empty map")?;
-    let elevation = height
-        .iter()
-        .zip(&land)
-        .map(|(h, is_land)| {
-            if *is_land {
-                to_i16((h - level) / (top - level) * p.max_elevation_m)
-            } else {
-                to_i16(-(level - h) / (level - bottom) * p.max_depth_m)
+    let mut fine_land = vec![false; fine.len()];
+    for t in (0..grid.len()).filter(|t| at(&land, *t)) {
+        for c in cells_of(fine, grid, cells, t) {
+            if let Some(f) = fine_land.get_mut(c) {
+                *f = true;
             }
-        })
-        .collect();
-    Ok((land, elevation))
+        }
+    }
+    let outlet: Vec<bool> = fine_land.iter().map(|l| !l).collect();
+    erode(&p.relief, &fine, &mut height, &outlet);
+    to_curve(&mut height, &fine_land, &p.land_heights.axis, &p.land_heights.metres, PER_MILLE_F64);
+    to_curve(&mut height, &outlet, &p.sea_depths.axis, &p.sea_depths.metres, PER_MILLE_F64);
+    let mut elevation = Vec::with_capacity(grid.len());
+    let mut relief = Vec::with_capacity(grid.len());
+    for t in 0..grid.len() {
+        let hs: Vec<f64> = cells_of(fine, grid, cells, t).map(|c| at(&height, c)).collect();
+        let (lo, hi) = hs.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), h| {
+            (if *h < lo { *h } else { lo }, if *h > hi { *h } else { hi })
+        });
+        elevation.push(to_i16(hs.iter().sum::<f64>() / per_tile));
+        let range = Fixed::<0>::from_f64(hi - lo, Round::HalfEven).map(Fixed::raw).ok().and_then(|r| u16::try_from(r).ok());
+        let Some(r) = range else { return Err("a tile's relief beyond sixteen bits of metres".to_owned()) };
+        relief.push(r);
+    }
+    Ok(Surface { land, elevation, relief })
 }
 
-/// Each tile's terrain class, by its elevation and its steepest slope to a neighbour, in parts per thousand.
-fn terrain(p: &MapParams, grid: &Grid, elevation: &[i16]) -> Vec<u8> {
-    (0..grid.len())
-        .map(|index| {
-            let t = grid.tile(index);
-            let here = i32::from(at(elevation, index));
-            let steepest = grid
-                .neighbours(t)
-                .map(|nb| {
-                    let rise = u64::from((here - i32::from(at(elevation, grid.index(nb)))).unsigned_abs());
-                    rise * PER_MILLE / grid.plane_m(t, nb)
-                })
-                .fold(0, |a, b| if b > a { b } else { a });
-            let slope = u32::try_from(steepest).unwrap_or(u32::MAX);
-            let class =
-                p.terrain.iter().position(|c| here <= i32::from(c.max_elevation_m) && slope <= c.max_slope_permille);
+/// Each land tile's terrain class, by its elevation and its relief within it.
+fn terrain(p: &MapParams, s: &Surface) -> Vec<u8> {
+    s.elevation
+        .iter()
+        .zip(&s.relief)
+        .map(|(e, r)| {
+            let class = p.terrain.iter().position(|c| *e <= c.max_elevation_m && u32::from(*r) <= c.max_relief_m);
             u8::try_from(class.unwrap_or(p.terrain.len() - 1)).unwrap_or(u8::MAX)
         })
         .collect()
 }
 
-/// The countries: grown on the mainland to their shares of it, the islands joining the nearest; refused when a
-/// country holds less of its land on the mainland than the declared floor.
+/// What a step between neighbours costs a growing country, region or zone: its length over the ground, lengthened by
+/// the relief it climbs into, and by a river it crosses onto, so fronts wait at ridges and rivers and borders form
+/// there.
+struct Ground<'a> {
+    grid: &'a Grid,
+    elevation: &'a [i16],
+    relief: &'a [u16],
+    river: &'a [bool],
+    rugged_m: u64,
+    crossing_m: u64,
+}
+
+impl Ground<'_> {
+    fn step(&self, a: TileId, b: TileId) -> u64 {
+        let (ia, ib) = (self.grid.index(a), self.grid.index(b));
+        let leg = self.grid.length_m(a, at(self.elevation, ia), b, at(self.elevation, ib));
+        let rugged = leg * (self.rugged_m + u64::from(at(self.relief, ib))) / self.rugged_m;
+        let crossing = if at(self.river, ib) && !at(self.river, ia) { self.crossing_m } else { 0 };
+        rugged + crossing
+    }
+}
+
+/// The countries: grown on the mainland to their shares of it, the islands joining the nearest, then balanced to
+/// their shares of all the land; refused when a country's land strays from its share by more than the tolerance, or
+/// holds less of its land on the mainland than the declared floor.
 fn countries(
     p: &MapParams,
     grid: &Grid,
     land: &[bool],
     lot: &[u64],
+    step: StepCost<'_>,
     draws: &mut Draws,
 ) -> Result<(Vec<Option<usize>>, Vec<bool>), String> {
     let (label, sizes) = components(grid, land);
@@ -239,8 +295,12 @@ fn countries(
     let tiles: Vec<TileId> = on_mainland.iter().zip(0..).filter(|(m, _)| **m).map(|(_, i)| grid.tile(i)).collect();
     let targets = apportion(count(tiles.len()), &p.split);
     let seeds = pick_seeds(&tiles, p.split.len(), draws);
-    let mut owner = grow(grid, &on_mainland, &seeds, &targets, lot);
+    let mut owner = grow(grid, &on_mainland, &seeds, &targets, lot, step);
     join_nearest(grid, &mut owner, land, lot);
+    let shares = apportion(p.land_tiles, &p.split);
+    if !balance(grid, &mut owner, &seeds, &shares, p.share_tolerance_per_mille, lot) {
+        return Err("the countries' land strays from their shares beyond the tolerance".to_owned());
+    }
     for c in 0..p.split.len() {
         let all = count(owner.iter().filter(|o| **o == Some(c)).count());
         let main = count(owner.iter().zip(&on_mainland).filter(|(o, m)| **o == Some(c) && **m).count());
@@ -251,6 +311,11 @@ fn countries(
     Ok((owner, on_mainland))
 }
 
+/// The tiles of `mask`, in identity order.
+fn tiles_of(grid: &Grid, mask: &[bool]) -> Vec<TileId> {
+    mask.iter().zip(0..).filter(|(m, _)| **m).map(|(_, i)| grid.tile(i)).collect()
+}
+
 /// Where a part's seeds are drawn: its mainland tiles, so no part starts stranded on an island, or all its tiles when
 /// none of them is on the mainland.
 fn seedable(grid: &Grid, mask: &[bool], on_mainland: &[bool]) -> Vec<TileId> {
@@ -259,27 +324,24 @@ fn seedable(grid: &Grid, mask: &[bool], on_mainland: &[bool]) -> Vec<TileId> {
     if tiles.is_empty() { tiles_of(grid, mask) } else { tiles }
 }
 
-/// The tiles of `mask`, in identity order.
-fn tiles_of(grid: &Grid, mask: &[bool]) -> Vec<TileId> {
-    mask.iter().zip(0..).filter(|(m, _)| **m).map(|(_, i)| grid.tile(i)).collect()
-}
-
-/// Regions and zones, grown within each country and region of like size, regions seeded on the mainland, those left
-/// over joining the nearest, and zones below the least size merging into their smallest neighbour, or the nearest zone
-/// when they have none; refused when a region is in two pieces on the mainland or a zone falls outside its declared
-/// size.
+/// Regions and zones, grown by the ground's step costs within each country and region: regions seeded on the
+/// mainland, of like size and balanced to it within the tolerance, and zones below the least size merging into their
+/// smallest neighbour, or the nearest zone from an island; refused when a region strays from its share, is in two
+/// pieces on the mainland, or a zone falls outside its declared size.
 struct Places {
     regions: Vec<Region>,
     zones: Vec<Zone>,
     zone_of: Vec<Option<ZoneId>>,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn places(
     p: &MapParams,
     grid: &Grid,
     owner: &[Option<usize>],
     on_mainland: &[bool],
     lot: &[u64],
+    step: StepCost<'_>,
     draws: &mut Draws,
 ) -> Result<Places, String> {
     let zones_by_country = apportion(p.zones, &p.split);
@@ -290,8 +352,11 @@ fn places(
         let regions = usize::try_from(p.regions.get(c).copied().unwrap_or(0)).map_err(|e| e.to_string())?;
         let targets = apportion(count(tiles.len()), &vec![1; regions]);
         let seeds = pick_seeds(&seedable(grid, &in_country, on_mainland), regions, draws);
-        let mut region = grow(grid, &in_country, &seeds, &targets, lot);
+        let mut region = grow(grid, &in_country, &seeds, &targets, lot, step);
         join_nearest(grid, &mut region, &in_country, lot);
+        if !balance(grid, &mut region, &seeds, &targets, p.share_tolerance_per_mille, lot) {
+            return Err(format!("country {c}'s regions stray from like size beyond the tolerance"));
+        }
         let sizes: Vec<u64> = (0..regions).map(|r| count(region.iter().filter(|o| **o == Some(r)).count())).collect();
         let zone_counts = apportion(zones_by_country.get(c).copied().unwrap_or(0), &sizes);
         for r in 0..regions {
@@ -306,7 +371,7 @@ fn places(
             let zones = usize::try_from(zone_counts.get(r).copied().unwrap_or(0)).map_err(|e| e.to_string())?;
             let z_targets = apportion(count(r_tiles.len()), &vec![1; zones]);
             let z_seeds = pick_seeds(&r_tiles, zones, draws);
-            let mut zone = grow(grid, &in_region, &z_seeds, &z_targets, lot);
+            let mut zone = grow(grid, &in_region, &z_seeds, &z_targets, lot, step);
             join_nearest(grid, &mut zone, &in_region, lot);
             merge_small(grid, &mut zone, zones, p.zone_min_tiles);
             for z in 0..zones {
@@ -343,25 +408,51 @@ fn places(
 fn attempt(p: &MapParams, climate: &dyn Fn(ClimateInput) -> u8, draws: &mut Draws) -> Result<Map, String> {
     let side = side(p.land_tiles, p.sea_share);
     let grid = Grid { width: side, height: side, tile_m: p.tile_m };
-    let height = heights(p, &grid, draws);
+    let s = surface(p, &grid, draws)?;
     let lot: Vec<u64> = (0..grid.len()).map(|_| draws.next_u64()).collect();
-    let (land, elevation) = surface(p, &height)?;
-    let terrain = terrain(p, &grid, &elevation);
-    let to_sea = sea_distance(&grid, &land);
-    let (owner, on_mainland) = countries(p, &grid, &land, &lot, draws)?;
-    let places = places(p, &grid, &owner, &on_mainland, &lot, draws)?;
+    let terrain = terrain(p, &s);
+    let heights: Vec<f64> = s.elevation.iter().map(|e| f64::from(*e)).collect();
+    let outlet: Vec<bool> = s.land.iter().map(|l| !l).collect();
+    let routes = drainage(&grid, &heights, &outlet);
+    let upstream = upstream(&routes);
+    let river: Vec<bool> =
+        upstream.iter().zip(&s.land).map(|(u, l)| *l && *u >= p.river_tiles).collect();
+    let ground = Ground {
+        grid: &grid,
+        elevation: &s.elevation,
+        relief: &s.relief,
+        river: &river,
+        rugged_m: p.rugged_m,
+        crossing_m: p.river_crossing_m,
+    };
+    let step = |a: TileId, b: TileId| ground.step(a, b);
+    let to_sea = sea_distance(&grid, &s.land);
+    let (owner, on_mainland) = countries(p, &grid, &s.land, &lot, &step, draws)?;
+    let places = places(p, &grid, &owner, &on_mainland, &lot, &step, draws)?;
     let rows = u64::from(side - 1);
     let tiles = (0..grid.len())
         .map(|index| {
             let (_, y) = grid.xy(grid.tile(index));
             let north = u32::try_from(u64::from(side - 1 - y) * PER_MILLE / rows).unwrap_or(0);
-            let elevation_m = at(&elevation, index);
+            let elevation_m = at(&s.elevation, index);
             let input = ClimateInput { north_permille: north, elevation_m, sea_distance_m: at(&to_sea, index) };
-            let surface = if at(&land, index) { LAND } else { WATER };
+            let surface = if at(&s.land, index) { LAND } else { WATER };
             Tile::new(elevation_m, surface, at(&terrain, index), climate(input), at(&places.zone_of, index))
         })
         .collect();
-    Ok(Map { grid, tiles, zones: places.zones, regions: places.regions, rejections: Vec::new(), attempt: 0 })
+    let drains_to = routes.receiver.iter().map(|r| r.map(|i| grid.tile(i))).collect();
+    Ok(Map {
+        grid,
+        tiles,
+        relief_m: s.relief,
+        drains_to,
+        upstream,
+        river_tiles: p.river_tiles,
+        zones: places.zones,
+        regions: places.regions,
+        rejections: Vec::new(),
+        attempt: 0,
+    })
 }
 
 /// The map from the seed: attempt after attempt from the map's stream, each rejected one recorded with the
@@ -385,15 +476,58 @@ pub fn generate(p: &MapParams, climate: &dyn Fn(ClimateInput) -> u8, draws: &dyn
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use phx_core::{Purpose, StreamDecl, Streams};
     use phx_id::Day;
     use phx_rand::{Draws, Seed, Subject, SubjectTag};
 
-    use super::{MapParams, TerrainClass, apportion, generate};
+    use super::{HeightCurve, MapParams, TerrainClass, apportion, generate};
+    use crate::relief::ReliefParams;
     use crate::partition::components;
 
     const MAP: StreamDecl = StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
+
+    /// A small map's parameters, for tests of what the generator guarantees on any map.
+    pub(crate) fn small(land_tiles: u64, split: Vec<u64>, regions: Vec<u64>, zones: u64) -> MapParams {
+        MapParams {
+            land_tiles,
+            tile_m: 10_000,
+            sea_share: 0.4,
+            cells_per_tile: 3,
+            relief: ReliefParams {
+                base_cells: 3,
+                octaves: 4,
+                roughness: 0.5,
+                falloff: 2.0,
+                plates: 6,
+                belt: 0.05,
+                plate_weight: 0.3,
+                mountain_weight: 0.5,
+                warp: 0.1,
+                erosion_passes: 2,
+                erosion_rate: 0.01,
+                area_exponent: 0.5,
+            },
+            land_heights: HeightCurve { axis: vec![0, 500, 1000], metres: vec![0, 300, 3000] },
+            sea_depths: HeightCurve { axis: vec![0, 1000], metres: vec![-4000, -10] },
+            terrain: vec![
+                TerrainClass { max_elevation_m: 200, max_relief_m: 100 },
+                TerrainClass { max_elevation_m: 1_500, max_relief_m: 600 },
+                TerrainClass { max_elevation_m: i16::MAX, max_relief_m: u32::MAX },
+            ],
+            river_tiles: 10,
+            rugged_m: 500,
+            river_crossing_m: 5_000,
+            split,
+            regions,
+            zones,
+            zone_min_tiles: 4,
+            zone_max_tiles: 60,
+            share_tolerance_per_mille: 100,
+            mainland_floor_percent: 60,
+            max_attempts: 50,
+        }
+    }
 
     #[test]
     fn apportion_by_largest_remainder() {
@@ -404,29 +538,7 @@ mod tests {
 
     #[test]
     fn a_small_map_meets_its_conditions() {
-        let p = MapParams {
-            land_tiles: 900,
-            tile_m: 10_000,
-            sea_share: 0.4,
-            base_cells: 3,
-            octaves: 4,
-            roughness: 0.5,
-            falloff: 2.0,
-            max_elevation_m: 3_000.0,
-            max_depth_m: 4_000.0,
-            terrain: vec![
-                TerrainClass { max_elevation_m: 300, max_slope_permille: 20 },
-                TerrainClass { max_elevation_m: 1_500, max_slope_permille: 80 },
-                TerrainClass { max_elevation_m: i16::MAX, max_slope_permille: u32::MAX },
-            ],
-            split: vec![50, 30, 20],
-            regions: vec![5, 3, 3],
-            zones: 45,
-            zone_min_tiles: 5,
-            zone_max_tiles: 60,
-            mainland_floor_percent: 80,
-            max_attempts: 50,
-        };
+        let p = small(900, vec![50, 30, 20], vec![5, 3, 3], 45);
         let streams = Streams::new(Seed::new(7), &[MAP]).unwrap();
         let draws = |a: u64| -> Draws { streams.open(&MAP, Subject::new(SubjectTag::World, a), Day::new(0), 0) };
         let map = generate(&p, &|c| u8::from(c.elevation_m > 1_000), &draws);
@@ -436,7 +548,10 @@ mod tests {
             map.tiles.iter().all(|t| t.is_land() == t.zone().is_some()),
             "every land tile, and only land, has a zone"
         );
-        assert_eq!((map.regions.len(), map.zones.len()), (11, 45));
+        assert!(map.regions.len() == 11 && map.zones.len() <= 45, "zones merge, never split");
+        let plains = map.tiles.iter().filter(|t| t.is_land() && t.terrain == 0).count();
+        assert!(plains > 0, "some land is plain");
+        assert!(map.upstream.iter().any(|u| *u >= 10), "water gathers into rivers");
         for (z, zone) in map.zones.iter().enumerate() {
             let mask: Vec<bool> = map
                 .tiles

@@ -1,0 +1,189 @@
+use core::f64::consts::{SQRT_2, TAU};
+
+use libm::{cos, exp, pow, sin, sqrt};
+use phx_macros::clause;
+use phx_rand::{Draws, normal, open_unit};
+
+use crate::consts::HALF;
+use crate::grid::Grid;
+use crate::hydrology::{drainage, upstream};
+use crate::noise::{Lattice, fractal, octaves};
+
+/// What the relief is generated from, every value read from the register.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ReliefParams {
+    pub base_cells: u32,
+    pub octaves: u8,
+    pub roughness: f64,
+    pub falloff: f64,
+    pub plates: u32,
+    pub belt: f64,
+    pub plate_weight: f64,
+    pub mountain_weight: f64,
+    pub warp: f64,
+    pub erosion_passes: u32,
+    pub erosion_rate: f64,
+    pub area_exponent: f64,
+}
+
+/// A tectonic plate: where it lies, how high its crust stands, and how it moves.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Plate {
+    u: f64,
+    v: f64,
+    base: f64,
+    du: f64,
+    dv: f64,
+}
+
+fn plates(count: u32, d: &mut Draws) -> Vec<Plate> {
+    (0..count)
+        .map(|_| {
+            let (u, v) = (open_unit(d), open_unit(d));
+            let base = normal(d);
+            let (angle, speed) = (TAU * open_unit(d), open_unit(d));
+            Plate { u, v, base, du: speed * cos(angle), dv: speed * sin(angle) }
+        })
+        .collect()
+}
+
+/// The two plates nearest a point, and the point's distance to the line halfway between them.
+fn nearest_two(plates: &[Plate], u: f64, v: f64) -> Option<(Plate, Plate, f64)> {
+    let dist2 = |p: &Plate| (p.u - u) * (p.u - u) + (p.v - v) * (p.v - v);
+    let mut best: Option<(f64, Plate)> = None;
+    let mut second: Option<(f64, Plate)> = None;
+    for p in plates {
+        let d = dist2(p);
+        if best.is_none_or(|(b, _)| d < b) {
+            second = best;
+            best = Some((d, *p));
+        } else if second.is_none_or(|(s, _)| d < s) {
+            second = Some((d, *p));
+        }
+    }
+    let ((d1, a), (d2, b)) = (best?, second?);
+    let apart = sqrt((b.u - a.u) * (b.u - a.u) + (b.v - a.v) * (b.v - a.v));
+    Some((a, b, (d2 - d1) / (2.0 * apart)))
+}
+
+/// The noise fields one attempt draws, in a fixed order: the relief's octaves, the two warp fields and the ridges.
+struct Fields {
+    relief: Vec<Lattice>,
+    warp_u: Vec<Lattice>,
+    warp_v: Vec<Lattice>,
+    ridges: Vec<Lattice>,
+    plates: Vec<Plate>,
+}
+
+/// The raw relief on the fine grid, before erosion: each plate's crust blended across its borders, mountain belts
+/// raised where plates converge (ridged), the fractal relief over a warped plane, less the falloff that puts the sea
+/// at the edges.
+#[clause("GEO.10")]
+#[must_use]
+pub fn raw(p: &ReliefParams, fine: &Grid, d: &mut Draws) -> Vec<f64> {
+    let fields = Fields {
+        relief: octaves(p.base_cells, p.base_cells, p.octaves, d),
+        warp_u: octaves(p.base_cells, p.base_cells, p.octaves, d),
+        warp_v: octaves(p.base_cells, p.base_cells, p.octaves, d),
+        ridges: octaves(p.base_cells, p.base_cells, p.octaves, d),
+        plates: plates(p.plates, d),
+    };
+    let span = f64::from(fine.width);
+    (0..fine.len())
+        .map(|index| {
+            let (x, y) = fine.xy(fine.tile(index));
+            let (u, v) = ((f64::from(x) + HALF) / span, (f64::from(y) + HALF) / span);
+            let (wu, wv) = (
+                u + p.warp * fractal(&fields.warp_u, p.roughness, u, v),
+                v + p.warp * fractal(&fields.warp_v, p.roughness, u, v),
+            );
+            let (plate, uplift) = match nearest_two(&fields.plates, wu, wv) {
+                Some((a, b, border)) => {
+                    let near = exp(-border / p.belt);
+                    let crust = a.base * (1.0 - near) + (a.base + b.base) * HALF * near;
+                    let apart = sqrt((b.u - a.u) * (b.u - a.u) + (b.v - a.v) * (b.v - a.v));
+                    let converging = ((a.du - b.du) * (b.u - a.u) + (a.dv - b.dv) * (b.v - a.v)) / apart;
+                    (crust, if converging > 0.0 { converging * near } else { 0.0 })
+                }
+                None => (0.0, 0.0),
+            };
+            let ridge = 1.0 - fractal(&fields.ridges, p.roughness, wu, wv).abs();
+            let (du, dv) = (u - HALF, v - HALF);
+            p.plate_weight * plate
+                + fractal(&fields.relief, p.roughness, wu, wv)
+                + p.mountain_weight * uplift * (1.0 + ridge)
+                - p.falloff * (du * du + dv * dv)
+        })
+        .collect()
+}
+
+/// Rivers cut the relief: each pass routes the water to the outlets, then lowers every cell toward its receiver by
+/// the stream-power law, solved implicitly from the outlets up so no pass overshoots.
+#[clause("GEO.10")]
+pub fn erode(p: &ReliefParams, fine: &Grid, height: &mut [f64], outlet: &[bool]) {
+    for _ in 0..p.erosion_passes {
+        let routes = drainage(fine, height, outlet);
+        let area = upstream(&routes);
+        for cell in &routes.order {
+            let Some(r) = routes.receiver.get(*cell).copied().flatten() else { continue };
+            let (Some(h_r), Some(a)) = (height.get(r).copied(), area.get(*cell).copied()) else { continue };
+            let (cx, cy) = fine.xy(fine.tile(*cell));
+            let (rx, ry) = fine.xy(fine.tile(r));
+            let run = if cx != rx && cy != ry { SQRT_2 } else { 1.0 };
+            let cut = p.erosion_rate * pow(f64::from(a), p.area_exponent) / run;
+            if let Some(h) = height.get_mut(*cell) {
+                *h = (*h + cut * h_r) / (1.0 + cut);
+            }
+        }
+    }
+}
+
+/// A measured curve, `axis` in parts per thousand of the cells and `values` in metres, read between its points.
+#[must_use]
+pub fn curve_at(axis: &[i64], values: &[i64], per_mille: f64) -> f64 {
+    let points: Vec<(f64, f64)> =
+        axis.iter().zip(values).map(|(a, v)| (phx_rand::float::from_i64(*a), phx_rand::float::from_i64(*v))).collect();
+    let mut below = points.first().copied().unwrap_or((0.0, 0.0));
+    for (x, y) in &points {
+        if *x >= per_mille {
+            let (x0, y0) = below;
+            return if *x > x0 { y0 + (y - y0) * (per_mille - x0) / (x - x0) } else { *y };
+        }
+        below = (*x, *y);
+    }
+    below.1
+}
+
+/// Heights mapped by rank to a measured curve: the cells of `mask`, lowest first (ties by place), each at the curve's
+/// value for its share of the cells below it, so the relief keeps its shape and takes the Earth's distribution.
+#[clause("GEO.10")]
+pub fn to_curve(height: &mut [f64], mask: &[bool], axis: &[i64], values: &[i64], per_mille_whole: f64) {
+    let mut ranked: Vec<(f64, usize)> =
+        height.iter().zip(mask).enumerate().filter(|(_, (_, m))| **m).map(|(i, (h, _))| (*h, i)).collect();
+    ranked.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+    let n = phx_rand::float::from_u64(phx_rand::float::len_u64(ranked.len()));
+    for (rank, (_, cell)) in ranked.iter().enumerate() {
+        let share = (phx_rand::float::from_u64(phx_rand::float::len_u64(rank)) + HALF) / n * per_mille_whole;
+        if let Some(h) = height.get_mut(*cell) {
+            *h = curve_at(axis, values, share);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{curve_at, to_curve};
+
+    #[test]
+    fn heights_take_the_measured_curve_by_rank() {
+        let (axis, values) = ([0, 500, 1000], [0, 100, 1000]);
+        assert!((curve_at(&axis, &values, 250.0) - 50.0).abs() < 1e-9);
+        assert!((curve_at(&axis, &values, 750.0) - 550.0).abs() < 1e-9);
+        let mut h = vec![9.0, -3.0, 4.0, 7.0];
+        let mask = [true, false, true, true];
+        to_curve(&mut h, &mask, &axis, &values, 1000.0);
+        assert!(h[2] < h[3] && h[3] < h[0], "order kept");
+        assert_eq!(h[1].to_bits(), (-3.0_f64).to_bits(), "cells outside the mask untouched");
+        assert!((h[3] - 100.0).abs() < 1e-9, "the median cell at the curve's median");
+    }
+}

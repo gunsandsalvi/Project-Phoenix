@@ -91,6 +91,12 @@ impl Table1 {
         &self.axis
     }
 
+    /// The values at the axis's points, in the table's decimals.
+    #[must_use]
+    pub fn values(&self) -> &[i64] {
+        &self.values
+    }
+
     /// # Errors
     /// When `x` lies outside the axis and the table refuses there.
     pub fn at(&self, x: i64) -> Result<i64, OutsideAxes> {

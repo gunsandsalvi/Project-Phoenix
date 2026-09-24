@@ -6,7 +6,7 @@ number a year of 1994-2023, over the world's land (World Bank AG.LND.TOTL.K2) in
 tile. Its exposure classes scale it by a quarter, one and four, sheltered to exposed ground. A tile's class comes
 from its terrain and its climate class, read from the measured climate (GEO_climate.toml): floods on humid plains,
 storms where the wind is strong, droughts where dry days prevail, earthquakes in mountains; the coast raises floods
-and storms one class. The spread and severity of each class, and the deposits, are assumed, each with its reason.
+and storms one class, and a river raises floods one class. The spread and severity of each class, and the deposits, are assumed, each with its reason.
 
     python3 tools/data/hazards.py [--fetch]
 """
@@ -90,14 +90,14 @@ def main():
     per_year = events_per_year()
     plains, mountains = 0, terrains - 1
 
-    def exposure(hazard, coastal):
+    def exposure(hazard, coastal, river=False):
         rows = []
         for t in range(terrains):
             row = []
             for c in range(classes):
                 if hazard == "flood":
                     e = (1 if t == plains else 0) if dry[c] < 0.85 else 0
-                    e += 1 if coastal and t <= 1 else 0
+                    e += 1 if (coastal or river) and t <= 1 else 0
                 elif hazard == "storm":
                     e = 2 if wind[c] >= 5.0 else 1 if wind[c] >= 3.5 else 0
                     e = min(2, e + (1 if coastal else 0))
@@ -118,6 +118,9 @@ def main():
         parts.append(prim(f"GEO.{name}_exposure_coastal", "TECHNOLOGY", "assumed",
             f"Exposure class of a coastal tile to {name}s: as inland, with floods on low coasts and storms one class higher.",
             exposure(name, True)))
+        parts.append(prim(f"GEO.{name}_exposure_river", "TECHNOLOGY", "assumed",
+            f"Exposure class to {name}s of a tile a river runs through: as inland, with floods one class higher on its plains and hills.",
+            exposure(name, False, True)))
         parts.append(prim(f"GEO.{name}_rate", "TECHNOLOGY", "estimated",
             f"Yearly chance {'an' if name[0] in 'aeiou' else 'a'} {name} starts on a tile, by exposure class: EM-DAT's {per_year[entity]:.1f} a year ({entity}, {FIRST}-{LAST}, via Our World in Data) over the world's {land:,.0f} km2 of land ({land_year}, World Bank AG.LND.TOTL.K2) in tiles of {tile_km2:.0f} km2, scaled by a quarter, one and four from sheltered to exposed ground.",
             table1([rate * m for m in MULTIPLIERS], 8)))

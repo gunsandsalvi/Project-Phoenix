@@ -7,7 +7,8 @@ use crate::generate::{Map, sea_distance};
 use crate::prims::GeoPrims;
 
 /// Each tile's exposure class to each declared hazard, one column per hazard, none on water: read from its terrain
-/// and climate class, by the coastal table within the declared distance of the sea and the inland one beyond it.
+/// and climate class, by the coastal table within the declared distance of the sea, the river table where a river
+/// runs, and the inland one elsewhere.
 #[clause("GEO.7")]
 #[must_use]
 pub fn exposure(p: &GeoPrims, r: &Register, map: &Map) -> Vec<Vec<Option<u8>>> {
@@ -20,11 +21,18 @@ pub fn exposure(p: &GeoPrims, r: &Register, map: &Map) -> Vec<Vec<Option<u8>>> {
             map.tiles
                 .iter()
                 .zip(&to_sea)
-                .map(|(t, d)| {
+                .enumerate()
+                .map(|(i, (t, d))| {
                     if !t.is_land() {
                         return None;
                     }
-                    let table = if *d <= coast_m { h.coastal.shared(r) } else { h.inland.shared(r) };
+                    let table = if *d <= coast_m {
+                        h.coastal.shared(r)
+                    } else if map.is_river(i) {
+                        h.river.shared(r)
+                    } else {
+                        h.inland.shared(r)
+                    };
                     let class = cell2(table, i64::from(t.terrain), i64::from(t.climate));
                     let Ok(c) = u8::try_from(class) else {
                         violation!(clause = "GEO.7", "an exposure class beyond a byte", class = class);
