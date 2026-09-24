@@ -1196,8 +1196,9 @@ ledger's five families (ownership, contracts, money, flows, units) read both thr
 ### 10.5 Settled worlds for testing
 
 After each step's build, the build machine — the development VM where the world is built — generates the world at
-the play resolution (until the Stage 0 gate first sets it, the declared initial one), settles it for the owner's
-length and runs it on, with the audit and every live check (§14.7);
+the play resolution (until the Stage 0 gate first sets it, the declared initial one) and runs it with the audit and
+every live check (§14.7): an ordinary step's for 120 days from day zero, a stage gate's settled for the owner's length
+and run two years after it;
 its numbers test the code and are never read as the world's. A stage gate's device run generates and settles its own
 world on the phone. CI never runs the world.
 

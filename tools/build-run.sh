@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-# The build run: after a step's build, the world is settled and run two years on this machine, with every live check
-# and the read trace. Its numbers test the code and are never read as the world's.
+# The build run: after a step's build, the world runs on this machine with every live check and the read trace: an
+# ordinary step's for 120 days from day zero, which holds a quarter's save; a stage gate's (--gate) settled and run
+# two years. Its numbers test the code and are never read as the world's.
 set -euo pipefail
+
+span=(--days 730 --total-days 120)
+if [[ "${1:-}" == "--gate" ]]; then
+    span=(--days 730)
+fi
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -19,7 +25,7 @@ built=$(( $(date +%s) - start ))
 mkdir -p perf/build-run
 exec target/release/phx run \
     --seed 1 \
-    --days 730 \
+    "${span[@]}" \
     --checks all \
     --read-trace \
     --data data \

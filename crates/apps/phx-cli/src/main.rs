@@ -59,6 +59,9 @@ pub struct RunArgs {
     /// Days to run after settling.
     #[arg(long)]
     days: u16,
+    /// Instead, days to run from day zero in all, settling cut short: an ordinary step's build run.
+    #[arg(long)]
+    total_days: Option<u16>,
     /// Worker threads of the pool.
     #[arg(long)]
     workers: Option<usize>,

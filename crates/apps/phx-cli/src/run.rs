@@ -77,8 +77,14 @@ fn selected(checks: &str, id: &str) -> bool {
     checks == "all" || checks.split(',').any(|c| c.trim() == id)
 }
 
-/// The day settling ends, the owner's length after day zero, and the day the run ends, `days` after that.
-fn span(w: Inspector<'_>, days: u16) -> Result<(phx_id::Day, phx_id::Day), String> {
+/// The day settling ends, the owner's length after day zero, and the day the run ends, `days` after that; or, for a
+/// run of `total` days from day zero, that day, with settling cut short at it and the injections' save counted from
+/// day zero.
+fn span(w: Inspector<'_>, days: u16, total: Option<u16>) -> Result<(phx_id::Day, phx_id::Day), String> {
+    if let Some(total) = total {
+        let end = Period::days(total).map_or(w.day_zero(), |p| w.calendar().plus(w.day_zero(), p));
+        return Ok((w.day_zero(), end));
+    }
     let years = u16::try_from(w.settling_years()).map_err(|_| "too long a settling")?;
     let months = years.checked_mul(MONTHS_PER_YEAR).ok_or("too long a settling")?;
     let settled = Period::months(months).map_or(w.day_zero(), |p| w.calendar().plus(w.day_zero(), p));
@@ -398,7 +404,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let assembling = clock.now_ns();
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let assembly_ns = clock.now_ns().checked_sub(assembling);
-    let (settle_end, end) = span(Inspector::new(&world), args.days)?;
+    let (settle_end, end) = span(Inspector::new(&world), args.days, args.total_days)?;
     let started = clock.now_ns();
     let injection_save = play(&mut world, args, settle_end, end, &clock)?;
     let run_ns = clock.now_ns().checked_sub(started);
@@ -423,6 +429,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "seed": args.seed,
         "settle_years": w.settling_years(),
         "days": args.days,
+        "total_days": args.total_days,
         "read_trace": args.read_trace,
         "workers": args.workers,
         "first_day": crate::measure::calendar::date_text(w.date(w.day_zero().succ())),

@@ -47,7 +47,8 @@ about how to build.
   population representation (REP, Appendix E 14) is judged the same way. The resolution is a valve, set and reset
   by measuring the budget.
 - **The build run**: after each step's build, the world runs on the build machine (the development VM) at the play
-  resolution, settled and run two years, with the audit and every live check (`tools/build-run.sh`); a step is
+  resolution with the audit and every live check (`tools/build-run.sh`): an ordinary step's for 120 days from day
+  zero, a stage gate's (`--gate`) settled and run two years (the owner's decision, plan §12); a step is
   `done` only with a clean build run. Its numbers test the code and are never read as the world's. CI builds and
   tests and never runs the world; nothing runs the world twice, not even to prove determinism.
 - **One change, one commit**, saying what and why.
