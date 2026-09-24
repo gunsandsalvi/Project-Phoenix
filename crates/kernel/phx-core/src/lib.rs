@@ -50,8 +50,8 @@ pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
 };
 pub use family::{
-    AUDIT_SUBSTEP, AuditFamily, AuditInputs, AuditStream, FamilyCtx, FamilyDecl, FamilyMode, InjectTarget, ReadTrace,
-    Span, rolling_slice,
+    AUDIT_SUBSTEP, AuditFamily, AuditInputs, AuditStream, FamilyCtx, FamilyDecl, FamilyMode, InjectTarget, LegDigest,
+    ReadTrace, Span, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{

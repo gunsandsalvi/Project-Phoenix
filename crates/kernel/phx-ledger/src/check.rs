@@ -1,11 +1,11 @@
 use phx_macros::clause;
-use phx_num::Missing;
+use phx_num::{Missing, violation};
 
 use crate::algebra::Side;
 use crate::instruction::{AccountRef, Denom, LegKind, LegRec, RowOp};
 
 /// Why an instruction did not settle.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FailCause {
     /// A payer had not the money, within any facility its deposit's terms grant.
     Funds,
@@ -38,7 +38,9 @@ pub fn check_legs(positions: &[Position], moves: &[(usize, i64)]) -> Result<(), 
         let delta: i128 = moves.iter().filter(|(i, _)| *i == at).map(|(_, q)| i128::from(*q)).sum();
         let Missing::Present(floor) = p.floor else { continue };
         if delta < 0 && i128::from(p.now) + delta < i128::from(floor) {
-            let first = moves.iter().position(|(i, _)| *i == at).unwrap_or(0);
+            let Some(first) = moves.iter().position(|(i, _)| *i == at) else {
+                violation!(clause = "SET.4", "a position moved by no leg", position = at);
+            };
             return Err((p.short, first));
         }
     }
@@ -49,9 +51,10 @@ pub fn check_legs(positions: &[Position], moves: &[(usize, i64)]) -> Result<(), 
 /// the asset side against the liability side, so a line's two sides open and close together.
 fn signed(leg: &LegRec) -> i128 {
     match (leg.kind, leg.account) {
-        (LegKind::Row(RowOp::Open(_) | RowOp::Close), AccountRef::Line { side: Side::Liability, .. }) => {
-            -i128::from(leg.qty)
-        }
+        (
+            LegKind::Row(RowOp::Open(_) | RowOp::Close | RowOp::Count),
+            AccountRef::Line { side: Side::Liability, .. },
+        ) => -i128::from(leg.qty),
         _ => i128::from(leg.qty),
     }
 }

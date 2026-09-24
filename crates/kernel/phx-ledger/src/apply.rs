@@ -1,6 +1,6 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
-use phx_core::{AuditStream, SubStep};
+use phx_core::{AuditStream, LegDigest, SubStep};
 use phx_id::{Day, InstrumentId, LineId, PartyId, Slot};
 use phx_macros::clause;
 use phx_num::{Missing, Money, Qty, capacity_exceeded, violation};
@@ -16,8 +16,10 @@ use crate::events::InstrumentEvents;
 use crate::fails::Fail;
 use crate::holder::HolderArenas;
 use crate::holding::{Disposal, Lot, LotOrder, holding};
-use crate::instruction::{AccountRef, Denom, DueRow, Instruction, InstructionId, LegKind, LegRec, Reasons, RowOp};
-use crate::instrument::{Instruments, IssueChange};
+use crate::instruction::{
+    AccountRef, Denom, DueRow, Instruction, InstructionId, LegKind, LegRec, ROW_COUNT, Reasons, RowOp,
+};
+use crate::instrument::{InstrumentFamily, Instruments, IssueChange};
 use crate::lien::Liens;
 use crate::line::Lines;
 use crate::rows::{Optional, RowView, rows};
@@ -65,11 +67,53 @@ pub const MONEY_SUBSTEPS: &[SubStep] = &[
     SubStep::S10b,
 ];
 
-/// What a day's settlement leaves for the close: its fails, for the contract processes, and its accounting effects.
+/// What a day's settlement leaves for the close: its fails, for the contract processes, its accounting effects, and
+/// what moved in each currency, gross and by party.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DayBook {
     pub fails: Vec<Fail>,
     pub effects: Vec<EffectRec>,
+    pub disposed: Vec<DisposedRec>,
+    moved: BTreeMap<(u8, PartyId), (i128, i128)>,
+}
+
+/// Units that left a holding, with the cost their lots carried out, for the accounts to realise.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DisposedRec {
+    pub party: PartyId,
+    pub instrument: InstrumentId,
+    pub units: i64,
+    pub cost: i64,
+    pub day: Day,
+}
+
+/// A day's settlement as published: per currency, the value paid gross and the value that changed hands net of what
+/// each party both paid and received, and the fails by cause.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Settlement {
+    pub gross: BTreeMap<u8, i128>,
+    pub net: BTreeMap<u8, i128>,
+    pub fails: BTreeMap<FailCause, u64>,
+}
+
+impl DayBook {
+    /// The day's settlement values and fails, measured from its book.
+    #[clause("SET.10")]
+    #[must_use]
+    pub fn measure(&self) -> Settlement {
+        let mut m = Settlement::default();
+        for ((ccy, _), (paid, received)) in &self.moved {
+            *m.gross.entry(*ccy).or_insert(0) += paid;
+            let net = received - paid;
+            if net > 0 {
+                *m.net.entry(*ccy).or_insert(0) += net;
+            }
+        }
+        for f in &self.fails {
+            *m.fails.entry(f.cause).or_insert(0) += 1;
+        }
+        m
+    }
 }
 
 /// The world's books: everything the ledger keeps, and the one routine by which instructions change it.
@@ -178,7 +222,7 @@ impl<B: Backing> Ledger<B> {
         if !self.applied.insert(id) {
             violation!(clause = "SET.11", "an instruction applied twice", id = id.get());
         }
-        Self::refuse(at, &legs, id);
+        self.refuse(at, &legs, id);
         let mut located = Vec::with_capacity(legs.len());
         for leg in &legs {
             match holders.locate(leg.party) {
@@ -189,9 +233,10 @@ impl<B: Backing> Ledger<B> {
         let mut keys: Vec<Key> = Vec::new();
         let mut positions: Vec<Position> = Vec::new();
         let mut moves: Vec<(usize, i64)> = Vec::new();
-        for (leg, at) in legs.iter().zip(&located) {
+        let mut moved_by: Vec<usize> = Vec::new();
+        for (n, (leg, at)) in legs.iter().zip(&located).enumerate() {
             let key = Key { table: at.table, slot: at.slot, account: leg.account };
-            let Some((position, delta)) = self.position(holders.arenas(at.table), at.party, at.slot, leg) else {
+            let Some((position, delta)) = self.draws(holders.arenas(at.table), at.party, at.slot, leg) else {
                 continue;
             };
             let at = if let Some(i) = keys.iter().position(|k| *k == key) {
@@ -202,12 +247,11 @@ impl<B: Backing> Ledger<B> {
                 positions.len() - 1
             };
             moves.push((at, delta));
+            moved_by.push(n);
         }
-        let leg_of = |m: usize| moves.get(m).and_then(|(p, _)| keys.get(*p)).map(|k| k.account);
         if let Err((cause, m)) = check_legs(&positions, &moves) {
-            let failing = legs.iter().find(|l| Some(l.account) == leg_of(m)).map_or(legs.first(), Some);
-            let Some(leg) = failing.copied() else {
-                violation!(clause = "SET.11", "an instruction with no legs", id = id.get());
+            let Some(leg) = moved_by.get(m).and_then(|n| legs.get(*n)).copied() else {
+                violation!(clause = "SET.4", "a failing move with no leg", id = id.get());
             };
             return Err(self.fail(settling, cause, &leg, covers));
         }
@@ -219,14 +263,14 @@ impl<B: Backing> Ledger<B> {
         Ok(id)
     }
 
-    fn refuse(at: ApplyAt, legs: &[LegRec], id: InstructionId) {
+    fn refuse(&self, at: ApplyAt, legs: &[LegRec], id: InstructionId) {
         for leg in legs {
             let opening = matches!(leg.kind, LegKind::OpeningWrite { .. });
             match at {
                 ApplyAt::Day(_) if opening => {
                     violation!(clause = "SET.9", "an opening write after the opening", id = id.get());
                 }
-                ApplyAt::Day(s) if leg.moves_money() && !MONEY_SUBSTEPS.contains(&s) => {
+                ApplyAt::Day(s) if self.money(leg) && !MONEY_SUBSTEPS.contains(&s) => {
                     violation!(clause = "SET.11", "money moved at a sub-step where money does not move", id = id.get());
                 }
                 ApplyAt::Opening if !opening => {
@@ -244,6 +288,14 @@ impl<B: Backing> Ledger<B> {
         }
     }
 
+    /// Whether a leg moves money: on a money line, or banknotes between holders.
+    fn money(&self, leg: &LegRec) -> bool {
+        match leg.account {
+            AccountRef::Instrument(id) => self.instruments.get(id).family == InstrumentFamily::Banknote,
+            AccountRef::Line { .. } | AccountRef::Unit(_) => leg.moves_money(),
+        }
+    }
+
     fn fail(&mut self, s: Settling, cause: FailCause, leg: &LegRec, covers: Vec<Covered>) -> Fail {
         for c in covers {
             self.covers.release(c);
@@ -254,7 +306,7 @@ impl<B: Backing> Ledger<B> {
     }
 
     /// What a leg draws on and how it moves it; a leg that can only add, or opens a row, draws on nothing.
-    fn position(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, leg: &LegRec) -> Option<(Position, i64)> {
+    fn draws(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, leg: &LegRec) -> Option<(Position, i64)> {
         match (leg.kind, leg.account) {
             (LegKind::Money | LegKind::Row(RowOp::Adjust), AccountRef::Line { line, side }) => {
                 let view = find(arenas, slot, line, side);
@@ -325,7 +377,33 @@ impl<B: Backing> Ledger<B> {
                 None
             }
             (LegKind::Row(RowOp::Open(_)), AccountRef::Line { .. }) => None,
+            (LegKind::Row(RowOp::Count), AccountRef::Line { line, side }) => {
+                let now = i64::from(find(arenas, slot, line, side).row.count);
+                Some((Position { now, floor: Missing::Present(0), short: FailCause::FreeUnits }, leg.qty))
+            }
             _ => violation!(clause = "SET.11", "a leg whose kind does not fit its account", party = party.get()),
+        }
+    }
+
+    /// What a party holds on the account a position code names: a row's balance, or its member count when the code
+    /// is marked so; a holding's units, or for its issuer the units issued, as owed; whether a named unit is held.
+    #[must_use]
+    pub fn position(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, code: u64) -> i64 {
+        let row =
+            |line: LineId, side: Side| rows(arenas, slot).into_iter().find(|r| r.row.line == line && r.side() == side);
+        match AccountRef::from_code(code) {
+            AccountRef::Line { line, side } if code & ROW_COUNT != 0 => {
+                row(line, side).map_or(0, |r| i64::from(r.row.count))
+            }
+            AccountRef::Line { line, side } => row(line, side).map_or(0, |r| balance(&r, line)),
+            AccountRef::Instrument(id) if self.instruments.get(id).issuer == Missing::Present(party) => {
+                -self.instruments.get(id).issued.n()
+            }
+            AccountRef::Instrument(id) => match holding(arenas, slot, id) {
+                Missing::Present(h) => h.quantity.raw(),
+                Missing::Absent => 0,
+            },
+            AccountRef::Unit(unit) => i64::from(named(arenas, slot).iter().any(|u| u.id == unit)),
         }
     }
 
@@ -351,12 +429,32 @@ impl<B: Backing> Ledger<B> {
         for i in order {
             let (Some(leg), Some(at)) = (legs.get(i), located.get(i)) else { continue };
             let arenas = holders.arenas(at.table);
+            let before = self.position(arenas, at.party, at.slot, leg.position_code());
             self.settle_leg(arenas, *at, leg, s.day, &mut taken);
             audit.touched(arenas.table(), at.slot);
+            let money = matches!(leg.kind, LegKind::Money);
+            let digest = LegDigest {
+                party: at.party,
+                account: leg.position_code(),
+                denom: leg.denom.code(),
+                qty: leg.qty,
+                before,
+                paired: leg.paired(),
+                money,
+            };
+            audit.leg(s.id.get(), digest);
             if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {
                 let effect = if leg.qty < 0 { decl.paid } else { decl.received };
                 let amount = Money::new(leg.qty.abs(), ccy);
                 self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
+                if matches!(leg.account, AccountRef::Line { side: Side::Asset, .. }) {
+                    let (paid, received) = self.day.moved.entry((ccy.index(), at.party)).or_insert((0, 0));
+                    if leg.qty < 0 {
+                        *paid += i128::from(-leg.qty);
+                    } else {
+                        *received += i128::from(leg.qty);
+                    }
+                }
             }
         }
         if !taken.is_empty() {
@@ -383,12 +481,11 @@ impl<B: Backing> Ledger<B> {
                     violation!(clause = "Law 7", "a balance overflows", line = line.get());
                 };
                 let optional = Optional { balance: Missing::Present(next), ..view.optional };
-                self.lines.set_words(arenas, slot, line, side, optional);
+                Lines::<B>::set_words(arenas, slot, line, side, optional);
             }
-            (LegKind::Units { cost }, AccountRef::Instrument(id))
+            (LegKind::Units { .. }, AccountRef::Instrument(id))
                 if self.instruments.get(id).issuer == Missing::Present(party) =>
             {
-                let _ = cost;
                 let why = if leg.qty < 0 { IssueChange::Issuance } else { IssueChange::Buyback };
                 self.instruments.change_issued(id, Qty::new(-leg.qty, self.instruments.get(id).unit), why);
             }
@@ -419,6 +516,17 @@ impl<B: Backing> Ledger<B> {
             (LegKind::Row(RowOp::Close), AccountRef::Line { line, side }) => {
                 self.lines.remove_row(arenas, at.table, slot, line, side);
             }
+            (LegKind::Row(RowOp::Count), AccountRef::Line { line, side }) => {
+                let count = i64::from(find(arenas, slot, line, side).row.count) + leg.qty;
+                let Ok(count) = u32::try_from(count) else {
+                    violation!(
+                        clause = "REG.14",
+                        "a row's member count below nothing or beyond its width",
+                        line = line.get()
+                    );
+                };
+                self.lines.set_count(arenas, slot, line, side, count);
+            }
             _ => violation!(clause = "SET.11", "a leg whose kind does not fit its account", party = party.get()),
         }
     }
@@ -428,7 +536,8 @@ impl<B: Backing> Ledger<B> {
             self.instruments.acquire(arenas, at.table, at.slot, id, Lot::new(day, qty, cost));
         } else if qty < 0 {
             let disposal = Disposal { units: -qty, bound: self.bound(at.party, id), order: LotOrder::FirstIn };
-            let _ = self.instruments.dispose(arenas, at.table, at.slot, id, disposal);
+            let gone = self.instruments.dispose(arenas, at.table, at.slot, id, disposal);
+            self.day.disposed.push(DisposedRec { party: at.party, instrument: id, units: -qty, cost: gone.cost, day });
         }
     }
 

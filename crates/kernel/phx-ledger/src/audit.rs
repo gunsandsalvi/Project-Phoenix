@@ -13,6 +13,9 @@ use crate::rows::rows;
 
 declare_family! { pub OWNERSHIP = "REG.ownership" { mode: Rolling { cycle_days: 30 }, clause: "REG.13" } }
 declare_family! { pub CONTRACTS = "REG.contracts" { mode: Rolling { cycle_days: 30 }, clause: "REG.14" } }
+declare_family! { pub MONEY = "MON.money" { mode: Rolling { cycle_days: 30 }, clause: "MON.7" } }
+declare_family! { pub FLOWS = "SET.flows" { mode: Incremental, clause: "SET.9" } }
+declare_family! { pub UNITS = "NUM.units" { mode: Incremental, clause: "NUM.5" } }
 
 /// What a family found wrong with one instrument or line: whose it is, by how much, and what.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -102,6 +105,43 @@ pub fn contracts<B: Backing>(lines: &Lines<B>, tables: &[&dyn HolderArenas], lin
             let detail = format!("line {}: {side:?} side kept at {kept} against {from_rows} in its rows", line.get());
             gaps.push(Gap { owner, size: i128::from(kept) - from_rows, detail });
         }
+    }
+    gaps
+}
+
+/// A money line's balances: the holders' on its asset side and its issuer's on its liability side sum to nothing, so
+/// what the issuer records as its money liability is what its holders hold. Both sides of a money line keep
+/// holder lists; a line kind without them is not money.
+#[clause("MON.7", "MON.11")]
+pub fn money_line<B: Backing>(lines: &Lines<B>, tables: &[&dyn HolderArenas], line: LineId) -> Vec<Gap> {
+    let owner = FindingOwner::Line(line);
+    let keys = lines.keys();
+    let mut gaps = Vec::new();
+    if !lines.listed_side(line, Side::Asset) || !lines.listed_side(line, Side::Liability) {
+        let detail = format!("line {}: a money line whose sides are not both listed", line.get());
+        return vec![Gap { owner, size: 1, detail }];
+    }
+    let mut sum = 0_i128;
+    for key in lines.holders(line) {
+        let Ok((t, _)) = table(tables, keys, key) else {
+            let detail = format!("line {}: a holder on a table the world does not keep", line.get());
+            gaps.push(Gap { owner, size: 1, detail });
+            continue;
+        };
+        let (_, slot) = keys.split(key);
+        for r in rows(t, slot).iter().filter(|r| r.row.line == line) {
+            match r.optional.balance {
+                Missing::Present(b) => sum += i128::from(b),
+                Missing::Absent => {
+                    let detail = format!("line {}: a money row without a balance", line.get());
+                    gaps.push(Gap { owner, size: 1, detail });
+                }
+            }
+        }
+    }
+    if sum != 0 {
+        let detail = format!("line {}: its holders' and its issuer's balances differ by {sum}", line.get());
+        gaps.push(Gap { owner, size: sum, detail });
     }
     gaps
 }

@@ -185,3 +185,32 @@ fn a_family_declared_twice_is_refused() {
     families.extend(kernel_families());
     assert_eq!(Audit::new(families).unwrap_err().len(), 2);
 }
+
+mod digests {
+    use phx_core::LegDigest;
+    use phx_id::PartyId;
+
+    use crate::records::{Digests, Gap};
+
+    fn leg(party: u64, account: u64, qty: i64, before: i64, money: bool) -> LegDigest {
+        LegDigest { party: PartyId::new(party), account, denom: 0, qty, before, paired: true, money }
+    }
+
+    #[test]
+    fn records_find_what_the_books_do_not_hold() {
+        let mut d = Digests::default();
+        d.record(1, leg(4, 8, -200, 1_000, true));
+        d.record(1, leg(5, 8, 200, 1_000, true));
+        d.record(2, leg(4, 8, -50, 800, true));
+        d.record(2, leg(6, 16, 50, 0, false));
+        assert!(d.flow_gaps().is_empty(), "each instruction has both its sides");
+        assert_eq!(d.money_gaps(), vec![Gap::Money { instruction: 2, ccy: 0, sum: -50 }], "money gone to a loan row");
+        let books = |p: PartyId, _: u64| match p.get() {
+            4 => 750,
+            5 => 1_200,
+            _ => 49,
+        };
+        let gaps = d.unit_gaps(&books);
+        assert_eq!(gaps, vec![Gap::Units { party: PartyId::new(6), account: 16, expected: 50, held: 49 }]);
+    }
+}

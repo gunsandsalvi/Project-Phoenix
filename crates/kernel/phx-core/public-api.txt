@@ -406,6 +406,14 @@ pub phx_core::family::FamilyDecl::clause: &'static str
 pub phx_core::family::FamilyDecl::mode: phx_core::family::FamilyMode
 pub phx_core::family::FamilyDecl::name: &'static str
 pub phx_core::family::FamilyDecl::owner: &'static str
+pub struct phx_core::family::LegDigest
+pub phx_core::family::LegDigest::account: u64
+pub phx_core::family::LegDigest::before: i64
+pub phx_core::family::LegDigest::denom: u32
+pub phx_core::family::LegDigest::money: bool
+pub phx_core::family::LegDigest::paired: bool
+pub phx_core::family::LegDigest::party: phx_id::ids::PartyId
+pub phx_core::family::LegDigest::qty: i64
 pub struct phx_core::family::ReadTrace
 pub phx_core::family::ReadTrace::duplicate_opens: usize
 pub phx_core::family::ReadTrace::later_writes: usize
@@ -422,6 +430,7 @@ pub fn phx_core::family::AuditFamily::decl(&self) -> phx_core::family::FamilyDec
 pub fn phx_core::family::AuditFamily::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub trait phx_core::family::AuditStream
 pub fn phx_core::family::AuditStream::applied(&mut self, u64)
+pub fn phx_core::family::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_core::family::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub trait phx_core::family::InjectTarget
 pub fn phx_core::family::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
@@ -2147,6 +2156,14 @@ pub struct phx_core::KinkRegistry
 impl phx_core::kinks::KinkRegistry
 pub fn phx_core::kinks::KinkRegistry::on(&self, phx_core::kinks::KinkOn) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::kinks::KinkDecl> + '_
 pub fn phx_core::kinks::KinkRegistry::register(&mut self, phx_core::kinks::KinkDecl) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::LegDigest
+pub phx_core::LegDigest::account: u64
+pub phx_core::LegDigest::before: i64
+pub phx_core::LegDigest::denom: u32
+pub phx_core::LegDigest::money: bool
+pub phx_core::LegDigest::paired: bool
+pub phx_core::LegDigest::party: phx_id::ids::PartyId
+pub phx_core::LegDigest::qty: i64
 pub struct phx_core::LegalForm
 pub phx_core::LegalForm::endings: alloc::vec::Vec<alloc::string::String>
 pub phx_core::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
@@ -2445,6 +2462,7 @@ pub fn phx_core::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
 pub fn phx_core::AuditFamily::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub trait phx_core::AuditStream
 pub fn phx_core::AuditStream::applied(&mut self, u64)
+pub fn phx_core::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_core::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub trait phx_core::Contribution: core::marker::Send + core::marker::Sync
 pub fn phx_core::Contribution::contribute(&self, &mut phx_core::contribution::OpeningCtx<'_>)

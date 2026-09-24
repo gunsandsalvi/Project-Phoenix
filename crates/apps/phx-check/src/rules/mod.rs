@@ -19,6 +19,7 @@ mod layering;
 mod ledger_writes;
 mod literals;
 mod live_checks;
+mod money_moves;
 mod places;
 mod random_crates;
 mod rayon_libc;
@@ -112,6 +113,12 @@ pub const RULES: &[Rule] = &[
         title: "holdings, rows, lines, liens and issued amounts are written by phx-ledger alone",
         since: "S0.14",
         run: ledger_writes::run,
+    },
+    Rule {
+        id: "PC-25",
+        title: "money moves only through the apply routine, which alone writes a balance",
+        since: "S0.15",
+        run: money_moves::run,
     },
 ];
 

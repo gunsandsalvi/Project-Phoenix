@@ -215,11 +215,27 @@ pub trait AuditFamily: Send + Sync {
     fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String>;
 }
 
+/// A settled leg as the audit keeps it, apart from the books it moved: whose, on which account and in which
+/// denomination (each coded by the ledger), by how much, what the account held before it, whether it is one of a pair,
+/// and whether it moved money on a money line.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LegDigest {
+    pub party: PartyId,
+    pub account: u64,
+    pub denom: u32,
+    pub qty: i64,
+    pub before: i64,
+    pub paired: bool,
+    pub money: bool,
+}
+
 /// The sink the apply routine feeds as it applies, which the audit implements and the assembly injects, so no kernel
 /// crate calls the audit above it.
 pub trait AuditStream {
     fn applied(&mut self, instruction: u64);
     fn touched(&mut self, table: TableId, slot: Slot);
+    /// A leg as it settles, for the families that check flows, money and units against the books.
+    fn leg(&mut self, instruction: u64, leg: LegDigest);
 }
 
 #[cfg(test)]

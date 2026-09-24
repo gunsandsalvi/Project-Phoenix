@@ -54,4 +54,9 @@ pub const CHECKS: &[Check] = &[
     geo::LC_0_15,
     ledger::LC_0_16,
     ledger::LC_0_17,
+    ledger::LC_0_18,
+    ledger::LC_0_19,
+    ledger::LC_0_20,
+    ledger::LC_0_21,
+    ledger::LC_0_22,
 ];

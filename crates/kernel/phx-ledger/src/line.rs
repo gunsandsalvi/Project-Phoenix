@@ -247,7 +247,14 @@ impl<B: Backing> Lines<B> {
 
     /// A holder's row opened on a line. A holder of a kind the side does not declare, or a row with other optional
     /// words than the side declares, is refused, and a holder keeps at most one row on each side of a line.
-    pub fn add_row(&mut self, arenas: &mut dyn HolderArenas, table: u16, holder: Slot, line: LineId, new: NewRow) {
+    pub(crate) fn add_row(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        line: LineId,
+        new: NewRow,
+    ) {
         let NewRow { side, within, count, point, optional } = new;
         let decl = *self.kind(self.row(line).kind).side(side);
         let kind = arenas.kind();
@@ -286,7 +293,14 @@ impl<B: Backing> Lines<B> {
     }
 
     /// A row's member count changed, the line's side count with it.
-    pub fn set_count(&mut self, arenas: &mut dyn HolderArenas, holder: Slot, line: LineId, side: Side, count: u32) {
+    pub(crate) fn set_count(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        holder: Slot,
+        line: LineId,
+        side: Side,
+        count: u32,
+    ) {
         let mut view = Self::find(arenas, holder, line, side);
         let by = i64::from(count) - i64::from(view.row.count);
         view.row.count = count;
@@ -296,21 +310,13 @@ impl<B: Backing> Lines<B> {
     }
 
     /// A row's optional words written, where the row lies.
-    pub fn set_words(
-        &mut self,
-        arenas: &mut dyn HolderArenas,
-        holder: Slot,
-        line: LineId,
-        side: Side,
-        optional: Optional,
-    ) {
+    pub(crate) fn set_words(arenas: &mut dyn HolderArenas, holder: Slot, line: LineId, side: Side, optional: Optional) {
         let view = Self::find(arenas, holder, line, side);
         rows::rewrite(arenas, holder, &view, optional);
     }
 
     /// A row's payment record written: its days in arrears and its payments missed.
-    pub fn set_record(
-        &mut self,
+    pub(crate) fn set_record(
         arenas: &mut dyn HolderArenas,
         holder: Slot,
         line: LineId,
@@ -324,7 +330,14 @@ impl<B: Backing> Lines<B> {
     }
 
     /// A holder's row on a side of a line removed; the holder leaves the line's list with its last row on it.
-    pub fn remove_row(&mut self, arenas: &mut dyn HolderArenas, table: u16, holder: Slot, line: LineId, side: Side) {
+    pub(crate) fn remove_row(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        line: LineId,
+        side: Side,
+    ) {
         let view = Self::find(arenas, holder, line, side);
         let listed_before = self.listed(line, &rows::rows(arenas, holder));
         rows::remove(arenas, holder, &view);

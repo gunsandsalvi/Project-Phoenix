@@ -8,6 +8,7 @@ use phx_store::Backing;
 use crate::algebra::Side;
 use crate::apply::{Holders, Ledger, Located};
 use crate::fails::Fail;
+use crate::line::Lines;
 use crate::rows::{PaymentRecord, rows};
 
 /// A contract row in arrears: its line, its side, and the party holding it.
@@ -97,7 +98,7 @@ impl<B: Backing> Ledger<B> {
             violation!(clause = "SET.3", "arrears cured on a row its party does not have", line = line.get());
         };
         let record = PaymentRecord { arrears_days: 0, missed: view.record().missed };
-        self.lines.set_record(arenas, slot, line, side, record);
+        Lines::<B>::set_record(arenas, slot, line, side, record);
     }
 
     fn write_record(&mut self, holders: &mut dyn Holders, key: ArrearsKey, today: Day, missed_one: bool) {
@@ -119,6 +120,6 @@ impl<B: Backing> Ledger<B> {
             record.missed = m;
         }
         record.arrears_days = days(since, today);
-        self.lines.set_record(arenas, slot, key.line, side, record);
+        Lines::<B>::set_record(arenas, slot, key.line, side, record);
     }
 }

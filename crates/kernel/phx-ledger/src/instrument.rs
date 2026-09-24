@@ -181,7 +181,7 @@ impl<B: Backing> Instruments<B> {
 
     /// Changes the issued amount, for one of the reasons that may; an issued amount below nothing stops the
     /// run.
-    pub fn change_issued(&mut self, id: InstrumentId, by: Qty, _why: IssueChange) {
+    pub(crate) fn change_issued(&mut self, id: InstrumentId, by: Qty, _why: IssueChange) {
         let mut row = self.row(id);
         let issued = Qty::at(row.unit, row.issued) + by;
         if issued.n() < 0 {
@@ -218,7 +218,14 @@ impl<B: Backing> Instruments<B> {
 
     /// Units acquired by a holder of the table at place `table`, which enters the instrument's holder list with its
     /// first lot.
-    pub fn acquire(&mut self, arenas: &mut dyn HolderArenas, table: u16, holder: Slot, id: InstrumentId, lot: Lot) {
+    pub(crate) fn acquire(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        id: InstrumentId,
+        lot: Lot,
+    ) {
         let _ = self.row(id);
         if holding::acquire(arenas, holder, id, lot) {
             let mut list = self.list(id);
@@ -228,7 +235,7 @@ impl<B: Backing> Instruments<B> {
     }
 
     /// Units that leave a holding, its holder leaving the instrument's holder list with its last unit.
-    pub fn dispose(
+    pub(crate) fn dispose(
         &mut self,
         arenas: &mut dyn HolderArenas,
         table: u16,

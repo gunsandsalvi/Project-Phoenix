@@ -838,8 +838,8 @@ The `declare_*` macros are added by the steps whose kernel types they wrap. This
 - **Violations** (II.5, §2.5): `violation!` builds a `Violation` and calls `std::panic::panic_any`. It evaluates its
   keys as `i128`. `capacity_exceeded!` does the same with its own payload. The application's panic hook, which runs
   on the panicking thread, adds the site by reading `phx_exec::site` directly (S0.07).
-- `Ccy(u8)`: a currency's index in `data/world.toml`'s `[[currency]]` list (code, name, smallest unit's name,
-  country). Currency identity is data (Law 10).
+- `Ccy(u8)`: a currency's index: the index of the country whose central bank issues it, its name drawn with the
+  country's at the opening (S0.27). Currency identity is data (Law 10).
 - `Amount(i64)`: whole smallest units with **no currency**, used only in store columns whose currency the column
   fixes. It has no arithmetic.
 - `Money { amt: i64, ccy: Ccy }` is the computing type:
@@ -1497,7 +1497,7 @@ architecture §13.2's line.
 | `src/calendar/prims.rs` | the declarations of `TIME.epoch` and `TIME.calendar`, read through the register (S0.09) |
 | `crates/kernel/phx-store/src/block_list.rs` | `BlockBag`, the agenda's bucket: entries in the order pushed, drained whole, from the block pool |
 | `crates/apps/phx-check/src/rules/day_arithmetic.rs` | PC-17 |
-| `data/world.toml` | `TIME.epoch`; its `[[country]]`, `[[unit]]` and `[[currency]]` entries come with the steps that first read them (S0.11, S0.14, S0.15) |
+| `data/world.toml` | `TIME.epoch`; its `[[country]]` and `[[unit]]` entries come with the steps that first read them (S0.11, S0.14); a currency is its country's (S0.15) |
 | `data/<country>/TIME.toml` | the weekend rule and holiday rules of each country, with sources, committed as the three levels' templates in `data/profiles/<level>/TIME.toml` (§2.1) |
 
 **Design**
@@ -2792,7 +2792,7 @@ comments; a civil day count outside the calendar.
 
 ### S0.15 — `phx-ledger` II: money, accounts, instructions and settlement
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: MON.1, MON.2, MON.3, MON.16; SET.1, SET.2, SET.3; MON.4 *(part: banknotes as holdings; withdrawal
@@ -2824,17 +2824,20 @@ comments; a civil day count outside the calendar.
 
 | File | Purpose |
 | --- | --- |
-| `data/world.toml` | `[[currency]]`: code, name, smallest unit's name and country, read here first (S0.03's `Ccy`) |
-| `src/money.rs` | money line kinds as data: reserves (CB ↔ bank), deposit kinds (bank ↔ depositor), the treasury account (CB ↔ treasury); banknotes as each central bank's instrument |
-| `src/instruction.rs` | `Instruction { id: u64, reason: ReasonId, trade_day, settle_day, legs: ListRef }`; `LegRec { party: PartyId, account: AccountRef, qty: i64, denom: Denom, kind: LegKind }`, where `AccountRef` is `Line(LineId)`, `Instrument(InstrumentId)` or `Unit(u64)`, `Denom` is `Ccy` or `UnitId`, and `LegKind` is `Money`, `Units`, `Row`, `Transformation { accounts_for }` or `OpeningWrite` |
-| `src/check.rs` | pure `check_legs(balances, limits, free_units, legs) -> Result<(), FailCause>` over slices |
-| `src/apply.rs` | the one apply routine: check, apply all or none, record the fail, write accounting effects, feed the audit through `phx_core::AuditStream` (S0.10) |
-| `src/rounding.rs` | `RoundingLanding { convention: Round, residue_to: Payer | Payee | Named(PartyId) }` |
-| `src/fails.rs` | `Fail { instruction, cause, due, line: Missing<LineId> }` |
-| `src/contract_process.rs` | 2d: each line kind's generic contract process turns yesterday's fails on its lines into arrears and payment-record updates (SET.3, SET.16) |
-| `src/effects.rs` | each reason's declared accounting effect on each side (revenue, expense, asset, liability, equity), emitted as events at apply for `phx-acct` (S0.19) |
-| `src/audit.rs` | adds the Money, Flows and Units families |
-| `crates/kernel/phx-audit/src/records.rs` | the independent records the families check against: per-batch digests kept at apply time, issuers' own totals per deposit and loan line |
+| currencies | one per country, the one its central bank issues, named with the country at the opening (S0.27); `Ccy` is the country's index, so no `[[currency]]` data is needed |
+| `src/algebra.rs` | `Facility { limit, rate, day_count }` in a deposit's terms: the overdraft or intraday facility its bank agreed (MON.3, MON.15) |
+| `src/money.rs` | `MoneyHolders`: the money line kinds as declarations — reserves (central bank ↔ bank), deposit kinds (bank ↔ depositor, with a `pending` word), the treasury's account (central bank ↔ treasury), each side carrying the balance so a line's balances sum to nothing; `banknotes`, each central bank's note instrument |
+| `src/instruction.rs` | `Instruction { id, reason, trade_day, settle_day, legs: Vec<LegRec>, pays: Missing<DueRow>, covers: Vec<Covered> }`; `LegRec { party, account, qty, denom, kind }`, where `AccountRef` is `Line { line, side }`, `Instrument(InstrumentId)` or `Unit(u64)`, `Denom` is `Ccy` or `UnitId`, and `LegKind` is `Money`, `Units { cost }`, `Row(Open | Close | Adjust | Count)`, `Transformation(Source)` or `OpeningWrite { identity }`; `ReasonDecl { name, order, paid, received }`; the accounts' codes for records kept apart from the books |
+| `src/check.rs` | pure `check_legs(positions, moves) -> Result<(), (FailCause, usize)>` and `unbalanced(legs)` |
+| `src/apply.rs` | `Ledger`, the world's books; `Holders`, how the apply reaches the holder tables and follows an ended party to its successor; the one apply routine and `settle` in declared order; `DayBook` with the day's fails, effects and the settlement measure (SET.10) |
+| `src/rounding.rs` | `RoundingLanding { convention: Round, residue_to: Payer | Payee | Named(PartyId) }` and `split` |
+| `src/fails.rs` | `Fail { instruction, reason, cause, party, due, row: Missing<DueRow> }`, the row being the contract whose due the instruction paid |
+| `src/contract_process.rs` | 2d: the generic contract process turns yesterday's fails into payments missed and arrears on their rows, and ages every row in arrears from the day it began (SET.3, SET.16); `cure` |
+| `src/effects.rs` | `EffectRec`: each settled money leg's accounting effect as its reason declares it, for `phx-acct` (S0.19) |
+| `src/audit.rs` | adds the Money, Flows and Units families' declarations and the money-line check |
+| `crates/kernel/phx-core/src/family.rs` | `LegDigest` and `AuditStream::leg`: each settled leg as the audit keeps it |
+| `crates/kernel/phx-audit/src/records.rs` | `Digests`, the audit's own record of the day's legs: per instruction and denomination their sums, per instruction and currency their money, per party and account what it held before and the day's net; and the checks against it |
+| `crates/apps/phx-check/src/rules/money_moves.rs` | PC-25 |
 
 **Design**
 
@@ -2874,11 +2877,20 @@ comments; a civil day count outside the calendar.
   yet.
 - **A party ending during a day** (SET.7): instructions naming it settle or are refused against its estate, through
   `Directory::resolve`.
+- **Instructions** keep their legs in a `Vec`: single instructions are few, and the day's batches (S0.17) are never
+  materialised, so the one allocation per instruction is not on the hot path. A leg's quantity is signed from its
+  party's side: received positive, given negative; a money line's issuer's balance is the negative of what it owes.
+- **Row legs** open, retire or adjust a row, or change its member count; opening and retiring count their members on
+  the asset side against the liability side, so a line's two sides open and close together.
+- **The audit's own records**: the apply tells the audit each settled leg, with what its account held before it, so
+  `phx-audit` checks flows, money and units against records the books did not write.
 - **Families**:
   - **Money**: MON.7, MON.8, MON.9;
   - **Flows**: each denomination's legs sum to zero per instruction, instructions reconciling to holdings (SET.8,
     SET.9);
   - **Units**: opening plus in equals out plus closing per holder and asset per day (NUM.5 on units).
+  - The world keeps no books until S0.16; the checks are built and tested here, and S0.16 registers the families over
+    the world's books with the settlement measure's publication and the counters.
 
 **Unit tests** (pure functions over slices)
 - `all_or_none`.
@@ -2889,6 +2901,9 @@ comments; a civil day count outside the calendar.
 - `transformation_needs_source`.
 - `contract_process_turns_fails_into_arrears`.
 - `row_leg_adds_to_both_sides`: a `Row` leg on an accruing line adds the same amount to both sides' rows.
+- `ended_parties_are_refused_by_name`; `declared_order_within_a_sub_step`; `digests_reconcile_to_the_books`;
+  `money_lines_balance_at_their_issuers`; `settlement_published_gross_and_net`; `account_codes_round_trip`;
+  `records_find_what_the_books_do_not_hold` (`phx-audit`).
 
 **Live checks** (applicable from S0.16)
 - `LC-0-18`: Money — per issuer and currency, balances equal its liability; notes held equal notes issued.
@@ -2898,10 +2913,13 @@ comments; a civil day count outside the calendar.
 - `LC-0-21`: every fail has a cause, and its line kind's contract process recorded it at 2d (SET.3).
 - `LC-0-22`: gross and net settlement and fails by cause are published per day (SET.10, part).
 
-**Budget**: the apply is ≤ 30 ns per payment in parallel by target chunk (architecture §13.2); counters
-`phx_ledger.payments_applied`, `phx_ledger.fails` by cause.
+**Budget**: the apply is ≤ 30 ns per payment in parallel by target chunk (architecture §13.2): that is the batch
+apply of S0.17, measured there; a single instruction here reads its parties' row runs and allocates its legs. Counters
+`phx_ledger.payments_applied`, `phx_ledger.fails` by cause, reported from S0.16.
 
-**Guards**: PC-25: money moves only through `apply`; no crate but `phx-ledger` writes a balance.
+**Guards**: PC-25: money moves only through `apply`; no crate but `phx-ledger` writes a balance. The ledger's writers
+of rows, counts, balances, records, holdings and issued amounts are crate-private, so the compiler refuses any other
+caller; the rule keeps them so, and refuses a leg digest built outside the apply.
 
 **Not allowed**:
 - a silent negative balance;
@@ -2984,6 +3002,8 @@ writes, reports — and the first real parties:
 - **The world's books**: the world keeps the ledger's books (instruments, terms, lines, liens, covers, commitments)
   with the holder tables as `HolderArenas`, and registers S0.14's Ownership and Contracts families over them, rolling
   over instruments and lines, with the counters `phx_ledger.rows`, `phx_ledger.lines` and `phx_ledger.terms_interned`.
+  It registers S0.15's Money, Flows and Units families over the books and the audit's digests, publishes the
+  settlement measure each day (SET.10), and reports `phx_ledger.payments_applied` and `phx_ledger.fails` by cause.
 
 **Unit tests**
 - `largest_remainder_apportions_exactly`.

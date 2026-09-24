@@ -5,7 +5,7 @@ use phx_core::calendar::bizday::BusinessDayConvention;
 use phx_core::calendar::daycount::DayCount;
 use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
 use phx_core::kind_tables::KindTable;
-use phx_core::{AuditStream, SubStep};
+use phx_core::{AuditStream, LegDigest, SubStep};
 use phx_id::{CountryId, Date, Day, InstrumentId, LineId, PartyId, Slot, TableId};
 use phx_num::{Ccy, Missing, Money, Rate, RatePeriod, Round, UnitId};
 use phx_store::{AddressSpace, HeapBacking};
@@ -60,6 +60,7 @@ impl Holders for Tables {
 #[derive(Default)]
 struct Seen {
     applied: Vec<u64>,
+    legs: Vec<(u64, LegDigest)>,
 }
 
 impl AuditStream for Seen {
@@ -68,6 +69,10 @@ impl AuditStream for Seen {
     }
 
     fn touched(&mut self, _: TableId, _: Slot) {}
+
+    fn leg(&mut self, instruction: u64, leg: LegDigest) {
+        self.legs.push((instruction, leg));
+    }
 }
 
 fn terms(facility: Missing<Facility>) -> Terms {
@@ -384,6 +389,7 @@ fn contract_process_turns_fails_into_arrears() {
     i.pays = Missing::Present(DueRow { line: loan, side: Side::Liability });
     assert!(w.ledger.apply(&mut w.tables, SETTLE, i, &mut Seen::default()).is_err());
     let book = w.ledger.close();
+    assert_eq!(book.measure().fails.get(&FailCause::Funds), Some(&1), "fails are published by cause");
     w.ledger.contract_process(&mut w.tables, &book.fails, Day::new(11));
     let record = |w: &mut World| {
         let r = rows(w.tables.arenas(table), slot);
@@ -426,9 +432,17 @@ fn row_leg_adds_to_both_sides() {
         kind: LegKind::Row(RowOp::Adjust),
     };
     let i = w.instruction(w.pay, vec![adjust(3, Side::Asset, 50), adjust(6, Side::Liability, -50)]);
-    let _ = w.ledger.apply(&mut w.tables, ApplyAt::Day(SubStep::S2c), i, &mut Seen::default()).unwrap();
+    let _ = w.ledger.apply(&mut w.tables, ApplyAt::Day(SubStep::S2a), i, &mut Seen::default()).unwrap();
     assert_eq!((w.balance(3, loan, Side::Asset), w.balance(6, loan, Side::Liability)), (50, -50));
     assert_eq!(w.ledger.lines.side_count(loan, Side::Asset), 1);
+    let count = |party: u64, side: Side| LegRec { kind: LegKind::Row(RowOp::Count), ..open(party, side) };
+    let i = w.instruction(
+        w.pay,
+        vec![LegRec { qty: 2, ..count(3, Side::Asset) }, LegRec { qty: 2, ..count(6, Side::Liability) }],
+    );
+    let _ = w.ledger.apply(&mut w.tables, SETTLE, i, &mut Seen::default()).unwrap();
+    let counts = (w.ledger.lines.side_count(loan, Side::Asset), w.ledger.lines.side_count(loan, Side::Liability));
+    assert_eq!(counts, (3, 3), "members join both sides together");
 }
 
 #[test]
@@ -456,4 +470,74 @@ fn declared_order_within_a_sub_step() {
     let out = w.ledger.settle(&mut w.tables, SETTLE, vec![first, second], &mut Seen::default());
     assert_eq!(out[0], Ok(b), "the earlier-ordered reason settles first whatever its place");
     assert_eq!(out[1].as_ref().map_err(|f| f.instruction).err(), Some(a));
+}
+
+#[test]
+fn digests_reconcile_to_the_books() {
+    // What the audit is told, leg by leg, rebuilds every position it touched from what it held before.
+    let mut w = world();
+    let ([d1, d2], r) = (w.deposits, w.reserves);
+    let mut seen = Seen::default();
+    let legs = vec![
+        money(4, d1, Side::Asset, -200),
+        money(2, d1, Side::Liability, 200),
+        money(2, r, Side::Asset, -200),
+        money(3, r, Side::Asset, 200),
+        money(3, d2, Side::Liability, -200),
+        money(6, d2, Side::Asset, 200),
+    ];
+    let i = w.instruction(w.pay, legs);
+    let _ = w.ledger.apply(&mut w.tables, SETTLE, i, &mut seen).unwrap();
+    let i = w.same_bank(5, 4, 50);
+    let _ = w.ledger.apply(&mut w.tables, SETTLE, i, &mut seen).unwrap();
+    assert_eq!(seen.applied.len(), 2);
+    let mut firsts: Vec<(PartyId, u64, i64, i64)> = Vec::new();
+    for (_, d) in &seen.legs {
+        match firsts.iter_mut().find(|(p, a, _, _)| *p == d.party && *a == d.account) {
+            Some((_, _, _, net)) => *net += d.qty,
+            None => firsts.push((d.party, d.account, d.before, d.qty)),
+        }
+    }
+    for (party, account, before, net) in firsts {
+        let Located::Live { table, slot, .. } = w.tables.locate(party) else { unreachable!() };
+        assert_eq!(w.ledger.position(w.tables.arenas(table), party, slot, account), before + net);
+    }
+    let money_sum: i64 = seen.legs.iter().filter(|(_, d)| d.money).map(|(_, d)| d.qty).sum();
+    assert_eq!(money_sum, 0, "no money made without its issuer");
+}
+
+#[test]
+fn money_lines_balance_at_their_issuers() {
+    let mut w = world();
+    let i = w.same_bank(4, 5, 300);
+    let _ = w.ledger.apply(&mut w.tables, SETTLE, i, &mut Seen::default()).unwrap();
+    let t = &w.tables.kinds;
+    let tables: [&dyn HolderArenas; 3] = [&t[0], &t[1], &t[2]];
+    for line in [w.reserves, w.deposits[0], w.deposits[1]] {
+        assert!(crate::audit::money_line(&w.ledger.lines, &tables, line).is_empty());
+    }
+}
+
+#[test]
+fn settlement_published_gross_and_net() {
+    let mut w = world();
+    for (from, to, amount) in [(4, 5, 300), (5, 4, 100)] {
+        let i = w.same_bank(from, to, amount);
+        let _ = w.ledger.apply(&mut w.tables, SETTLE, i, &mut Seen::default()).unwrap();
+    }
+    let m = w.ledger.close().measure();
+    assert_eq!((m.gross.get(&0), m.net.get(&0)), (Some(&400), Some(&200)), "400 paid, 200 changed hands net");
+}
+
+#[test]
+fn account_codes_round_trip() {
+    for a in [
+        AccountRef::Line { line: LineId::new(7), side: Side::Asset },
+        AccountRef::Line { line: LineId::new(7), side: Side::Liability },
+        AccountRef::Instrument(InstrumentId::new(3)),
+        AccountRef::Unit(1 << 40),
+    ] {
+        assert_eq!(AccountRef::from_code(a.code()), a);
+        assert_eq!(AccountRef::from_code(a.code() | crate::instruction::ROW_COUNT), a, "a count marks its line");
+    }
 }

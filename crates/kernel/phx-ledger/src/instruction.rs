@@ -80,11 +80,76 @@ pub enum AccountRef {
     Unit(u64),
 }
 
+const TAG_BITS: u32 = u8::BITS;
+/// The kinds of account in a code's low byte: a line's asset side, an instrument, a line's liability side, a named
+/// unit, each its own bit so a code reads by masks.
+const LINE: u64 = 0;
+const INSTRUMENT: u64 = 1;
+const LIABILITY: u64 = 1 << 1;
+const UNIT: u64 = LIABILITY << 1;
+
+/// Marks a line account's code as its row's member count, which rows opened and retired move, apart from its balance.
+pub const ROW_COUNT: u64 = UNIT << 1;
+
+impl AccountRef {
+    /// The account as one number, for records kept apart from the books: its kind in the low byte, the side of a line
+    /// above it, and its identity in the high bits.
+    #[must_use]
+    pub fn code(self) -> u64 {
+        match self {
+            AccountRef::Line { line, side } => {
+                let s = match side {
+                    Side::Asset => LINE,
+                    Side::Liability => LIABILITY,
+                };
+                (u64::from(line.get()) << TAG_BITS) | s
+            }
+            AccountRef::Instrument(id) => (u64::from(id.get()) << TAG_BITS) | INSTRUMENT,
+            AccountRef::Unit(u) => {
+                if u >> (u64::BITS - TAG_BITS) != 0 {
+                    capacity_exceeded!("named units for their account code", u64::MAX >> TAG_BITS, u);
+                }
+                (u << TAG_BITS) | UNIT
+            }
+        }
+    }
+
+    /// The account a code names.
+    #[must_use]
+    pub fn from_code(code: u64) -> AccountRef {
+        let id = code >> TAG_BITS;
+        let narrow = || {
+            let Ok(n) = u32::try_from(id) else {
+                violation!(clause = "SET.9", "an account code beyond its identity's width", code = code);
+            };
+            n
+        };
+        match code & u64::from(u8::MAX) & !ROW_COUNT {
+            LINE => AccountRef::Line { line: LineId::new(narrow()), side: Side::Asset },
+            LIABILITY => AccountRef::Line { line: LineId::new(narrow()), side: Side::Liability },
+            INSTRUMENT => AccountRef::Instrument(InstrumentId::new(narrow())),
+            UNIT => AccountRef::Unit(id),
+            _ => violation!(clause = "SET.9", "an account code of no kind", code = code),
+        }
+    }
+}
+
 /// What a leg is counted in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Denom {
     Ccy(Ccy),
     Unit(UnitId),
+}
+
+impl Denom {
+    /// The denomination as one number: a currency by its index, a unit by its index above a currency's range.
+    #[must_use]
+    pub fn code(self) -> u32 {
+        match self {
+            Denom::Ccy(c) => u32::from(c.index()),
+            Denom::Unit(u) => (1 << u16::BITS) | u32::from(u.index()),
+        }
+    }
 }
 
 /// What a row leg does to its party's row on a line.
@@ -96,6 +161,8 @@ pub enum RowOp {
     Open(NewRow),
     /// Retires the row; the leg's quantity is its member count.
     Close,
+    /// Adds the leg's quantity to the row's member count.
+    Count,
 }
 
 /// What accounts for a transformation's units: the way that produced them, the deposit they were taken from, or the
@@ -142,10 +209,19 @@ impl LegRec {
         !matches!(self.kind, LegKind::Transformation(_) | LegKind::OpeningWrite { .. })
     }
 
-    /// Whether the leg moves money.
+    /// The code of what the leg moves: its account's, marked as a row's member count for a row opened or retired.
+    #[must_use]
+    pub fn position_code(&self) -> u64 {
+        match self.kind {
+            LegKind::Row(RowOp::Open(_) | RowOp::Close | RowOp::Count) => self.account.code() | ROW_COUNT,
+            _ => self.account.code(),
+        }
+    }
+
+    /// Whether the leg moves money on a money line; banknotes, the other money, move as units of their instrument.
     #[must_use]
     pub fn moves_money(&self) -> bool {
-        matches!(self.denom, Denom::Ccy(_)) && !matches!(self.kind, LegKind::OpeningWrite { .. })
+        matches!(self.kind, LegKind::Money)
     }
 }
 
