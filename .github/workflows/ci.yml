@@ -46,6 +46,23 @@ jobs:
           key: test-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
       - run: cargo test --workspace
 
+  # The world runs in the release profile, whose full optimisation can build code that the debug profile's tests
+  # never see; the same tests run there too.
+  test-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: test-release-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+      - run: cargo test --workspace --release
+
   phx-check:
     runs-on: ubuntu-24.04
     timeout-minutes: 30

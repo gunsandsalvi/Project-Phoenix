@@ -62,7 +62,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_rand.ir_philox_x4"
-value = 852
+value = 682
 direction = "down"
 
 [[ratchet]]

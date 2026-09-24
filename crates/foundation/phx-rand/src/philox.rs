@@ -40,49 +40,10 @@ pub fn philox(ctr: [u32; 4], key: [u32; 2]) -> [u32; 4] {
     c
 }
 
-/// Applies `f` lane by lane over four-lane arrays.
-#[inline]
-fn lanes<A: Copy, B: Copy>(
-    a: [A; BLOCK_WORDS],
-    b: [A; BLOCK_WORDS],
-    f: impl Fn(A, A) -> B,
-    zero: B,
-) -> [B; BLOCK_WORDS] {
-    let mut out = [zero; BLOCK_WORDS];
-    for ((o, x), y) in out.iter_mut().zip(a).zip(b) {
-        *o = f(x, y);
-    }
-    out
-}
-
-/// Four Philox blocks at once, held word by word across the four counters, so each round is the same operation on
-/// four lanes and the compiler can keep each word in one vector register.
+/// Four Philox blocks, each the scalar function's, so the batch cannot differ from it.
 #[must_use]
 pub fn philox_x4(ctrs: [[u32; 4]; BLOCK_WORDS], key: [u32; 2]) -> [[u32; 4]; BLOCK_WORDS] {
-    let mut c0 = ctrs.map(|[w, _, _, _]| w);
-    let mut c1 = ctrs.map(|[_, w, _, _]| w);
-    let mut c2 = ctrs.map(|[_, _, w, _]| w);
-    let mut c3 = ctrs.map(|[_, _, _, w]| w);
-    let mut k = key;
-    for r in 0..PHILOX_ROUNDS {
-        if r > 0 {
-            k = bump(k);
-        }
-        let [k0, k1] = k;
-        let p0 = c0.map(|x| mul_hi_lo(PHILOX_M0, x));
-        let p2 = c2.map(|x| mul_hi_lo(PHILOX_M1, x));
-        let next0 = lanes(p2.map(|(hi, _)| hi), c1, |hi1, w| hi1 ^ w ^ k0, 0);
-        let next2 = lanes(p0.map(|(hi, _)| hi), c3, |hi0, w| hi0 ^ w ^ k1, 0);
-        c1 = p2.map(|(_, lo)| lo);
-        c3 = p0.map(|(_, lo)| lo);
-        c0 = next0;
-        c2 = next2;
-    }
-    let mut out = [[0_u32; 4]; BLOCK_WORDS];
-    for ((((block, w0), w1), w2), w3) in out.iter_mut().zip(c0).zip(c1).zip(c2).zip(c3) {
-        *block = [w0, w1, w2, w3];
-    }
-    out
+    ctrs.map(|ctr| philox(ctr, key))
 }
 
 #[cfg(test)]

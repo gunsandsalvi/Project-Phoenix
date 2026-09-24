@@ -1510,7 +1510,7 @@ positions of defined-benefit rights and DC pots (S4.04).
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test`; `phx-check`; the workspace built for Android; kernel micro-benchmark instruction counts under valgrind, whose ratchets fail CI. The world is not run |
+| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test` in the debug and the release profile; `phx-check`; the workspace built for Android; kernel micro-benchmark instruction counts under valgrind, whose ratchets fail CI. The world is not run |
 
 **The build run** (`tools/build-run.sh`, on the build machine — the development VM, 4 cores and 15 GB — after each
 step's build, from S0.11, the first step with a world; S0.01 to S0.10 have none): fat LTO; the world at the play
