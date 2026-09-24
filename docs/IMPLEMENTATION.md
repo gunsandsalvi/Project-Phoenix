@@ -3834,7 +3834,7 @@ its peak rises by 59 MiB with them.
 
 ### S0.21 — `phx-pop` I: cell tables, keys, positions, steps and profiles
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: REP.1, REP.3 (with S0.14's line records), REP.4, REP.19, REP.20, REP.32, REP.33.
@@ -3999,6 +3999,11 @@ tables implement here.
   - the audit's view listed every cell at each close (now a slice is found by arithmetic over slots);
   - a new cell's landing key read as nought until it was keyed (now keyed as it is added);
   - a position the kind does not hold read as a leading total (now a contract violation).
+
+**Build run** (b208459, `perf/build-run/b2084594af60.json`): settled 2026 and ran to 2 January 2029, 1 098 days
+in 120 s after a 15 s opening, peak 237 MiB, as at S0.20: the world keeps no cell yet. Every live check passes but
+LC-0-29 (the first levy), LC-0-30 to LC-0-32 (the first market) and LC-0-37 and LC-0-38 (the first cell). Twelve
+saves read back to their closes' hashes and the thirteen injections each lit their family alone.
 
 ---
 
