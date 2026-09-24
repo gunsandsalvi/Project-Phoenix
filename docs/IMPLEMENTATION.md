@@ -4416,7 +4416,7 @@ in a batch of eight; how many parts share a cell on a day is measured once the w
 
 ### S0.24 — `phx-pop` IV: tolerance control, promotion, renumbering and the landing index
 
-**Status**: planned
+**Status**: done
 
 **Clauses**:
 - PROCESS: REP.10, REP.28, REP.39; REP.29 *(part: promotion and demotion by rank; promotion on a sale decision is
@@ -4576,6 +4576,12 @@ in a batch of eight; how many parts share a cell on a day is measured once the w
     with room inline (now not);
   - the lone part rising 2% with the real index in place of the ordered map that stood in for it, whose ratchet
     rises with the owner's review.
+
+**Build run** (0e568de, `perf/build-run/0e568de5cbc9.json`): settled 2026 and ran to 2 January 2029, 1 098 days
+in 119 s after a 16 s opening, peak 232 MiB, the same world as at S0.23: no cell is kept yet, so the day's tolerance
+control, rank read and renumbering have nothing to act on. Every live check passes but LC-0-29, LC-0-30 to LC-0-32
+and LC-0-37 to LC-0-50 (the first cell). Twelve saves read back to their closes' hashes and the thirteen injections
+each lit their family alone.
 
 ---
 
