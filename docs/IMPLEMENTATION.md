@@ -4589,7 +4589,28 @@ each lit their family alone.
 
 ### S0.25 — GEN II and the population: households and small firms, the opening lines paying, `sys-dem` and `sys-est`
 
-**Status**: planned
+**Status**: building
+
+**Sub-steps** (the owner's decision, §12): S0.25 is built in five sub-steps, in order, each with its own two reviews
+and build run, and marked here as it is done. The clause map names S0.25, which completes with the last.
+- **S0.25a — the world keeps cells** (building): the cell tables in the books beside the kind tables; the world's
+  population state (keys, landing indexes, levels, members counted by event, the agenda) saved, hashed and handed to
+  the opening; the Representation family over the real cells; processes on cells declared (`PopProcess`) and run —
+  1b's agenda, 3b's screening, 3e's outcomes, 10b's landing with re-keying, tolerance control, the monthly rank read
+  and the light days' narrowing and renumbering — with the counters. Its build run has no cell yet.
+- **S0.25b — the population's data**: the sources fetched and derived into the country groups' profiles and the
+  declared distributions (life tables and the age structure, household composition, tenure, income and wealth,
+  education and occupation, deposits and loans, pensions, kin), each in the inventory with its mapping; the gaps'
+  proxies as the owner decided (§12).
+- **S0.25c — households and demography**: `if-pop`, `sys-dem`'s kinds, roles, keys, profiles and positions; the two
+  canonical passes and the apportionment of banking arrangements; mortality, illness and ageing as processes; deaths
+  as events. LC-0-37 to LC-0-52 and LC-0-54 apply.
+- **S0.25d — lines paying**: employment, tenancy and the dwelling stock, deposits and loans, small firms as cells,
+  and pensions in payment (`sys-lab`, `sys-hsg`, `sys-bnk`, `sys-frm`, `sys-soc`, `sys-pen`), paying by their terms
+  through pooled flows. LC-0-55 and LC-0-56 apply.
+- **S0.25e — estates and the settled world**: `sys-est`, catastrophes' losses at owners (GEO.8), settling, LC-0-53;
+  the step's reviews and its build run.
+
 
 **Clauses**:
 - STATE: PTY.2, PTY.3, PTY.5; POP.1 *(part: the roles of Stage 0)*, POP.2 *(part)*; FRM.23 *(part:
