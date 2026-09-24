@@ -15632,6 +15632,10 @@ the final build within the budget on the phone.
 | The part ratchets after S0.24 | accepted as committed in 196d00a: the lone part 181 991 and the ten-member part 263 968 instructions (the real landing index's lookup), the batch of eight 524 975 and the widening sweep 42 375 363 (CI's counts) | 2026-09-24 |
 | S0.25's size | split into sub-steps, each with its own reviews and build run | 2026-09-24 |
 | The build run's length | an ordinary step's 120 days from day zero; a stage gate's settled and run two years, since the full population's opening and settling on the build machine take about an hour | 2026-09-24 |
+| State pensions' rules (S0.25b) | each group's pension age and replacement rate from its members in OECD Pensions at a Glance, the developing group's from India pooled with the eight emerging members, recorded as an assumption; who receives one from the ILO's SDG 1.3.1 coverage for every group | 2026-09-24 |
+| Illness and disability onset (S0.25b) | derived from prevalence by age by a declared mapping: lasting disability's onset from the rise in prevalence between age bands, recorded with its assumptions; short spells wait for a source | 2026-09-24 |
+| Kin (S0.25b) | a parent's living children from WPP's cohort fertility and survival for its birth year, less those the UN data show co-resident; the rest live elsewhere, by age and region | 2026-09-24 |
+| Groups without data (S0.25b) | WID used as published, its imputation being its published method; any other value a group lacks (mortgages, rents, job tenure and the like) from its relationship with GDP per head fitted across the countries that have it, recorded as a declared mapping with its fit | 2026-09-24 |
 | Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
 
 ---

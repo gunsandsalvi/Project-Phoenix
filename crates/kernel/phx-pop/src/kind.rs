@@ -1,4 +1,4 @@
-use phx_core::{
+use phx_core::{ResolutionDecl, 
     GroupDecl, KeyAttrDecl, KinkRegistry, PinDecl, PopEntry, PopItem, PositionDecl, PositionOf, ProfileComponent,
     RateDecl, RoleDecl, ScaleRef,
 };
@@ -61,6 +61,8 @@ pub struct PopKindDecl {
     pub reviews: Vec<Declared<&'static str>>,
     pub pins: Vec<Declared<PinDecl>>,
     pub sig: SigLayout,
+    /// How the kind is represented, which the world requires of every kind it keeps.
+    pub resolution: Option<Declared<ResolutionDecl>>,
 }
 
 /// Every item of one kind, sorted into its lists.
@@ -73,6 +75,7 @@ struct Items {
     groups: Vec<Declared<GroupDecl>>,
     reviews: Vec<Declared<&'static str>>,
     pins: Vec<Declared<PinDecl>>,
+    resolution: Option<Declared<ResolutionDecl>>,
 }
 
 fn name_of(item: &PopItem) -> &'static str {
@@ -84,6 +87,7 @@ fn name_of(item: &PopItem) -> &'static str {
         PopItem::ProfileGroup(g) => g.name,
         PopItem::ReviewKind(d) => d,
         PopItem::Pin(p) => p.name,
+        PopItem::Resolution(_) => "resolution",
     }
 }
 
@@ -107,6 +111,7 @@ impl Items {
                 PopItem::ProfileGroup(item) => items.groups.push(Declared { writer, item }),
                 PopItem::ReviewKind(item) => items.reviews.push(Declared { writer, item }),
                 PopItem::Pin(item) => items.pins.push(Declared { writer, item }),
+                PopItem::Resolution(item) => items.resolution = Some(Declared { writer, item }),
             }
         }
         items.roles.sort_by_key(|d| d.item.name);
@@ -265,6 +270,7 @@ impl PopKindDecl {
                 reviews: items.reviews,
                 pins: items.pins,
                 sig,
+                resolution: items.resolution,
             }),
             Ok(_) => Err(errors),
             Err(e) => {

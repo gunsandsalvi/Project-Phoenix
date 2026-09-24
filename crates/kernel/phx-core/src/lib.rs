@@ -78,7 +78,7 @@ pub use phx_macros::{
     declare_message, declare_prim, declare_record, declare_rule, declare_stream,
 };
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
-pub use pop::{
+pub use pop::{RankDecl, ResolutionDecl, 
     GroupDecl, KeyAttrDecl, PinDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, PositionOf, ProfileComponent,
     RateDecl, RoleDecl, ScaleRef,
 };

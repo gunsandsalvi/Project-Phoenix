@@ -83,6 +83,27 @@ pub struct PinDecl {
     pub clause: &'static str,
 }
 
+/// The ranks a kind's parties are read by each month: the position whose per-member value ranks them, and the
+/// primitives holding the promotion rank and the lower rank an individual must fall below to rejoin the cells.
+#[clause("REP.29", "REP.2")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RankDecl {
+    pub measure: &'static str,
+    pub promote: &'static str,
+    pub demote: &'static str,
+}
+
+/// How a kind is represented, each a RESOLUTION primitive the kind names: its cell budget; its ranks, if its parties
+/// are ranked; and the order its positions widen in when their gaps tie.
+#[clause("REP.4", "REP.18", "REP.28")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ResolutionDecl {
+    pub cell_budget: &'static str,
+    pub ranks: Option<RankDecl>,
+    pub widen_order: &'static [&'static str],
+    pub clause: &'static str,
+}
+
 /// One item of a population kind.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PopItem {
@@ -94,6 +115,7 @@ pub enum PopItem {
     /// A lumpy decision's point, reviewed by the kind's members on their own exposure.
     ReviewKind(&'static str),
     Pin(PinDecl),
+    Resolution(ResolutionDecl),
 }
 
 /// An item as declared: the system that declared it, which writes it, and the kind it belongs to.
@@ -149,5 +171,9 @@ impl<'a> PopKindBuilder<'a> {
 
     pub fn pin(&mut self, decl: PinDecl) -> &mut Self {
         self.add(PopItem::Pin(decl))
+    }
+
+    pub fn resolution(&mut self, decl: ResolutionDecl) -> &mut Self {
+        self.add(PopItem::Resolution(decl))
     }
 }
