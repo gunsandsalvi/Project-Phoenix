@@ -335,6 +335,12 @@ impl<B: Backing> CellTable<B> {
         self.table.slots.live_slots()
     }
 
+    /// The live bits of its rows, a row to a bit.
+    #[must_use]
+    pub fn live_words(&self) -> &[u64] {
+        self.table.slots.live_words()
+    }
+
     pub fn party(&self, slot: Slot) -> PartyId {
         self.live(slot);
         PartyId::new(read(&self.party, slot))

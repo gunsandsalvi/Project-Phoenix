@@ -142,8 +142,8 @@ impl<B: Backing> PayerPositions for CellTable<B> {
 }
 
 impl<B: Backing> HolderTable for CellTable<B> {
-    fn live(&self) -> Box<dyn Iterator<Item = Slot> + '_> {
-        Box::new(self.slots())
+    fn live_words(&self) -> &[u64] {
+        self.live_words()
     }
 }
 

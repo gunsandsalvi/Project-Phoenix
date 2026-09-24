@@ -92,13 +92,14 @@ impl<B: Backing> HolderArenas for KindTable<B> {
 /// A holder table as the books keep it: its arenas, what the pooled-flow rule reads of its payers, and its live rows.
 /// The kind tables of individuals are one; the population's cell tables are the other, known here only by it.
 pub trait HolderTable: HolderArenas + crate::positions::PayerPositions {
-    /// The live rows, in slot order.
-    fn live(&self) -> Box<dyn Iterator<Item = Slot> + '_>;
+    /// The live bits, a row to a bit; `phx_store::table::live_in` reads them as the live rows in slot order, with
+    /// no call through the table per row.
+    fn live_words(&self) -> &[u64];
 }
 
 impl<B: Backing> HolderTable for KindTable<B> {
-    fn live(&self) -> Box<dyn Iterator<Item = Slot> + '_> {
-        Box::new(self.slots())
+    fn live_words(&self) -> &[u64] {
+        self.live_words()
     }
 }
 

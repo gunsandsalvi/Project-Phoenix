@@ -254,7 +254,7 @@ impl<B: Backing> Books<B> {
         let mut out = DayRecords::default();
         for place in self.parties.places() {
             let table = self.parties.holder(place);
-            for slot in table.live() {
+            for slot in phx_store::table::live_in(table.live_words()) {
                 out.heads_read += 1;
                 let Some((rows, read)) = runs::due_rows(table, slot, day, due) else { continue };
                 out.scanned.push((place, slot));

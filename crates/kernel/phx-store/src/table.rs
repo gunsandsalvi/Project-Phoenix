@@ -128,17 +128,13 @@ impl<B: Backing> SlotAlloc<B> {
 
     /// Live slots in ascending order, a word of the live bits at a time.
     pub fn live_slots(&self) -> impl Iterator<Item = Slot> + '_ {
-        let words = self.live.slice(to_usize(self.high.div_ceil(BITS)));
-        (0_u32..).zip(words.iter()).flat_map(|(w, bits)| {
-            let mut rest = *bits;
-            std::iter::from_fn(move || {
-                (rest != 0).then(|| {
-                    let bit = rest.trailing_zeros();
-                    rest &= rest - 1;
-                    Slot::new(w * BITS + bit)
-                })
-            })
-        })
+        live_in(self.live_words())
+    }
+
+    /// The live bits, a slot to a bit, as far as the high water.
+    #[must_use]
+    pub fn live_words(&self) -> &[u64] {
+        self.live.slice(to_usize(self.high.div_ceil(BITS)))
     }
 }
 
@@ -262,6 +258,20 @@ impl<B: Backing> crate::save::Saved for Table<B> {
         }
         Ok(Table { id, max_rows, rows_per_chunk, slots })
     }
+}
+
+/// The live slots a table's live bits mark, in ascending order.
+pub fn live_in(words: &[u64]) -> impl Iterator<Item = Slot> + '_ {
+    (0_u32..).zip(words.iter()).flat_map(|(w, bits)| {
+        let mut rest = *bits;
+        std::iter::from_fn(move || {
+            (rest != 0).then(|| {
+                let bit = rest.trailing_zeros();
+                rest &= rest - 1;
+                Slot::new(w * BITS + bit)
+            })
+        })
+    })
 }
 
 #[cfg(test)]

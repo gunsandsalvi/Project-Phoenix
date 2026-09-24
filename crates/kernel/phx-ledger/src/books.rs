@@ -474,7 +474,7 @@ impl<B: Backing> Books<B> {
     fn relist(&mut self) {
         let Books { ledger, parties, .. } = self;
         for (place, table) in (0_u16..).zip(parties.holders()) {
-            for slot in table.live() {
+            for slot in phx_store::table::live_in(table.live_words()) {
                 for (instrument, _) in crate::holding::bases(table, slot) {
                     ledger.instruments.relist(place, slot, instrument);
                 }

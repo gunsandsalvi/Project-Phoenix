@@ -606,9 +606,9 @@ pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -
 pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_core::kind_tables::KindTable<B>::table(&self) -> phx_id::ids::TableId
 pub trait phx_ledger::holder::HolderTable: phx_ledger::holder::HolderArenas + phx_ledger::positions::PayerPositions
-pub fn phx_ledger::holder::HolderTable::live(&self) -> alloc::boxed::Box<(dyn core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_)>
+pub fn phx_ledger::holder::HolderTable::live_words(&self) -> &[u64]
 impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderTable for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::live(&self) -> alloc::boxed::Box<(dyn core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_)>
+pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
 pub mod phx_ledger::holding
 pub enum phx_ledger::holding::LotOrder
 pub phx_ledger::holding::LotOrder::FirstIn

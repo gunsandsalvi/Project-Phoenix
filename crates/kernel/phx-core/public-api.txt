@@ -777,6 +777,7 @@ pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_c
 pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
 pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
+pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
@@ -2664,6 +2665,7 @@ pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_c
 pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
 pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
+pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)

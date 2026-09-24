@@ -113,7 +113,7 @@ impl<B: Backing> Books<B> {
         let (mut read, mut broken) = (0_u64, 0_u64);
         for place in self.parties.places() {
             let table = self.parties.holder(place);
-            for slot in table.live().filter(|s| s.get() % RUN_SAMPLE_PERIOD == day.get() % RUN_SAMPLE_PERIOD) {
+            for slot in phx_store::table::live_in(table.live_words()).filter(|s| s.get() % RUN_SAMPLE_PERIOD == day.get() % RUN_SAMPLE_PERIOD) {
                 let t = runs::truth(table, slot, day, due, &self.ledger.lines);
                 read += 1;
                 if !t.holds || (t.due > 0 && !scanned.contains(&(place, slot))) {

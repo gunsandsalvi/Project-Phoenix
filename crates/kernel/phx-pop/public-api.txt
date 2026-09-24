@@ -620,6 +620,7 @@ pub fn phx_pop::table::CellTable<B>::is_live(&self, phx_id::ids::Slot) -> bool
 pub fn phx_pop::table::CellTable<B>::kind(&self) -> &'static str
 pub fn phx_pop::table::CellTable<B>::landing(&self, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &[u8]) -> u64
 pub fn phx_pop::table::CellTable<B>::list(&self, phx_id::ids::Slot, phx_pop::table::CellList) -> phx_store::arena::ListRef
+pub fn phx_pop::table::CellTable<B>::live_words(&self) -> &[u64]
 pub fn phx_pop::table::CellTable<B>::make_individual(&mut self, phx_id::ids::Slot)
 pub fn phx_pop::table::CellTable<B>::new(&mut phx_store::backing::AddressSpace, &phx_pop::kind::PopKindDecl, phx_id::ids::TableId, u32, u32) -> phx_pop::table::CellTable<B>
 pub fn phx_pop::table::CellTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
@@ -672,7 +673,7 @@ pub fn phx_pop::table::CellTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_c
 pub fn phx_pop::table::CellTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_pop::table::CellTable<B>::table(&self) -> phx_id::ids::TableId
 impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderTable for phx_pop::table::CellTable<B>
-pub fn phx_pop::table::CellTable<B>::live(&self) -> alloc::boxed::Box<(dyn core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_)>
+pub fn phx_pop::table::CellTable<B>::live_words(&self) -> &[u64]
 impl<B: phx_store::backing::Backing> phx_ledger::positions::PayerPositions for phx_pop::table::CellTable<B>
 pub fn phx_pop::table::CellTable<B>::kinks_into(&self, phx_id::ids::Slot, &mut alloc::vec::Vec<phx_ledger::pooled::Kink>)
 pub fn phx_pop::table::CellTable<B>::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
