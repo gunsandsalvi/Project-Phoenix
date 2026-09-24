@@ -385,7 +385,10 @@ def income_wealth(level: str, members: set, m: dict) -> list:
                f"WID {variable}, equal-split adults, from {fetched(m, 'wid_shares')}. The body's median is one; the "
                f"mapping keeps the exponent and the top's start at the body's 90th percentile, solves the body's "
                f"sigma so that the whole distribution's {'Gini' if what == 'income' else 'top tenth share'} is the "
-               f"country's drawn {drawn}, and scales it to the country's mean.")
+               f"country's drawn {drawn}, and scales it to the country's mean."
+               + (" The drawn Gini is the World Bank's, from surveys of disposable income or consumption, where WID's "
+                  "shares are of pre-tax income: the mapping takes the shape from one and the level from the other."
+                  if what == "income" else ""))
         out.append(entry(pid, "ENDOWMENT", "DEM", "measured", ref,
                          f'{{ family = "lognormal_pareto_tail", discretisation = "equal_shares", mu = "0", '
                          f'sigma = "{num(sigma)}", threshold = "{num(threshold)}", alpha = "{num(alpha)}" }}'))
@@ -441,13 +444,14 @@ def employment(level: str, members: set, m: dict) -> list:
         cols = []
         for sex in ("F", "M"):
             x = d[d.sex == sex].pivot_table(index="iso3", columns="class", values="employed").reindex(columns=classes)
-            x = x.fillna(0).div(x.fillna(0).sum(axis=1), axis=0)
+            x = x.div(x.sum(axis=1), axis=0)
             med = x.median()
             cols.append((med / med.sum()).to_numpy())
         n = d.iso3.nunique()
         ref = (f"Share of the employed by {what}, by sex (columns: female, male): the median over the group's {n} "
-               f"economies of each share at their latest survey or census 2010-2025 (a class it does not report "
-               f"counted as none), the medians rescaled to sum to one, from {fetched(m, 'ilo_employment')}. The "
+               f"economies of each share of the employed its classes cover at their latest survey or census "
+               f"2010-2025 (a class an economy does not report left out of that class's median, not read as none), the "
+               f"medians rescaled to sum to one, from {fetched(m, 'ilo_employment')}. The "
                f"group's standard at every drawn value.")
         out.append(entry(pid, "ENDOWMENT", "LAB", "measured", ref,
                          table2([int(c) for c in classes], [0, 1], np.column_stack(cols), "refuse")))

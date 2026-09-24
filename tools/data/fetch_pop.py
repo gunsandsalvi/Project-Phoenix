@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Fetches the published data the opening population is derived from, into data/sources/raw/.
 
-The sources surveyed in data/sources/notes/population-sources.md, each kept as a compact CSV of the rows the
-derivation reads, with its release and download date in the manifest beside fetch.py's. The files are committed, so
+Each source is kept as a compact CSV of the rows the derivation reads, with its release and download date in the manifest beside fetch.py's. The files are committed, so
 tools/data/derive_pop.py reruns without the network.
 
     python3 tools/data/fetch_pop.py [--cache DIR] [--only NAME ...]

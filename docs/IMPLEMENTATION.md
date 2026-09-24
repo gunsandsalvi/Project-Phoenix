@@ -216,6 +216,9 @@ data/world.toml                 world constants: epoch, total population, map, t
 data/setup/default.toml         the default new game: population split and each country's choices and name (GEN.14)
 data/profiles/                  country-group profile tables and each choice's ranges by level, with sources (GEN.15)
 data/profiles/<level>/<SYS>.toml  a development level's template of each system's primitives and mappings
+data/profiles/<level>/gen/<SYS>.toml  its template of each system's opening distributions and the technology they
+                                rest on (life tables, health hazards), derived by tools/data/derive_pop.py
+data/sources/raw/               the published series the profiles are derived from, with their manifest
 data/names/                     real countries' institution and currency names, and the name generator's lists
 data/shared/<SYS>.toml          primitives common to all countries
 data/<country>/<SYS>.toml       one country's primitives, instantiated at a new game from its level's template and
@@ -230,8 +233,10 @@ docs/                           the spec, the architecture, this file
 ```
 
 A step's **Files** row naming `data/<country>/<SYS>.toml` or `data/<country>/gen/<SYS>.toml` commits that system's
-templates in `data/profiles/<level>/`, one per development level, with their sources; each country's file is
-instantiated from them at a new game (S0.27) and never committed.
+templates in `data/profiles/<level>/` or `data/profiles/<level>/gen/`, one per development level, with their sources;
+each country's file is instantiated from them at a new game (S0.27) and never committed. A new game copies a
+level's `gen/` templates only once a system declares what they hold, since the register refuses an entry no system
+declares.
 
 ### 2.2 Inside a crate
 
@@ -4614,10 +4619,39 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     injection reach a cell.
   - Build run (`989384647c9a`, 120 days from day zero): clean, no finding, peak 208 MiB. No system declares a
     population kind or a process yet, so the world is S0.24's and LC-0-37 to LC-0-50 read "not yet".
-- **S0.25b — the population's data**: the sources fetched and derived into the country groups' profiles and the
+- **S0.25b — the population's data** (done): the sources fetched and derived into the country groups' profiles and the
   declared distributions (life tables and the age structure, household composition, tenure, income and wealth,
   education and occupation, deposits and loans, pensions, kin), each in the inventory with its mapping; the gaps'
   proxies as the owner decided (§12).
+  As built:
+  - `tools/data/fetch_pop.py` fetches beside `fetch.py`, into `data/sources/raw/` with the same manifest: WPP 2024
+    (2023's life tables by sex, population by single age and sex, fertility by age 1950-2023, under-five mortality and
+    the sex ratio at birth); ILOSTAT (disability by sex and age band; employment by ISCO-08 group and by ICSE-93
+    status; SDG 1.3.1 coverage); the UN DESA household and older persons' databases 2026; WID's income and wealth
+    shares; the Wittgenstein Centre's attainment by age and sex; the OECD Affordable Housing Database, Eurostat,
+    ECLAC and DHS tenure; Findex; Pensions at a Glance; the GFDD's pension fund assets;
+  - `tools/data/derive_pop.py` writes each level's `data/profiles/<level>/gen/{DEM,HH,LAB,HSG,BNK,SOC,PEN}.toml`, each
+    entry a register value type (tables, distributions) with its source and mapping in `source_ref`: the Brass logit
+    survival standard solved to the drawn life expectancy; the age standard raked to the drawn shares under 15 and
+    over 65; disability prevalence and its onset (the owner's mapping); households by type and size as log ratios on
+    the drawn fertility (one Theil-Sen slope, each group's intercept); older persons' arrangements; living children
+    by parent's and child's age (the owner's kin mapping); income and wealth as a lognormal body with a Pareto top,
+    solved to the drawn Gini and top tenth's share; education by age and sex; occupation and status shares;
+    tenure, housing costs, accounts and borrowing, and occupational pensions' share of old-age income as logits on
+    log GDP per head (the group's median where ten of its economies report it, otherwise the owner's fit across
+    all); the state pension's age and replacement rate (the developing group pooled with the emerging members, the
+    owner's decision) and old-age and disability benefit coverage; pension funds' assets;
+  - `derive.py` adds GEN.home_ownership to the joint profile from the owner's order of sources (F-008), so a new
+    game's draws of every value move with it;
+  - the world reads no `gen/` file until S0.25c's systems declare them; `data/inventory.toml` names each with its
+    status, and F-035 lists what the sources leave thin.
+  - Reviews (the builder's two): a class an economy's labour survey does not report was read as none, now left out
+    of that class's median; the income mapping says the drawn Gini is of disposable income or consumption while
+    WID's shape is pre-tax; the scripts' docstrings name no document. Education, occupation, status, disability,
+    older persons and kin are each group's standard at every drawn value, which the spec allows (their shapes from
+    published work, no parameter read from a derived value).
+  - Build run (`e2ccc95774c9`, 120 days): clean, no finding, peak 208 MiB, with GEN.home_ownership drawn in each
+    country's profile; the world reads no population table yet.
 - **S0.25c — households and demography**: `if-pop`, `sys-dem`'s kinds, roles, keys, profiles and positions; the two
   canonical passes and the apportionment of banking arrangements; mortality, illness and ageing as processes; deaths
   as events. LC-0-37 to LC-0-52 and LC-0-54 apply.
@@ -15604,6 +15638,7 @@ the final build within the budget on the phone.
 | F-032 | S0.24 | build, 2026-09-24 | A widening sweep costs 42 000 instructions a cell over a thousand synthetic cells (`phx_pop.ir_widen_sweep`), against 300 ns a cell and the joins | every cell's step vector is recomputed from its totals, about 8 000 instructions a cell, and the cells a widening unites join as whole parts, detaching and attaching every row | judged on the phone at S0.26; the remedy of N8.7 first: the base steps kept per cell so a widening shifts them, and whole-cell joins made in place | open |
 | F-033 | S0.24 | build, 2026-09-24 | A rank read costs 1 174 instructions a row (`phx_pop.ir_rank_read`), against 2 ns a row and 5 ms a month for about a million rows | rows are gathered with their identities before the histogram, and ties at the edge draw a hypergeometric per edge cell | judged on the phone at S0.26; the read runs once a month, so its cost is at most one day's | open |
 | F-034 | S0.24 | build, 2026-09-24 | A gap estimate costs 33 000 instructions a sampled cell over thirty positions (`phx_pop.ir_gap_estimate`), about 330 ms for the design's 10⁴ samples against 20 ms | each position's partner key is hashed from the whole step vector again and looked up in the index | judged on the phone at S0.26; the landing key updated for one changed step, and the sample sized to the budget (REP.18) | open |
+| F-035 | S0.25b | derivation, 2026-09-24 | The population's sources leave the emerging and developing groups thin where the owner's fit to GDP per head stands in: owners with a mortgage, subsidised tenants, mortgage and rent burdens and occupational pensions' share of old-age income are fitted over economies of GDP per head from about $16 000 to $131 000 (PPP) and read at the groups' $5 000 to $17 000, where they extrapolate (subsidised tenants among 70-95% of tenants; occupational pensions rising as incomes fall); the developing group's home ownership rests on the DHS share of adults 15-49 owning any house, not households owning theirs; WID imputes almost all emerging and developing wealth; and no source gives a mortgage's rate or remaining term, a defined-benefit pension's spread, indexation or survivors' share, the defined-benefit share of pension assets, short spells of illness, or adult children living elsewhere | missing data: the published sources cover OECD and European economies | the owner: a source for each (candidates: national household finance surveys, the ECB's HFCS tables, SSA/ISSA's Social Security Programs Throughout the World from another network, IPUMS microdata), or the fits kept as declared; judged before S0.25c draws the lines that read them | open |
 
 ---
 

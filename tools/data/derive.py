@@ -90,8 +90,8 @@ DEGREES = ["low", "medium", "high"]
 
 
 def home_ownership() -> pd.DataFrame:
-    """Each economy's share of households owning their home, from the best source it has, in the owner's order
-    (plan section 12): the OECD Affordable Housing Database's owners outright and with a mortgage (households);
+    """Each economy's share of households owning their home, from the best source it has, in the owner's order:
+    the OECD Affordable Housing Database's owners outright and with a mortgage (households);
     ECLAC's owners (households); Eurostat's persons in owner households; and, for economies with none of these, the
     DHS surveys' share of adults 15-49 owning a house alone or jointly, the mean of women's and men's where both are
     surveyed, a person-level proxy for household ownership."""
