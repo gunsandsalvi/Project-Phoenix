@@ -95,7 +95,7 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
 /// The world's books opened from the setup's countries, their people and their currencies' units.
 fn open(
     d: &mut Declarations,
-    pop: &[phx_pop::kind::PopKindDecl],
+    pop: &[phx_pop::population::KindSetup],
     kernel: &KernelPrims,
     c: &crate::compile::Compiled,
     game: &NewGame,
@@ -152,15 +152,17 @@ fn open_accounts(
     phx_acct::accounts::Accounts::open(permitted, forms, &owned, books, &ccy_of, period_of(&c.calendar, c.day_zero))
 }
 
-/// The families of the kernel crates that keep the world's map, books, markets, accounts and cells, over what they
-/// read.
-fn crate_families(countries: usize) -> Vec<Box<dyn phx_core::AuditFamily>> {
+/// The families of the kernel crates that keep the world's map, books, markets and accounts, over what they read, and
+/// the cells' where the world keeps a population kind, since only then can the family's injection reach a cell.
+fn crate_families(countries: usize, cells: bool) -> Vec<Box<dyn phx_core::AuditFamily>> {
     let mut families: Vec<Box<dyn phx_core::AuditFamily>> =
         vec![Box::new(phx_geo::audit::Places { countries }), Box::new(phx_geo::audit::Deposits)];
     families.extend(phx_ledger::audit::families());
     families.push(Box::new(phx_market::audit::Prices));
     families.extend(phx_acct::audit::families());
-    families.push(Box::new(phx_pop::audit::Representation));
+    if cells {
+        families.push(Box::new(phx_pop::audit::Representation));
+    }
     families
 }
 
@@ -170,8 +172,10 @@ struct Prepared {
     game: NewGame,
     levels: Vec<CountryEntry>,
     d: Declarations,
-    /// Each population kind compiled from the systems' items, in the order their tables follow the kind tables.
-    pop: Vec<phx_pop::kind::PopKindDecl>,
+    /// Each population kind compiled from the systems' items and its settings, in the order their tables follow the
+    /// kind tables, and the processes on their members.
+    pop: Vec<phx_pop::population::KindSetup>,
+    processes: Vec<crate::cells::Bound>,
     h: HandlerTable,
     kernel: KernelPrims,
     c: Compiled,
@@ -195,15 +199,17 @@ struct State {
 }
 
 /// The population kinds the systems declare, each compiled from every system's items for it, its positions cut into
-/// the steps of the partitions they name.
+/// the steps of the partitions they name, with its settings and the processes on its members.
 fn population_kinds(
-    d: &Declarations,
+    d: &mut Declarations,
     register: &phx_core::Register,
-) -> Result<Vec<phx_pop::kind::PopKindDecl>, Vec<String>> {
+    rep: &phx_pop::prims::RepPrims,
+) -> Result<(Vec<phx_pop::population::KindSetup>, Vec<crate::cells::Bound>), Vec<String>> {
     let kinds: Vec<&'static str> =
         d.kinds.iter().filter(|(_, k)| k.table == phx_core::KindTableRef::Cells).map(|(_, k)| k.name).collect();
     let steps = |name: &'static str| register.partition(name).and_then(phx_pop::steps::StepTable::new);
-    phx_pop::population::Population::compile(&kinds, &d.pop, &d.kinks, &steps)
+    let decls = phx_pop::population::Population::compile(&kinds, &d.pop, &d.kinks, &steps)?;
+    crate::cells::bind(d, register, rep, decls)
 }
 
 /// The data's content, which a save names so that a load over other data is refused.
@@ -253,17 +259,17 @@ fn prepare(
         return Err(AssemblyErrors(errors));
     };
     errors.extend(unlawful_kinds(&d, &kernel, &c.register));
-    let pop = match population_kinds(&d, &c.register) {
-        Ok(pop) => pop,
+    let (pop, processes) = match population_kinds(&mut d, &c.register, &kernel.rep) {
+        Ok(bound) => bound,
         Err(e) => {
             errors.extend(e);
-            Vec::new()
+            (Vec::new(), Vec::new())
         }
     };
     if !errors.is_empty() {
         return Err(AssemblyErrors(errors));
     }
-    Ok(Prepared { game, levels, d, pop, h, kernel, c, entries, register_hash: data_hash(&files) })
+    Ok(Prepared { game, levels, d, pop, processes, h, kernel, c, entries, register_hash: data_hash(&files) })
 }
 
 /// Every name the build declares that a store keeps: kinds, record kinds, streams, decision points, the audit's
@@ -297,7 +303,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let State { geo, tables, books, population, markets, accounts, records, events, carried, run, space } = s;
     let mut families = kernel_families();
     families.extend(std::mem::take(&mut p.d.families).into_iter().map(|(_, f)| f));
-    families.extend(crate_families(p.game.countries.len()));
+    families.extend(crate_families(p.game.countries.len(), !p.pop.is_empty()));
     let mut audit = Audit::new(families).map_err(AssemblyErrors)?;
     audit.resume(records.len(), events.len());
     let decls: Vec<phx_core::FamilyDecl> = audit.families().collect();
@@ -321,6 +327,8 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     if !unkept.is_empty() {
         return Err(AssemblyErrors(unkept));
     }
+    let kinks = crate::cells::FacilityKinks::of(&books.ledger);
+    let rank_day = p.kernel.rep.rank_day.shared(&p.c.register).get();
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
     Ok(World {
@@ -341,6 +349,13 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         settling_years,
         books,
         population,
+        processes: std::mem::take(&mut p.processes),
+        cell_hits: Vec::new(),
+        cell_parts: Vec::new(),
+        cell_flagged: Vec::new(),
+        cell_day: crate::cells::CellDay::of(carried.today),
+        kinks,
+        rank_day,
         markets,
         accounts,
         report: run.report,
@@ -464,7 +479,7 @@ pub fn load(
         .iter()
         .map(|f| f.decl())
         .chain(p.d.families.iter().map(|(_, f)| f.decl()))
-        .chain(crate_families(p.game.countries.len()).iter().map(|f| f.decl()))
+        .chain(crate_families(p.game.countries.len(), !p.pop.is_empty()).iter().map(|f| f.decl()))
         .collect();
     let names = names(&p.d, &families, &tables, &declared);
     let mut declared = Some(declared);
@@ -474,8 +489,10 @@ pub fn load(
     })
     .map_err(one)?;
     let mut books = books;
-    let mut population = phx_pop::population::Population::new(p.pop.clone(), books.parties.first_cell_place());
-    read_file(dir, "population", &names, &mut |r| population.load_from(r)).map_err(one)?;
+    let first = books.parties.first_cell_place();
+    let mut space_pop = AddressSpace::empty();
+    let mut population = phx_pop::population::Population::new(p.pop.clone(), first, p.c.day_zero, &mut space_pop);
+    read_file(dir, "population", &names, &mut |r| population.load_from(r, &mut space_pop)).map_err(one)?;
     population.restore::<phx_store::SystemBacking>(books.parties.cells_mut().0);
     let markets = read_file(dir, "markets", &names, &mut |r| phx_store::Saved::load(r)).map_err(one)?;
     let (permitted, forms) = standard(&p.d, &p.kernel, &p.c);
@@ -483,7 +500,7 @@ pub fn load(
         phx_acct::accounts::Accounts::load_from(r, permitted.clone(), forms.clone())
     })
     .map_err(one)?;
-    let mut space = AddressSpace::empty();
+    let mut space = space_pop;
     let record_kinds: Vec<phx_core::RecordKindDecl> = p.d.records.iter().map(|(_, r)| *r).collect();
     let records = read_file(dir, "records", &names, &mut |r| {
         let store = RecordStore::load_from(r, record_kinds.clone())?;

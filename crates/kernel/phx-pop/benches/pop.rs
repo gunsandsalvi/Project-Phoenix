@@ -235,7 +235,7 @@ fn ir_renumber(
     let lv = levels();
     let mut index = std::mem::take(&mut dp.index);
     let swaps = renumber::plan(&dp.tenb(&NoKinks, &lv), 0..usize::MAX);
-    renumber::apply(&mut dp.tenb(&NoKinks, &lv), &mut index, &mut agenda, &swaps);
+    renumber::apply(&mut dp.tenb(&NoKinks, &lv), &mut index, Some(&mut agenda), &swaps);
     black_box(swaps.len());
     dp.index = index;
     (dp, agenda)

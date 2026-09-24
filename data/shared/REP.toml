@@ -1,0 +1,27 @@
+# The representation's resolution settings shared by every population kind (spec REP.18): how many cells the decision
+# gap's estimate samples, the share of the budget below which tolerances narrow, and the day of each month ranks are
+# read. Each kind's own cell budget and ranks are its own system's.
+
+[[primitive]]
+id = "REP.gap_sample"
+kind = "RESOLUTION"
+owner = "REP"
+source = "assumed"
+source_ref = "Resolution (spec REP.39): 256 sampled cells a read, enough that a position whose widening would unite one cell in a hundred with a partner is found in about nine reads in ten; set by measurement at the gate (N8.5)."
+value = 256
+
+[[primitive]]
+id = "REP.narrow_share"
+kind = "RESOLUTION"
+owner = "REP"
+source = "assumed"
+source_ref = "Resolution (spec REP.28): tolerances narrow on light days while the cells carried are below nine tenths of the budget, so a narrowing leaves room before widening is needed again; set by measurement at the gate (N8.5)."
+value = 0.90
+
+[[primitive]]
+id = "REP.rank_day"
+kind = "RESOLUTION"
+owner = "REP"
+source = "assumed"
+source_ref = "Resolution (spec REP.29): ranks are read on the first day of each month."
+value = 1

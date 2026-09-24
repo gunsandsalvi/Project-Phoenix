@@ -1,3 +1,4 @@
+pub mod cells;
 pub mod compile;
 pub mod consts;
 pub mod day;

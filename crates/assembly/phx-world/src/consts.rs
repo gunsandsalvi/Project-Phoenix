@@ -12,6 +12,13 @@ pub const HASH_KEY: [u64; 2] = [0x5048_5820_574f_524c, 0x4420_4841_5348_2031];
 
 /// The whole population, in the percent a setup's split is written in.
 pub const WHOLE: u64 = 100;
+/// A whole, in the hundredths a share of two decimals is written in.
+pub const SHARE_WHOLE: u64 = 100;
+/// The widening sweeps a kind may take in one day while its cells exceed its budget: the heavy day's budget holds two.
+pub const SWEEPS_PER_DAY: u32 = 2;
+/// Bits of a promoted member's draw subject that number the members rising from one cell together, below its origin's
+/// identity: room for a million at once.
+pub const PROMOTION_SEQ_BITS: u32 = 20;
 
 /// Rows each kind table of individuals reserves: room for a kind's individuals across the three countries, beyond the
 /// firms the promotion rank admits, in address space committed only as rows are written.

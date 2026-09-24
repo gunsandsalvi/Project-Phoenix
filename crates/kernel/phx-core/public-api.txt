@@ -43,8 +43,10 @@ pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::id
 pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
+pub fn phx_core::agenda::Agenda<B>::set_next_with(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day, u32)
 pub fn phx_core::agenda::Agenda<B>::swap_rows(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
+pub fn phx_core::agenda::Agenda<B>::with(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> u32
 pub struct phx_core::agenda::AgendaCounters
 pub phx_core::agenda::AgendaCounters::entries: u64
 pub phx_core::agenda::AgendaCounters::moved: u64
@@ -974,6 +976,7 @@ pub phx_core::pop::PopItem::KeyAttr(phx_core::pop::KeyAttrDecl)
 pub phx_core::pop::PopItem::Pin(phx_core::pop::PinDecl)
 pub phx_core::pop::PopItem::Position(phx_core::pop::PositionDecl)
 pub phx_core::pop::PopItem::ProfileGroup(phx_core::pop::GroupDecl)
+pub phx_core::pop::PopItem::Resolution(phx_core::pop::ResolutionDecl)
 pub phx_core::pop::PopItem::ReviewKind(&'static str)
 pub phx_core::pop::PopItem::Role(phx_core::pop::RoleDecl)
 pub phx_core::pop::PopItem::StandingRate(phx_core::pop::RateDecl)
@@ -1005,6 +1008,7 @@ pub fn phx_core::pop::PopKindBuilder<'a>::key_attr(&mut self, phx_core::pop::Key
 pub fn phx_core::pop::PopKindBuilder<'a>::pin(&mut self, phx_core::pop::PinDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::profile_group(&mut self, phx_core::pop::GroupDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::resolution(&mut self, phx_core::pop::ResolutionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::review_kind(&mut self, &'static str) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::standing_rate(&mut self, phx_core::pop::RateDecl) -> &mut Self
@@ -1018,10 +1022,19 @@ pub phx_core::pop::PositionDecl::unit: &'static str
 pub struct phx_core::pop::ProfileComponent
 pub phx_core::pop::ProfileComponent::name: &'static str
 pub phx_core::pop::ProfileComponent::values: u32
+pub struct phx_core::pop::RankDecl
+pub phx_core::pop::RankDecl::demote: &'static str
+pub phx_core::pop::RankDecl::measure: &'static str
+pub phx_core::pop::RankDecl::promote: &'static str
 pub struct phx_core::pop::RateDecl
 pub phx_core::pop::RateDecl::clause: &'static str
 pub phx_core::pop::RateDecl::name: &'static str
 pub phx_core::pop::RateDecl::unit: &'static str
+pub struct phx_core::pop::ResolutionDecl
+pub phx_core::pop::ResolutionDecl::cell_budget: &'static str
+pub phx_core::pop::ResolutionDecl::clause: &'static str
+pub phx_core::pop::ResolutionDecl::ranks: core::option::Option<phx_core::pop::RankDecl>
+pub phx_core::pop::ResolutionDecl::widen_order: &'static [&'static str]
 pub struct phx_core::pop::RoleDecl
 pub phx_core::pop::RoleDecl::clause: &'static str
 pub phx_core::pop::RoleDecl::name: &'static str
@@ -1034,20 +1047,24 @@ pub phx_core::pop_process::MemberChange::Part
 pub phx_core::pop_process::MemberChange::Part::count: u64
 pub phx_core::pop_process::MemberChange::Part::from: u32
 pub phx_core::pop_process::MemberChange::Part::key: alloc::vec::Vec<(&'static str, u32)>
-pub phx_core::pop_process::MemberChange::Part::moves: alloc::vec::Vec<(&'static str, &'static str)>
+pub phx_core::pop_process::MemberChange::Part::moves: alloc::vec::Vec<phx_core::pop_process::GroupMove>
 pub phx_core::pop_process::MemberChange::Part::to: u32
 pub phx_core::pop_process::MemberChange::Revalue
 pub phx_core::pop_process::MemberChange::Revalue::count: u64
 pub phx_core::pop_process::MemberChange::Revalue::from: u32
 pub phx_core::pop_process::MemberChange::Revalue::to: u32
 pub struct phx_core::pop_process::CellView<'a>
-pub phx_core::pop_process::CellView::country: phx_id::ids::CountryId
+pub phx_core::pop_process::CellView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
 pub phx_core::pop_process::CellView::date: phx_id::day::Date
 pub phx_core::pop_process::CellView::key: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
 pub phx_core::pop_process::CellView::kind: &'static str
 pub phx_core::pop_process::CellView::party: phx_id::ids::PartyId
 impl core::fmt::Debug for phx_core::pop_process::CellView<'_>
 pub fn phx_core::pop_process::CellView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_core::pop_process::GroupMove
+pub phx_core::pop_process::GroupMove::from: &'static str
+pub phx_core::pop_process::GroupMove::left: u32
+pub phx_core::pop_process::GroupMove::to: &'static str
 pub trait phx_core::pop_process::PopProcess: core::marker::Send + core::marker::Sync
 pub fn phx_core::pop_process::PopProcess::changes_after(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::pop_process::PopProcess::group(&self) -> &'static str
@@ -1458,6 +1475,7 @@ pub fn phx_core::register::PrimDecl::owner(&self) -> core::result::Result<phx_id
 pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::register::Register
 impl phx_core::register::Register
+pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
@@ -1902,6 +1920,20 @@ pub phx_core::ListKind::Holdings
 pub phx_core::ListKind::Lots
 pub phx_core::ListKind::NamedUnits
 pub phx_core::ListKind::RelationshipRows
+pub enum phx_core::MemberChange
+pub phx_core::MemberChange::End
+pub phx_core::MemberChange::End::count: u64
+pub phx_core::MemberChange::End::from: u32
+pub phx_core::MemberChange::Part
+pub phx_core::MemberChange::Part::count: u64
+pub phx_core::MemberChange::Part::from: u32
+pub phx_core::MemberChange::Part::key: alloc::vec::Vec<(&'static str, u32)>
+pub phx_core::MemberChange::Part::moves: alloc::vec::Vec<phx_core::pop_process::GroupMove>
+pub phx_core::MemberChange::Part::to: u32
+pub phx_core::MemberChange::Revalue
+pub phx_core::MemberChange::Revalue::count: u64
+pub phx_core::MemberChange::Revalue::from: u32
+pub phx_core::MemberChange::Revalue::to: u32
 pub enum phx_core::MessageState
 pub phx_core::MessageState::Answered
 pub phx_core::MessageState::Failed
@@ -1927,6 +1959,7 @@ pub phx_core::PopItem::KeyAttr(phx_core::pop::KeyAttrDecl)
 pub phx_core::PopItem::Pin(phx_core::pop::PinDecl)
 pub phx_core::PopItem::Position(phx_core::pop::PositionDecl)
 pub phx_core::PopItem::ProfileGroup(phx_core::pop::GroupDecl)
+pub phx_core::PopItem::Resolution(phx_core::pop::ResolutionDecl)
 pub phx_core::PopItem::ReviewKind(&'static str)
 pub phx_core::PopItem::Role(phx_core::pop::RoleDecl)
 pub phx_core::PopItem::StandingRate(phx_core::pop::RateDecl)
@@ -2163,8 +2196,10 @@ pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::id
 pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
+pub fn phx_core::agenda::Agenda<B>::set_next_with(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day, u32)
 pub fn phx_core::agenda::Agenda<B>::swap_rows(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
+pub fn phx_core::agenda::Agenda<B>::with(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> u32
 pub struct phx_core::AgendaCounters
 pub phx_core::AgendaCounters::entries: u64
 pub phx_core::AgendaCounters::moved: u64
@@ -2244,6 +2279,14 @@ pub fn phx_core::calendar::Calendar::next_turn_day(&self, phx_id::day::Day) -> p
 pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId, phx_id::day::Day) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day
+pub struct phx_core::CellView<'a>
+pub phx_core::CellView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
+pub phx_core::CellView::date: phx_id::day::Date
+pub phx_core::CellView::key: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
+pub phx_core::CellView::kind: &'static str
+pub phx_core::CellView::party: phx_id::ids::PartyId
+impl core::fmt::Debug for phx_core::pop_process::CellView<'_>
+pub fn phx_core::pop_process::CellView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::Claim
 pub phx_core::Claim::item: &'static str
 pub phx_core::Claim::system: phx_id::ids::SystemCode
@@ -2524,6 +2567,10 @@ pub phx_core::GroupDecl::clause: &'static str
 pub phx_core::GroupDecl::components: &'static [phx_core::pop::ProfileComponent]
 pub phx_core::GroupDecl::name: &'static str
 pub phx_core::GroupDecl::role: &'static str
+pub struct phx_core::GroupMove
+pub phx_core::GroupMove::from: &'static str
+pub phx_core::GroupMove::left: u32
+pub phx_core::GroupMove::to: &'static str
 pub struct phx_core::HandlerEntry
 pub phx_core::HandlerEntry::clause: &'static str
 pub phx_core::HandlerEntry::intents: &'static [&'static str]
@@ -2792,6 +2839,7 @@ pub fn phx_core::pop::PopKindBuilder<'a>::key_attr(&mut self, phx_core::pop::Key
 pub fn phx_core::pop::PopKindBuilder<'a>::pin(&mut self, phx_core::pop::PinDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::profile_group(&mut self, phx_core::pop::GroupDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::resolution(&mut self, phx_core::pop::ResolutionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::review_kind(&mut self, &'static str) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::standing_rate(&mut self, phx_core::pop::RateDecl) -> &mut Self
@@ -2839,6 +2887,10 @@ pub phx_core::QueuedIntent::words: alloc::vec::Vec<i64>
 impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
 pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::RankDecl
+pub phx_core::RankDecl::demote: &'static str
+pub phx_core::RankDecl::measure: &'static str
+pub phx_core::RankDecl::promote: &'static str
 pub struct phx_core::RateDecl
 pub phx_core::RateDecl::clause: &'static str
 pub phx_core::RateDecl::name: &'static str
@@ -2889,6 +2941,7 @@ pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::O
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub struct phx_core::Register
 impl phx_core::register::Register
+pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
@@ -2900,6 +2953,11 @@ impl phx_core::register::RegisterBuilder
 pub fn phx_core::register::RegisterBuilder::build(self, &[phx_core::register::DataFile], usize) -> core::result::Result<phx_core::register::Register, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::register::RegisterBuilder::declare<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::RegisterBuilder
+pub struct phx_core::ResolutionDecl
+pub phx_core::ResolutionDecl::cell_budget: &'static str
+pub phx_core::ResolutionDecl::clause: &'static str
+pub phx_core::ResolutionDecl::ranks: core::option::Option<phx_core::pop::RankDecl>
+pub phx_core::ResolutionDecl::widen_order: &'static [&'static str]
 pub struct phx_core::RoleDecl
 pub phx_core::RoleDecl::clause: &'static str
 pub phx_core::RoleDecl::name: &'static str
@@ -3162,6 +3220,13 @@ pub trait phx_core::MarketsAudit: core::fmt::Debug
 pub fn phx_core::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub trait phx_core::MessageDef
 pub const phx_core::MessageDef::DECL: phx_core::messages::MessageKindDecl
+pub trait phx_core::PopProcess: core::marker::Send + core::marker::Sync
+pub fn phx_core::PopProcess::changes_after(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
+pub fn phx_core::PopProcess::group(&self) -> &'static str
+pub fn phx_core::PopProcess::hazard(&self) -> &'static str
+pub fn phx_core::PopProcess::kind(&self) -> &'static str
+pub fn phx_core::PopProcess::outcome(&self, &phx_core::pop_process::CellView<'_>, &[(u32, u64)], &mut alloc::vec::Vec<phx_core::pop_process::MemberChange>)
+pub fn phx_core::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, u32) -> f64
 pub trait phx_core::PrimType
 pub type phx_core::PrimType::Read<'a>
 pub fn phx_core::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>

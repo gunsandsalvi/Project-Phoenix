@@ -1,6 +1,6 @@
-use phx_core::{ResolutionDecl, 
+use phx_core::{
     GroupDecl, KeyAttrDecl, KinkRegistry, PinDecl, PopEntry, PopItem, PositionDecl, PositionOf, ProfileComponent,
-    RateDecl, RoleDecl, ScaleRef,
+    RateDecl, ResolutionDecl, RoleDecl, ScaleRef,
 };
 use phx_macros::clause;
 use phx_num::Missing;

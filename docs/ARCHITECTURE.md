@@ -671,6 +671,20 @@ the role's clocks, so the household table stays at 14; discovery and imitation t
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
 same way with counts of one.
 
+**Processes on cells** are declared by the system that owns their outcome (`PopProcess`, in `phx-core`): the hazard
+it answers, the kind and profile group it reads, a member's daily chance at each joint value, the next date its rates
+may change unvisited, and its outcome for the members hit — a value changed in place, a part split out with its hit
+value, groups and key attributes changed, or households ended. The world binds each at assembly to its hazard (of the
+same system, acting on the kind), group, event kind and stream, orders them by kind and hazard, and gives each its
+kind's agenda reason; two processes of one kind never share a stream. The population's agenda has one table per kind
+that processes act on, and keeps beside each (row, reason)'s next day the weight rung its booking was drawn at, which
+thinning reads; a redraw is a booking with no rung. Each day, 3b gathers the agenda and screens each booked cell for
+each process due (`phx_pop::screen::screen_due`), recording each hit's event at once; 3e applies the outcomes in the
+order the hits were drawn; 10b lands the day's parts, re-keys the cells flagged, reads ranks on the declared day,
+runs tolerance control, books every row added, removed or grown afresh for the next day, and then, on a light day
+(one no country trades), renumbers one chunk, each swap carrying its rows' bookings. The line kinks a landing reads are the facilities' limits, found once at
+assembly or load.
+
 **Attention** is a daily review intensity λ per (cell, lumpy decision kind), and the daily review probability is a = 1
 − e^(−λ), so −ln(1 − a) = λ and review exposure accrues additively. λ_k = g_k·sqrt(σ²_own + σ²_pub,m) is the cell's
 own decision (REP.38): g_k, from the stake's curvature and the review cost, and σ²_own, from its own outlooks' widths,

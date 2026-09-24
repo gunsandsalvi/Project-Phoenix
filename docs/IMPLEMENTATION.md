@@ -4598,6 +4598,20 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
   the opening; the Representation family over the real cells; processes on cells declared (`PopProcess`) and run —
   1b's agenda, 3b's screening, 3e's outcomes, 10b's landing with re-keying, tolerance control, the monthly rank read
   and the light days' narrowing and renumbering — with the counters. Its build run has no cell yet.
+  As built:
+  - the books keep the cell tables beside the kind tables as trait objects (`HolderTable`, `CellHolders`), so
+    settlement, holder lists, saves and the hash reach cells; the world's `Population` keeps each kind's
+    declaration, settings, keys, landing index, levels, members counted by event and the agenda, as the save's
+    `population` store (format 2);
+  - a kind's resolution (`ResolutionDecl`) names its cell budget, its ranks and its widening order as primitives;
+    `REP.gap_sample`, `REP.narrow_share` and `REP.rank_day` are the representation's own (`data/shared/REP.toml`);
+  - processes on cells (`PopProcess`) are bound at assembly, screened at 3b through the agenda (`screen_due`, whose
+    bookings keep the rung they were drawn at), their outcomes applied at 3e (`phx_pop::outcome`), and 10b lands,
+    re-keys, ranks, widens or narrows, renumbers and books afresh (architecture §7.3); the day's counts are the run's
+    `cells` metrics;
+  - a household ending (`MemberChange::End`) stops the run until estates exist for it (S0.25c, S0.25e);
+  - the Representation family joins the audit only where a population kind exists, since only then can its
+    injection reach a cell.
 - **S0.25b — the population's data**: the sources fetched and derived into the country groups' profiles and the
   declared distributions (life tables and the age structure, household composition, tenure, income and wealth,
   education and occupation, deposits and loans, pensions, kin), each in the inventory with its mapping; the gaps'

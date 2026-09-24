@@ -115,6 +115,9 @@ pub struct CellTable<B: Backing = SystemBacking> {
     ext: Extension<B>,
     #[saved(skip)]
     layout: Layout,
+    /// The day's rows added, removed or grown, whose agenda bookings the world draws again.
+    #[saved(skip)]
+    changed: Vec<Slot>,
 }
 
 /// What the table needs of its kind's layout, rebuilt from the kind after a load.
@@ -201,8 +204,17 @@ impl<B: Backing> CellTable<B> {
             arenas: Vec::new(),
             ext: Extension::new(space, id, max_rows, rows_per_chunk),
             layout: Layout::of(kind),
+            changed: Vec::new(),
             table,
         }
+    }
+
+    /// The rows added, removed or grown since the last call, each once, in slot order.
+    pub fn take_changed(&mut self) -> Vec<Slot> {
+        let mut out = std::mem::take(&mut self.changed);
+        out.sort_unstable();
+        out.dedup();
+        out
     }
 
     /// The kind's layout restored after a load, which the save does not carry.
@@ -278,6 +290,7 @@ impl<B: Backing> CellTable<B> {
         }
         self.set_profile(slot, cell.profile);
         self.rekey(slot, kind, levels);
+        self.changed.push(slot);
         slot
     }
 
@@ -296,6 +309,7 @@ impl<B: Backing> CellTable<B> {
             self.edit_list(slot, list, ChunkArena::clear);
         }
         self.table.slots.release(slot);
+        self.changed.push(slot);
     }
 
     fn live(&self, slot: Slot) {
@@ -889,6 +903,9 @@ impl<B: Backing> CellTable<B> {
         }
         if hot.is_individual() && w != Weight::new(1) {
             violation!(clause = "REP.2", "an individual given a weight other than one", slot = slot.get());
+        }
+        if w > hot.weight() {
+            self.changed.push(slot);
         }
         hot.set_weight(w);
         self.hot.set(slot, hot);

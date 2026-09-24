@@ -6,13 +6,13 @@ use phx_macros::clause;
 
 use crate::register::Register;
 
-/// A cell as a process reads it: its kind, its party, the country it lives in, the value of each of its key's
-/// attributes by name, and the day.
+/// A cell as a process reads it: its kind, its party, the value of each of its key's attributes by name, the country
+/// each region lies in, and the day.
 pub struct CellView<'a> {
     pub kind: &'static str,
     pub party: PartyId,
-    pub country: CountryId,
     pub key: &'a dyn Fn(&str) -> Option<u32>,
+    pub country_of: &'a dyn Fn(u32) -> Option<CountryId>,
     pub date: Date,
 }
 
@@ -31,11 +31,20 @@ pub enum MemberChange {
     /// The members' value in the group becomes another, in place: nothing else about them differs from the cell's,
     /// so they stay.
     Revalue { from: u32, to: u32, count: u64 },
-    /// The members split out as a part: their value in the group becomes `to`, each named key attribute takes its
-    /// value, and each named role's values move to another role's group (as when a partner becomes the head).
-    Part { from: u32, count: u64, to: u32, key: Vec<(&'static str, u32)>, moves: Vec<(&'static str, &'static str)> },
+    /// The members split out as a part: their value in the group becomes `to`; then each move gives one group the
+    /// values another held and leaves that other at a value (as when a partner becomes the head and no partner is
+    /// left); and each named key attribute takes its value.
+    Part { from: u32, count: u64, to: u32, moves: Vec<GroupMove>, key: Vec<(&'static str, u32)> },
     /// The members' households end: no member of them is left, and each becomes an estate.
     End { from: u32, count: u64 },
+}
+
+/// One group's values given to another within a part, the first left at a value.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GroupMove {
+    pub from: &'static str,
+    pub to: &'static str,
+    pub left: u32,
 }
 
 /// A process on a population kind's members, declared by the system that owns its outcome. The hazard it answers

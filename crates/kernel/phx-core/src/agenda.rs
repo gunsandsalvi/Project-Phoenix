@@ -52,6 +52,8 @@ struct TableAgenda<B: Backing> {
     spec: AgendaTableSpec,
     rows: usize,
     next: Region<u32, B>,
+    /// Per (row, reason), what its booking was drawn with: the weight rung of a screened process.
+    with: Region<u32, B>,
     booked: Region<u32, B>,
     days: Vec<BlockBag>,
     blocks: Vec<BlockBag>,
@@ -88,6 +90,22 @@ impl<B: Backing> TableAgenda<B> {
         let (at, width) = (self.row(slot) * self.spec.reasons, self.spec.reasons);
         let Some(cells) = self.next.slice(self.rows * width).get(at..at + width) else {
             violation!(clause = "TIME.5", "a row the agenda has not grown to", slot = slot.get(), rows = self.rows);
+        };
+        cells
+    }
+
+    fn with(&self, slot: Slot) -> &[u32] {
+        let (at, width) = (self.row(slot) * self.spec.reasons, self.spec.reasons);
+        let Some(cells) = self.with.slice(self.rows * width).get(at..at + width) else {
+            violation!(clause = "TIME.5", "a row the agenda has not grown to", slot = slot.get(), rows = self.rows);
+        };
+        cells
+    }
+
+    fn with_mut(&mut self, slot: Slot) -> &mut [u32] {
+        let (at, width, rows) = (self.row(slot) * self.spec.reasons, self.spec.reasons, self.rows);
+        let Some(cells) = self.with.slice_mut(rows * width).get_mut(at..at + width) else {
+            violation!(clause = "TIME.5", "a row the agenda has not grown to", slot = slot.get(), rows = rows);
         };
         cells
     }
@@ -235,6 +253,7 @@ impl<B: Backing> Agenda<B> {
                 spec: *spec,
                 rows: 0,
                 next: Region::reserve(space, cells),
+                with: Region::reserve(space, cells),
                 booked: Region::reserve(space, index(spec.max_rows)),
                 days: vec![BlockBag::EMPTY; WHEEL_BUCKETS],
                 blocks: vec![BlockBag::EMPTY; WHEEL_BUCKETS],
@@ -275,9 +294,13 @@ impl<B: Backing> Agenda<B> {
         }
         let width = t.spec.reasons;
         t.next.ensure(rows * width);
+        t.with.ensure(rows * width);
         t.booked.ensure(rows);
         if let Some(cells) = t.next.slice_mut(rows * width).get_mut(t.rows * width..) {
             cells.fill(NEVER);
+        }
+        if let Some(cells) = t.with.slice_mut(rows * width).get_mut(t.rows * width..) {
+            cells.fill(0);
         }
         if let Some(cells) = t.booked.slice_mut(rows).get_mut(t.rows..) {
             cells.fill(NEVER);
@@ -320,6 +343,25 @@ impl<B: Backing> Agenda<B> {
         }
     }
 
+    /// Sets the next day a row is due for a reason, as `set_next` does, with what its booking was drawn with.
+    pub fn set_next_with(&mut self, table: TableId, slot: Slot, reason: usize, day: Day, with: u32) {
+        self.set_next(table, slot, reason, day);
+        let (t, _) = self.parts(table);
+        let Some(cell) = t.with_mut(slot).get_mut(reason) else {
+            violation!(clause = "TIME.5", "a reason the table does not declare", reason = reason);
+        };
+        *cell = with;
+    }
+
+    /// What a row's booking for a reason was drawn with.
+    #[must_use]
+    pub fn with(&self, table: TableId, slot: Slot, reason: usize) -> u32 {
+        let Some(&w) = self.table(table).with(slot).get(reason) else {
+            violation!(clause = "TIME.5", "a reason the table does not declare", reason = reason);
+        };
+        w
+    }
+
     /// Leaves a row with no next day for a reason; its entry stays until its day, when the row is re-booked.
     pub fn clear(&mut self, table: TableId, slot: Slot, reason: usize) {
         let (t, _) = self.parts(table);
@@ -334,6 +376,7 @@ impl<B: Backing> Agenda<B> {
         let today = self.today;
         let (t, pool) = self.parts(table);
         t.reasons_mut(slot).fill(NEVER);
+        t.with_mut(slot).fill(0);
         if t.booked(slot) != NEVER {
             t.set_booked(slot, NEVER);
             t.live -= 1;
@@ -351,6 +394,9 @@ impl<B: Backing> Agenda<B> {
         let today = self.today;
         let (t, pool) = self.parts(table);
         let (ra, rb): (Vec<u32>, Vec<u32>) = (t.reasons(a).to_vec(), t.reasons(b).to_vec());
+        let (wa, wb): (Vec<u32>, Vec<u32>) = (t.with(a).to_vec(), t.with(b).to_vec());
+        t.with_mut(a).copy_from_slice(&wb);
+        t.with_mut(b).copy_from_slice(&wa);
         let (ba, bb) = (t.booked(a), t.booked(b));
         for (s, booked) in [(a, ba), (b, bb)] {
             if booked != NEVER {
@@ -379,6 +425,9 @@ impl<B: Backing> Agenda<B> {
         let reasons: Vec<u32> = t.reasons(from).to_vec();
         t.reasons_mut(to).copy_from_slice(&reasons);
         t.reasons_mut(from).fill(NEVER);
+        let with: Vec<u32> = t.with(from).to_vec();
+        t.with_mut(to).copy_from_slice(&with);
+        t.with_mut(from).fill(0);
         let booked = t.booked(from);
         if booked != NEVER {
             t.set_booked(from, NEVER);
@@ -468,6 +517,7 @@ impl<B: Backing> Agenda<B> {
             let width = t.spec.reasons;
             t.rows.save(w);
             t.next.slice(t.rows * width).to_vec().save(w);
+            t.with.slice(t.rows * width).to_vec().save(w);
         }
     }
 
@@ -490,18 +540,19 @@ impl<B: Backing> Agenda<B> {
         for spec in specs {
             let rows = usize::load(r)?;
             let next: Vec<u32> = Vec::load(r)?;
-            if next.len() != rows * spec.reasons || rows > index(spec.max_rows) {
+            let with: Vec<u32> = Vec::load(r)?;
+            if next.len() != rows * spec.reasons || with.len() != next.len() || rows > index(spec.max_rows) {
                 return Err(invalid(format!("agenda rows of table {} other than the build's", spec.table.get())));
             }
             let Ok(rows32) = u32::try_from(rows) else {
                 return Err(invalid(format!("{rows} agenda rows")));
             };
             agenda.grow(spec.table, rows32);
-            for (i, days) in next.chunks(spec.reasons).enumerate() {
+            for (i, (days, withs)) in next.chunks(spec.reasons).zip(with.chunks(spec.reasons)).enumerate() {
                 let slot = Slot::new(u32::try_from(i).map_err(|e| invalid(e.to_string()))?);
-                for (reason, &day) in days.iter().enumerate() {
+                for (reason, (&day, &w)) in days.iter().zip(withs).enumerate() {
                     if day != NEVER {
-                        agenda.set_next(spec.table, slot, reason, Day::new(day));
+                        agenda.set_next_with(spec.table, slot, reason, Day::new(day), w);
                     }
                 }
             }
@@ -517,6 +568,9 @@ impl<B: Backing> Agenda<B> {
             for d in t.next.slice(t.rows * width) {
                 h.u64(u64::from(*d));
             }
+            for w in t.with.slice(t.rows * width) {
+                h.u64(u64::from(*w));
+            }
         }
     }
 
@@ -529,7 +583,11 @@ impl<B: Backing> Agenda<B> {
     #[must_use]
     pub fn bytes_committed(&self) -> usize {
         self.pool.bytes_committed()
-            + self.tables.iter().map(|t| t.next.bytes_committed() + t.booked.bytes_committed()).sum::<usize>()
+            + self
+                .tables
+                .iter()
+                .map(|t| t.next.bytes_committed() + t.with.bytes_committed() + t.booked.bytes_committed())
+                .sum::<usize>()
     }
 }
 
@@ -730,10 +788,11 @@ mod tests {
     fn agenda_swap_keeps_every_due() {
         let mut a = agenda(0, &[(0, 8, 2)]);
         a.set_next(T, Slot::new(1), 0, Day::new(5));
-        a.set_next(T, Slot::new(1), 1, Day::new(40));
+        a.set_next_with(T, Slot::new(1), 1, Day::new(40), 7);
         a.set_next(T, Slot::new(4), 0, Day::new(9));
         a.swap_rows(T, Slot::new(1), Slot::new(4));
         a.swap_rows(T, Slot::new(4), Slot::new(6));
+        assert_eq!(a.with(T, Slot::new(6), 1), 7, "what a booking was drawn with moves with its row");
         assert_eq!((a.next(T, Slot::new(1), 0), a.next(T, Slot::new(4), 0)), (Some(Day::new(9)), None));
         assert_eq!(a.next(T, Slot::new(6), 1), Some(Day::new(40)));
         let mut due = Vec::new();
@@ -752,7 +811,7 @@ mod tests {
         let mut a = agenda(0, &[(0, 8, 2), (3, 4, 1)]);
         a.set_next(T, Slot::new(1), 0, Day::new(5));
         a.set_next(T, Slot::new(1), 1, Day::new(3_000));
-        a.set_next(T, Slot::new(6), 0, Day::new(9));
+        a.set_next_with(T, Slot::new(6), 0, Day::new(9), 213);
         a.set_next(TableId::new(3), Slot::new(2), 0, Day::new(9));
         let _ = a.gather(Day::new(2));
         let mut bytes = Vec::new();
@@ -767,6 +826,7 @@ mod tests {
         ];
         let mut b: Agenda<Heap> = Agenda::load_from(&mut r, &mut AddressSpace::empty(), &specs, 1 << 16).unwrap();
         assert_eq!(b.today(), Day::new(2));
+        assert_eq!(b.with(T, Slot::new(6), 0), 213, "what a booking was drawn with reads back");
         let dues = |x: &mut Agenda<Heap>| {
             let mut due = Vec::new();
             for d in 3..=3_000 {

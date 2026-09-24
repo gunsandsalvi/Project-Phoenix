@@ -41,19 +41,22 @@ pub fn plan<B: Backing, L: Backing>(ctx: &TenB<'_, B, L>, chunks: Range<usize>) 
 }
 
 /// The swaps applied with every reference remapped for the rows they move alone: the rows and their arena lists, the
-/// ledger's holder lists, the landing index, the directory and the agenda. No identity changes.
+/// ledger's holder lists, the landing index, the directory and the agenda, where the kind's rows are booked in one. No
+/// identity changes.
 #[clause("REP.1", "PTY.10")]
 pub fn apply<B: Backing, L: Backing, A: Backing>(
     ctx: &mut TenB<'_, B, L>,
     index: &mut Index,
-    agenda: &mut Agenda<A>,
+    mut agenda: Option<&mut Agenda<A>>,
     swaps: &[(Slot, Slot)],
 ) {
     let id = ctx.table.id();
     for (a, b) in swaps.iter().copied() {
         ctx.table.swap_rows(a, b);
         ctx.ledger.swap_holders(&*ctx.table, ctx.place, a, b);
-        agenda.swap_rows(id, a, b);
+        if let Some(agenda) = agenda.as_deref_mut() {
+            agenda.swap_rows(id, a, b);
+        }
         let mut moves = Vec::with_capacity(2);
         for s in [a, b] {
             let party = ctx.table.party(s);
@@ -145,7 +148,7 @@ mod tests {
         let chunk_before = ten.table.chunk_of(risen[0]);
         let swaps = plan(&ten.tenb(), 0..usize::MAX);
         assert!(!swaps.is_empty(), "the rows were added out of key order");
-        apply(&mut ten.tenb(), &mut index, &mut agenda, &swaps);
+        apply(&mut ten.tenb(), &mut index, Some(&mut agenda), &swaps);
         assert_eq!(identity_view(&ten), before, "no identity, total or row changed");
         assert_eq!(due_of(&ten, &agenda), due_before, "every due moved with its row");
         assert!(plan(&ten.tenb(), 0..usize::MAX).is_empty(), "the order holds once restored");

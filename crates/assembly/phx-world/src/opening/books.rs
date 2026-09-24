@@ -90,7 +90,7 @@ pub fn cell_tables(
 /// systems and names, each handed the books and the population.
 pub fn open_books(
     d: &mut Declarations,
-    pop: &[phx_pop::kind::PopKindDecl],
+    pop: &[phx_pop::population::KindSetup],
     compiled: &crate::compile::Compiled,
     countries: &[OpeningCountry],
     date: phx_id::Date,
@@ -98,8 +98,11 @@ pub fn open_books(
 ) -> (Books, phx_pop::population::Population, GenReport) {
     let kinds: Vec<&'static str> =
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
-    let mut books: Books = Books::with_cells(&kinds, pop.len(), cell_tables(pop), size());
-    let mut population = phx_pop::population::Population::new(pop.to_vec(), books.parties.first_cell_place());
+    let decls: Vec<phx_pop::kind::PopKindDecl> = pop.iter().map(|s| s.decl.clone()).collect();
+    let mut books: Books = Books::with_cells(&kinds, pop.len(), cell_tables(&decls), size());
+    let first = books.parties.first_cell_place();
+    let mut population =
+        phx_pop::population::Population::new(pop.to_vec(), first, compiled.day_zero, books.parties.cells_mut().2);
     let mut report = GenReport::default();
     let mut contributions: Vec<(&'static str, Box<dyn Contribution>)> = std::mem::take(&mut d.contributions);
     contributions.sort_by(|(a, x), (b, y)| (x.phase().0, *a, x.name()).cmp(&(y.phase().0, *b, y.name())));
@@ -127,6 +130,12 @@ pub fn open_books(
     }
     for kind in &kinds {
         report.equity.extend(books.parties.of_kind(kind).map(|p| (p, books.equity(p))));
+    }
+    let cells = books.parties.cells_mut().0;
+    let phx_pop::population::Population { kinds: pop_kinds, agenda, .. } = &mut population;
+    for (i, k) in pop_kinds.iter().enumerate() {
+        let table = phx_pop::population::Population::table_mut::<phx_store::SystemBacking>(cells, i);
+        phx_pop::population::book_changed(k, table, agenda, compiled.day_zero.succ());
     }
     (books, population, report)
 }

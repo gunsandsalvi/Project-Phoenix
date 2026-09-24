@@ -46,6 +46,20 @@ pub struct World {
     pub(crate) books: phx_ledger::books::Books,
     /// The population kinds: their declarations, keys, landing indexes and step levels; their cells are the books'.
     pub(crate) population: phx_pop::population::Population,
+    /// The processes acting on the population's members, in order of kind, then hazard.
+    pub(crate) processes: Vec<crate::cells::Bound>,
+    /// The day's hits, from 3b's screening to 3e's outcomes.
+    pub(crate) cell_hits: Vec<crate::cells::CellHit>,
+    /// The day's parts, per population kind, from 3e's outcomes to 10b's landing.
+    pub(crate) cell_parts: Vec<Vec<phx_pop::part::Part>>,
+    /// The day's cells to re-key at 10b, per population kind.
+    pub(crate) cell_flagged: Vec<Vec<phx_id::Slot>>,
+    /// What the day's work on cells did.
+    pub(crate) cell_day: crate::cells::CellDay,
+    /// The line kinks landings read.
+    pub(crate) kinks: crate::cells::FacilityKinks,
+    /// The day of each month the population's ranks are read.
+    pub(crate) rank_day: u64,
     pub(crate) markets: phx_market::markets::Markets,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,
@@ -76,13 +90,18 @@ pub struct World {
     pub(crate) loaded: bool,
 }
 
+/// The map and what GEO compiled from it, among the systems' own states.
+pub(crate) fn geo_in<'a>(own: &'a [(&'static str, OwnState)]) -> &'a phx_geo::GeoState {
+    let found = own.iter().find(|(code, _)| *code == <phx_geo::Geo as phx_core::System>::CODE);
+    let Some(geo) = found.and_then(|(_, s)| s.downcast_ref::<std::sync::Arc<phx_geo::GeoState>>()) else {
+        phx_num::violation!(clause = "GEO.1", "a world whose map GEO does not keep");
+    };
+    geo
+}
+
 impl World {
     /// The map and what GEO compiled from it, which GEO keeps as its own state.
     pub(crate) fn geo(&self) -> &phx_geo::GeoState {
-        let found = self.own.iter().find(|(code, _)| *code == <phx_geo::Geo as phx_core::System>::CODE);
-        let Some(geo) = found.and_then(|(_, s)| s.downcast_ref::<std::sync::Arc<phx_geo::GeoState>>()) else {
-            phx_num::violation!(clause = "GEO.1", "a world whose map GEO does not keep");
-        };
-        geo
+        geo_in(&self.own)
     }
 }

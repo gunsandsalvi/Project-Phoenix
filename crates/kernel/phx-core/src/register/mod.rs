@@ -410,6 +410,20 @@ impl Register {
         }
     }
 
+    /// A shared count by its identifier, as a population kind's resolution names its cell budget and ranks.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is not one shared count.
+    pub fn count(&self, id: &str) -> Result<u64, String> {
+        let Some(i) = self.decls.iter().position(|d| d.id == id) else {
+            return Err(format!("no primitive `{id}` is declared"));
+        };
+        match self.stored.get(i) {
+            Some(Stored::Shared(PrimValue::Count(c))) => Ok(c.get()),
+            _ => Err(format!("`{id}` is not one shared count")),
+        }
+    }
+
     /// The standing SHAPEs and their reasons.
     #[clause("NUM.7")]
     #[must_use]

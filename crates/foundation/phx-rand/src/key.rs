@@ -47,9 +47,11 @@ pub enum SubjectTag {
     Instrument,
     /// A stratum and ordinal of an opening draw, before its party exists.
     Opening,
+    /// A joint value of a population kind's profile group, as an event names the members a hit reached.
+    ProfileValue,
 }
 
-const TAGS: [SubjectTag; 11] = [
+const TAGS: [SubjectTag; 12] = [
     SubjectTag::World,
     SubjectTag::Party,
     SubjectTag::Part,
@@ -61,6 +63,7 @@ const TAGS: [SubjectTag; 11] = [
     SubjectTag::Market,
     SubjectTag::Instrument,
     SubjectTag::Opening,
+    SubjectTag::ProfileValue,
 ];
 
 /// A tagged identity: four bits of tag above sixty bits of identity.

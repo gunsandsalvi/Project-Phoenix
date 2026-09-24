@@ -2,25 +2,41 @@
 //! cell table among the books' holder tables, its interned keys, its landing index and the level each position's
 //! steps stand at.
 
-use phx_core::{KinkRegistry, PopEntry};
-use phx_id::TableId;
+use phx_core::{Agenda, AgendaTableSpec, KinkRegistry, PopEntry};
+use phx_id::{Day, TableId};
 use phx_ledger::holder::CellHolders;
 use phx_macros::clause;
 use phx_num::violation;
 use phx_store::{AddressSpace, Backing, LoadError, Reader, Saved, Writer};
 
 use crate::audit::CellsView;
+use crate::consts::{AGENDA_BLOCKS, CELL_AGENDA_ROWS};
 use crate::index::Index;
 use crate::key::KeyInterner;
 use crate::kind::PopKindDecl;
 use crate::landing::Landed;
+use crate::promote::Ranks;
 use crate::steps::StepTable;
 use crate::table::CellTable;
+use crate::tolerance::Tolerances;
+
+/// A kind as the world sets it up: its compiled declaration, how many processes act on its members (its agenda's
+/// reasons), and its representation's settings read from the primitives its resolution names.
+#[derive(Clone, Debug)]
+pub struct KindSetup {
+    pub decl: PopKindDecl,
+    pub processes: usize,
+    pub tolerances: Tolerances,
+    pub ranks: Option<Ranks>,
+}
 
 /// One population kind in the world.
 #[derive(Debug)]
 pub struct PopKind {
     pub decl: PopKindDecl,
+    pub processes: usize,
+    pub tolerances: Tolerances,
+    pub ranks: Option<Ranks>,
     /// Its cell table's place among the books' holder tables.
     pub place: u16,
     pub keys: KeyInterner,
@@ -30,12 +46,14 @@ pub struct PopKind {
 }
 
 /// Every population kind, in the order their tables follow the kind tables; each kind's members as the events that
-/// began and ended them count them, which its cells' weights are held to; and the day's landings.
-#[derive(Debug, Default)]
+/// began and ended them count them, which its cells' weights are held to; the day's landings; and the agenda of the
+/// cells the processes act on, one table for each kind that has any.
+#[derive(Debug)]
 pub struct Population {
     pub kinds: Vec<PopKind>,
     pub members: Vec<(&'static str, u64)>,
     pub landed: Vec<Landed>,
+    pub agenda: Agenda,
 }
 
 impl Population {
@@ -61,14 +79,17 @@ impl Population {
     }
 
     /// The population over its kinds, their tables from `first` on among the books' places, each at the finest steps
-    /// until tolerance control widens them.
+    /// until tolerance control widens them, with an empty agenda from `today`.
     #[must_use]
-    pub fn new(decls: Vec<PopKindDecl>, first: u16) -> Population {
+    pub fn new(setups: Vec<KindSetup>, first: u16, today: Day, space: &mut AddressSpace) -> Population {
         let kinds = (first..)
-            .zip(decls)
-            .map(|(place, decl)| PopKind {
-                levels: vec![0; decl.positions.len()],
-                decl,
+            .zip(setups)
+            .map(|(place, s)| PopKind {
+                levels: vec![0; s.decl.positions.len()],
+                decl: s.decl,
+                processes: s.processes,
+                tolerances: s.tolerances,
+                ranks: s.ranks,
                 place,
                 keys: KeyInterner::new(),
                 index: Index::new(),
@@ -76,7 +97,16 @@ impl Population {
             .collect::<Vec<PopKind>>();
         let members = kinds.iter().map(|k| (k.decl.kind, 0)).collect();
         let landed = kinds.iter().map(|_| Landed::default()).collect();
-        Population { kinds, members, landed }
+        let Ok(agenda) = Agenda::new(space, today, &agenda_specs(&kinds), AGENDA_BLOCKS) else {
+            violation!(clause = "TIME.5", "more processes on a kind than an agenda row has reasons");
+        };
+        Population { kinds, members, landed, agenda }
+    }
+
+    /// The agenda's table for a kind, if processes act on its members.
+    #[must_use]
+    pub fn agenda_table(&self, kind: usize) -> Option<TableId> {
+        self.kinds.get(kind).filter(|k| k.processes > 0).map(|k| TableId::new(k.place))
     }
 
     /// Members a kind gained or lost by the events that begin and end them.
@@ -157,6 +187,7 @@ impl Population {
         }
         let members: Vec<u64> = self.members.iter().map(|(_, n)| *n).collect();
         members.save(w);
+        self.agenda.save_to(w);
     }
 
     /// Each kind's keys and levels read back over the build's kinds.
@@ -164,7 +195,7 @@ impl Population {
     /// # Errors
     /// When the store is damaged or its levels do not fit the build's positions.
     #[clause("SET.12")]
-    pub fn load_from(&mut self, r: &mut Reader<'_>) -> Result<(), LoadError> {
+    pub fn load_from(&mut self, r: &mut Reader<'_>, space: &mut AddressSpace) -> Result<(), LoadError> {
         for k in &mut self.kinds {
             k.keys = KeyInterner::load(r)?;
             let levels: Vec<u8> = Vec::load(r)?;
@@ -180,6 +211,7 @@ impl Population {
         for ((_, n), m) in self.members.iter_mut().zip(members) {
             *n = m;
         }
+        self.agenda = Agenda::load_from(r, space, &agenda_specs(&self.kinds), AGENDA_BLOCKS)?;
         Ok(())
     }
 
@@ -192,5 +224,35 @@ impl Population {
         for (_, n) in &self.members {
             h.u64(*n);
         }
+        self.agenda.hash_into(h);
     }
+}
+
+/// Every row of a kind added, removed or grown since it was last booked, booked afresh: its bookings dropped, and a
+/// live row booked for every process to be drawn on `first`, so each draws at its present weight and values.
+#[clause("REP.7")]
+pub fn book_changed<B: Backing>(kind: &PopKind, table: &mut CellTable<B>, agenda: &mut Agenda, first: Day) {
+    let changed = table.take_changed();
+    if kind.processes == 0 {
+        return;
+    }
+    let tid = TableId::new(kind.place);
+    agenda.grow(tid, table.high_water());
+    for s in changed {
+        agenda.release(tid, s);
+        if table.is_live(s) {
+            for r in 0..kind.processes {
+                agenda.set_next_with(tid, s, r, first, 0);
+            }
+        }
+    }
+}
+
+/// The agenda's tables: one for each kind that processes act on, each reason one of its processes.
+fn agenda_specs(kinds: &[PopKind]) -> Vec<AgendaTableSpec> {
+    kinds
+        .iter()
+        .filter(|k| k.processes > 0)
+        .map(|k| AgendaTableSpec { table: TableId::new(k.place), max_rows: CELL_AGENDA_ROWS, reasons: k.processes })
+        .collect()
 }

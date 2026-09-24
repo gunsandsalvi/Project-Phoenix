@@ -45,6 +45,12 @@ pub const DESIGN_TEN: u32 = 10;
 /// A profile group's third component's values, and the design point's compositions.
 pub const DESIGN_THREE: u32 = 3;
 
+/// Rows each kind's table in the population's agenda reserves: as many as a cell table does, in address space
+/// committed only as rows are written.
+pub const CELL_AGENDA_ROWS: u32 = 1 << 23;
+/// Blocks of the population agenda's entries: room for every row's one entry, in address space committed as used.
+pub const AGENDA_BLOCKS: u32 = 1 << 20;
+
 /// The cells a landing key holds inline in the landing index before the rest spill past them.
 pub const INDEX_INLINE: usize = 4;
 

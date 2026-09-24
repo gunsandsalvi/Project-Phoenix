@@ -55,9 +55,9 @@ const APPLY_POINTS: [SubStep; 23] = [
 ];
 
 /// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, stage 2's
-/// contract process at 2d, over the fails of the days since it last ran, and 9b's accounts, posting the day's settled
-/// money.
-pub const KERNEL_WORK: [SubStep; 3] = [SubStep::S1b, SubStep::S2d, SubStep::S9b];
+/// contract process at 2d, over the fails of the days since it last ran, 3b's screening of the population's cells and
+/// 3e's outcomes of their hits, and 9b's accounts, posting the day's settled money.
+pub const KERNEL_WORK: [SubStep; 5] = [SubStep::S1b, SubStep::S2d, SubStep::S3b, SubStep::S3e, SubStep::S9b];
 
 /// The audit's sub-step, which runs every day.
 pub const AUDIT_AT: SubStep = AUDIT_SUBSTEP;
@@ -131,6 +131,15 @@ impl World {
             site::enter(Site { day: day.get(), substep: info.step.ordinal(), handler: 0, chunk: 0 });
             if info.step == SubStep::S1b {
                 self.due = self.books.ledger.mark_due(day, &self.calendar);
+            }
+            if info.step == SubStep::S3b {
+                self.cells_screen(day);
+            }
+            if info.step == SubStep::S3e {
+                self.cells_outcomes(day);
+            }
+            if info.step == SubStep::S10b {
+                self.cells_settle(day);
             }
             if info.step == SubStep::S2d {
                 let fails = std::mem::take(&mut self.unprocessed);
