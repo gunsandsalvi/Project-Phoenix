@@ -2610,7 +2610,7 @@ live check passing.
 
 ### S0.14 — `phx-ledger` I: instruments, holdings, lines, relationship rows and the contract algebra
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: REG.1, REG.2, REG.3, REG.4, REG.5, REG.6, REG.7, REG.8, REG.9, REG.10; REP.3 *(part: lines and rows; the
@@ -2774,11 +2774,19 @@ live check passing.
 - per-kind code for a contract the algebra can express.
 
 **Done when**
-- [ ] The types, the algebra and the families exist, with the tests passing.
-- [ ] The public-API snapshot is committed.
-- [ ] LC-0-16 and LC-0-17 are registered.
-- [ ] PC-24 is registered.
-- [ ] Two reviews are done.
+- [x] The types, the algebra and the families exist, with the tests passing.
+- [x] The public-API snapshot is committed.
+- [x] LC-0-16 and LC-0-17 are registered.
+- [x] PC-24 is registered.
+- [x] Two reviews are done.
+
+The build run on 4538b8b (perf/build-run/4538b8b1edbe.json) ran as S0.13's did — the map accepted at its first
+attempt, a year settled and two run, 1,098 closes of the audit, assembly 8.1 s, 48 MiB peak, no finding — with every
+live check passing and LC-0-16 and LC-0-17 waiting for the world's books (S0.16). The reviews found and fixed:
+holder lists that missed a holder whose first row was on an unlisted side; rows accepted with other optional words
+than their side declares; silent skips where a step schedule had no rate, a holding's lots were missing from the
+arena, or words were put past a list's end; stand-in defaults in the terms interner's indexing; clause references in
+comments; a civil day count outside the calendar.
 
 ---
 
