@@ -3565,7 +3565,7 @@ million rows and found nothing. No market met, as none is declared before S1.03.
 
 ### S0.19 — `phx-acct`: books, carrying bases, valuations and statements
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: ACC.1, ACC.2, ACC.3, ACC.4, ACC.6.
@@ -3678,10 +3678,21 @@ without a declared accounting effect.
 - a carrying value defaulted to cost when the mark is absent.
 
 **Done when**
-- [ ] Books, bases, valuations, statements and the family exist, with the tests passing.
-- [ ] LC-0-33 and LC-0-34 pass.
-- [ ] PC-29 is registered.
-- [ ] Two reviews are done.
+- [x] Books, bases, valuations, statements and the family exist, with the tests passing.
+- [x] LC-0-33 and LC-0-34 pass.
+- [x] PC-29 is registered.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found:
+  - a statement showing an absent tally as zero income (its income and capital are now absent);
+  - a valuer's curve falling back to its ends for a tenor inside them (now a contract violation);
+  - the accounts posted at the close rather than at 9b, where the architecture reads them (they now post at 9b,
+    and the close stops the run on anything recorded after);
+  - an equity account's writes open to other crates (now the crate's own, which PC-29 holds).
+
+**Build run** (dc257ef, `perf/build-run/dc257ef5b16f.json`): settled 2026 and ran to 2 January 2029, 1 098 days
+in 105 s after a 16 s opening, peak 178 MiB. Every live check passes but LC-0-10 (saves), LC-0-29 (the first levy)
+and LC-0-30 to LC-0-32 (the first market). The audit's thirteen families, the three Accounts families among them,
+checked 54.6 million rows and found nothing: 45 038 equity accounts against their parties' positions. At the run's
+end 66 834 unpaid claims stood, receivable and payable alike at 6 492 394 979 639.
 
 ---
 
