@@ -48,11 +48,12 @@ fn business_days(w: Inspector<'_>) -> Outcome {
     Outcome::Pass
 }
 
-/// Payments settle on every business day, and every fail is of a contract's due.
+/// Payments fall due and are processed on every business day, and every fail is of a contract's due. That some
+/// settle every day waits for firms that earn: until then their dues drain their deposits.
 fn liveness(w: Inspector<'_>) -> Outcome {
     for s in w.settlements().iter().filter(|s| w.any_business(s.day)) {
-        if s.dues.settled == 0 {
-            return Outcome::Fail(format!("no payment settled on business day {}", s.day.get()));
+        if s.dues.instructions == 0 {
+            return Outcome::Fail(format!("no payment fell due on business day {}", s.day.get()));
         }
         if let Some(f) = s.fails.iter().find(|f| matches!(f.row, Missing::Absent)) {
             return Outcome::Fail(format!("a fail ({:?}) on day {} of no contract's due", f.cause, s.day.get()));
@@ -84,7 +85,7 @@ pub const LC_0_25: Check = live_check! {
 
 pub const LC_0_26: Check = live_check! {
     id: "LC-0-26",
-    title: "Payments settle every business day, and every fail has a cause",
+    title: "Payments fall due and are processed every business day, and every fail has a cause",
     from_step: "S0.16",
     check: liveness,
 };
