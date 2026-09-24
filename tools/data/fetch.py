@@ -101,10 +101,10 @@ def log(message: str) -> None:
     print(f"{datetime.datetime.now():%H:%M:%S} {message}", file=sys.stderr, flush=True)
 
 
-def get(url: str, tries: int = 4, timeout: int = 60) -> bytes:
+def get(url: str, tries: int = 4, timeout: int = 60, accept: str = "*/*") -> bytes:
     for attempt in range(tries):
         try:
-            request = urllib.request.Request(url, headers={"User-Agent": "phoenix-data-fetch/1"})
+            request = urllib.request.Request(url, headers={"User-Agent": "phoenix-data-fetch/1", "Accept": accept})
             with urllib.request.urlopen(request, timeout=timeout) as r:
                 return r.read()
         except Exception as e:  # a flaky connection is retried a few times, then the fetch stops

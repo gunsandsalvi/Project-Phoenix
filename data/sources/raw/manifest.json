@@ -5,6 +5,10 @@
       "rows": 425,
       "title": "Central bank policy rate (%, end of year), BIS"
     },
+    "ilo/disability": {
+      "rows": 6395,
+      "title": "Population aged 15 and over with a disability and in total, thousands, by sex and age band (DF_POP_XWAP_SEX_AGE_DSB_NB), ILOSTAT"
+    },
     "imf/GGXWDG_NGDP": {
       "rows": 2083,
       "title": "General government gross debt (% of GDP), IMF World Economic Outlook"
@@ -148,6 +152,22 @@
     "wid/whweal_p0p100_999_i": {
       "rows": 2354,
       "title": "Net household wealth to net national income ratio, WID"
+    },
+    "wpp/fertility_by_age": {
+      "rows": 15984,
+      "title": "Age-specific fertility rates by single age of mother 15-49, births per 1,000 women, 1950-2023, UN World Population Prospects 2024"
+    },
+    "wpp/indicators": {
+      "rows": 15984,
+      "title": "Under-five deaths per 1,000 live births (Q5) and males per 100 females at birth (SRB), 1950-2023, UN World Population Prospects 2024"
+    },
+    "wpp/life_table": {
+      "rows": 43632,
+      "title": "Complete life tables by sex, 2023: probability of dying between ages x and x+1 (qx) and survivors of 100,000 born (lx), UN World Population Prospects 2024"
+    },
+    "wpp/population_by_age": {
+      "rows": 21816,
+      "title": "Population by single age and sex, 1 July 2023, thousands, UN World Population Prospects 2024"
     }
   },
   "sources": {
@@ -155,6 +175,11 @@
       "release": "2026-09-16",
       "title": "BIS, central bank policy rates, bulk CSV",
       "url": "https://data.bis.org/static/bulk/WS_CBPOL_csv_flat.zip"
+    },
+    "ilo_disability": {
+      "fetched": "2026-09-24",
+      "title": "ILOSTAT SDMX API",
+      "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
     },
     "imf": {
       "title": "IMF DataMapper API",
@@ -184,6 +209,11 @@
       "release": "2026-09-09",
       "title": "World Inequality Database, bulk download",
       "url": "https://wid.world/bulk_download/wid_all_data.zip"
+    },
+    "wpp": {
+      "fetched": "2026-09-24",
+      "title": "UN DESA, World Population Prospects 2024, standard projections (medium variant), CSV files",
+      "url": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/CSV_FILES/<file>"
     }
   },
   "years": "2015-2025"
