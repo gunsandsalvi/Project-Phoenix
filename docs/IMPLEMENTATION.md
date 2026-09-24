@@ -3076,7 +3076,7 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 
 ### S0.17 — `phx-ledger` III: the settlement stream, the fixed point, levies, standing and pooled flows, transfers and the waterfall
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - PROCESS: MON.5 *(batches, net settlement, failure per payer)*; SET.6; TIME.7; REP.8 *(part: the pooled-flow rule as
@@ -3334,12 +3334,25 @@ the 10 ns a row and 30 ns a payment the budget allows (F-020).
 - `phx-ledger` naming a `phx-pop` type.
 
 **Done when**
-- [ ] The stream, the fixed point, the apply and the rest exist, and the institutions' dated flows settle through
+- [x] The stream, the fixed point, the apply and the rest exist, and the institutions' dated flows settle through
   them.
-- [ ] LC-0-27, LC-0-28 and LC-0-61 pass; LC-0-29 is registered.
-- [ ] Unit costs are recorded by instruction counts and judged on the phone at S0.26.
-- [ ] PC-27 is registered.
-- [ ] Two reviews are done.
+- [x] LC-0-27, LC-0-28 and LC-0-61 pass; LC-0-29 is registered.
+- [x] Unit costs are recorded by instruction counts and judged on the phone at S0.26.
+- [x] PC-27 is registered.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found the
+  verdicts read from the fixed point's own records (now recomputed from the settled payments), a day's legs and
+  pending routes held whole (now applied line by line and held in a pass of their own), a payment's route derived
+  three times and rows found by search (F-020), the sequential apply (F-021), and the functions no stream reads yet
+  (F-022).
+
+**Build run** (fb6b5a4, `perf/build-run/fb6b5a4290bb.json`): settled 2026 and ran to 2 January 2029, 1 098 days in
+94 s after a 15 s opening, peak 158 MiB; every live check passes but LC-0-10, which waits for saves (S0.20), and
+LC-0-29, which waits for the first levy; the audit checked 10.6 million rows and found nothing. The ledger's seven
+counters had no ratchet before this run and are set from it. 34.9 million run heads were read, 26.3 million rows of
+scanned segments, 3.7 million of them due: a bank's segment holds all its loans and is due most days, so most rows
+it scans are not (the +5 ns line of the budget). 2.67 million payments fell due, 2.56 million settled and 106 607
+failed for funds (F-016); no payment needed another's credit, so the closing ring stayed empty. The most on one day:
+52 778 payments, 2 852 visits of the fixed point, 9.4 MB of records and nets.
 
 ---
 
@@ -15269,7 +15282,7 @@ the final build within the budget on the phone.
 | F-015 | S0.16 | derivation, 2026-09-24 | Firm density (enterprises per person employed) is published for 35 economies, the OECD's business statistics, all but four in the developed group; the developed median is 0.215. The emerging and developing groups' 0.209 is assumed at the median over all 35 economies it reports, with its reason in the data | none: missing data | a source with world coverage (the World Bank's Entrepreneurship Database or national business registers) | open |
 | F-016 | S0.16 | build machine, 2026-09-24 | The opening's firms pay their loans' interest and principal from their deposits and earn nothing: in the first 397 days about 13 900 of 1.1 million dues fail for funds, and their rows fall into arrears; by the end of the second year the emerging country's firms are drained, and on 27 December 2027, the one country open, all 733 of its dues failed (the build run on ff93e15, LC-0-26) | FRM's production and sales, which bring the firms' income, do not exist yet | S1.03 (firms produce and sell), whose live checks take on LC-0-26's claim that payments settle every business day; until then the fails are the world's truth, never masked | open |
 | F-017 | S0.16 | build machine, 2026-09-24 | The opening's balance sheets are partial: the banks' deposits are the firms' alone (a quarter of the published deposits), so the banks' equity is the rest of their loans and reserves (7.4 × 10¹⁴ against 1.06 × 10¹⁵ of loans), and the treasury's equity is minus the reserves, since the central bank's claim on it stands for the sovereign's debt | households, their deposits and the banks' owners are not drawn yet; the sovereign's debt waits for SOV | S0.25 (households, their deposits and ownership) and S1.11 (the sovereign's debt); `GEN.bank_capital_ratio` is read then | open |
-| F-018 | S0.16 | build machine, 2026-09-24 | Stage 7's dues scan every line and read every holder's rows each business day, and a leg on a bank's row reads the bank's run to find it (about 1 400 rows a bank): 397 days with the opening took 49 s, the opening itself about 12 s; at the full world's 36 M rows the scan alone would miss the budget | no due-day runs or payer pass yet; rows found by reading a holder's run | S0.17: the payer pass over due-day runs, rows found by their run head | open |
+| F-018 | S0.16 | build machine, 2026-09-24 | Stage 7's dues scan every line and read every holder's rows each business day, and a leg on a bank's row reads the bank's run to find it (about 1 400 rows a bank): 397 days with the opening took 49 s, the opening itself about 12 s; at the full world's 36 M rows the scan alone would miss the budget | no due-day runs or payer pass yet; rows found by reading a holder's run | S0.17: the payer pass over due-day runs, rows found by their run head | closed: S0.17's due-day runs and payer pass read one head a holder and scan a segment only on its day; what a payment still costs is F-020 |
 | F-019 | S0.16 | build machine, 2026-09-24 | The opening's report keeps every write in the world's memory: 225 k now, tens of millions once households are drawn | the report is kept whole for the run's report and LC-0-24 | S0.25: the report streams its writes to the run's directory and keeps their counts and sums | open |
 | F-020 | S0.17 | build machine, 2026-09-24 | 1b and the whole of stage 7 over sixteen loans due on one day cost 350 502 instructions (`phx_ledger.ir_settle_day_16`), about 22 000 a payment, against a budget of about 10 ns a row read and 30 ns a payment applied. Each payment's dues, route and legs are derived three times (7a, 7b, 7c), its reckoning, its accounts and its lines' owers are looked up through ordered maps and holder lists, a bank's row is found by reading its run, and each scanned holder's due rows are collected into a vector | the per-payment path: nothing of a payment is kept between the passes, and rows and routes are found by search | before the Stage 0 gate (S0.26): a payment's route kept per (party, bank) in the day's records, accounts found by the run head's offsets, the dues computed once in 7a; measured on the phone | open |
 | F-021 | S0.17 | build, 2026-09-24 | 7c applies the day's nets sequentially, one instruction per line, not in parallel by target chunk: the money legs of every payment sit on one deposit or reserves line per bank, so a line's instruction is the unit of apply and lines share their parties' accounts | a chunked apply needs the nets split by the account's chunk, not the line | S0.26: parallelised by target chunk if the phone's measure of 7c calls for it | open |

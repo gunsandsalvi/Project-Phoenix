@@ -33,6 +33,44 @@ counter = "phx_geo.map_bytes"
 value = 7498868
 direction = "down"
 
+# Stage 7 on the build run, the most on any day: rows of lines due read, run heads read, rows of scanned segments read
+# and those among them not due, payments, the fixed point's visits, and the bytes of the day's records and nets.
+# They rise with the world as its parties arrive, each rise stated.
+[[ratchet]]
+counter = "phx_ledger.rows_streamed"
+value = 60588
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.run_heads_read"
+value = 45038
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.run_rows_scanned"
+value = 132838
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.run_rows_not_due"
+value = 81796
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.payments"
+value = 52778
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.fixed_point_iterations"
+value = 2852
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.day_buffer_peak_bytes"
+value = 9376864
+direction = "down"
+
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
 [[ratchet]]
 counter = "phx_num.ir_value_of"
