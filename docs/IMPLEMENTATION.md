@@ -2424,7 +2424,7 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 
 ### S0.13 — `phx-geo`: the map, weather and catastrophes
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: GEO.1, GEO.2, GEO.3, GEO.6, GEO.7.
@@ -2567,10 +2567,14 @@ crate keeps map geometry of its own (GEO.14).
 - a fixed number of hazards in a type.
 
 **Done when**
-- [ ] The live world generates its map from its seed, and runs a year of weather and catastrophes.
-- [ ] LC-0-11 to LC-0-15 pass (LC-0-14 on the build run).
-- [ ] PC-23 is registered.
-- [ ] Two reviews are done.
+- [x] The live world generates its map from its seed, and runs a year of weather and catastrophes.
+- [x] LC-0-11 to LC-0-15 pass (LC-0-14 on the build run).
+- [x] PC-23 is registered.
+- [x] Two reviews are done.
+
+The build run on bc1dfb5 (perf/build-run/bc1dfb516364.json) accepted the map at its first attempt (40,000 land tiles,
+25 regions, 1,979 zones, 2,222 deposits), settled a year and ran two: 109,824 events, weather and catastrophes
+0.57 ms a day on the build machine, assembly 3.3 s, 29 MiB peak, no finding, every live check passing.
 
 ---
 

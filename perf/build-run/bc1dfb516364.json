@@ -1,0 +1,155 @@
+{
+  "assembly_ms": 3328,
+  "audit": {
+    "closes": 1098,
+    "families": [
+      "PTY.names",
+      "TIME.stamps",
+      "GEO.places",
+      "GEO.deposits"
+    ],
+    "most_rows_checked_in_a_close": 6131,
+    "phx_audit.rows_checked": 4724525
+  },
+  "build_seconds": 49,
+  "checks": [
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-01",
+      "outcome": "pass",
+      "title": "Every day has a record for every sub-step that should have run, and none for any that should not"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-02",
+      "outcome": "pass",
+      "title": "Every turn ends on a day that is a business day somewhere and covers every day since the last turn"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-03",
+      "outcome": "pass",
+      "title": "read-trace found no undeclared read, no read of a later write and no duplicate stream open"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-04",
+      "outcome": "pass",
+      "title": "Every record is dated with the day and sub-step that wrote it"
+    },
+    {
+      "detail": "it compared the world with a second run of it; the world runs once, and determinism is carried by construction",
+      "from_step": "S0.11",
+      "id": "LC-0-05",
+      "outcome": "retired",
+      "title": "The world hash is the same whatever the worker count"
+    },
+    {
+      "detail": "it compared the world with a second run of it; canonical handler ids carry it by construction",
+      "from_step": "S0.11",
+      "id": "LC-0-06",
+      "outcome": "retired",
+      "title": "The world hash is the same whatever the registration order"
+    },
+    {
+      "detail": "it compared the world with a second run of it; observers reach the world only through &self",
+      "from_step": "S0.11",
+      "id": "LC-0-07",
+      "outcome": "retired",
+      "title": "Looking at the world changes nothing"
+    },
+    {
+      "detail": "it compared the world with a second run of it; a stream's key comes from its own name alone",
+      "from_step": "S0.11",
+      "id": "LC-0-08",
+      "outcome": "retired",
+      "title": "Adding a stream changes no other stream's draws"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.12",
+      "id": "LC-0-09",
+      "outcome": "pass",
+      "title": "Every close ran every declared audit family, and they found nothing"
+    },
+    {
+      "detail": "an injection needs a save loaded apart, and saves arrive with persistence (S0.20)",
+      "from_step": "S0.12",
+      "id": "LC-0-10",
+      "outcome": "not yet",
+      "title": "Each family's injection into the day-30 save lights that family alone"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-11",
+      "outcome": "pass",
+      "title": "Every land tile's zone is in one region and country; every region has land; every site lies in its country and region"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-12",
+      "outcome": "pass",
+      "title": "The rejection record lists every failed attempt with its condition; the accepted map meets every condition"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-13",
+      "outcome": "pass",
+      "title": "Each region's realised weather is within z = 6.1 of its declared climate for the month, adjusted for persistence"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-14",
+      "outcome": "pass",
+      "title": "Catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the run"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-15",
+      "outcome": "pass",
+      "title": "For every finite deposit, extracted plus remaining equals its opening quantity"
+    }
+  ],
+  "counters": {
+    "phx_exec.barriers_per_empty_day": 0,
+    "phx_geo.map_bytes": 7417784
+  },
+  "days": 730,
+  "days_run": 1098,
+  "empty_world_budget_bytes": 52428800,
+  "findings": 0,
+  "first_day": "2026-01-01",
+  "geo": {
+    "deposits": 2222,
+    "events": 109824,
+    "land_tiles": 40000,
+    "phx_geo.generation_attempts": 1,
+    "regions": 25,
+    "rejections": [],
+    "zones": 1979
+  },
+  "last_day": "2029-01-02",
+  "longest_turn_days": 4,
+  "peak_resident_bytes": 30580736,
+  "placeholders": 0,
+  "ratchet_failures": [],
+  "read_trace": true,
+  "reserved_bytes": 4563402752,
+  "run_ms": 625,
+  "seed": 1,
+  "settle_years": 1,
+  "settled_on": "2026-12-31",
+  "standing_shapes": 10,
+  "turns": 775,
+  "workers": null,
+  "world_hash": "1638900ee7b1e591a64b80bea7dcc2ad"
+}
