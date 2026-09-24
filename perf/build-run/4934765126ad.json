@@ -1,0 +1,331 @@
+{
+  "assembly_ms": 14705,
+  "audit": {
+    "closes": 1098,
+    "families": [
+      "PTY.names",
+      "TIME.stamps",
+      "GEO.places",
+      "GEO.deposits",
+      "REG.ownership",
+      "REG.contracts",
+      "MON.money",
+      "SET.flows",
+      "NUM.units"
+    ],
+    "most_rows_checked_in_a_close": 156264,
+    "phx_audit.rows_checked": 15731202
+  },
+  "build_seconds": 0,
+  "checks": [
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-01",
+      "outcome": "pass",
+      "title": "Every day has a record for every sub-step that should have run, and none for any that should not"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-02",
+      "outcome": "pass",
+      "title": "Every turn ends on a day that is a business day somewhere and covers every day since the last turn"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-03",
+      "outcome": "pass",
+      "title": "read-trace found no undeclared read, no read of a later write and no duplicate stream open"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-04",
+      "outcome": "pass",
+      "title": "Every record is dated with the day and sub-step that wrote it"
+    },
+    {
+      "detail": "it compared the world with a second run of it; the world runs once, and determinism is carried by construction",
+      "from_step": "S0.11",
+      "id": "LC-0-05",
+      "outcome": "retired",
+      "title": "The world hash is the same whatever the worker count"
+    },
+    {
+      "detail": "it compared the world with a second run of it; canonical handler ids carry it by construction",
+      "from_step": "S0.11",
+      "id": "LC-0-06",
+      "outcome": "retired",
+      "title": "The world hash is the same whatever the registration order"
+    },
+    {
+      "detail": "it compared the world with a second run of it; observers reach the world only through &self",
+      "from_step": "S0.11",
+      "id": "LC-0-07",
+      "outcome": "retired",
+      "title": "Looking at the world changes nothing"
+    },
+    {
+      "detail": "it compared the world with a second run of it; a stream's key comes from its own name alone",
+      "from_step": "S0.11",
+      "id": "LC-0-08",
+      "outcome": "retired",
+      "title": "Adding a stream changes no other stream's draws"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.12",
+      "id": "LC-0-09",
+      "outcome": "pass",
+      "title": "Every close ran every declared audit family, and they found nothing"
+    },
+    {
+      "detail": "an injection needs a save loaded apart, and saves arrive with persistence (S0.20)",
+      "from_step": "S0.12",
+      "id": "LC-0-10",
+      "outcome": "not yet",
+      "title": "Each family's injection into the day-30 save lights that family alone"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-11",
+      "outcome": "pass",
+      "title": "The surface is closed, every tile with eight neighbours that count it back; every land tile's zone is in one region and country; every region has land; every site lies in its country and region"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-12",
+      "outcome": "pass",
+      "title": "The rejection record lists every failed attempt with its condition; the accepted map meets every condition"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-13",
+      "outcome": "pass",
+      "title": "Each region's realised weather is within z = 6.1 of its declared climate for the month, adjusted for persistence"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-14",
+      "outcome": "pass",
+      "title": "Catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the run"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-15",
+      "outcome": "pass",
+      "title": "For every finite deposit, extracted plus remaining equals its opening quantity"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.14",
+      "id": "LC-0-16",
+      "outcome": "pass",
+      "title": "For every issued instrument, holdings sum to the issued amount"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.14",
+      "id": "LC-0-17",
+      "outcome": "pass",
+      "title": "Every line's two sides hold equal counts, and each side it lists equals its holders' rows"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-18",
+      "outcome": "pass",
+      "title": "Per issuer and currency, the balances held equal its money liability; the notes held equal the notes issued"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-19",
+      "outcome": "pass",
+      "title": "Every instruction's paired legs sum to nothing per denomination; transformations and opening writes name their sources"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-20",
+      "outcome": "pass",
+      "title": "Per holder and asset per day, what it held plus what came in less what went out is what it holds"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-21",
+      "outcome": "pass",
+      "title": "Every fail has a cause, and its line kind's contract process recorded it at 2d"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-22",
+      "outcome": "pass",
+      "title": "Gross and net settlement and fails by cause are published every day"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-23",
+      "outcome": "pass",
+      "title": "Day one passes every family"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-24",
+      "outcome": "pass",
+      "title": "The GEN report lists every opening write with party, amount and identity, and each distribution with its source"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-25",
+      "outcome": "pass",
+      "title": "Every opening contract's payments fall on business days by its convention"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-26",
+      "outcome": "pass",
+      "title": "Payments fall due and are processed every business day, and every fail has a cause"
+    }
+  ],
+  "counters": {
+    "phx_exec.barriers_per_empty_day": 0,
+    "phx_geo.map_bytes": 7498388
+  },
+  "days": 730,
+  "days_run": 1098,
+  "findings": 0,
+  "first_day": "2026-01-01",
+  "geo": {
+    "deposits": 1399,
+    "events": 109838,
+    "land_goes_round": {
+      "east_west": true,
+      "north_south": false
+    },
+    "land_tiles": 40000,
+    "phx_geo.generation_attempts": 1,
+    "regions": 25,
+    "rejections": [],
+    "sea_goes_round": {
+      "east_west": true,
+      "north_south": false
+    },
+    "zones": 2000
+  },
+  "last_day": "2029-01-02",
+  "longest_turn_days": 4,
+  "memory_budget_bytes": 372244480,
+  "opening": {
+    "adjustments": [],
+    "apportioned": 32,
+    "distributions": [
+      {
+        "name": "BNK.banks/0",
+        "source": "14 banks, a Zipf law of exponent 0.9460 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "BNK.banks/1",
+        "source": "12 banks, a Zipf law of exponent 1.2009 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "BNK.banks/2",
+        "source": "6 banks, a Zipf law of exponent 0.8748 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "FRM.firms/0",
+        "source": "the 22500 largest of 17030840 firms (FRM.firms_per_employed over 79114592 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      },
+      {
+        "name": "FRM.firms/1",
+        "source": "the 13500 largest of 7426172 firms (FRM.firms_per_employed over 35518669 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      },
+      {
+        "name": "FRM.firms/2",
+        "source": "the 9000 largest of 5835800 firms (FRM.firms_per_employed over 27912072 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      }
+    ],
+    "kinds": {
+      "bank": {
+        "equity": "803518473140970",
+        "parties": 32
+      },
+      "central_bank": {
+        "equity": "0",
+        "parties": 3
+      },
+      "firm": {
+        "equity": "2872771456719604",
+        "parties": 45000
+      },
+      "treasury": {
+        "equity": "-168486538079881",
+        "parties": 3
+      }
+    },
+    "lines": {
+      "central bank credit to the treasury": {
+        "asset": "857641798131063",
+        "liability": "-857641798131063"
+      },
+      "current account": {
+        "asset": "423688751089411",
+        "liability": "-423688751089411"
+      },
+      "firm term loan": {
+        "asset": "1058720686150500",
+        "liability": "-1058720686150500"
+      },
+      "reserves": {
+        "asset": "168486538079881",
+        "liability": "-168486538079881"
+      },
+      "treasury account": {
+        "asset": "689155260051182",
+        "liability": "-689155260051182"
+      }
+    },
+    "writes": 225076
+  },
+  "peak_resident_bytes": 156553216,
+  "placeholders": 2,
+  "ratchet_failures": [],
+  "read_trace": true,
+  "reserved_bytes": 4563402752,
+  "run_ms": 88429,
+  "seed": 1,
+  "settle_years": 1,
+  "settled_on": "2026-12-31",
+  "settlement": {
+    "days": 1098,
+    "days_with_payments": 772,
+    "fails": {
+      "Funds": 108784
+    },
+    "gross": {
+      "0": "65186439585977",
+      "1": "13175624227310",
+      "2": "937907154748"
+    },
+    "instructions": 2694569,
+    "lines_due": 1047331,
+    "settled": 2585785
+  },
+  "standing_shapes": 17,
+  "turns": 775,
+  "workers": null,
+  "world_hash": "e45b9f75fcccddf30ea7ee12f3394a8d"
+}

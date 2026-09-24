@@ -2947,7 +2947,7 @@ on money lines and banknotes; row openings counted one-sided; the ledger's write
 
 ### S0.16 — GEN I and the institutions
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: GEN.1 *(part)*, GEN.5 *(part: contracts' terms)*.
@@ -3062,7 +3062,16 @@ writes, reports — and the first real parties:
 - [x] The live world opens with the institutions, balanced and reported, and pays its dated flows for a year.
 - [x] LC-0-16 to LC-0-26 pass.
 - [x] PC-26 is registered.
-- [ ] Two reviews are done.
+- [x] Two reviews are done: the builder's, spec and laws, then architecture, budget and shortcuts. They found the
+  opening's loans all falling due on one day of the month (starts are now drawn by day), accounts left due on the
+  opening day (now spent), 2d running on holidays, the gather's and the report's cost (F-018, F-019), and stand-in
+  defaults (none left).
+
+**Build run** (4934765, `perf/build-run/4934765126ad.json`): settled 2026 and ran to 2 January 2029, 1 098 days in
+88 s after a 15 s opening, peak 149 MiB; every live check passes but LC-0-10, which waits for saves (S0.20); the
+audit checked 15.7 million rows and found nothing. The opening drew 3 central banks and treasuries, 32 banks (14, 12
+and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million settled and 108 784 failed for funds
+(F-016).
 
 ---
 
