@@ -76,6 +76,39 @@ pub struct ProfileComponent {
     pub values: u32,
 }
 
+/// A joint value of components, the first the most significant: each component's value, in turn, over the values of
+/// those after it. A value beyond its component's stops the run.
+#[clause("REP.32")]
+#[must_use]
+pub fn joint(components: &[ProfileComponent], values: &[u32]) -> u32 {
+    if components.len() != values.len() {
+        phx_num::violation!(clause = "REP.32", "a joint value of another number of components", given = values.len());
+    }
+    components.iter().zip(values).fold(0_u32, |acc, (c, v)| {
+        if *v >= c.values {
+            phx_num::capacity_exceeded!("values of a profile component", c.values, *v);
+        }
+        let Some(next) = acc.checked_mul(c.values).and_then(|a| a.checked_add(*v)) else {
+            phx_num::capacity_exceeded!("joint values of a profile group", u32::MAX, acc);
+        };
+        next
+    })
+}
+
+/// One component's value within a joint value.
+#[clause("REP.32")]
+#[must_use]
+pub fn component(components: &[ProfileComponent], joint: u32, at: usize) -> u32 {
+    let Some(c) = components.get(at) else {
+        phx_num::violation!(clause = "REP.32", "a component beyond its group", at = at);
+    };
+    let after = components.iter().skip(at + 1).try_fold(1_u32, |acc, c| acc.checked_mul(c.values));
+    let Some(after) = after else {
+        phx_num::capacity_exceeded!("joint values of a profile group", u32::MAX, joint);
+    };
+    (joint / after) % c.values
+}
+
 /// Attributes members of a role do not share, counted jointly: each member of the role holds one value of every
 /// component, and the cell counts its members per joint value.
 #[clause("REP.32", "REP.33")]
@@ -186,5 +219,28 @@ impl<'a> PopKindBuilder<'a> {
 
     pub fn resolution(&mut self, decl: ResolutionDecl) -> &mut Self {
         self.add(PopItem::Resolution(decl))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ProfileComponent, component, joint};
+
+    const LIFE: &[ProfileComponent] = &[
+        ProfileComponent { name: "year", values: 256 },
+        ProfileComponent { name: "sex", values: 2 },
+        ProfileComponent { name: "health", values: 2 },
+    ];
+
+    #[test]
+    fn a_joint_value_reads_back_to_its_components() {
+        let v = joint(LIFE, &[125, 1, 0]);
+        assert_eq!(v, (125 * 2 + 1) * 2);
+        assert_eq!([0, 1, 2].map(|at| component(LIFE, v, at)), [125, 1, 0]);
+    }
+
+    #[test]
+    fn a_value_beyond_its_component_is_refused() {
+        assert!(std::panic::catch_unwind(|| joint(LIFE, &[0, 2, 0])).is_err());
     }
 }

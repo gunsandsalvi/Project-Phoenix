@@ -8,3 +8,11 @@ decided_by = "parliament"
 source = "assumed"
 source_ref = "The age at which family law makes a person an adult: 18, as the UN Convention on the Rights of the Child defines childhood and as nearly every country's civil law sets majority."
 value = 18
+
+[[primitive]]
+id = "DEM.partner_age_gap"
+kind = "ENDOWMENT"
+owner = "DEM"
+source = "assumed"
+source_ref = "A man's age less his female partner's in a couple living together, normal: a mean of 6 years for the group, near the gap between men's and women's mean ages at first marriage that UN DESA's World Marriage Data reports for such economies, and a spread of 5 years, both assumed until the gap is derived from those data (F-036)."
+value = { family = "normal", discretisation = "equal_shares", mean = "6", sd = "5" }

@@ -221,6 +221,17 @@ pub struct Distribution {
     pub exp: u8,
 }
 
+impl Distribution {
+    /// One value drawn from the distribution, its quantile at a uniform draw.
+    #[clause("NUM.4", "CHN.6")]
+    pub fn draw(&self, draws: &mut Draws) -> f64 {
+        match quantile::quantile(&self.family, phx_rand::open_unit(draws)) {
+            Ok(x) => x,
+            Err(_) => phx_num::violation!(clause = "NUM.4", "a distribution with no value at a drawn share"),
+        }
+    }
+}
+
 /// A type within a kind's type set.
 #[must_use]
 #[repr(transparent)]

@@ -50,7 +50,7 @@ impl<'a> OpeningCtx<'a> {
 }
 
 /// A country as the opening reads it: its identity, its people, its GDP in its currency's smallest units, its derived
-/// values on their natural scales, and the land tiles its parties may be sited on.
+/// values on their natural scales, the land tiles its parties may be sited on, and its regions, each with its land.
 #[derive(Clone, Debug, PartialEq)]
 pub struct OpeningCountry {
     pub id: CountryId,
@@ -58,6 +58,7 @@ pub struct OpeningCountry {
     pub gdp: f64,
     pub derived: Vec<(String, f64)>,
     pub sites: Vec<TileId>,
+    pub regions: Vec<(u32, Vec<TileId>)>,
 }
 
 impl OpeningCountry {

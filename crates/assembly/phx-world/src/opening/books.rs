@@ -18,28 +18,37 @@ use crate::opening::newgame::NewGame;
 #[must_use]
 pub fn countries(game: &NewGame, geo: &GeoState, population: u64, units: &[u64]) -> Vec<OpeningCountry> {
     let map = &geo.map;
-    let country_of = |i: usize| {
+    let region_of = |i: usize| {
         map.tiles
             .get(i)
             .and_then(phx_geo::tile::Tile::zone)
             .and_then(|z| map.zones.get(usize::try_from(z.get()).ok()?))
-            .and_then(|z| map.regions.get(usize::from(z.region.get())))
-            .map(|r| r.country)
+            .map(|z| z.region.get())
+            .and_then(|r| map.regions.get(usize::from(r)).map(|x| (u32::from(r), x.country)))
     };
     let mut sites: Vec<Vec<TileId>> = vec![Vec::new(); game.countries.len()];
+    let mut regions: Vec<Vec<(u32, Vec<TileId>)>> = vec![Vec::new(); game.countries.len()];
     for i in 0..map.tiles.len() {
-        if let Some(c) = country_of(i)
-            && let Some(s) = sites.get_mut(usize::from(c.get()))
+        if let Some((r, c)) = region_of(i)
+            && let (Some(s), Some(rs)) = (sites.get_mut(usize::from(c.get())), regions.get_mut(usize::from(c.get())))
         {
-            s.push(map.grid.tile(i));
+            let tile = map.grid.tile(i);
+            s.push(tile);
+            match rs.iter_mut().find(|(id, _)| *id == r) {
+                Some((_, land)) => land.push(tile),
+                None => rs.push((r, vec![tile])),
+            }
         }
+    }
+    for rs in &mut regions {
+        rs.sort_by_key(|(r, _)| *r);
     }
     game.countries
         .iter()
         .zip(&game.setup.split)
-        .zip(sites)
+        .zip(sites.into_iter().zip(regions))
         .zip(0_u8..)
-        .map(|(((country, share), sites), i)| {
+        .map(|(((country, share), (sites, regions)), i)| {
             let people = population * share / WHOLE;
             let per_head = country.derived.iter().find(|(n, _)| n == "GEN.gdp_per_head").map(|(_, v)| *v);
             let unit = units.get(usize::from(i)).copied().map(phx_rand::float::from_u64);
@@ -52,6 +61,7 @@ pub fn countries(game: &NewGame, geo: &GeoState, population: u64, units: &[u64])
                 gdp: phx_rand::float::from_u64(people) * per_head * unit,
                 derived: country.derived.clone(),
                 sites,
+                regions,
             }
         })
         .collect()

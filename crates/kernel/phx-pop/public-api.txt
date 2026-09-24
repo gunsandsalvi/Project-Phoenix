@@ -256,6 +256,10 @@ pub phx_pop::kind::Position::steps: phx_pop::steps::StepTable
 pub phx_pop::kind::Position::unit: &'static str
 pub phx_pop::kind::Position::writer: &'static str
 pub mod phx_pop::landing
+pub struct phx_pop::landing::Drawn
+pub phx_pop::landing::Drawn::key: phx_pop::key::KeyRecord
+pub phx_pop::landing::Drawn::profile: phx_pop::profile::Profile
+pub phx_pop::landing::Drawn::weight: phx_core::weight::Weight
 pub struct phx_pop::landing::Landed
 pub phx_pop::landing::Landed::erased: alloc::vec::Vec<f64>
 pub phx_pop::landing::Landed::holder_list_changes: u64
@@ -287,6 +291,7 @@ pub fn phx_pop::index::Index::candidates(&self, u64) -> alloc::vec::Vec<(phx_id:
 pub fn phx_pop::index::Index::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
 pub fn phx_pop::index::Index::remove(&mut self, u64, phx_id::ids::PartyId)
 pub fn phx_pop::landing::land<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut dyn phx_pop::landing::LandingIndex, alloc::vec::Vec<phx_pop::part::Part>) -> phx_pop::landing::Landed
+pub fn phx_pop::landing::land_drawn<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut dyn phx_pop::landing::LandingIndex, alloc::vec::Vec<phx_pop::landing::Drawn>) -> phx_pop::landing::Landed
 pub fn phx_pop::landing::landing_key(phx_pop::key::KeyId, &[phx_pop::steps::Step], &[u64]) -> u64
 pub mod phx_pop::measure
 pub struct phx_pop::measure::Census

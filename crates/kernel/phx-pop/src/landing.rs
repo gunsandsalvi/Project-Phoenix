@@ -290,6 +290,46 @@ pub fn land<B: Backing, L: Backing>(
     landed
 }
 
+/// Members the opening draws, which leave no cell: their key, their weight and their profile, with no position,
+/// rate, exposure, attention, row or holding yet.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Drawn {
+    pub key: KeyRecord,
+    pub weight: phx_core::Weight,
+    pub profile: crate::profile::Profile,
+}
+
+/// The opening's members landed as a day's parts land. Having left no cell, their parts are ordered by their place
+/// in the list, under the first identity this landing hands out.
+#[clause("GEN.3", "REP.8", "REP.14")]
+pub fn land_drawn<B: Backing, L: Backing>(
+    ctx: &mut TenB<'_, B, L>,
+    index: &mut dyn LandingIndex,
+    drawn: Vec<Drawn>,
+) -> Landed {
+    let origin = PartyId::new(ctx.directory.next());
+    let (kind, sig) = (ctx.kind, ctx.kind.sig.words());
+    let parts = drawn
+        .into_iter()
+        .zip(0_u32..)
+        .map(|(d, seq)| Part {
+            id: PartId { origin, seq },
+            from: Slot::new(0),
+            weight: d.weight,
+            key: d.key,
+            sig: vec![0; sig],
+            positions: vec![0; kind.positions.len()],
+            rates: vec![Missing::Absent; kind.rates.len()],
+            exposures: vec![Missing::Absent; kind.reviews.len()],
+            attention: vec![Missing::Absent; kind.reviews.len()],
+            profile: d.profile,
+            rows: Vec::new(),
+            holdings: Vec::new(),
+        })
+        .collect();
+    land(ctx, index, parts)
+}
+
 /// A cell's position totals, in the kind's order.
 pub(crate) fn totals<B: Backing>(table: &CellTable<B>, slot: Slot) -> Vec<i64> {
     (0..table.positions()).map(|i| table.position(slot, i)).collect()

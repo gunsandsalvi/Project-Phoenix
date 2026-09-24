@@ -290,6 +290,7 @@ pub phx_core::contribution::OpeningCountry::derived: alloc::vec::Vec<(alloc::str
 pub phx_core::contribution::OpeningCountry::gdp: f64
 pub phx_core::contribution::OpeningCountry::id: phx_id::ids::CountryId
 pub phx_core::contribution::OpeningCountry::people: u64
+pub phx_core::contribution::OpeningCountry::regions: alloc::vec::Vec<(u32, alloc::vec::Vec<phx_id::ids::TileId>)>
 pub phx_core::contribution::OpeningCountry::sites: alloc::vec::Vec<phx_id::ids::TileId>
 impl phx_core::contribution::OpeningCountry
 pub fn phx_core::contribution::OpeningCountry::derived(&self, &str) -> core::option::Option<f64>
@@ -1043,6 +1044,8 @@ pub struct phx_core::pop::RoleDecl
 pub phx_core::pop::RoleDecl::clause: &'static str
 pub phx_core::pop::RoleDecl::name: &'static str
 pub phx_core::pop::RoleDecl::per_member: phx_core::pop::RoleCount
+pub fn phx_core::pop::component(&[phx_core::pop::ProfileComponent], u32, usize) -> u32
+pub fn phx_core::pop::joint(&[phx_core::pop::ProfileComponent], &[u32]) -> u32
 pub mod phx_core::pop_process
 pub enum phx_core::pop_process::MemberChange
 pub phx_core::pop_process::MemberChange::End
@@ -1312,6 +1315,8 @@ pub struct phx_core::register::values::Distribution
 pub phx_core::register::values::Distribution::discretisation: phx_core::register::values::Discretisation
 pub phx_core::register::values::Distribution::exp: u8
 pub phx_core::register::values::Distribution::family: phx_core::register::values::Family
+impl phx_core::register::values::Distribution
+pub fn phx_core::register::values::Distribution::draw(&self, &mut phx_rand::draws::Draws) -> f64
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
@@ -2450,6 +2455,8 @@ pub struct phx_core::Distribution
 pub phx_core::Distribution::discretisation: phx_core::register::values::Discretisation
 pub phx_core::Distribution::exp: u8
 pub phx_core::Distribution::family: phx_core::register::values::Family
+impl phx_core::register::values::Distribution
+pub fn phx_core::register::values::Distribution::draw(&self, &mut phx_rand::draws::Draws) -> f64
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
@@ -2794,6 +2801,7 @@ pub phx_core::OpeningCountry::derived: alloc::vec::Vec<(alloc::string::String, f
 pub phx_core::OpeningCountry::gdp: f64
 pub phx_core::OpeningCountry::id: phx_id::ids::CountryId
 pub phx_core::OpeningCountry::people: u64
+pub phx_core::OpeningCountry::regions: alloc::vec::Vec<(u32, alloc::vec::Vec<phx_id::ids::TileId>)>
 pub phx_core::OpeningCountry::sites: alloc::vec::Vec<phx_id::ids::TileId>
 impl phx_core::contribution::OpeningCountry
 pub fn phx_core::contribution::OpeningCountry::derived(&self, &str) -> core::option::Option<f64>
@@ -3335,6 +3343,7 @@ pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, 
 pub fn phx_core::annual_to_daily(f64, u32) -> f64
 pub fn phx_core::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
 pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
+pub fn phx_core::component(&[phx_core::pop::ProfileComponent], u32, usize) -> u32
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
 pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
@@ -3343,6 +3352,7 @@ pub fn phx_core::draw_profile(&phx_core::register::profile::JointProfile, &[phx_
 pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
+pub fn phx_core::joint(&[phx_core::pop::ProfileComponent], &[u32]) -> u32
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::opening_subject(u32, u32) -> phx_rand::key::Subject
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>

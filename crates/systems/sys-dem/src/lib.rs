@@ -1,17 +1,25 @@
 //! DEM, population and demography: the household kind, its persons as roles, and the opening's households; mortality,
 //! illness and ageing arrive as processes on them.
 
+mod consts;
+mod opening;
 mod prims;
 
 use if_pop::{
     ADULT_COUNTS, ADULT_GROUPS, ADULTS, CHILD_COUNTS, CHILD_GROUPS, CHILDREN, HEAD, HEAD_AGE, HOUSEHOLD, PARTNER,
     PARTNER_AGE, PARTNERS, REGION,
 };
-use phx_core::{Declarations, HandlerTable, ResolutionDecl, System, declare_kind};
+use phx_core::{Declarations, HandlerTable, ResolutionDecl, StreamDef, System, declare_kind, declare_stream};
 
+pub use opening::Households;
 pub use prims::Prims;
 
 declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", table: Cells, clause: "POP.2" } }
+
+declare_stream! { pub RegionsStream = "DEM.opening_regions" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub CompositionStream = "DEM.opening_composition" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub HealthStream = "DEM.opening_health" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub EducationStream = "DEM.opening_education" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 /// Population and demography.
 #[derive(Debug)]
@@ -42,7 +50,11 @@ impl System for Dem {
     fn declare(d: &mut Declarations) {
         d.kind(HOUSEHOLD_KIND);
         declare_household(d);
-        let _prims = Prims::declare(d);
+        for stream in [RegionsStream::DECL, CompositionStream::DECL, HealthStream::DECL, EducationStream::DECL] {
+            d.stream(stream);
+        }
+        let prims = Prims::declare(d);
+        d.contribution(Box::new(Households { prims }));
     }
 
     fn handlers(_: &mut HandlerTable) {}

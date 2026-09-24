@@ -83,6 +83,17 @@ declare_prim! {
     pub WEALTH = "DEM.wealth_shape" { kind: Endowment, value: Distribution { exp: 6 }, clause: "GEN.2", scope: PerCountry }
 }
 declare_prim! {
+    /// Who each basic type of household holds besides its head: a partner, children, an older relative, another
+    /// adult, one or none of each.
+    pub MEMBERS = "DEM.household_members" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 0 }, clause: "GEN.2", scope: Shared
+    }
+}
+declare_prim! {
+    /// A man's age less his female partner's, in years.
+    pub PARTNER_GAP = "DEM.partner_age_gap" { kind: Endowment, value: Distribution { exp: 2 }, clause: "GEN.2", scope: PerCountry }
+}
+declare_prim! {
     /// The age classes the key holds persons in, by their first ages.
     pub AGE_CLASSES = "DEM.age_classes" { kind: Resolution, value: Partition { exp: 0 }, clause: "REP.25", scope: Shared }
 }
@@ -115,6 +126,8 @@ pub struct Prims {
     pub wealth: Prim<Distribution>,
     pub age_classes: Prim<Partition>,
     pub majority: Prim<Count>,
+    pub members: Prim<Table2>,
+    pub partner_gap: Prim<Distribution>,
 }
 
 impl Prims {
@@ -136,6 +149,8 @@ impl Prims {
             wealth: d.prim(&WEALTH),
             age_classes: d.prim(&AGE_CLASSES),
             majority: d.prim(&MAJORITY),
+            members: d.prim(&MEMBERS),
+            partner_gap: d.prim(&PARTNER_GAP),
         }
     }
 }

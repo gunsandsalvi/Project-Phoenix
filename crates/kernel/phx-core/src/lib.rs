@@ -80,7 +80,7 @@ pub use phx_macros::{
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
 pub use pop::{
     GroupDecl, KeyAttrDecl, PinDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, PositionOf, ProfileComponent,
-    RankDecl, RateDecl, ResolutionDecl, RoleCount, RoleDecl, ScaleRef,
+    RankDecl, RateDecl, ResolutionDecl, RoleCount, RoleDecl, ScaleRef, component, joint,
 };
 pub use pop_process::{CellView, HouseholdHit, MemberChange, PersonsGo, PopProcess, RoleMove};
 pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};

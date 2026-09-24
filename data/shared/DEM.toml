@@ -15,3 +15,11 @@ owner = "DEM"
 source = "assumed"
 source_ref = "The most household cells the representation keeps before tolerance control widens their steps: the architecture's sizing of about two million cells for the world's households (N8), set by measuring the budget."
 value = 2000000
+
+[[primitive]]
+id = "DEM.household_members"
+kind = "ENDOWMENT"
+owner = "DEM"
+source = "assumed"
+source_ref = "Who each basic type of household in DEM.household_types holds besides its head (rows in that order: one person, couple only, couple with children, single parent with children, extended family, non-relatives), one or none of each column: a partner, the children under the age of majority of the head's side, a relative of 65 and over, an adult who is no relative. The types are UN DESA's (Database on Household Size and Composition): a couple or a parent with children is a family nucleus, an extended family a nucleus with other relatives, here one older relative, and non-relatives persons sharing a dwelling, here two. A single parent is the children's mother. Each is an assumption of the opening's composition."
+value = { rows = [0, 1, 2, 3, 4, 5], columns = [0, 1, 2, 3], values = [[0, 0, 0, 0], [1, 0, 0, 0], [1, 1, 0, 0], [0, 1, 0, 0], [1, 1, 1, 0], [0, 0, 0, 1]], outside = "refuse" }

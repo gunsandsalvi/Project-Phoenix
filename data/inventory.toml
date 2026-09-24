@@ -216,7 +216,7 @@ what = "households by size and composition, and by region"
 owner = "DEM"
 first_read = "S0.25"
 source = "UN DESA Database on Household Size and Composition 2026 (types and sizes as log ratios on the drawn fertility) and on the Living Arrangements of Older Persons 2026; kin from WPP's fertility by year and age and survival (the owner's decision)"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/DEM.toml; by region, drawn with the region's households at S0.25c"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/DEM.toml; by region, drawn with the region's households at S0.25c; whom each type holds (DEM.household_members) and the partners' age gap (DEM.partner_age_gap) are assumed (F-036)"
 
 [[row]]
 id = "GEN.dist.education_and_skills"
