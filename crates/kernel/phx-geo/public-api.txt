@@ -439,6 +439,7 @@ pub fn phx_geo::tile::Tile::is_land(&self) -> bool
 pub fn phx_geo::tile::Tile::new(i16, u8, u8, u8, core::option::Option<phx_id::ids::ZoneId>) -> phx_geo::tile::Tile
 pub fn phx_geo::tile::Tile::zone(&self) -> core::option::Option<phx_id::ids::ZoneId>
 impl phx_store::pod::Pod for phx_geo::tile::Tile
+pub fn phx_geo::tile::Tile::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_geo::tile::Tile
 pub struct phx_geo::tile::Zone
 pub phx_geo::tile::Zone::centroid: phx_id::ids::TileId

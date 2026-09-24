@@ -3698,7 +3698,7 @@ end 66 834 unpaid claims stood, receivable and payable alike at 6 492 394 979 63
 
 ### S0.20 — Persistence and the save check
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: SET.12, SET.13.

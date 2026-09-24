@@ -343,6 +343,26 @@ pub fn move_list<B: Backing>(from: &mut ChunkArena<B>, to: &mut ChunkArena<B>, l
     list.off = off;
 }
 
+impl<B: Backing> crate::save::Saved for ChunkArena<B> {
+    fn save(&self, w: &mut crate::save::Writer<'_>) {
+        self.dead.save(w);
+        self.compactions.save(w);
+        self.words.save_prefix(to_usize(self.end), w, crate::Transform::Plain);
+        self.overflow.save_prefix(self.n_overflow, w, crate::Transform::Plain);
+    }
+
+    fn load(r: &mut crate::save::Reader<'_>) -> Result<ChunkArena<B>, crate::save::LoadError> {
+        let (dead, compactions) = (u32::load(r)?, u64::load(r)?);
+        let (words, end) = Region::load_prefix(r, crate::Transform::Plain)?;
+        let (overflow, n_overflow) = Region::load_prefix(r, crate::Transform::Plain)?;
+        let end = crate::save::narrow::<u32>(end, "an arena's words")?;
+        if dead > end {
+            return Err(crate::save::LoadError::Invalid("an arena with more dead words than words".to_owned()));
+        }
+        Ok(ChunkArena { words, end, dead, compactions, overflow, n_overflow })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};

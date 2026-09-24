@@ -46,6 +46,7 @@ pub phx_store::arena::CellListRef::off: u32
 impl phx_store::arena::CellListRef
 pub const phx_store::arena::CellListRef::EMPTY: phx_store::arena::CellListRef
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
+pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 pub struct phx_store::arena::CellLists<'a>
 pub phx_store::arena::CellLists::first_owner: u32
@@ -70,6 +71,9 @@ pub fn phx_store::arena::ChunkArena<B>::remove(&mut self, &mut phx_store::arena:
 pub fn phx_store::arena::ChunkArena<B>::resolve(&self, u32, phx_store::arena::CellListRef) -> phx_store::arena::ListRef
 pub fn phx_store::arena::ChunkArena<B>::store(&mut self, u32, &mut phx_store::arena::CellListRef, phx_store::arena::ListRef)
 pub fn phx_store::arena::ChunkArena<B>::used_words(&self) -> u32
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
+pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>
+pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)
 #[repr(C)] pub struct phx_store::arena::ListRef
 pub phx_store::arena::ListRef::cap: u32
 pub phx_store::arena::ListRef::len: u32
@@ -77,6 +81,7 @@ pub phx_store::arena::ListRef::off: u32
 impl phx_store::arena::ListRef
 pub const phx_store::arena::ListRef::EMPTY: phx_store::arena::ListRef
 impl phx_store::pod::Pod for phx_store::arena::ListRef
+pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 pub trait phx_store::arena::ArenaLists
 pub fn phx_store::arena::ArenaLists::count(&self) -> usize
@@ -150,6 +155,7 @@ pub const phx_store::block_list::BlockBag::EMPTY: phx_store::block_list::BlockBa
 pub fn phx_store::block_list::BlockBag::is_empty(self) -> bool
 pub fn phx_store::block_list::BlockBag::len(self) -> u32
 impl phx_store::pod::Pod for phx_store::block_list::BlockBag
+pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 #[repr(C)] pub struct phx_store::block_list::BlockList
 impl phx_store::block_list::BlockList
@@ -157,6 +163,7 @@ pub const phx_store::block_list::BlockList::EMPTY: phx_store::block_list::BlockL
 pub fn phx_store::block_list::BlockList::is_empty(self) -> bool
 pub fn phx_store::block_list::BlockList::len(self) -> u32
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
+pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
 pub struct phx_store::block_list::BlockPool<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
@@ -188,6 +195,12 @@ pub fn phx_store::column::Column<T, B>::rows_per_chunk(&self) -> usize
 pub fn phx_store::column::Column<T, B>::set(&mut self, phx_id::ids::Slot, T)
 pub fn phx_store::column::Column<T, B>::slice(&self) -> &[T]
 pub fn phx_store::column::Column<T, B>::slice_mut(&mut self) -> &mut [T]
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::load_as(&mut phx_store::save::Reader<'_>, phx_store::descriptor::Transform) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>
+pub fn phx_store::column::Column<T, B>::save_as(&self, &mut phx_store::save::Writer<'_>, phx_store::descriptor::Transform)
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>
+pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_store::consts
 pub const phx_store::consts::ARENA_DEAD_DEN: u64
 pub const phx_store::consts::ARENA_DEAD_NUM: u64
@@ -205,6 +218,7 @@ pub const phx_store::consts::ENCODE_MAGIC: u32
 pub const phx_store::consts::ENCODE_VERSION: u16
 pub const phx_store::consts::FRAME_BYTES: usize
 pub const phx_store::consts::HEAP_PAGE: usize
+pub const phx_store::consts::SAVE_READ_STEP: usize
 pub const phx_store::consts::SIP_C_ROUNDS: usize
 pub const phx_store::consts::SIP_D_ROUNDS: usize
 pub const phx_store::consts::SIP_INIT: [u64; 4]
@@ -253,8 +267,13 @@ pub phx_store::encode::DecodeError::Magic
 pub phx_store::encode::DecodeError::Truncated
 pub phx_store::encode::DecodeError::Version(u16)
 pub phx_store::encode::DecodeError::Width(u8)
+impl core::convert::From<phx_store::encode::DecodeError> for phx_store::save::LoadError
+pub fn phx_store::save::LoadError::from(phx_store::encode::DecodeError) -> phx_store::save::LoadError
 pub fn phx_store::encode::decode_column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&phx_store::descriptor::ColumnDescriptor, &[u8], &mut phx_store::column::Column<T, B>) -> core::result::Result<(), phx_store::encode::DecodeError>
+pub fn phx_store::encode::decode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[u8], &mut [T]) -> core::result::Result<(), phx_store::encode::DecodeError>
 pub fn phx_store::encode::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
+pub fn phx_store::encode::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>
+pub fn phx_store::encode::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>
 pub mod phx_store::hash
 pub struct phx_store::hash::IdentityHasher
 impl phx_store::hash::IdentityHasher
@@ -321,43 +340,81 @@ impl phx_store::pod::__seal::Sealed for u8
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::__seal::Sealed for [T; N]
 impl<const E: u8> phx_store::pod::__seal::Sealed for phx_num::fixed::Fixed<E>
 pub unsafe trait phx_store::pod::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static
+pub fn phx_store::pod::Pod::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for i16
+pub fn i16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for i32
+pub fn i32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for i64
+pub fn i64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for i8
+pub fn i8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::day::Day
+pub fn phx_id::day::Day::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::CountryId
+pub fn phx_id::ids::CountryId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::DayLocalId
+pub fn phx_id::ids::DayLocalId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::InstrumentId
+pub fn phx_id::ids::InstrumentId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::LineId
+pub fn phx_id::ids::LineId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::MarketId
+pub fn phx_id::ids::MarketId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::MsgId
+pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::PartyId
+pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::RegionId
+pub fn phx_id::ids::RegionId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::SeriesId
+pub fn phx_id::ids::SeriesId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::Slot
+pub fn phx_id::ids::Slot::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::StreamId
+pub fn phx_id::ids::StreamId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::TableId
+pub fn phx_id::ids::TableId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::TileId
+pub fn phx_id::ids::TileId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::ZoneId
+pub fn phx_id::ids::ZoneId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::missing::MaybeI64
+pub fn phx_num::missing::MaybeI64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::money::Amount
+pub fn phx_num::money::Amount::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::money::Ccy
+pub fn phx_num::money::Ccy::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::points::PointIdx
+pub fn phx_num::points::PointIdx::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::price::PriceRaw
+pub fn phx_num::price::PriceRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::qty::Count
+pub fn phx_num::qty::Count::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::qty::QtyRaw
+pub fn phx_num::qty::QtyRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::qty::UnitId
+pub fn phx_num::qty::UnitId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
+pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::arena::ListRef
+pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::block_list::BlockBag
+pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
+pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u16
+pub fn u16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u32
+pub fn u32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u64
+pub fn u64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u8
+pub fn u8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
+pub fn [T; N]::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl<const E: u8> phx_store::pod::Pod for phx_num::fixed::Fixed<E>
+pub fn phx_num::fixed::Fixed<E>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 pub fn phx_store::pod::as_bytes<T: phx_store::pod::Pod>(&[T]) -> &[u8]
 pub fn phx_store::pod::as_bytes_mut<T: phx_store::pod::Pod>(&mut [T]) -> &mut [u8]
 pub fn phx_store::pod::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
@@ -372,6 +429,97 @@ pub fn phx_store::region::Region<T, B>::release_above(&mut self, usize)
 pub fn phx_store::region::Region<T, B>::reserve(&mut phx_store::backing::AddressSpace, usize) -> phx_store::region::Region<T, B>
 pub fn phx_store::region::Region<T, B>::slice(&self, usize) -> &[T]
 pub fn phx_store::region::Region<T, B>::slice_mut(&mut self, usize) -> &mut [T]
+pub mod phx_store::save
+pub enum phx_store::save::LoadError
+pub phx_store::save::LoadError::Decode(phx_store::encode::DecodeError)
+pub phx_store::save::LoadError::Invalid(alloc::string::String)
+pub phx_store::save::LoadError::Io(core::io::error::Error)
+impl core::convert::From<core::io::error::Error> for phx_store::save::LoadError
+pub fn phx_store::save::LoadError::from(core::io::error::Error) -> phx_store::save::LoadError
+impl core::convert::From<phx_store::encode::DecodeError> for phx_store::save::LoadError
+pub fn phx_store::save::LoadError::from(phx_store::encode::DecodeError) -> phx_store::save::LoadError
+impl core::fmt::Display for phx_store::save::LoadError
+pub fn phx_store::save::LoadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_store::save::Reader<'a>
+impl<'a> phx_store::save::Reader<'a>
+pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>
+pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::rows_into<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform, &mut [T]) -> core::result::Result<(), phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::space(&mut self) -> &mut phx_store::backing::AddressSpace
+pub fn phx_store::save::Reader<'a>::take_space(&mut self) -> phx_store::backing::AddressSpace
+impl core::fmt::Debug for phx_store::save::Reader<'_>
+pub fn phx_store::save::Reader<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_store::save::Writer<'a>
+impl<'a> phx_store::save::Writer<'a>
+pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])
+pub fn phx_store::save::Writer<'a>::count(&mut self, usize)
+pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>
+pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>
+pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)
+impl core::fmt::Debug for phx_store::save::Writer<'_>
+pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub trait phx_store::save::Saved: core::marker::Sized
+pub fn phx_store::save::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_store::save::Saved::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for alloc::string::String
+pub fn alloc::string::String::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::string::String, phx_store::save::LoadError>
+pub fn alloc::string::String::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for bool
+pub fn bool::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<bool, phx_store::save::LoadError>
+pub fn bool::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for f64
+pub fn f64::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<f64, phx_store::save::LoadError>
+pub fn f64::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for i128
+pub fn i128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<i128, phx_store::save::LoadError>
+pub fn i128::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for u128
+pub fn u128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<u128, phx_store::save::LoadError>
+pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for usize
+pub fn usize::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<usize, phx_store::save::LoadError>
+pub fn usize::save(&self, &mut phx_store::save::Writer<'_>)
+impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved> phx_store::save::Saved for (A, B, C)
+pub fn (A, B, C)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C), phx_store::save::LoadError>
+pub fn (A, B, C)::save(&self, &mut phx_store::save::Writer<'_>)
+impl<A: phx_store::save::Saved, B: phx_store::save::Saved> phx_store::save::Saved for (A, B)
+pub fn (A, B)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B), phx_store::save::LoadError>
+pub fn (A, B)::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
+pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>
+pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
+pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
+pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>
+pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<K: phx_store::save::Saved + core::cmp::Ord, V: phx_store::save::Saved> phx_store::save::Saved for alloc::collections::btree::map::BTreeMap<K, V>
+pub fn alloc::collections::btree::map::BTreeMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::map::BTreeMap<K, V>, phx_store::save::LoadError>
+pub fn alloc::collections::btree::map::BTreeMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>
+pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::pod::Pod> phx_store::save::Saved for T
+pub fn T::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<T, phx_store::save::LoadError>
+pub fn T::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::save::Saved + core::cmp::Ord> phx_store::save::Saved for alloc::collections::btree::set::BTreeSet<T>
+pub fn alloc::collections::btree::set::BTreeSet<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::set::BTreeSet<T>, phx_store::save::LoadError>
+pub fn alloc::collections::btree::set::BTreeSet<T>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::save::Saved> phx_store::save::Saved for alloc::vec::Vec<T>
+pub fn alloc::vec::Vec<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>
+pub fn alloc::vec::Vec<T>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::save::Saved> phx_store::save::Saved for core::option::Option<T>
+pub fn core::option::Option<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<core::option::Option<T>, phx_store::save::LoadError>
+pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
+pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>
+pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_store::save::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>
 pub mod phx_store::table
 pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
@@ -382,6 +530,9 @@ pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool
 pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
+pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_store::table::Table<B: phx_store::backing::Backing>
 pub phx_store::table::Table::id: phx_id::ids::TableId
 pub phx_store::table::Table::slots: phx_store::table::SlotAlloc<B>
@@ -389,6 +540,9 @@ impl<B: phx_store::backing::Backing> phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
 pub fn phx_store::table::Table<B>::new(&mut phx_store::backing::AddressSpace, phx_id::ids::TableId, u32, u32) -> phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::rows_per_chunk(&self) -> u32
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
+pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>
+pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_store::table::TableChunk<R>
 pub phx_store::table::TableChunk::chunk: u32
 pub phx_store::table::TableChunk::first: phx_id::ids::Slot
@@ -421,6 +575,8 @@ pub phx_store::DecodeError::Magic
 pub phx_store::DecodeError::Truncated
 pub phx_store::DecodeError::Version(u16)
 pub phx_store::DecodeError::Width(u8)
+impl core::convert::From<phx_store::encode::DecodeError> for phx_store::save::LoadError
+pub fn phx_store::save::LoadError::from(phx_store::encode::DecodeError) -> phx_store::save::LoadError
 pub enum phx_store::FieldTag
 pub phx_store::FieldTag::Amount
 pub phx_store::FieldTag::Day
@@ -430,6 +586,16 @@ pub phx_store::FieldTag::PartyRef
 pub phx_store::FieldTag::Plain
 pub phx_store::FieldTag::Qty
 pub phx_store::FieldTag::TileRef
+pub enum phx_store::LoadError
+pub phx_store::LoadError::Decode(phx_store::encode::DecodeError)
+pub phx_store::LoadError::Invalid(alloc::string::String)
+pub phx_store::LoadError::Io(core::io::error::Error)
+impl core::convert::From<core::io::error::Error> for phx_store::save::LoadError
+pub fn phx_store::save::LoadError::from(core::io::error::Error) -> phx_store::save::LoadError
+impl core::convert::From<phx_store::encode::DecodeError> for phx_store::save::LoadError
+pub fn phx_store::save::LoadError::from(phx_store::encode::DecodeError) -> phx_store::save::LoadError
+impl core::fmt::Display for phx_store::save::LoadError
+pub fn phx_store::save::LoadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub enum phx_store::Transform
 pub phx_store::Transform::Delta
 pub phx_store::Transform::DeltaZigzag
@@ -449,6 +615,7 @@ pub const phx_store::block_list::BlockBag::EMPTY: phx_store::block_list::BlockBa
 pub fn phx_store::block_list::BlockBag::is_empty(self) -> bool
 pub fn phx_store::block_list::BlockBag::len(self) -> u32
 impl phx_store::pod::Pod for phx_store::block_list::BlockBag
+pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 #[repr(C)] pub struct phx_store::BlockList
 impl phx_store::block_list::BlockList
@@ -456,6 +623,7 @@ pub const phx_store::block_list::BlockList::EMPTY: phx_store::block_list::BlockL
 pub fn phx_store::block_list::BlockList::is_empty(self) -> bool
 pub fn phx_store::block_list::BlockList::len(self) -> u32
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
+pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
 pub struct phx_store::BlockPool<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
@@ -474,6 +642,7 @@ pub phx_store::CellListRef::off: u32
 impl phx_store::arena::CellListRef
 pub const phx_store::arena::CellListRef::EMPTY: phx_store::arena::CellListRef
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
+pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 pub struct phx_store::CellLists<'a>
 pub phx_store::CellLists::first_owner: u32
@@ -498,6 +667,9 @@ pub fn phx_store::arena::ChunkArena<B>::remove(&mut self, &mut phx_store::arena:
 pub fn phx_store::arena::ChunkArena<B>::resolve(&self, u32, phx_store::arena::CellListRef) -> phx_store::arena::ListRef
 pub fn phx_store::arena::ChunkArena<B>::store(&mut self, u32, &mut phx_store::arena::CellListRef, phx_store::arena::ListRef)
 pub fn phx_store::arena::ChunkArena<B>::used_words(&self) -> u32
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
+pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>
+pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_store::ChunkMut<'a, T>
 pub phx_store::ChunkMut::chunk: u32
 pub phx_store::ChunkMut::first: phx_id::ids::Slot
@@ -517,6 +689,12 @@ pub fn phx_store::column::Column<T, B>::rows_per_chunk(&self) -> usize
 pub fn phx_store::column::Column<T, B>::set(&mut self, phx_id::ids::Slot, T)
 pub fn phx_store::column::Column<T, B>::slice(&self) -> &[T]
 pub fn phx_store::column::Column<T, B>::slice_mut(&mut self) -> &mut [T]
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::load_as(&mut phx_store::save::Reader<'_>, phx_store::descriptor::Transform) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>
+pub fn phx_store::column::Column<T, B>::save_as(&self, &mut phx_store::save::Writer<'_>, phx_store::descriptor::Transform)
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>
+pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_store::ColumnDescriptor
 pub phx_store::ColumnDescriptor::elem_bytes: u16
 pub phx_store::ColumnDescriptor::fields: &'static [phx_store::descriptor::FieldDescriptor]
@@ -556,6 +734,7 @@ pub phx_store::ListRef::off: u32
 impl phx_store::arena::ListRef
 pub const phx_store::arena::ListRef::EMPTY: phx_store::arena::ListRef
 impl phx_store::pod::Pod for phx_store::arena::ListRef
+pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 pub struct phx_store::LogicalHasher
 impl phx_store::hash::LogicalHasher
@@ -579,6 +758,19 @@ pub fn phx_store::backing::MmapBacking::decommit(&mut self, core::ops::range::Ra
 pub fn phx_store::backing::MmapBacking::page(&self) -> usize
 pub fn phx_store::backing::MmapBacking::reserve(usize) -> phx_store::backing::MmapBacking
 pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
+pub struct phx_store::Reader<'a>
+impl<'a> phx_store::save::Reader<'a>
+pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>
+pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::rows_into<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform, &mut [T]) -> core::result::Result<(), phx_store::save::LoadError>
+pub fn phx_store::save::Reader<'a>::space(&mut self) -> &mut phx_store::backing::AddressSpace
+pub fn phx_store::save::Reader<'a>::take_space(&mut self) -> phx_store::backing::AddressSpace
+impl core::fmt::Debug for phx_store::save::Reader<'_>
+pub fn phx_store::save::Reader<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_store::Region<T: phx_store::pod::Pod, B: phx_store::backing::Backing>
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::region::Region<T, B>
 pub fn phx_store::region::Region<T, B>::bytes_committed(&self) -> usize
@@ -603,6 +795,9 @@ pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool
 pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
+pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_store::Table<B: phx_store::backing::Backing>
 pub phx_store::Table::id: phx_id::ids::TableId
 pub phx_store::Table::slots: phx_store::table::SlotAlloc<B>
@@ -610,10 +805,22 @@ impl<B: phx_store::backing::Backing> phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
 pub fn phx_store::table::Table<B>::new(&mut phx_store::backing::AddressSpace, phx_id::ids::TableId, u32, u32) -> phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::rows_per_chunk(&self) -> u32
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
+pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>
+pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_store::TableChunk<R>
 pub phx_store::TableChunk::chunk: u32
 pub phx_store::TableChunk::first: phx_id::ids::Slot
 pub phx_store::TableChunk::rows: R
+pub struct phx_store::Writer<'a>
+impl<'a> phx_store::save::Writer<'a>
+pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])
+pub fn phx_store::save::Writer<'a>::count(&mut self, usize)
+pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>
+pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>
+pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)
+impl core::fmt::Debug for phx_store::save::Writer<'_>
+pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub trait phx_store::ArenaLists
 pub fn phx_store::ArenaLists::count(&self) -> usize
 pub fn phx_store::ArenaLists::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
@@ -648,43 +855,138 @@ pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
 pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
 pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
 pub unsafe trait phx_store::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static
+pub fn phx_store::Pod::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for i16
+pub fn i16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for i32
+pub fn i32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for i64
+pub fn i64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for i8
+pub fn i8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::day::Day
+pub fn phx_id::day::Day::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::CountryId
+pub fn phx_id::ids::CountryId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::DayLocalId
+pub fn phx_id::ids::DayLocalId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::InstrumentId
+pub fn phx_id::ids::InstrumentId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::LineId
+pub fn phx_id::ids::LineId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::MarketId
+pub fn phx_id::ids::MarketId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::MsgId
+pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::PartyId
+pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::RegionId
+pub fn phx_id::ids::RegionId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::SeriesId
+pub fn phx_id::ids::SeriesId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::Slot
+pub fn phx_id::ids::Slot::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::StreamId
+pub fn phx_id::ids::StreamId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::TableId
+pub fn phx_id::ids::TableId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::TileId
+pub fn phx_id::ids::TileId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::ZoneId
+pub fn phx_id::ids::ZoneId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::missing::MaybeI64
+pub fn phx_num::missing::MaybeI64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::money::Amount
+pub fn phx_num::money::Amount::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::money::Ccy
+pub fn phx_num::money::Ccy::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::points::PointIdx
+pub fn phx_num::points::PointIdx::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::price::PriceRaw
+pub fn phx_num::price::PriceRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::qty::Count
+pub fn phx_num::qty::Count::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::qty::QtyRaw
+pub fn phx_num::qty::QtyRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_num::qty::UnitId
+pub fn phx_num::qty::UnitId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
+pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::arena::ListRef
+pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::block_list::BlockBag
+pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
+pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u16
+pub fn u16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u32
+pub fn u32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u64
+pub fn u64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u8
+pub fn u8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
+pub fn [T; N]::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl<const E: u8> phx_store::pod::Pod for phx_num::fixed::Fixed<E>
+pub fn phx_num::fixed::Fixed<E>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+pub trait phx_store::Saved: core::marker::Sized
+pub fn phx_store::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_store::Saved::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for alloc::string::String
+pub fn alloc::string::String::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::string::String, phx_store::save::LoadError>
+pub fn alloc::string::String::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for bool
+pub fn bool::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<bool, phx_store::save::LoadError>
+pub fn bool::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for f64
+pub fn f64::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<f64, phx_store::save::LoadError>
+pub fn f64::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for i128
+pub fn i128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<i128, phx_store::save::LoadError>
+pub fn i128::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for u128
+pub fn u128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<u128, phx_store::save::LoadError>
+pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)
+impl phx_store::save::Saved for usize
+pub fn usize::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<usize, phx_store::save::LoadError>
+pub fn usize::save(&self, &mut phx_store::save::Writer<'_>)
+impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved> phx_store::save::Saved for (A, B, C)
+pub fn (A, B, C)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C), phx_store::save::LoadError>
+pub fn (A, B, C)::save(&self, &mut phx_store::save::Writer<'_>)
+impl<A: phx_store::save::Saved, B: phx_store::save::Saved> phx_store::save::Saved for (A, B)
+pub fn (A, B)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B), phx_store::save::LoadError>
+pub fn (A, B)::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
+pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>
+pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
+pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
+pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>
+pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<K: phx_store::save::Saved + core::cmp::Ord, V: phx_store::save::Saved> phx_store::save::Saved for alloc::collections::btree::map::BTreeMap<K, V>
+pub fn alloc::collections::btree::map::BTreeMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::map::BTreeMap<K, V>, phx_store::save::LoadError>
+pub fn alloc::collections::btree::map::BTreeMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
+pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>
+pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::pod::Pod> phx_store::save::Saved for T
+pub fn T::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<T, phx_store::save::LoadError>
+pub fn T::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::save::Saved + core::cmp::Ord> phx_store::save::Saved for alloc::collections::btree::set::BTreeSet<T>
+pub fn alloc::collections::btree::set::BTreeSet<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::set::BTreeSet<T>, phx_store::save::LoadError>
+pub fn alloc::collections::btree::set::BTreeSet<T>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::save::Saved> phx_store::save::Saved for alloc::vec::Vec<T>
+pub fn alloc::vec::Vec<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>
+pub fn alloc::vec::Vec<T>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::save::Saved> phx_store::save::Saved for core::option::Option<T>
+pub fn core::option::Option<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<core::option::Option<T>, phx_store::save::LoadError>
+pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
+pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>
+pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)
 pub trait phx_store::SlotIdentity
 pub fn phx_store::SlotIdentity::identity(&self, phx_store::descriptor::FieldTag, u64) -> u64
 pub trait phx_store::TableChunks
@@ -711,7 +1013,11 @@ pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Colu
 pub fn phx_store::as_bytes<T: phx_store::pod::Pod>(&[T]) -> &[u8]
 pub fn phx_store::as_bytes_mut<T: phx_store::pod::Pod>(&mut [T]) -> &mut [u8]
 pub fn phx_store::decode_column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&phx_store::descriptor::ColumnDescriptor, &[u8], &mut phx_store::column::Column<T, B>) -> core::result::Result<(), phx_store::encode::DecodeError>
+pub fn phx_store::decode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[u8], &mut [T]) -> core::result::Result<(), phx_store::encode::DecodeError>
 pub fn phx_store::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
+pub fn phx_store::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>
 pub fn phx_store::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
 pub fn phx_store::move_list<B: phx_store::backing::Backing>(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef)
+pub fn phx_store::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>
+pub fn phx_store::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>
 pub type phx_store::SystemBacking = phx_store::backing::MmapBacking

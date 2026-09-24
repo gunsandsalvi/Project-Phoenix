@@ -2,6 +2,7 @@ mod clause;
 mod consts;
 mod decl;
 mod pod;
+mod saved;
 
 use proc_macro::TokenStream;
 
@@ -12,9 +13,16 @@ pub fn clause(args: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 /// Makes a `#[repr(C)]` struct of storable fields, with no padding and no float, storable itself.
-#[proc_macro_derive(Pod)]
+#[proc_macro_derive(Pod, attributes(save))]
 pub fn derive_pod(input: TokenStream) -> TokenStream {
     pod::expand(input.into()).unwrap_or_else(syn::Error::into_compile_error).into()
+}
+
+/// Saves a struct's or an enum's fields in order, an enum's variant first; a field marked `#[saved(skip)]` is an index
+/// its owner rebuilds after a load, and reads back as its default.
+#[proc_macro_derive(Saved, attributes(saved))]
+pub fn derive_saved(input: TokenStream) -> TokenStream {
+    saved::expand(input.into()).unwrap_or_else(syn::Error::into_compile_error).into()
 }
 
 /// A primitive's declaration, `pub NAME = "SYS.name" { kind: …, value: …, clause: "…", scope: …, … }`, checked as it

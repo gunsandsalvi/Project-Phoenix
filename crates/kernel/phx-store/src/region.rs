@@ -100,6 +100,34 @@ impl<T: Pod, B: Backing> Region<T, B> {
     }
 }
 
+impl<T: Pod, B: Backing> Region<T, B> {
+    /// The region's capacity and its first `n` elements, for a save; the rest of its reservation is empty.
+    pub(crate) fn save_prefix(&self, n: usize, w: &mut crate::save::Writer<'_>, transform: crate::Transform) {
+        w.count(self.capacity);
+        w.count(n);
+        if n > 0 {
+            w.rows(self.slice(n), transform);
+        }
+    }
+
+    /// A region read back as `save_prefix` wrote it, reserved again in the reader's space: its capacity and
+    /// its first elements.
+    pub(crate) fn load_prefix(
+        r: &mut crate::save::Reader<'_>,
+        transform: crate::Transform,
+    ) -> Result<(Region<T, B>, usize), crate::save::LoadError> {
+        let cap = crate::save::capacity::<T>(r)?;
+        let n = r.count()?;
+        crate::save::within(n, cap, "a region's elements")?;
+        let mut region = Region::reserve(r.space(), cap);
+        if n > 0 {
+            region.ensure(n);
+            r.rows_into(transform, region.slice_mut(n))?;
+        }
+        Ok((region, n))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Region;

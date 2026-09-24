@@ -147,6 +147,40 @@ impl<T: Pod, B: Backing> Column<T, B> {
     }
 }
 
+impl<T: Pod, B: Backing> Column<T, B> {
+    /// The column for a save, its rows through `transform`.
+    pub fn save_as(&self, w: &mut crate::save::Writer<'_>, transform: crate::Transform) {
+        w.count(self.rows_per_chunk);
+        self.region.save_prefix(self.len, w, transform);
+    }
+
+    /// A column read back as `save_as` wrote it.
+    ///
+    /// # Errors
+    /// When the store is damaged or holds another column.
+    pub fn load_as(
+        r: &mut crate::save::Reader<'_>,
+        transform: crate::Transform,
+    ) -> Result<Column<T, B>, crate::save::LoadError> {
+        let rows_per_chunk = r.count()?;
+        if !rows_per_chunk.is_power_of_two() {
+            return Err(crate::save::LoadError::Invalid("rows per chunk not a power of two".to_owned()));
+        }
+        let (region, len) = Region::load_prefix(r, transform)?;
+        Ok(Column { region, len, rows_per_chunk })
+    }
+}
+
+impl<T: Pod, B: Backing> crate::save::Saved for Column<T, B> {
+    fn save(&self, w: &mut crate::save::Writer<'_>) {
+        self.save_as(w, crate::Transform::Plain);
+    }
+
+    fn load(r: &mut crate::save::Reader<'_>) -> Result<Column<T, B>, crate::save::LoadError> {
+        Column::load_as(r, crate::Transform::Plain)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_id::Slot;

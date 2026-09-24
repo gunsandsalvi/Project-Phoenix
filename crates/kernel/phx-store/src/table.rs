@@ -221,6 +221,49 @@ table_chunks!(a: A, b: C, c: D, d: E);
 table_chunks!(a: A, b: C, c: D, d: E, e: F);
 table_chunks!(a: A, b: C, c: D, d: E, e: F, f: G);
 
+impl<B: Backing> crate::save::Saved for SlotAlloc<B> {
+    fn save(&self, w: &mut crate::save::Writer<'_>) {
+        self.high.save(w);
+        self.max.save(w);
+        self.live.save_prefix(to_usize(self.high.div_ceil(BITS)), w, crate::Transform::Plain);
+        self.free.save_prefix(self.n_free, w, crate::Transform::Plain);
+        self.released.save_prefix(self.n_released, w, crate::Transform::Plain);
+    }
+
+    fn load(r: &mut crate::save::Reader<'_>) -> Result<SlotAlloc<B>, crate::save::LoadError> {
+        let (high, max) = (u32::load(r)?, u32::load(r)?);
+        let (live, words) = Region::load_prefix(r, crate::Transform::Plain)?;
+        let (free, n_free) = Region::load_prefix(r, crate::Transform::Plain)?;
+        let (released, n_released) = Region::load_prefix(r, crate::Transform::Plain)?;
+        let wrong = high > max
+            || words != to_usize(high.div_ceil(BITS))
+            || free.capacity() != to_usize(max)
+            || released.capacity() != to_usize(max);
+        if wrong {
+            return Err(crate::save::LoadError::Invalid("a slot allocator whose parts disagree".to_owned()));
+        }
+        Ok(SlotAlloc { live, free, n_free, released, n_released, high, max })
+    }
+}
+
+impl<B: Backing> crate::save::Saved for Table<B> {
+    fn save(&self, w: &mut crate::save::Writer<'_>) {
+        self.id.save(w);
+        self.max_rows.save(w);
+        self.rows_per_chunk.save(w);
+        self.slots.save(w);
+    }
+
+    fn load(r: &mut crate::save::Reader<'_>) -> Result<Table<B>, crate::save::LoadError> {
+        let (id, max_rows, rows_per_chunk) = (TableId::load(r)?, u32::load(r)?, u32::load(r)?);
+        let slots = SlotAlloc::load(r)?;
+        if !rows_per_chunk.is_power_of_two() || slots.max != max_rows {
+            return Err(crate::save::LoadError::Invalid("a table whose geometry disagrees".to_owned()));
+        }
+        Ok(Table { id, max_rows, rows_per_chunk, slots })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_id::{Slot, TableId};

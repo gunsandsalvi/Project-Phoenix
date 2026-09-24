@@ -709,6 +709,7 @@ impl phx_core::kind_tables::RunHead
 pub const phx_core::kind_tables::RunHead::EMPTY: phx_core::kind_tables::RunHead
 pub fn phx_core::kind_tables::RunHead::due(self, phx_id::day::Day) -> bool
 impl phx_store::pod::Pod for phx_core::kind_tables::RunHead
+pub fn phx_core::kind_tables::RunHead::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_core::kind_tables::RunHead
 pub mod phx_core::kinds
 pub enum phx_core::kinds::Feature
@@ -799,6 +800,7 @@ pub fn phx_core::messages::Address::line_side(phx_id::ids::LineId, u8, u32) -> p
 pub fn phx_core::messages::Address::named_party(self) -> core::option::Option<phx_id::ids::PartyId>
 pub fn phx_core::messages::Address::party(phx_id::ids::PartyId) -> phx_core::messages::Address
 impl phx_store::pod::Pod for phx_core::messages::Address
+pub fn phx_core::messages::Address::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_core::messages::Address
 pub struct phx_core::messages::Answering
 pub phx_core::messages::Answering::addressee: &'static str
@@ -821,6 +823,7 @@ pub fn phx_core::messages::Message::new(u16, phx_core::messages::Address, phx_co
 pub fn phx_core::messages::Message::sender(&self) -> phx_core::messages::Address
 pub fn phx_core::messages::Message::state(&self) -> phx_core::messages::MessageState
 impl phx_store::pod::Pod for phx_core::messages::Message
+pub fn phx_core::messages::Message::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_core::messages::Message
 pub struct phx_core::messages::MessageKindDecl
 pub phx_core::messages::MessageKindDecl::acceptance: phx_num::missing::Missing<(&'static str, &'static str)>
@@ -1883,6 +1886,7 @@ pub fn phx_core::messages::Address::line_side(phx_id::ids::LineId, u8, u32) -> p
 pub fn phx_core::messages::Address::named_party(self) -> core::option::Option<phx_id::ids::PartyId>
 pub fn phx_core::messages::Address::party(phx_id::ids::PartyId) -> phx_core::messages::Address
 impl phx_store::pod::Pod for phx_core::messages::Address
+pub fn phx_core::messages::Address::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_core::messages::Address
 pub struct phx_core::Adjustment
 pub phx_core::Adjustment::drawn: i128
@@ -2352,6 +2356,7 @@ pub fn phx_core::messages::Message::new(u16, phx_core::messages::Address, phx_co
 pub fn phx_core::messages::Message::sender(&self) -> phx_core::messages::Address
 pub fn phx_core::messages::Message::state(&self) -> phx_core::messages::MessageState
 impl phx_store::pod::Pod for phx_core::messages::Message
+pub fn phx_core::messages::Message::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_core::messages::Message
 pub struct phx_core::MessageKindDecl
 pub phx_core::MessageKindDecl::acceptance: phx_num::missing::Missing<(&'static str, &'static str)>
@@ -2553,6 +2558,7 @@ impl phx_core::kind_tables::RunHead
 pub const phx_core::kind_tables::RunHead::EMPTY: phx_core::kind_tables::RunHead
 pub fn phx_core::kind_tables::RunHead::due(self, phx_id::day::Day) -> bool
 impl phx_store::pod::Pod for phx_core::kind_tables::RunHead
+pub fn phx_core::kind_tables::RunHead::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_core::kind_tables::RunHead
 pub struct phx_core::ScheduleDates
 pub phx_core::ScheduleDates::anchor: phx_id::day::Date

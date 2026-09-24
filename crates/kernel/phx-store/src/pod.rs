@@ -4,7 +4,9 @@ use phx_id::{
     CountryId, Day, DayLocalId, InstrumentId, LineId, MarketId, MsgId, PartyId, RegionId, SeriesId, Slot, StreamId,
     TableId, TileId, ZoneId,
 };
-use phx_num::{Amount, Ccy, Count, Fixed, MaybeI64, PointIdx, PriceRaw, QtyRaw, UnitId};
+use phx_num::{Amount, Ccy, Count, Fixed, MaybeI64, PointIdx, PriceRaw, QtyRaw, UnitId, capacity_exceeded};
+
+use crate::descriptor::{FieldDescriptor, FieldTag, Transform};
 
 #[cfg(not(target_endian = "little"))]
 compile_error!("stores read their bytes as little-endian, the order saves and hashes are written in");
@@ -13,7 +15,29 @@ compile_error!("stores read their bytes as little-endian, the order saves and ha
 ///
 /// # Safety
 /// The type has no padding, holds no pointer or reference, and every bit pattern of its size is a valid value.
-pub unsafe trait Pod: Copy + __seal::Sealed + 'static {}
+pub unsafe trait Pod: Copy + __seal::Sealed + 'static {
+    /// The value's integers, each at its offset from `at` and encoded by `transform`, in the order a save writes
+    /// them.
+    fn layout(at: u16, transform: Transform, out: &mut Vec<FieldDescriptor>);
+}
+
+/// One integer of a stored value, at its offset.
+fn leaf<T>(at: u16, transform: Transform, out: &mut Vec<FieldDescriptor>) {
+    let Ok(width) = u8::try_from(size_of::<T>()) else {
+        capacity_exceeded!("the bytes of a stored integer", u8::MAX, size_of::<T>());
+    };
+    out.push(FieldDescriptor { name: "", offset: at, width, transform, tag: FieldTag::Plain });
+}
+
+/// A field's offset within a stored value laid out at `at`, for the derive.
+#[doc(hidden)]
+#[must_use]
+pub fn field_at(at: u16, offset: usize) -> u16 {
+    match u16::try_from(offset).ok().and_then(|o| at.checked_add(o)) {
+        Some(o) => o,
+        None => capacity_exceeded!("the bytes of a stored value", u16::MAX, offset),
+    }
+}
 
 /// Keeps `Pod` out of reach except through this module and the derive.
 pub mod __seal {
@@ -25,7 +49,11 @@ macro_rules! base_pod {
         $(
             // SAFETY: an integer, or a `repr(transparent)` wrapper of one, has no padding and accepts every bit
             // pattern.
-            unsafe impl Pod for $t {}
+            unsafe impl Pod for $t {
+                fn layout(at: u16, transform: Transform, out: &mut Vec<FieldDescriptor>) {
+                    leaf::<$t>(at, transform, out);
+                }
+            }
             impl __seal::Sealed for $t {}
         )*
     };
@@ -37,11 +65,21 @@ base_pod!(StreamId, PartyId, Day, SeriesId);
 base_pod!(Amount, QtyRaw, PriceRaw, MaybeI64, PointIdx, Ccy, UnitId, Count);
 
 // SAFETY: `Fixed` is `repr(transparent)` over an `i64`.
-unsafe impl<const E: u8> Pod for Fixed<E> {}
+unsafe impl<const E: u8> Pod for Fixed<E> {
+    fn layout(at: u16, transform: Transform, out: &mut Vec<FieldDescriptor>) {
+        leaf::<Self>(at, transform, out);
+    }
+}
 impl<const E: u8> __seal::Sealed for Fixed<E> {}
 
 // SAFETY: an array lays its elements out with no gaps, so it has no padding its element lacks.
-unsafe impl<T: Pod, const N: usize> Pod for [T; N] {}
+unsafe impl<T: Pod, const N: usize> Pod for [T; N] {
+    fn layout(at: u16, transform: Transform, out: &mut Vec<FieldDescriptor>) {
+        for i in 0..N {
+            T::layout(field_at(at, i * size_of::<T>()), transform, out);
+        }
+    }
+}
 impl<T: Pod, const N: usize> __seal::Sealed for [T; N] {}
 
 /// The bytes of stored values, in the order saves and hashes read them.

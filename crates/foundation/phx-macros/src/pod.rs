@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Attribute, Data, DeriveInput, Type};
+use syn::{Attribute, Data, DeriveInput, Fields, Index, Member, Type};
 
 /// The layout checks and the two marker impls; every refusal names what the type must change.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
@@ -19,6 +19,12 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     if let Some(float) = types.iter().find(|t| has_float(t)) {
         return Err(syn::Error::new_spanned(float, "stored state holds no floating-point number"));
     }
+    let members: Vec<Member> = match &data.fields {
+        Fields::Named(f) => f.named.iter().filter_map(|x| x.ident.clone().map(Member::Named)).collect(),
+        Fields::Unnamed(f) => (0..f.unnamed.len()).map(|i| Member::Unnamed(Index::from(i))).collect(),
+        Fields::Unit => Vec::new(),
+    };
+    let transforms = data.fields.iter().map(|f| transform(&f.attrs)).collect::<syn::Result<Vec<_>>>()?;
     Ok(quote! {
         const _: () = {
             const fn field_is_pod<F: ::phx_store::Pod>() {}
@@ -29,9 +35,44 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
             );
         };
         #[expect(unsafe_code, reason = "the derive has checked the layout: repr(C), stored fields, no padding")]
-        unsafe impl ::phx_store::Pod for #name {}
+        unsafe impl ::phx_store::Pod for #name {
+            fn layout(
+                at: u16,
+                transform: ::phx_store::Transform,
+                out: &mut ::std::vec::Vec<::phx_store::FieldDescriptor>,
+            ) {
+                #(
+                    <#types as ::phx_store::Pod>::layout(
+                        ::phx_store::pod::field_at(at, ::core::mem::offset_of!(#name, #members)),
+                        #transforms,
+                        out,
+                    );
+                )*
+            }
+        }
         impl ::phx_store::__seal::Sealed for #name {}
     })
+}
+
+/// A field's declared encoding for saves, `#[save(delta)]` and the like; a field that declares none takes its
+/// value's.
+fn transform(attrs: &[Attribute]) -> syn::Result<TokenStream> {
+    let mut chosen = quote! { transform };
+    for attr in attrs.iter().filter(|a| a.path().is_ident("save")) {
+        attr.parse_nested_meta(|meta| {
+            let variant = ["plain", "delta", "zigzag", "delta_zigzag"]
+                .iter()
+                .zip(["Plain", "Delta", "Zigzag", "DeltaZigzag"])
+                .find(|(n, _)| meta.path.is_ident(n))
+                .map(|(_, v)| syn::Ident::new(v, proc_macro2::Span::call_site()));
+            let Some(v) = variant else {
+                return Err(meta.error("a save encoding is `plain`, `delta`, `zigzag` or `delta_zigzag`"));
+            };
+            chosen = quote! { ::phx_store::Transform::#v };
+            Ok(())
+        })?;
+    }
+    Ok(chosen)
 }
 
 fn repr_c(attrs: &[Attribute]) -> syn::Result<bool> {

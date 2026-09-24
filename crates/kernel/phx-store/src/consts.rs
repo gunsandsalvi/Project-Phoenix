@@ -48,6 +48,10 @@ pub const ENCODE_BLOCK: usize = 1 << 10;
 /// parallel.
 pub const FRAME_BYTES: usize = 1 << 20;
 
+/// Bytes a save's reader takes at a time for a length it was given: 1 MiB, so that a damaged length runs out of
+/// store long before it runs out of memory.
+pub const SAVE_READ_STEP: usize = 1 << 20;
+
 /// zstd's fastest level: saves stop the world, and the transforms already remove most redundancy.
 pub const ZSTD_LEVEL: i32 = 1;
 

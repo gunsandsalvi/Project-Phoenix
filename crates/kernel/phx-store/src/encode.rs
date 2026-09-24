@@ -200,33 +200,57 @@ fn check_layout<T: Pod>(desc: &ColumnDescriptor) -> usize {
 
 /// A column's rows as field streams, before compression.
 fn encode_stream<T: Pod>(desc: &ColumnDescriptor, rows: &[T]) -> Vec<u8> {
-    let elem = check_layout::<T>(desc);
+    check_layout::<T>(desc);
+    encode_rows(desc.fields, rows)
+}
+
+/// Rows as field streams, one per integer of the layout, each coded as its field declares and bit-packed per block:
+/// what a save compresses.
+#[clause("SET.12")]
+#[must_use]
+pub fn encode_rows<T: Pod>(fields: &[FieldDescriptor], rows: &[T]) -> Vec<u8> {
     let bytes = as_bytes(rows);
     let mut stream = Vec::new();
-    for f in desc.fields {
-        encode_field(&mut stream, f, bytes, elem);
+    for f in fields {
+        encode_field(&mut stream, f, bytes, size_of::<T>());
     }
     stream
 }
 
-fn decode_stream<T: Pod, B: Backing>(
-    desc: &ColumnDescriptor,
-    mut stream: &[u8],
-    into: &mut Column<T, B>,
-) -> Result<(), DecodeError> {
-    let elem = check_layout::<T>(desc);
-    // The first field's header names the row count every field repeats.
+/// How many rows a field stream holds, as its first field's header names them.
+///
+/// # Errors
+/// When the stream is too short to hold a header.
+pub fn rows_in(stream: &[u8]) -> Result<usize, DecodeError> {
     let mut peek = stream;
     take(&mut peek, size_of::<u32>() + size_of::<u16>() + size_of::<u16>())?;
-    let count = usize::try_from(u64::from_le_bytes(take_array(&mut peek)?)).map_err(|_| DecodeError::Layout)?;
+    usize::try_from(u64::from_le_bytes(take_array(&mut peek)?)).map_err(|_| DecodeError::Layout)
+}
+
+/// The exact inverse of `encode_rows`, into rows already sized to the count the stream names.
+///
+/// # Errors
+/// When the stream is damaged, of another layout, or holds more or fewer rows.
+#[clause("SET.12")]
+pub fn decode_rows<T: Pod>(fields: &[FieldDescriptor], mut stream: &[u8], rows: &mut [T]) -> Result<(), DecodeError> {
+    let bytes = as_bytes_mut(rows);
+    fields.iter().try_for_each(|f| decode_field(&mut stream, f, bytes, size_of::<T>()))?;
+    if stream.is_empty() { Ok(()) } else { Err(DecodeError::Layout) }
+}
+
+fn decode_stream<T: Pod, B: Backing>(
+    desc: &ColumnDescriptor,
+    stream: &[u8],
+    into: &mut Column<T, B>,
+) -> Result<(), DecodeError> {
+    check_layout::<T>(desc);
+    let count = rows_in(stream)?;
     // A damaged count must not ask for more rows than the column can ever hold.
     if count > into.capacity() - into.len() {
         return Err(DecodeError::Layout);
     }
     let before = into.len();
-    let rows = as_bytes_mut(into.append_zeroed(count));
-    let decoded = desc.fields.iter().try_for_each(|f| decode_field(&mut stream, f, rows, elem));
-    let decoded = decoded.and(if stream.is_empty() { Ok(()) } else { Err(DecodeError::Layout) });
+    let decoded = decode_rows(desc.fields, stream, into.append_zeroed(count));
     if decoded.is_err() {
         into.truncate(before);
     }

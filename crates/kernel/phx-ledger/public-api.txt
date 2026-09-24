@@ -493,6 +493,7 @@ pub phx_ledger::holding::CellHolding::quantity: phx_num::qty::QtyRaw
 impl phx_ledger::holding::CellHolding
 pub fn phx_ledger::holding::CellHolding::members(&self) -> phx_num::qty::Count
 impl phx_store::pod::Pod for phx_ledger::holding::CellHolding
+pub fn phx_ledger::holding::CellHolding::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_ledger::holding::CellHolding
 pub struct phx_ledger::holding::Disposal
 pub phx_ledger::holding::Disposal::bound: i64
@@ -507,6 +508,7 @@ pub phx_ledger::holding::IndividualHolding::instrument: phx_id::ids::InstrumentI
 pub phx_ledger::holding::IndividualHolding::lots: u32
 pub phx_ledger::holding::IndividualHolding::quantity: phx_num::qty::QtyRaw
 impl phx_store::pod::Pod for phx_ledger::holding::IndividualHolding
+pub fn phx_ledger::holding::IndividualHolding::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_ledger::holding::IndividualHolding
 #[repr(C)] pub struct phx_ledger::holding::Lot
 pub phx_ledger::holding::Lot::acquired: phx_id::day::Day
@@ -515,6 +517,7 @@ pub phx_ledger::holding::Lot::quantity: phx_num::qty::QtyRaw
 impl phx_ledger::holding::Lot
 pub fn phx_ledger::holding::Lot::new(phx_id::day::Day, i64, i64) -> phx_ledger::holding::Lot
 impl phx_store::pod::Pod for phx_ledger::holding::Lot
+pub fn phx_ledger::holding::Lot::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_ledger::holding::Lot
 pub const phx_ledger::holding::PLEDGED: u32
 pub fn phx_ledger::holding::bases(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<(phx_id::ids::InstrumentId, i64)>
@@ -854,6 +857,7 @@ pub phx_ledger::rows::RelRow::point: u16
 pub phx_ledger::rows::RelRow::record: u32
 pub phx_ledger::rows::RelRow::role: u8
 impl phx_store::pod::Pod for phx_ledger::rows::RelRow
+pub fn phx_ledger::rows::RelRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_ledger::rows::RelRow
 pub struct phx_ledger::rows::RowView
 pub phx_ledger::rows::RowView::at: usize
@@ -983,6 +987,7 @@ pub phx_ledger::units::NamedUnit::site: phx_id::ids::TileId
 impl phx_ledger::units::NamedUnit
 pub fn phx_ledger::units::NamedUnit::new(u64, phx_id::ids::TileId, phx_id::day::Day, u16, u8) -> phx_ledger::units::NamedUnit
 impl phx_store::pod::Pod for phx_ledger::units::NamedUnit
+pub fn phx_ledger::units::NamedUnit::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_ledger::units::NamedUnit
 pub fn phx_ledger::units::add(&mut dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_ledger::units::NamedUnit)
 pub fn phx_ledger::units::named(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<phx_ledger::units::NamedUnit>

@@ -1190,6 +1190,37 @@ world on the phone. CI never runs the world.
   saves, which every manifest references, so it is stored once.
 - **No copies**: a save is loaded only to continue the one run, or, on the build machine, apart by `phx inject` to be
   audited and discarded, never run on (N1).
+- **Stores** of a save, each one file, in the order the world hash reads them:
+  - `world`: the day, the fails waiting for the contract process, the player's queue, bindings, the closed fact;
+  - `books`: the directory, the kind tables and the ledger;
+  - `markets`;
+  - `accounts`;
+  - `records`;
+  - `events`;
+  - `geo`: the map as generated and the kernel tables' columns.
+
+  Beside them, outside the world hash, `run` holds the run's metrics, findings, settlements and the opening's report.
+  The map and the books are saved rather than regenerated, since the map's generation and the opening each take
+  longer than a load's 3 s.
+- **What the build supplies on load**: everything declared in code or data — the register, the calendar's rules,
+  streams, handlers, rules, the audit's families, and the books' declarations (line kinds and reasons). The books'
+  declarations are the opening's first phase, `DECLARATIONS`, which a load runs alone on empty books before reading
+  the `books` store; the save records their names, and a load refuses a save whose names differ.
+- **What a load rebuilds**, in canonical order, never trusting a saved copy:
+  - instruments' and lines' holder lists, from holdings and rows;
+  - the due wheel, from the lines' next due days;
+  - the terms interner's index, from its entries;
+  - the tape's last print per market;
+  - the accounts' claims per party;
+  - the calendar's window;
+  - the audit's cursors, from the stores' lengths.
+
+  Allocator state is saved as it stands: the slot allocators, the arenas' words with their dead words, and the
+  interner's free identities and reference counts.
+- **The world hash** covers every carried state a later day can read: with the directory, kind tables, instruments,
+  lines, markets, accounts, records, events and kernel tables, also the run heads, the terms and their reference
+  counts, liens, covers, commitments, arrears, the fails waiting and the player's queue. Layout, holder lists and
+  other indexes stay out.
 
 ---
 
