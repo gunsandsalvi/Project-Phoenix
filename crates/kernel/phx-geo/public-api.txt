@@ -140,6 +140,7 @@ pub fn phx_geo::generate::Map::is_river(&self, usize) -> bool
 pub struct phx_geo::generate::MapParams
 pub phx_geo::generate::MapParams::cells_per_tile: u32
 pub phx_geo::generate::MapParams::land_heights: phx_geo::generate::HeightCurve
+pub phx_geo::generate::MapParams::land_relief: phx_geo::generate::HeightCurve
 pub phx_geo::generate::MapParams::land_tiles: u64
 pub phx_geo::generate::MapParams::mainland_floor_percent: u64
 pub phx_geo::generate::MapParams::max_attempts: u64
@@ -239,6 +240,7 @@ pub phx_geo::prims::GeoPrims::hazards: alloc::vec::Vec<phx_geo::prims::HazardPri
 pub phx_geo::prims::GeoPrims::highland_class: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::land_heights: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::prims::GeoPrims::land_relief: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::metres_per_degree: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::mountain_weight: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
@@ -312,6 +314,7 @@ pub const phx_geo::prims::GRADE_SIGMA: phx_core::register::PrimDecl
 pub const phx_geo::prims::HIGHLAND_CLASS: phx_core::register::PrimDecl
 pub const phx_geo::prims::HIGHLAND_ELEVATION: phx_core::register::PrimDecl
 pub const phx_geo::prims::LAND_HEIGHTS: phx_core::register::PrimDecl
+pub const phx_geo::prims::LAND_RELIEF: phx_core::register::PrimDecl
 pub const phx_geo::prims::MAINLAND_FLOOR: phx_core::register::PrimDecl
 pub const phx_geo::prims::METRES_PER_DEGREE: phx_core::register::PrimDecl
 pub const phx_geo::prims::MOUNTAIN_WEIGHT: phx_core::register::PrimDecl
@@ -513,6 +516,7 @@ pub phx_geo::GeoPrims::hazards: alloc::vec::Vec<phx_geo::prims::HazardPrims>
 pub phx_geo::GeoPrims::highland_class: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::land_heights: phx_core::register::Prim<phx_core::register::values::Table1>
+pub phx_geo::GeoPrims::land_relief: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::metres_per_degree: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::mountain_weight: phx_core::register::Prim<phx_num::fixed::Fixed<2>>

@@ -46,6 +46,7 @@ pub struct MapParams {
     pub cells_per_tile: u32,
     pub relief: ReliefParams,
     pub land_heights: HeightCurve,
+    pub land_relief: HeightCurve,
     pub sea_depths: HeightCurve,
     pub terrain: Vec<TerrainClass>,
     pub river_tiles: u32,
@@ -172,11 +173,22 @@ fn cells_of(fine: Grid, tile_grid: &Grid, cells: u32, tile: usize) -> impl Itera
 
 /// The relief: raw heights on the fine grid, the declared number of tiles of highest mean as land, rivers cutting the
 /// land to the sea, then the land's cells ranked onto the measured land heights and the sea's onto the measured
-/// depths; each tile's elevation the mean of its cells and its relief their range.
+/// depths. Each tile's elevation is the mean of its cells; its relief is the range of its cells, ranked among the land
+/// tiles onto the measured ranges of the real ground's windows of a tile's span, so the terrain classes read from it
+/// take the Earth's shares; its river is the largest stream of the fine grid through it, and it drains to the tile that
+/// stream flows on to, so rivers follow the valleys the erosion cut.
 struct Surface {
     land: Vec<bool>,
     elevation: Vec<i16>,
     relief: Vec<u16>,
+    drains_to: Vec<Option<usize>>,
+    upstream: Vec<u32>,
+}
+
+/// The tile a fine cell lies in.
+fn tile_of(fine: &Grid, grid: &Grid, cells: u32, cell: usize) -> usize {
+    let (x, y) = fine.xy(fine.tile(cell));
+    grid.index(grid.at(x / cells, y / cells))
 }
 
 fn surface(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Result<Surface, String> {
@@ -209,8 +221,12 @@ fn surface(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Result<Surface, Str
     erode(&p.relief, &fine, &mut height, &outlet);
     to_curve(&mut height, &fine_land, &Curve::new(&p.land_heights.axis, &p.land_heights.metres), PER_MILLE_F64);
     to_curve(&mut height, &outlet, &Curve::new(&p.sea_depths.axis, &p.sea_depths.metres), PER_MILLE_F64);
+    let routes = drainage(&fine, &height, &outlet);
+    let area = upstream(&routes);
     let mut elevation = Vec::with_capacity(grid.len());
-    let mut relief = Vec::with_capacity(grid.len());
+    let mut range = Vec::with_capacity(grid.len());
+    let mut drains_to = Vec::with_capacity(grid.len());
+    let mut through = Vec::with_capacity(grid.len());
     for t in 0..grid.len() {
         let (lo, hi, sum) = cells_of(fine, grid, cells, t)
             .map(|c| at(&height, c))
@@ -218,12 +234,27 @@ fn surface(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Result<Surface, Str
                 (if h < lo { h } else { lo }, if h > hi { h } else { hi }, sum + h)
             });
         elevation.push(to_i16(sum / per_tile));
-        let range =
-            Fixed::<0>::from_f64(hi - lo, Round::HalfEven).map(Fixed::raw).ok().and_then(|r| u16::try_from(r).ok());
-        let Some(r) = range else { return Err("a tile's relief beyond sixteen bits of metres".to_owned()) };
+        range.push(hi - lo);
+        // The tile's river is the stream of most area through it, ties to the first cell; it leaves the tile where
+        // that stream first reaches a cell of another.
+        let main = cells_of(fine, grid, cells, t).fold(None, |best: Option<usize>, c| {
+            if best.is_none_or(|b| at(&area, c) > at(&area, b)) { Some(c) } else { best }
+        });
+        let mut next = main.and_then(|c| at(&routes.receiver, c));
+        while let Some(c) = next.filter(|c| tile_of(&fine, grid, cells, *c) == t) {
+            next = at(&routes.receiver, c);
+        }
+        drains_to.push(next.map(|c| tile_of(&fine, grid, cells, c)));
+        through.push(main.map_or(0, |c| at(&area, c) / (cells * cells)));
+    }
+    to_curve(&mut range, &land, &Curve::new(&p.land_relief.axis, &p.land_relief.metres), PER_MILLE_F64);
+    let mut relief = Vec::with_capacity(grid.len());
+    for r in range {
+        let whole = Fixed::<0>::from_f64(r, Round::HalfEven).map(Fixed::raw).ok().and_then(|r| u16::try_from(r).ok());
+        let Some(r) = whole else { return Err("a tile's relief beyond sixteen bits of metres".to_owned()) };
         relief.push(r);
     }
-    Ok(Surface { land, elevation, relief })
+    Ok(Surface { land, elevation, relief, drains_to, upstream: through })
 }
 
 /// Each land tile's terrain class, by its elevation and its relief within it.
@@ -383,11 +414,7 @@ fn attempt(p: &MapParams, climate: &dyn Fn(ClimateInput) -> u8, draws: &mut Draw
     let s = surface(p, &grid, draws)?;
     let lot: Vec<u64> = (0..grid.len()).map(|_| draws.next_u64()).collect();
     let terrain = terrain(p, &s);
-    let heights: Vec<f64> = s.elevation.iter().map(|e| f64::from(*e)).collect();
-    let outlet: Vec<bool> = s.land.iter().map(|l| !l).collect();
-    let routes = drainage(&grid, &heights, &outlet);
-    let upstream = upstream(&routes);
-    let river: Vec<bool> = upstream.iter().zip(&s.land).map(|(u, l)| *l && *u >= p.river_tiles).collect();
+    let river: Vec<bool> = s.upstream.iter().zip(&s.land).map(|(u, l)| *l && *u >= p.river_tiles).collect();
     let ground = Ground::new(&grid, &s, &river, p.rugged_m, p.river_crossing_m);
     let step = |a: TileId, b: TileId| ground.step(a, b);
     let to_sea = sea_distance(&grid, &s.land);
@@ -404,13 +431,13 @@ fn attempt(p: &MapParams, climate: &dyn Fn(ClimateInput) -> u8, draws: &mut Draw
             Tile::new(elevation_m, surface, at(&terrain, index), climate(input), at(&places.zone_of, index))
         })
         .collect();
-    let drains_to = routes.receiver.iter().map(|r| r.map(|i| grid.tile(i))).collect();
+    let drains_to = s.drains_to.iter().map(|r| r.map(|i| grid.tile(i))).collect();
     Ok(Map {
         grid,
         tiles,
         relief_m: s.relief,
         drains_to,
-        upstream,
+        upstream: s.upstream,
         river_tiles: p.river_tiles,
         zones: places.zones,
         regions: places.regions,
@@ -474,6 +501,7 @@ pub(crate) mod tests {
                 area_exponent: 0.5,
             },
             land_heights: HeightCurve { axis: vec![0, 500, 1000], metres: vec![0, 300, 3000] },
+            land_relief: HeightCurve { axis: vec![0, 500, 1000], metres: vec![0, 100, 1500] },
             sea_depths: HeightCurve { axis: vec![0, 1000], metres: vec![-4000, -10] },
             terrain: vec![
                 TerrainClass { max_elevation_m: 200, max_relief_m: 100 },

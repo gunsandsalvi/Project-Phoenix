@@ -103,6 +103,7 @@ pub fn params(p: &GeoPrims, r: &Register, a: &Allotment) -> Result<MapParams, St
         cells_per_tile: count(p.relief_cells.shared(r).get())?,
         relief: relief_params,
         land_heights: curve(p.land_heights.shared(r)),
+        land_relief: curve(p.land_relief.shared(r)),
         sea_depths: curve(p.sea_depths.shared(r)),
         terrain,
         river_tiles: count(p.river_tiles.shared(r).get())?,

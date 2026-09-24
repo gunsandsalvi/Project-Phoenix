@@ -133,6 +133,14 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// The range of heights in metres within the land's windows of a tile's span, at each part per thousand of their
+    /// area, least first, measured over the analogue region.
+    pub LAND_RELIEF = "GEO.land_relief" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 0 }, clause: "GEO.10", scope: Shared
+    }
+}
+
+declare_prim! {
     /// The sea's heights in metres (below zero) at each part per thousand of its area, deepest first.
     pub SEA_DEPTHS = "GEO.sea_depths" {
         kind: Endowment, value: Table1 { axis_exp: 0, exp: 0 }, clause: "GEO.10", scope: Shared
@@ -494,6 +502,7 @@ pub struct GeoPrims {
     pub erosion_rate: Prim<Fixed<5>>,
     pub area_exponent: Prim<Fixed<2>>,
     pub land_heights: Prim<Table1>,
+    pub land_relief: Prim<Table1>,
     pub sea_depths: Prim<Table1>,
     pub river_tiles: Prim<Count>,
     pub rugged_m: Prim<Count>,
@@ -550,6 +559,7 @@ impl GeoPrims {
             erosion_rate: d.prim(&EROSION_RATE),
             area_exponent: d.prim(&AREA_EXPONENT),
             land_heights: d.prim(&LAND_HEIGHTS),
+            land_relief: d.prim(&LAND_RELIEF),
             sea_depths: d.prim(&SEA_DEPTHS),
             river_tiles: d.prim(&RIVER_TILES),
             rugged_m: d.prim(&RUGGED_M),

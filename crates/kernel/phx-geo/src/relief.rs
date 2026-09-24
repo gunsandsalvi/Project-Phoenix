@@ -67,6 +67,15 @@ fn nearest_two(plates: &[Plate], u: f64, v: f64) -> Option<(Plate, Plate, f64)> 
     Some((a, b, (d2 - d1) / (2.0 * apart)))
 }
 
+/// How far a point of the plane lies toward the ocean around the map: nothing at the centre, growing as the square of
+/// the distance from it there, and without end toward the edges, so no land reaches them. It is `1/q - 1` over four,
+/// where `q`, the product of each axis's `4x(1 - x)`, is one at the centre and nothing at an edge.
+fn ocean(east: f64, south: f64) -> f64 {
+    let (du, dv) = (east - HALF, south - HALF);
+    let q = (1.0 - 2.0 * 2.0 * du * du) * (1.0 - 2.0 * 2.0 * dv * dv);
+    (1.0 / q - 1.0) * HALF * HALF
+}
+
 /// The noise fields one attempt draws, in a fixed order: the relief's octaves, the two warp fields, the ridges, the two
 /// fields that bend the plates' sutures, and the plates.
 struct Fields {
@@ -119,11 +128,10 @@ pub fn raw(p: &ReliefParams, fine: &Grid, draws: &mut Draws) -> Vec<f64> {
                 None => (0.0, 0.0),
             };
             let ridge = 1.0 - fractal(&fields.ridges, p.roughness, wu, wv).abs();
-            let (du, dv) = (east - HALF, south - HALF);
             p.plate_weight * plate
                 + fractal(&fields.relief, p.roughness, wu, wv)
                 + p.mountain_weight * uplift * (1.0 + ridge)
-                - p.falloff * (du * du + dv * dv)
+                - p.falloff * ocean(east, south)
         })
         .collect()
 }
