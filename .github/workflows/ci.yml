@@ -224,5 +224,8 @@ jobs:
       - run: sudo apt-get update -q && sudo apt-get install -y -q valgrind
       - run: valgrind --version | grep -q "$VALGRIND_VERSION"
       - run: gungraun-runner --version | grep -q "$GUNGRAUN_VERSION" || cargo install gungraun-runner --version "$GUNGRAUN_VERSION" --locked --force
+      # The cached target keeps summaries of benchmarks since renamed or removed, which the ratchets would read as
+      # this commit's counts, so only this run's summaries are left to read.
+      - run: rm -rf target/gungraun
       - run: GUNGRAUN_SAVE_SUMMARY=json cargo bench --workspace
       - run: cargo run -q -p phx-check -- bench-ratchets
