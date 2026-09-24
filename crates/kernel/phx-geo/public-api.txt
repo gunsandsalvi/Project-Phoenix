@@ -183,6 +183,7 @@ pub fn phx_geo::grid::Grid::len(&self) -> usize
 pub fn phx_geo::grid::Grid::length_m(&self, phx_id::ids::TileId, i16, phx_id::ids::TileId, i16) -> u64
 pub fn phx_geo::grid::Grid::neighbours(&self, phx_id::ids::TileId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::TileId> + '_
 pub fn phx_geo::grid::Grid::plane_m(&self, phx_id::ids::TileId, phx_id::ids::TileId) -> u64
+pub fn phx_geo::grid::Grid::seams(&self, phx_id::ids::TileId, phx_id::ids::TileId) -> (i64, i64)
 pub fn phx_geo::grid::Grid::tile(&self, usize) -> phx_id::ids::TileId
 pub fn phx_geo::grid::Grid::xy(&self, phx_id::ids::TileId) -> (u32, u32)
 pub const phx_geo::grid::DIRECTIONS: usize

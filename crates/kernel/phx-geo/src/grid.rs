@@ -100,6 +100,18 @@ impl Grid {
         AROUND.iter().position(|(dx, dy)| self.at(wrap(x, *dx, self.width), wrap(y, *dy, self.height)) == b)
     }
 
+    /// The seams a step from `a` to its neighbour `b` crosses, east and south counted as one, west and north as minus
+    /// one, across and down.
+    #[must_use]
+    pub fn seams(&self, a: TileId, b: TileId) -> (i64, i64) {
+        let ((ax, ay), (bx, by)) = (self.xy(a), self.xy(b));
+        let cross = |from: u32, to: u32| {
+            let jump = i64::from(to) - i64::from(from);
+            i64::from(jump < -1) - i64::from(jump > 1)
+        };
+        (cross(ax, bx), cross(ay, by))
+    }
+
     /// A tile's centre, in metres from the first tile's corner.
     #[must_use]
     pub fn centre_m(&self, t: TileId) -> (u64, u64) {
@@ -163,6 +175,9 @@ mod tests {
         );
         assert_eq!(g.direction(TileId::new(0), TileId::new(11)), Some(0), "up and left, across both seams");
         assert_eq!(g.direction(TileId::new(0), TileId::new(2)), None, "two across is not a neighbour");
+        assert_eq!(g.seams(TileId::new(0), TileId::new(11)), (-1, -1), "west and north across both seams");
+        assert_eq!(g.seams(TileId::new(3), TileId::new(0)), (1, 0), "east across one");
+        assert_eq!(g.seams(TileId::new(5), TileId::new(6)), (0, 0));
         assert_eq!(g.plane_m(TileId::new(0), TileId::new(3)), 10_000, "the short way round");
         assert_eq!(g.plane_m(TileId::new(0), TileId::new(2)), 20_000, "either way is as long");
         assert_eq!(g.length_m(TileId::new(0), 0, TileId::new(8), 0), 10_000, "across the north-south seam");

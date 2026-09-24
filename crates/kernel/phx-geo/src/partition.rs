@@ -48,11 +48,6 @@ pub fn components(grid: &Grid, mask: &[bool]) -> (Vec<Option<usize>>, Vec<u64>) 
 pub fn winds(grid: &Grid, mask: &[bool]) -> (bool, bool) {
     let mut seen: Vec<Option<(i64, i64)>> = vec![None; grid.len()];
     let (mut across, mut down) = (false, false);
-    // A step whose coordinate jumps by more than one crossed the seam that way.
-    let cross = |from: u32, to: u32| {
-        let jump = i64::from(to) - i64::from(from);
-        i64::from(jump < -1) - i64::from(jump > 1)
-    };
     for start in 0..grid.len() {
         if !mask.get(start).copied().unwrap_or(false) || seen.get(start).copied().flatten().is_some() {
             continue;
@@ -64,14 +59,13 @@ pub fn winds(grid: &Grid, mask: &[bool]) -> (bool, bool) {
         while let Some(cell) = queue.pop_front() {
             let Some((wound_x, wound_y)) = seen.get(cell).copied().flatten() else { continue };
             let tile = grid.tile(cell);
-            let (col, row) = grid.xy(tile);
             for near in grid.neighbours(tile) {
                 let other = grid.index(near);
                 if !mask.get(other).copied().unwrap_or(false) {
                     continue;
                 }
-                let (near_col, near_row) = grid.xy(near);
-                let next = (wound_x + cross(col, near_col), wound_y + cross(row, near_row));
+                let (seam_x, seam_y) = grid.seams(tile, near);
+                let next = (wound_x + seam_x, wound_y + seam_y);
                 match seen.get(other).copied().flatten() {
                     None => {
                         if let Some(slot) = seen.get_mut(other) {
