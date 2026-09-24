@@ -57,6 +57,7 @@ pub struct Declarations {
     pub families: Vec<(&'static str, Box<dyn AuditFamily>)>,
     pub contributions: Vec<(&'static str, Box<dyn Contribution>)>,
     pub pop: Vec<PopEntry>,
+    pub pop_processes: Vec<(&'static str, Box<dyn crate::pop_process::PopProcess>)>,
     kink_errors: Vec<String>,
 }
 
@@ -134,6 +135,11 @@ impl Declarations {
 
     pub fn contribution(&mut self, contribution: Box<dyn Contribution>) {
         self.contributions.push((self.system, contribution));
+    }
+
+    /// A process on a population kind's members, whose outcome the declaring system writes.
+    pub fn pop_process(&mut self, process: Box<dyn crate::pop_process::PopProcess>) {
+        self.pop_processes.push((self.system, process));
     }
 
     /// Adds items to a population kind: its roles, key attributes, positions, standing rates, profile groups,

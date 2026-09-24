@@ -1025,6 +1025,36 @@ pub phx_core::pop::RateDecl::unit: &'static str
 pub struct phx_core::pop::RoleDecl
 pub phx_core::pop::RoleDecl::clause: &'static str
 pub phx_core::pop::RoleDecl::name: &'static str
+pub mod phx_core::pop_process
+pub enum phx_core::pop_process::MemberChange
+pub phx_core::pop_process::MemberChange::End
+pub phx_core::pop_process::MemberChange::End::count: u64
+pub phx_core::pop_process::MemberChange::End::from: u32
+pub phx_core::pop_process::MemberChange::Part
+pub phx_core::pop_process::MemberChange::Part::count: u64
+pub phx_core::pop_process::MemberChange::Part::from: u32
+pub phx_core::pop_process::MemberChange::Part::key: alloc::vec::Vec<(&'static str, u32)>
+pub phx_core::pop_process::MemberChange::Part::moves: alloc::vec::Vec<(&'static str, &'static str)>
+pub phx_core::pop_process::MemberChange::Part::to: u32
+pub phx_core::pop_process::MemberChange::Revalue
+pub phx_core::pop_process::MemberChange::Revalue::count: u64
+pub phx_core::pop_process::MemberChange::Revalue::from: u32
+pub phx_core::pop_process::MemberChange::Revalue::to: u32
+pub struct phx_core::pop_process::CellView<'a>
+pub phx_core::pop_process::CellView::country: phx_id::ids::CountryId
+pub phx_core::pop_process::CellView::date: phx_id::day::Date
+pub phx_core::pop_process::CellView::key: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
+pub phx_core::pop_process::CellView::kind: &'static str
+pub phx_core::pop_process::CellView::party: phx_id::ids::PartyId
+impl core::fmt::Debug for phx_core::pop_process::CellView<'_>
+pub fn phx_core::pop_process::CellView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub trait phx_core::pop_process::PopProcess: core::marker::Send + core::marker::Sync
+pub fn phx_core::pop_process::PopProcess::changes_after(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
+pub fn phx_core::pop_process::PopProcess::group(&self) -> &'static str
+pub fn phx_core::pop_process::PopProcess::hazard(&self) -> &'static str
+pub fn phx_core::pop_process::PopProcess::kind(&self) -> &'static str
+pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::pop_process::CellView<'_>, &[(u32, u64)], &mut alloc::vec::Vec<phx_core::pop_process::MemberChange>)
+pub fn phx_core::pop_process::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, u32) -> f64
 pub mod phx_core::records
 pub struct phx_core::records::Reader
 pub phx_core::records::Reader::day: phx_id::day::Day
@@ -1610,6 +1640,7 @@ pub phx_core::system::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::system::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
 pub phx_core::system::Declarations::occasions: alloc::vec::Vec<(&'static str, phx_core::occasions::OccasionDecl)>
 pub phx_core::system::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
+pub phx_core::system::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)>
 pub phx_core::system::Declarations::prims: phx_core::register::RegisterBuilder
 pub phx_core::system::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::records::RecordKindDecl)>
 pub phx_core::system::Declarations::rules: phx_core::rules::RuleTable
@@ -1630,6 +1661,7 @@ pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::Me
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
 pub fn phx_core::system::Declarations::occasion(&mut self, phx_core::occasions::OccasionDecl)
 pub fn phx_core::system::Declarations::pop_kind(&mut self, &'static str) -> phx_core::pop::PopKindBuilder<'_>
+pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::RecordKindDecl)
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
@@ -2301,6 +2333,7 @@ pub phx_core::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
 pub phx_core::Declarations::occasions: alloc::vec::Vec<(&'static str, phx_core::occasions::OccasionDecl)>
 pub phx_core::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
+pub phx_core::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)>
 pub phx_core::Declarations::prims: phx_core::register::RegisterBuilder
 pub phx_core::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::records::RecordKindDecl)>
 pub phx_core::Declarations::rules: phx_core::rules::RuleTable
@@ -2321,6 +2354,7 @@ pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::Me
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
 pub fn phx_core::system::Declarations::occasion(&mut self, phx_core::occasions::OccasionDecl)
 pub fn phx_core::system::Declarations::pop_kind(&mut self, &'static str) -> phx_core::pop::PopKindBuilder<'_>
+pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::RecordKindDecl)
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>

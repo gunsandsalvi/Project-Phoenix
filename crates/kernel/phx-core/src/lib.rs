@@ -24,6 +24,7 @@ pub mod messages;
 pub mod occasions;
 pub mod policy;
 pub mod pop;
+pub mod pop_process;
 pub mod records;
 pub mod register;
 pub mod rules;
