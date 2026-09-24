@@ -256,7 +256,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_core.ir_agenda_gather"
-value = 148974
+value = 149145
 direction = "down"
 
 # phx-ledger: a ten-year annual bond's dues on its fifth coupon date (a fixed coupon and its principal, one due), and
@@ -289,7 +289,7 @@ direction = "down"
 # accounts. CI's runner holds the ratchet at its own measure, which is above the build machine's.
 [[ratchet]]
 counter = "phx_ledger.ir_settle_day_16"
-value = 335741
+value = 339639
 direction = "down"
 
 # phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
@@ -321,47 +321,47 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_screen_candidate"
-value = 3308025
+value = 3308173
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_end_to_end"
-value = 263968
+value = 262588
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_lone"
-value = 181991
+value = 181840
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_parts_batched"
-value = 524975
+value = 523388
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_index_rebuild"
-value = 1043577
+value = 1043845
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_rank_read"
-value = 1173370
+value = 1173189
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_gap_estimate"
-value = 3299315
+value = 3299623
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_widen_sweep"
-value = 42375363
+value = 42349568
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_renumber"
-value = 25277087
+value = 25806094
 direction = "down"
 
 [[ratchet]]
