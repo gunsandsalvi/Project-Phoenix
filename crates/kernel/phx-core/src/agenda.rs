@@ -457,6 +457,69 @@ impl<B: Backing> Agenda<B> {
         TodayAgenda { day, per_table }
     }
 
+    /// The agenda for a save: its day, and each table's rows with every row's next day per reason; the wheel is an
+    /// index of them, rebuilt on reading.
+    #[clause("SET.12")]
+    pub fn save_to(&self, w: &mut phx_store::Writer<'_>) {
+        use phx_store::Saved as _;
+        self.today.save(w);
+        self.moved.save(w);
+        for t in &self.tables {
+            let width = t.spec.reasons;
+            t.rows.save(w);
+            t.next.slice(t.rows * width).to_vec().save(w);
+        }
+    }
+
+    /// The agenda read back over the tables of `specs`, each row booked at its earliest next day.
+    ///
+    /// # Errors
+    /// When the store is damaged or holds other tables than `specs`.
+    #[clause("SET.12")]
+    pub fn load_from(
+        r: &mut phx_store::Reader<'_>,
+        space: &mut AddressSpace,
+        specs: &[AgendaTableSpec],
+        max_blocks: u32,
+    ) -> Result<Agenda<B>, phx_store::LoadError> {
+        use phx_store::Saved as _;
+        let today = u32::load(r)?;
+        let invalid = |e: String| phx_store::LoadError::Invalid(e);
+        let mut agenda = Agenda::new(space, Day::new(today), specs, max_blocks).map_err(invalid)?;
+        agenda.moved = u64::load(r)?;
+        for spec in specs {
+            let rows = usize::load(r)?;
+            let next: Vec<u32> = Vec::load(r)?;
+            if next.len() != rows * spec.reasons || rows > index(spec.max_rows) {
+                return Err(invalid(format!("agenda rows of table {} other than the build's", spec.table.get())));
+            }
+            let Ok(rows32) = u32::try_from(rows) else {
+                return Err(invalid(format!("{rows} agenda rows")));
+            };
+            agenda.grow(spec.table, rows32);
+            for (i, days) in next.chunks(spec.reasons).enumerate() {
+                let slot = Slot::new(u32::try_from(i).map_err(|e| invalid(e.to_string()))?);
+                for (reason, &day) in days.iter().enumerate() {
+                    if day != NEVER {
+                        agenda.set_next(spec.table, slot, reason, Day::new(day));
+                    }
+                }
+            }
+        }
+        Ok(agenda)
+    }
+
+    /// Each row's next day per reason, for the world's hash.
+    pub fn hash_into(&self, h: &mut phx_store::LogicalHasher) {
+        h.u64(u64::from(self.today));
+        for t in &self.tables {
+            let width = t.spec.reasons;
+            for d in t.next.slice(t.rows * width) {
+                h.u64(u64::from(*d));
+            }
+        }
+    }
+
     #[must_use]
     pub fn counters(&self) -> AgendaCounters {
         let (live, stale) = self.tables.iter().fold((0, 0), |(l, s), t| (l + t.live, s + t.stale));
@@ -682,6 +745,38 @@ mod tests {
         assert_eq!(due, vec![(5, 6, 0b01), (9, 1, 0b01), (40, 6, 0b10)]);
         let c = a.counters();
         assert_eq!(c.entries - c.stale, 0);
+    }
+
+    #[test]
+    fn agenda_reads_back_every_due() {
+        let mut a = agenda(0, &[(0, 8, 2), (3, 4, 1)]);
+        a.set_next(T, Slot::new(1), 0, Day::new(5));
+        a.set_next(T, Slot::new(1), 1, Day::new(3_000));
+        a.set_next(T, Slot::new(6), 0, Day::new(9));
+        a.set_next(TableId::new(3), Slot::new(2), 0, Day::new(9));
+        let _ = a.gather(Day::new(2));
+        let mut bytes = Vec::new();
+        let mut w = phx_store::Writer::new(&mut bytes).unwrap();
+        a.save_to(&mut w);
+        w.finish().unwrap();
+        let mut input = bytes.as_slice();
+        let mut r = phx_store::Reader::new(&mut input).unwrap();
+        let specs = [
+            AgendaTableSpec { table: T, max_rows: 8, reasons: 2 },
+            AgendaTableSpec { table: TableId::new(3), max_rows: 4, reasons: 1 },
+        ];
+        let mut b: Agenda<Heap> = Agenda::load_from(&mut r, &mut AddressSpace::empty(), &specs, 1 << 16).unwrap();
+        assert_eq!(b.today(), Day::new(2));
+        let dues = |x: &mut Agenda<Heap>| {
+            let mut due = Vec::new();
+            for d in 3..=3_000 {
+                for t in x.gather(Day::new(d)).per_table {
+                    due.extend(t.slots.iter().zip(&t.reasons).map(|(s, m)| (d, t.table.get(), s.get(), *m)));
+                }
+            }
+            due
+        };
+        assert_eq!(dues(&mut b), dues(&mut a), "the rebuilt wheel gathers what the saved one did");
     }
 
     #[test]
