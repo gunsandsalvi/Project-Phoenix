@@ -51,6 +51,10 @@ pub enum ValueType {
     Profile {
         exp: u8,
     },
+    /// A range cut into steps: strictly increasing boundaries to `exp` places.
+    Partition {
+        exp: u8,
+    },
 }
 
 /// What a table does with a point outside its axes: its declared rule, never an implicit one.
@@ -333,6 +337,14 @@ pub enum PrimValue {
     LegalForms(Vec<LegalForm>),
     CarryingBases(Vec<crate::accounting::Permitted>),
     Profile(JointProfile),
+    Partition(Partition),
+}
+
+/// A range cut into steps at strictly increasing boundaries, each a decimal written as an integer scaled by 10^`exp`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Partition {
+    pub exp: u8,
+    pub bounds: Box<[i64]>,
 }
 
 /// A decimal written in data as an integer scaled by 10^exp: exact, or refused. A float is read by its shortest
@@ -627,6 +639,11 @@ pub fn parse(v: &Value, ty: ValueType, period: Option<RatePeriod>) -> Result<Pri
         ValueType::LegalForms => Ok(PrimValue::LegalForms(legal_forms(v)?)),
         ValueType::CarryingBases => Ok(PrimValue::CarryingBases(carrying_bases(v)?)),
         ValueType::Profile { exp } => Ok(PrimValue::Profile(crate::register::profile::parse(v, exp, decimal)?)),
+        ValueType::Partition { exp } => {
+            let bounds = decimals(Some(v), exp, "boundaries")?;
+            increasing(&bounds, "boundaries")?;
+            Ok(PrimValue::Partition(Partition { exp, bounds: bounds.into_boxed_slice() }))
+        }
     }
 }
 
@@ -700,6 +717,7 @@ read_ref!(CountryRules, Calendar, ValueType::Calendar);
 read_ref!(Vec<LegalForm>, LegalForms, ValueType::LegalForms);
 read_ref!(Vec<crate::accounting::Permitted>, CarryingBases, ValueType::CarryingBases);
 read_ref!(JointProfile, Profile, ValueType::Profile { .. });
+read_ref!(Partition, Partition, ValueType::Partition { .. });
 
 #[cfg(test)]
 mod tests {
@@ -722,6 +740,16 @@ mod tests {
         assert_eq!(decimal(&value("\"0.1000\""), 1), Ok(1));
         assert!(decimal(&value("0.035"), 2).is_err(), "more places than declared");
         assert!(decimal(&value("\"1e3\""), 2).is_err());
+    }
+
+    #[test]
+    fn partitions_are_strictly_increasing() {
+        let ty = ValueType::Partition { exp: 2 };
+        let PrimValue::Partition(p) = parse(&value("[-0.5, 0, 0.25, 3]"), ty, None).unwrap() else { panic!() };
+        assert_eq!((p.exp, &*p.bounds), (2, &[-50, 0, 25, 300][..]));
+        assert!(parse(&value("[0, 0]"), ty, None).is_err());
+        assert!(parse(&value("[]"), ty, None).is_err());
+        assert!(parse(&value("[0.125]"), ty, None).is_err(), "more places than declared");
     }
 
     #[test]

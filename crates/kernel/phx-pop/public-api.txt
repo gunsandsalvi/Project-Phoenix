@@ -1,0 +1,111 @@
+pub mod phx_pop
+pub mod phx_pop::consts
+pub const phx_pop::consts::KEY_BITS: u32
+pub const phx_pop::consts::KEY_WORDS: usize
+pub const phx_pop::consts::STEPS_PER_WORD: usize
+pub mod phx_pop::key
+pub struct phx_pop::key::KeyField
+pub phx_pop::key::KeyField::bits: u32
+pub phx_pop::key::KeyField::name: &'static str
+pub phx_pop::key::KeyField::shift: u32
+pub phx_pop::key::KeyField::values: u32
+pub phx_pop::key::KeyField::word: usize
+#[repr(C)] pub struct phx_pop::key::KeyId(_)
+impl phx_pop::key::KeyId
+pub const fn phx_pop::key::KeyId::get(self) -> u32
+pub const fn phx_pop::key::KeyId::new(u32) -> phx_pop::key::KeyId
+impl phx_store::pod::Pod for phx_pop::key::KeyId
+pub fn phx_pop::key::KeyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::__seal::Sealed for phx_pop::key::KeyId
+pub struct phx_pop::key::KeyInterner
+impl phx_pop::key::KeyInterner
+pub fn phx_pop::key::KeyInterner::apply(&mut self, &phx_exec::keyed::KeyedReduce<phx_pop::key::KeyRecord, i64>)
+pub fn phx_pop::key::KeyInterner::id(&self, &phx_pop::key::KeyRecord) -> phx_num::missing::Missing<phx_pop::key::KeyId>
+pub fn phx_pop::key::KeyInterner::is_empty(&self) -> bool
+pub fn phx_pop::key::KeyInterner::len(&self) -> usize
+pub fn phx_pop::key::KeyInterner::new() -> phx_pop::key::KeyInterner
+pub fn phx_pop::key::KeyInterner::record(&self, phx_pop::key::KeyId) -> phx_pop::key::KeyRecord
+pub fn phx_pop::key::KeyInterner::refs(&self, phx_pop::key::KeyId) -> u32
+impl core::default::Default for phx_pop::key::KeyInterner
+pub fn phx_pop::key::KeyInterner::default() -> phx_pop::key::KeyInterner
+pub struct phx_pop::key::KeyLayout
+impl phx_pop::key::KeyLayout
+pub fn phx_pop::key::KeyLayout::fields(&self) -> &[phx_pop::key::KeyField]
+pub fn phx_pop::key::KeyLayout::get(&self, &phx_pop::key::KeyRecord, usize) -> u32
+pub fn phx_pop::key::KeyLayout::new(&[phx_core::pop::KeyAttrDecl]) -> core::result::Result<phx_pop::key::KeyLayout, alloc::string::String>
+pub fn phx_pop::key::KeyLayout::set(&self, &mut phx_pop::key::KeyRecord, usize, u32)
+#[repr(C)] pub struct phx_pop::key::KeyRecord
+pub phx_pop::key::KeyRecord::words: [u64; 4]
+impl phx_core::map::MapKey for phx_pop::key::KeyRecord
+pub fn phx_pop::key::KeyRecord::key64(self) -> u64
+impl phx_exec::radix::RadixKey for phx_pop::key::KeyRecord
+pub const phx_pop::key::KeyRecord::BITS: u32
+pub fn phx_pop::key::KeyRecord::digit(self, u32) -> usize
+pub fn phx_pop::key::KeyRecord::word(self) -> u64
+impl phx_store::pod::Pod for phx_pop::key::KeyRecord
+pub fn phx_pop::key::KeyRecord::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::__seal::Sealed for phx_pop::key::KeyRecord
+pub mod phx_pop::kind
+pub enum phx_pop::kind::Scale
+pub phx_pop::kind::Scale::Position(usize)
+pub phx_pop::kind::Scale::Rate(usize)
+pub struct phx_pop::kind::Declared<T>
+pub phx_pop::kind::Declared::item: T
+pub phx_pop::kind::Declared::writer: &'static str
+pub struct phx_pop::kind::Group
+pub phx_pop::kind::Group::components: alloc::vec::Vec<phx_core::pop::ProfileComponent>
+pub phx_pop::kind::Group::name: &'static str
+pub phx_pop::kind::Group::role: usize
+pub phx_pop::kind::Group::values: u32
+pub phx_pop::kind::Group::writer: &'static str
+pub struct phx_pop::kind::PopKindDecl
+pub phx_pop::kind::PopKindDecl::groups: alloc::vec::Vec<phx_pop::kind::Group>
+pub phx_pop::kind::PopKindDecl::key: phx_pop::key::KeyLayout
+pub phx_pop::kind::PopKindDecl::key_attrs: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::KeyAttrDecl>>
+pub phx_pop::kind::PopKindDecl::kind: &'static str
+pub phx_pop::kind::PopKindDecl::pins: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::PinDecl>>
+pub phx_pop::kind::PopKindDecl::positions: alloc::vec::Vec<phx_pop::kind::Position>
+pub phx_pop::kind::PopKindDecl::rates: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::RateDecl>>
+pub phx_pop::kind::PopKindDecl::reviews: alloc::vec::Vec<phx_pop::kind::Declared<&'static str>>
+pub phx_pop::kind::PopKindDecl::roles: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::RoleDecl>>
+pub phx_pop::kind::PopKindDecl::sig: phx_pop::sig::SigLayout
+impl phx_pop::kind::PopKindDecl
+pub fn phx_pop::kind::PopKindDecl::compile(&'static str, &[phx_core::pop::PopEntry], &phx_core::kinks::KinkRegistry, &dyn core::ops::function::Fn(&'static str) -> core::result::Result<phx_pop::steps::StepTable, alloc::string::String>) -> core::result::Result<phx_pop::kind::PopKindDecl, alloc::vec::Vec<alloc::string::String>>
+pub struct phx_pop::kind::Position
+pub phx_pop::kind::Position::name: &'static str
+pub phx_pop::kind::Position::role: phx_num::missing::Missing<usize>
+pub phx_pop::kind::Position::scale: phx_pop::kind::Scale
+pub phx_pop::kind::Position::steps: phx_pop::steps::StepTable
+pub phx_pop::kind::Position::unit: &'static str
+pub phx_pop::kind::Position::writer: &'static str
+pub mod phx_pop::landing
+pub fn phx_pop::landing::landing_key(phx_pop::key::KeyId, &[phx_pop::steps::Step], &[u64]) -> u64
+pub mod phx_pop::sig
+pub struct phx_pop::sig::SigGroup
+pub phx_pop::sig::SigGroup::bits: u32
+pub phx_pop::sig::SigGroup::points: u16
+pub phx_pop::sig::SigGroup::position: usize
+pub phx_pop::sig::SigGroup::shift: u32
+pub phx_pop::sig::SigGroup::source: phx_core::kinks::KinkSource
+pub phx_pop::sig::SigGroup::word: usize
+pub struct phx_pop::sig::SigLayout
+impl phx_pop::sig::SigLayout
+pub fn phx_pop::sig::SigLayout::bits(&self) -> u32
+pub fn phx_pop::sig::SigLayout::get(&self, &[u64], usize) -> u16
+pub fn phx_pop::sig::SigLayout::groups(&self) -> &[phx_pop::sig::SigGroup]
+pub fn phx_pop::sig::SigLayout::new(&[&'static str], &phx_core::kinks::KinkRegistry) -> phx_pop::sig::SigLayout
+pub fn phx_pop::sig::SigLayout::set(&self, &mut [u64], usize, u16)
+pub fn phx_pop::sig::SigLayout::words(&self) -> usize
+pub mod phx_pop::steps
+#[repr(transparent)] pub struct phx_pop::steps::Step(_)
+impl phx_pop::steps::Step
+pub const phx_pop::steps::Step::MISSING: phx_pop::steps::Step
+pub const fn phx_pop::steps::Step::get(self) -> u16
+pub const fn phx_pop::steps::Step::is_missing(self) -> bool
+pub struct phx_pop::steps::StepTable
+impl phx_pop::steps::StepTable
+pub fn phx_pop::steps::StepTable::at_level(phx_pop::steps::Step, u8) -> phx_pop::steps::Step
+pub fn phx_pop::steps::StepTable::new(&phx_core::register::values::Partition) -> core::result::Result<phx_pop::steps::StepTable, alloc::string::String>
+pub fn phx_pop::steps::StepTable::step_of(&self, i64) -> phx_pop::steps::Step
+pub fn phx_pop::steps::StepTable::step_scaled(&self, i64, phx_num::missing::Missing<i128>) -> phx_pop::steps::Step
+pub fn phx_pop::steps::StepTable::steps(&self) -> usize

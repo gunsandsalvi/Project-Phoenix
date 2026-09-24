@@ -3828,13 +3828,13 @@ in 121 s after a 16 s opening, peak 237 MiB. Every live check passes but LC-0-29
 LC-0-32 (the first market). Twelve quarterly saves, each at most 11 MiB, written in at most 0.72 s and checked in at
 most 0.77 s, all read back to their closes' hashes. The thirteen injections into the day-30 save each lit their own
 family alone, each over a load of 0.55 to 0.65 s. The run's 16 s over S0.19's is the saves' writing and checking;
-its 59 MiB of peak is a store decoded whole by the save check.
+its peak rises by 59 MiB with them.
 
 ---
 
 ### S0.21 — `phx-pop` I: cell tables, keys, positions, steps and profiles
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: REP.1, REP.3 (with S0.14's line records), REP.4, REP.19, REP.20, REP.32, REP.33.

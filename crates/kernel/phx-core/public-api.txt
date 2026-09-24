@@ -826,6 +826,7 @@ pub phx_core::kinks::KinkDecl::clause: &'static str
 pub phx_core::kinks::KinkDecl::name: &'static str
 pub phx_core::kinks::KinkDecl::on: phx_core::kinks::KinkOn
 pub phx_core::kinks::KinkDecl::owner: &'static str
+pub phx_core::kinks::KinkDecl::points: u16
 pub phx_core::kinks::KinkDecl::source: phx_core::kinks::KinkSource
 pub struct phx_core::kinks::KinkRegistry
 impl phx_core::kinks::KinkRegistry
@@ -947,6 +948,63 @@ pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::System
 pub fn phx_core::policy::PolicyValue<T>::announcements(&self) -> &[phx_core::policy::Announcement<T>]
 pub fn phx_core::policy::PolicyValue<T>::open<P>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::policy::PolicyValue<T> where P: phx_core::register::values::PrimType, for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
 pub fn phx_core::policy::PolicyValue<T>::value_on(&self, phx_id::day::Day) -> T
+pub mod phx_core::pop
+pub enum phx_core::pop::PopItem
+pub phx_core::pop::PopItem::KeyAttr(phx_core::pop::KeyAttrDecl)
+pub phx_core::pop::PopItem::Pin(phx_core::pop::PinDecl)
+pub phx_core::pop::PopItem::Position(phx_core::pop::PositionDecl)
+pub phx_core::pop::PopItem::ProfileGroup(phx_core::pop::GroupDecl)
+pub phx_core::pop::PopItem::ReviewKind(&'static str)
+pub phx_core::pop::PopItem::Role(phx_core::pop::RoleDecl)
+pub phx_core::pop::PopItem::StandingRate(phx_core::pop::RateDecl)
+pub enum phx_core::pop::PositionOf
+pub phx_core::pop::PositionOf::Member
+pub phx_core::pop::PositionOf::Roles(&'static [&'static str])
+pub enum phx_core::pop::ScaleRef
+pub phx_core::pop::ScaleRef::Position(&'static str)
+pub phx_core::pop::ScaleRef::Rate(&'static str)
+pub struct phx_core::pop::GroupDecl
+pub phx_core::pop::GroupDecl::clause: &'static str
+pub phx_core::pop::GroupDecl::components: &'static [phx_core::pop::ProfileComponent]
+pub phx_core::pop::GroupDecl::name: &'static str
+pub phx_core::pop::GroupDecl::role: &'static str
+pub struct phx_core::pop::KeyAttrDecl
+pub phx_core::pop::KeyAttrDecl::clause: &'static str
+pub phx_core::pop::KeyAttrDecl::name: &'static str
+pub phx_core::pop::KeyAttrDecl::values: u32
+pub struct phx_core::pop::PinDecl
+pub phx_core::pop::PinDecl::clause: &'static str
+pub phx_core::pop::PinDecl::name: &'static str
+pub struct phx_core::pop::PopEntry
+pub phx_core::pop::PopEntry::item: phx_core::pop::PopItem
+pub phx_core::pop::PopEntry::kind: &'static str
+pub phx_core::pop::PopEntry::system: &'static str
+pub struct phx_core::pop::PopKindBuilder<'a>
+impl<'a> phx_core::pop::PopKindBuilder<'a>
+pub fn phx_core::pop::PopKindBuilder<'a>::key_attr(&mut self, phx_core::pop::KeyAttrDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::pin(&mut self, phx_core::pop::PinDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::profile_group(&mut self, phx_core::pop::GroupDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::review_kind(&mut self, &'static str) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::standing_rate(&mut self, phx_core::pop::RateDecl) -> &mut Self
+pub struct phx_core::pop::PositionDecl
+pub phx_core::pop::PositionDecl::clause: &'static str
+pub phx_core::pop::PositionDecl::name: &'static str
+pub phx_core::pop::PositionDecl::of: phx_core::pop::PositionOf
+pub phx_core::pop::PositionDecl::scale: phx_core::pop::ScaleRef
+pub phx_core::pop::PositionDecl::steps: &'static str
+pub phx_core::pop::PositionDecl::unit: &'static str
+pub struct phx_core::pop::ProfileComponent
+pub phx_core::pop::ProfileComponent::name: &'static str
+pub phx_core::pop::ProfileComponent::values: u32
+pub struct phx_core::pop::RateDecl
+pub phx_core::pop::RateDecl::clause: &'static str
+pub phx_core::pop::RateDecl::name: &'static str
+pub phx_core::pop::RateDecl::unit: &'static str
+pub struct phx_core::pop::RoleDecl
+pub phx_core::pop::RoleDecl::clause: &'static str
+pub phx_core::pop::RoleDecl::name: &'static str
 pub mod phx_core::records
 pub struct phx_core::records::Reader
 pub phx_core::records::Reader::day: phx_id::day::Day
@@ -1137,6 +1195,7 @@ pub phx_core::register::values::PrimValue::Fixed::exp: u8
 pub phx_core::register::values::PrimValue::Fixed::raw: i64
 pub phx_core::register::values::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
 pub phx_core::register::values::PrimValue::Money(phx_num::money::Amount)
+pub phx_core::register::values::PrimValue::Partition(phx_core::register::values::Partition)
 pub phx_core::register::values::PrimValue::PointTable(phx_num::points::PointTable)
 pub phx_core::register::values::PrimValue::Profile(phx_core::register::profile::JointProfile)
 pub phx_core::register::values::PrimValue::Qty(phx_num::qty::QtyRaw)
@@ -1155,6 +1214,8 @@ pub phx_core::register::values::ValueType::Fixed::exp: u8
 pub phx_core::register::values::ValueType::LegalForms
 pub phx_core::register::values::ValueType::Money
 pub phx_core::register::values::ValueType::Money::exp: u8
+pub phx_core::register::values::ValueType::Partition
+pub phx_core::register::values::ValueType::Partition::exp: u8
 pub phx_core::register::values::ValueType::PointTable
 pub phx_core::register::values::ValueType::PointTable::exp: u8
 pub phx_core::register::values::ValueType::Profile
@@ -1178,6 +1239,13 @@ pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::regi
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::register::values::OutsideAxes
+pub struct phx_core::register::values::Partition
+pub phx_core::register::values::Partition::bounds: alloc::boxed::Box<[i64]>
+pub phx_core::register::values::Partition::exp: u8
+impl phx_core::register::values::PrimType for phx_core::register::values::Partition
+pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition
+pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>
+pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::register::values::Table1
 impl phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>
@@ -1234,6 +1302,10 @@ impl phx_core::register::values::PrimType for phx_core::register::values::Distri
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::values::Partition
+pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition
+pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>
+pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>
@@ -1514,6 +1586,7 @@ pub phx_core::system::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_co
 pub phx_core::system::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::system::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
 pub phx_core::system::Declarations::occasions: alloc::vec::Vec<(&'static str, phx_core::occasions::OccasionDecl)>
+pub phx_core::system::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
 pub phx_core::system::Declarations::prims: phx_core::register::RegisterBuilder
 pub phx_core::system::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::records::RecordKindDecl)>
 pub phx_core::system::Declarations::rules: phx_core::rules::RuleTable
@@ -1533,6 +1606,7 @@ pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl
 pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
 pub fn phx_core::system::Declarations::occasion(&mut self, phx_core::occasions::OccasionDecl)
+pub fn phx_core::system::Declarations::pop_kind(&mut self, &'static str) -> phx_core::pop::PopKindBuilder<'_>
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::RecordKindDecl)
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
@@ -1792,6 +1866,17 @@ pub phx_core::PartyState::Ended::day: phx_id::day::Day
 pub phx_core::PartyState::Ended::successor: phx_num::missing::Missing<phx_id::ids::PartyId>
 pub phx_core::PartyState::Live(phx_id::ids::RowRef)
 pub phx_core::PartyState::Unknown
+pub enum phx_core::PopItem
+pub phx_core::PopItem::KeyAttr(phx_core::pop::KeyAttrDecl)
+pub phx_core::PopItem::Pin(phx_core::pop::PinDecl)
+pub phx_core::PopItem::Position(phx_core::pop::PositionDecl)
+pub phx_core::PopItem::ProfileGroup(phx_core::pop::GroupDecl)
+pub phx_core::PopItem::ReviewKind(&'static str)
+pub phx_core::PopItem::Role(phx_core::pop::RoleDecl)
+pub phx_core::PopItem::StandingRate(phx_core::pop::RateDecl)
+pub enum phx_core::PositionOf
+pub phx_core::PositionOf::Member
+pub phx_core::PositionOf::Roles(&'static [&'static str])
 pub enum phx_core::PrimKind
 pub phx_core::PrimKind::Endowment
 pub phx_core::PrimKind::Policy
@@ -1819,6 +1904,7 @@ pub phx_core::PrimValue::Fixed::exp: u8
 pub phx_core::PrimValue::Fixed::raw: i64
 pub phx_core::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
 pub phx_core::PrimValue::Money(phx_num::money::Amount)
+pub phx_core::PrimValue::Partition(phx_core::register::values::Partition)
 pub phx_core::PrimValue::PointTable(phx_num::points::PointTable)
 pub phx_core::PrimValue::Profile(phx_core::register::profile::JointProfile)
 pub phx_core::PrimValue::Qty(phx_num::qty::QtyRaw)
@@ -1858,6 +1944,9 @@ pub phx_core::Resolved::Unknown
 pub enum phx_core::RunsOn
 pub phx_core::RunsOn::Any
 pub phx_core::RunsOn::Business
+pub enum phx_core::ScaleRef
+pub phx_core::ScaleRef::Position(&'static str)
+pub phx_core::ScaleRef::Rate(&'static str)
 pub enum phx_core::Scope
 pub phx_core::Scope::PerCountry
 pub phx_core::Scope::Shared
@@ -1954,6 +2043,8 @@ pub phx_core::ValueType::Fixed::exp: u8
 pub phx_core::ValueType::LegalForms
 pub phx_core::ValueType::Money
 pub phx_core::ValueType::Money::exp: u8
+pub phx_core::ValueType::Partition
+pub phx_core::ValueType::Partition::exp: u8
 pub phx_core::ValueType::PointTable
 pub phx_core::ValueType::PointTable::exp: u8
 pub phx_core::ValueType::Profile
@@ -2176,6 +2267,7 @@ pub phx_core::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_core::kind
 pub phx_core::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
 pub phx_core::Declarations::occasions: alloc::vec::Vec<(&'static str, phx_core::occasions::OccasionDecl)>
+pub phx_core::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
 pub phx_core::Declarations::prims: phx_core::register::RegisterBuilder
 pub phx_core::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::records::RecordKindDecl)>
 pub phx_core::Declarations::rules: phx_core::rules::RuleTable
@@ -2195,6 +2287,7 @@ pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl
 pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
 pub fn phx_core::system::Declarations::occasion(&mut self, phx_core::occasions::OccasionDecl)
+pub fn phx_core::system::Declarations::pop_kind(&mut self, &'static str) -> phx_core::pop::PopKindBuilder<'_>
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::RecordKindDecl)
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
@@ -2357,6 +2450,11 @@ pub phx_core::GenReport::writes: alloc::vec::Vec<phx_core::contribution::WriteRe
 impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::WriteRecord>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::GroupDecl
+pub phx_core::GroupDecl::clause: &'static str
+pub phx_core::GroupDecl::components: &'static [phx_core::pop::ProfileComponent]
+pub phx_core::GroupDecl::name: &'static str
+pub phx_core::GroupDecl::role: &'static str
 pub struct phx_core::HandlerEntry
 pub phx_core::HandlerEntry::clause: &'static str
 pub phx_core::HandlerEntry::intents: &'static [&'static str]
@@ -2427,6 +2525,10 @@ pub phx_core::KernelTable::name: &'static str
 impl phx_store::save::Saved for phx_core::columns::KernelTable where &'static str: phx_store::save::Saved, phx_core::columns::FactColumns: phx_store::save::Saved
 pub fn phx_core::columns::KernelTable::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::columns::KernelTable::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::KeyAttrDecl
+pub phx_core::KeyAttrDecl::clause: &'static str
+pub phx_core::KeyAttrDecl::name: &'static str
+pub phx_core::KeyAttrDecl::values: u32
 pub struct phx_core::KindDecl
 pub phx_core::KindDecl::clause: &'static str
 pub phx_core::KindDecl::legal_form: &'static str
@@ -2465,6 +2567,7 @@ pub phx_core::KinkDecl::clause: &'static str
 pub phx_core::KinkDecl::name: &'static str
 pub phx_core::KinkDecl::on: phx_core::kinks::KinkOn
 pub phx_core::KinkDecl::owner: &'static str
+pub phx_core::KinkDecl::points: u16
 pub phx_core::KinkDecl::source: phx_core::kinks::KinkSource
 pub struct phx_core::KinkRegistry
 impl phx_core::kinks::KinkRegistry
@@ -2588,6 +2691,9 @@ impl phx_core::schedule::Phase
 pub fn phx_core::schedule::Phase::offset_days(self) -> u16
 pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16) -> core::option::Option<phx_core::schedule::Phase>
 pub struct phx_core::PhysicalToken(_)
+pub struct phx_core::PinDecl
+pub phx_core::PinDecl::clause: &'static str
+pub phx_core::PinDecl::name: &'static str
 pub struct phx_core::Pinned
 pub phx_core::Pinned::index: usize
 pub phx_core::Pinned::part: u8
@@ -2605,6 +2711,26 @@ pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::System
 pub fn phx_core::policy::PolicyValue<T>::announcements(&self) -> &[phx_core::policy::Announcement<T>]
 pub fn phx_core::policy::PolicyValue<T>::open<P>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::policy::PolicyValue<T> where P: phx_core::register::values::PrimType, for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
 pub fn phx_core::policy::PolicyValue<T>::value_on(&self, phx_id::day::Day) -> T
+pub struct phx_core::PopEntry
+pub phx_core::PopEntry::item: phx_core::pop::PopItem
+pub phx_core::PopEntry::kind: &'static str
+pub phx_core::PopEntry::system: &'static str
+pub struct phx_core::PopKindBuilder<'a>
+impl<'a> phx_core::pop::PopKindBuilder<'a>
+pub fn phx_core::pop::PopKindBuilder<'a>::key_attr(&mut self, phx_core::pop::KeyAttrDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::pin(&mut self, phx_core::pop::PinDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::profile_group(&mut self, phx_core::pop::GroupDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::review_kind(&mut self, &'static str) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::standing_rate(&mut self, phx_core::pop::RateDecl) -> &mut Self
+pub struct phx_core::PositionDecl
+pub phx_core::PositionDecl::clause: &'static str
+pub phx_core::PositionDecl::name: &'static str
+pub phx_core::PositionDecl::of: phx_core::pop::PositionOf
+pub phx_core::PositionDecl::scale: phx_core::pop::ScaleRef
+pub phx_core::PositionDecl::steps: &'static str
+pub phx_core::PositionDecl::unit: &'static str
 pub struct phx_core::Prim<T>
 impl<T: phx_core::register::values::PrimType> phx_core::register::Prim<T>
 pub fn phx_core::register::Prim<T>::decl(self, &phx_core::register::Register) -> &phx_core::register::PrimDecl
@@ -2626,6 +2752,9 @@ pub phx_core::PrimDecl::value: phx_core::register::values::ValueType
 impl phx_core::register::PrimDecl
 pub fn phx_core::register::PrimDecl::owner(&self) -> core::result::Result<phx_id::ids::SystemCode, alloc::string::String>
 pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::ProfileComponent
+pub phx_core::ProfileComponent::name: &'static str
+pub phx_core::ProfileComponent::values: u32
 pub struct phx_core::ProfileValue
 pub phx_core::ProfileValue::countries: u32
 pub phx_core::ProfileValue::mean: i64
@@ -2639,6 +2768,10 @@ pub phx_core::QueuedIntent::words: alloc::vec::Vec<i64>
 impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
 pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::RateDecl
+pub phx_core::RateDecl::clause: &'static str
+pub phx_core::RateDecl::name: &'static str
+pub phx_core::RateDecl::unit: &'static str
 pub struct phx_core::RateFn
 pub phx_core::RateFn::axes: &'static [&'static str]
 pub phx_core::RateFn::table: &'static str
@@ -2694,6 +2827,9 @@ impl phx_core::register::RegisterBuilder
 pub fn phx_core::register::RegisterBuilder::build(self, &[phx_core::register::DataFile], usize) -> core::result::Result<phx_core::register::Register, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::register::RegisterBuilder::declare<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::RegisterBuilder
+pub struct phx_core::RoleDecl
+pub phx_core::RoleDecl::clause: &'static str
+pub phx_core::RoleDecl::name: &'static str
 pub struct phx_core::RoleId(pub &'static str)
 pub struct phx_core::RuleSig<I, O>
 pub phx_core::RuleSig::implementer: &'static str
@@ -2970,6 +3106,10 @@ impl phx_core::register::values::PrimType for phx_core::register::values::Distri
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::register::values::Partition
+pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition
+pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>
+pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>

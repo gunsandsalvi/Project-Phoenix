@@ -713,6 +713,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "phx-pop"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-exec",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+ "phx-store",
+]
+
+[[package]]
 name = "phx-rand"
 version = "0.1.0"
 dependencies = [

@@ -14,6 +14,7 @@ use crate::kinds::KindDecl;
 use crate::kinks::{KinkDecl, KinkRegistry};
 use crate::messages::MessageKindDecl;
 use crate::occasions::OccasionDecl;
+use crate::pop::{PopEntry, PopKindBuilder};
 use crate::records::RecordKindDecl;
 use crate::register::values::PrimType;
 use crate::register::{Prim, PrimDecl, RegisterBuilder};
@@ -55,6 +56,7 @@ pub struct Declarations {
     pub kinks: KinkRegistry,
     pub families: Vec<(&'static str, Box<dyn AuditFamily>)>,
     pub contributions: Vec<(&'static str, Box<dyn Contribution>)>,
+    pub pop: Vec<PopEntry>,
     kink_errors: Vec<String>,
 }
 
@@ -132,6 +134,17 @@ impl Declarations {
 
     pub fn contribution(&mut self, contribution: Box<dyn Contribution>) {
         self.contributions.push((self.system, contribution));
+    }
+
+    /// Adds items to a population kind: its roles, key attributes, positions, standing rates, profile groups,
+    /// review kinds and pins, each the declaring system's to write.
+    pub fn pop_kind(&mut self, kind: &'static str) -> PopKindBuilder<'_> {
+        PopKindBuilder::new(self, kind)
+    }
+
+    /// The system whose declarations are being read.
+    pub(crate) fn system(&self) -> &'static str {
+        self.system
     }
 
     /// The claims as the item check reads them.

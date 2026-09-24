@@ -169,7 +169,7 @@ fn expand_items(input: TokenStream, body: fn(&Decl) -> syn::Result<TokenStream>)
 
 const PRIM_KINDS: [&str; 6] = ["Technology", "Preference", "Policy", "Endowment", "Resolution", "Shape"];
 const PERIODS: [&str; 5] = ["Day", "Week", "Month", "Quarter", "Year"];
-const VALUE_TYPES: [&str; 14] = [
+const VALUE_TYPES: [&str; 15] = [
     "Fixed",
     "Rate",
     "Money",
@@ -184,6 +184,7 @@ const VALUE_TYPES: [&str; 14] = [
     "LegalForms",
     "CarryingBases",
     "Profile",
+    "Partition",
 ];
 
 /// A variant written bare, `Rate`, or with its fields, `Fixed { exp: 4 }`, as a path under `ty`.
