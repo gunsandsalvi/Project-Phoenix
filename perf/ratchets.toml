@@ -285,9 +285,11 @@ counter = "phx_ledger.ir_pooled_16_rows"
 value = 3400
 direction = "down"
 
+# A whole stage 7 over sixteen holders: from S0.19 it records each due that falls, with what became of it, for the
+# accounts. Set from CI's runner, which counts 24 more than the build machine.
 [[ratchet]]
 counter = "phx_ledger.ir_settle_day_16"
-value = 350502
+value = 351596
 direction = "down"
 
 # phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
