@@ -43,7 +43,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_heads_read"
-value = 45038
+value = 69498
 direction = "down"
 
 [[ratchet]]
@@ -321,47 +321,47 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_screen_candidate"
-value = 3308173
+value = 3460412
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_end_to_end"
-value = 262588
+value = 262322
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_lone"
-value = 181840
+value = 181784
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_parts_batched"
-value = 523388
+value = 523210
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_index_rebuild"
-value = 1043845
+value = 1044483
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_rank_read"
-value = 1173189
+value = 1175643
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_gap_estimate"
-value = 3299623
+value = 3299891
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_widen_sweep"
-value = 42349568
+value = 42327037
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_renumber"
-value = 25806094
+value = 25806082
 direction = "down"
 
 [[ratchet]]
