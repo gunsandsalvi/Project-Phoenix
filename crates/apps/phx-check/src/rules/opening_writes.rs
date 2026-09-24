@@ -7,7 +7,7 @@ use crate::workspace::{Source, Workspace};
 const RULE: &str = "PC-26";
 /// What the opening's code may not call: the day's ways of changing the books and the facts, since the opening
 /// writes only through its contributions' opening writes.
-const DAY_WRITERS: &[&str] = &["apply", "settle", "pay_dues", "contract_process", "write_fact"];
+const DAY_WRITERS: &[&str] = &["apply", "settle", "settle_day", "contract_process", "write_fact"];
 const CONTRIBUTION: &str = "Contribution";
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
@@ -93,7 +93,7 @@ mod tests {
         assert_eq!(found(opening), Some(0));
         let settles = "impl Contribution for P { fn contribute(&self, o: &mut Opening) { b.apply(at, i, a); } }";
         assert_eq!(found(settles), Some(1));
-        let helper = "impl Contribution for P {} fn pay(b: &mut Books) { b.pay_dues(d, c, a); }";
+        let helper = "impl Contribution for P {} fn pay(b: &mut Books) { b.settle_day(d, y, c, a); }";
         assert_eq!(found(helper), Some(1), "a helper of the opening's file is the opening's code");
         assert_eq!(found("fn day(b: &mut Books) { b.apply(at, i, a); }"), None, "the day's code is not the opening's");
     }

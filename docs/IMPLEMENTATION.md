@@ -2645,7 +2645,7 @@ live check passing.
 | `src/lien.rs` | `Lien { key: LienKey { holder, instrument, seq }, units, to: PartyId, chain: Missing<LienKey> }`, keyed by (holder, instrument, seq); an individual's holding carries a flag, and the pledged total is read from the lien table, counting a chain's first lien only |
 | `src/algebra.rs` | legs: `FixedAmount`, `Principal { amount, repayment }`, `RateOnNotional { reference: Fixed | Floating { series, spread, reset, fixing }, day_count }`, `StepSchedule { steps: [(Day, Rate)] }`, `PayableInKind { rate, day_count, instrument }`, `PerTime`, `Indexed { series, base, current, leg }`, `Contingent { event, amount }`, `Delivery`, `Elective { side, schedule, legs }`; `Schedule`, `Seniority`, `Collateral { kind, zone, class }`, `PaymentOrder`; early termination; conversion or write-down; default definition; the underlying; `due_on` |
 | `src/terms.rs` | the terms interner: `TermsId(u32)`, reference-counted, sharded by a hash of the terms' canonical words |
-| `src/line.rs` | `LineKindDecl` with a `SideDecl { holder_kinds, words, holder_list }` per side; `LineKind<U>`, typed by the balance's unit; `Line { kind: u16, flags: u16, terms: u32, side_counts: [u32; 2], next_due: Day, holders: BlockList }` (32 bytes); `NewRow` |
+| `src/line.rs` | `LineKindDecl` with a `SideDecl { holder_kinds, words, holder_list }` per side; `LineKind<U>`, typed by the balance's unit; `Line { kind: u16, flags: u16, terms: u32, side_counts: [u32; 2], next_due: Day, fallen: u32, holders: BlockList }` (36 bytes: `fallen` is the index of the schedule's date that fell last, which 1b keeps, S0.17); `NewRow` |
 | `src/rows.rs` | `RelRow { line: u32, count: u32, record: u32, point: u16, role: u8, flags: u8 }` (16 bytes, no padding; `record` packs days in arrears and missed payments, sixteen bits each, as architecture §4.5 lays it out) and the optional words per side (`balance`, `pending`, `amount`), encoded as whole 8-byte words after the row in the holder's arena (S0.06) |
 | `data/world.toml` | `[[unit]]`: each unit's name, kind and price exponent, with its source, read here first (S0.03's `UnitId`) |
 | `crates/kernel/phx-core/src/register/units.rs` | the register's units: `UnitKind`, `UnitDecl`, `Units`, refusing a name given twice, a unit without its reason and a unit in a per-country file |
@@ -2977,7 +2977,7 @@ writes, reports — and the first real parties:
 | `crates/kernel/phx-core/src/family.rs` | `BooksAudit` and `LegRecords`, the books and the settled legs as the audit reads them |
 | `crates/kernel/phx-ledger/src/books.rs` | `Books`: the ledger and a kind table per kind of individual; `open` for opening instructions; each party's equity; the books' hash |
 | `crates/kernel/phx-ledger/src/opening.rs` | the legs an opening writes: rows opened, balances and holdings written |
-| `crates/kernel/phx-ledger/src/dues.rs` | stage 7's dated flows until the payer pass: the day's due lines, their dues, paid from the payer's means of payment |
+| `crates/kernel/phx-ledger/src/dues.rs` | the dues' reckoning — which side of a due line is reckoned, and who pays whom — and a payment's route from the payer's means of payment to the payee's |
 | `crates/kernel/phx-ledger/src/audit.rs` | the ledger's five families over `BooksAudit` and `LegRecords` |
 | `crates/assembly/phx-world/src/opening/books.rs` | the opening's countries and the runner over the contributions, phase by phase |
 | `crates/systems/sys-cb/src/opening.rs` | the central bank and the treasury; reserves, the treasury's account and the claim on the treasury |
@@ -3018,10 +3018,9 @@ writes, reports — and the first real parties:
   from its rows and holdings, which is how its equity opens (ACC.4). Balancing sets no price or rate (GEN.11).
   Until the households open (S0.25) the balance sheets are partial: the banks' deposits are the firms' alone, so the
   banks' equity is large, and the treasury's is minus the reserves (F-017).
-- **Dated flows** (architecture §10.4b): at 7c each line due today pays its asset side's holders from its owing party's
-  means of payment, one instruction per due, in the declared order; a line moves to its next date; fails wait for the
-  next business day's 2d, where the contract process turns them into arrears. The lines are scanned each business
-  day and a party's row is found by reading its run; S0.17's payer pass and due-day runs replace both (F-018).
+- **Dated flows** (architecture §10.4b): each line due today pays its claimants from its owing party's means of
+  payment in the declared order; a line moves to its next date; fails wait for the next business day's 2d, where the
+  contract process turns them into arrears. They settle through S0.17's payer pass over due-day runs (F-018).
 - **Placeholders**: `BNK.loan_years_min` and `_max`, SHAPE, named for BNK; the placeholder count is 2.
 - **The world's books**: the world keeps the books with their kind tables, hashes them with the world, registers the
   ledger's Ownership, Contracts, Money, Flows and Units families over them and the audit's records, publishes each
@@ -3050,7 +3049,7 @@ writes, reports — and the first real parties:
 **Budget**: institutions' rows are within §13.1's individuals line; GEN I's time is judged on the phone at S0.26.
 
 **Guards**: PC-26: the opening's code — any file that implements a contribution — calls none of the day's writers
-(`apply`, `settle`, `pay_dues`, `contract_process`, `write_fact`); it writes only through opening writes.
+(`apply`, `settle`, `settle_day`, `contract_process`, `write_fact`); it writes only through opening writes.
 
 **Not allowed**:
 - balancing that sets a rate or price;
@@ -3077,7 +3076,7 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 
 ### S0.17 — `phx-ledger` III: the settlement stream, the fixed point, levies, standing and pooled flows, transfers and the waterfall
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - PROCESS: MON.5 *(batches, net settlement, failure per payer)*; SET.6; TIME.7; REP.8 *(part: the pooled-flow rule as
@@ -3116,13 +3115,14 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 
 | File | Purpose |
 | --- | --- |
-| `src/due.rs` | 1b: the due-line bitmap from lines' `next_due`, and the advance of each due line's next date |
-| `src/runs.rs` | due-day runs: `RunHead { next_due: u32, offset: u16, len: u16 }` (8 bytes) per holder, its dated rows a segment of its row list; the head's maintenance |
+| `src/due.rs` | 1b: the due-line bitmap from lines' `next_due`, and the advance of each due line's next date and the index of the date that fell |
+| `src/runs.rs` | due-day runs: `RunHead { next_due: u32, offset: u16, len: u16 }` (8 bytes, in `phx-core`'s kind tables) per holder, its dated rows a segment of its row list; the head's maintenance; a run read in full against its rows (`truth`) |
 | `src/stream.rs` | 7a: one stream over every holder table's heads, entering a holder's run only when its head is today, holder-major, giving per (party, bank) debits, credits and the first failing row; the day's due holders of lines with no retail holder list |
 | `src/positions.rs` | `trait PayerPositions { weight, per_member_funds(bank), kinks_into(position, buf), standing_rate(row) }`, implemented by the kind tables (weight one) and, from S0.21, the cell tables |
 | `src/pooled.rs` | `pooled(funds_pm, weight, rows_in_order, kinks) -> RowOutcomes`: pure |
+| `src/dues.rs` | the reckoning rule and a payment's route through deposits and reserves |
 | `src/fixed_point.rs` | 7b |
-| `src/apply_batch.rs` | 7c: gathered by target chunk and applied in parallel; reserves once per bank by net |
+| `src/apply_batch.rs` | 7c: the day's payments gathered into nets per account and row and applied one instruction per line, reserves once per bank by net (F-021); the fails recorded; the verdicts and the closing ring |
 | `src/split_request.rs` | `SplitRequest { holder, row, count, cause }` intents, turned into parts by `phx-pop` (S0.23) |
 | `src/levy.rs` | `LevyDecl`; per-member computation; withholding as a split of the gross |
 | `src/standing.rs` | standing-flow rates, plain and indexed; the day's leg per paying row; pending on non-business days; kink days for plain flows; the day's kink test for indexed flows |
@@ -3130,7 +3130,7 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 | `src/transfer.rs` | `LineTransfer`, `SplitAtKink`, `ToProcedureLine` |
 | `src/waterfall.rs` | the estate waterfall |
 
-**Design**
+**Design** (as built where it says so)
 
 - **1b**: every line whose `next_due` is today sets its bit in a bitmap (375 KB at 3 M lines, cache-resident), and
   its next date is then advanced by its schedule at 1b, so 7a's head rewrite reads the advanced dates. The line keeps
@@ -3148,6 +3148,12 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 
   Individuals keep the same fields at `u32` width in their kind table's row. A cell's segment outgrowing `u16` is a
   contract violation calling for a layout change.
+  As built, a scanned holder's head is rewritten after 7c, and the rows of lines whose dates are spent leave the
+  segment for the end of the holder's rows, so an empty segment is never due.
+- **Reckoning** (as built, architecture §6.5): a due line is reckoned on one side's rows, each row its own payment
+  with one counterparty: the claimant's row on a line of two holders; the other side's rows on a line one party holds
+  a side of; a line of many holders on both sides needs a pairing (REP.23) and is a contract violation until one is
+  drawn. The liability side pays. A payment is named by its line and the holder of the row it was reckoned on.
 - **Sides without a holder list** (architecture §4.5): the gather that reads a due line's rows on such a side feeds
   the streaming audit its rows' counts, which the line's kept side count is checked against (REG.14, the part S0.14's
   Contracts family cannot reach through a list).
@@ -3179,6 +3185,19 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 - **7c**: surviving payments are gathered by target chunk and applied in parallel; reserves move once per bank by net
   (MON.5). Failed payers' payees are drawn by REP.23 where pairings were not recorded, and their legs fail visibly.
   Accounting effects are emitted.
+  As built: the scanned holders' due rows are read again in the stream's order; each surviving payment's legs join
+  a net per (line, party, side, money or row), and the nets are applied as one instruction per line, read in order
+  from the ordered map, so each account is checked once against its net and no order can fail what 7b let stand. The
+  apply is sequential (F-021). A failed payment is recorded as a fail at once; one through a closed issuer is held
+  pending in a pass of its own after the apply, so every verdict reads the funds 7a read.
+- **Verdicts** (as built): over the settled payments and the books as stage 7 found them, 7c recomputes each party's
+  standing (soundness), each failed payer's shortfall at its first failed payment in its order (maximality), each
+  money account's movement against its net, and each bank's reserve movement against the net of its customers'
+  payments across banks — a party's bank being itself when it holds reserves, its deposit's issuer otherwise. One
+  holder in `RUN_SAMPLE_PERIOD` (64), by slot congruent to the day, has its run read against all its rows. The day's
+  `DaySettlement` keeps the counts of breaches, the closing ring (the parties whose settled payments their own funds
+  could not cover without the day's credits, and the part those credits paid), the day's counts and the bytes its
+  buffers held.
 - **Pooled flows** (REP.8):
   - `pooled()` tests each row in order against both the payer's per-member funds left by earlier rows and the reached
     members' own positions (share before the row plus the row's per-member amount), for every registered kink.
@@ -3268,14 +3287,16 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 - `closed_payer_pairing_drawn_once`: over two days of a resolution, the same holders' legs are pending.
 
 **Live checks**
-- `LC-0-27`: every bank's reserve movement equals the net of its customers' applied payments (MON.5).
+- `LC-0-27`: every bank's reserve movement equals the net of its customers' applied payments (MON.5); as built,
+  every money account's movement equals its net too.
 - `LC-0-28`: from the 7b records kept until the audit, recomputed on the state at the start of stage 7:
   - **soundness**: every settled payer could pay given the other settled payments;
   - **maximality**: every failed payer was short given them (SET.6).
 - `LC-0-29`: levies: sampled levy amounts equal per member × count under their conventions. It applies from S1.11,
   when the first levy exists.
 - `LC-0-61`: due-day runs: on sampled holders, every row of a line due that day was read in the holder's run that day,
-  and no head was later than its segment's earliest due day.
+  and no head was later than its segment's earliest due day. As built, the sample is one holder in 64 each day, and
+  every row that can still fall due must lie in the segment.
 - `LC-0-22` now also publishes the closing ring's size (SET.10).
 - Pooled flows, transfers, the split at a kink, procedure lines, pending legs, indexed flows and the waterfall rest on
   unit tests until their first live users (S0.25, S1.09, S2.03, S2.04, S2.08, S2.09). Each user step's live checks
@@ -3293,7 +3314,14 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
   S0.26 (architecture §14.6, item 4).
 
 **Guards**: PC-27: no materialised batch — no buffer sized by a batch's rows — in `stream.rs`, `fixed_point.rs`,
-`apply_batch.rs` and `batch.rs`.
+`apply_batch.rs` and `batch.rs`. As built, the rule refuses a struct field in those files that keeps payments, legs,
+rows, instructions or due rows in a collection; the passes keep per-party records, per-account nets and the keys of
+failed payments.
+
+**Benchmarks** (as built, instruction counts on the build machine, `benches/ledger.rs`): 64 run heads read, 878
+(about 14 a head); `pooled()` over 16 rows with two kinks, 3 400 (about 210 a row, most of it the result's
+allocation); 1b and the whole of stage 7 over 16 loans due on one day, 350 502 — about 22 000 a payment, far over
+the 10 ns a row and 30 ns a payment the budget allows (F-020).
 
 **Not allowed**:
 - a gross bank matrix;
@@ -15237,12 +15265,15 @@ the final build within the budget on the phone.
 | F-011 | S0.13 | owner's review of the map, 2026-09-24 | The map of the build run on bc1dfb5 has 1.5% of its land as plains (the real Old World's lowland share is near a half): elevations rise linearly from the sea to the highest point, so nearly all land stands above the plains' 200 m, and floods, coal, and oil and gas, which read plains, all but vanish | the generator's relief: no measured land-height curve, no erosion, no rivers | S0.13 reopened: relief on a finer grid from plates and noise, eroded by rivers, its land heights mapped to ETOPO's measured curve for the analogue region, terrain read from relief within the tile, rivers carried by the map | closed: the relief is generated on a grid four times finer from plates, warped noise and ridged belts, eroded by rivers, its land heights ranked onto ETOPO's curve and each tile's relief onto ETOPO's measured ranges; the build run's map is 45/26/22/8% plains, hills, uplands and mountains against the real 42/29/21/7% |
 | F-012 | S0.13 | owner's review of the map, 2026-09-24 | The same map's regions range from 652 to 2,763 tiles in Noredia, where GEO.3 wants regions of like size: tiles left after the growth, and islands, join whichever region reaches them first, unbounded | the generator's partition: no bound on the spill and no balance | S0.13 reopened: regions grown by travel cost so borders follow ridges and rivers, then balanced tile by tile within a declared tolerance, which becomes a construction condition | closed: countries, regions and zones are cut by exact halving over travel cost, so each part holds together and its borders follow ridges and rivers; a cut moves only to keep a peninsula whole, within the declared tolerance; the build run's regions are within 0.1% of like size |
 | F-013 | S0.14 | build machine, 2026-09-24 | `phx-rand`'s `philox_x4_equals_scalar` fails under the release profile on x86_64 (rustc 1.98.1): a word of the first batch differs from the scalar Philox's (484434796 against 2277454608), on every run; the debug profile, the only one CI tests in, passes. The code is safe integer arithmetic, so either the release build miscompiles it or the batch leans on something the optimiser may change; either way the world's release builds may draw other numbers than Philox4x32-10 gives | none known | S0.04 reopened as its own change: find the cause and fix it, and CI runs the tests in the release profile as well | closed: the lane-wise batch fails only at opt-level 3 with one codegen unit and passes at opt-level 2 or with sixteen units, so the optimiser builds that safe arithmetic wrongly; the batch is now four scalar blocks, identical by construction and 682 instructions against the lane-wise 852. No draw of the world used the batch. CI runs the workspace's tests in the release profile too |
-| F-014 | S0.14 | build machine, 2026-09-24 | `due_on` for a ten-year annual bond costs 2,604 instructions on its coupon date and 2,293 on the day after (`phx_ledger.ir_due_on_coupon`, `ir_due_on_between`): the legs cost about 155 each, within the 50 ns a leg is allowed, but finding which date of the schedule falls on the day — a guess and its neighbours, each read through the calendar — costs 2,290, several times a leg's budget, and would be paid for every row read | the date's index is searched from the day on every call instead of kept | S0.17: 1b, which advances each due line's `next_due` by its schedule, keeps the line's date index beside it, and `due_on` is handed the index, so the search runs once per line and date, never per row | open |
+| F-014 | S0.14 | build machine, 2026-09-24 | `due_on` for a ten-year annual bond costs 2,604 instructions on its coupon date and 2,293 on the day after (`phx_ledger.ir_due_on_coupon`, `ir_due_on_between`): the legs cost about 155 each, within the 50 ns a leg is allowed, but finding which date of the schedule falls on the day — a guess and its neighbours, each read through the calendar — costs 2,290, several times a leg's budget, and would be paid for every row read | the date's index is searched from the day on every call instead of kept | S0.17: 1b, which advances each due line's `next_due` by its schedule, keeps the line's date index beside it, and `due_on` is handed the index, so the search runs once per line and date, never per row | closed: S0.17's 1b keeps the index and the settlement hands it to `due_at`; `due_on` alone still searches |
 | F-015 | S0.16 | derivation, 2026-09-24 | Firm density (enterprises per person employed) is published for 35 economies, the OECD's business statistics, all but four in the developed group; the developed median is 0.215. The emerging and developing groups' 0.209 is assumed at the median over all 35 economies it reports, with its reason in the data | none: missing data | a source with world coverage (the World Bank's Entrepreneurship Database or national business registers) | open |
 | F-016 | S0.16 | build machine, 2026-09-24 | The opening's firms pay their loans' interest and principal from their deposits and earn nothing: in the first 397 days about 13 900 of 1.1 million dues fail for funds, and their rows fall into arrears; by the end of the second year the emerging country's firms are drained, and on 27 December 2027, the one country open, all 733 of its dues failed (the build run on ff93e15, LC-0-26) | FRM's production and sales, which bring the firms' income, do not exist yet | S1.03 (firms produce and sell), whose live checks take on LC-0-26's claim that payments settle every business day; until then the fails are the world's truth, never masked | open |
 | F-017 | S0.16 | build machine, 2026-09-24 | The opening's balance sheets are partial: the banks' deposits are the firms' alone (a quarter of the published deposits), so the banks' equity is the rest of their loans and reserves (7.4 × 10¹⁴ against 1.06 × 10¹⁵ of loans), and the treasury's equity is minus the reserves, since the central bank's claim on it stands for the sovereign's debt | households, their deposits and the banks' owners are not drawn yet; the sovereign's debt waits for SOV | S0.25 (households, their deposits and ownership) and S1.11 (the sovereign's debt); `GEN.bank_capital_ratio` is read then | open |
 | F-018 | S0.16 | build machine, 2026-09-24 | Stage 7's dues scan every line and read every holder's rows each business day, and a leg on a bank's row reads the bank's run to find it (about 1 400 rows a bank): 397 days with the opening took 49 s, the opening itself about 12 s; at the full world's 36 M rows the scan alone would miss the budget | no due-day runs or payer pass yet; rows found by reading a holder's run | S0.17: the payer pass over due-day runs, rows found by their run head | open |
 | F-019 | S0.16 | build machine, 2026-09-24 | The opening's report keeps every write in the world's memory: 225 k now, tens of millions once households are drawn | the report is kept whole for the run's report and LC-0-24 | S0.25: the report streams its writes to the run's directory and keeps their counts and sums | open |
+| F-020 | S0.17 | build machine, 2026-09-24 | 1b and the whole of stage 7 over sixteen loans due on one day cost 350 502 instructions (`phx_ledger.ir_settle_day_16`), about 22 000 a payment, against a budget of about 10 ns a row read and 30 ns a payment applied. Each payment's dues, route and legs are derived three times (7a, 7b, 7c), its reckoning, its accounts and its lines' owers are looked up through ordered maps and holder lists, a bank's row is found by reading its run, and each scanned holder's due rows are collected into a vector | the per-payment path: nothing of a payment is kept between the passes, and rows and routes are found by search | before the Stage 0 gate (S0.26): a payment's route kept per (party, bank) in the day's records, accounts found by the run head's offsets, the dues computed once in 7a; measured on the phone | open |
+| F-021 | S0.17 | build, 2026-09-24 | 7c applies the day's nets sequentially, one instruction per line, not in parallel by target chunk: the money legs of every payment sit on one deposit or reserves line per bank, so a line's instruction is the unit of apply and lines share their parties' accounts | a chunked apply needs the nets split by the account's chunk, not the line | S0.26: parallelised by target chunk if the phone's measure of 7c calls for it | open |
+| F-022 | S0.17 | build, 2026-09-24 | Levies, standing flows (plain and indexed), the pooled-flow rule's kinks and its split requests, the move to a procedure line over a side of many holders, and the waterfall exist as functions under unit tests; no 7a stream reads a levy or a standing flow yet, and a procedure line needs the line's other side to have one holder | nothing declares a levy, a standing flow or a kink yet, and no procedure opens | their first users: standing flows and the pairing S0.25, levies S1.11, kinks S0.21 and S0.23, procedures S2.03, the waterfall S0.25 (`sys-est`); each user step's live checks cover them | open |
 
 ---
 

@@ -170,12 +170,40 @@ fn settlement_report(w: Inspector<'_>) -> serde_json::Value {
     json!({
         "days": days.len(),
         "lines_due": sum(|d| d.dues.lines),
-        "instructions": sum(|d| d.dues.instructions),
+        "payments": sum(|d| d.dues.payments),
+        "failed": sum(|d| d.dues.failed),
+        "heads_read": sum(|d| d.dues.heads_read),
+        "rows_scanned": sum(|d| d.dues.rows_scanned),
+        "rows_due": sum(|d| d.dues.rows_due),
+        "fixed_point_iterations": sum(|d| d.dues.iterations),
+        "ring_parties": sum(|d| d.dues.ring_parties),
+        "largest_ring": greatest(days.iter().map(|d| d.dues.ring_parties)),
+        "ring_value": days.iter().map(|d| d.dues.ring_value).sum::<i128>().to_string(),
+        "runs_read": sum(|d| d.dues.runs_read),
+        "gross_paid": days.iter().map(|d| d.dues.gross).sum::<i128>().to_string(),
         "settled": sum(|d| d.dues.settled),
         "days_with_payments": days.iter().filter(|d| d.dues.settled > 0).count(),
         "gross": gross.iter().map(|(c, v)| (c.to_string(), json!(v.to_string()))).collect::<serde_json::Map<_, _>>(),
         "fails": fails,
     })
+}
+
+/// The ratcheted counters the run reads: the empty day's barriers, the map's bytes, and the most on any day of the
+/// settlement's rows, heads, payments, iterations and buffers.
+fn counters(w: Inspector<'_>) -> [(&'static str, u64); 9] {
+    let most =
+        |f: fn(&phx_ledger::apply_batch::DaySettlement) -> u64| greatest(w.settlements().iter().map(|s| f(&s.dues)));
+    [
+        ("phx_exec.barriers_per_empty_day", empty_day_barriers(w)),
+        ("phx_geo.map_bytes", u64::try_from(w.geo().bytes()).unwrap_or(u64::MAX)),
+        ("phx_ledger.rows_streamed", most(|d| d.rows_due)),
+        ("phx_ledger.run_heads_read", most(|d| d.heads_read)),
+        ("phx_ledger.run_rows_scanned", most(|d| d.rows_scanned)),
+        ("phx_ledger.run_rows_not_due", most(|d| d.rows_scanned - d.rows_due)),
+        ("phx_ledger.payments", most(|d| d.payments)),
+        ("phx_ledger.fixed_point_iterations", most(|d| d.iterations)),
+        ("phx_ledger.day_buffer_peak_bytes", most(|d| d.buffer_bytes)),
+    ]
 }
 
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
@@ -218,9 +246,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         println!("{} {outcome} {detail}", check.id);
         results.push(json!({ "id": check.id, "title": check.title, "from_step": check.from_step, "outcome": outcome, "detail": detail }));
     }
-    let empty_day_barriers = empty_day_barriers(w);
-    let map_bytes = u64::try_from(w.geo().bytes()).unwrap_or(u64::MAX);
-    let counters = [("phx_exec.barriers_per_empty_day", empty_day_barriers), ("phx_geo.map_bytes", map_bytes)];
+    let counters = counters(w);
     let ratchet_failures = check_ratchets(&args.ratchets, &counters)?;
     for f in &ratchet_failures {
         println!("ratchet: {f}");

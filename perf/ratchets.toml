@@ -222,7 +222,9 @@ value = 148974
 direction = "down"
 
 # phx-ledger: a ten-year annual bond's dues on its fifth coupon date (a fixed coupon and its principal, one due), and
-# on the day after, when only the search for a schedule date is paid; the search is most of the count (F-014).
+# on the day after, when only the search for a schedule date is paid; the search is most of the count (F-014). The
+# settlement never pays that search, since 1b hands its dues the date's index; `due_on` is now that entry with no
+# index, two instructions more.
 [[ratchet]]
 counter = "phx_ledger.ir_due_on_coupon"
 value = 2604
@@ -230,5 +232,22 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.ir_due_on_between"
-value = 2293
+value = 2295
+direction = "down"
+
+# phx-ledger's stage 7: sixty-four run heads read for whether they are due; the pooled-flow rule over sixteen rows
+# with two kinks; and 1b with the whole of stage 7 over sixteen loans due on one day, far over its budget (F-020).
+[[ratchet]]
+counter = "phx_ledger.ir_run_heads_64"
+value = 878
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.ir_pooled_16_rows"
+value = 3400
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.ir_settle_day_16"
+value = 350502
 direction = "down"

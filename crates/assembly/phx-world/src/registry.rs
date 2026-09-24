@@ -209,6 +209,8 @@ pub fn assemble(
         books,
         report,
         unprocessed: Vec::new(),
+        due: phx_ledger::due::DueLines::default(),
+        closed: phx_ledger::pending::Closed::default(),
         settlements: Vec::new(),
         day_messages: DayMessages::default(),
         queue: PlayerQueue::default(),

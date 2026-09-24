@@ -48,7 +48,7 @@ fn money(w: Inspector<'_>) -> Outcome {
 }
 
 fn flows(w: Inspector<'_>) -> Outcome {
-    let instructions = w.settlements().iter().map(|s| s.dues.instructions).sum();
+    let instructions = w.settlements().iter().map(|s| s.dues.payments).sum();
     quiet(w, FLOWS.name, instructions)
 }
 
@@ -78,6 +78,64 @@ fn fails(w: Inspector<'_>) -> Outcome {
         }
     }
     Outcome::Pass
+}
+
+/// Each day's reserves moved by the net of its settled payments between banks, and every account by the net of the
+/// payments applied to it.
+fn reserves(w: Inspector<'_>) -> Outcome {
+    let days = w.settlements();
+    if days.iter().all(|s| s.dues.settled == 0) {
+        return Outcome::Fail("no payment settled over the run".to_owned());
+    }
+    match days.iter().find(|s| s.dues.reserves_missed > 0 || s.dues.nets_missed > 0) {
+        Some(s) => Outcome::Fail(format!(
+            "on day {}, {} banks' reserves and {} accounts moved other than by their nets",
+            s.day.get(),
+            s.dues.reserves_missed,
+            s.dues.nets_missed
+        )),
+        None => Outcome::Pass,
+    }
+}
+
+/// Each day's settled set, recomputed on the books as stage 7 found them, is sound and maximal: every settled party
+/// could pay, and every failed payer was short.
+fn greatest(w: Inspector<'_>) -> Outcome {
+    let days = w.settlements();
+    if days.iter().all(|s| s.dues.payments == 0) {
+        return Outcome::Fail("no payment fell due over the run".to_owned());
+    }
+    match days.iter().find(|s| s.dues.unsound > 0 || s.dues.not_maximal > 0) {
+        Some(s) => Outcome::Fail(format!(
+            "on day {}, {} parties settled beyond their means and {} failed though they could pay",
+            s.day.get(),
+            s.dues.unsound,
+            s.dues.not_maximal
+        )),
+        None => Outcome::Pass,
+    }
+}
+
+/// The levies' amounts are per member times the count; nothing levies before the first tax.
+fn levies(_: Inspector<'_>) -> Outcome {
+    Outcome::NotYet("the first levy arrives with the taxes (S1.11)")
+}
+
+/// The sampled holders' runs held against their rows every day.
+fn runs(w: Inspector<'_>) -> Outcome {
+    let days = w.settlements();
+    if days.iter().all(|s| s.dues.runs_read == 0) {
+        return Outcome::Fail("no holder's run was read in full over the run".to_owned());
+    }
+    match days.iter().find(|s| s.dues.runs_broken > 0) {
+        Some(s) => Outcome::Fail(format!(
+            "on day {}, {} of {} sampled holders' runs did not hold",
+            s.day.get(),
+            s.dues.runs_broken,
+            s.dues.runs_read
+        )),
+        None => Outcome::Pass,
+    }
 }
 
 /// A settlement published for every day of the run, in order.
@@ -136,7 +194,35 @@ pub const LC_0_21: Check = live_check! {
 
 pub const LC_0_22: Check = live_check! {
     id: "LC-0-22",
-    title: "Gross and net settlement and fails by cause are published every day",
+    title: "Gross and net settlement, fails by cause and the closing ring are published every day",
     from_step: "S0.15",
     check: published,
+};
+
+pub const LC_0_27: Check = live_check! {
+    id: "LC-0-27",
+    title: "Every bank's reserve movement equals the net of its customers' applied payments",
+    from_step: "S0.17",
+    check: reserves,
+};
+
+pub const LC_0_28: Check = live_check! {
+    id: "LC-0-28",
+    title: "The settled set is sound and maximal, recomputed on the state at the start of stage 7",
+    from_step: "S0.17",
+    check: greatest,
+};
+
+pub const LC_0_29: Check = live_check! {
+    id: "LC-0-29",
+    title: "Sampled levy amounts equal per member times count under their conventions",
+    from_step: "S0.17",
+    check: levies,
+};
+
+pub const LC_0_61: Check = live_check! {
+    id: "LC-0-61",
+    title: "On sampled holders, every row due was read in the holder's run, and no head was later than its segment's earliest due day",
+    from_step: "S0.17",
+    check: runs,
 };

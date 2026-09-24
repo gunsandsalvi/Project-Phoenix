@@ -22,7 +22,7 @@ pub type OwnState = Box<dyn Any + Send + Sync>;
 pub struct Settled {
     pub day: Day,
     pub measure: phx_ledger::apply::Settlement,
-    pub dues: phx_ledger::dues::DuesPaid,
+    pub dues: phx_ledger::apply_batch::DaySettlement,
     pub fails: Vec<phx_ledger::fails::Fail>,
 }
 
@@ -46,6 +46,8 @@ pub struct World {
     pub(crate) books: phx_ledger::books::Books,
     pub(crate) report: phx_core::GenReport,
     pub(crate) unprocessed: Vec<phx_ledger::fails::Fail>,
+    pub(crate) due: phx_ledger::due::DueLines,
+    pub(crate) closed: phx_ledger::pending::Closed,
     pub(crate) settlements: Vec<Settled>,
     pub(crate) records: RecordStore,
     pub(crate) events: EventStore,

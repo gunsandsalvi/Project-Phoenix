@@ -29,6 +29,12 @@ pub fn phx_audit::records::Digests::money_gaps(&self) -> alloc::vec::Vec<phx_aud
 pub fn phx_audit::records::Digests::positions(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::PartyId, u64)> + '_
 pub fn phx_audit::records::Digests::record(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_audit::records::Digests::unit_gaps(&self, &dyn core::ops::function::Fn(phx_id::ids::PartyId, u64) -> i64) -> alloc::vec::Vec<phx_audit::records::Gap>
+impl phx_core::family::LegRecords for phx_audit::records::Digests
+pub fn phx_audit::records::Digests::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_audit::records::Digests::instructions(&self) -> u64
+pub fn phx_audit::records::Digests::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_audit::records::Digests::positions(&self) -> u64
+pub fn phx_audit::records::Digests::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
 pub mod phx_audit::runner
 pub struct phx_audit::runner::Audit
 impl phx_audit::runner::Audit
@@ -39,6 +45,7 @@ pub fn phx_audit::runner::Audit::stream(&mut self) -> &mut dyn phx_core::family:
 impl core::fmt::Debug for phx_audit::runner::Audit
 pub fn phx_audit::runner::Audit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_audit::runner::CloseInputs<'a>
+pub phx_audit::runner::CloseInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_audit::runner::CloseInputs::calendar: &'a phx_core::calendar::Calendar
 pub phx_audit::runner::CloseInputs::day: phx_id::day::Day
 pub phx_audit::runner::CloseInputs::directory: &'a phx_core::directory::Directory
@@ -81,6 +88,7 @@ pub fn phx_audit::runner::Audit::stream(&mut self) -> &mut dyn phx_core::family:
 impl core::fmt::Debug for phx_audit::runner::Audit
 pub fn phx_audit::runner::Audit::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_audit::CloseInputs<'a>
+pub phx_audit::CloseInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_audit::CloseInputs::calendar: &'a phx_core::calendar::Calendar
 pub phx_audit::CloseInputs::day: phx_id::day::Day
 pub phx_audit::CloseInputs::directory: &'a phx_core::directory::Directory

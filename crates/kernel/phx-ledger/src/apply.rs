@@ -129,6 +129,10 @@ pub struct Ledger<B: Backing = SystemBacking> {
     pub reasons: Reasons,
     pub(crate) arrears: Arrears,
     applied: BTreeSet<InstructionId>,
+    /// The day of the instructions numbered last and how many; every instruction of a day draws its number here.
+    numbered: (Day, u32),
+    /// The insolvency procedures open, whose stays suspend the dues of their procedure lines.
+    pub procedures: BTreeSet<u16>,
     day: DayBook,
 }
 
@@ -185,6 +189,8 @@ impl<B: Backing> Ledger<B> {
             reasons: Reasons::default(),
             arrears: Arrears::default(),
             applied: BTreeSet::new(),
+            numbered: (Day::new(0), 0),
+            procedures: BTreeSet::new(),
             day: DayBook::default(),
         }
     }
@@ -234,9 +240,21 @@ impl<B: Backing> Ledger<B> {
         let mut positions: Vec<Position> = Vec::new();
         let mut moves: Vec<(usize, i64)> = Vec::new();
         let mut moved_by: Vec<usize> = Vec::new();
+        let opened: Vec<(PartyId, AccountRef)> = legs
+            .iter()
+            .filter(|l| matches!(l.kind, LegKind::Row(RowOp::Open(_))))
+            .map(|l| (l.party, l.account))
+            .collect();
         for (n, (leg, at)) in legs.iter().zip(&located).enumerate() {
             let key = Key { table: at.table, slot: at.slot, account: leg.account };
-            let Some((position, delta)) = self.draws(holders.arenas(at.table), at.party, at.slot, leg) else {
+            let fresh = matches!(leg.kind, LegKind::Row(RowOp::Adjust)) && opened.contains(&(leg.party, leg.account));
+            let drawn = if fresh {
+                // A row this instruction opens holds nothing until it does, and nothing bounds what it is given.
+                Some((Position { now: 0, floor: Missing::Absent, short: FailCause::Funds }, leg.qty))
+            } else {
+                self.draws(holders.arenas(at.table), at.party, at.slot, leg)
+            };
+            let Some((position, delta)) = drawn else {
                 continue;
             };
             let at = if let Some(i) = keys.iter().position(|k| *k == key) {
@@ -422,10 +440,15 @@ impl<B: Backing> Ledger<B> {
     ) {
         let decl = self.reasons.get(s.reason);
         let mut taken: Vec<NamedUnit> = Vec::new();
-        let order: Vec<usize> = (0..legs.len())
-            .filter(|i| legs.get(*i).is_some_and(|l| l.qty < 0))
-            .chain((0..legs.len()).filter(|i| legs.get(*i).is_some_and(|l| l.qty >= 0)))
-            .collect();
+        // Rows are opened before anything moves on them and retired after; between, what leaves goes before what
+        // arrives.
+        let rank = |l: &LegRec| {
+            let (opens, closes) =
+                (matches!(l.kind, LegKind::Row(RowOp::Open(_))), matches!(l.kind, LegKind::Row(RowOp::Close)));
+            (closes, !opens, l.qty >= 0)
+        };
+        let mut order: Vec<usize> = (0..legs.len()).collect();
+        order.sort_by_key(|i| legs.get(*i).map(rank));
         for i in order {
             let (Some(leg), Some(at)) = (legs.get(i), located.get(i)) else { continue };
             let arenas = holders.arenas(at.table);
@@ -518,6 +541,13 @@ impl<B: Backing> Ledger<B> {
                 self.lines.add_row(arenas, at.table, slot, line, new);
             }
             (LegKind::Row(RowOp::Close), AccountRef::Line { line, side }) => {
+                if -i64::from(find(arenas, slot, line, side).row.count) != leg.qty {
+                    violation!(
+                        clause = "SET.11",
+                        "a row retired with another count than its members",
+                        line = line.get()
+                    );
+                }
                 self.lines.remove_row(arenas, at.table, slot, line, side);
             }
             (LegKind::Row(RowOp::Count), AccountRef::Line { line, side }) => {
@@ -550,6 +580,24 @@ impl<B: Backing> Ledger<B> {
     pub fn close(&mut self) -> DayBook {
         self.applied.clear();
         core::mem::take(&mut self.day)
+    }
+
+    /// The next instruction's identity on a day: its day, and its place in that day's numbering.
+    pub fn next_id(&mut self, day: Day) -> InstructionId {
+        if self.numbered.0 != day {
+            self.numbered = (day, 0);
+        }
+        let id = InstructionId::new(day, self.numbered.1);
+        let Some(next) = self.numbered.1.checked_add(1) else {
+            capacity_exceeded!("instructions of one day", u32::MAX, self.numbered.1);
+        };
+        self.numbered.1 = next;
+        id
+    }
+
+    /// A fail the day's settlement found without applying an instruction: a payment the fixed point removed.
+    pub(crate) fn record_fail(&mut self, f: Fail) {
+        self.day.fails.push(f);
     }
 
     /// The rows in arrears.

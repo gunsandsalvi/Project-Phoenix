@@ -1,4 +1,5 @@
 use core::marker::PhantomData;
+use std::collections::BTreeMap;
 
 use phx_id::{Day, LineId, Slot};
 use phx_macros::{Pod, clause};
@@ -26,6 +27,8 @@ pub struct LineKindDecl {
     pub asset: SideDecl,
     pub liability: SideDecl,
     pub transfer_requesters: &'static [&'static str],
+    /// Whether its lines have dues on dates, so its rows sit in their holders' due-day runs.
+    pub dated: bool,
 }
 
 impl LineKindDecl {
@@ -102,11 +105,26 @@ impl<U: BalanceUnit> LineKind<U> {
     }
 }
 
+fn usize_of(n: u32) -> usize {
+    let Ok(u) = usize::try_from(n) else {
+        capacity_exceeded!("words of a holder's run", usize::MAX, n);
+    };
+    u
+}
+
+fn word32(n: usize) -> u32 {
+    let Ok(w) = u32::try_from(n) else {
+        capacity_exceeded!("words of a holder's run", u32::MAX, n);
+    };
+    w
+}
+
 /// A line's flag: its schedule's dates are spent.
 const DONE: u16 = 1;
 
-/// A line's stored row, 32 bytes: its kind and flags, its interned terms, its side counts kept as rows change, the
-/// next day any of its dues can fall, and its holder list.
+/// A line's stored row, 36 bytes: its kind and flags, its interned terms, its side counts kept as rows change, the
+/// next day any of its dues can fall and the index of its schedule's date that last fell due, so a due never searches
+/// the schedule for its day, and its holder list.
 #[clause("REP.3", "REG.14")]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Pod)]
@@ -116,6 +134,7 @@ struct LineRow {
     terms: u32,
     side_counts: [u32; 2],
     next_due: Day,
+    fallen: u32,
     holders: BlockList,
 }
 
@@ -141,6 +160,8 @@ pub struct Lines<B: Backing = SystemBacking> {
     deposits: Vec<u16>,
     reserves: Vec<u16>,
     money: Vec<u16>,
+    /// The lines by the day they next fall due; an entry whose line has since moved is passed over.
+    wheel: BTreeMap<u32, Vec<u32>>,
 }
 
 impl<B: Backing> Lines<B> {
@@ -153,6 +174,7 @@ impl<B: Backing> Lines<B> {
             deposits: Vec::new(),
             reserves: Vec::new(),
             money: Vec::new(),
+            wheel: BTreeMap::new(),
         }
     }
 
@@ -234,21 +256,6 @@ impl<B: Backing> Lines<B> {
         self.row(line).flags & DONE != 0
     }
 
-    /// A line's next due day after it paid: the next date of its schedule, or none when its dates are spent.
-    pub fn advance(&mut self, line: LineId, next: Missing<Day>) {
-        let mut row = self.row(line);
-        match next {
-            Missing::Present(d) => {
-                if d <= row.next_due {
-                    violation!(clause = "REG.5", "a line's next due day not after its last", line = line.get());
-                }
-                row.next_due = d;
-            }
-            Missing::Absent => row.flags |= DONE,
-        }
-        self.set(line, row);
-    }
-
     /// A line kind whose balance is in a declared unit that is not money.
     pub fn declare_in_unit(&mut self, decl: LineKindDecl, unit: UnitId) -> LineKind<InUnit> {
         LineKind { index: self.declare_kind(decl), unit: PhantomData, balance_unit: unit }
@@ -272,21 +279,89 @@ impl<B: Backing> Lines<B> {
         self.rows.set(Slot::new(line.get()), row);
     }
 
-    /// A line opened with its kind and terms, whose holder of the interned terms it becomes; no rows yet.
-    pub fn open(&mut self, kind: u16, terms: TermsId, next_due: Day) -> LineId {
+    /// A line opened with its kind and terms, whose holder of the interned terms it becomes; no rows yet. `first` is
+    /// the first day its dues fall and that date's index in its schedule; a line with no dates never falls due.
+    pub fn open(&mut self, kind: u16, terms: TermsId, first: Missing<(Day, u32)>) -> LineId {
         let _ = self.kind(kind);
         let Ok(id) = u32::try_from(self.rows.len()) else {
             capacity_exceeded!("lines", u32::MAX, self.rows.len());
         };
+        let (next_due, fallen, flags) = match first {
+            Missing::Present((day, k)) => {
+                let Some(before) = k.checked_sub(1) else {
+                    violation!(
+                        clause = "REG.5",
+                        "a line's first due on its schedule's anchor, which is no date",
+                        line = id
+                    );
+                };
+                self.wheel.entry(day.get()).or_default().push(id);
+                (day, before, 0)
+            }
+            Missing::Absent => (Day::new(0), 0, DONE),
+        };
         self.rows.push(LineRow {
             kind,
-            flags: 0,
+            flags,
             terms: terms.get(),
             side_counts: [0; 2],
             next_due,
+            fallen,
             holders: BlockList::EMPTY,
         });
         LineId::new(id)
+    }
+
+    /// The lines that fall due on a day, by identity; entries of earlier days, which no line can still owe, and of
+    /// lines that have moved on are passed over.
+    pub(crate) fn falling(&mut self, day: Day) -> Vec<LineId> {
+        let mut out = Vec::new();
+        while let Some(entry) = self.wheel.first_entry() {
+            if *entry.key() > day.get() {
+                break;
+            }
+            for id in entry.remove() {
+                let row = self.row(LineId::new(id));
+                if row.flags & DONE == 0 && row.next_due == day {
+                    out.push(LineId::new(id));
+                }
+            }
+        }
+        out.sort_unstable();
+        out.dedup();
+        out
+    }
+
+    /// The index of the schedule's date a line last fell due on.
+    #[must_use]
+    pub fn fallen(&self, line: LineId) -> u32 {
+        self.row(line).fallen
+    }
+
+    /// A line fallen due on its `k`-th date, moved to its next: the next date's day, or none when its dates are spent.
+    pub(crate) fn fall(&mut self, line: LineId, k: u32, next: Missing<Day>) {
+        let mut row = self.row(line);
+        if k != row.fallen + 1 {
+            violation!(clause = "REG.5", "a line falling due out of its dates' order", line = line.get(), k = k);
+        }
+        row.fallen = k;
+        match next {
+            Missing::Present(d) => {
+                if d <= row.next_due {
+                    violation!(clause = "REG.5", "a line's next due day not after its last", line = line.get());
+                }
+                row.next_due = d;
+                self.wheel.entry(d.get()).or_default().push(line.get());
+            }
+            Missing::Absent => row.flags |= DONE,
+        }
+        self.set(line, row);
+    }
+
+    /// Whether a line's kind has dues on dates.
+    #[must_use]
+    pub fn dated(&self, line: LineId) -> bool {
+        self.kind(self.row(line).kind).dated
     }
 
     /// A line's terms.
@@ -359,7 +434,22 @@ impl<B: Backing> Lines<B> {
         }
         let listed_before = self.listed(line, &rows_now);
         let row = RelRow { line, count, record: 0, point, role: role(side, within), flags: 0 };
-        rows::append(arenas, holder, row, optional);
+        if self.dated(line) {
+            let mut head = arenas.run_head(holder);
+            let at = usize_of(head.offset + head.len);
+            rows::insert(arenas, holder, at, row, optional);
+            let added = rows::words_of_row(&rows::iter(arenas, holder).find(|r| r.at == at).unwrap_or_else(|| {
+                violation!(clause = "REG.14", "a row put into a run and not found there", line = line.get())
+            }));
+            let due = self.next_due(line).get();
+            if head.len == 0 || due < head.next_due {
+                head.next_due = due;
+            }
+            head.len += word32(added);
+            arenas.set_run_head(holder, head);
+        } else {
+            rows::append(arenas, holder, row, optional);
+        }
         self.adjust(line, side, i64::from(count));
         if decl.holder_list && !listed_before {
             let mut r = self.row(line);
@@ -430,6 +520,14 @@ impl<B: Backing> Lines<B> {
         let view = Self::find(arenas, holder, line, side);
         let listed_before = self.listed(line, &rows::rows(arenas, holder));
         rows::remove(arenas, holder, &view);
+        let mut head = arenas.run_head(holder);
+        let (at, width) = (word32(view.at), word32(rows::words_of_row(&view)));
+        if at < head.offset {
+            head.offset -= width;
+        } else if at < head.offset + head.len {
+            head.len -= width;
+        }
+        arenas.set_run_head(holder, head);
         self.adjust(line, side, -i64::from(view.row.count));
         if listed_before && !self.listed(line, &rows::rows(arenas, holder)) {
             let mut r = self.row(line);
@@ -447,6 +545,7 @@ impl<B: Backing> Lines<B> {
                 h.u64(w);
             }
             h.u64(u64::from(r.next_due.get()));
+            h.u64(u64::from(r.fallen));
         }
     }
 

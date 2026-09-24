@@ -35,6 +35,7 @@ impl MoneyHolders {
             asset: Self::side(self.banks, BALANCE),
             liability: Self::side(self.central_banks, BALANCE),
             transfer_requesters: self.requesters,
+            dated: false,
         }
     }
 
@@ -47,6 +48,7 @@ impl MoneyHolders {
             asset: Self::side(self.depositors, BALANCE | PENDING),
             liability: Self::side(self.banks, BALANCE),
             transfer_requesters: self.requesters,
+            dated: true,
         }
     }
 
@@ -58,6 +60,7 @@ impl MoneyHolders {
             asset: Self::side(self.treasuries, BALANCE),
             liability: Self::side(self.central_banks, BALANCE),
             transfer_requesters: self.requesters,
+            dated: false,
         }
     }
 }

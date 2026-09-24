@@ -37,6 +37,7 @@ const CLAIM: LineKindDecl = LineKindDecl {
     name: "central bank credit to the treasury",
     asset: SideDecl { holder_kinds: &[CENTRAL_BANK.name], words: BALANCE, holder_list: true },
     liability: SideDecl { holder_kinds: &[TREASURY.name], words: BALANCE, holder_list: true },
+    dated: false,
     transfer_requesters: &["CB"],
 };
 
@@ -129,7 +130,7 @@ impl Contribution for Lines {
     }
 
     fn contribute(&self, opening: &mut Opening<'_>) {
-        let (countries, register, date, day) = (opening.countries, opening.register, opening.date, opening.day);
+        let (countries, register, date) = (opening.countries, opening.register, opening.date);
         let (b, report) = books::split(opening);
         let reason = reason(b);
         let reserves = b.ledger.lines.declare_reserves(HOLDERS.reserves()).index();
@@ -147,11 +148,8 @@ impl Contribution for Lines {
                 country: c.id,
             };
             let terms = b.ledger.terms.intern(Terms::account(currency(c.id), dates));
-            let [held, kept, owed] = [reserves, account, claim].map(|kind| b.ledger.lines.open(kind, terms, day));
-            // An account has no dates of its own, so nothing ever falls due on it.
-            for line in [held, kept, owed] {
-                b.ledger.lines.advance(line, phx_num::Missing::Absent);
-            }
+            let [held, kept, owed] =
+                [reserves, account, claim].map(|kind| b.ledger.lines.open(kind, terms, phx_num::Missing::Absent));
             let Ok(count) = u32::try_from(banks.len()) else {
                 phx_num::capacity_exceeded!("banks of a country", u32::MAX, banks.len());
             };

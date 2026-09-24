@@ -1,4 +1,4 @@
-use phx_core::kind_tables::{KindTable, ListKind};
+use phx_core::kind_tables::{KindTable, ListKind, RunHead};
 use phx_exec::mix64;
 use phx_id::{PartyId, Slot, TableId};
 use phx_macros::clause;
@@ -23,6 +23,9 @@ pub trait HolderArenas {
     fn overwrite(&mut self, holder: Slot, list: ListKind, at: usize, words: &[u64]);
     /// Words removed from a holder's list.
     fn remove(&mut self, holder: Slot, list: ListKind, at: usize, count: usize);
+    /// A holder's due-day run head.
+    fn run_head(&self, holder: Slot) -> RunHead;
+    fn set_run_head(&mut self, holder: Slot, head: RunHead);
     /// Words put into a holder's list before the word at `at`, the rest moved after them.
     fn insert(&mut self, holder: Slot, list: ListKind, at: usize, words: &[u64]) {
         let Some(tail) = self.read(holder, list).get(at..).map(<[u64]>::to_vec) else {
@@ -75,6 +78,14 @@ impl<B: Backing> HolderArenas for KindTable<B> {
         if count > 0 {
             self.edit_list(holder, list, |arena, r| arena.remove(r, word(at), word(count)));
         }
+    }
+
+    fn run_head(&self, holder: Slot) -> RunHead {
+        KindTable::run_head(self, holder)
+    }
+
+    fn set_run_head(&mut self, holder: Slot, head: RunHead) {
+        KindTable::set_run_head(self, holder, head);
     }
 }
 

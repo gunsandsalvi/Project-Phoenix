@@ -159,7 +159,7 @@ pub enum RowOp {
     Adjust,
     /// Opens the row; the leg's quantity is its member count.
     Open(NewRow),
-    /// Retires the row; the leg's quantity is its member count.
+    /// Retires the row; the leg's quantity is its members leaving, minus its member count.
     Close,
     /// Adds the leg's quantity to the row's member count.
     Count,

@@ -1,5 +1,6 @@
 pub mod algebra;
 pub mod apply;
+pub mod apply_batch;
 pub mod audit;
 pub mod books;
 pub mod check;
@@ -7,26 +8,41 @@ pub mod commitment;
 pub mod consts;
 pub mod contract_process;
 pub mod covered;
+pub mod due;
 pub mod dues;
 pub mod effects;
 pub mod events;
 pub mod fails;
+pub mod fixed_point;
 pub mod holder;
 pub mod holding;
 pub mod instruction;
 pub mod instrument;
+pub mod levy;
 pub mod lien;
 pub mod line;
 pub mod money;
 pub mod opening;
+pub mod pending;
+pub mod pooled;
+pub mod positions;
 pub mod rounding;
 pub mod rows;
+pub mod runs;
+pub mod split_request;
+pub mod standing;
+pub mod stream;
 pub mod terms;
+pub mod transfer;
 pub mod units;
+pub mod waterfall;
 pub mod words;
 
 #[cfg(test)]
 mod dues_tests;
+mod fixed_point_tests;
+mod runs_tests;
 mod settle_tests;
 #[cfg(test)]
 mod tests;
+mod transfer_tests;

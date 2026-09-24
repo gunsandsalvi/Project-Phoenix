@@ -43,6 +43,7 @@ const LOAN: LineKindDecl = LineKindDecl {
     name: "firm term loan",
     asset: SideDecl { holder_kinds: &[BANK.name], words: BALANCE, holder_list: true },
     liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
+    dated: true,
     transfer_requesters: &["BNK"],
 };
 
@@ -121,15 +122,15 @@ fn started(
     calendar.date(start)
 }
 
-/// The first date of a schedule after a day.
-fn next_date(dates: &ScheduleDates, calendar: &phx_core::Calendar, day: phx_id::Day) -> phx_id::Day {
+/// The first date of a schedule after a day, with its index.
+fn next_date(dates: &ScheduleDates, calendar: &phx_core::Calendar, day: phx_id::Day) -> (phx_id::Day, u32) {
     let mut k = 1;
     let mut due = dates.nth(calendar, k);
     while due <= day {
         k += 1;
         due = dates.nth(calendar, k);
     }
-    due
+    (due, k)
 }
 
 fn terms(ccy: phx_num::Ccy, legs: Vec<Leg>, schedule: Schedule) -> Terms {
@@ -145,6 +146,7 @@ fn terms(ccy: phx_num::Ccy, legs: Vec<Leg>, schedule: Schedule) -> Terms {
         default: DefaultDefinition { missed_payments: 1, grace_days: 0 },
         underlying: Missing::Absent,
         facility: Missing::<Facility>::Absent,
+        stay: Missing::Absent,
     }
 }
 
@@ -234,7 +236,7 @@ impl Contracts {
             }],
             Schedule { dates: monthly(date, c.id), count: Missing::Absent },
         ));
-        let first_due = monthly(date, c.id).nth(calendar, 1);
+        let first_due = (monthly(date, c.id).nth(calendar, 1), 1);
         let lending = rate(derived(c, "GEN.lending_rate"));
         let mut lenders = Vec::with_capacity(firms.len());
         let mut at = 0_usize;
@@ -255,7 +257,7 @@ impl Contracts {
             if mine.is_empty() {
                 continue;
             }
-            let line = b.ledger.lines.open(kinds.0, deposit_terms, first_due);
+            let line = b.ledger.lines.open(kinds.0, deposit_terms, Missing::Present(first_due));
             let Ok(k) = u32::try_from(n) else { violation!(clause = "GEN.4", "a bank's firms beyond a row's count") };
             let mut legs = vec![open_row(register, *bank, line, Side::Liability, k, BALANCE)];
             legs.extend(mine.iter().map(|(f, _)| open_row(register, *f, line, Side::Asset, 1, BALANCE | PENDING)));
@@ -281,7 +283,7 @@ impl Contracts {
                     ],
                     Schedule { dates, count: Missing::Present(months) },
                 ));
-                let loan = b.ledger.lines.open(kinds.1, loan_terms, first);
+                let loan = b.ledger.lines.open(kinds.1, loan_terms, Missing::Present(first));
                 let legs = vec![
                     open_row(register, *bank, loan, Side::Asset, 1, BALANCE),
                     open_row(register, *firm, loan, Side::Liability, 1, BALANCE),

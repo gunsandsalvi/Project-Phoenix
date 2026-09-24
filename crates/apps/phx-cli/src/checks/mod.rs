@@ -64,4 +64,8 @@ pub const CHECKS: &[Check] = &[
     opening::LC_0_24,
     opening::LC_0_25,
     opening::LC_0_26,
+    ledger::LC_0_27,
+    ledger::LC_0_28,
+    ledger::LC_0_29,
+    ledger::LC_0_61,
 ];

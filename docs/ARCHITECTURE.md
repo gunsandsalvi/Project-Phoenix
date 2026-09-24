@@ -475,7 +475,7 @@ day, as TIME.8 lists. Every apply point (§6.2) may emit **parts** (§7.5); all 
 | 4 Real work | 4a production, services, shipments, construction; jobs starting and ending · 4b apply |
 | 5 Decide | 5a public-series outlooks per method, and registered instrument outlooks and their values on days with a new print (§8); migration's memo of inclusive values (`sys-hh`) · 5b continuous decisions of rows scheduled or woken today, fused per table · 5c lumpy decisions of occasion holders; institutions (B); answers to messages at their declared sub-step · 5d apply; promotion on a declared decision (§7.11) |
 | 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B), open-ended funds' dealing at the value computed after its orders were taken (forward pricing, administered, MKT.8) among them; a resolution's selection among bids by the authority's least-cost rule (B, §9.2); admission hooks over each member's order set (§8) · 6b marks, and instruments' and currency pairs' fixings by the pricing service's declared method (§8) · 6c (B) the curve and the valuation inputs derived from 6b's fixings (discount-factor tables) · 6d apply: matches become instructions, drawing the commitments they meet (a terms grant's `Row` leg in place of the money leg, §4.4); banknotes change hands; members whose fills change their holdings make their parts, pinned until settlement (§4.2); on non-business days card payments and electricity trades are recorded as **pending** on the payer's deposit row and the payee's, settling at the next business day's stage 7 |
-| 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds, per currency; a bank's conversion commitment drawn for a leg in a currency its payer does not hold; holding levies on their dates; per-category tallies of rows on lines whose sides sit in two countries; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c apply every surviving instruction's legs, deposits and reserves together, with the streaming audit fused in and the survivors' declared tallies added · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§4.5, §9.2) |
+| 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds, per currency; a bank's conversion commitment drawn for a leg in a currency its payer does not hold; holding levies on their dates; per-category tallies of rows on lines whose sides sit in two countries; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c the surviving payments' nets applied per account, one instruction per line, deposits and reserves together, with the streaming audit fused in and the survivors' declared tallies added · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§4.5, §9.2) |
 | 8 Fund (B) | 8a money-market orders and the central bank's tender orders · 8b the **linked call**: the money market and the tenders meet together (§8) · 8c its trades settle · 8d standing-facility, lender-of-last-resort and the treasury's direct-borrowing requests, met by `phx-market`'s administered form within their declared limits, reading the supervisor's solvency fact · 8e they settle · 8f intraday credit closes: a bank that cannot repay has the shortfall recorded as an **overdue claim of the central bank** and its liquidity failure recorded (MON.3, MON.12, BFL.10) |
 | 9 Value and judge (B) | 9a valuations, provisions among them, and each party's sensitivities per (party, bucket) · 9b accounts and ratios, funds' net asset values and the group fact, reading 9a's valuations · 9c tests: margins (a house's initial margin one blocked product over its accounts), covenants, capital, solvency — each test and the consequence it triggers in one handler, consolidated statements a pure `phx-acct` read; demands issued, due next business day; resolutions triggered and bids invited (§9.2); reports read from the books · 9d publications: reports, ratings, net asset values, benchmark reference rates fixed from 8b's match sets (§8), analysts' estimates revised on the day's reports · 9e apply: stage 9's intents — demands, messages, wakes, facts on other parties, the closed fact, income events |
 | 10 Close | 10a public events; an election's tally where one closes today · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11); declared sweeps a system registers and `phx-pop` runs (a campaign's intention group written and cleared) · 10c (B) monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e tracers every day, views and pages on a turn's last day (read-only) · 10f metrics |
@@ -549,15 +549,31 @@ reduction runs over a fixed tree.
   by the pooled-flow rule (REP.8), with the first failing row recorded. Banks' nets are sums over parties. Nothing is
   written per leg and no payee reduction is needed. For a due line with no retail holder list, the (holder, row) pairs
   met are gathered into the day buffers, which 7b and 7d read in its place.
+- **Reckoning**: a due line's dues are reckoned on one side's rows, each row its own payment with one counterparty.
+  A line of two holders is reckoned on its claimant's row; a line one party holds a side of (a bank's loans to many
+  firms, a scheme's members) is reckoned on the other side's rows, each paying or paid by that party; a line with many
+  holders on both sides pays only through a pairing drawn once (REP.23). The liability side always pays. A holder's
+  record is per currency, one account each; the payment's route runs from the payer's account to the payee's through
+  their banks' liabilities and, between banks, reserves.
 - **7b** starts from every payment succeeding and removes, until nothing changes, the payers who cannot pay given the
   payments still standing, and the customer legs of banks that cannot cover their nets after intraday credit (MON.3,
   MON.5). A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering
   the credits of their other side and the nets of their banks. A payer fails as a **prefix** of its payment order
   (REP.8), which is monotone, so the result is the **greatest** set that can settle, and rings of payments that can
   settle together do (TIME.6).
-- **7c** applies every surviving payment, in parallel by target chunk, with banks' reserves moved once per bank by
-  net; applied is final (SET.5). Failure is per payer (MON.5): a payer that cannot pay fails its own legs; where the
-  pairing to its payees was not recorded, the payees who lose are drawn (REP.23).
+- **7c** nets the surviving payments' legs per (line, party, side), money and rows apart, and applies them as one
+  instruction per line in line order, read straight from the ordered nets: every account is checked once against its
+  net, so no order of application can fail what 7b let stand, and banks' reserves move once per bank by net; applied
+  is final (SET.5). The apply is sequential while the day's payments are few; the split by target chunk across the
+  pool waits for the phone's measure to call for it (the plan's F-021). Failure is per payer (MON.5): a payer that
+  cannot pay fails its own legs; where the pairing to its payees was not recorded, the payees who lose are drawn
+  (REP.23).
+- **Verdicts**: 7c recomputes, over the payments that settle and the books as stage 7 found them, each party's
+  standing (soundness), each failed payer's shortfall at its first failed payment (maximality), each account's
+  movement against its net, and each bank's reserves against the net of its customers' payments across banks; one
+  holder in 64, by slot congruent to the day, has its run read against all its rows. The counts of breaches are the
+  day's, read by the live checks. The **closing ring** (SET.10) is the parties whose settled payments their own funds
+  could not cover without the day's credits, and the part those credits paid.
 - **Pending** is a leg's third state, beside settled and failed. At 7a a leg whose payer's or payee's bank is
   **closed** (§9.2) is fixed as pending and kept out of 7b: it neither fails nor funds anyone. Its amount sits as
   `pending` on the payer's deposit row, which the payer's funds exclude, and on the payee's, where it counts for
@@ -1960,7 +1976,7 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | I3 | INS | `sys-ins` | 4 | 4 | planned |
 | I4 | PEN | `sys-pen` | 0 | 5 | planned |
 | J1 | TRS | `sys-trs` | 1 | 5 | planned |
-| J2 | TAX | `sys-tax` | 0 | 5 | planned |
+| J2 | TAX | `sys-tax` | 0 | 5 | building |
 | J3 | SOC | `sys-soc` | 0 | 5 | planned |
 | J4 | CB | `sys-cb` | 1 | 5 | planned |
 | J5 | SUP | `sys-sup` | 2 | 4 | planned |

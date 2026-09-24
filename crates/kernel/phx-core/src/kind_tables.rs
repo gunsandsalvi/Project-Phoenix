@@ -73,8 +73,31 @@ pub struct KindTable<B: Backing = SystemBacking> {
     created: Column<u32, B>,
     types: Vec<Column<u16, B>>,
     lists: Lists<B>,
+    runs: Column<RunHead, B>,
     arenas: Vec<ChunkArena<B>>,
     facets: Vec<Facet<B>>,
+}
+
+/// The head of a holder's due-day run: the earliest day any row of its dated segment can fall due, and where the
+/// segment lies in its relationship rows, in words. A row leaving the segment leaves the day as it was, an early
+/// bound that costs one scan; an empty segment is never due.
+#[clause("REP.3")]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Pod)]
+pub struct RunHead {
+    pub next_due: u32,
+    pub offset: u32,
+    pub len: u32,
+}
+
+impl RunHead {
+    pub const EMPTY: RunHead = RunHead { next_due: 0, offset: 0, len: 0 };
+
+    /// Whether a holder's run is scanned on a day: its segment holds rows and its head has come.
+    #[must_use]
+    pub fn due(self, day: Day) -> bool {
+        self.len > 0 && self.next_due <= day.get()
+    }
 }
 
 /// A new row's fixed columns.
@@ -125,6 +148,7 @@ impl<B: Backing> KindTable<B> {
                 lots: table.column(space),
                 named_units: table.column(space),
             },
+            runs: table.column(space),
             arenas: Vec::new(),
             facets: Vec::new(),
             table,
@@ -154,6 +178,7 @@ impl<B: Backing> KindTable<B> {
         for column in self.lists.all_mut() {
             put(column, slot, ListRef::EMPTY);
         }
+        put(&mut self.runs, slot, RunHead::EMPTY);
         for facet in &mut self.facets {
             put(&mut facet.values, slot, ABSENT_I64);
         }
@@ -207,6 +232,17 @@ impl<B: Backing> KindTable<B> {
     pub fn list(&self, slot: Slot, kind: ListKind) -> ListRef {
         self.live(slot);
         self.lists.of(kind).get(slot).unwrap_or_else(|| missing_row(slot))
+    }
+
+    /// A row's due-day run head.
+    pub fn run_head(&self, slot: Slot) -> RunHead {
+        self.live(slot);
+        self.runs.get(slot).unwrap_or_else(|| missing_row(slot))
+    }
+
+    pub fn set_run_head(&mut self, slot: Slot, head: RunHead) {
+        self.live(slot);
+        self.runs.set(slot, head);
     }
 
     /// A row's list, as the words its arena holds.

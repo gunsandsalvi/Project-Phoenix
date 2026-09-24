@@ -33,6 +33,7 @@ const LOAN: LineKindDecl = LineKindDecl {
     asset: SideDecl { holder_kinds: &["bank"], words: BALANCE, holder_list: true },
     liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
     transfer_requesters: &["BNK"],
+    dated: true,
 };
 /// Twelve percent a year in the rate's scale, where one whole is 10^12.
 const TWELVE_PERCENT: i64 = 120_000_000_000;
@@ -118,8 +119,8 @@ fn opened() -> Opened {
     let deposit_kind = books.ledger.lines.declare_deposits(HOLDERS.deposits("current account")).index();
     let loan_kind = books.ledger.lines.declare_money(LOAN).index();
     let account = books.ledger.terms.intern(Terms::account(EUR, monthly()));
-    let reserves = books.ledger.lines.open(reserves_kind, account, Day::new(0));
-    let deposits = banks.map(|_| books.ledger.lines.open(deposit_kind, account, Day::new(0)));
+    let reserves = books.ledger.lines.open(reserves_kind, account, Missing::Absent);
+    let deposits = banks.map(|_| books.ledger.lines.open(deposit_kind, account, Missing::Absent));
     let due = cal.day(Date::new(2026, 2, 16).unwrap()).unwrap();
     let lent = [(firms[0], banks[0], 500_000), (firms[1], banks[0], 100_000), (firms[2], banks[0], 1_000_000)];
     let loans = lent.map(|(_, _, principal)| {
@@ -135,11 +136,8 @@ fn opened() -> Opened {
             ..Terms::account(EUR, monthly())
         };
         let id = books.ledger.terms.intern(terms);
-        books.ledger.lines.open(loan_kind, id, due)
+        books.ledger.lines.open(loan_kind, id, Missing::Present((due, 1)))
     });
-    for line in [reserves, deposits[0], deposits[1]] {
-        books.ledger.lines.advance(line, Missing::Absent);
-    }
     let reason = books.ledger.reasons.declare(ReasonDecl {
         name: "opening",
         order: 0,
@@ -200,8 +198,10 @@ fn opening_writes_close_books() {
 fn dues_are_paid_from_the_payers_money() {
     let mut o = opened();
     let cal = calendar();
-    let paid = o.books.pay_dues(o.due, &cal, &mut Quiet);
-    assert_eq!((paid.lines, paid.instructions, paid.settled), (3, 6, 4), "C can pay neither its interest nor its loan");
+    let due = o.books.ledger.mark_due(o.due, &cal);
+    let paid = o.books.settle_day(&due, o.due, &cal, &crate::pending::Closed::default(), &mut Quiet);
+    assert_eq!((paid.lines, paid.payments, paid.settled, paid.failed), (3, 3, 2, 1), "C cannot pay its loan's dues");
+    assert_eq!((paid.unsound, paid.not_maximal, paid.nets_missed, paid.reserves_missed), (0, 0, 0, 0));
     let [cb, b0, b1, a, b, c] = o.parties;
     let [la, lb, lc] = o.loans;
     // A month's interest over 31 days at 12%: 5 095.89 on A's 500 000, 1 019.18 on B's 100 000, to the nearest.
@@ -218,7 +218,7 @@ fn dues_are_paid_from_the_payers_money() {
     assert_eq!(balance(&o.books, c, lc, Side::Liability), -1_000_000);
     assert!(o.loans.iter().all(|l| o.books.ledger.lines.done(*l)), "the loans' one date is spent");
     let fails = o.books.ledger.fails();
-    assert_eq!(fails.len(), 2);
+    assert_eq!(fails.len(), 1, "a row's dues settle or fail together");
     assert!(fails.iter().all(|f| f.party == c && f.cause == FailCause::Funds));
     assert!(
         fails.iter().all(|f| f.row == Missing::Present(crate::instruction::DueRow { line: lc, side: Side::Liability }))

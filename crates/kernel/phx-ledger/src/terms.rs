@@ -304,6 +304,7 @@ impl Words {
             w.rate(f.rate);
             w.day_count(f.day_count);
         });
+        self.missing(t.stay, |w, procedure| w.u(u64::from(procedure)));
     }
 }
 
@@ -497,6 +498,7 @@ mod tests {
             default: DefaultDefinition { missed_payments: 1, grace_days: 30 },
             underlying: Missing::Absent,
             facility: Missing::Absent,
+            stay: Missing::Absent,
         }
     }
 

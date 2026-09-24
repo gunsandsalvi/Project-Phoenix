@@ -4,6 +4,7 @@ use crate::workspace::Workspace;
 
 pub mod api_snapshot;
 mod audit_reads;
+mod batches;
 mod clippy_files;
 mod comment_refs;
 mod day_arithmetic;
@@ -127,6 +128,7 @@ pub const RULES: &[Rule] = &[
         since: "S0.16",
         run: opening_writes::run,
     },
+    Rule { id: "PC-27", title: "no materialised batch in stage 7's passes", since: "S0.17", run: batches::run },
 ];
 
 /// The dependency rules, which `layering` runs alone.

@@ -97,6 +97,7 @@ fn terms(facility: Missing<Facility>) -> Terms {
         default: DefaultDefinition { missed_payments: 1, grace_days: 30 },
         underlying: Missing::Absent,
         facility,
+        stay: Missing::Absent,
     }
 }
 
@@ -130,10 +131,10 @@ fn world() -> World {
     let overdraft = ledger.terms.intern(terms(Missing::Present(facility)));
     let reserves_kind = ledger.lines.declare_money(KINDS.reserves());
     let deposit_kind = ledger.lines.declare_money(KINDS.deposits("current account"));
-    let reserves = ledger.lines.open(reserves_kind.index(), plain, Day::new(0));
+    let reserves = ledger.lines.open(reserves_kind.index(), plain, Missing::Absent);
     let deposits = [
-        ledger.lines.open(deposit_kind.index(), overdraft, Day::new(0)),
-        ledger.lines.open(deposit_kind.index(), plain, Day::new(0)),
+        ledger.lines.open(deposit_kind.index(), overdraft, Missing::Absent),
+        ledger.lines.open(deposit_kind.index(), plain, Missing::Absent),
     ];
     let with = |w: u8| {
         let b = if w & crate::rows::PENDING == 0 { Missing::Absent } else { Missing::Present(0) };
@@ -377,9 +378,10 @@ fn contract_process_turns_fails_into_arrears() {
         asset: SideDecl { holder_kinds: &["bank"], words: BALANCE, holder_list: true },
         liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
         transfer_requesters: &["BNK"],
+        dated: false,
     });
     let terms = w.ledger.terms.intern(terms(Missing::Absent));
-    let loan = w.ledger.lines.open(loan_kind.index(), terms, Day::new(10));
+    let loan = w.ledger.lines.open(loan_kind.index(), terms, Missing::Absent);
     let Located::Live { table, slot, .. } = w.tables.locate(PartyId::new(6)) else { unreachable!() };
     let owed = Optional { balance: Missing::Present(-5_000), ..Optional::NONE };
     let new = NewRow { side: Side::Liability, within: 0, count: 1, point: 0, optional: owed };
@@ -411,9 +413,10 @@ fn row_leg_adds_to_both_sides() {
         asset: SideDecl { holder_kinds: &["bank"], words: BALANCE, holder_list: true },
         liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
         transfer_requesters: &["BNK"],
+        dated: false,
     });
     let terms = w.ledger.terms.intern(terms(Missing::Absent));
-    let loan = w.ledger.lines.open(loan_kind.index(), terms, Day::new(10));
+    let loan = w.ledger.lines.open(loan_kind.index(), terms, Missing::Absent);
     let zero = Optional { balance: Missing::Present(0), ..Optional::NONE };
     let open = |party: u64, side: Side| LegRec {
         party: PartyId::new(party),

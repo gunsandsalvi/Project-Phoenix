@@ -108,7 +108,7 @@ fn named_units_keep_their_site_when_sold() {
 }
 
 mod lines {
-    use phx_id::{Day, LineId};
+    use phx_id::LineId;
     use phx_num::{Ccy, Missing, Money, UnitId};
     use phx_store::AddressSpace;
 
@@ -124,6 +124,7 @@ mod lines {
         asset: SideDecl { holder_kinds: &["bank"], words: 0, holder_list: true },
         liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
         transfer_requesters: &["BNK"],
+        dated: false,
     };
 
     fn lines(space: &mut AddressSpace) -> Lines<Heap> {
@@ -136,7 +137,7 @@ mod lines {
         let (mut banks, mut firms) = (table(&mut space, "bank", 0), table(&mut space, "firm", 1));
         let mut all = lines(&mut space);
         let loan = all.declare_money(LOAN);
-        let line = all.open(loan.index(), TermsId::new(0), Day::new(30));
+        let line = all.open(loan.index(), TermsId::new(0), Missing::Absent);
         let bank = holder(&mut space, &mut banks, 1);
         let (f1, f2) = (holder(&mut space, &mut firms, 2), holder(&mut space, &mut firms, 3));
         all.add_row(
@@ -178,7 +179,7 @@ mod lines {
         let mut firms = table(&mut space, "firm", 1);
         let mut all = lines(&mut space);
         let loan = all.declare_money(LOAN);
-        let line = all.open(loan.index(), TermsId::new(0), Day::new(30));
+        let line = all.open(loan.index(), TermsId::new(0), Missing::Absent);
         let f = holder(&mut space, &mut firms, 2);
         let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             all.add_row(
@@ -201,7 +202,7 @@ mod lines {
             let mut firms = table(&mut space, "firm", 1);
             let mut all = lines(&mut space);
             let loan = all.declare_money(LOAN);
-            let ids: Vec<LineId> = (0..12).map(|_| all.open(loan.index(), TermsId::new(0), Day::new(30))).collect();
+            let ids: Vec<LineId> = (0..12).map(|_| all.open(loan.index(), TermsId::new(0), Missing::Absent)).collect();
             let holders: Vec<_> = (0..6).map(|p| holder(&mut space, &mut firms, 10 + p)).collect();
             let mut order: Vec<(usize, LineId)> = ids.iter().enumerate().map(|(i, l)| (i, *l)).collect();
             if shard_major {
@@ -238,8 +239,8 @@ mod lines {
             ..LOAN
         });
         let (with_words, bare) = (
-            all.open(deposit.index(), TermsId::new(0), Day::new(1)),
-            all.open(plain.index(), TermsId::new(0), Day::new(1)),
+            all.open(deposit.index(), TermsId::new(0), Missing::Absent),
+            all.open(plain.index(), TermsId::new(0), Missing::Absent),
         );
         let f = holder(&mut space, &mut firms, 2);
         let words = Optional { balance: Missing::Present(-7), pending: Missing::Present(3), amount: Missing::Absent };
@@ -271,7 +272,7 @@ mod lines {
         let mut firms = table(&mut space, "firm", 1);
         let mut all = lines(&mut space);
         let loan = all.declare_money(LOAN);
-        let line = all.open(loan.index(), TermsId::new(0), Day::new(30));
+        let line = all.open(loan.index(), TermsId::new(0), Missing::Absent);
         let f = holder(&mut space, &mut firms, 2);
         let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             all.add_row(
@@ -298,7 +299,7 @@ mod lines {
             liability: SideDecl { holder_kinds: &["firm"], words: 0, holder_list: true },
             ..LOAN
         });
-        let line = all.open(swap.index(), TermsId::new(0), Day::new(30));
+        let line = all.open(swap.index(), TermsId::new(0), Missing::Absent);
         let f = holder(&mut space, &mut firms, 2);
         all.add_row(
             &mut firms,
@@ -382,8 +383,9 @@ mod books {
             asset: SideDecl { holder_kinds: &["bank"], words: 0, holder_list: true },
             liability: SideDecl { holder_kinds: &["firm"], words: 0, holder_list: true },
             transfer_requesters: &["BNK"],
+            dated: false,
         });
-        let line = all.open(loan.index(), TermsId::new(0), Day::new(30));
+        let line = all.open(loan.index(), TermsId::new(0), Missing::Absent);
         let b = holder(&mut space, &mut banks, 2);
         let (f1, f2) = (holder(&mut space, &mut firms, 3), holder(&mut space, &mut firms, 4));
         all.add_row(

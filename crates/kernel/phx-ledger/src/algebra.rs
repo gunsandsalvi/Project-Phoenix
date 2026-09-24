@@ -9,7 +9,7 @@ use phx_num::{Ccy, DayFraction, Missing, Money, Qty, Rate, RatePeriod, Round, ac
 use crate::consts::DUES_PER_DAY;
 
 /// Which side of a two-sided contract: the one holding it as an asset, or the one owing it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Side {
     Asset,
     Liability,
@@ -188,6 +188,8 @@ pub struct Terms {
     pub default: DefaultDefinition,
     pub underlying: Missing<Underlying>,
     pub facility: Missing<Facility>,
+    /// The insolvency procedure whose stay suspends the dues of the rows on lines of these terms while it is open.
+    pub stay: Missing<u16>,
 }
 
 impl Terms {
@@ -206,6 +208,7 @@ impl Terms {
             default: DefaultDefinition { missed_payments: 1, grace_days: 0 },
             underlying: Missing::Absent,
             facility: Missing::Absent,
+            stay: Missing::Absent,
         }
     }
 }
@@ -527,13 +530,16 @@ fn leg_due(
 /// its event's day and each elective leg on a date its side elects. It is pure and allocates nothing.
 #[clause("REG.5", "REG.11")]
 pub fn due_on(terms: &Terms, day: Day, state: &DueState<'_>, out: &mut DueBuf) {
+    due_at(terms, terms.schedule.date_index(state.calendar, day), day, state, out);
+}
+
+/// The dues of a contract on a day whose date index in its schedule is already known — `None` when the day is none
+/// of its dates — so the schedule is never searched for the day.
+#[clause("REG.5", "REG.11")]
+pub fn due_at(terms: &Terms, k: Option<u32>, day: Day, state: &DueState<'_>, out: &mut DueBuf) {
     out.clear();
     let schedule = &terms.schedule;
-    let date = schedule.date_index(state.calendar, day).map(|k| Accrual {
-        k,
-        from: schedule.stated(k - 1),
-        to: schedule.stated(k),
-    });
+    let date = k.map(|k| Accrual { k, from: schedule.stated(k - 1), to: schedule.stated(k) });
     for (i, leg) in terms.legs.iter().enumerate() {
         let Ok(at) = u16::try_from(i) else {
             capacity_exceeded!("legs of one contract", u16::MAX, i);
@@ -619,6 +625,7 @@ mod tests {
             default: DefaultDefinition { missed_payments: 1, grace_days: 30 },
             underlying: Missing::Absent,
             facility: Missing::Absent,
+            stay: Missing::Absent,
         }
     }
 

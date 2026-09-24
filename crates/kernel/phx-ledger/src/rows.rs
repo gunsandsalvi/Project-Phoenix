@@ -168,6 +168,20 @@ pub(crate) fn append(arenas: &mut dyn HolderArenas, holder: Slot, mut row: RelRo
     arenas.append(holder, ListKind::RelationshipRows, &words);
 }
 
+/// A row put into its holder's run before the word at `at`.
+pub(crate) fn insert(arenas: &mut dyn HolderArenas, holder: Slot, at: usize, mut row: RelRow, optional: Optional) {
+    row.flags = (row.flags & !(BALANCE | PENDING | AMOUNT)) | optional.flags();
+    let mut words = to_words(&row);
+    words.extend(optional.words());
+    arenas.insert(holder, ListKind::RelationshipRows, at, &words);
+}
+
+/// The words a row takes in its holder's run.
+#[must_use]
+pub fn words_of_row(view: &RowView) -> usize {
+    width(view.row.flags)
+}
+
 /// A row written back where it lies; its optional words keep their places.
 pub(crate) fn rewrite(arenas: &mut dyn HolderArenas, holder: Slot, view: &RowView, optional: Optional) {
     if optional.flags() != view.row.flags & (BALANCE | PENDING | AMOUNT) {

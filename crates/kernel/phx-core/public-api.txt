@@ -126,6 +126,8 @@ pub fn phx_core::calendar::Calendar::any_business(&self, phx_id::day::Day) -> bo
 pub fn phx_core::calendar::Calendar::countries(&self) -> usize
 pub fn phx_core::calendar::Calendar::date(&self, phx_id::day::Day) -> phx_id::day::Date
 pub fn phx_core::calendar::Calendar::day(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::calendar::Calendar::days_before(&self, phx_id::day::Day, u32) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::calendar::Calendar::days_between(&self, phx_id::day::Day, phx_id::day::Day) -> core::option::Option<u32>
 pub fn phx_core::calendar::Calendar::epoch(&self) -> phx_id::day::Date
 pub fn phx_core::calendar::Calendar::is_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> bool
 pub fn phx_core::calendar::Calendar::move_window(&mut self, i32)
@@ -188,7 +190,12 @@ pub const phx_core::consts::MONTHS: i32
 pub const phx_core::consts::MONTHS_PER_QUARTER: u16
 pub const phx_core::consts::MONTHS_PER_YEAR: u16
 pub const phx_core::consts::NUMERIC_STEPS: u32
+pub const phx_core::consts::OPENING_BALANCES: u8
+pub const phx_core::consts::OPENING_CONTRACTS: u8
 pub const phx_core::consts::OPENING_ORDINAL_BASE: u8
+pub const phx_core::consts::OPENING_PARTIES: u8
+pub const phx_core::consts::OPENING_PHYSICAL_STOCK: u8
+pub const phx_core::consts::OPENING_PRESENT_VALUES: u8
 pub const phx_core::consts::PARAM_EXP: u8
 pub const phx_core::consts::PARAM_SCALE_F64: f64
 pub const phx_core::consts::PERCENT_F64: f64
@@ -198,19 +205,67 @@ pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
 pub const phx_core::consts::WHEEL_BITS: u32
 pub const phx_core::consts::WHEEL_BUCKETS: usize
 pub mod phx_core::contribution
+pub struct phx_core::contribution::Adjustment
+pub phx_core::contribution::Adjustment::drawn: i128
+pub phx_core::contribution::Adjustment::set: i128
+pub phx_core::contribution::Adjustment::what: alloc::string::String
+pub struct phx_core::contribution::Apportioned
+pub phx_core::contribution::Apportioned::drawn: u64
+pub phx_core::contribution::Apportioned::party: phx_id::ids::PartyId
+pub phx_core::contribution::Apportioned::realised: u64
+pub phx_core::contribution::Apportioned::stratum: alloc::string::String
+pub struct phx_core::contribution::GenReport
+pub phx_core::contribution::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
+pub phx_core::contribution::GenReport::apportioned: alloc::vec::Vec<phx_core::contribution::Apportioned>
+pub phx_core::contribution::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
+pub phx_core::contribution::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>
+pub phx_core::contribution::GenReport::writes: alloc::vec::Vec<phx_core::contribution::WriteRecord>
+pub struct phx_core::contribution::Opening<'a>
+pub phx_core::contribution::Opening::books: &'a mut dyn core::any::Any
+pub phx_core::contribution::Opening::calendar: &'a phx_core::calendar::Calendar
+pub phx_core::contribution::Opening::countries: &'a [phx_core::contribution::OpeningCountry]
+pub phx_core::contribution::Opening::ctx: phx_core::contribution::OpeningCtx<'a>
+pub phx_core::contribution::Opening::date: phx_id::day::Date
+pub phx_core::contribution::Opening::day: phx_id::day::Day
+pub phx_core::contribution::Opening::register: &'a phx_core::register::Register
+pub phx_core::contribution::Opening::report: &'a mut phx_core::contribution::GenReport
+impl core::fmt::Debug for phx_core::contribution::Opening<'_>
+pub fn phx_core::contribution::Opening<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_core::contribution::OpeningCountry
+pub phx_core::contribution::OpeningCountry::derived: alloc::vec::Vec<(alloc::string::String, f64)>
+pub phx_core::contribution::OpeningCountry::gdp: f64
+pub phx_core::contribution::OpeningCountry::id: phx_id::ids::CountryId
+pub phx_core::contribution::OpeningCountry::people: u64
+pub phx_core::contribution::OpeningCountry::sites: alloc::vec::Vec<phx_id::ids::TileId>
+impl phx_core::contribution::OpeningCountry
+pub fn phx_core::contribution::OpeningCountry::derived(&self, &str) -> core::option::Option<f64>
+pub fn phx_core::contribution::OpeningCountry::site(&self, &mut phx_rand::draws::Draws) -> phx_id::ids::TileId
 pub struct phx_core::contribution::OpeningCtx<'a>
 impl<'a> phx_core::contribution::OpeningCtx<'a>
 pub fn phx_core::contribution::OpeningCtx<'a>::draws(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject) -> phx_rand::draws::Draws
 pub fn phx_core::contribution::OpeningCtx<'a>::new(&'a phx_core::streams::Streams, phx_core::streams::OpeningPhase) -> phx_core::contribution::OpeningCtx<'a>
 pub fn phx_core::contribution::OpeningCtx<'a>::phase(&self) -> phx_core::streams::OpeningPhase
+pub struct phx_core::contribution::WriteRecord
+pub phx_core::contribution::WriteRecord::amount: i128
+pub phx_core::contribution::WriteRecord::counter: phx_id::ids::PartyId
+pub phx_core::contribution::WriteRecord::identity: u64
+pub phx_core::contribution::WriteRecord::party: phx_id::ids::PartyId
+pub const phx_core::contribution::BALANCES: phx_core::streams::OpeningPhase
+pub const phx_core::contribution::CONTRACTS: phx_core::streams::OpeningPhase
+pub const phx_core::contribution::PARTIES: phx_core::streams::OpeningPhase
+pub const phx_core::contribution::PHASES: [phx_core::streams::OpeningPhase; 5]
+pub const phx_core::contribution::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
+pub const phx_core::contribution::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub trait phx_core::contribution::Contribution: core::marker::Send + core::marker::Sync
-pub fn phx_core::contribution::Contribution::contribute(&self, &mut phx_core::contribution::OpeningCtx<'_>)
+pub fn phx_core::contribution::Contribution::contribute(&self, &mut phx_core::contribution::Opening<'_>)
 pub fn phx_core::contribution::Contribution::derived(&self) -> &'static [&'static str]
 pub fn phx_core::contribution::Contribution::drawn(&self) -> &'static [&'static str]
 pub fn phx_core::contribution::Contribution::name(&self) -> &'static str
 pub fn phx_core::contribution::Contribution::phase(&self) -> phx_core::streams::OpeningPhase
 pub fn phx_core::contribution::Contribution::reads(&self) -> &'static [&'static str]
 pub fn phx_core::contribution::Contribution::writes(&self) -> &'static [&'static str]
+pub fn phx_core::contribution::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
+pub fn phx_core::contribution::opening_subject(u32, u32) -> phx_rand::key::Subject
 pub mod phx_core::decisions
 pub enum phx_core::decisions::Decider
 pub phx_core::decisions::Decider::Player
@@ -372,10 +427,12 @@ pub phx_core::family::FamilyMode::Rolling
 pub phx_core::family::FamilyMode::Rolling::cycle_days: u16
 pub phx_core::family::FamilyMode::Streaming
 pub struct phx_core::family::AuditInputs<'a>
+pub phx_core::family::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_core::family::AuditInputs::calendar: &'a phx_core::calendar::Calendar
 pub phx_core::family::AuditInputs::day: phx_id::day::Day
 pub phx_core::family::AuditInputs::directory: &'a phx_core::directory::Directory
 pub phx_core::family::AuditInputs::events: &'a phx_core::events::EventStore
+pub phx_core::family::AuditInputs::legs: &'a dyn phx_core::family::LegRecords
 pub phx_core::family::AuditInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_core::family::AuditInputs::new_events: phx_core::family::Span
 pub phx_core::family::AuditInputs::new_records: phx_core::family::Span
@@ -386,10 +443,12 @@ pub phx_core::family::AuditInputs::touched: &'a phx_core::touched::TouchedRows
 pub phx_core::family::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::family::FamilyCtx<'a>
 impl<'a> phx_core::family::FamilyCtx<'a>
+pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
+pub fn phx_core::family::FamilyCtx<'a>::legs(&self) -> &dyn phx_core::family::LegRecords
 pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::DayMessages
 pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
@@ -406,6 +465,11 @@ pub phx_core::family::FamilyDecl::clause: &'static str
 pub phx_core::family::FamilyDecl::mode: phx_core::family::FamilyMode
 pub phx_core::family::FamilyDecl::name: &'static str
 pub phx_core::family::FamilyDecl::owner: &'static str
+pub struct phx_core::family::Gap
+pub phx_core::family::Gap::detail: alloc::string::String
+pub phx_core::family::Gap::owner: phx_core::findings::FindingOwner
+pub phx_core::family::Gap::size: i128
+pub phx_core::family::Gap::unit: phx_core::findings::Unit
 pub struct phx_core::family::LegDigest
 pub phx_core::family::LegDigest::account: u64
 pub phx_core::family::LegDigest::before: i64
@@ -432,6 +496,13 @@ pub trait phx_core::family::AuditStream
 pub fn phx_core::family::AuditStream::applied(&mut self, u64)
 pub fn phx_core::family::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_core::family::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub trait phx_core::family::BooksAudit: core::fmt::Debug
+pub fn phx_core::family::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::BooksAudit::instruments(&self) -> usize
+pub fn phx_core::family::BooksAudit::lines(&self) -> usize
+pub fn phx_core::family::BooksAudit::money(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
 pub trait phx_core::family::InjectTarget
 pub fn phx_core::family::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::day(&self) -> phx_id::day::Day
@@ -439,6 +510,12 @@ pub fn phx_core::family::InjectTarget::fact(&self, &str, &'static str, phx_id::i
 pub fn phx_core::family::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
 pub fn phx_core::family::InjectTarget::set_fact(&mut self, &str, &'static str, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
+pub trait phx_core::family::LegRecords: core::fmt::Debug
+pub fn phx_core::family::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::LegRecords::instructions(&self) -> u64
+pub fn phx_core::family::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::LegRecords::positions(&self) -> u64
+pub fn phx_core::family::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
 pub mod phx_core::findings
 pub enum phx_core::findings::FindingOwner
@@ -585,7 +662,10 @@ pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_c
 pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
+pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
+pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
+pub fn phx_core::kind_tables::KindTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
@@ -595,6 +675,15 @@ pub phx_core::kind_tables::NewIndividual::created: phx_id::day::Day
 pub phx_core::kind_tables::NewIndividual::party: phx_id::ids::PartyId
 pub phx_core::kind_tables::NewIndividual::site: phx_id::ids::TileId
 pub phx_core::kind_tables::NewIndividual::types: &'a [phx_core::register::values::TypeId]
+#[repr(C)] pub struct phx_core::kind_tables::RunHead
+pub phx_core::kind_tables::RunHead::len: u32
+pub phx_core::kind_tables::RunHead::next_due: u32
+pub phx_core::kind_tables::RunHead::offset: u32
+impl phx_core::kind_tables::RunHead
+pub const phx_core::kind_tables::RunHead::EMPTY: phx_core::kind_tables::RunHead
+pub fn phx_core::kind_tables::RunHead::due(self, phx_id::day::Day) -> bool
+impl phx_store::pod::Pod for phx_core::kind_tables::RunHead
+impl phx_store::pod::__seal::Sealed for phx_core::kind_tables::RunHead
 pub mod phx_core::kinds
 pub enum phx_core::kinds::Feature
 pub phx_core::kinds::Feature::IssuesCurrency
@@ -622,6 +711,7 @@ pub phx_core::kinds::LegalForm::owners: alloc::string::String
 impl phx_core::kinds::LegalForm
 pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub const phx_core::kinds::LEGAL_FORMS: phx_core::register::PrimDecl
 pub mod phx_core::kinks
 pub enum phx_core::kinks::KinkOn
 pub phx_core::kinks::KinkOn::PerMember(&'static str)
@@ -1750,6 +1840,10 @@ pub fn phx_core::messages::Address::named_party(self) -> core::option::Option<ph
 pub fn phx_core::messages::Address::party(phx_id::ids::PartyId) -> phx_core::messages::Address
 impl phx_store::pod::Pod for phx_core::messages::Address
 impl phx_store::pod::__seal::Sealed for phx_core::messages::Address
+pub struct phx_core::Adjustment
+pub phx_core::Adjustment::drawn: i128
+pub phx_core::Adjustment::set: i128
+pub phx_core::Adjustment::what: alloc::string::String
 pub struct phx_core::Agenda<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
 pub fn phx_core::agenda::Agenda<B>::booked(&self, phx_id::ids::TableId, phx_id::ids::Slot) -> core::option::Option<phx_id::day::Day>
@@ -1780,11 +1874,18 @@ pub struct phx_core::Answering
 pub phx_core::Answering::addressee: &'static str
 pub phx_core::Answering::substep: phx_core::substep::SubStep
 pub phx_core::Answering::system: &'static str
+pub struct phx_core::Apportioned
+pub phx_core::Apportioned::drawn: u64
+pub phx_core::Apportioned::party: phx_id::ids::PartyId
+pub phx_core::Apportioned::realised: u64
+pub phx_core::Apportioned::stratum: alloc::string::String
 pub struct phx_core::AuditInputs<'a>
+pub phx_core::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_core::AuditInputs::calendar: &'a phx_core::calendar::Calendar
 pub phx_core::AuditInputs::day: phx_id::day::Day
 pub phx_core::AuditInputs::directory: &'a phx_core::directory::Directory
 pub phx_core::AuditInputs::events: &'a phx_core::events::EventStore
+pub phx_core::AuditInputs::legs: &'a dyn phx_core::family::LegRecords
 pub phx_core::AuditInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_core::AuditInputs::new_events: phx_core::family::Span
 pub phx_core::AuditInputs::new_records: phx_core::family::Span
@@ -1812,6 +1913,8 @@ pub fn phx_core::calendar::Calendar::any_business(&self, phx_id::day::Day) -> bo
 pub fn phx_core::calendar::Calendar::countries(&self) -> usize
 pub fn phx_core::calendar::Calendar::date(&self, phx_id::day::Day) -> phx_id::day::Date
 pub fn phx_core::calendar::Calendar::day(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::calendar::Calendar::days_before(&self, phx_id::day::Day, u32) -> core::option::Option<phx_id::day::Day>
+pub fn phx_core::calendar::Calendar::days_between(&self, phx_id::day::Day, phx_id::day::Day) -> core::option::Option<u32>
 pub fn phx_core::calendar::Calendar::epoch(&self) -> phx_id::day::Date
 pub fn phx_core::calendar::Calendar::is_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> bool
 pub fn phx_core::calendar::Calendar::move_window(&mut self, i32)
@@ -2020,10 +2123,12 @@ pub phx_core::FactDecl::unit: phx_num::missing::Missing<&'static str>
 pub phx_core::FactDecl::value: phx_core::facts::FactType
 pub struct phx_core::FamilyCtx<'a>
 impl<'a> phx_core::family::FamilyCtx<'a>
+pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
+pub fn phx_core::family::FamilyCtx<'a>::legs(&self) -> &dyn phx_core::family::LegRecords
 pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::DayMessages
 pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
@@ -2055,6 +2160,17 @@ pub fn phx_core::findings::Findings::is_empty(&self) -> bool
 pub fn phx_core::findings::Findings::len(&self) -> usize
 pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
 pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)
+pub struct phx_core::Gap
+pub phx_core::Gap::detail: alloc::string::String
+pub phx_core::Gap::owner: phx_core::findings::FindingOwner
+pub phx_core::Gap::size: i128
+pub phx_core::Gap::unit: phx_core::findings::Unit
+pub struct phx_core::GenReport
+pub phx_core::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
+pub phx_core::GenReport::apportioned: alloc::vec::Vec<phx_core::contribution::Apportioned>
+pub phx_core::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
+pub phx_core::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>
+pub phx_core::GenReport::writes: alloc::vec::Vec<phx_core::contribution::WriteRecord>
 pub struct phx_core::HandlerEntry
 pub phx_core::HandlerEntry::clause: &'static str
 pub phx_core::HandlerEntry::intents: &'static [&'static str]
@@ -2141,7 +2257,10 @@ pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_c
 pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
+pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
+pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
+pub fn phx_core::kind_tables::KindTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
@@ -2225,6 +2344,26 @@ pub fn phx_core::streams::ObserverDraws<'a>::open(&self, &phx_core::streams::Str
 pub struct phx_core::OccasionDecl
 pub phx_core::OccasionDecl::kind: phx_core::occasions::OccasionKind
 pub phx_core::OccasionDecl::point: &'static str
+pub struct phx_core::Opening<'a>
+pub phx_core::Opening::books: &'a mut dyn core::any::Any
+pub phx_core::Opening::calendar: &'a phx_core::calendar::Calendar
+pub phx_core::Opening::countries: &'a [phx_core::contribution::OpeningCountry]
+pub phx_core::Opening::ctx: phx_core::contribution::OpeningCtx<'a>
+pub phx_core::Opening::date: phx_id::day::Date
+pub phx_core::Opening::day: phx_id::day::Day
+pub phx_core::Opening::register: &'a phx_core::register::Register
+pub phx_core::Opening::report: &'a mut phx_core::contribution::GenReport
+impl core::fmt::Debug for phx_core::contribution::Opening<'_>
+pub fn phx_core::contribution::Opening<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_core::OpeningCountry
+pub phx_core::OpeningCountry::derived: alloc::vec::Vec<(alloc::string::String, f64)>
+pub phx_core::OpeningCountry::gdp: f64
+pub phx_core::OpeningCountry::id: phx_id::ids::CountryId
+pub phx_core::OpeningCountry::people: u64
+pub phx_core::OpeningCountry::sites: alloc::vec::Vec<phx_id::ids::TileId>
+impl phx_core::contribution::OpeningCountry
+pub fn phx_core::contribution::OpeningCountry::derived(&self, &str) -> core::option::Option<f64>
+pub fn phx_core::contribution::OpeningCountry::site(&self, &mut phx_rand::draws::Draws) -> phx_id::ids::TileId
 pub struct phx_core::OpeningCtx<'a>
 impl<'a> phx_core::contribution::OpeningCtx<'a>
 pub fn phx_core::contribution::OpeningCtx<'a>::draws(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject) -> phx_rand::draws::Draws
@@ -2354,6 +2493,15 @@ impl phx_core::rules::RuleTable
 pub fn phx_core::rules::RuleTable::call<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::rules::RuleTable::check(&self, &[(&'static str, &'static str)]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::rules::RuleTable::implement<I: 'static, O: 'static>(&mut self, &'static str, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
+#[repr(C)] pub struct phx_core::RunHead
+pub phx_core::RunHead::len: u32
+pub phx_core::RunHead::next_due: u32
+pub phx_core::RunHead::offset: u32
+impl phx_core::kind_tables::RunHead
+pub const phx_core::kind_tables::RunHead::EMPTY: phx_core::kind_tables::RunHead
+pub fn phx_core::kind_tables::RunHead::due(self, phx_id::day::Day) -> bool
+impl phx_store::pod::Pod for phx_core::kind_tables::RunHead
+impl phx_store::pod::__seal::Sealed for phx_core::kind_tables::RunHead
 pub struct phx_core::ScheduleDates
 pub phx_core::ScheduleDates::anchor: phx_id::day::Date
 pub phx_core::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention
@@ -2451,10 +2599,22 @@ pub fn phx_core::weight::Weight::add(self, phx_core::weight::Weight) -> phx_core
 impl core::ops::arith::Sub for phx_core::weight::Weight
 pub type phx_core::weight::Weight::Output = phx_core::weight::Weight
 pub fn phx_core::weight::Weight::sub(self, phx_core::weight::Weight) -> phx_core::weight::Weight
+pub struct phx_core::WriteRecord
+pub phx_core::WriteRecord::amount: i128
+pub phx_core::WriteRecord::counter: phx_id::ids::PartyId
+pub phx_core::WriteRecord::identity: u64
+pub phx_core::WriteRecord::party: phx_id::ids::PartyId
 pub const phx_core::AUDIT_SUBSTEP: phx_core::substep::SubStep
+pub const phx_core::BALANCES: phx_core::streams::OpeningPhase
 pub const phx_core::CALENDAR: phx_core::register::PrimDecl
+pub const phx_core::CONTRACTS: phx_core::streams::OpeningPhase
 pub const phx_core::DAY_ZERO: phx_core::register::PrimDecl
 pub const phx_core::EPOCH: phx_core::register::PrimDecl
+pub const phx_core::LEGAL_FORMS: phx_core::register::PrimDecl
+pub const phx_core::PARTIES: phx_core::streams::OpeningPhase
+pub const phx_core::PHASES: [phx_core::streams::OpeningPhase; 5]
+pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
+pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
 pub trait phx_core::AuditFamily: core::marker::Send + core::marker::Sync
 pub fn phx_core::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
@@ -2464,8 +2624,15 @@ pub trait phx_core::AuditStream
 pub fn phx_core::AuditStream::applied(&mut self, u64)
 pub fn phx_core::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_core::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub trait phx_core::BooksAudit: core::fmt::Debug
+pub fn phx_core::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::BooksAudit::instruments(&self) -> usize
+pub fn phx_core::BooksAudit::lines(&self) -> usize
+pub fn phx_core::BooksAudit::money(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
 pub trait phx_core::Contribution: core::marker::Send + core::marker::Sync
-pub fn phx_core::Contribution::contribute(&self, &mut phx_core::contribution::OpeningCtx<'_>)
+pub fn phx_core::Contribution::contribute(&self, &mut phx_core::contribution::Opening<'_>)
 pub fn phx_core::Contribution::derived(&self) -> &'static [&'static str]
 pub fn phx_core::Contribution::drawn(&self) -> &'static [&'static str]
 pub fn phx_core::Contribution::name(&self) -> &'static str
@@ -2507,6 +2674,12 @@ pub fn phx_core::IntentDef::encode(&self, &mut alloc::vec::Vec<u64>)
 impl phx_core::handler::IntentDef for phx_core::events::EventIntent
 pub const phx_core::events::EventIntent::NAME: &'static str
 pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
+pub trait phx_core::LegRecords: core::fmt::Debug
+pub fn phx_core::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::LegRecords::instructions(&self) -> u64
+pub fn phx_core::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::LegRecords::positions(&self) -> u64
+pub fn phx_core::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
 pub trait phx_core::Limited: core::marker::Copy
 pub fn phx_core::Limited::smallest_units(self) -> i128
 pub fn phx_core::Limited::split(Self, Self) -> (Self, Self)
@@ -2613,6 +2786,7 @@ pub fn phx_core::TracedCells::is_traced(&self, phx_id::ids::PartyId) -> bool
 pub trait phx_core::Writes<F: phx_core::facts::FactDef>
 pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
 pub fn phx_core::annual_to_daily(f64, u32) -> f64
+pub fn phx_core::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
 pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
 pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
@@ -2623,6 +2797,7 @@ pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
+pub fn phx_core::opening_subject(u32, u32) -> phx_rand::key::Subject
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
 pub fn phx_core::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
 pub type phx_core::Opened = (&'static str, u64)

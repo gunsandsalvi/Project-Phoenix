@@ -52,7 +52,7 @@ fn business_days(w: Inspector<'_>) -> Outcome {
 /// settle every day waits for firms that earn: until then their dues drain their deposits.
 fn liveness(w: Inspector<'_>) -> Outcome {
     for s in w.settlements().iter().filter(|s| w.any_business(s.day)) {
-        if s.dues.instructions == 0 {
+        if s.dues.payments == 0 {
             return Outcome::Fail(format!("no payment fell due on business day {}", s.day.get()));
         }
         if let Some(f) = s.fails.iter().find(|f| matches!(f.row, Missing::Absent)) {
