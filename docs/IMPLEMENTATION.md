@@ -3698,7 +3698,7 @@ end 66 834 unpaid claims stood, receivable and payable alike at 6 492 394 979 63
 
 ### S0.20 — Persistence and the save check
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: SET.12, SET.13.
@@ -3822,6 +3822,13 @@ end 66 834 unpaid claims stood, receivable and payable alike at 6 492 394 979 63
   - a save's check outcome kept as an empty string when it matched (now absent);
   - a load that trusted its stores without checking the world they rebuild against the manifest's hash (now
     checked).
+
+**Build run** (814b785, `perf/build-run/814b785549bf.json`): settled 2026 and ran to 2 January 2029, 1 098 days
+in 121 s after a 16 s opening, peak 237 MiB. Every live check passes but LC-0-29 (the first levy) and LC-0-30 to
+LC-0-32 (the first market). Twelve quarterly saves, each at most 11 MiB, written in at most 0.72 s and checked in at
+most 0.77 s, all read back to their closes' hashes. The thirteen injections into the day-30 save each lit their own
+family alone, each over a load of 0.55 to 0.65 s. The run's 16 s over S0.19's is the saves' writing and checking;
+its 59 MiB of peak is a store decoded whole by the save check.
 
 ---
 
