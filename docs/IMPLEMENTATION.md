@@ -2424,7 +2424,7 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 
 ### S0.13 — `phx-geo`: the map, weather and catastrophes
 
-**Status**: building (reopened for F-011 and F-012; the closed world)
+**Status**: done
 
 **Clauses**:
 - STATE: GEO.1, GEO.2, GEO.3, GEO.6, GEO.7.
@@ -2574,10 +2574,14 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
   south.
 
 **Budget**:
-- Map generation ≤ 10 s on the phone, judged at S0.26; the x86 benchmark of this block's review was 0.6–1 s for the
-  distances on 4 cores. Measured on the build machine, one thread: the map 1.2 s at its first attempt, the zone
-  distances 2.0 s, the whole assembly 3.1 s; the distances' parallel measure arrives with the pool.
-- The map ≤ 80 MB: tiles, exposure columns, distances and deposits. Measured: 7.4 MB (`phx_geo.map_bytes`, ratcheted).
+- Map generation ≤ 10 s on the phone, judged at S0.26. Measured on the build machine, one thread: the whole assembly
+  8.3 s at the map's first attempt, most of it the relief (noise and erosion over a million relief cells, about 4 s)
+  and the zone distances (about 2 s). The noise's cells and the distances' zones are independent, so both divide
+  across the pool's workers when the world has one; that, and not a coarser relief, is the first step if the phone
+  misses.
+- The map ≤ 80 MB, its generation included: tiles with their relief and rivers, exposure columns, distances and
+  deposits. Measured: 7.5 MB standing (`phx_geo.map_bytes`, ratcheted); the opening's peak 47 MiB, the whole world's.
+  The build run holds the world's peak to the budgets of the steps it holds: the empty world's 50 MB and the map's.
 - Weather and catastrophes ≤ 1 ms a day.
 - Counters: `phx_geo.map_bytes`, `phx_geo.generation_attempts`, `phx_geo.astar_calls`.
 
@@ -2597,9 +2601,10 @@ crate keeps map geometry of its own (GEO.14).
 - [x] PC-23 is registered.
 - [x] Two reviews are done.
 
-The build run on bc1dfb5 (perf/build-run/bc1dfb516364.json) accepted the map at its first attempt (40,000 land tiles,
-25 regions, 1,979 zones, 2,222 deposits), settled a year and ran two: 109,824 events, weather and catastrophes
-0.57 ms a day on the build machine, assembly 3.3 s, 29 MiB peak, no finding, every live check passing.
+The build run on 11abe16 (perf/build-run/11abe160c1e4.json) accepted the closed world's map at its first attempt
+(40,000 land tiles, 25 regions within 0.1% of like size, 2,000 zones, 1,399 deposits; land and sea each going all the
+way round east to west), settled a year and ran two: 109,838 events, assembly 8.4 s, 47 MiB peak, no finding, every
+live check passing.
 
 ---
 
@@ -15132,8 +15137,8 @@ the final build within the budget on the phone.
 | F-008 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
 | F-009 | S0.04 | build, 2026-09-23 | `pick_without_replacement` builds its Fenwick tree on the heap at each call (5 863 instructions for 8 picks from 64 categories, `phx_rand.ir_pick_without_replacement`, most of it the allocation), as S0.04 designs it; §2.8 allows no heap allocation per row in a handler | none: an engineering cost | S0.23, where picks first run per row: the tree comes from the chunk arena's scratch, rebuilt in place | open |
 | F-010 | S0.13 | build, 2026-09-24 | GEO's exposure tables, spreads, severities and deposits are assumed, each with its reason (data/shared/GEO_hazards.toml): the rates are EM-DAT's world means per tile, but their split across exposure classes (a quarter, one and four), the footprints' spread and the share destroyed have no published source in hand, and the deposits' densities, grades and sizes wait for the resources GDS declares | none: missing data | S1.05, which brings the resources and their data (USGS mineral commodity summaries and deposit databases); for the hazards, a regional loss or footprint dataset (EM-DAT's affected areas, Munich Re NatCatSERVICE, the Global Flood Database) when one is chosen | open |
-| F-011 | S0.13 | owner's review of the map, 2026-09-24 | The map of the build run on bc1dfb5 has 1.5% of its land as plains (the real Old World's lowland share is near a half): elevations rise linearly from the sea to the highest point, so nearly all land stands above the plains' 200 m, and floods, coal, and oil and gas, which read plains, all but vanish | the generator's relief: no measured land-height curve, no erosion, no rivers | S0.13 reopened: relief on a finer grid from plates and noise, eroded by rivers, its land heights mapped to ETOPO's measured curve for the analogue region, terrain read from relief within the tile, rivers carried by the map | closed: the relief is generated on a grid four times finer from plates, warped noise and ridged belts, eroded by rivers, its land heights ranked onto ETOPO's curve and each tile's relief onto ETOPO's measured ranges; the build run's map is 42/28/23/8% plains, hills, uplands and mountains against the real 42/29/21/7% |
-| F-012 | S0.13 | owner's review of the map, 2026-09-24 | The same map's regions range from 652 to 2,763 tiles in Noredia, where GEO.3 wants regions of like size: tiles left after the growth, and islands, join whichever region reaches them first, unbounded | the generator's partition: no bound on the spill and no balance | S0.13 reopened: regions grown by travel cost so borders follow ridges and rivers, then balanced tile by tile within a declared tolerance, which becomes a construction condition | closed: countries, regions and zones are cut by exact halving over travel cost, so each part holds together and its borders follow ridges and rivers; a cut moves only to keep a peninsula whole, within the declared tolerance; the build run's regions are within 1.3% of like size |
+| F-011 | S0.13 | owner's review of the map, 2026-09-24 | The map of the build run on bc1dfb5 has 1.5% of its land as plains (the real Old World's lowland share is near a half): elevations rise linearly from the sea to the highest point, so nearly all land stands above the plains' 200 m, and floods, coal, and oil and gas, which read plains, all but vanish | the generator's relief: no measured land-height curve, no erosion, no rivers | S0.13 reopened: relief on a finer grid from plates and noise, eroded by rivers, its land heights mapped to ETOPO's measured curve for the analogue region, terrain read from relief within the tile, rivers carried by the map | closed: the relief is generated on a grid four times finer from plates, warped noise and ridged belts, eroded by rivers, its land heights ranked onto ETOPO's curve and each tile's relief onto ETOPO's measured ranges; the build run's map is 45/26/22/8% plains, hills, uplands and mountains against the real 42/29/21/7% |
+| F-012 | S0.13 | owner's review of the map, 2026-09-24 | The same map's regions range from 652 to 2,763 tiles in Noredia, where GEO.3 wants regions of like size: tiles left after the growth, and islands, join whichever region reaches them first, unbounded | the generator's partition: no bound on the spill and no balance | S0.13 reopened: regions grown by travel cost so borders follow ridges and rivers, then balanced tile by tile within a declared tolerance, which becomes a construction condition | closed: countries, regions and zones are cut by exact halving over travel cost, so each part holds together and its borders follow ridges and rivers; a cut moves only to keep a peninsula whole, within the declared tolerance; the build run's regions are within 0.1% of like size |
 
 ---
 
