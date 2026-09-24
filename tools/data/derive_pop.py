@@ -478,19 +478,21 @@ def gdp_per_head() -> pd.Series:
     return np.log(last_value(d))
 
 
-def standard_or_fit(values: pd.Series, members: set, x: pd.Series) -> tuple:
-    """A share's logit for the group: the median over its economies when at least MIN_COUNTRIES report it, with no
-    slope; otherwise, as the owner decided for values a group lacks, the Theil-Sen line in the log of GDP per head
-    across every economy that reports it, its intercept their median residual. Returns (intercept, slope, count,
-    the GDP per head range of the economies fitted over, or None)."""
+def standard_or_nearest(values: pd.Series, members: set, x: pd.Series) -> tuple:
+    """A share's logit for the group: the median over its economies when at least MIN_COUNTRIES report it; otherwise,
+    as the owner decided for values a group lacks, the median over the MIN_COUNTRIES reporting economies nearest the
+    group's median log GDP per head, ties broken by code. Returns (logit, count, the GDP per head range of the
+    nearest economies or None)."""
     y = logit(values).dropna()
     own = y[y.index.isin(members)]
     if len(own) >= MIN_COUNTRIES:
-        return float(own.median()), 0.0, len(own), None
+        return float(own.median()), len(own), None
+    centre = float(x[x.index.isin(members)].median())
     both = pd.concat([y.rename("y"), x.rename("x")], axis=1).dropna()
-    slope = theil_sen(both.x.to_numpy(), both.y.to_numpy())
-    span = (math.exp(both.x.min()), math.exp(both.x.max()))
-    return float((both.y - slope * both.x).median()), slope, len(both), span
+    both["gap"] = (both.x - centre).abs()
+    near = both.rename_axis("iso3").reset_index().sort_values(["gap", "iso3"]).head(MIN_COUNTRIES)
+    span = (math.exp(near.x.min()), math.exp(near.x.max()))
+    return float(near.y.median()), len(near), span
 
 
 def tenure_parts() -> dict:
@@ -521,49 +523,48 @@ def tenure_parts() -> dict:
     }
 
 
-def fit_rows(parts: dict, names: list, members: set, x: pd.Series) -> tuple:
+def nearest_rows(parts: dict, names: list, members: set, x: pd.Series) -> tuple:
     rows, notes = [], []
     for name in names:
-        a, b, n, span = standard_or_fit(parts[name], members, x)
-        rows.append([a, b])
-        where = f"fitted over {n} economies of GDP per head {span[0]:,.0f} to {span[1]:,.0f}" if span else \
-            f"the median over {n} economies"
+        v, n, span = standard_or_nearest(parts[name], members, x)
+        rows.append(v)
+        where = (f"the median of the {n} reporting economies nearest the group in GDP per head, {span[0]:,.0f} to "
+                 f"{span[1]:,.0f}" if span else f"the median over the group's {n} economies")
         notes.append(f"{name.replace('.', ' ').replace('_', ' ')}: {where}")
-    return np.array(rows), "; ".join(notes)
+    return rows, "; ".join(notes)
 
 
 def housing(level: str, members: set, m: dict) -> list:
     parts = tenure_parts()
     x = gdp_per_head()
     names = ["mortgaged", "subsidised", "mortgage_burden", "rent_burden"]
-    rows, notes = fit_rows(parts, names, members, x)
-    ref = (f"Logits of four shares as lines in the log of GDP per head (PPP, constant 2021 dollars), the columns "
-           f"intercept and slope; a country's share is the inverse logit at its drawn GEN.gdp_per_head. Rows: 0 owners "
-           f"with a mortgage among owners; 1 subsidised or reduced-rent tenants among tenants; 2 the median mortgage "
-           f"burden (principal and interest over disposable income) of owners with a mortgage; 3 the median rent "
-           f"burden of tenants. Each economy at its latest year 2015-2025, from the OECD Affordable Housing Database "
-           f"(households), else Eurostat's EU-SILC (persons); where the group has at least {MIN_COUNTRIES} economies "
-           f"the row is their median with no slope, otherwise, as the owner decided for values a group lacks, the "
-           f"Theil-Sen line across every economy that has it ({notes}), from {fetched(m, 'housing', 'wdi')}. "
-           f"Owners' and tenants' shares of households are GEN.home_ownership's; a mortgage's rate and remaining "
-           f"term have no source here.")
+    rows, notes = nearest_rows(parts, names, members, x)
+    ref = (f"Four shares, the group's standard at every drawn value: 0 owners with a mortgage among owners; 1 "
+           f"subsidised or reduced-rent tenants among tenants; 2 the median mortgage burden (principal and interest "
+           f"over disposable income) of owners with a mortgage; 3 the median rent burden of tenants. Each economy at "
+           f"its latest year 2015-2025, from the OECD Affordable Housing Database (households), else Eurostat's "
+           f"EU-SILC (persons); the median over the group's economies where at least {MIN_COUNTRIES} report it, "
+           f"otherwise, as the owner decided for values a group lacks, over the {MIN_COUNTRIES} reporting economies "
+           f"nearest the group's median GDP per head (PPP, constant 2021 dollars) ({notes}), from "
+           f"{fetched(m, 'housing', 'wdi')}. Owners' and tenants' shares of households are GEN.home_ownership's; a "
+           f"mortgage's rate and remaining term have no source here and are the owner's placeholder (S0.16's).")
     return [entry("HSG.tenure_and_costs", "ENDOWMENT", "HSG", "measured", ref,
-                  table2(range(len(names)), [0, 1], rows, "refuse"))]
+                  f"{{ axis = [{', '.join(str(i) for i in range(len(names)))}], "
+                  f"values = [{', '.join(num(1 / (1 + math.exp(-v))) for v in rows)}], outside = \"refuse\" }}")]
 
 
 def banking(level: str, members: set, m: dict) -> list:
     parts = {code: last_value(pd.read_csv(RAW / "findex" / f"{code}.csv").rename(columns={"share": "value"}))
              for code in ["account.t.d", "fin17a", "fin22a"]}
     x = gdp_per_head()
-    rows, notes = fit_rows(parts, list(parts), members, x)
-    ref = (f"Logits of three shares of adults 15 and over as lines in the log of GDP per head (PPP, constant 2021 "
-           f"dollars), the columns intercept and slope: 0 holding an account at a bank or other financial institution "
-           f"or a mobile money provider; 1 having saved at a bank in the past year; 2 having borrowed from a bank in "
-           f"the past year. Each economy at its latest survey wave 2015-2025; the group's median with no slope where "
-           f"at least {MIN_COUNTRIES} economies report it, otherwise the Theil-Sen line across all ({notes}), from "
-           f"{fetched(m, 'findex', 'wdi')}.")
+    rows, notes = nearest_rows(parts, list(parts), members, x)
+    ref = (f"Three shares of adults 15 and over, the group's standard at every drawn value: 0 holding an account at a "
+           f"bank or other financial institution or a mobile money provider; 1 having saved at a bank in the past "
+           f"year; 2 having borrowed from a bank in the past year. Each economy at its latest survey wave 2015-2025 "
+           f"({notes}), from {fetched(m, 'findex', 'wdi')}.")
     return [entry("BNK.accounts_and_borrowing", "ENDOWMENT", "BNK", "measured", ref,
-                  table2(range(len(parts)), [0, 1], rows, "refuse"))]
+                  f"{{ axis = [0, 1, 2], values = [{', '.join(num(1 / (1 + math.exp(-v))) for v in rows)}], "
+                  f"outside = \"refuse\" }}")]
 
 
 # ---- Pensions ----------------------------------------------------------------------------------------------------
@@ -621,17 +622,16 @@ def pensions(members_of: dict, m: dict) -> dict:
                    f"(SDG indicator 1.3.1), {fetched(m, 'pensions')}. The group's standard at every drawn value.")
             entries.append(entry(pid, "ENDOWMENT", "SOC", "measured", ref,
                                  f"{{ axis = [0, 1], values = [{num(med[0])}, {num(med[1])}], outside = \"refuse\" }}"))
-        a, b, n, span = standard_or_fit(occ, members, x)
-        where = (f"the Theil-Sen line in the log of GDP per head across {n} economies of GDP per head {span[0]:,.0f} to "
-                 f"{span[1]:,.0f}, as the owner decided for values a group lacks" if span else
-                 f"the median over the group's {n} economies, with no slope")
-        ref = (f"The logit of the share of the disposable income of people over 65 that comes from occupational "
-               f"pensions, as a line in the log of GDP per head (PPP, constant 2021 dollars), the intercept and slope: "
-               f"{where}; each economy at its latest year 2015-2025, from {fetched(m, 'pensions', 'wdi')}. The "
-               f"opening's defined-benefit pensions in payment are drawn to it; their amounts' spread, indexation and "
-               f"survivors' shares have no source here.")
+        v, n, span = standard_or_nearest(occ, members, x)
+        where = (f"the median of the {n} reporting economies nearest the group's median GDP per head, {span[0]:,.0f} "
+                 f"to {span[1]:,.0f}, as the owner decided for values a group lacks" if span else
+                 f"the median over the group's {n} economies")
+        ref = (f"The share of the disposable income of people over 65 that comes from occupational pensions: {where}; "
+               f"each economy at its latest year 2015-2025, from {fetched(m, 'pensions', 'wdi')}. The group's standard "
+               f"at every drawn value. The opening's defined-benefit pensions in payment are drawn to it; their "
+               f"amounts' spread, indexation and survivors' shares have no source here.")
         pen = [entry("PEN.occupational_income_share", "ENDOWMENT", "PEN", "measured", ref,
-                     f"{{ axis = [0, 1], values = [{num(a)}, {num(b)}], outside = \"refuse\" }}")]
+                     f'"{num(1 / (1 + math.exp(-v)))}"')]
         f = funds[funds.index.isin(members)]
         ref = (f"Pension funds' assets to GDP: the median over the group's {len(f)} economies at their latest year "
                f"2015-2025, from {fetched(m, 'pensions')} (GFDD.DI.13). How much of them back defined-benefit schemes "

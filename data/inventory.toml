@@ -255,8 +255,8 @@ id = "GEN.dist.housing"
 what = "the housing stock, its tenure and its mortgages"
 owner = "HSG"
 first_read = "S0.25"
-source = "OECD Affordable Housing Database HM1.3 and HC1.2, Eurostat ilc_lvho02: owners with a mortgage, subsidised tenants and the median mortgage and rent burdens, fitted to GDP per head for the groups that lack them (the owner's decision)"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/HSG.toml; the fits extrapolate far below the incomes they were fitted over (F-035); a mortgage's rate and remaining term have no source"
+source = "OECD Affordable Housing Database HM1.3 and HC1.2, Eurostat ilc_lvho02: owners with a mortgage, subsidised tenants and the median mortgage and rent burdens, for the groups that lack them the median of the ten reporting economies nearest in GDP per head (the owner's decision)"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/HSG.toml; a mortgage's rate and remaining term take S0.16's placeholder (the owner's decision, F-035)"
 
 [[row]]
 id = "GEN.dist.health"
@@ -287,7 +287,7 @@ id = "GEN.dist.pensions_in_payment"
 what = "defined-benefit pensions in payment and pension funds' assets"
 owner = "PEN"
 first_read = "S0.25"
-source = "OECD Pensions at a Glance (occupational transfers' share of the over-65s' income), fitted to GDP per head for the groups that lack it; World Bank GFDD pension fund assets to GDP"
+source = "OECD Pensions at a Glance (occupational transfers' share of the over-65s' income), for the groups that lack it the median of the ten reporting economies nearest in GDP per head; World Bank GFDD pension fund assets to GDP"
 status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/PEN.toml; amounts' spread, indexation, survivors' shares and the defined-benefit share of assets have no source (F-035)"
 
 [[row]]
