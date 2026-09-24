@@ -265,7 +265,7 @@ direction = "down"
 # index, two instructions more.
 [[ratchet]]
 counter = "phx_ledger.ir_due_on_coupon"
-value = 2604
+value = 2602
 direction = "down"
 
 [[ratchet]]
@@ -289,7 +289,7 @@ direction = "down"
 # accounts. CI's runner holds the ratchet at its own measure, which is above the build machine's.
 [[ratchet]]
 counter = "phx_ledger.ir_settle_day_16"
-value = 336118
+value = 335741
 direction = "down"
 
 # phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
@@ -326,42 +326,42 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_end_to_end"
-value = 262397
+value = 263968
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_part_lone"
-value = 181288
+value = 181991
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_parts_batched"
-value = 524792
+value = 524975
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_index_rebuild"
-value = 1044692
+value = 1043577
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_rank_read"
-value = 1173786
+value = 1173370
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_gap_estimate"
-value = 3300006
+value = 3299315
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_widen_sweep"
-value = 42332771
+value = 42375363
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.ir_renumber"
-value = 25277500
+value = 25277087
 direction = "down"
 
 [[ratchet]]

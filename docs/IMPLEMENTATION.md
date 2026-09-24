@@ -4574,7 +4574,7 @@ in a batch of eight; how many parts share a cell on a day is measured once the w
   - a key held once more through a whole keyed reduction (now directly);
   - a rank read computing each row's bin in five passes (now once), and the index reading its spill map for keys
     with room inline (now not);
-  - the lone part rising 2% with the real index in place of the ordered map that stood in for it, whose ratchet
+  - the lone part rising 2.5% with the real index in place of the ordered map that stood in for it, whose ratchet
     rises with the owner's review.
 
 **Build run** (0e568de, `perf/build-run/0e568de5cbc9.json`): settled 2026 and ran to 2 January 2029, 1 098 days
