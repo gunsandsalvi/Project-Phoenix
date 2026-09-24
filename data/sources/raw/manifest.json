@@ -153,6 +153,10 @@
       "rows": 2387,
       "title": "Population ages 65 and above (% of total population)"
     },
+    "wid/shares": {
+      "rows": 31350,
+      "title": "Shares of pre-tax national income (sptincj992) and net personal wealth (shwealj992), equal-split adults, held by the bottom 50%, the middle 40%, the top 10%, 1% and 0.1%, 2010 on, WID"
+    },
     "wid/shweal_p90p100_992_j": {
       "rows": 2090,
       "title": "Top 10% share of net personal wealth (adults, equal-split), WID"
@@ -219,6 +223,12 @@
       "url": "https://databankfiles.worldbank.org/public/ddpext_download/WDI_CSV.zip"
     },
     "wid": {
+      "release": "2026-09-09",
+      "title": "World Inequality Database, bulk download",
+      "url": "https://wid.world/bulk_download/wid_all_data.zip"
+    },
+    "wid_shares": {
+      "fetched": "2026-09-24",
       "release": "2026-09-09",
       "title": "World Inequality Database, bulk download",
       "url": "https://wid.world/bulk_download/wid_all_data.zip"

@@ -1,4 +1,4 @@
-# The developing group's demography (spec POP.3, POP.4, GEN.2), derived by tools/data/derive_pop.py; never edited by hand.
+# The developing group's demography and households (spec POP.3, POP.4, GEN.2), derived by tools/data/derive_pop.py; never edited by hand.
 
 [[primitive]]
 id = "DEM.survival_logit_standard"

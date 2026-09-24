@@ -11,6 +11,7 @@ same files gives the same tables.
 The tables are written to data/profiles/<level>/gen/, the opening's distributions and the technology they rest on.
 """
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -324,6 +325,72 @@ def kin(level: str, members: set, m: dict) -> str:
                  table2(range(15, 101), CHILD_BANDS, standard, "refuse"))
 
 
+# ---- Income and wealth -------------------------------------------------------------------------------------------
+
+Z90 = 1.2815515655446004  # the standard normal's 90th percentile, where the Pareto top begins
+SHARE_GROUPS = ["p0p50", "p50p90", "p90p100", "p99p100"]
+
+
+def phi(x: float) -> float:
+    return 0.5 * math.erfc(-x / math.sqrt(2))
+
+
+def body_sigma(ratio: float) -> float:
+    """The lognormal's sigma whose bottom half holds `ratio` of what its bottom 90% hold: Phi(-s) / Phi(z90 - s),
+    which falls as s grows, solved by bisection; none when no sigma gives it."""
+    f = lambda s: phi(-s) / phi(Z90 - s) - ratio
+    lo, hi = 1e-6, 10.0
+    if f(lo) < 0 or f(hi) > 0:
+        return float("nan")
+    for _ in range(200):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if f(mid) > 0 else (lo, mid)
+    return (lo + hi) / 2
+
+
+def tail_alpha(top1: float, top10: float) -> float:
+    """The Pareto exponent at which the top hundredth holds `top1 / top10` of the top tenth's share:
+    (0.01 / 0.1)^(1 - 1/alpha)."""
+    return 1 / (1 - math.log(top1 / top10) / math.log(0.1))
+
+
+def shapes(what: str, members: set) -> pd.DataFrame:
+    w = pd.read_csv(RAW / "wid" / "shares.csv")
+    w = w[(w.what == what) & w.iso3.isin(members) & w.group.isin(SHARE_GROUPS)]
+    wide = w.pivot_table(index=["iso3", "year"], columns="group", values="share").dropna().reset_index()
+    wide = wide.sort_values("year").groupby("iso3").last().reset_index()
+    wide["sigma"] = [body_sigma(b / (b + mdl)) if b > 0 else float("nan") for b, mdl in zip(wide.p0p50, wide.p50p90)]
+    wide["alpha"] = [tail_alpha(a, b) for a, b in zip(wide.p99p100, wide.p90p100)]
+    return wide
+
+
+def income_wealth(level: str, members: set, m: dict) -> list:
+    out = []
+    for what, pid, drawn, variable in [
+        ("income", "DEM.income_shape", "GEN.income_gini", "sptincj992, pre-tax national income"),
+        ("wealth", "DEM.wealth_shape", "GEN.top10_wealth_share", "shwealj992, net personal wealth"),
+    ]:
+        d = shapes(what, members)
+        ok = d.dropna(subset=["sigma", "alpha"])
+        ok = ok[ok.alpha > 1]
+        sigma, alpha = float(ok.sigma.median()), float(ok.alpha.median())
+        threshold = math.exp(sigma * Z90)
+        left = len(d) - len(ok)
+        ref = (f"The group's shape of {what}: a lognormal body with a Pareto top above its 90th percentile (the "
+               f"generator's lognormal_pareto_tail). Each economy's body sigma is solved from the bottom half's share "
+               f"of the bottom 90%'s, Phi(-s)/Phi(z90 - s), and its Pareto exponent from the top 1%'s share of the top "
+               f"10%'s, 0.1^(1 - 1/alpha); the medians over the group's {len(ok)} economies at their latest year "
+               f"2010-2025 ({left} left out, their bottom half holding nothing or less, or their top no finite mean), "
+               f"WID {variable}, equal-split adults, from {fetched(m, 'wid_shares')}. The body's median is one; the "
+               f"mapping keeps the exponent and the top's start at the body's 90th percentile, solves the body's "
+               f"sigma so that the whole distribution's {'Gini' if what == 'income' else 'top tenth share'} is the "
+               f"country's drawn {drawn}, and scales it to the country's mean.")
+        out.append(entry(pid, "ENDOWMENT", "DEM", "measured", ref,
+                         f'{{ family = "lognormal_pareto_tail", discretisation = "equal_shares", mu = "0", '
+                         f'sigma = "{num(sigma)}", threshold = "{num(threshold)}", alpha = "{num(alpha)}" }}'))
+    return out
+
+
 def main() -> None:
     g = groups()
     m = manifest()
@@ -331,9 +398,12 @@ def main() -> None:
     hh = households(members_of, m)
     for level, members in members_of.items():
         dem = demography(level, members, m) + hh[level]
-        write(level, "DEM", f"# The {level} group's demography (spec POP.3, POP.4, GEN.2), derived by "
-                            "tools/data/derive_pop.py; never edited by hand.", dem)
-        print(level, [e.split('"')[1] for e in dem])
+        write(level, "DEM", f"# The {level} group's demography and households (spec POP.3, POP.4, GEN.2), derived "
+                            "by tools/data/derive_pop.py; never edited by hand.", dem)
+        money = income_wealth(level, members, m)
+        write(level, "HH", f"# The {level} group's shapes of income and wealth (spec GEN.2), derived by "
+                           "tools/data/derive_pop.py; never edited by hand.", money)
+        print(level, [e.split('"')[1] for e in dem + money])
 
 
 if __name__ == "__main__":

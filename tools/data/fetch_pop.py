@@ -208,7 +208,42 @@ def un_households(cache: Path, manifest: dict, iso3: set) -> None:
     }
 
 
-SOURCES = {"wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households}
+WID_URL = "https://wid.world/bulk_download/wid_all_data.zip"
+WID_SHARES = {"sptincj992": "income", "shwealj992": "wealth"}
+WID_GROUPS = ["p0p50", "p50p90", "p90p100", "p99p100", "p99.9p100"]
+
+
+def wid_shares(cache: Path, manifest: dict, iso3: set) -> None:
+    """Shares of pre-tax national income and of net personal wealth held by the bottom half, the middle 40%, the top
+    tenth, hundredth and thousandth, equal-split adults, 2010 on."""
+    import zipfile
+    z = zipfile.ZipFile(cached(cache, "wid_all_data.zip", WID_URL))
+    two = {r["iso2"]: r["iso3"] for r in csv.DictReader((RAW / "wb" / "countries.csv").open()) if r["iso2"]}
+    rows = []
+    for info in z.infolist():
+        name = info.filename
+        if not (name.startswith("WID_data_") and name.endswith(".csv")):
+            continue
+        iso = two.get(name[len("WID_data_"):-len(".csv")])
+        if iso not in iso3:
+            continue
+        for r in csv.DictReader(io.TextIOWrapper(z.open(info), encoding="utf-8"), delimiter=";"):
+            if r["variable"] in WID_SHARES and r["percentile"] in WID_GROUPS and int(r["year"]) >= 2010 \
+                    and r["value"]:
+                rows.append((iso, int(r["year"]), WID_SHARES[r["variable"]], r["percentile"], r["value"]))
+    manifest["series"]["wid/shares"] = {
+        "title": "Shares of pre-tax national income (sptincj992) and net personal wealth (shwealj992), equal-split "
+                 "adults, held by the bottom 50%, the middle 40%, the top 10%, 1% and 0.1%, 2010 on, WID",
+        "rows": table(RAW / "wid" / "shares.csv", ["iso3", "year", "what", "group", "share"], rows),
+    }
+    release = max(i.date_time for i in z.infolist())
+    manifest["sources"]["wid_shares"] = {
+        "title": "World Inequality Database, bulk download", "url": WID_URL,
+        "release": datetime.date(*release[:3]).isoformat(),
+    }
+
+
+SOURCES = {"wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares}
 
 
 def main() -> None:
