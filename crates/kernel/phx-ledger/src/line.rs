@@ -7,7 +7,7 @@ use phx_store::{AddressSpace, Backing, BlockList, Column, SystemBacking};
 
 use crate::algebra::Side;
 use crate::holder::{HolderArenas, HolderKeys, HolderLists};
-use crate::rows::{self, Optional, RelRow, RowView, role};
+use crate::rows::{self, Optional, PaymentRecord, RelRow, RowView, role};
 use crate::terms::TermsId;
 
 /// One side of a line kind: the kinds of party that may hold it, the optional words its rows carry, and whether the
@@ -305,6 +305,21 @@ impl<B: Backing> Lines<B> {
         optional: Optional,
     ) {
         let view = Self::find(arenas, holder, line, side);
+        rows::rewrite(arenas, holder, &view, optional);
+    }
+
+    /// A row's payment record written: its days in arrears and its payments missed.
+    pub fn set_record(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        holder: Slot,
+        line: LineId,
+        side: Side,
+        record: PaymentRecord,
+    ) {
+        let mut view = Self::find(arenas, holder, line, side);
+        view.row.record = record.packed();
+        let optional = view.optional;
         rows::rewrite(arenas, holder, &view, optional);
     }
 

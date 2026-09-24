@@ -57,6 +57,7 @@ fn bond() -> (Calendar, Terms, Day) {
         conversion: Missing::Absent,
         default: DefaultDefinition { missed_payments: 1, grace_days: 30 },
         underlying: Missing::Absent,
+        facility: Missing::Absent,
     };
     let day = schedule.day(&cal, 5);
     (cal, terms, day)

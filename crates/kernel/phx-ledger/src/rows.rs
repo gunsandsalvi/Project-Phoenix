@@ -74,6 +74,23 @@ pub fn side_of(role: u8) -> Side {
     if role & 1 == 0 { Side::Asset } else { Side::Liability }
 }
 
+/// A row's payment record: days in arrears and payments missed, sixteen bits each.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PaymentRecord {
+    pub arrears_days: u16,
+    pub missed: u16,
+}
+
+impl PaymentRecord {
+    /// The record as the row stores it: days in the low half, payments missed in the high.
+    #[must_use]
+    pub fn packed(self) -> u32 {
+        let [a, b] = self.arrears_days.to_le_bytes();
+        let [c, d] = self.missed.to_le_bytes();
+        u32::from_le_bytes([a, b, c, d])
+    }
+}
+
 /// A row as read from its holder's arena: the row, its optional words, and where in the holder's run it lies.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RowView {
@@ -88,18 +105,11 @@ impl RowView {
         side_of(self.row.role)
     }
 
-    /// Days in arrears: the record's low half.
+    /// The row's payment record.
     #[must_use]
-    pub fn arrears_days(&self) -> u16 {
-        let [a, b, _, _] = self.row.record.to_le_bytes();
-        u16::from_le_bytes([a, b])
-    }
-
-    /// Payments missed: the record's high half.
-    #[must_use]
-    pub fn missed(&self) -> u16 {
-        let [_, _, c, d] = self.row.record.to_le_bytes();
-        u16::from_le_bytes([c, d])
+    pub fn record(&self) -> PaymentRecord {
+        let [a, b, c, d] = self.row.record.to_le_bytes();
+        PaymentRecord { arrears_days: u16::from_le_bytes([a, b]), missed: u16::from_le_bytes([c, d]) }
     }
 }
 

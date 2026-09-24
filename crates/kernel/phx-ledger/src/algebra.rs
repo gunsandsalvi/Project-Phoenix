@@ -163,6 +163,15 @@ pub enum Underlying {
     Event(EventRef),
 }
 
+/// A facility the issuer of a deposit agreed in advance: the balance may fall below nothing by up to `limit` for each
+/// member of the row, and the negative balance is the loan, carrying its rate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Facility {
+    pub limit: Money,
+    pub rate: Rate,
+    pub day_count: DayCount,
+}
+
 /// A contract's terms: its legs placed on its schedule, and everything that says how it ranks, is secured, ends and
 /// defaults. Two contracts with equal terms are identical.
 #[clause("REG.5", "REG.8")]
@@ -178,6 +187,7 @@ pub struct Terms {
     pub conversion: Missing<Conversion>,
     pub default: DefaultDefinition,
     pub underlying: Missing<Underlying>,
+    pub facility: Missing<Facility>,
 }
 
 /// What falls due: money, units of a unit, or units of an instrument paid in kind, or a loss for a named valuer to
@@ -588,6 +598,7 @@ mod tests {
             conversion: Missing::Absent,
             default: DefaultDefinition { missed_payments: 1, grace_days: 30 },
             underlying: Missing::Absent,
+            facility: Missing::Absent,
         }
     }
 

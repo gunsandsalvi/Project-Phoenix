@@ -299,6 +299,11 @@ impl Words {
                 w.event(e);
             }
         });
+        self.missing(t.facility, |w, f| {
+            w.money(f.limit);
+            w.rate(f.rate);
+            w.day_count(f.day_count);
+        });
     }
 }
 
@@ -491,6 +496,7 @@ mod tests {
             conversion: Missing::Absent,
             default: DefaultDefinition { missed_payments: 1, grace_days: 30 },
             underlying: Missing::Absent,
+            facility: Missing::Absent,
         }
     }
 
