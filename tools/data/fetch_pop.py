@@ -132,7 +132,83 @@ def ilo_disability(cache: Path, manifest: dict, iso3: set) -> None:
     manifest["sources"]["ilo_disability"] = {"title": "ILOSTAT SDMX API", "url": ILO.format(flow="<dataflow>")}
 
 
-SOURCES = {"wpp": wpp, "ilo_disability": ilo_disability}
+UN_HH = "https://population.un.org/household/assets/UNDESA_PD_2026_hh-size-composition.xlsx"
+UN_OLDER = "https://population.un.org/LivingArrangements/assets/UNDESA_PD_2026_living-arrangements-older-persons.xlsx"
+HH_COLUMNS = {
+    "Average household size (number of members)": "mean_size",
+    "1 member": "size_1",
+    "2-3 members": "size_2_3",
+    "4-5 members": "size_4_5",
+    "6 or more members": "size_6_plus",
+    "One-person": "one_person",
+    "Couple only": "couple_only",
+    "Couple with children": "couple_children",
+    "Single parent with children": "single_parent",
+    "Extended family": "extended",
+    "Non-relatives": "non_relatives",
+    "Unknown": "unknown",
+    "Multi-generation": "multi_generation",
+    "Three generation": "three_generation",
+}
+OLDER_COLUMNS = {
+    "One person": "one_person",
+    "Couple only": "couple_only",
+    "With spouse or partner": "with_partner",
+    "With children under age 20 years": "with_children_under_20",
+    "With children aged 20 years or over": "with_children_20_plus",
+}
+
+
+def un_sheet(path: Path, sheet: str, columns: dict, keys: list) -> list:
+    """The rows of a UN DESA household workbook, its header on the fifth row; each economy's rows keep their
+    source, catalogue number and reference year, and '..' stays missing."""
+    import openpyxl
+    rows = list(openpyxl.load_workbook(path, read_only=True)[sheet].iter_rows(values_only=True))
+    header = [str(h).strip() if h is not None else "" for h in rows[4]]
+    at = {name: header.index(name) for name in ["ISO3 Code", "Data source category", "Data source catalog ID",
+                                                 "Reference year", *keys, *columns]}
+    out = []
+    for r in rows[5:]:
+        if r[at["ISO3 Code"]] is None:
+            continue
+        values = []
+        for name in columns:
+            v = r[at[name]]
+            values.append("" if v in (None, "..", "") else str(v))
+        if not any(values):
+            continue
+        out.append((str(r[at["ISO3 Code"]]), int(r[at["Reference year"]]), str(r[at["Data source category"]]),
+                    str(r[at["Data source catalog ID"]]), *(str(r[at[k]]) for k in keys), *values))
+    return out
+
+
+def un_households(cache: Path, manifest: dict, iso3: set) -> None:
+    """Households by size and basic type, and older persons by living arrangement, from censuses and surveys."""
+    hh = [r for r in un_sheet(cached(cache, "un_hh.xlsx", UN_HH), "HH size and composition 2026", HH_COLUMNS, [])
+          if r[0] in iso3]
+    manifest["series"]["un/households"] = {
+        "title": "Households by size and by basic and intergenerational type, % of households, and mean size, each "
+                 "source's reference year, UN DESA Database on Household Size and Composition 2026",
+        "rows": table(RAW / "un" / "households.csv",
+                      ["iso3", "year", "source", "catalog", *HH_COLUMNS.values()], hh),
+    }
+    older = [r for r in un_sheet(cached(cache, "un_older.xlsx", UN_OLDER), "HHLA of Older Persons 2026",
+                                 OLDER_COLUMNS, ["Age range", "Sex"]) if r[0] in iso3]
+    manifest["series"]["un/older_persons"] = {
+        "title": "Older persons (60+, 65+, 80+) by sex living alone, as a couple only, with a partner, with children "
+                 "under 20 and with children 20 or over, % of older persons, UN DESA Database on the Households and "
+                 "Living Arrangements of Older Persons 2026",
+        "rows": table(RAW / "un" / "older_persons.csv",
+                      ["iso3", "year", "source", "catalog", "ages", "sex", *OLDER_COLUMNS.values()], older),
+    }
+    manifest["sources"]["un_households"] = {
+        "title": "UN DESA Population Division, Database on Household Size and Composition 2026 and Database on the "
+                 "Households and Living Arrangements of Older Persons 2026",
+        "url": f"{UN_HH}; {UN_OLDER}",
+    }
+
+
+SOURCES = {"wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households}
 
 
 def main() -> None:

@@ -45,6 +45,14 @@
       "rows": 336,
       "title": "Enterprises, business economy except financial, all sizes, OECD SDBS"
     },
+    "un/households": {
+      "rows": 1099,
+      "title": "Households by size and by basic and intergenerational type, % of households, and mean size, each source's reference year, UN DESA Database on Household Size and Composition 2026"
+    },
+    "un/older_persons": {
+      "rows": 9185,
+      "title": "Older persons (60+, 65+, 80+) by sex living alone, as a couple only, with a partner, with children under 20 and with children 20 or over, % of older persons, UN DESA Database on the Households and Living Arrangements of Older Persons 2026"
+    },
     "wb/FD.RES.LIQU.AS.ZS": {
       "rows": 1521,
       "title": "Bank liquid reserves to bank assets ratio (%), World Bank WDI"
@@ -193,6 +201,11 @@
       "fetched": "2026-09-24",
       "title": "OECD SDMX API, Structural and Demographic Business Statistics (ISIC Rev. 4)",
       "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN.BTN_95XK._T+S_GE250.?startPeriod=2015&format=csvfile"
+    },
+    "un_households": {
+      "fetched": "2026-09-24",
+      "title": "UN DESA Population Division, Database on Household Size and Composition 2026 and Database on the Households and Living Arrangements of Older Persons 2026",
+      "url": "https://population.un.org/household/assets/UNDESA_PD_2026_hh-size-composition.xlsx; https://population.un.org/LivingArrangements/assets/UNDESA_PD_2026_living-arrangements-older-persons.xlsx"
     },
     "wb": {
       "fetched": "2026-09-24",

@@ -183,12 +183,154 @@ def disability(level: str, members: set, m: dict, age_standard: np.ndarray) -> l
     ]
 
 
+# ---- Households and kin ------------------------------------------------------------------------------------------
+
+TYPES = ["one_person", "couple_only", "couple_children", "single_parent", "extended", "non_relatives"]
+SIZES = ["size_1", "size_2_3", "size_4_5", "size_6_plus"]
+OLDER = ["one_person", "couple_only", "with_partner", "with_children_under_20", "with_children_20_plus"]
+CHILD_BANDS = [0, 20, 40, 60]
+
+
+def tfr() -> pd.Series:
+    """Each economy's total fertility in each year, the sum of its age-specific rates."""
+    f = pd.read_csv(RAW / "wpp" / "fertility_by_age.csv")
+    return f.set_index(["iso3", "year"]).sum(axis=1) / 1000
+
+
+def theil_sen(x: np.ndarray, y: np.ndarray) -> float:
+    """The median of the slopes between every pair of points with distinct x (Theil 1950, Sen 1968)."""
+    i, j = np.triu_indices(len(x), 1)
+    dx = x[j] - x[i]
+    ok = dx != 0
+    return float(np.median((y[j] - y[i])[ok] / dx[ok]))
+
+
+def log_ratio_fit(d: pd.DataFrame, parts: list, reference: str, g: pd.DataFrame) -> tuple:
+    """Each part's log ratio to the reference part, ln(share / reference share), as a line in the log of total
+    fertility: one slope for every economy, read within the groups (each group's medians taken out) by Theil-Sen,
+    and each group's intercept the median of its economies' residuals. A zero share has no log ratio and leaves that
+    economy out of that part's fit."""
+    d = d.merge(g, on="iso3")
+    x = np.log(d.tfr.to_numpy())
+    fits = {}
+    for p in parts:
+        if p == reference:
+            continue
+        ok = (d[p] > 0) & (d[reference] > 0)
+        y = pd.Series(np.nan, index=d.index)
+        y[ok] = np.log(d[p][ok] / d[reference][ok])
+        frame = pd.DataFrame({"x": x, "y": y, "level": d.level}).dropna()
+        within = frame.groupby("level")[["x", "y"]].transform(lambda v: v - v.median())
+        slope = theil_sen(within.x.to_numpy(), within.y.to_numpy())
+        intercept = (frame.y - slope * frame.x).groupby(frame.level).median()
+        fits[p] = (slope, intercept, len(frame))
+    return fits
+
+
+def households(members_of: dict, m: dict) -> dict:
+    g = groups()
+    h = pd.read_csv(RAW / "un" / "households.csv")
+    t = tfr().rename("tfr")
+    h = h.join(t, on=["iso3", "year"])
+    typed = h.dropna(subset=TYPES + ["tfr"]).copy()
+    typed[TYPES] = typed[TYPES].div(typed[TYPES].sum(axis=1), axis=0)
+    typed = typed.sort_values("year").groupby("iso3").last().reset_index()
+    sized = h.dropna(subset=SIZES + ["tfr"]).copy()
+    sized[SIZES] = sized[SIZES].div(sized[SIZES].sum(axis=1), axis=0)
+    sized = sized.sort_values("year").groupby("iso3").last().reset_index()
+    type_fit = log_ratio_fit(typed, TYPES, "couple_children", g)
+    size_fit = log_ratio_fit(sized, SIZES, "size_2_3", g)
+    older = pd.read_csv(RAW / "un" / "older_persons.csv")
+    older = older[(older.ages == "65 or over") & (older.sex.isin(["Females", "Males"]))]
+    out = {}
+    for level, members in members_of.items():
+        entries = []
+        for name, parts, ref, fit, frame, what in [
+            ("DEM.household_types", TYPES, "couple_children", type_fit, typed,
+             "households by basic type (one person, couple only, couple with children, single parent with children, "
+             "extended family, non-relatives), the unknown left out"),
+            ("DEM.household_sizes", SIZES, "size_2_3", size_fit, sized,
+             "households by size (1, 2-3, 4-5, 6 or more members)"),
+        ]:
+            n = int(frame.iso3.isin(members).sum())
+            rows = []
+            for p in parts:
+                if p == ref:
+                    rows.append([0.0, 0.0])
+                else:
+                    slope, intercept, _ = fit[p]
+                    rows.append([float(intercept[level]), slope])
+            pooled = min(f[2] for f in fit.values())
+            ref_text = (f"{what.capitalize()}: each part's log ratio to the {ref.replace('_', ' ')} share as a line in "
+                        f"the log of total fertility, the columns its intercept for the group and its slope. The slope "
+                        f"is one for every economy, the Theil-Sen median of pairwise slopes over at least {pooled} "
+                        f"economies with each group's medians taken out; the intercept is the median residual over the "
+                        f"group's {n} economies. Each economy is read at its latest source reporting every part "
+                        f"(censuses and surveys), its fertility that year's, from {fetched(m, 'un_households', 'wpp')}. "
+                        f"A country's shares are each part's exp(intercept + slope ln TFR) over their sum, at its drawn "
+                        f"GEN.fertility.")
+            entries.append(entry(name, "ENDOWMENT", "DEM", "measured", ref_text,
+                                 table2(range(len(parts)), [0, 1], np.array(rows), "refuse")))
+        o = older[older.iso3.isin(members)].sort_values("year").groupby(["iso3", "sex"]).last().reset_index()
+        values = np.array([[o[o.sex == sex][c].median() / 100 for sex in ("Females", "Males")] for c in OLDER])
+        n = int(o.groupby("sex").size().min())
+        older_ref = (f"Share of persons aged 65 and over living alone, as a couple only, with a partner, with a child "
+                     f"under 20 and with a child of 20 or over (rows, in that order; the last three overlap), by sex "
+                     f"(female, male): the median over at least {n} economies of the group at their latest source, "
+                     f"from {fetched(m, 'un_households')}. The group's standard at every drawn value.")
+        entries.append(entry("DEM.older_living_arrangements", "ENDOWMENT", "DEM", "measured", older_ref,
+                             table2(range(len(OLDER)), [0, 1], values, "refuse")))
+        entries.append(kin(level, members, m))
+        out[level] = entries
+    return out
+
+
+def kin(level: str, members: set, m: dict) -> str:
+    """Each parent age's expected living children by the children's age band: the births its cohort of mothers had at
+    each age, from each year's fertility at that age, each child surviving to its age now by its birth year's under-five
+    mortality and the snapshot's life table beyond five."""
+    f = pd.read_csv(RAW / "wpp" / "fertility_by_age.csv").set_index(["iso3", "year"])
+    ind = pd.read_csv(RAW / "wpp" / "indicators.csv").set_index(["iso3", "year"])
+    life = pd.read_csv(RAW / "wpp" / "life_table.csv")
+    first = int(f.index.get_level_values("year").min())
+    tables = []
+    for iso in sorted(members):
+        if iso not in f.index.get_level_values("iso3"):
+            continue
+        fi = f.loc[iso]
+        q5 = ind.loc[iso].q5
+        lx = life[life.iso3 == iso].groupby("age").lx.mean().to_numpy() / 100000
+        table = np.zeros((101 - 15, len(CHILD_BANDS)))
+        for a in range(15, 101):
+            for k in range(0, a - 14):
+                mother = a - k
+                if mother > 49:
+                    continue
+                year = max(SNAPSHOT - k, first)
+                births = fi.loc[year, f"f{mother}"] / 1000
+                survive = (1 - q5.loc[max(SNAPSHOT - k, first)] / 1000) * (lx[k] / lx[5] if k >= 5 else 1.0)
+                band = max(i for i, lo in enumerate(CHILD_BANDS) if k >= lo)
+                table[a - 15, band] += births * survive
+        tables.append(table)
+    standard = np.median(np.stack(tables), axis=0)
+    ref = (f"Expected living children of a parent of each age 15-100 (rows) by the children's age band from its first "
+           f"age (0-19, 20-39, 40-59, 60 and over): for a mother of that age, the births her cohort had at each age "
+           f"15-49 by that year's age-specific fertility (the first year's, {first}, for years before it), each child "
+           f"surviving to its age now by its birth year's under-five mortality and beyond five by the {SNAPSHOT} life "
+           f"table, both sexes; the median over the group's {len(tables)} economies, from {fetched(m, 'wpp')}. As the "
+           f"owner decided, a parent's children in other households are these less those living with it; a father is "
+           f"read at his own age, as no source gives fathers' fertility by age.")
+    return entry("DEM.living_children", "ENDOWMENT", "DEM", "measured", ref,
+                 table2(range(15, 101), CHILD_BANDS, standard, "refuse"))
+
+
 def main() -> None:
     g = groups()
     m = manifest()
-    for level in sorted(set(LEVELS.values())):
-        members = set(g[g.level == level].iso3)
-        dem = demography(level, members, m)
+    members_of = {level: set(g[g.level == level].iso3) for level in sorted(set(LEVELS.values()))}
+    hh = households(members_of, m)
+    for level, members in members_of.items():
+        dem = demography(level, members, m) + hh[level]
         write(level, "DEM", f"# The {level} group's demography (spec POP.3, POP.4, GEN.2), derived by "
                             "tools/data/derive_pop.py; never edited by hand.", dem)
         print(level, [e.split('"')[1] for e in dem])
