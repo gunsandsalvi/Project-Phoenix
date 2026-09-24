@@ -3,14 +3,14 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Ten: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
-# files of phx-num, phx-rand, phx-store, phx-exec and phx-core, whose gungraun harness prints, exits and passes setups by
-# value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
+# Eleven: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
+# files of phx-num, phx-rand, phx-store, phx-exec, phx-core and phx-ledger, whose gungraun harness prints, exits and
+# passes setups by value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views, the
 # storable marker) and phx-exec's one (affinity, thread ids and the prefetch hint), each lowering the lint for itself
 # alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 10
+value = 11
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
@@ -219,4 +219,16 @@ direction = "down"
 [[ratchet]]
 counter = "phx_core.ir_agenda_gather"
 value = 148974
+direction = "down"
+
+# phx-ledger: a ten-year annual bond's dues on its fifth coupon date (a fixed coupon and its principal, one due), and
+# on the day after, when only the search for a schedule date is paid; the search is most of the count (F-014).
+[[ratchet]]
+counter = "phx_ledger.ir_due_on_coupon"
+value = 2604
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.ir_due_on_between"
+value = 2293
 direction = "down"

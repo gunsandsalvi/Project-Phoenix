@@ -16,6 +16,7 @@ mod hand_pod;
 mod id_default;
 mod interfaces;
 mod layering;
+mod ledger_writes;
 mod literals;
 mod live_checks;
 mod places;
@@ -106,6 +107,12 @@ pub const RULES: &[Rule] = &[
     Rule { id: "PC-21", title: "handlers name only the table's sub-steps", since: "S0.11", run: substeps::run },
     Rule { id: "PC-22", title: "the audit reads the world only", since: "S0.12", run: audit_reads::run },
     Rule { id: "PC-23", title: "places belong to phx-geo", since: "S0.13", run: places::run },
+    Rule {
+        id: "PC-24",
+        title: "holdings, rows, lines, liens and issued amounts are written by phx-ledger alone",
+        since: "S0.14",
+        run: ledger_writes::run,
+    },
 ];
 
 /// The dependency rules, which `layering` runs alone.

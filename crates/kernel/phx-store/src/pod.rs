@@ -1,8 +1,8 @@
 #![expect(unsafe_code, reason = "the storable marker is a promise about layout, made here for the base types")]
 
 use phx_id::{
-    CountryId, Day, DayLocalId, InstrumentId, LineId, MarketId, MsgId, PartyId, RegionId, Slot, StreamId, TableId,
-    TileId, ZoneId,
+    CountryId, Day, DayLocalId, InstrumentId, LineId, MarketId, MsgId, PartyId, RegionId, SeriesId, Slot, StreamId,
+    TableId, TileId, ZoneId,
 };
 use phx_num::{Amount, Ccy, Count, Fixed, MaybeI64, PointIdx, PriceRaw, QtyRaw, UnitId};
 
@@ -33,7 +33,7 @@ macro_rules! base_pod {
 
 base_pod!(u8, u16, u32, u64, i8, i16, i32, i64);
 base_pod!(Slot, TableId, LineId, InstrumentId, MarketId, TileId, ZoneId, RegionId, CountryId, DayLocalId, MsgId);
-base_pod!(StreamId, PartyId, Day);
+base_pod!(StreamId, PartyId, Day, SeriesId);
 base_pod!(Amount, QtyRaw, PriceRaw, MaybeI64, PointIdx, Ccy, UnitId, Count);
 
 // SAFETY: `Fixed` is `repr(transparent)` over an `i64`.

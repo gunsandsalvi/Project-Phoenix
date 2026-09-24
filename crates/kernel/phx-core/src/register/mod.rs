@@ -1,6 +1,7 @@
 pub mod limit;
 pub mod profile;
 mod quantile;
+pub mod units;
 pub mod values;
 
 use std::marker::PhantomData;
@@ -14,6 +15,7 @@ use serde::Deserialize;
 
 use crate::calendar::period::Period;
 use crate::consts::MONTHS_PER_QUARTER;
+use crate::register::units::{UnitDecl, UnitEntry, Units};
 use crate::register::values::{PrimType, PrimValue, ValueType, parse};
 
 /// What kind of number a primitive is.
@@ -263,14 +265,30 @@ impl RegisterBuilder {
         }
         let mut found: Vec<Vec<Option<(PrimValue, EntryMeta)>>> =
             self.decls.iter().map(|d| vec![None; if d.scope == Scope::Shared { 1 } else { countries }]).collect();
+        let mut unit_decls = Vec::new();
         for file in files {
-            let entries = match entries(&file.text) {
-                Ok(e) => e,
+            let (entries, units) = match read_file(&file.text) {
+                Ok(f) => (f.primitive, f.unit),
                 Err(e) => {
                     errors.push(format!("{}: {e}", file.path));
                     continue;
                 }
             };
+            if !units.is_empty() && file.country != Missing::Absent {
+                errors.push(format!("{}: units are the world's, declared in its own files", file.path));
+            }
+            for u in units {
+                match source(&u.source) {
+                    Ok(src) => unit_decls.push(UnitDecl {
+                        name: u.name,
+                        kind: u.kind,
+                        price_exp: u.price_exp,
+                        source: src,
+                        source_ref: u.source_ref,
+                    }),
+                    Err(e) => errors.push(format!("{}: unit `{}`: {e}", file.path, u.name)),
+                }
+            }
             for entry in entries {
                 let found_at = by_id.binary_search_by(|(id, _)| (*id).cmp(entry.id.as_str()));
                 let Some(i) = found_at.ok().and_then(|at| by_id.get(at)).map(|(_, i)| *i) else {
@@ -316,7 +334,13 @@ impl RegisterBuilder {
                 sources.push(metas);
             }
         }
-        if errors.is_empty() { Ok(Register { decls: self.decls, stored, sources }) } else { Err(errors) }
+        let units = Units::new(unit_decls).map_err(|mut e| {
+            errors.append(&mut e);
+        });
+        match units {
+            Ok(units) if errors.is_empty() => Ok(Register { decls: self.decls, stored, sources, units }),
+            _ => Err(errors),
+        }
     }
 }
 
@@ -342,6 +366,7 @@ pub struct Register {
     decls: Vec<PrimDecl>,
     stored: Vec<Stored>,
     sources: Vec<Vec<EntryMeta>>,
+    units: Units,
 }
 
 #[derive(Debug)]
@@ -351,6 +376,12 @@ enum Stored {
 }
 
 impl Register {
+    /// The world's units.
+    #[must_use]
+    pub fn units(&self) -> &Units {
+        &self.units
+    }
+
     fn stored(&self, index: u32) -> &Stored {
         let Some(s) = usize::try_from(index).ok().and_then(|i| self.stored.get(i)) else {
             violation!(clause = "NUM.3", "a primitive handle from another register", index = index);
@@ -426,7 +457,10 @@ struct Entry {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct File {
+    #[serde(default)]
     primitive: Vec<Entry>,
+    #[serde(default)]
+    unit: Vec<UnitEntry>,
 }
 
 /// A development level, whose templates a country's data is instantiated from.
@@ -457,8 +491,8 @@ pub struct CountryEntry {
     pub level: Level,
 }
 
-fn entries(text: &str) -> Result<Vec<Entry>, String> {
-    Ok(toml::from_str::<File>(text).map_err(|e| e.to_string())?.primitive)
+fn read_file(text: &str) -> Result<File, String> {
+    toml::from_str::<File>(text).map_err(|e| e.to_string())
 }
 
 fn source(text: &str) -> Result<Source, String> {

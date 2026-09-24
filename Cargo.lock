@@ -645,6 +645,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "phx-ledger"
+version = "0.1.0"
+dependencies = [
+ "gungraun",
+ "phx-core",
+ "phx-exec",
+ "phx-id",
+ "phx-macros",
+ "phx-num",
+ "phx-store",
+ "trybuild",
+]
+
+[[package]]
 name = "phx-macros"
 version = "0.1.0"
 dependencies = [

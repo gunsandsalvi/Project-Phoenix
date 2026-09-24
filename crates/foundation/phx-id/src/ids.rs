@@ -50,6 +50,10 @@ id!(
     DayLocalId(u32)
 );
 id!(MsgId(u64));
+id!(
+    /// A published series: a price, rate or index some market or statistician prints under this one identity.
+    SeriesId(u32)
+);
 id!(StreamId(u32));
 
 /// A party's identity: allocated once from one monotone counter and never reused. It is never zero, but is held as a

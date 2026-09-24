@@ -204,6 +204,42 @@ impl<B: Backing> KindTable<B> {
         self.lists.of(kind).get(slot).unwrap_or_else(|| missing_row(slot))
     }
 
+    /// A row's list, as the words its arena holds.
+    #[must_use]
+    pub fn words(&self, slot: Slot, kind: ListKind) -> &[u64] {
+        let list = self.list(slot, kind);
+        let chunk = at(slot) / at(Slot::new(self.table.rows_per_chunk()));
+        match self.arenas.get(chunk) {
+            Some(arena) => arena.read(list),
+            None => &[],
+        }
+    }
+
+    /// Edits a row's list in its arena, writing back its reference, which an edit may move.
+    pub fn edit_list<R>(
+        &mut self,
+        slot: Slot,
+        kind: ListKind,
+        f: impl FnOnce(&mut ChunkArena<B>, &mut ListRef) -> R,
+    ) -> R {
+        let mut list = self.list(slot, kind);
+        let out = f(self.arena_mut(slot), &mut list);
+        let column = match kind {
+            ListKind::RelationshipRows => &mut self.lists.relationship_rows,
+            ListKind::Holdings => &mut self.lists.holdings,
+            ListKind::Lots => &mut self.lists.lots,
+            ListKind::NamedUnits => &mut self.lists.named_units,
+        };
+        column.set(slot, list);
+        out
+    }
+
+    /// The kind of individual the table holds.
+    #[must_use]
+    pub fn kind(&self) -> &'static str {
+        self.kind
+    }
+
     /// The arena of the chunk a row lies in, where its lists live.
     pub fn arena_mut(&mut self, slot: Slot) -> &mut ChunkArena<B> {
         let chunk = at(slot) / at(Slot::new(self.table.rows_per_chunk()));

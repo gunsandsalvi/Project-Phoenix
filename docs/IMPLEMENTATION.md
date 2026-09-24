@@ -2610,7 +2610,7 @@ live check passing.
 
 ### S0.14 — `phx-ledger` I: instruments, holdings, lines, relationship rows and the contract algebra
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: REG.1, REG.2, REG.3, REG.4, REG.5, REG.6, REG.7, REG.8, REG.9, REG.10; REP.3 *(part: lines and rows; the
@@ -2639,20 +2639,23 @@ live check passing.
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-ledger/src/instrument.rs` | `InstrumentFamily` (Debt, Equity, FundUnit, Contract, RealAsset, Banknote); `Instrument { id, family, issuer: Missing<PartyId>, unit, ccy, issued: QtyRaw, terms: TermsId, state }`; the issuer is absent only for real assets (REG.16) |
-| `src/holding.rs` | `CellHolding { instrument: u32, count: u32, quantity: i64, pooled_cost: i64 }` (24 bytes), `count` the members holding it; `IndividualHolding { instrument: u32, flags: u32, quantity: i64, lots: ListRef, _pad: u32 }` (32 bytes; the pad is an explicit zero field, since `Pod` refuses implicit padding), with `Lot { acquired: Day, quantity: i64, cost: i64 }` in the lot arena; the instrument's holder list |
-| `src/units.rs` | `NamedUnit { id: u64, kind: CapKind, site: TileId, condition: u8, service_day: Day }` for an individual's plant and dwellings (REG.9); cells count units by (zone, class) as holdings |
-| `src/lien.rs` | `Lien { holder: PartyId, instrument, seq: u32, units, to: PartyId, chain: Missing<LienId> }`, keyed by (holder, instrument, seq); an individual's holding carries a flag, and the pledged total is read from the lien table |
-| `src/algebra.rs` | legs: `FixedAmount`, `RateOnNotional { reference: Fixed | Floating { series, spread, reset }, day_count }`, `StepSchedule { steps: [(Day, Rate)] }`, `PayableInKind { instrument }`, `PerTime`, `Indexed { series, base }`, `Contingent { event, amount }`, `Delivery { unit, quantity }`; `Schedule`, `Seniority`, `Collateral { kind, zone, class }`, `PaymentOrder`; early termination; conversion or write-down; default definition |
-| `src/terms.rs` | the terms interner: `TermsId(u32)`, reference-counted, sharded |
-| `src/line.rs` | `LineKindDecl`; `Line { kind: u16, flags: u16, terms: u32, side_counts: [u32; 2], next_due: Day, holders: BlockList }` (32 bytes) |
-| `src/rows.rs` | `RelRow { line: u32, count: u32, point: u16, record: u16, role: u8, flags: u8, _pad: u16 }` (16 bytes: the fields sum to 14, and the pad is an explicit zero field, since `Pod` refuses implicit padding) and the optional words per kind (`balance`, `pending`, `amount`), encoded as whole 8-byte words in the holder's arena (S0.06) |
-| `data/world.toml` | `[[unit]]`: each unit's kind and name, read here first (S0.03's `UnitId`) |
-| `src/holder.rs` | `trait HolderArenas`: a holder's row run, holdings, lots and named units, by `RowRef`; implemented by the kind tables (wired by `phx-world`) and, at S0.21, by the cell tables |
-| `src/commitment.rs` | `Commitment { kind, parties: [PartyId; 2], legs: ListRef, creates: ListRef, retires: ListRef, expires: Day, state }`, with its lists in an arena |
-| `src/events.rs` | the instrument's events and its `state` (live, suspended, defaulted, ceased): this module is the state's one writer, applying the event intents systems declare; empty of event kinds until S1.11 adds maturities |
-| `src/covered.rs` | `Covered<Qty>`: a quantity of free units held or borrowed, built only here, placing a commitment on those units |
-| `src/audit.rs` | the Ownership and Contracts families |
+| `crates/kernel/phx-ledger/src/instrument.rs` | `InstrumentFamily` (Debt, Equity, FundUnit, Contract, RealAsset, Banknote); `Instrument { id, family, issuer: Missing<PartyId>, unit, ccy, issued: Qty, terms: TermsId, state }`, stored as a 32-byte row; the issuer is absent only for real assets (REG.16); each instrument's holder list; `acquire` and `dispose`, the only way units enter or leave a holding, keeping the list |
+| `src/holding.rs` | `CellHolding { instrument: u32, count: u32, quantity: i64, pooled_cost: i64 }` (24 bytes), `count` the members holding it; `IndividualHolding { instrument: u32, lots: u32, quantity: i64, flags: u32, _pad: u32 }` (24 bytes), `lots` the number of its lots, which lie in the holder's lot list in holding order — a list reference inside a list would not survive the arena's compaction; `Lot { acquired: Day, quantity: i64, cost: i64 }` (24 bytes); `Disposal { units, bound, order }` |
+| `src/units.rs` | `NamedUnit { id: u64, site: TileId, service_day: Day, class: u16, condition: u8 }` (24 bytes) for an individual's plant and dwellings (REG.9); cells count units by (zone, class) as holdings |
+| `src/lien.rs` | `Lien { key: LienKey { holder, instrument, seq }, units, to: PartyId, chain: Missing<LienKey> }`, keyed by (holder, instrument, seq); an individual's holding carries a flag, and the pledged total is read from the lien table, counting a chain's first lien only |
+| `src/algebra.rs` | legs: `FixedAmount`, `Principal { amount, repayment }`, `RateOnNotional { reference: Fixed | Floating { series, spread, reset, fixing }, day_count }`, `StepSchedule { steps: [(Day, Rate)] }`, `PayableInKind { rate, day_count, instrument }`, `PerTime`, `Indexed { series, base, current, leg }`, `Contingent { event, amount }`, `Delivery`, `Elective { side, schedule, legs }`; `Schedule`, `Seniority`, `Collateral { kind, zone, class }`, `PaymentOrder`; early termination; conversion or write-down; default definition; the underlying; `due_on` |
+| `src/terms.rs` | the terms interner: `TermsId(u32)`, reference-counted, sharded by a hash of the terms' canonical words |
+| `src/line.rs` | `LineKindDecl` with a `SideDecl { holder_kinds, words, holder_list }` per side; `LineKind<U>`, typed by the balance's unit; `Line { kind: u16, flags: u16, terms: u32, side_counts: [u32; 2], next_due: Day, holders: BlockList }` (32 bytes); `NewRow` |
+| `src/rows.rs` | `RelRow { line: u32, count: u32, record: u32, point: u16, role: u8, flags: u8 }` (16 bytes, no padding; `record` packs days in arrears and missed payments, sixteen bits each, as architecture §4.5 lays it out) and the optional words per side (`balance`, `pending`, `amount`), encoded as whole 8-byte words after the row in the holder's arena (S0.06) |
+| `data/world.toml` | `[[unit]]`: each unit's name, kind and price exponent, with its source, read here first (S0.03's `UnitId`) |
+| `crates/kernel/phx-core/src/register/units.rs` | the register's units: `UnitKind`, `UnitDecl`, `Units`, refusing a name given twice, a unit without its reason and a unit in a per-country file |
+| `src/holder.rs` | `trait HolderArenas`: a holder's row run, holdings, lots and named units, as words of its arena; implemented by the kind tables and, at S0.21, by the cell tables; `HolderKeys`, a holder's table place and slot in one `u32`; `HolderLists`, the sorted block lists of holder keys in pools chosen by the owner's identity |
+| `src/commitment.rs` | `Commitment { kind, parties: [PartyId; 2], legs, creates, retires, expires: Day, state }`; commitments are few and kept in an ordered map by identity |
+| `src/events.rs` | the instrument's events and its `state` (live, suspended, defaulted, ceased): `InstrumentEventDecl { name, from, to }`, declared by the system that decides the event, applied here, the state's one writer; empty of event kinds until S1.11 adds maturities |
+| `src/covered.rs` | `Covered`: a quantity of free units held or borrowed, built only here, placing a commitment on those units |
+| `src/audit.rs` | the Ownership and Contracts families: their declarations and their checks, over the instruments or lines and the holder tables they are handed |
+| `crates/apps/phx-check/src/rules/ledger_writes.rs` | PC-24 |
+| `crates/apps/phx-cli/src/checks/ledger.rs` | LC-0-16 and LC-0-17 |
 
 **Design**
 
@@ -2679,7 +2682,9 @@ live check passing.
   - **Covered quantities** (`covered.rs`): an offer of held units takes a `Covered<Qty>`, which only `phx-ledger`
     builds, from free units held or borrowed. Building one places a commitment on the units (REG.10) until its order
     lapses at 1a or its trade settles, so the same units cannot cover two offers.
-  - Each instrument keeps its holders as a `BlockList`.
+  - Each instrument keeps its holders as a `BlockList`. Units enter and leave holdings only through the instruments'
+    `acquire` and `dispose`, so the list is kept with them: a holder enters with its first lot and leaves with its
+    last unit.
   - Negative physical quantities or free units violate `REG.15`.
 - **Named units** (REG.9): an individual's plant and dwellings are named units with site and condition, in its arena.
   A cell's are counts by (zone, class), holdings of the class instrument.
@@ -2691,8 +2696,11 @@ live check passing.
   - The asset on one side and the liability on the other are read from the same line's two sides.
   - Rows are reached only through `HolderArenas` by `RowRef`; nothing outside the arena names a position in it
     (architecture §4.5).
-- **Holder lists**: `phx_store::BlockList`, with one `BlockPool` per shard chosen by `mix64(line)`, so parallel
-  updates never share a pool and block ids never depend on workers.
+- **Holder lists**: `phx_store::BlockList`, with one `BlockPool` per shard chosen by `mix64` of the owning line or
+  instrument, so parallel updates never share a pool and block ids never depend on workers. An entry is a holder key:
+  the holder table's place among the holder tables in the high bits and the slot below, the split set by how many
+  holder tables the world has, so one list sorts holders of every table. A holder is on a line's list while it has a
+  row on a side that keeps one.
 - **Extension points of the algebra**, declared here and filled by the steps that need them, so no later step changes
   this crate's surface:
   - the amount of a `Contingent` leg is a fixed sum, a `ValuedLoss { valuer, limit, deductible }` (a named valuer's
@@ -2715,9 +2723,13 @@ live check passing.
   writer (Law 4); every system reads it.
 - **Families**:
   - **Ownership**: holdings sum to issued per instrument (REG.13), incrementally for instruments touched today and
-    rolling for the rest.
-  - **Contracts**: each line's side counts equal its rows; the asset on one side equals the liability on the other
-    (REG.14).
+    rolling for the rest. The sum runs over the instrument's holder list; a listed holder without a holding is a
+    finding of its own.
+  - **Contracts**: each line's two sides hold equal counts (REP.31), and each side that keeps a holder list equals its
+    listed holders' rows (REG.14). A side that keeps none (§4.5) is checked against its rows where settlement's gather
+    reads them (S0.17).
+  - The world keeps no books until the opening's institutions issue their instruments (S0.16); the families' checks
+    are built and tested here, and S0.16 registers them with the world's books and holder tables, with the counters.
 
 **Unit tests**
 - `due_on_fixed_coupon_bond`; `due_on_floating_uses_fixing_day`; `step_up_and_pik`.
@@ -2731,17 +2743,26 @@ live check passing.
 - `non_money_balance_has_no_money_conversion` (compile-fail): a balance of a declared non-money unit cannot be read as
   `Money` except through its line kind's declared conversions.
 - `elective_leg_pays_only_on_election`: over a given schedule and decision record, the legs pay on elected dates only.
+- `holdings_sum_to_issued`, `sides_against_each_other_and_their_rows`: the families' checks find a gap of the right
+  size and nothing when the books agree.
+- `state_moves_only_by_declared_events`; `declared_words_only`; `listed_on_either_side`.
 
 **Live checks**: LC-0-16 (Ownership) and LC-0-17 (Contracts) are registered, and apply from S0.16.
 
 **Budget**:
-- `RelRow` is 16 bytes, plus 8 per optional word; holdings are 24 or 32 bytes; `Line` is 32 bytes. Architecture
+- `RelRow` is 16 bytes, plus 8 per optional word; holdings are 24 bytes, an individual's lots 24 each; `Line` is 32
+  bytes. Architecture
   §13.1's lines are updated in this step's commit.
 - A due computation per leg ≤ 50 ns; accruing rows' dues are counted separately from the settlement stream's reads.
-- Counters: `phx_ledger.rows`, `phx_ledger.lines`, `phx_ledger.terms_interned`.
+  `benches/ledger.rs` counts `due_on` for a two-leg bond on and off its date (F-014).
+- Counters: `phx_ledger.rows`, `phx_ledger.lines`, `phx_ledger.terms_interned`, reported from S0.16, when the world
+  keeps its books.
 
 **Guards**:
-- PC-24: no crate but `phx-ledger` writes a holding, row, line, lien or issued amount.
+- PC-24: no crate but `phx-ledger` writes a holding, row, line, lien or issued amount. Lines, liens, instruments and
+  their issued amounts are private to the crate and change only through its methods; the rule refuses, outside
+  `phx-ledger` and `phx-core` (which declares the holder's lists), any use of the rows', holdings', lots' and named
+  units' lists and any construction of the ledger's stored records.
 - Assembly refusals: a line kind without transfer requesters; a commitment kind without its legs; a floating leg over
   an unprinted series.
 
@@ -2952,6 +2973,9 @@ writes, reports — and the first real parties:
   instructions (batches arrive at S0.17). Fails become arrears through the contract process (S0.15).
 - **Placeholders**: `sys-frm`, `sys-bnk` and `sys-cb` declare their opening contributions and facts. Each missing
   decision is a SHAPE placeholder naming the step that retires it, and the placeholder count records it (NUM.7).
+- **The world's books**: the world keeps the ledger's books (instruments, terms, lines, liens, covers, commitments)
+  with the holder tables as `HolderArenas`, and registers S0.14's Ownership and Contracts families over them, rolling
+  over instruments and lines, with the counters `phx_ledger.rows`, `phx_ledger.lines` and `phx_ledger.terms_interned`.
 
 **Unit tests**
 - `largest_remainder_apportions_exactly`.
@@ -3043,7 +3067,9 @@ quantity outside a declared distribution (GEN.11).
 **Design**
 
 - **1b**: every line whose `next_due` is today sets its bit in a bitmap (375 KB at 3 M lines, cache-resident), and
-  its next date is then advanced by its schedule at 1b, so 7a's head rewrite reads the advanced dates.
+  its next date is then advanced by its schedule at 1b, so 7a's head rewrite reads the advanced dates. The line keeps
+  its schedule's date index beside `next_due`, advanced with it, and `due_on` is handed that index, so a row's dues
+  never search the schedule for the day (F-014).
 - **Due-day runs** (architecture §6.5): every line kind with dues (loans, rents, employment, invoices, policies,
   annuities, benefits and pensions, derivatives) is **dated**. A holder's dated rows are one segment of its row list,
   and its `RunHead` keeps the segment's offset and length and `next_due`, the earliest day any of its rows can be
@@ -3056,6 +3082,9 @@ quantity outside a declared distribution (GEN.11).
 
   Individuals keep the same fields at `u32` width in their kind table's row. A cell's segment outgrowing `u16` is a
   contract violation calling for a layout change.
+- **Sides without a holder list** (architecture §4.5): the gather that reads a due line's rows on such a side feeds
+  the streaming audit its rows' counts, which the line's kept side count is checked against (REG.14, the part S0.14's
+  Contracts family cannot reach through a list).
 - **7a, the stream**: a sequential pass over every holder table's heads, holder-major, entering the segments due
   today. For each row of a scanned segment whose line's bit is set:
   - its per-member amount is `point_table[point]` or `amount`;
@@ -15139,6 +15168,8 @@ the final build within the budget on the phone.
 | F-010 | S0.13 | build, 2026-09-24 | GEO's exposure tables, spreads, severities and deposits are assumed, each with its reason (data/shared/GEO_hazards.toml): the rates are EM-DAT's world means per tile, but their split across exposure classes (a quarter, one and four), the footprints' spread and the share destroyed have no published source in hand, and the deposits' densities, grades and sizes wait for the resources GDS declares | none: missing data | S1.05, which brings the resources and their data (USGS mineral commodity summaries and deposit databases); for the hazards, a regional loss or footprint dataset (EM-DAT's affected areas, Munich Re NatCatSERVICE, the Global Flood Database) when one is chosen | open |
 | F-011 | S0.13 | owner's review of the map, 2026-09-24 | The map of the build run on bc1dfb5 has 1.5% of its land as plains (the real Old World's lowland share is near a half): elevations rise linearly from the sea to the highest point, so nearly all land stands above the plains' 200 m, and floods, coal, and oil and gas, which read plains, all but vanish | the generator's relief: no measured land-height curve, no erosion, no rivers | S0.13 reopened: relief on a finer grid from plates and noise, eroded by rivers, its land heights mapped to ETOPO's measured curve for the analogue region, terrain read from relief within the tile, rivers carried by the map | closed: the relief is generated on a grid four times finer from plates, warped noise and ridged belts, eroded by rivers, its land heights ranked onto ETOPO's curve and each tile's relief onto ETOPO's measured ranges; the build run's map is 45/26/22/8% plains, hills, uplands and mountains against the real 42/29/21/7% |
 | F-012 | S0.13 | owner's review of the map, 2026-09-24 | The same map's regions range from 652 to 2,763 tiles in Noredia, where GEO.3 wants regions of like size: tiles left after the growth, and islands, join whichever region reaches them first, unbounded | the generator's partition: no bound on the spill and no balance | S0.13 reopened: regions grown by travel cost so borders follow ridges and rivers, then balanced tile by tile within a declared tolerance, which becomes a construction condition | closed: countries, regions and zones are cut by exact halving over travel cost, so each part holds together and its borders follow ridges and rivers; a cut moves only to keep a peninsula whole, within the declared tolerance; the build run's regions are within 0.1% of like size |
+| F-013 | S0.14 | build machine, 2026-09-24 | `phx-rand`'s `philox_x4_equals_scalar` fails under the release profile on x86_64 (rustc 1.98.1): a word of the first batch differs from the scalar Philox's (484434796 against 2277454608), on every run; the debug profile, the only one CI tests in, passes. The code is safe integer arithmetic, so either the release build miscompiles it or the batch leans on something the optimiser may change; either way the world's release builds may draw other numbers than Philox4x32-10 gives | none known | S0.04 reopened as its own change: find the cause and fix it, and CI runs the tests in the release profile as well | open |
+| F-014 | S0.14 | build machine, 2026-09-24 | `due_on` for a ten-year annual bond costs 2,604 instructions on its coupon date and 2,293 on the day after (`phx_ledger.ir_due_on_coupon`, `ir_due_on_between`): the legs cost about 155 each, within the 50 ns a leg is allowed, but finding which date of the schedule falls on the day — a guess and its neighbours, each read through the calendar — costs 2,290, several times a leg's budget, and would be paid for every row read | the date's index is searched from the day on every call instead of kept | S0.17: 1b, which advances each due line's `next_due` by its schedule, keeps the line's date index beside it, and `due_on` is handed the index, so the search runs once per line and date, never per row | open |
 
 ---
 

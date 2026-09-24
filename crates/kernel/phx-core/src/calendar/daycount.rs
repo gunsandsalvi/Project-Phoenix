@@ -23,6 +23,13 @@ fn thirty_360(start: Date, end: Date, d1: u8, d2: u8) -> i64 {
         + (i64::from(d2) - i64::from(d1))
 }
 
+/// The actual days from `start` to `end`.
+#[clause("TIME.4")]
+#[must_use]
+pub fn actual_days(start: Date, end: Date) -> i64 {
+    days_from_civil(end) - days_from_civil(start)
+}
+
 /// The fraction of a year from `start` to `end` by the day count, exactly, as a numerator over a denominator.
 #[clause("TIME.4")]
 pub fn day_fraction(start: Date, end: Date, dc: DayCount) -> DayFraction {

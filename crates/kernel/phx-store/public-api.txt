@@ -14,6 +14,7 @@ impl phx_store::pod::__seal::Sealed for phx_id::ids::MarketId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MsgId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::RegionId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::SeriesId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::Slot
 impl phx_store::pod::__seal::Sealed for phx_id::ids::StreamId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::TableId
@@ -295,6 +296,7 @@ impl phx_store::pod::__seal::Sealed for phx_id::ids::MarketId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MsgId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::RegionId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::SeriesId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::Slot
 impl phx_store::pod::__seal::Sealed for phx_id::ids::StreamId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::TableId
@@ -332,6 +334,7 @@ impl phx_store::pod::Pod for phx_id::ids::MarketId
 impl phx_store::pod::Pod for phx_id::ids::MsgId
 impl phx_store::pod::Pod for phx_id::ids::PartyId
 impl phx_store::pod::Pod for phx_id::ids::RegionId
+impl phx_store::pod::Pod for phx_id::ids::SeriesId
 impl phx_store::pod::Pod for phx_id::ids::Slot
 impl phx_store::pod::Pod for phx_id::ids::StreamId
 impl phx_store::pod::Pod for phx_id::ids::TableId
@@ -658,6 +661,7 @@ impl phx_store::pod::Pod for phx_id::ids::MarketId
 impl phx_store::pod::Pod for phx_id::ids::MsgId
 impl phx_store::pod::Pod for phx_id::ids::PartyId
 impl phx_store::pod::Pod for phx_id::ids::RegionId
+impl phx_store::pod::Pod for phx_id::ids::SeriesId
 impl phx_store::pod::Pod for phx_id::ids::Slot
 impl phx_store::pod::Pod for phx_id::ids::StreamId
 impl phx_store::pod::Pod for phx_id::ids::TableId

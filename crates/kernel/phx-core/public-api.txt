@@ -56,6 +56,7 @@ pub phx_core::calendar::daycount::DayCount::Act365F
 pub phx_core::calendar::daycount::DayCount::ActActIsda
 pub phx_core::calendar::daycount::DayCount::Thirty360Bond
 pub phx_core::calendar::daycount::DayCount::Thirty360E
+pub fn phx_core::calendar::daycount::actual_days(phx_id::day::Date, phx_id::day::Date) -> i64
 pub fn phx_core::calendar::daycount::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
 pub mod phx_core::calendar::period
 pub enum phx_core::calendar::period::EndOfMonth
@@ -567,13 +568,16 @@ impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_core::kind_tables::NewIndividual<'_>) -> phx_id::ids::Slot
 pub fn phx_core::kind_tables::KindTable<B>::arena_mut(&mut self, phx_id::ids::Slot) -> &mut phx_store::arena::ChunkArena<B>
 pub fn phx_core::kind_tables::KindTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
+pub fn phx_core::kind_tables::KindTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
 pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
+pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
 pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
 pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
+pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
@@ -846,6 +850,32 @@ pub fn phx_core::register::profile::draw_profile(&phx_core::register::profile::J
 pub fn phx_core::register::profile::from_normals(&phx_core::register::profile::Moments, &[f64], &[f64]) -> alloc::vec::Vec<f64>
 pub fn phx_core::register::profile::moments(&phx_core::register::profile::JointProfile) -> phx_core::register::profile::Moments
 pub fn phx_core::register::profile::natural(phx_core::register::profile::Transform, f64) -> f64
+pub mod phx_core::register::units
+pub enum phx_core::register::units::UnitKind
+pub phx_core::register::units::UnitKind::Contracts
+pub phx_core::register::units::UnitKind::Dwellings
+pub phx_core::register::units::UnitKind::Face
+pub phx_core::register::units::UnitKind::FundUnits
+pub phx_core::register::units::UnitKind::Hours
+pub phx_core::register::units::UnitKind::Kilometres
+pub phx_core::register::units::UnitKind::Persons
+pub phx_core::register::units::UnitKind::Physical
+pub phx_core::register::units::UnitKind::Shares
+pub phx_core::register::units::UnitKind::SquareMetres
+pub struct phx_core::register::units::UnitDecl
+pub phx_core::register::units::UnitDecl::kind: phx_core::register::units::UnitKind
+pub phx_core::register::units::UnitDecl::name: alloc::string::String
+pub phx_core::register::units::UnitDecl::price_exp: u8
+pub phx_core::register::units::UnitDecl::source: phx_core::register::Source
+pub phx_core::register::units::UnitDecl::source_ref: alloc::string::String
+pub struct phx_core::register::units::Units
+impl phx_core::register::units::Units
+pub fn phx_core::register::units::Units::decl(&self, phx_num::qty::UnitId) -> core::option::Option<&phx_core::register::units::UnitDecl>
+pub fn phx_core::register::units::Units::is_empty(&self) -> bool
+pub fn phx_core::register::units::Units::len(&self) -> usize
+pub fn phx_core::register::units::Units::named(&self, &str) -> phx_num::missing::Missing<phx_num::qty::UnitId>
+pub fn phx_core::register::units::Units::new(alloc::vec::Vec<phx_core::register::units::UnitDecl>) -> core::result::Result<phx_core::register::units::Units, alloc::vec::Vec<alloc::string::String>>
+pub fn phx_core::register::units::Units::table(&self) -> &phx_num::price::UnitTable
 pub mod phx_core::register::values
 pub enum phx_core::register::values::Discretisation
 pub phx_core::register::values::Discretisation::EqualShares
@@ -1089,6 +1119,7 @@ impl phx_core::register::Register
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
 pub fn phx_core::register::Register::standing_shapes(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
+pub fn phx_core::register::Register::units(&self) -> &phx_core::register::units::Units
 pub fn phx_core::register::Register::unsourced(&self) -> alloc::vec::Vec<&'static str>
 pub struct phx_core::register::RegisterBuilder
 impl phx_core::register::RegisterBuilder
@@ -2093,13 +2124,16 @@ impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_core::kind_tables::NewIndividual<'_>) -> phx_id::ids::Slot
 pub fn phx_core::kind_tables::KindTable<B>::arena_mut(&mut self, phx_id::ids::Slot) -> &mut phx_store::arena::ChunkArena<B>
 pub fn phx_core::kind_tables::KindTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
+pub fn phx_core::kind_tables::KindTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
 pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
+pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
 pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
 pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
+pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
@@ -2282,6 +2316,7 @@ impl phx_core::register::Register
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
 pub fn phx_core::register::Register::standing_shapes(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
+pub fn phx_core::register::Register::units(&self) -> &phx_core::register::units::Units
 pub fn phx_core::register::Register::unsourced(&self) -> alloc::vec::Vec<&'static str>
 pub struct phx_core::RegisterBuilder
 impl phx_core::register::RegisterBuilder

@@ -16,3 +16,41 @@ owner = "TIME"
 source = "assumed"
 source_ref = "The opening is a snapshot of the present, dated the last day of the latest year whose annual accounts, censuses and financial statistics are complete in the country-group profiles; day one of the world, the first day settling runs, is the day after."
 value = 2025-12-31
+
+# The world's units, each a unit's identity by its place. A price is in a currency's smallest units per unit, times ten
+# to the minus the unit's price exponent.
+
+[[unit]]
+name = "face"
+kind = "face"
+price_exp = 6
+source = "assumed"
+source_ref = "A unit of face is a currency's smallest unit, which a debt claim or a banknote promises; six places carry a bond's price per unit of face to a millionth, finer than the basis point of a bond price quoted to three decimals of a percent."
+
+[[unit]]
+name = "share"
+kind = "shares"
+price_exp = 2
+source = "assumed"
+source_ref = "A share's price in hundredths of a currency's smallest unit: exchanges quote shares to the cent and below it, down to a hundredth of a cent for low-priced stocks."
+
+[[unit]]
+name = "fund unit"
+kind = "fund_units"
+price_exp = 4
+source = "assumed"
+source_ref = "A fund unit's price to four places beyond a currency's smallest unit, as funds publish their net asset value per unit to four decimals."
+
+[[unit]]
+name = "contract"
+kind = "contracts"
+price_exp = 0
+source = "assumed"
+source_ref = "A contract between two parties is one unit, whose price is its whole amount in a currency's smallest units."
+
+[[unit]]
+name = "dwelling"
+kind = "dwellings"
+price_exp = 0
+source = "assumed"
+source_ref = "A dwelling is one unit, priced whole in a currency's smallest units, as dwellings are sold."
