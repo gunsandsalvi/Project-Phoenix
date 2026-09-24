@@ -4079,7 +4079,8 @@ saves read back to their closes' hashes and the thirteen injections each lit the
     (a part split by any other cause takes its share of the exposure, S0.23); reviewers who do not act stay, and
     the cell's mean then stands for members whose true exposures differ — the approximation REP.21 accepts. Its cost
     is reported as it is incurred (REP.15): at each review draw and each landing, the dispersion of exposure that the
-    mean erases is added to LC-0-46's measures, not only measured in a unit test.
+    mean erases (`review::erased_at_review`) is added to the representation's cost measures (S0.24's live check),
+    not only measured in a unit test.
   - A **surprise** (VAL.4) that bears on a decision kind wakes the cell for that kind on the next day its point runs
     (REP.35), through the agenda.
 - **Needs and notices** reach particular members on their own day. On a day their decision point does not run
