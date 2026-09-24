@@ -98,7 +98,12 @@ impl<B: Backing> Ledger<B> {
         let view: RowView = crate::line::Lines::<B>::find(arenas, holder, line, side);
         let of = view.row.count;
         if share.count == 0 || share.count > of {
-            violation!(clause = "REP.9", "members leaving a row that does not hold them", leaving = share.count, of = of);
+            violation!(
+                clause = "REP.9",
+                "members leaving a row that does not hold them",
+                leaving = share.count,
+                of = of
+            );
         }
         let key = ArrearsKey::new(line, side, arenas.party(holder));
         let since = match self.arrears.since(key) {
@@ -125,18 +130,24 @@ impl<B: Backing> Ledger<B> {
 
     /// A part's row joins a cell: added to the cell's row on the same line side, whose payment record it must share,
     /// or placed as the cell's first row there, the cell entering the line's list with its first listed row. The
-    /// line's side counts do not move.
+    /// line's side counts do not move. Returns whether the cell entered the line's list.
     #[clause("REP.8", "REP.14")]
-    pub fn attach_row(&mut self, arenas: &mut dyn HolderArenas, table: u16, holder: Slot, detached: DetachedRow) {
+    pub fn attach_row(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        detached: DetachedRow,
+    ) -> bool {
         let (line, side) = (detached.line(), detached.side());
         let key = ArrearsKey::new(line, side, arenas.party(holder));
         let found = rows::iter(arenas, holder).find(|r| r.row.line == line && r.side() == side);
         let Some(mut view) = found else {
-            self.lines.place_row(arenas, table, holder, detached.row, detached.optional);
+            let entered = self.lines.place_row(arenas, table, holder, detached.row, detached.optional);
             if let Missing::Present(d) = detached.arrears_since {
                 self.arrears.begin(key, d);
             }
-            return;
+            return entered;
         };
         if view.row.record != detached.row.record || view.row.point != detached.row.point {
             violation!(clause = "REP.8", "rows of other payment records or points joined", line = line.get());
@@ -158,6 +169,7 @@ impl<B: Backing> Ledger<B> {
         };
         view.row.count = count;
         rows::rewrite(arenas, holder, &view, joined);
+        false
     }
 
     /// Members leave a cell's holding for a part: `count` of the members holding it, taking their share of its units
@@ -197,14 +209,20 @@ impl<B: Backing> Ledger<B> {
     }
 
     /// A part's holding joins a cell's: members, units and pooled cost add, or it becomes the cell's holding of the
-    /// instrument, the cell entering the instrument's list.
+    /// instrument, the cell entering the instrument's list. Returns whether it entered the list.
     #[clause("REP.8", "REP.14")]
-    pub fn attach_holding(&mut self, arenas: &mut dyn HolderArenas, table: u16, holder: Slot, part: CellHolding) {
+    pub fn attach_holding(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        part: CellHolding,
+    ) -> bool {
         let all = cell_holdings(arenas, holder);
         let Some((i, h)) = all.iter().copied().enumerate().find(|(_, h)| h.instrument == part.instrument) else {
             arenas.append(holder, ListKind::Holdings, &to_words(&part));
             self.instruments.enlist(table, holder, part.instrument);
-            return;
+            return true;
         };
         let add = |a: i64, b: i64| {
             let Some(s) = a.checked_add(b) else {
@@ -222,6 +240,7 @@ impl<B: Backing> Ledger<B> {
             pooled_cost: Amount::from_raw(add(h.pooled_cost.raw(), part.pooled_cost.raw())),
         };
         arenas.overwrite(holder, ListKind::Holdings, i * HOLDING, &to_words(&joined));
+        false
     }
 }
 
@@ -268,7 +287,13 @@ mod tests {
         let kind = l.lines.declare_money(LOAN).index();
         let line = l.lines.open(kind, TermsId::new(0), Missing::Absent);
         let optional = Optional { balance: Missing::Present(1_001), ..Optional::NONE };
-        l.lines.add_row(&mut cells, 1, a, line, NewRow { side: Side::Liability, within: 0, count: 10, point: 0, optional });
+        l.lines.add_row(
+            &mut cells,
+            1,
+            a,
+            line,
+            NewRow { side: Side::Liability, within: 0, count: 10, point: 0, optional },
+        );
         let at = (line, Side::Liability);
         let three = l.detach_row(&mut cells, 1, a, at, RowShare { count: 3, own_balance: 0 }, Round::HalfEven);
         assert_eq!((three.row.count, three.optional.balance), (3, Missing::Present(300)), "3 × 1001 ÷ 10 = 300.3");
@@ -301,8 +326,14 @@ mod tests {
             let new = NewRow { side: Side::Liability, within: 0, count: 4, point: 0, optional };
             l.lines.add_row(&mut cells, 1, h, line, new);
         }
-        let mut part: DetachedRow =
-            l.detach_row(&mut cells, 1, a, (line, Side::Liability), RowShare { count: 1, own_balance: 0 }, Round::Floor);
+        let mut part: DetachedRow = l.detach_row(
+            &mut cells,
+            1,
+            a,
+            (line, Side::Liability),
+            RowShare { count: 1, own_balance: 0 },
+            Round::Floor,
+        );
         part.row.record = PaymentRecord { arrears_days: 3, missed: 1 }.packed();
         let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| l.attach_row(&mut cells, 1, b, part)));
         let payload = caught.expect_err("a record is kept, never averaged");

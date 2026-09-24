@@ -195,3 +195,158 @@ pub(crate) fn cells<'a>(
 pub(crate) fn draws(tag: &str, i: u32) -> Draws {
     Draws::new(stream_key(Seed::new(11), tag), Subject::new(SubjectTag::Party, 7), i, 0)
 }
+
+/// A landing index kept in a map, cells in order of identity under each landing key.
+#[derive(Debug, Default)]
+pub(crate) struct MapIndex {
+    pub cells: std::collections::BTreeMap<u64, std::collections::BTreeMap<PartyId, Slot>>,
+}
+
+impl crate::landing::LandingIndex for MapIndex {
+    fn candidates(&self, landing: u64) -> Vec<(PartyId, Slot)> {
+        self.cells.get(&landing).map(|c| c.iter().map(|(p, s)| (*p, *s)).collect()).unwrap_or_default()
+    }
+
+    fn insert(&mut self, landing: u64, party: PartyId, slot: Slot) {
+        self.cells.entry(landing).or_default().insert(party, slot);
+    }
+
+    fn remove(&mut self, landing: u64, party: PartyId) {
+        if let Some(c) = self.cells.get_mut(&landing) {
+            c.remove(&party);
+        }
+    }
+}
+
+/// Line kinks as a list of points per line side.
+#[derive(Debug, Default)]
+pub(crate) struct Points(pub Vec<(LineId, Side, i64)>);
+
+impl crate::check::LineKinks for Points {
+    fn points(&self, line: LineId, side: Side) -> Vec<i64> {
+        self.0.iter().filter(|(l, s, _)| (*l, *s) == (line, side)).map(|(_, _, p)| *p).collect()
+    }
+}
+
+/// A table of cells as 10b meets it: its books, keys, directory and index.
+pub(crate) struct Ten {
+    pub space: AddressSpace,
+    pub books: Books,
+    pub table: CellTable<HeapBacking>,
+    pub keys: KeyInterner,
+    pub directory: phx_core::Directory,
+    pub kind: PopKindDecl,
+    pub index: MapIndex,
+    pub kinks: Points,
+}
+
+/// A cell to add: its weight, income, deposit, and loan if it has one.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Spec {
+    pub weight: u32,
+    pub income: i64,
+    pub deposit: i64,
+    pub loan: Option<(u32, i64)>,
+}
+
+impl Ten {
+    pub(crate) fn new() -> Ten {
+        let mut space = AddressSpace::empty();
+        let books = books(&mut space);
+        let kind = kind();
+        let table = CellTable::new(&mut space, &kind, TableId::new(1), 64, 16);
+        Ten {
+            space,
+            books,
+            table,
+            keys: KeyInterner::new(),
+            directory: phx_core::Directory::new(),
+            kind,
+            index: MapIndex::default(),
+            kinks: Points::default(),
+        }
+    }
+
+    pub(crate) fn key(&self, composition: u32) -> KeyRecord {
+        let mut record = KeyRecord::default();
+        self.kind.key.set(&mut record, 0, composition);
+        record
+    }
+
+    /// A cell of the composition given, its heads all young and healthy and its partners all young, spending one a
+    /// member a day.
+    pub(crate) fn add(&mut self, composition: u32, spec: Spec) -> (PartyId, Slot) {
+        let key = self.key(composition);
+        crate::landing::hold_key(&mut self.keys, key, 1);
+        let Missing::Present(id) = self.keys.id(&key) else { panic!("held") };
+        let layout = self.table.profile_layout().clone();
+        let mut p = Profile::empty(&layout);
+        for g in [AGE, AGE_HEALTH, PARTNER_AGE] {
+            p.add(&layout, g, 0, spec.weight);
+        }
+        let party = PartyId::new(self.directory.next());
+        let new = NewCell {
+            party,
+            created: Day::new(0),
+            weight: Weight::new(spec.weight),
+            key: id,
+            positions: &[spec.income],
+            profile: &p,
+        };
+        let s = self.table.add(&mut self.space, new, &self.kind, &[0]);
+        assert_eq!(self.directory.begin(phx_id::RowRef { table: self.table.id(), slot: s }), party);
+        self.table.set_rate(s, 0, Missing::Present(1));
+        let b = &mut self.books;
+        b.ledger.attach_row(
+            &mut self.table,
+            PLACE,
+            s,
+            row(b.deposit, Side::Asset, spec.weight, Missing::Present(spec.deposit)),
+        );
+        if let Some((count, balance)) = spec.loan {
+            b.ledger.attach_row(
+                &mut self.table,
+                PLACE,
+                s,
+                row(b.loan, Side::Liability, count, Missing::Present(balance)),
+            );
+        }
+        self.table.rekey(s, &self.kind, &[0]);
+        crate::landing::LandingIndex::insert(&mut self.index, self.table.hot(s).landing_key, party, s);
+        (party, s)
+    }
+
+    pub(crate) fn tenb(&mut self) -> crate::landing::TenB<'_, HeapBacking, HeapBacking> {
+        crate::landing::TenB {
+            ledger: &mut self.books.ledger,
+            table: &mut self.table,
+            place: PLACE,
+            keys: &mut self.keys,
+            directory: &mut self.directory,
+            space: &mut self.space,
+            kind: &self.kind,
+            levels: &[0],
+            kinks: &self.kinks,
+            today: Day::new(3),
+        }
+    }
+
+    /// Members split from a cell, drawn from the stream given.
+    pub(crate) fn split(&mut self, slot: Slot, seq: u32, count: u32, tag: &str) -> crate::part::Part {
+        let origin = self.table.party(slot);
+        let mut cells =
+            Cells { ledger: &mut self.books.ledger, table: &mut self.table, place: PLACE, keys: &self.keys };
+        let spec = crate::split::SplitSpec {
+            count,
+            given: &[],
+            rows: &[],
+            own: &[],
+            reviewed: Missing::Absent,
+            rounding: phx_num::round::Round::HalfEven,
+        };
+        match crate::split::split(&mut cells, slot, crate::part::PartId { origin, seq }, &spec, &mut draws(tag, seq)) {
+            crate::split::Parted::Part(p) => *p,
+            crate::split::Parted::Whole => panic!("a part was expected"),
+        }
+    }
+}

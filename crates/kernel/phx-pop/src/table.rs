@@ -706,30 +706,13 @@ impl<B: Backing> CellTable<B> {
         self.arenas.len()
     }
 
-    /// The cell's steps at the given levels, in the kind's position order: each position's total against the total
-    /// of its scale, a standing rate's scale being the rate per member times the weight.
+    /// The cell's steps at the given levels, in the kind's position order.
     #[clause("REP.4", "REP.20")]
     #[must_use]
     pub fn steps(&self, slot: Slot, kind: &PopKindDecl, levels: &[u8]) -> Vec<Step> {
-        let weight = i128::from(self.weight(slot).get());
-        kind.positions
-            .iter()
-            .enumerate()
-            .map(|(i, p)| {
-                let scale = match p.scale {
-                    Scale::Position(j) => Missing::Present(i128::from(self.position(slot, j))),
-                    Scale::Rate(r) => match self.rate(slot, r) {
-                        Missing::Present(v) => Missing::Present(i128::from(v) * weight),
-                        Missing::Absent => Missing::Absent,
-                    },
-                };
-                let base = p.steps.step_scaled(self.position(slot, i), scale);
-                let Some(level) = levels.get(i) else {
-                    violation!(clause = "REP.4", "a position with no current level", position = i);
-                };
-                StepTable::at_level(base, *level)
-            })
-            .collect()
+        let positions: Vec<i64> = (0..self.layout.positions).map(|i| self.position(slot, i)).collect();
+        let rates: Vec<Missing<i64>> = (0..self.rates.len()).map(|r| self.rate(slot, r)).collect();
+        steps_of(kind, levels, self.weight(slot), &positions, &rates)
     }
 
     /// The cell's landing key, recomputed from its key, positions and kink signature.
@@ -770,6 +753,45 @@ impl<B: Backing> CellTable<B> {
         hot.set_weight(w);
         self.hot.set(slot, hot);
     }
+}
+
+/// Steps at the given levels of members of `weight` holding `positions` as totals and `rates` per member, in the
+/// kind's position order: each position's total against the total of its scale, a standing rate's scale being the
+/// rate per member times the weight. A cell's and a part's steps are read alike.
+#[clause("REP.4", "REP.20")]
+#[must_use]
+pub fn steps_of(
+    kind: &PopKindDecl,
+    levels: &[u8],
+    weight: Weight,
+    positions: &[i64],
+    rates: &[Missing<i64>],
+) -> Vec<Step> {
+    let members = i128::from(weight.get());
+    kind.positions
+        .iter()
+        .enumerate()
+        .map(|(i, p)| {
+            let scale = match p.scale {
+                Scale::Position(j) => match positions.get(j) {
+                    Some(t) => Missing::Present(i128::from(*t)),
+                    None => violation!(clause = "REP.20", "a scale on a position the kind does not hold", position = j),
+                },
+                Scale::Rate(r) => match rates.get(r) {
+                    Some(Missing::Present(v)) => Missing::Present(i128::from(*v) * members),
+                    Some(Missing::Absent) => Missing::Absent,
+                    None => violation!(clause = "REP.20", "a scale on a rate the kind does not hold", rate = r),
+                },
+            };
+            let Some(total) = positions.get(i) else {
+                violation!(clause = "REP.20", "a position the kind does not hold", position = i);
+            };
+            let Some(level) = levels.get(i) else {
+                violation!(clause = "REP.4", "a position with no current level", position = i);
+            };
+            StepTable::at_level(p.steps.step_scaled(*total, scale), *level)
+        })
+        .collect()
 }
 
 impl Layout {

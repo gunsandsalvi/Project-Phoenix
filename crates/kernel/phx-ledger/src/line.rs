@@ -443,7 +443,8 @@ impl<B: Backing> Lines<B> {
     }
 
     /// A row put into its holder's rows as it is, into the due-day run if its line is dated, the holder entering the
-    /// line's list with its first listed row there; the line's side counts are the caller's.
+    /// line's list with its first listed row there; the line's side counts are the caller's. Returns whether the holder
+    /// entered the list.
     pub(crate) fn place_row(
         &mut self,
         arenas: &mut dyn HolderArenas,
@@ -451,7 +452,7 @@ impl<B: Backing> Lines<B> {
         holder: Slot,
         row: RelRow,
         optional: Optional,
-    ) {
+    ) -> bool {
         let (line, side) = (row.line, rows::side_of(row.role));
         let decl = *self.kind(self.row(line).kind).side(side);
         let kind = arenas.kind();
@@ -482,11 +483,13 @@ impl<B: Backing> Lines<B> {
         } else {
             rows::append(arenas, holder, row, optional);
         }
-        if decl.holder_list && !listed_before {
+        let enters = decl.holder_list && !listed_before;
+        if enters {
             let mut r = self.row(line);
             self.lists.enter(line.get(), &mut r.holders, table, holder);
             self.set(line, r);
         }
+        enters
     }
 
     /// Whether any of a holder's rows puts it on a line's holder list: a row on a side that keeps one.
