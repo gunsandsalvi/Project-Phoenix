@@ -69,6 +69,17 @@ pub fn phx_pop::envelope::chance(&[u64], &[f64]) -> f64
 pub fn phx_pop::envelope::envelope(f64, u64) -> f64
 pub fn phx_pop::envelope::next_booking(&mut phx_rand::draws::Draws, phx_id::day::Day, f64, phx_num::missing::Missing<phx_id::day::Day>) -> phx_num::missing::Missing<phx_pop::envelope::Booking>
 pub fn phx_pop::envelope::rung(u32) -> u64
+pub mod phx_pop::group_demand
+pub struct phx_pop::group_demand::GroupBudget
+impl phx_pop::group_demand::GroupBudget
+pub fn phx_pop::group_demand::GroupBudget::add_piece(&mut self, i64, u32, phx_num::missing::Missing<&'static str>)
+pub fn phx_pop::group_demand::GroupBudget::day(&self, &dyn core::ops::function::Fn(&str) -> phx_num::missing::Missing<(i64, i64)>, phx_num::round::Round) -> i64
+pub struct phx_pop::group_demand::Groups
+pub phx_pop::group_demand::Groups::budgets: alloc::collections::btree::map::BTreeMap<(phx_id::ids::MarketId, u64), phx_pop::group_demand::GroupBudget>
+pub phx_pop::group_demand::Groups::index_today: alloc::collections::btree::map::BTreeMap<&'static str, (i64, i64)>
+pub phx_pop::group_demand::Groups::rounding: phx_num::round::Round
+impl phx_core::extensions::GroupDemand for phx_pop::group_demand::Groups
+pub fn phx_pop::group_demand::Groups::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64
 pub mod phx_pop::holder
 pub mod phx_pop::hot
 #[repr(C)] pub struct phx_pop::hot::HotRecord
@@ -337,6 +348,12 @@ pub fn phx_pop::screen::book<B: phx_store::backing::Backing>(&phx_pop::table::Ce
 pub fn phx_pop::screen::screen_candidate<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::screen::Process<'_>, phx_id::day::Day, u64, &mut phx_rand::draws::Draws, &mut phx_pop::screen::ScreenCounters) -> (core::option::Option<phx_pop::screen::Hit>, phx_num::missing::Missing<phx_pop::envelope::Booking>)
 pub fn phx_pop::screen::screen_daily<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::screen::Process<'_>, phx_id::day::Day, &mut phx_rand::draws::Draws, &mut phx_pop::screen::ScreenCounters) -> core::option::Option<phx_pop::screen::Hit>
 pub type phx_pop::screen::EnvelopeFn = dyn core::ops::function::Fn(&[u32], phx_id::day::Day) -> (f64, phx_num::missing::Missing<phx_id::day::Day>)
+pub mod phx_pop::seller_spread
+pub struct phx_pop::seller_spread::Spread
+pub phx_pop::seller_spread::Spread::phases: u64
+pub phx_pop::seller_spread::Spread::sold: alloc::vec::Vec<u64>
+pub phx_pop::seller_spread::Spread::unfilled: u64
+pub fn phx_pop::seller_spread::spread(&mut phx_rand::draws::Draws, &[u64], &[(u64, u64)]) -> phx_pop::seller_spread::Spread
 pub mod phx_pop::sig
 pub struct phx_pop::sig::SigGroup
 pub phx_pop::sig::SigGroup::bits: u32
@@ -485,3 +502,5 @@ pub phx_pop::table::NewCell::positions: &'a [i64]
 pub phx_pop::table::NewCell::profile: &'a phx_pop::profile::Profile
 pub phx_pop::table::NewCell::weight: phx_core::weight::Weight
 pub fn phx_pop::table::steps_of(&phx_pop::kind::PopKindDecl, &[u8], phx_core::weight::Weight, &[i64], &[phx_num::missing::Missing<i64>]) -> alloc::vec::Vec<phx_pop::steps::Step>
+pub mod phx_pop::tiles
+pub fn phx_pop::tiles::tile_of_unit(&mut phx_rand::draws::Draws, &[(phx_id::ids::TileId, u64)]) -> phx_id::ids::TileId
