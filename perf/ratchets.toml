@@ -294,13 +294,14 @@ direction = "down"
 
 # phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
 # borrowers, twenty thousand reaches): met cold, and met the next day from the first day's basis when every bid has
-# moved; most of the warm count is the prices' ranges, not the pivots (F-023).
+# moved; most of the warm count is the prices' ranges, not the pivots (F-023). A new bench's ratchet takes CI's
+# measure, since the runner, not the build machine, holds it.
 [[ratchet]]
 counter = "phx_market.ir_linked_call_cold"
-value = 1915858017
+value = 1915726951
 direction = "down"
 
 [[ratchet]]
 counter = "phx_market.ir_linked_call_warm"
-value = 1124153158
+value = 1123989366
 direction = "down"
