@@ -10,6 +10,15 @@ source_ref = "The owner's map (plan §12, 2026-09-23): tiles of 10 km, the same 
 value = 10000
 
 [[primitive]]
+id = "GEO.share_tolerance_per_mille"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "Each country's land within 5% of its share, and each region within 5% of its country's mean: the cuts are exact but for a peninsula, which goes whole to one side."
+shape = "standing:a construction condition: regions of like size, as GEO.3 asks, and countries holding their shares of the land, which no mechanism of the world adjusts"
+value = 50
+
+[[primitive]]
 id = "GEO.zones"
 kind = "RESOLUTION"
 owner = "GEO"
@@ -56,9 +65,9 @@ id = "GEO.octaves"
 kind = "SHAPE"
 owner = "GEO"
 source = "assumed"
-source_ref = "Seven octaves, the finest about a tile across, so the relief varies from tile to tile."
+source_ref = "Nine octaves, the finest about a relief cell across (2.5 km, four to a tile), so the relief the rivers run over is rough at the scale they are routed at, as real ground is, not smooth planes they would cross in straight lines."
 shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
-value = 7
+value = 9
 
 [[primitive]]
 id = "GEO.roughness"
@@ -68,15 +77,6 @@ source = "assumed"
 source_ref = "Each octave half the last's weight: the fractal relief of real terrain, whose spectra fall by about half an octave's amplitude per doubling of frequency."
 shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
 value = 0.5
-
-[[primitive]]
-id = "GEO.falloff"
-kind = "SHAPE"
-owner = "GEO"
-source = "assumed"
-source_ref = "The height's fall from the centre that keeps the sea at the map's edges."
-shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
-value = 1.5
 
 [[primitive]]
 id = "GEO.mainland_floor_percent"
@@ -114,20 +114,20 @@ source_ref = "Within 20 km of the sea a tile takes the coastal exposure: storm s
 value = 20000
 
 [[primitive]]
-id = "GEO.metres_per_degree"
-kind = "ENDOWMENT"
-owner = "GEO"
-source = "measured"
-source_ref = "The Earth's mean radius, 6,371,008.8 m (IUGG; Moritz, Geodetic Reference System 1980), times pi over 180: 111,195 m to a degree of latitude."
-value = 111195
-
-[[primitive]]
-id = "GEO.south_latitude"
+id = "GEO.warm_latitude"
 kind = "ENDOWMENT"
 owner = "GEO"
 source = "assumed"
-source_ref = "The owner's placement of the map (plan §12, 2026-09-24): its south edge at 35°N, so the map spans 35°N to 58.3°N, a temperate continent like Europe's, from Mediterranean to boreal."
+source_ref = "The owner's latitude cycle (plan §12, 2026-09-24): the warm belt at 35°N, the cool belt at 58.3°N half the world away, the climates of a temperate continent like Europe's, from Mediterranean to boreal."
 value = 35.0
+
+[[primitive]]
+id = "GEO.cool_latitude"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "assumed"
+source_ref = "The owner's latitude cycle (plan §12, 2026-09-24): the cool belt at 58.3°N, half the world away from the warm belt at 35°N, as far north as the first placement of the map reached."
+value = 58.3
 
 [[primitive]]
 id = "GEO.relief_cells_per_tile"

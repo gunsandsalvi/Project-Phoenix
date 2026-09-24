@@ -44,41 +44,37 @@ pub(crate) fn cell1(table: &Table1, x: i64) -> i64 {
 #[clause("GEO.7")]
 #[derive(Clone, Debug)]
 pub struct ClimateRule {
-    south_tenths: i64,
-    north_tenths: i64,
+    warm_tenths: i64,
+    cool_tenths: i64,
     lowland: Table2,
     highland: Table1,
     highland_class: Table1,
 }
 
 impl ClimateRule {
-    /// # Errors
-    /// When the map's height in tenths of a degree is beyond a number's width.
-    pub fn read(p: &GeoPrims, r: &Register, height_m: u64) -> Result<ClimateRule, String> {
-        let south_tenths = p.south_latitude.shared(r).raw();
-        let per_degree = p.metres_per_degree.shared(r).get();
-        let tenths = u64::try_from(phx_core::consts::DECIMAL_RADIX).map_err(|e| e.to_string())?;
-        let span = i64::try_from(height_m * tenths / per_degree).map_err(|e| e.to_string())?;
-        Ok(ClimateRule {
-            south_tenths,
-            north_tenths: south_tenths + span,
+    #[must_use]
+    pub fn read(p: &GeoPrims, r: &Register) -> ClimateRule {
+        ClimateRule {
+            warm_tenths: p.warm_latitude.shared(r).raw(),
+            cool_tenths: p.cool_latitude.shared(r).raw(),
             lowland: p.climate_lowland.shared(r).clone(),
             highland: p.highland_elevation.shared(r).clone(),
             highland_class: p.highland_class.shared(r).clone(),
-        })
+        }
     }
 
-    /// The latitude, in tenths of a degree, at a position across the map from south to north.
+    /// The latitude, in tenths of a degree, at a place in the latitude cycle, from the warm belt at nothing to the
+    /// cool belt at a thousand.
     #[must_use]
-    pub fn latitude_tenths(&self, north_permille: u32) -> i64 {
+    pub fn latitude_tenths(&self, cycle_permille: u32) -> i64 {
         let per_mille = i64::try_from(PER_MILLE).unwrap_or(i64::MAX);
-        self.south_tenths + i64::from(north_permille) * (self.north_tenths - self.south_tenths) / per_mille
+        self.warm_tenths + i64::from(cycle_permille) * (self.cool_tenths - self.warm_tenths) / per_mille
     }
 
     /// A tile's climate class.
     #[must_use]
     pub fn class(&self, input: ClimateInput) -> u8 {
-        let latitude = self.latitude_tenths(input.north_permille);
+        let latitude = self.latitude_tenths(input.cycle_permille);
         let class = if i64::from(input.elevation_m) > cell1(&self.highland, latitude) {
             cell1(&self.highland_class, latitude)
         } else {

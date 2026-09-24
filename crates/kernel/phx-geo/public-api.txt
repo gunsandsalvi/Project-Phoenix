@@ -67,7 +67,7 @@ pub struct phx_geo::climate::ClimateRule
 impl phx_geo::climate::ClimateRule
 pub fn phx_geo::climate::ClimateRule::class(&self, phx_geo::generate::ClimateInput) -> u8
 pub fn phx_geo::climate::ClimateRule::latitude_tenths(&self, u32) -> i64
-pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register, u64) -> core::result::Result<phx_geo::climate::ClimateRule, alloc::string::String>
+pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> phx_geo::climate::ClimateRule
 pub struct phx_geo::climate::RegionClimate
 pub phx_geo::climate::RegionClimate::months: alloc::vec::Vec<alloc::vec::Vec<phx_geo::climate::Marginal>>
 pub phx_geo::climate::RegionClimate::persistence: alloc::vec::Vec<f64>
@@ -118,8 +118,8 @@ pub mod phx_geo::exposure
 pub fn phx_geo::exposure::exposure(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map) -> alloc::vec::Vec<alloc::vec::Vec<core::option::Option<u8>>>
 pub mod phx_geo::generate
 pub struct phx_geo::generate::ClimateInput
+pub phx_geo::generate::ClimateInput::cycle_permille: u32
 pub phx_geo::generate::ClimateInput::elevation_m: i16
-pub phx_geo::generate::ClimateInput::north_permille: u32
 pub phx_geo::generate::ClimateInput::sea_distance_m: u64
 pub struct phx_geo::generate::HeightCurve
 pub phx_geo::generate::HeightCurve::axis: alloc::vec::Vec<i64>
@@ -151,6 +151,7 @@ pub phx_geo::generate::MapParams::river_tiles: u32
 pub phx_geo::generate::MapParams::rugged_m: u64
 pub phx_geo::generate::MapParams::sea_depths: phx_geo::generate::HeightCurve
 pub phx_geo::generate::MapParams::sea_share: f64
+pub phx_geo::generate::MapParams::share_tolerance_per_mille: u64
 pub phx_geo::generate::MapParams::split: alloc::vec::Vec<u64>
 pub phx_geo::generate::MapParams::terrain: alloc::vec::Vec<phx_geo::generate::TerrainClass>
 pub phx_geo::generate::MapParams::tile_m: u32
@@ -164,6 +165,7 @@ pub struct phx_geo::generate::TerrainClass
 pub phx_geo::generate::TerrainClass::max_elevation_m: i16
 pub phx_geo::generate::TerrainClass::max_relief_m: u32
 pub fn phx_geo::generate::generate(&phx_geo::generate::MapParams, &dyn core::ops::function::Fn(phx_geo::generate::ClimateInput) -> u8, &dyn core::ops::function::Fn(u64) -> phx_rand::draws::Draws) -> phx_geo::generate::Map
+pub fn phx_geo::generate::latitude_cycle(u32, u32) -> u32
 pub fn phx_geo::generate::sea_distance(&phx_geo::grid::Grid, &[bool]) -> alloc::vec::Vec<u64>
 pub fn phx_geo::generate::side(u64, f64) -> u32
 pub mod phx_geo::grid
@@ -197,7 +199,7 @@ pub struct phx_geo::hydrology::Drainage
 pub phx_geo::hydrology::Drainage::filled: alloc::vec::Vec<f64>
 pub phx_geo::hydrology::Drainage::order: alloc::vec::Vec<usize>
 pub phx_geo::hydrology::Drainage::receiver: alloc::vec::Vec<core::option::Option<usize>>
-pub fn phx_geo::hydrology::drainage(&phx_geo::grid::Grid, &[f64], &[bool]) -> phx_geo::hydrology::Drainage
+pub fn phx_geo::hydrology::drainage(&phx_geo::grid::Grid, &[f64], &[bool], &[u64]) -> phx_geo::hydrology::Drainage
 pub fn phx_geo::hydrology::upstream(&phx_geo::hydrology::Drainage) -> alloc::vec::Vec<u32>
 pub mod phx_geo::network
 pub struct phx_geo::network::Network
@@ -218,6 +220,7 @@ pub mod phx_geo::partition
 pub fn phx_geo::partition::apportion(u64, &[u64]) -> alloc::vec::Vec<u64>
 pub fn phx_geo::partition::components(&phx_geo::grid::Grid, &[bool]) -> (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<u64>)
 pub fn phx_geo::partition::split(&phx_geo::grid::Grid, &[bool], &[u64], &[u64], phx_geo::partition::StepCost<'_>, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<core::option::Option<usize>>
+pub fn phx_geo::partition::winds(&phx_geo::grid::Grid, &[bool]) -> (bool, bool)
 pub type phx_geo::partition::StepCost<'a> = &'a dyn core::ops::function::Fn(phx_id::ids::TileId, phx_id::ids::TileId) -> u64
 pub mod phx_geo::prims
 pub struct phx_geo::prims::DepositPrims
@@ -232,17 +235,16 @@ pub phx_geo::prims::GeoPrims::area_exponent: phx_core::register::Prim<phx_num::f
 pub phx_geo::prims::GeoPrims::base_cells: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::climate_lowland: phx_core::register::Prim<phx_core::register::values::Table2>
 pub phx_geo::prims::GeoPrims::coast_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::cool_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
 pub phx_geo::prims::GeoPrims::deposits: phx_geo::prims::DepositPrims
 pub phx_geo::prims::GeoPrims::erosion_passes: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::erosion_rate: phx_core::register::Prim<phx_num::fixed::Fixed<5>>
-pub phx_geo::prims::GeoPrims::falloff: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::prims::GeoPrims::hazards: alloc::vec::Vec<phx_geo::prims::HazardPrims>
 pub phx_geo::prims::GeoPrims::highland_class: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::land_heights: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::land_relief: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
-pub phx_geo::prims::GeoPrims::metres_per_degree: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::mountain_weight: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::prims::GeoPrims::octaves: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::plate_belt: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
@@ -256,10 +258,11 @@ pub phx_geo::prims::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed
 pub phx_geo::prims::GeoPrims::rugged_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::sea_depths: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
-pub phx_geo::prims::GeoPrims::south_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
+pub phx_geo::prims::GeoPrims::share_tolerance: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::terrain_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::terrain_relief: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::tile_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::warm_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
 pub phx_geo::prims::GeoPrims::warp: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
 pub phx_geo::prims::GeoPrims::weather: phx_geo::prims::WeatherPrims
 pub phx_geo::prims::GeoPrims::zone_max_tiles: phx_core::register::Prim<phx_num::qty::Count>
@@ -290,6 +293,7 @@ pub const phx_geo::prims::AREA_EXPONENT: phx_core::register::PrimDecl
 pub const phx_geo::prims::BASE_CELLS: phx_core::register::PrimDecl
 pub const phx_geo::prims::CLIMATE_LOWLAND: phx_core::register::PrimDecl
 pub const phx_geo::prims::COAST_M: phx_core::register::PrimDecl
+pub const phx_geo::prims::COOL_LATITUDE: phx_core::register::PrimDecl
 pub const phx_geo::prims::DEPOSIT_DENSITY: phx_core::register::PrimDecl
 pub const phx_geo::prims::DROUGHT_COASTAL: phx_core::register::PrimDecl
 pub const phx_geo::prims::DROUGHT_INLAND: phx_core::register::PrimDecl
@@ -301,7 +305,6 @@ pub const phx_geo::prims::DROUGHT_SPREAD: phx_core::register::PrimDecl
 pub const phx_geo::prims::DRY_SHARE: phx_core::register::PrimDecl
 pub const phx_geo::prims::EROSION_PASSES: phx_core::register::PrimDecl
 pub const phx_geo::prims::EROSION_RATE: phx_core::register::PrimDecl
-pub const phx_geo::prims::FALLOFF: phx_core::register::PrimDecl
 pub const phx_geo::prims::FLOOD_COASTAL: phx_core::register::PrimDecl
 pub const phx_geo::prims::FLOOD_INLAND: phx_core::register::PrimDecl
 pub const phx_geo::prims::FLOOD_RATE: phx_core::register::PrimDecl
@@ -316,7 +319,6 @@ pub const phx_geo::prims::HIGHLAND_ELEVATION: phx_core::register::PrimDecl
 pub const phx_geo::prims::LAND_HEIGHTS: phx_core::register::PrimDecl
 pub const phx_geo::prims::LAND_RELIEF: phx_core::register::PrimDecl
 pub const phx_geo::prims::MAINLAND_FLOOR: phx_core::register::PrimDecl
-pub const phx_geo::prims::METRES_PER_DEGREE: phx_core::register::PrimDecl
 pub const phx_geo::prims::MOUNTAIN_WEIGHT: phx_core::register::PrimDecl
 pub const phx_geo::prims::OCTAVES: phx_core::register::PrimDecl
 pub const phx_geo::prims::PERSISTENCE: phx_core::register::PrimDecl
@@ -342,7 +344,7 @@ pub const phx_geo::prims::ROUGHNESS: phx_core::register::PrimDecl
 pub const phx_geo::prims::RUGGED_M: phx_core::register::PrimDecl
 pub const phx_geo::prims::SEA_DEPTHS: phx_core::register::PrimDecl
 pub const phx_geo::prims::SEA_SHARE: phx_core::register::PrimDecl
-pub const phx_geo::prims::SOUTH_LATITUDE: phx_core::register::PrimDecl
+pub const phx_geo::prims::SHARE_TOLERANCE: phx_core::register::PrimDecl
 pub const phx_geo::prims::STORM_COASTAL: phx_core::register::PrimDecl
 pub const phx_geo::prims::STORM_INLAND: phx_core::register::PrimDecl
 pub const phx_geo::prims::STORM_RATE: phx_core::register::PrimDecl
@@ -358,6 +360,7 @@ pub const phx_geo::prims::TERRAIN_ELEVATION: phx_core::register::PrimDecl
 pub const phx_geo::prims::TERRAIN_RELIEF: phx_core::register::PrimDecl
 pub const phx_geo::prims::TILE_M: phx_core::register::PrimDecl
 pub const phx_geo::prims::UNBOUNDED: phx_core::register::PrimDecl
+pub const phx_geo::prims::WARM_LATITUDE: phx_core::register::PrimDecl
 pub const phx_geo::prims::WARP: phx_core::register::PrimDecl
 pub const phx_geo::prims::WIND_SCALE: phx_core::register::PrimDecl
 pub const phx_geo::prims::WIND_SHAPE: phx_core::register::PrimDecl
@@ -375,7 +378,6 @@ pub phx_geo::relief::ReliefParams::base_cells: u32
 pub phx_geo::relief::ReliefParams::belt: f64
 pub phx_geo::relief::ReliefParams::erosion_passes: u32
 pub phx_geo::relief::ReliefParams::erosion_rate: f64
-pub phx_geo::relief::ReliefParams::falloff: f64
 pub phx_geo::relief::ReliefParams::mountain_weight: f64
 pub phx_geo::relief::ReliefParams::octaves: u8
 pub phx_geo::relief::ReliefParams::plate_warp: f64
@@ -383,7 +385,7 @@ pub phx_geo::relief::ReliefParams::plate_weight: f64
 pub phx_geo::relief::ReliefParams::plates: u32
 pub phx_geo::relief::ReliefParams::roughness: f64
 pub phx_geo::relief::ReliefParams::warp: f64
-pub fn phx_geo::relief::erode(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut [f64], &[bool])
+pub fn phx_geo::relief::erode(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut [f64], &[bool], &[u64])
 pub fn phx_geo::relief::raw(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<f64>
 pub fn phx_geo::relief::to_curve(&mut [f64], &[bool], &phx_geo::relief::Curve, f64)
 pub mod phx_geo::state
@@ -508,17 +510,16 @@ pub phx_geo::GeoPrims::area_exponent: phx_core::register::Prim<phx_num::fixed::F
 pub phx_geo::GeoPrims::base_cells: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::climate_lowland: phx_core::register::Prim<phx_core::register::values::Table2>
 pub phx_geo::GeoPrims::coast_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::cool_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
 pub phx_geo::GeoPrims::deposits: phx_geo::prims::DepositPrims
 pub phx_geo::GeoPrims::erosion_passes: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::erosion_rate: phx_core::register::Prim<phx_num::fixed::Fixed<5>>
-pub phx_geo::GeoPrims::falloff: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::GeoPrims::hazards: alloc::vec::Vec<phx_geo::prims::HazardPrims>
 pub phx_geo::GeoPrims::highland_class: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::highland_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::land_heights: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::land_relief: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::mainland_floor: phx_core::register::Prim<phx_num::qty::Count>
-pub phx_geo::GeoPrims::metres_per_degree: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::mountain_weight: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::GeoPrims::octaves: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::plate_belt: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
@@ -532,10 +533,11 @@ pub phx_geo::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed::Fixed
 pub phx_geo::GeoPrims::rugged_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::sea_depths: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
-pub phx_geo::GeoPrims::south_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
+pub phx_geo::GeoPrims::share_tolerance: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::terrain_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::terrain_relief: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::tile_m: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::warm_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
 pub phx_geo::GeoPrims::warp: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
 pub phx_geo::GeoPrims::weather: phx_geo::prims::WeatherPrims
 pub phx_geo::GeoPrims::zone_max_tiles: phx_core::register::Prim<phx_num::qty::Count>

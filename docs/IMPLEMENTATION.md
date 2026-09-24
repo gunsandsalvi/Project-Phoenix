@@ -2424,7 +2424,7 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 
 ### S0.13 — `phx-geo`: the map, weather and catastrophes
 
-**Status**: building (reopened for F-011 and F-012)
+**Status**: building (reopened for F-011 and F-012; the closed world)
 
 **Clauses**:
 - STATE: GEO.1, GEO.2, GEO.3, GEO.6, GEO.7.
@@ -2454,9 +2454,11 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 | File | Purpose |
 | --- | --- |
 | `crates/kernel/phx-geo/src/tile.rs` | `Tile` (12 bytes): `elevation_m: i16`, `surface: u8`, `terrain: u8`, `climate: u8`, padding, `zone: u32` (sea has none); coordinates derive from the tile's id; `Zone { region, centroid, tiles }`, `Region { country }` |
-| `src/grid.rs` | the grid, its 8-neighbourhood, centres, three-dimensional leg lengths rounded to whole metres |
-| `src/noise.rs` | gradient noise over the map stream's draws, pure |
-| `src/partition.rs` | components, seeded region growing with target sizes, islands joining the nearest, small parts merging into their smallest neighbour |
+| `src/grid.rs` | the grid over a closed surface: its 8-neighbourhood across the seams, centres, three-dimensional leg lengths the shorter way round, rounded to whole metres |
+| `src/noise.rs` | gradient noise over the map stream's draws, pure, repeating with the world |
+| `src/relief.rs` | the raw relief on the fine grid (plates read over a warped closed plane, their converging borders raised as ridged belts, fractal relief), stream-power erosion, and the measured curves heights and tile relief are ranked onto |
+| `src/hydrology.rs` | the priority flood (receivers, order, filled heights), ties by lot, and upstream area |
+| `src/partition.rs` | components; exact halving splits over travel cost; islands ranked with the coast they face; whether a set of tiles goes all the way round |
 | `src/generate.rs` | `generate(&MapParams, climate, draws) -> Map`: attempts, conditions, rejections |
 | `src/distance.rs` | `ZoneDistances`, per country over its land as a compact graph, none across a border; `dijkstra`; `path_length(a, b)` by A* on demand |
 | `src/climate.rs` | climate classes by latitude, distance to the sea and elevation; each region's monthly marginals weighted by its tiles |
@@ -2472,31 +2474,46 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 | `crates/kernel/phx-core/src/{handler,system,columns,events}.rs`, `crates/assembly/phx-world/src/day.rs` | the first handlers dispatched: a handler's body registered with its declaration, run over its table's chunks with its context built per chunk (kernel tables on the day's thread, architecture §6.3), traced rows stamped with their writers, event intents recorded at the apply point; retires S0.11's stop on a sub-step with a handler |
 | `crates/foundation/phx-rand/src/quantile.rs` | the gamma, beta and Weibull quantiles the weather's marginals need |
 | `crates/apps/phx-cli/src/checks/geo.rs`, `crates/apps/phx-check/src/rules/places.rs` | LC-0-11 to LC-0-15; PC-23 |
-| `data/shared/GEO.toml` | resolution, the relief's SHAPEs, terrain classes, construction conditions, the coastal distance, metres per degree, and the owner's south edge |
+| `data/shared/GEO.toml` | resolution, the relief's SHAPEs, terrain classes, construction conditions, the coastal distance, and the owner's latitude cycle |
+| `data/shared/GEO_relief.toml`, `tools/data/relief.py`, `tools/data/relief_fetch.py` | the land's heights, the sea's depths and the land's relief within a tile's span, measured from NOAA's ETOPO1 over the analogue region (35–58°N, 10°W–60°E), the relief kept in `data/sources/raw/etopo/` |
 | `data/shared/GEO_climate.toml`, `tools/data/climate.py`, `tools/data/climate_sites.toml` | the climate tables, measured from NASA POWER's daily reanalysis (1991–2020) at 71 places of the Old World, the places' days kept in `data/sources/raw/power/` |
 | `data/shared/GEO_hazards.toml`, `tools/data/hazards.py` | the hazard tables (rates from EM-DAT over the World Bank's land area; exposure from terrain and the measured climate) and the deposits, the assumed ones with their reasons (F-010) |
 
 **Design**
 
-- **Grid and projection** (GEO.1, GEO.2): a local planar projection in metres, with 10 km tiles (RESOLUTION). The
-  rectangle `W × H` is declared so that land is about 40,000 tiles at the declared sea share. Adjacency is the
-  8-neighbourhood. Coordinates derive from the id.
+- **Grid** (GEO.1, GEO.2): 10 km tiles (RESOLUTION) over a **closed surface** that wraps east to west and north to
+  south: every tile has the same eight neighbours and there is no edge. The square's side is declared so that land is
+  about 40,000 tiles at the declared sea share. Coordinates derive from the id; lengths take the shorter way round
+  each axis. The wrap lives in `Grid` alone, so nothing else treats a seam specially.
 - **Generation** (GEO.10), in an opening context with its declared sub-step ordinal, from the stream `GEO.map`, with
   subject `World(attempt)`:
-  1. **Elevation** from gradient noise, with the SHAPE parameters declared as standing SHAPEs.
-  2. **Sea** by the sea level; **terrain** from elevation and slope; **climate** from latitude, elevation and distance
-     to sea, each by a declared table.
-  3. **Countries** by seeded region growing over land, to the declared shares. Seeds are drawn over the largest
-     landmass. Islands (land components below the declared minimum) join the country of the nearest mainland tile.
-     Ties go by lot.
-  4. **Regions** within each country, then **zones** within each region, by region growing that stops a zone at its
-     declared maximum and merges any zone below its minimum into its smallest neighbour. The zone counts per country
-     are declared.
-  5. **Exposure** per hazard (GEO.7) and **deposits** per tile and resource (GEO.16). Assembly refuses a resource
+  1. **Relief** on a grid four cells to a tile's side (SHAPE, standing): plates read over a warped plane, their
+     crusts blended across their borders and belts raised where they converge, ridged; fractal noise of nine octaves
+     over a second warp, the finest a relief cell across. Plane, noise and plates all repeat with the world. The
+     declared land count of tiles of highest mean is land.
+  2. **Erosion**: passes of the stream-power law over the priority flood's drainage, solved implicitly from the
+     outlets up; ties in the flood, as a filled flat's are, go by a lot per cell, so water crosses a flat by a winding
+     way.
+  3. **Measured curves**: the land's cells ranked onto ETOPO's land heights, the sea's onto its depths; each tile's
+     elevation is the mean of its cells, and its relief, the range of its cells, ranked among the land tiles onto
+     ETOPO's measured ranges over windows of a tile's span.
+  4. **Terrain** from elevation and relief by the declared classes; **rivers**: a tile's river is the largest stream
+     of the fine grid through it, and it drains to the tile that stream flows on to; **climate** from the row's place
+     in the latitude cycle, elevation and distance to the sea, by a declared table.
+  5. **Countries**, then **regions** in each country, then **zones** in each region, by **exact halving**: the parts
+     are cut in two groups, the tiles ranked by how much nearer one end of the land they lie than the other by travel
+     cost (length over the ground, lengthened by the relief climbed into and a river crossed), and cut at the first
+     group's share. The ends are the tile furthest from one drawn and the tile furthest from that. A tile's route to
+     either end never leaves its side, so each part holds together, and borders follow the ridges and rivers that make
+     travel dear. Tiles of equal rank, a peninsula's, go whole to one side, the cut moving to the edge nearest the
+     share. A tile off the largest piece ranks with its nearest tile on it, so an island goes with the coast it faces.
+  6. **Exposure** per hazard (GEO.7) and **deposits** per tile and resource (GEO.16). Assembly refuses a resource
      declared present on every terrain.
 - **Construction conditions** are declared:
+  - each country's land within the declared tolerance of its share, and each region within it of its country's like
+    size;
   - each country's mainland holds at least its declared share of its land;
-  - each region is connected;
+  - each region is one piece on the mainland;
   - each zone is within its declared size range.
 
   A failed attempt is **rejected and recorded** with its condition, and the next uses the next attempt number. There
@@ -2520,26 +2537,31 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
   - each struck tile's severity comes from the declared distribution for its exposure;
   - the event records the struck tiles and severities as details.
 - **Stock per (tile, class)** is created empty and filled from S0.25.
-- **As built**: the owner places the map by its south edge; its north edge is the south edge plus the map's height
-  over the metres in a degree (a map 2,590 km high spans 23.3°). Climate classes are nine five-degree bands from
-  25°N, each coastal (under 50 km from the sea), inland (to 300 km), interior and highland (above a threshold
-  elevation per band). Sunshine is carried as the day's clear-sky index, the daily measure the reanalysis records.
-  Weather and catastrophes are public events (CHN.4) recorded at stage 3's apply, dated 3a: one per region and
-  variable a day, one per footprint. Regions are seeded on the mainland, zones over all their region's land, and a
-  zone below its least size merges into its smallest neighbour, or into the nearest zone from an island.
+- **As built**: the owner's latitude cycle (GEO.18) reads the first row at 35°N and the row half the world away at
+  58.3°N, evenly between, so every latitude of the first placement is present twice and changes twice as fast along
+  the way as on the Earth. Climate classes are nine five-degree bands from 25°N, each coastal (under 50 km from the
+  sea), inland (to 300 km), interior and highland (above a threshold elevation per band). Sunshine is carried as the
+  day's clear-sky index, the daily measure the reanalysis records. Weather and catastrophes are public events (CHN.4)
+  recorded at stage 3's apply, dated 3a: one per region and variable a day, one per footprint.
 
 **Unit tests**
+- `the_grid_closes_on_itself`: neighbours across both seams, mutual; directions and lengths the short way round.
 - `noise_is_pure_and_seeded`.
-- `partition_reaches_shares_and_bounds` on a hand-made mask.
-- `islands_join_nearest_country`.
+- `the_latitude_cycle_closes_evenly`.
+- `heights_take_the_measured_curve_by_rank`.
+- `a_pit_drains_over_its_lowest_rim_and_the_far_end_round_the_seam`.
+- `parts_hold_their_shares_each_in_one_piece`, `peninsulas_stay_whole`, `an_island_goes_with_the_coast_it_faces`,
+  `a_band_goes_round_and_a_blob_does_not`.
+- `a_small_map_meets_its_conditions`.
 - `dijkstra_matches_brute_force` on a 10×10 grid.
 - `weather_marginals_and_persistence` over 10⁵ draws.
 - `footprint_connected`.
 - `origin_counts_by_exposure_class_exact`.
 
 **Live checks**
-- `LC-0-11`: every land tile's zone is in one region and country; every region has land; every site of any party lies
-  in its country and region (GEO.11).
+- `LC-0-11`: the surface is closed, every tile with eight distinct neighbours that each count it back (GEO.1); every
+  land tile's zone is in one region and country; every region has land; every site of any party lies in its country
+  and region (GEO.11).
 - `LC-0-12`: the rejection record lists every failed attempt with its condition; the accepted map meets every
   condition (GEO.10).
 - `LC-0-13`: each region's realised weather is within z = 6.1 of its declared climate for the season, with the
@@ -2547,6 +2569,9 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
 - `LC-0-14`: catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the build run's
   two-year run.
 - `LC-0-15`: GEO.12 — extracted plus remaining equals the opening quantity for every finite deposit.
+
+- Reported, not enforced: whether the sea and the land each go all the way round the world, east to west and north to
+  south.
 
 **Budget**:
 - Map generation ≤ 10 s on the phone, judged at S0.26; the x86 benchmark of this block's review was 0.6–1 s for the
@@ -15107,8 +15132,8 @@ the final build within the budget on the phone.
 | F-008 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
 | F-009 | S0.04 | build, 2026-09-23 | `pick_without_replacement` builds its Fenwick tree on the heap at each call (5 863 instructions for 8 picks from 64 categories, `phx_rand.ir_pick_without_replacement`, most of it the allocation), as S0.04 designs it; §2.8 allows no heap allocation per row in a handler | none: an engineering cost | S0.23, where picks first run per row: the tree comes from the chunk arena's scratch, rebuilt in place | open |
 | F-010 | S0.13 | build, 2026-09-24 | GEO's exposure tables, spreads, severities and deposits are assumed, each with its reason (data/shared/GEO_hazards.toml): the rates are EM-DAT's world means per tile, but their split across exposure classes (a quarter, one and four), the footprints' spread and the share destroyed have no published source in hand, and the deposits' densities, grades and sizes wait for the resources GDS declares | none: missing data | S1.05, which brings the resources and their data (USGS mineral commodity summaries and deposit databases); for the hazards, a regional loss or footprint dataset (EM-DAT's affected areas, Munich Re NatCatSERVICE, the Global Flood Database) when one is chosen | open |
-| F-011 | S0.13 | owner's review of the map, 2026-09-24 | The map of the build run on bc1dfb5 has 1.5% of its land as plains (the real Old World's lowland share is near a half): elevations rise linearly from the sea to the highest point, so nearly all land stands above the plains' 200 m, and floods, coal, and oil and gas, which read plains, all but vanish | the generator's relief: no measured land-height curve, no erosion, no rivers | S0.13 reopened: relief on a finer grid from plates and noise, eroded by rivers, its land heights mapped to ETOPO's measured curve for the analogue region, terrain read from relief within the tile, rivers carried by the map | open |
-| F-012 | S0.13 | owner's review of the map, 2026-09-24 | The same map's regions range from 652 to 2,763 tiles in Noredia, where GEO.3 wants regions of like size: tiles left after the growth, and islands, join whichever region reaches them first, unbounded | the generator's partition: no bound on the spill and no balance | S0.13 reopened: regions grown by travel cost so borders follow ridges and rivers, then balanced tile by tile within a declared tolerance, which becomes a construction condition | open |
+| F-011 | S0.13 | owner's review of the map, 2026-09-24 | The map of the build run on bc1dfb5 has 1.5% of its land as plains (the real Old World's lowland share is near a half): elevations rise linearly from the sea to the highest point, so nearly all land stands above the plains' 200 m, and floods, coal, and oil and gas, which read plains, all but vanish | the generator's relief: no measured land-height curve, no erosion, no rivers | S0.13 reopened: relief on a finer grid from plates and noise, eroded by rivers, its land heights mapped to ETOPO's measured curve for the analogue region, terrain read from relief within the tile, rivers carried by the map | closed: the relief is generated on a grid four times finer from plates, warped noise and ridged belts, eroded by rivers, its land heights ranked onto ETOPO's curve and each tile's relief onto ETOPO's measured ranges; the build run's map is 42/28/23/8% plains, hills, uplands and mountains against the real 42/29/21/7% |
+| F-012 | S0.13 | owner's review of the map, 2026-09-24 | The same map's regions range from 652 to 2,763 tiles in Noredia, where GEO.3 wants regions of like size: tiles left after the growth, and islands, join whichever region reaches them first, unbounded | the generator's partition: no bound on the spill and no balance | S0.13 reopened: regions grown by travel cost so borders follow ridges and rivers, then balanced tile by tile within a declared tolerance, which becomes a construction condition | closed: countries, regions and zones are cut by exact halving over travel cost, so each part holds together and its borders follow ridges and rivers; a cut moves only to keep a peninsula whole, within the declared tolerance; the build run's regions are within 1.3% of like size |
 
 ---
 
@@ -15146,7 +15171,7 @@ the final build within the budget on the phone.
 | Slow distributions (GEN.10, spec Appendix E 38) | held, not regrown: income, wealth and firm sizes credited while the world keeps them and moves their members; no decades runs | 2026-09-23 |
 | What the run has not produced (spec Appendix E 39) | never blocks a gate: listed as not yet seen with the run's length, its mechanism shown at logic level; only the budget blocks | 2026-09-23 |
 | Measuring the representation (spec Appendix E 40) | only at the play resolution, in the one run; the valve's effect measured in the running world | 2026-09-23 |
-| The map's placement (GEO.18) | its south edge at 35°N; the map's 2,590 km of height then span 35°N to 58.3°N, a temperate continent like Europe's | 2026-09-24 |
+| The world's shape and its latitude cycle (GEO.18) | a closed world of the same size (2,590 km each way), wrapping east to west and north to south, with no edge and no pole; a row's climate is read at a latitude that climbs evenly from 35°N at the first row to 58.3°N half the world away and falls evenly back, keeping the climates of the first placement, a temperate continent like Europe's (replaces the placement of the map by its south edge at 35°N) | 2026-09-24 |
 | Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
 
 ---

@@ -866,6 +866,15 @@ and hashed with the world. Weather is drawn per region and catastrophes per coun
 public events at stage 3's apply: a variable's value per region a day, and a footprint's struck tiles with their
 severities. The losses at owners (the two levels above) join them when stock is placed.
 
+The surface is **closed** (GEO.1): `Grid` wraps both ways, so every tile has the same eight neighbours and there is
+no edge anywhere. The wrap lives in `Grid` alone: its neighbours, its directions and its lengths, which take the
+shorter way round each axis. Everything else reads them and never touches a coordinate itself, so countries,
+regions and zones, zone distances, the distance to the sea, rivers and catastrophe footprints all cross the seams
+without a special case. The relief's noise tiles with the grid's period, and plates are read at their wrapped
+distance. A row's climate is read at its place in the latitude cycle (GEO.18): its declared warm latitude at the
+first row, its declared cool latitude half the world away, evenly between. The phone draws the map scrolling
+without end in both directions.
+
 ### 7.11 Tolerance control and promotion
 
 - **Tolerance control** (REP.28) runs at 10b **on the day the cells carried exceed the budget**: it merges steps

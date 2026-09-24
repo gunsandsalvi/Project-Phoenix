@@ -21,11 +21,11 @@ pub struct TerrainClass {
     pub max_relief_m: u32,
 }
 
-/// What a tile's climate class is read from: how far north it lies across the map, from 0 at the south edge to 1 at
-/// the north, its elevation, and its distance to the sea.
+/// What a tile's climate class is read from: its row's place in the latitude cycle, in parts per thousand from the
+/// warm belt to the cool, its elevation, and its distance to the sea.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ClimateInput {
-    pub north_permille: u32,
+    pub cycle_permille: u32,
     pub elevation_m: i16,
     pub sea_distance_m: u64,
 }
@@ -52,6 +52,7 @@ pub struct MapParams {
     pub river_tiles: u32,
     pub rugged_m: u64,
     pub river_crossing_m: u64,
+    pub share_tolerance_per_mille: u64,
     pub split: Vec<u64>,
     pub regions: Vec<u64>,
     pub zones: u64,
@@ -100,6 +101,16 @@ fn to_i16(x: f64) -> i16 {
         violation!(clause = "GEO.1", "an elevation beyond sixteen bits of metres");
     };
     v
+}
+
+/// A row's place in the latitude cycle, in parts per thousand from the warm belt to the cool: the cycle climbs evenly
+/// from the first row to the row half the world away and falls evenly back, so it closes as the world does and every
+/// place in it is held by as many rows.
+#[must_use]
+pub fn latitude_cycle(row: u32, rows: u32) -> u32 {
+    let (twice_centre, all) = (u64::from(row) * 2 + 1, u64::from(rows));
+    let from_cool = all.abs_diff(twice_centre) * PER_MILLE / all;
+    u32::try_from(PER_MILLE - from_cool).unwrap_or(0)
 }
 
 /// The side of the square grid that holds the land at the declared sea share.
@@ -218,10 +229,11 @@ fn surface(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Result<Surface, Str
         }
     }
     let outlet: Vec<bool> = fine_land.iter().map(|l| !l).collect();
-    erode(&p.relief, &fine, &mut height, &outlet);
+    let cell_lot: Vec<u64> = (0..fine.len()).map(|_| draws.next_u64()).collect();
+    erode(&p.relief, &fine, &mut height, &outlet, &cell_lot);
     to_curve(&mut height, &fine_land, &Curve::new(&p.land_heights.axis, &p.land_heights.metres), PER_MILLE_F64);
     to_curve(&mut height, &outlet, &Curve::new(&p.sea_depths.axis, &p.sea_depths.metres), PER_MILLE_F64);
-    let routes = drainage(&fine, &height, &outlet);
+    let routes = drainage(&fine, &height, &outlet, &cell_lot);
     let area = upstream(&routes);
     let mut elevation = Vec::with_capacity(grid.len());
     let mut range = Vec::with_capacity(grid.len());
@@ -305,8 +317,13 @@ impl<'a> Ground<'a> {
     }
 }
 
-/// The countries: all the land split in their shares; refused when a country holds less of its land on the mainland
-/// than the declared floor.
+/// Whether `size` lies within `tolerance_per_mille` of `target`.
+fn within(size: u64, target: u64, tolerance_per_mille: u64) -> bool {
+    size.abs_diff(target) * PER_MILLE <= target * tolerance_per_mille
+}
+
+/// The countries: all the land split in their shares; refused when a country's land strays from its share beyond the
+/// tolerance, or it holds less of its land on the mainland than the declared floor.
 fn countries(
     p: &MapParams,
     grid: &Grid,
@@ -319,8 +336,12 @@ fn countries(
     let mainland = sizes.iter().enumerate().fold(0, |best, (i, s)| if *s > at(&sizes, best) { i } else { best });
     let on_mainland: Vec<bool> = label.iter().map(|l| *l == Some(mainland)).collect();
     let owner = split(grid, land, &p.split, lot, step, draws);
-    for c in 0..p.split.len() {
+    let shares = apportion(count(land.iter().filter(|l| **l).count()), &p.split);
+    for (c, share) in shares.iter().enumerate() {
         let all = count(owner.iter().filter(|o| **o == Some(c)).count());
+        if !within(all, *share, p.share_tolerance_per_mille) {
+            return Err(format!("country {c} holds {all} land tiles against its share of {share}"));
+        }
         let main = count(owner.iter().zip(&on_mainland).filter(|(o, m)| **o == Some(c) && **m).count());
         if main * WHOLE_PERCENT < p.mainland_floor_percent * all {
             return Err(format!("country {c} holds {main} of its {all} land tiles on the mainland"));
@@ -341,7 +362,8 @@ fn tiles_by_part(grid: &Grid, owner: &[Option<usize>], parts: usize) -> Vec<Vec<
 }
 
 /// The regions and zones: each country's land split into regions of like size, each region's into its zones; refused
-/// when a region is in more than one piece on the mainland, or a zone falls outside its declared size.
+/// when a region strays from its country's mean beyond the tolerance or is in more than one piece on the mainland, or
+/// a zone falls outside its declared size.
 struct Places {
     regions: Vec<Region>,
     zones: Vec<Zone>,
@@ -365,6 +387,12 @@ fn places(
         let region = split(grid, &in_country, &vec![1; regions], lot, step, draws);
         let region_tiles = tiles_by_part(grid, &region, regions);
         let sizes: Vec<u64> = region_tiles.iter().map(|t| count(t.len())).collect();
+        let mean = apportion(sizes.iter().sum(), &vec![1; regions]);
+        for (r, (size, like)) in sizes.iter().zip(&mean).enumerate() {
+            if !within(*size, *like, p.share_tolerance_per_mille) {
+                return Err(format!("region {r} of country {c} holds {size} tiles against its like size of {like}"));
+            }
+        }
         let zone_counts = apportion(zones_by_country.get(c).copied().unwrap_or(0), &sizes);
         for (r, r_tiles) in region_tiles.iter().enumerate() {
             let mut in_region = vec![false; grid.len()];
@@ -420,13 +448,15 @@ fn attempt(p: &MapParams, climate: &dyn Fn(ClimateInput) -> u8, draws: &mut Draw
     let to_sea = sea_distance(&grid, &s.land);
     let (owner, on_mainland) = countries(p, &grid, &s.land, &lot, &step, draws)?;
     let places = places(p, &grid, &owner, &on_mainland, &lot, &step, draws)?;
-    let rows = u64::from(side - 1);
     let tiles = (0..grid.len())
         .map(|index| {
             let (_, y) = grid.xy(grid.tile(index));
-            let north = u32::try_from(u64::from(side - 1 - y) * PER_MILLE / rows).unwrap_or(0);
             let elevation_m = at(&s.elevation, index);
-            let input = ClimateInput { north_permille: north, elevation_m, sea_distance_m: at(&to_sea, index) };
+            let input = ClimateInput {
+                cycle_permille: latitude_cycle(y, grid.height),
+                elevation_m,
+                sea_distance_m: at(&to_sea, index),
+            };
             let surface = if at(&s.land, index) { LAND } else { WATER };
             Tile::new(elevation_m, surface, at(&terrain, index), climate(input), at(&places.zone_of, index))
         })
@@ -472,7 +502,7 @@ pub(crate) mod tests {
     use phx_id::Day;
     use phx_rand::{Draws, Seed, Subject, SubjectTag};
 
-    use super::{HeightCurve, MapParams, TerrainClass, apportion, generate};
+    use super::{HeightCurve, MapParams, TerrainClass, generate, latitude_cycle};
     use crate::partition::components;
     use crate::relief::ReliefParams;
 
@@ -489,7 +519,6 @@ pub(crate) mod tests {
                 base_cells: 3,
                 octaves: 4,
                 roughness: 0.5,
-                falloff: 2.0,
                 plates: 6,
                 belt: 0.05,
                 plate_weight: 0.3,
@@ -511,6 +540,7 @@ pub(crate) mod tests {
             river_tiles: 10,
             rugged_m: 500,
             river_crossing_m: 5_000,
+            share_tolerance_per_mille: 100,
             split,
             regions,
             zones,
@@ -522,10 +552,11 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn apportion_by_largest_remainder() {
-        assert_eq!(apportion(25, &[50, 30, 20]), vec![13, 7, 5]);
-        assert_eq!(apportion(10, &[1, 1, 1]), vec![4, 3, 3]);
-        assert_eq!(apportion(7, &[0, 0]), vec![0, 0]);
+    fn the_latitude_cycle_closes_evenly() {
+        let rows = 10;
+        let cycle: Vec<u32> = (0..rows).map(|r| latitude_cycle(r, rows)).collect();
+        assert_eq!(cycle, vec![100, 300, 500, 700, 900, 900, 700, 500, 300, 100], "up and back, even steps");
+        assert_eq!(latitude_cycle(0, rows), latitude_cycle(rows - 1, rows), "the first row meets the last");
     }
 
     #[test]

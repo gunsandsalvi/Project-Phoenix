@@ -1,16 +1,15 @@
 use std::cmp::{Ordering, Reverse};
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::BinaryHeap;
 
 use phx_macros::clause;
 
 use crate::grid::Grid;
 
-/// A height in the flood's queue, ordered totally, ties by the order cells were queued so no outcome depends on
-/// anything but the heights.
+/// A height in the flood's queue, ordered totally, ties by the cell's lot and then its place.
 #[derive(Clone, Copy, Debug)]
 struct Queued {
     height: f64,
-    order: u64,
+    lot: u64,
     cell: usize,
 }
 
@@ -30,7 +29,7 @@ impl PartialOrd for Queued {
 
 impl Ord for Queued {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.height.total_cmp(&other.height).then(self.order.cmp(&other.order))
+        self.height.total_cmp(&other.height).then(self.lot.cmp(&other.lot)).then(self.cell.cmp(&other.cell))
     }
 }
 
@@ -45,30 +44,28 @@ pub struct Drainage {
 }
 
 /// The priority flood: from every outlet, the lowest cell reached so far claims its unreached neighbours, each
-/// draining to it and filled to at least its height, so a depression drains over its lowest rim. A neighbour that lies
-/// no higher than the cell claiming it is in a depression and is filled to that level; such cells take their turn from
-/// a plain queue, before any higher cell, as the heap would give them next anyway.
+/// draining to it and filled to at least its height, so a depression drains over its lowest rim. Cells of one level,
+/// as a filled depression's are, take their turns by lot, so water crosses a flat by a winding way rather than in the
+/// straight rays of the order the flood reached them.
 #[clause("GEO.10")]
 #[must_use]
-pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool]) -> Drainage {
+pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool], lot: &[u64]) -> Drainage {
     let n = grid.len();
     let mut receiver = vec![None; n];
     let mut filled = height.to_vec();
     let mut reached = vec![false; n];
     let mut order = Vec::with_capacity(n);
     let mut heap = BinaryHeap::new();
-    let mut queued = 0_u64;
+    let lot_of = |cell: usize| lot.get(cell).copied().unwrap_or(u64::MAX);
     for (cell, is_outlet) in outlet.iter().enumerate() {
         if *is_outlet && let Some(h) = height.get(cell) {
-            heap.push(Reverse(Queued { height: *h, order: queued, cell }));
-            queued += 1;
+            heap.push(Reverse(Queued { height: *h, lot: lot_of(cell), cell }));
             if let Some(r) = reached.get_mut(cell) {
                 *r = true;
             }
         }
     }
-    let mut pit: VecDeque<Queued> = VecDeque::new();
-    while let Some(q) = pit.pop_front().or_else(|| heap.pop().map(|Reverse(q)| q)) {
+    while let Some(Reverse(q)) = heap.pop() {
         order.push(q.cell);
         for next in grid.neighbours(grid.tile(q.cell)) {
             let i = grid.index(next);
@@ -86,13 +83,7 @@ pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool]) -> Drainage {
             if let Some(r) = receiver.get_mut(i) {
                 *r = Some(q.cell);
             }
-            let next = Queued { height: spill, order: queued, cell: i };
-            if level <= q.height {
-                pit.push_back(next);
-            } else {
-                heap.push(Reverse(next));
-            }
-            queued += 1;
+            heap.push(Reverse(Queued { height: spill, lot: lot_of(i), cell: i }));
         }
     }
     Drainage { receiver, order, filled }
@@ -120,15 +111,15 @@ mod tests {
     use crate::grid::Grid;
 
     #[test]
-    fn a_pit_drains_over_its_lowest_rim() {
-        // A row of five with the sea at the west end and a pit in the middle.
-        let g = Grid { width: 5, height: 1, tile_m: 10_000 };
-        let h = [0.0, 3.0, 1.0, 5.0, 6.0];
-        let outlet = [true, false, false, false, false];
-        let d = drainage(&g, &h, &outlet);
-        assert_eq!(d.receiver, vec![None, Some(0), Some(1), Some(2), Some(3)]);
+    fn a_pit_drains_over_its_lowest_rim_and_the_far_end_round_the_seam() {
+        // A ring of six with the sea at the first, a pit at the third, and the far end beside the sea round the seam.
+        let g = Grid { width: 6, height: 1, tile_m: 10_000 };
+        let h = [0.0, 3.0, 1.0, 5.0, 6.0, 7.0];
+        let outlet = [true, false, false, false, false, false];
+        let d = drainage(&g, &h, &outlet, &[0; 6]);
+        assert_eq!(d.receiver, vec![None, Some(0), Some(1), Some(2), Some(3), Some(0)]);
         assert_eq!(d.filled[2].to_bits(), 3.0_f64.to_bits(), "the pit filled to its rim");
-        assert_eq!(upstream(&d), vec![5, 4, 3, 2, 1]);
+        assert_eq!(upstream(&d), vec![6, 4, 3, 2, 1, 1]);
         assert_eq!(d.order[0], 0, "the outlet first, then every cell after its receiver");
     }
 }

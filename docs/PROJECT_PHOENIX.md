@@ -660,11 +660,14 @@ exposure; it never writes an economic outcome.
 
 **State**
 
-- **GEO.1 STATE** — The world is a finite grid of **tiles**, each with a stable identity, a coordinate on one
-  declared projection, a surface (land or water), an elevation and a terrain class. Adjacency is read from
-  the grid, one way, for everybody.
-- **GEO.2 STATE** — **Distance** is a physical length derived from coordinates and the projection; a path's
-  length is the sum of its legs. Grid steps and labels are not distance.
+- **GEO.1 STATE** — The world is a finite grid of **tiles** covering a **closed surface**: it wraps east to west and
+  north to south, so it has no edge and no pole, and whatever travels far enough in one direction comes back to where
+  it started. Each tile has a stable identity, a coordinate on the surface, a surface (land or water), an elevation
+  and a terrain class. Every tile has the same eight neighbours around it; adjacency is read from the grid, one way,
+  for everybody.
+- **GEO.2 STATE** — **Distance** is a physical length derived from coordinates on the closed surface: between two
+  places it is the shortest of the ways around; a path's length is the sum of its legs. Grid steps and labels are
+  not distance.
 - **GEO.3 STATE** — A **country** is a jurisdiction over a set of tiles, with a currency, laws and a state (Part J). A
   **region** is a set of tiles within one country and is where local markets (labour, housing, services, retail) meet.
   A country's land and its number of regions follow its population share (GEN.14): the regions, a world constant in
@@ -708,8 +711,10 @@ exposure; it never writes an economic outcome.
 
 **Primitives**
 
-- **GEO.18 PRIMITIVE** — Projection and world size (ENDOWMENT, chosen by the owner); tile size (RESOLUTION: the
-  same map subdivided); terrain generation parameters (SHAPE,
+- **GEO.18 PRIMITIVE** — The world's size and its **latitude cycle** (ENDOWMENT, chosen by the owner): with no pole,
+  the latitude a row's climate is read at runs evenly from a warm belt to a cool belt over half the world's height
+  and back over the other half, so every latitude between them is present twice, and it changes along the way
+  faster than on the Earth; tile size (RESOLUTION: the same map subdivided); terrain generation parameters (SHAPE,
   declared as such, with the reason no mechanism replaces them); deposits and opening infrastructure
   (ENDOWMENT); hazard exposure by terrain (TECHNOLOGY).
 

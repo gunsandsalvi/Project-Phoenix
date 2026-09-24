@@ -85,7 +85,6 @@ pub fn params(p: &GeoPrims, r: &Register, a: &Allotment) -> Result<MapParams, St
         base_cells: count(p.base_cells.shared(r).get())?,
         octaves: u8::try_from(p.octaves.shared(r).get()).map_err(|e| e.to_string())?,
         roughness: p.roughness.shared(r).to_f64(),
-        falloff: p.falloff.shared(r).to_f64(),
         plates: count(p.plates.shared(r).get())?,
         belt: p.plate_belt.shared(r).to_f64(),
         plate_weight: p.plate_weight.shared(r).to_f64(),
@@ -109,6 +108,7 @@ pub fn params(p: &GeoPrims, r: &Register, a: &Allotment) -> Result<MapParams, St
         river_tiles: count(p.river_tiles.shared(r).get())?,
         rugged_m: p.rugged_m.shared(r).get(),
         river_crossing_m: p.river_crossing_m.shared(r).get(),
+        share_tolerance_per_mille: p.share_tolerance.shared(r).get(),
         split: a.land.clone(),
         regions: a.regions.clone(),
         zones: p.zones.shared(r).get(),
@@ -188,8 +188,7 @@ impl GeoState {
         let one = |e: String| vec![e];
         let mut errors = everywhere(p, r);
         let map_params = params(p, r, a).map_err(one)?;
-        let side = crate::generate::side(map_params.land_tiles, map_params.sea_share);
-        let rule = ClimateRule::read(p, r, u64::from(side) * u64::from(map_params.tile_m)).map_err(one)?;
+        let rule = ClimateRule::read(p, r);
         let map = generate(&map_params, &|input| rule.class(input), &|attempt| {
             ctx.draws(&MAP_STREAM, Subject::new(SubjectTag::World, attempt))
         });

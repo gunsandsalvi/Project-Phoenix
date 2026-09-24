@@ -40,6 +40,56 @@ pub fn components(grid: &Grid, mask: &[bool]) -> (Vec<Option<usize>>, Vec<u64>) 
     (label, sizes)
 }
 
+/// Whether the tiles of `mask` join up all the way round the closed surface, east to west and north to south: a walk
+/// over them that comes back to a tile it started from after crossing a seam more times one way than the other.
+/// Found by walking each piece while counting the seams crossed; a tile reached again with other counts closes a way
+/// round.
+#[must_use]
+pub fn winds(grid: &Grid, mask: &[bool]) -> (bool, bool) {
+    let mut seen: Vec<Option<(i64, i64)>> = vec![None; grid.len()];
+    let (mut across, mut down) = (false, false);
+    // A step whose coordinate jumps by more than one crossed the seam that way.
+    let cross = |from: u32, to: u32| {
+        let jump = i64::from(to) - i64::from(from);
+        i64::from(jump < -1) - i64::from(jump > 1)
+    };
+    for start in 0..grid.len() {
+        if !mask.get(start).copied().unwrap_or(false) || seen.get(start).copied().flatten().is_some() {
+            continue;
+        }
+        if let Some(first) = seen.get_mut(start) {
+            *first = Some((0, 0));
+        }
+        let mut queue = VecDeque::from([start]);
+        while let Some(cell) = queue.pop_front() {
+            let Some((wound_x, wound_y)) = seen.get(cell).copied().flatten() else { continue };
+            let tile = grid.tile(cell);
+            let (col, row) = grid.xy(tile);
+            for near in grid.neighbours(tile) {
+                let other = grid.index(near);
+                if !mask.get(other).copied().unwrap_or(false) {
+                    continue;
+                }
+                let (near_col, near_row) = grid.xy(near);
+                let next = (wound_x + cross(col, near_col), wound_y + cross(row, near_row));
+                match seen.get(other).copied().flatten() {
+                    None => {
+                        if let Some(slot) = seen.get_mut(other) {
+                            *slot = Some(next);
+                        }
+                        queue.push_back(other);
+                    }
+                    Some((before_x, before_y)) => {
+                        across |= before_x != next.0;
+                        down |= before_y != next.1;
+                    }
+                }
+            }
+        }
+    }
+    (across, down)
+}
+
 /// Whole numbers in proportion to `weights` summing to `total`, by largest remainder, ties to the earlier.
 #[must_use]
 pub fn apportion(total: u64, weights: &[u64]) -> Vec<u64> {
@@ -213,14 +263,15 @@ impl Work<'_> {
     }
 }
 
-/// The tiles of `members` shared among parts in proportion to `weights`, each part's count exact to the tile, by
-/// halving: the parts are cut in two groups, the tiles are ranked by how much nearer they lie to one end of the land
-/// than to the other, by summed step cost, and cut at the first group's share; each group is then halved the same
-/// way. The ends are the tile furthest from one drawn on the largest piece, and the tile furthest from that, so each
-/// cut crosses the land's long way. A tile whose route to its own end costs less than to the other has its whole route
-/// on its side, so each part holds together, and its border lies along a line of equal costs, bent by the ridges and
-/// rivers that make steps dear. A tile off the largest piece ranks with the tile of it nearest over the plane, so an
-/// island goes with the coast it faces. Returns each tile's part.
+/// The tiles of `members` shared among parts in proportion to `weights`, by halving: the parts are cut in two groups,
+/// the tiles are ranked by how much nearer they lie to one end of the land than to the other, by summed step cost, and
+/// cut at the first group's share; each group is then halved the same way. The ends are the tile furthest from one
+/// drawn on the largest piece, and the tile furthest from that, so each cut crosses the land's long way. Along a
+/// tile's route to either end its rank never moves away from that end's, so each part holds together, and its border
+/// lies along a line of equal costs, bent by the ridges and rivers that make steps dear. Tiles of equal rank, such as
+/// a peninsula's, which reach both ends only through its neck, are never parted: the cut falls at the edge of such a
+/// group nearest the share, so a count is exact unless the cut would split one. A tile off the largest piece ranks
+/// with the tile of it nearest over the plane, so an island goes with the coast it faces. Returns each tile's part.
 #[clause("GEO.3", "GEO.10")]
 #[must_use]
 pub fn split(
@@ -277,14 +328,30 @@ fn divide(
         Some(largest) => rank(work, tiles, largest, draws),
         None => Vec::new(),
     };
-    let cut = usize::try_from(to_left).unwrap_or(usize::MAX);
-    let (near, far) = ranked.split_at_checked(cut).unwrap_or((&ranked, &[]));
+    let cut = nearest_edge(&ranked, to_left);
+    let tiles: Vec<usize> = ranked.iter().map(|(_, i)| *i).collect();
+    let (near, far) = tiles.split_at_checked(cut).unwrap_or((&tiles, &[]));
     divide(work, near, first, left, draws, owner);
     divide(work, far, first + left.len(), right, draws, owner);
 }
 
-/// The members ranked from the first end to the second.
-fn rank(work: &mut Work<'_>, tiles: &[usize], largest: u32, draws: &mut Draws) -> Vec<usize> {
+/// Where to cut a ranked list so that no two tiles of equal rank part: the edge between ranks nearest `share`, ties
+/// to the earlier.
+fn nearest_edge(ranked: &[(i128, usize)], share: u64) -> usize {
+    let mut best: Option<(u64, usize)> = None;
+    for at in 0..=ranked.len() {
+        let is_edge =
+            at == 0 || at == ranked.len() || ranked.get(at - 1).map(|(r, _)| *r) != ranked.get(at).map(|(r, _)| *r);
+        let off = u64::try_from(at).unwrap_or(u64::MAX).abs_diff(share);
+        if is_edge && best.is_none_or(|(b, _)| off < b) {
+            best = Some((off, at));
+        }
+    }
+    best.map_or(0, |(_, at)| at)
+}
+
+/// The members ranked from the first end to the second, each with its rank: how much nearer the first end it lies.
+fn rank(work: &mut Work<'_>, tiles: &[usize], largest: u32, draws: &mut Draws) -> Vec<(i128, usize)> {
     let main: Vec<usize> = tiles.iter().copied().filter(|i| work.piece.get(*i) == Some(largest)).collect();
     let on_main = u64::try_from(main.len()).unwrap_or(0);
     let Some(start) = usize::try_from(below_u64(draws, on_main)).ok().and_then(|k| main.get(k).copied()) else {
@@ -296,16 +363,16 @@ fn rank(work: &mut Work<'_>, tiles: &[usize], largest: u32, draws: &mut Draws) -
     let Some(second_end) = farthest(&main, &work.to_a, work.lot) else { return Vec::new() };
     costs(work.grid, &work.member, work.step, second_end, &mut work.to_b);
     work.anchors(tiles, largest);
-    let mut keyed: Vec<(i128, u64, u64, usize)> = tiles
+    let mut keyed: Vec<(i128, u64, usize)> = tiles
         .iter()
         .filter_map(|i| {
             let (_, anchor) = work.anchor.get(*i)?;
             let (to_a, to_b) = (work.to_a.get(anchor)?, work.to_b.get(anchor)?);
-            Some((i128::from(to_a) - i128::from(to_b), to_a, work.lot.get(*i).copied().unwrap_or(u64::MAX), *i))
+            Some((i128::from(to_a) - i128::from(to_b), work.lot.get(*i).copied().unwrap_or(u64::MAX), *i))
         })
         .collect();
     keyed.sort_unstable();
-    keyed.into_iter().map(|(_, _, _, i)| i).collect()
+    keyed.into_iter().map(|(r, _, i)| (r, i)).collect()
 }
 
 #[cfg(test)]
@@ -314,7 +381,7 @@ mod tests {
     use phx_id::{Day, TileId};
     use phx_rand::{Draws, Seed, Subject, SubjectTag};
 
-    use super::{apportion, components, split};
+    use super::{apportion, components, split, winds};
     use crate::grid::Grid;
 
     const MAP: StreamDecl = StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
@@ -366,8 +433,42 @@ mod tests {
     }
 
     #[test]
+    fn a_band_goes_round_and_a_blob_does_not() {
+        let g = Grid { width: 8, height: 6, tile_m: 10_000 };
+        let band: Vec<bool> = (0..g.len()).map(|i| g.xy(g.tile(i)).1 == 2).collect();
+        assert_eq!(winds(&g, &band), (true, false), "a row all the way across goes round east to west");
+        let column: Vec<bool> = (0..g.len()).map(|i| g.xy(g.tile(i)).0 == 7).collect();
+        assert_eq!(winds(&g, &column), (false, true), "a column at the seam goes round north to south");
+        let blob: Vec<bool> = (0..g.len()).map(|i| g.xy(g.tile(i)).0 < 3 && g.xy(g.tile(i)).1 < 3).collect();
+        assert_eq!(winds(&g, &blob), (false, false));
+        let broken: Vec<bool> = (0..g.len()).map(|i| g.xy(g.tile(i)).1 == 2 && g.xy(g.tile(i)).0 != 4).collect();
+        assert_eq!(winds(&g, &broken), (false, false), "a row with a gap does not");
+    }
+
+    #[test]
+    fn peninsulas_stay_whole() {
+        // A comb: a spine three tiles deep with a tooth one tile wide on every other column, each reaching the spine
+        // through one neck.
+        let g = Grid { width: 24, height: 12, tile_m: 10_000 };
+        let members: Vec<bool> = (0..g.len())
+            .map(|i| {
+                let (x, y) = g.xy(g.tile(i));
+                x < 21 && (y < 3 || (y < 9 && x % 2 == 0))
+            })
+            .collect();
+        for seed in 1..20 {
+            let owner = split(&g, &members, &[1, 1, 1, 1], &lot(g.len()), &ground, &mut draws(seed));
+            for part in 0..4 {
+                let mask: Vec<bool> = owner.iter().map(|o| *o == Some(part)).collect();
+                assert_eq!(components(&g, &mask).1.len(), 1, "part {part} is one piece (seed {seed})");
+            }
+        }
+    }
+
+    #[test]
     fn an_island_goes_with_the_coast_it_faces() {
-        let g = Grid { width: 16, height: 6, tile_m: 10_000 };
+        // Wide enough that the island lies nearer the east coast than the west one round the seam.
+        let g = Grid { width: 20, height: 6, tile_m: 10_000 };
         let mut members = vec![false; g.len()];
         for y in 0..6 {
             for x in 0..10 {

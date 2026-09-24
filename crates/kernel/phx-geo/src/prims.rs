@@ -39,14 +39,6 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// How fast the height falls away from the map's centre, which puts the sea at its edges.
-    pub FALLOFF = "GEO.falloff" {
-        kind: Shape, value: Fixed { exp: 2 }, clause: "GEO.10", scope: Shared,
-        shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
-    }
-}
-
-declare_prim! {
     /// Relief cells across a tile: the relief is generated, eroded and measured this much finer than the tiles.
     pub RELIEF_CELLS = "GEO.relief_cells_per_tile" { kind: Resolution, value: Count, clause: "GEO.18", scope: Shared }
 }
@@ -163,6 +155,15 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// How far, in parts per thousand, a country's land may stray from its share, and a region from its country's
+    /// mean, where a cut would otherwise part a peninsula.
+    pub SHARE_TOLERANCE = "GEO.share_tolerance_per_mille" {
+        kind: Shape, value: Count, clause: "GEO.3", scope: Shared,
+        shape: standing("a construction condition: regions of like size, as GEO.3 asks, and countries holding their shares of the land, which no mechanism of the world adjusts")
+    }
+}
+
+declare_prim! {
     /// Zones across the three countries, shared among them in their population shares.
     pub ZONES = "GEO.zones" { kind: Resolution, value: Count, clause: "GEO.3", scope: Shared }
 }
@@ -186,16 +187,16 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// The latitude of the map's south edge, in degrees north, on the owner's projection.
-    pub SOUTH_LATITUDE = "GEO.south_latitude" {
+    /// The latitude of the world's warm belt, in degrees north, at which its first row's climate is read.
+    pub WARM_LATITUDE = "GEO.warm_latitude" {
         kind: Endowment, value: Fixed { exp: 1 }, clause: "GEO.18", scope: Shared
     }
 }
 
 declare_prim! {
-    /// Metres of the Earth's surface in a degree of latitude, by which the map's height spans its latitudes.
-    pub METRES_PER_DEGREE = "GEO.metres_per_degree" {
-        kind: Endowment, value: Count, clause: "GEO.18", scope: Shared
+    /// The latitude of the world's cool belt, in degrees north, at which the row half the world away is read.
+    pub COOL_LATITUDE = "GEO.cool_latitude" {
+        kind: Endowment, value: Fixed { exp: 1 }, clause: "GEO.18", scope: Shared
     }
 }
 
@@ -490,7 +491,6 @@ pub struct GeoPrims {
     pub base_cells: Prim<Count>,
     pub octaves: Prim<Count>,
     pub roughness: Prim<Fixed<2>>,
-    pub falloff: Prim<Fixed<2>>,
     pub relief_cells: Prim<Count>,
     pub plates: Prim<Count>,
     pub plate_belt: Prim<Fixed<3>>,
@@ -507,12 +507,13 @@ pub struct GeoPrims {
     pub river_tiles: Prim<Count>,
     pub rugged_m: Prim<Count>,
     pub river_crossing_m: Prim<Count>,
+    pub share_tolerance: Prim<Count>,
     pub zones: Prim<Count>,
     pub zone_min_tiles: Prim<Count>,
     pub zone_max_tiles: Prim<Count>,
     pub mainland_floor: Prim<Count>,
-    pub south_latitude: Prim<Fixed<1>>,
-    pub metres_per_degree: Prim<Count>,
+    pub warm_latitude: Prim<Fixed<1>>,
+    pub cool_latitude: Prim<Fixed<1>>,
     pub terrain_elevation: Prim<Table1>,
     pub terrain_relief: Prim<Table1>,
     pub climate_lowland: Prim<Table2>,
@@ -547,7 +548,6 @@ impl GeoPrims {
             base_cells: d.prim(&BASE_CELLS),
             octaves: d.prim(&OCTAVES),
             roughness: d.prim(&ROUGHNESS),
-            falloff: d.prim(&FALLOFF),
             relief_cells: d.prim(&RELIEF_CELLS),
             plates: d.prim(&PLATES),
             plate_belt: d.prim(&PLATE_BELT),
@@ -564,12 +564,13 @@ impl GeoPrims {
             river_tiles: d.prim(&RIVER_TILES),
             rugged_m: d.prim(&RUGGED_M),
             river_crossing_m: d.prim(&RIVER_CROSSING_M),
+            share_tolerance: d.prim(&SHARE_TOLERANCE),
             zones: d.prim(&ZONES),
             zone_min_tiles: d.prim(&ZONE_MIN_TILES),
             zone_max_tiles: d.prim(&ZONE_MAX_TILES),
             mainland_floor: d.prim(&MAINLAND_FLOOR),
-            south_latitude: d.prim(&SOUTH_LATITUDE),
-            metres_per_degree: d.prim(&METRES_PER_DEGREE),
+            warm_latitude: d.prim(&WARM_LATITUDE),
+            cool_latitude: d.prim(&COOL_LATITUDE),
             terrain_elevation: d.prim(&TERRAIN_ELEVATION),
             terrain_relief: d.prim(&TERRAIN_RELIEF),
             climate_lowland: d.prim(&CLIMATE_LOWLAND),

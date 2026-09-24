@@ -92,7 +92,13 @@ fn empty_day_barriers(w: Inspector<'_>) -> u64 {
 /// its handlers recorded.
 fn geo_report(w: Inspector<'_>) -> serde_json::Value {
     let geo = w.geo();
+    let land: Vec<bool> = geo.map.tiles.iter().map(phx_geo::tile::Tile::is_land).collect();
+    let sea: Vec<bool> = land.iter().map(|l| !l).collect();
+    let (sea_across, sea_down) = phx_geo::partition::winds(&geo.map.grid, &sea);
+    let (land_across, land_down) = phx_geo::partition::winds(&geo.map.grid, &land);
     json!({
+        "sea_goes_round": { "east_west": sea_across, "north_south": sea_down },
+        "land_goes_round": { "east_west": land_across, "north_south": land_down },
         "phx_geo.generation_attempts": geo.map.attempt + 1,
         "rejections": geo.map.rejections.iter().map(|r| r.condition.clone()).collect::<Vec<_>>(),
         "land_tiles": geo.map.tiles.iter().filter(|t| t.is_land()).count(),

@@ -15,7 +15,6 @@ pub struct ReliefParams {
     pub base_cells: u32,
     pub octaves: u8,
     pub roughness: f64,
-    pub falloff: f64,
     pub plates: u32,
     pub belt: f64,
     pub plate_weight: f64,
@@ -48,32 +47,30 @@ fn plates(count: u32, d: &mut Draws) -> Vec<Plate> {
         .collect()
 }
 
-/// The two plates nearest a point, and the point's distance to the line halfway between them.
+/// A difference of coordinates on the closed plane of side one, taken the shorter way round: between -½ and ½.
+fn wrapped(d: f64) -> f64 {
+    d - libm::round(d)
+}
+
+/// The two plates nearest a point over the closed plane, each as its offset from the point, and the point's distance
+/// to the line halfway between them.
 fn nearest_two(plates: &[Plate], u: f64, v: f64) -> Option<(Plate, Plate, f64)> {
-    let dist2 = |p: &Plate| (p.u - u) * (p.u - u) + (p.v - v) * (p.v - v);
+    let offset = |p: &Plate| Plate { u: wrapped(p.u - u), v: wrapped(p.v - v), ..*p };
+    let dist2 = |p: &Plate| p.u * p.u + p.v * p.v;
     let mut best: Option<(f64, Plate)> = None;
     let mut second: Option<(f64, Plate)> = None;
-    for p in plates {
-        let d = dist2(p);
+    for p in plates.iter().map(offset) {
+        let d = dist2(&p);
         if best.is_none_or(|(b, _)| d < b) {
             second = best;
-            best = Some((d, *p));
+            best = Some((d, p));
         } else if second.is_none_or(|(s, _)| d < s) {
-            second = Some((d, *p));
+            second = Some((d, p));
         }
     }
     let ((d1, a), (d2, b)) = (best?, second?);
     let apart = sqrt((b.u - a.u) * (b.u - a.u) + (b.v - a.v) * (b.v - a.v));
     Some((a, b, (d2 - d1) / (2.0 * apart)))
-}
-
-/// How far a point of the plane lies toward the ocean around the map: nothing at the centre, growing as the square of
-/// the distance from it there, and without end toward the edges, so no land reaches them. It is `1/q - 1` over four,
-/// where `q`, the product of each axis's `4x(1 - x)`, is one at the centre and nothing at an edge.
-fn ocean(east: f64, south: f64) -> f64 {
-    let (du, dv) = (east - HALF, south - HALF);
-    let q = (1.0 - 2.0 * 2.0 * du * du) * (1.0 - 2.0 * 2.0 * dv * dv);
-    (1.0 / q - 1.0) * HALF * HALF
 }
 
 /// The noise fields one attempt draws, in a fixed order: the relief's octaves, the two warp fields, the ridges, the two
@@ -89,8 +86,9 @@ struct Fields {
 }
 
 /// The raw relief on the fine grid, before erosion: each plate's crust blended across its borders, mountain belts
-/// raised where plates converge (ridged), the fractal relief over a warped plane, less the falloff that puts the sea
-/// at the edges.
+/// raised where plates converge (ridged), and the fractal relief, all over a warped plane. The plane closes on itself
+/// as the grid does, its coordinates running from nothing to one across each way, and the noise and the plates repeat
+/// with it, so nothing marks a seam.
 #[clause("GEO.10")]
 #[must_use]
 pub fn raw(p: &ReliefParams, fine: &Grid, draws: &mut Draws) -> Vec<f64> {
@@ -103,11 +101,11 @@ pub fn raw(p: &ReliefParams, fine: &Grid, draws: &mut Draws) -> Vec<f64> {
         plate_v: octaves(p.base_cells, p.base_cells, p.octaves, draws),
         plates: plates(p.plates, draws),
     };
-    let span = f64::from(fine.width);
+    let (across, down) = (f64::from(fine.width), f64::from(fine.height));
     (0..fine.len())
         .map(|index| {
             let (col, row) = fine.xy(fine.tile(index));
-            let (east, south) = ((f64::from(col) + HALF) / span, (f64::from(row) + HALF) / span);
+            let (east, south) = ((f64::from(col) + HALF) / across, (f64::from(row) + HALF) / down);
             let (wu, wv) = (
                 east + p.warp * fractal(&fields.warp_u, p.roughness, east, south),
                 south + p.warp * fractal(&fields.warp_v, p.roughness, east, south),
@@ -131,7 +129,6 @@ pub fn raw(p: &ReliefParams, fine: &Grid, draws: &mut Draws) -> Vec<f64> {
             p.plate_weight * plate
                 + fractal(&fields.relief, p.roughness, wu, wv)
                 + p.mountain_weight * uplift * (1.0 + ridge)
-                - p.falloff * ocean(east, south)
         })
         .collect()
 }
@@ -139,9 +136,9 @@ pub fn raw(p: &ReliefParams, fine: &Grid, draws: &mut Draws) -> Vec<f64> {
 /// Rivers cut the relief: each pass routes the water to the outlets, then lowers every cell toward its receiver by
 /// the stream-power law, solved implicitly from the outlets up so no pass overshoots.
 #[clause("GEO.10")]
-pub fn erode(p: &ReliefParams, fine: &Grid, height: &mut [f64], outlet: &[bool]) {
+pub fn erode(p: &ReliefParams, fine: &Grid, height: &mut [f64], outlet: &[bool], lot: &[u64]) {
     for _ in 0..p.erosion_passes {
-        let routes = drainage(fine, height, outlet);
+        let routes = drainage(fine, height, outlet, lot);
         let area = upstream(&routes);
         for cell in &routes.order {
             let Some(r) = routes.receiver.get(*cell).copied().flatten() else { continue };
