@@ -10,6 +10,7 @@ mod fixture;
 pub mod group_demand;
 pub mod holder;
 pub mod hot;
+pub mod households;
 pub mod index;
 pub mod individual;
 pub mod join;

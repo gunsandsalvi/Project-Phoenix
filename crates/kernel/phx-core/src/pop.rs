@@ -21,10 +21,21 @@ pub enum ScaleRef {
     Rate(&'static str),
 }
 
-/// A role within each member: a person of a household, its dwelling, a firm's own.
+/// How many persons of a role each member holds: one, or as many as one of the member's key attributes says, so a
+/// household's children of an age band are one role counted in its key.
+#[clause("REP.26", "REP.14")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RoleCount {
+    One,
+    Key(&'static str),
+}
+
+/// A role within each member: a person of a household, its dwelling, a firm's own; each member holds its count of
+/// them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RoleDecl {
     pub name: &'static str,
+    pub per_member: RoleCount,
     pub clause: &'static str,
 }
 

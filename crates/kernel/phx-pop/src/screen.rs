@@ -224,7 +224,7 @@ mod tests {
     fn cell() -> (CellTable<HeapBacking>, Slot) {
         let entry = |item| PopEntry { system: "DEM", kind: "household", item };
         let entries = [
-            entry(PopItem::Role(RoleDecl { name: "person", clause: "REP.26" })),
+            entry(PopItem::Role(RoleDecl { name: "person", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
             entry(PopItem::ProfileGroup(GroupDecl { name: "age", role: "person", components: AGE, clause: "REP.32" })),
         ];
         let kind = PopKindDecl::compile("household", &entries, &KinkRegistry::default(), &steps).unwrap();

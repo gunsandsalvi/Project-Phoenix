@@ -90,8 +90,8 @@ fn steps(_: &'static str) -> Result<StepTable, String> {
 fn kind() -> PopKindDecl {
     let e = |item| PopEntry { system: "REP", kind: KIND, item };
     let mut entries = vec![
-        e(PopItem::Role(RoleDecl { name: "head", clause: "REP.26" })),
-        e(PopItem::Role(RoleDecl { name: "partner", clause: "REP.26" })),
+        e(PopItem::Role(RoleDecl { name: "head", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
+        e(PopItem::Role(RoleDecl { name: "partner", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
         e(PopItem::KeyAttr(KeyAttrDecl { name: "REP.composition", values: DESIGN_THREE, clause: "REP.19" })),
         e(PopItem::ProfileGroup(GroupDecl { name: "head_joint", role: "head", components: JOINT, clause: "REP.32" })),
         e(PopItem::ProfileGroup(GroupDecl {

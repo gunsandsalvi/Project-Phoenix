@@ -671,10 +671,19 @@ the role's clocks, so the household table stays at 14; discovery and imitation t
 Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
 same way with counts of one.
 
+**Roles are counted in the key.** A role is held once by every member of a cell (the head) or as many times as one
+of its key attributes says (a partner, none or one; the other adults of an age class; the children of an age band),
+so a group of that role counts the member's weight times that count (REP.14, REP.26), and a split draws each group's
+persons for the households that leave.
+
 **Processes on cells** are declared by the system that owns their outcome (`PopProcess`, in `phx-core`): the hazard
-it answers, the kind and profile group it reads, a member's daily chance at each joint value, the next date its rates
-may change unvisited, and its outcome for the members hit — a value changed in place, a part split out with its hit
-value, groups and key attributes changed, or households ended. The world binds each at assembly to its hazard (of the
+it answers, the kind and profile group it reads, a person's daily chance at each joint value, the next date its rates
+may change unvisited, and its outcome. Its hits are persons; 3e groups them into the households they belong to by
+drawing persons without replacement (`phx_pop::households::households_hit`), so two reached in one household are one
+household, and the outcome says for each group of households what happens: persons' values changed in place; or the
+households split out as a part whose reached persons leave or move to another role with their other values drawn
+(a child of an age band ageing into the next, the rest filled as declared), roles moved (a partner becoming the head),
+and key attributes set, checked against every group's persons; or the households ended. The world binds each at assembly to its hazard (of the
 same system, acting on the kind), group, event kind and stream, orders them by kind and hazard, and gives each its
 kind's agenda reason; two processes of one kind never share a stream. The population's agenda has one table per kind
 that processes act on, and keeps beside each (row, reason)'s next day the weight rung its booking was drawn at, which

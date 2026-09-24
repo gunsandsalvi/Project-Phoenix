@@ -69,7 +69,7 @@ const AGE: &[ProfileComponent] = &[ProfileComponent { name: "age_band", values: 
 fn cell_setup() -> (CellTable<HeapBacking>, Slot) {
     let entry = |item| PopEntry { system: "DEM", kind: "household", item };
     let entries = [
-        entry(PopItem::Role(RoleDecl { name: "person", clause: "REP.26" })),
+        entry(PopItem::Role(RoleDecl { name: "person", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
         entry(PopItem::ProfileGroup(GroupDecl { name: "age", role: "person", components: AGE, clause: "REP.32" })),
     ];
     let steps = |_: &'static str| StepTable::new(&Partition { exp: 0, bounds: [1].into() });

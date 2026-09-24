@@ -125,7 +125,8 @@ impl Population {
     #[must_use]
     pub fn view<'a, B: Backing + 'static>(&'a self, cells: &'a [Box<dyn CellHolders>]) -> CellsView<'a, B> {
         let tables = (0..self.kinds.len()).map(|i| Population::table::<B>(cells, i)).collect();
-        CellsView::new(tables, &self.members, &self.landed)
+        let keys = self.kinds.iter().map(|k| &k.keys).collect();
+        CellsView::new(tables, keys, &self.members, &self.landed)
     }
 
     /// Each kind's empty cell table, made in the books' address space with identities from `first` on.

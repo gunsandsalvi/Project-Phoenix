@@ -80,9 +80,9 @@ pub use phx_macros::{
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
 pub use pop::{
     GroupDecl, KeyAttrDecl, PinDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, PositionOf, ProfileComponent,
-    RankDecl, RateDecl, ResolutionDecl, RoleDecl, ScaleRef,
+    RankDecl, RateDecl, ResolutionDecl, RoleCount, RoleDecl, ScaleRef,
 };
-pub use pop_process::{CellView, GroupMove, MemberChange, PopProcess};
+pub use pop_process::{CellView, HouseholdHit, MemberChange, PersonsGo, PopProcess, RoleMove};
 pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};
 pub use register::limit::{Binding, Bindings, Bound, DeclaredLimit, Limited, PhysicalToken, TermsToken};
 pub use register::profile::{JointProfile, Pinned, ProfileValue, Transform, draw_profile};

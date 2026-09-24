@@ -1,11 +1,11 @@
 use phx_core::{
     GroupDecl, KeyAttrDecl, KinkRegistry, PinDecl, PopEntry, PopItem, PositionDecl, PositionOf, ProfileComponent,
-    RateDecl, ResolutionDecl, RoleDecl, ScaleRef,
+    RateDecl, ResolutionDecl, RoleCount, RoleDecl, ScaleRef,
 };
 use phx_macros::clause;
 use phx_num::Missing;
 
-use crate::key::KeyLayout;
+use crate::key::{KeyField, KeyLayout};
 use crate::sig::SigLayout;
 use crate::steps::StepTable;
 
@@ -35,11 +35,13 @@ pub struct Position {
     pub writer: &'static str,
 }
 
-/// A profile group as the kind holds it: its role, its components, and how many joint values they take.
+/// A profile group as the kind holds it: its role, the key field counting that role's persons in each member (one
+/// each when absent), its components, and how many joint values they take.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Group {
     pub name: &'static str,
     pub role: usize,
+    pub per_member: Missing<KeyField>,
     pub components: Vec<ProfileComponent>,
     pub values: u32,
     pub writer: &'static str,
@@ -246,6 +248,7 @@ impl PopKindDecl {
                 Some(v) if v > 0 => groups.push(Group {
                     name: g.item.name,
                     role,
+                    per_member: Missing::Absent,
                     components: g.item.components.to_vec(),
                     values: v,
                     writer: g.writer,
@@ -256,6 +259,20 @@ impl PopKindDecl {
         }
         let attrs: Vec<KeyAttrDecl> = items.key_attrs.iter().map(|d| d.item).collect();
         let key = KeyLayout::new(&attrs).map_err(|e| format!("`{kind}`: {e}"));
+        if let Ok(layout) = &key {
+            for g in &mut groups {
+                let Some(role) = items.roles.get(g.role) else { continue };
+                if let RoleCount::Key(attr) = role.item.per_member {
+                    match layout.named(attr) {
+                        Some(f) => g.per_member = Missing::Present(f),
+                        None => errors.push(format!(
+                            "role `{}` is counted by key attribute `{attr}`, which the kind has not",
+                            role.item.name
+                        )),
+                    }
+                }
+            }
+        }
         let names: Vec<&'static str> = positions.iter().map(|p| p.name).collect();
         let sig = SigLayout::new(&names, kinks);
         match key {
@@ -309,8 +326,14 @@ mod tests {
 
     fn base() -> Vec<PopEntry> {
         vec![
-            entry("DEM", PopItem::Role(RoleDecl { name: "adult_1", clause: "REP.26" })),
-            entry("DEM", PopItem::Role(RoleDecl { name: "adult_2", clause: "REP.26" })),
+            entry(
+                "DEM",
+                PopItem::Role(RoleDecl { name: "adult_1", per_member: phx_core::RoleCount::One, clause: "REP.26" }),
+            ),
+            entry(
+                "DEM",
+                PopItem::Role(RoleDecl { name: "adult_2", per_member: phx_core::RoleCount::One, clause: "REP.26" }),
+            ),
             entry("HH", PopItem::StandingRate(RateDecl { name: "HH.spending", unit: "money/day", clause: "REP.20" })),
             entry("DEM", PopItem::KeyAttr(KeyAttrDecl { name: "DEM.composition", values: 9, clause: "REP.19" })),
         ]

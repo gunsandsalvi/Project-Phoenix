@@ -22,29 +22,44 @@ impl core::fmt::Debug for CellView<'_> {
     }
 }
 
-/// What a hit does to the members it reached who hold one joint value of the process's group, as the owning system
-/// declares it. The kernel splits them from their cell as one part, carrying their other roles' profile values drawn
-/// from the cell, then makes these changes to the part.
+/// The persons a process reached in the households of one cell, grouped by household: `households` households, each
+/// of which lost the same persons, counted by their joint value in the process's group.
+#[clause("REP.26")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HouseholdHit {
+    pub households: u64,
+    pub persons: Vec<(u32, u32)>,
+}
+
+/// Where the persons a hit reached go: out of their household, or into another of its roles with every value they
+/// hold; a value of the new role's groups no group of theirs corresponds to is given by `fill`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PersonsGo {
+    Leave,
+    Into { role: &'static str, fill: Vec<(&'static str, u32)> },
+}
+
+/// Persons of one role moving to another within each household of a part, as many from each, their values drawn from
+/// the part's: as when a partner becomes the head.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RoleMove {
+    pub from: &'static str,
+    pub to: &'static str,
+    pub persons: u32,
+}
+
+/// What a hit does, as the owning system declares it. The kernel applies each in the order given.
 #[clause("REP.26", "REP.23")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MemberChange {
-    /// The members' value in the group becomes another, in place: nothing else about them differs from the cell's,
-    /// so they stay.
+    /// Persons' value in the group becomes another, in place: nothing else about their households differs, so they
+    /// stay.
     Revalue { from: u32, to: u32, count: u64 },
-    /// The members split out as a part: their value in the group becomes `to`; then each move gives one group the
-    /// values another held and leaves that other at a value (as when a partner becomes the head and no partner is
-    /// left); and each named key attribute takes its value.
-    Part { from: u32, count: u64, to: u32, moves: Vec<GroupMove>, key: Vec<(&'static str, u32)> },
-    /// The members' households end: no member of them is left, and each becomes an estate.
-    End { from: u32, count: u64 },
-}
-
-/// One group's values given to another within a part, the first left at a value.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct GroupMove {
-    pub from: &'static str,
-    pub to: &'static str,
-    pub left: u32,
+    /// The households of one of the hits split out as a part: the persons reached go where `persons` says, then each
+    /// role move is made, and each named key attribute takes its value.
+    Part { hit: usize, persons: PersonsGo, moves: Vec<RoleMove>, key: Vec<(&'static str, u32)> },
+    /// The households of one of the hits end: no person of them is left, and each becomes an estate.
+    End { hit: usize },
 }
 
 /// A process on a population kind's members, declared by the system that owns its outcome. The hazard it answers
@@ -61,6 +76,6 @@ pub trait PopProcess: Send + Sync {
     fn rate(&self, register: &Register, cell: &CellView<'_>, value: u32) -> f64;
     /// The first day after `date` on which a rate may change though the cell is not visited, if there is one.
     fn changes_after(&self, date: Date) -> Option<Date>;
-    /// The changes for the members hit in a cell, per joint value hit.
-    fn outcome(&self, cell: &CellView<'_>, hits: &[(u32, u64)], out: &mut Vec<MemberChange>);
+    /// The changes for the persons reached in a cell's households, grouped by household.
+    fn outcome(&self, cell: &CellView<'_>, hits: &[HouseholdHit], out: &mut Vec<MemberChange>);
 }

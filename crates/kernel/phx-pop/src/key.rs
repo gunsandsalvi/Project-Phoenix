@@ -76,15 +76,13 @@ impl KeyLayout {
     /// An attribute's value in a record.
     #[must_use]
     pub fn get(&self, key: &KeyRecord, attr: usize) -> u32 {
-        let f = self.field(attr);
-        let Some(w) = key.words.get(f.word) else {
-            violation!(clause = "REP.19", "a key field beyond its record", word = f.word);
-        };
-        let mask = mask(f.bits);
-        let Ok(v) = u32::try_from((w >> f.shift) & mask) else {
-            violation!(clause = "REP.19", "a key field wider than its values", attr = attr);
-        };
-        v
+        read(&self.field(attr), key)
+    }
+
+    /// An attribute's field by its name.
+    #[must_use]
+    pub fn named(&self, name: &str) -> Option<KeyField> {
+        self.fields.iter().find(|f| f.name == name).copied()
     }
 
     /// An attribute's value written into a record; a value outside the attribute's declared values stops the run.
@@ -99,6 +97,18 @@ impl KeyLayout {
         let mask = mask(f.bits) << f.shift;
         *w = (*w & !mask) | (u64::from(value) << f.shift);
     }
+}
+
+/// A field's value in a record.
+#[must_use]
+pub fn read(f: &KeyField, key: &KeyRecord) -> u32 {
+    let Some(w) = key.words.get(f.word) else {
+        violation!(clause = "REP.19", "a key field beyond its record", word = f.word);
+    };
+    let Ok(v) = u32::try_from((w >> f.shift) & mask(f.bits)) else {
+        violation!(clause = "REP.19", "a key field wider than its values", word = f.word);
+    };
+    v
 }
 
 fn mask(bits: u32) -> u64 {

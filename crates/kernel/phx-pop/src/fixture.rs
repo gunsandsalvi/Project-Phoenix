@@ -66,8 +66,8 @@ pub(crate) fn kind() -> PopKindDecl {
     let e = |system, item| PopEntry { system, kind: HH, item };
     let group = |name, role, components| PopItem::ProfileGroup(GroupDecl { name, role, components, clause: "REP.32" });
     let entries = [
-        e("DEM", PopItem::Role(RoleDecl { name: "head", clause: "REP.26" })),
-        e("DEM", PopItem::Role(RoleDecl { name: "partner", clause: "REP.26" })),
+        e("DEM", PopItem::Role(RoleDecl { name: "head", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
+        e("DEM", PopItem::Role(RoleDecl { name: "partner", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
         e("DEM", PopItem::KeyAttr(KeyAttrDecl { name: "DEM.composition", values: 4, clause: "REP.19" })),
         e("DEM", group("DEM.age", "head", THREE)),
         e("DEM", group("DEM.age_health", "head", SIX)),

@@ -221,8 +221,11 @@ mod tests {
 
     #[test]
     fn the_ledger_reaches_cells_as_it_reaches_individuals() {
-        let role =
-            PopEntry { system: "DEM", kind: "household", item: PopItem::Role(RoleDecl { name: "a", clause: "x" }) };
+        let role = PopEntry {
+            system: "DEM",
+            kind: "household",
+            item: PopItem::Role(RoleDecl { name: "a", per_member: phx_core::RoleCount::One, clause: "x" }),
+        };
         let k = PopKindDecl::compile("household", &[role], &KinkRegistry::default(), &steps).unwrap();
         let mut space = AddressSpace::empty();
         let mut t: CellTable<HeapBacking> = CellTable::new(&mut space, &k, TableId::new(4), 64, 8);

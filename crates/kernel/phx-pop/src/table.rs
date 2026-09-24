@@ -1008,7 +1008,7 @@ mod tests {
     /// kinds, with one profile group.
     fn kind(positions: usize, rates: usize, reviews: usize) -> PopKindDecl {
         let mut e = vec![
-            entry(PopItem::Role(RoleDecl { name: "adult", clause: "REP.26" })),
+            entry(PopItem::Role(RoleDecl { name: "adult", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
             entry(PopItem::KeyAttr(KeyAttrDecl { name: "region", values: 20, clause: "REP.19" })),
             entry(PopItem::ProfileGroup(GroupDecl {
                 name: "LAB.adult",

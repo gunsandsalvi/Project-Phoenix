@@ -2,7 +2,7 @@ pub mod phx_pop
 pub mod phx_pop::audit
 pub struct phx_pop::audit::CellsView<'a, B: phx_store::backing::Backing>
 impl<'a, B: phx_store::backing::Backing> phx_pop::audit::CellsView<'a, B>
-pub fn phx_pop::audit::CellsView<'a, B>::new(alloc::vec::Vec<&'a phx_pop::table::CellTable<B>>, &'a [(&'static str, u64)], &'a [phx_pop::landing::Landed]) -> phx_pop::audit::CellsView<'a, B>
+pub fn phx_pop::audit::CellsView<'a, B>::new(alloc::vec::Vec<&'a phx_pop::table::CellTable<B>>, alloc::vec::Vec<&'a phx_pop::key::KeyInterner>, &'a [(&'static str, u64)], &'a [phx_pop::landing::Landed]) -> phx_pop::audit::CellsView<'a, B>
 impl<B: phx_store::backing::Backing> core::fmt::Debug for phx_pop::audit::CellsView<'_, B>
 pub fn phx_pop::audit::CellsView<'_, B>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<B: phx_store::backing::Backing> phx_core::family::CellsAudit for phx_pop::audit::CellsView<'_, B>
@@ -16,7 +16,7 @@ pub fn phx_pop::audit::Representation::check(&self, &phx_core::family::FamilyCtx
 pub fn phx_pop::audit::Representation::decl(&self) -> phx_core::family::FamilyDecl
 pub fn phx_pop::audit::Representation::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub const phx_pop::audit::REPRESENTATION: phx_core::family::FamilyDecl
-pub fn phx_pop::audit::representation<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_pop::audit::representation<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::key::KeyRecord) -> alloc::vec::Vec<phx_core::family::Gap>
 pub mod phx_pop::check
 pub enum phx_pop::check::Refused
 pub phx_pop::check::Refused::Attention
@@ -118,6 +118,8 @@ impl phx_store::pod::Pod for phx_pop::hot::HotRecord
 pub fn phx_pop::hot::HotRecord::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_pop::hot::HotRecord
 pub const phx_pop::hot::INDIVIDUAL: u16
+pub mod phx_pop::households
+pub fn phx_pop::households::households_hit(&mut phx_rand::draws::Draws, u64, u64, &[(u32, u64)]) -> alloc::vec::Vec<phx_core::pop_process::HouseholdHit>
 pub mod phx_pop::index
 pub enum phx_pop::index::IndexChange
 pub phx_pop::index::IndexChange::Enter(phx_id::ids::Slot)
@@ -203,6 +205,7 @@ pub struct phx_pop::key::KeyLayout
 impl phx_pop::key::KeyLayout
 pub fn phx_pop::key::KeyLayout::fields(&self) -> &[phx_pop::key::KeyField]
 pub fn phx_pop::key::KeyLayout::get(&self, &phx_pop::key::KeyRecord, usize) -> u32
+pub fn phx_pop::key::KeyLayout::named(&self, &str) -> core::option::Option<phx_pop::key::KeyField>
 pub fn phx_pop::key::KeyLayout::new(&[phx_core::pop::KeyAttrDecl]) -> core::result::Result<phx_pop::key::KeyLayout, alloc::string::String>
 pub fn phx_pop::key::KeyLayout::set(&self, &mut phx_pop::key::KeyRecord, usize, u32)
 #[repr(C)] pub struct phx_pop::key::KeyRecord
@@ -216,6 +219,7 @@ pub fn phx_pop::key::KeyRecord::word(self) -> u64
 impl phx_store::pod::Pod for phx_pop::key::KeyRecord
 pub fn phx_pop::key::KeyRecord::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_pop::key::KeyRecord
+pub fn phx_pop::key::read(&phx_pop::key::KeyField, &phx_pop::key::KeyRecord) -> u32
 pub mod phx_pop::kind
 pub enum phx_pop::kind::Scale
 pub phx_pop::kind::Scale::Position(usize)
@@ -226,6 +230,7 @@ pub phx_pop::kind::Declared::writer: &'static str
 pub struct phx_pop::kind::Group
 pub phx_pop::kind::Group::components: alloc::vec::Vec<phx_core::pop::ProfileComponent>
 pub phx_pop::kind::Group::name: &'static str
+pub phx_pop::kind::Group::per_member: phx_num::missing::Missing<phx_pop::key::KeyField>
 pub phx_pop::kind::Group::role: usize
 pub phx_pop::kind::Group::values: u32
 pub phx_pop::kind::Group::writer: &'static str
@@ -317,11 +322,18 @@ pub phx_pop::occasion::Occasion::profile_value: u32
 pub phx_pop::occasion::Occasion::row: phx_id::ids::Slot
 pub fn phx_pop::occasion::reaches(phx_core::occasions::OccasionKind, bool, phx_id::day::Day) -> phx_pop::occasion::Reaches
 pub mod phx_pop::outcome
+pub struct phx_pop::outcome::Reshape<'a>
+pub phx_pop::outcome::Reshape::go: &'a phx_core::pop_process::PersonsGo
+pub phx_pop::outcome::Reshape::group: usize
+pub phx_pop::outcome::Reshape::key: &'a [(&'static str, u32)]
+pub phx_pop::outcome::Reshape::moves: &'a [phx_core::pop_process::RoleMove]
+pub phx_pop::outcome::Reshape::persons: &'a [(u32, u32)]
 pub fn phx_pop::outcome::group(&phx_pop::kind::PopKindDecl, &str) -> core::option::Option<usize>
 pub fn phx_pop::outcome::rekeyed(&phx_pop::kind::PopKindDecl, phx_pop::key::KeyRecord, &[(&str, u32)]) -> phx_pop::key::KeyRecord
-pub fn phx_pop::outcome::reshape(&mut phx_pop::part::Part, &phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, (usize, u32, u32), &[phx_core::pop_process::GroupMove], &[(&str, u32)])
-pub fn phx_pop::outcome::reshape_cell<B: phx_store::backing::Backing>(&mut phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, (usize, u32, u32), &[phx_core::pop_process::GroupMove])
+pub fn phx_pop::outcome::reshape(&mut phx_pop::part::Part, &phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, &phx_pop::outcome::Reshape<'_>, &mut phx_rand::draws::Draws)
+pub fn phx_pop::outcome::reshape_cell<B: phx_store::backing::Backing>(&mut phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &phx_pop::outcome::Reshape<'_>, &phx_pop::key::KeyRecord, &mut phx_rand::draws::Draws)
 pub fn phx_pop::outcome::revalue<B: phx_store::backing::Backing>(&mut phx_pop::table::CellTable<B>, phx_id::ids::Slot, usize, u32, u32, u64)
+pub fn phx_pop::outcome::role(&phx_pop::kind::PopKindDecl, &str) -> core::option::Option<usize>
 pub mod phx_pop::overlap
 pub struct phx_pop::overlap::Overlap
 pub phx_pop::overlap::Overlap::by_set: alloc::vec::Vec<u64>
@@ -412,6 +424,7 @@ pub const phx_pop::prims::RANK_DAY: phx_core::register::PrimDecl
 pub mod phx_pop::profile
 pub struct phx_pop::profile::GroupShape
 pub phx_pop::profile::GroupShape::dense: bool
+pub phx_pop::profile::GroupShape::per_member: phx_num::missing::Missing<phx_pop::key::KeyField>
 pub phx_pop::profile::GroupShape::role: usize
 pub phx_pop::profile::GroupShape::values: u32
 pub struct phx_pop::profile::Profile
@@ -430,6 +443,7 @@ pub struct phx_pop::profile::ProfileLayout
 pub phx_pop::profile::ProfileLayout::groups: alloc::vec::Vec<phx_pop::profile::GroupShape>
 impl phx_pop::profile::ProfileLayout
 pub fn phx_pop::profile::ProfileLayout::new(&[phx_pop::kind::Group]) -> phx_pop::profile::ProfileLayout
+pub fn phx_pop::profile::ProfileLayout::persons(&self, usize, &phx_pop::key::KeyRecord, u64) -> u64
 pub struct phx_pop::profile::WordBytes<'a>
 pub phx_pop::profile::WordBytes::len: usize
 pub phx_pop::profile::WordBytes::words: &'a [u64]

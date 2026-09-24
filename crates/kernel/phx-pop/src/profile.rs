@@ -4,12 +4,17 @@ use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 
 use crate::consts::{DENSE_MAX_VALUES, VARINT_BITS, VARINT_MORE};
+use phx_num::Missing;
+
+use crate::key::{KeyField, KeyRecord};
 use crate::kind::Group;
 
-/// How one profile group is kept: how many joint values it takes, and whether as a dense histogram.
+/// How one profile group is kept: its role, the key field counting that role's persons in each member, how many
+/// joint values it takes, and whether as a dense histogram.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GroupShape {
     pub role: usize,
+    pub per_member: Missing<KeyField>,
     pub values: u32,
     pub dense: bool,
 }
@@ -26,9 +31,32 @@ impl ProfileLayout {
     pub fn new(groups: &[Group]) -> ProfileLayout {
         let shapes = groups
             .iter()
-            .map(|g| GroupShape { role: g.role, values: g.values, dense: g.values <= DENSE_MAX_VALUES })
+            .map(|g| GroupShape {
+                role: g.role,
+                per_member: g.per_member,
+                values: g.values,
+                dense: g.values <= DENSE_MAX_VALUES,
+            })
             .collect();
         ProfileLayout { groups: shapes }
+    }
+
+    /// The persons of a group's role that `members` members of a key hold: one each, or the key's count of them.
+    #[clause("REP.14", "REP.26")]
+    #[must_use]
+    pub fn persons(&self, group: usize, key: &KeyRecord, members: u64) -> u64 {
+        let Some(shape) = self.groups.get(group) else {
+            violation!(clause = "REP.32", "a profile group the kind does not hold", group = group);
+        };
+        match shape.per_member {
+            Missing::Absent => members,
+            Missing::Present(f) => {
+                let Some(n) = members.checked_mul(u64::from(crate::key::read(&f, key))) else {
+                    capacity_exceeded!("persons of a role", u64::MAX, members);
+                };
+                n
+            }
+        }
     }
 }
 
@@ -458,9 +486,9 @@ mod tests {
     fn layout() -> ProfileLayout {
         ProfileLayout {
             groups: vec![
-                GroupShape { role: 0, values: 12, dense: true },
-                GroupShape { role: 0, values: 40_000, dense: false },
-                GroupShape { role: 1, values: 3, dense: true },
+                GroupShape { role: 0, per_member: phx_num::Missing::Absent, values: 12, dense: true },
+                GroupShape { role: 0, per_member: phx_num::Missing::Absent, values: 40_000, dense: false },
+                GroupShape { role: 1, per_member: phx_num::Missing::Absent, values: 3, dense: true },
             ],
         }
     }

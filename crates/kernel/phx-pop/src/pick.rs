@@ -86,9 +86,9 @@ mod tests {
     fn picks_joint_within_group() {
         let layout = ProfileLayout {
             groups: vec![
-                GroupShape { role: 0, values: 6, dense: true },
-                GroupShape { role: 0, values: 4, dense: true },
-                GroupShape { role: 1, values: 3, dense: true },
+                GroupShape { role: 0, per_member: phx_num::Missing::Absent, values: 6, dense: true },
+                GroupShape { role: 0, per_member: phx_num::Missing::Absent, values: 4, dense: true },
+                GroupShape { role: 1, per_member: phx_num::Missing::Absent, values: 3, dense: true },
             ],
         };
         let mut p = Profile::empty(&layout);

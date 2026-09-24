@@ -73,39 +73,42 @@ fn leavers(d: &mut Draws, weight: u32, holding: u32, k: u32) -> u32 {
 }
 
 /// The leaving members' profile values, taken from the cell's as the splits before left it: the groups the event
-/// determined as it gives them, every other group drawn without replacement from the cell's counts. What leaves is
-/// taken from `origin` and noted in `deltas`, so the cell's profile is written once for all its splits.
+/// determined as it gives them, every other group drawn without replacement from the cell's counts, each group's
+/// persons the leaving members' count of its role under the cell's key. What leaves is taken from `origin` and noted
+/// in `deltas`, so the cell's profile is written once for all its splits.
 fn split_profile(
     layout: &crate::profile::ProfileLayout,
+    key: &crate::key::KeyRecord,
     origin: &mut crate::profile::Profile,
     deltas: &mut Vec<(usize, u32, i64)>,
     spec: &SplitSpec<'_>,
     d: &mut Draws,
 ) -> crate::profile::Profile {
-    let k = spec.count;
     let mut profile = crate::profile::Profile::empty(layout);
     for g in 0..layout.groups.len() {
+        let persons = layout.persons(g, key, u64::from(spec.count));
         let mut taken: Vec<(u32, u64)> = if let Some((_, values)) = spec.given.iter().find(|(given, _)| *given == g) {
             values.to_vec()
         } else {
             let held = origin.held(g);
             let counts: Vec<u64> = held.iter().map(|(_, n)| u64::from(*n)).collect();
             let mut out = vec![0_u64; counts.len()];
-            // All three draws are the same multivariate hypergeometric: one member is one uniform over the members,
-            // found by a scan; a few members one by one; many members value by value.
-            if k == 1 {
+            // All three draws are the same multivariate hypergeometric: one person is one uniform over the persons,
+            // found by a scan; a few persons one by one; many persons value by value.
+            if persons == 0 {
+            } else if persons == 1 {
                 if let Some(slot) = out.get_mut(crate::pick::one_of(d, &counts)) {
                     *slot = 1;
                 }
-            } else if u64::from(k) < phx_rand::float::len_u64(counts.len()) {
-                pick_without_replacement(d, &counts, u64::from(k), &mut out);
+            } else if persons < phx_rand::float::len_u64(counts.len()) {
+                pick_without_replacement(d, &counts, persons, &mut out);
             } else {
-                multivariate_hypergeometric(d, &counts, u64::from(k), &mut out);
+                multivariate_hypergeometric(d, &counts, persons, &mut out);
             }
             held.iter().zip(out).filter(|(_, n)| *n > 0).map(|((v, _), n)| (*v, n)).collect()
         };
-        if taken.iter().map(|(_, n)| n).sum::<u64>() != u64::from(k) {
-            violation!(clause = "REP.14", "a group's leaving members other than the part's weight", group = g);
+        if taken.iter().map(|(_, n)| n).sum::<u64>() != persons {
+            violation!(clause = "REP.14", "a group's leaving persons other than the part's members hold", group = g);
         }
         taken.sort_unstable_by_key(|(v, _)| *v);
         for (v, n) in taken {
@@ -170,7 +173,8 @@ pub fn split_batch<B: Backing, L: Backing>(
             out.push(Parted::Whole);
             continue;
         }
-        let profile = split_profile(&layout, &mut origin, &mut deltas, spec, d);
+        let key = keys.record(table.hot(slot).key_id);
+        let profile = split_profile(&layout, &key, &mut origin, &mut deltas, spec, d);
         plans.push((plan_rows(&mut held, spec, weight, d), spec.rounding));
         let mut holdings = Vec::new();
         for h in cell_holdings(&*table, slot) {
@@ -187,7 +191,7 @@ pub fn split_batch<B: Backing, L: Backing>(
             id: *id,
             from: slot,
             weight: Weight::new(k),
-            key: keys.record(table.hot(slot).key_id),
+            key,
             sig: table.sig(slot),
             positions,
             rates,
@@ -410,7 +414,14 @@ mod tests {
         let mut d = draws("DEM.death", 0);
         for _ in 0..trials {
             let (mut held, mut deltas) = (origin.clone(), Vec::new());
-            let got = super::split_profile(&layout, &mut held, &mut deltas, &plain(1), &mut d);
+            let got = super::split_profile(
+                &layout,
+                &crate::key::KeyRecord::default(),
+                &mut held,
+                &mut deltas,
+                &plain(1),
+                &mut d,
+            );
             assert_eq!(got.members(AGE_HEALTH), 1);
             sick_young += u64::from(got.count(AGE_HEALTH, 1));
             loan += u64::from(super::leavers(&mut d, 100, 30, 1));

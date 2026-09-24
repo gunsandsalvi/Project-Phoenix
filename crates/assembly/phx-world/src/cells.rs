@@ -8,10 +8,11 @@ use phx_id::{Day, PartyId, Slot, TableId};
 use phx_macros::clause;
 use phx_num::round::Round;
 use phx_num::{Missing, violation};
+use phx_pop::households::households_hit;
 use phx_pop::kind::PopKindDecl;
 use phx_pop::landing::{Landed, TenB, land};
 use phx_pop::measure::Census;
-use phx_pop::outcome::{rekeyed, reshape, reshape_cell, revalue};
+use phx_pop::outcome::{Reshape, rekeyed, reshape, reshape_cell, revalue};
 use phx_pop::part::PartId;
 use phx_pop::population::{KindSetup, Population};
 use phx_pop::prims::RepPrims;
@@ -390,18 +391,25 @@ impl World {
                 kd.decl.key_attrs.iter().position(|a| a.item.name == name).map(|i| kd.decl.key.get(&record, i))
             };
             let view = CellView { kind: kd.decl.kind, party: h.party, key: &key, country_of: &country_of, date };
-            let mut changes = Vec::new();
-            bound.process.outcome(&view, &h.by_value, &mut changes);
             let subject = Subject::new(SubjectTag::Part, h.party.get());
             let mut draws = self.streams.open(&bound.stream, subject, day, SubStep::S3e.ordinal());
+            let layout = table.profile_layout().clone();
+            let weight = u64::from(table.weight(h.slot).get());
+            let reached = households_hit(&mut draws, weight, layout.persons(bound.group, &record, 1), &h.by_value);
+            let mut changes = Vec::new();
+            bound.process.outcome(&view, &reached, &mut changes);
             for change in changes {
                 match change {
                     MemberChange::Revalue { from, to, count } => revalue(table, h.slot, bound.group, from, to, count),
-                    MemberChange::Part { from, count, to, moves, key: attrs } => {
-                        let Ok(n) = u32::try_from(count) else {
-                            phx_num::capacity_exceeded!("members of a part", u32::MAX, count);
+                    MemberChange::Part { hit, persons: go, moves, key: attrs } => {
+                        let Some(hh) = reached.get(hit) else {
+                            violation!(clause = "REP.26", "an outcome for households the hit did not reach", hit = hit);
                         };
-                        let given = [(from, count)];
+                        let Ok(n) = u32::try_from(hh.households) else {
+                            phx_num::capacity_exceeded!("households of a part", u32::MAX, hh.households);
+                        };
+                        let given: Vec<(u32, u64)> =
+                            hh.persons.iter().map(|(v, c)| (*v, u64::from(*c) * hh.households)).collect();
                         let groups = [(bound.group, &given[..])];
                         let spec = SplitSpec {
                             count: n,
@@ -417,18 +425,19 @@ impl World {
                         };
                         seq = Some((h.party, next));
                         let id = PartId { origin: h.party, seq: next };
-                        let layout = table.profile_layout().clone();
+                        let r =
+                            Reshape { group: bound.group, persons: &hh.persons, go: &go, moves: &moves, key: &attrs };
                         let mut at = Cells { ledger, table, place: kd.place, keys: &kd.keys };
                         match split(&mut at, h.slot, id, &spec, &mut draws) {
                             Parted::Part(mut part) => {
-                                reshape(&mut part, &kd.decl, &layout, (bound.group, from, to), &moves, &attrs);
+                                reshape(&mut part, &kd.decl, &layout, &r, &mut draws);
                                 if let Some(parts) = self.cell_parts.get_mut(h.kind) {
                                     parts.push(*part);
                                 }
                             }
                             Parted::Whole => {
-                                reshape_cell(table, h.slot, &kd.decl, (bound.group, from, to), &moves);
                                 let new = rekeyed(&kd.decl, record, &attrs);
+                                reshape_cell(table, h.slot, &kd.decl, &r, &new, &mut draws);
                                 let mut ctx = TenB {
                                     ledger,
                                     table,
@@ -715,7 +724,7 @@ mod tests {
         fn changes_after(&self, _: phx_id::Date) -> Option<phx_id::Date> {
             None
         }
-        fn outcome(&self, _: &CellView<'_>, _: &[(u32, u64)], _: &mut Vec<MemberChange>) {}
+        fn outcome(&self, _: &CellView<'_>, _: &[phx_core::HouseholdHit], _: &mut Vec<MemberChange>) {}
     }
 
     struct Dem;
@@ -741,7 +750,7 @@ mod tests {
     fn kinds() -> Vec<PopKindDecl> {
         let entry = |item| PopEntry { system: "DEM", kind: "household", item };
         let entries = [
-            entry(PopItem::Role(RoleDecl { name: "person", clause: "REP.26" })),
+            entry(PopItem::Role(RoleDecl { name: "person", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
             entry(PopItem::ProfileGroup(GroupDecl { name: "age", role: "person", components: AGE, clause: "REP.32" })),
         ];
         let steps = |_: &'static str| StepTable::new(&Partition { exp: 0, bounds: [1].into() });

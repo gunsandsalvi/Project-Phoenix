@@ -8,17 +8,18 @@ use phx_ledger::rows;
 use phx_macros::clause;
 use phx_store::Backing;
 
+use crate::key::{KeyInterner, KeyRecord};
 use crate::landing::Landed;
 use crate::table::CellTable;
 
 declare_family! { pub REPRESENTATION = "REP.representation" { mode: Rolling { cycle_days: 30 }, clause: "REP.14" } }
 
 /// A cell's weight, its profiles and its attachments: it stands for at least one member; each profile group counts
-/// every member of its role, which every member of the cell holds, so each group sums to the weight; and no row or
-/// holding is held by more members than the cell has.
+/// every person of its role, which each member of the cell holds as many of as its key says, so each group sums to the
+/// weight times that count; and no row or holding is held by more members than the cell has.
 #[clause("REP.14", "REP.17", "REP.31")]
 #[must_use]
-pub fn representation<B: Backing>(table: &CellTable<B>, slot: Slot) -> Vec<Gap> {
+pub fn representation<B: Backing>(table: &CellTable<B>, slot: Slot, key: &KeyRecord) -> Vec<Gap> {
     let owner = FindingOwner::Party(table.party(slot));
     let weight = i128::from(table.weight(slot).get());
     let mut gaps = Vec::new();
@@ -27,14 +28,16 @@ pub fn representation<B: Backing>(table: &CellTable<B>, slot: Slot) -> Vec<Gap> 
         gaps.push(Gap { owner, size: 1, unit: Unit::Count, detail });
     }
     let profile = table.profile(slot);
-    for g in 0..table.profile_layout().groups.len() {
+    let layout = table.profile_layout();
+    for g in 0..layout.groups.len() {
         let counted = i128::from(profile.members(g));
-        if counted != weight {
+        let persons = i128::from(layout.persons(g, key, u64::from(table.weight(slot).get())));
+        if counted != persons {
             let detail = format!(
-                "cell {}: profile group {g} counts {counted} members of a weight of {weight}",
+                "cell {}: profile group {g} counts {counted} persons where a weight of {weight} holds {persons}",
                 table.party(slot).get()
             );
-            gaps.push(Gap { owner, size: counted - weight, unit: Unit::Count, detail });
+            gaps.push(Gap { owner, size: counted - persons, unit: Unit::Count, detail });
         }
     }
     let holdings = cell_holdings(table, slot);
@@ -57,6 +60,7 @@ pub fn representation<B: Backing>(table: &CellTable<B>, slot: Slot) -> Vec<Gap> 
 /// day's landings in each table.
 pub struct CellsView<'a, B: Backing> {
     tables: Vec<&'a CellTable<B>>,
+    keys: Vec<&'a KeyInterner>,
     populations: &'a [(&'static str, u64)],
     landed: &'a [Landed],
 }
@@ -71,10 +75,11 @@ impl<'a, B: Backing> CellsView<'a, B> {
     #[must_use]
     pub fn new(
         tables: Vec<&'a CellTable<B>>,
+        keys: Vec<&'a KeyInterner>,
         populations: &'a [(&'static str, u64)],
         landed: &'a [Landed],
     ) -> CellsView<'a, B> {
-        CellsView { tables, populations, landed }
+        CellsView { tables, keys, populations, landed }
     }
 }
 
@@ -92,14 +97,18 @@ impl<B: Backing> CellsAudit for CellsView<'_, B> {
 
     fn representation(&self, cell: usize) -> Vec<Gap> {
         let mut at = cell;
-        for t in &self.tables {
+        for (t, keys) in self.tables.iter().zip(&self.keys) {
             let n = slots(t);
             if at < n {
                 let Ok(raw) = u32::try_from(at) else {
                     phx_num::capacity_exceeded!("slots of a cell table", u32::MAX, at);
                 };
                 let slot = Slot::new(raw);
-                return if t.is_live(slot) { representation(t, slot) } else { Vec::new() };
+                return if t.is_live(slot) {
+                    representation(t, slot, &keys.record(t.hot(slot).key_id))
+                } else {
+                    Vec::new()
+                };
             }
             at -= n;
         }
@@ -199,7 +208,7 @@ mod tests {
     use phx_store::{AddressSpace, HeapBacking};
 
     use super::representation;
-    use crate::key::KeyId;
+    use crate::key::{KeyInterner, KeyRecord};
     use crate::kind::PopKindDecl;
     use crate::profile::Profile;
     use crate::steps::StepTable;
@@ -215,8 +224,13 @@ mod tests {
     fn profiles_count_every_member_of_their_role() {
         let entry = |item| PopEntry { system: "DEM", kind: "household", item };
         let entries = [
-            entry(PopItem::Role(RoleDecl { name: "adult", clause: "REP.26" })),
-            entry(PopItem::Role(RoleDecl { name: "child", clause: "REP.26" })),
+            entry(PopItem::Role(RoleDecl { name: "adult", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
+            entry(PopItem::Role(RoleDecl {
+                name: "child",
+                per_member: phx_core::RoleCount::Key("DEM.children"),
+                clause: "REP.26",
+            })),
+            entry(PopItem::KeyAttr(phx_core::KeyAttrDecl { name: "DEM.children", values: 4, clause: "REP.19" })),
             entry(PopItem::ProfileGroup(GroupDecl {
                 name: "adult_h",
                 role: "adult",
@@ -237,25 +251,30 @@ mod tests {
         let mut p = Profile::empty(&layout);
         p.add(&layout, 0, 1, 7);
         p.add(&layout, 0, 2, 3);
-        p.add(&layout, 1, 0, 10);
+        p.add(&layout, 1, 0, 20);
+        let mut record = KeyRecord::default();
+        kind.key.set(&mut record, 0, 2);
+        let mut keys = KeyInterner::new();
+        keys.hold(record, 1);
+        let phx_num::Missing::Present(key) = keys.id(&record) else { panic!("the key is held") };
         let new = NewCell {
             party: PartyId::new(8),
             created: Day::new(1),
             weight: Weight::new(10),
-            key: KeyId::new(0),
+            key,
             positions: &[],
             profile: &p,
         };
         let s = t.add(&mut space, new, &kind, &[]);
-        assert!(representation(&t, s).is_empty());
+        assert!(representation(&t, s, &record).is_empty(), "ten households of two children each count twenty");
         p.remove(1, 0, 1);
         t.set_profile(s, &p);
-        let gaps = representation(&t, s);
+        let gaps = representation(&t, s, &record);
         assert_eq!(gaps.iter().map(|g| g.size).collect::<Vec<_>>(), [-1], "one child uncounted");
-        let view = super::CellsView::new(vec![&t], &[("household", 10)], &[]);
+        let view = super::CellsView::new(vec![&t], vec![&keys], &[("household", 10)], &[]);
         assert_eq!((phx_core::CellsAudit::cells(&view), phx_core::CellsAudit::representation(&view, 0).len()), (1, 1));
         assert!(phx_core::CellsAudit::populations(&view).is_empty(), "ten members of a population of ten");
-        let short = super::CellsView::new(vec![&t], &[("household", 12)], &[]);
+        let short = super::CellsView::new(vec![&t], vec![&keys], &[("household", 12)], &[]);
         let gaps = phx_core::CellsAudit::populations(&short);
         assert_eq!(gaps.iter().map(|g| g.size).collect::<Vec<_>>(), [-2], "two households nowhere");
     }
