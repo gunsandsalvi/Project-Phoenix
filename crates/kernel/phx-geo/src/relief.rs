@@ -149,50 +149,66 @@ pub fn erode(p: &ReliefParams, fine: &Grid, height: &mut [f64], outlet: &[bool])
     }
 }
 
-/// A measured curve, `axis` in parts per thousand of the cells and `values` in metres, read between its points.
-#[must_use]
-pub fn curve_at(axis: &[i64], values: &[i64], per_mille: f64) -> f64 {
-    let points: Vec<(f64, f64)> =
-        axis.iter().zip(values).map(|(a, v)| (phx_rand::float::from_i64(*a), phx_rand::float::from_i64(*v))).collect();
-    let mut below = points.first().copied().unwrap_or((0.0, 0.0));
-    for (x, y) in &points {
-        if *x >= per_mille {
-            let (x0, y0) = below;
-            return if *x > x0 { y0 + (y - y0) * (per_mille - x0) / (x - x0) } else { *y };
-        }
-        below = (*x, *y);
+/// A measured curve: points at parts per thousand of the cells, with the metres at each, read between its points.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Curve {
+    points: Vec<(f64, f64)>,
+}
+
+impl Curve {
+    #[must_use]
+    pub fn new(axis: &[i64], values: &[i64]) -> Curve {
+        let points = axis
+            .iter()
+            .zip(values)
+            .map(|(a, v)| (phx_rand::float::from_i64(*a), phx_rand::float::from_i64(*v)))
+            .collect();
+        Curve { points }
     }
-    below.1
+
+    /// The curve's value at `per_mille`, flat beyond its ends.
+    #[must_use]
+    pub fn at(&self, per_mille: f64) -> f64 {
+        let mut below = self.points.first().copied().unwrap_or((0.0, 0.0));
+        for (x, y) in &self.points {
+            if *x >= per_mille {
+                let (x0, y0) = below;
+                return if *x > x0 { y0 + (y - y0) * (per_mille - x0) / (x - x0) } else { *y };
+            }
+            below = (*x, *y);
+        }
+        below.1
+    }
 }
 
 /// Heights mapped by rank to a measured curve: the cells of `mask`, lowest first (ties by place), each at the curve's
 /// value for its share of the cells below it, so the relief keeps its shape and takes the Earth's distribution.
 #[clause("GEO.10")]
-pub fn to_curve(height: &mut [f64], mask: &[bool], axis: &[i64], values: &[i64], per_mille_whole: f64) {
+pub fn to_curve(height: &mut [f64], mask: &[bool], curve: &Curve, per_mille_whole: f64) {
     let mut ranked: Vec<(f64, usize)> =
         height.iter().zip(mask).enumerate().filter(|(_, (_, m))| **m).map(|(i, (h, _))| (*h, i)).collect();
-    ranked.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+    ranked.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
     let n = phx_rand::float::from_u64(phx_rand::float::len_u64(ranked.len()));
     for (rank, (_, cell)) in ranked.iter().enumerate() {
         let share = (phx_rand::float::from_u64(phx_rand::float::len_u64(rank)) + HALF) / n * per_mille_whole;
         if let Some(h) = height.get_mut(*cell) {
-            *h = curve_at(axis, values, share);
+            *h = curve.at(share);
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{curve_at, to_curve};
+    use super::{Curve, to_curve};
 
     #[test]
     fn heights_take_the_measured_curve_by_rank() {
-        let (axis, values) = ([0, 500, 1000], [0, 100, 1000]);
-        assert!((curve_at(&axis, &values, 250.0) - 50.0).abs() < 1e-9);
-        assert!((curve_at(&axis, &values, 750.0) - 550.0).abs() < 1e-9);
+        let curve = Curve::new(&[0, 500, 1000], &[0, 100, 1000]);
+        assert!((curve.at(250.0) - 50.0).abs() < 1e-9);
+        assert!((curve.at(750.0) - 550.0).abs() < 1e-9);
         let mut h = vec![9.0, -3.0, 4.0, 7.0];
         let mask = [true, false, true, true];
-        to_curve(&mut h, &mask, &axis, &values, 1000.0);
+        to_curve(&mut h, &mask, &curve, 1000.0);
         assert!(h[2] < h[3] && h[3] < h[0], "order kept");
         assert_eq!(h[1].to_bits(), (-3.0_f64).to_bits(), "cells outside the mask untouched");
         assert!((h[3] - 100.0).abs() < 1e-9, "the median cell at the curve's median");

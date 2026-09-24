@@ -1,5 +1,5 @@
 use std::cmp::{Ordering, Reverse};
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, VecDeque};
 
 use phx_macros::clause;
 
@@ -45,7 +45,9 @@ pub struct Drainage {
 }
 
 /// The priority flood: from every outlet, the lowest cell reached so far claims its unreached neighbours, each
-/// draining to it and filled to at least its height, so a depression drains over its lowest rim.
+/// draining to it and filled to at least its height, so a depression drains over its lowest rim. A neighbour that lies
+/// no higher than the cell claiming it is in a depression and is filled to that level; such cells take their turn from
+/// a plain queue, before any higher cell, as the heap would give them next anyway.
 #[clause("GEO.10")]
 #[must_use]
 pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool]) -> Drainage {
@@ -65,7 +67,8 @@ pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool]) -> Drainage {
             }
         }
     }
-    while let Some(Reverse(q)) = heap.pop() {
+    let mut pit: VecDeque<Queued> = VecDeque::new();
+    while let Some(q) = pit.pop_front().or_else(|| heap.pop().map(|Reverse(q)| q)) {
         order.push(q.cell);
         for next in grid.neighbours(grid.tile(q.cell)) {
             let i = grid.index(next);
@@ -83,7 +86,12 @@ pub fn drainage(grid: &Grid, height: &[f64], outlet: &[bool]) -> Drainage {
             if let Some(r) = receiver.get_mut(i) {
                 *r = Some(q.cell);
             }
-            heap.push(Reverse(Queued { height: spill, order: queued, cell: i }));
+            let next = Queued { height: spill, order: queued, cell: i };
+            if level <= q.height {
+                pit.push_back(next);
+            } else {
+                heap.push(Reverse(next));
+            }
             queued += 1;
         }
     }

@@ -10,7 +10,7 @@ use crate::consts::{PER_MILLE, PER_MILLE_F64, WHOLE_PERCENT};
 use crate::grid::{DIRECTIONS, Grid};
 use crate::hydrology::{drainage, upstream};
 use crate::partition::{StepCost, apportion, components, split};
-use crate::relief::{ReliefParams, erode, raw, to_curve};
+use crate::relief::{Curve, ReliefParams, erode, raw, to_curve};
 use crate::tile::{LAND, Region, Tile, WATER, Zone};
 
 /// A terrain class: the first class whose elevation and in-tile relief ceilings a land tile keeps is its class; the
@@ -207,16 +207,17 @@ fn surface(p: &MapParams, grid: &Grid, draws: &mut Draws) -> Result<Surface, Str
     }
     let outlet: Vec<bool> = fine_land.iter().map(|l| !l).collect();
     erode(&p.relief, &fine, &mut height, &outlet);
-    to_curve(&mut height, &fine_land, &p.land_heights.axis, &p.land_heights.metres, PER_MILLE_F64);
-    to_curve(&mut height, &outlet, &p.sea_depths.axis, &p.sea_depths.metres, PER_MILLE_F64);
+    to_curve(&mut height, &fine_land, &Curve::new(&p.land_heights.axis, &p.land_heights.metres), PER_MILLE_F64);
+    to_curve(&mut height, &outlet, &Curve::new(&p.sea_depths.axis, &p.sea_depths.metres), PER_MILLE_F64);
     let mut elevation = Vec::with_capacity(grid.len());
     let mut relief = Vec::with_capacity(grid.len());
     for t in 0..grid.len() {
-        let hs: Vec<f64> = cells_of(fine, grid, cells, t).map(|c| at(&height, c)).collect();
-        let (lo, hi) = hs.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), h| {
-            (if *h < lo { *h } else { lo }, if *h > hi { *h } else { hi })
-        });
-        elevation.push(to_i16(hs.iter().sum::<f64>() / per_tile));
+        let (lo, hi, sum) = cells_of(fine, grid, cells, t)
+            .map(|c| at(&height, c))
+            .fold((f64::INFINITY, f64::NEG_INFINITY, 0.0), |(lo, hi, sum), h| {
+                (if h < lo { h } else { lo }, if h > hi { h } else { hi }, sum + h)
+            });
+        elevation.push(to_i16(sum / per_tile));
         let range =
             Fixed::<0>::from_f64(hi - lo, Round::HalfEven).map(Fixed::raw).ok().and_then(|r| u16::try_from(r).ok());
         let Some(r) = range else { return Err("a tile's relief beyond sixteen bits of metres".to_owned()) };

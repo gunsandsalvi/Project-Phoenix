@@ -362,6 +362,10 @@ pub const phx_geo::prims::ZONES: phx_core::register::PrimDecl
 pub const phx_geo::prims::ZONE_MAX_TILES: phx_core::register::PrimDecl
 pub const phx_geo::prims::ZONE_MIN_TILES: phx_core::register::PrimDecl
 pub mod phx_geo::relief
+pub struct phx_geo::relief::Curve
+impl phx_geo::relief::Curve
+pub fn phx_geo::relief::Curve::at(&self, f64) -> f64
+pub fn phx_geo::relief::Curve::new(&[i64], &[i64]) -> phx_geo::relief::Curve
 pub struct phx_geo::relief::ReliefParams
 pub phx_geo::relief::ReliefParams::area_exponent: f64
 pub phx_geo::relief::ReliefParams::base_cells: u32
@@ -376,10 +380,9 @@ pub phx_geo::relief::ReliefParams::plate_weight: f64
 pub phx_geo::relief::ReliefParams::plates: u32
 pub phx_geo::relief::ReliefParams::roughness: f64
 pub phx_geo::relief::ReliefParams::warp: f64
-pub fn phx_geo::relief::curve_at(&[i64], &[i64], f64) -> f64
 pub fn phx_geo::relief::erode(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut [f64], &[bool])
 pub fn phx_geo::relief::raw(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<f64>
-pub fn phx_geo::relief::to_curve(&mut [f64], &[bool], &[i64], &[i64], f64)
+pub fn phx_geo::relief::to_curve(&mut [f64], &[bool], &phx_geo::relief::Curve, f64)
 pub mod phx_geo::state
 pub struct phx_geo::state::Allotment
 pub phx_geo::state::Allotment::land: alloc::vec::Vec<u64>
