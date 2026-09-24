@@ -1,7 +1,5 @@
-/// The age classes of adults a household's key can hold: the most the age-class partition may cut adulthood into.
-pub const ADULT_CLASSES: u32 = 8;
-/// The age bands of children a household's key can hold: the most the partition may cut childhood into.
-pub const CHILD_BANDS: u32 = 8;
+/// The age classes a household's key can hold: the most the age-class partition may cut a life into.
+pub const AGE_CLASSES: u32 = 8;
 /// The regions a household's key can name: more than any world's, whose regions are a world constant.
 pub const REGIONS: u32 = 64;
 /// The persons of one role a household's key can count, beyond any household the sources describe; a household of

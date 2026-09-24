@@ -314,6 +314,47 @@ pub fn check(kind: &PopKindDecl, key: &KeyRecord, e: &Explicit) {
     }
 }
 
+/// Explicit households gathered by key, as the opening forms them: each held to its key's counts, with one value in
+/// every group of its role; the households of one key one part, weighing as many as they are, with their persons'
+/// values as its profile.
+#[derive(Debug, Default)]
+pub struct Gathered {
+    cells: BTreeMap<KeyRecord, (u32, Profile)>,
+}
+
+impl Gathered {
+    #[clause("REP.14", "REP.26", "GEN.3")]
+    pub fn add(&mut self, kind: &PopKindDecl, layout: &ProfileLayout, key: KeyRecord, e: &Explicit) {
+        check(kind, &key, e);
+        for person in &e.persons {
+            if !person.values.iter().map(|(g, _)| *g).eq(groups_of(kind, person.role)) {
+                violation!(
+                    clause = "REP.32",
+                    "a person without one value in each group of its role",
+                    role = person.role
+                );
+            }
+        }
+        let (n, profile) = self.cells.entry(key).or_insert_with(|| (0, Profile::empty(layout)));
+        let Some(more) = n.checked_add(1) else { capacity_exceeded!("households of a key", u32::MAX, *n) };
+        *n = more;
+        for person in &e.persons {
+            for (g, v) in &person.values {
+                profile.add(layout, *g, *v, 1);
+            }
+        }
+    }
+
+    /// The households gathered, a part for each key in the keys' order.
+    #[must_use]
+    pub fn into_drawn(self) -> Vec<crate::landing::Drawn> {
+        self.cells
+            .into_iter()
+            .map(|(key, (n, profile))| crate::landing::Drawn { key, weight: phx_core::Weight::new(n), profile })
+            .collect()
+    }
+}
+
 /// The explicit households, as they were drawn out of a cell under `key` and as the outcomes left them, returned or
 /// regrouped. A household no one is left in ends; one under the cell's key returns its changes in place; the rest
 /// are grouped by the key they now hold, in the order of their keys, each held to its key's counts.
@@ -425,6 +466,51 @@ mod tests {
             p.add(&layout, g, v, n);
         }
         (key(kind, 1, 2), p, layout)
+    }
+
+    /// Households gathered by key make parts that weigh as many as they are, each group counting the persons its
+    /// role's count gives every household; a household that does not hold its key's persons is refused.
+    #[test]
+    fn households_gather_by_key_into_parts() {
+        let kind = kind();
+        let layout = ProfileLayout::new(&kind.groups);
+        let role = |name: &str| kind.roles.iter().position(|r| r.item.name == name).unwrap();
+        let held = |role: usize, values: &[(usize, u32)]| super::Held { role, values: values.to_vec() };
+        let household = |partner: bool, children: u32| {
+            let mut persons = vec![held(role("head"), &[(HEAD_AGE, 2), (HEAD_WORK, 1)])];
+            if partner {
+                persons.push(held(role("partner"), &[(PARTNER_AGE, 2)]));
+            }
+            persons.extend((0..children).map(|c| held(role("child"), &[(CHILD_AGE, c % 2)])));
+            (key(&kind, u32::from(partner), children), Explicit { persons })
+        };
+        let mut gathered = super::Gathered::default();
+        let mut d = draws(9);
+        let mut drawn_persons = 0_u64;
+        for _ in 0..200 {
+            let partner = phx_rand::below_u64(&mut d, 2) == 1;
+            let (k, e) = household(partner, u32::try_from(phx_rand::below_u64(&mut d, 4)).unwrap());
+            drawn_persons += super::wide(e.persons.len());
+            gathered.add(&kind, &layout, k, &e);
+        }
+        let parts = gathered.into_drawn();
+        assert_eq!(parts.iter().map(|p| u64::from(p.weight.get())).sum::<u64>(), 200);
+        let mut persons = 0_u64;
+        for part in &parts {
+            let counts = role_counts(&kind, &part.key);
+            for (g, group) in kind.groups.iter().enumerate() {
+                let held: u64 = part.profile.held(g).iter().map(|(_, n)| u64::from(*n)).sum();
+                assert_eq!(held, u64::from(part.weight.get()) * u64::from(counts[group.role]));
+                persons += held * u64::from(g != HEAD_WORK);
+            }
+        }
+        assert_eq!(persons, drawn_persons, "every person gathered once");
+        let (k, e) = household(true, 2);
+        let wrong = key(&kind, 0, 2);
+        assert!(std::panic::catch_unwind(|| super::Gathered::default().add(&kind, &layout, wrong, &e)).is_err());
+        let mut short = e.clone();
+        short.persons[0].values.pop();
+        assert!(std::panic::catch_unwind(|| super::Gathered::default().add(&kind, &layout, k, &short)).is_err());
     }
 
     #[test]

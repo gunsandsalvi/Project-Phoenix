@@ -91,6 +91,10 @@ pub fn phx_pop::envelope::rung(u32) -> u64
 pub mod phx_pop::explicit
 pub struct phx_pop::explicit::Explicit
 pub phx_pop::explicit::Explicit::persons: alloc::vec::Vec<phx_pop::explicit::Held>
+pub struct phx_pop::explicit::Gathered
+impl phx_pop::explicit::Gathered
+pub fn phx_pop::explicit::Gathered::add(&mut self, &phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, phx_pop::key::KeyRecord, &phx_pop::explicit::Explicit)
+pub fn phx_pop::explicit::Gathered::into_drawn(self) -> alloc::vec::Vec<phx_pop::landing::Drawn>
 pub struct phx_pop::explicit::Held
 pub phx_pop::explicit::Held::role: usize
 pub phx_pop::explicit::Held::values: alloc::vec::Vec<(usize, u32)>

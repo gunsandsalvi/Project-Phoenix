@@ -1,13 +1,14 @@
 //! DEM, population and demography: the household kind, its persons as roles, and the opening's households; mortality,
 //! illness and ageing arrive as processes on them.
 
+mod compose;
 mod consts;
 mod opening;
 mod prims;
 
 use if_pop::{
-    ADULT_COUNTS, ADULT_GROUPS, ADULTS, CHILD_COUNTS, CHILD_GROUPS, CHILDREN, HEAD, HEAD_AGE, HOUSEHOLD, PARTNER,
-    PARTNER_AGE, PARTNERS, REGION,
+    ADULT, ADULT_COUNT, ADULT_GROUPS, CHILD_COUNTS, CHILD_GROUPS, CHILDREN, HEAD, HEAD_AGE, HOUSEHOLD, PARTNER,
+    PARTNERS, REGION,
 };
 use phx_core::{
     Declarations, HandlerTable, ResolutionDecl, SetupValue, StreamDef, System, declare_kind, declare_stream,
@@ -19,6 +20,7 @@ pub use prims::Prims;
 declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", table: Cells, clause: "POP.2" } }
 
 declare_stream! { pub RegionsStream = "DEM.opening_regions" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub PersonsStream = "DEM.opening_persons" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub CompositionStream = "DEM.opening_composition" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub HealthStream = "DEM.opening_health" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub EducationStream = "DEM.opening_education" { purpose: Opening, keyed: false, clause: "GEN.3" } }
@@ -30,10 +32,7 @@ pub struct Dem;
 /// The household kind's roles, key and profile groups, from the households' vocabulary, and how it is represented.
 fn declare_household(d: &mut Declarations) {
     let mut k = d.pop_kind(HOUSEHOLD);
-    k.role(HEAD).role(PARTNER).key_attr(REGION).key_attr(HEAD_AGE).key_attr(PARTNERS).key_attr(PARTNER_AGE);
-    for (role, count) in ADULTS.iter().zip(ADULT_COUNTS.iter()) {
-        k.role(*role).key_attr(*count);
-    }
+    k.role(HEAD).role(PARTNER).role(ADULT).key_attr(REGION).key_attr(HEAD_AGE).key_attr(PARTNERS).key_attr(ADULT_COUNT);
     for (role, count) in CHILDREN.iter().zip(CHILD_COUNTS.iter()) {
         k.role(*role).key_attr(*count);
     }
@@ -52,7 +51,13 @@ impl System for Dem {
     fn declare(d: &mut Declarations) {
         d.kind(HOUSEHOLD_KIND);
         declare_household(d);
-        for stream in [RegionsStream::DECL, CompositionStream::DECL, HealthStream::DECL, EducationStream::DECL] {
+        for stream in [
+            RegionsStream::DECL,
+            PersonsStream::DECL,
+            CompositionStream::DECL,
+            HealthStream::DECL,
+            EducationStream::DECL,
+        ] {
             d.stream(stream);
         }
         let prims = Prims::declare(d);

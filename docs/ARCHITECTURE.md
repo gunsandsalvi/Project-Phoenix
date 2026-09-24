@@ -1175,6 +1175,30 @@ For every line kind and physical class, one side is **drawn** and the other **de
   and only the line's counterparty side is apportioned. Pass B is a replay of pass A's draws, and lands each region's
   households in bulk in sort order before drawing the next, so the sort scratch is one region's.
 
+**Households are drawn persons first** (GEN.2, REP.26), so the persons' ages are the country's and the households are
+what those persons make:
+1. **Persons.** A region's people are apportioned by largest remainder, ties by lot, over single ages and sexes in
+   proportion to the country's age standard raked to its drawn shares; that pool is every person the region holds.
+2. **Families.** While the pool holds a child under the age of majority, one is drawn from it, each child alike; its
+   mother is drawn from the pool's women in proportion to each age's women and their chance of a living child of
+   that age; her other children at each age with her chance of one, while the pool holds one; the family's type among
+   those with children in proportion to their shares at the country's fertility; a partner, when the type holds one,
+   from the pool's men in proportion to each age's men and the partner gap's chance at it; an older relative, when
+   the type holds one, from the pool's persons of 65 and over. A child whom no woman left in the pool can have
+   mothered is raised by another adult of the pool, counted in the report; a child no adult is left to raise stops
+   the opening, the distributions being inconsistent (GEN.2).
+3. **The rest.** While the pool holds an adult, a household's type is drawn among those without children in
+   proportion to their shares, and its persons from the pool as the type says: one person; a woman and a partner at
+   the gap; persons who are not relatives.
+4. **The type follows the persons**: a member the pool no longer holds is not drawn, so the last households of a
+   region hold whom the pool has left, and every person of the pool is in exactly one household.
+
+The elder of a couple heads it, else the mother, else the one person or the first drawn. Each household is formed as
+an explicit household, its key from its persons (§7.3: the head's age class, the partner, the other adults, the
+children of each band), each person's health and each adult's education drawn by its age and sex from the
+household's own streams; households are gathered by key into cells, each held to its key's counts (REP.14). The
+report gives each country's households by type and persons by age band against the drawn shares.
+
 The same seed therefore gives the same world whatever the resolution the valve sets, and nothing is balanced after
 merging: finer attributes are drawn from their own counter keys, so a coarser setting is a projection of a finer
 one, and every number of preference types is a discretisation of the same declared distribution (NUM.4). Drawing

@@ -6,7 +6,7 @@ pub mod consts;
 
 use phx_core::{GroupDecl, KeyAttrDecl, ProfileComponent, RoleCount, RoleDecl};
 
-use crate::consts::{ADULT_CLASSES, BIRTH_YEARS, EDUCATION_VALUES, PERSONS_PER_ROLE, REGIONS};
+use crate::consts::{AGE_CLASSES, BIRTH_YEARS, EDUCATION_VALUES, PERSONS_PER_ROLE, REGIONS};
 
 /// The population kind of households.
 pub const HOUSEHOLD: &str = "household";
@@ -34,28 +34,20 @@ pub const SCHOOLING: &[ProfileComponent] = &[EDUCATION];
 
 /// The region a household lives in.
 pub const REGION: KeyAttrDecl = KeyAttrDecl { name: "DEM.region", values: REGIONS, clause: "REP.19" };
-/// The head's age class, and the partner's; a household with no partner holds its partner's class at nought.
-pub const HEAD_AGE: KeyAttrDecl = KeyAttrDecl { name: "DEM.head_age", values: ADULT_CLASSES, clause: "REP.25" };
-pub const PARTNER_AGE: KeyAttrDecl = KeyAttrDecl { name: "DEM.partner_age", values: ADULT_CLASSES, clause: "REP.25" };
+/// The head's age class; every other person's age is in its birth year alone.
+pub const HEAD_AGE: KeyAttrDecl = KeyAttrDecl { name: "DEM.head_age", values: AGE_CLASSES, clause: "REP.25" };
 /// Whether the head has a partner in the household.
 pub const PARTNERS: KeyAttrDecl = KeyAttrDecl { name: "DEM.partners", values: 2, clause: "REP.26" };
+/// The adults besides the head and the partner.
+pub const ADULT_COUNT: KeyAttrDecl = KeyAttrDecl { name: "DEM.adults", values: PERSONS_PER_ROLE, clause: "REP.26" };
 
 pub const HEAD: RoleDecl = RoleDecl { name: "head", per_member: RoleCount::One, clause: "REP.26" };
 pub const PARTNER: RoleDecl =
     RoleDecl { name: "partner", per_member: RoleCount::Key("DEM.partners"), clause: "REP.26" };
+/// The other adults, as many as the key counts.
+pub const ADULT: RoleDecl = RoleDecl { name: "adult", per_member: RoleCount::Key("DEM.adults"), clause: "REP.26" };
 
-/// The other adults of each age class, as many as the key counts; the classes beyond the partition's stay empty.
-pub const ADULTS: &[RoleDecl] = &[
-    RoleDecl { name: "adult_0", per_member: RoleCount::Key("DEM.adults_0"), clause: "REP.26" },
-    RoleDecl { name: "adult_1", per_member: RoleCount::Key("DEM.adults_1"), clause: "REP.26" },
-    RoleDecl { name: "adult_2", per_member: RoleCount::Key("DEM.adults_2"), clause: "REP.26" },
-    RoleDecl { name: "adult_3", per_member: RoleCount::Key("DEM.adults_3"), clause: "REP.26" },
-    RoleDecl { name: "adult_4", per_member: RoleCount::Key("DEM.adults_4"), clause: "REP.26" },
-    RoleDecl { name: "adult_5", per_member: RoleCount::Key("DEM.adults_5"), clause: "REP.26" },
-    RoleDecl { name: "adult_6", per_member: RoleCount::Key("DEM.adults_6"), clause: "REP.26" },
-    RoleDecl { name: "adult_7", per_member: RoleCount::Key("DEM.adults_7"), clause: "REP.26" },
-];
-/// The children of each age band, as many as the key counts.
+/// The children of each age band, as many as the key counts; the bands beyond the age of majority stay empty.
 pub const CHILDREN: &[RoleDecl] = &[
     RoleDecl { name: "child_0", per_member: RoleCount::Key("DEM.children_0"), clause: "REP.26" },
     RoleDecl { name: "child_1", per_member: RoleCount::Key("DEM.children_1"), clause: "REP.26" },
@@ -66,17 +58,7 @@ pub const CHILDREN: &[RoleDecl] = &[
     RoleDecl { name: "child_6", per_member: RoleCount::Key("DEM.children_6"), clause: "REP.26" },
     RoleDecl { name: "child_7", per_member: RoleCount::Key("DEM.children_7"), clause: "REP.26" },
 ];
-/// The counts of other adults by age class and children by age band.
-pub const ADULT_COUNTS: &[KeyAttrDecl] = &[
-    KeyAttrDecl { name: "DEM.adults_0", values: PERSONS_PER_ROLE, clause: "REP.26" },
-    KeyAttrDecl { name: "DEM.adults_1", values: PERSONS_PER_ROLE, clause: "REP.26" },
-    KeyAttrDecl { name: "DEM.adults_2", values: PERSONS_PER_ROLE, clause: "REP.26" },
-    KeyAttrDecl { name: "DEM.adults_3", values: PERSONS_PER_ROLE, clause: "REP.26" },
-    KeyAttrDecl { name: "DEM.adults_4", values: PERSONS_PER_ROLE, clause: "REP.26" },
-    KeyAttrDecl { name: "DEM.adults_5", values: PERSONS_PER_ROLE, clause: "REP.26" },
-    KeyAttrDecl { name: "DEM.adults_6", values: PERSONS_PER_ROLE, clause: "REP.26" },
-    KeyAttrDecl { name: "DEM.adults_7", values: PERSONS_PER_ROLE, clause: "REP.26" },
-];
+/// The counts of children by age band.
 pub const CHILD_COUNTS: &[KeyAttrDecl] = &[
     KeyAttrDecl { name: "DEM.children_0", values: PERSONS_PER_ROLE, clause: "REP.26" },
     KeyAttrDecl { name: "DEM.children_1", values: PERSONS_PER_ROLE, clause: "REP.26" },
@@ -99,36 +81,8 @@ pub const ADULT_GROUPS: &[(GroupDecl, GroupDecl)] = &[
         GroupDecl { name: "DEM.partner_schooling", role: "partner", components: SCHOOLING, clause: "REP.32" },
     ),
     (
-        GroupDecl { name: "DEM.adult_0_life", role: "adult_0", components: LIFE, clause: "REP.32" },
-        GroupDecl { name: "DEM.adult_0_schooling", role: "adult_0", components: SCHOOLING, clause: "REP.32" },
-    ),
-    (
-        GroupDecl { name: "DEM.adult_1_life", role: "adult_1", components: LIFE, clause: "REP.32" },
-        GroupDecl { name: "DEM.adult_1_schooling", role: "adult_1", components: SCHOOLING, clause: "REP.32" },
-    ),
-    (
-        GroupDecl { name: "DEM.adult_2_life", role: "adult_2", components: LIFE, clause: "REP.32" },
-        GroupDecl { name: "DEM.adult_2_schooling", role: "adult_2", components: SCHOOLING, clause: "REP.32" },
-    ),
-    (
-        GroupDecl { name: "DEM.adult_3_life", role: "adult_3", components: LIFE, clause: "REP.32" },
-        GroupDecl { name: "DEM.adult_3_schooling", role: "adult_3", components: SCHOOLING, clause: "REP.32" },
-    ),
-    (
-        GroupDecl { name: "DEM.adult_4_life", role: "adult_4", components: LIFE, clause: "REP.32" },
-        GroupDecl { name: "DEM.adult_4_schooling", role: "adult_4", components: SCHOOLING, clause: "REP.32" },
-    ),
-    (
-        GroupDecl { name: "DEM.adult_5_life", role: "adult_5", components: LIFE, clause: "REP.32" },
-        GroupDecl { name: "DEM.adult_5_schooling", role: "adult_5", components: SCHOOLING, clause: "REP.32" },
-    ),
-    (
-        GroupDecl { name: "DEM.adult_6_life", role: "adult_6", components: LIFE, clause: "REP.32" },
-        GroupDecl { name: "DEM.adult_6_schooling", role: "adult_6", components: SCHOOLING, clause: "REP.32" },
-    ),
-    (
-        GroupDecl { name: "DEM.adult_7_life", role: "adult_7", components: LIFE, clause: "REP.32" },
-        GroupDecl { name: "DEM.adult_7_schooling", role: "adult_7", components: SCHOOLING, clause: "REP.32" },
+        GroupDecl { name: "DEM.adult_life", role: "adult", components: LIFE, clause: "REP.32" },
+        GroupDecl { name: "DEM.adult_schooling", role: "adult", components: SCHOOLING, clause: "REP.32" },
     ),
 ];
 /// Each child role's life.
