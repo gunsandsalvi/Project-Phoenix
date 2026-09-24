@@ -467,6 +467,7 @@ pub(crate) mod tests {
                 plate_weight: 0.3,
                 mountain_weight: 0.5,
                 warp: 0.1,
+                plate_warp: 0.1,
                 erosion_passes: 2,
                 erosion_rate: 0.01,
                 area_exponent: 0.5,

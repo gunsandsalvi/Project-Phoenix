@@ -21,6 +21,7 @@ pub struct ReliefParams {
     pub plate_weight: f64,
     pub mountain_weight: f64,
     pub warp: f64,
+    pub plate_warp: f64,
     pub erosion_passes: u32,
     pub erosion_rate: f64,
     pub area_exponent: f64,
@@ -66,12 +67,15 @@ fn nearest_two(plates: &[Plate], u: f64, v: f64) -> Option<(Plate, Plate, f64)> 
     Some((a, b, (d2 - d1) / (2.0 * apart)))
 }
 
-/// The noise fields one attempt draws, in a fixed order: the relief's octaves, the two warp fields and the ridges.
+/// The noise fields one attempt draws, in a fixed order: the relief's octaves, the two warp fields, the ridges, the two
+/// fields that bend the plates' sutures, and the plates.
 struct Fields {
     relief: Vec<Lattice>,
     warp_u: Vec<Lattice>,
     warp_v: Vec<Lattice>,
     ridges: Vec<Lattice>,
+    plate_u: Vec<Lattice>,
+    plate_v: Vec<Lattice>,
     plates: Vec<Plate>,
 }
 
@@ -86,6 +90,8 @@ pub fn raw(p: &ReliefParams, fine: &Grid, draws: &mut Draws) -> Vec<f64> {
         warp_u: octaves(p.base_cells, p.base_cells, p.octaves, draws),
         warp_v: octaves(p.base_cells, p.base_cells, p.octaves, draws),
         ridges: octaves(p.base_cells, p.base_cells, p.octaves, draws),
+        plate_u: octaves(p.base_cells, p.base_cells, p.octaves, draws),
+        plate_v: octaves(p.base_cells, p.base_cells, p.octaves, draws),
         plates: plates(p.plates, draws),
     };
     let span = f64::from(fine.width);
@@ -97,7 +103,11 @@ pub fn raw(p: &ReliefParams, fine: &Grid, draws: &mut Draws) -> Vec<f64> {
                 east + p.warp * fractal(&fields.warp_u, p.roughness, east, south),
                 south + p.warp * fractal(&fields.warp_v, p.roughness, east, south),
             );
-            let (plate, uplift) = match nearest_two(&fields.plates, wu, wv) {
+            let (pu, pv) = (
+                wu + p.plate_warp * fractal(&fields.plate_u, p.roughness, wu, wv),
+                wv + p.plate_warp * fractal(&fields.plate_v, p.roughness, wu, wv),
+            );
+            let (plate, uplift) = match nearest_two(&fields.plates, pu, pv) {
                 Some((own, other, border)) => {
                     let near = exp(-border / p.belt);
                     let crust = own.base * (1.0 - near) + (own.base + other.base) * HALF * near;

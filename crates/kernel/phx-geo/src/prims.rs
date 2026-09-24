@@ -92,6 +92,15 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// How far the plane is warped before the plates are read, as a share of the map's side: the bends of the sutures
+    /// between them.
+    pub PLATE_WARP = "GEO.plate_warp" {
+        kind: Shape, value: Fixed { exp: 3 }, clause: "GEO.10", scope: Shared,
+        shape: standing("the ground is given: plate tectonics, erosion and the making of relief are outside the world")
+    }
+}
+
+declare_prim! {
     /// Passes of fluvial erosion over the relief.
     pub EROSION_PASSES = "GEO.erosion_passes" {
         kind: Shape, value: Count, clause: "GEO.10", scope: Shared,
@@ -480,6 +489,7 @@ pub struct GeoPrims {
     pub plate_weight: Prim<Fixed<2>>,
     pub mountain_weight: Prim<Fixed<2>>,
     pub warp: Prim<Fixed<3>>,
+    pub plate_warp: Prim<Fixed<3>>,
     pub erosion_passes: Prim<Count>,
     pub erosion_rate: Prim<Fixed<5>>,
     pub area_exponent: Prim<Fixed<2>>,
@@ -535,6 +545,7 @@ impl GeoPrims {
             plate_weight: d.prim(&PLATE_WEIGHT),
             mountain_weight: d.prim(&MOUNTAIN_WEIGHT),
             warp: d.prim(&WARP),
+            plate_warp: d.prim(&PLATE_WARP),
             erosion_passes: d.prim(&EROSION_PASSES),
             erosion_rate: d.prim(&EROSION_RATE),
             area_exponent: d.prim(&AREA_EXPONENT),

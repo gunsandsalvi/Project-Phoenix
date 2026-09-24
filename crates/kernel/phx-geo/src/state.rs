@@ -91,6 +91,7 @@ pub fn params(p: &GeoPrims, r: &Register, a: &Allotment) -> Result<MapParams, St
         plate_weight: p.plate_weight.shared(r).to_f64(),
         mountain_weight: p.mountain_weight.shared(r).to_f64(),
         warp: p.warp.shared(r).to_f64(),
+        plate_warp: p.plate_warp.shared(r).to_f64(),
         erosion_passes: count(p.erosion_passes.shared(r).get())?,
         erosion_rate: p.erosion_rate.shared(r).to_f64(),
         area_exponent: p.area_exponent.shared(r).to_f64(),

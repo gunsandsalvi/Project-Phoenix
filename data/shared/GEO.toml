@@ -183,6 +183,15 @@ shape = "standing:the ground is given: plate tectonics, erosion and the making o
 value = 0.06
 
 [[primitive]]
+id = "GEO.plate_warp"
+kind = "SHAPE"
+owner = "GEO"
+source = "assumed"
+source_ref = "The plates read over a plane warped by up to about 300 km: sutures bend in arcs of that size, as the Alps and Carpathians do, rather than running straight between plate centres."
+shape = "standing:the ground is given: plate tectonics, erosion and the making of relief are outside the world"
+value = 0.12
+
+[[primitive]]
 id = "GEO.erosion_passes"
 kind = "SHAPE"
 owner = "GEO"

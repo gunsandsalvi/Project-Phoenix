@@ -244,6 +244,7 @@ pub phx_geo::prims::GeoPrims::metres_per_degree: phx_core::register::Prim<phx_nu
 pub phx_geo::prims::GeoPrims::mountain_weight: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::prims::GeoPrims::octaves: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::plate_belt: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
+pub phx_geo::prims::GeoPrims::plate_warp: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
 pub phx_geo::prims::GeoPrims::plate_weight: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::prims::GeoPrims::plates: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::relief_cells: phx_core::register::Prim<phx_num::qty::Count>
@@ -318,6 +319,7 @@ pub const phx_geo::prims::OCTAVES: phx_core::register::PrimDecl
 pub const phx_geo::prims::PERSISTENCE: phx_core::register::PrimDecl
 pub const phx_geo::prims::PLATES: phx_core::register::PrimDecl
 pub const phx_geo::prims::PLATE_BELT: phx_core::register::PrimDecl
+pub const phx_geo::prims::PLATE_WARP: phx_core::register::PrimDecl
 pub const phx_geo::prims::PLATE_WEIGHT: phx_core::register::PrimDecl
 pub const phx_geo::prims::QUAKE_COASTAL: phx_core::register::PrimDecl
 pub const phx_geo::prims::QUAKE_INLAND: phx_core::register::PrimDecl
@@ -369,6 +371,7 @@ pub phx_geo::relief::ReliefParams::erosion_rate: f64
 pub phx_geo::relief::ReliefParams::falloff: f64
 pub phx_geo::relief::ReliefParams::mountain_weight: f64
 pub phx_geo::relief::ReliefParams::octaves: u8
+pub phx_geo::relief::ReliefParams::plate_warp: f64
 pub phx_geo::relief::ReliefParams::plate_weight: f64
 pub phx_geo::relief::ReliefParams::plates: u32
 pub phx_geo::relief::ReliefParams::roughness: f64
@@ -512,6 +515,7 @@ pub phx_geo::GeoPrims::metres_per_degree: phx_core::register::Prim<phx_num::qty:
 pub phx_geo::GeoPrims::mountain_weight: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::GeoPrims::octaves: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::plate_belt: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
+pub phx_geo::GeoPrims::plate_warp: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
 pub phx_geo::GeoPrims::plate_weight: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::GeoPrims::plates: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::relief_cells: phx_core::register::Prim<phx_num::qty::Count>
