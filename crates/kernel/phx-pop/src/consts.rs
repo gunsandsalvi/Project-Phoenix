@@ -48,6 +48,9 @@ pub const DESIGN_THREE: u32 = 3;
 /// The cells a landing key holds inline in the landing index before the rest spill past them.
 pub const INDEX_INLINE: usize = 4;
 
+/// A rank read's histogram bins: a per-member value's sign and bit length, sixty-five lengths either side of nought.
+pub const RANK_BINS: usize = 130;
+
 #[cfg(test)]
 mod tests {
     #[test]

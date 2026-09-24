@@ -678,6 +678,16 @@ impl<B: Backing> Lines<B> {
         Ok(Lines { rows, lists: HolderLists::new(r.space(), blocks, keys), kinds, deposits, reserves, money, wheel })
     }
 
+    /// A holder taken off a line's holder list as renumbering moves it, where a side it holds keeps one.
+    pub(crate) fn delist(&mut self, table: u16, holder: Slot, line: LineId, sides: &[Side]) {
+        let kind = self.kind(self.row(line).kind);
+        if sides.iter().any(|s| kind.side(*s).holder_list) {
+            let mut r = self.row(line);
+            self.lists.leave(line.get(), &mut r.holders, table, holder);
+            self.set(line, r);
+        }
+    }
+
     /// A holder put back on a line's holder list as a load rebuilds it, where a side it holds keeps one.
     pub(crate) fn relist(&mut self, table: u16, holder: Slot, line: LineId, sides: &[Side]) {
         let kind = self.kind(self.row(line).kind);

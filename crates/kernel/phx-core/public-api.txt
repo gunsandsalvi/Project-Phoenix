@@ -40,6 +40,7 @@ pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, p
 pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
+pub fn phx_core::agenda::Agenda<B>::swap_rows(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
 pub struct phx_core::agenda::AgendaCounters
 pub phx_core::agenda::AgendaCounters::entries: u64
@@ -2122,6 +2123,7 @@ pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, p
 pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
+pub fn phx_core::agenda::Agenda<B>::swap_rows(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
 pub struct phx_core::AgendaCounters
 pub phx_core::AgendaCounters::entries: u64

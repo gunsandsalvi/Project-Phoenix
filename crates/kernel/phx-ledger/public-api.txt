@@ -251,12 +251,15 @@ pub fn phx_ledger::apply::Ledger<B>::position(&self, &dyn phx_ledger::holder::Ho
 pub fn phx_ledger::apply::Ledger<B>::settle(&mut self, &mut dyn phx_ledger::apply::Holders, phx_ledger::apply::ApplyAt, alloc::vec::Vec<phx_ledger::instruction::Instruction>, &mut dyn phx_core::family::AuditStream) -> alloc::vec::Vec<core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>>
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::attach_holding(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_ledger::holding::CellHolding) -> bool
+pub fn phx_ledger::apply::Ledger<B>::attach_holding_as_lot(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_ledger::holding::CellHolding, phx_id::day::Day) -> bool
 pub fn phx_ledger::apply::Ledger<B>::attach_row(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_ledger::part::DetachedRow) -> bool
 pub fn phx_ledger::apply::Ledger<B>::attach_rows(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, alloc::vec::Vec<phx_ledger::part::DetachedRow>) -> u32
 pub fn phx_ledger::apply::Ledger<B>::detach_holding(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_id::ids::InstrumentId, u32, phx_num::round::Round) -> phx_ledger::holding::CellHolding
+pub fn phx_ledger::apply::Ledger<B>::detach_lots_pooled(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot) -> alloc::vec::Vec<phx_ledger::holding::CellHolding>
 pub fn phx_ledger::apply::Ledger<B>::detach_row(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, (phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare, phx_num::round::Round) -> phx_ledger::part::DetachedRow
 pub fn phx_ledger::apply::Ledger<B>::detach_rows(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &[((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)], phx_num::round::Round) -> alloc::vec::Vec<phx_ledger::part::DetachedRow>
 pub fn phx_ledger::apply::Ledger<B>::detach_rows_batch(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &[phx_ledger::part::RowPlan<'_>]) -> alloc::vec::Vec<alloc::vec::Vec<phx_ledger::part::DetachedRow>>
+pub fn phx_ledger::apply::Ledger<B>::swap_holders(&mut self, &dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_id::ids::Slot)
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::contract_process(&mut self, &mut dyn phx_ledger::apply::Holders, &[phx_ledger::fails::Fail], phx_id::day::Day)
 pub fn phx_ledger::apply::Ledger<B>::cure(&mut self, &mut dyn phx_ledger::apply::Holders, phx_id::ids::LineId, phx_ledger::algebra::Side, phx_id::ids::PartyId)

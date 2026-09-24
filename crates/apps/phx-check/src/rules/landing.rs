@@ -9,8 +9,19 @@ const POP: &str = "phx-pop";
 const LEDGER: &str = "phx-ledger";
 /// The population's splits and landings: a split made at an apply sub-step, a landing at 10b, each by phx-pop alone
 /// until the world's apply and 10b call it through the population's own entry points.
-const PARTS: &[&str] =
-    &["split", "split_batch", "land", "join", "join_batch", "rekey_flagged", "take_whole", "set_key"];
+const PARTS: &[&str] = &[
+    "split",
+    "split_batch",
+    "land",
+    "join",
+    "join_batch",
+    "rekey_flagged",
+    "take_whole",
+    "set_key",
+    "promote",
+    "demote",
+    "sweep",
+];
 /// The ledger's moves of a cell's rows and holdings into a part and back, which only the population's splits and
 /// landings ask for.
 const MOVES: &[&str] = &[
@@ -21,6 +32,9 @@ const MOVES: &[&str] = &[
     "attach_rows",
     "detach_holding",
     "attach_holding",
+    "attach_holding_as_lot",
+    "detach_lots_pooled",
+    "swap_holders",
 ];
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {

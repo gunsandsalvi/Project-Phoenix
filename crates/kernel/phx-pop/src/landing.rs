@@ -134,14 +134,14 @@ fn landing_of(view: &View) -> Missing<u64> {
     }
 }
 
-/// A new cell made of a part: its identity from the directory, its key held once more, its totals, profile, rates,
-/// exposures, attention, rows and holdings the part's, keyed at once and entered in the index.
-fn new_cell<B: Backing, L: Backing>(
+/// A part placed in a row of its own: its identity from the directory, its key held once more, its totals, profile,
+/// signature, rates, exposures, attention, rows and holdings the part's. An individual's row is made one before its
+/// holdings arrive, so they arrive as lots at their pooled cost; a cell's keep them pooled.
+pub(crate) fn place_part<B: Backing, L: Backing>(
     ctx: &mut TenB<'_, B, L>,
-    index: &mut dyn LandingIndex,
     part: Part,
-    landed: &mut Landed,
-) -> Slot {
+    individual: bool,
+) -> (PartyId, Slot, crate::join::Joined) {
     hold_key(ctx.keys, part.key, 1);
     let Missing::Present(key) = ctx.keys.id(&part.key) else {
         violation!(clause = "REP.19", "a key held and not interned");
@@ -157,7 +157,10 @@ fn new_cell<B: Backing, L: Backing>(
     };
     let slot = ctx.table.add(ctx.space, new, ctx.kind, ctx.levels);
     if ctx.directory.begin(RowRef { table: ctx.table.id(), slot }) != party {
-        violation!(clause = "PTY.9", "a new cell given another identity than the directory's next");
+        violation!(clause = "PTY.9", "a new row given another identity than the directory's next");
+    }
+    if individual {
+        ctx.table.make_individual(slot);
     }
     ctx.table.set_sig(slot, &part.sig);
     for (r, rate) in part.rates.iter().enumerate() {
@@ -177,14 +180,31 @@ fn new_cell<B: Backing, L: Backing>(
     let entered = ctx.ledger.attach_rows(ctx.table, ctx.place, slot, part.rows);
     let mut done = crate::join::Joined { rows, holder_list_changes: entered, erased: Vec::new() };
     for holding in part.holdings {
-        if ctx.ledger.attach_holding(ctx.table, ctx.place, slot, holding) {
+        let listed = if individual {
+            ctx.ledger.attach_holding_as_lot(ctx.table, ctx.place, slot, holding, ctx.today)
+        } else {
+            ctx.ledger.attach_holding(ctx.table, ctx.place, slot, holding)
+        };
+        if listed {
             done.holder_list_changes += 1;
         }
     }
     ctx.table.rekey(slot, ctx.kind, ctx.levels);
+    (party, slot, done)
+}
+
+/// A new cell made of a part, keyed at once and entered in the index.
+fn new_cell<B: Backing, L: Backing>(
+    ctx: &mut TenB<'_, B, L>,
+    index: &mut dyn LandingIndex,
+    part: Part,
+    landed: &mut Landed,
+) -> Slot {
+    let id = part.id;
+    let (party, slot, done) = place_part(ctx, part, false);
     index.insert(ctx.table.hot(slot).landing_key, party, slot);
     landed.new_cells += 1;
-    landed.joined(part.id, party, &done);
+    landed.joined(id, party, &done);
     slot
 }
 

@@ -77,6 +77,12 @@ impl<B: Backing> Extension<B> {
         }
     }
 
+    /// The individual's row moved, as renumbering moves it.
+    pub fn set_owner(&mut self, ext: Slot, owner: Slot) {
+        self.live(ext);
+        self.owner.set(ext, owner.get());
+    }
+
     pub fn owner(&self, ext: Slot) -> Slot {
         self.live(ext);
         let Some(o) = self.owner.get(ext) else {

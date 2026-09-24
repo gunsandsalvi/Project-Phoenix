@@ -146,6 +146,27 @@ fn read<T: phx_store::Pod, B: Backing>(column: &Column<T, B>, slot: Slot) -> T {
     v
 }
 
+fn swap<T: phx_store::Pod, B: Backing>(column: &mut Column<T, B>, a: Slot, b: Slot) {
+    let (x, y) = (read(column, a), read(column, b));
+    column.set(a, y);
+    column.set(b, x);
+}
+
+/// Two distinct chunks' arenas, mutably at once.
+fn two<B: Backing>(
+    arenas: &mut [ChunkArena<B>],
+    i: usize,
+    j: usize,
+) -> (Option<&mut ChunkArena<B>>, Option<&mut ChunkArena<B>>) {
+    if i < j {
+        let (lo, hi) = arenas.split_at_mut(j);
+        (lo.get_mut(i), hi.first_mut())
+    } else {
+        let (lo, hi) = arenas.split_at_mut(i);
+        (hi.first_mut(), lo.get_mut(j))
+    }
+}
+
 fn word32(n: usize) -> u32 {
     let Ok(w) = u32::try_from(n) else {
         capacity_exceeded!("words of a cell's list", u32::MAX, n);
@@ -541,6 +562,95 @@ impl<B: Backing> CellTable<B> {
             arena.remove(list, 0, list.len);
             arena.append(list, &words);
         });
+    }
+
+    /// The chunk a row lies in, which holds its lists' arena.
+    #[must_use]
+    pub fn chunk_of(&self, slot: Slot) -> usize {
+        self.chunk(slot)
+    }
+
+    /// The row an individual's extension names as its owner, which must be the individual's own.
+    pub fn ext_owner(&self, slot: Slot) -> Slot {
+        let Missing::Present(ext) = self.hot(slot).individual_ext() else {
+            violation!(clause = "REP.2", "an extension read of a row that is no individual", slot = slot.get());
+        };
+        self.ext.owner(ext)
+    }
+
+    /// Two live rows exchange their slots, as renumbering moves rows into their order: every column, the lists in their
+    /// chunks' arenas, carried into the other chunk's arena when the chunks differ, and an individual's extension link.
+    /// Identities go with their rows; what names a slot — holder lists, the directory, the index, the agenda — is the
+    /// caller's to remap.
+    #[clause("REP.1", "PTY.10")]
+    pub fn swap_rows(&mut self, a: Slot, b: Slot) {
+        self.live(a);
+        self.live(b);
+        if a == b {
+            return;
+        }
+        swap(&mut self.party, a, b);
+        swap(&mut self.created, a, b);
+        swap(&mut self.hot, a, b);
+        swap(&mut self.runs, a, b);
+        for c in &mut self.positions {
+            swap(c, a, b);
+        }
+        for c in &mut self.sig {
+            swap(c, a, b);
+        }
+        for c in &mut self.rates {
+            swap(c, a, b);
+        }
+        for c in &mut self.exposures {
+            swap(c, a, b);
+        }
+        for c in &mut self.attention {
+            swap(c, a, b);
+        }
+        let (ca, cb) = (self.chunk(a), self.chunk(b));
+        for list in CellList::ALL {
+            let (oa, ob) = (Self::owner(a, list), Self::owner(b, list));
+            let (mut ra, mut rb) = (read(self.list_column(list), a), read(self.list_column(list), b));
+            let (mut fa, mut fb) = (self.arena(a).resolve(oa, ra), self.arena(b).resolve(ob, rb));
+            if ca != cb {
+                let (Some(from), Some(to)) = two(&mut self.arenas, ca, cb) else {
+                    violation!(clause = "PTY.10", "a row beyond the table's chunks", slot = a.get());
+                };
+                phx_store::move_list(from, to, &mut fa);
+                phx_store::move_list(to, from, &mut fb);
+            }
+            if let Some(arena) = self.arenas.get_mut(ca) {
+                arena.store(oa, &mut ra, fb);
+            }
+            if let Some(arena) = self.arenas.get_mut(cb) {
+                arena.store(ob, &mut rb, fa);
+            }
+            if let Some(c) = self.lists.get_mut(list.place()) {
+                c.set(a, ra);
+                c.set(b, rb);
+            }
+        }
+        for (s, came_from) in [(a, cb), (b, ca)] {
+            let Missing::Present(ext) = self.hot(s).individual_ext() else { continue };
+            self.ext.set_owner(ext, s);
+            let to = self.chunk(s);
+            if came_from == to {
+                continue;
+            }
+            // An individual's lots and named units lie in its row's chunk arena, so they go with it.
+            for list in [ExtList::Lots, ExtList::NamedUnits] {
+                let mut r = self.ext.list(ext, list);
+                if r.cap == 0 {
+                    continue;
+                }
+                let (Some(from), Some(into)) = two(&mut self.arenas, came_from, to) else {
+                    violation!(clause = "PTY.10", "a row beyond the table's chunks", slot = s.get());
+                };
+                phx_store::move_list(from, into, &mut r);
+                self.ext.set_list(ext, list, r);
+            }
+        }
     }
 
     /// The kind's profile layout.

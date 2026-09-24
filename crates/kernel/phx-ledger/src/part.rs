@@ -280,6 +280,83 @@ impl<B: Backing> Ledger<B> {
         DetachedRow { row: leaving, optional: Optional { balance: bl, pending: pl, amount: al }, arrears_since: since }
     }
 
+    /// A member made an individual takes its share of a cell's holding as one lot, acquired on the day it is made at the
+    /// pooled cost it took, so no cost moves. Returns whether it entered the instrument's holder list.
+    #[clause("REP.29", "REG.1")]
+    pub fn attach_holding_as_lot(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        part: CellHolding,
+        day: Day,
+    ) -> bool {
+        if part.count != 1 {
+            violation!(clause = "REP.29", "an individual taking a holding of many members", members = part.count);
+        }
+        let lot = crate::holding::Lot::new(day, part.quantity.raw(), part.pooled_cost.raw());
+        let entered = crate::holding::acquire(arenas, holder, part.instrument, lot);
+        if entered {
+            self.instruments.enlist(table, holder, part.instrument);
+        }
+        entered
+    }
+
+    /// An individual rejoining the cells: each of its holdings leaves as one member's pooled holding at the cost of its
+    /// lots, and the individual leaves the instruments' holder lists.
+    #[clause("REP.29", "REG.1")]
+    pub fn detach_lots_pooled(&mut self, arenas: &mut dyn HolderArenas, table: u16, holder: Slot) -> Vec<CellHolding> {
+        let taken = crate::holding::take_all(arenas, holder);
+        for h in &taken {
+            self.instruments.unlist(table, holder, h.instrument);
+        }
+        taken
+    }
+
+    /// Two holders whose rows swapped slots, as renumbering swaps them: every holder list naming either is changed to
+    /// name the slot its lines and instruments now lie at.
+    #[clause("REG.4", "PTY.10")]
+    pub fn swap_holders(&mut self, arenas: &dyn HolderArenas, table: u16, a: Slot, b: Slot) {
+        if a == b {
+            return;
+        }
+        let lines = |s: Slot| {
+            let mut by: std::collections::BTreeMap<LineId, Vec<Side>> = std::collections::BTreeMap::new();
+            for r in rows::rows(arenas, s) {
+                by.entry(r.row.line).or_default().push(r.side());
+            }
+            by
+        };
+        // What each slot holds now was the other's before the swap, and its lists still name the other.
+        let (at_a, at_b) = (lines(a), lines(b));
+        let (held_a, held_b) =
+            (crate::holding::instruments_of(arenas, a), crate::holding::instruments_of(arenas, b));
+        for (line, sides) in &at_a {
+            self.lines.delist(table, b, *line, sides);
+        }
+        for (line, sides) in &at_b {
+            self.lines.delist(table, a, *line, sides);
+        }
+        for id in &held_a {
+            self.instruments.unlist(table, b, *id);
+        }
+        for id in &held_b {
+            self.instruments.unlist(table, a, *id);
+        }
+        for (line, sides) in &at_a {
+            self.lines.relist(table, a, *line, sides);
+        }
+        for (line, sides) in &at_b {
+            self.lines.relist(table, b, *line, sides);
+        }
+        for id in &held_a {
+            self.instruments.enlist(table, a, *id);
+        }
+        for id in &held_b {
+            self.instruments.enlist(table, b, *id);
+        }
+    }
+
     /// A part's row joins a cell: added to the cell's row on the same line side, whose payment record it must share,
     /// or placed as the cell's first row there, the cell entering the line's list with its first listed row. The
     /// line's side counts do not move. Returns whether the cell entered the line's list.

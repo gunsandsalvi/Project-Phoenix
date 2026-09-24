@@ -65,10 +65,12 @@ pub const phx_pop::consts::DESIGN_WEIGHT: u32
 pub const phx_pop::consts::EXPOSURE_ONE: f64
 pub const phx_pop::consts::HOT_LEAD: usize
 pub const phx_pop::consts::HOT_STEPS: usize
+pub const phx_pop::consts::INDEX_INLINE: usize
 pub const phx_pop::consts::KEY_BITS: u32
 pub const phx_pop::consts::KEY_WORDS: usize
 pub const phx_pop::consts::LADDER_DEN: u64
 pub const phx_pop::consts::LADDER_NUM: u64
+pub const phx_pop::consts::RANK_BINS: usize
 pub const phx_pop::consts::STEPS_PER_WORD: usize
 pub const phx_pop::consts::VARINT_BITS: u32
 pub const phx_pop::consts::VARINT_MORE: u8
@@ -112,6 +114,27 @@ impl phx_store::pod::Pod for phx_pop::hot::HotRecord
 pub fn phx_pop::hot::HotRecord::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_pop::hot::HotRecord
 pub const phx_pop::hot::INDIVIDUAL: u16
+pub mod phx_pop::index
+pub enum phx_pop::index::IndexChange
+pub phx_pop::index::IndexChange::Enter(phx_id::ids::Slot)
+pub phx_pop::index::IndexChange::Leave
+pub phx_pop::index::IndexChange::Move(phx_id::ids::Slot)
+pub struct phx_pop::index::Candidates
+pub struct phx_pop::index::Index
+impl phx_pop::index::Index
+pub fn phx_pop::index::Index::apply(&mut self, alloc::vec::Vec<(u64, phx_id::ids::PartyId, phx_pop::index::IndexChange)>)
+pub fn phx_pop::index::Index::bytes(&self) -> usize
+pub fn phx_pop::index::Index::cells(&self) -> usize
+pub fn phx_pop::index::Index::entries(&self) -> alloc::vec::Vec<(u64, alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>)>
+pub fn phx_pop::index::Index::keys(&self) -> usize
+pub fn phx_pop::index::Index::new() -> phx_pop::index::Index
+pub fn phx_pop::index::Index::rebuild<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>) -> phx_pop::index::Index
+impl core::default::Default for phx_pop::index::Index
+pub fn phx_pop::index::Index::default() -> phx_pop::index::Index
+impl phx_pop::landing::LandingIndex for phx_pop::index::Index
+pub fn phx_pop::index::Index::candidates(&self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>
+pub fn phx_pop::index::Index::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
+pub fn phx_pop::index::Index::remove(&mut self, u64, phx_id::ids::PartyId)
 pub mod phx_pop::individual
 pub enum phx_pop::individual::ExtList
 pub phx_pop::individual::ExtList::Lots
@@ -126,6 +149,7 @@ pub fn phx_pop::individual::Extension<B>::new(&mut phx_store::backing::AddressSp
 pub fn phx_pop::individual::Extension<B>::owner(&self, phx_id::ids::Slot) -> phx_id::ids::Slot
 pub fn phx_pop::individual::Extension<B>::remove(&mut self, phx_id::ids::Slot)
 pub fn phx_pop::individual::Extension<B>::set_list(&mut self, phx_id::ids::Slot, phx_pop::individual::ExtList, phx_store::arena::ListRef)
+pub fn phx_pop::individual::Extension<B>::set_owner(&mut self, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_pop::individual::Extension<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_pop::individual::Extension<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::individual::Extension<B> where phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_store::arena::ListRef, B>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved
@@ -244,12 +268,33 @@ pub trait phx_pop::landing::LandingIndex
 pub fn phx_pop::landing::LandingIndex::candidates(&self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>
 pub fn phx_pop::landing::LandingIndex::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
 pub fn phx_pop::landing::LandingIndex::remove(&mut self, u64, phx_id::ids::PartyId)
-impl phx_pop::landing::LandingIndex for phx_pop::synthetic::OrderedIndex
-pub fn phx_pop::synthetic::OrderedIndex::candidates(&self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>
-pub fn phx_pop::synthetic::OrderedIndex::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
-pub fn phx_pop::synthetic::OrderedIndex::remove(&mut self, u64, phx_id::ids::PartyId)
+impl phx_pop::landing::LandingIndex for phx_pop::index::Index
+pub fn phx_pop::index::Index::candidates(&self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>
+pub fn phx_pop::index::Index::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
+pub fn phx_pop::index::Index::remove(&mut self, u64, phx_id::ids::PartyId)
 pub fn phx_pop::landing::land<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut dyn phx_pop::landing::LandingIndex, alloc::vec::Vec<phx_pop::part::Part>) -> phx_pop::landing::Landed
 pub fn phx_pop::landing::landing_key(phx_pop::key::KeyId, &[phx_pop::steps::Step], &[u64]) -> u64
+pub mod phx_pop::measure
+pub struct phx_pop::measure::Census
+pub phx_pop::measure::Census::at_weight_one: u64
+pub phx_pop::measure::Census::cells: u64
+pub phx_pop::measure::Census::individuals: u64
+pub phx_pop::measure::Census::members: u64
+impl phx_pop::measure::Census
+pub fn phx_pop::measure::Census::of<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>) -> phx_pop::measure::Census
+pub fn phx_pop::measure::Census::share_at_weight_one(&self) -> core::option::Option<f64>
+pub struct phx_pop::measure::DayCosts
+pub phx_pop::measure::DayCosts::erased: alloc::vec::Vec<f64>
+pub phx_pop::measure::DayCosts::gaps: alloc::vec::Vec<f64>
+pub phx_pop::measure::DayCosts::landings: u64
+pub phx_pop::measure::DayCosts::new_cells: u64
+pub phx_pop::measure::DayCosts::occasions: u64
+pub phx_pop::measure::DayCosts::splits: u64
+impl phx_pop::measure::DayCosts
+pub fn phx_pop::measure::DayCosts::erase(&mut self, usize, f64)
+pub fn phx_pop::measure::DayCosts::estimated(&mut self, &phx_pop::tolerance::Estimate)
+pub fn phx_pop::measure::DayCosts::landed(&mut self, &phx_pop::landing::Landed)
+pub fn phx_pop::measure::DayCosts::new(usize) -> phx_pop::measure::DayCosts
 pub mod phx_pop::occasion
 pub enum phx_pop::occasion::Reaches
 pub phx_pop::occasion::Reaches::Carried
@@ -337,6 +382,17 @@ pub fn phx_pop::profile::packed_bytes(&[u64], usize) -> alloc::borrow::Cow<'_, [
 pub fn phx_pop::profile::read_group<S: phx_pop::profile::ByteSource + ?core::marker::Sized>(&phx_pop::profile::ProfileLayout, &S, usize) -> core::result::Result<alloc::vec::Vec<(u32, u32)>, alloc::string::String>
 pub fn phx_pop::profile::shifted<S: phx_pop::profile::ByteSource + ?core::marker::Sized>(&phx_pop::profile::ProfileLayout, &S, usize, &[(usize, u32, i64)]) -> core::result::Result<alloc::vec::Vec<u8>, alloc::string::String>
 pub fn phx_pop::profile::to_words(&[u8]) -> alloc::vec::Vec<u64>
+pub mod phx_pop::promote
+pub struct phx_pop::promote::RankRead
+pub phx_pop::promote::RankRead::demote: alloc::vec::Vec<phx_id::ids::Slot>
+pub phx_pop::promote::RankRead::promote: alloc::vec::Vec<(phx_id::ids::Slot, u32)>
+pub struct phx_pop::promote::Ranks
+pub phx_pop::promote::Ranks::demote: u64
+pub phx_pop::promote::Ranks::measure: usize
+pub phx_pop::promote::Ranks::promote: u64
+pub fn phx_pop::promote::demote<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut phx_pop::index::Index, &[phx_id::ids::Slot]) -> phx_pop::landing::Landed
+pub fn phx_pop::promote::promote<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut phx_pop::index::Index, phx_id::ids::Slot, u32, &mut [phx_rand::draws::Draws]) -> alloc::vec::Vec<phx_id::ids::Slot>
+pub fn phx_pop::promote::read_ranks<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_pop::promote::Ranks, &dyn core::ops::function::Fn(phx_id::ids::PartyId) -> bool, &mut phx_rand::draws::Draws) -> phx_pop::promote::RankRead
 pub mod phx_pop::rekey
 pub struct phx_pop::rekey::KeyClock
 pub phx_pop::rekey::KeyClock::attr: usize
@@ -345,6 +401,9 @@ pub fn phx_pop::rekey::clock_day(&[phx_id::day::Day]) -> phx_num::missing::Missi
 pub fn phx_pop::rekey::clocks_ended(&phx_pop::key::KeyLayout, phx_pop::key::KeyRecord, &[(phx_pop::rekey::KeyClock, phx_id::day::Day)], phx_id::day::Day) -> phx_pop::key::KeyRecord
 pub fn phx_pop::rekey::rekey_flagged<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut dyn phx_pop::landing::LandingIndex, &[phx_id::ids::Slot], &mut phx_pop::landing::Landed) -> u64
 pub fn phx_pop::rekey::set_key<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, phx_id::ids::Slot, phx_pop::key::KeyRecord)
+pub mod phx_pop::renumber
+pub fn phx_pop::renumber::apply<B: phx_store::backing::Backing, L: phx_store::backing::Backing, A: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut phx_pop::index::Index, &mut phx_core::agenda::Agenda<A>, &[(phx_id::ids::Slot, phx_id::ids::Slot)])
+pub fn phx_pop::renumber::plan<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&phx_pop::landing::TenB<'_, B, L>, core::ops::range::Range<usize>) -> alloc::vec::Vec<(phx_id::ids::Slot, phx_id::ids::Slot)>
 pub mod phx_pop::review
 pub fn phx_pop::review::accrued(i64, i64, u32) -> i64
 pub fn phx_pop::review::after_review(i64, u64, phx_core::weight::Weight) -> i64
@@ -418,6 +477,7 @@ impl phx_pop::steps::Step
 pub const phx_pop::steps::Step::MISSING: phx_pop::steps::Step
 pub const fn phx_pop::steps::Step::get(self) -> u16
 pub const fn phx_pop::steps::Step::is_missing(self) -> bool
+pub const fn phx_pop::steps::Step::sibling(self) -> core::option::Option<phx_pop::steps::Step>
 pub struct phx_pop::steps::StepTable
 impl phx_pop::steps::StepTable
 pub fn phx_pop::steps::StepTable::at_level(phx_pop::steps::Step, u8) -> phx_pop::steps::Step
@@ -428,7 +488,7 @@ pub fn phx_pop::steps::StepTable::steps(&self) -> usize
 pub mod phx_pop::synthetic
 pub struct phx_pop::synthetic::DesignPoint<B: phx_store::backing::Backing>
 pub phx_pop::synthetic::DesignPoint::directory: phx_core::directory::Directory
-pub phx_pop::synthetic::DesignPoint::index: phx_pop::synthetic::OrderedIndex
+pub phx_pop::synthetic::DesignPoint::index: phx_pop::index::Index
 pub phx_pop::synthetic::DesignPoint::keys: phx_pop::key::KeyInterner
 pub phx_pop::synthetic::DesignPoint::kind: phx_pop::kind::PopKindDecl
 pub phx_pop::synthetic::DesignPoint::ledger: phx_ledger::apply::Ledger<B>
@@ -445,11 +505,6 @@ pub fn phx_pop::synthetic::DesignPoint<B>::fmt(&self, &mut core::fmt::Formatter<
 pub struct phx_pop::synthetic::NoKinks
 impl phx_pop::check::LineKinks for phx_pop::synthetic::NoKinks
 pub fn phx_pop::synthetic::NoKinks::points(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> alloc::vec::Vec<i64>
-pub struct phx_pop::synthetic::OrderedIndex
-impl phx_pop::landing::LandingIndex for phx_pop::synthetic::OrderedIndex
-pub fn phx_pop::synthetic::OrderedIndex::candidates(&self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::Slot)>
-pub fn phx_pop::synthetic::OrderedIndex::insert(&mut self, u64, phx_id::ids::PartyId, phx_id::ids::Slot)
-pub fn phx_pop::synthetic::OrderedIndex::remove(&mut self, u64, phx_id::ids::PartyId)
 pub fn phx_pop::synthetic::design_point<B: phx_store::backing::Backing>() -> phx_pop::synthetic::DesignPoint<B>
 pub fn phx_pop::synthetic::levels() -> [u8; 30]
 pub mod phx_pop::table
@@ -481,12 +536,14 @@ pub fn phx_pop::table::CellTable<B>::add(&mut self, &mut phx_store::backing::Add
 pub fn phx_pop::table::CellTable<B>::add_individual_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
 pub fn phx_pop::table::CellTable<B>::attention(&self, phx_id::ids::Slot, usize) -> phx_num::missing::Missing<phx_pop::table::Attention>
 pub fn phx_pop::table::CellTable<B>::bytes_per_row(&self) -> usize
+pub fn phx_pop::table::CellTable<B>::chunk_of(&self, phx_id::ids::Slot) -> usize
 pub fn phx_pop::table::CellTable<B>::chunks(&self) -> usize
 pub fn phx_pop::table::CellTable<B>::compact(&mut self, usize, &mut phx_store::region::Region<u64, B>)
 pub fn phx_pop::table::CellTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
 pub fn phx_pop::table::CellTable<B>::edit_ext<R>(&mut self, phx_id::ids::Slot, phx_pop::individual::ExtList, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
 pub fn phx_pop::table::CellTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_pop::table::CellList, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
 pub fn phx_pop::table::CellTable<B>::exposure(&self, phx_id::ids::Slot, usize) -> phx_num::missing::Missing<i64>
+pub fn phx_pop::table::CellTable<B>::ext_owner(&self, phx_id::ids::Slot) -> phx_id::ids::Slot
 pub fn phx_pop::table::CellTable<B>::ext_words(&self, phx_id::ids::Slot, phx_pop::individual::ExtList) -> &[u64]
 pub fn phx_pop::table::CellTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
 pub fn phx_pop::table::CellTable<B>::high_water(&self) -> u32
@@ -524,6 +581,7 @@ pub fn phx_pop::table::CellTable<B>::shift_profile(&mut self, phx_id::ids::Slot,
 pub fn phx_pop::table::CellTable<B>::sig(&self, phx_id::ids::Slot) -> alloc::vec::Vec<u64>
 pub fn phx_pop::table::CellTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_pop::table::CellTable<B>::steps(&self, phx_id::ids::Slot, &phx_pop::kind::PopKindDecl, &[u8]) -> alloc::vec::Vec<phx_pop::steps::Step>
+pub fn phx_pop::table::CellTable<B>::swap_rows(&mut self, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_pop::table::CellTable<B>::weight(&self, phx_id::ids::Slot) -> phx_core::weight::Weight
 pub fn phx_pop::table::CellTable<B>::words(&self, phx_id::ids::Slot, phx_pop::table::CellList) -> &[u64]
 pub fn phx_pop::table::CellTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
@@ -557,3 +615,29 @@ pub phx_pop::table::NewCell::weight: phx_core::weight::Weight
 pub fn phx_pop::table::steps_of(&phx_pop::kind::PopKindDecl, &[u8], phx_core::weight::Weight, &[i64], &[phx_num::missing::Missing<i64>]) -> alloc::vec::Vec<phx_pop::steps::Step>
 pub mod phx_pop::tiles
 pub fn phx_pop::tiles::tile_of_unit(&mut phx_rand::draws::Draws, &[(phx_id::ids::TileId, u64)]) -> phx_id::ids::TileId
+pub mod phx_pop::tolerance
+pub struct phx_pop::tolerance::CellFacts
+pub phx_pop::tolerance::CellFacts::rates: alloc::vec::Vec<phx_num::missing::Missing<i64>>
+pub phx_pop::tolerance::CellFacts::totals: alloc::vec::Vec<i64>
+pub phx_pop::tolerance::CellFacts::weight: u32
+pub struct phx_pop::tolerance::Estimate
+pub phx_pop::tolerance::Estimate::gap: alloc::vec::Vec<f64>
+pub phx_pop::tolerance::Estimate::pairs: alloc::vec::Vec<u32>
+pub phx_pop::tolerance::Estimate::sampled: u32
+pub struct phx_pop::tolerance::GapForm
+pub phx_pop::tolerance::GapForm::form: fn(&phx_pop::tolerance::CellFacts) -> phx_num::missing::Missing<i64>
+pub phx_pop::tolerance::GapForm::name: &'static str
+pub phx_pop::tolerance::GapForm::scale: usize
+pub struct phx_pop::tolerance::Tolerances
+pub phx_pop::tolerance::Tolerances::budget: u64
+pub phx_pop::tolerance::Tolerances::narrow_den: u64
+pub phx_pop::tolerance::Tolerances::narrow_num: u64
+pub phx_pop::tolerance::Tolerances::sample: u32
+pub phx_pop::tolerance::Tolerances::widen_order: alloc::vec::Vec<usize>
+pub fn phx_pop::tolerance::choose_narrowing(&phx_pop::tolerance::Estimate, u64, &phx_pop::tolerance::Tolerances, &[u8]) -> phx_num::missing::Missing<usize>
+pub fn phx_pop::tolerance::choose_widening(&phx_pop::tolerance::Estimate, u64, &phx_pop::tolerance::Tolerances, &[u8], &[u8], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<usize>
+pub fn phx_pop::tolerance::estimate<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, &phx_pop::index::Index, &phx_pop::kind::PopKindDecl, &[u8], &[phx_pop::tolerance::GapForm], u32, &mut phx_rand::draws::Draws) -> phx_pop::tolerance::Estimate
+pub fn phx_pop::tolerance::facts<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot) -> phx_pop::tolerance::CellFacts
+pub fn phx_pop::tolerance::pair_gap(&phx_pop::tolerance::GapForm, &phx_pop::tolerance::CellFacts, &phx_pop::tolerance::CellFacts) -> phx_num::missing::Missing<f64>
+pub fn phx_pop::tolerance::sweep<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::landing::TenB<'_, B, L>, &mut phx_pop::index::Index, &mut phx_pop::landing::Landed) -> u64
+pub fn phx_pop::tolerance::top_levels(&phx_pop::kind::PopKindDecl) -> alloc::vec::Vec<u8>
