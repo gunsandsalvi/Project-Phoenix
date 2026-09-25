@@ -1297,6 +1297,13 @@ adult who has reached its sex's pension age the state pension at its sex's cover
 state pension line, a flat monthly amount — the replacement rate of the mean wage — whose payer, the treasury, is
 named. Members reaching the pension age during the run join with the claim (S1.11); the defined-benefit schemes
 lack sources (plan §11, F-045, F-046).
+The small firms are drawn with the parties, before the households: each country's firms below the promotion rank,
+by the firm-size law cut at the smallest the rank admits, counted by employment size class, apportioned over the
+regions by their land and over the banks by the banks' drawn sizes, and landed as cells of the small-firm kind
+keyed by region, size class and bank. They hold the firms' deposits and debt the large firms do not, by their
+employees, on each bank's lines for them, and are employers on the employment lines by their headcount beside the
+large firms. The large firms remain rows of the kernel's firm kind table until the firms' positions let one rank
+read span both (plan §11, F-048).
 
 The same seed therefore gives the same world whatever the resolution the valve sets, and nothing is balanced after
 merging: finer attributes are drawn from their own counter keys, so a coarser setting is a projection of a finer

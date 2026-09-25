@@ -1,8 +1,8 @@
 //! The households' jobs at the opening: each adult is employed at the country's employment rate, and an employee at
 //! its sex's share of employees among the employed; its wage is the mean wage the labour share gives, times its
 //! household's income as a multiple of the mean, on the nearest wage point. A job is a row on the employment line of
-//! its wage point, whose employers are the country's firms, apportioned by their headcounts once every household is
-//! drawn.
+//! its wage point, whose employers are the country's firms, large and small, apportioned by their headcounts once
+//! every household is drawn.
 
 use std::collections::BTreeMap;
 
@@ -39,7 +39,7 @@ pub const EMPLOYMENT: LineKindDecl = LineKindDecl {
         exclusive: true,
     },
     liability: SideDecl {
-        holder_kinds: &["firm"],
+        holder_kinds: &["firm", "small_firm"],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],
@@ -50,6 +50,7 @@ pub const EMPLOYMENT: LineKindDecl = LineKindDecl {
 };
 
 const FIRMS: &str = "FRM.firms";
+const SMALL_FIRMS: &str = "FRM.small_firms";
 
 /// The employment line's kind in the books.
 #[derive(Debug)]
@@ -121,9 +122,11 @@ impl AttachmentDraw for Jobs {
         let employed = derived(c, "GEN.employment_rate") / PERCENT;
         let workers = phx_rand::float::from_u64(c.people) * adults * employed;
         let wage = derived(c, "GEN.labour_share") / PERCENT * c.gdp / workers / MONTHS_PER_YEAR;
-        let Some(firms) = books.drawn.get(&key(FIRMS, c.id)).cloned() else {
+        let (Some(large), Some(small)) = (books.drawn.get(&key(FIRMS, c.id)), books.drawn.get(&key(SMALL_FIRMS, c.id)))
+        else {
             violation!(clause = "GEN.3", "labour's opening reading firms not yet drawn", country = c.id.get());
         };
+        let firms: Vec<_> = large.iter().chain(small).copied().collect();
         let date = calendar.date(today);
         let dates = phx_ledger::opening::monthly(date, c.id);
         let first = Missing::Present((dates.nth(calendar, 1), 1));

@@ -50,6 +50,7 @@ impl System for Bnk {
         let accounts: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&ACCOUNTS);
         d.stream(households::HouseholdsStream::DECL);
         d.pop_kind(if_pop::HOUSEHOLD).key_attr(households::BANK_ATTR);
+        d.pop_kind(opening::SMALL_FIRM).key_attr(households::BANK_ATTR);
         let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> = Box::new(households::HouseholdLines { accounts });
         d.attachment(Box::new(draw));
         d.contribution(Box::new(Declared));

@@ -109,6 +109,7 @@ impl AttachmentDraw for HouseholdLines {
         let banks = drawn(books, crate::opening::BANKS, c.id);
         let firms: i64 = drawn(books, crate::opening::DEPOSITS, c.id)
             .iter()
+            .chain(&drawn(books, crate::opening::SMALL_DEPOSITS, c.id))
             .map(|(_, d)| {
                 let Ok(d) = i64::try_from(*d) else {
                     violation!(clause = "MON.16", "a firm's deposit beyond whole smallest units");

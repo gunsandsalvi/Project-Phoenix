@@ -4768,7 +4768,21 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     treasury, named, a flat amount — the replacement rate (`SOC.replacement_rate`) of the labour share's mean wage per
     worker. Not built: members reaching the pension age during the run joining the line, which waits for the claim
     (S1.11, F-046), and the defined-benefit schemes with their pensions in payment, which lack sources (F-045);
-  - S0.25d-6: small firms as cells (FRM.23) and their ranks;
+  - S0.25d-6 *(built; its build run below)*: small firms as cells (FRM.23) and their ranks. As built: `sys-frm`'s
+    `small` draws each country's firms below the promotion rank — the firm-size law's firms from one person up to the
+    smallest the rank admits, counted by employment size class (`FRM.size_classes`, Eurostat's classes) with each
+    class's mean whole size — apportioned over the regions by their land and over the banks by the banks' drawn
+    sizes, and lands a cell of the `small_firm` kind for each (class, region, bank), keyed by `FRM.region`,
+    `FRM.size_class` and `BNK.bank` (the banks declare the attribute on the kind; the opening draws it with the
+    firms, as a household's bank is drawn with it). The firms' deposits and debt the large firms do not hold are the
+    small firms', shared over the cells by their employees; `sys-bnk` opens each bank's current account and a loan
+    line for the small firms that bank with it, a cell's row counting its firms, the loan paying interest on its
+    balance (F-042); the households' deposits are the country's less every firm's. The employment lines' employers are
+    the large firms and the small firms' cells by headcount. The firms' ranks wait for their positions (F-048). The
+    first build run found the large firms' arenas outgrowing their reservation: the arenas' compaction was run by
+    nothing, now at the opening's and the day's quiet moments, and each firm was party to a line of every 5% wage and
+    rent point, now points a quarter apart (F-047). Tests: the size classes share the firms below the cut and hold
+    their sizes; a class beyond the cut holds none; a kind table's compaction keeps every list and frees the dead;
   - S0.25d-7: LC-0-44, 45, 48, 55 and 56, docs, reviews, the build run, done.
 - **S0.25e — estates and the settled world**: `sys-est`, catastrophes' losses at owners (GEO.8), settling, LC-0-53;
   the step's reviews and its build run.
@@ -4821,7 +4835,7 @@ This is the world the Stage 0 gate measures.
 | `crates/interfaces/if-banking/src/terms.rs` | deposit kinds, the banking arrangement, payment order, coverage order |
 | `crates/systems/sys-dem/` | POP's mortality, illness and ageing as hazards and processes; the population's opening contribution |
 | `crates/systems/sys-est/` | household estates: opening, the waterfall through the ledger (S0.17), distribution in kind to heirs (POP.9, part) |
-| `crates/systems/sys-lab/src/jobs.rs`, `crates/systems/sys-hsg/src/tenancies.rs`, `crates/systems/sys-bnk/src/households.rs`, `crates/systems/sys-frm/src/gen.rs` | their draws of the households' lines at the opening (architecture §10.3) and their placeholders: the wage and rent points until firms and landlords post their own |
+| `crates/systems/sys-lab/src/jobs.rs`, `crates/systems/sys-hsg/src/tenancies.rs`, `crates/systems/sys-bnk/src/households.rs`, `crates/systems/sys-frm/src/small.rs` | their draws of the households' lines and the small firms at the opening (architecture §10.3) and their placeholders: the wage and rent points until firms and landlords post their own |
 | `crates/systems/sys-soc/src/gen.rs`, `src/state_pension.rs` | the state pension's line and opening pensioners; its payment by the rule's points; the placeholder naming SOC |
 | `crates/systems/sys-pen/src/gen.rs`, `src/in_payment.rs` | the opening schemes as parties with their sponsors and assets; their pensioner lines and rows; payment, indexation and survivors by the terms; the placeholder naming PEN |
 | `crates/assembly/phx-world/src/opening/population.rs` | the two canonical passes (architecture §10.3) |
@@ -15764,6 +15778,8 @@ the final build within the budget on the phone.
 | F-044 | S0.25d | build, 2026-09-25 | Jobs are drawn for adults of every age at the country's employment rate, and wages by the household's income alone: none by age, occupation family or skill, though the occupation shares are in hand | employment by age and wages by occupation have no mechanism at the opening yet | the employment line's terms by occupation family and skill (LAB.1), the jobs drawn by age, with the labour step (S1.x) | open |
 | F-045 | S0.25d | build, 2026-09-25 | No defined-benefit pension is in payment at the opening, though the occupational pensions' share of the over-65s' income is in hand (`PEN.occupational_income_share`) | the opening schemes need the share of pensioners a scheme pays, the schemes' number and sponsors, and the part of the pension funds' assets that backs defined benefits, and none has a source here: drawn without them they would be invented (GEN.11) | sources for defined-benefit coverage among pensioners and for the schemes' assets, then `sys-pen`'s opening schemes and pensions in payment, on per-point lines like the state pension's; an owner item for the Stage 0 gate | open |
 | F-046 | S0.25d | build, 2026-09-25 | Persons reaching the state pension age during the run do not join the state pension line: only the opening's pensioners are paid, so the pensions in payment dwindle as they die | a person's joining is a once-only change that the cells' hazards cannot keep once-only: a person's age is a profile value that does not change when it joins, so a hazard over it would hit, and draw coverage for, the same person again; the person's claim is the state that records it, and that is SOC.3's claim decision (S1.11) | the claim at the pension age (S1.11's `sys-soc`), which gives the person the state its hazard reads, with members joining a line at 3e, the ledger's counterpart to `members_leave` | open |
+| F-047 | S0.25d | build, 2026-09-25 | The opening's large firms outgrew their arenas (`region elements`, 4 M and then 16 M words for a chunk of 4 096): every firm is party to every employment and tenancy line of its country, one per wage or rent point, and at 5% points a country has some 190 of each; the rows of individuals then far exceed the architecture's 2 M | the counterparty side of a line of many holders is apportioned over every eligible firm by its size, so a large firm takes a row on every point; and the arenas were never compacted | points a quarter apart (`LAB.wage_point_ratio`, `HSG.rent_point_ratio`, placeholders) and compaction at quiet moments; the points and the rows they cost measured on the phone (S0.26) and refined by the budget (N8.5); landlords drawn from the dwelling stock (F-043) and wage offers by firm (LAB) will set each firm's points | open |
+| F-048 | S0.25d | build, 2026-09-25 | The firms' ranks are not read: the kernel ranks a kind by a position, and a small firm's headcount is in its key (FRM.23) while its positions (cash, debt, inventory, output) arrive with S1.03; the large firms are rows of the kernel's firm kind table, not individuals of the small firms' table, so no rank read spans both | a rank measure read from the key, and the large firms as individuals of the firms' cell table, are neither built | the firms' positions and a rank read over the large firms and the small firms together (S1.03), LC-0-48 on firms with it; at the opening every firm above the rank's edge is a large firm by construction | open |
 
 ---
 

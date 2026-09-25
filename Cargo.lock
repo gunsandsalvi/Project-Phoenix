@@ -1112,12 +1112,15 @@ dependencies = [
 name = "sys-frm"
 version = "0.1.0"
 dependencies = [
+ "if-pop",
  "phx-core",
  "phx-id",
  "phx-ledger",
  "phx-macros",
  "phx-num",
+ "phx-pop",
  "phx-rand",
+ "phx-store",
 ]
 
 [[package]]

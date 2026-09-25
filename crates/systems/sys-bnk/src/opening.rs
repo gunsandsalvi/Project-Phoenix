@@ -12,6 +12,7 @@ use phx_ledger::line::{LineKindDecl, SideDecl};
 use phx_ledger::money::MoneyHolders;
 use phx_ledger::opening::{currency, derived, key, monthly, open_row, plain_terms as terms, whole, write};
 use phx_ledger::rows::{BALANCE, PENDING};
+use phx_ledger::terms::TermsId;
 use phx_macros::clause;
 use phx_num::{Count, Missing, Money, Rate, RatePeriod, violation};
 use phx_rand::below_u64;
@@ -25,13 +26,19 @@ const DEBT: &str = "FRM.debt";
 pub(crate) const DEPOSITS: &str = "FRM.deposits";
 const LENDERS: &str = "BNK.lenders";
 const ACCOUNT: &str = "current account";
+/// The kind of the small firms' cells, and what they draw: their banks, their firms, their deposits and their debt.
+pub(crate) const SMALL_FIRM: &str = "small_firm";
+const SMALL_BANKS: &str = "FRM.small_banks";
+const SMALL_COUNTS: &str = "FRM.small_counts";
+pub(crate) const SMALL_DEPOSITS: &str = "FRM.small_deposits";
+const SMALL_DEBT: &str = "FRM.small_debt";
 
 /// Current accounts: a bank's liability to the firms that bank with it.
 const HOLDERS: MoneyHolders = MoneyHolders {
     central_banks: &["central_bank"],
     banks: &[BANK.name],
     treasuries: &["treasury"],
-    depositors: &["firm"],
+    depositors: &["firm", SMALL_FIRM],
     requesters: &["BNK"],
 };
 
@@ -46,7 +53,7 @@ const LOAN: LineKindDecl = LineKindDecl {
         exclusive: false,
     },
     liability: SideDecl {
-        holder_kinds: &["firm"],
+        holder_kinds: &["firm", SMALL_FIRM],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],
@@ -307,6 +314,96 @@ impl Contracts {
             }
         }
         b.drawn.insert(key(LENDERS, c.id), lenders);
+        let small_loans = b.ledger.terms.intern(terms(
+            ccy,
+            vec![Leg::RateOnNotional { reference: Reference::Fixed(lending), day_count: DayCount::Act365F }],
+            Schedule { dates: monthly(date, c.id), count: Missing::Absent },
+        ));
+        Small { kinds, deposits: deposit_terms, loans: small_loans, first: Missing::Present(first_due) }.open(
+            b,
+            (register, reason),
+            c,
+            report,
+        );
+    }
+}
+
+/// The small firms' lines at their banks: each bank's current account for the small firms that bank with it and a
+/// loan line they owe on, interest on the balance alone, a cell's row counting its firms; each cell's deposit and
+/// debt written on them.
+struct Small {
+    kinds: (u16, u16),
+    deposits: TermsId,
+    loans: TermsId,
+    first: Missing<(phx_id::Day, u32)>,
+}
+
+impl Small {
+    #[clause("BNK.1", "FRM.23", "GEN.4")]
+    fn open(
+        &self,
+        b: &mut Books,
+        (register, reason): (&phx_core::Register, ReasonId),
+        c: &OpeningCountry,
+        report: &mut phx_core::GenReport,
+    ) {
+        let ccy = currency(c.id);
+        let (banked, counts) = (drawn(b, SMALL_BANKS, c.id), drawn(b, SMALL_COUNTS, c.id));
+        let (deposits, debts) = (drawn(b, SMALL_DEPOSITS, c.id), drawn(b, SMALL_DEBT, c.id));
+        let amount = |list: &[(PartyId, u64)], cell: PartyId| {
+            let Some(&(_, a)) = list.iter().find(|(p, _)| *p == cell) else {
+                violation!(clause = "GEN.3", "a small firms' cell with no drawn amount", cell = cell.get());
+            };
+            let Ok(a) = i64::try_from(a) else {
+                violation!(clause = "MON.16", "an amount beyond whole smallest units", cell = cell.get());
+            };
+            a
+        };
+        let mut banks: Vec<u64> = banked.iter().map(|(_, bank)| *bank).collect();
+        banks.sort_unstable();
+        banks.dedup();
+        for bank in banks {
+            let bank_party = PartyId::new(bank);
+            let cells: Vec<(PartyId, u32)> = banked
+                .iter()
+                .filter(|(_, at)| *at == bank)
+                .map(|(cell, _)| {
+                    let Some(&(_, n)) = counts.iter().find(|(p, _)| p == cell) else {
+                        violation!(clause = "GEN.3", "a small firms' cell with no drawn firms", cell = cell.get());
+                    };
+                    let Ok(n) = u32::try_from(n) else {
+                        phx_num::capacity_exceeded!("firms of a cell", u32::MAX, n);
+                    };
+                    (*cell, n)
+                })
+                .collect();
+            let total: u64 = cells.iter().map(|(_, n)| u64::from(*n)).sum();
+            let Ok(total) = u32::try_from(total) else {
+                phx_num::capacity_exceeded!("small firms of a bank", u32::MAX, total);
+            };
+            let account = b.ledger.lines.open(self.kinds.0, self.deposits, self.first);
+            let loan = b.ledger.lines.open(self.kinds.1, self.loans, self.first);
+            let mut legs = vec![
+                open_row(register, bank_party, account, Side::Liability, total, BALANCE),
+                open_row(register, bank_party, loan, Side::Asset, total, BALANCE),
+            ];
+            for (cell, n) in &cells {
+                legs.push(open_row(register, *cell, account, Side::Asset, *n, BALANCE | PENDING));
+                legs.push(open_row(register, *cell, loan, Side::Liability, *n, BALANCE));
+            }
+            b.open(reason, legs, bank, report);
+            for (cell, _) in &cells {
+                let (deposit, owed) = (amount(&deposits, *cell), amount(&debts, *cell));
+                let id = cell.get();
+                let legs = vec![
+                    write(*cell, account, Side::Asset, deposit, ccy, id),
+                    write(bank_party, account, Side::Liability, -deposit, ccy, id),
+                    write(bank_party, loan, Side::Asset, owed, ccy, id),
+                    write(*cell, loan, Side::Liability, -owed, ccy, id),
+                ];
+                b.open(reason, legs, id, report);
+            }
+        }
     }
 }
 
@@ -318,7 +415,7 @@ impl Contribution for Contracts {
         CONTRACTS
     }
     fn reads(&self) -> &'static [&'static str] {
-        &[BANKS, FIRMS, DEBT]
+        &[BANKS, FIRMS, DEBT, SMALL_BANKS, SMALL_COUNTS, SMALL_DEPOSITS, SMALL_DEBT]
     }
     fn writes(&self) -> &'static [&'static str] {
         &[LENDERS]
