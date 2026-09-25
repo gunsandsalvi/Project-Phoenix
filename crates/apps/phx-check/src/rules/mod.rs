@@ -16,6 +16,7 @@ mod draws;
 mod equity;
 mod expect_count;
 mod expect_reason;
+mod forecasts;
 mod hand_pod;
 mod id_default;
 mod interfaces;
@@ -25,8 +26,10 @@ mod ledger_writes;
 mod literals;
 mod live_checks;
 mod money_moves;
+mod no_tuning;
 mod opening_writes;
 mod places;
+mod preregistration;
 mod prints;
 mod random_crates;
 mod rayon_libc;
@@ -164,6 +167,19 @@ pub const RULES: &[Rule] = &[
         title: "members split and landed by the population alone, a cell's totals changed at 10b by a landing alone",
         since: "S0.23",
         run: landing::run,
+    },
+    Rule {
+        id: "PC-33",
+        title: "outlooks formed by the menu from what they are handed, never by running the world",
+        since: "S1.01",
+        run: forecasts::run,
+    },
+    Rule { id: "PC-90", title: "measures defined before any read", since: "S1.01", run: preregistration::run },
+    Rule {
+        id: "PC-91",
+        title: "no tuning: every primitive's change cites its source",
+        since: "S1.01",
+        run: no_tuning::run,
     },
     Rule { id: "PC-75", title: "a border closed in the markets' reach alone", since: "S0.18", run: borders::run },
 ];

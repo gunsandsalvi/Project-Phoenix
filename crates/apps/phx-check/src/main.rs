@@ -3,6 +3,7 @@ mod clauses;
 mod comments;
 mod coverage;
 mod docs;
+mod git;
 mod ratchets;
 mod reports;
 mod rules;

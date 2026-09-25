@@ -15440,8 +15440,9 @@ mechanisms its file named beforehand.
 **Design**
 
 - **Registration** (PC-90), checked mechanically: every report names the commit it was computed at and the canonical
-  hash of every definition and estimator it used. For each, PC-90 finds the commit that introduced that blob and
-  requires it to be an ancestor of the report's commit (`git merge-base --is-ancestor`, never dates). The recorder's
+  hash of every definition and estimator it used (canonical: the file's values as sorted JSON, blind to key order and
+  layout). For each, PC-90 finds the first commit whose file has that hash and requires it to be an ancestor of the
+  report's commit (`git merge-base --is-ancestor`, never dates). The recorder's
   stamps carry the same test back to the data: every series a report reads was recorded under a build whose commit
   descends from each definition's registration, so no definition is written after its series were seen. PC-90
   covers `perf/reads/` as well, from S1.01. Nothing under `perf/realism/`, `perf/chains/` or `perf/reads/` is ever
@@ -15449,9 +15450,11 @@ mechanisms its file named beforehand.
   `Measure-Change: defect|precision <id>@<version superseded>`, naming no `perf/` path and no finding. The checks read
   `main`'s first-parent history, so a squash merge carries the trailers of the commits it squashed; one that dropped
   them is refused.
-- **No tuning** (PC-91), from its registration commit at S1.01 on. CI dumps the register (`phx dump-registry --json`)
-  at the merge base and at the merged commit and diffs it by id — values, additions and removals — with the opening
-  distributions in `data/<country>/gen/` and the rule forms in `SHAPES.toml`:
+- **No tuning** (PC-91), from its registration commit at S1.01 on. For each first-parent commit since, `phx-check`
+  reads the register's data files (`data/world.toml`, `data/shared/` and the levels' templates and openings under
+  `data/profiles/`, rule forms in `SHAPES.toml` among them) as the commit and its first parent hold them, and diffs
+  them by (file, id) — values, additions and removals. A merge answers with the trailers of every commit it brings in,
+  and CI fetches the whole history for it:
   - each changed, added or removed primitive, opening distribution or form carries `Primitive-Change: <id> —
     <source_ref>`, whose `source_ref` equals the entry's own;
   - a changed value must come with a changed `source_ref` (a new source, edition or table), or carry
