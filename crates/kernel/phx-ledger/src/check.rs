@@ -36,11 +36,19 @@ pub struct Position {
 /// The cause and leg of the first position that would fall below its floor.
 #[clause("SET.4", "MON.3", "MON.12")]
 pub fn check_legs(positions: &[Position], moves: &[(usize, i64)]) -> Result<(), (FailCause, usize)> {
-    for (at, p) in positions.iter().enumerate() {
-        let delta: i128 = moves.iter().filter(|(i, _)| *i == at).map(|(_, q)| i128::from(*q)).sum();
+    // Each position's net and its first move, in one pass over the moves.
+    let mut net: Vec<(i128, Option<usize>)> = vec![(0, None); positions.len()];
+    for (m, (at, q)) in moves.iter().enumerate() {
+        let Some((sum, first)) = net.get_mut(*at) else {
+            violation!(clause = "SET.4", "a move of no position", position = *at);
+        };
+        *sum += i128::from(*q);
+        first.get_or_insert(m);
+    }
+    for (at, (p, (delta, first))) in positions.iter().zip(net).enumerate() {
         let Missing::Present(floor) = p.floor else { continue };
         if delta < 0 && i128::from(p.now) + delta < i128::from(floor) {
-            let Some(first) = moves.iter().position(|(i, _)| *i == at) else {
+            let Some(first) = first else {
                 violation!(clause = "SET.4", "a position moved by no leg", position = at);
             };
             return Err((p.short, first));

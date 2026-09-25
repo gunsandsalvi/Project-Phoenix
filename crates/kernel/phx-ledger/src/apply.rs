@@ -168,7 +168,7 @@ struct At {
 
 /// A position a leg draws on, by who holds it and what: a row's member count apart from its balance, since the two
 /// are counted in different denominations.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct Key {
     table: u16,
     slot: Slot,
@@ -250,7 +250,7 @@ impl<B: Backing> Ledger<B> {
                 Located::Ended => return Err(self.fail(settling, FailCause::Ended, leg, covers)),
             }
         }
-        let mut keys: Vec<Key> = Vec::new();
+        let mut keys: BTreeMap<Key, usize> = BTreeMap::new();
         let mut positions: Vec<Position> = Vec::new();
         let mut moves: Vec<(usize, i64)> = Vec::new();
         let mut moved_by: Vec<usize> = Vec::new();
@@ -271,13 +271,10 @@ impl<B: Backing> Ledger<B> {
             let Some((position, delta)) = drawn else {
                 continue;
             };
-            let at = if let Some(i) = keys.iter().position(|k| *k == key) {
-                i
-            } else {
-                keys.push(key);
+            let at = *keys.entry(key).or_insert_with(|| {
                 positions.push(position);
                 positions.len() - 1
-            };
+            });
             moves.push((at, delta));
             moved_by.push(n);
         }
