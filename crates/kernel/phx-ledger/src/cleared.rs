@@ -50,6 +50,13 @@ struct Class {
 }
 
 impl Class {
+    fn bytes(&self) -> usize {
+        size_of::<Class>()
+            + self.parties.capacity() * size_of::<PartyId>()
+            + (self.tree.capacity() + self.held.capacity()) * size_of::<u64>()
+            + self.taken.capacity() * size_of::<u32>()
+    }
+
     fn new(unit: u32, rows: &[(PartyId, u32)]) -> Class {
         let n = rows.len();
         let mut tree = vec![0_u64; n + 1];
@@ -122,6 +129,11 @@ pub(crate) struct Tally {
 }
 
 impl Tally {
+    /// What the tally holds in memory: its index's entries and its classes with their lists.
+    pub(crate) fn bytes(&self) -> usize {
+        self.index.len() * size_of::<(PartyId, (usize, usize))>() + self.classes.iter().map(Class::bytes).sum::<usize>()
+    }
+
     /// A side's rows as each holder, its members and its unit.
     pub(crate) fn new(rows: &[(PartyId, u32, u32)]) -> Tally {
         let mut by_unit: BTreeMap<u32, Vec<(PartyId, u32)>> = BTreeMap::new();
@@ -224,6 +236,12 @@ pub struct Losers {
 }
 
 impl Losers {
+    /// What the draw holds in memory.
+    #[must_use]
+    pub fn bytes(&self) -> usize {
+        size_of::<Losers>() + self.tally.bytes()
+    }
+
     /// The claimant rows by party with their counts and units, none drawn yet.
     #[must_use]
     pub fn new(claimants: &[(PartyId, u32, u32)], draws: Draws) -> Losers {

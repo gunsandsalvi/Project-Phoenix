@@ -897,6 +897,7 @@ pub fn phx_core::kinks::KinkRegistry::register(&mut self, phx_core::kinks::KinkD
 pub mod phx_core::map
 pub struct phx_core::map::KernelMap<K, V>
 impl<K: phx_core::map::MapKey, V> phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::capacity(&self) -> usize
 pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
 pub fn phx_core::map::KernelMap<K, V>::get(&self, K) -> core::option::Option<&V>
 pub fn phx_core::map::KernelMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
@@ -2655,6 +2656,7 @@ pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::valu
 pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::KernelMap<K, V>
 impl<K: phx_core::map::MapKey, V> phx_core::map::KernelMap<K, V>
+pub fn phx_core::map::KernelMap<K, V>::capacity(&self) -> usize
 pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
 pub fn phx_core::map::KernelMap<K, V>::get(&self, K) -> core::option::Option<&V>
 pub fn phx_core::map::KernelMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>

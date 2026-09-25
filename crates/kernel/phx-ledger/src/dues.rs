@@ -98,6 +98,26 @@ pub(crate) struct Found {
     pub cleared: KernelMap<LineId, ClearedDay>,
 }
 
+impl Found {
+    /// What the day's look-ups hold in memory: every map's room, and each cleared line's claimants and losers' draw.
+    pub(crate) fn bytes(&self) -> usize {
+        let cleared: usize = self
+            .cleared
+            .sorted()
+            .iter()
+            .map(|(_, c)| {
+                c.claimants.len() * size_of::<(PartyId, (u32, u32))>() + c.losers.as_ref().map_or(0, Losers::bytes)
+            })
+            .sum();
+        self.owers.capacity() * size_of::<(LineId, PartyId)>()
+            + self.reckoned.capacity() * size_of::<(LineId, Reckoning)>()
+            + self.accounts.capacity() * size_of::<(u64, Missing<LineId>)>()
+            + self.issues.capacity() * size_of::<(u64, bool)>()
+            + self.cleared.capacity() * size_of::<(LineId, ClearedDay)>()
+            + cleared
+    }
+}
+
 /// A party's account in a currency as one key: the party's identity above the currency's index.
 fn account_key(party: PartyId, ccy: Ccy) -> u64 {
     let id = party.get();

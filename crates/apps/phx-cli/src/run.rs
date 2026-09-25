@@ -27,8 +27,8 @@ const POPULATION_BYTES: u64 = 275 << 20;
 /// slack, the lines themselves, and the interned keys and terms.
 const LINES_BYTES: u64 = (849 + 216 + 96 + 108) << 20;
 
-/// Resident memory the population's indexes may take: the landing index and the agenda.
-const INDEXES_BYTES: u64 = (61 + 85) << 20;
+/// Resident memory the population's indexes may take: the agenda.
+const INDEXES_BYTES: u64 = 85 << 20;
 
 /// Resident memory the worst day's buffers and the arenas' slack may take.
 const DAY_BYTES: u64 = (600 + 214) << 20;

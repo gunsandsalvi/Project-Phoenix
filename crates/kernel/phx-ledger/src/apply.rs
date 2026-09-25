@@ -88,6 +88,16 @@ impl DayBook {
             && self.disposed.is_empty()
             && self.moved.is_empty()
     }
+
+    /// What the day's records hold in memory, by their room.
+    #[must_use]
+    pub fn bytes(&self) -> usize {
+        self.fails.capacity() * size_of::<Fail>()
+            + self.effects.capacity() * size_of::<EffectRec>()
+            + self.dues.capacity() * size_of::<crate::effects::DueRec>()
+            + self.disposed.capacity() * size_of::<DisposedRec>()
+            + self.moved.len() * size_of::<((u8, PartyId), (i128, i128))>()
+    }
 }
 
 /// Units that left a holding, with the cost their lots carried out, for the accounts to realise.

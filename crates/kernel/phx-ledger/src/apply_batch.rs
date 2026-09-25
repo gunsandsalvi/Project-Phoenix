@@ -362,13 +362,16 @@ impl<B: Backing> Books<B> {
         let reserves_before: Vec<((PartyId, u8), Option<i128>)> =
             g.crossing.keys().map(|&(p, c)| ((p, c), self.reserves_of(p, Ccy::new(c), &mut found))).collect();
         let before = self.balances(&g.nets);
-        let buffer_bytes = bytes::<(PartyId, Record)>(streamed.records.len() + g.given.len())
-            + bytes::<(u16, Slot)>(streamed.scanned.len() + scanned.len())
-            + bytes::<Payment>(streamed.made.len())
-            + bytes::<(NetKey, i128)>(g.nets.len())
+        // Every day buffer by the room it holds, grown or not: what the phone must find free at the day's peak.
+        let buffer_bytes = bytes::<(PartyId, Record)>(streamed.records.capacity() + g.given.capacity())
+            + bytes::<(u16, Slot)>(streamed.scanned.capacity() + scanned.len())
+            + bytes::<Payment>(streamed.made.capacity())
+            + bytes::<(NetKey, i128)>(g.nets.capacity())
             + bytes::<Option<i128>>(g.nets.len() * 2)
-            + bytes::<((PartyId, u8), i128)>(g.crossing.len() + reserves_before.len())
-            + bytes::<(LineId, PartyId)>(fixed.failed.len() + fixed.by_bank.len());
+            + bytes::<((PartyId, u8), i128)>(g.crossing.len() + reserves_before.capacity())
+            + bytes::<(LineId, PartyId)>(fixed.failed.len() + fixed.by_bank.len())
+            + bytes::<PartyId>(g.failed_payers.len() + streamed.moneyless.len())
+            + bytes::<u8>(found.bytes() + self.ledger.day.bytes());
         self.apply_nets(&g.nets, day, audit);
         let after = self.balances(&g.nets);
         let nets_missed = count(

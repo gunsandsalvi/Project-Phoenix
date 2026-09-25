@@ -561,11 +561,12 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
 
 ### 6.5 Settlement
 
-- **Implicit batches** — (line kind or market, rule, day) — are never materialised: debits are generated payer-major
-  from holder-major rows (point lookups, levies per contract), credits payee-major by keyed reduction streamed shard by
-  shard; the two sides agree by REP.31. Each party's rows in a batch are summed sequentially into **one leg per
-  (party, bank)**, debited from its deposits in the declared payment order and credited to the
-  deposit its kind declares receives that reason; a standing flow is one leg per paying row per day; pending amounts
+- **Implicit batches** — (line kind or market, rule, day) — are never materialised as batches: the one day buffer
+  sized by the day's payments is the list 7a hands 7c, so 7c does not reckon them again (as built below). Debits are
+  generated payer-major from holder-major rows (point lookups, levies per contract), credits payee-major by keyed
+  reduction streamed shard by shard; the two sides agree by REP.31. Each party's rows in a batch are summed
+  sequentially into **one leg per (party, bank)**, debited from its deposits in the declared payment order and credited
+  to the deposit its kind declares receives that reason; a standing flow is one leg per paying row per day; pending amounts
   from non-business days are legs of the next business day's batch.
 - **1b** marks the lines whose dues fall today in a **due-line bitmap** (one bit per line, cache-resident); each line
   carries its next due day, which 1b advances past today as it marks the line, so 7a reads advanced dates.
@@ -584,7 +585,7 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
   fixed-seed map, read whole only in key order, and the claimants per line in `BTreeMap`s; the pooled-flow rule is
   given each agent as one payer, every row reaching all its twins, so no row splits an agent's funds (F-065); and no
   gather of unlisted sides is built (F-058). The stream keeps the day's payments in its order (about 157 MB on the
-  twins payday of 2.8 M payments), and 7c's gather reads them, reckoning again only a cleared line's claimant credit
+  twins payday of 2.8 M payments, the only field PC-27 lets keep a batch's items), and 7c's gather reads them, reckoning again only a cleared line's claimant credit
   after its losers; both compute each payment's route, 7c nets it in the fixed-seed map and sorts the nets once, and
   a due record is kept per payment for the accounts (F-057).
 - **Reckoning**: a due line's dues are reckoned on one side's rows, each row its own payment with one counterparty.
@@ -1821,8 +1822,8 @@ A rule changes only with its reason recorded in §18.
    flows settled as legs in a streamed pass; pooled flows, one leg per party per batch; only accruals posted lazily
    (§7.4).
 9. Screening is scheduled at an envelope rate with thinning by default; daily only for dense processes (§7.3).
-10. Settlement: implicit batches never materialised; a streamed payer pass; the greatest fixed point; failure per
-    payer (§6.5).
+10. Settlement: implicit batches never materialised, but for the day's payments 7a hands 7c; a streamed payer pass;
+    the greatest fixed point; failure per payer (§6.5).
 11. **Tolerances are steps** (REP.4, amended): landing is one lookup of the landing key, a check of the lines' kinks,
     batches per target and clusters of the unlanded (§7.6).
 12. Open business pins only what belongs to particular members; balances are positions with steps (§4.2).

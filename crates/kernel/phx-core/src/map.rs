@@ -113,6 +113,12 @@ impl<K: MapKey, V> KernelMap<K, V> {
         self.len == 0
     }
 
+    /// The entries the map holds room for, grown or not, so what it takes in memory can be counted.
+    #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.shards.iter().map(HashMap::capacity).sum()
+    }
+
     /// Every entry, sorted by key, for a read that must not depend on the entries' order.
     #[must_use]
     pub fn sorted(&self) -> Vec<(K, &V)> {

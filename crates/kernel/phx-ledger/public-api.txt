@@ -220,6 +220,7 @@ pub phx_ledger::apply::DayBook::dues: alloc::vec::Vec<phx_ledger::effects::DueRe
 pub phx_ledger::apply::DayBook::effects: alloc::vec::Vec<phx_ledger::effects::EffectRec>
 pub phx_ledger::apply::DayBook::fails: alloc::vec::Vec<phx_ledger::fails::Fail>
 impl phx_ledger::apply::DayBook
+pub fn phx_ledger::apply::DayBook::bytes(&self) -> usize
 pub fn phx_ledger::apply::DayBook::is_empty(&self) -> bool
 impl phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::DayBook::measure(&self) -> phx_ledger::apply::Settlement
@@ -462,6 +463,7 @@ pub mod phx_ledger::cleared
 pub struct phx_ledger::cleared::Losers
 impl phx_ledger::cleared::Losers
 pub fn phx_ledger::cleared::Losers::all_lost(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::PartyId, u32)> + '_
+pub fn phx_ledger::cleared::Losers::bytes(&self) -> usize
 pub fn phx_ledger::cleared::Losers::draw_to(&mut self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, u32)>
 pub fn phx_ledger::cleared::Losers::drawn(&self) -> u64
 pub fn phx_ledger::cleared::Losers::lost(&self, phx_id::ids::PartyId) -> u32
