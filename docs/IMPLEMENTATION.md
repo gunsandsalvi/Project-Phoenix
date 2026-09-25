@@ -3854,7 +3854,7 @@ its peak rises by 59 MiB with them.
 
 ### S0.21 — `phx-pop` I: cell tables, keys, positions, steps and profiles
 
-**Status**: done
+**Status**: done; its cell machinery superseded by S0.28, which holds the population as agents
 
 **Clauses**:
 - STATE: REP.1, REP.3 (with S0.14's line records), REP.4, REP.19, REP.20, REP.32, REP.33.
@@ -4030,7 +4030,7 @@ saves read back to their closes' hashes and the thirteen injections each lit the
 
 ### S0.22 — `phx-pop` II: screening, reviews and occasions
 
-**Status**: done
+**Status**: done; its cell machinery superseded by S0.28, which holds the population as agents
 
 **Clauses**:
 - PROCESS: REP.7, REP.12; REP.21 *(part: review days, review exposure and the count reviewing; attention as a
@@ -4205,7 +4205,7 @@ alone.
 
 ### S0.23 — `phx-pop` III: splits, parts, pooled flows, landing, re-keying and the seller spread
 
-**Status**: done
+**Status**: done; its cell machinery superseded by S0.28, which holds the population as agents
 
 **Clauses**:
 - PROCESS: REP.8, REP.9, REP.23, REP.36; REP.22 *(part: counts, capacity by lot and the seller spread; tastes are
@@ -4441,7 +4441,7 @@ in a batch of eight; how many parts share a cell on a day is measured once the w
 
 ### S0.24 — `phx-pop` IV: tolerance control, promotion, renumbering and the landing index
 
-**Status**: done
+**Status**: done; its cell machinery superseded by S0.28, which holds the population as agents
 
 **Clauses**:
 - PROCESS: REP.10, REP.28, REP.39; REP.29 *(part: promotion and demotion by rank; promotion on a sale decision is
@@ -5093,6 +5093,124 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 - [ ] LC-0-37 to LC-0-56 pass, but LC-0-42, which waits for Stage 1's first decisions, and LC-0-48, which waits for
   the firms' positions (F-048).
 - [ ] Two reviews are done.
+
+---
+
+### S0.28 — The population as agents: twins and a small world
+
+**Status**: building
+
+**Clauses**:
+- STATE: REP.1, REP.2, REP.3, REP.20 *(part: positions arrive as declared columns with the steps that need them)*,
+  REP.40, REP.41.
+- PROCESS: REP.7, REP.9, REP.12, REP.23 *(part: pairings drawn on a person leaving a line)*, REP.25, REP.26.
+- INVARIANT: REP.13, REP.14, REP.31.
+- MEASURE: REP.15.
+- FORBID: REP.16, REP.17.
+- PRIMITIVE: REP.18 *(part: the factor and the representation; taste distributions, review costs and price points
+  with their systems)*.
+
+**Architecture**: §7 (rewritten), §6.5, §9.1, §10.3, §13.
+
+**Depends on**: S0.25. It replaces the cell machinery of S0.21 to S0.25 (cell tables, keys, positions' steps,
+profiles, envelope screening, splits, parts, pooled parts, landing, re-keying, tolerance control, promotion,
+renumbering, seller spreads, tracers), which the owner retired (§12, 2026-09-25: the population representation).
+
+**Goal**: every household and small firm an agent with its own persons, attributes and contracts, never split,
+joined or averaged, in either representation of REP.40 — **twins** (the full population as agents of multiplicity
+_k_) or a **small world** (one _k_-th of the population, every agent one real party) — chosen by two register
+primitives and switched for build runs by `phx run --representation twins:K|small:K`, so the two can be compared on
+the finished world's macro results (spec Appendix E 44).
+
+The sub-steps:
+- S0.28 R0: spec (REP rewritten, Law 11, PTY, GEN.14, Appendix E 14, 16, 31, 35, 41, 44), architecture §7, this
+  step, the owner's decision (§12).
+- S0.28 R1: `phx-pop` rewritten as agent tables: the table (§7.1) as the ledger's `CellHolders`, persons and
+  attachments in its arenas, the kinds' compiled declarations (attributes, roles, person attributes), the
+  population state, saves and hash; the cell machinery deleted.
+- S0.28 R2: hazards drawn ahead per (agent, process) (§7.3); 3b's hits and 3e's outcomes on explicit households
+  (§7.4): persons gone leave their lines, empty households end in estates; `sys-dem`'s processes on persons by
+  exact age, birthdays retired since ages are read from birth dates.
+- S0.28 R3: the opening under both representations: `sys-dem` draws households as agents (no gathering or
+  landing), `sys-frm` small firms as agents with their own sizes, banks and regions, the lines drawer's rows at
+  multiplicity times contracts, `GEN.population` divided by `REP.population_divisor`.
+- S0.28 R4: the world, the audit's agents family, `phx-obs` on agents (tracers retired), the live checks, `phx-check`
+  rules, `phx-ffi`'s load bench and world surface; the ledger's part, pooled-part and split-request machinery
+  deleted.
+- S0.28 R5: settlement's per-payment path (F-020, F-057) and the agents' passes on the pool (F-056).
+- S0.28 R6: build runs under both representations, the factor set by the budget, reviews, findings.
+
+**Files**
+- `crates/kernel/phx-pop/src/`: `table.rs` (agent table), `person.rs` (person words and attachments), `kind.rs`
+  (compiled kinds), `population.rs` (the population state, saves, hash), `hazard.rs` (next hits), `explicit.rs`
+  (households made explicit and written back), `audit.rs` (the agents family), `measure.rs` (REP.15); the cell
+  modules deleted.
+- `crates/kernel/phx-core/src/pop.rs`, `pop_process.rs`: the kinds' vocabulary and the process trait on persons.
+- `crates/interfaces/if-pop/src/lib.rs`: the household's roles, attributes and person attributes.
+- `crates/systems/sys-dem/src/`: `opening.rs`, `processes.rs`, `household.rs`, `lines.rs`; `sys-frm/src/small.rs`;
+  `sys-bnk`, `sys-lab`, `sys-hsg`, `sys-soc` where they read cells.
+- `crates/assembly/phx-world/src/agents.rs` (from `cells.rs`), `estates.rs`, `registry.rs`, `day.rs`, `save/`;
+  `phx-obs`; `phx-cli`'s checks and `run.rs` (`--representation`); `phx-check`'s rules; `phx-ffi`'s load bench.
+- `crates/kernel/phx-ledger/src/`: `part.rs`, `split_request.rs` and the pooled parts deleted.
+- `data/shared/REP.toml`: `REP.multiplicity`, `REP.population_divisor`; the cell settings deleted with their
+  readers (`REP.gap_sample`, `REP.narrow_share`, `REP.rank_day`, `DEM.cell_budget`, `FRM.cell_budget`,
+  `DEM.age_classes` where only cells read it).
+
+**Design**
+- **Agents** (§7.1): one table per population kind; columns party, created, multiplicity, one `u32` per declared
+  attribute, pending hits, run head; arenas of rows, holdings, persons (a word each: civil birth serial, role,
+  packed person attributes) and attachments (a word each: person place or the household, line, side).
+- **Declarations**: a kind declares its attributes (`AttrDecl`: region, bank, size), its roles and its person
+  attributes (`PersonAttrDecl`: sex, health, education) and the attribute it is sited by. Nothing else: positions,
+  review kinds and standing rates are declared by the steps that bring them.
+- **Hazards** (§7.3): per (agent, process) the next hit or redraw is booked in the agenda; `PopProcess::rate` reads a
+  person on a day and `changes_after` the next day a person's rate may change; a booked hit draws its persons
+  conditioned on at least one.
+- **Outcomes** (§7.4): each hit agent's explicit household changed by each process's outcome in order, persons gone
+  leaving their rows with `members_leave` at the multiplicity, an empty household ending in an estate by line
+  transfers.
+- **Representation** (§7.6): `REP.multiplicity` and `REP.population_divisor`; the default twins at a factor set by
+  the budget in R6.
+
+**Unit tests**
+- The person word packs and unpacks every role, attribute and birth date in the table's range, the oldest persons
+  before the epoch among them.
+- The next hit: over many draws, the days to a hit are geometric at 1 − Π(1 − qᵢ), and a redraw falls at the
+  earliest change.
+- An agent's row counts are its multiplicity times its attachments; a death lowers every row its person held by the
+  multiplicity.
+- The representation primitives divide the population and set the multiplicity; a multiplicity of zero is refused.
+
+**Live checks** (LC-0-37 to LC-0-50 redefined for agents; the ones that read landings, tolerances and renumbering
+retire with the machinery)
+- `LC-0-37`: every agent's row on each line counts its multiplicity times its attachments there, and every person
+  attachment names a present person (REP.31).
+- `LC-0-38`: every agent's multiplicity is its kind's under the representation in force, the player's one (REP.17).
+- `LC-0-39` to `LC-0-42`: as S0.22 wrote them, on agents.
+- `LC-0-43`: the agents family — multiplicities sum to each population, persons to the persons counted by event,
+  lines' sides equal (REP.13, REP.31).
+- `LC-0-44`, `LC-0-45`, `LC-0-47`, `LC-0-50`: retired; they read landings, a cell budget and renumbering, which no
+  longer exist.
+- `LC-0-46`, `LC-0-49`: REP.15's report every day: representation, factor, agents, individuals, persons, agents hit
+  and events per agent, and under twins the agents above the individuals' rank.
+- `LC-0-48`: every party within the individuals' rank at the opening is an individual; waits for the firms'
+  positions (S1.03, F-048).
+
+**Budget**: architecture §13 as it applies to Stage 0's world, at the factor R6 sets, measured on the build machine
+and at S0.26 on the phone.
+
+**Guards**: `phx-check`'s rules on the retired cell modules removed with them; the public-API snapshots of
+`phx-pop`, `phx-core` and `phx-ledger` recorded anew; the placeholder ratchet as before.
+
+**Not allowed**: an agent split, joined or averaged; a twin that differs from another; a multiplicity changed after
+its agent began; a row whose count is not its multiplicity times its contracts; a mode branch in any system (the
+representation is two numbers every mechanism reads alike).
+
+**Done when**
+- [ ] Both representations open, settle and run the build run's days clean at one factor, with the same number of
+  agents.
+- [ ] LC-0-37 to LC-0-56 pass or retire as above, but those waiting on Stage 1 (LC-0-42, LC-0-48).
+- [ ] The factor is set by the measured budget, and the two reviews are done.
 
 ---
 
@@ -15994,7 +16112,7 @@ the final build within the budget on the phone.
 | Budget stance (N8) | keep 1 s / 2 s and 4.5 GB; coarsen the spec rather than relax the budget | 2026-09-23 |
 | Save duration (N8.10) | a full save within 5 s on the phone, the world paused | 2026-09-23 |
 | Saves (SET.12, spec Appendix E 22) | every save full; increments dropped, since a full save, its increment and the next full save exceeded 4 GB and an increment could not meet 1 s | 2026-09-23 |
-| Order of refinement (N8.5, spec Appendix E 41) | cell budget and tolerances first, then the number of preference types, then attribute classes and zones, promotion ranks last; backwards when coarsening | 2026-09-23 |
+| Order of refinement (N8.5, spec Appendix E 41) | the representation's factor first (cell budget and tolerances before 2026-09-25), then the number of preference types, then attribute classes and zones, promotion ranks last; backwards when coarsening | 2026-09-23 |
 | The worst turn (N8.2, spec Appendix E 41) | if representation, traversal and the valve cannot meet it, decided on the measured numbers at S0.26 and S1.16, coarsening the spec before relaxing the budget | 2026-09-23 |
 | Public ways (TEC.4, spec Appendix E 42) | every firm knows its industry's ways no patent covers and no firm keeps private; only discovered improvements are assets | 2026-09-23 |
 | Settling length (GEN.6) | one simulated year by default; adjustable | 2026-09-23 |
@@ -16043,6 +16161,7 @@ the final build within the budget on the phone.
 | The full-load bench's volumes (S0.26e) | `perf/load/volumes.toml` from architecture §13.1's and §13.2's lines at the finished world's sizes, each store and kind of work citing its line; the owner reviews its changes (the `perf/load/` guard), and each gate replaces the built stages' counts by measured ones | 2026-09-25 |
 | The unbanked households' dues (F-051) | a payment to or from a party with no money fails as `NoMoney` and stays in arrears until the households hold banknotes (S1.09, S1.12); no line is withheld from an unbanked household, since the data draw jobs, tenancies and pensions for every household | 2026-09-25 |
 | The build run's stage-7 ratchets for Stage 0 | set to the counts measured after the households' lines began paying (`perf/ratchets.toml`): `phx_ledger.rows_streamed` 6 802 801, `run_heads_read` 274 774, `run_rows_scanned` 6 880 013, `run_rows_not_due` 320 775, `payments` 6 800 506, `fixed_point_iterations` 101 829, `day_buffer_peak_bytes` 58 555 872; the owner accepted the ratchets for Stage 0 | 2026-09-25 |
+| The population representation (spec Appendix E 14, 16, 44; REP) | cells retired: every household and small firm an agent of its own, never split or joined, in one of two representations built side by side — twins (the full population as agents of multiplicity _k_) and a small world (one _k_-th of the population, every agent one party) — switched by two register primitives and `phx run --representation`, to be compared once the full model is final; twins the default; the factor set by the budget | 2026-09-25 |
 
 ---
 
@@ -16055,7 +16174,8 @@ field, data file's `clause` key or `violation!(clause = ..)` names it (architect
 regenerates architecture §19 from this map and the steps' statuses.
 
 When a stage's block of steps is written in detail, its rows here are refined to the clauses its steps actually
-complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14, PTY.12, GEN.9, N6) keep their numbers
+complete, in the same change. Retired clauses (REP.4, REP.6, REP.8, REP.10, REP.11, REP.19, REP.27, REP.28, REP.29, REP.30, REP.32, REP.33, REP.36,
+REP.37, REP.39, SET.14, PTY.12, GEN.9, N6) keep their numbers
 and are not mapped.
 
 | System | Step | Clauses |
@@ -16084,18 +16204,11 @@ and are not mapped.
 | GEO | S1.07 | 13, 18 |
 | GEO | S2.05 | 5 |
 | GEO | S5.02 | 4 |
-| REP | S0.21 | 1, 3, 4, 17, 19, 20, 32, 33 |
-| REP | S0.22 | 7, 12 |
-| REP | S0.23 | 8, 9, 14, 16, 23, 36 |
-| REP | S0.24 | 10, 13, 15, 28, 31, 39 |
-| REP | S0.25 | 25, 26 |
-| REP | S0.26 | 2, 30 |
+| REP | S0.28 | 1, 2, 3, 7, 9, 12, 13, 14, 15, 16, 17, 23, 25, 26, 31, 40, 41 |
 | REP | S1.01 | 21, 35, 38 |
-| REP | S1.06 | 37 |
 | REP | S1.09 | 34 |
-| REP | S1.12 | 5 |
+| REP | S1.12 | 5, 20 |
 | REP | S2.05 | 22, 24 |
-| REP | S4.06 | 29 |
 | REP | S6.05 | 18 |
 | GEN | S1.01 | 11 |
 | GEN | S0.27 | 14 |

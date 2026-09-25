@@ -216,12 +216,9 @@ type or a fund type is a declaration, never a new special case in a mechanism.
 Parties differ — in endowment, preference, history, information and position — and those differences are
 what give a market two sides, make a distribution have tails, and let a shock transmit. Every decision is
 taken **by a party from its own state**; an aggregate is always `Σ f(xᵢ)`, never `f(Σ xᵢ)`. There is no
-representative agent anywhere a decision has a threshold. Members that nothing tells apart may be carried
-together as one **cell** (REP): its decision is exactly each member's decision, applied to every member, which is
-a count and not an average. A mean is formed in two places only — among members within a tolerance of one
-another, and over a flow that reaches some of a cell's members, whose amount joins the cell's total (REP.8) — and
-**never across a kink** of any rule, contract or constraint: there it changes no total that a rule straight between
-its kinks yields, and what it changes elsewhere is measured when it happens (REP.15).
+representative agent anywhere a decision has a threshold. Identical twins may be carried together as one
+**agent** of their count (REP): its decision is exactly each twin's decision, taken from its own state and applied
+to every twin, which is a count and not an average. No state is ever averaged across parties.
 
 ### Law 12 — Causality runs forward, and nobody knows more than they could
 
@@ -459,21 +456,20 @@ is a party with a permanent identity.
   house**, a **treasury**, a **central bank**, a **public agency**, a **parliament**, a **political party**,
   an **estate**. Each has an identity that is never reused.
 - **PTY.2 STATE** — **The world is real-sized**: hundreds of millions of people and millions of small firms
-  across its countries. Every party is either an **individual** or a **cell** of members whose represented
-  state is identical (REP). Institutions, issuers, every firm or household within its promotion rank and the
-  player's own are individuals; the rest of the household and small-firm population is carried in cells. A cell
-  is a named party whose weight is the exact count of the real parties it is.
+  across its countries, or one declared share of them in a small world (REP.40). Every party is either an
+  **individual** or an **agent** of its kind's population (REP). Institutions, issuers, every firm or household
+  within its rank at the opening and the player's own are individuals; the rest of the households and small firms
+  are agents. An agent is a named party whose multiplicity is the exact count of identical real parties it is.
 - **PTY.3 STATE** — A **person** has an age, a household, a region of residence, skills, a health state and a
   labour-market state. A **household** is one or more persons who share a budget and a dwelling; it is the
   unit that owns, consumes, saves and borrows. Legal ownership sits with the household; labour, age and
-  mortality with the person. A household carried in a cell has exactly its cell's represented state, and its
-  persons are roles in that state (REP.26).
+  mortality with the person. A household holds its persons, each with its role in it (REP.26).
 - **PTY.4 STATE** — Every party has a **legal form**, and the legal form is declared data (Law 10): what it
   may hold, whether it is a party separate from its owners, whether its owners have limited liability,
   whether it may take deposits, how it can end, and who its owners are.
 - **PTY.5 STATE** — Every party has a **site** on the map (GEO), from which its region and country are read;
-  a party with several establishments has a site for each. A household in a cell has a **zone** in its profile,
-  and its site is the tile of what it holds there, drawn when something depends on it (REP.24).
+  a party with several establishments has a site for each. An agent has a **zone** among its attributes, and its
+  site is the tile of what it holds there, drawn when something depends on it (REP.24).
 - **PTY.6 STATE** — Every party has a **home currency** — its country's — and keeps its books in it.
 - **PTY.7 STATE** — **Ownership and control are relations between parties**, recorded as holdings of the
   owned party's equity (REG), never as attributes. A **group** is a parent and the subsidiaries it controls
@@ -506,12 +502,12 @@ is a party with a permanent identity.
 - **PTY.13 FORBID** — No party without an identity, no identity reused, no party that exists only to absorb
   a residual, and no party that cannot end (Law 13) except a central bank in its own currency.
 - **PTY.14 FORBID** — No weight, share or scale factor applied to a party's decisions or holdings, other than
-  a cell's count of members (REP). A party holds what it holds.
+  an agent's multiplicity (REP). A party holds what it holds.
 
 **Primitives**
 
 - **PTY.15 PRIMITIVE** — The opening population and its parties (ENDOWMENT); legal forms and what each
-  permits (POLICY of the country that defines them); the cell budget, tolerances and zones (RESOLUTION, REP).
+  permits (POLICY of the country that defines them); the representation, its factor and zones (RESOLUTION, REP).
 
 **Out of scope**
 
@@ -735,335 +731,233 @@ exposure; it never writes an economic outcome.
 enough to be true and compactly enough to run on a phone. This section says what any representation must make
 true — what is exact, what is approximated, and how the approximation is measured — and chooses no method.
 
-1. Members that nothing in the world tells apart are **counted, not copied**.
-2. Every attribute is carried in **one of four ways**, chosen by what reads it: shared exactly, shared within a
-   tolerance, counted per member, or held as a contract.
-3. There are **two approximations of state**. Members within a tolerance of one another may hold their mean, and a
-   flow that reaches some of a cell's members may join the cell's total; neither ever crosses a kink of any rule,
-   contract or constraint, for the members the flow reaches or for the cell, and what each costs is computed when it
-   is incurred.
-4. Chance, choice and the **occasions** to act reach members, not groups.
+1. Every household and small firm is an **agent** with its own state, its own persons and its own contracts. No
+   agent is ever split, joined or averaged with another.
+2. An agent may stand for several **identical twins** — its **multiplicity** — which share one state and one fate.
+   The multiplicity is a count fixed when the agent begins.
+3. The world is held in one of **two representations**, chosen per build (decision 44): the full population as
+   agents of one multiplicity, or a smaller world whose every agent is one real party.
+4. Chance, choice and the **occasions** to act reach agents, each by its own state.
 5. A relationship between many parties is **one record**, and who in it is paired with whom is drawn only when
-   something depends on it. That rests on **one declared assumption**: inside a line, and between a cell's profile
-   groups and roles, nothing matters beyond what is counted.
+   something depends on it. That rests on **one declared assumption**: inside a line, nothing matters beyond what
+   is counted.
 6. **Looking changes nothing.**
 
-The work of a day follows the number of distinct situations that change, not the number of people.
+The work of a day follows the number of agents something happens to, not the number of people.
 
 **Depends on:** PTY, NUM, CHN, GEO.
 
 **State**
 
-- **REP.1 STATE** — A **cell** is a named party standing for an exact **count** of real households or small firms —
-  its **weight** — whose members are **exchangeable**.
-  - They share one key (REP.19) and one set of positions (REP.20).
-  - They differ only in their profiles (REP.32) and in which lines they are attached to (REP.3). The cell records
-    both as exact counts of members.
-  - Everything a cell holds is held as a total, and a member's share of it is the total over the weight (REP.9).
-  - A household or small firm of weight one is a cell like any other.
-  - The members of one part that end on one occasion (PTY.9) are exchangeable, so their estates may be one cell of
-    estates holding their count, which distributes per member times that count (REP.9, L3).
-- **REP.2 STATE** — An **individual** is a party never carried in a cell:
+- **REP.1 STATE** — An **agent** is a named household or small firm held in its kind's population. It holds its
+  own attributes (REP.41), its own positions (REP.20), its persons (REP.26), its contracts and holdings.
+  - Its **multiplicity** is the count of real parties it stands for: its **twins**, identical in every attribute,
+    position, person and contract, each holding its share of everything the agent holds (REP.9).
+  - Everything a twin does, every twin does; everything that happens to one happens to all. So an agent's state
+    is exactly each twin's, and nothing is ever averaged.
+  - Agents of one kind share one multiplicity, except the player's own, which is one (OBS.4).
+- **REP.2 STATE** — An **individual** is a party never held in a population:
   - every institution and issuer, and every party with a public instrument (a listed share, a bond, a rating);
-  - the **top-ranked** parties of each kind by size (employees, turnover, net worth), down to a declared **rank**.
-    The largest parties move aggregates on their own. A rank, unlike a size in money, keeps the number of
-    individuals bounded and does not drift with the price level;
+  - the **top-ranked** parties of each kind by size (employees, turnover, net worth) at the opening, down to a
+    declared **rank**. The largest parties move aggregates on their own. A rank, unlike a size in money, keeps the
+    number of individuals bounded and does not drift with the price level;
   - the player's own household or firm (OBS.4).
-- **REP.19 STATE** — **The key** is the attributes every member of a cell shares **exactly** and that are never
-  averaged. Each kind declares its key (Law 10). Examples:
-  - **Households:** region, composition class, preference type (NUM.4), heuristic stance (VAL.7), tenure, age
-    class, credit-record stage, and every **clock a rule reads** (months unemployed toward a benefit's end, months
-    in arrears toward default).
-  - **Small firms:** zone, the ways they run, legal form, productivity and management types, their **posted
-    price and wage offers** (REP.34), headcount by occupation family, plant units by kind, and their clocks.
-- **REP.20 STATE** — **Positions** are the continuous amounts every member shares, with the member's value the
-  cell's total over its weight. A position is **read** where a fact already lives — cash from the cell's accounts,
-  wealth from its holdings at their marks — and only a record that lives nowhere else (recent income, accrued
-  rights, own outlooks) is held by the cell, as an exact total. Examples: cash, recent income, debt service, the
-  mark of illiquid wealth, the risky share of savings, accrued pension rights and contribution records, inventory,
-  cumulative output, and the member's outlooks of its own variables (VAL.23).
-  - Each position is measured against the **member's own scale** — its own outgoings, income or sales. So a
-    tolerance is scale-free, stays meaningful near zero, and does not drift with the price level.
-- **REP.32 STATE** — **Profiles** are attributes members do **not** share, held by the cell as an exact count of
-  members for each value.
-  - Profiles are counted **jointly within declared groups of a role**, the finest being the whole role (REP.33), and
-    independently across roles. A contract's own terms carry what it is joint with: a mortgage's and a dwelling
-    policy's terms name the zone and class of the dwelling they cover.
-  - Each **adult role**: occupation, skill, birth year, health, its education record, its participation, and its
-    attachments to employment, personal insurance and pension lines.
-  - Each **child role**: birth year, health and its schooling.
-  - The **dwelling role**: zone, the dwelling's class, and its attachments to tenancy, mortgage and dwelling
-    insurance lines.
-  - For a firm: founding date and its attachments.
-  - So a worker drawn from a line comes with its own skill. A flooded dwelling comes with its own insurance and
-    mortgage. An insured illness comes with the policy that pays it.
+
+  An individual's multiplicity is one.
+- **REP.40 STATE** — **The representation.** A build holds its world in one of two representations, with one
+  **factor** _k_ (RESOLUTION):
+  - **Twins.** The countries hold the whole population the setup gives (GEN.14). Its households and small firms
+    are drawn as agents of multiplicity _k_, one agent for every _k_ real ones; individuals are drawn as they are.
+  - **Small world.** The countries hold one _k_-th of the population the setup gives, and every agent is one real
+    party of multiplicity one. Everything the opening derives from the population — the employed, the firms, the
+    lines — follows from the smaller population, and the individuals' rank is one _k_-th of the declared rank.
+
+  Both draw the same number of agents for one _k_, by the same mechanisms; they differ only in what one agent
+  stands for. The factor is set by measuring the budget (N8.5).
+- **REP.41 STATE** — **An agent's attributes** are what it holds exactly and is never averaged on: for a household
+  its region and zone, its bank, its tenure, its credit-record stage, its preference type (NUM.4) and heuristic
+  stance (VAL.7), and every **clock a rule reads** (months unemployed toward a benefit's end, months in arrears
+  toward default); for a small firm its zone, its ways, legal form, productivity and management types, its
+  **posted price and wage offers** (REP.34), its headcount by occupation family and its plant. Each kind declares
+  its attributes (Law 10).
+- **REP.20 STATE** — **Positions** are an agent's continuous amounts. A position is **read** where a fact already
+  lives — cash from its accounts, wealth from its holdings at their marks — and only a record that lives nowhere
+  else (recent income, accrued rights, own outlooks) is held by the agent, as an exact total over its twins.
+  Examples: recent income, debt service, the mark of illiquid wealth, the risky share of savings, accrued pension
+  rights and contribution records, inventory, cumulative output, and its outlooks of its own variables (VAL.23).
 - **REP.3 STATE** — A **line** is one record of identical contracts, with the same terms, between the parties on
   its two sides.
-  - Each side is one or more named parties, individuals or cells, each with an exact **count** of contracts.
+  - Each side is one or more named parties, individuals or agents, each with an exact **count** of contracts.
   - A line with one party per side is an ordinary contract line. A line with many is how a relationship between many
     parties is recorded: employment in one occupation family and skill at one wage offer and start band in one region;
     tenancies of one class at one rent in one zone; deposits of one kind at one bank; invoices on one market's terms
     that fall due together (TCR.1); kinship between parents and the households their children formed.
+  - An agent's count on a line is its multiplicity times the contracts each twin holds there.
   - **Terms belong to the line**, and nothing but the parties' own decisions and the contract's own events changes
-    them. An amount that differs by holder, such as a deposit's balance or an accrued pension, is a position of the
-    holder's cell (REP.20).
-- **REP.33 STATE** — **Which way an attribute is carried** follows from what reads it, and is declared per kind:
-  - An attribute read by any **continuous** decision, rule or contract of the cell is key or position.
-  - One read only by hazards, by occasions (REP.21) and by events that concern some members is a profile.
-  - A relationship is a line.
-
-  Where a choice remains (an attribute may be key or profile, profiles joint or independent), it is RESOLUTION, set
-  for play by measurement (N8.5).
-- **REP.4 STATE** — The **cell budget** is how many cells the world may carry at once. **Tolerances** are how
-  near two members' positions must be for them to share one: each position's range, on the member's own scale
-  (REP.20), is divided into **steps**, and two members are within tolerance when every position lies in the same
-  step. Being within tolerance is then the same for every pair in every order, so no landing depends on which join
-  came first and no cell's mean drifts away from the members it joined. The **promotion rank** is set per kind. All
-  three are RESOLUTION, and N8.5 sets them for play.
+    them. An amount that differs by holder, such as a deposit's balance or an accrued pension, is the holder's own.
 - **REP.34 STATE** — **Price points.** Posted prices, wage offers and lenders' rates lie on the poster's **price
   points**: the round and conventional numbers of its trade. The set of points is a convention of the trade, a
   primitive like a market's tick size; which point is posted is the poster's own decision (FRM.5, LAB.4, BNK.4), and
   how often prices sit on each point, and how long, are outcomes.
-  - Identical sellers can therefore share one posted price.
-  - A posted price is in the key and is never averaged: every price a buyer meets is one a seller chose.
+  - A posted price is never averaged: every price a buyer meets is one a seller chose.
 
 **Decisions**
 
-- **REP.5 DECISION** — **A cell decides as each of its members would.**
-  - A **continuous** decision is taken once from the shared key and positions and applied to every member, and it
-    is exactly each member's decision. Examples: this week's spending, the level of a buffer, where savings go.
-    Hours and wages are contract terms, changed only on occasions.
-  - A **lumpy** decision is taken only by members who have an **occasion** (REP.21), each reading the shared state
-    and its own profile. Examples: to quit, move, buy a dwelling or a vehicle, borrow, found or close a business,
-    switch bank, reconsider a heuristic, **change a posted price or wage**.
-- **REP.38 DECISION** — **Attention.** How often a member reviews each kind of lumpy decision is its own choice, a
-  continuous decision of its cell, from what reviewing and changing that decision costs it (REP.18) and what is at
-  stake: the loss it expects from leaving the decision as it stands, which a surprise raises (REP.35). Attention is
-  therefore an outcome, never a review rate.
+- **REP.5 DECISION** — **An agent decides as itself.** Every decision is taken from the agent's own state, and an
+  agent of multiplicity _k_ takes it once for its twins, which is exactly each twin's decision.
+  - A **continuous** decision is taken on its schedule. Examples: this week's spending, the level of a buffer,
+    where savings go. Hours and wages are contract terms, changed only on occasions.
+  - A **lumpy** decision is taken only on an **occasion** (REP.21). Examples: to quit, move, buy a dwelling or a
+    vehicle, borrow, found or close a business, switch bank, reconsider a heuristic, **change a posted price or
+    wage**.
+- **REP.38 DECISION** — **Attention.** How often an agent reviews each kind of lumpy decision is its own choice, a
+  continuous decision, from what reviewing and changing that decision costs it (REP.18) and what is at stake: the
+  loss it expects from leaving the decision as it stands, which a surprise raises (REP.35). Attention is therefore
+  an outcome, never a review rate.
 
 **Processes**
 
-- **REP.21 PROCESS** — **Occasions reach members.** Every lumpy decision is triggered by an occasion to a member:
-  - a **review**, at the member's **attention** rate (REP.38). Reviewing and changing a decision costs its decider
-    something real (Law 14) — time, a fee, a menu cost paid to a named party — and the cost is the primitive. Reviews
-    reach a cell on its own **review days** for each kind of decision (TIME.5), and on any day a surprise wakes it for
-    the decisions the surprise bears on (REP.35). On each, the count of members who review is drawn from their
-    **review exposure** — their attention summed over the days since each last reviewed, a position of the cell
-    (REP.20) that adds at landing and loses the reviewers' share when they review;
+- **REP.21 PROCESS** — **Occasions reach agents.** Every lumpy decision is triggered by an occasion:
+  - a **review**, at the agent's **attention** rate (REP.38). Reviewing and changing a decision costs its decider
+    something real (Law 14) — time, a fee, a menu cost paid to a named party — and the cost is the primitive;
   - a **need**: a breakdown, a birth, a notice to leave, a contract ending;
   - a **meeting**: an offer, a listing, a vacancy, an opportunity (CHN);
   - a **notice** addressed to it: a layoff, a margin call, a demand.
 
-  A cell receives a **count** of occasions on a day (REP.7). Only those members decide, and those who act on it
-  split into their own part.
+  An occasion reaches an agent with the chance it would reach each of its twins, and reaches all of them together.
 - **REP.35 PROCESS** — **A surprise raises attention.** A surprise (VAL.4) raises what is at stake in the decisions
-  it bears on, and so the rate at which members choose to review them (REP.38). A shock therefore
-  reaches members over days as their reviews arrive: fast when it is large, and never all at once by construction.
-- **REP.7 PROCESS** — **Chance acts on members.** A hazard acts on each profile value at its own rate. The number
-  of a cell's members it hits in a day is a binomial count per value, or a multinomial count where there are
-  several outcomes, drawn from the cell's own stream for that process (CHN).
-  - The **draw scheme** is declared: a count for each day, or the day of the next hit drawn ahead and redrawn
-    whenever the weight or the rate changes. Both give the same distribution of hits, and the world is exactly
-    reproducible under the scheme declared. A cell nothing hits need not be visited.
-  - Counts are never negative, an event never takes a whole weight as a lump, and no result depends on the order
-    anything else runs in.
-- **REP.22 PROCESS** — **A choice among alternatives is a count.** When members choose among sellers, vacancies,
-  dwellings, lenders or heuristics, each member has its own **taste** for each alternative on that occasion. For a
-  job offer, that taste is the match's quality. It is drawn from its type's declared distribution (random utility).
-  - The number of a cell's members choosing each alternative is a multinomial count with the probabilities that
-    distribution implies. Identical members spread as independent choosers would.
-  - Because tastes are drawn, every discrete choice is a **smooth** function of the shared state, not a kink.
+  it bears on, and so the rate at which agents choose to review them (REP.38). A shock therefore reaches agents over
+  days as their reviews arrive: fast when it is large, and never all at once by construction.
+- **REP.7 PROCESS** — **Chance acts on persons and agents.** A hazard acts on each person or agent at its own
+  rate, read from its own state on the day, from the agent's own stream for that process (CHN). A hit on a person
+  of an agent of multiplicity _k_ is a hit on that person in every twin.
+  - The **draw scheme** is declared: the day of an agent's next hit is drawn ahead, and drawn again when anything
+    its rate reads changes or on the next day its rate may change. Which of its persons the hit reaches is drawn
+    on that day, each as its own rate gives, at least one. The world is exactly reproducible under the scheme.
+  - An agent nothing hits is not visited, and no result depends on the order anything else runs in.
+- **REP.22 PROCESS** — **A choice among alternatives.** When an agent chooses among sellers, vacancies, dwellings,
+  lenders or heuristics, it has its own **taste** for each alternative on that occasion. For a job offer, that
+  taste is the match's quality. It is drawn from its type's declared distribution (random utility), and the agent
+  chooses the alternative its tastes and state make best; its twins choose the same.
+  - Because tastes are drawn, identical agents spread over alternatives as independent choosers would, and every
+    discrete choice is a **smooth** function of the shared state, not a kink.
   - An alternative with limited capacity serves those who reach it in an order drawn by lot, and the rest choose
     again.
-  - A cell of identical sellers takes each day's demand as its total. On its own review day (TIME.5) the sales of
-    the days since are spread over its members as the buyers reaching each would have been: each buyer reaches a
-    member drawn uniformly from those with units left, a member whose units run out closes to the rest by lot, and
-    each member's revenue and remaining units are its own. Identical firms therefore receive different demand and part
-    company by their sales, and no member sells a unit it did not hold.
 - **REP.23 PROCESS** — **Pairings are drawn when they matter.** Within a line, which party on one side is paired
   with which on the other is **not recorded**. The pairing is taken to be a uniform matching consistent with the
   counts: nothing about who is paired with whom matters beyond the line's terms and the counts. So **whatever a
-  counterparty chose on is in the line's terms or the attachment's profile**: an employer that selects by skill
-  hires onto a line whose terms include the skill it hired.
-  - When an event concerns some members, they are drawn from the counts at that moment, each with its own profile
-    values for the same role. Examples: a firm on one side closes, a member on the other side quits, a flood reaches
-    one tile, a parent dies and its heirs must be found.
-  - Attachments in different roles (a job, a tenancy, a bank) are drawn independently of one another.
-  - When a cell splits, every line attachment and profile count divides between the parts: exactly where every
-    member holds the same (the key, a held line, a firm's headcount per member), and otherwise drawn jointly within
-    each role as above.
+  counterparty chose on is in the line's terms**: an employer that selects by skill hires onto a line whose terms
+  include the skill it hired.
+  - When an event concerns some contracts on one side, the parties on the other side it reaches are drawn from
+    the counts at that moment. Examples: a firm on one side closes, a worker on the other side quits, a flood
+    reaches one tile, a parent dies and its heirs must be found.
   - Under that uniform matching, drawing at the moment is exactly what a pairing recorded from the start would have
-    given (the principle of deferred decisions). Once drawn, those members split out with what they hold, and
-    nothing drawn is contradicted afterwards.
-- **REP.24 PROCESS** — **Where members are.**
-  - A household's zone is a profile. Its dwelling, plant and vehicles are held by zone and **class** (kind, size,
-    quality band, condition band). Wear, damage and repair move units between condition classes.
+    given (the principle of deferred decisions). Nothing drawn is contradicted afterwards.
+- **REP.24 PROCESS** — **Where agents are.**
+  - A household's zone is an attribute. Its dwelling, plant and vehicles are held by zone and **class** (kind,
+    size, quality band, condition band). Wear, damage and repair move units between condition classes.
   - The tile each unit stands on is drawn when something depends on it (REP.23) from the zone's stock of that
     class counted per tile.
-  - Distance for members of cells is measured between zones. The zone is the spatial resolution at which they are
-    carried.
-- **REP.25 PROCESS** — **Age.** The age class is in the key and the birth year in the profile.
-  - Hazards by age act on each birth year at its own rate.
-  - Where a date inside a year matters (a statutory age, an entitlement from a birthday), the members reaching it on
-    each day are drawn from the cell's own birth years, spread across the days of the year.
-- **REP.26 PROCESS** — **Persons are roles.** A person in a cell is a role in its household's composition: head,
-  partner, another adult, or a child of an age band. Each adult role has its own profile and its own attachments,
-  such as employment. A person's event reaches a count of that role, and changes those members' key, positions or
-  profiles. Examples: a death, an illness, a job lost or taken, a new skill level, a child reaching adulthood.
-- **REP.8 PROCESS** — **Landing.** After an event, occasion, choice or flow, members whose shared state now differs
-  split into **parts**. Each part **lands** by joining a cell that has:
-  - the same key;
-  - positions within tolerance of its own;
-  - **no kink between them** of any rule, contract or constraint that applies to either: a payment falling due, a
-    credit limit, a tax band, a means test, a covenant, a lender's standard, a borrowing constraint.
-
-  Otherwise it becomes a cell of its own. At a landing:
-  - weights add, totals add, profile counts add, and line attachments add;
-  - line terms never change;
-  - holdings add at **pooled average cost**, the basis every rule of this world reads for members of cells;
-  - a counterparty's view of the joined cell — a lender's assessment, a supplier's terms — is formed from what it
-    can see of the cell and from the line's own record of payments and arrears, both of which the landing keeps; it
-    holds no view of a part apart from them, and re-forms its view on its next occasion.
-
-  **Pooled flows.** A flow that reaches some of a cell's members — wages on some of its lines, a bill on some of its
-  contracts — is applied to the cell's total and splits nobody, provided it carries across no kink either the cell's
-  per-member positions or the positions the members it reaches would have held alone (their share before the flow plus
-  their own per-member amount); where it would, the members it reaches split. Flows on one day are tested one row at a
-  time, in the declared payment order, each against the share left by those before it; once a payment fails for want
-  of funds, every payment after it in that order fails too, so a richer payer never fails where a poorer one would
-  have paid. The spread a pooled flow would have made among members is erased, and recorded as it is (REP.15).
-  Landings in a day follow a declared order that depends on nothing unordered.
-- **REP.36 PROCESS** — **Exact where rules are straight, at the moment of landing.** A landing does not change the
-  total that any rule, contract or constraint yields **at that moment**, to within its rounding of one smallest
-  unit per member, provided that the rule is straight (affine) between its kinks. That covers tax, interest,
-  benefits, repayments and limits. Curved responses, such as consumption and valuations, change in proportion to
-  the square of the spread joined; that is the decision gap (REP.15). After the landing, members that would have
-  crossed a kink at different times now cross it together; that later difference is an approximation the
-  representation accepts (Appendix E 14).
-- **REP.37 PROCESS** — **Meetings of the like.** At a market meeting whose purchases are used up at once, cells
-  whose positions lie within tolerance of one another and whose choice probabilities are the same may meet as one
-  **choice group**.
-  - The counts per seller are drawn once for the group.
-  - Each cell pays its own budget.
-  - Each cell receives its share of what the group bought, at the group's mix of sellers.
-
-  This is the one approximation of REP.8 held for a meeting. What is bought to be used up is consumed on delivery,
-  so the meeting's instruction carries each seller's goods leg and each buyer cell's money leg and consumption, not
-  a leg per purchase.
-- **REP.9 PROCESS** — **Exact totals in whole units.** A cell's money is a total in whole smallest units (MON.16),
-  held jointly by its members, and every holding counted in whole units — shares, face, fund units — is held the
-  same way. A member's share becomes whole units only when it leaves: _k_ members leaving a cell of weight _W_
-  holding _T_ take _k_·_T_/_W_ rounded by the unit's convention, and the rest stays. A rule's amount for a cell is
-  its amount per member, rounded by its convention, times the weight.
-  Indivisible physical units are held per member, in the key or in a role's profile, and never shared.
-- **REP.28 PROCESS** — **Tolerances adapt to the budget.** When the cells carried exceed the budget, tolerances are
-  widened, by merging adjacent steps, where the decision gap they would cause is smallest, and the cells that now lie
-  within tolerance of one another land together that day. When there is room, tolerances are narrowed, by dividing
-  steps, where the gap is largest, for landings from then on. A kink is never crossed at any tolerance. The gap it
-  reads is the representation's own estimate (REP.39).
-- **REP.39 PROCESS** — **The decision gap is estimated.** On a sample of landings drawn from the representation's own
-  stream (CHN.3), the parts' continuous decisions are evaluated apart and together, and the difference, per kind and
-  position, is the estimate that widening and narrowing read (REP.28). Evaluating a sampled landing changes no state
-  but the estimate.
-- **REP.10 PROCESS** — **The tails are carried finely.** Tolerances are narrow where a response is steep: near
-  default, a covenant, a mandate, a limit. Above the promotion rank a party is an individual (REP.29). Tails are
-  where the world's crises and inequality live.
-- **REP.29 PROCESS** — **Promotion and demotion.**
-  - A member that rises into its kind's promotion rank splits out as an individual. Ranks are read on a declared
-    day of each month; where members of one cell tie at the rank's edge, which of them promote is drawn by lot.
-  - An individual rejoins the cells only when it falls below a lower **demotion rank**, so that a party near the
-    line does not flip, and only if it has no public instrument.
-  - A small firm whose owners seek a buyer for it as a going concern (FRM.12, MNA) splits out as an individual on
-    that decision, so that it can be named as a target and sold whole.
-- **REP.30 PROCESS** — **Tracers.** A declared number of members are drawn at the opening from the observer's own
-  stream, each with its own profile values drawn at that moment. At every split it follows a part with
-  probability equal to that part's share **of the members with its profile values**, and its profile values change
-  only by the events that change them. A member the player marks is followed the same way from the day it is
-  marked.
-  - A tracer has its whole history from the day it began.
-  - At a landing it takes its cell's mean, and the landing is shown in its history as the event it is.
-  - A tracer is a read and changes nothing (Law 17). A set of tracers gives per-person paths distributed as the
-    represented world's members' paths are.
-- **REP.12 PROCESS** — **Only what is active is touched.** A cell is visited on a day only if it has an occasion, a
-  hazard hit, a scheduled payment or a flow that day. Accruals post on the dates that need them.
+  - Distance for agents is measured between zones. The zone is the spatial resolution at which they are carried.
+- **REP.25 PROCESS** — **Age.** Every person holds its **birth date**. Its age on any day, and the day it reaches a
+  statutory age or an entitlement, are read from it exactly.
+- **REP.26 PROCESS** — **Persons are held in their household.** A household holds each of its persons, with its
+  role (head, partner, another adult, a child), its birth date, sex, health, education and its own contracts, such
+  as employment. A person's event changes that person: a death, an illness, a job lost or taken, a new skill
+  level, a child reaching adulthood.
+- **REP.9 PROCESS** — **Exact totals in whole units.** An agent's money is a total in whole smallest units
+  (MON.16), and every holding counted in whole units — shares, face, fund units — is held the same way. A rule's
+  amount for an agent is its amount for one twin, rounded by its convention, times the multiplicity, so each twin's
+  share is always whole. Indivisible physical units are held per twin and never shared.
+- **REP.12 PROCESS** — **Only what is active is touched.** An agent is visited on a day only if it has an
+  occasion, a hazard hit, a scheduled payment or a flow that day. Accruals post on the dates that need them.
 
 **Invariants**
 
-- **REP.13 INVARIANT** — The sum of the weights of every population equals its population, exactly, every day.
-  Every real household and small firm is in exactly one cell or is one individual.
-- **REP.14 INVARIANT** — No split, landing, meeting, pairing draw, promotion or demotion changes any total of money
-  or units. Every cell's profile counts sum to its weight in each role.
-- **REP.31 INVARIANT** — On every line, the two sides hold equal counts. A cell's attachments in each role never
-  exceed its members in that role, and they reconcile with its profile counts.
+- **REP.13 INVARIANT** — Every population's agents' multiplicities sum to its population, exactly, every day:
+  households and small firms, and persons counted by their households' multiplicities. Every real household and
+  small firm is a twin of exactly one agent or is one individual.
+- **REP.14 INVARIANT** — No event, pairing draw or ending changes any total of money or units, and every holding
+  and count an agent holds is a whole multiple of its multiplicity.
+- **REP.31 INVARIANT** — On every line, the two sides hold equal counts. An agent's count on a line is its
+  multiplicity times the contracts its twin holds, and never more than its persons in the role that holds them.
 
 **Measures**
 
-- **REP.15 MEASURE** — **What the representation costs is reported as it is incurred**, per day, per kind and per
-  position:
-  - For every landing, pooled flow and meeting: the **dispersion erased**, which is the count joined and the sum of
-    squared differences from the mean, in the position's unit.
-  - The **decision gap** estimated on sampled landings (REP.39): the difference, in each decision's own unit,
-    between what the parts would have decided apart and what they decide together.
-  - The number of cells, individuals and lines; splits, landings and occasions per day; the share of each
-    population at weight one.
-
-  These are the error bar on every distributional number the world shows.
+- **REP.15 MEASURE** — **What the representation is, reported every day**, per kind: its representation and factor,
+  its agents, individuals and lines, the persons they hold, the agents something happened to that day and the
+  events per agent, and — in twins — the agents whose size would rank them individuals but that stand for _k_
+  identical twins. These are what every distributional number the world shows is drawn from.
 
 **Forbids**
 
 - **REP.16 FORBID** — The representation must never:
-  - average a key attribute, a posted price, a line's terms or a profile;
-  - join positions across a kink;
+  - average an attribute, a position, a posted price, a line's terms or a person;
+  - split an agent, join two, or let a twin differ from another;
   - create or destroy a unit;
-  - apply an event to a whole cell when it reaches only some of its members, except a pooled flow (REP.8) or a
-    seller cell's pooled demand (REP.22);
-  - let a whole cell take a lumpy decision at once, except its members who each have an occasion that day;
-  - let a member read an experience it did not have;
+  - apply an event to an agent that did not reach it, or to some of an agent's twins and not the others;
+  - let an agent read an experience it did not have;
   - record a pairing, or contradict one that was drawn;
-  - observe with a world stream, or act on the observer's (REP.30); the representation's own estimate of its gap
-    is part of the world and draws from a world stream (REP.39).
-- **REP.17 FORBID** — No weight that is a share, a scale factor or a probability. A weight is a count, changed only
-  by entry, death, split, landing, promotion or demotion.
+  - observe with a world stream, or act on the observer's.
+- **REP.17 FORBID** — No multiplicity that is a share, a scale factor or a probability. A multiplicity is a count
+  of real parties, one or the factor, fixed when its agent begins and never changed.
 
 **Primitives**
 
 - **REP.18 PRIMITIVE** — RESOLUTION:
+  - the representation's factor (REP.40), and which representation a build holds (decision 44);
   - each kind's attribute classes;
-  - tolerances and the cell budget;
-  - zones and age classes;
-  - promotion and demotion ranks, and the day of each month they are read (REP.29);
-  - the declared payment and landing orders (REP.8) and the draw scheme (REP.7);
-  - the share of landings sampled for the decision gap (REP.39);
-  - the number of tracers.
+  - zones;
+  - the individuals' ranks;
+  - the declared payment order and the draw scheme (REP.7).
 
   PREFERENCE: taste distributions per type. TECHNOLOGY: what reviewing and changing each kind of decision
   costs. POLICY of each trade: its price points.
 
 **Out of scope**
 
-- Nothing: what the representation gives up is stated with its reasons in Appendix E, decision 14.
+- Nothing: what the representation gives up is stated with its reasons in Appendix E, decisions 14 and 44.
 
 **Retired**
 
+- **REP.4** — _Retired_: cell budgets, tolerances and steps belonged to cells joining members within a tolerance;
+  agents are never joined. The factor (REP.40) is the representation's one valve.
 - **REP.6** — _Retired_: splitting a member out when something happens to it alone, or when it is watched,
-  changed the world by looking at it. Replaced by occasions (REP.21), drawn pairings (REP.23), promotion (REP.29)
-  and tracers (REP.30).
-- **REP.11** — _Retired_: a shadow sample either diverges by its own chance or double-counts. Replaced by the cost
-  measured when incurred (REP.15).
+  changed the world by looking at it. Replaced by occasions (REP.21) and drawn pairings (REP.23).
+- **REP.8** — _Retired_: landing joined parts of cells into cells of the same key within a tolerance, and pooled a
+  flow reaching some of a cell's members into its total. An agent is never split, so nothing lands and no flow is
+  pooled across parties (decision 44).
+- **REP.10** — _Retired_: tails were carried finely by narrowing tolerances; every agent is exact.
+- **REP.11** — _Retired_: a shadow sample either diverges by its own chance or double-counts.
+- **REP.19** — _Retired_: the key was what every member of a cell shared exactly. Replaced by the agent's own
+  attributes (REP.41).
 - **REP.27** — _Retired_: outlooks held by experience group let a member read experience it did not have.
   Replaced by public outlooks computed once per method, and own outlooks as positions (VAL.23).
+- **REP.28** — _Retired_: tolerance control widened and narrowed cells' tolerances; there are none.
+- **REP.29** — _Retired_: promotion and demotion moved parties between cells and individuals by rank. The
+  individuals are those ranked at the opening (REP.2); an agent stays an agent, and a small firm sold whole is
+  named as the agent it is (decision 35).
+- **REP.30** — _Retired_: tracers followed members of cells through their splits. Every person is held in its
+  household (REP.26), and the observer reads agents themselves (OBS.8).
+- **REP.32** — _Retired_: profiles counted the attributes members of a cell did not share. Persons are held in
+  their households (REP.26).
+- **REP.33** — _Retired_: which way an attribute was carried followed from cells' four ways; an agent holds
+  everything as its own.
+- **REP.36** — _Retired_: exactness at a landing; nothing lands.
+- **REP.37** — _Retired_: choice groups let cells within a tolerance meet a market as one; every agent meets it as
+  itself.
+- **REP.39** — _Retired_: the decision gap of a landing; nothing lands.
 
 **Done when**
 
-- A world of hundreds of millions of people and millions of small firms carries its population exactly, within
-  the budget, on the target device.
-- A firm closing releases workers drawn from its lines with their own skills, and a flood destroys dwellings of
-  owners drawn from the zone's counts.
-- Identical households spread across sellers, vacancies and occasions, and identical firms part company by their
-  sales.
-- No posted price or contract term was ever averaged, and no tax, interest or benefit total changes at the moment of
-  a landing.
-- The cost of every landing is reported.
+- A world of hundreds of millions of people and millions of small firms carries its population exactly in either
+  representation, within the budget, on the target device.
+- A firm closing releases workers drawn from its lines, and a flood destroys dwellings of owners drawn from the
+  zone's counts.
+- Identical agents spread across sellers, vacancies and occasions by their own tastes and chances.
+- No attribute, posted price or contract term was ever averaged, and every agent's holdings are whole multiples of
+  its multiplicity.
+- The representation and its counts are reported every day.
 
 ---
 
@@ -1086,7 +980,8 @@ takes on day zero.
   bear a real country's name, which names its institutions and currency, but its economy is always generated.
 - **GEN.14 STATE** — **The setup.** Every run starts from a setup, fixed before it and recorded with it:
   - **world constants**, the same for every run of a build: the total population, the map's size (GEO.18), three
-    countries, the total number of regions and the settling length (GEN.6);
+    countries, the total number of regions and the settling length (GEN.6); and the representation with its factor
+    (REP.40), under which a small world's countries hold one factor-th of the total population;
   - **the population split** among the three countries, each between 10% and 70% of the total, so none is too small
     to have its markets or so large that it swamps the others; land and regions follow it (GEO.3);
   - **per country, six choices of three levels each**: development (developed, emerging, developing); public debt
@@ -5248,48 +5143,43 @@ Decisions taken in writing this version, and decisions still open.
     interdependent systems in one stage and brings a system forward where an earlier stage needs it.
 12. **Real limits are declared, invented bounds are forbidden**, and negative prices are possible.
 13. **The polity stays, and parties adapt their platforms.**
-14. **A real-sized population, carried in cells** (REP). The world holds hundreds of millions of people and
+14. **A real-sized population, carried as agents** (REP). The world holds hundreds of millions of people and
     millions of small firms. No phone can hold them one by one, and no exact record can hold every pairing between
-    them, because a household's employer, landlord, bank and shops are independent of one another. So the design
-    keeps exact what the laws need exact — counts, money, posted prices, contract terms, who holds which contract
-    in total — and makes two approximations, which it measures: the mean within a tolerance, and the pooled flow.
+    them, because a household's employer, landlord, bank and shops are independent of one another. So every household
+    and small firm the world holds is an agent with its own state, persons and contracts, never split, joined or
+    averaged; lines record relationships between many parties as counts; and the population is fitted to the phone
+    by one of two representations (decision 44), not by averaging anyone.
 
     It is a **hypothesis**, and it is tested on its macro results: from Stage 1 on, the world's run is judged by the
     relationships between its macro variables against those real economies show (N3, N4), while meeting the budget
     (decision 36).
 
     Its parts come from established work:
-    - **Counting exchangeable members** is exact aggregation of an agent-based Markov chain (lumpability,
-      Banisch).
-    - **Joining within a tolerance with every total conserved** is the cell-average and fixed-pivot method of
-      population balances (Kumar and Ramkrishna) and the histogram method of heterogeneous-agent economics
-      (Young, 2010).
-    - **Measuring positions against each member's own scale** is the buffer-stock normalisation (Carroll).
-    - **Never joining across a kink**, and smoothing discrete choices with taste shocks, is how discrete–continuous
-      models stay accurate (Iskhakov, Jørgensen, Rust and Schjerning, 2017).
-    - **Counts for chance and choice** follow random utility (McFadden) and binomial counting from stochastic
-      kinetics (Gibson and Bruck; Cao, Gillespie and Petzold).
+    - **Weighted agents of one fixed multiplicity that never split** are the robust form of super-individuals
+      (Scheffer, Baveco, DeAngelis, Rose and van Nes, 1995; Parry and Evans, 2008, on the distortions of splitting
+      and merging ones), as in Covasim's population scale (Kerr et al., 2021), the super-droplets of cloud physics
+      (Shima et al., 2009) and dynamic microsimulation's households copied to equal weight (Li and O'Donoghue,
+      2013); **a full-scale agent per real party** follows Poledna, Miess, Hommes and Rabitsch (2023).
+    - **Next hits drawn ahead per agent** are the next-reaction method of stochastic kinetics (Gibson and Bruck).
     - **Occasions chosen against a real cost of reviewing** follow costly observation and staggered adjustment
       (Calvo; Reis; Alvarez, Guiso and Lippi, 2012), and **attention that rises with what is at stake** follows
       Sicherman, Loewenstein, Seppi and Utkus (2016).
+    - **Tastes drawn per occasion** follow random utility (McFadden).
     - **Price points** follow the bunching of prices and wages at round numbers (Levy, Lee, Chen, Kauffman and
       Bergen, 2011; Dube, Manning and Naidu, 2018).
     - **Many-party lines with pairings drawn when needed** apply the principle of deferred decisions (Motwani and
       Raghavan) to the uniform matching of the configuration model (Bollobás).
     - **Batch settlement** is how real payrolls and card payments settle (deferred net settlement).
-    - **Pooled average cost** is a real basis for capital gains (share pooling).
     - **Heuristic switching by discrete choice** follows Brock and Hommes, and **experience weighted by age**
       follows Malmendier and Nagel (2016).
     - **The largest firms kept individual** follows granular fluctuations (Gabaix, 2011).
 
     What it gives up, and says so:
     - persistence of who is paired with whom inside a line beyond its terms;
-    - correlation between a member's attachments in different roles, and between its profile groups, inside one
-      cell;
-    - dispersion inside a tolerance;
-    - after a landing, members that would have crossed a kink at different times crossing it together (REP.36);
-    - the spread among a cell's members that a flow reaching only some of them would have made (REP.8);
-    - where within a region a member works; the exact day a member reviews; the daily divergence of identical sellers;
+    - where within a region an agent works; the exact tile of what it holds until something depends on it;
+    - under twins, that an agent's twins share one fate: a death, a default or a success happens to _k_ real parties
+      at once, so counts move in steps of _k_ and a small firm's rise is _k_ identical rises;
+    - under a small world, the scale of the real economy: fewer parties in every market;
     - final salary's back-loading of pension rights (decision 32);
     - derivatives held by households and small firms (decision 33).
 
@@ -5297,8 +5187,9 @@ Decisions taken in writing this version, and decisions still open.
     large and a small open economy. Their primitives may come from data (tax law, life tables, technology), but no
     country copies a real one, so results are never read as forecasts of a real economy; a real name labels a
     country and pre-fills its setup, never its data (decision 43).
-16. **The population is never scaled down to fit the device**: the phone runs the full population at the play
-    resolution (N8.5), and the cost reported at each landing says what that resolution costs.
+16. _Retired_: the full population carried in cells was never scaled down, but cells joined their members within
+    tolerances, and a phone cannot hold the full population as agents. Decision 44 fits the population to the phone
+    by its representation, and says which of the two a build holds.
 17. **Both observer views exist**, clearly labelled: an inspector's full view for building and research, and a
     participant's view for playing (OBS.2).
 18. **Stylised facts have cited benchmark ranges** from published empirical work (N3); the exact statistic is
@@ -5335,21 +5226,20 @@ Decisions taken in writing this version, and decisions still open.
 30. _Retired_: there is no accuracy for play to set. The play resolution is set by the budget alone (N8.5), and
     whether the world makes sense is judged by its one run (decision 36).
 31. **The representation is coarsened for the phone.** Independent estimates put the fully exact representation at
-    several times the budget (N8), driven by what members do rather than by how many cells there are. So: a flow
-    reaching some of a cell's members joins the cell's total unless it crosses a kink (REP.8, Law 11); employment
-    lines are by occupation family and region, with a start band (LAB.1, REP.3); reviews reach a cell on its own
-    review days (REP.21); and a cell of identical sellers spreads its sales over its members on its review days
-    (REP.22). What each loses is listed under decision 14.
+    several times the budget (N8), driven by what agents do rather than by how many there are. So: employment lines
+    are by occupation family and region, with a start band (LAB.1, REP.3); and reviews reach an agent on its own
+    review days (REP.21). What each loses is listed under decision 14.
 32. **Defined-benefit rights accrue as career-average amounts** (PEN.2). A final-salary right needs each member's pay
-    history, which a cell does not carry; career-average revalued slices are exact for cells. Final-salary schemes of
+    history, a record per person that the budget does not carry; career-average revalued slices are one exact total
+    per right. Final-salary schemes of
     the opening world are carried as their career-average equivalents.
 33. **Derivatives are held by individuals only** (DRX, DRV): banks, funds, insurers, pension schemes, dealers and the
     largest firms. Households and small firms carry their rate and price risks through the terms of their loans,
-    deposits and supply contracts, as most do; daily margin per cell would cost the budget for few real users.
+    deposits and supply contracts, as most do; daily margin per agent would cost the budget for few real users.
 34. **Liability cover has its hazard**: harm to third parties is one of CHN.3's processes, so liability claims come
     from events like every other claim (INS.6).
-35. **A small firm is sold whole by promotion** (REP.29): when its owners seek a buyer, it becomes an individual, so a
-    takeover can name it.
+35. **A small firm is sold whole as the agent it is**: when its owners seek a buyer, the agent itself is named as
+    the target, and under twins each of its twins is sold to one of the buyer's (REP.1).
 36. **One run.** The world runs once, on the phone: no reference run at weight one, no second run at another
     resolution or seed, no copy for an experiment. A new build starts its run anew from day zero, since a save from
     another build is refused. Runs off the phone that test the code are never read as the world's. Whether it
@@ -5372,8 +5262,8 @@ Decisions taken in writing this version, and decisions still open.
     level on values handed to it. Only the budget blocks a stage (N8.8).
 40. **The resolution is measured only at the play resolution.** The representation's counts and costs are read in the
     one run at the resolution in force; when the valve moves, its effect is measured in the running world.
-41. **The order of refinement** (N8.5): when the budget allows a finer resolution, the cell budget and tolerances are
-    refined first, then the number of preference types, then attribute classes and zones, and promotion ranks last;
+41. **The order of refinement** (N8.5): when the budget allows a finer resolution, the representation's factor is
+    refined first, then the number of preference types, then attribute classes and zones, and individuals' ranks last;
     when the budget calls for a coarser one, the same order runs backwards. If representation and traversal and this
     valve cannot meet the worst turn (N8.2), the answer is decided on the measured numbers at the first gates
     (N8.7, N8.8), under the standing rule that the specification is coarsened before the budget is relaxed.
@@ -5389,6 +5279,13 @@ Decisions taken in writing this version, and decisions still open.
     so the ~20 numbers the opening needs are never typed. A real name labels the country's institutions and currency
     and pre-fills its choices with that country's levels; its economy is always generated. Because the total
     population is a constant, no split can break the budget (N8).
+44. **Two representations, one switch** (REP.40). The phone cannot hold the full population one party at a time, so
+    a build holds it in one of two ways with one factor _k_: **twins**, the full population with every household and
+    small firm an agent of _k_ identical twins; or a **small world**, one _k_-th of the population with every agent
+    one real party. Both use the same mechanisms and draw the same number of agents; the build's representation is a
+    world constant recorded with the run, and a save of the other is refused. Twins is the default, for the depth
+    of the full economy's banks, markets and largest firms; the two are compared on the finished world's macro
+    results (N3, N4), and the factor is set by the budget (N8.5).
 
 **Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
 needs it.

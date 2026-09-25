@@ -683,377 +683,126 @@ kernel's own work (§6.2).
 
 ### 7.1 Tables
 
-One cell table per population kind — household, household running a business, small firm — in `phx-pop`. Individuals
-of these kinds (the promoted, the player) are rows of weight one flagged `individual` in the same table, with an
-**extension facet** for state only individuals have. Institutions are rows of the kernel's kind tables of individuals
-(§4.1), never cells.
+One **agent table** per population kind — household, small firm — in `phx-pop`. Each row is an agent (REP.1): a
+household or small firm of its kind's multiplicity, never split, joined or averaged. The player's household is a row
+of multiplicity one (OBS.4). Institutions and the largest firms are rows of the kernel's kind tables of individuals
+(§4.1).
 
-The books keep the cell tables beside the kind tables, one holder place each after the kind tables', known to
+The books keep the agent tables beside the kind tables, one holder place each after the kind tables', known to
 `phx-ledger` only through its traits (`HolderTable`, `CellHolders`), so the settlement stream, the holder lists, the
-directory and the saves reach cells as they reach individuals; `phx-pop` reaches its own tables by their type. What
-the tables do not hold — each kind's compiled declaration, interned keys, landing index, step levels and members
-counted by event — is the world's `Population`, which the opening's contributions are handed beside the books.
+directory and the saves reach agents as they reach individuals; `phx-pop` reaches its own tables by their type. What
+the tables do not hold — each kind's compiled declaration, the agenda and the members counted by event — is the
+world's `Population`, which the opening's contributions are handed beside the books.
 
-A cell row keeps a **landing-hot record** of one 64-byte line — landing key (key id and step vector hashed), weight,
-flags, the leading steps and the three leading position totals — and, in columns, the other positions as `i64`
-totals in declared fixed-point units (REP.20), the key-rule kink signature in whole words, its width compiled from the
-kink registry (§7.6), standing-flow rates (§7.4), review exposures and attention rates per lumpy kind (§7.3) and arena
-references (`u32`
-offset, `u16` length, `u16` capacity; a longer list moves its reference to the arena's overflow map) to its profiles,
-relationship rows and holdings, and the due-day run's head (§4.5). The household record's 464 bytes at Stage 0 are
-itemised in the plan (S0.21); it is 512 bytes through Stage 1, 576 through Stage 2, 592 through Stage 3, 624 through
-Stage 4, 640 through Stage 5, whose `vote` review keeps its state in a side column of a country's cells only while
-its campaign runs, and 672 through Stage 6. Read-positions (cash,
-wealth) are read from the cell's own rows.
+An agent row keeps, in columns: its party, the day it began, its **multiplicity** (`u32`), one `u32` per declared
+**attribute** (REP.41: a household's region and bank, a small firm's region, size and bank), a word of **pending
+hits** (a bit per process whose booked day is a hit, §7.3), the due-day run's head (§4.5), and arena references to
+its lists in its chunk's arena:
+
+- **rows** and **holdings**, the ledger's (§4.5), each row counting the agent's multiplicity times the contracts its
+  twin holds on the line (REP.3);
+- **persons** (REP.26), one word each: the birth date as the calendar's civil day serial (32 bits, so the oldest
+  persons, born before the world's epoch, are held exactly), the role (head, partner, adult, child), and the kind's
+  declared person attributes packed after it (sex, health, education), their widths compiled from their values;
+- **attachments**, one word each: a person's place in the household (or the household itself), the line and the
+  side, so a person's death finds the rows it held without reading any other household.
+
+Positions (REP.20) arrive as declared `i64` columns with the steps that need them.
 
 ### 7.2 Arenas, locality and identity
 
 - Variable-length lists live in **chunk-local arenas**, compacted in place per chunk with a chunk-sized scratch;
   freed pages return to the system. Columns sit in reserved address space; nothing reallocates; no store holds a
   heap-owning type.
-- **Renumbering** restores locality (by kind, country, region, zone, key) incrementally: one chunk range per declared
-  light day, remapping holder lists, the directory and the landing index for the rows it moves.
+- Agents are drawn region by region at the opening, so a chunk holds neighbours; an agent keeps its slot for life,
+  and an ended agent's slot is reused by the next one to begin, so no renumbering is needed.
 - The **directory** maps permanent identities to slots. A party that ends leaves a tombstone only while a record or
   an event names it (a reference count, taken when the record or event is written), and until the day's close in any
-  case, so the day's legs that name it still resolve for the audit; its slot is recycled at once. A fail waiting for
-  the next business day's contract process names its party the same way, so a cell that lands at 10b before its fail
-  is processed is read through the directory to its successor, which holds the row. A row's arrears go where its
-  members go: a row retired takes its arrears entry with it, and a line transfer carries it to the row that takes the
-  members, the earlier day standing where that row was in arrears too. Day-local part identities never enter it.
+  case, so the day's legs that name it still resolve for the audit; its slot is recycled at once. A row's arrears go
+  where its contracts go: a row retired takes its arrears entry with it, and a line transfer carries it to the row
+  that takes the contracts.
 
-### 7.3 The agenda and screening
+### 7.3 The agenda and hazards
 
-The **agenda** of a day lists the rows that act that day: rows whose decision schedule (TIME.5) falls today, rows
-woken (a message, a surprise, the player's intent, a standing flow reaching a kink, §7.4), and rows with a hazard,
-review or need **candidate** today (payments are the settlement stream's, §6.5). `phx-core` keeps each row's next day
-per reason and **one calendar entry per row**, at the earliest of them, in a timing wheel of day buckets; 1b gathers
-today's bucket and reads each row's reasons due today.
+The **agenda** of a day lists the agents that act that day: agents whose decision schedule (TIME.5) falls today,
+agents woken (a message, a surprise, the player's intent), and agents with a hazard booked today (payments are the
+settlement stream's, §6.5). `phx-core` keeps each agent's next day per reason — a reason per process on its kind —
+and **one calendar entry per agent**, at the earliest of them, in a timing wheel of day buckets; 3b gathers today's
+bucket and reads each agent's reasons due today.
 
-Each hazard and occasion declares its **draw scheme** (REP.7):
+Every process on a kind is drawn **ahead** (REP.7, the next-reaction method). For an agent and a process, from a day
+_d_: every person's daily chance _q_ᵢ is read at _d_ from the agent's own state, and the agent's chance of a hit on a
+day is _p_ = 1 − Π(1 − _q_ᵢ), constant until the next day any person's rate may change (the process's
+`changes_after` for each person, the earliest of them, `c`). The days to the next hit are one geometric draw of
+chance _p_ from the agent's stream for the process; if the hit falls before `c`, it is booked with its bit set in
+the agent's pending hits, and otherwise a **redraw** is booked at `c`. Both are exact, since a day's chances are
+independent of the days before: the redraw starts afresh from its day. Whatever changes an agent — an outcome, a
+person leaving or joining, a new attribute — books every process on it afresh from the next day.
 
-- **Scheduled** (the default): per (row, process), the next candidate day is drawn ahead at an **envelope** rate π̄ =
-  1 − (1 − p̄)^W̄, where p̄ bounds the per-member rate over the row's profile values and over the rate's validity
-  window (until the next date an input of the rate can change), and W̄ is the weight rounded up to the next rung of a
-  geometric **weight ladder** of ratio 5/4. On a candidate day the candidate is
-  accepted with probability π/π̄, where π = 1 − Π_v (1 − p_v)^{n_v}; if accepted, the counts per value are drawn
-  **jointly conditioned on a total of at least one** — values in declared order, each binomial conditioned on the
-  hits still owed — so the result is exactly the daily binomial counts (CHN.7). The next candidate is redrawn when the
-  weight crosses its rung or the validity window ends; a falling rate or weight needs nothing, since thinning absorbs
-  it.
-- **Daily** only for processes dense enough that most rows have a hit most days: `Σ n_v ln(1 − p_v)` with one `exp`
-  per (row, process), vectorised, over agenda rows and rows of the process's own declared set.
+On a booked hit day, 3b draws which persons the hit reaches, each by its own _q_ᵢ **conditioned on at least one**
+(`binomials_joint_at_least_one`), records the event, and hands the agent to 3e. A hit on a person of an agent of
+multiplicity _k_ is that person's hit in every twin (REP.1): the outcome is the agent's, once.
 
-A hazard acts on a role of a party, a party, a tile, a region, a country, or the **units of a held class** (plant
-failing, a vehicle's accident): all are screened in 3b by `phx-pop` for cells and by the kind tables for individuals,
-except catastrophes, drawn at 3a (§7.10), and the owning system applies the outcome at 3e. A hit carries the hit
-members' profile values as the pick drew them, jointly within their role's group, their attachments among them; a
-process declares the systems interested in its hits (a cover naming the peril), each of which receives the hit at 3e,
-while the process's owner stays the one writer of the outcome. Harm to third parties (Stage 4) is one process per
-table, acting on every declared class the table holds, so the household table uses 14 of its 16 agenda reasons and the
-firm table about 10; Stage 5's `vote` review and `migrate` share existing reasons. Stage 6's meetings are one hazard
-per region over its singles' counts, kept by a declared sweep at 3a so that 3b draws from them, and skill is a read of
-the role's clocks, so the household table stays at 14; discovery and imitation take the firm table to about 12.
+A hazard on a party itself (a firm's plant failing, a vehicle's accident) reads the agent with no persons: its _q_ is
+its own. Catastrophes are drawn at 3a (§7.8).
 
-Hit members are picked by weighted picks over a prefix of the profile counts, O(k log e). Individuals are screened the
-same way with counts of one.
+### 7.4 Outcomes and endings
 
-**The household's composition.** A household's persons are roles (REP.26): the head; a partner, none or one; other
-adults, as many as the key counts; and children of each age band below the age of majority, as many as the key
-counts for the band. The key holds the head's age class (REP.25), whether there is a partner, and those counts;
-every person's birth year is in its role's profile, which is all a rate by age reads, so no other adult's or the
-partner's age is in the key. A role counted in the key is held that many times by every member of a cell, so a
-group of that role counts the weight times the count (REP.14). Only a change of the key makes a part: a head's
-class changing, a partner or another adult arriving or leaving, a child moving up a band or reaching majority, when
-it becomes another adult with its schooling not yet recorded, and a head's death, when the partner, else the eldest
-other adult, else the eldest child takes its place. An adult's birthday, or a change of health, changes the profile
-in place.
+At 3e each agent hit that day is made explicit — its attributes by name and its persons by role and attributes,
+`phx_core::Household` — and each process's outcome changes it in the processes' declared order (POP.3 before POP.4).
+Then:
 
-**Attachments.** A cell's rows are held either by its households — a deposit, a loan, a tenancy: the row's count is
-households — or by the persons of declared roles — a job by an adult role, a pension by the pensioner's: the row's
-count is persons of those roles. A line kind's side declares which (its holder roles, none meaning the household),
-and whether a person holds at most one row of the kind (a job). A side whose holder counts a member for each of its
-counterparts — an employer a job for each employee, a bank an account for each depositor — declares so (`many`), and
-the Representation family holds its cell rows to no count per member; every other cell row counts at most one member
-per household, or per person of its roles. A household made explicit carries its attachments:
-each household-level row's members are drawn with the households, and each person-level row's with the persons of its
-roles, jointly among the kind's rows where a person holds one, from the counts no touched household took (REP.23).
-An outcome's person who dies or leaves takes its person-level attachments with it: its rows lose that member, and on
-the line's other side one member is drawn by counts to leave with it (REP.23) — the employer's job ends with the
-worker. A household no one is left in becomes an estate (§9.1), which takes its household-level rows whole. Parts
-leave with their households' attachments as given row shares, so the split draws nothing for them.
-As built (`phx_pop::attach`, `phx_pop::explicit::carried`, `phx_world::cells`): the households are made explicit first
-and their attachments drawn after, household by household, each row's holders — households, or the persons of its
-roles — drawn one at a time by the members left among the holders left, the rows of one exclusive kind and one set of
-roles drawn together as one pool; a person keeps its rows whatever role it takes, and a person gone returns its rows
-to leave. At 3e the ledger's part comes between the outcomes and the splits: each row a person gone held loses that
-member and, drawn from the other side's holder list by their counts, one member there (`Books::members_leave`, one
-instruction a line side, no balance moving with it); the households no one is left in pass their rows to one estate
-by line transfer, a party of the kernel's `estate` kind sited at the centre of a zone of the region its kind's
-declared attribute names (`PopItem::SitedBy`), drawn from the cell's stream; then the parts split with every row of
-the cell given. A side households hold therefore lists `estate` among its holder kinds, and the other side of a
-person's row keeps a holder list.
+- a person gone (a death) leaves every row its attachments name: the row's count falls by the multiplicity, and the
+  line's other side loses as many contracts, drawn from its holders by their counts (REP.23), in one
+  `members_leave` per row;
+- the household's persons and attributes are written back in place; the head's place, if emptied, is taken as the
+  outcome says;
+- a household no one is left in **ends**: an estate is opened at a zone centre of its region and every row and
+  holding it held passes to it whole by line transfers (PTY.9); its slot is freed.
 
-**Processes on cells** are declared by the system that owns their outcome (`PopProcess`, in `phx-core`): the hazard
-it answers, the kind, the profile groups it reads — one set of components, the same in every role it acts on, so a
-hazard on persons' lives is one process over every role's life group — a person's daily chance at a joint value of
-a group, the next date its rates may change unvisited, and its outcome on one household. What its rates read of the
-register is found once when the world binds it at assembly, and held, so a rate is a pure read. The world binds
-each process to its hazard (of the same system, acting on the kind), groups, event kind and stream, orders them by
-kind and hazard, and gives each its kind's agenda reason; two processes of one kind never share a stream. The
-screen's exposure is persons: the envelope is drawn for the weight's rung times the persons each household holds in
-the process's groups. A rate that climbs within its window, as a birthday's does over the days left in its year, is
-bounded by the envelope until the window's end and thinned day by day, so its windows are months, not days: a rate
-never turns within its window, so the envelope is each value's greater rate on the window's first day and its last. A
-cell whose values reach no rate today is not hit, and one whose envelope has fallen to none books only the day its
-rates may change.
+Nothing is split or landed: an agent is changed where it is, or ends.
 
-At **3e** a cell's hits of the day, from every process in order of kind and hazard, are applied together in three
-steps, two of them pure functions over values that the tests hold to their accounts:
-1. **Materialise.** The persons each hit reached fall into households by drawing without replacement within the
-   hit and independently across hits, so one person may be reached by two processes; each household touched is
-   made explicit — its key and each of its persons with its role and every value it holds — its unreached persons
-   drawn once, jointly within each group, from the persons of the cell no hit reached.
-2. **Change.** Each process's outcome acts on each explicit household it reached, in order: a person dies or leaves,
-   a value changes, a person takes another role, the key's attributes follow from the persons. What an outcome
-   leaves to chance — a successor's age class, its birthday this year passed or not — it draws from its process's
-   stream for the cell at 3e. A person gone is not
-   reached again the same day. A household with no one left ends (§9.1).
-3. **Re-aggregate.** Households whose key did not change return their profile changes to the cell in place.
-   Households whose key changed are grouped by their new key and split out, each group one part: its profile is the
-   households' own, every value given, so the split draws only the rows' members (§7.5). When every household of
-   the cell is in one group the cell itself takes the new profile and key, keeping its identity, and re-keys at 10b.
-   Every output is checked: each group counts the persons its key gives, and the persons that entered are the
-   persons that left, died or stayed.
+### 7.5 Lines, counts and settlement
 
-The opening builds the same explicit households from its draws and re-aggregates them by key into its cells (§10.3).
-The realised rates are measured live (CHN.7): over a fixed sample of cells — one in 64 by its identity's mix, so the
-sample holds whatever a cell becomes — 3b adds each process's expected hits a day, each value's persons times its
-rate, and their variance, beside the hits drawn there, by year and value; the run's checks hold each tally within its
-sampling error. 10b keeps each day's persons, and, around each renumbering slice, the identity hash of its chunk's
-cells in party order, which must not change.
-The population's agenda has one table per kind that processes act on, and keeps beside each (row, reason)'s next day
-the weight rung its booking was drawn at, which thinning reads; a redraw is a booking with no rung. Each day, 3b
-gathers the agenda and screens each booked cell for each process due (`phx_pop::screen::screen_due`), recording each
-hit's event at once, the event naming the cell, which the directory keeps resolvable while the event does (§7.2);
-3e applies the outcomes as above; 10b lands the day's parts, re-keys the cells flagged, reads ranks on the declared
-day, runs tolerance control, books every row added, removed or grown afresh for the next day, and then, on a light
-day (one no country trades), renumbers one chunk, each swap carrying its rows' bookings. The line kinks a landing
-reads are the facilities' limits, found once at assembly or load.
+A row's count is the agent's multiplicity times its twin's contracts on the line (REP.3), so every line's two sides
+hold equal counts of real contracts in either representation. A rule's amount for an agent is its amount for one
+twin, rounded by its convention, times the multiplicity (REP.9), so every balance an agent holds is a whole
+multiple of its multiplicity and each twin's share is whole.
 
-**Attention** is a daily review intensity λ per (cell, lumpy decision kind), and the daily review probability is a = 1
-− e^(−λ), so −ln(1 − a) = λ and review exposure accrues additively. λ_k = g_k·sqrt(σ²_own + σ²_pub,m) is the cell's
-own decision (REP.38): g_k, from the stake's curvature and the review cost, and σ²_own, from its own outlooks' widths,
-change only at its visits and are stored per kind as `u32` fixed-point values (the plan's S1.01); σ²_pub,m, the public
-variance its method reads, changes only when that method's series publishes, and each method keeps its dated values.
-The rate is constant between one visit or publication and the next, so a cell's exposure over any span is a sum of one
-term per publication in it, computed at its next visit: a public surprise (REP.35) raises every affected cell's
-attention exactly without touching any cell. A surprise larger than a type's declared sensitivity times its width also
-**wakes** the cells it bears on: the keys whose stance and type it reaches are marked in a bitmap by one pass over the
-key records, and one pass over the cells' hot records books the marked ones' review reason for the next day the point
-runs. That pass is budgeted as a publication-day line (§13.2).
+Settlement reads agents as it reads individuals, through `PayerPositions`: an agent's weight is its multiplicity,
+its funds per member are its account's balance over it, and the pooled-flow rule tests each row against one twin's
+funds (§6.5). Since every row an agent holds reaches all its twins, no row ever reaches some of them: the rule pays
+or fails an agent's rows whole, and never asks for a split.
 
-**Reviews** (REP.21) are not screened daily. Each cell has, per kind of lumpy decision, its own **review days** — a
-schedule declared per decision kind (weekly, monthly), with the cell's phase within it a **keyed draw** from the
-stream `TIME.schedule_phase` — a pure function of (the cell's identity, the schedule), recomputed when read, so no
-phase is stored — always days on which that decision point runs; a surprise (VAL.4) wakes the cell for
-the decisions it bears on (REP.35). Each (cell, decision kind) carries a **review exposure** position: the members'
-total of −ln(1 − a_t) summed over the days since each last reviewed, added daily from the cell's attention a_t. It
-is additive and outside the landing key: it adds at landing, and loses the reviewers' share when they review;
-reviewers who act split out with none. Until attention exists (Stage 1) the position is missing and no review is
-drawn. On a review day the count who review is drawn per profile value with probability 1 − exp(−exposure ÷ weight),
-and those members are evaluated with counts (§7.5). Carrying the mean exposure for members whose true exposures
-differ biases the count slightly upward; the bias is measured, as REP.21's approximation. A cell therefore enters the
-agenda for reviews on a fraction of days set by its schedules, not every day. All wakes of a row share one agenda
-reason, all its review kinds another, all its continuous-decision schedules a third, and all its key clocks (a credit
-record's horizon, a procedure's period) a fourth (`NextDays`, the plan's S0.08). **Needs and notices** reach
-particular members on their own day; on a day their decision point does not run (TIME.8) those members carry the
-occasion as open business (§4.2) until it does.
+### 7.6 The representation
 
-### 7.4 Standing flows and pooled flows
+Two register primitives (`data/shared/REP.toml`, RESOLUTION) set it (REP.40, spec Appendix E 44):
 
-A continuous decision taken on a row's schedule (REP.5: "this week's spending") sets **standing flows**: per-member
-rates — spending by category, saving into a named account, production and use of inputs — that hold every day until
-the row's next decision. They are carried as rates on the row and summed, per group they feed, into **group
-aggregates**, kept incrementally by keyed reduction when a rate changes (§7.9). Each day:
+- `REP.multiplicity` — the multiplicity of every agent of a population kind: the factor under twins, one under a
+  small world;
+- `REP.population_divisor` — what the setup's total population is divided by before the countries are derived: one
+  under twins, the factor under a small world.
 
-- markets read the aggregates, not the rows (§7.9);
-- each paying row's amount for the day — its rate, scaled by what its group actually bought when capacity bound — is
-  **one leg of that day's batch**, written in the streamed payer pass (§6.5): settled at stage 7 on a business day; on
-  a non-business day paid in banknotes at 6d or recorded as pending on the deposit row (TIME.8);
-- a physical flow (output, use of inputs, spoilage, wear) is carried **lazily** like a money rate: stocks accrue as
-  rate × days and are realised at the row's next visit, a kink (a stock reaching zero, a condition class reached, the
-  end of a lead time) booking its day on the agenda. The realisation writes one transformation record for the span
-  (SET.9), so the TEC.9 and Units families check spans, and no producing row is touched on a day nothing happens to
-  it.
-
-**Pooled flows** (REP.8): a flow that reaches some of a cell's members — wages on some of its employment rows, a due
-on some of its loan rows — is applied to the cell's totals. The payer pass sums a party's rows of the batch
-sequentially and writes **one leg per (party, bank)**, so a payroll or a day's dues is a leg per employer and per
-cell, not per row. Rows are tested one at a time in the declared payment order: a row is pooled when neither the
-cell's per-member positions nor the reached members' own (their share before the row plus the row's per-member amount)
-cross a kink — funds at zero, a limit, a tax band on the per-role year-to-date positions, a means test. Otherwise the
-row's members split with their own outcome (an outflow fails for them; an inflow lands them past the kink). The spread
-erased is recorded per flow (REP.15). A non-business day's standing flows are paid by card, recorded as pending,
-unless the kind's declaration says banknotes.
-
-Only **accruals** — interest, accrued rights — are posted lazily, on the dates that need them (REP.12), and at any
-split, landing or re-key that touches the row, and they enter the kink-day computation. A row whose
-position crosses a step boundary at any apply is flagged and **re-keyed** at 10b, so its landing key is always true
-(§7.6). At each decision the ledger computes the day a standing flow would carry a position across a kink (funds
-reaching zero, a limit, a band) and puts the row on that day's agenda, so no kink is crossed unseen (REP.16).
-
-**Indexed flows.** A standing flow may be a rate on a region's **daily index** — energy per degree-day, written with
-the weather at 3a. Its day's amount is rate × the index × the members it reaches that day, in the payer pass and in
-the group aggregates (which keep such rates per index), so the weather moves demand without touching a row. No kink
-day is booked for it, since the weather has no upper bound and no envelope could be declared without clamping it:
-on every day it posts a leg, the leg's realised amount is tested against the payer's funds and every registered kink,
-as every row the stream reads is, and a crossed kink fails the row or splits the reached members that day.
-
-### 7.5 Occasions, overlaps, splits and parts
-
-Overlapping occasions in one cell are allocated by hypergeometric draws from each process's stream at 3d; each system
-decides for the counts assigned to it, evaluated **per (row, decision, profile combination)** with counts; parts are
-the product of outcomes in declared process order. A split divides profiles and relationship rows jointly within each
-role's declared groups by multivariate hypergeometric draws, and balances divide with their rows; totals leave by
-REP.9's rounding. A split happens only when members' **key** changes, when a flow would carry them across a kink
-(§7.4), when they act on a lumpy decision that changes their key or their indivisible holdings, or when open business
-pins them (§4.2). A change only to a profile or an attachment — a job taken at a similar wage, a policy switched — is
-applied to the row's counts in place.
-
-**Parts** are rows with **day-local identities**: a part carries only its own profile entries, rows and positions.
-The split fixes each of its rows' shares; the rows stay on the cell until 10b, so the cell pays the dues falling
-on them that day, its funds read from its whole account row. At 10b, before the part lands, its rows and holdings are
-detached from the cell by the ledger (`phx_ledger::part`), each with its members' share of the row's words, its payment
-record and its arrears — the day's fails on a leaving row made arrears as it leaves, rather than at the next 2d, so
-they go with the members who failed — in the order the splits were made, and attached to the cell it lands in; its members stay on
-their lines, so no line's side counts move between the split and the landing. What a flow moved for the reached members
-alone — its amount on their funds row, its move of the position its kink lies on — leaves with them whole before the
-rest is shared.
-**Split batches**: the splits one apply sub-step makes from one cell are made together, in the order their events
-were decided. Each draws from the cell as the splits before it left it, so the parts are the ones splitting one by
-one would make; the cell's profile is read once and written once, and each of its rows is read once and rewritten once
-however many parts leave it. A single member leaving is one uniform draw — over the cell's members for each profile
-group, and over the row's for each row — rather than a hypergeometric.
-At 10b a part either lands in a cell — its identity resolves to that cell and the records naming it are re-pointed
-through back-pointers — or becomes a cell with a permanent identity. Members pinned by open business (§4.2) land only
-with identical items. A change that applies to every member of a cell alike (a key rule changing) **re-keys** the
-cell in place instead of making a part; members crossing an age class on their own birthdays (REP.25) are parts.
-
-**Formation and division** (Stage 6): `combine` makes one household part from two parts of equal weight from two
-origin cells, roles mapped, totals, rows and holdings added, its identity the lower origin's; `divide` makes a new
-household from a part of one, rows whole by role and divisible holdings by the family law's shares with REP.9's
-rounding. Each is one part per transaction, requested only by `sys-dem`'s move handler at 3c and made at stage 3's
-apply (§6.2). A new household's key
-attributes are set by their declaring systems' `.at_formation` handles — its preference type drawn, outlooks and
-stance from the origin it lived in — and never averaged (REP.16).
-
-### 7.6 Landing
-
-- **Steps**: each position declares a base partition of its range on the member's own scale (REP.4, REP.20),
-  non-uniform where responses are steep — finer near default, a covenant, a limit (REP.10) — and coarser levels made
-  by merging adjacent steps in pairs, so widening a tolerance (REP.28) re-keys a cell by a shift, never by
-  recomputation.
-- **The landing key** of a row is (key id, step vector, key-rule kink signature). The step vector covers every
-  position, including each deposit row's per-member balance and pending amount and each holding row's per-member
-  quantity (§4.5), and the per-role year-to-date positions (§7.8). The signature records on which side of every kink
-  of the key's rules (tax bands, means tests, borrowing constraints) the per-member positions lie. Two members are
-  within tolerance exactly when their step vectors are equal.
-- **The landing index** is a sharded hash from landing key to the cells holding it, in order of their permanent
-  identities, never slots, so renumbering cannot change where a part lands. Cells may share a key while their lines'
-  kinks or pins differ. A part looks up its key and takes the first candidate that passes the **check**:
-  - the same key id, signature and full step vector, compared exactly, since a hash only proposes;
-  - the same standing rates and attention, which a landing never averages, and review exposures kept on both or
-    neither;
-  - then, for every line side both hold, the same payment record, arrears and price point, and the kinks of the
-    line — a credit limit, the insured limit — read from the candidate's own rows (contiguous), a payment falling due
-    showing as a record that differs,
-
-  so no join averages a key or crosses a kink (REP.8, REP.16).
-- **Batches**: parts are sorted by landing key at 10b; all parts bound for one target are checked against its state at
-  10b's start and joined together: their rows merged per line side and attached in one pass, its profile moved in one
-  pass, each line's holder list changed at most once. A batch leaves the target as joining its parts one by one would.
-- **Clusters**: parts that find no target are grouped by landing key; within a group, in canonical order (origin
-  cell's identity, then the part's sequence within it), each part joins the first new cell it passes the check with,
-  or starts one. New cells per day are counted (§13.2).
-- **Joining** is one `Landing` instruction per part, whose legs are derived from the part's rows (SET.1); weights,
-  totals, profiles, relationship rows (by line and role), payment records and holdings (pooled cost) add. A join
-  that adds count to a row the target already holds touches no holder list; only a holder's first entry to a line,
-  or its last exit, does.
-- **Re-reads**: one landing in a declared number, by its part's identity, is read again once it has joined: every line
-  side the target and its parts held must hold the same members and balance in the target after, and every row's
-  members must lie on the same side of each of its line's kinks as before. A straight rule is linear in a row's
-  members and balance, so its total is kept exactly when they are (REP.36); the day's re-reads are counted with the
-  cells, and the live checks read them.
+The opening divides `GEN.population` by the divisor before the split among the countries, so everything derived
+from a country's people — the employed, firms, lines, the individuals' rank (`FRM.rank_per_million`) — follows the
+smaller world; it then draws one agent for every `REP.multiplicity` households and small firms, each counting that
+many on its lines. `phx run --representation twins:K|small:K` sets both before assembly, for build runs comparing
+the two; the manifest's register hash covers them, so a save is refused by a build of the other representation or
+factor (§11). Twins is the default.
 
 ### 7.7 Relationship counts and their levers
 
-Relationship rows per cell dominate memory (§13.1). Line terms are what the spec says they are (LAB.1, REP.3: an
+Relationship rows per agent dominate memory (§13.1). Line terms are what the spec says they are (LAB.1, REP.3: an
 employment line is occupation family, skill, wage point, hours, notice and severance terms, pension kind and rates,
 start band and region, with its employers on the other side; the scheme a member belongs to is its attachment's, so it
-splits no line). The banking arrangement is key (§4.5), so the number of distinct arrangements in a region is a floor
-under its cell count; it is measured with the rows-per-cell curve (§14.6). Participation per asset class (shares,
-bonds, fund units) is key too: its three bits multiply a base key's distinct keys by at most 8, and fewer in practice,
-since most households hold no security directly. The distinct-key curve is measured from Stage 3
-(`phx_pop.distinct_keys`). Instruments are rows with counts (§4.5), so holding different instruments of one class
-never splits a cell. A small firm's **own known ways** are key (S1.02's interned set): every way it knows beyond its
-industry's public set (TEC.4, spec Appendix E 42), never pruned, so distinct own sets are a floor under the firm
-cells — at most about 50 k more at the design point, fewer since public ways separate no cell — measured from Stage 6
-(`phx_pop.cells_by_known_ways`); carrying the known ways it does not run as a profile (REP.33) is the lever the plan's
-F-007 proposes. The levers, all declarations, each set for play by measuring the budget (N8.5):
+splits no line). Instruments are rows with counts (§4.5). The levers, all declarations, each set for play by
+measuring the budget (N8.5):
 
-- **Attributes may move from profile to key** (REP.33): an adult role's occupation family or skill in the key
-  concentrates a cell's employment rows.
+- **The factor** (REP.40): agents, rows and their work fall with it in either representation.
 - **Start bands** are RESOLUTION (Law 9): five years at play.
 - **Contract grids** are price points and vintages, conventions of each trade (REP.34).
-- **Tolerances** (REP.4, REP.28): wider steps mean fewer parts and fewer cells.
 
-### 7.8 Profiles and year-to-date positions
-
-Profiles are counted per role, jointly within declared groups (REP.32, REP.33). Joints the spec requires are carried
-by contract terms where they belong: a mortgage's and a dwelling policy's collateral description names zone and class,
-so a flood's draws meet the right mortgages and policies (§7.10). Others are attachments joint in the role's group: a
-policy's cover with health and age, a member's pension scheme with its employment, a policy's renewal band. Lists are
-compactly encoded: dense small histograms, delta and varint coding, one-byte counts with an escape. A split or a join
-moves a profile in one pass over its bytes, read in place from the arena's words, never decoded into lists and
-encoded again. From Stage 6 the
-adult role's education record is its own group, and participation (its searching value carrying the month band the
-search began) and retirement are components joint with the employment attachment; a child role carries its
-schooling, its compulsory stage a read of birth year and the law. The labour-market state and skill are reads
-(`labour_state`, `skill_now`), never stored: skill is rewritten in place only when its clock's origin changes.
-
-**Year-to-date figures** — taxable income, contributions — are **per-role positions** (REP.20, REP.26): each adult
-role's total over the cell's members, with steps, fed by the flows that reach that role. The tax schedule's bands are
-key-rule kinks in the landing key's signature, so no join averages across a band (REP.16). A member who leaves takes
-its share k·A/W with it (REP.9); a member laid off keeps its figure, since the position belongs to the role, not the
-line. The annual assessment reads the positions (TAX.2).
-
-### 7.9 Choice groups and pieces
-
-Only market kinds whose purchases are used up at once hold choice groups (REP.37). A cell's members in one zone form a
-**piece** (a household's zone is a profile, REP.24); the choice probabilities of a meeting depend on the zone, the
-preference type and the positions the choice reads, so a **group** is the pieces that share those (a declared key per
-market kind, a step vector only where probabilities read positions). Group budgets are aggregates of the pieces'
-standing flows (§7.4), kept incrementally. Each day, per (group, product), counts are drawn over seller cells by
-conditional binomials; each seller cell takes the day's demand as its total, and on its review days its sales since
-the last are spread over its members by the capacity-respecting draw of REP.22, each member taking its own revenue and
-units, which is when identical sellers part company (counted as parts, §13.2). Each buyer cell pays its own budget and
-receives its share at the group's mix. Rounds of re-choice after capacity binds are counted and budgeted (§13.2).
-
-**Payments of a meeting.** The meeting's match set records, per (group, product), the counts sold by each seller.
-Buyers are debited by their pooled legs (one per buyer and bank, §7.4); sellers are credited per seller from the match
-set by keyed reduction, so a leg per (buyer, seller) never exists. Every unit of spending names its seller through
-the match-set record (HH.15). A group's **reach** — how many sellers its members choose among — is a declared search
-cost (REP.18), its size counted and ratcheted; the meeting's cost grows with it (§13.2).
-
-**Labour rounds.** A round is a day: applications sent at 5c reach employers, who answer at the next day's 5c with
-offers, which applicants accept or refuse at the 5c after. Matching costs about 50 ns per vacancy visible to a
-searching group; vacancies visible and rounds are counted and ratcheted.
-
-**Posted prices** of firms have one writer, `sys-frm`'s price review. What differs by seller kind — a stock's cover
-for goods, fill for services and carriage — is a declared **pressure** input the kind's system supplies as a fact
-(Law 10). **Rent points** of landlords, households and firms alike, have one writer, `sys-hsg`'s rent review.
-
-### 7.10 Places and catastrophes
+### 7.8 Places and catastrophes
 
 `phx-geo` keeps **physical stock per (tile, class)** as the one writer of where units stand, and an index listing,
 per (zone, class), the **holding** rows (owners) of that class there. A catastrophe at 3a draws in two levels:
@@ -1092,32 +841,14 @@ distance. A row's climate is read at its place in the latitude cycle (GEO.18): i
 first row, its declared cool latitude half the world away, evenly between. The phone draws the map scrolling
 without end in both directions.
 
-### 7.11 Tolerance control and promotion
+### 7.9 The valve
 
-- **Tolerance control** (REP.28) runs at 10b **on the day the cells carried exceed the budget**: it merges steps
-  where the decision gap is smallest — estimated from pure decision-point forms over **pairs of cells that the merge
-  would unite**, sampled from the **representation's own world stream**, each gap divided by the decision's declared
-  scale per member so gaps compare across decisions, ties going by a declared position order — and lands the cells
-  that now share a landing key, that day. It is a
-  declared full sweep, budgeted on the heavy day (§13.2). Narrowing runs on declared light days and stops when the
-  cells carried reach a declared share of the budget, so a heavy day's new cells rarely trigger widening.
-- **Promotion** reads ranks monthly and at every issuance of a public instrument (REP.2, REP.29), and runs at 5d for
-  the members a declared decision promotes (`seek_buyer`, spec Appendix E 35). A rank read is one pass building a
-  histogram of members by bin (the per-member value's sign and bit length); only the edge bin's rows are ordered. A
-  promoted member's share of each pooled holding becomes one lot at its pooled cost, and a demoted individual's lots
-  pool at their cost, so no cost moves either way.
-- **Narrowing** reads the same estimate as widening: among positions above their base partition, the one whose next
-  merge would cause the largest gap is divided, since a merge's gap is what the representation can observe.
-- **Renumbering** permutes a range's live rows among the slots they hold, by swaps that remap every reference to the
-  two rows swapped (§7.2).
 - **The world runs once** (spec Appendix E 36): there is no weight-one run, and no run at another resolution or seed
-  to compare with. The representation is judged by the run's own macro results against real economies' (N3, N4),
-  and REP.15's costs, measured at each landing, are its error bar.
+  to compare with. The representation is judged by the run's own macro results against real economies' (N3, N4).
 - **The valve** (N8.5) is a declared RESOLUTION setting, never an input the world reads from its own timing: it
-  changes only between runs or at a save boundary, by a recorded change citing a device or measurement report
-  (§14.8). As built, its settings are register primitives (`data/shared/REP.toml`, and each kind's cell budget and
-  ranks in its system's file), which the manifest's register hash covers, so a load with a changed valve is refused
-  as other data (§11). Tolerance control reads only the count of cells carried, never a wall clock.
+  changes only between runs, by a recorded change citing a device or measurement report (§14.8). Its settings are
+  register primitives (`data/shared/REP.toml`), which the manifest's register hash covers, so a load with a changed
+  valve is refused as other data (§11).
 
 ---
 
