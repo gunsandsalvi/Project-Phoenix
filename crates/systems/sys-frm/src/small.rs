@@ -164,10 +164,14 @@ impl SmallFirms {
         let firms: Vec<(PartyId, u64)> = large.iter().chain(&cells).copied().collect();
         let heads: Vec<u64> = firms.iter().map(|(_, n)| *n).collect();
         let mut split = ctx.draws(&SmallStream::DECL, subject(AMOUNTS));
-        // Each total apportioned exactly over every firm by its drawn employees, the large firms first.
+        // Each total apportioned over every firm by its drawn employees, the large firms first, a twin-th at a time,
+        // so an agent's amount is a whole share for each of its twins.
         let mut share = |total: f64| -> (Amounts, Amounts) {
-            let parts: Vec<(PartyId, u64)> =
-                firms.iter().zip(apportion(whole_u64(total), &heads, &mut split)).map(|((f, _), a)| (*f, a)).collect();
+            let parts: Vec<(PartyId, u64)> = firms
+                .iter()
+                .zip(apportion(whole_u64(total) / k, &heads, &mut split))
+                .map(|((f, _), a)| (*f, a * k))
+                .collect();
             let (mine, theirs) = parts.split_at(large.len());
             (mine.to_vec(), theirs.to_vec())
         };

@@ -133,6 +133,10 @@ impl<B: Backing> Books<B> {
             Side::Asset => balance,
             Side::Liability => -balance,
         };
+        // A due on the balance is one twin's, rounded by its convention, times the agent's twins, so every twin's
+        // share stays whole.
+        let unit = self.parties.unit(holder);
+        let outstanding = outstanding / i64::from(unit);
         let state = DueState {
             calendar,
             outstanding: Money::new(outstanding, terms.ccy),
@@ -170,6 +174,7 @@ impl<B: Backing> Books<B> {
             }
             return self.cleared_payment(holder, row, per, (terms.ccy, terms.payment_order.0), found);
         };
+        let whole = times(whole, unit);
         let amount = times(per, members) + whole;
         if amount == 0 {
             return None;
