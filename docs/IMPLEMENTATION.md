@@ -4712,7 +4712,8 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     Build run (`b7930378e270`, 120 days): the opening's 130.8 M households in 24 461 cells, then 120 days of deaths,
     onsets and birthdays; every live check passes but those waiting on a named step (LC-0-29 to LC-0-32, LC-0-42, 44,
     45, 48, 53, 55 and 56); peak 447 MiB; the run heads read (79 952) rise with the cells, the ratchet moved under the
-    owner's autonomy (§12).
+    owner's autonomy (§12). The run was not clean on memory as well: its peak was over the run's budget of 355 MiB,
+    which held no line for the population (F-041), and the step was marked done without it.
 - **S0.25d — lines paying**: employment, tenancy and the dwelling stock, deposits and loans, small firms as cells,
   and pensions in payment (`sys-lab`, `sys-hsg`, `sys-bnk`, `sys-frm`, `sys-soc`, `sys-pen`), paying by their terms
   through pooled flows. LC-0-55 and LC-0-56 apply.
@@ -4725,7 +4726,8 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     a cell pays from its pooled funds, as one payer, until the attachments say which members a row reaches
     (S0.25d-2). Tests: the draw nested in its count, within each row and even over members; a cleared line over
     books of two banks, one payer failing, its members' dues lost by drawn claimants, reserves conserved. Build run
-    (the world's lines unchanged, none cleared until S0.25d-4): see the commit.
+    (`82340ece379b`, 120 days; the world's lines unchanged, none cleared until S0.25d-4): every check passes but
+    those waiting on a named step; peak 447 MiB, over the run's budget that held no line for the population (F-041).
   - S0.25d-2: the kernel's attachments on explicit households — rows held by households or by the persons of declared
     roles, drawn with them at 3e, a leaving person's rows and its counterparty's member leaving together, parts
     taking their attachments as given shares, and a household no one is left in becoming an estate that takes its
@@ -15724,6 +15726,7 @@ the final build within the budget on the phone.
 | F-038 | S0.25c | opening, build machine, 2026-09-24 | The opening draws 130.8 M households (300 M persons) into 24 461 cells, the world's assembly taking 212 s on one core of the build machine (98.2 M households, 48 736 cells and 127 s when drawn type first); architecture §10.3 draws pass A in parallel, but the world has no worker pool before S0.26 | the opening runs on one thread | the opening's regions drawn on the world's pool when it exists (S0.26) | open |
 | F-039 | S0.25c | opening, build machine, 2026-09-24 | The opening's households are too small and too few are families: 1.90, 2.70 and 3.22 persons a household in the developed, emerging and developing countries; couples with children 10.0% of households against `DEM.household_types`' 31.2% at the drawn fertility (20.4% against 37.5%, 22.7% against 38.4%), extended families 3.9% against 12.0% (16.5% against 30.4%, 21.5% against 36.3%), one person 42.7% against 24.3% (26.6% against 9.8%, 24.9% against 7.7%) (the opening report's `DEM.households`, run 4b of 2026-09-24). The persons are drawn first and every adult who is neither a partner nor a mother of a child under majority lives alone, in a couple or with one unrelated adult, as `DEM.household_members` says each type holds | households formed from persons with no adult child at home and at most one relative: nothing reads `DEM.household_sizes` or `DEM.older_living_arrangements`' persons of 65 and over living with a child of 20 or over | adults at home by the sources in hand: a family's children of 20 and over from `DEM.living_children` and older persons with a grown child from `DEM.older_living_arrangements`, the households' sizes read against `DEM.household_sizes`; `DEM.household_members` revised with them (F-036) | open |
 | F-040 | S0.25c | review, 2026-09-25 | Mortality reads age and sex alone: the disabled die at the rates of the able of their age and sex, though POP.3 gives a hazard by age and health; the opening's disability prevalence and the onset hazard were derived as if the disabled die at the population's rate (`DEM.disability_onset`) | no source in hand for the disabled's mortality relative to the able's by age | a relative mortality of the disabled by age from a sourced study (e.g. the Global Burden of Disease's excess mortality), declared with the life table, and the onset mapping re-derived with it | open |
+| F-041 | S0.25c | build, 2026-09-25 | The build run's memory budget (`phx-cli`'s `WORLD_BYTES`: the empty world, the map and the individuals, 355 MiB) held no line for the population, so every run since S0.25c's opening peaked over it (447 MiB, b7930378e270 and 82340ece379b) and was not clean, though its checks all passed | the step that brought the cells added no budget line; the peak is the opening's, whose scratch for one region's parts the design puts at about 250 MB | the population's line added to the run's budget, the opening's scratch of one region's parts beside the cells at the run's resolution (275 MiB); the opening's own peak measured on the phone at S0.26, and the parallel opening (F-038) held to the same scratch | open |
 
 ---
 

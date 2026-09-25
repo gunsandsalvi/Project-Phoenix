@@ -20,8 +20,12 @@ const MAP_BYTES: u64 = 80 << 20;
 /// Resident memory the individuals may take: their kind tables and facets, which hold the institutions' rows.
 const INDIVIDUALS_BYTES: u64 = 225 << 20;
 
+/// Resident memory the population may take: its cells at the run's resolution, and the opening's scratch for one
+/// region's parts, sorted by landing key before they land.
+const POPULATION_BYTES: u64 = 275 << 20;
+
 /// Resident memory the world may take at its peak: the budgets of the steps it holds.
-const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES + MAP_BYTES + INDIVIDUALS_BYTES;
+const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES + MAP_BYTES + INDIVIDUALS_BYTES + POPULATION_BYTES;
 const MONTHS_PER_YEAR: u16 = 12;
 /// Days after settling at whose close the save the injections load is taken.
 const INJECTION_SAVE_DAY: u16 = 30;
