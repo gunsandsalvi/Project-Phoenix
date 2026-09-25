@@ -100,15 +100,20 @@ impl<B: Backing> Ledger<B> {
     /// payment missed on the row, arrears begun at the fail's due day if the row had none — and refreshes the days in
     /// arrears of every row still in arrears. A fail naming no contract row is a fail of a payment with no contract,
     /// whose party sees it and whose line has nothing to record; a fail on a row retired since, its members gone or
-    /// its estate settled, retires with the row as the row's arrears do.
+    /// its estate settled, retires with the row as the row's arrears do. A row misses a due day once.
     #[clause("SET.3", "SET.16", "TIME.7")]
     pub fn contract_process(&mut self, holders: &mut dyn Holders, fails: &[Fail], today: Day) {
+        // A row paying many counterparties on one due day misses that day once, however many of its payments failed.
+        let mut missed: std::collections::BTreeSet<(ArrearsKey, Day)> = std::collections::BTreeSet::new();
         for fail in fails {
             let phx_num::Missing::Present(row) = fail.row else { continue };
             if !holds_row(holders, fail.party, row.line, row.side) {
                 continue;
             }
             let key = ArrearsKey { line: row.line, side: side_code(row.side), party: fail.party };
+            if !missed.insert((key, fail.due)) {
+                continue;
+            }
             let begun = self.arrears.since.entry(key).or_insert(fail.due);
             if fail.due < *begun {
                 *begun = fail.due;
