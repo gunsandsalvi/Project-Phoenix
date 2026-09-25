@@ -4784,7 +4784,16 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     nothing, now at the opening's and the day's quiet moments, and each firm was party to a line of every 5% wage and
     rent point, now points a quarter apart (F-047). Tests: the size classes share the firms below the cut and hold
     their sizes; a class beyond the cut holds none; a kind table's compaction keeps every list and frees the dead;
-  - S0.25d-7: LC-0-44, 45, 48, 55 and 56, docs, reviews, the build run, done.
+  - S0.25d-7 *(built; its build run below)*: LC-0-44, 45, 48, 55 and 56, docs, reviews, the build run, done. As
+    built: one landing in `LANDING_SAMPLE`, by its part's identity, is re-read once it has joined (`phx_pop::sample`):
+    each line side's members and balance the target and its parts held against the target's after, and every row
+    against its line's kinks; the day's re-reads are counted with the cells (`CellDay`), LC-0-44 failing on a row
+    moved across a kink and LC-0-45 on a line side not kept, a straight rule being linear in members and balance.
+    LC-0-55 reads the run's dues paid, each fail of a contract's due for a line kind that names the system to decide
+    on it, and every row held by persons against the persons its cell holds of those roles; LC-0-56 reads the
+    opening's apportionments, none giving a party of no drawn size anything, an unmatched stratum stopping the
+    opening. LC-0-48 waits for the firms' positions (S1.03, F-048). Tests: a join that adds every side keeps every
+    straight total; a lost member or unit and a crossed kink are counted.
 - **S0.25e — estates and the settled world**: `sys-est`, catastrophes' losses at owners (GEO.8), settling, LC-0-53;
   the step's reviews and its build run.
 

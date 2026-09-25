@@ -14,6 +14,7 @@ use crate::join::{Landing, join, join_batch};
 use crate::key::{KeyId, KeyInterner, KeyRecord};
 use crate::kind::PopKindDecl;
 use crate::part::{Part, PartId};
+use crate::sample::{self, sampled};
 use crate::steps::Step;
 use crate::table::{CellTable, NewCell};
 
@@ -85,6 +86,8 @@ pub struct Landed {
     pub resolved: Vec<(PartId, PartyId)>,
     /// Per position, what the day's landings moved of the totals they joined: the audit's, which only nought passes.
     pub moved: Vec<i64>,
+    /// The day's landings re-read after they joined.
+    pub samples: Vec<crate::sample::LandingSample>,
 }
 
 impl Landed {
@@ -259,7 +262,14 @@ pub fn land<B: Backing, L: Backing>(
         let batch: Vec<Part> =
             bound.iter().filter_map(|(_, _, i, _)| parts.get_mut(*i).and_then(Option::take)).collect();
         let ids: Vec<PartId> = batch.iter().map(|p| p.id).collect();
+        let reread = ids.iter().any(|id| sampled(*id)).then(|| cells.get(&slot).cloned()).flatten();
         let done = join_batch(ctx.ledger, ctx.table, ctx.place, slot, batch);
+        if let Some(was) = reread {
+            let mut before: Vec<&View> = vec![&was];
+            before.extend(bound.iter().filter_map(|(_, _, i, _)| views.get(*i)));
+            let after = View::of_cell(ctx.table, slot, ctx.ledger, ctx.kind, ctx.levels);
+            landed.samples.push(sample::reread(&before, &after, ctx.kinks));
+        }
         landed.landings += phx_rand::float::len_u64(ids.len());
         landed.joined_all(&ids, cell, &done);
     }
@@ -275,7 +285,12 @@ pub fn land<B: Backing, L: Backing>(
             })
         });
         if let Some((cell, slot)) = found {
+            let was = sampled(id).then(|| View::of_cell(ctx.table, slot, ctx.ledger, ctx.kind, ctx.levels));
             let done = join(ctx.ledger, ctx.table, ctx.place, &Landing { part: id, target: slot }, part);
+            if let Some(was) = was {
+                let after = View::of_cell(ctx.table, slot, ctx.ledger, ctx.kind, ctx.levels);
+                landed.samples.push(sample::reread(&[&was, &view], &after, ctx.kinks));
+            }
             landed.landings += 1;
             landed.joined(id, cell, &done);
         } else {

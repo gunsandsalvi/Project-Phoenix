@@ -226,6 +226,12 @@ pub struct CellDay {
     pub renumber_changed: u64,
     /// The estates opened for households no one was left in that held anything.
     pub estates: u64,
+    /// Landings re-read after they joined; the line sides they held, those the join did not keep, and the rows it
+    /// moved across a kink.
+    pub reread: u64,
+    pub reread_sides: u64,
+    pub sides_unkept: u64,
+    pub kinks_crossed: u64,
 }
 
 impl CellDay {
@@ -260,6 +266,10 @@ impl CellDay {
             renumbered: 0,
             renumber_changed: 0,
             estates: 0,
+            reread: 0,
+            reread_sides: 0,
+            sides_unkept: 0,
+            kinks_crossed: 0,
         }
     }
 }
@@ -936,6 +946,12 @@ impl World {
             count.landings += landed.landings;
             count.new_cells += landed.new_cells;
             count.erased += landed.erased.iter().sum::<f64>();
+            for r in &landed.samples {
+                count.reread += 1;
+                count.reread_sides += u64::from(r.sides);
+                count.sides_unkept += u64::from(r.unequal);
+                count.kinks_crossed += u64::from(r.crossed);
+            }
             let census = Census::of(table);
             count.cells += census.cells;
             count.individuals += census.individuals;
@@ -970,6 +986,7 @@ fn merge(into: &mut Landed, from: Landed) {
         }
     }
     into.resolved.extend(from.resolved);
+    into.samples.extend(from.samples);
 }
 
 #[cfg(test)]

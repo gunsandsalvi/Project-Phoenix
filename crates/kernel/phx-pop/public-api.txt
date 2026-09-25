@@ -80,6 +80,7 @@ pub const phx_pop::consts::KEY_BITS: u32
 pub const phx_pop::consts::KEY_WORDS: usize
 pub const phx_pop::consts::LADDER_DEN: u64
 pub const phx_pop::consts::LADDER_NUM: u64
+pub const phx_pop::consts::LANDING_SAMPLE: u64
 pub const phx_pop::consts::POPULATION_CHUNK: u32
 pub const phx_pop::consts::POPULATION_DRAWN: usize
 pub const phx_pop::consts::RANK_BINS: usize
@@ -317,6 +318,7 @@ pub phx_pop::landing::Landed::new_cells: u64
 pub phx_pop::landing::Landed::parts: u64
 pub phx_pop::landing::Landed::resolved: alloc::vec::Vec<(phx_pop::part::PartId, phx_id::ids::PartyId)>
 pub phx_pop::landing::Landed::rows: u64
+pub phx_pop::landing::Landed::samples: alloc::vec::Vec<phx_pop::sample::LandingSample>
 pub struct phx_pop::landing::TenB<'a, B: phx_store::backing::Backing, L: phx_store::backing::Backing>
 pub phx_pop::landing::TenB::directory: &'a mut phx_core::directory::Directory
 pub phx_pop::landing::TenB::keys: &'a mut phx_pop::key::KeyInterner
@@ -541,6 +543,13 @@ pub fn phx_pop::review::phase(&mut phx_rand::draws::Draws, phx_core::calendar::p
 pub fn phx_pop::review::review_chance(i64, phx_core::weight::Weight) -> f64
 pub fn phx_pop::review::reviewers(&mut phx_rand::draws::Draws, &[u64], i64, phx_core::weight::Weight, &mut [u64])
 pub fn phx_pop::review::wake_day(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::RunsOn, phx_id::day::Day) -> phx_id::day::Day
+pub mod phx_pop::sample
+pub struct phx_pop::sample::LandingSample
+pub phx_pop::sample::LandingSample::crossed: u32
+pub phx_pop::sample::LandingSample::sides: u32
+pub phx_pop::sample::LandingSample::unequal: u32
+pub fn phx_pop::sample::reread(&[&phx_pop::check::View], &phx_pop::check::View, &dyn phx_pop::check::LineKinks) -> phx_pop::sample::LandingSample
+pub fn phx_pop::sample::sampled(phx_pop::part::PartId) -> bool
 pub mod phx_pop::screen
 pub struct phx_pop::screen::Hit
 pub phx_pop::screen::Hit::by_value: alloc::vec::Vec<(usize, u32, u64)>

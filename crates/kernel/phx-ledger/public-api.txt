@@ -924,6 +924,7 @@ pub fn phx_ledger::line::LineKindDecl::side(&self, phx_ledger::algebra::Side) ->
 pub struct phx_ledger::line::Lines<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_ledger::line::Lines<B>
 pub fn phx_ledger::line::Lines<B>::dated(&self, phx_id::ids::LineId) -> bool
+pub fn phx_ledger::line::Lines<B>::decl(&self, phx_id::ids::LineId) -> &phx_ledger::line::LineKindDecl
 pub fn phx_ledger::line::Lines<B>::declare_deposits(&mut self, phx_ledger::line::LineKindDecl) -> phx_ledger::line::LineKind<phx_ledger::line::InMoney>
 pub fn phx_ledger::line::Lines<B>::declare_in_unit(&mut self, phx_ledger::line::LineKindDecl, phx_num::qty::UnitId) -> phx_ledger::line::LineKind<phx_ledger::line::InUnit>
 pub fn phx_ledger::line::Lines<B>::declare_means_of_payment(&mut self, phx_ledger::line::LineKindDecl) -> phx_ledger::line::LineKind<phx_ledger::line::InMoney>

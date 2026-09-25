@@ -123,7 +123,7 @@ impl View {
 }
 
 /// Which side of a point a row's members lie on: at or above it per member, compared exactly over the row's count.
-fn at_or_above(balance: i64, count: u32, point: i64) -> bool {
+pub(crate) fn at_or_above(balance: i64, count: u32, point: i64) -> bool {
     i128::from(balance) >= i128::from(point) * i128::from(count)
 }
 

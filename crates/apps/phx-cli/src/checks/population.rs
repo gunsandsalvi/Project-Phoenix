@@ -247,21 +247,45 @@ fn no_kink_crossed(w: Inspector<'_>) -> Outcome {
     if !keeps_cells(w) {
         return Outcome::NotYet(NO_CELLS);
     }
-    if cells_hold_lines(w) {
-        return Outcome::Fail("cells hold lines but no landing is sampled against their kinks".to_owned());
+    if !cells_hold_lines(w) {
+        return Outcome::NotYet(NO_LINES);
     }
-    Outcome::NotYet(NO_LINES)
+    let days = w.cell_days();
+    let reread: u64 = days.iter().map(|d| d.reread).sum();
+    if reread == 0 {
+        return Outcome::Fail("no landing was re-read over the run".to_owned());
+    }
+    match days.iter().find(|d| d.kinks_crossed > 0) {
+        Some(d) => Outcome::Fail(format!(
+            "day {}: {} rows of re-read landings moved across a point of their line's kinks",
+            d.day.get(),
+            d.kinks_crossed
+        )),
+        None => Outcome::Pass,
+    }
 }
 
-/// Sampled landings' straight rules' totals unchanged at the moment of landing, to a smallest unit per member.
+/// Sampled landings' straight rules' totals unchanged at the moment of landing: every line side's members and balance
+/// the cell and its parts held are the cell's after the join, a straight rule being linear in them.
 fn straight_rules_exact(w: Inspector<'_>) -> Outcome {
     if !keeps_cells(w) {
         return Outcome::NotYet(NO_CELLS);
     }
-    if cells_hold_lines(w) {
-        return Outcome::Fail("cells hold lines but no landing is sampled for its straight rules".to_owned());
+    if !cells_hold_lines(w) {
+        return Outcome::NotYet(NO_LINES);
     }
-    Outcome::NotYet(NO_LINES)
+    let days = w.cell_days();
+    if days.iter().map(|d| d.reread_sides).sum::<u64>() == 0 {
+        return Outcome::Fail("no re-read landing held a line".to_owned());
+    }
+    match days.iter().find(|d| d.sides_unkept > 0) {
+        Some(d) => Outcome::Fail(format!(
+            "day {}: {} line sides of re-read landings lost or gained members or balance in the join",
+            d.day.get(),
+            d.sides_unkept
+        )),
+        None => Outcome::Pass,
+    }
 }
 
 /// The representation's costs reported each day: the dispersion joins erased, and splits, landings and new cells,
@@ -330,7 +354,7 @@ fn ranks_carried(w: Inspector<'_>) -> Outcome {
     if w.population().kinds.iter().any(|k| k.ranks.is_some()) {
         return Outcome::Fail("a kind reads ranks but its promotions are not recorded for this check".to_owned());
     }
-    Outcome::NotYet("no population kind reads ranks before the small firms (S0.25d)")
+    Outcome::NotYet("no population kind reads ranks before the firms' positions (S1.03)")
 }
 
 /// The representation's measures reported every day, with the share of each population at weight one.
@@ -514,14 +538,80 @@ pub const LC_0_54: Check = live_check! {
     check: life_rates_by_class,
 };
 
-/// Paydays, dues and pensions in payment settle through pooled flows, every fail with a cause and a waiting owner.
-fn lines_pay(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("no household holds a line before the opening lines (S0.25d)")
+/// Paydays, dues and pensions in payment settle through pooled flows, every fail of a contract's due with the system
+/// its line kind names to decide on it; and no row held by persons counts more members than its cell holds persons of
+/// the roles that hold it, so the dead are paid nothing.
+fn lines_pay(w: Inspector<'_>) -> Outcome {
+    if !cells_hold_lines(w) {
+        return Outcome::NotYet(NO_LINES);
+    }
+    let settled = w.settlements();
+    if settled.iter().map(|s| s.dues.payments).sum::<u64>() == 0 {
+        return Outcome::Fail("no due was paid over the run".to_owned());
+    }
+    let lines = &w.books().ledger.lines;
+    for s in settled {
+        for f in &s.fails {
+            if let phx_num::Missing::Present(row) = f.row
+                && lines.decl(row.line).transfer_requesters.is_empty()
+            {
+                return Outcome::Fail(format!(
+                    "day {}: a fail on a {} line, whose kind names no system to decide on it",
+                    s.day.get(),
+                    lines.kind_name(row.line)
+                ));
+            }
+        }
+    }
+    for (k, kd) in w.population().kinds.iter().enumerate() {
+        let table = w.cell_table(k);
+        for slot in table.slots() {
+            let counts = role_counts(&kd.decl, &kd.keys.record(table.hot(slot).key_id));
+            let weight = u64::from(table.weight(slot).get());
+            for r in phx_ledger::rows::iter(table, slot) {
+                let roles = lines.side_decl(r.row.line, r.side()).holder_roles;
+                if roles.is_empty() {
+                    continue;
+                }
+                let persons: u64 = kd
+                    .decl
+                    .roles
+                    .iter()
+                    .zip(&counts)
+                    .filter(|(role, _)| roles.contains(&role.item.name))
+                    .map(|(_, n)| weight * u64::from(*n))
+                    .sum();
+                if u64::from(r.row.count) > persons {
+                    return Outcome::Fail(format!(
+                        "cell {} holds {} members of a {} line with {persons} persons to hold them",
+                        table.party(slot).get(),
+                        r.row.count,
+                        lines.kind_name(r.row.line)
+                    ));
+                }
+            }
+        }
+    }
+    Outcome::Pass
 }
 
-/// The GEN report lists every apportionment difference and every unmatched stratum.
-fn apportionments_reported(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("no line's counterparty side is apportioned before the opening lines (S0.25d)")
+/// The GEN report lists the counterparties each derived side was apportioned over, what each drew and what it was
+/// given; no party of no drawn size was given any. A stratum with no eligible counterparty stops the opening, so none
+/// is left unmatched.
+fn apportionments_reported(w: Inspector<'_>) -> Outcome {
+    if !cells_hold_lines(w) {
+        return Outcome::NotYet(NO_LINES);
+    }
+    let report = &w.opening().apportioned;
+    if report.is_empty() {
+        return Outcome::Fail("the opening reports no apportionment".to_owned());
+    }
+    match report.iter().find(|a| a.drawn == 0 && a.realised > 0) {
+        Some(a) => {
+            Outcome::Fail(format!("{}: party {} of no drawn size was given {}", a.stratum, a.party.get(), a.realised))
+        }
+        None => Outcome::Pass,
+    }
 }
 
 pub const LC_0_55: Check = live_check! {

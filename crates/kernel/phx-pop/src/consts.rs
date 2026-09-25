@@ -62,6 +62,10 @@ pub const POPULATION_CHUNK: u32 = 256;
 /// The positions a synthetic population's cells draw; the rest they hold alike.
 pub const POPULATION_DRAWN: usize = 6;
 
+/// One landing in this many is re-read after it joins, by its part's identity: enough over a run's landings to find a
+/// join that loses a member or a unit or moves members across a kink, few enough to cost little of 10b.
+pub const LANDING_SAMPLE: u64 = 64;
+
 #[cfg(test)]
 mod tests {
     #[test]

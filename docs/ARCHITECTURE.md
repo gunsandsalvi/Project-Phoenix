@@ -910,6 +910,11 @@ stance from the origin it lived in — and never averaged (REP.16).
   totals, profiles, relationship rows (by line and role), payment records and holdings (pooled cost) add. A join
   that adds count to a row the target already holds touches no holder list; only a holder's first entry to a line,
   or its last exit, does.
+- **Re-reads**: one landing in a declared number, by its part's identity, is read again once it has joined: every line
+  side the target and its parts held must hold the same members and balance in the target after, and every row's
+  members must lie on the same side of each of its line's kinks as before. A straight rule is linear in a row's
+  members and balance, so its total is kept exactly when they are (REP.36); the day's re-reads are counted with the
+  cells, and the live checks read them.
 
 ### 7.7 Relationship counts and their levers
 

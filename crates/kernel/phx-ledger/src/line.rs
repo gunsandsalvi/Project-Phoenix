@@ -240,6 +240,12 @@ impl<B: Backing> Lines<B> {
         self.kind(self.row(line).kind).side(side)
     }
 
+    /// A line's kind as its system declared it.
+    #[must_use]
+    pub fn decl(&self, line: LineId) -> &LineKindDecl {
+        self.kind(self.row(line).kind)
+    }
+
     /// The name of a line's kind.
     #[must_use]
     pub fn kind_name(&self, line: LineId) -> &'static str {

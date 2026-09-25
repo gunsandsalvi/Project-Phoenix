@@ -34,6 +34,7 @@ pub mod promote;
 pub mod rekey;
 pub mod renumber;
 pub mod review;
+pub mod sample;
 pub mod screen;
 pub mod seller_spread;
 pub mod sig;
