@@ -161,21 +161,29 @@ impl CountryAttachments for Country {
             let covered = open_unit(&mut d);
             let sex = phx_core::component(if_pop::LIFE, life, if_pop::SEX_AT);
             let born = phx_core::component(if_pop::LIFE, life, if_pop::BIRTH_YEAR_AT);
-            let Ok(born) = i32::try_from(born) else { violation!(clause = "REP.25", "a birth year beyond the calendar") };
+            let Ok(born) = i32::try_from(born) else {
+                violation!(clause = "REP.25", "a birth year beyond the calendar")
+            };
             let age = phx_rand::float::from_i64(i64::from(self.year - if_pop::consts::FIRST_BIRTH_YEAR - born));
             let at = match sex {
                 if_pop::FEMALE => 0,
                 if_pop::MALE => 1,
                 _ => violation!(clause = "REP.26", "a sex beyond the two", sex = sex),
             };
-            let (Some(start), Some(share), Some(pension)) = (self.age.get(at), self.coverage.get(at), self.line.get(at))
+            let (Some(start), Some(share), Some(pension)) =
+                (self.age.get(at), self.coverage.get(at), self.line.get(at))
             else {
                 violation!(clause = "GEN.2", "a sex the state pension does not hold");
             };
             if age < *start || covered >= *share {
                 continue;
             }
-            rows.push(DrawnRow { line: *pension, side: Side::Asset, holder: Holder::Person(place), balance: Balance::None });
+            rows.push(DrawnRow {
+                line: *pension,
+                side: Side::Asset,
+                holder: Holder::Person(place),
+                balance: Balance::None,
+            });
         }
     }
 
