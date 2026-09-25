@@ -462,7 +462,8 @@ impl World {
                     violation!(clause = "POP.15", "a household ended holding what only an estate can take yet");
                 }
             }
-            let rows = phx_ledger::rows::rows(table, slot).iter().map(|r| (r.row.line, r.side(), r.row.count)).collect();
+            let rows =
+                phx_ledger::rows::rows(table, slot).iter().map(|r| (r.row.line, r.side(), r.row.count)).collect();
             (rows, table.multiplicity(slot).get())
         };
         if !rows.is_empty() {
@@ -623,8 +624,57 @@ impl World {
         };
         let donor = table.party(slot);
         let player = if twins == 1 { donor } else { self.seat_twin(day, k, (slot, donor)) };
+        if twins > 1 {
+            self.seat_counterparts(day, (player, donor), &mut d);
+        }
         self.queue.seat(phx_core::Player { party: player, delegate: choice.delegate });
         Ok(())
+    }
+
+    /// On each line the player holds whose other side holds agents, one of them, drawn by its contracts there, seats
+    /// one twin as the player's was seated, so the player's members and its donor's each find a counterpart of their
+    /// own unit when they leave. The donor, already one twin short, is not drawn.
+    #[clause("REP.1", "REP.23")]
+    fn seat_counterparts(&mut self, day: Day, (player, donor): (PartyId, PartyId), d: &mut Draws) {
+        let (place, slot) = self.books.parties.row(player);
+        let held: Vec<(LineId, Side)> = phx_ledger::rows::rows(self.books.parties.holder(place), slot)
+            .iter()
+            .map(|r| (r.row.line, r.side()))
+            .collect();
+        let first = self.books.parties.first_cell_place();
+        let mut seated: std::collections::BTreeSet<PartyId> = std::collections::BTreeSet::new();
+        for (line, side) in held {
+            let other = if side == Side::Asset { Side::Liability } else { Side::Asset };
+            let agents: Vec<(PartyId, u64)> = self
+                .books
+                .side_counts(line, other)
+                .into_iter()
+                .filter(|(p, _)| {
+                    *p != donor && self.books.parties.row(*p).0 >= first && self.books.parties.unit(*p) > 1
+                })
+                .map(|(p, c)| (p, u64::from(c)))
+                .collect();
+            let contracts: u64 = agents.iter().map(|(_, c)| c).sum();
+            if contracts == 0 {
+                continue;
+            }
+            let mut at = phx_rand::below_u64(d, contracts);
+            let Some(counterpart) = agents.iter().find_map(|(p, c)| {
+                if at < *c {
+                    Some(*p)
+                } else {
+                    at -= c;
+                    None
+                }
+            }) else {
+                violation!(clause = "REP.23", "a counterpart drawn past the line's agents", line = line.get());
+            };
+            if seated.insert(counterpart) {
+                let (place, slot) = self.books.parties.row(counterpart);
+                let kind = usize::from(place - first);
+                let _ = self.seat_twin(day, kind, (slot, counterpart));
+            }
+        }
     }
 
     /// One twin of an agent seated as an agent of its own, of multiplicity one: its household copied, and one twin's

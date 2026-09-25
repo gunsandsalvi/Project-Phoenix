@@ -5197,8 +5197,8 @@ The sub-steps:
 retire with the machinery)
 - `LC-0-37`: every agent's row on each line counts its multiplicity times its attachments there, and every person
   attachment names a present person (REP.31).
-- `LC-0-38`: every agent's multiplicity is its kind's under the representation in force, the player's one and its
-  donor's one fewer (REP.17).
+- `LC-0-38`: every agent's multiplicity is its kind's under the representation in force, but the seated twins, the
+  player's and its counterparts', of one each, and their donors of one fewer, as many as the seats (REP.1, REP.17).
 - `LC-0-39` to `LC-0-42`: as S0.22 wrote them, on agents.
 - `LC-0-43`: the agents family — multiplicities sum to each population, persons to the persons counted by event,
   lines' sides equal (REP.13, REP.31).

@@ -44,8 +44,8 @@ fn rows_count_twins(w: Inspector<'_>) -> Outcome {
     Outcome::Pass
 }
 
-/// Every agent's multiplicity is its kind's under the representation in force; the player's is one, and the agent
-/// the player was drawn from holds one twin fewer.
+/// Every agent's multiplicity is its kind's under the representation in force, but the seated twins, the player's
+/// and its counterparts', of one each, and their donors, of one twin fewer, as many as the seats.
 fn multiplicities_declared(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
@@ -55,21 +55,28 @@ fn multiplicities_declared(w: Inspector<'_>) -> Outcome {
         phx_num::Missing::Present(p) => p.party,
         phx_num::Missing::Absent => return Outcome::Fail("no player was seated".to_owned()),
     };
-    let mut donors = 0_u32;
+    let (mut seats, mut donors, mut player_seated) = (0_u32, 0_u32, false);
     for kind in 0..w.population().kinds.len() {
         let table = w.agent_table(kind);
         for slot in table.slots() {
             let (party, m) = (table.party(slot), table.multiplicity(slot).get());
-            let expected = if party == player { 1 } else { k };
-            if m + 1 == k && party != player {
+            if m == k {
+                player_seated |= party == player;
+            } else if m == 1 {
+                seats += 1;
+                player_seated |= party == player;
+            } else if m + 1 == k {
                 donors += 1;
-            } else if m != expected {
+            } else {
                 return Outcome::Fail(format!("agent {} of {m} twins under a factor of {k}", party.get()));
             }
         }
     }
-    if k > 1 && donors > 1 {
-        return Outcome::Fail(format!("{donors} agents hold one twin fewer, where only the player's donor may"));
+    if !player_seated {
+        return Outcome::Fail("the player is no agent of one twin".to_owned());
+    }
+    if k > 1 && (seats == 0 || seats != donors) {
+        return Outcome::Fail(format!("{seats} seated twins and {donors} donors, where each seat has its donor"));
     }
     Outcome::Pass
 }
@@ -83,7 +90,7 @@ pub const LC_0_37: Check = live_check! {
 
 pub const LC_0_38: Check = live_check! {
     id: "LC-0-38",
-    title: "Every agent's multiplicity is its kind's under the representation, the player's one",
+    title: "Every agent's multiplicity is its kind's, but the seated twins of one and their donors of one fewer",
     from_step: "S0.28",
     check: multiplicities_declared,
 };

@@ -152,6 +152,15 @@ impl<B: Backing> Books<B> {
         self.line_holders(line).filter(|p| *p != party).collect()
     }
 
+    /// The listed holders of one side of a line with their rows' counts, in the holder list's order.
+    #[must_use]
+    pub fn side_counts(&self, line: LineId, side: Side) -> Vec<(PartyId, u32)> {
+        self.side_holders(line, side)
+            .into_iter()
+            .filter_map(|p| self.row_on_side(p, line, side).map(|r| (p, r.row.count)))
+            .collect()
+    }
+
     /// A line's holders on one side, in its holder list's order.
     pub(crate) fn side_holders(&self, line: LineId, side: Side) -> Vec<PartyId> {
         self.line_holders(line).filter(|p| self.row_on_side(*p, line, side).is_some()).collect()
