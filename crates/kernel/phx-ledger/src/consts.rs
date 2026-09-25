@@ -41,3 +41,6 @@ pub const MONEY_ROWS_KEPT: usize = 4;
 pub const STREAM_SHARDS: usize = 64;
 /// The shards of 7a read at once, so no more than a wave's payments wait to be booked; fixed, as the shards are.
 pub const STREAM_WAVE: usize = 8;
+/// The shards 7c routes the day's payments in, read a wave at a time: finer than 7a's, as a route is wider than the
+/// payment it moves, so a wave holds a thirty-second of the day.
+pub const ROUTE_SHARDS: usize = 256;

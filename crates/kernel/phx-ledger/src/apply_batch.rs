@@ -248,8 +248,8 @@ impl<B: Backing> Books<B> {
         let mut g = Gathered { given, nets: net_list, ..Gathered::default() };
         let mut nets = std::mem::take(&mut self.buffers.nets);
         nets.clear();
-        let each = streamed.made.len().div_ceil(crate::consts::STREAM_SHARDS);
-        for wave in (0..crate::consts::STREAM_SHARDS).step_by(crate::consts::STREAM_WAVE) {
+        let each = streamed.made.len().div_ceil(crate::consts::ROUTE_SHARDS);
+        for wave in (0..crate::consts::ROUTE_SHARDS).step_by(crate::consts::STREAM_WAVE) {
             let found_now: &Found = found;
             // The routes are made on the pool, a wave of shards at a time; what they come to is gathered in order.
             let routed = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_WAVE, |i| {
