@@ -419,9 +419,9 @@ fn build(v: &Volumes, host: &dyn BenchHost, holidays: &[Date], (first, heavy): (
     };
     let pool = Pool::new(&PoolSpec::detect()).map_err(|e| e.0)?;
     show(host, "building", "the household agents, their persons and attachments".to_owned(), String::new(), "");
-    let mut d = draws(3, 0, 0);
     let pv = &v.population;
-    let population = agents(pv.agents, pv.persons_per_agent, pv.attachments_per_agent, pv.multiplicity, &mut d);
+    let stream = stream_key(Seed::new(3), "LOAD.bench");
+    let population = agents(pv.agents, pv.persons_per_agent, pv.attachments_per_agent, pv.multiplicity, stream);
     show(host, "building", "the books' holders and their dated rows".to_owned(), String::new(), "");
     let sv = &v.settlement;
     let size = SettlementSize {

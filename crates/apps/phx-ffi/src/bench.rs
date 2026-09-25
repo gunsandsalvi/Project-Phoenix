@@ -305,7 +305,8 @@ const COST_OUTCOMES: u32 = 50_000;
 /// Nanoseconds an agent's next hit takes to draw, and a hit's outcome to apply, measured on one core.
 fn agent_costs(clock: &Mono) -> (u64, u64) {
     let mut d = Draws::new(stream_key(Seed::new(1), "REP.bench"), Subject::new(SubjectTag::World, 0), 0, 0);
-    let mut population = crate::agents::agents(COST_AGENTS, COST_PERSONS, COST_ATTACHMENTS, COST_TWINS, &mut d);
+    let stream = stream_key(Seed::new(1), "REP.bench_agents");
+    let mut population = crate::agents::agents(COST_AGENTS, COST_PERSONS, COST_ATTACHMENTS, COST_TWINS, stream);
     let Some(date) = phx_id::Date::new(2026, 3, 2) else { return (0, 0) };
     let slots = population.slots.clone();
     let n = u64::try_from(slots.len()).unwrap_or(0);

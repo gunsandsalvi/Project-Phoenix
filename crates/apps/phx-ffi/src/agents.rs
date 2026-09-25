@@ -11,7 +11,7 @@ use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::person::{Attachment, Holder, pack};
 use phx_pop::table::{AgentTable, NewAgent};
-use phx_rand::{Draws, below_u64};
+use phx_rand::{Draws, StreamKey, Subject, SubjectTag, below_u64};
 use phx_store::{AddressSpace, SystemBacking};
 
 /// Rows of the bench's agent table per chunk, as the world's.
@@ -61,15 +61,17 @@ pub(crate) struct Agents {
     _space: AddressSpace,
 }
 
-/// `n` household agents of `persons` persons and `attachments` attachments each, drawn from `d`.
-pub(crate) fn agents(n: u32, persons: u32, attachments: u32, twins: u32, d: &mut Draws) -> Agents {
+/// `n` household agents of `persons` persons and `attachments` attachments each, each drawn from its own address of
+/// `stream`, as the world draws each party apart, so no count of agents exhausts one address.
+pub(crate) fn agents(n: u32, persons: u32, attachments: u32, twins: u32, stream: StreamKey) -> Agents {
     let decl = kind();
     let mut space = AddressSpace::empty();
     let mut table = AgentTable::<SystemBacking>::new(&mut space, &decl, TableId::new(0), n, ROWS_PER_CHUNK);
     let mut slots = Vec::with_capacity(usize::try_from(n).unwrap_or(0));
     for i in 0..n {
-        let attrs = [draw(d, u64::from(REGIONS))];
         let party = PartyId::new(u64::from(i) + 1);
+        let d = &mut Draws::new(stream, Subject::new(SubjectTag::Party, party.get()), 0, 0);
+        let attrs = [draw(d, u64::from(REGIONS))];
         let slot = table
             .add(&mut space, NewAgent { party, created: Day::new(0), multiplicity: Weight::new(twins), attrs: &attrs });
         let words: Vec<u64> = (0..persons)
