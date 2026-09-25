@@ -471,6 +471,7 @@ impl<B: Backing> Ledger<B> {
             let (Some(leg), Some(at)) = (legs.get(i), located.get(i)) else { continue };
             let arenas = holders.arenas(at.table);
             let before = self.position(arenas, at.party, at.slot, leg.position_code());
+            let basis = self.held_basis(arenas, *at, leg);
             self.settle_leg(arenas, *at, leg, s.day, &mut taken);
             audit.touched(arenas.table(), at.slot);
             let money = matches!(leg.kind, LegKind::Money);
@@ -498,10 +499,42 @@ impl<B: Backing> Ledger<B> {
                     }
                 }
             }
+            // What else the leg moved of its party's net assets: a row's balance, or the cost of a holding's lots.
+            let worth = match (leg.kind, leg.denom, basis) {
+                (LegKind::Row(RowOp::Adjust), Denom::Ccy(ccy), _) => Missing::Present((leg.qty, ccy)),
+                (_, _, Missing::Present((was, ccy))) => match self.held_basis(arenas, *at, leg) {
+                    Missing::Present((now, _)) => Missing::Present((now - was, ccy)),
+                    Missing::Absent => Missing::Absent,
+                },
+                _ => Missing::Absent,
+            };
+            if let Missing::Present((moved, ccy)) = worth
+                && moved != 0
+            {
+                let effect = if moved < 0 { decl.paid } else { decl.received };
+                let amount = Money::new(moved, ccy);
+                self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
+            }
         }
         if !taken.is_empty() {
             violation!(clause = "SET.11", "a named unit given that nobody received", id = s.id.get());
         }
+    }
+
+    /// What a holder's lots of the instrument a leg moves cost, in the instrument's currency, where the leg moves
+    /// units a holder holds rather than an issuer's.
+    fn held_basis(&self, arenas: &dyn HolderArenas, at: At, leg: &LegRec) -> Missing<(i64, phx_num::Ccy)> {
+        let AccountRef::Instrument(id) = leg.account else { return Missing::Absent };
+        let instrument = self.instruments.get(id);
+        if instrument.issuer == Missing::Present(at.party) {
+            return Missing::Absent;
+        }
+        // A holding not held has no lots, so costs nothing.
+        let cost = match crate::holding::basis(arenas, at.slot, id) {
+            Missing::Present(b) => b,
+            Missing::Absent => 0,
+        };
+        Missing::Present((cost, instrument.ccy))
     }
 
     fn settle_leg(
@@ -617,9 +650,10 @@ impl<B: Backing> Ledger<B> {
         }
     }
 
-    /// The opening's moves outside any instruction forgotten: the audit reads days, and the opening is none.
+    /// The opening's records forgotten: the audit and the accounts read days, and the opening is none; the accounts
+    /// open on what the opening wrote.
     pub fn opened(&mut self) {
-        self.day.outside.clear();
+        self.day = DayBook::default();
     }
 
     /// The next instruction's identity on a day: its day, and its place in that day's numbering.
