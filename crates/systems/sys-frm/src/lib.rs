@@ -87,6 +87,7 @@ impl System for Frm {
             firms_per_employed: prims.firms_per_employed,
             size_exponent: prims.size_exponent,
             deposit_share: prims.deposit_share,
+            depreciation: prims.depreciation,
             classes: d.prim(&SIZE_CLASSES),
         };
         d.pop_kind(SMALL_FIRM.name).key_attr(REGION).key_attr(SIZE).sited_by(REGION.name).resolution(ResolutionDecl {

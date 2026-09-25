@@ -9,7 +9,7 @@ use phx_ledger::algebra::Terms;
 use phx_ledger::books::{self, Books};
 use phx_ledger::instruction::{Effect, ReasonDecl, ReasonId};
 use phx_ledger::instrument::{InstrumentFamily, NewInstrument};
-use phx_ledger::opening::{currency, derived, hold, key, whole};
+use phx_ledger::opening::{currency, derived, hold, key};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_rand::float::{floor_to_u64, from_u64};
@@ -19,8 +19,6 @@ use crate::consts::{MILLION, PERCENT, PURPOSES, SITES, SIZES};
 use crate::{CountPrim, FIRM, FixedPrim, OpeningStream};
 
 const FIRMS: &str = "FRM.firms";
-const DEBT: &str = "FRM.debt";
-const DEPOSITS: &str = "FRM.deposits";
 const PLANT: &str = "FRM.plant";
 
 /// The primitives the firms' opening reads.
@@ -60,9 +58,8 @@ pub fn largest(firms: u64, rank: u64, alpha: f64, draws: &mut phx_rand::Draws) -
 }
 
 /// Each country's largest firms: the persons employed, the firms the law's scale gives them, and the largest down to
-/// the promotion rank, drawn by size and sited in the country. Each draws its debt and its deposits in proportion to
-/// its employees, of the country's firm debt and of the firms' share of the banks' deposits, and its plant, of the
-/// capital the steady path gives the country's investment, growth and wear.
+/// the promotion rank, drawn by size and sited in the country. Their debt, deposits and plant are drawn with the small
+/// firms', over every firm.
 #[clause("GEN.2", "GEN.3", "REP.2", "PTY.9")]
 #[derive(Debug)]
 pub struct Parties {
@@ -82,34 +79,15 @@ impl Parties {
         let alpha = p.size_exponent.shared(register).to_f64();
         let mut draws = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, SIZES, 0));
         let sizes = largest(firms, rank, alpha, &mut draws);
-        let debt = derived(c, "GEN.firm_debt") / PERCENT * c.gdp;
-        let deposits = p.deposit_share.shared(register).to_f64() * derived(c, "GEN.bank_deposits") / PERCENT * c.gdp;
-        let wear = p.depreciation.shared(register).to_f64();
-        let growth = derived(c, "GEN.growth") / PERCENT;
-        let capital = derived(c, "GEN.investment") / PERCENT / (growth + wear) * c.gdp;
-        let mut out: [Vec<(PartyId, u64)>; 4] = Default::default();
+        let mut headcounts: Vec<(PartyId, u64)> = Vec::with_capacity(sizes.len());
         for (ordinal, size) in (0_u32..).zip(&sizes) {
             let mut at = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, SITES, ordinal));
             let site = c.site(&mut at);
             let firm = books::of(opening).parties.begin(FIRM.name, site, day);
-            let share = from_u64(*size) / employed;
-            let amount = |total: f64| {
-                let Ok(whole) = u64::try_from(whole(total * share)) else {
-                    violation!(clause = "GEN.4", "a firm's amount below nothing", firm = firm.get());
-                };
-                whole
-            };
-            let [headcounts, owed, held, plant] = &mut out;
             headcounts.push((firm, *size));
-            owed.push((firm, amount(debt)));
-            held.push((firm, amount(deposits)));
-            plant.push((firm, amount(capital)));
         }
         let (b, report) = books::split(opening);
-        let [headcounts, owed, held, plant] = out;
-        for (name, list) in [(FIRMS, headcounts), (DEBT, owed), (DEPOSITS, held), (PLANT, plant)] {
-            b.drawn.insert(key(name, c.id), list);
-        }
+        b.drawn.insert(key(FIRMS, c.id), headcounts);
         report.distributions.push((
             key(FIRMS, c.id),
             format!(
@@ -131,10 +109,10 @@ impl Contribution for Parties {
         &[]
     }
     fn writes(&self) -> &'static [&'static str] {
-        &[FIRMS, DEBT, DEPOSITS, PLANT]
+        &[FIRMS]
     }
     fn drawn(&self) -> &'static [&'static str] {
-        &[FIRMS, DEBT, DEPOSITS, PLANT]
+        &[FIRMS]
     }
     fn derived(&self) -> &'static [&'static str] {
         &[]

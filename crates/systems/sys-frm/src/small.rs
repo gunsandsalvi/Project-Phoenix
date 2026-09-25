@@ -26,6 +26,7 @@ use crate::{BANK_ATTR, FixedPrim, REGION, SIZE, SMALL_FIRM, SmallStream};
 const FIRMS: &str = "FRM.firms";
 const DEBT: &str = "FRM.debt";
 const DEPOSITS: &str = "FRM.deposits";
+const PLANT: &str = "FRM.plant";
 const BANKS: &str = "BNK.banks";
 /// Each small-firm cell with the persons its firms employ, their deposits and their debt.
 pub const SMALL_FIRMS: &str = "FRM.small_firms";
@@ -36,12 +37,16 @@ pub const SMALL_BANKS: &str = "FRM.small_banks";
 /// Each small-firm cell with its firms.
 pub const SMALL_COUNTS: &str = "FRM.small_counts";
 
+/// Parties with an amount each, as the opening's draws are kept.
+type Amounts = Vec<(PartyId, u64)>;
+
 /// The primitives the small firms' opening reads.
 #[derive(Clone, Copy, Debug)]
 pub struct SmallPrims {
     pub firms_per_employed: FixedPrim,
     pub size_exponent: FixedPrim,
     pub deposit_share: FixedPrim,
+    pub depreciation: FixedPrim,
     pub classes: Prim<Partition>,
 }
 
@@ -222,25 +227,24 @@ impl SmallFirms {
             banked.push((*cell, bank.get()));
             counts.push((*cell, *firms));
         }
-        let total_small = |name: &str, total: f64| {
-            let held: u64 = drawn(books, name, c).iter().map(|(_, a)| *a).sum();
-            let Some(left) = whole_u64(total).checked_sub(held) else {
-                violation!(clause = "GEN.4", "the large firms holding more than all firms", country = c.id.get());
-            };
-            left
-        };
-        let deposits = total_small(
-            DEPOSITS,
-            p.deposit_share.shared(register).to_f64() * derived(c, "GEN.bank_deposits") / PERCENT * c.gdp,
-        );
-        let debt = total_small(DEBT, derived(c, "GEN.firm_debt") / PERCENT * c.gdp);
-        let heads: Vec<u64> = cells.iter().map(|(_, n)| *n).collect();
+        let wear = p.depreciation.shared(register).to_f64();
+        let capital = derived(c, "GEN.investment") / PERCENT / (derived(c, "GEN.growth") / PERCENT + wear) * c.gdp;
+        let deposits = p.deposit_share.shared(register).to_f64() * derived(c, "GEN.bank_deposits") / PERCENT * c.gdp;
+        let debt = derived(c, "GEN.firm_debt") / PERCENT * c.gdp;
+        let firms: Vec<(PartyId, u64)> = large.iter().chain(&cells).copied().collect();
+        let heads: Vec<u64> = firms.iter().map(|(_, n)| *n).collect();
         let mut split = ctx.draws(&SmallStream::DECL, subject(AMOUNTS));
-        let share = |total: u64, lot: &mut phx_rand::Draws| -> Vec<(PartyId, u64)> {
-            let parts = apportion(total, &heads, lot);
-            cells.iter().zip(parts).map(|((cell, _), a)| (*cell, a)).collect()
+        // Each total apportioned exactly over every firm by its drawn employees, the large firms first.
+        let mut share = |total: f64| -> (Amounts, Amounts) {
+            let parts: Vec<(PartyId, u64)> =
+                firms.iter().zip(apportion(whole_u64(total), &heads, &mut split)).map(|((f, _), a)| (*f, a)).collect();
+            let (mine, theirs) = parts.split_at(large.len());
+            (mine.to_vec(), theirs.to_vec())
         };
-        let (deposits, debt) = (share(deposits, &mut split), share(debt, &mut split));
+        let (large_deposits, deposits) = share(deposits);
+        let (large_debt, debt) = share(debt);
+        let (plant, _) = share(capital);
+        let heads: Vec<u64> = cells.iter().map(|(_, n)| *n).collect();
         let employed_small: u64 = heads.iter().sum();
         let firms_small = small;
         for (name, list) in [
@@ -249,6 +253,9 @@ impl SmallFirms {
             (SMALL_DEBT, debt),
             (SMALL_BANKS, banked),
             (SMALL_COUNTS, counts),
+            (DEPOSITS, large_deposits),
+            (DEBT, large_debt),
+            (PLANT, plant),
         ] {
             books.drawn.insert(key(name, c.id), list);
         }
@@ -258,8 +265,8 @@ impl SmallFirms {
             format!(
                 "country {}: {firms_small} small firms below the promotion rank's smallest of {cut} persons, employing \
                  {employed_small} of {employed:.0} employed, in {} cells by size class (FRM.size_classes), region \
-                 (by land) and bank (by the banks' drawn sizes); the firms' deposits and debt the large firms do not \
-                 hold, by their employees",
+                 (by land) and bank (by the banks' drawn sizes); the firms' deposits, debt and plant shared over every \
+                 firm by its employees, the small firms' plant not yet held",
                 c.id.get(),
                 landed.new_cells,
             ),
@@ -297,13 +304,13 @@ impl Contribution for SmallFirms {
         PARTIES
     }
     fn reads(&self) -> &'static [&'static str] {
-        &[FIRMS, DEBT, DEPOSITS, BANKS]
+        &[FIRMS, BANKS]
     }
     fn writes(&self) -> &'static [&'static str] {
-        &[SMALL_FIRMS, SMALL_DEPOSITS, SMALL_DEBT, SMALL_BANKS, SMALL_COUNTS]
+        &[SMALL_FIRMS, SMALL_DEPOSITS, SMALL_DEBT, SMALL_BANKS, SMALL_COUNTS, DEPOSITS, DEBT, PLANT]
     }
     fn drawn(&self) -> &'static [&'static str] {
-        &[SMALL_FIRMS, SMALL_BANKS, SMALL_COUNTS]
+        &[SMALL_FIRMS, SMALL_BANKS, SMALL_COUNTS, DEPOSITS, DEBT, PLANT]
     }
     fn derived(&self) -> &'static [&'static str] {
         &[SMALL_DEPOSITS, SMALL_DEBT]
