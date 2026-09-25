@@ -346,6 +346,7 @@ pub fn run_world(
     turns: u32,
     report_path: String,
 ) -> String {
+    crate::stopped::watch(&report_path);
     match run(host.as_ref(), &data_dir, &run_dir, turns, &report_path) {
         Ok(report) => report,
         Err(error) => {

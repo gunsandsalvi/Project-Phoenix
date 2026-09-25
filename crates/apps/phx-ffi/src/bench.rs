@@ -459,6 +459,7 @@ pub fn measure(device: &DeviceInfo, host: &dyn BenchHost) -> Result<Json, String
 #[uniffi::export]
 #[expect(clippy::needless_pass_by_value, reason = "the foreign interface hands over owned values")]
 pub fn run_bench(device: DeviceInfo, host: Arc<dyn BenchHost>, report_path: String) -> String {
+    crate::stopped::watch(&report_path);
     match run(&device, host.as_ref(), &report_path) {
         Ok(report) => report,
         Err(error) => {

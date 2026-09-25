@@ -50,6 +50,12 @@ private val THERMAL = listOf("none", "light", "moderate", "severe", "critical", 
 /** The world's turns the bench runs from its opening: about three months of business days. */
 private const val WORLD_TURNS = 60u
 
+/** The suffix of the file a stopped run leaves beside its report. */
+private const val STOPPED = ".stopped.txt"
+
+private fun stops(activity: ComponentActivity): List<File> =
+    activity.getExternalFilesDir(null)?.listFiles { f -> f.name.endsWith(STOPPED) }?.toList() ?: emptyList()
+
 /** Copies an asset directory to the app's files, so the engine reads it as it reads the repository's data. */
 private fun unpack(activity: ComponentActivity, asset: String, into: File) {
     val names = activity.assets.list(asset) ?: emptyArray()
@@ -85,12 +91,19 @@ fun AppScreen(activity: ComponentActivity) {
     var report by remember { mutableStateOf<String?>(null) }
     var reportFile by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
+    // A run the engine stopped closes the app at once; what stopped it was written beside its report, shown here.
+    LaunchedEffect(Unit) {
+        stops(activity).forEach { f ->
+            lines.add(BenchLine("stopped", f.name.removeSuffix(STOPPED), f.readText(), "", "", 0))
+        }
+    }
     LaunchedEffect(lines.size) {
         if (lines.isNotEmpty()) listState.animateScrollToItem(lines.size - 1)
     }
 
     /** Runs one of the engine's benches on its own thread, showing each line as it comes and keeping its report. */
     fun launch(name: String, file: File, body: (BenchHost) -> String) {
+        stops(activity).forEach { it.delete() }
         lines.clear()
         report = null
         phase = Phase.RUNNING

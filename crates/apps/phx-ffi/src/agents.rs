@@ -114,8 +114,8 @@ fn rate(p: &Person, date: Date) -> f64 {
     RATES.get(band).or(RATES.last()).copied().unwrap_or(0.0)
 }
 
-/// An agent's next hit drawn ahead from a day, as the world's booking draws it: its persons read, their chances, and
-/// the wait to the first hit before the next birthday.
+/// An agent's next hit drawn ahead from a day, as the world's booking draws it: its persons read on that day, their
+/// chances, and the wait to the first hit before the next birthday, which falls after it.
 pub(crate) fn hazard(a: &Agents, slot: Slot, (day, date): (Day, Date), d: &mut Draws) -> Booking {
     let h = household(&a.decl, &a.table, slot);
     let qs: Vec<f64> = h.present().map(|(_, p)| rate(p, date)).collect();
@@ -127,7 +127,7 @@ pub(crate) fn hazard(a: &Agents, slot: Slot, (day, date): (Day, Date), d: &mut D
         let days = phx_id::days_from_civil(c) - phx_id::days_from_civil(date);
         u32::try_from(days).ok().map(|n| Day::new(day.get() + n))
     });
-    next_booking(d, any_hit(&qs), day.succ(), change.map_or(Missing::Absent, Missing::Present))
+    next_booking(d, any_hit(&qs), day, change.map_or(Missing::Absent, Missing::Present))
 }
 
 /// A hit's outcome on an agent, as the world's 3e applies one: its household made explicit, its persons reached drawn,

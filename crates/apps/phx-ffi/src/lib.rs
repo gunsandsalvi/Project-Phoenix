@@ -5,6 +5,7 @@ pub mod bench;
 mod json;
 pub mod load;
 pub mod programme;
+pub mod stopped;
 pub mod world;
 
 pub use bench::{BenchHost, BenchLine, DeviceInfo, run_bench};

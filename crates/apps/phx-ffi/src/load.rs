@@ -624,6 +624,7 @@ pub fn run_load(
     save_dir: String,
     report_path: String,
 ) -> String {
+    crate::stopped::watch(&report_path);
     match run(host.as_ref(), &volumes_path, &save_dir, &report_path) {
         Ok(report) => report,
         Err(error) => {

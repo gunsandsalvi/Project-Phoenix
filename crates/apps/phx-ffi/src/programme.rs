@@ -56,6 +56,7 @@ pub fn run_programme(
     save_dir: String,
     report_path: String,
 ) -> String {
+    crate::stopped::watch(&report_path);
     let world = (data_dir.as_str(), run_dir.as_str(), turns);
     match run(&device, host.as_ref(), world, (&volumes_path, &save_dir), &report_path) {
         Ok(report) => report,
