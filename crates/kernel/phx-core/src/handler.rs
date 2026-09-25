@@ -275,7 +275,7 @@ mod tests {
     struct Tracer;
     impl StreamDef for Tracer {
         const DECL: StreamDecl =
-            StreamDecl { name: "OBS.tracer", purpose: Purpose::Observer, keyed: false, clause: "REP.30" };
+            StreamDecl { name: "OBS.tracer", purpose: Purpose::Observer, keyed: false, clause: "OBS.8" };
     }
 
     struct Offer(u64);

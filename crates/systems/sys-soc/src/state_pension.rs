@@ -88,7 +88,7 @@ pub struct StatePension {
 /// One country's state pension as its pensioners draw it: by sex, the age it starts at, the share covered, and the
 /// pension's line.
 struct Country {
-    year: i32,
+    date: phx_id::Date,
     age: [f64; 2],
     coverage: [f64; 2],
     line: [LineSpec; 2],
@@ -136,7 +136,7 @@ impl AttachmentDraw for StatePension {
             }
         });
         Box::new(Country {
-            year: date.year(),
+            date,
             age: by_sex(self.age.get(register, c.id), AGE_PARTS),
             coverage: by_sex(self.coverage.get(register, c.id), SHARE_PARTS),
             line,
@@ -157,16 +157,9 @@ impl CountryAttachments for Country {
         let mut d = ctx.draws(&PensionStream::DECL, subject);
         let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
         for (place, p) in h.household.persons.iter().enumerate().filter(|(_, p)| adult_roles.contains(&p.role)) {
-            let Some(life) = p.values.iter().find(|(g, _)| if_pop::LIFE_GROUPS.contains(g)).map(|(_, v)| *v) else {
-                violation!(clause = "REP.26", "an adult with no life value");
-            };
             let covered = open_unit(&mut d);
-            let sex = phx_core::component(if_pop::LIFE, life, if_pop::SEX_AT);
-            let born = phx_core::component(if_pop::LIFE, life, if_pop::BIRTH_YEAR_AT);
-            let Ok(born) = i32::try_from(born) else {
-                violation!(clause = "REP.25", "a birth year beyond the calendar")
-            };
-            let age = phx_rand::float::from_i64(i64::from(self.year - if_pop::consts::FIRST_BIRTH_YEAR - born));
+            let Some(sex) = p.attr(if_pop::SEX.name) else { violation!(clause = "REP.26", "a person with no sex") };
+            let age = phx_rand::float::from_i64(p.age_on(self.date));
             let at = match sex {
                 if_pop::FEMALE => 0,
                 if_pop::MALE => 1,

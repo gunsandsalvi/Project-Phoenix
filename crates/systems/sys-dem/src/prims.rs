@@ -99,18 +99,14 @@ declare_prim! {
     pub LIFE_EXPECTANCY = "DEM.life_expectancy" { kind: Endowment, value: Fixed { exp: 2 }, clause: "GEN.15", scope: PerCountry }
 }
 declare_prim! {
-    /// The age classes the key holds persons in, by their first ages.
-    pub AGE_CLASSES = "DEM.age_classes" { kind: Resolution, value: Partition { exp: 0 }, clause: "REP.25", scope: Shared }
+    /// The age classes realised mortality and illness are reported by, by their first ages.
+    pub AGE_CLASSES = "DEM.age_classes" { kind: Resolution, value: Partition { exp: 0 }, clause: "CHN.7", scope: Shared }
 }
 declare_prim! {
     /// The age of majority, below which a person is a child of its household.
     pub MAJORITY = "DEM.age_of_majority" {
         kind: Policy, decided_by: "parliament", value: Count, clause: "POP.16", scope: PerCountry
     }
-}
-declare_prim! {
-    /// The most household cells the representation keeps.
-    pub CELL_BUDGET = "DEM.cell_budget" { kind: Resolution, value: Count, clause: "REP.18", scope: Shared }
 }
 
 /// DEM's primitives as its opening and processes read them.
@@ -138,7 +134,6 @@ pub struct Prims {
 
 impl Prims {
     pub fn declare(d: &mut Declarations) -> Prims {
-        let _: Prim<Count> = d.prim(&CELL_BUDGET);
         Prims {
             survival: d.prim(&SURVIVAL),
             sex_ratio: d.prim(&SEX_RATIO),

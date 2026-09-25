@@ -42,11 +42,11 @@ fn crosses(position: i64, by: i64, at: i64) -> bool {
 /// row whose reached members' share of the funds cannot pay it fails, and every row after it with it, so failure is a
 /// prefix of the order; a row that carries its reached members across another kink splits them off and is paid.
 /// Pure: the caller hands the funds, the members and the kinks.
-#[clause("REP.8", "REP.16")]
+#[clause("REP.9", "REP.16")]
 #[must_use]
 pub fn pooled(funds: i128, weight: u32, rows: &[PooledRow], kinks: &[Kink]) -> Vec<RowOutcome> {
     if weight == 0 {
-        phx_num::violation!(clause = "REP.8", "a pooled flow over a party with no members");
+        phx_num::violation!(clause = "REP.9", "a pooled flow over a party with no members");
     }
     let mut left = funds;
     let mut failed = false;

@@ -18,14 +18,13 @@ pub struct SideDecl {
     pub holder_kinds: &'static [&'static str],
     pub words: u8,
     pub holder_list: bool,
-    /// On a population's cells, the roles whose persons hold the side's rows, each person a member; none, the
+    /// On a population's agents, the roles whose persons hold the side's rows, each person a contract; none, the
     /// households.
     pub holder_roles: &'static [&'static str],
     /// Whether a holder holds at most one row of the kind on this side, as a person holds one job.
     pub exclusive: bool,
     /// Whether a holder's row counts a member for each of its counterparts, as an employer a job for each employee,
-    /// so a cell's member holds any number; otherwise each member holds one, or one for each of its persons in
-    /// `holder_roles`.
+    /// so a twin holds any number; otherwise each twin holds one, or one for each of its persons in `holder_roles`.
     pub many: bool,
 }
 
@@ -744,16 +743,6 @@ impl<B: Backing> Lines<B> {
             versions: BTreeMap::new(),
             fell: (Day::new(0), std::collections::BTreeSet::new()),
         })
-    }
-
-    /// A holder taken off a line's holder list as renumbering moves it, where a side it holds keeps one.
-    pub(crate) fn delist(&mut self, table: u16, holder: Slot, line: LineId, sides: &[Side]) {
-        let kind = self.kind(self.row(line).kind);
-        if sides.iter().any(|s| kind.side(*s).holder_list) {
-            let mut r = self.row(line);
-            self.lists.leave(line.get(), &mut r.holders, table, holder);
-            self.set(line, r);
-        }
     }
 
     /// A holder put back on a line's holder list as a load rebuilds it, where a side it holds keeps one.

@@ -72,8 +72,10 @@ pub(crate) struct RunRecord {
 pub(crate) struct BuildContext {
     pub names: Vec<&'static str>,
     pub declared: phx_ledger::books::Books,
-    /// The population kinds, over which a save's keys, levels and agenda are read back.
-    pub pop: Vec<phx_pop::population::KindSetup>,
+    /// The population kinds with the processes on each, over which a save's agenda is read back, and the
+    /// representation the build holds.
+    pub pop: Vec<(phx_pop::kind::PopKindDecl, usize)>,
+    pub representation: phx_pop::prims::Representation,
     pub record_kinds: Vec<RecordKindDecl>,
     pub permitted: Vec<phx_core::Permitted>,
     pub forms: std::collections::BTreeMap<&'static str, String>,
@@ -203,6 +205,8 @@ impl World {
             date: format!("{:04}-{:02}-{:02}", date.year(), date.month(), date.day()),
             settling_years: self.settling_years.get(),
             read_trace: self.read_trace,
+            multiplicity: self.population.representation.multiplicity,
+            population_divisor: self.population.representation.population_divisor,
             stores: entries,
             world_hash: hex(world_hash),
         }
@@ -248,22 +252,14 @@ impl World {
 
     /// What reading this world's saves needs from its build.
     pub(crate) fn build_context(&self) -> BuildContext {
-        let pop: Vec<phx_pop::population::KindSetup> = self
-            .population
-            .kinds
-            .iter()
-            .map(|k| phx_pop::population::KindSetup {
-                decl: k.decl.clone(),
-                processes: k.processes,
-                tolerances: k.tolerances.clone(),
-                ranks: k.ranks,
-            })
-            .collect();
-        let decls: Vec<phx_pop::kind::PopKindDecl> = pop.iter().map(|s| s.decl.clone()).collect();
+        let pop: Vec<(phx_pop::kind::PopKindDecl, usize)> =
+            self.population.kinds.iter().map(|k| (k.decl.clone(), k.processes)).collect();
+        let decls: Vec<phx_pop::kind::PopKindDecl> = pop.iter().map(|(d, _)| d.clone()).collect();
         BuildContext {
             names: self.names.clone(),
-            declared: self.books.declared(crate::opening::books::size(), crate::opening::books::cell_tables(&decls)),
+            declared: self.books.declared(crate::opening::books::size(), crate::opening::books::agent_tables(&decls)),
             pop,
+            representation: self.population.representation,
             record_kinds: self.records.kinds().to_vec(),
             permitted: self.accounts.permitted().to_vec(),
             forms: self.accounts.forms().clone(),
@@ -282,8 +278,8 @@ fn read_and_hash(dir: &Path, name: &str, ctx: &mut BuildContext, hs: &mut [&mut 
             }
         }
         "books" => {
-            let decls: Vec<phx_pop::kind::PopKindDecl> = ctx.pop.iter().map(|s| s.decl.clone()).collect();
-            let tables = crate::opening::books::cell_tables(&decls);
+            let decls: Vec<phx_pop::kind::PopKindDecl> = ctx.pop.iter().map(|(d, _)| d.clone()).collect();
+            let tables = crate::opening::books::agent_tables(&decls);
             let mut declared = Some(ctx.declared.declared(crate::opening::books::size(), tables));
             let books = read_store(dir, name, &names, &mut |r| {
                 let d = declared.take().ok_or_else(|| LoadError::Invalid("the books read twice".to_owned()))?;
@@ -296,8 +292,8 @@ fn read_and_hash(dir: &Path, name: &str, ctx: &mut BuildContext, hs: &mut [&mut 
         "population" => {
             let first = ctx.declared.parties.first_cell_place();
             let mut space = phx_store::AddressSpace::empty();
-            let mut population =
-                phx_pop::population::Population::new(ctx.pop.clone(), first, phx_id::Day::new(0), &mut space);
+            let (pop, rep) = (ctx.pop.clone(), ctx.representation);
+            let mut population = phx_pop::population::Population::new(pop, rep, first, phx_id::Day::new(0), &mut space);
             read_store(dir, name, &names, &mut |r| population.load_from(r, &mut space))?;
             for h in hs.iter_mut() {
                 population.hash_into(h);

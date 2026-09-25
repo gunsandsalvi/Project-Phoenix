@@ -11,7 +11,7 @@ use crate::rows::{self, RowView};
 /// What the pooled-flow rule reads of a payer, as its table keeps it: how many members its row stands for, what a
 /// member may draw on in an account, the kinks on its positions, and the standing rate a row carries. The kind tables
 /// implement it with a weight of one; the population's cells implement it for their members.
-#[clause("REP.8", "REP.16")]
+#[clause("REP.9", "REP.16")]
 pub trait PayerPositions {
     fn weight(&self, holder: Slot) -> u32;
     /// A member's funds in an account: the row's balance less what is pending, with the facility each member has,

@@ -32,19 +32,3 @@ owner = "FRM"
 source = "assumed"
 source_ref = "Plant wears out at about 5% a year, near the average rate of the capital stock in national accounts (Penn World Table's average depreciation rate is 4-5%), until the classes of capital goods are declared with their own lives."
 value = "0.05"
-
-[[primitive]]
-id = "FRM.size_classes"
-kind = "RESOLUTION"
-owner = "FRM"
-source = "assumed"
-source_ref = "The first employments of the size classes a small firm's key holds it in: Eurostat's structural business statistics' classes by persons employed (one, 2-9, 10-19, 20-49, 50-249, 250 and more), the last running to the smallest firm the promotion rank admits. A resolution setting, changed by measuring the budget (N8.5)."
-value = [1, 2, 10, 20, 50, 250]
-
-[[primitive]]
-id = "FRM.cell_budget"
-kind = "RESOLUTION"
-owner = "FRM"
-source = "assumed"
-source_ref = "The most small-firm cells the representation keeps before tolerance control widens their steps: the architecture's design point of a quarter of a million firm and business cells (N8), set by measuring the budget."
-value = 250000

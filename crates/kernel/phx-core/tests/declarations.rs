@@ -77,7 +77,7 @@ fn declarations_expand_to_the_vocabulary() {
     assert_eq!((Hire::INTENTS, Hire::STREAMS), (&["LAB.offer"][..], &["LAB.matching"][..]));
     assert_eq!(Matching::DECL.purpose, Purpose::Meeting);
     assert!(Application::DECL.validate().is_ok());
-    assert_eq!(INJURY.scheme, DrawScheme::Scheduled { envelope: phx_core::EnvelopeRule::MaxOverProfile });
+    assert_eq!(INJURY.scheme, DrawScheme::Scheduled);
     assert!(ASK.validate().is_ok() && (ASK.rule)(&[3, 4]) == 3);
     assert_eq!((BENEFIT.name, BENEFIT.implementer), ("SOC.unemployment_benefit", "SOC"));
     assert_eq!((VACANCIES.writer, WAGES.owner, WAGES.mode), ("LAB", "LAB", FamilyMode::Rolling { cycle_days: 30 }));

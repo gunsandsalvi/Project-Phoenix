@@ -1,10 +1,10 @@
 //! The full-load bench: the finished world's cost on the phone before the finished world exists. It builds the
-//! stores whose kernels exist at the finished world's sizes — the household cells with their rows on shared lines and
-//! their profile entries, and books whose holders' dated rows fall due every business day or once a month — holds the
-//! rest of the declared bytes as random words from its own stream, and runs a simulated month, each day's kinds of
-//! work at that day type's declared counts through their kernels: settlement, parts split and landed, candidates
-//! screened, the agenda, gathers of the rows a visit reads with arithmetic on them for the mechanisms not yet built,
-//! tolerance's gap estimate, the audit's slice, and full saves. Its numbers are costs, never the world's.
+//! stores whose kernels exist at the finished world's sizes — the household agents with their persons and
+//! attachments, and books whose holders' dated rows fall due every business day or once a month — holds the rest of
+//! the declared bytes as random words from its own stream, and runs a simulated month, each day's kinds of work at
+//! that day type's declared counts through their kernels: settlement, agents' next hits drawn, their outcomes applied,
+//! the agenda, gathers of the rows a visit reads with arithmetic on them for the mechanisms not yet built, the audit's
+//! slice, and full saves. Its numbers are costs, never the world's.
 
 use std::hint::black_box;
 use std::time::Instant;
@@ -12,20 +12,16 @@ use std::time::Instant;
 use phx_exec::{Clock, Pool, PoolSpec, mix64};
 use phx_id::{Date, Day, Slot};
 use phx_ledger::synthetic::{Settlement, SettlementSize, Unaudited, calendar, settlement};
-use phx_num::Missing;
-use phx_pop::landing::land;
-use phx_pop::screen::{Process, ScreenCounters, screen_candidate};
-use phx_pop::synthetic::{DesignPoint, NoKinks, levels, population_at};
-use phx_pop::tolerance::estimate;
 use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
 use phx_store::SystemBacking;
 use serde::Deserialize;
 
+use crate::agents::{Agents, agents, hazard, outcome};
 use crate::bench::{BenchHost, BenchLine};
 use crate::json::Json;
 
 /// The report section's layout.
-const LOAD_VERSION: u64 = 1;
+const LOAD_VERSION: u64 = 2;
 /// The budget: a turn's median and worst wall time, peak resident memory, a full save's time and two saves' bytes.
 const MEDIAN_MS: u64 = 1_000;
 const WORST_MS: u64 = 2_000;
@@ -36,12 +32,8 @@ const MIB: u64 = 1 << 20;
 const GIB: u64 = 1 << 30;
 const KIB: u64 = 1 << 10;
 const NS_PER_MS: u64 = 1_000_000;
-/// The parts of one batch, each of one member, split from one cell and landed together.
-const PART_BATCH: usize = 8;
-/// The share of the held stores and of the cells the audit reads each day: its rolling slice.
+/// The share of the held stores and of the agents the audit reads each day: its rolling slice.
 const AUDIT_SLICES: u64 = 30;
-/// The cells the gap estimate samples, as the representation's primitive declares.
-const GAP_SAMPLE: u32 = 256;
 /// Pieces a parallel kind of work is cut into, per worker.
 const PIECES_PER_WORKER: usize = 4;
 /// The first date the month runs from, a Monday.
@@ -50,15 +42,8 @@ const FIRST: (i32, u8, u8) = (2026, 3, 2);
 const WEEK_BEFORE: (i32, u8, u8) = (2026, 2, 23);
 /// Words a save writes at a time.
 const SAVE_WORDS: usize = 1 << 16;
-/// Streams a part's draws are opened on per batch: more than a batch's parts.
-const PART_STREAMS: u64 = 16;
 /// The fold a gather's reads go through, so the reads cannot be skipped.
 const FOLD_ROTATE: u32 = 5;
-/// The candidates' hazards: three rates by value and the envelope that bounds them, as the screen's bench uses.
-const RATES: [f64; 3] = [0.0004, 0.0012, 0.003];
-const ENVELOPE: f64 = 0.003;
-/// The household cell weight a candidate's rung is booked at: the design point's.
-const BOOKED_WEIGHT: u32 = 170;
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -89,25 +74,22 @@ impl DayType {
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 enum Kernel {
-    Screen,
+    Hazard,
+    Outcome,
     Redraw,
     Agenda,
     Gather,
-    Aggregate,
-    Part,
     Settle,
-    Tolerance,
     Audit,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct PopulationVolumes {
-    cells: u32,
-    members_per_cell: u32,
-    rows_per_cell: u32,
-    lines: u32,
-    profile_entries_per_cell: u32,
+    agents: u32,
+    multiplicity: u32,
+    persons_per_agent: u32,
+    attachments_per_agent: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -322,11 +304,10 @@ fn greatest(values: &[u64]) -> Option<u64> {
 /// The stores and books the month runs over.
 struct Load {
     pool: Pool,
-    population: DesignPoint<SystemBacking>,
+    population: Agents,
     books: Settlement<SystemBacking>,
     stores: Vec<Vec<u64>>,
     names: Vec<String>,
-    cells: Vec<Slot>,
 }
 
 impl Load {
@@ -334,12 +315,11 @@ impl Load {
         name.and_then(|n| self.names.iter().position(|m| m == n))
     }
 
-    /// A random live cell of more members than a batch of parts takes.
-    fn cell(&self, d: &mut Draws) -> Option<Slot> {
-        let at = usize::try_from(below_u64(d, u64::try_from(self.cells.len()).unwrap_or(0))).ok()?;
-        let slot = self.cells.get(at).copied()?;
-        let enough = u32::try_from(PART_BATCH).unwrap_or(u32::MAX);
-        (self.population.table.is_live(slot) && self.population.table.weight(slot).get() > enough).then_some(slot)
+    /// A random agent.
+    fn agent(&self, d: &mut Draws) -> Option<Slot> {
+        let slots = &self.population.slots;
+        let at = usize::try_from(below_u64(d, u64::try_from(slots.len()).unwrap_or(0))).ok()?;
+        slots.get(at).copied()
     }
 
     /// One kind of work on one day, at its count for the day's type.
@@ -347,34 +327,33 @@ impl Load {
         if count == 0 {
             return;
         }
-        let lv = levels();
         match w.kernel {
-            Kernel::Screen => {
-                let (table, cells) = (&self.population.table, &self.cells);
+            Kernel::Hazard => {
+                let population = &self.population;
                 let n = piece_count(&self.pool);
-                let screened = self.pool.map(n, |p| {
-                    // Each worker its own hazard, as each chunk of the world's screening reads its processes.
-                    let rate = |_: usize, v: u32, _: Day| {
-                        RATES.get(usize::try_from(v).unwrap_or(usize::MAX)).copied().unwrap_or(ENVELOPE)
-                    };
-                    let envelope = |_: &[(usize, u32)], _: Day| (ENVELOPE, Missing::Absent);
-                    let process = Process { groups: &[0], persons: 1, rate: &rate, envelope: &envelope };
+                let drawn = self.pool.map(n, |p| {
                     let (first, units) = piece(count, n, p);
                     let mut d = draws(4, first, day);
-                    let mut c = ScreenCounters::default();
-                    let booked = phx_pop::envelope::rung(BOOKED_WEIGHT);
-                    let len = u64::try_from(cells.len()).unwrap_or(0);
+                    let len = u64::try_from(population.slots.len()).unwrap_or(0);
+                    let mut hits = 0_u64;
                     for _ in 0..units {
                         let at = usize::try_from(below_u64(&mut d, len)).unwrap_or(0);
-                        let Some(slot) = cells.get(at) else { continue };
-                        let _ =
-                            black_box(screen_candidate(table, *slot, &process, Day::new(day), booked, &mut d, &mut c));
+                        let Some(slot) = population.slots.get(at) else { continue };
+                        let booked = hazard(population, *slot, (Day::new(day), date), &mut d);
+                        hits += u64::from(matches!(booked, phx_pop::hazard::Booking::Hit(_)));
                     }
-                    c.candidates
+                    hits
                 });
-                black_box(screened);
+                black_box(drawn);
             }
-            Kernel::Redraw | Kernel::Aggregate => {
+            Kernel::Outcome => {
+                let mut d = draws(5, 0, day);
+                for _ in 0..count {
+                    let Some(slot) = self.agent(&mut d) else { continue };
+                    outcome(&mut self.population, slot, date, &mut d);
+                }
+            }
+            Kernel::Redraw => {
                 if let Some(at) = self.store(w.store.as_ref())
                     && let Some(store) = self.stores.get_mut(at)
                 {
@@ -389,7 +368,6 @@ impl Load {
             Kernel::Gather => {
                 black_box(gather(&self.pool, &self.stores, count, w.reads.unwrap_or(1), day));
             }
-            Kernel::Part => self.parts(count, day, &lv),
             Kernel::Settle => {
                 if kind == DayType::Closed {
                     return;
@@ -403,40 +381,17 @@ impl Load {
                 // The day's book is the close's to take, as the world's is, or it grows over the month.
                 black_box(self.books.books.close().dues.len());
             }
-            Kernel::Tolerance => {
-                let mut d = draws(8, 0, day);
-                let p = &self.population;
-                black_box(estimate(&p.table, &p.index, &p.kind, &lv, &[], GAP_SAMPLE, &mut d).pairs.len());
-            }
             Kernel::Audit => {
                 let all: Vec<&Vec<u64>> = self.stores.iter().collect();
                 black_box(sweep(&all, AUDIT_SLICES, u64::from(day)));
                 let step = usize::try_from(AUDIT_SLICES).unwrap_or(1);
                 let skip = usize::try_from(u64::from(day) % AUDIT_SLICES).unwrap_or(0);
                 let t = &self.population.table;
+                let slots = &self.population.slots;
                 black_box(
-                    self.cells.iter().skip(skip).step_by(step).fold(0, |a, s| fold(a, u64::from(t.weight(*s).get()))),
+                    slots.iter().skip(skip).step_by(step).fold(0, |a, s| fold(a, u64::from(t.multiplicity(*s).get()))),
                 );
             }
-        }
-    }
-
-    /// Parts of one member each, split from random cells a batch at a time and landed with their holder lists.
-    fn parts(&mut self, count: u64, day: u32, lv: &[u8]) {
-        let kinks = NoKinks;
-        let mut d = draws(5, 0, day);
-        let batches = count / u64::try_from(PART_BATCH).unwrap_or(1);
-        for b in 0..batches {
-            let Some(slot) = self.cell(&mut d) else { continue };
-            let p = &mut self.population;
-            p.origin = slot;
-            let mut streams: Vec<Draws> =
-                (0..PART_STREAMS).take(PART_BATCH).map(|i| draws(6, b * PART_STREAMS + i, day)).collect();
-            let parts = p.parts(&[1; PART_BATCH], &mut streams);
-            p.table.rekey(slot, &p.kind, lv);
-            let mut index = std::mem::take(&mut p.index);
-            black_box(land(&mut p.tenb(&kinks, lv), &mut index, parts).rows);
-            p.index = index;
         }
     }
 }
@@ -463,10 +418,10 @@ fn build(v: &Volumes, host: &dyn BenchHost, holidays: &[Date], (first, heavy): (
         return Err("no Monday before the first".to_owned());
     };
     let pool = Pool::new(&PoolSpec::detect()).map_err(|e| e.0)?;
-    show(host, "building", "the household cells and their rows".to_owned(), String::new(), "");
+    show(host, "building", "the household agents, their persons and attachments".to_owned(), String::new(), "");
     let mut d = draws(3, 0, 0);
     let pv = &v.population;
-    let population = population_at::<SystemBacking>(pv.cells, pv.rows_per_cell, pv.lines, &mut d);
+    let population = agents(pv.agents, pv.persons_per_agent, pv.attachments_per_agent, pv.multiplicity, &mut d);
     show(host, "building", "the books' holders and their dated rows".to_owned(), String::new(), "");
     let sv = &v.settlement;
     let size = SettlementSize {
@@ -479,9 +434,8 @@ fn build(v: &Volumes, host: &dyn BenchHost, holidays: &[Date], (first, heavy): (
     let books = settlement::<SystemBacking>(size, calendar(holidays)?, (week_before, first, heavy))?;
     show(host, "building", "the held stores".to_owned(), String::new(), "");
     let stores: Vec<Vec<u64>> = v.stores.iter().zip(0_u64..).map(|(s, i)| held(&pool, s.bytes, i)).collect();
-    let cells = population.table.slots().collect();
     let names = v.stores.iter().map(|s| s.name.clone()).collect();
-    Ok(Load { pool, population, books, stores, names, cells })
+    Ok(Load { pool, population, books, stores, names })
 }
 
 fn verdict(ok: bool) -> &'static str {
@@ -618,9 +572,10 @@ fn report_json(
     Json::obj([
         ("load_version", Json::UInt(LOAD_VERSION)),
         ("commit", Json::str(option_env!("PHX_COMMIT").unwrap_or("unknown"))),
-        ("population_cells", Json::UInt(u64::from(v.population.cells))),
-        ("population_members_per_cell", Json::UInt(u64::from(v.population.members_per_cell))),
-        ("population_profile_entries_per_cell", Json::UInt(u64::from(v.population.profile_entries_per_cell))),
+        ("population_agents", Json::UInt(u64::from(v.population.agents))),
+        ("population_multiplicity", Json::UInt(u64::from(v.population.multiplicity))),
+        ("population_persons_per_agent", Json::UInt(u64::from(v.population.persons_per_agent))),
+        ("population_attachments_per_agent", Json::UInt(u64::from(v.population.attachments_per_agent))),
         ("built_ms", Json::UInt(built_ms)),
         ("built_vm_hwm_bytes", Json::opt(built_peak, Json::UInt)),
         ("days", Json::Array(days.collect())),
@@ -701,8 +656,7 @@ mod tests {
         let full = include_str!("../../../../perf/load/volumes.toml");
         let mut table: toml::Table = toml::from_str(full).unwrap();
         let pop = table.get_mut("population").unwrap().as_table_mut().unwrap();
-        pop.insert("cells".to_owned(), 2_000.into());
-        pop.insert("lines".to_owned(), 5_000.into());
+        pop.insert("agents".to_owned(), 2_000.into());
         let set = table.get_mut("settlement").unwrap().as_table_mut().unwrap();
         set.insert("holders".to_owned(), 3_000.into());
         set.insert("banks".to_owned(), 3.into());

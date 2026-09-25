@@ -54,19 +54,19 @@ pub use decisions::{Decider, DecisionPointDecl, Player, PlayerQueue, QueuedInten
 pub use directory::{Directory, PartyState, Resolved};
 pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};
 pub use events_rule::{EventsRule, NewsEntry, Notice, PUBLIC_EVENTS};
-pub use extensions::{GroupDemand, PublicEventRule, TRACER_STREAM, TRACERS, TracedCells};
+pub use extensions::{GroupDemand, PublicEventRule};
 pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
 };
 pub use family::{
-    AUDIT_SUBSTEP, AccountsAudit, AuditFamily, AuditInputs, AuditStream, BooksAudit, CellsAudit, FamilyCtx, FamilyDecl,
-    FamilyMode, Gap, InjectTarget, LegDigest, LegRecords, MarketsAudit, ReadTrace, Span, rolling_slice,
+    AUDIT_SUBSTEP, AccountsAudit, AgentsAudit, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx,
+    FamilyDecl, FamilyMode, Gap, InjectTarget, LegDigest, LegRecords, MarketsAudit, ReadTrace, Span, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{
     Ctx, CtxParts, DrawsFrom, Emits, FactStore, HandlerDecl, IntentDef, Intents, Opened, Reads, RunChunk, Writes,
 };
-pub use hazards::{ActsOn, DrawScheme, EnvelopeRule, HazardDecl, RateChange, RateFn, annual_to_daily};
+pub use hazards::{ActsOn, DrawScheme, HazardDecl, RateChange, RateFn, annual_to_daily};
 pub use kind_tables::{FacetDecl, KindTable, ListKind, NewIndividual, RunHead};
 pub use kinds::{ESTATE_KIND, Feature, KindDecl, KindId, KindTableRef, LEGAL_FORMS, LegalForm};
 pub use kinks::{KinkDecl, KinkOn, KinkRegistry, KinkSource};
@@ -80,11 +80,8 @@ pub use phx_macros::{
     declare_message, declare_prim, declare_record, declare_rule, declare_stream,
 };
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
-pub use pop::{
-    GroupDecl, KeyAttrDecl, PinDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, PositionOf, ProfileComponent,
-    RankDecl, RateDecl, ResolutionDecl, RoleCount, RoleDecl, ScaleRef, component, joint,
-};
-pub use pop_process::{CellView, Household, Person, PopProcess};
+pub use pop::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, RoleDecl};
+pub use pop_process::{AgentView, Household, Person, PopProcess};
 pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};
 pub use register::limit::{Binding, Bindings, Bound, DeclaredLimit, Limited, PhysicalToken, TermsToken};
 pub use register::profile::{JointProfile, Pinned, ProfileValue, Transform, draw_profile};

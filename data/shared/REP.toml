@@ -1,27 +1,19 @@
-# The representation's resolution settings shared by every population kind (spec REP.18): how many cells the decision
-# gap's estimate samples, the share of the budget below which tolerances narrow, and the day of each month ranks are
-# read. Each kind's own cell budget and ranks are its own system's.
+# The representation (spec REP.40, Appendix E 44): every household and small firm an agent, the full population as
+# agents of one multiplicity (twins) or one factor-th of it as agents of one party each (a small world). Twins is the
+# default; `phx run --representation twins:K|small:K` sets both for a build run.
 
 [[primitive]]
-id = "REP.gap_sample"
+id = "REP.multiplicity"
 kind = "RESOLUTION"
 owner = "REP"
 source = "assumed"
-source_ref = "Resolution (spec REP.39): 256 sampled cells a read, enough that a position whose widening would unite one cell in a hundred with a partner is found in about nine reads in ten; set by measurement at the gate (N8.5)."
-value = 256
+source_ref = "Resolution (spec REP.40, N8.5): the twins every household and small firm agent stands for under the default representation, twins. Twenty draws about six and a half million household agents for three countries of 300 million people; the factor is set by measuring the budget on the build machine and the phone (plan S0.28 R6)."
+value = 20
 
 [[primitive]]
-id = "REP.narrow_share"
+id = "REP.population_divisor"
 kind = "RESOLUTION"
 owner = "REP"
 source = "assumed"
-source_ref = "Resolution (spec REP.28): tolerances narrow on light days while the cells carried are below nine tenths of the budget, so a narrowing leaves room before widening is needed again; set by measurement at the gate (N8.5)."
-value = 0.90
-
-[[primitive]]
-id = "REP.rank_day"
-kind = "RESOLUTION"
-owner = "REP"
-source = "assumed"
-source_ref = "Resolution (spec REP.29): ranks are read on the first day of each month."
+source_ref = "Resolution (spec REP.40): what the setup's total population is divided by before the countries are derived. One under twins, the full population; the factor under a small world."
 value = 1

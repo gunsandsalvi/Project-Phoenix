@@ -24,7 +24,7 @@ pub enum DayLeg {
 
 /// A day's amount: the rate per member, times the region's index that day over its scale for an indexed flow, times
 /// the members the flow reaches that day, rounded once.
-#[clause("REP.8")]
+#[clause("REP.9")]
 #[must_use]
 pub fn day_amount(per_member: i64, index: Missing<(i64, i64)>, reached: u32, rounding: Round) -> i64 {
     let whole = i128::from(per_member) * i128::from(reached);
@@ -65,7 +65,7 @@ pub fn kink_day(position: i64, per_day: i64, kink: i64) -> Missing<u32> {
 
 /// An indexed flow's day tested as the stream tests every row it reads: its realised amount against the payer's funds
 /// and every kink on the reached members' position, on the day it posts, whether its leg settles or waits pending.
-#[clause("REP.8", "REP.16")]
+#[clause("REP.9", "REP.16")]
 #[must_use]
 pub fn indexed_day(
     funds: i128,
@@ -77,7 +77,7 @@ pub fn indexed_day(
 ) -> RowOutcome {
     let row = PooledRow { per_member, reached, position, moves: per_member };
     let [out] = pooled(funds, weight, &[row], kinks)[..] else {
-        phx_num::violation!(clause = "REP.8", "a pooled test of one row gave other than one outcome");
+        phx_num::violation!(clause = "REP.9", "a pooled test of one row gave other than one outcome");
     };
     out
 }

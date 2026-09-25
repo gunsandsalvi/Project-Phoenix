@@ -9,16 +9,10 @@ use phx_rand::{
     geometric, hypergeometric, multinomial, normal, open_unit, philox, philox_x4, pick_without_replacement, stream_key,
 };
 
-use phx_pop::check::{View, check};
-use phx_pop::join::{Landing, join};
-use phx_pop::landing::{LandingIndex, land, landing_key};
-use phx_pop::synthetic::{NoKinks, design_point, levels};
-use phx_store::SystemBacking;
-
 use crate::json::Json;
 
 /// The report's layout; a change to it is a new version and a new schema.
-const REPORT_VERSION: u64 = 1;
+const REPORT_VERSION: u64 = 2;
 const GIB: u64 = 1 << 30;
 
 /// The phone and the build, as the app knows them.
@@ -299,87 +293,52 @@ fn kernels(run: &mut Run<'_>, pool: &Pool) {
     run.target("gather of 512 MB of intents", "GB/s", bytes / secs / 1e9, &Target::AtLeast(4.0));
 }
 
-/// Nanoseconds a part takes at the design point, measured on one core: a lone part's four components — split (rows,
-/// profiles and positions divided), the origin re-keyed, the key looked up and checked, and the join with its holder
-/// lists — and parts leaving one cell and landing in one cell in batches of eight, split, re-keyed and landed together.
-struct PartCosts {
-    lone: [u64; 4],
-    lone_parts: u32,
-    batched: u64,
-    batched_parts: u32,
-}
+/// Agents the per-agent costs are measured over, of three persons and forty attachments each: the design point's.
+const COST_AGENTS: u32 = 50_000;
+const COST_PERSONS: u32 = 3;
+const COST_ATTACHMENTS: u32 = 40;
+const COST_TWINS: u32 = 170;
+/// Next hits drawn and outcomes applied in the measure.
+const COST_DRAWS: u32 = 200_000;
+const COST_OUTCOMES: u32 = 50_000;
 
-/// Parts of one member each in a batch; a batch of one member each is the batch's cheapest part, since every row
-/// still reads its leavers.
-const BATCH: [u32; 8] = [1; 8];
-const LONE_PARTS: u32 = 150;
-const BATCHES: u32 = 16;
-
-fn part_costs(clock: &Mono) -> Option<PartCosts> {
-    let lv = levels();
-    let kinks = NoKinks;
-    let mut dp = design_point::<SystemBacking>();
-    let mut lone = [0_u64; 4];
-    for i in 0..LONE_PARTS {
-        let mut d = Draws::new(stream_key(Seed::new(1), "REP.bench"), Subject::new(SubjectTag::World, 0), i, 0);
-        let t0 = clock.now_ns();
-        let part = dp.part(i, 1, &mut d);
-        let t1 = clock.now_ns();
-        let origin = dp.origin;
-        dp.table.rekey(origin, &dp.kind, &lv);
-        let t2 = clock.now_ns();
-        let view = View::of_part(&part, &dp.keys, &dp.kind, &lv);
-        let phx_num::Missing::Present(key) = view.key else { return None };
-        let lk = landing_key(key, &view.steps, &view.sig);
-        let target = dp.index.candidates(lk).into_iter().find(|(_, slot)| {
-            check(&view, &View::of_cell(&dp.table, *slot, &dp.ledger, &dp.kind, &lv), &kinks).is_ok()
-        });
-        let t3 = clock.now_ns();
-        let (_, slot) = target?;
-        let landing = Landing { part: part.id, target: slot };
-        black_box(join(&mut dp.ledger, &mut dp.table, 0, &landing, part).rows);
-        let t4 = clock.now_ns();
-        for (s, (a, b)) in lone.iter_mut().zip([(t0, t1), (t1, t2), (t2, t3), (t3, t4)]) {
-            *s += b - a;
+/// Nanoseconds an agent's next hit takes to draw, and a hit's outcome to apply, measured on one core.
+fn agent_costs(clock: &Mono) -> (u64, u64) {
+    let mut d = Draws::new(stream_key(Seed::new(1), "REP.bench"), Subject::new(SubjectTag::World, 0), 0, 0);
+    let mut population = crate::agents::agents(COST_AGENTS, COST_PERSONS, COST_ATTACHMENTS, COST_TWINS, &mut d);
+    let Some(date) = phx_id::Date::new(2026, 3, 2) else { return (0, 0) };
+    let slots = population.slots.clone();
+    let n = u64::try_from(slots.len()).unwrap_or(0);
+    let t0 = clock.now_ns();
+    for _ in 0..COST_DRAWS {
+        let at = usize::try_from(phx_rand::below_u64(&mut d, n)).unwrap_or(0);
+        if let Some(slot) = slots.get(at) {
+            black_box(crate::agents::hazard(&population, *slot, (phx_id::Day::new(0), date), &mut d));
         }
     }
-    let mut dp = design_point::<SystemBacking>();
-    let mut batched = 0;
-    for b in 0..BATCHES {
-        let mut streams: Vec<Draws> = (0..8)
-            .map(|i| {
-                Draws::new(stream_key(Seed::new(1), "REP.bench"), Subject::new(SubjectTag::World, 1), b * 8 + i, 0)
-            })
-            .collect();
-        let t0 = clock.now_ns();
-        let parts = dp.parts(&BATCH, &mut streams);
-        let origin = dp.origin;
-        dp.table.rekey(origin, &dp.kind, &lv);
-        let mut index = std::mem::take(&mut dp.index);
-        black_box(land(&mut dp.tenb(&kinks, &lv), &mut index, parts).rows);
-        batched += clock.now_ns() - t0;
-        dp.index = index;
+    let t1 = clock.now_ns();
+    for _ in 0..COST_OUTCOMES {
+        let at = usize::try_from(phx_rand::below_u64(&mut d, n)).unwrap_or(0);
+        if let Some(slot) = slots.get(at) {
+            crate::agents::outcome(&mut population, *slot, date, &mut d);
+        }
     }
-    Some(PartCosts { lone, lone_parts: LONE_PARTS, batched, batched_parts: BATCHES * 8 })
+    let t2 = clock.now_ns();
+    ((t1 - t0) / u64::from(COST_DRAWS), (t2 - t1) / u64::from(COST_OUTCOMES))
 }
 
-/// A part's costs against its share of the budget's 2.5 µs, measured on the fastest core like the samplers.
-fn parts(run: &mut Run<'_>, pool: &Pool) {
+/// An agent's costs against the budget's units: a next hit drawn ahead (180 ns) and a hit's outcome applied in place,
+/// measured on the fastest core like the samplers.
+fn agent_units(run: &mut Run<'_>, pool: &Pool) {
     let clock = &run.clock;
-    let Some(costs) = pool.on_every_worker(|| part_costs(clock)).into_iter().next().flatten() else {
-        run.line("targets", "a part", "not measured: the design point's part found no target".to_owned(), None);
-        return;
-    };
-    let per = |ns: u64, n: u32| to_f64(ns) / f64::from(n) / 1e3;
-    let [split, rekey, lookup, joined] = costs.lone;
-    let n = costs.lone_parts;
-    run.target("a part's split: rows, profiles and positions", "µs", per(split, n), &Target::AtMost(1.0));
-    run.target("a part's origin re-keyed", "µs", per(rekey, n), &Target::AtMost(0.2));
-    run.target("a part's key, lookup and check", "µs", per(lookup, n), &Target::AtMost(0.4));
-    run.target("a part's join and holder lists", "µs", per(joined, n), &Target::AtMost(0.9));
-    run.target("a part end to end", "µs", per(split + rekey + lookup + joined, n), &Target::AtMost(2.5));
-    let each = per(costs.batched, costs.batched_parts);
-    run.target("a part in a batch of eight, end to end", "µs", each, &Target::AtMost(2.5));
+    let Some((draw, apply)) = pool.on_every_worker(|| agent_costs(clock)).into_iter().next() else { return };
+    run.target("an agent's next hit drawn ahead", "ns", to_f64(draw), &Target::AtMost(180.0));
+    run.target(
+        "a hit's outcome on its agent, made explicit and written back",
+        "ns",
+        to_f64(apply),
+        &Target::AtMost(2500.0),
+    );
 }
 
 /// Core rates sampled at one moment of the run, shown and kept for the report.
@@ -465,13 +424,13 @@ pub fn measure(device: &DeviceInfo, host: &dyn BenchHost) -> Result<Json, String
     }
 
     kernels(&mut run, &pool);
-    parts(&mut run, &micro_pool);
+    agent_units(&mut run, &micro_pool);
     let (_, fast_end) = sample_rates(&mut run, &mut rates, "end", &spec.cores);
     run.target("pool fast-core-seconds per second at the end", "", fast_end, &Target::AtLeast(3.0));
 
     let report = Json::obj([
         ("report_version", Json::UInt(REPORT_VERSION)),
-        ("step", Json::str("S0.23")),
+        ("step", Json::str("S0.28")),
         ("commit", Json::str(option_env!("PHX_COMMIT").unwrap_or("unknown"))),
         (
             "device",

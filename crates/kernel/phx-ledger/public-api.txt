@@ -223,8 +223,6 @@ impl phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::DayBook::is_empty(&self) -> bool
 impl phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::DayBook::measure(&self) -> phx_ledger::apply::Settlement
-impl phx_ledger::apply::DayBook
-pub fn phx_ledger::apply::DayBook::waiting(&self) -> alloc::vec::Vec<phx_ledger::fails::Fail>
 pub struct phx_ledger::apply::DisposedRec
 pub phx_ledger::apply::DisposedRec::cost: i64
 pub phx_ledger::apply::DisposedRec::day: phx_id::day::Day
@@ -247,23 +245,11 @@ pub fn phx_ledger::apply::Ledger<B>::arrears(&self) -> &phx_ledger::contract_pro
 pub fn phx_ledger::apply::Ledger<B>::close(&mut self) -> phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::Ledger<B>::day_book(&self) -> &phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::Ledger<B>::fails(&self) -> &[phx_ledger::fails::Fail]
-pub fn phx_ledger::apply::Ledger<B>::flush_outside(&mut self, &mut dyn phx_core::family::AuditStream)
 pub fn phx_ledger::apply::Ledger<B>::new(phx_ledger::instrument::Instruments<B>, phx_ledger::line::Lines<B>) -> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::next_id(&mut self, phx_id::day::Day) -> phx_ledger::instruction::InstructionId
 pub fn phx_ledger::apply::Ledger<B>::opened(&mut self)
 pub fn phx_ledger::apply::Ledger<B>::position(&self, &dyn phx_ledger::holder::HolderArenas, phx_id::ids::PartyId, phx_id::ids::Slot, u64) -> i64
 pub fn phx_ledger::apply::Ledger<B>::settle(&mut self, &mut dyn phx_ledger::apply::Holders, phx_ledger::apply::ApplyAt, alloc::vec::Vec<phx_ledger::instruction::Instruction>, &mut dyn phx_core::family::AuditStream) -> alloc::vec::Vec<core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>>
-impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
-pub fn phx_ledger::apply::Ledger<B>::attach_holding(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_ledger::holding::CellHolding) -> bool
-pub fn phx_ledger::apply::Ledger<B>::attach_holding_as_lot(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_ledger::holding::CellHolding, phx_id::day::Day) -> bool
-pub fn phx_ledger::apply::Ledger<B>::attach_row(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_ledger::part::DetachedRow) -> bool
-pub fn phx_ledger::apply::Ledger<B>::attach_rows(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, alloc::vec::Vec<phx_ledger::part::DetachedRow>) -> u32
-pub fn phx_ledger::apply::Ledger<B>::detach_holding(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_id::ids::InstrumentId, u32, phx_num::round::Round) -> phx_ledger::holding::CellHolding
-pub fn phx_ledger::apply::Ledger<B>::detach_lots_pooled(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot) -> alloc::vec::Vec<phx_ledger::holding::CellHolding>
-pub fn phx_ledger::apply::Ledger<B>::detach_row(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, (phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare, phx_num::round::Round) -> phx_ledger::part::DetachedRow
-pub fn phx_ledger::apply::Ledger<B>::detach_rows(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &[((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)], phx_num::round::Round) -> alloc::vec::Vec<phx_ledger::part::DetachedRow>
-pub fn phx_ledger::apply::Ledger<B>::detach_rows_batch(&mut self, &mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &[phx_ledger::part::RowPlan<'_>]) -> alloc::vec::Vec<alloc::vec::Vec<phx_ledger::part::DetachedRow>>
-pub fn phx_ledger::apply::Ledger<B>::swap_holders(&mut self, &dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, phx_id::ids::Slot)
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::contract_process(&mut self, &mut dyn phx_ledger::apply::Holders, &[phx_ledger::fails::Fail], phx_id::day::Day)
 pub fn phx_ledger::apply::Ledger<B>::cure(&mut self, &mut dyn phx_ledger::apply::Holders, phx_id::ids::LineId, phx_ledger::algebra::Side, phx_id::ids::PartyId)
@@ -445,6 +431,7 @@ pub fn phx_ledger::books::Parties<B>::places(&self) -> impl core::iter::traits::
 pub fn phx_ledger::books::Parties<B>::row(&self, phx_id::ids::PartyId) -> (u16, phx_id::ids::Slot)
 pub fn phx_ledger::books::Parties<B>::site(&self, phx_id::ids::PartyId) -> phx_id::ids::TileId
 pub fn phx_ledger::books::Parties<B>::table(&self, u16) -> &phx_core::kind_tables::KindTable<B>
+pub fn phx_ledger::books::Parties<B>::unit(&self, phx_id::ids::PartyId) -> u32
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Holders for phx_ledger::books::Parties<B>
 pub fn phx_ledger::books::Parties<B>::arenas(&mut self, u16) -> &mut dyn phx_ledger::holder::HolderArenas
 pub fn phx_ledger::books::Parties<B>::locate(&self, phx_id::ids::PartyId) -> phx_ledger::apply::Located
@@ -473,7 +460,7 @@ pub fn phx_ledger::cleared::Losers::all_lost(&self) -> impl core::iter::traits::
 pub fn phx_ledger::cleared::Losers::draw_to(&mut self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, u32)>
 pub fn phx_ledger::cleared::Losers::drawn(&self) -> u64
 pub fn phx_ledger::cleared::Losers::lost(&self, phx_id::ids::PartyId) -> u32
-pub fn phx_ledger::cleared::Losers::new(&[(phx_id::ids::PartyId, u32)], phx_rand::draws::Draws) -> phx_ledger::cleared::Losers
+pub fn phx_ledger::cleared::Losers::new(&[(phx_id::ids::PartyId, u32, u32)], phx_rand::draws::Draws) -> phx_ledger::cleared::Losers
 pub fn phx_ledger::cleared::per_contract(&phx_ledger::algebra::Leg) -> bool
 pub mod phx_ledger::commitment
 pub enum phx_ledger::commitment::CommitmentState
@@ -584,6 +571,7 @@ pub phx_ledger::dues::DueReasons::distributed: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::left: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::payment: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::principal: phx_ledger::instruction::ReasonId
+pub phx_ledger::dues::DueReasons::seated: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::succeeded: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::written_off: phx_ledger::instruction::ReasonId
 impl phx_ledger::dues::DueReasons
@@ -1024,21 +1012,6 @@ pub fn phx_ledger::opening::open_row(&phx_core::register::Register, phx_id::ids:
 pub fn phx_ledger::opening::plain_terms(phx_num::money::Ccy, alloc::vec::Vec<phx_ledger::algebra::Leg>, phx_ledger::algebra::Schedule) -> phx_ledger::algebra::Terms
 pub fn phx_ledger::opening::whole(f64) -> i64
 pub fn phx_ledger::opening::write(phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, i64, phx_num::money::Ccy, u64) -> phx_ledger::instruction::LegRec
-pub mod phx_ledger::part
-pub struct phx_ledger::part::DetachedRow
-pub phx_ledger::part::DetachedRow::arrears_since: phx_num::missing::Missing<phx_id::day::Day>
-pub phx_ledger::part::DetachedRow::optional: phx_ledger::rows::Optional
-pub phx_ledger::part::DetachedRow::row: phx_ledger::rows::RelRow
-impl phx_ledger::part::DetachedRow
-pub fn phx_ledger::part::DetachedRow::line(&self) -> phx_id::ids::LineId
-pub fn phx_ledger::part::DetachedRow::opening(phx_id::ids::LineId, phx_ledger::algebra::Side, u8, u32, phx_ledger::rows::Optional) -> phx_ledger::part::DetachedRow
-pub fn phx_ledger::part::DetachedRow::side(&self) -> phx_ledger::algebra::Side
-pub struct phx_ledger::part::RowShare
-pub phx_ledger::part::RowShare::count: u32
-pub phx_ledger::part::RowShare::own_balance: i64
-pub fn phx_ledger::part::cell_holdings(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<phx_ledger::holding::CellHolding>
-pub fn phx_ledger::part::merge_rows(alloc::vec::Vec<phx_ledger::part::DetachedRow>) -> alloc::vec::Vec<phx_ledger::part::DetachedRow>
-pub type phx_ledger::part::RowPlan<'a> = (&'a [((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)], phx_num::round::Round)
 pub mod phx_ledger::pending
 pub struct phx_ledger::pending::Closed
 pub phx_ledger::pending::Closed::issuers: alloc::collections::btree::set::BTreeSet<phx_id::ids::PartyId>
@@ -1137,24 +1110,6 @@ pub fn phx_ledger::runs::due_rows(&dyn phx_ledger::holder::HolderArenas, phx_id:
 pub fn phx_ledger::runs::rehead<B: phx_store::backing::Backing>(&mut dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, &phx_ledger::line::Lines<B>)
 pub fn phx_ledger::runs::segment(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_core::kind_tables::RunHead) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::rows::RowView> + '_
 pub fn phx_ledger::runs::truth<B: phx_store::backing::Backing>(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::day::Day, &phx_ledger::due::DueLines, &phx_ledger::line::Lines<B>) -> phx_ledger::runs::RunTruth
-pub mod phx_ledger::split_request
-pub enum phx_ledger::split_request::SplitCause
-pub phx_ledger::split_request::SplitCause::Failed
-pub phx_ledger::split_request::SplitCause::Kink(u16)
-pub struct phx_ledger::split_request::SplitRequest
-pub phx_ledger::split_request::SplitRequest::account: phx_id::ids::LineId
-pub phx_ledger::split_request::SplitRequest::cause: phx_ledger::split_request::SplitCause
-pub phx_ledger::split_request::SplitRequest::count: u32
-pub phx_ledger::split_request::SplitRequest::holder: phx_id::ids::PartyId
-pub phx_ledger::split_request::SplitRequest::line: phx_id::ids::LineId
-pub phx_ledger::split_request::SplitRequest::moves: i64
-pub phx_ledger::split_request::SplitRequest::per_member: i64
-pub phx_ledger::split_request::SplitRequest::side: phx_ledger::algebra::Side
-impl phx_ledger::split_request::SplitRequest
-pub fn phx_ledger::split_request::SplitRequest::decode(&[u64]) -> core::option::Option<phx_ledger::split_request::SplitRequest>
-impl phx_core::handler::IntentDef for phx_ledger::split_request::SplitRequest
-pub const phx_ledger::split_request::SplitRequest::NAME: &'static str
-pub fn phx_ledger::split_request::SplitRequest::encode(&self, &mut alloc::vec::Vec<u64>)
 pub mod phx_ledger::standing
 pub enum phx_ledger::standing::DayLeg
 pub phx_ledger::standing::DayLeg::Banknotes(i64)

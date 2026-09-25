@@ -5,28 +5,27 @@
 
 [[read]]
 id = "persons"
-title = "persons living in households held as cells"
+title = "persons living in the households the population's agents stand for"
 unit = "persons"
-measure = "cells.persons"
+measure = "agents.persons"
 
 [[read]]
-id = "cell_members"
-title = "members of every population kind held as cells"
-unit = "members"
-measure = "cells.members"
+id = "parties"
+title = "real households and small firms the population's agents stand for"
+unit = "parties"
+measure = "agents.parties"
 
 [[read]]
-id = "cells"
-title = "cells of every population kind"
-unit = "cells"
-measure = "cells.cells"
-grows = "F-054: the cells rose on every day of the first build runs, their members steady"
+id = "agents"
+title = "agents of every population kind"
+unit = "agents"
+measure = "agents.agents"
 
 [[read]]
 id = "persons_gone"
 title = "persons gone from households in the day"
 unit = "persons"
-measure = "cells.gone"
+measure = "agents.gone"
 
 [[read]]
 id = "deaths"
@@ -44,13 +43,13 @@ measure = "events.DEM.disabled"
 id = "estates_opened"
 title = "estates opened in the day"
 unit = "estates"
-measure = "cells.estates_opened"
+measure = "agents.estates_opened"
 
 [[read]]
 id = "estates_settled"
 title = "estates settled and ended in the day"
 unit = "estates"
-measure = "cells.estates_settled"
+measure = "agents.estates_settled"
 
 [[read]]
 id = "payments_due"
@@ -77,43 +76,29 @@ unit = "smallest currency units"
 measure = "settlement.gross"
 
 [[histogram]]
-id = "household_cells_by_weight"
-title = "household cells by their members"
+id = "households_by_persons"
+title = "households by their persons"
 kind = "household"
-of = "weight"
-edges = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+of = "persons"
+edges = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12]
 
 [[histogram]]
-id = "small_firm_cells_by_weight"
-title = "small-firm cells by their members"
-kind = "small_firm"
-of = "weight"
-edges = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
-
-[[histogram]]
-id = "households_by_head_age"
-title = "households by their head's age class"
+id = "households_by_region"
+title = "households by the region they live in"
 kind = "household"
-of = "key.DEM.head_age"
-edges = [0, 1, 2, 3, 4, 5, 6, 7]
-
-[[histogram]]
-id = "households_by_adults"
-title = "households by their adults beside the head and partner"
-kind = "household"
-of = "key.DEM.adults"
-edges = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+of = "attr.DEM.region"
+edges = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 20, 24, 32, 48]
 
 [[histogram]]
 id = "households_by_bank"
-title = "households by the bank they bank with, nought for none"
+title = "households by the bank they bank with"
 kind = "household"
-of = "key.BNK.bank"
+of = "attr.BNK.bank"
 edges = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50]
 
 [[histogram]]
 id = "small_firms_by_size"
-title = "small firms by their size class"
+title = "small firms by the persons they employ"
 kind = "small_firm"
-of = "key.FRM.size_class"
-edges = [0, 1, 2, 3, 4, 5, 6, 7]
+of = "attr.FRM.size"
+edges = [1, 2, 3, 5, 10, 20, 50, 100, 250, 500, 1000]

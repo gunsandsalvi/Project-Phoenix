@@ -20,9 +20,9 @@ pub struct IndividualHolding {
     pad: u32,
 }
 
-/// A cell's holding, 24 bytes: one pooled lot at average cost held by `count` of its members alike, so a member's
+/// An agent's holding, 24 bytes: one lot at average cost held by `count` of its twins alike, so a twin's
 /// quantity is the quantity over the count.
-#[clause("REG.1", "REP.8", "ACC.6")]
+#[clause("REG.1", "REP.9", "ACC.6")]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Pod)]
 pub struct CellHolding {
@@ -120,19 +120,6 @@ fn index(arenas: &dyn HolderArenas, holder: Slot) -> Vec<(IndividualHolding, usi
         .collect()
 }
 
-/// The instruments a holder holds, a cell's pooled holdings or an individual's alike: both begin with their
-/// instrument and take the same words.
-pub(crate) fn instruments_of(arenas: &dyn HolderArenas, holder: Slot) -> Vec<InstrumentId> {
-    const _: () = assert!(words_of::<CellHolding>() == HOLDING, "both kinds of holding take the same words");
-    arenas
-        .read(holder, ListKind::Holdings)
-        .as_chunks::<HOLDING>()
-        .0
-        .iter()
-        .map(|w| from_words::<CellHolding>(w).instrument)
-        .collect()
-}
-
 /// A holder's holding of an instrument, if it holds any.
 pub fn holding(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId) -> Missing<IndividualHolding> {
     match index(arenas, holder).into_iter().find(|(h, _)| h.instrument == instrument) {
@@ -185,33 +172,6 @@ pub fn basis(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId) 
         Missing::Present(_) => Missing::Present(lots(arenas, holder, instrument).iter().map(|l| l.cost.raw()).sum()),
         Missing::Absent => Missing::Absent,
     }
-}
-
-/// Every holding of an individual taken whole, its lots gone with it: each as one member's pooled holding at the cost
-/// of its lots, for an individual that rejoins the cells. A pledged holding cannot leave its lien behind.
-#[clause("REG.1", "REP.29")]
-pub(crate) fn take_all(arenas: &mut dyn HolderArenas, holder: Slot) -> Vec<CellHolding> {
-    let all = index(arenas, holder);
-    let mut out = Vec::with_capacity(all.len());
-    for (h, _) in &all {
-        if h.flags & PLEDGED != 0 {
-            violation!(clause = "REP.29", "a pledged holding pooled with a cell's", instrument = h.instrument.get());
-        }
-        let cost = lots(arenas, holder, h.instrument).iter().try_fold(0_i64, |t, l| t.checked_add(l.cost.raw()));
-        let Some(cost) = cost else {
-            violation!(clause = "Law 7", "a holding's cost overflows", instrument = h.instrument.get());
-        };
-        out.push(CellHolding {
-            instrument: h.instrument,
-            count: 1,
-            quantity: h.quantity,
-            pooled_cost: Amount::from_raw(cost),
-        });
-    }
-    let lot_words: usize = all.iter().map(|(h, _)| usize_of(h.lots) * LOT).sum();
-    arenas.remove(holder, ListKind::Lots, 0, lot_words);
-    arenas.remove(holder, ListKind::Holdings, 0, all.len() * HOLDING);
-    out
 }
 
 /// Units acquired: a lot added at the end of the holding's lots, the holding begun if the holder had none. Returns

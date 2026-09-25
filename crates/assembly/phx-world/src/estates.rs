@@ -60,11 +60,11 @@ impl World {
             let mut draws = self.streams.open(&HouseholdsStream::DECL, subject, day, SubStep::S7c.ordinal());
             match self.books.settle_estate(estate, destination, m, &mut draws, self.audit.stream()) {
                 Ok(s) => {
-                    self.cell_day.estates_settled += 1;
-                    self.cell_day.estates_passed += i128::from(s.passed);
-                    self.cell_day.estates_written_off += i128::from(s.written_off);
+                    self.agent_day.estates_settled += 1;
+                    self.agent_day.estates_passed += i128::from(s.passed);
+                    self.agent_day.estates_written_off += i128::from(s.written_off);
                 }
-                Err(_) => self.cell_day.estates_waiting += 1,
+                Err(_) => self.agent_day.estates_waiting += 1,
             }
         }
     }

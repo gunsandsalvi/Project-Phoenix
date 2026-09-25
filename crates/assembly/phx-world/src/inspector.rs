@@ -46,19 +46,19 @@ impl<'a> Inspector<'a> {
         &self.world.population
     }
 
-    /// A population kind's cell table.
+    /// A population kind's agent table.
     #[must_use]
-    pub fn cell_table(&self, kind: usize) -> &phx_pop::table::CellTable<phx_store::SystemBacking> {
+    pub fn agent_table(&self, kind: usize) -> &phx_pop::table::AgentTable<phx_store::SystemBacking> {
         phx_pop::population::Population::table(self.world.books.parties.cells(), kind)
     }
 
-    /// What each day's work on the cells did, day by day.
+    /// What each day's work on the agents did, day by day.
     #[must_use]
-    pub fn cell_days(&self) -> &[crate::cells::CellDay] {
-        &self.world.metrics.cells
+    pub fn agent_days(&self) -> &[crate::agents::AgentDay] {
+        &self.world.metrics.agents
     }
 
-    /// The processes' realised and expected hits over the sampled cells.
+    /// The processes' realised and expected hits over the sampled agents.
     #[must_use]
     pub fn rates(&self) -> &crate::rates::Rates {
         &self.world.metrics.rates
@@ -161,12 +161,6 @@ impl<'a> Inspector<'a> {
     #[must_use]
     pub fn player_queue(&self) -> &phx_core::PlayerQueue {
         &self.world.queue
-    }
-
-    /// The day's splits of the cells the observer traces.
-    #[must_use]
-    pub fn split_log(&self) -> &crate::observe::SplitLog {
-        &self.world.split_log
     }
 
     /// The observer's draws: its own streams only.

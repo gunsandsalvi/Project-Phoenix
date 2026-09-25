@@ -8,7 +8,7 @@ use phx_id::{CountryId, TileId};
 use phx_ledger::books::{Books, BooksSize};
 
 use crate::consts::{
-    BOOK_ROWS_PER_CHUNK, CELL_ROWS, CELL_ROWS_PER_CHUNK, HOLDER_BLOCKS, INSTRUMENTS, KIND_ROWS, KIND_ROWS_PER_CHUNK,
+    AGENT_ROWS, AGENT_ROWS_PER_CHUNK, BOOK_ROWS_PER_CHUNK, HOLDER_BLOCKS, INSTRUMENTS, KIND_ROWS, KIND_ROWS_PER_CHUNK,
     LINES, WHOLE,
 };
 use crate::opening::newgame::NewGame;
@@ -80,8 +80,9 @@ pub fn size() -> BooksSize {
     }
 }
 
-/// A maker of the population's empty cell tables in the books' address space, their identities after the kind tables'.
-pub fn cell_tables(
+/// A maker of the population's empty agent tables in the books' address space, their identities after the kind
+/// tables'.
+pub fn agent_tables(
     pop: &[phx_pop::kind::PopKindDecl],
 ) -> impl FnOnce(&mut phx_store::AddressSpace, u16) -> Vec<Box<dyn phx_ledger::holder::CellHolders>> + '_ {
     move |space, first| {
@@ -89,18 +90,18 @@ pub fn cell_tables(
             pop,
             space,
             first,
-            CELL_ROWS,
-            CELL_ROWS_PER_CHUNK,
+            AGENT_ROWS,
+            AGENT_ROWS_PER_CHUNK,
         )
     }
 }
 
-/// The world's books opened: a kind table for each kind of individual the systems declare and a cell table for each
+/// The world's books opened: a kind table for each kind of individual the systems declare and an agent table for each
 /// population kind, then each of the given contributing phases in order, its contributions in the order of their
-/// systems and names, each handed the books and the population.
+/// systems and names, each handed the books and the population under the representation in force.
 pub fn open_books(
     d: &mut Declarations,
-    pop: &[phx_pop::population::KindSetup],
+    (pop, representation): (&[(phx_pop::kind::PopKindDecl, usize)], phx_pop::prims::Representation),
     compiled: &crate::compile::Compiled,
     countries: &[OpeningCountry],
     date: phx_id::Date,
@@ -108,11 +109,12 @@ pub fn open_books(
 ) -> (Books, phx_pop::population::Population, GenReport) {
     let kinds: Vec<&'static str> =
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
-    let decls: Vec<phx_pop::kind::PopKindDecl> = pop.iter().map(|s| s.decl.clone()).collect();
-    let mut books: Books = Books::with_cells(&kinds, pop.len(), cell_tables(&decls), size());
+    let decls: Vec<phx_pop::kind::PopKindDecl> = pop.iter().map(|(d, _)| d.clone()).collect();
+    let mut books: Books = Books::with_cells(&kinds, pop.len(), agent_tables(&decls), size());
     let first = books.parties.first_cell_place();
+    let space = books.parties.cells_mut().2;
     let mut population =
-        phx_pop::population::Population::new(pop.to_vec(), first, compiled.day_zero, books.parties.cells_mut().2);
+        phx_pop::population::Population::new(pop.to_vec(), representation, first, compiled.day_zero, space);
     let mut report = GenReport::default();
     let mut contributions: Vec<(&'static str, Box<dyn Contribution>)> = std::mem::take(&mut d.contributions);
     let mut attachments = std::mem::take(&mut d.attachments);
@@ -144,12 +146,6 @@ pub fn open_books(
     }
     for kind in &kinds {
         report.equity.extend(books.parties.of_kind(kind).map(|p| (p, books.equity(p))));
-    }
-    let cells = books.parties.cells_mut().0;
-    let phx_pop::population::Population { kinds: pop_kinds, agenda, .. } = &mut population;
-    for (i, k) in pop_kinds.iter().enumerate() {
-        let table = phx_pop::population::Population::table_mut::<phx_store::SystemBacking>(cells, i);
-        phx_pop::population::book_changed(k, table, agenda, compiled.day_zero.succ());
     }
     (books, population, report)
 }

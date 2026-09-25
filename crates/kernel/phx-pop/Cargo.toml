@@ -17,12 +17,6 @@ phx-num = { path = "../../foundation/phx-num" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../phx-store" }
 
-[dev-dependencies]
-gungraun.workspace = true
-
-[[bench]]
-name = "pop"
-harness = false
 
 [lints]
 workspace = true

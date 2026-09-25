@@ -4,13 +4,12 @@
 # runs every count through its kernel. Its numbers are costs, never the world's. The built stages' counts replace their
 # estimates at each gate (`phx measure`).
 
-# The population the bench builds: household cells with their rows on shared lines and their profile entries.
+# The population the bench builds: household agents with their persons and their attachments to shared lines.
 [population]
-cells = 700000                  # §13.1: household cells at the design point
-members_per_cell = 170          # §13.1: average weight
-rows_per_cell = 30              # §13.1: 40 rows per household cell, less the settlement's 14 per holder below
-lines = 3000000                 # §13.1: lines
-profile_entries_per_cell = 150  # §13.1: household profile entries
+agents = 700000                 # §13.1: household agents at the design point
+multiplicity = 170              # §13: the design point's factor under twins
+persons_per_agent = 3           # §13.1: persons held in each household agent
+attachments_per_agent = 40      # §13.1: 40 rows per household agent, one attachment each
 
 # The settlement the bench builds: holders each with dated rows, two falling due weekly on each business day and four
 # once a month on the heavy day, fourteen a holder, so an ordinary weekday reads 1.1 M run heads, scans their rows and
@@ -25,24 +24,20 @@ holders_per_line = 256
 
 # Stores held as random words: their bytes through Stage 6, less what the bench builds (§13.1 with each stage's additions).
 [[store]]
-name = "household cells beyond the built record"
-line = "13.1 household cells (672 bytes through Stage 6)"
-bytes = 200000000
+name = "household agents beyond the built record"
+line = "13.1 household agents (672 bytes through Stage 6)"
+bytes = 400000000
 [[store]]
-name = "household profiles beyond the built entries"
-line = "13.1 household profiles, with Stages 4-6"
-bytes = 83000000
-[[store]]
-name = "relationship rows beyond the built rows"
+name = "relationship rows"
 line = "13.1 relationship rows, with Stages 2-6"
-bytes = 360000000
+bytes = 1200000000
 [[store]]
 name = "holdings, instruments, lots, liens and commitments"
 line = "13.1, with Stage 3's positions and Stage 4's pots"
 bytes = 452000000
 [[store]]
-name = "firm and business cells"
-line = "13.1, with Stage 6's cells kept apart"
+name = "firm and business agents"
+line = "13.1, with Stage 6's records"
 bytes = 176000000
 [[store]]
 name = "lines and their stage totals"
@@ -53,13 +48,9 @@ name = "interned keys and terms"
 line = "13.1, with Stages 3-4"
 bytes = 151000000
 [[store]]
-name = "landing index and agenda"
+name = "agenda"
 line = "13.1"
-bytes = 146000000
-[[store]]
-name = "group aggregates and pieces"
-line = "13.1"
-bytes = 60000000
+bytes = 85000000
 [[store]]
 name = "kind tables of individuals"
 line = "13.1, with Stages 4-5"
@@ -89,11 +80,11 @@ name = "arena slack and page tails"
 line = "13.1, with each stage's slack"
 bytes = 295000000
 [[store]]
-name = "renumbering slice and save buffers"
+name = "save buffers"
 line = "13.1"
 bytes = 94000000
 [[store]]
-name = "views and tracers"
+name = "views"
 line = "13.1, with Stage 6"
 bytes = 70000000
 
@@ -112,20 +103,20 @@ saves = [21, 29]
 # business, a closed and a heavy day (§13.2 through Stage 6; a closed day's and a heavy day's in the ratios of the
 # table's times where the table gives only the business day's count).
 [[work]]
-name = "hazard and need candidates"
-kernel = "screen"
+name = "hazard and need draws, drawn ahead"
+kernel = "hazard"
 line = "13.2"
 counts = [1100000, 1100000, 1100000]
 [[work]]
 name = "agenda redraws"
 kernel = "redraw"
-store = "landing index and agenda"
+store = "agenda"
 line = "13.2"
 counts = [240000, 160000, 360000]
 [[work]]
 name = "agenda gather at 1b"
 kernel = "agenda"
-store = "landing index and agenda"
+store = "agenda"
 line = "13.2"
 counts = [1500000, 1500000, 1500000]
 [[work]]
@@ -134,12 +125,6 @@ kernel = "gather"
 reads = 40
 line = "13.2"
 counts = [280000, 101000, 327000]
-[[work]]
-name = "group-aggregate updates"
-kernel = "aggregate"
-store = "group aggregates and pieces"
-line = "13.2"
-counts = [11000000, 4070000, 12800000]
 [[work]]
 name = "occasion evaluations"
 kernel = "gather"
@@ -153,9 +138,9 @@ reads = 20
 line = "13.2, with Stage 4"
 counts = [270000, 76000, 334000]
 [[work]]
-name = "parts"
-kernel = "part"
-line = "13.2, with Stages 2-4"
+name = "outcomes on agents, changed in place"
+kernel = "outcome"
+line = "13.2, the changes that were parts, with Stages 2-4"
 counts = [365000, 85000, 530000]
 [[work]]
 name = "meetings, choice groups, seller spreads and labour matching"
@@ -180,11 +165,6 @@ kernel = "gather"
 reads = 10
 line = "13.2 through Stage 6, at a microsecond of gathers a unit"
 counts = [900000, 120000, 1500000]
-[[work]]
-name = "tolerance control"
-kernel = "tolerance"
-line = "13.2"
-counts = [1, 1, 1]
 [[work]]
 name = "audit, statistics, events and views"
 kernel = "audit"

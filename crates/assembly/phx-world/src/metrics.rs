@@ -83,8 +83,8 @@ pub struct Metrics {
     pub closes: Closes,
     pub saves: Vec<SaveMeasure>,
     pub injections: Vec<InjectionRecord>,
-    /// What each day's work on the population's cells did.
-    pub cells: Vec<crate::cells::CellDay>,
-    /// The processes' realised rates over the sampled cells.
+    /// What each day's work on the population's agents did.
+    pub agents: Vec<crate::agents::AgentDay>,
+    /// The processes' realised rates over the sampled agents.
     pub rates: crate::rates::Rates,
 }

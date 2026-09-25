@@ -78,8 +78,11 @@ impl<B: Backing> Work<'_, B> {
         let Some(day) = self.found.cleared.get(&line) else {
             violation!(clause = "REP.23", "a cleared payment failed on a line never reckoned", line = line.get());
         };
-        let claimants: Vec<(PartyId, u32)> =
-            if day.losers.is_none() { day.claimants.iter().map(|(p, c)| (*p, *c)).collect() } else { Vec::new() };
+        let claimants: Vec<(PartyId, u32, u32)> = if day.losers.is_none() {
+            day.claimants.iter().map(|(p, (c, u))| (*p, *c, *u)).collect()
+        } else {
+            Vec::new()
+        };
         let draws = (self.draws_of)(line);
         let Some(day) = self.found.cleared.get_mut(&line) else { return };
         day.failed += u64::from(members);
@@ -165,7 +168,7 @@ impl<B: Backing> Books<B> {
     /// as a prefix of its payment order, which is monotone in its funds, and a removal takes again the parties whose
     /// accounts it touched, so the payments left are the greatest set that can settle given one another, rings
     /// included.
-    #[clause("SET.6", "MON.5", "REP.8", "TIME.6")]
+    #[clause("SET.6", "MON.5", "REP.9", "TIME.6")]
     pub(crate) fn fixed_point(
         &self,
         day: &mut DayRecords,

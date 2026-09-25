@@ -69,29 +69,23 @@ pub fn level_for(standards: [&[f64]; 2], male_share: f64, asked: f64) -> f64 {
     }
 }
 
-/// The chance that one born `age` calendar years before the year dies in it: half a year at each of the two ages the
-/// year spans, `1 − sqrt(l(age + 1) / l(age − 1))`, alive at the year's start; one born in the year, half a year from
-/// birth, `1 − sqrt(l(1))`; past the table's last age, the open age's.
+/// The chance that one who has just reached `age` dies before its next birthday, `1 − l(age + 1) / l(age)`; past the
+/// table's last age, the open age's.
 #[clause("POP.16", "REP.25")]
 #[must_use]
-pub fn dies_in_year(l: &[f64], age: usize) -> f64 {
+pub fn dies_at_age(l: &[f64], age: usize) -> f64 {
     if age + 1 >= l.len() {
         return open_age(l);
     }
-    let before = match age.checked_sub(1) {
-        Some(a) => l.get(a),
-        None => l.first(),
-    };
-    let Some(before) = before else { violation!(clause = "POP.16", "a life table of no ages") };
-    match l.get(age + 1) {
-        Some(after) if *before > 0.0 => 1.0 - libm::sqrt(after / before),
+    match (l.get(age), l.get(age + 1)) {
+        (Some(before), Some(after)) if *before > 0.0 => 1.0 - after / before,
         _ => violation!(clause = "POP.16", "a life table in which no one reaches an age it gives", age = age),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{dies_in_year, level_for, life_expectancy, survivorship};
+    use super::{dies_at_age, level_for, life_expectancy, survivorship};
 
     /// A standard whose logits rise by a tenth a year from −2.
     fn standard() -> Vec<f64> {
@@ -121,14 +115,9 @@ mod tests {
     }
 
     #[test]
-    fn a_cohorts_death_is_the_tables_over_the_ages_it_spans() {
+    fn a_year_of_age_dies_at_the_tables_rate() {
         let l = survivorship(&standard(), 0.0);
-        let q = dies_in_year(&l, 50);
-        assert!((q - (1.0 - (l[51] / l[49]).sqrt())).abs() < 1e-15);
-        assert!((0.0..1.0).contains(&q));
-        let open = 1.0 - l[100] / l[99];
-        assert!((dies_in_year(&l, 100) - open).abs() < 1e-15, "the open age's chance past the table");
-        assert!((dies_in_year(&l, 120) - open).abs() < 1e-15);
-        assert!((dies_in_year(&l, 0) - (1.0 - l[1].sqrt())).abs() < 1e-15, "half a year from birth");
+        assert!((dies_at_age(&l, 40) - (1.0 - l[41] / l[40])).abs() < 1e-15);
+        assert!((dies_at_age(&l, 130) - (1.0 - l[100] / l[99])).abs() < 1e-15, "the open age's chance past the table");
     }
 }

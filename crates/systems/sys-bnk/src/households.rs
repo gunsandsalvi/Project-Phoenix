@@ -5,7 +5,7 @@
 
 use phx_core::calendar::daycount::DayCount;
 use phx_core::register::values::Table1;
-use phx_core::{KeyAttrDecl, OpeningCountry, OpeningCtx, Prim, Register, StreamDef, declare_stream};
+use phx_core::{AttrDecl, OpeningCountry, OpeningCtx, Prim, Register, StreamDef, declare_stream};
 use phx_id::{Day, PartyId};
 use phx_ledger::algebra::{Leg, Reference, Schedule, Side};
 use phx_ledger::attachments::{
@@ -28,7 +28,7 @@ use phx_ledger::opening::{monthly, plain_terms as terms};
 declare_stream! { pub HouseholdsStream = "BNK.opening_households" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 /// The bank a household banks with, counted from one; nought, none.
-pub const BANK_ATTR: KeyAttrDecl = KeyAttrDecl { name: "BNK.bank", values: MOST_BANKS + 1, clause: "REP.19" };
+pub const BANK_ATTR: AttrDecl = AttrDecl { name: "BNK.bank", values: MOST_BANKS + 1, clause: "REP.41" };
 
 /// Households' current accounts: a bank's liability to its many depositors, and to the estates they leave.
 pub const RETAIL: MoneyHolders = MoneyHolders {
@@ -191,7 +191,9 @@ impl CountryAttachments for Country {
         let Some(bank) = self.banks.get(at).copied() else {
             violation!(clause = "GEN.4", "a bank chosen beyond the country's banks");
         };
-        let Ok(place) = u32::try_from(at + 1) else { violation!(clause = "REP.19", "a bank beyond the key's reach") };
+        let Ok(place) = u32::try_from(at + 1) else {
+            violation!(clause = "REP.41", "a bank beyond the attribute's values")
+        };
         keys.push((BANK_ATTR.name, place));
         let (kind, terms, first) = self.deposit;
         rows.push(DrawnRow {

@@ -1,7 +1,8 @@
 //! The households' lines at the opening: each system's draw called with each household as it is formed, a line
-//! opened for each distinct kind, terms and named counterparty, the rows opened on the cells the households land in,
-//! and, once the country is drawn, each line's other side — the counterparty the households named, or the parties
-//! apportioned over by their drawn sizes — with the balances written through the opening's writes.
+//! opened for each distinct kind, terms and named counterparty, each agent's rows counting its twins' contracts, and,
+//! once the country is drawn, each line's other side — the counterparty the households named, or the parties
+//! apportioned over by their drawn sizes — with the balances written through the opening's writes, a whole share for
+//! each twin.
 
 use std::any::Any;
 use std::collections::BTreeMap;
@@ -17,24 +18,28 @@ use phx_ledger::instruction::ReasonId;
 use phx_ledger::opening::{key, open_row, write};
 use phx_macros::clause;
 use phx_num::{Missing, capacity_exceeded, violation};
-use phx_pop::explicit::{Attached, Explicit, GatheredRow, named};
-use phx_pop::key::KeyRecord;
-use phx_pop::kind::PopKindDecl;
-use phx_pop::part::PartId;
+use phx_pop::person::{Attachment, Holder as Place};
 use phx_rand::{Draws, Subject};
 
-/// A cell's row as the opening sums it: its members, and its balance's pool and summed weight.
-type CellRow = (u64, Missing<(u32, u64)>);
+/// What a household's lines came to: its attachments as words, the contracts its twin holds on each line side, and
+/// each line side whose balance is a share of a pool, with its weight.
+pub(crate) struct Held {
+    pub attachments: Vec<u64>,
+    rows: Vec<(LineId, Side, u64)>,
+    balances: Vec<(LineId, Side, u32, u64)>,
+}
 
-/// What a country's households' lines came to: each line, the side the households hold and its members, and each
-/// cell row whose balance is a share of a pool, with its weight.
+/// What a country's households' lines came to: each line, the side the households hold and its contracts, each
+/// agent's row counts, each agent row whose balance is a share of a pool with its weight, and the twins an agent
+/// stands for.
 pub(crate) struct Drawer {
     draws: Vec<Box<dyn CountryAttachments>>,
     lines: BTreeMap<(u16, u32, bool, u64), (LineId, LineSpec)>,
     sides: BTreeMap<LineId, (Side, u64)>,
-    cells: BTreeMap<LineId, Vec<(PartyId, u64)>>,
+    holders: BTreeMap<LineId, Vec<(PartyId, u64)>>,
     balances: Vec<(PartyId, LineId, Side, u32, u64)>,
     country: phx_id::CountryId,
+    twins: u64,
 }
 
 fn other(side: Side) -> Side {
@@ -42,6 +47,11 @@ fn other(side: Side) -> Side {
         Side::Asset => Side::Liability,
         Side::Liability => Side::Asset,
     }
+}
+
+fn twins_i64(twins: u64) -> i64 {
+    let Ok(t) = i64::try_from(twins) else { capacity_exceeded!("twins of an agent", i64::MAX, twins) };
+    t
 }
 
 fn count32(n: u64) -> u32 {
@@ -57,6 +67,7 @@ impl Drawer {
         register: &Register,
         when: (&phx_core::Calendar, Day),
         country: &OpeningCountry,
+        twins: u32,
     ) -> Drawer {
         let draws = attachments
             .iter()
@@ -71,61 +82,76 @@ impl Drawer {
             draws,
             lines: BTreeMap::new(),
             sides: BTreeMap::new(),
-            cells: BTreeMap::new(),
+            holders: BTreeMap::new(),
             balances: Vec::new(),
             country: country.id,
+            twins: u64::from(twins),
         }
     }
 
-    /// A household's lines drawn by every system, the key attributes they set written to its record, and its rows
-    /// attached to it and its persons; returns each balance's pool and weight by the row it lies on.
+    /// A household's lines drawn by every system, the attributes they set written to it, and its contracts attached to
+    /// it and its persons.
     #[clause("REP.23", "REP.26", "GEN.2")]
     pub(crate) fn household(
         &mut self,
         books: &mut Books,
-        kind: &PopKindDecl,
-        record: &mut KeyRecord,
-        e: &mut Explicit,
+        h: &mut phx_core::Household,
         (at, (wealth, income)): ((&OpeningCtx<'_>, Subject), (f64, f64)),
-    ) -> Vec<(Attached, u32, u64)> {
+    ) -> Held {
         let (mut rows, mut keys): (Vec<DrawnRow>, Vec<(&'static str, u32)>) = (Vec::new(), Vec::new());
         for d in &mut self.draws {
-            let view = named(kind, record, e);
-            d.draw(books, Drawing { household: &view, wealth, income }, at, &mut rows, &mut keys);
+            d.draw(books, Drawing { household: h, wealth, income }, at, &mut rows, &mut keys);
             for (name, v) in keys.drain(..) {
-                let Some(i) = kind.key_attrs.iter().position(|a| a.item.name == name) else {
-                    violation!(clause = "REP.19", "a draw setting a key attribute its kind does not hold");
-                };
-                kind.key.set(record, i, v);
+                h.set_attr(name, v);
             }
         }
-        let mut weights = Vec::new();
+        let mut held = Held { attachments: Vec::new(), rows: Vec::new(), balances: Vec::new() };
         for r in rows {
             let line = self.line(books, r.line);
-            let held = (line, r.side);
-            match self.sides.get_mut(&line) {
-                Some((side, n)) if *side == r.side => *n += 1,
-                Some(_) => {
+            match self.sides.get(&line) {
+                Some((side, _)) if *side != r.side => {
                     violation!(clause = "REP.31", "households holding both sides of one line", line = line.get())
                 }
+                Some(_) => {}
                 None => {
-                    self.sides.insert(line, (r.side, 1));
+                    self.sides.insert(line, (r.side, 0));
                 }
             }
-            match r.holder {
-                Holder::Household => e.rows.push(held),
+            let holder = match r.holder {
+                Holder::Household => Place::Household,
                 Holder::Person(i) => {
-                    let Some(p) = e.persons.get_mut(i) else {
+                    if i >= h.persons.len() {
                         violation!(clause = "REP.26", "a row held by a person the household does not hold", person = i);
-                    };
-                    p.rows.push(held);
+                    }
+                    Place::Person(i)
                 }
+            };
+            held.attachments.push(Attachment { holder, line, side: r.side }.pack());
+            match held.rows.iter_mut().find(|(l, s, _)| *l == line && *s == r.side) {
+                Some((_, _, n)) => *n += 1,
+                None => held.rows.push((line, r.side, 1)),
             }
             if let Balance::Share { pool, weight } = r.balance {
-                weights.push((held, pool, weight));
+                held.balances.push((line, r.side, pool, weight));
             }
         }
-        weights
+        held
+    }
+
+    /// An agent's rows kept to open with their lines' other sides once the country is drawn: each counting its twins'
+    /// contracts.
+    #[clause("REP.3", "REP.31")]
+    pub(crate) fn agent(&mut self, party: PartyId, twins: u64, held: Held) {
+        for (line, _, n) in held.rows {
+            let count = n * twins;
+            self.holders.entry(line).or_default().push((party, count));
+            if let Some((_, members)) = self.sides.get_mut(&line) {
+                *members += count;
+            }
+        }
+        for (line, side, pool, weight) in held.balances {
+            self.balances.push((party, line, side, pool, weight));
+        }
     }
 
     /// The line of a kind, terms and named counterparty, opened the first time a household holds a row on it.
@@ -138,39 +164,9 @@ impl Drawer {
         line
     }
 
-    /// A region's cells given the rows their households hold: each landed part's rows kept for the cell it landed in,
-    /// rows of one line side on one cell as one, to open with their lines' other sides once the country is drawn.
-    #[clause("REP.8", "REP.14", "GEN.3")]
-    pub(crate) fn landed(&mut self, rows: &[Vec<GatheredRow>], resolved: &[(PartId, PartyId)]) {
-        let mut on: BTreeMap<(PartyId, LineId, Side), CellRow> = BTreeMap::new();
-        for (id, cell) in resolved {
-            let Some(part) = usize::try_from(id.seq).ok().and_then(|i| rows.get(i)) else {
-                violation!(clause = "GEN.3", "a landed part the opening did not draw", seq = id.seq);
-            };
-            for r in part {
-                let (members, pool) = on.entry((*cell, r.at.0, r.at.1)).or_insert((0, Missing::Absent));
-                *members += u64::from(r.count);
-                *pool = match (*pool, r.pool) {
-                    (held, Missing::Absent) => held,
-                    (Missing::Absent, joining) => joining,
-                    (Missing::Present((mine, weight)), Missing::Present((theirs, more))) if mine == theirs => {
-                        Missing::Present((mine, weight + more))
-                    }
-                    _ => violation!(clause = "GEN.4", "one row's balance a share of two pools", line = r.at.0.get()),
-                };
-            }
-        }
-        for ((cell, line, side), (n, pool)) in on {
-            self.cells.entry(line).or_default().push((cell, n));
-            if let Missing::Present((p, w)) = pool {
-                self.balances.push((cell, line, side, p, w));
-            }
-        }
-    }
-
     /// The country's lines closed: a named line's counterparty takes one row counting the households' members; a
-    /// derived line's other side is apportioned over the parties its draw names by their drawn sizes, each apportioned
-    /// share reported; each pool's total is apportioned over its rows by their weights and written against the line's
+    /// derived line's other side is apportioned over the parties its draw names by their drawn sizes, a whole share for
+    /// each twin, each apportioned share reported; each pool's total is apportioned over its rows by their weights and written against the line's
     /// counterparty.
     #[clause("GEN.4", "REP.31", "REP.23")]
     pub(crate) fn close(
@@ -180,7 +176,7 @@ impl Drawer {
         lot: &mut Draws,
         report: &mut GenReport,
     ) {
-        let Drawer { draws, lines, sides, cells, balances, country } = self;
+        let Drawer { draws, lines, sides, holders, balances, country, twins } = self;
         let mut counterparty_of: BTreeMap<LineId, PartyId> = BTreeMap::new();
         for (line, spec) in lines.into_values() {
             let Some((side, members)) = sides.get(&line).copied() else {
@@ -188,11 +184,11 @@ impl Drawer {
             };
             let words = books.ledger.lines.side_decl(line, other(side)).words;
             let held = books.ledger.lines.side_decl(line, side).words;
-            let mut legs: Vec<_> = cells
+            let mut legs: Vec<_> = holders
                 .get(&line)
                 .into_iter()
                 .flatten()
-                .map(|(cell, n)| open_row(register, *cell, line, side, count32(*n), held))
+                .map(|(agent, n)| open_row(register, *agent, line, side, count32(*n), held))
                 .collect();
             match spec.counterparty {
                 Missing::Present(party) => {
@@ -211,8 +207,9 @@ impl Drawer {
                         );
                     }
                     let weights: Vec<u64> = eligible.iter().map(|(_, w)| *w).collect();
-                    let counts = apportion(members, &weights, lot);
-                    for ((party, drawn), realised) in eligible.iter().zip(counts) {
+                    // Each twin's contracts go to one counterparty, so the members are apportioned a twin-th at a time.
+                    let counts = apportion(members / twins, &weights, lot);
+                    for ((party, drawn), realised) in eligible.iter().zip(counts.into_iter().map(|c| c * twins)) {
                         report.apportioned.push(Apportioned {
                             stratum: key(&format!("line {}", line.get()), country),
                             party: *party,
@@ -231,14 +228,16 @@ impl Drawer {
         for (pool, total) in totals {
             let mine: Vec<&(PartyId, LineId, Side, u32, u64)> = balances.iter().filter(|b| b.3 == pool).collect();
             let weights: Vec<u64> = mine.iter().map(|b| b.4).collect();
-            for ((cell, line, side, _, _), amount) in mine.iter().zip(shares(total, &weights, lot)) {
+            // Each twin's share is whole, so the pool is shared out a twin-th at a time.
+            for ((agent, line, side, _, _), each) in mine.iter().zip(shares(total / twins_i64(twins), &weights, lot)) {
+                let amount = each * twins_i64(twins);
                 let Some(counterparty) = counterparty_of.get(line) else {
                     violation!(clause = "GEN.4", "a balance on a line with no named counterparty", line = line.get());
                 };
-                let id = cell.get();
+                let id = agent.get();
                 let ccy = books.ledger.terms.get(books.ledger.lines.terms(*line)).ccy;
                 let legs = vec![
-                    write(*cell, *line, *side, amount, ccy, id),
+                    write(*agent, *line, *side, amount, ccy, id),
                     write(*counterparty, *line, other(*side), -amount, ccy, id),
                 ];
                 books.open(reason, legs, id, report);

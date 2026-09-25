@@ -116,18 +116,15 @@ pub trait AccountsAudit: core::fmt::Debug {
     fn periods(&self, day: Day) -> (u64, Vec<Gap>);
 }
 
-/// The population's cells as the audit reads them: each cell's weight against its profile counts in every role. The
-/// population kernel implements it over its cell tables.
-pub trait CellsAudit: core::fmt::Debug {
-    /// Cells over every population table, by index.
-    fn cells(&self) -> usize;
-    /// One cell's weight, each of its profile groups' counts against it, and each of its rows' and holdings' members
-    /// within it.
-    fn representation(&self, cell: usize) -> Vec<Gap>;
-    /// Each population's cells' weights against its population.
+/// The population's agents as the audit reads them: each agent's multiplicity against its contracts, and each
+/// population's multiplicities against it. The population kernel implements it over its agent tables.
+pub trait AgentsAudit: core::fmt::Debug {
+    /// Agents' slots over every population table, by index.
+    fn agents(&self) -> usize;
+    /// One agent's multiplicity and each of its rows' counts against it.
+    fn agent(&self, at: usize) -> Vec<Gap>;
+    /// Each population's agents' multiplicities against its population.
     fn populations(&self) -> Vec<Gap>;
-    /// Any total the day's landings moved.
-    fn landings(&self) -> Vec<Gap>;
 }
 
 /// The audit's own record of the day's settled legs, kept apart from the books they moved.
@@ -164,7 +161,7 @@ pub struct AuditInputs<'a> {
     pub legs: &'a dyn LegRecords,
     pub markets: &'a dyn MarketsAudit,
     pub accounts: &'a dyn AccountsAudit,
-    pub cells: &'a dyn CellsAudit,
+    pub agents: &'a dyn AgentsAudit,
     /// Each system's own state, by its code, as its handlers read it.
     pub own: &'a [(&'static str, Box<dyn core::any::Any + Send + Sync>)],
 }
@@ -272,10 +269,10 @@ impl<'a> FamilyCtx<'a> {
         self.inputs.accounts
     }
 
-    /// The population's cells.
+    /// The population's agents.
     #[must_use]
-    pub fn cells(&self) -> &dyn CellsAudit {
-        self.inputs.cells
+    pub fn agents(&self) -> &dyn AgentsAudit {
+        self.inputs.agents
     }
 
     /// The markets' public tape.
@@ -331,8 +328,8 @@ pub trait InjectTarget {
     fn markets(&mut self) -> &mut dyn core::any::Any;
     /// The save's accounts, as their type, which the accounts' families name.
     fn accounts(&mut self) -> &mut dyn core::any::Any;
-    /// The save's cell tables, as their type, which the population's families name.
-    fn cells(&mut self) -> &mut dyn core::any::Any;
+    /// The save's agent tables, as their type, which the population's families name.
+    fn agents(&mut self) -> &mut dyn core::any::Any;
     /// A system's own state, which that system's families name.
     fn own(&mut self, system: &str) -> Option<&mut dyn core::any::Any>;
     /// The sink the audit reads the day's legs from, as if they had settled today.

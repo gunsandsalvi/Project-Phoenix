@@ -20,8 +20,7 @@ const MAP_BYTES: u64 = 80 << 20;
 /// Resident memory the individuals may take: their kind tables and facets, which hold the institutions' rows.
 const INDIVIDUALS_BYTES: u64 = 225 << 20;
 
-/// Resident memory the population may take: its cells at the run's resolution, and the opening's scratch for one
-/// region's parts, sorted by landing key before they land.
+/// Resident memory the population may take: its agents, their persons and attachments at the run's factor.
 const POPULATION_BYTES: u64 = 275 << 20;
 
 /// Resident memory the lines the population holds may take: the relationship rows, the lines' holder lists with their
@@ -333,15 +332,37 @@ fn accounts_report(w: Inspector<'_>) -> serde_json::Value {
 
 /// The saves the run took: each one's day, its stores' sizes, its write and check times, and whether it read back to
 /// its close's hash.
-/// The tracers followed: how many, how many moved and how often, and how many ended with their cells.
-fn tracers_report(tracers: &phx_obs::Tracers) -> serde_json::Value {
-    let all = tracers.tracers();
-    json!({
-        "tracers": all.len(),
-        "moved": all.iter().filter(|t| !t.moves.is_empty()).count(),
-        "moves": all.iter().map(|t| t.moves.len()).sum::<usize>(),
-        "ended": all.iter().filter(|t| t.ended != phx_num::Missing::Absent).count(),
+/// The world's configuration from the run's arguments.
+fn config(args: &RunArgs) -> Result<WorldConfig, String> {
+    Ok(WorldConfig {
+        seed: args.seed,
+        data: args.data.clone(),
+        setup: args.setup.clone(),
+        run_dir: args.run_dir.clone(),
+        read_trace: args.read_trace,
+        representation: match &args.representation {
+            Some(named) => phx_num::Missing::Present(representation(named)?),
+            None => phx_num::Missing::Absent,
+        },
     })
+}
+
+/// The representation `twins:K` or `small:K` names.
+///
+/// # Errors
+/// Anything else, or a factor of nought.
+pub(crate) fn representation(named: &str) -> Result<phx_pop::prims::Representation, String> {
+    let bad = || format!("`{named}` is neither `twins:K` nor `small:K` for a factor K of one or more");
+    let (mode, factor) = named.split_once(':').ok_or_else(bad)?;
+    let k: u32 = factor.parse().map_err(|_| bad())?;
+    if k == 0 {
+        return Err(bad());
+    }
+    match mode {
+        "twins" => Ok(phx_pop::prims::Representation { multiplicity: k, population_divisor: 1 }),
+        "small" => Ok(phx_pop::prims::Representation { multiplicity: 1, population_divisor: k }),
+        _ => Err(bad()),
+    }
 }
 
 /// Each macro read's days, first and last value, least, greatest and sum, and the view's histograms at the close.
@@ -436,7 +457,7 @@ fn live_checks(w: Inspector<'_>, observed: &Observed<'_>, checks: &str) -> (Vec<
     (results, all_pass)
 }
 
-/// What the observer keeps beside the run: the tracers and reads it takes each day, its views, and the view at
+/// What the observer keeps beside the run: the reads it takes each day, its views, and the view at
 /// settling's end.
 struct Observing {
     watch: phx_obs::Watch,
@@ -450,8 +471,7 @@ impl Observing {
         w: Inspector<'_>,
         definitions: &phx_obs::Definitions,
     ) -> Result<(Observing, std::sync::Arc<phx_obs::View>), String> {
-        let tracers = phx_obs::Tracers::declared(w)?;
-        let watch = phx_obs::Watch { tracers, recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
+        let watch = phx_obs::Watch { recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
         let mut views = phx_obs::Views::new(&definitions.histograms, w)?;
         let opening = views.close(w, &watch.recorder);
         Ok((Observing { watch, views, settled: None }, opening))
@@ -501,13 +521,7 @@ fn play(
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
     crate::panic_hook::install(format!("seed{}-pid{}", args.seed, std::process::id()), PathBuf::from("violations"));
-    let config = WorldConfig {
-        seed: args.seed,
-        data: args.data.clone(),
-        setup: args.setup.clone(),
-        run_dir: args.run_dir.clone(),
-        read_trace: args.read_trace,
-    };
+    let config = config(args)?;
     let clock = WallClock::new();
     let assembling = clock.now_ns();
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
@@ -565,7 +579,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "saves": saves_report(w),
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
-        "tracers": tracers_report(&obs.watch.tracers),
+        "representation": w.population().representation.name(),
         "injections": crate::inject::report(w.injections()),
         "peak_resident_bytes": peak,
         "memory_budget_bytes": WORLD_BYTES,
@@ -610,6 +624,7 @@ pub fn measure_calendar(data: &Path, setup: &Path, run_dir: &Path, out: &Path) -
         setup: setup.to_path_buf(),
         run_dir: run_dir.to_path_buf(),
         read_trace: false,
+        representation: phx_num::Missing::Absent,
     };
     let world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let report = crate::measure::calendar::measure(Inspector::new(&world));

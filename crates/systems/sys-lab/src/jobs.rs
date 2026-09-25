@@ -177,10 +177,7 @@ impl CountryAttachments for Country {
         let mut d = ctx.draws(&JobsStream::DECL, subject);
         let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
         for (place, p) in h.household.persons.iter().enumerate().filter(|(_, p)| adult_roles.contains(&p.role)) {
-            let Some(life) = p.values.iter().find(|(g, _)| if_pop::LIFE_GROUPS.contains(g)).map(|(_, v)| *v) else {
-                violation!(clause = "REP.26", "an adult with no life value");
-            };
-            let sex = phx_core::component(if_pop::LIFE, life, if_pop::SEX_AT);
+            let Some(sex) = p.attr(if_pop::SEX.name) else { violation!(clause = "REP.26", "a person with no sex") };
             let [female, male] = self.employees;
             let employee = match sex {
                 if_pop::FEMALE => female,

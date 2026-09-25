@@ -5123,18 +5123,18 @@ primitives and switched for build runs by `phx run --representation twins:K|smal
 the finished world's macro results (spec Appendix E 44).
 
 The sub-steps:
-- S0.28 R0: spec (REP rewritten, Law 11, PTY, GEN.14, Appendix E 14, 16, 31, 35, 41, 44), architecture §7, this
+- S0.28 R0 *(built)*: spec (REP rewritten, Law 11, PTY, GEN.14, Appendix E 14, 16, 31, 35, 41, 44), architecture §7, this
   step, the owner's decision (§12).
-- S0.28 R1: `phx-pop` rewritten as agent tables: the table (§7.1) as the ledger's `CellHolders`, persons and
+- S0.28 R1 *(built)*: `phx-pop` rewritten as agent tables: the table (§7.1) as the ledger's `CellHolders`, persons and
   attachments in its arenas, the kinds' compiled declarations (attributes, roles, person attributes), the
   population state, saves and hash; the cell machinery deleted.
-- S0.28 R2: hazards drawn ahead per (agent, process) (§7.3); 3b's hits and 3e's outcomes on explicit households
+- S0.28 R2 *(built)*: hazards drawn ahead per (agent, process) (§7.3); 3b's hits and 3e's outcomes on explicit households
   (§7.4): persons gone leave their lines, empty households end in estates; `sys-dem`'s processes on persons by
   exact age, birthdays retired since ages are read from birth dates.
-- S0.28 R3: the opening under both representations: `sys-dem` draws households as agents (no gathering or
+- S0.28 R3 *(built)*: the opening under both representations: `sys-dem` draws households as agents (no gathering or
   landing), `sys-frm` small firms as agents with their own sizes, banks and regions, the lines drawer's rows at
   multiplicity times contracts, `GEN.population` divided by `REP.population_divisor`.
-- S0.28 R4: the world, the audit's agents family, `phx-obs` on agents (tracers retired), the live checks, `phx-check`
+- S0.28 R4 *(built)*: the world, the audit's agents family, `phx-obs` on agents (tracers retired), the live checks, `phx-check`
   rules, `phx-ffi`'s load bench and world surface; the ledger's part, pooled-part and split-request machinery
   deleted.
 - S0.28 R5: settlement's per-payment path (F-020, F-057) and the agents' passes on the pool (F-056).
@@ -5143,23 +5143,31 @@ The sub-steps:
 **Files**
 - `crates/kernel/phx-pop/src/`: `table.rs` (agent table), `person.rs` (person words and attachments), `kind.rs`
   (compiled kinds), `population.rs` (the population state, saves, hash), `hazard.rs` (next hits), `explicit.rs`
-  (households made explicit and written back), `audit.rs` (the agents family), `measure.rs` (REP.15); the cell
-  modules deleted.
+  (households made explicit and written back), `holder.rs` (the ledger's traits for agent tables), `prims.rs` (the
+  representation), `audit.rs` (the agents family); the cell modules deleted. REP.15's measures are the world's
+  `AgentDay`.
+- `crates/kernel/phx-core/src/calendar/mod.rs`: a date's civil serial and the date of one, for persons' birth dates.
 - `crates/kernel/phx-core/src/pop.rs`, `pop_process.rs`: the kinds' vocabulary and the process trait on persons.
 - `crates/interfaces/if-pop/src/lib.rs`: the household's roles, attributes and person attributes.
 - `crates/systems/sys-dem/src/`: `opening.rs`, `processes.rs`, `household.rs`, `lines.rs`; `sys-frm/src/small.rs`;
   `sys-bnk`, `sys-lab`, `sys-hsg`, `sys-soc` where they read cells.
-- `crates/assembly/phx-world/src/agents.rs` (from `cells.rs`), `estates.rs`, `registry.rs`, `day.rs`, `save/`;
-  `phx-obs`; `phx-cli`'s checks and `run.rs` (`--representation`); `phx-check`'s rules; `phx-ffi`'s load bench.
-- `crates/kernel/phx-ledger/src/`: `part.rs`, `split_request.rs` and the pooled parts deleted.
+- `crates/assembly/phx-world/src/agents.rs` (from `cells.rs`), `estates.rs`, `registry.rs`, `day.rs`, `rates.rs`,
+  `save/` (the manifest's representation, format 3); `phx-obs` (tracers and the split log retired, reads and
+  histograms on agents); `phx-cli`'s checks, `run.rs` (`--representation`) and `inject.rs`; `phx-ffi`'s `agents.rs`,
+  load bench and device report.
+- `crates/kernel/phx-ledger/src/`: `cleared.rs` (draws in whole units), `transfer.rs`, `stream.rs`, `books.rs` (a
+  holder's unit); `part.rs`, `split_request.rs`, the arrears taken before rows left a cell and the positions moved
+  outside instructions deleted; `apply.rs` lets the opening move rows between holders.
+- `data/observer/READS.toml`, `data/shared/OBS.toml` (`OBS.tracers` retired), `perf/load/volumes.toml`.
 - `data/shared/REP.toml`: `REP.multiplicity`, `REP.population_divisor`; the cell settings deleted with their
   readers (`REP.gap_sample`, `REP.narrow_share`, `REP.rank_day`, `DEM.cell_budget`, `FRM.cell_budget`,
   `DEM.age_classes` where only cells read it).
 
 **Design**
 - **Agents** (§7.1): one table per population kind; columns party, created, multiplicity, one `u32` per declared
-  attribute, pending hits, run head; arenas of rows, holdings, persons (a word each: civil birth serial, role,
-  packed person attributes) and attachments (a word each: person place or the household, line, side).
+  attribute, run head; arenas of rows, holdings, persons (a word each: civil birth serial, role, packed person
+  attributes) and attachments (a word each: person place or the household, line, side). Whether a booking is a hit
+  is the agenda's value beside its day.
 - **Declarations**: a kind declares its attributes (`AttrDecl`: region, bank, size), its roles and its person
   attributes (`PersonAttrDecl`: sex, health, education) and the attribute it is sited by. Nothing else: positions,
   review kinds and standing rates are declared by the steps that bring them.
@@ -5168,7 +5176,10 @@ The sub-steps:
   conditioned on at least one.
 - **Outcomes** (§7.4): each hit agent's explicit household changed by each process's outcome in order, persons gone
   leaving their rows with `members_leave` at the multiplicity, an empty household ending in an estate by line
-  transfers.
+  transfers. Counterparts leaving and a cleared line's losers are drawn in whole units (REP.23): a holder gives its
+  multiplicity, one for an individual.
+- **The player** (§7.6): one twin of a household agent drawn by multiplicity in the player's country, seated at the
+  opening as an agent of multiplicity one with a twin's share of every row; the donor keeps one twin fewer.
 - **Representation** (§7.6): `REP.multiplicity` and `REP.population_divisor`; the default twins at a factor set by
   the budget in R6.
 
@@ -5185,7 +5196,8 @@ The sub-steps:
 retire with the machinery)
 - `LC-0-37`: every agent's row on each line counts its multiplicity times its attachments there, and every person
   attachment names a present person (REP.31).
-- `LC-0-38`: every agent's multiplicity is its kind's under the representation in force, the player's one (REP.17).
+- `LC-0-38`: every agent's multiplicity is its kind's under the representation in force, the player's one and its
+  donor's one fewer (REP.17).
 - `LC-0-39` to `LC-0-42`: as S0.22 wrote them, on agents.
 - `LC-0-43`: the agents family — multiplicities sum to each population, persons to the persons counted by event,
   lines' sides equal (REP.13, REP.31).
@@ -5203,7 +5215,7 @@ and at S0.26 on the phone.
 `phx-pop`, `phx-core` and `phx-ledger` recorded anew; the placeholder ratchet as before.
 
 **Not allowed**: an agent split, joined or averaged; a twin that differs from another; a multiplicity changed after
-its agent began; a row whose count is not its multiplicity times its contracts; a mode branch in any system (the
+its agent began, but the player's donor's at the opening; a row whose count is not its multiplicity times its contracts; a mode branch in any system (the
 representation is two numbers every mechanism reads alike).
 
 **Done when**
@@ -16098,6 +16110,8 @@ the final build within the budget on the phone.
 | F-070 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) (this row was numbered F-008 beside S0.27's, a duplicate) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
 | F-071 | S1.01 | build, 2026-09-25 | The outlook methods' spreads across parties are assumed (`data/shared/VAL.toml`): the adaptive gain's beta(2, 2) around the experiments' 0.65 and the surveys' slower gains, the switching intensity's gamma(2, 0.2) around the experiments' 0.4, and a surprise waking beyond two widths; the trend's, the anchor's, the experience exponent's and the performance memory's values are single estimates from experiments and one survey study | no source of their dispersion across a population is in the register | estimates from household expectation panels (the Michigan survey, the New York Fed's Survey of Consumer Expectations) before S1.12 decides from outlooks | open |
 | F-072 | S1.01 | build, 2026-09-25 | The benchmark ranges of N3's and N4's definitions (`data/measure/`) were written from the cited works as the builder recalled them, with no table or page checked; a range or a figure may not match its source | none: a transcription risk in the definitions | a reviewer checks each benchmark against its source before the first read that uses it; a mismatch is a new version citing `Measure-Change: defect` (PC-90) | open |
+| F-073 | S0.28 | trial, 2026-09-25 | `phx_ledger.run_heads_read` on the heaviest of ten days: 991 630 under twins at 170 (946 591 agents standing for 160.9 M parties and 300 M persons) and 946 900 in a small world at 170, against its ratchet of 274 774 set on the cell world: each agent is a holder whose run head is read on a day its lines fall due | the settlement stream reads every holder's run head on the days its lines are due | the ratchet stated anew with the factor the budget sets (R6), and settlement's per-payment path (F-020, F-057) in R5 | open |
+| F-074 | S0.28 | build, 2026-09-25 | Whole units: every count on a line agents hold is a whole multiple of their multiplicity but the player's (one) and its donor's (the factor less one). A count to leave that no holder's unit fits stops the run (REP.31), and a cleared line's losers may pass the failed count by less than one multiplicity, the top issuer keeping the difference | the player's seat breaks the lines' common unit | watched in the build runs under both representations; if either occurs, the player's seat made from a whole agent of one twin's worth of rows (R6) | open |
 
 ---
 

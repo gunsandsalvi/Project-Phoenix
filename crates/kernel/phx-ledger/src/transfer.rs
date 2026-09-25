@@ -232,7 +232,8 @@ impl<B: Backing> Books<B> {
     }
 
     /// Members leaving a line with as many of its other side: `count` members off a party's row, and as many off the
-    /// rows of the other side's holders, each drawn by the members its row has left, so the sides stay equal;
+    /// rows of the other side's holders, each drawn by the members its row has left and giving its whole unit, so the
+    /// sides stay equal and an agent's twins alike;
     /// one instruction. A member leaving takes no share of a row's balance, which would be a claim the line still
     /// holds, and its counterparts none of theirs, which mirror the claims that stay.
     ///
@@ -255,10 +256,10 @@ impl<B: Backing> Books<B> {
         let mut tally = match self.leaving.remove(&(line, other)) {
             Some((read, tally)) if read == version => tally,
             _ => {
-                let rows: Vec<(PartyId, u32)> = self
+                let rows: Vec<(PartyId, u32, u32)> = self
                     .side_holders(line, other)
                     .into_iter()
-                    .filter_map(|p| self.row_on_side(p, line, other).map(|r| (p, r.row.count)))
+                    .filter_map(|p| self.row_on_side(p, line, other).map(|r| (p, r.row.count, self.parties.unit(p))))
                     .collect();
                 crate::cleared::Tally::new(&rows)
             }

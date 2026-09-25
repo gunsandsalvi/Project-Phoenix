@@ -1,403 +1,180 @@
-use phx_core::{
-    GroupDecl, KeyAttrDecl, KinkRegistry, PinDecl, PopEntry, PopItem, PositionDecl, PositionOf, ProfileComponent,
-    RateDecl, ResolutionDecl, RoleCount, RoleDecl, ScaleRef,
-};
+//! A population kind compiled from every system's items: its attributes, its persons' roles and attributes, and where
+//! its agents are sited.
+
+use phx_core::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, RoleDecl};
 use phx_macros::clause;
-use phx_num::Missing;
+use phx_num::{Missing, violation};
 
-use crate::key::{KeyField, KeyLayout};
-use crate::sig::SigLayout;
-use crate::steps::StepTable;
+use crate::consts::{PERSON_ATTR_BITS, ROLE_BITS};
 
-/// An item with the system that declared it, its one writer.
+/// An item as its kind holds it, with the system that declared it and writes it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Declared<T> {
-    pub writer: &'static str,
     pub item: T,
+    pub system: &'static str,
 }
 
-/// What a position is measured against, resolved: another of the kind's positions, or one of its standing rates, by
-/// place.
+/// A person attribute's place in a person's word: its bits from `shift`, `bits` wide.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Scale {
-    Position(usize),
-    Rate(usize),
+pub struct PersonField {
+    pub decl: PersonAttrDecl,
+    pub system: &'static str,
+    pub shift: u32,
+    pub bits: u32,
 }
 
-/// A position as the kind holds it: once for the member, or once for each role it was declared for.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Position {
-    pub name: &'static str,
-    pub role: Missing<usize>,
-    pub unit: &'static str,
-    pub scale: Scale,
-    pub steps: StepTable,
-    pub writer: &'static str,
-}
-
-/// A profile group as the kind holds it: its role, the key field counting that role's persons in each member (one
-/// each when absent), its components, and how many joint values they take.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Group {
-    pub name: &'static str,
-    pub role: usize,
-    pub per_member: Missing<KeyField>,
-    pub components: Vec<ProfileComponent>,
-    pub values: u32,
-    pub writer: &'static str,
-}
-
-/// A population kind compiled from every system's items: its roles, key layout, positions with their scales and
-/// steps, standing rates, profile groups, review kinds, pins and kink signature. Each list is in name order, so the
-/// layout owes nothing to the order systems are registered in.
-#[clause("REP.33", "Law 10")]
+/// A population kind as its agents are laid out.
+#[clause("REP.41", "REP.26", "Law 10")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PopKindDecl {
     pub kind: &'static str,
+    pub attrs: Vec<Declared<AttrDecl>>,
     pub roles: Vec<Declared<RoleDecl>>,
-    pub key_attrs: Vec<Declared<KeyAttrDecl>>,
-    pub key: KeyLayout,
-    pub positions: Vec<Position>,
-    pub rates: Vec<Declared<RateDecl>>,
-    pub groups: Vec<Group>,
-    pub reviews: Vec<Declared<&'static str>>,
-    pub pins: Vec<Declared<PinDecl>>,
-    pub sig: SigLayout,
-    /// How the kind is represented, which the world requires of every kind it keeps.
-    pub resolution: Option<Declared<ResolutionDecl>>,
-    /// The key attribute naming the region its members live in, where a kind that leaves estates declares one.
+    pub person_attrs: Vec<PersonField>,
+    /// The attribute whose value is the region an agent lives in.
     pub sited_by: Missing<usize>,
 }
 
-/// Every item of one kind, sorted into its lists.
-#[derive(Default)]
-struct Items {
-    roles: Vec<Declared<RoleDecl>>,
-    key_attrs: Vec<Declared<KeyAttrDecl>>,
-    positions: Vec<Declared<PositionDecl>>,
-    rates: Vec<Declared<RateDecl>>,
-    groups: Vec<Declared<GroupDecl>>,
-    reviews: Vec<Declared<&'static str>>,
-    pins: Vec<Declared<PinDecl>>,
-    resolution: Option<Declared<ResolutionDecl>>,
-    sited_by: Option<&'static str>,
-}
-
-fn name_of(item: &PopItem) -> &'static str {
-    match item {
-        PopItem::Role(r) => r.name,
-        PopItem::KeyAttr(a) => a.name,
-        PopItem::Position(p) => p.name,
-        PopItem::StandingRate(r) => r.name,
-        PopItem::ProfileGroup(g) => g.name,
-        PopItem::ReviewKind(d) => d,
-        PopItem::Pin(p) => p.name,
-        PopItem::Resolution(_) => "resolution",
-        PopItem::SitedBy(_) => "sited by",
-    }
-}
-
-impl Items {
-    fn of(kind: &'static str, entries: &[PopEntry], errors: &mut Vec<String>) -> Items {
-        let mut items = Items::default();
-        let mut seen: Vec<(&'static str, &'static str)> = Vec::new();
-        for e in entries.iter().filter(|e| e.kind == kind) {
-            let name = name_of(&e.item);
-            if let Some((_, first)) = seen.iter().find(|(n, _)| *n == name) {
-                errors.push(format!("`{kind}`: `{name}` declared by {first} and again by {}", e.system));
-                continue;
-            }
-            seen.push((name, e.system));
-            let writer = e.system;
-            match e.item {
-                PopItem::Role(item) => items.roles.push(Declared { writer, item }),
-                PopItem::KeyAttr(item) => items.key_attrs.push(Declared { writer, item }),
-                PopItem::Position(item) => items.positions.push(Declared { writer, item }),
-                PopItem::StandingRate(item) => items.rates.push(Declared { writer, item }),
-                PopItem::ProfileGroup(item) => items.groups.push(Declared { writer, item }),
-                PopItem::ReviewKind(item) => items.reviews.push(Declared { writer, item }),
-                PopItem::Pin(item) => items.pins.push(Declared { writer, item }),
-                PopItem::Resolution(item) => items.resolution = Some(Declared { writer, item }),
-                PopItem::SitedBy(attr) => items.sited_by = Some(attr),
-            }
-        }
-        items.roles.sort_by_key(|d| d.item.name);
-        items.key_attrs.sort_by_key(|d| d.item.name);
-        items.positions.sort_by_key(|d| d.item.name);
-        items.rates.sort_by_key(|d| d.item.name);
-        items.groups.sort_by_key(|d| d.item.name);
-        items.reviews.sort_by_key(|d| d.item);
-        items.pins.sort_by_key(|d| d.item.name);
-        items
-    }
-
-    fn role(&self, name: &str) -> Option<usize> {
-        self.roles.iter().position(|r| r.item.name == name)
-    }
-}
-
-/// A declared position once per instance: the member's, or one per role, roles in name order.
-fn instances(items: &Items, errors: &mut Vec<String>) -> Vec<(Declared<PositionDecl>, Missing<usize>)> {
-    let mut out = Vec::new();
-    for p in &items.positions {
-        match p.item.of {
-            PositionOf::Member => out.push((*p, Missing::Absent)),
-            PositionOf::Roles(roles) => {
-                let mut places: Vec<usize> = Vec::new();
-                for r in roles {
-                    match items.role(r) {
-                        Some(i) if !places.contains(&i) => places.push(i),
-                        Some(_) => errors.push(format!("position `{}` names role `{r}` twice", p.item.name)),
-                        None => {
-                            let name = p.item.name;
-                            errors.push(format!("position `{name}` is of role `{r}`, which the kind has not"));
-                        }
-                    }
-                }
-                if roles.is_empty() {
-                    errors.push(format!("position `{}` is of no role", p.item.name));
-                }
-                places.sort_unstable();
-                out.extend(places.into_iter().map(|i| (*p, Missing::Present(i))));
-            }
-        }
-    }
-    out
-}
-
-/// The instance a position's scale names: the same role's instance of a position held per role, or the member's.
-fn scale_of(
-    at: usize,
-    of: &[(Declared<PositionDecl>, Missing<usize>)],
-    items: &Items,
-    errors: &mut Vec<String>,
-) -> Option<Scale> {
-    let (p, role) = of.get(at)?;
-    match p.item.scale {
-        ScaleRef::Rate(r) => {
-            let found = items.rates.iter().position(|d| d.item.name == r).map(Scale::Rate);
-            if found.is_none() {
-                errors
-                    .push(format!("position `{}` is measured against rate `{r}`, which the kind has not", p.item.name));
-            }
-            found
-        }
-        ScaleRef::Position(s) if s == p.item.name => {
-            errors.push(format!("position `{s}` is measured against itself"));
-            None
-        }
-        ScaleRef::Position(s) => {
-            let same_role = of.iter().position(|(q, r)| q.item.name == s && *r == *role);
-            let member = of.iter().position(|(q, r)| q.item.name == s && *r == Missing::Absent);
-            let found = same_role.or(member).map(Scale::Position);
-            if found.is_none() {
-                errors.push(format!(
-                    "position `{}` is measured against `{s}`, which the kind holds neither for its role nor for the member",
-                    p.item.name
-                ));
-            }
-            found
-        }
+/// Bits that hold every value below `values`.
+fn bits_for(values: u32) -> u32 {
+    match values.checked_sub(1) {
+        Some(most) => u32::BITS - most.leading_zeros(),
+        None => 0,
     }
 }
 
 impl PopKindDecl {
-    /// A kind compiled from every system's items for it, each position's steps read through `steps` from the partition
-    /// its declaration names.
+    /// The kind compiled from the items declared for it.
     ///
     /// # Errors
-    /// Every refusal at once: an item declared twice, a role, rate or scale that the kind does not hold, a position
-    /// measured against itself, a partition that is not one, a profile group of no component or of more joint values
-    /// than a count can name, and a key that does not fit its record.
-    pub fn compile(
-        kind: &'static str,
-        entries: &[PopEntry],
-        kinks: &KinkRegistry,
-        steps: &dyn Fn(&'static str) -> Result<StepTable, String>,
-    ) -> Result<PopKindDecl, Vec<String>> {
+    /// Every refusal at once: a name declared twice, roles or person attributes beyond a person's word, an attribute
+    /// of no values, or a siting attribute the kind does not hold.
+    pub fn compile(kind: &'static str, entries: &[PopEntry]) -> Result<PopKindDecl, Vec<String>> {
         let mut errors = Vec::new();
-        let items = Items::of(kind, entries, &mut errors);
-        let of = instances(&items, &mut errors);
-        let mut positions = Vec::with_capacity(of.len());
-        for (i, (p, role)) in of.iter().enumerate() {
-            let scale = scale_of(i, &of, &items, &mut errors);
-            let table = steps(p.item.steps).map_err(|e| format!("position `{}`: {e}", p.item.name));
-            match (scale, table) {
-                (Some(scale), Ok(steps)) => positions.push(Position {
-                    name: p.item.name,
-                    role: *role,
-                    unit: p.item.unit,
-                    scale,
-                    steps,
-                    writer: p.writer,
-                }),
-                (_, Err(e)) => errors.push(e),
-                (None, Ok(_)) => {}
-            }
-        }
-        let mut groups = Vec::with_capacity(items.groups.len());
-        for g in &items.groups {
-            let Some(role) = items.role(g.item.role) else {
-                errors.push(format!(
-                    "profile group `{}` is of role `{}`, which the kind has not",
-                    g.item.name, g.item.role
-                ));
-                continue;
-            };
-            if g.item.components.is_empty() {
-                errors.push(format!("profile group `{}` has no component", g.item.name));
-                continue;
-            }
-            let values = g.item.components.iter().try_fold(1_u32, |acc, c| acc.checked_mul(c.values));
-            match values {
-                Some(v) if v > 0 => groups.push(Group {
-                    name: g.item.name,
-                    role,
-                    per_member: Missing::Absent,
-                    components: g.item.components.to_vec(),
-                    values: v,
-                    writer: g.writer,
-                }),
-                _ => errors
-                    .push(format!("profile group `{}` has no joint value, or more than a count names", g.item.name)),
-            }
-        }
-        let attrs: Vec<KeyAttrDecl> = items.key_attrs.iter().map(|d| d.item).collect();
-        let key = KeyLayout::new(&attrs).map_err(|e| format!("`{kind}`: {e}"));
-        if let Ok(layout) = &key {
-            for g in &mut groups {
-                let Some(role) = items.roles.get(g.role) else { continue };
-                if let RoleCount::Key(attr) = role.item.per_member {
-                    match layout.named(attr) {
-                        Some(f) => g.per_member = Missing::Present(f),
-                        None => errors.push(format!(
-                            "role `{}` is counted by key attribute `{attr}`, which the kind has not",
-                            role.item.name
-                        )),
+        let mut attrs = Vec::new();
+        let mut roles = Vec::new();
+        let mut person_attrs: Vec<PersonField> = Vec::new();
+        let mut sited: Option<&'static str> = None;
+        let mut shift = 0_u32;
+        for e in entries.iter().filter(|e| e.kind == kind) {
+            match e.item {
+                PopItem::Attr(a) => {
+                    if a.values == 0 {
+                        errors.push(format!("`{kind}` attribute `{}` takes no values", a.name));
+                    }
+                    attrs.push(Declared { item: a, system: e.system });
+                }
+                PopItem::Role(r) => roles.push(Declared { item: r, system: e.system }),
+                PopItem::PersonAttr(p) => {
+                    if p.values == 0 {
+                        errors.push(format!("`{kind}` person attribute `{}` takes no values", p.name));
+                    }
+                    let bits = bits_for(p.values);
+                    person_attrs.push(PersonField { decl: p, system: e.system, shift, bits });
+                    shift += bits;
+                }
+                PopItem::SitedBy(name) => {
+                    if sited.replace(name).is_some() {
+                        errors.push(format!("`{kind}` sited by two attributes"));
                     }
                 }
             }
         }
+        let names: Vec<&str> = attrs
+            .iter()
+            .map(|a| a.item.name)
+            .chain(roles.iter().map(|r| r.item.name))
+            .chain(person_attrs.iter().map(|p| p.decl.name))
+            .collect();
+        for (i, n) in names.iter().enumerate() {
+            if names.iter().skip(i + 1).any(|m| m == n) {
+                errors.push(format!("`{kind}` declares `{n}` twice"));
+            }
+        }
+        if roles.len() > 1 << ROLE_BITS {
+            errors.push(format!("`{kind}` declares {} roles, more than a person's word holds", roles.len()));
+        }
+        if shift > PERSON_ATTR_BITS {
+            errors.push(format!("`{kind}`'s person attributes take {shift} bits, more than a person's word holds"));
+        }
         let mut sited_by = Missing::Absent;
-        if let Some(attr) = items.sited_by {
-            match items.key_attrs.iter().position(|a| a.item.name == attr) {
-                Some(i) => sited_by = Missing::Present(i),
-                None => errors.push(format!("`{kind}` is sited by key attribute `{attr}`, which it has not")),
+        if let Some(name) = sited {
+            if let Some(i) = attrs.iter().position(|a| a.item.name == name) {
+                sited_by = Missing::Present(i);
+            } else {
+                errors.push(format!("`{kind}` sited by `{name}`, an attribute it does not hold"));
             }
         }
-        let names: Vec<&'static str> = positions.iter().map(|p| p.name).collect();
-        let sig = SigLayout::new(&names, kinks);
-        match key {
-            Ok(key) if errors.is_empty() => Ok(PopKindDecl {
-                kind,
-                roles: items.roles,
-                key_attrs: items.key_attrs,
-                key,
-                positions,
-                rates: items.rates,
-                groups,
-                reviews: items.reviews,
-                pins: items.pins,
-                sig,
-                resolution: items.resolution,
-                sited_by,
-            }),
-            Ok(_) => Err(errors),
-            Err(e) => {
-                errors.push(e);
-                Err(errors)
-            }
-        }
+        if errors.is_empty() { Ok(PopKindDecl { kind, attrs, roles, person_attrs, sited_by }) } else { Err(errors) }
+    }
+
+    /// An attribute's place among the kind's.
+    #[must_use]
+    pub fn attr(&self, name: &str) -> Option<usize> {
+        self.attrs.iter().position(|a| a.item.name == name)
+    }
+
+    /// A role's place among the kind's.
+    #[must_use]
+    pub fn role(&self, name: &str) -> Option<usize> {
+        self.roles.iter().position(|r| r.item.name == name)
+    }
+
+    /// A role's name by its place.
+    #[must_use]
+    pub fn role_name(&self, place: usize) -> &'static str {
+        let Some(r) = self.roles.get(place) else {
+            violation!(clause = "REP.26", "a role beyond the kind's", role = place);
+        };
+        r.item.name
+    }
+
+    /// A person attribute's place among the kind's.
+    #[must_use]
+    pub fn person_attr(&self, name: &str) -> Option<usize> {
+        self.person_attrs.iter().position(|p| p.decl.name == name)
+    }
+
+    /// Whether the kind's agents hold persons.
+    #[must_use]
+    pub fn has_persons(&self) -> bool {
+        !self.roles.is_empty()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use phx_core::register::values::Partition;
-    use phx_core::{
-        GroupDecl, KeyAttrDecl, KinkRegistry, PopEntry, PopItem, PositionDecl, PositionOf, ProfileComponent, RateDecl,
-        RoleDecl, ScaleRef,
-    };
-    use phx_num::Missing;
+    use phx_core::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, RoleDecl};
 
-    use super::{PopKindDecl, Scale};
-    use crate::steps::StepTable;
+    use super::{PopKindDecl, bits_for};
 
-    const HH: &str = "household";
-
-    fn entry(system: &'static str, item: PopItem) -> PopEntry {
-        PopEntry { system, kind: HH, item }
-    }
-
-    fn position(name: &'static str, of: PositionOf, scale: ScaleRef) -> PopItem {
-        PopItem::Position(PositionDecl { name, unit: "money", of, scale, steps: "REP.steps", clause: "REP.20" })
-    }
-
-    fn steps(_: &'static str) -> Result<StepTable, String> {
-        StepTable::new(&Partition { exp: 2, bounds: [0, 50, 100].into() })
-    }
-
-    fn base() -> Vec<PopEntry> {
-        vec![
-            entry(
-                "DEM",
-                PopItem::Role(RoleDecl { name: "adult_1", per_member: phx_core::RoleCount::One, clause: "REP.26" }),
-            ),
-            entry(
-                "DEM",
-                PopItem::Role(RoleDecl { name: "adult_2", per_member: phx_core::RoleCount::One, clause: "REP.26" }),
-            ),
-            entry("HH", PopItem::StandingRate(RateDecl { name: "HH.spending", unit: "money/day", clause: "REP.20" })),
-            entry("DEM", PopItem::KeyAttr(KeyAttrDecl { name: "DEM.composition", values: 9, clause: "REP.19" })),
-        ]
+    fn entry(item: PopItem) -> PopEntry {
+        PopEntry { system: "DEM", kind: "household", item }
     }
 
     #[test]
-    fn pop_kind_builder_records_writers() {
-        let mut entries = base();
-        entries.push(entry("HH", position("HH.income", PositionOf::Member, ScaleRef::Rate("HH.spending"))));
-        entries.push(entry(
-            "TAX",
-            position("TAX.income_to_date", PositionOf::Roles(&["adult_2", "adult_1"]), ScaleRef::Position("HH.income")),
-        ));
-        let k = PopKindDecl::compile(HH, &entries, &KinkRegistry::default(), &steps).unwrap();
-        let held: Vec<(&str, Missing<usize>, &str, Scale)> =
-            k.positions.iter().map(|p| (p.name, p.role, p.writer, p.scale)).collect();
-        assert_eq!(
-            held,
-            [
-                ("HH.income", Missing::Absent, "HH", Scale::Rate(0)),
-                ("TAX.income_to_date", Missing::Present(0), "TAX", Scale::Position(0)),
-                ("TAX.income_to_date", Missing::Present(1), "TAX", Scale::Position(0)),
-            ],
-            "both systems' positions, each with its writer, one instance per role in name order"
-        );
-        let mut twice = entries.clone();
-        twice.push(entry("SOC", position("HH.income", PositionOf::Member, ScaleRef::Rate("HH.spending"))));
-        let e = PopKindDecl::compile(HH, &twice, &KinkRegistry::default(), &steps).unwrap_err();
-        assert_eq!(e, ["`household`: `HH.income` declared by HH and again by SOC"]);
-        let mut reordered = entries;
-        reordered.reverse();
-        let r = PopKindDecl::compile(HH, &reordered, &KinkRegistry::default(), &steps).unwrap();
-        assert_eq!(r, k, "the layout owes nothing to the order of declaration");
+    fn bits_hold_every_value() {
+        assert_eq!([1, 2, 3, 4, 5, 9, 256].map(bits_for), [0, 1, 2, 2, 3, 4, 8]);
     }
 
-    const HUGE: &[ProfileComponent] =
-        &[ProfileComponent { name: "a", values: 1 << 20 }, ProfileComponent { name: "b", values: 1 << 20 }];
+    #[test]
+    fn person_attributes_pack_after_one_another() {
+        let entries = [
+            entry(PopItem::Attr(AttrDecl { name: "region", values: 25, clause: "x" })),
+            entry(PopItem::Role(RoleDecl { name: "head", clause: "x" })),
+            entry(PopItem::PersonAttr(PersonAttrDecl { name: "sex", values: 2, clause: "x" })),
+            entry(PopItem::PersonAttr(PersonAttrDecl { name: "education", values: 10, clause: "x" })),
+            entry(PopItem::SitedBy("region")),
+        ];
+        let k = PopKindDecl::compile("household", &entries).unwrap();
+        let fields: Vec<(u32, u32)> = k.person_attrs.iter().map(|f| (f.shift, f.bits)).collect();
+        assert_eq!(fields, [(0, 1), (1, 4)]);
+        assert_eq!((k.attr("region"), k.role("head"), k.person_attr("education")), (Some(0), Some(0), Some(1)));
+    }
 
     #[test]
-    fn a_kind_refuses_what_it_cannot_hold() {
-        let mut entries = base();
-        entries.push(entry("HH", position("HH.a", PositionOf::Member, ScaleRef::Position("HH.a"))));
-        entries.push(entry("HH", position("HH.b", PositionOf::Roles(&["child"]), ScaleRef::Rate("HH.none"))));
-        entries.push(entry("HH", position("HH.c", PositionOf::Member, ScaleRef::Position("HH.b"))));
-        let group = |name: &'static str, role: &'static str, components: &'static [ProfileComponent]| {
-            PopItem::ProfileGroup(GroupDecl { name, role, components, clause: "REP.32" })
-        };
-        entries.push(entry("LAB", group("LAB.none", "adult_1", &[])));
-        entries.push(entry("LAB", group("LAB.child", "child", &[ProfileComponent { name: "skill", values: 4 }])));
-        entries.push(entry("LAB", group("LAB.huge", "adult_1", HUGE)));
-        let e = PopKindDecl::compile(HH, &entries, &KinkRegistry::default(), &steps).unwrap_err();
-        assert_eq!(e.len(), 6, "{e:#?}");
+    fn a_kind_sited_by_nothing_it_holds_is_refused() {
+        let entries = [entry(PopItem::SitedBy("region"))];
+        assert!(PopKindDecl::compile("household", &entries).is_err());
     }
 }

@@ -25,15 +25,16 @@ pub enum ActsOn {
     },
 }
 
-/// A date on which a rate's inputs can change though its row is not visited, which ends the validity of the
-/// envelope its candidate days were drawn at.
+/// A date on which a rate's inputs can change though its agent is not visited, on which the agent's next hit is drawn
+/// again.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RateChange {
     /// The first day of each year, when tables read by age or by year roll on.
     YearStart,
-    /// The first day of each month, which ends the windows of a rate that climbs through a year, as the chance of a
-    /// birthday not yet passed does.
+    /// The first day of each month.
     MonthStart,
+    /// A person's birthday, when a rate read by exact age moves on.
+    Birthday,
     /// A policy value's effective day.
     Policy(&'static str),
     /// The row's next review by the named schedule.
@@ -41,7 +42,7 @@ pub enum RateChange {
 }
 
 /// A hazard's rate: a table primitive read at declared axes of the thing it acts on, and the dates its inputs can
-/// change without a visit; a change of profile values comes only with a visit, which draws afresh.
+/// change without a visit; any change to the agent itself draws afresh.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RateFn {
     pub table: &'static str,
@@ -49,17 +50,10 @@ pub struct RateFn {
     pub changes: &'static [RateChange],
 }
 
-/// How a scheduled hazard bounds its rate over a row's profile values.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EnvelopeRule {
-    /// The table's greatest rate over the values the row's profile holds.
-    MaxOverProfile,
-}
-
-/// How candidate days are drawn: ahead at an envelope rate and thinned, or every day.
+/// How hits are drawn: the day of the next drawn ahead, or a count every day.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DrawScheme {
-    Scheduled { envelope: EnvelopeRule },
+    Scheduled,
     Daily,
 }
 

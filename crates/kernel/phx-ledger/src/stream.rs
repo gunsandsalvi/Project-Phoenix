@@ -234,7 +234,7 @@ impl<B: Backing> Books<B> {
             );
         }
         if row.side() == Side::Asset {
-            day.claimants.insert(holder, row.row.count);
+            day.claimants.insert(holder, (row.row.count, self.parties.unit(holder)));
         }
         let (from, to, members) = match row.side() {
             Side::Liability => (holder, top, row.row.count),
@@ -268,7 +268,7 @@ impl<B: Backing> Books<B> {
     /// Every payment a party takes part in today, in its payment order: its due rows in its run's order, by the
     /// order of their terms; each claimant's row is its own payment, and each row owing a line is every payment the
     /// line's claimants make due.
-    #[clause("REP.8")]
+    #[clause("REP.9")]
     pub(crate) fn payments_of(
         &self,
         party: PartyId,
@@ -358,7 +358,7 @@ impl<B: Backing> Books<B> {
     /// Stage 7a: one stream over every holder table's run heads, holder-major. A holder whose head has not come costs
     /// that one read; on its head's day its segment's rows on lines due today are read, and each claimant's row adds
     /// its payment's debits and credits to the records of the accounts it touches.
-    #[clause("MON.5", "REP.8", "SET.6")]
+    #[clause("MON.5", "REP.9", "SET.6")]
     pub(crate) fn stream(
         &self,
         due: &DueLines,

@@ -17,7 +17,7 @@ use crate::instruction::{Instruction, InstructionId, LegKind, LegRec, ReasonId};
 use crate::instrument::Instruments;
 use crate::line::Lines;
 
-/// The world's parties: one kind table for each individual kind, then one cell table for each population kind, each
+/// The world's parties: one kind table for each individual kind, then one agent table for each population kind, each
 /// by its place among them, and the directory that finds a party's row and follows an ended party to its successor.
 #[derive(Debug)]
 pub struct Parties<B: Backing = SystemBacking> {
@@ -48,7 +48,7 @@ impl<B: Backing> Parties<B> {
         place16(i)
     }
 
-    /// Every holder table in place order: the kind tables, then the cell tables.
+    /// Every holder table in place order: the kind tables, then the population's agent tables.
     pub fn holders(&self) -> impl Iterator<Item = &dyn HolderTable> + '_ {
         let kinds = self.tables.iter().map(|t| -> &dyn HolderTable { t });
         kinds.chain(self.cells.iter().map(|c| -> &dyn HolderTable { &**c }))
@@ -84,20 +84,20 @@ impl<B: Backing> Parties<B> {
         &mut **c
     }
 
-    /// The population's cell tables, in place order after the kind tables.
+    /// The population's agent tables, in place order after the kind tables.
     #[must_use]
     pub fn cells(&self) -> &[Box<dyn CellHolders>] {
         &self.cells
     }
 
-    /// The first cell table's place.
+    /// The first agent table's place.
     #[must_use]
     pub fn first_cell_place(&self) -> u16 {
         place16(self.tables.len())
     }
 
-    /// The cell tables with the directory and the address space, apart, so the population can split and land cells,
-    /// begin and end their parties and grow their arenas at once.
+    /// The agent tables with the directory and the address space, apart, so the population can begin and end its
+    /// agents and grow their arenas at once.
     pub fn cells_mut(&mut self) -> (&mut Vec<Box<dyn CellHolders>>, &mut Directory, &mut AddressSpace) {
         (&mut self.cells, &mut self.directory, &mut self.space)
     }
@@ -139,6 +139,14 @@ impl<B: Backing> Parties<B> {
                 violation!(clause = "PTY.10", "a party read that is not live", party = party.get())
             }
         }
+    }
+
+    /// The members a party's row stands for on each contract it holds: an agent's multiplicity, one for an individual.
+    #[clause("REP.3")]
+    #[must_use]
+    pub fn unit(&self, party: PartyId) -> u32 {
+        let (place, slot) = self.row(party);
+        self.holder(place).weight(slot)
     }
 
     /// Ends an individual whose rows and holdings have all left it: its row freed and its identity ended with no
@@ -256,8 +264,8 @@ impl<B: Backing> Books<B> {
         Books::with_cells(kinds, 0, |_, _| Vec::new(), size)
     }
 
-    /// Empty books with a kind table for each individual kind, then `cells` cell tables, which `make` builds in the
-    /// books' address space from the first cell table's identity on.
+    /// Empty books with a kind table for each individual kind, then `cells` agent tables, which `make` builds in the
+    /// books' address space from the first agent table's identity on.
     #[must_use]
     pub fn with_cells(
         kinds: &[&'static str],
@@ -485,7 +493,7 @@ impl<B: Backing> Books<B> {
     }
 
     /// Empty books of these books' kinds and sizes, carrying their declarations: line kinds, reasons, instrument
-    /// events and due reasons, as a save of these books is read back over; `make` builds their empty cell tables.
+    /// events and due reasons, as a save of these books is read back over; `make` builds their empty agent tables.
     #[must_use]
     pub fn declared(
         &self,

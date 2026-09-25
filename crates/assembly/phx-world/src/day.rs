@@ -58,8 +58,8 @@ const APPLY_POINTS: [SubStep; 23] = [
 ];
 
 /// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, stage 2's
-/// contract process at 2d, over the fails of the days since it last ran, 3b's screening of the population's cells and
-/// 3e's outcomes of their hits, 9b's accounts, posting the day's settled money, and 10a's public events.
+/// contract process at 2d, over the fails of the days since it last ran, 3b's gathering of the population's agents due
+/// and 3e's outcomes of their hits, 9b's accounts, posting the day's settled money, and 10a's public events.
 pub const KERNEL_WORK: [SubStep; 6] =
     [SubStep::S1b, SubStep::S2d, SubStep::S3b, SubStep::S3e, SubStep::S9b, SubStep::S10a];
 
@@ -107,8 +107,7 @@ impl World {
         let mut days = 0_u32;
         loop {
             let day = self.today.succ();
-            let traced = observer.as_deref().map(|o| -> &dyn phx_core::TracedCells { o });
-            self.run_day(day, traced, clock);
+            self.run_day(day, clock);
             self.today = day;
             if let Some(o) = observer.as_deref_mut() {
                 o.day_closed(crate::Inspector::new(self));
@@ -129,9 +128,8 @@ impl World {
     /// Runs one day: each sub-step in the table's order, skipping one with no handlers unless it is a kernel apply of
     /// a stage that runs, and one that runs only on business days when no country has one.
     #[clause("TIME.6", "TIME.8")]
-    fn run_day(&mut self, day: Day, traced: Option<&dyn phx_core::TracedCells>, clock: &dyn Clock) {
+    fn run_day(&mut self, day: Day, clock: &dyn Clock) {
         let any_business = self.calendar.any_business(day);
-        self.split_log.splits.clear();
         self.day_messages.lapse();
         let mut pending: Vec<(SubStep, Intents)> = Vec::new();
         let mut dues = DaySettlement::default();
@@ -157,10 +155,10 @@ impl World {
             }
             if info.step == SubStep::S3b {
                 self.catastrophe_losses(day);
-                self.cells_screen(day);
+                self.agents_gather(day);
             }
             if info.step == SubStep::S3e {
-                self.cells_outcomes(day);
+                self.agents_outcomes(day);
             }
             if info.step == SubStep::S10a {
                 // Yesterday's events recorded after its 10a are judged today; the rest are judged again the same way.
@@ -168,7 +166,7 @@ impl World {
                 self.events.publish(from, &self.news);
             }
             if info.step == SubStep::S10b {
-                self.cells_settle(day, traced);
+                self.agents_settle(day);
             }
             if info.step == SubStep::S2d {
                 self.process_fails(day);
@@ -284,7 +282,7 @@ impl World {
     }
 
     /// The contract process over the fails waiting since the last business day, each read against the party that
-    /// holds its row now: a cell that landed since is its successor.
+    /// holds its row now: an ended party's successor, if it has one.
     #[clause("SET.3", "PTY.10")]
     fn process_fails(&mut self, day: Day) {
         let fails = std::mem::take(&mut self.unprocessed);
@@ -325,7 +323,6 @@ impl World {
     #[clause("N1")]
     fn close(&mut self, day: Day, dues: DaySettlement) {
         self.books.parties.compact_arenas();
-        self.books.ledger.flush_outside(self.audit.stream());
         let book = self.books.close();
         self.accounts.close_day(&book);
         self.settlements.push(Settled {
@@ -336,12 +333,11 @@ impl World {
             unrecorded: phx_num::Missing::Absent,
         });
         // A fail waits for the next business day's contract process, and its party may end before then.
-        let waiting = book.waiting();
         let directory = self.books.parties.cells_mut().1;
-        for f in &waiting {
+        for f in &book.fails {
             directory.retain(f.party);
         }
-        self.unprocessed.extend(waiting);
+        self.unprocessed.extend(book.fails.iter().copied());
         let mut reads = ReadTrace::default();
         for t in &mut self.tables {
             let found = t.columns.take_trace();
@@ -355,8 +351,6 @@ impl World {
 
     /// Every audit family over what the world holds at a day's close, and the day's accounts then done.
     pub(crate) fn audit_close(&mut self, day: Day, trace: Option<ReadTrace>) -> phx_audit::CloseRecord {
-        let lines = &self.books.ledger.lines;
-        let sides = |line: phx_id::LineId, side: phx_ledger::algebra::Side| *lines.side_decl(line, side);
         let inputs = CloseInputs {
             day,
             register: &self.register,
@@ -370,7 +364,10 @@ impl World {
             books: &self.books,
             markets: &self.markets,
             accounts: &phx_acct::audit::AccountsView::new(&self.books, &self.accounts),
-            cells: &self.population.view::<phx_store::SystemBacking>(self.books.parties.cells(), &sides),
+            agents: &phx_pop::audit::AgentsView::<phx_store::SystemBacking>::new(
+                self.books.parties.cells(),
+                &self.population,
+            ),
             own: &self.own,
         };
         let record = self.audit.close(inputs, &mut self.findings);

@@ -1,26 +1,19 @@
-//! The opening's small firms: the country's firms below the promotion rank, their sizes by the firm-size law cut at
-//! the smallest firm the rank admits, counted by employment size class, apportioned over the regions by their land
-//! and over the banks by the banks' drawn sizes, and landed as cells keyed by region, size class and bank.
+//! The opening's small firms: the country's firms below the individuals' rank as agents, one for every `k` firms under
+//! twins, apportioned over the regions by their land and over the banks by the banks' drawn sizes, each with its own
+//! size drawn from the firm-size law cut at the smallest firm the rank admits.
 
-use phx_core::register::values::Partition;
-use phx_core::{
-    Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, Prim, StreamDef, apportion, opening_subject,
-};
-use phx_id::{LineId, PartyId};
-use phx_ledger::algebra::Side;
+use phx_core::{Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, StreamDef, apportion, opening_subject};
+use phx_id::PartyId;
 use phx_ledger::books::Books;
 use phx_ledger::opening::{derived, key, whole};
 use phx_macros::clause;
-use phx_num::{Missing, capacity_exceeded, violation};
-use phx_pop::check::LineKinks;
-use phx_pop::key::KeyRecord;
-use phx_pop::landing::{Drawn, TenB, land_drawn};
+use phx_num::{capacity_exceeded, violation};
 use phx_pop::population::{PopKind, Population};
-use phx_pop::profile::{Profile, ProfileLayout};
+use phx_rand::AliasTable;
 use phx_rand::float::{from_u64, len_u64};
 use phx_store::SystemBacking;
 
-use crate::consts::{AMOUNTS, CLASSES, PERCENT, SHARE_PARTS, SMALL_PURPOSES};
+use crate::consts::{AMOUNTS, CLASSES, PERCENT, SMALL_PURPOSES};
 use crate::{BANK_ATTR, FixedPrim, REGION, SIZE, SMALL_FIRM, SmallStream};
 
 const FIRMS: &str = "FRM.firms";
@@ -28,13 +21,13 @@ const DEBT: &str = "FRM.debt";
 const DEPOSITS: &str = "FRM.deposits";
 const PLANT: &str = "FRM.plant";
 const BANKS: &str = "BNK.banks";
-/// Each small-firm cell with the persons its firms employ, their deposits and their debt.
+/// Each small-firm agent with the persons its twins employ, their deposits and their debt.
 pub const SMALL_FIRMS: &str = "FRM.small_firms";
 pub const SMALL_DEPOSITS: &str = "FRM.small_deposits";
 pub const SMALL_DEBT: &str = "FRM.small_debt";
-/// Each small-firm cell with the bank its firms bank with.
+/// Each small-firm agent with the bank its twins bank with.
 pub const SMALL_BANKS: &str = "FRM.small_banks";
-/// Each small-firm cell with its firms.
+/// Each small-firm agent with its twins.
 pub const SMALL_COUNTS: &str = "FRM.small_counts";
 
 /// Parties with an amount each, as the opening's draws are kept.
@@ -47,24 +40,14 @@ pub struct SmallPrims {
     pub size_exponent: FixedPrim,
     pub deposit_share: FixedPrim,
     pub depreciation: FixedPrim,
-    pub classes: Prim<Partition>,
 }
 
-/// Each country's small firms landed as cells, with their employees, deposits and debt drawn for the banks' and
-/// labour's lines to read.
-#[clause("FRM.23", "GEN.2", "GEN.3", "GEN.4", "REP.14")]
+/// Each country's small firms as agents, with their employees, deposits and debt drawn for the banks' and labour's
+/// lines to read.
+#[clause("FRM.23", "GEN.2", "GEN.3", "GEN.4", "REP.40")]
 #[derive(Debug)]
 pub struct SmallFirms {
     pub prims: SmallPrims,
-}
-
-/// The small firms' rows are none as they land, so no line's kink can part them.
-struct NoRows;
-
-impl LineKinks for NoRows {
-    fn points(&self, _: LineId, _: Side) -> Vec<i64> {
-        Vec::new()
-    }
 }
 
 /// The share of firms of a Pareto law of exponent `alpha` from one person up whose whole size is `k`, and so falls
@@ -72,36 +55,6 @@ impl LineKinks for NoRows {
 fn at_size(k: u64, alpha: f64) -> f64 {
     let k = from_u64(k);
     k.powf(-alpha) - (k + 1.0).powf(-alpha)
-}
-
-/// For each size class the law's firms below `cut` fall in, their share of those firms and their mean whole size, which
-/// a class holding none has not: the classes' first sizes are `bounds`, each running to the next, the last to the cut.
-#[clause("GEN.2")]
-#[must_use]
-pub fn classes(bounds: &[u64], cut: u64, alpha: f64) -> Vec<(f64, Missing<f64>)> {
-    let below: f64 = (1..cut).map(|k| at_size(k, alpha)).sum();
-    if below <= 0.0 {
-        violation!(clause = "GEN.2", "no firm below the promotion rank's smallest", cut = cut);
-    }
-    bounds
-        .iter()
-        .enumerate()
-        .map(|(i, first)| {
-            let end = bounds.get(i + 1).copied().filter(|e| *e < cut).unwrap_or(cut);
-            let (share, persons) = (*first..end).fold((0.0, 0.0), |(s, p), k| {
-                let at = at_size(k, alpha);
-                (s + at, p + at * from_u64(k))
-            });
-            if share > 0.0 { (share / below, Missing::Present(persons / share)) } else { (0.0, Missing::Absent) }
-        })
-        .collect()
-}
-
-fn weight(x: f64) -> u64 {
-    let Ok(w) = u64::try_from(whole(x * SHARE_PARTS)) else {
-        violation!(clause = "GEN.2", "a share below nothing");
-    };
-    w
 }
 
 fn drawn(b: &Books, name: &str, c: &OpeningCountry) -> Vec<(PartyId, u64)> {
@@ -112,62 +65,42 @@ fn drawn(b: &Books, name: &str, c: &OpeningCountry) -> Vec<(PartyId, u64)> {
 }
 
 fn attr(kd: &PopKind, name: &str) -> usize {
-    let Some(i) = kd.decl.key_attrs.iter().position(|a| a.item.name == name) else {
-        violation!(clause = "REP.19", "a small firm's key attribute its kind does not hold");
+    let Some(i) = kd.decl.attr(name) else {
+        violation!(clause = "REP.41", "a small firm's attribute its kind does not hold");
     };
     i
 }
 
-fn to_u32(n: u64) -> u32 {
-    let Ok(n) = u32::try_from(n) else { capacity_exceeded!("members of a cell", u32::MAX, n) };
-    n
+/// A small firm drawn: its region, its bank's place and party, its size.
+struct Firm {
+    region: u32,
+    bank: (u32, PartyId),
+    size: u64,
 }
 
-/// Each size class's small firms apportioned over the regions by their land and each region's over the banks by the
-/// banks' drawn sizes, a part for each (class, region, bank) with the persons its firms employ and its bank.
-#[clause("FRM.23", "GEN.2", "REP.19")]
-fn strata(
-    kd: &PopKind,
+/// The country's small-firm agents apportioned over the regions by their land and each region's over the banks by the
+/// banks' drawn sizes, each with its size drawn from the firm-size law below the cut.
+#[clause("FRM.23", "GEN.2", "REP.41")]
+fn draw_firms(
     c: &OpeningCountry,
-    (by_class, shares): (&[u64], &[(f64, Missing<f64>)]),
+    agents: u64,
+    (cut, alpha): (u64, f64),
     banks: &[(PartyId, u64)],
     lot: &mut phx_rand::Draws,
-) -> Vec<(Drawn, u64, PartyId)> {
+) -> Vec<Firm> {
     let tiles: Vec<u64> = c.regions.iter().map(|(_, t)| len_u64(t.len())).collect();
     let bank_weights: Vec<u64> = banks.iter().map(|(_, w)| *w).collect();
-    let (region_at, size_at, bank_at) = (attr(kd, REGION.name), attr(kd, SIZE.name), attr(kd, BANK_ATTR));
-    let layout = ProfileLayout::new(&kd.decl.groups);
-    let mut parts = Vec::new();
-    for ((class, n), (_, mean)) in (0_u32..).zip(by_class).zip(shares) {
-        if *n == 0 {
-            continue;
-        }
-        let Missing::Present(mean) = *mean else {
-            violation!(clause = "GEN.4", "firms apportioned to a size class the law gives none", class = class);
-        };
-        for ((region, _), m) in c.regions.iter().zip(apportion(*n, &tiles, lot)) {
-            if m == 0 {
-                continue;
-            }
-            for ((place, (bank, _)), k) in (1_u32..).zip(banks).zip(apportion(m, &bank_weights, lot)) {
-                if k == 0 {
-                    continue;
-                }
-                let mut record = KeyRecord::default();
-                kd.decl.key.set(&mut record, region_at, *region);
-                kd.decl.key.set(&mut record, size_at, class);
-                kd.decl.key.set(&mut record, bank_at, place);
-                let d = Drawn {
-                    key: record,
-                    weight: phx_core::Weight::new(to_u32(k)),
-                    profile: Profile::empty(&layout),
-                    rows: Vec::new(),
-                };
-                parts.push((d, whole_u64(from_u64(k) * mean), *bank));
+    let sizes = AliasTable::new(&(1..cut).map(|k| at_size(k, alpha)).collect::<Vec<f64>>());
+    let mut firms = Vec::new();
+    for ((region, _), m) in c.regions.iter().zip(apportion(agents, &tiles, lot)) {
+        for ((place, (bank, _)), k) in (1_u32..).zip(banks).zip(apportion(m, &bank_weights, lot)) {
+            for _ in 0..k {
+                let size = len_u64(sizes.draw(lot)) + 1;
+                firms.push(Firm { region: *region, bank: (place, *bank), size });
             }
         }
     }
-    parts
+    firms
 }
 
 impl SmallFirms {
@@ -193,39 +126,36 @@ impl SmallFirms {
         let Some(&(_, cut)) = large.last() else {
             violation!(clause = "REP.2", "a country with no firm within the promotion rank", country = c.id.get());
         };
-        let bounds: Vec<u64> = p
-            .classes
-            .shared(register)
-            .bounds
-            .iter()
-            .map(|b| {
-                let Ok(b) = u64::try_from(*b) else { violation!(clause = "GEN.2", "a size class below nothing") };
-                b
-            })
-            .collect();
-        let shares = classes(&bounds, cut, p.size_exponent.shared(register).to_f64());
         let subject = |purpose: u32| opening_subject(u32::from(c.id.get()) * SMALL_PURPOSES + purpose, 0);
         let mut lot = ctx.draws(&SmallStream::DECL, subject(CLASSES));
-        let by_class = apportion(small, &shares.iter().map(|(s, _)| weight(*s)).collect::<Vec<_>>(), &mut lot);
         let banks = drawn(books, BANKS, c);
         let Some(at) = population.kinds.iter().position(|k| k.decl.kind == SMALL_FIRM.name) else {
             violation!(clause = "FRM.23", "a world that keeps no small firm kind");
         };
-        let Some(kd) = population.kinds.get_mut(at) else { violation!(clause = "FRM.23", "a kind beyond the world's") };
-        let parts = strata(kd, c, (&by_class, &shares), &banks, &mut lot);
-        let persons: Vec<(u64, PartyId, u64)> =
-            parts.iter().map(|(d, n, bank)| (*n, *bank, u64::from(d.weight.get()))).collect();
-        let landed = land(books, kd, at, *day, parts.into_iter().map(|(d, _, _)| d).collect());
-        let mut cells: Vec<(PartyId, u64)> = Vec::with_capacity(landed.resolved.len());
-        let mut banked: Vec<(PartyId, u64)> = Vec::with_capacity(landed.resolved.len());
-        let mut counts: Vec<(PartyId, u64)> = Vec::with_capacity(landed.resolved.len());
-        for (id, cell) in &landed.resolved {
-            let Some((n, bank, firms)) = usize::try_from(id.seq).ok().and_then(|i| persons.get(i)) else {
-                violation!(clause = "GEN.3", "a landed part the opening did not draw", seq = id.seq);
-            };
-            cells.push((*cell, *n));
-            banked.push((*cell, bank.get()));
-            counts.push((*cell, *firms));
+        let k = u64::from(population.representation.multiplicity);
+        let Some(kd) = population.kinds.get(at) else { violation!(clause = "FRM.23", "a kind beyond the world's") };
+        let (region_at, size_at, bank_at) = (attr(kd, REGION.name), attr(kd, SIZE.name), attr(kd, BANK_ATTR));
+        let alpha = p.size_exponent.shared(register).to_f64();
+        let firms_drawn = draw_firms(c, small / k, (cut, alpha), &banks, &mut lot);
+        let (tables, directory, space) = books.parties.cells_mut();
+        let table = Population::table_mut::<SystemBacking>(tables, at);
+        let mut cells: Vec<(PartyId, u64)> = Vec::with_capacity(firms_drawn.len());
+        let mut banked: Vec<(PartyId, u64)> = Vec::with_capacity(firms_drawn.len());
+        let mut counts: Vec<(PartyId, u64)> = Vec::with_capacity(firms_drawn.len());
+        for f in &firms_drawn {
+            let mut attrs = vec![0_u32; kd.decl.attrs.len()];
+            let Ok(size) = u32::try_from(f.size) else { capacity_exceeded!("a small firm's size", u32::MAX, f.size) };
+            for (i, v) in [(region_at, f.region), (size_at, size), (bank_at, f.bank.0)] {
+                if let Some(x) = attrs.get_mut(i) {
+                    *x = v;
+                }
+            }
+            let Ok(twins) = u32::try_from(k) else { capacity_exceeded!("twins of an agent", u32::MAX, k) };
+            let twins = phx_core::Weight::new(twins);
+            let (_, party) = phx_pop::table::begin(table, directory, space, (*day, twins, &attrs));
+            cells.push((party, f.size * k));
+            banked.push((party, f.bank.1.get()));
+            counts.push((party, k));
         }
         let wear = p.depreciation.shared(register).to_f64();
         let capital = derived(c, "GEN.investment") / PERCENT / (derived(c, "GEN.growth") / PERCENT + wear) * c.gdp;
@@ -246,7 +176,8 @@ impl SmallFirms {
         let (plant, _) = share(capital);
         let heads: Vec<u64> = cells.iter().map(|(_, n)| *n).collect();
         let employed_small: u64 = heads.iter().sum();
-        let firms_small = small;
+        let firms_small = k * len_u64(firms_drawn.len());
+        let agents = firms_drawn.len();
         for (name, list) in [
             (SMALL_FIRMS, cells),
             (SMALL_DEPOSITS, deposits),
@@ -259,16 +190,16 @@ impl SmallFirms {
         ] {
             books.drawn.insert(key(name, c.id), list);
         }
-        population.count(at, firms_small, 0);
+        population.count(at, (firms_small, 0), (0, 0));
         report.distributions.push((
             key(SMALL_FIRMS, c.id),
             format!(
-                "country {}: {firms_small} small firms below the promotion rank's smallest of {cut} persons, employing \
-                 {employed_small} of {employed:.0} employed, in {} cells by size class (FRM.size_classes), region \
-                 (by land) and bank (by the banks' drawn sizes); the firms' deposits, debt and plant shared over every \
-                 firm by its employees, the small firms' plant not yet held",
+                "country {}: {firms_small} small firms below the individuals' rank's smallest of {cut} persons, as \
+                 {agents} agents of {k} twins, employing {employed_small} of {employed:.0} employed; regions by land, \
+                 banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent); the \
+                 firms' deposits, debt and plant shared over every firm by its employees, the small firms' plant not \
+                 yet held",
                 c.id.get(),
-                landed.new_cells,
             ),
         ));
     }
@@ -277,23 +208,6 @@ impl SmallFirms {
 fn whole_u64(x: f64) -> u64 {
     let Ok(n) = u64::try_from(whole(x)) else { violation!(clause = "GEN.4", "an amount below nothing") };
     n
-}
-
-/// The country's small firms landed as cells in their kind's table.
-fn land(
-    books: &mut Books,
-    kd: &mut PopKind,
-    at: usize,
-    today: phx_id::Day,
-    drawn: Vec<Drawn>,
-) -> phx_pop::landing::Landed {
-    let Books { ledger, parties, .. } = books;
-    let (cells, directory, space) = parties.cells_mut();
-    let table = Population::table_mut::<SystemBacking>(cells, at);
-    let PopKind { decl, keys, index, levels, place, .. } = kd;
-    let mut ctx =
-        TenB { ledger, table, place: *place, keys, directory, space, kind: decl, levels, kinks: &NoRows, today };
-    land_drawn(&mut ctx, index, drawn)
 }
 
 impl Contribution for SmallFirms {
@@ -326,27 +240,12 @@ impl Contribution for SmallFirms {
 
 #[cfg(test)]
 mod tests {
-    use super::classes;
+    use super::at_size;
 
     #[test]
-    fn classes_share_the_firms_below_the_cut_and_hold_their_sizes() {
-        let got = classes(&[1, 2, 10], 50, 1.0);
-        let share: f64 = got.iter().map(|(s, _)| s).sum();
-        assert!((share - 1.0).abs() < 1e-12);
-        let [(_, one), (_, micro), (_, small)] = [got[0], got[1], got[2]];
-        let at = |m: phx_num::Missing<f64>| match m {
-            phx_num::Missing::Present(v) => v,
-            phx_num::Missing::Absent => f64::NAN,
-        };
-        assert!((at(one) - 1.0).abs() < 1e-12);
-        assert!(at(micro) > 2.0 && at(micro) < 10.0);
-        assert!(at(small) > 10.0 && at(small) < 50.0);
-    }
-
-    #[test]
-    fn a_class_beyond_the_cut_holds_no_firm() {
-        let got = classes(&[1, 2, 10, 50], 20, 1.059);
-        assert_eq!(got[3], (0.0, phx_num::Missing::Absent));
-        assert!((got.iter().map(|(s, _)| s).sum::<f64>() - 1.0).abs() < 1e-12);
+    fn the_law_shares_sum_to_the_firms_from_one_person() {
+        let alpha = 1.059;
+        let within: f64 = (1..100_000_u64).map(|k| at_size(k, alpha)).sum();
+        assert!((within - (1.0 - 100_000_f64.powf(-alpha))).abs() < 1e-12);
     }
 }

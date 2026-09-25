@@ -1,5 +1,5 @@
 //! The macro reads: series the declarations name, each read day by day from what the run records — the day's work on
-//! the cells, the day's settlement and the day's events — and never from a number made for the reading.
+//! the agents, the day's settlement and the day's events — and never from a number made for the reading.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -9,17 +9,16 @@ use phx_macros::clause;
 use phx_world::Inspector;
 use serde::Deserialize;
 
-/// A count of the day's work on the population's cells.
+/// A count of the day's work on the population's agents.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CellCount {
+pub enum AgentCount {
     Persons,
-    Members,
-    Cells,
-    Individuals,
+    Parties,
+    Agents,
     Gone,
+    Ended,
     EstatesOpened,
     EstatesSettled,
-    Parts,
 }
 
 /// A count or sum of the day's settlement.
@@ -34,7 +33,7 @@ pub enum SettlementCount {
 /// What a read measures, resolved against the world's declarations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Measure {
-    Cells(CellCount),
+    Agents(AgentCount),
     Settlement(SettlementCount),
     /// The sizes of the day's events of one declared kind, summed in the kind's unit.
     Events(u16),
@@ -83,9 +82,9 @@ pub struct ReadDecl {
     pub fact: Option<String>,
 }
 
-/// One declared histogram over a population kind's cells, over fixed lower edges: of their weights, each cell
-/// counted once (`of = "weight"`), or of a key attribute's values, each cell counted by its members
-/// (`of = "key.<attribute>"`). Each is an opening distribution whose distance from the world's own is read.
+/// One declared histogram over a population kind's real parties, over fixed lower edges, each agent counted once for
+/// every twin: of their persons (`of = "persons"`), or of an attribute's values (`of = "attr.<attribute>"`). Each is
+/// an opening distribution whose distance from the world's own is read.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct HistogramDecl {
@@ -123,17 +122,16 @@ impl Definitions {
 /// # Errors
 /// A name that is no measure, or an event kind the world does not declare.
 pub fn measure(name: &str, event_kinds: &[&str]) -> Result<Measure, String> {
-    use CellCount as C;
+    use AgentCount as A;
     use SettlementCount as S;
     let m = match name {
-        "cells.persons" => Measure::Cells(C::Persons),
-        "cells.members" => Measure::Cells(C::Members),
-        "cells.cells" => Measure::Cells(C::Cells),
-        "cells.individuals" => Measure::Cells(C::Individuals),
-        "cells.gone" => Measure::Cells(C::Gone),
-        "cells.estates_opened" => Measure::Cells(C::EstatesOpened),
-        "cells.estates_settled" => Measure::Cells(C::EstatesSettled),
-        "cells.parts" => Measure::Cells(C::Parts),
+        "agents.persons" => Measure::Agents(A::Persons),
+        "agents.parties" => Measure::Agents(A::Parties),
+        "agents.agents" => Measure::Agents(A::Agents),
+        "agents.gone" => Measure::Agents(A::Gone),
+        "agents.ended" => Measure::Agents(A::Ended),
+        "agents.estates_opened" => Measure::Agents(A::EstatesOpened),
+        "agents.estates_settled" => Measure::Agents(A::EstatesSettled),
         "settlement.payments" => Measure::Settlement(S::Payments),
         "settlement.settled" => Measure::Settlement(S::Settled),
         "settlement.failed" => Measure::Settlement(S::Failed),
@@ -205,8 +203,8 @@ impl Recorder {
     /// Reads every day the run closed since the last reading.
     pub fn read(&mut self, w: Inspector<'_>) {
         let after = |d: Day| self.read_to.is_none_or(|r| d > r);
-        let cells: BTreeMap<Day, &phx_world::cells::CellDay> =
-            w.cell_days().iter().filter(|c| after(c.day)).map(|c| (c.day, c)).collect();
+        let agents: BTreeMap<Day, &phx_world::agents::AgentDay> =
+            w.agent_days().iter().filter(|c| after(c.day)).map(|c| (c.day, c)).collect();
         let settled: BTreeMap<Day, &phx_world::world::Settled> =
             w.settlements().iter().filter(|s| after(s.day)).map(|s| (s.day, s)).collect();
         let mut events: BTreeMap<(Day, u16), i128> = BTreeMap::new();
@@ -218,13 +216,13 @@ impl Recorder {
             *events.entry((e.day, e.kind)).or_insert(0) += size;
         }
         self.events_read = store.len();
-        let mut days: Vec<Day> = cells.keys().chain(settled.keys()).copied().collect();
+        let mut days: Vec<Day> = agents.keys().chain(settled.keys()).copied().collect();
         days.sort_unstable();
         days.dedup();
         for day in &days {
             for (m, s) in self.measures.iter().zip(&mut self.series) {
                 let value = match m {
-                    Measure::Cells(c) => cells.get(day).map(|d| cell_count(d, *c)),
+                    Measure::Agents(c) => agents.get(day).map(|d| agent_count(d, *c)),
                     Measure::Settlement(c) => settled.get(day).map(|d| settlement_count(d, *c)),
                     // A day the run closed with no event of the kind had none: its sum is nought, not unknown.
                     Measure::Events(k) => Some(events.get(&(*day, *k)).copied().unwrap_or(0)),
@@ -246,18 +244,29 @@ impl Recorder {
     }
 }
 
-fn cell_count(d: &phx_world::cells::CellDay, c: CellCount) -> i128 {
+fn agent_count(d: &phx_world::agents::AgentDay, c: AgentCount) -> i128 {
     let n = match c {
-        CellCount::Persons => d.persons,
-        CellCount::Members => d.members,
-        CellCount::Cells => d.cells,
-        CellCount::Individuals => d.individuals,
-        CellCount::Gone => d.gone,
-        CellCount::EstatesOpened => d.estates,
-        CellCount::EstatesSettled => d.estates_settled,
-        CellCount::Parts => d.parts,
+        AgentCount::Persons => d.persons,
+        AgentCount::Parties => d.parties,
+        AgentCount::Agents => d.agents,
+        AgentCount::Gone => d.gone,
+        AgentCount::Ended => d.ended,
+        AgentCount::EstatesOpened => d.estates,
+        AgentCount::EstatesSettled => d.estates_settled,
     };
     i128::from(n)
+}
+
+/// The observer the host runs beside the world: the reads taken each day.
+#[derive(Debug)]
+pub struct Watch {
+    pub recorder: Recorder,
+}
+
+impl phx_world::Observer for Watch {
+    fn day_closed(&mut self, w: Inspector<'_>) {
+        self.recorder.read(w);
+    }
 }
 
 fn settlement_count(s: &phx_world::world::Settled, c: SettlementCount) -> i128 {
@@ -271,15 +280,15 @@ fn settlement_count(s: &phx_world::world::Settled, c: SettlementCount) -> i128 {
 
 #[cfg(test)]
 mod tests {
-    use super::{CellCount, Measure, measure};
+    use super::{AgentCount, Measure, measure};
 
     #[test]
     fn measures_are_named_or_refused() {
         let kinds = ["GEO.rain", "DEM.died"];
-        assert_eq!(measure("cells.persons", &kinds), Ok(Measure::Cells(CellCount::Persons)));
+        assert_eq!(measure("agents.persons", &kinds), Ok(Measure::Agents(AgentCount::Persons)));
         assert_eq!(measure("events.DEM.died", &kinds), Ok(Measure::Events(1)));
         assert!(measure("events.DEM.born", &kinds).is_err());
-        assert!(measure("cells.happiness", &kinds).is_err());
+        assert!(measure("agents.happiness", &kinds).is_err());
         assert_eq!(measure("sta.output", &kinds), Ok(Measure::NotYet("S1.14")));
     }
 }

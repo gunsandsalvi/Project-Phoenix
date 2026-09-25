@@ -11,8 +11,8 @@ use phx_world::Inspector;
 use super::{Observed, Outcome};
 use crate::live_check;
 
-/// The player's household is seated, lives as an individual of the household kind in the country the setup named,
-/// was never demoted, and left no intent queued past the points it was queued for: with no decision point yet, none is
+/// The player's household is seated, lives as an agent of one of the household kind in the country the setup named,
+/// kept its identity, and left no intent queued past the points it was queued for: with no decision point yet, none is
 /// queued, and the rule decides nothing for it.
 fn player_seated(w: Inspector<'_>) -> Outcome {
     let Missing::Present(player) = w.player_queue().player() else {
@@ -25,24 +25,23 @@ fn player_seated(w: Inspector<'_>) -> Outcome {
         return Outcome::Fail(format!("the player's party {} is not live", player.party.get()));
     };
     if party != player.party {
-        return Outcome::Fail(format!("the player's party {} was landed in {}", player.party.get(), party.get()));
+        return Outcome::Fail(format!("the player's party {} resolves to {}", player.party.get(), party.get()));
     }
     let kinds = &w.population().kinds;
     let Some((k, kd)) = kinds.iter().enumerate().find(|(_, k)| k.decl.kind == phx_world::consts::PLAYER_KIND) else {
         return Outcome::Fail("the world keeps no household kind".to_owned());
     };
-    let table = w.cell_table(k);
+    let table = w.agent_table(k);
     if table.id() != row.table {
         return Outcome::Fail("the player's party is not a household".to_owned());
     }
-    let hot = table.hot(row.slot);
-    if !hot.is_individual() {
-        return Outcome::Fail("the player's household is carried in a cell".to_owned());
+    if table.multiplicity(row.slot).get() != 1 {
+        return Outcome::Fail("the player's household stands for more than one".to_owned());
     }
     let Missing::Present(sited) = kd.decl.sited_by else {
         return Outcome::Fail("households are sited by no region".to_owned());
     };
-    let region = kd.decl.key.get(&kd.keys.record(hot.key_id), sited);
+    let region = table.attr(row.slot, sited);
     let country = usize::try_from(region).ok().and_then(|r| w.geo().map.regions.get(r)).map(|r| r.country.get());
     let chosen = w.game().setup.player.country;
     if country.map(|c| u64::from(c) + 1) != Some(chosen) {

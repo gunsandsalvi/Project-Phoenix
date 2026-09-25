@@ -50,7 +50,7 @@ pub enum ApplyAt {
 }
 
 /// The sub-steps at which money moves: stage 2's settlement of the day's fails and retries, banknotes paid at 6d,
-/// stages 7 and 8, and a cell's own totals at landing.
+/// and stages 7 and 8.
 pub const MONEY_SUBSTEPS: &[SubStep] = &[
     SubStep::S2c,
     SubStep::S6d,
@@ -72,24 +72,10 @@ pub const MONEY_SUBSTEPS: &[SubStep] = &[
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DayBook {
     pub fails: Vec<Fail>,
-    /// The fails already made arrears today, on rows that left their cell before the next contract process.
-    pub(crate) arrears_taken: BTreeSet<usize>,
     pub effects: Vec<EffectRec>,
     pub dues: Vec<crate::effects::DueRec>,
     pub disposed: Vec<DisposedRec>,
     moved: BTreeMap<(u8, PartyId), (i128, i128)>,
-    /// The positions moved outside any instruction — a part's rows and holdings leaving a cell or joining one — as
-    /// the audit keeps legs, waiting to be handed to it in their order among the instructions' legs.
-    pub(crate) outside: Vec<LegDigest>,
-}
-
-impl DayBook {
-    /// The day's fails the next contract process still has to make arrears.
-    #[must_use]
-    pub fn waiting(&self) -> Vec<Fail> {
-        let taken = |i: &usize| self.arrears_taken.contains(i);
-        self.fails.iter().enumerate().filter(|(i, _)| !taken(i)).map(|(_, f)| *f).collect()
-    }
 }
 
 impl DayBook {
@@ -101,7 +87,6 @@ impl DayBook {
             && self.dues.is_empty()
             && self.disposed.is_empty()
             && self.moved.is_empty()
-            && self.outside.is_empty()
     }
 }
 
@@ -252,7 +237,6 @@ impl<B: Backing> Ledger<B> {
         audit: &mut dyn AuditStream,
     ) -> Result<InstructionId, Fail> {
         let Instruction { id, reason, settle_day, legs, pays, covers, .. } = instruction;
-        self.flush_outside(audit);
         let settling = Settling { id, reason, day: settle_day, pays };
         if !self.applied.insert(id) {
             violation!(clause = "SET.11", "an instruction applied twice", id = id.get());
@@ -320,8 +304,11 @@ impl<B: Backing> Ledger<B> {
                 ApplyAt::Day(s) if self.money(leg) && !MONEY_SUBSTEPS.contains(&s) => {
                     violation!(clause = "SET.11", "money moved at a sub-step where money does not move", id = id.get());
                 }
-                ApplyAt::Opening if !opening && !matches!(leg.kind, LegKind::Row(RowOp::Open(_))) => {
-                    violation!(clause = "SET.1", "an instruction before day one that neither opens a row nor writes");
+                ApplyAt::Opening if !opening && !matches!(leg.kind, LegKind::Row(_)) => {
+                    violation!(
+                        clause = "SET.1",
+                        "an instruction before day one that neither opens, moves nor writes a row"
+                    );
                 }
                 ApplyAt::Day(_) | ApplyAt::Opening => {}
             }
@@ -651,14 +638,6 @@ impl<B: Backing> Ledger<B> {
     pub fn close(&mut self) -> DayBook {
         self.applied.clear();
         core::mem::take(&mut self.day)
-    }
-
-    /// The positions moved outside any instruction since the last flush, handed to the audit in the order they moved
-    /// among the instructions' legs.
-    pub fn flush_outside(&mut self, audit: &mut dyn AuditStream) {
-        for moved in self.day.outside.drain(..) {
-            audit.leg(0, moved);
-        }
     }
 
     /// The opening's records forgotten: the audit and the accounts read days, and the opening is none; the accounts

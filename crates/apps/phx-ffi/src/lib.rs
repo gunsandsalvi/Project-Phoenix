@@ -1,5 +1,6 @@
 uniffi::setup_scaffolding!();
 
+mod agents;
 pub mod bench;
 mod json;
 pub mod load;

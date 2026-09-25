@@ -7,124 +7,91 @@ use phx_num::{Missing, capacity_exceeded, violation};
 use phx_store::consts::ARENA_RESERVED_WORDS;
 use phx_store::{AddressSpace, Backing, CellListRef, ChunkArena, Column, ListRef, Region, SystemBacking, Table};
 
-use crate::consts::{HOT_LEAD, HOT_STEPS};
-use crate::hot::HotRecord;
-use crate::individual::{ExtList, Extension};
-use crate::key::KeyId;
-use crate::kind::{PopKindDecl, Scale};
-use crate::landing::landing_key;
-use crate::profile::{Profile, ProfileLayout, packed_bytes, read_group, shifted, to_words};
-use crate::steps::{Step, StepTable};
+use crate::kind::PopKindDecl;
 
-/// The lists a cell keeps in its chunk's arena: relationship rows, holdings, profiles, and the standing rates too
-/// large for their column.
+/// The lists an agent keeps in its chunk's arena: the ledger's relationship rows, holdings, lots and named units, its
+/// persons and its attachments.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CellList {
+pub enum AgentList {
     Rows,
     Holdings,
-    Profiles,
-    Rates,
+    Lots,
+    NamedUnits,
+    Persons,
+    Attachments,
 }
 
-impl CellList {
-    pub const ALL: [CellList; 4] = [CellList::Rows, CellList::Holdings, CellList::Profiles, CellList::Rates];
+impl AgentList {
+    pub const ALL: [AgentList; 6] = [
+        AgentList::Rows,
+        AgentList::Holdings,
+        AgentList::Lots,
+        AgentList::NamedUnits,
+        AgentList::Persons,
+        AgentList::Attachments,
+    ];
 
-    /// The list's place among a cell's lists.
     fn place(self) -> usize {
-        let Some(i) = CellList::ALL.iter().position(|l| *l == self) else {
-            violation!(clause = "REP.3", "a cell list outside the lists a cell keeps");
+        let Some(at) = AgentList::ALL.iter().position(|l| *l == self) else {
+            violation!(clause = "REP.1", "an agent list the table does not keep");
         };
-        i
+        at
     }
 }
 
-/// A standing rate stored in its column: the rate itself, or this mark, which sends a read to the cell's rate list,
-/// where a rate too large for the column is kept and an absent one is not.
-const RATE_ELSEWHERE: u32 = u32::MAX;
-
-/// A cell's due-day run head in eight bytes: the earliest day a dated row can fall due, and where its dated rows lie
-/// in its relationship rows. A cell's rows are few, so their offset and length fit sixteen bits; one that did not is a
-/// contract violation calling for a wider layout.
+/// An agent's due-day run head in eight bytes: the earliest day a dated row can fall due, and where its dated rows lie
+/// in its relationship rows. An agent's rows are few, so their offset and length fit sixteen bits; one that did not is
+/// a contract violation calling for a wider layout.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Pod)]
-pub struct CellRunHead {
+pub struct AgentRunHead {
     pub next_due: u32,
     pub offset: u16,
     pub len: u16,
 }
 
-impl CellRunHead {
-    pub const EMPTY: CellRunHead = CellRunHead { next_due: 0, offset: 0, len: 0 };
+impl AgentRunHead {
+    pub const EMPTY: AgentRunHead = AgentRunHead { next_due: 0, offset: 0, len: 0 };
 
     fn wide(self) -> RunHead {
         RunHead { next_due: self.next_due, offset: u32::from(self.offset), len: u32::from(self.len) }
     }
 
-    fn narrow(head: RunHead) -> CellRunHead {
+    fn narrow(head: RunHead) -> AgentRunHead {
         let (Ok(offset), Ok(len)) = (u16::try_from(head.offset), u16::try_from(head.len)) else {
-            capacity_exceeded!("a cell's dated rows for its run head", u16::MAX, head.offset + head.len);
+            capacity_exceeded!("an agent's dated rows for its run head", u16::MAX, head.offset + head.len);
         };
-        CellRunHead { next_due: head.next_due, offset, len }
+        AgentRunHead { next_due: head.next_due, offset, len }
     }
 }
 
-/// A cell's attention to one kind of lumpy decision: its stake's weight and its own outlook's variance, each a fixed
-/// point the deciding system writes; absent until attention is decided.
-#[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Pod)]
-pub struct Attention {
-    pub stake: u32,
-    pub own: u32,
-}
-
-impl Attention {
-    const ABSENT: Attention = Attention { stake: u32::MAX, own: u32::MAX };
-}
-
-/// A new cell: its party, when it was created, its weight and key, every position's total in the kind's order, and
-/// its profiles.
+/// A new agent: its party, the day it began, its multiplicity and each of its kind's attributes in order.
 #[derive(Clone, Copy, Debug)]
-pub struct NewCell<'a> {
+pub struct NewAgent<'a> {
     pub party: PartyId,
     pub created: Day,
-    pub weight: Weight,
-    pub key: KeyId,
-    pub positions: &'a [i64],
-    pub profile: &'a Profile,
+    pub multiplicity: Weight,
+    pub attrs: &'a [u32],
 }
 
-/// The table of one population kind: every cell's hot record, its positions beyond the leading three as totals, its
-/// kink signature, standing rates, review exposures and attention, the due-day run head, and its lists in its
-/// chunk's arena. Individuals of the kind are rows of weight one with an extension row.
-#[clause("REP.1", "REP.20", "REP.32", "REP.3")]
+/// The table of one population kind: every agent's party, the day it began, its multiplicity, its attributes, its
+/// facts, the due-day run head, and its lists in its chunk's arena.
+#[clause("REP.1", "REP.41", "REP.26")]
 #[derive(Debug, phx_macros::Saved)]
-pub struct CellTable<B: Backing = SystemBacking> {
+pub struct AgentTable<B: Backing = SystemBacking> {
     kind: &'static str,
     table: Table<B>,
     party: Column<u64, B>,
     created: Column<u32, B>,
-    hot: Column<HotRecord, B>,
-    positions: Vec<Column<i64, B>>,
-    sig: Vec<Column<u64, B>>,
-    rates: Vec<Column<u32, B>>,
-    exposures: Vec<Column<i64, B>>,
-    attention: Vec<Column<Attention, B>>,
+    multiplicity: Column<u32, B>,
+    attrs: Vec<Column<u32, B>>,
+    facts: Vec<Column<i64, B>>,
     lists: Vec<Column<CellListRef, B>>,
-    runs: Column<CellRunHead, B>,
+    runs: Column<AgentRunHead, B>,
     arenas: Vec<ChunkArena<B>>,
-    ext: Extension<B>,
-    #[saved(skip)]
-    layout: Layout,
-    /// The day's rows added, removed or grown, whose agenda bookings the world draws again.
+    /// The day's agents added, removed or changed, whose hazards the world draws again.
     #[saved(skip)]
     changed: Vec<Slot>,
-}
-
-/// What the table needs of its kind's layout, rebuilt from the kind after a load.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-struct Layout {
-    positions: usize,
-    profiles: ProfileLayout,
 }
 
 #[inline]
@@ -146,70 +113,44 @@ fn put<T: phx_store::Pod, B: Backing>(column: &mut Column<T, B>, slot: Slot, val
 #[inline]
 fn read<T: phx_store::Pod, B: Backing>(column: &Column<T, B>, slot: Slot) -> T {
     let Some(v) = column.get(slot) else {
-        violation!(clause = "PTY.10", "a read of a cell row no party holds", slot = slot.get());
+        violation!(clause = "PTY.10", "a read of an agent row no party holds", slot = slot.get());
     };
     v
 }
 
-fn swap<T: phx_store::Pod, B: Backing>(column: &mut Column<T, B>, a: Slot, b: Slot) {
-    let (x, y) = (read(column, a), read(column, b));
-    column.set(a, y);
-    column.set(b, x);
-}
-
-/// Two distinct chunks' arenas, mutably at once.
-fn two<B: Backing>(
-    arenas: &mut [ChunkArena<B>],
-    i: usize,
-    j: usize,
-) -> (Option<&mut ChunkArena<B>>, Option<&mut ChunkArena<B>>) {
-    if i < j {
-        let (lo, hi) = arenas.split_at_mut(j);
-        (lo.get_mut(i), hi.first_mut())
-    } else {
-        let (lo, hi) = arenas.split_at_mut(i);
-        (hi.first_mut(), lo.get_mut(j))
-    }
-}
-
 fn word32(n: usize) -> u32 {
     let Ok(w) = u32::try_from(n) else {
-        capacity_exceeded!("words of a cell's list", u32::MAX, n);
+        capacity_exceeded!("words of an agent's list", u32::MAX, n);
     };
     w
 }
 
-impl<B: Backing> CellTable<B> {
-    /// An empty table for a population kind, of at most `max_rows` cells.
+impl<B: Backing> AgentTable<B> {
+    /// An empty table for a population kind, of at most `max_rows` agents.
     pub fn new(
         space: &mut AddressSpace,
         kind: &PopKindDecl,
         id: TableId,
         max_rows: u32,
         rows_per_chunk: u32,
-    ) -> CellTable<B> {
+    ) -> AgentTable<B> {
         let table: Table<B> = Table::new(space, id, max_rows, rows_per_chunk);
-        CellTable {
+        AgentTable {
             kind: kind.kind,
             party: table.column(space),
             created: table.column(space),
-            hot: table.column(space),
-            positions: kind.positions.iter().skip(HOT_LEAD).map(|_| table.column(space)).collect(),
-            sig: (0..kind.sig.words()).map(|_| table.column(space)).collect(),
-            rates: kind.rates.iter().map(|_| table.column(space)).collect(),
-            exposures: kind.reviews.iter().map(|_| table.column(space)).collect(),
-            attention: kind.reviews.iter().map(|_| table.column(space)).collect(),
-            lists: CellList::ALL.iter().map(|_| table.column(space)).collect(),
+            multiplicity: table.column(space),
+            attrs: kind.attrs.iter().map(|_| table.column(space)).collect(),
+            facts: Vec::new(),
+            lists: AgentList::ALL.iter().map(|_| table.column(space)).collect(),
             runs: table.column(space),
             arenas: Vec::new(),
-            ext: Extension::new(space, id, max_rows, rows_per_chunk),
-            layout: Layout::of(kind),
             changed: Vec::new(),
             table,
         }
     }
 
-    /// The rows added, removed or grown since the last call, each once, in slot order.
+    /// The agents added, removed or changed since the last call, each once, in slot order.
     pub fn take_changed(&mut self) -> Vec<Slot> {
         let mut out = std::mem::take(&mut self.changed);
         out.sort_unstable();
@@ -217,9 +158,9 @@ impl<B: Backing> CellTable<B> {
         out
     }
 
-    /// The kind's layout restored after a load, which the save does not carry.
-    pub fn relayout(&mut self, kind: &PopKindDecl) {
-        self.layout = Layout::of(kind);
+    /// An agent whose hazards read something that changed, to be drawn again.
+    pub fn mark_changed(&mut self, slot: Slot) {
+        self.changed.push(slot);
     }
 
     pub fn id(&self) -> TableId {
@@ -231,81 +172,61 @@ impl<B: Backing> CellTable<B> {
         self.kind
     }
 
-    /// Bytes a cell's row takes in the table's columns, its arena lists apart.
+    /// Bytes an agent's row takes in the table's columns, its arena lists apart.
     #[must_use]
     pub fn bytes_per_row(&self) -> usize {
-        let fixed = size_of::<u64>() + size_of::<u32>() + size_of::<HotRecord>() + size_of::<CellRunHead>();
-        fixed
-            + self.positions.len() * size_of::<i64>()
-            + self.sig.len() * size_of::<u64>()
-            + self.rates.len() * size_of::<u32>()
-            + self.exposures.len() * size_of::<i64>()
-            + self.attention.len() * size_of::<Attention>()
+        size_of::<u64>()
+            + 2 * size_of::<u32>()
+            + size_of::<AgentRunHead>()
+            + self.attrs.len() * size_of::<u32>()
+            + self.facts.len() * size_of::<i64>()
             + self.lists.len() * size_of::<CellListRef>()
     }
 
-    /// A row for a new cell, keyed at once at the given levels: its hot record, positions and profiles; its
-    /// signature at band nought, its rates, review exposures and attention absent, and its lists otherwise empty.
-    pub fn add(&mut self, space: &mut AddressSpace, cell: NewCell<'_>, kind: &PopKindDecl, levels: &[u8]) -> Slot {
-        if cell.weight == Weight::new(0) {
-            violation!(clause = "REP.17", "a cell of no members", party = cell.party.get());
+    /// A row for a new agent, with its attributes; its facts absent and its lists empty.
+    pub fn add(&mut self, space: &mut AddressSpace, agent: NewAgent<'_>) -> Slot {
+        if agent.multiplicity == Weight::new(0) {
+            violation!(clause = "REP.17", "an agent of no twins", party = agent.party.get());
         }
-        if cell.positions.len() != self.layout.positions {
+        if agent.attrs.len() != self.attrs.len() {
             violation!(
-                clause = "REP.20",
-                "a cell with another count of positions than its kind",
-                given = cell.positions.len()
+                clause = "REP.41",
+                "an agent with another count of attributes than its kind",
+                given = agent.attrs.len()
             );
         }
         let slot = self.table.slots.alloc();
-        put(&mut self.party, slot, cell.party.get());
-        put(&mut self.created, slot, cell.created.get());
-        let mut hot = HotRecord::new(cell.key, cell.weight);
-        for (lead, total) in hot.lead.iter_mut().zip(cell.positions) {
-            *lead = *total;
+        put(&mut self.party, slot, agent.party.get());
+        put(&mut self.created, slot, agent.created.get());
+        put(&mut self.multiplicity, slot, agent.multiplicity.get());
+        for (column, v) in self.attrs.iter_mut().zip(agent.attrs) {
+            put(column, slot, *v);
         }
-        put(&mut self.hot, slot, hot);
-        for (column, total) in self.positions.iter_mut().zip(cell.positions.iter().skip(HOT_LEAD)) {
-            put(column, slot, *total);
-        }
-        for column in &mut self.sig {
-            put(column, slot, 0);
-        }
-        for column in &mut self.rates {
-            put(column, slot, RATE_ELSEWHERE);
-        }
-        for column in &mut self.exposures {
+        for column in &mut self.facts {
             put(column, slot, ABSENT_I64);
-        }
-        for column in &mut self.attention {
-            put(column, slot, Attention::ABSENT);
         }
         for column in &mut self.lists {
             put(column, slot, CellListRef::EMPTY);
         }
-        put(&mut self.runs, slot, CellRunHead::EMPTY);
-        let chunk = at(slot) / at(Slot::new(self.table.rows_per_chunk()));
+        put(&mut self.runs, slot, AgentRunHead::EMPTY);
+        let chunk = self.chunk(slot);
         while self.arenas.len() <= chunk {
             self.arenas.push(ChunkArena::new(space, ARENA_RESERVED_WORDS));
         }
-        self.set_profile(slot, cell.profile);
-        self.rekey(slot, kind, levels);
+        // A reused slot's arena lists were cleared when its last agent ended.
         self.changed.push(slot);
         slot
     }
 
-    /// Frees a row whose cell has ended with no rows or holdings left; its profiles and rates go with it.
+    /// Frees an agent that has ended with no contracts or holdings left; its persons and attachments go with it.
     pub fn remove(&mut self, slot: Slot) {
         self.live(slot);
-        for list in [CellList::Rows, CellList::Holdings] {
+        for list in [AgentList::Rows, AgentList::Holdings, AgentList::Lots, AgentList::NamedUnits] {
             if self.list(slot, list).len != 0 {
-                violation!(clause = "PTY.10", "a cell removed with lists still in its arena", slot = slot.get());
+                violation!(clause = "PTY.10", "an agent removed with contracts still in its arena", slot = slot.get());
             }
         }
-        if let Missing::Present(ext) = self.hot(slot).individual_ext() {
-            self.ext.remove(ext);
-        }
-        for list in CellList::ALL {
+        for list in AgentList::ALL {
             self.edit_list(slot, list, ChunkArena::clear);
         }
         self.table.slots.release(slot);
@@ -314,23 +235,23 @@ impl<B: Backing> CellTable<B> {
 
     fn live(&self, slot: Slot) {
         if !self.table.slots.is_live(slot) {
-            violation!(clause = "PTY.10", "a read of a cell row no party holds", slot = slot.get());
+            violation!(clause = "PTY.10", "a read of an agent row no party holds", slot = slot.get());
         }
     }
 
-    /// Slots the table has handed out, live or freed: every cell's slot lies below it.
+    /// Slots the table has handed out, live or freed: every agent's slot lies below it.
     #[must_use]
     pub fn high_water(&self) -> u32 {
         self.table.slots.high_water()
     }
 
-    /// Whether a cell holds the slot.
+    /// Whether an agent holds the slot.
     #[must_use]
     pub fn is_live(&self, slot: Slot) -> bool {
         self.table.slots.is_live(slot)
     }
 
-    /// The rows cells hold, in slot order.
+    /// The rows agents hold, in slot order.
     pub fn slots(&self) -> impl Iterator<Item = Slot> + '_ {
         self.table.slots.live_slots()
     }
@@ -351,345 +272,88 @@ impl<B: Backing> CellTable<B> {
         Day::new(read(&self.created, slot))
     }
 
-    #[inline]
-    pub fn hot(&self, slot: Slot) -> HotRecord {
+    /// The count of identical real parties the agent stands for.
+    #[clause("REP.1", "REP.17")]
+    pub fn multiplicity(&self, slot: Slot) -> Weight {
         self.live(slot);
-        read(&self.hot, slot)
+        Weight::new(read(&self.multiplicity, slot))
     }
 
-    #[inline]
-    pub fn weight(&self, slot: Slot) -> Weight {
-        self.hot(slot).weight()
+    /// One twin taken from an agent to stand alone, as the player's household is: its multiplicity one less, never
+    /// none.
+    #[clause("REP.1", "REP.17")]
+    pub fn take_twin(&mut self, slot: Slot) {
+        let k = self.multiplicity(slot).get();
+        let Some(left) = k.checked_sub(1).filter(|l| *l > 0) else {
+            violation!(clause = "REP.17", "a twin taken from an agent of one", slot = slot.get());
+        };
+        self.multiplicity.set(slot, left);
     }
 
-    /// A position's total, by its place in the kind's order.
+    /// An attribute's value, by its place among the kind's.
     #[must_use]
-    #[inline]
-    pub fn position(&self, slot: Slot, i: usize) -> i64 {
-        if i >= self.layout.positions {
-            violation!(clause = "REP.20", "a position the kind does not hold", position = i);
-        }
-        let hot = self.hot(slot);
-        if let Some(t) = hot.lead.get(i) {
-            return *t;
-        }
-        let Some(column) = i.checked_sub(HOT_LEAD).and_then(|j| self.positions.get(j)) else {
-            violation!(clause = "REP.20", "a position the kind does not hold", position = i);
+    pub fn attr(&self, slot: Slot, i: usize) -> u32 {
+        self.live(slot);
+        let Some(c) = self.attrs.get(i) else {
+            violation!(clause = "REP.41", "an attribute the kind does not hold", attr = i);
         };
-        read(column, slot)
+        read(c, slot)
     }
 
-    #[inline]
-    pub fn set_position(&mut self, slot: Slot, i: usize, total: i64) {
-        if i >= self.layout.positions {
-            violation!(clause = "REP.20", "a position the kind does not hold", position = i);
-        }
-        let mut hot = self.hot(slot);
-        if let Some(t) = hot.lead.get_mut(i) {
-            *t = total;
-            self.hot.set(slot, hot);
-            return;
-        }
-        let Some(column) = i.checked_sub(HOT_LEAD).and_then(|j| self.positions.get_mut(j)) else {
-            violation!(clause = "REP.20", "a position the kind does not hold", position = i);
+    pub fn set_attr(&mut self, slot: Slot, i: usize, value: u32) {
+        self.live(slot);
+        let Some(c) = self.attrs.get_mut(i) else {
+            violation!(clause = "REP.41", "an attribute the kind does not hold", attr = i);
         };
-        column.set(slot, total);
+        c.set(slot, value);
+        self.changed.push(slot);
     }
 
-    /// How many positions the kind keeps.
+    /// Every attribute's value, in the kind's order.
     #[must_use]
-    pub fn positions(&self) -> usize {
-        self.layout.positions
+    pub fn attrs(&self, slot: Slot) -> Vec<u32> {
+        (0..self.attrs.len()).map(|i| self.attr(slot, i)).collect()
     }
 
-    /// How many standing rates the kind keeps.
+    /// The agent's persons, a word each.
     #[must_use]
-    pub fn rate_kinds(&self) -> usize {
-        self.rates.len()
+    pub fn persons(&self, slot: Slot) -> &[u64] {
+        self.words(slot, AgentList::Persons)
     }
 
-    /// How many kinds of lumpy decision the kind reviews.
+    /// The agent's persons written anew.
+    pub fn set_persons(&mut self, slot: Slot, words: &[u64]) {
+        self.edit_list(slot, AgentList::Persons, |arena, r| {
+            arena.clear(r);
+            arena.append(r, words);
+        });
+        self.changed.push(slot);
+    }
+
+    /// The agent's attachments, a word each.
     #[must_use]
-    pub fn review_kinds(&self) -> usize {
-        self.exposures.len()
+    pub fn attachments(&self, slot: Slot) -> &[u64] {
+        self.words(slot, AgentList::Attachments)
     }
 
-    /// The cell's kink signature, a word per column.
-    #[must_use]
-    pub fn sig(&self, slot: Slot) -> Vec<u64> {
-        self.live(slot);
-        self.sig.iter().map(|c| read(c, slot)).collect()
-    }
-
-    pub fn set_sig(&mut self, slot: Slot, sig: &[u64]) {
-        self.live(slot);
-        if sig.len() != self.sig.len() {
-            violation!(clause = "REP.16", "a signature of another width than its kind's", words = sig.len());
-        }
-        for (c, w) in self.sig.iter_mut().zip(sig) {
-            c.set(slot, *w);
-        }
-    }
-
-    /// A standing rate per member, absent until the cell first decides it.
-    pub fn rate(&self, slot: Slot, r: usize) -> Missing<i64> {
-        self.live(slot);
-        let Some(column) = self.rates.get(r) else {
-            violation!(clause = "REP.20", "a standing rate the kind does not hold", rate = r);
-        };
-        match read(column, slot) {
-            RATE_ELSEWHERE => {
-                let words = self.words(slot, CellList::Rates);
-                let r64 = phx_rand::float::len_u64(r);
-                match words.chunks(2).find(|p| p.first() == Some(&r64)) {
-                    Some([_, v]) => Missing::Present(v.cast_signed()),
-                    _ => Missing::Absent,
-                }
-            }
-            v => Missing::Present(i64::from(v)),
-        }
-    }
-
-    /// A standing rate set, in its column when it fits and in the rate list when it does not, or cleared.
-    pub fn set_rate(&mut self, slot: Slot, r: usize, rate: Missing<i64>) {
-        self.live(slot);
-        let r64 = phx_rand::float::len_u64(r);
-        let found = self.words(slot, CellList::Rates).chunks(2).position(|p| p.first() == Some(&r64));
-        if let Some(i) = found {
-            self.edit_list(slot, CellList::Rates, |arena, list| arena.remove(list, word32(i * 2), 2));
-        }
-        let inline = match rate {
-            Missing::Present(v) => u32::try_from(v).ok().filter(|v| *v != RATE_ELSEWHERE),
-            Missing::Absent => None,
-        };
-        let Some(column) = self.rates.get_mut(r) else {
-            violation!(clause = "REP.20", "a standing rate the kind does not hold", rate = r);
-        };
-        column.set(
-            slot,
-            match inline {
-                Some(v) => v,
-                None => RATE_ELSEWHERE,
-            },
-        );
-        if let (None, Missing::Present(v)) = (inline, rate) {
-            self.edit_list(slot, CellList::Rates, |arena, list| arena.append(list, &[r64, v.cast_unsigned()]));
-        }
-    }
-
-    /// The members' review exposure to one kind of lumpy decision, absent until attention exists.
-    pub fn exposure(&self, slot: Slot, k: usize) -> Missing<i64> {
-        self.live(slot);
-        let Some(column) = self.exposures.get(k) else {
-            violation!(clause = "REP.21", "a review kind the kind does not hold", review = k);
-        };
-        match read(column, slot) {
-            ABSENT_I64 => Missing::Absent,
-            v => Missing::Present(v),
-        }
-    }
-
-    pub fn set_exposure(&mut self, slot: Slot, k: usize, exposure: i64) {
-        self.live(slot);
-        if exposure == ABSENT_I64 {
-            violation!(clause = "NUM.8", "the absent marker written as an exposure");
-        }
-        let Some(column) = self.exposures.get_mut(k) else {
-            violation!(clause = "REP.21", "a review kind the kind does not hold", review = k);
-        };
-        column.set(slot, exposure);
-    }
-
-    /// The cell's attention to one kind of lumpy decision, absent until it decides it.
-    pub fn attention(&self, slot: Slot, k: usize) -> Missing<Attention> {
-        self.live(slot);
-        let Some(column) = self.attention.get(k) else {
-            violation!(clause = "REP.38", "a review kind the kind does not hold", review = k);
-        };
-        match read(column, slot) {
-            a if a == Attention::ABSENT => Missing::Absent,
-            a => Missing::Present(a),
-        }
-    }
-
-    pub fn set_attention(&mut self, slot: Slot, k: usize, a: Attention) {
-        self.live(slot);
-        if a == Attention::ABSENT {
-            violation!(clause = "NUM.8", "the absent marker written as attention");
-        }
-        let Some(column) = self.attention.get_mut(k) else {
-            violation!(clause = "REP.38", "a review kind the kind does not hold", review = k);
-        };
-        column.set(slot, a);
-    }
-
-    /// The cell's profiles, read from its arena.
-    #[must_use]
-    pub fn profile(&self, slot: Slot) -> Profile {
-        let words = self.words(slot, CellList::Profiles);
-        let Some((len, packed)) = words.split_first() else {
-            violation!(clause = "REP.32", "a cell with no profile", slot = slot.get());
-        };
-        let Ok(n) = usize::try_from(*len) else {
-            violation!(clause = "REP.32", "a profile longer than this machine's words", slot = slot.get());
-        };
-        match Profile::read_from(&self.layout.profiles, &&*packed_bytes(packed, n), n) {
-            Ok(p) => p,
-            Err(_) => violation!(clause = "REP.32", "a cell's profile does not read back", slot = slot.get()),
-        }
-    }
-
-    /// One profile group's values held by the cell's members, read in place without decoding its other groups.
-    #[must_use]
-    pub fn profile_group(&self, slot: Slot, group: usize) -> Vec<(u32, u32)> {
-        let words = self.words(slot, CellList::Profiles);
-        let Some((len, packed)) = words.split_first() else {
-            violation!(clause = "REP.32", "a cell with no profile", slot = slot.get());
-        };
-        let Ok(n) = usize::try_from(*len) else {
-            violation!(clause = "REP.32", "a profile longer than this machine's words", slot = slot.get());
-        };
-        match read_group(&self.layout.profiles, &&*packed_bytes(packed, n), group) {
-            Ok(g) => g,
-            Err(_) => violation!(clause = "REP.32", "a cell's profile does not read back", slot = slot.get()),
-        }
-    }
-
-    /// The cell's profiles written into its arena: their byte count, then their bytes packed into words.
-    pub fn set_profile(&mut self, slot: Slot, profile: &Profile) {
-        let bytes = profile.encode(&self.layout.profiles);
-        self.store_profile(slot, &bytes);
-    }
-
-    /// Members moved at joint values of a cell's profile, in one pass over its bytes: `deltas` in (group, value) order.
-    #[clause("REP.14", "REP.32")]
-    pub fn shift_profile(&mut self, slot: Slot, deltas: &[(usize, u32, i64)]) {
-        if deltas.is_empty() {
-            return;
-        }
-        let words = self.words(slot, CellList::Profiles);
-        let Some((len, packed)) = words.split_first() else {
-            violation!(clause = "REP.32", "a cell with no profile", slot = slot.get());
-        };
-        let Ok(n) = usize::try_from(*len) else {
-            violation!(clause = "REP.32", "a profile longer than this machine's words", slot = slot.get());
-        };
-        let Ok(bytes) = shifted(&self.layout.profiles, &&*packed_bytes(packed, n), n, deltas) else {
-            violation!(clause = "REP.14", "a profile's members moved past what it holds", slot = slot.get());
-        };
-        self.store_profile(slot, &bytes);
-    }
-
-    fn store_profile(&mut self, slot: Slot, bytes: &[u8]) {
-        let mut words = Vec::with_capacity(1 + bytes.len().div_ceil(size_of::<u64>()));
-        words.push(phx_rand::float::len_u64(bytes.len()));
-        words.extend(to_words(bytes));
-        self.edit_list(slot, CellList::Profiles, |arena, list| {
-            arena.remove(list, 0, list.len);
-            arena.append(list, &words);
+    pub fn set_attachments(&mut self, slot: Slot, words: &[u64]) {
+        self.edit_list(slot, AgentList::Attachments, |arena, r| {
+            arena.clear(r);
+            arena.append(r, words);
         });
     }
 
-    /// The chunk a row lies in, which holds its lists' arena.
+    /// The chunk a slot lies in.
     #[must_use]
     pub fn chunk_of(&self, slot: Slot) -> usize {
         self.chunk(slot)
     }
 
-    /// The row an individual's extension names as its owner, which must be the individual's own.
-    pub fn ext_owner(&self, slot: Slot) -> Slot {
-        let Missing::Present(ext) = self.hot(slot).individual_ext() else {
-            violation!(clause = "REP.2", "an extension read of a row that is no individual", slot = slot.get());
-        };
-        self.ext.owner(ext)
-    }
-
-    /// Two live rows exchange their slots, as renumbering moves rows into their order: every column, the lists in their
-    /// chunks' arenas, carried into the other chunk's arena when the chunks differ, and an individual's extension link.
-    /// Identities go with their rows; what names a slot — holder lists, the directory, the index, the agenda — is the
-    /// caller's to remap.
-    #[clause("REP.1", "PTY.10")]
-    pub fn swap_rows(&mut self, a: Slot, b: Slot) {
-        self.live(a);
-        self.live(b);
-        if a == b {
-            return;
-        }
-        swap(&mut self.party, a, b);
-        swap(&mut self.created, a, b);
-        swap(&mut self.hot, a, b);
-        swap(&mut self.runs, a, b);
-        for c in &mut self.positions {
-            swap(c, a, b);
-        }
-        for c in &mut self.sig {
-            swap(c, a, b);
-        }
-        for c in &mut self.rates {
-            swap(c, a, b);
-        }
-        for c in &mut self.exposures {
-            swap(c, a, b);
-        }
-        for c in &mut self.attention {
-            swap(c, a, b);
-        }
-        let (ca, cb) = (self.chunk(a), self.chunk(b));
-        for list in CellList::ALL {
-            let (oa, ob) = (Self::owner(a, list), Self::owner(b, list));
-            let (mut ra, mut rb) = (read(self.list_column(list), a), read(self.list_column(list), b));
-            let (mut fa, mut fb) = (self.arena(a).resolve(oa, ra), self.arena(b).resolve(ob, rb));
-            if ca != cb {
-                let (Some(from), Some(to)) = two(&mut self.arenas, ca, cb) else {
-                    violation!(clause = "PTY.10", "a row beyond the table's chunks", slot = a.get());
-                };
-                phx_store::move_list(from, to, &mut fa);
-                phx_store::move_list(to, from, &mut fb);
-            }
-            if let Some(arena) = self.arenas.get_mut(ca) {
-                arena.store(oa, &mut ra, fb);
-            }
-            if let Some(arena) = self.arenas.get_mut(cb) {
-                arena.store(ob, &mut rb, fa);
-            }
-            if let Some(c) = self.lists.get_mut(list.place()) {
-                c.set(a, ra);
-                c.set(b, rb);
-            }
-        }
-        for (s, came_from) in [(a, cb), (b, ca)] {
-            let Missing::Present(ext) = self.hot(s).individual_ext() else { continue };
-            self.ext.set_owner(ext, s);
-            let to = self.chunk(s);
-            if came_from == to {
-                continue;
-            }
-            // An individual's lots and named units lie in its row's chunk arena, so they go with it.
-            for list in [ExtList::Lots, ExtList::NamedUnits] {
-                let mut r = self.ext.list(ext, list);
-                if r.cap == 0 {
-                    continue;
-                }
-                let (Some(from), Some(into)) = two(&mut self.arenas, came_from, to) else {
-                    violation!(clause = "PTY.10", "a row beyond the table's chunks", slot = s.get());
-                };
-                phx_store::move_list(from, into, &mut r);
-                self.ext.set_list(ext, list, r);
-            }
-        }
-    }
-
-    /// The kind's profile layout.
-    #[must_use]
-    pub fn profile_layout(&self) -> &ProfileLayout {
-        &self.layout.profiles
-    }
-
-    fn owner(slot: Slot, list: CellList) -> u32 {
+    fn owner(slot: Slot, list: AgentList) -> u32 {
         let Some(o) =
-            slot.get().checked_mul(word32(CellList::ALL.len())).and_then(|o| o.checked_add(word32(list.place())))
+            slot.get().checked_mul(word32(AgentList::ALL.len())).and_then(|o| o.checked_add(word32(list.place())))
         else {
-            capacity_exceeded!("cell list owners", u32::MAX, slot.get());
+            capacity_exceeded!("agent list owners", u32::MAX, slot.get());
         };
         o
     }
@@ -700,37 +364,37 @@ impl<B: Backing> CellTable<B> {
 
     fn arena(&self, slot: Slot) -> &ChunkArena<B> {
         let Some(a) = self.arenas.get(self.chunk(slot)) else {
-            violation!(clause = "PTY.10", "a cell beyond the table's chunks", slot = slot.get());
+            violation!(clause = "PTY.10", "an agent beyond the table's chunks", slot = slot.get());
         };
         a
     }
 
-    fn list_column(&self, list: CellList) -> &Column<CellListRef, B> {
+    fn list_column(&self, list: AgentList) -> &Column<CellListRef, B> {
         let Some(c) = self.lists.get(list.place()) else {
-            violation!(clause = "REP.3", "a cell list the table does not keep", list = list.place());
+            violation!(clause = "REP.3", "an agent list the table does not keep", list = list.place());
         };
         c
     }
 
-    /// A cell's list, its full reference.
-    pub fn list(&self, slot: Slot, list: CellList) -> ListRef {
+    /// An agent's list, its full reference.
+    pub fn list(&self, slot: Slot, list: AgentList) -> ListRef {
         self.live(slot);
         self.arena(slot).resolve(Self::owner(slot, list), read(self.list_column(list), slot))
     }
 
-    /// A cell's list, as its arena's words.
+    /// An agent's list, as its arena's words.
     #[must_use]
-    pub fn words(&self, slot: Slot, list: CellList) -> &[u64] {
+    pub fn words(&self, slot: Slot, list: AgentList) -> &[u64] {
         let r = self.list(slot, list);
         self.arena(slot).read(r)
     }
 
-    /// Edits a cell's list in its arena, writing back its reference, which an edit may move or lengthen past its
+    /// Edits an agent's list in its arena, writing back its reference, which an edit may move or lengthen past its
     /// compact form.
     pub fn edit_list<R>(
         &mut self,
         slot: Slot,
-        list: CellList,
+        list: AgentList,
         f: impl FnOnce(&mut ChunkArena<B>, &mut ListRef) -> R,
     ) -> R {
         let mut full = self.list(slot, list);
@@ -738,7 +402,7 @@ impl<B: Backing> CellTable<B> {
         let owner = Self::owner(slot, list);
         let mut compact = read(self.list_column(list), slot);
         let Some(arena) = self.arenas.get_mut(chunk) else {
-            violation!(clause = "PTY.10", "a cell beyond the table's chunks", slot = slot.get());
+            violation!(clause = "PTY.10", "an agent beyond the table's chunks", slot = slot.get());
         };
         let out = f(arena, &mut full);
         arena.store(owner, &mut compact, full);
@@ -748,70 +412,42 @@ impl<B: Backing> CellTable<B> {
         out
     }
 
-    /// An individual's list kept in its extension.
-    #[must_use]
-    pub fn ext_words(&self, slot: Slot, list: ExtList) -> &[u64] {
-        match self.hot(slot).individual_ext() {
-            Missing::Present(ext) => self.arena(slot).read(self.ext.list(ext, list)),
-            Missing::Absent => &[],
-        }
-    }
-
-    /// Edits an individual's list kept in its extension; a cell has none.
-    pub fn edit_ext<R>(
-        &mut self,
-        slot: Slot,
-        list: ExtList,
-        f: impl FnOnce(&mut ChunkArena<B>, &mut ListRef) -> R,
-    ) -> R {
-        let Missing::Present(ext) = self.hot(slot).individual_ext() else {
-            violation!(clause = "REP.2", "a cell given what only an individual keeps", slot = slot.get());
-        };
-        let mut r = self.ext.list(ext, list);
-        let chunk = self.chunk(slot);
-        let Some(arena) = self.arenas.get_mut(chunk) else {
-            violation!(clause = "PTY.10", "a cell beyond the table's chunks", slot = slot.get());
-        };
-        let out = f(arena, &mut r);
-        self.ext.set_list(ext, list, r);
-        out
-    }
-
-    /// A column for a fact only the kind's individuals carry.
+    /// A column for a fact every agent of the kind holds.
     ///
     /// # Errors
-    /// A fact that has a column already.
-    pub fn add_individual_fact(&mut self, space: &mut AddressSpace, name: &'static str) -> Result<FactColumn, String> {
-        self.ext.add_facet(space, name)
+    /// Never as built; a fact's name is checked by the schema that calls it.
+    pub fn add_fact(&mut self, space: &mut AddressSpace) -> Result<FactColumn, String> {
+        let mut column: Column<i64, B> = self.table.column(space);
+        for _ in 0..self.high_water() {
+            column.push(ABSENT_I64);
+        }
+        let index = word32(self.facts.len());
+        self.facts.push(column);
+        Ok(FactColumn::new(index))
     }
 
-    /// An individual's fact; a cell carries none.
+    /// An agent's fact.
     pub fn fact(&self, slot: Slot, column: FactColumn) -> Missing<i64> {
-        match self.hot(slot).individual_ext() {
-            Missing::Present(ext) => self.ext.fact(ext, column),
-            Missing::Absent => violation!(clause = "REP.33", "an individual's fact read on a cell", slot = slot.get()),
-        }
+        self.live(slot);
+        let Some(c) = self.facts.get(phx_rand::float::index(u64::from(column.index()))) else {
+            violation!(clause = "REP.20", "a fact the table does not keep", column = column.index());
+        };
+        let v = read(c, slot);
+        if v == ABSENT_I64 { Missing::Absent } else { Missing::Present(v) }
     }
 
     pub fn write_fact(&mut self, slot: Slot, column: FactColumn, value: i64) {
-        let Missing::Present(ext) = self.hot(slot).individual_ext() else {
-            violation!(clause = "REP.33", "an individual's fact written on a cell", slot = slot.get());
+        self.live(slot);
+        let Some(c) = self.facts.get_mut(phx_rand::float::index(u64::from(column.index()))) else {
+            violation!(clause = "REP.20", "a fact the table does not keep", column = column.index());
         };
-        self.ext.write_fact(ext, column, value);
-    }
-
-    /// Marks a row of weight one an individual, with an extension row of its own.
-    pub fn make_individual(&mut self, slot: Slot) {
-        let mut hot = self.hot(slot);
-        if hot.weight() != Weight::new(1) || hot.is_individual() {
-            violation!(clause = "REP.2", "an individual made of a cell of many, or twice", slot = slot.get());
+        if value == ABSENT_I64 {
+            violation!(clause = "NUM.8", "the absent marker written as an agent's fact");
         }
-        let ext = self.ext.add(slot);
-        hot.make_individual(ext);
-        self.hot.set(slot, hot);
+        c.set(slot, value);
     }
 
-    /// A cell's due-day run head.
+    /// An agent's due-day run head.
     pub fn run_head(&self, slot: Slot) -> RunHead {
         self.live(slot);
         read(&self.runs, slot).wide()
@@ -819,29 +455,25 @@ impl<B: Backing> CellTable<B> {
 
     pub fn set_run_head(&mut self, slot: Slot, head: RunHead) {
         self.live(slot);
-        self.runs.set(slot, CellRunHead::narrow(head));
+        self.runs.set(slot, AgentRunHead::narrow(head));
     }
 
-    /// Closes the gaps in a chunk's arena: every live cell's lists in slot order, then every individual's
-    /// extension lists, each reference rewritten where it now lies.
+    /// Closes the gaps in a chunk's arena: every live agent's lists in slot order, each reference rewritten where it
+    /// now lies.
     pub fn compact(&mut self, chunk: usize, scratch: &mut Region<u64, B>) {
         let per = at(Slot::new(self.table.rows_per_chunk()));
-        let cells: Vec<Slot> = self.slots().filter(|s| at(*s) / per == chunk).collect();
-        let exts: Vec<Slot> = self.ext.slots().filter(|e| at(self.ext.owner(*e)) / per == chunk).collect();
+        let agents: Vec<Slot> = self.slots().filter(|s| at(*s) / per == chunk).collect();
         let mut refs: Vec<ListRef> = Vec::new();
-        for s in &cells {
-            refs.extend(CellList::ALL.iter().map(|l| self.list(*s, *l)));
-        }
-        for e in &exts {
-            refs.extend([ExtList::Lots, ExtList::NamedUnits].map(|l| self.ext.list(*e, l)));
+        for s in &agents {
+            refs.extend(AgentList::ALL.iter().map(|l| self.list(*s, *l)));
         }
         let Some(arena) = self.arenas.get_mut(chunk) else {
             violation!(clause = "PTY.10", "a chunk the table does not have", chunk = chunk);
         };
         arena.compact(refs.as_mut_slice(), scratch);
         let mut moved = refs.into_iter();
-        for s in &cells {
-            for l in CellList::ALL {
+        for s in &agents {
+            for l in AgentList::ALL {
                 let Some(full) = moved.next() else { return };
                 let mut compact = read(self.list_column(l), *s);
                 if let Some(arena) = self.arenas.get_mut(chunk) {
@@ -850,12 +482,6 @@ impl<B: Backing> CellTable<B> {
                 if let Some(c) = self.lists.get_mut(l.place()) {
                     c.set(*s, compact);
                 }
-            }
-        }
-        for e in &exts {
-            for l in [ExtList::Lots, ExtList::NamedUnits] {
-                let Some(full) = moved.next() else { return };
-                self.ext.set_list(*e, l, full);
             }
         }
     }
@@ -881,293 +507,25 @@ impl<B: Backing> CellTable<B> {
         self.arenas.len()
     }
 
-    /// The cell's steps at the given levels, in the kind's position order.
-    #[clause("REP.4", "REP.20")]
+    /// Words every chunk's arena holds, live or dead.
     #[must_use]
-    pub fn steps(&self, slot: Slot, kind: &PopKindDecl, levels: &[u8]) -> Vec<Step> {
-        let positions: Vec<i64> = (0..self.layout.positions).map(|i| self.position(slot, i)).collect();
-        let rates: Vec<Missing<i64>> = (0..self.rates.len()).map(|r| self.rate(slot, r)).collect();
-        steps_of(kind, levels, self.weight(slot), &positions, &rates)
-    }
-
-    /// The cell's landing key, recomputed from its key, positions and kink signature.
-    #[clause("REP.8")]
-    #[must_use]
-    pub fn landing(&self, slot: Slot, kind: &PopKindDecl, levels: &[u8]) -> u64 {
-        landing_key(self.hot(slot).key_id, &self.steps(slot, kind, levels), &self.sig(slot))
-    }
-
-    /// Writes the cell's landing key and its leading steps from its state now.
-    pub fn rekey(&mut self, slot: Slot, kind: &PopKindDecl, levels: &[u8]) {
-        let steps = self.steps(slot, kind, levels);
-        let mut hot = self.hot(slot);
-        hot.landing_key = landing_key(hot.key_id, &steps, &self.sig(slot));
-        hot.step_vec_lo = [Step::MISSING.get(); HOT_STEPS];
-        for (lo, s) in hot.step_vec_lo.iter_mut().zip(&steps) {
-            *lo = s.get();
-        }
-        self.hot.set(slot, hot);
-    }
-
-    /// The key identity a cell holds, rewritten when its key changes.
-    pub fn set_key(&mut self, slot: Slot, key: KeyId) {
-        let mut hot = self.hot(slot);
-        hot.key_id = key;
-        self.hot.set(slot, hot);
-    }
-
-    /// A cell's weight changed; one whose last member leaves ends instead.
-    pub fn set_weight(&mut self, slot: Slot, w: Weight) {
-        let mut hot = self.hot(slot);
-        if w == Weight::new(0) {
-            violation!(clause = "REP.17", "a cell left with no members", slot = slot.get());
-        }
-        if hot.is_individual() && w != Weight::new(1) {
-            violation!(clause = "REP.2", "an individual given a weight other than one", slot = slot.get());
-        }
-        if w > hot.weight() {
-            self.changed.push(slot);
-        }
-        hot.set_weight(w);
-        self.hot.set(slot, hot);
+    pub fn arena_words(&self) -> u64 {
+        self.arenas.iter().map(|a| u64::from(a.used_words())).sum()
     }
 }
 
-/// Steps at the given levels of members of `weight` holding `positions` as totals and `rates` per member, in the
-/// kind's position order: each position's total against the total of its scale, a standing rate's scale being the
-/// rate per member times the weight. A cell's and a part's steps are read alike.
-#[clause("REP.4", "REP.20")]
-#[must_use]
-pub fn steps_of(
-    kind: &PopKindDecl,
-    levels: &[u8],
-    weight: Weight,
-    positions: &[i64],
-    rates: &[Missing<i64>],
-) -> Vec<Step> {
-    let members = i128::from(weight.get());
-    kind.positions
-        .iter()
-        .enumerate()
-        .map(|(i, p)| {
-            let scale = match p.scale {
-                Scale::Position(j) => match positions.get(j) {
-                    Some(t) => Missing::Present(i128::from(*t)),
-                    None => violation!(clause = "REP.20", "a scale on a position the kind does not hold", position = j),
-                },
-                Scale::Rate(r) => match rates.get(r) {
-                    Some(Missing::Present(v)) => Missing::Present(i128::from(*v) * members),
-                    Some(Missing::Absent) => Missing::Absent,
-                    None => violation!(clause = "REP.20", "a scale on a rate the kind does not hold", rate = r),
-                },
-            };
-            let Some(total) = positions.get(i) else {
-                violation!(clause = "REP.20", "a position the kind does not hold", position = i);
-            };
-            let Some(level) = levels.get(i) else {
-                violation!(clause = "REP.4", "a position with no current level", position = i);
-            };
-            StepTable::at_level(p.steps.step_scaled(*total, scale), *level)
-        })
-        .collect()
-}
-
-impl Layout {
-    fn of(kind: &PopKindDecl) -> Layout {
-        Layout { positions: kind.positions.len(), profiles: ProfileLayout::new(&kind.groups) }
+/// A new agent begun: a party of the directory's next identity at a new row of the table.
+#[clause("PTY.9", "REP.1")]
+pub fn begin<B: Backing>(
+    table: &mut AgentTable<B>,
+    directory: &mut phx_core::Directory,
+    space: &mut AddressSpace,
+    (created, multiplicity, attrs): (Day, Weight, &[u32]),
+) -> (Slot, PartyId) {
+    let party = PartyId::new(directory.next());
+    let slot = table.add(space, NewAgent { party, created, multiplicity, attrs });
+    if directory.begin(phx_id::RowRef { table: table.id(), slot }) != party {
+        violation!(clause = "PTY.9", "an agent begun under another identity than the directory's next");
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use phx_core::register::values::Partition;
-    use phx_core::{
-        GroupDecl, KeyAttrDecl, KinkRegistry, PopEntry, PopItem, PositionDecl, PositionOf, ProfileComponent, RateDecl,
-        RoleDecl, RunHead, ScaleRef, Weight,
-    };
-    use phx_id::{Day, PartyId, Slot, TableId};
-    use phx_num::Missing;
-    use phx_store::{AddressSpace, HeapBacking, Region};
-
-    use super::{CellList, CellTable, NewCell};
-    use crate::key::KeyId;
-    use crate::kind::PopKindDecl;
-    use crate::profile::Profile;
-    use crate::steps::{Step, StepTable};
-
-    type Heap = HeapBacking;
-
-    const HH: &str = "household";
-    const SKILL: &[ProfileComponent] = &[ProfileComponent { name: "skill", values: 5 }];
-
-    fn entry(item: PopItem) -> PopEntry {
-        PopEntry { system: "DEM", kind: HH, item }
-    }
-
-    fn position(name: &'static str, scale: ScaleRef) -> PopItem {
-        PopItem::Position(PositionDecl {
-            name,
-            unit: "money",
-            of: PositionOf::Member,
-            scale,
-            steps: "REP.s",
-            clause: "REP.20",
-        })
-    }
-
-    fn steps(_: &'static str) -> Result<StepTable, String> {
-        StepTable::new(&Partition { exp: 2, bounds: [50, 100, 200].into() })
-    }
-
-    /// A kind of `positions` positions, each measured against the spending rate, `rates` rates and `reviews` review
-    /// kinds, with one profile group.
-    fn kind(positions: usize, rates: usize, reviews: usize) -> PopKindDecl {
-        let mut e = vec![
-            entry(PopItem::Role(RoleDecl { name: "adult", per_member: phx_core::RoleCount::One, clause: "REP.26" })),
-            entry(PopItem::KeyAttr(KeyAttrDecl { name: "region", values: 20, clause: "REP.19" })),
-            entry(PopItem::ProfileGroup(GroupDecl {
-                name: "LAB.adult",
-                role: "adult",
-                components: SKILL,
-                clause: "REP.32",
-            })),
-        ];
-        for i in 0..rates {
-            let name: &'static str = Box::leak(format!("R.{i:02}").into_boxed_str());
-            e.push(entry(PopItem::StandingRate(RateDecl { name, unit: "money/day", clause: "REP.20" })));
-        }
-        for i in 0..positions {
-            let name: &'static str = Box::leak(format!("P.{i:02}").into_boxed_str());
-            e.push(entry(position(name, ScaleRef::Rate("R.00"))));
-        }
-        for i in 0..reviews {
-            let name: &'static str = Box::leak(format!("D.{i:02}").into_boxed_str());
-            e.push(entry(PopItem::ReviewKind(name)));
-        }
-        PopKindDecl::compile(HH, &e, &KinkRegistry::default(), &steps).unwrap()
-    }
-
-    fn table(k: &PopKindDecl) -> (AddressSpace, CellTable<Heap>) {
-        let mut space = AddressSpace::empty();
-        let t = CellTable::new(&mut space, k, TableId::new(1), 1_000, 16);
-        (space, t)
-    }
-
-    fn cell(space: &mut AddressSpace, t: &mut CellTable<Heap>, k: &PopKindDecl, party: u64, weight: u32) -> Slot {
-        let totals: Vec<i64> = (0..k.positions.len()).map(|i| i64::try_from(i).unwrap() * 100).collect();
-        let mut profile = Profile::empty(t.profile_layout());
-        profile.add(t.profile_layout(), 0, 2, weight);
-        let new = NewCell {
-            party: PartyId::new(party),
-            created: Day::new(9),
-            weight: Weight::new(weight),
-            key: KeyId::new(0),
-            positions: &totals,
-            profile: &profile,
-        };
-        t.add(space, new, k, &vec![0; k.positions.len()])
-    }
-
-    #[test]
-    fn cells_keep_totals_rates_and_profiles() {
-        let k = kind(5, 2, 1);
-        let (mut space, mut t) = table(&k);
-        let s = cell(&mut space, &mut t, &k, 7, 40);
-        assert_eq!((t.party(s), t.weight(s), t.created(s)), (PartyId::new(7), Weight::new(40), Day::new(9)));
-        assert_eq!((0..5).map(|i| t.position(s, i)).collect::<Vec<_>>(), [0, 100, 200, 300, 400]);
-        t.set_position(s, 1, -5);
-        t.set_position(s, 4, 9);
-        assert_eq!(
-            (t.position(s, 1), t.position(s, 4), t.hot(s).lead[1]),
-            (-5, 9, -5),
-            "leading totals in the hot record"
-        );
-        assert_eq!(t.rate(s, 0), Missing::Absent, "a rate not yet decided");
-        t.set_rate(s, 0, Missing::Present(250));
-        t.set_rate(s, 1, Missing::Present(-3));
-        assert_eq!((t.rate(s, 0), t.rate(s, 1)), (Missing::Present(250), Missing::Present(-3)), "a rate kept apart");
-        t.set_rate(s, 1, Missing::Present(i64::from(u32::MAX) + 9));
-        assert_eq!(t.rate(s, 1), Missing::Present(i64::from(u32::MAX) + 9));
-        t.set_rate(s, 1, Missing::Absent);
-        assert_eq!((t.rate(s, 1), t.words(s, CellList::Rates).len()), (Missing::Absent, 0));
-        assert_eq!(t.exposure(s, 0), Missing::Absent, "no exposure before attention");
-        let mut p = t.profile(s);
-        p.remove(0, 2, 10);
-        p.add(t.profile_layout(), 0, 4, 10);
-        t.set_profile(s, &p);
-        assert_eq!((t.profile(s).count(0, 4), t.profile(s).members(0)), (10, 40));
-        let levels = vec![0_u8; k.positions.len()];
-        t.set_rate(s, 0, Missing::Present(1));
-        t.rekey(s, &k, &levels);
-        // Scale: a rate of 1 per member over 40 members is 40; totals 0, -5, 200, 300, 9 over it.
-        let steps: Vec<u16> = t.steps(s, &k, &levels).iter().map(|x| x.get()).collect();
-        assert_eq!(steps, [0, 0, 3, 3, 0]);
-        assert_eq!(t.hot(s).landing_key, t.landing(s, &k, &levels), "the key written is the key recomputed");
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| t.position(s, 5))).is_err());
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| t.set_weight(s, Weight::new(0)))).is_err());
-        t.set_rate(s, 0, Missing::Absent);
-        assert!(t.steps(s, &k, &levels).iter().all(|x| *x == Step::MISSING), "no scale, no step");
-        assert_ne!(t.hot(s).landing_key, t.landing(s, &k, &levels), "a stale key is seen");
-    }
-
-    #[test]
-    fn an_individual_keeps_its_own_lists() {
-        let k = kind(1, 1, 0);
-        let (mut space, mut t) = table(&k);
-        let many = cell(&mut space, &mut t, &k, 1, 3);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| t.make_individual(many))).is_err());
-        let one = cell(&mut space, &mut t, &k, 2, 1);
-        t.make_individual(one);
-        t.edit_ext(one, crate::individual::ExtList::Lots, |a, r| a.append(r, &[5, 6]));
-        assert_eq!(t.ext_words(one, crate::individual::ExtList::Lots), [5, 6]);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| t.set_weight(one, Weight::new(2)))).is_err());
-    }
-
-    #[test]
-    fn run_segment_contiguous_after_append_and_compact() {
-        let k = kind(1, 1, 0);
-        let (mut space, mut t) = table(&k);
-        let cells: Vec<Slot> = (0..4).map(|i| cell(&mut space, &mut t, &k, 10 + i, 2)).collect();
-        // Each cell's dated rows open its list, their segment marked by its run head; undated rows follow, and lists
-        // grow past their room, move, and leave dead words behind.
-        let mark = |n: usize| 1_000 * (u64::try_from(n).unwrap() + 1);
-        for (n, s) in cells.iter().enumerate() {
-            let dated: Vec<u64> = (0..6).map(|w| mark(n) + w).collect();
-            t.edit_list(*s, CellList::Rows, |a, r| a.append(r, &dated));
-            t.set_run_head(*s, RunHead { next_due: 30, offset: 0, len: 6 });
-        }
-        for round in 0..20_u64 {
-            for s in &cells {
-                t.edit_list(*s, CellList::Rows, |a, r| a.append(r, &[round, round]));
-                t.edit_list(*s, CellList::Holdings, |a, r| a.append(r, &[round]));
-            }
-        }
-        let before: Vec<Vec<u64>> = cells.iter().map(|s| t.words(*s, CellList::Rows).to_vec()).collect();
-        let profiles: Vec<Profile> = cells.iter().map(|s| t.profile(*s)).collect();
-        let dead = t.arenas[0].dead_words();
-        assert!(dead > 0, "growth left dead words to close");
-        let mut scratch: Region<u64, Heap> = Region::reserve(&mut AddressSpace::empty(), 1 << 16);
-        t.compact(0, &mut scratch);
-        assert_eq!(t.arenas[0].dead_words(), 0);
-        for (n, s) in cells.iter().enumerate() {
-            let rows = t.words(*s, CellList::Rows);
-            assert_eq!(rows, before[n].as_slice(), "every word where it was in its list");
-            let head = t.run_head(*s);
-            let (from, to) = (usize::try_from(head.offset).unwrap(), usize::try_from(head.offset + head.len).unwrap());
-            let segment = rows.get(from..to).unwrap();
-            assert!(segment.iter().all(|w| *w >= mark(n)), "the dated rows still one segment");
-            assert_eq!(t.profile(*s), profiles[n]);
-            assert_eq!(t.words(*s, CellList::Holdings).len(), 20);
-        }
-    }
-
-    #[test]
-    fn household_record_within_budget() {
-        // Stage 0's household as the budget itemises it: three leading and nine further positions, fourteen standing
-        // rates, ten review kinds, one word of signature.
-        let k = kind(12, 14, 10);
-        let (_, t) = table(&k);
-        assert!(t.bytes_per_row() <= 464, "{} bytes a household row", t.bytes_per_row());
-        assert_eq!(t.bytes_per_row(), 8 + 4 + 64 + 8 + 9 * 8 + 14 * 4 + 10 * 8 + 10 * 8 + 4 * 8);
-    }
+    (slot, party)
 }

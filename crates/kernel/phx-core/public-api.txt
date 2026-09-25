@@ -175,6 +175,9 @@ pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId,
 pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day
 pub struct phx_core::calendar::CountryCalendar
 pub phx_core::calendar::CountryCalendar::country: phx_id::ids::CountryId
+pub fn phx_core::calendar::civil_date(i64) -> phx_id::day::Date
+pub fn phx_core::calendar::civil_serial(phx_id::day::Date) -> i64
+pub fn phx_core::calendar::days_after(phx_id::day::Date, i64) -> phx_id::day::Date
 pub mod phx_core::columns
 pub struct phx_core::columns::ColumnTrace
 pub phx_core::columns::ColumnTrace::handler: u16
@@ -226,6 +229,7 @@ pub const phx_core::consts::EASTER_L: [i32; 2]
 pub const phx_core::consts::EASTER_M: [i32; 3]
 pub const phx_core::consts::EASTER_MONTH: [i32; 3]
 pub const phx_core::consts::KEYED_ORDINAL: u8
+pub const phx_core::consts::LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8)
 pub const phx_core::consts::MAP_SEED: u64
 pub const phx_core::consts::MAX_NTH: i8
 pub const phx_core::consts::MAX_REASONS: usize
@@ -457,16 +461,12 @@ pub phx_core::events_rule::NewsEntry::kind: alloc::string::String
 pub phx_core::events_rule::NewsEntry::notice: phx_core::events_rule::Notice
 pub const phx_core::events_rule::PUBLIC_EVENTS: phx_core::register::PrimDecl
 pub mod phx_core::extensions
-pub const phx_core::extensions::TRACERS: phx_core::register::PrimDecl
-pub const phx_core::extensions::TRACER_STREAM: phx_core::streams::StreamDecl
 pub trait phx_core::extensions::GroupDemand
 pub fn phx_core::extensions::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64
 pub trait phx_core::extensions::PublicEventRule
 pub fn phx_core::extensions::PublicEventRule::is_public(&self, &phx_core::events::Event) -> bool
 impl phx_core::extensions::PublicEventRule for phx_core::events_rule::EventsRule
 pub fn phx_core::events_rule::EventsRule::is_public(&self, &phx_core::events::Event) -> bool
-pub trait phx_core::extensions::TracedCells
-pub fn phx_core::extensions::TracedCells::is_traced(&self, phx_id::ids::PartyId) -> bool
 pub mod phx_core::facts
 pub enum phx_core::facts::Audience
 pub phx_core::facts::Audience::Authority(&'static str)
@@ -529,9 +529,9 @@ pub phx_core::family::FamilyMode::Rolling::cycle_days: u16
 pub phx_core::family::FamilyMode::Streaming
 pub struct phx_core::family::AuditInputs<'a>
 pub phx_core::family::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
+pub phx_core::family::AuditInputs::agents: &'a dyn phx_core::family::AgentsAudit
 pub phx_core::family::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_core::family::AuditInputs::calendar: &'a phx_core::calendar::Calendar
-pub phx_core::family::AuditInputs::cells: &'a dyn phx_core::family::CellsAudit
 pub phx_core::family::AuditInputs::day: phx_id::day::Day
 pub phx_core::family::AuditInputs::directory: &'a phx_core::directory::Directory
 pub phx_core::family::AuditInputs::events: &'a phx_core::events::EventStore
@@ -549,9 +549,9 @@ pub phx_core::family::AuditInputs::trace: core::option::Option<phx_core::family:
 pub struct phx_core::family::FamilyCtx<'a>
 impl<'a> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
+pub fn phx_core::family::FamilyCtx<'a>::agents(&self) -> &dyn phx_core::family::AgentsAudit
 pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
-pub fn phx_core::family::FamilyCtx<'a>::cells(&self) -> &dyn phx_core::family::CellsAudit
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
@@ -606,6 +606,10 @@ pub fn phx_core::family::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<p
 pub fn phx_core::family::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::AccountsAudit::parties(&self) -> usize
 pub fn phx_core::family::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
+pub trait phx_core::family::AgentsAudit: core::fmt::Debug
+pub fn phx_core::family::AgentsAudit::agent(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::AgentsAudit::agents(&self) -> usize
+pub fn phx_core::family::AgentsAudit::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub trait phx_core::family::AuditFamily: core::marker::Send + core::marker::Sync
 pub fn phx_core::family::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
 pub fn phx_core::family::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
@@ -621,17 +625,12 @@ pub fn phx_core::family::BooksAudit::lines(&self) -> usize
 pub fn phx_core::family::BooksAudit::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
-pub trait phx_core::family::CellsAudit: core::fmt::Debug
-pub fn phx_core::family::CellsAudit::cells(&self) -> usize
-pub fn phx_core::family::CellsAudit::landings(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::CellsAudit::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::CellsAudit::representation(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub trait phx_core::family::InjectTarget
 pub fn phx_core::family::InjectTarget::accounts(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::family::InjectTarget::add_event(&mut self, phx_rand::key::Subject, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::family::InjectTarget::agents(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::family::InjectTarget::books(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::family::InjectTarget::cells(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::family::InjectTarget::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::family::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
@@ -769,10 +768,8 @@ pub phx_core::hazards::ActsOn::Tile
 pub enum phx_core::hazards::DrawScheme
 pub phx_core::hazards::DrawScheme::Daily
 pub phx_core::hazards::DrawScheme::Scheduled
-pub phx_core::hazards::DrawScheme::Scheduled::envelope: phx_core::hazards::EnvelopeRule
-pub enum phx_core::hazards::EnvelopeRule
-pub phx_core::hazards::EnvelopeRule::MaxOverProfile
 pub enum phx_core::hazards::RateChange
+pub phx_core::hazards::RateChange::Birthday
 pub phx_core::hazards::RateChange::MonthStart
 pub phx_core::hazards::RateChange::Policy(&'static str)
 pub phx_core::hazards::RateChange::Review(&'static str)
@@ -1012,110 +1009,65 @@ pub fn phx_core::policy::PolicyValue<T>::open<P>(phx_core::register::Prim<P>, &p
 pub fn phx_core::policy::PolicyValue<T>::value_on(&self, phx_id::day::Day) -> T
 pub mod phx_core::pop
 pub enum phx_core::pop::PopItem
-pub phx_core::pop::PopItem::KeyAttr(phx_core::pop::KeyAttrDecl)
-pub phx_core::pop::PopItem::Pin(phx_core::pop::PinDecl)
-pub phx_core::pop::PopItem::Position(phx_core::pop::PositionDecl)
-pub phx_core::pop::PopItem::ProfileGroup(phx_core::pop::GroupDecl)
-pub phx_core::pop::PopItem::Resolution(phx_core::pop::ResolutionDecl)
-pub phx_core::pop::PopItem::ReviewKind(&'static str)
+pub phx_core::pop::PopItem::Attr(phx_core::pop::AttrDecl)
+pub phx_core::pop::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)
 pub phx_core::pop::PopItem::Role(phx_core::pop::RoleDecl)
 pub phx_core::pop::PopItem::SitedBy(&'static str)
-pub phx_core::pop::PopItem::StandingRate(phx_core::pop::RateDecl)
-pub enum phx_core::pop::PositionOf
-pub phx_core::pop::PositionOf::Member
-pub phx_core::pop::PositionOf::Roles(&'static [&'static str])
-pub enum phx_core::pop::RoleCount
-pub phx_core::pop::RoleCount::Key(&'static str)
-pub phx_core::pop::RoleCount::One
-pub enum phx_core::pop::ScaleRef
-pub phx_core::pop::ScaleRef::Position(&'static str)
-pub phx_core::pop::ScaleRef::Rate(&'static str)
-pub struct phx_core::pop::GroupDecl
-pub phx_core::pop::GroupDecl::clause: &'static str
-pub phx_core::pop::GroupDecl::components: &'static [phx_core::pop::ProfileComponent]
-pub phx_core::pop::GroupDecl::name: &'static str
-pub phx_core::pop::GroupDecl::role: &'static str
-pub struct phx_core::pop::KeyAttrDecl
-pub phx_core::pop::KeyAttrDecl::clause: &'static str
-pub phx_core::pop::KeyAttrDecl::name: &'static str
-pub phx_core::pop::KeyAttrDecl::values: u32
-pub struct phx_core::pop::PinDecl
-pub phx_core::pop::PinDecl::clause: &'static str
-pub phx_core::pop::PinDecl::name: &'static str
+pub struct phx_core::pop::AttrDecl
+pub phx_core::pop::AttrDecl::clause: &'static str
+pub phx_core::pop::AttrDecl::name: &'static str
+pub phx_core::pop::AttrDecl::values: u32
+pub struct phx_core::pop::PersonAttrDecl
+pub phx_core::pop::PersonAttrDecl::clause: &'static str
+pub phx_core::pop::PersonAttrDecl::name: &'static str
+pub phx_core::pop::PersonAttrDecl::values: u32
 pub struct phx_core::pop::PopEntry
 pub phx_core::pop::PopEntry::item: phx_core::pop::PopItem
 pub phx_core::pop::PopEntry::kind: &'static str
 pub phx_core::pop::PopEntry::system: &'static str
 pub struct phx_core::pop::PopKindBuilder<'a>
 impl<'a> phx_core::pop::PopKindBuilder<'a>
-pub fn phx_core::pop::PopKindBuilder<'a>::key_attr(&mut self, phx_core::pop::KeyAttrDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::pin(&mut self, phx_core::pop::PinDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::profile_group(&mut self, phx_core::pop::GroupDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::resolution(&mut self, phx_core::pop::ResolutionDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::review_kind(&mut self, &'static str) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::attr(&mut self, phx_core::pop::AttrDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::person_attr(&mut self, phx_core::pop::PersonAttrDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::standing_rate(&mut self, phx_core::pop::RateDecl) -> &mut Self
-pub struct phx_core::pop::PositionDecl
-pub phx_core::pop::PositionDecl::clause: &'static str
-pub phx_core::pop::PositionDecl::name: &'static str
-pub phx_core::pop::PositionDecl::of: phx_core::pop::PositionOf
-pub phx_core::pop::PositionDecl::scale: phx_core::pop::ScaleRef
-pub phx_core::pop::PositionDecl::steps: &'static str
-pub phx_core::pop::PositionDecl::unit: &'static str
-pub struct phx_core::pop::ProfileComponent
-pub phx_core::pop::ProfileComponent::name: &'static str
-pub phx_core::pop::ProfileComponent::values: u32
-pub struct phx_core::pop::RankDecl
-pub phx_core::pop::RankDecl::demote: &'static str
-pub phx_core::pop::RankDecl::measure: &'static str
-pub phx_core::pop::RankDecl::promote: &'static str
-pub struct phx_core::pop::RateDecl
-pub phx_core::pop::RateDecl::clause: &'static str
-pub phx_core::pop::RateDecl::name: &'static str
-pub phx_core::pop::RateDecl::unit: &'static str
-pub struct phx_core::pop::ResolutionDecl
-pub phx_core::pop::ResolutionDecl::cell_budget: &'static str
-pub phx_core::pop::ResolutionDecl::clause: &'static str
-pub phx_core::pop::ResolutionDecl::ranks: core::option::Option<phx_core::pop::RankDecl>
-pub phx_core::pop::ResolutionDecl::widen_order: &'static [&'static str]
 pub struct phx_core::pop::RoleDecl
 pub phx_core::pop::RoleDecl::clause: &'static str
 pub phx_core::pop::RoleDecl::name: &'static str
-pub phx_core::pop::RoleDecl::per_member: phx_core::pop::RoleCount
-pub fn phx_core::pop::component(&[phx_core::pop::ProfileComponent], u32, usize) -> u32
-pub fn phx_core::pop::joint(&[phx_core::pop::ProfileComponent], &[u32]) -> u32
 pub mod phx_core::pop_process
-pub struct phx_core::pop_process::CellView<'a>
-pub phx_core::pop_process::CellView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
-pub phx_core::pop_process::CellView::date: phx_id::day::Date
-pub phx_core::pop_process::CellView::key: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
-pub phx_core::pop_process::CellView::kind: &'static str
-pub phx_core::pop_process::CellView::party: phx_id::ids::PartyId
-impl core::fmt::Debug for phx_core::pop_process::CellView<'_>
-pub fn phx_core::pop_process::CellView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct phx_core::pop_process::AgentView<'a>
+pub phx_core::pop_process::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
+pub phx_core::pop_process::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
+pub phx_core::pop_process::AgentView::date: phx_id::day::Date
+pub phx_core::pop_process::AgentView::kind: &'static str
+pub phx_core::pop_process::AgentView::party: phx_id::ids::PartyId
+impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
+pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::pop_process::Household
-pub phx_core::pop_process::Household::key: alloc::vec::Vec<(&'static str, u32)>
+pub phx_core::pop_process::Household::attrs: alloc::vec::Vec<(&'static str, u32)>
 pub phx_core::pop_process::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
 impl phx_core::pop_process::Household
-pub fn phx_core::pop_process::Household::key(&self, &str) -> u32
+pub fn phx_core::pop_process::Household::attr(&self, &str) -> u32
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
 pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)
 pub struct phx_core::pop_process::Person
+pub phx_core::pop_process::Person::attrs: alloc::vec::Vec<(&'static str, u32)>
+pub phx_core::pop_process::Person::born: phx_id::day::Date
 pub phx_core::pop_process::Person::gone: bool
 pub phx_core::pop_process::Person::role: &'static str
-pub phx_core::pop_process::Person::values: alloc::vec::Vec<(&'static str, u32)>
 impl phx_core::pop_process::Person
-pub fn phx_core::pop_process::Person::value(&self, &str) -> core::option::Option<u32>
+pub fn phx_core::pop_process::Person::age_on(&self, phx_id::day::Date) -> i64
+pub fn phx_core::pop_process::Person::attr(&self, &str) -> core::option::Option<u32>
+pub fn phx_core::pop_process::Person::birthday_in(&self, i32) -> phx_id::day::Date
+pub fn phx_core::pop_process::Person::next_birthday(&self, phx_id::day::Date) -> phx_id::day::Date
+pub fn phx_core::pop_process::Person::set_attr(&mut self, &str, u32)
 pub trait phx_core::pop_process::PopProcess: core::marker::Send + core::marker::Sync
 pub fn phx_core::pop_process::PopProcess::bind(&mut self, &phx_core::register::Register)
-pub fn phx_core::pop_process::PopProcess::changes_after(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
-pub fn phx_core::pop_process::PopProcess::groups(&self) -> &'static [&'static str]
+pub fn phx_core::pop_process::PopProcess::changes_after(&self, &phx_core::pop_process::Person, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::pop_process::PopProcess::hazard(&self) -> &'static str
 pub fn phx_core::pop_process::PopProcess::kind(&self) -> &'static str
-pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &mut phx_core::pop_process::Household, &[usize], &mut phx_rand::draws::Draws)
-pub fn phx_core::pop_process::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &'static str, u32) -> f64
+pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &mut phx_core::pop_process::Household, &[usize], &mut phx_rand::draws::Draws)
+pub fn phx_core::pop_process::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &phx_core::pop_process::Person) -> f64
 pub mod phx_core::records
 pub struct phx_core::records::Reader
 pub phx_core::records::Reader::day: phx_id::day::Day
@@ -1869,15 +1821,12 @@ pub phx_core::Discretisation::EqualShares
 pub enum phx_core::DrawScheme
 pub phx_core::DrawScheme::Daily
 pub phx_core::DrawScheme::Scheduled
-pub phx_core::DrawScheme::Scheduled::envelope: phx_core::hazards::EnvelopeRule
 pub enum phx_core::EndOfMonth
 pub phx_core::EndOfMonth::Keep
 pub phx_core::EndOfMonth::Plain
 impl phx_store::save::Saved for phx_core::calendar::period::EndOfMonth
 pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)
-pub enum phx_core::EnvelopeRule
-pub phx_core::EnvelopeRule::MaxOverProfile
 pub enum phx_core::FactType
 pub phx_core::FactType::Count
 pub phx_core::FactType::Day
@@ -2025,18 +1974,10 @@ pub phx_core::PartyState::Ended::successor: phx_num::missing::Missing<phx_id::id
 pub phx_core::PartyState::Live(phx_id::ids::RowRef)
 pub phx_core::PartyState::Unknown
 pub enum phx_core::PopItem
-pub phx_core::PopItem::KeyAttr(phx_core::pop::KeyAttrDecl)
-pub phx_core::PopItem::Pin(phx_core::pop::PinDecl)
-pub phx_core::PopItem::Position(phx_core::pop::PositionDecl)
-pub phx_core::PopItem::ProfileGroup(phx_core::pop::GroupDecl)
-pub phx_core::PopItem::Resolution(phx_core::pop::ResolutionDecl)
-pub phx_core::PopItem::ReviewKind(&'static str)
+pub phx_core::PopItem::Attr(phx_core::pop::AttrDecl)
+pub phx_core::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)
 pub phx_core::PopItem::Role(phx_core::pop::RoleDecl)
 pub phx_core::PopItem::SitedBy(&'static str)
-pub phx_core::PopItem::StandingRate(phx_core::pop::RateDecl)
-pub enum phx_core::PositionOf
-pub phx_core::PositionOf::Member
-pub phx_core::PositionOf::Roles(&'static [&'static str])
 pub enum phx_core::PrimKind
 pub phx_core::PrimKind::Endowment
 pub phx_core::PrimKind::Policy
@@ -2097,6 +2038,7 @@ pub phx_core::Purpose::ThirdPartyHarm
 pub phx_core::Purpose::TypeAtBirth
 pub phx_core::Purpose::Weather
 pub enum phx_core::RateChange
+pub phx_core::RateChange::Birthday
 pub phx_core::RateChange::MonthStart
 pub phx_core::RateChange::Policy(&'static str)
 pub phx_core::RateChange::Review(&'static str)
@@ -2110,15 +2052,9 @@ pub enum phx_core::Resolved
 pub phx_core::Resolved::Ended(phx_id::ids::PartyId)
 pub phx_core::Resolved::Live(phx_id::ids::PartyId, phx_id::ids::RowRef)
 pub phx_core::Resolved::Unknown
-pub enum phx_core::RoleCount
-pub phx_core::RoleCount::Key(&'static str)
-pub phx_core::RoleCount::One
 pub enum phx_core::RunsOn
 pub phx_core::RunsOn::Any
 pub phx_core::RunsOn::Business
-pub enum phx_core::ScaleRef
-pub phx_core::ScaleRef::Position(&'static str)
-pub phx_core::ScaleRef::Rate(&'static str)
 pub enum phx_core::Scope
 pub phx_core::Scope::PerCountry
 pub phx_core::Scope::Shared
@@ -2288,6 +2224,14 @@ pub struct phx_core::AgendaTableSpec
 pub phx_core::AgendaTableSpec::max_rows: u32
 pub phx_core::AgendaTableSpec::reasons: usize
 pub phx_core::AgendaTableSpec::table: phx_id::ids::TableId
+pub struct phx_core::AgentView<'a>
+pub phx_core::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
+pub phx_core::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
+pub phx_core::AgentView::date: phx_id::day::Date
+pub phx_core::AgentView::kind: &'static str
+pub phx_core::AgentView::party: phx_id::ids::PartyId
+impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
+pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::Announcement<T>
 pub phx_core::Announcement::announced: phx_id::day::Day
 pub phx_core::Announcement::effective: phx_id::day::Day
@@ -2304,11 +2248,15 @@ pub phx_core::Apportioned::stratum: alloc::string::String
 impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::AttrDecl
+pub phx_core::AttrDecl::clause: &'static str
+pub phx_core::AttrDecl::name: &'static str
+pub phx_core::AttrDecl::values: u32
 pub struct phx_core::AuditInputs<'a>
 pub phx_core::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
+pub phx_core::AuditInputs::agents: &'a dyn phx_core::family::AgentsAudit
 pub phx_core::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
 pub phx_core::AuditInputs::calendar: &'a phx_core::calendar::Calendar
-pub phx_core::AuditInputs::cells: &'a dyn phx_core::family::CellsAudit
 pub phx_core::AuditInputs::day: phx_id::day::Day
 pub phx_core::AuditInputs::directory: &'a phx_core::directory::Directory
 pub phx_core::AuditInputs::events: &'a phx_core::events::EventStore
@@ -2359,14 +2307,6 @@ pub fn phx_core::calendar::Calendar::next_turn_day(&self, phx_id::day::Day) -> p
 pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId, phx_id::day::Day) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day
-pub struct phx_core::CellView<'a>
-pub phx_core::CellView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
-pub phx_core::CellView::date: phx_id::day::Date
-pub phx_core::CellView::key: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
-pub phx_core::CellView::kind: &'static str
-pub phx_core::CellView::party: phx_id::ids::PartyId
-impl core::fmt::Debug for phx_core::pop_process::CellView<'_>
-pub fn phx_core::pop_process::CellView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::Claim
 pub phx_core::Claim::item: &'static str
 pub phx_core::Claim::system: phx_id::ids::SystemCode
@@ -2595,9 +2535,9 @@ pub phx_core::FactDecl::value: phx_core::facts::FactType
 pub struct phx_core::FamilyCtx<'a>
 impl<'a> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
+pub fn phx_core::family::FamilyCtx<'a>::agents(&self) -> &dyn phx_core::family::AgentsAudit
 pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
 pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
-pub fn phx_core::family::FamilyCtx<'a>::cells(&self) -> &dyn phx_core::family::CellsAudit
 pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
 pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
@@ -2655,11 +2595,6 @@ pub phx_core::GenReport::writes: alloc::vec::Vec<phx_core::contribution::WriteRe
 impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::WriteRecord>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::GroupDecl
-pub phx_core::GroupDecl::clause: &'static str
-pub phx_core::GroupDecl::components: &'static [phx_core::pop::ProfileComponent]
-pub phx_core::GroupDecl::name: &'static str
-pub phx_core::GroupDecl::role: &'static str
 pub struct phx_core::HandlerEntry
 pub phx_core::HandlerEntry::clause: &'static str
 pub phx_core::HandlerEntry::intents: &'static [&'static str]
@@ -2688,10 +2623,10 @@ pub phx_core::HazardDecl::stream: &'static str
 impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::Household
-pub phx_core::Household::key: alloc::vec::Vec<(&'static str, u32)>
+pub phx_core::Household::attrs: alloc::vec::Vec<(&'static str, u32)>
 pub phx_core::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
 impl phx_core::pop_process::Household
-pub fn phx_core::pop_process::Household::key(&self, &str) -> u32
+pub fn phx_core::pop_process::Household::attr(&self, &str) -> u32
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
 pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)
 pub struct phx_core::Intents
@@ -2737,10 +2672,6 @@ pub phx_core::KernelTable::name: &'static str
 impl phx_store::save::Saved for phx_core::columns::KernelTable where &'static str: phx_store::save::Saved, phx_core::columns::FactColumns: phx_store::save::Saved
 pub fn phx_core::columns::KernelTable::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::columns::KernelTable::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::KeyAttrDecl
-pub phx_core::KeyAttrDecl::clause: &'static str
-pub phx_core::KeyAttrDecl::name: &'static str
-pub phx_core::KeyAttrDecl::values: u32
 pub struct phx_core::KindDecl
 pub phx_core::KindDecl::clause: &'static str
 pub phx_core::KindDecl::legal_form: &'static str
@@ -2908,19 +2839,25 @@ pub phx_core::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBa
 pub phx_core::Permitted::form: alloc::string::String
 pub phx_core::Permitted::held_for: phx_core::accounting::HeldFor
 pub struct phx_core::Person
+pub phx_core::Person::attrs: alloc::vec::Vec<(&'static str, u32)>
+pub phx_core::Person::born: phx_id::day::Date
 pub phx_core::Person::gone: bool
 pub phx_core::Person::role: &'static str
-pub phx_core::Person::values: alloc::vec::Vec<(&'static str, u32)>
 impl phx_core::pop_process::Person
-pub fn phx_core::pop_process::Person::value(&self, &str) -> core::option::Option<u32>
+pub fn phx_core::pop_process::Person::age_on(&self, phx_id::day::Date) -> i64
+pub fn phx_core::pop_process::Person::attr(&self, &str) -> core::option::Option<u32>
+pub fn phx_core::pop_process::Person::birthday_in(&self, i32) -> phx_id::day::Date
+pub fn phx_core::pop_process::Person::next_birthday(&self, phx_id::day::Date) -> phx_id::day::Date
+pub fn phx_core::pop_process::Person::set_attr(&mut self, &str, u32)
+pub struct phx_core::PersonAttrDecl
+pub phx_core::PersonAttrDecl::clause: &'static str
+pub phx_core::PersonAttrDecl::name: &'static str
+pub phx_core::PersonAttrDecl::values: u32
 pub struct phx_core::Phase
 impl phx_core::schedule::Phase
 pub fn phx_core::schedule::Phase::offset_days(self) -> u16
 pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16) -> core::option::Option<phx_core::schedule::Phase>
 pub struct phx_core::PhysicalToken(_)
-pub struct phx_core::PinDecl
-pub phx_core::PinDecl::clause: &'static str
-pub phx_core::PinDecl::name: &'static str
 pub struct phx_core::Pinned
 pub phx_core::Pinned::index: usize
 pub phx_core::Pinned::part: u8
@@ -2955,22 +2892,10 @@ pub phx_core::PopEntry::kind: &'static str
 pub phx_core::PopEntry::system: &'static str
 pub struct phx_core::PopKindBuilder<'a>
 impl<'a> phx_core::pop::PopKindBuilder<'a>
-pub fn phx_core::pop::PopKindBuilder<'a>::key_attr(&mut self, phx_core::pop::KeyAttrDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::pin(&mut self, phx_core::pop::PinDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::profile_group(&mut self, phx_core::pop::GroupDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::resolution(&mut self, phx_core::pop::ResolutionDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::review_kind(&mut self, &'static str) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::attr(&mut self, phx_core::pop::AttrDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::person_attr(&mut self, phx_core::pop::PersonAttrDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::standing_rate(&mut self, phx_core::pop::RateDecl) -> &mut Self
-pub struct phx_core::PositionDecl
-pub phx_core::PositionDecl::clause: &'static str
-pub phx_core::PositionDecl::name: &'static str
-pub phx_core::PositionDecl::of: phx_core::pop::PositionOf
-pub phx_core::PositionDecl::scale: phx_core::pop::ScaleRef
-pub phx_core::PositionDecl::steps: &'static str
-pub phx_core::PositionDecl::unit: &'static str
 pub struct phx_core::Prim<T>
 impl<T: phx_core::register::values::PrimType> phx_core::register::Prim<T>
 pub fn phx_core::register::Prim<T>::decl(self, &phx_core::register::Register) -> &phx_core::register::PrimDecl
@@ -2992,9 +2917,6 @@ pub phx_core::PrimDecl::value: phx_core::register::values::ValueType
 impl phx_core::register::PrimDecl
 pub fn phx_core::register::PrimDecl::owner(&self) -> core::result::Result<phx_id::ids::SystemCode, alloc::string::String>
 pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
-pub struct phx_core::ProfileComponent
-pub phx_core::ProfileComponent::name: &'static str
-pub phx_core::ProfileComponent::values: u32
 pub struct phx_core::ProfileValue
 pub phx_core::ProfileValue::countries: u32
 pub phx_core::ProfileValue::mean: i64
@@ -3008,14 +2930,6 @@ pub phx_core::QueuedIntent::words: alloc::vec::Vec<i64>
 impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
 pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::RankDecl
-pub phx_core::RankDecl::demote: &'static str
-pub phx_core::RankDecl::measure: &'static str
-pub phx_core::RankDecl::promote: &'static str
-pub struct phx_core::RateDecl
-pub phx_core::RateDecl::clause: &'static str
-pub phx_core::RateDecl::name: &'static str
-pub phx_core::RateDecl::unit: &'static str
 pub struct phx_core::RateFn
 pub phx_core::RateFn::axes: &'static [&'static str]
 pub phx_core::RateFn::changes: &'static [phx_core::hazards::RateChange]
@@ -3076,15 +2990,9 @@ impl phx_core::register::RegisterBuilder
 pub fn phx_core::register::RegisterBuilder::build(self, &[phx_core::register::DataFile], usize) -> core::result::Result<phx_core::register::Register, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::register::RegisterBuilder::declare<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
 pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::RegisterBuilder
-pub struct phx_core::ResolutionDecl
-pub phx_core::ResolutionDecl::cell_budget: &'static str
-pub phx_core::ResolutionDecl::clause: &'static str
-pub phx_core::ResolutionDecl::ranks: core::option::Option<phx_core::pop::RankDecl>
-pub phx_core::ResolutionDecl::widen_order: &'static [&'static str]
 pub struct phx_core::RoleDecl
 pub phx_core::RoleDecl::clause: &'static str
 pub phx_core::RoleDecl::name: &'static str
-pub phx_core::RoleDecl::per_member: phx_core::pop::RoleCount
 pub struct phx_core::RoleId(pub &'static str)
 pub struct phx_core::RuleSig<I, O>
 pub phx_core::RuleSig::implementer: &'static str
@@ -3236,13 +3144,15 @@ pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub const phx_core::PUBLIC_EVENTS: phx_core::register::PrimDecl
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
-pub const phx_core::TRACERS: phx_core::register::PrimDecl
-pub const phx_core::TRACER_STREAM: phx_core::streams::StreamDecl
 pub trait phx_core::AccountsAudit: core::fmt::Debug
 pub fn phx_core::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::AccountsAudit::parties(&self) -> usize
 pub fn phx_core::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
+pub trait phx_core::AgentsAudit: core::fmt::Debug
+pub fn phx_core::AgentsAudit::agent(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::AgentsAudit::agents(&self) -> usize
+pub fn phx_core::AgentsAudit::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub trait phx_core::AuditFamily: core::marker::Send + core::marker::Sync
 pub fn phx_core::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
 pub fn phx_core::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
@@ -3258,11 +3168,6 @@ pub fn phx_core::BooksAudit::lines(&self) -> usize
 pub fn phx_core::BooksAudit::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
-pub trait phx_core::CellsAudit: core::fmt::Debug
-pub fn phx_core::CellsAudit::cells(&self) -> usize
-pub fn phx_core::CellsAudit::landings(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::CellsAudit::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::CellsAudit::representation(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub trait phx_core::Contribution: core::marker::Send + core::marker::Sync
 pub fn phx_core::Contribution::contribute(&self, &mut phx_core::contribution::Opening<'_>)
 pub fn phx_core::Contribution::derived(&self) -> &'static [&'static str]
@@ -3297,8 +3202,8 @@ pub trait phx_core::InjectTarget
 pub fn phx_core::InjectTarget::accounts(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::InjectTarget::add_event(&mut self, phx_rand::key::Subject, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::InjectTarget::agents(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::InjectTarget::books(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::InjectTarget::cells(&mut self) -> &mut dyn core::any::Any
 pub fn phx_core::InjectTarget::day(&self) -> phx_id::day::Day
 pub fn phx_core::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
@@ -3353,12 +3258,11 @@ pub trait phx_core::MessageDef
 pub const phx_core::MessageDef::DECL: phx_core::messages::MessageKindDecl
 pub trait phx_core::PopProcess: core::marker::Send + core::marker::Sync
 pub fn phx_core::PopProcess::bind(&mut self, &phx_core::register::Register)
-pub fn phx_core::PopProcess::changes_after(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
-pub fn phx_core::PopProcess::groups(&self) -> &'static [&'static str]
+pub fn phx_core::PopProcess::changes_after(&self, &phx_core::pop_process::Person, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::PopProcess::hazard(&self) -> &'static str
 pub fn phx_core::PopProcess::kind(&self) -> &'static str
-pub fn phx_core::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &mut phx_core::pop_process::Household, &[usize], &mut phx_rand::draws::Draws)
-pub fn phx_core::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &'static str, u32) -> f64
+pub fn phx_core::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &mut phx_core::pop_process::Household, &[usize], &mut phx_rand::draws::Draws)
+pub fn phx_core::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &phx_core::pop_process::Person) -> f64
 pub trait phx_core::PrimType
 pub type phx_core::PrimType::Read<'a>
 pub fn phx_core::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>
@@ -3444,14 +3348,11 @@ pub trait phx_core::TableSchema
 pub fn phx_core::TableSchema::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-pub trait phx_core::TracedCells
-pub fn phx_core::TracedCells::is_traced(&self, phx_id::ids::PartyId) -> bool
 pub trait phx_core::Writes<F: phx_core::facts::FactDef>
 pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
 pub fn phx_core::annual_to_daily(f64, u32) -> f64
 pub fn phx_core::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
 pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
-pub fn phx_core::component(&[phx_core::pop::ProfileComponent], u32, usize) -> u32
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
 pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
@@ -3460,7 +3361,6 @@ pub fn phx_core::draw_profile(&phx_core::register::profile::JointProfile, &[phx_
 pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
-pub fn phx_core::joint(&[phx_core::pop::ProfileComponent], &[u32]) -> u32
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::opening_subject(u32, u32) -> phx_rand::key::Subject
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>

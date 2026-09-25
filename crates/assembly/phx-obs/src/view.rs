@@ -21,13 +21,13 @@ pub struct View {
     pub histograms: Vec<(String, Histogram)>,
 }
 
-/// What a histogram counts of each cell.
+/// What a histogram reads of each agent, which it counts once for every twin.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Of {
-    /// Its weight, the cell counted once.
-    Weight,
-    /// The value of the key attribute at this index, the cell counted by its members.
-    Key(usize),
+    /// Its persons.
+    Persons,
+    /// The value of the attribute at this place among its kind's.
+    Attr(usize),
 }
 
 /// The declared histograms resolved against the world's population kinds.
@@ -58,16 +58,17 @@ impl Views {
             let Some(kind) = kinds.iter().position(|k| k.decl.kind == d.kind) else {
                 return Err(format!("histogram `{}` is of `{}`, a kind the world does not keep", d.id, d.kind));
             };
-            let of = match (d.of.as_str(), d.of.strip_prefix("key.")) {
-                ("weight", _) => Of::Weight,
+            let of = match (d.of.as_str(), d.of.strip_prefix("attr.")) {
+                ("persons", _) => Of::Persons,
                 (_, Some(attr)) => {
-                    let fields = kinds.get(kind).map_or(&[][..], |k| k.decl.key.fields());
-                    let Some(i) = fields.iter().position(|f| f.name == attr) else {
-                        return Err(format!("histogram `{}` reads `{attr}`, no key attribute of `{}`", d.id, d.kind));
+                    let Some(i) = kinds.get(kind).and_then(|k| k.decl.attr(attr)) else {
+                        return Err(format!("histogram `{}` reads `{attr}`, no attribute of `{}`", d.id, d.kind));
                     };
-                    Of::Key(i)
+                    Of::Attr(i)
                 }
-                (other, None) => return Err(format!("histogram `{}` is of `{other}`, neither weight nor a key", d.id)),
+                (other, None) => {
+                    return Err(format!("histogram `{}` is of `{other}`, neither persons nor an attribute", d.id));
+                }
             };
             Histogram::new(d.edges.clone()).map_err(|e| format!("histogram `{}`: {e}", d.id))?;
             histograms.push(Resolved { id: d.id.clone(), kind, of, edges: d.edges.clone() });
@@ -85,17 +86,14 @@ impl Views {
         let mut histograms = Vec::with_capacity(self.histograms.len());
         for r in &self.histograms {
             let Ok(mut h) = Histogram::new(r.edges.clone()) else { continue };
-            let table = w.cell_table(r.kind);
-            let Some(kind) = w.population().kinds.get(r.kind) else { continue };
+            let table = w.agent_table(r.kind);
             for slot in table.slots() {
-                let weight = table.weight(slot).get();
-                match r.of {
-                    Of::Weight => h.add(i64::from(weight), 1),
-                    Of::Key(attr) => {
-                        let key = kind.keys.record(table.hot(slot).key_id);
-                        h.add(i64::from(kind.decl.key.get(&key, attr)), u64::from(weight));
-                    }
-                }
+                let twins = u64::from(table.multiplicity(slot).get());
+                let value = match r.of {
+                    Of::Persons => i64::try_from(table.persons(slot).len()).unwrap_or(i64::MAX),
+                    Of::Attr(attr) => i64::from(table.attr(slot, attr)),
+                };
+                h.add(value, twins);
             }
             histograms.push((r.id.clone(), h));
         }

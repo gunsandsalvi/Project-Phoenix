@@ -21,11 +21,3 @@ value = [
   { kind = "DEM.disabled", notice = "never" },
   { kind = "DEM.aged", notice = "never" },
 ]
-
-[[primitive]]
-id = "OBS.tracers"
-kind = "RESOLUTION"
-owner = "OBS"
-source = "assumed"
-source_ref = "Resolution (spec REP.30, OBS.9): a thousand members followed from the opening, enough for per-person paths to be read by country and by the head's life stage, within the views and tracers' line of the memory budget; set by measurement at the gate (N8.5)."
-value = 1000

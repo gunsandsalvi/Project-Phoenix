@@ -17,9 +17,6 @@ use crate::trace::TraceLog;
 /// What a system compiled at assembly, which only its own handlers are given.
 pub type OwnState = Box<dyn Any + Send + Sync>;
 
-/// A part split at 3e with the rows it takes, which stay on its origin until 10b.
-pub(crate) type PlannedPart = (phx_pop::part::Part, phx_pop::split::RowPlanned);
-
 /// A day's settlement as published: its measure, what its dated flows came to, and its fails; and, once the next
 /// business day's contract process has taken them, how many of its fails on a row a party still held were not then in
 /// arrears.
@@ -52,25 +49,14 @@ pub struct World {
     pub(crate) today: Day,
     pub(crate) settling_years: Count,
     pub(crate) books: phx_ledger::books::Books,
-    /// The population kinds: their declarations, keys, landing indexes and step levels; their cells are the books'.
+    /// The population kinds, the representation, the parties counted and the agenda; their agents are the books'.
     pub(crate) population: phx_pop::population::Population,
-    /// The processes acting on the population's members, in order of kind, then hazard.
-    pub(crate) processes: Vec<crate::cells::Bound>,
-    /// The day's hits, from 3b's screening to 3e's outcomes.
-    pub(crate) cell_hits: Vec<crate::cells::CellHit>,
-    /// The day's parts, per population kind, from 3e's outcomes to 10b's landing, each with the rows it takes, which
-    /// stay on its origin until 10b.
-    pub(crate) cell_parts: Vec<Vec<PlannedPart>>,
-    /// The day's cells to re-key at 10b, per population kind.
-    pub(crate) cell_flagged: Vec<Vec<phx_id::Slot>>,
-    /// The day's splits of the cells the observer traces, cleared as each day begins; never saved or hashed.
-    pub(crate) split_log: crate::observe::SplitLog,
-    /// What the day's work on cells did.
-    pub(crate) cell_day: crate::cells::CellDay,
-    /// The line kinks landings read.
-    pub(crate) kinks: crate::cells::FacilityKinks,
-    /// The day of each month the population's ranks are read.
-    pub(crate) rank_day: u64,
+    /// The processes acting on the agents' persons, in order of kind, then hazard.
+    pub(crate) processes: Vec<crate::agents::Bound>,
+    /// The day's hits, from 3b's gathering to 3e's outcomes.
+    pub(crate) agent_hits: Vec<crate::agents::AgentHit>,
+    /// What the day's work on agents did.
+    pub(crate) agent_day: crate::agents::AgentDay,
     pub(crate) markets: phx_market::markets::Markets,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,

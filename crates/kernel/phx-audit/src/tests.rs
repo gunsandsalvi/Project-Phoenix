@@ -87,7 +87,7 @@ impl Hand {
             books: &NoBooks,
             markets: &NoMarkets,
             accounts: &NoAccounts,
-            cells: &NoCells,
+            agents: &NoAgents,
             own: &[],
         };
         let record = audit.close(close, &mut findings);
@@ -115,21 +115,18 @@ impl phx_core::AccountsAudit for NoAccounts {
     }
 }
 
-/// A population of no cells.
+/// A population of no agents.
 #[derive(Debug)]
-struct NoCells;
+struct NoAgents;
 
-impl phx_core::CellsAudit for NoCells {
-    fn cells(&self) -> usize {
+impl phx_core::AgentsAudit for NoAgents {
+    fn agents(&self) -> usize {
         0
     }
-    fn representation(&self, _: usize) -> Vec<phx_core::Gap> {
+    fn agent(&self, _: usize) -> Vec<phx_core::Gap> {
         Vec::new()
     }
     fn populations(&self) -> Vec<phx_core::Gap> {
-        Vec::new()
-    }
-    fn landings(&self) -> Vec<phx_core::Gap> {
         Vec::new()
     }
 }
@@ -217,7 +214,7 @@ impl InjectTarget for Hand {
         &mut self.nothing
     }
 
-    fn cells(&mut self) -> &mut dyn core::any::Any {
+    fn agents(&mut self) -> &mut dyn core::any::Any {
         &mut self.nothing
     }
 

@@ -124,6 +124,7 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
         data,
         run_dir: PathBuf::from(run_dir),
         read_trace: false,
+        representation: phx_num::Missing::Absent,
     };
     show(host, "world", "opening", "assembling".to_owned(), String::new(), "");
     let started = clock.now_ns();
@@ -131,8 +132,7 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
     let opening_ms = clock.now_ns().checked_sub(started).map(|n| n / NS_PER_MS);
     let opened_peak = proc_kib("status", "VmHWM:");
     let w = Inspector::new(&world);
-    let tracers = phx_obs::Tracers::declared(w)?;
-    let mut watch = phx_obs::Watch { tracers, recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
+    let mut watch = phx_obs::Watch { recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
     let mut views = phx_obs::Views::new(&definitions.histograms, w)?;
     let opened = opening_ms.map_or_else(|| "unclocked".to_owned(), |ms| format!("{ms} ms"));
     show(host, "world", "opening", format!("{opened}, peak {}", mib(opened_peak)), String::new(), "");

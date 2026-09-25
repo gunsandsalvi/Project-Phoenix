@@ -12,6 +12,23 @@ use crate::calendar::period::{EndOfMonth, Period, advance};
 use crate::calendar::rules::CountryRules;
 use crate::consts::{CALENDAR_WINDOW_YEARS, CALENDAR_WORD_BITS as BITS};
 
+/// A date's civil serial: its days from the proleptic calendar's origin, as a person's word holds its birth date, so a
+/// date long before the world's epoch is held exactly.
+#[must_use]
+pub fn civil_serial(date: Date) -> i64 {
+    days_from_civil(date)
+}
+
+/// The date a civil serial names.
+pub fn civil_date(serial: i64) -> Date {
+    civil_from_days(serial)
+}
+
+/// The date a number of days after another, or before it for a negative number.
+pub fn days_after(date: Date, days: i64) -> Date {
+    civil_from_days(days_from_civil(date) + days)
+}
+
 /// One country's business days: its rules, which are the calendar's state, and a bitset of a window of years built
 /// from them, which is not.
 #[derive(Clone, Debug)]

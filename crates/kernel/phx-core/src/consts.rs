@@ -103,3 +103,6 @@ pub const KEYED_ORDINAL: u8 = u8::MAX;
 
 /// A whole, in percent, for the profile's percentages.
 pub const PERCENT_F64: f64 = 100.0;
+
+/// The month and day a birthday on the 29th of February falls on in a common year: the 1st of March.
+pub const LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8) = (3, 1);

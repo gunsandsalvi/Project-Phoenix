@@ -92,6 +92,10 @@ pub struct RunArgs {
     /// Where the world's saves are kept; by default `saves` in the run's directory.
     #[arg(long)]
     saves: Option<PathBuf>,
+    /// The representation in place of the data's: `twins:K`, the whole population as agents of K twins, or
+    /// `small:K`, one K-th of the population with every agent one party.
+    #[arg(long)]
+    representation: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]

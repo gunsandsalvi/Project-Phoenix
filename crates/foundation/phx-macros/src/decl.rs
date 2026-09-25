@@ -592,6 +592,7 @@ fn rate_changes(e: &Expr) -> syn::Result<Vec<TokenStream>> {
             Expr::Path(p) if p.path.is_ident("MonthStart") => {
                 Ok(quote! { ::phx_core::hazards::RateChange::MonthStart })
             }
+            Expr::Path(p) if p.path.is_ident("Birthday") => Ok(quote! { ::phx_core::hazards::RateChange::Birthday }),
             Expr::Call(ExprCall { func, args, .. }) => {
                 let name = match args.iter().collect::<Vec<_>>().as_slice() {
                     [one] => string(one)?,
@@ -609,7 +610,7 @@ fn rate_changes(e: &Expr) -> syn::Result<Vec<TokenStream>> {
             }
             _ => Err(syn::Error::new_spanned(
                 c,
-                "expected `YearStart`, `MonthStart`, `Policy(\"…\")` or `Review(\"…\")`",
+                "expected `YearStart`, `MonthStart`, `Birthday`, `Policy(\"…\")` or `Review(\"…\")`",
             )),
         })
         .collect()
@@ -627,9 +628,7 @@ fn hazard(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
     let changes = rate_changes(required(&fields, "changes", span)?)?;
     let outcome = string(required(&fields, "outcome", span)?)?;
     let scheme = match variant(required(&fields, "scheme", span)?, &["Scheduled", "Daily"])? {
-        s if s == "Scheduled" => quote! {
-            ::phx_core::hazards::DrawScheme::Scheduled { envelope: ::phx_core::hazards::EnvelopeRule::MaxOverProfile }
-        },
+        s if s == "Scheduled" => quote! { ::phx_core::hazards::DrawScheme::Scheduled },
         _ => quote! { ::phx_core::hazards::DrawScheme::Daily },
     };
     let stream = string(required(&fields, "stream", span)?)?;

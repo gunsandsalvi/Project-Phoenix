@@ -1,20 +1,12 @@
-# DEM's shared primitives: how households are represented.
+# DEM's shared primitives.
 
 [[primitive]]
 id = "DEM.age_classes"
 kind = "RESOLUTION"
 owner = "DEM"
 source = "assumed"
-source_ref = "The first ages of the classes a household's key holds its persons in: children by bands of six years to the age of majority, adults by classes that part working life from retirement and old age. A resolution setting, changed by measuring the budget (N8.5); every rule that reads an age adds its boundary."
+source_ref = "The first ages of the classes realised mortality and illness are reported by against their tables (CHN.7): children by bands of six years to the age of majority, adults by classes that part working life from retirement and old age. A reporting resolution; no rule reads it."
 value = [0, 6, 12, 18, 35, 50, 65, 80]
-
-[[primitive]]
-id = "DEM.cell_budget"
-kind = "RESOLUTION"
-owner = "DEM"
-source = "assumed"
-source_ref = "The most household cells the representation keeps before tolerance control widens their steps: the architecture's sizing of about two million cells for the world's households (N8), set by measuring the budget."
-value = 2000000
 
 [[primitive]]
 id = "DEM.household_members"

@@ -28,6 +28,10 @@ pub fn injections(
         setup: setup.to_path_buf(),
         run_dir: run_dir.to_path_buf(),
         read_trace: manifest.read_trace,
+        representation: phx_num::Missing::Present(phx_pop::prims::Representation {
+            multiplicity: manifest.multiplicity,
+            population_divisor: manifest.population_divisor,
+        }),
     };
     let build = crate::run::build_id()?;
     let clock = WallClock::new();

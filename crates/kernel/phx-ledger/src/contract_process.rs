@@ -111,49 +111,6 @@ impl<B: Backing> Ledger<B> {
         }
     }
 
-    /// Today's fails on a cell's rows about to leave it, made arrears now: the members leaving failed with the cell,
-    /// so the arrears and the missed payment go with them, where tomorrow's contract process would find the row gone.
-    /// Every fail of a day comes from an instruction numbered that day, so the day numbered last is today.
-    #[clause("SET.3", "REP.8")]
-    pub(crate) fn arrears_before_leaving(
-        &mut self,
-        arenas: &mut dyn crate::holder::HolderArenas,
-        holder: phx_id::Slot,
-        party: PartyId,
-        rows: &[(LineId, Side)],
-    ) {
-        let today = self.numbered.0;
-        let found: Vec<(usize, Fail)> = self
-            .day
-            .fails
-            .iter()
-            .enumerate()
-            .filter(|(i, f)| f.party == party && !self.day.arrears_taken.contains(i))
-            .filter(|(_, f)| matches!(f.row, phx_num::Missing::Present(r) if rows.contains(&(r.line, r.side))))
-            .map(|(i, f)| (i, *f))
-            .collect();
-        for (i, fail) in found {
-            let phx_num::Missing::Present(row) = fail.row else { continue };
-            let key = ArrearsKey { line: row.line, side: side_code(row.side), party };
-            let begun = self.arrears.since.entry(key).or_insert(fail.due);
-            if fail.due < *begun {
-                *begun = fail.due;
-            }
-            let since = *begun;
-            let Some(view) = rows::iter(arenas, holder).find(|r| r.row.line == row.line && r.side() == row.side) else {
-                violation!(clause = "SET.3", "a fail on a row its cell does not have", line = row.line.get());
-            };
-            let mut record = view.record();
-            let Some(m) = record.missed.checked_add(1) else {
-                capacity_exceeded!("payments missed in a row's record", u16::MAX, record.missed);
-            };
-            record.missed = m;
-            record.arrears_days = days(since, today);
-            Lines::<B>::set_record(arenas, holder, row.line, row.side, record);
-            self.day.arrears_taken.insert(i);
-        }
-    }
-
     /// Arrears cured when a row's dues are paid up: it leaves the index, and its days in arrears return to nothing.
     pub fn cure(&mut self, holders: &mut dyn Holders, line: LineId, side: Side, party: PartyId) {
         let key = ArrearsKey { line, side: side_code(side), party };

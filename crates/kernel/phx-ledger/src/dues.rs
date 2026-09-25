@@ -26,6 +26,8 @@ pub struct DueReasons {
     pub written_off: ReasonId,
     /// What an estate held beyond what it owed, passed to its heirs or the law's destination.
     pub distributed: ReasonId,
+    /// One twin's contracts moved from its agent to the household that stands alone for it.
+    pub seated: ReasonId,
 }
 
 impl DueReasons {
@@ -43,6 +45,7 @@ impl DueReasons {
         let written_off = ReasonDecl { name: "written off", order: 2, paid: Effect::Expense, received: Effect::Equity };
         let distributed =
             ReasonDecl { name: "estate distributed", order: 2, paid: Effect::Equity, received: Effect::Equity };
+        let seated = ReasonDecl { name: "twin seated", order: 2, paid: Effect::Equity, received: Effect::Equity };
         DueReasons {
             payment: reasons.declare(payment),
             principal: reasons.declare(principal),
@@ -51,6 +54,7 @@ impl DueReasons {
             destroyed: reasons.declare(destroyed),
             written_off: reasons.declare(written_off),
             distributed: reasons.declare(distributed),
+            seated: reasons.declare(seated),
         }
     }
 }
@@ -70,7 +74,7 @@ pub(crate) enum Reckoning {
 pub(crate) struct ClearedDay {
     pub top: PartyId,
     pub per_member: i64,
-    pub claimants: BTreeMap<PartyId, u32>,
+    pub claimants: BTreeMap<PartyId, (u32, u32)>,
     pub failed: u64,
     pub losers: Option<Losers>,
 }

@@ -1,4 +1,4 @@
-pub mod cells;
+pub mod agents;
 pub mod compile;
 pub mod consts;
 pub mod day;
@@ -21,7 +21,7 @@ pub mod world;
 pub use graph::{HandlerGraph, HandlerId};
 pub use inspector::{Dispatch, Inspector};
 pub use metrics::{InjectionRecord, Metrics, SaveMeasure, SubStepRecord, TurnRecord};
-pub use observe::{Observer, Split, SplitLog};
+pub use observe::Observer;
 pub use refusals::AssemblyErrors;
 pub use registry::{WorldConfig, assemble, load};
 pub use save::{SaveRecord, StoreRecord};

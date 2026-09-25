@@ -97,7 +97,7 @@ impl InjectTarget for Target<'_> {
         self.accounts
     }
 
-    fn cells(&mut self) -> &mut dyn Any {
+    fn agents(&mut self) -> &mut dyn Any {
         self.books.parties.cells_mut().0
     }
 
