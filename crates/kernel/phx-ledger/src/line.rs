@@ -455,6 +455,11 @@ impl<B: Backing> Lines<B> {
         };
         *count = next;
         self.set(line, row);
+        self.moved(line, side);
+    }
+
+    /// A line side's members changed hands or counts, its total the same or not: what was read of it is stale.
+    pub(crate) fn moved(&mut self, line: LineId, side: Side) {
         let changed = self.versions.entry((line.get(), side == Side::Asset)).or_insert(0);
         let Some(next) = changed.checked_add(1) else {
             capacity_exceeded!("changes of a line side", u64::MAX, *changed);
@@ -527,6 +532,7 @@ impl<B: Backing> Lines<B> {
         } else {
             rows::append(arenas, holder, row, optional);
         }
+        self.moved(line, side);
         let enters = decl.holder_list && !listed_before;
         if enters {
             let mut r = self.row(line);
@@ -612,6 +618,7 @@ impl<B: Backing> Lines<B> {
         let view = Self::find(arenas, holder, line, side);
         let listed_before = self.listed(line, &rows::rows(arenas, holder));
         rows::remove(arenas, holder, &view);
+        self.moved(line, side);
         let mut head = arenas.run_head(holder);
         let (at, width) = (word32(view.at), word32(rows::words_of_row(&view)));
         if at < head.offset {

@@ -142,6 +142,9 @@ impl<B: Backing> Ledger<B> {
         was: (i64, Missing<i64>),
         now: (i64, Missing<i64>),
     ) {
+        if was.0 != now.0 {
+            self.lines.moved(line, side);
+        }
         let code = AccountRef::Line { line, side }.code();
         let or_none = |b: Missing<i64>| match b {
             Missing::Present(b) => b,
