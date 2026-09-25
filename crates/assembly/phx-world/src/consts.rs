@@ -18,8 +18,8 @@ pub const WHOLE: u64 = 100;
 pub const KIND_ROWS: u32 = 1 << 18;
 /// Rows of a kind table per chunk, as the population's tables chunk theirs.
 pub const KIND_ROWS_PER_CHUNK: u32 = 1 << 12;
-/// Rows each population kind's agent table reserves: room for a kind's agents at a factor of four over the design
-/// point's population, in address space committed only as rows are written.
+/// Rows each population kind's agent table reserves, in address space committed only as rows are written: some
+/// thirty times the design point's households, under a million agents.
 pub const AGENT_ROWS: u32 = 1 << 25;
 /// Rows of an agent table per chunk.
 pub const AGENT_ROWS_PER_CHUNK: u32 = 1 << 12;

@@ -360,8 +360,8 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
 - **Due-day runs**: a holder's rows of **dated** line kinds (loans, rents, employment, invoices, policies, annuities,
   benefits and pensions, derivatives) are one segment of its row list, and its record keeps the run's **head** — the
   earliest day any of them can be due, and the segment's offset and length — with no list reference of its own: 12 bytes
-  in an individual's record (`phx_core::RunHead`, three `u32`), 8 in an agent's (`phx_pop::CellRunHead`, a `u32` day and
-  `u16` offset and length, since an agent's rows are few). Rows are never reordered by due day: the head is a lower
+  in an individual's record (`phx_core::RunHead`, three `u32`), 8 in an agent's (`phx_pop::table::AgentRunHead`, a
+  `u32` day and `u16` offset and length, since an agent's rows are few). Rows are never reordered by due day: the head is a lower
   bound, rewritten when the segment is scanned on its day (§6.5).
 - **Pensions** (Stage 4, and pensions in payment from Stage 0): a job's pension kind and contribution rates are terms
   of its employment line, and the scheme a person belongs to is a component of its employment attachment (§7.1), so

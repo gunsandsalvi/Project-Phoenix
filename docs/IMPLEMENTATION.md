@@ -3134,7 +3134,7 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 | File | Purpose |
 | --- | --- |
 | `crates/kernel/phx-ledger/src/due.rs` | 1b: the due-line bitmap from lines' `next_due`, and the advance of each due line's next date and the index of the date that fell |
-| `crates/kernel/phx-ledger/src/runs.rs` | due-day runs: `RunHead { next_due: u32, offset: u32, len: u32 }` (12 bytes, in `phx-core`'s kind tables; a cell's `CellRunHead`, `phx-pop`'s, is 8 bytes, its offset and length `u16`) per holder, its dated rows a segment of its row list; the head's maintenance; a run read in full against its rows (`truth`) |
+| `crates/kernel/phx-ledger/src/runs.rs` | due-day runs: `RunHead { next_due: u32, offset: u32, len: u32 }` (12 bytes, in `phx-core`'s kind tables; an agent's `AgentRunHead`, `phx-pop`'s, is 8 bytes, its offset and length `u16`) per holder, its dated rows a segment of its row list; the head's maintenance; a run read in full against its rows (`truth`) |
 | `crates/kernel/phx-ledger/src/stream.rs` | 7a: one stream over every holder table's heads, entering a holder's run only when its head is today, holder-major, giving per (party, bank) debits, credits and the first failing row; the day's due holders of lines with no retail holder list |
 | `crates/kernel/phx-ledger/src/positions.rs` | `trait PayerPositions { weight, per_member_funds(bank), kinks_into(position, buf), standing_rate(row) }`, implemented by the kind tables (weight one) and, from S0.21, the cell tables |
 | `crates/kernel/phx-ledger/src/pooled.rs` | `pooled(funds_pm, weight, rows_in_order, kinks) -> RowOutcomes`: pure |
