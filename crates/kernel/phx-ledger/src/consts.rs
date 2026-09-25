@@ -39,3 +39,5 @@ pub const MONEY_ROWS_KEPT: usize = 4;
 /// The shards 7a's heads are read in: fixed, never the number of workers, so the stream's result is the same on any
 /// pool; many to a worker, so the pool balances shards of uneven work.
 pub const STREAM_SHARDS: usize = 64;
+/// The shards of 7a read at once, so no more than a wave's payments wait to be booked; fixed, as the shards are.
+pub const STREAM_WAVE: usize = 8;

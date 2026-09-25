@@ -11,7 +11,7 @@ use crate::algebra::{Amount, DueBuf, DuePlan, DueState, Leg, Side, due_at, due_b
 use crate::apply::{Holders, Located};
 use crate::books::Books;
 use crate::cleared::{per_contract, times};
-use crate::consts::STREAM_SHARDS;
+use crate::consts::{STREAM_SHARDS, STREAM_WAVE};
 use crate::due::DueLines;
 use crate::dues::{ClearedDay, Found, Reckoning, row_leg};
 use crate::instruction::{AccountRef, LegKind, LegRec};
@@ -55,7 +55,7 @@ pub(crate) enum Reckoned {
 /// What a shard of 7a's heads found, in the stream's order, for the serial pass that books it.
 enum Step {
     Scanned { place: u16, slot: Slot, read: u64, due: u64 },
-    Paid(Payment, Vec<LegRec>),
+    Paid(Payment),
     Cleared { holder: PartyId, row: RowView, per: i64, ccy: Ccy, order: u8 },
 }
 
@@ -526,13 +526,22 @@ impl<B: Backing> Books<B> {
                 let _ = found.plans.insert(line, due_plan(terms, Some(self.ledger.lines.fallen(line)), day, calendar));
             }
         }
-        let plans = &found.plans;
         let each = heads.len().div_ceil(STREAM_SHARDS);
-        let shards = phx_exec::pool::map(self.pool.as_deref(), STREAM_SHARDS, |shard| {
-            let from = at_most(shard * each, heads.len());
-            let to = at_most(from + each, heads.len());
-            self.stream_shard(heads.get(from..to).unwrap_or(&[]), due, (day, calendar), plans)
-        });
+        for wave in (0..STREAM_SHARDS).step_by(STREAM_WAVE) {
+            let plans = &found.plans;
+            // A wave of shards at a time, so only a wave's payments wait to be booked.
+            let shards = phx_exec::pool::map(self.pool.as_deref(), STREAM_WAVE, |i| {
+                let from = at_most((wave + i) * each, heads.len());
+                let to = at_most(from + each, heads.len());
+                self.stream_shard(heads.get(from..to).unwrap_or(&[]), due, (day, calendar), plans)
+            });
+            self.book_shards(shards, &mut out, closed, found);
+        }
+        out
+    }
+
+    /// A wave of 7a's shards booked in the stream's order: each payment's route, the pending, and the records.
+    fn book_shards(&self, shards: Vec<(u64, Vec<Step>)>, out: &mut DayRecords, closed: &Closed, found: &mut Found) {
         for (read, steps) in shards {
             out.heads_read += read;
             for step in steps {
@@ -543,7 +552,10 @@ impl<B: Backing> Books<B> {
                         out.rows_due += due;
                         continue;
                     }
-                    Step::Paid(p, legs) => (p, legs),
+                    Step::Paid(p) => {
+                        let legs = if p.moneyless { Vec::new() } else { self.effects(&p) };
+                        (p, legs)
+                    }
                     Step::Cleared { holder, row, per, ccy, order } => {
                         let Some(p) = self.cleared_payment(holder, &row, per, (ccy, order), found) else { continue };
                         let legs = if p.moneyless { Vec::new() } else { self.effects(&p) };
@@ -571,7 +583,6 @@ impl<B: Backing> Books<B> {
                 out.gross += i128::from(p.amount);
             }
         }
-        out
     }
 
     /// One shard of 7a's heads: how many were read, and what each due holder's segment makes, in order.
@@ -597,10 +608,7 @@ impl<B: Backing> Books<B> {
             for row in rows {
                 match self.reckon(holder, &row, (day, calendar), plans.get(row.row.line)) {
                     None => {}
-                    Some(Reckoned::Paid(p)) => {
-                        let legs = if p.moneyless { Vec::new() } else { self.effects(&p) };
-                        steps.push(Step::Paid(p, legs));
-                    }
+                    Some(Reckoned::Paid(p)) => steps.push(Step::Paid(p)),
                     Some(Reckoned::Cleared { per, ccy, order }) => {
                         steps.push(Step::Cleared { holder, row, per, ccy, order });
                     }
