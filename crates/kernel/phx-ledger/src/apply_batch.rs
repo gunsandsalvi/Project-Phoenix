@@ -505,9 +505,7 @@ impl<B: Backing> Books<B> {
         if !closed.is_empty() {
             self.hold_all(&streamed, (due, day, calendar), closed, &mut found);
         }
-        for &(place, slot) in &streamed.scanned {
-            runs::rehead(crate::apply::Holders::arenas(&mut self.parties, place), place, slot, &mut self.ledger.lines);
-        }
+        self.reheads(&streamed.scanned);
         let settled = DaySettlement {
             lines: count(due.lines().len()),
             heads_read: streamed.heads_read,
@@ -533,6 +531,41 @@ impl<B: Backing> Books<B> {
         };
         self.buffers.keep(streamed, g, nets);
         settled
+    }
+
+    /// Each scanned holder's head rewritten: the heads read on the pool in fixed shards, then written and filed in the
+    /// stream's order; a holder with a spent row has its rows moved on the calling thread.
+    fn reheads(&mut self, scanned: &[(u16, Slot)])
+    where
+        B: Sync,
+    {
+        let each = scanned.len().div_ceil(crate::consts::STREAM_SHARDS);
+        if each == 0 {
+            return;
+        }
+        let read = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_SHARDS, |i| {
+            let from = if i * each < scanned.len() { i * each } else { scanned.len() };
+            let to = if from + each < scanned.len() { from + each } else { scanned.len() };
+            let lines = &self.ledger.lines;
+            scanned
+                .get(from..to)
+                .unwrap_or(&[])
+                .iter()
+                .map(|&(place, slot)| runs::next_head(self.parties.holder(place), slot, lines))
+                .collect::<Vec<_>>()
+        });
+        for (&(place, slot), next) in scanned.iter().zip(read.into_iter().flatten()) {
+            let arenas = crate::apply::Holders::arenas(&mut self.parties, place);
+            match next {
+                Some((head, least)) => {
+                    if let Some(day) = least {
+                        self.ledger.lines.file_head(place, slot, day);
+                    }
+                    arenas.set_run_head(slot, head);
+                }
+                None => runs::rehead(arenas, place, slot, &mut self.ledger.lines),
+            }
+        }
     }
 
     /// How many payers that failed were not short: at its first failed payment in its own order, what a payer held
