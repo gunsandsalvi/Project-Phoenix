@@ -36,40 +36,44 @@ direction = "down"
 
 # Stage 7 on the build run, the most on any day: rows of lines due read, run heads read, rows of scanned segments read
 # and those among them not due, payments, the fixed point's visits, and the bytes of the day's records and nets.
-# They rise with the world as its parties arrive, each rise stated.
+# They rise with the world as its parties arrive, each rise stated. Restated at S0.28 on the twins build run at a factor
+# of 170 (20afd3e4), the higher of the two representations on each: every household and small firm is an agent whose run
+# head is read on its lines' due days, so heads, visits and the day's records rise (heads 274 774 to 991 630, visits
+# 101 829 to 498 793, bytes 58.6 MB to 197.3 MB); a cell's dues were a row per cell, an agent's a row per agent of
+# whole twins, so rows streamed and scanned, rows not due and payments fall.
 [[ratchet]]
 counter = "phx_ledger.rows_streamed"
-value = 6802801
+value = 2806411
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_heads_read"
-value = 274774
+value = 991630
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_rows_scanned"
-value = 6880013
+value = 2879500
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_rows_not_due"
-value = 320775
+value = 81796
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.payments"
-value = 6800506
+value = 2798261
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.fixed_point_iterations"
-value = 101829
+value = 498793
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.day_buffer_peak_bytes"
-value = 58555872
+value = 197288928
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
