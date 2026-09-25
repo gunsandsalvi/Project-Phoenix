@@ -53,7 +53,9 @@ def grid(values: np.ndarray, places: int = 6) -> str:
 
 def entry(pid: str, kind: str, owner: str, source: str, ref: str, value: str) -> str:
     ref = ref.replace('"', "'")
-    return (f'[[primitive]]\nid = "{pid}"\nkind = "{kind}"\nowner = "{owner}"\nsource = "{source}"\n'
+    # A policy names who decides it; every policy the population's data carries is its parliament's.
+    decider = 'decided_by = "parliament"\n' if kind == "POLICY" else ""
+    return (f'[[primitive]]\nid = "{pid}"\nkind = "{kind}"\nowner = "{owner}"\n{decider}source = "{source}"\n'
             f'source_ref = "{ref}"\nvalue = {value}\n')
 
 

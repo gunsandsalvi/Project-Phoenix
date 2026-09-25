@@ -4,6 +4,7 @@
 id = "SOC.pension_age"
 kind = "POLICY"
 owner = "SOC"
+decided_by = "parliament"
 source = "measured"
 source_ref = "By sex (female, male), the current normal pension age of a worker entering at 22, years: the median over 41 economies at their latest year 2015-2025, from OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD (fetched 2026-09-24). The state pension's rule at its flat point; its earnings-related part waits for SOC."
 value = { axis = [0, 1], values = [64.80, 65.00], outside = "refuse" }
@@ -12,6 +13,7 @@ value = { axis = [0, 1], values = [64.80, 65.00], outside = "refuse" }
 id = "SOC.replacement_rate"
 kind = "POLICY"
 owner = "SOC"
+decided_by = "parliament"
 source = "measured"
 source_ref = "By sex (female, male), the gross replacement rate of mandatory schemes for a worker on average earnings, share of pre-retirement earnings: the median over 41 economies at their latest year 2015-2025, from OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD (fetched 2026-09-24). The state pension's rule at its flat point; its earnings-related part waits for SOC."
 value = { axis = [0, 1], values = [0.461000, 0.461000], outside = "refuse" }
