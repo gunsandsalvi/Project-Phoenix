@@ -1,6 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use phx_core::KernelMap;
 use phx_core::calendar::Calendar;
 use phx_id::{Day, LineId, PartyId, Slot};
 use phx_macros::clause;
@@ -63,8 +62,85 @@ impl Record {
     }
 }
 
-/// The day's records by party, looked up leg by leg and read whole only in party order.
-pub type Records = KernelMap<PartyId, Record>;
+/// The day's records, one per party whose account the day's payments touch, kept by the party's holder table and slot
+/// so a stream in slot order reads them in order, and stamped with the day they were made, so emptying them costs
+/// nothing and they keep their room from one day to the next; read whole only in party order.
+#[derive(Debug, Default)]
+pub struct Records {
+    tables: Vec<Vec<(u32, Option<Record>)>>,
+    touched: Vec<(PartyId, u16, Slot)>,
+    day: u32,
+}
+
+fn slot_at(slot: Slot) -> usize {
+    let Ok(at) = usize::try_from(slot.get()) else {
+        phx_num::capacity_exceeded!("holder slots", usize::MAX, slot.get());
+    };
+    at
+}
+
+impl Records {
+    /// Empties the records for a new day, keeping their room.
+    pub fn clear(&mut self) {
+        let Some(next) = self.day.checked_add(1) else {
+            phx_num::capacity_exceeded!("days of stage 7's records", u32::MAX, self.day);
+        };
+        self.day = next;
+        self.touched.clear();
+    }
+
+    /// The record of the party at a holder table and slot, if the day made one.
+    #[must_use]
+    pub fn get(&self, (table, slot): (u16, Slot)) -> Option<&Record> {
+        let (day, record) = self.tables.get(usize::from(table))?.get(slot_at(slot))?;
+        if *day == self.day { record.as_ref() } else { None }
+    }
+
+    /// The record of a party at a holder table and slot, made by `make` where the day has none.
+    pub fn get_or_insert_with(
+        &mut self,
+        party: PartyId,
+        (table, slot): (u16, Slot),
+        make: impl FnOnce() -> Record,
+    ) -> &mut Record {
+        let (t, at) = (usize::from(table), slot_at(slot));
+        if self.tables.len() <= t {
+            self.tables.resize_with(t + 1, Vec::new);
+        }
+        let Some(of_table) = self.tables.get_mut(t) else {
+            phx_num::capacity_exceeded!("holder tables", t, t);
+        };
+        if of_table.len() <= at {
+            of_table.resize(at + 1, (0, None));
+        }
+        let Some(entry) = of_table.get_mut(at) else {
+            phx_num::capacity_exceeded!("holder slots", at, at);
+        };
+        if entry.0 != self.day || entry.1.is_none() {
+            *entry = (self.day, Some(make()));
+            self.touched.push((party, table, slot));
+        }
+        let Some(record) = entry.1.as_mut() else {
+            violation!(clause = "MON.5", "a party's record not kept", party = party.get());
+        };
+        record
+    }
+
+    /// Every record the day made, in party order.
+    #[must_use]
+    pub fn sorted(&self) -> Vec<(PartyId, Record)> {
+        let mut out: Vec<(PartyId, Record)> =
+            self.touched.iter().filter_map(|&(p, t, s)| self.get((t, s)).map(|r| (p, *r))).collect();
+        out.sort_unstable_by_key(|(p, _)| *p);
+        out
+    }
+
+    /// The records the room holds, made today or not, so what they take in memory can be counted.
+    #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.tables.iter().map(Vec::len).sum()
+    }
+}
 
 /// Stage 7a's result: one record per party with an account the day's payments touch, the holders whose runs were
 /// scanned, the day's payments in the stream's order, so 7c gathers them without reckoning them again, and the day's
@@ -355,7 +431,8 @@ impl<B: Backing> Books<B> {
         let mut touched = Vec::new();
         for leg in legs.iter().filter(|l| matches!(l.kind, LegKind::Money)) {
             let AccountRef::Line { line, side: Side::Asset } = leg.account else { continue };
-            let rec = records.get_or_insert_with(leg.party, || self.record_of(leg.party, line));
+            let at = self.parties.row(leg.party);
+            let rec = records.get_or_insert_with(leg.party, at, || self.record_of(leg.party, line));
             if rec.account != line {
                 violation!(clause = "MON.5", "a party paying from two accounts in one day", party = leg.party.get());
             }

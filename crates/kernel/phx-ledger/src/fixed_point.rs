@@ -102,7 +102,7 @@ impl<B: Backing> Work<'_, B> {
     /// on, a prefix of its payment order; if what it pays for others through its account still exceeds its funds, it
     /// is a bank that cannot cover its net, and its customers' payments through it are removed.
     fn visit(&mut self, party: PartyId) {
-        let Some(rec) = self.records.get(party).copied() else { return };
+        let Some(rec) = self.records.get(self.books.parties.row(party)).copied() else { return };
         if rec.standing() >= 0 {
             return;
         }
@@ -129,7 +129,7 @@ impl<B: Backing> Work<'_, B> {
                 self.fail(p);
             }
         }
-        if self.records.get(party).is_some_and(|r| r.standing() < 0) {
+        if self.records.get(self.books.parties.row(party)).is_some_and(|r| r.standing() < 0) {
             self.remove_customers(party, rec.account);
         }
     }

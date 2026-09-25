@@ -484,7 +484,7 @@ impl<B: Backing> Books<B> {
             let Some(p) = first else { return false };
             let legs = self.effects(&p);
             let Missing::Present(account) = self.money_row(payer, p.ccy) else { return false };
-            let rec = given.get(payer).copied().unwrap_or_else(|| self.record_of(payer, account));
+            let rec = given.get(self.parties.row(payer)).copied().unwrap_or_else(|| self.record_of(payer, account));
             rec.standing() < crate::fixed_point::draw(&legs, payer, rec.account)
         };
         count(payers.iter().filter(|p| !short(**p, found)).count())
