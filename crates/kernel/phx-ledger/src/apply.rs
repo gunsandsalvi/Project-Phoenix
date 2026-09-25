@@ -9,7 +9,7 @@ use phx_store::{Backing, SystemBacking};
 use crate::algebra::Side;
 use crate::check::{FailCause, Position, check_legs, unbalanced};
 use crate::commitment::Commitments;
-use crate::contract_process::Arrears;
+use crate::contract_process::{Arrears, ArrearsKey};
 use crate::covered::{Covered, Covers};
 use crate::effects::EffectRec;
 use crate::events::InstrumentEvents;
@@ -562,6 +562,8 @@ impl<B: Backing> Ledger<B> {
                     );
                 }
                 self.lines.remove_row(arenas, at.table, slot, line, side);
+                // A retired row's arrears retire with it; a transfer carries them to the row that takes its members.
+                self.arrears.remove(ArrearsKey::new(line, side, party));
             }
             (LegKind::Row(RowOp::Count), AccountRef::Line { line, side }) => {
                 let count = i64::from(find(arenas, slot, line, side).row.count) + leg.qty;

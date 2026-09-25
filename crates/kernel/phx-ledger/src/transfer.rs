@@ -9,6 +9,7 @@ use phx_store::Backing;
 use crate::algebra::Side;
 use crate::apply::ApplyAt;
 use crate::books::Books;
+use crate::contract_process::ArrearsKey;
 use crate::fails::Fail;
 use crate::instruction::{AccountRef, Denom, Instruction, InstructionId, LegKind, LegRec, ReasonId, RowOp};
 use crate::line::NewRow;
@@ -158,7 +159,26 @@ impl<B: Backing> Books<B> {
         let moved = share(&view, t.count, m.rounding);
         let mut legs = self.leave((t.from, t.line, t.side), t.count, moved, m);
         legs.extend(self.arrive((t.to, t.line, t.side), t.count, moved, &view, m));
-        self.submit(t.reason, legs, m, audit)
+        let since = self.ledger.arrears.since(ArrearsKey::new(t.line, t.side, t.from));
+        let id = self.submit(t.reason, legs, m, audit)?;
+        if let Some(since) = since {
+            self.carry_arrears(ArrearsKey::new(t.line, t.side, t.to), since);
+        }
+        Ok(id)
+    }
+
+    /// Arrears carried with members onto another row: the row is in arrears since the earlier of its own and theirs.
+    #[clause("SET.3")]
+    fn carry_arrears(&mut self, to: ArrearsKey, since: Day) {
+        let arrears = &mut self.ledger.arrears;
+        match arrears.since(to) {
+            Some(own) if own <= since => {}
+            Some(_) => {
+                arrears.remove(to);
+                arrears.begin(to, since);
+            }
+            None => arrears.begin(to, since),
+        }
     }
 
     /// A debtor's rows moved to a procedure line: a new line of the same kind whose terms add the procedure's stay,

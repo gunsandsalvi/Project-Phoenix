@@ -674,8 +674,9 @@ wealth) are read from the cell's own rows.
   an event names it (a reference count, taken when the record or event is written), and until the day's close in any
   case, so the day's legs that name it still resolve for the audit; its slot is recycled at once. A fail waiting for
   the next business day's contract process names its party the same way, so a cell that lands at 10b before its fail
-  is processed is read through the directory to its successor, which holds the row. Day-local part identities never
-  enter it.
+  is processed is read through the directory to its successor, which holds the row. A row's arrears go where its
+  members go: a row retired takes its arrears entry with it, and a line transfer carries it to the row that takes the
+  members, the earlier day standing where that row was in arrears too. Day-local part identities never enter it.
 
 ### 7.3 The agenda and screening
 

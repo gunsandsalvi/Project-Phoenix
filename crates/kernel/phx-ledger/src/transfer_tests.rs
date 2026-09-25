@@ -215,6 +215,31 @@ fn a_transfer_moves_count_with_balance() {
     assert_eq!(row(&w, w.banks[1], w.loan, Side::Asset), (3, 600));
 }
 
+/// Members moved off a row in arrears carry its arrears to the row that takes them, and a row retired whole keeps
+/// none; a taker already in arrears keeps the earlier day.
+#[test]
+fn a_transfer_carries_the_rows_arrears() {
+    let mut w = world();
+    let m = at(&w);
+    let key = |p| crate::contract_process::ArrearsKey::new(w.loan, Side::Asset, p);
+    let (early, late) = (Day::new(3), Day::new(5));
+    let [lender, buyer] = w.banks;
+    w.books.ledger.arrears.begin(key(lender), late);
+    let one = LineTransfer { line: w.loan, side: Side::Asset, from: lender, to: buyer, count: 1, reason: w.reason };
+    let _ = w.books.transfer(one, m, &mut Quiet).expect("the sale settles");
+    let of = |w: &World, p| w.books.ledger.arrears.of(w.loan, Side::Asset, p);
+    assert_eq!((of(&w, lender), of(&w, buyer)), (Some(late), Some(late)), "carried to the taker");
+    w.books.ledger.arrears.remove(key(buyer));
+    w.books.ledger.arrears.begin(key(buyer), early);
+    let rest = LineTransfer { line: w.loan, side: Side::Asset, from: lender, to: buyer, count: 2, reason: w.reason };
+    let _ = w.books.transfer(rest, m, &mut Quiet).expect("the sale settles");
+    assert_eq!(
+        (of(&w, lender), of(&w, buyer)),
+        (None, Some(early)),
+        "the retired row keeps none; the earlier day stands"
+    );
+}
+
 /// A line of no balance held by a firm for two members, and by each bank for one on the other side: a member leaving
 /// the firm's row takes one of the banks' with it, drawn by their members, and the sides stay equal.
 #[test]
