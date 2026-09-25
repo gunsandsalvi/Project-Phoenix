@@ -79,6 +79,12 @@ impl Arrears {
     }
 }
 
+/// Whether a live party still holds its row on a side of a line.
+fn holds_row(holders: &mut dyn Holders, party: PartyId, line: LineId, side: Side) -> bool {
+    let Located::Live { table, slot, .. } = holders.locate(party) else { return false };
+    rows::iter(holders.arenas(table), slot).any(|r| r.row.line == line && r.side() == side)
+}
+
 fn days(since: Day, today: Day) -> u16 {
     let Some(d) = today.get().checked_sub(since.get()) else {
         violation!(clause = "SET.3", "arrears that began after today", since = since.get(), today = today.get());
@@ -93,11 +99,15 @@ impl<B: Backing> Ledger<B> {
     /// Stage 2d: each line kind's generic contract process turns yesterday's fails on its lines into arrears — a
     /// payment missed on the row, arrears begun at the fail's due day if the row had none — and refreshes the days in
     /// arrears of every row still in arrears. A fail naming no contract row is a fail of a payment with no contract,
-    /// whose party sees it and whose line has nothing to record.
+    /// whose party sees it and whose line has nothing to record; a fail on a row retired since, its members gone or
+    /// its estate settled, retires with the row as the row's arrears do.
     #[clause("SET.3", "SET.16", "TIME.7")]
     pub fn contract_process(&mut self, holders: &mut dyn Holders, fails: &[Fail], today: Day) {
         for fail in fails {
             let phx_num::Missing::Present(row) = fail.row else { continue };
+            if !holds_row(holders, fail.party, row.line, row.side) {
+                continue;
+            }
             let key = ArrearsKey { line: row.line, side: side_code(row.side), party: fail.party };
             let begun = self.arrears.since.entry(key).or_insert(fail.due);
             if fail.due < *begun {
