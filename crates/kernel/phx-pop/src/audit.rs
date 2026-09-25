@@ -125,19 +125,22 @@ impl<B: Backing> AgentsAudit for AgentsView<'_, B> {
         for ((t, (kind, counted)), persons_counted) in
             self.tables.iter().zip(&self.population.members).zip(&self.population.persons)
         {
-            let (mut held, mut persons) = (0_i128, 0_i128);
+            let (mut held, mut persons, mut agents) = (0_i128, 0_i128, 0_i128);
             for s in t.slots() {
                 let k = i128::from(t.multiplicity(s).get());
                 held += k;
                 persons += k * i128::from(phx_rand::float::len_u64(t.persons(s).len()));
+                agents += 1;
             }
-            for (what, have, want) in [("parties", held, *counted), ("persons", persons, *persons_counted)] {
+            let checks =
+                [("parties", held, *counted), ("persons", persons, *persons_counted), ("agents", agents, t.agents())];
+            for (what, have, want) in checks {
                 if have != i128::from(want) {
                     gaps.push(Gap {
                         owner: FindingOwner::Table(t.id()),
                         size: have - i128::from(want),
                         unit: Unit::Count,
-                        detail: format!("`{kind}`: its agents stand for {have} {what} where events counted {want}"),
+                        detail: format!("`{kind}`: its agents hold {have} {what} where their events counted {want}"),
                     });
                 }
             }

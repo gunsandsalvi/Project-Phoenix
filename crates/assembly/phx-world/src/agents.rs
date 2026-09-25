@@ -517,15 +517,10 @@ impl World {
         self.book_changed(day, SubStep::S10b.ordinal());
         let mut count = self.agent_day;
         let cells = self.books.parties.cells();
-        for k in 0..self.population.kinds.len() {
-            let table = Population::table::<SystemBacking>(cells, k);
-            for slot in table.slots() {
-                count.agents += 1;
-                let twins = u64::from(table.multiplicity(slot).get());
-                count.parties += twins;
-                count.persons += twins * phx_rand::float::len_u64(table.persons(slot).len());
-            }
-        }
+        let pop = &self.population;
+        count.agents = (0..pop.kinds.len()).map(|k| Population::table::<SystemBacking>(cells, k).agents()).sum();
+        count.parties = pop.members.iter().map(|(_, n)| n).sum();
+        count.persons = pop.persons.iter().sum();
         self.agent_day = count;
         self.metrics.agents.push(count);
     }

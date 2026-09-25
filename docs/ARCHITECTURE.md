@@ -692,7 +692,9 @@ An agent row keeps, in columns: its party, the day it began, its **multiplicity*
 - **attachments**, one word each: a person's place in the household (or the household itself), the line and the
   side, so a person's death finds the rows it held without reading any other household.
 
-Positions (REP.20) arrive as declared `i64` columns with the steps that need them.
+Positions (REP.20) arrive as declared `i64` columns with the steps that need them. The table counts its agents as
+they begin and end, and the population counts their parties and persons by the events that begin and end them, so
+the day's measures (REP.15) visit no agent; the agents family checks the three against the table (REP.14).
 
 ### 7.2 Arenas, locality and identity
 

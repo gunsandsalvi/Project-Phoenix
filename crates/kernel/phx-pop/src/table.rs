@@ -89,6 +89,8 @@ pub struct AgentTable<B: Backing = SystemBacking> {
     lists: Vec<Column<CellListRef, B>>,
     runs: Column<AgentRunHead, B>,
     arenas: Vec<ChunkArena<B>>,
+    /// The agents live, counted as they begin and end, so no day need count them by visiting each.
+    agents: u64,
     /// The day's agents added, removed or changed, whose hazards the world draws again.
     #[saved(skip)]
     changed: Vec<Slot>,
@@ -145,6 +147,7 @@ impl<B: Backing> AgentTable<B> {
             lists: AgentList::ALL.iter().map(|_| table.column(space)).collect(),
             runs: table.column(space),
             arenas: Vec::new(),
+            agents: 0,
             changed: Vec::new(),
             table,
         }
@@ -215,6 +218,7 @@ impl<B: Backing> AgentTable<B> {
         }
         // A reused slot's arena lists were cleared when its last agent ended.
         self.changed.push(slot);
+        self.agents += 1;
         slot
     }
 
@@ -231,6 +235,13 @@ impl<B: Backing> AgentTable<B> {
         }
         self.table.slots.release(slot);
         self.changed.push(slot);
+        self.agents -= 1;
+    }
+
+    /// The agents live in the table.
+    #[must_use]
+    pub fn agents(&self) -> u64 {
+        self.agents
     }
 
     fn live(&self, slot: Slot) {

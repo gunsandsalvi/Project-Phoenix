@@ -16,6 +16,7 @@ use phx_ledger::terms::TermsId;
 use phx_macros::clause;
 use phx_num::{Count, Missing, Money, Rate, RatePeriod, violation};
 use phx_rand::below_u64;
+use std::collections::BTreeMap;
 
 use crate::consts::{LOANS, LOTS, MONTHS_PER_YEAR, PERCENT, PURPOSES, RATE_ONE, SHARE_PARTS, SITES};
 use crate::{BANK, OpeningStream, zipf};
@@ -352,8 +353,12 @@ impl Small {
         let ccy = currency(c.id);
         let (banked, counts) = (drawn(b, SMALL_BANKS, c.id), drawn(b, SMALL_COUNTS, c.id));
         let (deposits, debts) = (drawn(b, SMALL_DEPOSITS, c.id), drawn(b, SMALL_DEBT, c.id));
-        let amount = |list: &[(PartyId, u64)], cell: PartyId| {
-            let Some(&(_, a)) = list.iter().find(|(p, _)| *p == cell) else {
+        // Each agent's drawn amounts and firms found by its identity, as there are millions of agents.
+        let (deposits, debts): (BTreeMap<PartyId, u64>, BTreeMap<PartyId, u64>) =
+            (deposits.into_iter().collect(), debts.into_iter().collect());
+        let counts: BTreeMap<PartyId, u64> = counts.into_iter().collect();
+        let amount = |list: &BTreeMap<PartyId, u64>, cell: PartyId| {
+            let Some(&a) = list.get(&cell) else {
                 violation!(clause = "GEN.3", "a small firms' cell with no drawn amount", cell = cell.get());
             };
             let Ok(a) = i64::try_from(a) else {
@@ -361,16 +366,16 @@ impl Small {
             };
             a
         };
-        let mut banks: Vec<u64> = banked.iter().map(|(_, bank)| *bank).collect();
-        banks.sort_unstable();
-        banks.dedup();
-        for bank in banks {
+        let mut by_bank: BTreeMap<u64, Vec<PartyId>> = BTreeMap::new();
+        for (cell, bank) in &banked {
+            by_bank.entry(*bank).or_default().push(*cell);
+        }
+        for (bank, banked) in by_bank {
             let bank_party = PartyId::new(bank);
             let cells: Vec<(PartyId, u32)> = banked
                 .iter()
-                .filter(|(_, at)| *at == bank)
-                .map(|(cell, _)| {
-                    let Some(&(_, n)) = counts.iter().find(|(p, _)| p == cell) else {
+                .map(|cell| {
+                    let Some(&n) = counts.get(cell) else {
                         violation!(clause = "GEN.3", "a small firms' cell with no drawn firms", cell = cell.get());
                     };
                     let Ok(n) = u32::try_from(n) else {

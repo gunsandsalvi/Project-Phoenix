@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # The build run: after a step's build, the world runs on this machine with every live check and the read trace: an
 # ordinary step's for 120 days from day zero, which holds a quarter's save; a stage gate's (--gate) settled and run
-# two years. Its numbers test the code and are never read as the world's.
+# two years; any further arguments go to the run. Its numbers test the code and are never read as the world's.
 set -euo pipefail
 
 span=(--days 730 --total-days 120)
 if [[ "${1:-}" == "--gate" ]]; then
     span=(--days 730)
+    shift
 fi
+# Anything else is handed to the run, as `--representation small:K` to run the other representation.
+extra=("$@")
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -33,4 +36,5 @@ exec target/release/phx run \
     --run-dir target/run \
     --ratchets perf/ratchets.toml \
     --report "perf/build-run/$commit.json" \
-    --build-seconds "$built"
+    --build-seconds "$built" \
+    "${extra[@]}"
