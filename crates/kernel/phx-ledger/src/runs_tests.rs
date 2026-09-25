@@ -188,3 +188,19 @@ fn run_head_lower_bound_after_moves() {
     rehead(Holders::arenas(&mut f.books.parties, place), slot, &f.books.ledger.lines);
     assert_eq!(Some(head(&f.books, f.firm).next_due), earliest(&f), "a scan makes the head exact again");
 }
+
+#[test]
+fn a_row_placed_on_a_line_due_today_falls_due_today() {
+    let mut f = fixture();
+    let day = f.books.ledger.lines.next_due(f.dated[0]);
+    let due = f.books.ledger.mark_due(day, &f.cal);
+    assert!(due.is_due(f.dated[0]), "the first dated line falls due on its day");
+    let joiner = f.books.parties.begin("firm", TileId::new(0), day);
+    let (place, slot) = f.books.parties.row(joiner);
+    let optional = Optional { balance: Missing::Present(0), pending: Missing::Absent, amount: Missing::Absent };
+    let new = NewRow { side: Side::Liability, within: 0, count: 1, point: 0, optional };
+    f.books.ledger.lines.add_row(Holders::arenas(&mut f.books.parties, place), place, slot, f.dated[0], new);
+    assert_eq!(head(&f.books, joiner).next_due, day.get(), "its head is today, though the line has moved on");
+    let t = truth(f.books.parties.table(place), slot, day, &due, &f.books.ledger.lines);
+    assert!(t.holds && t.due == 1, "the run holds and gives today's row");
+}

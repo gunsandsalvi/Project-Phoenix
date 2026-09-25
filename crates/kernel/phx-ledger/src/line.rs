@@ -174,6 +174,9 @@ pub struct Lines<B: Backing = SystemBacking> {
     /// How many times each line side's members have changed, so what was read of a side is known still true; kept
     /// for the run alone, a load beginning it afresh with every read of a side.
     versions: BTreeMap<(u32, bool), u64>,
+    /// The day of the latest 1b and the lines that fell due on it, so a row placed later that day on one of them
+    /// falls due today; kept for the day alone, as the marks are made again each day.
+    fell: (Day, std::collections::BTreeSet<u32>),
 }
 
 impl<B: Backing> Lines<B> {
@@ -188,6 +191,7 @@ impl<B: Backing> Lines<B> {
             money: Vec::new(),
             wheel: BTreeMap::new(),
             versions: BTreeMap::new(),
+            fell: (Day::new(0), std::collections::BTreeSet::new()),
         }
     }
 
@@ -357,6 +361,7 @@ impl<B: Backing> Lines<B> {
     /// The lines that fall due on a day, by identity; entries of earlier days, which no line can still owe, and of
     /// lines that have moved on are passed over.
     pub(crate) fn falling(&mut self, day: Day) -> Vec<LineId> {
+        self.fell = (day, std::collections::BTreeSet::new());
         let mut out = Vec::new();
         while let Some(entry) = self.wheel.first_entry() {
             if *entry.key() > day.get() {
@@ -382,6 +387,7 @@ impl<B: Backing> Lines<B> {
 
     /// A line fallen due on its `k`-th date, moved to its next: the next date's day, or none when its dates are spent.
     pub(crate) fn fall(&mut self, line: LineId, k: u32, next: Missing<Day>) {
+        self.fell.1.insert(line.get());
         let mut row = self.row(line);
         if k != row.fallen + 1 {
             violation!(clause = "REG.5", "a line falling due out of its dates' order", line = line.get(), k = k);
@@ -511,7 +517,8 @@ impl<B: Backing> Lines<B> {
             let added = rows::words_of_row(&rows::iter(arenas, holder).find(|r| r.at == at).unwrap_or_else(|| {
                 violation!(clause = "REG.14", "a row put into a run and not found there", line = line.get())
             }));
-            let due = self.next_due(line).get();
+            // A line that fell due today has moved on to its next date, but the row falls due today with it.
+            let due = if self.fell.1.contains(&line.get()) { self.fell.0 } else { self.next_due(line) }.get();
             if head.len == 0 || due < head.next_due {
                 head.next_due = due;
             }
@@ -721,6 +728,7 @@ impl<B: Backing> Lines<B> {
             money,
             wheel,
             versions: BTreeMap::new(),
+            fell: (Day::new(0), std::collections::BTreeSet::new()),
         })
     }
 

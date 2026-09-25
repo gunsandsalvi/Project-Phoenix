@@ -555,7 +555,8 @@ reduction runs over a fixed tree.
 - **Due-day runs**: every line kind with dues is dated, and a holder's dated rows are one segment of its row list
   behind its **run head** (§4.5). 7a reads each holder's head; on a day before it the holder costs that one read; on
   its day 7a scans the segment and rewrites the head as the least next due day of the segment's lines. A row joining
-  the segment lowers the head if earlier; a row leaving changes nothing, since an early head costs only a scan.
+  the segment lowers the head if earlier, to today when its line fell due at today's 1b (whose date has moved on), so
+  members joining at 3e pay today's due; a row leaving changes nothing, since an early head costs only a scan.
 - **7a** is **one stream over the holders' runs**, holder-major: in a scanned segment, a row whose line is due today
   is a debit if the holder is on its paying side and a credit otherwise, at the row's per-member amount (a point
   lookup, levies per member) times its count; each (party, bank) gets its debit and credit totals, tested for debits
