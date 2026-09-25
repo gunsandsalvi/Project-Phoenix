@@ -1,5 +1,5 @@
 //! The budget as measured: the phone's turns, sub-steps and memory from its device report, the full-load bench's
-//! month, and unit costs from the phone's sub-step times over the build run's daily counts of the same world.
+//! month, and stage 7's unit costs from each phone turn's own time and counts.
 
 use serde_json::{Value, json};
 
@@ -54,16 +54,28 @@ fn substeps(turns: &[&Value]) -> Vec<(String, Option<u64>)> {
         .collect()
 }
 
-/// A phone sub-step's median time per unit of a count the build run took of the same world, per business day.
-fn per_unit(steps: &[(String, Option<u64>)], label: &str, total: Option<u64>, days: Option<u64>) -> Value {
-    let ns = steps.iter().find(|(l, _)| l == label).and_then(|(_, ns)| *ns);
-    match (ns, total, days) {
-        (Some(ns), Some(total), Some(days)) if total > 0 && days > 0 => {
-            json!({ "substep": label, "median_ns": ns, "per_day": total / days, "ns_per_unit": ns * days / total })
-        }
-        _ => json!({ "substep": label, "median_ns": ns, "per_day": Value::Null, "ns_per_unit": Value::Null }),
-    }
+/// Stage 7's cost per unit of a count, from the phone's own turns: in each turn that settled any, the stage's time
+/// (all of it runs in 7c's block) over the turn's own count; the median of those, and how many turns gave one.
+fn per_unit(turns: &[&Value], count: &str) -> Value {
+    let costs: Vec<u64> = turns
+        .iter()
+        .filter_map(|t| {
+            let n = t.get(count)?.as_u64().filter(|n| *n > 0)?;
+            let ns = t
+                .get("substeps")?
+                .as_array()?
+                .iter()
+                .find(|s| s.get("substep").and_then(Value::as_str) == Some(STAGE_7))?
+                .get("wall_ns")?
+                .as_u64()?;
+            Some(ns / n)
+        })
+        .collect();
+    json!({ "count": count, "turns": costs.len(), "median_ns_per_unit": median(costs.clone()), "worst_ns_per_unit": greatest(&costs) })
 }
+
+/// The sub-step whose block runs all of stage 7: the stream, the fixed point and the apply.
+const STAGE_7: &str = "7c";
 
 /// The measurement: the world's turns and sub-steps on the phone, its memory, the unit costs, the full-load bench
 /// against its criteria and the fundamentals' targets.
@@ -72,7 +84,6 @@ pub fn measure(build: &Value, device: &Value) -> Value {
     let (open, closed) = (turns(device, true), turns(device, false));
     let (open_ms, closed_ms) = (wall(&open), wall(&closed));
     let steps = substeps(&open);
-    let days = u64_at(build, &["settlement", "days_with_payments"]);
     let load = device.get("load");
     let criteria = |k: &str| load.and_then(|l| u64_at(l, &["criteria", k]));
     let within = |v: Option<u64>, k: &str| v.zip(criteria(k)).map(|(v, c)| v <= c);
@@ -94,10 +105,7 @@ pub fn measure(build: &Value, device: &Value) -> Value {
             "opening_vm_hwm_bytes": device.pointer("/world/opening_vm_hwm_bytes"),
             "vm_hwm_bytes": device.pointer("/world/vm_hwm_bytes"),
         },
-        "unit_costs": [
-            per_unit(&steps, "7a", u64_at(build, &["settlement", "rows_scanned"]), days),
-            per_unit(&steps, "7c", u64_at(build, &["settlement", "payments"]), days),
-        ],
+        "unit_costs": [per_unit(&open, "rows_scanned"), per_unit(&open, "payments")],
         "load": {
             "median_turn_ms": load_median,
             "worst_turn_ms": load_worst,
@@ -123,14 +131,19 @@ mod tests {
     }
 
     #[test]
-    fn unit_costs_divide_phone_time_by_the_build_runs_counts() {
-        let turn = |business, ns| json!({ "business": business, "wall_ms": 10, "substeps": [{ "substep": "7a", "wall_ns": ns }] });
-        let device =
-            json!({ "world": { "turns": [turn(true, 300), turn(true, 100), turn(true, 200), turn(false, 7)] } });
-        let build = json!({ "settlement": { "days_with_payments": 4, "rows_scanned": 40, "payments": 0 } });
-        let m = measure(&build, &device);
-        assert_eq!(m["turns"]["business"]["count"], 3);
-        assert_eq!(m["unit_costs"][0], json!({ "substep": "7a", "median_ns": 200, "per_day": 10, "ns_per_unit": 20 }));
-        assert_eq!(m["unit_costs"][1]["ns_per_unit"], serde_json::Value::Null, "no payments, no cost per payment");
+    fn unit_costs_are_each_turns_stage_seven_over_its_own_counts() {
+        let turn = |ns, payments| {
+            json!({ "business": true, "wall_ms": 10, "payments": payments, "rows_scanned": 0,
+                    "substeps": [{ "substep": "7c", "wall_ns": ns }] })
+        };
+        let device = json!({ "world": { "turns": [turn(300, 10), turn(900, 30), turn(50, 0), turn(800, 100)] } });
+        let m = measure(&json!({}), &device);
+        assert_eq!(m["turns"]["business"]["count"], 4);
+        assert_eq!(
+            m["unit_costs"][1],
+            json!({ "count": "payments", "turns": 3, "median_ns_per_unit": 30, "worst_ns_per_unit": 30 }),
+            "three turns paid anything, each 30 ns a payment but the last's 8"
+        );
+        assert_eq!(m["unit_costs"][0]["turns"], 0, "no rows scanned, no cost per row");
     }
 }

@@ -168,6 +168,11 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
             ("days", Json::UInt(u64::from(record.days))),
             ("business", Json::Bool(Inspector::new(&world).any_business(record.last))),
             ("wall_ms", Json::opt(wall_ms, Json::UInt)),
+            ("payments", Json::UInt(settled(Inspector::new(&world), (record.first, record.last), |s| s.payments))),
+            (
+                "rows_scanned",
+                Json::UInt(settled(Inspector::new(&world), (record.first, record.last), |s| s.rows_scanned)),
+            ),
             ("substeps", substeps(Inspector::new(&world), record.first, record.last)),
             ("vm_hwm_bytes", Json::opt(peak, Json::UInt)),
             ("pss_bytes", Json::opt(pss, Json::UInt)),
@@ -279,6 +284,15 @@ fn save_and_load(
         ("load_ms", Json::opt(load_ms, Json::UInt)),
         ("hash_holds", Json::Bool(same)),
     ]))
+}
+
+/// A count of the settlements of the turn's days, summed.
+fn settled(
+    w: Inspector<'_>,
+    (first, last): (phx_id::Day, phx_id::Day),
+    count: fn(&phx_ledger::apply_batch::DaySettlement) -> u64,
+) -> u64 {
+    w.settlements().iter().filter(|s| first <= s.day && s.day <= last).map(|s| count(&s.dues)).sum()
 }
 
 /// Each opening distribution's distance from the world's own at the run's end.
