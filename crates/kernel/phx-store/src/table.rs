@@ -281,6 +281,15 @@ pub fn live_in(words: &[u64]) -> impl Iterator<Item = Slot> + '_ {
     })
 }
 
+/// The live slots among `first`, `first + step`, `first + 2·step`…, in ascending order: a rolling slice read without
+/// walking the slots between.
+pub fn live_every(words: &[u64], first: u32, step: u32) -> impl Iterator<Item = Slot> + '_ {
+    (first..)
+        .step_by(to_usize(step))
+        .map_while(move |s| (to_usize(s / BITS) < words.len()).then_some(Slot::new(s)))
+        .filter(move |s| live_at(words, *s))
+}
+
 #[cfg(test)]
 mod tests {
     use phx_id::{Slot, TableId};
@@ -289,6 +298,14 @@ mod tests {
     use crate::backing::{AddressSpace, HeapBacking};
 
     type Heap = HeapBacking<4096>;
+
+    #[test]
+    fn live_every_reads_only_the_slice() {
+        let words = [0b1011_u64, 1 << 1];
+        let every: Vec<u32> = super::live_every(&words, 1, 2).map(|s| s.get()).collect();
+        assert_eq!(every, vec![1, 3, 65]);
+        assert_eq!(super::live_every(&words, 0, 2).count(), 1);
+    }
 
     #[test]
     fn slot_recycling_is_ordered() {
