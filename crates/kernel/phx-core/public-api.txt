@@ -1152,6 +1152,17 @@ pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::O
 pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub mod phx_core::register
 pub use phx_core::register::Missing
+pub mod phx_core::register::forms
+pub struct phx_core::register::forms::FormDecl
+pub phx_core::register::forms::FormDecl::id: alloc::string::String
+pub phx_core::register::forms::FormDecl::owner: alloc::string::String
+pub phx_core::register::forms::FormDecl::reason: alloc::string::String
+pub phx_core::register::forms::FormDecl::source: phx_core::register::Source
+pub phx_core::register::forms::FormDecl::source_ref: alloc::string::String
+pub struct phx_core::register::forms::Forms
+impl phx_core::register::forms::Forms
+pub fn phx_core::register::forms::Forms::decls(&self) -> &[phx_core::register::forms::FormDecl]
+pub fn phx_core::register::forms::Forms::new(alloc::vec::Vec<phx_core::register::forms::FormDecl>) -> core::result::Result<phx_core::register::forms::Forms, alloc::vec::Vec<alloc::string::String>>
 pub mod phx_core::register::limit
 pub struct phx_core::register::limit::Binding
 pub phx_core::register::limit::Binding::day: phx_id::day::Day
@@ -1532,6 +1543,7 @@ pub struct phx_core::register::Register
 impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
 pub fn phx_core::register::Register::countries(&self) -> usize
+pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
@@ -3052,6 +3064,7 @@ pub struct phx_core::Register
 impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
 pub fn phx_core::register::Register::countries(&self) -> usize
+pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>

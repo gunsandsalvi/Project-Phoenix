@@ -1,3 +1,4 @@
+pub mod forms;
 pub mod limit;
 pub mod profile;
 mod quantile;
@@ -15,6 +16,7 @@ use serde::Deserialize;
 
 use crate::calendar::period::Period;
 use crate::consts::MONTHS_PER_QUARTER;
+use crate::register::forms::{FormDecl, FormEntry, Forms};
 use crate::register::units::{UnitDecl, UnitEntry, Units};
 use crate::register::values::{PrimType, PrimValue, ValueType, parse};
 
@@ -268,9 +270,10 @@ impl RegisterBuilder {
         let mut found: Vec<Vec<Option<(PrimValue, EntryMeta)>>> =
             self.decls.iter().map(|d| vec![None; if d.scope == Scope::Shared { 1 } else { countries }]).collect();
         let mut unit_decls = Vec::new();
+        let mut form_decls = Vec::new();
         for file in files {
-            let (entries, units) = match read_file(&file.text) {
-                Ok(f) => (f.primitive, f.unit),
+            let (entries, units, forms) = match read_file(&file.text) {
+                Ok(f) => (f.primitive, f.unit, f.form),
                 Err(e) => {
                     errors.push(format!("{}: {e}", file.path));
                     continue;
@@ -279,18 +282,7 @@ impl RegisterBuilder {
             if !units.is_empty() && file.country != Missing::Absent {
                 errors.push(format!("{}: units are the world's, declared in its own files", file.path));
             }
-            for u in units {
-                match source(&u.source) {
-                    Ok(src) => unit_decls.push(UnitDecl {
-                        name: u.name,
-                        kind: u.kind,
-                        price_exp: u.price_exp,
-                        source: src,
-                        source_ref: u.source_ref,
-                    }),
-                    Err(e) => errors.push(format!("{}: unit `{}`: {e}", file.path, u.name)),
-                }
-            }
+            world_decls(file, forms, units, &mut form_decls, &mut unit_decls, &mut errors);
             for entry in entries {
                 let found_at = by_id.binary_search_by(|(id, _)| (*id).cmp(entry.id.as_str()));
                 let Some(i) = found_at.ok().and_then(|at| by_id.get(at)).map(|(_, i)| *i) else {
@@ -339,9 +331,52 @@ impl RegisterBuilder {
         let units = Units::new(unit_decls).map_err(|mut e| {
             errors.append(&mut e);
         });
-        match units {
-            Ok(units) if errors.is_empty() => Ok(Register { decls: self.decls, stored, sources, units, countries }),
+        let forms = Forms::new(form_decls).map_err(|mut e| {
+            errors.append(&mut e);
+        });
+        match (units, forms) {
+            (Ok(units), Ok(forms)) if errors.is_empty() => {
+                Ok(Register { decls: self.decls, stored, sources, units, forms, countries })
+            }
             _ => Err(errors),
+        }
+    }
+}
+
+/// A file's rule forms and units, which only the world's own files declare.
+fn world_decls(
+    file: &DataFile,
+    forms: Vec<FormEntry>,
+    units: Vec<UnitEntry>,
+    form_decls: &mut Vec<FormDecl>,
+    unit_decls: &mut Vec<UnitDecl>,
+    errors: &mut Vec<String>,
+) {
+    if !forms.is_empty() && file.country != Missing::Absent {
+        errors.push(format!("{}: rule forms are the world's, declared in its own files", file.path));
+    }
+    for f in forms {
+        match source(&f.source) {
+            Ok(src) => form_decls.push(FormDecl {
+                id: f.id,
+                owner: f.owner,
+                reason: f.reason,
+                source: src,
+                source_ref: f.source_ref,
+            }),
+            Err(e) => errors.push(format!("{}: form `{}`: {e}", file.path, f.id)),
+        }
+    }
+    for u in units {
+        match source(&u.source) {
+            Ok(src) => unit_decls.push(UnitDecl {
+                name: u.name,
+                kind: u.kind,
+                price_exp: u.price_exp,
+                source: src,
+                source_ref: u.source_ref,
+            }),
+            Err(e) => errors.push(format!("{}: unit `{}`: {e}", file.path, u.name)),
         }
     }
 }
@@ -369,6 +404,7 @@ pub struct Register {
     stored: Vec<Stored>,
     sources: Vec<Vec<EntryMeta>>,
     units: Units,
+    forms: Forms,
     countries: usize,
 }
 
@@ -389,6 +425,12 @@ impl Register {
     #[must_use]
     pub fn units(&self) -> &Units {
         &self.units
+    }
+
+    /// The decision rules' forms, each a standing SHAPE with its reason and source.
+    #[must_use]
+    pub fn forms(&self) -> &Forms {
+        &self.forms
     }
 
     fn stored(&self, index: u32) -> &Stored {
@@ -498,6 +540,8 @@ struct File {
     primitive: Vec<Entry>,
     #[serde(default)]
     unit: Vec<UnitEntry>,
+    #[serde(default)]
+    form: Vec<FormEntry>,
 }
 
 /// A development level, whose templates a country's data is instantiated from.

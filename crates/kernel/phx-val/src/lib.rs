@@ -8,6 +8,7 @@ pub mod heuristic;
 pub mod heuristics;
 pub mod method;
 pub mod outlook;
+pub mod prims;
 pub mod registered;
 pub mod schedule;
 pub mod surprise;

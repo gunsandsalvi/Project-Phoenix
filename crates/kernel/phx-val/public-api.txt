@@ -91,6 +91,30 @@ impl phx_val::outlook::VarId
 pub const fn phx_val::outlook::VarId::get(self) -> u32
 pub const fn phx_val::outlook::VarId::new(u32) -> phx_val::outlook::VarId
 pub fn phx_val::outlook::fixed(f64) -> phx_num::fixed::Fixed<6>
+pub mod phx_val::prims
+pub struct phx_val::prims::ValPrims
+pub phx_val::prims::ValPrims::adaptive_gain: phx_core::register::Prim<phx_core::register::values::Distribution>
+pub phx_val::prims::ValPrims::anchor_kappa: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_val::prims::ValPrims::attention_sensitivity: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_val::prims::ValPrims::experience_theta: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_val::prims::ValPrims::heuristics_tracked: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_val::prims::ValPrims::memory_types: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_val::prims::ValPrims::performance_memory: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_val::prims::ValPrims::switching_intensity: phx_core::register::Prim<phx_core::register::values::Distribution>
+pub phx_val::prims::ValPrims::switching_types: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_val::prims::ValPrims::trend_gamma: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+impl phx_val::prims::ValPrims
+pub fn phx_val::prims::ValPrims::declare(&mut phx_core::system::Declarations) -> phx_val::prims::ValPrims
+pub const phx_val::prims::ADAPTIVE_GAIN: phx_core::register::PrimDecl
+pub const phx_val::prims::ANCHOR_KAPPA: phx_core::register::PrimDecl
+pub const phx_val::prims::ATTENTION_SENSITIVITY: phx_core::register::PrimDecl
+pub const phx_val::prims::EXPERIENCE_THETA: phx_core::register::PrimDecl
+pub const phx_val::prims::HEURISTICS_TRACKED: phx_core::register::PrimDecl
+pub const phx_val::prims::MEMORY_TYPES: phx_core::register::PrimDecl
+pub const phx_val::prims::PERFORMANCE_MEMORY: phx_core::register::PrimDecl
+pub const phx_val::prims::SWITCHING_INTENSITY: phx_core::register::PrimDecl
+pub const phx_val::prims::SWITCHING_TYPES: phx_core::register::PrimDecl
+pub const phx_val::prims::TREND_GAMMA: phx_core::register::PrimDecl
 pub mod phx_val::registered
 pub struct phx_val::registered::Registered
 impl phx_val::registered::Registered
