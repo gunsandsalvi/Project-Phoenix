@@ -17,6 +17,8 @@ pub enum FailCause {
     Ended,
     /// A payer or payee holding no money in the payment's currency: no account, and none it issues.
     NoMoney,
+    /// A payer whose bank could not cover its net after intraday credit, so its customers' legs were removed.
+    BankShort,
 }
 
 /// What a leg draws on before the instruction: what is there now, and how far it may fall; a position with no floor,

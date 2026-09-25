@@ -219,7 +219,13 @@ impl<B: Backing> Books<B> {
                 }
                 // A cleared line's claimant with no money loses its due against the top issuer, which owes no row.
                 if !(p.cleared && p.payee == p.reckoned_on && p.moneyless) {
-                    let cause = if p.moneyless { FailCause::NoMoney } else { FailCause::Funds };
+                    let cause = if p.moneyless {
+                        FailCause::NoMoney
+                    } else if fixed.by_bank.contains(&p.key()) {
+                        FailCause::BankShort
+                    } else {
+                        FailCause::Funds
+                    };
                     self.fail_payment(&p, day, cause);
                 }
                 self.record_due(&p, DueOutcome::Failed);

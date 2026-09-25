@@ -443,6 +443,7 @@ pub fn phx_ledger::books::of<'a>(&'a mut phx_core::contribution::Opening<'_>) ->
 pub fn phx_ledger::books::split<'a>(&'a mut phx_core::contribution::Opening<'_>) -> (&'a mut phx_ledger::books::Books, &'a mut phx_core::contribution::GenReport)
 pub mod phx_ledger::check
 pub enum phx_ledger::check::FailCause
+pub phx_ledger::check::FailCause::BankShort
 pub phx_ledger::check::FailCause::Ended
 pub phx_ledger::check::FailCause::FreeUnits
 pub phx_ledger::check::FailCause::Funds

@@ -623,7 +623,7 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
   holders with money reach.
 - **7b** starts from every payment succeeding and removes, until nothing changes, the payers who cannot pay given the
   payments still standing, and the customer legs of banks that cannot cover their nets after intraday credit (MON.3,
-  MON.5). A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering the
+  MON.5), each such payment failed with the bank's cause, `FailCause::BankShort`. A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering the
   credits of their other side and the nets of their banks. As built, only through holder lists, so a side that keeps
   none — a failing bank's household depositors, a lender's household loans — is not revisited (F-058). A payer fails as
   a **prefix** of its payment order (REP.18), which is monotone, so the result is the **greatest** set that can settle,
