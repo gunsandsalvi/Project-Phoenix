@@ -533,37 +533,40 @@ impl<B: Backing> Books<B> {
         settled
     }
 
-    /// Each scanned holder's head rewritten: the heads read on the pool in fixed shards, then written and filed in the
-    /// stream's order; a holder with a spent row has its rows moved on the calling thread.
+    /// Each scanned holder's head rewritten: a wave of fixed shards' next days read on the pool, then the heads written
+    /// and filed in the stream's order; a holder with a spent row has its rows moved on the calling thread.
     fn reheads(&mut self, scanned: &[(u16, Slot)])
     where
         B: Sync,
     {
+        let at_most = |a: usize, b: usize| if a < b { a } else { b };
         let each = scanned.len().div_ceil(crate::consts::STREAM_SHARDS);
-        if each == 0 {
-            return;
-        }
-        let read = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_SHARDS, |i| {
-            let from = if i * each < scanned.len() { i * each } else { scanned.len() };
-            let to = if from + each < scanned.len() { from + each } else { scanned.len() };
-            let lines = &self.ledger.lines;
-            scanned
-                .get(from..to)
-                .unwrap_or(&[])
-                .iter()
-                .map(|&(place, slot)| runs::next_head(self.parties.holder(place), slot, lines))
-                .collect::<Vec<_>>()
-        });
-        for (&(place, slot), next) in scanned.iter().zip(read.into_iter().flatten()) {
-            let arenas = crate::apply::Holders::arenas(&mut self.parties, place);
-            match next {
-                Some((head, least)) => {
-                    if let Some(day) = least {
-                        self.ledger.lines.file_head(place, slot, day);
+        for wave in (0..crate::consts::STREAM_SHARDS).step_by(crate::consts::STREAM_WAVE) {
+            let read = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_WAVE, |i| {
+                let from = at_most((wave + i) * each, scanned.len());
+                let to = at_most(from + each, scanned.len());
+                let lines = &self.ledger.lines;
+                scanned
+                    .get(from..to)
+                    .unwrap_or(&[])
+                    .iter()
+                    .map(|&(place, slot)| runs::next_head(self.parties.holder(place), slot, lines))
+                    .collect::<Vec<_>>()
+            });
+            let from = at_most(wave * each, scanned.len());
+            for (&(place, slot), next) in scanned.get(from..).unwrap_or(&[]).iter().zip(read.into_iter().flatten()) {
+                let arenas = crate::apply::Holders::arenas(&mut self.parties, place);
+                match next {
+                    Some(least) => {
+                        let mut head = arenas.run_head(slot);
+                        if let Some(day) = least {
+                            head.next_due = day;
+                            arenas.set_run_head(slot, head);
+                            self.ledger.lines.file_head(place, slot, day);
+                        }
                     }
-                    arenas.set_run_head(slot, head);
+                    None => runs::rehead(arenas, place, slot, &mut self.ledger.lines),
                 }
-                None => runs::rehead(arenas, place, slot, &mut self.ledger.lines),
             }
         }
     }

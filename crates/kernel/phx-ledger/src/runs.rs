@@ -77,22 +77,19 @@ pub fn truth<B: Backing>(
     out
 }
 
-/// A scanned holder's head as `rehead` would rewrite it, read without writing, where no row of its segment is spent:
-/// the head with its next due day, and the day it is filed under, if any. None where a spent row must move.
-pub fn next_head<B: Backing>(arenas: &dyn HolderArenas, holder: Slot, lines: &Lines<B>) -> Option<(RunHead, Option<u32>)> {
-    let mut head = arenas.run_head(holder);
+/// The day a scanned holder's head is filed under as `rehead` would rewrite it, read without writing, where no row of
+/// its segment is spent: the least next due day of its lines, or none for an empty segment. None where a spent row
+/// must move.
+pub fn next_head<B: Backing>(arenas: &dyn HolderArenas, holder: Slot, lines: &Lines<B>) -> Option<Option<u32>> {
     let mut least: Option<u32> = None;
-    for r in segment(arenas, holder, head) {
+    for r in segment(arenas, holder, arenas.run_head(holder)) {
         if lines.done(r.row.line) {
             return None;
         }
         let d = lines.next_due(r.row.line).get();
         least = Some(least.map_or(d, |l| if d < l { d } else { l }));
     }
-    if let Some(next) = least {
-        head.next_due = next;
-    }
-    Some((head, least))
+    Some(least)
 }
 
 /// A scanned holder's head rewritten: the least next due day of its segment's lines, read after 1b moved them on.

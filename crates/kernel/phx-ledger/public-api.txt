@@ -1136,7 +1136,7 @@ pub struct phx_ledger::runs::RunTruth
 pub phx_ledger::runs::RunTruth::due: u64
 pub phx_ledger::runs::RunTruth::holds: bool
 pub fn phx_ledger::runs::due_rows(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::day::Day, &phx_ledger::due::DueLines) -> core::option::Option<(alloc::vec::Vec<phx_ledger::rows::RowView>, u64)>
-pub fn phx_ledger::runs::next_head<B: phx_store::backing::Backing>(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, &phx_ledger::line::Lines<B>) -> core::option::Option<(phx_core::kind_tables::RunHead, core::option::Option<u32>)>
+pub fn phx_ledger::runs::next_head<B: phx_store::backing::Backing>(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, &phx_ledger::line::Lines<B>) -> core::option::Option<core::option::Option<u32>>
 pub fn phx_ledger::runs::rehead<B: phx_store::backing::Backing>(&mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &mut phx_ledger::line::Lines<B>)
 pub fn phx_ledger::runs::segment(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_core::kind_tables::RunHead) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::rows::RowView> + '_
 pub fn phx_ledger::runs::truth<B: phx_store::backing::Backing>(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::day::Day, &phx_ledger::due::DueLines, &phx_ledger::line::Lines<B>) -> phx_ledger::runs::RunTruth
