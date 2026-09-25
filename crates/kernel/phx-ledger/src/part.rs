@@ -1,6 +1,6 @@
 use phx_core::LegDigest;
 use phx_core::kind_tables::ListKind;
-use phx_id::{Day, InstrumentId, LineId, Slot};
+use phx_id::{Day, InstrumentId, LineId, PartyId, Slot};
 use phx_macros::clause;
 use phx_num::round::{Round, split_total};
 use phx_num::{Amount, Missing, QtyRaw, capacity_exceeded, violation};
@@ -126,11 +126,36 @@ pub fn cell_holdings(arenas: &dyn HolderArenas, holder: Slot) -> Vec<CellHolding
     arenas.read(holder, ListKind::Holdings).as_chunks::<HOLDING>().0.iter().map(|w| from_words(w)).collect()
 }
 
+/// What a row holds as the audit reads its positions: its members, and its balance where it keeps one; a row not
+/// held holds neither.
+fn held(view: Option<&RowView>) -> (i64, Missing<i64>) {
+    view.map_or((0, Missing::Absent), |v| (i64::from(v.row.count), v.optional.balance))
+}
+
 impl<B: Backing> Ledger<B> {
-    /// The positions of a row the audit reads: its member count, and its balance where it keeps one.
-    fn row_codes(line: LineId, side: Side, balance: bool) -> Vec<u64> {
+    /// A row's move outside any instruction, recorded for the audit as unpaired legs of no instruction: its members,
+    /// and its balance where it keeps one, from what it held to what it holds.
+    fn row_moved(
+        &mut self,
+        party: PartyId,
+        (line, side): (LineId, Side),
+        was: (i64, Missing<i64>),
+        now: (i64, Missing<i64>),
+    ) {
         let code = AccountRef::Line { line, side }.code();
-        if balance { vec![code | ROW_COUNT, code] } else { vec![code | ROW_COUNT] }
+        let or_none = |b: Missing<i64>| match b {
+            Missing::Present(b) => b,
+            Missing::Absent => 0,
+        };
+        let keeps = was.1 != Missing::Absent || now.1 != Missing::Absent;
+        let moves = [(code | ROW_COUNT, was.0, now.0), (code, or_none(was.1), or_none(now.1))];
+        for (account, before, after) in moves.into_iter().take(if keeps { 2 } else { 1 }) {
+            if after != before {
+                let qty = after - before;
+                let digest = LegDigest { party, account, denom: 0, qty, flow: 0, before, paired: false, money: false };
+                self.day.outside.push(digest);
+            }
+        }
     }
 
     /// What a holder's positions hold before a move outside any instruction.
@@ -167,10 +192,7 @@ impl<B: Backing> Ledger<B> {
         rounding: Round,
     ) -> DetachedRow {
         let view: RowView = crate::line::Lines::<B>::find(arenas, holder, line, side);
-        let before = self.before(arenas, holder, Self::row_codes(line, side, view.optional.balance != Missing::Absent));
-        let detached = self.detach_view(arenas, table, holder, view, share, rounding);
-        self.outside(arenas, holder, before);
-        detached
+        self.detach_view(arenas, table, holder, view, share, rounding)
     }
 
     /// Members leave several of a cell's rows at once, each row read once: the rows are taken last first, so a row
@@ -192,18 +214,12 @@ impl<B: Backing> Ledger<B> {
             };
             found.push((i, *view, *share));
         }
-        let codes = found
-            .iter()
-            .flat_map(|(_, v, _)| Self::row_codes(v.row.line, v.side(), v.optional.balance != Missing::Absent))
-            .collect();
-        let before = self.before(arenas, holder, codes);
         found.sort_unstable_by_key(|(_, view, _)| core::cmp::Reverse(view.at));
         let mut out: Vec<(usize, DetachedRow)> = found
             .into_iter()
             .map(|(i, view, share)| (i, self.detach_view(arenas, table, holder, view, share, rounding)))
             .collect();
         out.sort_unstable_by_key(|(i, _)| *i);
-        self.outside(arenas, holder, before);
         out.into_iter().map(|(_, d)| d).collect()
     }
 
@@ -222,15 +238,7 @@ impl<B: Backing> Ledger<B> {
         // Each row as the plans so far left it, whether its words changed, and whether it left whole.
         let mut views: Vec<(RowView, bool, bool)> =
             rows::rows(arenas, holder).into_iter().map(|v| (v, false, false)).collect();
-        let mut codes: Vec<u64> = plans
-            .iter()
-            .flat_map(|(plan, _)| plan.iter())
-            .filter_map(|((line, side), _)| views.iter().find(|(v, _, _)| v.row.line == *line && v.side() == *side))
-            .flat_map(|(v, _, _)| Self::row_codes(v.row.line, v.side(), v.optional.balance != Missing::Absent))
-            .collect();
-        codes.sort_unstable();
-        codes.dedup();
-        let before = self.before(arenas, holder, codes);
+        let was: Vec<(i64, Missing<i64>)> = views.iter().map(|(v, _, _)| held(Some(v))).collect();
         let mut out = Vec::with_capacity(plans.len());
         for (plan, rounding) in plans {
             let mut detached = Vec::with_capacity(plan.len());
@@ -271,8 +279,14 @@ impl<B: Backing> Ledger<B> {
             }
             out.push(detached);
         }
-        for (view, _, _) in views.iter().filter(|(_, changed, gone)| *changed && !*gone) {
-            rows::rewrite(arenas, holder, view, view.optional);
+        for ((view, changed, gone), was) in views.iter().zip(&was) {
+            if *changed && !*gone {
+                rows::rewrite(arenas, holder, view, view.optional);
+            }
+            if *changed || *gone {
+                let now = if *gone { held(None) } else { held(Some(view)) };
+                self.row_moved(party, (view.row.line, view.side()), *was, now);
+            }
         }
         let mut gone: Vec<RowView> = views.into_iter().filter(|(_, _, gone)| *gone).map(|(v, _, _)| v).collect();
         gone.sort_unstable_by_key(|v| core::cmp::Reverse(v.at));
@@ -281,7 +295,6 @@ impl<B: Backing> Ledger<B> {
             let _ = self.lines.unplace_row(arenas, table, holder, line, side);
             self.arrears.remove(ArrearsKey::new(line, side, party));
         }
-        self.outside(arenas, holder, before);
         out
     }
 
@@ -304,7 +317,8 @@ impl<B: Backing> Ledger<B> {
                 of = of
             );
         }
-        let key = ArrearsKey::new(line, side, arenas.party(holder));
+        let party = arenas.party(holder);
+        let key = ArrearsKey::new(line, side, party);
         let since = match self.arrears.since(key) {
             Some(d) => Missing::Present(d),
             None => Missing::Absent,
@@ -313,6 +327,7 @@ impl<B: Backing> Ledger<B> {
             // All its members leaving take the row whole, their own amount within its balance.
             let whole = self.lines.unplace_row(arenas, table, holder, line, side);
             self.arrears.remove(key);
+            self.row_moved(party, (line, side), held(Some(&view)), held(None));
             return DetachedRow { row: whole.row, optional: whole.optional, arrears_since: since };
         }
         let (bl, bs) = word_share(view.optional.balance, share.own_balance, share, of, rounding);
@@ -322,6 +337,7 @@ impl<B: Backing> Ledger<B> {
         stay.row.count = of - share.count;
         let staying = Optional { balance: bs, pending: ps, amount: a_s };
         rows::rewrite(arenas, holder, &stay, staying);
+        self.row_moved(party, (line, side), held(Some(&view)), (i64::from(stay.row.count), staying.balance));
         let mut leaving = view.row;
         leaving.count = share.count;
         DetachedRow { row: leaving, optional: Optional { balance: bl, pending: pl, amount: al }, arrears_since: since }
@@ -416,11 +432,7 @@ impl<B: Backing> Ledger<B> {
     ) -> bool {
         let (line, side) = (detached.line(), detached.side());
         let found = rows::iter(arenas, holder).find(|r| r.row.line == line && r.side() == side);
-        let before =
-            self.before(arenas, holder, Self::row_codes(line, side, detached.optional.balance != Missing::Absent));
-        let entered = self.attach_view(arenas, table, holder, found, detached);
-        self.outside(arenas, holder, before);
-        entered
+        self.attach_view(arenas, table, holder, found, detached)
     }
 
     /// Several of a part's rows join a cell, its rows read once: rows it holds take their counts and words in place,
@@ -434,11 +446,6 @@ impl<B: Backing> Ledger<B> {
         detached: Vec<DetachedRow>,
     ) -> u32 {
         let views = rows::rows(arenas, holder);
-        let codes = detached
-            .iter()
-            .flat_map(|d| Self::row_codes(d.line(), d.side(), d.optional.balance != Missing::Absent))
-            .collect();
-        let before = self.before(arenas, holder, codes);
         let mut new = Vec::new();
         for d in detached {
             match views.iter().find(|r| r.row.line == d.line() && r.side() == d.side()) {
@@ -455,7 +462,6 @@ impl<B: Backing> Ledger<B> {
                 entered += 1;
             }
         }
-        self.outside(arenas, holder, before);
         entered
     }
 
@@ -468,12 +474,14 @@ impl<B: Backing> Ledger<B> {
         detached: DetachedRow,
     ) -> bool {
         let (line, side) = (detached.line(), detached.side());
-        let key = ArrearsKey::new(line, side, arenas.party(holder));
+        let party = arenas.party(holder);
+        let key = ArrearsKey::new(line, side, party);
         let Some(mut view) = found else {
             let entered = self.lines.place_row(arenas, table, holder, detached.row, detached.optional);
             if let Missing::Present(d) = detached.arrears_since {
                 self.arrears.begin(key, d);
             }
+            self.row_moved(party, (line, side), held(None), (i64::from(detached.row.count), detached.optional.balance));
             return entered;
         };
         if view.row.record != detached.row.record || view.row.point != detached.row.point {
@@ -494,8 +502,10 @@ impl<B: Backing> Ledger<B> {
             pending: sum(view.optional.pending, detached.optional.pending, line),
             amount: sum(view.optional.amount, detached.optional.amount, line),
         };
+        let was = held(Some(&view));
         view.row.count = count;
         rows::rewrite(arenas, holder, &view, joined);
+        self.row_moved(party, (line, side), was, (i64::from(count), joined.balance));
         false
     }
 
