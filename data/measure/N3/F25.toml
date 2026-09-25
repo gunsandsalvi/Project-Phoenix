@@ -1,0 +1,26 @@
+id = "F25"
+version = 1
+title = "Gravity: trade falls with distance and at borders"
+series = ["shipments between regions by value (FRT records)", "great-circle distance between regions' population-weighted centres"]
+unit = "region pair-year"
+estimator = { id = "regress", version = 1 }
+filter = { model = "Poisson pseudo-maximum likelihood with origin and destination effects", second_read = "distance along the freight network" }
+window = "all years of play after every opening supply contract has ended"
+sample = "every pair of regions"
+pooled = true
+credit = ["B"]
+min_years = 2
+suspects = ["FRT", "GDS", "XB"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "distance elasticity of trade"
+range = [-1.4, -0.5]
+source = "Head and Mayer (2014), Handbook of International Economics 4, ch. 3"
+source_ref = "Meta-analysis of gravity estimates: a median distance elasticity near -0.9, structural estimates near -1.1."
+
+[[benchmark]]
+statistic = "border effect, log of within-border over cross-border trade at equal distance"
+range = [0.8, 3.3]
+source = "McCallum (1995), American Economic Review 85(3); Anderson and van Wincoop (2003), American Economic Review 93(1)"
+source_ref = "Trade within borders is several times cross-border trade at equal distance: a log border effect of about 1.6 after multilateral resistance, 3.1 in McCallum's first estimate."

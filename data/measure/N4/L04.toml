@@ -1,0 +1,36 @@
+id = "L04"
+version = 1
+title = "The cost of capital"
+first_link = "the surprise in the committee's rate changes: the change in overnight and short-rate prints over the announcement day"
+traces = ["overnight prints, banks' marginal cost of funds, loan quotes, firms' marginal cost of money, investment orders and hiring, in that order"]
+min_years = 10
+suspects = ["CB", "BFL", "BNK", "CAP", "LAB"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "ten-year yield change per point of surprise"
+series = "SOV prints"
+horizon = "the announcement day"
+sign = "positive"
+range = [0.1, 0.7]
+source = "Kuttner (2001), Journal of Monetary Economics 47(3)"
+source_ref = "Long yields respond to the surprise component of Federal Reserve rate changes, by about a third of it."
+
+[[benchmark]]
+statistic = "share-index change per point of surprise tightening, per cent"
+series = "the market index (IDX)"
+horizon = "the announcement day"
+sign = "negative"
+range = [-8.0, -1.0]
+source = "Bernanke and Kuttner (2005), Journal of Finance 60(3)"
+source_ref = "A surprise cut of 25 basis points raises share prices by about one per cent."
+
+[[benchmark]]
+statistic = "quarters to the trough of output after a tightening"
+series = "STA real output"
+horizon = "up to sixteen quarters"
+sign = "negative"
+range = [3.0, 12.0]
+source = "Christiano, Eichenbaum and Evans (1999), Handbook of Macroeconomics 1A, ch. 2"
+source_ref = "Output falls with a lag, its trough about six to eight quarters after a policy tightening."
+order = 3

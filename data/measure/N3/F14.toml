@@ -1,0 +1,26 @@
+id = "F14"
+version = 1
+title = "Spending out of transitory receipts, by liquidity"
+series = ["spending from match-set records", "receipts tied to no income or household event: tax refunds and benefit amounts changed on a budget's effective day (TAX, SOC records)", "liquid wealth per member"]
+unit = "household-quarter"
+estimator = { id = "event", version = 1 }
+filter = { design = "recipients' change in spending less non-recipients' of the same band over the same dates, over the amount received", liquid_wealth_bands = 3 }
+window = "every receipt of play"
+sample = "households by liquid-wealth band, per country"
+pooled = false
+credit = ["B"]
+min_years = 2
+suspects = ["HH", "BNK", "L11"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "quarterly spending on non-durables out of a receipt, all bands"
+range = [0.1, 0.45]
+source = "Johnson, Parker and Souleles (2006), American Economic Review 96(5); Parker et al. (2013), American Economic Review 103(6)"
+source_ref = "Households spent about 20 to 40 per cent of the 2001 rebates on non-durables in the quarter received, and 12 to 30 per cent of the 2008 payments."
+
+[[benchmark]]
+statistic = "the lowest liquidity band's propensity less the highest's"
+range = [0.05, 0.6]
+source = "Johnson, Parker and Souleles (2006)"
+source_ref = "The response is concentrated among households with low liquid wealth or income."

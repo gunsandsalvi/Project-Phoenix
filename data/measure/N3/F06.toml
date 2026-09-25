@@ -1,0 +1,26 @@
+id = "F06"
+version = 1
+title = "The Phillips curve and its instability"
+series = ["STA wage inflation, quarterly", "IDX consumer-price inflation, quarterly", "unemployment gap: STA unemployment rate less its HP trend (smoothing 1600)"]
+unit = "country-quarter"
+estimator = { id = "regress", version = 1 }
+filter = { model = "wage inflation on the unemployment gap", window_quarters = 40, step_quarters = 4, intervals = "Newey-West", lags = 4 }
+window = "rolling ten-year windows of play"
+sample = "every quarter of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 20
+suspects = ["LAB", "FRM", "VAL"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "median slope of wage inflation on the unemployment gap across windows"
+range = [-1.5, -0.05]
+source = "Galí (2011), Journal of the European Economic Association 9(3); Blanchard (2016), American Economic Review 106(5)"
+source_ref = "Wage-inflation slopes on unemployment are negative, near -0.5 to -1 in Galí's post-war US estimates; price-inflation slopes have flattened since 1990 to about -0.2 (Blanchard)."
+
+[[benchmark]]
+statistic = "share of windows whose slope has the opposite sign to the median's"
+range = [0.0, 0.4]
+source = "Blanchard (2016)"
+source_ref = "Rolling estimates of the curve drift in size and sometimes lose significance but seldom reverse sign for long."

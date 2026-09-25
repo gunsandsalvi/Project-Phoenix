@@ -1,0 +1,26 @@
+id = "F12"
+version = 1
+title = "Sticky prices: long spells, large changes"
+series = ["posted price points per seller or seller cell and product at closes"]
+unit = "price spell"
+estimator = { id = "spells", version = 1 }
+filter = { spells = "begun after settling", weights = "a cell's spells weighted by its sellers", sales = "temporary cuts reverting within 30 days excluded" }
+window = "every spell begun in play"
+sample = "posted prices of goods and services, per country"
+pooled = false
+credit = ["B"]
+min_years = 2
+suspects = ["FRM", "SRV"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "median duration of price spells, months"
+range = [3.0, 12.0]
+source = "Nakamura and Steinsson (2008), Quarterly Journal of Economics 123(4); Bils and Klenow (2004), Journal of Political Economy 112(5)"
+source_ref = "Regular US consumer prices last a median 8 to 11 months excluding sales; about 4 months including them."
+
+[[benchmark]]
+statistic = "mean absolute size of price changes"
+range = [0.05, 0.16]
+source = "Klenow and Kryvtsov (2008), Quarterly Journal of Economics 123(3)"
+source_ref = "Regular US consumer price changes average about 11 per cent in absolute size."

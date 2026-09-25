@@ -1,0 +1,26 @@
+id = "F20"
+version = 1
+title = "Returns: fat tails, no linear memory"
+series = ["daily closes of listed shares and the market index (MKT, IDX)"]
+unit = "stock-day"
+estimator = { id = "tail", version = 1 }
+filter = { method = "Hill", tail_share = 0.05, standardised = true, lags = [1, 5, 10], ljung_box_lags = 10 }
+window = "all days of play"
+sample = "listed shares and the index, per country"
+pooled = true
+credit = ["B"]
+min_years = 2
+suspects = ["EQY", "DLR", "FND", "VAL", "L2", "L11"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "Hill tail index of standardised daily returns"
+range = [2.0, 5.0]
+source = "Cont (2001), Quantitative Finance 1(2)"
+source_ref = "The tail index of daily returns lies between about 2 and 5 across markets."
+
+[[benchmark]]
+statistic = "autocorrelation of daily returns at lag one"
+range = [-0.07, 0.07]
+source = "Cont (2001)"
+source_ref = "Linear autocorrelations of liquid assets' returns are insignificant beyond intraday horizons."

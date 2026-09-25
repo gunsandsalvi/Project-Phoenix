@@ -1,0 +1,20 @@
+id = "F10"
+version = 1
+title = "Productivity dispersion within industries"
+series = ["real value added with IDX industry deflators", "hours and capital from filed accounts"]
+unit = "firm-year"
+estimator = { id = "regress", version = 1 }
+filter = { tfp = "log value added less cost-share-weighted log inputs, cost shares from each industry's own books", ratio = "90th over 10th percentile, in levels" }
+window = "every year of play"
+sample = "firms with filed accounts, per industry and country"
+pooled = false
+credit = ["B"]
+min_years = 3
+suspects = ["TEC", "L12"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "90th over 10th percentile of TFP within industries"
+range = [1.6, 5.0]
+source = "Syverson (2004), Review of Economics and Statistics 86(2); Hsieh and Klenow (2009), Quarterly Journal of Economics 124(4)"
+source_ref = "Within US four-digit manufacturing industries the 90-10 TFP ratio averages 1.92; dispersion is wider in China and India."

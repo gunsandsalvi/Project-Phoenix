@@ -1,0 +1,26 @@
+id = "F08"
+version = 1
+title = "Firm sizes: a Pareto tail"
+series = ["firm employment at year ends: individuals, and cells by weight"]
+unit = "firm-year"
+estimator = { id = "tail", version = 1 }
+filter = { method = "Hill", threshold = "the 99th percentile of employment", rank_size = "log rank on log employment above the threshold" }
+window = "every year end of play"
+sample = "all firms alive at the year end, per country"
+pooled = false
+credit = ["S"]
+min_years = 1
+suspects = ["FRM", "TEC", "L3", "L12"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "Hill tail exponent of firm employment"
+range = [0.8, 1.4]
+source = "Axtell (2001), Science 293"
+source_ref = "US Census firm sizes by employment follow a Pareto law with exponent 1.059."
+
+[[benchmark]]
+statistic = "rank-size slope above the threshold"
+range = [-1.4, -0.8]
+source = "Axtell (2001)"
+source_ref = "Zipf's law: log rank falls with log size at a slope near -1."

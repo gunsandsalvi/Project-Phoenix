@@ -1,0 +1,26 @@
+id = "F16"
+version = 1
+title = "Credit over the cycle"
+series = ["STA bank credit to households and firms", "STA real output", "ACC banks' and firms' leverage"]
+unit = "country-quarter"
+estimator = { id = "corr", version = 1 }
+filter = { filter = "hp", lambda = 1600, credit = "real, log", pre_peak_years = 5 }
+window = "all quarters of play"
+sample = "every quarter of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 15
+suspects = ["BNK", "BCP", "L5"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "correlation of cyclical credit growth with cyclical output growth"
+range = [0.1, 0.8]
+source = "Claessens, Kose and Terrones (2012), Journal of International Economics 87(1)"
+source_ref = "Credit and output cycles move together: credit contractions and downturns coincide far more often than chance across 44 countries."
+
+[[benchmark]]
+statistic = "change in credit over output in the five years before cycle peaks, less its unconditional five-year change, percentage points of output"
+range = [0.0, 25.0]
+source = "Jordà, Schularick and Taylor (2013), Journal of Money, Credit and Banking 45(s2)"
+source_ref = "Credit rises faster than output in the expansions that precede recessions, most in those that end in crises."

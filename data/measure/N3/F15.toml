@@ -1,0 +1,26 @@
+id = "F15"
+version = 1
+title = "Unemployment spells and duration dependence"
+series = ["persons' labour-market states, tracers"]
+unit = "spell"
+estimator = { id = "survival", version = 1 }
+filter = { spells = "begun after settling", long_term_months = 12, hazard_at_months = [1, 12] }
+window = "every spell begun in play"
+sample = "unemployment spells, per country"
+pooled = false
+credit = ["B"]
+min_years = 3
+suspects = ["LAB", "POP", "SOC"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "long-term share of the unemployed (a year and more)"
+range = [0.1, 0.6]
+source = "OECD Labour Force Statistics, incidence of long-term unemployment"
+source_ref = "The share of the unemployed out of work for a year or more ranges from about 10 per cent in the US to 40 to 50 per cent in much of continental Europe."
+
+[[benchmark]]
+statistic = "exit hazard at twelve months over exit hazard at one month"
+range = [0.15, 0.85]
+source = "Machin and Manning (1999), Handbook of Labor Economics 3C; Kroft, Lange and Notowidigdo (2013), Quarterly Journal of Economics 128(3)"
+source_ref = "Exit rates from unemployment fall with duration."

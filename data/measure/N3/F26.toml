@@ -1,0 +1,20 @@
+id = "F26"
+version = 1
+title = "Exchange rates are near random walks"
+series = ["monthly FX fixings", "relative money, output and rates (STA, CB)"]
+unit = "currency pair-month"
+estimator = { id = "forecast", version = 1 }
+filter = { model = "monetary fundamentals, rolling", horizons_months = [1, 6, 12], window_months = 60 }
+window = "all months of play"
+sample = "every currency pair"
+pooled = true
+credit = ["B"]
+min_years = 10
+suspects = ["FX", "XB", "L10"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "RMSE of the fundamentals model over the random walk's"
+range = [0.95, 1.4]
+source = "Meese and Rogoff (1983), Journal of International Economics 14; Cheung, Chinn and Pascual (2005), Journal of International Money and Finance 24(7)"
+source_ref = "Structural exchange-rate models do not beat the random walk out of sample at horizons up to a year."

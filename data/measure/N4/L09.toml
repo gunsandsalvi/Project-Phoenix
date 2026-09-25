@@ -1,0 +1,17 @@
+id = "L09"
+version = 1
+title = "The supply shock"
+first_link = "lost units at a place: catastrophes, failures, depletion"
+traces = ["shipments in rise up to freight capacity"]
+min_years = 3
+suspects = ["GDS", "FRT", "IDX", "TEC"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "lead of producer prices over consumer prices, months"
+series = "IDX producer and consumer price indices"
+horizon = "up to twelve months"
+sign = "positive"
+range = [0.0, 6.0]
+source = "Clark (1995), Federal Reserve Bank of Kansas City Economic Review 80(2)"
+source_ref = "Producer prices move before consumer prices, though the lead is weak and unstable."

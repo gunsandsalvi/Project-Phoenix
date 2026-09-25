@@ -1,0 +1,26 @@
+id = "L03"
+version = 1
+title = "Immortality refused"
+first_link = "firm endings (FRM records, estates)"
+traces = ["estate sales of plant and stock", "employees released into LAB", "entry into the freed markets"]
+min_years = 5
+suspects = ["EST", "FRM", "CRD", "LAB"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "recovery of senior secured claims less subordinated claims, share of face"
+series = "creditors' recoveries by the rank of their claims (EST)"
+horizon = "at the estate's close"
+sign = "positive"
+range = [0.1, 0.45]
+source = "Altman and Kishore (1996), Financial Analysts Journal 52(6)"
+source_ref = "Recoveries on defaulted bonds rise with seniority, from about a third of face for subordinated to over half for senior secured."
+
+[[benchmark]]
+statistic = "correlation of entry and exit rates across industries"
+series = "foundings and endings by industry (FRM)"
+horizon = "annual"
+sign = "positive"
+range = [0.1, 0.8]
+source = "Dunne, Roberts and Samuelson (1988), RAND Journal of Economics 19(4)"
+source_ref = "Industries with high entry rates also have high exit rates."

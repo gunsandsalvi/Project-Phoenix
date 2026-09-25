@@ -1,0 +1,13 @@
+# The credit classes of N3's facts (GEN.10): what each credits and the reads it takes.
+
+[[class]]
+id = "S"
+name = "slow distributions"
+credits = "while the world holds and moves it: its statistic in the benchmark range at each year end of play, GEN.8's distance from the opening showing no drift away (no trend beyond its interval), and its members moving within it by the world's own flows"
+reads = ["year-end cross-sections by keyed reduction over cells with their weights", "GEN.8's distances", "rank mobility, entry and exit"]
+
+[[class]]
+id = "B"
+name = "behaviour"
+credits = "from the first day of play, over what the run has produced; a cycle statistic once the run has a complete trough-to-trough cycle of its own dating"
+reads = ["Harding-Pagan dating over STA's quarterly real output (F01's parameters)", "the recorder's series"]

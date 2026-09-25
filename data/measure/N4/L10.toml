@@ -1,0 +1,27 @@
+id = "L10"
+version = 1
+title = "The open economy"
+first_link = "rate differentials and the surprise in the committee's rate changes"
+traces = ["foreign-currency borrowers' revaluations"]
+min_years = 10
+suspects = ["FX", "XB", "CB", "CRD"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "short-run pass-through of the exchange rate into import prices"
+series = "import prices and the exchange rate (IDX, FX)"
+horizon = "one quarter"
+sign = "positive"
+range = [0.2, 0.8]
+source = "Campa and Goldberg (2005), Review of Economics and Statistics 87(4)"
+source_ref = "Across OECD countries, short-run pass-through into import prices averages about 0.46."
+
+[[benchmark]]
+statistic = "long-run pass-through"
+series = "the same"
+horizon = "four quarters"
+sign = "positive"
+range = [0.35, 0.95]
+source = "Campa and Goldberg (2005)"
+source_ref = "Long-run pass-through averages about 0.64: partial and delayed."
+order = 2

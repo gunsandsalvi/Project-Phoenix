@@ -1,0 +1,20 @@
+id = "F05"
+version = 1
+title = "The Beveridge curve"
+series = ["STA vacancy rate, quarterly", "STA unemployment rate, quarterly"]
+unit = "country-quarter"
+estimator = { id = "hp", version = 1 }
+filter = { lambda = 100000, log = true }
+window = "all quarters of play"
+sample = "every quarter of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 10
+suspects = ["LAB"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "correlation of cyclical log vacancies with cyclical log unemployment"
+range = [-0.98, -0.6]
+source = "Shimer (2005), American Economic Review 95(1)"
+source_ref = "US quarterly vacancy and unemployment rates, HP-filtered with a smoothing of 10^5, correlate at about -0.9."

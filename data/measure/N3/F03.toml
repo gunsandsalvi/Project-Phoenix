@@ -1,0 +1,38 @@
+id = "F03"
+version = 1
+title = "Comovement with output over the cycle"
+series = ["STA real output, fixed investment, consumption of non-durables and services, employment and the unemployment rate, quarterly"]
+unit = "country-quarter"
+estimator = { id = "hp", version = 1 }
+filter = { lambda = 1600, log = true, unemployment = "level" }
+window = "all quarters of play"
+sample = "every quarter of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 10
+suspects = ["LAB", "HH", "CAP"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "correlation of cyclical consumption with cyclical output"
+range = [0.5, 0.95]
+source = "Stock and Watson (1999)"
+source_ref = "Consumption of non-durables and services is strongly procyclical, with contemporaneous correlations near 0.7 to 0.9."
+
+[[benchmark]]
+statistic = "correlation of cyclical fixed investment with cyclical output"
+range = [0.6, 0.97]
+source = "Stock and Watson (1999)"
+source_ref = "Fixed investment is strongly procyclical, correlations near 0.8 to 0.9."
+
+[[benchmark]]
+statistic = "correlation of cyclical employment with cyclical output"
+range = [0.5, 0.95]
+source = "Stock and Watson (1999)"
+source_ref = "Employment is procyclical and lags slightly, contemporaneous correlations near 0.8."
+
+[[benchmark]]
+statistic = "correlation of the cyclical unemployment rate with cyclical output"
+range = [-0.95, -0.5]
+source = "Stock and Watson (1999)"
+source_ref = "The unemployment rate is countercyclical, correlations near -0.85."

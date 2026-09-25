@@ -1,0 +1,17 @@
+id = "L01"
+version = 1
+title = "Loss as an event"
+first_link = "borrowers' own cash failures: missed payments and defaults (the Contracts family's fail records)"
+traces = ["defaults lead arrears, workouts, enforcement, collateral sales and losses on named holders in the order of claims"]
+min_years = 3
+suspects = ["TCR", "BNK", "HSG", "EST"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "discount of forced collateral sales below comparable voluntary sales of dwellings"
+series = "dwelling transactions by cause of sale (HSG)"
+horizon = "at the sale"
+sign = "negative"
+range = [-0.35, -0.05]
+source = "Campbell, Giglio and Pathak (2011), American Economic Review 101(5)"
+source_ref = "Foreclosed Massachusetts houses sell at a discount of about 27 per cent; sales after a death, about 5 to 7 per cent."

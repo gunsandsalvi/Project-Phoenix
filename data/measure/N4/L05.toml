@@ -1,0 +1,26 @@
+id = "L05"
+version = 1
+title = "The credit and housing cycle"
+first_link = "changes in collateral values (HSG prices, marks)"
+traces = ["published lending standards"]
+min_years = 15
+suspects = ["BNK", "HSG", "BCP"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "correlation of credit growth with earlier house-price growth, at its peak lag"
+series = "STA credit to households; HSG prices"
+horizon = "up to eight quarters"
+sign = "positive"
+range = [0.2, 0.9]
+source = "Goodhart and Hofmann (2008), Oxford Review of Economic Policy 24(1)"
+source_ref = "House prices and credit move together, with effects running in both directions."
+
+[[benchmark]]
+statistic = "foreclosure sales' share of transactions after house-price peaks over before"
+series = "dwelling transactions by cause (HSG)"
+horizon = "eight quarters either side of a peak"
+sign = "positive"
+range = [1.2, 6.0]
+source = "Campbell, Giglio and Pathak (2011)"
+source_ref = "Forced sales rise as prices fall after peaks."

@@ -1,0 +1,26 @@
+id = "F02"
+version = 1
+title = "Relative volatilities over the cycle"
+series = ["STA real output, quarterly", "STA real fixed investment, quarterly", "household spending on non-durables and services from match-set records, durability from each product's declaration, quarterly"]
+unit = "country-quarter"
+estimator = { id = "hp", version = 1 }
+filter = { lambda = 1600, log = true }
+window = "all quarters of play"
+sample = "every quarter of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 10
+suspects = ["CAP", "HH", "VAL", "L4"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "sd of cyclical fixed investment over sd of cyclical output"
+range = [1.8, 4.5]
+source = "Stock and Watson (1999), Handbook of Macroeconomics 1A, ch. 1"
+source_ref = "HP-filtered US post-war fixed investment is about 2.5 to 3 times as volatile as output; Backus, Kehoe and Kydland (1992, JPE 100) find investment 2 to 4 times output's volatility across OECD economies."
+
+[[benchmark]]
+statistic = "sd of cyclical non-durables and services consumption over sd of cyclical output"
+range = [0.3, 1.0]
+source = "Stock and Watson (1999); Backus, Kehoe and Kydland (1992)"
+source_ref = "Consumption of non-durables and services moves less than output: about half as much in the US, and between about 0.5 and 1 across OECD economies."

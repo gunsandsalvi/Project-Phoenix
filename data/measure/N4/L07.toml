@@ -1,0 +1,26 @@
+id = "L07"
+version = 1
+title = "The downgrade loop"
+first_link = "downgrades across a mandate boundary (RAT records)"
+traces = ["mandate sales, capital charges, haircuts and issuers' funding costs"]
+min_years = 5
+suspects = ["RAT", "CRD", "FND", "INS"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "abnormal price change of bonds downgraded across the boundary"
+series = "CRD prints"
+horizon = "the month of the downgrade"
+sign = "negative"
+range = [-0.12, -0.005]
+source = "Ellul, Jotikasthira and Lundblad (2011), Journal of Financial Economics 101(3)"
+source_ref = "Insurers constrained by capital sell downgraded bonds, whose prices fall and then partly recover."
+
+[[benchmark]]
+statistic = "probability of a further downgrade after a downgrade over after no rating change"
+series = "RAT records"
+horizon = "one year"
+sign = "positive"
+range = [1.5, 6.0]
+source = "Lando and Skødeberg (2002), Journal of Banking and Finance 26(2-3)"
+source_ref = "Rating downgrades have momentum: a recent downgrade raises the chance of another."

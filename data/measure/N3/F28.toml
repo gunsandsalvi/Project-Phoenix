@@ -1,0 +1,38 @@
+id = "F28"
+version = 1
+title = "Births, moves and housing"
+series = ["births by tenure and region, moves by region (POP records, STA)", "house prices, incomes, unemployment and wages by region"]
+unit = "region-year"
+estimator = { id = "regress", version = 1 }
+filter = { models = ["births on house-price change, by tenure", "births on unemployment", "net migration on earnings gaps"] }
+window = "all years of play"
+sample = "every region"
+pooled = true
+credit = ["B"]
+min_years = 10
+suspects = ["POP", "HSG", "LAB", "XB"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "owners' births per ten per cent house-price rise, per cent"
+range = [0.0, 10.0]
+source = "Dettling and Kearney (2014), Journal of Public Economics 110"
+source_ref = "Rising house prices raise owners' fertility and lower non-owners'."
+
+[[benchmark]]
+statistic = "non-owners' births per ten per cent house-price rise, per cent"
+range = [-8.0, 0.0]
+source = "Dettling and Kearney (2014)"
+source_ref = "Non-owners' fertility falls as house prices rise."
+
+[[benchmark]]
+statistic = "births per point of unemployment, per cent"
+range = [-6.0, 0.0]
+source = "Currie and Schwandt (2014), Proceedings of the National Academy of Sciences 111(41)"
+source_ref = "Fertility falls when unemployment rises."
+
+[[benchmark]]
+statistic = "net migration per point of earnings gap, per cent of population"
+range = [0.0, 1.0]
+source = "Blanchard and Katz (1992), Brookings Papers on Economic Activity 1992(1)"
+source_ref = "People move toward regions whose earnings and employment rise."

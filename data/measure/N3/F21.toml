@@ -1,0 +1,32 @@
+id = "F21"
+version = 1
+title = "Volatility clusters"
+series = ["daily closes of listed shares and the market index"]
+unit = "stock-day"
+estimator = { id = "corr", version = 1 }
+filter = { absolute_returns = true, lags = [1, 5, 10, 20, 50, 100], decay = "power law fitted over the lags" }
+window = "all days of play"
+sample = "listed shares and the index, per country"
+pooled = true
+credit = ["B"]
+min_years = 3
+suspects = ["DLR", "FND", "L2", "L11"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "autocorrelation of absolute daily returns at lag one"
+range = [0.05, 0.45]
+source = "Cont (2001)"
+source_ref = "Absolute returns are positively autocorrelated over long horizons."
+
+[[benchmark]]
+statistic = "power-law decay exponent of that autocorrelation"
+range = [0.15, 0.6]
+source = "Cont (2001)"
+source_ref = "The autocorrelation of absolute returns decays as a power of the lag with exponent between about 0.2 and 0.4."
+
+[[benchmark]]
+statistic = "correlation of returns with future volatility"
+range = [-0.5, -0.01]
+source = "Cont (2001); Black (1976)"
+source_ref = "The leverage effect: falling prices are followed by higher volatility."

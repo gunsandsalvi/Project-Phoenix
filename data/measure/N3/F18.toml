@@ -1,0 +1,26 @@
+id = "F18"
+version = 1
+title = "Credit booms precede banking crises"
+series = ["banking crises dated from events: bank failures, resolutions and emergency lending mapped to Laeven and Valencia's criteria", "STA credit"]
+unit = "country-year"
+estimator = { id = "regress", version = 1 }
+filter = { model = "logit of a crisis onset on five lags of real credit growth", pooled = true }
+window = "all years of play"
+sample = "every year of play, pooled over countries"
+pooled = true
+credit = ["B"]
+min_years = 30
+suspects = ["BFL", "SUP", "L5", "L6"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "sum of the coefficients on lagged real credit growth"
+range = [3.0, 35.0]
+source = "Schularick and Taylor (2012), American Economic Review 102(2)"
+source_ref = "Lagged credit growth predicts crises in 14 advanced economies over 1870-2008, the sum of its five lag coefficients near 20."
+
+[[benchmark]]
+statistic = "area under the ROC curve"
+range = [0.55, 0.85]
+source = "Schularick and Taylor (2012)"
+source_ref = "The credit model's area under the ROC curve is about 0.7."

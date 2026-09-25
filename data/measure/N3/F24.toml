@@ -1,0 +1,26 @@
+id = "F24"
+version = 1
+title = "Credit spreads are countercyclical and predict output"
+series = ["issuers' bond spreads over maturity-matched sovereign yields (CRD prints)", "STA real output", "default events"]
+unit = "country-quarter"
+estimator = { id = "regress", version = 1 }
+filter = { model = "future four-quarter output growth on the spread", intervals = "Newey-West", lags = 4 }
+window = "all quarters of play"
+sample = "every quarter of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 10
+suspects = ["CRD", "RAT", "BNK", "L1", "L7"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "correlation of the average spread with output growth"
+range = [-0.85, -0.1]
+source = "Gilchrist and Zakrajšek (2012), American Economic Review 102(4)"
+source_ref = "Corporate credit spreads widen in downturns."
+
+[[benchmark]]
+statistic = "slope of future four-quarter output growth on the spread, points per point"
+range = [-3.0, -0.2]
+source = "Gilchrist and Zakrajšek (2012)"
+source_ref = "A wider spread predicts slower output growth."

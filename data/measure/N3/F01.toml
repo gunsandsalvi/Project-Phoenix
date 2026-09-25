@@ -1,0 +1,38 @@
+id = "F01"
+version = 1
+title = "Business cycles: growth, and expansions longer than recessions"
+series = ["STA real output, quarterly, per country"]
+unit = "country-quarter"
+estimator = { id = "dating", version = 1 }
+filter = { method = "Harding-Pagan", min_phase_quarters = 2, min_cycle_quarters = 5, log = true }
+window = "all quarters of play"
+sample = "every quarter of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 20
+suspects = ["TEC", "CAP", "FRM", "L4", "L5", "L12"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "mean annual growth of real output, per cent"
+range = [0.5, 6.0]
+source = "Penn World Table 10.01 (Feenstra, Inklaar and Timmer, 2015), rgdpna"
+source_ref = "Country means of annual real GDP growth over 1950-2019: nearly all economies between about 1 and 5 per cent a year; the range adds half a point at each end for the three development levels."
+
+[[benchmark]]
+statistic = "mean expansion length over mean recession length"
+range = [2.5, 9.0]
+source = "NBER Business Cycle Dating Committee chronology; Harding and Pagan (2002), Journal of Monetary Economics 49"
+source_ref = "US post-war expansions average about 58 months against about 11 for recessions, a ratio near 5; Harding and Pagan's quarterly dating of other industrial economies gives ratios between about 3 and 8."
+
+[[benchmark]]
+statistic = "mean recession length, quarters"
+range = [2.0, 6.0]
+source = "NBER Business Cycle Dating Committee chronology; Harding and Pagan (2002)"
+source_ref = "Post-war recessions last on average three to four quarters in the US and other industrial economies' quarterly dating."
+
+[[benchmark]]
+statistic = "coefficient of variation of expansion lengths"
+range = [0.3, 1.1]
+source = "NBER Business Cycle Dating Committee chronology"
+source_ref = "Post-war US expansions range from 12 to 128 months around a mean near 58, a coefficient of variation near 0.6."

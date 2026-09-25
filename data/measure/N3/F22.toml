@@ -1,0 +1,26 @@
+id = "F22"
+version = 1
+title = "Housing: volume and prices move together"
+series = ["dwelling transactions and prices by region, quarterly (HSG, STA)"]
+unit = "region-quarter"
+estimator = { id = "corr", version = 1 }
+filter = { growth = "annual log difference", max_lag_quarters = 8 }
+window = "all quarters of play"
+sample = "every region, per country"
+pooled = true
+credit = ["B"]
+min_years = 5
+suspects = ["HSG", "BNK", "L5"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "contemporaneous correlation of transaction volume with price growth"
+range = [0.1, 0.85]
+source = "Stein (1995), Quarterly Journal of Economics 110(2); Clayton, Miller and Peng (2010), Journal of Real Estate Finance and Economics 40"
+source_ref = "Housing prices and trading volume are strongly positively correlated."
+
+[[benchmark]]
+statistic = "lag in quarters at which volume's correlation with later price growth peaks"
+range = [0.0, 6.0]
+source = "Clayton, Miller and Peng (2010)"
+source_ref = "Volume moves with or ahead of prices."

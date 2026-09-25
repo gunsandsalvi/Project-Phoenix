@@ -1,0 +1,20 @@
+id = "F07"
+version = 1
+title = "Fat tails in output growth"
+series = ["STA real output, quarterly"]
+unit = "country-quarter"
+estimator = { id = "subbotin", version = 1 }
+filter = { growth = "quarterly log difference", standardised = true }
+window = "all quarters of play"
+sample = "every quarter of play after settling, per country"
+pooled = true
+credit = ["B"]
+min_years = 20
+suspects = ["FRM", "catastrophes", "L2", "L6"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "exponential-power shape of standardised output growth (1 Laplace, 2 normal)"
+range = [0.6, 1.6]
+source = "Fagiolo, Napoletano and Roventini (2008), Journal of Applied Econometrics 23(5)"
+source_ref = "Quarterly output growth rates of OECD countries have exponential-power shapes near 1, well below the normal's 2."

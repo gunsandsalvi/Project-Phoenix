@@ -1,0 +1,20 @@
+id = "F17"
+version = 1
+title = "Defaults cluster"
+series = ["firm default events", "each firm's default probability from its lenders' loan assessments"]
+unit = "time bin"
+estimator = { id = "cluster", version = 1 }
+filter = { bins = "of equal expected defaults", expected_per_bin = 8 }
+window = "all of play"
+sample = "firms with a loan assessment, per country"
+pooled = true
+credit = ["B"]
+min_years = 5
+suspects = ["TCR", "L1", "L6", "L9"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "variance over mean of default counts in bins of equal expected defaults"
+range = [1.2, 6.0]
+source = "Das, Duffie, Kapadia and Saita (2007), Journal of Finance 62(1)"
+source_ref = "US corporate defaults cluster beyond what firms' own default intensities imply: binned counts are over-dispersed against the Poisson."

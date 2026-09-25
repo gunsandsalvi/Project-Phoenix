@@ -1,0 +1,26 @@
+id = "F23"
+version = 1
+title = "The yield curve predicts recessions"
+series = ["bill and ten-year bond yields (SOV prints)", "the world's own recession dating (F01)"]
+unit = "country-quarter"
+estimator = { id = "regress", version = 1 }
+filter = { model = "probit of a recession within four quarters on the term spread" }
+window = "all quarters of play"
+sample = "every quarter of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 20
+suspects = ["SOV", "CB", "DLR", "VAL"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "mean ten-year less bill spread, percentage points"
+range = [0.3, 2.5]
+source = "Estrella and Mishkin (1998), Review of Economics and Statistics 80(1)"
+source_ref = "The US term spread averaged about 1.5 points."
+
+[[benchmark]]
+statistic = "probit coefficient on the spread, four quarters ahead"
+range = [-1.2, -0.2]
+source = "Estrella and Mishkin (1998)"
+source_ref = "A flatter or inverted curve predicts recessions four quarters ahead, with a negative, significant coefficient."

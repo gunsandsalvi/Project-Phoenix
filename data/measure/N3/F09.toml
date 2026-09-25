@@ -1,0 +1,26 @@
+id = "F09"
+version = 1
+title = "Firm growth: tent-shaped and falling with size"
+series = ["annual employment and sales growth of continuing firms, individuals and firm tracers"]
+unit = "firm-year"
+estimator = { id = "subbotin", version = 1 }
+filter = { growth = "annual log difference", size_bins = 8, size = "employment at the start of the year" }
+window = "every year of play"
+sample = "continuing firms, per country"
+pooled = true
+credit = ["B"]
+min_years = 5
+suspects = ["FRM", "TEC", "CAP"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "exponential-power shape of firm growth rates"
+range = [0.5, 1.4]
+source = "Bottazzi and Secchi (2006), RAND Journal of Economics 37(2); Stanley et al. (1996), Nature 379"
+source_ref = "Firm growth rates have Laplace-like, tent-shaped densities, exponential-power shapes near 1."
+
+[[benchmark]]
+statistic = "slope of log sd of growth on log size across bins"
+range = [-0.35, -0.05]
+source = "Stanley et al. (1996); Amaral et al. (1997), Journal de Physique I 7"
+source_ref = "The spread of growth falls with size as a power near -0.15 to -0.2."

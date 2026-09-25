@@ -1,0 +1,32 @@
+id = "F13"
+version = 1
+title = "Income and wealth: Pareto tops, wealth more unequal"
+series = ["household pre-tax income: the adult roles' year-to-date taxable-income positions at each year end", "household net worth at year ends; cells by weight"]
+unit = "household-year"
+estimator = { id = "tail", version = 1 }
+filter = { top_shares = [0.01, 0.001], method = "Pareto exponent from top shares, and Hill above the 99th percentile" }
+window = "every year end of play"
+sample = "all households, per country"
+pooled = false
+credit = ["S"]
+min_years = 1
+suspects = ["HH", "EQY", "POP", "LAB", "TAX", "L3"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "Pareto exponent of top incomes"
+range = [1.4, 3.2]
+source = "Atkinson, Piketty and Saez (2011), Journal of Economic Literature 49(1)"
+source_ref = "Inverted Pareto coefficients of top incomes between about 1.6 and 2.5 across countries and decades, Pareto exponents between about 1.7 and 2.7."
+
+[[benchmark]]
+statistic = "Pareto exponent of top wealth"
+range = [1.1, 2.0]
+source = "Vermeulen (2018), Review of Income and Wealth 64(2)"
+source_ref = "Top wealth tails, corrected for survey under-coverage with rich lists, have Pareto exponents near 1.3 to 1.7."
+
+[[benchmark]]
+statistic = "wealth's exponent less income's"
+range = [-1.8, -0.05]
+source = "Atkinson, Piketty and Saez (2011); Vermeulen (2018)"
+source_ref = "Wealth is more concentrated than income: its exponent is the lower."

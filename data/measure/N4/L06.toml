@@ -1,0 +1,17 @@
+id = "L06"
+version = 1
+title = "Runs and contagion"
+first_link = "a bank's published losses (ACC reports)"
+traces = ["forced sales, funding cost and facility use at the struck bank", "losses along named exposures"]
+min_years = 5
+suspects = ["BNK", "BFL", "BCP", "SUP"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "withdrawal rate of uninsured deposits less insured, after the losses"
+series = "deposit balances by insurance cover (BNK)"
+horizon = "four weeks"
+sign = "positive"
+range = [0.01, 0.4]
+source = "Iyer and Puri (2012), American Economic Review 102(4)"
+source_ref = "In a bank run, depositors above the insurance limit withdraw far more often than insured ones."

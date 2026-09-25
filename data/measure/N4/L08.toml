@@ -1,0 +1,26 @@
+id = "L08"
+version = 1
+title = "The fiscal and political loop"
+first_link = "downturns in the world's own dating (F01)"
+traces = ["benefits and receipts", "deficit and issuance"]
+min_years = 20
+suspects = ["TRS", "SOV", "TAX", "SOC", "POL"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "long forward rate per point of projected deficit over output"
+series = "SOV prints; the published balance and debt (STA)"
+horizon = "annual"
+sign = "positive"
+range = [0.05, 0.6]
+source = "Laubach (2009), Journal of the European Economic Association 7(4)"
+source_ref = "A one-point rise in the projected deficit ratio raises long-term forward rates by about 20 to 30 basis points."
+
+[[benchmark]]
+statistic = "incumbents' vote share per point of unemployment"
+series = "election results and unemployment (POL, STA)"
+horizon = "the election"
+sign = "negative"
+range = [-3.0, -0.1]
+source = "Fair (1978), Review of Economics and Statistics 60(2)"
+source_ref = "Incumbents lose votes when the economy does badly."

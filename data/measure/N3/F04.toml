@@ -1,0 +1,20 @@
+id = "F04"
+version = 1
+title = "Okun's law"
+series = ["STA unemployment rate, annual", "STA real output, annual"]
+unit = "country-year"
+estimator = { id = "regress", version = 1 }
+filter = { model = "change in unemployment rate on real output growth", intervals = "Newey-West", lags = 2 }
+window = "all years of play"
+sample = "every year of play after settling, per country"
+pooled = false
+credit = ["B"]
+min_years = 15
+suspects = ["LAB", "FRM"]
+earlier_reads = []
+
+[[benchmark]]
+statistic = "OLS slope of the change in the unemployment rate on output growth"
+range = [-0.9, -0.1]
+source = "Ball, Leigh and Loungani (2017), Journal of Money, Credit and Banking 49(7)"
+source_ref = "Okun coefficients for twenty advanced economies over 1980-2011 lie between about -0.15 (Japan) and -0.85 (Spain), near -0.4 for the US."

@@ -112,8 +112,8 @@ impl<'ast> Visit<'ast> for Finder<'_> {
 }
 
 /// Where the committed data may lie: the world's constants, the shared primitives, the setups, the level templates,
-/// the name tables, the inventory and the observer's declared reads. A country's own data is instantiated in a run's directory at a new game and is
-/// never committed.
+/// the name tables, the inventory, the observer's declared reads and the measures' definitions. A country's own data
+/// is instantiated in a run's directory at a new game and is never committed.
 const DATA_PLACES: &[&str] = &[
     "data/world.toml",
     "data/inventory.toml",
@@ -121,6 +121,7 @@ const DATA_PLACES: &[&str] = &[
     "data/setup/",
     "data/names/",
     "data/observer/",
+    "data/measure/",
     "data/profiles/developed/",
     "data/profiles/emerging/",
     "data/profiles/developing/",

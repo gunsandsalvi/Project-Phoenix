@@ -1,0 +1,26 @@
+id = "L12"
+version = 1
+title = "Growth"
+first_link = "discoveries, imitations and licences (TEC records)"
+traces = ["total factor productivity growth traced to ways discovered in the run (LC-6-06)"]
+min_years = 20
+suspects = ["TEC", "FRM", "CAP"]
+estimator = { id = "event", version = 1 }
+
+[[benchmark]]
+statistic = "fit of a logistic path to each way's share of adopters"
+series = "adoption of ways by firms (TEC)"
+horizon = "the way's life"
+sign = "positive"
+range = [0.8, 1.0]
+source = "Griliches (1957), Econometrica 25(4)"
+source_ref = "Adoption of hybrid corn followed S-shaped logistic paths."
+
+[[benchmark]]
+statistic = "year-on-year persistence of firm TFP"
+series = "firm TFP within industries (F10's measure)"
+horizon = "annual"
+sign = "positive"
+range = [0.5, 0.95]
+source = "Syverson (2011), Journal of Economic Literature 49(2); Foster, Haltiwanger and Syverson (2008), American Economic Review 98(1)"
+source_ref = "Productivity differences within industries are large and persistent."
