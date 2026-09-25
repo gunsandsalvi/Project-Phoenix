@@ -104,9 +104,12 @@ pub mod phx_pop::prims
 pub struct phx_pop::prims::ClearedStream
 impl phx_core::streams::StreamDef for phx_pop::prims::ClearedStream
 pub const phx_pop::prims::ClearedStream::DECL: phx_core::streams::StreamDecl
-pub struct phx_pop::prims::HouseholdsStream
-impl phx_core::streams::StreamDef for phx_pop::prims::HouseholdsStream
-pub const phx_pop::prims::HouseholdsStream::DECL: phx_core::streams::StreamDecl
+pub struct phx_pop::prims::EstateSiteStream
+impl phx_core::streams::StreamDef for phx_pop::prims::EstateSiteStream
+pub const phx_pop::prims::EstateSiteStream::DECL: phx_core::streams::StreamDecl
+pub struct phx_pop::prims::LeavingStream
+impl phx_core::streams::StreamDef for phx_pop::prims::LeavingStream
+pub const phx_pop::prims::LeavingStream::DECL: phx_core::streams::StreamDecl
 pub struct phx_pop::prims::RepPrims
 pub phx_pop::prims::RepPrims::multiplicity: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_pop::prims::RepPrims::population_divisor: phx_core::register::Prim<phx_num::qty::Count>

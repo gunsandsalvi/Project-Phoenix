@@ -11,7 +11,7 @@ use phx_ledger::transfer::MoveAt;
 use phx_macros::clause;
 use phx_num::round::Round;
 use phx_num::{Missing, violation};
-use phx_pop::prims::HouseholdsStream;
+use phx_pop::prims::LeavingStream;
 use phx_rand::{Subject, SubjectTag};
 
 use crate::consts::HEIRLESS_DESTINATION;
@@ -57,7 +57,7 @@ impl World {
         for estate in open {
             let destination = self.destination(estate);
             let subject = Subject::new(SubjectTag::Party, estate.get());
-            let mut draws = self.streams.open(&HouseholdsStream::DECL, subject, day, SubStep::S7c.ordinal());
+            let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S7c.ordinal());
             match self.books.settle_estate(estate, destination, m, &mut draws, self.audit.stream()) {
                 Ok(s) => {
                     self.agent_day.estates_settled += 1;

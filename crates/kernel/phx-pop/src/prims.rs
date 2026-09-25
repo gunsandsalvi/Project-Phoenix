@@ -16,7 +16,8 @@ declare_prim! {
 }
 
 declare_stream! { pub ClearedStream = "REP.cleared" { purpose: Pairing, keyed: false, clause: "REP.23" } }
-declare_stream! { pub HouseholdsStream = "REP.households" { purpose: Sample, keyed: false, clause: "REP.26" } }
+declare_stream! { pub LeavingStream = "REP.leaving" { purpose: Pairing, keyed: false, clause: "REP.23" } }
+declare_stream! { pub EstateSiteStream = "REP.estate_site" { purpose: Sample, keyed: false, clause: "PTY.9" } }
 
 /// The representation's primitives as the world reads them.
 #[derive(Debug)]
@@ -27,7 +28,8 @@ pub struct RepPrims {
 
 impl RepPrims {
     pub fn declare(d: &mut Declarations) -> RepPrims {
-        d.stream(HouseholdsStream::DECL);
+        d.stream(LeavingStream::DECL);
+        d.stream(EstateSiteStream::DECL);
         d.stream(ClearedStream::DECL);
         RepPrims { multiplicity: d.prim(&MULTIPLICITY), population_divisor: d.prim(&POPULATION_DIVISOR) }
     }

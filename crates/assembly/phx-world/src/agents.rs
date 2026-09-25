@@ -16,7 +16,7 @@ use phx_pop::explicit::{household, write_back};
 use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::population::Population;
-use phx_pop::prims::HouseholdsStream;
+use phx_pop::prims::{EstateSiteStream, LeavingStream};
 use phx_pop::table::AgentList;
 use phx_rand::{Draws, Subject, SubjectTag};
 use phx_store::SystemBacking;
@@ -420,10 +420,10 @@ impl World {
         self.agent_day.gone += gone * k;
         self.population.count(kind, (0, 0), (0, gone * k));
         let subject = Subject::new(SubjectTag::Party, party.get());
-        let mut draws = self.streams.open(&HouseholdsStream::DECL, subject, day, SubStep::S3e.ordinal());
+        let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S3e.ordinal());
         self.leave(day, party, (&written.leaving, twins), &mut draws);
         if written.ended {
-            self.end_agent(day, (kind, slot, party), region, &mut draws);
+            self.end_agent(day, (kind, slot, party), region);
         }
     }
 
@@ -453,7 +453,7 @@ impl World {
     /// An agent no one is left in ended: what it holds passes to one estate sited in its region, and its row and
     /// identity end.
     #[clause("PTY.9", "POP.15", "REP.16")]
-    fn end_agent(&mut self, day: Day, (kind, slot, party): (usize, Slot, PartyId), region: Option<u32>, d: &mut Draws) {
+    fn end_agent(&mut self, day: Day, (kind, slot, party): (usize, Slot, PartyId), region: Option<u32>) {
         let m = move_at(&self.register, day, ApplyAt::Day(SubStep::S3e));
         let (rows, twins): (Vec<(LineId, Side, u32)>, u32) = {
             let table = Population::table::<SystemBacking>(self.books.parties.cells(), kind);
@@ -474,7 +474,9 @@ impl World {
                     party = party.get()
                 );
             };
-            let site = self.estate_site(region, d);
+            let subject = Subject::new(SubjectTag::Party, party.get());
+            let mut d = self.streams.open(&EstateSiteStream::DECL, subject, day, SubStep::S3e.ordinal());
+            let site = self.estate_site(region, &mut d);
             // An agent's twins leave an estate each, alike: one estate standing for them all.
             let estate = self.books.parties.begin_weighted(phx_core::ESTATE_KIND.name, site, day, twins);
             let succeeded = self.books.dues.succeeded;
