@@ -1343,7 +1343,7 @@ headroom, this document's margin for the estimates' error.
 | Store | Count | Bytes each | Budget |
 | --- | --- | --- | --- |
 | Household agents: attributes, positions (with each deposit row's), rates, review exposures and attention rates per kind, own outlooks, arena references, the due-day run's head (itemised in the plan, S0.21, S1.12; Stage 2's review kinds S2.05, S2.06) | 0.7 M | 576 | 403 MB |
-| Household persons and attachments (budgeted as the compact profiles they replace) | 0.7 M × 150 entries | 2 | 210 MB |
+| Household persons and attachments, a packed word each | 0.7 M × 43 words | 8 | 240 MB |
 | Relationship rows (40 per household agent, 12 per firm agent, 2 M of individuals; Stage 0's pensions in payment, 0.35 M state pension rows at 16 bytes and 0.5 M DB pensioner rows at 24; Stage 2's invoice rows, 10 per firm agent and 0.5 M of individuals, one per (holder, market, terms, statement period)) | 36.85 M | ≈ 23 average | 849 MB |
 | Line holder lists, with block slack (none on the pensions' retail side, §4.5) | 36 M | 6 | 216 MB |
 | Holdings and instruments' holder lists | 5.25 M | 28 | 147 MB |
@@ -1351,49 +1351,47 @@ headroom, this document's margin for the estimates' error.
 | Lines (kind, terms id, side counts, next due day, holder list; Stage 2's invoice lines are a few thousand) | 3 M | 32 | 96 MB |
 | Loan lines' balance totals per arrears stage (Stage 2) | 0.3 M × 4 | 8 | 10 MB |
 | Interned terms with their sharded hash (keys retired with cells) | 1.5 M | 72 | 108 MB |
-| Landing index (retired with cells) | 0.95 M | 64 | 61 MB |
 | Agenda: next days per (agent, reason), one calendar entry per agent | 0.95 M × 16 | 5.5 | 85 MB |
-| Group aggregates and pieces (retired with cells) | — | — | 60 MB |
 | Kind tables of individuals and their facets | 0.15 M | 1.5 KB | 225 MB |
 | Estates open, one per ended party: openings × life (§9.1) | 60 k | 512 | 31 MB |
 | Instruments, lots, liens, commitments, messages that live across days (Stage 2's listings, 13 MB) | — | — | 163 MB |
 | Markets, marks and fixings history; public records (Stage 2's filed accounts over two years, 48 MB); events | — | — | 198 MB |
 | Map, network, deposits, stock per (tile, class) and its index | — | — | 80 MB |
 | Directory with bounded tombstones | — | — | 50 MB |
-| Day buffers at the worst day (payee reduction streamed shard by shard; intents; sort scratch) | — | — | 600 MB |
+| Day buffers at the worst day (payee reduction streamed shard by shard; intents; sort scratch), by their room; measured at 889 MB on Stage 0's twins payday, over this line (the plan's F-082) | — | — | 600 MB |
 | Arena slack and page tails (15% of variable-length stores) | — | — | 214 MB |
 | Save buffers (the renumbering slice retired with cells) | — | — | 94 MB |
 | Views (tracers retired with cells) | — | — | 60 MB |
 | Android process baseline | — | — | 250 MB |
-| **Total** | | | **4 335 MB** |
+| **Total** | | | **4 244 MB** |
 
-Through Stage 1 the design point peaks at about 4.08 GB against 4.5 GB — the run head in every household record from
-Stage 0 adds 6 MB, Stage 0's pensions in payment 20 MB with slack, and the landing index (retired with cells) as
-measured (64 bytes a key) 13 MB more than designed — so 9.3% headroom, just short of the required 10%. Stage 2 adds about 251 MB — invoice rows with their holder-list entries and slack 104 MB, filed accounts 48 MB,
-household agents 45 MB, estates 31 MB, listings 13 MB, loan lines' stage totals 10 MB — to about **4.32 GB**: 4%
-headroom, short of the required 10% (a peak of at most 4 050 MB), as the plan's F-005 records. Stage 3 adds about
-240 MB — institutions' positions and their lots 104 MB, households' holding rows 30 MB, individuals' deviations from
-their methods' outlooks 19 MB, household attributes with participation 18 MB, registered outlooks 12 MB,
-household agents 11 MB (592 bytes), money-market lines 10 MB, records and instruments 10 MB, slack 26 MB — to about
-**4.56 GB**: 1.4% over the budget itself, as the plan's F-003 records. Stage 4 adds about 387 MB (the plan's S4.07):
-relationship rows 138 MB — policies 4.9 M and firms' 0.5 M at 16 bytes, DB active and deferred rights 1.3 M at 24,
-derivatives 1 M at 16 with no `amount`, claim and compensation lines — household attachments 42 MB (policy attachments
-with their renewal bands, and the pension scheme joint with employment), DC pots with their `pending` word 38 MB,
-lines 35 MB, interned terms 25 MB, household agents 22 MB (624 bytes), kind tables 15 MB, records and valuations 30 MB,
-holder lists 8 MB (derivative lines and institutional sides only, §4.5), slack 34 MB — to about **4.95 GB**: 10% over
-the budget itself, as the plan's F-004 records. Stage 5 adds about 116 MB (the plan's Stage 5 ledger, after its
+Through Stage 1 the design point peaks at about 3.98 GB against 4.5 GB — the run head in every household record from
+Stage 0 adds 6 MB, Stage 0's pensions in payment 20 MB with slack, the persons and attachments as laid out 30 MB more
+than first budgeted, and the landing index (as measured) and group aggregates retired with cells 134 MB less — so 12%
+headroom, if the day buffers are brought under their line (F-082). Stage 2 adds about 251 MB — invoice rows with their
+holder-list entries and slack 104 MB, filed accounts 48 MB, household agents 45 MB, estates 31 MB, listings 13 MB, loan
+lines' stage totals 10 MB — to about **4.23 GB**: 6% headroom, short of the required 10% (a peak of at most 4 050 MB),
+as the plan's F-005 records. Stage 3 adds about 240 MB — institutions' positions and their lots 104 MB, households'
+holding rows 30 MB, individuals' deviations from their methods' outlooks 19 MB, household attributes with participation
+18 MB, registered outlooks 12 MB, household agents 11 MB (592 bytes), money-market lines 10 MB, records and instruments
+10 MB, slack 26 MB — to about **4.47 GB**: 0.7% headroom, as the plan's F-003 records. Stage 4 adds about 387 MB (the
+plan's S4.07): relationship rows 138 MB — policies 4.9 M and firms' 0.5 M at 16 bytes, DB active and deferred rights 1.3
+M at 24, derivatives 1 M at 16 with no `amount`, claim and compensation lines — household attachments 42 MB (policy
+attachments with their renewal bands, and the pension scheme joint with employment), DC pots with their `pending` word
+38 MB, lines 35 MB, interned terms 25 MB, household agents 22 MB (624 bytes), kind tables 15 MB, records and valuations
+30 MB, holder lists 8 MB (derivative lines and institutional sides only, §4.5), slack 34 MB — to about **4.86 GB**: 8%
+over the budget itself, as the plan's F-004 records. Stage 5 adds about 116 MB (the plan's Stage 5 ledger, after its
 reviews' remedies): relationship rows 42 MB — benefit claimants 0.65 M at 16 bytes, earnings-related state-pension
 rights 0.6 M at 24, tax payables and instalments 0.35 M at 24, payroll payables' balances per base, foreign-currency
-deposits and nostros at 38 — lines and terms 15 MB, attachments 13 MB (intentions during a campaign, waits and
-claims), household agents 11 MB (640 bytes), foreign holdings 9 MB (at 32 and 24 bytes), records 8 MB, the `vote`
-review's side column during a campaign 5 MB, messages 2 MB, kind tables 1 MB, slack 10 MB — to about **5.07 GB**: 13%
-over the budget itself, as the plan's F-006 records. Stage 6 adds (the plan's Stage 6 ledger): firm agents' known
-ways, about 50 k at about 1 KB, 50 MB; household persons' records 28 MB (the education record, schooling, the search
-band, participation and retirement); household agents 22 MB (672 bytes); relationship rows 6 MB (kin rows, licences);
-firm agents 1 MB (504 bytes, past this table's 500-byte line by 4) and their cumulative-output lists 7 MB; ways,
-known-way sets and patents 7 MB; views 10 MB; imitation pools 4 MB; receipts 1 MB; slack 11 MB — about 147 MB, to
-about **5.21 GB**: 16% over the budget itself, as the plan's F-007 records. How rows fall as the factor rises is
-measured (§14.6).
+deposits and nostros at 38 — lines and terms 15 MB, attachments 13 MB (intentions during a campaign, waits and claims),
+household agents 11 MB (640 bytes), foreign holdings 9 MB (at 32 and 24 bytes), records 8 MB, the `vote` review's side
+column during a campaign 5 MB, messages 2 MB, kind tables 1 MB, slack 10 MB — to about **4.97 GB**: 10% over the budget
+itself, as the plan's F-006 records. Stage 6 adds (the plan's Stage 6 ledger): firm agents' known ways, about 50 k at
+about 1 KB, 50 MB; household persons' records 28 MB (the education record, schooling, the search band, participation and
+retirement); household agents 22 MB (672 bytes); relationship rows 6 MB (kin rows, licences); firm agents 1 MB (504
+bytes, past this table's 500-byte line by 4) and their cumulative-output lists 7 MB; ways, known-way sets and patents 7
+MB; views 10 MB; imitation pools 4 MB; receipts 1 MB; slack 11 MB — about 147 MB, to about **5.12 GB**: 14% over the
+budget itself, as the plan's F-007 records. How rows fall as the factor rises is measured (§14.6).
 
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
