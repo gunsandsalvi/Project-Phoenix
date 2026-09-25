@@ -787,6 +787,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "phx-val"
+version = "0.1.0"
+dependencies = [
+ "libm",
+ "phx-core",
+ "phx-id",
+ "phx-macros",
+ "phx-market",
+ "phx-num",
+ "phx-rand",
+ "trybuild",
+]
+
+[[package]]
 name = "phx-world"
 version = "0.1.0"
 dependencies = [

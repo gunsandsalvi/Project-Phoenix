@@ -1,0 +1,22 @@
+[package]
+name = "phx-val"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+libm.workspace = true
+phx-core = { path = "../phx-core" }
+phx-id = { path = "../../foundation/phx-id" }
+phx-macros = { path = "../../foundation/phx-macros" }
+phx-num = { path = "../../foundation/phx-num" }
+phx-rand = { path = "../../foundation/phx-rand" }
+
+[dev-dependencies]
+phx-market = { path = "../phx-market" }
+trybuild.workspace = true
+
+[lints]
+workspace = true

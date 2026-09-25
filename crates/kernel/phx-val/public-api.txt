@@ -1,0 +1,128 @@
+pub mod phx_val
+pub mod phx_val::attention
+pub struct phx_val::attention::Span
+pub phx_val::attention::Span::days: u32
+pub phx_val::attention::Span::var_public: f64
+pub fn phx_val::attention::exposure(f64, f64, &[phx_val::attention::Span]) -> f64
+pub fn phx_val::attention::gain(f64, f64) -> f64
+pub fn phx_val::attention::intensity(f64, f64, f64) -> f64
+pub fn phx_val::attention::probability(f64) -> f64
+pub mod phx_val::experience
+pub fn phx_val::experience::long_mean(&[f64], u32, f64) -> phx_num::missing::Missing<f64>
+pub fn phx_val::experience::weight(u32, u32, f64) -> f64
+pub mod phx_val::heuristic
+pub struct phx_val::heuristic::Adaptive
+impl phx_val::heuristic::Heuristic for phx_val::heuristic::Adaptive
+pub fn phx_val::heuristic::Adaptive::name(&self) -> &'static str
+pub fn phx_val::heuristic::Adaptive::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub struct phx_val::heuristic::Anchor
+impl phx_val::heuristic::Heuristic for phx_val::heuristic::Anchor
+pub fn phx_val::heuristic::Anchor::name(&self) -> &'static str
+pub fn phx_val::heuristic::Anchor::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub struct phx_val::heuristic::Announcement
+impl phx_val::heuristic::Heuristic for phx_val::heuristic::Announcement
+pub fn phx_val::heuristic::Announcement::name(&self) -> &'static str
+pub fn phx_val::heuristic::Announcement::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub struct phx_val::heuristic::HeuristicId(_)
+impl phx_val::heuristic::HeuristicId
+pub const fn phx_val::heuristic::HeuristicId::index(self) -> u8
+pub fn phx_val::heuristic::HeuristicId::new(u8) -> phx_val::heuristic::HeuristicId
+pub fn phx_val::heuristic::HeuristicId::rule(self) -> &'static dyn phx_val::heuristic::Heuristic
+pub struct phx_val::heuristic::Params
+pub phx_val::heuristic::Params::gamma: f64
+pub phx_val::heuristic::Params::kappa: f64
+pub phx_val::heuristic::Params::lambda: f64
+pub struct phx_val::heuristic::Seen
+pub phx_val::heuristic::Seen::announced: phx_num::missing::Missing<phx_val::heuristics::Announced>
+pub phx_val::heuristic::Seen::before: f64
+pub phx_val::heuristic::Seen::horizon_end: phx_id::day::Day
+pub phx_val::heuristic::Seen::last: f64
+pub phx_val::heuristic::Seen::level: f64
+pub phx_val::heuristic::Seen::previous: f64
+pub struct phx_val::heuristic::Trend
+impl phx_val::heuristic::Heuristic for phx_val::heuristic::Trend
+pub fn phx_val::heuristic::Trend::name(&self) -> &'static str
+pub fn phx_val::heuristic::Trend::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub const phx_val::heuristic::MENU: [&dyn phx_val::heuristic::Heuristic; 4]
+pub trait phx_val::heuristic::Heuristic: phx_val::heuristic::menu::OnTheMenu + core::marker::Sync + core::fmt::Debug
+pub fn phx_val::heuristic::Heuristic::name(&self) -> &'static str
+pub fn phx_val::heuristic::Heuristic::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+impl phx_val::heuristic::Heuristic for phx_val::heuristic::Adaptive
+pub fn phx_val::heuristic::Adaptive::name(&self) -> &'static str
+pub fn phx_val::heuristic::Adaptive::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+impl phx_val::heuristic::Heuristic for phx_val::heuristic::Anchor
+pub fn phx_val::heuristic::Anchor::name(&self) -> &'static str
+pub fn phx_val::heuristic::Anchor::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+impl phx_val::heuristic::Heuristic for phx_val::heuristic::Announcement
+pub fn phx_val::heuristic::Announcement::name(&self) -> &'static str
+pub fn phx_val::heuristic::Announcement::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+impl phx_val::heuristic::Heuristic for phx_val::heuristic::Trend
+pub fn phx_val::heuristic::Trend::name(&self) -> &'static str
+pub fn phx_val::heuristic::Trend::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub mod phx_val::heuristics
+pub struct phx_val::heuristics::Announced
+pub phx_val::heuristics::Announced::effective: phx_id::day::Day
+pub phx_val::heuristics::Announced::level: f64
+pub fn phx_val::heuristics::adaptive(f64, f64, f64) -> f64
+pub fn phx_val::heuristics::anchor(f64, f64, f64) -> f64
+pub fn phx_val::heuristics::announcement(f64, phx_val::heuristics::Announced, phx_id::day::Day) -> f64
+pub fn phx_val::heuristics::trend(f64, f64, f64) -> f64
+pub mod phx_val::method
+pub struct phx_val::method::AgeWindow(pub u16)
+pub struct phx_val::method::MemoryType(pub u8)
+pub struct phx_val::method::Method
+pub phx_val::method::Method::heuristic: phx_val::heuristic::HeuristicId
+pub phx_val::method::Method::memory: phx_val::method::MemoryType
+pub phx_val::method::Method::window: phx_val::method::AgeWindow
+pub fn phx_val::method::outlook(phx_val::method::Method, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub mod phx_val::outlook
+pub struct phx_val::outlook::Outlook
+pub phx_val::outlook::Outlook::ccy: phx_num::missing::Missing<phx_num::money::Ccy>
+pub phx_val::outlook::Outlook::day: phx_id::day::Day
+pub phx_val::outlook::Outlook::horizon: phx_core::calendar::period::Period
+pub phx_val::outlook::Outlook::mean: phx_num::fixed::Fixed<6>
+pub phx_val::outlook::Outlook::unit: phx_num::qty::UnitId
+pub phx_val::outlook::Outlook::var: phx_val::outlook::VarId
+pub phx_val::outlook::Outlook::width: phx_num::fixed::Fixed<6>
+impl phx_val::outlook::Outlook
+pub fn phx_val::outlook::Outlook::formed_by(&self, phx_id::day::Day) -> bool
+pub struct phx_val::outlook::VarId(_)
+impl phx_val::outlook::VarId
+pub const fn phx_val::outlook::VarId::get(self) -> u32
+pub const fn phx_val::outlook::VarId::new(u32) -> phx_val::outlook::VarId
+pub fn phx_val::outlook::fixed(f64) -> phx_num::fixed::Fixed<6>
+pub mod phx_val::registered
+pub struct phx_val::registered::Registered
+impl phx_val::registered::Registered
+pub fn phx_val::registered::Registered::apply(&mut self, &[((phx_val::method::Method, phx_val::outlook::VarId), i64)])
+pub fn phx_val::registered::Registered::is_empty(&self) -> bool
+pub fn phx_val::registered::Registered::len(&self) -> usize
+pub fn phx_val::registered::Registered::methods_of(&self, phx_val::outlook::VarId) -> impl core::iter::traits::iterator::Iterator<Item = phx_val::method::Method> + '_
+pub fn phx_val::registered::deviation_after(f64, f64, u32) -> f64
+pub mod phx_val::schedule
+pub struct phx_val::schedule::Schedule
+pub phx_val::schedule::Schedule::orders: alloc::vec::Vec<(phx_num::price::PriceRaw, i64)>
+pub mod phx_val::surprise
+pub fn phx_val::surprise::surprise(f64, f64) -> f64
+pub fn phx_val::surprise::wakes(f64, f64, f64) -> bool
+pub fn phx_val::surprise::width(phx_num::missing::Missing<f64>, f64, f64) -> f64
+pub mod phx_val::switching
+pub fn phx_val::switching::performance(phx_num::missing::Missing<f64>, f64, f64) -> f64
+pub fn phx_val::switching::shares(&[phx_num::missing::Missing<f64>], f64, &mut [f64])
+pub mod phx_val::value
+pub struct phx_val::value::Flow
+pub phx_val::value::Flow::amount: f64
+pub phx_val::value::Flow::years: f64
+pub struct phx_val::value::Value
+impl phx_val::value::Value
+pub fn phx_val::value::Value::of(phx_num::money::Ccy, f64) -> phx_val::value::Value
+pub fn phx_val::value::Value::worth(self) -> phx_num::money::Money
+pub fn phx_val::value::annuity(f64, u32, f64) -> f64
+pub fn phx_val::value::claim_value(&[phx_val::value::Flow], f64) -> f64
+pub fn phx_val::value::comparable(&[f64], f64) -> phx_num::missing::Missing<f64>
+pub fn phx_val::value::dwelling_value(f64, u32, f64, f64) -> f64
+pub fn phx_val::value::firm_value(f64, f64, f64) -> phx_num::missing::Missing<f64>
+pub fn phx_val::value::offer_value(f64, f64, u32, f64, f64) -> f64
+pub fn phx_val::value::platform_value<P>(&P, impl core::ops::function::Fn(&P) -> f64) -> f64
+pub fn phx_val::value::project_value(f64, f64, f64, u32, f64) -> f64
+pub fn phx_val::value::required_return(f64, f64, f64) -> f64

@@ -5387,7 +5387,7 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 
 ### S1.01 — `phx-val`: outlooks, heuristics, surprises and values
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: VAL.1–VAL.23, all of them.
@@ -5478,9 +5478,10 @@ systems whose parties hold them — `sys-hh` for households (S1.12) and `sys-frm
     for the decisions that read the variable (REP.35): own variables at the visit that observed them; public series
     by architecture §7.3's wake pass over the keys of the stances and types it reaches.
 - **Attention** (REP.21), a continuous decision of the cell, computed at its visits, per lumpy decision kind k:
-  - the loss from an unreviewed decision grows as ½·ψ_k·σ²·τ² over τ days, where σ² is the variance per day of what
-    the decision targets (read from the party's outlook widths, in the target's unit squared per day) and ψ_k is the
-    loss's curvature at the party's position (money per unit squared, from the decision's pure evaluation form);
+  - a decision left unreviewed loses ½·ψ_k·σ²·t a day at t days, so ¼·ψ_k·σ²·τ² over τ days, where σ² is the
+    variance per day of what the decision targets (read from the party's outlook widths, in the target's unit squared
+    per day) and ψ_k is the loss's curvature at the party's position (money per unit squared per day, from the
+    decision's pure evaluation form), so that λ_k below is per day;
   - reviewing costs c_k in money: its hours (TECHNOLOGY) at the party's own wage or value of leisure;
   - minimising c_k ÷ τ + ¼·ψ_k·σ²·τ gives the review intensity λ_k = ½·sqrt(ψ_k·σ² ÷ c_k), per day;
   - σ² is the party's own part plus its method's public part, so λ_k = g_k·sqrt(σ²_own + σ²_pub,m), with
@@ -5515,7 +5516,7 @@ systems whose parties hold them — `sys-hh` for households (S1.12) and `sys-frm
 - `switching_shares_logit`.
 - `surprise_width_ewma`.
 - `attention_rises_with_stake_and_falls_with_cost`.
-- `attention_units`: λ is per day for ψ in money per unit², σ² in unit² per day and c in money.
+- `attention_units`: λ is per day for ψ in money per unit² per day, σ² in unit² per day and c in money.
 - `exposure_span_exact`: the stored g_k and σ²_own and the method's dated public variances give the same exposure
   as summing λ daily, across spans with several publications.
 - `values_are_not_prices` (compile-fail).
