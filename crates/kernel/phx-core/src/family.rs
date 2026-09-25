@@ -81,7 +81,7 @@ pub struct Gap {
 
 /// The world's books as the audit reads them: its instruments and lines by index, each checked by the ledger that
 /// keeps them, and what a party holds on an account. The ledger implements it, so the audit need not name the ledger.
-pub trait BooksAudit: core::fmt::Debug {
+pub trait BooksAudit: core::fmt::Debug + Sync {
     fn instruments(&self) -> usize;
     fn lines(&self) -> usize;
     /// An instrument's holdings against its issued amount.
@@ -97,7 +97,7 @@ pub trait BooksAudit: core::fmt::Debug {
 
 /// The markets' public tape as the audit reads it: the prints, marks and fixings the markets published on a day,
 /// each checked against the match sets it came from. The market kernel implements it, so the audit need not name it.
-pub trait MarketsAudit: core::fmt::Debug {
+pub trait MarketsAudit: core::fmt::Debug + Sync {
     /// What the day published and what it gets wrong: the entries checked, and each gap.
     fn prices(&self, day: Day) -> (u64, Vec<Gap>);
 }
@@ -105,7 +105,7 @@ pub trait MarketsAudit: core::fmt::Debug {
 /// The parties' accounts as the audit reads them: each party's equity account against a read of its positions at
 /// their carrying values, the receivables against the payables line by line, and each period's income against its
 /// equity's change. The accounts kernel implements it over the books.
-pub trait AccountsAudit: core::fmt::Debug {
+pub trait AccountsAudit: core::fmt::Debug + Sync {
     /// Parties with an equity account, by index.
     fn parties(&self) -> usize;
     /// One party's equity account against its positions, or its read as unreadable.
@@ -118,7 +118,7 @@ pub trait AccountsAudit: core::fmt::Debug {
 
 /// The population's agents as the audit reads them: each agent's multiplicity against its contracts, and each
 /// population's multiplicities against it. The population kernel implements it over its agent tables.
-pub trait AgentsAudit: core::fmt::Debug {
+pub trait AgentsAudit: core::fmt::Debug + Sync {
     /// Agents' slots over every population table, by index.
     fn agents(&self) -> usize;
     /// One agent's multiplicity and each of its rows' counts against it.
@@ -128,7 +128,7 @@ pub trait AgentsAudit: core::fmt::Debug {
 }
 
 /// The audit's own record of the day's settled legs, kept apart from the books they moved.
-pub trait LegRecords: core::fmt::Debug {
+pub trait LegRecords: core::fmt::Debug + Sync {
     /// The instructions recorded today, each in each denomination it moved.
     fn instructions(&self) -> u64;
     /// The positions the day's legs moved.

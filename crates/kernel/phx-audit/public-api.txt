@@ -57,6 +57,7 @@ pub phx_audit::runner::CloseInputs::events: &'a phx_core::events::EventStore
 pub phx_audit::runner::CloseInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_audit::runner::CloseInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_audit::runner::CloseInputs::own: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
+pub phx_audit::runner::CloseInputs::pool: core::option::Option<&'a phx_exec::pool::Pool>
 pub phx_audit::runner::CloseInputs::records: &'a phx_core::records::RecordStore
 pub phx_audit::runner::CloseInputs::register: &'a phx_core::register::Register
 pub phx_audit::runner::CloseInputs::tables: &'a [phx_core::columns::KernelTable]
@@ -106,6 +107,7 @@ pub phx_audit::CloseInputs::events: &'a phx_core::events::EventStore
 pub phx_audit::CloseInputs::markets: &'a dyn phx_core::family::MarketsAudit
 pub phx_audit::CloseInputs::messages: &'a phx_core::messages::DayMessages
 pub phx_audit::CloseInputs::own: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
+pub phx_audit::CloseInputs::pool: core::option::Option<&'a phx_exec::pool::Pool>
 pub phx_audit::CloseInputs::records: &'a phx_core::records::RecordStore
 pub phx_audit::CloseInputs::register: &'a phx_core::register::Register
 pub phx_audit::CloseInputs::tables: &'a [phx_core::columns::KernelTable]

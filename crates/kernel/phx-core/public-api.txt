@@ -603,12 +603,12 @@ pub phx_core::family::Span::start: usize
 impl phx_core::family::Span
 pub fn phx_core::family::Span::iter(self) -> impl core::iter::traits::iterator::Iterator<Item = usize>
 pub const phx_core::family::AUDIT_SUBSTEP: phx_core::substep::SubStep
-pub trait phx_core::family::AccountsAudit: core::fmt::Debug
+pub trait phx_core::family::AccountsAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::family::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::family::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::AccountsAudit::parties(&self) -> usize
 pub fn phx_core::family::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-pub trait phx_core::family::AgentsAudit: core::fmt::Debug
+pub trait phx_core::family::AgentsAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::family::AgentsAudit::agent(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::AgentsAudit::agents(&self) -> usize
 pub fn phx_core::family::AgentsAudit::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -620,7 +620,7 @@ pub trait phx_core::family::AuditStream
 pub fn phx_core::family::AuditStream::applied(&mut self, u64)
 pub fn phx_core::family::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_core::family::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub trait phx_core::family::BooksAudit: core::fmt::Debug
+pub trait phx_core::family::BooksAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::family::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::instruments(&self) -> usize
 pub fn phx_core::family::BooksAudit::lines(&self) -> usize
@@ -641,13 +641,13 @@ pub fn phx_core::family::InjectTarget::own(&mut self, &str) -> core::option::Opt
 pub fn phx_core::family::InjectTarget::set_fact(&mut self, &str, &'static str, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
 pub fn phx_core::family::InjectTarget::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
 pub fn phx_core::family::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
-pub trait phx_core::family::LegRecords: core::fmt::Debug
+pub trait phx_core::family::LegRecords: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::family::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::LegRecords::instructions(&self) -> u64
 pub fn phx_core::family::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::LegRecords::positions(&self) -> u64
 pub fn phx_core::family::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
-pub trait phx_core::family::MarketsAudit: core::fmt::Debug
+pub trait phx_core::family::MarketsAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::family::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::family::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
 pub mod phx_core::findings
@@ -686,6 +686,7 @@ pub fn phx_core::findings::Finding::save(&self, &mut phx_store::save::Writer<'_>
 pub struct phx_core::findings::Findings
 impl phx_core::findings::Findings
 pub fn phx_core::findings::Findings::all(&self) -> &[phx_core::findings::Finding]
+pub fn phx_core::findings::Findings::extend(&mut self, phx_core::findings::Findings)
 pub fn phx_core::findings::Findings::is_empty(&self) -> bool
 pub fn phx_core::findings::Findings::len(&self) -> usize
 pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
@@ -2609,6 +2610,7 @@ pub fn phx_core::findings::Finding::save(&self, &mut phx_store::save::Writer<'_>
 pub struct phx_core::Findings
 impl phx_core::findings::Findings
 pub fn phx_core::findings::Findings::all(&self) -> &[phx_core::findings::Finding]
+pub fn phx_core::findings::Findings::extend(&mut self, phx_core::findings::Findings)
 pub fn phx_core::findings::Findings::is_empty(&self) -> bool
 pub fn phx_core::findings::Findings::len(&self) -> usize
 pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
@@ -3205,12 +3207,12 @@ pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub const phx_core::PUBLIC_EVENTS: phx_core::register::PrimDecl
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
-pub trait phx_core::AccountsAudit: core::fmt::Debug
+pub trait phx_core::AccountsAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::AccountsAudit::parties(&self) -> usize
 pub fn phx_core::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-pub trait phx_core::AgentsAudit: core::fmt::Debug
+pub trait phx_core::AgentsAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::AgentsAudit::agent(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::AgentsAudit::agents(&self) -> usize
 pub fn phx_core::AgentsAudit::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -3222,7 +3224,7 @@ pub trait phx_core::AuditStream
 pub fn phx_core::AuditStream::applied(&mut self, u64)
 pub fn phx_core::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_core::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub trait phx_core::BooksAudit: core::fmt::Debug
+pub trait phx_core::BooksAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::BooksAudit::instruments(&self) -> usize
 pub fn phx_core::BooksAudit::lines(&self) -> usize
@@ -3279,7 +3281,7 @@ pub fn phx_core::IntentDef::encode(&self, &mut alloc::vec::Vec<u64>)
 impl phx_core::handler::IntentDef for phx_core::events::EventIntent
 pub const phx_core::events::EventIntent::NAME: &'static str
 pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
-pub trait phx_core::LegRecords: core::fmt::Debug
+pub trait phx_core::LegRecords: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::LegRecords::instructions(&self) -> u64
 pub fn phx_core::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -3313,7 +3315,7 @@ impl phx_core::map::MapKey for phx_id::ids::PartyId
 pub fn phx_id::ids::PartyId::key64(self) -> u64
 impl phx_core::map::MapKey for u64
 pub fn u64::key64(self) -> u64
-pub trait phx_core::MarketsAudit: core::fmt::Debug
+pub trait phx_core::MarketsAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub trait phx_core::MessageDef
 pub const phx_core::MessageDef::DECL: phx_core::messages::MessageKindDecl

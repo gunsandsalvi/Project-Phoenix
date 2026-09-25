@@ -382,6 +382,7 @@ impl World {
                 &self.population,
             ),
             own: &self.own,
+            pool: self.books.pool(),
         };
         let record = self.audit.close(inputs, &mut self.findings);
         self.accounts.end_day();

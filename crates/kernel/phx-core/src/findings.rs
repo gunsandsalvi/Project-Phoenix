@@ -53,6 +53,11 @@ impl Findings {
         self.list.push(finding);
     }
 
+    /// Another list's findings appended in their order.
+    pub fn extend(&mut self, other: Findings) {
+        self.list.extend(other.list);
+    }
+
     #[must_use]
     pub fn all(&self) -> &[Finding] {
         &self.list

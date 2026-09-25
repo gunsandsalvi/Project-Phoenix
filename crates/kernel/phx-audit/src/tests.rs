@@ -89,6 +89,7 @@ impl Hand {
             accounts: &NoAccounts,
             agents: &NoAgents,
             own: &[],
+            pool: None,
         };
         let record = audit.close(close, &mut findings);
         assert_eq!((record.families, record.findings), (2, findings.len()));

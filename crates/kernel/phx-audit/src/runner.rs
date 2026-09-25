@@ -24,6 +24,8 @@ pub struct CloseInputs<'a> {
     pub accounts: &'a dyn phx_core::AccountsAudit,
     pub agents: &'a dyn phx_core::AgentsAudit,
     pub own: &'a [(&'static str, Box<dyn core::any::Any + Send + Sync>)],
+    /// The world's workers, which check the families at once where there are any.
+    pub pool: Option<&'a phx_exec::Pool>,
 }
 
 /// One close: its day, how many families ran, the rows they checked, and the findings they recorded.
@@ -117,10 +119,18 @@ impl Audit {
             agents: c.agents,
             own: c.own,
         };
+        // Each family checks into its own findings on the pool; they are kept in the families' order.
+        let checked = phx_exec::pool::map(c.pool, self.families.len(), |i| {
+            let mut own = Findings::default();
+            let rows = self.families.get(i).map_or(0, |family| {
+                family.check(&FamilyCtx::new(inputs, family.decl().mode), &mut own)
+            });
+            (rows, own)
+        });
         let mut rows_checked = 0;
-        for family in &self.families {
-            let ctx = FamilyCtx::new(inputs, family.decl().mode);
-            rows_checked += family.check(&ctx, findings);
+        for (rows, own) in checked {
+            rows_checked += rows;
+            findings.extend(own);
         }
         let record = CloseRecord {
             day: c.day,
