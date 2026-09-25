@@ -672,8 +672,10 @@ wealth) are read from the cell's own rows.
   light day, remapping holder lists, the directory and the landing index for the rows it moves.
 - The **directory** maps permanent identities to slots. A party that ends leaves a tombstone only while a record or
   an event names it (a reference count, taken when the record or event is written), and until the day's close in any
-  case, so the day's legs that name it still resolve for the audit; its slot is recycled at once. Day-local part
-  identities never enter it.
+  case, so the day's legs that name it still resolve for the audit; its slot is recycled at once. A fail waiting for
+  the next business day's contract process names its party the same way, so a cell that lands at 10b before its fail
+  is processed is read through the directory to its successor, which holds the row. Day-local part identities never
+  enter it.
 
 ### 7.3 The agenda and screening
 

@@ -171,8 +171,7 @@ impl World {
                 self.cells_settle(day, traced);
             }
             if info.step == SubStep::S2d {
-                let fails = std::mem::take(&mut self.unprocessed);
-                self.books.contract_process(&fails, day);
+                self.process_fails(day);
             }
             if is_apply_point(info) {
                 apply(day, &mut pending, &mut self.events, self.event_kinds.len());
@@ -278,6 +277,26 @@ impl World {
         visited
     }
 
+    /// The contract process over the fails waiting since the last business day, each read against the party that
+    /// holds its row now: a cell that landed since is its successor.
+    #[clause("SET.3", "PTY.10")]
+    fn process_fails(&mut self, day: Day) {
+        let fails = std::mem::take(&mut self.unprocessed);
+        let directory = self.books.parties.directory();
+        let now: Vec<phx_ledger::fails::Fail> = fails
+            .iter()
+            .map(|f| match directory.resolve(f.party) {
+                phx_core::Resolved::Live(party, _) => phx_ledger::fails::Fail { party, ..*f },
+                phx_core::Resolved::Ended(_) | phx_core::Resolved::Unknown => *f,
+            })
+            .collect();
+        self.books.contract_process(&now, day);
+        let directory = self.books.parties.cells_mut().1;
+        for f in &fails {
+            directory.release(f.party);
+        }
+    }
+
     /// The day's close: the read trace sums the day, and every audit family reads what the day left behind.
     #[clause("N1")]
     fn close(&mut self, day: Day, dues: DaySettlement) {
@@ -285,6 +304,11 @@ impl World {
         let book = self.books.close();
         self.accounts.close_day(&book);
         self.settlements.push(Settled { day, measure: book.measure(), dues, fails: book.fails.clone() });
+        // A fail waits for the next business day's contract process, and its party may end before then.
+        let directory = self.books.parties.cells_mut().1;
+        for f in &book.fails {
+            directory.retain(f.party);
+        }
         self.unprocessed.extend(book.fails);
         let mut reads = ReadTrace::default();
         for t in &mut self.tables {
