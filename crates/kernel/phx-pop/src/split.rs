@@ -277,8 +277,9 @@ pub type RowPlanned = (Vec<RowLeaving>, Round);
 /// The members one split takes from each of the cell's rows as the splits before it left them: the event's own rows as
 /// it gives them, every other row's drawn from the members holding it; `held` is left with what stays.
 fn plan_rows(held: &mut Vec<(LineId, Side, u32)>, spec: &SplitSpec<'_>, weight: u32, d: &mut Draws) -> Vec<RowLeaving> {
-    for ((line, side), _) in spec.rows {
-        if !held.iter().any(|(l, s, _)| (l, s) == (line, side)) {
+    // A row no member leaves may be named though the day's earlier plans have taken all its members.
+    for ((line, side), share) in spec.rows {
+        if share.count > 0 && !held.iter().any(|(l, s, _)| (l, s) == (line, side)) {
             violation!(clause = "REP.23", "a split naming a row its cell does not hold", line = line.get());
         }
     }
@@ -418,6 +419,33 @@ mod tests {
             };
             assert_eq!(run(true), run(false), "draw {i}: the same members and shares leave, later");
         }
+    }
+
+    #[test]
+    fn a_row_planned_away_may_be_named_by_none_leaving_it() {
+        let kind = kind();
+        let mut space = AddressSpace::empty();
+        let mut bk: Books = books(&mut space);
+        let (keys, _) = keys(&kind, 1, 1);
+        let (mut tab, slot) = cell(&mut space, &kind, &mut bk, &keys);
+        let loan = (bk.loan, Side::Liability);
+        let all_of_it = [(loan, RowShare { count: 30, own_balance: 0 })];
+        let first = SplitSpec { rows: &all_of_it, ..plain(40) };
+        let mut d = draws("DEM.death", 0);
+        let id = |seq| PartId { origin: PartyId::new(7), seq };
+        let (_, plan) = super::split_planned(&mut cells(&mut bk, &mut tab, &keys), slot, id(0), &first, &[], &mut d);
+        let none = [(loan, RowShare { count: 0, own_balance: 0 })];
+        let second = SplitSpec { rows: &none, ..plain(10) };
+        let (_, again) =
+            super::split_planned(&mut cells(&mut bk, &mut tab, &keys), slot, id(1), &second, &plan.0, &mut d);
+        assert!(again.0.iter().all(|(at, _)| *at != loan), "no member of the row is left to take");
+        let one = [(loan, RowShare { count: 1, own_balance: 0 })];
+        let third = SplitSpec { rows: &one, ..plain(10) };
+        let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            super::split_planned(&mut cells(&mut bk, &mut tab, &keys), slot, id(2), &third, &plan.0, &mut d)
+        }));
+        let clause = caught.err().and_then(|p| p.downcast_ref::<phx_num::Violation>().map(|v| v.clause));
+        assert_eq!(clause, Some("REP.23"), "a member taken from a row none holds");
     }
 
     #[test]
