@@ -39,10 +39,26 @@ import uniffi.phx_ffi.BenchHost
 import uniffi.phx_ffi.BenchLine
 import uniffi.phx_ffi.DeviceInfo
 import uniffi.phx_ffi.runBench
+import uniffi.phx_ffi.runWorld
 
 private enum class Phase { READY, RUNNING, DONE }
 
 private val THERMAL = listOf("none", "light", "moderate", "severe", "critical", "emergency", "shutdown")
+
+/** The world's turns the bench runs from its opening: about three months of business days. */
+private const val WORLD_TURNS = 60u
+
+/** Copies an asset directory to the app's files, so the engine reads it as it reads the repository's data. */
+private fun unpack(activity: ComponentActivity, asset: String, into: File) {
+    val names = activity.assets.list(asset) ?: emptyArray()
+    if (names.isEmpty()) {
+        into.parentFile?.mkdirs()
+        activity.assets.open(asset).use { input -> into.outputStream().use { input.copyTo(it) } }
+        return
+    }
+    into.mkdirs()
+    for (name in names) unpack(activity, "$asset/$name", File(into, name))
+}
 
 private fun device(activity: ComponentActivity): DeviceInfo {
     val memory = ActivityManager.MemoryInfo()
@@ -98,11 +114,41 @@ fun AppScreen(activity: ComponentActivity) {
         }
     }
 
+    fun startWorld() {
+        lines.clear()
+        report = null
+        phase = Phase.RUNNING
+        activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val main = Handler(Looper.getMainLooper())
+        val power = activity.getSystemService(PowerManager::class.java)
+        val host = object : BenchHost {
+            override fun thermalStatus(): Int = power.currentThermalStatus
+            override fun onLine(line: BenchLine) {
+                main.post { lines.add(line) }
+            }
+        }
+        val data = File(activity.filesDir, "data")
+        val runDir = File(activity.filesDir, "run")
+        val file = File(activity.getExternalFilesDir(null), "S0.26-world-report.json")
+        thread(name = "phx-world") {
+            data.deleteRecursively()
+            unpack(activity, "data", data)
+            runDir.mkdirs()
+            val text = runWorld(host, data.absolutePath, runDir.absolutePath, WORLD_TURNS, file.absolutePath)
+            main.post {
+                report = text
+                reportFile = file.absolutePath
+                phase = Phase.DONE
+                activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
+    }
+
     fun share() {
         val text = report ?: return
         val send = Intent(Intent.ACTION_SEND)
             .setType("application/json")
-            .putExtra(Intent.EXTRA_SUBJECT, "Phoenix device report S0.07")
+            .putExtra(Intent.EXTRA_SUBJECT, "Phoenix device report")
             .putExtra(Intent.EXTRA_TEXT, text)
         activity.startActivity(Intent.createChooser(send, "Share the report"))
     }
@@ -111,7 +157,8 @@ fun AppScreen(activity: ComponentActivity) {
         Text("Project Phoenix bench", style = MaterialTheme.typography.titleLarge)
         Text(
             when (phase) {
-                Phase.READY -> "Plug the phone in, close other apps, and run. It takes a few minutes and about 4 GB."
+                Phase.READY -> "Plug the phone in and close other apps. The bench takes a few minutes and about 4 GB; the " +
+                    "world opens three countries' population, then runs $WORLD_TURNS turns."
                 Phase.RUNNING -> "Running… keep the app open."
                 Phase.DONE -> "Done. The report is at ${reportFile ?: "?"}"
             },
@@ -119,7 +166,8 @@ fun AppScreen(activity: ComponentActivity) {
             modifier = Modifier.padding(vertical = 8.dp),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = ::start, enabled = phase != Phase.RUNNING) { Text("Run") }
+            Button(onClick = ::start, enabled = phase != Phase.RUNNING) { Text("Run bench") }
+            Button(onClick = ::startWorld, enabled = phase != Phase.RUNNING) { Text("Run world") }
             Button(onClick = ::share, enabled = report != null) { Text("Share report") }
         }
         HorizontalDivider(Modifier.padding(vertical = 8.dp))

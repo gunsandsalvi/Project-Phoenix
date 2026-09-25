@@ -47,7 +47,20 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    // The bench runs the world from the data the game reads, without the raw sources it was derived from.
+    sourceSets.getByName("bench").assets.srcDir(layout.buildDirectory.dir("phx-assets"))
 }
+
+val phxData by tasks.registering(Sync::class) {
+    from(rootProject.file("../data")) {
+        exclude("sources/**")
+    }
+    into(layout.buildDirectory.dir("phx-assets/data"))
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.contains("Bench") && it.name.endsWith("Assets") }
+    .configureEach { dependsOn(phxData) }
 
 dependencies {
     implementation(platform(libs.compose.bom))

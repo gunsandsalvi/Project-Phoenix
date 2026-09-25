@@ -649,6 +649,7 @@ dependencies = [
  "phx-pop",
  "phx-rand",
  "phx-store",
+ "phx-world",
  "uniffi",
 ]
 
