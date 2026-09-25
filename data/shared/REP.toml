@@ -7,8 +7,8 @@ id = "REP.multiplicity"
 kind = "RESOLUTION"
 owner = "REP"
 source = "assumed"
-source_ref = "Resolution (spec REP.40, N8.5): the twins every household and small firm agent stands for under the default representation, twins. Twenty draws about six and a half million household agents for three countries of 300 million people; the factor is set by measuring the budget on the build machine and the phone (plan S0.28 R6)."
-value = 20
+source_ref = "Resolution (spec REP.40, N8.5): the twins every household and small firm agent stands for under the default representation, twins. The owner's setting (plan §12, 2026-09-25): 170, the design point of architecture §13, about 0.95 million agents for three countries of 300 million people; a factor of 20 exceeded the reserved address space (F-075)."
+value = 170
 
 [[primitive]]
 id = "REP.population_divisor"

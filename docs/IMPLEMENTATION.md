@@ -16177,6 +16177,7 @@ the final build within the budget on the phone.
 | The unbanked households' dues (F-051) | a payment to or from a party with no money fails as `NoMoney` and stays in arrears until the households hold banknotes (S1.09, S1.12); no line is withheld from an unbanked household, since the data draw jobs, tenancies and pensions for every household | 2026-09-25 |
 | The build run's stage-7 ratchets for Stage 0 | set to the counts measured after the households' lines began paying (`perf/ratchets.toml`): `phx_ledger.rows_streamed` 6 802 801, `run_heads_read` 274 774, `run_rows_scanned` 6 880 013, `run_rows_not_due` 320 775, `payments` 6 800 506, `fixed_point_iterations` 101 829, `day_buffer_peak_bytes` 58 555 872; the owner accepted the ratchets for Stage 0 | 2026-09-25 |
 | The population representation (spec Appendix E 14, 16, 44; REP) | cells retired: every household and small firm an agent of its own, never split or joined, in one of two representations built side by side — twins (the full population as agents of multiplicity _k_) and a small world (one _k_-th of the population, every agent one party) — switched by two register primitives and `phx run --representation`, to be compared once the full model is final; twins the default; the factor set by the budget | 2026-09-25 |
+| The representation's factor (spec REP.40, N8.5) | 170 under twins, the default: `REP.multiplicity` = 170 (architecture §13's design point); a small world at the same factor for the comparison runs | 2026-09-25 |
 
 ---
 
