@@ -530,6 +530,7 @@ pub const phx_ledger::consts::MONTHS_A_YEAR: u8
 pub const phx_ledger::consts::ROW_OPTIONAL_WORDS: usize
 pub const phx_ledger::consts::RUN_SAMPLE_PERIOD: u32
 pub const phx_ledger::consts::STREAM_SHARDS: usize
+pub const phx_ledger::consts::STREAM_WAVE: usize
 pub const phx_ledger::consts::SYNTHETIC_DEPOSIT: i64
 pub const phx_ledger::consts::SYNTHETIC_EPOCH_YEAR: i32
 pub const phx_ledger::consts::SYNTHETIC_LOAN: i64
@@ -1186,6 +1187,7 @@ pub fn phx_ledger::stream::Records::clear(&mut self)
 pub fn phx_ledger::stream::Records::get(&self, (u16, phx_id::ids::Slot)) -> core::option::Option<&phx_ledger::stream::Record>
 pub fn phx_ledger::stream::Records::get_or_insert_with(&mut self, phx_id::ids::PartyId, (u16, phx_id::ids::Slot), impl core::ops::function::FnOnce() -> phx_ledger::stream::Record) -> &mut phx_ledger::stream::Record
 pub fn phx_ledger::stream::Records::sorted(&self) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_ledger::stream::Record)>
+pub fn phx_ledger::stream::Records::touched(&self) -> usize
 pub fn phx_ledger::stream::issuers(&[phx_ledger::instruction::LegRec]) -> alloc::vec::Vec<phx_id::ids::PartyId>
 pub mod phx_ledger::synthetic
 pub struct phx_ledger::synthetic::Settlement<B: phx_store::backing::Backing>

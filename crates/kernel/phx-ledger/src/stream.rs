@@ -150,6 +150,12 @@ impl Records {
         out
     }
 
+    /// The parties the day's records were made for.
+    #[must_use]
+    pub fn touched(&self) -> usize {
+        self.touched.capacity()
+    }
+
     /// The records the room holds, made today or not, so what they take in memory can be counted.
     #[must_use]
     pub fn capacity(&self) -> usize {

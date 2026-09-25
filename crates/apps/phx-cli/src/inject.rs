@@ -37,7 +37,9 @@ pub fn injections(
     let clock = WallClock::new();
     let loaded = || {
         let t0 = clock.now_ns();
-        let world = load(SYSTEMS, INTERFACES, &config, from, &build).map_err(|e| format!("the save refused:\n{e}"))?;
+        let mut world =
+            load(SYSTEMS, INTERFACES, &config, from, &build).map_err(|e| format!("the save refused:\n{e}"))?;
+        world.use_pool(crate::run::pool(None)?);
         Ok::<_, String>((world, clock.now_ns().checked_sub(t0)))
     };
     let (mut world, mut load_ns) = loaded()?;

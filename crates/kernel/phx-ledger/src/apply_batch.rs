@@ -408,7 +408,8 @@ impl<B: Backing> Books<B> {
             g.crossing.keys().map(|&(p, c)| ((p, c), self.reserves_of(p, Ccy::new(c)))).collect();
         let before = self.balances(&g.nets);
         // Every day buffer by the room it holds, grown or not: what the phone must find free at the day's peak.
-        let buffer_bytes = bytes::<(PartyId, Record)>(streamed.records.capacity() + g.given.capacity())
+        let buffer_bytes = bytes::<(u32, Option<Record>)>(streamed.records.capacity() + g.given.capacity())
+            + bytes::<(PartyId, u16, Slot)>(streamed.records.touched() + g.given.touched())
             + bytes::<(u16, Slot)>(streamed.scanned.capacity() + scanned.len())
             + bytes::<Payment>(streamed.made.capacity())
             + bytes::<(NetKey, i128)>(g.nets.capacity())

@@ -579,7 +579,7 @@ fn substeps_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
 }
 
 /// The pool the world's sharded work runs on: the cores the system allows, or the first `workers` of them.
-fn pool(workers: Option<usize>) -> Result<std::sync::Arc<phx_exec::Pool>, String> {
+pub(crate) fn pool(workers: Option<usize>) -> Result<std::sync::Arc<phx_exec::Pool>, String> {
     let mut spec = phx_exec::spec::PoolSpec::detect();
     if let Some(n) = workers {
         spec.cores.truncate(n);
