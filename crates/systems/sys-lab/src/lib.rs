@@ -17,6 +17,13 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// The employed by occupation family (ISCO-08 major group), by sex, which the jobs' occupations will read.
+    pub OCCUPATION = "LAB.occupation_shares" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
+    }
+}
+
+declare_prim! {
     /// The ratio between neighbouring wage points, the round numbers wages are paid at, until firms post their own.
     pub WAGE_POINT_RATIO = "LAB.wage_point_ratio" {
         kind: Shape, value: Fixed { exp: 6 }, clause: "REP.34", scope: Shared, shape: placeholder("LAB")
@@ -33,6 +40,7 @@ impl System for Lab {
     fn declare(d: &mut Declarations) {
         d.stream(JobsStream::DECL);
         let jobs = Jobs { status: d.prim(&STATUS), ratio: d.prim(&WAGE_POINT_RATIO) };
+        let _: phx_core::Prim<phx_core::register::values::Table2> = d.prim(&OCCUPATION);
         d.contribution(Box::new(Declared));
         let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> = Box::new(jobs);
         d.attachment(Box::new(draw));
