@@ -150,13 +150,18 @@ pub fn settlement<B: Backing>(
     // holders' share, and each bank's deposit line and reserves row.
     let groups = size.holders.div_ceil(size.holders_per_line) + size.banks;
     let lines = groups * (weekly + size.monthly_rows) + size.banks + 1;
+    // A kind table holds parties, the holders and the banks; their rows live in the holders' arenas.
+    let Some(parties) = size.holders.checked_add(size.banks).and_then(|p| p.checked_add(1)) else {
+        return Err("more synthetic parties than a table holds".to_owned());
+    };
     let books_size = BooksSize {
-        rows: rows.next_power_of_two(),
+        rows: parties.next_power_of_two(),
         rows_per_chunk: SYNTHETIC_ROWS_PER_CHUNK,
         instruments: 1,
         lines: lines.next_power_of_two(),
         per_chunk: SYNTHETIC_ROWS_PER_CHUNK,
-        blocks: rows.next_power_of_two(),
+        // Each of a holder list's shards holds its share of the rows.
+        blocks: rows.div_ceil(crate::consts::HOLDER_SHARDS).next_power_of_two(),
     };
     let mut books: Books<B> = Books::new(&[CENTRAL_BANK, BANK, HOLDER], books_size);
     let reserves_kind = books.ledger.lines.declare_reserves(HOLDERS.reserves()).index();

@@ -22,8 +22,9 @@ pub const SYNTHETIC_DEPOSIT: i64 = 100_000_000;
 pub const SYNTHETIC_LOAN: i64 = 1_000_000;
 /// The loans' rate a year: twelve per cent, in the rate's raw scale.
 pub const SYNTHETIC_RATE: i64 = 120_000_000_000;
-/// The rows a chunk holds.
-pub const SYNTHETIC_ROWS_PER_CHUNK: u32 = 1 << 12;
+/// The rows a chunk holds: enough holders to fill much of an individual's chunk arena with their dated rows, so the
+/// full load's million holders reserve tens of arenas, not hundreds.
+pub const SYNTHETIC_ROWS_PER_CHUNK: u32 = 1 << 15;
 /// The calendar's epoch year.
 pub const SYNTHETIC_EPOCH_YEAR: i32 = 1950;
 /// The calendar's first year.
