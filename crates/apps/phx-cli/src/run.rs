@@ -258,6 +258,8 @@ fn settlement_report(w: Inspector<'_>) -> serde_json::Value {
         "lines_due": sum(|d| d.dues.lines),
         "payments": sum(|d| d.dues.payments),
         "failed": sum(|d| d.dues.failed),
+        "lost": sum(|d| d.dues.lost),
+        "lost_past_failed": sum(|d| d.dues.lost_past_failed),
         "heads_read": sum(|d| d.dues.heads_read),
         "rows_scanned": sum(|d| d.dues.rows_scanned),
         "rows_due": sum(|d| d.dues.rows_due),
