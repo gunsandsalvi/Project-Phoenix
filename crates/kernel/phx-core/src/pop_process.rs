@@ -60,7 +60,7 @@ impl Household {
     }
 
     /// A key attribute set to a value.
-    pub fn set_key(&mut self, name: &str, value: u32) {
+    pub fn set_attr(&mut self, name: &str, value: u32) {
         let Some((_, v)) = self.key.iter_mut().find(|(n, _)| *n == name) else {
             phx_num::violation!(clause = "REP.19", "a household keyed by an attribute its kind does not hold");
         };
@@ -87,10 +87,20 @@ pub trait PopProcess: Send + Sync {
     /// The profile groups whose joint values its rate is read at, of one set of components, so a value means the
     /// same in each: the groups of the roles it acts on.
     fn groups(&self) -> &'static [&'static str];
-    /// A person's daily chance of a hit at a joint value of one of its groups, in a cell, on a day.
+    /// A person's daily chance of a hit at a joint value of one of its groups, in a cell, on a day. Between one day
+    /// `changes_after` names and the next it rises or falls but never turns, so its greatest over those days is at
+    /// the first or the last.
     fn rate(&self, register: &Register, cell: &CellView<'_>, group: &'static str, value: u32) -> f64;
     /// The first day after `date` on which a rate may change though the cell is not visited, if there is one.
     fn changes_after(&self, date: Date) -> Option<Date>;
-    /// What the persons it reached, by their places in the household, do to their household.
-    fn outcome(&self, register: &Register, cell: &CellView<'_>, household: &mut Household, reached: &[usize]);
+    /// What the persons it reached, by their places in the household, do to their household; what is left to chance
+    /// is drawn from `draws`, the process's own for the cell and the day.
+    fn outcome(
+        &self,
+        register: &Register,
+        cell: &CellView<'_>,
+        household: &mut Household,
+        reached: &[usize],
+        draws: &mut phx_rand::Draws,
+    );
 }

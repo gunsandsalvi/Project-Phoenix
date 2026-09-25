@@ -4682,8 +4682,20 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     without mothers raised by adults (and a child with no adult left refused), the partner gap's chances, and
     households gathered by key into parts. Run (two days, 2026-09-24): ages the drawn shares exactly; households too
     small (F-039); the opening's time is F-038;
-  - S0.25c-4c: `sys-dem`'s processes — death by the life table solved to the drawn life expectancy, the onset of
-    disability, and birthdays spread over the year in monthly windows; households no one is left in end;
+  - S0.25c-4c (built): `sys-dem`'s processes — death by the life table solved to the drawn life expectancy, the onset
+    of disability, and birthdays spread over the year in monthly windows; households no one is left in end. As
+    built: `DEM.death`, `DEM.disability_onset` and `DEM.birthday` on every person (`Persons`), from the streams
+    `DEM.mortality`, `DEM.illness` and `DEM.birthdays`, recording `DEM.died`, `DEM.disabled` and `DEM.aged`. The life
+    table is Brass's relational model at the level solved to `DEM.life_expectancy` (sexes weighted by their shares of
+    births), its open age past 100 holding its last year's hazard; a cohort dies in a year by the ages it spans
+    (`1 − sqrt(l(a+1)/l(a−1))`). A dead head's place goes to the partner, else the eldest adult, else the eldest
+    child (`household::succeed`), its class drawn from its birthday passed or not; birthdays read the head's class
+    in the key and a child's band, a child of age becoming an adult with schooling not yet recorded. The opening
+    draws each birth year from the share of the year elapsed at the snapshot. The kernel: `RateChange::MonthStart`,
+    an outcome's own draws at 3e, the envelope read at its window's first and last days, and a cell with no chance
+    today not hit and, with no envelope, booked only to its redraw. Tests: the life table (the level solved, the
+    open age, a cohort's death), roles and succession, a person taking a role, the classes and the year's days, the
+    envelope with no chance. Run (30 days, 2026-09-24): clean but for the checks a short run cannot pass;
   - S0.25c-5: docs, reviews, the build run, done.
 - **S0.25d — lines paying**: employment, tenancy and the dwelling stock, deposits and loans, small firms as cells,
   and pensions in payment (`sys-lab`, `sys-hsg`, `sys-bnk`, `sys-frm`, `sys-soc`, `sys-pen`), paying by their terms

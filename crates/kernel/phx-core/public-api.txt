@@ -742,6 +742,7 @@ pub phx_core::hazards::DrawScheme::Scheduled::envelope: phx_core::hazards::Envel
 pub enum phx_core::hazards::EnvelopeRule
 pub phx_core::hazards::EnvelopeRule::MaxOverProfile
 pub enum phx_core::hazards::RateChange
+pub phx_core::hazards::RateChange::MonthStart
 pub phx_core::hazards::RateChange::Policy(&'static str)
 pub phx_core::hazards::RateChange::Review(&'static str)
 pub phx_core::hazards::RateChange::YearStart
@@ -1063,7 +1064,7 @@ pub phx_core::pop_process::Household::persons: alloc::vec::Vec<phx_core::pop_pro
 impl phx_core::pop_process::Household
 pub fn phx_core::pop_process::Household::key(&self, &str) -> u32
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
-pub fn phx_core::pop_process::Household::set_key(&mut self, &str, u32)
+pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)
 pub struct phx_core::pop_process::Person
 pub phx_core::pop_process::Person::gone: bool
 pub phx_core::pop_process::Person::role: &'static str
@@ -1076,7 +1077,7 @@ pub fn phx_core::pop_process::PopProcess::changes_after(&self, phx_id::day::Date
 pub fn phx_core::pop_process::PopProcess::groups(&self) -> &'static [&'static str]
 pub fn phx_core::pop_process::PopProcess::hazard(&self) -> &'static str
 pub fn phx_core::pop_process::PopProcess::kind(&self) -> &'static str
-pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &mut phx_core::pop_process::Household, &[usize])
+pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &mut phx_core::pop_process::Household, &[usize], &mut phx_rand::draws::Draws)
 pub fn phx_core::pop_process::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &'static str, u32) -> f64
 pub mod phx_core::records
 pub struct phx_core::records::Reader
@@ -2030,6 +2031,7 @@ pub phx_core::Purpose::ThirdPartyHarm
 pub phx_core::Purpose::TypeAtBirth
 pub phx_core::Purpose::Weather
 pub enum phx_core::RateChange
+pub phx_core::RateChange::MonthStart
 pub phx_core::RateChange::Policy(&'static str)
 pub phx_core::RateChange::Review(&'static str)
 pub phx_core::RateChange::YearStart
@@ -2615,7 +2617,7 @@ pub phx_core::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
 impl phx_core::pop_process::Household
 pub fn phx_core::pop_process::Household::key(&self, &str) -> u32
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
-pub fn phx_core::pop_process::Household::set_key(&mut self, &str, u32)
+pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)
 pub struct phx_core::Intents
 impl phx_core::handler::Intents
 pub fn phx_core::handler::Intents::is_empty(&self) -> bool
@@ -3257,7 +3259,7 @@ pub fn phx_core::PopProcess::changes_after(&self, phx_id::day::Date) -> core::op
 pub fn phx_core::PopProcess::groups(&self) -> &'static [&'static str]
 pub fn phx_core::PopProcess::hazard(&self) -> &'static str
 pub fn phx_core::PopProcess::kind(&self) -> &'static str
-pub fn phx_core::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &mut phx_core::pop_process::Household, &[usize])
+pub fn phx_core::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &mut phx_core::pop_process::Household, &[usize], &mut phx_rand::draws::Draws)
 pub fn phx_core::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::CellView<'_>, &'static str, u32) -> f64
 pub trait phx_core::PrimType
 pub type phx_core::PrimType::Read<'a>

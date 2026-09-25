@@ -57,7 +57,9 @@ fn day_after(first: Day, days: u64) -> Missing<Day> {
 /// never change book nothing: nothing hits the row within the world's time until a visit draws afresh.
 #[clause("REP.7")]
 pub fn next_booking(d: &mut Draws, first: Day, pi_bar: f64, changes: Missing<Day>) -> Missing<Booking> {
-    let candidate = match geometric(d, pi_bar) {
+    // A row that can no longer be hit waits only for the day its rates may change.
+    let wait = if pi_bar > 0.0 { geometric(d, pi_bar) } else { Missing::Absent };
+    let candidate = match wait {
         Missing::Present(g) => day_after(first, g),
         Missing::Absent => Missing::Absent,
     };
@@ -89,8 +91,10 @@ fn bounded(counts: &[u64], rates: &[f64], p_bar: f64, rung: u64) {
 #[clause("REP.7", "CHN.7")]
 pub fn candidate(d: &mut Draws, counts: &[u64], rates: &[f64], p_bar: f64, rung: u64, out: &mut [u64]) -> bool {
     bounded(counts, rates, p_bar, rung);
-    // A ratio past one only by rounding accepts, as the chance it stands for is the envelope itself.
-    if open_unit(d) >= chance(counts, rates) / envelope(p_bar, rung) {
+    // A row whose values reach no rate today is not hit, whatever its envelope, which may be none; a ratio past one
+    // only by rounding accepts, as the chance it stands for is the envelope itself.
+    let today = chance(counts, rates);
+    if today <= 0.0 || open_unit(d) >= today / envelope(p_bar, rung) {
         out.fill(0);
         return false;
     }
@@ -247,6 +251,22 @@ mod tests {
     }
 
     const DAYS: u32 = 1_000_000;
+
+    #[test]
+    fn a_row_with_no_envelope_books_only_its_redraw() {
+        let mut d = draws("none", 2);
+        let v = Missing::Present(Day::new(40));
+        assert_eq!(next_booking(&mut d, Day::new(3), 0.0, v), Missing::Present(Booking::Redraw(Day::new(40))));
+        assert_eq!(next_booking(&mut d, Day::new(3), 0.0, Missing::Absent), Missing::Absent);
+    }
+
+    #[test]
+    fn a_row_with_no_chance_today_is_not_hit() {
+        let mut out = [7_u64; 2];
+        let mut d = draws("none", 1);
+        assert!(!candidate(&mut d, &[3, 4], &[0.0, 0.0], 0.0, 8, &mut out));
+        assert_eq!(out, [0, 0]);
+    }
 
     #[test]
     fn envelope_scheme_matches_daily_binomial() {

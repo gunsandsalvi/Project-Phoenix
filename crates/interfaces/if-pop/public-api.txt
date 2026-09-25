@@ -11,9 +11,11 @@ pub const if_pop::ADULT: phx_core::pop::RoleDecl
 pub const if_pop::ADULT_COUNT: phx_core::pop::KeyAttrDecl
 pub const if_pop::ADULT_GROUPS: &[(phx_core::pop::GroupDecl, phx_core::pop::GroupDecl)]
 pub const if_pop::BIRTH_YEAR: phx_core::pop::ProfileComponent
+pub const if_pop::BIRTH_YEAR_AT: usize
 pub const if_pop::CHILDREN: &[phx_core::pop::RoleDecl]
 pub const if_pop::CHILD_COUNTS: &[phx_core::pop::KeyAttrDecl]
 pub const if_pop::CHILD_GROUPS: &[phx_core::pop::GroupDecl]
+pub const if_pop::CLASSED_GROUPS: &[&str]
 pub const if_pop::DISABLED: u32
 pub const if_pop::EDUCATION: phx_core::pop::ProfileComponent
 pub const if_pop::EDUCATION_UNRECORDED: u32
@@ -21,11 +23,14 @@ pub const if_pop::FEMALE: u32
 pub const if_pop::HEAD: phx_core::pop::RoleDecl
 pub const if_pop::HEAD_AGE: phx_core::pop::KeyAttrDecl
 pub const if_pop::HEALTH: phx_core::pop::ProfileComponent
+pub const if_pop::HEALTH_AT: usize
 pub const if_pop::HOUSEHOLD: &str
 pub const if_pop::LIFE: &[phx_core::pop::ProfileComponent]
+pub const if_pop::LIFE_GROUPS: &[&str]
 pub const if_pop::MALE: u32
 pub const if_pop::PARTNER: phx_core::pop::RoleDecl
 pub const if_pop::PARTNERS: phx_core::pop::KeyAttrDecl
 pub const if_pop::REGION: phx_core::pop::KeyAttrDecl
 pub const if_pop::SCHOOLING: &[phx_core::pop::ProfileComponent]
 pub const if_pop::SEX: phx_core::pop::ProfileComponent
+pub const if_pop::SEX_AT: usize

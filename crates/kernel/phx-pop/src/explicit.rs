@@ -599,7 +599,7 @@ mod tests {
             named[head.0].persons.iter_mut().for_each(|x| x.gone = true);
             if !named[child.0].persons[child.1].gone {
                 named[child.0].persons[child.1].gone = true;
-                named[child.0].set_key("children", 1);
+                named[child.0].set_attr("children", 1);
             }
             let after: Vec<_> = named.iter().map(|h| from_named(&kind, h)).collect();
             let r = regroup(&kind, &layout, &cell_key, &t.households, &after);
@@ -647,7 +647,7 @@ mod tests {
                         h.persons[*p].gone = true;
                     }
                     gone += super::wide(leaving.len());
-                    h.set_key("children", 2 - u32::try_from(leaving.len()).unwrap());
+                    h.set_attr("children", 2 - u32::try_from(leaving.len()).unwrap());
                     from_named(&kind, &h)
                 })
                 .collect();

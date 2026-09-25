@@ -6,6 +6,7 @@ use if_pop::{
     ADULT, ADULT_COUNT, ADULT_GROUPS, CHILD_COUNTS, CHILD_GROUPS, CHILDREN, FEMALE, HEAD, HEAD_AGE, HOUSEHOLD, LIFE,
     MALE, PARTNER, PARTNERS, REGION, SCHOOLING,
 };
+use phx_core::calendar::daycount::actual_days;
 use phx_core::register::values::{Distribution, Partition, Table2, TypeSet};
 use phx_core::{
     Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, PrimDecl, Register, StreamDef, ValueType, apportion,
@@ -58,6 +59,7 @@ pub(crate) fn value(table: &Table2, decl: &PrimDecl, row: i64, column: i64) -> f
 /// education by age band and sex; and the types' shares, for the report.
 struct Country {
     year: i32,
+    elapsed: f64,
     people: [Vec<f64>; 2],
     rules: Rules,
     disabled: Vec<[f64; 2]>,
@@ -262,7 +264,7 @@ fn types(p: &Prims, register: &Register, c: &OpeningCountry) -> (Pick<Type>, Pic
 }
 
 impl Country {
-    fn of(p: &Prims, register: &Register, c: &OpeningCountry, year: i32) -> Country {
+    fn of(p: &Prims, register: &Register, c: &OpeningCountry, date: phx_id::Date) -> Country {
         let id = c.id;
         let people = People::of(p, register, c);
         let Some(oldest) = people.ages().last().copied() else {
@@ -290,7 +292,8 @@ impl Country {
             without,
         };
         Country {
-            year,
+            year: date.year(),
+            elapsed: elapsed(date),
             people: SEXES.map(|s| people.ages().iter().map(|a| people.at(*a, s)).collect()),
             rules,
             disabled: disabled(p, register, id, oldest),
@@ -319,12 +322,25 @@ impl Country {
         level
     }
 
-    fn birth_year(&self, p: &Member) -> u32 {
-        let Ok(born) = u32::try_from(i64::from(self.year) - i64::from(p.age) - i64::from(FIRST_BIRTH_YEAR)) else {
+    /// A person's birth year from its age at the snapshot: this year less its age if its birthday, spread over the
+    /// year's days, has passed, and a year earlier if not.
+    fn birth_year(&self, p: &Member, d: &mut Draws) -> u32 {
+        let born = i64::from(self.year) - i64::from(p.age) - i64::from(open_unit(d) >= self.elapsed);
+        let Ok(born) = u32::try_from(born - i64::from(FIRST_BIRTH_YEAR)) else {
             violation!(clause = "POP.1", "a person born before the first birth year the profile holds", age = p.age);
         };
         born
     }
+}
+
+/// The share of its year a date's days before it make.
+fn elapsed(date: phx_id::Date) -> f64 {
+    let start = |y: i32| {
+        let Some(d) = phx_id::Date::new(y, 1, 1) else { violation!(clause = "TIME.2", "a year with no first day") };
+        d
+    };
+    let (first, next) = (start(date.year()), start(date.year() + 1));
+    from_i64(actual_days(first, date)) / from_i64(actual_days(first, next))
 }
 
 fn index(v: u32) -> usize {
@@ -533,7 +549,7 @@ fn draw_region(
             if let Some(b) = tally.bands.get_mut(band(i64::from(m.age))) {
                 *b += 1;
             }
-            let life = joint(LIFE, &[country.birth_year(m), m.sex, disabled]);
+            let life = joint(LIFE, &[country.birth_year(m, &mut d), m.sex, disabled]);
             let schooling = (m.place != Place::Child).then(|| joint(SCHOOLING, &[country.education(m, &mut school)]));
             forming.person(m, life, schooling);
         }
@@ -605,7 +621,7 @@ impl Contribution for Households {
         let at = household_kind(population);
         let classes = self.prims.age_classes.shared(register);
         for c in *countries {
-            let country = Country::of(&self.prims, register, c, date.year());
+            let country = Country::of(&self.prims, register, c, *date);
             let tiles: Vec<u64> = c.regions.iter().map(|(_, tiles)| len_u64(tiles.len())).collect();
             let mut lot = ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 0));
             let shares = apportion(c.people, &tiles, &mut lot);

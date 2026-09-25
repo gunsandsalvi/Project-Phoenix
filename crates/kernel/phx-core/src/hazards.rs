@@ -31,6 +31,9 @@ pub enum ActsOn {
 pub enum RateChange {
     /// The first day of each year, when tables read by age or by year roll on.
     YearStart,
+    /// The first day of each month, which ends the windows of a rate that climbs through a year, as the chance of a
+    /// birthday not yet passed does.
+    MonthStart,
     /// A policy value's effective day.
     Policy(&'static str),
     /// The row's next review by the named schedule.

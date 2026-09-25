@@ -315,15 +315,18 @@ impl World {
                     };
                     let rate =
                         |g: usize, v: u32, d: Day| b.process.rate(register, &view(d), group_name(&kd.decl, g), v);
+                    // A rate never turns within its window, so its greatest there is at the window's first or last day.
                     let envelope = |values: &[(usize, u32)], d: Day| {
+                        let change = b.process.changes_after(calendar.date(d)).and_then(|c| calendar.day(c));
+                        let last = change.and_then(|c| c.get().checked_sub(1)).map(Day::new);
                         let mut bar = 0.0_f64;
                         for (g, v) in values {
-                            let r = rate(*g, *v, d);
-                            if r > bar {
-                                bar = r;
+                            for r in [Some(rate(*g, *v, d)), last.map(|l| rate(*g, *v, l))].into_iter().flatten() {
+                                if r > bar {
+                                    bar = r;
+                                }
                             }
                         }
-                        let change = b.process.changes_after(calendar.date(d)).and_then(|c| calendar.day(c));
                         (bar, change.map_or(Missing::Absent, Missing::Present))
                     };
                     let layout = table.profile_layout();
@@ -439,7 +442,11 @@ impl World {
             kd.decl.key_attrs.iter().position(|a| a.item.name == name).map(|i| kd.decl.key.get(&record, i))
         };
         let view = CellView { kind: kd.decl.kind, party, key: &key, country_of: &country_of, date };
-        apply_outcomes(&self.processes, &self.register, &view, hits, &touched.reached, &mut households);
+        let mut draws_of = |b: &Bound| {
+            self.streams.open(&b.stream, Subject::new(SubjectTag::Party, party.get()), day, SubStep::S3e.ordinal())
+        };
+        let hits_reached = (hits, touched.reached.as_slice());
+        apply_outcomes(&self.processes, &self.register, &view, hits_reached, &mut households, &mut draws_of);
         let after: Vec<_> = households.iter().map(|h| from_named(&kd.decl, h)).collect();
         let regrouped = regroup(&kd.decl, &layout, &record, &touched.households, &after);
         if !regrouped.in_place.is_empty() {
@@ -511,20 +518,24 @@ impl World {
     }
 }
 
+/// The persons one hit reached, each by its household and its place there.
+type Reached = Vec<(usize, usize)>;
+
 /// Each hit's process's outcome on each household the hit reached, in the order of the hits, a person gone before a
-/// later hit reaches it passed over.
+/// later hit reaches it passed over; each process draws from its own stream for the cell at 3e.
 fn apply_outcomes(
     processes: &[Bound],
     register: &Register,
     view: &CellView<'_>,
-    hits: &[CellHit],
-    reached: &[Vec<(usize, usize)>],
+    (hits, reached): (&[CellHit], &[Reached]),
     households: &mut [phx_core::Household],
+    draws_of: &mut dyn FnMut(&Bound) -> phx_rand::Draws,
 ) {
     for (hit, reached) in hits.iter().zip(reached) {
         let Some(bound) = processes.get(hit.process) else {
             violation!(clause = "REP.7", "a hit of a process the world does not hold");
         };
+        let mut draws = draws_of(bound);
         for (h, household) in households.iter_mut().enumerate() {
             let places: Vec<usize> = reached
                 .iter()
@@ -532,7 +543,7 @@ fn apply_outcomes(
                 .map(|(_, p)| *p)
                 .collect();
             if !places.is_empty() {
-                bound.process.outcome(register, view, household, &places);
+                bound.process.outcome(register, view, household, &places, &mut draws);
             }
         }
     }
@@ -808,7 +819,15 @@ mod tests {
         fn changes_after(&self, _: phx_id::Date) -> Option<phx_id::Date> {
             None
         }
-        fn outcome(&self, _: &Register, _: &CellView<'_>, _: &mut phx_core::Household, _: &[usize]) {}
+        fn outcome(
+            &self,
+            _: &Register,
+            _: &CellView<'_>,
+            _: &mut phx_core::Household,
+            _: &[usize],
+            _: &mut phx_rand::Draws,
+        ) {
+        }
     }
 
     struct Dem;

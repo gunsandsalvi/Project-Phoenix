@@ -96,3 +96,35 @@ pub const CHILD_GROUPS: &[GroupDecl] = &[
     GroupDecl { name: "DEM.child_6_life", role: "child_6", components: LIFE, clause: "REP.32" },
     GroupDecl { name: "DEM.child_7_life", role: "child_7", components: LIFE, clause: "REP.32" },
 ];
+
+/// Every role's life group, which the processes on persons' lives read.
+pub const LIFE_GROUPS: &[&str] = &[
+    "DEM.head_life",
+    "DEM.partner_life",
+    "DEM.adult_life",
+    "DEM.child_0_life",
+    "DEM.child_1_life",
+    "DEM.child_2_life",
+    "DEM.child_3_life",
+    "DEM.child_4_life",
+    "DEM.child_5_life",
+    "DEM.child_6_life",
+    "DEM.child_7_life",
+];
+/// The life groups of the persons whose age class the household holds: the head's in its key, each child's in its
+/// band.
+pub const CLASSED_GROUPS: &[&str] = &[
+    "DEM.head_life",
+    "DEM.child_0_life",
+    "DEM.child_1_life",
+    "DEM.child_2_life",
+    "DEM.child_3_life",
+    "DEM.child_4_life",
+    "DEM.child_5_life",
+    "DEM.child_6_life",
+    "DEM.child_7_life",
+];
+/// A life value's components by their places: birth year, sex, health.
+pub const BIRTH_YEAR_AT: usize = 0;
+pub const SEX_AT: usize = 1;
+pub const HEALTH_AT: usize = 2;

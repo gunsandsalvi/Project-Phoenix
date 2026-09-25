@@ -579,7 +579,7 @@ fn acts_on(e: &Expr) -> syn::Result<TokenStream> {
     }
 }
 
-/// The dates a rate can change without a visit: `YearStart`, `Policy("…")` or `Review("…")`.
+/// The dates a rate can change without a visit: `YearStart`, `MonthStart`, `Policy("…")` or `Review("…")`.
 fn rate_changes(e: &Expr) -> syn::Result<Vec<TokenStream>> {
     let Expr::Array(a) = e else {
         return Err(syn::Error::new_spanned(e, "expected a list of the dates the rate can change"));
@@ -588,6 +588,9 @@ fn rate_changes(e: &Expr) -> syn::Result<Vec<TokenStream>> {
         .iter()
         .map(|c| match c {
             Expr::Path(p) if p.path.is_ident("YearStart") => Ok(quote! { ::phx_core::hazards::RateChange::YearStart }),
+            Expr::Path(p) if p.path.is_ident("MonthStart") => {
+                Ok(quote! { ::phx_core::hazards::RateChange::MonthStart })
+            }
             Expr::Call(ExprCall { func, args, .. }) => {
                 let name = match args.iter().collect::<Vec<_>>().as_slice() {
                     [one] => string(one)?,
@@ -603,7 +606,10 @@ fn rate_changes(e: &Expr) -> syn::Result<Vec<TokenStream>> {
                     _ => Err(syn::Error::new_spanned(c, "expected `Policy(\"…\")` or `Review(\"…\")`")),
                 }
             }
-            _ => Err(syn::Error::new_spanned(c, "expected `YearStart`, `Policy(\"…\")` or `Review(\"…\")`")),
+            _ => Err(syn::Error::new_spanned(
+                c,
+                "expected `YearStart`, `MonthStart`, `Policy(\"…\")` or `Review(\"…\")`",
+            )),
         })
         .collect()
 }

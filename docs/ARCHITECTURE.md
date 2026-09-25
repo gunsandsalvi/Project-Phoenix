@@ -691,7 +691,10 @@ each process to its hazard (of the same system, acting on the kind), groups, eve
 kind and hazard, and gives each its kind's agenda reason; two processes of one kind never share a stream. The
 screen's exposure is persons: the envelope is drawn for the weight's rung times the persons each household holds in
 the process's groups. A rate that climbs within its window, as a birthday's does over the days left in its year, is
-bounded by the envelope until the window's end and thinned day by day, so its windows are months, not days.
+bounded by the envelope until the window's end and thinned day by day, so its windows are months, not days: a rate
+never turns within its window, so the envelope is each value's greater rate on the window's first day and its last. A
+cell whose values reach no rate today is not hit, and one whose envelope has fallen to none books only the day its
+rates may change.
 
 At **3e** a cell's hits of the day, from every process in order of kind and hazard, are applied together in three
 steps, two of them pure functions over values that the tests hold to their accounts:
@@ -700,7 +703,9 @@ steps, two of them pure functions over values that the tests hold to their accou
    made explicit — its key and each of its persons with its role and every value it holds — its unreached persons
    drawn once, jointly within each group, from the persons of the cell no hit reached.
 2. **Change.** Each process's outcome acts on each explicit household it reached, in order: a person dies or leaves,
-   a value changes, a person takes another role, the key's attributes follow from the persons. A person gone is not
+   a value changes, a person takes another role, the key's attributes follow from the persons. What an outcome
+   leaves to chance — a successor's age class, its birthday this year passed or not — it draws from its process's
+   stream for the cell at 3e. A person gone is not
    reached again the same day. A household with no one left ends (§9.1).
 3. **Re-aggregate.** Households whose key did not change return their profile changes to the cell in place.
    Households whose key changed are grouped by their new key and split out, each group one part: its profile is the
