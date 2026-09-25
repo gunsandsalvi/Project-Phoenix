@@ -4716,6 +4716,20 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
 - **S0.25d — lines paying**: employment, tenancy and the dwelling stock, deposits and loans, small firms as cells,
   and pensions in payment (`sys-lab`, `sys-hsg`, `sys-bnk`, `sys-frm`, `sys-soc`, `sys-pen`), paying by their terms
   through pooled flows. LC-0-55 and LC-0-56 apply.
+  Built in sub-steps (the builder's decision under the owner's autonomy, §12), each with its reviews:
+  - S0.25d-1: the kernel's settlement for cells — a row's per-contract dues times its count, and cleared lines, whose
+    claimant members who lose to failed payers are drawn (architecture §6.5);
+  - S0.25d-2: the kernel's attachments on explicit households — rows held by households or by the persons of declared
+    roles, drawn with them at 3e, a leaving person's rows and its counterparty's member leaving together, parts
+    taking their attachments as given shares, and a household no one is left in becoming an estate that takes its
+    rows (architecture §7.3, §9.1; the estate's sale and distribution are S0.25e's);
+  - S0.25d-3: the opening's attachment draws, the online apportionment of named counterparties, the gathering of
+    rows into cells, the lines opened and the derived sides apportioned, the report's unmatched strata (architecture
+    §10.3);
+  - S0.25d-4: deposits and loans (`sys-bnk`), jobs (`sys-lab`), tenancies (`sys-hsg`), paying by their terms;
+  - S0.25d-5: pensions in payment (`sys-soc`, `sys-pen`);
+  - S0.25d-6: small firms as cells (FRM.23) and their ranks;
+  - S0.25d-7: LC-0-44, 45, 48, 55 and 56, docs, reviews, the build run, done.
 - **S0.25e — estates and the settled world**: `sys-est`, catastrophes' losses at owners (GEO.8), settling, LC-0-53;
   the step's reviews and its build run.
 

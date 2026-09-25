@@ -552,10 +552,20 @@ reduction runs over a fixed tree.
   met are gathered into the day buffers, which 7b and 7d read in its place.
 - **Reckoning**: a due line's dues are reckoned on one side's rows, each row its own payment with one counterparty.
   A line of two holders is reckoned on its claimant's row; a line one party holds a side of (a bank's loans to many
-  firms, a scheme's members) is reckoned on the other side's rows, each paying or paid by that party; a line with many
-  holders on both sides pays only through a pairing drawn once (REP.23). The liability side always pays. A holder's
-  record is per currency, one account each; the payment's route runs from the payer's account to the payee's through
-  their banks' liabilities and, between banks, reserves.
+  firms, a scheme's members) is reckoned on the other side's rows, each paying or paid by that party. A row's due is
+  its terms' per-contract amounts times its count, and what its terms reckon on its balance, which is the row's total.
+  The liability side always pays. A holder's record is per currency, one account each; the payment's route runs from
+  the payer's account to the payee's through their banks' liabilities and, between banks, reserves.
+- **Cleared lines**: a line with many holders on both sides — employers and employees, landlords and tenants — records
+  no pairing (REP.23), so it is **cleared**: each row on either side is its own payment against the line, the
+  liability side's rows paying their dues and the asset side's rows paid theirs, the two totals equal since the
+  sides' counts are (REP.31). Each payment's money is routed from the payer's account up through its issuers to the
+  top one, the central bank, and down to the payee's, so the banks' nets settle in reserves and the top issuer's
+  legs sum to nothing over the line. A cleared line's dues are per member (a wage, a rent), refused otherwise. When
+  its payers fail, the claimant members who lose are drawn (REP.23): the members the failed rows owed, as one draw
+  over the claimant rows' counts from the line's own stream on the day, made afresh from the same start each time the
+  failed count grows, so the fixed point stays a function of the failures alone; each claimant row is paid for its
+  members not drawn.
 - **7b** starts from every payment succeeding and removes, until nothing changes, the payers who cannot pay given the
   payments still standing, and the customer legs of banks that cannot cover their nets after intraday credit (MON.3,
   MON.5). A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering
@@ -681,6 +691,17 @@ class changing, a partner or another adult arriving or leaving, a child moving u
 it becomes another adult with its schooling not yet recorded, and a head's death, when the partner, else the eldest
 other adult, else the eldest child takes its place. An adult's birthday, or a change of health, changes the profile
 in place.
+
+**Attachments.** A cell's rows are held either by its households — a deposit, a loan, a tenancy: the row's count is
+households — or by the persons of declared roles — a job by an adult role, a pension by the pensioner's: the row's
+count is persons of those roles. A line kind's side declares which (its holder roles, none meaning the household),
+and whether a person holds at most one row of the kind (a job). A household made explicit carries its attachments:
+each household-level row's members are drawn with the households, and each person-level row's with the persons of its
+roles, jointly among the kind's rows where a person holds one, from the counts no touched household took (REP.23).
+An outcome's person who dies or leaves takes its person-level attachments with it: its rows lose that member, and on
+the line's other side one member is drawn by counts to leave with it (REP.23) — the employer's job ends with the
+worker. A household no one is left in becomes an estate (§9.1), which takes its household-level rows whole. Parts
+leave with their households' attachments as given row shares, so the split draws nothing for them.
 
 **Processes on cells** are declared by the system that owns their outcome (`PopProcess`, in `phx-core`): the hazard
 it answers, the kind, the profile groups it reads — one set of components, the same in every role it acts on, so a
@@ -1208,6 +1229,26 @@ an explicit household, its key from its persons (§7.3: the head's age class, th
 children of each band), each person's health and each adult's education drawn by its age and sex from the
 household's own streams; households are gathered by key into cells, each held to its key's counts (REP.14). The
 report gives each country's households by type and persons by age band against the drawn shares.
+
+**The households' lines** are drawn with the households, since a household's bank is in its key and its jobs,
+loans, tenancy and pensions are rows gathered with it into its cell (REP.23, REP.26). Each system that owns a line
+kind declares an **attachment draw**, which `sys-dem`'s formation calls for each household once its persons are
+drawn, from that system's own opening streams and the household's subject: the banking arrangement (a key
+attribute), each deposit's balance, each loan's terms and outstanding amount, each adult's job, the tenancy and each
+pensioner's pension, each with its terms drawn over the trade's price points (REP.34), its counterparty named where
+the household's arrangement names it (its bank, the treasury) or left to the derived side (employers, landlords,
+schemes), and its holders — the household, or the persons of its roles. Where a counterparty is chosen in
+proportion to drawn sizes (the bank among the country's), the choice is made **online**: the n-th household of a
+stratum takes the counterparty furthest below its share of n, ties by lot, so every prefix of the region's
+households is apportioned within one of exact whatever the region's total, and no second pass is needed. Households
+are gathered by key and profile and by the attachments they hold (§7.3); a cell's row on a line counts its
+households or persons and sums their balances. A line is opened for each distinct (kind, terms, named counterparty);
+the counterparty's side of a named line is one row counting the cell rows' members. Lines whose other side is derived
+— jobs, tenancies, defined-benefit pensions — take it once every region is drawn, each line's count apportioned over
+the eligible counterparties by their drawn sizes (§10.2), and the unmatched strata and each counterparty's difference
+from its drawn size go to the opening report. The balances close through the ledger's opening writes (GEN.4): each
+row's balance written against its counterparty's, and a counterparty's books the sum of its rows, its equity the
+residual, reported.
 
 The same seed therefore gives the same world whatever the resolution the valve sets, and nothing is balanced after
 merging: finer attributes are drawn from their own counter keys, so a coarser setting is a projection of a finer
