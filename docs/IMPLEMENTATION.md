@@ -15598,7 +15598,10 @@ mechanisms its file named beforehand.
     are unchanged;
   - a RESOLUTION entry whose value changes carries `Resolution-Change: <id> — <report>` instead, citing a `perf/device` or `perf/measure`
     report that shows a budget miss for a coarsening, or measured headroom for a refinement: the resolution is
-    representation, set by measurement of the budget (N8.5);
+    representation, set by measurement of the budget (N8.5); or `Resolution-Change: <id> — plan §12, <decision>`, a
+    row of the owner's decisions that the commit's plan holds, for a resolution the owner set;
+  - a later commit may carry an earlier one's citations, naming it in a `Cited-For: <commit>` trailer, so history
+    is never rewritten to add them;
   - no trailer names a `perf/realism` or `perf/chains` path, a finding, or a fact or chain file.
 
   The check reads form only; whether a source is honest is the reviewers'. It is architecture §16.7's rule on

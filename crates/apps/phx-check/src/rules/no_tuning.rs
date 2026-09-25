@@ -13,8 +13,15 @@ const RULE: &str = "PC-91";
 /// The rule's own file: the commit that added it is the registration.
 const REGISTRATION: &str = "crates/apps/phx-check/src/rules/no_tuning.rs";
 const DATA: &str = "data";
-/// Where the budget's measurements are, the only reports a resolution change may cite.
+/// Where the budget's measurements are, which a resolution change may cite.
 const BUDGET_REPORTS: &[&str] = &["perf/device/", "perf/measure/"];
+/// A resolution changed by the owner cites the decision's row in the plan's owner decisions instead.
+const OWNER: &str = "plan §12, ";
+const PLAN: &str = "docs/IMPLEMENTATION.md";
+/// A later commit's trailer naming an earlier commit whose citations it carries.
+const CITED_FOR: &str = "Cited-For";
+/// The fewest hex digits a cited commit is named by.
+const SHORT_HASH: usize = 7;
 /// What no citation may name: a realism or chain result, a finding, or a measure's definition.
 const RESULTS: &[&str] = &["perf/realism", "perf/chains", "data/measure"];
 
@@ -47,9 +54,16 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         Ok(c) => c,
         Err(e) => return fail(e),
     };
+    let mut later: Vec<(String, String)> = Vec::new();
+    for commit in &commits {
+        let Ok(message) = git.message(commit) else { continue };
+        for cited in trailers(&message, CITED_FOR) {
+            later.push((cited.to_owned(), message.clone()));
+        }
+    }
     let mut breaches = Vec::new();
     for commit in commits {
-        match commit_breaches(&git, &commit) {
+        match commit_breaches(&git, &commit, &later) {
             Ok(found) => breaches.extend(found.into_iter().map(|m| Breach::new(RULE, DATA, 1, m))),
             Err(e) => breaches.extend(fail(e)),
         }
@@ -57,7 +71,7 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
     breaches
 }
 
-fn commit_breaches(git: &Git, commit: &str) -> Result<Vec<String>, String> {
+fn commit_breaches(git: &Git, commit: &str, later: &[(String, String)]) -> Result<Vec<String>, String> {
     let touched: Vec<String> =
         git.changed(commit, DATA)?.into_iter().map(|t| t.path).filter(|p| is_register_file(p)).collect();
     if touched.is_empty() {
@@ -76,9 +90,19 @@ fn commit_breaches(git: &Git, commit: &str) -> Result<Vec<String>, String> {
             after.extend(dump(path, &text)?);
         }
     }
-    let message = git.message(commit)?;
+    let mut message = git.message(commit)?;
+    for (cited, carried) in later {
+        if cited.len() >= SHORT_HASH && commit.starts_with(cited.as_str()) {
+            message.push('\n');
+            message.push_str(carried);
+        }
+    }
     let short: String = commit.chars().take(12).collect();
-    let exists = |report: &str| git.show(commit, report).is_some();
+    let plan = git.show(commit, PLAN).unwrap_or_default();
+    let exists = |report: &str| match report.strip_prefix(OWNER) {
+        Some(decision) => plan.lines().any(|l| l.starts_with(&format!("| {decision}"))),
+        None => git.show(commit, report).is_some(),
+    };
     Ok(judge(&before, &after, &message, &exists).into_iter().map(|m| format!("{short}: {m}")).collect())
 }
 
@@ -167,7 +191,11 @@ pub fn judge(before: &Dump, after: &Dump, message: &str, exists: &dyn Fn(&str) -
             let reported = resolutions
                 .iter()
                 .filter_map(|t| t.split_once(" — "))
-                .any(|(i, report)| i == id && BUDGET_REPORTS.iter().any(|p| report.starts_with(p)) && exists(report));
+                .any(|(i, report)| {
+                    i == id
+                        && (BUDGET_REPORTS.iter().any(|p| report.starts_with(p)) || report.starts_with(OWNER))
+                        && exists(report)
+                });
             if !reported {
                 refusals.push(format!("`{id}` is a resolution changed without `Resolution-Change: {id} — <report>`"));
             }
@@ -258,5 +286,8 @@ mod tests {
         assert!(judge(&before, &after, "Resolution-Change: X.r — perf/device/abc.json", &device).is_empty());
         assert_eq!(judge(&before, &after, "Resolution-Change: X.r — perf/realism/F01/r.json", &device).len(), 2);
         assert!(judge(&Dump::new(), &after, "Primitive-Change: X.r — s", NONE).is_empty());
+        let decided = |p: &str| p == "plan §12, The factor";
+        assert!(judge(&before, &after, "Resolution-Change: X.r — plan §12, The factor", &decided).is_empty());
+        assert_eq!(judge(&before, &after, "Resolution-Change: X.r — plan §12, No such row", &decided).len(), 1);
     }
 }
