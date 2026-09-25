@@ -5229,6 +5229,28 @@ recorded anew; the placeholder ratchet as before.
 its agent began, but the seated twins' donors' at the opening; a row whose count is not its multiplicity times its
 contracts; a mode branch in any system (the representation is two numbers every mechanism reads alike).
 
+**Reviews** (independent, S0.28 being Stage 0's last step before the gate; bde909ce to f5224552):
+- **Reviewer A (spec and step)**, no blocker. S1, an estate of a twins agent stood for its k estates as one of
+  multiplicity one: estates carry their agent's multiplicity (0477f7c3). S2, REP.15 claimed whole: carried in part,
+  completed at S1.03 (d7cc7972). S3, who holds a cleared line's overshoot: REP.23 names the issuer the line settles
+  through (bfa1e107). S4, no unit fits a leaving count: contracts leave like with like and the player's counterparts
+  seat a twin, the owner's decision (§12; 04151a2a, 90f1b158). Minors: the player's household an agent (REP.2, OBS.4;
+  bfa1e107); the donors' exception in REP.17 (b871fe57); a mixed representation, silent truncations and defaults
+  stopped (0d844fb3); GEN.14's representation the build's (bfa1e107); the opening's remainders reported and large
+  firms' shares whole units of one (74963421); the bank's removal its own fail cause (be3d2cc2); leaving and estate
+  siting on streams of their own (f0fd22cf); the person-per-line audit and LC-0-43 reading the sides (d7cc7972);
+  F-053's fixture test allowed by the owner (F-063, §12); F-074's row made readable (bfa1e107).
+- **Reviewer B (architecture, budget and shortcuts)**. B1, the day-buffer ratchet: the counter now counts every
+  buffer by its room with the day book and the look-ups (ab9e4578), and the ratchet is restated from the gate run.
+  S1 and S8, memory: PC-27 names the payments list the design keeps (ab9e4578), the retired landing index leaves the
+  run's budget, and architecture §13.1 is restated from the gate run. S2, three daily sweeps removed (533af5d1). S3
+  and S4, the hot path's allocations and the bench's cheaper kernel: F-081, for the phone's measure. S5, the agents'
+  work ratcheted (aa48779e). S6, PC-30 to PC-32 retired, PC-34 guards an agent's writes and a twin taken after the
+  opening stops the run (3e5490bc). S7, R5 unfinished: the owner closes the step with speed left to the phone
+  (§12; F-020, F-056, F-057 open). Minors: M1 (0d844fb3); M2, M3 (005f3b0c); M4 (aa48779e); M5, LC-0-38, LC-0-40 and
+  LC-0-43 made able to fail (90f1b158, d7cc7972); M6 with F-081; M7, the parser's zero refused by its test, the
+  death's rows answered by the audit's row check on the real run rather than a built world.
+
 **Done when**
 - [ ] Both representations open, settle and run the build run's days clean at one factor, with the same number of
   agents.
