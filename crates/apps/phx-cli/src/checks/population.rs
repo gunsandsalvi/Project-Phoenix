@@ -134,7 +134,9 @@ fn within(what: &str, t: &RateTally, twins: f64) -> Result<(), String> {
 }
 
 fn twins_u64(twins: f64) -> u64 {
-    let Some(k) = phx_rand::float::floor_to_u64(twins) else { return 1 };
+    let Some(k) = phx_rand::float::floor_to_u64(twins) else {
+        phx_num::violation!(clause = "REP.17", "a factor of twins beyond counting");
+    };
     k
 }
 

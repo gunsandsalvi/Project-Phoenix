@@ -142,6 +142,9 @@ impl<B: Backing> Books<B> {
         // A due on the balance is one twin's, rounded by its convention, times the agent's twins, so every twin's
         // share stays whole.
         let unit = self.parties.unit(holder);
+        if outstanding % i64::from(unit) != 0 {
+            violation!(clause = "REP.9", "an agent's balance not a whole share for each twin", line = line.get());
+        }
         let outstanding = outstanding / i64::from(unit);
         let state = DueState {
             calendar,

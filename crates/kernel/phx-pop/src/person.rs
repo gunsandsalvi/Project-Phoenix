@@ -24,7 +24,10 @@ pub fn pack(kind: &PopKindDecl, p: &Person) -> u64 {
     let Some(role) = kind.role(p.role) else {
         violation!(clause = "REP.26", "a person of a role its kind does not hold");
     };
-    let mut word = u64::from(serial.cast_unsigned()) | (u64::try_from(role).unwrap_or(u64::MAX) << BIRTH_BITS);
+    let Ok(role) = u64::try_from(role) else {
+        capacity_exceeded!("a person's role", u64::MAX, role);
+    };
+    let mut word = u64::from(serial.cast_unsigned()) | (role << BIRTH_BITS);
     let base = BIRTH_BITS + ROLE_BITS;
     for f in &kind.person_attrs {
         let Some(v) = p.attr(f.decl.name) else {

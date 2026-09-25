@@ -699,3 +699,19 @@ fn findings_by(findings: &[phx_core::Finding]) -> Vec<serde_json::Value> {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::representation;
+
+    #[test]
+    fn representation_names_one_factor() {
+        let r = representation("twins:170").expect("twins");
+        assert_eq!((r.multiplicity, r.population_divisor), (170, 1));
+        let r = representation("small:170").expect("a small world");
+        assert_eq!((r.multiplicity, r.population_divisor), (1, 170));
+        for bad in ["twins:0", "small:0", "twins", "cells:4", "twins:-1"] {
+            assert!(representation(bad).is_err(), "`{bad}` refused");
+        }
+    }
+}

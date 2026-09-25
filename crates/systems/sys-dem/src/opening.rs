@@ -379,7 +379,12 @@ fn start(y: i32) -> Date {
 /// The days of a date's year, and those of it before the date.
 fn year_days(date: Date) -> (u64, u64) {
     let (first, next) = (start(date.year()), start(date.year() + 1));
-    let whole = |n: i64| u64::try_from(n).unwrap_or(0);
+    let whole = |n: i64| {
+        let Ok(d) = u64::try_from(n) else {
+            violation!(clause = "TIME.2", "a date before its year's first day", days = n);
+        };
+        d
+    };
     (whole(actual_days(first, next)), whole(actual_days(first, date)))
 }
 

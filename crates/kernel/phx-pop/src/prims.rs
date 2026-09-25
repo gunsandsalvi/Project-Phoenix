@@ -56,17 +56,26 @@ impl Representation {
             }
             v
         };
-        Representation { multiplicity: read(prims.multiplicity), population_divisor: read(prims.population_divisor) }
+        let r =
+            Representation { multiplicity: read(prims.multiplicity), population_divisor: read(prims.population_divisor) };
+        if r.multiplicity > 1 && r.population_divisor > 1 {
+            violation!(
+                clause = "REP.40",
+                "twins in a small world, which is neither representation",
+                multiplicity = r.multiplicity,
+                divisor = r.population_divisor
+            );
+        }
+        r
     }
 
-    /// Which representation this is, for reports: twins, a small world, or both at once.
+    /// Which representation this is, for reports: twins, or a small world; a factor of one is both.
     #[must_use]
     pub fn name(self) -> String {
         match (self.multiplicity, self.population_divisor) {
             (1, 1) => "one agent for every party".to_owned(),
-            (k, 1) => format!("twins at {k}"),
             (1, k) => format!("a small world at {k}"),
-            (m, d) => format!("twins at {m} in a world one {d}-th of the population"),
+            (k, _) => format!("twins at {k}"),
         }
     }
 }
