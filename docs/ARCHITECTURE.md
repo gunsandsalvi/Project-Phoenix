@@ -578,7 +578,10 @@ reduction runs over a fixed tree.
   members not drawn. The draw is one sequence of members, each picked by the members its row has left (a Fenwick tree
   over the claimant rows, `phx_ledger::cleared::Losers`), from the stream `REP.cleared` keyed by the line and the day,
   so the first n drawn are the same members whatever n the failures reach and a growing count only takes credits
-  away. A line is cleared when its holder list shows at least two holders on each side; the reading stops there. For
+  away. A line is cleared when its holder list shows at least two holders on each side, a side that keeps no list
+  (households, depositors) counting as many; the reading stops there, and two listed holders are the whole line only
+  when both its sides are listed. The claimant rows the losers are drawn from are those the day's stream read, since
+  an unlisted side's holders are found only by reading their rows. For
   the accounts the top issuer stands as every cleared payment's counterparty: it is owed the failed payers' dues and
   owes the drawn members theirs, recorded as failed dues, so its receivables and payables on the line net to nothing
   (`DaySettlement::lost` counts the members drawn). A short bank's customers lose their payments through it, but a

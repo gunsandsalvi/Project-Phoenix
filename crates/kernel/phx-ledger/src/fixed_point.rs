@@ -78,15 +78,8 @@ impl<B: Backing> Work<'_, B> {
         let Some(day) = self.found.cleared.get(&line) else {
             violation!(clause = "REP.23", "a cleared payment failed on a line never reckoned", line = line.get());
         };
-        let claimants: Vec<(PartyId, u32)> = if day.losers.is_none() {
-            self.books
-                .side_holders(line, Side::Asset)
-                .into_iter()
-                .filter_map(|p| self.books.row_on_side(p, line, Side::Asset).map(|r| (p, r.row.count)))
-                .collect()
-        } else {
-            Vec::new()
-        };
+        let claimants: Vec<(PartyId, u32)> =
+            if day.losers.is_none() { day.claimants.iter().map(|(p, c)| (*p, *c)).collect() } else { Vec::new() };
         let draws = (self.draws_of)(line);
         let Some(day) = self.found.cleared.get_mut(&line) else { return };
         day.failed += u64::from(members);

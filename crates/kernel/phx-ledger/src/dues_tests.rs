@@ -252,6 +252,19 @@ const WAGE: LineKindDecl = LineKindDecl {
     dated: true,
 };
 
+/// A wage line whose claimants, many and small, keep no holder list, as households' sides do.
+const UNLISTED_WAGE: LineKindDecl = LineKindDecl {
+    name: "unlisted wage",
+    asset: SideDecl {
+        holder_kinds: &["firm"],
+        words: BALANCE,
+        holder_list: false,
+        holder_roles: &[],
+        exclusive: false,
+    },
+    ..WAGE
+};
+
 /// Two payers owing a line of 1 000 a member a month — the first for 2 members with 10 000 on deposit at the first
 /// bank, the second for 3 with 100 at the second — and three claimants holding 1, 3 and 1 members, one at each bank
 /// and one at the first: no pairing between them is recorded.
@@ -341,9 +354,9 @@ fn a_cleared_line_pays_row_by_row_and_draws_who_loses() {
     assert_eq!(balance(&books, cb, reserves, Side::Liability), -100_000);
 }
 
-/// The line above, but the second payer and the third claimant hold no account: the payer's dues fail for want of
-/// money, its members' dues lost by claimant members drawn for them, and the claimant's own due is lost against the
-/// top issuer, which owes no row of the line.
+/// The line above, its claimants keeping no holder list, and the second payer and the third claimant holding no
+/// account: the payer's dues fail for want of money, its members' dues lost by claimant members drawn from the rows
+/// the day's stream read, and the claimant's own due is lost against the top issuer, which owes no row of the line.
 #[test]
 fn a_cleared_line_fails_the_rows_of_holders_with_no_money() {
     let size = BooksSize { rows: 32, rows_per_chunk: 32, instruments: 16, lines: 16, per_chunk: 16, blocks: 32 };
@@ -356,7 +369,7 @@ fn a_cleared_line_fails_the_rows_of_holders_with_no_money() {
     let claimants = [at(&mut books, "firm"), at(&mut books, "firm"), at(&mut books, "firm")];
     let reserves_kind = books.ledger.lines.declare_reserves(HOLDERS.reserves()).index();
     let deposit_kind = books.ledger.lines.declare_deposits(HOLDERS.deposits("current account")).index();
-    let wage_kind = books.ledger.lines.declare_money(WAGE).index();
+    let wage_kind = books.ledger.lines.declare_money(UNLISTED_WAGE).index();
     let account = books.ledger.terms.intern(Terms::account(EUR, monthly()));
     let reserves = books.ledger.lines.open(reserves_kind, account, Missing::Absent);
     let deposits = banks.map(|_| books.ledger.lines.open(deposit_kind, account, Missing::Absent));

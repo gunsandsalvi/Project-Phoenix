@@ -63,12 +63,14 @@ pub(crate) enum Reckoning {
     Cleared,
 }
 
-/// A cleared line's day: the top issuer its payments reach, the one due its rows pay per member, the members of its
-/// failed payers, and the claimant members drawn to lose them.
+/// A cleared line's day: the top issuer its payments reach, the one due its rows pay per member, its claimant rows as
+/// the day's stream read them, since a side of many small holders keeps no holder list, the members of its failed
+/// payers, and the claimant members drawn to lose them.
 #[derive(Debug)]
 pub(crate) struct ClearedDay {
     pub top: PartyId,
     pub per_member: i64,
+    pub claimants: BTreeMap<PartyId, u32>,
     pub failed: u64,
     pub losers: Option<Losers>,
 }
@@ -124,6 +126,13 @@ impl<B: Backing> Books<B> {
         })
     }
 
+    /// Whether a line's holder list holds both its sides, so that two holders are the whole line; a side of many small
+    /// holders keeps no list, and its holders are found only by reading their rows.
+    fn both_listed(&self, line: LineId) -> bool {
+        let lines = &self.ledger.lines;
+        lines.listed_side(line, Side::Asset) && lines.listed_side(line, Side::Liability)
+    }
+
     /// A line's holders other than a party, in its holder list's order.
     pub(crate) fn line_holders_but(&self, line: LineId, party: PartyId) -> Vec<PartyId> {
         self.line_holders(line).filter(|p| *p != party).collect()
@@ -134,16 +143,18 @@ impl<B: Backing> Books<B> {
         self.line_holders(line).filter(|p| self.row_on_side(*p, line, side).is_some()).collect()
     }
 
-    /// How a line's dues are reckoned: a line of two holders on its claimant's row; a line one party holds a side of
-    /// on the other side's rows, each its own payment with that party; a line of many holders on both sides, whose
-    /// pairing is not recorded, cleared.
+    /// How a line's dues are reckoned: a line of two holders, both sides listed, on its claimant's row; a line one
+    /// party holds a side of on the other side's rows, each its own payment with that party; a line of many holders on
+    /// both sides, whose pairing is not recorded, cleared. A side that keeps no list is taken to hold many.
     #[clause("REP.23")]
     pub(crate) fn reckoning(&self, line: LineId, reader: PartyId, side: Side, found: &mut Found) -> Reckoning {
         if let Some(r) = found.reckoned.get(&line) {
             return *r;
         }
         let holders: Vec<PartyId> = self.line_holders(line).collect();
-        let r = if let [a, b] = holders.as_slice() {
+        let r = if self.both_listed(line)
+            && let [a, b] = holders.as_slice()
+        {
             let other = if *a == reader { *b } else { *a };
             match side {
                 Side::Asset => Reckoning::On { side: Side::Asset, counter: other },
@@ -180,8 +191,8 @@ impl<B: Backing> Books<B> {
         }
         let holders: Vec<PartyId> = self.line_holders(line).collect();
         let owers: Vec<PartyId> = match holders.as_slice() {
-            [a, b] if *a == claimant => vec![*b],
-            [a, b] if *b == claimant => vec![*a],
+            [a, b] if *a == claimant && self.both_listed(line) => vec![*b],
+            [a, b] if *b == claimant && self.both_listed(line) => vec![*a],
             _ => holders.into_iter().filter(|p| self.row_on_side(*p, line, Side::Liability).is_some()).collect(),
         };
         let [p] = owers.as_slice() else {

@@ -214,7 +214,13 @@ impl<B: Backing> Books<B> {
             (None, true) => self.line_top(line, ccy, found),
             (_, false) => self.top_of(holder, ccy, found),
         };
-        let day = found.cleared.entry(line).or_insert(ClearedDay { top, per_member: per, failed: 0, losers: None });
+        let day = found.cleared.entry(line).or_insert(ClearedDay {
+            top,
+            per_member: per,
+            claimants: BTreeMap::new(),
+            failed: 0,
+            losers: None,
+        });
         if day.top != top || day.per_member != per {
             violation!(
                 clause = "REP.23",
@@ -226,6 +232,9 @@ impl<B: Backing> Books<B> {
                 per_member = per,
                 first_per_member = day.per_member
             );
+        }
+        if row.side() == Side::Asset {
+            day.claimants.insert(holder, row.row.count);
         }
         let (from, to, members) = match row.side() {
             Side::Liability => (holder, top, row.row.count),
