@@ -4618,7 +4618,7 @@ each lit their family alone.
 
 ### S0.25 — GEN II and the population: households and small firms, the opening lines paying, `sys-dem` and estates
 
-**Status**: building
+**Status**: done (closed with S0.28, whose agents replaced its cells; its world ran on the twins gate run aa48779e)
 
 **Sub-steps** (the owner's decision, §12): S0.25 is built in five sub-steps, in order, each with its own two reviews
 and build run, and marked here as it is done. The clause map names S0.25, which completes with the last.
@@ -5092,17 +5092,17 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 - an estate that values rather than sells, or that distributes before its debts are paid.
 
 **Done when**
-- [ ] The full population opens, balances, settles for a year and lives a simulated year with deaths, illness, ageing,
+- [x] The full population opens, balances, settles for a year and lives a simulated year with deaths, illness, ageing,
   catastrophes, paydays, dues and pensions in payment.
-- [ ] LC-0-37 to LC-0-56 pass, but LC-0-42, which waits for Stage 1's first decisions, and LC-0-48, which waits for
+- [x] LC-0-37 to LC-0-56 pass, but LC-0-42, which waits for Stage 1's first decisions, and LC-0-48, which waits for
   the firms' positions (F-048).
-- [ ] Two reviews are done.
+- [x] Two reviews are done.
 
 ---
 
 ### S0.28 — The population as agents: twins and a small world
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: REP.1, REP.2, REP.3, REP.20 *(part: positions arrive as declared columns with the steps that need them)*,
@@ -5252,10 +5252,13 @@ contracts; a mode branch in any system (the representation is two numbers every 
   death's rows answered by the audit's row check on the real run rather than a built world.
 
 **Done when**
-- [ ] Both representations open, settle and run the build run's days clean at one factor, with the same number of
-  agents.
-- [ ] LC-0-37 to LC-0-56 pass or retire as above, but those waiting on Stage 1 (LC-0-42, LC-0-48).
-- [ ] The factor is set by the measured budget, and the two reviews are done.
+- [x] Both representations open, settle and run the build run's days clean at one factor: the twins gate run
+  (aa48779e, settled and two years) and the small world's run (8bb7cd39), each clean but for the ratchets restated
+  from them (c94152ee) and, on the twins run, the memory F-061's fix answered (8bb7cd39, the small run's peak 2 055
+  MiB); the owner closed it on these without a further run. The agents number alike but for three (F-083).
+- [x] LC-0-37 to LC-0-56 pass or retire as above, but those waiting on Stage 1 (LC-0-42, LC-0-48).
+- [x] The factor is 170 until the phone's measure sets it (S0.26, the owner's decision, §12), and the two reviews are
+  done.
 
 ---
 
@@ -16161,6 +16164,7 @@ the final build within the budget on the phone.
 | F-080 | S0.28 | gate build run, 2026-09-25 | Payments fail more as the world runs: on the twins gate run (2dfff358, settled then two years) 14.6 M of 100.8 M payments due failed, and the last day's payday failed 514 565 of 2 749 420, the most of any day; the heaviest day's fixed point took 713 437 iterations against the 498 793 of the 120-day runs | no household or firm decides at Stage 0: none cuts its spending, draws on credit or changes its work when its money runs short, so a payer that falls short stays short and more follow as balances drift under fixed dues | the decisions that answer it arrive with households' budgets and credit (S1.12, S1.09) and firms' (S1.03); the fixed point's ratchet is restated from the gate run with this cause; watched in every stage's gate run | open for S1.12 |
 | F-081 | S0.28 | step review B, 2026-09-25 | The agents' kernel allocates on the hot path and the bench measures a cheaper one: at 3b and 10b each agent gathered or booked builds a `Household` (a `Vec` of persons, each with a `Vec` of named attributes), `chances` and `follow` collect their places and rates per booking, `reached` allocates two `Vec`s, rates read attributes by name, 3e builds the regions per hit agent; in stage 7 `draw_to`, `book()`, `check_legs` and `apply` allocate per call. `phx-ffi`'s hazard bench skips `chances`, `follow`, `PopProcess::rate` and the register reads, which live in `phx-world` where the bench cannot call them, and no callgrind bench covers the agents' next hit or write-back | the agents' kernel was written for correctness first (R1, R2), in the assembly layer | read persons from their packed words with attributes resolved at bind, keep scratch the world owns, and move `follow`, `book` and `chances` into `phx-pop` as the one kernel the world and the bench call, with a `benches/pop.rs`, when the phone's measure (S0.26) says the day's 3b and 10b need it; the phone's device report times the world's own turns meanwhile | open for the phone's measure |
 | F-082 | S0.28 | gate build run, 2026-09-25 | The day buffers, counted by their room with the day book's records and the day's look-ups, peaked at 888 941 584 bytes on the twins gate run (aa48779e), a payday of 2.8 M payments, about 318 bytes a payment; architecture §13.1's line for the finished world's worst day, 4.4 M payments, is 600 MB, which at this rate would be about 1.4 GB | stage 7 keeps two records per payment across the day: the payment 7a hands 7c (56 bytes, F-020) and a due record for the accounts (56 bytes, F-057), besides the per-party records, nets and cleared lines' claimants | change how the day is represented, not the population: a compact handle per payment (its holder's slot and row) in place of the payment, and dues folded per (party, line kind) for the accounts, as F-057 proposes; measured on the phone at S0.26, whose memory reading decides when | open for the phone's measure |
+| F-083 | S0.28 | build runs, 2026-09-25 | The two representations open with agents three apart at one factor: 946 591 under twins (aa48779e) and 946 594 in the small world (8bb7cd39), where REP.40 says both draw the same number | the remainders fall in different places: twins divide each region's persons by the factor, the small world divides the whole population by it first, and twins seat the player's and its counterparts' twins; both report their remainders (74963421) | one division of the population by the factor, before the regions, for both representations, when REP.40's equality is next read; watched in each stage's build runs | open |
 
 ---
 
