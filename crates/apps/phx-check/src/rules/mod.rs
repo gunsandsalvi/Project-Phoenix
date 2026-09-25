@@ -2,11 +2,11 @@ use std::fmt;
 
 use crate::workspace::Workspace;
 
+mod agent_writes;
 pub mod api_snapshot;
 mod audit_reads;
 mod batches;
 mod borders;
-mod cell_writes;
 mod clippy_files;
 mod comment_refs;
 mod day_arithmetic;
@@ -20,7 +20,6 @@ mod forecasts;
 mod hand_pod;
 mod id_default;
 mod interfaces;
-mod landing;
 mod layering;
 mod ledger_writes;
 mod literals;
@@ -34,7 +33,6 @@ mod prints;
 mod random_crates;
 mod rayon_libc;
 mod register_reads;
-mod screening;
 mod statics;
 mod substeps;
 mod unsafe_code;
@@ -151,22 +149,10 @@ pub const RULES: &[Rule] = &[
         run: equity::run,
     },
     Rule {
-        id: "PC-30",
-        title: "a cell's columns written by the population's typed writes alone",
-        since: "S0.21",
-        run: cell_writes::run,
-    },
-    Rule {
-        id: "PC-31",
-        title: "members screened by the population's 3b screen alone",
-        since: "S0.22",
-        run: screening::run,
-    },
-    Rule {
-        id: "PC-32",
-        title: "members split and landed by the population alone, a cell's totals changed at 10b by a landing alone",
-        since: "S0.23",
-        run: landing::run,
+        id: "PC-34",
+        title: "an agent's persons, attachments and twins written by the population, the openings and the world alone",
+        since: "S0.28",
+        run: agent_writes::run,
     },
     Rule {
         id: "PC-33",
@@ -184,14 +170,38 @@ pub const RULES: &[Rule] = &[
     Rule { id: "PC-75", title: "a border closed in the markets' reach alone", since: "S0.18", run: borders::run },
 ];
 
+/// Rules retired with what they guarded, their numbers kept and never reused.
+pub const RETIRED: &[(&str, &str)] = &[
+    ("PC-30", "a cell's column writes: cells were retired for agents (S0.28), whose writes PC-34 guards"),
+    ("PC-31", "members screened at 3b: agents draw their next events, and nothing is screened (S0.28)"),
+    ("PC-32", "members split and landed: agents are never split or joined, so nothing lands (S0.28)"),
+];
+
 /// The dependency rules, which `layering` runs alone.
 pub const LAYERING: &[&str] = &["PC-01", "PC-02", "PC-03", "PC-04"];
 
 pub fn run(ws: &Workspace, ids: Option<&[&str]>) -> Vec<Breach> {
-    RULES.iter().filter(|r| ids.is_none_or(|ids| ids.contains(&r.id))).flat_map(|r| (r.run)(ws)).collect()
+    // A retired rule asked for by name answers why it was retired, so no one mistakes its silence for a pass.
+    let retired = RETIRED
+        .iter()
+        .filter(|(id, _)| ids.is_some_and(|ids| ids.contains(id)))
+        .map(|(id, why)| Breach::new(id, "phx-check", 0, format!("retired: {why}")));
+    retired
+        .chain(RULES.iter().filter(|r| ids.is_none_or(|ids| ids.contains(&r.id))).flat_map(|r| (r.run)(ws)))
+        .collect()
 }
 
 /// A breach for a source that does not parse, which every syntax rule reports rather than skips.
 pub fn unparsed(rule: &'static str, path: &str, error: &str) -> Breach {
     Breach::new(rule, path, 1, format!("does not parse: {error}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{RETIRED, RULES};
+
+    #[test]
+    fn a_retired_number_is_never_reused() {
+        assert!(RETIRED.iter().all(|(id, _)| RULES.iter().all(|r| r.id != *id)));
+    }
 }

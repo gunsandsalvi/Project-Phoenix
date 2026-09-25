@@ -3978,8 +3978,9 @@ tables implement here.
   F-060.)*
 
 **Guards**:
-- PC-30: no crate writes a cell column except through `phx-pop`'s typed writes, which a system reaches only through
-  its handler's `Ctx` for the items it declared through `d.pop_kind` (the same path facts take into kind tables).
+- PC-30 (retired at S0.28 with the cells; PC-34 guards the agents' writes): no crate writes a cell column except
+  through `phx-pop`'s typed writes, which a system reaches only through its handler's `Ctx` for the items it declared
+  through `d.pop_kind` (the same path facts take into kind tables).
 - No system names another system's attribute.
 - Every key, position and profile attribute is declared with its REP.33 class.
 
@@ -4160,8 +4161,9 @@ saves read back to their closes' hashes and the thirteen injections each lit the
   day. *(Not built as counters: the day's candidates and redraws are the world's day records (`CellDay`), which
   the live checks read, neither reported nor ratcheted; dense evaluations and occasion groups are not counted; F-060.)*
 
-**Guards**: PC-31: no screening outside 3b and the agenda, but for the tile and region processes `phx-geo` draws
-at 3a (S0.13); a process without a declared draw scheme is refused at assembly.
+**Guards**: PC-31 (retired at S0.28: agents draw their next events, and nothing is screened): no screening outside 3b
+and the agenda, but for the tile and region processes `phx-geo` draws at 3a (S0.13); a process without a declared draw
+scheme is refused at assembly.
 
 **Not allowed**:
 - visiting every cell daily;
@@ -4365,9 +4367,9 @@ alone.
   `phx_pop.rows_per_part` and `phx_pop.holder_list_changes_per_join`, which the day buffers' line and the join's
   unit cost rest on.
 
-**Guards**: PC-32: no landing outside 10b; no split outside an apply sub-step or the sub-step a declared part
-operation names (3c's `combine` and `divide`, S6.02); the `Landing` instruction is the only way a cell's totals
-change at 10b.
+**Guards**: PC-32 (retired at S0.28: agents are never split or joined): no landing outside 10b; no split outside an
+apply sub-step or the sub-step a declared part operation names (3c's `combine` and `divide`, S6.02); the `Landing`
+instruction is the only way a cell's totals change at 10b.
 
 **Not allowed**:
 - probing neighbouring steps;
@@ -5217,12 +5219,15 @@ retire with the machinery)
 **Budget**: architecture §13 as it applies to Stage 0's world, at the factor R6 sets, measured on the build machine
 and at S0.26 on the phone.
 
-**Guards**: `phx-check`'s rules on the retired cell modules removed with them; the public-API snapshots of
-`phx-pop`, `phx-core` and `phx-ledger` recorded anew; the placeholder ratchet as before.
+**Guards**: PC-30, PC-31 and PC-32, which guarded the cells' writes, screening and landing, are retired with them,
+their numbers kept (`phx-check`'s `RETIRED`); PC-34: an agent's persons and attachments are written by `phx-pop`, the
+openings that form households (`sys-dem`) and the world alone, and a twin is taken by the world alone, which stops the
+run if it is taken after the opening (REP.17); the public-API snapshots of `phx-pop`, `phx-core` and `phx-ledger`
+recorded anew; the placeholder ratchet as before.
 
 **Not allowed**: an agent split, joined or averaged; a twin that differs from another; a multiplicity changed after
-its agent began, but the player's donor's at the opening; a row whose count is not its multiplicity times its contracts; a mode branch in any system (the
-representation is two numbers every mechanism reads alike).
+its agent began, but the seated twins' donors' at the opening; a row whose count is not its multiplicity times its
+contracts; a mode branch in any system (the representation is two numbers every mechanism reads alike).
 
 **Done when**
 - [ ] Both representations open, settle and run the build run's days clean at one factor, with the same number of

@@ -687,6 +687,9 @@ impl World {
     /// share of each of the agent's contracts moved to it.
     #[clause("REP.1", "REP.9", "REP.17")]
     fn seat_twin(&mut self, day: Day, kind: usize, (slot, donor): (Slot, PartyId)) -> PartyId {
+        if day != self.day_zero {
+            violation!(clause = "REP.17", "a twin taken after the opening", party = donor.get());
+        }
         let (cells, directory, space) = self.books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(cells, kind);
         let attrs = table.attrs(slot);
