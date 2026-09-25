@@ -207,7 +207,12 @@ impl<B: Backing> Books<B> {
             violation!(
                 clause = "REP.23",
                 "a cleared line whose rows pay different dues or reach different top issuers",
-                line = line.get()
+                line = line.get(),
+                holder = holder.get(),
+                top = top.get(),
+                first_top = day.top.get(),
+                per_member = per,
+                first_per_member = day.per_member
             );
         }
         let (from, to, members) = match row.side() {
