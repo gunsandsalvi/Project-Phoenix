@@ -23,7 +23,7 @@ declare_family! { pub REPRESENTATION = "REP.representation" { mode: Rolling { cy
 /// weight times that count; and no row or holding is held by more members than the cell has, a row of a side held by
 /// persons counting each member's persons in the side's roles, `persons(line, side)`, which is missing for a side
 /// whose holders each hold any number.
-#[clause("REP.14", "REP.17", "REP.31")]
+#[clause("REP.14", "REP.17", "REP.31", "PTY.11")]
 #[must_use]
 pub fn representation<B: Backing>(
     table: &CellTable<B>,

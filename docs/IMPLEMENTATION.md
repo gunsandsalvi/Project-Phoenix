@@ -4818,8 +4818,10 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
 
 
 **Clauses**:
-- STATE: PTY.2, PTY.3, PTY.5; POP.1 *(part: the roles of Stage 0)*, POP.2 *(part)*; FRM.23 *(part:
-  small firms as cells, without behaviour)*; GEO.5 *(land held)*.
+- STATE: PTY.2 *(part: the population in cells of exact weights beside its individuals; a household's promotion by
+  its rank is S1.12's)*, PTY.3 *(part: a person's age, household, region and health; skills and a labour-market state
+  are S1.08's)*, PTY.5 *(part: sites by region; a household cell's zone in its profile is S2.05's)*; POP.1 *(part:
+  the roles of Stage 0)*, POP.2 *(part)*; FRM.23 *(part: small firms as cells, without behaviour)*.
 - PROCESS: REP.25, REP.26; POP.3, POP.4; GEN.6; PTY.9 *(endings with estates)*; GEO.8 *(losses at owners)*; L3 *(part:
   household estates)*; POP.9 *(part: heirs from kinship lines, distribution in kind)*; GEN.4 *(part: the population's
   balancing)*.
@@ -6116,7 +6118,8 @@ Counters, ratcheted: `phx_frt.shipments`, `phx_frt.refused_bookings`.
 
 **Clauses**:
 - STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: LAB.1–LAB.4, LAB.6–LAB.17, including collective
-  bargaining (LAB.10) where declared union coverage exists, and the minimum wage (LAB.11).
+  bargaining (LAB.10) where declared union coverage exists, and the minimum wage (LAB.11); PTY.3 *(completes it: a
+  person's skills and labour-market state)*.
 - DECISION: LAB.5 *(part: search within the region; moving for work is S2.05, retraining S6.02)*; FRM.7 *(completes
   it: employing, with S1.03's buying)*; HH.6 *(part: search, acceptance, quits and retirement, with S1.12)*; REP.34
   *(part: wage points)*.
@@ -6553,7 +6556,7 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
 **Status**: planned
 
 **Clauses**:
-- STATE: HH.1, HH.2, HH.3.
+- STATE: HH.1, HH.2, HH.3; PTY.2 *(completes it: households promoted and demoted by their rank)*.
 - DECISION: HH.4, HH.5; HH.6 *(completes it: participation and hours, with S1.08's search, quits and retirement)*;
   HH.7 *(part: deposits, banknotes and bills at auction)*; REP.5.
 - STATE: MON.4 *(completes it, with S1.09's part: depositors withdraw and deposit banknotes)*.
@@ -7773,7 +7776,8 @@ receivables by name; references resolve to the estate.
 
 **Clauses**:
 - STATE: HSG.1, HSG.2, HSG.3, HSG.19; CAP.2; GDS.3 *(completes it: land grown on)*; GEO.4 *(part: private owners'
-  life, maintenance and condition; public owners decide from S5.02, where it completes)*.
+  life, maintenance and condition; public owners decide from S5.02, where it completes)*; GEO.5 *(land held, with
+  what stands on it)*; PTY.5 *(completes it: a household cell's zone in its profile)*.
 - DECISION: HSG.4, HSG.5, HSG.6, HSG.7, HSG.8, HSG.9, HSG.18; HH.8, HH.10; HH.9 *(part: moving within a country;
   abroad is S5.05)*; LAB.5 *(part: search in other regions, with a move)*.
 - PROCESS: HSG.10, HSG.11, HSG.12, HSG.20; CAP.7 *(part: private owners; public owners at S5.02)*; POP.8 *(part:
@@ -15955,7 +15959,10 @@ and are not mapped.
 | TIME | S0.17 | 7 |
 | PTY | S0.09 | 1, 4, 6, 8, 13, 14 |
 | PTY | S0.12 | 10 |
-| PTY | S0.25 | 2, 3, 5, 9, 11, 15 |
+| PTY | S0.25 | 9, 11, 15 |
+| PTY | S1.08 | 3 |
+| PTY | S1.12 | 2 |
+| PTY | S2.05 | 5 |
 | PTY | S3.05 | 7 |
 | NUM | S0.03 | 1, 6 |
 | NUM | S0.09 | 3, 4, 7, 8, 9 |
@@ -15965,9 +15972,10 @@ and are not mapped.
 | CHN | S0.25 | 7 |
 | CHN | S6.02 | 3 |
 | GEO | S0.13 | 1, 2, 3, 6, 7, 10, 11, 14, 15, 16, 17 |
-| GEO | S0.25 | 5, 8 |
+| GEO | S0.25 | 8 |
 | GEO | S1.05 | 9, 12 |
 | GEO | S1.07 | 13, 18 |
+| GEO | S2.05 | 5 |
 | GEO | S5.02 | 4 |
 | REP | S0.21 | 1, 3, 4, 17, 19, 20, 32, 33 |
 | REP | S0.22 | 7, 12 |

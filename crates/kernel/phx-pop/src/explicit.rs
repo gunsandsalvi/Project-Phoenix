@@ -451,7 +451,7 @@ impl Gathered {
 /// The explicit households, as they were drawn out of a cell under `key` and as the outcomes left them, returned or
 /// regrouped. A household no one is left in ends; one under the cell's key returns its changes in place; the rest
 /// are grouped by the key they now hold, in the order of their keys, each held to its key's counts.
-#[clause("REP.26", "REP.14", "REP.8")]
+#[clause("REP.26", "REP.14", "REP.8", "PTY.11")]
 #[must_use]
 pub fn regroup(
     kind: &PopKindDecl,
