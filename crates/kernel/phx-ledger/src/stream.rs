@@ -376,51 +376,54 @@ impl<B: Backing> Books<B> {
         touched
     }
 
-    /// Stage 7a: one stream over every holder table's run heads, holder-major. A holder whose head has not come costs
-    /// that one read; on its head's day its segment's rows on lines due today are read, and each claimant's row adds
-    /// its payment's debits and credits to the records of the accounts it touches.
+    /// Stage 7a: one stream over the run heads filed as due by today, holder-major in table and slot order. A holder
+    /// whose head has since moved costs that one read; on its head's day its segment's rows on lines due today are
+    /// read, and each claimant's row adds its payment's debits and credits to the records of the accounts it touches.
     #[clause("MON.5", "REP.9", "SET.6")]
     pub(crate) fn stream(
         &self,
+        heads: &[u32],
         due: &DueLines,
-        day: Day,
-        calendar: &Calendar,
+        (day, calendar): (Day, &Calendar),
         closed: &Closed,
         found: &mut Found,
     ) -> DayRecords {
         let mut out = DayRecords::default();
-        for place in self.parties.places() {
+        let keys = self.ledger.lines.keys();
+        for &key in heads {
+            let (place, slot) = keys.split(key);
             let table = self.parties.holder(place);
-            for slot in phx_store::table::live_in(table.live_words()) {
-                out.heads_read += 1;
-                let Some((rows, read)) = runs::due_rows(table, slot, day, due) else { continue };
-                out.scanned.push((place, slot));
-                out.rows_scanned += read;
-                out.rows_due += count(rows.len());
-                let holder = table.party(slot);
-                for row in &rows {
-                    let Some(p) = self.payment(holder, row, day, calendar, found) else { continue };
-                    out.payments += 1;
-                    out.made.push(p);
-                    if p.moneyless {
-                        out.moneyless.insert(holder);
-                        continue;
-                    }
-                    let legs = self.effects(&p);
-                    if closed.holds(p.payer, &issuers(&legs)) {
-                        if p.cleared {
-                            violation!(
-                                clause = "MON.5",
-                                "a cleared line's payment through a closed bank, which waits for resolution (sys-sup)",
-                                line = p.line.get()
-                            );
-                        }
-                        out.pending += 1;
-                        continue;
-                    }
-                    let _ = self.book(&mut out.records, &legs, 1);
-                    out.gross += i128::from(p.amount);
+            if !phx_store::table::live_at(table.live_words(), slot) {
+                continue;
+            }
+            out.heads_read += 1;
+            let Some((rows, read)) = runs::due_rows(table, slot, day, due) else { continue };
+            out.scanned.push((place, slot));
+            out.rows_scanned += read;
+            out.rows_due += count(rows.len());
+            let holder = table.party(slot);
+            for row in &rows {
+                let Some(p) = self.payment(holder, row, day, calendar, found) else { continue };
+                out.payments += 1;
+                out.made.push(p);
+                if p.moneyless {
+                    out.moneyless.insert(holder);
+                    continue;
                 }
+                let legs = self.effects(&p);
+                if closed.holds(p.payer, &issuers(&legs)) {
+                    if p.cleared {
+                        violation!(
+                            clause = "MON.5",
+                            "a cleared line's payment through a closed bank, which waits for resolution (sys-sup)",
+                            line = p.line.get()
+                        );
+                    }
+                    out.pending += 1;
+                    continue;
+                }
+                let _ = self.book(&mut out.records, &legs, 1);
+                out.gross += i128::from(p.amount);
             }
         }
         out

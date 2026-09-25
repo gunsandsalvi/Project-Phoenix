@@ -260,6 +260,13 @@ impl<B: Backing> crate::save::Saved for Table<B> {
     }
 }
 
+/// Whether a table's live bits mark a slot live.
+#[must_use]
+pub fn live_at(words: &[u64], slot: Slot) -> bool {
+    let (word, mask) = bit(slot);
+    words.get(word).is_some_and(|w| w & mask != 0)
+}
+
 /// The live slots a table's live bits mark, in ascending order.
 pub fn live_in(words: &[u64]) -> impl Iterator<Item = Slot> + '_ {
     (0_u32..).zip(words.iter()).flat_map(|(w, bits)| {

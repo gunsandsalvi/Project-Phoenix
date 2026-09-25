@@ -82,7 +82,7 @@ pub fn truth<B: Backing>(
 /// The rows of lines whose dates are spent leave the segment for the end of the holder's rows, so a segment holds
 /// only rows that can still fall due and an empty one is never due.
 #[clause("REP.3")]
-pub fn rehead<B: Backing>(arenas: &mut dyn HolderArenas, holder: Slot, lines: &Lines<B>) {
+pub fn rehead<B: Backing>(arenas: &mut dyn HolderArenas, table: u16, holder: Slot, lines: &mut Lines<B>) {
     let mut head = arenas.run_head(holder);
     let spent: Vec<RowView> = segment(arenas, holder, head).filter(|r| lines.done(r.row.line)).collect();
     for view in spent.iter().rev() {
@@ -101,6 +101,7 @@ pub fn rehead<B: Backing>(arenas: &mut dyn HolderArenas, holder: Slot, lines: &L
         .fold(None, |least: Option<u32>, d| Some(least.map_or(d, |l| if d < l { d } else { l })));
     if let Some(next) = least {
         head.next_due = next;
+        lines.file_head(table, holder, next);
     }
     arenas.set_run_head(holder, head);
 }

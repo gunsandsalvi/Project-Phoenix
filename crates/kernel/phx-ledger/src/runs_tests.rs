@@ -149,7 +149,7 @@ fn run_head_skips_until_due() {
                 assert_eq!(head_before.next_due, day.get(), "day {d}: scanned on a day that is not its head's");
                 let got: Vec<LineId> = rows.iter().map(|r| r.row.line).collect();
                 assert_eq!(got, expected, "day {d}: the rows taken are those due");
-                rehead(Holders::arenas(&mut f.books.parties, place), slot, &f.books.ledger.lines);
+                rehead(Holders::arenas(&mut f.books.parties, place), place, slot, &mut f.books.ledger.lines);
             }
         }
     }
@@ -185,7 +185,7 @@ fn run_head_lower_bound_after_moves() {
     assert_eq!(segment_lines(&f), f.dated[1..].to_vec(), "a row leaving the segment shortens it");
     let h = head(&f.books, f.firm);
     assert!(earliest(&f).is_some_and(|e| h.next_due <= e), "an early head after a row leaves stays a lower bound");
-    rehead(Holders::arenas(&mut f.books.parties, place), slot, &f.books.ledger.lines);
+    rehead(Holders::arenas(&mut f.books.parties, place), place, slot, &mut f.books.ledger.lines);
     assert_eq!(Some(head(&f.books, f.firm).next_due), earliest(&f), "a scan makes the head exact again");
 }
 

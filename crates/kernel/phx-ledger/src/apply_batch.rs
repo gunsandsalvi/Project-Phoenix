@@ -345,7 +345,8 @@ impl<B: Backing> Books<B> {
         audit: &mut dyn AuditStream,
     ) -> DaySettlement {
         let mut found = Found::default();
-        let mut streamed = self.stream(due, day, calendar, closed, &mut found);
+        let heads = self.ledger.lines.take_heads(day);
+        let mut streamed = self.stream(&heads, due, (day, calendar), closed, &mut found);
         let fixed = self.fixed_point(&mut streamed, due, day, calendar, &mut found, draws_of);
         let scanned: BTreeSet<(u16, Slot)> = streamed.scanned.iter().copied().collect();
         let (runs_read, runs_broken) = self.runs_broken(due, day, &scanned);
@@ -395,7 +396,7 @@ impl<B: Backing> Books<B> {
             self.hold_all(&streamed, (due, day, calendar), closed, &mut found);
         }
         for &(place, slot) in &streamed.scanned {
-            runs::rehead(crate::apply::Holders::arenas(&mut self.parties, place), slot, &self.ledger.lines);
+            runs::rehead(crate::apply::Holders::arenas(&mut self.parties, place), place, slot, &mut self.ledger.lines);
         }
         DaySettlement {
             lines: count(due.lines().len()),

@@ -605,6 +605,7 @@ pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Colu
 impl<'a, A: phx_store::pod::Pod, C: phx_store::pod::Pod, D: phx_store::pod::Pod, E: phx_store::pod::Pod, F: phx_store::pod::Pod, G: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)
 pub type (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)::Rows = (&'a mut [A], &'a mut [C], &'a mut [D], &'a mut [E], &'a mut [F], &'a mut [G])
 pub fn (&'a mut phx_store::column::Column<A, B>, &'a mut phx_store::column::Column<C, B>, &'a mut phx_store::column::Column<D, B>, &'a mut phx_store::column::Column<E, B>, &'a mut phx_store::column::Column<F, B>, &'a mut phx_store::column::Column<G, B>)::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
+pub fn phx_store::table::live_at(&[u64], phx_id::ids::Slot) -> bool
 pub fn phx_store::table::live_in(&[u64]) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub enum phx_store::DecodeError
 pub phx_store::DecodeError::Frame

@@ -520,6 +520,7 @@ pub fn phx_ledger::commitment::empty_kinds(&[phx_ledger::commitment::CommitmentK
 pub mod phx_ledger::consts
 pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::HOLDER_SHARDS: u32
+pub const phx_ledger::consts::MONEY_ROWS_KEPT: usize
 pub const phx_ledger::consts::MONTHS_A_YEAR: u8
 pub const phx_ledger::consts::ROW_OPTIONAL_WORDS: usize
 pub const phx_ledger::consts::RUN_SAMPLE_PERIOD: u32
@@ -965,14 +966,20 @@ pub fn phx_ledger::line::Lines<B>::kind_name(&self, phx_id::ids::LineId) -> &'st
 pub fn phx_ledger::line::Lines<B>::kind_names(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
 pub fn phx_ledger::line::Lines<B>::kind_of(&self, phx_id::ids::LineId) -> u16
 pub fn phx_ledger::line::Lines<B>::len(&self) -> usize
+pub fn phx_ledger::line::Lines<B>::listed_holders(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> u32
 pub fn phx_ledger::line::Lines<B>::listed_side(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> bool
+pub fn phx_ledger::line::Lines<B>::money_rows(&self, u16, phx_id::ids::Slot) -> core::option::Option<phx_ledger::line::MoneyRows>
 pub fn phx_ledger::line::Lines<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32, phx_ledger::holder::HolderKeys) -> phx_ledger::line::Lines<B>
 pub fn phx_ledger::line::Lines<B>::next_due(&self, phx_id::ids::LineId) -> phx_id::day::Day
 pub fn phx_ledger::line::Lines<B>::open(&mut self, u16, phx_ledger::terms::TermsId, phx_num::missing::Missing<(phx_id::day::Day, u32)>) -> phx_id::ids::LineId
 pub fn phx_ledger::line::Lines<B>::side_count(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> u32
 pub fn phx_ledger::line::Lines<B>::side_decl(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> &phx_ledger::line::SideDecl
 pub fn phx_ledger::line::Lines<B>::side_version(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> u64
+pub fn phx_ledger::line::Lines<B>::sole_holder(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> core::option::Option<u32>
 pub fn phx_ledger::line::Lines<B>::terms(&self, phx_id::ids::LineId) -> phx_ledger::terms::TermsId
+pub struct phx_ledger::line::MoneyRows
+impl phx_ledger::line::MoneyRows
+pub fn phx_ledger::line::MoneyRows::rows(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::LineId, phx_ledger::algebra::Side)> + '_
 pub struct phx_ledger::line::NewRow
 pub phx_ledger::line::NewRow::count: u32
 pub phx_ledger::line::NewRow::optional: phx_ledger::rows::Optional
@@ -1115,7 +1122,7 @@ pub struct phx_ledger::runs::RunTruth
 pub phx_ledger::runs::RunTruth::due: u64
 pub phx_ledger::runs::RunTruth::holds: bool
 pub fn phx_ledger::runs::due_rows(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::day::Day, &phx_ledger::due::DueLines) -> core::option::Option<(alloc::vec::Vec<phx_ledger::rows::RowView>, u64)>
-pub fn phx_ledger::runs::rehead<B: phx_store::backing::Backing>(&mut dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, &phx_ledger::line::Lines<B>)
+pub fn phx_ledger::runs::rehead<B: phx_store::backing::Backing>(&mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &mut phx_ledger::line::Lines<B>)
 pub fn phx_ledger::runs::segment(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_core::kind_tables::RunHead) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::rows::RowView> + '_
 pub fn phx_ledger::runs::truth<B: phx_store::backing::Backing>(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::day::Day, &phx_ledger::due::DueLines, &phx_ledger::line::Lines<B>) -> phx_ledger::runs::RunTruth
 pub mod phx_ledger::standing

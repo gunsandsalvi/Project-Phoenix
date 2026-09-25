@@ -171,6 +171,9 @@ pub struct Lines<B: Backing = SystemBacking> {
     money: Vec<u16>,
     /// The lines by the day they next fall due; an entry whose line has since moved is passed over.
     wheel: BTreeMap<u32, Vec<u32>>,
+    /// The holders, as keys, by the day their run head next falls due, so 7a reads only the heads due; an entry whose
+    /// head has since moved is passed over. Kept for the run alone, rebuilt with the holder lists.
+    heads: BTreeMap<u32, Vec<u32>>,
     /// How many times each line side's members have changed, by line and side, so what was read of a side is known
     /// still true; kept for the run alone, a load beginning it afresh with every read of a side.
     versions: Vec<[u64; 2]>,
@@ -198,6 +201,7 @@ impl<B: Backing> Lines<B> {
             reserves: Vec::new(),
             money: Vec::new(),
             wheel: BTreeMap::new(),
+            heads: BTreeMap::new(),
             versions: Vec::new(),
             listed: Vec::new(),
             money_rows: Vec::new(),
@@ -495,6 +499,22 @@ impl<B: Backing> Lines<B> {
         self.versions.get(at_line(line)).and_then(|v| v.get(side_index(side))).copied().unwrap_or(0)
     }
 
+    /// A holder filed under the day its run head next falls due.
+    pub(crate) fn file_head(&mut self, table: u16, holder: Slot, day: u32) {
+        let key = self.keys().key(table, holder);
+        self.heads.entry(day).or_default().push(key);
+    }
+
+    /// The holders filed under today or earlier, as keys in table and slot order, each once, their entries taken:
+    /// those whose heads may be due, which the reader checks against each head.
+    pub(crate) fn take_heads(&mut self, day: Day) -> Vec<u32> {
+        let later = self.heads.split_off(&(day.get() + 1));
+        let mut keys: Vec<u32> = std::mem::replace(&mut self.heads, later).into_values().flatten().collect();
+        keys.sort_unstable();
+        keys.dedup();
+        keys
+    }
+
     /// The key of the one holder a listed side of a line holds, or none where it holds none or more than one.
     #[must_use]
     pub fn sole_holder(&self, line: LineId, side: Side) -> Option<u32> {
@@ -627,6 +647,7 @@ impl<B: Backing> Lines<B> {
             let due = if self.fell.1.contains(&line.get()) { self.fell.0 } else { self.next_due(line) }.get();
             if head.len == 0 || due < head.next_due {
                 head.next_due = due;
+                self.file_head(table, holder, due);
             }
             head.len += word32(added);
             arenas.set_run_head(holder, head);
@@ -851,6 +872,7 @@ impl<B: Backing> Lines<B> {
             reserves,
             money,
             wheel,
+            heads: BTreeMap::new(),
             versions: Vec::new(),
             listed: Vec::new(),
             money_rows: Vec::new(),
@@ -859,6 +881,14 @@ impl<B: Backing> Lines<B> {
     }
 
     /// A holder put back on a line's holder list as a load rebuilds it, where a side it holds keeps one.
+    /// A holder's run head filed as a load rebuilds the index of heads, where its segment holds rows.
+    pub(crate) fn refile_head(&mut self, arenas: &dyn HolderArenas, table: u16, holder: Slot) {
+        let head = arenas.run_head(holder);
+        if head.len > 0 {
+            self.file_head(table, holder, head.next_due);
+        }
+    }
+
     pub(crate) fn relist(&mut self, arenas: &dyn HolderArenas, table: u16, holder: Slot, line: LineId, sides: &[Side]) {
         let kind = *self.kind(self.row(line).kind);
         for side in sides {
