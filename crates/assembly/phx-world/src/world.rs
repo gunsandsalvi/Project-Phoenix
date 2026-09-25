@@ -17,6 +17,9 @@ use crate::trace::TraceLog;
 /// What a system compiled at assembly, which only its own handlers are given.
 pub type OwnState = Box<dyn Any + Send + Sync>;
 
+/// A part split at 3e with the rows it takes, which stay on its origin until 10b.
+pub(crate) type PlannedPart = (phx_pop::part::Part, phx_pop::split::RowPlanned);
+
 /// A day's settlement as published: its measure, what its dated flows came to, and its fails; and, once the next
 /// business day's contract process has taken them, how many of its fails on a row a party still held were not then in
 /// arrears.
@@ -55,8 +58,9 @@ pub struct World {
     pub(crate) processes: Vec<crate::cells::Bound>,
     /// The day's hits, from 3b's screening to 3e's outcomes.
     pub(crate) cell_hits: Vec<crate::cells::CellHit>,
-    /// The day's parts, per population kind, from 3e's outcomes to 10b's landing.
-    pub(crate) cell_parts: Vec<Vec<phx_pop::part::Part>>,
+    /// The day's parts, per population kind, from 3e's outcomes to 10b's landing, each with the rows it takes, which
+    /// stay on its origin until 10b.
+    pub(crate) cell_parts: Vec<Vec<PlannedPart>>,
     /// The day's cells to re-key at 10b, per population kind.
     pub(crate) cell_flagged: Vec<Vec<phx_id::Slot>>,
     /// The day's splits of the cells the observer traces, cleared as each day begins; never saved or hashed.

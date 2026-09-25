@@ -609,8 +609,12 @@ pub phx_pop::split::SplitSpec::own: &'a [(usize, i64)]
 pub phx_pop::split::SplitSpec::reviewed: phx_num::missing::Missing<usize>
 pub phx_pop::split::SplitSpec::rounding: phx_num::round::Round
 pub phx_pop::split::SplitSpec::rows: &'a [((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)]
+pub fn phx_pop::split::detach_planned<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::split::Cells<'_, B, L>, phx_id::ids::Slot, &[phx_pop::split::RowPlanned]) -> alloc::vec::Vec<alloc::vec::Vec<phx_ledger::part::DetachedRow>>
 pub fn phx_pop::split::split<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::split::Cells<'_, B, L>, phx_id::ids::Slot, phx_pop::part::PartId, &phx_pop::split::SplitSpec<'_>, &mut phx_rand::draws::Draws) -> phx_pop::split::Parted
 pub fn phx_pop::split::split_batch<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::split::Cells<'_, B, L>, phx_id::ids::Slot, &mut [(phx_pop::part::PartId, phx_pop::split::SplitSpec<'_>, &mut phx_rand::draws::Draws)]) -> alloc::vec::Vec<phx_pop::split::Parted>
+pub fn phx_pop::split::split_planned<B: phx_store::backing::Backing, L: phx_store::backing::Backing>(&mut phx_pop::split::Cells<'_, B, L>, phx_id::ids::Slot, phx_pop::part::PartId, &phx_pop::split::SplitSpec<'_>, &[phx_pop::split::RowLeaving], &mut phx_rand::draws::Draws) -> (phx_pop::split::Parted, phx_pop::split::RowPlanned)
+pub type phx_pop::split::RowLeaving = ((phx_id::ids::LineId, phx_ledger::algebra::Side), phx_ledger::part::RowShare)
+pub type phx_pop::split::RowPlanned = (alloc::vec::Vec<phx_pop::split::RowLeaving>, phx_num::round::Round)
 pub mod phx_pop::steps
 #[repr(transparent)] pub struct phx_pop::steps::Step(_)
 impl phx_pop::steps::Step
@@ -752,6 +756,7 @@ pub fn phx_pop::table::CellTable<B>::table(&self) -> phx_id::ids::TableId
 impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderTable for phx_pop::table::CellTable<B>
 pub fn phx_pop::table::CellTable<B>::live_words(&self) -> &[u64]
 impl<B: phx_store::backing::Backing> phx_ledger::positions::PayerPositions for phx_pop::table::CellTable<B>
+pub fn phx_pop::table::CellTable<B>::funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_pop::table::CellTable<B>::kinks_into(&self, phx_id::ids::Slot, &mut alloc::vec::Vec<phx_ledger::pooled::Kink>)
 pub fn phx_pop::table::CellTable<B>::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_pop::table::CellTable<B>::standing_rate(&self, phx_id::ids::Slot, &phx_ledger::rows::RowView) -> phx_num::missing::Missing<i64>

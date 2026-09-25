@@ -2,11 +2,10 @@ use phx_core::facts::{FactDecl, ReprClass};
 use phx_core::schema::{FactColumn, TableSchema};
 use phx_core::{ListKind, RunHead};
 use phx_id::{LineId, PartyId, Slot, TableId};
-use phx_ledger::algebra::Side;
 use phx_ledger::holder::{CellHolders, HolderArenas, HolderTable};
 use phx_ledger::pooled::Kink;
 use phx_ledger::positions::PayerPositions;
-use phx_ledger::rows::{self, RowView};
+use phx_ledger::rows::RowView;
 use phx_macros::clause;
 use phx_num::{Missing, capacity_exceeded, violation};
 use phx_store::{AddressSpace, Backing, ChunkArena, ListRef};
@@ -110,21 +109,13 @@ impl<B: Backing> PayerPositions for CellTable<B> {
     }
 
     fn per_member_funds(&self, holder: Slot, account: LineId, facility_per_member: i64) -> i128 {
-        let Some(view) = rows::iter(self, holder).find(|r| r.row.line == account && r.side() == Side::Asset) else {
-            violation!(clause = "MON.5", "funds read on an account its holder does not hold", line = account.get());
-        };
-        let Missing::Present(balance) = view.optional.balance else {
-            violation!(clause = "MON.5", "an account with no balance", line = account.get());
-        };
-        let pending = match view.optional.pending {
-            Missing::Present(p) => i128::from(p),
-            Missing::Absent => 0,
-        };
-        let members = i128::from(view.row.count);
-        if members == 0 {
-            violation!(clause = "REP.9", "an account held by no member", line = account.get());
-        }
-        (i128::from(balance) - pending) / members + i128::from(facility_per_member)
+        let (available, members) = phx_ledger::positions::account_funds(self, holder, account);
+        available / members + i128::from(facility_per_member)
+    }
+
+    fn funds(&self, holder: Slot, account: LineId, facility_per_member: i64) -> i128 {
+        let (available, members) = phx_ledger::positions::account_funds(self, holder, account);
+        available + i128::from(facility_per_member) * members
     }
 
     /// Every kink of the cell's key rules lies in its signature, whose points the rules owning them give; a cell

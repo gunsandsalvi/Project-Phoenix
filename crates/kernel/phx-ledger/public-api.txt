@@ -1066,15 +1066,18 @@ pub phx_ledger::pooled::PooledRow::reached: u32
 pub fn phx_ledger::pooled::pooled(i128, u32, &[phx_ledger::pooled::PooledRow], &[phx_ledger::pooled::Kink]) -> alloc::vec::Vec<phx_ledger::pooled::RowOutcome>
 pub mod phx_ledger::positions
 pub trait phx_ledger::positions::PayerPositions
+pub fn phx_ledger::positions::PayerPositions::funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_ledger::positions::PayerPositions::kinks_into(&self, phx_id::ids::Slot, &mut alloc::vec::Vec<phx_ledger::pooled::Kink>)
 pub fn phx_ledger::positions::PayerPositions::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_ledger::positions::PayerPositions::standing_rate(&self, phx_id::ids::Slot, &phx_ledger::rows::RowView) -> phx_num::missing::Missing<i64>
 pub fn phx_ledger::positions::PayerPositions::weight(&self, phx_id::ids::Slot) -> u32
 impl<B: phx_store::backing::Backing> phx_ledger::positions::PayerPositions for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_core::kind_tables::KindTable<B>::kinks_into(&self, phx_id::ids::Slot, &mut alloc::vec::Vec<phx_ledger::pooled::Kink>)
 pub fn phx_core::kind_tables::KindTable<B>::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_core::kind_tables::KindTable<B>::standing_rate(&self, phx_id::ids::Slot, &phx_ledger::rows::RowView) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::weight(&self, phx_id::ids::Slot) -> u32
+pub fn phx_ledger::positions::account_funds(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::LineId) -> (i128, i128)
 pub mod phx_ledger::rounding
 pub enum phx_ledger::rounding::Residue
 pub phx_ledger::rounding::Residue::Named(phx_id::ids::PartyId)

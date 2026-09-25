@@ -921,9 +921,11 @@ pins them (§4.2). A change only to a profile or an attachment — a job taken a
 applied to the row's counts in place.
 
 **Parts** are rows with **day-local identities**: a part carries only its own profile entries, rows and positions.
-Its rows and holdings are detached from the cell by the ledger (`phx_ledger::part`), each with its members' share of
-the row's words, its payment record and its arrears, and attached to the cell it lands in; its members stay on their
-lines, so no line's side counts move between the split and the landing. What a flow moved for the reached members
+The split fixes each of its rows' shares; the rows stay on the cell until 10b, so the cell pays the dues falling
+on them that day, its funds read from its whole account row. At 10b, before the part lands, its rows and holdings are
+detached from the cell by the ledger (`phx_ledger::part`), each with its members' share of the row's words, its payment
+record and its arrears, in the order the splits were made, and attached to the cell it lands in; its members stay on
+their lines, so no line's side counts move between the split and the landing. What a flow moved for the reached members
 alone — its amount on their funds row, its move of the position its kink lies on — leaves with them whole before the
 rest is shared.
 **Split batches**: the splits one apply sub-step makes from one cell are made together, in the order their events

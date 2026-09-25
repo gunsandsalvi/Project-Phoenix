@@ -331,8 +331,7 @@ impl<B: Backing> Books<B> {
             Missing::Absent => 0,
         };
         let positions = self.parties.holder(table);
-        let weight = i128::from(positions.weight(slot));
-        Record { account, funds: positions.per_member_funds(slot, account, facility) * weight, debit: 0, credit: 0 }
+        Record { account, funds: positions.funds(slot, account, facility), debit: 0, credit: 0 }
     }
 
     /// Adds or takes away a payment's effects on the accounts it touches: a leg drawing on an account is a debit, a

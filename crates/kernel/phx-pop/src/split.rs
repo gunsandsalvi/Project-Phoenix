@@ -148,6 +148,58 @@ pub fn split_batch<B: Backing, L: Backing>(
     slot: Slot,
     splits: &mut [(PartId, SplitSpec<'_>, &mut Draws)],
 ) -> Vec<Parted> {
+    let (mut out, plans) = split_with(at, slot, splits, &[]);
+    let rows = detach_planned(at, slot, &plans);
+    let mut rows = rows.into_iter();
+    for parted in &mut out {
+        if let Parted::Part(p) = parted {
+            p.rows = rows.next().unwrap_or_default();
+        }
+    }
+    out
+}
+
+/// A split whose rows stay on the cell until `detach_planned` takes them, so that what falls due on them before then
+/// is the cell's to pay and receive: the part without its rows, and the members it takes from each, planned as the
+/// cell's rows hold them less the members `pending` splits have already planned to take. What else leaves, leaves now.
+#[clause("REP.8", "REP.9", "REP.14", "REP.23")]
+pub fn split_planned<B: Backing, L: Backing>(
+    at: &mut Cells<'_, B, L>,
+    slot: Slot,
+    id: PartId,
+    spec: &SplitSpec<'_>,
+    pending: &[RowLeaving],
+    d: &mut Draws,
+) -> (Parted, RowPlanned) {
+    let mut one = [(id, *spec, d)];
+    let (mut out, mut plans) = split_with(at, slot, &mut one, pending);
+    let parted = out.pop().unwrap_or(Parted::Whole);
+    let plan = plans.pop().unwrap_or((Vec::new(), spec.rounding));
+    (parted, plan)
+}
+
+/// The rows planned for several parts taken from a cell at once, in the order of their plans, each share taken from the
+/// row as the plans before it left it.
+pub fn detach_planned<B: Backing, L: Backing>(
+    at: &mut Cells<'_, B, L>,
+    slot: Slot,
+    plans: &[RowPlanned],
+) -> Vec<Vec<phx_ledger::part::DetachedRow>> {
+    if plans.iter().all(|(p, _)| p.is_empty()) {
+        return plans.iter().map(|_| Vec::new()).collect();
+    }
+    let borrowed: Vec<RowPlan<'_>> = plans.iter().map(|(p, r)| (p.as_slice(), *r)).collect();
+    at.ledger.detach_rows_batch(&mut *at.table, at.place, slot, &borrowed)
+}
+
+/// The splits' parts, and the rows each takes planned: every part's rows drawn from the cell's as the splits before it
+/// and `pending` left them, none detached.
+fn split_with<B: Backing, L: Backing>(
+    at: &mut Cells<'_, B, L>,
+    slot: Slot,
+    splits: &mut [(PartId, SplitSpec<'_>, &mut Draws)],
+    pending: &[RowLeaving],
+) -> (Vec<Parted>, Vec<RowPlanned>) {
     let (ledger, table, place, keys) = (&mut *at.ledger, &mut *at.table, at.place, at.keys);
     let layout = table.profile_layout().clone();
     let mut origin = table.profile(slot);
@@ -155,6 +207,16 @@ pub fn split_batch<B: Backing, L: Backing>(
     // The cell's rows as the splits so far left them: the members each holds, a row gone once none do.
     let mut held: Vec<(LineId, Side, u32)> =
         rows::iter(&*table, slot).map(|r| (r.row.line, r.side(), r.row.count)).collect();
+    for ((line, side), share) in pending {
+        let Some((_, _, count)) = held.iter_mut().find(|(l, s, _)| (l, s) == (line, side)) else {
+            violation!(clause = "REP.23", "a plan naming a row its cell does not hold", line = line.get());
+        };
+        let Some(rest) = count.checked_sub(share.count) else {
+            violation!(clause = "REP.9", "more members planned to leave a row than hold it", line = line.get());
+        };
+        *count = rest;
+    }
+    held.retain(|(_, _, count)| *count > 0);
     let mut plans: Vec<(Vec<RowLeaving>, Round)> = Vec::with_capacity(splits.len());
     let mut out = Vec::with_capacity(splits.len());
     for (id, spec, d) in splits.iter_mut() {
@@ -202,19 +264,15 @@ pub fn split_batch<B: Backing, L: Backing>(
             holdings,
         })));
     }
-    let borrowed: Vec<RowPlan<'_>> = plans.iter().map(|(p, r)| (p.as_slice(), *r)).collect();
-    let mut detached = ledger.detach_rows_batch(table, place, slot, &borrowed).into_iter();
-    for parted in &mut out {
-        if let Parted::Part(p) = parted {
-            p.rows = detached.next().unwrap_or_default();
-        }
-    }
     table.shift_profile(slot, &crate::profile::net(deltas));
-    out
+    (out, plans)
 }
 
 /// The members leaving one line side of a cell's row.
-type RowLeaving = ((LineId, Side), RowShare);
+pub type RowLeaving = ((LineId, Side), RowShare);
+
+/// A part's rows planned: the members it takes from each, and the rounding their shares take.
+pub type RowPlanned = (Vec<RowLeaving>, Round);
 
 /// The members one split takes from each of the cell's rows as the splits before it left them: the event's own rows as
 /// it gives them, every other row's drawn from the members holding it; `held` is left with what stays.
@@ -322,6 +380,44 @@ mod tests {
             })
             .collect();
         (row_totals, holding_totals)
+    }
+
+    #[test]
+    fn a_planned_split_detached_later_is_the_split() {
+        let kind = kind();
+        for i in 0..50 {
+            let run = |planned: bool| {
+                let mut space = AddressSpace::empty();
+                let mut bk: Books = books(&mut space);
+                let (keys, _) = keys(&kind, 1, 1);
+                let (mut tab, slot) = cell(&mut space, &kind, &mut bk, &keys);
+                let mut d = draws("DEM.death", i);
+                let mut parts = Vec::new();
+                let mut pending = Vec::new();
+                for (seq, n) in [(0, 25), (1, 10)] {
+                    let id = PartId { origin: PartyId::new(7), seq };
+                    let mut at = cells(&mut bk, &mut tab, &keys);
+                    if planned {
+                        let (got, plan) = super::split_planned(&mut at, slot, id, &plain(n), &pending, &mut d);
+                        pending.extend(plan.0.iter().copied());
+                        parts.push((part(got), plan));
+                    } else {
+                        parts.push((part(split(&mut at, slot, id, &plain(n), &mut d)), (Vec::new(), Round::HalfEven)));
+                    }
+                }
+                if planned {
+                    let before = totals(&tab, slot);
+                    assert_eq!(before.0.first().map(|x| x.0), Some(100), "the rows stay whole until detached");
+                    let plans: Vec<_> = parts.iter().map(|(_, p)| p.clone()).collect();
+                    let rows = super::detach_planned(&mut cells(&mut bk, &mut tab, &keys), slot, &plans);
+                    for ((p, _), r) in parts.iter_mut().zip(rows) {
+                        p.rows = r;
+                    }
+                }
+                (totals(&tab, slot), parts.into_iter().map(|(p, _)| p).collect::<Vec<_>>())
+            };
+            assert_eq!(run(true), run(false), "draw {i}: the same members and shares leave, later");
+        }
     }
 
     #[test]

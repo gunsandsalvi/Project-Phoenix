@@ -26,7 +26,7 @@ use phx_pop::rekey::rekey_flagged;
 use phx_pop::rekey::{end_cell, set_key};
 use phx_pop::renumber;
 use phx_pop::screen::{Process, ScreenCounters, screen_due};
-use phx_pop::split::{Cells, Parted, SplitSpec, split};
+use phx_pop::split::{Cells, Parted, RowLeaving, SplitSpec, detach_planned, split_planned};
 use phx_pop::table::CellTable;
 use phx_pop::tolerance::Tolerances;
 use phx_pop::tolerance::{choose_narrowing, choose_widening, estimate, sweep, top_levels};
@@ -592,6 +592,9 @@ impl World {
         let table = Population::table_mut::<SystemBacking>(cells, kind);
         let layout = table.profile_layout().clone();
         let mut ended = 0_u64;
+        // What the day's earlier parts from this cell have planned to take of its rows, still on it until 10b.
+        let parts_here = self.cell_parts.get_mut(kind).map(std::mem::take).unwrap_or_default();
+        let (mut mine, others): (Vec<_>, Vec<_>) = parts_here.into_iter().partition(|(p, _)| p.id.origin == party);
         let groups = regrouped.parts.into_iter().map(|m| (m, false)).chain(regrouped.ended.map(|m| (m, true)));
         for (seq, (moved, end)) in (0_u32..).zip(groups) {
             let given: Vec<Vec<(u32, u64)>> = (0..layout.groups.len())
@@ -614,9 +617,22 @@ impl World {
                 reviewed: Missing::Absent,
                 rounding: Round::HalfEven,
             };
+            let Some(seq) = u32::try_from(mine.len()).ok().and_then(|n| seq.checked_add(n)) else {
+                phx_num::capacity_exceeded!("parts from one cell in a day", u32::MAX, mine.len());
+            };
             let id = PartId { origin: party, seq };
+            let pending: Vec<RowLeaving> = mine.iter().flat_map(|(_, (plan, _))| plan.iter().copied()).collect();
             let mut at = Cells { ledger, table, place: kd.place, keys: &kd.keys };
-            let parted = split(&mut at, slot, id, &spec, draws);
+            let (parted, planned) = split_planned(&mut at, slot, id, &spec, &pending, draws);
+            if end && !mine.is_empty() && matches!(parted, Parted::Whole) {
+                // The cell ends here, so the rows its earlier parts take leave it now, not at 10b.
+                let plans: Vec<_> = mine.iter().map(|(_, plan)| plan.clone()).collect();
+                let rows = detach_planned(&mut at, slot, &plans);
+                for ((part, plan), taken) in mine.iter_mut().zip(rows) {
+                    part.rows = taken;
+                    plan.0.clear();
+                }
+            }
             let phx_pop::population::PopKind { decl, keys, index, levels, place, .. } = &mut *kd;
             let mut ctx = TenB {
                 ledger,
@@ -632,7 +648,7 @@ impl World {
             };
             match (parted, end) {
                 (Parted::Part(part), true) => {
-                    if !part.rows.is_empty() || !part.holdings.is_empty() {
+                    if !part.rows.is_empty() || !part.holdings.is_empty() || !planned.0.is_empty() {
                         violation!(clause = "POP.15", "households ended holding what only an estate can take");
                     }
                     ended += u64::from(moved.households);
@@ -646,9 +662,7 @@ impl World {
                 }
                 (Parted::Part(mut part), false) => {
                     (part.profile, part.key) = (moved.after, moved.key);
-                    if let Some(parts) = self.cell_parts.get_mut(kind) {
-                        parts.push(*part);
-                    }
+                    mine.push((*part, planned));
                     self.cell_day.parts += 1;
                 }
                 (Parted::Whole, false) => {
@@ -660,6 +674,9 @@ impl World {
                     self.cell_day.parts += 1;
                 }
             }
+        }
+        if let Some(parts) = self.cell_parts.get_mut(kind) {
+            *parts = others.into_iter().chain(mine).collect();
         }
         ended
     }
@@ -800,23 +817,57 @@ impl TenBShared<'_> {
     }
 }
 
+/// The rows the day's parts take, detached from their origins: each origin's plans at once, in the order its parts
+/// were split, before any part lands.
+fn take_planned(
+    ctx: &mut TenB<'_, SystemBacking, SystemBacking>,
+    planned: Vec<crate::world::PlannedPart>,
+) -> Vec<phx_pop::part::Part> {
+    let (mut parts, plans): (Vec<_>, Vec<_>) = planned.into_iter().unzip();
+    let mut origins: Vec<Slot> = Vec::new();
+    for p in &parts {
+        if !origins.contains(&p.from) {
+            origins.push(p.from);
+        }
+    }
+    for origin in origins {
+        let at: Vec<usize> = (0..parts.len())
+            .filter(|i| parts.get(*i).is_some_and(|p| p.from == origin))
+            .filter(|i| plans.get(*i).is_some_and(|(plan, _)| !plan.is_empty()))
+            .collect();
+        if at.is_empty() {
+            continue;
+        }
+        let these: Vec<_> = at.iter().filter_map(|i| plans.get(*i).cloned()).collect();
+        let mut cells = Cells { ledger: &mut *ctx.ledger, table: &mut *ctx.table, place: ctx.place, keys: ctx.keys };
+        for (i, rows) in at.into_iter().zip(detach_planned(&mut cells, origin, &these)) {
+            if let Some(p) = parts.get_mut(i) {
+                p.rows = rows;
+            }
+        }
+    }
+    parts
+}
+
 /// A kind's parts landed, its ranks read on the rank day with members promoted and individuals demoted, and its
 /// flagged cells re-keyed.
 fn land_rank_rekey(
     sh: &mut TenBShared<'_>,
     table: &mut CellTable<SystemBacking>,
     kd: &mut phx_pop::population::PopKind,
-    work: (Vec<phx_pop::part::Part>, Vec<Slot>, bool, (usize, Subject)),
+    work: (Vec<crate::world::PlannedPart>, Vec<Slot>, bool, (usize, Subject)),
     count: &mut CellDay,
 ) -> Landed {
-    let (parts, mut flagged, rank_day, (kind, kind_subject)) = work;
+    let (planned, mut flagged, rank_day, (kind, kind_subject)) = work;
     let player = sh.player;
     let traced = sh.traced;
-    let mut splits = traced.map_or_else(Vec::new, |t| traced_splits(t, table, &kd.decl, kind, &parts));
     let (day, streams, ordinal) = (sh.day, sh.streams, SubStep::S10b.ordinal());
     let levels = kd.levels.clone();
     let ranks = kd.ranks;
+    let decl = kd.decl.clone();
     let (mut ctx, index) = sh.ctx(table, kd, &levels);
+    let parts = take_planned(&mut ctx, planned);
+    let mut splits = traced.map_or_else(Vec::new, |t| traced_splits(t, &*ctx.table, &decl, kind, &parts));
     let mut landed = Landed::default();
     if !parts.is_empty() {
         landed = land(&mut ctx, index, parts);
