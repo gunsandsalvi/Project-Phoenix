@@ -223,6 +223,8 @@ impl phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::DayBook::is_empty(&self) -> bool
 impl phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::DayBook::measure(&self) -> phx_ledger::apply::Settlement
+impl phx_ledger::apply::DayBook
+pub fn phx_ledger::apply::DayBook::waiting(&self) -> alloc::vec::Vec<phx_ledger::fails::Fail>
 pub struct phx_ledger::apply::DisposedRec
 pub phx_ledger::apply::DisposedRec::cost: i64
 pub phx_ledger::apply::DisposedRec::day: phx_id::day::Day

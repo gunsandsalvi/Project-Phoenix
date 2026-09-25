@@ -194,6 +194,8 @@ impl<B: Backing> Ledger<B> {
         share: RowShare,
         rounding: Round,
     ) -> DetachedRow {
+        let party = arenas.party(holder);
+        self.arrears_before_leaving(arenas, holder, party, &[(line, side)]);
         let view: RowView = crate::line::Lines::<B>::find(arenas, holder, line, side);
         self.detach_view(arenas, table, holder, view, share, rounding)
     }
@@ -209,6 +211,9 @@ impl<B: Backing> Ledger<B> {
         plan: &[((LineId, Side), RowShare)],
         rounding: Round,
     ) -> Vec<DetachedRow> {
+        let party = arenas.party(holder);
+        let leaving: Vec<(LineId, Side)> = plan.iter().map(|(at, _)| *at).collect();
+        self.arrears_before_leaving(arenas, holder, party, &leaving);
         let views = rows::rows(arenas, holder);
         let mut found: Vec<(usize, RowView, RowShare)> = Vec::with_capacity(plan.len());
         for (i, ((line, side), share)) in plan.iter().enumerate() {
@@ -238,6 +243,8 @@ impl<B: Backing> Ledger<B> {
         plans: &[RowPlan<'_>],
     ) -> Vec<Vec<DetachedRow>> {
         let party = arenas.party(holder);
+        let leaving: Vec<(LineId, Side)> = plans.iter().flat_map(|(p, _)| p.iter().map(|(at, _)| *at)).collect();
+        self.arrears_before_leaving(arenas, holder, party, &leaving);
         // Each row as the plans so far left it, whether its words changed, and whether it left whole.
         let mut views: Vec<(RowView, bool, bool)> =
             rows::rows(arenas, holder).into_iter().map(|v| (v, false, false)).collect();
@@ -697,6 +704,56 @@ mod tests {
             "the count and the balance left one cell for the other"
         );
         assert!(l.day.outside.iter().all(|d| d.flow == 0 && !d.money), "moves outside instructions pair nothing");
+    }
+
+    #[test]
+    fn a_fail_on_a_row_leaving_leaves_with_it() {
+        use crate::check::FailCause;
+        use crate::fails::Fail;
+        use crate::instruction::{DueRow, Effect, InstructionId, ReasonDecl};
+        let mut space = AddressSpace::empty();
+        let mut cells = table(&mut space, "household", 1);
+        let (a, b) = (holder(&mut space, &mut cells, 1), holder(&mut space, &mut cells, 2));
+        let mut l = ledger(&mut space);
+        let kind = l.lines.declare_money(LOAN).index();
+        let line = l.lines.open(kind, TermsId::new(0), Missing::Absent);
+        let optional = Optional { balance: Missing::Present(100), ..Optional::NONE };
+        let new = NewRow { side: Side::Liability, within: 0, count: 4, point: 0, optional };
+        l.lines.add_row(&mut cells, 1, a, line, new);
+        let today = phx_id::Day::new(20);
+        l.numbered = (today, 1);
+        let reason = l.reasons.declare(ReasonDecl {
+            name: "contract payment",
+            order: 0,
+            paid: Effect::Liability,
+            received: Effect::Asset,
+        });
+        l.day.fails.push(Fail {
+            instruction: InstructionId::new(today, 0),
+            reason,
+            cause: FailCause::Funds,
+            party: phx_id::PartyId::new(1),
+            due: today,
+            row: Missing::Present(DueRow { line, side: Side::Liability }),
+        });
+        let whole = l.detach_row(
+            &mut cells,
+            1,
+            a,
+            (line, Side::Liability),
+            RowShare { count: 4, own_balance: 0 },
+            Round::Floor,
+        );
+        assert_eq!(whole.arrears_since, Missing::Present(today), "the arrears leave with the row");
+        assert_eq!(
+            whole.row.record,
+            PaymentRecord { arrears_days: 0, missed: 1 }.packed(),
+            "and the payment missed today"
+        );
+        assert!(l.day.waiting().is_empty(), "the next contract process has nothing left to make of it");
+        l.attach_row(&mut cells, 1, b, whole);
+        assert_eq!(l.arrears.of(line, Side::Liability, phx_id::PartyId::new(2)), Some(today));
+        assert_eq!(l.arrears.of(line, Side::Liability, phx_id::PartyId::new(1)), None);
     }
 
     #[test]

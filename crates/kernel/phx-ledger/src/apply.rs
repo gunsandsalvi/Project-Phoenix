@@ -72,6 +72,8 @@ pub const MONEY_SUBSTEPS: &[SubStep] = &[
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DayBook {
     pub fails: Vec<Fail>,
+    /// The fails already made arrears today, on rows that left their cell before the next contract process.
+    pub(crate) arrears_taken: BTreeSet<usize>,
     pub effects: Vec<EffectRec>,
     pub dues: Vec<crate::effects::DueRec>,
     pub disposed: Vec<DisposedRec>,
@@ -79,6 +81,15 @@ pub struct DayBook {
     /// The positions moved outside any instruction — a part's rows and holdings leaving a cell or joining one — as
     /// the audit keeps legs, waiting to be handed to it in their order among the instructions' legs.
     pub(crate) outside: Vec<LegDigest>,
+}
+
+impl DayBook {
+    /// The day's fails the next contract process still has to make arrears.
+    #[must_use]
+    pub fn waiting(&self) -> Vec<Fail> {
+        let taken = |i: &usize| self.arrears_taken.contains(i);
+        self.fails.iter().enumerate().filter(|(i, _)| !taken(i)).map(|(_, f)| *f).collect()
+    }
 }
 
 impl DayBook {
@@ -147,7 +158,7 @@ pub struct Ledger<B: Backing = SystemBacking> {
     pub(crate) arrears: Arrears,
     applied: BTreeSet<InstructionId>,
     /// The day of the instructions numbered last and how many; every instruction of a day draws its number here.
-    numbered: (Day, u32),
+    pub(crate) numbered: (Day, u32),
     /// The insolvency procedures open, whose stays suspend the dues of their procedure lines.
     pub procedures: BTreeSet<u16>,
     pub(crate) day: DayBook,

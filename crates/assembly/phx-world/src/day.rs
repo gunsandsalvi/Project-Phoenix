@@ -336,11 +336,12 @@ impl World {
             unrecorded: phx_num::Missing::Absent,
         });
         // A fail waits for the next business day's contract process, and its party may end before then.
+        let waiting = book.waiting();
         let directory = self.books.parties.cells_mut().1;
-        for f in &book.fails {
+        for f in &waiting {
             directory.retain(f.party);
         }
-        self.unprocessed.extend(book.fails);
+        self.unprocessed.extend(waiting);
         let mut reads = ReadTrace::default();
         for t in &mut self.tables {
             let found = t.columns.take_trace();
