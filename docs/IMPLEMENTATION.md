@@ -59,7 +59,7 @@ Every step has these sections, in this order; `phx-check docs` refuses a step mi
 
 | Section | What it says |
 | --- | --- |
-| **Status** | `planned`, `building`, `done` or `retired` |
+| **Status** | `planned`, `building`, `awaiting owner` (its remaining **Done when** items the owner's alone), `done` or `retired` |
 | **Clauses** | the spec clauses the step completes, each with its type; clauses it starts but a later step completes, marked *(part)* |
 | **Architecture** | the architecture sections it implements |
 | **Depends on** | earlier steps |
@@ -661,7 +661,7 @@ one place later steps add rules.
   | PC-06 | No integer or float literal other than 0, 1, −1, 2 in world crates outside `consts.rs`, type positions, `tests/`, `benches/` and `#[cfg(test)]`; arguments of `assert!`, `vec!`, `violation!` and `format!` are parsed and checked as expressions; a literal in `consts.rs` needs a doc comment |
   | PC-07 | No comment in any crate matches `\b[A-Z]{2,4}\.\d+\b`, `\bLaw \d+\b`, `\bN\d+(\.\d+)?\b`, `§`, `\bspec(ification)?\b`, `ARCHITECTURE`, `IMPLEMENTATION`, `PROJECT_PHOENIX`, `\bS\d+\.\d+\b`, `TODO` or `FIXME`, read through the comment lexer |
   | PC-08 | Interface crates: no `fn` with a body other than a constructor (`new`, `from_*`) or a field accessor returning a field |
-  | PC-09 | Documents: every workspace crate appears in architecture §3's lists; every step in this file but a `retired` one has every section of §0.2 in order, and every step a valid status; at most one step is `building`; a crate exists only if its step is `building` or `done` |
+  | PC-09 | Documents: every workspace crate appears in architecture §3's lists; every step in this file but a `retired` one has every section of §0.2 in order, and every step a valid status; at most one step is `building`, a step `awaiting owner` not counting; a crate exists only if its step is `building`, `awaiting owner` or `done` |
   | PC-10 | The counts of `#[expect(...)]`, `#![expect(...)]` and `cfg_attr(…, expect(…))` in world crates are at most the values in `perf/ratchets.toml` |
   | PC-11 | Every `#[expect]` in a world crate has a `reason` |
   | PC-13 | No direct dependency of a world crate on `rand`, `rand_core`, `getrandom`, `ahash` or `fxhash` |
@@ -5229,7 +5229,7 @@ representation is two numbers every mechanism reads alike).
 
 ### S0.26 — `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate
 
-**Status**: building. Split into sub-steps, each with its own build run:
+**Status**: awaiting owner: the phone's run of the bench flavour and the full-load bench, `phx measure` on its report and architecture §13 in measured numbers (§12, 2026-09-25). Split into sub-steps, each with its own build run:
 - **S0.26a — the world on the phone** *(part built)*: `phx-ffi`'s `run_world` assembles the world from the data the
   bench flavour ships as assets, settles it for the owner's length (`GEN.settling_years`), reporting the settling's
   turns, days and wall time, and runs the measured turns (the app passes 60), sending each turn's wall time, days,
