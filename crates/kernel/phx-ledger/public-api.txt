@@ -524,6 +524,12 @@ pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::HOLDER_SHARDS: u32
 pub const phx_ledger::consts::ROW_OPTIONAL_WORDS: usize
 pub const phx_ledger::consts::RUN_SAMPLE_PERIOD: u32
+pub const phx_ledger::consts::SYNTHETIC_DEPOSIT: i64
+pub const phx_ledger::consts::SYNTHETIC_EPOCH_YEAR: i32
+pub const phx_ledger::consts::SYNTHETIC_LOAN: i64
+pub const phx_ledger::consts::SYNTHETIC_RATE: i64
+pub const phx_ledger::consts::SYNTHETIC_ROWS_PER_CHUNK: u32
+pub const phx_ledger::consts::SYNTHETIC_WINDOW_YEAR: i32
 pub const phx_ledger::consts::TERMS_SHARDS: u32
 pub mod phx_ledger::contract_process
 pub struct phx_ledger::contract_process::Arrears
@@ -1156,7 +1162,7 @@ pub mod phx_ledger::stream
 pub struct phx_ledger::stream::DayRecords
 pub phx_ledger::stream::DayRecords::gross: i128
 pub phx_ledger::stream::DayRecords::heads_read: u64
-pub phx_ledger::stream::DayRecords::moneyless: alloc::vec::Vec<phx_ledger::stream::Payment>
+pub phx_ledger::stream::DayRecords::moneyless: alloc::collections::btree::set::BTreeSet<phx_id::ids::PartyId>
 pub phx_ledger::stream::DayRecords::payments: u64
 pub phx_ledger::stream::DayRecords::pending: u64
 pub phx_ledger::stream::DayRecords::records: alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, phx_ledger::stream::Record>
@@ -1185,6 +1191,24 @@ pub phx_ledger::stream::Record::funds: i128
 impl phx_ledger::stream::Record
 pub fn phx_ledger::stream::Record::standing(&self) -> i128
 pub fn phx_ledger::stream::issuers(&[phx_ledger::instruction::LegRec]) -> alloc::vec::Vec<phx_id::ids::PartyId>
+pub mod phx_ledger::synthetic
+pub struct phx_ledger::synthetic::Settlement<B: phx_store::backing::Backing>
+pub phx_ledger::synthetic::Settlement::books: phx_ledger::books::Books<B>
+pub phx_ledger::synthetic::Settlement::calendar: phx_core::calendar::Calendar
+pub phx_ledger::synthetic::Settlement::monthly_due: phx_id::day::Day
+pub struct phx_ledger::synthetic::SettlementSize
+pub phx_ledger::synthetic::SettlementSize::banks: u32
+pub phx_ledger::synthetic::SettlementSize::daily_rows: u32
+pub phx_ledger::synthetic::SettlementSize::holders: u32
+pub phx_ledger::synthetic::SettlementSize::holders_per_line: u32
+pub phx_ledger::synthetic::SettlementSize::monthly_rows: u32
+pub struct phx_ledger::synthetic::Unaudited
+impl phx_core::family::AuditStream for phx_ledger::synthetic::Unaudited
+pub fn phx_ledger::synthetic::Unaudited::applied(&mut self, u64)
+pub fn phx_ledger::synthetic::Unaudited::leg(&mut self, u64, phx_core::family::LegDigest)
+pub fn phx_ledger::synthetic::Unaudited::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
+pub fn phx_ledger::synthetic::calendar(&[phx_id::day::Date]) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>
+pub fn phx_ledger::synthetic::settlement<B: phx_store::backing::Backing>(phx_ledger::synthetic::SettlementSize, phx_core::calendar::Calendar, (phx_id::day::Date, phx_id::day::Date)) -> core::result::Result<phx_ledger::synthetic::Settlement<B>, alloc::string::String>
 pub mod phx_ledger::terms
 #[repr(transparent)] pub struct phx_ledger::terms::TermsId(_)
 impl phx_ledger::terms::TermsId

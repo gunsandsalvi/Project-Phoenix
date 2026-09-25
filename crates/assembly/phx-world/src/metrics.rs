@@ -1,7 +1,8 @@
 use phx_audit::CloseRecord;
 use phx_id::Day;
 
-/// One sub-step that ran on a day: the rows and bytes it touched and the barriers it crossed.
+/// One sub-step that ran on a day: the rows and bytes it touched, the barriers it crossed, and its wall time by the
+/// application's clock, absent when the clock ran backwards.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct SubStepRecord {
     pub day: Day,
@@ -9,6 +10,7 @@ pub struct SubStepRecord {
     pub rows: u64,
     pub bytes: u64,
     pub barriers: u64,
+    pub wall_ns: Option<u64>,
 }
 
 /// One turn: the days it ran and its wall time by the application's clock, absent when the clock ran backwards.

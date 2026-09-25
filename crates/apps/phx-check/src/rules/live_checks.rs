@@ -11,6 +11,24 @@ const SUITE: &str = "phx-cli";
 const SUITE_FILE: &str = "/src/checks/mod.rs";
 const WORLD: &str = "phx-world";
 const INSPECTOR: &str = "Inspector";
+const OBSERVER: &str = "phx-obs";
+/// The world and its stores, which the observer never names by mutable reference, nor the world at all: it reads
+/// through the inspector.
+const WORLD_TYPES: &[&str] = &[
+    "World",
+    "FactColumns",
+    "KernelTable",
+    "EventStore",
+    "RecordStore",
+    "Books",
+    "Parties",
+    "Ledger",
+    "CellTable",
+    "Population",
+    "Directory",
+    "Markets",
+    "Accounts",
+];
 
 /// A check defined by `live_check!`: the constant that holds it, its identity and where it is.
 struct Defined {
@@ -30,7 +48,65 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
             breaches.extend(inspector_breaches(source));
         }
     }
+    if let Some(observer) = ws.crates.iter().find(|c| c.name == OBSERVER) {
+        for source in observer.sources.iter().filter(|s| !s.is_test_or_bench()) {
+            breaches.extend(observer_breaches(source));
+        }
+    }
     breaches
+}
+
+/// The observer reads the world only through the inspector: it names neither the world nor a mutable reference to
+/// any of the world's stores.
+fn observer_breaches(source: &Source) -> Vec<Breach> {
+    let file = match &source.file {
+        Ok(file) => file,
+        Err(error) => return vec![unparsed(RULE, &source.path, error)],
+    };
+    let mut finder = ObserverFinder { found: Vec::new() };
+    finder.visit_file(file);
+    finder.found.into_iter().map(|(line, message)| Breach::new(RULE, &source.path, line, message)).collect()
+}
+
+struct ObserverFinder {
+    found: Vec<(usize, String)>,
+}
+
+fn last_ident(ty: &Type) -> Option<&syn::Ident> {
+    match ty {
+        Type::Path(p) => p.path.segments.last().map(|s| &s.ident),
+        _ => None,
+    }
+}
+
+impl<'ast> Visit<'ast> for ObserverFinder {
+    fn visit_type_reference(&mut self, r: &'ast syn::TypeReference) {
+        if r.mutability.is_some()
+            && let Some(name) = last_ident(&r.elem).filter(|i| WORLD_TYPES.iter().any(|w| *i == w))
+        {
+            self.found.push((attrs::line(name.span()), format!("the observer takes `&mut {name}`")));
+        }
+        visit::visit_type_reference(self, r);
+    }
+
+    fn visit_path(&mut self, p: &'ast syn::Path) {
+        // A draw's subject tagged `World` names the whole world as a subject, not the world's type.
+        let mut before: Option<&syn::Ident> = None;
+        for s in &p.segments {
+            if s.ident == "World" && before.is_none_or(|b| b != "SubjectTag") {
+                let message = "the observer names the world, not its inspector".to_owned();
+                self.found.push((attrs::line(s.ident.span()), message));
+            }
+            before = Some(&s.ident);
+        }
+        visit::visit_path(self, p);
+    }
+
+    fn visit_item_mod(&mut self, item: &'ast syn::ItemMod) {
+        if !attrs::is_test(&item.attrs) {
+            visit::visit_item_mod(self, item);
+        }
+    }
 }
 
 fn suite_breaches(ws: &Workspace, suite: &Crate) -> Vec<Breach> {
@@ -249,6 +325,17 @@ mod tests {
             "`Inspector::other` is not a read through `&self`",
         ];
         assert_eq!(found, expected);
+    }
+
+    #[test]
+    fn the_observer_reads_only_through_the_inspector() {
+        let source = "fn a(w: Inspector<'_>, h: &mut Histogram) {}\n\
+                      fn b(t: &mut CellTable<SystemBacking>) {}\n\
+                      fn c(w: &phx_world::World) {}\n\
+                      fn d() { let _ = Subject::new(SubjectTag::World, 0); }\n";
+        let obs = with_source(krate("phx-obs", Layer::Assembly), "src/view.rs", source);
+        let found: Vec<String> = run(&Workspace::new(vec![obs])).iter().map(|b| b.message.clone()).collect();
+        assert_eq!(found, ["the observer takes `&mut CellTable`", "the observer names the world, not its inspector"]);
     }
 
     #[test]

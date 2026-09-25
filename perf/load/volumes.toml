@@ -1,0 +1,192 @@
+# The finished world's volumes for the full-load bench (architecture §13, §14.6 item 7): the bytes of each store at the
+# design point through Stage 6, and each day type's counts of each kind of work, with the architecture's line each
+# comes from. The bench builds the stores whose kernels exist and holds the rest as random words it gathers from; it
+# runs every count through its kernel. Its numbers are costs, never the world's. The built stages' counts replace their
+# estimates at each gate (`phx measure`).
+
+# The population the bench builds: household cells with their rows on shared lines and their profile entries.
+[population]
+cells = 700000                  # §13.1: household cells at the design point
+members_per_cell = 170          # §13.1: average weight
+rows_per_cell = 30              # §13.1: 40 rows per household cell, less the settlement's 14 per holder below
+lines = 3000000                 # §13.1: lines
+profile_entries_per_cell = 150  # §13.1: household profile entries
+
+# The settlement the bench builds: holders each with dated rows, two falling due weekly on each business day and four
+# once a month on the heavy day, fourteen a holder, so an ordinary weekday reads 1.1 M run heads, scans their rows and
+# pays 2.2 M, and the heavy day pays 6.6 M (§13.2: 1.1 M heads, 6.2 M rows, 2 M payments on a business day; 4.4 M on
+# the heavy day).
+[settlement]
+holders = 1100000
+daily_rows = 2
+monthly_rows = 4
+banks = 100
+holders_per_line = 256
+
+# Stores held as random words: their bytes through Stage 6, less what the bench builds (§13.1 with each stage's additions).
+[[store]]
+name = "household cells beyond the built record"
+line = "13.1 household cells (672 bytes through Stage 6)"
+bytes = 200000000
+[[store]]
+name = "household profiles beyond the built entries"
+line = "13.1 household profiles, with Stages 4-6"
+bytes = 83000000
+[[store]]
+name = "relationship rows beyond the built rows"
+line = "13.1 relationship rows, with Stages 2-6"
+bytes = 360000000
+[[store]]
+name = "holdings, instruments, lots, liens and commitments"
+line = "13.1, with Stage 3's positions and Stage 4's pots"
+bytes = 452000000
+[[store]]
+name = "firm and business cells"
+line = "13.1, with Stage 6's cells kept apart"
+bytes = 176000000
+[[store]]
+name = "lines and their stage totals"
+line = "13.1, with Stages 2-5"
+bytes = 166000000
+[[store]]
+name = "interned keys and terms"
+line = "13.1, with Stages 3-4"
+bytes = 151000000
+[[store]]
+name = "landing index and agenda"
+line = "13.1"
+bytes = 146000000
+[[store]]
+name = "group aggregates and pieces"
+line = "13.1"
+bytes = 60000000
+[[store]]
+name = "kind tables of individuals"
+line = "13.1, with Stages 4-5"
+bytes = 241000000
+[[store]]
+name = "estates open"
+line = "13.1"
+bytes = 31000000
+[[store]]
+name = "markets, records and events"
+line = "13.1, with Stages 2-5"
+bytes = 246000000
+[[store]]
+name = "map, network, deposits and stock"
+line = "13.1"
+bytes = 80000000
+[[store]]
+name = "directory"
+line = "13.1"
+bytes = 50000000
+[[store]]
+name = "day buffers"
+line = "13.1, the worst day's"
+bytes = 600000000
+[[store]]
+name = "arena slack and page tails"
+line = "13.1, with each stage's slack"
+bytes = 295000000
+[[store]]
+name = "renumbering slice and save buffers"
+line = "13.1"
+bytes = 94000000
+[[store]]
+name = "views and tracers"
+line = "13.1, with Stage 6"
+bytes = 70000000
+
+# The month the bench runs: each day's type in order. Ordinary weekdays, a weekend and the Monday after it, a holiday
+# block of three closed days before a quarter-end payday (the heavy day), and weekdays again.
+[month]
+days = ["business", "business", "business", "business", "business", "closed", "closed", "business",
+        "business", "business", "business", "business", "closed", "closed", "business", "business",
+        "business", "business", "closed", "closed", "closed", "heavy", "business", "business", "business",
+        "business", "closed", "closed", "business", "business"]
+# A full save after the heavy day and at the month's end, the declared interval's (SET.17), by the days' places from
+# nought.
+saves = [21, 29]
+
+# Each kind of work: the kernel the bench runs it with, the rows each unit reads where it gathers, and its count on a
+# business, a closed and a heavy day (§13.2 through Stage 6; a closed day's and a heavy day's in the ratios of the
+# table's times where the table gives only the business day's count).
+[[work]]
+name = "hazard and need candidates"
+kernel = "screen"
+line = "13.2"
+counts = [1100000, 1100000, 1100000]
+[[work]]
+name = "agenda redraws"
+kernel = "redraw"
+store = "landing index and agenda"
+line = "13.2"
+counts = [240000, 160000, 360000]
+[[work]]
+name = "agenda gather at 1b"
+kernel = "agenda"
+store = "landing index and agenda"
+line = "13.2"
+counts = [1500000, 1500000, 1500000]
+[[work]]
+name = "row visits"
+kernel = "gather"
+reads = 40
+line = "13.2"
+counts = [280000, 101000, 327000]
+[[work]]
+name = "group-aggregate updates"
+kernel = "aggregate"
+store = "group aggregates and pieces"
+line = "13.2"
+counts = [11000000, 4070000, 12800000]
+[[work]]
+name = "occasion evaluations"
+kernel = "gather"
+reads = 4
+line = "13.2, with Stages 2 and 4"
+counts = [3060000, 610000, 3800000]
+[[work]]
+name = "choices of acting members"
+kernel = "gather"
+reads = 20
+line = "13.2, with Stage 4"
+counts = [270000, 76000, 334000]
+[[work]]
+name = "parts"
+kernel = "part"
+line = "13.2, with Stages 2-4"
+counts = [365000, 85000, 530000]
+[[work]]
+name = "meetings, choice groups, seller spreads and labour matching"
+kernel = "gather"
+reads = 30
+line = "13.2"
+counts = [350000, 200000, 350000]
+[[work]]
+name = "physical flows"
+kernel = "gather"
+reads = 2
+line = "13.2"
+counts = [300000, 200000, 300000]
+[[work]]
+name = "settlement"
+kernel = "settle"
+line = "13.2, with Stage 4"
+counts = [1, 0, 1]
+[[work]]
+name = "institutions, markets, the state, valuation and accounts"
+kernel = "gather"
+reads = 10
+line = "13.2 through Stage 6, at a microsecond of gathers a unit"
+counts = [900000, 120000, 1500000]
+[[work]]
+name = "tolerance control"
+kernel = "tolerance"
+line = "13.2"
+counts = [1, 1, 1]
+[[work]]
+name = "audit, statistics, events and views"
+kernel = "audit"
+line = "13.2"
+counts = [1, 1, 1]

@@ -56,6 +56,8 @@ pub struct World {
     pub(crate) cell_parts: Vec<Vec<phx_pop::part::Part>>,
     /// The day's cells to re-key at 10b, per population kind.
     pub(crate) cell_flagged: Vec<Vec<phx_id::Slot>>,
+    /// The day's splits of the cells the observer traces, cleared as each day begins; never saved or hashed.
+    pub(crate) split_log: crate::observe::SplitLog,
     /// What the day's work on cells did.
     pub(crate) cell_day: crate::cells::CellDay,
     /// The line kinks landings read.

@@ -258,6 +258,58 @@ pub fn population<B: Backing>(cells: u32, d: &mut Draws) -> DesignPoint<B> {
     p
 }
 
+/// A population at the finished world's size, for the full-load bench: `cells` design-point cells, each holding
+/// `rows_per_cell` rows on lines drawn from a pool of `lines`, with the design point's profile entries and positions;
+/// data for measuring what the finished world's stores cost and what its kernels take over them, not a world.
+#[must_use]
+pub fn population_at<B: Backing>(cells: u32, rows_per_cell: u32, lines: u32, d: &mut Draws) -> DesignPoint<B> {
+    let mut space = AddressSpace::empty();
+    let keys = HolderKeys::new(1);
+    let Some(rows) = cells.checked_mul(rows_per_cell) else {
+        capacity_exceeded!("full-load rows", u32::MAX, u64::from(cells) * u64::from(rows_per_cell));
+    };
+    let half = u32::try_from(phx_store::consts::BLOCK_HALF).unwrap_or(u32::MAX);
+    let blocks = lines + rows.div_ceil(half);
+    let mut ledger = Ledger::new(
+        Instruments::new(&mut space, 1, 1, 1, keys),
+        Lines::new(&mut space, lines.next_power_of_two(), POPULATION_CHUNK, blocks, keys),
+    );
+    let loan = ledger.lines.declare_money(LOAN).index();
+    let pool: Vec<LineId> = (0..lines).map(|_| ledger.lines.open(loan, TermsId::new(0), Missing::Absent)).collect();
+    let kind = kind();
+    let table = CellTable::new(&mut space, &kind, TableId::new(1), cells.next_power_of_two(), POPULATION_CHUNK);
+    let mut p = DesignPoint {
+        space,
+        ledger,
+        table,
+        keys: KeyInterner::new(),
+        directory: Directory::new(),
+        kind,
+        index: Index::new(),
+        origin: Slot::new(0),
+        target: Slot::new(0),
+    };
+    let take = usize::try_from(rows_per_cell).unwrap_or(usize::MAX);
+    for _ in 0..cells {
+        let mut key = KeyRecord::default();
+        let Ok(composition) = u32::try_from(below_u64(d, u64::from(DESIGN_THREE))) else {
+            violation!(clause = "REP.19", "a composition past its values");
+        };
+        p.kind.key.set(&mut key, 0, composition);
+        let mut per_member = [DESIGN_PER_MEMBER; DESIGN_POSITIONS];
+        for each in per_member.iter_mut().take(POPULATION_DRAWN) {
+            *each = i64::try_from(below_u64(d, u64::from(DESIGN_THREE))).unwrap_or(0) * DESIGN_PER_MEMBER;
+        }
+        // A cell's rows on consecutive lines of the pool from a drawn start, so no two of its rows share a line.
+        let start = usize::try_from(below_u64(d, u64::from(lines))).unwrap_or(0);
+        let mine: Vec<LineId> = pool.iter().cycle().skip(start).take(take).copied().collect();
+        let _ = cell(&mut p, key, &mine, &per_member);
+    }
+    p.origin = Slot::new(0);
+    p.target = Slot::new(0);
+    p
+}
+
 impl<B: Backing> DesignPoint<B> {
     /// `count` members split from the first cell, drawn from `d`.
     pub fn part(&mut self, seq: u32, count: u32, d: &mut Draws) -> Part {

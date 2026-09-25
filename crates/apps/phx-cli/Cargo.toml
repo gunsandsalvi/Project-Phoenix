@@ -21,6 +21,7 @@ phx-id = { path = "../../foundation/phx-id" }
 phx-ledger = { path = "../../kernel/phx-ledger" }
 phx-market = { path = "../../kernel/phx-market" }
 phx-num = { path = "../../foundation/phx-num" }
+phx-obs = { path = "../../assembly/phx-obs" }
 phx-pop = { path = "../../kernel/phx-pop" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }

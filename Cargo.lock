@@ -599,6 +599,7 @@ dependencies = [
  "phx-ledger",
  "phx-market",
  "phx-num",
+ "phx-obs",
  "phx-pop",
  "phx-rand",
  "phx-store",
@@ -644,12 +645,18 @@ dependencies = [
 name = "phx-ffi"
 version = "0.1.0"
 dependencies = [
+ "phx-core",
  "phx-exec",
+ "phx-id",
+ "phx-ledger",
  "phx-num",
+ "phx-obs",
  "phx-pop",
  "phx-rand",
  "phx-store",
  "phx-world",
+ "serde",
+ "toml 0.9.12+spec-1.1.0",
  "uniffi",
 ]
 
@@ -723,6 +730,20 @@ dependencies = [
  "gungraun",
  "phx-macros",
  "trybuild",
+]
+
+[[package]]
+name = "phx-obs"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-id",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+ "phx-world",
+ "serde",
+ "toml 0.9.12+spec-1.1.0",
 ]
 
 [[package]]

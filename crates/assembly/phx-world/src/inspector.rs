@@ -157,6 +157,24 @@ impl<'a> Inspector<'a> {
         &self.world.events
     }
 
+    /// The player's queue: its party and the intents still queued.
+    #[must_use]
+    pub fn player_queue(&self) -> &phx_core::PlayerQueue {
+        &self.world.queue
+    }
+
+    /// The day's splits of the cells the observer traces.
+    #[must_use]
+    pub fn split_log(&self) -> &crate::observe::SplitLog {
+        &self.world.split_log
+    }
+
+    /// The observer's draws: its own streams only.
+    #[must_use]
+    pub fn observer_draws(&self) -> phx_core::ObserverDraws<'_> {
+        phx_core::ObserverDraws::new(&self.world.streams)
+    }
+
     /// The declared rule of which recorded events become public.
     #[must_use]
     pub fn news(&self) -> &phx_core::EventsRule {

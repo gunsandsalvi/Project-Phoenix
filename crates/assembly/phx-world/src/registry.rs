@@ -359,6 +359,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         cell_hits: Vec::new(),
         cell_parts: Vec::new(),
         cell_flagged: Vec::new(),
+        split_log: crate::observe::SplitLog::default(),
         cell_day: crate::cells::CellDay::of(carried.today),
         kinks,
         rank_day,
@@ -418,7 +419,7 @@ pub fn assemble(
         carried: crate::save::Carried {
             today: p.c.day_zero,
             unprocessed: Vec::new(),
-            queue: PlayerQueue::default(),
+            queue: PlayerQueue::unseated(),
             bindings: Bindings::default(),
             closed: phx_ledger::pending::Closed::default(),
         },
@@ -432,7 +433,9 @@ pub fn assemble(
         },
         space,
     };
-    finish(p, state, config)
+    let mut world = finish(p, state, config)?;
+    world.open_player().map_err(one)?;
+    Ok(world)
 }
 
 /// A world read back from a save to continue: the build's declarations and data compiled as for a new game, the

@@ -648,6 +648,7 @@ pub fn phx_pop::synthetic::NoKinks::points(&self, phx_id::ids::LineId, phx_ledge
 pub fn phx_pop::synthetic::design_point<B: phx_store::backing::Backing>() -> phx_pop::synthetic::DesignPoint<B>
 pub fn phx_pop::synthetic::levels() -> [u8; 30]
 pub fn phx_pop::synthetic::population<B: phx_store::backing::Backing>(u32, &mut phx_rand::draws::Draws) -> phx_pop::synthetic::DesignPoint<B>
+pub fn phx_pop::synthetic::population_at<B: phx_store::backing::Backing>(u32, u32, u32, &mut phx_rand::draws::Draws) -> phx_pop::synthetic::DesignPoint<B>
 pub mod phx_pop::table
 pub enum phx_pop::table::CellList
 pub phx_pop::table::CellList::Holdings

@@ -39,6 +39,8 @@ import uniffi.phx_ffi.BenchHost
 import uniffi.phx_ffi.BenchLine
 import uniffi.phx_ffi.DeviceInfo
 import uniffi.phx_ffi.runBench
+import uniffi.phx_ffi.runLoad
+import uniffi.phx_ffi.runProgramme
 import uniffi.phx_ffi.runWorld
 
 private enum class Phase { READY, RUNNING, DONE }
@@ -87,7 +89,8 @@ fun AppScreen(activity: ComponentActivity) {
         if (lines.isNotEmpty()) listState.animateScrollToItem(lines.size - 1)
     }
 
-    fun start() {
+    /** Runs one of the engine's benches on its own thread, showing each line as it comes and keeping its report. */
+    fun launch(name: String, file: File, body: (BenchHost) -> String) {
         lines.clear()
         report = null
         phase = Phase.RUNNING
@@ -101,10 +104,8 @@ fun AppScreen(activity: ComponentActivity) {
                 main.post { lines.add(line) }
             }
         }
-        val info = device(activity)
-        val file = File(activity.getExternalFilesDir(null), "S0.07-report.json")
-        thread(name = "phx-bench") {
-            val text = runBench(info, host, file.absolutePath)
+        thread(name = name) {
+            val text = body(host)
             main.post {
                 report = text
                 reportFile = file.absolutePath
@@ -114,33 +115,54 @@ fun AppScreen(activity: ComponentActivity) {
         }
     }
 
+    fun start() {
+        val info = device(activity)
+        val file = File(activity.getExternalFilesDir(null), "S0.07-report.json")
+        launch("phx-bench", file) { host -> runBench(info, host, file.absolutePath) }
+    }
+
     fun startWorld() {
-        lines.clear()
-        report = null
-        phase = Phase.RUNNING
-        activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val main = Handler(Looper.getMainLooper())
-        val power = activity.getSystemService(PowerManager::class.java)
-        val host = object : BenchHost {
-            override fun thermalStatus(): Int = power.currentThermalStatus
-            override fun onLine(line: BenchLine) {
-                main.post { lines.add(line) }
-            }
-        }
         val data = File(activity.filesDir, "data")
         val runDir = File(activity.filesDir, "run")
         val file = File(activity.getExternalFilesDir(null), "S0.26-world-report.json")
-        thread(name = "phx-world") {
+        launch("phx-world", file) { host ->
             data.deleteRecursively()
             unpack(activity, "data", data)
             runDir.mkdirs()
-            val text = runWorld(host, data.absolutePath, runDir.absolutePath, WORLD_TURNS, file.absolutePath)
-            main.post {
-                report = text
-                reportFile = file.absolutePath
-                phase = Phase.DONE
-                activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            }
+            runWorld(host, data.absolutePath, runDir.absolutePath, WORLD_TURNS, file.absolutePath)
+        }
+    }
+
+    fun startLoad() {
+        val load = File(activity.filesDir, "load")
+        val file = File(activity.getExternalFilesDir(null), "S0.26-load-report.json")
+        launch("phx-load", file) { host ->
+            load.deleteRecursively()
+            unpack(activity, "load", load)
+            val volumes = File(load, "volumes.toml").absolutePath
+            runLoad(host, volumes, activity.cacheDir.absolutePath, file.absolutePath)
+        }
+    }
+
+    /** The whole programme, one report: the bench, the world's turns and the full load, one after another. */
+    fun startProgramme() {
+        val info = device(activity)
+        val data = File(activity.filesDir, "data")
+        val runDir = File(activity.filesDir, "run")
+        val load = File(activity.filesDir, "load")
+        val file = File(activity.getExternalFilesDir(null), "S0.26-device-report.json")
+        launch("phx-programme", file) { host ->
+            data.deleteRecursively()
+            unpack(activity, "data", data)
+            runDir.deleteRecursively()
+            runDir.mkdirs()
+            load.deleteRecursively()
+            unpack(activity, "load", load)
+            val volumes = File(load, "volumes.toml").absolutePath
+            runProgramme(
+                info, host, data.absolutePath, runDir.absolutePath, WORLD_TURNS, volumes,
+                activity.cacheDir.absolutePath, file.absolutePath,
+            )
         }
     }
 
@@ -158,7 +180,8 @@ fun AppScreen(activity: ComponentActivity) {
         Text(
             when (phase) {
                 Phase.READY -> "Plug the phone in and close other apps. The bench takes a few minutes and about 4 GB; the " +
-                    "world opens three countries' population, then runs $WORLD_TURNS turns."
+                    "world opens three countries' population, then runs $WORLD_TURNS turns; the full load builds the " +
+                    "finished world's stores, about 5 GB, and runs a month."
                 Phase.RUNNING -> "Running… keep the app open."
                 Phase.DONE -> "Done. The report is at ${reportFile ?: "?"}"
             },
@@ -168,6 +191,12 @@ fun AppScreen(activity: ComponentActivity) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = ::start, enabled = phase != Phase.RUNNING) { Text("Run bench") }
             Button(onClick = ::startWorld, enabled = phase != Phase.RUNNING) { Text("Run world") }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = ::startLoad, enabled = phase != Phase.RUNNING) { Text("Full load") }
+            Button(onClick = ::startProgramme, enabled = phase != Phase.RUNNING) { Text("Run all") }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = ::share, enabled = report != null) { Text("Share report") }
         }
         HorizontalDivider(Modifier.padding(vertical = 8.dp))

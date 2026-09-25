@@ -83,10 +83,21 @@ impl World {
         self.today
     }
 
-    /// Runs a turn: the player's intents are queued for 1c, and every day from the day after the last turn up to the
-    /// next day that is a business day in some country runs, each as its own day.
-    #[clause("TIME.6", "N8.2")]
+    /// Runs a turn with no observer.
     pub fn run_turn(&mut self, intents: &[QueuedIntent], clock: &dyn Clock) -> TurnRecord {
+        self.run_turn_observed(intents, clock, None)
+    }
+
+    /// Runs a turn: the player's intents are queued for 1c, and every day from the day after the last turn up to the
+    /// next day that is a business day in some country runs, each as its own day, the observer reading each once it
+    /// has ended; its reading is inside the turn's time, as the phone's views are.
+    #[clause("TIME.6", "N8.2", "Law 17")]
+    pub fn run_turn_observed(
+        &mut self,
+        intents: &[QueuedIntent],
+        clock: &dyn Clock,
+        mut observer: Option<&mut dyn crate::observe::Observer>,
+    ) -> TurnRecord {
         let start = clock.now_ns();
         for intent in intents {
             self.queue.push(intent.clone());
@@ -96,8 +107,14 @@ impl World {
         let mut days = 0_u32;
         loop {
             let day = self.today.succ();
-            self.run_day(day);
+            let traced = observer.as_deref().map(|o| -> &dyn phx_core::TracedCells { o });
+            self.run_day(day, traced, clock);
             self.today = day;
+            if let Some(o) = observer.as_deref_mut() {
+                o.day_closed(crate::Inspector::new(self));
+            }
+            // The parties ended today were held for the day's legs and the observer's reading; the day is over.
+            self.books.parties.cells_mut().1.close_day();
             days += 1;
             if day == last {
                 break;
@@ -112,8 +129,9 @@ impl World {
     /// Runs one day: each sub-step in the table's order, skipping one with no handlers unless it is a kernel apply of
     /// a stage that runs, and one that runs only on business days when no country has one.
     #[clause("TIME.6", "TIME.8")]
-    fn run_day(&mut self, day: Day) {
+    fn run_day(&mut self, day: Day, traced: Option<&dyn phx_core::TracedCells>, clock: &dyn Clock) {
         let any_business = self.calendar.any_business(day);
+        self.split_log.splits.clear();
         self.day_messages.lapse();
         let mut pending: Vec<(SubStep, Intents)> = Vec::new();
         let mut dues = DaySettlement::default();
@@ -131,6 +149,7 @@ impl World {
             if !runs {
                 continue;
             }
+            let started = clock.now_ns();
             let rows = self.dispatch(day, info.step, &mut pending);
             site::enter(Site { day: day.get(), substep: info.step.ordinal(), handler: 0, chunk: 0 });
             if info.step == SubStep::S1b {
@@ -149,7 +168,7 @@ impl World {
                 self.events.publish(from, &self.news);
             }
             if info.step == SubStep::S10b {
-                self.cells_settle(day);
+                self.cells_settle(day, traced);
             }
             if info.step == SubStep::S2d {
                 let fails = std::mem::take(&mut self.unprocessed);
@@ -182,6 +201,7 @@ impl World {
                 rows,
                 bytes: 0,
                 barriers: 0,
+                wall_ns: clock.now_ns().checked_sub(started),
             });
         }
         let date = self.calendar.date(day);
@@ -275,7 +295,6 @@ impl World {
         let trace = self.read_trace.then(|| self.trace.close_day(reads));
         let record = self.audit_close(day, trace);
         self.metrics.closes.0.push(record);
-        self.books.parties.cells_mut().1.close_day();
     }
 
     /// Every audit family over what the world holds at a day's close, and the day's accounts then done.

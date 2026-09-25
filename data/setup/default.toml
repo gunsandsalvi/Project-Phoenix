@@ -5,6 +5,9 @@
 # The population split, in whole percent of the world's population.
 split = [50, 30, 20]
 
+# The player lives in the first country, and on a day it has queued nothing the rule decides for its household.
+player = { country = 1, delegate = true }
+
 [[country]]
 development = "developed"
 public_debt = "medium"

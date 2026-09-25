@@ -55,6 +55,33 @@ fn mib(bytes: Option<u64>) -> String {
     bytes.map_or_else(|| "unread".to_owned(), |b| format!("{} MiB", b / MIB))
 }
 
+/// Each macro read's values day by day, and the view's histograms at the last close.
+fn reads(recorder: &phx_obs::Recorder, view: &phx_obs::View) -> Json {
+    let series = recorder.series().iter().map(|s| {
+        let values = s
+            .values
+            .iter()
+            .map(|(d, v)| Json::Array(vec![Json::UInt(u64::from(d.get())), Json::str(v.to_string())]))
+            .collect();
+        Json::obj([
+            ("id", Json::str(s.id.clone())),
+            ("unit", Json::str(s.unit.clone())),
+            ("values", Json::Array(values)),
+        ])
+    });
+    let histograms = view.histograms.iter().map(|(id, h)| {
+        let edges = h.edges().iter().map(|e| Json::Int(*e)).collect();
+        let counts = h.counts().iter().map(|c| Json::UInt(*c)).collect();
+        Json::obj([
+            ("id", Json::str(id.clone())),
+            ("edges", Json::Array(edges)),
+            ("counts", Json::Array(counts)),
+            ("below", Json::UInt(h.below())),
+        ])
+    });
+    Json::obj([("series", Json::Array(series.collect())), ("histograms", Json::Array(histograms.collect()))])
+}
+
 /// The middle of a set of values, the upper of two middles.
 fn median(values: &[u64]) -> Option<u64> {
     let mut sorted = values.to_vec();
@@ -68,8 +95,21 @@ fn median(values: &[u64]) -> Option<u64> {
 /// # Errors
 /// What stopped the assembly or the report's writing.
 pub fn run(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32, report_path: &str) -> Result<String, String> {
+    let text = measure(host, data, run_dir, turns)?.pretty();
+    std::fs::write(report_path, &text).map_err(|e| format!("{report_path}: {e}"))?;
+    show(host, "report", "written", report_path.to_owned(), String::new(), "");
+    Ok(text)
+}
+
+/// The world assembled from the data and run for `turns` turns, each shown as it closes: the world's section of the
+/// device report.
+///
+/// # Errors
+/// Data that cannot be read, or a world the assembly refuses.
+pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> Result<Json, String> {
     let clock = Mono(Instant::now());
     let data = PathBuf::from(data);
+    let definitions = phx_obs::Definitions::read(&data)?;
     let config = WorldConfig {
         seed: 1,
         setup: data.join("setup").join("default.toml"),
@@ -82,12 +122,18 @@ pub fn run(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32, report_p
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let opening_ms = clock.now_ns().checked_sub(started).map(|n| n / NS_PER_MS);
     let opened_peak = proc_kib("status", "VmHWM:");
+    let w = Inspector::new(&world);
+    let tracers = phx_obs::Tracers::declared(w)?;
+    let mut watch = phx_obs::Watch { tracers, recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
+    let mut views = phx_obs::Views::new(&definitions.histograms, w)?;
+    let opening = views.close(w, &watch.recorder);
     let opened = opening_ms.map_or_else(|| "unclocked".to_owned(), |ms| format!("{ms} ms"));
     show(host, "world", "opening", format!("{opened}, peak {}", mib(opened_peak)), String::new(), "");
     let mut rows = Vec::new();
     let mut walls = Vec::new();
     for turn in 0..turns {
-        let record = world.run_turn(&[], &clock);
+        // The observer follows its tracers and takes its reads at each day's end, inside the turn's time.
+        let record = world.run_turn_observed(&[], &clock, Some(&mut watch));
         let wall_ms = record.wall_ns.map(|n| n / NS_PER_MS);
         let peak = proc_kib("status", "VmHWM:");
         let pss = proc_kib("smaps_rollup", "Pss:");
@@ -110,7 +156,9 @@ pub fn run(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32, report_p
             ("turn", Json::UInt(u64::from(turn + 1))),
             ("first_day", Json::UInt(u64::from(record.first.get()))),
             ("days", Json::UInt(u64::from(record.days))),
+            ("business", Json::Bool(Inspector::new(&world).any_business(record.last))),
             ("wall_ms", Json::opt(wall_ms, Json::UInt)),
+            ("substeps", substeps(Inspector::new(&world), record.first, record.last)),
             ("vm_hwm_bytes", Json::opt(peak, Json::UInt)),
             ("pss_bytes", Json::opt(pss, Json::UInt)),
             ("thermal_status", Json::Int(i64::from(host.thermal_status()))),
@@ -125,6 +173,7 @@ pub fn run(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32, report_p
         show(host, "world", name, text, format!("≤ {budget} ms"), verdict);
     }
     let w = Inspector::new(&world);
+    let view = views.close(w, &watch.recorder);
     let report = Json::obj([
         ("report_version", Json::UInt(WORLD_REPORT_VERSION)),
         ("commit", Json::str(option_env!("PHX_COMMIT").unwrap_or("unknown"))),
@@ -136,11 +185,51 @@ pub fn run(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32, report_p
         ("vm_hwm_bytes", Json::opt(proc_kib("status", "VmHWM:"), Json::UInt)),
         ("world_hash", Json::str(format!("{:032x}", w.world_hash()))),
         ("findings", Json::UInt(u64::try_from(w.findings().len()).unwrap_or(u64::MAX))),
+        ("reads", reads(&watch.recorder, &view)),
+        ("drift", drift(&phx_obs::drift(&opening, &view))),
     ]);
-    let text = report.pretty();
-    std::fs::write(report_path, &text).map_err(|e| format!("{report_path}: {e}"))?;
-    show(host, "report", "written", report_path.to_owned(), String::new(), "");
-    Ok(text)
+    Ok(report)
+}
+
+/// Each opening distribution's distance from the world's own at the run's end.
+fn drift(drifts: &[phx_obs::Drift]) -> Json {
+    Json::Array(
+        drifts
+            .iter()
+            .map(|d| {
+                let distance = match d.distance {
+                    phx_num::Missing::Present(x) => Json::Float(x),
+                    phx_num::Missing::Absent => Json::Null,
+                };
+                Json::obj([
+                    ("id", Json::str(d.id.clone())),
+                    ("day", Json::UInt(u64::from(d.day.get()))),
+                    ("distance", distance),
+                ])
+            })
+            .collect(),
+    )
+}
+
+/// Each sub-step that ran in a turn's days, by its label, with its wall time summed over them: absent where the clock
+/// ran backwards on any of them.
+fn substeps(w: Inspector<'_>, first: phx_id::Day, last: phx_id::Day) -> Json {
+    let mut by: Vec<(u8, Option<u64>)> = Vec::new();
+    for r in w.substep_records().iter().rev().take_while(|r| r.day >= first).filter(|r| r.day <= last) {
+        match by.iter_mut().find(|(s, _)| *s == r.substep) {
+            Some((_, ns)) => *ns = ns.zip(r.wall_ns).map(|(a, b)| a + b),
+            None => by.push((r.substep, r.wall_ns)),
+        }
+    }
+    by.sort_unstable_by_key(|(s, _)| *s);
+    Json::Array(
+        by.into_iter()
+            .filter_map(|(s, ns)| {
+                let info = phx_core::SUB_STEPS.get(usize::from(s))?;
+                Some(Json::obj([("substep", Json::str(info.label)), ("wall_ns", Json::opt(ns, Json::UInt))]))
+            })
+            .collect(),
+    )
 }
 
 /// The app's entry: assembles and runs the world on the calling thread, which must not be the interface's.

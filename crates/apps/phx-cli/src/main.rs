@@ -107,6 +107,17 @@ enum Measure {
         #[arg(long)]
         out: PathBuf,
     },
+    /// The budget as measured: the phone's turns, sub-steps, memory and unit costs, and the full-load bench.
+    Budget {
+        /// The build run's report of the commit the phone ran.
+        #[arg(long)]
+        build_run: PathBuf,
+        /// The phone's device report.
+        #[arg(long)]
+        device: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+    },
 }
 
 fn main() -> ExitCode {
@@ -116,6 +127,7 @@ fn main() -> ExitCode {
         Command::Measure(Measure::Calendar { data, setup, run_dir, out }) => {
             run::measure_calendar(&data, &setup, &run_dir, &out)
         }
+        Command::Measure(Measure::Budget { build_run, device, out }) => run::measure_budget(&build_run, &device, &out),
         Command::Inject(a) => {
             inject::run(&a.from, &a.data, &a.setup, &a.run_dir, a.family.as_deref(), a.report.as_deref())
         }

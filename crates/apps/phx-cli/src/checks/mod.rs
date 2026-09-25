@@ -19,6 +19,23 @@ pub enum Outcome {
     NotYet(&'static str),
 }
 
+/// What the observer recorded beside the world over the run: the declared reads and their series, and each opening
+/// distribution's distance from the world's own at settling's end and at the run's end.
+#[derive(Clone, Copy, Debug)]
+pub struct Observed<'a> {
+    pub reads: &'a [phx_obs::ReadDecl],
+    pub series: &'a [phx_obs::Series],
+    pub settled: &'a [phx_obs::Drift],
+    pub ended: &'a [phx_obs::Drift],
+}
+
+/// What a check reads: the world alone, or the world with what the observer recorded of it.
+#[derive(Clone, Copy, Debug)]
+pub enum Run {
+    World(fn(Inspector<'_>) -> Outcome),
+    Observed(fn(Inspector<'_>, &Observed<'_>) -> Outcome),
+}
+
 /// A live check: its permanent identity, what it holds, the step it holds from, and its function; a retired check
 /// keeps its identity and says why.
 #[derive(Clone, Copy, Debug)]
@@ -26,7 +43,7 @@ pub struct Check {
     pub id: &'static str,
     pub title: &'static str,
     pub from_step: &'static str,
-    pub run: Option<fn(Inspector<'_>) -> Outcome>,
+    pub run: Option<Run>,
     pub retired: Option<&'static str>,
 }
 
@@ -34,7 +51,22 @@ pub struct Check {
 #[macro_export]
 macro_rules! live_check {
     (id: $id:literal, title: $title:literal, from_step: $step:literal, check: $f:expr $(,)?) => {
-        $crate::checks::Check { id: $id, title: $title, from_step: $step, run: Some($f), retired: None }
+        $crate::checks::Check {
+            id: $id,
+            title: $title,
+            from_step: $step,
+            run: Some($crate::checks::Run::World($f)),
+            retired: None,
+        }
+    };
+    (id: $id:literal, title: $title:literal, from_step: $step:literal, observed: $f:expr $(,)?) => {
+        $crate::checks::Check {
+            id: $id,
+            title: $title,
+            from_step: $step,
+            run: Some($crate::checks::Run::Observed($f)),
+            retired: None,
+        }
     };
     (id: $id:literal, title: $title:literal, from_step: $step:literal, retired: $why:literal $(,)?) => {
         $crate::checks::Check { id: $id, title: $title, from_step: $step, run: None, retired: Some($why) }

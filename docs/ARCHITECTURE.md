@@ -82,7 +82,9 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 
 ### 3.1 Dependency rules (checked by `phx-check`)
 
-- A crate depends only on lower layers. Inside L0 the order is `phx-macros → phx-num → phx-rand → phx-id`; inside L1
+- A crate depends only on lower layers. Inside L0 the order is `phx-macros → phx-num → phx-rand → phx-id`; inside L3
+  it is `phx-world → phx-obs`, so the observer reads the world through its inspector and the world never reads the
+  observer (the traced cells reach `phx-pop` through `phx_core::TracedCells`); inside L1
   it is `phx-store → phx-exec → phx-core → phx-geo → phx-ledger → phx-pop → phx-market → phx-acct → phx-val →
   phx-audit`. Interface crates may depend on L0, L1 and the interface crates before them in the order `if-base →
   if-pop → if-labour → if-property → if-firm → if-banking → if-credit → if-securities → if-risk → if-energy → if-open
@@ -1477,7 +1479,18 @@ world on the phone. CI never runs the world.
 
 - **Views** are built at 10e on a turn's last day from records and the state at its close, into fixed-bin histograms,
   and swapped in behind an `Arc`; tracers move every day; tables cross the FFI in pages; `phx-obs` writes nothing
-  (Law 17).
+  (Law 17). As built, the host (`phx-cli`'s run, `phx-ffi`'s bench) drives the observer after each turn: its
+  `Recorder` reads each day the turn closed from the run's own records — the day's work on the cells, the day's
+  settlement and the day's events — into the **macro reads** `data/observer/READS.toml` declares, each a named
+  measure (`cells.persons`, `settlement.gross`, `events.<kind>` summing the sizes of the day's events of a declared
+  kind, …); its `Views` build, at the turn's close, each read's latest value and the declared histograms of a kind's
+  cells, of their weights or of a key attribute's values counted by members, over fixed lower edges with the values
+  below the first counted apart. Each histogram is an opening distribution (GEN.8): the host keeps the opening's view
+  and reports each histogram's distance from it (half the summed differences of the bins' shares) at settling's end
+  and at the run's end. The observer is a `phx_world::Observer` passed to `run_turn_observed`: after each day it
+  follows the tracers and takes the reads through the inspector, inside the turn's time, and the world is the same
+  world with it or without it. PC-20 refuses any `&mut` to the world's stores, and any naming of `World`, in
+  `phx-obs`.
 - **Two builds**: the participant's reads only through `ParticipantScope`, its party's scoped read; the inspector's
   compiles only with the `inspector` feature, which the participant build refuses. Every shown number is a
   `Shown<T>`, built from a record entry, a read at the close, a published statistic, or a fixed-bin aggregate of
@@ -1487,16 +1500,28 @@ world on the phone. CI never runs the world.
   distributional number (N5).
 - **Tracers** follow members through splits by the observer's stream, conditioned on their profile values (REP.30);
   marks count against their declared number. A tracer's last year is in memory and its older history is paged from
-  the history store (§11).
+  the history store (§11). As built, `OBS.tracers` members are drawn at the opening from `OBS.tracer` over every
+  kind's cells by weight, each with its own values of the groups counted once per member; 10b writes a split log only
+  for the cells `TracedCells` names (origin, the stayers' and each part's counts by group value, the cell each part
+  landed in), cleared at each day's start and never saved or hashed; a tracer goes to a side with probability its
+  members times, for each group, the share holding its value, then to its cell's successor, and ends with a cell that
+  ends with none. It does not yet follow a cell's per-member outcomes (a death, an onset), which draw counts, not
+  members (F-052).
 - **The player** is an individual (OBS.4) whose decider fact names the player. A queued intent is a **wake**: at 1c
   of the first day its decision point runs, it gives the player an occasion for that decision (REP.21) and is decided
   there; until then it stays queued. On days the player has queued nothing for a scheduled decision, the rule decides
   only if the player's settings delegate (OBS.4). The player is never landed or demoted (REP.29). It appears in
-  every audit family.
+  every audit family. As built, the setup states the player's country and whether it delegates; at the end of the
+  assembly the world draws a household of that country from the stream `GEN.player`, each household equally likely,
+  splits it out of its cell as an individual (the promotion's own split) and seats it in `PlayerQueue`, saved and
+  hashed with the world, which names the player's decider (`Decider::Player`) and refuses an intent queued for any
+  other party; the rank read never demotes it.
 - **On the phone**, `phx-ffi` runs the engine on its own thread with the pinned pool: create, load, step a turn, read
   a view page, submit an action, save, and in the inspector build export the recorder's series (§14.8). The bench
   flavour runs a declared number of turns and the full-load bench (§14.6), shows each turn's results live as it
-  completes, and writes a JSON report.
+  completes, and writes a JSON report; `Run all` runs the probe, the world's turns and the full-load bench in turn and
+  writes the device report's second version (`perf/schema/device-report.json`), each turn with its sub-steps' wall
+  times, which the world records in its `SubStepRecord`s by the application's clock.
 
 ---
 
@@ -1762,7 +1787,9 @@ it at the Stage 6 gate.
 
 Every step declares **live checks** with permanent identifiers (`LC-…`), implemented in `phx-cli`'s check suite over a
 live run's records and metrics. A retired check keeps its identifier and says why; `phx-check` fails if one
-disappears.
+disappears. A check reads the world through its inspector (`Run::World`), or the world with what the observer recorded
+beside it over the run — the reads' series and the opening distributions' drift (`Run::Observed`), as liveness and
+GEN.8 do.
 
 ### 14.3 Determinism by construction
 
@@ -1781,6 +1808,7 @@ neither needs a budget there.
 
 | Command | Measures |
 | --- | --- |
+| `phx measure budget` | from a build run's report and the device report of the same commit's world: the phone's business and closed turns, each sub-step's median, memory, unit costs (a sub-step's median over the build run's count per business day), and the full-load bench against its criteria |
 | `phx measure` | read from the device run's report (§14.6), the representation's own numbers: rows per kind, relationship rows per cell by line kind, profile entries per role, bytes per store and peak resident bytes, agenda rows, candidates and hits per process, occasions and evaluation groups, parts and new cells per day by cause, choice groups and draws, legs per batch, rows and bytes per sub-step, unit costs per line of §13.2 |
 | `phx inject` | audit independence (N1), on the build machine, on a save loaded apart, audited and discarded |
 | `phx realism` | the stylised facts (N3) read from the run: recording, statistics, verdicts, GEN.10 (§14.8) |

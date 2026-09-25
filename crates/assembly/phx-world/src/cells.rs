@@ -770,6 +770,10 @@ struct TenBShared<'a> {
     kinks: &'a FacilityKinks,
     streams: &'a phx_core::Streams,
     day: Day,
+    player: Missing<PartyId>,
+    /// The observer's traced cells, whose splits the day's log keeps.
+    traced: Option<&'a dyn phx_core::TracedCells>,
+    log: &'a mut crate::observe::SplitLog,
 }
 
 impl TenBShared<'_> {
@@ -802,10 +806,13 @@ fn land_rank_rekey(
     sh: &mut TenBShared<'_>,
     table: &mut CellTable<SystemBacking>,
     kd: &mut phx_pop::population::PopKind,
-    work: (Vec<phx_pop::part::Part>, Vec<Slot>, bool, Subject),
+    work: (Vec<phx_pop::part::Part>, Vec<Slot>, bool, (usize, Subject)),
     count: &mut CellDay,
 ) -> Landed {
-    let (parts, mut flagged, rank_day, kind_subject) = work;
+    let (parts, mut flagged, rank_day, (kind, kind_subject)) = work;
+    let player = sh.player;
+    let traced = sh.traced;
+    let mut splits = traced.map_or_else(Vec::new, |t| traced_splits(t, table, &kd.decl, kind, &parts));
     let (day, streams, ordinal) = (sh.day, sh.streams, SubStep::S10b.ordinal());
     let levels = kd.levels.clone();
     let ranks = kd.ranks;
@@ -814,9 +821,17 @@ fn land_rank_rekey(
     if !parts.is_empty() {
         landed = land(&mut ctx, index, parts);
     }
+    for (split, ids) in &mut splits {
+        for (left, id) in split.left.iter_mut().zip(ids.iter()) {
+            if let Some((_, cell)) = landed.resolved.iter().find(|(p, _)| p == id) {
+                left.landed = *cell;
+            }
+        }
+    }
     if rank_day && let Some(ranks) = ranks {
         let mut draws = streams.open(&PromotionStream::DECL, kind_subject, day, ordinal);
-        let read = read_ranks(&*ctx.table, ranks, &|_| false, &mut draws);
+        // The player's party is never demoted: it is an individual from the start to the end.
+        let read = read_ranks(&*ctx.table, ranks, &|p| player == Missing::Present(p), &mut draws);
         for (slot, members) in read.promote {
             let origin = ctx.table.party(slot).get();
             let mut per: Vec<phx_rand::Draws> = (0..members)
@@ -828,7 +843,29 @@ fn land_rank_rekey(
                     streams.open(&PromotionStream::DECL, Subject::new(SubjectTag::Part, id), day, ordinal)
                 })
                 .collect();
-            let _ = promote(&mut ctx, index, slot, members, &mut per);
+            let origin = ctx.table.party(slot);
+            let placed = promote(&mut ctx, index, slot, members, &mut per);
+            if traced.is_some_and(|t| t.is_traced(origin)) {
+                let t = &*ctx.table;
+                let counts = |s: Slot| crate::observe::once_per_member(ctx.kind, &t.profile(s));
+                let stays = t.is_live(slot) && !t.hot(slot).is_individual();
+                let left = placed
+                    .iter()
+                    .map(|s| crate::observe::Left {
+                        weight: t.weight(*s).get(),
+                        counts: counts(*s),
+                        landed: t.party(*s),
+                    })
+                    .collect();
+                let split = crate::observe::Split {
+                    kind,
+                    origin,
+                    stayed: if stays { t.weight(slot).get() } else { 0 },
+                    stayed_counts: if stays { counts(slot) } else { Vec::new() },
+                    left,
+                };
+                splits.push((split, Vec::new()));
+            }
             flagged.push(slot);
             count.promoted += u64::from(members);
         }
@@ -839,7 +876,46 @@ fn land_rank_rekey(
     }
     flagged.retain(|s| ctx.table.is_live(*s));
     count.rekeys += rekey_flagged(&mut ctx, index, &flagged, &mut landed);
+    sh.log.splits.extend(splits.into_iter().map(|(s, _)| s));
     landed
+}
+
+/// The day's parts of traced cells, one split per cell: what stays in it as it stands before they land, and each part
+/// with the identity by which its landing is found.
+fn traced_splits(
+    traced: &dyn phx_core::TracedCells,
+    table: &CellTable<SystemBacking>,
+    kind: &PopKindDecl,
+    k: usize,
+    parts: &[phx_pop::part::Part],
+) -> Vec<(crate::observe::Split, Vec<PartId>)> {
+    let mut out: Vec<(crate::observe::Split, Vec<PartId>)> = Vec::new();
+    for part in parts.iter().filter(|p| traced.is_traced(p.id.origin)) {
+        let left = crate::observe::Left {
+            weight: part.weight.get(),
+            counts: crate::observe::once_per_member(kind, &part.profile),
+            landed: part.id.origin,
+        };
+        if let Some((split, ids)) = out.iter_mut().find(|(s, _)| s.origin == part.id.origin) {
+            split.left.push(left);
+            ids.push(part.id);
+            continue;
+        }
+        let stays = table.is_live(part.from) && table.party(part.from) == part.id.origin;
+        let split = crate::observe::Split {
+            kind: k,
+            origin: part.id.origin,
+            stayed: if stays { table.weight(part.from).get() } else { 0 },
+            stayed_counts: if stays {
+                crate::observe::once_per_member(kind, &table.profile(part.from))
+            } else {
+                Vec::new()
+            },
+            left: vec![left],
+        };
+        out.push((split, vec![part.id]));
+    }
+    out
 }
 
 /// Tolerance control for a kind: while its cells exceed its budget, the widenings of least gap swept in, at most
@@ -928,14 +1004,29 @@ impl World {
     /// on a light day, narrows where there is room and renumbers one chunk; every row added, removed or grown is booked
     /// afresh for tomorrow; and the day's counts are kept.
     #[clause("REP.8", "REP.28", "REP.29", "REP.13", "REP.15")]
-    pub(crate) fn cells_settle(&mut self, day: Day) {
+    pub(crate) fn cells_settle(&mut self, day: Day, traced: Option<&dyn phx_core::TracedCells>) {
         self.cell_lists();
         let date = self.calendar.date(day);
         let light = !self.calendar.any_business(day);
         let rank_day = u64::from(date.day()) == self.rank_day;
         let phx_ledger::books::Books { ledger, parties, .. } = &mut self.books;
         let (cells, directory, space) = parties.cells_mut();
-        let mut sh = TenBShared { ledger, directory, space, kinks: &self.kinks, streams: &self.streams, day };
+        let player = match self.queue.player() {
+            Missing::Present(p) => Missing::Present(p.party),
+            Missing::Absent => Missing::Absent,
+        };
+        let log = &mut self.split_log;
+        let mut sh = TenBShared {
+            ledger,
+            directory,
+            space,
+            kinks: &self.kinks,
+            streams: &self.streams,
+            day,
+            player,
+            traced,
+            log,
+        };
         let Population { kinds, landed: day_landed, agenda, .. } = &mut self.population;
         let mut count = self.cell_day;
         for (k, kd) in kinds.iter_mut().enumerate() {
@@ -943,7 +1034,8 @@ impl World {
             let parts = self.cell_parts.get_mut(k).map(std::mem::take).unwrap_or_default();
             let flagged = self.cell_flagged.get_mut(k).map(std::mem::take).unwrap_or_default();
             let kind_subject = Subject::new(SubjectTag::World, phx_rand::float::len_u64(k));
-            let mut landed = land_rank_rekey(&mut sh, table, kd, (parts, flagged, rank_day, kind_subject), &mut count);
+            let work = (parts, flagged, rank_day, (k, kind_subject));
+            let mut landed = land_rank_rekey(&mut sh, table, kd, work, &mut count);
             tolerance(&mut sh, table, kd, (light, kind_subject), &mut landed, &mut count);
             // Rows are booked before any is renumbered, since a swap carries each row's bookings to its new slot.
             phx_pop::population::book_changed(kd, table, agenda, day.succ());
@@ -972,6 +1064,101 @@ impl World {
         }
         self.cell_day = count;
         self.metrics.cells.push(count);
+    }
+}
+
+impl World {
+    /// The player's household, drawn at the opening from the households of the country the setup names, each equally
+    /// likely, and split out of its cell as an individual, which it stays: ranks never demote it. Its cell re-keys at
+    /// the first day's 10b, as a cell any member left does.
+    ///
+    /// # Errors
+    /// A world that keeps no household kind, or whose player's country holds no household.
+    #[clause("OBS.4", "REP.2")]
+    pub(crate) fn open_player(&mut self) -> Result<(), String> {
+        use phx_rand::below_u64;
+        let choice = self.game.setup.player;
+        let country = choice
+            .country
+            .checked_sub(1)
+            .and_then(|c| u8::try_from(c).ok())
+            .map(phx_id::CountryId::new)
+            .ok_or_else(|| format!("the player lives in country {}, which is none", choice.country))?;
+        let Some(k) = self.population.kinds.iter().position(|kd| kd.decl.kind == crate::consts::PLAYER_KIND) else {
+            return Err(format!("the world keeps no `{}` kind for the player", crate::consts::PLAYER_KIND));
+        };
+        self.cell_lists();
+        let region_country: Vec<phx_id::CountryId> =
+            crate::world::geo_in(&self.own).map.regions.iter().map(|r| r.country).collect();
+        let day = self.today;
+        let phx_ledger::books::Books { ledger, parties, .. } = &mut self.books;
+        let (cells, directory, space) = parties.cells_mut();
+        let table = Population::table_mut::<SystemBacking>(cells, k);
+        let Some(kd) = self.population.kinds.get_mut(k) else {
+            return Err("the player's kind has no table".to_owned());
+        };
+        let Missing::Present(sited) = kd.decl.sited_by else {
+            return Err(format!("the `{}` kind names no region its cells are sited by", kd.decl.kind));
+        };
+        let in_country = |slot: Slot| {
+            let record = kd.keys.record(table.hot(slot).key_id);
+            let region = usize::try_from(kd.decl.key.get(&record, sited)).unwrap_or(usize::MAX);
+            region_country.get(region) == Some(&country)
+        };
+        let eligible: Vec<(Slot, u64)> = table
+            .slots()
+            .filter(|s| !table.hot(*s).is_individual() && in_country(*s))
+            .map(|s| (s, u64::from(table.weight(s).get())))
+            .collect();
+        let households: u64 = eligible.iter().map(|(_, w)| w).sum();
+        if households == 0 {
+            return Err(format!("the player's country {} holds no household", choice.country));
+        }
+        let subject = Subject::new(SubjectTag::Country, u64::from(country.get()));
+        let mut d = self.streams.open(&crate::opening::prims::PLAYER_STREAM, subject, day, 0);
+        let mut at = below_u64(&mut d, households);
+        let Some(slot) = eligible.iter().find_map(|(s, w)| {
+            if at < *w {
+                Some(*s)
+            } else {
+                at -= w;
+                None
+            }
+        }) else {
+            violation!(clause = "OBS.4", "a household drawn past the country's households");
+        };
+        let origin = table.party(slot);
+        let mut split = [self.streams.open(
+            &crate::opening::prims::PLAYER_STREAM,
+            Subject::new(SubjectTag::Part, origin.get()),
+            day,
+            0,
+        )];
+        let levels = kd.levels.clone();
+        let mut sh = TenBShared {
+            ledger,
+            directory,
+            space,
+            kinks: &self.kinks,
+            streams: &self.streams,
+            day,
+            player: Missing::Absent,
+            traced: None,
+            log: &mut self.split_log,
+        };
+        let (mut ctx, index) = sh.ctx(table, kd, &levels);
+        let placed = promote(&mut ctx, index, slot, 1, &mut split);
+        let Some(player) = placed.first().map(|s| ctx.table.party(*s)) else {
+            violation!(clause = "OBS.4", "the player's household was not split out");
+        };
+        if ctx.table.is_live(slot)
+            && ctx.table.party(slot) != player
+            && let Some(f) = self.cell_flagged.get_mut(k)
+        {
+            f.push(slot);
+        }
+        self.queue.seat(phx_core::Player { party: player, delegate: choice.delegate });
+        Ok(())
     }
 }
 

@@ -205,7 +205,7 @@ mod tests {
         let streams = Streams::new(phx_rand::Seed::new(1), &[]).unwrap();
         let register = RegisterBuilder::default().build(&[], 1).unwrap();
         let (mut intents, mut bindings, mut queue, rules) =
-            (Intents::default(), Bindings::default(), PlayerQueue::default(), RuleTable::default());
+            (Intents::default(), Bindings::default(), PlayerQueue::unseated(), RuleTable::default());
         let parts = CtxParts {
             day: phx_id::Day::new(1),
             date: phx_id::Date::new(2025, 1, 2).unwrap(),

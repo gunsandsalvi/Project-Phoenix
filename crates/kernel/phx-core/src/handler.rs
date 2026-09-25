@@ -307,7 +307,7 @@ mod tests {
     fn ctx_passes_through_what_the_handler_declares() {
         let streams = Streams::new(Seed::new(1), &[Tracer::DECL]).unwrap();
         let (mut facts, mut intents, mut bindings, mut queue) =
-            (ListFacts::default(), Intents::default(), Bindings::default(), PlayerQueue::default());
+            (ListFacts::default(), Intents::default(), Bindings::default(), PlayerQueue::unseated());
         let rules = RuleTable::default();
         let register = crate::register::RegisterBuilder::default().build(&[], 1).unwrap();
         let mut opens = Vec::new();

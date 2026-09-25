@@ -5032,7 +5032,9 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 - **S0.26a — the world on the phone** *(part built)*: `phx-ffi`'s `run_world` assembles the world from the data the
   bench flavour ships as assets and runs a declared number of turns, sending each turn's wall time, days, `VmHWM` and
   PSS to the screen as it closes and writing a report with the opening's time and the median and worst turn against
-  the budget. The report's second schema, per-sub-step timings and the macro reads come with S0.26c and S0.26e.
+  the budget. Each turn's row carries whether it ends on a business day and its sub-steps' wall times, summed over
+  its days from the world's `SubStepRecord`s (which now hold each sub-step's wall time by the application's clock),
+  with the macro reads and each opening distribution's drift.
 - **S0.26b — the public-event rule** *(built)*: `phx_core::EventsRule` (`events_rule.rs`) from the standing SHAPE
   `OBS.public_events` (`data/shared/OBS.toml`, a new value type `NewsRule`), which names every declared event kind
   once — always, never, or when one of its details' sizes reaches a declared size in the kind's unit — and is refused
@@ -5041,11 +5043,45 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   rule judges so, so yesterday's events recorded after its 10a are judged today (architecture §4.10). The opening
   rule: weather always, a catastrophe when a struck tile loses a permille, a household's death, disability or
   birthday never. LC-0-58 is real; LC-0-57, 59 and 60 name S0.26d and S0.26e.
-- **S0.26c — `phx-obs`**: views, fixed-bin histograms, tracers with the split log, and the macro reads of
-  `READS.toml`; PC-20 extended.
-- **S0.26d — the player** as an individual, its queued intents as wakes; LC-0-57.
-- **S0.26e — the measurement programme**: the full-load bench, the device report's second schema, `phx measure`,
-  LC-0-59 and LC-0-60; then the phone.
+- **S0.26c — `phx-obs`** *(built)*: the crate, above
+  `phx-world` in the assembly layer's order (`phx-world → phx-obs`), reads the world only through its inspector. Its
+  `Recorder` reads each day a turn closed into the series `data/observer/READS.toml` declares (moved from
+  `data/shared/`, where every file is the register's): persons, members and cells, persons gone, deaths and
+  disability onsets (the day's `DEM` events' sizes), estates opened and settled, payments due, settled and failed, and
+  the gross settled; a read may name why it can rise on every day (`grows`). `Views` build at a turn's close each
+  read's latest value and the declared histograms, each over a kind's cells of their weights (a cell counted once) or
+  of a key attribute's values (a cell counted by its members): household and small-firm cells by weight, households by
+  their head's age class, adults and bank, small firms by size class. `phx run` reports each series' days, first and
+  last value, least, greatest and sum, and the histograms; the phone bench writes the series day by day into its
+  report. Tracers (REP.30): `OBS.tracers` (1 000, a resolution) members drawn at the opening from `OBS.tracer` over
+  every kind's cells by weight, each with its own values of the groups counted once per member drawn from its cell's
+  counts, and followed at 10b's splits of the cells that hold one — the world's split log, written only for those
+  cells through `TracedCells`, cleared at each day's start, never saved or hashed — each to a side with probability
+  its members times, for each group, the share holding the tracer's value; then to a cell's successor in the
+  directory, and ended with a cell that ended with none. The observer is a `phx_world::Observer` the host passes to
+  `run_turn_observed`, called at each day's close through the inspector; a world run with it and one without are the
+  same world. PC-20 refuses in `phx-obs` any `&mut` to the world's stores and any naming of `World`; PC-18 lets it
+  read its own declarations.
+- **S0.26d — the player** *(built)*: the setup states `player = { country, delegate }` (GEN.14 and OBS.4 amended);
+  at the end of the assembly the world draws a household of that country from `GEN.player`, each equally likely,
+  splits it out of its cell as an individual with the promotion's split, and seats it in `PlayerQueue` (saved and
+  hashed), which answers `Decider::Player` for it and refuses an intent queued for another party; the rank read never
+  demotes it. With no decision point yet, nothing is queued and nothing decided for it. LC-0-57 reads the seated
+  player live, an individual household in the setup's country, and no intent left queued.
+- **S0.26e — the measurement programme** *(built)*: the full-load bench (`phx-ffi`'s `load.rs` over
+  `perf/load/volumes.toml`, the owner's review; `phx-ledger::synthetic::settlement` and
+  `phx-pop::synthetic::population_at` build its books and cells), run from the bench flavour's `Full load`; `Run all`
+  runs the probe and micro-benchmarks, the world's turns and the full-load bench one after another and writes the
+  device report's second version, the first's fundamentals with a `world` and a `load` section
+  (`perf/schema/device-report.json` takes both versions). `phx measure budget --build-run --device` reads a build
+  run's report and a device report of the same commit's world: the phone's business and closed turns, each
+  sub-step's median, memory, unit costs (7a per row scanned, 7c per payment: the phone's median over the build run's
+  count per business day of the same world), and the full-load bench against its criteria. Live checks that read what
+  the observer recorded beside the world (`Run::Observed`, over `Observed`): LC-0-59 — money moves on every business
+  day, each day's fails tallied by cause are the fails recorded, no read rises on every day unless its declaration
+  names why, and the reads never all stand still to the run's end; LC-0-60 — each opening distribution's distance
+  from the world's own (half the summed differences of the bins' shares, `Histogram::distance`) read at settling's
+  end and the run's end, reported under `drift`; then the phone.
 
 **Clauses**:
 - PROCESS: OBS.4 *(part: the player as an individual, its queue as wakes)*; REP.30 *(tracers)*.
@@ -5072,7 +5108,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 | File | Purpose |
 | --- | --- |
 | `crates/assembly/phx-obs/src/*.rs` | minimal views, fixed-bin histograms, tracers (REP.30) and the macro reads (`READS.toml`) computed from public records; read-only; swapped behind an `Arc` at 10e |
-| `data/shared/READS.toml` | the declared macro reads, Stage 0's (demographic and monetary) |
+| `data/observer/READS.toml` | the declared macro reads, Stage 0's (demographic and monetary) |
 | `crates/kernel/phx-core/src/events_rule.rs` | S0.10's declared extension point: the OBS.3 rule at 10a, which recorded events become public, declared as a standing SHAPE. It reads only the day's events (which every system records at the sub-step that caused them, CHN.4) and public records, so it needs no state `phx-core` cannot see. Its extension point: per event kind, the declared follow-ups that develop from it (S6.04) |
 | `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create from a setup (S0.27), load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock |
 | `crates/apps/phx-ffi/src/bench.rs` | S0.07's bench, extended: S0.17's micro-benchmarks beside S0.04's, S0.07's and S0.23's, and N turns of the world with its macro reads, all inside the app's process; each turn's and each bench day's results are sent to the app as they complete |
@@ -5170,7 +5206,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
     which the bench follows — or the owner decides.
   - Every later gate reruns it, with the built stages' counts, measured by `phx measure`, in place of their estimates.
   - Its numbers are costs, never the world's: nothing of it is saved, hashed or read by a check.
-- **The macro reads** (`data/shared/READS.toml`): the declared macro series each gate reports from the run, with the
+- **The macro reads** (`data/observer/READS.toml`): the declared macro series each gate reports from the run, with the
   relationships between them that real economies show (spec Appendix E 25). Stage 0's reads are demographic and
   monetary; each stage's gate adds its own.
 - **The Stage 0 gate**:
@@ -5302,7 +5338,7 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 | `src/schedule.rs` | the investor schedule, a pure function; empty until S3.03 fills it |
 | `src/attention.rs` | attention from stakes and review cost (Reis, 2006): intensity and daily probability |
 | `src/heuristic.rs` | `trait Heuristic`, sealed, so no crate but `phx-val` can implement one (PC-33 is a compile-level refusal) |
-| `data/shared/READS.toml` | extended with Stage 1's macro reads at the start of this step, frozen before S1.16's gate run |
+| `data/observer/READS.toml` | extended with Stage 1's macro reads at the start of this step, frozen before S1.16's gate run |
 | `data/shared/VAL.toml` | memory and switching-intensity type sets (NUM.4); heuristic parameters (λ, γ, κ) per memory type; attention sensitivity per type; the menu listed in `SHAPES.toml` with its sources. Patience and risk aversion are HH's and management's primitives (one register entry each), passed to the value methods as arguments |
 
 `phx-val` declares no positions and no decision points: it is pure functions and the public-series outlooks. The
@@ -6879,7 +6915,7 @@ completed at S0.26)*; the Stage 1 exit.
 | File | Purpose |
 | --- | --- |
 | `perf/device/S1.16-*.json`, `perf/measure/S1.16-*.json` | the device report and the measurements |
-| `data/shared/READS.toml` | the declared macro reads, **frozen** before the gate run: declared at S0.26 for Stage 0's reads and extended at the start of S1.01 |
+| `data/observer/READS.toml` | the declared macro reads, **frozen** before the gate run: declared at S0.26 for Stage 0's reads and extended at the start of S1.01 |
 | `perf/reads/S1.16-*.json` | the macro reads from the gate run's device report |
 | `data/measure/N3/F<nn>.toml` | for each macro read that is one of N3's facts, its definition in S7.01's form, brought forward to this step (spec Part O), committed with `READS.toml` before the gate run |
 
@@ -7071,7 +7107,7 @@ Loans can be sold to other banks at a negotiated price.
 | `src/audit.rs` | the BNK.12 family |
 | `data/<country>/BNK.toml` | adds: workout and enforcement costs in staff hours and fees to named parties (TECHNOLOGY, legal POLICY for fees); the provisioning standard's horizons by arrears stage (POLICY: accounting standards, ACC.17); the provision review schedule (PREFERENCE of management); review costs per workout, loan-sale and quote decision in hours (TECHNOLOGY) |
 | `data/shared/SHAPES.toml` | the workout form and the loan-sale form, with sources |
-| `data/shared/READS.toml` | extended with Stage 2's macro reads (S2.12), each with its relationship and source, before the stage's code |
+| `data/observer/READS.toml` | extended with Stage 2's macro reads (S2.12), each with its relationship and source, before the stage's code |
 
 **Design**
 
@@ -8859,7 +8895,7 @@ measured)*; N8 *(judged again: the budget at Stage 2)*; N2 *(judged again)*; the
 | File | Purpose |
 | --- | --- |
 | `perf/device/S2.12-*.json`, `perf/measure/S2.12-*.json` | the device report and the measurements |
-| `data/shared/READS.toml` | extended at the start of S2.01 with Stage 2's reads, and frozen before the gate run |
+| `data/observer/READS.toml` | extended at the start of S2.01 with Stage 2's reads, and frozen before the gate run |
 | `perf/reads/S2.12-*.json` | the macro reads from the run |
 
 **Design**:
@@ -9122,7 +9158,7 @@ and linked by the lenders' budgets. Who lends, who borrows, at what rate and who
 | `data/<country>/MMK.toml` | tenors, collateral baskets and eligibility, repo conventions, lots, ticks (POLICY) |
 | `data/<country>/BFL.toml` | adds the money market's routes to `marginal_cost_of_funds`' declared sources |
 | `data/<country>/gen/MMK.toml` | the opening agreements and positions, with sources |
-| `data/shared/READS.toml` | Stage 3's macro reads (S3.11), each with its relationship and source, declared before the stage's code |
+| `data/observer/READS.toml` | Stage 3's macro reads (S3.11), each with its relationship and source, declared before the stage's code |
 
 `MMK.toml` also holds the review schedules and review hours (TECHNOLOGY) and the lenders' management types (risk
 appetite, confidence, the share of a market's turnover it expects to sell per day: PREFERENCE).
@@ -10868,7 +10904,7 @@ stage's macro reads from the run.
 
 | File | Purpose |
 | --- | --- |
-| `data/shared/READS.toml` | Stage 3's reads, declared at the start of S3.01 and frozen before the gate run |
+| `data/observer/READS.toml` | Stage 3's reads, declared at the start of S3.01 and frozen before the gate run |
 | `perf/device/S3.11-*.json`, `perf/measure/S3.11-*.json` | the device report and the measurements |
 | `perf/reads/S3.11-*.json` | the macro reads from the run |
 
@@ -12576,7 +12612,7 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 | `src/audit.rs` | `SUP.resolution_identity` over every resolution kind; the protection and guarantee funds' reconciliation |
 | `data/<country>/SUP.toml` | tests, consequences, licensing criteria and minimum capital (POLICY) |
 | `data/shared/SHAPES.toml` | the founders' form |
-| `data/shared/READS.toml` | Stage 4's reads, frozen before the run |
+| `data/observer/READS.toml` | Stage 4's reads, frozen before the run |
 | `perf/{device,measure,reads}/S4.07-*.json` | the device report, the measurements and the macro reads |
 
 **Design**
@@ -14133,7 +14169,7 @@ placeholder naming TAX, SOC, POL, FX or XB remains.
 
 | File | Purpose |
 | --- | --- |
-| `data/shared/READS.toml` | Stage 5's reads, frozen before the run |
+| `data/observer/READS.toml` | Stage 5's reads, frozen before the run |
 | `perf/{device,measure,reads}/S5.06-*.json` | the device report, the measurements and the macro reads |
 
 **Design**
@@ -14638,7 +14674,7 @@ which only `sys-tec`'s 3e handlers and its opening contribution can build (compi
 | `crates/systems/sys-bnk/src/bureau.rs` | `.at_formation` for the credit-record stage, from the records of the lines each role brings |
 | `crates/systems/sys-hsg/src/rules/where_to_live.rs` | adult children's leaving after `migrate`; formed households' and separating adults' needs (S2.05's "from S6.02"); the division read through `division_shares` |
 | `crates/systems/sys-sta/src/vital.rs` | POP.13's published series beside S1.14's vital statistics |
-| `data/shared/READS.toml` | LC-6-13's event: the share of a region's jobs lost and the window it is lost over, fixed before the run |
+| `data/observer/READS.toml` | LC-6-13's event: the share of a region's jobs lost and the window it is lost over, fixed before the run |
 | `data/<country>/DEM.toml` | schooling-to-skill tables and the experience technology (skill levels gained per year of tenure and lost per month of search, by family); meeting rates by age class (TECHNOLOGY); partner-age compatibility (PREFERENCE); education and family law (POLICY, owner: the parliament); review hours (TECHNOLOGY); review schedules (PREFERENCE) |
 | `data/<country>/gen/DEM.toml` | education attainment and skills by age, region and occupation family; enrolments (ENDOWMENT, census and survey sources) |
 | `data/shared/SHAPES.toml` | the forms of `enrol`, `form`, `separate` and leaving in `where_to_live`, with sources |
@@ -14866,7 +14902,7 @@ own paths, which this guard does not touch.
 | `src/metrics.rs` | HH.16: the propensity to consume by band of wealth and of liquid wealth, from receipts tied to no income or household event, against non-recipients of the band; the saving rate, wealth and income distributions, leverage, debt-service burden, defaults by household type; each receipt kept per recipient cell until its next visit |
 | `data/<country>/HH.toml` | liquidity cost hours per class (TECHNOLOGY); nothing else new |
 | `data/shared/SHAPES.toml` | the whole-balance-sheet form, replacing S3.05's entry, with sources and its standing assumption |
-| `data/shared/READS.toml` | HH.16's bands of wealth and of liquid wealth over income, fixed with the reads |
+| `data/observer/READS.toml` | HH.16's bands of wealth and of liquid wealth over income, fixed with the reads |
 
 **Design**
 
@@ -15122,7 +15158,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 | `crates/assembly/phx-world/src/opening/report.rs` | the GEN report: every system's contribution, distribution, source, balancing change and apportionment difference |
 | `crates/kernel/phx-audit/src/families.rs` | the map from N1's ten families to the system families that make them up, with each one's owner |
 | `crates/apps/phx-cli/src/inject.rs` | `phx inject --all`: every family's injection into a loaded save, and the independence report |
-| `data/shared/READS.toml` | Stage 6's reads, frozen before the run |
+| `data/observer/READS.toml` | Stage 6's reads, frozen before the run |
 | `perf/{device,measure,reads,inject}/S6.05-*.json` | the device report, the measurements, the macro reads and the independence report |
 
 **Design**
@@ -15826,6 +15862,7 @@ the final build within the budget on the phone.
 | F-049 | S0.25d | build, 2026-09-25 | The small firms hold no plant: the country's capital is apportioned over every firm by its employees, and the small firms' share is held by no one, so the opening's capital falls short of the steady path's by that share | a cell's holding of a physical class at the opening (a pooled holding counting its firms) is not drawn, and FRM.23's plant units are a key attribute that waits for S1.03 | the small firms' plant as their cells' pooled holdings, keyed by plant units (S1.03) | open |
 | F-050 | S0.25e | build, 2026-09-25 | No estate passes anything to an heir: every remainder goes to the country's treasury, and an estate settles on the next business day by one kernel rule (pay, write off, pass on), where the architecture's estates live about 25 days and sell what their debts need | kinship lines are not drawn at the opening (REP.23), and `sys-est`'s decisions — what to sell, when, to whom — have no handler that writes instructions yet | the kinship lines drawn with the households and heirs taken from their counts by the inheritance law (POP.9), and `sys-est`'s own handlers for sales and timing, when systems' handlers write instructions (Stage 1) | open |
 | F-051 | S0.25e | build, 2026-09-25 | Households that bank nowhere hold no money at all: their rents fail from the first due, and the wages and pensions paid them fail too, each as `NoMoney`, so they fall into arrears from the opening. The build run b1a62f6 onward stopped on it (REP.23, the unbanked tenant taken for its own top issuer) | jobs, tenancies and pensions are drawn for every household, banked or not, as they are in the countries the data describes, while banknotes are no one's holding until the households' liquidity choice (HH.7) | the households' banknotes, at the opening and by the liquidity choice, with dues and wages paid in cash where a party holds no account (S1.09's banknotes, S1.12's HH.7) | open |
+| F-052 | S0.26c | build, 2026-09-25 | A tracer never dies, ages or falls ill with its cell's members: a death or a disability onset reaches a count of a cell's members drawn at 3e, and a tracer among them is not drawn, so a tracer outlives its cell's deaths and keeps its opening values of the groups a person's event changes | the cells' per-member outcomes draw counts, not members, and the observer sees only the splits the day logs, not which members an outcome took | the day's per-member outcomes logged for traced cells as splits are (the members an outcome reached, by the values of their groups), each tracer following them with the observer's draws as it follows a split, and ending with its death | open |
 
 ---
 
@@ -15871,6 +15908,8 @@ the final build within the budget on the phone.
 | The ratchets after S0.25a | accepted at CI's counts on ee64202: settlement's day over sixteen holders 339 639 (+1.2%, holder tables reached as trait objects so cells sit in the books), renumbering 25 806 094 (+2.1%, the agenda's drawn rung swapped with each row), and the agenda's gather 149 145, the gap estimate 3 299 623, the index rebuild 1 043 845 and the candidate screen 3 308 173 (each under 0.1%); five that fell moved down to their counts | 2026-09-24 |
 | The ratchets after S0.25c-4a | accepted at CI's counts on 8c16d42: the candidate screen 3 460 412 (+4.6%, the values tagged by group, the rate read by group and the exposure in persons, a process reading several groups), the rank read 1 175 643, the index rebuild 1 044 483 and the gap estimate 3 299 891 (each under 0.25%, since the roles counted in the key); the build run's run heads read 69 498, rising with the world's cells; five that fell moved down to their counts | 2026-09-24 |
 | The ratchets after S0.25e | accepted at CI's counts on d26ebab: the batch of eight parts 600 233 (+14.7%, one of its parts is re-read after it lands, and a removed row clears its lists), the ten-member part 264 080 and the lone part 181 956 (each under 0.7%), settlement's day over sixteen holders 342 863 (+0.9%, the lines' side versions that key the leaving tally, and estates' reasons), the candidate screen 3 467 788 and the widening sweep 42 431 285 (each under 0.25%); four that fell moved down to their counts | 2026-09-25 |
+| The player's household (S0.26d) | the builder's, under the autonomy below: the setup states the country the player lives in and whether the rule decides for it on a day it queued nothing, the default the first country and delegating; the household is drawn at the opening from that country's households, each equally likely (GEN.14 and OBS.4 amended) | 2026-09-25 |
+| Public events (S0.26b) | the builder's, under the autonomy below: weather always public, a catastrophe when a struck tile loses at least a permille, a household's death, disability or birthday never (`OBS.public_events`, a standing SHAPE) | 2026-09-25 |
 | Autonomy to the Stage 0 gate | the builder takes every decision the plan leaves to it, and the ones this table would otherwise wait for, until the gate's phone measurement; before it, the documents are checked against the code and fixed, then the full adversarial review of Stage 0 runs; each such decision is stated in its commit and here | 2026-09-24 |
 | The run heads read after S0.25c | 79 952 on the build run b7930378e270, rising with the world's cells as the owner accepted; taken by the builder under its autonomy | 2026-09-25 |
 | The opening's landlords and the wage and rent points | Tenancies at the opening pay landlords that stand in the country's firms by their plant, until the dwelling stock and its owners are drawn (S2.05); wages and rents lie on points five per cent apart until firms and landlords post their own (placeholders LAB and HSG); taken by the builder under its autonomy | 2026-09-25 |
@@ -15884,6 +15923,8 @@ the final build within the budget on the phone.
 | Values a group lacks, revised (F-035) | the median over the ten reporting economies nearest the group's median GDP per head, not a line in GDP per head extrapolated below the incomes it was fitted over: owners with a mortgage, subsidised tenants, mortgage and rent burdens, occupational pensions' share of old-age income | 2026-09-24 |
 | A mortgage's rate and remaining term (F-035) | S0.16's placeholder for opening term loans: the rate from the drawn lending rate, the term drawn between declared years with starts uniform over it, naming BNK until origination by year is sourced (S1.09) | 2026-09-24 |
 | Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
+| The full-load bench's volumes (S0.26e) | `perf/load/volumes.toml` from architecture §13.1's and §13.2's lines at the finished world's sizes, each store and kind of work citing its line; the owner reviews its changes (the `perf/load/` guard), and each gate replaces the built stages' counts by measured ones | 2026-09-25 |
+| The unbanked households' dues (F-051) | a payment to or from a party with no money fails as `NoMoney` and stays in arrears until the households hold banknotes (S1.09, S1.12); no line is withheld from an unbanked household, since the data draw jobs, tenancies and pensions for every household | 2026-09-25 |
 
 ---
 

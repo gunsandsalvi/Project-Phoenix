@@ -60,6 +60,10 @@ declare_prim! {
 pub const SETUP_STREAM: StreamDecl =
     StreamDecl { name: "GEN.setup", purpose: Purpose::Opening, keyed: false, clause: "GEN.15" };
 
+/// The stream the player's household is drawn from, and its members split out by.
+pub const PLAYER_STREAM: StreamDecl =
+    StreamDecl { name: "GEN.player", purpose: Purpose::Opening, keyed: false, clause: "OBS.4" };
+
 /// The stream generated names are drawn from.
 pub const NAMES_STREAM: StreamDecl =
     StreamDecl { name: "GEN.names", purpose: Purpose::Opening, keyed: false, clause: "GEN.14" };
@@ -83,6 +87,7 @@ impl GenPrims {
     pub fn declare(d: &mut Declarations) -> GenPrims {
         d.stream(SETUP_STREAM);
         d.stream(NAMES_STREAM);
+        d.stream(PLAYER_STREAM);
         GenPrims {
             population: d.prim(&POPULATION),
             countries: d.prim(&COUNTRIES),

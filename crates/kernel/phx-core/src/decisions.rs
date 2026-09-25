@@ -50,15 +50,60 @@ pub struct QueuedIntent {
     pub words: Vec<i64>,
 }
 
-/// The player's intents for the turn, taken as their decision points come due.
-#[derive(Debug, Default, phx_macros::Saved)]
+/// The player's party, an individual from the start, and whether the rule decides for it on a day it queued nothing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
+pub struct Player {
+    pub party: PartyId,
+    pub delegate: bool,
+}
+
+/// The player, once seated at the opening, and its intents for the turn, taken as their decision points come due.
+#[clause("OBS.4", "REP.2")]
+#[derive(Debug, phx_macros::Saved)]
 pub struct PlayerQueue {
+    player: Missing<Player>,
     queued: Vec<QueuedIntent>,
 }
 
 impl PlayerQueue {
+    /// A queue before the opening has seated the player.
+    #[must_use]
+    pub fn unseated() -> PlayerQueue {
+        PlayerQueue { player: Missing::Absent, queued: Vec::new() }
+    }
+
+    /// Seats the player's party, once.
+    pub fn seat(&mut self, player: Player) {
+        if let Missing::Present(p) = self.player {
+            violation!(clause = "OBS.4", "a second player seated", party = p.party.get());
+        }
+        self.player = Missing::Present(player);
+    }
+
+    pub fn player(&self) -> Missing<Player> {
+        self.player
+    }
+
+    /// Who decides for a party: the player for its own party, the rule for every other.
+    #[must_use]
+    pub fn decider(&self, party: PartyId) -> Decider {
+        match self.player {
+            Missing::Present(p) if p.party == party => Decider::Player { delegate_when_unqueued: p.delegate },
+            _ => Decider::Rule,
+        }
+    }
+
+    /// Queues an intent; the player acts only as its own party.
     pub fn push(&mut self, intent: QueuedIntent) {
+        if !matches!(self.player, Missing::Present(p) if p.party == intent.party) {
+            violation!(clause = "OBS.4", "an intent queued for a party not the player's", party = intent.party.get());
+        }
         self.queued.push(intent);
+    }
+
+    /// The intents still queued, by their points.
+    pub fn queued(&self) -> impl Iterator<Item = &'static str> + '_ {
+        self.queued.iter().map(|q| q.point)
     }
 
     /// The intent queued for a party's decision point, removed from the queue.
@@ -99,7 +144,7 @@ mod tests {
     use phx_id::PartyId;
     use phx_num::Missing;
 
-    use super::{Decider, DecisionPointDecl, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
+    use super::{Decider, DecisionPointDecl, Player, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
     use crate::schedule::WakeKind;
 
     #[derive(Debug, PartialEq)]
@@ -136,8 +181,18 @@ mod tests {
     #[test]
     fn decider_dispatch() {
         let player = PartyId::new(1);
-        let mut queue = PlayerQueue::default();
+        let mut queue = PlayerQueue::unseated();
+        queue.seat(Player { party: player, delegate: false });
+        assert_eq!(queue.decider(player), Decider::Player { delegate_when_unqueued: false });
+        assert_eq!(queue.decider(PartyId::new(2)), Decider::Rule, "every other party's rule decides");
         queue.push(QueuedIntent { party: player, point: "HH.spend", words: vec![7] });
+        let other = QueuedIntent { party: PartyId::new(2), point: "HH.spend", words: vec![7] };
+        let mut refused = PlayerQueue::unseated();
+        refused.seat(Player { party: player, delegate: true });
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| refused.push(other))).is_err(),
+            "the player acts only as its own party"
+        );
         assert_eq!(dispatch(&SPEND, Decider::Rule, None, &[100, 0]), Some(Spend(50)), "the rule");
         let queued = queue.take(player, "HH.spend");
         let keeps = Decider::Player { delegate_when_unqueued: false };

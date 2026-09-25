@@ -19,6 +19,7 @@ pub struct KernelPrims {
     pub calendar: Prim<CountryRules>,
     pub legal_forms: Prim<Vec<phx_core::LegalForm>>,
     pub public_events: Prim<Vec<phx_core::NewsEntry>>,
+    pub tracers: Prim<phx_num::Count>,
     pub opening: GenPrims,
     pub geo: phx_geo::GeoPrims,
     pub market: phx_market::reach::MarketPrims,
@@ -36,6 +37,10 @@ impl KernelPrims {
             calendar: d.prim(&phx_core::CALENDAR),
             legal_forms: d.prim(&phx_core::LEGAL_FORMS),
             public_events: d.prim(&phx_core::PUBLIC_EVENTS),
+            tracers: {
+                d.stream(phx_core::TRACER_STREAM);
+                d.prim(&phx_core::TRACERS)
+            },
             opening: GenPrims::declare(d),
             geo: phx_geo::GeoPrims::declare(d),
             market: phx_market::reach::MarketPrims::declare(d),

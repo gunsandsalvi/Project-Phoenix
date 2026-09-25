@@ -36,6 +36,7 @@ pub mod runs;
 pub mod split_request;
 pub mod standing;
 pub mod stream;
+pub mod synthetic;
 pub mod terms;
 pub mod transfer;
 pub mod units;

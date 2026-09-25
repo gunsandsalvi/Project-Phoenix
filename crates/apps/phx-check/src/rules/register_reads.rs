@@ -9,8 +9,8 @@ const RULE: &str = "PC-18";
 
 /// Each token of a limit's origin, and the crates that may build one.
 const TOKENS: &[(&str, &[&str])] = &[("TermsToken", &["phx-ledger"]), ("PhysicalToken", &["phx-ledger", "phx-geo"])];
-/// The data-reading crates besides the kernel's register.
-const DATA_READERS: &[&str] = &["phx-world", "phx-cli"];
+/// The data-reading crates besides the kernel's register; the observer reads only its own declarations.
+const DATA_READERS: &[&str] = &["phx-world", "phx-obs", "phx-cli", "phx-ffi"];
 /// The one module of the kernel that reads data.
 const REGISTER: (&str, &str) = ("phx-core", "/src/register/");
 const DATA_CRATES: [&str; 2] = ["toml", "serde"];
@@ -112,7 +112,7 @@ impl<'ast> Visit<'ast> for Finder<'_> {
 }
 
 /// Where the committed data may lie: the world's constants, the shared primitives, the setups, the level templates,
-/// the name tables and the inventory. A country's own data is instantiated in a run's directory at a new game and is
+/// the name tables, the inventory and the observer's declared reads. A country's own data is instantiated in a run's directory at a new game and is
 /// never committed.
 const DATA_PLACES: &[&str] = &[
     "data/world.toml",
@@ -120,6 +120,7 @@ const DATA_PLACES: &[&str] = &[
     "data/shared/",
     "data/setup/",
     "data/names/",
+    "data/observer/",
     "data/profiles/developed/",
     "data/profiles/emerging/",
     "data/profiles/developing/",

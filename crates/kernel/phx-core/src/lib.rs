@@ -50,11 +50,11 @@ pub use contribution::{
     Adjustment, Apportioned, BALANCES, CONTRACTS, Contribution, DECLARATIONS, GenReport, Opening, OpeningCountry,
     OpeningCtx, PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, WriteRecord, apportion, opening_subject,
 };
-pub use decisions::{Decider, DecisionPointDecl, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
+pub use decisions::{Decider, DecisionPointDecl, Player, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
 pub use directory::{Directory, PartyState, Resolved};
 pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};
 pub use events_rule::{EventsRule, NewsEntry, Notice, PUBLIC_EVENTS};
-pub use extensions::{GroupDemand, PublicEventRule, TracedCells};
+pub use extensions::{GroupDemand, PublicEventRule, TRACER_STREAM, TRACERS, TracedCells};
 pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
 };

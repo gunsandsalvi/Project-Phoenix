@@ -1095,7 +1095,9 @@ takes on day zero.
   - **per country, a name**: a real country's, which names its institutions and currency and pre-fills its choices
     with that country's levels, or a generated one.
 
-  Each choice has a default and may instead be drawn from the seed.
+  Each choice has a default and may instead be drawn from the seed. The setup also states **the player's**: the
+  country the player lives in, and whether the rules decide for the player's household on a day the player has
+  queued nothing (OBS.4).
 - **GEN.2 STATE** — **Declared distributions.** For each country, the generator derives distributions from its
   derived values (GEN.15), their shapes from published work and their parameters from those values, each registered
   (NUM.3) with its sources:
@@ -4717,7 +4719,8 @@ age, and a stream of news generated from real events.
 
 - **OBS.4 PROCESS** — A human **player** acts as a named party in the world, with its own means, through the same
   markets and contracts as everybody else, and appears in every check. The player's party is an individual from
-  the start (REP.2).
+  the start (REP.2): its household, drawn at the opening from the households of the country the setup names, each
+  equally likely, and never returned to a cell.
 - **OBS.8 PROCESS** — **Looking at a member of a cell** shows a **portrait**: a tracer (REP.30), with its cell's
   shared state, its own profile values drawn from the observer's stream, and its history since it began — from the
   opening for the tracers drawn then, from the day of marking for one the player marks, which says so. Looking at

@@ -34,8 +34,12 @@ const ALLOWED: &[Allowed] = &[
     },
     Allowed {
         name: "ObserverDraws",
-        places: &[("phx-core", &["/src/streams.rs", "/src/lib.rs"]), ("phx-obs", &[])],
-        why: "only the observer opens the observer's streams",
+        places: &[
+            ("phx-core", &["/src/streams.rs", "/src/lib.rs"]),
+            ("phx-world", &["/src/inspector.rs"]),
+            ("phx-obs", &[]),
+        ],
+        why: "only the observer opens the observer's streams, handed them by the inspector",
     },
 ];
 

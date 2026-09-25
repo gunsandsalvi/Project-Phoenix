@@ -52,3 +52,6 @@ pub const RATE_SAMPLE: u64 = 64;
 /// The kind of party the law names to take what an estate leaves where no heir is drawn: the treasury, in every
 /// opening country, until the inheritance law's destinations are declared per country.
 pub const HEIRLESS_DESTINATION: &str = "treasury";
+
+/// The population kind the player's party is drawn from at the opening: its household.
+pub const PLAYER_KIND: &str = "household";

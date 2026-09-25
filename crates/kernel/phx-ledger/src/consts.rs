@@ -15,3 +15,20 @@ pub const HOLDER_SHARDS: u32 = 8;
 pub const RUN_SAMPLE_PERIOD: u32 = 64;
 /// The optional words a relationship row can carry: its balance, its pending amount and its amount.
 pub const ROW_OPTIONAL_WORDS: usize = 3;
+
+/// The synthetic settlement's books: each holder's deposit, in the smallest units.
+pub const SYNTHETIC_DEPOSIT: i64 = 100_000_000;
+/// Each loan row's balance, in the smallest units.
+pub const SYNTHETIC_LOAN: i64 = 1_000_000;
+/// The loans' rate a year: twelve per cent, in the rate's raw scale.
+pub const SYNTHETIC_RATE: i64 = 120_000_000_000;
+/// The rows a chunk holds.
+pub const SYNTHETIC_ROWS_PER_CHUNK: u32 = 1 << 12;
+/// The calendar's epoch year.
+pub const SYNTHETIC_EPOCH_YEAR: i32 = 1950;
+/// The calendar's first year.
+pub const SYNTHETIC_WINDOW_YEAR: i32 = 2020;
+/// The business days of a week, each with its own weekly rows.
+pub const WEEKDAYS: u32 = 5;
+/// The months of a year.
+pub const MONTHS_A_YEAR: u8 = 12;

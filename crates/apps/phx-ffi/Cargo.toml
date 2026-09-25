@@ -18,12 +18,18 @@ required-features = ["bindgen"]
 bindgen = ["uniffi/cli"]
 
 [dependencies]
+phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
+phx-id = { path = "../../foundation/phx-id" }
+phx-ledger = { path = "../../kernel/phx-ledger" }
 phx-num = { path = "../../foundation/phx-num" }
 phx-pop = { path = "../../kernel/phx-pop" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }
+phx-obs = { path = "../../assembly/phx-obs" }
 phx-world = { path = "../../assembly/phx-world" }
+serde.workspace = true
+toml.workspace = true
 uniffi.workspace = true
 
 [lints]

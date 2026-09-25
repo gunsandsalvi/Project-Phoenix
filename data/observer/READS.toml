@@ -1,0 +1,118 @@
+# The observer's declared macro reads: Stage 0's demographic and monetary series, each read day by day from what the
+# run records, and the histograms each view shows. A read names a measure the observer knows how to take; an event
+# measure names a declared event kind and sums its sizes in the kind's unit. Each histogram is an opening
+# distribution, read at the opening, at settling's end and at the run's end, and its distances between them reported.
+
+[[read]]
+id = "persons"
+title = "persons living in households held as cells"
+unit = "persons"
+measure = "cells.persons"
+
+[[read]]
+id = "cell_members"
+title = "members of every population kind held as cells"
+unit = "members"
+measure = "cells.members"
+
+[[read]]
+id = "cells"
+title = "cells of every population kind"
+unit = "cells"
+measure = "cells.cells"
+
+[[read]]
+id = "persons_gone"
+title = "persons gone from households in the day"
+unit = "persons"
+measure = "cells.gone"
+
+[[read]]
+id = "deaths"
+title = "deaths in the day"
+unit = "persons"
+measure = "events.DEM.died"
+
+[[read]]
+id = "disability_onsets"
+title = "persons becoming disabled in the day"
+unit = "persons"
+measure = "events.DEM.disabled"
+
+[[read]]
+id = "estates_opened"
+title = "estates opened in the day"
+unit = "estates"
+measure = "cells.estates_opened"
+
+[[read]]
+id = "estates_settled"
+title = "estates settled and ended in the day"
+unit = "estates"
+measure = "cells.estates_settled"
+
+[[read]]
+id = "payments_due"
+title = "payments due in the day"
+unit = "payments"
+measure = "settlement.payments"
+
+[[read]]
+id = "payments_settled"
+title = "payments settled in the day"
+unit = "payments"
+measure = "settlement.settled"
+
+[[read]]
+id = "payments_failed"
+title = "payments failed in the day"
+unit = "payments"
+measure = "settlement.failed"
+
+[[read]]
+id = "gross_settled"
+title = "gross value settled in the day, over every currency's smallest units"
+unit = "smallest currency units"
+measure = "settlement.gross"
+
+[[histogram]]
+id = "household_cells_by_weight"
+title = "household cells by their members"
+kind = "household"
+of = "weight"
+edges = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+
+[[histogram]]
+id = "small_firm_cells_by_weight"
+title = "small-firm cells by their members"
+kind = "small_firm"
+of = "weight"
+edges = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+
+[[histogram]]
+id = "households_by_head_age"
+title = "households by their head's age class"
+kind = "household"
+of = "key.DEM.head_age"
+edges = [0, 1, 2, 3, 4, 5, 6, 7]
+
+[[histogram]]
+id = "households_by_adults"
+title = "households by their adults beside the head and partner"
+kind = "household"
+of = "key.DEM.adults"
+edges = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+[[histogram]]
+id = "households_by_bank"
+title = "households by the bank they bank with, nought for none"
+kind = "household"
+of = "key.BNK.bank"
+edges = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50]
+
+[[histogram]]
+id = "small_firms_by_size"
+title = "small firms by their size class"
+kind = "small_firm"
+of = "key.FRM.size_class"
+edges = [0, 1, 2, 3, 4, 5, 6, 7]

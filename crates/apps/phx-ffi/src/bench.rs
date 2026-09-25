@@ -397,6 +397,29 @@ fn sample_rates(run: &mut Run<'_>, rates: &mut Vec<Json>, at: &str, pool_cores: 
 /// # Errors
 /// When the pool cannot start or the report cannot be written.
 pub fn run(device: &DeviceInfo, host: &dyn BenchHost, report_path: &str) -> Result<String, String> {
+    let text = measure(device, host)?.pretty();
+    std::fs::write(report_path, &text).map_err(|e| format!("{report_path}: {e}"))?;
+    show_written(host, report_path);
+    Ok(text)
+}
+
+/// Shows the report's path once it is written.
+pub(crate) fn show_written(host: &dyn BenchHost, report_path: &str) {
+    host.on_line(BenchLine {
+        section: "report".to_owned(),
+        name: "written".to_owned(),
+        value: report_path.to_owned(),
+        target: String::new(),
+        verdict: String::new(),
+        thermal_status: host.thermal_status(),
+    });
+}
+
+/// The probe and the micro-benchmarks, each result shown as it completes: the report of the device's fundamentals.
+///
+/// # Errors
+/// When the pool cannot start.
+pub fn measure(device: &DeviceInfo, host: &dyn BenchHost) -> Result<Json, String> {
     let mut run = Run { host, clock: Mono(Instant::now()), targets: Vec::new() };
     let spec = PoolSpec::detect();
     let pool = Pool::new(&spec).map_err(|e| e.0)?;
@@ -470,10 +493,7 @@ pub fn run(device: &DeviceInfo, host: &dyn BenchHost, report_path: &str) -> Resu
         ("micro", Json::Array(micro_json)),
         ("targets", Json::Array(run.targets.clone())),
     ]);
-    let text = report.pretty();
-    std::fs::write(report_path, &text).map_err(|e| format!("{report_path}: {e}"))?;
-    run.line("report", "written", report_path.to_owned(), None);
-    Ok(text)
+    Ok(report)
 }
 
 /// The app's entry: runs the bench on the calling thread, which must not be the interface's.

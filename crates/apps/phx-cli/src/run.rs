@@ -8,7 +8,7 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::RunArgs;
-use crate::checks::{CHECKS, Outcome};
+use crate::checks::{CHECKS, Observed, Outcome, Run};
 use crate::clock::WallClock;
 
 /// Resident memory the empty world may take.
@@ -322,6 +322,63 @@ fn accounts_report(w: Inspector<'_>) -> serde_json::Value {
 
 /// The saves the run took: each one's day, its stores' sizes, its write and check times, and whether it read back to
 /// its close's hash.
+/// The tracers followed: how many, how many moved and how often, and how many ended with their cells.
+fn tracers_report(tracers: &phx_obs::Tracers) -> serde_json::Value {
+    let all = tracers.tracers();
+    json!({
+        "tracers": all.len(),
+        "moved": all.iter().filter(|t| !t.moves.is_empty()).count(),
+        "moves": all.iter().map(|t| t.moves.len()).sum::<usize>(),
+        "ended": all.iter().filter(|t| t.ended != phx_num::Missing::Absent).count(),
+    })
+}
+
+/// Each macro read's days, first and last value, least, greatest and sum, and the view's histograms at the close.
+fn reads_report(recorder: &phx_obs::Recorder, view: &phx_obs::View) -> serde_json::Value {
+    let series: serde_json::Map<_, _> = recorder
+        .series()
+        .iter()
+        .map(|s| {
+            let values = s.values.iter().map(|(_, v)| *v);
+            let at =
+                |e: Option<&(phx_id::Day, i128)>| e.map(|(d, v)| json!({ "day": d.get(), "value": v.to_string() }));
+            let summary = json!({
+                "unit": s.unit,
+                "days": s.values.len(),
+                "first": at(s.values.first()),
+                "last": at(s.values.last()),
+                "least": values.clone().reduce(|a, b| if b < a { b } else { a }).map(|v| v.to_string()),
+                "greatest": values.clone().reduce(|a, b| if b > a { b } else { a }).map(|v| v.to_string()),
+                "sum": values.sum::<i128>().to_string(),
+            });
+            (s.id.clone(), summary)
+        })
+        .collect();
+    let histograms: serde_json::Map<_, _> = view
+        .histograms
+        .iter()
+        .map(|(id, h)| (id.clone(), json!({ "edges": h.edges(), "counts": h.counts(), "below": h.below() })))
+        .collect();
+    json!({ "series": series, "histograms": histograms })
+}
+
+/// Each opening distribution's distance from the world's own at settling's end and at the run's end.
+fn drift_report(settled: &[phx_obs::Drift], ended: &[phx_obs::Drift]) -> serde_json::Value {
+    let at = |drifts: &[phx_obs::Drift]| -> serde_json::Map<String, serde_json::Value> {
+        drifts
+            .iter()
+            .map(|d| {
+                let distance = match d.distance {
+                    phx_num::Missing::Present(x) => json!(x),
+                    phx_num::Missing::Absent => serde_json::Value::Null,
+                };
+                (d.id.clone(), json!({ "day": d.day.get(), "distance": distance }))
+            })
+            .collect()
+    };
+    json!({ "settled": at(settled), "ended": at(ended) })
+}
+
 fn saves_report(w: Inspector<'_>) -> serde_json::Value {
     let saves: Vec<serde_json::Value> = w
         .saves()
@@ -342,12 +399,16 @@ fn saves_report(w: Inspector<'_>) -> serde_json::Value {
 }
 
 /// The live checks selected, each printed as it runs: their outcomes for the report, and whether none failed.
-fn live_checks(w: Inspector<'_>, checks: &str) -> (Vec<serde_json::Value>, bool) {
+fn live_checks(w: Inspector<'_>, observed: &Observed<'_>, checks: &str) -> (Vec<serde_json::Value>, bool) {
     let mut results = Vec::new();
     let mut all_pass = true;
     for check in CHECKS.iter().filter(|c| selected(checks, c.id)) {
-        let (outcome, detail) = match (check.run, check.retired) {
-            (Some(f), _) => match f(w) {
+        let run = check.run.map(|r| match r {
+            Run::World(f) => f(w),
+            Run::Observed(f) => f(w, observed),
+        });
+        let (outcome, detail) = match (run, check.retired) {
+            (Some(outcome), _) => match outcome {
                 Outcome::Pass => ("pass", String::new()),
                 Outcome::Fail(why) => {
                     all_pass = false;
@@ -364,6 +425,35 @@ fn live_checks(w: Inspector<'_>, checks: &str) -> (Vec<serde_json::Value>, bool)
     (results, all_pass)
 }
 
+/// What the observer keeps beside the run: the tracers and reads it takes each day, its views, and the view at
+/// settling's end.
+struct Observing {
+    watch: phx_obs::Watch,
+    views: phx_obs::Views,
+    settled: Option<std::sync::Arc<phx_obs::View>>,
+}
+
+impl Observing {
+    /// The observer of the declarations over the opened world, and the opening's view.
+    fn open(
+        w: Inspector<'_>,
+        definitions: &phx_obs::Definitions,
+    ) -> Result<(Observing, std::sync::Arc<phx_obs::View>), String> {
+        let tracers = phx_obs::Tracers::declared(w)?;
+        let watch = phx_obs::Watch { tracers, recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
+        let mut views = phx_obs::Views::new(&definitions.histograms, w)?;
+        let opening = views.close(w, &watch.recorder);
+        Ok((Observing { watch, views, settled: None }, opening))
+    }
+
+    /// The view at settling's end, taken at the first close on or after it.
+    fn settling(&mut self, w: Inspector<'_>, settle_end: phx_id::Day) {
+        if self.settled.is_none() && w.today() >= settle_end {
+            self.settled = Some(self.views.close(w, &self.watch.recorder));
+        }
+    }
+}
+
 /// Runs the world to its last day, saving it at each save interval and taking the injections' save, whose directory
 /// it returns.
 fn play(
@@ -372,6 +462,7 @@ fn play(
     settle_end: phx_id::Day,
     end: phx_id::Day,
     clock: &WallClock,
+    obs: &mut Observing,
 ) -> Result<Option<PathBuf>, String> {
     let saves = args.saves.clone().unwrap_or_else(|| args.run_dir.join("saves"));
     let build = build_id()?;
@@ -379,8 +470,10 @@ fn play(
     let w = Inspector::new(world);
     let injection_day = Period::days(INJECTION_SAVE_DAY).map_or(settle_end, |p| w.calendar().plus(settle_end, p));
     let mut injection_save = None;
+    obs.settling(w, settle_end);
     while world.today() < end {
-        world.run_turn(&[], clock);
+        world.run_turn_observed(&[], clock, Some(&mut obs.watch));
+        obs.settling(Inspector::new(world), settle_end);
         let now = save_period(Inspector::new(world), world.today())?;
         if now != period {
             save_and_check(world, &saves, &build, clock)?;
@@ -409,8 +502,10 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let assembly_ns = clock.now_ns().checked_sub(assembling);
     let (settle_end, end) = span(Inspector::new(&world), args.days, args.total_days)?;
+    let definitions = phx_obs::Definitions::read(&args.data)?;
+    let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;
     let started = clock.now_ns();
-    let injection_save = play(&mut world, args, settle_end, end, &clock)?;
+    let injection_save = play(&mut world, args, settle_end, end, &clock, &mut obs)?;
     let run_ns = clock.now_ns().checked_sub(started);
     let injecting = clock.now_ns();
     if let Some(dir) = &injection_save {
@@ -420,7 +515,12 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     }
     let inject_ns = clock.now_ns().checked_sub(injecting);
     let w = Inspector::new(&world);
-    let (results, all_pass) = live_checks(w, &args.checks);
+    let view = obs.views.close(w, &obs.watch.recorder);
+    let settled = obs.settled.as_ref().map(|v| phx_obs::drift(&opening, v)).unwrap_or_default();
+    let ended = phx_obs::drift(&opening, &view);
+    let observed =
+        Observed { reads: &definitions.reads, series: obs.watch.recorder.series(), settled: &settled, ended: &ended };
+    let (results, all_pass) = live_checks(w, &observed, &args.checks);
     let counters = counters(w);
     let ratchet_failures = check_ratchets(&args.ratchets, &counters)?;
     for f in &ratchet_failures {
@@ -452,6 +552,9 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "markets": markets_report(w),
         "accounts": accounts_report(w),
         "saves": saves_report(w),
+        "reads": reads_report(&obs.watch.recorder, &view),
+        "drift": drift_report(&settled, &ended),
+        "tracers": tracers_report(&obs.watch.tracers),
         "injections": crate::inject::report(w.injections()),
         "peak_resident_bytes": peak,
         "memory_budget_bytes": WORLD_BYTES,
@@ -499,6 +602,23 @@ pub fn measure_calendar(data: &Path, setup: &Path, run_dir: &Path, out: &Path) -
     };
     let world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let report = crate::measure::calendar::measure(Inspector::new(&world));
+    let text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
+    if let Some(dir) = out.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    }
+    std::fs::write(out, text + "\n").map_err(|e| format!("{}: {e}", out.display()))?;
+    println!("{}", out.display());
+    Ok(true)
+}
+
+/// The budget as measured, from a build run's report and a device report of the same commit's world, written to
+/// `out`.
+pub fn measure_budget(build_run: &Path, device: &Path, out: &Path) -> Result<bool, String> {
+    let read = |p: &Path| -> Result<serde_json::Value, String> {
+        let text = std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?;
+        serde_json::from_str(&text).map_err(|e| format!("{}: {e}", p.display()))
+    };
+    let report = crate::measure::budget::measure(&read(build_run)?, &read(device)?);
     let text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
     if let Some(dir) = out.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;

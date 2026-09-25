@@ -90,12 +90,23 @@ pub enum Split {
     Drawn(Drawn),
 }
 
-/// A new game's setup: the population split and each country's choices.
+/// Where the player lives, by the country's place in the setup from one, and whether the rule decides for the player's
+/// household on a day the player has queued nothing.
+#[clause("OBS.4", "GEN.14")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PlayerChoice {
+    pub country: u64,
+    pub delegate: bool,
+}
+
+/// A new game's setup: the population split, each country's choices, and the player's.
 #[clause("GEN.14")]
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Setup {
     pub split: Split,
+    pub player: PlayerChoice,
     pub country: Vec<CountryChoices>,
 }
 
@@ -120,11 +131,12 @@ pub struct CountrySetup {
     pub name: NameChoice,
 }
 
-/// A setup with every choice made: the split in whole percent, and each country's levels.
+/// A setup with every choice made: the split in whole percent, each country's levels, and the player's choices.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResolvedSetup {
     pub split: Vec<u64>,
     pub countries: Vec<CountrySetup>,
+    pub player: PlayerChoice,
 }
 
 /// Reads a setup from its file.
@@ -135,8 +147,8 @@ pub fn read(text: &str) -> Result<Setup, String> {
     toml::from_str(text).map_err(|e| format!("setup: {e}"))
 }
 
-/// The rules a setup breaks: a country count other than the world's, a share outside the guardrails, or shares that
-/// do not make up the whole. A setup that breaks one is refused, never adjusted.
+/// The rules a setup breaks: a country count other than the world's, a share outside the guardrails, shares that
+/// do not make up the whole, or a player living in no country. A setup that breaks one is refused, never adjusted.
 #[clause("GEN.14")]
 #[must_use]
 pub fn refusals(setup: &Setup, g: Guardrails) -> Vec<String> {
@@ -144,6 +156,9 @@ pub fn refusals(setup: &Setup, g: Guardrails) -> Vec<String> {
     let count = u64::try_from(setup.country.len()).unwrap_or(u64::MAX);
     if count != g.countries {
         errors.push(format!("the setup has {count} countries, and the world {}", g.countries));
+    }
+    if setup.player.country == 0 || setup.player.country > count {
+        errors.push(format!("the player lives in country {}, and the setup has {count}", setup.player.country));
     }
     if let Split::Percent(shares) = &setup.split {
         if u64::try_from(shares.len()).ok() != Some(g.countries) {
@@ -226,7 +241,7 @@ pub fn resolve(setup: &Setup, g: Guardrails, split_draws: &mut Draws, country_dr
             name: c.name.clone(),
         })
         .collect();
-    ResolvedSetup { split, countries }
+    ResolvedSetup { split, countries, player: setup.player }
 }
 
 #[cfg(test)]
@@ -250,7 +265,7 @@ mod tests {
     fn setup(split: &str) -> String {
         let country = "[[country]]\ndevelopment = \"developed\"\npublic_debt = \"drawn\"\nprivate_debt = \"low\"\n\
                        risk_appetite = \"bold\"\ninequality = \"medium\"\nopenness = \"high\"\nname = \"generated\"\n";
-        format!("split = {split}\n{}", country.repeat(3))
+        format!("split = {split}\nplayer = {{ country = 1, delegate = true }}\n{}", country.repeat(3))
     }
 
     #[test]
@@ -261,6 +276,8 @@ mod tests {
         assert_eq!(refusals(&read(&setup("[50, 30, 30]")).unwrap(), G).len(), 1, "not the whole");
         assert_eq!(read(&setup("[50, 30, 20]")).unwrap().country.len(), 3);
         assert!(read(&setup("\"random\"")).is_err());
+        let nowhere = read(&setup("[50, 30, 20]").replace("country = 1,", "country = 4,")).unwrap();
+        assert_eq!(refusals(&nowhere, G).len(), 1, "a player in no country");
     }
 
     #[test]

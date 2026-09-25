@@ -17,6 +17,8 @@ pub const KERNEL: &[&str] = &[
     "phx-val",
     "phx-audit",
 ];
+/// The assembly's order: the observer reads the world, which never reads the observer.
+pub const ASSEMBLY: &[&str] = &["phx-world", "phx-obs"];
 pub const INTERFACES: &[&str] = &[
     "if-base",
     "if-pop",
@@ -55,7 +57,8 @@ fn order(layer: Layer) -> Option<&'static [&'static str]> {
         Layer::Foundation => Some(FOUNDATION),
         Layer::Kernel => Some(KERNEL),
         Layer::Interfaces => Some(INTERFACES),
-        Layer::Systems | Layer::Assembly | Layer::Apps => None,
+        Layer::Assembly => Some(ASSEMBLY),
+        Layer::Systems | Layer::Apps => None,
     }
 }
 

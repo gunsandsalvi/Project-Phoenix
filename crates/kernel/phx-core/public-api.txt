@@ -341,12 +341,23 @@ pub phx_core::decisions::DecisionPointDecl::system: &'static str
 pub phx_core::decisions::DecisionPointDecl::wakes: &'static [phx_core::schedule::WakeKind]
 impl<I, O> phx_core::decisions::DecisionPointDecl<I, O>
 pub fn phx_core::decisions::DecisionPointDecl<I, O>::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::decisions::Player
+pub phx_core::decisions::Player::delegate: bool
+pub phx_core::decisions::Player::party: phx_id::ids::PartyId
+impl phx_store::save::Saved for phx_core::decisions::Player where phx_id::ids::PartyId: phx_store::save::Saved, bool: phx_store::save::Saved
+pub fn phx_core::decisions::Player::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::Player::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::decisions::PlayerQueue
 impl phx_core::decisions::PlayerQueue
+pub fn phx_core::decisions::PlayerQueue::decider(&self, phx_id::ids::PartyId) -> phx_core::decisions::Decider
 pub fn phx_core::decisions::PlayerQueue::is_empty(&self) -> bool
+pub fn phx_core::decisions::PlayerQueue::player(&self) -> phx_num::missing::Missing<phx_core::decisions::Player>
 pub fn phx_core::decisions::PlayerQueue::push(&mut self, phx_core::decisions::QueuedIntent)
+pub fn phx_core::decisions::PlayerQueue::queued(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
+pub fn phx_core::decisions::PlayerQueue::seat(&mut self, phx_core::decisions::Player)
 pub fn phx_core::decisions::PlayerQueue::take(&mut self, phx_id::ids::PartyId, &str) -> core::option::Option<alloc::vec::Vec<i64>>
-impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
+pub fn phx_core::decisions::PlayerQueue::unseated() -> phx_core::decisions::PlayerQueue
+impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where phx_num::missing::Missing<phx_core::decisions::Player>: phx_store::save::Saved, alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
 pub fn phx_core::decisions::PlayerQueue::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::decisions::PlayerQueue::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::decisions::QueuedIntent
@@ -446,6 +457,8 @@ pub phx_core::events_rule::NewsEntry::kind: alloc::string::String
 pub phx_core::events_rule::NewsEntry::notice: phx_core::events_rule::Notice
 pub const phx_core::events_rule::PUBLIC_EVENTS: phx_core::register::PrimDecl
 pub mod phx_core::extensions
+pub const phx_core::extensions::TRACERS: phx_core::register::PrimDecl
+pub const phx_core::extensions::TRACER_STREAM: phx_core::streams::StreamDecl
 pub trait phx_core::extensions::GroupDemand
 pub fn phx_core::extensions::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64
 pub trait phx_core::extensions::PublicEventRule
@@ -2897,12 +2910,23 @@ pub phx_core::PinDecl::name: &'static str
 pub struct phx_core::Pinned
 pub phx_core::Pinned::index: usize
 pub phx_core::Pinned::part: u8
+pub struct phx_core::Player
+pub phx_core::Player::delegate: bool
+pub phx_core::Player::party: phx_id::ids::PartyId
+impl phx_store::save::Saved for phx_core::decisions::Player where phx_id::ids::PartyId: phx_store::save::Saved, bool: phx_store::save::Saved
+pub fn phx_core::decisions::Player::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::Player::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::PlayerQueue
 impl phx_core::decisions::PlayerQueue
+pub fn phx_core::decisions::PlayerQueue::decider(&self, phx_id::ids::PartyId) -> phx_core::decisions::Decider
 pub fn phx_core::decisions::PlayerQueue::is_empty(&self) -> bool
+pub fn phx_core::decisions::PlayerQueue::player(&self) -> phx_num::missing::Missing<phx_core::decisions::Player>
 pub fn phx_core::decisions::PlayerQueue::push(&mut self, phx_core::decisions::QueuedIntent)
+pub fn phx_core::decisions::PlayerQueue::queued(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
+pub fn phx_core::decisions::PlayerQueue::seat(&mut self, phx_core::decisions::Player)
 pub fn phx_core::decisions::PlayerQueue::take(&mut self, phx_id::ids::PartyId, &str) -> core::option::Option<alloc::vec::Vec<i64>>
-impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
+pub fn phx_core::decisions::PlayerQueue::unseated() -> phx_core::decisions::PlayerQueue
+impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where phx_num::missing::Missing<phx_core::decisions::Player>: phx_store::save::Saved, alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
 pub fn phx_core::decisions::PlayerQueue::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::decisions::PlayerQueue::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::PolicyValue<T>
@@ -3197,6 +3221,8 @@ pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub const phx_core::PUBLIC_EVENTS: phx_core::register::PrimDecl
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
+pub const phx_core::TRACERS: phx_core::register::PrimDecl
+pub const phx_core::TRACER_STREAM: phx_core::streams::StreamDecl
 pub trait phx_core::AccountsAudit: core::fmt::Debug
 pub fn phx_core::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
