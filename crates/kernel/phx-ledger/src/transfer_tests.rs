@@ -223,6 +223,21 @@ fn a_transfer_moves_count_with_balance() {
     assert_eq!(row(&w, w.banks[1], w.loan, Side::Asset), (3, 600));
 }
 
+/// A borrower's row moved onto another borrower's row on the same line: the count and the negative balance arrive
+/// together, the count judged apart from the balance.
+#[test]
+fn a_liability_transfer_joins_a_held_row() {
+    let mut w = world();
+    let m = at(&w);
+    let [first, second, _] = w.firms;
+    let taken =
+        LineTransfer { line: w.loan, side: Side::Liability, from: second, to: first, count: 1, reason: w.reason };
+    let _ = w.books.transfer(taken, m, &mut Quiet).expect("the move settles");
+    assert_eq!(row(&w, first, w.loan, Side::Liability), (2, -300), "the count and the debt taken on together");
+    assert!(w.books.row_on_side(second, w.loan, Side::Liability).is_none(), "the moved row is retired");
+    assert_eq!(w.books.ledger.lines.side_count(w.loan, Side::Liability), 3, "the side's members stay");
+}
+
 /// Members moved off a row in arrears carry its arrears to the row that takes them, and a row retired whole keeps
 /// none; a taker already in arrears keeps the earlier day.
 #[test]

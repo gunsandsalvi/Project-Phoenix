@@ -166,12 +166,13 @@ struct At {
     slot: Slot,
 }
 
-/// A position a leg draws on, by who holds it and what.
+/// A position a leg draws on, by who holds it and what: a row's member count apart from its balance, since the two
+/// are counted in different denominations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Key {
     table: u16,
     slot: Slot,
-    account: AccountRef,
+    code: u64,
 }
 
 fn find(arenas: &dyn HolderArenas, slot: Slot, line: LineId, side: Side) -> RowView {
@@ -259,7 +260,7 @@ impl<B: Backing> Ledger<B> {
             .map(|l| (l.party, l.account))
             .collect();
         for (n, (leg, at)) in legs.iter().zip(&located).enumerate() {
-            let key = Key { table: at.table, slot: at.slot, account: leg.account };
+            let key = Key { table: at.table, slot: at.slot, code: leg.position_code() };
             let fresh = matches!(leg.kind, LegKind::Row(RowOp::Adjust)) && opened.contains(&(leg.party, leg.account));
             let drawn = if fresh {
                 // A row this instruction opens holds nothing until it does, and nothing bounds what it is given.
