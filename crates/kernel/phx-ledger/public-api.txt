@@ -529,6 +529,8 @@ pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::HOLDER_SHARDS: u32
 pub const phx_ledger::consts::MONEY_ROWS_KEPT: usize
 pub const phx_ledger::consts::MONTHS_A_YEAR: u8
+pub const phx_ledger::consts::RECORD_RUN_BITS: u32
+pub const phx_ledger::consts::RECORD_SHARDS: usize
 pub const phx_ledger::consts::ROUTE_SHARDS: usize
 pub const phx_ledger::consts::ROW_OPTIONAL_WORDS: usize
 pub const phx_ledger::consts::RUN_SAMPLE_PERIOD: u32

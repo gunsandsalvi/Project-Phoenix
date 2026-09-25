@@ -73,7 +73,7 @@ pub const MONEY_SUBSTEPS: &[SubStep] = &[
 pub struct DayBook {
     pub fails: Vec<Fail>,
     pub effects: Vec<EffectRec>,
-    /// The dues of the day that did not settle, each kept for the claims it leaves.
+    /// The dues of the day kept one by one, those that did not settle, for the claims each leaves.
     pub dues: Vec<crate::effects::DueRec>,
     /// The interest of the day's dues that settled, folded by party, the payee's earned and the payer's spent: a
     /// settled due leaves no claim, so the accounts read only what each party earned.
@@ -679,13 +679,7 @@ impl<B: Backing> Ledger<B> {
 
     /// A due that fell today, and what became of it, for the accounts.
     pub(crate) fn record_due(&mut self, d: crate::effects::DueRec) {
-        if d.outcome != crate::effects::DueOutcome::Settled {
-            self.day.dues.push(d);
-            return;
-        }
-        let interest = i128::from(d.interest.amt());
-        *self.day.earned.get_or_insert_with(d.payee, || 0) += interest;
-        *self.day.earned.get_or_insert_with(d.payer, || 0) -= interest;
+        self.day.dues.push(d);
     }
 
     /// The rows in arrears.

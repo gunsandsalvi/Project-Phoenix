@@ -11,7 +11,7 @@ use crate::algebra::{Amount, DueBuf, DuePlan, DueState, Leg, Side, due_at, due_b
 use crate::apply::{Holders, Located};
 use crate::books::Books;
 use crate::cleared::{per_contract, times};
-use crate::consts::{STREAM_SHARDS, STREAM_WAVE};
+use crate::consts::{RECORD_RUN_BITS, RECORD_SHARDS, STREAM_SHARDS, STREAM_WAVE};
 use crate::due::DueLines;
 use crate::dues::{ClearedDay, Found, Reckoning, row_leg};
 use crate::instruction::{AccountRef, LegKind, LegRec};
@@ -52,11 +52,21 @@ pub(crate) enum Reckoned {
     Cleared { per: i64, ccy: Ccy, order: u8 },
 }
 
-/// What a shard of 7a's heads found, in the stream's order, for the serial pass that books it.
+/// What a shard of 7a's heads found, in the stream's order, for the serial pass that counts it: a payment's route is
+/// already booked in its shard's bookings unless it is held pending, and a cleared line's row waits for the line's day.
 enum Step {
     Scanned { place: u16, slot: Slot, read: u64, due: u64 },
-    Paid(Payment),
+    Paid { p: Payment, held: bool },
     Cleared { holder: PartyId, row: RowView, per: i64, ccy: Ccy, order: u8 },
+}
+
+/// One shard of 7a's heads: how many were read, what each due holder's segment makes in order, and what its
+/// payments' routes book, put with the records' shards, and pay gross.
+struct Streamed {
+    read: u64,
+    steps: Vec<Step>,
+    bookings: Vec<Vec<Booking>>,
+    gross: i128,
 }
 
 /// A party's account at the start of stage 7 and what the day's standing payments do to it: what it may draw on (its
@@ -77,48 +87,38 @@ impl Record {
     }
 }
 
-/// The day's records, one per party whose account the day's payments touch, kept by the party's holder table and slot
-/// so a stream in slot order reads them in order, and stamped with the day they were made, so emptying them costs
-/// nothing and they keep their room from one day to the next; read whole only in party order.
+/// A payment's effect on one account's record: the party, where its record is kept, the account, and the leg's
+/// quantity, a draw when negative and a credit otherwise.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Booking {
+    party: PartyId,
+    at: (u16, Slot),
+    account: LineId,
+    qty: i64,
+}
+
+/// One shard of the day's records: its runs of every holder table's slots, kept densely, and the parties it made
+/// records for.
 #[derive(Debug, Default)]
-pub struct Records {
+struct RecordShard {
     tables: Vec<Vec<(u32, Option<Record>)>>,
     touched: Vec<(PartyId, u16, Slot)>,
-    day: u32,
 }
 
-fn slot_at(slot: Slot) -> usize {
-    let Ok(at) = usize::try_from(slot.get()) else {
-        phx_num::capacity_exceeded!("holder slots", usize::MAX, slot.get());
-    };
-    at
-}
-
-impl Records {
-    /// Empties the records for a new day, keeping their room.
-    pub fn clear(&mut self) {
-        let Some(next) = self.day.checked_add(1) else {
-            phx_num::capacity_exceeded!("days of stage 7's records", u32::MAX, self.day);
-        };
-        self.day = next;
-        self.touched.clear();
+impl RecordShard {
+    fn get(&self, day: u32, table: u16, local: usize) -> Option<&Record> {
+        let (made, record) = self.tables.get(usize::from(table))?.get(local)?;
+        if *made == day { record.as_ref() } else { None }
     }
 
-    /// The record of the party at a holder table and slot, if the day made one.
-    #[must_use]
-    pub fn get(&self, (table, slot): (u16, Slot)) -> Option<&Record> {
-        let (day, record) = self.tables.get(usize::from(table))?.get(slot_at(slot))?;
-        if *day == self.day { record.as_ref() } else { None }
-    }
-
-    /// The record of a party at a holder table and slot, made by `make` where the day has none.
-    pub fn get_or_insert_with(
+    fn get_or_insert_with(
         &mut self,
+        day: u32,
         party: PartyId,
         (table, slot): (u16, Slot),
         make: impl FnOnce() -> Record,
     ) -> &mut Record {
-        let (t, at) = (usize::from(table), slot_at(slot));
+        let (t, (_, at)) = (usize::from(table), record_at(slot));
         if self.tables.len() <= t {
             self.tables.resize_with(t + 1, Vec::new);
         }
@@ -131,8 +131,8 @@ impl Records {
         let Some(entry) = of_table.get_mut(at) else {
             phx_num::capacity_exceeded!("holder slots", at, at);
         };
-        if entry.0 != self.day || entry.1.is_none() {
-            *entry = (self.day, Some(make()));
+        if entry.0 != day || entry.1.is_none() {
+            *entry = (day, Some(make()));
             self.touched.push((party, table, slot));
         }
         let Some(record) = entry.1.as_mut() else {
@@ -140,12 +140,114 @@ impl Records {
         };
         record
     }
+}
+
+/// The day's records, one per party whose account the day's payments touch, kept by the party's holder table and slot
+/// so a stream in slot order reads them in order, and stamped with the day they were made, so emptying them costs
+/// nothing and they keep their room from one day to the next; read whole only in party order. The slots' runs are
+/// dealt to shards in turn, so the pool folds a day's bookings a shard to a worker.
+#[derive(Debug, Default)]
+pub struct Records {
+    shards: Vec<RecordShard>,
+    day: u32,
+}
+
+fn slot_at(slot: Slot) -> usize {
+    let Ok(at) = usize::try_from(slot.get()) else {
+        phx_num::capacity_exceeded!("holder slots", usize::MAX, slot.get());
+    };
+    at
+}
+
+/// Where a slot's record is kept: the shard its run of slots is dealt to, and its place among that shard's slots.
+fn record_at(slot: Slot) -> (usize, usize) {
+    let at = slot_at(slot);
+    let run = at >> RECORD_RUN_BITS;
+    let local = ((run / RECORD_SHARDS) << RECORD_RUN_BITS) | (at & ((1 << RECORD_RUN_BITS) - 1));
+    (run % RECORD_SHARDS, local)
+}
+
+/// One empty list per shard of the records, for a source to put each booking with its record's shard.
+pub(crate) fn booking_buckets() -> Vec<Vec<Booking>> {
+    (0..RECORD_SHARDS).map(|_| Vec::new()).collect()
+}
+
+impl Records {
+    /// Empties the records for a new day, keeping their room.
+    pub fn clear(&mut self) {
+        let Some(next) = self.day.checked_add(1) else {
+            phx_num::capacity_exceeded!("days of stage 7's records", u32::MAX, self.day);
+        };
+        self.day = next;
+        if self.shards.is_empty() {
+            self.shards.resize_with(RECORD_SHARDS, RecordShard::default);
+        }
+        for s in &mut self.shards {
+            s.touched.clear();
+        }
+    }
+
+    /// The record of the party at a holder table and slot, if the day made one.
+    #[must_use]
+    pub fn get(&self, (table, slot): (u16, Slot)) -> Option<&Record> {
+        let (shard, local) = record_at(slot);
+        self.shards.get(shard)?.get(self.day, table, local)
+    }
+
+    /// The record of a party at a holder table and slot, made by `make` where the day has none.
+    pub fn get_or_insert_with(
+        &mut self,
+        party: PartyId,
+        (table, slot): (u16, Slot),
+        make: impl FnOnce() -> Record,
+    ) -> &mut Record {
+        if self.shards.is_empty() {
+            self.shards.resize_with(RECORD_SHARDS, RecordShard::default);
+        }
+        let day = self.day;
+        let Some(shard) = self.shards.get_mut(record_at(slot).0) else {
+            phx_num::capacity_exceeded!("record shards", RECORD_SHARDS, record_at(slot).0);
+        };
+        shard.get_or_insert_with(day, party, (table, slot), make)
+    }
+
+    /// Many payments' bookings folded into the records on the pool: each shard takes its own from every source in the
+    /// sources' order, a record it lacks made by `make`, so the records are the same with any number of workers.
+    pub(crate) fn fold(
+        &mut self,
+        pool: Option<&phx_exec::pool::Pool>,
+        sources: &[Vec<Vec<Booking>>],
+        make: &(dyn Fn(PartyId, LineId) -> Record + Sync),
+    ) {
+        if self.shards.is_empty() {
+            self.shards.resize_with(RECORD_SHARDS, RecordShard::default);
+        }
+        let day = self.day;
+        phx_exec::pool::each(pool, self.shards.iter_mut().enumerate(), |(k, shard)| {
+            for b in sources.iter().filter_map(|of| of.get(k)).flatten() {
+                let rec = shard.get_or_insert_with(day, b.party, b.at, || make(b.party, b.account));
+                if rec.account != b.account {
+                    violation!(clause = "MON.5", "a party paying from two accounts in one day", party = b.party.get());
+                }
+                let q = i128::from(b.qty);
+                if q < 0 {
+                    rec.debit -= q;
+                } else {
+                    rec.credit += q;
+                }
+            }
+        });
+    }
 
     /// Every record the day made, in party order.
     #[must_use]
     pub fn sorted(&self) -> Vec<(PartyId, Record)> {
-        let mut out: Vec<(PartyId, Record)> =
-            self.touched.iter().filter_map(|&(p, t, s)| self.get((t, s)).map(|r| (p, *r))).collect();
+        let mut out: Vec<(PartyId, Record)> = self
+            .shards
+            .iter()
+            .flat_map(|s| s.touched.iter())
+            .filter_map(|&(p, t, s)| self.get((t, s)).map(|r| (p, *r)))
+            .collect();
         out.sort_unstable_by_key(|(p, _)| *p);
         out
     }
@@ -153,13 +255,13 @@ impl Records {
     /// The parties the day's records were made for.
     #[must_use]
     pub fn touched(&self) -> usize {
-        self.touched.capacity()
+        self.shards.iter().map(|s| s.touched.capacity()).sum()
     }
 
     /// The records the room holds, made today or not, so what they take in memory can be counted.
     #[must_use]
     pub fn capacity(&self) -> usize {
-        self.tables.iter().map(Vec::len).sum()
+        self.shards.iter().flat_map(|s| s.tables.iter()).map(Vec::len).sum()
     }
 }
 
@@ -535,37 +637,47 @@ impl<B: Backing> Books<B> {
         let each = heads.len().div_ceil(STREAM_SHARDS);
         for wave in (0..STREAM_SHARDS).step_by(STREAM_WAVE) {
             let plans = &found.plans;
-            // A wave of shards at a time, so only a wave's payments wait to be booked.
-            let shards = phx_exec::pool::map(self.pool.as_deref(), STREAM_WAVE, |i| {
+            // A wave of shards at a time, so only a wave's payments wait to be counted.
+            let mut shards = phx_exec::pool::map(self.pool.as_deref(), STREAM_WAVE, |i| {
                 let from = at_most((wave + i) * each, heads.len());
                 let to = at_most(from + each, heads.len());
-                self.stream_shard(heads.get(from..to).unwrap_or(&[]), due, (day, calendar), plans)
+                self.stream_shard(heads.get(from..to).unwrap_or(&[]), due, (day, calendar), plans, closed)
             });
-            self.book_shards(shards, &mut out, closed, found);
+            let bookings: Vec<Vec<Vec<Booking>>> =
+                shards.iter_mut().map(|sh| std::mem::take(&mut sh.bookings)).collect();
+            self.count_shards(shards, &mut out, closed, found);
+            out.records.fold(self.pool.as_deref(), &bookings, &|party, account| self.record_of(party, account));
         }
         out
     }
 
-    /// A wave of 7a's shards booked in the stream's order: each payment's route, the pending, and the records.
-    fn book_shards(&self, shards: Vec<(u64, Vec<Step>)>, out: &mut DayRecords, closed: &Closed, found: &mut Found) {
-        for (read, steps) in shards {
-            out.heads_read += read;
-            for step in steps {
-                let (p, legs) = match step {
+    /// A wave of 7a's shards counted in the stream's order, and each cleared line's row turned into its payment and
+    /// booked, as the line's day is kept across the stream.
+    fn count_shards(&self, shards: Vec<Streamed>, out: &mut DayRecords, closed: &Closed, found: &mut Found) {
+        for sh in shards {
+            out.heads_read += sh.read;
+            out.gross += sh.gross;
+            for step in sh.steps {
+                let p = match step {
                     Step::Scanned { place, slot, read, due } => {
                         out.scanned.push((place, slot));
                         out.rows_scanned += read;
                         out.rows_due += due;
                         continue;
                     }
-                    Step::Paid(p) => {
-                        let legs = if p.moneyless { Vec::new() } else { self.effects(&p) };
-                        (p, legs)
+                    Step::Paid { p, held } => {
+                        out.payments += 1;
+                        out.made.push(p);
+                        if p.moneyless {
+                            out.moneyless.insert(p.reckoned_on);
+                        } else if held {
+                            out.pending += 1;
+                        }
+                        continue;
                     }
                     Step::Cleared { holder, row, per, ccy, order } => {
                         let Some(p) = self.cleared_payment(holder, &row, per, (ccy, order), found) else { continue };
-                        let legs = if p.moneyless { Vec::new() } else { self.effects(&p) };
-                        (p, legs)
+                        p
                     }
                 };
                 out.payments += 1;
@@ -574,16 +686,13 @@ impl<B: Backing> Books<B> {
                     out.moneyless.insert(p.reckoned_on);
                     continue;
                 }
+                let legs = self.effects(&p);
                 if closed.holds(p.payer, &issuers(&legs)) {
-                    if p.cleared {
-                        violation!(
-                            clause = "MON.5",
-                            "a cleared line's payment through a closed bank, which waits for resolution (sys-sup)",
-                            line = p.line.get()
-                        );
-                    }
-                    out.pending += 1;
-                    continue;
+                    violation!(
+                        clause = "MON.5",
+                        "a cleared line's payment through a closed bank, which waits for resolution (sys-sup)",
+                        line = p.line.get()
+                    );
                 }
                 let _ = self.book(&mut out.records, &legs, 1);
                 out.gross += i128::from(p.amount);
@@ -591,36 +700,61 @@ impl<B: Backing> Books<B> {
         }
     }
 
-    /// One shard of 7a's heads: how many were read, and what each due holder's segment makes, in order.
+    /// A payment's bookings on the accounts its money legs draw on or pay into, each put with its record's shard.
+    pub(crate) fn bookings(&self, legs: &[LegRec], out: &mut [Vec<Booking>]) {
+        for leg in legs.iter().filter(|l| matches!(l.kind, LegKind::Money)) {
+            let AccountRef::Line { line, side: Side::Asset } = leg.account else { continue };
+            let at = self.parties.row(leg.party);
+            let Some(bucket) = out.get_mut(record_at(at.1).0) else {
+                phx_num::capacity_exceeded!("record shards", RECORD_SHARDS, record_at(at.1).0);
+            };
+            bucket.push(Booking { party: leg.party, at, account: line, qty: leg.qty });
+        }
+    }
+
+    /// One shard of 7a's heads: how many were read, what each due holder's segment makes, in order, and what the
+    /// payments not held pending book.
     fn stream_shard(
         &self,
         heads: &[u32],
         due: &DueLines,
         (day, calendar): (Day, &Calendar),
         plans: &KernelMap<LineId, DuePlan>,
-    ) -> (u64, Vec<Step>) {
+        closed: &Closed,
+    ) -> Streamed {
         let keys = self.ledger.lines.keys();
-        let (mut read, mut steps) = (0_u64, Vec::new());
+        let mut sh = Streamed { read: 0, steps: Vec::new(), bookings: booking_buckets(), gross: 0 };
         for &key in heads {
             let (place, slot) = keys.split(key);
             let table = self.parties.holder(place);
             if !phx_store::table::live_at(table.live_words(), slot) {
                 continue;
             }
-            read += 1;
+            sh.read += 1;
             let Some((rows, scanned)) = runs::due_rows(table, slot, day, due) else { continue };
-            steps.push(Step::Scanned { place, slot, read: scanned, due: count(rows.len()) });
+            sh.steps.push(Step::Scanned { place, slot, read: scanned, due: count(rows.len()) });
             let holder = table.party(slot);
             for row in rows {
                 match self.reckon(holder, &row, (day, calendar), plans.get(row.row.line)) {
                     None => {}
-                    Some(Reckoned::Paid(p)) => steps.push(Step::Paid(p)),
+                    Some(Reckoned::Paid(p)) => {
+                        let mut held = false;
+                        if !p.moneyless {
+                            let legs = self.effects(&p);
+                            held = closed.holds(p.payer, &issuers(&legs));
+                            if !held {
+                                self.bookings(&legs, &mut sh.bookings);
+                                sh.gross += i128::from(p.amount);
+                            }
+                        }
+                        sh.steps.push(Step::Paid { p, held });
+                    }
                     Some(Reckoned::Cleared { per, ccy, order }) => {
-                        steps.push(Step::Cleared { holder, row, per, ccy, order });
+                        sh.steps.push(Step::Cleared { holder, row, per, ccy, order });
                     }
                 }
             }
         }
-        (read, steps)
+        sh
     }
 }

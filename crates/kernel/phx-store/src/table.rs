@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn live_every_reads_only_the_slice() {
         let words = [0b1011_u64, 1 << 1];
-        let every: Vec<u32> = super::live_every(&words, 1, 2).map(|s| s.get()).collect();
+        let every: Vec<u32> = super::live_every(&words, 1, 2).map(Slot::get).collect();
         assert_eq!(every, vec![1, 3, 65]);
         assert_eq!(super::live_every(&words, 0, 2).count(), 1);
     }

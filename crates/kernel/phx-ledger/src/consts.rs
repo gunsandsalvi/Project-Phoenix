@@ -44,3 +44,8 @@ pub const STREAM_WAVE: usize = 8;
 /// The shards 7c routes the day's payments in, read a wave at a time: finer than 7a's, as a route is wider than the
 /// payment it moves, so a wave holds a thirty-second of the day.
 pub const ROUTE_SHARDS: usize = 256;
+/// The shards the day's records are dealt to, a run of slots at a time, so the pool folds each shard's bookings on
+/// one worker; fixed, never the number of workers, so the records are the same on any pool.
+pub const RECORD_SHARDS: usize = 64;
+/// The bits of a run of slots dealt to one records shard: runs of a thousand slots keep a shard's records dense.
+pub const RECORD_RUN_BITS: u32 = 10;

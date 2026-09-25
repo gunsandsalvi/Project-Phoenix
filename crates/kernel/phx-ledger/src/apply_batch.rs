@@ -102,6 +102,26 @@ struct Gathered {
     failed: u64,
 }
 
+/// One shard of 7c's payments before it is folded: where the payments held pending (true) or failed lie in the day's
+/// payments, in the stream's order, and what the settled ones add, each put with the shard of the sum it adds to.
+#[derive(Default)]
+struct Routed {
+    unsettled: Vec<(usize, bool)>,
+    settled: u64,
+    given: Vec<Vec<crate::stream::Booking>>,
+    nets: Vec<Vec<(NetKey, i64)>>,
+    earned: Vec<Vec<(PartyId, i128)>>,
+    crossing: BTreeMap<(PartyId, u8), i128>,
+}
+
+/// A keyed value put with its shard.
+fn push<T>(buckets: &mut [Vec<T>], shard: usize, value: T) {
+    let Some(bucket) = buckets.get_mut(shard) else {
+        phx_num::capacity_exceeded!("keyed shards", buckets.len(), shard);
+    };
+    bucket.push(value);
+}
+
 /// The day's buffers, kept on the books from one stage 7 to the next and emptied, never freed, so a day maps no new
 /// pages once the heaviest day has sized them.
 #[derive(Debug, Default)]
@@ -226,7 +246,9 @@ impl<B: Backing> Books<B> {
     }
 
     /// The day's payments in the stream's order: one through a closed issuer is left for the pending pass, one the
-    /// fixed point failed is recorded, and one that settles adds its legs to the nets.
+    /// fixed point failed is recorded, and one that settles adds its interest to its parties' income, its legs to the
+    /// nets and its bookings to the records given the settled payments. Each wave of shards is routed on the pool and
+    /// what it adds folded a shard of each sum to a worker; the payments left or failed are recorded in order after.
     fn gather(
         &mut self,
         streamed: &DayRecords,
@@ -249,25 +271,32 @@ impl<B: Backing> Books<B> {
         let each = streamed.made.len().div_ceil(crate::consts::ROUTE_SHARDS);
         for wave in (0..crate::consts::ROUTE_SHARDS).step_by(crate::consts::STREAM_WAVE) {
             let found_now: &Found = found;
-            // The routes are made on the pool, a wave of shards at a time; what they come to is gathered in order.
-            let routed = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_WAVE, |i| {
+            let mut routed = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_WAVE, |i| {
                 let at_most = |a: usize, b: usize| if a < b { a } else { b };
                 let from = at_most((wave + i) * each, streamed.made.len());
                 let to = at_most(from + each, streamed.made.len());
-                streamed
-                    .made
-                    .get(from..to)
-                    .unwrap_or(&[])
-                    .iter()
-                    .filter_map(|made| after_losers(made, found_now).map(|p| (p, self.effects(&p))))
-                    .collect::<Vec<_>>()
+                self.route_shard(streamed.made.get(from..to).unwrap_or(&[]), from, fixed, (closed, found_now))
             });
-            for (p, route) in routed.into_iter().flatten() {
-                if closed.holds(p.payer, &crate::stream::issuers(&route)) {
-                    self.record_due(&p, DueOutcome::Pending);
-                    continue;
+            let pool = self.pool.as_deref();
+            let bookings: Vec<_> = routed.iter_mut().map(|r| std::mem::take(&mut r.given)).collect();
+            g.given.fold(pool, &bookings, &|party, account| self.record_of(party, account));
+            let legs: Vec<_> = routed.iter_mut().map(|r| std::mem::take(&mut r.nets)).collect();
+            nets.fold(pool, &legs, || 0, |q, leg| *q += i128::from(*leg));
+            let earned: Vec<_> = routed.iter_mut().map(|r| std::mem::take(&mut r.earned)).collect();
+            self.ledger.day.earned.fold(pool, &earned, || 0, |v, add| *v += add);
+            for r in routed {
+                g.settled += r.settled;
+                for (key, q) in r.crossing {
+                    *g.crossing.entry(key).or_insert(0) += q;
                 }
-                if fixed.failed.contains(&p.key()) {
+                for (at, pending) in r.unsettled {
+                    let Some(p) = streamed.made.get(at).and_then(|made| after_losers(made, found)) else {
+                        violation!(clause = "SET.6", "an unsettled payment the day did not make", at = at);
+                    };
+                    if pending {
+                        self.record_due(&p, DueOutcome::Pending);
+                        continue;
+                    }
                     g.failed += 1;
                     if !fixed.by_bank.contains(&p.key()) && !p.moneyless {
                         g.failed_payers.insert(p.payer);
@@ -284,37 +313,57 @@ impl<B: Backing> Books<B> {
                         self.fail_payment(&p, day, cause);
                     }
                     self.record_due(&p, DueOutcome::Failed);
-                    continue;
-                }
-                g.settled += 1;
-                self.record_due(&p, DueOutcome::Settled);
-                let _ = self.book(&mut g.given, &route, 1);
-                let (from, to) = (self.settles_at(p.payer, p.ccy), self.settles_at(p.payee, p.ccy));
-                if from != to {
-                    *g.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
-                    *g.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
-                }
-                for leg in route {
-                    let AccountRef::Line { line, side } = leg.account else {
-                        violation!(clause = "SET.1", "a payment's leg on no line", party = leg.party.get());
-                    };
-                    let is_row = matches!(leg.kind, LegKind::Row(_));
-                    let key = NetKey { line, party: leg.party, side, row: is_row };
-                    match nets.get_mut(key) {
-                        Some(q) => *q += i128::from(leg.qty),
-                        None => {
-                            let _ = nets.insert(key, i128::from(leg.qty));
-                        }
-                    }
-                    if !is_row && side == Side::Asset && self.ledger.lines.is_reserves(line) {
-                        let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
-                        let _ = g.crossing.entry((leg.party, ccy.index())).or_insert(0);
-                    }
                 }
             }
         }
         g.nets.extend(nets.drain_sorted());
         (g, nets)
+    }
+
+    /// One shard of 7c's payments routed: those held pending or failed kept in order, and what the settled ones add,
+    /// each put with the shard of the sum it adds to.
+    fn route_shard(&self, made: &[Payment], first: usize, fixed: &FixedPoint, (closed, found): (&Closed, &Found)) -> Routed {
+        let mut r = Routed {
+            given: crate::stream::booking_buckets(),
+            nets: phx_core::KernelMap::<NetKey, i128>::buckets(),
+            earned: phx_core::KernelMap::<PartyId, i128>::buckets(),
+            ..Routed::default()
+        };
+        for (at, p) in (first..).zip(made).filter_map(|(at, made)| after_losers(made, found).map(|p| (at, p))) {
+            let route = self.effects(&p);
+            if closed.holds(p.payer, &crate::stream::issuers(&route)) {
+                r.unsettled.push((at, true));
+                continue;
+            }
+            if fixed.failed.contains(&p.key()) {
+                r.unsettled.push((at, false));
+                continue;
+            }
+            r.settled += 1;
+            let interest = i128::from(p.amount - p.principal);
+            for (party, v) in [(p.payee, interest), (p.payer, -interest)] {
+                push(&mut r.earned, phx_core::KernelMap::<PartyId, i128>::shard_of(party), (party, v));
+            }
+            self.bookings(&route, &mut r.given);
+            let (from, to) = (self.settles_at(p.payer, p.ccy), self.settles_at(p.payee, p.ccy));
+            if from != to {
+                *r.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
+                *r.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
+            }
+            for leg in route {
+                let AccountRef::Line { line, side } = leg.account else {
+                    violation!(clause = "SET.1", "a payment's leg on no line", party = leg.party.get());
+                };
+                let is_row = matches!(leg.kind, LegKind::Row(_));
+                let key = NetKey { line, party: leg.party, side, row: is_row };
+                push(&mut r.nets, phx_core::KernelMap::<NetKey, i128>::shard_of(key), (key, leg.qty));
+                if !is_row && side == Side::Asset && self.ledger.lines.is_reserves(line) {
+                    let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
+                    let _ = r.crossing.entry((leg.party, ccy.index())).or_insert(0);
+                }
+            }
+        }
+        r
     }
 
     /// The dues the claimant members drawn on cleared lines lost, recorded as failed against the top issuer, which

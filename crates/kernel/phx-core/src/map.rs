@@ -150,6 +150,38 @@ impl<K: MapKey, V> KernelMap<K, V> {
         self.len = 0;
     }
 
+    /// The shard a key is kept in, so a reduction can hand each shard's keys to one worker.
+    #[must_use]
+    pub fn shard_of(key: K) -> usize {
+        shard(key)
+    }
+
+    /// One empty list per shard, for a source to put each of its keyed values with its key's shard.
+    #[must_use]
+    pub fn buckets<I>() -> Vec<Vec<(K, I)>> {
+        (0..KEYED_SHARDS).map(|_| Vec::new()).collect()
+    }
+
+    /// Many sources' keyed values folded into the map on the pool: each shard takes its own values from every source
+    /// in the sources' order, a key it lacks made by `make`, so the map is the same with any number of workers.
+    pub fn fold<I: Sync>(
+        &mut self,
+        pool: Option<&phx_exec::pool::Pool>,
+        sources: &[Vec<Vec<(K, I)>>],
+        make: impl Fn() -> V + Sync,
+        add: impl Fn(&mut V, &I) + Sync,
+    ) where
+        K: Send + Sync,
+        V: Send,
+    {
+        phx_exec::pool::each(pool, self.shards.iter_mut().enumerate(), |(k, s)| {
+            for (key, value) in sources.iter().filter_map(|of| of.get(k)).flatten() {
+                add(s.entry(*key).or_insert_with(&make), value);
+            }
+        });
+        self.len = self.shards.iter().map(HashMap::len).sum();
+    }
+
     /// Every entry, sorted by key, leaving the map empty, for a save.
     pub fn drain_sorted(&mut self) -> Vec<(K, V)> {
         let mut all: Vec<(K, V)> = self.shards.iter_mut().flat_map(HashMap::drain).collect();
@@ -191,6 +223,25 @@ impl<K: MapKey, V> Default for KernelMap<K, V> {
 #[cfg(test)]
 mod tests {
     use super::KernelMap;
+
+    #[test]
+    fn a_fold_adds_every_source_by_shard() {
+        let mut m: KernelMap<u64, i64> = KernelMap::new();
+        let _ = m.insert(3, 10);
+        let sources: Vec<Vec<Vec<(u64, i64)>>> = (0..2_i64)
+            .map(|src| {
+                let mut b = KernelMap::<u64, i64>::buckets();
+                for k in 0..100_u64 {
+                    b[KernelMap::<u64, i64>::shard_of(k)].push((k, src + 1));
+                }
+                b
+            })
+            .collect();
+        m.fold(None, &sources, || 0, |v, add| *v += add);
+        assert_eq!(m.len(), 100);
+        assert_eq!(m.get(3), Some(&13));
+        assert_eq!(m.get(99), Some(&3));
+    }
 
     #[test]
     fn kernel_map_keeps_and_drains_sorted() {
