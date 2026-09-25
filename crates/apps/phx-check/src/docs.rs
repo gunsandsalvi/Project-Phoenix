@@ -51,8 +51,9 @@ pub const SECTIONS: &[&str] = &[
     "Done when",
 ];
 
-/// A step's statuses; `awaiting` (written `awaiting owner`) is a step whose remaining items are the owner's alone.
-pub const STATUSES: &[&str] = &["planned", "building", "awaiting", "done", "retired"];
+/// A step's statuses; `awaiting` (written `awaiting owner`) is a step whose remaining items are the owner's alone, and
+/// `held` a step begun and set aside while an earlier one, reopened, is building.
+pub const STATUSES: &[&str] = &["planned", "building", "awaiting", "held", "done", "retired"];
 
 fn regex(pattern: &str) -> Result<Regex, String> {
     Regex::new(pattern).map_err(|e| e.to_string())

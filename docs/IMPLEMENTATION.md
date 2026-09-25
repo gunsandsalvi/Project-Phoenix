@@ -59,7 +59,7 @@ Every step has these sections, in this order; `phx-check docs` refuses a step mi
 
 | Section | What it says |
 | --- | --- |
-| **Status** | `planned`, `building`, `awaiting owner` (its remaining **Done when** items the owner's alone), `done` or `retired` |
+| **Status** | `planned`, `building`, `awaiting owner` (its remaining **Done when** items the owner's alone), `held` (begun and set aside while an earlier step, reopened, is building), `done` or `retired` |
 | **Clauses** | the spec clauses the step completes, each with its type; clauses it starts but a later step completes, marked *(part)* |
 | **Architecture** | the architecture sections it implements |
 | **Depends on** | earlier steps |
@@ -5264,7 +5264,7 @@ contracts; a mode branch in any system (the representation is two numbers every 
 
 ### S0.26 — `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate
 
-**Status**: awaiting owner: the phone's run of the bench flavour and the full-load bench, `phx measure` on its report and architecture §13 in measured numbers (§12, 2026-09-25). Split into sub-steps, each with its own build run:
+**Status**: building: reopened by the owner (§12, 2026-09-25) until the full-load bench meets the budget (F-087); then the phone's run of the bench flavour and the full-load bench, `phx measure` on its report and architecture §13 in measured numbers. Split into sub-steps, each with its own build run:
 - **S0.26a — the world on the phone** *(part built)*: `phx-ffi`'s `run_world` assembles the world from the data the
   bench flavour ships as assets, settles it for the owner's length (`GEN.settling_years`), reporting the settling's
   turns, days and wall time, and runs the measured turns (the app passes 60), sending each turn's wall time, days,
@@ -5553,7 +5553,7 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 
 ### S1.01 — `phx-val`: outlooks, heuristics, surprises and values
 
-**Status**: building
+**Status**: held: set aside while S0.26, reopened, brings the full load within the budget (§12, 2026-09-25)
 
 **Clauses**:
 - STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: VAL.1–VAL.23, all of them.
@@ -16168,6 +16168,7 @@ the final build within the budget on the phone.
 | F-084 | S0.26 | the owner's phone run, 2026-09-25 | The bench flavour closed with no word right after the micro-benchmarks' last target, on `Run all` | the agents' bench (`phx-ffi` `agents::hazard`) read a household's chances on one day and booked from the next, so a person's birthday on that next day made the rate's change fall on the booking's first day, which `next_booking` refuses (REP.7); a violation aborts the process, and the app had no hook to say so | the bench books from the day it reads, as the world's `chances` does; a stop on the phone is written beside the report (`phx-ffi` `stopped`) and shown when the app next opens | fixed |
 | F-085 | S0.26 | the owner's phone run, 2026-09-25 | After the world's turns, save and load, the full-load bench stopped building its household agents: blocks per draw address, declared 16 777 216, needed 16 777 216 | the bench drew all 700 000 agents, each a region, three persons and forty attachments (about 280 words), from one address, which holds 67 M words | each bench agent draws from its own address, keyed by its party, as the world draws each party apart (checked: the full volume builds on the build machine) | fixed |
 | F-086 | S0.26 | the owner's phone run, 2026-09-25 | The full-load bench stopped building its books' holders: reserved address space, declared 68 719 476 736, needed 70 479 257 600 | the synthetic books sized each kind table by the relationship rows (33 M) where it holds parties (1.1 M holders and the banks), gave every holder-list shard all the rows' blocks where each holds its share, and chunked the holders by 4 096, so each of 269 chunks reserved an individual's 128 MiB arena | kind tables sized by their parties, each shard's blocks by its share, and 32 768 holders a chunk; the full volume's books build on the build machine | fixed |
+| F-087 | S0.26 | build machine, 2026-09-25, 70d35dd4 (4 cores) | The full-load bench misses every target: median turn 13.6 s (≤ 1 s), worst 26.5 s (≤ 2 s), peak resident 8 307 MiB (≤ 4.5 GB; 6 769 MiB once built, before a day ran), a save 20–23 s (≤ 5 s) and two saves 8 272 MiB (≤ 4 GiB). A business day's median by kind: settlement 10 611 ms, outcomes on agents 678, the gathers standing for later stages' mechanisms 1 772 together, hazard draws 210; the heavy day's settlement 20 407 ms; a closed day, with no settlement, about 0.9 s | settlement reckons each due row's payment again in each pass that reads it (7a, 7b's visits and removals, 7c, the not-maximal count, the pending pass), each with its legs built on the heap and its parties found through maps, on one thread (F-020, F-056, F-057); outcomes on agents on one thread; the saves write the held stores as random words, which do not compress, and write stores the world never saves (day buffers, arena slack, save buffers) | S0.26 reopened (§12): a review of the most-used algorithms, then how the world is represented and traversed (N8.7) | open |
 
 ---
 
@@ -16238,6 +16239,7 @@ the final build within the budget on the phone.
 | What a resolution's change cites (PC-91) | a resolution changed by the owner's decision cites the decision's row in this section (`Resolution-Change: <id> — plan §12, <decision>`), as well as a budget report | 2026-09-25 |
 | A step waiting on the owner (PC-09) | a step whose remaining **Done when** items are the owner's alone takes the status `awaiting owner`, which is not `building`; S0.26 waits so for the phone's run | 2026-09-25 |
 | A kernel's books fixture in its tests (F-063) | a kernel's hand-built fixture of a few parties, lines and books, asserting its own arithmetic, is a logic-level test and not a world; CLAUDE.md says so | 2026-09-25 |
+| Stage 0 reopened (N8.8; F-087) | Stage 0 does not end while the full-load bench misses the budget: S0.26 building again, S1.01 `held` (a status for a step begun and set aside while an earlier one, reopened, is building); the work starts from a review of the most-used algorithms against current research | 2026-09-25 |
 
 ---
 

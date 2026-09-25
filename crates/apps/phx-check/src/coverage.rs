@@ -83,7 +83,7 @@ fn derive_row(line: &str, named: &[(&Step, Vec<String>)], map: &[MapRow]) -> Opt
     let involved = naming.iter().map(|s| s.status.clone()).chain(completing.iter().cloned());
     let status = if completing.iter().all(|s| s.as_deref() == Some("done")) {
         "done"
-    } else if involved.into_iter().any(|s| matches!(s.as_deref(), Some("building" | "awaiting" | "done"))) {
+    } else if involved.into_iter().any(|s| matches!(s.as_deref(), Some("building" | "awaiting" | "held" | "done"))) {
         "building"
     } else {
         "planned"

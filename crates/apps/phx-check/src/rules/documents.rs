@@ -17,7 +17,7 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
         match steps.iter().find(|s| s.crates.contains(&c.name)) {
             None => breaches.push(Breach::new(RULE, &c.manifest_path(), 1, "no step creates this crate")),
-            Some(step) if !matches!(step.status.as_deref(), Some("building" | "awaiting" | "done")) => {
+            Some(step) if !matches!(step.status.as_deref(), Some("building" | "awaiting" | "held" | "done")) => {
                 let message = format!("`{}` exists before its step {} is building", c.name, step.id);
                 breaches.push(Breach::new(RULE, &c.manifest_path(), 1, message));
             }
@@ -114,6 +114,12 @@ mod tests {
     fn docs_accept_a_step_awaiting_the_owner_beside_one_building() {
         let plan = step("S0.01", "awaiting owner", "", "x") + &step("S0.02", "building", "", "y");
         assert!(run(&ws(plan, &[])).is_empty(), "a step awaiting the owner is not building");
+    }
+
+    #[test]
+    fn docs_accept_a_held_step_with_its_crate_beside_one_building() {
+        let plan = step("S0.01", "building", "", "x") + &step("S1.01", "held", "", "crates/apps/phx-core/src/lib.rs");
+        assert!(run(&ws(plan, &["phx-core"])).is_empty(), "a held step is not building and keeps its crate");
     }
 
     #[test]
