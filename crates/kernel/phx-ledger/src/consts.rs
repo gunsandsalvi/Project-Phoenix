@@ -33,3 +33,6 @@ pub const SYNTHETIC_WINDOW_YEAR: i32 = 2020;
 pub const WEEKDAYS: u32 = 5;
 /// The months of a year.
 pub const MONTHS_A_YEAR: u8 = 12;
+/// Rows on means-of-payment lines a holder's summary keeps: a household's deposit and banknotes, a bank's reserves
+/// and the deposits it issues; a holder with more has its rows read.
+pub const MONEY_ROWS_KEPT: usize = 4;

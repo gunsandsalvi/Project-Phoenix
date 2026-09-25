@@ -528,7 +528,7 @@ impl<B: Backing> Books<B> {
                     by_line.entry(row.row.line).or_default().push(row.side());
                 }
                 for (line, sides) in by_line {
-                    ledger.lines.relist(place, slot, line, &sides);
+                    ledger.lines.relist(table, place, slot, line, &sides);
                 }
             }
         }

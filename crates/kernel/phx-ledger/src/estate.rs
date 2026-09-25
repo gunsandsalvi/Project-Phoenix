@@ -8,7 +8,7 @@ use phx_num::{Ccy, Missing, violation};
 
 use crate::algebra::Side;
 use crate::books::Books;
-use crate::dues::{Found, row_leg};
+use crate::dues::row_leg;
 use crate::fails::Fail;
 use crate::transfer::MoveAt;
 use crate::waterfall::{Claim, Realised, waterfall};
@@ -92,7 +92,6 @@ impl<B: phx_store::Backing> Books<B> {
             }
         }
         let fall = waterfall(&realised, &claims, &[0], &firsts);
-        let mut found = Found::default();
         let mut out = Settled::default();
         let every = |x: i64| {
             let Some(all) = x.checked_mul(unit) else {
@@ -103,7 +102,7 @@ impl<B: phx_store::Backing> Books<B> {
         for (paid, (claim, (line, creditor))) in fall.paid.iter().zip(claims.iter().zip(&debts)) {
             let (paid, short) = (every(paid.paid), every(claim.amount - paid.paid));
             if paid > 0 {
-                let mut legs = self.pay(estate, *creditor, paid, claim.ccy, &mut found);
+                let mut legs = self.pay(estate, *creditor, paid, claim.ccy);
                 legs.push(row_leg(estate, *line, Side::Liability, paid, claim.ccy));
                 legs.push(row_leg(*creditor, *line, Side::Asset, -paid, claim.ccy));
                 let _ = self.submit(self.dues.payment, legs, m, audit)?;
@@ -121,7 +120,7 @@ impl<B: phx_store::Backing> Books<B> {
         for (ccy, left) in fall.left {
             let left = every(left);
             if left > 0 {
-                let legs = self.pay(estate, destination, left, ccy, &mut found);
+                let legs = self.pay(estate, destination, left, ccy);
                 let _ = self.submit(self.dues.distributed, legs, m, audit)?;
                 out.passed += left;
             }

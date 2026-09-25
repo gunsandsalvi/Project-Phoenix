@@ -311,8 +311,7 @@ fn an_estate_pays_its_debts_passes_the_rest_and_ends() {
 fn an_estate_short_of_its_debts_writes_off_the_rest() {
     let mut w = world();
     let m = MoveAt { at: ApplyAt::Day(SubStep::S7c), ..at(&w) };
-    let mut found = crate::dues::Found::default();
-    let legs = w.books.pay(w.firms[2], w.firms[1], 9_800, EUR, &mut found);
+    let legs = w.books.pay(w.firms[2], w.firms[1], 9_800, EUR);
     let _ = w.books.submit(w.reason, legs, m, &mut Quiet).expect("the payment settles");
     let mut d = crate::cleared::test_draws(w.loan);
     let s = w.books.settle_estate(w.firms[2], w.firms[1], m, &mut d, &mut Quiet).expect("settles");

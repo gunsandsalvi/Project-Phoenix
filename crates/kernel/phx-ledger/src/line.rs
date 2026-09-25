@@ -7,6 +7,7 @@ use phx_num::{Ccy, Missing, Money, Qty, UnitId, capacity_exceeded, violation};
 use phx_store::{AddressSpace, Backing, BlockList, Column, SystemBacking};
 
 use crate::algebra::Side;
+use crate::consts::MONEY_ROWS_KEPT;
 use crate::holder::{HolderArenas, HolderKeys, HolderLists};
 use crate::rows::{self, Optional, PaymentRecord, RelRow, RowView, role};
 use crate::terms::TermsId;
@@ -170,9 +171,17 @@ pub struct Lines<B: Backing = SystemBacking> {
     money: Vec<u16>,
     /// The lines by the day they next fall due; an entry whose line has since moved is passed over.
     wheel: BTreeMap<u32, Vec<u32>>,
-    /// How many times each line side's members have changed, so what was read of a side is known still true; kept
-    /// for the run alone, a load beginning it afresh with every read of a side.
-    versions: BTreeMap<(u32, bool), u64>,
+    /// How many times each line side's members have changed, by line and side, so what was read of a side is known
+    /// still true; kept for the run alone, a load beginning it afresh with every read of a side.
+    versions: Vec<[u64; 2]>,
+    /// Each line side's listed holders as a count and the exclusive-or of their keys, by line and side: a side of one
+    /// holder names it, the others cancelling out, without reading any holder's rows. Kept for the run alone, rebuilt
+    /// with the holder lists.
+    listed: Vec<[Listed; 2]>,
+    /// Each holder's rows on means-of-payment lines, by holder place and slot, kept as they open and close, so a
+    /// payment finds its payer's account without reading the payer's rows. Kept for the run alone, rebuilt with the
+    /// holder lists.
+    money_rows: Vec<Vec<MoneyRows>>,
     /// The day of the latest 1b and the lines that fell due on it, so a row placed later that day on one of them
     /// falls due today; kept for the day alone, as the marks are made again each day.
     fell: (Day, std::collections::BTreeSet<u32>),
@@ -189,7 +198,9 @@ impl<B: Backing> Lines<B> {
             reserves: Vec::new(),
             money: Vec::new(),
             wheel: BTreeMap::new(),
-            versions: BTreeMap::new(),
+            versions: Vec::new(),
+            listed: Vec::new(),
+            money_rows: Vec::new(),
             fell: (Day::new(0), std::collections::BTreeSet::new()),
         }
     }
@@ -465,18 +476,103 @@ impl<B: Backing> Lines<B> {
 
     /// A line side's members changed hands or counts, its total the same or not: what was read of it is stale.
     pub(crate) fn moved(&mut self, line: LineId, side: Side) {
-        let changed = self.versions.entry((line.get(), side == Side::Asset)).or_insert(0);
+        let at = at_line(line);
+        if self.versions.len() <= at {
+            self.versions.resize(at + 1, [0; 2]);
+        }
+        let Some(changed) = self.versions.get_mut(at).and_then(|v| v.get_mut(side_index(side))) else {
+            capacity_exceeded!("line versions", self.versions.len(), at);
+        };
         let Some(next) = changed.checked_add(1) else {
             capacity_exceeded!("changes of a line side", u64::MAX, *changed);
         };
         *changed = next;
     }
 
-    /// How many times a line side's members have changed in this run; what was read of it at the same version is
-    /// still true.
+    /// How many times a side of a line has changed its members this run.
     #[must_use]
     pub fn side_version(&self, line: LineId, side: Side) -> u64 {
-        self.versions.get(&(line.get(), side == Side::Asset)).copied().unwrap_or(0)
+        self.versions.get(at_line(line)).and_then(|v| v.get(side_index(side))).copied().unwrap_or(0)
+    }
+
+    /// The key of the one holder a listed side of a line holds, or none where it holds none or more than one.
+    #[must_use]
+    pub fn sole_holder(&self, line: LineId, side: Side) -> Option<u32> {
+        let l = self.listed.get(at_line(line)).and_then(|l| l.get(side_index(side)))?;
+        (l.count == 1).then_some(l.keys)
+    }
+
+    /// How many holders a listed side of a line holds.
+    #[must_use]
+    pub fn listed_holders(&self, line: LineId, side: Side) -> u32 {
+        self.listed.get(at_line(line)).and_then(|l| l.get(side_index(side))).map_or(0, |l| l.count)
+    }
+
+    /// A holder entering or leaving a listed side of a line.
+    fn list_side(&mut self, line: LineId, side: Side, key: u32, enters: bool) {
+        let at = at_line(line);
+        if self.listed.len() <= at {
+            self.listed.resize(at + 1, [Listed::default(); 2]);
+        }
+        let Some(l) = self.listed.get_mut(at).and_then(|l| l.get_mut(side_index(side))) else {
+            capacity_exceeded!("listed line sides", self.listed.len(), at);
+        };
+        l.keys ^= key;
+        l.count = if enters {
+            l.count.checked_add(1).unwrap_or_else(|| capacity_exceeded!("holders of a line side", u32::MAX, l.count))
+        } else {
+            let Some(fewer) = l.count.checked_sub(1) else {
+                violation!(clause = "REG.14", "a holder leaving a line side it is not listed on", line = line.get());
+            };
+            fewer
+        };
+    }
+
+    /// A holder's rows on means-of-payment lines: what a payment reads of it, or `None` where it holds more than
+    /// the summary keeps and its rows must be read.
+    #[must_use]
+    pub fn money_rows(&self, table: u16, holder: Slot) -> Option<MoneyRows> {
+        let m = self.money_rows.get(usize::from(table))?.get(slot_at(holder)).copied().unwrap_or_default();
+        (!m.more).then_some(m)
+    }
+
+    /// A holder's row on a means-of-payment line opened or closed; where it held more than the summary keeps, its
+    /// rows are read again.
+    fn note_money(&mut self, arenas: &dyn HolderArenas, table: u16, holder: Slot, row: (LineId, Side), opens: bool) {
+        if !self.is_money(row.0) {
+            return;
+        }
+        let t = usize::from(table);
+        if self.money_rows.len() <= t {
+            self.money_rows.resize_with(t + 1, Vec::new);
+        }
+        let Some(of_table) = self.money_rows.get_mut(t) else {
+            capacity_exceeded!("holder tables", self.money_rows.len(), t);
+        };
+        let at = slot_at(holder);
+        if of_table.len() <= at {
+            of_table.resize(at + 1, MoneyRows::default());
+        }
+        let Some(m) = of_table.get_mut(at) else {
+            capacity_exceeded!("holder slots", of_table.len(), at);
+        };
+        if opens && !m.more {
+            m.add(row);
+            return;
+        }
+        if !opens && !m.more {
+            m.take(row);
+            return;
+        }
+        let mut again = MoneyRows::default();
+        for r in rows::iter(arenas, holder) {
+            if self.money.contains(&self.row(r.row.line).kind) {
+                again.add((r.row.line, r.side()));
+            }
+        }
+        if let Some(m) = self.money_rows.get_mut(t).and_then(|v| v.get_mut(at)) {
+            *m = again;
+        }
     }
 
     /// A holder's row opened on a line. A holder of a kind the side does not declare, or a row with other optional
@@ -538,6 +634,10 @@ impl<B: Backing> Lines<B> {
             rows::append(arenas, holder, row, optional);
         }
         self.moved(line, side);
+        if decl.holder_list {
+            self.list_side(line, side, self.keys().key(table, holder), true);
+        }
+        self.note_money(arenas, table, holder, (line, side), true);
         let enters = decl.holder_list && !listed_before;
         if enters {
             let mut r = self.row(line);
@@ -629,8 +729,13 @@ impl<B: Backing> Lines<B> {
             violation!(clause = "REG.14", "a row read that its holder does not have", line = line.get());
         };
         let leaves = listing(side) && !listed_by_other;
+        let side_listed = listing(side);
         rows::remove(arenas, holder, &view);
         self.moved(line, side);
+        if side_listed {
+            self.list_side(line, side, self.keys().key(table, holder), false);
+        }
+        self.note_money(arenas, table, holder, (line, side), false);
         let mut head = arenas.run_head(holder);
         let (at, width) = (word32(view.at), word32(rows::words_of_row(&view)));
         if at < head.offset {
@@ -746,18 +851,107 @@ impl<B: Backing> Lines<B> {
             reserves,
             money,
             wheel,
-            versions: BTreeMap::new(),
+            versions: Vec::new(),
+            listed: Vec::new(),
+            money_rows: Vec::new(),
             fell: (Day::new(0), std::collections::BTreeSet::new()),
         })
     }
 
     /// A holder put back on a line's holder list as a load rebuilds it, where a side it holds keeps one.
-    pub(crate) fn relist(&mut self, table: u16, holder: Slot, line: LineId, sides: &[Side]) {
-        let kind = self.kind(self.row(line).kind);
+    pub(crate) fn relist(&mut self, arenas: &dyn HolderArenas, table: u16, holder: Slot, line: LineId, sides: &[Side]) {
+        let kind = *self.kind(self.row(line).kind);
+        for side in sides {
+            if kind.side(*side).holder_list {
+                self.list_side(line, *side, self.keys().key(table, holder), true);
+            }
+            self.note_money(arenas, table, holder, (line, *side), true);
+        }
         if sides.iter().any(|s| kind.side(*s).holder_list) {
             let mut r = self.row(line);
             self.lists.enter(line.get(), &mut r.holders, table, holder);
             self.set(line, r);
         }
+    }
+}
+
+/// A line side's listed holders: how many, and the exclusive-or of their keys.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct Listed {
+    count: u32,
+    keys: u32,
+}
+
+/// The rows a holder keeps on means-of-payment lines, as many as a household or a bank holds; one more and the
+/// holder's rows are read instead.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MoneyRows {
+    held: [Option<(LineId, Side)>; MONEY_ROWS_KEPT],
+    more: bool,
+}
+
+impl MoneyRows {
+    /// The rows kept, in the order they opened.
+    pub fn rows(&self) -> impl Iterator<Item = (LineId, Side)> + '_ {
+        self.held.iter().flatten().copied()
+    }
+
+    fn add(&mut self, row: (LineId, Side)) {
+        match self.held.iter_mut().find(|h| h.is_none()) {
+            Some(free) => *free = Some(row),
+            None => self.more = true,
+        }
+    }
+
+    fn take(&mut self, row: (LineId, Side)) {
+        if let Some(h) = self.held.iter_mut().find(|h| **h == Some(row)) {
+            *h = None;
+        }
+    }
+}
+
+fn at_line(line: LineId) -> usize {
+    let Ok(at) = usize::try_from(line.get()) else {
+        capacity_exceeded!("lines", usize::MAX, line.get());
+    };
+    at
+}
+
+fn slot_at(slot: Slot) -> usize {
+    let Ok(at) = usize::try_from(slot.get()) else {
+        capacity_exceeded!("holder slots", usize::MAX, slot.get());
+    };
+    at
+}
+
+fn side_index(side: Side) -> usize {
+    match side {
+        Side::Liability => 0,
+        Side::Asset => 1,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use phx_id::LineId;
+
+    use super::MoneyRows;
+    use crate::algebra::Side;
+    use crate::consts::MONEY_ROWS_KEPT;
+
+    #[test]
+    fn money_rows_keep_what_fits_and_mark_more() {
+        let mut m = MoneyRows::default();
+        let rows: Vec<(LineId, Side)> =
+            (1..=u32::try_from(MONEY_ROWS_KEPT).unwrap()).map(|i| (LineId::new(i), Side::Asset)).collect();
+        for r in &rows {
+            m.add(*r);
+        }
+        assert_eq!((m.rows().collect::<Vec<_>>(), m.more), (rows.clone(), false));
+        m.take(rows[0]);
+        assert_eq!(m.rows().count(), MONEY_ROWS_KEPT - 1, "a closed row leaves room");
+        m.add((LineId::new(90), Side::Liability));
+        m.add((LineId::new(91), Side::Liability));
+        assert!(m.more, "a row past the room marks the holder's rows to be read");
     }
 }

@@ -63,7 +63,7 @@ impl<B: Backing> Work<'_, B> {
         if !self.failed.insert(p.key()) {
             return;
         }
-        let legs = self.books.effects(p, self.found);
+        let legs = self.books.effects(p);
         for party in self.books.book(self.records, &legs, -1) {
             self.enqueue(party);
         }
@@ -91,7 +91,7 @@ impl<B: Backing> Work<'_, B> {
         let per = day.per_member;
         let more = day.losers.get_or_insert_with(|| Losers::new(&claimants, draws_of(line))).draw_to(failed);
         for (claimant, k) in more {
-            let (legs, _) = self.books.route(claimant, -times(per, k), ccy, self.found);
+            let (legs, _) = self.books.route(claimant, -times(per, k), ccy);
             for party in self.books.book(self.records, &legs, -1) {
                 self.enqueue(party);
             }
@@ -110,7 +110,7 @@ impl<B: Backing> Work<'_, B> {
         let own: Vec<(Payment, i128)> = all
             .iter()
             .filter(|p| p.payer == party && !self.failed.contains(&p.key()))
-            .map(|p| (*p, draw(&self.books.effects(p, self.found), party, rec.account)))
+            .map(|p| (*p, draw(&self.books.effects(p), party, rec.account)))
             .collect();
         let own_draw: i128 = own.iter().map(|(_, d)| d).sum();
         let for_others = rec.debit - own_draw;
@@ -152,7 +152,7 @@ impl<B: Backing> Work<'_, B> {
                     if p.cleared && p.payee == customer {
                         continue;
                     }
-                    let legs = self.books.effects(&p, self.found);
+                    let legs = self.books.effects(&p);
                     if draw(&legs, bank, account) > 0 || legs.iter().any(|l| l.party == bank) {
                         self.by_bank.insert(p.key());
                         self.fail(&p);

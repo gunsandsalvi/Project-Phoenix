@@ -120,7 +120,7 @@ impl<B: Backing> Books<B> {
         found: &mut Found,
     ) -> Option<Payment> {
         let line = row.row.line;
-        let reckoning = self.reckoning(line, holder, row.side(), found);
+        let reckoning = self.reckoning(line);
         if let Reckoning::On { side, .. } = reckoning
             && row.side() != side
         {
@@ -192,7 +192,7 @@ impl<B: Backing> Books<B> {
             Side::Asset => (counter, holder),
             Side::Liability => (holder, counter),
         };
-        let moneyless = !self.holds_money(from, terms.ccy, found) || !self.holds_money(to, terms.ccy, found);
+        let moneyless = !self.holds_money(from, terms.ccy) || !self.holds_money(to, terms.ccy);
         Some(Payment {
             line,
             payer: from,
@@ -222,11 +222,11 @@ impl<B: Backing> Books<B> {
         found: &mut Found,
     ) -> Option<Payment> {
         let line = row.row.line;
-        let moneyless = !self.holds_money(holder, ccy, found);
+        let moneyless = !self.holds_money(holder, ccy);
         let top = match (found.cleared.get(line), moneyless) {
             (Some(day), true) => day.top,
-            (None, true) => self.line_top(line, ccy, found),
-            (_, false) => self.top_of(holder, ccy, found),
+            (None, true) => self.line_top(line, ccy),
+            (_, false) => self.top_of(holder, ccy),
         };
         if found.cleared.get(line).is_none() {
             let _ = found
@@ -272,12 +272,12 @@ impl<B: Backing> Books<B> {
     }
 
     /// The top issuer a cleared line's payments reach: the one its holders with money reach.
-    fn line_top(&self, line: LineId, ccy: Ccy, found: &mut Found) -> PartyId {
+    fn line_top(&self, line: LineId, ccy: Ccy) -> PartyId {
         let holders: Vec<PartyId> = self.line_holders(line).collect();
-        let Some(holder) = holders.into_iter().find(|p| self.holds_money(*p, ccy, found)) else {
+        let Some(holder) = holders.into_iter().find(|p| self.holds_money(*p, ccy)) else {
             violation!(clause = "REP.23", "a cleared line none of whose holders holds money", line = line.get());
         };
-        self.top_of(holder, ccy, found)
+        self.top_of(holder, ccy)
     }
 
     /// Every payment a party takes part in today, in its payment order: its due rows in its run's order, by the
@@ -296,7 +296,7 @@ impl<B: Backing> Books<B> {
         rows.sort_by_key(|r| self.ledger.terms.get(self.ledger.lines.terms(r.row.line)).payment_order.0);
         let mut out = Vec::new();
         for r in rows {
-            let reckoned = match self.reckoning(r.row.line, party, r.side(), found) {
+            let reckoned = match self.reckoning(r.row.line) {
                 Reckoning::On { side, .. } if side != r.side() => side,
                 _ => {
                     out.extend(self.payment(party, &r, day, calendar, found));
@@ -315,19 +315,19 @@ impl<B: Backing> Books<B> {
     /// What a payment does, leg by leg: the money from the payer's means of payment to the payee's, through deposits
     /// and, between banks, reserves; and the principal repaid off the contract's rows. A cleared line's payment moves
     /// its row's holder's money up to the top issuer, or down from it.
-    pub(crate) fn effects(&self, p: &Payment, found: &mut Found) -> Vec<LegRec> {
+    pub(crate) fn effects(&self, p: &Payment) -> Vec<LegRec> {
         if p.moneyless {
             return Vec::new();
         }
         if p.cleared {
             let (legs, _) = if p.payer == p.reckoned_on {
-                self.route(p.payer, p.amount, p.ccy, found)
+                self.route(p.payer, p.amount, p.ccy)
             } else {
-                self.route(p.payee, -p.amount, p.ccy, found)
+                self.route(p.payee, -p.amount, p.ccy)
             };
             return legs;
         }
-        let mut legs = self.pay(p.payer, p.payee, p.amount, p.ccy, found);
+        let mut legs = self.pay(p.payer, p.payee, p.amount, p.ccy);
         if p.principal != 0 {
             legs.push(row_leg(p.payee, p.line, Side::Asset, -p.principal, p.ccy));
             legs.push(row_leg(p.payer, p.line, Side::Liability, p.principal, p.ccy));
@@ -406,7 +406,7 @@ impl<B: Backing> Books<B> {
                         out.moneyless.insert(holder);
                         continue;
                     }
-                    let legs = self.effects(&p, found);
+                    let legs = self.effects(&p);
                     if closed.holds(p.payer, &issuers(&legs)) {
                         if p.cleared {
                             violation!(

@@ -127,16 +127,16 @@ fn after_losers(p: &Payment, found: &Found) -> Option<Payment> {
 impl<B: Backing> Books<B> {
     /// The party whose reserves a party's payments move: a party holding reserves itself, a depositor its bank, and
     /// a party with no account in the currency, which pays in its own money, itself.
-    fn settles_at(&self, party: PartyId, ccy: Ccy, found: &mut Found) -> PartyId {
-        match self.money_row(party, ccy, found) {
-            Missing::Present(line) if !self.ledger.lines.is_reserves(line) => self.owed_by(line, party, found),
+    fn settles_at(&self, party: PartyId, ccy: Ccy) -> PartyId {
+        match self.money_row(party, ccy) {
+            Missing::Present(line) if !self.ledger.lines.is_reserves(line) => self.owed_by(line),
             _ => party,
         }
     }
 
     /// A party's reserves in a currency, when it holds them.
-    fn reserves_of(&self, party: PartyId, ccy: Ccy, found: &mut Found) -> Option<i128> {
-        let Missing::Present(line) = self.money_row(party, ccy, found) else { return None };
+    fn reserves_of(&self, party: PartyId, ccy: Ccy) -> Option<i128> {
+        let Missing::Present(line) = self.money_row(party, ccy) else { return None };
         if !self.ledger.lines.is_reserves(line) {
             return None;
         }
@@ -207,7 +207,7 @@ impl<B: Backing> Books<B> {
         let mut nets: phx_core::KernelMap<NetKey, i128> = phx_core::KernelMap::new();
         for made in &streamed.made {
             let Some(p) = after_losers(made, found) else { continue };
-            let route = self.effects(&p, found);
+            let route = self.effects(&p);
             if closed.holds(p.payer, &crate::stream::issuers(&route)) {
                 self.record_due(&p, DueOutcome::Pending);
                 continue;
@@ -234,7 +234,7 @@ impl<B: Backing> Books<B> {
             g.settled += 1;
             self.record_due(&p, DueOutcome::Settled);
             let _ = self.book(&mut g.given, &route, 1);
-            let (from, to) = (self.settles_at(p.payer, p.ccy, found), self.settles_at(p.payee, p.ccy, found));
+            let (from, to) = (self.settles_at(p.payer, p.ccy), self.settles_at(p.payee, p.ccy));
             if from != to {
                 *g.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
                 *g.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
@@ -360,7 +360,7 @@ impl<B: Backing> Books<B> {
             .fold((0_u64, 0_i128), |(n, v), r| (n + 1, v + r.debit - r.funds));
         let not_maximal = self.not_maximal(&g.failed_payers, &fixed, &g.given, (due, day, calendar), &mut found);
         let reserves_before: Vec<((PartyId, u8), Option<i128>)> =
-            g.crossing.keys().map(|&(p, c)| ((p, c), self.reserves_of(p, Ccy::new(c), &mut found))).collect();
+            g.crossing.keys().map(|&(p, c)| ((p, c), self.reserves_of(p, Ccy::new(c)))).collect();
         let before = self.balances(&g.nets);
         // Every day buffer by the room it holds, grown or not: what the phone must find free at the day's peak.
         let buffer_bytes = bytes::<(PartyId, Record)>(streamed.records.capacity() + g.given.capacity())
@@ -384,7 +384,7 @@ impl<B: Backing> Books<B> {
         let reserves_missed = count(
             reserves_before
                 .iter()
-                .filter(|(key, was)| match (was, self.reserves_of(key.0, Ccy::new(key.1), &mut found)) {
+                .filter(|(key, was)| match (was, self.reserves_of(key.0, Ccy::new(key.1))) {
                     (Some(was), Some(now)) => g.crossing.get(key).is_none_or(|net| now - was != *net),
                     (None, None) => false,
                     _ => true,
@@ -438,8 +438,8 @@ impl<B: Backing> Books<B> {
                 .into_iter()
                 .find(|p| p.payer == payer && fixed.failed.contains(&p.key()) && !fixed.by_bank.contains(&p.key()));
             let Some(p) = first else { return false };
-            let legs = self.effects(&p, found);
-            let Missing::Present(account) = self.money_row(payer, p.ccy, found) else { return false };
+            let legs = self.effects(&p);
+            let Missing::Present(account) = self.money_row(payer, p.ccy) else { return false };
             let rec = given.get(payer).copied().unwrap_or_else(|| self.record_of(payer, account));
             rec.standing() < crate::fixed_point::draw(&legs, payer, rec.account)
         };
@@ -453,7 +453,7 @@ impl<B: Backing> Books<B> {
             let holder = self.parties.holder(place).party(slot);
             for row in self.due_rows_of(holder, due) {
                 let Some(p) = self.payment(holder, &row, day, calendar, found) else { continue };
-                let route = self.effects(&p, found);
+                let route = self.effects(&p);
                 if closed.holds(p.payer, &crate::stream::issuers(&route)) {
                     self.hold_pending(&route);
                 }

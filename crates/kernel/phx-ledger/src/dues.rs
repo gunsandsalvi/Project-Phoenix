@@ -87,19 +87,14 @@ impl ClearedDay {
     }
 }
 
-/// What a day's dues have looked up once: the party owing each line, how each line is reckoned, each party's account
-/// in each currency, and each cleared line's day.
+/// What a day's dues have looked up once: each cleared line's day.
 #[derive(Debug, Default)]
 pub(crate) struct Found {
-    owers: KernelMap<LineId, PartyId>,
-    reckoned: KernelMap<LineId, Reckoning>,
-    accounts: KernelMap<u64, Missing<LineId>>,
-    issues: KernelMap<u64, bool>,
     pub cleared: KernelMap<LineId, ClearedDay>,
 }
 
 impl Found {
-    /// What the day's look-ups hold in memory: every map's room, and each cleared line's claimants and losers' draw.
+    /// What the day's look-ups hold in memory: the map's room, and each cleared line's claimants and losers' draw.
     pub(crate) fn bytes(&self) -> usize {
         let cleared: usize = self
             .cleared
@@ -109,22 +104,8 @@ impl Found {
                 c.claimants.len() * size_of::<(PartyId, (u32, u32))>() + c.losers.as_ref().map_or(0, Losers::bytes)
             })
             .sum();
-        self.owers.capacity() * size_of::<(LineId, PartyId)>()
-            + self.reckoned.capacity() * size_of::<(LineId, Reckoning)>()
-            + self.accounts.capacity() * size_of::<(u64, Missing<LineId>)>()
-            + self.issues.capacity() * size_of::<(u64, bool)>()
-            + self.cleared.capacity() * size_of::<(LineId, ClearedDay)>()
-            + cleared
+        self.cleared.capacity() * size_of::<(LineId, ClearedDay)>() + cleared
     }
-}
-
-/// A party's account in a currency as one key: the party's identity above the currency's index.
-fn account_key(party: PartyId, ccy: Ccy) -> u64 {
-    let id = party.get();
-    if id >> (u64::BITS - u8::BITS) != 0 {
-        phx_num::capacity_exceeded!("a party's identity under a currency", u64::MAX >> u8::BITS, id);
-    }
-    (id << u8::BITS) | u64::from(ccy.index())
 }
 
 pub(crate) fn money_leg(party: PartyId, line: LineId, side: Side, qty: i64, ccy: Ccy) -> LegRec {
@@ -160,13 +141,6 @@ impl<B: Backing> Books<B> {
         })
     }
 
-    /// Whether a line's holder list holds both its sides, so that two holders are the whole line; a side of many small
-    /// holders keeps no list, and its holders are found only by reading their rows.
-    fn both_listed(&self, line: LineId) -> bool {
-        let lines = &self.ledger.lines;
-        lines.listed_side(line, Side::Asset) && lines.listed_side(line, Side::Liability)
-    }
-
     /// A line's holders other than a party, in its holder list's order.
     pub(crate) fn line_holders_but(&self, line: LineId, party: PartyId) -> Vec<PartyId> {
         self.line_holders(line).filter(|p| *p != party).collect()
@@ -186,121 +160,98 @@ impl<B: Backing> Books<B> {
         self.line_holders(line).filter(|p| self.row_on_side(*p, line, side).is_some()).collect()
     }
 
-    /// How a line's dues are reckoned: a line of two holders, both sides listed, on its claimant's row; a line one
-    /// party holds a side of on the other side's rows, each its own payment with that party; a line of many holders on
-    /// both sides, whose pairing is not recorded, cleared. A side that keeps no list is taken to hold many.
+    /// How a line's dues are reckoned: on the other side's rows where one listed side holds one party, the owing
+    /// side's first, each row its own payment with that party; a line of many holders on both sides, whose pairing is
+    /// not recorded, cleared. A side that keeps no list is taken to hold many.
     #[clause("REP.23")]
-    pub(crate) fn reckoning(&self, line: LineId, reader: PartyId, side: Side, found: &mut Found) -> Reckoning {
-        if let Some(r) = found.reckoned.get(line) {
-            return *r;
-        }
-        let holders: Vec<PartyId> = self.line_holders(line).collect();
-        let r = if self.both_listed(line)
-            && let [a, b] = holders.as_slice()
-        {
-            let other = if *a == reader { *b } else { *a };
-            match side {
-                Side::Asset => Reckoning::On { side: Side::Asset, counter: other },
-                Side::Liability => Reckoning::On { side: Side::Asset, counter: reader },
+    pub(crate) fn reckoning(&self, line: LineId) -> Reckoning {
+        let lines = &self.ledger.lines;
+        let sole = |side: Side| {
+            if !lines.side_decl(line, side).holder_list {
+                return None;
             }
-        } else {
-            // A side that keeps no list counts as many, so the reading stops at a listed side's second holder.
-            let listed = |side: Side| self.ledger.lines.side_decl(line, side).holder_list;
-            let (owing_many, claiming_many) = (!listed(Side::Liability), !listed(Side::Asset));
-            let (mut owing, mut claiming) = (Vec::new(), Vec::new());
-            for p in holders {
-                if (owing_many || owing.len() > 1) && (claiming_many || claiming.len() > 1) {
-                    break;
-                }
-                if !owing_many && self.row_on_side(p, line, Side::Liability).is_some() {
-                    owing.push(p);
-                }
-                if !claiming_many && self.row_on_side(p, line, Side::Asset).is_some() {
-                    claiming.push(p);
-                }
-            }
-            match (owing.as_slice(), claiming.as_slice()) {
-                ([one], _) => Reckoning::On { side: Side::Asset, counter: *one },
-                (_, [one]) => Reckoning::On { side: Side::Liability, counter: *one },
-                _ => Reckoning::Cleared,
-            }
+            lines.sole_holder(line, side).map(|k| self.party_of_key(k))
         };
-        let _ = found.reckoned.insert(line, r);
-        r
+        if let Some(counter) = sole(Side::Liability) {
+            return Reckoning::On { side: Side::Asset, counter };
+        }
+        match sole(Side::Asset) {
+            Some(counter) => Reckoning::On { side: Side::Liability, counter },
+            None => Reckoning::Cleared,
+        }
     }
 
-    /// The one party that owes a line: its liability side's holder. On a line of two holders it is the one that is
-    /// not its claimant, found without reading either's rows.
-    pub(crate) fn owed_by(&self, line: LineId, claimant: PartyId, found: &mut Found) -> PartyId {
-        if let Some(p) = found.owers.get(line) {
-            return *p;
+    /// The party a holder-list key names.
+    fn party_of_key(&self, key: u32) -> PartyId {
+        let (place, slot) = self.ledger.lines.keys().split(key);
+        self.parties.holder(place).party(slot)
+    }
+
+    /// The one party that owes a line: its liability side's one listed holder.
+    pub(crate) fn owed_by(&self, line: LineId) -> PartyId {
+        let lines = &self.ledger.lines;
+        match lines.sole_holder(line, Side::Liability) {
+            Some(k) if lines.side_decl(line, Side::Liability).holder_list => self.party_of_key(k),
+            _ => violation!(
+                clause = "REG.8",
+                "a line owed by other than one party",
+                line = line.get(),
+                owers = lines.listed_holders(line, Side::Liability)
+            ),
         }
-        let holders: Vec<PartyId> = self.line_holders(line).collect();
-        let owers: Vec<PartyId> = match holders.as_slice() {
-            [a, b] if *a == claimant && self.both_listed(line) => vec![*b],
-            [a, b] if *b == claimant && self.both_listed(line) => vec![*a],
-            _ => holders.into_iter().filter(|p| self.row_on_side(*p, line, Side::Liability).is_some()).collect(),
+    }
+
+    /// Each of a party's rows on means-of-payment lines in a currency, on one side, handed to `each`: from the
+    /// holder's summary, or its rows where it holds more than the summary keeps.
+    fn each_money_line(&self, party: PartyId, ccy: Ccy, side: Side, mut each: impl FnMut(LineId)) {
+        let crate::apply::Located::Live { table, slot, .. } = crate::apply::Holders::locate(&self.parties, party)
+        else {
+            return;
         };
-        let [p] = owers.as_slice() else {
-            violation!(clause = "REG.8", "a line owed by other than one party", line = line.get(), owers = owers.len());
-        };
-        let _ = found.owers.insert(line, *p);
-        *p
+        let lines = &self.ledger.lines;
+        let of_ccy = |line: LineId| self.ledger.terms.get(lines.terms(line)).ccy == ccy;
+        match lines.money_rows(table, slot) {
+            Some(m) => m.rows().filter(|(l, s)| *s == side && of_ccy(*l)).for_each(|(l, _)| each(l)),
+            None => self
+                .rows_of(party)
+                .into_iter()
+                .filter(|(line, s)| *s == side && lines.is_money(*line) && of_ccy(*line))
+                .for_each(|(line, _)| each(line)),
+        }
     }
 
     /// The money a party pays from and is paid into in a currency: its one row on the holder's side of a money line.
-    pub(crate) fn money_row(&self, party: PartyId, ccy: Ccy, found: &mut Found) -> Missing<LineId> {
-        if let Some(m) = found.accounts.get(account_key(party, ccy)) {
-            return *m;
-        }
-        let lines = &self.ledger.lines;
-        let held: Vec<LineId> = self
-            .rows_of(party)
-            .into_iter()
-            .filter(|(line, side)| {
-                *side == Side::Asset && lines.is_money(*line) && self.ledger.terms.get(lines.terms(*line)).ccy == ccy
-            })
-            .map(|(line, _)| line)
-            .collect();
-        let account = match held.as_slice() {
-            [] => Missing::Absent,
-            [line] => Missing::Present(*line),
-            _ => violation!(
+    pub(crate) fn money_row(&self, party: PartyId, ccy: Ccy) -> Missing<LineId> {
+        let (mut account, mut accounts) = (Missing::Absent, 0_u32);
+        self.each_money_line(party, ccy, Side::Asset, |line| {
+            account = Missing::Present(line);
+            accounts += 1;
+        });
+        if accounts > 1 {
+            violation!(
                 clause = "MON.5",
                 "a party with two money accounts in one currency and no declared account to pay from",
                 party = party.get()
-            ),
-        };
-        let _ = found.accounts.insert(account_key(party, ccy), account);
+            );
+        }
         account
     }
 
-    /// Whether a party has money in a currency to pay from and be paid into: an account, or, for an issuer of that
-    /// money, its own liability. A party with neither holds no money in it.
-    #[clause("MON.5", "MON.12")]
-    pub(crate) fn holds_money(&self, party: PartyId, ccy: Ccy, found: &mut Found) -> bool {
-        if let Missing::Present(_) = self.money_row(party, ccy, found) {
-            return true;
-        }
-        if let Some(i) = found.issues.get(account_key(party, ccy)) {
-            return *i;
-        }
-        let lines = &self.ledger.lines;
-        let issues = self.rows_of(party).into_iter().any(|(line, side)| {
-            side == Side::Liability && lines.is_money(line) && self.ledger.terms.get(lines.terms(line)).ccy == ccy
-        });
-        let _ = found.issues.insert(account_key(party, ccy), issues);
-        issues
+    /// Whether a party holds money in a currency: an account in it, or money it issues.
+    pub(crate) fn holds_money(&self, party: PartyId, ccy: Ccy) -> bool {
+        let mut issues = false;
+        self.each_money_line(party, ccy, Side::Liability, |_| issues = true);
+        issues || matches!(self.money_row(party, ccy), Missing::Present(_))
     }
 
     /// The legs moving money between a party's account and the top issuer, the one that pays in its own money: up
     /// through each issuer for an amount paid, down for an amount received (negative); and the top issuer reached.
     #[clause("MON.5", "MON.6")]
-    pub(crate) fn route(&self, party: PartyId, x: i64, ccy: Ccy, found: &mut Found) -> (Vec<LegRec>, PartyId) {
+    pub(crate) fn route(&self, party: PartyId, x: i64, ccy: Ccy) -> (Vec<LegRec>, PartyId) {
         let mut legs = Vec::new();
         let mut at = party;
-        while let Missing::Present(line) = self.money_row(at, ccy, found) {
-            let issuer = self.owed_by(line, at, found);
+        while let Missing::Present(line) = self.money_row(at, ccy) {
+            let issuer = self.owed_by(line);
             legs.push(money_leg(at, line, Side::Asset, -x, ccy));
             legs.push(money_leg(issuer, line, Side::Liability, x, ccy));
             at = issuer;
@@ -309,10 +260,10 @@ impl<B: Backing> Books<B> {
     }
 
     /// The top issuer a party's money reaches, through each issuer of the account it holds.
-    pub(crate) fn top_of(&self, party: PartyId, ccy: Ccy, found: &mut Found) -> PartyId {
+    pub(crate) fn top_of(&self, party: PartyId, ccy: Ccy) -> PartyId {
         let mut at = party;
-        while let Missing::Present(line) = self.money_row(at, ccy, found) {
-            at = self.owed_by(line, at, found);
+        while let Missing::Present(line) = self.money_row(at, ccy) {
+            at = self.owed_by(line);
         }
         at
     }
@@ -320,15 +271,15 @@ impl<B: Backing> Books<B> {
     /// The legs of a payment of money: from the payer's account to the payee's, each bank's liability moved with its
     /// depositor's, and between two issuers the same payment again one level up, until one issuer owes both.
     #[clause("MON.5", "MON.6")]
-    pub(crate) fn pay(&self, from: PartyId, to: PartyId, x: i64, ccy: Ccy, found: &mut Found) -> Vec<LegRec> {
-        let (paying, paid) = (self.money_row(from, ccy, found), self.money_row(to, ccy, found));
+    pub(crate) fn pay(&self, from: PartyId, to: PartyId, x: i64, ccy: Ccy) -> Vec<LegRec> {
+        let (paying, paid) = (self.money_row(from, ccy), self.money_row(to, ccy));
         if let Missing::Present(line) = paid
-            && self.owed_by(line, to, found) == from
+            && self.owed_by(line) == from
         {
             return vec![money_leg(to, line, Side::Asset, x, ccy), money_leg(from, line, Side::Liability, -x, ccy)];
         }
         if let Missing::Present(line) = paying
-            && self.owed_by(line, from, found) == to
+            && self.owed_by(line) == to
         {
             return vec![money_leg(from, line, Side::Asset, -x, ccy), money_leg(to, line, Side::Liability, x, ccy)];
         }
@@ -340,14 +291,14 @@ impl<B: Backing> Books<B> {
                 to = to.get()
             );
         };
-        let (issuer_a, issuer_b) = (self.owed_by(a, from, found), self.owed_by(b, to, found));
+        let (issuer_a, issuer_b) = (self.owed_by(a), self.owed_by(b));
         let mut legs = vec![money_leg(from, a, Side::Asset, -x, ccy), money_leg(to, b, Side::Asset, x, ccy)];
         if a != b {
             legs.push(money_leg(issuer_a, a, Side::Liability, x, ccy));
             legs.push(money_leg(issuer_b, b, Side::Liability, -x, ccy));
         }
         if issuer_a != issuer_b {
-            legs.extend(self.pay(issuer_a, issuer_b, x, ccy, found));
+            legs.extend(self.pay(issuer_a, issuer_b, x, ccy));
         }
         legs
     }
