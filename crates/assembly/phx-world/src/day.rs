@@ -275,6 +275,7 @@ impl World {
         let trace = self.read_trace.then(|| self.trace.close_day(reads));
         let record = self.audit_close(day, trace);
         self.metrics.closes.0.push(record);
+        self.books.parties.cells_mut().1.close_day();
     }
 
     /// Every audit family over what the world holds at a day's close, and the day's accounts then done.

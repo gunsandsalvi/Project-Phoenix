@@ -49,6 +49,10 @@ pub struct Directory {
     next: u64,
     live: KernelMap<PartyId, Live>,
     ended: KernelMap<PartyId, Ended>,
+    /// The parties ended today, each held as a record until the close so the day's legs that name it still resolve;
+    /// empty at every close, so a save never holds one.
+    #[saved(skip)]
+    ended_today: Vec<PartyId>,
 }
 
 impl Default for Directory {
@@ -60,7 +64,7 @@ impl Default for Directory {
 impl Directory {
     #[must_use]
     pub fn new() -> Directory {
-        Directory { next: 1, live: KernelMap::new(), ended: KernelMap::new() }
+        Directory { next: 1, live: KernelMap::new(), ended: KernelMap::new(), ended_today: Vec::new() }
     }
 
     /// The next identity that will be handed out; every identity below it was handed out once.
@@ -115,7 +119,7 @@ impl Directory {
     }
 
     /// Ends a live party, naming its successor if it has one; the successor must be live. The record is kept while
-    /// anything names the ended party.
+    /// anything names the ended party, and until the day's close in any case.
     #[clause("PTY.9", "PTY.13")]
     pub fn end(&mut self, id: PartyId, day: Day, successor: Missing<PartyId>) {
         let Some(live) = self.live.remove(id) else {
@@ -126,13 +130,23 @@ impl Directory {
         {
             violation!(clause = "PTY.9", "a successor that is not live", party = id.get(), successor = s.get());
         }
-        if live.refs == 0 {
-            return;
-        }
         if let Missing::Present(s) = successor {
             self.retain(s);
         }
-        self.ended.insert(id, Ended { day, successor, refs: live.refs });
+        let Some(refs) = live.refs.checked_add(1) else {
+            capacity_exceeded!("records naming one party", u32::MAX, u64::from(u32::MAX) + 1);
+        };
+        self.ended.insert(id, Ended { day, successor, refs });
+        self.ended_today.push(id);
+    }
+
+    /// The day's close: the parties ended today are no longer held for the day's legs, and those nothing names are
+    /// forgotten.
+    #[clause("PTY.10")]
+    pub fn close_day(&mut self) {
+        for id in std::mem::take(&mut self.ended_today) {
+            self.release(id);
+        }
     }
 
     /// A record now names the party.
@@ -225,6 +239,8 @@ mod tests {
         let mut d = Directory::new();
         let a = d.begin(row(0));
         d.end(a, Day::new(1), Missing::Absent);
+        assert!(matches!(d.lookup(a), PartyState::Ended { .. }), "held until the day's close");
+        d.close_day();
         let b = d.begin(row(0));
         assert!(b > a, "the same slot, a new identity");
         assert_eq!((d.lookup(a), d.next()), (PartyState::Unknown, 3));
@@ -254,6 +270,8 @@ mod tests {
         d.release(a);
         assert!(matches!(d.lookup(a), PartyState::Ended { .. }), "one record still names it");
         d.release(a);
+        assert!(matches!(d.lookup(a), PartyState::Ended { .. }), "the day's close still holds it");
+        d.close_day();
         assert_eq!(d.lookup(a), PartyState::Unknown);
         assert!(matches!(d.lookup(heir), PartyState::Live(_)));
         let caught = std::panic::catch_unwind(move || d.release(PartyId::new(1)));

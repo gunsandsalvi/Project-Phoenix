@@ -659,9 +659,10 @@ wealth) are read from the cell's own rows.
   heap-owning type.
 - **Renumbering** restores locality (by kind, country, region, zone, key) incrementally: one chunk range per declared
   light day, remapping holder lists, the directory and the landing index for the rows it moves.
-- The **directory** maps permanent identities to slots. A cell that ends leaves a tombstone only while a record or
-  an event names it (a reference count, taken when the record or event is written); then its slot is recycled.
-  Day-local part identities never enter it.
+- The **directory** maps permanent identities to slots. A party that ends leaves a tombstone only while a record or
+  an event names it (a reference count, taken when the record or event is written), and until the day's close in any
+  case, so the day's legs that name it still resolve for the audit; its slot is recycled at once. Day-local part
+  identities never enter it.
 
 ### 7.3 The agenda and screening
 

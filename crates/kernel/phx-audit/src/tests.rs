@@ -273,6 +273,7 @@ fn names_follows_successors() {
     assert!(hand.audit().is_empty(), "a successor that lives and an estate that distributed both answer");
     hand.directory.end(gone, hand.day, Missing::Absent);
     hand.directory.release(gone);
+    hand.directory.close_day();
     assert_eq!(
         hand.audit(),
         [NAMES.name],

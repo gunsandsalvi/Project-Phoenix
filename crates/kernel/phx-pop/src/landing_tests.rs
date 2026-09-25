@@ -260,6 +260,11 @@ fn rekey_on_step_crossing() {
     assert!(!ten.table.is_live(sa), "a lands in b whole");
     assert_eq!(state(&ten, b).0, 200);
     assert!(
+        matches!(ten.directory.resolve(a), phx_core::Resolved::Live(p, _) if p == b),
+        "until the close, a's successor answers for it"
+    );
+    ten.directory.close_day();
+    assert!(
         matches!(ten.directory.resolve(a), phx_core::Resolved::Unknown),
         "a has ended, and with no record naming it leaves no tombstone"
     );
