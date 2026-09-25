@@ -48,3 +48,8 @@ pub const HEIRLESS_DESTINATION: &str = "treasury";
 
 /// The population kind the player's party is drawn from at the opening: its household.
 pub const PLAYER_KIND: &str = "household";
+/// The shards 3b's agents are followed in, and how many are read at once: fixed, never the number of workers, so the
+/// day's result is the same on any pool, and only a wave's draws wait to be written.
+pub const GATHER_SHARDS: usize = 64;
+/// See `GATHER_SHARDS`.
+pub const GATHER_WAVE: usize = 8;

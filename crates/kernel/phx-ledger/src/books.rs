@@ -268,6 +268,12 @@ pub struct BooksSize {
 }
 
 impl<B: Backing> Books<B> {
+    /// The workers the books were given, if any.
+    #[must_use]
+    pub fn pool(&self) -> Option<&phx_exec::Pool> {
+        self.pool.as_deref()
+    }
+
     /// Workers for stage 7's shards; its results are the same with or without them.
     pub fn use_pool(&mut self, pool: std::sync::Arc<phx_exec::Pool>) {
         self.pool = Some(pool);
