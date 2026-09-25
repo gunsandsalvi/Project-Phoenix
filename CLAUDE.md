@@ -85,6 +85,8 @@ about how to build.
 - **No test builds a world.** A world arranged by the same hand that wrote the code is a second world. A question
   about the world is answered against the real one: the audit, the liveness reads (N2), the realism tests (N3)
   and the chain relationships (N4), all read from the world's one run.
+- A kernel's hand-built fixture of a few parties, lines and books, asserting that kernel's own arithmetic, is a
+  logic-level test, not a world (owner, plan §12).
 
 ## Working here
 
