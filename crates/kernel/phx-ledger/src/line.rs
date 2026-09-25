@@ -23,6 +23,10 @@ pub struct SideDecl {
     pub holder_roles: &'static [&'static str],
     /// Whether a holder holds at most one row of the kind on this side, as a person holds one job.
     pub exclusive: bool,
+    /// Whether a holder's row counts a member for each of its counterparts, as an employer a job for each employee,
+    /// so a cell's member holds any number; otherwise each member holds one, or one for each of its persons in
+    /// `holder_roles`.
+    pub many: bool,
 }
 
 /// A line kind as a system declares it: its two sides, and the systems that may request a transfer of its rows.

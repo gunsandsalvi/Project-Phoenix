@@ -41,6 +41,7 @@ const CLAIM: LineKindDecl = LineKindDecl {
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     liability: SideDecl {
         holder_kinds: &[TREASURY.name],
@@ -48,6 +49,7 @@ const CLAIM: LineKindDecl = LineKindDecl {
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     dated: false,
     transfer_requesters: &["CB"],

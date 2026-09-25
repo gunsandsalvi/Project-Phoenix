@@ -29,6 +29,7 @@ const fn kind(dated: bool) -> LineKindDecl {
             holder_list: true,
             holder_roles: &[],
             exclusive: false,
+            many: false,
         },
         liability: SideDecl {
             holder_kinds: &["firm"],
@@ -36,6 +37,7 @@ const fn kind(dated: bool) -> LineKindDecl {
             holder_list: true,
             holder_roles: &[],
             exclusive: false,
+            many: false,
         },
         transfer_requesters: &["BNK"],
         dated,

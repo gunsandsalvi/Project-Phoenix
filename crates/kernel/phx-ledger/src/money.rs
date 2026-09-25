@@ -23,8 +23,8 @@ pub struct MoneyHolders {
 /// issuer's side is its recorded money liability.
 #[clause("MON.1", "MON.2", "MON.11")]
 impl MoneyHolders {
-    fn side(kinds: &'static [&'static str], words: u8) -> SideDecl {
-        SideDecl { holder_kinds: kinds, words, holder_list: true, holder_roles: &[], exclusive: false }
+    fn side(kinds: &'static [&'static str], words: u8, many: bool) -> SideDecl {
+        SideDecl { holder_kinds: kinds, words, holder_list: true, holder_roles: &[], exclusive: false, many }
     }
 
     /// Reserves: a central bank's liability to a bank.
@@ -32,8 +32,8 @@ impl MoneyHolders {
     pub fn reserves(&self) -> LineKindDecl {
         LineKindDecl {
             name: "reserves",
-            asset: Self::side(self.banks, BALANCE),
-            liability: Self::side(self.central_banks, BALANCE),
+            asset: Self::side(self.banks, BALANCE, false),
+            liability: Self::side(self.central_banks, BALANCE, true),
             transfer_requesters: self.requesters,
             dated: false,
         }
@@ -45,8 +45,8 @@ impl MoneyHolders {
     pub fn deposits(&self, name: &'static str) -> LineKindDecl {
         LineKindDecl {
             name,
-            asset: Self::side(self.depositors, BALANCE | PENDING),
-            liability: Self::side(self.banks, BALANCE),
+            asset: Self::side(self.depositors, BALANCE | PENDING, false),
+            liability: Self::side(self.banks, BALANCE, true),
             transfer_requesters: self.requesters,
             dated: true,
         }
@@ -62,11 +62,12 @@ impl MoneyHolders {
             holder_list: false,
             holder_roles: &[],
             exclusive: true,
+            many: false,
         };
         LineKindDecl {
             name,
             asset: depositors,
-            liability: Self::side(self.banks, BALANCE),
+            liability: Self::side(self.banks, BALANCE, true),
             transfer_requesters: self.requesters,
             dated: true,
         }
@@ -77,8 +78,8 @@ impl MoneyHolders {
     pub fn treasury_account(&self) -> LineKindDecl {
         LineKindDecl {
             name: "treasury account",
-            asset: Self::side(self.treasuries, BALANCE),
-            liability: Self::side(self.central_banks, BALANCE),
+            asset: Self::side(self.treasuries, BALANCE, false),
+            liability: Self::side(self.central_banks, BALANCE, false),
             transfer_requesters: self.requesters,
             dated: false,
         }

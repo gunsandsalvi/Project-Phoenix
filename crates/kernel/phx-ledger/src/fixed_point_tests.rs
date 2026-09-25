@@ -30,13 +30,21 @@ const HOLDERS: MoneyHolders = MoneyHolders {
 };
 const INVOICE: LineKindDecl = LineKindDecl {
     name: "invoice",
-    asset: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true, holder_roles: &[], exclusive: false },
+    asset: SideDecl {
+        holder_kinds: &["firm"],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: false,
+    },
     liability: SideDecl {
         holder_kinds: &["firm"],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     transfer_requesters: &["FRM"],
     dated: true,

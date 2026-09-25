@@ -51,6 +51,7 @@ pub const LOAN: LineKindDecl = LineKindDecl {
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: true,
     },
     liability: phx_ledger::line::SideDecl {
         holder_kinds: &[if_pop::HOUSEHOLD, phx_core::ESTATE_KIND.name],
@@ -58,6 +59,7 @@ pub const LOAN: LineKindDecl = LineKindDecl {
         holder_list: false,
         holder_roles: &[],
         exclusive: true,
+        many: false,
     },
     dated: true,
     transfer_requesters: &["BNK"],

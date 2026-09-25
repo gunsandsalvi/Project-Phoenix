@@ -381,6 +381,7 @@ fn contract_process_turns_fails_into_arrears() {
             holder_list: true,
             holder_roles: &[],
             exclusive: false,
+            many: false,
         },
         liability: SideDecl {
             holder_kinds: &["firm"],
@@ -388,6 +389,7 @@ fn contract_process_turns_fails_into_arrears() {
             holder_list: true,
             holder_roles: &[],
             exclusive: false,
+            many: false,
         },
         transfer_requesters: &["BNK"],
         dated: false,
@@ -428,6 +430,7 @@ fn row_leg_adds_to_both_sides() {
             holder_list: true,
             holder_roles: &[],
             exclusive: false,
+            many: false,
         },
         liability: SideDecl {
             holder_kinds: &["firm"],
@@ -435,6 +438,7 @@ fn row_leg_adds_to_both_sides() {
             holder_list: true,
             holder_roles: &[],
             exclusive: false,
+            many: false,
         },
         transfer_requesters: &["BNK"],
         dated: false,

@@ -38,13 +38,21 @@ const HOLDERS: MoneyHolders = MoneyHolders {
 };
 const LOAN: LineKindDecl = LineKindDecl {
     name: "loan",
-    asset: SideDecl { holder_kinds: &[BANK], words: BALANCE, holder_list: true, holder_roles: &[], exclusive: false },
+    asset: SideDecl {
+        holder_kinds: &[BANK],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: false,
+    },
     liability: SideDecl {
         holder_kinds: &[HOLDER],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     transfer_requesters: &["BNK"],
     dated: true,

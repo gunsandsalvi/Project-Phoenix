@@ -51,6 +51,7 @@ const LOAN: LineKindDecl = LineKindDecl {
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: true,
     },
     liability: SideDecl {
         holder_kinds: &["firm", SMALL_FIRM],
@@ -58,6 +59,7 @@ const LOAN: LineKindDecl = LineKindDecl {
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     dated: true,
     transfer_requesters: &["BNK"],

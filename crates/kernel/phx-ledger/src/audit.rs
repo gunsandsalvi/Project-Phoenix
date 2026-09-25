@@ -219,11 +219,11 @@ where
     fn position(&self, party: phx_id::PartyId, account: u64) -> i64 {
         use crate::apply::{Holders, Located};
         match self.parties.locate(party) {
-            Located::Live { party, table, slot } => {
+            Located::Live { party: found, table, slot } if found == party => {
                 self.ledger.position(self.parties.holder(table), party, slot, account)
             }
-            // What an ended party held passed on when it ended, so it holds nothing.
-            Located::Ended => 0,
+            // What an ended party held passed on when it ended, to its successor where it has one, so it holds nothing.
+            Located::Live { .. } | Located::Ended => 0,
         }
     }
 }

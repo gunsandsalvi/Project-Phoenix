@@ -32,6 +32,7 @@ pub const STATE_PENSION: LineKindDecl = LineKindDecl {
         holder_list: false,
         holder_roles: &[if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name],
         exclusive: true,
+        many: false,
     },
     liability: SideDecl {
         holder_kinds: &["treasury"],
@@ -39,6 +40,7 @@ pub const STATE_PENSION: LineKindDecl = LineKindDecl {
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: true,
     },
     dated: true,
     transfer_requesters: &["SOC"],

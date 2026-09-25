@@ -31,13 +31,21 @@ declare_stream! { pub TenancyStream = "HSG.opening_tenancies" { purpose: Opening
 /// a line, so it records no pairing.
 pub const TENANCY: LineKindDecl = LineKindDecl {
     name: "tenancy",
-    asset: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true, holder_roles: &[], exclusive: false },
+    asset: SideDecl {
+        holder_kinds: &["firm"],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: true,
+    },
     liability: SideDecl {
         holder_kinds: &[if_pop::HOUSEHOLD, phx_core::ESTATE_KIND.name],
         words: BALANCE,
         holder_list: false,
         holder_roles: &[],
         exclusive: true,
+        many: false,
     },
     dated: true,
     transfer_requesters: &["HSG"],

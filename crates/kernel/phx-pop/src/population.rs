@@ -127,12 +127,12 @@ impl Population {
     pub fn view<'a, B: Backing + 'static>(
         &'a self,
         cells: &'a [Box<dyn CellHolders>],
-        roles: &'a dyn Fn(LineId, Side) -> &'static [&'static str],
+        sides: &'a dyn Fn(LineId, Side) -> phx_ledger::line::SideDecl,
     ) -> CellsView<'a, B> {
         let tables = (0..self.kinds.len()).map(|i| Population::table::<B>(cells, i)).collect();
         let keys = self.kinds.iter().map(|k| &k.keys).collect();
         let kinds = self.kinds.iter().map(|k| &k.decl).collect();
-        CellsView::new((tables, keys, kinds), roles, &self.members, &self.landed)
+        CellsView::new((tables, keys, kinds), sides, &self.members, &self.landed)
     }
 
     /// Each kind's empty cell table, made in the books' address space with identities from `first` on.

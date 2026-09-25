@@ -38,13 +38,21 @@ pub(crate) const PARTNER_AGE: usize = 2;
 
 const DEPOSIT: LineKindDecl = LineKindDecl {
     name: "deposit",
-    asset: SideDecl { holder_kinds: &[HH], words: BALANCE, holder_list: false, holder_roles: &[], exclusive: false },
+    asset: SideDecl {
+        holder_kinds: &[HH],
+        words: BALANCE,
+        holder_list: false,
+        holder_roles: &[],
+        exclusive: false,
+        many: false,
+    },
     liability: SideDecl {
         holder_kinds: &["bank"],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     transfer_requesters: &["BFL"],
     dated: false,
@@ -52,8 +60,22 @@ const DEPOSIT: LineKindDecl = LineKindDecl {
 
 const LOAN: LineKindDecl = LineKindDecl {
     name: "loan",
-    asset: SideDecl { holder_kinds: &["bank"], words: 0, holder_list: true, holder_roles: &[], exclusive: false },
-    liability: SideDecl { holder_kinds: &[HH], words: BALANCE, holder_list: true, holder_roles: &[], exclusive: false },
+    asset: SideDecl {
+        holder_kinds: &["bank"],
+        words: 0,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: false,
+    },
+    liability: SideDecl {
+        holder_kinds: &[HH],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: false,
+    },
     transfer_requesters: &["BNK"],
     dated: false,
 };

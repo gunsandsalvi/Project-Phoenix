@@ -325,7 +325,7 @@ impl World {
     /// Every audit family over what the world holds at a day's close, and the day's accounts then done.
     pub(crate) fn audit_close(&mut self, day: Day, trace: Option<ReadTrace>) -> phx_audit::CloseRecord {
         let lines = &self.books.ledger.lines;
-        let roles = |line: phx_id::LineId, side: phx_ledger::algebra::Side| lines.side_decl(line, side).holder_roles;
+        let sides = |line: phx_id::LineId, side: phx_ledger::algebra::Side| *lines.side_decl(line, side);
         let inputs = CloseInputs {
             day,
             register: &self.register,
@@ -339,7 +339,7 @@ impl World {
             books: &self.books,
             markets: &self.markets,
             accounts: &phx_acct::audit::AccountsView::new(&self.books, &self.accounts),
-            cells: &self.population.view::<phx_store::SystemBacking>(self.books.parties.cells(), &roles),
+            cells: &self.population.view::<phx_store::SystemBacking>(self.books.parties.cells(), &sides),
             own: &self.own,
         };
         let record = self.audit.close(inputs, &mut self.findings);

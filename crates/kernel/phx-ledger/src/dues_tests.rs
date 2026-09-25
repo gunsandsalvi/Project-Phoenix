@@ -30,13 +30,21 @@ const HOLDERS: MoneyHolders = MoneyHolders {
 };
 const LOAN: LineKindDecl = LineKindDecl {
     name: "loan",
-    asset: SideDecl { holder_kinds: &["bank"], words: BALANCE, holder_list: true, holder_roles: &[], exclusive: false },
+    asset: SideDecl {
+        holder_kinds: &["bank"],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: false,
+    },
     liability: SideDecl {
         holder_kinds: &["firm"],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     transfer_requesters: &["BNK"],
     dated: true,
@@ -240,13 +248,21 @@ fn dues_are_paid_from_the_payers_money() {
 
 const WAGE: LineKindDecl = LineKindDecl {
     name: "wage",
-    asset: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true, holder_roles: &[], exclusive: false },
+    asset: SideDecl {
+        holder_kinds: &["firm"],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: false,
+    },
     liability: SideDecl {
         holder_kinds: &["firm"],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     transfer_requesters: &["BNK"],
     dated: true,
@@ -261,6 +277,7 @@ const UNLISTED_WAGE: LineKindDecl = LineKindDecl {
         holder_list: false,
         holder_roles: &[],
         exclusive: false,
+        many: false,
     },
     ..WAGE
 };

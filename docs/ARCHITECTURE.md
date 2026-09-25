@@ -728,7 +728,10 @@ in place.
 **Attachments.** A cell's rows are held either by its households — a deposit, a loan, a tenancy: the row's count is
 households — or by the persons of declared roles — a job by an adult role, a pension by the pensioner's: the row's
 count is persons of those roles. A line kind's side declares which (its holder roles, none meaning the household),
-and whether a person holds at most one row of the kind (a job). A household made explicit carries its attachments:
+and whether a person holds at most one row of the kind (a job). A side whose holder counts a member for each of its
+counterparts — an employer a job for each employee, a bank an account for each depositor — declares so (`many`), and
+the Representation family holds its cell rows to no count per member; every other cell row counts at most one member
+per household, or per person of its roles. A household made explicit carries its attachments:
 each household-level row's members are drawn with the households, and each person-level row's with the persons of its
 roles, jointly among the kind's rows where a person holds one, from the counts no touched household took (REP.23).
 An outcome's person who dies or leaves takes its person-level attachments with it: its rows lose that member, and on
