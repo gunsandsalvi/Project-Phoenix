@@ -17,13 +17,16 @@ use crate::trace::TraceLog;
 /// What a system compiled at assembly, which only its own handlers are given.
 pub type OwnState = Box<dyn Any + Send + Sync>;
 
-/// A day's settlement as published: its measure, what its dated flows came to, and its fails.
+/// A day's settlement as published: its measure, what its dated flows came to, and its fails; and, once the next
+/// business day's contract process has taken them, how many of its fails on a row a party still held were not then in
+/// arrears.
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Settled {
     pub day: Day,
     pub measure: phx_ledger::apply::Settlement,
     pub dues: phx_ledger::apply_batch::DaySettlement,
     pub fails: Vec<phx_ledger::fails::Fail>,
+    pub unrecorded: phx_num::Missing<u64>,
 }
 
 /// The assembled world: its calendar, register, streams and handlers, its stores and its day, the audit that reads

@@ -25,7 +25,8 @@ pub struct DueRec {
     pub outcome: DueOutcome,
 }
 
-/// A settled money leg's effect on its party's accounts, as its reason declares it, for the accounts to read.
+/// A settled money leg's effect on its party's accounts, as its reason declares it, for the accounts to read: the
+/// amount signed as the leg moved its party's net assets, in or out.
 #[clause("SET.1")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct EffectRec {

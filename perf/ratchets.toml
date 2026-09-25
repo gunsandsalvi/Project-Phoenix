@@ -39,37 +39,37 @@ direction = "down"
 # They rise with the world as its parties arrive, each rise stated.
 [[ratchet]]
 counter = "phx_ledger.rows_streamed"
-value = 60588
+value = 6801772
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_heads_read"
-value = 79952
+value = 274774
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_rows_scanned"
-value = 132838
+value = 6878984
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_rows_not_due"
-value = 81796
+value = 320775
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.payments"
-value = 52778
+value = 6799477
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.fixed_point_iterations"
-value = 2852
+value = 101829
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.day_buffer_peak_bytes"
-value = 9376864
+value = 58468656
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.

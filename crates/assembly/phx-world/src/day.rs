@@ -291,9 +291,27 @@ impl World {
             })
             .collect();
         self.books.contract_process(&now, day);
+        self.fails_recorded(day);
         let directory = self.books.parties.cells_mut().1;
         for f in &fails {
             directory.release(f.party);
+        }
+    }
+
+    /// Each earlier day's fails as the contract process just left them: those on a row their party, followed to its
+    /// successor, still holds and that is not in arrears.
+    fn fails_recorded(&mut self, day: Day) {
+        let books = &self.books;
+        let arrears = books.ledger.arrears();
+        for s in self.settlements.iter_mut().filter(|s| s.day < day && s.unrecorded == phx_num::Missing::Absent) {
+            let unrecorded = s.fails.iter().filter(|f| {
+                let phx_num::Missing::Present(row) = f.row else { return false };
+                let phx_core::Resolved::Live(party, _) = books.parties.directory().resolve(f.party) else {
+                    return false;
+                };
+                books.rows_of(party).contains(&(row.line, row.side)) && arrears.of(row.line, row.side, party).is_none()
+            });
+            s.unrecorded = phx_num::Missing::Present(phx_rand::float::len_u64(unrecorded.count()));
         }
     }
 
@@ -304,7 +322,13 @@ impl World {
         self.books.ledger.flush_outside(self.audit.stream());
         let book = self.books.close();
         self.accounts.close_day(&book);
-        self.settlements.push(Settled { day, measure: book.measure(), dues, fails: book.fails.clone() });
+        self.settlements.push(Settled {
+            day,
+            measure: book.measure(),
+            dues,
+            fails: book.fails.clone(),
+            unrecorded: phx_num::Missing::Absent,
+        });
         // A fail waits for the next business day's contract process, and its party may end before then.
         let directory = self.books.parties.cells_mut().1;
         for f in &book.fails {

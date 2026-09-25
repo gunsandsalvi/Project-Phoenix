@@ -487,7 +487,7 @@ impl<B: Backing> Ledger<B> {
             audit.leg(s.id.get(), digest);
             if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {
                 let effect = if leg.qty < 0 { decl.paid } else { decl.received };
-                let amount = Money::new(leg.qty.abs(), ccy);
+                let amount = Money::new(leg.qty, ccy);
                 self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
                 if matches!(leg.account, AccountRef::Line { side: Side::Asset, .. }) {
                     let (paid, received) = self.day.moved.entry((ccy.index(), at.party)).or_insert((0, 0));

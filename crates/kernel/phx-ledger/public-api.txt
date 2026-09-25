@@ -986,6 +986,7 @@ pub phx_ledger::line::SideDecl::exclusive: bool
 pub phx_ledger::line::SideDecl::holder_kinds: &'static [&'static str]
 pub phx_ledger::line::SideDecl::holder_list: bool
 pub phx_ledger::line::SideDecl::holder_roles: &'static [&'static str]
+pub phx_ledger::line::SideDecl::many: bool
 pub phx_ledger::line::SideDecl::words: u8
 pub trait phx_ledger::line::BalanceUnit
 pub type phx_ledger::line::BalanceUnit::Value

@@ -10,7 +10,7 @@ pub fn phx_pop::attach::attach(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRe
 pub mod phx_pop::audit
 pub struct phx_pop::audit::CellsView<'a, B: phx_store::backing::Backing>
 impl<'a, B: phx_store::backing::Backing> phx_pop::audit::CellsView<'a, B>
-pub fn phx_pop::audit::CellsView<'a, B>::new((alloc::vec::Vec<&'a phx_pop::table::CellTable<B>>, alloc::vec::Vec<&'a phx_pop::key::KeyInterner>, alloc::vec::Vec<&'a phx_pop::kind::PopKindDecl>), &'a dyn core::ops::function::Fn(phx_id::ids::LineId, phx_ledger::algebra::Side) -> &'static [&'static str], &'a [(&'static str, u64)], &'a [phx_pop::landing::Landed]) -> phx_pop::audit::CellsView<'a, B>
+pub fn phx_pop::audit::CellsView<'a, B>::new((alloc::vec::Vec<&'a phx_pop::table::CellTable<B>>, alloc::vec::Vec<&'a phx_pop::key::KeyInterner>, alloc::vec::Vec<&'a phx_pop::kind::PopKindDecl>), &'a dyn core::ops::function::Fn(phx_id::ids::LineId, phx_ledger::algebra::Side) -> phx_ledger::line::SideDecl, &'a [(&'static str, u64)], &'a [phx_pop::landing::Landed]) -> phx_pop::audit::CellsView<'a, B>
 impl<B: phx_store::backing::Backing> core::fmt::Debug for phx_pop::audit::CellsView<'_, B>
 pub fn phx_pop::audit::CellsView<'_, B>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<B: phx_store::backing::Backing> phx_core::family::CellsAudit for phx_pop::audit::CellsView<'_, B>
@@ -24,7 +24,7 @@ pub fn phx_pop::audit::Representation::check(&self, &phx_core::family::FamilyCtx
 pub fn phx_pop::audit::Representation::decl(&self) -> phx_core::family::FamilyDecl
 pub fn phx_pop::audit::Representation::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub const phx_pop::audit::REPRESENTATION: phx_core::family::FamilyDecl
-pub fn phx_pop::audit::representation<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::key::KeyRecord, &dyn core::ops::function::Fn(phx_id::ids::LineId, phx_ledger::algebra::Side) -> u64) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_pop::audit::representation<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::key::KeyRecord, &dyn core::ops::function::Fn(phx_id::ids::LineId, phx_ledger::algebra::Side) -> phx_num::missing::Missing<u64>) -> alloc::vec::Vec<phx_core::family::Gap>
 pub mod phx_pop::check
 pub enum phx_pop::check::Refused
 pub phx_pop::check::Refused::Attention
@@ -447,7 +447,7 @@ pub fn phx_pop::population::Population::save_to(&self, &mut phx_store::save::Wri
 pub fn phx_pop::population::Population::table<B: phx_store::backing::Backing + 'static>(&[alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], usize) -> &phx_pop::table::CellTable<B>
 pub fn phx_pop::population::Population::table_mut<B: phx_store::backing::Backing + 'static>(&mut [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], usize) -> &mut phx_pop::table::CellTable<B>
 pub fn phx_pop::population::Population::tables<B: phx_store::backing::Backing + core::fmt::Debug + 'static>(&[phx_pop::kind::PopKindDecl], &mut phx_store::backing::AddressSpace, u16, u32, u32) -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>> where phx_pop::table::CellTable<B>: core::marker::Send + core::marker::Sync
-pub fn phx_pop::population::Population::view<'a, B: phx_store::backing::Backing + 'static>(&'a self, &'a [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], &'a dyn core::ops::function::Fn(phx_id::ids::LineId, phx_ledger::algebra::Side) -> &'static [&'static str]) -> phx_pop::audit::CellsView<'a, B>
+pub fn phx_pop::population::Population::view<'a, B: phx_store::backing::Backing + 'static>(&'a self, &'a [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], &'a dyn core::ops::function::Fn(phx_id::ids::LineId, phx_ledger::algebra::Side) -> phx_ledger::line::SideDecl) -> phx_pop::audit::CellsView<'a, B>
 pub fn phx_pop::population::book_changed<B: phx_store::backing::Backing>(&phx_pop::population::PopKind, &mut phx_pop::table::CellTable<B>, &mut phx_core::agenda::Agenda, phx_id::day::Day)
 pub mod phx_pop::prims
 pub struct phx_pop::prims::ClearedStream

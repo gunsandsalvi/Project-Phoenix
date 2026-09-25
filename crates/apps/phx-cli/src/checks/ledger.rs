@@ -60,28 +60,21 @@ fn units(w: Inspector<'_>) -> Outcome {
     quiet(w, UNITS.name, settled)
 }
 
-/// Every fail on a contract row before the run's last business day has been turned into arrears on that row by the
-/// contract process at the next business day's 2d; the last day's wait for a 2d the run did not reach.
+/// Every fail on a contract row before the run's last business day was in arrears on that row once the contract
+/// process at the next business day's 2d had run, where its party still held the row; the last day's wait for a 2d
+/// the run did not reach.
 fn fails(w: Inspector<'_>) -> Outcome {
     let Some(last) = w.settlements().iter().rev().find(|s| w.any_business(s.day)).map(|s| s.day) else {
         return Outcome::Fail("no business day was run".to_owned());
     };
-    let arrears = w.books().ledger.arrears();
     for s in w.settlements().iter().filter(|s| s.day < last) {
-        for f in &s.fails {
-            let Missing::Present(row) = f.row else { continue };
-            // A party that ended since, or whose members took the row elsewhere, holds no row to read.
-            let phx_core::Resolved::Live(party, _) = w.books().parties.directory().resolve(f.party) else { continue };
-            if !w.books().rows_of(party).contains(&(row.line, row.side)) {
-                continue;
+        match s.unrecorded {
+            Missing::Present(0) => {}
+            Missing::Present(n) => {
+                return Outcome::Fail(format!("{n} fails on day {} were not in arrears after 2d", s.day.get()));
             }
-            if arrears.of(row.line, row.side, party).is_none() {
-                return Outcome::Fail(format!(
-                    "a fail on line {} on day {} ({:?}) is not in arrears",
-                    row.line.get(),
-                    s.day.get(),
-                    f.cause
-                ));
+            Missing::Absent => {
+                return Outcome::Fail(format!("the fails of day {} never met a contract process", s.day.get()));
             }
         }
     }

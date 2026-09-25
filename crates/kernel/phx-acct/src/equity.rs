@@ -32,17 +32,16 @@ impl EquityEvent {
         EquityEvent { party, kind: EquityKind::Income, amount }
     }
 
-    /// The event a settled leg's declared effect makes, where it makes one: revenue and expense are income, an
-    /// equity effect is capital; an asset or liability moved is no event.
+    /// The event a settled leg's declared effect makes, where it makes one, by as much as the leg moved its party's
+    /// net assets: revenue and expense are income, an equity effect is capital; an asset or liability moved is no
+    /// event. A leg passing through a party, in and out, so moves its equity by nothing.
     pub fn from_effect(e: &EffectRec) -> Missing<EquityEvent> {
-        let amt = e.amount.amt();
-        let (kind, amount) = match e.effect {
-            Effect::Revenue => (EquityKind::Income, amt),
-            Effect::Expense => (EquityKind::Income, -amt),
-            Effect::Equity => (EquityKind::Capital, amt),
+        let kind = match e.effect {
+            Effect::Revenue | Effect::Expense => EquityKind::Income,
+            Effect::Equity => EquityKind::Capital,
             Effect::Asset | Effect::Liability => return Missing::Absent,
         };
-        Missing::Present(EquityEvent { party: e.party, kind, amount })
+        Missing::Present(EquityEvent { party: e.party, kind, amount: e.amount.amt() })
     }
 
     pub fn party(&self) -> PartyId {
@@ -148,7 +147,7 @@ mod tests {
             amount: Money::new(amt, eur),
         };
         for rec in
-            [leg(Effect::Revenue, 40), leg(Effect::Expense, 15), leg(Effect::Asset, 500), leg(Effect::Liability, 70)]
+            [leg(Effect::Revenue, 40), leg(Effect::Expense, -15), leg(Effect::Asset, 500), leg(Effect::Liability, -70)]
         {
             if let Missing::Present(e) = EquityEvent::from_effect(&rec) {
                 accounts.post(&e);
@@ -157,6 +156,15 @@ mod tests {
         assert!(
             matches!(accounts.of(bank), Missing::Present(a) if a.balance() == 1_025),
             "income moves it; money moved does not"
+        );
+        for rec in [leg(Effect::Equity, 60), leg(Effect::Equity, -60)] {
+            if let Missing::Present(e) = EquityEvent::from_effect(&rec) {
+                accounts.post(&e);
+            }
+        }
+        assert!(
+            matches!(accounts.of(bank), Missing::Present(a) if a.balance() == 1_025),
+            "capital passing through, in and out, leaves it"
         );
         accounts.post(&EquityEvent::earned(PartyId::new(9), 5));
         assert_eq!(accounts.len(), 1, "a party without owners keeps no account");
