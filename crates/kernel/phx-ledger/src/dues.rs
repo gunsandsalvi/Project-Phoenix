@@ -161,15 +161,18 @@ impl<B: Backing> Books<B> {
                 Side::Liability => Reckoning::On { side: Side::Asset, counter: reader },
             }
         } else {
+            // A side that keeps no list counts as many, so the reading stops at a listed side's second holder.
+            let listed = |side: Side| self.ledger.lines.side_decl(line, side).holder_list;
+            let (owing_many, claiming_many) = (!listed(Side::Liability), !listed(Side::Asset));
             let (mut owing, mut claiming) = (Vec::new(), Vec::new());
             for p in holders {
-                if owing.len() > 1 && claiming.len() > 1 {
+                if (owing_many || owing.len() > 1) && (claiming_many || claiming.len() > 1) {
                     break;
                 }
-                if self.row_on_side(p, line, Side::Liability).is_some() {
+                if !owing_many && self.row_on_side(p, line, Side::Liability).is_some() {
                     owing.push(p);
                 }
-                if self.row_on_side(p, line, Side::Asset).is_some() {
+                if !claiming_many && self.row_on_side(p, line, Side::Asset).is_some() {
                     claiming.push(p);
                 }
             }
