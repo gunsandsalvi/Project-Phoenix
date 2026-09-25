@@ -349,11 +349,12 @@ impl<B: Backing> Books<B> {
             if rec.account != line {
                 violation!(clause = "MON.5", "a party paying from two accounts in one day", party = leg.party.get());
             }
-            let q = i128::from(leg.qty) * sign;
+            // A payment taken away leaves the column it was booked in: debits stay what the standing payments draw.
+            let q = i128::from(leg.qty);
             if q < 0 {
-                rec.debit -= q;
+                rec.debit -= q * sign;
             } else {
-                rec.credit += q;
+                rec.credit += q * sign;
             }
             touched.push(leg.party);
         }
