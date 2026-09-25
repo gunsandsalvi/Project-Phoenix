@@ -238,3 +238,37 @@ fn members_leave_with_their_counterparts() {
     let sides = [Side::Asset, Side::Liability].map(|s| w.books.ledger.lines.side_count(job, s));
     assert_eq!(sides, [1, 1]);
 }
+
+/// A firm settled as an estate: its 10 000 pays its loan of 100, the 9 900 left is paid to the destination, its rows
+/// leave with a member of the bank's each, and it ends.
+#[test]
+fn an_estate_pays_its_debts_passes_the_rest_and_ends() {
+    let mut w = world();
+    let m = MoveAt { at: ApplyAt::Day(SubStep::S7c), ..at(&w) };
+    let mut d = crate::cleared::test_draws(w.loan);
+    let s = w.books.settle_estate(w.firms[0], w.firms[1], m, &mut d, &mut Quiet).expect("settles");
+    assert_eq!((s.paid, s.written_off, s.passed), (100, 0, 9_900));
+    assert_eq!(row(&w, w.firms[1], w.deposits, Side::Asset), (1, 19_900));
+    assert_eq!(
+        row(&w, w.banks[0], w.deposits, Side::Liability),
+        (2, -29_900),
+        "the bank owes the loan's repayment less"
+    );
+    assert_eq!(row(&w, w.banks[0], w.loan, Side::Asset), (2, 500));
+    assert_eq!(w.books.parties.of_kind("firm").count(), 2, "the estate ended");
+}
+
+/// An estate holding 200 against a loan of 300 pays the 200 and its creditor loses the rest; nothing is passed on.
+#[test]
+fn an_estate_short_of_its_debts_writes_off_the_rest() {
+    let mut w = world();
+    let m = MoveAt { at: ApplyAt::Day(SubStep::S7c), ..at(&w) };
+    let mut found = crate::dues::Found::default();
+    let legs = w.books.pay(w.firms[2], w.firms[1], 9_800, EUR, &mut found);
+    let _ = w.books.submit(w.reason, legs, m, &mut Quiet).expect("the payment settles");
+    let mut d = crate::cleared::test_draws(w.loan);
+    let s = w.books.settle_estate(w.firms[2], w.firms[1], m, &mut d, &mut Quiet).expect("settles");
+    assert_eq!((s.paid, s.written_off, s.passed), (200, 100, 0));
+    assert_eq!(row(&w, w.banks[0], w.loan, Side::Asset), (2, 300), "the bank's claims less the paid and the lost");
+    assert_eq!(row(&w, w.firms[1], w.deposits, Side::Asset), (1, 19_800));
+}

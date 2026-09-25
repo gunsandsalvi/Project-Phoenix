@@ -1116,6 +1116,13 @@ law, the rate of openings times their life: firms' about 800 a day × about 40 d
 about 25 days, personal insolvencies' about 70 a day × about 45 days — about 60 thousand open, at 512 bytes each
 (§13.1). Their mean life and the number open are counted per kind.
 
+As built at Stage 0 (plan S0.25e): an ended household's rows pass to one estate at 3e; from the next business day,
+at 7c once the day's dues are paid, the ledger settles it (`Books::settle_estate`) — its money pays its debts through
+the waterfall, what it owes beyond is written off, what is left is paid to its country's treasury, since no heir is
+drawn before the kinship lines exist — and its rows leave with their counterparts and it ends; one whose payment
+fails waits, counted. A catastrophe's struck tiles lose, at 3b, their share of every physical unit the individuals
+sited there hold, as a transformation naming the event (GEO.8).
+
 ### 9.2 A bank's failure
 
 1. **Day D, 8f**: the bank cannot repay intraday credit. The shortfall becomes an overdue claim of the central bank on

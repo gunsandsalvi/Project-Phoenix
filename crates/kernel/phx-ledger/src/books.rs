@@ -6,7 +6,7 @@ use phx_id::{Day, LineId, PartyId, RowRef, Slot, TableId, TileId};
 
 use crate::algebra::Side;
 use phx_macros::clause;
-use phx_num::{capacity_exceeded, violation};
+use phx_num::{Missing, capacity_exceeded, violation};
 use phx_store::{AddressSpace, Backing, SystemBacking};
 
 use crate::apply::{ApplyAt, DayBook, Holders, Ledger, Located};
@@ -139,6 +139,18 @@ impl<B: Backing> Parties<B> {
                 violation!(clause = "PTY.10", "a party read that is not live", party = party.get())
             }
         }
+    }
+
+    /// Ends an individual whose rows and holdings have all left it: its row freed and its identity ended with no
+    /// successor.
+    #[clause("PTY.9", "PTY.13")]
+    pub fn end(&mut self, party: PartyId, day: Day) {
+        let (place, slot) = self.row(party);
+        let Some(table) = self.tables.get_mut(usize::from(place)) else {
+            violation!(clause = "PTY.9", "a party ended outside the tables of individuals", party = party.get());
+        };
+        table.remove(slot);
+        self.directory.end(party, day, Missing::Absent);
     }
 
     /// A party's site.

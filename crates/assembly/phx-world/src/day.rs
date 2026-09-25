@@ -136,6 +136,7 @@ impl World {
                 self.due = self.books.ledger.mark_due(day, &self.calendar);
             }
             if info.step == SubStep::S3b {
+                self.catastrophe_losses(day);
                 self.cells_screen(day);
             }
             if info.step == SubStep::S3e {
@@ -159,6 +160,7 @@ impl World {
                 };
                 dues =
                     self.books.settle_day(&self.due, day, &self.calendar, &self.closed, &draws_of, self.audit.stream());
+                self.estates_settle(day);
             }
             if info.step == SubStep::S9b {
                 let period = crate::registry::period_of(&self.calendar, day);

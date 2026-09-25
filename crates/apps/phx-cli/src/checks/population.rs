@@ -481,10 +481,35 @@ pub const LC_0_52: Check = live_check! {
 };
 
 /// Every death has a cause and a destination for everything held and owed; every estate distributes and ends.
-fn estates_settle(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet(
-        "no household holds or owes anything, and no estate opens, before the opening lines and estates (S0.25e)",
-    )
+fn estates_settle(w: Inspector<'_>) -> Outcome {
+    if !cells_hold_lines(w) {
+        return Outcome::NotYet(NO_LINES);
+    }
+    let days = w.cell_days();
+    let (Some(last), opened) = (days.last(), days.iter().map(|d| d.estates).sum::<u64>()) else {
+        return Outcome::NotYet(NO_CELLS);
+    };
+    let settled: u64 = days.iter().map(|d| d.estates_settled).sum();
+    let books = w.books();
+    let open: Vec<phx_id::PartyId> = books.parties.of_kind(phx_core::ESTATE_KIND.name).collect();
+    if settled + phx_rand::float::len_u64(open.len()) != opened {
+        return Outcome::Fail(format!("{opened} estates opened, {settled} settled and {} open", open.len()));
+    }
+    // An estate still open at the close opened on the last day, or waited on a payment that failed that day.
+    let stale = open
+        .iter()
+        .filter(|p| {
+            let (place, slot) = books.parties.row(**p);
+            books.parties.table(place).created(slot) < last.day
+        })
+        .count();
+    if phx_rand::float::len_u64(stale) != last.estates_waiting {
+        return Outcome::Fail(format!(
+            "{stale} estates open from before the last day, {} counted waiting",
+            last.estates_waiting
+        ));
+    }
+    Outcome::Pass
 }
 
 pub const LC_0_53: Check = live_check! {

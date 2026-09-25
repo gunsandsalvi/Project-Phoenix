@@ -4796,6 +4796,18 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     straight total; a lost member or unit and a crossed kink are counted.
 - **S0.25e — estates and the settled world**: `sys-est`, catastrophes' losses at owners (GEO.8), settling, LC-0-53;
   the step's reviews and its build run.
+  As built: no system's handler writes instructions yet, so the estates' settlement is the ledger's
+  (`Books::settle_estate`) run by the world (`estates`): from the business day after it opened, at 7c once the day's
+  dues are paid, an estate's money pays its debts through the waterfall (one class, in the order held, the residue of
+  a division on the first debt of its currency), what it owes beyond is written off by its creditor, what is left is
+  paid to its country's treasury — no heir is drawn before the kinship lines exist (F-050) — and its rows leave with
+  their counterparts and it ends; a payment that fails leaves it waiting, counted, and settled again the next business
+  day. A member leaving a line takes none of its counterparts' balance, which mirrors the claims that stay.
+  Catastrophes' losses (`losses`, GEO.8): at 3b each struck tile's share of every physical unit the individuals sited
+  there hold is lost as a transformation naming the event; households hold no dwelling and small firms no plant yet
+  (S2.05, F-049), so no attachment or tenant is reached. Settling is the gate run's, as before. LC-0-53 reads the
+  estates opened, settled and open, every estate open from before the last day counted waiting. Tests: an estate
+  pays its debts, passes the rest and ends; one short of its debts writes off the rest.
 
 
 **Clauses**:
@@ -15791,6 +15803,7 @@ the final build within the budget on the phone.
 | F-047 | S0.25d | build, 2026-09-25 | The opening's large firms outgrew their arenas (`region elements`, 4 M and then 16 M words for a chunk of 4 096): every firm is party to every employment and tenancy line of its country, one per wage or rent point, and at 5% points a country has some 190 of each; the rows of individuals then far exceed the architecture's 2 M | the counterparty side of a line of many holders is apportioned over every eligible firm by its size, so a large firm takes a row on every point; and the arenas were never compacted | points a quarter apart (`LAB.wage_point_ratio`, `HSG.rent_point_ratio`, placeholders) and compaction at quiet moments; the points and the rows they cost measured on the phone (S0.26) and refined by the budget (N8.5); landlords drawn from the dwelling stock (F-043) and wage offers by firm (LAB) will set each firm's points | open |
 | F-048 | S0.25d | build, 2026-09-25 | The firms' ranks are not read: the kernel ranks a kind by a position, and a small firm's headcount is in its key (FRM.23) while its positions (cash, debt, inventory, output) arrive with S1.03; the large firms are rows of the kernel's firm kind table, not individuals of the small firms' table, so no rank read spans both | a rank measure read from the key, and the large firms as individuals of the firms' cell table, are neither built | the firms' positions and a rank read over the large firms and the small firms together (S1.03), LC-0-48 on firms with it; at the opening every firm above the rank's edge is a large firm by construction | open |
 | F-049 | S0.25d | build, 2026-09-25 | The small firms hold no plant: the country's capital is apportioned over every firm by its employees, and the small firms' share is held by no one, so the opening's capital falls short of the steady path's by that share | a cell's holding of a physical class at the opening (a pooled holding counting its firms) is not drawn, and FRM.23's plant units are a key attribute that waits for S1.03 | the small firms' plant as their cells' pooled holdings, keyed by plant units (S1.03) | open |
+| F-050 | S0.25e | build, 2026-09-25 | No estate passes anything to an heir: every remainder goes to the country's treasury, and an estate settles on the next business day by one kernel rule (pay, write off, pass on), where the architecture's estates live about 25 days and sell what their debts need | kinship lines are not drawn at the opening (REP.23), and `sys-est`'s decisions — what to sell, when, to whom — have no handler that writes instructions yet | the kinship lines drawn with the households and heirs taken from their counts by the inheritance law (POP.9), and `sys-est`'s own handlers for sales and timing, when systems' handlers write instructions (Stage 1) | open |
 
 ---
 

@@ -127,7 +127,7 @@ impl<B: Backing> Books<B> {
         legs
     }
 
-    fn submit(
+    pub(crate) fn submit(
         &mut self,
         reason: ReasonId,
         legs: Vec<LegRec>,
@@ -214,7 +214,7 @@ impl<B: Backing> Books<B> {
     /// Members leaving a line with as many of its other side: `count` members off a party's row, and as many off the
     /// rows of the other side's holders, each drawn by the members its row has left, so the sides stay equal;
     /// one instruction. A member leaving takes no share of a row's balance, which would be a claim the line still
-    /// holds.
+    /// holds, and its counterparts none of theirs, which mirror the claims that stay.
     ///
     /// # Errors
     /// The fail, when the instruction could not settle.
@@ -238,8 +238,9 @@ impl<B: Backing> Books<B> {
             .collect();
         let taken = draw_members(&mut counterparts, count, d);
         let mut legs = self.leave((party, line, side), count, self.no_share((party, line, side), count, m), m);
+        // The members leaving hold no balance, so the counterparts that leave with them take none of theirs.
         for (p, k) in taken {
-            legs.extend(self.leave((p, line, other), k, self.no_share((p, line, other), k, m), m));
+            legs.extend(self.leave((p, line, other), k, 0, m));
         }
         self.submit(self.dues.left, legs, m, audit)
     }

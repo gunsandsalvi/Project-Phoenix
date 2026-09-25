@@ -48,3 +48,7 @@ pub const SAVE_PARTIAL: &str = ".partial";
 /// One cell in this many, by its identity's mix, is measured for the realised rates: enough for a year's sampling
 /// error to be small against the rates' own, few enough to cost a small share of 3b.
 pub const RATE_SAMPLE: u64 = 64;
+
+/// The kind of party the law names to take what an estate leaves where no heir is drawn: the treasury, in every
+/// opening country, until the inheritance law's destinations are declared per country.
+pub const HEIRLESS_DESTINATION: &str = "treasury";

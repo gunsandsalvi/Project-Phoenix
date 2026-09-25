@@ -232,6 +232,12 @@ pub struct CellDay {
     pub reread_sides: u64,
     pub sides_unkept: u64,
     pub kinks_crossed: u64,
+    /// Estates settled and ended, those left waiting on a payment that failed, and what the settled passed on and
+    /// their creditors lost.
+    pub estates_settled: u64,
+    pub estates_waiting: u64,
+    pub estates_passed: i128,
+    pub estates_written_off: i128,
 }
 
 impl CellDay {
@@ -270,6 +276,10 @@ impl CellDay {
             reread_sides: 0,
             sides_unkept: 0,
             kinks_crossed: 0,
+            estates_settled: 0,
+            estates_waiting: 0,
+            estates_passed: 0,
+            estates_written_off: 0,
         }
     }
 }

@@ -20,6 +20,12 @@ pub struct DueReasons {
     pub left: ReasonId,
     /// An estate succeeding to what the households it ended with held.
     pub succeeded: ReasonId,
+    /// Units a hazard destroyed at their holder, which no one receives.
+    pub destroyed: ReasonId,
+    /// What an estate owed beyond what it held, lost by its creditor.
+    pub written_off: ReasonId,
+    /// What an estate held beyond what it owed, passed to its heirs or the law's destination.
+    pub distributed: ReasonId,
 }
 
 impl DueReasons {
@@ -32,11 +38,19 @@ impl DueReasons {
         let left = ReasonDecl { name: "members left", order: 2, paid: Effect::Equity, received: Effect::Equity };
         let succeeded =
             ReasonDecl { name: "estate succeeded", order: 2, paid: Effect::Equity, received: Effect::Equity };
+        let destroyed =
+            ReasonDecl { name: "destroyed by a hazard", order: 2, paid: Effect::Expense, received: Effect::Equity };
+        let written_off = ReasonDecl { name: "written off", order: 2, paid: Effect::Expense, received: Effect::Equity };
+        let distributed =
+            ReasonDecl { name: "estate distributed", order: 2, paid: Effect::Equity, received: Effect::Equity };
         DueReasons {
             payment: reasons.declare(payment),
             principal: reasons.declare(principal),
             left: reasons.declare(left),
             succeeded: reasons.declare(succeeded),
+            destroyed: reasons.declare(destroyed),
+            written_off: reasons.declare(written_off),
+            distributed: reasons.declare(distributed),
         }
     }
 }

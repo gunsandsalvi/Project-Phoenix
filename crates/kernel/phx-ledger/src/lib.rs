@@ -13,6 +13,7 @@ pub mod covered;
 pub mod due;
 pub mod dues;
 pub mod effects;
+pub mod estate;
 pub mod events;
 pub mod fails;
 pub mod fixed_point;
