@@ -5,7 +5,8 @@ use phx_core::{
     AgentsAudit, AuditFamily, FamilyCtx, FamilyDecl, Finding, FindingOwner, Findings, Gap, InjectTarget, Unit,
     declare_family,
 };
-use phx_id::Slot;
+use phx_id::{LineId, Slot};
+use phx_ledger::algebra::Side;
 use phx_ledger::rows;
 use phx_macros::clause;
 use phx_num::Missing;
@@ -20,7 +21,8 @@ declare_family! { pub AGENTS = "REP.agents" { mode: Rolling { cycle_days: 30 }, 
 
 /// One agent against its multiplicity: at least one twin; each row counting its multiplicity times the contracts its
 /// attachments name there — a whole multiple of it for an agent of no persons — and its balance a whole multiple of it;
-/// and every attachment naming a person it holds.
+/// every attachment naming a person it holds; and no person holding two contracts on one side of a line, so a line's
+/// contracts its persons hold never outnumber them.
 #[clause("REP.14", "REP.17", "REP.31", "PTY.11")]
 #[must_use]
 pub fn agent<B: Backing>(table: &AgentTable<B>, slot: Slot) -> Vec<Gap> {
@@ -37,11 +39,22 @@ pub fn agent<B: Backing>(table: &AgentTable<B>, slot: Slot) -> Vec<Gap> {
     let persons = table.persons(slot).len();
     // An agent that holds no persons, a small firm, names no contracts: each of its rows is its twins' alike.
     let attached = persons > 0;
+    let mut held: Vec<(usize, LineId, Side)> = Vec::new();
     for w in table.attachments(slot) {
-        if let Holder::Person(i) = Attachment::unpack(*w).holder
-            && i >= persons
+        let a = Attachment::unpack(*w);
+        if let Holder::Person(i) = a.holder {
+            if i >= persons {
+                gaps.push(gap(1, format!("agent {party}: an attachment of person {i} of {persons}")));
+            }
+            held.push((i, a.line, a.side));
+        }
+    }
+    held.sort_unstable();
+    for pair in held.windows(2) {
+        if let [a, b] = pair
+            && a == b
         {
-            gaps.push(gap(1, format!("agent {party}: an attachment of person {i} of {persons}")));
+            gaps.push(gap(1, format!("agent {party}: person {} holds two contracts on line {}", a.0, a.1.get())));
         }
     }
     let k = i128::from(k);

@@ -129,8 +129,10 @@ pub(crate) struct AgentHit {
 #[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct AgentDay {
     pub day: Day,
-    /// The agenda's rows gathered at 3b, and the bookings of a process on them read.
+    /// The agenda's rows gathered at 3b, the bookings the agenda held for them, and the bookings of a process on them
+    /// read.
     pub gathered: u64,
+    pub due: u64,
     pub read: u64,
     /// Bookings drawn again on the day a rate changed, and hits drawn.
     pub redraws: u64,
@@ -162,6 +164,7 @@ impl AgentDay {
         AgentDay {
             day,
             gathered: 0,
+            due: 0,
             read: 0,
             redraws: 0,
             hits: 0,
@@ -323,6 +326,7 @@ impl World {
                     continue;
                 }
                 self.agent_day.gathered += 1;
+                self.agent_day.due += u64::from(mask.count_ones());
                 let party = table.party(slot);
                 let twins = u64::from(table.multiplicity(slot).get());
                 let h = household(&kd.decl, table, slot);

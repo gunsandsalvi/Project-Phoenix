@@ -83,7 +83,7 @@ fn multiplicities_declared(w: Inspector<'_>) -> Outcome {
 
 pub const LC_0_37: Check = live_check! {
     id: "LC-0-37",
-    title: "Every agent's rows count its multiplicity times its attachments, and its attachments name its persons",
+    title: "Every agent's rows count its multiplicity times its attachments, which name its persons, one a line",
     from_step: "S0.28",
     check: rows_count_twins,
 };
@@ -177,21 +177,15 @@ fn realised_rates(w: Inspector<'_>) -> Outcome {
     Outcome::Pass
 }
 
-/// No agent is read but for its agenda's rows: each day's bookings read are of rows it gathered, and its hits of
-/// bookings read.
+/// Each day every booking the agenda held for a live agent is read once, by the process it was booked for, and no
+/// other is read.
 fn only_the_active(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
     }
-    let processes = phx_rand::float::len_u64(w.processes().len());
     for d in w.agent_days() {
-        if d.read > d.gathered * processes {
-            return Outcome::Fail(format!(
-                "day {}: {} bookings read of {} rows gathered",
-                d.day.get(),
-                d.read,
-                d.gathered
-            ));
+        if d.read != d.due {
+            return Outcome::Fail(format!("day {}: {} bookings read of {} due", d.day.get(), d.read, d.due));
         }
     }
     Outcome::Pass
@@ -234,7 +228,7 @@ pub const LC_0_39: Check = live_check! {
 
 pub const LC_0_40: Check = live_check! {
     id: "LC-0-40",
-    title: "No agent is visited on a day it had no agenda entry",
+    title: "Every booking the agenda holds for a day is read that day, and no other",
     from_step: "S0.22",
     check: only_the_active,
 };
@@ -253,14 +247,18 @@ pub const LC_0_42: Check = live_check! {
     check: carried_decided,
 };
 
-/// The agents family ran at every close and found nothing, and each kind's multiplicities sum to the parties the
-/// events that began and ended them count, its persons to the persons counted.
+/// The agents family ran at every close and found nothing, nor did the contracts family, which holds every line's
+/// sides equal; and each kind's multiplicities sum to the parties the events that began and ended them count, its
+/// persons to the persons counted.
 fn populations_whole(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
     }
     if let Some(f) = finding(w, phx_pop::audit::AGENTS.name) {
         return Outcome::Fail(format!("the agents family found, {f}"));
+    }
+    if let Some(f) = finding(w, phx_ledger::audit::CONTRACTS.name) {
+        return Outcome::Fail(format!("the contracts family found, {f}"));
     }
     let pop = w.population();
     for (k, ((kind, parties), persons)) in pop.members.iter().zip(&pop.persons).enumerate() {
@@ -361,7 +359,8 @@ pub const LC_0_48: Check = live_check! {
     check: ranks_carried,
 };
 
-/// The representation named every day beside its measures: the factor, the agents and the parties.
+/// The representation named every day beside its measures, and the last day's agents, the parties they stand for
+/// and those parties' persons the ones the agent tables hold at the run's end.
 fn representation_named(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
@@ -372,6 +371,27 @@ fn representation_named(w: Inspector<'_>) -> Outcome {
     }
     if w.agent_days().iter().any(|d| d.persons == 0) {
         return Outcome::Fail("a day on which the agents held no person".to_owned());
+    }
+    let Some(last) = w.agent_days().last() else { return Outcome::NotYet("no day has run") };
+    let (mut agents, mut parties, mut persons) = (0_u64, 0_u64, 0_u64);
+    for k in 0..w.population().kinds.len() {
+        let table = w.agent_table(k);
+        for s in table.slots() {
+            let m = u64::from(table.multiplicity(s).get());
+            agents += 1;
+            parties += m;
+            persons += m * phx_rand::float::len_u64(table.persons(s).len());
+        }
+    }
+    if (last.agents, last.parties, last.persons) != (agents, parties, persons) {
+        return Outcome::Fail(format!(
+            "day {} reported {} agents, {} parties and {} persons where the tables hold {agents}, {parties} and \
+             {persons}",
+            last.day.get(),
+            last.agents,
+            last.parties,
+            last.persons
+        ));
     }
     Outcome::Pass
 }

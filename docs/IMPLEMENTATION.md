@@ -5106,7 +5106,9 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   REP.40, REP.41.
 - PROCESS: REP.7, REP.9, REP.12, REP.23 *(part: pairings drawn on a person leaving a line)*, REP.25, REP.26.
 - INVARIANT: REP.13, REP.14, REP.31.
-- MEASURE: REP.15.
+- MEASURE: REP.15 *(part: the representation, its factor, the agents, the parties they stand for and their persons,
+  and the day's gathered, hit and ended agents, over all kinds; per kind, with individuals, lines, events per agent
+  and the twins whose size would rank them individuals, once the firms have positions, S1.03)*.
 - FORBID: REP.16, REP.17.
 - PRIMITIVE: REP.18 *(part: the factor and the representation; taste distributions, review costs and price points
   with their systems)*.
@@ -5195,17 +5197,19 @@ The sub-steps:
 
 **Live checks** (LC-0-37 to LC-0-50 redefined for agents; the ones that read landings, tolerances and renumbering
 retire with the machinery)
-- `LC-0-37`: every agent's row on each line counts its multiplicity times its attachments there, and every person
-  attachment names a present person (REP.31).
+- `LC-0-37`: every agent's row on each line counts its multiplicity times its attachments there, every person
+  attachment names a present person, and no person holds two contracts on one side of a line (REP.31).
 - `LC-0-38`: every agent's multiplicity is its kind's under the representation in force, but the seated twins, the
   player's and its counterparts', of one each, and their donors of one fewer, as many as the seats (REP.1, REP.17).
-- `LC-0-39` to `LC-0-42`: as S0.22 wrote them, on agents.
-- `LC-0-43`: the agents family — multiplicities sum to each population, persons to the persons counted by event,
-  lines' sides equal (REP.13, REP.31).
+- `LC-0-39`, `LC-0-41`, `LC-0-42`: as S0.22 wrote them, on agents.
+- `LC-0-40`: every booking the agenda holds for a live agent on a day is read that day, once, and no other (REP.12).
+- `LC-0-43`: the agents family — multiplicities sum to each population, persons to the persons counted by event —
+  and the contracts family, which holds lines' sides equal, found nothing (REP.13, REP.31).
 - `LC-0-44`, `LC-0-45`, `LC-0-47`, `LC-0-50`: retired; they read landings, a cell budget and renumbering, which no
   longer exist.
-- `LC-0-46`, `LC-0-49`: REP.15's report every day: representation, factor, agents, individuals, persons, agents hit
-  and events per agent, and under twins the agents above the individuals' rank.
+- `LC-0-46`, `LC-0-49`: REP.15's report every day, over all kinds: the representation and its factor, the agents,
+  the parties they stand for and their persons, as the tables hold them at the run's end, and the day's gathered, hit
+  and ended agents; per kind, with individuals, lines and the twins above the individuals' rank, at S1.03.
 - `LC-0-48`: every party within the individuals' rank at the opening is an individual; waits for the firms'
   positions (S1.03, F-048).
 
@@ -5792,6 +5796,8 @@ run it to forecast (a signature check).
   *(part: default of payment and liquidation; the balance-sheet test and restructuring are S2.03)*; L3 *(part: firm
   estates liquidate through the waterfall)*.
 - INVARIANT: FRM.17, FRM.18.
+- MEASURE: REP.15 *(completes it: reported per kind, with individuals, lines, events per agent and the twins whose
+  size would rank them individuals)*.
 - FORBID: FRM.20, FRM.21.
 - PRIMITIVE: FRM.22.
 - Financing, payouts, groups, distress and the rest of the lifecycle (FRM.3, FRM.9, FRM.10, FRM.12, FRM.19) are S2.03
@@ -16233,8 +16239,9 @@ and are not mapped.
 | GEO | S1.07 | 13, 18 |
 | GEO | S2.05 | 5 |
 | GEO | S5.02 | 4 |
-| REP | S0.28 | 1, 2, 3, 7, 9, 12, 13, 14, 15, 16, 17, 23, 25, 26, 31, 40, 41 |
+| REP | S0.28 | 1, 2, 3, 7, 9, 12, 13, 14, 16, 17, 23, 25, 26, 31, 40, 41 |
 | REP | S1.01 | 21, 35, 38 |
+| REP | S1.03 | 15 |
 | REP | S1.09 | 34 |
 | REP | S1.12 | 5, 20 |
 | REP | S2.05 | 22, 24 |
