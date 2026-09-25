@@ -32,6 +32,7 @@ pub(crate) struct Drawer {
     draws: Vec<Box<dyn CountryAttachments>>,
     lines: BTreeMap<(u16, u32, bool, u64), (LineId, LineSpec)>,
     sides: BTreeMap<LineId, (Side, u64)>,
+    cells: BTreeMap<LineId, Vec<(PartyId, u64)>>,
     balances: Vec<(PartyId, LineId, Side, u32, u64)>,
     country: phx_id::CountryId,
 }
@@ -66,7 +67,14 @@ impl Drawer {
                 draw.country(books, register, when, country)
             })
             .collect();
-        Drawer { draws, lines: BTreeMap::new(), sides: BTreeMap::new(), balances: Vec::new(), country: country.id }
+        Drawer {
+            draws,
+            lines: BTreeMap::new(),
+            sides: BTreeMap::new(),
+            cells: BTreeMap::new(),
+            balances: Vec::new(),
+            country: country.id,
+        }
     }
 
     /// A household's lines drawn by every system, the key attributes they set written to its record, and its rows
@@ -130,17 +138,10 @@ impl Drawer {
         line
     }
 
-    /// A region's cells given the rows their households hold: each landed part's rows opened on the cell it landed
-    /// in, rows of one line side on one cell as one row.
+    /// A region's cells given the rows their households hold: each landed part's rows kept for the cell it landed in,
+    /// rows of one line side on one cell as one, to open with their lines' other sides once the country is drawn.
     #[clause("REP.8", "REP.14", "GEN.3")]
-    pub(crate) fn open_cells(
-        &mut self,
-        books: &mut Books,
-        (register, reason): (&Register, ReasonId),
-        rows: &[Vec<GatheredRow>],
-        resolved: &[(PartId, PartyId)],
-        report: &mut GenReport,
-    ) {
+    pub(crate) fn landed(&mut self, rows: &[Vec<GatheredRow>], resolved: &[(PartId, PartyId)]) {
         let mut on: BTreeMap<(PartyId, LineId, Side), CellRow> = BTreeMap::new();
         for (id, cell) in resolved {
             let Some(part) = usize::try_from(id.seq).ok().and_then(|i| rows.get(i)) else {
@@ -159,16 +160,11 @@ impl Drawer {
                 };
             }
         }
-        let mut legs = Vec::with_capacity(on.len());
         for ((cell, line, side), (n, pool)) in on {
-            let words = books.ledger.lines.side_decl(line, side).words;
-            legs.push(open_row(register, cell, line, side, count32(n), words));
+            self.cells.entry(line).or_default().push((cell, n));
             if let Missing::Present((p, w)) = pool {
                 self.balances.push((cell, line, side, p, w));
             }
-        }
-        if !legs.is_empty() {
-            books.open(reason, legs, u64::from(self.country.get()), report);
         }
     }
 
@@ -184,17 +180,24 @@ impl Drawer {
         lot: &mut Draws,
         report: &mut GenReport,
     ) {
-        let Drawer { draws, lines, sides, balances, country } = self;
+        let Drawer { draws, lines, sides, cells, balances, country } = self;
         let mut counterparty_of: BTreeMap<LineId, PartyId> = BTreeMap::new();
         for (line, spec) in lines.into_values() {
             let Some((side, members)) = sides.get(&line).copied() else {
                 violation!(clause = "REP.31", "a line opened that no household holds", line = line.get());
             };
             let words = books.ledger.lines.side_decl(line, other(side)).words;
+            let held = books.ledger.lines.side_decl(line, side).words;
+            let mut legs: Vec<_> = cells
+                .get(&line)
+                .into_iter()
+                .flatten()
+                .map(|(cell, n)| open_row(register, *cell, line, side, count32(*n), held))
+                .collect();
             match spec.counterparty {
                 Missing::Present(party) => {
                     counterparty_of.insert(line, party);
-                    let legs = vec![open_row(register, party, line, other(side), count32(members), words)];
+                    legs.push(open_row(register, party, line, other(side), count32(members), words));
                     books.open(reason, legs, party.get(), report);
                 }
                 Missing::Absent => {
@@ -209,7 +212,6 @@ impl Drawer {
                     }
                     let weights: Vec<u64> = eligible.iter().map(|(_, w)| *w).collect();
                     let counts = apportion(members, &weights, lot);
-                    let mut legs = Vec::new();
                     for ((party, drawn), realised) in eligible.iter().zip(counts) {
                         report.apportioned.push(Apportioned {
                             stratum: key(&format!("line {}", line.get()), country),

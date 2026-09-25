@@ -1275,7 +1275,8 @@ household as it is formed — its key, its persons, and the wealth and income `s
 (`DEM.opening_means`), as multiples of the country's median — and gives its rows and the key attributes it sets. A
 row names its line by kind, terms and named counterparty (`LineSpec`), its holder (the household or a person by
 place) and its balance: none, or a share of a pool by a weight. Cells land without rows; each landed part's rows are
-then opened on the cell it landed in, rows of one line side summed. Once the country is drawn, a named line's
+kept for the cell it landed in, rows of one line side summed, and once the country is drawn each line opens as one
+instruction, its cells' rows and its other side together, so its sides' counts agree: a named line's
 counterparty takes one row counting the households' members; a derived line's other side is apportioned over the
 parties its draw names, by their drawn sizes, each share reported; each pool's total — the draw's sourced aggregate —
 is apportioned over its rows by their summed weights and written against the counterparty. The banks' draw is the

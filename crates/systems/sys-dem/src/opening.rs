@@ -678,7 +678,7 @@ impl Contribution for Households {
                 let drawn = draw_region(&country, ctx, (*region, people), &kd.decl, classes, (&mut drawer, books));
                 let rows: Vec<_> = drawn.drawn.iter().map(|d| d.rows.clone()).collect();
                 let landed = land(books, kd, at, *day, drawn.drawn);
-                drawer.open_cells(books, (register, reason), &rows, &landed.resolved, report);
+                drawer.landed(&rows, &landed.resolved);
                 tally.add(&drawn.tally);
                 cells += landed.new_cells;
             }
