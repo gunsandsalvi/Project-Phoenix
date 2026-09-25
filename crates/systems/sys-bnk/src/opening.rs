@@ -123,6 +123,21 @@ pub(crate) fn rate(percent: f64) -> Rate {
     Rate::new(whole(percent / PERCENT * RATE_ONE), RatePeriod::Year)
 }
 
+/// `items` in an order drawn from `draws`, every order alike: the firms come largest first, and the banks take them in
+/// turn, so without it the largest bank would keep every largest firm.
+#[clause("GEN.3", "CHN.1")]
+pub(crate) fn shuffle<T>(items: &mut [T], draws: &mut phx_rand::Draws) {
+    for last in (1..items.len()).rev() {
+        let Ok(n) = u64::try_from(last + 1) else {
+            phx_num::capacity_exceeded!("items shuffled", u64::MAX, last);
+        };
+        let Ok(pick) = usize::try_from(below_u64(draws, n)) else {
+            phx_num::capacity_exceeded!("a drawn position", usize::MAX, n);
+        };
+        items.swap(last, pick);
+    }
+}
+
 /// The date `months` months before `date`, on the same day of the month or the month's last.
 fn months_before(date: Date, months: u32) -> Date {
     let total = i64::from(date.year()) * i64::from(MONTHS_PER_YEAR) + i64::from(date.month()) - 1 - i64::from(months);
@@ -245,13 +260,14 @@ impl Contracts {
         let mut loans = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, LOANS, 0));
         let (b, report) = books::split(opening);
         let banks = drawn(b, BANKS, c.id);
-        let firms = drawn(b, FIRMS, c.id);
+        let mut firms = drawn(b, FIRMS, c.id);
         let debts = drawn(b, DEBT, c.id);
         let Ok(count) = u64::try_from(firms.len()) else {
             phx_num::capacity_exceeded!("firms of a country", u64::MAX, firms.len());
         };
         let weights: Vec<u64> = banks.iter().map(|(_, w)| *w).collect();
         let counts = apportion(count, &weights, &mut lot);
+        shuffle(&mut firms, &mut lot);
         let deposit_terms = b.ledger.terms.intern(terms(
             ccy,
             vec![Leg::RateOnNotional {
@@ -503,5 +519,39 @@ impl Contribution for Balances {
                 b.open(reason, legs, id, report);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
+
+    use super::shuffle;
+
+    fn draws(seed: u64) -> Draws {
+        Draws::new(stream_key(Seed::new(seed), "BNK.lots"), Subject::new(SubjectTag::World, 0), 0, 0)
+    }
+
+    #[test]
+    fn shuffle_keeps_every_item_once() {
+        for seed in 0..20 {
+            let mut items: Vec<u32> = (0..100).collect();
+            shuffle(&mut items, &mut draws(seed));
+            let mut sorted = items.clone();
+            sorted.sort_unstable();
+            assert_eq!(sorted, (0..100).collect::<Vec<u32>>(), "a permutation of what it was handed");
+        }
+    }
+
+    #[test]
+    fn shuffle_moves_the_first_item_anywhere() {
+        let mut first_at = [0_u32; 4];
+        for seed in 0..4000 {
+            let mut items: Vec<usize> = (0..4).collect();
+            shuffle(&mut items, &mut draws(seed));
+            let Some(at) = items.iter().position(|i| *i == 0) else { panic!("the first item lost") };
+            first_at[at] += 1;
+        }
+        assert!(first_at.iter().all(|n| (850..1150).contains(n)), "every position alike: {first_at:?}");
     }
 }
