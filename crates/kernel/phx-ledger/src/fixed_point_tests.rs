@@ -171,7 +171,7 @@ fn settle(w: &mut World) -> (crate::apply_batch::DaySettlement, Vec<i64>) {
 
 fn settle_closed(w: &mut World, closed: &Closed) -> (crate::apply_batch::DaySettlement, Vec<i64>) {
     let due = w.books.ledger.mark_due(w.day, &w.cal);
-    let s = w.books.settle_day(&due, w.day, &w.cal, closed, &mut Quiet);
+    let s = w.books.settle_day(&due, w.day, &w.cal, closed, &crate::cleared::test_draws, &mut Quiet);
     let deposits = (0..w.firms.len()).map(|i| balance(w, w.firms[i], w.deposits[i % 2], Side::Asset)).collect();
     (s, deposits)
 }

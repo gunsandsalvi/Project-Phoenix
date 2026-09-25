@@ -183,7 +183,7 @@ fn procedure_line_leaves_shared_line() {
     // With the procedure open, its line pays nothing; the other borrowers pay their interest as before.
     w.books.ledger.procedures.insert(7);
     let due = w.books.ledger.mark_due(w.due, &w.cal);
-    let s = w.books.settle_day(&due, w.due, &w.cal, &Closed::default(), &mut Quiet);
+    let s = w.books.settle_day(&due, w.due, &w.cal, &Closed::default(), &crate::cleared::test_draws, &mut Quiet);
     assert_eq!((s.payments, s.settled), (2, 2), "the stayed row's due is suspended");
     let paid: Vec<i64> = w.firms.iter().map(|f| 10_000 - row(&w, *f, w.deposits, Side::Asset).1).collect();
     assert_eq!(paid, vec![1, 0, 3], "a month at 12% on 100 and 300, to the nearest unit; nothing on the stayed 200");

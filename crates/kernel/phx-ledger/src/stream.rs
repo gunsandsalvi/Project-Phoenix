@@ -9,8 +9,9 @@ use phx_store::Backing;
 use crate::algebra::{Amount, DueBuf, DueState, Leg, Side, due_at};
 use crate::apply::{Holders, Located};
 use crate::books::Books;
+use crate::cleared::{per_contract, times};
 use crate::due::DueLines;
-use crate::dues::{Found, row_leg};
+use crate::dues::{ClearedDay, Found, Reckoning, row_leg};
 use crate::instruction::{AccountRef, LegKind, LegRec};
 use crate::pending::Closed;
 use crate::rows::RowView;
@@ -19,7 +20,8 @@ use crate::runs;
 /// One row's dues on a line due today, reckoned on the row of the side its line is reckoned on and paid by the line's
 /// liability side to its asset side; `principal` is the part that repays the claim, moving the contract's rows with
 /// the money. A payment is named by its line and the holder of the row it was reckoned on, since a holder keeps one
-/// row on a side of a line.
+/// row on a side of a line. A cleared line's payment is one row's, between its holder and the top issuer, for the
+/// members it pays or is paid for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Payment {
     pub line: LineId,
@@ -30,6 +32,8 @@ pub struct Payment {
     pub ccy: Ccy,
     pub order: u8,
     pub reckoned_on: PartyId,
+    pub cleared: bool,
+    pub members: u32,
 }
 
 impl Payment {
@@ -93,7 +97,10 @@ impl<B: Backing> Books<B> {
         runs::segment(arenas, slot, arenas.run_head(slot)).filter(|r| due.is_due(r.row.line)).collect()
     }
 
-    /// The payment a claimant's row makes due today, if any: its dues summed, reckoned on its balance.
+    /// The payment a row makes due today, if any: on the side its line is reckoned on, its dues summed, the amounts
+    /// per contract times its count and those its terms reckon on its balance as they are; on a cleared line, every
+    /// row's.
+    #[clause("REP.23", "REP.31")]
     pub(crate) fn payment(
         &self,
         holder: PartyId,
@@ -103,8 +110,10 @@ impl<B: Backing> Books<B> {
         found: &mut Found,
     ) -> Option<Payment> {
         let line = row.row.line;
-        let (reckoned, counter) = self.reckoning(line, holder, row.side(), found);
-        if row.side() != reckoned {
+        let reckoning = self.reckoning(line, holder, row.side(), found);
+        if let Reckoning::On { side, .. } = reckoning
+            && row.side() != side
+        {
             return None;
         }
         let terms = self.ledger.terms.get(self.ledger.lines.terms(line));
@@ -116,7 +125,7 @@ impl<B: Backing> Books<B> {
         let Missing::Present(balance) = row.optional.balance else {
             violation!(clause = "REG.8", "a contract row with no balance to reckon its dues on", line = line.get());
         };
-        let outstanding = match reckoned {
+        let outstanding = match row.side() {
             Side::Asset => balance,
             Side::Liability => -balance,
         };
@@ -129,7 +138,7 @@ impl<B: Backing> Books<B> {
         };
         let mut buf = DueBuf::default();
         due_at(terms, Some(self.ledger.lines.fallen(line)), day, &state, &mut buf);
-        let (mut amount, mut principal) = (0_i64, 0_i64);
+        let (mut per, mut whole, mut principal) = (0_i64, 0_i64, 0_i64);
         for d in buf.iter() {
             let Amount::Money(m) = d.amount else {
                 violation!(
@@ -138,11 +147,26 @@ impl<B: Backing> Books<B> {
                     line = line.get()
                 );
             };
-            amount += m.amt();
-            if matches!(terms.legs.get(usize::from(d.leg)), Some(Leg::Principal { .. })) {
+            let Some(leg) = terms.legs.get(usize::from(d.leg)) else {
+                violation!(clause = "REG.5", "a due of a leg its terms do not hold", line = line.get());
+            };
+            if per_contract(leg) {
+                per += m.amt();
+            } else {
+                whole += m.amt();
+            }
+            if matches!(leg, Leg::Principal { .. }) {
                 principal += m.amt();
             }
         }
+        let members = row.row.count;
+        let Reckoning::On { side: reckoned, counter } = reckoning else {
+            if !terms.legs.iter().all(per_contract) || principal != 0 {
+                violation!(clause = "REP.23", "a cleared line whose dues are not paid per member", line = line.get());
+            }
+            return self.cleared_payment(holder, row, per, (terms.ccy, terms.payment_order.0), found);
+        };
+        let amount = times(per, members) + whole;
         if amount == 0 {
             return None;
         }
@@ -155,10 +179,53 @@ impl<B: Backing> Books<B> {
             payer: from,
             payee: to,
             amount,
-            principal,
+            principal: times(principal, members),
             ccy: terms.ccy,
             order: terms.payment_order.0,
             reckoned_on: holder,
+            cleared: false,
+            members,
+        })
+    }
+
+    /// A cleared line's row's payment: a liability row pays its per-member due for each of its members to the top
+    /// issuer; an asset row is paid it for each of its members not drawn to lose to the line's failed payers. Every
+    /// row of the line pays the same due and reaches the same top issuer.
+    #[clause("REP.23", "MON.5")]
+    fn cleared_payment(
+        &self,
+        holder: PartyId,
+        row: &RowView,
+        per: i64,
+        (ccy, order): (Ccy, u8),
+        found: &mut Found,
+    ) -> Option<Payment> {
+        let line = row.row.line;
+        let top = self.top_of(holder, ccy, found);
+        let day = found.cleared.entry(line).or_insert(ClearedDay { top, per_member: per, failed: 0, losers: None });
+        if day.top != top || day.per_member != per {
+            violation!(
+                clause = "REP.23",
+                "a cleared line whose rows pay different dues or reach different top issuers",
+                line = line.get()
+            );
+        }
+        let (from, to, members) = match row.side() {
+            Side::Liability => (holder, top, row.row.count),
+            Side::Asset => (top, holder, row.row.count - day.lost(holder)),
+        };
+        let amount = times(per, members);
+        (amount != 0).then_some(Payment {
+            line,
+            payer: from,
+            payee: to,
+            amount,
+            principal: 0,
+            ccy,
+            order,
+            reckoned_on: holder,
+            cleared: true,
+            members,
         })
     }
 
@@ -178,11 +245,13 @@ impl<B: Backing> Books<B> {
         rows.sort_by_key(|r| self.ledger.terms.get(self.ledger.lines.terms(r.row.line)).payment_order.0);
         let mut out = Vec::new();
         for r in rows {
-            let (reckoned, _) = self.reckoning(r.row.line, party, r.side(), found);
-            if r.side() == reckoned {
-                out.extend(self.payment(party, &r, day, calendar, found));
-                continue;
-            }
+            let reckoned = match self.reckoning(r.row.line, party, r.side(), found) {
+                Reckoning::On { side, .. } if side != r.side() => side,
+                _ => {
+                    out.extend(self.payment(party, &r, day, calendar, found));
+                    continue;
+                }
+            };
             for other in self.line_holders_but(r.row.line, party) {
                 if let Some(row) = self.row_on_side(other, r.row.line, reckoned) {
                     out.extend(self.payment(other, &row, day, calendar, found));
@@ -193,8 +262,17 @@ impl<B: Backing> Books<B> {
     }
 
     /// What a payment does, leg by leg: the money from the payer's means of payment to the payee's, through deposits
-    /// and, between banks, reserves; and the principal repaid off the contract's rows.
+    /// and, between banks, reserves; and the principal repaid off the contract's rows. A cleared line's payment moves
+    /// its row's holder's money up to the top issuer, or down from it.
     pub(crate) fn effects(&self, p: &Payment, found: &mut Found) -> Vec<LegRec> {
+        if p.cleared {
+            let (legs, _) = if p.payer == p.reckoned_on {
+                self.route(p.payer, p.amount, p.ccy, found)
+            } else {
+                self.route(p.payee, -p.amount, p.ccy, found)
+            };
+            return legs;
+        }
         let mut legs = self.pay(p.payer, p.payee, p.amount, p.ccy, found);
         if p.principal != 0 {
             legs.push(row_leg(p.payee, p.line, Side::Asset, -p.principal, p.ccy));
@@ -266,6 +344,13 @@ impl<B: Backing> Books<B> {
                     let legs = self.effects(&p, found);
                     out.payments += 1;
                     if closed.holds(p.payer, &issuers(&legs)) {
+                        if p.cleared {
+                            violation!(
+                                clause = "MON.5",
+                                "a cleared line's payment through a closed bank, which waits for resolution (sys-sup)",
+                                line = p.line.get()
+                            );
+                        }
                         out.pending += 1;
                         continue;
                     }

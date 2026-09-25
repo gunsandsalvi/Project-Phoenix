@@ -565,7 +565,15 @@ reduction runs over a fixed tree.
   its payers fail, the claimant members who lose are drawn (REP.23): the members the failed rows owed, as one draw
   over the claimant rows' counts from the line's own stream on the day, made afresh from the same start each time the
   failed count grows, so the fixed point stays a function of the failures alone; each claimant row is paid for its
-  members not drawn.
+  members not drawn. The draw is one sequence of members, each picked by the members its row has left (a Fenwick tree
+  over the claimant rows, `phx_ledger::cleared::Losers`), from the stream `REP.cleared` keyed by the line and the day,
+  so the first n drawn are the same members whatever n the failures reach and a growing count only takes credits
+  away. A line is cleared when its holder list shows at least two holders on each side; the reading stops there. For
+  the accounts the top issuer stands as every cleared payment's counterparty: it is owed the failed payers' dues and
+  owes the drawn members theirs, recorded as failed dues, so its receivables and payables on the line net to nothing
+  (`DaySettlement::lost` counts the members drawn). A short bank's customers lose their payments through it, but a
+  cleared line's credits into it stand, since they only add to its reserves. A cleared payment through a closed bank
+  waits for the resolution `sys-sup` brings (S2.08), and stops the run until then.
 - **7b** starts from every payment succeeding and removes, until nothing changes, the payers who cannot pay given the
   payments still standing, and the customer legs of banks that cannot cover their nets after intraday credit (MON.3,
   MON.5). A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering

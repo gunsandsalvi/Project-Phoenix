@@ -287,6 +287,7 @@ pub phx_ledger::apply_batch::DaySettlement::gross: i128
 pub phx_ledger::apply_batch::DaySettlement::heads_read: u64
 pub phx_ledger::apply_batch::DaySettlement::iterations: u64
 pub phx_ledger::apply_batch::DaySettlement::lines: u64
+pub phx_ledger::apply_batch::DaySettlement::lost: u64
 pub phx_ledger::apply_batch::DaySettlement::nets_missed: u64
 pub phx_ledger::apply_batch::DaySettlement::not_maximal: u64
 pub phx_ledger::apply_batch::DaySettlement::payments: u64
@@ -364,7 +365,7 @@ pub fn phx_ledger::books::Books<B>::declared(&self, phx_ledger::books::BooksSize
 pub fn phx_ledger::books::Books<B>::load_from(&mut phx_store::save::Reader<'_>, phx_ledger::books::Books<B>) -> core::result::Result<phx_ledger::books::Books<B>, phx_store::save::LoadError>
 pub fn phx_ledger::books::Books<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
-pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement
+pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &dyn core::ops::function::Fn(phx_id::ids::LineId) -> phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::to_procedure_line(&mut self, phx_ledger::transfer::ToProcedureLine, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_id::ids::LineId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::transfer(&mut self, phx_ledger::transfer::LineTransfer, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
@@ -419,6 +420,15 @@ pub phx_ledger::check::Position::now: i64
 pub phx_ledger::check::Position::short: phx_ledger::check::FailCause
 pub fn phx_ledger::check::check_legs(&[phx_ledger::check::Position], &[(usize, i64)]) -> core::result::Result<(), (phx_ledger::check::FailCause, usize)>
 pub fn phx_ledger::check::unbalanced(&[phx_ledger::instruction::LegRec]) -> core::option::Option<phx_ledger::instruction::Denom>
+pub mod phx_ledger::cleared
+pub struct phx_ledger::cleared::Losers
+impl phx_ledger::cleared::Losers
+pub fn phx_ledger::cleared::Losers::all_lost(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::PartyId, u32)> + '_
+pub fn phx_ledger::cleared::Losers::draw_to(&mut self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, u32)>
+pub fn phx_ledger::cleared::Losers::drawn(&self) -> u64
+pub fn phx_ledger::cleared::Losers::lost(&self, phx_id::ids::PartyId) -> u32
+pub fn phx_ledger::cleared::Losers::new(&[(phx_id::ids::PartyId, u32)], phx_rand::draws::Draws) -> phx_ledger::cleared::Losers
+pub fn phx_ledger::cleared::per_contract(&phx_ledger::algebra::Leg) -> bool
 pub mod phx_ledger::commitment
 pub enum phx_ledger::commitment::CommitmentState
 pub phx_ledger::commitment::CommitmentState::Drawn
@@ -1094,7 +1104,9 @@ pub phx_ledger::stream::DayRecords::scanned: alloc::vec::Vec<(u16, phx_id::ids::
 pub struct phx_ledger::stream::Payment
 pub phx_ledger::stream::Payment::amount: i64
 pub phx_ledger::stream::Payment::ccy: phx_num::money::Ccy
+pub phx_ledger::stream::Payment::cleared: bool
 pub phx_ledger::stream::Payment::line: phx_id::ids::LineId
+pub phx_ledger::stream::Payment::members: u32
 pub phx_ledger::stream::Payment::order: u8
 pub phx_ledger::stream::Payment::payee: phx_id::ids::PartyId
 pub phx_ledger::stream::Payment::payer: phx_id::ids::PartyId

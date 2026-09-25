@@ -1,4 +1,5 @@
 use phx_audit::CloseInputs;
+use phx_core::StreamDef;
 use phx_core::{
     AUDIT_SUBSTEP, ColumnTrace, CtxParts, EventIntent, EventStore, FactStore, IntentDef, Intents, NewEvent,
     QueuedIntent, ReadTrace, SUB_STEPS, SubStep, SubStepInfo, SubStepKind,
@@ -9,6 +10,8 @@ use phx_id::Day;
 use phx_ledger::apply_batch::DaySettlement;
 use phx_macros::clause;
 use phx_num::{Missing, violation};
+use phx_pop::prims::ClearedStream;
+use phx_rand::{Subject, SubjectTag};
 use phx_store::consts::DEFAULT_ROWS_PER_CHUNK;
 
 use crate::metrics::{SubStepRecord, TurnRecord};
@@ -149,7 +152,13 @@ impl World {
                 apply(day, &mut pending, &mut self.events, self.event_kinds.len());
             }
             if info.step == SubStep::S7c {
-                dues = self.books.settle_day(&self.due, day, &self.calendar, &self.closed, self.audit.stream());
+                let streams = &self.streams;
+                let draws_of = |line: phx_id::LineId| {
+                    let subject = Subject::new(SubjectTag::Line, u64::from(line.get()));
+                    streams.open(&ClearedStream::DECL, subject, day, SubStep::S7b.ordinal())
+                };
+                dues =
+                    self.books.settle_day(&self.due, day, &self.calendar, &self.closed, &draws_of, self.audit.stream());
             }
             if info.step == SubStep::S9b {
                 let period = crate::registry::period_of(&self.calendar, day);

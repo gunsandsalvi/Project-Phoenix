@@ -7,6 +7,7 @@ use phx_store::Backing;
 
 use crate::algebra::Side;
 use crate::books::Books;
+use crate::cleared::Losers;
 use crate::instruction::{AccountRef, Denom, Effect, LegKind, LegRec, ReasonDecl, ReasonId, Reasons, RowOp};
 
 /// The reasons a contract's dues are paid for: its payments, which settle the receivable and payable its due made
@@ -27,12 +28,39 @@ impl DueReasons {
     }
 }
 
-/// What a day's dues have looked up once: the party owing each line, and each party's account in each currency.
+/// How a line's dues are reckoned: on one side's rows, each paying or paid by the one party on the other side, or,
+/// on a line of many holders on both sides, cleared, each row its own payment through the top issuer.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Reckoning {
+    On { side: Side, counter: PartyId },
+    Cleared,
+}
+
+/// A cleared line's day: the top issuer its payments reach, the one due its rows pay per member, the members of its
+/// failed payers, and the claimant members drawn to lose them.
+#[derive(Debug)]
+pub(crate) struct ClearedDay {
+    pub top: PartyId,
+    pub per_member: i64,
+    pub failed: u64,
+    pub losers: Option<Losers>,
+}
+
+impl ClearedDay {
+    /// A claimant's members drawn to lose; before any payer fails, none.
+    pub fn lost(&self, party: PartyId) -> u32 {
+        self.losers.as_ref().map_or(0, |l| l.lost(party))
+    }
+}
+
+/// What a day's dues have looked up once: the party owing each line, how each line is reckoned, each party's account
+/// in each currency, and each cleared line's day.
 #[derive(Debug, Default)]
 pub(crate) struct Found {
     owers: BTreeMap<LineId, PartyId>,
-    reckoned: BTreeMap<LineId, (Side, PartyId)>,
+    reckoned: BTreeMap<LineId, Reckoning>,
     accounts: BTreeMap<(PartyId, u8), Missing<LineId>>,
+    pub cleared: BTreeMap<LineId, ClearedDay>,
 }
 
 pub(crate) fn money_leg(party: PartyId, line: LineId, side: Side, qty: i64, ccy: Ccy) -> LegRec {
@@ -78,11 +106,11 @@ impl<B: Backing> Books<B> {
         self.line_holders(line).filter(|p| self.row_on_side(*p, line, side).is_some()).collect()
     }
 
-    /// Which side of a line its dues are reckoned on, and the one party on the other side, the counterparty of every
-    /// payment: a line of two holders is reckoned on its claimant's row; a line one party holds a side of is reckoned
-    /// on the other side's rows, each its own payment with that party. A line of many holders on both sides needs a
-    /// pairing drawn before it can pay.
-    pub(crate) fn reckoning(&self, line: LineId, reader: PartyId, side: Side, found: &mut Found) -> (Side, PartyId) {
+    /// How a line's dues are reckoned: a line of two holders on its claimant's row; a line one party holds a side of
+    /// on the other side's rows, each its own payment with that party; a line of many holders on both sides, whose
+    /// pairing is not recorded, cleared.
+    #[clause("REP.23")]
+    pub(crate) fn reckoning(&self, line: LineId, reader: PartyId, side: Side, found: &mut Found) -> Reckoning {
         if let Some(r) = found.reckoned.get(&line) {
             return *r;
         }
@@ -90,22 +118,26 @@ impl<B: Backing> Books<B> {
         let r = if let [a, b] = holders.as_slice() {
             let other = if *a == reader { *b } else { *a };
             match side {
-                Side::Asset => (Side::Asset, other),
-                Side::Liability => (Side::Asset, reader),
+                Side::Asset => Reckoning::On { side: Side::Asset, counter: other },
+                Side::Liability => Reckoning::On { side: Side::Asset, counter: reader },
             }
         } else {
-            let owing: Vec<PartyId> =
-                holders.iter().copied().filter(|p| self.row_on_side(*p, line, Side::Liability).is_some()).collect();
-            let claiming: Vec<PartyId> =
-                holders.iter().copied().filter(|p| self.row_on_side(*p, line, Side::Asset).is_some()).collect();
+            let (mut owing, mut claiming) = (Vec::new(), Vec::new());
+            for p in holders {
+                if owing.len() > 1 && claiming.len() > 1 {
+                    break;
+                }
+                if self.row_on_side(p, line, Side::Liability).is_some() {
+                    owing.push(p);
+                }
+                if self.row_on_side(p, line, Side::Asset).is_some() {
+                    claiming.push(p);
+                }
+            }
             match (owing.as_slice(), claiming.as_slice()) {
-                ([one], _) => (Side::Asset, *one),
-                (_, [one]) => (Side::Liability, *one),
-                _ => violation!(
-                    clause = "REP.23",
-                    "dues on a line of many holders on both sides need a pairing",
-                    line = line.get()
-                ),
+                ([one], _) => Reckoning::On { side: Side::Asset, counter: *one },
+                (_, [one]) => Reckoning::On { side: Side::Liability, counter: *one },
+                _ => Reckoning::Cleared,
             }
         };
         found.reckoned.insert(line, r);
@@ -156,6 +188,30 @@ impl<B: Backing> Books<B> {
         };
         found.accounts.insert((party, ccy.index()), account);
         account
+    }
+
+    /// The legs moving money between a party's account and the top issuer, the one that pays in its own money: up
+    /// through each issuer for an amount paid, down for an amount received (negative); and the top issuer reached.
+    #[clause("MON.5", "MON.6")]
+    pub(crate) fn route(&self, party: PartyId, x: i64, ccy: Ccy, found: &mut Found) -> (Vec<LegRec>, PartyId) {
+        let mut legs = Vec::new();
+        let mut at = party;
+        while let Missing::Present(line) = self.money_row(at, ccy, found) {
+            let issuer = self.owed_by(line, at, found);
+            legs.push(money_leg(at, line, Side::Asset, -x, ccy));
+            legs.push(money_leg(issuer, line, Side::Liability, x, ccy));
+            at = issuer;
+        }
+        (legs, at)
+    }
+
+    /// The top issuer a party's money reaches, through each issuer of the account it holds.
+    pub(crate) fn top_of(&self, party: PartyId, ccy: Ccy, found: &mut Found) -> PartyId {
+        let mut at = party;
+        while let Missing::Present(line) = self.money_row(at, ccy, found) {
+            at = self.owed_by(line, at, found);
+        }
+        at
     }
 
     /// The legs of a payment of money: from the payer's account to the payee's, each bank's liability moved with its

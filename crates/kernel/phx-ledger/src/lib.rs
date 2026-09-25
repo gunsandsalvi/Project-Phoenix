@@ -4,6 +4,7 @@ pub mod apply_batch;
 pub mod audit;
 pub mod books;
 pub mod check;
+pub mod cleared;
 pub mod commitment;
 pub mod consts;
 pub mod contract_process;

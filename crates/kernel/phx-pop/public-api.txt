@@ -429,6 +429,9 @@ pub fn phx_pop::population::Population::tables<B: phx_store::backing::Backing + 
 pub fn phx_pop::population::Population::view<'a, B: phx_store::backing::Backing + 'static>(&'a self, &'a [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>]) -> phx_pop::audit::CellsView<'a, B>
 pub fn phx_pop::population::book_changed<B: phx_store::backing::Backing>(&phx_pop::population::PopKind, &mut phx_pop::table::CellTable<B>, &mut phx_core::agenda::Agenda, phx_id::day::Day)
 pub mod phx_pop::prims
+pub struct phx_pop::prims::ClearedStream
+impl phx_core::streams::StreamDef for phx_pop::prims::ClearedStream
+pub const phx_pop::prims::ClearedStream::DECL: phx_core::streams::StreamDecl
 pub struct phx_pop::prims::HouseholdsStream
 impl phx_core::streams::StreamDef for phx_pop::prims::HouseholdsStream
 pub const phx_pop::prims::HouseholdsStream::DECL: phx_core::streams::StreamDecl

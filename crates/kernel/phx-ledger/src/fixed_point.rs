@@ -3,10 +3,13 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use phx_core::calendar::Calendar;
 use phx_id::{Day, LineId, PartyId};
 use phx_macros::clause;
+use phx_num::{Ccy, violation};
+use phx_rand::Draws;
 use phx_store::Backing;
 
 use crate::algebra::Side;
 use crate::books::Books;
+use crate::cleared::{Losers, times};
 use crate::due::DueLines;
 use crate::dues::Found;
 use crate::instruction::{AccountRef, LegKind, LegRec};
@@ -43,6 +46,7 @@ struct Work<'a, B: Backing> {
     by_bank: BTreeSet<(LineId, PartyId)>,
     queue: VecDeque<PartyId>,
     queued: BTreeSet<PartyId>,
+    draws_of: &'a dyn Fn(LineId) -> Draws,
 }
 
 impl<B: Backing> Work<'_, B> {
@@ -52,7 +56,8 @@ impl<B: Backing> Work<'_, B> {
         }
     }
 
-    /// A payment removed: its effects come off every account it touched, whose parties are taken again.
+    /// A payment removed: its effects come off every account it touched, whose parties are taken again. A cleared
+    /// line's payer failing, its members' dues are lost by claimant members drawn for them.
     fn fail(&mut self, p: &Payment) {
         if !self.failed.insert(p.key()) {
             return;
@@ -60,6 +65,39 @@ impl<B: Backing> Work<'_, B> {
         let legs = self.books.effects(p, self.found);
         for party in self.books.book(self.records, &legs, -1) {
             self.enqueue(party);
+        }
+        if p.cleared && p.payer == p.reckoned_on {
+            self.lose(p.line, p.members, p.ccy);
+        }
+    }
+
+    /// A cleared line's failed members grown by `members`: the claimant members drawn to lose them, from the same
+    /// sequence of the line's stream, and each newly drawn claimant's credit taken off the accounts it reaches.
+    #[clause("REP.23", "REP.31")]
+    fn lose(&mut self, line: LineId, members: u32, ccy: Ccy) {
+        let Some(day) = self.found.cleared.get(&line) else {
+            violation!(clause = "REP.23", "a cleared payment failed on a line never reckoned", line = line.get());
+        };
+        let claimants: Vec<(PartyId, u32)> = if day.losers.is_none() {
+            self.books
+                .side_holders(line, Side::Asset)
+                .into_iter()
+                .filter_map(|p| self.books.row_on_side(p, line, Side::Asset).map(|r| (p, r.row.count)))
+                .collect()
+        } else {
+            Vec::new()
+        };
+        let draws = (self.draws_of)(line);
+        let Some(day) = self.found.cleared.get_mut(&line) else { return };
+        day.failed += u64::from(members);
+        let failed = day.failed;
+        let per = day.per_member;
+        let more = day.losers.get_or_insert_with(|| Losers::new(&claimants, draws)).draw_to(failed);
+        for (claimant, k) in more {
+            let (legs, _) = self.books.route(claimant, -times(per, k), ccy, self.found);
+            for party in self.books.book(self.records, &legs, -1) {
+                self.enqueue(party);
+            }
         }
     }
 
@@ -99,7 +137,8 @@ impl<B: Backing> Work<'_, B> {
         }
     }
 
-    /// Every standing payment of a bank's customers whose legs pass through the bank's account.
+    /// Every standing payment of a bank's customers whose legs pass through the bank's account; a cleared line's
+    /// credit to a customer only adds to the bank's reserves, and stands.
     #[clause("MON.5")]
     fn remove_customers(&mut self, bank: PartyId, account: LineId) {
         let issued: Vec<LineId> = self
@@ -112,6 +151,9 @@ impl<B: Backing> Work<'_, B> {
         for line in issued {
             for customer in self.books.side_holders(line, Side::Asset) {
                 for p in self.books.payments_of(customer, self.due, self.day, self.calendar, self.found) {
+                    if p.cleared && p.payee == customer {
+                        continue;
+                    }
                     let legs = self.books.effects(&p, self.found);
                     if draw(&legs, bank, account) > 0 || legs.iter().any(|l| l.party == bank) {
                         if !self.failed.contains(&p.key()) {
@@ -138,6 +180,7 @@ impl<B: Backing> Books<B> {
         today: Day,
         calendar: &Calendar,
         found: &mut Found,
+        draws_of: &dyn Fn(LineId) -> Draws,
     ) -> FixedPoint {
         let short: Vec<PartyId> = day.records.iter().filter(|(_, r)| r.standing() < 0).map(|(p, _)| *p).collect();
         let mut work = Work {
@@ -151,6 +194,7 @@ impl<B: Backing> Books<B> {
             by_bank: BTreeSet::new(),
             queue: VecDeque::new(),
             queued: BTreeSet::new(),
+            draws_of,
         };
         for p in short {
             work.enqueue(p);

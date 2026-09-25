@@ -35,6 +35,8 @@ pub struct DaySettlement {
     pub pending: u64,
     pub settled: u64,
     pub failed: u64,
+    /// The claimant members drawn to lose on cleared lines whose payers failed.
+    pub lost: u64,
     pub iterations: u64,
     pub gross: i128,
     /// The closing ring: the parties whose settled payments their own funds could not cover without the day's
@@ -207,6 +209,29 @@ impl<B: Backing> Books<B> {
         g
     }
 
+    /// The dues the claimant members drawn on cleared lines lost, recorded as failed against the top issuer, which
+    /// holds the failed payers' dues; the members drawn.
+    #[clause("REP.23", "ACC.1")]
+    fn record_lost(&mut self, found: &Found) -> u64 {
+        let mut members = 0_u64;
+        for (line, c) in &found.cleared {
+            let Some(losers) = &c.losers else { continue };
+            let ccy = self.ledger.terms.get(self.ledger.lines.terms(*line)).ccy;
+            for (claimant, k) in losers.all_lost() {
+                self.ledger.record_due(DueRec {
+                    line: *line,
+                    payer: c.top,
+                    payee: claimant,
+                    interest: phx_num::Money::new(crate::cleared::times(c.per_member, k), ccy),
+                    principal: phx_num::Money::new(0, ccy),
+                    outcome: DueOutcome::Failed,
+                });
+            }
+            members += losers.drawn();
+        }
+        members
+    }
+
     /// The nets applied, one instruction per line as its legs are read in order, so no batch of legs is held.
     fn apply_nets(&mut self, nets: &BTreeMap<NetKey, i128>, day: Day, audit: &mut dyn AuditStream) {
         let mut legs: Vec<LegRec> = Vec::new();
@@ -261,14 +286,16 @@ impl<B: Backing> Books<B> {
         day: Day,
         calendar: &Calendar,
         closed: &Closed,
+        draws_of: &dyn Fn(LineId) -> phx_rand::Draws,
         audit: &mut dyn AuditStream,
     ) -> DaySettlement {
         let mut found = Found::default();
         let mut streamed = self.stream(due, day, calendar, closed, &mut found);
-        let fixed = self.fixed_point(&mut streamed, due, day, calendar, &mut found);
+        let fixed = self.fixed_point(&mut streamed, due, day, calendar, &mut found, draws_of);
         let scanned: BTreeSet<(u16, Slot)> = streamed.scanned.iter().copied().collect();
         let (runs_read, runs_broken) = self.runs_broken(due, day, &scanned);
         let g = self.gather(&streamed, &fixed, (due, day, calendar), closed, &mut found);
+        let lost = self.record_lost(&found);
         let unsound = count(g.given.values().filter(|r| r.standing() < 0).count());
         let (ring_parties, ring_value) = g
             .given
@@ -322,6 +349,7 @@ impl<B: Backing> Books<B> {
             pending: streamed.pending,
             settled: g.settled,
             failed: g.failed,
+            lost,
             iterations: fixed.iterations,
             gross: streamed.gross,
             ring_parties,

@@ -4717,8 +4717,15 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
   and pensions in payment (`sys-lab`, `sys-hsg`, `sys-bnk`, `sys-frm`, `sys-soc`, `sys-pen`), paying by their terms
   through pooled flows. LC-0-55 and LC-0-56 apply.
   Built in sub-steps (the builder's decision under the owner's autonomy, §12), each with its reviews:
-  - S0.25d-1: the kernel's settlement for cells — a row's per-contract dues times its count, and cleared lines, whose
-    claimant members who lose to failed payers are drawn (architecture §6.5);
+  - S0.25d-1 *(done)*: the kernel's settlement for cells — a row's per-contract dues times its count, and cleared
+    lines, whose claimant members who lose to failed payers are drawn (architecture §6.5). As built: a leg's amount is
+    per contract (a fixed sum, a principal, a sum per time, a contingent sum, an indexed one of these) or reckoned on
+    the balance (`phx_ledger::cleared::per_contract`); a cleared line's rows each pay or are paid through the top
+    issuer, the losers drawn one member at a time from `REP.cleared` (declared with the representation's streams);
+    a cell pays from its pooled funds, as one payer, until the attachments say which members a row reaches
+    (S0.25d-2). Tests: the draw nested in its count, within each row and even over members; a cleared line over
+    books of two banks, one payer failing, its members' dues lost by drawn claimants, reserves conserved. Build run
+    (the world's lines unchanged, none cleared until S0.25d-4): see the commit.
   - S0.25d-2: the kernel's attachments on explicit households — rows held by households or by the persons of declared
     roles, drawn with them at 3e, a leaving person's rows and its counterparty's member leaving together, parts
     taking their attachments as given shares, and a household no one is left in becoming an estate that takes its
@@ -8226,7 +8233,8 @@ for the large-exposure test, on its reporting dates, spread by phase, inside "Va
 - BCP.6 *(completes it: a breach's consequences)*; BCP.8 *(completes it: no loss skips a layer in resolution)*.
 
 **Architecture**: §3.1 (decision-point homes), §4.4 (the split at a kink), §4.5 (the banking arrangement), §6.1
-(2b, 5c, 6a, 7, 8d, 8f, 9c, 9e), §6.5 (pending legs), §9.1, §9.2, §13.2 (the resolution's D+1).
+(2b, 5c, 6a, 7, 8d, 8f, 9c, 9e), §6.5 (pending legs, and a cleared line's payment through a closed bank, which
+stops the run until this step), §9.1, §9.2, §13.2 (the resolution's D+1).
 
 **Depends on**: S2.07.
 

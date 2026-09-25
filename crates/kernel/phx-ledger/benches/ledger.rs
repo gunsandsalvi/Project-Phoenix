@@ -238,7 +238,11 @@ fn loans() -> (Books<Heap>, Calendar, Day) {
 #[bench::loans(setup = loans)]
 fn ir_settle_day_16((mut books, cal, day): (Books<Heap>, Calendar, Day)) -> u64 {
     let due = books.ledger.mark_due(day, &cal);
-    books.settle_day(&due, day, &cal, &Closed::default(), &mut Quiet).settled
+    let draws = |l: phx_id::LineId| {
+        let subject = phx_rand::Subject::new(phx_rand::SubjectTag::Line, u64::from(l.get()));
+        phx_rand::Draws::new(phx_rand::stream_key(phx_rand::Seed::new(1), "REP.cleared"), subject, 0, 0)
+    };
+    books.settle_day(&due, day, &cal, &Closed::default(), &draws, &mut Quiet).settled
 }
 
 library_benchmark_group!(

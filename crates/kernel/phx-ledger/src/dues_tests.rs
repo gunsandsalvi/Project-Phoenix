@@ -199,7 +199,14 @@ fn dues_are_paid_from_the_payers_money() {
     let mut o = opened();
     let cal = calendar();
     let due = o.books.ledger.mark_due(o.due, &cal);
-    let paid = o.books.settle_day(&due, o.due, &cal, &crate::pending::Closed::default(), &mut Quiet);
+    let paid = o.books.settle_day(
+        &due,
+        o.due,
+        &cal,
+        &crate::pending::Closed::default(),
+        &crate::cleared::test_draws,
+        &mut Quiet,
+    );
     assert_eq!((paid.lines, paid.payments, paid.settled, paid.failed), (3, 3, 2, 1), "C cannot pay its loan's dues");
     assert_eq!((paid.unsound, paid.not_maximal, paid.nets_missed, paid.reserves_missed), (0, 0, 0, 0));
     let [cb, b0, b1, a, b, c] = o.parties;
@@ -223,4 +230,101 @@ fn dues_are_paid_from_the_payers_money() {
     assert!(
         fails.iter().all(|f| f.row == Missing::Present(crate::instruction::DueRow { line: lc, side: Side::Liability }))
     );
+}
+
+const WAGE: LineKindDecl = LineKindDecl {
+    name: "wage",
+    asset: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
+    liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
+    transfer_requesters: &["BNK"],
+    dated: true,
+};
+
+/// Two payers owing a line of 1 000 a member a month — the first for 2 members with 10 000 on deposit at the first
+/// bank, the second for 3 with 100 at the second — and three claimants holding 1, 3 and 1 members, one at each bank
+/// and one at the first: no pairing between them is recorded.
+#[test]
+fn a_cleared_line_pays_row_by_row_and_draws_who_loses() {
+    let size = BooksSize { rows: 32, rows_per_chunk: 32, instruments: 16, lines: 16, per_chunk: 16, blocks: 32 };
+    let mut books: Books<Heap> = Books::new(&["central bank", "bank", "firm"], size);
+    let cal = calendar();
+    let at = |books: &mut Books<Heap>, kind| books.parties.begin(kind, TileId::new(0), Day::new(0));
+    let cb = at(&mut books, "central bank");
+    let banks = [at(&mut books, "bank"), at(&mut books, "bank")];
+    let payers = [at(&mut books, "firm"), at(&mut books, "firm")];
+    let claimants = [at(&mut books, "firm"), at(&mut books, "firm"), at(&mut books, "firm")];
+    let reserves_kind = books.ledger.lines.declare_reserves(HOLDERS.reserves()).index();
+    let deposit_kind = books.ledger.lines.declare_deposits(HOLDERS.deposits("current account")).index();
+    let wage_kind = books.ledger.lines.declare_money(WAGE).index();
+    let account = books.ledger.terms.intern(Terms::account(EUR, monthly()));
+    let reserves = books.ledger.lines.open(reserves_kind, account, Missing::Absent);
+    let deposits = banks.map(|_| books.ledger.lines.open(deposit_kind, account, Missing::Absent));
+    let wage_terms = Terms {
+        legs: vec![Leg::FixedAmount(Money::new(1_000, EUR))],
+        schedule: Schedule { dates: monthly(), count: Missing::Absent },
+        ..Terms::account(EUR, monthly())
+    };
+    let wage_terms = books.ledger.terms.intern(wage_terms);
+    let due = cal.day(Date::new(2026, 2, 16).unwrap()).unwrap();
+    let wage = books.ledger.lines.open(wage_kind, wage_terms, Missing::Present((due, 1)));
+    let reason = books.ledger.reasons.declare(ReasonDecl {
+        name: "opening",
+        order: 0,
+        paid: Effect::Equity,
+        received: Effect::Equity,
+    });
+    let banked =
+        [(payers[0], 0, 10_000), (payers[1], 1, 100), (claimants[0], 0, 0), (claimants[1], 1, 0), (claimants[2], 0, 0)];
+    let mut legs = vec![open(cb, reserves, Side::Liability, 2, BALANCE)];
+    for ((bank, line), depositors) in banks.iter().zip(deposits).zip([3, 2]) {
+        legs.push(open(*bank, reserves, Side::Asset, 1, BALANCE));
+        legs.push(open(*bank, line, Side::Liability, depositors, BALANCE));
+    }
+    for (party, bank, _) in banked {
+        legs.push(open(party, deposits[bank], Side::Asset, 1, BALANCE | PENDING));
+    }
+    for (party, count) in payers.iter().zip([2, 3]) {
+        legs.push(open(*party, wage, Side::Liability, count, BALANCE));
+    }
+    for (party, count) in claimants.iter().zip([1, 3, 1]) {
+        legs.push(open(*party, wage, Side::Asset, count, BALANCE));
+    }
+    let mut report = GenReport::default();
+    books.open(reason, legs, 0, &mut report);
+    let mut writes = Vec::new();
+    for bank in banks {
+        writes.extend([write(bank, reserves, Side::Asset, 50_000), write(cb, reserves, Side::Liability, -50_000)]);
+    }
+    for (party, bank, amount) in banked.into_iter().filter(|b| b.2 > 0) {
+        writes.push(write(party, deposits[bank], Side::Asset, amount));
+        writes.push(write(banks[bank], deposits[bank], Side::Liability, -amount));
+    }
+    books.open(reason, writes, 1, &mut report);
+
+    let marked = books.ledger.mark_due(due, &cal);
+    let paid = books.settle_day(
+        &marked,
+        due,
+        &cal,
+        &crate::pending::Closed::default(),
+        &crate::cleared::test_draws,
+        &mut Quiet,
+    );
+    assert_eq!(
+        (paid.payments, paid.failed, paid.lost),
+        (5, 1, 3),
+        "every row its own payment; the second payer's 3 lost"
+    );
+    assert_eq!((paid.unsound, paid.not_maximal, paid.nets_missed, paid.reserves_missed), (0, 0, 0, 0));
+    assert_eq!(balance(&books, payers[0], deposits[0], Side::Asset), 8_000, "the first payer paid for its 2 members");
+    assert_eq!(balance(&books, payers[1], deposits[1], Side::Asset), 100, "the second failed whole");
+    let received: Vec<i64> =
+        claimants.iter().zip([0, 1, 0]).map(|(c, b)| balance(&books, *c, deposits[b], Side::Asset)).collect();
+    assert_eq!(received.iter().sum::<i64>(), 2_000, "the claimants are paid what the payers paid");
+    for (r, count) in received.iter().zip([1, 3, 1]) {
+        assert!(*r % 1_000 == 0 && *r <= 1_000 * count, "whole members, within each row's count");
+    }
+    let held: i64 = banks.iter().map(|b| balance(&books, *b, reserves, Side::Asset)).sum();
+    assert_eq!(held, 100_000, "reserves moved between the banks, none made");
+    assert_eq!(balance(&books, cb, reserves, Side::Liability), -100_000);
 }
