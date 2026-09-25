@@ -36,3 +36,6 @@ pub const MONTHS_A_YEAR: u8 = 12;
 /// Rows on means-of-payment lines a holder's summary keeps: a household's deposit and banknotes, a bank's reserves
 /// and the deposits it issues; a holder with more has its rows read.
 pub const MONEY_ROWS_KEPT: usize = 4;
+/// The shards 7a's heads are read in: fixed, never the number of workers, so the stream's result is the same on any
+/// pool; many to a worker, so the pool balances shards of uneven work.
+pub const STREAM_SHARDS: usize = 64;

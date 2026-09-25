@@ -129,6 +129,8 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
     show(host, "world", "opening", "assembling".to_owned(), String::new(), "");
     let started = clock.now_ns();
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
+    let pool = phx_exec::Pool::new(&phx_exec::spec::PoolSpec::detect()).map_err(|e| e.0)?;
+    world.use_pool(std::sync::Arc::new(pool));
     let opening_ms = clock.now_ns().checked_sub(started).map(|n| n / NS_PER_MS);
     let opened_peak = proc_kib("status", "VmHWM:");
     let w = Inspector::new(&world);

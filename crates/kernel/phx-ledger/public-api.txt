@@ -391,6 +391,7 @@ pub fn phx_ledger::books::Books<B>::new(&[&'static str], phx_ledger::books::Book
 pub fn phx_ledger::books::Books<B>::open(&mut self, phx_ledger::instruction::ReasonId, alloc::vec::Vec<phx_ledger::instruction::LegRec>, u64, &mut phx_core::contribution::GenReport)
 pub fn phx_ledger::books::Books<B>::row_on(&self, phx_id::ids::PartyId, &str) -> core::option::Option<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 pub fn phx_ledger::books::Books<B>::rows_of(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
+pub fn phx_ledger::books::Books<B>::use_pool(&mut self, alloc::sync::Arc<phx_exec::pool::Pool>)
 pub fn phx_ledger::books::Books<B>::with_cells(&[&'static str], usize, impl core::ops::function::FnOnce(&mut phx_store::backing::AddressSpace, u16) -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>>, phx_ledger::books::BooksSize) -> phx_ledger::books::Books<B>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::declared(&self, phx_ledger::books::BooksSize, impl core::ops::function::FnOnce(&mut phx_store::backing::AddressSpace, u16) -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>>) -> phx_ledger::books::Books<B>
@@ -401,7 +402,7 @@ pub fn phx_ledger::books::Books<B>::members_leave(&mut self, (phx_id::ids::Party
 pub fn phx_ledger::books::Books<B>::to_procedure_line(&mut self, phx_ledger::transfer::ToProcedureLine, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_id::ids::LineId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::transfer(&mut self, phx_ledger::transfer::LineTransfer, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
-pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &dyn core::ops::function::Fn(phx_id::ids::LineId) -> phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement
+pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &dyn core::ops::function::Fn(phx_id::ids::LineId) -> phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement where B: core::marker::Sync
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::settle_estate(&mut self, phx_id::ids::PartyId, phx_id::ids::PartyId, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::estate::Settled, phx_ledger::fails::Fail>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
@@ -528,6 +529,7 @@ pub const phx_ledger::consts::MONEY_ROWS_KEPT: usize
 pub const phx_ledger::consts::MONTHS_A_YEAR: u8
 pub const phx_ledger::consts::ROW_OPTIONAL_WORDS: usize
 pub const phx_ledger::consts::RUN_SAMPLE_PERIOD: u32
+pub const phx_ledger::consts::STREAM_SHARDS: usize
 pub const phx_ledger::consts::SYNTHETIC_DEPOSIT: i64
 pub const phx_ledger::consts::SYNTHETIC_EPOCH_YEAR: i32
 pub const phx_ledger::consts::SYNTHETIC_LOAN: i64

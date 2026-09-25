@@ -242,6 +242,8 @@ pub struct Books<B: Backing = SystemBacking> {
     pub(crate) leaving: BTreeMap<(LineId, Side), (u64, crate::cleared::Tally)>,
     /// Stage 7's buffers, kept from one day to the next.
     pub(crate) buffers: crate::apply_batch::DayBuffers,
+    /// The workers stage 7 reads its shards on, where the world gives it some; without, the shards run in turn.
+    pub(crate) pool: Option<std::sync::Arc<phx_exec::Pool>>,
 }
 
 /// The opening's instructions feed no audit: day one's audit reads the state they leave.
@@ -266,6 +268,11 @@ pub struct BooksSize {
 }
 
 impl<B: Backing> Books<B> {
+    /// Workers for stage 7's shards; its results are the same with or without them.
+    pub fn use_pool(&mut self, pool: std::sync::Arc<phx_exec::Pool>) {
+        self.pool = Some(pool);
+    }
+
     /// Empty books with a kind table for each individual kind, in the order given.
     #[must_use]
     pub fn new(kinds: &[&'static str], size: BooksSize) -> Books<B> {
@@ -310,6 +317,7 @@ impl<B: Backing> Books<B> {
             opened: 0,
             leaving: BTreeMap::new(),
             buffers: crate::apply_batch::DayBuffers::default(),
+            pool: None,
         }
     }
 
@@ -497,6 +505,7 @@ impl<B: Backing> Books<B> {
             opened,
             leaving: BTreeMap::new(),
             buffers: crate::apply_batch::DayBuffers::default(),
+            pool: None,
         };
         books.relist();
         Ok(books)

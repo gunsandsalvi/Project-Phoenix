@@ -383,7 +383,10 @@ impl<B: Backing> Books<B> {
         closed: &Closed,
         draws_of: &dyn Fn(LineId) -> phx_rand::Draws,
         audit: &mut dyn AuditStream,
-    ) -> DaySettlement {
+    ) -> DaySettlement
+    where
+        B: Sync,
+    {
         let mut found = Found::default();
         let heads = self.ledger.lines.take_heads(day);
         let buffers = self.buffers.stream_buffers();

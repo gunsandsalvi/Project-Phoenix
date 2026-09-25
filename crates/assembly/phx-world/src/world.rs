@@ -103,6 +103,11 @@ pub(crate) fn geo_in<'a>(own: &'a [(&'static str, OwnState)]) -> &'a phx_geo::Ge
 }
 
 impl World {
+    /// Workers for the day's sharded kernel work; the world's results are the same with or without them.
+    pub fn use_pool(&mut self, pool: std::sync::Arc<phx_exec::Pool>) {
+        self.books.use_pool(pool);
+    }
+
     /// The map and what GEO compiled from it, which GEO keeps as its own state.
     pub(crate) fn geo(&self) -> &phx_geo::GeoState {
         geo_in(&self.own)

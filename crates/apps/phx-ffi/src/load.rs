@@ -303,7 +303,7 @@ fn greatest(values: &[u64]) -> Option<u64> {
 
 /// The stores and books the month runs over.
 struct Load {
-    pool: Pool,
+    pool: std::sync::Arc<Pool>,
     population: Agents,
     books: Settlement<SystemBacking>,
     stores: Vec<Vec<u64>>,
@@ -417,7 +417,7 @@ fn build(v: &Volumes, host: &dyn BenchHost, holidays: &[Date], (first, heavy): (
     let Some(week_before) = Date::new(WEEK_BEFORE.0, WEEK_BEFORE.1, WEEK_BEFORE.2) else {
         return Err("no Monday before the first".to_owned());
     };
-    let pool = Pool::new(&PoolSpec::detect()).map_err(|e| e.0)?;
+    let pool = std::sync::Arc::new(Pool::new(&PoolSpec::detect()).map_err(|e| e.0)?);
     show(host, "building", "the household agents, their persons and attachments".to_owned(), String::new(), "");
     let pv = &v.population;
     let stream = stream_key(Seed::new(3), "LOAD.bench");
@@ -435,6 +435,8 @@ fn build(v: &Volumes, host: &dyn BenchHost, holidays: &[Date], (first, heavy): (
     show(host, "building", "the held stores".to_owned(), String::new(), "");
     let stores: Vec<Vec<u64>> = v.stores.iter().zip(0_u64..).map(|(s, i)| held(&pool, s.bytes, i)).collect();
     let names = v.stores.iter().map(|s| s.name.clone()).collect();
+    let mut books = books;
+    books.books.use_pool(std::sync::Arc::clone(&pool));
     Ok(Load { pool, population, books, stores, names })
 }
 

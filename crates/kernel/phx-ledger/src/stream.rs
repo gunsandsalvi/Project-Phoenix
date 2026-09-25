@@ -1,15 +1,17 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use phx_core::KernelMap;
 use phx_core::calendar::Calendar;
 use phx_id::{Day, LineId, PartyId, Slot};
 use phx_macros::clause;
 use phx_num::{Ccy, Missing, Money, violation};
 use phx_store::Backing;
 
-use crate::algebra::{Amount, DueBuf, DueState, Leg, Side, due_at, due_by_plan, due_plan};
+use crate::algebra::{Amount, DueBuf, DuePlan, DueState, Leg, Side, due_at, due_by_plan, due_plan};
 use crate::apply::{Holders, Located};
 use crate::books::Books;
 use crate::cleared::{per_contract, times};
+use crate::consts::STREAM_SHARDS;
 use crate::due::DueLines;
 use crate::dues::{ClearedDay, Found, Reckoning, row_leg};
 use crate::instruction::{AccountRef, LegKind, LegRec};
@@ -42,6 +44,19 @@ impl Payment {
     pub fn key(&self) -> (LineId, PartyId) {
         (self.line, self.reckoned_on)
     }
+}
+
+/// A row's due as far as the row alone decides it.
+pub(crate) enum Reckoned {
+    Paid(Payment),
+    Cleared { per: i64, ccy: Ccy, order: u8 },
+}
+
+/// What a shard of 7a's heads found, in the stream's order, for the serial pass that books it.
+enum Step {
+    Scanned { place: u16, slot: Slot, read: u64, due: u64 },
+    Paid(Payment, Vec<LegRec>),
+    Cleared { holder: PartyId, row: RowView, per: i64, ccy: Ccy, order: u8 },
 }
 
 /// A party's account at the start of stage 7 and what the day's standing payments do to it: what it may draw on (its
@@ -171,6 +186,11 @@ pub fn issuers(legs: &[LegRec]) -> Vec<PartyId> {
         .collect()
 }
 
+/// The lesser of two indexes.
+fn at_most(a: usize, b: usize) -> usize {
+    if a < b { a } else { b }
+}
+
 fn count(n: usize) -> u64 {
     phx_rand::float::len_u64(n)
 }
@@ -195,6 +215,28 @@ impl<B: Backing> Books<B> {
         calendar: &Calendar,
         found: &mut Found,
     ) -> Option<Payment> {
+        let line = row.row.line;
+        if found.plans.get(line).is_none() {
+            let terms = self.ledger.terms.get(self.ledger.lines.terms(line));
+            let plan = due_plan(terms, Some(self.ledger.lines.fallen(line)), day, calendar);
+            let _ = found.plans.insert(line, plan);
+        }
+        match self.reckon(holder, row, (day, calendar), found.plans.get(line))? {
+            Reckoned::Paid(p) => Some(p),
+            Reckoned::Cleared { per, ccy, order } => self.cleared_payment(holder, row, per, (ccy, order), found),
+        }
+    }
+
+    /// A row's due as far as the row alone decides it: its payment, or on a cleared line the due it pays or is paid
+    /// per member, which the line's day turns into a payment. Reads the day's plan of the line's dues where given.
+    #[clause("REP.23", "REP.31")]
+    fn reckon(
+        &self,
+        holder: PartyId,
+        row: &RowView,
+        (day, calendar): (Day, &Calendar),
+        plan: Option<&DuePlan>,
+    ) -> Option<Reckoned> {
         let line = row.row.line;
         let reckoning = self.reckoning(line);
         if let Reckoning::On { side, .. } = reckoning
@@ -221,21 +263,27 @@ impl<B: Backing> Books<B> {
         if outstanding % i64::from(unit) != 0 {
             violation!(clause = "REP.9", "an agent's balance not a whole share for each twin", line = line.get());
         }
-        let outstanding = outstanding / i64::from(unit);
-        let state = DueState {
-            calendar,
-            outstanding: Money::new(outstanding, terms.ccy),
-            elected: &|_, _| false,
-            occurred: &|_, _| false,
-            in_state_since: &|_, _| Missing::Absent,
-        };
+        let outstanding = Money::new(outstanding / i64::from(unit), terms.ccy);
         let mut buf = DueBuf::default();
         let k = self.ledger.lines.fallen(line);
-        let plan = found.plans.get_or_insert_with(line, || due_plan(terms, Some(k), day, calendar));
+        let planned;
+        let plan = if let Some(p) = plan {
+            p
+        } else {
+            planned = due_plan(terms, Some(k), day, calendar);
+            &planned
+        };
         if plan.general {
+            let state = DueState {
+                calendar,
+                outstanding,
+                elected: &|_, _| false,
+                occurred: &|_, _| false,
+                in_state_since: &|_, _| Missing::Absent,
+            };
             due_at(terms, Some(k), day, &state, &mut buf);
         } else {
-            due_by_plan(plan, state.outstanding, &mut buf);
+            due_by_plan(plan, outstanding, &mut buf);
         }
         let (mut per, mut whole, mut principal) = (0_i64, 0_i64, 0_i64);
         for d in buf.iter() {
@@ -263,7 +311,7 @@ impl<B: Backing> Books<B> {
             if !terms.legs.iter().all(per_contract) || principal != 0 {
                 violation!(clause = "REP.23", "a cleared line whose dues are not paid per member", line = line.get());
             }
-            return self.cleared_payment(holder, row, per, (terms.ccy, terms.payment_order.0), found);
+            return Some(Reckoned::Cleared { per, ccy: terms.ccy, order: terms.payment_order.0 });
         };
         let whole = times(whole, unit);
         let amount = times(per, members) + whole;
@@ -275,7 +323,7 @@ impl<B: Backing> Books<B> {
             Side::Liability => (holder, counter),
         };
         let moneyless = !self.holds_money(from, terms.ccy) || !self.holds_money(to, terms.ccy);
-        Some(Payment {
+        Some(Reckoned::Paid(Payment {
             line,
             payer: from,
             payee: to,
@@ -287,7 +335,7 @@ impl<B: Backing> Books<B> {
             cleared: false,
             members,
             moneyless,
-        })
+        }))
     }
 
     /// A cleared line's row's payment: a liability row pays its per-member due for each of its members to the top
@@ -457,6 +505,8 @@ impl<B: Backing> Books<B> {
     /// Stage 7a: one stream over the run heads filed as due by today, holder-major in table and slot order. A holder
     /// whose head has since moved costs that one read; on its head's day its segment's rows on lines due today are
     /// read, and each claimant's row adds its payment's debits and credits to the records of the accounts it touches.
+    /// The heads are read in a fixed number of shards, on the pool where the books have one, each shard's payments
+    /// reckoned apart; the shards are then booked in the stream's order, so the result is the same with any workers.
     #[clause("MON.5", "REP.9", "SET.6")]
     pub(crate) fn stream(
         &self,
@@ -466,29 +516,46 @@ impl<B: Backing> Books<B> {
         (day, calendar): (Day, &Calendar),
         closed: &Closed,
         found: &mut Found,
-    ) -> DayRecords {
-        let keys = self.ledger.lines.keys();
-        for &key in heads {
-            let (place, slot) = keys.split(key);
-            let table = self.parties.holder(place);
-            if !phx_store::table::live_at(table.live_words(), slot) {
-                continue;
+    ) -> DayRecords
+    where
+        B: Sync,
+    {
+        for &line in due.lines() {
+            if found.plans.get(line).is_none() {
+                let terms = self.ledger.terms.get(self.ledger.lines.terms(line));
+                let _ = found.plans.insert(line, due_plan(terms, Some(self.ledger.lines.fallen(line)), day, calendar));
             }
-            out.heads_read += 1;
-            let Some((rows, read)) = runs::due_rows(table, slot, day, due) else { continue };
-            out.scanned.push((place, slot));
-            out.rows_scanned += read;
-            out.rows_due += count(rows.len());
-            let holder = table.party(slot);
-            for row in &rows {
-                let Some(p) = self.payment(holder, row, day, calendar, found) else { continue };
+        }
+        let plans = &found.plans;
+        let each = heads.len().div_ceil(STREAM_SHARDS);
+        let shards = phx_exec::pool::map(self.pool.as_deref(), STREAM_SHARDS, |shard| {
+            let from = at_most(shard * each, heads.len());
+            let to = at_most(from + each, heads.len());
+            self.stream_shard(heads.get(from..to).unwrap_or(&[]), due, (day, calendar), plans)
+        });
+        for (read, steps) in shards {
+            out.heads_read += read;
+            for step in steps {
+                let (p, legs) = match step {
+                    Step::Scanned { place, slot, read, due } => {
+                        out.scanned.push((place, slot));
+                        out.rows_scanned += read;
+                        out.rows_due += due;
+                        continue;
+                    }
+                    Step::Paid(p, legs) => (p, legs),
+                    Step::Cleared { holder, row, per, ccy, order } => {
+                        let Some(p) = self.cleared_payment(holder, &row, per, (ccy, order), found) else { continue };
+                        let legs = if p.moneyless { Vec::new() } else { self.effects(&p) };
+                        (p, legs)
+                    }
+                };
                 out.payments += 1;
                 out.made.push(p);
                 if p.moneyless {
-                    out.moneyless.insert(holder);
+                    out.moneyless.insert(p.reckoned_on);
                     continue;
                 }
-                let legs = self.effects(&p);
                 if closed.holds(p.payer, &issuers(&legs)) {
                     if p.cleared {
                         violation!(
@@ -505,5 +572,41 @@ impl<B: Backing> Books<B> {
             }
         }
         out
+    }
+
+    /// One shard of 7a's heads: how many were read, and what each due holder's segment makes, in order.
+    fn stream_shard(
+        &self,
+        heads: &[u32],
+        due: &DueLines,
+        (day, calendar): (Day, &Calendar),
+        plans: &KernelMap<LineId, DuePlan>,
+    ) -> (u64, Vec<Step>) {
+        let keys = self.ledger.lines.keys();
+        let (mut read, mut steps) = (0_u64, Vec::new());
+        for &key in heads {
+            let (place, slot) = keys.split(key);
+            let table = self.parties.holder(place);
+            if !phx_store::table::live_at(table.live_words(), slot) {
+                continue;
+            }
+            read += 1;
+            let Some((rows, scanned)) = runs::due_rows(table, slot, day, due) else { continue };
+            steps.push(Step::Scanned { place, slot, read: scanned, due: count(rows.len()) });
+            let holder = table.party(slot);
+            for row in rows {
+                match self.reckon(holder, &row, (day, calendar), plans.get(row.row.line)) {
+                    None => {}
+                    Some(Reckoned::Paid(p)) => {
+                        let legs = if p.moneyless { Vec::new() } else { self.effects(&p) };
+                        steps.push(Step::Paid(p, legs));
+                    }
+                    Some(Reckoned::Cleared { per, ccy, order }) => {
+                        steps.push(Step::Cleared { holder, row, per, ccy, order });
+                    }
+                }
+            }
+        }
+        (read, steps)
     }
 }

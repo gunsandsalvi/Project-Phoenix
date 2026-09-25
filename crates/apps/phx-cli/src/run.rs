@@ -578,6 +578,15 @@ fn substeps_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
         .collect()
 }
 
+/// The pool the world's sharded work runs on: the cores the system allows, or the first `workers` of them.
+fn pool(workers: Option<usize>) -> Result<std::sync::Arc<phx_exec::Pool>, String> {
+    let mut spec = phx_exec::spec::PoolSpec::detect();
+    if let Some(n) = workers {
+        spec.cores.truncate(n);
+    }
+    phx_exec::Pool::new(&spec).map(std::sync::Arc::new).map_err(|e| e.0)
+}
+
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
@@ -586,6 +595,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let clock = WallClock::new();
     let assembling = clock.now_ns();
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
+    world.use_pool(pool(args.workers)?);
     let assembly_ns = clock.now_ns().checked_sub(assembling);
     let (settle_end, end) = span(Inspector::new(&world), args.days, args.total_days)?;
     let definitions = phx_obs::Definitions::read(&args.data)?;
