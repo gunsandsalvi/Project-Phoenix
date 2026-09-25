@@ -49,7 +49,7 @@ The forces:
 | --- | --- | --- |
 | Engine | **Rust**, stable, pinned in `rust-toolchain.toml`, edition 2024 | Layout and allocation control, no GC pauses, data-race freedom, Android and Linux targets, crates as compiler-enforced boundaries. |
 | World mathematics | **`libm`** (pure Rust) for transcendental functions in world code | Platform-independent results. |
-| Parallelism | **Own pool** in `phx-exec` over **rayon-core**, pinned to fast and medium cores, with Android performance-hint sessions | Cost-sized fixed chunks, no little cores, few barriers. Only `phx-exec` depends on rayon. |
+| Parallelism | **Own pool** in `phx-exec` over **rayon-core**, pinned to fast and medium cores, with Android performance-hint sessions | Cost-sized fixed chunks, no little cores, few barriers. Only `phx-exec` depends on rayon. As built at Stage 0 the world runs on one thread: the pool serves only `phx-ffi`'s benches, and performance-hint sessions are not built (`PerfHint` has only `NoHint`, called by nothing); making the world's traversals parallel is the plan's F-056. |
 | Hash maps | **hashbrown** + fixed-seed **foldhash**, behind a kernel map type with no iteration, sharded where written in parallel | Fast lookups; no outcome depends on hash order. |
 | Randomness | **Own Philox4x32-10** in `phx-rand`, batch-first, NEON-vectorised samplers | Draws addressable by (stream, identity, day, index): parallel, order-free, reproducible (CHN.1, CHN.6). |
 | Compression | **zstd** level 1 after per-column transforms (delta, zigzag, bit-packing) | Fast; transforms double the ratio on integer columns. |
@@ -115,23 +115,23 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 
 | Crate | Carries | Owns |
 | --- | --- | --- |
-| `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>`, rounding conventions, checked `i64`/`i128` arithmetic, the named comparisons that replace `min` and `max` (§16), `violation!` and its payload, **point tables** (a trade's price points as `i64`, REP.34). No floating-point type in any store. |
+| `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>`, rounding conventions, checked `i64`/`i128` arithmetic, `violation!` and its payload, **point tables** (a trade's price points as `i64`, REP.34). No floating-point type in any store. It has no named comparisons: `min` and `max` are refused (§16) and callers compare inline. |
 | `phx-rand` | CHN.1, CHN.6, CHN.7 | Philox; stream keys; batch samplers: binomial (inversion, BTPE) and **zero-truncated** binomial, multinomial (conditional binomials; alias tables when draws are fewer than categories), hypergeometric (inversion when small, Stadlober's ratio of uniforms otherwise) and multivariate hypergeometric, weighted picks over prefix sums, geometric (for next-candidate days), normal, log-normal, Pareto, Gumbel; rejection thinning. |
 | `phx-id` | TIME.1, TIME.2 (the day and civil dates), PTY.1 (identities) | Identifier types (`PartyId`, slots, `LineId`, `RowRef`, `InstrumentId`, day-local ids), `Day`, `Date`. |
-| `phx-macros` | — | `#[clause]`, `#[derive(Pod)]`, `declare_kind!`, `declare_fact!`, `declare_store!`, `declare_message!`, `declare_rule!`, `declare_system!`. |
+| `phx-macros` | — | `#[clause]` (which checks each name is a clause identifier), `#[derive(Pod)]`, `#[derive(Saved)]`, `declare_prim!`, `declare_fact!`, `declare_kind!`, `declare_facet!`, `declare_stream!`, `declare_message!`, `declare_hazard!`, `declare_decision!`, `declare_rule!`, `declare_record!`, `declare_family!`, `declare_handler!`. |
 
 ### 3.3 Kernel
 
 | Crate | Carries | Owns |
 | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
-| `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry, the traits kernel crates meet through without depending on each other (`GroupDemand`, which `phx-pop` implements for `phx-market`; `TracedCells`, the observer's read-only set of traced cells, which `phx-pop` reads to write its split log; `BooksAudit`, `LegRecords` and `CellsAudit`, the books, the settled legs and the cells as the audit reads them, §10.4c); calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
+| `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. At Stage 0 the world calls none of the pool's traversals or `KeyedReduce` (§6.3); `phx-ffi`'s benches and the crates' tests do. |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry, the traits kernel crates meet through without depending on each other (`GroupDemand`, which `phx-pop` implements for `phx-market`; `TracedCells`, the observer's read-only set of traced cells, which `phx-pop` reads to write its split log; `BooksAudit`, `MarketsAudit`, `AccountsAudit`, `LegRecords` and `CellsAudit`, the books, the tape, the accounts, the settled legs and the cells as the audit reads them, §10.4c); calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds and profiles; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.10). |
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings (cells' with a member count) with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and pooled flows (§7.4); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
 | `phx-pop` | REP | Cell tables; keys (interned, reference-counted, sharded); positions and their **steps** (REP.4), and keyed position lists (§4.5); profiles by role; **screening** (§7.3); occasion allocation; splits and parts, and a household's `combine` and `divide` (§7.5); **landing** and its index (§7.6); choice-group pieces (§7.9); tolerance control; promotion; renumbering. |
 | `phx-market` | MKT | The six forms (§8), the coupled call and the **linked call** among them; prints, marks, and instruments' and currency pairs' fixings at 6b by the pricing service's declared method; admission hooks; market failures. |
-| `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts, with the receivables and payables of dues as they fall, posted from the day's settled records by the kernel's own work at 9b. |
+| `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts, with the receivables and payables of dues as they fall, posted from the day's settled records by the kernel's own work at 9b on a business day and, on a day with no 9b, at the audit's sub-step (10d) before the close reads them. The ledger's apply raises an equity effect for a money leg, a row leg that adjusts a balance, and a move of a holder's cost of lots, each signed by the leg's move of its party's net assets, so a leg passing through a party moves its equity by nothing. |
 | `phx-val` | VAL | Outlook methods as pure functions; public-series outlooks once per method per day, and for registered series only per registered pair on days with a new print; surprise and confidence arithmetic; the investor schedule. |
 | `phx-audit` | N1 | Families; streaming checks, the `AuditStream` the apply routine feeds; independent records (§15); incremental and rolling checks; injection mode. |
 
@@ -146,6 +146,9 @@ system that owns that kind's decision — except that a lender valuing a claim o
 item that only one system may construct carries a **writer token** only that system can build: a lender's
 `LoanAssessment` (in `if-credit`) is built only by `sys-bnk`, so every price and provision on a lender's book comes
 from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_claim_value`, never building one.
+As built at Stage 0, `if-pop` is the one interface crate: plain constants (roles, key attributes, profile components)
+that `sys-dem` declares and the other systems read, not `ItemDecl`s, so assembly checks no writer for them; the
+interfaces' list in `phx-world/src/systems.rs` holds only `phx_geo::ITEMS`, `phx-geo` being registered as a system.
 
 | Crate | Domain |
 | --- | --- |
@@ -175,25 +178,33 @@ from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_
 | --- | --- |
 | `phx-world` | Registry and schema compilation (§5.3); stages and sub-steps (§6); GEN (§10); saving (§11); the player's decider (§12); metrics. |
 | `phx-obs` | Views, tracers, portraits, and in the inspector build the realism recorder (§14.8); read-only. |
-| `phx-cli` | `run` (with its report), `inject`, `measure`, `realism`, `chains`, `register-report`, `dump-registry`; the live-check suite. |
-| `phx-ffi` | The engine as an Android library. |
+| `phx-cli` | `run` (with its report), `inject`, `measure` (`calendar` and `budget` at Stage 0; `realism`, `chains` and `register-report` arrive with Stage 7, §14.4); the live-check suite. |
+| `phx-ffi` | The engine as an Android library. At Stage 0 it exports `run_bench`, `run_world`, `run_load` and `run_programme` (§12). |
 | `android/` | The Compose app and its `bench` flavour. |
 | `phx-check` | Law, layering and document checks (§16). |
 
 ### 3.7 Repository
 
 ```text
-Cargo.toml · rust-toolchain.toml · clippy.toml · .cargo/config.toml · CODEOWNERS
+Cargo.toml · rust-toolchain.toml · rust-toolchain-miri.toml · clippy.toml · .cargo/config.toml · CODEOWNERS
 crates/{foundation,kernel,interfaces,systems,assembly,apps}/
-android/  data/  perf/  docs/  tools/build-run.sh  .github/workflows/ci.yml
+android/  data/  perf/  docs/  tools/{build-run.sh,versions.toml,data/}  .github/workflows/ci.yml
 ```
 
-`data/world.toml` holds the world constants; `data/setup/` the default new game; `data/profiles/` the country-group
-profiles, the choices' ranges and each development level's templates of every system's primitives; `data/names/` the
-name tables (§10.0). A country's `data/<country>/` is instantiated at a new game into the run's directory, never
-committed. `data/measure/` holds the realism reads' registered definitions, which no world crate reads.
-`perf/{realism,chains,register}/` hold their reports, append-only (§14.8); `perf/device/` and `perf/measure/` the
-gates' reports; `perf/build-run/` the build runs' reports (§14.7); `perf/ratchets.toml` the counters' values.
+`data/world.toml` holds the calendar's constants (the epoch, day zero) and the world's units; the generator's constants
+— the population, the countries and their regions, the map's size, the settling length — are `data/shared/GEN.toml`'s.
+`data/shared/` holds the register's shared files, one or more per system (`<SYS>.toml`); `data/setup/` the default new
+game; `data/profiles/<level>/` the country-group profiles, the choices' ranges and each development level's templates of
+every system's primitives, the opening's distributions in its `gen/`; `data/names/` the name tables (§10.0);
+`data/observer/READS.toml` the observer's declared macro reads, which no world crate reads; `data/inventory.toml` the
+opening's inventory of derived values and distributions with their sources; `data/sources/` the fetched raw series and
+their notes. `tools/data/*.py` fetch the sources and derive the profiles from them; `tools/versions.toml` pins every
+tool beyond the Rust toolchain (the NDK and Android levels, the cargo tools, valgrind, the nightlies `miri` and
+`public-api` use). A country's `data/<country>/` is instantiated at a new game into the run's directory, never
+committed. From Stage 7, `data/measure/` holds the realism reads' registered definitions, which no world crate reads,
+and `perf/{realism,chains,register}/` their reports, append-only (§14.8). `perf/device/` and `perf/measure/` hold the
+gates' reports; `perf/build-run/` the build runs' reports (§14.7); `perf/load/volumes.toml` the full-load bench's
+volumes (§14.6); `perf/schema/` the device report's schema; `perf/ratchets.toml` the counters' values.
 
 ---
 
@@ -206,18 +217,18 @@ channels, each with one writer per fact (Law 4) and declared audiences (Law 12).
 
 A **fact** is a named, typed attribute of parties of declared kinds, declared in an interface crate with its type and
 unit, the kinds it applies to, **exactly one writer** (a system, or a placeholder SHAPE naming the system that retires
-it), its **audience** (the party, a named authority, public after a lag) and, for cells, its representation class
-(key, position or profile, REP.33). Facts compile into columns of the cell tables and into **facet columns** of the
-kernel's **kind tables of individuals** — one table per individual kind (bank, fund, insurer, scheme, clearing house,
-dealer, agency, political party, large firm, estate), owned by `phx-core`, whose columns belong to the systems that
-declared them. A bank is one row, written by BNK, BFL, BCP and SUP each in its own columns. A dealer is a row of the
-dealer kind, a party of its declared form (a bank's subsidiary or an independent broker-dealer) with its own equity
-and books (DLR.1). Publishers — the curve publisher, the pricing service, benchmark administrators, index publishers,
-rating agencies, banks' analyst units and pollsters — are large firms with a **publisher facet** (their method, what
-they cover, their records), each its own party reading only public records and what it bought; finance companies are
-large firms whose form takes no deposits. Writing needs a token only the writer crate can build; reading needs a
-handle. Party creation and ending are kernel operations requested by declared systems (SUP.9 creates a bank; SUP.5
-ends one).
+it), its **audience** (the party, a named authority, public after a lag) and, for cells, its representation class (key,
+position or profile, REP.33). Facts compile into columns of the cell tables and into **facet columns** of the kernel's
+**kind tables of individuals** — one table per individual kind (central bank, treasury, bank, fund, insurer, scheme,
+clearing house, dealer, agency, political party, large firm, estate), owned by `phx-core`, whose columns belong to the
+systems that declared them. A bank is one row, written by BNK, BFL, BCP and SUP each in its own columns. A dealer is a
+row of the dealer kind, a party of its declared form (a bank's subsidiary or an independent broker-dealer) with its own
+equity and books (DLR.1). Publishers — the curve publisher, the pricing service, benchmark administrators, index
+publishers, rating agencies, banks' analyst units and pollsters — are large firms with a **publisher facet** (their
+method, what they cover, their records), each its own party reading only public records and what it bought; finance
+companies are large firms whose form takes no deposits. Writing needs a token only the writer crate can build; reading
+needs a handle. Party creation and ending are kernel operations requested by declared systems (SUP.9 creates a bank;
+SUP.5 ends one).
 
 ### 4.2 Messages
 
@@ -356,9 +367,10 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
   writer, `phx-ledger`'s instrument events, applying the event intents the deciding systems declare.
 - **Due-day runs**: a holder's rows of **dated** line kinds (loans, rents, employment, invoices, policies, annuities,
   benefits and pensions, derivatives) are one segment of its row list, and its record keeps the run's **head** — the
-  earliest day any of them can be due, and the segment's offset and length — in 8 bytes, with no list reference of
-  its own. Rows are never reordered by due day: the head is a lower bound, rewritten when the segment is scanned on
-  its day (§6.5).
+  earliest day any of them can be due, and the segment's offset and length — with no list reference of its own: 12 bytes
+  in an individual's record (`phx_core::RunHead`, three `u32`), 8 in a cell's (`phx_pop::CellRunHead`, a `u32` day and
+  `u16` offset and length, since a cell's rows are few). Rows are never reordered by due day: the head is a lower bound,
+  rewritten when the segment is scanned on its day (§6.5).
 - **Pensions** (Stage 4, and pensions in payment from Stage 0): a job's pension kind and contribution rates are terms
   of its employment line, and the scheme a member belongs to is a component of its employment attachment, joint in
   the adult role's profile group, so employment lines are not split by scheme. A DB row's `balance` is an accrued
@@ -386,8 +398,8 @@ that moves a hazard's rate above its screening envelope reschedules the rows it 
 
 - Every decision the spec names is a **decision point**: an input view type and an output intent type from an
   interface crate, a rule function registered by its system, a declared **schedule** (TIME.5) and **wake conditions**,
-  and a pure evaluation form usable off-world (REP.15). The **decider** is a per-party fact: the kind's rule, or the
-  player. The kernel dispatches inside the decision point.
+  and a pure evaluation form usable off-world (REP.15). The **decider** is the kind's rule or the player, derived for
+  a party from `PlayerQueue` (§12), not stored per party. The kernel dispatches inside the decision point.
 - A **rule handle** is a pure function declared in an interface crate and implemented by its owning system — the tax
   on a given income, a benefit entitlement, a lender's cap, a clearing house's margin for a trade, a platform's effect
   on a household — callable by any system with inputs it may read. It reads only its inputs and policy values. Market
@@ -398,14 +410,16 @@ that moves a hazard's rate above its screening envelope reschedules the rows it 
 `KeyedReduce<K, V>`: chunk-local sorted runs, merged in parallel by owner-key shard, each shard in chunk order. The
 only way a pass sums over rows it does not own, and the way every **global structure** — the landing index, the key
 and terms interner, the directory, line creation, holder lists — is updated: sharded by key hash, each shard applied
-by one worker, so nothing serialises and no atomic is needed.
+by one worker, so nothing serialises and no atomic is needed. As built at Stage 0 the world uses none: it runs on one
+thread (F-056), its global structures are updated in place, and settlement's nets and records are `BTreeMap`s (§6.5).
 
 ### 4.9 Records, audiences, scoped reads
 
-Decision kernels read through `ctx.party(row)`: the party's own rows and facts; the relationship rows it is holder or
-counterparty of; records whose audience includes it; earlier prints and marks. Audience is checked at compile and
-assembly time from declarations; `read-trace`, a run-time flag of release builds, on in every build run (§14.7),
-samples chunks and verifies reads at run time. Store-wide views go only to processes and applies.
+Decision kernels read what their party may: its own rows and facts; the relationship rows it is holder or counterparty
+of; records whose audience includes it; earlier prints and marks. As built, a handler's `Ctx` reads and writes a
+declared fact by slot (`read::<F>(slot)`, `write::<F>(slot, v)`), and has no per-party accessor. Audience is checked at
+compile and assembly time from declarations; `read-trace`, a run-time flag of release builds, on in every build run
+(§14.7), samples chunks and verifies reads at run time. Store-wide views go only to processes and applies.
 
 ### 4.10 Public events
 
@@ -424,7 +438,7 @@ today. A public event stays public. `phx-obs` only shows them.
 
 ```rust
 pub trait System: Send + Sync + 'static {        // zero-sized implementors only (asserted)
-    const CODE: SystemCode;
+    const CODE: &'static str;                     // checked at assembly as two to four capitals
     fn declare(d: &mut Declarations);             // kinds, facts, stores, lines, messages, levies, markets, rules,
                                                   // primitives, policy values, hazards, occasions, kinks, decision
                                                   // points, schedules, audits, metrics, views, opening contributions
@@ -434,8 +448,11 @@ pub trait System: Send + Sync + 'static {        // zero-sized implementors only
 
 The trait and everything it declares with live in `phx-core`, so systems (L2) and kernel crates (L1) use them without
 reaching the assembly. Declarations generate typed handles with private constructors: using something undeclared does
-not compile, and an unused declaration fails `dead_code`. Registration is one line in `phx-world/src/systems.rs`
-(each interface crate's items are listed beside it); its order carries no meaning (§6.2).
+not compile, and an unused declaration fails `dead_code`. A reference across systems — a writer, a reader, an answering
+system, a transfer requester — is a system's code as a string, not a compile-time handle; assembly checks the
+references §5.4 names.
+Registration is one line in `phx-world/src/systems.rs` (each interface crate's items are listed beside it); its order
+carries no meaning (§6.2).
 
 ### 5.2 Handlers
 
@@ -482,16 +499,16 @@ day, as TIME.8 lists. Every apply point (§6.2) may emit **parts** (§7.5); all 
 
 | Stage | Sub-steps |
 | --- | --- |
-| 1 Open | 1a lapse orders, quotes and day-local messages whose day has passed · 1b build the **agenda** (§7.3) · 1c the player's queued intents become wakes (§12) |
+| 1 Open | 1a lapse orders, quotes and day-local messages whose day has passed · 1b the lines due today marked (§6.5) · 1c the player's queued intents become wakes (§12) |
 | 2 Resolve | 2a accruals post where a date needs them · 2b (B) **resolutions** opened by the last business day's failures: valuation and write-downs, a clearing house's recovery by its rulebook on its pending legs (§9.2) · 2c (B) **settle** calls and demands due today (the settlement routine of stage 7); failures handed to their owners at once (TIME.7) · 2d (B) earlier fails delivered to owners; arrears · 2e (B) recognised losses land; parties that cannot go on end; estates open and compute their waterfall · 2f apply |
-| 3 Nature and population | 3a weather; catastrophes (§7.10) · 3b hazards and occasions drawn for agenda rows (§7.3) · 3c demographic events; foundings and moves decided before; each country's school year's date; households formed (`combine`) and divided (`divide`) on the day their dwelling is their own · 3d overlapping occasions allocated (§7.5) · 3e hits answered, then stage 3's apply (§6.2): transformation records; hit records reach the systems a process declares interested, which open what they answer (claims); discoveries, imitations and meetings applied |
+| 3 Nature and population | 3a weather; catastrophes (§7.10) · 3b the **agenda** gathered, and hazards and occasions drawn for its rows (§7.3) · 3c demographic events; foundings and moves decided before; each country's school year's date; households formed (`combine`) and divided (`divide`) on the day their dwelling is their own · 3d overlapping occasions allocated (§7.5) · 3e hits answered, then stage 3's apply (§6.2): transformation records; hit records reach the systems a process declares interested, which open what they answer (claims); discoveries, imitations and meetings applied |
 | 4 Real work | 4a production, services, shipments, construction; jobs starting and ending · 4b apply |
 | 5 Decide | 5a public-series outlooks per method, and registered instrument outlooks and their values on days with a new print (§8); migration's memo of inclusive values (`sys-hh`) · 5b continuous decisions of rows scheduled or woken today, fused per table · 5c lumpy decisions of occasion holders; institutions (B); answers to messages at their declared sub-step · 5d apply; promotion on a declared decision (§7.11) |
 | 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B), open-ended funds' dealing at the value computed after its orders were taken (forward pricing, administered, MKT.8) among them; a resolution's selection among bids by the authority's least-cost rule (B, §9.2); admission hooks over each member's order set (§8) · 6b marks, and instruments' and currency pairs' fixings by the pricing service's declared method (§8) · 6c (B) the curve and the valuation inputs derived from 6b's fixings (discount-factor tables) · 6d apply: matches become instructions, drawing the commitments they meet (a terms grant's `Row` leg in place of the money leg, §4.4); banknotes change hands; members whose fills change their holdings make their parts, pinned until settlement (§4.2); on non-business days card payments and electricity trades are recorded as **pending** on the payer's deposit row and the payee's, settling at the next business day's stage 7 |
-| 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds, per currency; a bank's conversion commitment drawn for a leg in a currency its payer does not hold; holding levies on their dates; per-category tallies of rows on lines whose sides sit in two countries; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c the surviving payments' nets applied per account, one instruction per line, deposits and reserves together, with the streaming audit fused in and the survivors' declared tallies added · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§4.5, §9.2) |
+| 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds, per currency; a bank's conversion commitment drawn for a leg in a currency its payer does not hold; holding levies on their dates; per-category tallies of rows on lines whose sides sit in two countries; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c the surviving payments' nets applied per account, one instruction per line, deposits and reserves together, with the streaming audit fused in and the survivors' declared tallies added · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§4.5, §9.2). As built at Stage 0, all of it — the stream, the fixed point, the apply, the losers' draw and the estates' settlement (§9.1) — runs in 7c's kernel block; 7a, 7b, 7d and 7e run nothing of their own |
 | 8 Fund (B) | 8a money-market orders and the central bank's tender orders · 8b the **linked call**: the money market and the tenders meet together (§8) · 8c its trades settle · 8d standing-facility, lender-of-last-resort and the treasury's direct-borrowing requests, met by `phx-market`'s administered form within their declared limits, reading the supervisor's solvency fact · 8e they settle · 8f intraday credit closes: a bank that cannot repay has the shortfall recorded as an **overdue claim of the central bank** and its liquidity failure recorded (MON.3, MON.12, BFL.10) |
 | 9 Value and judge (B) | 9a valuations, provisions among them, and each party's sensitivities per (party, bucket) · 9b accounts and ratios, funds' net asset values and the group fact, reading 9a's valuations · 9c tests: margins (a house's initial margin one blocked product over its accounts), covenants, capital, solvency — each test and the consequence it triggers in one handler, consolidated statements a pure `phx-acct` read; demands issued, due next business day; resolutions triggered and bids invited (§9.2); reports read from the books · 9d publications: reports, ratings, net asset values, benchmark reference rates fixed from 8b's match sets (§8), analysts' estimates revised on the day's reports · 9e apply: stage 9's intents — demands, messages, wakes, facts on other parties, the closed fact, income events |
-| 10 Close | 10a public events; an election's tally where one closes today · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11); declared sweeps a system registers and `phx-pop` runs (a campaign's intention group written and cleared) · 10c (B) monthly ranks; a renumbering slice on declared light days · 10d incremental audit families · 10e tracers every day, views and pages on a turn's last day (read-only) · 10f metrics |
+| 10 Close | 10a public events; an election's tally where one closes today · 10b **landing** of the day's parts and re-keying of rows whose steps changed (§7.6); tolerance control when the cells carried exceed the budget (§7.11); the monthly rank read on its day; on a declared light day, narrowing and a renumbering slice; declared sweeps a system registers and `phx-pop` runs (a campaign's intention group written and cleared) · 10c (B) nothing at Stage 0 · 10d on a day with no 9b, the day's accounts posted first (§3.3); incremental audit families · 10e tracers every day, views and pages on a turn's last day (read-only) · 10f metrics |
 
 The **kernel applies** — 2f, 4b, 5d, 6d, 7c, 9e and 10b — are a sub-step kind of their own: no system registers a
 handler there (§5.4), and the kernel runs each on every day its stage runs, whatever is queued. What a system does
@@ -518,6 +535,15 @@ write another handler reads, so registration order carries no meaning; intent bu
 handler id), so gathers and new identities do not depend on it either, which a logic-level test holds: the canonical
 ids a registration list yields are the same for every order of it (§14.3).
 
+As built at Stage 0 no system's handler writes an instruction, so the world's apply routine (`phx_world::day`'s
+`apply`) records the day's event intents, dated by the sub-step that drew them, and stops the run on any other intent.
+What moves the books is the kernel's own work at its sub-step: 3b's catastrophe losses (§9.1); 3e's outcomes on the
+cells, with their parts, the ledger's `members_leave` and the estates' line transfers (`cells_outcomes`, §7.3); 7c's
+block, which runs `Books::settle_day` and then the estates' settlement (§6.5, §9.1); and 10b's landings
+(`cells_settle`, §7.6). Instructions go through the ledger's one instruction apply (`Ledger::apply`), which feeds the
+audit; a part's rows detached and attached move outside any instruction and are recorded for the audit apart
+(§10.4c).
+
 ### 6.3 Traversals
 
 `phx-exec` runs one traversal per table per sub-step, in **cost-sized chunks** (declared per table, never dependent
@@ -527,12 +553,16 @@ whether it is an **agenda** pass (the rows the agenda lists, in slot order), a *
 needs every row that day, and always declared: tolerance control and narrowing (§7.11), the monthly ranks, a
 surprise's wake pass (§7.3), the singles' counts for meetings (§7.3), a scheme's valuation and the sweeps systems
 register (§6.1) — or a **kernel apply** (§6.2). A **sweep ledger** counts rows and bytes touched per sub-step, and a
-ratchet holds it (§16).
+ratchet holds it (§16). As built at Stage 0 the ledger is partial: each sub-step's `SubStepRecord` keeps the rows its
+handlers visited and its wall time, its bytes and barriers are 0, the kernel's own work at a sub-step (screening,
+outcomes, settlement, landing) is not counted in it, and no ratchet reads it (F-060).
 
 The kernel's own small tables (regions, countries) keep their facts as columns (`FactColumns`) and are traversed chunk
 by chunk on the day's thread, since each is one chunk. The pool's traversal arrives with the first handler on a kind
 table, whose chunks are handed to workers as disjoint column views; the order of chunks and handlers, and
-so of intents, is the same either way.
+so of intents, is the same either way. As built at Stage 0 the world runs on one thread: the only handlers are
+`phx-geo`'s on its kernel tables, and the kernel's work — 3b's screening, 3e's outcomes, stage 7, 10b's landing and
+the audit — runs serially; `--workers` is only reported. Chunk-parallel traversals are the plan's F-056.
 
 ### 6.4 Compute, gather, apply
 
@@ -540,7 +570,8 @@ Handlers write their own rows and emit intents into (chunk, handler) buffers; ga
 applies run in declared order, in parallel over disjoint targets. **One apply routine** serves every apply point
 (§6.2): it settles the instructions of reasons allowed there (§6.1), writes transformation records, emits parts, and
 checks and feeds the streaming audit through `phx-core`'s `AuditStream`, which `phx-world` injects (§3.3). Every
-reduction runs over a fixed tree.
+reduction runs over a fixed tree. At Stage 0 it applies event intents only; parts, settlement and estates are the
+kernel's own work (§6.2).
 
 ### 6.5 Settlement
 
@@ -562,7 +593,11 @@ reduction runs over a fixed tree.
   lookup, levies per member) times its count; each (party, bank) gets its debit and credit totals, tested for debits
   by the pooled-flow rule (REP.8), with the first failing row recorded. Banks' nets are sums over parties. Nothing is
   written per leg and no payee reduction is needed. For a due line with no retail holder list, the (holder, row) pairs
-  met are gathered into the day buffers, which 7b and 7d read in its place.
+  met are gathered into the day buffers, which 7b and 7d read in its place. As built at Stage 0: the stream keeps a
+  record per party and the claimants per line in `BTreeMap`s, inserted row by row; the pooled-flow rule is given each
+  cell as one payer, every row reaching one member with no kinks, so no row's members split from a cell's funds
+  (F-065); and no gather of unlisted sides is built (F-058). The stream and 7c's gather each compute every payment's
+  route, and a due record is kept per payment for the accounts (F-057).
 - **Reckoning**: a due line's dues are reckoned on one side's rows, each row its own payment with one counterparty.
   A line of two holders is reckoned on its claimant's row; a line one party holds a side of (a bank's loans to many
   firms, a scheme's members) is reckoned on the other side's rows, each paying or paid by that party. A row's due is
@@ -598,23 +633,30 @@ reduction runs over a fixed tree.
   holders with money reach.
 - **7b** starts from every payment succeeding and removes, until nothing changes, the payers who cannot pay given the
   payments still standing, and the customer legs of banks that cannot cover their nets after intraday credit (MON.3,
-  MON.5). A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering
-  the credits of their other side and the nets of their banks. A payer fails as a **prefix** of its payment order
-  (REP.8), which is monotone, so the result is the **greatest** set that can settle, and rings of payments that can
-  settle together do (TIME.6).
+  MON.5). A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering the
+  credits of their other side and the nets of their banks. As built, only through holder lists, so a side that keeps
+  none — a failing bank's household depositors, a lender's household loans — is not revisited (F-058). A payer fails as
+  a **prefix** of its payment order (REP.8), which is monotone, so the result is the **greatest** set that can settle,
+  and rings of payments that can settle together do (TIME.6).
 - **7c** nets the surviving payments' legs per (line, party, side), money and rows apart, and applies them as one
   instruction per line in line order, read straight from the ordered nets: every account is checked once against its
   net, so no order of application can fail what 7b let stand, and banks' reserves move once per bank by net; applied
-  is final (SET.5). The apply is sequential while the day's payments are few; the split by target chunk across the
-  pool waits for the phone's measure to call for it (the plan's F-021). Failure is per payer (MON.5): a payer that
-  cannot pay fails its own legs; where the pairing to its payees was not recorded, the payees who lose are drawn
-  (REP.23).
+  is final (SET.5). The apply is sequential while the day's payments are few, its nets an ordered `BTreeMap`; the
+  split by target chunk across the pool waits for the phone's measure to call for it (the plan's F-021). Failure is
+  per payer (MON.5): a payer that cannot pay fails its own legs; where the pairing to its payees was not recorded, the
+  payees who lose are drawn (REP.23).
 - **Verdicts**: 7c recomputes, over the payments that settle and the books as stage 7 found them, each party's
   standing (soundness), each failed payer's shortfall at its first failed payment (maximality), each account's
   movement against its net, and each bank's reserves against the net of its customers' payments across banks; one
   holder in 64, by slot congruent to the day, has its run read against all its rows. The counts of breaches are the
   day's, read by the live checks. The **closing ring** (SET.10) is the parties whose settled payments their own funds
   could not cover without the day's credits, and the part those credits paid.
+- **Fails and the close**: the day's fails, each with its cause, are the day's book, which the close takes with the
+  settlement measure (SET.10) and the dues' counts. A fail waits for the next business day's 2d, where the contract
+  process — kernel work at a sub-step with no handlers — reads it against the party that holds its row then (a cell
+  landed since is its successor) and turns it into arrears; the directory keeps the failed party resolvable until
+  then. Once that 2d has run, the world counts each earlier day's fails whose row is still held and not in arrears
+  (`Settled::unrecorded`), which LC-0-21 reads.
 - **Pending** is a leg's third state, beside settled and failed. At 7a a leg whose payer's or payee's bank is
   **closed** (§9.2) is fixed as pending and kept out of 7b: it neither fails nor funds anyone. Its amount sits as
   `pending` on the payer's deposit row, which the payer's funds exclude, and on the payee's, where it counts for
@@ -1068,9 +1110,11 @@ without end in both directions.
 - **The world runs once** (spec Appendix E 36): there is no weight-one run, and no run at another resolution or seed
   to compare with. The representation is judged by the run's own macro results against real economies' (N3, N4),
   and REP.15's costs, measured at each landing, are its error bar.
-- **The valve** (N8.5) is a declared RESOLUTION setting in the save's manifest, never an input the world reads from
-  its own timing: it changes only between runs or at a save boundary, by a recorded change citing a device or
-  measurement report (§14.8). Tolerance control reads only the count of cells carried, never a wall clock.
+- **The valve** (N8.5) is a declared RESOLUTION setting, never an input the world reads from its own timing: it
+  changes only between runs or at a save boundary, by a recorded change citing a device or measurement report
+  (§14.8). As built, its settings are register primitives (`data/shared/REP.toml`, and each kind's cell budget and
+  ranks in its system's file), which the manifest's register hash covers, so a load with a changed valve is refused
+  as other data (§11). Tolerance control reads only the count of cells carried, never a wall clock.
 
 ---
 
@@ -1122,7 +1166,7 @@ without end in both directions.
 
 | Ending | Handled by | How |
 | --- | --- | --- |
-| A cell member's death | `sys-dem` | The role leaves the household; if the household ends, an estate row in `phx-core`'s estate table, behaviour in `sys-est` |
+| A cell member's death | `sys-dem` | The role leaves the household; if the household ends, an estate row in `phx-core`'s estate table, behaviour in `sys-est` (at Stage 0, `phx_ledger::estate` and `phx-world`'s `estates`, below) |
 | Leaving home, separation, formation | `sys-dem` | Not an ending: `divide` makes a new household from a part of one by the family law, `combine` one from two origins' parts (§7.5); the origins continue, and a household ends only with its last member |
 | Household, firm, fund or political-party estate | `sys-est` | Sells what its debts need; pays by the country's law through the ledger's waterfall (L3), as instructions settled at stage 7; passes the rest in kind (POP.9) |
 | Personal insolvency | `sys-hh` | The procedure (HH.21): an estate row sells the non-exempt assets, distributes and ends; for the procedure's period the income levy's follow-on pays the creditors' claim line through the country's trustee; discharge ends the claims |
@@ -1140,12 +1184,14 @@ law, the rate of openings times their life: firms' about 800 a day × about 40 d
 about 25 days, personal insolvencies' about 70 a day × about 45 days — about 60 thousand open, at 512 bytes each
 (§13.1). Their mean life and the number open are counted per kind.
 
-As built at Stage 0 (plan S0.25e): an ended household's rows pass to one estate at 3e; from the next business day,
-at 7c once the day's dues are paid, the ledger settles it (`Books::settle_estate`) — its money pays its debts through
-the waterfall, what it owes beyond is written off, what is left is paid to its country's treasury, since no heir is
-drawn before the kinship lines exist — and its rows leave with their counterparts and it ends; one whose payment
-fails waits, counted. A catastrophe's struck tiles lose, at 3b, their share of every physical unit the individuals
-sited there hold, as a transformation naming the event (GEO.8).
+As built at Stage 0 (plan S0.25e) there is no `sys-est`: estates are the ledger's `phx_ledger::estate` run by the
+world's `estates` (`phx-world/src/estates.rs`). An ended household's rows pass to one estate at 3e; from the next
+business day, in 7c's block once the day's dues are paid, the ledger settles it (`Books::settle_estate`) — its money
+pays its debts through the waterfall, what it owes beyond is written off, what is left is paid to the party of the kind
+`HEIRLESS_DESTINATION` names (the treasury) in its country, since no heir is drawn before the kinship lines exist (the
+plan's F-050) — and its rows leave with their counterparts and it ends; one whose payment fails waits, counted. Dues it
+owes in arrears are not claims in its waterfall (F-066). A catastrophe's struck tiles lose, at 3b, their share of every
+physical unit the individuals sited there hold, as a transformation naming the event (GEO.8).
 
 ### 9.2 A bank's failure
 
@@ -1223,7 +1269,8 @@ A world starts from a setup (spec GEN.14, GEN.15, Appendix E 43), so a new game 
   country, and each country's land is its share of the map, so regions are of like size.
 - **Names**: a real name labels the country's institutions and currency and pre-fills its choices; its economy is
   always derived. A generated name comes from the stream `GEN.names`.
-- The setup is recorded in every save's manifest and named by every realism report (GEN.11).
+- The setup is named by every realism report (GEN.11). A save's manifest does not record it: its register hash is
+  over the data files, the countries the setup instantiated among them, so a load with another setup is refused (§11).
 
 ### 10.1 Phases
 
@@ -1250,7 +1297,8 @@ For every line kind and physical class, one side is **drawn** and the other **de
 - **Vacancies and vacant dwellings** are drawn from their own rates on top of the derived stock.
 - **Unmatched demand**: a stratum with no eligible counterparty takes the declared substitute (the nearest zone, the
   next class) and otherwise stays unmatched — unemployed or recorded homeless (HSG.13) — each reported with its count
-  (GEN.8).
+  (GEN.8). As built at Stage 0 no substitute is declared, and a derived line with no eligible party to take its other
+  side stops the opening (`sys-dem`'s `lines`), so no stratum is left unmatched.
 
 ### 10.3 Canonical drawing
 
@@ -1344,7 +1392,8 @@ read span both (plan §11, F-048).
 The same seed therefore gives the same world whatever the resolution the valve sets, and nothing is balanced after
 merging: finer attributes are drawn from their own counter keys, so a coarser setting is a projection of a finer
 one, and every number of preference types is a discretisation of the same declared distribution (NUM.4). Drawing
-the full population takes tens of seconds on the phone's cores.
+the full population takes tens of seconds on the phone's cores. As built the opening runs on one thread, and took
+about ten minutes on the build machine (the plan's F-038, F-062).
 
 ### 10.4 The snapshot, day zero and settling
 
@@ -1379,43 +1428,42 @@ series of one, never a drawn past.
 - **Balancing** is the ledger's `OpeningWrite` legs, applied by the one apply routine at `ApplyAt::Opening`, where
   rows may also be opened and nothing else moves. Each write is reported with its party, amount, the identity it
   served and its counterparty; once every phase has run, each party's opening **equity** is computed once, as its
-  rows' balances signed by side plus its holdings at cost, into the report.
+  rows' balances signed by side plus its holdings at cost, into the report. At the assembly's end, once the player is
+  seated, the ledger forgets the opening's day book whole (`Ledger::opened`): the audit and the accounts read days, and
+  the opening is none, so the accounts open on what the opening wrote.
 - **Plant** is a real asset per country, counted in its own unit priced in the currency's smallest unit, held at
   cost; its size is the steady state's capital, investment over growth plus depreciation.
 - **Accounts** — reserves, the treasury's account, the central bank's claim on the treasury — have no dates and are
   marked spent at the opening; every other opening line falls due on the first date of its schedule after the
   snapshot.
 
-### 10.4b Dated flows before the payer pass
+### 10.4b Dated flows before the payer pass *(retired)*
 
-Until S0.17 brings the payer pass (§6.5), stage 7's kernel apply (7c) pays the day's dues directly:
-
-- the lines due today are those whose next due day is today and whose dates are not spent; one pass over every
-  holder's rows gathers each due line's owing party (its liability side) and each asset-side row with its balance;
-- each due is its own instruction, reason *contract payment* (expense and revenue) or *principal repaid* (liability
-  and asset), paid from the owing party's **means of payment** to the holder's: a line kind declared as a means of
-  payment (deposits, reserves, the treasury's account) whose issuer is found from its liability side. A party paying
-  its own depositor credits the deposit; a depositor paying its bank debits it; between two issuers the same payment
-  is made again one level up, reserves between banks. A principal repaid also moves the contract's rows;
-- instructions apply in the reasons' declared order, then by identity; a line moves to its next date whether or not
-  its dues settled, and a fail waits for the next business day's 2d, where the contract process — kernel work at a
-  sub-step with no handlers — turns it into arrears;
-- the close takes the day's book: its settlement measure (SET.10), the dues' counts and its fails are published.
+Retired at S0.17, which brought the payer pass: stage 7 no longer pays each due as its own instruction from a pass
+over every holder's rows. Settlement is `Books::settle_day` — the stream over the holders' runs, the fixed point and
+one net per (line, party, side) applied one instruction per line — as §6.5 says, with the fails and the close there.
 
 ### 10.4c The audit's view of the books
 
-`phx-core` declares two traits the kernel crates meet through: `BooksAudit`, the books as the audit reads them
+`phx-core` declares the traits the kernel crates meet through: `BooksAudit`, the books as the audit reads them
 (instruments and lines by index, each checked by the ledger, and what a party holds on an account), which the ledger
-implements; and `LegRecords`, the audit's own record of the day's settled legs, which `phx-audit` implements. The
-ledger's five families (ownership, contracts, money, flows, units) read both through the family context. Each leg's
-digest carries what it counts toward its instruction's balance, a liability row's member count against the asset
-side's, as the apply check counts it, so members leaving a line with their counterparts balance. A part's rows and
-holdings leaving a cell or joining one move positions outside any instruction: the ledger records each such move as
-an unpaired digest and hands them to the audit in their order among the instructions' legs, so a position's opening
-and its day's moves still make what it holds. The money family reads its day's span of money lines together, a side
-of many small holders that keeps no list summed in one pass over the tables of the kinds that may hold it. The
-representation family bounds a row by the cell's weight times the persons each member holds in the roles its side
-declares, as a household's jobs count its adults.
+implements; `MarketsAudit`, `AccountsAudit` and `CellsAudit`, the tape, the accounts and the cells; and `LegRecords`,
+the audit's own record of the day's settled legs, which `phx-audit` implements. The ledger's five families
+(ownership, contracts, money, flows, units) read them through the family context. Each leg's digest carries what it
+counts toward its instruction's balance, a liability row's member count against the asset side's, as the apply check
+counts it, so members leaving a line with their counterparts balance. A part's rows and holdings leaving a cell or
+joining one move positions outside any instruction: the ledger records each such move as an unpaired digest, its
+members and balance from what the row held to what it holds, taken from the views the detach and the attach already
+hold (`part.rs`'s `row_moved`), and hands them to the audit in their order among the instructions' legs, so a
+position's opening and its day's moves still make what it holds. Every row placed, removed or recounted marks its line
+side changed (`Lines::moved`), so what was read of a side, such as the members a draw is made over, is known stale. In
+the position read, a party that has ended holds nothing of its own: what it held passed on when it ended. The money
+family reads its day's span of money lines together, a side of many small holders that keeps no list summed in one
+pass over the tables of the kinds that may hold it; as built this sweeps every live cell's rows whenever the span
+holds a retail deposit line, undeclared and uncounted (F-059). The representation family bounds a row by the cell's
+weight times the persons each member holds in the roles its side declares, as a household's jobs count its adults; a
+side declared `many`, whose holder counts a member for each counterpart (an employer, a bank), is bounded by no count
+per member.
 
 ### 10.5 Settled worlds for testing
 
@@ -1430,11 +1478,14 @@ world on the phone. CI never runs the world.
 
 ## 11. Persistence
 
-- A **save** is a directory: a manifest (format, build, register and policy hashes, seed, day, settings) and one file
-  per store of zstd frames of transformed pages.
+- A **save** is a directory: a manifest and one file per store of zstd frames of transformed pages. The manifest
+  (`save/manifest.rs`) holds the format, the build, the register (a hash of the data files the world was assembled
+  over), the seed, the day and its date, the settling length (`settling_years`), whether the read trace was on, each
+  store's name, file, bytes compressed and raw and logical hash, and the world hash. It holds no policy hash, setup or
+  valve: the register hash covers them where they are data (§7.11, §10.0).
 - Saves are written at the moments SET.12 declares — when the player saves, when the app is set aside, and at the
   declared interval (an owner setting, by default every simulated quarter) — and the world pauses while one is written
-  (N8.10); on the phone, all cores write, about 1–2 s.
+  (N8.10). As built, the stores are written one after another on one thread.
 - **Every save is full** (SET.12, spec Appendix E 22): it writes every store whole, and a restore reads one save.
   Allocator state (free slots, block pools, interners) and the linked call's basis (§8) are
   saved with the stores, and derived indexes are rebuilt on load in canonical order; the world hash covers logical
@@ -1462,7 +1513,8 @@ world on the phone. CI never runs the world.
   - `events`;
   - `geo`: the map as generated and the kernel tables' columns.
 
-  Beside them, outside the world hash, `run` holds the run's metrics, findings, settlements and the opening's report.
+  Beside them, outside the world hash, `run` holds the run's metrics, findings, settlements, the opening's report, the
+  read trace's log and the handlers whose first chunk it traced (`traced_first`).
   The map and the books are saved rather than regenerated, since the map's generation and the opening each take
   longer than a load's 3 s.
 - **What the build supplies on load**: everything declared in code or data — the register, the calendar's rules,
@@ -1505,9 +1557,12 @@ world on the phone. CI never runs the world.
   and at the run's end. The observer is a `phx_world::Observer` passed to `run_turn_observed`: after each day it
   follows the tracers and takes the reads through the inspector, inside the turn's time, and the world is the same
   world with it or without it. PC-20 refuses any `&mut` to the world's stores, and any naming of `World`, in
-  `phx-obs`.
+  `phx-obs`. On the phone the observer follows the measured turns, not settling, and the views are built twice, at
+  settling's end and at the run's end, not at each turn's close (F-064).
 - **Two builds**: the participant's reads only through `ParticipantScope`, its party's scoped read; the inspector's
-  compiles only with the `inspector` feature, which the participant build refuses. Every shown number is a
+  compiles only with the `inspector` feature, which the participant build refuses. As built at Stage 0 there is one
+  build: no crate declares an `inspector` feature, `Inspector` and the `Recorder` are always compiled, and
+  `ParticipantScope` is not built. Every shown number is a
   `Shown<T>`, built from a record entry, a read at the close, a published statistic, or a fixed-bin aggregate of
   reads; pages are generated from the interface crates' view schemas, and a decision
   page from its point's input view and intent.
@@ -1532,11 +1587,16 @@ world on the phone. CI never runs the world.
   hashed with the world, which names the player's decider (`Decider::Player`) and refuses an intent queued for any
   other party; the rank read never demotes it.
 - **On the phone**, `phx-ffi` runs the engine on its own thread with the pinned pool: create, load, step a turn, read
-  a view page, submit an action, save, and in the inspector build export the recorder's series (§14.8). The bench
-  flavour runs a declared number of turns and the full-load bench (§14.6), shows each turn's results live as it
-  completes, and writes a JSON report; `Run all` runs the probe, the world's turns and the full-load bench in turn and
-  writes the device report's second version (`perf/schema/device-report.json`), each turn with its sub-steps' wall
-  times, which the world records in its `SubStepRecord`s by the application's clock.
+  a view page, submit an action, save, and in the inspector build export the recorder's series (§14.8). As built at
+  Stage 0 that play surface is not built: `phx-ffi` exports `run_bench` (the probe and micro-benchmarks), `run_world`,
+  `run_load` (the full-load bench, §14.6) and `run_programme`, each run on the app's calling thread, the world on that
+  one thread. `run_world` assembles the world, settles it for the owner's length (`GEN.settling_years`), reporting the
+  settling's turns, days and time, runs the measured turns (the app passes 60), each reporting its wall time, days,
+  whether it ends on a business day, its payments and rows scanned, its sub-steps' wall times (summed from the world's
+  `SubStepRecord`s, kept by the application's clock), `VmHWM`, PSS and thermal status, then saves the world whole,
+  drops it and reads it back, timing both and checking the world hash. The bench flavour shows each result live as it
+  completes; `Run all` (`run_programme`) runs the probe, the world's turns and the full-load bench in turn and writes
+  the device report's second version (`perf/schema/device-report.json`).
 
 ---
 
@@ -1813,28 +1873,34 @@ and logic level: chunking, gathers and reductions fixed by index, whatever the w
 tests); canonical ids, whatever the registration order (§6.2); a stream's key derived from its own name alone (CHN.1);
 observers, the audit and the realism recorder reaching the world only through `&self` accessors (Law 17, PC-20,
 PC-85). Every state that carries across days and can change an outcome is saved or canonical: a solver's warm start
-is saved (§8), derived indexes are rebuilt in canonical order (§11), and the resolution valve is a manifest setting
-changed only at a save boundary, never from the run's own timing (§7.11). The build run checks that each save,
-decoded store by store without building a second world, hashes to the world hash of the close it was written at
-(SET.15), and that renumbering leaves the identity hash unchanged across its slice; on the phone neither runs, so
-neither needs a budget there.
+is saved (§8), derived indexes are rebuilt in canonical order (§11), and the resolution valve is a setting of the
+register, which the manifest's hash covers, changed only between runs or at a save boundary, never from the run's own
+timing (§7.11). The build run checks that each save, decoded store by store without building a second world, hashes
+to the world hash of the close it was written at (SET.15), and that renumbering leaves the identity hash unchanged
+across its slice; neither is meant to run on the phone. As built the save check runs only in `phx run`, but the
+identity hashes around each renumbering slice are taken in the world's 10b on every light day, on the phone too, with
+the other checks' instruments inside the day (F-060).
 
 ### 14.4 The measurement programme
 
 | Command | Measures |
 | --- | --- |
-| `phx measure budget` | from a build run's report and the device report of the same commit's world: the phone's business and closed turns, each sub-step's median, memory, unit costs (a sub-step's median over the build run's count per business day), and the full-load bench against its criteria |
-| `phx measure` | read from the device run's report (§14.6), the representation's own numbers: rows per kind, relationship rows per cell by line kind, profile entries per role, bytes per store and peak resident bytes, agenda rows, candidates and hits per process, occasions and evaluation groups, parts and new cells per day by cause, choice groups and draws, legs per batch, rows and bytes per sub-step, unit costs per line of §13.2 |
+| `phx measure calendar` | the declared calendars' longest closed runs and their paydays after holidays (§13.2), into `perf/measure/` |
+| `phx measure budget` | from a build run's report and the device report of the same commit's world: the phone's business and closed turns, each sub-step's median, memory (the opening's and the run's `VmHWM`), stage 7's unit costs — each phone turn's own 7c time, the block that runs all of stage 7, over that turn's own payments and rows scanned, the median and worst of those — and the full-load bench against its criteria |
+| `phx measure` *(not built)* | read from the device run's report (§14.6), the representation's own numbers: rows per kind, relationship rows per cell by line kind, profile entries per role, bytes per store and peak resident bytes, agenda rows, candidates and hits per process, occasions and evaluation groups, parts and new cells per day by cause, choice groups and draws, legs per batch, rows and bytes per sub-step, unit costs per line of §13.2 |
 | `phx inject` | audit independence (N1), on the build machine, on a save loaded apart, audited and discarded |
-| `phx realism` | the stylised facts (N3) read from the run: recording, statistics, verdicts, GEN.10 (§14.8) |
-| `phx chains` | the chains' relationships (N4) read from the run (§14.8) |
-| `phx register-report` | the primitive register's sources and the shares assumed and estimated (N7) |
+| `phx realism` *(Stage 7)* | the stylised facts (N3) read from the run: recording, statistics, verdicts, GEN.10 (§14.8) |
+| `phx chains` *(Stage 7)* | the chains' relationships (N4) read from the run (§14.8) |
+| `phx register-report` *(Stage 7)* | the primitive register's sources and the shares assumed and estimated (N7) |
 | `phx run --report` | the run's audit, liveness, live checks, REP.15's costs, GEN.8 and NUM.7 |
+
+At Stage 0 `phx measure` has two subcommands, `calendar` and `budget`; the representation's numbers of the third row
+are not yet read.
 
 ### 14.5 Gates
 
 Every stage ends with: CI green, and a clean build run of the gate commit (§14.7), whose audit and live checks are the
-gate's; the **device run**: the bench flavour, built with fat LTO on the build machine and carrying the inspector's
+gate's; the **device run**: the bench flavour, built by CI with fat LTO (§18 item 33) and carrying the inspector's
 recorder (§14.8), runs a settled simulated year on the phone and exports its report and series,
 and the owner commits the report to `perf/device/`; `phx measure` within the memory and time budgets; from Stage 1,
 the stage's macro reads, which `phx-cli` reads from the device run's series, against real economies' relationships
@@ -1842,7 +1908,8 @@ the stage's macro reads, which `phx-cli` reads from the device run's series, aga
 recorder's cost is inside it. The **go/no-go** reads the device report: the median turn ≤ 1 000 ms and the worst ≤
 2 000 ms over the settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s; §13's 10%
 headroom is reported, and a gate passes without it only as a recorded finding. Stage 7's gate adds the realism reads
-(§14.8): realism misses are findings and do not block it; the budget does (N8.8).
+(§14.8): realism misses are findings and do not block it; the budget does (N8.8). As built at Stage 0 the device run
+settles for the owner's length and then runs the turns the app passes, 60, not yet a year of them (§12).
 
 From Stage 0's gate on, every gate also runs the **full-load bench** on the phone (§14.6, item 7) and holds it to the
 same criteria: a gate does not pass without it, so a finished world too slow or too large is found at Stage 0, not at
@@ -1859,7 +1926,8 @@ on the build machine:
 1. **Rows per cell by line kind** — employment, tenancy, deposit, loan and the rest — and profile entries per role, as
    a **curve against cell weight across the one run's own cells**, at the play resolution only (spec Appendix E
    40), at the opening and after a simulated year; distinct keys and banking
-   arrangements per region, the floor they put under the cell count.
+   arrangements per region, the floor they put under the cell count. *(Pending: the bench flavour does not yet write
+   these counts and `phx measure` does not read them.)*
 2. **The phone**: core-seconds per second by core class across the run, with the thermal status; random-gather
    nanoseconds per row over 1–3 GB with 16 KiB pages and prefetch, with all cores gathering together; sweep
    bandwidth; barrier cost.
@@ -1881,6 +1949,13 @@ on the build machine:
    candidates and the agenda, each visit's gathers with its ledger's arithmetic for the mechanisms not yet built,
    tolerance control, the audit, the views and full saves. It is judged by the gate's criteria (§14.5); each later
    gate reruns it with the built stages' measured counts. Its numbers are costs, never the world's.
+   As built (`phx-ffi`'s `load.rs` over `perf/load/volumes.toml`), it runs after the world's turns in `Run all`, on
+   the pool; its books and cells are built by the random-data generators `phx_ledger::synthetic` and
+   `phx_pop::synthetic`. It settles each business day through `Books::settle_day` and closes the ledger's day, screens
+   candidates, splits and lands parts, and runs tolerance's gap estimate; the audit is a sequential sweep of a slice of
+   the random words and of the cells' weights, not the real families; the agenda, redraws, group aggregates and each
+   visit's gathers are reads and writes of random words; there are no views, 3e outcomes, estates or 9b posting
+   (F-064).
 
 Stage 1's gate adds retail and labour: choice groups and draws, sellers in reach, group-aggregate updates per visit,
 seller spreads, occasion evaluations and choices by decision, vacancies visible and labour rounds, surprise wakes,
@@ -1897,18 +1972,20 @@ positions of defined-benefit rights and DC pots (S4.04).
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test` in the debug and the release profile; `phx-check`; the workspace built for Android; kernel micro-benchmark instruction counts under valgrind, whose ratchets fail CI. The world is not run |
+| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test` in the debug and the release profile; `phx-check`; `miri` over `phx-store`'s tests on the pinned nightly; `public-api`, the kernel and interface crates' API snapshots; the workspace built for Android; `android-app`, the engine built for the phone with the `device` profile, its Kotlin bindings and the bench flavour's APK, uploaded as an artifact (§18 item 33); kernel micro-benchmark instruction counts under valgrind, whose ratchets fail CI. The world is not run |
 
 **The build run** (`tools/build-run.sh`, on the build machine — the development VM, 4 cores and 15 GB — after each
-step's build, from S0.11, the first step with a world; S0.01 to S0.10 have none): fat LTO; the world at the play
-resolution (§10.5), settled at the owner's length, then two simulated years with `read-trace` on, the audit and every
-live check; the engine's counter ratchets, whose moves fail the build run, not CI; peak memory; wall time, build and
-run apart. It is the only run of the world off the phone, and it uses no other resolution or seed. It is **clean**
-when the audit reports nothing, every failing live check is recorded as a finding in the plan's §11, and no ratchet
-moves the wrong way. A step's last commit adds the report of the build run on the commit before it, as
-`perf/build-run/<that commit>.json`, and marks the step `done`; these reports are append-only and, being the code's
-numbers and never the world's, need no owner review. The play resolution needs about 5 GB; the run is expected to
-take about 30 to 70 minutes a step: GEN and the world about 15 to 30, the fat-LTO build the rest.
+step's build, from S0.11, the first step with a world; S0.01 to S0.10 have none): a `--release` build (thin LTO; only
+the `device` profile is fat, §17); the world at the play resolution (§10.5), with `read-trace` on, the audit and every
+live check — an ordinary step's for 120 days from day zero, a stage gate's (`--gate`) settled at the owner's length and
+run two years after it; the engine's counter ratchets, whose moves fail the build run, not CI — as built, the barriers
+per empty day, the map's bytes and seven stage-7 counters (§16.8); peak memory; wall time, build and run apart. It is
+the only run of the world off the phone, and it uses no other resolution or seed. It is **clean** when the audit reports
+nothing, every failing live check is recorded as a finding in the plan's §11, and no ratchet moves the wrong way. A
+step's last commit adds the report of the build run on the commit before it, as `perf/build-run/<that commit>.json`, and
+marks the step `done`; these reports are append-only and, being the code's numbers and never the world's, need no owner
+review. The play resolution needs about 5 GB. At 300 million persons the opening takes about ten minutes and each
+business day about 13 s on the build machine's one thread (F-056, F-062).
 
 ### 14.8 The realism reads
 
@@ -1917,9 +1994,9 @@ opened from one year of settling and read as it is played on the phone. Nothing 
 with another run. A fact the run has not yet had time to produce is *not yet credited*; a slow distribution is
 credited while the world holds it (GEN.10).
 
-- **The recorder**, in `phx-obs`'s inspector build only, reads the run through the `Inspector` at each close and
-  writes the series the registered definitions name, outside the save, exported with it; it opens no stream and writes
-  nothing to the world (Law 17).
+- **The recorder**, in `phx-obs`'s inspector build only (at Stage 0 always compiled, §12), reads the run through the
+  `Inspector` at each close and writes the series the registered definitions name, outside the save, exported with it;
+  it opens no stream and writes nothing to the world (Law 17).
 - **Statistics** are computed from those series as a statistician computes them from real data, each with its
   estimator's interval from the run's own sample, and compared per country with the benchmark range its source gives.
 - **Chains** (N4) are read as relationships between macro variables — responses around the run's own dated
@@ -1954,13 +2031,18 @@ credited while the world holds it (GEN.10).
    `allow(clippy::disallowed_*)` in world crates only falls.
 3. **Structural rules** (`phx-check`): no `static` items in world crates; no heap-owning types in stores; numeric
    literals only 0, 1, −1 and 2 in mechanisms, engineering constants in one `consts` item per crate; no clause
-   identifiers in comments; interface crates without behaviour; no full sweep in a sub-step not declared as one.
+   identifiers in comments; interface crates without behaviour; no full sweep in a sub-step not declared as one
+   (*not built*: no rule refuses an undeclared full sweep yet).
 4. **Types that refuse**: `Money`, `Qty`, `Missing` without `Default` or clamping; kind identifiers without equality
    outside the kernel; private-constructed handles; zero-sized systems.
-5. **The clause map**: every spec clause is assigned to a step in `IMPLEMENTATION.md`; for a step marked done, each
-   clause has its **carrier** in `phx dump-registry` — STATE → store, fact or type; DECISION → decision point;
-   PROCESS → handler; INVARIANT → audit family; MEASURE → metric; FORBID → a check, clippy rule or type-level
-   refusal; PRIMITIVE → register entries — and `#[clause]` attributes on items of the wrong shape are refused.
+5. **The clause map**: every spec clause is assigned to a step in `IMPLEMENTATION.md`, and `phx-check clauses` refuses a
+   live clause the map omits, one two rows complete, and a mapped clause that is retired or unknown. For a step marked
+   done, each clause it completes must have a **carrier** in the code or data: a `#[clause(..)]` attribute, a
+   declaration's `clause` field, a data file's `clause` key, or a contract's `violation!(clause = ..)`
+   (`crates/apps/phx-check/src/clauses.rs`). The carrier's shape — STATE → store, fact or type; DECISION → decision
+   point; PROCESS → handler; INVARIANT → audit family; MEASURE → metric; FORBID → a check, clippy rule or type-level
+   refusal; PRIMITIVE → register entries — is not checked: `#[clause]` checks only that each name is a clause
+   identifier, and there is no `phx dump-registry`.
 6. **Documents**: the coverage table (§19) regenerated and matching; every step with all its sections and a status;
    this document's crate lists matching the workspace.
 7. **Process**: live-check identifiers never disappear; a primitive's value in `data/` changes only with its `source`
@@ -1971,7 +2053,13 @@ credited while the world holds it (GEN.10).
 8. **Ratchets** on deterministic counters (§14.7): kernel instruction counts, in CI; in the build run, bytes per
    store, per row and at peak; rows and bytes touched per sub-step; agenda rows, candidates, evaluation groups, parts,
    new cells and landings per day; legs per batch; barriers per day; cells per kind; rows per cell by line kind.
-   Declared-but-never-read primitives, streams and hazards are reported.
+   Declared-but-never-read primitives, streams and hazards are reported. As built at Stage 0 (`perf/ratchets.toml`,
+   `phx-cli`'s `run.rs`): CI ratchets the kernels' instruction counts; `phx-check` the counts of `allow` and `expect`
+   attributes and of placeholders; the build run only the barriers per empty day, the map's bytes and seven stage-7
+   counters, each the most on any day — rows streamed, run heads read, run rows scanned and those not due, payments,
+   the fixed point's iterations and the day buffers' peak bytes. The day's candidates, redraws, parts, landings, new
+   cells and re-keys are the world's day records (`CellDay`), which the live checks read, neither reported nor
+   ratcheted; the other counters are not built (F-060).
 9. **The markets' rules** (the plan's PC-50 to PC-57): no bank's loan or deposit pricing takes a central-bank rate as
    its cost of funds except through `marginal_cost_of_funds`, while public administered rates may be read; no system
    calls a matching, clearing or allocation function of `phx-market`, whose meeting handlers alone meet markets,
@@ -1991,11 +2079,13 @@ A rule changes only with its reason recorded in §18.
 
 ## 17. Build and target
 
-- Release: `lto = "fat"` (build-run and device builds), `codegen-units = 1`, `panic = "abort"` with a hook that
-  writes the violation report.
+- Release: `lto = "thin"`, `codegen-units = 1`, `panic = "abort"` with a hook that writes the violation report,
+  overflow checks on; the build run builds it. The `device` profile, which CI builds the phone's library with,
+  inherits it with `lto = "fat"`.
 - Phone target features: `+lse,+rcpc,+dotprod,+fp16`; NEON by auto-vectorisation and in `phx-rand`'s samplers;
   64-byte aligned, padded columns; software prefetch on holder-list and index gathers.
-- Pool sized to fast and medium cores; performance-hint sessions per turn.
+- Pool sized to fast and medium cores; performance-hint sessions per turn. As built at Stage 0 the world runs on one
+  thread and no performance-hint session is opened (§2, F-056).
 
 ---
 
@@ -2105,7 +2195,8 @@ A rule changes only with its reason recorded in §18.
       a kink works over any row kind's per-member position (§4.4);
     - a levy takes its schedule from a policy value, the flow's line terms or the payee's fact, and a follow-on may
       write rights in a unit that is not money (§4.3);
-    - every dated row kind sits in its holder's due-day run behind one 8-byte head in the record, never reordered;
+    - every dated row kind sits in its holder's due-day run behind one head in the record (8 bytes in a cell's, 12 in
+      an individual's, §4.5), never reordered;
       retail many-party lines — policies, annuities, claimants, benefits and pensions — keep no holder list on their
       retail side, the stream gathering the day's due holders and a rare line-major day scanning the arenas once
       (§4.5, §6.5);
@@ -2240,7 +2331,8 @@ A rule changes only with its reason recorded in §18.
       supplies data (spec GEN.14, Appendix E 43);
     - the derived values are drawn jointly from the development level's profile, the other levels' distributions
       conditioned on, nothing clamped; per-level templates instantiate `data/<country>/` at a new game, never
-      committed, and the setup is recorded in the manifest (§3.7, §10.0; spec GEN.15).
+      committed, and a save names the setup through its register hash over the countries it instantiated (§3.7,
+      §10.0, §11; spec GEN.15).
 
 32. **The finished world's load at every gate**:
     - from Stage 0's gate, the full-load bench runs random data at the finished world's volumes and shapes through
@@ -2305,18 +2397,18 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | I1 | DRV | `sys-drv` | 4 | 4 | planned |
 | I2 | DRX | `sys-drx` | 4 | 5 | planned |
 | I3 | INS | `sys-ins` | 4 | 4 | planned |
-| I4 | PEN | `sys-pen` | 0 | 5 | building |
+| I4 | PEN | `sys-pen` (no crate yet: Stage 0's state pension is `sys-soc`'s; F-045) | 0 | 5 | building |
 | J1 | TRS | `sys-trs` | 1 | 5 | planned |
-| J2 | TAX | `sys-tax` | 0 | 5 | building |
+| J2 | TAX | `sys-tax` (no crate yet) | 0 | 5 | building |
 | J3 | SOC | `sys-soc` | 0 | 5 | building |
-| J4 | CB | `sys-cb` | 1 | 5 | planned |
+| J4 | CB | `sys-cb` (from Stage 0: the central banks and treasuries as parties) | 1 | 5 | planned |
 | J5 | SUP | `sys-sup` | 2 | 4 | planned |
 | J6 | POL | `sys-pol` | 5 | 5 | planned |
 | K1 | FX | `sys-fx` | 5 | 5 | planned |
 | K2 | XB | `sys-xb` | 5 | 5 | planned |
 | M1 | OBS | `phx-core`, `phx-obs`, `android/` | 0 | 6 | building |
 | M2 | STA | `sys-sta` | 1 | 5 | planned |
-| L3 | estates | `sys-est`, `phx-ledger` | 0 | 2 | planned |
+| L3 | estates | `phx-ledger` and `phx-world` at Stage 0; `sys-est` from Stage 1 (S1.03) | 0 | 2 | building |
 | L1, L2, L4–L12 | transmission chains | read from the run by `phx chains` (N4) | 2 | 7 | planned |
-| N1 | audit | `phx-audit` and every system's families | 0 | 6 | planned |
-| N2–N8 | measurement | `phx-cli`, `phx-world` metrics, `android/` bench | 0 | 7 | planned |
+| N1 | audit | `phx-audit` and every system's families, run in every build run | 0 | 6 | building |
+| N2–N8 | measurement | `phx-cli`, `phx-world` metrics, `android/` bench | 0 | 7 | building |

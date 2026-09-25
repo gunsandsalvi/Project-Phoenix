@@ -185,7 +185,7 @@ settled live world, and from Stage 1 its macro reads are reported against real e
 
 | Stage | Steps |
 | --- | --- |
-| **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.27 the opening's data inventory · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save check · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem`, `sys-est` · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
+| **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.27 the setup and its derivation · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save check · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem` and estates · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
 | **1 The circular flow** | S1.01 `phx-val` · S1.02 `sys-tec` · S1.03 `sys-frm` · S1.04 `sys-cap` · S1.05 `sys-gds` · S1.06 `sys-srv` · S1.07 `sys-frt` · S1.08 `sys-lab` · S1.09 `sys-bnk` · S1.10 `sys-cb` · S1.11 `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov` · S1.12 `sys-hh` · S1.13 `sys-dem` births · S1.14 `sys-idx` and `sys-sta` · S1.15 GEN III · S1.16 the Stage 1 gate |
 | **2 Credit and failure** | S2.01 losses and provisions · S2.02 `sys-tcr` · S2.03 the firm lifecycle · S2.04 estates and inheritance in kind · S2.05 `sys-hsg` · S2.06 `sys-bfl` · S2.07 `sys-bcp` · S2.08 `sys-sup` · S2.09 `sys-ene` · S2.10 the credit bureau and filed accounts · S2.11 personal insolvency · S2.12 the Stage 2 gate |
 | **3 Money and capital markets** | S3.01 `sys-mmk` · S3.02 `sys-cb` in full · S3.03 `sys-trs` and `sys-sov` in full · S3.04 `sys-crd` · S3.05 `sys-eqy` · S3.06 `sys-dlr` · S3.07 `sys-fnd` · S3.08 non-bank lenders · S3.09 `sys-idx` in full · S3.10 `sys-rat` · S3.11 the Stage 3 gate |
@@ -289,8 +289,10 @@ not use.
   - a metric for MEASURE;
   - a check, clippy rule or refusing type for FORBID;
   - a register entry for PRIMITIVE.
-- Declarations carry the clause as data (`.clause("LAB.1")`), so `phx dump-registry` lists carriers.
-- `phx-check clauses` verifies that each carrier has the right shape (§16.5 of the architecture).
+- Declarations carry the clause as data (a `clause` field), and so do data files (a `clause` key).
+- `phx-check clauses` verifies that each clause a done step completes has a carrier: a `#[clause(..)]` attribute, a
+  declaration's `clause` field, a data file's `clause` key or a contract's `violation!(clause = ..)` (architecture
+  §16.5). The carrier's shape is not checked.
 - Comments never name clauses, documents or history (CLAUDE.md). The attribute is the only link.
 
 ### 2.5 Violations and findings
@@ -678,8 +680,10 @@ one place later steps add rules.
     that open with `**<Section>**`; its crates are the `crates/<layer>/<crate>/` paths of its **Files** table, and a
     crate belongs to the first step that names it;
   - a map row of §13 is `| <SYS> | S<stage>.<nn> | <numbers> |`.
-- **`clauses`**, until `phx dump-registry` exists (S0.11): refuses a live clause the map omits, a clause two rows
-  complete, and a mapped clause that is retired or not in the spec. S0.11 adds the carriers' check.
+- **`clauses`** (`src/clauses.rs`): refuses a live clause the map omits, a clause two rows complete, and a mapped
+  clause that is retired or not in the spec; and, for each step marked `done`, a clause it completes that nothing in
+  the code or data carries — a `#[clause(..)]` attribute, a declaration's `clause` field, a data file's `clause` key
+  or a contract's `violation!(clause = ..)`, read outside tests and benches. There is no `phx dump-registry`.
 - **`coverage [--write]`** derives architecture §19's rows whose System is a spec code: **First stage** is the earliest
   stage of a step whose **Clauses** section names one of the system's clauses; **Complete at stage** is the latest
   stage of its map rows; **Status** is `planned` while no step naming its clauses is `building` or `done`, `done`
@@ -1288,7 +1292,8 @@ This is one of the two crates allowed `unsafe`.
 - Arena compaction is O(live words of the chunk); arena slack is at most 15% (architecture §13.1).
 - Block-list insertion is O(log blocks + 16).
 - `gungraun` counts for append, compaction per word, block-list insert, and encode and decode per byte are ratcheted.
-- Counters: `phx_store.bytes_committed`, `phx_store.arena_dead_words`, `phx_store.compactions`.
+- Counters: `phx_store.bytes_committed`, `phx_store.arena_dead_words`, `phx_store.compactions`. *(Not built: the
+  columns, arenas and block pools answer `bytes_committed()`, which no counter reads; F-060.)*
 
 **Guards**:
 - PC-12 becomes active.
@@ -1626,7 +1631,8 @@ architecture §13.2's line.
   about 290 instructions per due row, its re-booking included (`phx_core.ir_agenda_gather`); it is timed on the
   phone at the Stage 0 gate.
 - Benchmarks and ratchets: `phx_core.ir_is_business`, `phx_core.ir_next_due`, `phx_core.ir_agenda_gather`.
-- Counters: `phx_core.agenda_entries`, `phx_core.agenda_moved`, `phx_core.agenda_stale`.
+- Counters: `phx_core.agenda_entries`, `phx_core.agenda_moved`, `phx_core.agenda_stale`. *(Not built; F-060. The
+  world's day records (`CellDay`) count the rows gathered at 3b.)*
 
 **Guards**: PC-17: no world crate outside `phx-core::calendar` calls `days_from_civil`, or adds an integer to a `Day`
 except through `Calendar::plus`, `Day::succ`, or a declared day period (TIME.11, TIME.12).
@@ -2590,7 +2596,8 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
   deposits. Measured: 7.5 MB standing (`phx_geo.map_bytes`, ratcheted); the opening's peak 47 MiB, the whole world's.
   The build run holds the world's peak to the budgets of the steps it holds: the empty world's 50 MB and the map's.
 - Weather and catastrophes ≤ 1 ms a day.
-- Counters: `phx_geo.map_bytes`, `phx_geo.generation_attempts`, `phx_geo.astar_calls`.
+- Counters: `phx_geo.map_bytes`, `phx_geo.generation_attempts`, `phx_geo.astar_calls`. *(`phx_geo.astar_calls` is not
+  built; F-060.)*
 
 **Guards**: PC-23: no crate but `phx-geo` writes a tile, zone or site; no ownership change writes a site (GEO.15); no
 crate keeps map geometry of its own (GEO.14).
@@ -2648,20 +2655,20 @@ live check passing.
 | File | Purpose |
 | --- | --- |
 | `crates/kernel/phx-ledger/src/instrument.rs` | `InstrumentFamily` (Debt, Equity, FundUnit, Contract, RealAsset, Banknote); `Instrument { id, family, issuer: Missing<PartyId>, unit, ccy, issued: Qty, terms: TermsId, state }`, stored as a 32-byte row; the issuer is absent only for real assets (REG.16); each instrument's holder list; `acquire` and `dispose`, the only way units enter or leave a holding, keeping the list |
-| `src/holding.rs` | `CellHolding { instrument: u32, count: u32, quantity: i64, pooled_cost: i64 }` (24 bytes), `count` the members holding it; `IndividualHolding { instrument: u32, lots: u32, quantity: i64, flags: u32, _pad: u32 }` (24 bytes), `lots` the number of its lots, which lie in the holder's lot list in holding order — a list reference inside a list would not survive the arena's compaction; `Lot { acquired: Day, quantity: i64, cost: i64 }` (24 bytes); `Disposal { units, bound, order }` |
-| `src/units.rs` | `NamedUnit { id: u64, site: TileId, service_day: Day, class: u16, condition: u8 }` (24 bytes) for an individual's plant and dwellings (REG.9); cells count units by (zone, class) as holdings |
-| `src/lien.rs` | `Lien { key: LienKey { holder, instrument, seq }, units, to: PartyId, chain: Missing<LienKey> }`, keyed by (holder, instrument, seq); an individual's holding carries a flag, and the pledged total is read from the lien table, counting a chain's first lien only |
-| `src/algebra.rs` | legs: `FixedAmount`, `Principal { amount, repayment }`, `RateOnNotional { reference: Fixed | Floating { series, spread, reset, fixing }, day_count }`, `StepSchedule { steps: [(Day, Rate)] }`, `PayableInKind { rate, day_count, instrument }`, `PerTime`, `Indexed { series, base, current, leg }`, `Contingent { event, amount }`, `Delivery`, `Elective { side, schedule, legs }`; `Schedule`, `Seniority`, `Collateral { kind, zone, class }`, `PaymentOrder`; early termination; conversion or write-down; default definition; the underlying; `due_on` |
-| `src/terms.rs` | the terms interner: `TermsId(u32)`, reference-counted, sharded by a hash of the terms' canonical words |
-| `src/line.rs` | `LineKindDecl` with a `SideDecl { holder_kinds, words, holder_list }` per side; `LineKind<U>`, typed by the balance's unit; `Line { kind: u16, flags: u16, terms: u32, side_counts: [u32; 2], next_due: Day, fallen: u32, holders: BlockList }` (36 bytes: `fallen` is the index of the schedule's date that fell last, which 1b keeps, S0.17); `NewRow` |
-| `src/rows.rs` | `RelRow { line: u32, count: u32, record: u32, point: u16, role: u8, flags: u8 }` (16 bytes, no padding; `record` packs days in arrears and missed payments, sixteen bits each, as architecture §4.5 lays it out) and the optional words per side (`balance`, `pending`, `amount`), encoded as whole 8-byte words after the row in the holder's arena (S0.06) |
+| `crates/kernel/phx-ledger/src/holding.rs` | `CellHolding { instrument: u32, count: u32, quantity: i64, pooled_cost: i64 }` (24 bytes), `count` the members holding it; `IndividualHolding { instrument: u32, lots: u32, quantity: i64, flags: u32, _pad: u32 }` (24 bytes), `lots` the number of its lots, which lie in the holder's lot list in holding order — a list reference inside a list would not survive the arena's compaction; `Lot { acquired: Day, quantity: i64, cost: i64 }` (24 bytes); `Disposal { units, bound, order }` |
+| `crates/kernel/phx-ledger/src/units.rs` | `NamedUnit { id: u64, site: TileId, service_day: Day, class: u16, condition: u8 }` (24 bytes) for an individual's plant and dwellings (REG.9); cells count units by (zone, class) as holdings |
+| `crates/kernel/phx-ledger/src/lien.rs` | `Lien { key: LienKey { holder, instrument, seq }, units, to: PartyId, chain: Missing<LienKey> }`, keyed by (holder, instrument, seq); an individual's holding carries a flag, and the pledged total is read from the lien table, counting a chain's first lien only |
+| `crates/kernel/phx-ledger/src/algebra.rs` | legs: `FixedAmount`, `Principal { amount, repayment }`, `RateOnNotional { reference: Fixed | Floating { series, spread, reset, fixing }, day_count }`, `StepSchedule { steps: [(Day, Rate)] }`, `PayableInKind { rate, day_count, instrument }`, `PerTime`, `Indexed { series, base, current, leg }`, `Contingent { event, amount }`, `Delivery`, `Elective { side, schedule, legs }`; `Schedule`, `Seniority`, `Collateral { kind, zone, class }`, `PaymentOrder`; early termination; conversion or write-down; default definition; the underlying; `due_on` |
+| `crates/kernel/phx-ledger/src/terms.rs` | the terms interner: `TermsId(u32)`, reference-counted, sharded by a hash of the terms' canonical words |
+| `crates/kernel/phx-ledger/src/line.rs` | `LineKindDecl` with a `SideDecl { holder_kinds, words, holder_list, holder_roles, exclusive, many }` per side (the last three from S0.25d: the roles whose persons hold a cell's rows, at most one row a holder, and a holder counting a member for each counterpart); `LineKind<U>`, typed by the balance's unit; `Line { kind: u16, flags: u16, terms: u32, side_counts: [u32; 2], next_due: Day, fallen: u32, holders: BlockList }` (36 bytes: `fallen` is the index of the schedule's date that fell last, which 1b keeps, S0.17); `NewRow` |
+| `crates/kernel/phx-ledger/src/rows.rs` | `RelRow { line: u32, count: u32, record: u32, point: u16, role: u8, flags: u8 }` (16 bytes, no padding; `record` packs days in arrears and missed payments, sixteen bits each, as architecture §4.5 lays it out) and the optional words per side (`balance`, `pending`, `amount`), encoded as whole 8-byte words after the row in the holder's arena (S0.06) |
 | `data/world.toml` | `[[unit]]`: each unit's name, kind and price exponent, with its source, read here first (S0.03's `UnitId`) |
 | `crates/kernel/phx-core/src/register/units.rs` | the register's units: `UnitKind`, `UnitDecl`, `Units`, refusing a name given twice, a unit without its reason and a unit in a per-country file |
-| `src/holder.rs` | `trait HolderArenas`: a holder's row run, holdings, lots and named units, as words of its arena; implemented by the kind tables and, at S0.21, by the cell tables; `HolderKeys`, a holder's table place and slot in one `u32`; `HolderLists`, the sorted block lists of holder keys in pools chosen by the owner's identity |
-| `src/commitment.rs` | `Commitment { kind, parties: [PartyId; 2], legs, creates, retires, expires: Day, state }`; commitments are few and kept in an ordered map by identity |
-| `src/events.rs` | the instrument's events and its `state` (live, suspended, defaulted, ceased): `InstrumentEventDecl { name, from, to }`, declared by the system that decides the event, applied here, the state's one writer; empty of event kinds until S1.11 adds maturities |
-| `src/covered.rs` | `Covered`: a quantity of free units held or borrowed, built only here, placing a commitment on those units |
-| `src/audit.rs` | the Ownership and Contracts families: their declarations and their checks, over the instruments or lines and the holder tables they are handed |
+| `crates/kernel/phx-ledger/src/holder.rs` | `trait HolderArenas`: a holder's row run, holdings, lots and named units, as words of its arena; implemented by the kind tables and, at S0.21, by the cell tables; `HolderKeys`, a holder's table place and slot in one `u32`; `HolderLists`, the sorted block lists of holder keys in pools chosen by the owner's identity |
+| `crates/kernel/phx-ledger/src/commitment.rs` | `Commitment { kind, parties: [PartyId; 2], legs, creates, retires, expires: Day, state }`; commitments are few and kept in an ordered map by identity |
+| `crates/kernel/phx-ledger/src/events.rs` | the instrument's events and its `state` (live, suspended, defaulted, ceased): `InstrumentEventDecl { name, from, to }`, declared by the system that decides the event, applied here, the state's one writer; empty of event kinds until S1.11 adds maturities |
+| `crates/kernel/phx-ledger/src/covered.rs` | `Covered`: a quantity of free units held or borrowed, built only here, placing a commitment on those units |
+| `crates/kernel/phx-ledger/src/audit.rs` | the Ownership and Contracts families: their declarations and their checks, over the instruments or lines and the holder tables they are handed |
 | `crates/apps/phx-check/src/rules/ledger_writes.rs` | PC-24 |
 | `crates/apps/phx-cli/src/checks/ledger.rs` | LC-0-16 and LC-0-17 |
 
@@ -2764,7 +2771,7 @@ live check passing.
 - A due computation per leg ≤ 50 ns; accruing rows' dues are counted separately from the settlement stream's reads.
   `benches/ledger.rs` counts `due_on` for a two-leg bond on and off its date (F-014).
 - Counters: `phx_ledger.rows`, `phx_ledger.lines`, `phx_ledger.terms_interned`, reported from S0.16, when the world
-  keeps its books.
+  keeps its books. *(Not built; F-060.)*
 
 **Guards**:
 - PC-24: no crate but `phx-ledger` writes a holding, row, line, lien or issued amount. Lines, liens, instruments and
@@ -2833,16 +2840,16 @@ comments; a civil day count outside the calendar.
 | File | Purpose |
 | --- | --- |
 | currencies | one per country, the one its central bank issues, named with the country at the opening (S0.27); `Ccy` is the country's index, so no `[[currency]]` data is needed |
-| `src/algebra.rs` | `Facility { limit, rate, day_count }` in a deposit's terms: the overdraft or intraday facility its bank agreed (MON.3, MON.15) |
-| `src/money.rs` | `MoneyHolders`: the money line kinds as declarations — reserves (central bank ↔ bank), deposit kinds (bank ↔ depositor, with a `pending` word), the treasury's account (central bank ↔ treasury), each side carrying the balance so a line's balances sum to nothing; `banknotes`, each central bank's note instrument |
-| `src/instruction.rs` | `Instruction { id, reason, trade_day, settle_day, legs: Vec<LegRec>, pays: Missing<DueRow>, covers: Vec<Covered> }`; `LegRec { party, account, qty, denom, kind }`, where `AccountRef` is `Line { line, side }`, `Instrument(InstrumentId)` or `Unit(u64)`, `Denom` is `Ccy` or `UnitId`, and `LegKind` is `Money`, `Units { cost }`, `Row(Open | Close | Adjust | Count)`, `Transformation(Source)` or `OpeningWrite { identity }`; `ReasonDecl { name, order, paid, received }`; the accounts' codes for records kept apart from the books |
-| `src/check.rs` | pure `check_legs(positions, moves) -> Result<(), (FailCause, usize)>` and `unbalanced(legs)` |
-| `src/apply.rs` | `Ledger`, the world's books; `Holders`, how the apply reaches the holder tables and follows an ended party to its successor; the one apply routine and `settle` in declared order; `DayBook` with the day's fails, effects and the settlement measure (SET.10) |
-| `src/rounding.rs` | `RoundingLanding { convention: Round, residue_to: Payer | Payee | Named(PartyId) }` and `split` |
-| `src/fails.rs` | `Fail { instruction, reason, cause, party, due, row: Missing<DueRow> }`, the row being the contract whose due the instruction paid |
-| `src/contract_process.rs` | 2d: the generic contract process turns yesterday's fails into payments missed and arrears on their rows, and ages every row in arrears from the day it began (SET.3, SET.16); `cure` |
-| `src/effects.rs` | `EffectRec`: each settled money leg's accounting effect as its reason declares it, for `phx-acct` (S0.19) |
-| `src/audit.rs` | adds the Money, Flows and Units families' declarations and the money-line check |
+| `crates/kernel/phx-ledger/src/algebra.rs` | `Facility { limit, rate, day_count }` in a deposit's terms: the overdraft or intraday facility its bank agreed (MON.3, MON.15) |
+| `crates/kernel/phx-ledger/src/money.rs` | `MoneyHolders`: the money line kinds as declarations — reserves (central bank ↔ bank), deposit kinds (bank ↔ depositor, with a `pending` word), the treasury's account (central bank ↔ treasury), each side carrying the balance so a line's balances sum to nothing; `banknotes`, each central bank's note instrument |
+| `crates/kernel/phx-ledger/src/instruction.rs` | `Instruction { id, reason, trade_day, settle_day, legs: Vec<LegRec>, pays: Missing<DueRow>, covers: Vec<Covered> }`; `LegRec { party, account, qty, denom, kind }`, where `AccountRef` is `Line { line, side }`, `Instrument(InstrumentId)` or `Unit(u64)`, `Denom` is `Ccy` or `UnitId`, and `LegKind` is `Money`, `Units { cost }`, `Row(Open | Close | Adjust | Count)`, `Transformation(Source)` or `OpeningWrite { identity }`; `ReasonDecl { name, order, paid, received }`; the accounts' codes for records kept apart from the books |
+| `crates/kernel/phx-ledger/src/check.rs` | pure `check_legs(positions, moves) -> Result<(), (FailCause, usize)>` and `unbalanced(legs)` |
+| `crates/kernel/phx-ledger/src/apply.rs` | `Ledger`, the world's books; `Holders`, how the apply reaches the holder tables and follows an ended party to its successor; the one apply routine and `settle` in declared order; `DayBook` with the day's fails, effects and the settlement measure (SET.10) |
+| `crates/kernel/phx-ledger/src/rounding.rs` | `RoundingLanding { convention: Round, residue_to: Payer | Payee | Named(PartyId) }` and `split` |
+| `crates/kernel/phx-ledger/src/fails.rs` | `Fail { instruction, reason, cause, party, due, row: Missing<DueRow> }`, the row being the contract whose due the instruction paid |
+| `crates/kernel/phx-ledger/src/contract_process.rs` | 2d: the generic contract process turns yesterday's fails into payments missed and arrears on their rows, and ages every row in arrears from the day it began (SET.3, SET.16); `cure` |
+| `crates/kernel/phx-ledger/src/effects.rs` | `EffectRec`: each settled money leg's accounting effect as its reason declares it, for `phx-acct` (S0.19) |
+| `crates/kernel/phx-ledger/src/audit.rs` | adds the Money, Flows and Units families' declarations and the money-line check |
 | `crates/kernel/phx-core/src/family.rs` | `LegDigest` and `AuditStream::leg`: each settled leg as the audit keeps it |
 | `crates/kernel/phx-audit/src/records.rs` | `Digests`, the audit's own record of the day's legs: per instruction and denomination their sums, per instruction and currency their money, per party and account what it held before and the day's net; and the checks against it |
 | `crates/apps/phx-check/src/rules/money_moves.rs` | PC-25 |
@@ -2923,7 +2930,9 @@ comments; a civil day count outside the calendar.
 
 **Budget**: the apply is ≤ 30 ns per payment in parallel by target chunk (architecture §13.2): that is the batch
 apply of S0.17, measured there; a single instruction here reads its parties' row runs and allocates its legs. Counters
-`phx_ledger.payments_applied`, `phx_ledger.fails` by cause, reported from S0.16.
+`phx_ledger.payments_applied`, `phx_ledger.fails` by cause, reported from S0.16. *(Not built as counters: the run
+report's `settlement` gives the payments, the failed and the fails by cause, and `phx_ledger.payments` is ratcheted
+at S0.17; F-060.)*
 
 **Guards**: PC-25: money moves only through `apply`; no crate but `phx-ledger` writes a balance. The ledger's writers
 of rows, counts, balances, records, holdings and issued amounts are crate-private, so the compiler refuses any other
@@ -3124,20 +3133,20 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 
 | File | Purpose |
 | --- | --- |
-| `src/due.rs` | 1b: the due-line bitmap from lines' `next_due`, and the advance of each due line's next date and the index of the date that fell |
-| `src/runs.rs` | due-day runs: `RunHead { next_due: u32, offset: u16, len: u16 }` (8 bytes, in `phx-core`'s kind tables) per holder, its dated rows a segment of its row list; the head's maintenance; a run read in full against its rows (`truth`) |
-| `src/stream.rs` | 7a: one stream over every holder table's heads, entering a holder's run only when its head is today, holder-major, giving per (party, bank) debits, credits and the first failing row; the day's due holders of lines with no retail holder list |
-| `src/positions.rs` | `trait PayerPositions { weight, per_member_funds(bank), kinks_into(position, buf), standing_rate(row) }`, implemented by the kind tables (weight one) and, from S0.21, the cell tables |
-| `src/pooled.rs` | `pooled(funds_pm, weight, rows_in_order, kinks) -> RowOutcomes`: pure |
-| `src/dues.rs` | the reckoning rule and a payment's route through deposits and reserves |
-| `src/fixed_point.rs` | 7b |
-| `src/apply_batch.rs` | 7c: the day's payments gathered into nets per account and row and applied one instruction per line, reserves once per bank by net (F-021); the fails recorded; the verdicts and the closing ring |
-| `src/split_request.rs` | `SplitRequest { holder, row, count, cause }` intents, turned into parts by `phx-pop` (S0.23) |
-| `src/levy.rs` | `LevyDecl`; per-member computation; withholding as a split of the gross |
-| `src/standing.rs` | standing-flow rates, plain and indexed; the day's leg per paying row; pending on non-business days; kink days for plain flows; the day's kink test for indexed flows |
-| `src/pending.rs` | the closed-issuer hook: legs fixed as pending at 7a, kept out of 7b, settled or failed later |
-| `src/transfer.rs` | `LineTransfer`, `SplitAtKink`, `ToProcedureLine` |
-| `src/waterfall.rs` | the estate waterfall |
+| `crates/kernel/phx-ledger/src/due.rs` | 1b: the due-line bitmap from lines' `next_due`, and the advance of each due line's next date and the index of the date that fell |
+| `crates/kernel/phx-ledger/src/runs.rs` | due-day runs: `RunHead { next_due: u32, offset: u32, len: u32 }` (12 bytes, in `phx-core`'s kind tables; a cell's `CellRunHead`, `phx-pop`'s, is 8 bytes, its offset and length `u16`) per holder, its dated rows a segment of its row list; the head's maintenance; a run read in full against its rows (`truth`) |
+| `crates/kernel/phx-ledger/src/stream.rs` | 7a: one stream over every holder table's heads, entering a holder's run only when its head is today, holder-major, giving per (party, bank) debits, credits and the first failing row; the day's due holders of lines with no retail holder list |
+| `crates/kernel/phx-ledger/src/positions.rs` | `trait PayerPositions { weight, per_member_funds(bank), kinks_into(position, buf), standing_rate(row) }`, implemented by the kind tables (weight one) and, from S0.21, the cell tables |
+| `crates/kernel/phx-ledger/src/pooled.rs` | `pooled(funds_pm, weight, rows_in_order, kinks) -> RowOutcomes`: pure |
+| `crates/kernel/phx-ledger/src/dues.rs` | the reckoning rule and a payment's route through deposits and reserves |
+| `crates/kernel/phx-ledger/src/fixed_point.rs` | 7b |
+| `crates/kernel/phx-ledger/src/apply_batch.rs` | 7c: the day's payments gathered into nets per account and row and applied one instruction per line, reserves once per bank by net (F-021); the fails recorded; the verdicts and the closing ring |
+| `crates/kernel/phx-ledger/src/split_request.rs` | `SplitRequest { holder, row, count, cause }` intents, turned into parts by `phx-pop` (S0.23) |
+| `crates/kernel/phx-ledger/src/levy.rs` | `LevyDecl`; per-member computation; withholding as a split of the gross |
+| `crates/kernel/phx-ledger/src/standing.rs` | standing-flow rates, plain and indexed; the day's leg per paying row; pending on non-business days; kink days for plain flows; the day's kink test for indexed flows |
+| `crates/kernel/phx-ledger/src/pending.rs` | the closed-issuer hook: legs fixed as pending at 7a, kept out of 7b, settled or failed later |
+| `crates/kernel/phx-ledger/src/transfer.rs` | `LineTransfer`, `SplitAtKink`, `ToProcedureLine` |
+| `crates/kernel/phx-ledger/src/waterfall.rs` | the estate waterfall |
 
 **Design** (as built where it says so)
 
@@ -3400,25 +3409,25 @@ logic level.
 | File | Purpose |
 | --- | --- |
 | `crates/kernel/phx-market/src/market.rs` | `MarketDecl { key, form, meeting_days, convention, participants: rule handle, ticks or point table, ties: [TieRule] }`, the tie sequence its operator declares (MKT.21) |
-| `src/order.rs` | `Order { party, market, side, schedule or limit, timing: Continuous | AtTheClose, day, reason: DecisionPointId }`; an offer of held units takes its quantity as `Covered<Qty>` (S0.14) |
-| `src/call.rs` | the call auction |
-| `src/book.rs` | the continuous book and its closing call |
-| `src/dealer.rs` | dealer quotes as orders posted by dealers' decision points; client requests to several dealers; inter-dealer trades |
-| `src/coupled_call.rs` | the call auction over a network of zones with line capacities (MKT.3's form with a network), solved exactly as a min-cost flow |
-| `src/linked_call.rs` | the coupled call with a cost on an edge and a capacity on a node: calls keyed by borrower, linked by lenders' budgets (S3.01) |
+| `crates/kernel/phx-market/src/order.rs` | `Order { party, market, side, schedule or limit, timing: Continuous | AtTheClose, day, reason: DecisionPointId }`; an offer of held units takes its quantity as `Covered<Qty>` (S0.14) |
+| `crates/kernel/phx-market/src/call.rs` | the call auction |
+| `crates/kernel/phx-market/src/book.rs` | the continuous book and its closing call |
+| `crates/kernel/phx-market/src/dealer.rs` | dealer quotes as orders posted by dealers' decision points; client requests to several dealers; inter-dealer trades |
+| `crates/kernel/phx-market/src/coupled_call.rs` | the call auction over a network of zones with line capacities (MKT.3's form with a network), solved exactly as a min-cost flow |
+| `crates/kernel/phx-market/src/linked_call.rs` | the coupled call with a cost on an edge and a capacity on a node: calls keyed by borrower, linked by lenders' budgets (S3.01) |
 | `benches/linked_call.rs` | the linked call's prototype on a declared network of the money market's size, measuring its unit cost |
-| `src/posted.rs` | posted prices over `phx_core::GroupDemand` |
-| `src/bilateral.rs` | the bilateral protocol over messages across days |
-| `src/administered.rs` | a declared rate and the quantity it meets |
-| `src/print.rs` | `Print { market, instrument, day, unit, ccy, quantity, price, form, matches: MatchSetId }`; marks and fixings |
-| `src/failure.rs` | `MarketFailure { market, day, kind }`, published |
-| `src/audit.rs` | the Prices family |
+| `crates/kernel/phx-market/src/posted.rs` | posted prices over `phx_core::GroupDemand` |
+| `crates/kernel/phx-market/src/bilateral.rs` | the bilateral protocol over messages across days |
+| `crates/kernel/phx-market/src/administered.rs` | a declared rate and the quantity it meets |
+| `crates/kernel/phx-market/src/print.rs` | `Print { market, instrument, day, unit, ccy, quantity, price, form, matches: MatchSetId }`; marks and fixings |
+| `crates/kernel/phx-market/src/failure.rs` | `MarketFailure { market, day, kind }`, published |
+| `crates/kernel/phx-market/src/audit.rs` | the Prices family |
 | `crates/kernel/phx-core/src/extensions.rs` | `trait GroupDemand`, S0.10's declared extension point, below both `phx-pop`, which implements it at S0.23, and `phx-market`, which reads it, so neither depends on the other out of layer order (as built: it was declared there at S0.10) |
-| `src/simplex.rs` | as built: the integer network simplex under the calls over networks — strongly feasible trees, block pricing, a warm start from a saved basis keyed by arc and node |
-| `src/admission.rs` | as built: admission over a member's order set in canonical order, and on a book in arrival order with the used headroom carried |
-| `src/grant.rs` | as built: a purchase's value split between an undrawn grant's terms and money |
-| `src/markets.rs` | as built: the markets' state (the tape, each linked call's basis, the days' measures), the one place meetings are recorded as prints, marks and failures, and the tape as the audit reads it |
-| `src/reach.rs` | as built: `Reach` and `XB.closed_borders`, declared with the kernel's primitives |
+| `crates/kernel/phx-market/src/simplex.rs` | as built: the integer network simplex under the calls over networks — strongly feasible trees, block pricing, a warm start from a saved basis keyed by arc and node |
+| `crates/kernel/phx-market/src/admission.rs` | as built: admission over a member's order set in canonical order, and on a book in arrival order with the used headroom carried |
+| `crates/kernel/phx-market/src/grant.rs` | as built: a purchase's value split between an undrawn grant's terms and money |
+| `crates/kernel/phx-market/src/markets.rs` | as built: the markets' state (the tape, each linked call's basis, the days' measures), the one place meetings are recorded as prints, marks and failures, and the tape as the audit reads it |
+| `crates/kernel/phx-market/src/reach.rs` | as built: `Reach` and `XB.closed_borders`, declared with the kernel's primitives |
 | `crates/kernel/phx-core/src/family.rs` | as built: `trait MarketsAudit`, the tape as the audit reads it, beside `BooksAudit` |
 
 **Design** (as built where it says so)
@@ -3531,7 +3540,8 @@ logic level.
 **Budget**: call O(n log n); book O(n log depth); the coupled call a network simplex over a few dozen zones and
 their steps, ≤ 5 ms for all three countries' blocks of a day; posted meetings within architecture §13.2's line.
 The linked call's prototype, on a declared network of about 20 000 edges and 6 000 posters, measures its unit cost
-warm and cold, and its instruction count is ratcheted (`phx_market.linked_call_instructions`); each country's call
+warm and cold, and its instruction counts are ratcheted (`phx_market.ir_linked_call_cold`,
+`phx_market.ir_linked_call_warm`); each country's call
 runs on one core, the countries in parallel, so its time counts in wall time undivided. Counters
 `phx_market.matches`, `phx_market.failures`, `phx_market.rechoice_rounds`, `phx_market.commitments_drawn`.
 
@@ -3734,10 +3744,10 @@ end 66 834 unpaid claims stood, receivable and payable alike at 6 492 394 979 63
 | File | Purpose |
 | --- | --- |
 | `crates/assembly/phx-world/src/save/mod.rs` | `save(world, dir)`, `load(dir) -> World`; every save full |
-| `src/save/manifest.rs` | format, build, register and policy hashes, seed, day, settings, per store its bytes, committed extents and logical hash |
+| `crates/assembly/phx-world/src/save/manifest.rs` | as built: the format, the build, the register (a hash of the data files), the seed, the day and its date, `settling_years`, whether the read trace was on, per store its name, file, bytes compressed and raw and logical hash, and the world hash; no policy hash, setup or valve |
 | `crates/apps/phx-cli/src/inject.rs` | `phx inject --family <f> --from <save>`: loads the save apart (audited and discarded, never run on), applies the family's declared injection (`AuditFamily::inject`, S0.12) through an `InjectTarget` over the loaded stores, runs the audit, and requires exactly that family to report |
-| `src/save/retention.rs` | retention: the latest complete save, plus the one being written; the older is deleted only after the new one's manifest is written and synced |
-| `src/save/inject.rs` | the `InjectTarget` over a loaded world's stores, and `World::inject`: one family's injection, then the audit over a full rolling cycle of closes without a day stepped |
+| `crates/assembly/phx-world/src/save/retention.rs` | retention: the latest complete save, plus the one being written; the older is deleted only after the new one's manifest is written and synced |
+| `crates/assembly/phx-world/src/save/inject.rs` | the `InjectTarget` over a loaded world's stores, and `World::inject`: one family's injection, then the audit over a full rolling cycle of closes without a day stepped |
 | `crates/kernel/phx-store/src/save.rs` | the codec: `Saved`, the streaming zstd `Writer` and `Reader`, rows of `Pod` values through their declared transforms |
 | `crates/foundation/phx-macros/src/saved.rs` | `#[derive(Saved)]`, with `#[saved(skip)]` for a derived index its owner rebuilds |
 | `crates/assembly/phx-world/src/registry.rs` | `load`: the build's declarations and data compiled as for a new game, the manifest checked, the stores read and the indexes rebuilt, the world hash verified |
@@ -3880,9 +3890,9 @@ tables implement here.
 | `src/hot.rs` | `HotRecord` (64 bytes, `#[repr(C)]`, `Pod`): `landing_key: u64` (hash), `key_id: u32`, `weight: u32`, `flags: u16`, `pad: u16`, `step_vec_lo: [u16; 8]` (the leading positions' steps), `individual_ext: u32`, `lead: [i64; 3]` (the three leading position totals, which landing and screening read most) |
 | `src/sig.rs` | the kink signature: its width per kind compiled from the kink registry as Σ ⌈log₂(bands + 1)⌉ over (position, rule), in whole `u64` words kept beside the positions, outside the hot record |
 | `src/key.rs` | `KeyLayout`; `KeyRecord` (bit-packed attributes, up to 32 bytes); the sharded interner `KeyInterner` (hash to `key_id` with reference counts, updated by keyed reduction) |
-| `src/position.rs` | `PositionDecl { name, unit, scale: ScaleRef, steps: StepTable, kinks: [KinkRef] }`; position columns as `i64` totals |
+| `crates/kernel/phx-core/src/pop.rs` | as built: `PositionDecl { name, unit, of, scale: ScaleRef, steps, clause }`, `steps` naming its partition primitive, declared with the rest of a population kind; kinks are declared apart (`KinkDecl`, `kinks.rs`); position columns as `i64` totals in `phx-pop`'s table |
 | `src/steps.rs` | `StepTable { boundaries: Box<[i64]> }`, a non-uniform base partition on the member's own scale, and coarser levels made by merging adjacent pairs; `step_of(per_member_scaled) -> u16` |
-| `src/scale.rs` | `ScaleRef`: which position or flow a position is measured against (own outgoings, income, sales), REP.20 |
+| `crates/kernel/phx-core/src/pop.rs` | as built: `ScaleRef`, which position or flow a position is measured against (own outgoings, income, sales), REP.20 |
 | `src/profile.rs` | per role, per declared group: joint value counts as a compact list (dense small histogram, or `(value_code, count)` pairs with delta-varint coding) in the chunk arena |
 | `src/holder.rs` | `impl phx_ledger::HolderArenas` and `impl phx_ledger::PayerPositions` for `CellTable`; `impl phx_core::TableSchema` for `CellTable` |
 | `src/individual.rs` | the extension facet for individuals of population kinds (weight one, flagged) |
@@ -3962,7 +3972,8 @@ tables implement here.
   Any item a later step adds is counted against this table in that step, and the counter below is ratcheted.
 - Profiles take 2 bytes per entry at 150 entries.
 - `step_of` ≤ 10 ns; computing a landing key ≤ 100 ns.
-- Counters: `phx_pop.bytes_per_household_cell`, `phx_pop.profile_entries_per_cell` (ratcheted).
+- Counters: `phx_pop.bytes_per_household_cell`, `phx_pop.profile_entries_per_cell` (ratcheted). *(Not built;
+  F-060.)*
 
 **Guards**:
 - PC-30: no crate writes a cell column except through `phx-pop`'s typed writes, which a system reaches only through
@@ -3994,9 +4005,9 @@ tables implement here.
   - the Representation family is built and tested, and joins the world's audit with the population (S0.25), when
     its injection can reach a cell; `CellsAudit` is how the audit reads cells, and the world hands it none until then;
   - the pooled-flow read stops the run on a cell whose kind has kinks, until the rules give their points;
-  - `phx_pop.bytes_per_household_cell` and `phx_pop.profile_entries_per_cell` are measured once households exist
-    (S0.25); the benches `phx_pop.ir_step_of` (76 instructions a step) and `phx_pop.ir_landing_key` (341 a key) are
-    ratcheted.
+  - `phx_pop.bytes_per_household_cell` and `phx_pop.profile_entries_per_cell` were to be measured once households exist
+    (S0.25), and are not built (F-060); the benches `phx_pop.ir_step_of` (76 instructions a step) and
+    `phx_pop.ir_landing_key` (341 a key) are ratcheted.
 
 **Done when**
 - [x] The tables, keys, positions, steps and profiles exist.
@@ -4144,7 +4155,8 @@ saves read back to their closes' hashes and the thirteen injections each lit the
   cutting redraws to the landings that cross a rung;
 - a daily dense (row, process) ≤ 5 ns;
 - counters: `phx_pop.candidates`, `phx_pop.redraws`, `phx_pop.dense_evals`, `phx_pop.occasion_groups`, ratcheted per
-  day.
+  day. *(Not built as counters: the day's candidates and redraws are the world's day records (`CellDay`), which
+  the live checks read, neither reported nor ratcheted; dense evaluations and occasion groups are not counted; F-060.)*
 
 **Guards**: PC-31: no screening outside 3b and the agenda, but for the tile and region processes `phx-geo` draws
 at 3a (S0.13); a process without a declared draw scheme is refused at assembly.
@@ -4297,7 +4309,7 @@ alone.
     drawn member; a member that cannot fill it sells what it holds, closes, and the rest of the purchase chooses
     again among the others. Members at zero leave the active set before the next phase.
   - The phases per spread are counted (`phx_pop.spread_phases`, ratcheted), since many members near zero lengthen
-    it.
+    it. *(Not built; F-060.)*
   - Members end with their own revenue and units, and those whose positions leave their steps split into parts.
 - **Tiles** (REP.24): when an event needs a unit's tile, it is drawn from the zone's stock of that class per tile
   (S0.13's store).
@@ -4345,7 +4357,9 @@ alone.
 - a seller spread ≤ 3 µs per seller cell of 50 members, about 49 binomials a phase (the prototype: 4.1 µs, untuned),
   with the phases per spread counted over the settled year on the phone;
 - the parts' day buffer is within §13.1's 600 MB (256 bytes per part plus its rows);
-- counters: `phx_pop.parts`, `phx_pop.new_cells`, `phx_pop.landings`, `phx_pop.rekeys`, ratcheted per day by cause;
+- counters: `phx_pop.parts`, `phx_pop.new_cells`, `phx_pop.landings`, `phx_pop.rekeys`, ratcheted per day by cause
+  *(not built as counters: the day's parts, landings, new cells and re-keys are the world's day records
+  (`CellDay`), not by cause, neither reported nor ratcheted; F-060)*;
   `phx_pop.rows_per_part` and `phx_pop.holder_list_changes_per_join`, which the day buffers' line and the join's
   unit cost rest on.
 
@@ -4533,7 +4547,9 @@ in a batch of eight; how many parts share a cell on a day is measured once the w
 - The index at about 50 bytes per cell (12 per inline candidate), 12 MB more than architecture §13.1's 38; the
   memory table is updated with it.
 - Gap estimation: a declared sample of about 10⁴ cells per kind, one lookup per (sample, position), ≤ 20 ms.
-- Counters: `phx_pop.tolerance_runs`, `phx_pop.cells`, `phx_pop.individuals_per_kind`.
+- Counters: `phx_pop.tolerance_runs`, `phx_pop.cells`, `phx_pop.individuals_per_kind`. *(Not built as counters: the
+  cells and individuals of every kind together are the world's day records (`CellDay`), unratcheted; tolerance runs and
+  individuals per kind are not counted; F-060.)*
 
 **Guards**: none new.
 
@@ -4595,7 +4611,7 @@ each lit their family alone.
 
 ---
 
-### S0.25 — GEN II and the population: households and small firms, the opening lines paying, `sys-dem` and `sys-est`
+### S0.25 — GEN II and the population: households and small firms, the opening lines paying, `sys-dem` and estates
 
 **Status**: building
 
@@ -4797,7 +4813,8 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     opening's apportionments, none giving a party of no drawn size anything, an unmatched stratum stopping the
     opening. LC-0-48 waits for the firms' positions (S1.03, F-048). Tests: a join that adds every side keeps every
     straight total; a lost member or unit and a crossed kink are counted.
-- **S0.25e — estates and the settled world**: `sys-est`, catastrophes' losses at owners (GEO.8), settling, LC-0-53;
+- **S0.25e — estates and the settled world**: estates (the ledger's at Stage 0, no `sys-est`), catastrophes' losses at
+  owners (GEO.8), settling, LC-0-53;
   the step's reviews and its build run.
   As built: no system's handler writes instructions yet, so the estates' settlement is the ledger's
   (`Books::settle_estate`) run by the world (`estates`): from the business day after it opened, at 7c once the day's
@@ -4823,21 +4840,21 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
   are S1.08's)*, PTY.5 *(part: sites by region; a household cell's zone in its profile is S2.05's)*; POP.1 *(part:
   the roles of Stage 0)*, POP.2 *(part)*; FRM.23 *(part: small firms as cells, without behaviour)*.
 - PROCESS: REP.25, REP.26; POP.3, POP.4; GEN.6; PTY.9 *(endings with estates)*; GEO.8 *(losses at owners)*; L3 *(part:
-  household estates)*; POP.9 *(part: heirs from kinship lines, distribution in kind)*; GEN.4 *(part: the population's
-  balancing)*.
+  household estates)*; POP.9 *(part: what an estate leaves passed to the law's heirless destination; heirs from
+  kinship lines and distribution in kind wait, F-050)*; GEN.4 *(part: the population's balancing)*.
 - INVARIANT: PTY.11; GEN.7 *(part: the population's world passes every family on day one)*.
 - MEASURE: CHN.7 *(the realised rates, live)*.
 - FORBID: POP.15 *(part)*.
 - PRIMITIVE: PTY.15; POP.16 *(part: life tables and health hazards)*; GEN.12 *(part)*.
 - The opening world's employment, tenancy, deposit and loan lines paying as their terms say (spec Part O Stage 0):
-  LAB.1 *(part: the line's terms, the pension's kind and contribution rates among them, and the attachment's scheme
-  component)*, HSG.2 *(part)*, BNK.1 *(part)* and BNK.19 *(part)*, with placeholders naming LAB, HSG and BNK for
-  every decision they lack.
+  LAB.1 *(part: a fixed wage on the line's wage point; the pension's kind and contribution rates, the other terms and
+  the attachment's scheme component are not built, F-068)*, HSG.2 *(part)*, BNK.1 *(part)* and BNK.19 *(part)*; the
+  placeholders naming LAB, HSG and BNK for the decisions they lack are not declared (F-067).
 - The opening world's pensions in payment — the state pension and defined-benefit pensions already being paid —
   paying as their terms say (spec Part O Stage 0): PEN.1 *(part: the state pension paid to named households)*, PEN.2
-  *(part: pensions in payment)*, SOC.3 *(part: payment on its dates until eligibility ends)*, with a placeholder
-  naming SOC (S5.02) for the state pension's claims and earnings-related part, and one naming PEN (S4.04) for every
-  scheme decision.
+  *(part: pensions in payment; the defined-benefit schemes' are not built, F-045)*, SOC.3 *(part: payment on its
+  dates until eligibility ends)*; the placeholders naming SOC (S5.02) for the state pension's claims and
+  earnings-related part, and PEN (S4.04) for every scheme decision, are not declared (F-067).
 
 **Architecture**: §6.5, §7.1, §7.4, §9.1, §10, §13, §14.6.
 
@@ -4859,27 +4876,33 @@ This is the world the Stage 0 gate measures.
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-pop/src/*.rs` | household and person roles, key and position attributes of Stage 0 (region, composition, preference type, tenure, age class, credit-record stage, banking arrangement, clocks), profile attributes (birth year, occupation family, skill, health, zone, dwelling class), facts and decision points declared (with placeholders) |
-| `crates/interfaces/if-base/src/pension.rs` | the pension kind (none, defined benefit, defined contribution), contribution rate points and fund-menu identifiers, shared so that `if-labour` needs no later crate |
-| `crates/interfaces/if-labour/src/terms.rs` | the employment line's terms (LAB.1, amended): occupation family, skill, wage point, hours, notice and severance, start band, region, and the pension's kind and contribution rates (for a DC job, rate points and a fund-menu identifier many employers share); the employment attachment's scheme component; the wage point table. It uses only `if-base`, L0 and L1 types |
-| `crates/interfaces/if-property/src/terms.rs` | the tenancy and mortgage terms with zone and class |
-| `crates/interfaces/if-banking/src/terms.rs` | deposit kinds, the banking arrangement, payment order, coverage order |
-| `crates/systems/sys-dem/` | POP's mortality, illness and ageing as hazards and processes; the population's opening contribution |
-| `crates/systems/sys-est/` | household estates: opening, the waterfall through the ledger (S0.17), distribution in kind to heirs (POP.9, part) |
+| `crates/interfaces/if-pop/src/lib.rs`, `src/consts.rs` | the household's vocabulary as constants: the population kind, roles (head, partner, other adults, a child of each band), key attributes (region, the head's age class, the counts of partners, adults and children by band) and profile components (birth year, sex, health, education), which `sys-dem` declares and other systems read |
+| `crates/systems/sys-dem/src/compose.rs`, `src/opening.rs`, `src/household.rs` | the opening: each region's persons apportioned over single ages and sexes and households formed from that pool (architecture §10.3), each given its key and values and gathered by key into cells; roles and succession |
+| `crates/systems/sys-dem/src/lines.rs` | the households' lines at the opening: the systems' attachment draws called per household, rows gathered into cells, lines opened, named sides written and derived sides apportioned and reported; a derived line with no eligible party stops the opening |
+| `crates/systems/sys-dem/src/life.rs`, `src/processes.rs`, `src/prims.rs` | POP's mortality (the Brass life table solved to the drawn life expectancy), the onset of disability and birthdays as processes on cells (`PopProcess`) |
 | `crates/systems/sys-lab/src/jobs.rs`, `crates/systems/sys-hsg/src/tenancies.rs`, `crates/systems/sys-bnk/src/households.rs`, `crates/systems/sys-frm/src/small.rs` | their draws of the households' lines and the small firms at the opening (architecture §10.3) and their placeholders: the wage and rent points until firms and landlords post their own |
-| `crates/systems/sys-soc/src/gen.rs`, `src/state_pension.rs` | the state pension's line and opening pensioners; its payment by the rule's points; the placeholder naming SOC |
-| `crates/systems/sys-pen/src/gen.rs`, `src/in_payment.rs` | the opening schemes as parties with their sponsors and assets; their pensioner lines and rows; payment, indexation and survivors by the terms; the placeholder naming PEN |
-| `crates/assembly/phx-world/src/opening/population.rs` | the two canonical passes (architecture §10.3) |
-| `data/<country>/SOC.toml` | the state pension's rule, age and payment dates (POLICY) |
-| `data/<country>/gen/{DEM,FRM,LAB,HSG,BNK,SOC,PEN}.toml` | the opening distributions with sources: life tables, censuses, household composition, income and wealth, kin, firm sizes, tenure, mortgages, deposits, jobs' pension kinds and rates, state pensions and defined-benefit pensions in payment, schemes and their assets. Household composition, income and wealth are declared by `sys-dem` until `sys-hh` exists (S1.12), when the register records the change of declarer |
-| `data/<country>/DEM.toml` | life tables and health hazards by age (TECHNOLOGY) |
-| `data/world.toml` | `settling_years = 1` (the owner's default, adjustable) |
+| `crates/systems/sys-soc/src/state_pension.rs` | the state pension's lines per sex and the opening pensioners, paid monthly by the treasury |
+| `crates/kernel/phx-ledger/src/attachments.rs`, `src/cleared.rs`, `src/part.rs`, `src/transfer.rs` | the attachment draws' interface and the online apportionment; cleared lines and their losers; parts' rows detached and attached; `members_leave` and the estates' line transfers |
+| `crates/kernel/phx-ledger/src/estate.rs`, `src/waterfall.rs` | an estate settled: its money through the waterfall, the rest written off or passed on, its rows leaving and the estate ended (`Books::settle_estate`) |
+| `crates/kernel/phx-pop/src/attach.rs`, `src/explicit.rs`, `src/sample.rs` | attachments drawn with explicit households; 3e's materialise, change and re-aggregate; the landing re-reads |
+| `crates/assembly/phx-world/src/cells.rs`, `src/rates.rs`, `src/estates.rs`, `src/losses.rs` | the world's day on the cells (3b's screening, 3e's outcomes, 10b), the realised rates' tallies, the estates' settlement in 7c's block (the heirless destination `consts.rs`'s `HEIRLESS_DESTINATION`), catastrophes' losses at owners |
+| `crates/apps/phx-cli/src/checks/population.rs` | LC-0-37 to LC-0-56 |
+| `data/profiles/<level>/{DEM,FRM,GEN,GEN_units,TIME}.toml`, `data/profiles/<level>/gen/{BNK,DEM,HSG,LAB,PEN,SOC}.toml` | each level's templates and opening distributions with their sources (`tools/data/derive_pop.py`), instantiated into a new game's `data/<country>/`; a `gen/` file is copied only for a system the world registers, so `PEN.toml` is read by none yet |
+| `data/shared/{DEM,LAB,HSG,BNK,FRM,REP}.toml` | the systems' shared primitives, the wage and rent points' placeholders among them |
+| `data/shared/GEN.toml` | `GEN.settling_years = 1` (the owner's default, adjustable) |
+
+Not built, each with its finding: `sys-pen` and the defined-benefit schemes with their pensions in payment (F-045);
+`sys-est`, whose place the ledger's `estate` and the world's `estates` take at Stage 0, and heirs from kinship lines
+(F-050); `if-base`'s pension kinds, `if-labour`'s, `if-property`'s and `if-banking`'s terms, which the Stage 0 lines
+do without (F-068).
 
 **Design**
 
 - **Pass A**: every household is drawn **complete** from counter keys — its members as roles, their birth years,
   occupation families, skills and health; its region and zone; its tenure, dwelling class, deposits, loans and
-  holdings; its kin (below) — in parallel.
+  holdings; its kin (below) — in parallel. *(As built: each region is drawn once, on one thread, persons first
+  (architecture §10.3), each named counterparty chosen online as a household is formed and each derived side
+  apportioned once the country is drawn, so no counter blocks, stratum counts or second pass are kept.)*
   - **The keys**: each attribute's draws come from the stream `<SYS>.opening_<attribute>` of the system that declares
     it, with the subject (country, region, household ordinal) and a fixed **counter block** per (member, attribute).
     A draw that needs a variable number of variates takes them inside its own block, so it never shifts the draws
@@ -4890,7 +4913,9 @@ This is the world the Stage 0 gate measures.
     of each employment, the rent and term of a tenancy, the rate and remaining term of a loan, the kind of each
     deposit, and each pension in payment — a member's state pension over the rule's points, and a defined-benefit
     pension's annual amount, indexation and survivor share from pension surveys. Each is drawn from its sourced
-    distribution directly over the trade's price points (REP.34), so no term is set by balancing (GEN.11).
+    distribution directly over the trade's price points (REP.34), so no term is set by balancing (GEN.11). *(Part: as
+    built a job is its wage point alone, a tenancy its rent point, a loan its rate with interest on the balance (F-042);
+    hours, start band and pension terms are not drawn (F-068), and no defined-benefit pension is (F-045).)*
   - **The steady-path convention** (GEN.5): each line's start date is drawn with its terms, and whatever its balance
     or current amount depends on from before the snapshot is computed as if the snapshot's present values had held
     since its start — a loan's outstanding amount from its rate, term and start, a floating line's current fixing, an
@@ -4900,6 +4925,7 @@ This is the world the Stage 0 gate measures.
   - **Kin** (POP.1): each household draws the count of its adults' children living in other households, by their
     age classes and regions, from the census sources. The children's side is drawn and the parents' side derived, so
     no relation is counted twice. These are kin lines between households (REP.3); heirs are drawn from them (POP.9).
+    *(Not built: no kin line is drawn, so no heir is (F-050).)*
   - Pass A keeps **stratum counts per GEN chunk**, sparse, not only totals, so pass B can rank each household within
     its stratum by a prefix sum over chunks in canonical order. A GEN chunk is about 1 M households (an engineering
     constant, apart from the tables' chunks), so the counts are about 120 chunks × the strata present in each.
@@ -4911,9 +4937,10 @@ This is the world the Stage 0 gate measures.
   - the opening schemes for defined-benefit pensions in payment, by sponsor sector and region;
   - the dwelling stock per (zone, class).
 
-  The derived side only apportions counts: it receives rows on terms the households drew. Unmatched strata take the
-  declared substitute or stay unmatched (unemployed, recorded homeless), each reported. Balancing through the ledger
-  closes every book (GEN.4).
+  The derived side only apportions counts: it receives rows on terms the households drew. As built no substitute is
+  declared, and a stratum with no eligible counterparty — a derived line with no party to take its other side —
+  stops the opening (`sys-dem`'s `lines`), so no stratum is left unmatched; LC-0-56 reads the apportionments.
+  Balancing through the ledger closes every book (GEN.4).
   - The banking arrangement, being a key attribute, is assigned per household: within each stratum, the household's
     canonical rank (its chunk's prefix plus its place in the chunk) falls in one bank's apportioned range. The same
     rule assigns the lenders of loans, which name one counterparty. Employment and tenancy lines record no pairing
@@ -4935,13 +4962,15 @@ This is the world the Stage 0 gate measures.
   - The employment lines carry each job's pension kind and contribution rates as terms from the opening, so no line
     changes when pensions are built; the scheme a member belongs to is the employment attachment's scheme component,
     **missing** until S4.04 draws the opening schemes' active members, and no contribution is levied before then.
+    *(Not built: the employment terms are the wage point alone, F-068.)*
 - **Pensions in payment** (spec Part O Stage 0), contracts that execute with no decision:
   - **The state pension** is `sys-soc`'s benefit line per (rule point, start band), paid from the treasury's account
     at the central bank (S0.16) to the pensioners' household cells on the other side, on the rule's dates, to named
     households — a statutory payment. Members crossing the state pension age join the line with the claim (SOC.3,
     S1.11), the person's state that keeps the joining once-only, which a hazard over a person's age cannot (F-046);
     until then the opening's pensioners alone are paid. Any earnings-related part is a placeholder naming SOC (S5.02).
-  - **Defined-benefit pensions in payment**: each opening scheme is a party of the scheme kind (a kind table of
+  - **Defined-benefit pensions in payment** *(not built: the schemes lack sources, F-045)*: each opening scheme is a
+    party of the scheme kind (a kind table of
     individuals, S0.09), sponsored by an opening large firm or public agency, its assets drawn from sources and
     balanced (GEN.4). Its pensioner lines per (scheme, section, indexation) carry rows whose `balance` is an
     `AccruedPension` (S0.14's non-money unit: the holder's total annual pension). The due is a `PerTime` leg over the
@@ -4963,55 +4992,89 @@ This is the world the Stage 0 gate measures.
   - Ageing: members crossing an age class on their birthdays are parts, drawn across the year (REP.25). For each
     (cell, birth year) whose members cross a class boundary this year, the count crossing on a day is binomial over
     those still to cross with probability one over the days left in the year, scheduled at an envelope like a
-    hazard (S0.22) from the stream `DEM.birthday`.
+    hazard (S0.22) from the stream `DEM.birthdays`.
   - A death is an event. The person's share of the household's claims passes by the household's rules, and a
     household with no surviving member becomes an estate (PTY.11, POP.15).
-- **`sys-est`** (L3, part): an estate row per ended household in `phx-core`'s estate kind table. The estate sells what
+- **Estates** (L3, part): an estate row per ended household in `phx-core`'s estate kind table. The estate sells what
   its debts need — here only through the market forms of S0.18 that exist, and otherwise waits, counted, on a
   placeholder naming its buyers' systems. It pays through the waterfall, and distributes the rest in kind to heirs
   drawn from its kinship lines' counts (REP.23), by the declared inheritance law (POLICY). With no heir, the law's
   declared destination takes the rest (the treasury, in every opening country), so nothing is ownerless (POP.15, Law
-  13). An estate ends when its distribution settles.
+  13). An estate ends when its distribution settles. *(As built there is no `sys-est`: the ledger's
+  `Books::settle_estate`, run by the world's `estates` in 7c's block, pays the debts through the waterfall, writes off
+  the rest and passes what is left to the heirless destination, which is `HEIRLESS_DESTINATION`, a kind name in
+  `phx-world`'s `consts.rs`, not a policy; it sells nothing and draws no heir (F-050), and dues in arrears are not in
+  its waterfall (F-066).)*
 - **Catastrophes** (GEO.8): S0.13's events reach owners through the two-level draw of architecture §7.10:
   - units lost across holdings;
   - then each hit holder's dwelling-role attachments;
   - tenants reached through the landlord's tenancies;
   - claims to insurers deferred to INS (Stage 4, a placeholder).
+
+  *(Part: as built, a struck tile's share of every physical unit the individuals sited there hold is lost at 3b; no
+  household holds a dwelling and no small firm plant yet (S2.05, F-049), so no attachment or tenant is reached.)*
 - **Settling** (GEN.6): the world runs by its own mechanisms for `settling_years` before day one of play; its history
   is kept, and it is the world's only history.
 
 **Unit tests**
-- `canonical_passes_identical`: pass B redraws what pass A drew for the same keys (the per-member draw function over
-  keys is pure).
-- `counter_blocks_isolate_variable_draws`: a draw taking more variates leaves every later attribute's draws unchanged.
-- `kin_counted_once`.
-- `apportionment_by_stratum_exact`.
-- `rank_assignment_independent_of_chunking`: the same households get the same banks for any chunk size.
-- `no_heir_goes_to_declared_destination`.
-- `death_moves_claims_by_rule`.
-- `pension_per_time_over_balance`: the monthly due per member from an annual balance not divisible by the count.
-- `survivor_share_moves_on_death`.
+
+The list first written here (`canonical_passes_identical`, `counter_blocks_isolate_variable_draws`,
+`kin_counted_once`, `apportionment_by_stratum_exact`, `rank_assignment_independent_of_chunking`,
+`no_heir_goes_to_declared_destination`, `death_moves_claims_by_rule`, `pension_per_time_over_balance`,
+`survivor_share_moves_on_death`) is retired: the opening draws each region once, persons first, its counterparties
+chosen online, with no counter blocks, second pass or ranks (architecture §10.3), and no kin line, heir,
+defined-benefit pension or survivor share is built (F-045, F-050). The tests as built:
+- `sys-dem`: `apportioned_parts_sum_to_the_total_and_follow_the_weights`, `the_tree_draws_each_person_once`,
+  `every_person_of_the_pool_is_in_one_household`, `children_without_mothers_are_raised_by_adults`,
+  `partners_take_the_gap` (`compose.rs`); `roles_name_their_groups_and_back`, `a_person_takes_a_role_with_its_values`,
+  `the_head_is_succeeded_in_order`, `the_eldest_of_two_adults_succeeds` (`household.rs`);
+  `survivorship_starts_whole_and_falls`, `life_expectancy_counts_half_the_year_of_death_and_the_open_age`,
+  `the_level_found_gives_the_life_expectancy_asked`, `a_cohorts_death_is_the_tables_over_the_ages_it_spans`
+  (`life.rs`); `classes_and_days_of_the_year` (`processes.rs`).
+- `sys-frm`: `classes_share_the_firms_below_the_cut_and_hold_their_sizes`, `a_class_beyond_the_cut_holds_no_firm`.
+- `phx-pop`: `households_gather_by_key_into_parts`, `a_household_holds_the_persons_its_key_counts`,
+  `households_are_drawn_whole_from_the_cells_values`, `two_reached_share_a_household_at_the_urns_rate`,
+  `a_household_named_and_read_back_is_itself`, `outcomes_regroup_by_the_keys_households_become`,
+  `every_person_drawn_out_is_accounted_for`, `households_moved_split_out_with_every_value_given` (`explicit.rs`);
+  `all_holders_drawn_take_every_member`, `a_household_holds_a_row_as_its_members_share_it` (`attach.rs`);
+  `a_join_that_adds_every_side_keeps_every_straight_total`, `a_lost_member_or_unit_and_a_crossed_kink_are_counted`
+  (`sample.rs`); `profiles_count_every_member_of_their_role` (`audit.rs`).
+- `phx-ledger`: `every_prefix_is_within_one_of_its_share`, `shares_sum_to_the_total` (`attachments.rs`);
+  `the_first_drawn_are_the_same_whatever_the_count`, `the_drawn_sum_to_the_failed_within_each_row`,
+  `each_member_is_as_likely_to_lose` (`cleared.rs`); `a_cleared_line_pays_row_by_row_and_draws_who_loses`,
+  `a_cleared_line_fails_the_rows_of_holders_with_no_money` (`dues_tests.rs`); `members_leave_with_their_counterparts`,
+  `an_estate_pays_its_debts_passes_the_rest_and_ends`, `an_estate_short_of_its_debts_writes_off_the_rest`
+  (`transfer_tests.rs`); `a_row_placed_on_a_line_due_today_falls_due_today` (`runs_tests.rs`). The books these
+  assemble are an owner item (F-063).
+- `phx-world`: `processes_bind_to_their_owners_hazards_and_groups` (`cells.rs`).
 
 **Live checks**
 - `LC-0-51`: day one passes every audit family with the full population (GEN.7).
 - `LC-0-52`: the populations reconcile — births (none yet), deaths and entries; every person is in exactly one
   household; every household has a member or is an estate (PTY.11, REP.13).
 - `LC-0-53`: every death has a cause and a destination for everything held and owed (POP.15); every estate
-  distributes and ends, or waits on a named placeholder, with the waiting estates counted by placeholder.
+  distributes and ends, or waits. As built it reads that the estates opened are those settled and those open, and
+  that every estate open from before the last day is counted waiting; no placeholder is named (F-067).
 - `LC-0-54`: realised mortality and illness per age class match their declared tables within sampling error over the
   year (CHN.7).
 - `LC-0-55`: paydays, dues and pensions in payment settle through pooled flows, and every fail has a cause and a
-  waiting owner; the count of fails by line kind is published (liveness, N2); every pension paid names a living
-  member's household or a survivor, and every death ended the member's share.
-- `LC-0-56`: the GEN report lists every apportionment difference and every unmatched stratum (GEN.4).
-- `LC-0-37` to `LC-0-50` become applicable and pass.
+  waiting owner. As built it reads that some due was paid over the run; that every fail of a contract's due is on a
+  line whose kind names systems that may request its transfer, read as the fail's waiting owner in place of a declared
+  placeholder (F-067); and that no row held by persons counts more members than its cell holds persons of those
+  roles, so the dead are paid nothing.
+- `LC-0-56`: the GEN report lists every apportionment difference and every unmatched stratum (GEN.4). As built it
+  reads that the report lists the apportionments and gives no party of no drawn size anything; an unmatched stratum
+  stops the opening, so none is listed.
+- `LC-0-37` to `LC-0-50` become applicable and pass, but LC-0-42, which waits for the first decisions (Stage 1), and
+  LC-0-48, which waits for the firms' positions (S1.03, F-048).
 
 **Budget**: the whole of architecture §13 as it applies to Stage 0's world — memory at the worst day's peak,
 the Stage 0 lines of §13.2 — measured at S0.26. Pensions in payment are about 0.85 M rows
 (state pensions about 0.35 M at 16 bytes, about two per cell with pensioners; defined-benefit pensions about 0.5 M at
 24 bytes), with no retail holder lists: about 20 MB with arena slack; paid mostly at month's end, about 7 ms on the
 heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_soc.state_pension_rows`,
-`phx_pen.pensioner_rows`, `phx_pen.in_payment_fails`.
+`phx_pen.pensioner_rows`, `phx_pen.in_payment_fails` — none built: the first waits on F-060, the others on `sys-pen`
+(F-045).
 
 **Guards**: every placeholder names its retiring system, and the placeholder count is ratcheted (NUM.7).
 
@@ -5026,7 +5089,8 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 **Done when**
 - [ ] The full population opens, balances, settles for a year and lives a simulated year with deaths, illness, ageing,
   catastrophes, paydays, dues and pensions in payment.
-- [ ] LC-0-37 to LC-0-56 pass.
+- [ ] LC-0-37 to LC-0-56 pass, but LC-0-42, which waits for Stage 1's first decisions, and LC-0-48, which waits for
+  the firms' positions (F-048).
 - [ ] Two reviews are done.
 
 ---
@@ -5035,11 +5099,14 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 
 **Status**: building. Split into sub-steps, each with its own build run:
 - **S0.26a — the world on the phone** *(part built)*: `phx-ffi`'s `run_world` assembles the world from the data the
-  bench flavour ships as assets and runs a declared number of turns, sending each turn's wall time, days, `VmHWM` and
-  PSS to the screen as it closes and writing a report with the opening's time and the median and worst turn against
-  the budget. Each turn's row carries whether it ends on a business day and its sub-steps' wall times, summed over
-  its days from the world's `SubStepRecord`s (which now hold each sub-step's wall time by the application's clock),
-  with the macro reads and each opening distribution's drift.
+  bench flavour ships as assets, settles it for the owner's length (`GEN.settling_years`), reporting the settling's
+  turns, days and wall time, and runs the measured turns (the app passes 60), sending each turn's wall time, days,
+  `VmHWM` and PSS to the screen as it closes and writing a report with the opening's time and peak and the median and
+  worst turn against the budget. Each turn's row carries whether it ends on a business day, its payments and rows
+  scanned, and its sub-steps' wall times, summed over its days from the world's `SubStepRecord`s (which hold each
+  sub-step's wall time by the application's clock), with the macro reads and each opening distribution's drift. Last
+  the world is saved whole, dropped and read back, both timed, and the world read back is checked against the saved
+  world hash.
 - **S0.26b — the public-event rule** *(built)*: `phx_core::EventsRule` (`events_rule.rs`) from the standing SHAPE
   `OBS.public_events` (`data/shared/OBS.toml`, a new value type `NewsRule`), which names every declared event kind
   once — always, never, or when one of its details' sizes reaches a declared size in the kind's unit — and is refused
@@ -5047,7 +5114,7 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   intent no longer carries publicity; at 10a the world makes public each event of that day and the day before the
   rule judges so, so yesterday's events recorded after its 10a are judged today (architecture §4.10). The opening
   rule: weather always, a catastrophe when a struck tile loses a permille, a household's death, disability or
-  birthday never. LC-0-58 is real; LC-0-57, 59 and 60 name S0.26d and S0.26e.
+  birthday never.
 - **S0.26c — `phx-obs`** *(built)*: the crate, above
   `phx-world` in the assembly layer's order (`phx-world → phx-obs`), reads the world only through its inspector. Its
   `Recorder` reads each day a turn closed into the series `data/observer/READS.toml` declares (moved from
@@ -5080,8 +5147,9 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   device report's second version, the first's fundamentals with a `world` and a `load` section
   (`perf/schema/device-report.json` takes both versions). `phx measure budget --build-run --device` reads a build
   run's report and a device report of the same commit's world: the phone's business and closed turns, each
-  sub-step's median, memory, unit costs (7a per row scanned, 7c per payment: the phone's median over the build run's
-  count per business day of the same world), and the full-load bench against its criteria. Live checks that read what
+  sub-step's median, memory, stage 7's unit costs (in each phone turn that settled any, its own 7c time — the block
+  that runs all of stage 7 — over its own rows scanned and over its own payments, the median and worst of those), and
+  the full-load bench against its criteria. Live checks that read what
   the observer recorded beside the world (`Run::Observed`, over `Observed`): LC-0-59 — money moves on every business
   day, each day's fails tallied by cause are the fails recorded, no read rises on every day unless its declaration
   names why, and the reads never all stand still to the run's end; LC-0-60 — each opening distribution's distance
@@ -5115,7 +5183,8 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 | `crates/assembly/phx-obs/src/*.rs` | minimal views, fixed-bin histograms, tracers (REP.30) and the macro reads (`READS.toml`) computed from public records; read-only; swapped behind an `Arc` at 10e |
 | `data/observer/READS.toml` | the declared macro reads, Stage 0's (demographic and monetary) |
 | `crates/kernel/phx-core/src/events_rule.rs` | S0.10's declared extension point: the OBS.3 rule at 10a, which recorded events become public, declared as a standing SHAPE. It reads only the day's events (which every system records at the sub-step that caused them, CHN.4) and public records, so it needs no state `phx-core` cannot see. Its extension point: per event kind, the declared follow-ups that develop from it (S6.04) |
-| `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create from a setup (S0.27), load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock |
+| `crates/apps/phx-ffi/src/lib.rs` | UniFFI surface: create from a setup (S0.27), load, step a turn, read a view page, submit an action (the player's queue), save; the `PerfHint` implementation over Android's performance-hint API; worker thread ids passed to it; the `Clock` implementation over the monotonic clock. As built: it exports `run_bench`, `run_world`, `run_load` and `run_programme`, with the monotonic `Clock` in each; the play surface moves to S6.04 (below), and no `PerfHint` implementation is built (F-056) |
+| `crates/apps/phx-ffi/src/world.rs`, `src/programme.rs` | as built: `run_world` (S0.26a) and `run_programme` (`Run all`) |
 | `crates/apps/phx-ffi/src/bench.rs` | S0.07's bench, extended: S0.17's micro-benchmarks beside S0.04's, S0.07's and S0.23's, and N turns of the world with its macro reads, all inside the app's process; each turn's and each bench day's results are sent to the app as they complete |
 | `perf/schema/device-report.json` | the report's schema, second version: turns, sub-steps, memory, the macro reads and the full-load bench's section |
 | `crates/apps/phx-ffi/src/load.rs` | the full-load bench: the finished world's stores filled with random data, and the real kernels run over them at the finished world's daily counts, by day type |
@@ -5161,12 +5230,18 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
     by instruction counts with and without them, reported and never removed (§2.13);
   - a **full-world projection**: the measured unit costs times the counts of the Stage 1–6 ledgers, the median, the
     worst turn and the peak, so representation choices are weighed against the whole world, not Stage 1 alone.
-- **The device report** (`perf/device/`, validated against its schema): per turn and per sub-step, wall times with
-  the day's type; the day's counters; thermal status and headroom (`AThermal`); `VmHWM` and PSS; core frequencies;
-  the performance-hint session's status; the build and the world hash; the macro reads of `READS.toml`, computed on
-  the phone by `phx-obs` from the run's public records at each close (read-only, in the views line), which makes this
-  run the gate run (§0.3). The measured year is consecutive turns from the settled world, with the phone's thermal
-  limits in force (N8.3) and no warm-up before it.
+
+  As built, `phx measure` has two subcommands: `calendar` (S0.11) and `budget` (the turns, sub-steps, memory, stage
+  7's unit costs and the full-load bench, S0.26e). Rows per cell against weight, profile entries per role, distinct
+  keys and banking arrangements per region, the key floor, rows per part, the other unit costs and the full-world
+  projection are not yet produced: the bench flavour does not write their counts. They are still to be met for this
+  gate (Done when).
+- **The device report** (`perf/device/`, validated against its schema): per turn and per sub-step, wall times with the
+  day's type; the day's counters; thermal status and headroom (`AThermal`); `VmHWM` and PSS; core frequencies; the
+  performance-hint session's status (none is opened yet, F-056); the build and the world hash; the macro reads of
+  `READS.toml`, computed on the phone by `phx-obs` from the run's public records at each close (read-only, in the views
+  line), which makes this run the gate run (§0.3). The measured year is consecutive turns from the settled world, with
+  the phone's thermal limits in force (N8.3) and no warm-up before it.
 - **Unit costs on the phone** come from the kernel micro-benchmarks in the bench (S0.04, S0.07, S0.17, S0.23) and from
   per-sub-step timers divided by the day's counters. A part, which spans 10b's sub-steps, is timed per component by
   counters on its stages.
@@ -5231,14 +5306,18 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
   remedies of N8.7 apply in order, and the owner decides if none suffices.
 
 **Unit tests**
-- `load_month_holds_every_day_type`: the bench's days are at most a month and hold each declared day type.
+- `load_month_holds_every_day_type`: the bench's days are at most a month and hold each declared day type. *(Still to
+  be met: not written. `load_runs_end_to_end`, ignored and run by hand, runs the bench at a small size.)*
 - `event_rule_is_pure`.
 - `tracer_follow_probability`.
-- `ffi_types_roundtrip`.
+- `ffi_types_roundtrip`. *(Retired to S6.04, with the play surface whose types it round-trips: the Stage 0 FFI carries
+  only the bench's records and strings.)*
 
 **Live checks**
 - `LC-0-57`: the player's queued intents are decided on the first day their decision point runs; with nothing queued,
-  the rule decides; the player appears in every family.
+  the rule decides; the player appears in every family. As built, with no decision point yet, it reads the player
+  seated: an individual household, never landed, in the setup's country, with nothing left queued. The player in
+  every family is retired to `LC-6-18` (S6.04), which reads each family's count of the player's party.
 - `LC-0-58`: every public event was produced by the rule from the state, with a date and subjects (OBS.3, OBS.5).
 - `LC-0-59`: liveness (N2): money circulates, fails are counted by cause, no quantity grows without bound for an
   unnamed reason, no dead fixed point.
@@ -5260,10 +5339,12 @@ values; PC-20 now also refuses any `&mut` into the world, or any write to a tabl
 
 **Done when**
 - [ ] The phone runs a settled simulated year in the bench flavour, and the report is committed, with save and load
-  times.
+  times. *(Still to be met: `perf/device/S0.26-*.json` and `perf/measure/S0.26-*.json` come from the owner's phone
+  run.)*
 - [ ] The full-load bench has run on the phone within its criteria, or N8.7's remedies have brought it within them, or
   the owner's decision is recorded in §12.
-- [ ] `phx measure` produces its report, and the macro reads are reported from the run.
+- [ ] `phx measure` produces its report, and the macro reads are reported from the run. *(Still to be met: the
+  representation's numbers, the key floor and the full-world projection, above.)*
 - [ ] Architecture §13 is rewritten with measured numbers.
 - [ ] The Stage 0 exit of spec Part O holds.
 - [ ] LC-0-57 to LC-0-60 pass.
@@ -15044,7 +15125,7 @@ ratchet.
 | `src/history.rs` | tracers' histories: the last year in memory, older change entries paged from the save's history store |
 | `crates/kernel/phx-core/src/events_rule.rs` | an extension this step makes to S0.26's public-event rule: per event kind, the declared follow-ups that develop from it; no existing item changes |
 | `crates/assembly/phx-world/src/save/history.rs` | an extension this step makes to S0.20's saves: one append-only **history store** beside the save units, which both units' manifests reference, so it is stored once; change entries only (splits, landings, events), delta-coded; a tracer's history dropped when the tracer ends |
-| `crates/apps/phx-ffi/src/*.rs` | pages in chunks; `submit(action)` into the player's queue; marking; delegation settings per decision point |
+| `crates/apps/phx-ffi/src/*.rs` | the play surface S0.26 left here — create from a setup, load, step a turn, read a view page, submit an action, save, and export the recorder's series — with `ffi_types_roundtrip`; pages in chunks; `submit(action)` into the player's queue; marking; delegation settings per decision point |
 | `android/app/` | Compose screens for the participant build; `android/inspector/`, the inspector flavour |
 | `data/shared/OBS.toml` | the event rule's follow-ups per kind (SHAPE, standing); staleness horizons are each market's (MKT); marks count against S0.26's declared number of tracers (OBS.9) |
 
@@ -15827,8 +15908,7 @@ the final build within the budget on the phone.
 | F-006 | Stage 5 ledger (§8) | planning, 2026-09-23 | Stage 5, with its reviews' re-costing (payroll levies at about 7.5 ns each; property tax from the (zone, class) index; the state pension's follow-on counted; units corrected) and remedies (VAT at statements and in cash sales' instructions; fused payroll levies; the follow-on one leg per cell; the migration memo; the `vote` state in a campaign side column; currency-derivative marks per (pair, maturity)), adds about 63 ms to an ordinary business day (currencies and their derivatives 22 ms, across borders 18 ms, levies 8 ms, agencies 5 ms), 4 ms to a non-business day and 99 ms to a heavy one (77, 4 and 133 before the remedies), and about 116 MB at peak (relationship rows 42 MB, lines and terms 15 MB, profiles 13 MB, household cells 11 MB, slack 10 MB). Through Stage 5 the median weekday projects at about 1 228 ms (23% over), the heavy Monday about 2 562 ms (28% over), three closed days before a quarter-end payday about 2 914 ms (46% over) and the peak about 5 065 MB (13% over the 4.5 GB budget itself); an election's eve adds about 60 ms in the largest country, a campaign business day 25 ms, a peg's break or a sudden stop 120 ms | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate, then S5.06's measurements; N8.7's remedies in order (the Stage 5 preamble's further proposals), then the play resolution, a valve set by measurement | open |
 | F-007 | Stage 6 ledger (§9) | planning, 2026-09-23 | Stage 6, with its reviews' re-costing (every known way kept, TEC.4, so distinct known-way sets keep about 50 k more firm cells apart, 25 ms and 50 MB; a formation counted as two origins; cumulative output in the firm's arena, the record at 504 bytes; the school year's date beside Stage 5's first-day line; the tracers' history store sized) and remedies (skill a read of its clocks; meetings a hazard on regions; courses as attachments; compulsory stages a read; views on a turn's last day; POP.11 and POP.12 on the rolling cycle; learning's power only past its thresholds), adds about 74 ms to an ordinary business day (firm cells kept apart by known ways 25 ms, parts 21 ms, views 8 ms, housing search for new households 5 ms, TEC 4 ms), 14 ms to a non-business day and 86 ms to a heavy one, and about 151 MB at peak (firm cells kept apart 50 MB, profiles 28 MB, household cells 22 MB, slack 11 MB, views and tracers 10 MB). Through Stage 6 the median weekday projects at about 1 302 ms (30% over), the Monday after a weekend about 2 034 ms (2% over), the heavy Monday about 2 676 ms (34% over), three closed days before a quarter-end payday about 3 042 ms (52% over) and the peak about 5 216 MB (16% over the 4.5 GB budget itself); two full saves take about 3.9 GB with the tracers' history store beside them; a country's school year's date adds up to 28 ms with Stage 5's line | none: the representation's cost | S0.26's full-load bench, which decides the Stage 0 gate, then S6.05's measurements; N8.7's remedies in order (the Stage 6 preamble's further proposals, known ways not run as a firm profile first), then the play resolution, a valve set by measurement | open |
 | F-008 | S0.27 | derivation, 2026-09-23 | The country-group profiles derived from the published series leave gaps: the BIS reports policy rates for 2 developing economies (too few for a profile), the OECD's social spending covers its members (4 emerging, no developing), and no source with world coverage gives home ownership. The IMF's household and firm debt are to GDP where GEN.15 names debt to income and to value added. Risk appetite has no country-level source in hand | none: missing data | the owner: a source for each gap (candidates: IMF IFS policy rates, ILO World Social Protection Report expenditure, census tenure tables via IPUMS; the Global Preferences Survey for risk taking), or those derived values left undrawn for the groups that lack them; decided before S0.16 reads the policy rate and S0.25 the rest | home ownership decided (§12, 2026-09-24); the policy rate, social spending and risk appetite open |
-| F-008 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
-| F-009 | S0.04 | build, 2026-09-23 | `pick_without_replacement` builds its Fenwick tree on the heap at each call (5 863 instructions for 8 picks from 64 categories, `phx_rand.ir_pick_without_replacement`, most of it the allocation), as S0.04 designs it; §2.8 allows no heap allocation per row in a handler | none: an engineering cost | S0.23, where picks first run per row: the tree comes from the chunk arena's scratch, rebuilt in place | open |
+| F-009 | S0.04 | build, 2026-09-23 | `pick_without_replacement` builds its Fenwick tree on the heap at each call (5 863 instructions for 8 picks from 64 categories, `phx_rand.ir_pick_without_replacement`, most of it the allocation), as S0.04 designs it; §2.8 allows no heap allocation per row in a handler | none: an engineering cost | S1.03, with F-057's stage 7 remedy: the tree built in a scratch the caller keeps and rebuilt in place, not allocated per call | open; live since S0.23: `phx-pop`'s hit picks and splits call it per row, and `phx-rand`'s `picks.rs` still allocates the tree per call |
 | F-010 | S0.13 | build, 2026-09-24 | GEO's exposure tables, spreads, severities and deposits are assumed, each with its reason (data/shared/GEO_hazards.toml): the rates are EM-DAT's world means per tile, but their split across exposure classes (a quarter, one and four), the footprints' spread and the share destroyed have no published source in hand, and the deposits' densities, grades and sizes wait for the resources GDS declares | none: missing data | S1.05, which brings the resources and their data (USGS mineral commodity summaries and deposit databases); for the hazards, a regional loss or footprint dataset (EM-DAT's affected areas, Munich Re NatCatSERVICE, the Global Flood Database) when one is chosen | open |
 | F-011 | S0.13 | owner's review of the map, 2026-09-24 | The map of the build run on bc1dfb5 has 1.5% of its land as plains (the real Old World's lowland share is near a half): elevations rise linearly from the sea to the highest point, so nearly all land stands above the plains' 200 m, and floods, coal, and oil and gas, which read plains, all but vanish | the generator's relief: no measured land-height curve, no erosion, no rivers | S0.13 reopened: relief on a finer grid from plates and noise, eroded by rivers, its land heights mapped to ETOPO's measured curve for the analogue region, terrain read from relief within the tile, rivers carried by the map | closed: the relief is generated on a grid four times finer from plates, warped noise and ridged belts, eroded by rivers, its land heights ranked onto ETOPO's curve and each tile's relief onto ETOPO's measured ranges; the build run's map is 45/26/22/8% plains, hills, uplands and mountains against the real 42/29/21/7% |
 | F-012 | S0.13 | owner's review of the map, 2026-09-24 | The same map's regions range from 652 to 2,763 tiles in Noredia, where GEO.3 wants regions of like size: tiles left after the growth, and islands, join whichever region reaches them first, unbounded | the generator's partition: no bound on the spill and no balance | S0.13 reopened: regions grown by travel cost so borders follow ridges and rivers, then balanced tile by tile within a declared tolerance, which becomes a construction condition | closed: countries, regions and zones are cut by exact halving over travel cost, so each part holds together and its borders follow ridges and rivers; a cut moves only to keep a peninsula whole, within the declared tolerance; the build run's regions are within 0.1% of like size |
@@ -15838,10 +15918,10 @@ the final build within the budget on the phone.
 | F-016 | S0.16 | build machine, 2026-09-24 | The opening's firms pay their loans' interest and principal from their deposits and earn nothing: in the first 397 days about 13 900 of 1.1 million dues fail for funds, and their rows fall into arrears; by the end of the second year the emerging country's firms are drained, and on 27 December 2027, the one country open, all 733 of its dues failed (the build run on ff93e15, LC-0-26) | FRM's production and sales, which bring the firms' income, do not exist yet | S1.03 (firms produce and sell), whose live checks take on LC-0-26's claim that payments settle every business day; until then the fails are the world's truth, never masked | open |
 | F-017 | S0.16 | build machine, 2026-09-24 | The opening's balance sheets are partial: the banks' deposits are the firms' alone (a quarter of the published deposits), so the banks' equity is the rest of their loans and reserves (7.4 × 10¹⁴ against 1.06 × 10¹⁵ of loans), and the treasury's equity is minus the reserves, since the central bank's claim on it stands for the sovereign's debt | households, their deposits and the banks' owners are not drawn yet; the sovereign's debt waits for SOV | S0.25 (households, their deposits and ownership) and S1.11 (the sovereign's debt); `GEN.bank_capital_ratio` is read then | open |
 | F-018 | S0.16 | build machine, 2026-09-24 | Stage 7's dues scan every line and read every holder's rows each business day, and a leg on a bank's row reads the bank's run to find it (about 1 400 rows a bank): 397 days with the opening took 49 s, the opening itself about 12 s; at the full world's 36 M rows the scan alone would miss the budget | no due-day runs or payer pass yet; rows found by reading a holder's run | S0.17: the payer pass over due-day runs, rows found by their run head | closed: S0.17's due-day runs and payer pass read one head a holder and scan a segment only on its day; what a payment still costs is F-020 |
-| F-019 | S0.16 | build machine, 2026-09-24 | The opening's report keeps every write in the world's memory: 225 k now, tens of millions once households are drawn | the report is kept whole for the run's report and LC-0-24 | S0.25: the report streams its writes to the run's directory and keeps their counts and sums | open |
+| F-019 | S0.16 | build machine, 2026-09-24 | The opening's report keeps every write in the world's memory: 225 k now, tens of millions once households are drawn | the report is kept whole for the run's report and LC-0-24 | S1.15 (GEN III): the report streams its writes to the run's directory and keeps their counts and sums | open; live: `GenReport.writes` (`phx-core`'s `contribution.rs`) is kept whole in the world's memory and saved with the run |
 | F-020 | S0.17 | build machine, 2026-09-24 | 1b and the whole of stage 7 over sixteen loans due on one day cost 350 502 instructions (`phx_ledger.ir_settle_day_16`), about 22 000 a payment, against a budget of about 10 ns a row read and 30 ns a payment applied. Each payment's dues, route and legs are derived three times (7a, 7b, 7c), its reckoning, its accounts and its lines' owers are looked up through ordered maps and holder lists, a bank's row is found by reading its run, and each scanned holder's due rows are collected into a vector | the per-payment path: nothing of a payment is kept between the passes, and rows and routes are found by search | before the Stage 0 gate (S0.26): a payment's route kept per (party, bank) in the day's records, accounts found by the run head's offsets, the dues computed once in 7a; measured on the phone | open |
 | F-021 | S0.17 | build, 2026-09-24 | 7c applies the day's nets sequentially, one instruction per line, not in parallel by target chunk: the money legs of every payment sit on one deposit or reserves line per bank, so a line's instruction is the unit of apply and lines share their parties' accounts | a chunked apply needs the nets split by the account's chunk, not the line | S0.26: parallelised by target chunk if the phone's measure of 7c calls for it | open |
-| F-022 | S0.17 | build, 2026-09-24 | Levies, standing flows (plain and indexed), the pooled-flow rule's kinks and its split requests, the move to a procedure line over a side of many holders, and the waterfall exist as functions under unit tests; no 7a stream reads a levy or a standing flow yet, and a procedure line needs the line's other side to have one holder | nothing declares a levy, a standing flow or a kink yet, and no procedure opens | their first users: standing flows and the pairing S0.25, levies S1.11, kinks S0.21 and S0.23, procedures S2.03, the waterfall S0.25 (`sys-est`); each user step's live checks cover them | open |
+| F-022 | S0.17 | build, 2026-09-24 | Levies, standing flows (plain and indexed), the pooled-flow rule's kinks and its split requests, the move to a procedure line over a side of many holders, and the waterfall exist as functions under unit tests; no 7a stream reads a levy or a standing flow yet, and a procedure line needs the line's other side to have one holder | nothing declares a levy, a standing flow or a kink yet, and no procedure opens | the waterfall's user since S0.25 is `phx_ledger::estate`, run by `phx-world/src/estates.rs` (there is no `sys-est` crate); no kink is declared in the world and the pooled-flow rule is given none (F-065); levies S1.11, standing flows and the rule's split requests S1.03 and S1.12, procedures S2.03; each user step's live checks cover them | open for levies, standing flows, kinks and procedures; the waterfall used |
 | F-023 | S0.18 | build machine, 2026-09-24 | The linked call on the money market's declared size costs 1.92 billion instructions cold and 1.12 billion warm (`phx_market.ir_linked_call_cold`, `_warm`): the warm start needs 475 pivots against 27 084, but choosing each borrower's price within its potentials' range, a search from each node whose range is wider than a point, is most of the warm count | the prices' ranges searched node by node over the whole residual graph | S3.01, whose budget the money market's call is measured against on the phone: the ranges searched only over each node's tight component | open |
 | F-024 | S0.18 | build, 2026-09-24 | The market forms exist as functions under unit tests and nothing in the Stage 0 world meets a market, so LC-0-30 to LC-0-32 report "not yet"; a linked call gives flows and prices but not yet its matches between lenders and borrowers, and a posted market prints each seller's sales but declares no mark of its own | no system posts in a market before the firms' prices; the money market's matching and a posted market's mark are their first users' | S1.03 (the first posted meetings and their mark), S3.01 (the money market's matches) | open |
 | F-025 | S0.19 | build, 2026-09-24 | A position's carrying basis is not stored with it: an opening position takes the first basis its legal form is permitted for what it is held for, read each time, and a debt owed is at amortised cost; a holding's purpose is read from its instrument family (a contract or debt to collect, a share or fund unit to trade, a real asset to use) | no party yet acquires a position by its own decision, so no basis is chosen at acquisition | the first acquisition decisions (S1.03's purchases, S3.02's securities), which store the chosen basis in the holding's or row's flags | open |
@@ -15850,7 +15930,7 @@ the final build within the budget on the phone.
 | F-028 | S0.22 | build, 2026-09-24 | Carrying a cell's mean review exposure over-counts reviews by about 12% against members each carrying their own, reviewing monthly at 2% a day over two years (`review_count_bias_measured`) | the concavity of 1 − e^(−x): reviewers who stay and the others share one mean | REP.21 accepts it; S1.01's attention is where its size is read against the decisions it moves, and LC-0-46 reports the dispersion erased at each review | open |
 | F-029 | S0.23 | build, 2026-09-24 | A part end to end at the design point costs 337 351 instructions (`phx_pop.ir_part_end_to_end`, ten members of two hundred with forty rows, 150 profile entries and thirty positions) and 17.4 µs a one-member part on the build machine; 12.2 µs on the phone, against 2.5 µs (F-001) | each split and join decodes and re-encodes both cells' profiles; a row's words go through the arena's list reference on every write; every row draws its leavers by its own hypergeometric; the check and the join each read the cell's rows into views; small vectors are allocated throughout | judged on the phone at S0.26 against F-001; the remedies of N8.7 in order. Taken since: batches per origin and per target (one read and one write of a cell's profile and rows), profiles moved in one pass, one-draw leavers, word arithmetic — a lone part 177 483 instructions and a part in a batch of eight 66 500; what remains is the rows' reads and writes, the positions' shares and the allocations of small vectors | open |
 | F-030 | S0.23 | build, 2026-09-24 | A seller cell's spread of fifty members and 450 purchases costs 3.1 million instructions (`phx_pop.ir_seller_spread`) against 3 µs | members whose stock is below the largest purchase left end every phase after one purchase, so a cell of small stocks spreads purchase by purchase, each finding the active members afresh | the phases per spread are counted from S0.25 (`phx_pop.spread_phases`) and judged on the phone at S0.26; each purchase drawn by lot is now one uniform draw, which took the spread to 2.54 million | open |
-| F-031 | S0.23 | build, 2026-09-24 | A part's rows belong to no holder between its split and 10b, so a due falling on one of them at stage 7 of the same day is not read by the settlement stream | parts land only at 10b, and the stream reads holders' rows | S0.25, when the world first splits cells: a split before stage 7 keeps a dated row on its origin until 10b, or its part lands at 7a | open |
+| F-031 | S0.23 | build, 2026-09-24 | A part's rows belong to no holder between its split and 10b, so a due falling on one of them at stage 7 of the same day is not read by the settlement stream | parts land only at 10b, and the stream reads holders' rows | S1.12 (`sys-hh`): the split's rows detached at 10b, their dues paid by the origin that day (the origin's funds read from its rows, not its weight) | open; live since S0.25, which splits cells at 3e: a part's members miss the dues falling that day between 3e and 10b |
 | F-032 | S0.24 | build, 2026-09-24 | A widening sweep costs 42 000 instructions a cell over a thousand synthetic cells (`phx_pop.ir_widen_sweep`), against 300 ns a cell and the joins | every cell's step vector is recomputed from its totals, about 8 000 instructions a cell, and the cells a widening unites join as whole parts, detaching and attaching every row | judged on the phone at S0.26; the remedy of N8.7 first: the base steps kept per cell so a widening shifts them, and whole-cell joins made in place | open |
 | F-033 | S0.24 | build, 2026-09-24 | A rank read costs 1 174 instructions a row (`phx_pop.ir_rank_read`), against 2 ns a row and 5 ms a month for about a million rows | rows are gathered with their identities before the histogram, and ties at the edge draw a hypergeometric per edge cell | judged on the phone at S0.26; the read runs once a month, so its cost is at most one day's | open |
 | F-034 | S0.24 | build, 2026-09-24 | A gap estimate costs 33 000 instructions a sampled cell over thirty positions (`phx_pop.ir_gap_estimate`), about 330 ms for the design's 10⁴ samples against 20 ms | each position's partner key is hashed from the whole step vector again and looked up in the index | judged on the phone at S0.26; the landing key updated for one changed step, and the sample sized to the budget (REP.18) | open |
@@ -15860,7 +15940,7 @@ the final build within the budget on the phone.
 | F-038 | S0.25c | opening, build machine, 2026-09-24 | The opening draws 130.8 M households (300 M persons) into 24 461 cells, the world's assembly taking 212 s on one core of the build machine (98.2 M households, 48 736 cells and 127 s when drawn type first); architecture §10.3 draws pass A in parallel, but the world has no worker pool before S0.26 | the opening runs on one thread | the opening's regions drawn on the world's pool when it exists (S0.26) | open |
 | F-039 | S0.25c | opening, build machine, 2026-09-24 | The opening's households are too small and too few are families: 1.90, 2.70 and 3.22 persons a household in the developed, emerging and developing countries; couples with children 10.0% of households against `DEM.household_types`' 31.2% at the drawn fertility (20.4% against 37.5%, 22.7% against 38.4%), extended families 3.9% against 12.0% (16.5% against 30.4%, 21.5% against 36.3%), one person 42.7% against 24.3% (26.6% against 9.8%, 24.9% against 7.7%) (the opening report's `DEM.households`, run 4b of 2026-09-24). The persons are drawn first and every adult who is neither a partner nor a mother of a child under majority lives alone, in a couple or with one unrelated adult, as `DEM.household_members` says each type holds | households formed from persons with no adult child at home and at most one relative: nothing reads `DEM.household_sizes` or `DEM.older_living_arrangements`' persons of 65 and over living with a child of 20 or over | adults at home by the sources in hand: a family's children of 20 and over from `DEM.living_children` and older persons with a grown child from `DEM.older_living_arrangements`, the households' sizes read against `DEM.household_sizes`; `DEM.household_members` revised with them (F-036) | open |
 | F-040 | S0.25c | review, 2026-09-25 | Mortality reads age and sex alone: the disabled die at the rates of the able of their age and sex, though POP.3 gives a hazard by age and health; the opening's disability prevalence and the onset hazard were derived as if the disabled die at the population's rate (`DEM.disability_onset`) | no source in hand for the disabled's mortality relative to the able's by age | a relative mortality of the disabled by age from a sourced study (e.g. the Global Burden of Disease's excess mortality), declared with the life table, and the onset mapping re-derived with it | open |
-| F-041 | S0.25c | build, 2026-09-25 | The build run's memory budget (`phx-cli`'s `WORLD_BYTES`: the empty world, the map and the individuals, 355 MiB) held no line for the population, so every run since S0.25c's opening peaked over it (447 MiB, b7930378e270 and 82340ece379b) and was not clean, though its checks all passed | the step that brought the cells added no budget line; the peak is the opening's, whose scratch for one region's parts the design puts at about 250 MB | the population's line added to the run's budget, the opening's scratch of one region's parts beside the cells at the run's resolution (275 MiB); the opening's own peak measured on the phone at S0.26, and the parallel opening (F-038) held to the same scratch | open |
+| F-041 | S0.25c | build, 2026-09-25 | The build run's memory budget (`phx-cli`'s `WORLD_BYTES`: the empty world, the map and the individuals, 355 MiB) held no line for the population, so every run since S0.25c's opening peaked over it (447 MiB, b7930378e270 and 82340ece379b) and was not clean, though its checks all passed | the step that brought the cells added no budget line; the peak is the opening's, whose scratch for one region's parts the design puts at about 250 MB | the population's line is added to the run's budget (`phx-cli`'s `run.rs`: `POPULATION_BYTES`, 275 MiB, with the lines', indexes' and day buffers' lines after it); what remains is the opening's own peak measured on the phone at S0.26, and the parallel opening (F-038) held to the same scratch | open for the phone's measure |
 | F-042 | S0.25d | build, 2026-09-25 | Households' loans repay no principal: they pay interest on their balance only, since a principal leg is an amount per contract and a cell's loan row sums households' loans of different sizes | the contract algebra holds no repayment reckoned on the balance (an annuity or a share of the outstanding amount) | a balance-reckoned repayment leg in the algebra, with the households' borrowing (S1.12) | open |
 | F-043 | S0.25d | build, 2026-09-25 | The opening's tenancies pay landlords that stand in the country's firms by their plant: no household or firm is drawn owning rented dwellings | the dwelling stock and its owners are sys-hsg's (S2.05), after the opening's lines | S2.05's dwelling stock by zone and class with firm and household landlords, drawn at the opening | open |
 | F-044 | S0.25d | build, 2026-09-25 | Jobs are drawn for adults of every age at the country's employment rate, and wages by the household's income alone: none by age, occupation family or skill, though the occupation shares are in hand | employment by age and wages by occupation have no mechanism at the opening yet | the employment line's terms by occupation family and skill (LAB.1), the jobs drawn by age, with the labour step (S1.x) | open |
@@ -15869,12 +15949,27 @@ the final build within the budget on the phone.
 | F-047 | S0.25d | build, 2026-09-25 | The opening's large firms outgrew their arenas (`region elements`, 4 M and then 16 M words for a chunk of 4 096): every firm is party to every employment and tenancy line of its country, one per wage or rent point, and at 5% points a country has some 190 of each; the rows of individuals then far exceed the architecture's 2 M | the counterparty side of a line of many holders is apportioned over every eligible firm by its size, so a large firm takes a row on every point; and the arenas were never compacted | points a quarter apart (`LAB.wage_point_ratio`, `HSG.rent_point_ratio`, placeholders) and compaction at quiet moments; the points and the rows they cost measured on the phone (S0.26) and refined by the budget (N8.5); landlords drawn from the dwelling stock (F-043) and wage offers by firm (LAB) will set each firm's points | open |
 | F-048 | S0.25d | build, 2026-09-25 | The firms' ranks are not read: the kernel ranks a kind by a position, and a small firm's headcount is in its key (FRM.23) while its positions (cash, debt, inventory, output) arrive with S1.03; the large firms are rows of the kernel's firm kind table, not individuals of the small firms' table, so no rank read spans both | a rank measure read from the key, and the large firms as individuals of the firms' cell table, are neither built | the firms' positions and a rank read over the large firms and the small firms together (S1.03), LC-0-48 on firms with it; at the opening every firm above the rank's edge is a large firm by construction | open |
 | F-049 | S0.25d | build, 2026-09-25 | The small firms hold no plant: the country's capital is apportioned over every firm by its employees, and the small firms' share is held by no one, so the opening's capital falls short of the steady path's by that share | a cell's holding of a physical class at the opening (a pooled holding counting its firms) is not drawn, and FRM.23's plant units are a key attribute that waits for S1.03 | the small firms' plant as their cells' pooled holdings, keyed by plant units (S1.03) | open |
-| F-050 | S0.25e | build, 2026-09-25 | No estate passes anything to an heir: every remainder goes to the country's treasury, and an estate settles on the next business day by one kernel rule (pay, write off, pass on), where the architecture's estates live about 25 days and sell what their debts need | kinship lines are not drawn at the opening (REP.23), and `sys-est`'s decisions — what to sell, when, to whom — have no handler that writes instructions yet | the kinship lines drawn with the households and heirs taken from their counts by the inheritance law (POP.9), and `sys-est`'s own handlers for sales and timing, when systems' handlers write instructions (Stage 1) | open |
-| F-051 | S0.25e | build, 2026-09-25 | Households that bank nowhere hold no money at all: their rents fail from the first due, and the wages and pensions paid them fail too, each as `NoMoney`, so they fall into arrears from the opening. The build run b1a62f6 onward stopped on it (REP.23, the unbanked tenant taken for its own top issuer) | jobs, tenancies and pensions are drawn for every household, banked or not, as they are in the countries the data describes, while banknotes are no one's holding until the households' liquidity choice (HH.7) | the households' banknotes, at the opening and by the liquidity choice, with dues and wages paid in cash where a party holds no account (S1.09's banknotes, S1.12's HH.7) | open |
+| F-050 | S0.25e | build, 2026-09-25 | No estate passes anything to an heir: every remainder goes to the country's treasury, and an estate settles on the next business day by one kernel rule (pay, write off, pass on), where the architecture's estates live about 25 days and sell what their debts need. What an estate leaves goes to the party of the kind `HEIRLESS_DESTINATION` names, `"treasury"`, a kind name in engine code (`phx-world`'s `consts.rs`, read by `estates.rs`), where POP.16 makes inheritance law a POLICY | kinship lines are not drawn at the opening (REP.23); there is no `sys-est` crate — estates are the ledger's `phx_ledger::estate`, run by `phx-world/src/estates.rs` — and no system's handler writes instructions yet, so no decision says what to sell, when or to whom; no per-country inheritance law names the destination | the kinship lines drawn with the households and heirs taken from their counts by the inheritance law (POP.9), and `sys-est`'s own handlers for sales and timing, when systems' handlers write instructions (Stage 1); in the same step, a per-country POLICY primitive naming the heirless destination retires `HEIRLESS_DESTINATION` | open |
+| F-051 | S0.25e | build, 2026-09-25 | Households that bank nowhere hold no money at all: their rents fail from the first due, and the wages and pensions paid them fail too, each as `NoMoney`, so they fall into arrears from the opening. The build run b1a62f6 onward stopped on it (REP.23, the unbanked tenant taken for its own top issuer). As built, a claimant with no money on a cleared line records its due as a failed due against the top issuer, the central bank, which owes it (a payable) while the payer's money has reached it (architecture §6.5, "A party with no money"); the claimant's receivable stands until it can be paid | jobs, tenancies and pensions are drawn for every household, banked or not, as they are in the countries the data describes, while banknotes are no one's holding until the households' liquidity choice (HH.7) | the households' banknotes, at the opening and by the liquidity choice, with dues and wages paid in cash where a party holds no account (S1.09's banknotes, S1.12's HH.7) | open |
 | F-052 | S0.26c | build, 2026-09-25 | A tracer never dies, ages or falls ill with its cell's members: a death or a disability onset reaches a count of a cell's members drawn at 3e, and a tracer among them is not drawn, so a tracer outlives its cell's deaths and keeps its opening values of the groups a person's event changes | the cells' per-member outcomes draw counts, not members, and the observer sees only the splits the day logs, not which members an outcome took | the day's per-member outcomes logged for traced cells as splits are (the members an outcome reached, by the values of their groups), each tracer following them with the observer's draws as it follows a split, and ending with its death | open |
 | F-053 | S0.25e | build, 2026-09-25 | A line transfer of a liability row's members onto a party that already holds a liability row on the line fails as `FreeUnits` in the ledger's own test world (three firms borrowing on one loan line), where the asset side's transfers settle | not yet traced: the count and balance legs of `transfer` on the liability side, as the apply checks them | the positions a liability-side transfer checks read and the leg or check corrected, with a test of an estate taking a row onto one it holds | open |
-| F-054 | S0.26e | build, 2026-09-25 | The cells rise on every day of the run — 184 815 on the first day, 228 674 on the 120th (build run f97ac88), their members steady at 161 M — so the population fragments: parts that find no cell of their key within tolerance start cells of their own faster than cells join or empty | tolerance control widens only toward the cell budget's gap estimate, and no budget at the play resolution is declared for it to hold; the parts' keys (ages, banks, roles) multiply | the play resolution's cell budget declared and held by tolerance control (REP.15, N8.5), measured on the phone at S0.26, and the rise read against it; LC-0-59 names this finding for the `cells` read until then | open |
+| F-054 | S0.26e | build, 2026-09-25 | The cells rise on every day of the run — 184 815 on the first day, 228 674 on the 120th (build run f97ac88), their members steady at 161 M — so the population fragments: parts that find no cell of their key within tolerance start cells of their own faster than cells join or empty | tolerance control widens only toward the cell budget's gap estimate, and no budget at the play resolution is declared for it to hold; the parts' keys (ages, banks, roles) multiply | the play resolution's cell budget declared and held by tolerance control (REP.15, N8.5), measured on the phone at S0.26, and the rise read against it; LC-0-59 names this finding for the `cells` read until then | open; `data/observer/READS.toml`'s `grows` on the cells read names this finding, so LC-0-59 passes while it is open; the owner rules at the gate whether that stands |
 | F-055 | S0.16 | build, 2026-09-25 | The firm-size law's sizes outnumber the employed: the small firms alone employ 87.2 M of country 0's 79.0 M employed (110%), 36.0 M of 35.2 M (102%) and 29.4 M of 28.1 M (105%) (build run 8295479), before the large firms' headcounts | the firms are counted by `FRM.firms_per_employed` and sized by a Pareto law from one person of exponent `FRM.size_exponent`, two sourced primitives whose implied mean size is not the employed per firm; the sizes only weight the jobs the households draw, so the jobs are whole, but the promotion rank's cut and the large firms' sizes read them | the law's scale derived from the employed per firm, so the drawn sizes sum to the employed (GEN.2), at the firms' positions (S1.03) | open |
+| F-056 | S0.11 | gate review, 2026-09-25 | The world runs on one thread: 3b's screening, 3e's outcomes, stage 7, 10b's landing and the audit run serially, and `phx_exec`'s pool and `KeyedReduce` serve only `phx-ffi`'s benches; `--workers` is only reported. Architecture §13.2 budgets 3 core-seconds per second. The build run took 12.7 s a business day on the 4-core VM at 300 M persons (829547975b6a: `run_ms` 1 068 306 over 84 business days) | no traversal of the world's day is chunk-parallel; no performance-hint session is opened | chunk-parallel traversals of 3b, 3e, 7a, 10b and the audit on the pool; the first stage whose phone measurement misses the budget, S1.16 at the latest | open |
+| F-057 | S0.17 | gate review, 2026-09-25 | Stage 7 works per payment: the stream and 7c's gather each compute every payment's route (two passes, a `Vec` per payment); a `DueRec` is kept per payment for the accounts (about 435 MB on a 6.8 M-payment day) and posted at 9b through `BTreeMap`s; 7a inserts per row into `BTreeMap`s (claimants, records); `day_buffer_peak_bytes` leaves out the dues, `Found`, the losers and the fails. With it, F-009's per-call allocation | nothing of a payment is kept between the passes, and the day's records are per payment and per row, in ordered maps | one pass per payment, dues aggregated per (line, payer, payee, outcome), flat buffers counted whole in the day buffers' peak; S1.03, when the firms' flows multiply the payments | open |
+| F-058 | S0.17 | gate review, 2026-09-25 | 7b revisits a removed payer's lines only through holder lists (`fixed_point.rs`, `stream.rs`): no gather of (holder, row) pairs is kept for a side with no list, so a failing bank's household depositors and a lender's household-loan credits are never removed | architecture §6.5's day gather of unlisted sides is not built | the gather of (holder, row) pairs on lines without a retail list, read by 7b; S1.09 (`sys-bnk`) | open |
+| F-059 | S0.25d | gate review, 2026-09-25 | The money family sweeps every live cell's rows whenever its day's span of money lines holds a retail deposit line (`phx-ledger`'s `audit.rs`, `money_lines`), a sweep neither declared nor counted | a side with no holder list keeps no balance total the audit can read against its issuer | each line side's balance total kept on the line, checked against its holders on the rolling cycle; S1.09 | open |
+| F-060 | S0.06–S0.26 | gate review, 2026-09-25 | The checks' instruments run inside the world's day, on the phone too: the identity hashes around each renumbering slice, `measure_rates` over every slot each day, `measure::persons`, `Census::of` twice per kind, `runs_broken` and `fails_recorded`. The sweep ledger is blind: `SubStepRecord`'s bytes and barriers are 0, the kernel's own work at a sub-step is not counted, and the build run's report has no wall time per sub-step. Counters the plan names are not built: `phx_store.{bytes_committed, arena_dead_words, compactions}`, `phx_core.{agenda_entries, agenda_moved, agenda_stale}`, `phx_geo.astar_calls`, `phx_ledger.{rows, lines, terms_interned, payments_applied, fails}`, `phx_pop.{candidates, redraws, dense_evals, occasion_groups}` (S0.22), `phx_pop.{parts, new_cells, landings, rekeys}` and `spread_phases` (S0.23), `phx_pop.{bytes_per_household_cell, profile_entries_per_cell}` (S0.21), `phx_pop.{tolerance_runs, cells, individuals_per_kind}` (S0.24), `phx_soc.state_pension_rows`; the build run ratchets nine counters (architecture §16.8) | the checks' reads were added where the day runs, and the counters' steps left them to the reports | the checks' instruments gated on the build run; the kernel's loops counted per sub-step and ratcheted; the named counters built or retired with a reason; S1.01 | open |
+| F-061 | S0.11 | gate review, 2026-09-25 | The run's records grow without bound in the phone's process: the settlements keep each day's fails (1.18 M in 120 days, about 47 MB), the findings are `String`s, and `cell_days` and `substeps` keep every day; events are never retired (3.56 M, 176 MB raw in the day-60 save, 829547975b6a) | the run's records, built for the build run's report and checks, have no window | a bounded window on the phone for the run's records and a retirement of events once public and read; S6.04 | open |
+| F-062 | S0.25d | gate review, 2026-09-25 | `place_row` and `unplace_row` collect the holder's whole row list on every call (`line.rs`), quadratic for a firm with rows on every wage and rent line; the opening took 625 s on one thread of the VM (829547975b6a: `assembly_ms` 631 707), past S0.26's ten-minute line | a row's placing reads the holder's rows into a list to check and to find its run | one pass over the holder's run without collecting; the opening measured on the phone; S1.15 | open |
+| F-063 | S0.15–S0.25e | gate review, 2026-09-25 | Tests assemble books — a central bank, banks, firms, lines, an opening and `settle_day`: `phx-ledger`'s `dues_tests.rs` (cleared lines, holders with no money), `transfer_tests.rs` (estates), `runs_tests.rs`, `fixed_point_tests.rs` and `settle_tests.rs`, against CLAUDE.md's "no test builds a world" | a kernel's books fixture is not ruled on | the owner rules whether a kernel's books fixture counts as a world; an owner item at the Stage 0 gate | open |
+| F-064 | S0.26e | gate review, 2026-09-25 | The full-load bench does not run the real kernels for the audit (a sequential sweep of random words and weights), 3e's outcomes, estates or 9b's posting, and builds no views; on the phone the world's views are built only after settling and at the end, not at each turn's close | the bench stands in random reads where the kernels' inputs are not built, and the phone's run builds views only for the drift | the real audit families and posting in the bench, views each turn on the phone; S1.16 | open |
+| F-065 | S0.25d | gate review, 2026-09-25 | The pooled-flow rule is not applied to cells: each pays as one payer (`fixed_point.rs`, every `PooledRow` reaching one member, no kinks), so a renter's rent can be drawn on owners' funds with no split test (REP.8, Law 11) | the rule is given no row's reached members and no kinks, and its split requests are not emitted | each row's reached members and the kinks passed to `pooled`, its split requests emitted; S1.12 | open |
+| F-066 | S0.25e | gate review, 2026-09-25 | An estate's dues in arrears are not claims in its waterfall: `phx-ledger`'s `estate.rs` reads row balances only, and the arrears leave with `members_leave` | the waterfall's claims are the rows' balances | the dues in arrears joining the waterfall, or the estate waiting on them; S2.04 | open |
+| F-067 | S0.25d | gate review, 2026-09-25 | Placeholders are missing: none is declared for the LAB, HSG and BNK decisions on a fail, for TAX, for SOC's claims and earnings-related part, for PEN, or for an estate's sale and timing; LC-0-55 reads a line kind's `transfer_requesters` as the waiting owner of a fail | the placeholders S0.25's clauses name were not written as declared SHAPEs | declared placeholder SHAPEs naming each system, read by LC-0-55 and LC-0-53; S1.01 | open |
+| F-068 | S0.25d | gate review, 2026-09-25 | Terms are incomplete: LAB.1's employment terms carry a fixed wage alone (no pension kind and rates, occupation, hours, notice or severance; lines per country, not region); HSG.2's tenancy is (country, rent point) alone (no zone, class, term, notice or deposit); POP.4's onset is permanent only (no spells or recovery; a disabled person keeps the job row) | the Stage 0 lines were drawn with the terms their sources gave, and illness with the onset its mapping gave | the terms and the spell process: S1.08 (LAB), S2.05 (HSG), S6.02 (POP.4) | open |
+| F-069 | S0.25, S0.26 | gate review, 2026-09-25 | Minor: GEN.8's mobility within a distribution is not read (`phx-obs`'s `liveness.rs` reads distances only); CHN.7's clustering of catastrophe losses in place and time is not read; the regional population is apportioned by land with no declared SHAPE (`sys-dem`'s `opening.rs`, `sys-frm`'s `small.rs`); the employed and the mean wage per worker are derived in four places (`sys-lab`'s `jobs.rs`, `sys-soc`'s `state_pension.rs`, `sys-frm`'s `small.rs`, `sys-hsg`'s `tenancies.rs`); pool ids are keyed by `u32` alone across systems (`sys-dem`'s `lines.rs`); `OLD_AGE` and `WORKING_AGE` are `sys-dem` consts, not register primitives; `LAB.wage_point_ratio` and `HSG.rent_point_ratio` are placeholder SHAPEs whose data calls them resolution settings; tracers yield none when their stream fails to open and stay when no side of a split holds their values (`phx-obs`'s `tracers.rs`); the observer's event read sums every event, private ones among them (`phx-obs`'s `reads.rs`) | each a small gap in its system | each fixed at its system's step; S1.16 at the latest | open |
+| F-070 | Stage 7 ledger (§10) | planning, 2026-09-23 | It costed a realism programme of runs besides the world's one (reference rungs, seeds, copies), which the owner's decision removes (spec Appendix E 36). The realism reads now come from the world's own run and cost minutes over the recorder's series (S7.01, S7.02) (this row was numbered F-008 beside S0.27's, a duplicate) | — | S7.01 and S7.02 read the one run; S7.03 retired | closed |
 
 ---
 
@@ -15924,7 +16019,7 @@ the final build within the budget on the phone.
 | Public events (S0.26b) | the builder's, under the autonomy below: weather always public, a catastrophe when a struck tile loses at least a permille, a household's death, disability or birthday never (`OBS.public_events`, a standing SHAPE) | 2026-09-25 |
 | Autonomy to the Stage 0 gate | the builder takes every decision the plan leaves to it, and the ones this table would otherwise wait for, until the gate's phone measurement; before it, the documents are checked against the code and fixed, then the full adversarial review of Stage 0 runs; each such decision is stated in its commit and here | 2026-09-24 |
 | The run heads read after S0.25c | 79 952 on the build run b7930378e270, rising with the world's cells as the owner accepted; taken by the builder under its autonomy | 2026-09-25 |
-| The opening's landlords and the wage and rent points | Tenancies at the opening pay landlords that stand in the country's firms by their plant, until the dwelling stock and its owners are drawn (S2.05); wages and rents lie on points five per cent apart until firms and landlords post their own (placeholders LAB and HSG); taken by the builder under its autonomy | 2026-09-25 |
+| The opening's landlords and the wage and rent points | Tenancies at the opening pay landlords that stand in the country's firms by their plant, until the dwelling stock and its owners are drawn (S2.05); wages and rents lie on points a quarter apart (`LAB.wage_point_ratio`, `HSG.rent_point_ratio`, 1.25; F-047) until firms and landlords post their own (placeholders LAB and HSG); taken by the builder under its autonomy | 2026-09-25 |
 | S0.25's size | split into sub-steps, each with its own reviews and build run | 2026-09-24 |
 | The build run's length | an ordinary step's 120 days from day zero; a stage gate's settled and run two years, since the full population's opening and settling on the build machine take about an hour | 2026-09-24 |
 | State pensions' rules (S0.25b) | each group's pension age and replacement rate from its members in OECD Pensions at a Glance, the developing group's from India pooled with the eight emerging members, recorded as an assumption; who receives one from the ILO's SDG 1.3.1 coverage for every group | 2026-09-24 |
@@ -15937,6 +16032,7 @@ the final build within the budget on the phone.
 | Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
 | The full-load bench's volumes (S0.26e) | `perf/load/volumes.toml` from architecture §13.1's and §13.2's lines at the finished world's sizes, each store and kind of work citing its line; the owner reviews its changes (the `perf/load/` guard), and each gate replaces the built stages' counts by measured ones | 2026-09-25 |
 | The unbanked households' dues (F-051) | a payment to or from a party with no money fails as `NoMoney` and stays in arrears until the households hold banknotes (S1.09, S1.12); no line is withheld from an unbanked household, since the data draw jobs, tenancies and pensions for every household | 2026-09-25 |
+| The build run's stage-7 ratchets for Stage 0 | set to the counts measured after the households' lines began paying (`perf/ratchets.toml`): `phx_ledger.rows_streamed` 6 802 801, `run_heads_read` 274 774, `run_rows_scanned` 6 880 013, `run_rows_not_due` 320 775, `payments` 6 800 506, `fixed_point_iterations` 101 829, `day_buffer_peak_bytes` 58 555 872; the owner accepted the ratchets for Stage 0 | 2026-09-25 |
 
 ---
 
@@ -15944,8 +16040,9 @@ the final build within the budget on the phone.
 
 Every clause of the spec is completed by exactly one step, listed here. Steps before it may carry it in part, as their
 **Clauses** sections say. `phx-check clauses` refuses a clause missing from this map or completed by two steps, and a
-step marked `done` whose completed clauses have no carrier of the right shape in `phx dump-registry` (architecture
-§16.5). `phx-check coverage --write` regenerates architecture §19 from this map and the steps' statuses.
+step marked `done` any of whose completed clauses nothing carries: no `#[clause(..)]` attribute, declaration's `clause`
+field, data file's `clause` key or `violation!(clause = ..)` names it (architecture §16.5). `phx-check coverage --write`
+regenerates architecture §19 from this map and the steps' statuses.
 
 When a stage's block of steps is written in detail, its rows here are refined to the clauses its steps actually
 complete, in the same change. Retired clauses (REP.6, REP.11, REP.27, SET.14, PTY.12, GEN.9, N6) keep their numbers
