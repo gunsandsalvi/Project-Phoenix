@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap.workspace = true
+if-pop = { path = "../../interfaces/if-pop" }
 phx-acct = { path = "../../kernel/phx-acct" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
@@ -20,6 +21,7 @@ phx-id = { path = "../../foundation/phx-id" }
 phx-ledger = { path = "../../kernel/phx-ledger" }
 phx-market = { path = "../../kernel/phx-market" }
 phx-num = { path = "../../foundation/phx-num" }
+phx-pop = { path = "../../kernel/phx-pop" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }
 phx-world = { path = "../../assembly/phx-world" }

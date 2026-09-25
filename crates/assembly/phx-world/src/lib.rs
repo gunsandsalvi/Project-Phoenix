@@ -7,6 +7,7 @@ pub mod hash;
 pub mod inspector;
 pub mod metrics;
 pub mod opening;
+pub mod rates;
 pub mod refusals;
 pub mod registry;
 pub mod save;

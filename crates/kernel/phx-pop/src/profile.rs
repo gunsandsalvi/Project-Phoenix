@@ -105,6 +105,12 @@ impl Profile {
         self.group(group).iter().map(|(_, n)| u64::from(*n)).sum()
     }
 
+    /// The groups the profile counts.
+    #[must_use]
+    pub fn groups(&self) -> usize {
+        self.groups.len()
+    }
+
     /// Joint values held, over every group.
     #[must_use]
     pub fn entries(&self) -> usize {

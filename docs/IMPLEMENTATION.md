@@ -4696,7 +4696,19 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     today not hit and, with no envelope, booked only to its redraw. Tests: the life table (the level solved, the
     open age, a cohort's death), roles and succession, a person taking a role, the classes and the year's days, the
     envelope with no chance. Run (30 days, 2026-09-24): clean but for the checks a short run cannot pass;
-  - S0.25c-5: docs, reviews, the build run, done.
+  - S0.25c-5: the population's live checks, docs, reviews, the build run, done. As built: LC-0-37 to LC-0-56 read
+    the world through the inspector (the population, its cell tables, the day records and the rates). The world
+    keeps, each day, the agenda's rows gathered and screened, the persons gone at 3e and held at the day's end, the
+    kinds' budgets, the dispersion joins erased, and the renumbering slices whose chunk's identity hash
+    (`phx_pop::measure::identity_hash`, in party order) was not the one before; and, over one cell in 64 by its
+    identity's mix (`RATE_SAMPLE`), each process's expected hits a day — each value's persons times its rate — and
+    their variance beside the hits it drew, by year and the value's first component (`phx_world::rates`). LC-0-39 and
+    LC-0-54 hold each tally within five standard deviations of its sampling error (per process, and per age class for
+    death and onset); LC-0-52 reconciles the persons day by day. LC-0-42 waits for the first decisions (Stage 1),
+    LC-0-44, 45, 48, 55 and 56 for the opening lines and small firms (S0.25d), LC-0-53 for the estates (S0.25e).
+    Reviews (the builder's two): mortality reads no health (F-040); the event's cell was retained twice at 3b (now
+    once); the renumbering hash read the whole table on every light day (now the renumbered chunk's rows), and slices
+    of two kinds could have hidden a change in one (now counted per slice).
 - **S0.25d — lines paying**: employment, tenancy and the dwelling stock, deposits and loans, small firms as cells,
   and pensions in payment (`sys-lab`, `sys-hsg`, `sys-bnk`, `sys-frm`, `sys-soc`, `sys-pen`), paying by their terms
   through pooled flows. LC-0-55 and LC-0-56 apply.
@@ -15685,6 +15697,7 @@ the final build within the budget on the phone.
 | F-037 | S0.25c | opening, build machine, 2026-09-24 | The opening's persons miss the drawn age structure: under 15 26.2% against GEN.share_under_15's 13.8% in the developed country, 32.5% against 28.9% and 40.1% against 37.6% in the others; 65 and over 11.6% against 19.2%, 9.8% against 4.7% and 9.7% against 3.9% (the opening report's `DEM.households`). The household types are drawn first and their persons after, so the age structure follows from the types' shares, the kin table's children per mother and the adults drawn for each type, not from the raked age standard | households drawn type first: no step joins the types' shares with the persons' ages | a composition drawn to both margins at once (persons by age and households by type, e.g. by iterative fitting over the two), a mechanism of the opening, never a rescaling of either table | closed: S0.25c-4b draws each region's persons by age and sex first and forms its households from them, so the ages are the drawn shares (13.8% and 19.2%, 28.9% and 4.7%, 37.6% and 3.9%); the households' own margin is F-039 |
 | F-038 | S0.25c | opening, build machine, 2026-09-24 | The opening draws 130.8 M households (300 M persons) into 24 461 cells, the world's assembly taking 212 s on one core of the build machine (98.2 M households, 48 736 cells and 127 s when drawn type first); architecture §10.3 draws pass A in parallel, but the world has no worker pool before S0.26 | the opening runs on one thread | the opening's regions drawn on the world's pool when it exists (S0.26) | open |
 | F-039 | S0.25c | opening, build machine, 2026-09-24 | The opening's households are too small and too few are families: 1.90, 2.70 and 3.22 persons a household in the developed, emerging and developing countries; couples with children 10.0% of households against `DEM.household_types`' 31.2% at the drawn fertility (20.4% against 37.5%, 22.7% against 38.4%), extended families 3.9% against 12.0% (16.5% against 30.4%, 21.5% against 36.3%), one person 42.7% against 24.3% (26.6% against 9.8%, 24.9% against 7.7%) (the opening report's `DEM.households`, run 4b of 2026-09-24). The persons are drawn first and every adult who is neither a partner nor a mother of a child under majority lives alone, in a couple or with one unrelated adult, as `DEM.household_members` says each type holds | households formed from persons with no adult child at home and at most one relative: nothing reads `DEM.household_sizes` or `DEM.older_living_arrangements`' persons of 65 and over living with a child of 20 or over | adults at home by the sources in hand: a family's children of 20 and over from `DEM.living_children` and older persons with a grown child from `DEM.older_living_arrangements`, the households' sizes read against `DEM.household_sizes`; `DEM.household_members` revised with them (F-036) | open |
+| F-040 | S0.25c | review, 2026-09-25 | Mortality reads age and sex alone: the disabled die at the rates of the able of their age and sex, though POP.3 gives a hazard by age and health; the opening's disability prevalence and the onset hazard were derived as if the disabled die at the population's rate (`DEM.disability_onset`) | no source in hand for the disabled's mortality relative to the able's by age | a relative mortality of the disabled by age from a sourced study (e.g. the Global Burden of Disease's excess mortality), declared with the life table, and the onset mapping re-derived with it | open |
 
 ---
 

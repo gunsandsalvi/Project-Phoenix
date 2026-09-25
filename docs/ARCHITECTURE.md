@@ -715,6 +715,11 @@ steps, two of them pure functions over values that the tests hold to their accou
    persons that left, died or stayed.
 
 The opening builds the same explicit households from its draws and re-aggregates them by key into its cells (§10.3).
+The realised rates are measured live (CHN.7): over a fixed sample of cells — one in 64 by its identity's mix, so the
+sample holds whatever a cell becomes — 3b adds each process's expected hits a day, each value's persons times its
+rate, and their variance, beside the hits drawn there, by year and value; the run's checks hold each tally within its
+sampling error. 10b keeps each day's persons, and, around each renumbering slice, the identity hash of its chunk's
+cells in party order, which must not change.
 The population's agenda has one table per kind that processes act on, and keeps beside each (row, reason)'s next day
 the weight rung its booking was drawn at, which thinning reads; a redraw is a booking with no rung. Each day, 3b
 gathers the agenda and screens each booked cell for each process due (`phx_pop::screen::screen_due`), recording each

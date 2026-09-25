@@ -45,3 +45,6 @@ pub const SAVE_FORMAT: u32 = 2;
 pub const SAVE_MANIFEST: &str = "manifest.json";
 /// The suffix a save's directory carries until it is complete.
 pub const SAVE_PARTIAL: &str = ".partial";
+/// One cell in this many, by its identity's mix, is measured for the realised rates: enough for a year's sampling
+/// error to be small against the rates' own, few enough to cost a small share of 3b.
+pub const RATE_SAMPLE: u64 = 64;

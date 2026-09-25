@@ -343,6 +343,8 @@ pub fn phx_pop::measure::DayCosts::erase(&mut self, usize, f64)
 pub fn phx_pop::measure::DayCosts::estimated(&mut self, &phx_pop::tolerance::Estimate)
 pub fn phx_pop::measure::DayCosts::landed(&mut self, &phx_pop::landing::Landed)
 pub fn phx_pop::measure::DayCosts::new(usize) -> phx_pop::measure::DayCosts
+pub fn phx_pop::measure::identity_hash<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, &phx_pop::key::KeyInterner, core::ops::range::Range<usize>, [u64; 2]) -> u128
+pub fn phx_pop::measure::persons<B: phx_store::backing::Backing>(&phx_pop::table::CellTable<B>, &phx_pop::kind::PopKindDecl, &phx_pop::key::KeyInterner) -> u64
 pub mod phx_pop::occasion
 pub enum phx_pop::occasion::Reaches
 pub phx_pop::occasion::Reaches::Carried
@@ -459,6 +461,7 @@ pub fn phx_pop::profile::Profile::decode(&phx_pop::profile::ProfileLayout, &[u8]
 pub fn phx_pop::profile::Profile::empty(&phx_pop::profile::ProfileLayout) -> phx_pop::profile::Profile
 pub fn phx_pop::profile::Profile::encode(&self, &phx_pop::profile::ProfileLayout) -> alloc::vec::Vec<u8>
 pub fn phx_pop::profile::Profile::entries(&self) -> usize
+pub fn phx_pop::profile::Profile::groups(&self) -> usize
 pub fn phx_pop::profile::Profile::held(&self, usize) -> &[(u32, u32)]
 pub fn phx_pop::profile::Profile::members(&self, usize) -> u64
 pub fn phx_pop::profile::Profile::read_from<S: phx_pop::profile::ByteSource>(&phx_pop::profile::ProfileLayout, &S, usize) -> core::result::Result<phx_pop::profile::Profile, alloc::string::String>

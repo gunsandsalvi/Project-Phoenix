@@ -1,6 +1,9 @@
 use phx_macros::clause;
 use phx_store::Backing;
 
+use crate::explicit::role_counts;
+use crate::key::KeyInterner;
+use crate::kind::PopKindDecl;
 use crate::landing::Landed;
 use crate::table::CellTable;
 use crate::tolerance::Estimate;
@@ -84,6 +87,76 @@ impl DayCosts {
     pub fn estimated(&mut self, est: &Estimate) {
         self.gaps.clone_from(&est.gap);
     }
+}
+
+/// The persons a table's cells hold: each cell's weight times the persons its key gives each of its roles.
+#[clause("REP.13", "REP.26")]
+#[must_use]
+pub fn persons<B: Backing>(table: &CellTable<B>, kind: &PopKindDecl, keys: &KeyInterner) -> u64 {
+    table
+        .slots()
+        .map(|slot| {
+            let per: u64 = role_counts(kind, &keys.record(table.hot(slot).key_id)).iter().map(|n| u64::from(*n)).sum();
+            u64::from(table.weight(slot).get()) * per
+        })
+        .sum()
+}
+
+/// The cells of a range of a table's chunks hashed by identity: in order of their parties, each with its weight, key,
+/// positions, rates, exposures, attention, profile and rows, so the same cells stored in other slots hash equal.
+#[clause("REP.29")]
+#[must_use]
+pub fn identity_hash<B: Backing>(
+    table: &CellTable<B>,
+    keys: &KeyInterner,
+    chunks: core::ops::Range<usize>,
+    key: [u64; 2],
+) -> u128 {
+    let mut slots: Vec<_> = table.slots().filter(|s| chunks.contains(&table.chunk_of(*s))).collect();
+    slots.sort_by_key(|s| table.party(*s));
+    let mut h = phx_store::LogicalHasher::new(key);
+    let missing = |m: phx_num::Missing<i64>| match m {
+        phx_num::Missing::Present(v) => (1, v),
+        phx_num::Missing::Absent => (0, 0),
+    };
+    for slot in slots {
+        h.u64(table.party(slot).get());
+        h.u64(u64::from(table.weight(slot).get()));
+        for w in keys.record(table.hot(slot).key_id).words {
+            h.u64(w);
+        }
+        for i in 0..table.positions() {
+            h.bytes(&table.position(slot, i).to_le_bytes());
+        }
+        for r in 0..table.rate_kinds() {
+            let (present, v) = missing(table.rate(slot, r));
+            h.u64(present);
+            h.bytes(&v.to_le_bytes());
+        }
+        for k in 0..table.review_kinds() {
+            let (present, v) = missing(table.exposure(slot, k));
+            h.u64(present);
+            h.bytes(&v.to_le_bytes());
+            match table.attention(slot, k) {
+                phx_num::Missing::Present(a) => {
+                    h.u64(1);
+                    h.u64(u64::from(a.stake));
+                    h.u64(u64::from(a.own));
+                }
+                phx_num::Missing::Absent => h.u64(0),
+            }
+        }
+        let profile = table.profile(slot);
+        for g in 0..profile.groups() {
+            for (v, n) in profile.held(g) {
+                h.u64((u64::from(*v) << u32::BITS) | u64::from(*n));
+            }
+        }
+        for w in table.words(slot, crate::table::CellList::Rows) {
+            h.u64(*w);
+        }
+    }
+    h.finish()
 }
 
 #[cfg(test)]

@@ -590,6 +590,7 @@ name = "phx-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "if-pop",
  "phx-acct",
  "phx-core",
  "phx-exec",
@@ -598,6 +599,7 @@ dependencies = [
  "phx-ledger",
  "phx-market",
  "phx-num",
+ "phx-pop",
  "phx-rand",
  "phx-store",
  "phx-world",

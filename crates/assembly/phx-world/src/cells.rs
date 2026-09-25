@@ -29,7 +29,8 @@ use phx_pop::tolerance::{choose_narrowing, choose_widening, estimate, sweep, top
 use phx_rand::{Subject, SubjectTag};
 use phx_store::SystemBacking;
 
-use crate::consts::{PROMOTION_SEQ_BITS, SHARE_WHOLE, SWEEPS_PER_DAY};
+use crate::consts::{HASH_KEY, PROMOTION_SEQ_BITS, SHARE_WHOLE, SWEEPS_PER_DAY};
+use crate::rates;
 use crate::world::World;
 
 /// A process on a kind's members as the world runs it: its kind, its agenda reason within the kind, the profile groups
@@ -186,7 +187,7 @@ pub(crate) struct CellHit {
 }
 
 /// What a day's work on the population's cells did, for the run's counters.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct CellDay {
     pub day: Day,
     pub candidates: u64,
@@ -206,6 +207,19 @@ pub struct CellDay {
     pub individuals: u64,
     pub members: u64,
     pub at_weight_one: u64,
+    /// The agenda's rows gathered at 3b, and the screens of a process on them.
+    pub gathered: u64,
+    pub screened: u64,
+    /// Persons gone from households at 3e, and the persons the cells hold at the day's end.
+    pub gone: u64,
+    pub persons: u64,
+    /// The cells the kinds' budgets allow.
+    pub budget: u64,
+    /// The dispersion the day's joins erased, over every position.
+    pub erased: f64,
+    /// Renumbering slices, and those after which the renumbered table's identity hash was not the one before.
+    pub renumbered: u64,
+    pub renumber_changed: u64,
 }
 
 impl CellDay {
@@ -231,6 +245,14 @@ impl CellDay {
             individuals: 0,
             members: 0,
             at_weight_one: 0,
+            gathered: 0,
+            screened: 0,
+            gone: 0,
+            persons: 0,
+            budget: 0,
+            erased: 0.0,
+            renumbered: 0,
+            renumber_changed: 0,
         }
     }
 }
@@ -297,6 +319,7 @@ impl World {
                 if mask == 0 || !table.is_live(slot) {
                     continue;
                 }
+                self.cell_day.gathered += 1;
                 let party = table.party(slot);
                 let record = kd.keys.record(table.hot(slot).key_id);
                 let key = |name: &str| {
@@ -336,18 +359,13 @@ impl World {
                     let mut d = self.streams.open(&b.stream, subject, day, SubStep::S3b.ordinal());
                     let hit =
                         screen_due(table, slot, &process, (t.table, b.reason, day), agenda, &mut d, &mut counters);
+                    self.cell_day.screened += 1;
                     if let Some(h) = hit {
-                        let details: Vec<(Subject, i64)> = h
-                            .by_value
-                            .iter()
-                            .map(|(g, v, n)| {
-                                let Ok(n) = i64::try_from(*n) else {
-                                    phx_num::capacity_exceeded!("members hit", i64::MAX, *n);
-                                };
-                                let at = (phx_rand::float::len_u64(*g) << u32::BITS) | u64::from(*v);
-                                (Subject::new(SubjectTag::ProfileValue, at), n)
-                            })
-                            .collect();
+                        if rates::sampled(party) {
+                            let year = rates::year_of(calendar.date(day));
+                            self.metrics.rates.realised((p, year), &kd.decl, &h.by_value);
+                        }
+                        let details = hit_details(&h.by_value);
                         self.events.record(NewEvent {
                             day,
                             substep: SubStep::S3b,
@@ -370,14 +388,9 @@ impl World {
         for party in named {
             directory.retain(party);
         }
-        // Each event names its cell, which the directory keeps resolvable while the event does, even once it ends.
-        let named_cells: Vec<PartyId> = self.cell_hits.iter().map(|h| h.party).collect();
-        let directory = self.books.parties.cells_mut().1;
-        for p in named_cells {
-            directory.retain(p);
-        }
         self.cell_day.candidates = counters.candidates;
         self.cell_day.redraws = counters.redraws;
+        self.measure_rates(day);
     }
 }
 
@@ -447,6 +460,7 @@ impl World {
         };
         let hits_reached = (hits, touched.reached.as_slice());
         apply_outcomes(&self.processes, &self.register, &view, hits_reached, &mut households, &mut draws_of);
+        self.cell_day.gone += households.iter().flat_map(|h| &h.persons).filter(|p| p.gone).map(|_| 1).sum::<u64>();
         let after: Vec<_> = households.iter().map(|h| from_named(&kd.decl, h)).collect();
         let regrouped = regroup(&kd.decl, &layout, &record, &touched.households, &after);
         if !regrouped.in_place.is_empty() {
@@ -518,6 +532,20 @@ impl World {
     }
 }
 
+/// A hit's event details: the persons it reached at each value, the value named with its group.
+fn hit_details(by_value: &[(usize, u32, u64)]) -> Vec<(Subject, i64)> {
+    by_value
+        .iter()
+        .map(|(g, v, n)| {
+            let Ok(n) = i64::try_from(*n) else {
+                phx_num::capacity_exceeded!("members hit", i64::MAX, *n);
+            };
+            let at = (phx_rand::float::len_u64(*g) << u32::BITS) | u64::from(*v);
+            (Subject::new(SubjectTag::ProfileValue, at), n)
+        })
+        .collect()
+}
+
 /// The persons one hit reached, each by its household and its place there.
 type Reached = Vec<(usize, usize)>;
 
@@ -549,7 +577,7 @@ fn apply_outcomes(
     }
 }
 
-fn group_name(kind: &PopKindDecl, g: usize) -> &'static str {
+pub(crate) fn group_name(kind: &PopKindDecl, g: usize) -> &'static str {
     let Some(x) = kind.groups.get(g) else {
         violation!(clause = "REP.32", "a process's group beyond its kind's", group = g);
     };
@@ -709,12 +737,17 @@ fn renumber_chunk(
         return;
     }
     let chunk = slot_index(Slot::new(sh.day.get())) % chunks;
+    let before = phx_pop::measure::identity_hash(table, &kd.keys, chunk..chunk + 1, HASH_KEY);
     let booked = kd.processes > 0;
     let levels = kd.levels.clone();
     let (mut ctx, index) = sh.ctx(table, kd, &levels);
     let swaps = renumber::plan(&ctx, chunk..chunk + 1);
     renumber::apply(&mut ctx, index, booked.then_some(agenda), &swaps);
     count.swaps += phx_rand::float::len_u64(swaps.len());
+    count.renumbered += 1;
+    if phx_pop::measure::identity_hash(table, &kd.keys, chunk..chunk + 1, HASH_KEY) != before {
+        count.renumber_changed += 1;
+    }
 }
 
 impl World {
@@ -745,8 +778,11 @@ impl World {
             if light {
                 renumber_chunk(&mut sh, table, kd, agenda, &mut count);
             }
+            count.persons += phx_pop::measure::persons(table, &kd.decl, &kd.keys);
+            count.budget += kd.tolerances.budget;
             count.landings += landed.landings;
             count.new_cells += landed.new_cells;
+            count.erased += landed.erased.iter().sum::<f64>();
             let census = Census::of(table);
             count.cells += census.cells;
             count.individuals += census.individuals;

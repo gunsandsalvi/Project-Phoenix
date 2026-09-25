@@ -40,6 +40,37 @@ impl<'a> Inspector<'a> {
         self.world.day_zero
     }
 
+    /// The population: its kinds, members counted by the events that began and ended them, and the agenda.
+    #[must_use]
+    pub fn population(&self) -> &phx_pop::population::Population {
+        &self.world.population
+    }
+
+    /// A population kind's cell table.
+    #[must_use]
+    pub fn cell_table(&self, kind: usize) -> &phx_pop::table::CellTable<phx_store::SystemBacking> {
+        phx_pop::population::Population::table(self.world.books.parties.cells(), kind)
+    }
+
+    /// What each day's work on the cells did, day by day.
+    #[must_use]
+    pub fn cell_days(&self) -> &[crate::cells::CellDay] {
+        &self.world.metrics.cells
+    }
+
+    /// The processes' realised and expected hits over the sampled cells.
+    #[must_use]
+    pub fn rates(&self) -> &crate::rates::Rates {
+        &self.world.metrics.rates
+    }
+
+    /// Each process bound, in order: the hazard it answers, its kind's place among the population's kinds and the
+    /// event kind its hits record.
+    #[must_use]
+    pub fn processes(&self) -> Vec<(&'static str, usize, u16)> {
+        self.world.processes.iter().map(|b| (b.process.hazard(), b.kind, b.event)).collect()
+    }
+
     /// The saves taken over the run, with their sizes, times and checks.
     #[must_use]
     pub fn saves(&self) -> &[crate::metrics::SaveMeasure] {
