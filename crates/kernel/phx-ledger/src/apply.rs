@@ -67,6 +67,19 @@ pub const MONEY_SUBSTEPS: &[SubStep] = &[
     SubStep::S10b,
 ];
 
+/// A party's money moved in one currency on a day, the key of what it paid and received.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct Moved {
+    ccy: u8,
+    party: PartyId,
+}
+
+impl phx_core::MapKey for Moved {
+    fn key64(self) -> u64 {
+        (self.party.get() << u8::BITS) | u64::from(self.ccy)
+    }
+}
+
 /// What a day's settlement leaves for the close: its fails, for the contract processes, its accounting effects, and
 /// what moved in each currency, gross and by party.
 #[derive(Debug, Default)]
@@ -79,7 +92,7 @@ pub struct DayBook {
     /// settled due leaves no claim, so the accounts read only what each party earned.
     pub earned: phx_core::KernelMap<PartyId, i128>,
     pub disposed: Vec<DisposedRec>,
-    moved: BTreeMap<(u8, PartyId), (i128, i128)>,
+    moved: phx_core::KernelMap<Moved, (i128, i128)>,
 }
 
 impl DayBook {
@@ -102,7 +115,7 @@ impl DayBook {
             + self.dues.capacity() * size_of::<crate::effects::DueRec>()
             + self.earned.capacity() * size_of::<(PartyId, i128)>()
             + self.disposed.capacity() * size_of::<DisposedRec>()
-            + self.moved.len() * size_of::<((u8, PartyId), (i128, i128))>()
+            + self.moved.capacity() * size_of::<(Moved, (i128, i128))>()
     }
 }
 
@@ -131,11 +144,11 @@ impl DayBook {
     #[must_use]
     pub fn measure(&self) -> Settlement {
         let mut m = Settlement::default();
-        for ((ccy, _), (paid, received)) in &self.moved {
-            *m.gross.entry(*ccy).or_insert(0) += paid;
+        for (Moved { ccy, .. }, (paid, received)) in self.moved.sorted() {
+            *m.gross.entry(ccy).or_insert(0) += paid;
             let net = received - paid;
             if net > 0 {
-                *m.net.entry(*ccy).or_insert(0) += net;
+                *m.net.entry(ccy).or_insert(0) += net;
             }
         }
         for f in &self.fails {
@@ -189,6 +202,15 @@ struct Key {
     table: u16,
     slot: Slot,
     code: u64,
+}
+
+/// A row's balance moved by a leg's quantity, written over the row as it was found.
+fn settle_balance(arenas: &mut dyn HolderArenas, slot: Slot, (line, view): (LineId, &RowView), qty: i64) {
+    let Some(next) = balance(view, line).checked_add(qty) else {
+        violation!(clause = "Law 7", "a balance overflows", line = line.get());
+    };
+    let optional = Optional { balance: Missing::Present(next), ..view.optional };
+    crate::rows::rewrite(arenas, slot, view, optional);
 }
 
 fn find(arenas: &dyn HolderArenas, slot: Slot, line: LineId, side: Side) -> RowView {
@@ -481,9 +503,23 @@ impl<B: Backing> Ledger<B> {
         for i in order {
             let (Some(leg), Some(at)) = (legs.get(i), located.get(i)) else { continue };
             let arenas = holders.arenas(at.table);
-            let before = self.position(arenas, at.party, at.slot, leg.position_code());
+            // A leg moving a line's balance reads its row once, for what it held before and what it holds after.
+            let line_row = match (leg.kind, leg.account) {
+                (
+                    LegKind::Money | LegKind::Row(RowOp::Adjust) | LegKind::OpeningWrite { .. },
+                    AccountRef::Line { line, side },
+                ) => Some((line, find(arenas, at.slot, line, side))),
+                _ => None,
+            };
+            let before = match &line_row {
+                Some((line, view)) => balance(view, *line),
+                None => self.position(arenas, at.party, at.slot, leg.position_code()),
+            };
             let basis = self.held_basis(arenas, *at, leg);
-            self.settle_leg(arenas, *at, leg, s.day, &mut taken);
+            match &line_row {
+                Some((line, view)) => settle_balance(arenas, at.slot, (*line, view), leg.qty),
+                None => self.settle_leg(arenas, *at, leg, s.day, &mut taken),
+            }
             audit.touched(arenas.table(), at.slot);
             let money = matches!(leg.kind, LegKind::Money);
             let digest = LegDigest {
@@ -502,7 +538,8 @@ impl<B: Backing> Ledger<B> {
                 let amount = Money::new(leg.qty, ccy);
                 self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
                 if matches!(leg.account, AccountRef::Line { side: Side::Asset, .. }) {
-                    let (paid, received) = self.day.moved.entry((ccy.index(), at.party)).or_insert((0, 0));
+                    let key = Moved { ccy: ccy.index(), party: at.party };
+                    let (paid, received) = self.day.moved.get_or_insert_with(key, || (0, 0));
                     if leg.qty < 0 {
                         *paid += i128::from(-leg.qty);
                     } else {
@@ -563,11 +600,7 @@ impl<B: Backing> Ledger<B> {
                 AccountRef::Line { line, side },
             ) => {
                 let view = find(arenas, slot, line, side);
-                let Some(next) = balance(&view, line).checked_add(leg.qty) else {
-                    violation!(clause = "Law 7", "a balance overflows", line = line.get());
-                };
-                let optional = Optional { balance: Missing::Present(next), ..view.optional };
-                Lines::<B>::set_words(arenas, slot, line, side, optional);
+                settle_balance(arenas, slot, (line, &view), leg.qty);
             }
             (LegKind::Units { .. }, AccountRef::Instrument(id))
                 if self.instruments.get(id).issuer == Missing::Present(party) =>
