@@ -162,7 +162,8 @@ pub fn judge(before: &Dump, after: &Dump, message: &str, exists: &dyn Fn(&str) -
     for (key, b, a) in diff(before, after) {
         let (_, id) = key;
         let Some(entry) = a.or(b) else { continue };
-        if entry.kind == "RESOLUTION" {
+        // A resolution's first value and its retirement are cited like any entry; changing it coarsens or refines.
+        if entry.kind == "RESOLUTION" && b.is_some() && a.is_some() {
             let reported = resolutions
                 .iter()
                 .filter_map(|t| t.split_once(" — "))
@@ -256,5 +257,6 @@ mod tests {
         let device = |p: &str| p == "perf/device/abc.json";
         assert!(judge(&before, &after, "Resolution-Change: X.r — perf/device/abc.json", &device).is_empty());
         assert_eq!(judge(&before, &after, "Resolution-Change: X.r — perf/realism/F01/r.json", &device).len(), 2);
+        assert!(judge(&Dump::new(), &after, "Primitive-Change: X.r — s", NONE).is_empty());
     }
 }

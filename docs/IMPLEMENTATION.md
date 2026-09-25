@@ -15462,7 +15462,7 @@ mechanisms its file named beforehand.
     check against it; a value changed under its old citation is refused;
   - a rename is a removal and an addition, or one `Primitive-Rename: <old> → <new>` when value, unit, kind and source
     are unchanged;
-  - a RESOLUTION entry carries `Resolution-Change: <id> — <report>` instead, citing a `perf/device` or `perf/measure`
+  - a RESOLUTION entry whose value changes carries `Resolution-Change: <id> — <report>` instead, citing a `perf/device` or `perf/measure`
     report that shows a budget miss for a coarsening, or measured headroom for a refinement: the resolution is
     representation, set by measurement of the budget (N8.5);
   - no trailer names a `perf/realism` or `perf/chains` path, a finding, or a fact or chain file.
