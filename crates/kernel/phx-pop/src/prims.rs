@@ -56,8 +56,10 @@ impl Representation {
             }
             v
         };
-        let r =
-            Representation { multiplicity: read(prims.multiplicity), population_divisor: read(prims.population_divisor) };
+        let r = Representation {
+            multiplicity: read(prims.multiplicity),
+            population_divisor: read(prims.population_divisor),
+        };
         if r.multiplicity > 1 && r.population_divisor > 1 {
             violation!(
                 clause = "REP.40",

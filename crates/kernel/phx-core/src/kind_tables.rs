@@ -482,14 +482,13 @@ mod tests {
     fn compaction_keeps_every_list_and_frees_the_dead() {
         let mut space = AddressSpace::empty();
         let mut t: KindTable<HeapBacking<4096>> = KindTable::new(&mut space, "firm", TableId::new(0), 64, 64, 1);
-        let row =
-            |p| NewIndividual {
-                party: PartyId::new(p),
-                site: TileId::new(0),
-                created: Day::new(1),
-                weight: 1,
-                types: TYPES,
-            };
+        let row = |p| NewIndividual {
+            party: PartyId::new(p),
+            site: TileId::new(0),
+            created: Day::new(1),
+            weight: 1,
+            types: TYPES,
+        };
         let slots: Vec<Slot> = (1..5).map(|p| t.add(&mut space, row(p))).collect();
         let mut model: Vec<Vec<u64>> = vec![Vec::new(); slots.len()];
         for round in 0..40_u64 {

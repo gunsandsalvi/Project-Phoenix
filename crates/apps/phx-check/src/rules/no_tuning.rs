@@ -188,14 +188,11 @@ pub fn judge(before: &Dump, after: &Dump, message: &str, exists: &dyn Fn(&str) -
         let Some(entry) = a.or(b) else { continue };
         // A resolution's first value and its retirement are cited like any entry; changing it coarsens or refines.
         if entry.kind == "RESOLUTION" && b.is_some() && a.is_some() {
-            let reported = resolutions
-                .iter()
-                .filter_map(|t| t.split_once(" — "))
-                .any(|(i, report)| {
-                    i == id
-                        && (BUDGET_REPORTS.iter().any(|p| report.starts_with(p)) || report.starts_with(OWNER))
-                        && exists(report)
-                });
+            let reported = resolutions.iter().filter_map(|t| t.split_once(" — ")).any(|(i, report)| {
+                i == id
+                    && (BUDGET_REPORTS.iter().any(|p| report.starts_with(p)) || report.starts_with(OWNER))
+                    && exists(report)
+            });
             if !reported {
                 refusals.push(format!("`{id}` is a resolution changed without `Resolution-Change: {id} — <report>`"));
             }
