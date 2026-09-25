@@ -167,6 +167,9 @@ pub struct Lines<B: Backing = SystemBacking> {
     money: Vec<u16>,
     /// The lines by the day they next fall due; an entry whose line has since moved is passed over.
     wheel: BTreeMap<u32, Vec<u32>>,
+    /// How many times each line side's members have changed, so what was read of a side is known still true; kept
+    /// for the run alone, a load beginning it afresh with every read of a side.
+    versions: BTreeMap<(u32, bool), u64>,
 }
 
 impl<B: Backing> Lines<B> {
@@ -180,6 +183,7 @@ impl<B: Backing> Lines<B> {
             reserves: Vec::new(),
             money: Vec::new(),
             wheel: BTreeMap::new(),
+            versions: BTreeMap::new(),
         }
     }
 
@@ -441,6 +445,18 @@ impl<B: Backing> Lines<B> {
         };
         *count = next;
         self.set(line, row);
+        let changed = self.versions.entry((line.get(), side == Side::Asset)).or_insert(0);
+        let Some(next) = changed.checked_add(1) else {
+            capacity_exceeded!("changes of a line side", u64::MAX, *changed);
+        };
+        *changed = next;
+    }
+
+    /// How many times a line side's members have changed in this run; what was read of it at the same version is
+    /// still true.
+    #[must_use]
+    pub fn side_version(&self, line: LineId, side: Side) -> u64 {
+        self.versions.get(&(line.get(), side == Side::Asset)).copied().unwrap_or(0)
     }
 
     /// A holder's row opened on a line. A holder of a kind the side does not declare, or a row with other optional
@@ -692,7 +708,16 @@ impl<B: Backing> Lines<B> {
             }
         }
         let LineDecls { kinds, deposits, reserves, money } = decls;
-        Ok(Lines { rows, lists: HolderLists::new(r.space(), blocks, keys), kinds, deposits, reserves, money, wheel })
+        Ok(Lines {
+            rows,
+            lists: HolderLists::new(r.space(), blocks, keys),
+            kinds,
+            deposits,
+            reserves,
+            money,
+            wheel,
+            versions: BTreeMap::new(),
+        })
     }
 
     /// A holder taken off a line's holder list as renumbering moves it, where a side it holds keeps one.

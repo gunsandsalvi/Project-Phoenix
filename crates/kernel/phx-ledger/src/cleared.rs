@@ -37,28 +37,22 @@ pub(crate) fn times(per: i64, count: u32) -> i64 {
     x
 }
 
-/// The members drawn to lose on a cleared line whose payers failed: one member at a time from the claimant rows, each
-/// by the members it has left, in one sequence from the line's stream, so the first n drawn are the same members
-/// whatever n the failures reach.
-#[clause("REP.23")]
-#[derive(Debug)]
-pub struct Losers {
+/// The members of a line side's rows by holder, in holder order, to draw from by their counts: a Fenwick tree over
+/// the rows, so a member is found and taken in the log of the holders.
+#[derive(Clone, Debug)]
+pub(crate) struct Tally {
     index: BTreeMap<PartyId, usize>,
     parties: Vec<PartyId>,
     tree: Vec<u64>,
-    lost: Vec<u32>,
+    taken: Vec<u32>,
     left: u64,
-    drawn: u64,
-    draws: Draws,
 }
 
-impl Losers {
-    /// The claimant rows by party with their counts, none drawn yet.
-    #[must_use]
-    pub fn new(claimants: &[(PartyId, u32)], draws: Draws) -> Losers {
-        let n = claimants.len();
+impl Tally {
+    pub(crate) fn new(rows: &[(PartyId, u32)]) -> Tally {
+        let n = rows.len();
         let mut tree = vec![0_u64; n + 1];
-        for (i, (_, c)) in claimants.iter().enumerate() {
+        for (i, (_, c)) in rows.iter().enumerate() {
             let mut j = i + 1;
             while j <= n {
                 if let Some(t) = tree.get_mut(j) {
@@ -67,55 +61,40 @@ impl Losers {
                 j += j.isolate_lowest_one();
             }
         }
-        Losers {
-            index: claimants.iter().enumerate().map(|(i, (p, _))| (*p, i)).collect(),
-            parties: claimants.iter().map(|(p, _)| *p).collect(),
+        Tally {
+            index: rows.iter().enumerate().map(|(i, (p, _))| (*p, i)).collect(),
+            parties: rows.iter().map(|(p, _)| *p).collect(),
             tree,
-            lost: vec![0; n],
-            left: claimants.iter().map(|(_, c)| u64::from(*c)).sum(),
-            drawn: 0,
-            draws,
+            taken: vec![0; n],
+            left: rows.iter().map(|(_, c)| u64::from(*c)).sum(),
         }
     }
 
-    /// The members of a claimant drawn so far; a party holding no claimant row has none.
-    #[must_use]
-    pub fn lost(&self, party: PartyId) -> u32 {
-        self.index.get(&party).and_then(|i| self.lost.get(*i)).copied().unwrap_or(0)
+    /// The members left to draw.
+    pub(crate) fn left(&self) -> u64 {
+        self.left
     }
 
-    /// Every claimant with members drawn, and how many.
-    pub fn all_lost(&self) -> impl Iterator<Item = (PartyId, u32)> + '_ {
-        self.parties.iter().zip(&self.lost).filter(|(_, n)| **n > 0).map(|(p, n)| (*p, *n))
+    /// One member drawn from those left, by the position the draws give among them in holder order, and taken.
+    pub(crate) fn draw(&mut self, draws: &mut Draws) -> usize {
+        let at = self.find(below_u64(draws, self.left));
+        self.take(at);
+        at
     }
 
-    /// The members drawn so far.
-    #[must_use]
-    pub fn drawn(&self) -> u64 {
-        self.drawn
+    fn party(&self, at: usize) -> Option<PartyId> {
+        self.parties.get(at).copied()
     }
 
-    /// The sequence drawn on until `failed` members are drawn; each claimant newly drawn, with how many more.
-    pub fn draw_to(&mut self, failed: u64) -> Vec<(PartyId, u32)> {
-        if failed > self.drawn + self.left {
-            violation!(
-                clause = "REP.31",
-                "more members failed on a cleared line than its claimants hold",
-                failed = failed,
-                held = self.drawn + self.left
-            );
-        }
-        let mut more: BTreeMap<usize, u32> = BTreeMap::new();
-        while self.drawn < failed {
-            let u = below_u64(&mut self.draws, self.left);
-            let at = self.find(u);
-            self.take(at);
-            *more.entry(at).or_insert(0) += 1;
-        }
-        more.into_iter().filter_map(|(i, k)| self.parties.get(i).map(|p| (*p, k))).collect()
+    fn taken(&self, party: PartyId) -> u32 {
+        self.index.get(&party).and_then(|i| self.taken.get(*i)).copied().unwrap_or(0)
     }
 
-    /// The claimant holding the member at a position among those left, by the tree's descent.
+    fn all_taken(&self) -> impl Iterator<Item = (PartyId, u32)> + '_ {
+        self.parties.iter().zip(&self.taken).filter(|(_, n)| **n > 0).map(|(p, n)| (*p, *n))
+    }
+
+    /// The holder holding the member at a position among those left, by the tree's descent.
     fn find(&self, mut target: u64) -> usize {
         let n = self.parties.len();
         let mut at = 0_usize;
@@ -142,11 +121,76 @@ impl Losers {
             }
             j += j.isolate_lowest_one();
         }
-        if let Some(l) = self.lost.get_mut(at) {
+        if let Some(l) = self.taken.get_mut(at) {
             *l += 1;
         }
         self.left -= 1;
-        self.drawn += 1;
+    }
+
+    /// `count` members drawn one at a time from those left; each holder drawn from, with how many, in holder order.
+    pub(crate) fn draw_many(&mut self, count: u32, draws: &mut Draws) -> Vec<(PartyId, u32)> {
+        let mut more: BTreeMap<usize, u32> = BTreeMap::new();
+        for _ in 0..count {
+            if self.left == 0 {
+                violation!(clause = "REP.31", "members leaving a line whose other side holds none to leave with them");
+            }
+            *more.entry(self.draw(draws)).or_insert(0) += 1;
+        }
+        more.into_iter().filter_map(|(i, k)| self.party(i).map(|p| (p, k))).collect()
+    }
+}
+
+/// The members drawn to lose on a cleared line whose payers failed: one member at a time from the claimant rows, each
+/// by the members it has left, in one sequence from the line's stream, so the first n drawn are the same members
+/// whatever n the failures reach.
+#[clause("REP.23")]
+#[derive(Debug)]
+pub struct Losers {
+    tally: Tally,
+    drawn: u64,
+    draws: Draws,
+}
+
+impl Losers {
+    /// The claimant rows by party with their counts, none drawn yet.
+    #[must_use]
+    pub fn new(claimants: &[(PartyId, u32)], draws: Draws) -> Losers {
+        Losers { tally: Tally::new(claimants), drawn: 0, draws }
+    }
+
+    /// The members of a claimant drawn so far; a party holding no claimant row has none.
+    #[must_use]
+    pub fn lost(&self, party: PartyId) -> u32 {
+        self.tally.taken(party)
+    }
+
+    /// Every claimant with members drawn, and how many.
+    pub fn all_lost(&self) -> impl Iterator<Item = (PartyId, u32)> + '_ {
+        self.tally.all_taken()
+    }
+
+    /// The members drawn so far.
+    #[must_use]
+    pub fn drawn(&self) -> u64 {
+        self.drawn
+    }
+
+    /// The sequence drawn on until `failed` members are drawn; each claimant newly drawn, with how many more.
+    pub fn draw_to(&mut self, failed: u64) -> Vec<(PartyId, u32)> {
+        if failed > self.drawn + self.tally.left() {
+            violation!(
+                clause = "REP.31",
+                "more members failed on a cleared line than its claimants hold",
+                failed = failed,
+                held = self.drawn + self.tally.left()
+            );
+        }
+        let mut more: BTreeMap<usize, u32> = BTreeMap::new();
+        while self.drawn < failed {
+            *more.entry(self.tally.draw(&mut self.draws)).or_insert(0) += 1;
+            self.drawn += 1;
+        }
+        more.into_iter().filter_map(|(i, k)| self.tally.party(i).map(|p| (p, k))).collect()
     }
 }
 

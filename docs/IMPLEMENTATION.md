@@ -4808,6 +4808,10 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
   (S2.05, F-049), so no attachment or tenant is reached. Settling is the gate run's, as before. LC-0-53 reads the
   estates opened, settled and open, every estate open from before the last day counted waiting. Tests: an estate
   pays its debts, passes the rest and ends; one short of its debts writes off the rest.
+  The build run of S0.25d found each employed person's death reading every employer of its wage line — tens of
+  thousands of rows a death — so a day took minutes: a line side's members by holder are now kept, with the side's
+  version, as a Fenwick tree (`Tally`, which the cleared lines' losers share) and drawn from again while the side is
+  unchanged, the draws the same whether kept or read afresh.
 
 
 **Clauses**:

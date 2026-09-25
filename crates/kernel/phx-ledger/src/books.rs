@@ -223,6 +223,9 @@ pub struct Books<B: Backing = SystemBacking> {
     pub drawn: BTreeMap<String, Vec<(PartyId, u64)>>,
     pub dues: DueReasons,
     opened: u32,
+    /// Each line side's members by holder as members last left it, with the side's version then: drawn from again
+    /// while the side is unchanged, so members leaving a line of many holders read its side once, not each time.
+    pub(crate) leaving: BTreeMap<(LineId, Side), (u64, crate::cleared::Tally)>,
 }
 
 /// The opening's instructions feed no audit: day one's audit reads the state they leave.
@@ -289,6 +292,7 @@ impl<B: Backing> Books<B> {
             drawn: BTreeMap::new(),
             dues,
             opened: 0,
+            leaving: BTreeMap::new(),
         }
     }
 
@@ -468,7 +472,14 @@ impl<B: Backing> Books<B> {
         let drawn = BTreeMap::load(r)?;
         let opened = u32::load(r)?;
         let space = r.take_space();
-        let mut books = Books { ledger, parties: Parties { tables, cells, directory, space }, drawn, dues, opened };
+        let mut books = Books {
+            ledger,
+            parties: Parties { tables, cells, directory, space },
+            drawn,
+            dues,
+            opened,
+            leaving: BTreeMap::new(),
+        };
         books.relist();
         Ok(books)
     }

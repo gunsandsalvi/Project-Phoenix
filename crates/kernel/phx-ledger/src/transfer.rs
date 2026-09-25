@@ -231,18 +231,27 @@ impl<B: Backing> Books<B> {
             Side::Asset => Side::Liability,
             Side::Liability => Side::Asset,
         };
-        let mut counterparts: Vec<(PartyId, u32)> = self
-            .side_holders(line, other)
-            .into_iter()
-            .filter_map(|p| self.row_on_side(p, line, other).map(|r| (p, r.row.count)))
-            .collect();
-        let taken = draw_members(&mut counterparts, count, d);
+        let version = self.ledger.lines.side_version(line, other);
+        let mut tally = match self.leaving.remove(&(line, other)) {
+            Some((read, tally)) if read == version => tally,
+            _ => {
+                let rows: Vec<(PartyId, u32)> = self
+                    .side_holders(line, other)
+                    .into_iter()
+                    .filter_map(|p| self.row_on_side(p, line, other).map(|r| (p, r.row.count)))
+                    .collect();
+                crate::cleared::Tally::new(&rows)
+            }
+        };
+        let taken = tally.draw_many(count, d);
         let mut legs = self.leave((party, line, side), count, self.no_share((party, line, side), count, m), m);
         // The members leaving hold no balance, so the counterparts that leave with them take none of theirs.
         for (p, k) in taken {
             legs.extend(self.leave((p, line, other), k, 0, m));
         }
-        self.submit(self.dues.left, legs, m, audit)
+        let applied = self.submit(self.dues.left, legs, m, audit)?;
+        self.leaving.insert((line, other), (self.ledger.lines.side_version(line, other), tally));
+        Ok(applied)
     }
 
     /// The balance share of members leaving a line, which must be nothing.
@@ -253,34 +262,6 @@ impl<B: Backing> Books<B> {
         }
         moved
     }
-}
-
-/// `count` members drawn one at a time from rows by the members each has left; the rows drawn from, with how many.
-fn draw_members(rows: &mut [(PartyId, u32)], count: u32, d: &mut phx_rand::Draws) -> Vec<(PartyId, u32)> {
-    let mut taken: Vec<(PartyId, u32)> = Vec::new();
-    for _ in 0..count {
-        let left: u64 = rows.iter().map(|(_, n)| u64::from(*n)).sum();
-        if left == 0 {
-            violation!(clause = "REP.31", "members leaving a line whose other side holds none to leave with them");
-        }
-        let mut at = phx_rand::below_u64(d, left);
-        let Some((p, n)) = rows.iter_mut().find(|(_, n)| {
-            let here = u64::from(*n);
-            if at < here {
-                return true;
-            }
-            at -= here;
-            false
-        }) else {
-            violation!(clause = "CHN.2", "a pick beyond its counts");
-        };
-        *n -= 1;
-        match taken.iter_mut().find(|(q, _)| q == p) {
-            Some((_, k)) => *k += 1,
-            None => taken.push((*p, 1)),
-        }
-    }
-    taken
 }
 
 /// A holder's rows split at a per-person limit: in the declared coverage order, each row's part per member within

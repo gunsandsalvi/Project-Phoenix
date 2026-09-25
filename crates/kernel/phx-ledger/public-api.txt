@@ -962,6 +962,7 @@ pub fn phx_ledger::line::Lines<B>::next_due(&self, phx_id::ids::LineId) -> phx_i
 pub fn phx_ledger::line::Lines<B>::open(&mut self, u16, phx_ledger::terms::TermsId, phx_num::missing::Missing<(phx_id::day::Day, u32)>) -> phx_id::ids::LineId
 pub fn phx_ledger::line::Lines<B>::side_count(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> u32
 pub fn phx_ledger::line::Lines<B>::side_decl(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> &phx_ledger::line::SideDecl
+pub fn phx_ledger::line::Lines<B>::side_version(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> u64
 pub fn phx_ledger::line::Lines<B>::terms(&self, phx_id::ids::LineId) -> phx_ledger::terms::TermsId
 pub struct phx_ledger::line::NewRow
 pub phx_ledger::line::NewRow::count: u32
