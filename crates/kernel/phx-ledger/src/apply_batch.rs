@@ -555,14 +555,17 @@ impl<B: Backing> Books<B> {
     where
         B: Sync,
     {
+        let mut out: Vec<Option<i128>> = vec![None; nets.len()];
         let each = nets.len().div_ceil(crate::consts::STREAM_SHARDS);
-        let read = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_SHARDS, |i| {
-            let at_most = |a: usize, b: usize| if a < b { a } else { b };
-            let from = at_most(i * each, nets.len());
-            let to = at_most(from + each, nets.len());
-            nets.get(from..to).unwrap_or(&[]).iter().map(|(k, _)| self.balance_of(k)).collect::<Vec<_>>()
-        });
-        read.into_iter().flatten().collect()
+        if each > 0 {
+            let shards = nets.chunks(each).zip(out.chunks_mut(each));
+            phx_exec::pool::each(self.pool.as_deref(), shards, |(keys, read)| {
+                for ((k, _), b) in keys.iter().zip(read.iter_mut()) {
+                    *b = self.balance_of(k);
+                }
+            });
+        }
+        out
     }
 
     /// The balance of the money account a net moves; none for a net on a contract's rows.
