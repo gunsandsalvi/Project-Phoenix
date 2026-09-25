@@ -166,10 +166,6 @@ pub struct DayRecords {
     pub records: Records,
     pub scanned: Vec<(u16, Slot)>,
     pub made: Vec<Payment>,
-    /// Each payment's legs as 7a routed them, in the payments' order, and where each payment's begin, so 7c reads a
-    /// route rather than routing it again.
-    pub legs: Vec<LegRec>,
-    pub leg_at: Vec<usize>,
     pub heads_read: u64,
     pub rows_scanned: u64,
     pub rows_due: u64,
@@ -178,16 +174,6 @@ pub struct DayRecords {
     pub gross: i128,
     /// The holders whose rows make payments that cannot settle, a party they need an account of holding no money.
     pub moneyless: BTreeSet<PartyId>,
-}
-
-impl DayRecords {
-    /// The legs 7a routed the `i`th payment by.
-    #[must_use]
-    pub fn route(&self, i: usize) -> &[LegRec] {
-        let from = self.leg_at.get(i).copied().unwrap_or(self.legs.len());
-        let to = self.leg_at.get(i + 1).copied().unwrap_or(self.legs.len());
-        self.legs.get(from..to).unwrap_or(&[])
-    }
 }
 
 /// The issuers a payment's money passes through: the parties on the owing side of the money lines it moves.
@@ -566,8 +552,6 @@ impl<B: Backing> Books<B> {
                 };
                 out.payments += 1;
                 out.made.push(p);
-                out.leg_at.push(out.legs.len());
-                out.legs.extend_from_slice(&legs);
                 if p.moneyless {
                     out.moneyless.insert(p.reckoned_on);
                     continue;

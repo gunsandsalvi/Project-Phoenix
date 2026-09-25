@@ -109,8 +109,6 @@ pub(crate) struct DayBuffers {
     records: Records,
     given: Records,
     made: Vec<Payment>,
-    legs: Vec<LegRec>,
-    leg_at: Vec<usize>,
     scanned: Vec<(u16, Slot)>,
     nets: phx_core::KernelMap<NetKey, i128>,
     net_list: Vec<(NetKey, i128)>,
@@ -125,19 +123,13 @@ impl DayBuffers {
         made.clear();
         let mut scanned = std::mem::take(&mut self.scanned);
         scanned.clear();
-        let mut legs = std::mem::take(&mut self.legs);
-        legs.clear();
-        let mut leg_at = std::mem::take(&mut self.leg_at);
-        leg_at.clear();
-        DayRecords { records, scanned, made, legs, leg_at, ..DayRecords::default() }
+        DayRecords { records, scanned, made, ..DayRecords::default() }
     }
 
     /// The day's buffers taken back at the close of stage 7.
     fn keep(&mut self, streamed: DayRecords, g: Gathered, nets: phx_core::KernelMap<NetKey, i128>) {
         self.records = streamed.records;
         self.made = streamed.made;
-        self.legs = streamed.legs;
-        self.leg_at = streamed.leg_at;
         self.scanned = streamed.scanned;
         self.given = g.given;
         self.net_list = g.nets;
@@ -253,17 +245,10 @@ impl<B: Backing> Books<B> {
         let mut g = Gathered { given, nets: net_list, ..Gathered::default() };
         let mut nets = std::mem::take(&mut self.buffers.nets);
         nets.clear();
-        for (i, made) in streamed.made.iter().enumerate() {
+        for made in &streamed.made {
             let Some(p) = after_losers(made, found) else { continue };
-            // A cleared line's claimant paid less for its members drawn to lose is routed again for what it is paid.
-            let rerouted;
-            let route: &[LegRec] = if p.amount == made.amount {
-                streamed.route(i)
-            } else {
-                rerouted = self.effects(&p);
-                &rerouted
-            };
-            if closed.holds(p.payer, &crate::stream::issuers(route)) {
+            let route = self.effects(&p);
+            if closed.holds(p.payer, &crate::stream::issuers(&route)) {
                 self.record_due(&p, DueOutcome::Pending);
                 continue;
             }
@@ -288,7 +273,7 @@ impl<B: Backing> Books<B> {
             }
             g.settled += 1;
             self.record_due(&p, DueOutcome::Settled);
-            let _ = self.book(&mut g.given, route, 1);
+            let _ = self.book(&mut g.given, &route, 1);
             let (from, to) = (self.settles_at(p.payer, p.ccy), self.settles_at(p.payee, p.ccy));
             if from != to {
                 *g.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
@@ -426,8 +411,6 @@ impl<B: Backing> Books<B> {
         let buffer_bytes = bytes::<(PartyId, Record)>(streamed.records.capacity() + g.given.capacity())
             + bytes::<(u16, Slot)>(streamed.scanned.capacity() + scanned.len())
             + bytes::<Payment>(streamed.made.capacity())
-            + bytes::<LegRec>(streamed.legs.capacity())
-            + bytes::<usize>(streamed.leg_at.capacity())
             + bytes::<(NetKey, i128)>(g.nets.capacity())
             + bytes::<Option<i128>>(g.nets.len() * 2)
             + bytes::<((PartyId, u8), i128)>(g.crossing.len() + reserves_before.capacity())

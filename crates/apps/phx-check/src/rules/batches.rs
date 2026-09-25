@@ -11,10 +11,9 @@ const PASSES: &[&str] = &["stream.rs", "fixed_point.rs", "apply_batch.rs", "batc
 const ITEMS: &[&str] = &["Payment", "LegRec", "RowView", "Instruction", "DueRow"];
 /// The collections a field could hold them in.
 const COLLECTIONS: &[&str] = &["Vec", "VecDeque", "BTreeMap", "BTreeSet", "HashMap", "HashSet", "SmallVec"];
-/// The lists the architecture keeps: the day's payments 7a hands 7c and their legs, so 7c neither reckons nor routes
-/// them again, and the buffers that keep their room from one day to the next.
-const NAMED: &[(&str, &str)] =
-    &[("DayRecords", "made"), ("DayBuffers", "made"), ("DayRecords", "legs"), ("DayBuffers", "legs")];
+/// The one list the architecture keeps: the day's payments 7a hands 7c, so 7c does not reckon them again, and the
+/// buffer that keeps its room from one day to the next.
+const NAMED: &[(&str, &str)] = &[("DayRecords", "made"), ("DayBuffers", "made")];
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();
