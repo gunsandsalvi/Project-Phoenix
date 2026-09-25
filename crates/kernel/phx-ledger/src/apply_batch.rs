@@ -236,7 +236,10 @@ impl<B: Backing> Books<B> {
         today: Today<'_>,
         closed: &Closed,
         found: &mut Found,
-    ) -> (Gathered, phx_core::KernelMap<NetKey, i128>) {
+    ) -> (Gathered, phx_core::KernelMap<NetKey, i128>)
+    where
+        B: Sync,
+    {
         let (_, day, _) = today;
         let mut given = std::mem::take(&mut self.buffers.given);
         given.clear();
@@ -245,55 +248,70 @@ impl<B: Backing> Books<B> {
         let mut g = Gathered { given, nets: net_list, ..Gathered::default() };
         let mut nets = std::mem::take(&mut self.buffers.nets);
         nets.clear();
-        for made in &streamed.made {
-            let Some(p) = after_losers(made, found) else { continue };
-            let route = self.effects(&p);
-            if closed.holds(p.payer, &crate::stream::issuers(&route)) {
-                self.record_due(&p, DueOutcome::Pending);
-                continue;
-            }
-            if fixed.failed.contains(&p.key()) {
-                g.failed += 1;
-                if !fixed.by_bank.contains(&p.key()) && !p.moneyless {
-                    g.failed_payers.insert(p.payer);
+        let each = streamed.made.len().div_ceil(crate::consts::STREAM_SHARDS);
+        for wave in (0..crate::consts::STREAM_SHARDS).step_by(crate::consts::STREAM_WAVE) {
+            let found_now: &Found = found;
+            // The routes are made on the pool, a wave of shards at a time; what they come to is gathered in order.
+            let routed = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_WAVE, |i| {
+                let at_most = |a: usize, b: usize| if a < b { a } else { b };
+                let from = at_most((wave + i) * each, streamed.made.len());
+                let to = at_most(from + each, streamed.made.len());
+                streamed
+                    .made
+                    .get(from..to)
+                    .unwrap_or(&[])
+                    .iter()
+                    .filter_map(|made| after_losers(made, found_now).map(|p| (p, self.effects(&p))))
+                    .collect::<Vec<_>>()
+            });
+            for (p, route) in routed.into_iter().flatten() {
+                if closed.holds(p.payer, &crate::stream::issuers(&route)) {
+                    self.record_due(&p, DueOutcome::Pending);
+                    continue;
                 }
-                // A cleared line's claimant with no money loses its due against the top issuer, which owes no row.
-                if !(p.cleared && p.payee == p.reckoned_on && p.moneyless) {
-                    let cause = if p.moneyless {
-                        FailCause::NoMoney
-                    } else if fixed.by_bank.contains(&p.key()) {
-                        FailCause::BankShort
-                    } else {
-                        FailCause::Funds
-                    };
-                    self.fail_payment(&p, day, cause);
-                }
-                self.record_due(&p, DueOutcome::Failed);
-                continue;
-            }
-            g.settled += 1;
-            self.record_due(&p, DueOutcome::Settled);
-            let _ = self.book(&mut g.given, &route, 1);
-            let (from, to) = (self.settles_at(p.payer, p.ccy), self.settles_at(p.payee, p.ccy));
-            if from != to {
-                *g.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
-                *g.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
-            }
-            for leg in route {
-                let AccountRef::Line { line, side } = leg.account else {
-                    violation!(clause = "SET.1", "a payment's leg on no line", party = leg.party.get());
-                };
-                let is_row = matches!(leg.kind, LegKind::Row(_));
-                let key = NetKey { line, party: leg.party, side, row: is_row };
-                match nets.get_mut(key) {
-                    Some(q) => *q += i128::from(leg.qty),
-                    None => {
-                        let _ = nets.insert(key, i128::from(leg.qty));
+                if fixed.failed.contains(&p.key()) {
+                    g.failed += 1;
+                    if !fixed.by_bank.contains(&p.key()) && !p.moneyless {
+                        g.failed_payers.insert(p.payer);
                     }
+                    // A cleared line's claimant with no money loses its due against the top issuer, which owes no row.
+                    if !(p.cleared && p.payee == p.reckoned_on && p.moneyless) {
+                        let cause = if p.moneyless {
+                            FailCause::NoMoney
+                        } else if fixed.by_bank.contains(&p.key()) {
+                            FailCause::BankShort
+                        } else {
+                            FailCause::Funds
+                        };
+                        self.fail_payment(&p, day, cause);
+                    }
+                    self.record_due(&p, DueOutcome::Failed);
+                    continue;
                 }
-                if !is_row && side == Side::Asset && self.ledger.lines.is_reserves(line) {
-                    let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
-                    let _ = g.crossing.entry((leg.party, ccy.index())).or_insert(0);
+                g.settled += 1;
+                self.record_due(&p, DueOutcome::Settled);
+                let _ = self.book(&mut g.given, &route, 1);
+                let (from, to) = (self.settles_at(p.payer, p.ccy), self.settles_at(p.payee, p.ccy));
+                if from != to {
+                    *g.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
+                    *g.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
+                }
+                for leg in route {
+                    let AccountRef::Line { line, side } = leg.account else {
+                        violation!(clause = "SET.1", "a payment's leg on no line", party = leg.party.get());
+                    };
+                    let is_row = matches!(leg.kind, LegKind::Row(_));
+                    let key = NetKey { line, party: leg.party, side, row: is_row };
+                    match nets.get_mut(key) {
+                        Some(q) => *q += i128::from(leg.qty),
+                        None => {
+                            let _ = nets.insert(key, i128::from(leg.qty));
+                        }
+                    }
+                    if !is_row && side == Side::Asset && self.ledger.lines.is_reserves(line) {
+                        let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
+                        let _ = g.crossing.entry((leg.party, ccy.index())).or_insert(0);
+                    }
                 }
             }
         }
@@ -531,20 +549,31 @@ impl<B: Backing> Books<B> {
         }
     }
 
-    /// The balances of the money accounts a day's nets move, read before or after they apply.
-    fn balances(&self, nets: &[(NetKey, i128)]) -> Vec<Option<i128>> {
-        nets.iter()
-            .map(|(k, _)| {
-                if k.row {
-                    return None;
-                }
-                let (place, slot) = self.parties.row(k.party);
-                let row = crate::rows::find(self.parties.holder(place), slot, k.line, k.side);
-                match row.map(|r| r.optional.balance) {
-                    Some(Missing::Present(b)) => Some(i128::from(b)),
-                    _ => None,
-                }
-            })
-            .collect()
+    /// The balances of the money accounts a day's nets move, read before or after they apply, on the pool in fixed
+    /// shards.
+    fn balances(&self, nets: &[(NetKey, i128)]) -> Vec<Option<i128>>
+    where
+        B: Sync,
+    {
+        let each = nets.len().div_ceil(crate::consts::STREAM_SHARDS);
+        let read = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_SHARDS, |i| {
+            let at_most = |a: usize, b: usize| if a < b { a } else { b };
+            let from = at_most(i * each, nets.len());
+            let to = at_most(from + each, nets.len());
+            nets.get(from..to).unwrap_or(&[]).iter().map(|(k, _)| self.balance_of(k)).collect::<Vec<_>>()
+        });
+        read.into_iter().flatten().collect()
+    }
+
+    /// The balance of the money account a net moves; none for a net on a contract's rows.
+    fn balance_of(&self, k: &NetKey) -> Option<i128> {
+        if k.row {
+            return None;
+        }
+        let (place, slot) = self.parties.row(k.party);
+        match crate::rows::find(self.parties.holder(place), slot, k.line, k.side).map(|r| r.optional.balance) {
+            Some(Missing::Present(b)) => Some(i128::from(b)),
+            _ => None,
+        }
     }
 }
