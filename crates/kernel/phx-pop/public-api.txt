@@ -1,4 +1,12 @@
 pub mod phx_pop
+pub mod phx_pop::attach
+pub struct phx_pop::attach::Attachable
+pub phx_pop::attach::Attachable::count: u32
+pub phx_pop::attach::Attachable::exclusive: phx_num::missing::Missing<u16>
+pub phx_pop::attach::Attachable::line: phx_id::ids::LineId
+pub phx_pop::attach::Attachable::roles: alloc::vec::Vec<usize>
+pub phx_pop::attach::Attachable::side: phx_ledger::algebra::Side
+pub fn phx_pop::attach::attach(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRecord, u64, &[phx_pop::attach::Attachable], &mut [phx_pop::explicit::Explicit], &mut phx_rand::draws::Draws)
 pub mod phx_pop::audit
 pub struct phx_pop::audit::CellsView<'a, B: phx_store::backing::Backing>
 impl<'a, B: phx_store::backing::Backing> phx_pop::audit::CellsView<'a, B>
@@ -91,12 +99,14 @@ pub fn phx_pop::envelope::rung(u32) -> u64
 pub mod phx_pop::explicit
 pub struct phx_pop::explicit::Explicit
 pub phx_pop::explicit::Explicit::persons: alloc::vec::Vec<phx_pop::explicit::Held>
+pub phx_pop::explicit::Explicit::rows: alloc::vec::Vec<phx_pop::explicit::Attached>
 pub struct phx_pop::explicit::Gathered
 impl phx_pop::explicit::Gathered
 pub fn phx_pop::explicit::Gathered::add(&mut self, &phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, phx_pop::key::KeyRecord, &phx_pop::explicit::Explicit)
 pub fn phx_pop::explicit::Gathered::into_drawn(self) -> alloc::vec::Vec<phx_pop::landing::Drawn>
 pub struct phx_pop::explicit::Held
 pub phx_pop::explicit::Held::role: usize
+pub phx_pop::explicit::Held::rows: alloc::vec::Vec<phx_pop::explicit::Attached>
 pub phx_pop::explicit::Held::values: alloc::vec::Vec<(usize, u32)>
 impl phx_pop::explicit::Held
 pub fn phx_pop::explicit::Held::value(&self, usize) -> core::option::Option<u32>
@@ -105,6 +115,7 @@ pub phx_pop::explicit::Moved::after: phx_pop::profile::Profile
 pub phx_pop::explicit::Moved::before: phx_pop::profile::Profile
 pub phx_pop::explicit::Moved::households: u32
 pub phx_pop::explicit::Moved::key: phx_pop::key::KeyRecord
+pub phx_pop::explicit::Moved::rows: alloc::vec::Vec<(phx_pop::explicit::Attached, u32)>
 pub struct phx_pop::explicit::Regrouped
 pub phx_pop::explicit::Regrouped::ended: core::option::Option<phx_pop::explicit::Moved>
 pub phx_pop::explicit::Regrouped::in_place: alloc::vec::Vec<(usize, u32, i64)>
@@ -112,6 +123,7 @@ pub phx_pop::explicit::Regrouped::parts: alloc::vec::Vec<phx_pop::explicit::Move
 pub struct phx_pop::explicit::Touched
 pub phx_pop::explicit::Touched::households: alloc::vec::Vec<phx_pop::explicit::Explicit>
 pub phx_pop::explicit::Touched::reached: alloc::vec::Vec<alloc::vec::Vec<(usize, usize)>>
+pub fn phx_pop::explicit::carried(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Household, &phx_pop::explicit::Explicit) -> (phx_pop::key::KeyRecord, phx_pop::explicit::Explicit, alloc::vec::Vec<phx_pop::explicit::Attached>)
 pub fn phx_pop::explicit::check(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRecord, &phx_pop::explicit::Explicit)
 pub fn phx_pop::explicit::from_named(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Household) -> (phx_pop::key::KeyRecord, phx_pop::explicit::Explicit)
 pub fn phx_pop::explicit::materialise(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRecord, u64, &phx_pop::profile::Profile, &[alloc::vec::Vec<(usize, u32, u64)>], &mut phx_rand::draws::Draws) -> phx_pop::explicit::Touched
@@ -119,6 +131,7 @@ pub fn phx_pop::explicit::named(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyR
 pub fn phx_pop::explicit::regroup(&phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, &phx_pop::key::KeyRecord, &[phx_pop::explicit::Explicit], &[(phx_pop::key::KeyRecord, phx_pop::explicit::Explicit)]) -> phx_pop::explicit::Regrouped
 pub fn phx_pop::explicit::role_counts(&phx_pop::kind::PopKindDecl, &phx_pop::key::KeyRecord) -> alloc::vec::Vec<u32>
 pub fn phx_pop::explicit::take_whole<B: phx_store::backing::Backing>(&mut phx_pop::table::CellTable<B>, phx_id::ids::Slot, &phx_pop::explicit::Moved)
+pub type phx_pop::explicit::Attached = (phx_id::ids::LineId, phx_ledger::algebra::Side)
 pub mod phx_pop::group_demand
 pub struct phx_pop::group_demand::GroupBudget
 impl phx_pop::group_demand::GroupBudget
@@ -275,6 +288,7 @@ pub phx_pop::kind::PopKindDecl::resolution: core::option::Option<phx_pop::kind::
 pub phx_pop::kind::PopKindDecl::reviews: alloc::vec::Vec<phx_pop::kind::Declared<&'static str>>
 pub phx_pop::kind::PopKindDecl::roles: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::RoleDecl>>
 pub phx_pop::kind::PopKindDecl::sig: phx_pop::sig::SigLayout
+pub phx_pop::kind::PopKindDecl::sited_by: phx_num::missing::Missing<usize>
 impl phx_pop::kind::PopKindDecl
 pub fn phx_pop::kind::PopKindDecl::compile(&'static str, &[phx_core::pop::PopEntry], &phx_core::kinks::KinkRegistry, &dyn core::ops::function::Fn(&'static str) -> core::result::Result<phx_pop::steps::StepTable, alloc::string::String>) -> core::result::Result<phx_pop::kind::PopKindDecl, alloc::vec::Vec<alloc::string::String>>
 pub struct phx_pop::kind::Position

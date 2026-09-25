@@ -122,8 +122,14 @@ mod lines {
 
     const LOAN: LineKindDecl = LineKindDecl {
         name: "loan",
-        asset: SideDecl { holder_kinds: &["bank"], words: 0, holder_list: true },
-        liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
+        asset: SideDecl { holder_kinds: &["bank"], words: 0, holder_list: true, holder_roles: &[], exclusive: false },
+        liability: SideDecl {
+            holder_kinds: &["firm"],
+            words: BALANCE,
+            holder_list: true,
+            holder_roles: &[],
+            exclusive: false,
+        },
         transfer_requesters: &["BNK"],
         dated: false,
     };
@@ -232,11 +238,23 @@ mod lines {
         let mut firms = table(&mut space, "firm", 1);
         let mut all = lines(&mut space);
         let deposit = all.declare_money(LineKindDecl {
-            liability: SideDecl { holder_kinds: &["firm"], words: BALANCE | PENDING, holder_list: true },
+            liability: SideDecl {
+                holder_kinds: &["firm"],
+                words: BALANCE | PENDING,
+                holder_list: true,
+                holder_roles: &[],
+                exclusive: false,
+            },
             ..LOAN
         });
         let plain = all.declare_money(LineKindDecl {
-            liability: SideDecl { holder_kinds: &["firm"], words: 0, holder_list: true },
+            liability: SideDecl {
+                holder_kinds: &["firm"],
+                words: 0,
+                holder_list: true,
+                holder_roles: &[],
+                exclusive: false,
+            },
             ..LOAN
         });
         let (with_words, bare) = (
@@ -296,8 +314,20 @@ mod lines {
         let mut firms = table(&mut space, "firm", 1);
         let mut all = lines(&mut space);
         let swap = all.declare_money(LineKindDecl {
-            asset: SideDecl { holder_kinds: &["firm"], words: 0, holder_list: false },
-            liability: SideDecl { holder_kinds: &["firm"], words: 0, holder_list: true },
+            asset: SideDecl {
+                holder_kinds: &["firm"],
+                words: 0,
+                holder_list: false,
+                holder_roles: &[],
+                exclusive: false,
+            },
+            liability: SideDecl {
+                holder_kinds: &["firm"],
+                words: 0,
+                holder_list: true,
+                holder_roles: &[],
+                exclusive: false,
+            },
             ..LOAN
         });
         let line = all.open(swap.index(), TermsId::new(0), Missing::Absent);
@@ -381,8 +411,20 @@ mod books {
         let mut all: Lines<Heap> = Lines::new(&mut space, 16, 16, 16, HolderKeys::new(2));
         let loan = all.declare_money(LineKindDecl {
             name: "loan",
-            asset: SideDecl { holder_kinds: &["bank"], words: 0, holder_list: true },
-            liability: SideDecl { holder_kinds: &["firm"], words: 0, holder_list: true },
+            asset: SideDecl {
+                holder_kinds: &["bank"],
+                words: 0,
+                holder_list: true,
+                holder_roles: &[],
+                exclusive: false,
+            },
+            liability: SideDecl {
+                holder_kinds: &["firm"],
+                words: 0,
+                holder_list: true,
+                holder_roles: &[],
+                exclusive: false,
+            },
             transfer_requesters: &["BNK"],
             dated: false,
         });

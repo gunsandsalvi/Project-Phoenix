@@ -5,6 +5,8 @@
 use std::collections::BTreeMap;
 
 use phx_core::RoleCount;
+use phx_id::LineId;
+use phx_ledger::algebra::Side;
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 use phx_rand::{Draws, below_u64};
@@ -13,11 +15,16 @@ use crate::key::KeyRecord;
 use crate::kind::PopKindDecl;
 use crate::profile::{Profile, ProfileLayout, net};
 
-/// A person made explicit: its role, and its value in each group of its role, in the kind's order of groups.
+/// A row a household or a person holds a member of: its line and side.
+pub type Attached = (LineId, Side);
+
+/// A person made explicit: its role, its value in each group of its role, in the kind's order of groups, and the rows
+/// it holds a member of.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Held {
     pub role: usize,
     pub values: Vec<(usize, u32)>,
+    pub rows: Vec<Attached>,
 }
 
 impl Held {
@@ -27,10 +34,12 @@ impl Held {
     }
 }
 
-/// A household made explicit: its persons, the roles in the kind's order and each role's persons together.
+/// A household made explicit: its persons, the roles in the kind's order and each role's persons together, and the
+/// rows the household itself holds a member of.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Explicit {
     pub persons: Vec<Held>,
+    pub rows: Vec<Attached>,
 }
 
 /// The households a day's hits on a cell reached, made explicit, and for each hit the persons it reached, each by its
@@ -125,10 +134,10 @@ fn fresh(kind: &PopKindDecl, counts: &[u32], pool: &mut Pool, first: (usize, usi
                     (g, if given { first_value } else { pool.take(g, d) })
                 })
                 .collect();
-            persons.push(Held { role, values });
+            persons.push(Held { role, values, rows: Vec::new() });
         }
     }
-    Explicit { persons }
+    Explicit { persons, rows: Vec::new() }
 }
 
 /// The households of a cell of `weight` households under `key` that the day's hits reached, made explicit. Each hit
@@ -226,6 +235,27 @@ pub fn named(kind: &PopKindDecl, key: &KeyRecord, e: &Explicit) -> phx_core::Hou
 #[clause("REP.26", "REP.19", "REP.32")]
 #[must_use]
 pub fn from_named(kind: &PopKindDecl, h: &phx_core::Household) -> (KeyRecord, Explicit) {
+    let (key, e, _) = read(kind, h, None);
+    (key, e)
+}
+
+/// A household as an outcome left it, as `from_named` reads it, with the rows it and its persons held as it was made
+/// explicit: a person still there keeps its own, whatever role it now has; the rows of a person gone are returned
+/// apart, one member each, to leave their lines.
+#[clause("REP.26", "REP.19", "REP.32", "REP.23")]
+#[must_use]
+pub fn carried(kind: &PopKindDecl, h: &phx_core::Household, before: &Explicit) -> (KeyRecord, Explicit, Vec<Attached>) {
+    if h.persons.len() != before.persons.len() {
+        violation!(clause = "REP.26", "an outcome that added or took away persons rather than marking them gone");
+    }
+    read(kind, h, Some(before))
+}
+
+fn read(
+    kind: &PopKindDecl,
+    h: &phx_core::Household,
+    before: Option<&Explicit>,
+) -> (KeyRecord, Explicit, Vec<Attached>) {
     let mut key = KeyRecord::default();
     if h.key.len() != kind.key_attrs.len() {
         violation!(clause = "REP.19", "a household's key of other attributes than its kind's", attrs = h.key.len());
@@ -237,7 +267,13 @@ pub fn from_named(kind: &PopKindDecl, h: &phx_core::Household) -> (KeyRecord, Ex
         kind.key.set(&mut key, at, *v);
     }
     let mut persons: Vec<Held> = Vec::new();
-    for p in h.persons.iter().filter(|p| !p.gone) {
+    let mut left: Vec<Attached> = Vec::new();
+    for (i, p) in h.persons.iter().enumerate() {
+        let rows: &[Attached] = before.and_then(|b| b.persons.get(i)).map_or(&[], |was| &was.rows);
+        if p.gone {
+            left.extend(rows.iter().copied());
+            continue;
+        }
         let Some(role) = kind.roles.iter().position(|r| r.item.name == p.role) else {
             violation!(clause = "REP.26", "a person of a role its kind does not hold");
         };
@@ -253,20 +289,22 @@ pub fn from_named(kind: &PopKindDecl, h: &phx_core::Household) -> (KeyRecord, Ex
         if values.len() != p.values.len() {
             violation!(clause = "REP.32", "a person with a value in a group not of its role");
         }
-        persons.push(Held { role, values });
+        persons.push(Held { role, values, rows: rows.to_vec() });
     }
     persons.sort_by_key(|p| p.role);
-    (key, Explicit { persons })
+    let rows = before.map_or_else(Vec::new, |b| b.rows.clone());
+    (key, Explicit { persons, rows }, left)
 }
 
-/// Households split out of a cell together: the key they share now, how many they are, and their profile as they
-/// were drawn out and as they are.
+/// Households split out of a cell together: the key they share now, how many they are, their profile as they were
+/// drawn out and as they are, and the members they and their persons hold of each of the cell's rows.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Moved {
     pub key: KeyRecord,
     pub households: u32,
     pub before: Profile,
     pub after: Profile,
+    pub rows: Vec<(Attached, u32)>,
 }
 
 /// What the day's outcomes make of a cell's explicit households: the changes of values of those that kept the cell's
@@ -296,6 +334,17 @@ fn profile_of<'a>(layout: &ProfileLayout, households: impl Iterator<Item = &'a E
         }
     }
     p
+}
+
+/// The members households and their persons hold of each row, in the rows' order.
+fn rows_of<'a>(households: impl Iterator<Item = &'a Explicit>) -> Vec<(Attached, u32)> {
+    let mut by: BTreeMap<Attached, u32> = BTreeMap::new();
+    for e in households {
+        for r in e.rows.iter().chain(e.persons.iter().flat_map(|p| &p.rows)) {
+            *by.entry(*r).or_insert(0) += 1;
+        }
+    }
+    by.into_iter().collect()
 }
 
 fn count32(n: usize) -> u32 {
@@ -392,6 +441,7 @@ pub fn regroup(
         households: count32(at.len()),
         before: profile_of(layout, at.iter().filter_map(|i| before.get(*i))),
         after: profile_of(layout, at.iter().filter_map(|i| after.get(*i).map(|(_, e)| e))),
+        rows: rows_of(at.iter().filter_map(|i| after.get(*i).map(|(_, e)| e))),
     };
     let parts = moving.into_iter().map(|(k, at)| group(k, &at)).collect();
     let ended = (!ended.is_empty()).then(|| group(*key, &ended));
@@ -404,7 +454,10 @@ mod tests {
     use phx_core::{GroupDecl, KeyAttrDecl, KinkRegistry, PopEntry, PopItem, ProfileComponent, RoleCount, RoleDecl};
     use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
 
-    use super::{Explicit, from_named, materialise, named, regroup, role_counts};
+    use phx_id::LineId;
+    use phx_ledger::algebra::Side;
+
+    use super::{Attached, Explicit, from_named, materialise, named, regroup, role_counts};
     use crate::key::KeyRecord;
     use crate::kind::PopKindDecl;
     use crate::profile::{Profile, ProfileLayout};
@@ -475,14 +528,15 @@ mod tests {
         let kind = kind();
         let layout = ProfileLayout::new(&kind.groups);
         let role = |name: &str| kind.roles.iter().position(|r| r.item.name == name).unwrap();
-        let held = |role: usize, values: &[(usize, u32)]| super::Held { role, values: values.to_vec() };
+        let held =
+            |role: usize, values: &[(usize, u32)]| super::Held { role, values: values.to_vec(), rows: Vec::new() };
         let household = |partner: bool, children: u32| {
             let mut persons = vec![held(role("head"), &[(HEAD_AGE, 2), (HEAD_WORK, 1)])];
             if partner {
                 persons.push(held(role("partner"), &[(PARTNER_AGE, 2)]));
             }
             persons.extend((0..children).map(|c| held(role("child"), &[(CHILD_AGE, c % 2)])));
-            (key(&kind, u32::from(partner), children), Explicit { persons })
+            (key(&kind, u32::from(partner), children), Explicit { persons, rows: Vec::new() })
         };
         let mut gathered = super::Gathered::default();
         let mut d = draws(9);
@@ -592,7 +646,12 @@ mod tests {
         let persons = |p: &super::Profile| (0..kind.groups.len()).map(|g| p.members(g)).sum::<u64>();
         for i in 0..100 {
             let hits = vec![vec![(CHILD_AGE, 1, 1)], vec![(HEAD_AGE, 3, 1)], vec![(HEAD_WORK, 0, 1)]];
-            let t = materialise(&kind, &cell_key, 10, &profile, &hits, &mut draws(i));
+            let mut t = materialise(&kind, &cell_key, 10, &profile, &hits, &mut draws(i));
+            let (deposit, job) = ((LineId::new(1), Side::Asset), (LineId::new(2), Side::Asset));
+            for e in &mut t.households {
+                e.rows.push(deposit);
+                e.persons.iter_mut().filter(|p| p.role == 0).for_each(|p| p.rows.push(job));
+            }
             let mut named: Vec<_> = t.households.iter().map(|e| named(&kind, &cell_key, e)).collect();
             let [child, head, worker] = [0, 1, 2].map(|h| t.reached[h][0]);
             named[worker.0].persons[worker.1].values[1].1 = 2;
@@ -601,13 +660,18 @@ mod tests {
                 named[child.0].persons[child.1].gone = true;
                 named[child.0].set_attr("children", 1);
             }
-            let after: Vec<_> = named.iter().map(|h| from_named(&kind, h)).collect();
+            let carried: Vec<_> = named.iter().zip(&t.households).map(|(h, e)| super::carried(&kind, h, e)).collect();
+            let left: Vec<Attached> = carried.iter().flat_map(|(_, _, l)| l.iter().copied()).collect();
+            let after: Vec<_> = carried.into_iter().map(|(k, e, _)| (k, e)).collect();
             let r = regroup(&kind, &layout, &cell_key, &t.households, &after);
             let ended = r.ended.as_ref().unwrap();
             assert_eq!((ended.households, persons(&ended.after)), (1, 0), "the household no one is left in");
+            assert_eq!(ended.rows, [(deposit, 1)], "its own rows for its estate");
+            assert!(left.contains(&job), "the dead head's job leaves its line");
             for m in &r.parts {
                 assert_eq!(m.key, key(&kind, 1, 1));
                 assert_eq!(persons(&m.before) - persons(&m.after), u64::from(m.households), "one child each");
+                assert_eq!(m.rows, [(deposit, m.households), (job, m.households)], "each part's own rows");
             }
             let back: i64 = r.in_place.iter().map(|(_, _, n)| n).sum();
             assert_eq!(back, 0, "a value changed in place neither adds nor removes persons");

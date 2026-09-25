@@ -18,6 +18,11 @@ pub struct SideDecl {
     pub holder_kinds: &'static [&'static str],
     pub words: u8,
     pub holder_list: bool,
+    /// On a population's cells, the roles whose persons hold the side's rows, each person a member; none, the
+    /// households.
+    pub holder_roles: &'static [&'static str],
+    /// Whether a holder holds at most one row of the kind on this side, as a person holds one job.
+    pub exclusive: bool,
 }
 
 /// A line kind as a system declares it: its two sides, and the systems that may request a transfer of its rows.
@@ -227,6 +232,12 @@ impl<B: Backing> Lines<B> {
     /// Every declared line kind's name, in the order declared.
     pub fn kind_names(&self) -> impl Iterator<Item = &'static str> + '_ {
         self.kinds.iter().map(|k| k.name)
+    }
+
+    /// A side of a line's kind, as its kind declares it.
+    #[must_use]
+    pub fn side_decl(&self, line: LineId, side: Side) -> &SideDecl {
+        self.kind(self.row(line).kind).side(side)
     }
 
     /// The name of a line's kind.

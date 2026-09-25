@@ -66,7 +66,7 @@ pub use handler::{
 };
 pub use hazards::{ActsOn, DrawScheme, EnvelopeRule, HazardDecl, RateChange, RateFn, annual_to_daily};
 pub use kind_tables::{FacetDecl, KindTable, ListKind, NewIndividual, RunHead};
-pub use kinds::{Feature, KindDecl, KindId, KindTableRef, LEGAL_FORMS, LegalForm};
+pub use kinds::{ESTATE_KIND, Feature, KindDecl, KindId, KindTableRef, LEGAL_FORMS, LegalForm};
 pub use kinks::{KinkDecl, KinkOn, KinkRegistry, KinkSource};
 pub use map::{KernelMap, MapKey};
 pub use messages::{

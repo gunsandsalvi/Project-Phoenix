@@ -226,12 +226,14 @@ fn plan_rows(held: &mut Vec<(LineId, Side, u32)>, spec: &SplitSpec<'_>, weight: 
     }
     let mut plan = Vec::with_capacity(held.len());
     for (line, side, count) in held.iter_mut() {
-        if *count > weight {
-            violation!(clause = "REP.31", "a row of more members than its cell", line = line.get());
-        }
-        let share = match spec.rows.iter().find(|(at, _)| *at == (*line, *side)) {
-            Some((_, s)) => *s,
-            None => RowShare { count: leavers(d, weight, *count, spec.count), own_balance: 0 },
+        let share = if let Some((_, s)) = spec.rows.iter().find(|(at, _)| *at == (*line, *side)) {
+            *s
+        } else {
+            // A row drawn is held by households, one member each; persons' rows are always given.
+            if *count > weight {
+                violation!(clause = "REP.31", "a row drawn of more members than its cell", line = line.get());
+            }
+            RowShare { count: leavers(d, weight, *count, spec.count), own_balance: 0 }
         };
         if share.count > 0 {
             plan.push(((*line, *side), share));

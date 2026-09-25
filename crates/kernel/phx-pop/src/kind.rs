@@ -65,6 +65,8 @@ pub struct PopKindDecl {
     pub sig: SigLayout,
     /// How the kind is represented, which the world requires of every kind it keeps.
     pub resolution: Option<Declared<ResolutionDecl>>,
+    /// The key attribute naming the region its members live in, where a kind that leaves estates declares one.
+    pub sited_by: Missing<usize>,
 }
 
 /// Every item of one kind, sorted into its lists.
@@ -78,6 +80,7 @@ struct Items {
     reviews: Vec<Declared<&'static str>>,
     pins: Vec<Declared<PinDecl>>,
     resolution: Option<Declared<ResolutionDecl>>,
+    sited_by: Option<&'static str>,
 }
 
 fn name_of(item: &PopItem) -> &'static str {
@@ -90,6 +93,7 @@ fn name_of(item: &PopItem) -> &'static str {
         PopItem::ReviewKind(d) => d,
         PopItem::Pin(p) => p.name,
         PopItem::Resolution(_) => "resolution",
+        PopItem::SitedBy(_) => "sited by",
     }
 }
 
@@ -114,6 +118,7 @@ impl Items {
                 PopItem::ReviewKind(item) => items.reviews.push(Declared { writer, item }),
                 PopItem::Pin(item) => items.pins.push(Declared { writer, item }),
                 PopItem::Resolution(item) => items.resolution = Some(Declared { writer, item }),
+                PopItem::SitedBy(attr) => items.sited_by = Some(attr),
             }
         }
         items.roles.sort_by_key(|d| d.item.name);
@@ -273,6 +278,13 @@ impl PopKindDecl {
                 }
             }
         }
+        let mut sited_by = Missing::Absent;
+        if let Some(attr) = items.sited_by {
+            match items.key_attrs.iter().position(|a| a.item.name == attr) {
+                Some(i) => sited_by = Missing::Present(i),
+                None => errors.push(format!("`{kind}` is sited by key attribute `{attr}`, which it has not")),
+            }
+        }
         let names: Vec<&'static str> = positions.iter().map(|p| p.name).collect();
         let sig = SigLayout::new(&names, kinks);
         match key {
@@ -288,6 +300,7 @@ impl PopKindDecl {
                 pins: items.pins,
                 sig,
                 resolution: items.resolution,
+                sited_by,
             }),
             Ok(_) => Err(errors),
             Err(e) => {

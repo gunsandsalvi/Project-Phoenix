@@ -33,8 +33,14 @@ const HOLDERS: MoneyHolders = MoneyHolders {
 };
 const LOAN: LineKindDecl = LineKindDecl {
     name: "loan",
-    asset: SideDecl { holder_kinds: &["bank"], words: BALANCE, holder_list: true },
-    liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
+    asset: SideDecl { holder_kinds: &["bank"], words: BALANCE, holder_list: true, holder_roles: &[], exclusive: false },
+    liability: SideDecl {
+        holder_kinds: &["firm"],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+    },
     transfer_requesters: &["BNK"],
     dated: true,
 };
@@ -207,4 +213,28 @@ fn a_transfer_moves_count_with_balance() {
         "a row all of whose members leave is retired"
     );
     assert_eq!(row(&w, w.banks[1], w.loan, Side::Asset), (3, 600));
+}
+
+/// A line of no balance held by a firm for two members, and by each bank for one on the other side: a member leaving
+/// the firm's row takes one of the banks' with it, drawn by their members, and the sides stay equal.
+#[test]
+fn members_leave_with_their_counterparts() {
+    let mut w = world();
+    let m = at(&w);
+    let kind = w.books.ledger.lines.kind_of(w.loan);
+    let terms = w.books.ledger.lines.terms(w.loan);
+    let job = w.books.ledger.lines.open(kind, terms, Missing::Absent);
+    let legs = vec![
+        open(w.firms[0], job, Side::Liability, 2, BALANCE),
+        open(w.banks[0], job, Side::Asset, 1, BALANCE),
+        open(w.banks[1], job, Side::Asset, 1, BALANCE),
+    ];
+    w.books.open(w.reason, legs, 2, &mut GenReport::default());
+    let mut d = crate::cleared::test_draws(job);
+    let _ = w.books.members_leave((w.firms[0], job, Side::Liability), 1, m, &mut d, &mut Quiet).expect("settles");
+    assert_eq!(row(&w, w.firms[0], job, Side::Liability), (1, 0));
+    let left: Vec<bool> = w.banks.iter().map(|b| w.books.row_on_side(*b, job, Side::Asset).is_some()).collect();
+    assert_eq!(left.iter().filter(|l| **l).count(), 1, "one bank's member left with the firm's");
+    let sides = [Side::Asset, Side::Liability].map(|s| w.books.ledger.lines.side_count(job, s));
+    assert_eq!(sides, [1, 1]);
 }

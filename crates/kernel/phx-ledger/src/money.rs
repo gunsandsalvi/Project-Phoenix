@@ -24,7 +24,7 @@ pub struct MoneyHolders {
 #[clause("MON.1", "MON.2", "MON.11")]
 impl MoneyHolders {
     fn side(kinds: &'static [&'static str], words: u8) -> SideDecl {
-        SideDecl { holder_kinds: kinds, words, holder_list: true }
+        SideDecl { holder_kinds: kinds, words, holder_list: true, holder_roles: &[], exclusive: false }
     }
 
     /// Reserves: a central bank's liability to a bank.

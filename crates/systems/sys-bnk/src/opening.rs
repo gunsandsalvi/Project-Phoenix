@@ -41,8 +41,20 @@ const HOLDERS: MoneyHolders = MoneyHolders {
 /// A firm's term loan from its bank, one contract to a line.
 const LOAN: LineKindDecl = LineKindDecl {
     name: "firm term loan",
-    asset: SideDecl { holder_kinds: &[BANK.name], words: BALANCE, holder_list: true },
-    liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
+    asset: SideDecl {
+        holder_kinds: &[BANK.name],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+    },
+    liability: SideDecl {
+        holder_kinds: &["firm"],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+    },
     dated: true,
     transfer_requesters: &["BNK"],
 };

@@ -5,10 +5,14 @@
 use phx_core::StreamDef;
 use phx_core::{ActsOn, CellView, Declarations, NewEvent, PopProcess, Register, StreamDecl, SubStep};
 use phx_id::{Day, PartyId, Slot, TableId};
+use phx_ledger::apply::ApplyAt;
+use phx_ledger::part::RowShare;
+use phx_ledger::transfer::{LineTransfer, MoveAt};
 use phx_macros::clause;
 use phx_num::round::Round;
 use phx_num::{Missing, violation};
-use phx_pop::explicit::{from_named, materialise, named, regroup, take_whole};
+use phx_pop::attach::{Attachable, attach};
+use phx_pop::explicit::{Attached, carried, materialise, named, regroup, take_whole};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::landing::{Landed, TenB, land};
 use phx_pop::measure::Census;
@@ -220,6 +224,8 @@ pub struct CellDay {
     /// Renumbering slices, and those after which the renumbered table's identity hash was not the one before.
     pub renumbered: u64,
     pub renumber_changed: u64,
+    /// The estates opened for households no one was left in that held anything.
+    pub estates: u64,
 }
 
 impl CellDay {
@@ -253,6 +259,7 @@ impl CellDay {
             erased: 0.0,
             renumbered: 0,
             renumber_changed: 0,
+            estates: 0,
         }
     }
 }
@@ -428,14 +435,33 @@ impl World {
         }
     }
 
-    /// One cell's hits of the day applied; returns the households that ended.
+    /// One cell's hits of the day applied; returns the households that ended. Its households are made explicit with
+    /// their attachments and changed by the outcomes; the persons gone leave their lines, the households no one is
+    /// left in pass what they held to an estate, and the rest return in place or split out by their new keys.
     fn cell_outcomes(&mut self, day: Day, kind: usize, (slot, party): (Slot, PartyId), hits: &[CellHit]) -> u64 {
+        let subject = Subject::new(SubjectTag::Part, party.get());
+        let mut draws = self.streams.open(&HouseholdsStream::DECL, subject, day, SubStep::S3e.ordinal());
+        let changed = self.cell_changed(day, kind, (slot, party), hits, &mut draws);
+        self.cell_leavers(day, party, &changed, &mut draws);
+        self.cell_regrouped(day, kind, (slot, party), changed.regrouped, &mut draws)
+    }
+
+    /// A cell's households drawn out of its counts with their attachments, changed by each hit's outcome in order,
+    /// and regrouped; the changes of those that keep the cell's key made in place.
+    fn cell_changed(
+        &mut self,
+        day: Day,
+        kind: usize,
+        (slot, party): (Slot, PartyId),
+        hits: &[CellHit],
+        draws: &mut phx_rand::Draws,
+    ) -> Changed {
         let geo = crate::world::geo_in(&self.own);
         let country_of = |r: u32| geo.map.regions.get(usize::try_from(r).ok()?).map(|x| x.country);
         let date = self.calendar.date(day);
         let phx_ledger::books::Books { ledger, parties, .. } = &mut self.books;
-        let (cells, directory, space) = parties.cells_mut();
-        let Some(kd) = self.population.kinds.get_mut(kind) else {
+        let cells = parties.cells_mut().0;
+        let Some(kd) = self.population.kinds.get(kind) else {
             violation!(clause = "REP.7", "a hit on a kind the world does not keep", kind = kind);
         };
         let table = Population::table_mut::<SystemBacking>(cells, kind);
@@ -444,11 +470,11 @@ impl World {
         }
         let record = kd.keys.record(table.hot(slot).key_id);
         let layout = table.profile_layout().clone();
-        let subject = Subject::new(SubjectTag::Part, party.get());
-        let mut draws = self.streams.open(&HouseholdsStream::DECL, subject, day, SubStep::S3e.ordinal());
         let by_hit: Vec<Vec<(usize, u32, u64)>> = hits.iter().map(|h| h.by_value.clone()).collect();
         let weight = u64::from(table.weight(slot).get());
-        let touched = materialise(&kd.decl, &record, weight, &table.profile(slot), &by_hit, &mut draws);
+        let mut touched = materialise(&kd.decl, &record, weight, &table.profile(slot), &by_hit, draws);
+        let rows = attachables(ledger, &kd.decl, &phx_ledger::rows::rows(&*table, slot));
+        attach(&kd.decl, &record, weight, &rows, &mut touched.households, draws);
         let mut households: Vec<phx_core::Household> =
             touched.households.iter().map(|e| named(&kd.decl, &record, e)).collect();
         let key = |name: &str| {
@@ -461,11 +487,91 @@ impl World {
         let hits_reached = (hits, touched.reached.as_slice());
         apply_outcomes(&self.processes, &self.register, &view, hits_reached, &mut households, &mut draws_of);
         self.cell_day.gone += households.iter().flat_map(|h| &h.persons).filter(|p| p.gone).map(|_| 1).sum::<u64>();
-        let after: Vec<_> = households.iter().map(|h| from_named(&kd.decl, h)).collect();
+        let mut left = Vec::new();
+        let mut after = Vec::with_capacity(households.len());
+        for (h, before) in households.iter().zip(&touched.households) {
+            let (k, e, gone) = carried(&kd.decl, h, before);
+            left.extend(gone);
+            after.push((k, e));
+        }
         let regrouped = regroup(&kd.decl, &layout, &record, &touched.households, &after);
         if !regrouped.in_place.is_empty() {
             table.shift_profile(slot, &regrouped.in_place);
         }
+        let region = match kd.decl.sited_by {
+            Missing::Present(i) => Missing::Present(kd.decl.key.get(&record, i)),
+            Missing::Absent => Missing::Absent,
+        };
+        Changed { regrouped, left, region }
+    }
+
+    /// The ledger's share of a cell's outcomes: each row of a person gone loses that member, and one of the line's
+    /// other side with it; the rows of households no one is left in pass to one estate, sited in their region.
+    #[clause("REP.23", "PTY.9", "POP.15")]
+    fn cell_leavers(&mut self, day: Day, party: PartyId, c: &Changed, draws: &mut phx_rand::Draws) {
+        let m = MoveAt {
+            contracts: phx_ledger::opening::contract_unit(&self.register),
+            rounding: Round::HalfEven,
+            day,
+            at: ApplyAt::Day(SubStep::S3e),
+        };
+        let mut leaving: std::collections::BTreeMap<Attached, u32> = std::collections::BTreeMap::new();
+        for at in &c.left {
+            *leaving.entry(*at).or_insert(0) += 1;
+        }
+        for ((line, side), n) in leaving {
+            if let Err(f) = self.books.members_leave((party, line, side), n, m, draws, self.audit.stream()) {
+                violation!(clause = "REP.23", "members leaving a line did not settle", party = f.party.get());
+            }
+        }
+        let Some(ended) = c.regrouped.ended.as_ref().filter(|e| !e.rows.is_empty()) else { return };
+        let Missing::Present(region) = c.region else {
+            violation!(clause = "PTY.9", "an estate of a kind that names no region to site it", party = party.get());
+        };
+        let site = self.estate_site(region, draws);
+        let estate = self.books.parties.begin(phx_core::ESTATE_KIND.name, site, day);
+        let succeeded = self.books.dues.succeeded;
+        for ((line, side), count) in &ended.rows {
+            let t =
+                LineTransfer { line: *line, side: *side, from: party, to: estate, count: *count, reason: succeeded };
+            if let Err(f) = self.books.transfer(t, m, self.audit.stream()) {
+                violation!(clause = "PTY.9", "an estate's succession did not settle", party = f.party.get());
+            }
+        }
+        self.cell_day.estates += 1;
+    }
+
+    /// Where an estate of a region's households is sited: the centre of one of the region's zones, drawn.
+    fn estate_site(&self, region: u32, draws: &mut phx_rand::Draws) -> phx_id::TileId {
+        let geo = crate::world::geo_in(&self.own);
+        let centres: Vec<phx_id::TileId> =
+            geo.map.zones.iter().filter(|z| u32::from(z.region.get()) == region).map(|z| z.centroid).collect();
+        let Some(at) = usize::try_from(phx_rand::below_u64(draws, phx_rand::float::len_u64(centres.len())))
+            .ok()
+            .and_then(|i| centres.get(i))
+        else {
+            violation!(clause = "PTY.5", "an estate sited in a region with no zone", region = region);
+        };
+        *at
+    }
+
+    /// A cell's households split out by the keys they have become, each part taking its households' own rows, and
+    /// those no one is left in, whose rows have passed to their estate, ended.
+    fn cell_regrouped(
+        &mut self,
+        day: Day,
+        kind: usize,
+        (slot, party): (Slot, PartyId),
+        regrouped: phx_pop::explicit::Regrouped,
+        draws: &mut phx_rand::Draws,
+    ) -> u64 {
+        let phx_ledger::books::Books { ledger, parties, .. } = &mut self.books;
+        let (cells, directory, space) = parties.cells_mut();
+        let Some(kd) = self.population.kinds.get_mut(kind) else {
+            violation!(clause = "REP.7", "a hit on a kind the world does not keep", kind = kind);
+        };
+        let table = Population::table_mut::<SystemBacking>(cells, kind);
+        let layout = table.profile_layout().clone();
         let mut ended = 0_u64;
         let groups = regrouped.parts.into_iter().map(|m| (m, false)).chain(regrouped.ended.map(|m| (m, true)));
         for (seq, (moved, end)) in (0_u32..).zip(groups) {
@@ -473,17 +579,25 @@ impl World {
                 .map(|g| moved.before.held(g).iter().map(|(v, n)| (*v, u64::from(*n))).collect())
                 .collect();
             let given: Vec<(usize, &[(u32, u64)])> = given.iter().enumerate().map(|(g, v)| (g, &v[..])).collect();
+            let rows: Vec<(Attached, RowShare)> = phx_ledger::rows::rows(&*table, slot)
+                .iter()
+                .map(|r| {
+                    let at = (r.row.line, r.side());
+                    let count = if end { 0 } else { moved.rows.iter().find(|(x, _)| *x == at).map_or(0, |(_, n)| *n) };
+                    (at, RowShare { count, own_balance: 0 })
+                })
+                .collect();
             let spec = SplitSpec {
                 count: moved.households,
                 given: &given,
-                rows: &[],
+                rows: &rows,
                 own: &[],
                 reviewed: Missing::Absent,
                 rounding: Round::HalfEven,
             };
             let id = PartId { origin: party, seq };
             let mut at = Cells { ledger, table, place: kd.place, keys: &kd.keys };
-            let parted = split(&mut at, slot, id, &spec, &mut draws);
+            let parted = split(&mut at, slot, id, &spec, draws);
             let phx_pop::population::PopKind { decl, keys, index, levels, place, .. } = &mut *kd;
             let mut ctx = TenB {
                 ledger,
@@ -530,6 +644,45 @@ impl World {
         }
         ended
     }
+}
+
+/// What a cell's outcomes made of its explicit households: their regrouping, the rows of the persons gone, one member
+/// each, and the region the cell's members live in, where its kind names one.
+struct Changed {
+    regrouped: phx_pop::explicit::Regrouped,
+    left: Vec<Attached>,
+    region: Missing<u32>,
+}
+
+/// A cell's rows as its households hold them: each side's holder roles as the kind's roles, and its line's kind when
+/// a holder holds at most one row of it.
+fn attachables(
+    ledger: &phx_ledger::apply::Ledger,
+    kind: &PopKindDecl,
+    rows: &[phx_ledger::rows::RowView],
+) -> Vec<Attachable> {
+    rows.iter()
+        .map(|r| {
+            let (line, side) = (r.row.line, r.side());
+            let decl = ledger.lines.side_decl(line, side);
+            let roles = decl
+                .holder_roles
+                .iter()
+                .map(|name| {
+                    let Some(i) = kind.roles.iter().position(|x| x.item.name == *name) else {
+                        violation!(
+                            clause = "REP.26",
+                            "a row held by a role its cell's kind does not hold",
+                            line = line.get()
+                        );
+                    };
+                    i
+                })
+                .collect();
+            let exclusive = if decl.exclusive { Missing::Present(ledger.lines.kind_of(line)) } else { Missing::Absent };
+            Attachable { line, side, count: r.row.count, roles, exclusive }
+        })
+        .collect()
 }
 
 /// A hit's event details: the persons it reached at each value, the value named with its group.

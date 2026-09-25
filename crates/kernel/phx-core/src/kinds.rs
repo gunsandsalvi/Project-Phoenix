@@ -10,6 +10,12 @@ declare_prim! {
     }
 }
 
+crate::declare_kind! {
+    /// An estate: the members of a cell who end on one occasion, holding their count of what they held until it is
+    /// sold and passed on.
+    pub ESTATE_KIND = "estate" { legal_form: "estate", table: Individuals, clause: "PTY.9" }
+}
+
 /// A kind of party, numbered at assembly in declaration order.
 #[must_use]
 #[repr(transparent)]

@@ -710,6 +710,17 @@ An outcome's person who dies or leaves takes its person-level attachments with i
 the line's other side one member is drawn by counts to leave with it (REP.23) — the employer's job ends with the
 worker. A household no one is left in becomes an estate (§9.1), which takes its household-level rows whole. Parts
 leave with their households' attachments as given row shares, so the split draws nothing for them.
+As built (`phx_pop::attach`, `phx_pop::explicit::carried`, `phx_world::cells`): the households are made explicit first
+and their attachments drawn after, household by household, each row's holders — households, or the persons of its
+roles — drawn one at a time by the members left among the holders left, the rows of one exclusive kind and one set of
+roles drawn together as one pool; a person keeps its rows whatever role it takes, and a person gone returns its rows
+to leave. At 3e the ledger's part comes between the outcomes and the splits: each row a person gone held loses that
+member and, drawn from the other side's holder list by their counts, one member there (`Books::members_leave`, one
+instruction a line side, no balance moving with it); the households no one is left in pass their rows to one estate
+by line transfer, a party of the kernel's `estate` kind sited at the centre of a zone of the region its kind's
+declared attribute names (`PopItem::SitedBy`), drawn from the cell's stream; then the parts split with every row of
+the cell given. A side households hold therefore lists `estate` among its holder kinds, and the other side of a
+person's row keeps a holder list.
 
 **Processes on cells** are declared by the system that owns their outcome (`PopProcess`, in `phx-core`): the hazard
 it answers, the kind, the profile groups it reads — one set of components, the same in every role it acts on, so a

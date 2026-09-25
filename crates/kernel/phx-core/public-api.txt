@@ -838,6 +838,7 @@ pub phx_core::kinds::LegalForm::owners: alloc::string::String
 impl phx_core::kinds::LegalForm
 pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub const phx_core::kinds::ESTATE_KIND: phx_core::kinds::KindDecl
 pub const phx_core::kinds::LEGAL_FORMS: phx_core::register::PrimDecl
 pub mod phx_core::kinks
 pub enum phx_core::kinks::KinkOn
@@ -984,6 +985,7 @@ pub phx_core::pop::PopItem::ProfileGroup(phx_core::pop::GroupDecl)
 pub phx_core::pop::PopItem::Resolution(phx_core::pop::ResolutionDecl)
 pub phx_core::pop::PopItem::ReviewKind(&'static str)
 pub phx_core::pop::PopItem::Role(phx_core::pop::RoleDecl)
+pub phx_core::pop::PopItem::SitedBy(&'static str)
 pub phx_core::pop::PopItem::StandingRate(phx_core::pop::RateDecl)
 pub enum phx_core::pop::PositionOf
 pub phx_core::pop::PositionOf::Member
@@ -1019,6 +1021,7 @@ pub fn phx_core::pop::PopKindBuilder<'a>::profile_group(&mut self, phx_core::pop
 pub fn phx_core::pop::PopKindBuilder<'a>::resolution(&mut self, phx_core::pop::ResolutionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::review_kind(&mut self, &'static str) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::standing_rate(&mut self, phx_core::pop::RateDecl) -> &mut Self
 pub struct phx_core::pop::PositionDecl
 pub phx_core::pop::PositionDecl::clause: &'static str
@@ -1968,6 +1971,7 @@ pub phx_core::PopItem::ProfileGroup(phx_core::pop::GroupDecl)
 pub phx_core::PopItem::Resolution(phx_core::pop::ResolutionDecl)
 pub phx_core::PopItem::ReviewKind(&'static str)
 pub phx_core::PopItem::Role(phx_core::pop::RoleDecl)
+pub phx_core::PopItem::SitedBy(&'static str)
 pub phx_core::PopItem::StandingRate(phx_core::pop::RateDecl)
 pub enum phx_core::PositionOf
 pub phx_core::PositionOf::Member
@@ -2870,6 +2874,7 @@ pub fn phx_core::pop::PopKindBuilder<'a>::profile_group(&mut self, phx_core::pop
 pub fn phx_core::pop::PopKindBuilder<'a>::resolution(&mut self, phx_core::pop::ResolutionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::review_kind(&mut self, &'static str) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::standing_rate(&mut self, phx_core::pop::RateDecl) -> &mut Self
 pub struct phx_core::PositionDecl
 pub phx_core::PositionDecl::clause: &'static str
@@ -3134,6 +3139,7 @@ pub const phx_core::CONTRACTS: phx_core::streams::OpeningPhase
 pub const phx_core::DAY_ZERO: phx_core::register::PrimDecl
 pub const phx_core::DECLARATIONS: phx_core::streams::OpeningPhase
 pub const phx_core::EPOCH: phx_core::register::PrimDecl
+pub const phx_core::ESTATE_KIND: phx_core::kinds::KindDecl
 pub const phx_core::LEGAL_FORMS: phx_core::register::PrimDecl
 pub const phx_core::PARTIES: phx_core::streams::OpeningPhase
 pub const phx_core::PHASES: [phx_core::streams::OpeningPhase; 6]

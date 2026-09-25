@@ -16,6 +16,10 @@ use crate::instruction::{AccountRef, Denom, Effect, LegKind, LegRec, ReasonDecl,
 pub struct DueReasons {
     pub payment: ReasonId,
     pub principal: ReasonId,
+    /// Members leaving a line with their counterparts, as a job ends with its worker.
+    pub left: ReasonId,
+    /// An estate succeeding to what the households it ended with held.
+    pub succeeded: ReasonId,
 }
 
 impl DueReasons {
@@ -24,7 +28,16 @@ impl DueReasons {
             ReasonDecl { name: "contract payment", order: 0, paid: Effect::Liability, received: Effect::Asset };
         let principal =
             ReasonDecl { name: "principal repaid", order: 1, paid: Effect::Liability, received: Effect::Asset };
-        DueReasons { payment: reasons.declare(payment), principal: reasons.declare(principal) }
+        // Neither moves money, so they share a place after the payments in the order.
+        let left = ReasonDecl { name: "members left", order: 2, paid: Effect::Equity, received: Effect::Equity };
+        let succeeded =
+            ReasonDecl { name: "estate succeeded", order: 2, paid: Effect::Equity, received: Effect::Equity };
+        DueReasons {
+            payment: reasons.declare(payment),
+            principal: reasons.declare(principal),
+            left: reasons.declare(left),
+            succeeded: reasons.declare(succeeded),
+        }
     }
 }
 

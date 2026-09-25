@@ -491,14 +491,14 @@ impl Forming<'_> {
                     violation!(clause = "REP.26", "a child's age band beyond the household's roles", age = m.age);
                 };
                 *n += 1;
-                self.persons.push(Held { role: *role, values: vec![(*g, life)] });
+                self.persons.push(Held { role: *role, values: vec![(*g, life)], rows: Vec::new() });
                 return;
             }
         };
         let Some(schooling) = schooling else { violation!(clause = "REP.26", "an adult without schooling drawn") };
         let mut values = vec![(groups.0, life), (groups.1, schooling)];
         values.sort_unstable();
-        self.persons.push(Held { role, values });
+        self.persons.push(Held { role, values, rows: Vec::new() });
     }
 }
 
@@ -567,7 +567,7 @@ fn draw_region(
         }
         let mut persons = forming.persons;
         persons.sort_by_key(|p| p.role);
-        gathered.add(kind, &profiles, record, &Explicit { persons });
+        gathered.add(kind, &profiles, record, &Explicit { persons, rows: Vec::new() });
         tally.persons += len_u64(members.len());
         tally.households += 1;
         tally.raised += u64::from(formed.raised);

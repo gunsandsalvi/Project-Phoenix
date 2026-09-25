@@ -1,6 +1,7 @@
 //! The population's cells: the tables households and small firms live in, their keys, positions, steps and
 //! profiles.
 
+pub mod attach;
 pub mod audit;
 pub mod check;
 pub mod consts;

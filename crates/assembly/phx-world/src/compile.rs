@@ -28,6 +28,7 @@ pub struct KernelPrims {
 
 impl KernelPrims {
     pub fn declare(d: &mut Declarations) -> KernelPrims {
+        d.kind(phx_core::ESTATE_KIND);
         KernelPrims {
             epoch: d.prim(&phx_core::EPOCH),
             day_zero: d.prim(&phx_core::DAY_ZERO),

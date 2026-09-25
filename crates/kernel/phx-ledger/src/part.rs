@@ -533,8 +533,14 @@ mod tests {
 
     const LOAN: LineKindDecl = LineKindDecl {
         name: "loan",
-        asset: SideDecl { holder_kinds: &["bank"], words: 0, holder_list: true },
-        liability: SideDecl { holder_kinds: &["household"], words: BALANCE, holder_list: true },
+        asset: SideDecl { holder_kinds: &["bank"], words: 0, holder_list: true, holder_roles: &[], exclusive: false },
+        liability: SideDecl {
+            holder_kinds: &["household"],
+            words: BALANCE,
+            holder_list: true,
+            holder_roles: &[],
+            exclusive: false,
+        },
         transfer_requesters: &["BNK"],
         dated: false,
     };

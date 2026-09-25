@@ -160,6 +160,8 @@ pub enum PopItem {
     ReviewKind(&'static str),
     Pin(PinDecl),
     Resolution(ResolutionDecl),
+    /// The key attribute whose value is the region the members live in, where what they leave behind is sited.
+    SitedBy(&'static str),
 }
 
 /// An item as declared: the system that declared it, which writes it, and the kind it belongs to.
@@ -219,6 +221,10 @@ impl<'a> PopKindBuilder<'a> {
 
     pub fn resolution(&mut self, decl: ResolutionDecl) -> &mut Self {
         self.add(PopItem::Resolution(decl))
+    }
+
+    pub fn sited_by(&mut self, attr: &'static str) -> &mut Self {
+        self.add(PopItem::SitedBy(attr))
     }
 }
 

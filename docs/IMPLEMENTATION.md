@@ -4728,10 +4728,19 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     books of two banks, one payer failing, its members' dues lost by drawn claimants, reserves conserved. Build run
     (`82340ece379b`, 120 days; the world's lines unchanged, none cleared until S0.25d-4): every check passes but
     those waiting on a named step; peak 447 MiB, over the run's budget that held no line for the population (F-041).
-  - S0.25d-2: the kernel's attachments on explicit households — rows held by households or by the persons of declared
+  - S0.25d-2 *(done)*: the kernel's attachments on explicit households — rows held by households or by the persons of declared
     roles, drawn with them at 3e, a leaving person's rows and its counterparty's member leaving together, parts
     taking their attachments as given shares, and a household no one is left in becoming an estate that takes its
-    rows (architecture §7.3, §9.1; the estate's sale and distribution are S0.25e's);
+    rows (architecture §7.3, §9.1; the estate's sale and distribution are S0.25e's). As built: a line side declares
+    its holder roles and whether it is exclusive (`SideDecl`); `phx_pop::attach` draws the explicit households'
+    attachments, `carried` keeps them through the outcomes and regrouping gives each part its rows; the ledger's
+    `members_leave` takes a gone person's member off its row and one drawn from the other side, and an estate —
+    the kernel's `estate` kind, with its legal form in `PTY.legal_forms` — takes the ended households' rows by line
+    transfer, sited in the region the kind names (`sited_by`); a drawn split's row may not hold more members than its
+    cell, a given one may (persons' rows). Tests: attachments drawn whole once every holder is drawn, an exclusive kind
+    held once a person, a row held at its members' share; rows carried to parts, to the estate and to leave; members
+    leaving a line with a counterpart drawn by counts. No household holds a row until S0.25d-3; the build run is in the
+    commit that follows this one.
   - S0.25d-3: the opening's attachment draws, the online apportionment of named counterparties, the gathering of
     rows into cells, the lines opened and the derived sides apportioned, the report's unmatched strata (architecture
     §10.3);

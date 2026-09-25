@@ -73,6 +73,7 @@ fn declare_household(d: &mut Declarations) {
         k.profile_group(life);
     }
     k.resolution(ResolutionDecl { cell_budget: "DEM.cell_budget", ranks: None, widen_order: &[], clause: "REP.18" });
+    k.sited_by(REGION.name);
 }
 
 impl System for Dem {

@@ -35,8 +35,20 @@ const HOLDERS: MoneyHolders = MoneyHolders {
 /// securities it holds.
 const CLAIM: LineKindDecl = LineKindDecl {
     name: "central bank credit to the treasury",
-    asset: SideDecl { holder_kinds: &[CENTRAL_BANK.name], words: BALANCE, holder_list: true },
-    liability: SideDecl { holder_kinds: &[TREASURY.name], words: BALANCE, holder_list: true },
+    asset: SideDecl {
+        holder_kinds: &[CENTRAL_BANK.name],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+    },
+    liability: SideDecl {
+        holder_kinds: &[TREASURY.name],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+    },
     dated: false,
     transfer_requesters: &["CB"],
 };

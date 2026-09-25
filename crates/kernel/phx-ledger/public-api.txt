@@ -365,10 +365,11 @@ pub fn phx_ledger::books::Books<B>::declared(&self, phx_ledger::books::BooksSize
 pub fn phx_ledger::books::Books<B>::load_from(&mut phx_store::save::Reader<'_>, phx_ledger::books::Books<B>) -> core::result::Result<phx_ledger::books::Books<B>, phx_store::save::LoadError>
 pub fn phx_ledger::books::Books<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
-pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &dyn core::ops::function::Fn(phx_id::ids::LineId) -> phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement
-impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
+pub fn phx_ledger::books::Books<B>::members_leave(&mut self, (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side), u32, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::to_procedure_line(&mut self, phx_ledger::transfer::ToProcedureLine, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_id::ids::LineId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::transfer(&mut self, phx_ledger::transfer::LineTransfer, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
+impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
+pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &dyn core::ops::function::Fn(phx_id::ids::LineId) -> phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement
 impl<B: phx_store::backing::Backing> phx_core::family::BooksAudit for phx_ledger::books::Books<B> where phx_ledger::books::Books<B>: core::fmt::Debug
 pub fn phx_ledger::books::Books<B>::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_ledger::books::Books<B>::instruments(&self) -> usize
@@ -525,8 +526,10 @@ pub fn phx_ledger::due::DueLines::is_due(&self, phx_id::ids::LineId) -> bool
 pub fn phx_ledger::due::DueLines::lines(&self) -> &[phx_id::ids::LineId]
 pub mod phx_ledger::dues
 pub struct phx_ledger::dues::DueReasons
+pub phx_ledger::dues::DueReasons::left: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::payment: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::principal: phx_ledger::instruction::ReasonId
+pub phx_ledger::dues::DueReasons::succeeded: phx_ledger::instruction::ReasonId
 impl phx_ledger::dues::DueReasons
 pub fn phx_ledger::dues::DueReasons::declare(&mut phx_ledger::instruction::Reasons) -> phx_ledger::dues::DueReasons
 pub mod phx_ledger::effects
@@ -908,6 +911,7 @@ pub fn phx_ledger::line::Lines<B>::new(&mut phx_store::backing::AddressSpace, u3
 pub fn phx_ledger::line::Lines<B>::next_due(&self, phx_id::ids::LineId) -> phx_id::day::Day
 pub fn phx_ledger::line::Lines<B>::open(&mut self, u16, phx_ledger::terms::TermsId, phx_num::missing::Missing<(phx_id::day::Day, u32)>) -> phx_id::ids::LineId
 pub fn phx_ledger::line::Lines<B>::side_count(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> u32
+pub fn phx_ledger::line::Lines<B>::side_decl(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> &phx_ledger::line::SideDecl
 pub fn phx_ledger::line::Lines<B>::terms(&self, phx_id::ids::LineId) -> phx_ledger::terms::TermsId
 pub struct phx_ledger::line::NewRow
 pub phx_ledger::line::NewRow::count: u32
@@ -916,8 +920,10 @@ pub phx_ledger::line::NewRow::point: u16
 pub phx_ledger::line::NewRow::side: phx_ledger::algebra::Side
 pub phx_ledger::line::NewRow::within: u8
 pub struct phx_ledger::line::SideDecl
+pub phx_ledger::line::SideDecl::exclusive: bool
 pub phx_ledger::line::SideDecl::holder_kinds: &'static [&'static str]
 pub phx_ledger::line::SideDecl::holder_list: bool
+pub phx_ledger::line::SideDecl::holder_roles: &'static [&'static str]
 pub phx_ledger::line::SideDecl::words: u8
 pub trait phx_ledger::line::BalanceUnit
 pub type phx_ledger::line::BalanceUnit::Value

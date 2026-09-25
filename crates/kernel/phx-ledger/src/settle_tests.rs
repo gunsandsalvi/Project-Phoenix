@@ -375,8 +375,20 @@ fn contract_process_turns_fails_into_arrears() {
     let mut w = world();
     let loan_kind = w.ledger.lines.declare_money(LineKindDecl {
         name: "loan",
-        asset: SideDecl { holder_kinds: &["bank"], words: BALANCE, holder_list: true },
-        liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
+        asset: SideDecl {
+            holder_kinds: &["bank"],
+            words: BALANCE,
+            holder_list: true,
+            holder_roles: &[],
+            exclusive: false,
+        },
+        liability: SideDecl {
+            holder_kinds: &["firm"],
+            words: BALANCE,
+            holder_list: true,
+            holder_roles: &[],
+            exclusive: false,
+        },
         transfer_requesters: &["BNK"],
         dated: false,
     });
@@ -410,8 +422,20 @@ fn row_leg_adds_to_both_sides() {
     let mut w = world();
     let loan_kind = w.ledger.lines.declare_money(LineKindDecl {
         name: "loan",
-        asset: SideDecl { holder_kinds: &["bank"], words: BALANCE, holder_list: true },
-        liability: SideDecl { holder_kinds: &["firm"], words: BALANCE, holder_list: true },
+        asset: SideDecl {
+            holder_kinds: &["bank"],
+            words: BALANCE,
+            holder_list: true,
+            holder_roles: &[],
+            exclusive: false,
+        },
+        liability: SideDecl {
+            holder_kinds: &["firm"],
+            words: BALANCE,
+            holder_list: true,
+            holder_roles: &[],
+            exclusive: false,
+        },
         transfer_requesters: &["BNK"],
         dated: false,
     });
