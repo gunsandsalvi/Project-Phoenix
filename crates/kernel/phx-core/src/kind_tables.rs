@@ -2,7 +2,7 @@ use phx_id::{Day, PartyId, Slot, TableId, TileId};
 use phx_macros::clause;
 use phx_num::consts::ABSENT_I64;
 use phx_num::{Missing, capacity_exceeded, violation};
-use phx_store::consts::ARENA_RESERVED_WORDS;
+use phx_store::consts::INDIVIDUAL_ARENA_WORDS;
 use phx_store::{AddressSpace, Backing, ChunkArena, Column, ListRef, SystemBacking, Table};
 
 use crate::facts::FactDecl;
@@ -184,7 +184,7 @@ impl<B: Backing> KindTable<B> {
         }
         let chunk = at(slot) / at(Slot::new(self.table.rows_per_chunk()));
         while self.arenas.len() <= chunk {
-            self.arenas.push(ChunkArena::new(space, ARENA_RESERVED_WORDS));
+            self.arenas.push(ChunkArena::new(space, INDIVIDUAL_ARENA_WORDS));
         }
         slot
     }

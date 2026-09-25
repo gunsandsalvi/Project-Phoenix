@@ -320,7 +320,9 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
 
 - **Holder-major** traversals — a visit, the payer pass of settlement, splits, landing — read a holder's rows
   sequentially; line-major events go through the holder list. Rows grow and shrink by re-appending the holder's run
-  at the arena's end and compacting in place; no row index outside the arena names a position in it.
+  at the arena's end and compacting in place; no row index outside the arena names a position in it. A chunk's
+  arena reserves address space, committed as written: 32 MiB for a chunk of cells, 128 MiB for a chunk of
+  individuals, since a firm or a bank is party to a line of each wage, rent or deposit point its households drew.
 - **Deposits.** A cell's **banking arrangement** — which deposit kinds it holds at which bank — is a **key attribute**
   (REP.33). Every deposit row of a cell therefore has count equal to the weight, a member's share of a balance is
   balance ÷ weight (REP.9), and each deposit row's per-member balance and pending amount are positions with steps in
@@ -1290,8 +1292,8 @@ the line of its rent point, whose landlords are derived over the firms by their 
 them. Both are lines of many holders on both sides, so they are cleared (§6.5). Social protection's draw gives each
 adult who has reached its sex's pension age the state pension at its sex's coverage: a person's row on its sex's
 state pension line, a flat monthly amount — the replacement rate of the mean wage — whose payer, the treasury, is
-named. The defined-benefit schemes and the members who reach the pension age during the run joining the line are
-not built (plan §11, F-045, F-046).
+named. Members reaching the pension age during the run join with the claim (S1.11); the defined-benefit schemes
+lack sources (plan §11, F-045, F-046).
 
 The same seed therefore gives the same world whatever the resolution the valve sets, and nothing is balanced after
 merging: finer attributes are drawn from their own counter keys, so a coarser setting is a projection of a finer

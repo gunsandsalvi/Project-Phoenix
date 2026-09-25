@@ -4766,8 +4766,8 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     each adult at or over its sex's pension age (`SOC.pension_age`, its age from its birth year) a state pensioner at
     its sex's coverage (`SOC.pension_coverage`): a person's row on its sex's state pension line, paid monthly by the
     treasury, named, a flat amount — the replacement rate (`SOC.replacement_rate`) of the labour share's mean wage per
-    worker. Not built: members reaching the pension age during the run joining the line (F-046), and the
-    defined-benefit schemes with their pensions in payment, `sys-pen` (F-045);
+    worker. Not built: members reaching the pension age during the run joining the line, which waits for the claim
+    (S1.11, F-046), and the defined-benefit schemes with their pensions in payment, which lack sources (F-045);
   - S0.25d-6: small firms as cells (FRM.23) and their ranks;
   - S0.25d-7: LC-0-44, 45, 48, 55 and 56, docs, reviews, the build run, done.
 - **S0.25e — estates and the settled world**: `sys-est`, catastrophes' losses at owners (GEO.8), settling, LC-0-53;
@@ -4893,9 +4893,9 @@ This is the world the Stage 0 gate measures.
 - **Pensions in payment** (spec Part O Stage 0), contracts that execute with no decision:
   - **The state pension** is `sys-soc`'s benefit line per (rule point, start band), paid from the treasury's account
     at the central bank (S0.16) to the pensioners' household cells on the other side, on the rule's dates, to named
-    households — a statutory payment. Members crossing the state pension age (an age-class boundary of the key,
-    so parts, REP.25) join the line at the rule's flat amount by the rule, without a claim: a placeholder naming SOC
-    (S5.02), which brings the claim (SOC.3) and any earnings-related part.
+    households — a statutory payment. Members crossing the state pension age join the line with the claim (SOC.3,
+    S1.11), the person's state that keeps the joining once-only, which a hazard over a person's age cannot (F-046);
+    until then the opening's pensioners alone are paid. Any earnings-related part is a placeholder naming SOC (S5.02).
   - **Defined-benefit pensions in payment**: each opening scheme is a party of the scheme kind (a kind table of
     individuals, S0.09), sponsored by an opening large firm or public agency, its assets drawn from sources and
     balanced (GEN.4). Its pensioner lines per (scheme, section, indexation) carry rows whose `balance` is an
@@ -6338,8 +6338,9 @@ reported daily.
 - PRIMITIVE: TRS.9; TRS.10 *(part: each country's payment order declared and read when cash runs short; the
   funding plan that reads it is S3.03)*.
 - STATE: TAX.1 *(part: income tax and one consumption tax)*; SOC.1 *(part: one benefit)*; PEN.1 *(part: the state
-  pension of S0.25 is paid in the treasury's declared payment order; its claims stay S0.25's placeholder naming SOC
-  until S5.02)*.
+  pension of S0.25 is paid in the treasury's declared payment order, and a person reaching the pension age claims it
+  by the one claim decision, joining its line at 3e with the ledger's counterpart to members leaving (F-046); its
+  earnings-related part stays a placeholder naming SOC until S5.02)*.
 - The funding plan (TRS.2, TRS.3) is S3.03; the full tax system S5.01; the full social system and agencies' own
   decisions S5.02; the parliament's budget S5.03.
 - It introduces these placeholders: the consumption tax charged as a retail sales tax wherever a country declares a
@@ -15761,8 +15762,8 @@ the final build within the budget on the phone.
 | F-042 | S0.25d | build, 2026-09-25 | Households' loans repay no principal: they pay interest on their balance only, since a principal leg is an amount per contract and a cell's loan row sums households' loans of different sizes | the contract algebra holds no repayment reckoned on the balance (an annuity or a share of the outstanding amount) | a balance-reckoned repayment leg in the algebra, with the households' borrowing (S1.12) | open |
 | F-043 | S0.25d | build, 2026-09-25 | The opening's tenancies pay landlords that stand in the country's firms by their plant: no household or firm is drawn owning rented dwellings | the dwelling stock and its owners are sys-hsg's (S2.05), after the opening's lines | S2.05's dwelling stock by zone and class with firm and household landlords, drawn at the opening | open |
 | F-044 | S0.25d | build, 2026-09-25 | Jobs are drawn for adults of every age at the country's employment rate, and wages by the household's income alone: none by age, occupation family or skill, though the occupation shares are in hand | employment by age and wages by occupation have no mechanism at the opening yet | the employment line's terms by occupation family and skill (LAB.1), the jobs drawn by age, with the labour step (S1.x) | open |
-| F-045 | S0.25d | build, 2026-09-25 | No defined-benefit pension is in payment at the opening, though the occupational pensions' share of the over-65s' income is in hand (`PEN.occupational_income_share`): the opening schemes, parties with sponsors and assets whose pensioner rows carry an accrued pension, are not built | the schemes as parties, the accrued pension as a row's balance and its per-time payment, indexation and survivors are S0.25d-5's design and were not built with it | the opening schemes and their pensions in payment (`sys-pen`'s `gen` and `in_payment`), before the Stage 0 gate | open |
-| F-046 | S0.25d | build, 2026-09-25 | Persons reaching the state pension age during the run do not join the state pension line: only the opening's pensioners are paid, so the pensions in payment dwindle as they die | a person's row added at the outcomes (a member joining a line, its counterpart's count with it) has no mechanism; only leaving does | members joining a line at 3e, the ledger's counterpart to `members_leave`, and the rule's join at the pension age by `sys-soc`, before the Stage 0 gate | open |
+| F-045 | S0.25d | build, 2026-09-25 | No defined-benefit pension is in payment at the opening, though the occupational pensions' share of the over-65s' income is in hand (`PEN.occupational_income_share`) | the opening schemes need the share of pensioners a scheme pays, the schemes' number and sponsors, and the part of the pension funds' assets that backs defined benefits, and none has a source here: drawn without them they would be invented (GEN.11) | sources for defined-benefit coverage among pensioners and for the schemes' assets, then `sys-pen`'s opening schemes and pensions in payment, on per-point lines like the state pension's; an owner item for the Stage 0 gate | open |
+| F-046 | S0.25d | build, 2026-09-25 | Persons reaching the state pension age during the run do not join the state pension line: only the opening's pensioners are paid, so the pensions in payment dwindle as they die | a person's joining is a once-only change that the cells' hazards cannot keep once-only: a person's age is a profile value that does not change when it joins, so a hazard over it would hit, and draw coverage for, the same person again; the person's claim is the state that records it, and that is SOC.3's claim decision (S1.11) | the claim at the pension age (S1.11's `sys-soc`), which gives the person the state its hazard reads, with members joining a line at 3e, the ledger's counterpart to `members_leave` | open |
 
 ---
 

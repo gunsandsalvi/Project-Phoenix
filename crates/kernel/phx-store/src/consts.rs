@@ -13,6 +13,11 @@ pub const DEFAULT_ROWS_PER_CHUNK: u32 = 1 << 12;
 /// full chunk. Reservation costs no memory until committed.
 pub const ARENA_RESERVED_WORDS: u32 = 1 << 22;
 
+/// Words a chunk's arena of individuals reserves: 128 MiB of address space, 4 096 words per row of a full chunk, since
+/// an individual — a firm, a bank — holds a row on each of the many lines of the households' terms it is party to, one
+/// per wage or rent point. Their tables are few chunks, so the reservation stays small against the budget.
+pub const INDIVIDUAL_ARENA_WORDS: u32 = 1 << 24;
+
 /// A relocated list's capacity grows by 5/4 of the length it needs, so repeated appends relocate a logarithmic number
 /// of times while the slack stays near an eighth on average.
 pub const ARENA_GROWTH_NUM: u64 = 5;
