@@ -10,7 +10,8 @@ use crate::rows::{self, RowView};
 
 /// What the pooled-flow rule reads of a payer, as its table keeps it: how many members its row stands for, what a
 /// member may draw on in an account, the kinks on its positions, and the standing rate a row carries. The kind tables
-/// implement it with a weight of one; the population's cells implement it for their members.
+/// implement it with each row's weight, one but for an agent's estate; the population's agent tables with each
+/// agent's multiplicity.
 #[clause("REP.9", "REP.16")]
 pub trait PayerPositions {
     fn weight(&self, holder: Slot) -> u32;
@@ -46,8 +47,8 @@ pub fn account_funds(arenas: &dyn crate::holder::HolderArenas, holder: Slot, acc
 }
 
 impl<B: Backing> PayerPositions for KindTable<B> {
-    fn weight(&self, _: Slot) -> u32 {
-        1
+    fn weight(&self, holder: Slot) -> u32 {
+        self.weight_at(holder)
     }
 
     fn per_member_funds(&self, holder: Slot, account: LineId, facility_per_member: i64) -> i128 {

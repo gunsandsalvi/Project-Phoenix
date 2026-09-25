@@ -114,12 +114,18 @@ impl<B: Backing> Parties<B> {
     /// directory gives, and its row is found from it.
     #[clause("PTY.9")]
     pub fn begin(&mut self, kind: &str, site: TileId, created: Day) -> PartyId {
+        self.begin_weighted(kind, site, created, 1)
+    }
+
+    /// A party begun standing for `weight` real parties alike: an agent's estate, one for each of its twins.
+    #[clause("REP.1", "REP.17")]
+    pub fn begin_weighted(&mut self, kind: &str, site: TileId, created: Day, weight: u32) -> PartyId {
         let place = self.place(kind);
         let party = PartyId::new(self.directory.next());
         let Some(table) = self.tables.get_mut(usize::from(place)) else {
             violation!(clause = "PTY.9", "a holder table's place beyond the tables", place = place);
         };
-        let slot = table.add(&mut self.space, NewIndividual { party, site, created, types: &[] });
+        let slot = table.add(&mut self.space, NewIndividual { party, site, created, weight, types: &[] });
         let begun = self.directory.begin(RowRef { table: table.id(), slot });
         if begun != party {
             violation!(

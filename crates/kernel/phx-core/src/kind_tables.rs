@@ -77,6 +77,7 @@ pub struct KindTable<B: Backing = SystemBacking> {
     party: Column<u64, B>,
     site: Column<u32, B>,
     created: Column<u32, B>,
+    weight: Column<u32, B>,
     types: Vec<Column<u16, B>>,
     lists: Lists<B>,
     runs: Column<RunHead, B>,
@@ -112,6 +113,8 @@ pub struct NewIndividual<'a> {
     pub party: PartyId,
     pub site: TileId,
     pub created: Day,
+    /// The real parties the row stands for: one, but for an agent's estate, one for each of its twins.
+    pub weight: u32,
     pub types: &'a [TypeId],
 }
 
@@ -152,6 +155,7 @@ impl<B: Backing> KindTable<B> {
             party: table.column(space),
             site: table.column(space),
             created: table.column(space),
+            weight: table.column(space),
             types: (0..type_dimensions).map(|_| table.column(space)).collect(),
             lists: Lists {
                 relationship_rows: table.column(space),
@@ -179,10 +183,14 @@ impl<B: Backing> KindTable<B> {
                 given = row.types.len()
             );
         }
+        if row.weight == 0 {
+            violation!(clause = "REP.17", "an individual standing for no party", party = row.party.get());
+        }
         let slot = self.table.slots.alloc();
         put(&mut self.party, slot, row.party.get());
         put(&mut self.site, slot, row.site.get());
         put(&mut self.created, slot, row.created.get());
+        put(&mut self.weight, slot, row.weight);
         for (column, t) in self.types.iter_mut().zip(row.types) {
             put(column, slot, t.get());
         }
@@ -280,6 +288,11 @@ impl<B: Backing> KindTable<B> {
             violation!(clause = "PTY.10", "a read of a row no party holds", slot = slot.get());
         };
         PartyId::new(raw)
+    }
+
+    /// The real parties a row stands for.
+    pub fn weight_at(&self, slot: Slot) -> u32 {
+        self.weight.get(slot).unwrap_or_else(|| missing_row(slot))
     }
 
     pub fn site(&self, slot: Slot) -> TileId {
@@ -434,6 +447,7 @@ mod tests {
             party: PartyId::new(p),
             site: TileId::new(p.try_into().unwrap()),
             created: Day::new(1),
+            weight: 1,
             types: TYPES,
         };
         let a = banks.add(&mut space, row(10));
@@ -453,6 +467,15 @@ mod tests {
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| banks.party(a))).is_err());
         assert_eq!(banks.id(), TableId::new(3));
         assert_eq!(banks.created(Slot::new(1)), Day::new(1));
+        assert_eq!(banks.weight_at(b), 1, "an individual stands for one party");
+        let estate = banks.add(&mut space, NewIndividual { weight: 170, ..row(12) });
+        assert_eq!(banks.weight_at(estate), 170, "an agent's estate stands for each of its twins");
+        let none = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut s = AddressSpace::empty();
+            let mut t: KindTable<HeapBacking<4096>> = KindTable::new(&mut s, "estate", TableId::new(4), 8, 8, 1);
+            t.add(&mut s, NewIndividual { weight: 0, ..row(13) })
+        }));
+        assert!(none.is_err(), "a row standing for no party is refused");
     }
 
     #[test]
@@ -460,7 +483,13 @@ mod tests {
         let mut space = AddressSpace::empty();
         let mut t: KindTable<HeapBacking<4096>> = KindTable::new(&mut space, "firm", TableId::new(0), 64, 64, 1);
         let row =
-            |p| NewIndividual { party: PartyId::new(p), site: TileId::new(0), created: Day::new(1), types: TYPES };
+            |p| NewIndividual {
+                party: PartyId::new(p),
+                site: TileId::new(0),
+                created: Day::new(1),
+                weight: 1,
+                types: TYPES,
+            };
         let slots: Vec<Slot> = (1..5).map(|p| t.add(&mut space, row(p))).collect();
         let mut model: Vec<Vec<u64>> = vec![Vec::new(); slots.len()];
         for round in 0..40_u64 {

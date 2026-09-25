@@ -455,14 +455,15 @@ impl World {
     #[clause("PTY.9", "POP.15", "REP.16")]
     fn end_agent(&mut self, day: Day, (kind, slot, party): (usize, Slot, PartyId), region: Option<u32>, d: &mut Draws) {
         let m = move_at(&self.register, day, ApplyAt::Day(SubStep::S3e));
-        let rows: Vec<(LineId, Side, u32)> = {
+        let (rows, twins): (Vec<(LineId, Side, u32)>, u32) = {
             let table = Population::table::<SystemBacking>(self.books.parties.cells(), kind);
             for list in [AgentList::Holdings, AgentList::Lots, AgentList::NamedUnits] {
                 if table.list(slot, list).len != 0 {
                     violation!(clause = "POP.15", "a household ended holding what only an estate can take yet");
                 }
             }
-            phx_ledger::rows::rows(table, slot).iter().map(|r| (r.row.line, r.side(), r.row.count)).collect()
+            let rows = phx_ledger::rows::rows(table, slot).iter().map(|r| (r.row.line, r.side(), r.row.count)).collect();
+            (rows, table.multiplicity(slot).get())
         };
         if !rows.is_empty() {
             let Some(region) = region else {
@@ -473,7 +474,8 @@ impl World {
                 );
             };
             let site = self.estate_site(region, d);
-            let estate = self.books.parties.begin(phx_core::ESTATE_KIND.name, site, day);
+            // An agent's twins leave an estate each, alike: one estate standing for them all.
+            let estate = self.books.parties.begin_weighted(phx_core::ESTATE_KIND.name, site, day, twins);
             let succeeded = self.books.dues.succeeded;
             for (line, side, count) in rows {
                 let t = LineTransfer { line, side, from: party, to: estate, count, reason: succeeded };
@@ -485,7 +487,7 @@ impl World {
         }
         let (cells, directory, _) = self.books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(cells, kind);
-        let twins = u64::from(table.multiplicity(slot).get());
+        let twins = u64::from(twins);
         let id = table.id();
         table.remove(slot);
         directory.end(party, day, Missing::Absent);

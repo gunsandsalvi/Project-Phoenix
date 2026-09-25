@@ -820,6 +820,7 @@ pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -
 pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
 pub fn phx_core::kind_tables::KindTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_core::kind_tables::KindTable<B>::weight_at(&self, phx_id::ids::Slot) -> u32
 pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
@@ -832,6 +833,7 @@ pub phx_core::kind_tables::NewIndividual::created: phx_id::day::Day
 pub phx_core::kind_tables::NewIndividual::party: phx_id::ids::PartyId
 pub phx_core::kind_tables::NewIndividual::site: phx_id::ids::TileId
 pub phx_core::kind_tables::NewIndividual::types: &'a [phx_core::register::values::TypeId]
+pub phx_core::kind_tables::NewIndividual::weight: u32
 #[repr(C)] pub struct phx_core::kind_tables::RunHead
 pub phx_core::kind_tables::RunHead::len: u32
 pub phx_core::kind_tables::RunHead::next_due: u32
@@ -2700,6 +2702,7 @@ pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -
 pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
 pub fn phx_core::kind_tables::KindTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_core::kind_tables::KindTable<B>::weight_at(&self, phx_id::ids::Slot) -> u32
 pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
@@ -2781,6 +2784,7 @@ pub phx_core::NewIndividual::created: phx_id::day::Day
 pub phx_core::NewIndividual::party: phx_id::ids::PartyId
 pub phx_core::NewIndividual::site: phx_id::ids::TileId
 pub phx_core::NewIndividual::types: &'a [phx_core::register::values::TypeId]
+pub phx_core::NewIndividual::weight: u32
 pub struct phx_core::NewsEntry
 pub phx_core::NewsEntry::kind: alloc::string::String
 pub phx_core::NewsEntry::notice: phx_core::events_rule::Notice

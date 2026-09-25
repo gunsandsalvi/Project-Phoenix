@@ -753,6 +753,9 @@ The work of a day follows the number of agents something happens to, not the num
     is exactly each twin's, and nothing is ever averaged.
   - Agents of one kind share one multiplicity, except the player's own, which is one (OBS.4), and the agent the
     player's household was drawn from, which keeps one twin fewer.
+  - An agent that ends leaves one estate for each twin, alike: one estate party standing for them all, of the
+    agent's multiplicity, whose every amount is a whole share for each twin (REP.9) and whose waterfall runs on one
+    twin's estate.
 - **REP.2 STATE** — An **individual** is a party never held in a population:
   - every institution and issuer, and every party with a public instrument (a listed share, a bond, a rating);
   - the **top-ranked** parties of each kind by size (employees, turnover, net worth) at the opening, down to a
@@ -900,7 +903,8 @@ The work of a day follows the number of agents something happens to, not the num
   - record a pairing, or contradict one that was drawn;
   - observe with a world stream, or act on the observer's.
 - **REP.17 FORBID** — No multiplicity that is a share, a scale factor or a probability. A multiplicity is a count
-  of real parties, one or the factor, fixed when its agent begins and never changed.
+  of real parties, one or the factor, fixed when its agent begins and never changed, but the donor's, which gives
+  the player's twin at the opening (REP.1). An agent's estate takes the agent's multiplicity.
 
 **Primitives**
 

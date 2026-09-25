@@ -278,6 +278,7 @@ pub phx_ledger::apply_batch::DaySettlement::heads_read: u64
 pub phx_ledger::apply_batch::DaySettlement::iterations: u64
 pub phx_ledger::apply_batch::DaySettlement::lines: u64
 pub phx_ledger::apply_batch::DaySettlement::lost: u64
+pub phx_ledger::apply_batch::DaySettlement::lost_past_failed: u64
 pub phx_ledger::apply_batch::DaySettlement::nets_missed: u64
 pub phx_ledger::apply_batch::DaySettlement::not_maximal: u64
 pub phx_ledger::apply_batch::DaySettlement::payments: u64
@@ -416,6 +417,7 @@ pub struct phx_ledger::books::Parties<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Parties<B>
 pub fn phx_ledger::books::Parties<B>::arenas(&self) -> alloc::vec::Vec<&dyn phx_ledger::holder::HolderArenas>
 pub fn phx_ledger::books::Parties<B>::begin(&mut self, &str, phx_id::ids::TileId, phx_id::day::Day) -> phx_id::ids::PartyId
+pub fn phx_ledger::books::Parties<B>::begin_weighted(&mut self, &str, phx_id::ids::TileId, phx_id::day::Day, u32) -> phx_id::ids::PartyId
 pub fn phx_ledger::books::Parties<B>::cells(&self) -> &[alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>]
 pub fn phx_ledger::books::Parties<B>::cells_mut(&mut self) -> (&mut alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>>, &mut phx_core::directory::Directory, &mut phx_store::backing::AddressSpace)
 pub fn phx_ledger::books::Parties<B>::compact_arenas(&mut self) -> u64
@@ -1127,10 +1129,11 @@ pub mod phx_ledger::stream
 pub struct phx_ledger::stream::DayRecords
 pub phx_ledger::stream::DayRecords::gross: i128
 pub phx_ledger::stream::DayRecords::heads_read: u64
+pub phx_ledger::stream::DayRecords::made: alloc::vec::Vec<phx_ledger::stream::Payment>
 pub phx_ledger::stream::DayRecords::moneyless: alloc::collections::btree::set::BTreeSet<phx_id::ids::PartyId>
 pub phx_ledger::stream::DayRecords::payments: u64
 pub phx_ledger::stream::DayRecords::pending: u64
-pub phx_ledger::stream::DayRecords::records: alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, phx_ledger::stream::Record>
+pub phx_ledger::stream::DayRecords::records: phx_ledger::stream::Records
 pub phx_ledger::stream::DayRecords::rows_due: u64
 pub phx_ledger::stream::DayRecords::rows_scanned: u64
 pub phx_ledger::stream::DayRecords::scanned: alloc::vec::Vec<(u16, phx_id::ids::Slot)>
@@ -1156,6 +1159,7 @@ pub phx_ledger::stream::Record::funds: i128
 impl phx_ledger::stream::Record
 pub fn phx_ledger::stream::Record::standing(&self) -> i128
 pub fn phx_ledger::stream::issuers(&[phx_ledger::instruction::LegRec]) -> alloc::vec::Vec<phx_id::ids::PartyId>
+pub type phx_ledger::stream::Records = phx_core::map::KernelMap<phx_id::ids::PartyId, phx_ledger::stream::Record>
 pub mod phx_ledger::synthetic
 pub struct phx_ledger::synthetic::Settlement<B: phx_store::backing::Backing>
 pub phx_ledger::synthetic::Settlement::books: phx_ledger::books::Books<B>

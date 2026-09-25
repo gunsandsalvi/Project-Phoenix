@@ -18,7 +18,7 @@ pub(crate) fn table(space: &mut AddressSpace, kind: &'static str, id: u16) -> Ki
 }
 
 pub(crate) fn holder(space: &mut AddressSpace, t: &mut KindTable<Heap>, party: u64) -> Slot {
-    t.add(space, NewIndividual { party: PartyId::new(party), site: TileId::new(0), created: Day::new(1), types: &[] })
+    t.add(space, NewIndividual { party: PartyId::new(party), site: TileId::new(0), created: Day::new(1), weight: 1, types: &[] })
 }
 
 const BOND: InstrumentId = InstrumentId::new(3);

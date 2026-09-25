@@ -57,10 +57,16 @@ impl<B: phx_store::Backing> Books<B> {
     ) -> Result<Settled, Fail> {
         let (place, slot) = self.parties.row(estate);
         let rows = crate::rows::rows(self.parties.holder(place), slot);
+        // The waterfall runs on one twin's estate, and each of its amounts is paid for every twin alike.
+        let unit = i64::from(self.parties.unit(estate));
         let (mut realised, mut claims, mut debts): (Vec<Realised>, Vec<Claim>, Vec<Debt>) = Default::default();
         for r in &rows {
             let line = r.row.line;
             let Missing::Present(balance) = r.optional.balance else { continue };
+            if balance % unit != 0 {
+                violation!(clause = "REP.9", "an estate's balance not a whole share for each twin", line = line.get());
+            }
+            let balance = balance / unit;
             let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
             match r.side() {
                 Side::Asset if self.ledger.lines.is_money(line) => {
@@ -88,14 +94,20 @@ impl<B: phx_store::Backing> Books<B> {
         let fall = waterfall(&realised, &claims, &[0], &firsts);
         let mut found = Found::default();
         let mut out = Settled::default();
+        let every = |x: i64| {
+            let Some(all) = x.checked_mul(unit) else {
+                phx_num::capacity_exceeded!("an estate's amount for its twins", i64::MAX, x);
+            };
+            all
+        };
         for (paid, (claim, (line, creditor))) in fall.paid.iter().zip(claims.iter().zip(&debts)) {
-            let short = claim.amount - paid.paid;
-            if paid.paid > 0 {
-                let mut legs = self.pay(estate, *creditor, paid.paid, claim.ccy, &mut found);
-                legs.push(row_leg(estate, *line, Side::Liability, paid.paid, claim.ccy));
-                legs.push(row_leg(*creditor, *line, Side::Asset, -paid.paid, claim.ccy));
+            let (paid, short) = (every(paid.paid), every(claim.amount - paid.paid));
+            if paid > 0 {
+                let mut legs = self.pay(estate, *creditor, paid, claim.ccy, &mut found);
+                legs.push(row_leg(estate, *line, Side::Liability, paid, claim.ccy));
+                legs.push(row_leg(*creditor, *line, Side::Asset, -paid, claim.ccy));
                 let _ = self.submit(self.dues.payment, legs, m, audit)?;
-                out.paid += paid.paid;
+                out.paid += paid;
             }
             if short > 0 {
                 let legs = vec![
@@ -107,6 +119,7 @@ impl<B: phx_store::Backing> Books<B> {
             }
         }
         for (ccy, left) in fall.left {
+            let left = every(left);
             if left > 0 {
                 let legs = self.pay(estate, destination, left, ccy, &mut found);
                 let _ = self.submit(self.dues.distributed, legs, m, audit)?;

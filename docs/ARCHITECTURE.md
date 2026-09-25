@@ -754,8 +754,10 @@ Then:
   alike; if none fits, the run stops (REP.31);
 - the household's persons and attributes are written back in place; the head's place, if emptied, is taken as the
   outcome says;
-- a household no one is left in **ends**: an estate is opened at a zone centre of its region and every row it held
-  passes to it whole by line transfers (PTY.9); its slot is freed and its identity ends. Households hold no
+- a household no one is left in **ends**: an estate is opened at a zone centre of its region, with the agent's
+  multiplicity as its row's weight in the estates' kind table (one estate for each twin, REP.1), and every row it
+  held passes to it whole by line transfers (PTY.9); its slot is freed and its identity ends. The estate's
+  waterfall runs on one twin's balances and pays each amount for every twin. Households hold no
   holdings before Stage 3; one ending with any stops the run until its holdings pass the same way.
 
 Nothing is split or landed: an agent is changed where it is, or ends.
