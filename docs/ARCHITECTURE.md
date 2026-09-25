@@ -1268,6 +1268,22 @@ the eligible counterparties by their drawn sizes (§10.2), and the unmatched str
 from its drawn size go to the opening report. The balances close through the ledger's opening writes (GEN.4): each
 row's balance written against its counterparty's, and a counterparty's books the sum of its rows, its equity the
 residual, reported.
+As built (`phx_ledger::attachments`, `sys-dem`'s `lines`): a system registers its draw with `Declarations::attachment`;
+the opening hands the draws to the households' contribution, which runs with the contracts, once every institution
+and firm is drawn. For each country each draw is made ready (`AttachmentDraw::country`), then called with each
+household as it is formed — its key, its persons, and the wealth and income `sys-dem` drew for it from its shapes
+(`DEM.opening_means`), as multiples of the country's median — and gives its rows and the key attributes it sets. A
+row names its line by kind, terms and named counterparty (`LineSpec`), its holder (the household or a person by
+place) and its balance: none, or a share of a pool by a weight. Cells land without rows; each landed part's rows are
+then opened on the cell it landed in, rows of one line side summed. Once the country is drawn, a named line's
+counterparty takes one row counting the households' members; a derived line's other side is apportioned over the
+parties its draw names, by their drawn sizes, each share reported; each pool's total — the draw's sourced aggregate —
+is apportioned over its rows by their summed weights and written against the counterparty. The banks' draw is the
+first: a household any of whose adults holds an account banks with one bank, chosen online and held in its key
+(`BNK.bank`), and keeps a household current account there, its share of the households' deposits (the country's
+deposits less the firms') by its wealth; a household any of whose adults has borrowed owes its bank a household loan,
+its share of the households' debt by its income. Neither side of a household's line keeps a holder list on the
+households' side.
 
 The same seed therefore gives the same world whatever the resolution the valve sets, and nothing is balanced after
 merging: finer attributes are drawn from their own counter keys, so a coarser setting is a projection of a finer

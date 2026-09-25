@@ -297,6 +297,8 @@ pub struct Drawn {
     pub key: KeyRecord,
     pub weight: phx_core::Weight,
     pub profile: crate::profile::Profile,
+    /// The rows its households and their persons hold, which the opening opens on the cell they land in.
+    pub rows: Vec<crate::explicit::GatheredRow>,
 }
 
 /// The opening's members landed as a day's parts land. Having left no cell, their parts are ordered by their place

@@ -304,6 +304,42 @@ pub phx_ledger::apply_batch::DaySettlement::unsound: u64
 impl phx_store::save::Saved for phx_ledger::apply_batch::DaySettlement where u64: phx_store::save::Saved, i128: phx_store::save::Saved
 pub fn phx_ledger::apply_batch::DaySettlement::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::apply_batch::DaySettlement::save(&self, &mut phx_store::save::Writer<'_>)
+pub mod phx_ledger::attachments
+pub enum phx_ledger::attachments::Balance
+pub phx_ledger::attachments::Balance::None
+pub phx_ledger::attachments::Balance::Share
+pub phx_ledger::attachments::Balance::Share::pool: u32
+pub phx_ledger::attachments::Balance::Share::weight: u64
+pub enum phx_ledger::attachments::Holder
+pub phx_ledger::attachments::Holder::Household
+pub phx_ledger::attachments::Holder::Person(usize)
+pub struct phx_ledger::attachments::Drawing<'a>
+pub phx_ledger::attachments::Drawing::household: &'a phx_core::pop_process::Household
+pub phx_ledger::attachments::Drawing::income: f64
+pub phx_ledger::attachments::Drawing::wealth: f64
+pub struct phx_ledger::attachments::DrawnRow
+pub phx_ledger::attachments::DrawnRow::balance: phx_ledger::attachments::Balance
+pub phx_ledger::attachments::DrawnRow::holder: phx_ledger::attachments::Holder
+pub phx_ledger::attachments::DrawnRow::line: phx_ledger::attachments::LineSpec
+pub phx_ledger::attachments::DrawnRow::side: phx_ledger::algebra::Side
+pub struct phx_ledger::attachments::LineSpec
+pub phx_ledger::attachments::LineSpec::counterparty: phx_num::missing::Missing<phx_id::ids::PartyId>
+pub phx_ledger::attachments::LineSpec::first: phx_num::missing::Missing<(phx_id::day::Day, u32)>
+pub phx_ledger::attachments::LineSpec::kind: u16
+pub phx_ledger::attachments::LineSpec::terms: phx_ledger::terms::TermsId
+impl phx_ledger::attachments::LineSpec
+pub fn phx_ledger::attachments::LineSpec::key(&self) -> (u16, u32, bool, u64)
+pub struct phx_ledger::attachments::Online
+impl phx_ledger::attachments::Online
+pub fn phx_ledger::attachments::Online::new(alloc::vec::Vec<u64>) -> phx_ledger::attachments::Online
+pub fn phx_ledger::attachments::Online::next(&mut self, &mut phx_rand::draws::Draws) -> usize
+pub trait phx_ledger::attachments::AttachmentDraw: core::marker::Send + core::marker::Sync
+pub fn phx_ledger::attachments::AttachmentDraw::country(&self, &mut phx_ledger::books::Books, &phx_core::register::Register, (&phx_core::calendar::Calendar, phx_id::day::Day), &phx_core::contribution::OpeningCountry) -> alloc::boxed::Box<dyn phx_ledger::attachments::CountryAttachments>
+pub trait phx_ledger::attachments::CountryAttachments
+pub fn phx_ledger::attachments::CountryAttachments::counterparties(&self, &phx_ledger::books::Books, &phx_ledger::attachments::LineSpec) -> alloc::vec::Vec<(phx_id::ids::PartyId, u64)>
+pub fn phx_ledger::attachments::CountryAttachments::draw(&mut self, &mut phx_ledger::books::Books, phx_ledger::attachments::Drawing<'_>, (&phx_core::contribution::OpeningCtx<'_>, phx_rand::key::Subject), &mut alloc::vec::Vec<phx_ledger::attachments::DrawnRow>, &mut alloc::vec::Vec<(&'static str, u32)>)
+pub fn phx_ledger::attachments::CountryAttachments::pools(&self) -> alloc::vec::Vec<(u32, i64)>
+pub fn phx_ledger::attachments::shares(i64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<i64>
 pub mod phx_ledger::audit
 pub struct phx_ledger::audit::Contracts
 impl phx_core::family::AuditFamily for phx_ledger::audit::Contracts
@@ -945,6 +981,7 @@ pub phx_ledger::money::MoneyHolders::treasuries: &'static [&'static str]
 impl phx_ledger::money::MoneyHolders
 pub fn phx_ledger::money::MoneyHolders::deposits(&self, &'static str) -> phx_ledger::line::LineKindDecl
 pub fn phx_ledger::money::MoneyHolders::reserves(&self) -> phx_ledger::line::LineKindDecl
+pub fn phx_ledger::money::MoneyHolders::retail_deposits(&self, &'static str) -> phx_ledger::line::LineKindDecl
 pub fn phx_ledger::money::MoneyHolders::treasury_account(&self) -> phx_ledger::line::LineKindDecl
 pub fn phx_ledger::money::banknotes(phx_id::ids::PartyId, phx_num::money::Ccy, phx_num::qty::UnitId, phx_ledger::terms::TermsId) -> phx_ledger::instrument::NewInstrument
 pub mod phx_ledger::opening

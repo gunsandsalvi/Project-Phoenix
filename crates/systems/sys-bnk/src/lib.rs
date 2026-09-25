@@ -3,6 +3,7 @@
 //! the firms' term loans. Its decisions arrive with its own step.
 
 mod consts;
+pub mod households;
 mod opening;
 pub mod zipf;
 
@@ -46,7 +47,11 @@ impl System for Bnk {
         d.kind(BANK);
         d.stream(OpeningStream::DECL);
         let years = (d.prim(&LOAN_YEARS_MIN), d.prim(&LOAN_YEARS_MAX));
-        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&ACCOUNTS);
+        let accounts: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&ACCOUNTS);
+        d.stream(households::HouseholdsStream::DECL);
+        d.pop_kind(if_pop::HOUSEHOLD).key_attr(households::BANK_ATTR);
+        let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> = Box::new(households::HouseholdLines { accounts });
+        d.attachment(Box::new(draw));
         d.contribution(Box::new(Declared));
         d.contribution(Box::new(Parties));
         d.contribution(Box::new(Contracts { years }));

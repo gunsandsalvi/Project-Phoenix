@@ -52,6 +52,26 @@ impl MoneyHolders {
         }
     }
 
+    /// A retail deposit kind: a bank's liability to depositors many enough that the line keeps no list of them, each
+    /// holding at most one account of the kind, reached only on its dues.
+    #[must_use]
+    pub fn retail_deposits(&self, name: &'static str) -> LineKindDecl {
+        let depositors = SideDecl {
+            holder_kinds: self.depositors,
+            words: BALANCE | PENDING,
+            holder_list: false,
+            holder_roles: &[],
+            exclusive: true,
+        };
+        LineKindDecl {
+            name,
+            asset: depositors,
+            liability: Self::side(self.banks, BALANCE),
+            transfer_requesters: self.requesters,
+            dated: true,
+        }
+    }
+
     /// The treasury's account: a central bank's liability to its own treasury.
     #[must_use]
     pub fn treasury_account(&self) -> LineKindDecl {

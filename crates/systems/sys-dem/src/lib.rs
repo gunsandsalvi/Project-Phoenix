@@ -5,6 +5,7 @@ mod compose;
 mod consts;
 mod household;
 mod life;
+mod lines;
 mod opening;
 mod prims;
 mod processes;
@@ -29,6 +30,7 @@ declare_stream! { pub PersonsStream = "DEM.opening_persons" { purpose: Opening, 
 declare_stream! { pub CompositionStream = "DEM.opening_composition" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub HealthStream = "DEM.opening_health" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub EducationStream = "DEM.opening_education" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub MeansStream = "DEM.opening_means" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub MortalityStream = "DEM.mortality" { purpose: Mortality, keyed: false, clause: "CHN.3" } }
 declare_stream! { pub IllnessStream = "DEM.illness" { purpose: Illness, keyed: false, clause: "CHN.3" } }
 declare_stream! { pub BirthdayStream = "DEM.birthdays" { purpose: Birthday, keyed: false, clause: "CHN.3" } }
@@ -88,6 +90,7 @@ impl System for Dem {
             CompositionStream::DECL,
             HealthStream::DECL,
             EducationStream::DECL,
+            MeansStream::DECL,
         ] {
             d.stream(stream);
         }
@@ -102,6 +105,7 @@ impl System for Dem {
         }
         let prims = Prims::declare(d);
         d.setup_value(SetupValue { prim: &prims::LIFE_EXPECTANCY, derived: "GEN.life_expectancy" });
+        d.contribution(Box::new(opening::Declared));
         d.contribution(Box::new(Households { prims }));
         d.pop_process(Box::new(Mortality::new(prims)));
         d.pop_process(Box::new(Onset { prims }));

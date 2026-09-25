@@ -8,7 +8,7 @@ use phx_core::RoleCount;
 use phx_id::LineId;
 use phx_ledger::algebra::Side;
 use phx_macros::clause;
-use phx_num::{capacity_exceeded, violation};
+use phx_num::{Missing, capacity_exceeded, violation};
 use phx_rand::{Draws, below_u64};
 
 use crate::key::KeyRecord;
@@ -363,17 +363,37 @@ pub fn check(kind: &PopKindDecl, key: &KeyRecord, e: &Explicit) {
     }
 }
 
-/// Explicit households gathered by key, as the opening forms them: each held to its key's counts, with one value in
-/// every group of its role; the households of one key one part, weighing as many as they are, with their persons'
-/// values as its profile.
-#[derive(Debug, Default)]
-pub struct Gathered {
-    cells: BTreeMap<KeyRecord, (u32, Profile)>,
+/// A row the households of one key hold together: its members, and the pool its balance is a share of with the
+/// weights they drew summed, when it has one.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GatheredRow {
+    pub at: Attached,
+    pub count: u32,
+    pub pool: Missing<(u32, u64)>,
 }
 
+/// Explicit households gathered by key, as the opening forms them: each held to its key's counts, with one value in
+/// every group of its role; the households of one key one part, weighing as many as they are, with their persons'
+/// values as its profile and their rows' members and balance weights summed.
+#[derive(Debug, Default)]
+pub struct Gathered {
+    cells: BTreeMap<KeyRecord, (u32, Profile, Rows)>,
+}
+
+/// A key's rows: each row's members and its balance's pool and summed weight.
+type Rows = BTreeMap<Attached, (u32, Missing<(u32, u64)>)>;
+
 impl Gathered {
+    /// A household gathered, with the pool and weight of each of its rows' balances, where they have one.
     #[clause("REP.14", "REP.26", "GEN.3")]
-    pub fn add(&mut self, kind: &PopKindDecl, layout: &ProfileLayout, key: KeyRecord, e: &Explicit) {
+    pub fn add(
+        &mut self,
+        kind: &PopKindDecl,
+        layout: &ProfileLayout,
+        key: KeyRecord,
+        e: &Explicit,
+        weights: &[(Attached, u32, u64)],
+    ) {
         check(kind, &key, e);
         for person in &e.persons {
             if !person.values.iter().map(|(g, _)| *g).eq(groups_of(kind, person.role)) {
@@ -384,13 +404,32 @@ impl Gathered {
                 );
             }
         }
-        let (n, profile) = self.cells.entry(key).or_insert_with(|| (0, Profile::empty(layout)));
+        let (n, profile, rows) = self.cells.entry(key).or_insert_with(|| (0, Profile::empty(layout), BTreeMap::new()));
         let Some(more) = n.checked_add(1) else { capacity_exceeded!("households of a key", u32::MAX, *n) };
         *n = more;
         for person in &e.persons {
             for (g, v) in &person.values {
                 profile.add(layout, *g, *v, 1);
             }
+        }
+        for at in e.rows.iter().chain(e.persons.iter().flat_map(|p| &p.rows)) {
+            let (count, _) = rows.entry(*at).or_insert((0, Missing::Absent));
+            let Some(more) = count.checked_add(1) else { capacity_exceeded!("members of a row", u32::MAX, *count) };
+            *count = more;
+        }
+        for (at, pool, weight) in weights {
+            let Some((_, held)) = rows.get_mut(at) else {
+                violation!(
+                    clause = "GEN.4",
+                    "a balance's weight on a row its household does not hold",
+                    line = at.0.get()
+                );
+            };
+            *held = match *held {
+                Missing::Absent => Missing::Present((*pool, *weight)),
+                Missing::Present((p, w)) if p == *pool => Missing::Present((p, w + weight)),
+                Missing::Present(_) => violation!(clause = "GEN.4", "one row's balance a share of two pools"),
+            };
         }
     }
 
@@ -399,7 +438,12 @@ impl Gathered {
     pub fn into_drawn(self) -> Vec<crate::landing::Drawn> {
         self.cells
             .into_iter()
-            .map(|(key, (n, profile))| crate::landing::Drawn { key, weight: phx_core::Weight::new(n), profile })
+            .map(|(key, (n, profile, rows))| crate::landing::Drawn {
+                key,
+                weight: phx_core::Weight::new(n),
+                profile,
+                rows: rows.into_iter().map(|(at, (count, pool))| GatheredRow { at, count, pool }).collect(),
+            })
             .collect()
     }
 }
@@ -545,7 +589,7 @@ mod tests {
             let partner = phx_rand::below_u64(&mut d, 2) == 1;
             let (k, e) = household(partner, u32::try_from(phx_rand::below_u64(&mut d, 4)).unwrap());
             drawn_persons += super::wide(e.persons.len());
-            gathered.add(&kind, &layout, k, &e);
+            gathered.add(&kind, &layout, k, &e, &[]);
         }
         let parts = gathered.into_drawn();
         assert_eq!(parts.iter().map(|p| u64::from(p.weight.get())).sum::<u64>(), 200);
@@ -561,10 +605,10 @@ mod tests {
         assert_eq!(persons, drawn_persons, "every person gathered once");
         let (k, e) = household(true, 2);
         let wrong = key(&kind, 0, 2);
-        assert!(std::panic::catch_unwind(|| super::Gathered::default().add(&kind, &layout, wrong, &e)).is_err());
+        assert!(std::panic::catch_unwind(|| super::Gathered::default().add(&kind, &layout, wrong, &e, &[])).is_err());
         let mut short = e.clone();
         short.persons[0].values.pop();
-        assert!(std::panic::catch_unwind(|| super::Gathered::default().add(&kind, &layout, k, &short)).is_err());
+        assert!(std::panic::catch_unwind(|| super::Gathered::default().add(&kind, &layout, k, &short, &[])).is_err());
     }
 
     #[test]

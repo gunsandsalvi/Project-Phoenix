@@ -274,6 +274,7 @@ impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::v
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::contribution::Opening<'a>
+pub phx_core::contribution::Opening::attachments: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
 pub phx_core::contribution::Opening::books: &'a mut dyn core::any::Any
 pub phx_core::contribution::Opening::calendar: &'a phx_core::calendar::Calendar
 pub phx_core::contribution::Opening::countries: &'a [phx_core::contribution::OpeningCountry]
@@ -1662,6 +1663,7 @@ pub phx_core::system::DecisionMeta::name: &'static str
 pub phx_core::system::DecisionMeta::system: &'static str
 pub phx_core::system::DecisionMeta::valid: core::result::Result<(), &'static str>
 pub struct phx_core::system::Declarations
+pub phx_core::system::Declarations::attachments: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::system::Declarations::claims: alloc::vec::Vec<(&'static str, &'static str)>
 pub phx_core::system::Declarations::contributions: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)>
 pub phx_core::system::Declarations::decisions: alloc::vec::Vec<phx_core::system::DecisionMeta>
@@ -1681,6 +1683,7 @@ pub phx_core::system::Declarations::rules: phx_core::rules::RuleTable
 pub phx_core::system::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
 pub phx_core::system::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
 impl phx_core::system::Declarations
+pub fn phx_core::system::Declarations::attachment(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
 pub fn phx_core::system::Declarations::claims(&self) -> core::result::Result<alloc::vec::Vec<phx_core::facts::Claim>, alloc::string::String>
 pub fn phx_core::system::Declarations::contribution(&mut self, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)
@@ -2381,6 +2384,7 @@ pub phx_core::DecisionSchedule::convention: phx_core::calendar::bizday::Business
 pub phx_core::DecisionSchedule::period: phx_core::calendar::period::Period
 pub phx_core::DecisionSchedule::runs_on: phx_core::schedule::RunsOn
 pub struct phx_core::Declarations
+pub phx_core::Declarations::attachments: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::Declarations::claims: alloc::vec::Vec<(&'static str, &'static str)>
 pub phx_core::Declarations::contributions: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)>
 pub phx_core::Declarations::decisions: alloc::vec::Vec<phx_core::system::DecisionMeta>
@@ -2400,6 +2404,7 @@ pub phx_core::Declarations::rules: phx_core::rules::RuleTable
 pub phx_core::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
 pub phx_core::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
 impl phx_core::system::Declarations
+pub fn phx_core::system::Declarations::attachment(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
 pub fn phx_core::system::Declarations::claims(&self) -> core::result::Result<alloc::vec::Vec<phx_core::facts::Claim>, alloc::string::String>
 pub fn phx_core::system::Declarations::contribution(&mut self, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)
@@ -2786,6 +2791,7 @@ pub struct phx_core::OccasionDecl
 pub phx_core::OccasionDecl::kind: phx_core::occasions::OccasionKind
 pub phx_core::OccasionDecl::point: &'static str
 pub struct phx_core::Opening<'a>
+pub phx_core::Opening::attachments: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
 pub phx_core::Opening::books: &'a mut dyn core::any::Any
 pub phx_core::Opening::calendar: &'a phx_core::calendar::Calendar
 pub phx_core::Opening::countries: &'a [phx_core::contribution::OpeningCountry]

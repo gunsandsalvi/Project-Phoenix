@@ -9,12 +9,13 @@ use if_pop::{
 use phx_core::calendar::daycount::actual_days;
 use phx_core::register::values::{Distribution, Partition, Table2, TypeSet};
 use phx_core::{
-    Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, PrimDecl, Register, StreamDef, ValueType, apportion,
-    joint, opening_subject,
+    CONTRACTS, Contribution, DECLARATIONS, Opening, OpeningCountry, OpeningPhase, PrimDecl, Register, StreamDef,
+    ValueType, apportion, joint, opening_subject,
 };
 use phx_id::{CountryId, LineId};
 use phx_ledger::algebra::Side;
 use phx_ledger::books::Books;
+use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_ledger::opening::key;
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
@@ -22,7 +23,7 @@ use phx_pop::check::LineKinks;
 use phx_pop::explicit::{Explicit, Gathered, Held};
 use phx_pop::key::KeyRecord;
 use phx_pop::kind::PopKindDecl;
-use phx_pop::landing::{Drawn, TenB, land_drawn};
+use phx_pop::landing::{Drawn, Landed, TenB, land_drawn};
 use phx_pop::population::{PopKind, Population};
 use phx_pop::profile::ProfileLayout;
 use phx_rand::float::{floor_to_i64, from_i64, from_u64, len_u64};
@@ -33,9 +34,42 @@ use crate::compose::{self, Member, Pick, Place, Pool, Rules, Type};
 use crate::consts::{
     BANDS, CHILDREN_COLUMN, GAP_TYPES, MEMBER_COLUMNS, OLD_AGE, OLDER, OTHER, PARTNER_COLUMN, PERCENT, WORKING_AGE,
 };
-use crate::{CompositionStream, EducationStream, HealthStream, PersonsStream, Prims, RegionsStream};
+use crate::lines::Drawer;
+use crate::{CompositionStream, EducationStream, HealthStream, MeansStream, PersonsStream, Prims, RegionsStream};
 
 const HOUSEHOLDS: &str = "DEM.households";
+
+/// What the households' opening instructions are for: capital on both sides, since they open the books.
+const REASON: ReasonDecl = ReasonDecl { name: "DEM opening", order: 0, paid: Effect::Equity, received: Effect::Equity };
+
+/// The households' declarations in the books: their opening's reason.
+#[derive(Debug)]
+pub struct Declared;
+
+impl Contribution for Declared {
+    fn name(&self) -> &'static str {
+        "household declarations"
+    }
+    fn phase(&self) -> OpeningPhase {
+        DECLARATIONS
+    }
+    fn reads(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn writes(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn drawn(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn derived(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    fn contribute(&self, opening: &mut Opening<'_>) {
+        let _ = phx_ledger::books::of(opening).ledger.reasons.declare(REASON);
+    }
+}
 
 /// A declared table's value at a point, its decimals undone.
 pub(crate) fn value(table: &Table2, decl: &PrimDecl, row: i64, column: i64) -> f64 {
@@ -66,6 +100,8 @@ struct Country {
     education_rows: Vec<i64>,
     education: [Vec<AliasTable>; 2],
     shares: Vec<f64>,
+    wealth: Distribution,
+    income: Distribution,
 }
 
 fn derived(c: &OpeningCountry, name: &str) -> f64 {
@@ -300,6 +336,8 @@ impl Country {
             education_rows,
             education,
             shares,
+            wealth: p.wealth.get(register, id).clone(),
+            income: p.income.get(register, id).clone(),
         }
     }
 
@@ -509,6 +547,7 @@ fn draw_region(
     (region, people): (u32, u64),
     kind: &PopKindDecl,
     classes: &Partition,
+    (drawer, books): (&mut Drawer, &mut Books),
 ) -> Region {
     let layout = Layout::of(kind);
     let profiles = ProfileLayout::new(&kind.groups);
@@ -567,7 +606,11 @@ fn draw_region(
         }
         let mut persons = forming.persons;
         persons.sort_by_key(|p| p.role);
-        gathered.add(kind, &profiles, record, &Explicit { persons, rows: Vec::new() });
+        let mut e = Explicit { persons, rows: Vec::new() };
+        let mut means = opening_ctx.draws(&MeansStream::DECL, subject);
+        let drawn = (country.wealth.draw(&mut means), country.income.draw(&mut means));
+        let weights = drawer.household(books, kind, &mut record, &mut e, ((opening_ctx, subject), drawn));
+        gathered.add(kind, &profiles, record, &e, &weights);
         tally.persons += len_u64(members.len());
         tally.households += 1;
         tally.raised += u64::from(formed.raised);
@@ -595,7 +638,7 @@ impl Contribution for Households {
         "households"
     }
     fn phase(&self) -> OpeningPhase {
-        PARTIES
+        CONTRACTS
     }
     fn reads(&self) -> &'static [&'static str] {
         &[]
@@ -611,7 +654,7 @@ impl Contribution for Households {
     }
 
     fn contribute(&self, opening: &mut Opening<'_>) {
-        let Opening { ctx, day, date, register, countries, report, books, population, .. } = opening;
+        let Opening { ctx, day, date, calendar, register, countries, report, books, population, attachments } = opening;
         let Some(books) = books.downcast_mut::<Books>() else {
             violation!(clause = "GEN.3", "an opening handed something other than the world's books");
         };
@@ -620,8 +663,10 @@ impl Contribution for Households {
         };
         let at = household_kind(population);
         let classes = self.prims.age_classes.shared(register);
+        let reason = books.ledger.reasons.named(REASON.name);
         for c in *countries {
             let country = Country::of(&self.prims, register, c, *date);
+            let mut drawer = Drawer::new(attachments, books, register, (calendar, *day), c);
             let tiles: Vec<u64> = c.regions.iter().map(|(_, tiles)| len_u64(tiles.len())).collect();
             let mut lot = ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 0));
             let shares = apportion(c.people, &tiles, &mut lot);
@@ -630,11 +675,15 @@ impl Contribution for Households {
                 let Some(kd) = population.kinds.get_mut(at) else {
                     violation!(clause = "POP.2", "a world that keeps no household kind");
                 };
-                let drawn = draw_region(&country, ctx, (*region, people), &kd.decl, classes);
+                let drawn = draw_region(&country, ctx, (*region, people), &kd.decl, classes, (&mut drawer, books));
+                let rows: Vec<_> = drawn.drawn.iter().map(|d| d.rows.clone()).collect();
                 let landed = land(books, kd, at, *day, drawn.drawn);
+                drawer.open_cells(books, (register, reason), &rows, &landed.resolved, report);
                 tally.add(&drawn.tally);
-                cells += landed;
+                cells += landed.new_cells;
             }
+            let mut lot = ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 1));
+            drawer.close(books, (register, reason), &mut lot, report);
             if tally.households == 0 {
                 violation!(clause = "GEN.3", "a country whose people make no household", country = c.id.get());
             }
@@ -645,14 +694,14 @@ impl Contribution for Households {
 }
 
 /// A region's households landed as cells in the household kind's table.
-fn land(books: &mut Books, kd: &mut PopKind, at: usize, today: phx_id::Day, drawn: Vec<Drawn>) -> u64 {
+fn land(books: &mut Books, kd: &mut PopKind, at: usize, today: phx_id::Day, drawn: Vec<Drawn>) -> Landed {
     let Books { ledger, parties, .. } = books;
     let (cells, directory, space) = parties.cells_mut();
     let table = Population::table_mut::<SystemBacking>(cells, at);
     let PopKind { decl, keys, index, levels, place, .. } = kd;
     let mut ctx =
         TenB { ledger, table, place: *place, keys, directory, space, kind: decl, levels, kinks: &NoRows, today };
-    land_drawn(&mut ctx, index, drawn).new_cells
+    land_drawn(&mut ctx, index, drawn)
 }
 
 fn describe(c: &OpeningCountry, country: &Country, t: &Tally, cells: u64) -> String {

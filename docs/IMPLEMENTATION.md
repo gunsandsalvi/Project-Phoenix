@@ -4739,11 +4739,18 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     transfer, sited in the region the kind names (`sited_by`); a drawn split's row may not hold more members than its
     cell, a given one may (persons' rows). Tests: attachments drawn whole once every holder is drawn, an exclusive kind
     held once a person, a row held at its members' share; rows carried to parts, to the estate and to leave; members
-    leaving a line with a counterpart drawn by counts. No household holds a row until S0.25d-3; the build run is in the
-    commit that follows this one.
-  - S0.25d-3: the opening's attachment draws, the online apportionment of named counterparties, the gathering of
+    leaving a line with a counterpart drawn by counts. No household holds a row until S0.25d-3. Build run (`b1a62f6b370e`,
+    120 days): clean, peak 447 MiB.
+  - S0.25d-3 *(built; its build run below)*: the opening's attachment draws, the online apportionment of named counterparties, the gathering of
     rows into cells, the lines opened and the derived sides apportioned, the report's unmatched strata (architecture
-    §10.3);
+    §10.3). As built: the draws' interface and the online choice and exact apportionment (`phx_ledger::attachments`),
+    the gathering of rows with their counts and balance weights (`Gathered`), `sys-dem`'s drawer (lines opened, cell
+    rows opened after landing, named sides, derived sides apportioned and reported, pools written), the households'
+    contribution moved to the contracts phase, and the banks' draw — the bank in the key, current accounts and
+    household loans — brought forward from S0.25d-4. The household loans pay interest on their balance and no
+    principal: a repayment per contract cannot follow a cell's balance summed over households of different loans,
+    and the balance-reckoned repayment waits for the households' own borrowing (F-042). Tests: the online choice
+    within one of each prefix's share, pools apportioned exactly.
   - S0.25d-4: deposits and loans (`sys-bnk`), jobs (`sys-lab`), tenancies (`sys-hsg`), paying by their terms;
   - S0.25d-5: pensions in payment (`sys-soc`, `sys-pen`);
   - S0.25d-6: small firms as cells (FRM.23) and their ranks;
@@ -15736,6 +15743,7 @@ the final build within the budget on the phone.
 | F-039 | S0.25c | opening, build machine, 2026-09-24 | The opening's households are too small and too few are families: 1.90, 2.70 and 3.22 persons a household in the developed, emerging and developing countries; couples with children 10.0% of households against `DEM.household_types`' 31.2% at the drawn fertility (20.4% against 37.5%, 22.7% against 38.4%), extended families 3.9% against 12.0% (16.5% against 30.4%, 21.5% against 36.3%), one person 42.7% against 24.3% (26.6% against 9.8%, 24.9% against 7.7%) (the opening report's `DEM.households`, run 4b of 2026-09-24). The persons are drawn first and every adult who is neither a partner nor a mother of a child under majority lives alone, in a couple or with one unrelated adult, as `DEM.household_members` says each type holds | households formed from persons with no adult child at home and at most one relative: nothing reads `DEM.household_sizes` or `DEM.older_living_arrangements`' persons of 65 and over living with a child of 20 or over | adults at home by the sources in hand: a family's children of 20 and over from `DEM.living_children` and older persons with a grown child from `DEM.older_living_arrangements`, the households' sizes read against `DEM.household_sizes`; `DEM.household_members` revised with them (F-036) | open |
 | F-040 | S0.25c | review, 2026-09-25 | Mortality reads age and sex alone: the disabled die at the rates of the able of their age and sex, though POP.3 gives a hazard by age and health; the opening's disability prevalence and the onset hazard were derived as if the disabled die at the population's rate (`DEM.disability_onset`) | no source in hand for the disabled's mortality relative to the able's by age | a relative mortality of the disabled by age from a sourced study (e.g. the Global Burden of Disease's excess mortality), declared with the life table, and the onset mapping re-derived with it | open |
 | F-041 | S0.25c | build, 2026-09-25 | The build run's memory budget (`phx-cli`'s `WORLD_BYTES`: the empty world, the map and the individuals, 355 MiB) held no line for the population, so every run since S0.25c's opening peaked over it (447 MiB, b7930378e270 and 82340ece379b) and was not clean, though its checks all passed | the step that brought the cells added no budget line; the peak is the opening's, whose scratch for one region's parts the design puts at about 250 MB | the population's line added to the run's budget, the opening's scratch of one region's parts beside the cells at the run's resolution (275 MiB); the opening's own peak measured on the phone at S0.26, and the parallel opening (F-038) held to the same scratch | open |
+| F-042 | S0.25d | build, 2026-09-25 | Households' loans repay no principal: they pay interest on their balance only, since a principal leg is an amount per contract and a cell's loan row sums households' loans of different sizes | the contract algebra holds no repayment reckoned on the balance (an annuity or a share of the outstanding amount) | a balance-reckoned repayment leg in the algebra, with the households' borrowing (S1.12) | open |
 
 ---
 

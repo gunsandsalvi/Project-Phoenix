@@ -102,8 +102,12 @@ pub phx_pop::explicit::Explicit::persons: alloc::vec::Vec<phx_pop::explicit::Hel
 pub phx_pop::explicit::Explicit::rows: alloc::vec::Vec<phx_pop::explicit::Attached>
 pub struct phx_pop::explicit::Gathered
 impl phx_pop::explicit::Gathered
-pub fn phx_pop::explicit::Gathered::add(&mut self, &phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, phx_pop::key::KeyRecord, &phx_pop::explicit::Explicit)
+pub fn phx_pop::explicit::Gathered::add(&mut self, &phx_pop::kind::PopKindDecl, &phx_pop::profile::ProfileLayout, phx_pop::key::KeyRecord, &phx_pop::explicit::Explicit, &[(phx_pop::explicit::Attached, u32, u64)])
 pub fn phx_pop::explicit::Gathered::into_drawn(self) -> alloc::vec::Vec<phx_pop::landing::Drawn>
+pub struct phx_pop::explicit::GatheredRow
+pub phx_pop::explicit::GatheredRow::at: phx_pop::explicit::Attached
+pub phx_pop::explicit::GatheredRow::count: u32
+pub phx_pop::explicit::GatheredRow::pool: phx_num::missing::Missing<(u32, u64)>
 pub struct phx_pop::explicit::Held
 pub phx_pop::explicit::Held::role: usize
 pub phx_pop::explicit::Held::rows: alloc::vec::Vec<phx_pop::explicit::Attached>
@@ -302,6 +306,7 @@ pub mod phx_pop::landing
 pub struct phx_pop::landing::Drawn
 pub phx_pop::landing::Drawn::key: phx_pop::key::KeyRecord
 pub phx_pop::landing::Drawn::profile: phx_pop::profile::Profile
+pub phx_pop::landing::Drawn::rows: alloc::vec::Vec<phx_pop::explicit::GatheredRow>
 pub phx_pop::landing::Drawn::weight: phx_core::weight::Weight
 pub struct phx_pop::landing::Landed
 pub phx_pop::landing::Landed::erased: alloc::vec::Vec<f64>

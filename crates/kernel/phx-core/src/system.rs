@@ -56,6 +56,9 @@ pub struct Declarations {
     pub kinks: KinkRegistry,
     pub families: Vec<(&'static str, Box<dyn AuditFamily>)>,
     pub contributions: Vec<(&'static str, Box<dyn Contribution>)>,
+    /// Each line-owning system's draw of the households' lines, which the household's formation calls; opaque here,
+    /// since the kernel crate that knows lines lies above this one.
+    pub attachments: Vec<(&'static str, Box<dyn core::any::Any + Send + Sync>)>,
     pub pop: Vec<PopEntry>,
     pub pop_processes: Vec<(&'static str, Box<dyn crate::pop_process::PopProcess>)>,
     pub setup_values: Vec<(&'static str, SetupValue)>,
@@ -149,6 +152,11 @@ impl Declarations {
 
     pub fn contribution(&mut self, contribution: Box<dyn Contribution>) {
         self.contributions.push((self.system, contribution));
+    }
+
+    /// A draw of the households' lines of the system's kinds, made with each household as the opening forms it.
+    pub fn attachment(&mut self, draw: Box<dyn core::any::Any + Send + Sync>) {
+        self.attachments.push((self.system, draw));
     }
 
     /// A process on a population kind's members, whose outcome the declaring system writes.

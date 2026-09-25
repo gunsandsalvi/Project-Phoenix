@@ -24,3 +24,6 @@ pub const LOTS: u32 = 1;
 pub const LOANS: u32 = 2;
 /// How many purposes a country's stratum holds.
 pub const PURPOSES: u32 = 3;
+/// Parts of a household's wealth or income, as a multiple of its country's median, it is weighed in for its share of
+/// the households' balances.
+pub const WEALTH_PARTS: f64 = 1_000_000.0;

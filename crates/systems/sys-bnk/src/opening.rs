@@ -22,10 +22,10 @@ use phx_rand::below_u64;
 use crate::consts::{LOANS, LOTS, MONTHS_PER_YEAR, PERCENT, PURPOSES, RATE_ONE, SHARE_PARTS, SITES};
 use crate::{BANK, OpeningStream, zipf};
 
-const BANKS: &str = "BNK.banks";
+pub(crate) const BANKS: &str = "BNK.banks";
 const FIRMS: &str = "FRM.firms";
 const DEBT: &str = "FRM.debt";
-const DEPOSITS: &str = "FRM.deposits";
+pub(crate) const DEPOSITS: &str = "FRM.deposits";
 const LENDERS: &str = "BNK.lenders";
 const ACCOUNT: &str = "current account";
 
@@ -100,21 +100,23 @@ impl Contribution for Declared {
         let _ = b.ledger.reasons.declare(REASON);
         b.ledger.lines.declare_deposits(HOLDERS.deposits(ACCOUNT));
         b.ledger.lines.declare_money(LOAN);
+        b.ledger.lines.declare_deposits(crate::households::RETAIL.retail_deposits(crate::households::ACCOUNT));
+        b.ledger.lines.declare_money(crate::households::LOAN);
     }
 }
 
-fn drawn(b: &Books, name: &str, country: CountryId) -> Vec<(PartyId, u64)> {
+pub(crate) fn drawn(b: &Books, name: &str, country: CountryId) -> Vec<(PartyId, u64)> {
     let Some(v) = b.drawn.get(&key(name, country)) else {
         violation!(clause = "GEN.3", "the banks' opening reading a stratum not yet drawn", country = country.get());
     };
     v.clone()
 }
 
-fn rate(percent: f64) -> Rate {
+pub(crate) fn rate(percent: f64) -> Rate {
     Rate::new(whole(percent / PERCENT * RATE_ONE), RatePeriod::Year)
 }
 
-fn monthly(anchor: Date, country: CountryId) -> ScheduleDates {
+pub(crate) fn monthly(anchor: Date, country: CountryId) -> ScheduleDates {
     let Some(months) = Period::months(1) else { violation!(clause = "TIME.4", "a month that is no period") };
     ScheduleDates {
         anchor,
@@ -176,7 +178,7 @@ fn next_date(dates: &ScheduleDates, calendar: &phx_core::Calendar, day: phx_id::
     (due, k)
 }
 
-fn terms(ccy: phx_num::Ccy, legs: Vec<Leg>, schedule: Schedule) -> Terms {
+pub(crate) fn terms(ccy: phx_num::Ccy, legs: Vec<Leg>, schedule: Schedule) -> Terms {
     Terms {
         ccy,
         legs,

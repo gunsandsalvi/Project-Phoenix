@@ -1,6 +1,7 @@
 pub mod algebra;
 pub mod apply;
 pub mod apply_batch;
+pub mod attachments;
 pub mod audit;
 pub mod books;
 pub mod check;

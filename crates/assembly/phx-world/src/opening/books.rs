@@ -115,6 +115,8 @@ pub fn open_books(
         phx_pop::population::Population::new(pop.to_vec(), first, compiled.day_zero, books.parties.cells_mut().2);
     let mut report = GenReport::default();
     let mut contributions: Vec<(&'static str, Box<dyn Contribution>)> = std::mem::take(&mut d.contributions);
+    let mut attachments = std::mem::take(&mut d.attachments);
+    attachments.sort_by_key(|(system, _)| *system);
     contributions.sort_by(|(a, x), (b, y)| (x.phase().0, *a, x.name()).cmp(&(y.phase().0, *b, y.name())));
     for phase in phases.iter().copied() {
         for (_, c) in contributions.iter().filter(|(_, c)| c.phase() == phase) {
@@ -134,6 +136,7 @@ pub fn open_books(
                     let any: &mut dyn Any = &mut population;
                     any
                 },
+                attachments: &attachments,
             };
             c.contribute(&mut opening);
         }

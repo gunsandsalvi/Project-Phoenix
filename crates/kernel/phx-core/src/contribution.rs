@@ -139,6 +139,8 @@ pub struct Opening<'a> {
     pub books: &'a mut dyn Any,
     /// The population kinds' keys, landing indexes and levels, beside the books that keep their cells.
     pub population: &'a mut dyn Any,
+    /// The systems' draws of the households' lines, in the order of their systems.
+    pub attachments: &'a [(&'static str, Box<dyn Any + Send + Sync>)],
 }
 
 impl core::fmt::Debug for Opening<'_> {
