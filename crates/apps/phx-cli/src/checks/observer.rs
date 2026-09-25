@@ -95,18 +95,22 @@ pub const LC_0_58: super::Check = live_check! {
     check: public_events_from_the_rule,
 };
 
-/// Money moves on every business day; each day's fails are tallied by their causes as they were recorded; no read
+/// Money moves on every business day; each day's fails tallied by their causes number the fails recorded, and match
+/// them cause by cause while the day still holds them; no read
 /// rises on every day of the run unless its declaration names why; and the reads never all stand still to the end.
 fn alive(w: Inspector<'_>, o: &Observed<'_>) -> Outcome {
     for s in w.settlements().iter().filter(|s| w.any_business(s.day)) {
         if s.dues.settled == 0 || s.dues.gross == 0 {
             return Outcome::Fail(format!("no money moved on business day {}", s.day.get()));
         }
+        if s.measure.fails.values().sum::<u64>() != s.recorded {
+            return Outcome::Fail(format!("day {}'s fails by cause do not number the fails recorded", s.day.get()));
+        }
         let mut tally: BTreeMap<FailCause, u64> = BTreeMap::new();
         for f in &s.fails {
             *tally.entry(f.cause).or_insert(0) += 1;
         }
-        if tally != s.measure.fails {
+        if s.unrecorded == Missing::Absent && tally != s.measure.fails {
             return Outcome::Fail(format!("day {}'s fails by cause are not the fails recorded", s.day.get()));
         }
     }

@@ -569,14 +569,13 @@ fn lines_pay(w: Inspector<'_>) -> Outcome {
     }
     let lines = &w.books().ledger.lines;
     for s in settled {
-        for f in &s.fails {
-            if let phx_num::Missing::Present(row) = f.row
-                && lines.decl(row.line).transfer_requesters.is_empty()
-            {
+        for (kind, _) in &s.by_kind {
+            let decl = lines.kind_decl(*kind);
+            if decl.transfer_requesters.is_empty() {
                 return Outcome::Fail(format!(
                     "day {}: a fail on a {} line, whose kind names no system to decide on it",
                     s.day.get(),
-                    lines.kind_name(row.line)
+                    decl.name
                 ));
             }
         }

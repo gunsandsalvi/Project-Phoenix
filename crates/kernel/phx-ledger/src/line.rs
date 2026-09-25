@@ -306,6 +306,12 @@ impl<B: Backing> Lines<B> {
         LineKind { index: self.declare_kind(decl), unit: PhantomData, balance_unit: unit }
     }
 
+    /// A line kind's declaration, by its index.
+    #[must_use]
+    pub fn kind_decl(&self, index: u16) -> &LineKindDecl {
+        self.kind(index)
+    }
+
     fn kind(&self, index: u16) -> &LineKindDecl {
         let Some(k) = self.kinds.get(usize::from(index)) else {
             violation!(clause = "REG.8", "a line of an undeclared kind", kind = index);

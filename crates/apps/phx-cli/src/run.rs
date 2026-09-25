@@ -514,6 +514,7 @@ fn play(
     obs.settling(w, settle_end);
     while world.today() < end {
         world.run_turn_observed(&[], clock, Some(&mut obs.watch));
+        println!("{}", progress(Inspector::new(world), settle_end));
         obs.settling(Inspector::new(world), settle_end);
         let now = save_period(Inspector::new(world), world.today())?;
         if now != period {
@@ -525,6 +526,27 @@ fn play(
         }
     }
     Ok(injection_save)
+}
+
+/// The turn just run, so a run can be followed as it goes: its dates and days, its wall time, the payments due and
+/// failed in it, and the audit's findings so far.
+fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
+    let Some(turn) = w.turn_records().last() else { return "no turn run".to_owned() };
+    let (mut due, mut failed) = (0_u64, 0_u64);
+    for s in w.settlements().iter().filter(|s| s.day >= turn.first && s.day <= turn.last) {
+        due += s.dues.payments;
+        failed += s.dues.failed;
+    }
+    let date = |d| crate::measure::calendar::date_text(w.date(d));
+    let phase = if turn.last < settle_end { "settling" } else { "running" };
+    let wall = turn.wall_ns.map_or_else(|| "untimed".to_owned(), |ns| format!("{} ms", ns / 1_000_000));
+    format!(
+        "{phase} {} to {}: {} days in {wall}; payments {due} due, {failed} failed; {} findings",
+        date(turn.first),
+        date(turn.last),
+        turn.days,
+        w.findings().len()
+    )
 }
 
 /// Each sub-step's wall time over the days it ran, in the day's order: its total, median and greatest, so a run shows

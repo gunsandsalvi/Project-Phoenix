@@ -1,4 +1,3 @@
-use phx_num::Missing;
 use phx_world::Inspector;
 
 use super::{Check, Outcome};
@@ -58,8 +57,8 @@ fn liveness(w: Inspector<'_>) -> Outcome {
         if s.dues.payments == 0 {
             return Outcome::Fail(format!("no payment fell due on business day {}", s.day.get()));
         }
-        if let Some(f) = s.fails.iter().find(|f| matches!(f.row, Missing::Absent)) {
-            return Outcome::Fail(format!("a fail ({:?}) on day {} of no contract's due", f.cause, s.day.get()));
+        if s.rowless > 0 {
+            return Outcome::Fail(format!("{} fails on day {} of no contract's due", s.rowless, s.day.get()));
         }
     }
     Outcome::Pass

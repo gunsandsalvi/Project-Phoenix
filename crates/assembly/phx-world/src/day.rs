@@ -316,6 +316,7 @@ impl World {
                 books.rows_of(party).contains(&(row.line, row.side)) && arrears.of(row.line, row.side, party).is_none()
             });
             s.unrecorded = phx_num::Missing::Present(phx_rand::float::len_u64(unrecorded.count()));
+            s.fails = Vec::new();
         }
     }
 
@@ -325,10 +326,22 @@ impl World {
         self.books.parties.compact_arenas();
         let book = self.books.close();
         self.accounts.close_day(&book);
+        let lines = &self.books.ledger.lines;
+        let mut by_kind: std::collections::BTreeMap<u16, u64> = std::collections::BTreeMap::new();
+        for f in &book.fails {
+            if let phx_num::Missing::Present(row) = f.row {
+                *by_kind.entry(lines.kind_of(row.line)).or_insert(0) += 1;
+            }
+        }
+        let recorded = phx_rand::float::len_u64(book.fails.len());
+        let rowless = recorded - by_kind.values().sum::<u64>();
         self.settlements.push(Settled {
             day,
             measure: book.measure(),
             dues,
+            recorded,
+            rowless,
+            by_kind: by_kind.into_iter().collect(),
             fails: book.fails.clone(),
             unrecorded: phx_num::Missing::Absent,
         });

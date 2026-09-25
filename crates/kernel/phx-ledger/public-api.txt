@@ -959,6 +959,7 @@ pub fn phx_ledger::line::Lines<B>::is_empty(&self) -> bool
 pub fn phx_ledger::line::Lines<B>::is_money(&self, phx_id::ids::LineId) -> bool
 pub fn phx_ledger::line::Lines<B>::is_reserves(&self, phx_id::ids::LineId) -> bool
 pub fn phx_ledger::line::Lines<B>::keys(&self) -> phx_ledger::holder::HolderKeys
+pub fn phx_ledger::line::Lines<B>::kind_decl(&self, u16) -> &phx_ledger::line::LineKindDecl
 pub fn phx_ledger::line::Lines<B>::kind_index(&self, &str) -> u16
 pub fn phx_ledger::line::Lines<B>::kind_name(&self, phx_id::ids::LineId) -> &'static str
 pub fn phx_ledger::line::Lines<B>::kind_names(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
