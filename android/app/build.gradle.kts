@@ -1,3 +1,5 @@
+import javax.inject.Inject
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -47,20 +49,43 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
-    // The bench runs the world from the data the game reads, without the raw sources it was derived from.
-    sourceSets.getByName("bench").assets.srcDir(layout.buildDirectory.dir("phx-assets"))
 }
 
-val phxData by tasks.registering(Sync::class) {
-    from(rootProject.file("../data")) {
-        exclude("sources/**")
+/** The data the game reads, without the raw sources it was derived from, laid out as the bench's `data` asset. */
+abstract class PhxData : DefaultTask() {
+    @get:Internal
+    abstract val source: DirectoryProperty
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    val inputs: FileTree
+        get() = source.asFileTree.matching { exclude("sources/**") }
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+
+    @get:Inject
+    abstract val files: FileSystemOperations
+
+    @TaskAction
+    fun copy() {
+        files.sync {
+            from(source) { exclude("sources/**") }
+            into(output.dir("data"))
+        }
     }
-    into(layout.buildDirectory.dir("phx-assets/data"))
 }
 
-tasks.matching { it.name.startsWith("merge") && it.name.contains("Bench") && it.name.endsWith("Assets") }
-    .configureEach { dependsOn(phxData) }
+val phxData = tasks.register<PhxData>("phxData") {
+    source.set(rootProject.layout.projectDirectory.dir("../data"))
+}
+
+// The bench runs the world from the data; the variant API carries the task's dependency to the assets it feeds.
+androidComponents {
+    onVariants(selector().withFlavor("mode" to "bench")) { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(phxData, PhxData::output)
+    }
+}
 
 dependencies {
     implementation(platform(libs.compose.bom))
