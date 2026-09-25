@@ -1,0 +1,10 @@
+# LAB's opening: the wage points jobs are paid at, until firms post their own wage offers.
+
+[[primitive]]
+id = "LAB.wage_point_ratio"
+kind = "SHAPE"
+owner = "LAB"
+source = "assumed"
+source_ref = "Wages at the opening lie on points five per cent apart, the step between neighbouring round monthly wages in collective agreements' pay scales, until each firm posts its own wage offers on its trade's points."
+shape = "placeholder:LAB"
+value = "1.05"

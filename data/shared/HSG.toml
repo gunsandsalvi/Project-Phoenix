@@ -1,0 +1,10 @@
+# HSG's opening: the rent points tenancies are paid at, until landlords set their own rents.
+
+[[primitive]]
+id = "HSG.rent_point_ratio"
+kind = "SHAPE"
+owner = "HSG"
+source = "assumed"
+source_ref = "Rents at the opening lie on points five per cent apart, the step between neighbouring round monthly rents, until each landlord sets its own rent on its trade's points."
+shape = "placeholder:HSG"
+value = "1.05"

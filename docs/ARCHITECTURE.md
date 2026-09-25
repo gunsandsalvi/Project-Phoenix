@@ -1272,7 +1272,7 @@ As built (`phx_ledger::attachments`, `sys-dem`'s `lines`): a system registers it
 the opening hands the draws to the households' contribution, which runs with the contracts, once every institution
 and firm is drawn. For each country each draw is made ready (`AttachmentDraw::country`), then called with each
 household as it is formed — its key, its persons, and the wealth and income `sys-dem` drew for it from its shapes
-(`DEM.opening_means`), as multiples of the country's median — and gives its rows and the key attributes it sets. A
+(`DEM.opening_means`), as multiples of the country's mean — and gives its rows and the key attributes it sets. A
 row names its line by kind, terms and named counterparty (`LineSpec`), its holder (the household or a person by
 place) and its balance: none, or a share of a pool by a weight. Cells land without rows; each landed part's rows are
 kept for the cell it landed in, rows of one line side summed, and once the country is drawn each line opens as one
@@ -1284,7 +1284,10 @@ first: a household any of whose adults holds an account banks with one bank, cho
 (`BNK.bank`), and keeps a household current account there, its share of the households' deposits (the country's
 deposits less the firms') by its wealth; a household any of whose adults has borrowed owes its bank a household loan,
 its share of the households' debt by its income. Neither side of a household's line keeps a holder list on the
-households' side.
+households' side. Labour's draw gives an employed adult a job, a person's row on the employment line of its
+wage point, whose employers are derived over the firms by headcount; housing's gives a renting household a tenancy on
+the line of its rent point, whose landlords are derived over the firms by their plant until the dwelling stock names
+them. Both are lines of many holders on both sides, so they are cleared (§6.5).
 
 The same seed therefore gives the same world whatever the resolution the valve sets, and nothing is balanced after
 merging: finer attributes are drawn from their own counter keys, so a coarser setting is a projection of a finer

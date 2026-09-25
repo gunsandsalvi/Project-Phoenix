@@ -1,19 +1,16 @@
-use phx_core::calendar::bizday::BusinessDayConvention;
 use phx_core::calendar::daycount::DayCount;
-use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
+use phx_core::calendar::period::ScheduleDates;
 use phx_core::{
     Apportioned, BALANCES, CONTRACTS, Contribution, DECLARATIONS, Opening, OpeningCountry, OpeningPhase, PARTIES, Prim,
     StreamDef, apportion, opening_subject,
 };
 use phx_id::{CountryId, Date, PartyId};
-use phx_ledger::algebra::{
-    DefaultDefinition, Facility, Leg, PaymentOrder, Reference, Repayment, Schedule, Seniority, Side, Termination, Terms,
-};
+use phx_ledger::algebra::{Leg, Reference, Repayment, Schedule, Side};
 use phx_ledger::books::{self, Books};
 use phx_ledger::instruction::{Effect, ReasonDecl, ReasonId};
 use phx_ledger::line::{LineKindDecl, SideDecl};
 use phx_ledger::money::MoneyHolders;
-use phx_ledger::opening::{currency, derived, key, open_row, whole, write};
+use phx_ledger::opening::{currency, derived, key, monthly, open_row, plain_terms as terms, whole, write};
 use phx_ledger::rows::{BALANCE, PENDING};
 use phx_macros::clause;
 use phx_num::{Count, Missing, Money, Rate, RatePeriod, violation};
@@ -116,17 +113,6 @@ pub(crate) fn rate(percent: f64) -> Rate {
     Rate::new(whole(percent / PERCENT * RATE_ONE), RatePeriod::Year)
 }
 
-pub(crate) fn monthly(anchor: Date, country: CountryId) -> ScheduleDates {
-    let Some(months) = Period::months(1) else { violation!(clause = "TIME.4", "a month that is no period") };
-    ScheduleDates {
-        anchor,
-        period: months,
-        eom: EndOfMonth::Plain,
-        convention: BusinessDayConvention::Following,
-        country,
-    }
-}
-
 /// The date `months` months before `date`, on the same day of the month or the month's last.
 fn months_before(date: Date, months: u32) -> Date {
     let total = i64::from(date.year()) * i64::from(MONTHS_PER_YEAR) + i64::from(date.month()) - 1 - i64::from(months);
@@ -176,23 +162,6 @@ fn next_date(dates: &ScheduleDates, calendar: &phx_core::Calendar, day: phx_id::
         due = dates.nth(calendar, k);
     }
     (due, k)
-}
-
-pub(crate) fn terms(ccy: phx_num::Ccy, legs: Vec<Leg>, schedule: Schedule) -> Terms {
-    Terms {
-        ccy,
-        legs,
-        schedule,
-        seniority: Seniority(0),
-        collateral: Missing::Absent,
-        payment_order: PaymentOrder(0),
-        termination: Termination::None,
-        conversion: Missing::Absent,
-        default: DefaultDefinition { missed_payments: 1, grace_days: 0 },
-        underlying: Missing::Absent,
-        facility: Missing::<Facility>::Absent,
-        stay: Missing::Absent,
-    }
 }
 
 /// Each country's banks: how many, and each one's share of the banks' assets, from a Zipf law fitted to the

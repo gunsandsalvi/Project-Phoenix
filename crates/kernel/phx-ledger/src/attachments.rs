@@ -58,7 +58,7 @@ pub struct DrawnRow {
 }
 
 /// What a draw reads of a household: its key and its persons' roles and values, by name, and the household's wealth
-/// and income as its own system drew them, each a multiple of its country's median.
+/// and income as its own system drew them, each a multiple of its country's mean.
 #[derive(Clone, Copy, Debug)]
 pub struct Drawing<'a> {
     pub household: &'a phx_core::Household,

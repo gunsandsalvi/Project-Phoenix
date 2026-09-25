@@ -1314,6 +1314,7 @@ pub phx_core::register::values::Distribution::exp: u8
 pub phx_core::register::values::Distribution::family: phx_core::register::values::Family
 impl phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::draw(&self, &mut phx_rand::draws::Draws) -> f64
+pub fn phx_core::register::values::Distribution::mean(&self) -> f64
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>
@@ -2459,6 +2460,7 @@ pub phx_core::Distribution::exp: u8
 pub phx_core::Distribution::family: phx_core::register::values::Family
 impl phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::draw(&self, &mut phx_rand::draws::Draws) -> f64
+pub fn phx_core::register::values::Distribution::mean(&self) -> f64
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>

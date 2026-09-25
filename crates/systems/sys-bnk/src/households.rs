@@ -22,7 +22,8 @@ use phx_rand::{Draws, Subject, open_unit};
 
 use crate::BANK;
 use crate::consts::{MOST_BANKS, PERCENT, SHARE_PARTS, WEALTH_PARTS};
-use crate::opening::{drawn, monthly, rate, terms};
+use crate::opening::{drawn, rate};
+use phx_ledger::opening::{monthly, plain_terms as terms};
 
 declare_stream! { pub HouseholdsStream = "BNK.opening_households" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 

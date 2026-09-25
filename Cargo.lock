@@ -787,6 +787,8 @@ dependencies = [
  "sys-cb",
  "sys-dem",
  "sys-frm",
+ "sys-hsg",
+ "sys-lab",
  "toml 0.9.12+spec-1.1.0",
 ]
 
@@ -1109,6 +1111,34 @@ dependencies = [
 name = "sys-frm"
 version = "0.1.0"
 dependencies = [
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+]
+
+[[package]]
+name = "sys-hsg"
+version = "0.1.0"
+dependencies = [
+ "if-pop",
+ "libm",
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+]
+
+[[package]]
+name = "sys-lab"
+version = "0.1.0"
+dependencies = [
+ "if-pop",
+ "libm",
  "phx-core",
  "phx-id",
  "phx-ledger",

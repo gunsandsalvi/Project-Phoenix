@@ -608,7 +608,10 @@ fn draw_region(
         persons.sort_by_key(|p| p.role);
         let mut e = Explicit { persons, rows: Vec::new() };
         let mut means = opening_ctx.draws(&MeansStream::DECL, subject);
-        let drawn = (country.wealth.draw(&mut means), country.income.draw(&mut means));
+        let drawn = (
+            country.wealth.draw(&mut means) / country.wealth.mean(),
+            country.income.draw(&mut means) / country.income.mean(),
+        );
         let weights = drawer.household(books, kind, &mut record, &mut e, ((opening_ctx, subject), drawn));
         gathered.add(kind, &profiles, record, &e, &weights);
         tally.persons += len_u64(members.len());

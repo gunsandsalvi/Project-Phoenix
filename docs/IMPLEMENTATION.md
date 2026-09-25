@@ -4751,7 +4751,17 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     principal: a repayment per contract cannot follow a cell's balance summed over households of different loans,
     and the balance-reckoned repayment waits for the households' own borrowing (F-042). Tests: the online choice
     within one of each prefix's share, pools apportioned exactly.
-  - S0.25d-4: deposits and loans (`sys-bnk`), jobs (`sys-lab`), tenancies (`sys-hsg`), paying by their terms;
+  - S0.25d-4 *(built; its build run below)*: deposits and loans (`sys-bnk`), jobs (`sys-lab`), tenancies (`sys-hsg`),
+    paying by their terms. As built: `sys-lab` draws each adult employed at the country's employment rate and an
+    employee at its sex's share of the employed (`LAB.status_shares`), its monthly wage the labour share's mean wage
+    per worker times its household's income over the mean, on the nearest wage point (`LAB.wage_point_ratio`); a job
+    is a person's row on the employment line of its point, cleared when the line has many employers, its employers
+    the country's firms by headcount. `sys-hsg` draws a household renting at one less the country's home ownership,
+    its monthly rent the median rent burden (`HSG.tenure_and_costs`) of its persons' share of the labour income times
+    its income over the mean, on the nearest rent point (`HSG.rent_point_ratio`); its landlords stand in the firms by
+    their plant (§12, F-043). The distributions' means (`Distribution::mean`, closed form for the log-normal body with
+    a Pareto tail) set the draws' multiples of the mean. Neither draws by age: jobs go to adults of every age, and no
+    wage is by occupation or skill (F-044);
   - S0.25d-5: pensions in payment (`sys-soc`, `sys-pen`);
   - S0.25d-6: small firms as cells (FRM.23) and their ranks;
   - S0.25d-7: LC-0-44, 45, 48, 55 and 56, docs, reviews, the build run, done.
@@ -4806,7 +4816,7 @@ This is the world the Stage 0 gate measures.
 | `crates/interfaces/if-banking/src/terms.rs` | deposit kinds, the banking arrangement, payment order, coverage order |
 | `crates/systems/sys-dem/` | POP's mortality, illness and ageing as hazards and processes; the population's opening contribution |
 | `crates/systems/sys-est/` | household estates: opening, the waterfall through the ledger (S0.17), distribution in kind to heirs (POP.9, part) |
-| `crates/systems/sys-lab/src/gen.rs`, `sys-hsg/src/gen.rs`, `sys-bnk/src/gen.rs`, `sys-frm/src/gen.rs` | their lines' opening contributions and their placeholders |
+| `crates/systems/sys-lab/src/jobs.rs`, `crates/systems/sys-hsg/src/tenancies.rs`, `crates/systems/sys-bnk/src/households.rs`, `crates/systems/sys-frm/src/gen.rs` | their draws of the households' lines at the opening (architecture §10.3) and their placeholders: the wage and rent points until firms and landlords post their own |
 | `crates/systems/sys-soc/src/gen.rs`, `src/state_pension.rs` | the state pension's line and opening pensioners; its payment by the rule's points; the placeholder naming SOC |
 | `crates/systems/sys-pen/src/gen.rs`, `src/in_payment.rs` | the opening schemes as parties with their sponsors and assets; their pensioner lines and rows; payment, indexation and survivors by the terms; the placeholder naming PEN |
 | `crates/assembly/phx-world/src/opening/population.rs` | the two canonical passes (architecture §10.3) |
@@ -15744,6 +15754,8 @@ the final build within the budget on the phone.
 | F-040 | S0.25c | review, 2026-09-25 | Mortality reads age and sex alone: the disabled die at the rates of the able of their age and sex, though POP.3 gives a hazard by age and health; the opening's disability prevalence and the onset hazard were derived as if the disabled die at the population's rate (`DEM.disability_onset`) | no source in hand for the disabled's mortality relative to the able's by age | a relative mortality of the disabled by age from a sourced study (e.g. the Global Burden of Disease's excess mortality), declared with the life table, and the onset mapping re-derived with it | open |
 | F-041 | S0.25c | build, 2026-09-25 | The build run's memory budget (`phx-cli`'s `WORLD_BYTES`: the empty world, the map and the individuals, 355 MiB) held no line for the population, so every run since S0.25c's opening peaked over it (447 MiB, b7930378e270 and 82340ece379b) and was not clean, though its checks all passed | the step that brought the cells added no budget line; the peak is the opening's, whose scratch for one region's parts the design puts at about 250 MB | the population's line added to the run's budget, the opening's scratch of one region's parts beside the cells at the run's resolution (275 MiB); the opening's own peak measured on the phone at S0.26, and the parallel opening (F-038) held to the same scratch | open |
 | F-042 | S0.25d | build, 2026-09-25 | Households' loans repay no principal: they pay interest on their balance only, since a principal leg is an amount per contract and a cell's loan row sums households' loans of different sizes | the contract algebra holds no repayment reckoned on the balance (an annuity or a share of the outstanding amount) | a balance-reckoned repayment leg in the algebra, with the households' borrowing (S1.12) | open |
+| F-043 | S0.25d | build, 2026-09-25 | The opening's tenancies pay landlords that stand in the country's firms by their plant: no household or firm is drawn owning rented dwellings | the dwelling stock and its owners are sys-hsg's (S2.05), after the opening's lines | S2.05's dwelling stock by zone and class with firm and household landlords, drawn at the opening | open |
+| F-044 | S0.25d | build, 2026-09-25 | Jobs are drawn for adults of every age at the country's employment rate, and wages by the household's income alone: none by age, occupation family or skill, though the occupation shares are in hand | employment by age and wages by occupation have no mechanism at the opening yet | the employment line's terms by occupation family and skill (LAB.1), the jobs drawn by age, with the labour step (S1.x) | open |
 
 ---
 
@@ -15790,6 +15802,7 @@ the final build within the budget on the phone.
 | The ratchets after S0.25c-4a | accepted at CI's counts on 8c16d42: the candidate screen 3 460 412 (+4.6%, the values tagged by group, the rate read by group and the exposure in persons, a process reading several groups), the rank read 1 175 643, the index rebuild 1 044 483 and the gap estimate 3 299 891 (each under 0.25%, since the roles counted in the key); the build run's run heads read 69 498, rising with the world's cells; five that fell moved down to their counts | 2026-09-24 |
 | Autonomy to the Stage 0 gate | the builder takes every decision the plan leaves to it, and the ones this table would otherwise wait for, until the gate's phone measurement; before it, the documents are checked against the code and fixed, then the full adversarial review of Stage 0 runs; each such decision is stated in its commit and here | 2026-09-24 |
 | The run heads read after S0.25c | 79 952 on the build run b7930378e270, rising with the world's cells as the owner accepted; taken by the builder under its autonomy | 2026-09-25 |
+| The opening's landlords and the wage and rent points | Tenancies at the opening pay landlords that stand in the country's firms by their plant, until the dwelling stock and its owners are drawn (S2.05); wages and rents lie on points five per cent apart until firms and landlords post their own (placeholders LAB and HSG); taken by the builder under its autonomy | 2026-09-25 |
 | S0.25's size | split into sub-steps, each with its own reviews and build run | 2026-09-24 |
 | The build run's length | an ordinary step's 120 days from day zero; a stage gate's settled and run two years, since the full population's opening and settling on the build machine take about an hour | 2026-09-24 |
 | State pensions' rules (S0.25b) | each group's pension age and replacement rate from its members in OECD Pensions at a Glance, the developing group's from India pooled with the eight emerging members, recorded as an assumption; who receives one from the ILO's SDG 1.3.1 coverage for every group | 2026-09-24 |

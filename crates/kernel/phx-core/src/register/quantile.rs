@@ -133,6 +133,27 @@ fn invert(cdf: impl Fn(f64) -> f64, p: f64) -> Result<f64, String> {
     Ok(f64::midpoint(low, high))
 }
 
+/// The distribution's mean, where its family has one in closed form: a log-normal body's share below the threshold and
+/// the Pareto tail's above it, `t·α/(α − 1)` over the tail's mass.
+pub(crate) fn mean(f: &Family) -> Result<f64, String> {
+    match f {
+        Family::LogNormal { mu, sigma } => {
+            let (mu, sigma) = (param(*mu), param(*sigma));
+            Ok(exp(mu + sigma * sigma / 2.0))
+        }
+        Family::LogNormalParetoTail { mu, sigma, threshold, alpha } => {
+            let (mu, sigma, t, a) = (param(*mu), param(*sigma), param(*threshold), param(*alpha));
+            if a <= 1.0 {
+                return Err(format!("a Pareto tail of index {a} has no mean"));
+            }
+            let at_threshold = normal_cdf((log(t) - mu) / sigma);
+            let body = exp(mu + sigma * sigma / 2.0) * normal_cdf((log(t) - mu - sigma * sigma) / sigma);
+            Ok(body + (1.0 - at_threshold) * t * a / (a - 1.0))
+        }
+        other => Err(format!("{other:?} has no mean in closed form here")),
+    }
+}
+
 /// The value below which a share `p` of the distribution lies, for `p` in (0, 1).
 pub(crate) fn quantile(f: &Family, p: f64) -> Result<f64, String> {
     let x = match f {
@@ -192,12 +213,24 @@ pub(crate) fn to_places(x: f64, exp: u8) -> Option<i64> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Family, beta_i, gamma_p, normal_cdf, quantile};
+    use super::{Family, beta_i, gamma_p, mean, normal_cdf, quantile};
 
     const S: i64 = 1_000_000_000_000;
 
     fn close(a: f64, b: f64) -> bool {
         (a - b).abs() < 1e-9 * (1.0 + b.abs())
+    }
+
+    /// The closed-form mean is the quantiles' average over a fine grid, for a tail thin enough that the grid holds it.
+    #[test]
+    fn a_joined_tails_mean_is_its_quantiles_average() {
+        let f = Family::LogNormalParetoTail { mu: 0, sigma: S / 2, threshold: 2 * S, alpha: 6 * S };
+        let n = 1_000_000_u32;
+        let average: f64 =
+            (0..n).map(|k| quantile(&f, (f64::from(k) + 0.5) / f64::from(n)).unwrap()).sum::<f64>() / f64::from(n);
+        let m = mean(&f).unwrap();
+        assert!((m - average).abs() < 1e-3 * m, "closed form {m}, grid {average}");
+        assert!(mean(&Family::LogNormalParetoTail { mu: 0, sigma: S, threshold: S, alpha: S }).is_err());
     }
 
     #[test]

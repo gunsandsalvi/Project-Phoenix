@@ -23,6 +23,8 @@ phx-store = { path = "../../kernel/phx-store" }
 sys-bnk = { path = "../../systems/sys-bnk" }
 sys-cb = { path = "../../systems/sys-cb" }
 sys-dem = { path = "../../systems/sys-dem" }
+sys-hsg = { path = "../../systems/sys-hsg" }
+sys-lab = { path = "../../systems/sys-lab" }
 sys-frm = { path = "../../systems/sys-frm" }
 serde.workspace = true
 serde_json.workspace = true

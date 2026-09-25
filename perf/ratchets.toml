@@ -14,10 +14,11 @@ value = 13
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
-# the placeholders a stage brings for later systems. Three: BNK's two loan terms, and XB's closed borders (S0.18).
+# the placeholders a stage brings for later systems. Five: BNK's two loan terms, XB's closed borders (S0.18), and the
+# wage and rent points (LAB, HSG, S0.25d) until firms and landlords post their own.
 [[ratchet]]
 counter = "phx_check.placeholder_count"
-value = 3
+value = 5
 direction = "down"
 
 # Barriers the day runner crosses on a day no handler runs, read by the build run.

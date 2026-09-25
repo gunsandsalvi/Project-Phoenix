@@ -88,3 +88,43 @@ pub fn derived(country: &OpeningCountry, name: &str) -> f64 {
     };
     v
 }
+
+/// Monthly dates from an anchor, on the anchor's day of each month, a date on no business day moved to the next.
+#[must_use]
+pub fn monthly(anchor: phx_id::Date, country: CountryId) -> phx_core::calendar::period::ScheduleDates {
+    let Some(months) = phx_core::calendar::period::Period::months(1) else {
+        violation!(clause = "TIME.4", "a month that is no period");
+    };
+    phx_core::calendar::period::ScheduleDates {
+        anchor,
+        period: months,
+        eom: phx_core::calendar::period::EndOfMonth::Plain,
+        convention: phx_core::calendar::bizday::BusinessDayConvention::Following,
+        country,
+    }
+}
+
+/// Terms of plain legs on a schedule: senior, unsecured, paid first, never terminated or converted, in default at
+/// the first payment missed, with no facility and no stay.
+#[must_use]
+pub fn plain_terms(
+    ccy: Ccy,
+    legs: Vec<crate::algebra::Leg>,
+    schedule: crate::algebra::Schedule,
+) -> crate::algebra::Terms {
+    use crate::algebra::{DefaultDefinition, Facility, PaymentOrder, Seniority, Termination, Terms};
+    Terms {
+        ccy,
+        legs,
+        schedule,
+        seniority: Seniority(0),
+        collateral: Missing::Absent,
+        payment_order: PaymentOrder(0),
+        termination: Termination::None,
+        conversion: Missing::Absent,
+        default: DefaultDefinition { missed_payments: 1, grace_days: 0 },
+        underlying: Missing::Absent,
+        facility: Missing::<Facility>::Absent,
+        stay: Missing::Absent,
+    }
+}

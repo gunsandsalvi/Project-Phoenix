@@ -230,6 +230,16 @@ impl Distribution {
             Err(_) => phx_num::violation!(clause = "NUM.4", "a distribution with no value at a drawn share"),
         }
     }
+
+    /// The distribution's mean.
+    #[clause("NUM.4")]
+    #[must_use]
+    pub fn mean(&self) -> f64 {
+        match quantile::mean(&self.family) {
+            Ok(x) => x,
+            Err(_) => phx_num::violation!(clause = "NUM.4", "a distribution whose mean is not known in closed form"),
+        }
+    }
 }
 
 /// A type within a kind's type set.

@@ -990,7 +990,9 @@ pub fn phx_ledger::opening::currency(phx_id::ids::CountryId) -> phx_num::money::
 pub fn phx_ledger::opening::derived(&phx_core::contribution::OpeningCountry, &str) -> f64
 pub fn phx_ledger::opening::hold(phx_id::ids::PartyId, phx_id::ids::InstrumentId, i64, phx_num::qty::UnitId, i64, u64) -> phx_ledger::instruction::LegRec
 pub fn phx_ledger::opening::key(&str, phx_id::ids::CountryId) -> alloc::string::String
+pub fn phx_ledger::opening::monthly(phx_id::day::Date, phx_id::ids::CountryId) -> phx_core::calendar::period::ScheduleDates
 pub fn phx_ledger::opening::open_row(&phx_core::register::Register, phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, u32, u8) -> phx_ledger::instruction::LegRec
+pub fn phx_ledger::opening::plain_terms(phx_num::money::Ccy, alloc::vec::Vec<phx_ledger::algebra::Leg>, phx_ledger::algebra::Schedule) -> phx_ledger::algebra::Terms
 pub fn phx_ledger::opening::whole(f64) -> i64
 pub fn phx_ledger::opening::write(phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, i64, phx_num::money::Ccy, u64) -> phx_ledger::instruction::LegRec
 pub mod phx_ledger::part
