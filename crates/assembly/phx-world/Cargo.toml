@@ -24,6 +24,7 @@ sys-bnk = { path = "../../systems/sys-bnk" }
 sys-cb = { path = "../../systems/sys-cb" }
 sys-dem = { path = "../../systems/sys-dem" }
 sys-hsg = { path = "../../systems/sys-hsg" }
+sys-soc = { path = "../../systems/sys-soc" }
 sys-lab = { path = "../../systems/sys-lab" }
 sys-frm = { path = "../../systems/sys-frm" }
 serde.workspace = true

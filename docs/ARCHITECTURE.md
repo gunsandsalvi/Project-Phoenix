@@ -1287,7 +1287,11 @@ its share of the households' debt by its income. Neither side of a household's l
 households' side. Labour's draw gives an employed adult a job, a person's row on the employment line of its
 wage point, whose employers are derived over the firms by headcount; housing's gives a renting household a tenancy on
 the line of its rent point, whose landlords are derived over the firms by their plant until the dwelling stock names
-them. Both are lines of many holders on both sides, so they are cleared (§6.5).
+them. Both are lines of many holders on both sides, so they are cleared (§6.5). Social protection's draw gives each
+adult who has reached its sex's pension age the state pension at its sex's coverage: a person's row on its sex's
+state pension line, a flat monthly amount — the replacement rate of the mean wage — whose payer, the treasury, is
+named. The defined-benefit schemes and the members who reach the pension age during the run joining the line are
+not built (plan §11, F-045, F-046).
 
 The same seed therefore gives the same world whatever the resolution the valve sets, and nothing is balanced after
 merging: finer attributes are drawn from their own counter keys, so a coarser setting is a projection of a finer

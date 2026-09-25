@@ -4762,7 +4762,12 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     their plant (§12, F-043). The distributions' means (`Distribution::mean`, closed form for the log-normal body with
     a Pareto tail) set the draws' multiples of the mean. Neither draws by age: jobs go to adults of every age, and no
     wage is by occupation or skill (F-044);
-  - S0.25d-5: pensions in payment (`sys-soc`, `sys-pen`);
+  - S0.25d-5 *(built; its build run below)*: pensions in payment (`sys-soc`, `sys-pen`). As built: `sys-soc` draws
+    each adult at or over its sex's pension age (`SOC.pension_age`, its age from its birth year) a state pensioner at
+    its sex's coverage (`SOC.pension_coverage`): a person's row on its sex's state pension line, paid monthly by the
+    treasury, named, a flat amount — the replacement rate (`SOC.replacement_rate`) of the labour share's mean wage per
+    worker. Not built: members reaching the pension age during the run joining the line (F-046), and the
+    defined-benefit schemes with their pensions in payment, `sys-pen` (F-045);
   - S0.25d-6: small firms as cells (FRM.23) and their ranks;
   - S0.25d-7: LC-0-44, 45, 48, 55 and 56, docs, reviews, the build run, done.
 - **S0.25e — estates and the settled world**: `sys-est`, catastrophes' losses at owners (GEO.8), settling, LC-0-53;
@@ -15756,6 +15761,8 @@ the final build within the budget on the phone.
 | F-042 | S0.25d | build, 2026-09-25 | Households' loans repay no principal: they pay interest on their balance only, since a principal leg is an amount per contract and a cell's loan row sums households' loans of different sizes | the contract algebra holds no repayment reckoned on the balance (an annuity or a share of the outstanding amount) | a balance-reckoned repayment leg in the algebra, with the households' borrowing (S1.12) | open |
 | F-043 | S0.25d | build, 2026-09-25 | The opening's tenancies pay landlords that stand in the country's firms by their plant: no household or firm is drawn owning rented dwellings | the dwelling stock and its owners are sys-hsg's (S2.05), after the opening's lines | S2.05's dwelling stock by zone and class with firm and household landlords, drawn at the opening | open |
 | F-044 | S0.25d | build, 2026-09-25 | Jobs are drawn for adults of every age at the country's employment rate, and wages by the household's income alone: none by age, occupation family or skill, though the occupation shares are in hand | employment by age and wages by occupation have no mechanism at the opening yet | the employment line's terms by occupation family and skill (LAB.1), the jobs drawn by age, with the labour step (S1.x) | open |
+| F-045 | S0.25d | build, 2026-09-25 | No defined-benefit pension is in payment at the opening, though the occupational pensions' share of the over-65s' income is in hand (`PEN.occupational_income_share`): the opening schemes, parties with sponsors and assets whose pensioner rows carry an accrued pension, are not built | the schemes as parties, the accrued pension as a row's balance and its per-time payment, indexation and survivors are S0.25d-5's design and were not built with it | the opening schemes and their pensions in payment (`sys-pen`'s `gen` and `in_payment`), before the Stage 0 gate | open |
+| F-046 | S0.25d | build, 2026-09-25 | Persons reaching the state pension age during the run do not join the state pension line: only the opening's pensioners are paid, so the pensions in payment dwindle as they die | a person's row added at the outcomes (a member joining a line, its counterpart's count with it) has no mechanism; only leaving does | members joining a line at 3e, the ledger's counterpart to `members_leave`, and the rule's join at the pension age by `sys-soc`, before the Stage 0 gate | open |
 
 ---
 
