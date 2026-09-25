@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use phx_core::{
     AuditFamily, FamilyCtx, FamilyDecl, Finding, FindingOwner, Findings, InjectTarget, LegDigest, declare_family,
 };
@@ -8,7 +10,7 @@ use phx_store::Backing;
 
 use crate::algebra::Side;
 use crate::books::Books;
-use crate::holder::{HolderArenas, HolderKeys};
+use crate::holder::{HolderArenas, HolderKeys, HolderTable};
 use crate::holding::holding;
 use crate::instruction::{AccountRef, Denom};
 use crate::instrument::{Instruments, IssueChange};
@@ -113,39 +115,66 @@ pub fn contracts<B: Backing>(lines: &Lines<B>, tables: &[&dyn HolderArenas], lin
     gaps
 }
 
-/// A money line's balances: the holders' on its asset side and its issuer's on its liability side sum to nothing, so
-/// what the issuer records as its money liability is what its holders hold. Both sides of a money line keep
-/// holder lists; a line kind without them is not money.
+/// Money lines' balances: each line's holders' on its asset side and its issuer's on its liability side sum to
+/// nothing, so what the issuer records as its money liability is what its holders hold. A listed side is read through
+/// the line's holder list; a side of many small holders that keeps none is read in one pass over the tables of the
+/// kinds that may hold it, for every such line at once.
 #[clause("MON.7", "MON.11")]
-pub fn money_line<B: Backing>(lines: &Lines<B>, tables: &[&dyn HolderArenas], line: LineId) -> Vec<Gap> {
-    let owner = FindingOwner::Line(line);
+pub fn money_lines<B: Backing>(
+    lines: &Lines<B>,
+    (tables, live): (&[&dyn HolderArenas], &[&dyn HolderTable]),
+    ids: &[LineId],
+) -> Vec<(LineId, Gap)> {
     let keys = lines.keys();
+    let mut sums: BTreeMap<LineId, i128> = ids.iter().map(|l| (*l, 0)).collect();
     let mut gaps = Vec::new();
-    if !lines.listed_side(line, Side::Asset) || !lines.listed_side(line, Side::Liability) {
-        let detail = format!("line {}: a money line whose sides are not both listed", line.get());
-        return vec![Gap { owner, size: 1, detail }];
+    let mut unlisted: BTreeMap<LineId, Vec<Side>> = BTreeMap::new();
+    for line in ids {
+        for side in [Side::Asset, Side::Liability] {
+            if !lines.listed_side(*line, side) {
+                unlisted.entry(*line).or_default().push(side);
+            }
+        }
     }
-    let mut sum = 0_i128;
-    for key in lines.holders(line) {
-        let Ok((t, _)) = table(tables, keys, key) else {
-            let detail = format!("line {}: a holder on a table the world does not keep", line.get());
-            gaps.push(Gap { owner, size: 1, detail });
-            continue;
+    let mut add = |line: LineId, r: &crate::rows::RowView, gaps: &mut Vec<(LineId, Gap)>| match r.optional.balance {
+        Missing::Present(b) => *sums.entry(line).or_insert(0) += i128::from(b),
+        Missing::Absent => {
+            let detail = format!("line {}: a money row without a balance", line.get());
+            gaps.push((line, Gap { owner: FindingOwner::Line(line), size: 1, detail }));
+        }
+    };
+    for line in ids {
+        for key in lines.holders(*line) {
+            let Ok((t, _)) = table(tables, keys, key) else {
+                let detail = format!("line {}: a holder on a table the world does not keep", line.get());
+                gaps.push((*line, Gap { owner: FindingOwner::Line(*line), size: 1, detail }));
+                continue;
+            };
+            let (_, slot) = keys.split(key);
+            for r in rows(t, slot).iter().filter(|r| r.row.line == *line && lines.listed_side(*line, r.side())) {
+                add(*line, r, &mut gaps);
+            }
+        }
+    }
+    if !unlisted.is_empty() {
+        let holds = |kind: &str| {
+            unlisted.iter().any(|(l, sides)| sides.iter().any(|s| lines.side_decl(*l, *s).holder_kinds.contains(&kind)))
         };
-        let (_, slot) = keys.split(key);
-        for r in rows(t, slot).iter().filter(|r| r.row.line == line) {
-            match r.optional.balance {
-                Missing::Present(b) => sum += i128::from(b),
-                Missing::Absent => {
-                    let detail = format!("line {}: a money row without a balance", line.get());
-                    gaps.push(Gap { owner, size: 1, detail });
+        for t in live.iter().filter(|t| holds(t.kind())) {
+            for slot in phx_store::table::live_in(t.live_words()) {
+                for r in &rows(*t, slot) {
+                    if unlisted.get(&r.row.line).is_some_and(|sides| sides.contains(&r.side())) {
+                        add(r.row.line, r, &mut gaps);
+                    }
                 }
             }
         }
     }
-    if sum != 0 {
-        let detail = format!("line {}: its holders' and its issuer's balances differ by {sum}", line.get());
-        gaps.push(Gap { owner, size: sum, detail });
+    for (line, sum) in sums {
+        if sum != 0 {
+            let detail = format!("line {}: its holders' and its issuer's balances differ by {sum}", line.get());
+            gaps.push((line, Gap { owner: FindingOwner::Line(line), size: sum, detail }));
+        }
     }
     gaps
 }
@@ -176,13 +205,15 @@ where
             .collect()
     }
 
-    fn money(&self, line: usize) -> Vec<phx_core::Gap> {
-        let id = LineId::new(narrow(line));
-        if !self.ledger.lines.is_money(id) {
-            return Vec::new();
-        }
-        let unit = phx_core::Unit::Money(self.ledger.terms.get(self.ledger.lines.terms(id)).ccy);
-        money_line(&self.ledger.lines, &self.parties.arenas(), id).into_iter().map(|g| g.found(unit)).collect()
+    fn money(&self, span: core::ops::Range<usize>) -> Vec<phx_core::Gap> {
+        let lines = &self.ledger.lines;
+        let ids: Vec<LineId> = span.map(|i| LineId::new(narrow(i))).filter(|l| lines.is_money(*l)).collect();
+        let tables = self.parties.arenas();
+        let live: Vec<&dyn crate::holder::HolderTable> = self.parties.holders().collect();
+        money_lines(lines, (&tables, &live), &ids)
+            .into_iter()
+            .map(|(line, g)| g.found(phx_core::Unit::Money(self.ledger.terms.get(lines.terms(line)).ccy)))
+            .collect()
     }
 
     fn position(&self, party: phx_id::PartyId, account: u64) -> i64 {
@@ -292,7 +323,7 @@ fn money_holding(books: &Books) -> Result<(PartyId, u64, u32, i64), String> {
 /// what it says the account held, `qty` what it moved.
 fn stray_leg(target: &mut dyn InjectTarget, before: i64, paired: bool, money: bool) -> Result<(), String> {
     let (party, account, denom, held) = money_holding(books(target)?)?;
-    let digest = LegDigest { party, account, denom, qty: 1, before: held + before, paired, money };
+    let digest = LegDigest { party, account, denom, qty: 1, flow: 1, before: held + before, paired, money };
     target.stream().leg(u64::MAX, digest);
     Ok(())
 }
@@ -344,7 +375,10 @@ impl AuditFamily for Money {
     fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
         let books = ctx.books();
         record(MONEY, ctx, ctx.legs().money_gaps(), findings);
-        ctx.legs().instructions() + rolling(MONEY, ctx, books.lines(), &|i| books.money(i), findings)
+        let span = ctx.rolling(books.lines());
+        let read = phx_rand::float::len_u64(span.end - span.start);
+        record(MONEY, ctx, books.money(span.start..span.end), findings);
+        ctx.legs().instructions() + read
     }
     /// A holder's money leg with no issuer's leg to meet it, on a position that holds what it moved.
     fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {

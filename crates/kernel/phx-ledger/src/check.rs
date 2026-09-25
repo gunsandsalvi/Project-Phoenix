@@ -52,12 +52,17 @@ pub fn check_legs(positions: &[Position], moves: &[(usize, i64)]) -> Result<(), 
 /// What a leg counts toward its instruction's balance: its quantity; a row opened or retired counts its members, on
 /// the asset side against the liability side, so a line's two sides open and close together.
 fn signed(leg: &LegRec) -> i128 {
+    i128::from(flow(leg))
+}
+
+/// What a leg counts toward its instruction's balance, as the audit keeps it.
+pub(crate) fn flow(leg: &LegRec) -> i64 {
     match (leg.kind, leg.account) {
         (
             LegKind::Row(RowOp::Open(_) | RowOp::Close | RowOp::Count),
             AccountRef::Line { side: Side::Liability, .. },
-        ) => -i128::from(leg.qty),
-        _ => i128::from(leg.qty),
+        ) => -leg.qty,
+        _ => leg.qty,
     }
 }
 

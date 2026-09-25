@@ -245,8 +245,10 @@ pub fn phx_ledger::apply::Ledger<B>::arrears(&self) -> &phx_ledger::contract_pro
 pub fn phx_ledger::apply::Ledger<B>::close(&mut self) -> phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::Ledger<B>::day_book(&self) -> &phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::Ledger<B>::fails(&self) -> &[phx_ledger::fails::Fail]
+pub fn phx_ledger::apply::Ledger<B>::flush_outside(&mut self, &mut dyn phx_core::family::AuditStream)
 pub fn phx_ledger::apply::Ledger<B>::new(phx_ledger::instrument::Instruments<B>, phx_ledger::line::Lines<B>) -> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::next_id(&mut self, phx_id::day::Day) -> phx_ledger::instruction::InstructionId
+pub fn phx_ledger::apply::Ledger<B>::opened(&mut self)
 pub fn phx_ledger::apply::Ledger<B>::position(&self, &dyn phx_ledger::holder::HolderArenas, phx_id::ids::PartyId, phx_id::ids::Slot, u64) -> i64
 pub fn phx_ledger::apply::Ledger<B>::settle(&mut self, &mut dyn phx_ledger::apply::Holders, phx_ledger::apply::ApplyAt, alloc::vec::Vec<phx_ledger::instruction::Instruction>, &mut dyn phx_core::family::AuditStream) -> alloc::vec::Vec<core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>>
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
@@ -377,7 +379,7 @@ pub const phx_ledger::audit::OWNERSHIP: phx_core::family::FamilyDecl
 pub const phx_ledger::audit::UNITS: phx_core::family::FamilyDecl
 pub fn phx_ledger::audit::contracts<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::LineId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub fn phx_ledger::audit::families() -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>
-pub fn phx_ledger::audit::money_line<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::LineId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
+pub fn phx_ledger::audit::money_lines<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, (&[&dyn phx_ledger::holder::HolderArenas], &[&dyn phx_ledger::holder::HolderTable]), &[phx_id::ids::LineId]) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::audit::Gap)>
 pub fn phx_ledger::audit::ownership<B: phx_store::backing::Backing>(&phx_ledger::instrument::Instruments<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::InstrumentId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub mod phx_ledger::books
 pub struct phx_ledger::books::Books<B: phx_store::backing::Backing>
@@ -412,7 +414,7 @@ impl<B: phx_store::backing::Backing> phx_core::family::BooksAudit for phx_ledger
 pub fn phx_ledger::books::Books<B>::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_ledger::books::Books<B>::instruments(&self) -> usize
 pub fn phx_ledger::books::Books<B>::lines(&self) -> usize
-pub fn phx_ledger::books::Books<B>::money(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_ledger::books::Books<B>::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_ledger::books::Books<B>::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_ledger::books::Books<B>::position(&self, phx_id::ids::PartyId, u64) -> i64
 pub struct phx_ledger::books::BooksSize
@@ -522,6 +524,7 @@ pub fn phx_ledger::commitment::empty_kinds(&[phx_ledger::commitment::CommitmentK
 pub mod phx_ledger::consts
 pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::HOLDER_SHARDS: u32
+pub const phx_ledger::consts::MONTHS_A_YEAR: u8
 pub const phx_ledger::consts::ROW_OPTIONAL_WORDS: usize
 pub const phx_ledger::consts::RUN_SAMPLE_PERIOD: u32
 pub const phx_ledger::consts::SYNTHETIC_DEPOSIT: i64
@@ -531,6 +534,7 @@ pub const phx_ledger::consts::SYNTHETIC_RATE: i64
 pub const phx_ledger::consts::SYNTHETIC_ROWS_PER_CHUNK: u32
 pub const phx_ledger::consts::SYNTHETIC_WINDOW_YEAR: i32
 pub const phx_ledger::consts::TERMS_SHARDS: u32
+pub const phx_ledger::consts::WEEKDAYS: u32
 pub mod phx_ledger::contract_process
 pub struct phx_ledger::contract_process::Arrears
 impl phx_ledger::contract_process::Arrears
@@ -1208,7 +1212,7 @@ pub fn phx_ledger::synthetic::Unaudited::applied(&mut self, u64)
 pub fn phx_ledger::synthetic::Unaudited::leg(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_ledger::synthetic::Unaudited::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_ledger::synthetic::calendar(&[phx_id::day::Date]) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>
-pub fn phx_ledger::synthetic::settlement<B: phx_store::backing::Backing>(phx_ledger::synthetic::SettlementSize, phx_core::calendar::Calendar, (phx_id::day::Date, phx_id::day::Date)) -> core::result::Result<phx_ledger::synthetic::Settlement<B>, alloc::string::String>
+pub fn phx_ledger::synthetic::settlement<B: phx_store::backing::Backing>(phx_ledger::synthetic::SettlementSize, phx_core::calendar::Calendar, (phx_id::day::Date, phx_id::day::Date, phx_id::day::Date)) -> core::result::Result<phx_ledger::synthetic::Settlement<B>, alloc::string::String>
 pub mod phx_ledger::terms
 #[repr(transparent)] pub struct phx_ledger::terms::TermsId(_)
 impl phx_ledger::terms::TermsId

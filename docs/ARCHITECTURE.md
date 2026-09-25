@@ -1403,7 +1403,15 @@ Until S0.17 brings the payer pass (§6.5), stage 7's kernel apply (7c) pays the 
 `phx-core` declares two traits the kernel crates meet through: `BooksAudit`, the books as the audit reads them
 (instruments and lines by index, each checked by the ledger, and what a party holds on an account), which the ledger
 implements; and `LegRecords`, the audit's own record of the day's settled legs, which `phx-audit` implements. The
-ledger's five families (ownership, contracts, money, flows, units) read both through the family context.
+ledger's five families (ownership, contracts, money, flows, units) read both through the family context. Each leg's
+digest carries what it counts toward its instruction's balance, a liability row's member count against the asset
+side's, as the apply check counts it, so members leaving a line with their counterparts balance. A part's rows and
+holdings leaving a cell or joining one move positions outside any instruction: the ledger records each such move as
+an unpaired digest and hands them to the audit in their order among the instructions' legs, so a position's opening
+and its day's moves still make what it holds. The money family reads its day's span of money lines together, a side
+of many small holders that keeps no list summed in one pass over the tables of the kinds that may hold it. The
+representation family bounds a row by the cell's weight times the persons each member holds in the roles its side
+declares, as a household's jobs count its adults.
 
 ### 10.5 Settled worlds for testing
 

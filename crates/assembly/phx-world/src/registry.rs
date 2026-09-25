@@ -435,6 +435,7 @@ pub fn assemble(
     };
     let mut world = finish(p, state, config)?;
     world.open_player().map_err(one)?;
+    world.books.ledger.opened();
     Ok(world)
 }
 

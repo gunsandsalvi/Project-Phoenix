@@ -32,7 +32,7 @@ impl Digests {
     pub fn record(&mut self, instruction: u64, leg: LegDigest) {
         let q = i128::from(leg.qty);
         if leg.paired {
-            *self.flows.entry((instruction, leg.denom)).or_insert(0) += q;
+            *self.flows.entry((instruction, leg.denom)).or_insert(0) += i128::from(leg.flow);
         }
         if leg.money {
             *self.money.entry((instruction, leg.denom)).or_insert(0) += q;

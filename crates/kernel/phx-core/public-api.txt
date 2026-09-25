@@ -583,6 +583,7 @@ pub struct phx_core::family::LegDigest
 pub phx_core::family::LegDigest::account: u64
 pub phx_core::family::LegDigest::before: i64
 pub phx_core::family::LegDigest::denom: u32
+pub phx_core::family::LegDigest::flow: i64
 pub phx_core::family::LegDigest::money: bool
 pub phx_core::family::LegDigest::paired: bool
 pub phx_core::family::LegDigest::party: phx_id::ids::PartyId
@@ -617,7 +618,7 @@ pub trait phx_core::family::BooksAudit: core::fmt::Debug
 pub fn phx_core::family::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::instruments(&self) -> usize
 pub fn phx_core::family::BooksAudit::lines(&self) -> usize
-pub fn phx_core::family::BooksAudit::money(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::BooksAudit::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
 pub trait phx_core::family::CellsAudit: core::fmt::Debug
@@ -2779,6 +2780,7 @@ pub struct phx_core::LegDigest
 pub phx_core::LegDigest::account: u64
 pub phx_core::LegDigest::before: i64
 pub phx_core::LegDigest::denom: u32
+pub phx_core::LegDigest::flow: i64
 pub phx_core::LegDigest::money: bool
 pub phx_core::LegDigest::paired: bool
 pub phx_core::LegDigest::party: phx_id::ids::PartyId
@@ -3240,7 +3242,7 @@ pub trait phx_core::BooksAudit: core::fmt::Debug
 pub fn phx_core::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::BooksAudit::instruments(&self) -> usize
 pub fn phx_core::BooksAudit::lines(&self) -> usize
-pub fn phx_core::BooksAudit::money(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::BooksAudit::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
 pub trait phx_core::CellsAudit: core::fmt::Debug

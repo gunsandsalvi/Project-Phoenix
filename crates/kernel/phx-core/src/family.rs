@@ -88,8 +88,9 @@ pub trait BooksAudit: core::fmt::Debug {
     fn ownership(&self, instrument: usize) -> Vec<Gap>;
     /// A line's two sides against each other and against its holders' rows.
     fn contracts(&self, line: usize) -> Vec<Gap>;
-    /// A line that is money: its holders' balances against its issuer's; nothing for a line that is not money.
-    fn money(&self, line: usize) -> Vec<Gap>;
+    /// The money lines of a span of lines: each one's holders' balances against its issuer's, the span read together
+    /// so a side of many small holders that keeps no list is summed in one pass; nothing for a line that is not money.
+    fn money(&self, lines: core::ops::Range<usize>) -> Vec<Gap>;
     /// What a party holds on an account, by the account's code.
     fn position(&self, party: PartyId, account: u64) -> i64;
 }
@@ -349,14 +350,16 @@ pub trait AuditFamily: Send + Sync {
 }
 
 /// A settled leg as the audit keeps it, apart from the books it moved: whose, on which account and in which
-/// denomination (each coded by the ledger), by how much, what the account held before it, whether it is one of a pair,
-/// and whether it moved money on a money line.
+/// denomination (each coded by the ledger), by how much, what it counts toward its instruction's balance (its quantity,
+/// or a liability row's member count against the asset side's, as a line's sides open and close together), what the
+/// account held before it, whether it is one of a pair, and whether it moved money on a money line.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LegDigest {
     pub party: PartyId,
     pub account: u64,
     pub denom: u32,
     pub qty: i64,
+    pub flow: i64,
     pub before: i64,
     pub paired: bool,
     pub money: bool,

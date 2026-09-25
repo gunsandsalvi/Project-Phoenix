@@ -1,3 +1,4 @@
+use phx_core::LegDigest;
 use phx_core::kind_tables::ListKind;
 use phx_id::{Day, InstrumentId, LineId, Slot};
 use phx_macros::clause;
@@ -10,6 +11,7 @@ use crate::apply::Ledger;
 use crate::contract_process::ArrearsKey;
 use crate::holder::HolderArenas;
 use crate::holding::CellHolding;
+use crate::instruction::{AccountRef, ROW_COUNT};
 use crate::rows::{self, Optional, RelRow, RowView};
 use crate::words::{from_words, to_words, words_of};
 
@@ -125,6 +127,32 @@ pub fn cell_holdings(arenas: &dyn HolderArenas, holder: Slot) -> Vec<CellHolding
 }
 
 impl<B: Backing> Ledger<B> {
+    /// The positions of a row the audit reads: its member count, and its balance where it keeps one.
+    fn row_codes(line: LineId, side: Side, balance: bool) -> Vec<u64> {
+        let code = AccountRef::Line { line, side }.code();
+        if balance { vec![code | ROW_COUNT, code] } else { vec![code | ROW_COUNT] }
+    }
+
+    /// What a holder's positions hold before a move outside any instruction.
+    fn before(&self, arenas: &dyn HolderArenas, holder: Slot, codes: Vec<u64>) -> Vec<(u64, i64)> {
+        let party = arenas.party(holder);
+        codes.into_iter().map(|c| (c, self.position(arenas, party, holder, c))).collect()
+    }
+
+    /// Each position's move since `before`, recorded for the audit as an unpaired leg of no instruction.
+    fn outside(&mut self, arenas: &dyn HolderArenas, holder: Slot, before: Vec<(u64, i64)>) {
+        let party = arenas.party(holder);
+        for (account, was) in before {
+            let now = self.position(arenas, party, holder, account);
+            if now != was {
+                let qty = now - was;
+                let digest =
+                    LegDigest { party, account, denom: 0, qty, flow: 0, before: was, paired: false, money: false };
+                self.day.outside.push(digest);
+            }
+        }
+    }
+
     /// Members leave a cell's row for a part, taking their share of each of its words by the rounding given, the rest
     /// staying; all of its members leaving take the row itself, and the cell leaves the line's list if it was its last
     /// listed row there. The members stay on the line, so its side counts do not move and no total moves.
@@ -139,7 +167,10 @@ impl<B: Backing> Ledger<B> {
         rounding: Round,
     ) -> DetachedRow {
         let view: RowView = crate::line::Lines::<B>::find(arenas, holder, line, side);
-        self.detach_view(arenas, table, holder, view, share, rounding)
+        let before = self.before(arenas, holder, Self::row_codes(line, side, view.optional.balance != Missing::Absent));
+        let detached = self.detach_view(arenas, table, holder, view, share, rounding);
+        self.outside(arenas, holder, before);
+        detached
     }
 
     /// Members leave several of a cell's rows at once, each row read once: the rows are taken last first, so a row
@@ -161,12 +192,18 @@ impl<B: Backing> Ledger<B> {
             };
             found.push((i, *view, *share));
         }
+        let codes = found
+            .iter()
+            .flat_map(|(_, v, _)| Self::row_codes(v.row.line, v.side(), v.optional.balance != Missing::Absent))
+            .collect();
+        let before = self.before(arenas, holder, codes);
         found.sort_unstable_by_key(|(_, view, _)| core::cmp::Reverse(view.at));
         let mut out: Vec<(usize, DetachedRow)> = found
             .into_iter()
             .map(|(i, view, share)| (i, self.detach_view(arenas, table, holder, view, share, rounding)))
             .collect();
         out.sort_unstable_by_key(|(i, _)| *i);
+        self.outside(arenas, holder, before);
         out.into_iter().map(|(_, d)| d).collect()
     }
 
@@ -185,6 +222,15 @@ impl<B: Backing> Ledger<B> {
         // Each row as the plans so far left it, whether its words changed, and whether it left whole.
         let mut views: Vec<(RowView, bool, bool)> =
             rows::rows(arenas, holder).into_iter().map(|v| (v, false, false)).collect();
+        let mut codes: Vec<u64> = plans
+            .iter()
+            .flat_map(|(plan, _)| plan.iter())
+            .filter_map(|((line, side), _)| views.iter().find(|(v, _, _)| v.row.line == *line && v.side() == *side))
+            .flat_map(|(v, _, _)| Self::row_codes(v.row.line, v.side(), v.optional.balance != Missing::Absent))
+            .collect();
+        codes.sort_unstable();
+        codes.dedup();
+        let before = self.before(arenas, holder, codes);
         let mut out = Vec::with_capacity(plans.len());
         for (plan, rounding) in plans {
             let mut detached = Vec::with_capacity(plan.len());
@@ -235,6 +281,7 @@ impl<B: Backing> Ledger<B> {
             let _ = self.lines.unplace_row(arenas, table, holder, line, side);
             self.arrears.remove(ArrearsKey::new(line, side, party));
         }
+        self.outside(arenas, holder, before);
         out
     }
 
@@ -369,7 +416,11 @@ impl<B: Backing> Ledger<B> {
     ) -> bool {
         let (line, side) = (detached.line(), detached.side());
         let found = rows::iter(arenas, holder).find(|r| r.row.line == line && r.side() == side);
-        self.attach_view(arenas, table, holder, found, detached)
+        let before =
+            self.before(arenas, holder, Self::row_codes(line, side, detached.optional.balance != Missing::Absent));
+        let entered = self.attach_view(arenas, table, holder, found, detached);
+        self.outside(arenas, holder, before);
+        entered
     }
 
     /// Several of a part's rows join a cell, its rows read once: rows it holds take their counts and words in place,
@@ -383,6 +434,11 @@ impl<B: Backing> Ledger<B> {
         detached: Vec<DetachedRow>,
     ) -> u32 {
         let views = rows::rows(arenas, holder);
+        let codes = detached
+            .iter()
+            .flat_map(|d| Self::row_codes(d.line(), d.side(), d.optional.balance != Missing::Absent))
+            .collect();
+        let before = self.before(arenas, holder, codes);
         let mut new = Vec::new();
         for d in detached {
             match views.iter().find(|r| r.row.line == d.line() && r.side() == d.side()) {
@@ -399,6 +455,7 @@ impl<B: Backing> Ledger<B> {
                 entered += 1;
             }
         }
+        self.outside(arenas, holder, before);
         entered
     }
 
@@ -454,6 +511,21 @@ impl<B: Backing> Ledger<B> {
         count: u32,
         rounding: Round,
     ) -> CellHolding {
+        let before = self.before(arenas, holder, vec![AccountRef::Instrument(instrument).code()]);
+        let taken = self.take_holding(arenas, table, holder, instrument, count, rounding);
+        self.outside(arenas, holder, before);
+        taken
+    }
+
+    fn take_holding(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        table: u16,
+        holder: Slot,
+        instrument: InstrumentId,
+        count: u32,
+        rounding: Round,
+    ) -> CellHolding {
         let all = cell_holdings(arenas, holder);
         let Some((i, h)) = all.iter().copied().enumerate().find(|(_, h)| h.instrument == instrument) else {
             violation!(clause = "REG.16", "a part leaving a holding its cell does not have", id = instrument.get());
@@ -488,6 +560,13 @@ impl<B: Backing> Ledger<B> {
         holder: Slot,
         part: CellHolding,
     ) -> bool {
+        let before = self.before(arenas, holder, vec![AccountRef::Instrument(part.instrument).code()]);
+        let entered = self.join_holding(arenas, table, holder, part);
+        self.outside(arenas, holder, before);
+        entered
+    }
+
+    fn join_holding(&mut self, arenas: &mut dyn HolderArenas, table: u16, holder: Slot, part: CellHolding) -> bool {
         let all = cell_holdings(arenas, holder);
         let Some((i, h)) = all.iter().copied().enumerate().find(|(_, h)| h.instrument == part.instrument) else {
             arenas.append(holder, ListKind::Holdings, &to_words(&part));
@@ -587,6 +666,16 @@ mod tests {
         l.attach_row(&mut cells, 1, b, rest);
         assert_eq!(balance(&cells, b), [(10, Missing::Present(1_001))]);
         assert_eq!(l.lines.side_count(line, Side::Liability), 10);
+        // Each move reached the audit's record, and each position's moves net to where it stands.
+        let net = |party: u64| -> i64 {
+            l.day.outside.iter().filter(|d| d.party == phx_id::PartyId::new(party) && !d.paired).map(|d| d.qty).sum()
+        };
+        assert_eq!(
+            (net(1), net(2)),
+            (-10 - 1_001, 10 + 1_001),
+            "the count and the balance left one cell for the other"
+        );
+        assert!(l.day.outside.iter().all(|d| d.flow == 0 && !d.money), "moves outside instructions pair nothing");
     }
 
     #[test]

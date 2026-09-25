@@ -540,9 +540,9 @@ fn money_lines_balance_at_their_issuers() {
     let _ = w.ledger.apply(&mut w.tables, SETTLE, i, &mut Seen::default()).unwrap();
     let t = &w.tables.kinds;
     let tables: [&dyn HolderArenas; 3] = [&t[0], &t[1], &t[2]];
-    for line in [w.reserves, w.deposits[0], w.deposits[1]] {
-        assert!(crate::audit::money_line(&w.ledger.lines, &tables, line).is_empty());
-    }
+    let live: [&dyn crate::holder::HolderTable; 3] = [&t[0], &t[1], &t[2]];
+    let lines = [w.reserves, w.deposits[0], w.deposits[1]];
+    assert!(crate::audit::money_lines(&w.ledger.lines, (&tables, &live), &lines).is_empty());
 }
 
 #[test]

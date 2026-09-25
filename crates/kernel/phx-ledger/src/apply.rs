@@ -76,6 +76,9 @@ pub struct DayBook {
     pub dues: Vec<crate::effects::DueRec>,
     pub disposed: Vec<DisposedRec>,
     moved: BTreeMap<(u8, PartyId), (i128, i128)>,
+    /// The positions moved outside any instruction — a part's rows and holdings leaving a cell or joining one — as
+    /// the audit keeps legs, waiting to be handed to it in their order among the instructions' legs.
+    pub(crate) outside: Vec<LegDigest>,
 }
 
 impl DayBook {
@@ -87,6 +90,7 @@ impl DayBook {
             && self.dues.is_empty()
             && self.disposed.is_empty()
             && self.moved.is_empty()
+            && self.outside.is_empty()
     }
 }
 
@@ -146,7 +150,7 @@ pub struct Ledger<B: Backing = SystemBacking> {
     numbered: (Day, u32),
     /// The insolvency procedures open, whose stays suspend the dues of their procedure lines.
     pub procedures: BTreeSet<u16>,
-    day: DayBook,
+    pub(crate) day: DayBook,
 }
 
 /// What every leg of an instruction settles with: its identity, reason and day, and the contract row it pays.
@@ -237,6 +241,7 @@ impl<B: Backing> Ledger<B> {
         audit: &mut dyn AuditStream,
     ) -> Result<InstructionId, Fail> {
         let Instruction { id, reason, settle_day, legs, pays, covers, .. } = instruction;
+        self.flush_outside(audit);
         let settling = Settling { id, reason, day: settle_day, pays };
         if !self.applied.insert(id) {
             violation!(clause = "SET.11", "an instruction applied twice", id = id.get());
@@ -474,6 +479,7 @@ impl<B: Backing> Ledger<B> {
                 account: leg.position_code(),
                 denom: leg.denom.code(),
                 qty: leg.qty,
+                flow: crate::check::flow(leg),
                 before,
                 paired: leg.paired(),
                 money,
@@ -601,6 +607,19 @@ impl<B: Backing> Ledger<B> {
     pub fn close(&mut self) -> DayBook {
         self.applied.clear();
         core::mem::take(&mut self.day)
+    }
+
+    /// The positions moved outside any instruction since the last flush, handed to the audit in the order they moved
+    /// among the instructions' legs.
+    pub fn flush_outside(&mut self, audit: &mut dyn AuditStream) {
+        for moved in self.day.outside.drain(..) {
+            audit.leg(0, moved);
+        }
+    }
+
+    /// The opening's moves outside any instruction forgotten: the audit reads days, and the opening is none.
+    pub fn opened(&mut self) {
+        self.day.outside.clear();
     }
 
     /// The next instruction's identity on a day: its day, and its place in that day's numbering.

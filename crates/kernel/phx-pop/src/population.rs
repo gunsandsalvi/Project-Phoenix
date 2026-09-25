@@ -3,7 +3,8 @@
 //! steps stand at.
 
 use phx_core::{Agenda, AgendaTableSpec, KinkRegistry, PopEntry};
-use phx_id::{Day, TableId};
+use phx_id::{Day, LineId, TableId};
+use phx_ledger::algebra::Side;
 use phx_ledger::holder::CellHolders;
 use phx_macros::clause;
 use phx_num::violation;
@@ -123,10 +124,15 @@ impl Population {
 
     /// The cell tables as the audit reads them, with each kind's members and the day's landings.
     #[must_use]
-    pub fn view<'a, B: Backing + 'static>(&'a self, cells: &'a [Box<dyn CellHolders>]) -> CellsView<'a, B> {
+    pub fn view<'a, B: Backing + 'static>(
+        &'a self,
+        cells: &'a [Box<dyn CellHolders>],
+        roles: &'a dyn Fn(LineId, Side) -> &'static [&'static str],
+    ) -> CellsView<'a, B> {
         let tables = (0..self.kinds.len()).map(|i| Population::table::<B>(cells, i)).collect();
         let keys = self.kinds.iter().map(|k| &k.keys).collect();
-        CellsView::new(tables, keys, &self.members, &self.landed)
+        let kinds = self.kinds.iter().map(|k| &k.decl).collect();
+        CellsView::new((tables, keys, kinds), roles, &self.members, &self.landed)
     }
 
     /// Each kind's empty cell table, made in the books' address space with identities from `first` on.

@@ -44,7 +44,10 @@ fn money(w: Inspector<'_>) -> Outcome {
     if !lines.ids().any(|l| lines.is_money(l)) {
         return Outcome::Fail("the books keep no money".to_owned());
     }
-    every(books.lines(), |i| books.money(i))
+    match books.money(0..books.lines()).into_iter().next() {
+        Some(g) => Outcome::Fail(g.detail),
+        None => Outcome::Pass,
+    }
 }
 
 fn flows(w: Inspector<'_>) -> Outcome {
@@ -67,7 +70,12 @@ fn fails(w: Inspector<'_>) -> Outcome {
     for s in w.settlements().iter().filter(|s| s.day < last) {
         for f in &s.fails {
             let Missing::Present(row) = f.row else { continue };
-            if arrears.of(row.line, row.side, f.party).is_none() {
+            // A party that ended since, or whose members took the row elsewhere, holds no row to read.
+            let phx_core::Resolved::Live(party, _) = w.books().parties.directory().resolve(f.party) else { continue };
+            if !w.books().rows_of(party).contains(&(row.line, row.side)) {
+                continue;
+            }
+            if arrears.of(row.line, row.side, party).is_none() {
                 return Outcome::Fail(format!(
                     "a fail on line {} on day {} ({:?}) is not in arrears",
                     row.line.get(),
