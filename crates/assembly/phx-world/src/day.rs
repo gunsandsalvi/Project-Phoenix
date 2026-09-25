@@ -191,6 +191,12 @@ impl World {
                 self.accounts.post_day(self.books.ledger.day_book(), period);
             }
             if info.step == AUDIT_AT {
+                // A day with no 9b still moves net assets, as a hazard destroying plant does, which the accounts
+                // follow before the close reads them.
+                if !any_business {
+                    let period = crate::registry::period_of(&self.calendar, day);
+                    self.accounts.post_day(self.books.ledger.day_book(), period);
+                }
                 self.close(day, dues);
             }
             site::leave();
