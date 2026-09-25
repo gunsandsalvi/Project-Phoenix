@@ -5426,7 +5426,7 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 | `src/schedule.rs` | the investor schedule, a pure function; empty until S3.03 fills it |
 | `src/attention.rs` | attention from stakes and review cost (Reis, 2006): intensity and daily probability |
 | `src/heuristic.rs` | `trait Heuristic`, sealed, so no crate but `phx-val` can implement one (PC-33 is a compile-level refusal) |
-| `data/observer/READS.toml` | extended with Stage 1's macro reads at the start of this step, frozen before S1.16's gate run |
+| `data/observer/READS.toml` | extended with Stage 1's macro reads at the start of this step, frozen before S1.16's gate run: each names its relationship and source and, where it is one of N3's facts, the fact; a read over a measure of a system not yet built names a measure `phx-obs` lists with the step that brings it, and records nothing until then |
 | `data/shared/VAL.toml` | memory and switching-intensity type sets (NUM.4): a memory type is a type of the adaptive gain λ's distribution and a switching type one of β's, each cut into a RESOLUTION count; γ, κ, the experience exponent θ and the performance record's memory are one value each, as the experiments measure them, until a source measures their spread; attention sensitivity; the number of heuristics tracked (a standing SHAPE). Patience and risk aversion are HH's and management's primitives (one register entry each), passed to the value methods as arguments |
 | `data/shared/SHAPES.toml` | the rule forms, `[[form]]` entries of the register with reason and source (§2.21): the heuristic menu, experience weighting, switching, attention and the value methods |
 
