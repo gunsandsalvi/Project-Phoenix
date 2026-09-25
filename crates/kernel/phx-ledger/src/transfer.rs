@@ -264,7 +264,7 @@ impl<B: Backing> Books<B> {
                 crate::cleared::Tally::new(&rows)
             }
         };
-        let taken = tally.draw_many(count, d);
+        let taken = tally.draw_many(count, self.parties.unit(party), d);
         let mut legs = self.leave((party, line, side), count, self.no_share((party, line, side), count, m), m);
         // The members leaving hold no balance, so the counterparts that leave with them take none of theirs.
         for (p, k) in taken {

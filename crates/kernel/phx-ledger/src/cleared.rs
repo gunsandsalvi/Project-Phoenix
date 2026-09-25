@@ -182,13 +182,23 @@ impl Tally {
         all.into_iter()
     }
 
-    /// Exactly `count` members drawn from those left, each draw among the holders whose unit fits in what remains;
-    /// each holder drawn from, with how many, in holder order.
-    pub(crate) fn draw_many(&mut self, count: u32, draws: &mut Draws) -> Vec<(PartyId, u32)> {
+    /// One member drawn among the holders of one unit, and its holder's unit taken.
+    fn draw_like(&mut self, unit: u32, draws: &mut Draws) -> Option<(PartyId, u32)> {
+        let c = self.classes.iter_mut().find(|c| c.unit == unit && c.left >= u64::from(unit))?;
+        let at = c.find(below_u64(draws, c.left));
+        c.take(at);
+        c.parties.get(at).map(|p| (*p, c.unit))
+    }
+
+    /// Exactly `count` members drawn from those left, like with like: among the holders of the leaving party's unit
+    /// `like` while they hold what remains, else among the holders whose unit fits in what remains; each holder drawn
+    /// from, with how many, in holder order.
+    pub(crate) fn draw_many(&mut self, count: u32, like: u32, draws: &mut Draws) -> Vec<(PartyId, u32)> {
         let mut more: BTreeMap<PartyId, u32> = BTreeMap::new();
         let mut remaining = count;
         while remaining > 0 {
-            let Some((p, k)) = self.draw(remaining, draws) else {
+            let alike = if remaining >= like { self.draw_like(like, draws) } else { None };
+            let Some((p, k)) = alike.or_else(|| self.draw(remaining, draws)) else {
                 violation!(
                     clause = "REP.31",
                     "members leaving a line whose other side holds none to leave with them in whole units",
@@ -335,6 +345,21 @@ mod tests {
         }
     }
 
+    /// The player's one member and its donor's 169 leave a line whose other side holds a seated counterpart's one
+    /// and 169 beside agents of 170: each leaving finds its like, whatever the draws.
+    #[test]
+    fn leaving_draws_like_with_like() {
+        let rows: Vec<(PartyId, u32, u32)> =
+            [(1, 2, 1), (2, 338, 169), (3, 3400, 170)].map(|(p, c, u)| (PartyId::new(p), c, u)).to_vec();
+        for t in 0..64_u64 {
+            let mut d = Draws::new(stream_key(Seed::new(t), "REP.cleared"), Subject::new(SubjectTag::Line, 1), 1, 0);
+            let mut tally = super::Tally::new(&rows);
+            assert_eq!(tally.draw_many(1, 1, &mut d), vec![(PartyId::new(1), 1)], "the player's like");
+            assert_eq!(tally.draw_many(169, 169, &mut d), vec![(PartyId::new(2), 169)], "the donor's like");
+            assert_eq!(tally.draw_many(340, 170, &mut d), vec![(PartyId::new(3), 340)], "an agent's like");
+        }
+    }
+
     #[test]
     fn leaving_takes_whole_units_to_the_count() {
         let rows: Vec<(PartyId, u32, u32)> =
@@ -342,7 +367,7 @@ mod tests {
         for t in 0..64_u64 {
             let mut d = Draws::new(stream_key(Seed::new(t), "REP.cleared"), Subject::new(SubjectTag::Line, 1), 1, 0);
             let mut tally = super::Tally::new(&rows);
-            let taken = tally.draw_many(4, &mut d);
+            let taken = tally.draw_many(4, 1, &mut d);
             assert_eq!(taken.iter().map(|(_, k)| *k).sum::<u32>(), 4);
             for (p, k) in taken {
                 if p != PartyId::new(1) {
