@@ -4,6 +4,7 @@ use phx_num::{Missing, capacity_exceeded, violation};
 use phx_store::LogicalHasher;
 
 use crate::map::KernelMap;
+use crate::pages::PagedMap;
 
 /// A live party's row, and how many records name it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
@@ -47,7 +48,7 @@ pub enum Resolved {
 #[derive(Debug, phx_macros::Saved)]
 pub struct Directory {
     next: u64,
-    live: KernelMap<PartyId, Live>,
+    live: PagedMap<PartyId, Live>,
     ended: KernelMap<PartyId, Ended>,
     /// The parties ended today, each held as a record until the close so the day's legs that name it still resolve;
     /// empty at every close, so a save never holds one.
@@ -64,7 +65,7 @@ impl Default for Directory {
 impl Directory {
     #[must_use]
     pub fn new() -> Directory {
-        Directory { next: 1, live: KernelMap::new(), ended: KernelMap::new(), ended_today: Vec::new() }
+        Directory { next: 1, live: PagedMap::new(), ended: KernelMap::new(), ended_today: Vec::new() }
     }
 
     /// The next identity that will be handed out; every identity below it was handed out once.
@@ -76,7 +77,7 @@ impl Directory {
     /// Feeds every identity the directory holds to the world's hash, in order of identity.
     pub fn hash_into(&self, h: &mut LogicalHasher) {
         h.u64(self.next);
-        for (party, live) in self.live.sorted() {
+        for (party, live) in self.live.iter() {
             h.u64(party.get());
             h.u64(u64::from(live.row.table.get()));
             h.u64(u64::from(live.row.slot.get()));

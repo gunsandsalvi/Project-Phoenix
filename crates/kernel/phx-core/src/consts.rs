@@ -106,3 +106,6 @@ pub const PERCENT_F64: f64 = 100.0;
 
 /// The month and day a birthday on the 29th of February falls on in a common year: the 1st of March.
 pub const LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8) = (3, 1);
+/// The ids a page of an id map holds: a page is freed when its last id goes, so a map of ids issued in order follows
+/// the ids still held; 4 096 keeps a page of 16-byte entries at 64 KiB.
+pub const ID_PAGE_BITS: u32 = 12;

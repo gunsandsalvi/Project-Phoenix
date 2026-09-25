@@ -23,6 +23,7 @@ pub mod kinks;
 pub mod map;
 pub mod messages;
 pub mod occasions;
+pub mod pages;
 pub mod policy;
 pub mod pop;
 pub mod pop_process;
@@ -76,6 +77,7 @@ pub use messages::{
     Address, Answering, Concerns, DayMessages, Message, MessageDef, MessageKindDecl, MessageState, MessageStore,
 };
 pub use occasions::{OccasionDecl, OccasionKind};
+pub use pages::{PageKey, PagedMap};
 pub use phx_macros::{
     declare_decision, declare_facet, declare_fact, declare_family, declare_handler, declare_hazard, declare_kind,
     declare_message, declare_prim, declare_record, declare_rule, declare_stream,

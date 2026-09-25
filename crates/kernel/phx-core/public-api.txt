@@ -228,6 +228,7 @@ pub const phx_core::consts::EASTER_H: [i32; 2]
 pub const phx_core::consts::EASTER_L: [i32; 2]
 pub const phx_core::consts::EASTER_M: [i32; 3]
 pub const phx_core::consts::EASTER_MONTH: [i32; 3]
+pub const phx_core::consts::ID_PAGE_BITS: u32
 pub const phx_core::consts::KEYED_ORDINAL: u8
 pub const phx_core::consts::LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8)
 pub const phx_core::consts::MAP_SEED: u64
@@ -402,7 +403,7 @@ pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> p
 pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
 impl core::default::Default for phx_core::directory::Directory
 pub fn phx_core::directory::Directory::default() -> Self
-impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: core::default::Default
+impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::pages::PagedMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: core::default::Default
 pub fn phx_core::directory::Directory::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::directory::Directory::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::events
@@ -996,6 +997,31 @@ pub phx_core::occasions::OccasionKind::Review::schedule: &'static str
 pub struct phx_core::occasions::OccasionDecl
 pub phx_core::occasions::OccasionDecl::kind: phx_core::occasions::OccasionKind
 pub phx_core::occasions::OccasionDecl::point: &'static str
+pub mod phx_core::pages
+pub struct phx_core::pages::PagedMap<K, V>
+impl<K: phx_core::pages::PageKey, V> phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::bytes(&self) -> usize
+pub fn phx_core::pages::PagedMap<K, V>::get(&self, K) -> core::option::Option<&V>
+pub fn phx_core::pages::PagedMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
+pub fn phx_core::pages::PagedMap<K, V>::insert(&mut self, K, V) -> core::option::Option<V>
+pub fn phx_core::pages::PagedMap<K, V>::is_empty(&self) -> bool
+pub fn phx_core::pages::PagedMap<K, V>::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (K, &V)> + '_
+pub fn phx_core::pages::PagedMap<K, V>::len(&self) -> usize
+pub fn phx_core::pages::PagedMap<K, V>::new() -> phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
+impl<K, V> core::fmt::Debug for phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<K: phx_core::pages::PageKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::pages::PagedMap<K, V>, phx_store::save::LoadError>
+pub fn phx_core::pages::PagedMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<K: phx_core::pages::PageKey, V> core::default::Default for phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::default() -> Self
+pub trait phx_core::pages::PageKey: core::marker::Copy + core::cmp::Ord
+pub fn phx_core::pages::PageKey::from_index(u64) -> Self
+pub fn phx_core::pages::PageKey::index(self) -> u64
+impl phx_core::pages::PageKey for phx_id::ids::PartyId
+pub fn phx_id::ids::PartyId::from_index(u64) -> phx_id::ids::PartyId
+pub fn phx_id::ids::PartyId::index(self) -> u64
 pub mod phx_core::policy
 pub enum phx_core::policy::AnnounceRefused
 pub phx_core::policy::AnnounceRefused::NotOwner
@@ -2455,7 +2481,7 @@ pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> p
 pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
 impl core::default::Default for phx_core::directory::Directory
 pub fn phx_core::directory::Directory::default() -> Self
-impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: core::default::Default
+impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::pages::PagedMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: core::default::Default
 pub fn phx_core::directory::Directory::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::directory::Directory::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Distribution
@@ -2831,6 +2857,24 @@ pub struct phx_core::OpeningPhase(pub u8)
 impl phx_core::streams::OpeningPhase
 pub fn phx_core::streams::OpeningPhase::ordinal(self) -> u8
 pub struct phx_core::OutsideAxes
+pub struct phx_core::PagedMap<K, V>
+impl<K: phx_core::pages::PageKey, V> phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::bytes(&self) -> usize
+pub fn phx_core::pages::PagedMap<K, V>::get(&self, K) -> core::option::Option<&V>
+pub fn phx_core::pages::PagedMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
+pub fn phx_core::pages::PagedMap<K, V>::insert(&mut self, K, V) -> core::option::Option<V>
+pub fn phx_core::pages::PagedMap<K, V>::is_empty(&self) -> bool
+pub fn phx_core::pages::PagedMap<K, V>::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (K, &V)> + '_
+pub fn phx_core::pages::PagedMap<K, V>::len(&self) -> usize
+pub fn phx_core::pages::PagedMap<K, V>::new() -> phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
+impl<K, V> core::fmt::Debug for phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<K: phx_core::pages::PageKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::pages::PagedMap<K, V>, phx_store::save::LoadError>
+pub fn phx_core::pages::PagedMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<K: phx_core::pages::PageKey, V> core::default::Default for phx_core::pages::PagedMap<K, V>
+pub fn phx_core::pages::PagedMap<K, V>::default() -> Self
 pub struct phx_core::Period
 impl phx_core::calendar::period::Period
 pub fn phx_core::calendar::period::Period::day_count(self) -> u16
@@ -3263,6 +3307,12 @@ pub trait phx_core::MarketsAudit: core::fmt::Debug
 pub fn phx_core::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub trait phx_core::MessageDef
 pub const phx_core::MessageDef::DECL: phx_core::messages::MessageKindDecl
+pub trait phx_core::PageKey: core::marker::Copy + core::cmp::Ord
+pub fn phx_core::PageKey::from_index(u64) -> Self
+pub fn phx_core::PageKey::index(self) -> u64
+impl phx_core::pages::PageKey for phx_id::ids::PartyId
+pub fn phx_id::ids::PartyId::from_index(u64) -> phx_id::ids::PartyId
+pub fn phx_id::ids::PartyId::index(self) -> u64
 pub trait phx_core::PopProcess: core::marker::Send + core::marker::Sync
 pub fn phx_core::PopProcess::bind(&mut self, &phx_core::register::Register)
 pub fn phx_core::PopProcess::changes_after(&self, &phx_core::pop_process::Person, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>

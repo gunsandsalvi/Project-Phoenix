@@ -673,6 +673,31 @@ mod tests {
         toml::to_string(&table).unwrap()
     }
 
+    /// The full-load bench at the finished world's volumes, each line appended to `phx-load-full-lines.txt` in the
+    /// system's temporary directory as it comes, the report and saves beside it.
+    #[test]
+    #[ignore = "the full-load bench at full volumes on the build machine: many minutes, run by hand, release profile"]
+    fn load_at_full_volumes() {
+        use std::io::Write;
+        struct Lines(std::fs::File);
+        impl BenchHost for Lines {
+            fn thermal_status(&self) -> i32 {
+                0
+            }
+
+            fn on_line(&self, l: BenchLine) {
+                let mut f = &self.0;
+                writeln!(f, "{} · {} · {} {}", l.name, l.value, l.target, l.verdict).unwrap();
+                f.flush().unwrap();
+            }
+        }
+        let dir = std::env::temp_dir();
+        let lines = std::fs::File::create(dir.join("phx-load-full-lines.txt")).unwrap();
+        let volumes = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../perf/load/volumes.toml");
+        let report = dir.join("phx-load-full-report.json");
+        run(&Lines(lines), volumes, dir.to_str().unwrap(), report.to_str().unwrap()).unwrap();
+    }
+
     #[test]
     #[ignore = "the full-load bench end to end at a small size: a minute of work, run by hand"]
     fn load_runs_end_to_end() {
