@@ -221,6 +221,7 @@ pub phx_ledger::apply::Located::Live::table: u16
 pub struct phx_ledger::apply::DayBook
 pub phx_ledger::apply::DayBook::disposed: alloc::vec::Vec<phx_ledger::apply::DisposedRec>
 pub phx_ledger::apply::DayBook::dues: alloc::vec::Vec<phx_ledger::effects::DueRec>
+pub phx_ledger::apply::DayBook::earned: phx_core::map::KernelMap<phx_id::ids::PartyId, i128>
 pub phx_ledger::apply::DayBook::effects: alloc::vec::Vec<phx_ledger::effects::EffectRec>
 pub phx_ledger::apply::DayBook::fails: alloc::vec::Vec<phx_ledger::fails::Fail>
 impl phx_ledger::apply::DayBook

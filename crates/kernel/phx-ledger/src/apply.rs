@@ -69,11 +69,15 @@ pub const MONEY_SUBSTEPS: &[SubStep] = &[
 
 /// What a day's settlement leaves for the close: its fails, for the contract processes, its accounting effects, and
 /// what moved in each currency, gross and by party.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default)]
 pub struct DayBook {
     pub fails: Vec<Fail>,
     pub effects: Vec<EffectRec>,
+    /// The dues of the day that did not settle, each kept for the claims it leaves.
     pub dues: Vec<crate::effects::DueRec>,
+    /// The interest of the day's dues that settled, folded by party, the payee's earned and the payer's spent: a
+    /// settled due leaves no claim, so the accounts read only what each party earned.
+    pub earned: phx_core::KernelMap<PartyId, i128>,
     pub disposed: Vec<DisposedRec>,
     moved: BTreeMap<(u8, PartyId), (i128, i128)>,
 }
@@ -85,6 +89,7 @@ impl DayBook {
         self.fails.is_empty()
             && self.effects.is_empty()
             && self.dues.is_empty()
+            && self.earned.is_empty()
             && self.disposed.is_empty()
             && self.moved.is_empty()
     }
@@ -95,6 +100,7 @@ impl DayBook {
         self.fails.capacity() * size_of::<Fail>()
             + self.effects.capacity() * size_of::<EffectRec>()
             + self.dues.capacity() * size_of::<crate::effects::DueRec>()
+            + self.earned.capacity() * size_of::<(PartyId, i128)>()
             + self.disposed.capacity() * size_of::<DisposedRec>()
             + self.moved.len() * size_of::<((u8, PartyId), (i128, i128))>()
     }
@@ -673,7 +679,13 @@ impl<B: Backing> Ledger<B> {
 
     /// A due that fell today, and what became of it, for the accounts.
     pub(crate) fn record_due(&mut self, d: crate::effects::DueRec) {
-        self.day.dues.push(d);
+        if d.outcome != crate::effects::DueOutcome::Settled {
+            self.day.dues.push(d);
+            return;
+        }
+        let interest = i128::from(d.interest.amt());
+        *self.day.earned.get_or_insert_with(d.payee, || 0) += interest;
+        *self.day.earned.get_or_insert_with(d.payer, || 0) -= interest;
     }
 
     /// The rows in arrears.
