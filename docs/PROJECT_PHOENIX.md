@@ -753,6 +753,9 @@ The work of a day follows the number of agents something happens to, not the num
     is exactly each twin's, and nothing is ever averaged.
   - Agents of one kind share one multiplicity, except the player's own, which is one (OBS.4), and the agent the
     player's household was drawn from, which keeps one twin fewer.
+  - At the opening, as the player's twin is taken from its donor, each agent on the other side of a line the player
+    holds, one drawn by its contracts on the line where several are, gives one twin too, seated the same way, so every
+    such line holds a party of the player's multiplicity and one of the donor's on its other side.
   - An agent that ends leaves one estate for each twin, alike: one estate party standing for them all, of the
     agent's multiplicity, whose every amount is a whole share for each twin (REP.9) and whose waterfall runs on one
     twin's estate.
@@ -854,8 +857,9 @@ The work of a day follows the number of agents something happens to, not the num
   - Under that uniform matching, drawing at the moment is exactly what a pairing recorded from the start would have
     given (the principle of deferred decisions). Nothing drawn is contradicted afterwards.
   - A party drawn on an agent's side is drawn whole: its twins' contracts leave, or lose, together (REP.1). Contracts
-    leaving are drawn among the parties whose multiplicity fits in what is left to draw; a cleared line's losers are
-    drawn until at least the failed count is reached.
+    leaving are drawn like with like: among the other side's parties of the leaving party's multiplicity while they
+    hold what is left, and otherwise among those whose multiplicity fits in what is left to draw; a cleared line's
+    losers are drawn until at least the failed count is reached.
 - **REP.24 PROCESS** — **Where agents are.**
   - A household's zone is an attribute. Its dwelling, plant and vehicles are held by zone and **class** (kind,
     size, quality band, condition band). Wear, damage and repair move units between condition classes.
