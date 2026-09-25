@@ -87,6 +87,7 @@ pub(crate) struct Found {
     owers: BTreeMap<LineId, PartyId>,
     reckoned: BTreeMap<LineId, Reckoning>,
     accounts: BTreeMap<(PartyId, u8), Missing<LineId>>,
+    issues: BTreeMap<(PartyId, u8), bool>,
     pub cleared: BTreeMap<LineId, ClearedDay>,
 }
 
@@ -115,7 +116,7 @@ impl<B: Backing> Books<B> {
     }
 
     /// A line's holders, in its holder list's order.
-    fn line_holders(&self, line: LineId) -> impl Iterator<Item = PartyId> + '_ {
+    pub(crate) fn line_holders(&self, line: LineId) -> impl Iterator<Item = PartyId> + '_ {
         let keys = self.ledger.lines.keys();
         self.ledger.lines.holders(line).map(move |k| {
             let (place, slot) = keys.split(k);
@@ -215,6 +216,24 @@ impl<B: Backing> Books<B> {
         };
         found.accounts.insert((party, ccy.index()), account);
         account
+    }
+
+    /// Whether a party has money in a currency to pay from and be paid into: an account, or, for an issuer of that
+    /// money, its own liability. A party with neither holds no money in it.
+    #[clause("MON.5", "MON.12")]
+    pub(crate) fn holds_money(&self, party: PartyId, ccy: Ccy, found: &mut Found) -> bool {
+        if let Missing::Present(_) = self.money_row(party, ccy, found) {
+            return true;
+        }
+        if let Some(i) = found.issues.get(&(party, ccy.index())) {
+            return *i;
+        }
+        let lines = &self.ledger.lines;
+        let issues = self.rows_of(party).into_iter().any(|(line, side)| {
+            side == Side::Liability && lines.is_money(line) && self.ledger.terms.get(lines.terms(line)).ccy == ccy
+        });
+        found.issues.insert((party, ccy.index()), issues);
+        issues
     }
 
     /// The legs moving money between a party's account and the top issuer, the one that pays in its own money: up

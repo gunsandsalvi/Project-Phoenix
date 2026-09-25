@@ -1269,6 +1269,8 @@ created and destroyed only by its issuers.
     intraday credit (MON.3), has its customers' legs removed and the rest resettles, as the operator's rules
     (POLICY) state; each removed payment fails visibly.
   - A payment in cash moves banknotes between the two parties.
+  - A payment to or from a party that holds no money in its currency — no account and no banknotes — cannot settle,
+    and fails visibly for that cause.
 - **MON.6 PROCESS** — **Money is created and destroyed only by its issuer's own transactions.**
   - A bank creates deposits whenever it **pays** a non-bank: a loan disbursed, a security bought, a wage or
     supplier paid, interest or a dividend paid out.

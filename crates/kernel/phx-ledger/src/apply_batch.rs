@@ -142,13 +142,13 @@ impl<B: Backing> Books<B> {
     }
 
     /// A payment the fixed point failed, recorded for the contract process.
-    fn fail_payment(&mut self, p: &Payment, day: Day) {
+    fn fail_payment(&mut self, p: &Payment, day: Day, cause: FailCause) {
         let reason = if p.principal != 0 { self.dues.principal } else { self.dues.payment };
         let instruction = self.ledger.next_id(day);
         self.ledger.record_fail(Fail {
             instruction,
             reason,
-            cause: FailCause::Funds,
+            cause,
             party: p.payer,
             due: day,
             row: Missing::Present(DueRow { line: p.line, side: Side::Liability }),
@@ -178,10 +178,14 @@ impl<B: Backing> Books<B> {
                 }
                 if fixed.failed.contains(&p.key()) {
                     g.failed += 1;
-                    if !fixed.by_bank.contains(&p.key()) {
+                    if !fixed.by_bank.contains(&p.key()) && !p.moneyless {
                         g.failed_payers.insert(p.payer);
                     }
-                    self.fail_payment(&p, day);
+                    // A cleared line's claimant with no money loses its due against the top issuer, which owes no row.
+                    if !(p.cleared && p.payee == p.reckoned_on && p.moneyless) {
+                        let cause = if p.moneyless { FailCause::NoMoney } else { FailCause::Funds };
+                        self.fail_payment(&p, day, cause);
+                    }
                     self.record_due(&p, DueOutcome::Failed);
                     continue;
                 }

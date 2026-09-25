@@ -584,6 +584,12 @@ reduction runs over a fixed tree.
   (`DaySettlement::lost` counts the members drawn). A short bank's customers lose their payments through it, but a
   cleared line's credits into it stand, since they only add to its reserves. A cleared payment through a closed bank
   waits for the resolution `sys-sup` brings (S2.08), and stops the run until then.
+- **A party with no money**: a payment whose payer or payee holds no money in its currency — no account, and none it
+  issues (`Books::holds_money`), as a household that banks nowhere until banknotes are held (S1.09, S1.12) — has no
+  legs and fails at the start of 7b, with the cause `FailCause::NoMoney` (MON.12). A cleared line's payer with none
+  fails as a short one does, its members' dues lost by drawn claimant members; a cleared line's claimant with none
+  loses its due against the top issuer, which holds no row to be in arrears on, and the top is the one the line's
+  holders with money reach.
 - **7b** starts from every payment succeeding and removes, until nothing changes, the payers who cannot pay given the
   payments still standing, and the customer legs of banks that cannot cover their nets after intraday credit (MON.3,
   MON.5). A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering

@@ -15,6 +15,8 @@ pub enum FailCause {
     NotHeld,
     /// A party that ended with no successor to answer for it.
     Ended,
+    /// A payer or payee holding no money in the payment's currency: no account, and none it issues.
+    NoMoney,
 }
 
 /// What a leg draws on before the instruction: what is there now, and how far it may fall; a position with no floor,

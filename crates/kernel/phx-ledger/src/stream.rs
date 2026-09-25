@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use phx_core::calendar::Calendar;
 use phx_id::{Day, LineId, PartyId, Slot};
@@ -34,6 +34,8 @@ pub struct Payment {
     pub reckoned_on: PartyId,
     pub cleared: bool,
     pub members: u32,
+    /// A party the payment needs an account of holds no money in its currency, so it cannot settle.
+    pub moneyless: bool,
 }
 
 impl Payment {
@@ -73,6 +75,8 @@ pub struct DayRecords {
     pub payments: u64,
     pub pending: u64,
     pub gross: i128,
+    /// The holders whose rows make payments that cannot settle, a party they need an account of holding no money.
+    pub moneyless: BTreeSet<PartyId>,
 }
 
 /// The issuers a payment's money passes through: the parties on the owing side of the money lines it moves.
@@ -174,6 +178,7 @@ impl<B: Backing> Books<B> {
             Side::Asset => (counter, holder),
             Side::Liability => (holder, counter),
         };
+        let moneyless = !self.holds_money(from, terms.ccy, found) || !self.holds_money(to, terms.ccy, found);
         Some(Payment {
             line,
             payer: from,
@@ -185,12 +190,14 @@ impl<B: Backing> Books<B> {
             reckoned_on: holder,
             cleared: false,
             members,
+            moneyless,
         })
     }
 
     /// A cleared line's row's payment: a liability row pays its per-member due for each of its members to the top
     /// issuer; an asset row is paid it for each of its members not drawn to lose to the line's failed payers. Every
-    /// row of the line pays the same due and reaches the same top issuer.
+    /// row of the line pays the same due and reaches the same top issuer; a holder with no money reaches none, and
+    /// its payment names the line's.
     #[clause("REP.23", "MON.5")]
     fn cleared_payment(
         &self,
@@ -201,7 +208,12 @@ impl<B: Backing> Books<B> {
         found: &mut Found,
     ) -> Option<Payment> {
         let line = row.row.line;
-        let top = self.top_of(holder, ccy, found);
+        let moneyless = !self.holds_money(holder, ccy, found);
+        let top = match (found.cleared.get(&line), moneyless) {
+            (Some(day), true) => day.top,
+            (None, true) => self.line_top(line, ccy, found),
+            (_, false) => self.top_of(holder, ccy, found),
+        };
         let day = found.cleared.entry(line).or_insert(ClearedDay { top, per_member: per, failed: 0, losers: None });
         if day.top != top || day.per_member != per {
             violation!(
@@ -231,7 +243,17 @@ impl<B: Backing> Books<B> {
             reckoned_on: holder,
             cleared: true,
             members,
+            moneyless,
         })
+    }
+
+    /// The top issuer a cleared line's payments reach: the one its holders with money reach.
+    fn line_top(&self, line: LineId, ccy: Ccy, found: &mut Found) -> PartyId {
+        let holders: Vec<PartyId> = self.line_holders(line).collect();
+        let Some(holder) = holders.into_iter().find(|p| self.holds_money(*p, ccy, found)) else {
+            violation!(clause = "REP.23", "a cleared line none of whose holders holds money", line = line.get());
+        };
+        self.top_of(holder, ccy, found)
     }
 
     /// Every payment a party takes part in today, in its payment order: its due rows in its run's order, by the
@@ -270,6 +292,9 @@ impl<B: Backing> Books<B> {
     /// and, between banks, reserves; and the principal repaid off the contract's rows. A cleared line's payment moves
     /// its row's holder's money up to the top issuer, or down from it.
     pub(crate) fn effects(&self, p: &Payment, found: &mut Found) -> Vec<LegRec> {
+        if p.moneyless {
+            return Vec::new();
+        }
         if p.cleared {
             let (legs, _) = if p.payer == p.reckoned_on {
                 self.route(p.payer, p.amount, p.ccy, found)
@@ -346,8 +371,12 @@ impl<B: Backing> Books<B> {
                 let holder = table.party(slot);
                 for row in &rows {
                     let Some(p) = self.payment(holder, row, day, calendar, found) else { continue };
-                    let legs = self.effects(&p, found);
                     out.payments += 1;
+                    if p.moneyless {
+                        out.moneyless.insert(holder);
+                        continue;
+                    }
+                    let legs = self.effects(&p, found);
                     if closed.holds(p.payer, &issuers(&legs)) {
                         if p.cleared {
                             violation!(

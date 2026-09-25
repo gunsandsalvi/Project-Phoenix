@@ -196,6 +196,13 @@ impl<B: Backing> Books<B> {
             queued: BTreeSet::new(),
             draws_of,
         };
+        for holder in &day.moneyless {
+            for row in self.due_rows_of(*holder, due) {
+                if let Some(p) = self.payment(*holder, &row, today, calendar, work.found).filter(|p| p.moneyless) {
+                    work.fail(&p);
+                }
+            }
+        }
         for p in short {
             work.enqueue(p);
         }

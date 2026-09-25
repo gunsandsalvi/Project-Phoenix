@@ -340,3 +340,87 @@ fn a_cleared_line_pays_row_by_row_and_draws_who_loses() {
     assert_eq!(held, 100_000, "reserves moved between the banks, none made");
     assert_eq!(balance(&books, cb, reserves, Side::Liability), -100_000);
 }
+
+/// The line above, but the second payer and the third claimant hold no account: the payer's dues fail for want of
+/// money, its members' dues lost by claimant members drawn for them, and the claimant's own due is lost against the
+/// top issuer, which owes no row of the line.
+#[test]
+fn a_cleared_line_fails_the_rows_of_holders_with_no_money() {
+    let size = BooksSize { rows: 32, rows_per_chunk: 32, instruments: 16, lines: 16, per_chunk: 16, blocks: 32 };
+    let mut books: Books<Heap> = Books::new(&["central bank", "bank", "firm"], size);
+    let cal = calendar();
+    let at = |books: &mut Books<Heap>, kind| books.parties.begin(kind, TileId::new(0), Day::new(0));
+    let cb = at(&mut books, "central bank");
+    let banks = [at(&mut books, "bank"), at(&mut books, "bank")];
+    let payers = [at(&mut books, "firm"), at(&mut books, "firm")];
+    let claimants = [at(&mut books, "firm"), at(&mut books, "firm"), at(&mut books, "firm")];
+    let reserves_kind = books.ledger.lines.declare_reserves(HOLDERS.reserves()).index();
+    let deposit_kind = books.ledger.lines.declare_deposits(HOLDERS.deposits("current account")).index();
+    let wage_kind = books.ledger.lines.declare_money(WAGE).index();
+    let account = books.ledger.terms.intern(Terms::account(EUR, monthly()));
+    let reserves = books.ledger.lines.open(reserves_kind, account, Missing::Absent);
+    let deposits = banks.map(|_| books.ledger.lines.open(deposit_kind, account, Missing::Absent));
+    let wage_terms = Terms {
+        legs: vec![Leg::FixedAmount(Money::new(1_000, EUR))],
+        schedule: Schedule { dates: monthly(), count: Missing::Absent },
+        ..Terms::account(EUR, monthly())
+    };
+    let wage_terms = books.ledger.terms.intern(wage_terms);
+    let due = cal.day(Date::new(2026, 2, 16).unwrap()).unwrap();
+    let wage = books.ledger.lines.open(wage_kind, wage_terms, Missing::Present((due, 1)));
+    let reason = books.ledger.reasons.declare(ReasonDecl {
+        name: "opening",
+        order: 0,
+        paid: Effect::Equity,
+        received: Effect::Equity,
+    });
+    let banked = [(payers[0], 0, 10_000), (claimants[0], 0, 0), (claimants[1], 1, 0)];
+    let mut legs = vec![open(cb, reserves, Side::Liability, 2, BALANCE)];
+    for ((bank, line), depositors) in banks.iter().zip(deposits).zip([2, 1]) {
+        legs.push(open(*bank, reserves, Side::Asset, 1, BALANCE));
+        legs.push(open(*bank, line, Side::Liability, depositors, BALANCE));
+    }
+    for (party, bank, _) in banked {
+        legs.push(open(party, deposits[bank], Side::Asset, 1, BALANCE | PENDING));
+    }
+    for (party, count) in payers.iter().zip([2, 3]) {
+        legs.push(open(*party, wage, Side::Liability, count, BALANCE));
+    }
+    for (party, count) in claimants.iter().zip([1, 3, 1]) {
+        legs.push(open(*party, wage, Side::Asset, count, BALANCE));
+    }
+    let mut report = GenReport::default();
+    books.open(reason, legs, 0, &mut report);
+    let mut writes = Vec::new();
+    for bank in banks {
+        writes.extend([write(bank, reserves, Side::Asset, 50_000), write(cb, reserves, Side::Liability, -50_000)]);
+    }
+    for (party, bank, amount) in banked.into_iter().filter(|b| b.2 > 0) {
+        writes.push(write(party, deposits[bank], Side::Asset, amount));
+        writes.push(write(banks[bank], deposits[bank], Side::Liability, -amount));
+    }
+    books.open(reason, writes, 1, &mut report);
+
+    let marked = books.ledger.mark_due(due, &cal);
+    let paid = books.settle_day(
+        &marked,
+        due,
+        &cal,
+        &crate::pending::Closed::default(),
+        &crate::cleared::test_draws,
+        &mut Quiet,
+    );
+    assert_eq!((paid.payments, paid.lost), (5, 3), "every row its own payment; the second payer's 3 lost");
+    assert_eq!((paid.unsound, paid.not_maximal, paid.nets_missed, paid.reserves_missed), (0, 0, 0, 0));
+    let fails: Vec<(PartyId, FailCause)> = books.ledger.fails().iter().map(|f| (f.party, f.cause)).collect();
+    assert_eq!(fails, vec![(payers[1], FailCause::NoMoney)], "only the payer with no money is in arrears");
+    assert_eq!(balance(&books, payers[0], deposits[0], Side::Asset), 8_000, "the first payer paid for its 2 members");
+    let received: Vec<i64> =
+        claimants[..2].iter().zip([0, 1]).map(|(c, b)| balance(&books, *c, deposits[b], Side::Asset)).collect();
+    assert!(received.iter().sum::<i64>() <= 2_000, "the claimants with money are paid no more than was paid");
+    for (r, count) in received.iter().zip([1, 3]) {
+        assert!(*r % 1_000 == 0 && *r <= 1_000 * count, "whole members, within each row's count");
+    }
+    let held: i64 = banks.iter().map(|b| balance(&books, *b, reserves, Side::Asset)).sum();
+    assert_eq!(i128::from(held), -i128::from(balance(&books, cb, reserves, Side::Liability)), "reserves balance");
+}

@@ -451,6 +451,7 @@ pub enum phx_ledger::check::FailCause
 pub phx_ledger::check::FailCause::Ended
 pub phx_ledger::check::FailCause::FreeUnits
 pub phx_ledger::check::FailCause::Funds
+pub phx_ledger::check::FailCause::NoMoney
 pub phx_ledger::check::FailCause::NotHeld
 impl phx_store::save::Saved for phx_ledger::check::FailCause
 pub fn phx_ledger::check::FailCause::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
@@ -1155,6 +1156,7 @@ pub mod phx_ledger::stream
 pub struct phx_ledger::stream::DayRecords
 pub phx_ledger::stream::DayRecords::gross: i128
 pub phx_ledger::stream::DayRecords::heads_read: u64
+pub phx_ledger::stream::DayRecords::moneyless: alloc::vec::Vec<phx_ledger::stream::Payment>
 pub phx_ledger::stream::DayRecords::payments: u64
 pub phx_ledger::stream::DayRecords::pending: u64
 pub phx_ledger::stream::DayRecords::records: alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, phx_ledger::stream::Record>
@@ -1167,6 +1169,7 @@ pub phx_ledger::stream::Payment::ccy: phx_num::money::Ccy
 pub phx_ledger::stream::Payment::cleared: bool
 pub phx_ledger::stream::Payment::line: phx_id::ids::LineId
 pub phx_ledger::stream::Payment::members: u32
+pub phx_ledger::stream::Payment::moneyless: bool
 pub phx_ledger::stream::Payment::order: u8
 pub phx_ledger::stream::Payment::payee: phx_id::ids::PartyId
 pub phx_ledger::stream::Payment::payer: phx_id::ids::PartyId
