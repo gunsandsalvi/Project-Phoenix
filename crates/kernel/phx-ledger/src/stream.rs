@@ -355,12 +355,7 @@ impl<B: Backing> Books<B> {
         let mut touched = Vec::new();
         for leg in legs.iter().filter(|l| matches!(l.kind, LegKind::Money)) {
             let AccountRef::Line { line, side: Side::Asset } = leg.account else { continue };
-            if records.get(leg.party).is_none() {
-                let _ = records.insert(leg.party, self.record_of(leg.party, line));
-            }
-            let Some(rec) = records.get_mut(leg.party) else {
-                violation!(clause = "MON.5", "a party's record not kept", party = leg.party.get());
-            };
+            let rec = records.get_or_insert_with(leg.party, || self.record_of(leg.party, line));
             if rec.account != line {
                 violation!(clause = "MON.5", "a party paying from two accounts in one day", party = leg.party.get());
             }
@@ -383,12 +378,12 @@ impl<B: Backing> Books<B> {
     pub(crate) fn stream(
         &self,
         heads: &[u32],
+        mut out: DayRecords,
         due: &DueLines,
         (day, calendar): (Day, &Calendar),
         closed: &Closed,
         found: &mut Found,
     ) -> DayRecords {
-        let mut out = DayRecords::default();
         let keys = self.ledger.lines.keys();
         for &key in heads {
             let (place, slot) = keys.split(key);

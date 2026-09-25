@@ -29,7 +29,7 @@ pub trait PayerPositions {
 
 /// A holder's account: its balance less what is pending, and the members its row holds.
 pub fn account_funds(arenas: &dyn crate::holder::HolderArenas, holder: Slot, account: LineId) -> (i128, i128) {
-    let Some(view) = rows::iter(arenas, holder).find(|r| r.row.line == account && r.side() == Side::Asset) else {
+    let Some(view) = rows::find(arenas, holder, account, Side::Asset) else {
         violation!(clause = "MON.5", "funds read on an account its holder does not hold", line = account.get());
     };
     let Missing::Present(balance) = view.optional.balance else {

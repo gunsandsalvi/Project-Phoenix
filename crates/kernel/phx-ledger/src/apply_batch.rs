@@ -102,6 +102,41 @@ struct Gathered {
     failed: u64,
 }
 
+/// The day's buffers, kept on the books from one stage 7 to the next and emptied, never freed, so a day maps no new
+/// pages once the heaviest day has sized them.
+#[derive(Debug, Default)]
+pub(crate) struct DayBuffers {
+    records: Records,
+    given: Records,
+    made: Vec<Payment>,
+    scanned: Vec<(u16, Slot)>,
+    nets: phx_core::KernelMap<NetKey, i128>,
+    net_list: Vec<(NetKey, i128)>,
+}
+
+impl DayBuffers {
+    /// The day's stream buffers, emptied, handed to 7a.
+    fn stream_buffers(&mut self) -> DayRecords {
+        let mut records = std::mem::take(&mut self.records);
+        records.clear();
+        let mut made = std::mem::take(&mut self.made);
+        made.clear();
+        let mut scanned = std::mem::take(&mut self.scanned);
+        scanned.clear();
+        DayRecords { records, scanned, made, ..DayRecords::default() }
+    }
+
+    /// The day's buffers taken back at the close of stage 7.
+    fn keep(&mut self, streamed: DayRecords, g: Gathered, nets: phx_core::KernelMap<NetKey, i128>) {
+        self.records = streamed.records;
+        self.made = streamed.made;
+        self.scanned = streamed.scanned;
+        self.given = g.given;
+        self.net_list = g.nets;
+        self.nets = nets;
+    }
+}
+
 fn bytes<T>(n: usize) -> u64 {
     phx_rand::float::len_u64(n * std::mem::size_of::<T>())
 }
@@ -201,10 +236,15 @@ impl<B: Backing> Books<B> {
         today: Today<'_>,
         closed: &Closed,
         found: &mut Found,
-    ) -> Gathered {
+    ) -> (Gathered, phx_core::KernelMap<NetKey, i128>) {
         let (_, day, _) = today;
-        let mut g = Gathered::default();
-        let mut nets: phx_core::KernelMap<NetKey, i128> = phx_core::KernelMap::new();
+        let mut given = std::mem::take(&mut self.buffers.given);
+        given.clear();
+        let mut net_list = std::mem::take(&mut self.buffers.net_list);
+        net_list.clear();
+        let mut g = Gathered { given, nets: net_list, ..Gathered::default() };
+        let mut nets = std::mem::take(&mut self.buffers.nets);
+        nets.clear();
         for made in &streamed.made {
             let Some(p) = after_losers(made, found) else { continue };
             let route = self.effects(&p);
@@ -257,8 +297,8 @@ impl<B: Backing> Books<B> {
                 }
             }
         }
-        g.nets = nets.drain_sorted();
-        g
+        g.nets.extend(nets.drain_sorted());
+        (g, nets)
     }
 
     /// The dues the claimant members drawn on cleared lines lost, recorded as failed against the top issuer, which
@@ -346,11 +386,12 @@ impl<B: Backing> Books<B> {
     ) -> DaySettlement {
         let mut found = Found::default();
         let heads = self.ledger.lines.take_heads(day);
-        let mut streamed = self.stream(&heads, due, (day, calendar), closed, &mut found);
+        let buffers = self.buffers.stream_buffers();
+        let mut streamed = self.stream(&heads, buffers, due, (day, calendar), closed, &mut found);
         let fixed = self.fixed_point(&mut streamed, due, day, calendar, &mut found, draws_of);
         let scanned: BTreeSet<(u16, Slot)> = streamed.scanned.iter().copied().collect();
         let (runs_read, runs_broken) = self.runs_broken(due, day, &scanned);
-        let g = self.gather(&streamed, &fixed, (due, day, calendar), closed, &mut found);
+        let (g, nets) = self.gather(&streamed, &fixed, (due, day, calendar), closed, &mut found);
         let (lost, lost_past_failed) = self.record_lost(&found);
         let given = g.given.sorted();
         let unsound = count(given.iter().filter(|(_, r)| r.standing() < 0).count());
@@ -398,7 +439,7 @@ impl<B: Backing> Books<B> {
         for &(place, slot) in &streamed.scanned {
             runs::rehead(crate::apply::Holders::arenas(&mut self.parties, place), place, slot, &mut self.ledger.lines);
         }
-        DaySettlement {
+        let settled = DaySettlement {
             lines: count(due.lines().len()),
             heads_read: streamed.heads_read,
             rows_scanned: streamed.rows_scanned,
@@ -420,7 +461,9 @@ impl<B: Backing> Books<B> {
             reserves_missed,
             runs_read,
             runs_broken,
-        }
+        };
+        self.buffers.keep(streamed, g, nets);
+        settled
     }
 
     /// How many payers that failed were not short: at its first failed payment in its own order, what a payer held
@@ -470,8 +513,7 @@ impl<B: Backing> Books<B> {
             let AccountRef::Line { line, side: Side::Asset } = leg.account else { continue };
             let (place, slot) = self.parties.row(leg.party);
             let arenas = crate::apply::Holders::arenas(&mut self.parties, place);
-            let Some(view) = crate::rows::iter(arenas, slot).find(|r| r.row.line == line && r.side() == Side::Asset)
-            else {
+            let Some(view) = crate::rows::find(arenas, slot, line, Side::Asset) else {
                 violation!(
                     clause = "MON.5",
                     "a pending amount on an account its party does not hold",
@@ -493,8 +535,7 @@ impl<B: Backing> Books<B> {
                     return None;
                 }
                 let (place, slot) = self.parties.row(k.party);
-                let row = crate::rows::iter(self.parties.holder(place), slot)
-                    .find(|r| r.row.line == k.line && r.side() == k.side);
+                let row = crate::rows::find(self.parties.holder(place), slot, k.line, k.side);
                 match row.map(|r| r.optional.balance) {
                     Some(Missing::Present(b)) => Some(i128::from(b)),
                     _ => None,

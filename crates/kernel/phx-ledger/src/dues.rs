@@ -129,7 +129,7 @@ impl<B: Backing> Books<B> {
         else {
             return None;
         };
-        crate::rows::iter(self.parties.holder(table), slot).find(|r| r.row.line == line && r.side() == side)
+        crate::rows::find(self.parties.holder(table), slot, line, side)
     }
 
     /// A line's holders, in its holder list's order.

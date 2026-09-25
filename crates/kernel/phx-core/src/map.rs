@@ -86,6 +86,21 @@ impl<K: MapKey, V> KernelMap<K, V> {
         self.at_mut(key).get_mut(&key)
     }
 
+    /// The value at a key, made by `make` where there is none: one look-up either way.
+    pub fn get_or_insert_with(&mut self, key: K, make: impl FnOnce() -> V) -> &mut V {
+        let i = shard(key);
+        let Some(s) = self.shards.get_mut(i) else {
+            capacity_exceeded!("map shards", KEYED_SHARDS, i);
+        };
+        match s.entry(key) {
+            hashbrown::hash_map::Entry::Occupied(o) => o.into_mut(),
+            hashbrown::hash_map::Entry::Vacant(v) => {
+                self.len += 1;
+                v.insert(make())
+            }
+        }
+    }
+
     /// Inserts or replaces, returning the value replaced.
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         let old = self.at_mut(key).insert(key, value);
@@ -125,6 +140,14 @@ impl<K: MapKey, V> KernelMap<K, V> {
         let mut all: Vec<(K, &V)> = self.shards.iter().flat_map(|s| s.iter().map(|(k, v)| (*k, v))).collect();
         all.sort_unstable_by_key(|entry| entry.0);
         all
+    }
+
+    /// Empties the map, keeping the room it holds, so a map filled again each day maps no new pages.
+    pub fn clear(&mut self) {
+        for s in &mut self.shards {
+            s.clear();
+        }
+        self.len = 0;
     }
 
     /// Every entry, sorted by key, leaving the map empty, for a save.

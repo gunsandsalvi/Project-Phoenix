@@ -82,7 +82,7 @@ impl Arrears {
 /// Whether a live party still holds its row on a side of a line.
 fn holds_row(holders: &mut dyn Holders, party: PartyId, line: LineId, side: Side) -> bool {
     let Located::Live { table, slot, .. } = holders.locate(party) else { return false };
-    rows::iter(holders.arenas(table), slot).any(|r| r.row.line == line && r.side() == side)
+    rows::find(holders.arenas(table), slot, line, side).is_some()
 }
 
 fn days(since: Day, today: Day) -> u16 {
@@ -134,7 +134,7 @@ impl<B: Backing> Ledger<B> {
         }
         let Located::Live { table, slot, .. } = holders.locate(party) else { return };
         let arenas = holders.arenas(table);
-        let Some(view) = rows::iter(arenas, slot).find(|r| r.row.line == line && r.side() == side) else {
+        let Some(view) = rows::find(arenas, slot, line, side) else {
             violation!(clause = "SET.3", "arrears cured on a row its party does not have", line = line.get());
         };
         let record = PaymentRecord { arrears_days: 0, missed: view.record().missed };
@@ -149,7 +149,7 @@ impl<B: Backing> Ledger<B> {
         };
         let side = side_of(key.side);
         let arenas = holders.arenas(table);
-        let Some(view) = rows::iter(arenas, slot).find(|r| r.row.line == key.line && r.side() == side) else {
+        let Some(view) = rows::find(arenas, slot, key.line, side) else {
             violation!(clause = "SET.3", "arrears on a row its party does not have", line = key.line.get());
         };
         let mut record = view.record();

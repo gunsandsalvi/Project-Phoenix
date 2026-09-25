@@ -240,6 +240,8 @@ pub struct Books<B: Backing = SystemBacking> {
     /// Each line side's members by holder as members last left it, with the side's version then: drawn from again
     /// while the side is unchanged, so members leaving a line of many holders read its side once, not each time.
     pub(crate) leaving: BTreeMap<(LineId, Side), (u64, crate::cleared::Tally)>,
+    /// Stage 7's buffers, kept from one day to the next.
+    pub(crate) buffers: crate::apply_batch::DayBuffers,
 }
 
 /// The opening's instructions feed no audit: day one's audit reads the state they leave.
@@ -307,6 +309,7 @@ impl<B: Backing> Books<B> {
             dues,
             opened: 0,
             leaving: BTreeMap::new(),
+            buffers: crate::apply_batch::DayBuffers::default(),
         }
     }
 
@@ -493,6 +496,7 @@ impl<B: Backing> Books<B> {
             dues,
             opened,
             leaving: BTreeMap::new(),
+            buffers: crate::apply_batch::DayBuffers::default(),
         };
         books.relist();
         Ok(books)

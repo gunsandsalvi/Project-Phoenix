@@ -25,8 +25,7 @@ fn word32(n: usize) -> u32 {
 
 /// The rows of a holder's dated segment, read in order.
 pub fn segment(arenas: &dyn HolderArenas, holder: Slot, head: RunHead) -> impl Iterator<Item = RowView> + '_ {
-    let (from, to) = (words(head.offset), words(head.offset + head.len));
-    rows::iter(arenas, holder).skip_while(move |r| r.at < from).take_while(move |r| r.at < to)
+    rows::iter_from(arenas, holder, words(head.offset), words(head.offset + head.len))
 }
 
 /// A holder's rows due today, with how many rows of its segment were read to find them: none, at the cost of one

@@ -3336,7 +3336,7 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
 `apply_batch.rs` and `batch.rs`. As built, the rule refuses a struct field in those files that keeps payments, legs,
 rows, instructions or due rows in a collection; the passes keep per-party records, per-account nets and the keys of
 failed payments, and the one list architecture §6.5 names, `DayRecords.made`, the day's payments 7a hands 7c (F-020),
-counted in the day buffers.
+kept between days as `DayBuffers.made` (§6.6), counted in the day buffers.
 
 **Benchmarks** (as built, instruction counts on the build machine, `benches/ledger.rs`): 64 run heads read, 878
 (about 14 a head); `pooled()` over 16 rows with two kinks, 3 400 (about 210 a row, most of it the result's

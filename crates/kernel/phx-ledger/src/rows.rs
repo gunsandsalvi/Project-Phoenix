@@ -129,35 +129,67 @@ pub fn rows(arenas: &dyn HolderArenas, holder: Slot) -> Vec<RowView> {
 
 /// A holder's rows read one at a time, so a search stops at the row it wants.
 pub fn iter(arenas: &dyn HolderArenas, holder: Slot) -> impl Iterator<Item = RowView> + '_ {
+    iter_from(arenas, holder, 0, usize::MAX)
+}
+
+/// A holder's row on a side of a line: each row's head read and passed by its width, only the row found read whole.
+#[must_use]
+pub fn find(arenas: &dyn HolderArenas, holder: Slot, line: LineId, side: Side) -> Option<RowView> {
     let words = arenas.read(holder, ListKind::RelationshipRows);
     let mut at = 0;
-    core::iter::from_fn(move || {
-        if at >= words.len() {
-            return None;
-        }
+    while at < words.len() {
         let Some(head) = words.get(at..at + ROW) else {
             violation!(clause = "REG.14", "a holder's rows end inside a row", at = at);
         };
         let row: RelRow = from_words(head);
-        let Some(rest) = words.get(at + ROW..at + width(row.flags)) else {
-            violation!(clause = "REG.14", "a row's flagged words missing from its holder's run", at = at);
-        };
-        let mut rest = rest.iter();
-        let mut next = |flag: u8| {
-            if row.flags & flag == 0 {
-                Missing::Absent
-            } else {
-                let Some(w) = rest.next() else {
-                    violation!(clause = "REG.14", "a row's flagged word missing from its holder's run", at = at);
-                };
-                Missing::Present(w.cast_signed())
-            }
-        };
-        let optional = Optional { balance: next(BALANCE), pending: next(PENDING), amount: next(AMOUNT) };
-        let view = RowView { row, optional, at };
+        if row.line == line && side_of(row.role) == side {
+            return view_at(words, at);
+        }
         at += width(row.flags);
+    }
+    None
+}
+
+/// The rows of a holder's run from the word `from`, a row's first, to the word `to`.
+pub fn iter_from(
+    arenas: &dyn HolderArenas,
+    holder: Slot,
+    from: usize,
+    to: usize,
+) -> impl Iterator<Item = RowView> + '_ {
+    let words = arenas.read(holder, ListKind::RelationshipRows);
+    let end = if to < words.len() { to } else { words.len() };
+    let mut at = from;
+    core::iter::from_fn(move || {
+        if at >= end {
+            return None;
+        }
+        let view = view_at(words, at)?;
+        at += width(view.row.flags);
         Some(view)
     })
+}
+
+/// The row whose head lies at the word `at`, read whole.
+fn view_at(words: &[u64], at: usize) -> Option<RowView> {
+    let head = words.get(at..at + ROW)?;
+    let row: RelRow = from_words(head);
+    let Some(rest) = words.get(at + ROW..at + width(row.flags)) else {
+        violation!(clause = "REG.14", "a row's flagged words missing from its holder's run", at = at);
+    };
+    let mut rest = rest.iter();
+    let mut next = |flag: u8| {
+        if row.flags & flag == 0 {
+            Missing::Absent
+        } else {
+            let Some(w) = rest.next() else {
+                violation!(clause = "REG.14", "a row's flagged word missing from its holder's run", at = at);
+            };
+            Missing::Present(w.cast_signed())
+        }
+    };
+    let optional = Optional { balance: next(BALANCE), pending: next(PENDING), amount: next(AMOUNT) };
+    Some(RowView { row, optional, at })
 }
 
 /// A row's words as its holder's run keeps them, its flags naming the optional words it carries; written into a

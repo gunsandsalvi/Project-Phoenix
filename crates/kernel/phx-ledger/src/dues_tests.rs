@@ -100,7 +100,7 @@ fn write(party: PartyId, line: LineId, side: Side, qty: i64) -> LegRec {
 
 fn balance(books: &Books<Heap>, party: PartyId, line: LineId, side: Side) -> i64 {
     let (place, slot) = books.parties.row(party);
-    let row = crate::rows::iter(books.parties.table(place), slot).find(|r| r.row.line == line && r.side() == side);
+    let row = crate::rows::find(books.parties.table(place), slot, line, side);
     match row.map(|r| r.optional.balance) {
         Some(Missing::Present(b)) => b,
         _ => panic!("no balance on line {}", line.get()),

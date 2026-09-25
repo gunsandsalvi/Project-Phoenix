@@ -186,7 +186,7 @@ struct Key {
 }
 
 fn find(arenas: &dyn HolderArenas, slot: Slot, line: LineId, side: Side) -> RowView {
-    let Some(view) = crate::rows::iter(arenas, slot).find(|r| r.row.line == line && r.side() == side) else {
+    let Some(view) = crate::rows::find(arenas, slot, line, side) else {
         violation!(clause = "SET.11", "a leg on a row its party does not have", line = line.get());
     };
     view
@@ -431,8 +431,7 @@ impl<B: Backing> Ledger<B> {
     /// is marked so; a holding's units, or for its issuer the units issued, as owed; whether a named unit is held.
     #[must_use]
     pub fn position(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, code: u64) -> i64 {
-        let row =
-            |line: LineId, side: Side| crate::rows::iter(arenas, slot).find(|r| r.row.line == line && r.side() == side);
+        let row = |line: LineId, side: Side| crate::rows::find(arenas, slot, line, side);
         match AccountRef::from_code(code) {
             AccountRef::Line { line, side } if code & ROW_COUNT != 0 => {
                 row(line, side).map_or(0, |r| i64::from(r.row.count))

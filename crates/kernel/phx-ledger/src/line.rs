@@ -669,7 +669,7 @@ impl<B: Backing> Lines<B> {
     }
 
     pub(crate) fn find(arenas: &dyn HolderArenas, holder: Slot, line: LineId, side: Side) -> RowView {
-        let Some(view) = rows::iter(arenas, holder).find(|r| r.row.line == line && r.side() == side) else {
+        let Some(view) = rows::find(arenas, holder, line, side) else {
             violation!(clause = "REG.14", "a row read that its holder does not have", line = line.get());
         };
         view

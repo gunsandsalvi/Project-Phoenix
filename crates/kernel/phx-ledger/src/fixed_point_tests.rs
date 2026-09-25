@@ -171,7 +171,7 @@ fn world(funds: &[i64], edges: &[(usize, usize, i64)], reserves: [i64; 2]) -> Wo
 
 fn balance(w: &World, party: PartyId, line: LineId, side: Side) -> i64 {
     let (place, slot) = w.books.parties.row(party);
-    let row = crate::rows::iter(w.books.parties.table(place), slot).find(|r| r.row.line == line && r.side() == side);
+    let row = crate::rows::find(w.books.parties.table(place), slot, line, side);
     match row.map(|r| r.optional.balance) {
         Some(Missing::Present(b)) => b,
         _ => panic!("no balance"),
@@ -325,8 +325,7 @@ fn bank_net_removal_resettles() {
 fn pending_on(w: &World, i: usize) -> i64 {
     let (place, slot) = w.books.parties.row(w.firms[i]);
     let line = w.deposits[i % 2];
-    let row =
-        crate::rows::iter(w.books.parties.table(place), slot).find(|r| r.row.line == line && r.side() == Side::Asset);
+    let row = crate::rows::find(w.books.parties.table(place), slot, line, Side::Asset);
     match row.map(|r| r.optional.pending) {
         Some(Missing::Present(p)) => p,
         _ => panic!("no pending word"),

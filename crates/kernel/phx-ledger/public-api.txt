@@ -1112,7 +1112,9 @@ pub fn phx_ledger::rows::RowView::side(&self) -> phx_ledger::algebra::Side
 pub const phx_ledger::rows::AMOUNT: u8
 pub const phx_ledger::rows::BALANCE: u8
 pub const phx_ledger::rows::PENDING: u8
+pub fn phx_ledger::rows::find(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::LineId, phx_ledger::algebra::Side) -> core::option::Option<phx_ledger::rows::RowView>
 pub fn phx_ledger::rows::iter(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::rows::RowView> + '_
+pub fn phx_ledger::rows::iter_from(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, usize, usize) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::rows::RowView> + '_
 pub fn phx_ledger::rows::role(phx_ledger::algebra::Side, u8) -> u8
 pub fn phx_ledger::rows::rows(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<phx_ledger::rows::RowView>
 pub fn phx_ledger::rows::side_of(u8) -> phx_ledger::algebra::Side
