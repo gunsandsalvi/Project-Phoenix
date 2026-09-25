@@ -43,7 +43,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_heads_read"
-value = 69498
+value = 79952
 direction = "down"
 
 [[ratchet]]

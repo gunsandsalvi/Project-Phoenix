@@ -4652,7 +4652,7 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     published work, no parameter read from a derived value).
   - Build run (`e2ccc95774c9`, 120 days): clean, no finding, peak 208 MiB, with GEN.home_ownership drawn in each
     country's profile; the world reads no population table yet.
-- **S0.25c — households and demography**: `if-pop`, `sys-dem`'s kinds, roles, keys, profiles and positions; the two
+- **S0.25c — households and demography** (done): `if-pop`, `sys-dem`'s kinds, roles, keys, profiles and positions; the two
   canonical passes and the apportionment of banking arrangements; mortality, illness and ageing as processes; deaths
   as events. LC-0-37 to LC-0-52 and LC-0-54 apply.
   Redesign (the owner's decision, §12): the first build of the processes turned each person's event into splits
@@ -4709,6 +4709,10 @@ and build run, and marked here as it is done. The clause map names S0.25, which 
     Reviews (the builder's two): mortality reads no health (F-040); the event's cell was retained twice at 3b (now
     once); the renumbering hash read the whole table on every light day (now the renumbered chunk's rows), and slices
     of two kinds could have hidden a change in one (now counted per slice).
+    Build run (`b7930378e270`, 120 days): the opening's 130.8 M households in 24 461 cells, then 120 days of deaths,
+    onsets and birthdays; every live check passes but those waiting on a named step (LC-0-29 to LC-0-32, LC-0-42, 44,
+    45, 48, 53, 55 and 56); peak 447 MiB; the run heads read (79 952) rise with the cells, the ratchet moved under the
+    owner's autonomy (§12).
 - **S0.25d — lines paying**: employment, tenancy and the dwelling stock, deposits and loans, small firms as cells,
   and pensions in payment (`sys-lab`, `sys-hsg`, `sys-bnk`, `sys-frm`, `sys-soc`, `sys-pen`), paying by their terms
   through pooled flows. LC-0-55 and LC-0-56 apply.
@@ -15743,6 +15747,7 @@ the final build within the budget on the phone.
 | The ratchets after S0.25a | accepted at CI's counts on ee64202: settlement's day over sixteen holders 339 639 (+1.2%, holder tables reached as trait objects so cells sit in the books), renumbering 25 806 094 (+2.1%, the agenda's drawn rung swapped with each row), and the agenda's gather 149 145, the gap estimate 3 299 623, the index rebuild 1 043 845 and the candidate screen 3 308 173 (each under 0.1%); five that fell moved down to their counts | 2026-09-24 |
 | The ratchets after S0.25c-4a | accepted at CI's counts on 8c16d42: the candidate screen 3 460 412 (+4.6%, the values tagged by group, the rate read by group and the exposure in persons, a process reading several groups), the rank read 1 175 643, the index rebuild 1 044 483 and the gap estimate 3 299 891 (each under 0.25%, since the roles counted in the key); the build run's run heads read 69 498, rising with the world's cells; five that fell moved down to their counts | 2026-09-24 |
 | Autonomy to the Stage 0 gate | the builder takes every decision the plan leaves to it, and the ones this table would otherwise wait for, until the gate's phone measurement; before it, the documents are checked against the code and fixed, then the full adversarial review of Stage 0 runs; each such decision is stated in its commit and here | 2026-09-24 |
+| The run heads read after S0.25c | 79 952 on the build run b7930378e270, rising with the world's cells as the owner accepted; taken by the builder under its autonomy | 2026-09-25 |
 | S0.25's size | split into sub-steps, each with its own reviews and build run | 2026-09-24 |
 | The build run's length | an ordinary step's 120 days from day zero; a stage gate's settled and run two years, since the full population's opening and settling on the build machine take about an hour | 2026-09-24 |
 | State pensions' rules (S0.25b) | each group's pension age and replacement rate from its members in OECD Pensions at a Glance, the developing group's from India pooled with the eight emerging members, recorded as an assumption; who receives one from the ILO's SDG 1.3.1 coverage for every group | 2026-09-24 |
