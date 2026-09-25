@@ -78,7 +78,7 @@ pub struct ReadDecl {
     /// Where that relationship is published.
     #[serde(default)]
     pub source: Option<String>,
-    /// The fact of N3 the read is, whose definition was registered before any read.
+    /// The stylised fact the read is, whose definition was registered before any read.
     #[serde(default)]
     pub fact: Option<String>,
 }
