@@ -5322,6 +5322,22 @@ contracts; a mode branch in any system (the representation is two numbers every 
   names why, and the reads never all stand still to the run's end; LC-0-60 — each opening distribution's distance
   from the world's own (half the summed differences of the bins' shares, `Histogram::distance`) read at settling's
   end and the run's end, reported under `drift`; then the phone.
+- **S0.26f — the full load within the budget** *(building)*: architecture §6.6's cost bounds, every operation a day
+  performs at most O(log n) in the world's size (the owner's rule, §12), built in this order, with the full load
+  measured on the build machine after each part and its numbers kept in F-087:
+  1. dense identity: `Directory` and `Parties::place_of` read a dense array by party id;
+  2. standing facts on their owners: a holder's money account and issuer per currency, a line's reckoning and ower,
+     kept as they change; `Found` retired;
+  3. the row index: a holder's rows by (line, side), found by search, O(log R); `find` returns the offset it found;
+  4. the due index: holders in the agenda's timing wheel by their run head's next due day, so 7a reads only those due;
+  5. the day's payment table: each due row reckoned once, routes interned, payments indexed by payer and by bank in
+     compressed sparse rows; 7b by cursors and epoch marks; 7c's nets by counting sort; day buffers kept across days;
+  6. parallel 7a, 7b rounds, 7c by target shard, and 3e's outcomes by agent chunk;
+  7. the audits and accounts by running sums and rolling slices (the money and contract families, the accruals'
+     mismatches, arrears by their start, `runs_broken`, `compact_due`, the equity view, `fails_recorded`, the regions'
+     and names' rolls, the catastrophe site index);
+  8. saves of the saved stores only, compressed in parallel frames, the held stores carrying their columns' shapes;
+  9. memory: each §13.1 line against the built stores' measured bytes, the bench's own build transients removed.
 
 **Clauses**:
 - PROCESS: OBS.4 *(part: the player an agent of one from the start, its queue as wakes)*; REP.30 *(tracers)*.
@@ -16240,6 +16256,7 @@ the final build within the budget on the phone.
 | A step waiting on the owner (PC-09) | a step whose remaining **Done when** items are the owner's alone takes the status `awaiting owner`, which is not `building`; S0.26 waits so for the phone's run | 2026-09-25 |
 | A kernel's books fixture in its tests (F-063) | a kernel's hand-built fixture of a few parties, lines and books, asserting its own arithmetic, is a logic-level test and not a world; CLAUDE.md says so | 2026-09-25 |
 | Stage 0 reopened (N8.8; F-087) | Stage 0 does not end while the full-load bench misses the budget: S0.26 building again, S1.01 `held` (a status for a step begun and set aside while an earlier one, reopened, is building); the work starts from a review of the most-used algorithms against current research | 2026-09-25 |
+| Cost bounds (N8.6; architecture §6.6) | every operation a day performs costs at most O(log n) in the size of any store of the world — sublinear, never a walk over a world-sized collection to do one thing; a day's cost is the sum of its events', and a world-sized pass only a declared rolling slice | 2026-09-25 |
 
 ---
 
