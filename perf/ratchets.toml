@@ -67,14 +67,51 @@ counter = "phx_ledger.payments"
 value = 2798267
 direction = "down"
 
+# The fixed point's visits restated from the twins gate run (aa48779e, two years): payers short of money multiply as
+# the world runs, since nothing at Stage 0 decides (F-080), and the last paydays are the heaviest.
 [[ratchet]]
 counter = "phx_ledger.fixed_point_iterations"
-value = 498793
+value = 715218
+direction = "down"
+
+# The day buffers restated from the twins gate run (aa48779e): counted by their room, with the payments 7a hands 7c,
+# the day book's due and fail records and the day's look-ups (ab9e4578); over architecture §13.1's line (F-082).
+[[ratchet]]
+counter = "phx_ledger.day_buffer_peak_bytes"
+value = 888941584
+direction = "down"
+
+# The members drawn on cleared lines on the heaviest day, and the agents' day at its most: rows gathered, bookings
+# read and drawn again, hits, and agents drawn afresh at 10b; first set at S0.28 from the twins gate run (aa48779e),
+# the higher of the two representations on each (the small world 8bb7cd39).
+[[ratchet]]
+counter = "phx_ledger.losers_drawn"
+value = 105362770
 direction = "down"
 
 [[ratchet]]
-counter = "phx_ledger.day_buffer_peak_bytes"
-value = 197288928
+counter = "phx_pop.agents_gathered"
+value = 6145
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.bookings_read"
+value = 14032
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.redraws"
+value = 13988
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.hits"
+value = 203
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.agents_booked"
+value = 197
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
@@ -292,10 +329,13 @@ value = 3400
 direction = "down"
 
 # A whole stage 7 over sixteen holders: from S0.19 it records each due that falls, with what became of it, for the
-# accounts. CI's runner holds the ratchet at its own measure, which is above the build machine's.
+# accounts. CI's runner holds the ratchet at its own measure, which is above the build machine's. Raised at S0.28 to
+# CI's 412 020 (e0030d0c): the day's look-ups in the fixed-seed sharded maps and the kept payments (F-020, which made
+# the payday four times faster at scale while a sixteen-holder day pays the maps' setup), contracts leaving like with
+# like, and the day buffers counted by their room; for the owner's review.
 [[ratchet]]
 counter = "phx_ledger.ir_settle_day_16"
-value = 351910
+value = 412020
 direction = "down"
 
 # phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
