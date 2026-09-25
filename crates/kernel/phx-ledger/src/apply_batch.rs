@@ -358,7 +358,9 @@ impl<B: Backing> Books<B> {
         let before = self.balances(&g.nets);
         let buffer_bytes = bytes::<(PartyId, Record)>(streamed.records.len() + g.given.len())
             + bytes::<(u16, Slot)>(streamed.scanned.len() + scanned.len())
+            + bytes::<Payment>(streamed.made.len())
             + bytes::<(NetKey, i128)>(g.nets.len())
+            + bytes::<Option<i128>>(g.nets.len() * 2)
             + bytes::<((PartyId, u8), i128)>(g.crossing.len() + reserves_before.len())
             + bytes::<(LineId, PartyId)>(fixed.failed.len() + fixed.by_bank.len());
         self.apply_nets(&g.nets, day, audit);
