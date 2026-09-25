@@ -220,6 +220,7 @@ pub const phx_store::consts::ENCODE_MAGIC: u32
 pub const phx_store::consts::ENCODE_VERSION: u16
 pub const phx_store::consts::FRAME_BYTES: usize
 pub const phx_store::consts::HEAP_PAGE: usize
+pub const phx_store::consts::INDIVIDUAL_ARENA_WORDS: u32
 pub const phx_store::consts::SAVE_READ_STEP: usize
 pub const phx_store::consts::SIP_C_ROUNDS: usize
 pub const phx_store::consts::SIP_D_ROUNDS: usize

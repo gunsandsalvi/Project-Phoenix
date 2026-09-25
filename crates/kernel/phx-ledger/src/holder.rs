@@ -115,6 +115,8 @@ pub trait CellHolders: HolderTable + core::fmt::Debug + Send + Sync {
     fn hash_into(&self, h: &mut phx_store::LogicalHasher);
     fn as_any(&self) -> &dyn core::any::Any;
     fn as_any_mut(&mut self) -> &mut dyn core::any::Any;
+    /// Compacts every chunk whose arena's dead words have passed the declared share; returns the chunks compacted.
+    fn compact_due(&mut self) -> u64;
 }
 
 /// A holder as a line's or instrument's holder list keeps it: its table in the high bits and its slot below, the

@@ -139,6 +139,7 @@ pub fn open_books(
                 attachments: &attachments,
             };
             c.contribute(&mut opening);
+            books.parties.compact_arenas();
         }
     }
     for kind in &kinds {

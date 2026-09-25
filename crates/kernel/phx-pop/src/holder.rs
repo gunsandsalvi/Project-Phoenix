@@ -172,6 +172,10 @@ where
     fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
         self
     }
+
+    fn compact_due(&mut self) -> u64 {
+        CellTable::compact_due(self)
+    }
 }
 
 /// Facts about a population kind are carried as the kind declares its attributes: in the key, as positions, in

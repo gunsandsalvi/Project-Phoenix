@@ -671,6 +671,7 @@ pub fn phx_pop::table::CellTable<B>::bytes_per_row(&self) -> usize
 pub fn phx_pop::table::CellTable<B>::chunk_of(&self, phx_id::ids::Slot) -> usize
 pub fn phx_pop::table::CellTable<B>::chunks(&self) -> usize
 pub fn phx_pop::table::CellTable<B>::compact(&mut self, usize, &mut phx_store::region::Region<u64, B>)
+pub fn phx_pop::table::CellTable<B>::compact_due(&mut self) -> u64
 pub fn phx_pop::table::CellTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
 pub fn phx_pop::table::CellTable<B>::edit_ext<R>(&mut self, phx_id::ids::Slot, phx_pop::individual::ExtList, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
 pub fn phx_pop::table::CellTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_pop::table::CellList, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
@@ -722,6 +723,7 @@ pub fn phx_pop::table::CellTable<B>::write_fact(&mut self, phx_id::ids::Slot, ph
 impl<B: phx_store::backing::Backing + core::fmt::Debug + 'static> phx_ledger::holder::CellHolders for phx_pop::table::CellTable<B> where phx_pop::table::CellTable<B>: core::marker::Send + core::marker::Sync
 pub fn phx_pop::table::CellTable<B>::as_any(&self) -> &dyn core::any::Any
 pub fn phx_pop::table::CellTable<B>::as_any_mut(&mut self) -> &mut dyn core::any::Any
+pub fn phx_pop::table::CellTable<B>::compact_due(&mut self) -> u64
 pub fn phx_pop::table::CellTable<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_pop::table::CellTable<B>::load_like(&self, &mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>, phx_store::save::LoadError>
 pub fn phx_pop::table::CellTable<B>::save_to(&self, &mut phx_store::save::Writer<'_>)

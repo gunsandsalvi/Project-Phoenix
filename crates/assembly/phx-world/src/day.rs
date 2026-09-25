@@ -253,6 +253,7 @@ impl World {
     /// The day's close: the read trace sums the day, and every audit family reads what the day left behind.
     #[clause("N1")]
     fn close(&mut self, day: Day, dues: DaySettlement) {
+        self.books.parties.compact_arenas();
         let book = self.books.close();
         self.accounts.close_day(&book);
         self.settlements.push(Settled { day, measure: book.measure(), dues, fails: book.fails.clone() });

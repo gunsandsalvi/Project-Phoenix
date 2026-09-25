@@ -3,7 +3,7 @@ use phx_macros::clause;
 use phx_num::consts::ABSENT_I64;
 use phx_num::{Missing, capacity_exceeded, violation};
 use phx_store::consts::INDIVIDUAL_ARENA_WORDS;
-use phx_store::{AddressSpace, Backing, ChunkArena, Column, ListRef, SystemBacking, Table};
+use phx_store::{AddressSpace, Backing, ChunkArena, Column, ListRef, Region, SystemBacking, Table};
 
 use crate::facts::FactDecl;
 use crate::register::values::TypeId;
@@ -23,6 +23,12 @@ pub enum ListKind {
     Holdings,
     Lots,
     NamedUnits,
+}
+
+impl ListKind {
+    /// Every list, in the order a row keeps them.
+    pub const ALL: [ListKind; 4] =
+        [ListKind::RelationshipRows, ListKind::Holdings, ListKind::Lots, ListKind::NamedUnits];
 }
 
 /// Each row's reference to each of its lists.
@@ -107,6 +113,11 @@ pub struct NewIndividual<'a> {
     pub site: TileId,
     pub created: Day,
     pub types: &'a [TypeId],
+}
+
+fn words(n: u32) -> usize {
+    let Ok(n) = usize::try_from(n) else { capacity_exceeded!("index width", usize::MAX, n) };
+    n
 }
 
 fn at(slot: Slot) -> usize {
@@ -197,7 +208,53 @@ impl<B: Backing> KindTable<B> {
                 violation!(clause = "PTY.10", "an individual removed with lists still in its arena", slot = slot.get());
             }
         }
+        // Its lists' room is dead from now, so the next compaction accounts for every word.
+        for kind in ListKind::ALL {
+            if self.list(slot, kind).cap != 0 {
+                self.edit_list(slot, kind, ChunkArena::clear);
+            }
+        }
         self.table.slots.release(slot);
+    }
+
+    /// Closes the gaps in every chunk's arena whose dead words have passed the declared share: each live row's lists
+    /// in slot order, each reference rewritten where it now lies. Returns the chunks compacted.
+    pub fn compact_due(&mut self) -> u64 {
+        let per = at(Slot::new(self.table.rows_per_chunk()));
+        let due: Vec<usize> =
+            (0..self.arenas.len()).filter(|c| self.arenas.get(*c).is_some_and(ChunkArena::needs_compaction)).collect();
+        let mut done = 0;
+        for chunk in due {
+            let slots: Vec<Slot> = self.slots().filter(|s| at(*s) / per == chunk).collect();
+            let mut refs: Vec<ListRef> = slots.iter().flat_map(|s| ListKind::ALL.map(|k| self.list(*s, k))).collect();
+            if let Some(arena) = self.arenas.get_mut(chunk) {
+                // A transient scratch outside the world's reservations, as large as the arena, unmapped as the
+                // compaction ends.
+                let mut scratch: Region<u64, B> =
+                    Region::reserve(&mut AddressSpace::empty(), words(arena.used_words()));
+                arena.compact(refs.as_mut_slice(), &mut scratch);
+            }
+            let mut moved = refs.into_iter();
+            for s in &slots {
+                for k in ListKind::ALL {
+                    let Some(r) = moved.next() else {
+                        violation!(clause = "SET.12", "a compaction that returned fewer lists than it took");
+                    };
+                    self.list_column(k).set(*s, r);
+                }
+            }
+            done += 1;
+        }
+        done
+    }
+
+    fn list_column(&mut self, kind: ListKind) -> &mut Column<ListRef, B> {
+        match kind {
+            ListKind::RelationshipRows => &mut self.lists.relationship_rows,
+            ListKind::Holdings => &mut self.lists.holdings,
+            ListKind::Lots => &mut self.lists.lots,
+            ListKind::NamedUnits => &mut self.lists.named_units,
+        }
     }
 
     fn live(&self, slot: Slot) {
@@ -271,13 +328,7 @@ impl<B: Backing> KindTable<B> {
     ) -> R {
         let mut list = self.list(slot, kind);
         let out = f(self.arena_mut(slot), &mut list);
-        let column = match kind {
-            ListKind::RelationshipRows => &mut self.lists.relationship_rows,
-            ListKind::Holdings => &mut self.lists.holdings,
-            ListKind::Lots => &mut self.lists.lots,
-            ListKind::NamedUnits => &mut self.lists.named_units,
-        };
-        column.set(slot, list);
+        self.list_column(kind).set(slot, list);
         out
     }
 
@@ -402,5 +453,34 @@ mod tests {
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| banks.party(a))).is_err());
         assert_eq!(banks.id(), TableId::new(3));
         assert_eq!(banks.created(Slot::new(1)), Day::new(1));
+    }
+
+    #[test]
+    fn compaction_keeps_every_list_and_frees_the_dead() {
+        let mut space = AddressSpace::empty();
+        let mut t: KindTable<HeapBacking<4096>> = KindTable::new(&mut space, "firm", TableId::new(0), 64, 64, 1);
+        let row =
+            |p| NewIndividual { party: PartyId::new(p), site: TileId::new(0), created: Day::new(1), types: TYPES };
+        let slots: Vec<Slot> = (1..5).map(|p| t.add(&mut space, row(p))).collect();
+        let mut model: Vec<Vec<u64>> = vec![Vec::new(); slots.len()];
+        for round in 0..40_u64 {
+            for (i, s) in slots.iter().enumerate() {
+                let w = round * 10 + u64::try_from(i).unwrap();
+                t.edit_list(*s, ListKind::RelationshipRows, |a, r| a.append(r, &[w]));
+                model[i].push(w);
+            }
+        }
+        let gone = slots[1];
+        t.edit_list(gone, ListKind::RelationshipRows, |a, r| a.remove(r, 0, r.len));
+        model[1].clear();
+        t.remove(gone);
+        let arena = t.arena_mut(slots[0]);
+        assert!(arena.needs_compaction(), "the relocations and the removed row left dead words");
+        assert_eq!(t.compact_due(), 1);
+        assert_eq!(t.arena_mut(slots[0]).dead_words(), 0);
+        for (i, s) in slots.iter().enumerate().filter(|(_, s)| **s != gone) {
+            assert_eq!(t.words(*s, ListKind::RelationshipRows), model[i].as_slice());
+        }
+        assert_eq!(t.compact_due(), 0, "nothing is due once compacted");
     }
 }

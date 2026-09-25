@@ -102,6 +102,14 @@ impl<B: Backing> Parties<B> {
         (&mut self.cells, &mut self.directory, &mut self.space)
     }
 
+    /// Compacts every holder table's chunks whose arenas' dead words have passed the declared share, at a moment no
+    /// list reference is held outside the tables; returns the chunks compacted.
+    #[clause("SET.12")]
+    pub fn compact_arenas(&mut self) -> u64 {
+        let kinds: u64 = self.tables.iter_mut().map(KindTable::compact_due).sum();
+        kinds + self.cells.iter_mut().map(|c| c.compact_due()).sum::<u64>()
+    }
+
     /// A party begun in its kind's table, sited on a tile, by a named beginning on a day: its identity is the next the
     /// directory gives, and its row is found from it.
     #[clause("PTY.9")]

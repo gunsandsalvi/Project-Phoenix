@@ -305,7 +305,7 @@ impl<B: Backing> CellTable<B> {
         if let Missing::Present(ext) = self.hot(slot).individual_ext() {
             self.ext.remove(ext);
         }
-        for list in [CellList::Profiles, CellList::Rates] {
+        for list in CellList::ALL {
             self.edit_list(slot, list, ChunkArena::clear);
         }
         self.table.slots.release(slot);
@@ -858,6 +858,21 @@ impl<B: Backing> CellTable<B> {
                 self.ext.set_list(*e, l, full);
             }
         }
+    }
+
+    /// Compacts every chunk whose arena's dead words have passed the declared share; returns the chunks compacted.
+    pub fn compact_due(&mut self) -> u64 {
+        let due: Vec<usize> =
+            (0..self.arenas.len()).filter(|c| self.arenas.get(*c).is_some_and(ChunkArena::needs_compaction)).collect();
+        for chunk in &due {
+            let used = self.arenas.get(*chunk).map_or(0, ChunkArena::used_words);
+            // A transient scratch outside the world's reservations, as large as the arena, unmapped as the
+            // compaction ends.
+            let mut scratch: Region<u64, B> =
+                Region::reserve(&mut phx_store::AddressSpace::empty(), phx_rand::float::index(u64::from(used)));
+            self.compact(*chunk, &mut scratch);
+        }
+        phx_rand::float::len_u64(due.len())
     }
 
     /// Chunks the table's rows span.

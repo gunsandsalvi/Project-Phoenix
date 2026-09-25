@@ -323,6 +323,9 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
   at the arena's end and compacting in place; no row index outside the arena names a position in it. A chunk's
   arena reserves address space, committed as written: 32 MiB for a chunk of cells, 128 MiB for a chunk of
   individuals, since a firm or a bank is party to a line of each wage, rent or deposit point its households drew.
+  The books compact every chunk whose dead words have passed the declared share at moments no list reference is
+  held outside the tables — after each opening contribution and at each day's close — each with a transient
+  scratch the size of its arena.
 - **Deposits.** A cell's **banking arrangement** — which deposit kinds it holds at which bank — is a **key attribute**
   (REP.33). Every deposit row of a cell therefore has count equal to the weight, a member's share of a balance is
   balance ÷ weight (REP.9), and each deposit row's per-member balance and pending amount are positions with steps in

@@ -426,6 +426,7 @@ pub fn phx_ledger::books::Parties<B>::arenas(&self) -> alloc::vec::Vec<&dyn phx_
 pub fn phx_ledger::books::Parties<B>::begin(&mut self, &str, phx_id::ids::TileId, phx_id::day::Day) -> phx_id::ids::PartyId
 pub fn phx_ledger::books::Parties<B>::cells(&self) -> &[alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>]
 pub fn phx_ledger::books::Parties<B>::cells_mut(&mut self) -> (&mut alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>>, &mut phx_core::directory::Directory, &mut phx_store::backing::AddressSpace)
+pub fn phx_ledger::books::Parties<B>::compact_arenas(&mut self) -> u64
 pub fn phx_ledger::books::Parties<B>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_ledger::books::Parties<B>::first_cell_place(&self) -> u16
 pub fn phx_ledger::books::Parties<B>::holder(&self, u16) -> &dyn phx_ledger::holder::HolderTable
@@ -629,6 +630,7 @@ pub fn phx_ledger::holder::HolderLists<B>::new(&mut phx_store::backing::AddressS
 pub trait phx_ledger::holder::CellHolders: phx_ledger::holder::HolderTable + core::fmt::Debug + core::marker::Send + core::marker::Sync
 pub fn phx_ledger::holder::CellHolders::as_any(&self) -> &dyn core::any::Any
 pub fn phx_ledger::holder::CellHolders::as_any_mut(&mut self) -> &mut dyn core::any::Any
+pub fn phx_ledger::holder::CellHolders::compact_due(&mut self) -> u64
 pub fn phx_ledger::holder::CellHolders::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_ledger::holder::CellHolders::load_like(&self, &mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>, phx_store::save::LoadError>
 pub fn phx_ledger::holder::CellHolders::save_to(&self, &mut phx_store::save::Writer<'_>)

@@ -769,6 +769,8 @@ pub phx_core::kind_tables::ListKind::Holdings
 pub phx_core::kind_tables::ListKind::Lots
 pub phx_core::kind_tables::ListKind::NamedUnits
 pub phx_core::kind_tables::ListKind::RelationshipRows
+impl phx_core::kind_tables::ListKind
+pub const phx_core::kind_tables::ListKind::ALL: [phx_core::kind_tables::ListKind; 4]
 pub struct phx_core::kind_tables::FacetDecl
 pub phx_core::kind_tables::FacetDecl::fact: &'static str
 pub phx_core::kind_tables::FacetDecl::kind: &'static str
@@ -776,6 +778,7 @@ pub struct phx_core::kind_tables::KindTable<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_core::kind_tables::NewIndividual<'_>) -> phx_id::ids::Slot
 pub fn phx_core::kind_tables::KindTable<B>::arena_mut(&mut self, phx_id::ids::Slot) -> &mut phx_store::arena::ChunkArena<B>
+pub fn phx_core::kind_tables::KindTable<B>::compact_due(&mut self) -> u64
 pub fn phx_core::kind_tables::KindTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
 pub fn phx_core::kind_tables::KindTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
 pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
@@ -1947,6 +1950,8 @@ pub phx_core::ListKind::Holdings
 pub phx_core::ListKind::Lots
 pub phx_core::ListKind::NamedUnits
 pub phx_core::ListKind::RelationshipRows
+impl phx_core::kind_tables::ListKind
+pub const phx_core::kind_tables::ListKind::ALL: [phx_core::kind_tables::ListKind; 4]
 pub enum phx_core::MessageState
 pub phx_core::MessageState::Answered
 pub phx_core::MessageState::Failed
@@ -2689,6 +2694,7 @@ pub struct phx_core::KindTable<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_core::kind_tables::NewIndividual<'_>) -> phx_id::ids::Slot
 pub fn phx_core::kind_tables::KindTable<B>::arena_mut(&mut self, phx_id::ids::Slot) -> &mut phx_store::arena::ChunkArena<B>
+pub fn phx_core::kind_tables::KindTable<B>::compact_due(&mut self) -> u64
 pub fn phx_core::kind_tables::KindTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
 pub fn phx_core::kind_tables::KindTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
 pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
