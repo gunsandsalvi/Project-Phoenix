@@ -142,12 +142,7 @@ fn day<S: FactStore + ?Sized>(ctx: &mut Ctx<'_, Weather, S>, row: Slot) {
         let Ok(size) = Fixed::<0>::from_f64(v * var.units_per, Round::HalfEven) else {
             violation!(clause = "CHN.3", "a weather value beyond its width");
         };
-        ctx.emit(&EventIntent {
-            kind: *kind,
-            subjects: vec![region],
-            details: vec![(region, size.raw())],
-            public: true,
-        });
+        ctx.emit(&EventIntent { kind: *kind, subjects: vec![region], details: vec![(region, size.raw())] });
     }
 }
 

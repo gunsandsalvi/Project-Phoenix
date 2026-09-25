@@ -89,7 +89,7 @@ fn hazard_day(geo: &GeoState, h: &HazardState, country: usize, days: u32, d: &mu
                 details.push((Subject::new(SubjectTag::Tile, u64::from(t.get())), share.raw()));
             }
             let subjects = details.iter().map(|(s, _)| *s).collect();
-            out.push(EventIntent { kind: h.event_kind, subjects, details, public: true });
+            out.push(EventIntent { kind: h.event_kind, subjects, details });
         }
     }
     out

@@ -399,7 +399,6 @@ impl World {
                             kind: b.event,
                             subjects: &[subject],
                             details: &details,
-                            public: false,
                             develops_from: Missing::Absent,
                         });
                         self.cell_day.hits += 1;

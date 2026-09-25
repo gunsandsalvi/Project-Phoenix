@@ -2,6 +2,7 @@ pub mod accounts;
 pub mod geo;
 pub mod ledger;
 pub mod markets;
+pub mod observer;
 pub mod opening;
 pub mod population;
 pub mod saves;
@@ -98,5 +99,9 @@ pub const CHECKS: &[Check] = &[
     population::LC_0_54,
     population::LC_0_55,
     population::LC_0_56,
+    observer::LC_0_57,
+    observer::LC_0_58,
+    observer::LC_0_59,
+    observer::LC_0_60,
     ledger::LC_0_61,
 ];

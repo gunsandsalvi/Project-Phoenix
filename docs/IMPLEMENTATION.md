@@ -5028,7 +5028,24 @@ heavy day and under 1 ms on an ordinary one (architecture §13). Counters: `phx_
 
 ### S0.26 — `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate
 
-**Status**: planned
+**Status**: building. Split into sub-steps, each with its own build run:
+- **S0.26a — the world on the phone** *(part built)*: `phx-ffi`'s `run_world` assembles the world from the data the
+  bench flavour ships as assets and runs a declared number of turns, sending each turn's wall time, days, `VmHWM` and
+  PSS to the screen as it closes and writing a report with the opening's time and the median and worst turn against
+  the budget. The report's second schema, per-sub-step timings and the macro reads come with S0.26c and S0.26e.
+- **S0.26b — the public-event rule** *(built)*: `phx_core::EventsRule` (`events_rule.rs`) from the standing SHAPE
+  `OBS.public_events` (`data/shared/OBS.toml`, a new value type `NewsRule`), which names every declared event kind
+  once — always, never, or when one of its details' sizes reaches a declared size in the kind's unit — and is refused
+  at assembly if it misses a kind or names one twice or one undeclared. Events are recorded private and the event
+  intent no longer carries publicity; at 10a the world makes public each event of that day and the day before the
+  rule judges so, so yesterday's events recorded after its 10a are judged today (architecture §4.10). The opening
+  rule: weather always, a catastrophe when a struck tile loses a permille, a household's death, disability or
+  birthday never. LC-0-58 is real; LC-0-57, 59 and 60 name S0.26d and S0.26e.
+- **S0.26c — `phx-obs`**: views, fixed-bin histograms, tracers with the split log, and the macro reads of
+  `READS.toml`; PC-20 extended.
+- **S0.26d — the player** as an individual, its queued intents as wakes; LC-0-57.
+- **S0.26e — the measurement programme**: the full-load bench, the device report's second schema, `phx measure`,
+  LC-0-59 and LC-0-60; then the phone.
 
 **Clauses**:
 - PROCESS: OBS.4 *(part: the player as an individual, its queue as wakes)*; REP.30 *(tracers)*.

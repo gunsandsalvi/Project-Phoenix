@@ -157,6 +157,12 @@ impl<'a> Inspector<'a> {
         &self.world.events
     }
 
+    /// The declared rule of which recorded events become public.
+    #[must_use]
+    pub fn news(&self) -> &phx_core::EventsRule {
+        &self.world.news
+    }
+
     /// The declared event kinds, each at the place an event's kind names.
     #[must_use]
     pub fn event_kinds(&self) -> &[phx_core::EventKindDecl] {

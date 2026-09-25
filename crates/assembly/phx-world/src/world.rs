@@ -38,6 +38,8 @@ pub struct World {
     pub(crate) own: Vec<(&'static str, OwnState)>,
     pub(crate) tables: Vec<KernelTable>,
     pub(crate) event_kinds: Vec<EventKindDecl>,
+    /// The declared rule of which recorded events become public at the close.
+    pub(crate) news: phx_core::EventsRule,
     pub(crate) bindings: Bindings,
     pub(crate) countries: Vec<CountryEntry>,
     pub(crate) day_zero: Day,

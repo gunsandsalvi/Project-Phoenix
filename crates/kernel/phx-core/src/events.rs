@@ -52,19 +52,18 @@ pub struct NewEvent<'a> {
     pub kind: u16,
     pub subjects: &'a [Subject],
     pub details: &'a [(Subject, i64)],
-    pub public: bool,
     pub develops_from: Missing<u64>,
 }
 
 /// An event drawn by a handler, recorded at its sub-step's apply point: its kind's place among the declared kinds,
-/// which the handler's system resolves at assembly, its subjects, and each detail's subject and size.
+/// which the handler's system resolves at assembly, its subjects, and each detail's subject and size. Whether it
+/// becomes public is the declared rule's to say at the close, never the handler's.
 #[clause("CHN.4")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EventIntent {
     pub kind: u16,
     pub subjects: Vec<Subject>,
     pub details: Vec<(Subject, i64)>,
-    pub public: bool,
 }
 
 impl crate::handler::IntentDef for EventIntent {
@@ -72,7 +71,6 @@ impl crate::handler::IntentDef for EventIntent {
 
     fn encode(&self, out: &mut Vec<u64>) {
         out.push(u64::from(self.kind));
-        out.push(u64::from(self.public));
         let Ok(count) = u64::try_from(self.subjects.len()) else {
             capacity_exceeded!("event subjects", u64::MAX, self.subjects.len());
         };
@@ -86,10 +84,10 @@ impl EventIntent {
     /// The intent its words encode, or none when they are not an event's.
     #[must_use]
     pub fn decode(words: &[u64]) -> Option<EventIntent> {
-        let [kind, public, count, rest @ ..] = words else { return None };
+        let [kind, count, rest @ ..] = words else { return None };
         let count = usize::try_from(*count).ok()?;
         let (subjects, details) = (rest.get(..count)?, rest.get(count..)?);
-        if details.len() % 2 != 0 || *public > 1 {
+        if details.len() % 2 != 0 {
             return None;
         }
         Some(EventIntent {
@@ -101,7 +99,6 @@ impl EventIntent {
                 .iter()
                 .map(|[s, size]| Subject::from_raw(*s).map(|s| (s, size.cast_signed())))
                 .collect::<Option<_>>()?,
-            public: *public == 1,
         })
     }
 }
@@ -142,7 +139,7 @@ impl<B: Backing> EventStore<B> {
             day: e.day.get(),
             kind: e.kind,
             substep: e.substep.ordinal(),
-            public: u8::from(e.public),
+            public: 0,
             subjects,
             details,
             develops_from,
@@ -153,6 +150,26 @@ impl<B: Backing> EventStore<B> {
     #[must_use]
     pub fn len(&self) -> usize {
         self.rows.len()
+    }
+
+    /// Makes public, by the declared rule, each event dated `from` or later that is not yet public, and returns how
+    /// many it made. The rule reads each event alone, so an event read twice is judged the same way both times.
+    #[clause("OBS.3", "OBS.5")]
+    pub fn publish(&mut self, from: Day, rule: &dyn crate::extensions::PublicEventRule) -> u64 {
+        let first = self.rows.slice().partition_point(|r| r.day < from.get());
+        let mut made = 0;
+        for i in first..self.rows.len() {
+            let Some(slot) = u32::try_from(i).ok().map(phx_id::Slot::new) else {
+                capacity_exceeded!("events", u32::MAX, i);
+            };
+            let Some(mut row) = self.rows.get(slot).filter(|r| r.public == 0) else { continue };
+            if rule.is_public(&self.get(row.id)) {
+                row.public = 1;
+                self.rows.set(slot, row);
+                made += 1;
+            }
+        }
+        made
     }
 
     #[must_use]
@@ -209,13 +226,12 @@ mod tests {
     #[test]
     fn event_intents_decode_what_they_encode() {
         let tile = |i| Subject::new(SubjectTag::Tile, i);
-        let intent =
-            EventIntent { kind: 3, subjects: vec![tile(8), tile(9)], details: vec![(tile(9), -40)], public: true };
+        let intent = EventIntent { kind: 3, subjects: vec![tile(8), tile(9)], details: vec![(tile(9), -40)] };
         let mut words = Vec::new();
         intent.encode(&mut words);
         assert_eq!(EventIntent::decode(&words), Some(intent));
         assert_eq!(EventIntent::decode(words.get(..words.len() - 1).unwrap()), None, "a detail cut short");
-        assert_eq!(EventIntent::decode(&[3, 2, 0]), None, "publicity is a flag");
+        assert_eq!(EventIntent::decode(&[3, 2, 7]), None, "a subject count beyond the words");
     }
 
     #[test]
@@ -229,7 +245,6 @@ mod tests {
             kind: 2,
             subjects: &[tile_a, tile_b],
             details: &[(tile_a, 70), (tile_b, -5)],
-            public: true,
             develops_from: Missing::Absent,
         };
         let first = store.record(flood);
@@ -242,5 +257,35 @@ mod tests {
             }))
             .is_err()
         );
+    }
+
+    struct Large;
+
+    impl crate::extensions::PublicEventRule for Large {
+        fn is_public(&self, event: &super::Event) -> bool {
+            event.details.iter().any(|(_, s)| *s > 10)
+        }
+    }
+
+    #[test]
+    fn the_rule_publishes_from_a_day_on_and_never_unpublishes() {
+        let mut space = AddressSpace::empty();
+        let mut store: EventStore<HeapBacking<4096>> = EventStore::new(&mut space, 64, 8, 1 << 12);
+        let tile = Subject::new(SubjectTag::Tile, 3);
+        let (large, small) = ([(tile, 70)], [(tile, 5)]);
+        let new = |day, details| NewEvent {
+            day: Day::new(day),
+            substep: SubStep::S3a,
+            kind: 0,
+            subjects: &[],
+            details,
+            develops_from: Missing::Absent,
+        };
+        let first = store.record(new(1, &large));
+        let (second, third) = (store.record(new(2, &small)), store.record(new(2, &large)));
+        assert_eq!(store.publish(Day::new(2), &Large), 1, "an event before the day is left as it is");
+        assert_eq!(store.publish(Day::new(1), &Large), 1);
+        assert_eq!(store.publish(Day::new(1), &Large), 0, "a public event stays public and is not counted again");
+        assert_eq!([first, second, third].map(|id| store.get(id).public), [true, false, true]);
     }
 }

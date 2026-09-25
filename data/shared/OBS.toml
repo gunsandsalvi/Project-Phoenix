@@ -1,0 +1,23 @@
+# OBS's rule of which recorded events become public at the close (spec OBS.3, OBS.9), a standing SHAPE standing in for
+# how news is selected. Every declared event kind is named once.
+
+[[primitive]]
+id = "OBS.public_events"
+kind = "SHAPE"
+owner = "OBS"
+source = "assumed"
+source_ref = "What somebody would notice: each region's weather, which everyone living there sees; a catastrophe that destroyed something somewhere, one permille of a struck tile's physical units being the least a severity is recorded to; not a household's death, disability or birthday, which are private and reach the public only through published statistics."
+shape = "standing:news selection"
+value = [
+  { kind = "GEO.temperature", notice = "always" },
+  { kind = "GEO.rain", notice = "always" },
+  { kind = "GEO.wind", notice = "always" },
+  { kind = "GEO.sunshine", notice = "always" },
+  { kind = "GEO.flood", notice = "largest_at_least", size = 1 },
+  { kind = "GEO.storm", notice = "largest_at_least", size = 1 },
+  { kind = "GEO.earthquake", notice = "largest_at_least", size = 1 },
+  { kind = "GEO.drought", notice = "largest_at_least", size = 1 },
+  { kind = "DEM.died", notice = "never" },
+  { kind = "DEM.disabled", notice = "never" },
+  { kind = "DEM.aged", notice = "never" },
+]

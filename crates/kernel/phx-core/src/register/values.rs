@@ -6,6 +6,7 @@ use toml::Value;
 
 use crate::calendar::rules::{CountryRules, HolidayRule, WEEK, WeekendRule};
 use crate::consts::{PARAM_EXP, PPM, RATE_EXP};
+use crate::events_rule::{NewsEntry, Notice};
 use crate::kinds::{Feature, LegalForm};
 use crate::register::profile::JointProfile;
 use crate::register::quantile;
@@ -45,6 +46,8 @@ pub enum ValueType {
     },
     Calendar,
     LegalForms,
+    /// Which kinds of event become public, and from what size.
+    NewsRule,
     /// The carrying bases each legal form may use for each purpose.
     CarryingBases,
     /// A country group's joint profile, its numbers to `exp` places.
@@ -356,6 +359,7 @@ pub enum PrimValue {
     PointTable(PointTable),
     Calendar(CountryRules),
     LegalForms(Vec<LegalForm>),
+    NewsRule(Vec<NewsEntry>),
     CarryingBases(Vec<crate::accounting::Permitted>),
     Profile(JointProfile),
     Partition(Partition),
@@ -558,6 +562,28 @@ fn legal_forms(v: &Value) -> Result<Vec<LegalForm>, String> {
     Ok(forms)
 }
 
+fn news_rule(v: &Value) -> Result<Vec<NewsEntry>, String> {
+    let list = v.as_array().ok_or("the public-event rule is not a list")?;
+    let mut out = Vec::with_capacity(list.len());
+    for entry in list {
+        let t = table(entry)?;
+        let size = || t.get("size").and_then(Value::as_integer).and_then(|s| u64::try_from(s).ok());
+        let notice = match (text(t, "notice")?, size()) {
+            ("always", None) => Notice::Always,
+            ("never", None) => Notice::Never,
+            ("largest_at_least", Some(s)) => Notice::LargestAtLeast(s),
+            ("largest_at_least", None) => {
+                return Err("`largest_at_least` without a whole `size` of nought or more".to_owned());
+            }
+            (other, _) => {
+                return Err(format!("notice `{other}` is not always, never or largest_at_least with a size alone"));
+            }
+        };
+        out.push(NewsEntry { kind: text(t, "kind")?.to_owned(), notice });
+    }
+    Ok(out)
+}
+
 /// The carrying bases the standard permits: per legal form and purpose, the bases in the standard's order.
 fn carrying_bases(v: &Value) -> Result<Vec<crate::accounting::Permitted>, String> {
     use crate::accounting::{CarryingBasis, HeldFor, Permitted};
@@ -658,6 +684,7 @@ pub fn parse(v: &Value, ty: ValueType, period: Option<RatePeriod>) -> Result<Pri
         }
         ValueType::Calendar => Ok(PrimValue::Calendar(calendar(v)?)),
         ValueType::LegalForms => Ok(PrimValue::LegalForms(legal_forms(v)?)),
+        ValueType::NewsRule => Ok(PrimValue::NewsRule(news_rule(v)?)),
         ValueType::CarryingBases => Ok(PrimValue::CarryingBases(carrying_bases(v)?)),
         ValueType::Profile { exp } => Ok(PrimValue::Profile(crate::register::profile::parse(v, exp, decimal)?)),
         ValueType::Partition { exp } => {
@@ -736,6 +763,7 @@ read_ref!(Distribution, Distribution, ValueType::Distribution { .. });
 read_ref!(PointTable, PointTable, ValueType::PointTable { .. });
 read_ref!(CountryRules, Calendar, ValueType::Calendar);
 read_ref!(Vec<LegalForm>, LegalForms, ValueType::LegalForms);
+read_ref!(Vec<NewsEntry>, NewsRule, ValueType::NewsRule);
 read_ref!(Vec<crate::accounting::Permitted>, CarryingBases, ValueType::CarryingBases);
 read_ref!(JointProfile, Profile, ValueType::Profile { .. });
 read_ref!(Partition, Partition, ValueType::Partition { .. });

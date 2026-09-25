@@ -10,6 +10,7 @@ pub mod contribution;
 pub mod decisions;
 pub mod directory;
 pub mod events;
+pub mod events_rule;
 pub mod extensions;
 pub mod facts;
 pub mod family;
@@ -52,6 +53,7 @@ pub use contribution::{
 pub use decisions::{Decider, DecisionPointDecl, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
 pub use directory::{Directory, PartyState, Resolved};
 pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};
+pub use events_rule::{EventsRule, NewsEntry, Notice, PUBLIC_EVENTS};
 pub use extensions::{GroupDemand, PublicEventRule, TracedCells};
 pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,

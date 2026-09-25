@@ -401,7 +401,6 @@ pub phx_core::events::Event::substep: u8
 pub struct phx_core::events::EventIntent
 pub phx_core::events::EventIntent::details: alloc::vec::Vec<(phx_rand::key::Subject, i64)>
 pub phx_core::events::EventIntent::kind: u16
-pub phx_core::events::EventIntent::public: bool
 pub phx_core::events::EventIntent::subjects: alloc::vec::Vec<phx_rand::key::Subject>
 impl phx_core::events::EventIntent
 pub fn phx_core::events::EventIntent::decode(&[u64]) -> core::option::Option<phx_core::events::EventIntent>
@@ -419,6 +418,7 @@ pub fn phx_core::events::EventStore<B>::hash_into(&self, &mut phx_store::hash::L
 pub fn phx_core::events::EventStore<B>::is_empty(&self) -> bool
 pub fn phx_core::events::EventStore<B>::len(&self) -> usize
 pub fn phx_core::events::EventStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32) -> phx_core::events::EventStore<B>
+pub fn phx_core::events::EventStore<B>::publish(&mut self, phx_id::day::Day, &dyn phx_core::extensions::PublicEventRule) -> u64
 pub fn phx_core::events::EventStore<B>::record(&mut self, phx_core::events::NewEvent<'_>) -> u64
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::events::EventStore<B> where phx_store::column::Column<EventRow, B>: phx_store::save::Saved, phx_store::arena::ChunkArena<B>: phx_store::save::Saved
 pub fn phx_core::events::EventStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
@@ -428,14 +428,29 @@ pub phx_core::events::NewEvent::day: phx_id::day::Day
 pub phx_core::events::NewEvent::details: &'a [(phx_rand::key::Subject, i64)]
 pub phx_core::events::NewEvent::develops_from: phx_num::missing::Missing<u64>
 pub phx_core::events::NewEvent::kind: u16
-pub phx_core::events::NewEvent::public: bool
 pub phx_core::events::NewEvent::subjects: &'a [phx_rand::key::Subject]
 pub phx_core::events::NewEvent::substep: phx_core::substep::SubStep
+pub mod phx_core::events_rule
+pub enum phx_core::events_rule::Notice
+pub phx_core::events_rule::Notice::Always
+pub phx_core::events_rule::Notice::LargestAtLeast(u64)
+pub phx_core::events_rule::Notice::Never
+pub struct phx_core::events_rule::EventsRule
+impl phx_core::events_rule::EventsRule
+pub fn phx_core::events_rule::EventsRule::new(&[phx_core::events_rule::NewsEntry], &[phx_core::events::EventKindDecl]) -> core::result::Result<phx_core::events_rule::EventsRule, alloc::string::String>
+impl phx_core::extensions::PublicEventRule for phx_core::events_rule::EventsRule
+pub fn phx_core::events_rule::EventsRule::is_public(&self, &phx_core::events::Event) -> bool
+pub struct phx_core::events_rule::NewsEntry
+pub phx_core::events_rule::NewsEntry::kind: alloc::string::String
+pub phx_core::events_rule::NewsEntry::notice: phx_core::events_rule::Notice
+pub const phx_core::events_rule::PUBLIC_EVENTS: phx_core::register::PrimDecl
 pub mod phx_core::extensions
 pub trait phx_core::extensions::GroupDemand
 pub fn phx_core::extensions::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64
 pub trait phx_core::extensions::PublicEventRule
 pub fn phx_core::extensions::PublicEventRule::is_public(&self, &phx_core::events::Event) -> bool
+impl phx_core::extensions::PublicEventRule for phx_core::events_rule::EventsRule
+pub fn phx_core::events_rule::EventsRule::is_public(&self, &phx_core::events::Event) -> bool
 pub trait phx_core::extensions::TracedCells
 pub fn phx_core::extensions::TracedCells::is_traced(&self, phx_id::ids::PartyId) -> bool
 pub mod phx_core::facts
@@ -1276,6 +1291,7 @@ pub phx_core::register::values::PrimValue::Fixed::exp: u8
 pub phx_core::register::values::PrimValue::Fixed::raw: i64
 pub phx_core::register::values::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
 pub phx_core::register::values::PrimValue::Money(phx_num::money::Amount)
+pub phx_core::register::values::PrimValue::NewsRule(alloc::vec::Vec<phx_core::events_rule::NewsEntry>)
 pub phx_core::register::values::PrimValue::Partition(phx_core::register::values::Partition)
 pub phx_core::register::values::PrimValue::PointTable(phx_num::points::PointTable)
 pub phx_core::register::values::PrimValue::Profile(phx_core::register::profile::JointProfile)
@@ -1295,6 +1311,7 @@ pub phx_core::register::values::ValueType::Fixed::exp: u8
 pub phx_core::register::values::ValueType::LegalForms
 pub phx_core::register::values::ValueType::Money
 pub phx_core::register::values::ValueType::Money::exp: u8
+pub phx_core::register::values::ValueType::NewsRule
 pub phx_core::register::values::ValueType::Partition
 pub phx_core::register::values::ValueType::Partition::exp: u8
 pub phx_core::register::values::ValueType::PointTable
@@ -1370,6 +1387,10 @@ impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::accounti
 pub type alloc::vec::Vec<phx_core::accounting::Permitted>::Read<'a> = &'a alloc::vec::Vec<phx_core::accounting::Permitted>
 pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::accounting::Permitted>>
 pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::events_rule::NewsEntry>
+pub type alloc::vec::Vec<phx_core::events_rule::NewsEntry>::Read<'a> = &'a alloc::vec::Vec<phx_core::events_rule::NewsEntry>
+pub fn alloc::vec::Vec<phx_core::events_rule::NewsEntry>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::events_rule::NewsEntry>>
+pub fn alloc::vec::Vec<phx_core::events_rule::NewsEntry>::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub type alloc::vec::Vec<phx_core::kinds::LegalForm>::Read<'a> = &'a alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::kinds::LegalForm>>
@@ -1957,6 +1978,10 @@ pub phx_core::MessageState::Answered
 pub phx_core::MessageState::Failed
 pub phx_core::MessageState::Lapsed
 pub phx_core::MessageState::Open
+pub enum phx_core::Notice
+pub phx_core::Notice::Always
+pub phx_core::Notice::LargestAtLeast(u64)
+pub phx_core::Notice::Never
 pub enum phx_core::OccasionKind
 pub phx_core::OccasionKind::Meeting
 pub phx_core::OccasionKind::Need
@@ -2014,6 +2039,7 @@ pub phx_core::PrimValue::Fixed::exp: u8
 pub phx_core::PrimValue::Fixed::raw: i64
 pub phx_core::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
 pub phx_core::PrimValue::Money(phx_num::money::Amount)
+pub phx_core::PrimValue::NewsRule(alloc::vec::Vec<phx_core::events_rule::NewsEntry>)
 pub phx_core::PrimValue::Partition(phx_core::register::values::Partition)
 pub phx_core::PrimValue::PointTable(phx_num::points::PointTable)
 pub phx_core::PrimValue::Profile(phx_core::register::profile::JointProfile)
@@ -2162,6 +2188,7 @@ pub phx_core::ValueType::Fixed::exp: u8
 pub phx_core::ValueType::LegalForms
 pub phx_core::ValueType::Money
 pub phx_core::ValueType::Money::exp: u8
+pub phx_core::ValueType::NewsRule
 pub phx_core::ValueType::Partition
 pub phx_core::ValueType::Partition::exp: u8
 pub phx_core::ValueType::PointTable
@@ -2482,7 +2509,6 @@ pub phx_core::Event::substep: u8
 pub struct phx_core::EventIntent
 pub phx_core::EventIntent::details: alloc::vec::Vec<(phx_rand::key::Subject, i64)>
 pub phx_core::EventIntent::kind: u16
-pub phx_core::EventIntent::public: bool
 pub phx_core::EventIntent::subjects: alloc::vec::Vec<phx_rand::key::Subject>
 impl phx_core::events::EventIntent
 pub fn phx_core::events::EventIntent::decode(&[u64]) -> core::option::Option<phx_core::events::EventIntent>
@@ -2500,10 +2526,16 @@ pub fn phx_core::events::EventStore<B>::hash_into(&self, &mut phx_store::hash::L
 pub fn phx_core::events::EventStore<B>::is_empty(&self) -> bool
 pub fn phx_core::events::EventStore<B>::len(&self) -> usize
 pub fn phx_core::events::EventStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32) -> phx_core::events::EventStore<B>
+pub fn phx_core::events::EventStore<B>::publish(&mut self, phx_id::day::Day, &dyn phx_core::extensions::PublicEventRule) -> u64
 pub fn phx_core::events::EventStore<B>::record(&mut self, phx_core::events::NewEvent<'_>) -> u64
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::events::EventStore<B> where phx_store::column::Column<EventRow, B>: phx_store::save::Saved, phx_store::arena::ChunkArena<B>: phx_store::save::Saved
 pub fn phx_core::events::EventStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::events::EventStore<B>::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::EventsRule
+impl phx_core::events_rule::EventsRule
+pub fn phx_core::events_rule::EventsRule::new(&[phx_core::events_rule::NewsEntry], &[phx_core::events::EventKindDecl]) -> core::result::Result<phx_core::events_rule::EventsRule, alloc::string::String>
+impl phx_core::extensions::PublicEventRule for phx_core::events_rule::EventsRule
+pub fn phx_core::events_rule::EventsRule::is_public(&self, &phx_core::events::Event) -> bool
 pub struct phx_core::FacetDecl
 pub phx_core::FacetDecl::fact: &'static str
 pub phx_core::FacetDecl::kind: &'static str
@@ -2782,7 +2814,6 @@ pub phx_core::NewEvent::day: phx_id::day::Day
 pub phx_core::NewEvent::details: &'a [(phx_rand::key::Subject, i64)]
 pub phx_core::NewEvent::develops_from: phx_num::missing::Missing<u64>
 pub phx_core::NewEvent::kind: u16
-pub phx_core::NewEvent::public: bool
 pub phx_core::NewEvent::subjects: &'a [phx_rand::key::Subject]
 pub phx_core::NewEvent::substep: phx_core::substep::SubStep
 pub struct phx_core::NewIndividual<'a>
@@ -2790,6 +2821,9 @@ pub phx_core::NewIndividual::created: phx_id::day::Day
 pub phx_core::NewIndividual::party: phx_id::ids::PartyId
 pub phx_core::NewIndividual::site: phx_id::ids::TileId
 pub phx_core::NewIndividual::types: &'a [phx_core::register::values::TypeId]
+pub struct phx_core::NewsEntry
+pub phx_core::NewsEntry::kind: alloc::string::String
+pub phx_core::NewsEntry::notice: phx_core::events_rule::Notice
 pub struct phx_core::NotObserver
 pub struct phx_core::ObserverDraws<'a>
 impl<'a> phx_core::streams::ObserverDraws<'a>
@@ -3159,6 +3193,7 @@ pub const phx_core::PARTIES: phx_core::streams::OpeningPhase
 pub const phx_core::PHASES: [phx_core::streams::OpeningPhase; 6]
 pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
+pub const phx_core::PUBLIC_EVENTS: phx_core::register::PrimDecl
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
 pub trait phx_core::AccountsAudit: core::fmt::Debug
 pub fn phx_core::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
@@ -3289,6 +3324,10 @@ impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::accounti
 pub type alloc::vec::Vec<phx_core::accounting::Permitted>::Read<'a> = &'a alloc::vec::Vec<phx_core::accounting::Permitted>
 pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::accounting::Permitted>>
 pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::events_rule::NewsEntry>
+pub type alloc::vec::Vec<phx_core::events_rule::NewsEntry>::Read<'a> = &'a alloc::vec::Vec<phx_core::events_rule::NewsEntry>
+pub fn alloc::vec::Vec<phx_core::events_rule::NewsEntry>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::events_rule::NewsEntry>>
+pub fn alloc::vec::Vec<phx_core::events_rule::NewsEntry>::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub type alloc::vec::Vec<phx_core::kinds::LegalForm>::Read<'a> = &'a alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::kinds::LegalForm>>
@@ -3347,6 +3386,8 @@ pub fn phx_num::fixed::Fixed<E>::read(&phx_core::register::values::PrimValue) ->
 pub fn phx_num::fixed::Fixed<E>::reads(phx_core::register::values::ValueType) -> bool
 pub trait phx_core::PublicEventRule
 pub fn phx_core::PublicEventRule::is_public(&self, &phx_core::events::Event) -> bool
+impl phx_core::extensions::PublicEventRule for phx_core::events_rule::EventsRule
+pub fn phx_core::events_rule::EventsRule::is_public(&self, &phx_core::events::Event) -> bool
 pub trait phx_core::QueuedPayload: core::marker::Sized
 pub fn phx_core::QueuedPayload::decode(&[i64]) -> core::option::Option<Self>
 pub trait phx_core::Reads<F: phx_core::facts::FactDef>

@@ -407,7 +407,12 @@ samples chunks and verifies reads at run time. Store-wide views go only to proce
 
 ### 4.10 Public events
 
-The OBS.3 rule runs at stage 10's first sub-step and writes to `phx-core`'s public records; `phx-obs` only shows them.
+Every event is recorded private, at the apply of the sub-step that drew it; whether it is public is never its
+writer's to say. The OBS.3 rule (`phx_core::EventsRule`, from the standing SHAPE `OBS.public_events`) runs at 10a and
+marks public each event dated that day or the day before that it judges so: it names every declared event kind once
+— always, never, or when one of its details' sizes reaches a declared size in the kind's unit — and reads each event
+alone, so an event judged twice is judged the same way, and yesterday's events recorded after its 10a are judged
+today. A public event stays public. `phx-obs` only shows them.
 
 ---
 
@@ -1011,7 +1016,7 @@ The map, its zone distances, the regions' climates, the exposure columns and the
 opening's map phase, into `phx-geo`'s own state, which its handlers and families share read-only; what changes day by
 day is kept in its kernel tables (a region's weather latents, a finite deposit's extracted and remaining quantities)
 and hashed with the world. Weather is drawn per region and catastrophes per country at 3a, and both are recorded as
-public events at stage 3's apply: a variable's value per region a day, and a footprint's struck tiles with their
+events at stage 3's apply, made public at 10a by the declared rule (§4.10): a variable's value per region a day, and a footprint's struck tiles with their
 severities. The losses at owners (the two levels above) join them when stock is placed.
 
 The surface is **closed** (GEO.1): `Grid` wraps both ways, so every tile has the same eight neighbours and there is

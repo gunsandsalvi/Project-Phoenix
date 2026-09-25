@@ -199,15 +199,8 @@ impl InjectTarget for Hand {
 
     fn add_event(&mut self, subject: Subject, day: Day, substep: SubStep) -> Result<(), String> {
         let subjects = [subject];
-        let event = NewEvent {
-            day,
-            substep,
-            kind: 0,
-            subjects: &subjects,
-            details: &[],
-            public: true,
-            develops_from: Missing::Absent,
-        };
+        let event =
+            NewEvent { day, substep, kind: 0, subjects: &subjects, details: &[], develops_from: Missing::Absent };
         self.events.record(event);
         Ok(())
     }
@@ -251,7 +244,6 @@ fn names_refuses_dangling() {
         kind: 0,
         subjects: &subjects,
         details: &[],
-        public: true,
         develops_from: Missing::Absent,
     };
     hand.events.record(event);

@@ -331,6 +331,9 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     }
     let kinks = crate::cells::FacilityKinks::of(&books.ledger);
     let rank_day = p.kernel.rep.rank_day.shared(&p.c.register).get();
+    let event_kinds: Vec<phx_core::EventKindDecl> = p.d.events.iter().map(|(_, e)| *e).collect();
+    let news = phx_core::EventsRule::new(p.kernel.public_events.shared(&p.c.register), &event_kinds)
+        .map_err(|e| AssemblyErrors(vec![e]))?;
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
     Ok(World {
@@ -343,7 +346,8 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         rules: std::mem::take(&mut p.d.rules),
         own,
         tables,
-        event_kinds: p.d.events.iter().map(|(_, e)| *e).collect(),
+        event_kinds,
+        news,
         bindings: carried.bindings,
         countries: p.levels,
         day_zero: p.c.day_zero,

@@ -59,8 +59,9 @@ const APPLY_POINTS: [SubStep; 23] = [
 
 /// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, stage 2's
 /// contract process at 2d, over the fails of the days since it last ran, 3b's screening of the population's cells and
-/// 3e's outcomes of their hits, and 9b's accounts, posting the day's settled money.
-pub const KERNEL_WORK: [SubStep; 5] = [SubStep::S1b, SubStep::S2d, SubStep::S3b, SubStep::S3e, SubStep::S9b];
+/// 3e's outcomes of their hits, 9b's accounts, posting the day's settled money, and 10a's public events.
+pub const KERNEL_WORK: [SubStep; 6] =
+    [SubStep::S1b, SubStep::S2d, SubStep::S3b, SubStep::S3e, SubStep::S9b, SubStep::S10a];
 
 /// The audit's sub-step, which runs every day.
 pub const AUDIT_AT: SubStep = AUDIT_SUBSTEP;
@@ -141,6 +142,11 @@ impl World {
             }
             if info.step == SubStep::S3e {
                 self.cells_outcomes(day);
+            }
+            if info.step == SubStep::S10a {
+                // Yesterday's events recorded after its 10a are judged today; the rest are judged again the same way.
+                let from = day.get().checked_sub(1).map_or(day, Day::new);
+                self.events.publish(from, &self.news);
             }
             if info.step == SubStep::S10b {
                 self.cells_settle(day);
@@ -316,7 +322,6 @@ fn apply(day: Day, pending: &mut Vec<(SubStep, Intents)>, events: &mut EventStor
                 kind: e.kind,
                 subjects: &e.subjects,
                 details: &e.details,
-                public: e.public,
                 develops_from: Missing::Absent,
             });
         }

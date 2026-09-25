@@ -80,7 +80,6 @@ impl InjectTarget for Target<'_> {
             kind: 0,
             subjects: &subjects,
             details: &[],
-            public: true,
             develops_from: Missing::Absent,
         });
         Ok(())
