@@ -20,7 +20,8 @@ use crate::stream::{DayRecords, Payment, Record};
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct FixedPoint {
     pub failed: BTreeSet<(LineId, PartyId)>,
-    /// The failed payments removed because a bank on their way could not cover its net, not for their payer.
+    /// The failed payments on the way through a bank that could not cover its net: the bank's removal takes them,
+    /// whether or not their payer had failed them first, so none is its payer's to answer for.
     pub by_bank: BTreeSet<(LineId, PartyId)>,
     pub iterations: u64,
 }
@@ -133,8 +134,9 @@ impl<B: Backing> Work<'_, B> {
         }
     }
 
-    /// Every standing payment of a bank's customers whose legs pass through the bank's account; a cleared line's
-    /// credit to a customer only adds to the bank's reserves, and stands.
+    /// Every payment of a bank's customers whose legs pass through the bank's account, the bank's to answer for even
+    /// where its payer had failed it; a cleared line's credit to a customer only adds to the bank's reserves, and
+    /// stands.
     #[clause("MON.5")]
     fn remove_customers(&mut self, bank: PartyId, account: LineId) {
         let issued: Vec<LineId> = self
@@ -152,9 +154,7 @@ impl<B: Backing> Work<'_, B> {
                     }
                     let legs = self.books.effects(&p, self.found);
                     if draw(&legs, bank, account) > 0 || legs.iter().any(|l| l.party == bank) {
-                        if !self.failed.contains(&p.key()) {
-                            self.by_bank.insert(p.key());
-                        }
+                        self.by_bank.insert(p.key());
                         self.fail(&p);
                     }
                 }
