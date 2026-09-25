@@ -329,6 +329,7 @@ pub fn phx_core::contribution::Contribution::phase(&self) -> phx_core::streams::
 pub fn phx_core::contribution::Contribution::reads(&self) -> &'static [&'static str]
 pub fn phx_core::contribution::Contribution::writes(&self) -> &'static [&'static str]
 pub fn phx_core::contribution::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
+pub fn phx_core::contribution::apportion_in_units(u64, &[u64], &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
 pub fn phx_core::contribution::opening_subject(u32, u32) -> phx_rand::key::Subject
 pub mod phx_core::decisions
 pub enum phx_core::decisions::Decider
@@ -3356,6 +3357,7 @@ pub trait phx_core::Writes<F: phx_core::facts::FactDef>
 pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
 pub fn phx_core::annual_to_daily(f64, u32) -> f64
 pub fn phx_core::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
+pub fn phx_core::apportion_in_units(u64, &[u64], &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
 pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
 pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)

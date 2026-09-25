@@ -6,8 +6,8 @@ use if_pop::{EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEALTH, HOUSEHOLD, MALE, R
 use phx_core::calendar::daycount::actual_days;
 use phx_core::register::values::{Distribution, Table2, TypeSet};
 use phx_core::{
-    CONTRACTS, Contribution, DECLARATIONS, Household, Opening, OpeningCountry, OpeningPhase, Person, PrimDecl,
-    Register, StreamDef, ValueType, apportion, opening_subject,
+    Adjustment, CONTRACTS, Contribution, DECLARATIONS, Household, Opening, OpeningCountry, OpeningPhase, Person,
+    PrimDecl, Register, StreamDef, ValueType, apportion, opening_subject,
 };
 use phx_id::{CountryId, Date};
 use phx_ledger::books::Books;
@@ -585,7 +585,9 @@ impl Contribution for Households {
             let mut lot = ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 0));
             let shares = apportion(c.people, &tiles, &mut lot);
             let mut tally = Tally::default();
+            let mut whole = 0_u64;
             for ((region, _), people) in c.regions.iter().zip(shares) {
+                whole += people - people % u64::from(twins);
                 let mut into = Into { books, kind: &kind, at, day: *day, twins };
                 let drawn = draw_region(&country, ctx, (*region, people), &mut into, &mut drawer);
                 tally.add(&drawn);
@@ -594,6 +596,13 @@ impl Contribution for Households {
             drawer.close(books, (register, reason), &mut lot, report);
             if tally.households == 0 {
                 violation!(clause = "GEN.3", "a country whose people make no household", country = c.id.get());
+            }
+            if whole != c.people {
+                report.adjustments.push(Adjustment {
+                    what: format!("country {}: persons, each region's a whole number for {twins} twins", c.id.get()),
+                    drawn: i128::from(c.people),
+                    set: i128::from(whole),
+                });
             }
             population.count(at, (tally.households, 0), (tally.persons, 0));
             report.distributions.push((key(HOUSEHOLDS, c.id), describe(c, &country, &tally, twins)));

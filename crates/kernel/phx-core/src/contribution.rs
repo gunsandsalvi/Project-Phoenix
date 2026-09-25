@@ -194,11 +194,42 @@ pub fn apportion(total: u64, weights: &[u64], lot: &mut Draws) -> Vec<u64> {
     parts
 }
 
+/// A total apportioned as `apportion` does over parties each of which takes whole multiples of its unit, an agent's
+/// its twins, so each twin's share is whole: a part's residue below its unit passes to the parties of unit one by
+/// their weights, and the parts still sum to the total.
+#[clause("GEN.4", "REP.9")]
+#[must_use]
+pub fn apportion_in_units(total: u64, weights: &[u64], units: &[u64], lot: &mut Draws) -> Vec<u64> {
+    if weights.len() != units.len() {
+        phx_num::violation!(clause = "GEN.4", "weights and units of different parties", weights = weights.len());
+    }
+    let mut parts = apportion(total, weights, lot);
+    let mut residue = 0_u64;
+    for (p, u) in parts.iter_mut().zip(units) {
+        if *u == 0 {
+            phx_num::violation!(clause = "REP.17", "a party of no unit");
+        }
+        residue += *p % u;
+        *p -= *p % u;
+    }
+    if residue == 0 {
+        return parts;
+    }
+    let ones: Vec<usize> = (0..units.len()).filter(|i| units.get(*i) == Some(&1)).collect();
+    let one_weights: Vec<u64> = ones.iter().filter_map(|i| weights.get(*i).copied()).collect();
+    for (i, extra) in ones.iter().zip(apportion(residue, &one_weights, lot)) {
+        if let Some(p) = parts.get_mut(*i) {
+            *p += extra;
+        }
+    }
+    parts
+}
+
 #[cfg(test)]
 mod tests {
     use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
 
-    use super::{apportion, opening_subject};
+    use super::{apportion, apportion_in_units, opening_subject};
 
     fn lot() -> Draws {
         Draws::new(stream_key(Seed::new(1), "BNK.opening"), Subject::new(SubjectTag::Opening, 0), 0, 0)
@@ -216,6 +247,21 @@ mod tests {
         let tied = apportion(1, &[1, 1], &mut lot());
         assert_eq!(tied.iter().sum::<u64>(), 1, "a tie goes to one party by lot");
         assert_eq!(tied, apportion(1, &[1, 1], &mut lot()), "the same lot breaks the tie the same way");
+    }
+
+    #[test]
+    fn units_stay_whole_and_the_residue_goes_to_parties_of_one() {
+        let parts = apportion_in_units(1_000, &[1, 1, 1], &[1, 170, 170], &mut lot());
+        assert_eq!(parts.iter().sum::<u64>(), 1_000, "parts sum to the total");
+        assert_eq!(parts, vec![660, 170, 170], "333 and 333 fall to 170 each, 326 passes to the party of one");
+        assert_eq!(apportion_in_units(340, &[1, 1], &[170, 170], &mut lot()), vec![170, 170], "whole shares stay");
+    }
+
+    #[test]
+    fn a_residue_with_no_party_of_one_is_refused() {
+        let caught = std::panic::catch_unwind(|| apportion_in_units(100, &[1, 1], &[170, 170], &mut lot()));
+        let payload = caught.expect_err("a residue no party of one can take stops the run");
+        assert_eq!(payload.downcast_ref::<phx_num::Violation>().map(|v| v.clause), Some("GEN.4"));
     }
 
     #[test]

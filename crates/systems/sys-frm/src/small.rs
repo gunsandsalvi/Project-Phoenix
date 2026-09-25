@@ -2,7 +2,10 @@
 //! twins, apportioned over the regions by their land and over the banks by the banks' drawn sizes, each with its own
 //! size drawn from the firm-size law cut at the smallest firm the rank admits.
 
-use phx_core::{Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, StreamDef, apportion, opening_subject};
+use phx_core::{
+    Adjustment, Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, StreamDef, apportion, apportion_in_units,
+    opening_subject,
+};
 use phx_id::PartyId;
 use phx_ledger::books::Books;
 use phx_ledger::opening::{derived, key, whole};
@@ -163,14 +166,15 @@ impl SmallFirms {
         let debt = derived(c, "GEN.firm_debt") / PERCENT * c.gdp;
         let firms: Vec<(PartyId, u64)> = large.iter().chain(&cells).copied().collect();
         let heads: Vec<u64> = firms.iter().map(|(_, n)| *n).collect();
+        let units: Vec<u64> = large.iter().map(|_| 1).chain(cells.iter().map(|_| k)).collect();
         let mut split = ctx.draws(&SmallStream::DECL, subject(AMOUNTS));
-        // Each total apportioned over every firm by its drawn employees, the large firms first, a twin-th at a time,
-        // so an agent's amount is a whole share for each of its twins.
+        // Each total apportioned over every firm by its drawn employees, an agent's in whole shares for each of its
+        // twins, what that leaves passing to the large firms.
         let mut share = |total: f64| -> (Amounts, Amounts) {
             let parts: Vec<(PartyId, u64)> = firms
                 .iter()
-                .zip(apportion(whole_u64(total) / k, &heads, &mut split))
-                .map(|((f, _), a)| (*f, a * k))
+                .zip(apportion_in_units(whole_u64(total), &heads, &units, &mut split))
+                .map(|((f, _), a)| (*f, a))
                 .collect();
             let (mine, theirs) = parts.split_at(large.len());
             (mine.to_vec(), theirs.to_vec())
@@ -194,6 +198,7 @@ impl SmallFirms {
         ] {
             books.drawn.insert(key(name, c.id), list);
         }
+        whole_agents(report, c, (small, firms_small), k);
         population.count(at, (firms_small, 0), (0, 0));
         report.distributions.push((
             key(SMALL_FIRMS, c.id),
@@ -206,6 +211,17 @@ impl SmallFirms {
                 c.id.get(),
             ),
         ));
+    }
+}
+
+/// The small firms left over when the country's are drawn as whole agents of the twins, reported.
+fn whole_agents(report: &mut phx_core::GenReport, c: &OpeningCountry, (small, drawn): (u64, u64), k: u64) {
+    if drawn != small {
+        report.adjustments.push(Adjustment {
+            what: format!("country {}: small firms, a whole number of agents of {k} twins", c.id.get()),
+            drawn: i128::from(small),
+            set: i128::from(drawn),
+        });
     }
 }
 

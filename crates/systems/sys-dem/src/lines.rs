@@ -7,7 +7,7 @@
 use std::any::Any;
 use std::collections::BTreeMap;
 
-use phx_core::{Apportioned, GenReport, OpeningCountry, OpeningCtx, Register, apportion};
+use phx_core::{Adjustment, Apportioned, GenReport, OpeningCountry, OpeningCtx, Register, apportion};
 use phx_id::{Day, LineId, PartyId};
 use phx_ledger::algebra::Side;
 use phx_ledger::attachments::{
@@ -229,7 +229,15 @@ impl Drawer {
             let mine: Vec<&(PartyId, LineId, Side, u32, u64)> = balances.iter().filter(|b| b.3 == pool).collect();
             let weights: Vec<u64> = mine.iter().map(|b| b.4).collect();
             // Each twin's share is whole, so the pool is shared out a twin-th at a time.
-            for ((agent, line, side, _, _), each) in mine.iter().zip(shares(total / twins_i64(twins), &weights, lot)) {
+            let per_twin = total / twins_i64(twins);
+            if per_twin * twins_i64(twins) != total {
+                report.adjustments.push(Adjustment {
+                    what: format!("pool {pool}: shared a twin-th at a time over agents of {twins} twins"),
+                    drawn: i128::from(total),
+                    set: i128::from(per_twin * twins_i64(twins)),
+                });
+            }
+            for ((agent, line, side, _, _), each) in mine.iter().zip(shares(per_twin, &weights, lot)) {
                 let amount = each * twins_i64(twins);
                 let Some(counterparty) = counterparty_of.get(line) else {
                     violation!(clause = "GEN.4", "a balance on a line with no named counterparty", line = line.get());

@@ -105,13 +105,24 @@ fn open(
     phases: &[phx_core::OpeningPhase],
 ) -> (phx_ledger::books::Books, phx_pop::population::Population, phx_core::GenReport) {
     // A small world's countries hold one factor-th of the population, and everything the opening derives follows.
-    let population = kernel.opening.population.shared(&c.register).get() / u64::from(pop.1.population_divisor);
+    let total = kernel.opening.population.shared(&c.register).get();
+    let divisor = u64::from(pop.1.population_divisor);
+    let population = total / divisor;
     let units: Vec<u64> = (0_u8..)
         .take(game.countries.len())
         .map(|i| kernel.opening.units_per_dollar.get(&c.register, CountryId::new(i)).get())
         .collect();
     let countries = crate::opening::books::countries(game, geo, population, &units);
-    crate::opening::books::open_books(d, pop, c, &countries, kernel.day_zero.shared(&c.register), phases)
+    let (books, people, mut report) =
+        crate::opening::books::open_books(d, pop, c, &countries, kernel.day_zero.shared(&c.register), phases);
+    if population * divisor != total {
+        report.adjustments.push(phx_core::Adjustment {
+            what: format!("the population, one {divisor}-th of the setup's in whole persons"),
+            drawn: i128::from(total),
+            set: i128::from(population * divisor),
+        });
+    }
+    (books, people, report)
 }
 
 /// The month a day falls in, counted from the calendar's year nought: the period the accounts close by.
