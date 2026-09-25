@@ -80,8 +80,13 @@ pub fn write_back<B: Backing>(kind: &PopKindDecl, table: &mut AgentTable<B>, slo
     }
     let persons: Vec<u64> = h.persons.iter().filter(|p| !p.gone).map(|p| pack(kind, p)).collect();
     written.ended = persons.is_empty();
-    table.set_persons(slot, &persons);
-    table.set_attachments(slot, &kept);
+    // A household nothing changed keeps its words, so its arena gains no dead ones and it is not drawn again.
+    if persons != table.persons(slot) {
+        table.set_persons(slot, &persons);
+    }
+    if kept != table.attachments(slot) {
+        table.set_attachments(slot, &kept);
+    }
     written
 }
 
