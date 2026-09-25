@@ -728,7 +728,11 @@ published technique it rests on:
 - **Saves** write only the stores the world saves, in independent zstd frames compressed on the pool (RFC 8878).
   Incompressible blocks are stored raw, and the bench's held stores carry their columns' shapes, not uniform words.
 
-As built at Stage 0, none of it is yet: S0.26f builds it in the order above, measuring the full load after each part.
+As built at Stage 0's close: dense identity; the standing facts on their owners (a listed side's holders as a count and
+the exclusive-or of their keys, each holder's money rows); the due index; the day's buffers kept and its records by
+holder slot, stamped by day; each due line's dues planned once; 7a in 64 fixed shards on the world's pool, a wave of 8
+at a time, booked in the stream's order. Rows are found by reading their heads, not yet by an index; 7b, 7c, 3e and the
+audit run on one thread; routes are made again at 7c. The rest is carried to Stage 1 (the plan's S0.26f, F-087).
 
 ---
 
