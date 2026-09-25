@@ -132,10 +132,9 @@ pub(crate) fn hazard(a: &Agents, slot: Slot, (day, date): (Day, Date), d: &mut D
     next_booking(d, any_hit(&qs), day, change.map_or(Missing::Absent, Missing::Present))
 }
 
-/// A hit's outcome on an agent, as the world's 3e applies one: its household made explicit, its persons reached drawn,
-/// one of them changed in place, and the household written back.
-pub(crate) fn outcome(a: &mut Agents, slot: Slot, date: Date, d: &mut Draws) {
-    let mut h: Household = household(&a.decl, &a.table, slot);
+/// A hit's outcome on an agent's household made explicit, as the world's 3e applies one: its persons reached drawn,
+/// one of them changed in place.
+pub(crate) fn outcome_on(h: &mut Household, date: Date, d: &mut Draws) {
     let qs: Vec<f64> = h.present().map(|(_, p)| rate(p, date)).collect();
     let mut hit = Vec::new();
     reached(d, &qs, &mut hit);
@@ -144,6 +143,55 @@ pub(crate) fn outcome(a: &mut Agents, slot: Slot, date: Date, d: &mut Draws) {
             p.set_attr("DEM.health", 1);
         }
     }
+}
+
+/// One hit's outcome on an agent, as the world's 3e applies one: its household made explicit, changed and written
+/// back.
+pub(crate) fn outcome(a: &mut Agents, slot: Slot, date: Date, d: &mut Draws) {
+    let mut h: Household = household(&a.decl, &a.table, slot);
+    outcome_on(&mut h, date, d);
     let _ = write_back(&a.decl, &mut a.table, slot, &h);
+    let _ = a.table.take_changed();
+}
+
+/// A day's outcomes on the agents hit, each as often as it was hit: the households made explicit and changed on the
+/// pool, each agent drawing from its own address so the work's order is no part of the result, and written back in
+/// slot order.
+pub(crate) fn outcomes(
+    a: &mut Agents,
+    (pool, pieces): (&phx_exec::Pool, usize),
+    hit: &mut [Slot],
+    (day, date, stream): (u32, Date, StreamKey),
+) {
+    hit.sort_unstable();
+    let mut runs: Vec<(Slot, u32)> = Vec::new();
+    for s in hit.iter() {
+        match runs.last_mut() {
+            Some((last, n)) if last == s => *n += 1,
+            _ => runs.push((*s, 1)),
+        }
+    }
+    let each = runs.len().div_ceil(pieces);
+    let (decl, table) = (&a.decl, &a.table);
+    let changed = pool.map(pieces, |p| {
+        let lesser = |x: usize, y: usize| if x < y { x } else { y };
+        let from = lesser(p * each, runs.len());
+        let to = lesser(from + each, runs.len());
+        runs.get(from..to)
+            .unwrap_or(&[])
+            .iter()
+            .map(|&(slot, times)| {
+                let mut h = household(decl, table, slot);
+                let mut d = Draws::new(stream, Subject::new(SubjectTag::Party, u64::from(slot.get())), day, 0);
+                for _ in 0..times {
+                    outcome_on(&mut h, date, &mut d);
+                }
+                (slot, h)
+            })
+            .collect::<Vec<_>>()
+    });
+    for (slot, h) in changed.into_iter().flatten() {
+        let _ = write_back(&a.decl, &mut a.table, slot, &h);
+    }
     let _ = a.table.take_changed();
 }

@@ -16,7 +16,7 @@ use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
 use phx_store::SystemBacking;
 use serde::Deserialize;
 
-use crate::agents::{Agents, agents, hazard, outcome};
+use crate::agents::{Agents, agents, hazard, outcomes};
 use crate::bench::{BenchHost, BenchLine};
 use crate::json::Json;
 
@@ -348,10 +348,10 @@ impl Load {
             }
             Kernel::Outcome => {
                 let mut d = draws(5, 0, day);
-                for _ in 0..count {
-                    let Some(slot) = self.agent(&mut d) else { continue };
-                    outcome(&mut self.population, slot, date, &mut d);
-                }
+                let mut hit: Vec<Slot> = (0..count).filter_map(|_| self.agent(&mut d)).collect();
+                let stream = stream_key(Seed::new(5), "LOAD.bench");
+                let pieces = piece_count(&self.pool);
+                outcomes(&mut self.population, (&self.pool, pieces), &mut hit, (day, date, stream));
             }
             Kernel::Redraw => {
                 if let Some(at) = self.store(w.store.as_ref())
