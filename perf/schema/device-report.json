@@ -288,6 +288,7 @@
         "commit",
         "opening_ms",
         "opening_vm_hwm_bytes",
+        "settling",
         "turns",
         "median_turn_ms",
         "worst_turn_ms",
@@ -295,14 +296,15 @@
         "world_hash",
         "findings",
         "reads",
-        "drift"
+        "drift",
+        "save"
       ],
       "additionalProperties": false,
       "properties": {
         "report_version": {
           "type": "integer",
           "enum": [
-            1
+            2
           ]
         },
         "commit": {
@@ -321,6 +323,45 @@
             "null"
           ],
           "minimum": 0
+        },
+        "settling": {
+          "type": "object",
+          "required": [
+            "years",
+            "turns",
+            "days",
+            "wall_ms",
+            "vm_hwm_bytes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "years": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "turns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "wall_ms": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "vm_hwm_bytes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
         },
         "turns": {
           "type": "array",
@@ -460,6 +501,39 @@
                 ],
                 "minimum": 0
               }
+            }
+          }
+        },
+        "save": {
+          "type": "object",
+          "required": [
+            "save_ms",
+            "save_bytes",
+            "load_ms",
+            "hash_holds"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "save_ms": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "save_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "load_ms": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "hash_holds": {
+              "type": "boolean"
             }
           }
         }

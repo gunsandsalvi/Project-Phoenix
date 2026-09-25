@@ -1,6 +1,7 @@
-//! The world on the phone: assembled from the data the app unpacked, then turns run one after another, each turn's
-//! wall time, its days and the process's resident peak sent to the app as the turn closes and written into the report
-//! with the opening's time and the median and worst turn against the budget.
+//! The world on the phone: assembled from the data the app unpacked and settled for the owner's length, then turns run
+//! one after another, each turn's wall time, its days and the process's resident peak sent to the app as the turn
+//! closes and written into the report with the opening's and the settling's times and the median and worst turn
+//! against the budget; last the world is saved and read back, each timed.
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -15,7 +16,14 @@ use crate::bench::{BenchHost, BenchLine};
 use crate::json::Json;
 
 /// The report's layout; a change to it is a new version and a new schema.
-const WORLD_REPORT_VERSION: u64 = 1;
+const WORLD_REPORT_VERSION: u64 = 2;
+/// Settling's progress is shown once in so many turns.
+const SETTLING_SHOWN_EVERY: u32 = 20;
+/// The build a save names and a load expects: the commit the library was built from.
+const BUILD: &str = match option_env!("PHX_COMMIT") {
+    Some(c) => c,
+    None => "unknown",
+};
 /// The budget's median and worst wall time of a turn, in milliseconds, on the phone.
 const MEDIAN_MS: u64 = 1_000;
 const WORST_MS: u64 = 2_000;
@@ -126,9 +134,11 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
     let tracers = phx_obs::Tracers::declared(w)?;
     let mut watch = phx_obs::Watch { tracers, recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
     let mut views = phx_obs::Views::new(&definitions.histograms, w)?;
-    let opening = views.close(w, &watch.recorder);
     let opened = opening_ms.map_or_else(|| "unclocked".to_owned(), |ms| format!("{ms} ms"));
     show(host, "world", "opening", format!("{opened}, peak {}", mib(opened_peak)), String::new(), "");
+    let settling = settle(host, &mut world, &clock)?;
+    let w = Inspector::new(&world);
+    let opening = views.close(w, &watch.recorder);
     let mut rows = Vec::new();
     let mut walls = Vec::new();
     for turn in 0..turns {
@@ -174,21 +184,101 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
     }
     let w = Inspector::new(&world);
     let view = views.close(w, &watch.recorder);
+    let (hash, findings) = (w.world_hash(), w.findings().len());
+    let reads = reads(&watch.recorder, &view);
+    let drift = drift(&phx_obs::drift(&opening, &view));
+    let saved = save_and_load(host, world, &config, &clock)?;
     let report = Json::obj([
         ("report_version", Json::UInt(WORLD_REPORT_VERSION)),
         ("commit", Json::str(option_env!("PHX_COMMIT").unwrap_or("unknown"))),
         ("opening_ms", Json::opt(opening_ms, Json::UInt)),
         ("opening_vm_hwm_bytes", Json::opt(opened_peak, Json::UInt)),
+        ("settling", settling),
         ("turns", Json::Array(rows)),
         ("median_turn_ms", Json::opt(middle, Json::UInt)),
         ("worst_turn_ms", Json::opt(worst, Json::UInt)),
         ("vm_hwm_bytes", Json::opt(proc_kib("status", "VmHWM:"), Json::UInt)),
-        ("world_hash", Json::str(format!("{:032x}", w.world_hash()))),
-        ("findings", Json::UInt(u64::try_from(w.findings().len()).unwrap_or(u64::MAX))),
-        ("reads", reads(&watch.recorder, &view)),
-        ("drift", drift(&phx_obs::drift(&opening, &view))),
+        ("world_hash", Json::str(format!("{hash:032x}"))),
+        ("findings", Json::UInt(u64::try_from(findings).unwrap_or(u64::MAX))),
+        ("reads", reads),
+        ("drift", drift),
+        ("save", saved),
     ]);
     Ok(report)
+}
+
+/// The world run from day zero to the end of the owner's settling length, turn after turn, its progress shown now
+/// and then: the turns, the days and the wall time it took.
+///
+/// # Errors
+/// A settling length the calendar cannot count.
+fn settle(host: &dyn BenchHost, world: &mut phx_world::world::World, clock: &Mono) -> Result<Json, String> {
+    let w = Inspector::new(world);
+    let years = u16::try_from(w.settling_years()).map_err(|_| "too long a settling".to_owned())?;
+    let months = years.checked_mul(phx_core::consts::MONTHS_PER_YEAR).ok_or("too long a settling")?;
+    let end =
+        phx_core::calendar::period::Period::months(months).map_or(w.day_zero(), |p| w.calendar().plus(w.day_zero(), p));
+    let started = clock.now_ns();
+    let (mut turns, mut days) = (0_u32, 0_u64);
+    while Inspector::new(world).today() < end {
+        let record = world.run_turn_observed(&[], clock, None);
+        turns += 1;
+        days += u64::from(record.days);
+        if turns % SETTLING_SHOWN_EVERY == 0 {
+            let date = Inspector::new(world).date(record.last);
+            show(
+                host,
+                "world",
+                "settling",
+                format!("{turns} turns, to {}-{:02}-{:02}", date.year(), date.month(), date.day()),
+                String::new(),
+                "",
+            );
+        }
+    }
+    let wall_ms = clock.now_ns().checked_sub(started).map(|n| n / NS_PER_MS);
+    let shown = wall_ms.map_or_else(|| "unclocked".to_owned(), |ms| format!("{ms} ms"));
+    show(host, "world", "settled", format!("{turns} turns, {days} days, {shown}"), String::new(), "");
+    Ok(Json::obj([
+        ("years", Json::UInt(u64::from(years))),
+        ("turns", Json::UInt(u64::from(turns))),
+        ("days", Json::UInt(days)),
+        ("wall_ms", Json::opt(wall_ms, Json::UInt)),
+        ("vm_hwm_bytes", Json::opt(proc_kib("status", "VmHWM:"), Json::UInt)),
+    ]))
+}
+
+/// The world saved whole into the run's directory and dropped, then read back: each timed, the save's size, and
+/// whether the world read back hashes as the one saved.
+///
+/// # Errors
+/// A save that cannot be written, or one the load refuses.
+fn save_and_load(
+    host: &dyn BenchHost,
+    world: phx_world::world::World,
+    config: &WorldConfig,
+    clock: &Mono,
+) -> Result<Json, String> {
+    let root = config.run_dir.join("saves");
+    let started = clock.now_ns();
+    let rec = world.save(&root, BUILD)?;
+    let save_ms = clock.now_ns().checked_sub(started).map(|n| n / NS_PER_MS);
+    let bytes: u64 = rec.stores.iter().map(|s| s.bytes).sum();
+    drop(world);
+    let started = clock.now_ns();
+    let loaded = phx_world::registry::load(SYSTEMS, INTERFACES, config, &rec.dir, BUILD)
+        .map_err(|e| format!("the save read back was refused:\n{e}"))?;
+    let load_ms = clock.now_ns().checked_sub(started).map(|n| n / NS_PER_MS);
+    let same = Inspector::new(&loaded).world_hash() == rec.world_hash;
+    let ms = |v: Option<u64>| v.map_or_else(|| "unclocked".to_owned(), |ms| format!("{ms} ms"));
+    show(host, "world", "save", format!("{}, {}", ms(save_ms), mib(Some(bytes))), String::new(), "");
+    show(host, "world", "load", ms(load_ms), String::new(), if same { "met" } else { "missed" });
+    Ok(Json::obj([
+        ("save_ms", Json::opt(save_ms, Json::UInt)),
+        ("save_bytes", Json::UInt(bytes)),
+        ("load_ms", Json::opt(load_ms, Json::UInt)),
+        ("hash_holds", Json::Bool(same)),
+    ]))
 }
 
 /// Each opening distribution's distance from the world's own at the run's end.

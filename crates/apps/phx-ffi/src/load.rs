@@ -400,6 +400,8 @@ impl Load {
                 let closed = phx_ledger::pending::Closed::default();
                 let cal = &self.books.calendar;
                 black_box(self.books.books.settle_day(&due, today, cal, &closed, &draws_of, &mut Unaudited).settled);
+                // The day's book is the close's to take, as the world's is, or it grows over the month.
+                black_box(self.books.books.close().dues.len());
             }
             Kernel::Tolerance => {
                 let mut d = draws(8, 0, day);

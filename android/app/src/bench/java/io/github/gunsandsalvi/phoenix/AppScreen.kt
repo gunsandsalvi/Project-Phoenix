@@ -179,9 +179,10 @@ fun AppScreen(activity: ComponentActivity) {
         Text("Project Phoenix bench", style = MaterialTheme.typography.titleLarge)
         Text(
             when (phase) {
-                Phase.READY -> "Plug the phone in and close other apps. The bench takes a few minutes and about 4 GB; the " +
-                    "world opens three countries' population, then runs $WORLD_TURNS turns; the full load builds the " +
-                    "finished world's stores, about 5 GB, and runs a month."
+                Phase.READY -> "Plug the phone in and close other apps. The run takes hours and about 4 GB: the " +
+                    "world opens three countries' population, settles for the owner's length, runs $WORLD_TURNS " +
+                    "measured turns, then saves and reads itself back; the full load builds the finished world's " +
+                    "stores, about 5 GB, and runs a month."
                 Phase.RUNNING -> "Running… keep the app open."
                 Phase.DONE -> "Done. The report is at ${reportFile ?: "?"}"
             },
