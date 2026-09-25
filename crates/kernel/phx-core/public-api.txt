@@ -373,6 +373,7 @@ pub phx_core::directory::Resolved::Unknown
 pub struct phx_core::directory::Directory
 impl phx_core::directory::Directory
 pub fn phx_core::directory::Directory::begin(&mut self, phx_id::ids::RowRef) -> phx_id::ids::PartyId
+pub fn phx_core::directory::Directory::close_day(&mut self)
 pub fn phx_core::directory::Directory::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyId>)
 pub fn phx_core::directory::Directory::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::directory::Directory::live_count(&self) -> usize
@@ -385,7 +386,7 @@ pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> p
 pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
 impl core::default::Default for phx_core::directory::Directory
 pub fn phx_core::directory::Directory::default() -> Self
-impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: core::default::Default
 pub fn phx_core::directory::Directory::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::directory::Directory::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::events
@@ -2471,6 +2472,7 @@ pub fn phx_core::register::limit::DeclaredLimit<T>::from_terms(phx_core::registe
 pub struct phx_core::Directory
 impl phx_core::directory::Directory
 pub fn phx_core::directory::Directory::begin(&mut self, phx_id::ids::RowRef) -> phx_id::ids::PartyId
+pub fn phx_core::directory::Directory::close_day(&mut self)
 pub fn phx_core::directory::Directory::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyId>)
 pub fn phx_core::directory::Directory::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::directory::Directory::live_count(&self) -> usize
@@ -2483,7 +2485,7 @@ pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> p
 pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
 impl core::default::Default for phx_core::directory::Directory
 pub fn phx_core::directory::Directory::default() -> Self
-impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: core::default::Default
 pub fn phx_core::directory::Directory::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::directory::Directory::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Distribution
