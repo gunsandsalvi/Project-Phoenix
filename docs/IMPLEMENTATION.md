@@ -8056,6 +8056,9 @@ A rate rise reaches house prices through what buyers can borrow.
 
 **Design**
 
+- **The rate sample**: an agent begun during the run — a household a move or a split forms — joins the world's
+  rate sample where it begins (`World::rate_sample`, found once at the first day since S0.28), or the live rates
+  (LC-0-39) count its hits and not its chances.
 - **Dwellings** (HSG.1, REP.24): an individual's are named units (S0.14); a cell's are holdings per (zone, class),
   each unit's tile drawn when something depends on it. Occupancy is the dwelling role's attachment: owned, a tenancy
   row (HSG.2), or a lodger's room tenancy. A household with none is recorded homeless (HSG.13).

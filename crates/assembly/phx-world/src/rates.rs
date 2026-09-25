@@ -85,24 +85,31 @@ impl World {
         let Population { kinds, .. } = &self.population;
         let cells = self.books.parties.cells();
         let rates = &mut self.metrics.rates;
-        for (k, kd) in kinds.iter().enumerate().filter(|(_, kd)| kd.processes > 0) {
+        // The sample is found in one sweep the first day, then read alone; an agent that ended leaves it.
+        let sample = self.rate_sample.get_or_insert_with(|| {
+            let mut all = Vec::new();
+            for (k, _) in kinds.iter().enumerate().filter(|(_, kd)| kd.processes > 0) {
+                let table = Population::table::<SystemBacking>(cells, k);
+                all.extend(table.slots().map(|s| (k, s, table.party(s))).filter(|(_, _, p)| sampled(*p)));
+            }
+            all
+        });
+        sample.retain(|(k, slot, party)| {
+            let table = Population::table::<SystemBacking>(cells, *k);
+            table.is_live(*slot) && table.party(*slot) == *party
+        });
+        for &(k, slot, _) in sample.iter() {
+            let Some(kd) = kinds.get(k) else { phx_num::violation!(clause = "CHN.7", "a sampled agent of no kind") };
             let table = Population::table::<SystemBacking>(cells, k);
-            for slot in table.slots().filter(|s| sampled(table.party(*s))) {
-                let h = phx_pop::explicit::household(&kd.decl, table, slot);
-                let twins = u64::from(table.multiplicity(slot).get());
-                let attr = |name: &str| h.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
-                let view = AgentView {
-                    kind: kd.decl.kind,
-                    party: table.party(slot),
-                    attr: &attr,
-                    country_of: &country_of,
-                    date,
-                };
-                for (p, b) in self.processes.iter().enumerate().filter(|(_, b)| b.kind == k) {
-                    for (_, person) in h.present() {
-                        let rate = b.process.rate(&self.register, &view, person);
-                        rates.expect((p, year, age_class(person, date)), twins, rate);
-                    }
+            let h = phx_pop::explicit::household(&kd.decl, table, slot);
+            let twins = u64::from(table.multiplicity(slot).get());
+            let attr = |name: &str| h.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
+            let view =
+                AgentView { kind: kd.decl.kind, party: table.party(slot), attr: &attr, country_of: &country_of, date };
+            for (p, b) in self.processes.iter().enumerate().filter(|(_, b)| b.kind == k) {
+                for (_, person) in h.present() {
+                    let rate = b.process.rate(&self.register, &view, person);
+                    rates.expect((p, year, age_class(person, date)), twins, rate);
                 }
             }
         }

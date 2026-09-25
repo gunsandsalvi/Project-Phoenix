@@ -173,6 +173,7 @@ pub fn phx_pop::table::AgentTable<B>::multiplicity(&self, phx_id::ids::Slot) -> 
 pub fn phx_pop::table::AgentTable<B>::new(&mut phx_store::backing::AddressSpace, &phx_pop::kind::PopKindDecl, phx_id::ids::TableId, u32, u32) -> phx_pop::table::AgentTable<B>
 pub fn phx_pop::table::AgentTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_pop::table::AgentTable<B>::persons(&self, phx_id::ids::Slot) -> &[u64]
+pub fn phx_pop::table::AgentTable<B>::persons_held(&self) -> u64
 pub fn phx_pop::table::AgentTable<B>::remove(&mut self, phx_id::ids::Slot)
 pub fn phx_pop::table::AgentTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
 pub fn phx_pop::table::AgentTable<B>::set_attachments(&mut self, phx_id::ids::Slot, &[u64])
@@ -182,6 +183,7 @@ pub fn phx_pop::table::AgentTable<B>::set_run_head(&mut self, phx_id::ids::Slot,
 pub fn phx_pop::table::AgentTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_pop::table::AgentTable<B>::take_changed(&mut self) -> alloc::vec::Vec<phx_id::ids::Slot>
 pub fn phx_pop::table::AgentTable<B>::take_twin(&mut self, phx_id::ids::Slot)
+pub fn phx_pop::table::AgentTable<B>::twins(&self) -> u64
 pub fn phx_pop::table::AgentTable<B>::words(&self, phx_id::ids::Slot, phx_pop::table::AgentList) -> &[u64]
 pub fn phx_pop::table::AgentTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing + core::fmt::Debug + 'static> phx_ledger::holder::CellHolders for phx_pop::table::AgentTable<B> where phx_pop::table::AgentTable<B>: core::marker::Send + core::marker::Sync

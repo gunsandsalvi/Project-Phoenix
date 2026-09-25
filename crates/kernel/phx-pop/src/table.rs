@@ -89,8 +89,11 @@ pub struct AgentTable<B: Backing = SystemBacking> {
     lists: Vec<Column<CellListRef, B>>,
     runs: Column<AgentRunHead, B>,
     arenas: Vec<ChunkArena<B>>,
-    /// The agents live, counted as they begin and end, so no day need count them by visiting each.
+    /// The agents live, the real parties they stand for and those parties' persons, kept as agents begin, change and
+    /// end, so no day need count them by visiting each.
     agents: u64,
+    twins: u64,
+    persons_held: u64,
     /// The day's agents added, removed or changed, whose hazards the world draws again.
     #[saved(skip)]
     changed: Vec<Slot>,
@@ -148,6 +151,8 @@ impl<B: Backing> AgentTable<B> {
             runs: table.column(space),
             arenas: Vec::new(),
             agents: 0,
+            twins: 0,
+            persons_held: 0,
             changed: Vec::new(),
             table,
         }
@@ -219,6 +224,7 @@ impl<B: Backing> AgentTable<B> {
         // A reused slot's arena lists were cleared when its last agent ended.
         self.changed.push(slot);
         self.agents += 1;
+        self.twins += u64::from(agent.multiplicity.get());
         slot
     }
 
@@ -230,18 +236,37 @@ impl<B: Backing> AgentTable<B> {
                 violation!(clause = "PTY.10", "an agent removed with contracts still in its arena", slot = slot.get());
             }
         }
+        let (k, persons) = (u64::from(self.multiplicity(slot).get()), self.persons_of(slot));
         for list in AgentList::ALL {
             self.edit_list(slot, list, ChunkArena::clear);
         }
         self.table.slots.release(slot);
         self.changed.push(slot);
         self.agents -= 1;
+        self.twins -= k;
+        self.persons_held -= k * persons;
     }
 
     /// The agents live in the table.
     #[must_use]
     pub fn agents(&self) -> u64 {
         self.agents
+    }
+
+    /// The real parties the table's agents stand for: their multiplicities summed.
+    #[must_use]
+    pub fn twins(&self) -> u64 {
+        self.twins
+    }
+
+    /// Those parties' persons: each agent's persons times its multiplicity, summed.
+    #[must_use]
+    pub fn persons_held(&self) -> u64 {
+        self.persons_held
+    }
+
+    fn persons_of(&self, slot: Slot) -> u64 {
+        phx_rand::float::len_u64(self.persons(slot).len())
     }
 
     fn live(&self, slot: Slot) {
@@ -299,6 +324,8 @@ impl<B: Backing> AgentTable<B> {
             violation!(clause = "REP.17", "a twin taken from an agent of one", slot = slot.get());
         };
         self.multiplicity.set(slot, left);
+        self.twins -= 1;
+        self.persons_held -= self.persons_of(slot);
     }
 
     /// An attribute's value, by its place among the kind's.
@@ -334,6 +361,8 @@ impl<B: Backing> AgentTable<B> {
 
     /// The agent's persons written anew.
     pub fn set_persons(&mut self, slot: Slot, words: &[u64]) {
+        let k = u64::from(self.multiplicity(slot).get());
+        self.persons_held = self.persons_held - k * self.persons_of(slot) + k * phx_rand::float::len_u64(words.len());
         self.edit_list(slot, AgentList::Persons, |arena, r| {
             arena.clear(r);
             arena.append(r, words);
@@ -472,8 +501,17 @@ impl<B: Backing> AgentTable<B> {
     /// Closes the gaps in a chunk's arena: every live agent's lists in slot order, each reference rewritten where it
     /// now lies.
     pub fn compact(&mut self, chunk: usize, scratch: &mut Region<u64, B>) {
-        let per = at(Slot::new(self.table.rows_per_chunk()));
-        let agents: Vec<Slot> = self.slots().filter(|s| at(*s) / per == chunk).collect();
+        // Only the chunk's own slots are read, never the whole table.
+        let per = self.table.rows_per_chunk();
+        let Some(first) = word32(chunk).checked_mul(per) else {
+            capacity_exceeded!("an agent table's rows", u32::MAX, chunk);
+        };
+        let Some(end) = first.checked_add(per) else {
+            capacity_exceeded!("an agent table's rows", u32::MAX, chunk);
+        };
+        let handed = self.high_water();
+        let agents: Vec<Slot> =
+            (first..end).filter(|s| *s < handed).map(Slot::new).filter(|s| self.is_live(*s)).collect();
         let mut refs: Vec<ListRef> = Vec::new();
         for s in &agents {
             refs.extend(AgentList::ALL.iter().map(|l| self.list(*s, *l)));

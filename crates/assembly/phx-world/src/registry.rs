@@ -381,6 +381,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         population,
         processes: std::mem::take(&mut p.processes),
         agent_hits: Vec::new(),
+        rate_sample: None,
         agent_day: crate::agents::AgentDay::of(carried.today),
         markets,
         accounts,

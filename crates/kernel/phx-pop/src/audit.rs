@@ -131,22 +131,16 @@ impl<B: Backing> AgentsAudit for AgentsView<'_, B> {
     }
 
     /// Each kind's multiplicities against its parties counted by event, and its persons times their agents'
-    /// multiplicities against its persons counted by event.
+    /// multiplicities against its persons counted by event, both as the table keeps them, so no day visits each agent;
+    /// the rolling slice holds each agent to what it holds.
     #[clause("REP.13")]
     fn populations(&self) -> Vec<Gap> {
         let mut gaps = Vec::new();
         for ((t, (kind, counted)), persons_counted) in
             self.tables.iter().zip(&self.population.members).zip(&self.population.persons)
         {
-            let (mut held, mut persons, mut agents) = (0_i128, 0_i128, 0_i128);
-            for s in t.slots() {
-                let k = i128::from(t.multiplicity(s).get());
-                held += k;
-                persons += k * i128::from(phx_rand::float::len_u64(t.persons(s).len()));
-                agents += 1;
-            }
-            let checks =
-                [("parties", held, *counted), ("persons", persons, *persons_counted), ("agents", agents, t.agents())];
+            let (held, persons) = (i128::from(t.twins()), i128::from(t.persons_held()));
+            let checks = [("parties", held, *counted), ("persons", persons, *persons_counted)];
             for (what, have, want) in checks {
                 if have != i128::from(want) {
                     gaps.push(Gap {

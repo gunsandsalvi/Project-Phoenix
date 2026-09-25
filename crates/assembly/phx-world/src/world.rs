@@ -55,6 +55,8 @@ pub struct World {
     pub(crate) processes: Vec<crate::agents::Bound>,
     /// The day's hits, from 3b's gathering to 3e's outcomes.
     pub(crate) agent_hits: Vec<crate::agents::AgentHit>,
+    /// The agents the rates are measured over, by kind and slot, found once when first read.
+    pub(crate) rate_sample: Option<Vec<(usize, phx_id::Slot, phx_id::PartyId)>>,
     /// What the day's work on agents did.
     pub(crate) agent_day: crate::agents::AgentDay,
     pub(crate) markets: phx_market::markets::Markets,
