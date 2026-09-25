@@ -49,10 +49,6 @@ impl Optional {
         has(self.balance, BALANCE) | has(self.pending, PENDING) | has(self.amount, AMOUNT)
     }
 
-    fn words(self) -> Vec<u64> {
-        self.present().collect()
-    }
-
     /// The words present, in their order.
     fn present(self) -> impl Iterator<Item = u64> {
         [self.balance, self.pending, self.amount].into_iter().filter_map(|m| match m {
@@ -164,20 +160,45 @@ pub fn iter(arenas: &dyn HolderArenas, holder: Slot) -> impl Iterator<Item = Row
     })
 }
 
-/// A row appended to its holder's run.
-pub(crate) fn append(arenas: &mut dyn HolderArenas, holder: Slot, mut row: RelRow, optional: Optional) {
+/// A row's words as its holder's run keeps them, its flags naming the optional words it carries; written into a
+/// buffer on the stack, since a row is at most its head and three optional words. Returns how many words it took.
+fn stored(row: &mut RelRow, optional: Optional, words: &mut [u64; ROW + OPTIONAL_WORDS]) -> usize {
     row.flags = (row.flags & !(BALANCE | PENDING | AMOUNT)) | optional.flags();
-    let mut words = to_words(&row);
-    words.extend(optional.words());
-    arenas.append(holder, ListKind::RelationshipRows, &words);
+    let mut n = 0;
+    for w in to_words(row).iter().copied().chain(optional.present()) {
+        if let Some(slot) = words.get_mut(n) {
+            *slot = w;
+        }
+        n += 1;
+    }
+    n
 }
 
-/// A row put into its holder's run before the word at `at`.
-pub(crate) fn insert(arenas: &mut dyn HolderArenas, holder: Slot, at: usize, mut row: RelRow, optional: Optional) {
-    row.flags = (row.flags & !(BALANCE | PENDING | AMOUNT)) | optional.flags();
-    let mut words = to_words(&row);
-    words.extend(optional.words());
-    arenas.insert(holder, ListKind::RelationshipRows, at, &words);
+/// A row appended to its holder's run.
+pub(crate) fn append(arenas: &mut dyn HolderArenas, holder: Slot, mut row: RelRow, optional: Optional) {
+    let mut words = [0_u64; ROW + OPTIONAL_WORDS];
+    let n = stored(&mut row, optional, &mut words);
+    let Some(written) = words.get(..n) else {
+        violation!(clause = "REG.14", "a row wider than its head and optional words", line = row.line.get());
+    };
+    arenas.append(holder, ListKind::RelationshipRows, written);
+}
+
+/// A row put into its holder's run before the word at `at`. Returns the words it took.
+pub(crate) fn insert(
+    arenas: &mut dyn HolderArenas,
+    holder: Slot,
+    at: usize,
+    mut row: RelRow,
+    optional: Optional,
+) -> usize {
+    let mut words = [0_u64; ROW + OPTIONAL_WORDS];
+    let n = stored(&mut row, optional, &mut words);
+    let Some(written) = words.get(..n) else {
+        violation!(clause = "REG.14", "a row wider than its head and optional words", line = row.line.get());
+    };
+    arenas.insert(holder, ListKind::RelationshipRows, at, written);
+    n
 }
 
 /// The words a row takes in its holder's run.

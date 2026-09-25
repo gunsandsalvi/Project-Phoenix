@@ -510,18 +510,18 @@ impl<B: Backing> Lines<B> {
         if optional.flags() != decl.words {
             violation!(clause = "REP.3", "a row's optional words other than its line side declares", line = line.get());
         }
-        let rows_now = rows::rows(arenas, holder);
-        if rows_now.iter().any(|r| r.row.line == line && r.side() == side) {
-            violation!(clause = "REG.14", "a second row of one holder on one side of a line", line = line.get());
+        // One pass over the holder's rows, which a firm holds on every wage and rent line: the check and the list.
+        let mut listed_before = false;
+        for r in rows::iter(arenas, holder).filter(|r| r.row.line == line) {
+            if r.side() == side {
+                violation!(clause = "REG.14", "a second row of one holder on one side of a line", line = line.get());
+            }
+            listed_before |= self.kind(self.row(line).kind).side(r.side()).holder_list;
         }
-        let listed_before = self.listed(line, &rows_now);
         if self.dated(line) {
             let mut head = arenas.run_head(holder);
             let at = usize_of(head.offset + head.len);
-            rows::insert(arenas, holder, at, row, optional);
-            let added = rows::words_of_row(&rows::iter(arenas, holder).find(|r| r.at == at).unwrap_or_else(|| {
-                violation!(clause = "REG.14", "a row put into a run and not found there", line = line.get())
-            }));
+            let added = rows::insert(arenas, holder, at, row, optional);
             // A line that fell due today has moved on to its next date, but the row falls due today with it.
             let due = if self.fell.1.contains(&line.get()) { self.fell.0 } else { self.next_due(line) }.get();
             if head.len == 0 || due < head.next_due {
@@ -540,12 +540,6 @@ impl<B: Backing> Lines<B> {
             self.set(line, r);
         }
         enters
-    }
-
-    /// Whether any of a holder's rows puts it on a line's holder list: a row on a side that keeps one.
-    fn listed(&self, line: LineId, rows: &[RowView]) -> bool {
-        let kind = self.kind(self.row(line).kind);
-        rows.iter().any(|r| r.row.line == line && kind.side(r.side()).holder_list)
     }
 
     pub(crate) fn find(arenas: &dyn HolderArenas, holder: Slot, line: LineId, side: Side) -> RowView {
@@ -615,8 +609,21 @@ impl<B: Backing> Lines<B> {
         line: LineId,
         side: Side,
     ) -> RowView {
-        let view = Self::find(arenas, holder, line, side);
-        let listed_before = self.listed(line, &rows::rows(arenas, holder));
+        // One pass finds the row and whether the holder is listed on its line by another row there too.
+        let listing = |s: Side| self.kind(self.row(line).kind).side(s).holder_list;
+        let mut found = None;
+        let mut listed_by_other = false;
+        for r in rows::iter(arenas, holder).filter(|r| r.row.line == line) {
+            if r.side() == side {
+                found = Some(r);
+            } else {
+                listed_by_other |= listing(r.side());
+            }
+        }
+        let Some(view) = found else {
+            violation!(clause = "REG.14", "a row read that its holder does not have", line = line.get());
+        };
+        let leaves = listing(side) && !listed_by_other;
         rows::remove(arenas, holder, &view);
         self.moved(line, side);
         let mut head = arenas.run_head(holder);
@@ -627,7 +634,7 @@ impl<B: Backing> Lines<B> {
             head.len -= width;
         }
         arenas.set_run_head(holder, head);
-        if listed_before && !self.listed(line, &rows::rows(arenas, holder)) {
+        if leaves {
             let mut r = self.row(line);
             self.lists.leave(line.get(), &mut r.holders, table, holder);
             self.set(line, r);
