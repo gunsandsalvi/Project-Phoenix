@@ -615,6 +615,132 @@ fn leg_due(
     }
 }
 
+/// A leg's due on a date of its schedule as far as the terms and the date fix it: an amount, or a rate and the
+/// period's fraction to accrue on what a row owes, scaled where the leg is indexed, paid in kind where it is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Planned {
+    Fixed(Amount),
+    Accrue { rate: Rate, fraction: DayFraction, scale: Option<(i64, i64)>, in_kind: Option<InstrumentId> },
+}
+
+/// A contract's dues on one day, fixed once for every row of its line: each leg's part the terms and the date decide,
+/// in the terms' order, so a row's dues are a few products of its balance. A leg that waits on an event or an
+/// election makes the plan `general`, and each row's dues are reckoned whole.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DuePlan {
+    legs: Vec<(u16, Planned)>,
+    pub general: bool,
+}
+
+/// The plan of a contract's dues on a day whose date index in its schedule is known, as `due_at` would reckon them
+/// for any balance.
+#[clause("REG.5", "REG.11")]
+#[must_use]
+pub fn due_plan(terms: &Terms, k: Option<u32>, day: Day, calendar: &Calendar) -> DuePlan {
+    let schedule = &terms.schedule;
+    let date = k.map(|k| Accrual { k, from: schedule.stated(k - 1), to: schedule.stated(k) });
+    let mut plan = DuePlan::default();
+    for (i, leg) in terms.legs.iter().enumerate() {
+        let Ok(at) = u16::try_from(i) else {
+            capacity_exceeded!("legs of one contract", u16::MAX, i);
+        };
+        plan_leg(leg, at, terms, (date, day, calendar), &mut plan, None);
+    }
+    plan
+}
+
+fn plan_leg(
+    leg: &Leg,
+    at: u16,
+    terms: &Terms,
+    (date, day, calendar): (Option<Accrual>, Day, &Calendar),
+    plan: &mut DuePlan,
+    scale: Option<(i64, i64)>,
+) {
+    let money = |m: Money| scale.map_or(m, |(current, base)| index(m, current, base));
+    let n = match terms.schedule.count {
+        Missing::Present(n) => Some(n),
+        Missing::Absent => None,
+    };
+    let mut fixed = |a: Amount| plan.legs.push((at, Planned::Fixed(a)));
+    match leg {
+        Leg::FixedAmount(amount) => {
+            if date.is_some() {
+                fixed(Amount::Money(money(*amount)));
+            }
+        }
+        Leg::Principal { amount, repayment } => {
+            let (Some(Accrual { k, .. }), Some(n)) = (date, n) else { return };
+            let part = match repayment {
+                Repayment::Bullet => (k == n).then_some(*amount),
+                Repayment::Linear => Some(linear_part(*amount, k, n)),
+            };
+            if let Some(p) = part {
+                fixed(Amount::Money(money(p)));
+            }
+        }
+        Leg::RateOnNotional { reference, day_count } => {
+            let Some(period) = date else { return };
+            let rate = match reference {
+                Reference::Fixed(r) => *r,
+                Reference::Floating(f) => add_rates(f.fixing.rate, f.spread),
+            };
+            let fraction = day_fraction(period.from, period.to, *day_count);
+            plan.legs.push((at, Planned::Accrue { rate, fraction, scale, in_kind: None }));
+        }
+        Leg::StepSchedule { steps, day_count } => {
+            let Some(period) = date else { return };
+            let Some(rate) = calendar.day(period.from).and_then(|start| stepped(steps, start)) else {
+                phx_num::violation!(
+                    clause = "REG.5",
+                    "a step schedule with no rate for a period it pays",
+                    k = period.k
+                );
+            };
+            let fraction = day_fraction(period.from, period.to, *day_count);
+            plan.legs.push((at, Planned::Accrue { rate, fraction, scale, in_kind: None }));
+        }
+        Leg::PayableInKind { rate, day_count, instrument } => {
+            let Some(period) = date else { return };
+            let fraction = day_fraction(period.from, period.to, *day_count);
+            plan.legs.push((at, Planned::Accrue { rate: *rate, fraction, scale, in_kind: Some(*instrument) }));
+        }
+        Leg::PerTime { amount, per } => {
+            let Some(period) = date else { return };
+            fixed(Amount::Money(money(per_time(*amount, *per, period))));
+        }
+        Leg::Indexed { base, current, leg: inner, .. } => {
+            plan_leg(inner, at, terms, (date, day, calendar), plan, Some((*current, *base)));
+        }
+        Leg::Delivery(qty) => {
+            if date.is_some() {
+                fixed(Amount::Units(*qty));
+            }
+        }
+        Leg::Contingent { .. } | Leg::Elective { .. } => plan.general = true,
+    }
+}
+
+/// The dues a plan comes to on what a row owes, written into `out`, as `due_at` reckons them for a plan that is not
+/// `general`. It allocates nothing.
+pub fn due_by_plan(plan: &DuePlan, outstanding: Money, out: &mut DueBuf) {
+    out.clear();
+    for (leg, planned) in &plan.legs {
+        let amount = match *planned {
+            Planned::Fixed(a) => a,
+            Planned::Accrue { rate, fraction, scale, in_kind } => {
+                let accrued = accrue(outstanding, rate, fraction, Round::HalfEven);
+                let m = scale.map_or(accrued, |(current, base)| index(accrued, current, base));
+                match in_kind {
+                    Some(instrument) => Amount::InKind { instrument, units: m.amt() },
+                    None => Amount::Money(m),
+                }
+            }
+        };
+        out.push(Due { leg: *leg, amount });
+    }
+}
+
 /// The dues of a contract on a day, written into `out`: every leg on a date of the schedule, each contingent leg on
 /// its event's day and each elective leg on a date its side elects. It is pure and allocates nothing.
 #[clause("REG.5", "REG.11")]
@@ -813,6 +939,55 @@ mod tests {
             Some(&Amount::Money(Money::new(40_000, EUR))),
             "the step in force from the period's start"
         );
+    }
+
+    #[test]
+    fn a_due_plan_reckons_what_due_at_does() {
+        use super::{Due, due_at, due_by_plan, due_plan};
+        let cal = calendar();
+        let s = schedule(3, 8);
+        let t = terms(
+            vec![
+                Leg::RateOnNotional { reference: Reference::Fixed(rate(5)), day_count: DayCount::Thirty360Bond },
+                Leg::StepSchedule {
+                    steps: vec![(s.day(&cal, 0), rate(2)), (s.day(&cal, 4), rate(4))],
+                    day_count: DayCount::Act365F,
+                },
+                Leg::PayableInKind { rate: rate(1), day_count: DayCount::Act365F, instrument: InstrumentId::new(7) },
+                Leg::Principal { amount: Money::new(1_000_003, EUR), repayment: Repayment::Linear },
+                Leg::FixedAmount(Money::new(250, EUR)),
+                Leg::PerTime { amount: Money::new(12_000, EUR), per: RatePeriod::Year },
+                Leg::Indexed {
+                    series: SeriesId::new(1),
+                    base: 100,
+                    current: 107,
+                    leg: Box::new(Leg::RateOnNotional {
+                        reference: Reference::Fixed(rate(3)),
+                        day_count: DayCount::Thirty360Bond,
+                    }),
+                },
+            ],
+            s,
+        );
+        for k in 1..=8 {
+            let day = s.day(&cal, k);
+            let plan = due_plan(&t, Some(k), day, &cal);
+            assert!(!plan.general);
+            for owed in [0, 1, 999_999, 1_000_003, 73_512_918] {
+                let state = DueState {
+                    calendar: &cal,
+                    outstanding: Money::new(owed, EUR),
+                    elected: &|_, _| false,
+                    occurred: &|_, _| false,
+                    in_state_since: &|_, _| Missing::Absent,
+                };
+                let (mut whole, mut planned) = (DueBuf::default(), DueBuf::default());
+                due_at(&t, Some(k), day, &state, &mut whole);
+                due_by_plan(&plan, Money::new(owed, EUR), &mut planned);
+                let (a, b): (Vec<Due>, Vec<Due>) = (whole.iter().collect(), planned.iter().collect());
+                assert_eq!(a, b, "date {k}, owed {owed}");
+            }
+        }
     }
 
     #[test]

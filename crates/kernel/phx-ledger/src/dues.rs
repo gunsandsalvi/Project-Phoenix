@@ -87,10 +87,11 @@ impl ClearedDay {
     }
 }
 
-/// What a day's dues have looked up once: each cleared line's day.
+/// What a day's dues have looked up once: each cleared line's day, and each due line's plan of its dues.
 #[derive(Debug, Default)]
 pub(crate) struct Found {
     pub cleared: KernelMap<LineId, ClearedDay>,
+    pub plans: KernelMap<LineId, crate::algebra::DuePlan>,
 }
 
 impl Found {
@@ -104,7 +105,9 @@ impl Found {
                 c.claimants.len() * size_of::<(PartyId, (u32, u32))>() + c.losers.as_ref().map_or(0, Losers::bytes)
             })
             .sum();
-        self.cleared.capacity() * size_of::<(LineId, ClearedDay)>() + cleared
+        self.cleared.capacity() * size_of::<(LineId, ClearedDay)>()
+            + self.plans.capacity() * size_of::<(LineId, crate::algebra::DuePlan)>()
+            + cleared
     }
 }
 

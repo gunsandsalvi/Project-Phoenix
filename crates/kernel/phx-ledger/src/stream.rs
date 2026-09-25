@@ -6,7 +6,7 @@ use phx_macros::clause;
 use phx_num::{Ccy, Missing, Money, violation};
 use phx_store::Backing;
 
-use crate::algebra::{Amount, DueBuf, DueState, Leg, Side, due_at};
+use crate::algebra::{Amount, DueBuf, DueState, Leg, Side, due_at, due_by_plan, due_plan};
 use crate::apply::{Holders, Located};
 use crate::books::Books;
 use crate::cleared::{per_contract, times};
@@ -230,7 +230,13 @@ impl<B: Backing> Books<B> {
             in_state_since: &|_, _| Missing::Absent,
         };
         let mut buf = DueBuf::default();
-        due_at(terms, Some(self.ledger.lines.fallen(line)), day, &state, &mut buf);
+        let k = self.ledger.lines.fallen(line);
+        let plan = found.plans.get_or_insert_with(line, || due_plan(terms, Some(k), day, calendar));
+        if plan.general {
+            due_at(terms, Some(k), day, &state, &mut buf);
+        } else {
+            due_by_plan(plan, state.outstanding, &mut buf);
+        }
         let (mut per, mut whole, mut principal) = (0_i64, 0_i64, 0_i64);
         for d in buf.iter() {
             let Amount::Money(m) = d.amount else {

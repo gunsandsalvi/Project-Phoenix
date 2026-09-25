@@ -130,6 +130,8 @@ pub fn phx_ledger::algebra::DueBuf::iter(&self) -> impl core::iter::traits::iter
 pub fn phx_ledger::algebra::DueBuf::len(&self) -> usize
 impl core::default::Default for phx_ledger::algebra::DueBuf
 pub fn phx_ledger::algebra::DueBuf::default() -> Self
+pub struct phx_ledger::algebra::DuePlan
+pub phx_ledger::algebra::DuePlan::general: bool
 pub struct phx_ledger::algebra::DueState<'a>
 pub phx_ledger::algebra::DueState::calendar: &'a phx_core::calendar::Calendar
 pub phx_ledger::algebra::DueState::elected: &'a dyn core::ops::function::Fn(phx_ledger::algebra::Side, phx_id::day::Day) -> bool
@@ -202,7 +204,9 @@ impl phx_store::save::Saved for phx_ledger::algebra::Terms where phx_num::money:
 pub fn phx_ledger::algebra::Terms::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::algebra::Terms::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::algebra::due_at(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
+pub fn phx_ledger::algebra::due_by_plan(&phx_ledger::algebra::DuePlan, phx_num::money::Money, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::due_on(&phx_ledger::algebra::Terms, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
+pub fn phx_ledger::algebra::due_plan(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_core::calendar::Calendar) -> phx_ledger::algebra::DuePlan
 pub fn phx_ledger::algebra::unprinted_series(&phx_ledger::algebra::Terms, &dyn core::ops::function::Fn(phx_id::ids::SeriesId) -> bool) -> alloc::vec::Vec<phx_id::ids::SeriesId>
 pub mod phx_ledger::apply
 pub enum phx_ledger::apply::ApplyAt
