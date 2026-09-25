@@ -26,9 +26,12 @@ fn reported(w: Inspector<'_>) -> Outcome {
         return Outcome::Fail(format!("the distribution {name} names no source"));
     }
     let parties = &w.books().parties;
+    let opened = w.day_zero();
     for kind in parties.kinds() {
-        if let Some(p) = parties.of_kind(kind).find(|p| !report.writes.iter().any(|x| x.party == *p || x.counter == *p))
-        {
+        let t = parties.table(parties.place(kind));
+        // Parties begun during the run, as estates are, were begun by no opening.
+        let named = |p: phx_id::PartyId| report.writes.iter().any(|x| x.party == p || x.counter == p);
+        if let Some(p) = t.slots().filter(|s| t.created(*s) <= opened).map(|s| t.party(s)).find(|p| !named(*p)) {
             return Outcome::Fail(format!("the {kind} {} is named by no opening write", p.get()));
         }
     }

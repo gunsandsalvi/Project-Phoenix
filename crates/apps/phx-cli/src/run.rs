@@ -24,8 +24,19 @@ const INDIVIDUALS_BYTES: u64 = 225 << 20;
 /// region's parts, sorted by landing key before they land.
 const POPULATION_BYTES: u64 = 275 << 20;
 
-/// Resident memory the world may take at its peak: the budgets of the steps it holds.
-const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES + MAP_BYTES + INDIVIDUALS_BYTES + POPULATION_BYTES;
+/// Resident memory the lines the population holds may take: the relationship rows, the lines' holder lists with their
+/// slack, the lines themselves, and the interned keys and terms.
+const LINES_BYTES: u64 = (849 + 216 + 96 + 108) << 20;
+
+/// Resident memory the population's indexes may take: the landing index and the agenda.
+const INDEXES_BYTES: u64 = (61 + 85) << 20;
+
+/// Resident memory the worst day's buffers and the arenas' slack may take.
+const DAY_BYTES: u64 = (600 + 214) << 20;
+
+/// Resident memory the world may take at its peak: the budgets of the stores it holds.
+const WORLD_BYTES: u64 =
+    EMPTY_WORLD_BYTES + MAP_BYTES + INDIVIDUALS_BYTES + POPULATION_BYTES + LINES_BYTES + INDEXES_BYTES + DAY_BYTES;
 const MONTHS_PER_YEAR: u16 = 12;
 /// Days after settling at whose close the save the injections load is taken.
 const INJECTION_SAVE_DAY: u16 = 30;

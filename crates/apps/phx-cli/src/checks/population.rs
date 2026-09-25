@@ -458,7 +458,9 @@ fn populations_reconcile(w: Inspector<'_>) -> Outcome {
     for (k, kd) in w.population().kinds.iter().enumerate() {
         let table = w.cell_table(k);
         for slot in table.slots() {
-            if role_counts(&kd.decl, &kd.keys.record(table.hot(slot).key_id)).iter().all(|n| *n == 0) {
+            // A kind whose members are not households of persons declares no roles, and holds no one to count.
+            let counts = role_counts(&kd.decl, &kd.keys.record(table.hot(slot).key_id));
+            if !counts.is_empty() && counts.iter().all(|n| *n == 0) {
                 return Outcome::Fail(format!("cell {} holds households of nobody", table.party(slot).get()));
             }
         }

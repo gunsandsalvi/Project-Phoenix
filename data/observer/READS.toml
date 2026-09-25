@@ -20,6 +20,7 @@ id = "cells"
 title = "cells of every population kind"
 unit = "cells"
 measure = "cells.cells"
+grows = "F-054: the cells rose on every day of the first build runs, their members steady"
 
 [[read]]
 id = "persons_gone"
