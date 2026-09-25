@@ -519,6 +519,35 @@ fn play(
     Ok(injection_save)
 }
 
+/// Each sub-step's wall time over the days it ran, in the day's order: its total, median and greatest, so a run shows
+/// where its days go.
+fn substeps_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    phx_core::SUB_STEPS
+        .iter()
+        .filter_map(|info| {
+            let mut times: Vec<u64> = w
+                .substep_records()
+                .iter()
+                .filter(|r| r.substep == info.step.ordinal())
+                .filter_map(|r| r.wall_ns)
+                .collect();
+            if times.is_empty() {
+                return None;
+            }
+            times.sort_unstable();
+            let total: u64 = times.iter().sum();
+            let median = times.get((times.len() - 1) / 2).copied();
+            Some(json!({
+                "substep": info.label,
+                "days": times.len(),
+                "total_ms": total / 1_000_000,
+                "median_ns": median,
+                "greatest_ns": times.last().copied(),
+            }))
+        })
+        .collect()
+}
+
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
@@ -576,6 +605,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "geo": geo_report(w),
         "opening": opening_report(w),
         "settlement": settlement_report(w),
+        "substeps": substeps_report(w),
         "markets": markets_report(w),
         "accounts": accounts_report(w),
         "saves": saves_report(w),
