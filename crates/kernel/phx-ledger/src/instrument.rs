@@ -9,6 +9,7 @@ use crate::terms::TermsId;
 
 /// What kind of thing an instrument is. Which families a world has, and what each family's terms carry, is declared
 /// data; generic code reads the legs.
+#[clause("REG.18")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InstrumentFamily {
     Debt,

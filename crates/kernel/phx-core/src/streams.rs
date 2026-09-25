@@ -75,7 +75,7 @@ struct Entry {
 }
 
 /// The run's streams, each keyed by its name and the one seed.
-#[clause("CHN.1", "CHN.6")]
+#[clause("CHN.1", "CHN.6", "CHN.8")]
 #[derive(Debug)]
 pub struct Streams {
     entries: Vec<Entry>,

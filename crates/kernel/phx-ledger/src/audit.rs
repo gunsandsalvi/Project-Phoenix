@@ -42,7 +42,7 @@ fn table<'a>(tables: &[&'a dyn HolderArenas], keys: HolderKeys, key: u32) -> Res
 
 /// Holdings of an instrument, summed over its holder list, against its issued amount; a holder on the list
 /// without a holding, or on a table the world does not keep, is a gap of its own.
-#[clause("REG.13")]
+#[clause("REG.13", "MON.9")]
 pub fn ownership<B: Backing>(instruments: &Instruments<B>, tables: &[&dyn HolderArenas], id: InstrumentId) -> Vec<Gap> {
     let owner = FindingOwner::Instrument(id);
     let keys = instruments.keys();

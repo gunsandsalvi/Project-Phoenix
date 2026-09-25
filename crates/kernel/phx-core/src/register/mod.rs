@@ -121,7 +121,7 @@ pub struct RoleId(pub &'static str);
 
 /// A primitive's declaration: everything its data entry must match, and the type its value is read as. Its owner is
 /// the system its identity begins with.
-#[clause("NUM.3")]
+#[clause("NUM.3", "NUM.9")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PrimDecl {
     pub id: &'static str,

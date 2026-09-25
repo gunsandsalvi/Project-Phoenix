@@ -34,7 +34,7 @@ pub struct Request {
 ///
 /// # Errors
 /// The failure, when no dealer asked quotes that side or no quote is within the client's limit.
-#[clause("MKT.5", "MKT.10", "MKT.16")]
+#[clause("MKT.5", "MKT.10", "MKT.16", "MKT.19")]
 pub fn request(req: &Request, quotes: &mut [Quote], lot: &mut Draws) -> Result<Match, FailureKind> {
     let side_of = |q: &Quote| match req.side {
         Side::Buy => q.ask,

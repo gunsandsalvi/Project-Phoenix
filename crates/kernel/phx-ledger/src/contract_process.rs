@@ -94,7 +94,7 @@ impl<B: Backing> Ledger<B> {
     /// payment missed on the row, arrears begun at the fail's due day if the row had none — and refreshes the days in
     /// arrears of every row still in arrears. A fail naming no contract row is a fail of a payment with no contract,
     /// whose party sees it and whose line has nothing to record.
-    #[clause("SET.3", "SET.16")]
+    #[clause("SET.3", "SET.16", "TIME.7")]
     pub fn contract_process(&mut self, holders: &mut dyn Holders, fails: &[Fail], today: Day) {
         for fail in fails {
             let phx_num::Missing::Present(row) = fail.row else { continue };

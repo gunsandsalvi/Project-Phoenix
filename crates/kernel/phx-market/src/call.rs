@@ -244,7 +244,7 @@ pub(crate) fn pair_net(net: &BTreeMap<PartyId, i128>, price: PriceRaw) -> Vec<Ma
 /// The call auction: one price where posted supply meets posted demand on the tick grid, chosen among the prices
 /// that clear by the operator's tie sequence; steps better than the price fill in full and those at it are rationed
 /// by the declared rule. No overlap, no bid or no offer is a failure; the market adds nothing to clear.
-#[clause("MKT.3", "MKT.10", "MKT.13", "MKT.17", "MKT.21")]
+#[clause("MKT.3", "MKT.10", "MKT.13", "MKT.17", "MKT.18", "MKT.21")]
 pub fn call(orders: &[Order], rules: CallRules<'_>, lot: &mut Draws) -> Outcome {
     let steps = |side: Side| -> Vec<(i64, i128)> {
         orders

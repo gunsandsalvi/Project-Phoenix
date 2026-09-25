@@ -2620,8 +2620,9 @@ live check passing.
 **Status**: done
 
 **Clauses**:
-- STATE: REG.1, REG.2, REG.3, REG.4, REG.5, REG.6, REG.7, REG.8, REG.9, REG.10; REP.3 *(part: lines and rows; the
-  cell side is S0.21)*.
+- STATE: REG.1, REG.2, REG.3, REG.4, REG.5, REG.8, REG.9, REG.10; REP.3 *(part: lines and rows; the cell side is
+  S0.21)*; REG.6, REG.7 *(part: the families declared; shares' classes and votes are S3.05's, fund units' terms
+  S3.07's)*.
 - INVARIANT: REG.13, REG.14, REG.15; REP.31 *(part: line sides; attachments against profiles are S0.23)*.
 - FORBID: REG.16, REG.17.
 - PRIMITIVE: REG.18.
@@ -2960,7 +2961,8 @@ on money lines and banknotes; row openings counted one-sided; the ledger's write
 - STATE: GEN.1 *(part)*, GEN.5 *(part: contracts' terms)*.
 - PROCESS: GEN.3 *(part)*, GEN.4 *(part: institutions' books)*; PTY.9 *(part: beginnings by GEN)*.
 - INVARIANT: GEN.7 *(part)*.
-- FORBID: GEN.11.
+- FORBID: GEN.11 *(part: the opening is balanced from sources, no term set by balancing; PC-91 carries it from
+  S1.01)*.
 - PRIMITIVE: GEN.12 *(part)*.
 - The opening parties of FRM, BNK and CB brought forward without behaviour (spec Part O).
 
@@ -3575,7 +3577,8 @@ million rows and found nothing. No market met, as none is declared before S1.03.
 **Status**: done
 
 **Clauses**:
-- STATE: ACC.1, ACC.2, ACC.3, ACC.4, ACC.6.
+- STATE: ACC.1, ACC.2, ACC.3, ACC.4; ACC.6 *(part: cells' pooled average cost and individuals' lots earliest first;
+  the firm's choice is S1.03's)*.
 - PROCESS: ACC.8, ACC.9; ACC.7 *(part: write-downs; provisions are S2.01)*; MKT.20 *(part: the valuer framework)*.
 - INVARIANT: ACC.10, ACC.11, ACC.12.
 - FORBID: ACC.13, ACC.14, ACC.15, ACC.16.
@@ -5304,6 +5307,7 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 
 **Clauses**:
 - STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: VAL.1–VAL.23, all of them.
+- FORBID: GEN.11 *(completes it: PC-91 refuses a primitive or opening changed after a run)*.
 - DECISION: REP.38 *(attention as its cell's continuous decision)*.
 - PROCESS: REP.21 *(completes it: attention as a continuous decision, its review cost paid)*; REP.35 *(completes it:
   the surprise that raises attention and wakes)*; REP.22 *(part: tastes over heuristics)*.
@@ -5560,7 +5564,8 @@ run it to forecast (a signature check).
 **Status**: planned
 
 **Clauses**:
-- STATE: FRM.1, FRM.2; FRM.23 *(part: cells keyed and positioned; cumulative output per way run is S6.01)*.
+- STATE: FRM.1, FRM.2; FRM.23 *(part: cells keyed and positioned; cumulative output per way run is S6.01)*; ACC.6
+  *(completes it: the firm's choice of cost flow)*.
 - DECISION: FRM.4, FRM.5, FRM.6, FRM.11; FRM.7 *(part: buying inputs; employing is S1.08)*; FRM.8 *(part: the
   production side; investing is S1.04)*; REP.34 *(part: posted prices of goods and services; wage points are S1.08,
   lenders' rate points S1.09)*.
@@ -9945,7 +9950,7 @@ syndicates of named banks.
 **Status**: planned
 
 **Clauses**:
-- STATE: EQY.1, EQY.2; PTY.7; FRM.3; ACC.5.
+- STATE: EQY.1, EQY.2; PTY.7; FRM.3; ACC.5; REG.6 *(completes it: classes, votes and preferred dividends)*.
 - DECISION: EQY.4; EQY.3 *(part: investors' own values and orders; index trackers complete it at S3.09)*; EQY.5
   *(part: votes at meetings; takeover votes complete it at S4.06)*; FRM.9 *(completes it: shares)*; FRM.10
   *(completes it: buybacks)*; BCP.4 *(completes it: shares)*; HH.7 *(part: shares and bonds held directly; funds are
@@ -10370,7 +10375,7 @@ only a number, no netting across counterparties).
 **Status**: planned
 
 **Clauses**:
-- STATE: FND.1, FND.2.
+- STATE: FND.1, FND.2; REG.7 *(completes it: fund units by the fund's terms)*.
 - DECISION: FND.3, FND.12; FND.4 *(part: managers' investing from their own views, hedge funds' long and short
   positions; their derivatives complete it at S4.02)*; HH.7 *(part: money, bond and equity funds among savings
   choices)*; BFL.7 *(completes it: a money fund among a depositor's alternatives in S2.06's `bank_choice`)*.
@@ -15977,7 +15982,7 @@ and are not mapped.
 | REP | S2.05 | 22, 24 |
 | REP | S4.06 | 29 |
 | REP | S6.05 | 18 |
-| GEN | S0.16 | 11 |
+| GEN | S1.01 | 11 |
 | GEN | S0.27 | 14 |
 | GEN | S0.25 | 6 |
 | GEN | S0.26 | 8 |
@@ -15991,9 +15996,11 @@ and are not mapped.
 | SET | S0.15 | 1, 2, 3, 4, 5, 7, 8, 9, 11, 16 |
 | SET | S0.17 | 6, 10 |
 | SET | S0.20 | 12, 13, 15, 17 |
-| REG | S0.14 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18 |
-| REG | S3.05 | 11, 12 |
-| ACC | S0.19 | 1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
+| REG | S0.14 | 1, 2, 3, 4, 5, 8, 9, 10, 13, 14, 15, 16, 17, 18 |
+| REG | S3.05 | 6, 11, 12 |
+| REG | S3.07 | 7 |
+| ACC | S0.19 | 1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
+| ACC | S1.03 | 6 |
 | ACC | S2.01 | 7 |
 | ACC | S3.05 | 5 |
 | MKT | S0.18 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21 |

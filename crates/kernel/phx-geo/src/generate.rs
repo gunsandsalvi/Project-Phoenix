@@ -71,7 +71,7 @@ pub struct Rejection {
 
 /// The accepted map: its grid and tiles, each tile's relief within it, where each tile drains and how many tiles
 /// drain through it, its zones and regions, and every attempt rejected before it.
-#[clause("GEO.1", "GEO.3", "GEO.10")]
+#[clause("GEO.1", "GEO.3", "GEO.10", "GEO.14")]
 #[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct Map {
     pub grid: Grid,

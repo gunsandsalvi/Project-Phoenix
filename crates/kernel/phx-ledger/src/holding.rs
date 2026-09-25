@@ -22,7 +22,7 @@ pub struct IndividualHolding {
 
 /// A cell's holding, 24 bytes: one pooled lot at average cost held by `count` of its members alike, so a member's
 /// quantity is the quantity over the count.
-#[clause("REG.1", "REP.8")]
+#[clause("REG.1", "REP.8", "ACC.6")]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Pod)]
 pub struct CellHolding {
@@ -157,7 +157,9 @@ pub fn lots(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId) -
     words.as_chunks::<LOT>().0.iter().map(|l| from_words(l)).collect()
 }
 
-/// Every holding of a holder with its basis, in the order of its holdings.
+/// Every holding of a holder with its basis, in the order of its holdings: the cost of the lots of the issue it
+/// holds, each cost once.
+#[clause("REG.17", "ACC.14", "ACC.15")]
 #[must_use]
 pub fn bases(arenas: &dyn HolderArenas, holder: Slot) -> Vec<(InstrumentId, i64)> {
     let lots = arenas.read(holder, ListKind::Lots);
