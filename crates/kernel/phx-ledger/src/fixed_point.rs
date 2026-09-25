@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeSet, VecDeque};
 
 use phx_core::calendar::Calendar;
 use phx_id::{Day, LineId, PartyId};
@@ -14,7 +14,7 @@ use crate::due::DueLines;
 use crate::dues::Found;
 use crate::instruction::{AccountRef, LegKind, LegRec};
 use crate::pooled::{PooledRow, RowOutcome, pooled};
-use crate::stream::{DayRecords, Payment, Record};
+use crate::stream::{DayRecords, Payment, Records};
 
 /// Stage 7b's result: the payments that fail, by line and payee, and how many times the worklist took a party.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -42,7 +42,7 @@ struct Work<'a, B: Backing> {
     day: Day,
     calendar: &'a Calendar,
     found: &'a mut Found,
-    records: &'a mut BTreeMap<PartyId, Record>,
+    records: &'a mut Records,
     failed: BTreeSet<(LineId, PartyId)>,
     by_bank: BTreeSet<(LineId, PartyId)>,
     queue: VecDeque<PartyId>,
@@ -76,7 +76,7 @@ impl<B: Backing> Work<'_, B> {
     /// sequence of the line's stream, and each newly drawn claimant's credit taken off the accounts it reaches.
     #[clause("REP.23", "REP.31")]
     fn lose(&mut self, line: LineId, members: u32, ccy: Ccy) {
-        let Some(day) = self.found.cleared.get(&line) else {
+        let Some(day) = self.found.cleared.get(line) else {
             violation!(clause = "REP.23", "a cleared payment failed on a line never reckoned", line = line.get());
         };
         let claimants: Vec<(PartyId, u32, u32)> = if day.losers.is_none() {
@@ -84,12 +84,12 @@ impl<B: Backing> Work<'_, B> {
         } else {
             Vec::new()
         };
-        let draws = (self.draws_of)(line);
-        let Some(day) = self.found.cleared.get_mut(&line) else { return };
+        let draws_of = self.draws_of;
+        let Some(day) = self.found.cleared.get_mut(line) else { return };
         day.failed += u64::from(members);
         let failed = day.failed;
         let per = day.per_member;
-        let more = day.losers.get_or_insert_with(|| Losers::new(&claimants, draws)).draw_to(failed);
+        let more = day.losers.get_or_insert_with(|| Losers::new(&claimants, draws_of(line))).draw_to(failed);
         for (claimant, k) in more {
             let (legs, _) = self.books.route(claimant, -times(per, k), ccy, self.found);
             for party in self.books.book(self.records, &legs, -1) {
@@ -102,7 +102,7 @@ impl<B: Backing> Work<'_, B> {
     /// on, a prefix of its payment order; if what it pays for others through its account still exceeds its funds, it
     /// is a bank that cannot cover its net, and its customers' payments through it are removed.
     fn visit(&mut self, party: PartyId) {
-        let Some(rec) = self.records.get(&party).copied() else { return };
+        let Some(rec) = self.records.get(party).copied() else { return };
         if rec.standing() >= 0 {
             return;
         }
@@ -129,7 +129,7 @@ impl<B: Backing> Work<'_, B> {
                 self.fail(p);
             }
         }
-        if self.records.get(&party).is_some_and(|r| r.standing() < 0) {
+        if self.records.get(party).is_some_and(|r| r.standing() < 0) {
             self.remove_customers(party, rec.account);
         }
     }
@@ -178,7 +178,8 @@ impl<B: Backing> Books<B> {
         found: &mut Found,
         draws_of: &dyn Fn(LineId) -> Draws,
     ) -> FixedPoint {
-        let short: Vec<PartyId> = day.records.iter().filter(|(_, r)| r.standing() < 0).map(|(p, _)| *p).collect();
+        let short: Vec<PartyId> =
+            day.records.sorted().into_iter().filter(|(_, r)| r.standing() < 0).map(|(p, _)| p).collect();
         let mut work = Work {
             books: self,
             due,

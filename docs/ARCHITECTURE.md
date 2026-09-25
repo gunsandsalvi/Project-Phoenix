@@ -580,10 +580,13 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
   by the pooled-flow rule (§7.5), with the first failing row recorded. Banks' nets are sums over parties. Nothing is
   written per leg and no payee reduction is needed. For a due line with no retail holder list, the (holder, row) pairs
   met are gathered into the day buffers, which 7b and 7d read in its place. As built at Stage 0: the stream keeps a
-  record per party and the claimants per line in `BTreeMap`s, inserted row by row; the pooled-flow rule is given each
-  agent as one payer, every row reaching all its twins, so no row splits an agent's funds (F-065); and no gather of
-  unlisted sides is built (F-058). The stream and 7c's gather each compute every payment's route, and a due record is
-  kept per payment for the accounts (F-057).
+  record per party, and the day's lookups (each line's reckoning and ower, each party's account), in the kernel's
+  fixed-seed map, read whole only in key order, and the claimants per line in `BTreeMap`s; the pooled-flow rule is
+  given each agent as one payer, every row reaching all its twins, so no row splits an agent's funds (F-065); and no
+  gather of unlisted sides is built (F-058). The stream keeps the day's payments in its order (about 157 MB on the
+  twins payday of 2.8 M payments), and 7c's gather reads them, reckoning again only a cleared line's claimant credit
+  after its losers; both compute each payment's route, 7c nets it in the fixed-seed map and sorts the nets once, and
+  a due record is kept per payment for the accounts (F-057).
 - **Reckoning**: a due line's dues are reckoned on one side's rows, each row its own payment with one counterparty.
   A line of two holders is reckoned on its claimant's row; a line one party holds a side of (a bank's loans to many
   firms, a scheme's members) is reckoned on the other side's rows, each paying or paid by that party. A row's due is

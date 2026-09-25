@@ -44,6 +44,7 @@ struct Class {
     unit: u32,
     parties: Vec<PartyId>,
     tree: Vec<u64>,
+    held: Vec<u64>,
     taken: Vec<u32>,
     left: u64,
 }
@@ -65,6 +66,7 @@ impl Class {
             unit,
             parties: rows.iter().map(|(p, _)| *p).collect(),
             tree,
+            held: rows.iter().map(|(_, c)| u64::from(*c)).collect(),
             taken: vec![0; n],
             left: rows.iter().map(|(_, c)| u64::from(*c)).sum(),
         }
@@ -88,26 +90,12 @@ impl Class {
         at
     }
 
-    /// The members a holder has left.
-    fn holds(&self, at: usize) -> u64 {
-        let (mut j, mut sum) = (at + 1, 0_u64);
-        while j > 0 {
-            sum += self.tree.get(j).copied().unwrap_or(0);
-            j -= j.isolate_lowest_one();
-        }
-        let mut k = at;
-        while k > 0 {
-            sum -= self.tree.get(k).copied().unwrap_or(0);
-            k -= k.isolate_lowest_one();
-        }
-        sum
-    }
-
     /// A holder's whole unit taken; an agent holding less than its multiplicity is a state that cannot exist.
     fn take(&mut self, at: usize) {
-        if self.holds(at) < u64::from(self.unit) {
+        let Some(held) = self.held.get_mut(at).filter(|h| **h >= u64::from(self.unit)) else {
             violation!(clause = "REP.9", "an agent's row holding less than its multiplicity", unit = self.unit);
-        }
+        };
+        *held -= u64::from(self.unit);
         let n = self.parties.len();
         let mut j = at + 1;
         while j <= n {

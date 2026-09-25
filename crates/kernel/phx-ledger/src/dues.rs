@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use phx_core::KernelMap;
 use phx_id::{LineId, PartyId};
 use phx_macros::clause;
 use phx_num::{Ccy, Missing, violation};
@@ -90,11 +91,20 @@ impl ClearedDay {
 /// in each currency, and each cleared line's day.
 #[derive(Debug, Default)]
 pub(crate) struct Found {
-    owers: BTreeMap<LineId, PartyId>,
-    reckoned: BTreeMap<LineId, Reckoning>,
-    accounts: BTreeMap<(PartyId, u8), Missing<LineId>>,
-    issues: BTreeMap<(PartyId, u8), bool>,
-    pub cleared: BTreeMap<LineId, ClearedDay>,
+    owers: KernelMap<LineId, PartyId>,
+    reckoned: KernelMap<LineId, Reckoning>,
+    accounts: KernelMap<u64, Missing<LineId>>,
+    issues: KernelMap<u64, bool>,
+    pub cleared: KernelMap<LineId, ClearedDay>,
+}
+
+/// A party's account in a currency as one key: the party's identity above the currency's index.
+fn account_key(party: PartyId, ccy: Ccy) -> u64 {
+    let id = party.get();
+    if id >> (u64::BITS - u8::BITS) != 0 {
+        phx_num::capacity_exceeded!("a party's identity under a currency", u64::MAX >> u8::BITS, id);
+    }
+    (id << u8::BITS) | u64::from(ccy.index())
 }
 
 pub(crate) fn money_leg(party: PartyId, line: LineId, side: Side, qty: i64, ccy: Ccy) -> LegRec {
@@ -152,7 +162,7 @@ impl<B: Backing> Books<B> {
     /// both sides, whose pairing is not recorded, cleared. A side that keeps no list is taken to hold many.
     #[clause("REP.23")]
     pub(crate) fn reckoning(&self, line: LineId, reader: PartyId, side: Side, found: &mut Found) -> Reckoning {
-        if let Some(r) = found.reckoned.get(&line) {
+        if let Some(r) = found.reckoned.get(line) {
             return *r;
         }
         let holders: Vec<PartyId> = self.line_holders(line).collect();
@@ -186,14 +196,14 @@ impl<B: Backing> Books<B> {
                 _ => Reckoning::Cleared,
             }
         };
-        found.reckoned.insert(line, r);
+        let _ = found.reckoned.insert(line, r);
         r
     }
 
     /// The one party that owes a line: its liability side's holder. On a line of two holders it is the one that is
     /// not its claimant, found without reading either's rows.
     pub(crate) fn owed_by(&self, line: LineId, claimant: PartyId, found: &mut Found) -> PartyId {
-        if let Some(p) = found.owers.get(&line) {
+        if let Some(p) = found.owers.get(line) {
             return *p;
         }
         let holders: Vec<PartyId> = self.line_holders(line).collect();
@@ -205,13 +215,13 @@ impl<B: Backing> Books<B> {
         let [p] = owers.as_slice() else {
             violation!(clause = "REG.8", "a line owed by other than one party", line = line.get(), owers = owers.len());
         };
-        found.owers.insert(line, *p);
+        let _ = found.owers.insert(line, *p);
         *p
     }
 
     /// The money a party pays from and is paid into in a currency: its one row on the holder's side of a money line.
     pub(crate) fn money_row(&self, party: PartyId, ccy: Ccy, found: &mut Found) -> Missing<LineId> {
-        if let Some(m) = found.accounts.get(&(party, ccy.index())) {
+        if let Some(m) = found.accounts.get(account_key(party, ccy)) {
             return *m;
         }
         let lines = &self.ledger.lines;
@@ -232,7 +242,7 @@ impl<B: Backing> Books<B> {
                 party = party.get()
             ),
         };
-        found.accounts.insert((party, ccy.index()), account);
+        let _ = found.accounts.insert(account_key(party, ccy), account);
         account
     }
 
@@ -243,14 +253,14 @@ impl<B: Backing> Books<B> {
         if let Missing::Present(_) = self.money_row(party, ccy, found) {
             return true;
         }
-        if let Some(i) = found.issues.get(&(party, ccy.index())) {
+        if let Some(i) = found.issues.get(account_key(party, ccy)) {
             return *i;
         }
         let lines = &self.ledger.lines;
         let issues = self.rows_of(party).into_iter().any(|(line, side)| {
             side == Side::Liability && lines.is_money(line) && self.ledger.terms.get(lines.terms(line)).ccy == ccy
         });
-        found.issues.insert((party, ccy.index()), issues);
+        let _ = found.issues.insert(account_key(party, ccy), issues);
         issues
     }
 

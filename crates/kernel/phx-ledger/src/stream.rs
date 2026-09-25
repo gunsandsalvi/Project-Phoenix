@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use phx_core::KernelMap;
 use phx_core::calendar::Calendar;
 use phx_id::{Day, LineId, PartyId, Slot};
 use phx_macros::clause;
@@ -62,13 +63,18 @@ impl Record {
     }
 }
 
+/// The day's records by party, looked up leg by leg and read whole only in party order.
+pub type Records = KernelMap<PartyId, Record>;
+
 /// Stage 7a's result: one record per party with an account the day's payments touch, the holders whose runs were
-/// scanned, and the day's counts: heads read, rows of scanned segments read, the rows among them due today, the
-/// payments they make and those held pending. Nothing is kept per payment.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+/// scanned, the day's payments in the stream's order, so 7c gathers them without reckoning them again, and the day's
+/// counts: heads read, rows of scanned segments read, the rows among them due today, the payments they make and those
+/// held pending.
+#[derive(Debug, Default)]
 pub struct DayRecords {
-    pub records: BTreeMap<PartyId, Record>,
+    pub records: Records,
     pub scanned: Vec<(u16, Slot)>,
+    pub made: Vec<Payment>,
     pub heads_read: u64,
     pub rows_scanned: u64,
     pub rows_due: u64,
@@ -214,18 +220,19 @@ impl<B: Backing> Books<B> {
     ) -> Option<Payment> {
         let line = row.row.line;
         let moneyless = !self.holds_money(holder, ccy, found);
-        let top = match (found.cleared.get(&line), moneyless) {
+        let top = match (found.cleared.get(line), moneyless) {
             (Some(day), true) => day.top,
             (None, true) => self.line_top(line, ccy, found),
             (_, false) => self.top_of(holder, ccy, found),
         };
-        let day = found.cleared.entry(line).or_insert(ClearedDay {
-            top,
-            per_member: per,
-            claimants: BTreeMap::new(),
-            failed: 0,
-            losers: None,
-        });
+        if found.cleared.get(line).is_none() {
+            let _ = found
+                .cleared
+                .insert(line, ClearedDay { top, per_member: per, claimants: BTreeMap::new(), failed: 0, losers: None });
+        }
+        let Some(day) = found.cleared.get_mut(line) else {
+            violation!(clause = "REP.23", "a cleared line's day not kept", line = line.get());
+        };
         if day.top != top || day.per_member != per {
             violation!(
                 clause = "REP.23",
@@ -341,11 +348,16 @@ impl<B: Backing> Books<B> {
 
     /// Adds or takes away a payment's effects on the accounts it touches: a leg drawing on an account is a debit, a
     /// leg paying into one a credit; an issuer's side of its own money is no account and has no record.
-    pub(crate) fn book(&self, records: &mut BTreeMap<PartyId, Record>, legs: &[LegRec], sign: i128) -> Vec<PartyId> {
+    pub(crate) fn book(&self, records: &mut Records, legs: &[LegRec], sign: i128) -> Vec<PartyId> {
         let mut touched = Vec::new();
         for leg in legs.iter().filter(|l| matches!(l.kind, LegKind::Money)) {
             let AccountRef::Line { line, side: Side::Asset } = leg.account else { continue };
-            let rec = records.entry(leg.party).or_insert_with(|| self.record_of(leg.party, line));
+            if records.get(leg.party).is_none() {
+                let _ = records.insert(leg.party, self.record_of(leg.party, line));
+            }
+            let Some(rec) = records.get_mut(leg.party) else {
+                violation!(clause = "MON.5", "a party's record not kept", party = leg.party.get());
+            };
             if rec.account != line {
                 violation!(clause = "MON.5", "a party paying from two accounts in one day", party = leg.party.get());
             }
@@ -386,6 +398,7 @@ impl<B: Backing> Books<B> {
                 for row in &rows {
                     let Some(p) = self.payment(holder, row, day, calendar, found) else { continue };
                     out.payments += 1;
+                    out.made.push(p);
                     if p.moneyless {
                         out.moneyless.insert(holder);
                         continue;

@@ -20,7 +20,7 @@ use crate::fixed_point::FixedPoint;
 use crate::instruction::{AccountRef, Denom, DueRow, Instruction, LegKind, LegRec, RowOp};
 use crate::pending::Closed;
 use crate::runs;
-use crate::stream::{DayRecords, Payment, Record};
+use crate::stream::{DayRecords, Payment, Record, Records};
 
 /// What a day's settlement came to, for the published measure and the live checks: the dues streamed and settled,
 /// the fixed point's work, the gross paid, the bytes the day's buffers held, and the breaches found by recomputing
@@ -63,7 +63,28 @@ pub struct DaySettlement {
 
 /// A net leg's key: the line and side it lies on, its party, and whether it moves the contract's rows rather than
 /// money. Lines come first, so a line's legs are adjacent and each line is applied as its legs are read.
-type NetKey = (LineId, PartyId, Side, bool);
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct NetKey {
+    line: LineId,
+    party: PartyId,
+    side: Side,
+    row: bool,
+}
+
+impl core::hash::Hash for NetKey {
+    fn hash<H: core::hash::Hasher>(&self, h: &mut H) {
+        self.line.hash(h);
+        self.party.hash(h);
+        (self.side == Side::Asset).hash(h);
+        self.row.hash(h);
+    }
+}
+
+impl phx_core::MapKey for NetKey {
+    fn key64(self) -> u64 {
+        (u64::from(self.line.get()) << u32::BITS) ^ self.party.get()
+    }
+}
 
 /// What the day's dues were due on: the lines, the day and the calendar that dates them.
 type Today<'a> = (&'a DueLines, Day, &'a Calendar);
@@ -73,8 +94,8 @@ type Today<'a> = (&'a DueLines, Day, &'a Calendar);
 /// the payers that failed.
 #[derive(Default)]
 struct Gathered {
-    nets: BTreeMap<NetKey, i128>,
-    given: BTreeMap<PartyId, Record>,
+    nets: Vec<(NetKey, i128)>,
+    given: Records,
     crossing: BTreeMap<(PartyId, u8), i128>,
     failed_payers: BTreeSet<PartyId>,
     settled: u64,
@@ -87,6 +108,20 @@ fn bytes<T>(n: usize) -> u64 {
 
 fn count(n: usize) -> u64 {
     phx_rand::float::len_u64(n)
+}
+
+/// A payment the stream made as the fixed point left it: a cleared line's claimant is paid for its members not
+/// drawn to lose, and a claimant all of whose members were drawn is paid nothing.
+fn after_losers(p: &Payment, found: &Found) -> Option<Payment> {
+    if !(p.cleared && p.payee == p.reckoned_on) {
+        return Some(*p);
+    }
+    let Some(day) = found.cleared.get(p.line) else {
+        violation!(clause = "REP.23", "a cleared payment on a line never reckoned", line = p.line.get());
+    };
+    let members = p.members - day.lost(p.reckoned_on);
+    let amount = crate::cleared::times(day.per_member, members);
+    (amount != 0).then_some(Payment { amount, members, ..*p })
 }
 
 impl<B: Backing> Books<B> {
@@ -157,8 +192,8 @@ impl<B: Backing> Books<B> {
         });
     }
 
-    /// Each scanned holder's due rows read again, in the stream's order: a payment through a closed issuer is left for
-    /// the pending pass, one the fixed point failed is recorded, and one that settles adds its legs to the nets.
+    /// The day's payments in the stream's order: one through a closed issuer is left for the pending pass, one the
+    /// fixed point failed is recorded, and one that settles adds its legs to the nets.
     fn gather(
         &mut self,
         streamed: &DayRecords,
@@ -167,51 +202,56 @@ impl<B: Backing> Books<B> {
         closed: &Closed,
         found: &mut Found,
     ) -> Gathered {
-        let (due, day, calendar) = today;
+        let (_, day, _) = today;
         let mut g = Gathered::default();
-        for &(place, slot) in &streamed.scanned {
-            let holder = self.parties.holder(place).party(slot);
-            for row in self.due_rows_of(holder, due) {
-                let Some(p) = self.payment(holder, &row, day, calendar, found) else { continue };
-                let route = self.effects(&p, found);
-                if closed.holds(p.payer, &crate::stream::issuers(&route)) {
-                    self.record_due(&p, DueOutcome::Pending);
-                    continue;
+        let mut nets: phx_core::KernelMap<NetKey, i128> = phx_core::KernelMap::new();
+        for made in &streamed.made {
+            let Some(p) = after_losers(made, found) else { continue };
+            let route = self.effects(&p, found);
+            if closed.holds(p.payer, &crate::stream::issuers(&route)) {
+                self.record_due(&p, DueOutcome::Pending);
+                continue;
+            }
+            if fixed.failed.contains(&p.key()) {
+                g.failed += 1;
+                if !fixed.by_bank.contains(&p.key()) && !p.moneyless {
+                    g.failed_payers.insert(p.payer);
                 }
-                if fixed.failed.contains(&p.key()) {
-                    g.failed += 1;
-                    if !fixed.by_bank.contains(&p.key()) && !p.moneyless {
-                        g.failed_payers.insert(p.payer);
-                    }
-                    // A cleared line's claimant with no money loses its due against the top issuer, which owes no row.
-                    if !(p.cleared && p.payee == p.reckoned_on && p.moneyless) {
-                        let cause = if p.moneyless { FailCause::NoMoney } else { FailCause::Funds };
-                        self.fail_payment(&p, day, cause);
-                    }
-                    self.record_due(&p, DueOutcome::Failed);
-                    continue;
+                // A cleared line's claimant with no money loses its due against the top issuer, which owes no row.
+                if !(p.cleared && p.payee == p.reckoned_on && p.moneyless) {
+                    let cause = if p.moneyless { FailCause::NoMoney } else { FailCause::Funds };
+                    self.fail_payment(&p, day, cause);
                 }
-                g.settled += 1;
-                self.record_due(&p, DueOutcome::Settled);
-                let _ = self.book(&mut g.given, &route, 1);
-                let (from, to) = (self.settles_at(p.payer, p.ccy, found), self.settles_at(p.payee, p.ccy, found));
-                if from != to {
-                    *g.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
-                    *g.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
-                }
-                for leg in route {
-                    let AccountRef::Line { line, side } = leg.account else {
-                        violation!(clause = "SET.1", "a payment's leg on no line", party = leg.party.get());
-                    };
-                    let is_row = matches!(leg.kind, LegKind::Row(_));
-                    *g.nets.entry((line, leg.party, side, is_row)).or_insert(0) += i128::from(leg.qty);
-                    if !is_row && side == Side::Asset && self.ledger.lines.is_reserves(line) {
-                        let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
-                        let _ = g.crossing.entry((leg.party, ccy.index())).or_insert(0);
+                self.record_due(&p, DueOutcome::Failed);
+                continue;
+            }
+            g.settled += 1;
+            self.record_due(&p, DueOutcome::Settled);
+            let _ = self.book(&mut g.given, &route, 1);
+            let (from, to) = (self.settles_at(p.payer, p.ccy, found), self.settles_at(p.payee, p.ccy, found));
+            if from != to {
+                *g.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
+                *g.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
+            }
+            for leg in route {
+                let AccountRef::Line { line, side } = leg.account else {
+                    violation!(clause = "SET.1", "a payment's leg on no line", party = leg.party.get());
+                };
+                let is_row = matches!(leg.kind, LegKind::Row(_));
+                let key = NetKey { line, party: leg.party, side, row: is_row };
+                match nets.get_mut(key) {
+                    Some(q) => *q += i128::from(leg.qty),
+                    None => {
+                        let _ = nets.insert(key, i128::from(leg.qty));
                     }
+                }
+                if !is_row && side == Side::Asset && self.ledger.lines.is_reserves(line) {
+                    let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
+                    let _ = g.crossing.entry((leg.party, ccy.index())).or_insert(0);
                 }
             }
         }
+        g.nets = nets.drain_sorted();
         g
     }
 
@@ -221,12 +261,12 @@ impl<B: Backing> Books<B> {
     #[clause("REP.23", "ACC.1")]
     fn record_lost(&mut self, found: &Found) -> (u64, u64) {
         let (mut members, mut past) = (0_u64, 0_u64);
-        for (line, c) in &found.cleared {
+        for (line, c) in found.cleared.sorted() {
             let Some(losers) = &c.losers else { continue };
-            let ccy = self.ledger.terms.get(self.ledger.lines.terms(*line)).ccy;
+            let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
             for (claimant, k) in losers.all_lost() {
                 self.ledger.record_due(DueRec {
-                    line: *line,
+                    line,
                     payer: c.top,
                     payee: claimant,
                     interest: phx_num::Money::new(crate::cleared::times(c.per_member, k), ccy),
@@ -241,10 +281,11 @@ impl<B: Backing> Books<B> {
     }
 
     /// The nets applied, one instruction per line as its legs are read in order, so no batch of legs is held.
-    fn apply_nets(&mut self, nets: &BTreeMap<NetKey, i128>, day: Day, audit: &mut dyn AuditStream) {
+    fn apply_nets(&mut self, nets: &[(NetKey, i128)], day: Day, audit: &mut dyn AuditStream) {
         let mut legs: Vec<LegRec> = Vec::new();
         let mut entries = nets.iter().peekable();
-        while let Some((&(line, party, side, is_row), q)) = entries.next() {
+        while let Some((NetKey { line, party, side, row: is_row }, q)) = entries.next() {
+            let (line, party, side, is_row) = (*line, *party, *side, *is_row);
             if *q != 0 {
                 let Ok(qty) = i64::try_from(*q) else {
                     phx_num::capacity_exceeded!("a day's net on one account", i64::MAX, 0);
@@ -259,7 +300,7 @@ impl<B: Backing> Books<B> {
                     kind,
                 });
             }
-            if entries.peek().is_some_and(|(k, _)| k.0 == line) || legs.is_empty() {
+            if entries.peek().is_some_and(|(k, _)| k.line == line) || legs.is_empty() {
                 continue;
             }
             let rows = legs.iter().any(|l| matches!(l.kind, LegKind::Row(_)));
@@ -304,10 +345,11 @@ impl<B: Backing> Books<B> {
         let (runs_read, runs_broken) = self.runs_broken(due, day, &scanned);
         let g = self.gather(&streamed, &fixed, (due, day, calendar), closed, &mut found);
         let (lost, lost_past_failed) = self.record_lost(&found);
-        let unsound = count(g.given.values().filter(|r| r.standing() < 0).count());
-        let (ring_parties, ring_value) = g
-            .given
-            .values()
+        let given = g.given.sorted();
+        let unsound = count(given.iter().filter(|(_, r)| r.standing() < 0).count());
+        let (ring_parties, ring_value) = given
+            .iter()
+            .map(|(_, r)| *r)
             .filter(|r| r.debit > r.funds)
             .fold((0_u64, 0_i128), |(n, v), r| (n + 1, v + r.debit - r.funds));
         let not_maximal = self.not_maximal(&g.failed_payers, &fixed, &g.given, (due, day, calendar), &mut found);
@@ -324,12 +366,8 @@ impl<B: Backing> Books<B> {
         let nets_missed = count(
             g.nets
                 .iter()
-                .filter(|(k, q)| {
-                    !k.3 && after
-                        .get(&(k.0, k.1, k.2))
-                        .zip(before.get(&(k.0, k.1, k.2)))
-                        .is_none_or(|(a, b)| a - b != **q)
-                })
+                .zip(before.iter().zip(&after))
+                .filter(|((k, q), (b, a))| !k.row && a.zip(**b).is_none_or(|(a, b)| a - b != *q))
                 .count(),
         );
         let reserves_missed = count(
@@ -379,7 +417,7 @@ impl<B: Backing> Books<B> {
         &self,
         payers: &BTreeSet<PartyId>,
         fixed: &FixedPoint,
-        given: &BTreeMap<PartyId, Record>,
+        given: &Records,
         (due, day, calendar): Today<'_>,
         found: &mut Found,
     ) -> u64 {
@@ -391,7 +429,7 @@ impl<B: Backing> Books<B> {
             let Some(p) = first else { return false };
             let legs = self.effects(&p, found);
             let Missing::Present(account) = self.money_row(payer, p.ccy, found) else { return false };
-            let rec = given.get(&payer).copied().unwrap_or_else(|| self.record_of(payer, account));
+            let rec = given.get(payer).copied().unwrap_or_else(|| self.record_of(payer, account));
             rec.standing() < crate::fixed_point::draw(&legs, payer, rec.account)
         };
         count(payers.iter().filter(|p| !short(**p, found)).count())
@@ -436,19 +474,20 @@ impl<B: Backing> Books<B> {
     }
 
     /// The balances of the money accounts a day's nets move, read before or after they apply.
-    fn balances(&self, nets: &BTreeMap<NetKey, i128>) -> BTreeMap<(LineId, PartyId, Side), i128> {
-        let mut out = BTreeMap::new();
-        for (line, party, side, is_row) in nets.keys() {
-            if *is_row {
-                continue;
-            }
-            let (place, slot) = self.parties.row(*party);
-            let row =
-                crate::rows::iter(self.parties.holder(place), slot).find(|r| r.row.line == *line && r.side() == *side);
-            if let Some(Missing::Present(b)) = row.map(|r| r.optional.balance) {
-                out.insert((*line, *party, *side), i128::from(b));
-            }
-        }
-        out
+    fn balances(&self, nets: &[(NetKey, i128)]) -> Vec<Option<i128>> {
+        nets.iter()
+            .map(|(k, _)| {
+                if k.row {
+                    return None;
+                }
+                let (place, slot) = self.parties.row(k.party);
+                let row = crate::rows::iter(self.parties.holder(place), slot)
+                    .find(|r| r.row.line == k.line && r.side() == k.side);
+                match row.map(|r| r.optional.balance) {
+                    Some(Missing::Present(b)) => Some(i128::from(b)),
+                    _ => None,
+                }
+            })
+            .collect()
     }
 }
