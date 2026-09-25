@@ -4,6 +4,7 @@ pub mod ledger;
 pub mod markets;
 pub mod observer;
 pub mod opening;
+pub mod outlooks;
 pub mod population;
 pub mod saves;
 pub mod stage0;
@@ -136,4 +137,10 @@ pub const CHECKS: &[Check] = &[
     observer::LC_0_59,
     observer::LC_0_60,
     ledger::LC_0_61,
+    outlooks::LC_1_01,
+    outlooks::LC_1_02,
+    outlooks::LC_1_03,
+    outlooks::LC_1_04,
+    outlooks::LC_1_43,
+    outlooks::LC_1_44,
 ];

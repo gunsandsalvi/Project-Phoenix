@@ -5427,7 +5427,8 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 | `src/attention.rs` | attention from stakes and review cost (Reis, 2006): intensity and daily probability |
 | `src/heuristic.rs` | `trait Heuristic`, sealed, so no crate but `phx-val` can implement one (PC-33 is a compile-level refusal) |
 | `data/observer/READS.toml` | extended with Stage 1's macro reads at the start of this step, frozen before S1.16's gate run |
-| `data/shared/VAL.toml` | memory and switching-intensity type sets (NUM.4); heuristic parameters (λ, γ, κ) per memory type; attention sensitivity per type; the menu listed in `SHAPES.toml` with its sources. Patience and risk aversion are HH's and management's primitives (one register entry each), passed to the value methods as arguments |
+| `data/shared/VAL.toml` | memory and switching-intensity type sets (NUM.4): a memory type is a type of the adaptive gain λ's distribution and a switching type one of β's, each cut into a RESOLUTION count; γ, κ, the experience exponent θ and the performance record's memory are one value each, as the experiments measure them, until a source measures their spread; attention sensitivity; the number of heuristics tracked (a standing SHAPE). Patience and risk aversion are HH's and management's primitives (one register entry each), passed to the value methods as arguments |
+| `data/shared/SHAPES.toml` | the rule forms, `[[form]]` entries of the register with reason and source (§2.21): the heuristic menu, experience weighting, switching, attention and the value methods |
 
 `phx-val` declares no positions and no decision points: it is pure functions and the public-series outlooks. The
 positions that carry own outlooks, stance and attention, and the stance review decision point, are declared by the
@@ -5464,7 +5465,8 @@ systems whose parties hold them — `sys-hh` for households (S1.12) and `sys-frm
 - **Own variables** (VAL.23): an outlook of a party's own income, sales or job is its position (REP.20), updated at
   its visits from its own receipts by its current heuristic, and joined at landing only within its step.
 - **Switching** (VAL.7):
-  - Performance per (method, series) is the exponentially weighted squared error at the party's memory.
+  - Performance per (method, series) is the exponentially weighted squared error, in the method's widths so that β
+    reads alike for every series, at the party's memory.
   - An individual weights heuristics by `exp(−β·perf_h) / Σ exp(−β·perf_j)`, with β its switching intensity.
   - A member of a cell holds one **stance**, a key attribute. On a stance review occasion (a decision kind with its
     own schedule, S0.22), the count choosing each heuristic is a multinomial with those probabilities and each
@@ -5541,7 +5543,8 @@ systems whose parties hold them — `sys-hh` for households (S1.12) and `sys-frm
   when a year's mean closes.
 - Own outlooks and attention are updated at visits (inside the visit's unit cost; the review's prototype measured the
   visit's arithmetic, ten attention intensities and the spending rule, at 96 ns on one x86 core).
-- Counters, ratcheted: `phx_val.methods_in_use`, `phx_val.surprise_wakes`, `phx_val.public_surprise_records`.
+- Counters, ratcheted from S1.12, when outlooks are first formed in the world: `phx_val.methods_in_use`,
+  `phx_val.surprise_wakes`, `phx_val.public_surprise_records`.
 
 **Guards**: PC-90 and PC-91 are registered here (rules in S7.01's design). PC-33: `Heuristic` is sealed in `phx-val`,
 so no other crate implements one (compile-level); and no function of `phx-val` takes the world or a table, so none can
