@@ -50,7 +50,7 @@ pub struct QueuedIntent {
     pub words: Vec<i64>,
 }
 
-/// The player's party, an individual from the start, and whether the rule decides for it on a day it queued nothing.
+/// The player's party, an agent of one from the start, and whether the rule decides for it on a day it queued nothing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Player {
     pub party: PartyId,
@@ -58,7 +58,7 @@ pub struct Player {
 }
 
 /// The player, once seated at the opening, and its intents for the turn, taken as their decision points come due.
-#[clause("OBS.4", "REP.2")]
+#[clause("OBS.4", "REP.1")]
 #[derive(Debug, phx_macros::Saved)]
 pub struct PlayerQueue {
     player: Missing<Player>,

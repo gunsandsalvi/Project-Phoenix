@@ -610,8 +610,9 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
   when both its sides are listed. The claimant rows the losers are drawn from are those the day's stream read, since
   an unlisted side's holders are found only by reading their rows. For
   the accounts the top issuer stands as every cleared payment's counterparty: it is owed the failed payers' dues and
-  owes the drawn contracts theirs, recorded as failed dues, so its receivables and payables on the line net to nothing
-  (`DaySettlement::lost` counts the contracts drawn). A short bank's customers lose their payments through it, but a
+  owes the drawn contracts theirs, recorded as failed dues, so its receivables and payables on the line net to what
+  the contracts drawn past the failed count were owed, which it holds and owes them (REP.23;
+  `DaySettlement::lost` counts the contracts drawn, `lost_past_failed` those past the failed count). A short bank's customers lose their payments through it, but a
   cleared line's credits into it stand, since they only add to its reserves. A cleared payment through a closed bank
   waits for the resolution `sys-sup` brings (S2.08), and stops the run until then.
 - **A party with no money**: a payment whose payer or payee holds no money in its currency — no account, and none it
@@ -2075,7 +2076,8 @@ A rule changes only with its reason recorded in §18.
       full population as agents of multiplicity _k_, or a **small world**, one _k_-th of it as agents of multiplicity
       one, set by `REP.multiplicity` and `REP.population_divisor`, twins by default (§7.6);
     - lines still record many-party relationships as counts, an agent's count its multiplicity times its twin's
-      contracts (§7.5); individuals are the institutions, the parties ranked at the opening and the player's household;
+      contracts (§7.5); individuals are the institutions and the parties ranked at the opening, and the player's household is an
+      agent of multiplicity one;
     - the factor is the representation's one valve (N8.5, §7.9); §13 keeps its estimates, with the work only cells
       needed marked retired, until the first measurements replace them.
 

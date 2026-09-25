@@ -457,9 +457,9 @@ is a party with a permanent identity.
   an **estate**. Each has an identity that is never reused.
 - **PTY.2 STATE** — **The world is real-sized**: hundreds of millions of people and millions of small firms
   across its countries, or one declared share of them in a small world (REP.40). Every party is either an
-  **individual** or an **agent** of its kind's population (REP). Institutions, issuers, every firm or household
-  within its rank at the opening and the player's own are individuals; the rest of the households and small firms
-  are agents. An agent is a named party whose multiplicity is the exact count of identical real parties it is.
+  **individual** or an **agent** of its kind's population (REP). Institutions, issuers and every firm or household
+  within its rank at the opening are individuals; the rest of the households and small firms, the player's own among
+  them, are agents. An agent is a named party whose multiplicity is the exact count of identical real parties it is.
 - **PTY.3 STATE** — A **person** has an age, a household, a region of residence, skills, a health state and a
   labour-market state. A **household** is one or more persons who share a budget and a dwelling; it is the
   unit that owns, consumes, saves and borrows. Legal ownership sits with the household; labour, age and
@@ -763,8 +763,7 @@ The work of a day follows the number of agents something happens to, not the num
   - every institution and issuer, and every party with a public instrument (a listed share, a bond, a rating);
   - the **top-ranked** parties of each kind by size (employees, turnover, net worth) at the opening, down to a
     declared **rank**. The largest parties move aggregates on their own. A rank, unlike a size in money, keeps the
-    number of individuals bounded and does not drift with the price level;
-  - the player's own household or firm (OBS.4).
+    number of individuals bounded and does not drift with the price level.
 
   An individual's multiplicity is one.
 - **REP.40 STATE** — **The representation.** A build holds its world in one of two representations, with one
@@ -858,8 +857,11 @@ The work of a day follows the number of agents something happens to, not the num
     given (the principle of deferred decisions). Nothing drawn is contradicted afterwards.
   - A party drawn on an agent's side is drawn whole: its twins' contracts leave, or lose, together (REP.1). Contracts
     leaving are drawn like with like: among the other side's parties of the leaving party's multiplicity while they
-    hold what is left, and otherwise among those whose multiplicity fits in what is left to draw; a cleared line's
-    losers are drawn until at least the failed count is reached.
+    hold what is left, and otherwise among those whose multiplicity fits in what is left to draw.
+  - A line whose payments settle through the issuer of their money, each against the line (MON.5), draws its losers
+    until at least the failed count is reached, the last drawn party's twins losing together. That issuer is owed
+    the failed payers' dues and owes the losers theirs, each recorded as failed; what the losers drawn past the
+    failed count were owed stays with it, owed to them as failed dues, so no amount has one side (Law 5).
 - **REP.24 PROCESS** — **Where agents are.**
   - A household's zone is an attribute. Its dwelling, plant and vehicles are held by zone and **class** (kind,
     size, quality band, condition band). Wear, damage and repair move units between condition classes.
@@ -988,8 +990,10 @@ takes on day zero.
   bear a real country's name, which names its institutions and currency, but its economy is always generated.
 - **GEN.14 STATE** — **The setup.** Every run starts from a setup, fixed before it and recorded with it:
   - **world constants**, the same for every run of a build: the total population, the map's size (GEO.18), three
-    countries, the total number of regions and the settling length (GEN.6); and the representation with its factor
-    (REP.40), under which a small world's countries hold one factor-th of the total population;
+    countries, the total number of regions and the settling length (GEN.6);
+  - **the representation** with its factor (REP.40), which the setup does not choose: it is the build's RESOLUTION
+    (REP.18), set by measuring the budget and recorded with the run and its saves, and under a small world the
+    countries hold one factor-th of the total population;
   - **the population split** among the three countries, each between 10% and 70% of the total, so none is too small
     to have its markets or so large that it swamps the others; land and regions follow it (GEO.3);
   - **per country, six choices of three levels each**: development (developed, emerging, developing); public debt
@@ -4618,9 +4622,9 @@ age, and a stream of news generated from real events.
 **Processes**
 
 - **OBS.4 PROCESS** — A human **player** acts as a named party in the world, with its own means, through the same
-  markets and contracts as everybody else, and appears in every check. The player's party is an individual from
-  the start (REP.2): its household, drawn at the opening from the households of the country the setup names, each
-  equally likely, and of multiplicity one.
+  markets and contracts as everybody else, and appears in every check. The player's party is an agent of
+  multiplicity one from the start (REP.1): its household, drawn at the opening from the households of the country the
+  setup names, each equally likely, and under twins one twin of the agent drawn.
 - **OBS.8 PROCESS** — **Looking at a household or small firm** shows its **agent** itself: its attributes, persons,
   positions and contracts, and the recorded events that name it. Under twins one agent stands for _k_ identical
   households or firms, and the view says so. Looking at one agent, or at a million, leaves the world exactly as it
@@ -4973,7 +4977,7 @@ the build continues by adding mechanisms, never by tuning.
 | **Party**                   | anything that can hold, owe, decide or be paid (PTY.1)                                                       |
 | **Person / household**      | an individual human / the people who share a budget and dwelling and own jointly (PTY.3)                    |
 | **Agent / multiplicity / twin** | a household or small firm with its own state, persons and contracts / the count of real parties it stands for / each of those identical parties (REP.1) |
-| **Individual**              | a party never held in a population: institutions, issuers, public names, the top-ranked by size at the opening, the player (REP.2) |
+| **Individual**              | a party never held in a population: institutions, issuers, public names, the top-ranked by size at the opening (REP.2) |
 | **Representation**          | twins (the full population, agents of multiplicity _k_) or a small world (one _k_-th of it, agents of multiplicity one) (REP.40) |
 | **Attribute / position**    | what an agent holds exactly as a declared class / a continuous amount it holds or reads (REP.41, REP.20) |
 | **Line**                    | one record of identical contracts whose sides are named parties with exact counts (REP.3)                |
