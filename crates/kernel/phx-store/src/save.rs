@@ -5,7 +5,7 @@ use phx_macros::clause;
 use phx_num::{Missing, violation};
 
 use crate::backing::AddressSpace;
-use crate::consts::{ENCODE_BLOCK, SAVE_READ_STEP, VA_BUDGET};
+use crate::consts::{ENCODE_BLOCK, SAVE_FRAME_BYTES, SAVE_FRAME_WAVE, SAVE_READ_STEP, VA_BUDGET};
 use crate::descriptor::{FieldDescriptor, Transform};
 use crate::encode::{DecodeError, decode_rows, encode_rows, rows_in};
 use crate::pod::{Pod, as_bytes, as_bytes_mut, from_bytes};
@@ -80,6 +80,10 @@ mod frame {
     pub fn decompress(source: &mut dyn Read) -> io::Result<Decompress<'_>> {
         zstd::stream::read::Decoder::new(source)
     }
+
+    pub fn whole(raw: &[u8]) -> io::Result<Vec<u8>> {
+        zstd::bulk::compress(raw, ZSTD_LEVEL)
+    }
 }
 
 #[cfg(miri)]
@@ -98,10 +102,26 @@ mod frame {
         Ok(c)
     }
 
+    pub fn whole(raw: &[u8]) -> io::Result<Vec<u8>> {
+        Ok(raw.to_vec())
+    }
+
     pub fn decompress(source: &mut dyn Read) -> io::Result<Decompress<'_>> {
         Ok(source)
     }
 }
+
+/// One frame of a store compressed on its own, as the frames of a framed writer are: a zstd frame, which read in turn
+/// with the store's other frames reads as one stream.
+///
+/// # Errors
+/// When no compression context can be made.
+pub fn compress_frame(raw: &[u8]) -> io::Result<Vec<u8>> {
+    frame::whole(raw)
+}
+
+/// What compresses a framed writer's frames: the frames given, each compressed as `compress_frame` does, in order.
+pub type Frames<'a> = &'a dyn Fn(&[Vec<u8>]) -> Vec<io::Result<Vec<u8>>>;
 
 /// One store written as a zstd stream: what saves write never fails the world; the first error the sink returns is
 /// kept and reported when the store is finished.
@@ -111,10 +131,21 @@ pub struct Writer<'a> {
     raw: u64,
 }
 
-/// Where a writer's bytes go: a store's compressed stream, or a hash of a value's encoding as it stands.
+/// Where a writer's bytes go: a store's compressed stream; its fixed frames, a wave at a time compressed by the
+/// caller, who may compress them at once; or a hash of a value's encoding as it stands.
 enum Out<'a> {
     Store(frame::Compress<Counted<'a>>),
+    Framed { sink: Counted<'a>, frames: Vec<Vec<u8>>, compress: Frames<'a> },
     Hash(&'a mut crate::hash::LogicalHasher),
+}
+
+/// A wave of a framed writer's frames compressed and written in order.
+fn flush_frames(sink: &mut Counted<'_>, frames: &mut Vec<Vec<u8>>, compress: Frames<'_>) -> io::Result<()> {
+    for out in compress(frames) {
+        sink.write_all(&out?)?;
+    }
+    frames.clear();
+    Ok(())
 }
 
 impl core::fmt::Debug for Writer<'_> {
@@ -133,6 +164,14 @@ impl<'a> Writer<'a> {
         Ok(Writer { out: Out::Store(out), failed: None, raw: 0 })
     }
 
+    /// A store's writer into a sink in fixed frames, a wave of them compressed at a time by `compress`: the frames
+    /// are cut by bytes alone, so the file is the same however they are compressed.
+    #[must_use]
+    pub fn framed(sink: &'a mut dyn Write, compress: Frames<'a>) -> Writer<'a> {
+        let frames = vec![Vec::with_capacity(SAVE_FRAME_BYTES)];
+        Writer { out: Out::Framed { sink: Counted { inner: sink, bytes: 0 }, frames, compress }, failed: None, raw: 0 }
+    }
+
     /// Bytes as they stand.
     pub fn bytes(&mut self, b: &[u8]) {
         match &mut self.out {
@@ -141,6 +180,28 @@ impl<'a> Writer<'a> {
                     && let Err(e) = out.write_all(b)
                 {
                     self.failed = Some(e);
+                }
+            }
+            Out::Framed { sink, frames, compress } => {
+                let mut rest = b;
+                while !rest.is_empty() {
+                    let Some(last) = frames.last_mut() else {
+                        violation!(clause = "SET.12", "a framed writer with no frame open");
+                    };
+                    let room = SAVE_FRAME_BYTES - last.len();
+                    let (now, later) = rest.split_at(if rest.len() < room { rest.len() } else { room });
+                    last.extend_from_slice(now);
+                    rest = later;
+                    if last.len() == SAVE_FRAME_BYTES {
+                        if frames.len() == SAVE_FRAME_WAVE
+                            && self.failed.is_none()
+                            && let Err(e) = flush_frames(sink, frames, *compress)
+                        {
+                            self.failed = Some(e);
+                        }
+                        frames.retain(|f| !f.is_empty());
+                        frames.push(Vec::with_capacity(SAVE_FRAME_BYTES));
+                    }
                 }
             }
             Out::Hash(h) => h.bytes(b),
@@ -173,6 +234,12 @@ impl<'a> Writer<'a> {
         }
         match self.out {
             Out::Store(out) => Ok((frame::finish(out)?.bytes, self.raw)),
+            Out::Framed { mut sink, mut frames, compress } => {
+                frames.retain(|f| !f.is_empty());
+                flush_frames(&mut sink, &mut frames, compress)?;
+                sink.flush()?;
+                Ok((sink.bytes, self.raw))
+            }
             Out::Hash(_) => Ok((0, self.raw)),
         }
     }
@@ -580,6 +647,25 @@ mod tests {
         v
     }
 
+
+    #[test]
+    fn a_framed_store_reads_back_as_one_stream() {
+        let words: Vec<u64> = (0..600_000_u64).map(|i| i * i).collect();
+        let compress = |frames: &[Vec<u8>]| frames.iter().map(|f| super::compress_frame(f)).collect::<Vec<_>>();
+        let mut file = Vec::new();
+        let mut w = Writer::framed(&mut file, &compress);
+        for chunk in words.chunks(1000) {
+            let bytes: Vec<u8> = chunk.iter().flat_map(|x| x.to_le_bytes()).collect();
+            w.bytes(&bytes);
+        }
+        let (_, raw) = w.finish().unwrap();
+        assert_eq!(raw, 600_000 * 8);
+        let mut input: &[u8] = &file;
+        let mut r = Reader::new(&mut input).unwrap();
+        let back = r.bytes(600_000 * 8).unwrap();
+        assert!(back.chunks(8).map(|b| u64::from_le_bytes(b.try_into().unwrap())).eq(words.iter().copied()));
+        assert!(r.at_end().unwrap());
+    }
     #[test]
     fn values_roundtrip() {
         let map: BTreeMap<PartyId, (i128, Missing<String>)> = [

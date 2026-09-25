@@ -57,6 +57,12 @@ pub const FRAME_BYTES: usize = 1 << 20;
 /// store long before it runs out of memory.
 pub const SAVE_READ_STEP: usize = 1 << 20;
 
+/// The bytes of one frame of a framed save: a frame is compressed on its own, so a store's frames compress at once on
+/// many workers; a mebibyte keeps each frame's matches long and a wave's frames small beside the world.
+pub const SAVE_FRAME_BYTES: usize = 1 << 20;
+/// The frames of a framed save compressed at once: enough for every worker the phone runs, twice over.
+pub const SAVE_FRAME_WAVE: usize = 16;
+
 /// zstd's fastest level: saves stop the world, and the transforms already remove most redundancy.
 pub const ZSTD_LEVEL: i32 = 1;
 

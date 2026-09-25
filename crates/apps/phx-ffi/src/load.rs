@@ -108,6 +108,15 @@ struct Store {
     name: String,
     line: String,
     bytes: u64,
+    /// Whether the world saves the store: day buffers, slack and the save's own buffers are held, never saved.
+    saved: bool,
+}
+
+/// What a held store's words carry: as many random low bits as the world's own saves compress to.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Held {
+    bits: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -138,6 +147,7 @@ struct Volumes {
     settlement: SettlementVolumes,
     #[serde(rename = "store")]
     stores: Vec<Store>,
+    held: Held,
     month: Month,
     #[serde(rename = "work")]
     works: Vec<Work>,
@@ -195,13 +205,14 @@ fn piece(total: u64, n: usize, p: usize) -> (u64, u64) {
     (first, if rest < each { rest } else { each })
 }
 
-/// A held store: its declared bytes as random words, written by the pool's workers.
-fn held(pool: &Pool, bytes: u64, seed: u64) -> Vec<u64> {
+/// A held store: its declared bytes as words of `bits` random low bits, written by the pool's workers.
+fn held(pool: &Pool, bytes: u64, seed: u64, bits: u32) -> Vec<u64> {
     let words = u64::try_from(words_of(bytes)).unwrap_or(0);
+    let mask = u64::BITS.checked_sub(bits).and_then(|shift| u64::MAX.checked_shr(shift)).unwrap_or(u64::MAX);
     let n = piece_count(pool);
     pool.map(n, |p| {
         let (first, len) = piece(words, n, p);
-        (first..first + len).map(|i| mix64(seed ^ i)).collect::<Vec<u64>>()
+        (first..first + len).map(|i| mix64(seed ^ i) & mask).collect::<Vec<u64>>()
     })
     .concat()
 }
@@ -311,6 +322,30 @@ struct Load {
 }
 
 impl Load {
+    /// A full save as the world writes one: the built agents and books through their own encodings, then the held
+    /// stores the world saves, in fixed frames compressed a wave at a time on the pool; returns the bytes written.
+    fn save(&self, path: &std::path::Path, stores: &[Store]) -> Result<u64, String> {
+        let file = std::fs::File::create(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut sink = std::io::BufWriter::new(file);
+        let compress = |frames: &[Vec<u8>]| {
+            self.pool.map(frames.len(), |i| {
+                frames.get(i).map_or_else(|| Ok(Vec::new()), |f| phx_store::save::compress_frame(f))
+            })
+        };
+        let mut w = phx_store::save::Writer::framed(&mut sink, &compress);
+        phx_store::Saved::save(&self.population.table, &mut w);
+        self.books.books.save_to(&mut w);
+        for (s, _) in self.stores.iter().zip(stores).filter(|(_, declared)| declared.saved) {
+            for chunk in s.chunks(SAVE_WORDS) {
+                let bytes: Vec<u8> = chunk.iter().flat_map(|x| x.to_le_bytes()).collect();
+                w.bytes(&bytes);
+            }
+        }
+        let (written, _) = w.finish().map_err(|e| e.to_string())?;
+        std::io::Write::flush(&mut sink).map_err(|e| e.to_string())?;
+        Ok(written)
+    }
+
     fn store(&self, name: Option<&String>) -> Option<usize> {
         name.and_then(|n| self.names.iter().position(|m| m == n))
     }
@@ -433,7 +468,8 @@ fn build(v: &Volumes, host: &dyn BenchHost, holidays: &[Date], (first, heavy): (
     };
     let books = settlement::<SystemBacking>(size, calendar(holidays)?, (week_before, first, heavy))?;
     show(host, "building", "the held stores".to_owned(), String::new(), "");
-    let stores: Vec<Vec<u64>> = v.stores.iter().zip(0_u64..).map(|(s, i)| held(&pool, s.bytes, i)).collect();
+    let stores: Vec<Vec<u64>> =
+        v.stores.iter().zip(0_u64..).map(|(s, i)| held(&pool, s.bytes, i, v.held.bits)).collect();
     let names = v.stores.iter().map(|s| s.name.clone()).collect();
     let mut books = books;
     books.books.use_pool(std::sync::Arc::clone(&pool));
@@ -490,7 +526,7 @@ pub fn measure(host: &dyn BenchHost, volumes_path: &str, save_dir: &str) -> Resu
         if v.month.saves.contains(&i) {
             let t0 = clock.now_ns();
             let path = std::path::Path::new(save_dir).join(format!("load-save-{i}.zst"));
-            let bytes = save(&path, &load.stores)?;
+            let bytes = load.save(&path, &v.stores)?;
             let ms = (clock.now_ns() - t0) / NS_PER_MS;
             std::fs::remove_file(&path).map_err(|e| format!("{}: {e}", path.display()))?;
             let name = format!("save after day {}", i + 1);
@@ -600,21 +636,6 @@ fn report_json(
         ("stores", Json::Array(stores.collect())),
         ("works", Json::Array(works.collect())),
     ])
-}
-
-/// A full save of the held stores through the store's compressed writer; returns the bytes written.
-fn save(path: &std::path::Path, stores: &[Vec<u64>]) -> Result<u64, String> {
-    let file = std::fs::File::create(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let mut sink = std::io::BufWriter::new(file);
-    let mut w = phx_store::save::Writer::new(&mut sink).map_err(|e| e.to_string())?;
-    for s in stores {
-        for chunk in s.chunks(SAVE_WORDS) {
-            let bytes: Vec<u8> = chunk.iter().flat_map(|x| x.to_le_bytes()).collect();
-            w.bytes(&bytes);
-        }
-    }
-    let (_, written) = w.finish().map_err(|e| e.to_string())?;
-    Ok(written)
 }
 
 /// The app's entry: runs the full-load bench on the calling thread, which must not be the interface's.

@@ -27,69 +27,91 @@ holders_per_line = 256
 name = "household agents beyond the built record"
 line = "13.1 household agents (672 bytes through Stage 6)"
 bytes = 400000000
+saved = true
 [[store]]
 name = "relationship rows"
 line = "13.1 relationship rows, with Stages 2-6"
 bytes = 1200000000
+saved = true
 [[store]]
 name = "holdings, instruments, lots, liens and commitments"
 line = "13.1, with Stage 3's positions and Stage 4's pots"
 bytes = 452000000
+saved = true
 [[store]]
 name = "firm and business agents"
 line = "13.1, with Stage 6's records"
 bytes = 176000000
+saved = true
 [[store]]
 name = "lines and their stage totals"
 line = "13.1, with Stages 2-5"
 bytes = 166000000
+saved = true
 [[store]]
 name = "interned keys and terms"
 line = "13.1, with Stages 3-4"
 bytes = 151000000
+saved = true
 [[store]]
 name = "agenda"
 line = "13.1"
 bytes = 85000000
+saved = true
 [[store]]
 name = "kind tables of individuals"
 line = "13.1, with Stages 4-5"
 bytes = 241000000
+saved = true
 [[store]]
 name = "estates open"
 line = "13.1"
 bytes = 31000000
+saved = true
 [[store]]
 name = "markets, records and events"
 line = "13.1, with Stages 2-5"
 bytes = 246000000
+saved = true
 [[store]]
 name = "map, network, deposits and stock"
 line = "13.1"
 bytes = 80000000
+saved = true
 [[store]]
 name = "directory"
 line = "13.1"
 bytes = 50000000
+saved = true
 [[store]]
 name = "day buffers"
 line = "13.1, the worst day's"
 bytes = 600000000
+saved = false
 [[store]]
 name = "arena slack and page tails"
 line = "13.1, with each stage's slack"
 bytes = 295000000
+saved = false
 [[store]]
 name = "save buffers"
 line = "13.1"
 bytes = 94000000
+saved = false
 [[store]]
 name = "views"
 line = "13.1, with Stage 6"
 bytes = 70000000
+saved = true
 
 # The month the bench runs: each day's type in order. Ordinary weekdays, a weekend and the Monday after it, a holiday
 # block of three closed days before a quarter-end payday (the heavy day), and weekdays again.
+# What the held stores' words carry: as many random low bits as the world's own saves compress to, so a save of the
+# held stores compresses as the world's does. The build run of 8b2a7185 saved 286 816 571 bytes of stores as
+# 110 054 463, 0.384 of each 64-bit word: 25 bits.
+[held]
+bits = 25
+
 [month]
 days = ["business", "business", "business", "business", "business", "closed", "closed", "business",
         "business", "business", "business", "business", "closed", "closed", "business", "business",

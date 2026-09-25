@@ -85,11 +85,22 @@ fn io_err(path: &Path, e: &dyn core::fmt::Display) -> String {
     format!("{}: {e}", path.display())
 }
 
-fn write_store(dir: &Path, name: &str, write: &dyn Fn(&mut Writer<'_>)) -> Result<(u64, u64), String> {
+/// A store written to its file in fixed frames, each wave of frames compressed at once on the pool where there is one.
+fn write_store(
+    dir: &Path,
+    name: &str,
+    pool: Option<&phx_exec::Pool>,
+    write: &dyn Fn(&mut Writer<'_>),
+) -> Result<(u64, u64), String> {
     let path = dir.join(file_of(name));
     let file = std::fs::File::create(&path).map_err(|e| io_err(&path, &e))?;
     let mut out = BufWriter::new(file);
-    let mut w = Writer::new(&mut out).map_err(|e| io_err(&path, &e))?;
+    let compress = |frames: &[Vec<u8>]| {
+        phx_exec::pool::map(pool, frames.len(), |i| {
+            frames.get(i).map_or_else(|| Ok(Vec::new()), |f| phx_store::save::compress_frame(f))
+        })
+    };
+    let mut w = Writer::framed(&mut out, &compress);
     write(&mut w);
     let sizes = w.finish().map_err(|e| io_err(&path, &e))?;
     out.flush().map_err(|e| io_err(&path, &e))?;
@@ -170,13 +181,13 @@ impl World {
         let mut stores = Vec::new();
         let mut whole = LogicalHasher::new(HASH_KEY);
         for name in STORES {
-            let (bytes, raw_bytes) = write_store(&dir, name, &|w| self.write_one(name, w))?;
+            let (bytes, raw_bytes) = write_store(&dir, name, self.books.pool(), &|w| self.write_one(name, w))?;
             let mut h = LogicalHasher::new(HASH_KEY);
             self.hash_one(name, &mut h);
             self.hash_one(name, &mut whole);
             stores.push(StoreRecord { name, bytes, raw_bytes, hash: h.finish() });
         }
-        let (run_bytes, run_raw) = write_store(&dir, RUN, &|w| self.write_one(RUN, w))?;
+        let (run_bytes, run_raw) = write_store(&dir, RUN, self.books.pool(), &|w| self.write_one(RUN, w))?;
         let world_hash = whole.finish();
         let mut entries: Vec<StoreEntry> = stores
             .iter()

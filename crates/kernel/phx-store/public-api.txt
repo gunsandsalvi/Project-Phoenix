@@ -221,6 +221,8 @@ pub const phx_store::consts::ENCODE_VERSION: u16
 pub const phx_store::consts::FRAME_BYTES: usize
 pub const phx_store::consts::HEAP_PAGE: usize
 pub const phx_store::consts::INDIVIDUAL_ARENA_WORDS: u32
+pub const phx_store::consts::SAVE_FRAME_BYTES: usize
+pub const phx_store::consts::SAVE_FRAME_WAVE: usize
 pub const phx_store::consts::SAVE_READ_STEP: usize
 pub const phx_store::consts::SIP_C_ROUNDS: usize
 pub const phx_store::consts::SIP_D_ROUNDS: usize
@@ -463,6 +465,7 @@ impl<'a> phx_store::save::Writer<'a>
 pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])
 pub fn phx_store::save::Writer<'a>::count(&mut self, usize)
 pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>
+pub fn phx_store::save::Writer<'a>::framed(&'a mut dyn core::io::write::Write, phx_store::save::Frames<'a>) -> phx_store::save::Writer<'a>
 pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>
 pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)
 impl core::fmt::Debug for phx_store::save::Writer<'_>
@@ -554,8 +557,10 @@ pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
 pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>
 pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_store::save::compress_frame(&[u8]) -> core::io::error::Result<alloc::vec::Vec<u8>>
 pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)
 pub fn phx_store::save::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>
+pub type phx_store::save::Frames<'a> = &'a dyn core::ops::function::Fn(&[alloc::vec::Vec<u8>]) -> alloc::vec::Vec<core::io::error::Result<alloc::vec::Vec<u8>>>
 pub mod phx_store::table
 pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
@@ -862,6 +867,7 @@ impl<'a> phx_store::save::Writer<'a>
 pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])
 pub fn phx_store::save::Writer<'a>::count(&mut self, usize)
 pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>
+pub fn phx_store::save::Writer<'a>::framed(&'a mut dyn core::io::write::Write, phx_store::save::Frames<'a>) -> phx_store::save::Writer<'a>
 pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>
 pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)
 impl core::fmt::Debug for phx_store::save::Writer<'_>
