@@ -11,43 +11,49 @@ use phx_num::violation;
 use crate::method::Method;
 use crate::outlook::VarId;
 
-/// The registrations per (method, series): how many holders and candidate lists read each pair.
+/// The registrations per series and method: how many holders and candidate lists read each pair, kept by series so a
+/// new print finds its methods without passing over any other series'.
 #[clause("VAL.23")]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Registered {
-    pairs: BTreeMap<(Method, VarId), u64>,
+    pairs: BTreeMap<VarId, BTreeMap<Method, u64>>,
 }
 
 impl Registered {
     /// An apply's changes, summed per pair before they land, so the order the changes were made in decides nothing.
     /// A pair released more often than registered is an impossible state.
     pub fn apply(&mut self, changes: &[((Method, VarId), i64)]) {
-        let mut summed: BTreeMap<(Method, VarId), i128> = BTreeMap::new();
-        for (pair, delta) in changes {
-            *summed.entry(*pair).or_insert(0) += i128::from(*delta);
+        let mut summed: BTreeMap<(VarId, Method), i128> = BTreeMap::new();
+        for ((method, var), delta) in changes {
+            *summed.entry((*var, *method)).or_insert(0) += i128::from(*delta);
         }
-        // A pair no one registers is kept as no entry, so its count is none registered.
-        for (pair, delta) in summed {
-            let now = i128::from(self.pairs.get(&pair).copied().unwrap_or(0)) + delta;
+        for ((var, method), delta) in summed {
+            let methods = self.pairs.entry(var).or_default();
+            // A pair no one registers is kept as no entry, so its count is none registered.
+            let now = i128::from(methods.get(&method).copied().unwrap_or(0)) + delta;
             let Ok(now) = u64::try_from(now) else {
-                violation!(clause = "VAL.23", "a series pair released more often than registered", var = pair.1.get());
+                violation!(clause = "VAL.23", "a series pair released more often than registered", var = var.get());
             };
             if now == 0 {
-                self.pairs.remove(&pair);
+                methods.remove(&method);
             } else {
-                self.pairs.insert(pair, now);
+                methods.insert(method, now);
+            }
+            if methods.is_empty() {
+                self.pairs.remove(&var);
             }
         }
     }
 
     /// The methods registered on a series, whose outlooks a new print of it updates.
     pub fn methods_of(&self, var: VarId) -> impl Iterator<Item = Method> + '_ {
-        self.pairs.keys().filter(move |(_, v)| *v == var).map(|(m, _)| *m)
+        self.pairs.get(&var).into_iter().flat_map(|m| m.keys().copied())
     }
 
+    /// The pairs registered.
     #[must_use]
     pub fn len(&self) -> usize {
-        self.pairs.len()
+        self.pairs.values().map(BTreeMap::len).sum()
     }
 
     #[must_use]
