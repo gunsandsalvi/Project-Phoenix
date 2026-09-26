@@ -407,6 +407,12 @@ fn a_transformation_carries_the_cost_of_units_made() {
         (Missing::Present(600), Missing::Present(300)),
         "the worn units left their class at the cost of their lots and came to the next at the cost they carry"
     );
+    let i = w.instruction(w.pay, vec![leg(new, -2, Source::Wear(0), 0), leg(worn, 2, Source::Wear(0), 100)]);
+    let _ = w.ledger.apply(&mut w.tables, ApplyAt::Day(SubStep::S4b), i, &mut Seen::default()).expect("worn again");
+    let arenas = w.tables.arenas(table);
+    let lots = crate::holding::lots(arenas, slot, worn);
+    assert_eq!(lots.len(), 1, "a class keeps its alike units in one lot at average cost");
+    assert_eq!(lots.first().map(|l| (l.quantity.raw(), l.cost.raw())), Some((6, 400)));
     let i = w.instruction(w.pay, vec![leg(worn, -1, Source::Wear(0), 75)]);
     let clause = caught_clause(|| {
         let _ = w.ledger.apply(&mut w.tables, ApplyAt::Day(SubStep::S4b), i, &mut Seen::default());

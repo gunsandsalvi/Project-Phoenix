@@ -217,18 +217,23 @@ impl<B: Backing> Instruments<B> {
         self.lists.keys()
     }
 
-    /// Units acquired by a holder of the table at place `table`, which enters the instrument's holder list with its
-    /// first lot.
-    pub(crate) fn acquire(
+    /// Units acquired by a holder of the table at place `table`, into the holding's one lot at average cost when
+    /// `pooled`, its units being alike, else as a lot of their own; a new holding enters the instrument's holder list.
+    pub(crate) fn acquire_as(
         &mut self,
         arenas: &mut dyn HolderArenas,
-        table: u16,
-        holder: Slot,
+        (table, holder): (u16, Slot),
         id: InstrumentId,
         lot: Lot,
+        pooled: bool,
     ) {
         let _ = self.row(id);
-        if holding::acquire(arenas, holder, id, lot) {
+        let new = if pooled {
+            holding::acquire_pooled(arenas, holder, id, lot)
+        } else {
+            holding::acquire(arenas, holder, id, lot)
+        };
+        if new {
             let mut list = self.list(id);
             self.lists.enter(id.get(), &mut list, table, holder);
             self.holders.set(Slot::new(id.get()), list);

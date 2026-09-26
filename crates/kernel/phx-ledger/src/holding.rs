@@ -202,6 +202,40 @@ pub(crate) fn acquire(arenas: &mut dyn HolderArenas, holder: Slot, instrument: I
     }
 }
 
+/// Units acquired into a holding of alike units kept at average cost: they join its one lot, their cost added to the
+/// lot's, so however often it is acquired the holding keeps a single lot. Returns whether the holding is new.
+#[clause("REG.1", "ACC.6", "REP.24")]
+pub(crate) fn acquire_pooled(arenas: &mut dyn HolderArenas, holder: Slot, instrument: InstrumentId, lot: Lot) -> bool {
+    if lot.quantity.raw() <= 0 {
+        violation!(clause = "REG.15", "an acquisition of no units or fewer", units = lot.quantity.raw());
+    }
+    let all = index(arenas, holder);
+    let Some((i, (h, at))) = all.iter().enumerate().find(|(_, (h, _))| h.instrument == instrument) else {
+        return acquire(arenas, holder, instrument, lot);
+    };
+    if h.lots != 1 {
+        violation!(clause = "ACC.6", "a holding at average cost of other than one lot", lots = h.lots);
+    }
+    let mut h = *h;
+    let Some(held) = arenas.read(holder, ListKind::Lots).get(*at..at + LOT).map(from_words::<Lot>) else {
+        violation!(
+            clause = "REG.4",
+            "a holding's lot missing from its holder's lot list",
+            instrument = instrument.get()
+        );
+    };
+    let (Some(q), Some(c)) =
+        (held.quantity.raw().checked_add(lot.quantity.raw()), held.cost.raw().checked_add(lot.cost.raw()))
+    else {
+        violation!(clause = "Law 7", "a holding's quantity or cost overflows", units = lot.quantity.raw());
+    };
+    let pooled = Lot::new(held.acquired, q, c);
+    arenas.overwrite(holder, ListKind::Lots, *at, &to_words(&pooled));
+    h.quantity = QtyRaw::from_raw(q);
+    arenas.overwrite(holder, ListKind::Holdings, i * HOLDING, &to_words(&h));
+    false
+}
+
 /// What `taken` of a lot's units cost: the whole lot's cost when all go, else their share of it.
 fn lot_share(lot: &Lot, taken: i64) -> i64 {
     let q = lot.quantity.raw();

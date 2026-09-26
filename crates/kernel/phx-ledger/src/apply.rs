@@ -752,7 +752,9 @@ impl<B: Backing> Ledger<B> {
 
     fn move_units(&mut self, arenas: &mut dyn HolderArenas, at: At, id: InstrumentId, qty: i64, cost: i64, day: Day) {
         if qty > 0 {
-            self.instruments.acquire(arenas, at.table, at.slot, id, Lot::new(day, qty, cost));
+            // A class of a chain holds alike units, so its holding keeps one lot at average cost.
+            let pooled = matches!(self.chains.of(id), Missing::Present(_));
+            self.instruments.acquire_as(arenas, (at.table, at.slot), id, Lot::new(day, qty, cost), pooled);
         } else if qty < 0 {
             let disposal = Disposal { units: -qty, bound: self.bound(at.party, id), order: LotOrder::FirstIn };
             let gone = self.instruments.dispose(arenas, at.table, at.slot, id, disposal);

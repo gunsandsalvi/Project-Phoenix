@@ -404,8 +404,8 @@ mod books {
         let id = bond(&mut all);
         all.change_issued(id, Qty::new(150, UnitId::new(0)), IssueChange::Issuance);
         let (b, f) = (holder(&mut space, &mut banks, 2), holder(&mut space, &mut firms, 3));
-        all.acquire(&mut banks, 0, b, id, Lot::new(Day::new(1), 100, 100));
-        all.acquire(&mut firms, 1, f, id, Lot::new(Day::new(1), 50, 50));
+        all.acquire_as(&mut banks, (0, b), id, Lot::new(Day::new(1), 100, 100), false);
+        all.acquire_as(&mut firms, (1, f), id, Lot::new(Day::new(1), 50, 50), false);
         assert_eq!(all.holders(id).count(), 2);
         let tables: [&dyn HolderArenas; 2] = [&banks, &firms];
         assert!(ownership(&all, &tables, id).is_empty());
