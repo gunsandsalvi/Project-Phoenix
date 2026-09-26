@@ -402,8 +402,10 @@ that moves a hazard's rate books its process afresh on the agents it concerns (�
 `KeyedReduce<K, V>`: chunk-local sorted runs, merged in parallel by owner-key shard, each shard in chunk order. The
 only way a pass sums over rows it does not own, and the way every **global structure** — the terms interner, the
 directory, line creation, holder lists — is updated: sharded by key hash, each shard applied
-by one worker, so nothing serialises and no atomic is needed. As built at Stage 0 the world uses none: it runs on one
-thread (F-056), its global structures are updated in place, and settlement's nets and records are `BTreeMap`s (§6.5).
+by one worker, so nothing serialises and no atomic is needed. As built at Stage 0, settlement's sums are keyed
+reductions of this kind: each shard of payments puts what it adds with the shard of the record, net or party it adds
+to, and each shard of the day's records or of the kernel map is folded by one worker, taking the payment shards in
+order (§6.6). The other global structures are still updated in place on one thread.
 
 ### 4.9 Records, audiences, scoped reads
 
@@ -707,8 +709,10 @@ published technique it rests on:
   cursor, so each payment is removed at most once, and the whole fixed point costs O(payments + removals). A
   customer's payments through a failing bank are that bank's index range. Queued and failed marks are epoch-stamped
   dense arrays, not ordered sets.
-- **Parallel without order.** The removal is monotone, so its greatest fixed point is unique whatever the order
-  (Tarski). A round can take every short party at once, on every worker, and reach the same set. A cleared line's
+- **Parallel without order.** A payer's removal of its own payments is monotone, so its greatest fixed point is unique
+  whatever the order (Tarski), and a round can take every short payer at once, on every worker, and reach the same set.
+  A bank's removal of its customers' payments is not yet: it reads the bank's debit, which a customer's own failure
+  lowers, so it must read the customers' payments that stand once their payers are done (F-088). A cleared line's
   losers depend only on its failed count. The result is deterministic by construction (Blelloch, Fineman, Gibbons and
   Shun, *Internally deterministic parallel algorithms can be fast*, 2012). 7a runs over due-holder shards, and 7c's
   nets are grouped by a counting sort on (line, party, side) and applied by target shard.
@@ -729,10 +733,16 @@ published technique it rests on:
   Incompressible blocks are stored raw, and the bench's held stores carry their columns' shapes, not uniform words.
 
 As built at Stage 0's close: dense identity; the standing facts on their owners (a listed side's holders as a count and
-the exclusive-or of their keys, each holder's money rows); the due index; the day's buffers kept and its records by
-holder slot, stamped by day; each due line's dues planned once; 7a in 64 fixed shards on the world's pool, a wave of 8
-at a time, booked in the stream's order. Rows are found by reading their heads, not yet by an index; 7b, 7c, 3e and the
-audit run on one thread; routes are made again at 7c. The rest is carried to Stage 1 (the plan's S0.26f, F-087).
+the exclusive-or of their keys, each holder's money rows); the due index, as a map from a day to the holders' keys
+filed under it, not yet the agenda's wheel; the day's buffers kept across days, its records dealt to 64 shards by runs
+of slots and stamped by day; each due line's dues planned once, and a settled due's interest folded by party. On the
+world's pool, in fixed shards and waves so the result is the same with any workers: 3b and 3e; 7a, its bookings folded
+a records shard to a worker; 7c's gather, each payment's route made again and what it adds (records, nets, income)
+folded a key shard to a worker, the failed and pending recorded in the stream's order; 7c's balances, heads and leg
+reads; the audit's families, each into its own findings, kept in their order; the opening's regions; and saves, each
+store to its own file at once, in fixed 1 MiB zstd frames compressed a wave at a time. Rows are found by reading their
+heads, not by an index; 7b runs on one thread (F-088); 7c's writes apply line by line; the money and contract families
+still read an unlisted side whole. The rest is carried to Stage 1 (the plan's S0.26f, F-087).
 
 ---
 
