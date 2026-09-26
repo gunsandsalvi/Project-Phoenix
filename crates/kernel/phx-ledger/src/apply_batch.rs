@@ -637,7 +637,8 @@ impl<B: Backing> Books<B> {
     }
 
     /// How many payers that failed were not short: at its first failed payment in its own order, what a payer held
-    /// given the payments that settle could pay it. A payment removed because a bank on its way was short is the bank's.
+    /// given the payments that settle could pay it. A payment removed because a bank on its way was short is the bank's,
+    /// and one to or from a party with no money is its own, failing whatever the payer holds.
     fn not_maximal(
         &self,
         payers: &BTreeSet<PartyId>,
@@ -647,11 +648,10 @@ impl<B: Backing> Books<B> {
         found: &mut Found,
     ) -> u64 {
         let short = |payer: PartyId, found: &mut Found| {
-            let first = self
-                .payments_of(payer, due, day, calendar, found)
-                .into_iter()
-                .find(|p| p.payer == payer && fixed.failed.contains(&p.key()) && !fixed.by_bank.contains(&p.key()));
-            let Some(p) = first else { return false };
+            let first = self.payments_of(payer, due, day, calendar, found).into_iter().find(|p| {
+                p.payer == payer && !p.moneyless && fixed.failed.contains(&p.key()) && !fixed.by_bank.contains(&p.key())
+            });
+            let Some(p) = first else { return true };
             let legs = self.effects(&p);
             let Missing::Present(account) = self.money_row(payer, p.ccy) else { return false };
             let rec = given.get(self.parties.row(payer)).copied().unwrap_or_else(|| self.record_of(payer, account));
