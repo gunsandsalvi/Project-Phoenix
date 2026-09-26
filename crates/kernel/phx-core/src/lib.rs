@@ -72,8 +72,8 @@ pub use family::{
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{
-    Ctx, CtxParts, DrawsFrom, Emits, FactStore, GoodsView, HandlerDecl, HeldGood, HeldPlant, HeldRight, IntentDef,
-    Intents, NoGoods, Opened, Reads, RunChunk, Writes,
+    Away, Ctx, CtxParts, DrawsFrom, Emits, FactStore, GoodsView, HandlerDecl, HeldGood, HeldPlant, HeldRight,
+    IntentDef, Intents, NoGoods, Opened, Reads, RunChunk, Writes,
 };
 pub use hazards::{ActsOn, DrawScheme, HazardDecl, RateChange, RateFn, annual_to_daily};
 pub use insolvency::InsolvencyDecl;

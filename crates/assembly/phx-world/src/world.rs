@@ -94,6 +94,7 @@ pub struct World {
     pub(crate) market_day: crate::goods::MarketDay,
     /// Each good's latest mark where it stands, and the public outlook of its price there, for the handlers' reads.
     pub(crate) marks: crate::goods::Marks,
+    pub(crate) away: std::sync::Arc<crate::goods::AwayTable>,
     pub(crate) outlooks: crate::goods::Outlooks,
     /// The methods public series are forecast by, each with its memory type's parameters, by the method's index.
     pub(crate) val_methods: Vec<(phx_val::method::Method, phx_val::heuristic::Params)>,
@@ -128,6 +129,11 @@ pub struct World {
 
 /// The map and what GEO compiled from it, among the systems' own states.
 pub(crate) fn geo_in<'a>(own: &'a [(&'static str, OwnState)]) -> &'a phx_geo::GeoState {
+    geo_arc(own)
+}
+
+/// The map as GEO keeps it, shared.
+pub(crate) fn geo_arc<'a>(own: &'a [(&'static str, OwnState)]) -> &'a std::sync::Arc<phx_geo::GeoState> {
     let found = own.iter().find(|(code, _)| *code == <phx_geo::Geo as phx_core::System>::CODE);
     let Some(geo) = found.and_then(|(_, s)| s.downcast_ref::<std::sync::Arc<phx_geo::GeoState>>()) else {
         phx_num::violation!(clause = "GEO.1", "a world whose map GEO does not keep");

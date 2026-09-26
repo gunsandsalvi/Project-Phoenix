@@ -32,15 +32,28 @@ pub const LC_1_19: super::Check = live_check! {
     check: one_owner_one_carrier,
 };
 
-fn no_freight_reads(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("freight rates are read against price gaps once goods are shipped (S1.15)")
+/// Once goods have been shipped, the gaps between places' prices of one good rise with the metres between them, which
+/// freight is charged by.
+fn gaps_track_freight(w: Inspector<'_>) -> Outcome {
+    let shipped: u64 = w.goods_days().iter().map(|(_, d)| d.shipments).sum();
+    if shipped == 0 {
+        return Outcome::NotYet("no goods were shipped in the run");
+    }
+    let pairs = super::goods::gaps_by_distance(w);
+    match super::goods::correlation(&pairs) {
+        Some(r) if r > 0.0 => Outcome::Pass,
+        Some(r) => {
+            Outcome::Fail(format!("price gaps over {} pairs of places correlate {r:.3} with distance", pairs.len()))
+        }
+        None => Outcome::NotYet("fewer than two pairs of places printed one good on a common day"),
+    }
 }
 
 pub const LC_1_20: super::Check = live_check! {
     id: "LC-1-20",
     title: "FRT.10: freight rates and price gaps between places are reported, and gaps track freight",
     from_step: "S1.07",
-    check: no_freight_reads,
+    check: gaps_track_freight,
 };
 
 /// No shipment still in transit was due before today: each has arrived, its lien released.

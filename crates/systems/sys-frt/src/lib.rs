@@ -1,11 +1,15 @@
 //! FRT, freight: the carriage market at each origin and mode, carriers' room from their vehicles, the technology of
 //! vehicles by mode and of goods' weight, the reasons freight is paid and goods leave and arrive under, and the
-//! shipper's rule.
+//! shipper's rule and visit, and each carrier's mode at the opening.
+
+mod carriers;
+mod consts;
+pub mod ship;
 
 use phx_core::register::values::Table1;
 use phx_core::{
-    Contribution, DECLARATIONS, Declarations, FacetDecl, FactDef, HandlerTable, Opening, OpeningPhase, PositionDecl,
-    Register, StreamDef, System, declare_prim, declare_stream,
+    Cadence, Contribution, DECLARATIONS, Declarations, FacetDecl, FactDef, HandlerDecl, HandlerTable, Opening,
+    OpeningPhase, PositionDecl, Register, RunsOn, StreamDef, System, VisitDecl, declare_prim, declare_stream,
 };
 use phx_id::MarketId;
 use phx_ledger::instruction::{Effect, ReasonDecl};
@@ -15,6 +19,25 @@ use phx_market::market::{Form, MarketDecl, MarketKey, Ration};
 use phx_num::{Count, Missing};
 
 declare_stream! { pub LotStream = "FRT.capacity_lot" { purpose: Meeting, keyed: false, clause: "FRT.7" } }
+declare_stream! { pub OpeningStream = "FRT.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub VisitStream = "FRT.visits" { purpose: Occasion, keyed: false, clause: "FRT.5" } }
+
+declare_prim! {
+    /// Each mode's share of the people carriage employs, by the mode's place, which the carriers' modes are drawn by.
+    pub MODE_SHARE = "FRT.mode_share" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 1 }, clause: "GEN.2", scope: Shared
+    }
+}
+
+declare_prim! {
+    /// The product carriage is sold as, by its place among the products.
+    pub CARRIAGE_PRODUCT = "FRT.carriage_product" { kind: Technology, value: Count, clause: "FRT.1", scope: Shared }
+}
+
+declare_prim! {
+    /// Days between a shipper's decisions to carry its goods elsewhere.
+    pub SHIPPING_DAYS = "FRT.shipping_days" { kind: Preference, value: Count, clause: "FRT.5", scope: Shared }
+}
 
 declare_prim! {
     /// The chain vehicles are held in: the place of transport equipment among the kinds of plant.
@@ -156,6 +179,33 @@ pub const CARRIAGE: FreightKind = FreightKind {
     arrived: ARRIVED.name,
 };
 
+/// The shipper's compiled reads: freight's technology, each product's lot and the carriage product's.
+fn compile(register: &Register) -> Result<ship::Own, String> {
+    let lots = register
+        .products("TEC.products")?
+        .iter()
+        .map(|e| match register.units().named(&e.unit) {
+            Missing::Present(u) => {
+                let exp = register
+                    .units()
+                    .decl(u)
+                    .map(|d| d.price_exp)
+                    .ok_or_else(|| format!("unit `{}` undeclared", e.unit))?;
+                (0..exp)
+                    .try_fold(1_i64, |b, _| b.checked_mul(consts::DECADE))
+                    .ok_or_else(|| format!("product `{}`'s lot beyond a quantity", e.name))
+            }
+            Missing::Absent => Err(format!("product `{}` in an undeclared unit", e.name)),
+        })
+        .collect::<Result<Vec<i64>, String>>()?;
+    let carriage = usize::try_from(register.count(CARRIAGE_PRODUCT.id)?).map_err(|e| e.to_string())?;
+    let Some(carriage_lot) = lots.get(carriage).map(|l| phx_rand::float::from_i64(*l)) else {
+        return Err(format!("carriage sold as product {carriage}, which is none"));
+    };
+    let kind = phx_ledger::instruction::name_code(CARRIAGE.market.key.kind);
+    Ok(ship::Own { tech: tech(register)?, lots, carriage_lot, kind })
+}
+
 /// Whether a shipper books room: when what the goods fetch where they go, less what they fetch where they are,
 /// exceeds what carrying them costs.
 #[clause("FRT.5", "FRT.11")]
@@ -214,11 +264,25 @@ impl System for Frt {
         d.claim(mode.name);
         d.facet(FacetDecl { fact: mode.name, kind: FIRM });
         d.pop_kind(SMALL_FIRM).position(PositionDecl { name: mode.name, clause: mode.clause });
+        let share = d.prim::<Table1>(&MODE_SHARE);
+        let product = d.prim::<Count>(&CARRIAGE_PRODUCT);
+        let _ = d.prim::<Count>(&SHIPPING_DAYS);
+        d.stream(OpeningStream::DECL);
+        d.stream(VisitStream::DECL);
         d.contribution(Box::new(Declared));
+        d.contribution(Box::new(carriers::Carriers { share, product }));
         d.market(Box::new(CARRIAGE));
+        d.compile(Box::new(|register, _| Ok(Box::new(compile(register)?))));
+        let cadence = Cadence::Schedule { days: SHIPPING_DAYS.id, runs_on: RunsOn::Business };
+        for (handler, kind) in [(ship::ShipSmall::NAME, SMALL_FIRM), (ship::ShipLarge::NAME, FIRM)] {
+            d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes: &[], clause: "FRT.5" });
+        }
     }
 
-    fn handlers(_: &mut HandlerTable) {}
+    fn handlers(h: &mut HandlerTable) {
+        h.add::<ship::ShipSmall>();
+        h.add::<ship::ShipLarge>();
+    }
 }
 
 #[cfg(test)]

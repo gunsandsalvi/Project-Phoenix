@@ -117,7 +117,7 @@ fn map_conditions(w: Inspector<'_>) -> Outcome {
     Outcome::Pass
 }
 
-fn events_of(w: Inspector<'_>, name: &str) -> Vec<Event> {
+pub(crate) fn events_of(w: Inspector<'_>, name: &str) -> Vec<Event> {
     let Some(kind) = w.event_kinds().iter().position(|k| k.name == name) else { return Vec::new() };
     (1..=w.events().len())
         .filter_map(|id| u64::try_from(id).ok())

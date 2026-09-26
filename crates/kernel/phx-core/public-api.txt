@@ -764,8 +764,15 @@ impl phx_store::save::Saved for phx_core::findings::Findings where alloc::vec::V
 pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::handler
+pub struct phx_core::handler::Away
+pub phx_core::handler::Away::carriage: i64
+pub phx_core::handler::Away::metres: u64
+pub phx_core::handler::Away::mode: u16
+pub phx_core::handler::Away::there: i64
+pub phx_core::handler::Away::zone: u32
 pub struct phx_core::handler::Ctx<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized>
 impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized> phx_core::handler::Ctx<'a, H, S>
+pub fn phx_core::handler::Ctx<'a, H, S>::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_core::register::limit::Bound<T>) -> T
 pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
@@ -812,6 +819,7 @@ pub fn phx_core::handler::Intents::iter(&self) -> impl core::iter::traits::itera
 pub fn phx_core::handler::Intents::len(&self) -> usize
 pub struct phx_core::handler::NoGoods
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
+pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
@@ -832,6 +840,7 @@ impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub trait phx_core::handler::GoodsView: core::fmt::Debug
+pub fn phx_core::handler::GoodsView::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::GoodsView::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
@@ -841,6 +850,7 @@ pub fn phx_core::handler::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, 
 pub fn phx_core::handler::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
+pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
@@ -2542,6 +2552,12 @@ pub phx_core::AuditInputs::register: &'a phx_core::register::Register
 pub phx_core::AuditInputs::tables: &'a [phx_core::columns::KernelTable]
 pub phx_core::AuditInputs::touched: &'a phx_core::touched::TouchedRows
 pub phx_core::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
+pub struct phx_core::Away
+pub phx_core::Away::carriage: i64
+pub phx_core::Away::metres: u64
+pub phx_core::Away::mode: u16
+pub phx_core::Away::there: i64
+pub phx_core::Away::zone: u32
 pub struct phx_core::Binding
 pub phx_core::Binding::day: phx_id::day::Day
 pub phx_core::Binding::excess: i128
@@ -2603,6 +2619,7 @@ pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::Ctx<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized>
 impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized> phx_core::handler::Ctx<'a, H, S>
+pub fn phx_core::handler::Ctx<'a, H, S>::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_core::register::limit::Bound<T>) -> T
 pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
@@ -3139,6 +3156,7 @@ pub phx_core::NewsEntry::kind: alloc::string::String
 pub phx_core::NewsEntry::notice: phx_core::events_rule::Notice
 pub struct phx_core::NoGoods
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
+pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
@@ -3633,6 +3651,7 @@ impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub trait phx_core::GoodsView: core::fmt::Debug
+pub fn phx_core::GoodsView::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::GoodsView::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
@@ -3642,6 +3661,7 @@ pub fn phx_core::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> p
 pub fn phx_core::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
+pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64

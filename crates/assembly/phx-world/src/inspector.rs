@@ -305,6 +305,11 @@ impl<'a> Inspector<'a> {
         self.world.geo()
     }
 
+    /// A market kind's place among the declared kinds, by its name.
+    pub fn market_kind(&self, name: &str) -> phx_num::Missing<u16> {
+        self.world.market_kinds.kind(phx_ledger::instruction::name_code(name))
+    }
+
     /// The world's books: the ledger and the parties whose rows it moves.
     #[must_use]
     pub fn books(&self) -> &phx_ledger::books::Books {

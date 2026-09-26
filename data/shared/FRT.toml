@@ -49,3 +49,27 @@ owner = "FRT"
 source = "measured"
 source_ref = "The units of each storable product in a tonne (axis: the products' places): an extracted product's unit is the tonne; the others' unit is what a US cent bought, so a tonne holds its value in cents, from the 2022 Commodity Flow Survey's value over tons (Census CF2200A08, US, all distances) of the SCTG groups the product aggregates: crops and livestock 01-04 ($540 a ton), food 05-08 ($1,780), consumer goods 30, 39 and 40 ($8,361), materials 20-24, 26-29 and 31-33 ($1,655), energy carriers 17-19 ($751), capital goods 34-38 ($11,626); tons of 907 kg."
 value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], values = [59525, 1, 1, 1, 1, 196211, 921642, 182433, 82784, 1281547], outside = "refuse" }
+
+[[primitive]]
+id = "FRT.mode_share"
+kind = "ENDOWMENT"
+owner = "FRT"
+source = "measured"
+source_ref = "Each mode's share of the people carriage employs, in thousands (road, rail, sea): truck transportation 1,525.4, rail transportation 153.7 and water transportation 70.9, the United States' seasonally adjusted employment of May 2025 (BLS Current Employment Statistics, as the Bureau of Transportation Statistics reports it for May 2025), taken for every group until each group's own employment by mode is read."
+value = { axis = [0, 1, 2], values = [15254, 1537, 709], outside = "refuse" }
+
+[[primitive]]
+id = "FRT.carriage_product"
+kind = "TECHNOLOGY"
+owner = "FRT"
+source = "measured"
+source_ref = "Carriage is sold as transport (H49-H53), the fourteenth of TEC.products, as the input-output tables make it."
+value = 13
+
+[[primitive]]
+id = "FRT.shipping_days"
+kind = "PREFERENCE"
+owner = "FRT"
+source = "assumed"
+source_ref = "Days between a shipper's decisions to carry its goods elsewhere: a week, as firms plan production week by week (Vollmann, Berry, Whybark and Jacobs, 2005, Manufacturing Planning and Control for Supply Chain Management, ch. 6)."
+value = 7

@@ -1,4 +1,4 @@
-//! Plant: its stock family clean and its wear realised; its capacity and its purchases, once firms produce and invest.
+//! Plant: its stock family clean and its wear realised; no making beyond its capacity; its purchases from builders.
 
 use phx_world::Inspector;
 
@@ -34,19 +34,50 @@ pub const LC_1_10: super::Check = live_check! {
     check: stock_clean,
 };
 
-fn no_output(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("output is bounded by its staff; the plant's capacity bounds it with the firm lifecycle (S2.03)")
+/// No making exceeded its plant's capacity a day, over a run in which firms made goods and their plant was reviewed.
+fn within_capacity(w: Inspector<'_>) -> Outcome {
+    let days = w.goods_days();
+    if let Some((day, d)) = days.iter().find(|(_, d)| d.beyond_capacity > 0) {
+        return Outcome::Fail(format!(
+            "{} makings beyond their plant's capacity on day {}",
+            d.beyond_capacity,
+            day.get()
+        ));
+    }
+    if days.iter().all(|(_, d)| d.made == 0) {
+        return Outcome::NotYet("no firm has made anything in the run");
+    }
+    let reviews = [
+        <sys_cap::review::ReviewSmall as phx_core::HandlerDecl>::NAME,
+        <sys_cap::review::ReviewLarge as phx_core::HandlerDecl>::NAME,
+    ];
+    if w.visit_days().iter().all(|v| reviews.iter().all(|r| v.visits_of(r) == 0)) {
+        return Outcome::NotYet("no owner has reviewed its plant in the run");
+    }
+    Outcome::Pass
 }
 
 pub const LC_1_11: super::Check = live_check! {
     id: "LC-1-11",
     title: "no output exceeds the capacity of the plant that made it (CAP.9)",
     from_step: "S1.04",
-    check: no_output,
+    check: within_capacity,
 };
 
-fn no_investment(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("firms invest with the firm lifecycle (S2.03)")
+/// Owners ordered plant from named builders, and their projects are building or complete; every stage and completion
+/// passed the ledger's check of what construction gives.
+fn invested(w: Inspector<'_>) -> Outcome {
+    let days = w.goods_days();
+    let begun: u64 = days.iter().map(|(_, d)| d.projects).sum();
+    let completed: u64 = days.iter().map(|(_, d)| d.completed).sum();
+    if begun == 0 {
+        return Outcome::NotYet("no owner has ordered plant in the run");
+    }
+    let building = w.books().ledger.chains.projects().count();
+    if completed == 0 && building == 0 {
+        return Outcome::Fail(format!("{begun} projects begun, none building and none completed"));
+    }
+    Outcome::Pass
 }
 
 pub const LC_1_12: super::Check = live_check! {
@@ -54,5 +85,5 @@ pub const LC_1_12: super::Check = live_check! {
     title: "every investment is a purchase from a named producer, a commitment until delivery; investment's share, \
             volatility and responses and the plant's age are reported (CAP.10)",
     from_step: "S1.04",
-    check: no_investment,
+    check: invested,
 };

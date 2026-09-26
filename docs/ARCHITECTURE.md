@@ -1093,6 +1093,17 @@ without end in both directions.
   released and the goods move, used up where they left and made where they arrive, at the cost that left with them;
   GDS's family counts them shipped and arrived. A segment with an end in a zone a catastrophe struck carries nothing
   that day.
+- **Carriers and shippers** (FRT.4, FRT.5): at the opening each firm selling the carriage product is given a mode,
+  drawn by the modes' shares of carriage employment (`FRT.mode_share`, stream `FRT.opening`). With the marks at 6a the
+  world rebuilds an `AwayTable`: each good's mark at each region's market zone and the carriage market's mark at each
+  origin and mode. A handler reads it through `Ctx::away` (`phx_core::Away`): for its row's zone, each other place in
+  its country that marks the good, with the metres between (`ZoneDistances`) and each mode carriage is marked in
+  where the row stands. The shipper's visit (`FRT.ship_*`, every `FRT.shipping_days` at 5d) carries the whole lots it
+  holds beyond its planning days' expected sales to the place whose price less its own and the freight — its tonnes
+  times the metres, in units of carriage at the carriage mark — is widest, when that is positive.
+- **Catastrophes** (GEO.8, GDS.9): a struck tile's share of every physical unit its sited individuals hold is lost
+  (`Source::Hazard`); an agent stands at a zone, so it loses the event's share of its zone — each struck tile's
+  thousandths over the zone's tiles — a whole part for each twin, of the plant it holds and the goods it holds there.
 - **The goods' balance** (GDS.10): a leg's digest names the source of a transformation's units and, on an instrument,
   what was issued of it before the leg, so the audit keeps per instrument the day moved (`StockDay`) its opening and
   what moved it: paired legs, unpaired legs no transformation accounts for, and each source's units made and used

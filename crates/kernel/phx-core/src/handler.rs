@@ -101,6 +101,18 @@ pub type HeldGood = (u16, u8, i64);
 /// Plant a row holds: its kind, its condition class and its units, one twin's for an agent.
 pub type HeldPlant = (u8, u8, i64);
 
+/// A place a good could be carried to from where a row stands, as the public prices show it: the zone, the mode,
+/// the metres between, the good's mark there for a lot, and the carriage market's mark at the row's place and mode
+/// for a lot of carriage.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Away {
+    pub zone: u32,
+    pub mode: u16,
+    pub metres: u64,
+    pub there: i64,
+    pub carriage: i64,
+}
+
 /// What a row's party may read of goods beyond its facts: its units of each good at its place, one twin's for an
 /// agent, and the list of them; the deposits whose rights it holds; the units of a product, of every grade, it has
 /// delivered since the world opened; and each good's latest mark at its place and the public outlook of its price
@@ -116,6 +128,8 @@ pub trait GoodsView: core::fmt::Debug {
     fn money(&self, slot: Slot) -> Missing<i64>;
     /// The plant the row holds.
     fn plant(&self, slot: Slot) -> &[HeldPlant];
+    /// The other places in the row's country a good is marked at, by each mode carriage is marked in where it stands.
+    fn away(&self, slot: Slot, product: u16, grade: u8) -> Vec<Away>;
 }
 
 /// The view of rows that hold no goods, as a kernel table's are.
@@ -146,6 +160,9 @@ impl GoodsView for NoGoods {
     }
     fn plant(&self, _: Slot) -> &[HeldPlant] {
         &[]
+    }
+    fn away(&self, _: Slot, _: u16, _: u8) -> Vec<Away> {
+        Vec::new()
     }
 }
 
@@ -230,6 +247,12 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     #[must_use]
     pub fn plant(&self, slot: Slot) -> &[HeldPlant] {
         self.parts.goods.plant(slot)
+    }
+
+    /// The other places a good is marked at and the carriage from the row's place to them, as the public prices show.
+    #[must_use]
+    pub fn away(&self, slot: Slot, product: u16, grade: u8) -> Vec<Away> {
+        self.parts.goods.away(slot, product, grade)
     }
 
     /// The public outlook of a good's price at the row's place by a method, in its market's raw price.

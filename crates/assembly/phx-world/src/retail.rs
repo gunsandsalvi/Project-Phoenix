@@ -218,8 +218,8 @@ impl World {
         for (seller, product, [price, capacity, way, plant], zone, twins) in rows {
             let Missing::Present(price) = price else { continue };
             let base = self.goods_frame.base(product);
-            // A service is made as it is sold, so its stall is what its maker's staff can serve today.
-            if self.goods_frame.delivered_at_once(product) {
+            // What cannot be stored is made as it is sold, so its stall is what its maker can make today.
+            if self.goods_frame.made_to_order(product) {
                 let (Missing::Present(staff), Missing::Present(way)) = (capacity, way) else { continue };
                 let rate = match plant {
                     Missing::Present(p) if p < staff => p,
@@ -414,6 +414,7 @@ impl World {
         // Each twin of a maker makes its own share, whole, so what they make together is a whole share for each.
         let twins = i64::from(self.books.parties.unit(seller));
         let each = qty / twins + i64::from(qty % twins != 0);
+        self.within_capacity(seller, each);
         let mut legs = vec![LegRec {
             party: seller,
             account: phx_ledger::instruction::AccountRef::Instrument(good),
