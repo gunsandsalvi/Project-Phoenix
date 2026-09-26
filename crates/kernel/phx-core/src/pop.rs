@@ -32,12 +32,22 @@ pub struct PersonAttrDecl {
     pub clause: &'static str,
 }
 
+/// A position every agent of a kind holds: an amount, a stock or a rate of its own, missing until its
+/// writer writes it.
+#[clause("REP.20")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PositionDecl {
+    pub name: &'static str,
+    pub clause: &'static str,
+}
+
 /// One item of a population kind.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PopItem {
     Attr(AttrDecl),
     Role(RoleDecl),
     PersonAttr(PersonAttrDecl),
+    Position(PositionDecl),
     /// The attribute whose value is the region the agent lives in, where what it leaves behind is sited.
     SitedBy(&'static str),
 }
@@ -79,6 +89,10 @@ impl<'a> PopKindBuilder<'a> {
 
     pub fn person_attr(&mut self, decl: PersonAttrDecl) -> &mut Self {
         self.add(PopItem::PersonAttr(decl))
+    }
+
+    pub fn position(&mut self, decl: PositionDecl) -> &mut Self {
+        self.add(PopItem::Position(decl))
     }
 
     pub fn sited_by(&mut self, attr: &'static str) -> &mut Self {

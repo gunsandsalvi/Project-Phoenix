@@ -33,6 +33,10 @@ pub struct Population {
     pub members: Vec<(&'static str, u64)>,
     pub persons: Vec<u64>,
     pub agenda: Agenda,
+    /// The agenda of the decisions taken on the rows of kinds as they come due, one table for each kind with any,
+    /// each reason one of its decisions; kinds of individuals among them.
+    pub visits: Agenda,
+    visit_specs: Vec<AgendaTableSpec>,
 }
 
 impl Population {
@@ -61,6 +65,7 @@ impl Population {
         first: u16,
         today: Day,
         space: &mut AddressSpace,
+        visit_specs: Vec<AgendaTableSpec>,
     ) -> Population {
         let kinds: Vec<PopKind> =
             (first..).zip(kinds).map(|(place, (decl, processes))| PopKind { decl, processes, place }).collect();
@@ -69,7 +74,10 @@ impl Population {
         let Ok(agenda) = Agenda::new(space, today, &agenda_specs(&kinds), AGENDA_BLOCKS) else {
             violation!(clause = "TIME.5", "more processes on a kind than an agenda row has reasons");
         };
-        Population { kinds, representation, members, persons, agenda }
+        let Ok(visits) = Agenda::new(space, today, &visit_specs, AGENDA_BLOCKS) else {
+            violation!(clause = "TIME.5", "more decisions on a kind than an agenda row has reasons");
+        };
+        Population { kinds, representation, members, persons, agenda, visits, visit_specs }
     }
 
     /// The agenda's table for a kind, if processes act on its persons.
@@ -132,7 +140,7 @@ impl Population {
         t
     }
 
-    /// Each kind's parties and persons counted, the representation and the agenda, for a save; the tables are the
+    /// Each kind's parties and persons counted, the representation and the agendas, for a save; the tables are the
     /// books'.
     #[clause("SET.12")]
     pub fn save_to(&self, w: &mut Writer<'_>) {
@@ -141,6 +149,7 @@ impl Population {
         members.save(w);
         self.persons.save(w);
         self.agenda.save_to(w);
+        self.visits.save_to(w);
     }
 
     /// The counts, the representation and the agenda read back over the build's kinds.
@@ -167,6 +176,7 @@ impl Population {
         }
         self.persons = persons;
         self.agenda = Agenda::load_from(r, space, &agenda_specs(&self.kinds), AGENDA_BLOCKS)?;
+        self.visits = Agenda::load_from(r, space, &self.visit_specs, AGENDA_BLOCKS)?;
         Ok(())
     }
 
@@ -180,6 +190,7 @@ impl Population {
             h.u64(*n);
         }
         self.agenda.hash_into(h);
+        self.visits.hash_into(h);
     }
 }
 

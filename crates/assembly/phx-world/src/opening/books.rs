@@ -100,7 +100,7 @@ pub fn agent_tables(
 /// they keep on it, and an agent table for each population kind, then each of the given contributing phases in order, its contributions in the order of their
 /// systems and names, each handed the books and the population under the representation in force.
 pub fn open_books(
-    (d, facets): (&mut Declarations, &[crate::registry::Facet]),
+    (d, facets, visits): (&mut Declarations, &[crate::registry::Facet], &[phx_core::AgendaTableSpec]),
     (pop, representation): (&[(phx_pop::kind::PopKindDecl, usize)], phx_pop::prims::Representation),
     compiled: &crate::compile::Compiled,
     countries: &[OpeningCountry],
@@ -121,8 +121,14 @@ pub fn open_books(
     }
     let first = books.parties.first_cell_place();
     let space = books.parties.cells_mut().2;
-    let mut population =
-        phx_pop::population::Population::new(pop.to_vec(), representation, first, compiled.day_zero, space);
+    let mut population = phx_pop::population::Population::new(
+        pop.to_vec(),
+        representation,
+        first,
+        compiled.day_zero,
+        space,
+        visits.to_vec(),
+    );
     let mut report = GenReport::default();
     let mut contributions: Vec<(&'static str, Box<dyn Contribution>)> = std::mem::take(&mut d.contributions);
     let mut attachments = std::mem::take(&mut d.attachments);

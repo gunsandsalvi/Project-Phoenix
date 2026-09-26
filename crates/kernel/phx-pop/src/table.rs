@@ -85,6 +85,8 @@ pub struct AgentTable<B: Backing = SystemBacking> {
     created: Column<u32, B>,
     multiplicity: Column<u32, B>,
     attrs: Vec<Column<u32, B>>,
+    /// The kind's positions by name, each the column of `facts` at its place.
+    positions: Vec<&'static str>,
     facts: Vec<Column<i64, B>>,
     lists: Vec<Column<CellListRef, B>>,
     runs: Column<AgentRunHead, B>,
@@ -97,6 +99,12 @@ pub struct AgentTable<B: Backing = SystemBacking> {
     /// The day's agents added, removed or changed, whose hazards the world draws again.
     #[saved(skip)]
     changed: Vec<Slot>,
+    /// The handler running on the agents due, whose reads and writes are checked against its declaration, and what
+    /// it read or wrote that it does not declare.
+    #[saved(skip)]
+    reader: Option<phx_core::ColumnTrace>,
+    #[saved(skip)]
+    undeclared: usize,
 }
 
 #[inline]
@@ -146,7 +154,8 @@ impl<B: Backing> AgentTable<B> {
             created: table.column(space),
             multiplicity: table.column(space),
             attrs: kind.attrs.iter().map(|_| table.column(space)).collect(),
-            facts: Vec::new(),
+            positions: kind.positions.iter().map(|p| p.item.name).collect(),
+            facts: kind.positions.iter().map(|_| table.column(space)).collect(),
             lists: AgentList::ALL.iter().map(|_| table.column(space)).collect(),
             runs: table.column(space),
             arenas: Vec::new(),
@@ -154,6 +163,8 @@ impl<B: Backing> AgentTable<B> {
             twins: 0,
             persons_held: 0,
             changed: Vec::new(),
+            reader: None,
+            undeclared: 0,
             table,
         }
     }
@@ -487,6 +498,19 @@ impl<B: Backing> AgentTable<B> {
         c.set(slot, value);
     }
 
+    /// A position's column, if the kind holds it.
+    #[must_use]
+    pub fn position(&self, name: &str) -> Option<FactColumn> {
+        self.positions.iter().position(|p| *p == name).map(|i| FactColumn::new(word32(i)))
+    }
+
+    fn named(&self, name: &str) -> FactColumn {
+        let Some(c) = self.position(name) else {
+            violation!(clause = "REP.20", "a position the kind does not hold");
+        };
+        c
+    }
+
     /// An agent's due-day run head.
     pub fn run_head(&self, slot: Slot) -> RunHead {
         self.live(slot);
@@ -577,4 +601,40 @@ pub fn begin<B: Backing>(
         violation!(clause = "PTY.9", "an agent begun under another identity than the directory's next");
     }
     (slot, party)
+}
+
+impl<B: Backing> AgentTable<B> {
+    /// Checks the reads and writes of the handler about to run on the agents due, or stops checking.
+    pub fn trace(&mut self, reader: Option<phx_core::ColumnTrace>) {
+        self.reader = reader;
+    }
+
+    /// The reads and writes handlers made that they do not declare, since last taken.
+    pub fn take_undeclared(&mut self) -> usize {
+        std::mem::take(&mut self.undeclared)
+    }
+
+    fn check(&mut self, fact: &str, written: bool) {
+        if let Some(r) = self.reader
+            && !r.writes.contains(&fact)
+            && (written || !r.reads.contains(&fact))
+        {
+            self.undeclared += 1;
+        }
+    }
+}
+
+/// A handler's rows of a population kind: its agents' positions, by name.
+impl<B: Backing> phx_core::FactStore for AgentTable<B> {
+    fn read(&mut self, fact: &'static str, slot: Slot) -> Missing<i64> {
+        self.check(fact, false);
+        let column = self.named(fact);
+        AgentTable::fact(self, slot, column)
+    }
+
+    fn write(&mut self, fact: &'static str, slot: Slot, value: i64) {
+        self.check(fact, true);
+        let column = self.named(fact);
+        self.write_fact(slot, column, value);
+    }
 }

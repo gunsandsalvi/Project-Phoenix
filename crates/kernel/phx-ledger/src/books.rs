@@ -213,6 +213,14 @@ impl<B: Backing> Parties<B> {
         self.table(place).site(slot)
     }
 
+    /// A kind table by its place, to change: its rows' facts as their handlers write them.
+    pub fn table_mut(&mut self, place: u16) -> &mut KindTable<B> {
+        let Some(t) = self.tables.get_mut(usize::from(place)) else {
+            violation!(clause = "PTY.10", "a holder table's place beyond the tables", place = place);
+        };
+        t
+    }
+
     #[must_use]
     pub fn table(&self, place: u16) -> &KindTable<B> {
         let Some(t) = self.tables.get(usize::from(place)) else {

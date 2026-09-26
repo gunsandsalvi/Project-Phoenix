@@ -448,6 +448,7 @@ pub fn phx_ledger::books::Parties<B>::places(&self) -> impl core::iter::traits::
 pub fn phx_ledger::books::Parties<B>::row(&self, phx_id::ids::PartyId) -> (u16, phx_id::ids::Slot)
 pub fn phx_ledger::books::Parties<B>::site(&self, phx_id::ids::PartyId) -> phx_id::ids::TileId
 pub fn phx_ledger::books::Parties<B>::table(&self, u16) -> &phx_core::kind_tables::KindTable<B>
+pub fn phx_ledger::books::Parties<B>::table_mut(&mut self, u16) -> &mut phx_core::kind_tables::KindTable<B>
 pub fn phx_ledger::books::Parties<B>::unit(&self, phx_id::ids::PartyId) -> u32
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Holders for phx_ledger::books::Parties<B>
 pub fn phx_ledger::books::Parties<B>::arenas(&mut self, u16) -> &mut dyn phx_ledger::holder::HolderArenas

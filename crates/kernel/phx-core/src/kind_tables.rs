@@ -83,6 +83,12 @@ pub struct KindTable<B: Backing = SystemBacking> {
     runs: Column<RunHead, B>,
     arenas: Vec<ChunkArena<B>>,
     facets: Vec<Facet<B>>,
+    /// The handler running on the rows due, whose reads and writes are checked against its declaration, and what it
+    /// read or wrote that it does not declare.
+    #[saved(skip)]
+    reader: Option<crate::columns::ColumnTrace>,
+    #[saved(skip)]
+    undeclared: usize,
 }
 
 /// The head of a holder's due-day run: the earliest day any row of its dated segment can fall due, and where the
@@ -166,6 +172,8 @@ impl<B: Backing> KindTable<B> {
             runs: table.column(space),
             arenas: Vec::new(),
             facets: Vec::new(),
+            reader: None,
+            undeclared: 0,
             table,
         }
     }
@@ -269,6 +277,12 @@ impl<B: Backing> KindTable<B> {
         if !self.table.slots.is_live(slot) {
             violation!(clause = "PTY.10", "a read of a row no party holds", slot = slot.get());
         }
+    }
+
+    /// Whether a party holds the row.
+    #[must_use]
+    pub fn is_live(&self, slot: Slot) -> bool {
+        self.table.slots.is_live(slot)
     }
 
     /// The rows parties hold, in slot order.
@@ -422,6 +436,46 @@ impl<B: Backing> TableSchema for KindTable<B> {
         };
         self.facets.push(Facet { name, values });
         Ok(FactColumn(index))
+    }
+}
+
+impl<B: Backing> KindTable<B> {
+    /// Checks the reads and writes of the handler about to run on the rows due, or stops checking.
+    pub fn trace(&mut self, reader: Option<crate::columns::ColumnTrace>) {
+        self.reader = reader;
+    }
+
+    /// The reads and writes handlers made that they do not declare, since last taken.
+    pub fn take_undeclared(&mut self) -> usize {
+        std::mem::take(&mut self.undeclared)
+    }
+
+    fn check(&mut self, fact: &str, written: bool) {
+        if let Some(r) = self.reader
+            && !r.writes.contains(&fact)
+            && (written || !r.reads.contains(&fact))
+        {
+            self.undeclared += 1;
+        }
+    }
+}
+
+/// A handler's rows of a kind of individual: their facts, by name.
+impl<B: Backing> crate::handler::FactStore for KindTable<B> {
+    fn read(&mut self, fact: &'static str, slot: Slot) -> Missing<i64> {
+        self.check(fact, false);
+        let Some(column) = self.facet_named(fact) else {
+            violation!(clause = "PTY.8", "a fact the kind does not keep");
+        };
+        KindTable::fact(self, slot, column)
+    }
+
+    fn write(&mut self, fact: &'static str, slot: Slot, value: i64) {
+        self.check(fact, true);
+        let Some(column) = self.facet_named(fact) else {
+            violation!(clause = "PTY.8", "a fact the kind does not keep");
+        };
+        self.write_fact(slot, column, value);
     }
 }
 

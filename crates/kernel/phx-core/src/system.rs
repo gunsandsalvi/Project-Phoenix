@@ -61,6 +61,8 @@ pub struct Declarations {
     pub attachments: Vec<(&'static str, Box<dyn core::any::Any + Send + Sync>)>,
     pub pop: Vec<PopEntry>,
     pub pop_processes: Vec<(&'static str, Box<dyn crate::pop_process::PopProcess>)>,
+    /// Each decision taken on the rows of a kind as they come due.
+    pub visits: Vec<(&'static str, crate::visit::VisitDecl)>,
     pub setup_values: Vec<(&'static str, SetupValue)>,
     /// Each system's state compiled from the register at assembly, which its handlers and its family read.
     pub compiled: Vec<(&'static str, Compile)>,
@@ -174,6 +176,11 @@ impl Declarations {
     /// A process on a population kind's members, whose outcome the declaring system writes.
     pub fn pop_process(&mut self, process: Box<dyn crate::pop_process::PopProcess>) {
         self.pop_processes.push((self.system, process));
+    }
+
+    /// A decision taken on a kind's rows as they come due, by its schedule or its reviews.
+    pub fn visit(&mut self, decl: crate::visit::VisitDecl) {
+        self.visits.push((self.system, decl));
     }
 
     /// Adds items to a population kind: its roles, key attributes, positions, standing rates, profile groups,

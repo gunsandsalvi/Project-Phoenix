@@ -56,6 +56,7 @@ pub struct phx_pop::kind::PopKindDecl
 pub phx_pop::kind::PopKindDecl::attrs: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::AttrDecl>>
 pub phx_pop::kind::PopKindDecl::kind: &'static str
 pub phx_pop::kind::PopKindDecl::person_attrs: alloc::vec::Vec<phx_pop::kind::PersonField>
+pub phx_pop::kind::PopKindDecl::positions: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::PositionDecl>>
 pub phx_pop::kind::PopKindDecl::roles: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::RoleDecl>>
 pub phx_pop::kind::PopKindDecl::sited_by: phx_num::missing::Missing<usize>
 impl phx_pop::kind::PopKindDecl
@@ -63,6 +64,7 @@ pub fn phx_pop::kind::PopKindDecl::attr(&self, &str) -> core::option::Option<usi
 pub fn phx_pop::kind::PopKindDecl::compile(&'static str, &[phx_core::pop::PopEntry]) -> core::result::Result<phx_pop::kind::PopKindDecl, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_pop::kind::PopKindDecl::has_persons(&self) -> bool
 pub fn phx_pop::kind::PopKindDecl::person_attr(&self, &str) -> core::option::Option<usize>
+pub fn phx_pop::kind::PopKindDecl::position(&self, &str) -> core::option::Option<usize>
 pub fn phx_pop::kind::PopKindDecl::role(&self, &str) -> core::option::Option<usize>
 pub fn phx_pop::kind::PopKindDecl::role_name(&self, usize) -> &'static str
 pub mod phx_pop::person
@@ -89,13 +91,14 @@ pub phx_pop::population::Population::kinds: alloc::vec::Vec<phx_pop::population:
 pub phx_pop::population::Population::members: alloc::vec::Vec<(&'static str, u64)>
 pub phx_pop::population::Population::persons: alloc::vec::Vec<u64>
 pub phx_pop::population::Population::representation: phx_pop::prims::Representation
+pub phx_pop::population::Population::visits: phx_core::agenda::Agenda
 impl phx_pop::population::Population
 pub fn phx_pop::population::Population::agenda_table(&self, usize) -> core::option::Option<phx_id::ids::TableId>
 pub fn phx_pop::population::Population::compile(&[&'static str], &[phx_core::pop::PopEntry]) -> core::result::Result<alloc::vec::Vec<phx_pop::kind::PopKindDecl>, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_pop::population::Population::count(&mut self, usize, (u64, u64), (u64, u64))
 pub fn phx_pop::population::Population::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_pop::population::Population::load_from(&mut self, &mut phx_store::save::Reader<'_>, &mut phx_store::backing::AddressSpace) -> core::result::Result<(), phx_store::save::LoadError>
-pub fn phx_pop::population::Population::new(alloc::vec::Vec<(phx_pop::kind::PopKindDecl, usize)>, phx_pop::prims::Representation, u16, phx_id::day::Day, &mut phx_store::backing::AddressSpace) -> phx_pop::population::Population
+pub fn phx_pop::population::Population::new(alloc::vec::Vec<(phx_pop::kind::PopKindDecl, usize)>, phx_pop::prims::Representation, u16, phx_id::day::Day, &mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::agenda::AgendaTableSpec>) -> phx_pop::population::Population
 pub fn phx_pop::population::Population::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_pop::population::Population::table<B: phx_store::backing::Backing + 'static>(&[alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], usize) -> &phx_pop::table::AgentTable<B>
 pub fn phx_pop::population::Population::table_mut<B: phx_store::backing::Backing + 'static>(&mut [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], usize) -> &mut phx_pop::table::AgentTable<B>
@@ -174,6 +177,7 @@ pub fn phx_pop::table::AgentTable<B>::new(&mut phx_store::backing::AddressSpace,
 pub fn phx_pop::table::AgentTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_pop::table::AgentTable<B>::persons(&self, phx_id::ids::Slot) -> &[u64]
 pub fn phx_pop::table::AgentTable<B>::persons_held(&self) -> u64
+pub fn phx_pop::table::AgentTable<B>::position(&self, &str) -> core::option::Option<phx_core::schema::FactColumn>
 pub fn phx_pop::table::AgentTable<B>::remove(&mut self, phx_id::ids::Slot)
 pub fn phx_pop::table::AgentTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
 pub fn phx_pop::table::AgentTable<B>::set_attachments(&mut self, phx_id::ids::Slot, &[u64])
@@ -186,6 +190,9 @@ pub fn phx_pop::table::AgentTable<B>::take_twin(&mut self, phx_id::ids::Slot)
 pub fn phx_pop::table::AgentTable<B>::twins(&self) -> u64
 pub fn phx_pop::table::AgentTable<B>::words(&self, phx_id::ids::Slot, phx_pop::table::AgentList) -> &[u64]
 pub fn phx_pop::table::AgentTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
+impl<B: phx_store::backing::Backing> phx_pop::table::AgentTable<B>
+pub fn phx_pop::table::AgentTable<B>::take_undeclared(&mut self) -> usize
+pub fn phx_pop::table::AgentTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
 impl<B: phx_store::backing::Backing + core::fmt::Debug + 'static> phx_ledger::holder::CellHolders for phx_pop::table::AgentTable<B> where phx_pop::table::AgentTable<B>: core::marker::Send + core::marker::Sync
 pub fn phx_pop::table::AgentTable<B>::as_any(&self) -> &dyn core::any::Any
 pub fn phx_pop::table::AgentTable<B>::as_any_mut(&mut self) -> &mut dyn core::any::Any
@@ -193,6 +200,9 @@ pub fn phx_pop::table::AgentTable<B>::compact_due(&mut self) -> u64
 pub fn phx_pop::table::AgentTable<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_pop::table::AgentTable<B>::load_like(&self, &mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>, phx_store::save::LoadError>
 pub fn phx_pop::table::AgentTable<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_pop::table::AgentTable<B>
+pub fn phx_pop::table::AgentTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_pop::table::AgentTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_pop::table::AgentTable<B>
 pub fn phx_pop::table::AgentTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
 impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderArenas for phx_pop::table::AgentTable<B>
@@ -213,7 +223,7 @@ pub fn phx_pop::table::AgentTable<B>::kinks_into(&self, phx_id::ids::Slot, &mut 
 pub fn phx_pop::table::AgentTable<B>::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_pop::table::AgentTable<B>::standing_rate(&self, phx_id::ids::Slot, &phx_ledger::rows::RowView) -> phx_num::missing::Missing<i64>
 pub fn phx_pop::table::AgentTable<B>::weight(&self, phx_id::ids::Slot) -> u32
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::table::AgentTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u32, B>>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<i64, B>>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<phx_store::arena::CellListRef, B>>: phx_store::save::Saved, phx_store::column::Column<phx_pop::table::AgentRunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::Slot>: core::default::Default
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::table::AgentTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u32, B>>: phx_store::save::Saved, alloc::vec::Vec<&'static str>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<i64, B>>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<phx_store::arena::CellListRef, B>>: phx_store::save::Saved, phx_store::column::Column<phx_pop::table::AgentRunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::Slot>: core::default::Default, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default
 pub fn phx_pop::table::AgentTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_pop::table::AgentTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_pop::table::NewAgent<'a>

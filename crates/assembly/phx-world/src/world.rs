@@ -63,6 +63,12 @@ pub struct World {
     pub(crate) rate_sample: Option<Vec<(usize, phx_id::Slot, phx_id::PartyId)>>,
     /// What the day's work on agents did.
     pub(crate) agent_day: crate::agents::AgentDay,
+    /// The decisions taken on the rows of kinds as they come due, the rows due today by visit, the day they were
+    /// gathered, and the undeclared reads their handlers made since the last close.
+    pub(crate) visits: Vec<crate::visits::Bound>,
+    pub(crate) visit_due: Vec<(usize, phx_id::Slot)>,
+    pub(crate) visit_day: Day,
+    pub(crate) visit_reads: phx_core::ReadTrace,
     pub(crate) markets: phx_market::markets::Markets,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,

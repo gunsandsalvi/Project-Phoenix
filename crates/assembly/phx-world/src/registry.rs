@@ -97,7 +97,7 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
 
 /// The world's books opened from the setup's countries, their people and their currencies' units.
 fn open(
-    (d, facets): (&mut Declarations, &[Facet]),
+    (d, facets, visits): (&mut Declarations, &[Facet], &[crate::visits::Bound]),
     pop: (&[(phx_pop::kind::PopKindDecl, usize)], phx_pop::prims::Representation),
     kernel: &KernelPrims,
     c: &crate::compile::Compiled,
@@ -115,7 +115,7 @@ fn open(
         .collect();
     let countries = crate::opening::books::countries(game, geo, population, &units);
     let (books, people, mut report) = crate::opening::books::open_books(
-        (d, facets),
+        (d, facets, &crate::visits::specs(visits)),
         pop,
         c,
         &countries,
@@ -204,6 +204,8 @@ struct Prepared {
     entries: Vec<SystemEntry>,
     /// Each fact a system keeps on a kind of individual: the kind, the fact's name and its declaration.
     facets: Vec<Facet>,
+    /// The decisions taken on kinds' rows as they come due.
+    visits: Vec<crate::visits::Bound>,
     register_hash: u128,
 }
 
@@ -305,6 +307,10 @@ fn prepare(
     errors.extend(refusals(&d, &h, &items, &registered));
     let (facets, unkept) = facets(&d, &items);
     errors.extend(unkept);
+    let visits = crate::visits::bind(&d, &h).unwrap_or_else(|e| {
+        errors.extend(e);
+        Vec::new()
+    });
     let compiled = match compile(&mut d, &kernel, &h.entries, &files, &levels, Seed::new(config.seed)) {
         Ok(c) => Some(c),
         Err(e) => {
@@ -342,6 +348,7 @@ fn prepare(
         c,
         entries,
         facets,
+        visits,
         register_hash: data_hash(&files),
     })
 }
@@ -403,7 +410,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     if !refused.is_empty() {
         return Err(AssemblyErrors(refused));
     }
-    let kept = |name: &str| tables.iter().any(|t| t.name == name);
+    let kept = |name: &str| tables.iter().any(|t| t.name == name) || p.visits.iter().any(|v| v.decl.kind == name);
     let unkept: Vec<String> =
         p.h.entries
             .iter()
@@ -441,6 +448,10 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         agent_hits: Vec::new(),
         rate_sample: None,
         agent_day: crate::agents::AgentDay::of(carried.today),
+        visits: std::mem::take(&mut p.visits),
+        visit_due: Vec::new(),
+        visit_day: carried.today,
+        visit_reads: phx_core::ReadTrace::default(),
         markets,
         accounts,
         report: run.report,
@@ -481,8 +492,15 @@ pub fn assemble(
     let geo = Arc::new(open_map(&p.kernel, &p.c, &p.game, &p.d)?);
     let countries = u32::try_from(p.game.countries.len()).map_err(|e| one(e.to_string()))?;
     let pop = (p.pop.as_slice(), p.representation);
-    let (books, population, report) =
-        open((&mut p.d, &p.facets), pop, &p.kernel, &p.c, &p.game, &geo, (&phx_core::PHASES, config.pool.as_ref()));
+    let (books, population, report) = open(
+        (&mut p.d, &p.facets, &p.visits),
+        pop,
+        &p.kernel,
+        &p.c,
+        &p.game,
+        &geo,
+        (&phx_core::PHASES, config.pool.as_ref()),
+    );
     let accounts = open_accounts(&p.d, &p.kernel, &p.c, &books, &geo);
     let tables = phx_geo::tables(&geo, countries);
     let mut space = AddressSpace::empty();
@@ -517,6 +535,7 @@ pub fn assemble(
     world.open_player().map_err(one)?;
     // Every agent the opening began, the player's among them, is drawn its first bookings from the day after it.
     world.book_changed(world.today, SubStep::S10b.ordinal());
+    world.visits_book_all(world.today);
     world.books.ledger.opened();
     Ok(world)
 }
@@ -568,7 +587,7 @@ pub fn load(
     let geo = Arc::new(geo);
     let pop = (p.pop.as_slice(), p.representation);
     let (declared, _, _) =
-        open((&mut p.d, &p.facets), pop, &p.kernel, &p.c, &p.game, &geo, (&[phx_core::DECLARATIONS], None));
+        open((&mut p.d, &p.facets, &p.visits), pop, &p.kernel, &p.c, &p.game, &geo, (&[phx_core::DECLARATIONS], None));
     let families: Vec<phx_core::FamilyDecl> = kernel_families()
         .iter()
         .map(|f| f.decl())
@@ -584,8 +603,14 @@ pub fn load(
     .map_err(one)?;
     let first = books.parties.first_cell_place();
     let mut space_pop = AddressSpace::empty();
-    let mut population =
-        phx_pop::population::Population::new(p.pop.clone(), p.representation, first, p.c.day_zero, &mut space_pop);
+    let mut population = phx_pop::population::Population::new(
+        p.pop.clone(),
+        p.representation,
+        first,
+        p.c.day_zero,
+        &mut space_pop,
+        crate::visits::specs(&p.visits),
+    );
     read_file(dir, "population", &names, &mut |r| population.load_from(r, &mut space_pop)).map_err(one)?;
     let markets = read_file(dir, "markets", &names, &mut |r| phx_store::Saved::load(r)).map_err(one)?;
     let (permitted, forms) = standard(&p.d, &p.kernel, &p.c);

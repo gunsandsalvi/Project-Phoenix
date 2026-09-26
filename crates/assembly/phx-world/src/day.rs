@@ -220,6 +220,9 @@ impl World {
     #[clause("TIME.6", "TIME.10")]
     fn dispatch(&mut self, day: Day, step: SubStep, pending: &mut Vec<(SubStep, Intents)>) -> u64 {
         let mut visited = 0_u64;
+        if matches!(step, SubStep::S5b | SubStep::S5c) {
+            visited += self.visits_run(day, step, pending);
+        }
         let date = self.calendar.date(day);
         for table in &mut self.tables {
             let handlers: Vec<_> = self.graph.at(step).filter(|(_, h)| h.table == table.name).collect();
@@ -351,7 +354,7 @@ impl World {
             directory.retain(f.party);
         }
         self.unprocessed.extend(book.fails.iter().copied());
-        let mut reads = ReadTrace::default();
+        let mut reads = self.take_visit_reads();
         for t in &mut self.tables {
             let found = t.columns.take_trace();
             reads.undeclared_reads += found.undeclared_reads;

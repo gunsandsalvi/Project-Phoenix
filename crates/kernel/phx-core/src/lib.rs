@@ -37,6 +37,7 @@ pub mod streams;
 pub mod substep;
 pub mod system;
 pub mod touched;
+pub mod visit;
 pub mod weight;
 
 pub use accounting::{CarryingBasis, HeldFor, Permitted};
@@ -85,7 +86,7 @@ pub use phx_macros::{
     declare_message, declare_prim, declare_record, declare_rule, declare_stream,
 };
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
-pub use pop::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, RoleDecl};
+pub use pop::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, RoleDecl};
 pub use pop_process::{AgentView, Household, Person, PopProcess};
 pub use products::ProductEntry;
 pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};
@@ -109,4 +110,5 @@ pub use system::{
     declare_system, handler_refusals,
 };
 pub use touched::TouchedRows;
+pub use visit::{Cadence, VisitDecl};
 pub use weight::Weight;

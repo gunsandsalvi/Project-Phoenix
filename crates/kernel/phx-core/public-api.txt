@@ -744,6 +744,9 @@ pub fn phx_core::handler::FactStore::write(&mut self, &'static str, phx_id::ids:
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub trait phx_core::handler::HandlerDecl: 'static
 pub const phx_core::handler::HandlerDecl::CLAUSE: &'static str
 pub const phx_core::handler::HandlerDecl::INTENTS: &'static [&'static str]
@@ -824,6 +827,7 @@ pub fn phx_core::kind_tables::KindTable<B>::edit_list<R>(&mut self, phx_id::ids:
 pub fn phx_core::kind_tables::KindTable<B>::facet_named(&self, &str) -> core::option::Option<phx_core::schema::FactColumn>
 pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
+pub fn phx_core::kind_tables::KindTable<B>::is_live(&self, phx_id::ids::Slot) -> bool
 pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
 pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
@@ -837,9 +841,15 @@ pub fn phx_core::kind_tables::KindTable<B>::slots(&self) -> impl core::iter::tra
 pub fn phx_core::kind_tables::KindTable<B>::weight_at(&self, phx_id::ids::Slot) -> u32
 pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
+impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::take_undeclared(&mut self) -> usize
+pub fn phx_core::kind_tables::KindTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
+impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default
 pub fn phx_core::kind_tables::KindTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::kind_tables::KindTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::kind_tables::NewIndividual<'a>
@@ -1058,6 +1068,7 @@ pub mod phx_core::pop
 pub enum phx_core::pop::PopItem
 pub phx_core::pop::PopItem::Attr(phx_core::pop::AttrDecl)
 pub phx_core::pop::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)
+pub phx_core::pop::PopItem::Position(phx_core::pop::PositionDecl)
 pub phx_core::pop::PopItem::Role(phx_core::pop::RoleDecl)
 pub phx_core::pop::PopItem::SitedBy(&'static str)
 pub struct phx_core::pop::AttrDecl
@@ -1076,8 +1087,12 @@ pub struct phx_core::pop::PopKindBuilder<'a>
 impl<'a> phx_core::pop::PopKindBuilder<'a>
 pub fn phx_core::pop::PopKindBuilder<'a>::attr(&mut self, phx_core::pop::AttrDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::person_attr(&mut self, phx_core::pop::PersonAttrDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &mut Self
+pub struct phx_core::pop::PositionDecl
+pub phx_core::pop::PositionDecl::clause: &'static str
+pub phx_core::pop::PositionDecl::name: &'static str
 pub struct phx_core::pop::RoleDecl
 pub phx_core::pop::RoleDecl::clause: &'static str
 pub phx_core::pop::RoleDecl::name: &'static str
@@ -1750,6 +1765,7 @@ pub phx_core::system::Declarations::records: alloc::vec::Vec<(&'static str, phx_
 pub phx_core::system::Declarations::rules: phx_core::rules::RuleTable
 pub phx_core::system::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
 pub phx_core::system::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
+pub phx_core::system::Declarations::visits: alloc::vec::Vec<(&'static str, phx_core::visit::VisitDecl)>
 impl phx_core::system::Declarations
 pub fn phx_core::system::Declarations::attachment(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
@@ -1774,6 +1790,7 @@ pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::Reco
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::system::Declarations::setup_value(&mut self, phx_core::system::SetupValue)
 pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)
+pub fn phx_core::system::Declarations::visit(&mut self, phx_core::visit::VisitDecl)
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::system::HandlerEntry
@@ -1817,6 +1834,18 @@ pub fn phx_core::touched::TouchedRows::count(&self) -> u64
 pub fn phx_core::touched::TouchedRows::mark(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_core::touched::TouchedRows::rows(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_core::touched::TouchedRows::tables(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::TableId> + '_
+pub mod phx_core::visit
+pub enum phx_core::visit::Cadence
+pub phx_core::visit::Cadence::Attention
+pub phx_core::visit::Cadence::Attention::position: &'static str
+pub phx_core::visit::Cadence::Schedule(phx_core::schedule::DecisionSchedule)
+pub struct phx_core::visit::VisitDecl
+pub phx_core::visit::VisitDecl::cadence: phx_core::visit::Cadence
+pub phx_core::visit::VisitDecl::clause: &'static str
+pub phx_core::visit::VisitDecl::handler: &'static str
+pub phx_core::visit::VisitDecl::kind: &'static str
+pub phx_core::visit::VisitDecl::stream: &'static str
+pub phx_core::visit::VisitDecl::wakes: &'static [phx_core::schedule::WakeKind]
 pub mod phx_core::weight
 #[repr(transparent)] pub struct phx_core::weight::Weight(_)
 impl phx_core::weight::Weight
@@ -1860,6 +1889,10 @@ pub phx_core::BusinessDayConvention::Unadjusted
 impl phx_store::save::Saved for phx_core::calendar::bizday::BusinessDayConvention
 pub fn phx_core::calendar::bizday::BusinessDayConvention::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_store::save::Writer<'_>)
+pub enum phx_core::Cadence
+pub phx_core::Cadence::Attention
+pub phx_core::Cadence::Attention::position: &'static str
+pub phx_core::Cadence::Schedule(phx_core::schedule::DecisionSchedule)
 pub enum phx_core::CarryingBasis
 pub phx_core::CarryingBasis::AmortisedCost
 pub phx_core::CarryingBasis::CostLessDepreciation
@@ -2042,6 +2075,7 @@ pub phx_core::PartyState::Unknown
 pub enum phx_core::PopItem
 pub phx_core::PopItem::Attr(phx_core::pop::AttrDecl)
 pub phx_core::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)
+pub phx_core::PopItem::Position(phx_core::pop::PositionDecl)
 pub phx_core::PopItem::Role(phx_core::pop::RoleDecl)
 pub phx_core::PopItem::SitedBy(&'static str)
 pub enum phx_core::PrimKind
@@ -2472,6 +2506,7 @@ pub phx_core::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::re
 pub phx_core::Declarations::rules: phx_core::rules::RuleTable
 pub phx_core::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
 pub phx_core::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
+pub phx_core::Declarations::visits: alloc::vec::Vec<(&'static str, phx_core::visit::VisitDecl)>
 impl phx_core::system::Declarations
 pub fn phx_core::system::Declarations::attachment(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
@@ -2496,6 +2531,7 @@ pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::Reco
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::system::Declarations::setup_value(&mut self, phx_core::system::SetupValue)
 pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)
+pub fn phx_core::system::Declarations::visit(&mut self, phx_core::visit::VisitDecl)
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::DeclaredLimit<T>
@@ -2768,6 +2804,7 @@ pub fn phx_core::kind_tables::KindTable<B>::edit_list<R>(&mut self, phx_id::ids:
 pub fn phx_core::kind_tables::KindTable<B>::facet_named(&self, &str) -> core::option::Option<phx_core::schema::FactColumn>
 pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
+pub fn phx_core::kind_tables::KindTable<B>::is_live(&self, phx_id::ids::Slot) -> bool
 pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
 pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
@@ -2781,9 +2818,15 @@ pub fn phx_core::kind_tables::KindTable<B>::slots(&self) -> impl core::iter::tra
 pub fn phx_core::kind_tables::KindTable<B>::weight_at(&self, phx_id::ids::Slot) -> u32
 pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
+impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::take_undeclared(&mut self) -> usize
+pub fn phx_core::kind_tables::KindTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
+impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default
 pub fn phx_core::kind_tables::KindTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::kind_tables::KindTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::KinkDecl
@@ -3001,8 +3044,12 @@ pub struct phx_core::PopKindBuilder<'a>
 impl<'a> phx_core::pop::PopKindBuilder<'a>
 pub fn phx_core::pop::PopKindBuilder<'a>::attr(&mut self, phx_core::pop::AttrDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::person_attr(&mut self, phx_core::pop::PersonAttrDecl) -> &mut Self
+pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &mut Self
+pub struct phx_core::PositionDecl
+pub phx_core::PositionDecl::clause: &'static str
+pub phx_core::PositionDecl::name: &'static str
 pub struct phx_core::Prim<T>
 impl<T: phx_core::register::values::PrimType> phx_core::register::Prim<T>
 pub fn phx_core::register::Prim<T>::decl(self, &phx_core::register::Register) -> &phx_core::register::PrimDecl
@@ -3224,6 +3271,13 @@ pub struct phx_core::TypeShare
 pub phx_core::TypeShare::id: phx_core::register::values::TypeId
 pub phx_core::TypeShare::share_ppm: u32
 pub phx_core::TypeShare::value: i64
+pub struct phx_core::VisitDecl
+pub phx_core::VisitDecl::cadence: phx_core::visit::Cadence
+pub phx_core::VisitDecl::clause: &'static str
+pub phx_core::VisitDecl::handler: &'static str
+pub phx_core::VisitDecl::kind: &'static str
+pub phx_core::VisitDecl::stream: &'static str
+pub phx_core::VisitDecl::wakes: &'static [phx_core::schedule::WakeKind]
 pub struct phx_core::WeekendRule
 pub phx_core::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>
 #[repr(transparent)] pub struct phx_core::Weight(_)
@@ -3302,6 +3356,9 @@ pub fn phx_core::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i6
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub trait phx_core::GroupDemand
 pub fn phx_core::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64
 pub trait phx_core::HandlerDecl: 'static

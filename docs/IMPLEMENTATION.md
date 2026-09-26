@@ -5963,6 +5963,10 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
   the ways it knows (TEC.4, spec Appendix E 42): a fact of a large firm, an attribute of a small one. Facts on kinds of
   individuals are columns the systems declare on the kind (`Declarations::facet`), added to the kind's table before the
   opening and saved with it. The opening reports the firms by industry per country.
+- **Decisions on the agenda** *(built, sub-step b1)*: the kernel's visits (architecture §7.3): positions on
+  population kinds (`PositionDecl`, one `i64` column each, by name), `VisitDecl` with a schedule or attention cadence,
+  the visits' agenda in `Population`, the 5b and 5c pass over the rows due, their reads and writes checked, and their
+  rebooking; the save format moves to 9. No system declares a visit yet: the firms' are sub-step b2's.
 - **Outlooks in the day** (S1.01): the firms' stances are the first parties' methods and their attention the first
   review intensities, so the public-series outlooks at 5a (VAL.23), once per method in use and series published, the
   attention exposure at visits (REP.21, REP.38) and the wake of a surprise beyond its sensitivity (REP.35, architecture

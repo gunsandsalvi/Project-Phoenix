@@ -33,7 +33,7 @@ pub const BOOK_ROWS_PER_CHUNK: u32 = 1 << 14;
 pub const HOLDER_BLOCKS: u32 = 1 << 20;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 8;
+pub const SAVE_FORMAT: u32 = 9;
 /// The file every save writes last, which makes it complete.
 pub const SAVE_MANIFEST: &str = "manifest.json";
 /// The suffix a save's directory carries until it is complete.
@@ -53,3 +53,5 @@ pub const PLAYER_KIND: &str = "household";
 pub const GATHER_SHARDS: usize = 64;
 /// See `GATHER_SHARDS`.
 pub const GATHER_WAVE: usize = 8;
+/// Billionths in a whole, for a review's daily chance as a position holds it.
+pub const BILLION: f64 = 1e9;

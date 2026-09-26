@@ -823,6 +823,20 @@ multiplicity _k_ is that person's hit in every twin (REP.1): the outcome is the 
 A hazard on a party itself (a firm's plant failing, a vehicle's accident) reads the agent with no persons: its _q_ is
 its own. Catastrophes are drawn at 3a (§7.8).
 
+**Decisions on the agenda (visits).** A system declares each decision it takes on the rows of a kind as a **visit**
+(`Declarations::visit`): the handler that takes it, the kind — a kind of individual or a population kind — its stream,
+the wakes it answers, and its **cadence**: a continuous decision's schedule (TIME.5), each row at its own phase within
+the period, drawn once and kept beside its booking; or a lumpy decision's reviews (REP.21) at the daily chance the row's
+attention position holds (REP.38), none while it holds none. The assembly refuses a visit whose handler is not its
+system's, runs on another table or outside 5b and 5c, or whose attention the kind does not hold. The visits keep an
+agenda of their own beside the processes' (`Population::visits`), one table per visited kind, a reason per visit, saved
+with the population. Every row is booked once the opening is done; the rows due are gathered on the day's first decision
+sub-step, each visit's handler runs on its rows due in runs of consecutive slots over its kind's table — an agent
+table's positions (REP.20, declared on the kind with `PopKindBuilder::position`) or a kind table's facts — and each row is
+booked again after it: its schedule's next instance, or a review drawn afresh at the attention its decision left it. A
+handler's reads and writes on its rows are checked against its declaration and counted into the day's read trace. A row
+that ends leaves its bookings to lapse: a due row no party holds is passed over.
+
 ### 7.4 Outcomes and endings
 
 At 3e each agent hit that day is made explicit — its attributes by name and its persons by role and attributes,

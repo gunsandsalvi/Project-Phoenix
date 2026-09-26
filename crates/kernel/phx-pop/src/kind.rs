@@ -1,7 +1,7 @@
 //! A population kind compiled from every system's items: its attributes, its persons' roles and attributes, and where
 //! its agents are sited.
 
-use phx_core::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, RoleDecl};
+use phx_core::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PositionDecl, RoleDecl};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 
@@ -31,6 +31,8 @@ pub struct PopKindDecl {
     pub attrs: Vec<Declared<AttrDecl>>,
     pub roles: Vec<Declared<RoleDecl>>,
     pub person_attrs: Vec<PersonField>,
+    /// The positions each agent holds, each a column of the kind's table in this order.
+    pub positions: Vec<Declared<PositionDecl>>,
     /// The attribute whose value is the region an agent lives in.
     pub sited_by: Missing<usize>,
 }
@@ -54,6 +56,7 @@ impl PopKindDecl {
         let mut attrs = Vec::new();
         let mut roles = Vec::new();
         let mut person_attrs: Vec<PersonField> = Vec::new();
+        let mut positions = Vec::new();
         let mut sited: Option<&'static str> = None;
         let mut shift = 0_u32;
         for e in entries.iter().filter(|e| e.kind == kind) {
@@ -73,6 +76,7 @@ impl PopKindDecl {
                     person_attrs.push(PersonField { decl: p, system: e.system, shift, bits });
                     shift += bits;
                 }
+                PopItem::Position(p) => positions.push(Declared { item: p, system: e.system }),
                 PopItem::SitedBy(name) => {
                     if sited.replace(name).is_some() {
                         errors.push(format!("`{kind}` sited by two attributes"));
@@ -85,6 +89,7 @@ impl PopKindDecl {
             .map(|a| a.item.name)
             .chain(roles.iter().map(|r| r.item.name))
             .chain(person_attrs.iter().map(|p| p.decl.name))
+            .chain(positions.iter().map(|p| p.item.name))
             .collect();
         for (i, n) in names.iter().enumerate() {
             if names.iter().skip(i + 1).any(|m| m == n) {
@@ -105,13 +110,23 @@ impl PopKindDecl {
                 errors.push(format!("`{kind}` sited by `{name}`, an attribute it does not hold"));
             }
         }
-        if errors.is_empty() { Ok(PopKindDecl { kind, attrs, roles, person_attrs, sited_by }) } else { Err(errors) }
+        if errors.is_empty() {
+            Ok(PopKindDecl { kind, attrs, roles, person_attrs, positions, sited_by })
+        } else {
+            Err(errors)
+        }
     }
 
     /// An attribute's place among the kind's.
     #[must_use]
     pub fn attr(&self, name: &str) -> Option<usize> {
         self.attrs.iter().position(|a| a.item.name == name)
+    }
+
+    /// A position's place among the kind's.
+    #[must_use]
+    pub fn position(&self, name: &str) -> Option<usize> {
+        self.positions.iter().position(|p| p.item.name == name)
     }
 
     /// A role's place among the kind's.

@@ -76,6 +76,8 @@ pub(crate) struct BuildContext {
     /// representation the build holds.
     pub pop: Vec<(phx_pop::kind::PopKindDecl, usize)>,
     pub representation: phx_pop::prims::Representation,
+    /// The tables of the visits' agenda, over which a save's visits are read back.
+    pub visit_specs: Vec<phx_core::AgendaTableSpec>,
     pub record_kinds: Vec<RecordKindDecl>,
     pub permitted: Vec<phx_core::Permitted>,
     pub forms: std::collections::BTreeMap<&'static str, String>,
@@ -288,6 +290,7 @@ impl World {
             declared: self.books.declared(crate::opening::books::size(), crate::opening::books::agent_tables(&decls)),
             pop,
             representation: self.population.representation,
+            visit_specs: crate::visits::specs(&self.visits),
             record_kinds: self.records.kinds().to_vec(),
             permitted: self.accounts.permitted().to_vec(),
             forms: self.accounts.forms().clone(),
@@ -321,7 +324,9 @@ fn read_and_hash(dir: &Path, name: &str, ctx: &mut BuildContext, hs: &mut [&mut 
             let first = ctx.declared.parties.first_cell_place();
             let mut space = phx_store::AddressSpace::empty();
             let (pop, rep) = (ctx.pop.clone(), ctx.representation);
-            let mut population = phx_pop::population::Population::new(pop, rep, first, phx_id::Day::new(0), &mut space);
+            let specs = ctx.visit_specs.clone();
+            let mut population =
+                phx_pop::population::Population::new(pop, rep, first, phx_id::Day::new(0), &mut space, specs);
             read_store(dir, name, &names, &mut |r| population.load_from(r, &mut space))?;
             for h in hs.iter_mut() {
                 population.hash_into(h);
