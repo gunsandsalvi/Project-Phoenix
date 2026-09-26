@@ -43,9 +43,12 @@ const HOLDERS: MoneyHolders = MoneyHolders {
     requesters: &["BNK"],
 };
 
+/// The firms' term loans' line kind.
+pub(crate) const LOAN_KIND: &str = "firm term loan";
+
 /// A firm's term loan from its bank, one contract to a line.
 const LOAN: LineKindDecl = LineKindDecl {
-    name: "firm term loan",
+    name: LOAN_KIND,
     asset: SideDecl {
         holder_kinds: &[BANK.name],
         words: BALANCE,
@@ -84,7 +87,7 @@ fn reason(b: &Books) -> ReasonId {
 }
 
 /// The banks' declarations in the books: their opening's reason, their deposits' kind and their loans' kind.
-#[clause("MON.1", "BNK.1")]
+#[clause("MON.1", "BNK.1", "BNK.2")]
 #[derive(Debug)]
 pub struct Declared;
 
@@ -111,6 +114,7 @@ impl Contribution for Declared {
     fn contribute(&self, opening: &mut Opening<'_>) {
         let b = books::of(opening);
         let _ = b.ledger.reasons.declare(REASON);
+        let _ = b.ledger.reasons.declare(crate::LENT);
         b.ledger.lines.declare_deposits(HOLDERS.deposits(ACCOUNT));
         b.ledger.lines.declare_money(LOAN);
         b.ledger.lines.declare_deposits(crate::households::RETAIL.retail_deposits(crate::households::ACCOUNT));

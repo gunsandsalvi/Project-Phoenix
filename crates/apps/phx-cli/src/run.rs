@@ -316,7 +316,7 @@ fn estates_open(w: Inspector<'_>) -> u64 {
     u64::try_from(most).unwrap_or(0)
 }
 
-fn counters(w: Inspector<'_>) -> [(&'static str, u64); 40] {
+fn counters(w: Inspector<'_>) -> [(&'static str, u64); 43] {
     let most =
         |f: fn(&phx_ledger::apply_batch::DaySettlement) -> u64| greatest(w.settlements().iter().map(|s| f(&s.dues)));
     let agents = |f: fn(&phx_world::agents::AgentDay) -> u64| greatest(w.agent_days().iter().map(f));
@@ -380,6 +380,12 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 40] {
         (
             "phx_lab.rounds_to_match",
             greatest(w.labour_days().iter().filter(|(_, d)| d.matches > 0).map(|(_, d)| d.match_days / d.matches)),
+        ),
+        ("phx_bnk.applications", greatest(w.credit_days().iter().map(|(_, d)| d.applications))),
+        ("phx_bnk.declines", greatest(w.credit_days().iter().map(|(_, d)| d.declines))),
+        (
+            "phx_bnk.loans_written",
+            greatest(w.credit_days().iter().map(|(_, d)| u64::try_from(d.written.len()).unwrap_or(u64::MAX))),
         ),
     ]
 }
@@ -734,6 +740,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
         "representation": w.population().representation.name(),
+        "twins_over_edge": w.twins_over_edge(),
         "injections": crate::inject::report(w.injections()),
         "peak_resident_bytes": peak,
         "memory_budget_bytes": WORLD_BYTES,

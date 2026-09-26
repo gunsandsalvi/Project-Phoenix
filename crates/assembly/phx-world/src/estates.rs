@@ -84,6 +84,7 @@ impl World {
             let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S7c.ordinal());
             let s = self.books.settle_estate(estate, destination, m, &mut draws, self.audit.stream());
             self.detach(&s.left, &mut draws);
+            self.credit_losses(&s.lost);
             self.agent_day.estates_passed += i128::from(s.passed);
             self.agent_day.estates_written_off += i128::from(s.written_off);
             if s.fail.is_some() {

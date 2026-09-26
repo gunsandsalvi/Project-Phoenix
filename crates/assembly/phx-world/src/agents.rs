@@ -800,6 +800,7 @@ impl World {
         self.metrics.visits.push(visited);
         self.metrics.goods.push((day, std::mem::take(&mut self.market_day.tally)));
         self.metrics.labour.push((day, std::mem::take(&mut self.labour.day)));
+        self.metrics.credit.push((day, std::mem::take(&mut self.credit.day)));
     }
 
     /// Every agent begun or changed since the last booking drawn afresh from the day after `day`; a kind no process

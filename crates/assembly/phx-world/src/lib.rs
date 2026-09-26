@@ -1,6 +1,7 @@
 pub mod agents;
 pub mod compile;
 pub mod consts;
+pub mod credit;
 pub mod day;
 mod defaults;
 mod estates;

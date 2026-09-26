@@ -17,3 +17,106 @@ source = "assumed"
 source_ref = "A firm's term loan at the opening runs ten years at most, as most business term loans run, until the banks' lending decides each loan's term."
 shape = "placeholder:BNK"
 value = 10
+
+# The banks' lending (BNK.4-BNK.6, BNK.20): the published statistics a bank's assessment starts from, the capital a
+# loan consumes and the return required on it, the cost of making a loan, the step of quoted rates, and how many
+# lenders a borrower asks.
+
+[[primitive]]
+id = "BNK.cover_bounds"
+kind = "ENDOWMENT"
+owner = "BNK"
+source = "measured"
+source_ref = "The least interest cover (earnings before interest and taxes over interest expense) of each class of borrower above the worst (axis: the classes C, CC, CCC, B-, B, B+, BB, BB+, BBB, A-, A, A+, AA, AAA), the worst, D, below the first: Damodaran's synthetic rating table for smaller and riskier firms (ratings.xls, New York University Stern School of Business, January 2026)."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], values = [0.50, 0.80, 1.25, 1.50, 2.00, 2.50, 3.00, 3.50, 4.00, 4.50, 6.00, 7.50, 9.50, 12.50], outside = "refuse" }
+
+[[primitive]]
+id = "BNK.default_rates"
+kind = "ENDOWMENT"
+owner = "BNK"
+source = "measured"
+source_ref = "The yearly default frequency published for each class of borrower (axis: D, C, CC, CCC, B-, B, B+, BB, BB+, BBB, A-, A, A+, AA, AAA): S&P Global's one-year average corporate default rates by rating, 1981-2024 (2024 Annual Global Corporate Default and Rating Transition Study, Table 24): CCC/C 26.12%, B 2.93%, BB 0.56%, BBB 0.14%, A 0.05%, AA 0.02%, AAA 0.00%, each notch at its rating's; D a borrower already in default."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], values = [1.0000, 0.2612, 0.2612, 0.2612, 0.0293, 0.0293, 0.0293, 0.0056, 0.0056, 0.0014, 0.0005, 0.0005, 0.0005, 0.0002, 0.0000], outside = "refuse" }
+
+[[primitive]]
+id = "BNK.loss_given_default"
+kind = "ENDOWMENT"
+owner = "BNK"
+source = "measured"
+source_ref = "The published share of a defaulted unsecured bank loan's balance lost: 1 less the 54.02% recovered on senior unsecured bank loans, Moody's post-default trading prices, 1982-2006 (Moody's Corporate Default and Recovery Rates, 1920-2006, Exhibit 6)."
+value = "0.4598"
+
+[[primitive]]
+id = "BNK.capital_requirement"
+kind = "POLICY"
+owner = "BNK"
+source = "measured"
+source_ref = "The capital a loan of full risk weight consumes, as a share of it: Basel III's minimum total capital, 8% of risk-weighted assets (BCBS RBC20.1), with the capital conservation buffer, 2.5% (RBC30.1)."
+decided_by = "banking supervisor"
+value = "0.1050"
+
+[[primitive]]
+id = "BNK.risk_weight"
+kind = "SHAPE"
+owner = "BNK"
+source = "measured"
+source_ref = "A firm's term loan's risk weight: 100%, the standardised approach's weight for an unrated corporate exposure (BCBS CRE20.43), until banks hold their own capital models."
+shape = "placeholder:BCP"
+value = "1.00"
+
+[[primitive]]
+id = "BNK.required_return"
+kind = "PREFERENCE"
+owner = "BNK"
+source = "estimated"
+source_ref = "The return a bank's management requires on the capital a loan consumes: 10%, the median of the models of euro area banks' cost of equity, within a range of 7.7-12.7% (Altavilla et al., ECB Occasional Paper 254, 2021); US banks' averaged 10.5% after Dodd-Frank (Kovner and Van Tassel, New York Fed Staff Report 854)."
+value = "0.100"
+
+[[primitive]]
+id = "BNK.loan_cost_share"
+kind = "TECHNOLOGY"
+owner = "BNK"
+source = "estimated"
+source_ref = "The cost of making a loan, as a share of output per person, so that it scales with a country's prices and wages: larger US banks' average total cost of a new small business loan, $3,200 (QED and Oliver Wyman 2015, cited by Mills and McCarthy, HBS Working Paper 17-042), over US GDP per person in 2015, about $56,800 (World Bank WDI)."
+value = "0.0563"
+
+[[primitive]]
+id = "BNK.rate_step"
+kind = "POLICY"
+owner = "BNK"
+source = "measured"
+source_ref = "The step between the yearly rates lenders quote: one eighth of a percentage point, the step of mortgage pass-through rates and of adjustable rates' rounding (Fannie Mae Selling Guide C2-1.1-02 and B2-1.4-02)."
+decided_by = "the trade's convention"
+value = "0.00125"
+
+[[primitive]]
+id = "BNK.lenders_asked"
+kind = "TECHNOLOGY"
+owner = "BNK"
+source = "measured"
+source_ref = "The shares of borrowers asking one, two, and three lenders (axis: the lenders asked; three or more counted as three): 54%, 23% and 23% of employer firms applying for financing (Federal Reserve Banks, 2015 Small Business Credit Survey, Report on Employer Firms)."
+value = { axis = [1, 2, 3], values = [0.54, 0.23, 0.23], outside = "refuse" }
+
+[[primitive]]
+id = "BNK.prior_loan_years"
+kind = "PREFERENCE"
+owner = "BNK"
+source = "assumed"
+source_ref = "The loan-years of its own book a bank counts the published default frequency of a class as, before its own defaults outweigh it: 100, assumed until a lender's learning is measured."
+value = 100
+
+[[primitive]]
+id = "BNK.prior_recoveries"
+kind = "PREFERENCE"
+owner = "BNK"
+source = "assumed"
+source_ref = "The recoveries of its own a bank counts the published loss given default as: 10, assumed until a lender's learning is measured."
+value = 10
+
+[[primitive]]
+id = "BNK.refinance_lead_days"
+kind = "PREFERENCE"
+owner = "BNK"
+source = "assumed"
+source_ref = "The days before a loan's maturity its borrower seeks to refinance it: 30, assumed until firms' funding decisions are built (S2.03)."
+value = 30

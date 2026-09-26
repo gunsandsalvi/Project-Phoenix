@@ -85,6 +85,7 @@ pub struct World {
     pub(crate) trade: crate::retail::TradeKinds,
     /// Labour's kind and laws, its book, and what its rounds rebuild from the world.
     pub(crate) labour: crate::labour::Labour,
+    pub(crate) credit: crate::credit::Credit,
     /// What the kernel reads to key goods.
     pub(crate) goods_frame: crate::goods::Frame,
     /// The day's orders, matches and trades, from their admission to their settlement.

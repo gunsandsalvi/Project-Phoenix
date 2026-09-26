@@ -1,6 +1,7 @@
 use phx_audit::CloseRecord;
 use phx_core::{Calendar, CountryEntry, FamilyDecl, Finding, SUB_STEPS, SubStep, SubStepKind};
 use phx_id::{CountryId, Date, Day};
+use phx_macros::clause;
 
 use crate::day::{AUDIT_AT, KERNEL_WORK};
 use crate::hash::world_hash;
@@ -71,8 +72,14 @@ impl<'a> Inspector<'a> {
 
     /// What each day's labour did: searchers, vacancies seen, applications, offers, matches, hires, layoffs,
     /// separations and retirements.
+    #[clause("LAB.14")]
     pub fn labour_days(&self) -> &[(Day, crate::labour::LabourDay)] {
         &self.world.metrics.labour
+    }
+
+    /// What each day's credit did: applications, quotes, declines by bank, choices, loans written, reviews.
+    pub fn credit_days(&self) -> &[(Day, crate::credit::CreditDay)] {
+        &self.world.metrics.credit
     }
 
     /// Employment as the books hold it: each employment line's two sides' members, and the people each employed
@@ -91,6 +98,45 @@ impl<'a> Inspector<'a> {
                 (i, side(phx_ledger::algebra::Side::Asset), side(phx_ledger::algebra::Side::Liability))
             })
             .collect()
+    }
+
+    /// The employers' agents whose size would rank them individuals but that stand for twins: those whose staff for
+    /// each twin reach the least staff of an individual employer.
+    #[clause("REP.15")]
+    #[must_use]
+    pub fn twins_over_edge(&self) -> u64 {
+        let w = self.world;
+        let Some(kind) = w.labour.kind else { return 0 };
+        let lines = &w.books.ledger.lines;
+        let k = lines.kind_index(kind.line);
+        let parties = &w.books.parties;
+        let first = parties.first_cell_place();
+        let staff = |place: u16, slot: phx_id::Slot| -> u64 {
+            phx_ledger::rows::rows(parties.holder(place), slot)
+                .iter()
+                .filter(|r| r.side() == phx_ledger::algebra::Side::Liability && lines.kind_of(r.row.line) == k)
+                .map(|r| u64::from(r.row.count))
+                .sum()
+        };
+        let edge = parties
+            .places()
+            .filter(|p| *p < first)
+            .flat_map(|p| live_slots(parties.holder(p)).into_iter().map(move |s| (p, s)))
+            .map(|(p, s)| staff(p, s))
+            .filter(|n| *n > 0)
+            .reduce(|a, b| if b < a { b } else { a });
+        let Some(edge) = edge else { return 0 };
+        let mut over = 0;
+        for p in parties.places().filter(|p| *p >= first) {
+            let t = parties.holder(p);
+            for s in live_slots(t) {
+                let twins = u64::from(parties.unit(t.party(s)));
+                if twins > 1 && staff(p, s) / twins >= edge {
+                    over += 1;
+                }
+            }
+        }
+        over
     }
 
     /// The persons of the household agents whose jobs buy more than `most` hours a week between them.
@@ -369,4 +415,9 @@ impl<'a> Inspector<'a> {
     pub fn stream_count(&self) -> usize {
         self.world.streams.len()
     }
+}
+
+/// A holder table's live slots, in order.
+fn live_slots(t: &dyn phx_ledger::holder::HolderTable) -> Vec<phx_id::Slot> {
+    phx_store::table::live_in(t.live_words()).collect()
 }

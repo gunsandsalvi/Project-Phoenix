@@ -37,7 +37,7 @@ struct Seeker {
 
 impl World {
     /// 5c: the day's round of labour, a step of each part.
-    #[clause("LAB.4", "LAB.5", "LAB.7", "LAB.8", "TIME.10")]
+    #[clause("LAB.4", "LAB.5", "LAB.7", "LAB.8", "LAB.15", "TIME.10")]
     pub(crate) fn labour_round(&mut self, day: Day) {
         let Some(kind) = self.labour.kind else { return };
         let book = &mut self.labour.book;

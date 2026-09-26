@@ -97,4 +97,7 @@ pub struct Metrics {
     /// What each day's labour did, which a save does not carry: the run's report reads them.
     #[saved(skip)]
     pub labour: Vec<(Day, crate::labour::LabourDay)>,
+    /// What each day's credit did, which a save does not carry: the run's report reads them.
+    #[saved(skip)]
+    pub credit: Vec<(Day, crate::credit::CreditDay)>,
 }

@@ -262,7 +262,7 @@ impl<B: Backing> Books<B> {
     }
 
     /// The party a holder-list key names.
-    pub(crate) fn party_of_key(&self, key: u32) -> PartyId {
+    pub fn party_of_key(&self, key: u32) -> PartyId {
         let (place, slot) = self.ledger.lines.keys().split(key);
         self.parties.holder(place).party(slot)
     }

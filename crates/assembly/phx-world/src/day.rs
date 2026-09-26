@@ -212,6 +212,7 @@ impl World {
                 self.markets_settle(SubStep::S7c);
                 self.freight_settle(day, SubStep::S7c);
                 self.labour_settle(day, SubStep::S7c);
+                self.credit_settle(day);
             }
             if info.step == SubStep::S9b {
                 let period = crate::registry::period_of(&self.calendar, day);
@@ -251,7 +252,10 @@ impl World {
                 self.arrivals(day);
                 self.goods_outlooks(day);
             }
-            SubStep::S5c => self.labour_round(day),
+            SubStep::S5c => {
+                self.labour_round(day);
+                self.credit_round(day);
+            }
             _ => {}
         }
     }

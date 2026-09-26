@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 if-firm = { path = "../../interfaces/if-firm" }
+if-credit = { path = "../../interfaces/if-credit" }
 if-labour = { path = "../../interfaces/if-labour" }
 phx-acct = { path = "../../kernel/phx-acct" }
 phx-audit = { path = "../../kernel/phx-audit" }

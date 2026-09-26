@@ -413,6 +413,7 @@ pub fn phx_ledger::books::Books<B>::load_from(&mut phx_store::save::Reader<'_>, 
 pub fn phx_ledger::books::Books<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::forget_tallies(&mut self)
+pub fn phx_ledger::books::Books<B>::lend(&mut self, (phx_id::ids::PartyId, phx_id::ids::PartyId, phx_id::ids::LineId), (i64, phx_num::money::Ccy), (phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt), &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::members_join(&mut self, (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side), phx_id::ids::PartyId, u32, (phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt), &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::members_leave(&mut self, (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side), u32, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> core::result::Result<alloc::vec::Vec<(phx_id::ids::PartyId, u32)>, phx_ledger::fails::Fail> where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::read_unlisted(&mut self, &[(phx_id::ids::LineId, phx_ledger::algebra::Side)]) -> bool where B: core::marker::Sync
@@ -421,6 +422,7 @@ pub fn phx_ledger::books::Books<B>::transfer(&mut self, phx_ledger::transfer::Li
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::holds_money(&self, phx_id::ids::PartyId, phx_num::money::Ccy) -> bool
 pub fn phx_ledger::books::Books<B>::money_held(&self, phx_id::ids::PartyId, phx_num::money::Ccy) -> phx_num::missing::Missing<i64>
+pub fn phx_ledger::books::Books<B>::party_of_key(&self, u32) -> phx_id::ids::PartyId
 pub fn phx_ledger::books::Books<B>::pay_into(&self, phx_id::ids::PartyId, phx_id::ids::PartyId, (i64, phx_num::money::Ccy), &mut alloc::vec::Vec<phx_ledger::instruction::LegRec>)
 pub fn phx_ledger::books::Books<B>::side_counts(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> alloc::vec::Vec<(phx_id::ids::PartyId, u32)>
 pub fn phx_ledger::books::Books<B>::trade_legs(&self, (phx_id::ids::PartyId, phx_id::ids::PartyId), (phx_id::ids::InstrumentId, i64), (i64, phx_num::money::Ccy)) -> alloc::vec::Vec<phx_ledger::instruction::LegRec>
@@ -674,6 +676,7 @@ pub struct phx_ledger::estate::Settled
 pub phx_ledger::estate::Settled::ended: bool
 pub phx_ledger::estate::Settled::fail: core::option::Option<phx_ledger::fails::Fail>
 pub phx_ledger::estate::Settled::left: alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, u32)>
+pub phx_ledger::estate::Settled::lost: alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::LineId, i64)>
 pub phx_ledger::estate::Settled::paid: i64
 pub phx_ledger::estate::Settled::passed: i64
 pub phx_ledger::estate::Settled::unsold: bool

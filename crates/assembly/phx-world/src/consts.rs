@@ -77,3 +77,7 @@ pub const LEAST_MATCH_DAYS: u32 = 3;
 pub const DAYS_A_YEAR: f64 = 365.2425;
 /// The places of decimals the required return a firm holds is written to.
 pub const HURDLE_EXP: u8 = 6;
+/// Months of a year, for a loan's term in years and a month's share of a loan-year.
+pub const MONTHS_A_YEAR: f64 = 12.0;
+/// Months of a year, whole, for numbering months across years.
+pub const MONTHS: i64 = 12;

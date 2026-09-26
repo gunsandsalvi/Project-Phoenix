@@ -137,6 +137,7 @@ impl World {
 
     /// A hire joining its line: the employee's members and as many of the employer's, the person attached and no
     /// longer searching, its occupation and wage point recorded.
+    #[clause("LAB.13", "LAB.1")]
     fn hire(&mut self, day: Day, h: &Hire) {
         let Some(kind) = self.labour.kind else { return };
         if !self.live(h.employer) || !self.live(h.employee) {

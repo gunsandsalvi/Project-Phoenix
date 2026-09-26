@@ -402,8 +402,10 @@ fn prepare(
 fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<String>> {
     let (mut kinds, mut errors) = (phx_market::instances::Kinds::default(), Vec::new());
     for (system, kind) in &d.markets {
-        // Labour's matching is its own kind, which meets no market's rules.
-        if kind.downcast_ref::<if_labour::kind::LabourKind>().is_some() {
+        // Labour's matching and credit's quotes are their own kinds, which meet no market's rules.
+        if kind.downcast_ref::<if_labour::kind::LabourKind>().is_some()
+            || kind.downcast_ref::<if_credit::kind::CreditKind>().is_some()
+        {
             continue;
         }
         let decl = kind
@@ -524,6 +526,16 @@ fn labour_of(
     crate::labour::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
+/// Credit's kind bound with each country's law, carrying its book.
+fn credit_of(
+    p: &Prepared,
+    geo: &phx_geo::GeoState,
+    book: crate::credit::CreditBook,
+) -> Result<crate::credit::Credit, AssemblyErrors> {
+    let (opening, _, _, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    crate::credit::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
+}
+
 fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, AssemblyErrors> {
     let State { geo, tables, books, population, markets, accounts, records, events, carried, run, space } = s;
     let mut families = kernel_families();
@@ -541,6 +553,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let news = phx_core::EventsRule::new(p.kernel.public_events.shared(&p.c.register), &event_kinds)
         .map_err(|e| AssemblyErrors(vec![e]))?;
     let labour = labour_of(&p, &geo, carried.labour)?;
+    let credit = credit_of(&p, &geo, carried.credit)?;
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
@@ -582,6 +595,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         market_kinds: std::mem::take(&mut p.market_kinds),
         trade: p.trade.clone(),
         labour,
+        credit,
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
@@ -657,6 +671,7 @@ pub fn assemble(
             bindings: Bindings::default(),
             closed: phx_ledger::pending::Closed::default(),
             labour: crate::labour::LabourBook::default(),
+            credit: crate::credit::CreditBook::default(),
         },
         run: crate::save::RunRecord {
             metrics: Metrics::default(),
@@ -673,6 +688,7 @@ pub fn assemble(
     // Every agent the opening began, the player's among them, is drawn its first bookings from the day after it.
     world.book_changed(world.today, SubStep::S10b.ordinal());
     world.labour_rebuild();
+    world.credit_rebuild();
     world.visits_book_all(world.today);
     world.books.ledger.opened();
     Ok(world)
@@ -785,6 +801,7 @@ pub fn load(
     let mut world = finish(p, state, config)?;
     world.defaults_rebuild();
     world.labour_rebuild();
+    world.credit_rebuild();
     world.loaded = true;
     let rebuilt = crate::save::manifest::hex(crate::hash::world_hash(&world));
     if rebuilt != manifest.world_hash {

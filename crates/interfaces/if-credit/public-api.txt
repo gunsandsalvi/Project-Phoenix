@@ -1,0 +1,58 @@
+pub mod if_credit
+pub mod if_credit::decisions
+pub struct if_credit::decisions::ChooseIn
+pub if_credit::decisions::ChooseIn::rate_step: f64
+pub if_credit::decisions::ChooseIn::rates: alloc::vec::Vec<f64>
+pub if_credit::decisions::ChooseIn::required_return: f64
+pub if_credit::decisions::ChooseIn::tastes: alloc::vec::Vec<f64>
+pub struct if_credit::decisions::DeclineIn
+pub if_credit::decisions::DeclineIn::capital: f64
+pub if_credit::decisions::DeclineIn::capital_requirement: f64
+pub if_credit::decisions::DeclineIn::class: u32
+pub if_credit::decisions::DeclineIn::standard: u32
+pub if_credit::decisions::DeclineIn::weighted: f64
+pub struct if_credit::decisions::QuoteIn
+pub if_credit::decisions::QuoteIn::capital_requirement: f64
+pub if_credit::decisions::QuoteIn::cost_of_funds: f64
+pub if_credit::decisions::QuoteIn::default_rate: f64
+pub if_credit::decisions::QuoteIn::loan_cost: f64
+pub if_credit::decisions::QuoteIn::loss_given_default: f64
+pub if_credit::decisions::QuoteIn::principal: f64
+pub if_credit::decisions::QuoteIn::rate_step: f64
+pub if_credit::decisions::QuoteIn::required_return: f64
+pub if_credit::decisions::QuoteIn::risk_weight: f64
+pub if_credit::decisions::QuoteIn::years: f64
+pub struct if_credit::decisions::StandardIn
+pub if_credit::decisions::StandardIn::classes: u32
+pub if_credit::decisions::StandardIn::priced_loss: f64
+pub if_credit::decisions::StandardIn::seen_loss: f64
+pub if_credit::decisions::StandardIn::standard: u32
+pub mod if_credit::kind
+pub struct if_credit::kind::CreditKind
+pub if_credit::kind::CreditKind::asked_stream: &'static str
+pub if_credit::kind::CreditKind::choose: fn(&if_credit::decisions::ChooseIn) -> phx_num::missing::Missing<u32>
+pub if_credit::kind::CreditKind::class_of: fn(&if_credit::law::Law, phx_num::missing::Missing<f64>) -> u32
+pub if_credit::kind::CreditKind::decline: fn(&if_credit::decisions::DeclineIn) -> bool
+pub if_credit::kind::CreditKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_credit::law::Law, alloc::string::String>
+pub if_credit::kind::CreditKind::learned: fn(f64, f64, f64, f64) -> f64
+pub if_credit::kind::CreditKind::lender: &'static str
+pub if_credit::kind::CreditKind::lent: &'static str
+pub if_credit::kind::CreditKind::loan: &'static str
+pub if_credit::kind::CreditKind::quote: fn(&if_credit::decisions::QuoteIn) -> f64
+pub if_credit::kind::CreditKind::standard: fn(&if_credit::decisions::StandardIn) -> u32
+pub if_credit::kind::CreditKind::taste_stream: &'static str
+pub mod if_credit::law
+pub struct if_credit::law::Law
+pub if_credit::law::Law::capital_requirement: f64
+pub if_credit::law::Law::cost_of_funds: f64
+pub if_credit::law::Law::cover_bounds: alloc::vec::Vec<f64>
+pub if_credit::law::Law::default_rates: alloc::vec::Vec<f64>
+pub if_credit::law::Law::lead_days: u32
+pub if_credit::law::Law::lenders_asked: alloc::vec::Vec<f64>
+pub if_credit::law::Law::loan_cost: f64
+pub if_credit::law::Law::loss_given_default: f64
+pub if_credit::law::Law::prior_loan_years: f64
+pub if_credit::law::Law::prior_recoveries: f64
+pub if_credit::law::Law::rate_step: f64
+pub if_credit::law::Law::required_return: f64
+pub if_credit::law::Law::risk_weight: f64

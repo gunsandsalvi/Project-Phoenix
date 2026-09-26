@@ -442,6 +442,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "if-credit"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-num",
+]
+
+[[package]]
 name = "if-firm"
 version = "0.1.0"
 dependencies = [
@@ -837,6 +845,7 @@ dependencies = [
 name = "phx-world"
 version = "0.1.0"
 dependencies = [
+ "if-credit",
  "if-firm",
  "if-labour",
  "phx-acct",
@@ -1148,7 +1157,9 @@ dependencies = [
 name = "sys-bnk"
 version = "0.1.0"
 dependencies = [
+ "if-credit",
  "if-pop",
+ "libm",
  "phx-core",
  "phx-id",
  "phx-ledger",

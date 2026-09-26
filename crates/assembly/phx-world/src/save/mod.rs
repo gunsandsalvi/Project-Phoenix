@@ -55,6 +55,7 @@ pub(crate) struct Carried {
     pub bindings: Bindings,
     pub closed: phx_ledger::pending::Closed,
     pub labour: crate::labour::LabourBook,
+    pub credit: crate::credit::CreditBook,
 }
 
 /// The run's own record, outside the world hash.
@@ -139,6 +140,7 @@ impl World {
                 self.bindings.save(w);
                 self.closed.save(w);
                 self.labour.book.save(w);
+                self.credit.book.save(w);
             }
             "books" => self.books.save_to(w),
             "population" => self.population.save_to(w),
@@ -169,7 +171,7 @@ impl World {
                 &self.unprocessed,
                 (&self.queue, &self.bindings),
                 &self.closed,
-                &self.labour.book,
+                (&self.labour.book, &self.credit.book),
             ),
             "books" => hash_books(h, &self.books),
             "population" => self.population.hash_into(h),
@@ -314,7 +316,14 @@ fn read_and_hash(dir: &Path, name: &str, ctx: &mut BuildContext, hs: &mut [&mut 
         "world" => {
             let c = read_store(dir, name, &names, &mut read_carried)?;
             for h in hs.iter_mut() {
-                hash_world_store(h, c.today, &c.unprocessed, (&c.queue, &c.bindings), &c.closed, &c.labour);
+                hash_world_store(
+                    h,
+                    c.today,
+                    &c.unprocessed,
+                    (&c.queue, &c.bindings),
+                    &c.closed,
+                    (&c.labour, &c.credit),
+                );
             }
         }
         "books" => {
@@ -387,6 +396,7 @@ pub(crate) fn read_carried(r: &mut Reader<'_>) -> Result<Carried, LoadError> {
         bindings: Saved::load(r)?,
         closed: Saved::load(r)?,
         labour: Saved::load(r)?,
+        credit: Saved::load(r)?,
     })
 }
 

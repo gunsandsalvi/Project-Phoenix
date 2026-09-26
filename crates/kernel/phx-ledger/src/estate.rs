@@ -30,6 +30,8 @@ pub struct Settled {
     pub unsold: bool,
     /// The payment that failed, where one did; what settled before it stands.
     pub fail: Option<Fail>,
+    /// Each debt written off: its creditor, its line and the amount lost.
+    pub lost: Vec<(PartyId, LineId, i64)>,
 }
 
 /// A debt of the estate: the line it is owed on and the one party holding the claim.
@@ -271,6 +273,7 @@ impl<B: phx_store::Backing> Books<B> {
                 ];
                 let _ = self.submit(self.dues.written_off, legs, m, audit)?;
                 out.written_off += short;
+                out.lost.push((*creditor, *line, short));
             }
         }
         if out.unsold {

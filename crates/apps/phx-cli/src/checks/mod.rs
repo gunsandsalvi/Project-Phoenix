@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod credit;
 pub mod firms;
 pub mod freight;
 pub mod geo;
@@ -168,6 +169,9 @@ pub const CHECKS: &[Check] = &[
     labour::LC_1_21,
     labour::LC_1_22,
     labour::LC_1_23,
+    credit::LC_1_24,
+    credit::LC_1_25,
+    credit::LC_1_26,
     firms::LC_1_45,
     goods::LC_1_46,
     freight::LC_1_47,

@@ -293,6 +293,28 @@ impl<B: Backing> Books<B> {
         self.submit(reason, legs, m, audit)
     }
 
+    /// A loan made: the lender's row and the borrower's opened on a new loan line, each a contract, the principal owed
+    /// on them, and the principal paid into the borrower's account, which the lender creates as a deposit where it
+    /// keeps the account and pays in reserves where another does, in one instruction.
+    ///
+    /// # Errors
+    /// The fail, when the instruction could not settle.
+    #[clause("BNK.8", "MON.6", "BNK.1")]
+    pub fn lend(
+        &mut self,
+        (lender, borrower, line): (PartyId, PartyId, LineId),
+        (principal, ccy): (i64, phx_num::Ccy),
+        (reason, m): (ReasonId, MoveAt),
+        audit: &mut dyn AuditStream,
+    ) -> Result<InstructionId, Fail> {
+        let mut legs =
+            vec![self.enter((lender, line, Side::Asset), 1, m), self.enter((borrower, line, Side::Liability), 1, m)];
+        legs.push(crate::dues::row_leg(lender, line, Side::Asset, principal, ccy));
+        legs.push(crate::dues::row_leg(borrower, line, Side::Liability, -principal, ccy));
+        self.pay_into(lender, borrower, (principal, ccy), &mut legs);
+        self.submit(reason, legs, m, audit)
+    }
+
     /// Members leaving a line with as many of its other side: `count` members off a party's row, and as many off the
     /// rows of the other side's holders, each drawn by the members its row has left and giving its whole unit, so the
     /// sides stay equal and an agent's twins alike, in one instruction. A member leaving takes no share of a row's balance, which would be a claim the line still

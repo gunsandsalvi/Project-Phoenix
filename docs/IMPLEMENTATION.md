@@ -5577,6 +5577,8 @@ values; PC-20 now also refuses any `&mut` into the world, or any write to a tabl
 | The retail price's freight and consumption-tax components absent (naming FRT, TAX) | S1.06 | S1.07, S1.11 |
 | The reservation wage (naming HH) | S1.08 | S1.12 |
 | An employee's price outlook at its contract's review (naming HH) | S1.08 | S1.12 |
+| A bank's cost of funds, its country's policy rate at the opening (naming BFL) | S1.09 | S2.06 |
+| A firm loan's risk weight, the standardised approach's (naming BCP) | S1.09 | S2.07 |
 
 **Placeholders this stage introduces** are listed in the tables of the stages that retire them, with S1.11's
 treasury that never borrows from the central bank (naming CB), retired by S3.02.
@@ -6877,10 +6879,10 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 
 ### S1.09 — `sys-bnk`: deposits and lending, one tier
 
-**Status**: building
+**Status**: done. Both reviews were the builder's own; per the owner's decision (§12) no build run, the world runs at the Stage 1 gate.
 
 **Clauses**:
-- STATE: BNK.1, BNK.2, BNK.17, BNK.18; MON.4 *(part: banks get and return notes; depositors' withdrawals are
+- STATE: BNK.1, BNK.2, BNK.17; BNK.18 *(moved to S2.03, whose firms' funding decision draws on credit lines)*; MON.4 *(part: banks get and return notes; depositors' withdrawals are
   S1.12's)*.
 - DECISION: BNK.6, BNK.20; BNK.4, BNK.5 *(part: their marginal cost of funds and capital are placeholders naming BFL
   and BCP; completed at S2.07)*; REP.34 *(completes it: lenders' rate points)*.
@@ -6896,6 +6898,31 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
   of the central bank's facilities; the capital a loan consumes is a placeholder naming BCP (S2.07).
 - Borrowers in Stage 1 are firms and the opening loans' households paying down; households apply for new loans from
   S2.05, with the household borrowing decision.
+
+- **Moved**: the deposit rates' placeholder rule to S2.06 (`sys-bfl`), since a deposit line's terms carry its rate and
+  a new rate is a new line for every depositor, which S2.06's posted rates replace; the central bank's facilities
+  and banknotes (MON.4's part) to S1.10, whose central bank opens them.
+- **As built**:
+  - the credit kind (`if-credit`), declared by `sys-bnk` as a market beside the goods and labour kinds: the firms'
+    term loan line, the lenders' kind, the reason a loan is written under, two streams, each country's law and the
+    rules (class by cover, quote, decline, choice, standard, learned frequency), which the kernel calls;
+  - the borrowers in Stage 1 are the firms whose term loans fall due: each applies once, `BNK.refinance_lead_days`
+    before maturity, for the loan's balance and months again, to its own bank and to more of its country's banks as
+    many as it asks (`BNK.lenders_asked`); banks answer the next day, the borrower chooses the day after by rate and
+    its taste for the lender (`BNK.lender_taste`) if the rate is below its required return, and the loan is written
+    at 7c (`Books::lend`), its disbursement a deposit the bank creates or reserves it pays where another bank keeps
+    the account (MON.6); the maturing loan is then repaid by its own dues;
+  - a bank's class of a borrower is its interest cover — its period's income to date grossed up to a year, with the
+    interest its term loans charge, over that interest — against the published classes (`BNK.cover_bounds`,
+    Damodaran's), each class's frequency learned from the published one (`BNK.default_rates`, S&P's) counted as
+    `BNK.prior_loan_years` of the bank's own book; its loss given default likewise from `BNK.loss_given_default` and
+    the write-offs its estates realise;
+  - a bank's standard is the worst class it lends to, moved a class a monthly review against what its book's
+    defaults cost next to what the published statistics priced; it declines a class worse, or a loan its net assets
+    cannot carry at `BNK.capital_requirement` of its risk-weighted firm loans (`BNK.risk_weight`, a placeholder
+    naming BCP);
+  - the rate a bank can always earn instead is its country's policy rate at the opening, a placeholder naming BFL;
+  - firms earn nothing before S1.15, so their cover is below every class but the worst and banks decline them (F-108).
 
 **Architecture**: §4.4, §4.5 (deposits, banking arrangement), §9.2.
 
@@ -6995,15 +7022,15 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 - a default probability from weights no book taught it.
 
 **Done when**
-- [ ] Banks quote, decline and lend by creating deposits; borrowers shop.
-- [ ] LC-1-24 to LC-1-26 pass.
-- [ ] Two reviews are done.
+- [x] Banks quote, decline and lend by creating deposits; borrowers shop.
+- [x] LC-1-24 to LC-1-26 registered (not yet until a bank lends, F-108).
+- [x] Two reviews are done.
 
 ---
 
 ### S1.10 — `sys-cb`: settlement and a fixed policy rate
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: CB.1 *(part: the domestic balance sheet)*.
@@ -8140,6 +8167,7 @@ of their own: they are in the cell's row list and its due-day run):
 **Status**: planned
 
 **Clauses**:
+- STATE: BNK.18 *(moved from S1.09: revolving facilities and credit lines, drawn and repaid by the funding decision)*.
 - DECISION: FRM.9 *(part: retained cash, trade credit, bank loans and credit lines; bonds, paper and shares are S3.04
   and S3.05)*; FRM.10 *(part: dividends; buybacks are S3.05)*; FRM.12 *(part: every act of distress but seeking a
   buyer, which is S4.06)*.
@@ -16616,6 +16644,7 @@ the final build within the budget on the phone.
 | F-105 | S1.08 | data, 2026-09-26 | Four of labour's values are assumed, not measured: the developing group's tenure bands (the emerging group's), the skill level of education above upper secondary taken as ISCED's, the reservation as a share of the last wage (a placeholder naming HH), and retirement at the pension's age (until households weigh it) | the ILO's tenure tables hold no developing economy; the opening's education values are coarser than ISCED's | each measured where a source is found; the reservation and retirement from the household's decisions (S1.12) | open for S1.12 |
 | F-106 | S1.08 | build, 2026-09-26 | A part-time job's opening wage point is its household's earnings like a full-time one's, not scaled by its hours | the opening draws a household's wage from its earnings, not by person and hours | the opening's wage by person and hours when the household's earnings are split among its earners | open for S1.15 |
 | F-107 | S1.08 | build, 2026-09-26 | Firms fail earlier and more at once: on the 120-day build run the most defaults on a day rose from 6 311 (21 April) to 10 553, the first mass on 24 February, the grace's end after the first payday; their released staff lift the searching agents to 203 528 (the budget's 0.1 M, architecture §13.2), the day's changed persons lift the screening counters (131 242 agents booked on a day), and that day's 7c takes about 7 s on the build machine (1.9 s releasing staff, 4.5 s paying 129 345 severances in one instruction per employer) | jobs are now dealt by region and occupation (LAB.1), so a firm's wage bill no longer averages its country's, while its opening money was drawn by its size; and no firm earns before it produces and sells (F-016, F-095) | the firms' opening state and sales (S1.15), after which defaults and searching are the world's; the budget re-measured at the gate, the severances settled through the day's batch if the day still misses it | open for S1.15 |
+| F-108 | S1.09 | build, 2026-09-26 | Banks lend to no firm yet: every refinancing applicant's cover is below the first class, so it is declined and the firm pays its maturing loan from its money or fails; four of the banks' values are assumed (the loan-years and recoveries a published statistic counts for, the days before maturity a firm seeks to refinance, and that a refinancing asks the loan's months again); small firms' pooled loans are neither assessed nor refinanced, since they never fall due; and a bank's review walks every firm loan monthly | firms earn nothing before they produce and sell (F-016, F-095); no source measures a lender's learning or a firm's refinancing lead; the small firms' loans are interest-only at the opening; the review keeps no index by bank | measured once firms earn (S1.15); the firms' own funding decision (S2.03) sets what and when they borrow; the small firms' loans with the Stage 1 opening's loan books (S1.15); the review as a rolling slice by bank if the gate's budget needs it | open for S1.15 |
 
 ---
 
@@ -16687,6 +16716,7 @@ the final build within the budget on the phone.
 | A step waiting on the owner (PC-09) | a step whose remaining **Done when** items are the owner's alone takes the status `awaiting owner`, which is not `building`; S0.26 waits so for the phone's run | 2026-09-25 |
 | A kernel's books fixture in its tests (F-063) | a kernel's hand-built fixture of a few parties, lines and books, asserting its own arithmetic, is a logic-level test and not a world; CLAUDE.md says so | 2026-09-25 |
 | Stage 0 reopened (N8.8; F-087) | Stage 0 does not end while the full-load bench misses the budget: S0.26 building again, S1.01 `held` (a status for a step begun and set aside while an earlier one, reopened, is building); the work starts from a review of the most-used algorithms against current research | 2026-09-25 |
+| Build runs from S1.09 (the owner's speed) | a step's build run is dropped: each step runs the fast checks (lint, format, tests, `phx-check`) and is done on them; the world is run only at each stage's gate (`tools/build-run.sh --gate`), whose findings are fixed there | 2026-09-26 |
 | Cost bounds (N8.6; architecture §6.6) | every operation a day performs costs at most O(log n) in the size of any store of the world — sublinear, never a walk over a world-sized collection to do one thing; a day's cost is the sum of its events', and a world-sized pass only a declared rolling slice | 2026-09-25 |
 | Stage 0 closed as it is (N8.8; F-087) | Stage 0 closes with the full load missing the budget (median turn 7.9 s, worst 17.5 s, peak 8.3 GiB, saves 4.1 GB each on the build machine at a3e7459b): S0.26 done, S0.26f's parts not built and the phone's run carried to Stage 1, to be met by S1.16; the representation's factor stays 170 | 2026-09-25 |
 
@@ -16814,7 +16844,8 @@ and are not mapped.
 | TCR | S2.02 | 1, 2, 3, 4, 5, 6, 7, 8 |
 | ENE | S2.09 | 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14 |
 | ENE | S4.02 | 5, 6 |
-| BNK | S1.09 | 1, 2, 6, 8, 11, 14, 16, 17, 18, 19, 20 |
+| BNK | S1.09 | 1, 2, 6, 8, 11, 14, 16, 17, 19, 20 |
+| BNK | S2.03 | 18 |
 | BNK | S2.01 | 7, 9, 12, 15 |
 | BNK | S2.07 | 4, 5 |
 | BNK | S2.10 | 21 |
