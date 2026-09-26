@@ -354,6 +354,7 @@ fn config(args: &RunArgs) -> Result<WorldConfig, String> {
             Some(named) => phx_num::Missing::Present(representation(named)?),
             None => phx_num::Missing::Absent,
         },
+        pool: Some(pool(args.workers)?),
     })
 }
 
@@ -595,7 +596,6 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let clock = WallClock::new();
     let assembling = clock.now_ns();
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
-    world.use_pool(pool(args.workers)?);
     let assembly_ns = clock.now_ns().checked_sub(assembling);
     let (settle_end, end) = span(Inspector::new(&world), args.days, args.total_days)?;
     let definitions = phx_obs::Definitions::read(&args.data)?;
@@ -697,6 +697,7 @@ pub fn measure_calendar(data: &Path, setup: &Path, run_dir: &Path, out: &Path) -
         run_dir: run_dir.to_path_buf(),
         read_trace: false,
         representation: phx_num::Missing::Absent,
+        pool: None,
     };
     let world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let report = crate::measure::calendar::measure(Inspector::new(&world));

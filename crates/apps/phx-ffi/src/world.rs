@@ -118,6 +118,7 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
     let clock = Mono(Instant::now());
     let data = PathBuf::from(data);
     let definitions = phx_obs::Definitions::read(&data)?;
+    let pool = phx_exec::Pool::new(&phx_exec::spec::PoolSpec::detect()).map_err(|e| e.0)?;
     let config = WorldConfig {
         seed: 1,
         setup: data.join("setup").join("default.toml"),
@@ -125,12 +126,11 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
         run_dir: PathBuf::from(run_dir),
         read_trace: false,
         representation: phx_num::Missing::Absent,
+        pool: Some(std::sync::Arc::new(pool)),
     };
     show(host, "world", "opening", "assembling".to_owned(), String::new(), "");
     let started = clock.now_ns();
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
-    let pool = phx_exec::Pool::new(&phx_exec::spec::PoolSpec::detect()).map_err(|e| e.0)?;
-    world.use_pool(std::sync::Arc::new(pool));
     let opening_ms = clock.now_ns().checked_sub(started).map(|n| n / NS_PER_MS);
     let opened_peak = proc_kib("status", "VmHWM:");
     let w = Inspector::new(&world);

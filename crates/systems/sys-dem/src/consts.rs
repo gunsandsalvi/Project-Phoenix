@@ -19,3 +19,6 @@ pub const MEMBER_COLUMNS: usize = 4;
 /// The types the partner gap is cut into to give each whole year of it a chance: fine enough that no year's chance
 /// moves by more than a type's share.
 pub const GAP_TYPES: u16 = 10_000;
+/// The regions drawn at once, each on its own worker, before they are booked in order: enough for every worker the
+/// phone runs, and few enough that a wave's households are small beside the world.
+pub const REGION_WAVE: usize = 8;

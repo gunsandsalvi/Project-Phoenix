@@ -24,7 +24,8 @@ use phx_store::SystemBacking;
 
 use crate::compose::{self, Member, Pick, Place, Pool, Rules, Type};
 use crate::consts::{
-    BANDS, CHILDREN_COLUMN, GAP_TYPES, MEMBER_COLUMNS, OLD_AGE, OLDER, OTHER, PARTNER_COLUMN, PERCENT, WORKING_AGE,
+    BANDS, CHILDREN_COLUMN, GAP_TYPES, MEMBER_COLUMNS, OLD_AGE, OLDER, OTHER, PARTNER_COLUMN, PERCENT, REGION_WAVE,
+    WORKING_AGE,
 };
 use crate::household::Role;
 use crate::lines::Drawer;
@@ -461,15 +462,25 @@ fn person(country: &Country, m: &Member, (d, health, school): (&mut Draws, &mut 
     }
 }
 
-/// One region's households formed from one twin-th of its persons, each made an agent with its lines drawn.
+/// A household drawn in a region, before the books hold it: the subject its draws are keyed by, what formed it, its
+/// persons and the means it was drawn.
+struct Formed {
+    subject: phx_rand::Subject,
+    raised: bool,
+    kind: usize,
+    h: Household,
+    drawn: (f64, f64),
+}
+
+/// One region's households formed from one twin-th of its persons, each household's draws keyed by the region and
+/// its place in it, so a region is drawn alone; with the persons it counts disabled and by age band.
 fn draw_region(
     country: &Country,
     opening_ctx: &phx_core::OpeningCtx<'_>,
     (region, people): (u32, u64),
-    into: &mut Into<'_>,
-    drawer: &mut Drawer,
-) -> Tally {
-    let twins = u64::from(into.twins);
+    (kind, twins): (&PopKindDecl, u32),
+) -> (Vec<Formed>, Tally) {
+    let twins = u64::from(twins);
     let mut lot = opening_ctx.draws(&PersonsStream::DECL, opening_subject(region, 0));
     let [women, men] = &country.people;
     let weights: Vec<f64> = women.iter().chain(men).copied().collect();
@@ -477,10 +488,10 @@ fn draw_region(
     let men_counts = counts.split_off(women.len());
     let mut pool = Pool::of(counts, men_counts);
     let mut tally = Tally { types: vec![0; country.shares.len()], ..Tally::default() };
-    let region_at = into.kind.attr(REGION.name).unwrap_or_else(|| {
+    let region_at = kind.attr(REGION.name).unwrap_or_else(|| {
         violation!(clause = "REP.41", "a household kind without its region");
     });
-    let (mut ordinal, mut members) = (0_u32, Vec::new());
+    let (mut ordinal, mut members, mut out) = (0_u32, Vec::new(), Vec::new());
     loop {
         let subject = opening_subject(region, ordinal);
         let mut d = opening_ctx.draws(&CompositionStream::DECL, subject);
@@ -496,24 +507,38 @@ fn draw_region(
             }
             persons.push(p);
         }
-        let mut attrs = vec![0_u32; into.kind.attrs.len()];
+        let mut attrs = vec![0_u32; kind.attrs.len()];
         if let Some(r) = attrs.get_mut(region_at) {
             *r = region;
         }
-        let names: Vec<(&'static str, u32)> =
-            into.kind.attrs.iter().zip(&attrs).map(|(a, v)| (a.item.name, *v)).collect();
-        let mut h = Household { attrs: names, persons };
+        let names: Vec<(&'static str, u32)> = kind.attrs.iter().zip(&attrs).map(|(a, v)| (a.item.name, *v)).collect();
+        let h = Household { attrs: names, persons };
         let mut means = opening_ctx.draws(&MeansStream::DECL, subject);
         let drawn = (
             country.wealth.draw(&mut means) / country.wealth.mean(),
             country.income.draw(&mut means) / country.income.mean(),
         );
+        out.push(Formed { subject, raised: formed.raised, kind: formed.kind.index, h, drawn });
+        let Some(next) = ordinal.checked_add(1) else {
+            capacity_exceeded!("households of a region", u32::MAX, ordinal);
+        };
+        ordinal = next;
+    }
+    (out, tally)
+}
+
+/// A region's drawn households made agents in their order, each with its lines drawn onto the books.
+fn book_region(
+    formed: Vec<Formed>,
+    opening_ctx: &phx_core::OpeningCtx<'_>,
+    into: &mut Into<'_>,
+    drawer: &mut Drawer,
+    tally: &mut Tally,
+) {
+    let twins = u64::from(into.twins);
+    for Formed { subject, raised, kind, mut h, drawn } in formed {
         let held = drawer.household(into.books, &mut h, ((opening_ctx, subject), drawn));
-        for (i, a) in into.kind.attrs.iter().enumerate() {
-            if let Some(x) = attrs.get_mut(i) {
-                *x = h.attr(a.item.name);
-            }
-        }
+        let attrs: Vec<u32> = into.kind.attrs.iter().map(|a| h.attr(a.item.name)).collect();
         let words: Vec<u64> = h.persons.iter().map(|p| pack(into.kind, p)).collect();
         let (tables, directory, space) = into.books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(tables, into.at);
@@ -524,16 +549,11 @@ fn draw_region(
         drawer.agent(party, twins, held);
         tally.persons += twins * len_u64(h.persons.len());
         tally.households += twins;
-        tally.raised += twins * u64::from(formed.raised);
-        if let Some(t) = tally.types.get_mut(formed.kind.index) {
+        tally.raised += twins * u64::from(raised);
+        if let Some(t) = tally.types.get_mut(kind) {
             *t += twins;
         }
-        let Some(next) = ordinal.checked_add(1) else {
-            capacity_exceeded!("households of a region", u32::MAX, ordinal);
-        };
-        ordinal = next;
     }
-    tally
 }
 
 /// The household kind's place among the population's kinds.
@@ -586,11 +606,17 @@ impl Contribution for Households {
             let shares = apportion(c.people, &tiles, &mut lot);
             let mut tally = Tally::default();
             let mut whole = 0_u64;
-            for ((region, _), people) in c.regions.iter().zip(shares) {
-                whole += people - people % u64::from(twins);
-                let mut into = Into { books, kind: &kind, at, day: *day, twins };
-                let drawn = draw_region(&country, ctx, (*region, people), &mut into, &mut drawer);
-                tally.add(&drawn);
+            let regions: Vec<(u32, u64)> = c.regions.iter().map(|(r, _)| *r).zip(shares).collect();
+            // A wave of regions drawn at once on the books' workers, then booked in the regions' order.
+            for wave in regions.chunks(REGION_WAVE) {
+                let drawn =
+                    books.on_pool(wave.len(), |i| wave.get(i).map(|r| draw_region(&country, ctx, *r, (&kind, twins))));
+                for ((_, people), (formed, counted)) in wave.iter().zip(drawn.into_iter().flatten()) {
+                    whole += people - people % u64::from(twins);
+                    tally.add(&counted);
+                    let mut into = Into { books, kind: &kind, at, day: *day, twins };
+                    book_region(formed, ctx, &mut into, &mut drawer, &mut tally);
+                }
             }
             let mut lot = ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 1));
             drawer.close(books, (register, reason), &mut lot, report);

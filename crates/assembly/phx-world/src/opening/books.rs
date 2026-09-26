@@ -105,12 +105,15 @@ pub fn open_books(
     compiled: &crate::compile::Compiled,
     countries: &[OpeningCountry],
     date: phx_id::Date,
-    phases: &[OpeningPhase],
+    (phases, pool): (&[OpeningPhase], Option<&std::sync::Arc<phx_exec::Pool>>),
 ) -> (Books, phx_pop::population::Population, GenReport) {
     let kinds: Vec<&'static str> =
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
     let decls: Vec<phx_pop::kind::PopKindDecl> = pop.iter().map(|(d, _)| d.clone()).collect();
     let mut books: Books = Books::with_cells(&kinds, pop.len(), agent_tables(&decls), size());
+    if let Some(pool) = pool {
+        books.use_pool(std::sync::Arc::clone(pool));
+    }
     let first = books.parties.first_cell_place();
     let space = books.parties.cells_mut().2;
     let mut population =

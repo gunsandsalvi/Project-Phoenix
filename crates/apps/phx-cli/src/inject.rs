@@ -32,6 +32,7 @@ pub fn injections(
             multiplicity: manifest.multiplicity,
             population_divisor: manifest.population_divisor,
         }),
+        pool: None,
     };
     let build = crate::run::build_id()?;
     let clock = WallClock::new();

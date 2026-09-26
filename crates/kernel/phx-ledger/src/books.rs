@@ -274,6 +274,11 @@ impl<B: Backing> Books<B> {
         self.pool.as_deref()
     }
 
+    /// `f` of every index below `n`, on the books' workers where they have any, in index order either way.
+    pub fn on_pool<T: Send>(&self, n: usize, f: impl Fn(usize) -> T + Sync) -> Vec<T> {
+        phx_exec::pool::map(self.pool(), n, f)
+    }
+
     /// Workers for stage 7's shards; its results are the same with or without them.
     pub fn use_pool(&mut self, pool: std::sync::Arc<phx_exec::Pool>) {
         self.pool = Some(pool);

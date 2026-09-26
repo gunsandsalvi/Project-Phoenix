@@ -24,7 +24,7 @@ use crate::world::{OwnState, World};
 
 /// How a run is set up: its one seed, where its data and its new game's setup lie, the run's own directory, where
 /// the new game's countries are instantiated, whether reads are traced, and the representation the owner's switch
-/// names in place of the register's.
+/// names in place of the register's, and the workers the world runs on, the opening among its work.
 #[derive(Clone, Debug)]
 pub struct WorldConfig {
     pub seed: u64,
@@ -33,6 +33,7 @@ pub struct WorldConfig {
     pub run_dir: PathBuf,
     pub read_trace: bool,
     pub representation: Missing<phx_pop::prims::Representation>,
+    pub pool: Option<Arc<phx_exec::Pool>>,
 }
 
 fn read(path: &Path, country: Missing<CountryId>) -> Result<DataFile, String> {
@@ -102,7 +103,7 @@ fn open(
     c: &crate::compile::Compiled,
     game: &NewGame,
     geo: &phx_geo::GeoState,
-    phases: &[phx_core::OpeningPhase],
+    (phases, pool): (&[phx_core::OpeningPhase], Option<&Arc<phx_exec::Pool>>),
 ) -> (phx_ledger::books::Books, phx_pop::population::Population, phx_core::GenReport) {
     // A small world's countries hold one factor-th of the population, and everything the opening derives follows.
     let total = kernel.opening.population.shared(&c.register).get();
@@ -114,7 +115,7 @@ fn open(
         .collect();
     let countries = crate::opening::books::countries(game, geo, population, &units);
     let (books, people, mut report) =
-        crate::opening::books::open_books(d, pop, c, &countries, kernel.day_zero.shared(&c.register), phases);
+        crate::opening::books::open_books(d, pop, c, &countries, kernel.day_zero.shared(&c.register), (phases, pool));
     if population * divisor != total {
         report.adjustments.push(phx_core::Adjustment {
             what: format!("the population, one {divisor}-th of the setup's in whole persons"),
@@ -423,7 +424,7 @@ pub fn assemble(
     let geo = Arc::new(open_map(&p.kernel, &p.c, &p.game, &p.d)?);
     let countries = u32::try_from(p.game.countries.len()).map_err(|e| one(e.to_string()))?;
     let pop = (p.pop.as_slice(), p.representation);
-    let (books, population, report) = open(&mut p.d, pop, &p.kernel, &p.c, &p.game, &geo, &phx_core::PHASES);
+    let (books, population, report) = open(&mut p.d, pop, &p.kernel, &p.c, &p.game, &geo, (&phx_core::PHASES, config.pool.as_ref()));
     let accounts = open_accounts(&p.d, &p.kernel, &p.c, &books, &geo);
     let tables = phx_geo::tables(&geo, countries);
     let mut space = AddressSpace::empty();
@@ -508,7 +509,7 @@ pub fn load(
     .map_err(one)?;
     let geo = Arc::new(geo);
     let pop = (p.pop.as_slice(), p.representation);
-    let (declared, _, _) = open(&mut p.d, pop, &p.kernel, &p.c, &p.game, &geo, &[phx_core::DECLARATIONS]);
+    let (declared, _, _) = open(&mut p.d, pop, &p.kernel, &p.c, &p.game, &geo, (&[phx_core::DECLARATIONS], None));
     let families: Vec<phx_core::FamilyDecl> = kernel_families()
         .iter()
         .map(|f| f.decl())

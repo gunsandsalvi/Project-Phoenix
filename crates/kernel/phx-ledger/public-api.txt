@@ -389,6 +389,7 @@ pub fn phx_ledger::books::Books<B>::contract_process(&mut self, &[phx_ledger::fa
 pub fn phx_ledger::books::Books<B>::equity(&self, phx_id::ids::PartyId) -> i128
 pub fn phx_ledger::books::Books<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_ledger::books::Books<B>::new(&[&'static str], phx_ledger::books::BooksSize) -> phx_ledger::books::Books<B>
+pub fn phx_ledger::books::Books<B>::on_pool<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_ledger::books::Books<B>::open(&mut self, phx_ledger::instruction::ReasonId, alloc::vec::Vec<phx_ledger::instruction::LegRec>, u64, &mut phx_core::contribution::GenReport)
 pub fn phx_ledger::books::Books<B>::pool(&self) -> core::option::Option<&phx_exec::pool::Pool>
 pub fn phx_ledger::books::Books<B>::row_on(&self, phx_id::ids::PartyId, &str) -> core::option::Option<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
