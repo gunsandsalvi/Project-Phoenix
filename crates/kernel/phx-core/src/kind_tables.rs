@@ -444,8 +444,14 @@ impl<B: Backing> KindTable<B> {
 /// written on one worker.
 #[must_use]
 pub fn deal_writes(writes: &[(Slot, usize, u64)], rows_per_chunk: u32, chunks: usize) -> Vec<Vec<(Slot, usize, u64)>> {
-    let mut dealt: Vec<Vec<(Slot, usize, u64)>> = (0..chunks).map(|_| Vec::new()).collect();
     let per = at(Slot::new(rows_per_chunk));
+    let mut counts = vec![0_usize; chunks];
+    for w in writes {
+        if let Some(c) = counts.get_mut(at(w.0) / per) {
+            *c += 1;
+        }
+    }
+    let mut dealt: Vec<Vec<(Slot, usize, u64)>> = counts.into_iter().map(Vec::with_capacity).collect();
     for w in writes {
         let Some(chunk) = dealt.get_mut(at(w.0) / per) else {
             violation!(clause = "PTY.10", "a write to a row beyond the table's chunks", slot = w.0.get());

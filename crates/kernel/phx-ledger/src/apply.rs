@@ -202,9 +202,35 @@ pub(crate) struct Deferred<'a> {
     moved: Vec<Vec<(Moved, i64)>>,
 }
 
+/// A batch's buffers kept from one day to the next and emptied, never freed, so a day maps no new pages once the
+/// heaviest day has sized them.
+#[derive(Debug, Default)]
+pub(crate) struct Held {
+    writes: Vec<Vec<(Slot, usize, u64)>>,
+    moved: Vec<Vec<(Moved, i64)>>,
+}
+
 impl<'a> Deferred<'a> {
-    pub(crate) fn new(pool: Option<&'a phx_exec::Pool>) -> Deferred<'a> {
-        Deferred { pool, writes: Vec::new(), moved: phx_core::KernelMap::<Moved, (i128, i128)>::buckets() }
+    pub(crate) fn new(pool: Option<&'a phx_exec::Pool>, held: Held) -> Deferred<'a> {
+        let Held { writes, mut moved } = held;
+        if moved.is_empty() {
+            moved = phx_core::KernelMap::<Moved, (i128, i128)>::buckets();
+        }
+        Deferred { pool, writes, moved }
+    }
+
+    /// What the batch's buffers hold in memory, by their room.
+    pub(crate) fn bytes(held: &Held) -> usize {
+        held.writes.iter().map(|w| w.capacity() * size_of::<(Slot, usize, u64)>()).sum::<usize>()
+            + held.moved.iter().map(|m| m.capacity() * size_of::<(Moved, i64)>()).sum::<usize>()
+    }
+
+    /// The buffers back, once what the batch held is written.
+    pub(crate) fn into_held(self) -> Held {
+        if self.writes.iter().any(|w| !w.is_empty()) || self.moved.iter().any(|m| !m.is_empty()) {
+            violation!(clause = "SET.5", "a batch ended with writes held back");
+        }
+        Held { writes: self.writes, moved: self.moved }
     }
 
     fn write(&mut self, table: u16, slot: Slot, word: usize, value: i64) {

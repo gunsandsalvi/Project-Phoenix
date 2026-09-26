@@ -132,6 +132,7 @@ pub(crate) struct DayBuffers {
     scanned: Vec<(u16, Slot)>,
     nets: phx_core::KernelMap<NetKey, i128>,
     net_list: Vec<(NetKey, i128)>,
+    held: crate::apply::Held,
 }
 
 impl DayBuffers {
@@ -456,7 +457,8 @@ impl<B: Backing> Books<B> {
         B: Sync,
     {
         let mut legs: Vec<LegRec> = Vec::new();
-        let mut deferred = crate::apply::Deferred::new(self.pool.as_deref());
+        let held = std::mem::take(&mut self.buffers.held);
+        let mut deferred = crate::apply::Deferred::new(self.pool.as_deref(), held);
         let mut entries = nets.iter().peekable();
         while let Some((NetKey { line, party, side, row: is_row }, q)) = entries.next() {
             let (line, party, side, is_row) = (*line, *party, *side, *is_row);
@@ -500,6 +502,7 @@ impl<B: Backing> Books<B> {
             }
         }
         self.ledger.flush(&mut self.parties, &mut deferred);
+        self.buffers.held = deferred.into_held();
     }
 
     /// Stage 7 over the books: the stream (7a), the fixed point (7b), and the apply (7c) of every surviving payment as
@@ -548,7 +551,7 @@ impl<B: Backing> Books<B> {
             + bytes::<((PartyId, u8), i128)>(g.crossing.len() + reserves_before.capacity())
             + bytes::<(LineId, PartyId)>(fixed.failed.len() + fixed.by_bank.len())
             + bytes::<PartyId>(g.failed_payers.len() + streamed.moneyless.len())
-            + bytes::<u8>(found.bytes() + self.ledger.day.bytes());
+            + bytes::<u8>(found.bytes() + self.ledger.day.bytes() + crate::apply::Deferred::bytes(&self.buffers.held));
         self.apply_nets(&g.nets, day, audit);
         let nets_missed = self.nets_missed(&g.nets, &before);
         let reserves_missed = count(
