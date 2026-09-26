@@ -88,9 +88,32 @@ fn life_table_traced(w: Inspector<'_>) -> Outcome {
     Outcome::Pass
 }
 
-/// Output by expenditure, income and production, measured once firms produce and sell.
-fn output_three_ways(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("output is measured three ways once firms produce and sell (S1.15)")
+/// Every release of the national accounts carries output by production, expenditure and income, the first two
+/// positive, and the discrepancy it publishes is expenditure less income.
+fn output_three_ways(w: Inspector<'_>) -> Outcome {
+    let releases: Vec<&if_state::stats::Release> =
+        w.releases().iter().filter(|r| usize::from(r.series) == if_state::stats::ACCOUNTS).collect();
+    if releases.is_empty() {
+        return Outcome::NotYet("no national accounts were published in the run");
+    }
+    for r in releases {
+        let [production, expenditure, income, discrepancy] = r.values.as_slice() else {
+            return Outcome::Fail(format!(
+                "country {}'s accounts for period {} carry {} values",
+                r.country,
+                r.period,
+                r.values.len()
+            ));
+        };
+        if *production <= 0 || *expenditure <= 0 || expenditure - income != *discrepancy {
+            return Outcome::Fail(format!(
+                "country {}'s accounts for period {} (vintage {}): production {production}, expenditure {expenditure}, \
+                 income {income}, discrepancy {discrepancy}",
+                r.country, r.period, r.vintage
+            ));
+        }
+    }
+    Outcome::Pass
 }
 
 pub const LC_1_37: Check = live_check! {

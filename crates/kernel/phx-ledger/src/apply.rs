@@ -826,7 +826,15 @@ impl<B: Backing> Ledger<B> {
         if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {
             let effect = if leg.qty < 0 { decl.paid } else { decl.received };
             let amount = Money::new(leg.qty, ccy);
-            self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
+            let reason = s.reason;
+            self.day.effects.push(EffectRec {
+                instruction: s.id,
+                party: at.party,
+                effect,
+                amount,
+                reason,
+                held: false,
+            });
             if matches!(leg.account, AccountRef::Line { side: Side::Asset, .. }) {
                 let key = Moved { ccy: ccy.index(), party: at.party };
                 match deferred {
@@ -854,7 +862,8 @@ impl<B: Backing> Ledger<B> {
             };
             let effect = if moved < 0 { paid } else { received };
             let amount = Money::new(moved, ccy);
-            self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
+            let reason = s.reason;
+            self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount, reason, held: true });
         }
     }
 

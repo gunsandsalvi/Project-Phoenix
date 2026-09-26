@@ -693,8 +693,10 @@ pub phx_ledger::effects::DueRec::principal: phx_num::money::Money
 pub struct phx_ledger::effects::EffectRec
 pub phx_ledger::effects::EffectRec::amount: phx_num::money::Money
 pub phx_ledger::effects::EffectRec::effect: phx_ledger::instruction::Effect
+pub phx_ledger::effects::EffectRec::held: bool
 pub phx_ledger::effects::EffectRec::instruction: phx_ledger::instruction::InstructionId
 pub phx_ledger::effects::EffectRec::party: phx_id::ids::PartyId
+pub phx_ledger::effects::EffectRec::reason: phx_ledger::instruction::ReasonId
 pub mod phx_ledger::estate
 pub struct phx_ledger::estate::Settled
 pub phx_ledger::estate::Settled::ended: bool

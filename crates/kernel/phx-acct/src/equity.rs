@@ -156,11 +156,20 @@ mod tests {
         let (bank, eur) = (PartyId::new(3), Ccy::new(0));
         let mut accounts = EquityAccounts::default();
         accounts.open(bank, eur, 1_000);
+        let reason = phx_ledger::instruction::Reasons::default().declare(phx_ledger::instruction::ReasonDecl {
+            name: "a test",
+            order: 0,
+            paid: Effect::Expense,
+            received: Effect::Revenue,
+            held: Missing::Absent,
+        });
         let leg = |effect, amt| EffectRec {
             instruction: InstructionId::new(Day::new(1), 0),
             party: bank,
             effect,
             amount: Money::new(amt, eur),
+            reason,
+            held: false,
         };
         for rec in
             [leg(Effect::Revenue, 40), leg(Effect::Expense, -15), leg(Effect::Asset, 500), leg(Effect::Liability, -70)]

@@ -7,8 +7,8 @@
 use std::collections::BTreeMap;
 
 use if_state::stats::{
-    CPI, HOLDER_CLASSES, IndexKind, LABOUR_FORCE, LABOUR_STATES, LIFE_TABLE, MONEY, PLACES, PPI, Priced, Release,
-    SERIES, StaKind, StaLaw,
+    ACCOUNTS, CPI, HOLDER_CLASSES, IndexKind, LABOUR_FORCE, LABOUR_STATES, LIFE_TABLE, MONEY, PLACES, PPI, Priced,
+    Release, SERIES, StaKind, StaLaw,
 };
 use phx_core::Household;
 use phx_id::{CountryId, Date, Day, PartyId};
@@ -42,6 +42,41 @@ pub(crate) struct Collected {
     pub census_days: (u32, u32),
     pub labour: Vec<u64>,
     pub money: Vec<i128>,
+    pub accounts: BTreeMap<u8, Sampled>,
+    pub income: i128,
+    pub stocks: (i128, i128),
+}
+
+/// The national accounts' records of firms' trades: what firms sold, what they bought of each other, what
+/// households bought of them, the plant firms bought, and what everyone else bought of them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Item {
+    Output,
+    Purchases,
+    Consumption,
+    Investment,
+    Other,
+}
+
+/// The items in the order their records are kept.
+const ITEMS: [Item; 5] = [Item::Output, Item::Purchases, Item::Consumption, Item::Investment, Item::Other];
+
+impl Item {
+    /// The item's key among a period's records: its place in their order.
+    fn code(self) -> u8 {
+        let Some(at) = ITEMS.iter().position(|i| *i == self).and_then(|i| u8::try_from(i).ok()) else {
+            violation!(clause = "STA.3", "an item of the accounts kept in no order");
+        };
+        at
+    }
+}
+
+/// Where a party stands in the national accounts: a firm, a household, or anything else.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Sector {
+    Firm,
+    Household,
+    Other,
 }
 
 /// What the agencies carry across days: what each has collected of each period not yet revised or still read by the
@@ -248,6 +283,7 @@ impl World {
         let Some(kind) = self.state.stats.kind else { return };
         let date = self.calendar.date(day);
         self.sample_sales(kind, date);
+        self.sample_accounts(kind, date);
         if self.state.book.stats.collected.iter().all(|c| c.census_days.0 == 0)
             || month_of(self.calendar.date(day.succ())) != month_of(date)
         {
@@ -304,6 +340,124 @@ impl World {
             }
             cell.all = (cell.all.0 + value, cell.all.1 + qty);
         }
+    }
+
+    /// A live party's sector and country, by its kind.
+    fn sector_of(&self, party: PartyId) -> Option<(Sector, u8)> {
+        let phx_core::Resolved::Live(live, _) = self.books.parties.directory().resolve(party) else { return None };
+        let Missing::Present(country) = self.country_of_party(live) else { return None };
+        let (place, _) = self.books.parties.row(live);
+        let kind = self.books.parties.holder(place).kind();
+        let sector = if kind == sys_frm::FIRM.name || kind == sys_frm::SMALL_FIRM.name {
+            Sector::Firm
+        } else if kind == if_pop::HOUSEHOLD {
+            Sector::Household
+        } else {
+            Sector::Other
+        };
+        Some((sector, country.get()))
+    }
+
+    /// The day's settled money read as firms' records: each firm's receipt of revenue its sale, and what paid it a
+    /// purchase by a firm, a household or anyone else, a firm's purchase of plant its investment; each instruction
+    /// sampled for its seller's country, early or late. And each firm's and household's income, from its effects and
+    /// the interest and wages it earned or paid, counted in full.
+    #[clause("STA.3")]
+    fn sample_accounts(&mut self, kind: StaKind, date: Date) {
+        let book = self.books.ledger.day_book();
+        let bought = self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(sys_cap::BOUGHT.name));
+        let worn = self.books.dues.worn;
+        let mut by: BTreeMap<phx_ledger::instruction::InstructionId, Vec<(PartyId, i64, bool)>> = BTreeMap::new();
+        let mut income: BTreeMap<u8, i128> = BTreeMap::new();
+        for e in &book.effects {
+            let Some((sector, c)) = self.sector_of(e.party) else { continue };
+            let earns =
+                matches!(e.effect, phx_ledger::instruction::Effect::Revenue | phx_ledger::instruction::Effect::Expense);
+            // Wear is capital consumed, which the income measure counts gross of.
+            if sector != Sector::Other && earns && e.reason != worn {
+                *income.entry(c).or_insert(0) += i128::from(e.amount.amt());
+            }
+            if !e.held {
+                let investment = bought == Missing::Present(e.reason);
+                by.entry(e.instruction).or_default().push((e.party, e.amount.amt(), investment));
+            }
+        }
+        for (party, amount) in book.earned.sorted() {
+            if let Some((sector, c)) = self.sector_of(party)
+                && sector != Sector::Other
+            {
+                *income.entry(c).or_insert(0) += *amount;
+            }
+        }
+        let mut sampled: Vec<(u8, Item, i128, bool)> = Vec::new();
+        for (id, legs) in by {
+            let sold: Vec<(PartyId, i64)> = legs
+                .iter()
+                .filter(|(p, a, _)| *a > 0 && matches!(self.sector_of(*p), Some((Sector::Firm, _))))
+                .map(|(p, a, _)| (*p, *a))
+                .collect();
+            let Some((seller, _)) = sold.first().copied() else { continue };
+            let Some((_, c)) = self.sector_of(seller) else { continue };
+            let Some((law, _)) = self.sta_law(c) else { continue };
+            let Some(schedule) = law.series.get(ACCOUNTS) else { continue };
+            let subject = Subject::new(SubjectTag::Party, id.get());
+            let place = u32::try_from(ACCOUNTS).unwrap_or(u32::MAX);
+            if !within(
+                phx_rand::open_unit(&mut self.streams.open_keyed_at(&kind.sample, subject, place)),
+                schedule.sample,
+            ) {
+                continue;
+            }
+            let early =
+                within(phx_rand::open_unit(&mut self.streams.open_keyed_at(&kind.returns, subject, place)), law.early);
+            let revenue: i128 = sold.iter().map(|(_, a)| i128::from(*a)).sum();
+            sampled.push((c, Item::Output, revenue, early));
+            // A seller's own payment within its sale is a levy on it, never a purchase.
+            let sellers: Vec<PartyId> = sold.iter().map(|(p, _)| *p).collect();
+            for (payer, amount, investment) in legs.iter().filter(|(p, a, _)| *a < 0 && !sellers.contains(p)) {
+                let item = match self.sector_of(*payer).map(|(s, _)| s) {
+                    Some(Sector::Firm) if *investment => Item::Investment,
+                    Some(Sector::Firm) => Item::Purchases,
+                    Some(Sector::Household) => Item::Consumption,
+                    _ => Item::Other,
+                };
+                sampled.push((c, item, -i128::from(*amount), early));
+            }
+        }
+        let period = month_of(date);
+        for (c, item, value, early) in sampled {
+            let cell = self.collecting(c, period).accounts.entry(item.code()).or_default();
+            if early {
+                cell.early = (cell.early.0 + value, cell.early.1 + 1);
+            }
+            cell.all = (cell.all.0 + value, cell.all.1 + 1);
+        }
+        for (c, v) in income {
+            self.collecting(c, period).income += v;
+        }
+    }
+
+    /// Each country's firms' stocks of goods at their cost, as their books hold them.
+    fn stocks_held(&self) -> Vec<i128> {
+        let mut out = vec![0_i128; self.state.stats.laws.len()];
+        let ledger = &self.books.ledger;
+        for place in self.books.parties.places() {
+            let holder = self.books.parties.holder(place);
+            if holder.kind() != sys_frm::FIRM.name && holder.kind() != sys_frm::SMALL_FIRM.name {
+                continue;
+            }
+            for slot in phx_store::table::live_in(holder.live_words()) {
+                let party = holder.party(slot);
+                let Missing::Present(country) = self.country_of_party(party) else { continue };
+                let Some(total) = out.get_mut(usize::from(country.get())) else { continue };
+                for (instrument, cost) in phx_ledger::holding::bases(holder, slot) {
+                    if matches!(ledger.goods.key(instrument), Missing::Present(_)) {
+                        *total += i128::from(cost);
+                    }
+                }
+            }
+        }
+        out
     }
 
     /// The census at a month's end, or on the first close: each country's panel's persons by age class and health,
@@ -375,6 +529,7 @@ impl World {
             }
         }
         let money = self.money_reported();
+        let stocks = self.stocks_held();
         let day_no = day.get();
         for c in 0..countries {
             let Ok(id) = u8::try_from(c) else { continue };
@@ -383,16 +538,20 @@ impl World {
             }
             let counted = persons.get(c).cloned().unwrap_or_default();
             let this = self.collecting(id, period);
+            let held = stocks.get(c).copied().unwrap_or(0);
             if this.census_days.0 == 0 {
                 this.start = counted.clone();
+                this.stocks.0 = held;
                 this.census_days.0 = day_no;
             } else {
+                this.stocks.1 = held;
                 this.end = counted.clone();
                 this.census_days.1 = day_no;
                 this.labour = labour.get(c).map(|l| l.to_vec()).unwrap_or_default();
                 this.money = money.get(c).cloned().unwrap_or_default();
                 let next = self.collecting(id, period + 1);
                 next.start = counted;
+                next.stocks.0 = held;
                 next.census_days.0 = day_no;
             }
         }
@@ -529,6 +688,23 @@ impl World {
                 c.money.iter().map(|v| i64::try_from(*v).ok()).collect()
             }
             LIFE_TABLE => self.life_table(c, (share, vintage != 0)),
+            ACCOUNTS => {
+                if c.census_days.1 == 0 {
+                    return None;
+                }
+                let of = |item: Item| {
+                    c.accounts
+                        .get(&item.code())
+                        .map_or(0.0, |x| from_i128(if vintage == 0 { x.early.0 } else { x.all.0 }))
+                };
+                let returned = if vintage == 0 { share * law.early } else { share };
+                let gross = |item: Item| of(item) / returned;
+                let stocked = from_i128(c.stocks.1 - c.stocks.0);
+                let production = gross(Item::Output) - gross(Item::Purchases) + stocked;
+                let expenditure = gross(Item::Consumption) + gross(Item::Investment) + gross(Item::Other) + stocked;
+                let income = from_i128(c.income);
+                [production, expenditure, income, expenditure - income].into_iter().map(whole).collect()
+            }
             _ => None,
         }
     }

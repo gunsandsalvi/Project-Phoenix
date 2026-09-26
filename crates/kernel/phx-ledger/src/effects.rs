@@ -25,8 +25,9 @@ pub struct DueRec {
     pub outcome: DueOutcome,
 }
 
-/// A settled money leg's effect on its party's accounts, as its reason declares it, for the accounts to read: the
-/// amount signed as the leg moved its party's net assets, in or out.
+/// A settled leg's effect on its party's accounts, as its reason declares it, for the accounts to read: the amount
+/// signed as the leg moved its party's net assets, in or out; the reason; and whether it is the cost units carried
+/// rather than money.
 #[clause("SET.1")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct EffectRec {
@@ -34,4 +35,6 @@ pub struct EffectRec {
     pub party: PartyId,
     pub effect: Effect,
     pub amount: Money,
+    pub reason: crate::instruction::ReasonId,
+    pub held: bool,
 }

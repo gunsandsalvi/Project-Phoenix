@@ -1,5 +1,5 @@
 # The developed group's statistics agency (spec STA.5): its calendar, samples and revisions. Series in their order:
-# the consumer price index, the producer price index, the labour force survey, the money stock, the period life table.
+# the consumer price index, the producer price index, the labour force survey, the money stock, the period life table, the national accounts.
 
 [[primitive]]
 id = "STA.release_day"
@@ -7,8 +7,8 @@ kind = "POLICY"
 owner = "STA"
 decided_by = "statistics agency"
 source = "assumed"
-source_ref = "The business day of the month each series is released on, in the series' order, after the calendars agencies publish: consumer prices near mid-month and producer prices a day or more after them (as the US BLS's CPI and PPI), the labour force early in the month (as the first Friday's Employment Situation), money late in the month (as the Federal Reserve's H.6), later the less developed the agency; assumed until each agency's calendar is read."
-value = { axis = [0, 1, 2, 3, 4], values = [10, 11, 3, 16, 12], outside = "refuse" }
+source_ref = "The business day of the month each series is released on, in the series' order, after the calendars agencies publish: consumer prices near mid-month and producer prices a day or more after them (as the US BLS's CPI and PPI), the labour force early in the month (as the first Friday's Employment Situation), money late in the month (as the Federal Reserve's H.6), output in the second week (as the UK ONS's monthly GDP), later the less developed the agency; assumed until each agency's calendar is read."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [10, 11, 3, 16, 12, 8], outside = "refuse" }
 
 [[primitive]]
 id = "STA.release_lag"
@@ -16,8 +16,8 @@ kind = "POLICY"
 owner = "STA"
 decided_by = "statistics agency"
 source = "assumed"
-source_ref = "The months after a period's end each series' first release comes in, in the series' order: the month after for prices and money where agencies publish monthly, longer for surveys and vital registration, and longer the less developed the agency; assumed."
-value = { axis = [0, 1, 2, 3, 4], values = [0, 0, 0, 0, 1], outside = "refuse" }
+source_ref = "The months after a period's end each series' first release comes in, in the series' order: the month after for prices and money where agencies publish monthly, longer for surveys, vital registration and output (the UK ONS publishes a month's GDP about six weeks after it ends), and longer the less developed the agency; assumed."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [0, 0, 0, 0, 1, 1], outside = "refuse" }
 
 [[primitive]]
 id = "STA.sample_share"
@@ -25,8 +25,8 @@ kind = "POLICY"
 owner = "STA"
 decided_by = "statistics agency"
 source = "assumed"
-source_ref = "The share of its records or households each series samples, in the series' order: a hundredth of retail sales and two hundredths of sales at the factory gate, three thousandths of households for the labour force (the UK's LFS and the US CPS sample between one and two thousandths), all of the banks' reports, and two hundredths of households for vital statistics; assumed."
-value = { axis = [0, 1, 2, 3, 4], values = [0.0100, 0.0200, 0.0030, 1.0000, 0.0200], outside = "refuse" }
+source_ref = "The share of its records or households each series samples, in the series' order: a hundredth of retail sales and two hundredths of sales at the factory gate, three thousandths of households for the labour force (the UK's LFS and the US CPS sample between one and two thousandths), all of the banks' reports, two hundredths of households for vital statistics, and two hundredths of firms' records of sales, purchases and payrolls for the national accounts, as the business surveys behind them; assumed."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [0.0100, 0.0200, 0.0030, 1.0000, 0.0200, 0.0200], outside = "refuse" }
 
 [[primitive]]
 id = "STA.early_returns"

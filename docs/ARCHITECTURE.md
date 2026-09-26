@@ -1203,6 +1203,16 @@ panel's persons and labour force, and one sweep of the holder tables' money rows
 are computed only on their calendar's days, and readers read them through `latest`, which returns nothing before a
 release's day (STA.4).
 
+**The national accounts** (STA.3, series `STA.accounts`): at 10a the agency reads the day's settled money from the
+ledger's day book, each effect carrying its reason and whether it is money or the cost units carried. Each instruction
+in which a firm received revenue is a firm's record, drawn by its instruction for the seller's country: the revenue
+is output, and each other party's payment in it a purchase by a firm, a firm's purchase of plant (`CAP bought`), a
+household's consumption, or anyone else's; a seller's own payment in its sale is a levy on it. Every firm's and
+household's income — its revenue and expense effects other than wear, and the interest and wages it earned or paid —
+is counted in full, as are firms' stocks of goods at cost at each census. A release publishes production (output less
+purchases plus the change in stocks), expenditure (consumption, investment and others' purchases plus the change in
+stocks), income, and the discrepancy of expenditure over income.
+
 ## 8. Markets, valuation and expectations
 
 - `phx-market` implements each form once (MKT.3–MKT.8): call auctions (with admission hooks); the continuous book

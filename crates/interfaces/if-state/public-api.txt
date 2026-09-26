@@ -1,5 +1,6 @@
 pub mod if_state
 pub mod if_state::consts
+pub const if_state::consts::ACCOUNTS: usize
 pub const if_state::consts::CPI: usize
 pub const if_state::consts::HOLDER_CLASSES: [&str; 2]
 pub const if_state::consts::LABOUR_FORCE: usize
@@ -7,8 +8,8 @@ pub const if_state::consts::LABOUR_STATES: usize
 pub const if_state::consts::LIFE_ENTRY: usize
 pub const if_state::consts::LIFE_TABLE: usize
 pub const if_state::consts::MONEY: usize
-pub const if_state::consts::NAMES: [&str; 5]
-pub const if_state::consts::PLACES: [u8; 5]
+pub const if_state::consts::NAMES: [&str; 6]
+pub const if_state::consts::PLACES: [u8; 6]
 pub const if_state::consts::PPI: usize
 pub const if_state::consts::SERIES: usize
 pub mod if_state::kinds
@@ -100,6 +101,7 @@ pub struct if_state::stats::StaLaw
 pub if_state::stats::StaLaw::early: f64
 pub if_state::stats::StaLaw::revision: u32
 pub if_state::stats::StaLaw::series: alloc::vec::Vec<if_state::stats::Schedule>
+pub const if_state::stats::ACCOUNTS: usize
 pub const if_state::stats::CPI: usize
 pub const if_state::stats::HOLDER_CLASSES: [&str; 2]
 pub const if_state::stats::LABOUR_FORCE: usize
@@ -107,8 +109,8 @@ pub const if_state::stats::LABOUR_STATES: usize
 pub const if_state::stats::LIFE_ENTRY: usize
 pub const if_state::stats::LIFE_TABLE: usize
 pub const if_state::stats::MONEY: usize
-pub const if_state::stats::NAMES: [&str; 5]
-pub const if_state::stats::PLACES: [u8; 5]
+pub const if_state::stats::NAMES: [&str; 6]
+pub const if_state::stats::PLACES: [u8; 6]
 pub const if_state::stats::PPI: usize
 pub const if_state::stats::SERIES: usize
 pub type if_state::stats::Latest = for<'a> fn(&'a [if_state::stats::Release], (u8, u8), phx_id::day::Day) -> core::option::Option<&'a if_state::stats::Release>
