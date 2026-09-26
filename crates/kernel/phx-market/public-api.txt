@@ -180,6 +180,16 @@ pub fn phx_market::intents::OrderIntent::decode(&[u64]) -> core::option::Option<
 impl phx_core::handler::IntentDef for phx_market::intents::OrderIntent
 pub const phx_market::intents::OrderIntent::NAME: &'static str
 pub fn phx_market::intents::OrderIntent::encode(&self, &mut alloc::vec::Vec<u64>)
+pub struct phx_market::intents::ShopIntent
+pub phx_market::intents::ShopIntent::kind: u64
+pub phx_market::intents::ShopIntent::product: u16
+pub phx_market::intents::ShopIntent::row: phx_id::ids::Slot
+pub phx_market::intents::ShopIntent::want: phx_market::retail::Want
+impl phx_market::intents::ShopIntent
+pub fn phx_market::intents::ShopIntent::decode(&[u64]) -> core::option::Option<phx_market::intents::ShopIntent>
+impl phx_core::handler::IntentDef for phx_market::intents::ShopIntent
+pub const phx_market::intents::ShopIntent::NAME: &'static str
+pub fn phx_market::intents::ShopIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub mod phx_market::linked_call
 pub struct phx_market::linked_call::LinkedCall
 pub phx_market::linked_call::LinkedCall::basis: phx_num::missing::Missing<phx_market::simplex::Basis>
@@ -438,6 +448,42 @@ pub struct phx_market::reach::Site
 pub phx_market::reach::Site::country: phx_id::ids::CountryId
 pub phx_market::reach::Site::zone: phx_id::ids::ZoneId
 pub const phx_market::reach::CLOSED_BORDERS: phx_core::register::PrimDecl
+pub mod phx_market::retail
+pub enum phx_market::retail::Want
+pub phx_market::retail::Want::Money(i64)
+pub phx_market::retail::Want::Units(i64)
+pub struct phx_market::retail::InReach
+pub phx_market::retail::InReach::km: f64
+pub phx_market::retail::InReach::stall: usize
+pub phx_market::retail::InReach::taste: f64
+pub struct phx_market::retail::RetailDay
+pub phx_market::retail::RetailDay::in_reach: u64
+pub phx_market::retail::RetailDay::rounds: u64
+pub phx_market::retail::RetailDay::sales: alloc::vec::Vec<phx_market::print::Match>
+pub phx_market::retail::RetailDay::unserved: alloc::vec::Vec<(phx_id::ids::PartyId, phx_market::retail::Want)>
+pub struct phx_market::retail::RetailKind
+pub phx_market::retail::RetailKind::distance_weight: &'static str
+pub phx_market::retail::RetailKind::market: phx_market::market::MarketDecl
+pub phx_market::retail::RetailKind::price: &'static str
+pub phx_market::retail::RetailKind::price_weight: &'static str
+pub phx_market::retail::RetailKind::reach: &'static str
+pub phx_market::retail::RetailKind::reason: &'static str
+pub phx_market::retail::RetailKind::sellers: &'static [&'static str]
+pub phx_market::retail::RetailKind::sells: &'static str
+pub phx_market::retail::RetailKind::tastes: &'static str
+pub struct phx_market::retail::Shopper
+pub phx_market::retail::Shopper::buyer: phx_id::ids::PartyId
+pub phx_market::retail::Shopper::reach: alloc::vec::Vec<phx_market::retail::InReach>
+pub phx_market::retail::Shopper::twins: i64
+pub phx_market::retail::Shopper::want: phx_market::retail::Want
+pub struct phx_market::retail::Stall
+pub phx_market::retail::Stall::price: phx_num::price::PriceRaw
+pub phx_market::retail::Stall::seller: phx_id::ids::PartyId
+pub phx_market::retail::Stall::units: i64
+pub struct phx_market::retail::Weights
+pub phx_market::retail::Weights::distance: f64
+pub phx_market::retail::Weights::price: f64
+pub fn phx_market::retail::retail(&[phx_market::retail::Stall], &[phx_market::retail::Shopper], i64, phx_market::retail::Weights, &mut phx_rand::draws::Draws) -> phx_market::retail::RetailDay
 pub mod phx_market::simplex
 pub struct phx_market::simplex::Arc
 pub phx_market::simplex::Arc::cap: phx_num::missing::Missing<i64>

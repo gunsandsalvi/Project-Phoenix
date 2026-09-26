@@ -21,4 +21,5 @@ pub mod order;
 pub mod posted;
 pub mod print;
 pub mod reach;
+pub mod retail;
 pub mod simplex;

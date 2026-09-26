@@ -6410,7 +6410,7 @@ Who holds each deposit's right is drawn at the Stage 1 opening (S1.15), with the
 - STATE: GDS.1, GDS.2; GDS.3 *(part: goods and commodities; land is HSG's, S2.05)*.
 - STATE: TEC.1 *(completes it: a perishable good's spoilage while stored, a rate per product sourced here)*.
 - DECISION: GDS.4; GDS.5 *(part: the order intents and the markets they meet in; the firms' buying is S1.15's)*;
-  GDS.6 *(part: the stockists' rule; their visit is S1.06's, with the storage they buy)*.
+  GDS.6 *(part: the stockists' rule; their visit is S1.15's, with the storage they buy)*.
 - PROCESS: GDS.7, GDS.8; GDS.9 *(part: hazards destroy stocks where they stand; weather's yields are production's,
   S1.15)*; GEO.9; FRM.13 *(from S1.03: revenue on delivery from the match set)*; REP.35
   *(completes it, from S1.03: a surprise in a firm's sales wakes its price review)*.
@@ -6499,89 +6499,105 @@ stock's and plant's values from here.
 
 ### S1.06 — `sys-srv`: services and distribution
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
-- STATE: SRV.1, SRV.2.
-- DECISION: SRV.3, SRV.4; HH.5 *(part: the choice of seller, with S1.12)*; GDS.6 *(completes it, from S1.05: the
-  stockists' visit, holding stock in the storage they buy here)*.
-- PROCESS: SRV.5, SRV.6; REP.37; REP.22 *(part: tastes over sellers)*.
-- MEASURE: SRV.7.
+- STATE: SRV.2; SRV.1 *(part: a provider's posted price; its capacity a day and the service made and delivered at
+  once, which production runs, are S1.15's)*.
+- DECISION: SRV.4; SRV.3 *(part: providers and distributors post their prices at `sys-frm`'s review over what they
+  sold and hold; staffing is S1.08's and a distributor's restocking is its buying of inputs, S1.15's)*; HH.5 *(part:
+  the choice of seller, with S1.12)*.
+- PROCESS: SRV.5, SRV.6; REP.22 *(part: tastes over sellers)*.
+- MEASURE: SRV.7 *(part: its live check is registered; its reads need households buying, S1.12)*.
 - FORBID: SRV.8.
 - PRIMITIVE: SRV.9.
+- The stockists' visit (GDS.6) moves to S1.15: a stockist's carry weighs the storage it buys at posted prices from the
+  providers that sell room, and neither they nor the goods they would hold exist before the Stage 1 opening.
 
-**Architecture**: §7.9 (choice groups, pieces, the seller spread), §8 (posted prices).
+**Architecture**: §7.11 (goods, orders and trades), §8 (posted prices).
 
 **Depends on**: S1.05.
 
 **Goal**: most of the economy's output:
 - services produced and consumed the same day, with capacity that perishes;
 - distributors holding goods and selling at posted retail prices;
-- households choosing among the providers they can reach, in choice groups;
+- households choosing among the sellers they can reach, each by its own taste that day;
 - retail prices that include the margin, the freight to the outlet and consumption tax.
+
+**Status of the parts**: every agent meets a market as itself (REP.37 retired), so there are no choice groups: a
+buyer is an agent, its twins choosing alike (REP.1).
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-firm/src/retail.rs` | provider and outlet facts: capacity per day, region served, posted price; distributors' stock |
-| `crates/systems/sys-srv/src/rules/*.rs` | SRV.3's staffing and distributors' stock levels; the services' **pressure** fact (fill against target fill) that S1.03's price review reads; `sys-frm` remains the one writer of every posted point |
-| `src/groups.rs` | the retail and service market kinds' choice-group declarations (the group key, the reach) for `phx-market`'s posted form, which meets them at 6a |
-| `data/<country>/SRV.toml` | service technologies; the reach of shopping by distance (TECHNOLOGY of travel); taste distributions per preference type (PREFERENCE) |
+| `crates/kernel/phx-market/src/retail.rs` | the retail meeting: shoppers choose among the sellers in their reach by logit over price, distance and a taste drawn per seller and day; capacity binds in an order drawn by lot, and the rest choose again, round by round |
+| `crates/kernel/phx-market/src/intents.rs` | `ShopIntent`: a buyer's want of a product, units or money a twin, admitted at 5d |
+| `crates/assembly/phx-world/src/retail.rs` | admission, the day's stalls read from the sellers' declared facts, the meeting at 6a, purchases at 6d settled in stage 7 |
+| `crates/systems/sys-srv/src/lib.rs` | the retail market kind, its primitives and the reason purchases settle under |
+| `data/shared/SRV.toml` | the weights of price and distance in choosing a seller (PREFERENCE) and the reach of shopping (TECHNOLOGY of travel) |
 
 **Design**
 
-- **Meetings** (SRV.5, REP.37), daily, including non-business days where sellers open (TIME.8):
-  1. Per (group, category), the group's budget (from standing flows) and its needs by quantity (HH.20) meet the posted
-     prices of the seller cells and individuals within reach.
-  2. Choice probabilities are multinomial logit over each seller's price, distance from the group's zone and the
-     type's taste distribution, among the sellers in the group's **reach**: those the declared reach of shopping by
-     distance (SRV.9, TECHNOLOGY of travel) and the market kind's search cost bring within reach of the group's zone
-     (S0.18's `Reach`), about ten at the design point. Gumbel tastes give logit exactly (McFadden, 1974). The taste
-     draws are the stream `SRV.taste`; capacity lots `SRV.capacity_lot`.
-  3. Counts are drawn over seller cells by conditional binomials.
-  4. Capacity binds by lot, and the rest re-choose in rounds that are counted.
-  5. Each buyer cell pays its own budget by its pooled leg; each seller is credited from the match set by keyed
-     reduction (architecture §7.9), so every unit of spending names its seller through the match-set record.
-  6. Sales per seller cell are totals, spread on its review days (S0.23).
-- **Distributors** (SRV.2) hold stock bought at wholesale (S1.05); their posted points are set by `sys-frm`'s review
-  (S1.03) over their unit cost, which includes the wholesale cost. Their
-  margin is the difference between what they paid and what they charge; it is never a stated markup (SRV.8).
-- **Retail price** (SRV.6): the posted price includes consumption tax (S1.11) and the distributor's freight cost of
-  bringing goods to the outlet (S1.07). Until those steps exist, each component is absent and marked by a placeholder
-  naming TAX (S1.11) and FRT (S1.07), which those steps retire.
-- **Services** (SRV.1): capacity per day from staff hours and plant. Unused capacity is lost at the day's close; there
-  is no stock of services.
+- **Sellers** (SRV.1, SRV.2): a firm posts the price of its industry's product (`FRM.industry`) at its review
+  (S1.03); what it can serve today is its free units of that good where it stands, a distributor's bought at
+  wholesale (S1.05). The retail kind names the facts it reads, so a distributor's line, the good it retails, drawn
+  with the opening's distributors (S1.15), is a fact the kind is declared over. A service is delivered as it is made, so it is never
+  held (TEC's `delivered_at_once`): a provider's stall is its capacity that day, and its sale makes the service by
+  the way the provider runs and delivers it at once, both with production (S1.15); until then no service is sold and
+  none is stored (SRV.8). A distributor's margin is what it charges less what its units cost it; there is no stated
+  markup (SRV.8).
+- **Buyers** (SRV.4, HH.5): a buyer asks for a product at 5d (`ShopIntent`): units it needs, or money it spends, a
+  twin's. The retail market kind (`SRV.retail`) has one instance per product, meeting daily, on non-business days too
+  (TIME.8): sellers keep their posted prices.
+- **The meeting** (SRV.5, REP.22) at 6a:
+  1. The sellers in reach of a buyer are those whose zone lies within the reach of shopping (`SRV.reach`, TECHNOLOGY
+     of travel) of its zone, through `Reach` (the border closure).
+  2. A buyer values each seller in reach at `−α·ln p − γ·d + ε`, `p` the posted price, `d` the distance in km, and `ε`
+     its taste for that seller that day, a standard Gumbel draw from the stream `SRV.taste` keyed by the buyer and the
+     day, so choice is multinomial logit exactly (McFadden, 1974) and alike buyers spread over sellers. `α` and `γ`
+     are PREFERENCE (`SRV.price_weight`, `SRV.distance_weight`).
+  3. Each seller serves those who chose it in an order drawn by lot (`SRV.capacity_lot`), in whole lots of the
+     product's least quantity a twin, until its units run out; a buyer served in part, or not at all, chooses again
+     among the sellers with units left, round by round, each round counted. One who finds none goes without, counted.
+  4. Each sale is a match of the day's set, naming buyer and seller (HH.15). At 6d it becomes a purchase: the
+     buyer's money to the seller, and the seller's units used up by the purchase (a transformation naming the buyer),
+     under `SRV.sold`: the buyer's outlay an expense, the seller's receipt revenue, the units' cost the cost of what
+     it sold. Purchases settle in stage 7 after the day's trades, each all or none; the units delivered count as the
+     seller's sales.
+- **Retail price** (SRV.6): the posted price is the seller's own, over costs that include what it paid for its
+  goods; the freight to the outlet enters its costs with FRT (S1.07) and consumption tax at the till with TAX
+  (S1.11), each a placeholder naming its step until then.
 
 **Unit tests**
-- `logit_shares_from_gumbel_tastes`.
-- `capacity_rechoice_by_lot`.
-- `retail_price_components`: over given wholesale cost, freight and tax, the components add up.
+- `logit_shares_from_gumbel_tastes`: over many buyers, each seller's share is its logit probability.
+- `capacity_rechoice_by_lot`: a full seller's excess buyers choose again, and no seller serves beyond its units.
+- `retail_price_components`: over given wholesale cost, freight and tax, the components add up (with FRT and TAX).
 
 **Live checks**
 - `LC-1-16`: SRV.7 — the services share of output and employment, the retail margin and its compression when wholesale
   costs rise, and the frequency and size of retail price changes are reported.
-- `LC-1-17`: no service is stored: unused capacity at the close equals capacity minus sales, and nothing carries over.
+- `LC-1-17`: no service is stored: no good of a product delivered at once has units in existence at a close.
 - `LC-1-18`: HH.15 (part) — every unit of household spending names its seller through a match-set record, and the
   sellers' credits per meeting sum to the buyers' debits.
 
-**Budget**: architecture §13.2's "Meetings and choice groups" line: 0.2 M group-products at 650 ns with about ten
-sellers in reach (the review's prototype: 0.6 µs at 10 sellers, 1.9 µs at 30, 6 µs at 100, on one x86 core). Reach is
-TECHNOLOGY and never a budget valve: if the sellers in reach cost too much, the traversal changes (a per-zone seller
-index sorted by distance), never the set a buyer chooses from (N8.7). Counters, ratcheted:
-`phx_market.sellers_in_reach`, `phx_market.rechoice_rounds`, `phx_srv.unused_capacity`.
+**Budget**: architecture §13.2's "Meetings and re-choice rounds" line: 0.2 M buyer-products at 650 ns with about ten
+sellers in reach. Reach is TECHNOLOGY and never a budget valve: if the sellers in reach cost too much, the traversal
+changes (sellers indexed by zone, the zones in reach of each buyer's zone found once a meeting), never the set a buyer
+chooses from (N8.7). Counters, ratcheted: `phx_market.sellers_in_reach`, `phx_market.rechoice_rounds`,
+`phx_srv.unused_capacity`.
 
 **Guards**: none new.
 
 **Not allowed**:
 - a household buying at the factory gate without going there;
 - a retail price as factory price × markup;
-- a stored service;
-- a meeting per household instead of per group.
+- a stored service.
 
 **Done when**
-- [ ] Services and retail run daily through choice groups, with capacity and re-choice.
-- [ ] LC-1-16 to LC-1-18 pass.
+- [ ] Retail meets daily with capacity and re-choice.
+- [ ] LC-1-17 passes; LC-1-16 and LC-1-18 report not yet until households buy (S1.12), and S1.12's Done when requires
+  them to pass.
 - [ ] Two reviews are done.
 
 ---
@@ -7131,6 +7147,8 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
 - MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(completes them: LC-1-01, LC-1-03, LC-1-43 and LC-1-44 measure the
   world's outlooks once households and firms decide from them)*.
 - INVARIANT: HH.15.
+- MEASURE: SRV.7 *(completes it, from S1.06: LC-1-16 reads the retail margin and the services' share once
+  households buy)*; its Done when requires LC-1-16 and LC-1-18 to pass.
 - FORBID: HH.18, HH.19.
 - PRIMITIVE: HH.20.
 - Housing and borrowing (HH.8, HH.10) are S2.05; moving (HH.9) S2.05 and S5.05; insurance S4.03; voting S5.03;
@@ -7429,7 +7447,10 @@ decisions)*: every Stage 1 system's opening contribution.
   its way)*.
 - MEASURE: CAP.10. FORBID: CAP.11. PRIMITIVE: CAP.13 *(completes it: the managements' hurdle and horizon
   distributions)*.
-- DECISION: GDS.5 *(completes it, from S1.05: firms buy their inputs for planned production)*; FRM.7 *(part, from
+- DECISION: GDS.6 *(completes it, from S1.05: the stockists' visit, holding stock in storage bought at posted
+  prices)*; SRV.1 *(completes it, from S1.06: a provider's capacity a day, the service made and delivered at once)*;
+  SRV.3 *(completes it, from S1.06: a distributor restocks by buying its goods at wholesale)*; GDS.5 *(completes
+  it, from S1.05: firms buy their inputs for planned production)*; FRM.7 *(part, from
   S1.05: the same buying)*; a solvent owner's closure of its firm (FRM.15's other way out, from S1.05), valuing its
   stock and plant at the prices it expects to fetch, read from its filed accounts. PROCESS: GDS.9
   *(completes it, from S1.05: weather sets the yields of crops where they grow)*. MEASURE: GDS.11 *(completes it, from
@@ -16704,11 +16725,12 @@ and are not mapped.
 | CAP | S2.05 | 2 |
 | CAP | S5.02 | 7 |
 | GDS | S1.05 | 1, 2, 4, 7, 8, 12, 13 |
-| GDS | S1.06 | 6 |
 | GDS | S1.07 | 10 |
-| GDS | S1.15 | 5, 9, 11 |
+| GDS | S1.15 | 5, 6, 9, 11 |
 | GDS | S2.05 | 3 |
-| SRV | S1.06 | 1, 2, 3, 4, 5, 6, 7, 8, 9 |
+| SRV | S1.06 | 2, 4, 5, 6, 8, 9 |
+| SRV | S1.12 | 7 |
+| SRV | S1.15 | 1, 3 |
 | FRT | S1.07 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
 | LAB | S1.08 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
 | LAB | S6.02 | 5 |

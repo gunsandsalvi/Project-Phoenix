@@ -627,6 +627,7 @@ dependencies = [
  "sys-cap",
  "sys-frm",
  "sys-gds",
+ "sys-srv",
  "sys-tec",
  "toml 0.9.12+spec-1.1.0",
 ]
@@ -735,6 +736,7 @@ name = "phx-market"
 version = "0.1.0"
 dependencies = [
  "gungraun",
+ "libm",
  "phx-core",
  "phx-geo",
  "phx-id",
@@ -851,6 +853,7 @@ dependencies = [
  "sys-hsg",
  "sys-lab",
  "sys-soc",
+ "sys-srv",
  "sys-tec",
  "toml 0.9.12+spec-1.1.0",
 ]
@@ -1261,6 +1264,19 @@ dependencies = [
  "phx-macros",
  "phx-num",
  "phx-rand",
+]
+
+[[package]]
+name = "sys-srv"
+version = "0.1.0"
+dependencies = [
+ "if-firm",
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-market",
+ "phx-num",
 ]
 
 [[package]]

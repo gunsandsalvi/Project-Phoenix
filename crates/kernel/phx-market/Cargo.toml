@@ -15,6 +15,7 @@ phx-macros = { path = "../../foundation/phx-macros" }
 phx-num = { path = "../../foundation/phx-num" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../phx-store" }
+libm.workspace = true
 
 [dev-dependencies]
 gungraun.workspace = true

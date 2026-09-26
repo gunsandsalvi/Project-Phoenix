@@ -15,6 +15,7 @@ pub mod opening;
 pub mod rates;
 pub mod refusals;
 pub mod registry;
+pub mod retail;
 pub mod save;
 mod spoil;
 pub mod systems;

@@ -196,9 +196,11 @@ impl World {
             if info.step == SubStep::S6a {
                 self.markets_meet(day);
                 self.goods_marks();
+                self.retail_meet(day);
             }
             if info.step == SubStep::S6d {
                 self.markets_trade(day);
+                self.retail_trade(day);
             }
             if info.step == SubStep::S7c {
                 let streams = &self.streams;
@@ -446,6 +448,12 @@ impl World {
                             violation!(clause = "CHN.4", "an order its words do not encode", words = words.len());
                         };
                         self.admit_order(day, g.step, rows_of(g.rows), &o);
+                    }
+                    phx_market::intents::ShopIntent::NAME => {
+                        let Some(o) = phx_market::intents::ShopIntent::decode(words) else {
+                            violation!(clause = "CHN.4", "a want its words do not encode", words = words.len());
+                        };
+                        self.admit_shop(g.step, rows_of(g.rows), &o);
                     }
                     _ => {
                         violation!(clause = "TIME.6", "an intent the apply routine does not know", words = words.len())

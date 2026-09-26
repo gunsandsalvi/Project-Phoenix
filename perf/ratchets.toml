@@ -223,6 +223,23 @@ counter = "phx_gds.extraction_orders"
 value = 0
 direction = "down"
 
+# Retail's heaviest day: the sellers every buyer had in reach, the rounds buyers chose again, and the units of
+# services no buyer took. First set at S1.06, at nothing until households buy (S1.12), which restates them.
+[[ratchet]]
+counter = "phx_market.sellers_in_reach"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_market.rechoice_rounds"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_srv.unused_capacity"
+value = 0
+direction = "down"
+
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
 [[ratchet]]
 counter = "phx_num.ir_value_of"

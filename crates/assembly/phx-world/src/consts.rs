@@ -61,3 +61,6 @@ pub const DECADE: i64 = 10;
 
 /// A half, added before a floor to round to the nearest.
 pub const HALF: f64 = 0.5;
+
+/// Metres in a kilometre, the unit buyers weigh a seller's distance in.
+pub const METRES_PER_KM: f64 = 1_000.0;

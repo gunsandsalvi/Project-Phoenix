@@ -1,0 +1,25 @@
+# The services' and distribution's preferences and technology of travel (SRV.9); each value's source is its entry's.
+
+[[primitive]]
+id = "SRV.price_weight"
+kind = "PREFERENCE"
+owner = "SRV"
+source = "estimated"
+source_ref = "The weight of the log of a seller's price in a shopper's choice among grocery stores, against a standard Gumbel taste: 1.725, the ln-price coefficient of the multinomial logit without interactions of Eizenberg, Lach and Oren-Yiftach (2021), Retail Prices in a City, AEJ: Economic Policy 13(2), Table 6 column 4 of the accepted version (Aug 2020), estimated jointly with the distance weight over shopping destinations in Jerusalem."
+value = "1.725"
+
+[[primitive]]
+id = "SRV.distance_weight"
+kind = "PREFERENCE"
+owner = "SRV"
+source = "estimated"
+source_ref = "The weight of a seller's distance in km in a shopper's choice among stores: 0.334 a km, the distance coefficient of the same logit (Eizenberg, Lach and Oren-Yiftach 2021, Table 6 column 4, accepted version), in the same units as the price weight; their median willingness to pay to bring a store a km closer is a 24.5% higher price (p.17)."
+value = "0.334"
+
+[[primitive]]
+id = "SRV.reach"
+kind = "TECHNOLOGY"
+owner = "SRV"
+source = "measured"
+source_ref = "How far a household goes to shop, in metres: 35 km, the 95th percentile of person trips for shopping and errands in the 2017 US National Household Travel Survey (21.6 miles, network distance, weighted by trip weights, from the public trip file), whose mean of 7.1 miles is the published figure (FHWA Summary of Travel Trends: 2017 NHTS, Table 5b)."
+value = 35000

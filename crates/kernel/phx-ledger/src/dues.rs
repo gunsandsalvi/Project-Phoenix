@@ -390,7 +390,7 @@ impl<B: Backing> Books<B> {
     /// The legs of a payment of money written after those `legs` holds, so a pass over many payments reuses one
     /// buffer.
     #[clause("MON.5", "MON.6")]
-    pub(crate) fn pay_into(&self, from: PartyId, to: PartyId, (x, ccy): (i64, Ccy), legs: &mut Vec<LegRec>) {
+    pub fn pay_into(&self, from: PartyId, to: PartyId, (x, ccy): (i64, Ccy), legs: &mut Vec<LegRec>) {
         let (paying, paid) = (self.money_row(from, ccy), self.money_row(to, ccy));
         if let Missing::Present(line) = paid
             && self.owed_by(line) == from

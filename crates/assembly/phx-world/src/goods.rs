@@ -36,11 +36,12 @@ pub(crate) struct Traded {
     pub base: i64,
 }
 
-/// What the kernel reads to key goods, compiled at assembly: each product's unit, each deposit resource's product,
-/// and each region's market zone.
+/// What the kernel reads to key goods, compiled at assembly: each product's unit and whether it is delivered as it is
+/// made, each deposit resource's product, and each region's market zone.
 #[derive(Clone, Debug)]
 pub(crate) struct Frame {
     pub products: Vec<Missing<Traded>>,
+    pub at_once: Vec<bool>,
     pub resources: Vec<Missing<u16>>,
     pub market_zones: Vec<Missing<ZoneId>>,
 }
@@ -51,6 +52,7 @@ impl Frame {
         let entries = register.products(PRODUCTS)?;
         let mut products = Vec::with_capacity(entries.len());
         let mut resources: Vec<Missing<u16>> = Vec::new();
+        let at_once = entries.iter().map(|p| p.delivered_at_once).collect();
         for (i, p) in (0_u16..).zip(entries) {
             let Missing::Present(unit) = register.units().named(&p.unit) else {
                 return Err(format!(
@@ -77,7 +79,12 @@ impl Frame {
                 }
             }
         }
-        Ok(Frame { products, resources, market_zones: geo.market_zones() })
+        Ok(Frame { products, at_once, resources, market_zones: geo.market_zones() })
+    }
+
+    /// A product's least quantity traded, ten to its price's exponent.
+    pub(crate) fn base(&self, product: u16) -> i64 {
+        self.traded(product).base
     }
 
     fn traded(&self, product: u16) -> Traded {
@@ -149,11 +156,15 @@ pub(crate) struct MarketDay {
     pub orders: Vec<Order>,
     pub matches: Vec<(MarketId, InstrumentId, Match)>,
     pub trades: Vec<(Instruction, PartyId, InstrumentId, i64)>,
+    pub shops: Vec<crate::retail::Shop>,
+    pub sales: Vec<crate::retail::Sale>,
     pub tally: GoodsDay,
 }
 
-/// What a day's goods did: the calls met, the transformations that took units from a deposit, the orders admitted,
-/// the orders refused or lapsed unmet, and the transformations and trades that failed.
+/// What a day's goods did: the calls met, the transformations that took units from a deposit, the orders and wants
+/// admitted, those refused or lapsed unmet, the transformations and trades that failed; and at retail, the buyers,
+/// the sellers they had in reach, the rounds of choosing again, the buyers that found no seller, and the units of
+/// services delivered at once that no buyer took, which are lost.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GoodsDay {
     pub auctions: u64,
@@ -161,6 +172,11 @@ pub struct GoodsDay {
     pub orders: u64,
     pub refused: u64,
     pub failed: u64,
+    pub shoppers: u64,
+    pub in_reach: u64,
+    pub rounds: u64,
+    pub unserved: u64,
+    pub unused: u64,
 }
 
 /// Each good's latest mark where it stands, as the markets' marks give it, rebuilt after the day's marks.

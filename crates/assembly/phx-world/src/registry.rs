@@ -211,8 +211,10 @@ struct Prepared {
     laws: Vec<crate::defaults::Law>,
     wears: Vec<crate::wear::WearBound>,
     spoils: Vec<crate::spoil::SpoilBound>,
-    /// The market kinds the systems declare.
+    /// The market kinds the systems declare, and the retail kinds among them.
     market_kinds: phx_market::instances::Kinds,
+    retail: Vec<crate::retail::RetailBound>,
+    reach: phx_market::reach::Reach,
     register_hash: u128,
 }
 
@@ -346,6 +348,11 @@ fn prepare(
         errors.extend(e);
         phx_market::instances::Kinds::default()
     });
+    let retail = crate::retail::bind(&d, &market_kinds, &c.register).unwrap_or_else(|e| {
+        errors.extend(e);
+        Vec::new()
+    });
+    let reach = phx_market::reach::Reach::new(&kernel.market, &c.register);
     let (pop, processes) = match population_kinds(&mut d, &c.register) {
         Ok(bound) => bound,
         Err(e) => {
@@ -377,6 +384,8 @@ fn prepare(
         wears,
         spoils,
         market_kinds,
+        retail,
+        reach,
         register_hash: data_hash(&files),
     })
 }
@@ -386,9 +395,16 @@ fn prepare(
 fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<String>> {
     let (mut kinds, mut errors) = (phx_market::instances::Kinds::default(), Vec::new());
     for (system, kind) in &d.markets {
-        let Some(decl) = kind.downcast_ref::<phx_market::market::MarketDecl>() else {
-            errors.push(format!("{system} declares a market kind that is no market's declaration"));
-            continue;
+        let decl = match (
+            kind.downcast_ref::<phx_market::market::MarketDecl>(),
+            kind.downcast_ref::<phx_market::retail::RetailKind>(),
+        ) {
+            (Some(d), _) => d,
+            (None, Some(r)) => &r.market,
+            (None, None) => {
+                errors.push(format!("{system} declares a market kind that is no market's declaration"));
+                continue;
+            }
         };
         errors.extend(phx_market::market::refusals(decl));
         if decl.settle_days != 0 {
@@ -522,6 +538,8 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         defaults: std::collections::BTreeSet::new(),
         markets,
         market_kinds: std::mem::take(&mut p.market_kinds),
+        retail: std::mem::take(&mut p.retail),
+        reach: p.reach,
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
