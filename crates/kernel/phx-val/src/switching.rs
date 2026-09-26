@@ -7,14 +7,14 @@ use phx_num::{Missing, violation};
 use phx_rand::float::{from_u64, len_u64};
 
 /// A heuristic's performance after an error, in the method's widths so the switching intensity reads alike for every
-/// series: the exponentially weighted squared error at the party's memory speed; the first error, with no record yet,
-/// is the record.
+/// series: the exponentially weighted squared error, `memory` the weight of the last; the first error, with no record
+/// yet, is the record.
 #[clause("VAL.3", "VAL.7")]
 #[must_use]
-pub fn performance(previous: Missing<f64>, error: f64, lambda: f64) -> f64 {
+pub fn performance(previous: Missing<f64>, error: f64, memory: f64) -> f64 {
     let squared = error * error;
     match previous {
-        Missing::Present(p) => p + lambda * (squared - p),
+        Missing::Present(p) => p + memory * (squared - p),
         Missing::Absent => squared,
     }
 }

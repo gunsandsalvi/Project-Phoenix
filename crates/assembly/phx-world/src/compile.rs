@@ -62,7 +62,7 @@ pub struct Compiled {
 /// Compiles the declarations against the data.
 ///
 /// # Errors
-/// Every entry the register refuses, a calendar its rules cannot describe, a stream twice or a hash shared, and a
+/// Every entry the register refuses, a count of heuristics tracked other than the menu's, a calendar its rules cannot describe, a stream twice or a hash shared, and a
 /// handler graph with two writers of one column or a write another reads.
 pub fn compile(
     d: &mut Declarations,
@@ -73,6 +73,7 @@ pub fn compile(
     seed: Seed,
 ) -> Result<Compiled, Vec<String>> {
     let register = std::mem::take(&mut d.prims).build(files, countries.len())?;
+    kernel.val.check(&register).map_err(|e| vec![e])?;
     let epoch = kernel.epoch.shared(&register);
     let day_zero_date = kernel.day_zero.shared(&register);
     let mut rules = Vec::with_capacity(countries.len());

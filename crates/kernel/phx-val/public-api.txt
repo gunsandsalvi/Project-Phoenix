@@ -104,6 +104,7 @@ pub phx_val::prims::ValPrims::switching_intensity: phx_core::register::Prim<phx_
 pub phx_val::prims::ValPrims::switching_types: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_val::prims::ValPrims::trend_gamma: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 impl phx_val::prims::ValPrims
+pub fn phx_val::prims::ValPrims::check(&self, &phx_core::register::Register) -> core::result::Result<(), alloc::string::String>
 pub fn phx_val::prims::ValPrims::declare(&mut phx_core::system::Declarations) -> phx_val::prims::ValPrims
 pub const phx_val::prims::ADAPTIVE_GAIN: phx_core::register::PrimDecl
 pub const phx_val::prims::ANCHOR_KAPPA: phx_core::register::PrimDecl

@@ -72,7 +72,7 @@ id = "VAL.attention_sensitivity"
 kind = "PREFERENCE"
 owner = "VAL"
 source = "assumed"
-source_ref = "How many widths a surprise must exceed to wake the parties it bears on (REP.35): two, a surprise outside the band a party's outlook holds about nineteen times in twenty; assumed until the review decisions of S1.12 measure it."
+source_ref = "How many widths a surprise must exceed to wake the parties it bears on (REP.35): two, the width being the mean absolute surprise, so a band of about 1.6 standard deviations that holds a normal surprise about nine times in ten; assumed until the review decisions of S1.12 measure it."
 value = "2"
 
 [[primitive]]

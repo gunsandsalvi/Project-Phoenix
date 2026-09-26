@@ -2,7 +2,7 @@
 //! experience weighting, attention sensitivity, and how many heuristics a party tracks.
 
 use phx_core::register::values::Distribution;
-use phx_core::{Declarations, Prim, declare_prim};
+use phx_core::{Declarations, Prim, Register, declare_prim};
 use phx_num::{Count, Fixed};
 
 declare_prim! {
@@ -96,6 +96,21 @@ impl ValPrims {
             switching_intensity: d.prim(&SWITCHING_INTENSITY),
             attention_sensitivity: d.prim(&ATTENTION_SENSITIVITY),
             heuristics_tracked: d.prim(&HEURISTICS_TRACKED),
+        }
+    }
+
+    /// The count of heuristics the data declares against the menu the code carries: a party tracks every rule on the
+    /// menu, so a different count names rules that do not exist or leaves some unscored.
+    ///
+    /// # Errors
+    /// The two counts, when they differ.
+    pub fn check(&self, register: &Register) -> Result<(), String> {
+        let declared = self.heuristics_tracked.shared(register).get();
+        let menu = crate::heuristic::MENU.len();
+        if usize::try_from(declared).ok() == Some(menu) {
+            Ok(())
+        } else {
+            Err(format!("{} declares {declared} heuristics tracked; the menu has {menu}", HEURISTICS_TRACKED.id))
         }
     }
 }
