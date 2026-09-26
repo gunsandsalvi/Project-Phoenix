@@ -17,7 +17,7 @@ pub struct AgeWindow(pub u16);
 
 /// How a party forms an outlook of a public series. Everyone using the same method saw the same prints the same way
 /// and holds the same outlook.
-#[clause("VAL.23")]
+#[clause("VAL.16", "VAL.23")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Method {
     pub heuristic: HeuristicId,

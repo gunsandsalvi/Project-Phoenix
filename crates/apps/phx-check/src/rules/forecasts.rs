@@ -4,6 +4,8 @@
 use syn::visit::{self, Visit};
 use syn::{FnArg, PathSegment, Signature};
 
+use phx_macros::clause;
+
 use super::{Breach, attrs, unparsed};
 use crate::workspace::{DepKind, Workspace};
 
@@ -14,6 +16,7 @@ const ALLOWED: &[&str] = &["phx-core", "phx-id", "phx-macros", "phx-num", "phx-r
 /// The names a parameter holding the world, its stores or a handler's view would carry.
 const HOLDERS: &[&str] = &["World", "Inspector", "Table", "Books", "Store", "Ctx", "Arenas"];
 
+#[clause("VAL.17")]
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();
     let Some(c) = ws.crates.iter().find(|c| c.name == VAL) else { return breaches };

@@ -5583,14 +5583,28 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 
 ### S1.01 — `phx-val`: outlooks, heuristics, surprises and values
 
-**Status**: building
+**Status**: done. `phx-val` is the menu, methods, experience weighting, switching, surprises, attention and values as
+pure functions, with the registered series and the investor schedule's extension point; VAL's primitives and the
+rule forms are in the register (assembly refuses a count of heuristics tracked other than the menu's); N3's and N4's
+definitions, Stage 1's macro reads, LC-1-01 to LC-1-04, LC-1-43, LC-1-44, PC-33, PC-90 and PC-91 are registered. No
+party holds a method or attention yet, so the 5a pass over public series, attention and the wake, and the `phx_val`
+counters join the day with the first stances, the firms' (S1.03), which completes VAL.23, REP.21, REP.35 and REP.38; VAL.12–VAL.15 are measured by
+their live checks from S1.12. Both reviews were the builder's own: they found the menu's count unchecked against the
+data, the performance record's memory named as the party's memory speed, and a wrong probability in
+`VAL.attention_sensitivity`'s reason, all fixed; and, on the build run of c3dd7538, a peak 4 MiB over the build
+world's budget, cut in stage 7's check buffers (e9df34e2).
 
 **Clauses**:
-- STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: VAL.1–VAL.23, all of them.
+- STATE, DECISION, PROCESS, INVARIANT, FORBID, PRIMITIVE: VAL.1–VAL.11, VAL.16–VAL.22; VAL.23 *(part: methods, the
+  experience weighting and registered series; the public-series outlooks at 5a join the day with the first stances,
+  S1.03)*.
+- MEASURE: VAL.12–VAL.15 *(part: registered as LC-1-01, LC-1-03, LC-1-43 and LC-1-44; they measure once the circular
+  flow closes, S1.12)*.
 - FORBID: GEN.11 *(completes it: PC-91 refuses a primitive or opening changed after a run)*.
-- DECISION: REP.38 *(attention as its cell's continuous decision)*.
-- PROCESS: REP.21 *(completes it: attention as a continuous decision, its review cost paid)*; REP.35 *(completes it:
-  the surprise that raises attention and wakes)*; REP.22 *(part: tastes over heuristics)*.
+- DECISION: REP.38 *(part: attention's form, from stake and review cost; it becomes a decision of the world's parties
+  with the firms', S1.03)*.
+- PROCESS: REP.21 *(part: the review intensity and its exposure)*; REP.35 *(part: the surprise and when it wakes)*;
+  REP.22 *(part: tastes over heuristics)*.
 - The extension points later steps use: the investor schedule (S3.03) and registered series, whose outlooks are
   computed only for the pairs registered (S3.03, S3.05) (architecture §8).
 
@@ -5754,11 +5768,11 @@ run it to forecast (a signature check).
 - a method computed per member when it is the same for every member using it.
 
 **Done when**
-- [ ] Outlooks, switching, surprises, attention and values exist, with the tests passing.
-- [ ] LC-1-01 to LC-1-04, LC-1-43 and LC-1-44 are registered; they are not applicable until the circular flow
+- [x] Outlooks, switching, surprises, attention and values exist, with the tests passing.
+- [x] LC-1-01 to LC-1-04, LC-1-43 and LC-1-44 are registered; they are not applicable until the circular flow
   closes, and S1.12's Done when requires them to pass.
-- [ ] PC-33 is registered.
-- [ ] Two reviews are done.
+- [x] PC-33 is registered.
+- [x] Two reviews are done.
 
 ---
 
@@ -5856,6 +5870,10 @@ run it to forecast (a signature check).
 - PROCESS: FRM.13, FRM.14; FRM.16 *(part: households found firms; firms and funds found them from S3.07)*; FRM.15
   *(part: default of payment and liquidation; the balance-sheet test and restructuring are S2.03)*; L3 *(part: firm
   estates liquidate through the waterfall)*.
+- STATE: VAL.23 *(completes it: the public-series outlooks at 5a, once per method in use)*.
+- DECISION: REP.38 *(completes it: the firms' attention, their first continuous decision of how often to review)*.
+- PROCESS: REP.21 *(completes it: reviews at the attention rate, their cost paid)*; REP.35 *(completes it: a
+  surprise raises attention and wakes the parties it bears on)*.
 - INVARIANT: FRM.17, FRM.18.
 - MEASURE: REP.15 *(completes it: reported per kind, with individuals, lines, events per agent and the twins whose
   size would rank them individuals)*.
@@ -5900,6 +5918,11 @@ run it to forecast (a signature check).
 
 **Design**
 
+- **Outlooks in the day** (S1.01): the firms' stances are the first parties' methods and their attention the first
+  review intensities, so the public-series outlooks at 5a (VAL.23), once per method in use and series published, the
+  attention exposure at visits (REP.21, REP.38) and the wake of a surprise beyond its sensitivity (REP.35, architecture
+  §7.3) join the day here, with the stance review and the counters `phx_val.methods_in_use`, `phx_val.surprise_wakes` and `phx_val.public_surprise_records` (ratcheted from
+  S1.12, when households' methods join them).
 - **Production** (FRM.4), a continuous decision on the firm's schedule (weekly by default):
   - target output `y* = E[demand over the lead time] + (s* − s) ÷ τ`, where `s` is the stock, `s*` the target stock
     (weeks of expected sales, a PREFERENCE of its management type) and `τ` its adjustment time;
@@ -6846,6 +6869,8 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
 - STATE: MON.4 *(completes it, with S1.09's part: depositors withdraw and deposit banknotes)*.
 - PROCESS: HH.13 *(part: debt service on its dates and arrears; default's consequences come with S2.01, S2.05 and
   S2.10, and HH.13 completes at S2.11)*.
+- MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(completes them: LC-1-01, LC-1-03, LC-1-43 and LC-1-44 measure the
+  world's outlooks once households and firms decide from them)*.
 - INVARIANT: HH.15.
 - FORBID: HH.18, HH.19.
 - PRIMITIVE: HH.20.
@@ -16317,8 +16342,7 @@ and are not mapped.
 | GEO | S2.05 | 5 |
 | GEO | S5.02 | 4 |
 | REP | S0.28 | 1, 2, 3, 7, 9, 12, 13, 14, 16, 17, 23, 25, 26, 31, 40, 41 |
-| REP | S1.01 | 21, 35, 38 |
-| REP | S1.03 | 15 |
+| REP | S1.03 | 15, 21, 35, 38 |
 | REP | S1.09 | 34 |
 | REP | S1.12 | 5, 20 |
 | REP | S2.05 | 22, 24 |
@@ -16347,7 +16371,9 @@ and are not mapped.
 | MKT | S0.18 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21 |
 | MKT | S3.06 | 5 |
 | MKT | S4.04 | 20 |
-| VAL | S1.01 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 |
+| VAL | S1.01 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 22 |
+| VAL | S1.03 | 23 |
+| VAL | S1.12 | 12, 13, 14, 15 |
 | POP | S0.25 | 3, 4 |
 | POP | S1.13 | 5, 10 |
 | POP | S2.04 | 9, 15 |

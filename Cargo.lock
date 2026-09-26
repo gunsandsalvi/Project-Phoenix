@@ -578,6 +578,7 @@ version = "0.1.0"
 dependencies = [
  "cargo_metadata",
  "clap",
+ "phx-macros",
  "proc-macro2",
  "regex",
  "serde",

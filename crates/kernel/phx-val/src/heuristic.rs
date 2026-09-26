@@ -12,7 +12,9 @@ mod menu {
 }
 
 /// What a method saw of a series when it forms its next outlook: its own last outlook, the last two values published,
-/// the level it anchors to, and a dated change announced, if any.
+/// the level it anchors to, and a dated change announced, if any. Nothing else reaches a rule: no party's private
+/// state and no result of the stage the outlook is read in.
+#[clause("VAL.18")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Seen {
     pub previous: f64,

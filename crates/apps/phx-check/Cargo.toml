@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 cargo_metadata.workspace = true
 clap.workspace = true
+phx-macros = { path = "../../foundation/phx-macros" }
 proc-macro2.workspace = true
 regex.workspace = true
 serde.workspace = true

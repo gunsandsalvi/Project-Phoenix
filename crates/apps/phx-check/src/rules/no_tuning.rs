@@ -5,6 +5,8 @@ use std::collections::BTreeMap;
 
 use regex::Regex;
 
+use phx_macros::clause;
+
 use super::Breach;
 use crate::git::{Git, trailers};
 use crate::workspace::Workspace;
@@ -39,6 +41,7 @@ pub type Dump = BTreeMap<(String, String), Entry>;
 /// An entry that differs: its (file, id), and the entry before and after, either absent.
 pub type Change<'a> = (&'a (String, String), Option<&'a Entry>, Option<&'a Entry>);
 
+#[clause("GEN.11")]
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let git = Git::at(&ws.root);
     let fail = |e: String| vec![Breach::new(RULE, REGISTRATION, 1, e)];
