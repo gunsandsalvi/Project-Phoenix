@@ -6278,7 +6278,8 @@ kink days, dues and wear.
   shares for each twin. Each firm's plant of a kind is spread over the classes as a steady stock growing at the
   country's growth rate g would be (each class ρ = (C ÷ L) ÷ (g + C ÷ L) times the one before), its units priced so
   the classes' values sum to the stock's value, one currency unit a unit of plant new; its lot costs what it is
-  worth. The large firms' structures are the drawn sizes housing reads for its landlords. This retires `FRM.plant`,
+  worth. The large firms' structures are the drawn sizes housing reads for its landlords. A firm that ends passes its
+  plant to its estate, a small firm's agent its twins' holdings to the one estate that stands for them. This retires `FRM.plant`,
   `FRM.depreciation` and the replacement-value unit, and F-049.
 - **Capacity** (CAP.9): a way's capacity a year from a holder's plant is the least over the kinds the way needs of
   Σ_classes units × efficiency ÷ the way's plant of that kind per unit of output a year — the scarcest kind's, as

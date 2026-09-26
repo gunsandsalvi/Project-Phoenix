@@ -636,18 +636,16 @@ impl World {
         region: Option<u32>,
     ) {
         let m = move_at(&self.register, day, ApplyAt::Day(step));
-        let (rows, twins): (Vec<(LineId, Side, u32)>, u32) = {
+        let (rows, twins, holds): (Vec<(LineId, Side, u32)>, u32, bool) = {
             let table = Population::table::<SystemBacking>(self.books.parties.cells(), kind);
-            for list in [AgentList::Holdings, AgentList::Lots, AgentList::NamedUnits] {
-                if table.list(slot, list).len != 0 {
-                    violation!(clause = "POP.15", "a household ended holding what only an estate can take yet");
-                }
+            if table.list(slot, AgentList::NamedUnits).len != 0 {
+                violation!(clause = "POP.15", "an agent ended holding named units, which no estate takes yet");
             }
             let rows =
                 phx_ledger::rows::rows(table, slot).iter().map(|r| (r.row.line, r.side(), r.row.count)).collect();
-            (rows, table.multiplicity(slot).get())
+            (rows, table.multiplicity(slot).get(), table.list(slot, AgentList::Holdings).len != 0)
         };
-        if !rows.is_empty() {
+        if !rows.is_empty() || holds {
             let Some(region) = region else {
                 violation!(
                     clause = "PTY.9",
@@ -666,6 +664,10 @@ impl World {
                 if let Err(f) = self.books.transfer(t, m, self.audit.stream()) {
                     violation!(clause = "PTY.9", "an estate's succession did not settle", party = f.party.get());
                 }
+            }
+            // An agent's holdings count one twin's, as the estate standing for its twins holds them.
+            if let Err(f) = self.books.pass_holdings((party, estate), succeeded, m, self.audit.stream()) {
+                violation!(clause = "PTY.9", "an estate's succession to holdings did not settle", party = f.party.get());
             }
             self.agent_day.estates += 1;
         }
