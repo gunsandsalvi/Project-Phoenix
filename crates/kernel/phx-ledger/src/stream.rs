@@ -369,7 +369,7 @@ impl<B: Backing> Books<B> {
         // share stays whole.
         let unit = self.parties.unit(holder);
         if outstanding % i64::from(unit) != 0 {
-            violation!(clause = "REP.9", "an agent's balance not a whole share for each twin", line = line.get());
+            violation!(clause = "REP.9", "an agent's balance not a whole share for each twin", party = holder.get());
         }
         let outstanding = Money::new(outstanding / i64::from(unit), terms.ccy);
         let mut buf = DueBuf::default();

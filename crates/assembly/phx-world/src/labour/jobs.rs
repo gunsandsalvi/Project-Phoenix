@@ -294,8 +294,11 @@ impl World {
         };
         let years = i64::from(self.calendar.date(day).year()) - i64::from(*band);
         let law = super::law_of(&self.labour.laws, CountryId::new(country));
-        // Each member is owed the same whole amount, so an agent's twins each receive an equal share.
-        let each = phx_ledger::opening::whole((kind.owed)(law, phx_rand::float::from_i64(wage.amt()), *days, years, 1));
+        // Each member is owed the same whole amount, a whole share for each of the payer's twins, so every twin on
+        // either side pays or receives an equal share.
+        let payer = i64::from(self.books.parties.unit(employer));
+        let raw = phx_ledger::opening::whole((kind.owed)(law, phx_rand::float::from_i64(wage.amt()), *days, years, 1));
+        let each = raw - raw.rem_euclid(payer);
         let Some(amount) = each.checked_mul(i64::from(members)) else {
             phx_num::capacity_exceeded!("a separation's severance", i64::MAX, each);
         };
