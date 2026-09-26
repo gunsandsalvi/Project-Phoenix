@@ -48,10 +48,12 @@ direction = "down"
 # head is read on its lines' due days, so heads, visits and the day's records rise (heads 274 774 to 991 630, visits
 # 101 829 to 498 793, bytes 58.6 MB to 197.3 MB); a cell's dues were a row per cell, an agent's a row per agent of
 # whole twins, so rows streamed and scanned, rows not due and payments fall. The large firms' banks drawn (F-077) moved
-# rows streamed, scanned and payments up by 6, 12 and 6 (092c0edb).
+# rows streamed, scanned and payments up by 6, 12 and 6 (092c0edb). The firms' industries, drawn under a new purpose of
+# each country's opening stratum, move every firm's size and site draw, and the busiest day's rows streamed, scanned and
+# payments rise by 8 778, 8 900 and 8 778 (ac0f57ed).
 [[ratchet]]
 counter = "phx_ledger.rows_streamed"
-value = 2806417
+value = 2815195
 direction = "down"
 
 [[ratchet]]
@@ -61,7 +63,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_rows_scanned"
-value = 2879512
+value = 2888412
 direction = "down"
 
 [[ratchet]]
@@ -71,7 +73,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.payments"
-value = 2798267
+value = 2807045
 direction = "down"
 
 # The fixed point's visits restated from the twins gate run (aa48779e, two years): payers short of money multiply as
