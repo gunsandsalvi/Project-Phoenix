@@ -2,6 +2,14 @@ pub mod if_pop
 pub mod if_pop::consts
 pub const if_pop::consts::EDUCATION_VALUES: u32
 pub const if_pop::consts::REGIONS: u32
+pub mod if_pop::facts
+pub struct if_pop::facts::After
+impl phx_core::facts::FactDef for if_pop::facts::After
+pub const if_pop::facts::After::ITEM: phx_core::facts::ItemDecl
+pub struct if_pop::facts::Income
+impl phx_core::facts::FactDef for if_pop::facts::Income
+pub const if_pop::facts::Income::ITEM: phx_core::facts::ItemDecl
+pub const if_pop::facts::POSITIONS: [phx_core::pop::PositionDecl; 2]
 pub const if_pop::ABLE: u32
 pub const if_pop::ADULT: phx_core::pop::RoleDecl
 pub const if_pop::CHILD: phx_core::pop::RoleDecl

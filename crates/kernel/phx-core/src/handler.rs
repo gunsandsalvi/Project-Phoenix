@@ -109,6 +109,8 @@ pub trait GoodsView: core::fmt::Debug {
     fn delivered(&self, slot: Slot, product: u16) -> i64;
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64>;
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64>;
+    /// The money the row's party holds on its account, one twin's for an agent; none without an account.
+    fn money(&self, slot: Slot) -> Missing<i64>;
 }
 
 /// The view of rows that hold no goods, as a kernel table's are.
@@ -132,6 +134,9 @@ impl GoodsView for NoGoods {
         Missing::Absent
     }
     fn outlook(&self, _: Slot, _: u16, _: u8, _: u16) -> Missing<i64> {
+        Missing::Absent
+    }
+    fn money(&self, _: Slot) -> Missing<i64> {
         Missing::Absent
     }
 }
@@ -229,6 +234,11 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     #[must_use]
     pub fn delivered(&self, slot: Slot, product: u16) -> i64 {
         self.parts.goods.delivered(slot, product)
+    }
+
+    /// The money the row's party holds on its account, one twin's for an agent.
+    pub fn money(&self, slot: Slot) -> Missing<i64> {
+        self.parts.goods.money(slot)
     }
 
     /// A good's latest mark at the row's place, in its market's raw price.

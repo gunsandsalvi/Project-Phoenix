@@ -13,6 +13,7 @@ pub const SYSTEMS: &[fn() -> SystemEntry] = &[
     SystemEntry::of::<sys_tax::Tax>,
     SystemEntry::of::<sys_trs::Trs>,
     SystemEntry::of::<sys_sov::Sov>,
+    SystemEntry::of::<sys_hh::Hh>,
     SystemEntry::of::<sys_tec::Tec>,
     SystemEntry::of::<sys_cap::Cap>,
     SystemEntry::of::<sys_gds::Gds>,

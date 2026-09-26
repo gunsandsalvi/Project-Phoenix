@@ -1,0 +1,10 @@
+# The developed group's households: their budget shares over the products (spec HH.5, HH.20), derived by
+# tools/data/derive_hh.py; never edited by hand.
+
+[[primitive]]
+id = "HH.budget_shares"
+kind = "PREFERENCE"
+owner = "HH"
+source = "measured"
+source_ref = "The share of households' final consumption expenditure (FIGARO's final-use column P3_S14, at basic prices, each purchase summed over where it came from) spent on each industry's products (agriculture, mining, food manufacturing, consumer goods manufacturing, materials manufacturing, energy, capital goods manufacturing, utilities, construction, trade, transport, accommodation and food services, business services, education, health, personal services): the median over the 36 economies of the World Bank's developed income groups whose tables the group's ways are derived from (AUS, AUT, BEL, BGR, CAN, CHE, CYP, CZE, DEU, DNK, ESP, EST, FIN, FRA, GBR, GRC, HRV, HUN, IRL, ITA, JPN, KOR, LTU, LUX, LVA, MLT, NLD, NOR, POL, PRT, ROU, SAU, SVK, SVN, SWE, USA), renormalised to sum to one after leaving out finance, real estate, public administration and households as employers (K64, K65, K66, L, O84, T, U; a median 24.7% of the spending), paid for by fees, rents and taxes (Eurostat FIGARO, SDMX 2.1 API, table naio_10_fcp_ip4, 2022, fetched 2026-09-26)."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], values = [0.027477, 0.000647, 0.113065, 0.048628, 0.038209, 0.088277, 0.062514, 0.012716, 0.002926, 0.224638, 0.052969, 0.103592, 0.088690, 0.018061, 0.055345, 0.062246], outside = "refuse" }

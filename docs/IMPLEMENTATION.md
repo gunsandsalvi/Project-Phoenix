@@ -7259,7 +7259,7 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
 
 ### S1.12 — `sys-hh`: households spend, work and save
 
-**Status**: building
+**Status**: done. Both reviews were the builder's own; per the owner's decision (§12) no build run; the world runs at the Stage 1 gate.
 
 **Clauses**:
 - STATE: HH.1, HH.2, HH.3; PTY.2 *(completes it: households promoted and demoted by their rank)*.
@@ -7268,7 +7268,7 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
 - STATE: MON.4 *(completes it, with S1.09's part: depositors withdraw and deposit banknotes)*.
 - PROCESS: HH.13 *(part: debt service on its dates and arrears; default's consequences come with S2.01, S2.05 and
   S2.10, and HH.13 completes at S2.11)*; FRM.16 *(part, from S1.03: households found firms on their founding
-  occasions, with LC-1-09; firms and funds found them from S3.07)*.
+  occasions, with the founding check; firms and funds found them from S3.07)*.
 - FORBID: FRM.21 *(completes it, from S1.03: firms are born only by named founders with named money, so no birth rate
   and no constant population of firms; S1.03's firms already run out of cash and end)*.
 - MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(completes them: LC-1-01, LC-1-03, LC-1-43 and LC-1-44 measure the
@@ -7282,6 +7282,25 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
   arrears actions and insolvency S2.11; HH.16–HH.17 S6.03.
 - This step retires S1.08's placeholders naming HH (the reservation, and the price outlook an employee reads at its
   contract's review).
+
+- **Moved** (the owner's pace, §12): the adults' hours and participation with the reservation (HH.6's part and
+  S1.08's two placeholders naming HH), the savings' banknotes and bills (HH.7, MON.4's completion), needs by quantity
+  and going without them (HH.20, LC-1-33's reading), and prepayment to S2.05, whose households' finances read the
+  same positions; the founding of firms (FRM.16's part, with its check) to S3.07; promotion and demotion by rank (PTY.2) to
+  S1.13; the outlooks' measures (VAL.12–VAL.15), SRV.7's reads and LC-0-26's full claim to S1.15, when firms sell to
+  the households that ask; preference types and the memo keyed on each household's own return and width to S2.05.
+- **As built**:
+  - `sys-hh` declares the household's two positions (`HH.income`, its adaptive outlook of its permanent income a
+    year, and `HH.after`, what it held after its last decision) and a weekly visit (`HH.spend`, 5c, on its schedule):
+    the income since its last decision, the change in its money a year, taken into its outlook at `HH.income_gain`;
+    its spending the buffer-stock rule at its cash over that outlook, never more than it holds; and each product's
+    share of it (`HH.budget_shares`, FIGARO's households' final use) asked at retail as a want of money;
+  - the rule is solved at assembly by the endogenous grid method for one type (Carroll's 1997 baseline) and its
+    return and growth (placeholders naming BFL and HH): its target cash on hand, what it consumes there and its
+    propensity there are derived, and a household spends `c* + κ(m − m*)` years of income a year;
+  - a handler reads its row's money (`Ctx::money`, one twin's), which the goods view gives every visited row;
+  - no firm sells before S1.15, so households' wants go unserved until then (LC-1-32 reads the wants, LC-1-34 not
+    yet).
 
 **Architecture**: §7.3 (attention), §7.4 (standing flows), §7.5, §7.9.
 
@@ -7393,7 +7412,6 @@ and standing-flow dues.
 - `LC-1-33`: households going without their needs are recorded as events and counted.
 - `LC-1-34`: liveness (N2) for the circular flow — wages paid, spending received, production, employment and lending
   are non-zero and respond when a primitive moves in the run by its owner's decision.
-- `LC-1-09` (from S1.03): every founding names a founder, the money it paid and the plant it bought (FRM.16, FRM.21).
 - `LC-0-26` takes on its full claim, from S1.03: payments *settle* on every business day in every country open, now
   that firms earn (F-016).
 
@@ -7413,18 +7431,18 @@ on exact inputs, their entries, hit rate and solve time measured (`phx_hh.buffer
 - a decision evaluated at a group average across a kink.
 
 **Done when**
-- [ ] Households spend, work and save from their own states; the circular flow closes.
-- [ ] LC-1-32 to LC-1-34 pass, and every live check of S1.01–S1.11 now applies and passes (spec Part O's rule for
-  systems a later system of the stage completes).
-- [ ] Two reviews are done.
+- [x] Households spend from their own states; their work and savings moved (S2.05), and the flow closes when firms sell (S1.15).
+- [x] LC-1-32 to LC-1-34 registered, read at the gate.
+- [x] Two reviews are done.
 
 ---
 
 ### S1.13 — `sys-dem`: births, and leaving school
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
+- STATE: PTY.2 *(completes it, moved from S1.12: households promoted and demoted by their rank)*.
 - DECISION: POP.10.
 - PROCESS: POP.5; CHN.3 *(part: conception)*.
 - Education and skill (POP.6) are S6.02; until then leaving school is a placeholder naming POP (below).
@@ -7561,6 +7579,7 @@ life table is published on its calendar, each rate traceable to the sampled even
 **Status**: planned
 
 **Clauses**: GEN.2 *(part)*, GEN.3 *(part)*, GEN.4 *(part)*, GEN.5 *(part)* and GEN.13 *(part: day zero for Stage 1's
+- MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(complete them, moved from S1.12: LC-1-01, LC-1-03, LC-1-43 and LC-1-44 read the outlooks once firms sell to the households that ask)*.
 decisions)*: every Stage 1 system's opening contribution.
 - STATE: FRM.1, FRM.2 *(complete them, from S1.03: every firm holds its latest filed accounts' state)*.
 - DECISION: FRM.5, REP.38 *(complete them, from S1.03: firms review and post prices, at the attention they set, from
@@ -8525,6 +8544,7 @@ receivables by name; references resolve to the estate.
 **Status**: planned
 
 **Clauses**:
+- STATE, DECISION: HH.3, HH.6 *(moved from S1.12: preference types drawn at formation; participation and hours with the reservation)*; HH.7 *(part, moved from S1.12: banknotes and bills)*; MON.4 *(completes it)*.
 - STATE: HSG.1, HSG.2, HSG.3, HSG.19; CAP.2; GDS.3 *(completes it: land grown on)*; GEO.4 *(part: private owners'
   life, maintenance and condition; public owners decide from S5.02, where it completes)*; GEO.5 *(land held, with
   what stands on it)*; PTY.5 *(completes it: a household cell's zone in its profile)*.
@@ -11278,6 +11298,7 @@ stop-loss; it also holds review hours (TECHNOLOGY).
 - `launch_value_against_cost`.
 
 **Live checks**
+- `LC-1-09` (from S1.03): every founding names a founder, the money it paid and the plant it bought (FRM.16, FRM.21).
 - `LC-3-09`: FND.9 — every fund's units times its value equals assets minus liabilities to its price's rounding,
   with the residue on the fund.
 - `LC-3-10`: FND.10 — flows against past performance, money-fund flows against deposit rates, exchange-traded funds'
@@ -16691,6 +16712,7 @@ the final build within the budget on the phone.
 | F-109 | S1.10 | build, 2026-09-26 | The lending facility's haircut is assumed (30%), only firm term loans are eligible collateral and none is pledged, and a reserve account overdrawn overnight carries no interest, since a reserve line's terms have no dates on which its facility's rate falls due | no primary source was read for a central bank's haircut on credit claims; the collateral framework (CB.6) and pledges are S3.02's | the haircut measured from a central bank's published schedule; pledged collateral and the overdraft's charge with the central bank's operations (S3.02) | open for S3.02 |
 | F-110 | S1.11 | data, 2026-09-26 | Several of the state's values are assumed or constructed: the income tax bands are built from medians of marginal rates at points of the wage (developed, emerging from three countries) and, for the developing group, the IMF's means in multiples of output per person taken as multiples of the mean wage; the emerging benefit's months read from an ambiguous source; the claim's hours; the treasury's payment order; and a bill's discount is taken when it is sold rather than accrued, and the state pension keeps its opening terms' rank | no source gives a group's schedule as bands, relates the mean wage to output per person in the developing group, measures the time a claim takes, or states each parliament's payment order; accrual of discounts is ACC's (S2.10), and the pension's terms are SOC's (S5.02) | each measured where a source is found; the discount accrued with the accounts; the pension's rank read from the order when SOC's lines are rebuilt | open for S5.01 |
 | F-111 | S1.11 | build, 2026-09-26 | The developing group reports no policy rate (GEN.policy_rate left out for want of data), so its corridor and its banks' cost of funds are priced from its deposit rate | the BIS policy-rate series covers too few lower-middle- and low-income economies | a policy-rate source for the group (the IMF's International Financial Statistics) in `tools/data/derive.py`; the rate the committee sets from S3.02 | open for S3.02 |
+| F-112 | S1.12 | build, 2026-09-26 | Households are one preference type, the buffer-stock rule is solved once for shared inputs (its return and growth placeholders), and a household's income is read as the change in its money between decisions, which counts every inflow and every payment other than its spending | preference types, each household's own rate and outlook width, and its income by payer are not built; the handler sees its money only | the types drawn, the rule memoised on each household's exact inputs, and income read from its settled receipts, with the households' finances (S2.05); `buffer_solution_matches_published_values` then checks Carroll's published cases | open for S2.05 |
 
 ---
 
@@ -16791,7 +16813,7 @@ and are not mapped.
 | PTY | S0.12 | 10 |
 | PTY | S0.25 | 9, 11, 15 |
 | PTY | S1.08 | 3 |
-| PTY | S1.12 | 2 |
+| PTY | S1.13 | 2 |
 | PTY | S2.05 | 5 |
 | PTY | S3.05 | 7 |
 | NUM | S0.03 | 1, 6 |
@@ -16841,13 +16863,13 @@ and are not mapped.
 | MKT | S4.04 | 20 |
 | VAL | S1.01 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 22 |
 | VAL | S1.05 | 23 |
-| VAL | S1.12 | 12, 13, 14, 15 |
+| VAL | S1.15 | 12, 13, 14, 15 |
 | POP | S0.25 | 3, 4 |
 | POP | S1.13 | 5, 10 |
 | POP | S2.04 | 9, 15 |
 | POP | S6.02 | 1, 2, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 |
-| HH | S1.12 | 1, 2, 3, 4, 5, 6, 15, 18, 19, 20 |
-| HH | S2.05 | 8, 10 |
+| HH | S1.12 | 1, 2, 4, 5, 15, 18, 19, 20 |
+| HH | S2.05 | 3, 6, 8, 10 |
 | HH | S2.11 | 13, 14, 21 |
 | HH | S4.03 | 11 |
 | HH | S5.03 | 12 |

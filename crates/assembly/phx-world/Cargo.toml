@@ -38,6 +38,7 @@ sys-gds = { path = "../../systems/sys-gds" }
 sys-srv = { path = "../../systems/sys-srv" }
 sys-frt = { path = "../../systems/sys-frt" }
 sys-sov = { path = "../../systems/sys-sov" }
+sys-hh = { path = "../../systems/sys-hh" }
 sys-tax = { path = "../../systems/sys-tax" }
 sys-trs = { path = "../../systems/sys-trs" }
 serde.workspace = true

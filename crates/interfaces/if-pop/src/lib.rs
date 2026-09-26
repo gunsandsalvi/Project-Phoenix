@@ -2,6 +2,7 @@
 //! its attributes and its persons' attributes. `sys-dem` declares them; other systems read and extend them.
 
 pub mod consts;
+pub mod facts;
 
 use phx_core::{AttrDecl, PersonAttrDecl, RoleDecl};
 

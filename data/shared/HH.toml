@@ -1,0 +1,76 @@
+# Households (spec HH): the preference type the buffer-stock rule is solved for, the income risk it faces, how fast its
+# outlook of its income learns, and how often it decides its spending.
+
+[[primitive]]
+id = "HH.patience"
+kind = "PREFERENCE"
+owner = "HH"
+source = "estimated"
+source_ref = "A household type's yearly patience: 0.96, the baseline of Carroll's buffer-stock model (Buffer-Stock Saving and the Life Cycle/Permanent Income Hypothesis, QJE 112(1), 1997), one type until the preference types are drawn."
+value = "0.960"
+
+[[primitive]]
+id = "HH.risk_aversion"
+kind = "PREFERENCE"
+owner = "HH"
+source = "estimated"
+source_ref = "A household type's relative risk aversion: 2, the baseline of Carroll (QJE 1997)."
+value = "2.00"
+
+[[primitive]]
+id = "HH.permanent_sd"
+kind = "ENDOWMENT"
+owner = "HH"
+source = "estimated"
+source_ref = "The spread of the log of a year's permanent income shock: 0.1, the baseline of Carroll (QJE 1997), from the PSID's household income."
+value = "0.100"
+
+[[primitive]]
+id = "HH.transitory_sd"
+kind = "ENDOWMENT"
+owner = "HH"
+source = "estimated"
+source_ref = "The spread of the log of a year's transitory income shock: 0.1, the baseline of Carroll (QJE 1997), from the PSID's household income."
+value = "0.100"
+
+[[primitive]]
+id = "HH.no_income_chance"
+kind = "ENDOWMENT"
+owner = "HH"
+source = "estimated"
+source_ref = "The chance of a year with no income: 0.5%, the baseline of Carroll (QJE 1997), from the PSID."
+value = "0.0050"
+
+[[primitive]]
+id = "HH.real_return"
+kind = "SHAPE"
+owner = "HH"
+source = "estimated"
+source_ref = "The gross real return a household earns on its saving: 1.00, Carroll's baseline (QJE 1997), until households read their banks' posted deposit rates less their price outlooks (BFL)."
+shape = "placeholder:BFL"
+value = "1.000"
+
+[[primitive]]
+id = "HH.income_growth"
+kind = "SHAPE"
+owner = "HH"
+source = "estimated"
+source_ref = "The gross growth a household expects of its permanent income: 1.03, Carroll's baseline (QJE 1997), until each forms its own outlook of its income's growth."
+shape = "placeholder:HH"
+value = "1.030"
+
+[[primitive]]
+id = "HH.income_gain"
+kind = "PREFERENCE"
+owner = "HH"
+source = "estimated"
+source_ref = "The share of its last surprise a household's income outlook takes in at each look: 0.65, the adaptive rule Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)) fitted to learning-to-forecast experiments, the mean of VAL's gain."
+value = "0.65"
+
+[[primitive]]
+id = "HH.spending_days"
+kind = "PREFERENCE"
+owner = "HH"
+source = "assumed"
+source_ref = "The days between a household's spending decisions: 7, a week's shopping, assumed until households' shopping frequency is measured."
+value = 7

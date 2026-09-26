@@ -209,12 +209,19 @@ struct RowGoods {
     held: Vec<Units>,
     rights: Vec<HeldRight>,
     delivered: Vec<Units>,
+    money: Missing<i64>,
 }
 
 impl RowGoods {
     /// A row that holds, has delivered and stands nowhere yet.
     fn none() -> RowGoods {
-        RowGoods { zone: Missing::Absent, held: Vec::new(), rights: Vec::new(), delivered: Vec::new() }
+        RowGoods {
+            zone: Missing::Absent,
+            held: Vec::new(),
+            rights: Vec::new(),
+            delivered: Vec::new(),
+            money: Missing::Absent,
+        }
     }
 }
 
@@ -249,6 +256,9 @@ impl GoodsView for RunGoods {
         let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
         let key = (GoodKey { product, grade, zone }, method);
         self.outlooks.get(&key).copied().map_or(Missing::Absent, Missing::Present)
+    }
+    fn money(&self, slot: Slot) -> Missing<i64> {
+        self.row(slot).map_or(Missing::Absent, |r| r.money)
     }
 }
 
@@ -747,6 +757,13 @@ impl World {
                 {
                     goods.rights.push(self.held_right(deposit));
                 }
+            }
+            if let Missing::Present(country) = self.geo().zone_country(row.zone) {
+                let ccy = phx_ledger::opening::currency(country);
+                goods.money = match self.books.money_held(row.party, ccy) {
+                    Missing::Present(m) => Missing::Present(m / row.twins),
+                    Missing::Absent => Missing::Absent,
+                };
             }
             for (good, q) in ledger.goods.delivered(row.party) {
                 if let Missing::Present(key) = ledger.goods.key(good) {

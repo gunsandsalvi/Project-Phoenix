@@ -880,6 +880,7 @@ dependencies = [
  "sys-frm",
  "sys-frt",
  "sys-gds",
+ "sys-hh",
  "sys-hsg",
  "sys-lab",
  "sys-soc",
@@ -1272,6 +1273,22 @@ dependencies = [
  "phx-market",
  "phx-num",
  "phx-rand",
+]
+
+[[package]]
+name = "sys-hh"
+version = "0.1.0"
+dependencies = [
+ "if-pop",
+ "libm",
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-market",
+ "phx-num",
+ "phx-rand",
+ "phx-val",
 ]
 
 [[package]]

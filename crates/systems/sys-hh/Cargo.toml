@@ -1,0 +1,22 @@
+[package]
+name = "sys-hh"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+if-pop = { path = "../../interfaces/if-pop" }
+libm.workspace = true
+phx-core = { path = "../../kernel/phx-core" }
+phx-id = { path = "../../foundation/phx-id" }
+phx-ledger = { path = "../../kernel/phx-ledger" }
+phx-macros = { path = "../../foundation/phx-macros" }
+phx-market = { path = "../../kernel/phx-market" }
+phx-num = { path = "../../foundation/phx-num" }
+phx-rand = { path = "../../foundation/phx-rand" }
+phx-val = { path = "../../kernel/phx-val" }
+
+[lints]
+workspace = true
