@@ -103,8 +103,8 @@ fn open(
     c: &crate::compile::Compiled,
     game: &NewGame,
     geo: &phx_geo::GeoState,
-    (phases, pool): (&[phx_core::OpeningPhase], Option<&Arc<phx_exec::Pool>>),
-) -> (phx_ledger::books::Books, phx_pop::population::Population, phx_core::GenReport) {
+    (phases, pool, report): (&[phx_core::OpeningPhase], Option<&Arc<phx_exec::Pool>>, phx_core::GenReport),
+) -> Result<(phx_ledger::books::Books, phx_pop::population::Population, phx_core::GenReport), String> {
     // A small world's countries hold one factor-th of the population, and everything the opening derives follows.
     let total = kernel.opening.population.shared(&c.register).get();
     let divisor = u64::from(pop.1.population_divisor);
@@ -121,7 +121,8 @@ fn open(
         &countries,
         kernel.day_zero.shared(&c.register),
         (phases, pool),
-    );
+        report,
+    )?;
     if population * divisor != total {
         report.adjustments.push(phx_core::Adjustment {
             what: format!("the population, one {divisor}-th of the setup's in whole persons"),
@@ -129,7 +130,7 @@ fn open(
             set: i128::from(population * divisor),
         });
     }
-    (books, people, report)
+    Ok((books, people, report))
 }
 
 /// The month a day falls in, counted from the calendar's year nought: the period the accounts close by.
@@ -510,6 +511,7 @@ pub fn assemble(
     let geo = Arc::new(open_map(&p.kernel, &p.c, &p.game, &p.d)?);
     let countries = u32::try_from(p.game.countries.len()).map_err(|e| one(e.to_string()))?;
     let pop = (p.pop.as_slice(), p.representation);
+    let listed = crate::opening::report::Listed::create(&config.run_dir).map_err(one)?;
     let (books, population, report) = open(
         (&mut p.d, &p.facets, &p.visits),
         pop,
@@ -517,8 +519,9 @@ pub fn assemble(
         &p.c,
         &p.game,
         &geo,
-        (&phx_core::PHASES, config.pool.as_ref()),
-    );
+        (&phx_core::PHASES, config.pool.as_ref(), phx_core::GenReport::new(Some(Box::new(listed)))),
+    )
+    .map_err(one)?;
     let accounts = open_accounts(&p.d, &p.kernel, &p.c, &books, &geo);
     let tables = phx_geo::tables(&geo, countries);
     let mut space = AddressSpace::empty();
@@ -604,8 +607,17 @@ pub fn load(
     .map_err(one)?;
     let geo = Arc::new(geo);
     let pop = (p.pop.as_slice(), p.representation);
-    let (declared, _, _) =
-        open((&mut p.d, &p.facets, &p.visits), pop, &p.kernel, &p.c, &p.game, &geo, (&[phx_core::DECLARATIONS], None));
+    // The declarations' phase writes nothing the report lists, and the report is the save's, so it is only counted.
+    let (declared, _, _) = open(
+        (&mut p.d, &p.facets, &p.visits),
+        pop,
+        &p.kernel,
+        &p.c,
+        &p.game,
+        &geo,
+        (&[phx_core::DECLARATIONS], None, phx_core::GenReport::new(None)),
+    )
+    .map_err(one)?;
     let families: Vec<phx_core::FamilyDecl> = kernel_families()
         .iter()
         .map(|f| f.decl())

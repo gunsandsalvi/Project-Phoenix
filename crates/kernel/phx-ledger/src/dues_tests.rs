@@ -111,9 +111,25 @@ fn balance(books: &Books<Heap>, party: PartyId, line: LineId, side: Side) -> i64
 /// a loan of 500 000 from it; firm B at the second bank with 1 000 000 on deposit and a loan of 100 000 from the
 /// first; firm C at the first bank with 1 000 on deposit and a loan of 1 000 000 from it. Each loan pays 12% a year
 /// monthly from 15 January 2026 and its principal at its one date, 16 February (the 15th is a Sunday).
+/// The opening's writes as its report lists them.
+#[derive(Debug)]
+struct Kept(std::sync::mpsc::Sender<phx_core::WriteRecord>);
+
+impl phx_core::ReportSink for Kept {
+    fn write(&mut self, w: &phx_core::WriteRecord) {
+        self.0.send(*w).unwrap();
+    }
+
+    fn apportioned(&mut self, _: &phx_core::Apportioned) {}
+
+    fn finish(self: Box<Self>) -> Result<(), String> {
+        Ok(())
+    }
+}
+
 struct Opened {
     books: Books<Heap>,
-    report: GenReport,
+    listed: std::sync::mpsc::Receiver<phx_core::WriteRecord>,
     parties: [PartyId; 6],
     reserves: LineId,
     deposits: [LineId; 2],
@@ -122,6 +138,8 @@ struct Opened {
 }
 
 fn opened() -> Opened {
+    let (sender, listed) = std::sync::mpsc::channel();
+    let kept = Kept(sender);
     let size = BooksSize { rows: 16, rows_per_chunk: 16, instruments: 16, lines: 16, per_chunk: 16, blocks: 16 };
     let mut books: Books<Heap> = Books::new(&["central bank", "bank", "firm"], size);
     let cal = calendar();
@@ -158,7 +176,7 @@ fn opened() -> Opened {
         paid: Effect::Equity,
         received: Effect::Equity,
     });
-    let mut report = GenReport::default();
+    let mut report = GenReport::new(Some(Box::new(kept)));
     let banked = [(firms[0], 0, 1_000_000), (firms[1], 1, 1_000_000), (firms[2], 0, 1_000)];
     let mut legs = vec![open(cb, reserves, Side::Liability, 2, BALANCE)];
     for ((bank, line), depositors) in banks.iter().zip(deposits).zip([2, 1]) {
@@ -189,7 +207,7 @@ fn opened() -> Opened {
     books.open(reason, writes, 1, &mut report);
     let [f0, f1, f2] = firms;
     let [b0, b1] = banks;
-    Opened { books, report, parties: [cb, b0, b1, f0, f1, f2], reserves, deposits, loans, due }
+    Opened { books, listed, parties: [cb, b0, b1, f0, f1, f2], reserves, deposits, loans, due }
 }
 
 #[test]
@@ -201,11 +219,12 @@ fn opening_writes_close_books() {
         equity,
         vec![-10_000_000, 5_000_000 - 1_001_000 + 1_600_000, 5_000_000 - 1_000_000, 500_000, 900_000, -999_000]
     );
+    let listed: Vec<phx_core::WriteRecord> = o.listed.try_iter().collect();
     for p in o.parties {
-        let written: i128 = o.report.writes.iter().filter(|w| w.party == p).map(|w| w.amount).sum();
+        let written: i128 = listed.iter().filter(|w| w.party == p).map(|w| w.amount).sum();
         assert_eq!(written, o.books.equity(p), "each party's equity is what its writes put on its books");
     }
-    assert!(o.report.writes.iter().all(|w| w.counter != w.party), "every write names the party that answers it");
+    assert!(listed.iter().all(|w| w.counter != w.party), "every write names the party that answers it");
 }
 
 #[test]

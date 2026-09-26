@@ -284,7 +284,7 @@ impl Contracts {
             let Ok(n) = usize::try_from(*realised) else {
                 violation!(clause = "GEN.4", "a bank's firms beyond the machine", bank = bank.get());
             };
-            report.apportioned.push(Apportioned {
+            report.apportion(Apportioned {
                 stratum: key(FIRMS, c.id),
                 party: *bank,
                 drawn: *weight,

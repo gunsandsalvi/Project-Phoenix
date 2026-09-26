@@ -272,11 +272,19 @@ pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_
 pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::contribution::GenReport
 pub phx_core::contribution::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
-pub phx_core::contribution::GenReport::apportioned: alloc::vec::Vec<phx_core::contribution::Apportioned>
+pub phx_core::contribution::GenReport::apportioned: u64
 pub phx_core::contribution::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
 pub phx_core::contribution::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>
-pub phx_core::contribution::GenReport::writes: alloc::vec::Vec<phx_core::contribution::WriteRecord>
-impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::WriteRecord>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved
+pub phx_core::contribution::GenReport::unfounded: alloc::vec::Vec<phx_core::contribution::Apportioned>
+pub phx_core::contribution::GenReport::unnamed: alloc::vec::Vec<phx_id::ids::PartyId>
+pub phx_core::contribution::GenReport::writes: u64
+impl phx_core::contribution::GenReport
+pub fn phx_core::contribution::GenReport::apportion(&mut self, phx_core::contribution::Apportioned)
+pub fn phx_core::contribution::GenReport::close(&mut self, alloc::vec::Vec<phx_id::ids::PartyId>) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::contribution::GenReport::named(&self, phx_id::ids::PartyId) -> bool
+pub fn phx_core::contribution::GenReport::new(core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>) -> phx_core::contribution::GenReport
+pub fn phx_core::contribution::GenReport::write(&mut self, phx_core::contribution::WriteRecord)
+impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved, alloc::vec::Vec<u64>: core::default::Default, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::contribution::Opening<'a>
@@ -330,6 +338,10 @@ pub fn phx_core::contribution::Contribution::name(&self) -> &'static str
 pub fn phx_core::contribution::Contribution::phase(&self) -> phx_core::streams::OpeningPhase
 pub fn phx_core::contribution::Contribution::reads(&self) -> &'static [&'static str]
 pub fn phx_core::contribution::Contribution::writes(&self) -> &'static [&'static str]
+pub trait phx_core::contribution::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
+pub fn phx_core::contribution::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)
+pub fn phx_core::contribution::ReportSink::finish(alloc::boxed::Box<Self>) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::contribution::ReportSink::write(&mut self, &phx_core::contribution::WriteRecord)
 pub fn phx_core::contribution::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
 pub fn phx_core::contribution::apportion_in_units(u64, &[u64], &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
 pub fn phx_core::contribution::opening_subject(u32, u32) -> phx_rand::key::Subject
@@ -2745,11 +2757,19 @@ pub phx_core::Gap::size: i128
 pub phx_core::Gap::unit: phx_core::findings::Unit
 pub struct phx_core::GenReport
 pub phx_core::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
-pub phx_core::GenReport::apportioned: alloc::vec::Vec<phx_core::contribution::Apportioned>
+pub phx_core::GenReport::apportioned: u64
 pub phx_core::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
 pub phx_core::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>
-pub phx_core::GenReport::writes: alloc::vec::Vec<phx_core::contribution::WriteRecord>
-impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::WriteRecord>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved
+pub phx_core::GenReport::unfounded: alloc::vec::Vec<phx_core::contribution::Apportioned>
+pub phx_core::GenReport::unnamed: alloc::vec::Vec<phx_id::ids::PartyId>
+pub phx_core::GenReport::writes: u64
+impl phx_core::contribution::GenReport
+pub fn phx_core::contribution::GenReport::apportion(&mut self, phx_core::contribution::Apportioned)
+pub fn phx_core::contribution::GenReport::close(&mut self, alloc::vec::Vec<phx_id::ids::PartyId>) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::contribution::GenReport::named(&self, phx_id::ids::PartyId) -> bool
+pub fn phx_core::contribution::GenReport::new(core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>) -> phx_core::contribution::GenReport
+pub fn phx_core::contribution::GenReport::write(&mut self, phx_core::contribution::WriteRecord)
+impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved, alloc::vec::Vec<u64>: core::default::Default, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::HandlerEntry
@@ -3603,6 +3623,10 @@ pub fn phx_core::events_rule::EventsRule::is_public(&self, &phx_core::events::Ev
 pub trait phx_core::QueuedPayload: core::marker::Sized
 pub fn phx_core::QueuedPayload::decode(&[i64]) -> core::option::Option<Self>
 pub trait phx_core::Reads<F: phx_core::facts::FactDef>
+pub trait phx_core::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
+pub fn phx_core::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)
+pub fn phx_core::ReportSink::finish(alloc::boxed::Box<Self>) -> core::result::Result<(), alloc::string::String>
+pub fn phx_core::ReportSink::write(&mut self, &phx_core::contribution::WriteRecord)
 pub trait phx_core::StreamDef
 pub const phx_core::StreamDef::DECL: phx_core::streams::StreamDecl
 pub trait phx_core::System: core::marker::Send + core::marker::Sync + 'static

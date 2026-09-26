@@ -589,11 +589,11 @@ fn apportionments_reported(w: Inspector<'_>) -> Outcome {
     if !agents_hold_lines(w) {
         return Outcome::NotYet(NO_LINES);
     }
-    let report = &w.opening().apportioned;
-    if report.is_empty() {
+    let report = w.opening();
+    if report.apportioned == 0 {
         return Outcome::Fail("the opening reports no apportionment".to_owned());
     }
-    match report.iter().find(|a| a.drawn == 0 && a.realised > 0) {
+    match report.unfounded.first() {
         Some(a) => {
             Outcome::Fail(format!("{}: party {} of no drawn size was given {}", a.stratum, a.party.get(), a.realised))
         }

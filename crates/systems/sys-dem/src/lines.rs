@@ -210,7 +210,7 @@ impl Drawer {
                     // Each twin's contracts go to one counterparty, so the members are apportioned a twin-th at a time.
                     let counts = apportion(members / twins, &weights, lot);
                     for ((party, drawn), realised) in eligible.iter().zip(counts.into_iter().map(|c| c * twins)) {
-                        report.apportioned.push(Apportioned {
+                        report.apportion(Apportioned {
                             stratum: key(&format!("line {}", line.get()), country),
                             party: *party,
                             drawn: *drawn,

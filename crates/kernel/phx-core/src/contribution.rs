@@ -106,16 +106,103 @@ pub struct Apportioned {
     pub realised: u64,
 }
 
-/// What the opening did, for its report: each distribution read with its source, each balancing write, each
-/// apportionment, and each party's opening equity, the one place equity is computed from assets and liabilities.
+/// Where the opening's report lists each balancing write and each apportionment as it is made, so the world keeps
+/// only what its checks read of them.
+pub trait ReportSink: core::fmt::Debug + Send + Sync {
+    fn write(&mut self, w: &WriteRecord);
+    fn apportioned(&mut self, a: &Apportioned);
+    /// The listing finished.
+    ///
+    /// # Errors
+    /// What could not be put.
+    fn finish(self: Box<Self>) -> Result<(), String>;
+}
+
+/// What the opening did, for its report: each distribution read with its source, each balancing change, each
+/// party's opening equity, the one place equity is computed from assets and liabilities; and of the balancing writes
+/// and the apportionments, listed to the report's sink as they are made, how many there were, the parties begun that
+/// no write named, and the apportionments that gave a party of no drawn size a share.
 #[clause("GEN.4")]
-#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct GenReport {
     pub distributions: Vec<(String, String)>,
-    pub writes: Vec<WriteRecord>,
-    pub apportioned: Vec<Apportioned>,
+    pub writes: u64,
+    pub unnamed: Vec<PartyId>,
+    pub apportioned: u64,
+    pub unfounded: Vec<Apportioned>,
     pub adjustments: Vec<Adjustment>,
     pub equity: Vec<(PartyId, i128)>,
+    /// The parties the writes named, a bit to a party, while the opening runs.
+    #[saved(skip)]
+    named: Vec<u64>,
+    #[saved(skip)]
+    sink: Option<Box<dyn ReportSink>>,
+}
+
+impl GenReport {
+    /// A report listing its writes and apportionments to `sink`, or only counting them where there is none.
+    #[must_use]
+    pub fn new(sink: Option<Box<dyn ReportSink>>) -> GenReport {
+        GenReport { sink, ..GenReport::default() }
+    }
+
+    /// A balancing write made: listed, counted, and its parties marked named.
+    pub fn write(&mut self, w: WriteRecord) {
+        if let Some(sink) = &mut self.sink {
+            sink.write(&w);
+        }
+        self.writes += 1;
+        for p in [w.party, w.counter] {
+            let (word, bit) = bit_of(p);
+            if self.named.len() <= word {
+                self.named.resize(word + 1, 0);
+            }
+            if let Some(x) = self.named.get_mut(word) {
+                *x |= bit;
+            }
+        }
+    }
+
+    /// An apportionment made: listed and counted, and kept where it gave a party of no drawn size a share.
+    pub fn apportion(&mut self, a: Apportioned) {
+        if let Some(sink) = &mut self.sink {
+            sink.apportioned(&a);
+        }
+        self.apportioned += 1;
+        if a.drawn == 0 && a.realised > 0 {
+            self.unfounded.push(a);
+        }
+    }
+
+    /// Whether a write named the party while the opening ran.
+    #[must_use]
+    pub fn named(&self, p: PartyId) -> bool {
+        let (word, bit) = bit_of(p);
+        self.named.get(word).is_some_and(|x| x & bit != 0)
+    }
+
+    /// The opening's report closed: the parties begun that no write named kept, the marks let go and the listing
+    /// finished.
+    ///
+    /// # Errors
+    /// What the listing could not put.
+    pub fn close(&mut self, unnamed: Vec<PartyId>) -> Result<(), String> {
+        self.unnamed = unnamed;
+        self.named = Vec::new();
+        match self.sink.take() {
+            Some(sink) => sink.finish(),
+            None => Ok(()),
+        }
+    }
+}
+
+/// A party's word and bit in a set of parties kept a bit to a party.
+fn bit_of(p: PartyId) -> (usize, u64) {
+    let bits = u64::from(u64::BITS);
+    let Ok(word) = usize::try_from(p.get() / bits) else {
+        phx_num::capacity_exceeded!("parties named", usize::MAX, p.get());
+    };
+    (word, 1 << (p.get() % bits))
 }
 
 /// A drawn amount the balancing changed, only as far as the accounts needed: what it was, as drawn and as set.

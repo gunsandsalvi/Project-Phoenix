@@ -242,8 +242,8 @@ fn opening_report(w: Inspector<'_>) -> serde_json::Value {
     json!({
         "kinds": kinds,
         "lines": lines.iter().map(|(k, [a, l])| ((*k).to_owned(), json!({ "asset": a.to_string(), "liability": l.to_string() }))).collect::<serde_json::Map<_, _>>(),
-        "writes": opening.writes.len(),
-        "apportioned": opening.apportioned.len(),
+        "writes": opening.writes,
+        "apportioned": opening.apportioned,
         "adjustments": opening.adjustments.iter().map(|a| json!({ "what": a.what, "drawn": a.drawn.to_string(), "set": a.set.to_string() })).collect::<Vec<_>>(),
         "distributions": opening.distributions.iter().map(|(n, s)| json!({ "name": n, "source": s })).collect::<Vec<_>>(),
     })

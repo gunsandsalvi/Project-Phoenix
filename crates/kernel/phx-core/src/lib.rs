@@ -53,8 +53,8 @@ pub use calendar::{Calendar, CountryCalendar};
 pub use columns::{ColumnTrace, FactColumns, KernelTable};
 pub use contribution::{
     Adjustment, Apportioned, BALANCES, CONTRACTS, Contribution, DECLARATIONS, GenReport, Opening, OpeningCountry,
-    OpeningCtx, PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, WriteRecord, apportion, apportion_in_units,
-    opening_subject,
+    OpeningCtx, PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, ReportSink, WriteRecord, apportion,
+    apportion_in_units, opening_subject,
 };
 pub use decisions::{Decider, DecisionPointDecl, Player, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
 pub use directory::{Directory, PartyState, Resolved};

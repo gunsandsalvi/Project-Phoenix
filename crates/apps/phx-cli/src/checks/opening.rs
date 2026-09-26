@@ -18,25 +18,16 @@ fn first_day(w: Inspector<'_>) -> Outcome {
 /// Every party the opening began is named by an opening write, and every distribution it read names its source.
 fn reported(w: Inspector<'_>) -> Outcome {
     let report = w.opening();
-    if report.writes.is_empty() {
+    if report.writes == 0 {
         return Outcome::Fail("the opening reports no write".to_owned());
     }
     if let Some((name, _)) = report.distributions.iter().find(|(_, source)| source.is_empty()) {
         return Outcome::Fail(format!("the distribution {name} names no source"));
     }
-    let parties = &w.books().parties;
-    let opened = w.day_zero();
-    let named: std::collections::BTreeSet<phx_id::PartyId> =
-        report.writes.iter().flat_map(|x| [x.party, x.counter]).collect();
-    for kind in parties.kinds() {
-        let t = parties.table(parties.place(kind));
-        // Parties begun during the run, as estates are, were begun by no opening.
-        if let Some(p) = t.slots().filter(|s| t.created(*s) <= opened).map(|s| t.party(s)).find(|p| !named.contains(p))
-        {
-            return Outcome::Fail(format!("the {kind} {} is named by no opening write", p.get()));
-        }
+    match report.unnamed.first() {
+        Some(p) => Outcome::Fail(format!("the party {} is named by no opening write", p.get())),
+        None => Outcome::Pass,
     }
-    Outcome::Pass
 }
 
 /// Every line still due falls due on a business day of its schedule's country.

@@ -1252,6 +1252,10 @@ defined-benefit pensions — take it once every region is drawn, each line's cou
 counterparties by their drawn sizes (§10.2), and the unmatched strata and each counterparty's difference from its drawn
 size go to the opening report. The balances close through the ledger's opening writes (GEN.4): each row's balance
 written against its counterparty's, and a counterparty's books the sum of its rows, its equity the residual, reported.
+The report lists each balancing write and each apportionment as it is made to `opening-writes.csv.zst` and
+`opening-apportioned.csv.zst` in the run's directory, a compressed frame at a time, and the world keeps only their
+counts, the parties begun that no write named and the apportionments that gave a party of no drawn size a share: the
+lists run to tens of millions of lines, which the world would otherwise hold, save and load for the whole run.
 As built (`phx_ledger::attachments`, `sys-dem`'s `lines`): a system registers its draw with `Declarations::attachment`;
 the opening hands the draws to the households' contribution, which runs with the contracts, once every institution and
 firm is drawn. For each country each draw is made ready (`AttachmentDraw::country`), then called with each household as

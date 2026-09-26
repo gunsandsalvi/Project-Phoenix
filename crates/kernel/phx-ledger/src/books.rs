@@ -392,7 +392,7 @@ impl<B: Backing> Books<B> {
         self.opened = next;
         for leg in legs.iter().filter(|l| matches!(l.kind, LegKind::OpeningWrite { .. })) {
             let counter = legs.iter().find(|o| o.party != leg.party).map_or(leg.party, |o| o.party);
-            report.writes.push(WriteRecord { party: leg.party, amount: i128::from(leg.qty), identity, counter });
+            report.write(WriteRecord { party: leg.party, amount: i128::from(leg.qty), identity, counter });
         }
         let instruction = Instruction {
             id,

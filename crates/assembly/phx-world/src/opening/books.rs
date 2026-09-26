@@ -99,6 +99,9 @@ pub fn agent_tables(
 /// The world's books opened: a kind table for each kind of individual the systems declare, with a column for each fact
 /// they keep on it, and an agent table for each population kind, then each of the given contributing phases in order, its contributions in the order of their
 /// systems and names, each handed the books and the population under the representation in force.
+///
+/// # Errors
+/// What the report's listing could not put.
 pub fn open_books(
     (d, facets, visits): (&mut Declarations, &[crate::registry::Facet], &[phx_core::AgendaTableSpec]),
     (pop, representation): (&[(phx_pop::kind::PopKindDecl, usize)], phx_pop::prims::Representation),
@@ -106,7 +109,8 @@ pub fn open_books(
     countries: &[OpeningCountry],
     date: phx_id::Date,
     (phases, pool): (&[OpeningPhase], Option<&std::sync::Arc<phx_exec::Pool>>),
-) -> (Books, phx_pop::population::Population, GenReport) {
+    mut report: GenReport,
+) -> Result<(Books, phx_pop::population::Population, GenReport), String> {
     let kinds: Vec<&'static str> =
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
     let decls: Vec<phx_pop::kind::PopKindDecl> = pop.iter().map(|(d, _)| d.clone()).collect();
@@ -129,7 +133,6 @@ pub fn open_books(
         space,
         visits.to_vec(),
     );
-    let mut report = GenReport::default();
     let mut contributions: Vec<(&'static str, Box<dyn Contribution>)> = std::mem::take(&mut d.contributions);
     let mut attachments = std::mem::take(&mut d.attachments);
     attachments.sort_by_key(|(system, _)| *system);
@@ -158,8 +161,11 @@ pub fn open_books(
             books.parties.compact_arenas();
         }
     }
+    let mut unnamed = Vec::new();
     for kind in &kinds {
         report.equity.extend(books.parties.of_kind(kind).map(|p| (p, books.equity(p))));
+        unnamed.extend(books.parties.of_kind(kind).filter(|p| !report.named(*p)));
     }
-    (books, population, report)
+    report.close(unnamed)?;
+    Ok((books, population, report))
 }
