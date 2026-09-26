@@ -847,7 +847,16 @@ Then:
   line's other side loses as many contracts, drawn from its holders by their counts (REP.23), in one
   `members_leave` per row. A holder drawn gives its whole **unit** — an agent's multiplicity, one for an
   individual — and a draw is made only among the holders whose unit fits in what is left, so an agent's twins stay
-  alike; if none fits, the run stops (REP.31);
+  alike. What no unit fits (an individual's count need not be a multiple of the agents' units) passes instead, by
+  line transfers, to other holders of the leaving party's own side drawn the same way, as a buyer of the contracts
+  would take them; if none fits there either, the run stops (REP.31). An agent drawn loses, from its persons, a
+  twin's share of the members that left, drawn among its attachments on that side of the line
+  (`World::detach`), so its persons still hold what its rows count. A side's members by holder are read once
+  (a `Tally`, from the holder list's keys straight to their rows, in fixed shards on the pool) and kept, moved by
+  each leaving and passing, while no other change reaches the side. A side that keeps no holder list is read once a
+  day, by `Books::read_unlisted` in one pass over the tables of the kinds that may hold it, before the estates that
+  leave against it, and let go after (`forget_unlisted`); the households' sides of employment and tenancy keep
+  lists, since a firm's end reaches them (§4.5);
 - the household's persons and attributes are written back in place; the head's place, if emptied, is taken as the
   outcome says;
 - a household no one is left in **ends**: an estate is opened at a zone centre of its region, with the agent's
@@ -1031,6 +1040,16 @@ pays its debts through the waterfall, what it owes beyond is written off, what i
 plan's F-050) — and its rows leave with their counterparts and it ends; one whose payment fails waits, counted. Dues it
 owes in arrears are not claims in its waterfall (F-066). A catastrophe's struck tiles lose, at 3b, their share of every
 physical unit the individuals sited there hold, as a transformation naming the event (GEO.8).
+
+Firms end in **default of payment** from S1.03 (FRM.15): a kind is put under its country's insolvency law by an
+`InsolvencyDecl` naming the grace (`FRM.insolvency_grace_days`). The contract process's fails that leave a party of
+such a kind in arrears queue the day its grace ends (`World::defaults`, rebuilt from the arrears when a save loads);
+at 2e a party whose contract is still in arrears at that day ends: a large firm into an estate that takes every row
+by line transfers and every holding (`pass_holdings`), a small firm's agent as a household's does (`end_agent`). Its
+equity account closes as it ends (`Accounts::close`): what it held is its estate's. The estate liquidates from the
+next business day as any other: its rows leave with their counterparts — its tenants' tenancies and its staff's jobs
+end (REP.23), drawn from the households' sides through their holder lists as §7.4 says. Restructuring, the law's
+other way, waits for the creditors' decisions (S3); balance-sheet insolvency for the valuation of firms' books.
 
 ### 9.2 A bank's failure
 

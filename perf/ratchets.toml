@@ -50,7 +50,8 @@ direction = "down"
 # whole twins, so rows streamed and scanned, rows not due and payments fall. The large firms' banks drawn (F-077) moved
 # rows streamed, scanned and payments up by 6, 12 and 6 (092c0edb). The firms' industries, drawn under a new purpose of
 # each country's opening stratum, move every firm's size and site draw, and the busiest day's rows streamed, scanned and
-# payments rise by 8 778, 8 900 and 8 778 (ac0f57ed).
+# payments rise by 8 778, 8 900 and 8 778 (ac0f57ed). Firms in default end into estates from S1.03, which hold their
+# rows until they settle, so the busiest day reads 45 rows not due more (81 841).
 [[ratchet]]
 counter = "phx_ledger.rows_streamed"
 value = 2815195
@@ -68,7 +69,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_rows_not_due"
-value = 81796
+value = 81841
 direction = "down"
 
 [[ratchet]]
@@ -121,6 +122,13 @@ direction = "down"
 [[ratchet]]
 counter = "phx_pop.agents_booked"
 value = 197
+direction = "down"
+
+# The firms that default on the heaviest day, whose estates settle the next business day: first set at S1.03 on the
+# build run, where every firm whose loan falls due before it sells fails at the first grace's end (F-095).
+[[ratchet]]
+counter = "phx_frm.defaults"
+value = 5430
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.

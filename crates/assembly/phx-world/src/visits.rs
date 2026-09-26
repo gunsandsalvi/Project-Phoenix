@@ -365,6 +365,15 @@ impl World {
         visited
     }
 
+    /// A row that ends leaves the visits' agenda, if its table is visited.
+    pub(crate) fn release_visits(&mut self, place: u16, slot: Slot) {
+        let table = TableId::new(place);
+        if self.visits.iter().any(|b| b.table == table) {
+            self.population.visits.grow(table, slot.get() + 1);
+            self.population.visits.release(table, slot);
+        }
+    }
+
     /// The reads the visits' handlers made that they do not declare, since the last close.
     pub(crate) fn take_visit_reads(&mut self) -> ReadTrace {
         std::mem::take(&mut self.visit_reads)

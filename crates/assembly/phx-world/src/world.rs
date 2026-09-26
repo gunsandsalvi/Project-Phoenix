@@ -69,6 +69,9 @@ pub struct World {
     pub(crate) visit_due: Vec<(usize, phx_id::Slot)>,
     pub(crate) visit_day: Day,
     pub(crate) visit_reads: phx_core::ReadTrace,
+    /// The kinds under an insolvency law, and the days the grace of each contract in arrears ends.
+    pub(crate) laws: Vec<crate::defaults::Law>,
+    pub(crate) defaults: std::collections::BTreeSet<crate::defaults::Due>,
     pub(crate) markets: phx_market::markets::Markets,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,

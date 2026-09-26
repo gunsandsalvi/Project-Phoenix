@@ -39,7 +39,7 @@ const HOLDERS: MoneyHolders = MoneyHolders {
     central_banks: &["central_bank"],
     banks: &[BANK.name],
     treasuries: &["treasury"],
-    depositors: &["firm", SMALL_FIRM],
+    depositors: &["firm", SMALL_FIRM, phx_core::ESTATE_KIND.name],
     requesters: &["BNK"],
 };
 
@@ -55,7 +55,7 @@ const LOAN: LineKindDecl = LineKindDecl {
         many: true,
     },
     liability: SideDecl {
-        holder_kinds: &["firm", SMALL_FIRM],
+        holder_kinds: &["firm", SMALL_FIRM, phx_core::ESTATE_KIND.name],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],

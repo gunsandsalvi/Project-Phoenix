@@ -284,7 +284,7 @@ fn way_sets(w: Inspector<'_>) -> u64 {
     w.own::<sys_tec::Technology>("TEC").map_or(0, |t| u64::try_from(t.sets.len()).unwrap_or(u64::MAX))
 }
 
-fn counters(w: Inspector<'_>) -> [(&'static str, u64); 16] {
+fn counters(w: Inspector<'_>) -> [(&'static str, u64); 17] {
     let most =
         |f: fn(&phx_ledger::apply_batch::DaySettlement) -> u64| greatest(w.settlements().iter().map(|s| f(&s.dues)));
     let agents = |f: fn(&phx_world::agents::AgentDay) -> u64| greatest(w.agent_days().iter().map(f));
@@ -305,6 +305,7 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 16] {
         ("phx_pop.redraws", agents(|d| d.redraws)),
         ("phx_pop.hits", agents(|d| d.hits)),
         ("phx_pop.agents_booked", agents(|d| d.booked)),
+        ("phx_frm.defaults", agents(|d| d.defaults)),
     ]
 }
 

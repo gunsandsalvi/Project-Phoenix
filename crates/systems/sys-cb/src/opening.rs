@@ -27,7 +27,7 @@ const HOLDERS: MoneyHolders = MoneyHolders {
     central_banks: &[CENTRAL_BANK.name],
     banks: &["bank"],
     treasuries: &[TREASURY.name],
-    depositors: &["firm", "bank"],
+    depositors: &["firm", "bank", phx_core::ESTATE_KIND.name],
     requesters: &["CB"],
 };
 

@@ -5,7 +5,8 @@
 //! settled again the next day.
 
 use phx_core::{ESTATE_KIND, StreamDef, SubStep};
-use phx_id::{Day, PartyId};
+use phx_id::{Day, LineId, PartyId};
+use phx_ledger::algebra::Side;
 use phx_ledger::apply::ApplyAt;
 use phx_ledger::transfer::MoveAt;
 use phx_macros::clause;
@@ -54,12 +55,29 @@ impl World {
             day,
             at: ApplyAt::Day(SubStep::S7c),
         };
+        // The estates whose rows leave against sides that keep no holder list settle first, after one read of those
+        // sides, before others leaving the same sides change them.
+        let mut against: Vec<(LineId, Side)> = Vec::new();
+        let (mut first, mut then): (Vec<PartyId>, Vec<PartyId>) = (Vec::new(), Vec::new());
         for estate in open {
+            let sides = self.books.unlisted_against(estate);
+            if sides.is_empty() {
+                then.push(estate);
+            } else {
+                against.extend(sides);
+                first.push(estate);
+            }
+        }
+        against.sort_unstable();
+        against.dedup();
+        self.books.read_unlisted(&against);
+        for estate in first.into_iter().chain(then) {
             let destination = self.destination(estate);
             let subject = Subject::new(SubjectTag::Party, estate.get());
             let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S7c.ordinal());
             match self.books.settle_estate(estate, destination, m, &mut draws, self.audit.stream()) {
                 Ok(s) => {
+                    self.detach(&s.left, &mut draws);
                     self.agent_day.estates_settled += 1;
                     self.agent_day.estates_passed += i128::from(s.passed);
                     self.agent_day.estates_written_off += i128::from(s.written_off);
@@ -67,5 +85,6 @@ impl World {
                 Err(_) => self.agent_day.estates_waiting += 1,
             }
         }
+        self.books.forget_unlisted();
     }
 }

@@ -37,6 +37,14 @@ pub(crate) fn times(per: i64, count: u32) -> i64 {
     x
 }
 
+/// A count of members moved by a change; fewer than none is a state that cannot exist.
+fn moved(count: u64, delta: i64) -> u64 {
+    let Some(now) = count.checked_add_signed(delta) else {
+        violation!(clause = "REG.14", "a holder leaving more members than it holds", delta = delta);
+    };
+    now
+}
+
 /// One unit's holders in a tally: a Fenwick tree over their members left, so a member is found and taken in the log
 /// of the holders.
 #[derive(Clone, Debug)]
@@ -97,6 +105,23 @@ impl Class {
         at
     }
 
+    /// A holder's members moved by `delta`, as a change the tally did not draw: more contracts to it, or fewer.
+    fn adjust(&mut self, at: usize, delta: i64) {
+        let Some(held) = self.held.get_mut(at) else {
+            violation!(clause = "REP.23", "a tally's holder beyond its holders", at = at);
+        };
+        *held = moved(*held, delta);
+        let n = self.parties.len();
+        let mut j = at + 1;
+        while j <= n {
+            if let Some(t) = self.tree.get_mut(j) {
+                *t = moved(*t, delta);
+            }
+            j += j.isolate_lowest_one();
+        }
+        self.left = moved(self.left, delta);
+    }
+
     /// A holder's whole unit taken; an agent holding less than its multiplicity is a state that cannot exist.
     fn take(&mut self, at: usize) {
         let Some(held) = self.held.get_mut(at).filter(|h| **h >= u64::from(self.unit)) else {
@@ -152,6 +177,27 @@ impl Tally {
         Tally { index, classes }
     }
 
+    /// The members a holder has left to draw; none for a party the tally does not hold.
+    pub(crate) fn held(&self, party: PartyId) -> u64 {
+        self.index
+            .get(&party)
+            .and_then(|(ci, i)| self.classes.get(*ci).and_then(|c| c.held.get(*i)))
+            .copied()
+            .unwrap_or(0)
+    }
+
+    /// A holder's members moved by a change made beside the tally's draws, so it stays the side it reads.
+    pub(crate) fn adjust(&mut self, party: PartyId, delta: i64) {
+        if delta == 0 {
+            return;
+        }
+        let Some((c, at)) = self.index.get(&party).and_then(|(ci, i)| self.classes.get_mut(*ci).map(|c| (c, *i)))
+        else {
+            violation!(clause = "REP.23", "a tally moving a holder it does not hold", party = party.get());
+        };
+        c.adjust(at, delta);
+    }
+
     /// The members left to draw.
     pub(crate) fn left(&self) -> u64 {
         self.classes.iter().map(|c| c.left).sum()
@@ -202,25 +248,19 @@ impl Tally {
         c.parties.get(at).map(|p| (*p, c.unit))
     }
 
-    /// Exactly `count` members drawn from those left, like with like: among the holders of the leaving party's unit
+    /// Up to `count` members drawn from those left, like with like: among the holders of the leaving party's unit
     /// `like` while they hold what remains, else among the holders whose unit fits in what remains; each holder drawn
-    /// from, with how many, in holder order.
-    pub(crate) fn draw_many(&mut self, count: u32, like: u32, draws: &mut Draws) -> Vec<(PartyId, u32)> {
+    /// from, with how many, in holder order, and what remains once no holder's unit fits.
+    pub(crate) fn draw_many(&mut self, count: u32, like: u32, draws: &mut Draws) -> (Vec<(PartyId, u32)>, u32) {
         let mut more: BTreeMap<PartyId, u32> = BTreeMap::new();
         let mut remaining = count;
         while remaining > 0 {
             let alike = if remaining >= like { self.draw_like(like, draws) } else { None };
-            let Some((p, k)) = alike.or_else(|| self.draw(remaining, draws)) else {
-                violation!(
-                    clause = "REP.31",
-                    "members leaving a line whose other side holds none to leave with them in whole units",
-                    remaining = remaining
-                );
-            };
+            let Some((p, k)) = alike.or_else(|| self.draw(remaining, draws)) else { break };
             *more.entry(p).or_insert(0) += k;
             remaining -= k;
         }
-        more.into_iter().collect()
+        (more.into_iter().collect(), remaining)
     }
 }
 
@@ -372,9 +412,9 @@ mod tests {
         for t in 0..64_u64 {
             let mut d = Draws::new(stream_key(Seed::new(t), "REP.cleared"), Subject::new(SubjectTag::Line, 1), 1, 0);
             let mut tally = super::Tally::new(&rows);
-            assert_eq!(tally.draw_many(1, 1, &mut d), vec![(PartyId::new(1), 1)], "the player's like");
-            assert_eq!(tally.draw_many(169, 169, &mut d), vec![(PartyId::new(2), 169)], "the donor's like");
-            assert_eq!(tally.draw_many(340, 170, &mut d), vec![(PartyId::new(3), 340)], "an agent's like");
+            assert_eq!(tally.draw_many(1, 1, &mut d), (vec![(PartyId::new(1), 1)], 0), "the player's like");
+            assert_eq!(tally.draw_many(169, 169, &mut d), (vec![(PartyId::new(2), 169)], 0), "the donor's like");
+            assert_eq!(tally.draw_many(340, 170, &mut d), (vec![(PartyId::new(3), 340)], 0), "an agent's like");
         }
     }
 
@@ -385,13 +425,44 @@ mod tests {
         for t in 0..64_u64 {
             let mut d = Draws::new(stream_key(Seed::new(t), "REP.cleared"), Subject::new(SubjectTag::Line, 1), 1, 0);
             let mut tally = super::Tally::new(&rows);
-            let taken = tally.draw_many(4, 1, &mut d);
+            let (taken, rest) = tally.draw_many(4, 1, &mut d);
+            assert_eq!(rest, 0);
             assert_eq!(taken.iter().map(|(_, k)| *k).sum::<u32>(), 4);
             for (p, k) in taken {
                 if p != PartyId::new(1) {
                     assert_eq!(k % 4, 0, "an agent gives its whole unit");
                 }
             }
+        }
+    }
+
+    /// A party of one leaving 509 members against a side of agents of 170 alone: two agents' units leave with it,
+    /// and the 169 no unit fits remain.
+    #[test]
+    fn what_no_unit_fits_remains() {
+        let rows: Vec<(PartyId, u32, u32)> =
+            [(1, 1700, 170), (2, 3400, 170)].map(|(p, c, u)| (PartyId::new(p), c, u)).to_vec();
+        for t in 0..64_u64 {
+            let mut d = Draws::new(stream_key(Seed::new(t), "REP.cleared"), Subject::new(SubjectTag::Line, 1), 1, 0);
+            let mut tally = super::Tally::new(&rows);
+            let (taken, rest) = tally.draw_many(509, 1, &mut d);
+            assert_eq!(taken.iter().map(|(_, k)| *k).sum::<u32>(), 340);
+            assert_eq!(rest, 169);
+        }
+    }
+
+    /// A holder whose members left beside the draws is drawn no more, and one given members is drawn by them.
+    #[test]
+    fn an_adjusted_holder_is_drawn_by_what_it_holds() {
+        let rows: Vec<(PartyId, u32, u32)> = [(1, 5, 1), (2, 5, 1)].map(|(p, c, u)| (PartyId::new(p), c, u)).to_vec();
+        for t in 0..64_u64 {
+            let mut d = Draws::new(stream_key(Seed::new(t), "REP.cleared"), Subject::new(SubjectTag::Line, 1), 1, 0);
+            let mut tally = super::Tally::new(&rows);
+            tally.adjust(PartyId::new(1), -5);
+            tally.adjust(PartyId::new(2), 3);
+            assert_eq!(tally.held(PartyId::new(2)), 8);
+            let (taken, rest) = tally.draw_many(8, 1, &mut d);
+            assert_eq!((taken, rest), (vec![(PartyId::new(2), 8)], 0));
         }
     }
 }

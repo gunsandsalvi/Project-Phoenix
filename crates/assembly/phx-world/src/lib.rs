@@ -2,6 +2,7 @@ pub mod agents;
 pub mod compile;
 pub mod consts;
 pub mod day;
+mod defaults;
 mod estates;
 pub mod graph;
 pub mod hash;

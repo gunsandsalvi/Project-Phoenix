@@ -206,6 +206,8 @@ struct Prepared {
     facets: Vec<Facet>,
     /// The decisions taken on kinds' rows as they come due.
     visits: Vec<crate::visits::Bound>,
+    /// The kinds under an insolvency law.
+    laws: Vec<crate::defaults::Law>,
     register_hash: u128,
 }
 
@@ -322,6 +324,10 @@ fn prepare(
         errors.extend(e);
         Vec::new()
     });
+    let laws = crate::defaults::bind(&d, &c.register).unwrap_or_else(|e| {
+        errors.extend(e);
+        Vec::new()
+    });
     errors.extend(unlawful_kinds(&d, &kernel, &c.register));
     let (pop, processes) = match population_kinds(&mut d, &c.register) {
         Ok(bound) => bound,
@@ -350,6 +356,7 @@ fn prepare(
         entries,
         facets,
         visits,
+        laws,
         register_hash: data_hash(&files),
     })
 }
@@ -453,6 +460,8 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         visit_due: Vec::new(),
         visit_day: carried.today,
         visit_reads: phx_core::ReadTrace::default(),
+        laws: std::mem::take(&mut p.laws),
+        defaults: std::collections::BTreeSet::new(),
         markets,
         accounts,
         report: run.report,
@@ -637,6 +646,7 @@ pub fn load(
     let run = read_file(dir, crate::save::RUN, &names, &mut read_run).map_err(one)?;
     let state = State { geo, tables, books, population, markets, accounts, records, events, carried, run, space };
     let mut world = finish(p, state, config)?;
+    world.defaults_rebuild();
     world.loaded = true;
     let rebuilt = crate::save::manifest::hex(crate::hash::world_hash(&world));
     if rebuilt != manifest.world_hash {

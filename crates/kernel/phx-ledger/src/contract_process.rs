@@ -68,6 +68,11 @@ impl Arrears {
         self.since(ArrearsKey { line, side: side_code(side), party })
     }
 
+    /// Every row in arrears with the day it began, in key order.
+    pub fn iter(&self) -> impl Iterator<Item = (ArrearsKey, Day)> + '_ {
+        self.since.iter().map(|(k, d)| (*k, *d))
+    }
+
     #[must_use]
     pub fn len(&self) -> usize {
         self.since.len()

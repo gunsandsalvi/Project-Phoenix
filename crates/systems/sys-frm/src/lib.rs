@@ -13,8 +13,8 @@ pub mod small;
 use phx_core::handler::HandlerDecl;
 use phx_core::register::values::Table2;
 use phx_core::{
-    AttrDecl, Cadence, Declarations, FacetDecl, FactDef, HandlerTable, RunsOn, StreamDef, System, VisitDecl, WakeKind,
-    declare_kind, declare_prim, declare_stream,
+    AttrDecl, Cadence, Declarations, FacetDecl, FactDef, HandlerTable, InsolvencyDecl, RunsOn, StreamDef, System,
+    VisitDecl, WakeKind, declare_kind, declare_prim, declare_stream,
 };
 use phx_num::{Count, Fixed};
 
@@ -81,6 +81,14 @@ impl Own {
     }
 }
 
+declare_prim! {
+    /// Days a firm may leave a payment due unpaid before it is in default of payment and liquidated: the insolvency
+    /// law's grace.
+    pub INSOLVENCY_GRACE_DAYS = "FRM.insolvency_grace_days" {
+        kind: Policy, decided_by: "parliament", value: Count, clause: "FRM.15", scope: Shared
+    }
+}
+
 /// Firms.
 #[derive(Debug)]
 pub struct Frm;
@@ -133,6 +141,10 @@ pub type TablePrim = phx_core::Prim<Table2>;
 /// The firms' state, a large firm's as facts of its row and a small firm's as positions of its agent, and their
 /// decisions on the agenda: the price's attention on each firm's production schedule, the price at its reviews.
 fn declare_decisions(d: &mut Declarations) {
+    let _ = d.prim::<Count>(&INSOLVENCY_GRACE_DAYS);
+    for kind in [FIRM.name, SMALL_FIRM.name] {
+        d.insolvency(InsolvencyDecl { kind, grace_days: INSOLVENCY_GRACE_DAYS.id, clause: "FRM.15" });
+    }
     d.stream(VisitStream::DECL);
     for fact in if_firm::facts::FACTS {
         d.claim(fact);

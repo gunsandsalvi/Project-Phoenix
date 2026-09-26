@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use phx_core::AuditStream;
 use phx_core::register::limit::DeclaredLimit;
 use phx_id::{Day, LineId, PartyId};
@@ -14,6 +16,17 @@ use crate::fails::Fail;
 use crate::instruction::{AccountRef, Denom, Instruction, InstructionId, LegKind, LegRec, ReasonId, RowOp};
 use crate::line::NewRow;
 use crate::rows::{Optional, RowView};
+
+/// A holder on a line side: the party, its members and its unit.
+type Held = (PartyId, u32, u32);
+
+/// A tally's count of members as a change to it.
+fn signed(members: u64) -> i64 {
+    let Ok(x) = i64::try_from(members) else {
+        capacity_exceeded!("a holder's members", i64::MAX, members);
+    };
+    x
+}
 
 /// A move of a count of one side of a line to another party — a sale of loans, a client moved to another clearing
 /// member, an estate succeeding a party, a foreclosure — with its balance moved pro rata.
@@ -233,12 +246,15 @@ impl<B: Backing> Books<B> {
 
     /// Members leaving a line with as many of its other side: `count` members off a party's row, and as many off the
     /// rows of the other side's holders, each drawn by the members its row has left and giving its whole unit, so the
-    /// sides stay equal and an agent's twins alike;
-    /// one instruction. A member leaving takes no share of a row's balance, which would be a claim the line still
-    /// holds, and its counterparts none of theirs, which mirror the claims that stay.
+    /// sides stay equal and an agent's twins alike, in one instruction. A member leaving takes no share of a row's balance, which would be a claim the line still
+    /// holds, and its counterparts none of theirs, which mirror the claims that stay. The members the other side
+    /// cannot give whole units for pass instead to other holders of the party's side, drawn alike, as a buyer of the
+    /// contracts would take them. A side that keeps no holder list is read beforehand, by `read_unlisted`.
+    ///
+    /// Returns the other side's holders drawn, with their members that left.
     ///
     /// # Errors
-    /// The fail, when the instruction could not settle.
+    /// The first fail, when an instruction could not settle; what settled before it stands.
     #[clause("REP.23", "REP.31")]
     pub fn members_leave(
         &mut self,
@@ -247,32 +263,158 @@ impl<B: Backing> Books<B> {
         m: MoveAt,
         d: &mut phx_rand::Draws,
         audit: &mut dyn AuditStream,
-    ) -> Result<InstructionId, Fail> {
+    ) -> Result<Vec<(PartyId, u32)>, Fail>
+    where
+        B: Sync,
+    {
         let other = match side {
             Side::Asset => Side::Liability,
             Side::Liability => Side::Asset,
         };
-        let version = self.ledger.lines.side_version(line, other);
-        let mut tally = match self.leaving.remove(&(line, other)) {
-            Some((read, tally)) if read == version => tally,
-            _ => {
-                let rows: Vec<(PartyId, u32, u32)> = self
-                    .side_holders(line, other)
-                    .into_iter()
-                    .filter_map(|p| self.row_on_side(p, line, other).map(|r| (p, r.row.count, self.parties.unit(p))))
-                    .collect();
-                crate::cleared::Tally::new(&rows)
+        let mut theirs = self.side_tally(line, other);
+        let ours = self.fresh_tally(line, side);
+        let unit = self.parties.unit(party);
+        let (taken, rest) = theirs.draw_many(count, unit, d);
+        let leaving = count - rest;
+        if leaving != 0 {
+            let mut legs = self.leave((party, line, side), leaving, self.no_share((party, line, side), leaving, m), m);
+            // The members leaving hold no balance, so the counterparts that leave with them take none of theirs.
+            for (p, k) in &taken {
+                legs.extend(self.leave((*p, line, other), *k, 0, m));
             }
-        };
-        let taken = tally.draw_many(count, self.parties.unit(party), d);
-        let mut legs = self.leave((party, line, side), count, self.no_share((party, line, side), count, m), m);
-        // The members leaving hold no balance, so the counterparts that leave with them take none of theirs.
-        for (p, k) in taken {
-            legs.extend(self.leave((p, line, other), k, 0, m));
+            let _ = self.submit(self.dues.left, legs, m, audit)?;
         }
-        let applied = self.submit(self.dues.left, legs, m, audit)?;
-        self.leaving.insert((line, other), (self.ledger.lines.side_version(line, other), tally));
-        Ok(applied)
+        self.leaving.insert((line, other), (self.ledger.lines.side_version(line, other), theirs));
+        let mut ours = match ours {
+            Some(mut t) => {
+                t.adjust(party, -i64::from(leaving));
+                t
+            }
+            None if rest == 0 => return Ok(taken),
+            None => self.side_tally(line, side),
+        };
+        if rest != 0 {
+            // The party is not among those drawn to take its own members.
+            let mine = ours.held(party);
+            ours.adjust(party, -signed(mine));
+            let (passed, short) = ours.draw_many(rest, unit, d);
+            if short != 0 {
+                violation!(
+                    clause = "REP.31",
+                    "members leaving a line whose sides hold none to take them in whole units",
+                    remaining = short
+                );
+            }
+            ours.adjust(party, signed(mine) - i64::from(rest));
+            for (to, k) in passed {
+                // The draw took the taker's members; it gains them instead.
+                ours.adjust(to, 2 * i64::from(k));
+                let t = LineTransfer { line, side, from: party, to, count: k, reason: self.dues.succeeded };
+                let _ = self.transfer(t, m, audit)?;
+            }
+        }
+        self.leaving.insert((line, side), (self.ledger.lines.side_version(line, side), ours));
+        Ok(taken)
+    }
+
+    /// A side's members by holder as members last left it, while the side is unchanged since.
+    fn fresh_tally(&mut self, line: LineId, side: Side) -> Option<crate::cleared::Tally> {
+        let version = self.ledger.lines.side_version(line, side);
+        self.leaving.remove(&(line, side)).filter(|(read, _)| *read == version).map(|(_, t)| t)
+    }
+
+    /// A side's members by holder: as last left, while the side is unchanged, else read again through its holder list.
+    /// A side that keeps none must have been read at its version.
+    fn side_tally(&mut self, line: LineId, side: Side) -> crate::cleared::Tally
+    where
+        B: Sync,
+    {
+        if let Some(t) = self.fresh_tally(line, side) {
+            return t;
+        }
+        if !self.ledger.lines.listed_side(line, side) {
+            violation!(
+                clause = "REP.23",
+                "members leaving against a side of no holder list it has not read",
+                line = line.get()
+            );
+        }
+        // The list's keys name each holder's table and slot, so its row is read there, not through the directory, in
+        // fixed shards of the list on the pool, joined in the list's order.
+        let split = self.ledger.lines.keys();
+        let keys: Vec<u32> = self.ledger.lines.holders(line).collect();
+        let shards = crate::consts::STREAM_SHARDS;
+        let each = keys.len().div_ceil(shards);
+        let found = phx_exec::pool::map(self.pool.as_deref(), shards, |k| {
+            let from = crate::stream::at_most(k * each, keys.len());
+            let to = crate::stream::at_most(from + each, keys.len());
+            keys.get(from..to)
+                .unwrap_or(&[])
+                .iter()
+                .filter_map(|key| {
+                    let (place, slot) = split.split(*key);
+                    let t = self.parties.holder(place);
+                    crate::rows::find(t, slot, line, side).map(|r| (t.party(slot), r.row.count, t.weight(slot)))
+                })
+                .collect::<Vec<Held>>()
+        });
+        let rows: Vec<Held> = found.into_iter().flatten().collect();
+        crate::cleared::Tally::new(&rows)
+    }
+
+    /// The sides that keep no holder list, read in one pass over the tables of the kinds that may hold them, for
+    /// members to leave against: each side's members by holder, at the side's version. Each table is read in fixed
+    /// shards of its slots, on the pool where the books have one, and the shards joined in slot order.
+    #[clause("REP.23")]
+    pub fn read_unlisted(&mut self, sides: &[(LineId, Side)])
+    where
+        B: Sync,
+    {
+        let mut wanted: BTreeMap<(LineId, Side), Vec<Held>> =
+            sides.iter().filter(|(l, s)| !self.ledger.lines.listed_side(*l, *s)).map(|k| (*k, Vec::new())).collect();
+        if wanted.is_empty() {
+            return;
+        }
+        let lines = &self.ledger.lines;
+        let holds = |kind: &str| wanted.keys().any(|(l, s)| lines.side_decl(*l, *s).holder_kinds.contains(&kind));
+        let places: Vec<u16> = self.parties.places().filter(|p| holds(self.parties.holder(*p).kind())).collect();
+        let shards = crate::consts::STREAM_SHARDS;
+        let found = phx_exec::pool::map(self.pool.as_deref(), places.len() * shards, |i| {
+            let (Some(place), k) = (places.get(i / shards), i % shards) else { return Vec::new() };
+            let t = self.parties.holder(*place);
+            let words = t.live_words();
+            let each = words.len().div_ceil(shards);
+            let from = crate::stream::at_most(k * each, words.len());
+            let to = crate::stream::at_most(from + each, words.len());
+            let Ok(base) = u32::try_from(from) else {
+                capacity_exceeded!("a holder table's live words", u32::MAX, from);
+            };
+            let mut out: Vec<((LineId, Side), (PartyId, u32))> = Vec::new();
+            for local in phx_store::table::live_in(words.get(from..to).unwrap_or(&[])) {
+                let slot = phx_id::Slot::new(local.get() + base * u64::BITS);
+                for r in crate::rows::rows(t, slot).iter().filter(|r| r.row.count != 0) {
+                    if wanted.contains_key(&(r.row.line, r.side())) {
+                        out.push(((r.row.line, r.side()), (t.party(slot), r.row.count)));
+                    }
+                }
+            }
+            out
+        });
+        for (at, (p, c)) in found.into_iter().flatten() {
+            if let Some(v) = wanted.get_mut(&at) {
+                v.push((p, c, self.parties.unit(p)));
+            }
+        }
+        for ((line, side), rows) in wanted {
+            let version = self.ledger.lines.side_version(line, side);
+            self.leaving.insert((line, side), (version, crate::cleared::Tally::new(&rows)));
+        }
+    }
+
+    /// The sides read without a holder list let go once the members that needed them have left.
+    pub fn forget_unlisted(&mut self) {
+        let lines = &self.ledger.lines;
+        self.leaving.retain(|(l, s), _| lines.listed_side(*l, *s));
     }
 
     /// The balance share of members leaving a line, which must be nothing.

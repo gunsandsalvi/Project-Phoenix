@@ -1,6 +1,6 @@
 //! An estate settled: what it holds in money pays what it owes through the waterfall, what it owes beyond is lost by
-//! its creditors, what it holds beyond is paid to the destination the law names, and then every row it holds leaves
-//! with its counterparts and the estate ends.
+//! its creditors, what it holds beyond — money and the units of every holding — passes to the destination the law
+//! names, and then every row it holds leaves with its counterparts and the estate ends.
 
 use phx_id::{LineId, PartyId};
 use phx_macros::clause;
@@ -14,20 +14,72 @@ use crate::transfer::MoveAt;
 use crate::waterfall::{Claim, Realised, waterfall};
 use phx_core::AuditStream;
 
-/// What an estate's settlement moved: paid to its creditors, lost by them, and passed on.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// What an estate's settlement moved: paid to its creditors, lost by them, and passed on; and who left with it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Settled {
     pub paid: i64,
     pub written_off: i64,
     pub passed: i64,
+    /// The holders drawn to leave with the estate's members, each with its line, its side and how many left.
+    pub left: Vec<(PartyId, LineId, Side, u32)>,
 }
 
 /// A debt of the estate: the line it is owed on and the one party holding the claim.
 type Debt = (LineId, PartyId);
 
 impl<B: phx_store::Backing> Books<B> {
+    /// Every holding of one party passed whole to another, each as its units at its basis, one instruction a holding:
+    /// what an ended firm held to its estate, and what an estate holds beyond its debts to the law's destination.
+    /// Returns the bases passed.
+    ///
+    /// # Errors
+    /// The first move that could not settle.
+    #[clause("PTY.9", "L3")]
+    pub fn pass_holdings(
+        &mut self,
+        (from, to): (PartyId, PartyId),
+        reason: crate::instruction::ReasonId,
+        m: MoveAt,
+        audit: &mut dyn AuditStream,
+    ) -> Result<i64, Fail> {
+        let (place, slot) = self.parties.row(from);
+        let held: Vec<(phx_id::InstrumentId, i64, i64)> = {
+            let table = self.parties.holder(place);
+            crate::holding::bases(table, slot)
+                .into_iter()
+                .map(|(instrument, basis)| {
+                    let Missing::Present(h) = crate::holding::holding(table, slot, instrument) else {
+                        violation!(clause = "REG.4", "a basis of a holding its holder does not hold");
+                    };
+                    (instrument, h.quantity.raw(), basis)
+                })
+                .collect()
+        };
+        let mut passed = 0_i64;
+        for (instrument, units, basis) in held {
+            let unit = self.ledger.instruments.get(instrument).unit;
+            let leg = |party, qty, cost| crate::instruction::LegRec {
+                party,
+                account: crate::instruction::AccountRef::Instrument(instrument),
+                qty,
+                denom: crate::instruction::Denom::Unit(unit),
+                kind: crate::instruction::LegKind::Units { cost },
+            };
+            let _ = self.submit(reason, vec![leg(from, -units, -basis), leg(to, units, basis)], m, audit)?;
+            passed += basis;
+        }
+        Ok(passed)
+    }
+
     /// The one party holding the other side of a line a debtor owes on.
     fn creditor(&self, line: LineId, debtor: PartyId) -> PartyId {
+        // A listed side of one holder names it at once, without reading the line's other holders.
+        if let Some(key) = self.ledger.lines.sole_holder(line, Side::Asset) {
+            let creditor = self.party_of_key(key);
+            if creditor != debtor {
+                return creditor;
+            }
+        }
         let holding: Vec<PartyId> = self
             .line_holders_but(line, debtor)
             .into_iter()
@@ -37,6 +89,24 @@ impl<B: phx_store::Backing> Books<B> {
             violation!(clause = "L3", "an estate's debt held by other than one creditor", line = line.get());
         };
         *creditor
+    }
+
+    /// The sides that keep no holder list its rows' members would leave against: what must be read before the party
+    /// leaves its lines.
+    #[must_use]
+    pub fn unlisted_against(&self, party: PartyId) -> Vec<(LineId, Side)> {
+        let (place, slot) = self.parties.row(party);
+        crate::rows::rows(self.parties.holder(place), slot)
+            .iter()
+            .map(|r| {
+                let other = match r.side() {
+                    Side::Asset => Side::Liability,
+                    Side::Liability => Side::Asset,
+                };
+                (r.row.line, other)
+            })
+            .filter(|(l, s)| !self.ledger.lines.listed_side(*l, *s))
+            .collect()
     }
 
     /// An estate settled, all at once or, when a payment fails, up to it: the waterfall over its money and its debts,
@@ -54,7 +124,10 @@ impl<B: phx_store::Backing> Books<B> {
         m: MoveAt,
         draws: &mut phx_rand::Draws,
         audit: &mut dyn AuditStream,
-    ) -> Result<Settled, Fail> {
+    ) -> Result<Settled, Fail>
+    where
+        B: Sync,
+    {
         let (place, slot) = self.parties.row(estate);
         let rows = crate::rows::rows(self.parties.holder(place), slot);
         // The waterfall runs on one twin's estate, and each of its amounts is paid for every twin alike.
@@ -125,13 +198,19 @@ impl<B: phx_store::Backing> Books<B> {
                 out.passed += left;
             }
         }
+        out.passed += self.pass_holdings((estate, destination), self.dues.distributed, m, audit)?;
         let (place, slot) = self.parties.row(estate);
         let held: Vec<(LineId, Side, u32)> = crate::rows::rows(self.parties.holder(place), slot)
             .iter()
             .map(|r| (r.row.line, r.side(), r.row.count))
             .collect();
         for (line, side, count) in held {
-            let _ = self.members_leave((estate, line, side), count, m, draws, audit)?;
+            let other = match side {
+                Side::Asset => Side::Liability,
+                Side::Liability => Side::Asset,
+            };
+            let taken = self.members_leave((estate, line, side), count, m, draws, audit)?;
+            out.left.extend(taken.into_iter().map(|(p, k)| (p, line, other, k)));
         }
         self.parties.end(estate, m.day);
         Ok(out)

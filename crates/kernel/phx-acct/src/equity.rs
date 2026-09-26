@@ -104,6 +104,11 @@ impl EquityAccounts {
         }
     }
 
+    /// A party's account closed as it ends: what it held passed whole to its estate.
+    pub(crate) fn close(&mut self, party: PartyId) {
+        let _ = self.accounts.remove(&party);
+    }
+
     pub fn of(&self, party: PartyId) -> Missing<EquityAccount> {
         match self.accounts.get(&party) {
             Some(a) => Missing::Present(*a),

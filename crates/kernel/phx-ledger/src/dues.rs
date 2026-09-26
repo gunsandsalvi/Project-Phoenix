@@ -19,7 +19,8 @@ pub struct DueReasons {
     pub principal: ReasonId,
     /// Members leaving a line with their counterparts, as a job ends with its worker.
     pub left: ReasonId,
-    /// An estate succeeding to what the households it ended with held.
+    /// A party succeeding to contracts another held: an estate to its party's, or a holder to the members a party
+    /// leaving a line passes it where its counterparts cannot leave with them in whole units.
     pub succeeded: ReasonId,
     /// Units a hazard destroyed at their holder, which no one receives.
     pub destroyed: ReasonId,
@@ -185,7 +186,7 @@ impl<B: Backing> Books<B> {
     }
 
     /// The party a holder-list key names.
-    fn party_of_key(&self, key: u32) -> PartyId {
+    pub(crate) fn party_of_key(&self, key: u32) -> PartyId {
         let (place, slot) = self.ledger.lines.keys().split(key);
         self.parties.holder(place).party(slot)
     }

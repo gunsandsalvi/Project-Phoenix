@@ -143,6 +143,14 @@ impl Accounts {
         }
     }
 
+    /// A party's accounts closed as it ends into an estate, which succeeds to all it held: its assets less its
+    /// liabilities are its estate's from then, and nothing is left for an account of its own to follow.
+    #[clause("PTY.9", "ACC.4")]
+    pub fn close(&mut self, party: PartyId) {
+        self.equity.close(party);
+        let _ = self.tallies.remove(&party);
+    }
+
     /// The day's audit done: the periods it closed are checked, and the next day posts afresh.
     pub fn end_day(&mut self) {
         self.closed.clear();

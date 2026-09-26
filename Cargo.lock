@@ -1170,6 +1170,7 @@ version = "0.1.0"
 dependencies = [
  "if-firm",
  "if-pop",
+ "libm",
  "phx-core",
  "phx-id",
  "phx-ledger",
@@ -1178,6 +1179,7 @@ dependencies = [
  "phx-pop",
  "phx-rand",
  "phx-store",
+ "phx-val",
 ]
 
 [[package]]

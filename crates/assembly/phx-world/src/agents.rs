@@ -156,6 +156,8 @@ pub struct AgentDay {
     pub estates_waiting: u64,
     pub estates_passed: i128,
     pub estates_written_off: i128,
+    /// Parties under an insolvency law that defaulted and ended into estates.
+    pub defaults: u64,
 }
 
 impl AgentDay {
@@ -181,6 +183,7 @@ impl AgentDay {
             estates_waiting: 0,
             estates_passed: 0,
             estates_written_off: 0,
+            defaults: 0,
         }
     }
 }
@@ -331,7 +334,6 @@ impl World {
     /// their events at once and wait for 3e, and its next booking after today is drawn.
     #[clause("REP.7", "REP.12", "CHN.4")]
     pub(crate) fn agents_gather(&mut self, day: Day) {
-        self.agent_day = AgentDay::of(day);
         let today = self.population.agenda.gather(day);
         let mut due: Vec<(usize, TableId, Slot, u32)> = Vec::new();
         for t in &today.per_table {
@@ -545,16 +547,71 @@ impl World {
             let Some(count) = n.checked_mul(twins) else {
                 phx_num::capacity_exceeded!("members leaving a line at once", u32::MAX, n);
             };
-            if let Err(f) = self.books.members_leave((party, line, side), count, m, draws, self.audit.stream()) {
-                violation!(clause = "REP.23", "members leaving a line did not settle", party = f.party.get());
+            let other = if side == Side::Asset { Side::Liability } else { Side::Asset };
+            match self.books.members_leave((party, line, side), count, m, draws, self.audit.stream()) {
+                Ok(taken) => {
+                    let left: Vec<(PartyId, LineId, Side, u32)> =
+                        taken.into_iter().map(|(p, k)| (p, line, other, k)).collect();
+                    self.detach(&left, draws);
+                }
+                Err(f) => {
+                    violation!(clause = "REP.23", "members leaving a line did not settle", party = f.party.get());
+                }
             }
+        }
+    }
+
+    /// The contracts agents drawn to leave with others' members lost, taken off their persons: each twin's share of
+    /// the members left, drawn among the attachments it holds on that side of the line, so its persons still hold
+    /// what its rows count. An agent of no persons names no contracts and has none to lose.
+    #[clause("REP.23", "REP.31")]
+    pub(crate) fn detach(&mut self, left: &[(PartyId, LineId, Side, u32)], d: &mut Draws) {
+        let first = self.books.parties.first_cell_place();
+        for (party, line, side, count) in left {
+            let (place, slot) = self.books.parties.row(*party);
+            let Some(kind) = place.checked_sub(first).map(usize::from) else { continue };
+            let (cells, _, _) = self.books.parties.cells_mut();
+            let table = Population::table_mut::<SystemBacking>(cells, kind);
+            if table.persons(slot).is_empty() {
+                continue;
+            }
+            let twins = table.multiplicity(slot).get();
+            if count % twins != 0 {
+                violation!(
+                    clause = "REP.31",
+                    "an agent's members left not a whole share for its twins",
+                    party = party.get()
+                );
+            }
+            let mut words = table.attachments(slot).to_vec();
+            for _ in 0..count / twins {
+                let on: Vec<usize> = (0..words.len())
+                    .filter(|i| {
+                        words
+                            .get(*i)
+                            .map(|w| phx_pop::person::Attachment::unpack(*w))
+                            .is_some_and(|a| a.line == *line && a.side == *side)
+                    })
+                    .collect();
+                let Some(n) = u32::try_from(on.len()).ok().filter(|n| *n != 0) else {
+                    violation!(
+                        clause = "REP.31",
+                        "an agent losing contracts its persons do not hold",
+                        party = party.get()
+                    );
+                };
+                if let Some(at) = usize::try_from(phx_rand::below_u32(d, n)).ok().and_then(|i| on.get(i)) {
+                    let _ = words.remove(*at);
+                }
+            }
+            table.set_attachments(slot, &words);
         }
     }
 
     /// An agent no one is left in ended: what it holds passes to one estate sited in its region, and its row and
     /// identity end.
     #[clause("PTY.9", "POP.15", "REP.16")]
-    fn end_agent(&mut self, day: Day, (kind, slot, party): (usize, Slot, PartyId), region: Option<u32>) {
+    pub(crate) fn end_agent(&mut self, day: Day, (kind, slot, party): (usize, Slot, PartyId), region: Option<u32>) {
         let m = move_at(&self.register, day, ApplyAt::Day(SubStep::S3e));
         let (rows, twins): (Vec<(LineId, Side, u32)>, u32) = {
             let table = Population::table::<SystemBacking>(self.books.parties.cells(), kind);
@@ -589,12 +646,16 @@ impl World {
             }
             self.agent_day.estates += 1;
         }
+        if let Some(place) = self.population.kinds.get(kind).map(|k| k.place) {
+            self.release_visits(place, slot);
+        }
         let (cells, directory, _) = self.books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(cells, kind);
         let twins = u64::from(twins);
         let id = table.id();
         table.remove(slot);
         directory.end(party, day, Missing::Absent);
+        self.accounts.close(party);
         if self.population.agenda_table(kind).is_some() {
             self.population.agenda.release(id, slot);
         }

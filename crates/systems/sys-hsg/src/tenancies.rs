@@ -32,7 +32,7 @@ declare_stream! { pub TenancyStream = "HSG.opening_tenancies" { purpose: Opening
 pub const TENANCY: LineKindDecl = LineKindDecl {
     name: "tenancy",
     asset: SideDecl {
-        holder_kinds: &["firm"],
+        holder_kinds: &["firm", phx_core::ESTATE_KIND.name],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],
@@ -42,7 +42,7 @@ pub const TENANCY: LineKindDecl = LineKindDecl {
     liability: SideDecl {
         holder_kinds: &[if_pop::HOUSEHOLD, phx_core::ESTATE_KIND.name],
         words: BALANCE,
-        holder_list: false,
+        holder_list: true,
         holder_roles: &[],
         exclusive: true,
         many: false,

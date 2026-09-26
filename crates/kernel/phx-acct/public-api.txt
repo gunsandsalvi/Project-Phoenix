@@ -4,6 +4,7 @@ pub struct phx_acct::accounts::Accounts
 pub phx_acct::accounts::Accounts::claims: phx_acct::accrual::Claims
 pub phx_acct::accounts::Accounts::equity: phx_acct::equity::EquityAccounts
 impl phx_acct::accounts::Accounts
+pub fn phx_acct::accounts::Accounts::close(&mut self, phx_id::ids::PartyId)
 pub fn phx_acct::accounts::Accounts::close_day(&self, &phx_ledger::apply::DayBook)
 pub fn phx_acct::accounts::Accounts::closed(&self) -> &[phx_acct::accounts::Closed]
 pub fn phx_acct::accounts::Accounts::end_day(&mut self)

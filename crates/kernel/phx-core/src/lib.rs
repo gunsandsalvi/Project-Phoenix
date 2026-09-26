@@ -110,5 +110,5 @@ pub use system::{
     declare_system, handler_refusals,
 };
 pub use touched::TouchedRows;
-pub use visit::{Cadence, VisitDecl};
+pub use visit::{Cadence, InsolvencyDecl, VisitDecl};
 pub use weight::Weight;

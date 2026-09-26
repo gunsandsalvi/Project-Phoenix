@@ -34,13 +34,13 @@ pub const EMPLOYMENT: LineKindDecl = LineKindDecl {
     asset: SideDecl {
         holder_kinds: &[if_pop::HOUSEHOLD, phx_core::ESTATE_KIND.name],
         words: BALANCE,
-        holder_list: false,
+        holder_list: true,
         holder_roles: &[if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name],
         exclusive: true,
         many: false,
     },
     liability: SideDecl {
-        holder_kinds: &["firm", "small_firm"],
+        holder_kinds: &["firm", "small_firm", phx_core::ESTATE_KIND.name],
         words: BALANCE,
         holder_list: true,
         holder_roles: &[],

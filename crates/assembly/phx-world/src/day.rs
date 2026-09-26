@@ -58,10 +58,11 @@ const APPLY_POINTS: [SubStep; 23] = [
 ];
 
 /// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, stage 2's
-/// contract process at 2d, over the fails of the days since it last ran, 3b's gathering of the population's agents due
+/// contract process at 2d, over the fails of the days since it last ran, and 2e's defaults of parties whose grace has
+/// ended, 3b's gathering of the population's agents due
 /// and 3e's outcomes of their hits, 9b's accounts, posting the day's settled money, and 10a's public events.
-pub const KERNEL_WORK: [SubStep; 6] =
-    [SubStep::S1b, SubStep::S2d, SubStep::S3b, SubStep::S3e, SubStep::S9b, SubStep::S10a];
+pub const KERNEL_WORK: [SubStep; 7] =
+    [SubStep::S1b, SubStep::S2d, SubStep::S2e, SubStep::S3b, SubStep::S3e, SubStep::S9b, SubStep::S10a];
 
 /// The audit's sub-step, which runs every day.
 pub const AUDIT_AT: SubStep = AUDIT_SUBSTEP;
@@ -131,6 +132,8 @@ impl World {
     fn run_day(&mut self, day: Day, clock: &dyn Clock) {
         let any_business = self.calendar.any_business(day);
         self.day_messages.lapse();
+        // The agents' day counts from its first sub-step, as parties end in default at 2e before the agents at 3b.
+        self.agent_day = crate::agents::AgentDay::of(day);
         let mut pending: Vec<(SubStep, Intents)> = Vec::new();
         let mut dues = DaySettlement::default();
         for info in &SUB_STEPS {
@@ -170,6 +173,9 @@ impl World {
             }
             if info.step == SubStep::S2d {
                 self.process_fails(day);
+            }
+            if info.step == SubStep::S2e {
+                self.defaults_end(day);
             }
             if is_apply_point(info) {
                 apply(day, &mut pending, &mut self.events, self.event_kinds.len());
@@ -298,6 +304,7 @@ impl World {
             })
             .collect();
         self.books.contract_process(&now, day);
+        self.defaults_queue(&now);
         self.fails_recorded(day);
         let directory = self.books.parties.cells_mut().1;
         for f in &fails {

@@ -295,7 +295,7 @@ pub fn issuers(legs: &[LegRec]) -> Vec<PartyId> {
 }
 
 /// The lesser of two indexes.
-fn at_most(a: usize, b: usize) -> usize {
+pub(crate) fn at_most(a: usize, b: usize) -> usize {
     if a < b { a } else { b }
 }
 

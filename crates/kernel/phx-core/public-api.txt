@@ -1754,6 +1754,7 @@ pub phx_core::system::Declarations::events: alloc::vec::Vec<(&'static str, phx_c
 pub phx_core::system::Declarations::facets: alloc::vec::Vec<(&'static str, phx_core::kind_tables::FacetDecl)>
 pub phx_core::system::Declarations::families: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::family::AuditFamily>)>
 pub phx_core::system::Declarations::hazards: alloc::vec::Vec<(&'static str, phx_core::hazards::HazardDecl)>
+pub phx_core::system::Declarations::insolvency: alloc::vec::Vec<(&'static str, phx_core::visit::InsolvencyDecl)>
 pub phx_core::system::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_core::kinds::KindDecl)>
 pub phx_core::system::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::system::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
@@ -1778,6 +1779,7 @@ pub fn phx_core::system::Declarations::facet(&mut self, phx_core::kind_tables::F
 pub fn phx_core::system::Declarations::family(&mut self, alloc::boxed::Box<dyn phx_core::family::AuditFamily>)
 pub fn phx_core::system::Declarations::hazard(&mut self, phx_core::hazards::HazardDecl)
 pub fn phx_core::system::Declarations::implement<I: 'static, O: 'static>(&mut self, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
+pub fn phx_core::system::Declarations::insolvency(&mut self, phx_core::visit::InsolvencyDecl)
 pub fn phx_core::system::Declarations::kind(&mut self, phx_core::kinds::KindDecl)
 pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl)
 pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
@@ -1841,6 +1843,10 @@ pub phx_core::visit::Cadence::Attention::position: &'static str
 pub phx_core::visit::Cadence::Schedule
 pub phx_core::visit::Cadence::Schedule::days: &'static str
 pub phx_core::visit::Cadence::Schedule::runs_on: phx_core::schedule::RunsOn
+pub struct phx_core::visit::InsolvencyDecl
+pub phx_core::visit::InsolvencyDecl::clause: &'static str
+pub phx_core::visit::InsolvencyDecl::grace_days: &'static str
+pub phx_core::visit::InsolvencyDecl::kind: &'static str
 pub struct phx_core::visit::VisitDecl
 pub phx_core::visit::VisitDecl::cadence: phx_core::visit::Cadence
 pub phx_core::visit::VisitDecl::clause: &'static str
@@ -2499,6 +2505,7 @@ pub phx_core::Declarations::events: alloc::vec::Vec<(&'static str, phx_core::eve
 pub phx_core::Declarations::facets: alloc::vec::Vec<(&'static str, phx_core::kind_tables::FacetDecl)>
 pub phx_core::Declarations::families: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::family::AuditFamily>)>
 pub phx_core::Declarations::hazards: alloc::vec::Vec<(&'static str, phx_core::hazards::HazardDecl)>
+pub phx_core::Declarations::insolvency: alloc::vec::Vec<(&'static str, phx_core::visit::InsolvencyDecl)>
 pub phx_core::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_core::kinds::KindDecl)>
 pub phx_core::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
@@ -2523,6 +2530,7 @@ pub fn phx_core::system::Declarations::facet(&mut self, phx_core::kind_tables::F
 pub fn phx_core::system::Declarations::family(&mut self, alloc::boxed::Box<dyn phx_core::family::AuditFamily>)
 pub fn phx_core::system::Declarations::hazard(&mut self, phx_core::hazards::HazardDecl)
 pub fn phx_core::system::Declarations::implement<I: 'static, O: 'static>(&mut self, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
+pub fn phx_core::system::Declarations::insolvency(&mut self, phx_core::visit::InsolvencyDecl)
 pub fn phx_core::system::Declarations::kind(&mut self, phx_core::kinds::KindDecl)
 pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl)
 pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
@@ -2740,6 +2748,10 @@ impl phx_core::pop_process::Household
 pub fn phx_core::pop_process::Household::attr(&self, &str) -> u32
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
 pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)
+pub struct phx_core::InsolvencyDecl
+pub phx_core::InsolvencyDecl::clause: &'static str
+pub phx_core::InsolvencyDecl::grace_days: &'static str
+pub phx_core::InsolvencyDecl::kind: &'static str
 pub struct phx_core::Intents
 impl phx_core::handler::Intents
 pub fn phx_core::handler::Intents::is_empty(&self) -> bool
