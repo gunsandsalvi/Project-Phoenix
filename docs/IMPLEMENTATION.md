@@ -5861,7 +5861,7 @@ run it to forecast (a signature check).
 - `LC-1-05`: TEC.9 — every production record in the run names a way its producer knew, with inputs consumed as
   recorded; registered here, applies once firms produce (S1.03).
 
-**Budget**: 57 ways and 45 interned sets at the opening, compiled once at assembly; the family reads only the day's
+**Budget**: 57 ways and 48 interned sets (three countries' sixteen industries) at the opening, compiled once at assembly; the family reads only the day's
 productions. Counter `phx_tec.way_sets`, ratcheted.
 
 **Guards**: none new.
