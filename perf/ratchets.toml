@@ -52,7 +52,7 @@ direction = "down"
 # each country's opening stratum, move every firm's size and site draw, and the busiest day's rows streamed, scanned and
 # payments rise by 8 778, 8 900 and 8 778 (ac0f57ed). Firms in default end into estates from S1.03, which hold their
 # rows until they settle, so the busiest day reads 45 rows not due more (81 841); estates that hold plant wait to sell it
-from the S1.03 review, holding their rows longer, and 4 more (81 845).
+# from the S1.03 review, holding their rows longer, and 4 more (81 845).
 [[ratchet]]
 counter = "phx_ledger.rows_streamed"
 value = 2815195

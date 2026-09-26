@@ -614,8 +614,6 @@ impl World {
             }
             let words: Vec<u64> =
                 words.iter().enumerate().filter(|(i, _)| !gone.contains(i)).map(|(_, w)| *w).collect();
-            // Its persons' contracts changed, so what its hazards read may have: it is drawn afresh.
-            table.mark_changed(slot);
             table.set_attachments(slot, &words);
         }
     }

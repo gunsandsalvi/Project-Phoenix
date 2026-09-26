@@ -488,7 +488,8 @@ fn estates_settle(w: Inspector<'_>) -> Outcome {
     if settled + phx_rand::float::len_u64(open.len()) != opened {
         return Outcome::Fail(format!("{opened} estates opened, {settled} settled and {} open", open.len()));
     }
-    // An estate still open at the close opened on the last day, or waited on a payment that failed that day.
+    // An estate still open at the close opened on the last day, or waited that day: on a payment that failed, or to
+    // sell the units it holds.
     let stale = open
         .iter()
         .filter(|p| {
@@ -496,11 +497,9 @@ fn estates_settle(w: Inspector<'_>) -> Outcome {
             books.parties.table(place).created(slot) < last.day
         })
         .count();
-    if phx_rand::float::len_u64(stale) != last.estates_waiting {
-        return Outcome::Fail(format!(
-            "{stale} estates open from before the last day, {} counted waiting",
-            last.estates_waiting
-        ));
+    let waiting = last.estates_waiting + last.estates_unsold;
+    if phx_rand::float::len_u64(stale) != waiting {
+        return Outcome::Fail(format!("{stale} estates open from before the last day, {waiting} counted waiting"));
     }
     Outcome::Pass
 }
