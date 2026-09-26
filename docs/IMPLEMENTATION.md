@@ -6723,7 +6723,7 @@ row by row, and severance settled one instruction each, all fixed; and F-104–F
 
 **Clauses**:
 - STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: LAB.1–LAB.4, LAB.6–LAB.9, LAB.11–LAB.17,
-  including the minimum wage (LAB.11); collective bargaining (LAB.10) is S1.15's, which opens the union parties it
+  including the minimum wage (LAB.11); collective bargaining (LAB.10) is S2.10's, which opens the union parties it
   needs, since no party can bargain before one exists; PTY.3 *(completes it: a
   person's skills and labour-market state)*.
 - DECISION: LAB.5 *(part: search within the region; moving for work is S2.05, retraining S6.02)*; FRM.7 *(completes
@@ -6844,7 +6844,7 @@ post vacancies at wage points and compete for workers:
   the lowest point that is, which the employer accepts if that is still below the work's expected revenue, and
   otherwise the employee quits, to that vacancy's search or out of work. The protocol ends in two moves. A new wage
   is a new line; members move rows.
-- **Collective bargaining** (LAB.10, built at S1.15): where coverage exists (ENDOWMENT), a union party — opened by GEN III —
+- **Collective bargaining** (LAB.10, built at S2.10): where coverage exists (ENDOWMENT), a union party — opened by GEN III —
   negotiates one agreement for the covered lines by a declared alternating-offers protocol (Rubinstein, 1982, listed
   in `SHAPES.toml`). The union's offers read its members' price outlooks and the employer's published results (its
   latest filed accounts, GEN.5 at the opening, S2.10 from then); the employer's read what its renegotiation reads. A
@@ -7643,16 +7643,17 @@ decisions)*: every Stage 1 system's opening contribution.
 - PROCESS: REP.21 *(completes it, from S1.03: the reviews run at the attention rate and their hours are counted)*.
 - DECISION: FRM.4, FRM.6, FRM.8, FRM.11 *(complete them, from S1.03 and S1.04: firms produce within the capacity
   their plant gives, by the ways it supports, and enter and leave lines by investing)*; CAP.3, CAP.4 *(complete them,
-  from S1.04: the rules built there run at the firms' investment and plant reviews)*.
-- PROCESS: CAP.5 *(purchases from named producers, paid in stages, delivered into the newest class)*; CAP.6
-  *(completes it, from S1.04: failures and repairs)*.
+  from S1.04: the rules built there run at the firms' investment and plant reviews; CAP.4's choice to maintain, repair,
+  sell or scrap and CAP.13's hurdle and horizon distributions move to S2.03, with the plant's resale market, F-115)*.
+- PROCESS: CAP.5 *(purchases from named producers, paid in stages, delivered into the newest class)*; CAP.6 *(its
+  failures and repairs move to S2.03, which completes it, waiting for a measured failure rate, F-101)*.
 - INVARIANT: CAP.9, TEC.9 *(complete them, from S1.04 and S1.02: every production is checked against its capacity and
   its way)*.
 - MEASURE: CAP.10. FORBID: CAP.11. PRIMITIVE: CAP.13 *(completes it: the managements' hurdle and horizon
   distributions)*.
 - DECISION: GDS.6 *(completes it, from S1.05: the stockists' visit, holding stock in storage bought at posted
   prices)*; SRV.1 *(completes it, from S1.06: a provider's capacity a day, the service made and delivered at once)*;
-  SRV.3 *(completes it, from S1.06: a distributor restocks by buying its goods at wholesale)*; FRT.4, FRT.5
+  SRV.3 *(a distributor's restocking moves to S2.05, with storage and the retail structure, F-117)*; FRT.4, FRT.5
   *(complete them, from S1.07: carriers with their vehicles, and shippers booking where the gap exceeds the
   freight)*; GDS.5 *(completes
   it, from S1.05: firms buy their inputs for planned production)*; FRM.7 *(part, from
@@ -7661,10 +7662,8 @@ decisions)*: every Stage 1 system's opening contribution.
   *(completes it, from S1.05: weather sets the yields of crops where they grow)*. MEASURE: GDS.11 *(completes it, from
   S1.05: its reads over the goods traded)*.
 - MEASURE: FRT.10 *(completes it, from S1.07: LC-1-20 reads freight rates against the price gaps)*.
-- PROCESS: LAB.10 *(collective bargaining, moved from S1.08: the union parties opened here negotiate their covered
-  lines' wages by a declared alternating-offers protocol (Rubinstein, 1982), reading their members' outlooks and the
-  employer's filed results, in `sys-lab`'s `rules/bargain.rs`; a strike stops the covered work's output and wages for
-  its days)*.
+- LAB.10 *(moved to S2.10: a union's offers read the employer's filed results, which are published from S2.10; the
+  opening's filed facts are the firm's own, not a publication)*.
 - Its Done when requires LC-1-05, LC-1-11, LC-1-12, LC-1-13, LC-1-15, LC-1-20 and LC-1-46 to pass.
 
 **Architecture**: §10.
@@ -8289,6 +8288,9 @@ of their own: they are in the cell's row list and its due-day run):
   buyer, which is S4.06)*.
 - PROCESS: FRM.15 *(completes it: the balance-sheet test, the law's procedures, restructuring)*; FRT.8 *(completes
   it, from S1.07: goods aboard a failed carrier recovered from its estate after the law's delay and at its cost)*.
+- DECISION: CAP.4 *(moved from S1.15: an owner maintains, repairs, sells or scraps a unit at its plant review, selling
+  through the plant's resale market)*. PROCESS: CAP.6 *(completes it, from S1.04: failures and repairs, at a measured
+  rate, F-101)*. PRIMITIVE: CAP.13 *(completes it, from S1.15: the managements' hurdle and horizon distributions)*.
 - MEASURE: FRM.19.
 - This step retires S1.03's placeholder naming FRM (every insolvency liquidates) and S2.01's placeholder answer to a
   restructuring offer for firms.
@@ -8607,7 +8609,8 @@ receivables by name; references resolve to the estate.
   life, maintenance and condition; public owners decide from S5.02, where it completes)*; GEO.5 *(land held, with
   what stands on it)*; PTY.5 *(completes it: a household cell's zone in its profile)*.
 - DECISION: HSG.4, HSG.5, HSG.6, HSG.7, HSG.8, HSG.9, HSG.18; HH.8, HH.10; HH.9 *(part: moving within a country;
-  abroad is S5.05)*; LAB.5 *(part: search in other regions, with a move)*.
+  abroad is S5.05)*; LAB.5 *(part: search in other regions, with a move)*; SRV.3 *(completes it, moved from S1.15: a
+  distributor restocks the made goods households buy at wholesale and holds them in storage it buys, F-117)*.
 - PROCESS: HSG.10, HSG.11, HSG.12, HSG.20; CAP.7 *(part: private owners; public owners at S5.02)*; POP.8 *(part:
   within a country)*; MKT.20 *(part: the dwelling appraiser)*; REP.22 *(completes it: tastes over dwellings)*; REP.24
   *(completes it: dwellings' and households' vehicles' wear and repair between condition classes)*; HH.13 *(part:
@@ -9507,6 +9510,10 @@ cost; kink-day re-checks at the envelope counted. Counters, ratcheted: `phx_ene.
   *(part: the filing calendar's spread; listed companies' reports arrive with S3.10)*.
 - This step retires S1.09's limit of a lender's assessment to its own lines' records (a placeholder naming BNK's
   bureau), and extends S2.02's terms to read filed accounts.
+- PROCESS: LAB.10 *(collective bargaining, moved from S1.15: the union parties negotiate their covered lines' wages by
+  a declared alternating-offers protocol (Rubinstein, 1982), reading their members' outlooks and the employer's filed
+  results, which exist from this step, in `sys-lab`'s `rules/bargain.rs`; the unions and their coverage (ENDOWMENT)
+  are opened here; a strike stops the covered work's output and wages for its days)*.
 
 **Architecture**: §3.1 (the filed accounts' home), §4.9 (records and audiences), §6.1 (5c, 7, 9d), §7.3 (the
 key-clock reason).
@@ -16777,6 +16784,7 @@ the final build within the budget on the phone.
 | F-116 | S1.15 | data and build, 2026-09-26 | Every group's carriers take the United States' shares of carriage employment by mode; a shipper weighs only the places its own zone's carriers reach, by the zones' distance rather than the route, and carries its whole surplus over its expected sales; weather's own variables do not yet set crop yields, only catastrophes destroy crops and stocks, and a catastrophe destroys every physical unit alike, plant with goods | modal mixes differ by group; a shipper takes no account of how its shipment moves the price where it goes; yields vary only with catastrophes | each group's employment by mode from its own statistics; the shipper's quantity from the price response it expects at the destination; a yield response to temperature and rain from agronomic sources (Schlenker and Roberts, 2009) and each asset's own vulnerability by hazard, with the hazards' losses (S2.05) | open for S2.05 |
 | F-117 | S1.15 | build, 2026-09-26 | Merchants carry only the standardised goods of their own place and buy no storage, since no product sells room; distributors do not restock the made goods households buy, which their makers sell at retail themselves; an owner values winding down at its books' cost rather than the prices its stock and plant would fetch | the carry ignores storage's cost; retail margins are the makers' own; a firm whose plant would fetch less than its cost closes too readily | storage as a service bought from the owners of room, distributors holding and reselling made goods at retail, and the stock and plant valued at their marks, with the retail structure (S2.05) | open for S2.05 |
 | F-118 | S1.15 | build, 2026-09-26 | The national accounts are monthly; their income measure counts households' and firms' income only, so banks' margins and the state's are not in it, and every firm's income is read in full where an agency would read its filed accounts; a record is a whole instruction, so production and expenditure differ only by sampling | the income measure falls short of output by the financial sector's and the state's value added; the discrepancy is mostly that | quarterly accounts beside the monthly, the financial and government sectors' value added, and income read from the filed accounts the firms publish (S2.10) | open for S2.10 |
+| F-119 | S1.15 | build, 2026-09-26 | Day zero runs no stage of its own: the opening's derivations from the snapshot stand for the first decisions (each firm's price the point nearest its product's snapshot price, its filed accounts' output and costs), and every party's own first decision comes at its first visit, phased over its period from day one | the first period's decisions arrive staggered rather than all on the snapshot; nothing is drawn, but the first prices are the opening's, not each firm's rule | day zero's 5a–5d for the decision kinds each system declares as opening decisions, orders standing into day one, with the opening's refinement (S2.10) | open for S2.10 |
 
 ---
 
@@ -16957,7 +16965,8 @@ and are not mapped.
 | FRM | S4.06 | 12 |
 | FRM | S6.01 | 23 |
 | CAP | S1.04 | 1, 8, 12 |
-| CAP | S1.15 | 3, 4, 5, 6, 9, 10, 11, 13 |
+| CAP | S1.15 | 3, 5, 9, 10, 11 |
+| CAP | S2.03 | 4, 6, 13 |
 | CAP | S2.05 | 2 |
 | CAP | S5.02 | 7 |
 | GDS | S1.05 | 1, 2, 4, 7, 8, 12, 13 |
@@ -16966,12 +16975,13 @@ and are not mapped.
 | GDS | S2.05 | 3 |
 | SRV | S1.06 | 2, 4, 5, 6, 8, 9 |
 | SRV | S1.12 | 7 |
-| SRV | S1.15 | 1, 3 |
+| SRV | S1.15 | 1 |
+| SRV | S2.05 | 3 |
 | FRT | S1.07 | 1, 2, 3, 6, 7, 9, 11, 12 |
 | FRT | S1.15 | 4, 5, 10 |
 | FRT | S2.03 | 8 |
 | LAB | S1.08 | 1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17 |
-| LAB | S1.15 | 10 |
+| LAB | S2.10 | 10 |
 | LAB | S6.02 | 5 |
 | HSG | S2.05 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 |
 | TCR | S2.02 | 1, 2, 3, 4, 5, 6, 7, 8 |
