@@ -104,6 +104,17 @@ impl EquityAccounts {
         }
     }
 
+    /// One party's events, in their order, moving its account once it is found.
+    pub(crate) fn post_all(&mut self, run: &[EquityEvent]) {
+        let Some(a) = run.first().and_then(|e| self.accounts.get_mut(&e.party)) else { return };
+        for event in run {
+            let Some(b) = a.balance.checked_add(event.amount) else {
+                phx_num::capacity_exceeded!("an equity account", i64::MAX, event.amount);
+            };
+            a.balance = b;
+        }
+    }
+
     /// A party's account closed as it ends: what it held passed whole to its estate.
     pub(crate) fn close(&mut self, party: PartyId) {
         let _ = self.accounts.remove(&party);

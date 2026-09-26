@@ -81,12 +81,15 @@ impl Accounts {
         accounts
     }
 
-    fn tally(&mut self, event: &EquityEvent) {
-        let Some(t) = self.tallies.get_mut(&event.party()) else { return };
-        match event.kind() {
-            EquityKind::Income => t.income += i128::from(event.amount()),
-            EquityKind::Capital | EquityKind::Distribution | EquityKind::Revaluation => {
-                t.capital += i128::from(event.amount());
+    /// One party's events added to its period's tally, if it keeps one.
+    fn tally_all(&mut self, run: &[EquityEvent]) {
+        let Some(t) = run.first().and_then(|e| self.tallies.get_mut(&e.party())) else { return };
+        for event in run {
+            match event.kind() {
+                EquityKind::Income => t.income += i128::from(event.amount()),
+                EquityKind::Capital | EquityKind::Distribution | EquityKind::Revaluation => {
+                    t.capital += i128::from(event.amount());
+                }
             }
         }
     }
@@ -110,27 +113,29 @@ impl Accounts {
             }
             self.period = period;
         }
+        let mut events = Vec::with_capacity(book.effects.len());
         for due in &book.dues {
             for event in self.claims.post(due) {
                 self.income += i128::from(event.amount());
-                self.equity.post(&event);
-                self.tally(&event);
+                events.push(event);
             }
         }
         for (party, amount) in book.earned.sorted() {
             let Ok(amount) = i64::try_from(*amount) else {
                 phx_num::capacity_exceeded!("a party's income of one day", i64::MAX, 0);
             };
-            let event = EquityEvent::earned(party, amount);
             self.income += i128::from(amount);
-            self.equity.post(&event);
-            self.tally(&event);
+            events.push(EquityEvent::earned(party, amount));
         }
-        for effect in &book.effects {
-            if let Missing::Present(event) = EquityEvent::from_effect(effect) {
-                self.equity.post(&event);
-                self.tally(&event);
-            }
+        events.extend(book.effects.iter().filter_map(|e| match EquityEvent::from_effect(e) {
+            Missing::Present(event) => Some(event),
+            Missing::Absent => None,
+        }));
+        // Each party's events posted together and in their order, so its account and its tally are each found once.
+        events.sort_by_key(EquityEvent::party);
+        for run in events.chunk_by(|a, b| a.party() == b.party()) {
+            self.equity.post_all(run);
+            self.tally_all(run);
         }
         self.posted = (book.dues.len() + book.earned.len(), book.effects.len());
     }
