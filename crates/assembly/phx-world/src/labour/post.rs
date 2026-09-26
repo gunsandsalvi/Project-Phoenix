@@ -38,7 +38,7 @@ struct Firm {
 }
 
 /// The fact names an employer's decision reads.
-const PRODUCT: &str = "FRM.industry";
+const PRODUCT: &str = "FRM.product";
 const PRICE: &str = "FRM.price";
 const OUTPUT: &str = "FRM.output_rate";
 const HURDLE: &str = "FRM.required_return";
@@ -78,9 +78,11 @@ impl World {
         };
         let (product, price, output, hurdle) = (read(PRODUCT)?, read(PRICE)?, read(OUTPUT)?, read(HURDLE)?);
         let scale = |exp: u8| (0..exp).fold(1.0, |s, _| s * phx_core::consts::DECIMAL_BASE);
+        let lot = phx_rand::float::from_i64(self.goods_frame.base(u16::try_from(product).ok()?));
+        // A posted price is for a lot of the product; the work is weighed by what a unit fetches.
         Some(Firm {
             product,
-            price: phx_rand::float::from_i64(price),
+            price: phx_rand::float::from_i64(price) / lot,
             units_a_day: phx_rand::float::from_i64(output),
             hurdle: phx_rand::float::from_i64(hurdle) / scale(crate::consts::HURDLE_EXP),
         })

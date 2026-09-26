@@ -718,8 +718,16 @@ impl<B: Backing> Ledger<B> {
                     violation!(clause = "Law 7", "a balance overflows", party = at.party.get());
                 };
                 d.write(at.table, at.slot, crate::rows::balance_word(word), next);
-                let table = holders.arenas(at.table).table();
-                self.record_leg(decl, s, (table, *at), leg, (before, Missing::Absent, Missing::Absent), Some(d), audit);
+                let (table, unit) = (holders.arenas(at.table).table(), holders.arenas(at.table).members(at.slot));
+                self.record_leg(
+                    decl,
+                    s,
+                    (table, *at, unit),
+                    leg,
+                    (before, Missing::Absent, Missing::Absent),
+                    Some(d),
+                    audit,
+                );
                 continue;
             }
             let arenas = holders.arenas(at.table);
@@ -761,8 +769,8 @@ impl<B: Backing> Ledger<B> {
                 },
                 Missing::Absent => Missing::Absent,
             };
-            let table = arenas.table();
-            self.record_leg(decl, s, (table, *at), leg, (before, held_moved, issued), None, audit);
+            let (table, unit) = (arenas.table(), arenas.members(at.slot));
+            self.record_leg(decl, s, (table, *at, unit), leg, (before, held_moved, issued), None, audit);
         }
         if !taken.is_empty() {
             violation!(clause = "SET.11", "a named unit given that nobody received", id = s.id.get());
@@ -776,7 +784,7 @@ impl<B: Backing> Ledger<B> {
         &mut self,
         decl: crate::instruction::ReasonDecl,
         s: Settling,
-        (table, at): (phx_id::TableId, At),
+        (table, at, unit): (phx_id::TableId, At, u32),
         leg: &LegRec,
         (before, held_moved, issued): (i64, Missing<(i64, phx_num::Ccy)>, Missing<i64>),
         deferred: Option<&mut Deferred<'_>>,
@@ -812,6 +820,7 @@ impl<B: Backing> Ledger<B> {
                 _ => Missing::Absent,
             },
             issued,
+            unit,
         };
         audit.leg(s.id.get(), digest);
         if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {

@@ -30,7 +30,10 @@ impl System for Tec {
         let known = <if_firm::known::Known as FactDef>::ITEM.name;
         d.claim(known);
         d.facet(FacetDecl { fact: known, kind: "firm" });
-        d.pop_kind("small_firm").attr(if_firm::known::KNOWN);
+        let way = <if_firm::known::WayUsed as FactDef>::ITEM.name;
+        d.claim(way);
+        d.facet(FacetDecl { fact: way, kind: "firm" });
+        d.pop_kind("small_firm").attr(if_firm::known::KNOWN).attr(if_firm::known::WAY);
         d.contribution(Box::new(known::Known { prims }));
     }
 

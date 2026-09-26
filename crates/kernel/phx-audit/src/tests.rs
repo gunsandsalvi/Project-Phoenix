@@ -334,6 +334,7 @@ mod digests {
             worn: phx_num::Missing::Absent,
             source: phx_num::Missing::Absent,
             issued: phx_num::Missing::Absent,
+            unit: 1,
         }
     }
 

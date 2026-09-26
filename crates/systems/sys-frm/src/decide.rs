@@ -3,14 +3,16 @@
 //! outlook, price or unit cost yet takes no decision, which waits for its opening accounts.
 
 use if_firm::facts::{
-    DeliveredAtReview, DeliveredSeen, ExpectedSales, LastReview, Markup, Method, Price, PriceAttention, SalesWidth,
-    UnitCost, WagePerHour,
+    DeliveredAtReview, DeliveredSeen, ExpectedSales, LastReview, Markup, Method, OutputRate, Price, PriceAttention,
+    RequiredReturn, SalesWidth, UnitCost, WagePerHour,
 };
-use if_firm::known::Industry;
+use if_firm::known::{Product, WayUsed};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
 use phx_core::{Declarations, Prim, declare_handler, declare_prim};
 use phx_id::Slot;
+use phx_ledger::intents::Transform;
 use phx_macros::clause;
+use phx_market::intents::{OrderIntent, ShopIntent};
 use phx_num::{Count, Fixed, Missing, PointTable};
 use phx_rand::float::from_i64;
 
@@ -200,7 +202,7 @@ declare_handler! {
     pub ReviewSmall = "FRM.review_small" {
         substep: S5c,
         table: "small_firm",
-        reads: [Industry, ExpectedSales, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
+        reads: [Product, ExpectedSales, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
         writes: [Markup, Price, DeliveredAtReview, LastReview],
         clause: "FRM.5",
         body: review,
@@ -212,7 +214,7 @@ declare_handler! {
     pub ReviewLarge = "FRM.review_large" {
         substep: S5c,
         table: "firm",
-        reads: [Industry, ExpectedSales, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
+        reads: [Product, ExpectedSales, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
         writes: [Markup, Price, DeliveredAtReview, LastReview],
         clause: "FRM.5",
         body: review,
@@ -224,8 +226,9 @@ declare_handler! {
     pub AttendSmall = "FRM.attend_small" {
         substep: S5b,
         table: "small_firm",
-        reads: [Industry, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn],
         writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
+        intents: [Transform, OrderIntent, ShopIntent],
         clause: "REP.38",
         body: attend,
     }
@@ -236,8 +239,9 @@ declare_handler! {
     pub AttendLarge = "FRM.attend_large" {
         substep: S5b,
         table: "firm",
-        reads: [Industry, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn],
         writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
+        intents: [Transform, OrderIntent, ShopIntent],
         clause: "REP.38",
         body: attend,
     }
@@ -280,7 +284,7 @@ fn scale_of(item: phx_core::ItemDecl) -> f64 {
 fn review<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
     H: HandlerDecl
-        + Reads<Industry>
+        + Reads<Product>
         + Reads<ExpectedSales>
         + Reads<DeliveredAtReview>
         + Reads<LastReview>
@@ -348,19 +352,20 @@ where
     }
 }
 
-/// The firm's product, the industry it is in.
+/// The product the firm makes.
 fn product_of<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot) -> Option<u16>
 where
-    H: HandlerDecl + Reads<Industry>,
+    H: HandlerDecl + Reads<Product>,
     S: FactStore + ?Sized,
 {
-    match ctx.read::<Industry>(row) {
+    match ctx.read::<Product>(row) {
         Missing::Present(p) => u16::try_from(p).ok(),
         Missing::Absent => None,
     }
 }
 
-/// The attention a firm gives its price, on its production schedule. First its sales outlook takes in what it sold
+/// A firm's production schedule: the attention it gives its price, then its production from the outlook it has just
+/// taken in. The attention: first its sales outlook takes in what it sold
 /// since its last schedule, the units of its product it delivered: moved by its memory type's gain, and the width of
 /// its surprises with it, a surprise beyond the widths it is sensitive to waking a review for tomorrow.
 /// Then its daily chance of a review from the loss a gap costs it, read from its revenue and markup, against
@@ -370,7 +375,36 @@ where
 fn attend<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
     H: HandlerDecl
-        + Reads<Industry>
+        + Reads<Product>
+        + Reads<ExpectedSales>
+        + Reads<SalesWidth>
+        + Reads<DeliveredSeen>
+        + Reads<Method>
+        + Reads<Markup>
+        + Reads<Price>
+        + Reads<WagePerHour>
+        + Reads<WayUsed>
+        + Reads<OutputRate>
+        + Reads<UnitCost>
+        + Reads<RequiredReturn>
+        + Writes<PriceAttention>
+        + Writes<ExpectedSales>
+        + Writes<SalesWidth>
+        + Writes<DeliveredSeen>
+        + phx_core::Emits<Transform>
+        + phx_core::Emits<OrderIntent>
+        + phx_core::Emits<ShopIntent>,
+    S: FactStore + ?Sized,
+{
+    attend_price(ctx, row);
+    crate::produce::produce(ctx, row);
+}
+
+/// The attention part of a firm's schedule.
+fn attend_price<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
+where
+    H: HandlerDecl
+        + Reads<Product>
         + Reads<ExpectedSales>
         + Reads<SalesWidth>
         + Reads<DeliveredSeen>
@@ -387,9 +421,9 @@ where
     let m: &Management = ctx.own::<crate::Own>().management();
     let Some(product) = product_of(ctx, row) else { return };
     let delivered = ctx.delivered(row, product);
-    let (Some(mut expected), Some(mut width), Some(markup), Some(price), Some(wage)) = (
+    let mut width = read::<SalesWidth, H, S>(ctx, row);
+    let (Some(mut expected), Some(markup), Some(price), Some(wage)) = (
         read::<ExpectedSales, H, S>(ctx, row),
-        read::<SalesWidth, H, S>(ctx, row),
         read::<Markup, H, S>(ctx, row),
         read::<Price, H, S>(ctx, row),
         read::<WagePerHour, H, S>(ctx, row),
@@ -405,14 +439,18 @@ where
     if let (Some(seen), Some(gain)) = (read::<DeliveredSeen, H, S>(ctx, row), gain) {
         let sold = from_i64(delivered) - seen;
         let surprise = phx_val::surprise::surprise(sold, expected);
-        woke = phx_val::surprise::wakes(surprise, width, m.sensitivity);
-        width = phx_val::surprise::width(Missing::Present(width), surprise, gain);
+        woke = width.is_some_and(|w| phx_val::surprise::wakes(surprise, w, m.sensitivity));
+        let before = width.map_or(Missing::Absent, Missing::Present);
+        let next = phx_val::surprise::width(before, surprise, gain);
+        width = Some(next);
         expected = phx_val::heuristics::adaptive(expected, sold, gain);
-        if let (Some(e), Some(w)) = (whole(expected), whole(width)) {
+        if let (Some(e), Some(w)) = (whole(expected), whole(next)) {
             ctx.write::<ExpectedSales>(row, e);
             ctx.write::<SalesWidth>(row, w);
         }
     }
+    // A firm that has seen no surprise yet knows no width to weigh its attention by.
+    let Some(width) = width else { return };
     ctx.write::<DeliveredSeen>(row, delivered);
     let cost = m.review_hours * wage;
     // A review costs its staff's hours; a firm whose hour costs nothing holds no staff to review with.

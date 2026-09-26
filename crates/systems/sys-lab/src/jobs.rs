@@ -34,7 +34,7 @@ declare_stream! { pub JobsStream = "LAB.opening_jobs" { purpose: Opening, keyed:
 /// Employment: the employer owes the wage to the employee, each job a member; many employers and many employees on
 /// a line, so it records no pairing.
 pub const EMPLOYMENT: LineKindDecl = LineKindDecl {
-    name: "employment",
+    name: if_labour::consts::EMPLOYMENT_LINE,
     asset: SideDecl {
         holder_kinds: &[if_pop::HOUSEHOLD, phx_core::ESTATE_KIND.name],
         words: BALANCE,

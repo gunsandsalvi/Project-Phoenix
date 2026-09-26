@@ -858,6 +858,7 @@ dependencies = [
 name = "phx-world"
 version = "0.1.0"
 dependencies = [
+ "if-base",
  "if-credit",
  "if-firm",
  "if-labour",
@@ -1240,13 +1241,16 @@ name = "sys-frm"
 version = "0.1.0"
 dependencies = [
  "if-firm",
+ "if-labour",
  "if-pop",
  "libm",
  "phx-acct",
  "phx-core",
+ "phx-geo",
  "phx-id",
  "phx-ledger",
  "phx-macros",
+ "phx-market",
  "phx-num",
  "phx-pop",
  "phx-rand",
@@ -1275,6 +1279,7 @@ dependencies = [
  "if-firm",
  "libm",
  "phx-core",
+ "phx-geo",
  "phx-id",
  "phx-ledger",
  "phx-macros",

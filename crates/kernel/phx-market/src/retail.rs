@@ -22,6 +22,10 @@ pub struct RetailKind {
     pub sellers: &'static [&'static str],
     pub sells: &'static str,
     pub price: &'static str,
+    /// A seller's units made a day, what it can serve of a product delivered as it is made.
+    pub capacity: &'static str,
+    /// The way a seller makes its product by.
+    pub way: &'static str,
     pub price_weight: &'static str,
     pub distance_weight: &'static str,
     pub reach: &'static str,

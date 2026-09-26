@@ -5,13 +5,20 @@ use phx_world::Inspector;
 use super::Outcome;
 use crate::live_check;
 
-fn not_yet(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("firms produce from their plant once they decide what to make (S1.15)")
+/// The production family ran and found nothing, and something was made by a way.
+fn productions_by_way(w: Inspector<'_>) -> Outcome {
+    if let Some(f) = w.findings().iter().find(|f| f.family == "TEC.production") {
+        return Outcome::Fail(format!("day {}: {}", f.day.get(), f.detail));
+    }
+    if w.goods_days().iter().all(|(_, g)| g.made == 0) {
+        return Outcome::NotYet("no firm has made anything by its way yet");
+    }
+    Outcome::Pass
 }
 
 pub const LC_1_05: super::Check = live_check! {
     id: "LC-1-05",
     title: "every production names a way its producer knew, with the inputs it consumed as the way states",
     from_step: "S1.02",
-    check: not_yet,
+    check: productions_by_way,
 };

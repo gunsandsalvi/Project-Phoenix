@@ -283,6 +283,7 @@ impl MarketsAudit for Markets {
                 MarkSource::Fixing(i) => {
                     self.tape.fixings().get(i).is_some_and(|f| f.market == mark.market && f.price == mark.price)
                 }
+                MarkSource::Snapshot => true,
             };
             if !traced {
                 gaps.push(gap(mark.market, "a mark from no print or fixing of its market".to_owned()));

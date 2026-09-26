@@ -106,7 +106,7 @@ pub fn open_books(
     (d, facets, visits): (&mut Declarations, &[crate::registry::Facet], &[phx_core::AgendaTableSpec]),
     (pop, representation): (&[(phx_pop::kind::PopKindDecl, usize)], phx_pop::prims::Representation),
     compiled: &crate::compile::Compiled,
-    countries: &[OpeningCountry],
+    (countries, geo): (&[OpeningCountry], &phx_geo::GeoState),
     date: phx_id::Date,
     (phases, pool): (&[OpeningPhase], Option<&std::sync::Arc<phx_exec::Pool>>),
     mut report: GenReport,
@@ -156,6 +156,7 @@ pub fn open_books(
                     any
                 },
                 attachments: &attachments,
+                geo,
             };
             c.contribute(&mut opening);
             books.parties.compact_arenas();

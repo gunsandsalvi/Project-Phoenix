@@ -130,6 +130,8 @@ pub struct Fixing {
 pub enum MarkSource {
     Print(PrintId),
     Fixing(usize),
+    /// The opening's present value of the market's latest print, which the snapshot dates.
+    Snapshot,
 }
 
 /// The day's mark of a market, which every holder whose carrying basis marks to it reads.
@@ -231,7 +233,7 @@ impl Tape {
         set
     }
 
-    /// A market's mark for the day, from its print or a fixing.
+    /// A market's mark for the day, from its print or a fixing, or the opening's snapshot of a market not yet printed.
     pub fn mark(&mut self, mark: Mark) {
         let known = match mark.source {
             MarkSource::Print(id) => {
@@ -240,6 +242,8 @@ impl Tape {
             MarkSource::Fixing(i) => {
                 self.fixings.get(i).is_some_and(|f| f.market == mark.market && f.price == mark.price)
             }
+            // A snapshot stands for a market's print before the world's first, never after it.
+            MarkSource::Snapshot => matches!(self.last_print(mark.market), Missing::Absent),
         };
         if !known {
             violation!(clause = "MKT.12", "a mark from no print or fixing of its market", market = mark.market.get());

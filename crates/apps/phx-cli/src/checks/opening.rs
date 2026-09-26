@@ -84,3 +84,17 @@ pub const LC_0_26: Check = live_check! {
     from_step: "S0.16",
     check: liveness,
 };
+
+pub const LC_1_40: Check = live_check! {
+    id: "LC-1-40",
+    title: "The Stage 1 opening: day one passes every family (GEN.7)",
+    from_step: "S1.15",
+    check: first_day,
+};
+
+pub const LC_1_41: Check = live_check! {
+    id: "LC-1-41",
+    title: "The GEN report lists every balancing change and apportionment difference, and names every party",
+    from_step: "S1.15",
+    check: reported,
+};

@@ -83,6 +83,11 @@ impl Frame {
     }
 
     /// A product's least quantity traded, ten to its price's exponent.
+    /// Whether a product is delivered as it is made, a service.
+    pub(crate) fn delivered_at_once(&self, product: u16) -> bool {
+        self.at_once.get(usize::from(product)).copied().unwrap_or(false)
+    }
+
     pub(crate) fn base(&self, product: u16) -> i64 {
         self.traded(product).base
     }
@@ -158,6 +163,8 @@ pub(crate) struct MarketDay {
     pub trades: Vec<(Instruction, PartyId, InstrumentId, i64)>,
     pub shops: Vec<crate::retail::Shop>,
     pub sales: Vec<crate::retail::Sale>,
+    /// Each seller of a service at today's meetings, with the way it makes it by.
+    pub makers: BTreeMap<PartyId, u32>,
     pub ships: Vec<crate::freight::Ship>,
     pub booked: Vec<crate::freight::Booked>,
     pub freight: Vec<(Instruction, crate::freight::Booked)>,
@@ -173,6 +180,8 @@ pub(crate) struct MarketDay {
 pub struct GoodsDay {
     pub auctions: u64,
     pub extractions: u64,
+    /// The transformations that made units by a way.
+    pub made: u64,
     pub orders: u64,
     pub refused: u64,
     pub failed: u64,
@@ -372,6 +381,19 @@ impl World {
                 denom: Denom::Unit(unit),
                 kind: LegKind::Transformation { source: leg.source, cost: times(leg.cost, row.twins) },
             });
+            if let Source::Way(w) = leg.source {
+                for (product, took) in self.way_inputs(w, leg.product, leg.qty) {
+                    let good = self.good(GoodKey { product, grade: 0, zone });
+                    let unit = self.goods_frame.traded(product).unit;
+                    legs.push(LegRec {
+                        party: row.party,
+                        account: AccountRef::Instrument(good),
+                        qty: -times(took, row.twins),
+                        denom: Denom::Unit(unit),
+                        kind: LegKind::Transformation { source: leg.source, cost: 0 },
+                    });
+                }
+            }
         }
         let instruction = Instruction {
             id: self.books.ledger.next_id(day),
@@ -389,6 +411,9 @@ impl World {
         if t.legs.iter().any(|l| matches!(l.source, Source::Deposit(_))) {
             self.market_day.tally.extractions += 1;
         }
+        if t.legs.iter().any(|l| matches!(l.source, Source::Way(_))) {
+            self.market_day.tally.made += 1;
+        }
         let deposits = self.tables.iter_mut().find(|k| k.name == phx_geo::audit::DEPOSIT_TABLE);
         let Some(table) = deposits else {
             violation!(clause = "GEO.12", "units taken from a deposit the world keeps no table of");
@@ -398,6 +423,75 @@ impl World {
                 violation!(clause = "GEO.12", "a deposit depleted beyond what it holds", row = r.get(), units = q);
             }
         }
+    }
+
+    /// What a way takes of each input that can be held to finish units of its product, a twin's: its register's
+    /// statement for what is started, rounded as the technology declares. A way that makes another product than the
+    /// leg's is a contract broken.
+    #[clause("TEC.9", "GDS.2")]
+    pub(crate) fn way_inputs(&self, way: u32, product: u16, finished: i64) -> Vec<(u16, i64)> {
+        let tech =
+            self.own.iter().find(|(code, _)| *code == "TEC").and_then(|(_, s)| s.downcast_ref::<sys_tec::Technology>());
+        let Some(w) = tech.and_then(|t| t.way(if_base::WayId::new(way))) else {
+            violation!(clause = "TEC.9", "a production by a way the technology does not hold", way = way);
+        };
+        if w.product.index() != product {
+            violation!(clause = "TEC.9", "a production of a product its way does not make", way = way);
+        }
+        let started = sys_tec::ways::started_for(w, phx_num::QtyRaw::from_raw(finished));
+        w.inputs
+            .iter()
+            .filter(|(p, _)| tech.and_then(|t| sys_tec::products::get(&t.products, *p)).is_some_and(|d| d.storable))
+            .map(|(p, per)| (p.index(), sys_tec::ways::takes(started, *per).raw()))
+            .filter(|(_, took)| *took > 0)
+            .collect()
+    }
+
+    /// The most units of its product a party can make by a way at a zone from what it holds of the way's inputs that
+    /// can be held: the least over them, each the most finished whose take of it the holding covers, each twin of
+    /// an agent from its own share.
+    #[clause("TEC.9")]
+    pub(crate) fn way_most(&self, way: u32, party: PartyId, zone: ZoneId) -> Missing<i64> {
+        let tech =
+            self.own.iter().find(|(code, _)| *code == "TEC").and_then(|(_, s)| s.downcast_ref::<sys_tec::Technology>());
+        let Some((t, w)) = tech.and_then(|t| t.way(if_base::WayId::new(way)).map(|w| (t, w))) else {
+            return Missing::Absent;
+        };
+        let (place, slot) = self.books.parties.row(party);
+        let arenas = self.books.parties.holder(place);
+        let twins = i64::from(self.books.parties.unit(party));
+        let mut most: Missing<i64> = Missing::Absent;
+        for (p, per) in
+            w.inputs.iter().filter(|(p, _)| sys_tec::products::get(&t.products, *p).is_some_and(|d| d.storable))
+        {
+            let key = GoodKey { product: p.index(), grade: 0, zone };
+            let held = match self.books.ledger.goods.of(key) {
+                Missing::Present(g) => match phx_ledger::holding::holding(arenas, slot, g) {
+                    Missing::Present(h) => h.quantity.raw(),
+                    Missing::Absent => 0,
+                },
+                Missing::Absent => 0,
+            } / twins;
+            let takes =
+                |f: i64| sys_tec::ways::takes(sys_tec::ways::started_for(w, phx_num::QtyRaw::from_raw(f)), *per).raw();
+            // A take rounds up, so the most the holding covers is found by halving below a bound it cannot pass.
+            let scale = phx_num::price::pow10(if_base::consts::PER_UNIT_EXP);
+            if per.raw() <= 0 {
+                continue;
+            }
+            let bound = i128::from(held) * scale / i128::from(per.raw()) + 1;
+            let (mut low, mut high) = (0_i64, i64::try_from(bound).unwrap_or(i64::MAX));
+            while low < high {
+                let mid = low + (high - low) / 2 + (high - low) % 2;
+                if takes(mid) <= held { low = mid } else { high = mid - 1 }
+            }
+            let f = low * twins;
+            most = Missing::Present(match most {
+                Missing::Present(m) if m < f => m,
+                _ => f,
+            });
+        }
+        most
     }
 
     /// A leg taking units from a deposit checked: made, not used up, of the product the deposit gives, by a party
@@ -647,6 +741,58 @@ impl World {
                 Err(_) => self.market_day.tally.failed += 1,
             }
         }
+    }
+
+    /// The opening's snapshot of the goods' markets (GEN.5): each good the opening holds, in the market its product
+    /// meets in, marked at its product's opening price for a lot, and that price its public series' one print, from
+    /// which every method's first outlook is that price.
+    #[clause("GEN.5", "VAL.10", "MKT.12")]
+    pub(crate) fn snapshot_markets(&mut self, day: Day) -> Result<(), String> {
+        let prices = self.register.table1("GDS.opening_price")?.values().to_vec();
+        let scale = phx_rand::float::from_i64(
+            i64::try_from(phx_num::price::pow10(match self.register.decl_by_id("GDS.opening_price")?.value {
+                phx_core::ValueType::Table1 { exp, .. } => exp,
+                _ => return Err("`GDS.opening_price` is no table of one axis".to_owned()),
+            }))
+            .map_err(|e| e.to_string())?,
+        );
+        let standardised = self.register.table1("GDS.standardised")?.clone();
+        let keys: Vec<GoodKey> = self.books.ledger.goods.iter().map(|(k, _)| k).collect();
+        let methods = self.val_methods.len();
+        for key in keys {
+            let common = standardised.at(i64::from(key.product)).is_ok_and(|v| v == 1);
+            let name = if common { "GDS.commodities" } else { "GDS.between_firms" };
+            let Missing::Present(kind) = self.market_kinds.kind(phx_ledger::instruction::name_code(name)) else {
+                continue;
+            };
+            let Some(per_unit) = prices.get(usize::from(key.product)) else { continue };
+            let lot = phx_rand::float::from_i64(self.goods_frame.base(key.product));
+            let Some(price) =
+                phx_rand::float::floor_to_i64((phx_rand::float::from_i64(*per_unit) / scale * lot).round())
+            else {
+                return Err(format!("product {}'s opening price beyond a price", key.product));
+            };
+            let market = self.market_kinds.instance(&mut self.markets.made, kind, key.code());
+            self.markets.tape.mark(phx_market::print::Mark {
+                market,
+                day,
+                price: phx_num::PriceRaw::from_raw(price),
+                source: phx_market::print::MarkSource::Snapshot,
+            });
+            self.markets.public.insert(
+                market,
+                phx_market::markets::PublicSeries {
+                    day,
+                    last: price,
+                    before: price,
+                    sum: i128::from(price),
+                    count: 1,
+                    outlooks: vec![price; methods],
+                },
+            );
+        }
+        self.goods_marks();
+        Ok(())
     }
 
     /// Each good's mark where it stands, from the markets' marks, for the handlers' reads.

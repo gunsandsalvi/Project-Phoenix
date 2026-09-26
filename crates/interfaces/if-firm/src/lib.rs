@@ -12,7 +12,9 @@ use phx_core::{FactDef, ItemDecl};
 /// Every item the crate exports.
 pub const ITEMS: &[ItemDecl] = &[
     <known::Industry as FactDef>::ITEM,
+    <known::Product as FactDef>::ITEM,
     <known::Known as FactDef>::ITEM,
+    <known::WayUsed as FactDef>::ITEM,
     <facts::ExpectedSales as FactDef>::ITEM,
     <facts::SalesWidth as FactDef>::ITEM,
     <facts::DeliveredAtReview as FactDef>::ITEM,

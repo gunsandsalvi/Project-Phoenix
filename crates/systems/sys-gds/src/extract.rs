@@ -207,8 +207,7 @@ where
         else {
             continue;
         };
-        let Some(unit_cost) = cost.checked_mul(product.lot) else { continue };
-        let (price, outlook, unit_cost) = (from_i64(price), from_i64(outlook), from_i64(unit_cost));
+        let (price, outlook, unit_cost) = (from_i64(price), from_i64(outlook), from_i64(cost));
         let finite = matches!(right.remaining, Missing::Present(_));
         let mut made = 0;
         if rules::extract::works(price, unit_cost, outlook, (rate, horizon), finite) {

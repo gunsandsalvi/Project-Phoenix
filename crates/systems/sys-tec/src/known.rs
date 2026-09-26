@@ -1,8 +1,9 @@
 //! The ways each opening firm knows: its industry's public ways in its country, a large firm's as a fact of its
-//! row, a small firm's as its agent's attribute. Its own ways come later, by discovery, licence or imitation.
+//! row, a small firm's as its agent's attribute; and of them the one that makes its product, which it makes it by.
+//! Its own ways come later, by discovery, licence or imitation.
 
 use if_base::IndustryId;
-use if_firm::known::{Industry, KNOWN, Known as KnownFact};
+use if_firm::known::{Industry, KNOWN, Known as KnownFact, WAY, WayUsed};
 use phx_core::{Contribution, FactDef, Opening, OpeningCountry, OpeningPhase, PHYSICAL_STOCK};
 use phx_id::PartyId;
 use phx_ledger::books::Books;
@@ -19,6 +20,18 @@ use crate::technology::Technology;
 const FIRMS: &str = "FRM.firms";
 const SMALL_FIRMS: &str = "FRM.small_firms";
 const SMALL_FIRM: &str = "small_firm";
+/// Each firm with the product it makes, as the firms' opening draws it.
+const PRODUCTS_DRAWN: &str = "FRM.firm_products";
+
+/// The way of a public set that makes a product.
+fn way_making(tech: &Technology, set: u32, product: u64) -> u32 {
+    let ways = tech.sets.ways(if_base::WaySetId::new(set)).unwrap_or(&[]);
+    let found = ways.iter().find(|w| tech.way(**w).is_some_and(|x| u64::from(x.product.index()) == product));
+    let Some(w) = found else {
+        violation!(clause = "TEC.4", "a firm's product no public way of its industry makes", product = product);
+    };
+    w.index()
+}
 
 /// Gives every opening firm its industry's public ways.
 #[clause("TEC.4")]
@@ -58,7 +71,7 @@ impl Contribution for Known {
         PHYSICAL_STOCK
     }
     fn reads(&self) -> &'static [&'static str] {
-        &[FIRMS, SMALL_FIRMS]
+        &[FIRMS, SMALL_FIRMS, PRODUCTS_DRAWN]
     }
     fn writes(&self) -> &'static [&'static str] {
         &[]
@@ -83,20 +96,31 @@ impl Contribution for Known {
             violation!(clause = "FRM.23", "a world that keeps no small firm kind");
         };
         let Some(kd) = population.kinds.get(at) else { violation!(clause = "FRM.23", "a kind beyond the world's") };
-        let (Some(industry_at), Some(known_at)) =
-            (kd.decl.attr(if_firm::known::INDUSTRY.name), kd.decl.attr(KNOWN.name))
+        let (Some(industry_at), Some(known_at), Some(way_at)) =
+            (kd.decl.attr(if_firm::known::INDUSTRY.name), kd.decl.attr(KNOWN.name), kd.decl.attr(WAY.name))
         else {
             violation!(clause = "REP.41", "a small firm kind without its industry or its known ways");
         };
         let (industry, known) = (<Industry as FactDef>::ITEM.name, <KnownFact as FactDef>::ITEM.name);
+        let way = <WayUsed as FactDef>::ITEM.name;
         let industries = tech.products.industries.len();
         for c in *countries {
+            let products: std::collections::BTreeMap<PartyId, u64> =
+                drawn(books, PRODUCTS_DRAWN, c).into_iter().collect();
+            let product_of = |firm: PartyId| {
+                let Some(p) = products.get(&firm) else {
+                    violation!(clause = "FRM.1", "a firm with no product", firm = firm.get());
+                };
+                *p
+            };
             let (mut large, mut small) = (vec![0_u64; industries], vec![0_u64; industries]);
             for (firm, _) in drawn(books, FIRMS, c) {
                 let Missing::Present(i) = books.parties.fact(firm, industry) else {
                     violation!(clause = "TEC.4", "a firm with no industry", firm = firm.get());
                 };
-                books.parties.open_fact(firm, known, i64::from(public(&tech, c, i)));
+                let set = public(&tech, c, i);
+                books.parties.open_fact(firm, known, i64::from(set));
+                books.parties.open_fact(firm, way, i64::from(way_making(&tech, set, product_of(firm))));
                 tally(&mut large, i, 1);
             }
             let first = books.parties.first_cell_place();
@@ -108,7 +132,9 @@ impl Contribution for Known {
                 let (tables, _, _) = books.parties.cells_mut();
                 let agents = Population::table_mut::<SystemBacking>(tables, table);
                 let i = i64::from(agents.attr(slot, industry_at));
-                agents.set_attr(slot, known_at, public(&tech, c, i));
+                let set = public(&tech, c, i);
+                agents.set_attr(slot, known_at, set);
+                agents.set_attr(slot, way_at, way_making(&tech, set, product_of(firm)));
                 tally(&mut small, i, u64::from(agents.multiplicity(slot).get()));
             }
             report.distributions.push((

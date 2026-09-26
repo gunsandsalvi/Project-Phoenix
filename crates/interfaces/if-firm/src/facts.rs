@@ -48,7 +48,7 @@ declare_fact! {
 }
 
 declare_fact! {
-    /// What a unit costs the firm to make, in its currency per unit.
+    /// What a lot of its product, the units its price is posted for, costs the firm to make, in its currency.
     pub UnitCost = "FRM.unit_cost" {
         value: Money, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "FRM.14",
     }

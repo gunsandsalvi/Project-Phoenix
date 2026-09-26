@@ -378,6 +378,8 @@ pub struct LegDigest {
     pub source: Missing<Transformed>,
     /// Its instrument's issued amount before the leg, when the leg is on an instrument.
     pub issued: Missing<i64>,
+    /// The members its holder stands for: an agent's twins, one for an individual.
+    pub unit: u32,
 }
 
 /// What accounts for units a transformation made or used up: the way that made or used them, the deposit they were
@@ -447,6 +449,7 @@ pub struct MadeLeg {
     pub party: PartyId,
     pub denom: u32,
     pub qty: i64,
+    pub unit: u32,
 }
 
 /// The sink the apply routine feeds as it applies, which the audit implements and the assembly injects, so no kernel

@@ -6,8 +6,10 @@
 mod consts;
 pub mod decide;
 pub mod families;
+pub mod filed;
 pub mod industry;
 mod opening;
+pub mod produce;
 pub mod rules;
 pub mod small;
 
@@ -28,6 +30,46 @@ declare_kind! { pub SMALL_FIRM = "small_firm" { legal_form: "company", table: Ce
 declare_stream! { pub OpeningStream = "FRM.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub SmallStream = "FRM.opening_small" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub VisitStream = "FRM.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
+
+declare_prim! {
+    /// The return a firm's management requires of what it holds and does, a year, drawn for each firm.
+    pub REQUIRED_RETURN = "FRM.required_return" {
+        kind: Preference, value: Distribution { exp: 6 }, clause: "FRM.14", scope: Shared
+    }
+}
+
+/// The products' opening prices, a unit's in its currency's smallest units, which the goods' system declares.
+pub const OPENING_PRICE: &str = "GDS.opening_price";
+
+/// What the firms' opening state reads: the days of sales their stocks cover, the management's handles, and the
+/// hurdles their managements are drawn from.
+#[derive(Clone, Copy, Debug)]
+pub struct FilingPrims {
+    pub decide: decide::DecidePrims,
+    pub required_return: phx_core::Prim<phx_core::register::values::Distribution>,
+}
+
+impl FilingPrims {
+    /// The methods a firm may forecast by: each heuristic with each memory type.
+    fn methods(register: &phx_core::Register) -> u64 {
+        let types = register.count("VAL.memory_types").unwrap_or_else(|_| {
+            phx_num::violation!(clause = "VAL.23", "the memory types unread");
+        });
+        phx_rand::float::len_u64(phx_val::heuristic::MENU.len()) * types
+    }
+
+    /// A product's lot, the units its price is posted for: ten to its unit's price places.
+    fn lot(register: &phx_core::Register, product: u16) -> f64 {
+        let entry = register.products("TEC.products").ok().and_then(|p| p.get(usize::from(product)).cloned());
+        let exp = entry
+            .and_then(|e| match register.units().named(&e.unit) {
+                phx_num::Missing::Present(u) => register.units().decl(u).map(|d| d.price_exp),
+                phx_num::Missing::Absent => None,
+            })
+            .unwrap_or_else(|| phx_num::violation!(clause = "GDS.1", "a product in an undeclared unit"));
+        libm::pow(consts::DECADE, f64::from(exp))
+    }
+}
 
 /// The region a small firm is sited in.
 pub const REGION: AttrDecl = AttrDecl { name: "FRM.region", values: if_pop::consts::REGIONS, clause: "REP.41" };
@@ -68,6 +110,7 @@ declare_prim! {
 #[derive(Debug)]
 pub struct Own {
     management: decide::Management,
+    plant: produce::Plant,
 }
 
 impl Own {
@@ -75,7 +118,22 @@ impl Own {
     pub fn management(&self) -> &decide::Management {
         &self.management
     }
+
+    #[must_use]
+    pub fn plant(&self) -> &produce::Plant {
+        &self.plant
+    }
 }
+
+/// Units a firm makes by its way: the cost of what the way uses up an expense as it is used, so what it makes carries
+/// no cost of its own and its sale's revenue is the margin over the inputs expensed.
+pub const MADE: phx_ledger::instruction::ReasonDecl = phx_ledger::instruction::ReasonDecl {
+    name: "FRM made",
+    order: 2,
+    paid: phx_ledger::instruction::Effect::Expense,
+    received: phx_ledger::instruction::Effect::Asset,
+    held: phx_num::Missing::Present((phx_ledger::instruction::Effect::Expense, phx_ledger::instruction::Effect::Asset)),
+};
 
 declare_prim! {
     /// Days a firm may leave a payment due unpaid before it is in default of payment and liquidated: the insolvency
@@ -104,6 +162,8 @@ impl System for Frm {
         };
         d.claim(<if_firm::known::Industry as FactDef>::ITEM.name);
         d.facet(FacetDecl { fact: <if_firm::known::Industry as FactDef>::ITEM.name, kind: FIRM.name });
+        d.claim(<if_firm::known::Product as FactDef>::ITEM.name);
+        d.facet(FacetDecl { fact: <if_firm::known::Product as FactDef>::ITEM.name, kind: FIRM.name });
         d.kind(SMALL_FIRM);
         d.stream(SmallStream::DECL);
         let small = small::SmallPrims {
@@ -112,10 +172,20 @@ impl System for Frm {
             deposit_share: prims.deposit_share,
             industries: prims.industries,
         };
-        d.pop_kind(SMALL_FIRM.name).attr(REGION).attr(SIZE).attr(if_firm::known::INDUSTRY).sited_by(REGION.name);
+        d.pop_kind(SMALL_FIRM.name)
+            .attr(REGION)
+            .attr(SIZE)
+            .attr(if_firm::known::INDUSTRY)
+            .attr(if_firm::known::PRODUCT)
+            .sited_by(REGION.name);
         d.contribution(Box::new(Parties { prims }));
         d.contribution(Box::new(SmallFirms { prims: small }));
-        declare_decisions(d);
+        let decide = declare_decisions(d);
+        let filing = FilingPrims { decide, required_return: d.prim(&REQUIRED_RETURN) };
+        d.contribution(Box::new(filed::Declared));
+        d.contribution(Box::new(filed::Products));
+        d.contribution(Box::new(filed::Stocks { prims: filing }));
+        d.contribution(Box::new(filed::Filed { prims: filing }));
         d.family(Box::new(families::Revenue));
     }
 
@@ -133,7 +203,7 @@ pub type TablePrim = phx_core::Prim<Table2>;
 
 /// The firms' state, a large firm's as facts of its row and a small firm's as positions of its agent, and their
 /// decisions on the agenda: the price's attention on each firm's production schedule, the price at its reviews.
-fn declare_decisions(d: &mut Declarations) {
+fn declare_decisions(d: &mut Declarations) -> decide::DecidePrims {
     let _ = d.prim::<Count>(&INSOLVENCY_GRACE_DAYS);
     for kind in [FIRM.name, SMALL_FIRM.name] {
         d.insolvency(InsolvencyDecl { kind, grace_days: INSOLVENCY_GRACE_DAYS.id, clause: "FRM.15" });
@@ -148,8 +218,12 @@ fn declare_decisions(d: &mut Declarations) {
         small.position(p);
     }
     let prims = decide::DecidePrims::declare(d);
-    d.compile(Box::new(move |register, _| {
-        Ok(Box::new(Own { management: decide::Management::compile(&prims, register)? }))
+    d.compile(Box::new(move |register, countries| {
+        let adjustment = prims.adjustment_days.shared(register).get();
+        Ok(Box::new(Own {
+            management: decide::Management::compile(&prims, register)?,
+            plant: produce::Plant::compile(register, countries, adjustment)?,
+        }))
     }));
     let schedule = Cadence::Schedule { days: decide::PRODUCTION_DAYS.id, runs_on: RunsOn::Business };
     let attention = Cadence::Attention { position: <if_firm::facts::PriceAttention as FactDef>::ITEM.name };
@@ -161,4 +235,5 @@ fn declare_decisions(d: &mut Declarations) {
     ] {
         d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes: &[], clause: "REP.21" });
     }
+    prims
 }

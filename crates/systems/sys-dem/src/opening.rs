@@ -591,7 +591,8 @@ impl Contribution for Households {
     }
 
     fn contribute(&self, opening: &mut Opening<'_>) {
-        let Opening { ctx, day, date, calendar, register, countries, report, books, population, attachments } = opening;
+        let Opening { ctx, day, date, calendar, register, countries, report, books, population, attachments, .. } =
+            opening;
         let Some(books) = books.downcast_mut::<Books>() else {
             violation!(clause = "GEN.3", "an opening handed something other than the world's books");
         };

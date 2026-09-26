@@ -130,7 +130,7 @@ fn open(
         (d, facets, &crate::visits::specs(visits)),
         pop,
         c,
-        &countries,
+        (&countries, geo),
         kernel.day_zero.shared(&c.register),
         (phases, pool),
         report,
@@ -721,6 +721,8 @@ pub fn assemble(
     world.open_player().map_err(one)?;
     // Every agent the opening began, the player's among them, is drawn its first bookings from the day after it.
     world.book_changed(world.today, SubStep::S10b.ordinal());
+    let today = world.today;
+    world.snapshot_markets(today).map_err(one)?;
     world.labour_rebuild();
     world.credit_rebuild();
     world.state_rebuild();

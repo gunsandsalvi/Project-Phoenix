@@ -330,6 +330,7 @@ pub fn inject_production(target: &mut dyn InjectTarget, way: u32) -> Result<(), 
         worn: Missing::Absent,
         source: Missing::Absent,
         issued: Missing::Absent,
+        unit: 1,
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())
@@ -375,6 +376,7 @@ fn stray_leg(target: &mut dyn InjectTarget, before: i64, paired: bool, money: bo
         worn: Missing::Absent,
         source: Missing::Absent,
         issued: Missing::Absent,
+        unit: 1,
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())
@@ -401,6 +403,7 @@ pub fn inject_wear(target: &mut dyn InjectTarget, chain: u32) -> Result<(), Stri
         worn: Missing::Present((chain, 1)),
         source: Missing::Absent,
         issued: Missing::Absent,
+        unit: 1,
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())
@@ -450,6 +453,7 @@ pub fn inject_good(target: &mut dyn InjectTarget) -> Result<(), String> {
         worn: Missing::Absent,
         source: Missing::Absent,
         issued: Missing::Present(issued),
+        unit: 1,
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())

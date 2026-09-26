@@ -47,7 +47,7 @@ impl Digests {
         if let phx_num::Missing::Present(way) = leg.made {
             let made =
                 self.made.entry(instruction).or_insert_with(|| phx_core::Made { instruction, way, legs: Vec::new() });
-            made.legs.push(phx_core::MadeLeg { party: leg.party, denom: leg.denom, qty: leg.qty });
+            made.legs.push(phx_core::MadeLeg { party: leg.party, denom: leg.denom, qty: leg.qty, unit: leg.unit });
         }
         if let phx_num::Missing::Present((chain, class)) = leg.worn {
             let worn = self.worn.entry(instruction).or_insert_with(|| phx_core::Worn { instruction, legs: Vec::new() });

@@ -6,6 +6,7 @@ mod consts;
 pub mod extract;
 pub mod families;
 pub mod markets;
+pub mod rights;
 pub mod rules;
 
 use phx_core::handler::HandlerDecl;
@@ -20,6 +21,24 @@ use phx_num::{Count, Missing};
 
 declare_stream! { pub LotsStream = "GDS.lots" { purpose: Meeting, keyed: false, clause: "MKT.3" } }
 declare_stream! { pub VisitStream = "GDS.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
+declare_stream! { pub OpeningStream = "GDS.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+
+declare_prim! {
+    /// Each product's price at the opening, a unit's in its currency's smallest units, by the product's place: the
+    /// snapshot's latest print of it.
+    pub OPENING_PRICE = "GDS.opening_price" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 2 }, clause: "GEN.5", scope: Shared
+    }
+}
+
+/// A right held from the opening: capital on both sides, since it opens the books.
+pub const RIGHTS_OPENED: ReasonDecl = ReasonDecl {
+    name: "GDS rights opened",
+    order: 0,
+    paid: Effect::Equity,
+    received: Effect::Equity,
+    held: Missing::Absent,
+};
 
 declare_prim! {
     /// The upper bounds of each extracted product's grade classes (rows, the products' places; columns, the classes),
@@ -108,7 +127,9 @@ impl Contribution for Declared {
     }
 
     fn contribute(&self, opening: &mut Opening<'_>) {
-        let _ = phx_ledger::books::of(opening).ledger.reasons.declare(EXTRACTED);
+        let reasons = &mut phx_ledger::books::of(opening).ledger.reasons;
+        let _ = reasons.declare(EXTRACTED);
+        let _ = reasons.declare(RIGHTS_OPENED);
     }
 }
 
@@ -158,7 +179,10 @@ impl System for Gds {
         let _ = d.prim::<Count>(&SPOILAGE_DAYS);
         d.stream(LotsStream::DECL);
         d.stream(VisitStream::DECL);
+        d.stream(OpeningStream::DECL);
+        let _ = d.prim::<Table1>(&OPENING_PRICE);
         d.contribution(Box::new(Declared));
+        d.contribution(Box::new(rights::Rights));
         d.family(Box::new(families::Goods));
         d.market(Box::new(markets::COMMODITIES));
         d.market(Box::new(markets::BETWEEN_FIRMS));

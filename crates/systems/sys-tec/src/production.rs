@@ -1,5 +1,6 @@
 //! The family of production: every unit made came by a registered way, from the inputs that way states for what
-//! was started, and from nothing else.
+//! was started, and from nothing else. An input that cannot be held, a service, is used as it is delivered to the
+//! producer and is never a leg of its production.
 
 use if_base::WayId;
 use phx_core::{
@@ -35,14 +36,23 @@ pub fn gaps(tech: &Technology, made: &Made) -> Vec<String> {
         made.legs.iter().filter(|l| l.denom == denom && (l.qty > 0) == positive).map(|l| l.qty).sum()
     };
     let finished = sum(output, true);
-    let started = crate::ways::started_for(way, QtyRaw::from_raw(finished));
+    // A holder of many twins runs the way once for each, each twin's take rounded up alone.
+    let unit = i64::from(made.legs.iter().find(|l| l.denom == output && l.qty > 0).map_or(1, |l| l.unit));
+    if unit <= 0 || finished % unit != 0 {
+        return vec![format!(
+            "instruction {} finished {finished} by way {}, no whole share for its maker's {unit} twins",
+            made.instruction, made.way
+        )];
+    }
+    let started = crate::ways::started_for(way, QtyRaw::from_raw(finished / unit));
     let mut out = Vec::new();
     let mut named = vec![output];
-    for (product, per) in &way.inputs {
+    let held = |p: if_base::ProductId| crate::products::get(&tech.products, p).is_some_and(|d| d.storable);
+    for (product, per) in way.inputs.iter().filter(|(p, _)| held(*p)) {
         let Some(denom) = code(*product) else { continue };
         named.push(denom);
         let took = -sum(denom, false);
-        let states = crate::ways::takes(started, *per).raw();
+        let states = crate::ways::takes(started, *per).raw() * unit;
         if took != states {
             out.push(format!(
                 "instruction {} finished {finished} by way {} and used {took} of product {} where the way states {states}",

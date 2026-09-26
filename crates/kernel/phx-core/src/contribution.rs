@@ -228,6 +228,8 @@ pub struct Opening<'a> {
     pub population: &'a mut dyn Any,
     /// The systems' draws of the households' lines, in the order of their systems.
     pub attachments: &'a [(&'static str, Box<dyn Any + Send + Sync>)],
+    /// The map the world opens on, handed as its own type so the kernel below it need not name it.
+    pub geo: &'a dyn Any,
 }
 
 impl core::fmt::Debug for Opening<'_> {

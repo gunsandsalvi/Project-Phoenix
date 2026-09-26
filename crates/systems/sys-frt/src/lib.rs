@@ -148,7 +148,7 @@ pub const CARRIAGE: FreightKind = FreightKind {
     },
     carriers: CARRIERS,
     mode: <if_firm::freight::Mode as FactDef>::ITEM.name,
-    sells: <if_firm::known::Industry as FactDef>::ITEM.name,
+    sells: <if_firm::known::Product as FactDef>::ITEM.name,
     price: <if_firm::facts::Price as FactDef>::ITEM.name,
     tech,
     paid: CARRIED.name,

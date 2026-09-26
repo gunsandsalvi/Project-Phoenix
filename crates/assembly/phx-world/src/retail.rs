@@ -33,6 +33,12 @@ pub(crate) struct RetailBound {
     pub reach: u64,
 }
 
+/// A seller at a meeting: its party, its product, its price, capacity and way as read, its zone and its twins.
+type SellerRow = (PartyId, u16, [Missing<i64>; 3], ZoneId, i64);
+
+/// The reason the firms make what they make under, a service as it is sold among them.
+const MADE: &str = "FRM made";
+
 /// The kinds of market goods meet buyers and carriers in, with the one set of counterparties a search reaches.
 #[derive(Clone, Debug)]
 pub(crate) struct TradeKinds {
@@ -63,7 +69,7 @@ pub(crate) struct Sale {
     pub market: MarketId,
     pub good: InstrumentId,
     pub matched: Match,
-    pub cover: phx_ledger::covered::Covered,
+    pub cover: Missing<phx_ledger::covered::Covered>,
 }
 
 /// Every retail kind the systems declare, bound to its market kind, its sellers' tables and its primitives; every
@@ -163,7 +169,7 @@ impl World {
     /// with no price, or no whole lot, has none.
     fn stalls(&mut self, bound: &RetailBound, products: &BTreeSet<u16>) -> BTreeMap<u16, Vec<Placed>> {
         let first = self.books.parties.first_cell_place();
-        let mut read: Vec<(Rows, phx_id::Slot, u16, Missing<i64>)> = Vec::new();
+        let mut read: Vec<(Rows, phx_id::Slot, u16, [Missing<i64>; 3])> = Vec::new();
         for &(place, individuals) in &bound.sellers {
             let agents = || {
                 let Some(k) = place.checked_sub(first) else {
@@ -191,14 +197,15 @@ impl World {
                     violation!(clause = "TEC.4", "a seller's product beyond the products' places", value = sells);
                 };
                 if products.contains(&product) {
-                    read.push((Rows { place, individuals }, slot, product, store.read(bound.decl.price, slot)));
+                    let facts = [bound.decl.price, bound.decl.capacity, bound.decl.way].map(|f| store.read(f, slot));
+                    read.push((Rows { place, individuals }, slot, product, facts));
                 }
             }
         }
-        let rows: Vec<(PartyId, u16, Missing<i64>, ZoneId)> = read
+        let rows: Vec<SellerRow> = read
             .into_iter()
-            .filter_map(|(rows, slot, product, price)| {
-                self.goods_row(rows, slot).map(|r| (r.party, product, price, r.zone))
+            .filter_map(|(rows, slot, product, facts)| {
+                self.goods_row(rows, slot).map(|r| (r.party, product, facts, r.zone, r.twins))
             })
             .collect();
         let mut pending: BTreeMap<(PartyId, InstrumentId), i64> = BTreeMap::new();
@@ -206,9 +213,26 @@ impl World {
             *pending.entry((m.seller, *good)).or_insert(0) += m.qty;
         }
         let mut out: BTreeMap<u16, Vec<Placed>> = BTreeMap::new();
-        for (seller, product, price, zone) in rows {
+        for (seller, product, [price, capacity, way], zone, twins) in rows {
             let Missing::Present(price) = price else { continue };
             let base = self.goods_frame.base(product);
+            // A service is made as it is sold, so its stall is what its maker's staff can serve today.
+            if self.goods_frame.delivered_at_once(product) {
+                let (Missing::Present(rate), Missing::Present(way)) = (capacity, way) else { continue };
+                let (Some(capacity), Ok(way)) = (rate.checked_mul(twins), u32::try_from(way)) else { continue };
+                let units = match self.way_most(way, seller, zone) {
+                    Missing::Present(m) if m < capacity => m,
+                    _ => capacity,
+                };
+                if price > 0 && units >= base {
+                    let good = self.good(GoodKey { product, grade: 0, zone });
+                    self.market_day.makers.insert(seller, way);
+                    let stall =
+                        Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: units - units % base };
+                    out.entry(product).or_default().push((stall, zone, good));
+                }
+                continue;
+            }
             let Missing::Present(good) = self.books.ledger.goods.of(GoodKey { product, grade: 0, zone }) else {
                 continue;
             };
@@ -358,6 +382,59 @@ impl World {
         out
     }
 
+    /// A service sold made in the purchase that sells it: its units by its maker's way, and what the way takes of the
+    /// inputs its maker holds; nothing for a good sold from stock.
+    fn made_at_sale(&mut self, seller: PartyId, (key, good): (GoodKey, InstrumentId), qty: i64) -> Vec<LegRec> {
+        let Some(way) = self.market_day.makers.get(&seller).copied() else { return Vec::new() };
+        let unit = self.books.ledger.instruments.get(good).unit;
+        let source = Source::Way(way);
+        // Each twin of a maker makes its own share, whole, so what they make together is a whole share for each.
+        let twins = i64::from(self.books.parties.unit(seller));
+        let each = qty / twins + i64::from(qty % twins != 0);
+        let mut legs = vec![LegRec {
+            party: seller,
+            account: phx_ledger::instruction::AccountRef::Instrument(good),
+            qty: each * twins,
+            denom: phx_ledger::instruction::Denom::Unit(unit),
+            kind: LegKind::Transformation { source, cost: 0 },
+        }];
+        for (product, per_twin) in self.way_inputs(way, key.product, each) {
+            let took = per_twin * twins;
+            let input = self.good(GoodKey { product, grade: 0, zone: key.zone });
+            let unit = self.books.ledger.instruments.get(input).unit;
+            legs.push(LegRec {
+                party: seller,
+                account: phx_ledger::instruction::AccountRef::Instrument(input),
+                qty: -took,
+                denom: phx_ledger::instruction::Denom::Unit(unit),
+                kind: LegKind::Transformation { source, cost: 0 },
+            });
+        }
+        legs
+    }
+
+    /// A service's making applied, under the firms' reason for what they make: whether its maker had the inputs.
+    fn make_for_sale(&mut self, day: Day, legs: Vec<LegRec>) -> bool {
+        let Missing::Present(reason) = self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(MADE)) else {
+            violation!(clause = "SET.1", "a service made under a reason never declared");
+        };
+        let instruction = Instruction {
+            id: self.books.ledger.next_id(day),
+            reason,
+            trade_day: day,
+            settle_day: day,
+            legs,
+            pays: Missing::Absent,
+            covers: Vec::new(),
+        };
+        let applied = self.books.apply(phx_ledger::apply::ApplyAt::Day(SubStep::S6d), instruction, self.audit.stream());
+        match applied {
+            Ok(_) => self.market_day.tally.made += 1,
+            Err(_) => self.market_day.tally.failed += 1,
+        }
+        applied.is_ok()
+    }
+
     /// Each sale's units covered for its buyer until its purchase settles.
     fn cover_sales(&mut self, market: MarketId, stalls: &[Placed], sales: Vec<Match>) {
         for m in sales {
@@ -365,6 +442,10 @@ impl World {
                 violation!(clause = "SRV.5", "a sale by no seller at the meeting", party = m.seller.get());
             };
             let good = *good;
+            if self.market_day.makers.contains_key(&m.seller) {
+                self.market_day.sales.push(Sale { market, good, matched: m, cover: Missing::Absent });
+                continue;
+            }
             let (place, slot) = self.books.parties.row(m.seller);
             let held = match phx_ledger::holding::holding(self.books.parties.holder(place), slot, good) {
                 Missing::Present(h) => h.quantity.raw(),
@@ -375,7 +456,7 @@ impl World {
             let Ok(cover) = self.books.ledger.covers.cover(m.seller, good, Qty::new(m.qty, unit), held, pledged) else {
                 violation!(clause = "REG.10", "a sale of units its seller holds no more", party = m.seller.get());
             };
-            self.market_day.sales.push(Sale { market, good, matched: m, cover });
+            self.market_day.sales.push(Sale { market, good, matched: m, cover: Missing::Present(cover) });
         }
     }
 
@@ -383,7 +464,8 @@ impl World {
     /// units used up at the till by the purchase that names the buyer, their cost the cost of what it sold.
     #[clause("SRV.6", "SET.1", "SET.4", "GDS.2")]
     pub(crate) fn retail_trade(&mut self, day: Day) {
-        for s in std::mem::take(&mut self.market_day.sales) {
+        let sales = std::mem::take(&mut self.market_day.sales);
+        for s in sales {
             let Buyer::Party(buyer) = s.matched.buyer else {
                 violation!(clause = "SRV.5", "a retail sale to no party", market = s.market.get());
             };
@@ -403,13 +485,19 @@ impl World {
                 capacity_exceeded!("a purchase's money", i64::MAX, s.matched.qty);
             };
             let instrument = self.books.ledger.instruments.get(s.good);
-            let mut legs = vec![LegRec {
+            // A service is made before the purchase that sells it uses it up, by an instruction of its own.
+            let made = self.made_at_sale(s.matched.seller, (key, s.good), s.matched.qty);
+            if !made.is_empty() && !self.make_for_sale(day, made) {
+                continue;
+            }
+            let mut legs = vec![];
+            legs.push(LegRec {
                 party: s.matched.seller,
                 account: AccountRef::Instrument(s.good),
                 qty: -s.matched.qty,
                 denom: Denom::Unit(instrument.unit),
                 kind: LegKind::Transformation { source: Source::Purchase(buyer.get()), cost: 0 },
-            }];
+            });
             self.books.pay_into(buyer, s.matched.seller, (amount, instrument.ccy), &mut legs);
             self.consumption_tax(s.matched.seller, (amount, instrument.ccy), &mut legs);
             let instruction = Instruction {
@@ -419,9 +507,13 @@ impl World {
                 settle_day: day,
                 legs,
                 pays: Missing::Absent,
-                covers: vec![s.cover],
+                covers: match s.cover {
+                    Missing::Present(c) => vec![c],
+                    Missing::Absent => Vec::new(),
+                },
             };
             self.market_day.trades.push((instruction, s.matched.seller, s.good, s.matched.qty));
         }
+        self.market_day.makers.clear();
     }
 }

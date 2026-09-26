@@ -101,3 +101,11 @@ decided_by = "the trade's convention"
 source = "measured"
 source_ref = "The price points within a decade, each over its top: the round prices and the nine-endings that retail prices bunch at, 9 being the most common final digit (Levy, Lee, Chen, Kauffman and Bergen, 2011, Price points and price rigidity, Review of Economics and Statistics 93(4)); a posted price is a point times a power of ten."
 value = [100, 109, 119, 129, 139, 149, 159, 169, 179, 189, 199, 219, 249, 279, 299, 349, 399, 449, 499, 549, 599, 649, 699, 799, 899, 999]
+
+[[primitive]]
+id = "FRM.required_return"
+kind = "PREFERENCE"
+owner = "FRM"
+source = "measured"
+source_ref = "The return a firm's management requires a year, its hurdle rate, drawn for each firm: normal, with the mean of 15% that US chief financial officers report (Jagannathan, Matsa, Meier and Tarhan 2016, Why do firms use high discount rates?, Journal of Financial Economics 120(3), table 1) and a spread of 5 points, near the interquartile range of their reported rates over its width in a normal's."
+value = { family = "normal", discretisation = "equal_shares", mean = "0.15", sd = "0.05" }

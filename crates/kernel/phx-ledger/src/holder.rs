@@ -16,6 +16,8 @@ pub trait HolderArenas {
         false
     }
     fn table(&self) -> TableId;
+    /// The members a holder stands for: an agent's twins, one for an individual.
+    fn members(&self, holder: Slot) -> u32;
     /// The kind of party the table holds, which a line side's declared holder kinds are checked against.
     fn kind(&self) -> &'static str;
     fn party(&self, holder: Slot) -> PartyId;
@@ -58,6 +60,10 @@ fn word(n: usize) -> u32 {
 }
 
 impl<B: Backing> HolderArenas for KindTable<B> {
+    fn members(&self, holder: Slot) -> u32 {
+        self.weight_at(holder)
+    }
+
     fn table(&self) -> TableId {
         self.id()
     }

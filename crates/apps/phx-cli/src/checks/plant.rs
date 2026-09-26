@@ -35,7 +35,7 @@ pub const LC_1_10: super::Check = live_check! {
 };
 
 fn no_output(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("firms produce from their plant from S1.15")
+    Outcome::NotYet("output is bounded by its staff; the plant's capacity bounds it with the firm lifecycle (S2.03)")
 }
 
 pub const LC_1_11: super::Check = live_check! {
@@ -46,7 +46,7 @@ pub const LC_1_11: super::Check = live_check! {
 };
 
 fn no_investment(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("firms invest from S1.15")
+    Outcome::NotYet("firms invest with the firm lifecycle (S2.03)")
 }
 
 pub const LC_1_12: super::Check = live_check! {

@@ -190,6 +190,8 @@ pub const CHECKS: &[Check] = &[
     stats::LC_1_37,
     stats::LC_1_38,
     stats::LC_1_39,
+    opening::LC_1_40,
+    opening::LC_1_41,
     births::LC_1_49,
     stats::LC_1_51,
     firms::LC_1_45,

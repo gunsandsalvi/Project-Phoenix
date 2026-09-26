@@ -48,8 +48,10 @@ impl World {
                     day,
                     SubStep::S5c.ordinal(),
                 );
-                let Some(phase) =
-                    u16::try_from(phx_rand::uniform::below_u64(&mut d, u64::from(days))).ok().and_then(Period::days)
+                // The first review falls on one of the period's days after today, so a phase is never nought.
+                let Some(phase) = u16::try_from(phx_rand::uniform::below_u64(&mut d, u64::from(days)) + 1)
+                    .ok()
+                    .and_then(Period::days)
                 else {
                     violation!(clause = "LAB.17", "a review's phase beyond a period", days = days);
                 };
