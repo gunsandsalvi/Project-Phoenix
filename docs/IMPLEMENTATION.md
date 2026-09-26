@@ -5975,6 +5975,18 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
   FRM.16) — with the plan's unit tests. The loss a price gap costs is read from the firm's own markup: at a markup μ
   over cost its demand's elasticity is (1 + μ) ÷ μ, and a log gap x loses R·x² ÷ (2μ) of revenue R, which sets both
   the menu-cost comparison and the attention's curvature, so neither needs a primitive of its own.
+- **The firm's state and its decisions on the agenda** *(built, sub-step b3)*: `if-firm/src/facts.rs` names what a
+  firm holds and expects — output stock, sales outlook (mean, width) and sales since the last review, unit cost, markup,
+  posted price, output rate, price attention and the cost of an hour of its staff — a large firm's as facts of its row
+  and a small firm's as positions of its agent, one writer, FRM. `sys-frm/src/decide.rs` declares the firms' visits:
+  on each firm's production schedule (`FRM.production_days`, business days) its price's attention (REP.38), from its
+  revenue, markup and sales outlook's width against its staff's review hours at their wage; and on each review drawn
+  at that attention (REP.21) its markup's update and the point it posts (FRM.5, REP.34), moved only when the gain
+  exceeds the staff's hours a change takes. The management's values (`data/shared/FRM.toml`) are one type for every
+  firm until management types are drawn (F-094). A firm's opening state — its sales outlook, stock, unit cost, markup,
+  price and wage per hour — is its latest filed accounts, which S1.15 draws (GEN.5); until then every firm holds none
+  and its decisions wait, as they must: nothing is read as zero. Production's decision (FRM.4) waits for its capacity
+  (S1.04) and its financing rate (S1.09), which it reads.
 - **Outlooks in the day** (S1.01): the firms' stances are the first parties' methods and their attention the first
   review intensities, so the public-series outlooks at 5a (VAL.23), once per method in use and series published, the
   attention exposure at visits (REP.21, REP.38) and the wake of a surprise beyond its sensitivity (REP.35, architecture
@@ -16288,6 +16300,7 @@ the final build within the budget on the phone.
 | F-091 | S1.02 | data, 2026-09-26 | The input-output tables report extraction as one product (CPA B), so metal ore, coal, oil and gas and building stone share its structure per dollar, each taken by the users of its resource (basic metals ore; refining and chemicals oil and gas; electricity coal; minerals and construction stone; any other user oil and gas): the hours and plant a tonne needs differ by resource only through its price | the tables' 64 products do not split mining | a supply-use table with the mining divisions (B05-B09), or the United States' detailed benchmark tables | open |
 | F-092 | S1.02 | data, 2026-09-26 | The FIGARO tables report seven economies of the emerging group and one of the developing group (India), fewer than the ten a group's measure needs, so those groups' ways are `estimated` from them | FIGARO covers the EU and eighteen other economies | the OECD's inter-country tables (76 economies) when their files can be fetched, or national tables of the group's economies | open |
 | F-093 | S1.03 | data, 2026-09-26 | The OECD's business statistics leave out agriculture, so its firms are taken as spread over the size classes as all firms are (`FRM.industry_by_size`): about a tenth of the developed group's largest firms are farms, where the business registers show far fewer; and the size tilt of every industry is the OECD's 46 reporting economies', all but eight developed, for the emerging and developing groups too | the OECD's structural statistics cover industry and services; agricultural censuses count holdings by area, not by persons employed | Eurostat's farm structure survey by labour force size class, or the agricultural censuses' holdings by workers (FAO World Programme for the Census of Agriculture); the World Bank Enterprise Surveys by size for the other groups | open |
+| F-094 | S1.03 | data, 2026-09-26 | The firms' management values — the production schedule, the markup's two speeds, the pressure's curvature, the staff hours of a review and of a price change — are one assumed type for every firm (`data/shared/FRM.toml`); only the stock cover (the United States' inventory-to-sales ratio) and the adjustment time (Blinder and Maccini's survey) are measured | no source gives the distribution of these across firms; the review and menu costs are case studies of one manufacturer and of supermarkets | management type sets drawn at the opening (S1.15) from the price-change frequency and size reads (FRM.19, SRV.7) once they can be compared with the micro price data (Nakamura and Steinsson 2008) | open |
 
 ---
 

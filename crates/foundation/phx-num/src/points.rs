@@ -38,6 +38,12 @@ impl PointTable {
         (indexable && increasing).then(|| PointTable { raw: raw.into_boxed_slice() })
     }
 
+    /// Every point, rising.
+    #[must_use]
+    pub fn points(&self) -> &[i64] {
+        &self.raw
+    }
+
     #[must_use]
     pub fn point(&self, i: PointIdx) -> i64 {
         match self.raw.get(usize::from(i.0)) {

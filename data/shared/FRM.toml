@@ -32,3 +32,80 @@ owner = "FRM"
 source = "assumed"
 source_ref = "Plant wears out at about 5% a year, near the average rate of the capital stock in national accounts (Penn World Table's average depreciation rate is 4-5%), until the classes of capital goods are declared with their own lives."
 value = "0.05"
+
+# How firms decide (spec FRM.4, FRM.5, REP.21, REP.34, REP.38): their production schedule, the stock they aim for and
+# how fast they close a gap to it, how their markup and price move, what a review and a price change cost their staff,
+# and the price points of their trades.
+
+[[primitive]]
+id = "FRM.production_days"
+kind = "PREFERENCE"
+owner = "FRM"
+source = "assumed"
+source_ref = "Firms plan production week by week: the weekly time buckets of master production scheduling in manufacturing planning practice (Vollmann, Berry, Whybark and Jacobs, 2005, Manufacturing Planning and Control for Supply Chain Management, ch. 6), assumed for every firm until management types are drawn."
+value = 7
+
+[[primitive]]
+id = "FRM.stock_cover_days"
+kind = "PREFERENCE"
+owner = "FRM"
+source = "measured"
+source_ref = "The stock a firm aims to hold, in days of sales: 42, the United States' total business inventories-to-sales ratio of about 1.38 months over 2015-2019 (Census Bureau, Manufacturing and Trade Inventories and Sales) at 30.4 days a month."
+value = 42
+
+[[primitive]]
+id = "FRM.adjustment_days"
+kind = "PREFERENCE"
+owner = "FRM"
+source = "estimated"
+source_ref = "Days over which a firm closes the gap to the stock it aims for: 152, five months, the speed of adjustment of about a fifth a month that the studies of manufacturers' finished-goods inventories surveyed by Blinder and Maccini (1991, Taking stock: a critical assessment of recent research on inventories, Journal of Economic Perspectives 5(1)) find."
+value = 152
+
+[[primitive]]
+id = "FRM.markup_sales_speed"
+kind = "PREFERENCE"
+owner = "FRM"
+source = "assumed"
+source_ref = "The share of a sales surprise a firm's markup takes in at a review: 0.05, so a month of sales a tenth above expected raises the markup half a point; assumed until management types are drawn and measured against the frequency and size of price changes (FRM.19, SRV.7)."
+value = "0.05"
+
+[[primitive]]
+id = "FRM.markup_seen_speed"
+kind = "PREFERENCE"
+owner = "FRM"
+source = "assumed"
+source_ref = "The share of the gap to competitors' posted prices a firm's markup takes in at a review: 0.05; assumed, as the sales speed is."
+value = "0.05"
+
+[[primitive]]
+id = "FRM.pressure_curvature"
+kind = "PREFERENCE"
+owner = "FRM"
+source = "assumed"
+source_ref = "How strongly a firm's desired price follows its demand's pressure: 0.5, a price that rises by about 5 percent when demand runs a tenth above expected and the stock is at its target; assumed until the price-change reads (FRM.19) measure it."
+value = "0.5"
+
+[[primitive]]
+id = "FRM.review_hours"
+kind = "TECHNOLOGY"
+owner = "FRM"
+source = "estimated"
+source_ref = "Hours of staff a price review takes: 8, a working day, from the managerial costs of price adjustment Zbaracki, Ritson, Levy, Dutta and Bergen (2004, Managerial and customer costs of price adjustment: direct evidence from industrial markets, Review of Economics and Statistics 86(2)) record at one manufacturer, where gathering information and deciding took several managers' days for each annual price review of its line."
+value = "8"
+
+[[primitive]]
+id = "FRM.menu_hours"
+kind = "TECHNOLOGY"
+owner = "FRM"
+source = "estimated"
+source_ref = "Hours of staff a price change takes: 2, the physical menu costs of changing a shelf price, about 0.7 percent of revenue across supermarket chains (Levy, Bergen, Dutta and Venable, 1997, The magnitude of menu costs: direct evidence from large US supermarket chains, Quarterly Journal of Economics 112(3)), stated as the staff time relabelling a store's line."
+value = "2"
+
+[[primitive]]
+id = "FRM.price_points"
+kind = "POLICY"
+owner = "FRM"
+decided_by = "the trade's convention"
+source = "measured"
+source_ref = "The price points within a decade, each over its top: the round prices and the nine-endings that retail prices bunch at, 9 being the most common final digit (Levy, Lee, Chen, Kauffman and Bergen, 2011, Price points and price rigidity, Review of Economics and Statistics 93(4)); a posted price is a point times a power of ten."
+value = [100, 109, 119, 129, 139, 149, 159, 169, 179, 189, 199, 219, 249, 279, 299, 349, 399, 449, 499, 549, 599, 649, 699, 799, 899, 999]

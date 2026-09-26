@@ -22,3 +22,9 @@ pub const SMALL_PURPOSES: u32 = 3;
 /// The persons a small firm can employ: far beyond the smallest firm the individuals' rank admits, which a world whose
 /// rank reaches past it stops at as a capacity reached.
 pub const MOST_SMALL_EMPLOYED: u32 = 1 << 16;
+/// A markup's millionths, as its fact holds it.
+pub const MARKUP_SCALE: f64 = 1e6;
+/// A daily chance's billionths, as the attention fact holds it.
+pub const BILLIONTHS: f64 = 1e9;
+/// A decade's ratio, from one power of ten to the next, over which a trade's price points repeat.
+pub const DECADE: f64 = 10.0;

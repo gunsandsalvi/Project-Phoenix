@@ -2,6 +2,39 @@ pub mod if_firm
 pub mod if_firm::consts
 pub const if_firm::consts::INDUSTRIES: u32
 pub const if_firm::consts::WAY_SETS: u32
+pub mod if_firm::facts
+pub struct if_firm::facts::ExpectedSales
+impl phx_core::facts::FactDef for if_firm::facts::ExpectedSales
+pub const if_firm::facts::ExpectedSales::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::Markup
+impl phx_core::facts::FactDef for if_firm::facts::Markup
+pub const if_firm::facts::Markup::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::OutputRate
+impl phx_core::facts::FactDef for if_firm::facts::OutputRate
+pub const if_firm::facts::OutputRate::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::Price
+impl phx_core::facts::FactDef for if_firm::facts::Price
+pub const if_firm::facts::Price::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::PriceAttention
+impl phx_core::facts::FactDef for if_firm::facts::PriceAttention
+pub const if_firm::facts::PriceAttention::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::SalesSince
+impl phx_core::facts::FactDef for if_firm::facts::SalesSince
+pub const if_firm::facts::SalesSince::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::SalesWidth
+impl phx_core::facts::FactDef for if_firm::facts::SalesWidth
+pub const if_firm::facts::SalesWidth::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::Stock
+impl phx_core::facts::FactDef for if_firm::facts::Stock
+pub const if_firm::facts::Stock::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::UnitCost
+impl phx_core::facts::FactDef for if_firm::facts::UnitCost
+pub const if_firm::facts::UnitCost::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::WagePerHour
+impl phx_core::facts::FactDef for if_firm::facts::WagePerHour
+pub const if_firm::facts::WagePerHour::ITEM: phx_core::facts::ItemDecl
+pub const if_firm::facts::FACTS: [&str; 10]
+pub const if_firm::facts::POSITIONS: [phx_core::pop::PositionDecl; 10]
 pub mod if_firm::known
 pub struct if_firm::known::Industry
 impl phx_core::facts::FactDef for if_firm::known::Industry

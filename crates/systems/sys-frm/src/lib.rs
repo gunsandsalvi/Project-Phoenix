@@ -4,15 +4,17 @@
 //! decisions arrive with their own step.
 
 mod consts;
+pub mod decide;
 pub mod industry;
 mod opening;
 pub mod rules;
 pub mod small;
 
+use phx_core::handler::HandlerDecl;
 use phx_core::register::values::Table2;
 use phx_core::{
-    AttrDecl, Declarations, FacetDecl, FactDef, HandlerTable, StreamDef, System, declare_kind, declare_prim,
-    declare_stream,
+    AttrDecl, Cadence, Declarations, FacetDecl, FactDef, HandlerTable, RunsOn, StreamDef, System, VisitDecl, WakeKind,
+    declare_kind, declare_prim, declare_stream,
 };
 use phx_num::{Count, Fixed};
 
@@ -24,6 +26,7 @@ declare_kind! { pub SMALL_FIRM = "small_firm" { legal_form: "company", table: Ce
 
 declare_stream! { pub OpeningStream = "FRM.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub SmallStream = "FRM.opening_small" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub VisitStream = "FRM.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
 
 /// The region a small firm is sited in.
 pub const REGION: AttrDecl = AttrDecl { name: "FRM.region", values: if_pop::consts::REGIONS, clause: "REP.41" };
@@ -65,6 +68,19 @@ declare_prim! {
     pub DEPRECIATION = "FRM.depreciation" { kind: Technology, value: Fixed { exp: 6 }, clause: "GEN.5", scope: Shared }
 }
 
+/// What the firms' handlers read of the register, compiled at assembly.
+#[derive(Debug)]
+pub struct Own {
+    management: decide::Management,
+}
+
+impl Own {
+    #[must_use]
+    pub fn management(&self) -> &decide::Management {
+        &self.management
+    }
+}
+
 /// Firms.
 #[derive(Debug)]
 pub struct Frm;
@@ -99,11 +115,52 @@ impl System for Frm {
         d.contribution(Box::new(Parties { prims }));
         d.contribution(Box::new(SmallFirms { prims: small }));
         d.contribution(Box::new(Plant));
+        declare_decisions(d);
     }
 
-    fn handlers(_: &mut HandlerTable) {}
+    fn handlers(h: &mut HandlerTable) {
+        h.add::<decide::ReviewSmall>();
+        h.add::<decide::ReviewLarge>();
+        h.add::<decide::AttendSmall>();
+        h.add::<decide::AttendLarge>();
+    }
 }
 
 pub type FixedPrim = phx_core::Prim<Fixed<6>>;
 pub type CountPrim = phx_core::Prim<Count>;
 pub type TablePrim = phx_core::Prim<Table2>;
+
+/// The firms' state, a large firm's as facts of its row and a small firm's as positions of its agent, and their
+/// decisions on the agenda: the price's attention on each firm's production schedule, the price at its reviews.
+fn declare_decisions(d: &mut Declarations) {
+    d.stream(VisitStream::DECL);
+    for fact in if_firm::facts::FACTS {
+        d.claim(fact);
+        d.facet(FacetDecl { fact, kind: FIRM.name });
+    }
+    let mut small = d.pop_kind(SMALL_FIRM.name);
+    for p in if_firm::facts::POSITIONS {
+        small.position(p);
+    }
+    let prims = decide::DecidePrims::declare(d);
+    d.compile(Box::new(move |register, _| {
+        Ok(Box::new(Own { management: decide::Management::compile(&prims, register)? }))
+    }));
+    let schedule = Cadence::Schedule { days: decide::PRODUCTION_DAYS.id, runs_on: RunsOn::Business };
+    let attention = Cadence::Attention { position: <if_firm::facts::PriceAttention as FactDef>::ITEM.name };
+    for (handler, kind, cadence) in [
+        (decide::AttendSmall::NAME, SMALL_FIRM.name, schedule),
+        (decide::AttendLarge::NAME, FIRM.name, schedule),
+        (decide::ReviewSmall::NAME, SMALL_FIRM.name, attention),
+        (decide::ReviewLarge::NAME, FIRM.name, attention),
+    ] {
+        d.visit(VisitDecl {
+            handler,
+            kind,
+            cadence,
+            stream: VisitStream::DECL.name,
+            wakes: &[WakeKind::Surprise],
+            clause: "REP.21",
+        });
+    }
+}
