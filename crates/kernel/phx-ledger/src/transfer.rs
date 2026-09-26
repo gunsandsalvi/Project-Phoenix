@@ -293,6 +293,29 @@ impl<B: Backing> Books<B> {
         self.submit(reason, legs, m, audit)
     }
 
+    /// Balances moved on rows, each row opened as one contract where its party holds none, in one instruction: a
+    /// central bank's facilities, whose positions are balances on their lines.
+    ///
+    /// # Errors
+    /// The fail, when the instruction could not settle.
+    #[clause("SET.4", "MON.6")]
+    pub fn move_balances(
+        &mut self,
+        moves: &[(PartyId, LineId, Side, i64)],
+        ccy: phx_num::Ccy,
+        (reason, m): (ReasonId, MoveAt),
+        audit: &mut dyn AuditStream,
+    ) -> Result<InstructionId, Fail> {
+        let mut legs = Vec::new();
+        for (party, line, side, qty) in moves {
+            if self.row_on_side(*party, *line, *side).is_none() {
+                legs.push(self.enter((*party, *line, *side), 1, m));
+            }
+            legs.push(crate::dues::row_leg(*party, *line, *side, *qty, ccy));
+        }
+        self.submit(reason, legs, m, audit)
+    }
+
     /// A loan made: the lender's row and the borrower's opened on a new loan line, each a contract, the principal owed
     /// on them, and the principal paid into the borrower's account, which the lender creates as a deposit where it
     /// keeps the account and pays in reserves where another does, in one instruction.

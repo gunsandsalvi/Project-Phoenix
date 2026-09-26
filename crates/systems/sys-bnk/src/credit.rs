@@ -2,6 +2,7 @@
 //! register and the opening's country, and the rules the kernel calls — a borrower's class by its cover, a bank's
 //! quote, its decline and its standard, a class's default frequency learned from its book, and a borrower's choice.
 
+use if_credit::central::{Request, RequestIn};
 use if_credit::decisions::{ChooseIn, DeclineIn, QuoteIn, StandardIn};
 use if_credit::law::Law;
 use phx_core::{OpeningCountry, Register};
@@ -129,6 +130,20 @@ pub fn choose(i: &ChooseIn) -> Missing<u32> {
     }
 }
 
+/// A bank's request at the fund stage: it borrows what its reserves fall short of its target, as far as its
+/// collateral lends, and places what they exceed it by. The target and the rule are a placeholder naming BFL until
+/// banks manage their liquidity.
+#[clause("CB.7", "BNK.8")]
+#[must_use]
+pub fn request(i: &RequestIn) -> Request {
+    let gap = i.target - i.reserves;
+    if gap > 0 {
+        Request { place: 0, borrow: if gap < i.collateral { gap } else { i.collateral } }
+    } else {
+        Request { place: -gap, borrow: 0 }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use if_credit::decisions::{ChooseIn, DeclineIn, QuoteIn, StandardIn};
@@ -219,5 +234,16 @@ mod tests {
         let liked = ChooseIn { tastes: vec![9.0, 0.0, 0.0], ..i.clone() };
         assert_eq!(choose(&liked), Missing::Present(0), "a strong taste outweighs an eighth");
         assert_eq!(choose(&ChooseIn { required_return: 0.04, ..i }), Missing::Absent, "no quote worth taking");
+    }
+
+    #[test]
+    fn facility_legs_from_request() {
+        use if_credit::central::{Request, RequestIn};
+        let short = RequestIn { reserves: 40, target: 100, collateral: 1_000 };
+        assert_eq!(super::request(&short), Request { place: 0, borrow: 60 }, "borrows its shortfall");
+        let thin = RequestIn { collateral: 25, ..short };
+        assert_eq!(super::request(&thin), Request { place: 0, borrow: 25 }, "as far as its collateral lends");
+        let flush = RequestIn { reserves: 130, ..short };
+        assert_eq!(super::request(&flush), Request { place: 30, borrow: 0 }, "places its excess");
     }
 }

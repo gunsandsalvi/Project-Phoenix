@@ -1,0 +1,29 @@
+# The central bank's corridor (CB.6, CB.7): its standing facilities' spreads around the policy rate and the haircut
+# its lending facility applies to eligible loans, placeholders until its committee and operations are built (S3.02).
+
+[[primitive]]
+id = "CB.deposit_spread"
+kind = "SHAPE"
+owner = "CB"
+source = "measured"
+source_ref = "How far below the policy rate the deposit facility pays: 0.15 percentage points, the ECB's main refinancing rate over its deposit facility rate since 18 September 2024, until each country's committee sets its corridor."
+shape = "placeholder:CB"
+value = "0.0015"
+
+[[primitive]]
+id = "CB.lending_spread"
+kind = "SHAPE"
+owner = "CB"
+source = "measured"
+source_ref = "How far above the policy rate the lending facility charges: 0.25 percentage points, the ECB's marginal lending facility over its main refinancing rate since 18 September 2024, until each country's committee sets its corridor."
+shape = "placeholder:CB"
+value = "0.0025"
+
+[[primitive]]
+id = "CB.loan_haircut"
+kind = "SHAPE"
+owner = "CB"
+source = "assumed"
+source_ref = "The share of an eligible loan's balance the lending facility does not lend against: 30%, assumed within the range central banks apply to non-marketable credit claims, until the central bank declares its collateral framework (S3.02)."
+shape = "placeholder:CB"
+value = "0.30"

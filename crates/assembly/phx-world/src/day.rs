@@ -61,8 +61,8 @@ const APPLY_POINTS: [SubStep; 23] = [
 /// contract process at 2d, over the fails of the days since it last ran, and 2e's defaults of parties whose grace has
 /// ended, 3b's gathering of the population's agents due and 3e's outcomes of their hits, 5a's public outlooks over
 /// the markets' prints, 6a's meetings, 9b's accounts, posting the day's settled money, and 10a's public events; 4a's
-/// start of work and 5c's round of labour.
-pub const KERNEL_WORK: [SubStep; 11] = [
+/// start of work and 5c's rounds of labour and credit; and 8d's fund stage at the central bank.
+pub const KERNEL_WORK: [SubStep; 12] = [
     SubStep::S1b,
     SubStep::S2d,
     SubStep::S2e,
@@ -72,6 +72,7 @@ pub const KERNEL_WORK: [SubStep; 11] = [
     SubStep::S5a,
     SubStep::S5c,
     SubStep::S6a,
+    SubStep::S8d,
     SubStep::S9b,
     SubStep::S10a,
 ];
@@ -213,6 +214,9 @@ impl World {
                 self.freight_settle(day, SubStep::S7c);
                 self.labour_settle(day, SubStep::S7c);
                 self.credit_settle(day);
+            }
+            if info.step == SubStep::S8d {
+                self.central_fund(day);
             }
             if info.step == SubStep::S9b {
                 let period = crate::registry::period_of(&self.calendar, day);

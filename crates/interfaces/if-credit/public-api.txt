@@ -1,4 +1,28 @@
 pub mod if_credit
+pub mod if_credit::central
+pub struct if_credit::central::CentralKind
+pub if_credit::central::CentralKind::account: &'static str
+pub if_credit::central::CentralKind::bank: &'static str
+pub if_credit::central::CentralKind::central_bank: &'static str
+pub if_credit::central::CentralKind::corridor: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_credit::central::Corridor, alloc::string::String>
+pub if_credit::central::CentralKind::deposit_facility: &'static str
+pub if_credit::central::CentralKind::interest: &'static str
+pub if_credit::central::CentralKind::lending_facility: &'static str
+pub if_credit::central::CentralKind::moved: &'static str
+pub if_credit::central::CentralKind::remitted: &'static str
+pub if_credit::central::CentralKind::reserves: &'static str
+pub if_credit::central::CentralKind::treasury: &'static str
+pub struct if_credit::central::Corridor
+pub if_credit::central::Corridor::deposit_rate: f64
+pub if_credit::central::Corridor::haircut: f64
+pub if_credit::central::Corridor::lending_rate: f64
+pub struct if_credit::central::Request
+pub if_credit::central::Request::borrow: i64
+pub if_credit::central::Request::place: i64
+pub struct if_credit::central::RequestIn
+pub if_credit::central::RequestIn::collateral: i64
+pub if_credit::central::RequestIn::reserves: i64
+pub if_credit::central::RequestIn::target: i64
 pub mod if_credit::decisions
 pub struct if_credit::decisions::ChooseIn
 pub if_credit::decisions::ChooseIn::rate_step: f64
@@ -39,6 +63,7 @@ pub if_credit::kind::CreditKind::lender: &'static str
 pub if_credit::kind::CreditKind::lent: &'static str
 pub if_credit::kind::CreditKind::loan: &'static str
 pub if_credit::kind::CreditKind::quote: fn(&if_credit::decisions::QuoteIn) -> f64
+pub if_credit::kind::CreditKind::request: fn(&if_credit::central::RequestIn) -> if_credit::central::Request
 pub if_credit::kind::CreditKind::standard: fn(&if_credit::decisions::StandardIn) -> u32
 pub if_credit::kind::CreditKind::taste_stream: &'static str
 pub mod if_credit::law

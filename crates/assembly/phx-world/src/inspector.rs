@@ -82,6 +82,11 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.credit
     }
 
+    /// What each day's fund stage did: the facilities' uses and quantities, their interest and the remittances.
+    pub fn central_days(&self) -> &[(Day, crate::central::CentralDay)] {
+        &self.world.metrics.central
+    }
+
     /// Employment as the books hold it: each employment line's two sides' members, and the people each employed
     /// person's household holds, for the checks.
     #[must_use]

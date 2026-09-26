@@ -405,6 +405,7 @@ fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<St
         // Labour's matching and credit's quotes are their own kinds, which meet no market's rules.
         if kind.downcast_ref::<if_labour::kind::LabourKind>().is_some()
             || kind.downcast_ref::<if_credit::kind::CreditKind>().is_some()
+            || kind.downcast_ref::<if_credit::central::CentralKind>().is_some()
         {
             continue;
         }
@@ -536,6 +537,16 @@ fn credit_of(
     crate::credit::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
+/// The central bank's kind bound with each country's corridor, carrying its book.
+fn central_of(
+    p: &Prepared,
+    geo: &phx_geo::GeoState,
+    book: crate::central::CentralBook,
+) -> Result<crate::central::Central, AssemblyErrors> {
+    let (opening, _, _, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    crate::central::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
+}
+
 fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, AssemblyErrors> {
     let State { geo, tables, books, population, markets, accounts, records, events, carried, run, space } = s;
     let mut families = kernel_families();
@@ -554,6 +565,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         .map_err(|e| AssemblyErrors(vec![e]))?;
     let labour = labour_of(&p, &geo, carried.labour)?;
     let credit = credit_of(&p, &geo, carried.credit)?;
+    let central = central_of(&p, &geo, carried.central)?;
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
@@ -596,6 +608,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         trade: p.trade.clone(),
         labour,
         credit,
+        central,
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
@@ -672,6 +685,7 @@ pub fn assemble(
             closed: phx_ledger::pending::Closed::default(),
             labour: crate::labour::LabourBook::default(),
             credit: crate::credit::CreditBook::default(),
+            central: crate::central::CentralBook::default(),
         },
         run: crate::save::RunRecord {
             metrics: Metrics::default(),

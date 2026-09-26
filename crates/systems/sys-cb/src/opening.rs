@@ -55,6 +55,26 @@ const CLAIM: LineKindDecl = LineKindDecl {
     transfer_requesters: &["CB"],
 };
 
+/// A standing facility's overnight positions: a bank's deposit at the central bank, or the central bank's loan to a
+/// bank, one row for each bank that has used it.
+const fn facility(
+    name: &'static str,
+    lender: &'static [&'static str],
+    borrower: &'static [&'static str],
+) -> LineKindDecl {
+    LineKindDecl { name, asset: side(lender), liability: side(borrower), dated: false, transfer_requesters: &["CB"] }
+}
+
+/// A facility's side: one row for each party that has used it.
+const fn side(kinds: &'static [&'static str]) -> SideDecl {
+    SideDecl { holder_kinds: kinds, words: BALANCE, holder_list: true, holder_roles: &[], exclusive: false, many: true }
+}
+
+/// The deposit facility: banks' overnight deposits at the central bank.
+pub(crate) const DEPOSIT_FACILITY: LineKindDecl = facility("deposit facility", &["bank"], &[CENTRAL_BANK.name]);
+/// The lending facility: the central bank's overnight loans to banks.
+pub(crate) const LENDING_FACILITY: LineKindDecl = facility("lending facility", &[CENTRAL_BANK.name], &["bank"]);
+
 /// What the central bank's opening instructions are for: capital on both sides, since they open its books.
 const REASON: ReasonDecl = ReasonDecl {
     name: "CB opening",
@@ -99,6 +119,11 @@ impl Contribution for Declared {
         b.ledger.lines.declare_reserves(HOLDERS.reserves());
         b.ledger.lines.declare_means_of_payment(HOLDERS.treasury_account());
         b.ledger.lines.declare_money(CLAIM);
+        b.ledger.lines.declare_money(DEPOSIT_FACILITY);
+        b.ledger.lines.declare_money(LENDING_FACILITY);
+        for r in [crate::MOVED, crate::INTEREST, crate::REMITTED] {
+            let _ = b.ledger.reasons.declare(r);
+        }
     }
 }
 
@@ -155,6 +180,26 @@ impl Contribution for Parties {
     }
 }
 
+/// A reserve account's terms: a bank may overdraw it intraday by as much as every bank's reserves at the opening,
+/// standing for intraday credit given freely against collateral, which the lending facility's rate prices where it
+/// stays overnight. A placeholder naming CB until its operations are built.
+fn intraday(register: &phx_core::Register, c: &phx_core::OpeningCountry, dates: ScheduleDates) -> Terms {
+    let ccy = currency(c.id);
+    let bank_assets = derived(c, "GEN.bank_assets") / PERCENT * c.gdp;
+    let limit = whole(derived(c, "GEN.liquid_reserves") / PERCENT * bank_assets);
+    let Ok(corridor) = crate::central::corridor(register, c) else {
+        violation!(clause = "CB.7", "a corridor that does not compile", country = c.id.get());
+    };
+    let raw = whole(corridor.lending_rate * crate::consts::RATE_ONE);
+    let mut t = Terms::account(ccy, dates);
+    t.facility = phx_num::Missing::Present(phx_ledger::algebra::Facility {
+        limit: phx_num::Money::new(limit, ccy),
+        rate: phx_num::Rate::new(raw, phx_num::RatePeriod::Year),
+        day_count: phx_core::calendar::daycount::DayCount::Act365F,
+    });
+    t
+}
+
 /// The central bank's lines in each country: reserves, with a row for each bank; the treasury's account; the claim
 /// on the treasury.
 #[clause("MON.1", "MON.2", "CB.1")]
@@ -200,8 +245,9 @@ impl Contribution for Lines {
                 country: c.id,
             };
             let terms = b.ledger.terms.intern(Terms::account(currency(c.id), dates));
-            let [held, kept, owed] =
-                [reserves, account, claim].map(|kind| b.ledger.lines.open(kind, terms, phx_num::Missing::Absent));
+            let reserve_terms = b.ledger.terms.intern(intraday(register, c, dates));
+            let held = b.ledger.lines.open(reserves, reserve_terms, phx_num::Missing::Absent);
+            let [kept, owed] = [account, claim].map(|kind| b.ledger.lines.open(kind, terms, phx_num::Missing::Absent));
             let Ok(count) = u32::try_from(banks.len()) else {
                 phx_num::capacity_exceeded!("banks of a country", u32::MAX, banks.len());
             };

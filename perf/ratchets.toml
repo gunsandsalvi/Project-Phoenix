@@ -17,10 +17,11 @@ direction = "down"
 # the placeholders a stage brings for later systems. Six: BNK's two loan terms, XB's closed borders (S0.18), the rent
 # points (HSG, S0.25d) until landlords post their own, and a searcher's reservation and an employee's price outlook
 # (HH, S1.08) until households weigh their own; and a firm loan's risk weight (BCP, S1.09) until banks hold their
-# own capital models.
+# own capital models; and the corridor's two spreads and its haircut (CB, S1.10) until the central bank's committee and
+# collateral framework are built.
 [[ratchet]]
 counter = "phx_check.placeholder_count"
-value = 7
+value = 10
 direction = "down"
 
 # The distinct sets of ways the technology keeps: each country's public set per industry, three countries of sixteen

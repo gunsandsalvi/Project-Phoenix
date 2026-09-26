@@ -1189,6 +1189,7 @@ dependencies = [
 name = "sys-cb"
 version = "0.1.0"
 dependencies = [
+ "if-credit",
  "phx-core",
  "phx-id",
  "phx-ledger",

@@ -5579,6 +5579,8 @@ values; PC-20 now also refuses any `&mut` into the world, or any write to a tabl
 | An employee's price outlook at its contract's review (naming HH) | S1.08 | S1.12 |
 | A bank's cost of funds, its country's policy rate at the opening (naming BFL) | S1.09 | S2.06 |
 | A firm loan's risk weight, the standardised approach's (naming BCP) | S1.09 | S2.07 |
+| A bank's reserves target and its request at the facilities (naming BFL) | S1.10 | S2.06 |
+| The corridor's spreads, its loan haircut and reserves' intraday overdraft (naming CB) | S1.10 | S3.02 |
 
 **Placeholders this stage introduces** are listed in the tables of the stages that retire them, with S1.11's
 treasury that never borrows from the central bank (naming CB), retired by S3.02.
@@ -7030,7 +7032,7 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 
 ### S1.10 — `sys-cb`: settlement and a fixed policy rate
 
-**Status**: building
+**Status**: done. Both reviews were the builder's own; per the owner's decision (§12) no build run, the world runs at the Stage 1 gate.
 
 **Clauses**:
 - STATE: CB.1 *(part: the domestic balance sheet)*.
@@ -7040,6 +7042,22 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 - The policy committee (CB.4), operations, lender of last resort and financing regimes are S3.02.
 - The fixed rate is a placeholder naming CB (S3.02).
 - This step retires S0.16's placeholders naming CB for the opening central banks' decisions.
+
+- **Moved**: banknotes issued and retired against reserves to S1.12, where households first draw and deposit them and
+  MON.4 completes; a bank's request at the facilities is `sys-bnk`'s rule (on the credit kind), as BNK's decision.
+- **As built**:
+  - the facilities are two lines per country, the deposit facility (banks' overnight deposits at the central bank) and
+    the lending facility (its overnight loans to banks), declared by `sys-cb` with its corridor
+    (`if_credit::central::CentralKind`), which the kernel runs at 8d on the country's business days: each bank's
+    positions of the day before returned with the days' interest at the corridor's rates, then its request met —
+    its reserves above its target placed, below borrowed as far as `1 − CB.loan_haircut` of its firm loans lends;
+  - a bank's target is its reserves over its deposits when it first came to the fund stage, times its deposits, and
+    the request rule is a placeholder naming BFL;
+  - the corridor is the policy rate at the opening less `CB.deposit_spread` and plus `CB.lending_spread`, the ECB's
+    (placeholders naming CB);
+  - intraday credit: a reserve account's terms let a bank overdraw by as much as every bank's reserves at the opening,
+    at the lending rate, standing for credit freely given against collateral (a placeholder naming CB);
+  - the central bank's net interest is remitted to the treasury on each month's first fund stage; a loss is kept.
 
 **Architecture**: §6.1 (stage 8), §6.5.
 
@@ -7082,15 +7100,15 @@ reported daily.
 - a facility used without the bank's request.
 
 **Done when**
-- [ ] The facilities work at the fixed rate.
-- [ ] LC-1-27 passes.
-- [ ] Two reviews are done.
+- [x] The facilities work at the fixed rate.
+- [x] LC-1-27 registered, read at the gate.
+- [x] Two reviews are done.
 
 ---
 
 ### S1.11 — The state, first cut: `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov`
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: TRS.1; SOV.1 *(part: bills)*; SOV.2 *(part: pari passu, no covenants, not callable; buybacks and
@@ -16645,6 +16663,7 @@ the final build within the budget on the phone.
 | F-106 | S1.08 | build, 2026-09-26 | A part-time job's opening wage point is its household's earnings like a full-time one's, not scaled by its hours | the opening draws a household's wage from its earnings, not by person and hours | the opening's wage by person and hours when the household's earnings are split among its earners | open for S1.15 |
 | F-107 | S1.08 | build, 2026-09-26 | Firms fail earlier and more at once: on the 120-day build run the most defaults on a day rose from 6 311 (21 April) to 10 553, the first mass on 24 February, the grace's end after the first payday; their released staff lift the searching agents to 203 528 (the budget's 0.1 M, architecture §13.2), the day's changed persons lift the screening counters (131 242 agents booked on a day), and that day's 7c takes about 7 s on the build machine (1.9 s releasing staff, 4.5 s paying 129 345 severances in one instruction per employer) | jobs are now dealt by region and occupation (LAB.1), so a firm's wage bill no longer averages its country's, while its opening money was drawn by its size; and no firm earns before it produces and sells (F-016, F-095) | the firms' opening state and sales (S1.15), after which defaults and searching are the world's; the budget re-measured at the gate, the severances settled through the day's batch if the day still misses it | open for S1.15 |
 | F-108 | S1.09 | build, 2026-09-26 | Banks lend to no firm yet: every refinancing applicant's cover is below the first class, so it is declined and the firm pays its maturing loan from its money or fails; four of the banks' values are assumed (the loan-years and recoveries a published statistic counts for, the days before maturity a firm seeks to refinance, and that a refinancing asks the loan's months again); small firms' pooled loans are neither assessed nor refinanced, since they never fall due; and a bank's review walks every firm loan monthly | firms earn nothing before they produce and sell (F-016, F-095); no source measures a lender's learning or a firm's refinancing lead; the small firms' loans are interest-only at the opening; the review keeps no index by bank | measured once firms earn (S1.15); the firms' own funding decision (S2.03) sets what and when they borrow; the small firms' loans with the Stage 1 opening's loan books (S1.15); the review as a rolling slice by bank if the gate's budget needs it | open for S1.15 |
+| F-109 | S1.10 | build, 2026-09-26 | The lending facility's haircut is assumed (30%), only firm term loans are eligible collateral and none is pledged, and a reserve account overdrawn overnight carries no interest, since a reserve line's terms have no dates on which its facility's rate falls due | no primary source was read for a central bank's haircut on credit claims; the collateral framework (CB.6) and pledges are S3.02's | the haircut measured from a central bank's published schedule; pledged collateral and the overdraft's charge with the central bank's operations (S3.02) | open for S3.02 |
 
 ---
 

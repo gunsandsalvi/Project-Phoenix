@@ -142,6 +142,7 @@ pub const CREDIT: CreditKind = CreditKind {
     choose: credit::choose,
     standard: credit::standard,
     learned: credit::learned,
+    request: credit::request,
 };
 
 /// Bank lending.
