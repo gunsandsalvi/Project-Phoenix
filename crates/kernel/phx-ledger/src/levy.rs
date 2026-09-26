@@ -111,6 +111,39 @@ pub fn on_row(base: i64, before: i64, count: u32, rates: Rates<'_>, rounding: Ro
     total
 }
 
+/// A levy withheld from every payment on a line kind in one currency: its payee, its bands over a member's yearly
+/// amount, and the payments a year the line makes, so each payment is taxed as its year's share.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Withholding {
+    pub kind: u16,
+    pub ccy: phx_num::Ccy,
+    pub payee: phx_id::PartyId,
+    pub bands: Vec<Band>,
+    pub periods: i64,
+}
+
+impl Withholding {
+    /// The levy on one member's payment: its year's share of the bands' levy on the payment's yearly amount, rounded
+    /// half to even once.
+    #[clause("TAX.2", "TAX.7")]
+    #[must_use]
+    pub fn on_payment(&self, per_member: i64) -> i64 {
+        let Some(yearly) = per_member.checked_mul(self.periods) else {
+            capacity_exceeded!("a member's yearly amount", i64::MAX, per_member);
+        };
+        let levy = per_member_levy(yearly, &self.bands);
+        let Ok(v) = i64::try_from(div_round(i128::from(levy), i128::from(self.periods), Round::HalfEven)) else {
+            capacity_exceeded!("a levy on a payment", i64::MAX, levy);
+        };
+        v
+    }
+}
+
+/// The yearly levy on a member's yearly amount under its bands.
+fn per_member_levy(yearly: i64, bands: &[Band]) -> i64 {
+    per_member(yearly, 0, Rates::Bands(bands), Round::HalfEven)
+}
+
 /// A gross amount per member split by a withheld levy into what the member is paid and what the remitter remits.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Withheld {
@@ -161,5 +194,19 @@ mod tests {
         let from_fact = Rates::Flat(TENTH / 2);
         let (a, b) = (on_row(2_345, 0, 3, from_terms, Round::Floor), on_row(2_345, 0, 3, from_fact, Round::Floor));
         assert_eq!((a, b), (117 * 3, 117 * 3), "117.25 a member, floored, times 3");
+    }
+
+    #[test]
+    fn withholding_per_member_rounded() {
+        let w = super::Withholding {
+            kind: 0,
+            ccy: phx_num::Ccy::new(0),
+            payee: phx_id::PartyId::new(1),
+            bands: vec![Band { from: 0, share: 0 }, Band { from: 12_000, share: 2 * TENTH }],
+            periods: 12,
+        };
+        assert_eq!(w.on_payment(1_000), 0, "a yearly 12 000 is all in the free band");
+        assert_eq!(w.on_payment(2_000), 200, "a fifth of the yearly 12 000 above the band, a month's share");
+        assert_eq!(w.on_payment(1_001), 0, "a twelfth of 2.4 rounds half to even");
     }
 }

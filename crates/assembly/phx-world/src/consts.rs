@@ -81,3 +81,7 @@ pub const HURDLE_EXP: u8 = 6;
 pub const MONTHS_A_YEAR: f64 = 12.0;
 /// Months of a year, whole, for numbering months across years.
 pub const MONTHS: i64 = 12;
+/// Weeks of a year, for a bill's term in years.
+pub const WEEKS_A_YEAR: f64 = DAYS_A_YEAR / DAYS_A_WEEK;
+/// A rate of one in phx-num's rate scale, for a yearly rate as the ledger holds it.
+pub const RATE_ONE: f64 = 1_000_000_000_000.0;

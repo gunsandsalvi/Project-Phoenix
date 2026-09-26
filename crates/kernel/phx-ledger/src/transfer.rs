@@ -93,6 +93,9 @@ fn share(view: &RowView, count: u32, rounding: Round) -> i64 {
     }
 }
 
+/// A payment an instruction makes beside its rows: from a party to another, an amount.
+pub type Payment = (PartyId, PartyId, i64);
+
 impl<B: Backing> Books<B> {
     fn row_or_stop(&self, party: PartyId, line: LineId, side: Side) -> RowView {
         let Some(view) = self.row_on_side(party, line, side) else {
@@ -306,12 +309,37 @@ impl<B: Backing> Books<B> {
         (reason, m): (ReasonId, MoveAt),
         audit: &mut dyn AuditStream,
     ) -> Result<InstructionId, Fail> {
+        self.move_rows(moves.iter().map(|(p, l, s, q)| (*p, *l, *s, 0, *q)), (ccy, Missing::Absent), (reason, m), audit)
+    }
+
+    /// Rows moved in one instruction, each by the members it gains and its balance, opened where its party holds none
+    /// (as one contract where it gains none), with payments from one party to another where any are named: a sale of
+    /// new contracts, the buyers' rows written and their price paid, all or none.
+    ///
+    /// # Errors
+    /// The fail, when the instruction could not settle.
+    #[clause("SET.4", "MON.6", "REG.11")]
+    pub fn move_rows(
+        &mut self,
+        moves: impl Iterator<Item = (PartyId, LineId, Side, u32, i64)>,
+        (ccy, payments): (phx_num::Ccy, Missing<&[Payment]>),
+        (reason, m): (ReasonId, MoveAt),
+        audit: &mut dyn AuditStream,
+    ) -> Result<InstructionId, Fail> {
         let mut legs = Vec::new();
-        for (party, line, side, qty) in moves {
-            if self.row_on_side(*party, *line, *side).is_none() {
-                legs.push(self.enter((*party, *line, *side), 1, m));
+        for (party, line, side, count, qty) in moves {
+            let absent = self.row_on_side(party, line, side).is_none();
+            if count > 0 {
+                legs.push(self.enter((party, line, side), count, m));
+            } else if absent {
+                legs.push(self.enter((party, line, side), 1, m));
             }
-            legs.push(crate::dues::row_leg(*party, *line, *side, *qty, ccy));
+            legs.push(crate::dues::row_leg(party, line, side, qty, ccy));
+        }
+        if let Missing::Present(pays) = payments {
+            for (from, to, amount) in pays {
+                self.pay_into(*from, *to, (*amount, ccy), &mut legs);
+            }
         }
         self.submit(reason, legs, m, audit)
     }

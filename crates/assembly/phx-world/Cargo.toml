@@ -10,6 +10,7 @@ publish.workspace = true
 if-firm = { path = "../../interfaces/if-firm" }
 if-credit = { path = "../../interfaces/if-credit" }
 if-labour = { path = "../../interfaces/if-labour" }
+if-state = { path = "../../interfaces/if-state" }
 phx-acct = { path = "../../kernel/phx-acct" }
 phx-audit = { path = "../../kernel/phx-audit" }
 phx-core = { path = "../../kernel/phx-core" }
@@ -36,6 +37,9 @@ sys-cap = { path = "../../systems/sys-cap" }
 sys-gds = { path = "../../systems/sys-gds" }
 sys-srv = { path = "../../systems/sys-srv" }
 sys-frt = { path = "../../systems/sys-frt" }
+sys-sov = { path = "../../systems/sys-sov" }
+sys-tax = { path = "../../systems/sys-tax" }
+sys-trs = { path = "../../systems/sys-trs" }
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true

@@ -159,6 +159,7 @@ impl World {
         if joined.is_err() {
             violation!(clause = "LAB.1", "a hire that did not join its line", party = h.employee.get());
         }
+        self.end_benefit(day, (h.employee, h.person));
         self.attach(h.employee, h.person, line);
         let Some(occupation) = h.class.get(class::OCCUPATION).copied() else {
             violation!(clause = "LAB.1", "a hire whose class names no occupation", party = h.employee.get());
@@ -227,9 +228,11 @@ impl World {
             taken.iter().map(|(p, k)| (*p, s.line, Side::Asset, *k)).collect();
         let persons = self.detach(&left, &mut d);
         let point = self.line_point(s.line);
+        let lost = self.wage_at(super::law_of(&self.labour.laws, CountryId::new(s.country)), i64::from(point));
         for (party, person) in persons {
             self.set_person(party, person, &[(kind.state, class::SEARCHING), (kind.last_point, point)]);
             self.labour.searchers.insert(party);
+            self.claim_benefit(day, (party, person), (CountryId::new(s.country), lost));
         }
         for (party, k) in taken {
             self.owe_severance(day, (s.employer, party), (s.line, s.country), k);

@@ -1,0 +1,9 @@
+# Social protection's shared technology: the hours a benefit's claim takes (spec SOC.3).
+
+[[primitive]]
+id = "SOC.claim_hours"
+kind = "TECHNOLOGY"
+owner = "SOC"
+source = "assumed"
+source_ref = "The hours claiming the benefit takes: 2, assumed until the time a claim takes is measured."
+value = "2.0"

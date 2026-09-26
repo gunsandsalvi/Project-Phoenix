@@ -473,6 +473,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "if-state"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-num",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -848,6 +856,7 @@ dependencies = [
  "if-credit",
  "if-firm",
  "if-labour",
+ "if-state",
  "phx-acct",
  "phx-audit",
  "phx-core",
@@ -874,8 +883,11 @@ dependencies = [
  "sys-hsg",
  "sys-lab",
  "sys-soc",
+ "sys-sov",
  "sys-srv",
+ "sys-tax",
  "sys-tec",
+ "sys-trs",
  "toml 0.9.12+spec-1.1.0",
 ]
 
@@ -1296,9 +1308,23 @@ name = "sys-soc"
 version = "0.1.0"
 dependencies = [
  "if-pop",
+ "if-state",
  "libm",
  "phx-core",
  "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+]
+
+[[package]]
+name = "sys-sov"
+version = "0.1.0"
+dependencies = [
+ "if-state",
+ "libm",
+ "phx-core",
  "phx-ledger",
  "phx-macros",
  "phx-num",
@@ -1319,6 +1345,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sys-tax"
+version = "0.1.0"
+dependencies = [
+ "if-state",
+ "phx-core",
+ "phx-id",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+]
+
+[[package]]
 name = "sys-tec"
 version = "0.1.0"
 dependencies = [
@@ -1333,6 +1371,17 @@ dependencies = [
  "phx-rand",
  "phx-store",
  "trybuild",
+]
+
+[[package]]
+name = "sys-trs"
+version = "0.1.0"
+dependencies = [
+ "if-state",
+ "phx-core",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
 ]
 
 [[package]]

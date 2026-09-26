@@ -21,8 +21,8 @@ fn table(register: &Register, id: &str) -> Result<Vec<f64>, String> {
     Ok(t.values().iter().map(|v| phx_rand::float::from_i64(*v) / scale).collect())
 }
 
-/// A country's lending law and technology. The rate a bank can always earn instead is its country's policy rate,
-/// a placeholder naming BFL until banks fund themselves.
+/// A country's lending law and technology. The rate a bank can always earn instead is its country's policy rate, or
+/// its deposit rate where its group reports none, a placeholder naming BFL until banks fund themselves.
 ///
 /// # Errors
 /// A primitive missing or of another shape.
@@ -35,7 +35,11 @@ pub fn law(register: &Register, c: &OpeningCountry) -> Result<Law, String> {
     }
     let people = phx_rand::float::from_u64(c.people);
     Ok(Law {
-        cost_of_funds: phx_ledger::opening::derived(c, "GEN.policy_rate") / PERCENT,
+        cost_of_funds: c
+            .derived("GEN.policy_rate")
+            .or_else(|| c.derived("GEN.deposit_rate"))
+            .ok_or("no policy or deposit rate")?
+            / PERCENT,
         capital_requirement: register.fixed(crate::CAPITAL_REQUIREMENT.id)?,
         required_return: register.fixed(crate::REQUIRED_RETURN.id)?,
         risk_weight: register.fixed(crate::RISK_WEIGHT.id)?,

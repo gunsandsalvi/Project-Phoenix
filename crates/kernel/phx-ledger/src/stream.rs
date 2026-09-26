@@ -559,22 +559,48 @@ impl<B: Backing> Books<B> {
         legs
     }
 
+    /// The levy withheld from a payment and its payee: each member's levy on its share, times the members; none where
+    /// no levy is withheld from its line's kind in its currency or nothing is due.
+    #[clause("TAX.2", "TAX.7", "REP.9")]
+    pub(crate) fn withheld(&self, p: &Payment) -> Option<(PartyId, i64)> {
+        if self.withholding.is_empty() || p.members == 0 {
+            return None;
+        }
+        let kind = self.ledger.lines.kind_of(p.line);
+        let w = self.withholding.iter().find(|w| w.kind == kind && w.ccy == p.ccy)?;
+        let per = p.amount / i64::from(p.members);
+        let tax = w.on_payment(per).checked_mul(i64::from(p.members))?;
+        (tax > 0).then_some((w.payee, tax))
+    }
+
     /// What a payment does, written over `legs`, so a pass over many payments reuses one buffer.
     pub(crate) fn effects_into(&self, p: &Payment, legs: &mut Vec<LegRec>) {
         legs.clear();
         if p.moneyless {
             return;
         }
+        let withheld = self.withheld(p);
         if p.cleared {
             let (route, _) = if p.payer == p.reckoned_on {
                 self.route(p.payer, p.amount, p.ccy)
             } else {
-                self.route(p.payee, -p.amount, p.ccy)
+                self.route(p.payee, -(p.amount - withheld.map_or(0, |(_, t)| t)), p.ccy)
             };
             legs.extend(route);
+            if p.payer != p.reckoned_on
+                && let Some((payee, tax)) = withheld
+            {
+                legs.extend(self.route(payee, -tax, p.ccy).0);
+            }
             return;
         }
-        self.pay_into(p.payer, p.payee, (p.amount, p.ccy), legs);
+        match withheld {
+            Some((payee, tax)) => {
+                self.pay_into(p.payer, p.payee, (p.amount - tax, p.ccy), legs);
+                self.pay_into(p.payer, payee, (tax, p.ccy), legs);
+            }
+            None => self.pay_into(p.payer, p.payee, (p.amount, p.ccy), legs),
+        }
         if p.principal != 0 {
             legs.push(row_leg(p.payee, p.line, Side::Asset, -p.principal, p.ccy));
             legs.push(row_leg(p.payer, p.line, Side::Liability, p.principal, p.ccy));

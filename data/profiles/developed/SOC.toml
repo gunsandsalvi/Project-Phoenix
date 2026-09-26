@@ -1,0 +1,19 @@
+# The developed group's social protection.
+
+[[primitive]]
+id = "SOC.benefit_replacement"
+kind = "POLICY"
+owner = "SOC"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The benefit's monthly amount as a share of the last wage: 62.4%, the median initial net replacement rate at the average wage over 38 high-income economies (OECD TaxBEN, net replacement rates in unemployment, month 2, four family types, no social assistance, fetched 2026-09-26)."
+value = "0.624"
+
+[[primitive]]
+id = "SOC.benefit_months"
+kind = "POLICY"
+owner = "SOC"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The months the benefit pays: 12, the median over 28 high-income economies of the months until a single person's net replacement rate at the average wage falls to its level at 60 months (OECD TaxBEN profiles, fetched 2026-09-26)."
+value = 12

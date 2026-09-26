@@ -406,6 +406,10 @@ fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<St
         if kind.downcast_ref::<if_labour::kind::LabourKind>().is_some()
             || kind.downcast_ref::<if_credit::kind::CreditKind>().is_some()
             || kind.downcast_ref::<if_credit::central::CentralKind>().is_some()
+            || kind.downcast_ref::<if_state::kinds::TaxKind>().is_some()
+            || kind.downcast_ref::<if_state::kinds::BenefitKind>().is_some()
+            || kind.downcast_ref::<if_state::kinds::BillKind>().is_some()
+            || kind.downcast_ref::<if_state::kinds::TreasuryKind>().is_some()
         {
             continue;
         }
@@ -537,6 +541,16 @@ fn credit_of(
     crate::credit::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
+/// The state's kinds bound with each country's law, carrying its book.
+fn state_of(
+    p: &Prepared,
+    geo: &phx_geo::GeoState,
+    book: crate::state::StateBook,
+) -> Result<crate::state::State, AssemblyErrors> {
+    let (opening, _, _, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    crate::state::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
+}
+
 /// The central bank's kind bound with each country's corridor, carrying its book.
 fn central_of(
     p: &Prepared,
@@ -566,6 +580,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let labour = labour_of(&p, &geo, carried.labour)?;
     let credit = credit_of(&p, &geo, carried.credit)?;
     let central = central_of(&p, &geo, carried.central)?;
+    let state = state_of(&p, &geo, carried.state)?;
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
@@ -609,6 +624,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         labour,
         credit,
         central,
+        state,
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
@@ -686,6 +702,7 @@ pub fn assemble(
             labour: crate::labour::LabourBook::default(),
             credit: crate::credit::CreditBook::default(),
             central: crate::central::CentralBook::default(),
+            state: crate::state::StateBook::default(),
         },
         run: crate::save::RunRecord {
             metrics: Metrics::default(),
@@ -703,6 +720,7 @@ pub fn assemble(
     world.book_changed(world.today, SubStep::S10b.ordinal());
     world.labour_rebuild();
     world.credit_rebuild();
+    world.state_rebuild();
     world.visits_book_all(world.today);
     world.books.ledger.opened();
     Ok(world)
@@ -816,6 +834,7 @@ pub fn load(
     world.defaults_rebuild();
     world.labour_rebuild();
     world.credit_rebuild();
+    world.state_rebuild();
     world.loaded = true;
     let rebuilt = crate::save::manifest::hex(crate::hash::world_hash(&world));
     if rebuilt != manifest.world_hash {

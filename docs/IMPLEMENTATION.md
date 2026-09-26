@@ -7108,7 +7108,7 @@ reported daily.
 
 ### S1.11 — The state, first cut: `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov`
 
-**Status**: building
+**Status**: done. Both reviews were the builder's own; per the owner's decision (§12) no build run: a five-day smoke run showed the world assembling and running with the step's kinds, the facilities used and no finding; the world runs at the Stage 1 gate.
 
 **Clauses**:
 - STATE: TRS.1; SOV.1 *(part: bills)*; SOV.2 *(part: pari passu, no covenants, not callable; buybacks and
@@ -7133,6 +7133,31 @@ reported daily.
   whatever the country's financing regime (naming CB, S3.02, which builds CB.3's regimes).
 - This step retires S0.25's placeholder naming TAX (levies absent from the opening lines) and S1.06's placeholder
   naming TAX (the consumption tax in retail prices).
+
+- **Moved**: the annual return (TAX.2's part) and the means test's kink and its check to S5.01 and S5.02, since the
+  per-role year-to-date positions they read are not kept yet, so income tax is withheld on each payment's year's
+  share (a non-cumulative basis); the public agencies' staffing and purchases to S5.02, since the opening world gives
+  the state no staff and nothing sells at a price before S1.15; the remittance on the calendar to S5.01, since tax is
+  paid to the treasury in the instruction that withholds or charges it.
+- **As built**:
+  - four systems declare kinds the world binds (`if-state`): `sys-tax` the income tax's bands and the consumption
+    tax's rate, `sys-soc` the benefit for a job lost, `sys-sov` the bills and their auctions, `sys-trs` the treasury's
+    payment order;
+  - income tax: the books hold a withholding for the employment line kind in each currency (`Withholding`, bound at
+    open and load), and every wage payment the dues make pays its members' levy — each member's year's share of the
+    bands over its wage times the payments a year — to the treasury and the rest to the member, in the payment's own
+    instruction; a pooled line's losers give back both parts;
+  - the consumption tax is included in the price paid at the till; the seller pays its share to the treasury in the
+    sale's instruction, a whole share for each of its twins;
+  - a person laid off, or released by a failed firm, claims the benefit when its months' pay is worth more than the
+    hours claiming takes at its last wage; it joins its country's line of that monthly amount, paid by the treasury
+    for the benefit's months at the benefits' rank in the payment order; a hire ends it;
+  - each country's bills are auctioned weekly on its declared weekday at the fund stage, before the facilities: the
+    treasury's placeholder plan offers what keeps a buffer of weeks of its last week's outflow after its maturities,
+    each bank bids its reserves above its target at the price whose yield is the deposit facility's rate, and a
+    uniform-price clearing sells the face bid; each auction is a line whose face is paid at maturity by the dues at
+    the debt service's rank; the discount is taken when the bill is sold (F-110);
+  - the state pension keeps the rank its opening terms carry (F-110).
 
 **Architecture**: §4.3 (levies), §4.6 (policy values), §7.8 (year-to-date positions).
 
@@ -7211,8 +7236,6 @@ reported daily.
 - `LC-1-29`: TRS.6 — debt outstanding equals issuance minus redemptions, read from the register.
 - `LC-1-30`: SOC.7 — every benefit is paid to a named household under its rule, after its claim.
 - `LC-1-31`: auction results (cover, tail, failures) are published.
-- `LC-1-48`: the means test's kink is registered and no cell holds members on both sides of it (read from the kink
-  signatures).
 
 **Budget**: levies are inside settlement's unit cost; returns are spread over the filing window (N8.9); claims are
 occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_sov.auctions`.
@@ -7228,15 +7251,15 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
 - a payment order written in code rather than read from the country's declaration.
 
 **Done when**
-- [ ] The state taxes, pays a benefit on claims, pays its opening staff and funds itself with bills.
-- [ ] LC-1-28 to LC-1-31 and LC-1-48 pass.
-- [ ] Two reviews are done.
+- [x] The state taxes, pays a benefit on claims and funds itself with bills (the opening gives it no staff).
+- [x] LC-1-28 to LC-1-31 registered, read at the gate; the means test's check moved with it (S5.02).
+- [x] Two reviews are done.
 
 ---
 
 ### S1.12 — `sys-hh`: households spend, work and save
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: HH.1, HH.2, HH.3; PTY.2 *(completes it: households promoted and demoted by their rank)*.
@@ -14067,6 +14090,8 @@ in a non-money unit), §4.5 (rows, no retail holder lists), §6.1 (3e, 4a, 5c, 6
 - `procure_lowest_price_ties_by_lot`.
 
 **Live checks**
+- `LC-1-48`: the means test's kink is registered and no cell holds members on both sides of it (read from the kink
+  signatures).
 - `LC-5-06`: SOC.3, SOC.7 — every benefit payment names a living member's household or a survivor, a rule and a
   claim; every eligibility end ended the rows of named members; no benefit is paid without a claim.
 - `LC-5-07`: SOC.6 — benefit spending by kind against unemployment, illness and the population over pension age,
@@ -16664,6 +16689,8 @@ the final build within the budget on the phone.
 | F-107 | S1.08 | build, 2026-09-26 | Firms fail earlier and more at once: on the 120-day build run the most defaults on a day rose from 6 311 (21 April) to 10 553, the first mass on 24 February, the grace's end after the first payday; their released staff lift the searching agents to 203 528 (the budget's 0.1 M, architecture §13.2), the day's changed persons lift the screening counters (131 242 agents booked on a day), and that day's 7c takes about 7 s on the build machine (1.9 s releasing staff, 4.5 s paying 129 345 severances in one instruction per employer) | jobs are now dealt by region and occupation (LAB.1), so a firm's wage bill no longer averages its country's, while its opening money was drawn by its size; and no firm earns before it produces and sells (F-016, F-095) | the firms' opening state and sales (S1.15), after which defaults and searching are the world's; the budget re-measured at the gate, the severances settled through the day's batch if the day still misses it | open for S1.15 |
 | F-108 | S1.09 | build, 2026-09-26 | Banks lend to no firm yet: every refinancing applicant's cover is below the first class, so it is declined and the firm pays its maturing loan from its money or fails; four of the banks' values are assumed (the loan-years and recoveries a published statistic counts for, the days before maturity a firm seeks to refinance, and that a refinancing asks the loan's months again); small firms' pooled loans are neither assessed nor refinanced, since they never fall due; and a bank's review walks every firm loan monthly | firms earn nothing before they produce and sell (F-016, F-095); no source measures a lender's learning or a firm's refinancing lead; the small firms' loans are interest-only at the opening; the review keeps no index by bank | measured once firms earn (S1.15); the firms' own funding decision (S2.03) sets what and when they borrow; the small firms' loans with the Stage 1 opening's loan books (S1.15); the review as a rolling slice by bank if the gate's budget needs it | open for S1.15 |
 | F-109 | S1.10 | build, 2026-09-26 | The lending facility's haircut is assumed (30%), only firm term loans are eligible collateral and none is pledged, and a reserve account overdrawn overnight carries no interest, since a reserve line's terms have no dates on which its facility's rate falls due | no primary source was read for a central bank's haircut on credit claims; the collateral framework (CB.6) and pledges are S3.02's | the haircut measured from a central bank's published schedule; pledged collateral and the overdraft's charge with the central bank's operations (S3.02) | open for S3.02 |
+| F-110 | S1.11 | data, 2026-09-26 | Several of the state's values are assumed or constructed: the income tax bands are built from medians of marginal rates at points of the wage (developed, emerging from three countries) and, for the developing group, the IMF's means in multiples of output per person taken as multiples of the mean wage; the emerging benefit's months read from an ambiguous source; the claim's hours; the treasury's payment order; and a bill's discount is taken when it is sold rather than accrued, and the state pension keeps its opening terms' rank | no source gives a group's schedule as bands, relates the mean wage to output per person in the developing group, measures the time a claim takes, or states each parliament's payment order; accrual of discounts is ACC's (S2.10), and the pension's terms are SOC's (S5.02) | each measured where a source is found; the discount accrued with the accounts; the pension's rank read from the order when SOC's lines are rebuilt | open for S5.01 |
+| F-111 | S1.11 | build, 2026-09-26 | The developing group reports no policy rate (GEN.policy_rate left out for want of data), so its corridor and its banks' cost of funds are priced from its deposit rate | the BIS policy-rate series covers too few lower-middle- and low-income economies | a policy-rate source for the group (the IMF's International Financial Statistics) in `tools/data/derive.py`; the rate the committee sets from S3.02 | open for S3.02 |
 
 ---
 

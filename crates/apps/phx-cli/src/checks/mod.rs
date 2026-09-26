@@ -16,6 +16,7 @@ pub mod population;
 pub mod retail;
 pub mod saves;
 pub mod stage0;
+pub mod state;
 pub mod technology;
 
 use phx_world::Inspector;
@@ -174,6 +175,10 @@ pub const CHECKS: &[Check] = &[
     credit::LC_1_25,
     credit::LC_1_26,
     central::LC_1_27,
+    state::LC_1_28,
+    state::LC_1_29,
+    state::LC_1_30,
+    state::LC_1_31,
     firms::LC_1_45,
     goods::LC_1_46,
     freight::LC_1_47,

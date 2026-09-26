@@ -1,0 +1,10 @@
+# The developed group's treasury (spec TRS.10): the order it pays in when its cash runs short.
+
+[[primitive]]
+id = "TRS.payment_order"
+kind = "POLICY"
+owner = "TRS"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "The rank of the treasury's debt service, its pensions and its benefits in its payment order, the first paid first: debt service and pensions first, benefits after, assumed from the priority governments give debt service when cash is short, until each parliament's order is read."
+value = { axis = [0, 1, 2], values = [0, 0, 1], outside = "refuse" }

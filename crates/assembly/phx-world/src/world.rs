@@ -87,6 +87,7 @@ pub struct World {
     pub(crate) labour: crate::labour::Labour,
     pub(crate) credit: crate::credit::Credit,
     pub(crate) central: crate::central::Central,
+    pub(crate) state: crate::state::State,
     /// What the kernel reads to key goods.
     pub(crate) goods_frame: crate::goods::Frame,
     /// The day's orders, matches and trades, from their admission to their settlement.

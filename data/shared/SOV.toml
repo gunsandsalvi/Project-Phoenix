@@ -1,0 +1,37 @@
+# The sovereign's bills (spec SOV.1, SOV.3) and the treasury's buffer (TRS.9).
+
+[[primitive]]
+id = "SOV.bill_face"
+kind = "POLICY"
+owner = "SOV"
+decided_by = "parliament"
+source = "measured"
+source_ref = "A bill's face, the unit its holders' contracts count: 100 units of the currency, the least face a US Treasury bill is sold in (TreasuryDirect)."
+value = 100
+
+[[primitive]]
+id = "SOV.bill_weeks"
+kind = "POLICY"
+owner = "SOV"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The weeks a bill runs: 13, the US Treasury's most issued bill, auctioned weekly (TreasuryDirect, auction schedule)."
+value = 13
+
+[[primitive]]
+id = "SOV.auction_weekday"
+kind = "POLICY"
+owner = "SOV"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The weekday a country's bill auctions are held on: Monday (0), the day the US Treasury auctions its 13-week bill (TreasuryDirect)."
+value = 0
+
+[[primitive]]
+id = "SOV.buffer_weeks"
+kind = "POLICY"
+owner = "SOV"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The weeks of its outflow the treasury keeps as its cash buffer: one, the US Treasury's policy since 2015 to hold cash sufficient to cover one week of outflows (Quarterly Refunding Statement, 6 May 2015)."
+value = "1.0"

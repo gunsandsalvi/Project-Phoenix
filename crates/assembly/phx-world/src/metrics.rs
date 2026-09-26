@@ -103,4 +103,7 @@ pub struct Metrics {
     /// What each day's fund stage did, which a save does not carry: the run's report reads them.
     #[saved(skip)]
     pub central: Vec<(Day, crate::central::CentralDay)>,
+    /// What each day's state did, which a save does not carry: the run's report reads them.
+    #[saved(skip)]
+    pub state: Vec<(Day, crate::state::StateDay)>,
 }

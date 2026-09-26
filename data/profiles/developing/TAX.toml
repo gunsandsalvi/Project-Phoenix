@@ -1,0 +1,28 @@
+# The developing group's taxes (spec TAX.1): the income tax's marginal bands over a member's yearly wage and the consumption tax's rate.
+
+[[primitive]]
+id = "TAX.income_band_edges"
+kind = "POLICY"
+owner = "TAX"
+decided_by = "parliament"
+source = "measured"
+source_ref = "Each income tax band's lower edge as a multiple of the mean wage: the IMF's means for low-income developing countries: tax starting at 1.3 times output per person at a lowest rate of 10.4%, the top rate 29% from 34 times (Collecting Taxes data, IMF Working Paper 22/20, 2019 values), the multiples of output per person taken as multiples of the mean wage, which no source relates for these economies."
+value = { axis = [0, 1, 2], values = [0.00, 1.30, 34.00], outside = "refuse" }
+
+[[primitive]]
+id = "TAX.income_band_rates"
+kind = "POLICY"
+owner = "TAX"
+decided_by = "parliament"
+source = "measured"
+source_ref = "Each income tax band's marginal rate: the IMF's means for low-income developing countries: tax starting at 1.3 times output per person at a lowest rate of 10.4%, the top rate 29% from 34 times (Collecting Taxes data, IMF Working Paper 22/20, 2019 values), the multiples of output per person taken as multiples of the mean wage, which no source relates for these economies."
+value = { axis = [0, 1, 2], values = [0.000, 0.104, 0.290], outside = "refuse" }
+
+[[primitive]]
+id = "TAX.consumption_rate"
+kind = "POLICY"
+owner = "TAX"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The standard rate of value-added tax: 16.0%, the median over 38 lower-middle- and low-income economies (PwC Worldwide Tax Summaries, VAT rates quick chart, fetched 2026-09-26)."
+value = "0.160"

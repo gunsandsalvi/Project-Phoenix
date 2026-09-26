@@ -411,6 +411,7 @@ impl World {
                 kind: LegKind::Transformation { source: Source::Purchase(buyer.get()), cost: 0 },
             }];
             self.books.pay_into(buyer, s.matched.seller, (amount, instrument.ccy), &mut legs);
+            self.consumption_tax(s.matched.seller, (amount, instrument.ccy), &mut legs);
             let instruction = Instruction {
                 id: self.books.ledger.next_id(day),
                 reason,

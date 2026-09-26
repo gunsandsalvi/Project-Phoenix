@@ -179,7 +179,7 @@ impl World {
         let placed = self.balance_of(bank, df, Side::Asset);
         let owed = -self.balance_of(bank, lf, Side::Liability);
         let post = |w: &mut World, moves: &[(PartyId, LineId, Side, i64)], reason: ReasonId| {
-            if w.books.move_balances(moves, ccy, (reason, m), w.audit.stream()).is_err() {
+            if !w.post_moves(moves, (cb, ccy), (reason, m)) {
                 violation!(clause = "CB.7", "a facility's position that did not settle", bank = bank.get());
             }
         };
@@ -256,9 +256,46 @@ impl World {
             self.central.day.borrowed += r.borrow;
             self.central.day.uses += 1;
         }
-        if !legs.is_empty() && self.books.move_balances(&legs, ccy, (moved, m), self.audit.stream()).is_err() {
+        if !legs.is_empty() && !self.post_moves(&legs, (cb, ccy), (moved, m)) {
             violation!(clause = "CB.7", "a bank's request that did not settle", bank = bank.get());
         }
+    }
+
+    /// Balances moved on facility and reserve rows in one instruction: where a bank opens its row on a facility line,
+    /// the central bank's row there gains the member it answers, so both sides count the same contracts.
+    fn post_moves(
+        &mut self,
+        moves: &[(PartyId, LineId, Side, i64)],
+        (cb, ccy): (PartyId, Ccy),
+        (reason, m): (ReasonId, phx_ledger::transfer::MoveAt),
+    ) -> bool {
+        let flip = |side: &Side| match side {
+            Side::Asset => Side::Liability,
+            Side::Liability => Side::Asset,
+        };
+        let mut owed: BTreeMap<(LineId, bool), u32> = BTreeMap::new();
+        let mut rows: Vec<(PartyId, LineId, Side, u32, i64)> = Vec::new();
+        for (party, line, side, qty) in moves.iter().filter(|(p, ..)| *p != cb) {
+            let opens = self.row_absent(*party, *line, *side);
+            rows.push((*party, *line, *side, u32::from(opens), *qty));
+            if opens {
+                *owed.entry((*line, flip(side) == Side::Asset)).or_insert(0) += 1;
+            }
+        }
+        for (party, line, side, qty) in moves.iter().filter(|(p, ..)| *p == cb) {
+            let n = owed.remove(&(*line, *side == Side::Asset)).unwrap_or(0);
+            rows.push((*party, *line, *side, n, *qty));
+        }
+        for ((line, asset), n) in owed {
+            rows.push((cb, line, if asset { Side::Asset } else { Side::Liability }, n, 0));
+        }
+        self.books.move_rows(rows.into_iter(), (ccy, Missing::Absent), (reason, m), self.audit.stream()).is_ok()
+    }
+
+    /// Whether a party holds no row on a line's side.
+    fn row_absent(&self, party: PartyId, line: LineId, side: Side) -> bool {
+        let (place, slot) = self.books.parties.row(party);
+        phx_ledger::rows::find(self.books.parties.holder(place), slot, line, side).is_none()
     }
 
     /// A party's balance on its row of a line, none held as nothing.
@@ -271,7 +308,7 @@ impl World {
     }
 
     /// What a bank owes its depositors: its balances on the deposit lines it issues.
-    fn deposits_of(&self, bank: PartyId) -> i64 {
+    pub(crate) fn deposits_of(&self, bank: PartyId) -> i64 {
         let lines = &self.books.ledger.lines;
         let (place, slot) = self.books.parties.row(bank);
         phx_ledger::rows::rows(self.books.parties.holder(place), slot)

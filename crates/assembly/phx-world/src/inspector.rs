@@ -87,6 +87,52 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.central
     }
 
+    /// What each day's state did: the consumption tax charged, the claims, the auctions.
+    pub fn state_days(&self) -> &[(Day, crate::state::StateDay)] {
+        &self.world.metrics.state
+    }
+
+    /// Each country's bills: the face issued and redeemed, and what the bill lines hold outstanding.
+    #[must_use]
+    pub fn bills(&self) -> Vec<(u8, i64, i64, i64)> {
+        let w = self.world;
+        let Some(kind) = w.state.bills else { return Vec::new() };
+        let lines = &w.books.ledger.lines;
+        let k = lines.kind_index(kind.line);
+        (0..w.state.countries.len())
+            .filter_map(|i| u8::try_from(i).ok())
+            .map(|c| {
+                let ccy = phx_ledger::opening::currency(CountryId::new(c));
+                let outstanding: i64 = w
+                    .state
+                    .book
+                    .bills
+                    .keys()
+                    .filter(|l| lines.kind_of(**l) == k && w.books.ledger.terms.get(lines.terms(**l)).ccy == ccy)
+                    .map(|l| {
+                        lines.sole_holder(*l, phx_ledger::algebra::Side::Liability).map_or(0, |key| {
+                            let t = w.books.party_of_key(key);
+                            let (place, slot) = w.books.parties.row(t);
+                            match phx_ledger::rows::find(
+                                w.books.parties.holder(place),
+                                slot,
+                                *l,
+                                phx_ledger::algebra::Side::Liability,
+                            )
+                            .map(|r| r.optional.balance)
+                            {
+                                Some(phx_num::Missing::Present(b)) => -b,
+                                _ => 0,
+                            }
+                        })
+                    })
+                    .sum();
+                let get = |m: &std::collections::BTreeMap<u8, i64>| m.get(&c).copied().unwrap_or(0);
+                (c, get(&w.state.book.issued), get(&w.state.book.redeemed), outstanding)
+            })
+            .collect()
+    }
+
     /// Employment as the books hold it: each employment line's two sides' members, and the people each employed
     /// person's household holds, for the checks.
     #[must_use]

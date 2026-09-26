@@ -57,6 +57,7 @@ pub(crate) struct Carried {
     pub labour: crate::labour::LabourBook,
     pub credit: crate::credit::CreditBook,
     pub central: crate::central::CentralBook,
+    pub state: crate::state::StateBook,
 }
 
 /// The run's own record, outside the world hash.
@@ -143,6 +144,7 @@ impl World {
                 self.labour.book.save(w);
                 self.credit.book.save(w);
                 self.central.book.save(w);
+                self.state.book.save(w);
             }
             "books" => self.books.save_to(w),
             "population" => self.population.save_to(w),
@@ -173,7 +175,7 @@ impl World {
                 &self.unprocessed,
                 (&self.queue, &self.bindings),
                 &self.closed,
-                (&self.labour.book, &self.credit.book, &self.central.book),
+                (&self.labour.book, &self.credit.book, &self.central.book, &self.state.book),
             ),
             "books" => hash_books(h, &self.books),
             "population" => self.population.hash_into(h),
@@ -324,7 +326,7 @@ fn read_and_hash(dir: &Path, name: &str, ctx: &mut BuildContext, hs: &mut [&mut 
                     &c.unprocessed,
                     (&c.queue, &c.bindings),
                     &c.closed,
-                    (&c.labour, &c.credit, &c.central),
+                    (&c.labour, &c.credit, &c.central, &c.state),
                 );
             }
         }
@@ -400,6 +402,7 @@ pub(crate) fn read_carried(r: &mut Reader<'_>) -> Result<Carried, LoadError> {
         labour: Saved::load(r)?,
         credit: Saved::load(r)?,
         central: Saved::load(r)?,
+        state: Saved::load(r)?,
     })
 }
 

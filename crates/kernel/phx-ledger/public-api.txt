@@ -393,6 +393,7 @@ pub phx_ledger::books::Books::drawn: alloc::collections::btree::map::BTreeMap<al
 pub phx_ledger::books::Books::dues: phx_ledger::dues::DueReasons
 pub phx_ledger::books::Books::ledger: phx_ledger::apply::Ledger<B>
 pub phx_ledger::books::Books::parties: phx_ledger::books::Parties<B>
+pub phx_ledger::books::Books::withholding: alloc::vec::Vec<phx_ledger::levy::Withholding>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::apply(&mut self, phx_ledger::apply::ApplyAt, phx_ledger::instruction::Instruction, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::close(&mut self) -> phx_ledger::apply::DayBook
@@ -417,6 +418,7 @@ pub fn phx_ledger::books::Books<B>::lend(&mut self, (phx_id::ids::PartyId, phx_i
 pub fn phx_ledger::books::Books<B>::members_join(&mut self, (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side), phx_id::ids::PartyId, u32, (phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt), &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::members_leave(&mut self, (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side), u32, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> core::result::Result<alloc::vec::Vec<(phx_id::ids::PartyId, u32)>, phx_ledger::fails::Fail> where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::move_balances(&mut self, &[(phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, i64)], phx_num::money::Ccy, (phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt), &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
+pub fn phx_ledger::books::Books<B>::move_rows(&mut self, impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, u32, i64)>, (phx_num::money::Ccy, phx_num::missing::Missing<&[phx_ledger::transfer::Payment]>), (phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt), &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::read_unlisted(&mut self, &[(phx_id::ids::LineId, phx_ledger::algebra::Side)]) -> bool where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::to_procedure_line(&mut self, phx_ledger::transfer::ToProcedureLine, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_id::ids::LineId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::transfer(&mut self, phx_ledger::transfer::LineTransfer, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
@@ -1035,6 +1037,14 @@ pub phx_ledger::levy::LevyDecl::schedule: phx_ledger::levy::LevySchedule
 pub struct phx_ledger::levy::Withheld
 pub phx_ledger::levy::Withheld::net: i64
 pub phx_ledger::levy::Withheld::remitted: i64
+pub struct phx_ledger::levy::Withholding
+pub phx_ledger::levy::Withholding::bands: alloc::vec::Vec<phx_ledger::levy::Band>
+pub phx_ledger::levy::Withholding::ccy: phx_num::money::Ccy
+pub phx_ledger::levy::Withholding::kind: u16
+pub phx_ledger::levy::Withholding::payee: phx_id::ids::PartyId
+pub phx_ledger::levy::Withholding::periods: i64
+impl phx_ledger::levy::Withholding
+pub fn phx_ledger::levy::Withholding::on_payment(&self, i64) -> i64
 pub fn phx_ledger::levy::on_row(i64, i64, u32, phx_ledger::levy::Rates<'_>, phx_num::round::Round) -> i64
 pub fn phx_ledger::levy::per_member(i64, i64, phx_ledger::levy::Rates<'_>, phx_num::round::Round) -> i64
 pub fn phx_ledger::levy::withhold(i64, i64, phx_ledger::levy::Rates<'_>, phx_num::round::Round) -> phx_ledger::levy::Withheld
@@ -1392,6 +1402,7 @@ pub phx_ledger::transfer::ToProcedureLine::procedure: u16
 pub phx_ledger::transfer::ToProcedureLine::reason: phx_ledger::instruction::ReasonId
 pub phx_ledger::transfer::ToProcedureLine::side: phx_ledger::algebra::Side
 pub fn phx_ledger::transfer::split_at_kink(&[(i64, u32)], phx_core::register::limit::DeclaredLimit<phx_num::money::Amount>, u32) -> alloc::vec::Vec<(i64, i64)>
+pub type phx_ledger::transfer::Payment = (phx_id::ids::PartyId, phx_id::ids::PartyId, i64)
 pub mod phx_ledger::units
 #[repr(C)] pub struct phx_ledger::units::NamedUnit
 pub phx_ledger::units::NamedUnit::class: u16

@@ -209,6 +209,7 @@ impl World {
                 };
                 dues =
                     self.books.settle_day(&self.due, day, &self.calendar, &self.closed, &draws_of, self.audit.stream());
+                self.bills_redeemed();
                 self.estates_settle(day);
                 self.markets_settle(SubStep::S7c);
                 self.freight_settle(day, SubStep::S7c);
@@ -216,6 +217,7 @@ impl World {
                 self.credit_settle(day);
             }
             if info.step == SubStep::S8d {
+                self.bill_auctions(day);
                 self.central_fund(day);
             }
             if info.step == SubStep::S9b {

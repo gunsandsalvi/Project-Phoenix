@@ -48,7 +48,7 @@ pub const STATE_PENSION: LineKindDecl = LineKindDecl {
 
 const TREASURIES: &str = "CB.treasury";
 
-/// The state pension line's kind in the books.
+/// The state pension's and the benefit's line kinds in the books, and the reason a claim joins under.
 #[derive(Debug)]
 pub struct Declared;
 
@@ -73,7 +73,10 @@ impl Contribution for Declared {
     }
 
     fn contribute(&self, opening: &mut Opening<'_>) {
-        books::of(opening).ledger.lines.declare_money(STATE_PENSION);
+        let ledger = &mut books::of(opening).ledger;
+        ledger.lines.declare_money(STATE_PENSION);
+        ledger.lines.declare_money(crate::benefit::BENEFIT);
+        let _ = ledger.reasons.declare(crate::benefit::CLAIMED);
     }
 }
 

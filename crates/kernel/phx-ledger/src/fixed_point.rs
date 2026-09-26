@@ -90,8 +90,19 @@ impl<B: Backing> Work<'_, B> {
         let failed = day.failed;
         let per = day.per_member;
         let more = day.losers.get_or_insert_with(|| Losers::new(&claimants, draws_of(line))).draw_to(failed);
+        let kind = self.books.ledger.lines.kind_of(line);
+        let levy = self
+            .books
+            .withholding
+            .iter()
+            .find(|w| w.kind == kind && w.ccy == ccy)
+            .map(|w| (w.payee, w.on_payment(per)));
         for (claimant, k) in more {
-            let (legs, _) = self.books.route(claimant, -times(per, k), ccy);
+            let tax = levy.map_or(0, |(_, t)| t);
+            let (mut legs, _) = self.books.route(claimant, -times(per - tax, k), ccy);
+            if let Some((payee, t)) = levy.filter(|(_, t)| *t > 0) {
+                legs.extend(self.books.route(payee, -times(t, k), ccy).0);
+            }
             for party in self.books.book(self.records, &legs, -1) {
                 self.enqueue(party);
             }

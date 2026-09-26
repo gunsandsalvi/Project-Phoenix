@@ -1,0 +1,137 @@
+//! SOV, the sovereign's debt, first cut: bills sold at uniform-price call auctions to the banks that bid, sized by the
+//! treasury's placeholder plan, each a contract its holders are paid at maturity. Bonds, dealers and the funding plan
+//! arrive with their own steps.
+
+mod rules;
+
+use if_state::kinds::{BillKind, BillLaw};
+use phx_core::{
+    Contribution, DECLARATIONS, Declarations, HandlerTable, Opening, OpeningCountry, OpeningPhase, Register, System,
+    declare_prim,
+};
+use phx_ledger::instruction::{Effect, ReasonDecl};
+use phx_ledger::line::{LineKindDecl, SideDecl};
+use phx_ledger::rows::BALANCE;
+use phx_macros::clause;
+use phx_num::{Count, Fixed, Missing};
+
+pub use rules::{bid, clear, size};
+
+declare_prim! {
+    /// A bill's face, the unit its holders' contracts are counted in.
+    pub FACE = "SOV.bill_face" { kind: Policy, decided_by: "parliament", value: Count, clause: "SOV.1", scope: Shared }
+}
+
+declare_prim! {
+    /// The weeks a bill runs.
+    pub WEEKS = "SOV.bill_weeks" { kind: Policy, decided_by: "parliament", value: Count, clause: "SOV.1", scope: Shared }
+}
+
+declare_prim! {
+    /// The weekday a country's bill auctions are held on, the first of the week its first.
+    pub WEEKDAY = "SOV.auction_weekday" {
+        kind: Policy, decided_by: "parliament", value: Count, clause: "SOV.3", scope: Shared
+    }
+}
+
+declare_prim! {
+    /// The weeks of its outflow the treasury keeps as its cash buffer.
+    pub BUFFER_WEEKS = "SOV.buffer_weeks" {
+        kind: Policy, decided_by: "parliament", value: Fixed { exp: 1 }, clause: "TRS.9", scope: Shared
+    }
+}
+
+/// A bill: the treasury's liability to the banks that hold it, each holding the contracts it bought.
+const BILL: LineKindDecl = LineKindDecl {
+    name: "treasury bill",
+    asset: SideDecl {
+        holder_kinds: &["bank"],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: true,
+    },
+    liability: SideDecl {
+        holder_kinds: &["treasury"],
+        words: BALANCE,
+        holder_list: true,
+        holder_roles: &[],
+        exclusive: false,
+        many: false,
+    },
+    dated: true,
+    transfer_requesters: &["SOV"],
+};
+
+/// Bills sold: the buyers' contracts written and their price paid to the treasury.
+pub const SOLD: ReasonDecl =
+    ReasonDecl { name: "SOV sold", order: 2, paid: Effect::Equity, received: Effect::Equity, held: Missing::Absent };
+
+/// A country's bills.
+///
+/// # Errors
+/// A primitive missing or of another shape.
+#[clause("SOV.1", "SOV.3", "TRS.9")]
+pub fn law(register: &Register, _: &OpeningCountry) -> Result<BillLaw, String> {
+    Ok(BillLaw {
+        face: i64::try_from(register.count(FACE.id)?).map_err(|e| e.to_string())?,
+        weeks: u16::try_from(register.count(WEEKS.id)?).map_err(|e| e.to_string())?,
+        weekday: u32::try_from(register.count(WEEKDAY.id)?).map_err(|e| e.to_string())?,
+        buffer_weeks: register.fixed(BUFFER_WEEKS.id)?,
+    })
+}
+
+/// The sovereign's bills, which the kernel runs.
+pub const BILLS: BillKind =
+    BillKind { line: BILL.name, sold: SOLD.name, law, size: rules::size, bid: rules::bid, clear: rules::clear };
+
+/// The bills' declarations in the books: their line kind and the reason their sales move under.
+#[derive(Debug)]
+pub struct Declared;
+
+impl Contribution for Declared {
+    fn name(&self) -> &'static str {
+        "bill declarations"
+    }
+    fn phase(&self) -> OpeningPhase {
+        DECLARATIONS
+    }
+    fn reads(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn writes(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn drawn(&self) -> &'static [&'static str] {
+        &[]
+    }
+    fn derived(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    fn contribute(&self, opening: &mut Opening<'_>) {
+        let ledger = &mut phx_ledger::books::of(opening).ledger;
+        ledger.lines.declare_money(BILL);
+        let _ = ledger.reasons.declare(SOLD);
+    }
+}
+
+/// The sovereign's debt.
+#[derive(Debug)]
+pub struct Sov;
+
+impl System for Sov {
+    const CODE: &'static str = "SOV";
+
+    fn declare(d: &mut Declarations) {
+        for p in [&FACE, &WEEKS, &WEEKDAY] {
+            let _: phx_core::Prim<Count> = d.prim(p);
+        }
+        let _: phx_core::Prim<Fixed<1>> = d.prim(&BUFFER_WEEKS);
+        d.contribution(Box::new(Declared));
+        d.market(Box::new(BILLS));
+    }
+
+    fn handlers(_: &mut HandlerTable) {}
+}

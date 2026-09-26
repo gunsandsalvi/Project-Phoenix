@@ -292,6 +292,8 @@ pub struct Books<B: Backing = SystemBacking> {
     pub(crate) buffers: crate::apply_batch::DayBuffers,
     /// The workers stage 7 reads its shards on, where the world gives it some; without, the shards run in turn.
     pub(crate) pool: Option<std::sync::Arc<phx_exec::Pool>>,
+    /// The levies withheld from the payments on a line kind in a currency, as the tax system binds them.
+    pub withholding: Vec<crate::levy::Withholding>,
 }
 
 /// The opening's instructions feed no audit: day one's audit reads the state they leave.
@@ -377,6 +379,7 @@ impl<B: Backing> Books<B> {
             leaving: BTreeMap::new(),
             buffers: crate::apply_batch::DayBuffers::default(),
             pool: None,
+            withholding: Vec::new(),
         }
     }
 
@@ -566,6 +569,7 @@ impl<B: Backing> Books<B> {
             leaving: BTreeMap::new(),
             buffers: crate::apply_batch::DayBuffers::default(),
             pool: None,
+            withholding: Vec::new(),
         };
         books.relist();
         Ok(books)

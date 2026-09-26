@@ -1,0 +1,55 @@
+pub mod if_state
+pub mod if_state::kinds
+pub struct if_state::kinds::Allotment
+pub if_state::kinds::Allotment::price: f64
+pub if_state::kinds::Allotment::won: alloc::vec::Vec<(u32, i64)>
+pub struct if_state::kinds::BenefitKind
+pub if_state::kinds::BenefitKind::claim: fn(&if_state::kinds::ClaimIn) -> bool
+pub if_state::kinds::BenefitKind::claimed: &'static str
+pub if_state::kinds::BenefitKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BenefitLaw, alloc::string::String>
+pub if_state::kinds::BenefitKind::line: &'static str
+pub struct if_state::kinds::BenefitLaw
+pub if_state::kinds::BenefitLaw::claim_hours: f64
+pub if_state::kinds::BenefitLaw::months: u32
+pub if_state::kinds::BenefitLaw::replacement: f64
+pub struct if_state::kinds::Bid
+pub if_state::kinds::Bid::bidder: u32
+pub if_state::kinds::Bid::face: i64
+pub if_state::kinds::Bid::price: f64
+pub struct if_state::kinds::BidIn
+pub if_state::kinds::BidIn::excess: f64
+pub if_state::kinds::BidIn::floor_price: f64
+pub struct if_state::kinds::BillKind
+pub if_state::kinds::BillKind::bid: fn(&if_state::kinds::BidIn) -> alloc::vec::Vec<(f64, f64)>
+pub if_state::kinds::BillKind::clear: fn(i64, &[if_state::kinds::Bid]) -> core::option::Option<if_state::kinds::Allotment>
+pub if_state::kinds::BillKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BillLaw, alloc::string::String>
+pub if_state::kinds::BillKind::line: &'static str
+pub if_state::kinds::BillKind::size: fn(&if_state::kinds::SizeIn) -> f64
+pub if_state::kinds::BillKind::sold: &'static str
+pub struct if_state::kinds::BillLaw
+pub if_state::kinds::BillLaw::buffer_weeks: f64
+pub if_state::kinds::BillLaw::face: i64
+pub if_state::kinds::BillLaw::weekday: u32
+pub if_state::kinds::BillLaw::weeks: u16
+pub struct if_state::kinds::ClaimIn
+pub if_state::kinds::ClaimIn::claiming_cost: f64
+pub if_state::kinds::ClaimIn::monthly: f64
+pub if_state::kinds::ClaimIn::months: f64
+pub struct if_state::kinds::PaymentOrder
+pub if_state::kinds::PaymentOrder::benefits: u8
+pub if_state::kinds::PaymentOrder::debt_service: u8
+pub if_state::kinds::PaymentOrder::pensions: u8
+pub struct if_state::kinds::SizeIn
+pub if_state::kinds::SizeIn::buffer_weeks: f64
+pub if_state::kinds::SizeIn::cash: f64
+pub if_state::kinds::SizeIn::maturing: f64
+pub if_state::kinds::SizeIn::outflow: f64
+pub struct if_state::kinds::TaxKind
+pub if_state::kinds::TaxKind::included: fn(f64, f64) -> f64
+pub if_state::kinds::TaxKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::TaxLaw, alloc::string::String>
+pub if_state::kinds::TaxKind::withheld_from: &'static str
+pub struct if_state::kinds::TaxLaw
+pub if_state::kinds::TaxLaw::bands: alloc::vec::Vec<(f64, f64)>
+pub if_state::kinds::TaxLaw::consumption_rate: f64
+pub struct if_state::kinds::TreasuryKind
+pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PaymentOrder, alloc::string::String>
