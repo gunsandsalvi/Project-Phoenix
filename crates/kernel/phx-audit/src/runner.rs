@@ -122,9 +122,10 @@ impl Audit {
         // Each family checks into its own findings on the pool; they are kept in the families' order.
         let checked = phx_exec::pool::map(c.pool, self.families.len(), |i| {
             let mut own = Findings::default();
-            let rows = self.families.get(i).map_or(0, |family| {
-                family.check(&FamilyCtx::new(inputs, family.decl().mode), &mut own)
-            });
+            let rows = self
+                .families
+                .get(i)
+                .map_or(0, |family| family.check(&FamilyCtx::new(inputs, family.decl().mode), &mut own));
             (rows, own)
         });
         let mut rows_checked = 0;

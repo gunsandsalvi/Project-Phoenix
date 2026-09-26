@@ -207,7 +207,9 @@ impl<B: Backing> Books<B> {
         let (mut read, mut broken) = (0_u64, 0_u64);
         for place in self.parties.places() {
             let table = self.parties.holder(place);
-            for slot in phx_store::table::live_every(table.live_words(), day.get() % RUN_SAMPLE_PERIOD, RUN_SAMPLE_PERIOD) {
+            for slot in
+                phx_store::table::live_every(table.live_words(), day.get() % RUN_SAMPLE_PERIOD, RUN_SAMPLE_PERIOD)
+            {
                 let t = runs::truth(table, slot, day, due, &self.ledger.lines);
                 read += 1;
                 if !t.holds || (t.due > 0 && !scanned.contains(&(place, slot))) {
@@ -269,7 +271,11 @@ impl<B: Backing> Books<B> {
         let mut nets = std::mem::take(&mut self.buffers.nets);
         nets.clear();
         let each = streamed.made.len().div_ceil(crate::consts::ROUTE_SHARDS);
-        for wave in (0..crate::consts::ROUTE_SHARDS).step_by(crate::consts::STREAM_WAVE) {
+        // Waves past the last payment hold nothing, so a small day pays for its payments, not for the shards.
+        for wave in (0..crate::consts::ROUTE_SHARDS)
+            .step_by(crate::consts::STREAM_WAVE)
+            .take_while(|w| w * each < streamed.made.len())
+        {
             let found_now: &Found = found;
             let mut routed = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_WAVE, |i| {
                 let at_most = |a: usize, b: usize| if a < b { a } else { b };
@@ -322,7 +328,16 @@ impl<B: Backing> Books<B> {
 
     /// One shard of 7c's payments routed: those held pending or failed kept in order, and what the settled ones add,
     /// each put with the shard of the sum it adds to.
-    fn route_shard(&self, made: &[Payment], first: usize, fixed: &FixedPoint, (closed, found): (&Closed, &Found)) -> Routed {
+    fn route_shard(
+        &self,
+        made: &[Payment],
+        first: usize,
+        fixed: &FixedPoint,
+        (closed, found): (&Closed, &Found),
+    ) -> Routed {
+        if made.is_empty() {
+            return Routed::default();
+        }
         let mut r = Routed {
             given: crate::stream::booking_buckets(),
             nets: phx_core::KernelMap::<NetKey, i128>::buckets(),
@@ -462,7 +477,8 @@ impl<B: Backing> Books<B> {
                 covers: Vec::new(),
             };
             let reads = self.read_legs(&instruction.legs);
-            let applied = self.ledger.apply_read(&mut self.parties, ApplyAt::Day(SubStep::S7c), instruction, reads, audit);
+            let applied =
+                self.ledger.apply_read(&mut self.parties, ApplyAt::Day(SubStep::S7c), instruction, reads, audit);
             if let Err(f) = applied {
                 violation!(
                     clause = "SET.6",
@@ -580,7 +596,10 @@ impl<B: Backing> Books<B> {
     {
         let at_most = |a: usize, b: usize| if a < b { a } else { b };
         let each = scanned.len().div_ceil(crate::consts::STREAM_SHARDS);
-        for wave in (0..crate::consts::STREAM_SHARDS).step_by(crate::consts::STREAM_WAVE) {
+        for wave in (0..crate::consts::STREAM_SHARDS)
+            .step_by(crate::consts::STREAM_WAVE)
+            .take_while(|w| w * each < scanned.len())
+        {
             let read = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_WAVE, |i| {
                 let from = at_most((wave + i) * each, scanned.len());
                 let to = at_most(from + each, scanned.len());

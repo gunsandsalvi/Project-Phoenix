@@ -391,4 +391,3 @@ pub(crate) fn read_run(r: &mut Reader<'_>) -> Result<RunRecord, LoadError> {
         traced_first: Saved::load(r)?,
     })
 }
-

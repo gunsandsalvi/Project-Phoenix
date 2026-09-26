@@ -300,8 +300,11 @@ impl<B: Backing> Ledger<B> {
             }
         }
         let opened = opened(&legs);
-        let drawn: Vec<Drawn> =
-            legs.iter().zip(&located).map(|(leg, at)| self.leg_draw(holders.arenas(at.table), *at, leg, &opened)).collect();
+        let drawn: Vec<Drawn> = legs
+            .iter()
+            .zip(&located)
+            .map(|(leg, at)| self.leg_draw(holders.arenas(at.table), *at, leg, &opened))
+            .collect();
         self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), audit)
     }
 
@@ -325,7 +328,9 @@ impl<B: Backing> Ledger<B> {
         }
         self.refuse(at, &legs, id);
         match reads {
-            Ok((located, drawn)) => self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), audit),
+            Ok((located, drawn)) => {
+                self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), audit)
+            }
             Err(n) => {
                 let Some(leg) = legs.get(n) else {
                     violation!(clause = "SET.7", "an ended party on no leg", id = id.get());

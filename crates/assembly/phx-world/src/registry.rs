@@ -424,7 +424,8 @@ pub fn assemble(
     let geo = Arc::new(open_map(&p.kernel, &p.c, &p.game, &p.d)?);
     let countries = u32::try_from(p.game.countries.len()).map_err(|e| one(e.to_string()))?;
     let pop = (p.pop.as_slice(), p.representation);
-    let (books, population, report) = open(&mut p.d, pop, &p.kernel, &p.c, &p.game, &geo, (&phx_core::PHASES, config.pool.as_ref()));
+    let (books, population, report) =
+        open(&mut p.d, pop, &p.kernel, &p.c, &p.game, &geo, (&phx_core::PHASES, config.pool.as_ref()));
     let accounts = open_accounts(&p.d, &p.kernel, &p.c, &books, &geo);
     let tables = phx_geo::tables(&geo, countries);
     let mut space = AddressSpace::empty();

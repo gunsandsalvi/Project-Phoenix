@@ -647,7 +647,6 @@ mod tests {
         v
     }
 
-
     #[test]
     fn a_framed_store_reads_back_as_one_stream() {
         let words: Vec<u64> = (0..600_000_u64).map(|i| i * i).collect();

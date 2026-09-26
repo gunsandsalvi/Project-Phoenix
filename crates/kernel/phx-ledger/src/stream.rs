@@ -635,7 +635,8 @@ impl<B: Backing> Books<B> {
             }
         }
         let each = heads.len().div_ceil(STREAM_SHARDS);
-        for wave in (0..STREAM_SHARDS).step_by(STREAM_WAVE) {
+        // Waves past the last head hold nothing, so a small day pays for its heads, not for the shards.
+        for wave in (0..STREAM_SHARDS).step_by(STREAM_WAVE).take_while(|w| w * each < heads.len()) {
             let plans = &found.plans;
             // A wave of shards at a time, so only a wave's payments wait to be counted.
             let mut shards = phx_exec::pool::map(self.pool.as_deref(), STREAM_WAVE, |i| {
@@ -723,7 +724,8 @@ impl<B: Backing> Books<B> {
         closed: &Closed,
     ) -> Streamed {
         let keys = self.ledger.lines.keys();
-        let mut sh = Streamed { read: 0, steps: Vec::new(), bookings: booking_buckets(), gross: 0 };
+        let bookings = if heads.is_empty() { Vec::new() } else { booking_buckets() };
+        let mut sh = Streamed { read: 0, steps: Vec::new(), bookings, gross: 0 };
         for &key in heads {
             let (place, slot) = keys.split(key);
             let table = self.parties.holder(place);

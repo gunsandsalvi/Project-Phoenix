@@ -348,7 +348,7 @@ impl World {
             );
         }
         let each = due.len().div_ceil(GATHER_SHARDS);
-        for wave in (0..GATHER_SHARDS).step_by(GATHER_WAVE) {
+        for wave in (0..GATHER_SHARDS).step_by(GATHER_WAVE).take_while(|w| w * each < due.len()) {
             let drawn = phx_exec::pool::map(self.books.pool(), GATHER_WAVE, |i| {
                 let from = lesser((wave + i) * each, due.len());
                 let to = lesser(from + each, due.len());
@@ -450,7 +450,7 @@ impl World {
         let hits = std::mem::take(&mut self.agent_hits);
         let agents: Vec<&[AgentHit]> = hits.chunk_by(|a, b| (a.kind, a.slot) == (b.kind, b.slot)).collect();
         let each = agents.len().div_ceil(GATHER_SHARDS);
-        for wave in (0..GATHER_SHARDS).step_by(GATHER_WAVE) {
+        for wave in (0..GATHER_SHARDS).step_by(GATHER_WAVE).take_while(|w| w * each < agents.len()) {
             let changed = phx_exec::pool::map(self.books.pool(), GATHER_WAVE, |i| {
                 let from = lesser((wave + i) * each, agents.len());
                 let to = lesser(from + each, agents.len());
