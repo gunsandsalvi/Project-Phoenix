@@ -322,28 +322,38 @@ struct Load {
 }
 
 impl Load {
-    /// A full save as the world writes one: the built agents and books through their own encodings, then the held
-    /// stores the world saves, in fixed frames compressed a wave at a time on the pool; returns the bytes written.
-    fn save(&self, path: &std::path::Path, stores: &[Store]) -> Result<u64, String> {
-        let file = std::fs::File::create(path).map_err(|e| format!("{}: {e}", path.display()))?;
-        let mut sink = std::io::BufWriter::new(file);
-        let compress = |frames: &[Vec<u8>]| {
-            self.pool.map(frames.len(), |i| {
-                frames.get(i).map_or_else(|| Ok(Vec::new()), |f| phx_store::save::compress_frame(f))
-            })
-        };
-        let mut w = phx_store::save::Writer::framed(&mut sink, &compress);
-        phx_store::Saved::save(&self.population.table, &mut w);
-        self.books.books.save_to(&mut w);
-        for (s, _) in self.stores.iter().zip(stores).filter(|(_, declared)| declared.saved) {
-            for chunk in s.chunks(SAVE_WORDS) {
-                let bytes: Vec<u8> = chunk.iter().flat_map(|x| x.to_le_bytes()).collect();
-                w.bytes(&bytes);
+    /// A full save as the world writes one: the built agents and books through their own encodings and the held
+    /// stores the world saves, each to its own file, all at once on the pool, each in fixed frames compressed a wave
+    /// at a time on the pool too; returns the bytes written.
+    fn save(&self, dir: &std::path::Path, stores: &[Store]) -> Result<u64, String> {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        let held: Vec<&Vec<u64>> = self.stores.iter().zip(stores).filter(|(_, s)| s.saved).map(|(h, _)| h).collect();
+        let pool: &Pool = &self.pool;
+        let written = pool.map(held.len() + 2, |i| {
+            let path = dir.join(format!("store-{i}.zst"));
+            let file = std::fs::File::create(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+            let mut sink = std::io::BufWriter::new(file);
+            let compress = |frames: &[Vec<u8>]| {
+                pool.map(frames.len(), |f| {
+                    frames.get(f).map_or_else(|| Ok(Vec::new()), |frame| phx_store::save::compress_frame(frame))
+                })
+            };
+            let mut w = phx_store::save::Writer::framed(&mut sink, &compress);
+            match i {
+                0 => phx_store::Saved::save(&self.population.table, &mut w),
+                1 => self.books.books.save_to(&mut w),
+                _ => {
+                    for chunk in held.get(i - 2).map_or(&[][..], |h| h.as_slice()).chunks(SAVE_WORDS) {
+                        let bytes: Vec<u8> = chunk.iter().flat_map(|x| x.to_le_bytes()).collect();
+                        w.bytes(&bytes);
+                    }
+                }
             }
-        }
-        let (written, _) = w.finish().map_err(|e| e.to_string())?;
-        std::io::Write::flush(&mut sink).map_err(|e| e.to_string())?;
-        Ok(written)
+            let (bytes, _) = w.finish().map_err(|e| e.to_string())?;
+            std::io::Write::flush(&mut sink).map_err(|e| e.to_string())?;
+            Ok::<u64, String>(bytes)
+        });
+        written.into_iter().sum()
     }
 
     fn store(&self, name: Option<&String>) -> Option<usize> {
@@ -525,10 +535,10 @@ pub fn measure(host: &dyn BenchHost, volumes_path: &str, save_dir: &str) -> Resu
         records.push(DayRecord { index: i, kind: *kind, walls, total_ns });
         if v.month.saves.contains(&i) {
             let t0 = clock.now_ns();
-            let path = std::path::Path::new(save_dir).join(format!("load-save-{i}.zst"));
+            let path = std::path::Path::new(save_dir).join(format!("load-save-{i}"));
             let bytes = load.save(&path, &v.stores)?;
             let ms = (clock.now_ns() - t0) / NS_PER_MS;
-            std::fs::remove_file(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+            std::fs::remove_dir_all(&path).map_err(|e| format!("{}: {e}", path.display()))?;
             let name = format!("save after day {}", i + 1);
             show(
                 host,

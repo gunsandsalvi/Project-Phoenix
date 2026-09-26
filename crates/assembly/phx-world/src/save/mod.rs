@@ -178,17 +178,34 @@ impl World {
     #[clause("SET.12", "SET.13", "N8.10")]
     pub fn save(&self, root: &Path, build: &str) -> Result<SaveRecord, String> {
         let dir = retention::begin(root, self.today)?;
-        let mut stores = Vec::new();
-        let mut whole = LogicalHasher::new(HASH_KEY);
-        for name in STORES {
-            let (bytes, raw_bytes) = write_store(&dir, name, self.books.pool(), &|w| self.write_one(name, w))?;
-            let mut h = LogicalHasher::new(HASH_KEY);
-            self.hash_one(name, &mut h);
-            self.hash_one(name, &mut whole);
-            stores.push(StoreRecord { name, bytes, raw_bytes, hash: h.finish() });
-        }
-        let (run_bytes, run_raw) = write_store(&dir, RUN, self.books.pool(), &|w| self.write_one(RUN, w))?;
-        let world_hash = whole.finish();
+        let pool = self.books.pool();
+        // Every store written and hashed at once, each to its own file, with the run's record and the world's hash,
+        // which reads the stores in their order, as tasks beside them.
+        let tasks = STORES.len() + 2;
+        let done = phx_exec::pool::map(pool, tasks, |i| match STORES.get(i) {
+            Some(name) => write_store(&dir, name, pool, &|w| self.write_one(name, w)).map(|sizes| {
+                let mut h = LogicalHasher::new(HASH_KEY);
+                self.hash_one(name, &mut h);
+                (sizes, h.finish())
+            }),
+            None if i == STORES.len() => write_store(&dir, RUN, pool, &|w| self.write_one(RUN, w)).map(|s| (s, 0)),
+            None => {
+                let mut whole = LogicalHasher::new(HASH_KEY);
+                for name in STORES {
+                    self.hash_one(name, &mut whole);
+                }
+                Ok(((0, 0), whole.finish()))
+            }
+        });
+        let mut done = done.into_iter().collect::<Result<Vec<_>, String>>()?.into_iter();
+        let stores: Vec<StoreRecord> = STORES
+            .iter()
+            .zip(done.by_ref())
+            .map(|(name, ((bytes, raw_bytes), hash))| StoreRecord { name, bytes, raw_bytes, hash })
+            .collect();
+        let (Some(((run_bytes, run_raw), _)), Some((_, world_hash))) = (done.next(), done.next()) else {
+            return Err("a save task that never ran".to_owned());
+        };
         let mut entries: Vec<StoreEntry> = stores
             .iter()
             .map(|s| StoreEntry {
@@ -374,3 +391,4 @@ pub(crate) fn read_run(r: &mut Reader<'_>) -> Result<RunRecord, LoadError> {
         traced_first: Saved::load(r)?,
     })
 }
+
