@@ -135,7 +135,7 @@ pub struct Writer<'a> {
 /// caller, who may compress them at once; or a hash of a value's encoding as it stands.
 enum Out<'a> {
     Store(frame::Compress<Counted<'a>>),
-    Framed { sink: Counted<'a>, frames: Vec<Vec<u8>>, compress: Frames<'a> },
+    Framed { sink: Counted<'a>, frames: Vec<Vec<u8>>, compress: Frames<'a>, frame: usize },
     Hash(&'a mut crate::hash::LogicalHasher),
 }
 
@@ -168,8 +168,14 @@ impl<'a> Writer<'a> {
     /// are cut by bytes alone, so the file is the same however they are compressed.
     #[must_use]
     pub fn framed(sink: &'a mut dyn Write, compress: Frames<'a>) -> Writer<'a> {
-        let frames = vec![Vec::with_capacity(SAVE_FRAME_BYTES)];
-        Writer { out: Out::Framed { sink: Counted { inner: sink, bytes: 0 }, frames, compress }, failed: None, raw: 0 }
+        Writer::framed_by(sink, compress, SAVE_FRAME_BYTES)
+    }
+
+    /// A framed writer whose frames are `frame` bytes.
+    fn framed_by(sink: &'a mut dyn Write, compress: Frames<'a>, frame: usize) -> Writer<'a> {
+        let frames = vec![Vec::with_capacity(frame)];
+        let out = Out::Framed { sink: Counted { inner: sink, bytes: 0 }, frames, compress, frame };
+        Writer { out, failed: None, raw: 0 }
     }
 
     /// Bytes as they stand.
@@ -182,17 +188,17 @@ impl<'a> Writer<'a> {
                     self.failed = Some(e);
                 }
             }
-            Out::Framed { sink, frames, compress } => {
+            Out::Framed { sink, frames, compress, frame } => {
                 let mut rest = b;
                 while !rest.is_empty() {
                     let Some(last) = frames.last_mut() else {
                         violation!(clause = "SET.12", "a framed writer with no frame open");
                     };
-                    let room = SAVE_FRAME_BYTES - last.len();
+                    let room = *frame - last.len();
                     let (now, later) = rest.split_at(if rest.len() < room { rest.len() } else { room });
                     last.extend_from_slice(now);
                     rest = later;
-                    if last.len() == SAVE_FRAME_BYTES {
+                    if last.len() == *frame {
                         if frames.len() == SAVE_FRAME_WAVE
                             && self.failed.is_none()
                             && let Err(e) = flush_frames(sink, frames, *compress)
@@ -200,7 +206,7 @@ impl<'a> Writer<'a> {
                             self.failed = Some(e);
                         }
                         frames.retain(|f| !f.is_empty());
-                        frames.push(Vec::with_capacity(SAVE_FRAME_BYTES));
+                        frames.push(Vec::with_capacity(*frame));
                     }
                 }
             }
@@ -234,7 +240,7 @@ impl<'a> Writer<'a> {
         }
         match self.out {
             Out::Store(out) => Ok((frame::finish(out)?.bytes, self.raw)),
-            Out::Framed { mut sink, mut frames, compress } => {
+            Out::Framed { mut sink, mut frames, compress, .. } => {
                 frames.retain(|f| !f.is_empty());
                 flush_frames(&mut sink, &mut frames, compress)?;
                 sink.flush()?;
@@ -649,19 +655,23 @@ mod tests {
 
     #[test]
     fn a_framed_store_reads_back_as_one_stream() {
-        let words: Vec<u64> = (0..600_000_u64).map(|i| i * i).collect();
+        // Frames of 4 KiB cut writes across frames and waves as the world's 1 MiB frames do, on fewer bytes.
+        let frame = 1 << 12;
+        let n = if cfg!(miri) { 20_000_u64 } else { 600_000 };
+        let words: Vec<u64> = (0..n).map(|i| i * i).collect();
         let compress = |frames: &[Vec<u8>]| frames.iter().map(|f| super::compress_frame(f)).collect::<Vec<_>>();
         let mut file = Vec::new();
-        let mut w = Writer::framed(&mut file, &compress);
+        let mut w = Writer::framed_by(&mut file, &compress, frame);
         for chunk in words.chunks(1000) {
             let bytes: Vec<u8> = chunk.iter().flat_map(|x| x.to_le_bytes()).collect();
             w.bytes(&bytes);
         }
         let (_, raw) = w.finish().unwrap();
-        assert_eq!(raw, 600_000 * 8);
+        assert_eq!(raw, n * 8);
+        assert!(raw > u64::try_from(super::SAVE_FRAME_WAVE * frame).unwrap(), "more than one wave of frames");
         let mut input: &[u8] = &file;
         let mut r = Reader::new(&mut input).unwrap();
-        let back = r.bytes(600_000 * 8).unwrap();
+        let back = r.bytes(usize::try_from(n * 8).unwrap()).unwrap();
         assert!(back.chunks(8).map(|b| u64::from_le_bytes(b.try_into().unwrap())).eq(words.iter().copied()));
         assert!(r.at_end().unwrap());
     }
