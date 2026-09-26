@@ -1015,6 +1015,13 @@ pub phx_ledger::instrument::NewInstrument::issuer: phx_num::missing::Missing<phx
 pub phx_ledger::instrument::NewInstrument::terms: phx_ledger::terms::TermsId
 pub phx_ledger::instrument::NewInstrument::unit: phx_num::qty::UnitId
 pub mod phx_ledger::intents
+pub struct phx_ledger::intents::CloseIntent
+pub phx_ledger::intents::CloseIntent::row: phx_id::ids::Slot
+impl phx_ledger::intents::CloseIntent
+pub fn phx_ledger::intents::CloseIntent::decode(&[u64]) -> core::option::Option<phx_ledger::intents::CloseIntent>
+impl phx_core::handler::IntentDef for phx_ledger::intents::CloseIntent
+pub const phx_ledger::intents::CloseIntent::NAME: &'static str
+pub fn phx_ledger::intents::CloseIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub struct phx_ledger::intents::Made
 pub phx_ledger::intents::Made::cost: i64
 pub phx_ledger::intents::Made::grade: u8

@@ -491,6 +491,12 @@ impl World {
                         };
                         self.admit_ship(g.step, rows_of(g.rows), &o);
                     }
+                    phx_ledger::intents::CloseIntent::NAME => {
+                        let Some(o) = phx_ledger::intents::CloseIntent::decode(words) else {
+                            violation!(clause = "CHN.4", "a closure its words do not encode", words = words.len());
+                        };
+                        self.close_firm(day, rows_of(g.rows), o.row);
+                    }
                     phx_market::intents::InvestIntent::NAME => {
                         let Some(o) = phx_market::intents::InvestIntent::decode(words) else {
                             violation!(

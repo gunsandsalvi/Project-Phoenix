@@ -125,8 +125,21 @@ fn firms_end(w: Inspector<'_>) -> Outcome {
             ));
         }
     }
-    Outcome::NotYet("firms close from S1.05, and their endings per industry are read over a year of the run")
+    let ran = u64::from(today.get()) - u64::from(w.day_zero().get());
+    if ran < DAYS_A_YEAR {
+        return Outcome::NotYet("firms' endings are read over a year of the run");
+    }
+    let days = w.agent_days();
+    let (closed, defaulted): (u64, u64) =
+        (days.iter().map(|d| d.closures).sum(), days.iter().map(|d| d.defaults).sum());
+    if closed == 0 || defaulted == 0 {
+        return Outcome::Fail(format!("over {ran} days, {closed} firms closed and {defaulted} defaulted"));
+    }
+    Outcome::Pass
 }
+
+/// The days of a year, over which firms' endings are read.
+const DAYS_A_YEAR: u64 = 365;
 
 pub const LC_1_45: super::Check = live_check! {
     id: "LC-1-45",

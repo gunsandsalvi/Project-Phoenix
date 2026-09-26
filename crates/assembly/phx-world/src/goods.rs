@@ -240,6 +240,7 @@ struct RowGoods {
     rights: Vec<HeldRight>,
     delivered: Vec<Units>,
     money: Missing<i64>,
+    net_assets: Missing<i64>,
 }
 
 impl RowGoods {
@@ -252,6 +253,7 @@ impl RowGoods {
             rights: Vec::new(),
             delivered: Vec::new(),
             money: Missing::Absent,
+            net_assets: Missing::Absent,
         }
     }
 }
@@ -290,6 +292,10 @@ impl GoodsView for RunGoods {
     }
     fn plant(&self, slot: Slot) -> &[phx_core::HeldPlant] {
         self.row(slot).map_or(&[], |r| r.plant.as_slice())
+    }
+
+    fn net_assets(&self, slot: Slot) -> Missing<i64> {
+        self.row(slot).map_or(Missing::Absent, |r| r.net_assets)
     }
 
     fn away(&self, slot: Slot, product: u16, grade: u8) -> Vec<phx_core::Away> {
@@ -1034,6 +1040,7 @@ impl World {
                     Missing::Absent => Missing::Absent,
                 };
             }
+            goods.net_assets = self.book_worth(place, at, row.twins);
             for (good, q) in ledger.goods.delivered(row.party) {
                 if let Missing::Present(key) = ledger.goods.key(good) {
                     goods.delivered.push((key.product, key.grade, q / row.twins));
@@ -1042,6 +1049,24 @@ impl World {
             out.rows.push(goods);
         }
         out
+    }
+
+    /// What a row is worth on its books, one twin's: its claims less what it owes, at their balances, and its
+    /// holdings at their cost; none where a row carries no balance to read.
+    fn book_worth(&self, place: u16, slot: Slot, twins: i64) -> Missing<i64> {
+        let arenas = self.books.parties.holder(place);
+        let mut total = 0_i128;
+        for r in phx_ledger::rows::rows(arenas, slot) {
+            let Missing::Present(balance) = r.optional.balance else { return Missing::Absent };
+            match r.side() {
+                phx_ledger::algebra::Side::Asset => total += i128::from(balance),
+                phx_ledger::algebra::Side::Liability => total -= i128::from(balance),
+            }
+        }
+        for (_, cost) in phx_ledger::holding::bases(arenas, slot) {
+            total += i128::from(cost);
+        }
+        i64::try_from(total / i128::from(twins)).map_or(Missing::Absent, Missing::Present)
     }
 
     /// A deposit as its right's holder sees it.

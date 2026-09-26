@@ -63,3 +63,19 @@ owner = "GDS"
 source = "measured"
 source_ref = "Each product's price at the opening, a unit's in its currency's smallest units (axis: the products' places), a currency's smallest unit buying a US cent's worth at world-average prices at the opening: one for each product whose unit is the quantity one US cent bought at world-average prices in 2022; for the extracted products the 2022 world price of a tonne in US cents, from the World Bank's Commodity Price Data (Pink Sheet) annual averages, iron ore $121.3 a dry tonne, Australian coal $344.9 a tonne and Brent, Dubai and WTI crude $97.1 a barrel at 7.33 barrels a tonne, and building stone from USGS Mineral Commodity Summaries 2023's crushed stone, $13.80 a tonne."
 value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [1.00, 12130.00, 34490.00, 71170.00, 1380.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00], outside = "refuse" }
+
+[[primitive]]
+id = "GDS.merchant_product"
+kind = "TECHNOLOGY"
+owner = "GDS"
+source = "measured"
+source_ref = "Merchants are the trade industry, whose product is distribution (G45, G46, G47), the thirteenth of TEC.products: wholesalers buy, hold and resell goods, as the input-output tables' trade margins record."
+value = 12
+
+[[primitive]]
+id = "GDS.merchant_days"
+kind = "PREFERENCE"
+owner = "GDS"
+source = "assumed"
+source_ref = "Days between a merchant's decisions to carry the goods of its place: a week, as firms plan production week by week (Vollmann, Berry, Whybark and Jacobs, 2005, Manufacturing Planning and Control for Supply Chain Management, ch. 6)."
+value = 7

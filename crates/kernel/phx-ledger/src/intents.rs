@@ -106,6 +106,30 @@ impl Transform {
     }
 }
 
+/// An owner's closure of its row's firm: the party ends into an estate that pays what it owes and passes on the rest.
+#[clause("FRM.15", "PTY.9")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CloseIntent {
+    pub row: Slot,
+}
+
+impl IntentDef for CloseIntent {
+    const NAME: &'static str = "FRM.close";
+
+    fn encode(&self, out: &mut Vec<u64>) {
+        out.push(u64::from(self.row.get()));
+    }
+}
+
+impl CloseIntent {
+    /// The closure its words encode, or none when they are not one.
+    #[must_use]
+    pub fn decode(words: &[u64]) -> Option<CloseIntent> {
+        let [row] = words else { return None };
+        Some(CloseIntent { row: Slot::new(u32::try_from(*row).ok()?) })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_core::IntentDef;

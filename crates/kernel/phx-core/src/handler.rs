@@ -130,6 +130,8 @@ pub trait GoodsView: core::fmt::Debug {
     fn plant(&self, slot: Slot) -> &[HeldPlant];
     /// The other places in the row's country a good is marked at, by each mode carriage is marked in where it stands.
     fn away(&self, slot: Slot, product: u16, grade: u8) -> Vec<Away>;
+    /// What the row's party is worth on its own books, its assets at cost less what it owes, one twin's for an agent.
+    fn net_assets(&self, slot: Slot) -> Missing<i64>;
 }
 
 /// The view of rows that hold no goods, as a kernel table's are.
@@ -163,6 +165,9 @@ impl GoodsView for NoGoods {
     }
     fn away(&self, _: Slot, _: u16, _: u8) -> Vec<Away> {
         Vec::new()
+    }
+    fn net_assets(&self, _: Slot) -> Missing<i64> {
+        Missing::Absent
     }
 }
 
@@ -247,6 +252,11 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     #[must_use]
     pub fn plant(&self, slot: Slot) -> &[HeldPlant] {
         self.parts.goods.plant(slot)
+    }
+
+    /// What the row's party is worth on its own books, one twin's for an agent.
+    pub fn net_assets(&self, slot: Slot) -> Missing<i64> {
+        self.parts.goods.net_assets(slot)
     }
 
     /// The other places a good is marked at and the carriage from the row's place to them, as the public prices show.

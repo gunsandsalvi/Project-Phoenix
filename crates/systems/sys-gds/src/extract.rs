@@ -25,6 +25,9 @@ pub struct Prims {
     pub fall: Prim<Table1>,
     pub days: Prim<Count>,
     pub standardised: Prim<Table1>,
+    pub spoilage: Prim<Table1>,
+    pub merchant: Prim<Count>,
+    pub merchant_days: Prim<Count>,
 }
 
 /// A product as its extraction and its trade read it: its classes' bounds, how its grade falls as its deposit is
@@ -37,11 +40,15 @@ pub struct Product {
     pub standardised: bool,
 }
 
-/// What the goods' handlers read of the register, compiled once: each product, and the days between decisions.
+/// What the goods' handlers read of the register, compiled once: each product, the days between an extractor's
+/// decisions, each product's yearly loss in stock, the product merchants sell, and the days between their decisions.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Own {
     pub products: Vec<Product>,
     pub days: i64,
+    pub spoilage: Vec<f64>,
+    pub merchant: u16,
+    pub merchant_days: i64,
 }
 
 impl Own {
@@ -79,10 +86,13 @@ impl Own {
             });
         }
         let days = i64::try_from(p.days.shared(register).get()).map_err(|e| e.to_string())?;
-        if days <= 0 {
-            return Err("an extraction schedule of no days".to_owned());
+        let merchant_days = i64::try_from(p.merchant_days.shared(register).get()).map_err(|e| e.to_string())?;
+        if days <= 0 || merchant_days <= 0 {
+            return Err("an extraction or merchants' schedule of no days".to_owned());
         }
-        Ok(Own { products, days })
+        let spoilage = crate::decimals(p.spoilage.shared(register).values(), crate::places(&crate::SPOILAGE_RATE));
+        let merchant = u16::try_from(p.merchant.shared(register).get()).map_err(|e| e.to_string())?;
+        Ok(Own { products, days, spoilage, merchant, merchant_days })
     }
 
     /// The kind a product's goods meet in.

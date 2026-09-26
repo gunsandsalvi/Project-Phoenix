@@ -6,6 +6,7 @@ mod consts;
 pub mod extract;
 pub mod families;
 pub mod markets;
+pub mod merchant;
 pub mod rights;
 pub mod rules;
 
@@ -82,6 +83,17 @@ declare_prim! {
 declare_prim! {
     /// Days between an extractor's decisions on its deposits.
     pub EXTRACTION_DAYS = "GDS.extraction_days" { kind: Preference, value: Count, clause: "GDS.4", scope: Shared }
+}
+
+declare_prim! {
+    /// The product merchants sell, by its place among the products: the firms that make it carry the goods of their
+    /// place.
+    pub MERCHANT_PRODUCT = "GDS.merchant_product" { kind: Technology, value: Count, clause: "GDS.6", scope: Shared }
+}
+
+declare_prim! {
+    /// Days between a merchant's decisions to carry the goods of its place.
+    pub MERCHANT_DAYS = "GDS.merchant_days" { kind: Preference, value: Count, clause: "GDS.6", scope: Shared }
 }
 
 declare_prim! {
@@ -173,8 +185,10 @@ impl System for Gds {
             fall: d.prim(&GRADE_FALL),
             days: d.prim(&EXTRACTION_DAYS),
             standardised: d.prim(&STANDARDISED),
+            spoilage: d.prim(&SPOILAGE_RATE),
+            merchant: d.prim(&MERCHANT_PRODUCT),
+            merchant_days: d.prim(&MERCHANT_DAYS),
         };
-        let _ = d.prim::<Table1>(&SPOILAGE_RATE);
         let _ = d.prim::<Table1>(&STORAGE);
         let _ = d.prim::<Count>(&SPOILAGE_DAYS);
         d.stream(LotsStream::DECL);
@@ -189,7 +203,10 @@ impl System for Gds {
         d.compile(Box::new(move |register, _| Ok(Box::new(extract::Own::compile(&prims, register)?))));
         let extraction = Cadence::Schedule { days: EXTRACTION_DAYS.id, runs_on: RunsOn::Business };
         let stock = Cadence::Schedule { days: SPOILAGE_DAYS.id, runs_on: RunsOn::Any };
+        let trade = Cadence::Schedule { days: MERCHANT_DAYS.id, runs_on: RunsOn::Business };
         for (handler, kind, cadence) in [
+            (merchant::MerchantSmall::NAME, HOLDERS[1], trade),
+            (merchant::MerchantLarge::NAME, HOLDERS[0], trade),
             (extract::ExtractSmall::NAME, HOLDERS[1], extraction),
             (extract::ExtractLarge::NAME, HOLDERS[0], extraction),
             (extract::StockSmall::NAME, HOLDERS[1], stock),
@@ -207,6 +224,8 @@ impl System for Gds {
         h.add::<extract::ExtractLarge>();
         h.add::<extract::StockSmall>();
         h.add::<extract::StockLarge>();
+        h.add::<merchant::MerchantSmall>();
+        h.add::<merchant::MerchantLarge>();
     }
 }
 

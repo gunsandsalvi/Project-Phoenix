@@ -1101,6 +1101,14 @@ without end in both directions.
   where the row stands. The shipper's visit (`FRT.ship_*`, every `FRT.shipping_days` at 5d) carries the whole lots it
   holds beyond its planning days' expected sales to the place whose price less its own and the freight — its tonnes
   times the metres, in units of carriage at the carriage mark — is widest, when that is positive.
+- **Merchants** (GDS.6): the firms making `GDS.merchant_product` visit every `GDS.merchant_days` at 5c and, for each
+  standardised good their place marks, weigh the price their method expects over the visit's days, less what spoils
+  and discounted at their required return, against today's: they bid, at no more than that, with the money they hold
+  beyond what their own planned sales cost, and when carrying no longer pays offer what they hold at no less.
+- **Closure** (FRM.15): at its production schedule an owner weighs the margin it expects a year, held for ever at its
+  required return, against what its firm is worth on its books (`Ctx::net_assets`: claims less debts at their
+  balances, holdings at cost, one twin's); when winding down is worth more it emits `FRM.close`, and the world ends
+  the firm into an estate as a default does, counted as a closure.
 - **Catastrophes** (GEO.8, GDS.9): a struck tile's share of every physical unit its sited individuals hold is lost
   (`Source::Hazard`); an agent stands at a zone, so it loses the event's share of its zone — each struck tile's
   thousandths over the zone's tiles — a whole part for each twin, of the plant it holds and the goods it holds there.

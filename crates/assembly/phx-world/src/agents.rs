@@ -162,6 +162,8 @@ pub struct AgentDay {
     pub estates_unsold: u64,
     /// Parties under an insolvency law that defaulted and ended into estates.
     pub defaults: u64,
+    /// Solvent firms their owners closed, ended into estates.
+    pub closures: u64,
     /// Sweeps of the holder tables for the members of sides that keep no holder list.
     pub unlisted_sweeps: u64,
     /// Rows whose plant wear was realised at a visit, the units their last classes retired, and the cost the worn
@@ -201,6 +203,7 @@ impl AgentDay {
             retired: 0,
             depreciation: 0,
             defaults: 0,
+            closures: 0,
         }
     }
 }

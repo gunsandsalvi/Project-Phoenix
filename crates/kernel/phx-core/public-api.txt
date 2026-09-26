@@ -784,6 +784,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[ph
 pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::Ctx<'a, H, S>::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
 pub fn phx_core::handler::Ctx<'a, H, S>::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
@@ -825,6 +826,7 @@ pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
@@ -846,6 +848,7 @@ pub fn phx_core::handler::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_co
 pub fn phx_core::handler::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::GoodsView::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
@@ -856,6 +859,7 @@ pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
@@ -2631,6 +2635,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[ph
 pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::Ctx<'a, H, S>::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
 pub fn phx_core::handler::Ctx<'a, H, S>::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
@@ -3162,6 +3167,7 @@ pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
@@ -3657,6 +3663,7 @@ pub fn phx_core::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handl
 pub fn phx_core::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::GoodsView::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
@@ -3667,6 +3674,7 @@ pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]

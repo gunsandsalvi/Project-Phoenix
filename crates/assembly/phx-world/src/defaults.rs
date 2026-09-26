@@ -148,6 +148,17 @@ impl World {
         }
     }
 
+    /// An owner's closure of its solvent firm: the firm ends into an estate as a default does, which pays what it owes
+    /// and passes on the rest, and is counted a closure.
+    #[clause("FRM.15", "PTY.9")]
+    pub(crate) fn close_firm(&mut self, day: Day, rows: crate::goods::Rows, slot: phx_id::Slot) {
+        let Some(row) = self.goods_row(rows, slot) else { return };
+        let defaults = self.agent_day.defaults;
+        self.default(day, row.party, rows.individuals);
+        self.agent_day.defaults = defaults;
+        self.agent_day.closures += 1;
+    }
+
     /// A party in default ended into an estate standing for as many real parties as it did, at its site, which
     /// succeeds to every row and holding it had.
     fn default(&mut self, day: Day, party: PartyId, individuals: bool) {

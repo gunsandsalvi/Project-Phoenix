@@ -10,7 +10,7 @@ use if_firm::known::{Product, WayUsed};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
 use phx_core::{Declarations, Prim, declare_handler, declare_prim};
 use phx_id::Slot;
-use phx_ledger::intents::Transform;
+use phx_ledger::intents::{CloseIntent, Transform};
 use phx_macros::clause;
 use phx_market::intents::{OrderIntent, ShopIntent};
 use phx_num::{Count, Fixed, Missing, PointTable};
@@ -228,7 +228,7 @@ declare_handler! {
         table: "small_firm",
         reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
         writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
-        intents: [Transform, OrderIntent, ShopIntent],
+        intents: [Transform, OrderIntent, ShopIntent, CloseIntent],
         clause: "REP.38",
         body: attend,
     }
@@ -241,7 +241,7 @@ declare_handler! {
         table: "firm",
         reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
         writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
-        intents: [Transform, OrderIntent, ShopIntent],
+        intents: [Transform, OrderIntent, ShopIntent, CloseIntent],
         clause: "REP.38",
         body: attend,
     }
@@ -394,11 +394,46 @@ where
         + Writes<DeliveredSeen>
         + phx_core::Emits<Transform>
         + phx_core::Emits<OrderIntent>
-        + phx_core::Emits<ShopIntent>,
+        + phx_core::Emits<ShopIntent>
+        + phx_core::Emits<CloseIntent>,
     S: FactStore + ?Sized,
 {
+    if winds_down(ctx, row) {
+        ctx.emit(&CloseIntent { row });
+        return;
+    }
     attend_price(ctx, row);
     crate::produce::produce(ctx, row);
+}
+
+/// Whether the owner closes its firm: the margin it expects a year on the sales it expects, held for ever at the
+/// return it requires, against what the firm is worth on its books, what winding it down returns. A firm whose owner
+/// requires no return, or lacks what the comparison reads, goes on.
+#[clause("FRM.15")]
+fn winds_down<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot) -> bool
+where
+    H: HandlerDecl + Reads<Product> + Reads<ExpectedSales> + Reads<Price> + Reads<UnitCost> + Reads<RequiredReturn>,
+    S: FactStore + ?Sized,
+{
+    let own: &crate::Own = ctx.own::<crate::Own>();
+    let days = own.management().production_days;
+    let lot = product_of(ctx, row).and_then(|p| own.plant().products.get(usize::from(p))).map(|t| t.lot);
+    let (Some(lot), Some(expected), Some(price), Some(cost), Some(required), Missing::Present(worth)) = (
+        lot,
+        read::<ExpectedSales, H, S>(ctx, row),
+        read::<Price, H, S>(ctx, row),
+        read::<UnitCost, H, S>(ctx, row),
+        read::<RequiredReturn, H, S>(ctx, row),
+        ctx.net_assets(row),
+    ) else {
+        return false;
+    };
+    let rate = required / crate::consts::FIXED_SCALE;
+    if rate <= 0.0 {
+        return false;
+    }
+    let margin = (price - cost) / from_i64(lot) * expected / days * crate::consts::DAYS_A_YEAR;
+    crate::rules::endings::closes(margin / rate, (from_i64(worth), 0.0))
 }
 
 /// The attention part of a firm's schedule.
