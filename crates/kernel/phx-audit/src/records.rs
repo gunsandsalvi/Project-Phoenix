@@ -8,10 +8,16 @@ use phx_macros::clause;
 /// families check the books against something the books did not write.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Digests {
-    /// Per instruction and denomination, the sum of its paired legs.
-    flows: BTreeMap<(u64, u32), i128>,
-    /// Per instruction and currency, the sum of its legs on money lines.
-    money: BTreeMap<(u64, u32), i128>,
+    /// The instruction whose legs are arriving, and its paired legs' and money legs' sums by denomination so far.
+    open: Option<u64>,
+    open_flows: Vec<(u32, i128)>,
+    open_money: Vec<(u32, i128)>,
+    /// Per instruction and denomination, the sums its legs left unbalanced when another's legs came between, which
+    /// the day's reading adds up.
+    flows: Vec<((u64, u32), i128)>,
+    money: Vec<((u64, u32), i128)>,
+    /// The instructions and denominations whose legs were read.
+    flow_keys: u64,
     /// Per party and account, what it held before the day's first leg on it, and the day's net of its legs.
     positions: BTreeMap<(PartyId, u64), (i64, i128)>,
     /// Per instruction that names a way, its legs made or used up.
@@ -37,11 +43,25 @@ impl Digests {
     /// A leg as it settles.
     pub fn record(&mut self, instruction: u64, leg: LegDigest) {
         let q = i128::from(leg.qty);
+        // An instruction's legs arrive together, so their sums are kept only while they do.
+        if self.open != Some(instruction) {
+            self.flush();
+            self.open = Some(instruction);
+        }
         if leg.paired {
-            *self.flows.entry((instruction, leg.denom)).or_insert(0) += i128::from(leg.flow);
+            match self.open_flows.iter_mut().find(|(d, _)| *d == leg.denom) {
+                Some((_, sum)) => *sum += i128::from(leg.flow),
+                None => {
+                    self.flow_keys += 1;
+                    self.open_flows.push((leg.denom, i128::from(leg.flow)));
+                }
+            }
         }
         if leg.money {
-            *self.money.entry((instruction, leg.denom)).or_insert(0) += q;
+            match self.open_money.iter_mut().find(|(d, _)| *d == leg.denom) {
+                Some((_, sum)) => *sum += q,
+                None => self.open_money.push((leg.denom, q)),
+            }
         }
         self.positions.entry((leg.party, leg.account)).or_insert((leg.before, 0)).1 += q;
         if let phx_num::Missing::Present(way) = leg.made {
@@ -74,14 +94,35 @@ impl Digests {
         }
     }
 
+    /// The open instruction's sums moved to the day's, where they are unbalanced.
+    fn flush(&mut self) {
+        let Some(instruction) = self.open.take() else { return };
+        self.flows.extend(self.open_flows.drain(..).filter(|(_, s)| *s != 0).map(|(d, s)| ((instruction, d), s)));
+        self.money.extend(self.open_money.drain(..).filter(|(_, s)| *s != 0).map(|(d, s)| ((instruction, d), s)));
+    }
+
+    /// Each instruction and denomination's sum over the day's unbalanced parts and the open instruction's, where it
+    /// is not nothing.
+    fn unbalanced(rest: &[((u64, u32), i128)], open: Option<u64>, now: &[(u32, i128)]) -> Vec<((u64, u32), i128)> {
+        let mut sums: BTreeMap<(u64, u32), i128> = BTreeMap::new();
+        for (key, s) in rest {
+            *sums.entry(*key).or_insert(0) += *s;
+        }
+        if let Some(instruction) = open {
+            for (d, s) in now {
+                *sums.entry((instruction, *d)).or_insert(0) += *s;
+            }
+        }
+        sums.into_iter().filter(|(_, s)| *s != 0).collect()
+    }
+
     /// Every instruction's paired legs sum to nothing in each denomination.
     #[clause("SET.9")]
     #[must_use]
     pub fn flow_gaps(&self) -> Vec<Gap> {
-        self.flows
-            .iter()
-            .filter(|(_, s)| **s != 0)
-            .map(|((instruction, denom), sum)| Gap::Flow { instruction: *instruction, denom: *denom, sum: *sum })
+        Self::unbalanced(&self.flows, self.open, &self.open_flows)
+            .into_iter()
+            .map(|((instruction, denom), sum)| Gap::Flow { instruction, denom, sum })
             .collect()
     }
 
@@ -90,10 +131,9 @@ impl Digests {
     #[clause("MON.8")]
     #[must_use]
     pub fn money_gaps(&self) -> Vec<Gap> {
-        self.money
-            .iter()
-            .filter(|(_, s)| **s != 0)
-            .map(|((instruction, ccy), sum)| Gap::Money { instruction: *instruction, ccy: *ccy, sum: *sum })
+        Self::unbalanced(&self.money, self.open, &self.open_money)
+            .into_iter()
+            .map(|((instruction, ccy), sum)| Gap::Money { instruction, ccy, sum })
             .collect()
     }
 
@@ -123,6 +163,10 @@ impl Digests {
 
     /// Starts the next day's record.
     pub fn clear(&mut self) {
+        self.open = None;
+        self.open_flows.clear();
+        self.open_money.clear();
+        self.flow_keys = 0;
         self.flows.clear();
         self.money.clear();
         self.positions.clear();
@@ -134,7 +178,7 @@ impl Digests {
 
 impl phx_core::LegRecords for Digests {
     fn instructions(&self) -> u64 {
-        phx_rand::float::len_u64(self.flows.len())
+        self.flow_keys
     }
 
     fn positions(&self) -> u64 {
@@ -190,5 +234,45 @@ impl Gap {
                 detail: format!("party {}: account {account} holds {held} where its legs make {expected}", party.get()),
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use phx_core::LegDigest;
+    use phx_id::PartyId;
+    use phx_num::Missing;
+
+    use super::{Digests, Gap};
+
+    fn leg(flow: i64) -> LegDigest {
+        LegDigest {
+            party: PartyId::new(1),
+            account: 7,
+            denom: 3,
+            qty: flow,
+            flow,
+            before: 0,
+            paired: true,
+            money: true,
+            made: Missing::Absent,
+            worn: Missing::Absent,
+            source: Missing::Absent,
+            issued: Missing::Absent,
+            unit: 1,
+        }
+    }
+
+    #[test]
+    fn interleaved_instructions_balance() {
+        let mut d = Digests::default();
+        d.record(1, leg(5));
+        d.record(2, leg(4));
+        d.record(1, leg(-5));
+        d.record(2, leg(-3));
+        assert_eq!(d.flow_gaps(), vec![Gap::Flow { instruction: 2, denom: 3, sum: 1 }]);
+        assert_eq!(d.money_gaps(), vec![Gap::Money { instruction: 2, ccy: 3, sum: 1 }]);
+        d.record(3, leg(2));
+        assert_eq!(d.flow_gaps().len(), 2, "the open instruction's sum counts before it closes");
     }
 }
