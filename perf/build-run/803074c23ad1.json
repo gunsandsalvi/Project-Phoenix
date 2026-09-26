@@ -1,0 +1,1418 @@
+{
+  "accounts": {
+    "claim_entries": 839466,
+    "equity_accounts": 45037,
+    "equity_total": "755898868491651",
+    "payable": "18815721541137",
+    "receivable": "18815721541137"
+  },
+  "assembly_ms": 56888,
+  "audit": {
+    "closes": 120,
+    "families": [
+      "PTY.names",
+      "TIME.stamps",
+      "GEO.places",
+      "GEO.deposits",
+      "REG.ownership",
+      "REG.contracts",
+      "MON.money",
+      "SET.flows",
+      "NUM.units",
+      "MKT.prices",
+      "ACC.equity",
+      "ACC.periods",
+      "ACC.claims",
+      "REP.agents"
+    ],
+    "most_rows_checked_in_a_close": 1799857,
+    "phx_audit.rows_checked": 50464193
+  },
+  "build_seconds": 62,
+  "checks": [
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-01",
+      "outcome": "pass",
+      "title": "Every day has a record for every sub-step that should have run, and none for any that should not"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-02",
+      "outcome": "pass",
+      "title": "Every turn ends on a day that is a business day somewhere and covers every day since the last turn"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-03",
+      "outcome": "pass",
+      "title": "read-trace found no undeclared read, no read of a later write and no duplicate stream open"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.11",
+      "id": "LC-0-04",
+      "outcome": "pass",
+      "title": "Every record is dated with the day and sub-step that wrote it"
+    },
+    {
+      "detail": "it compared the world with a second run of it; the world runs once, and determinism is carried by construction",
+      "from_step": "S0.11",
+      "id": "LC-0-05",
+      "outcome": "retired",
+      "title": "The world hash is the same whatever the worker count"
+    },
+    {
+      "detail": "it compared the world with a second run of it; canonical handler ids carry it by construction",
+      "from_step": "S0.11",
+      "id": "LC-0-06",
+      "outcome": "retired",
+      "title": "The world hash is the same whatever the registration order"
+    },
+    {
+      "detail": "it compared the world with a second run of it; observers reach the world only through &self",
+      "from_step": "S0.11",
+      "id": "LC-0-07",
+      "outcome": "retired",
+      "title": "Looking at the world changes nothing"
+    },
+    {
+      "detail": "it compared the world with a second run of it; a stream's key comes from its own name alone",
+      "from_step": "S0.11",
+      "id": "LC-0-08",
+      "outcome": "retired",
+      "title": "Adding a stream changes no other stream's draws"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.12",
+      "id": "LC-0-09",
+      "outcome": "pass",
+      "title": "Every close ran every declared audit family, and they found nothing"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.12",
+      "id": "LC-0-10",
+      "outcome": "pass",
+      "title": "Each family's injection into the day-30 save lights that family alone"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-11",
+      "outcome": "pass",
+      "title": "The surface is closed, every tile with eight neighbours that count it back; every land tile's zone is in one region and country; every region has land; every site lies in its country and region"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-12",
+      "outcome": "pass",
+      "title": "The rejection record lists every failed attempt with its condition; the accepted map meets every condition"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-13",
+      "outcome": "pass",
+      "title": "Each region's realised weather is within z = 6.1 of its declared climate for the month, adjusted for persistence"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-14",
+      "outcome": "pass",
+      "title": "Catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the run"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.13",
+      "id": "LC-0-15",
+      "outcome": "pass",
+      "title": "For every finite deposit, extracted plus remaining equals its opening quantity"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.14",
+      "id": "LC-0-16",
+      "outcome": "pass",
+      "title": "For every issued instrument, holdings sum to the issued amount"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.14",
+      "id": "LC-0-17",
+      "outcome": "pass",
+      "title": "Every line's two sides hold equal counts, and each side it lists equals its holders' rows"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-18",
+      "outcome": "pass",
+      "title": "Per issuer and currency, the balances held equal its money liability; the notes held equal the notes issued"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-19",
+      "outcome": "pass",
+      "title": "Every instruction's paired legs sum to nothing per denomination; transformations and opening writes name their sources"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-20",
+      "outcome": "pass",
+      "title": "Per holder and asset per day, what it held plus what came in less what went out is what it holds"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-21",
+      "outcome": "pass",
+      "title": "Every fail has a cause, and its line kind's contract process recorded it at 2d"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.15",
+      "id": "LC-0-22",
+      "outcome": "pass",
+      "title": "Gross and net settlement, fails by cause and the closing ring are published every day"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-23",
+      "outcome": "pass",
+      "title": "Day one passes every family"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-24",
+      "outcome": "pass",
+      "title": "The GEN report lists every opening write with party, amount and identity, and each distribution with its source"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-25",
+      "outcome": "pass",
+      "title": "Every opening contract's payments fall on business days by its convention"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.16",
+      "id": "LC-0-26",
+      "outcome": "pass",
+      "title": "Payments fall due and are processed every business day, and every fail has a cause"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.17",
+      "id": "LC-0-27",
+      "outcome": "pass",
+      "title": "Every bank's reserve movement equals the net of its customers' applied payments"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.17",
+      "id": "LC-0-28",
+      "outcome": "pass",
+      "title": "The settled set is sound and maximal, recomputed on the state at the start of stage 7"
+    },
+    {
+      "detail": "the first levy arrives with the taxes (S1.11)",
+      "from_step": "S0.17",
+      "id": "LC-0-29",
+      "outcome": "not yet",
+      "title": "Sampled levy amounts equal per member times count under their conventions"
+    },
+    {
+      "detail": "no market meets before the firms post their prices (S1.03)",
+      "from_step": "S0.18",
+      "id": "LC-0-30",
+      "outcome": "not yet",
+      "title": "The Prices family is clean every close"
+    },
+    {
+      "detail": "no market meets before the firms post their prices (S1.03)",
+      "from_step": "S0.18",
+      "id": "LC-0-31",
+      "outcome": "not yet",
+      "title": "Every print traces to its match set, and every published failure to its meeting"
+    },
+    {
+      "detail": "no market meets before the firms post their prices (S1.03)",
+      "from_step": "S0.18",
+      "id": "LC-0-32",
+      "outcome": "not yet",
+      "title": "The markets' measures are published per market per day, for the markets that met"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.19",
+      "id": "LC-0-33",
+      "outcome": "pass",
+      "title": "Accounts is clean for every party with an equity account"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.19",
+      "id": "LC-0-34",
+      "outcome": "pass",
+      "title": "Receivables equal payables across the world"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.20",
+      "id": "LC-0-35",
+      "outcome": "pass",
+      "title": "Every save reads back to the world hash of its close"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.20",
+      "id": "LC-0-36",
+      "outcome": "pass",
+      "title": "Save sizes and write times are recorded"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.28",
+      "id": "LC-0-37",
+      "outcome": "pass",
+      "title": "Every agent's rows count its multiplicity times its attachments, which name its persons, one a line"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.28",
+      "id": "LC-0-38",
+      "outcome": "pass",
+      "title": "Every agent's multiplicity is its kind's, but the seated twins of one and their donors of one fewer"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.22",
+      "id": "LC-0-39",
+      "outcome": "pass",
+      "title": "Every hazard's realised hit rate is within its sampling error of its declared rate"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.22",
+      "id": "LC-0-40",
+      "outcome": "pass",
+      "title": "Every booking the agenda holds for a day is read that day, and no other"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.22",
+      "id": "LC-0-41",
+      "outcome": "pass",
+      "title": "Every hazard occurrence has its event recorded at the sub-step that drew it"
+    },
+    {
+      "detail": "no decision point carries a need or notice before the first decisions (Stage 1)",
+      "from_step": "S0.22",
+      "id": "LC-0-42",
+      "outcome": "not yet",
+      "title": "Carried needs and notices are decided on the first day their decision point runs"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.28",
+      "id": "LC-0-43",
+      "outcome": "pass",
+      "title": "Multiplicities sum to each population, persons to the persons counted, and lines' sides are equal"
+    },
+    {
+      "detail": "agents are never joined, so nothing lands (S0.28)",
+      "from_step": "S0.23",
+      "id": "LC-0-44",
+      "outcome": "retired",
+      "title": "No landing crossed a kink: sampled landings re-checked against both sides' kinks"
+    },
+    {
+      "detail": "agents are never joined, so nothing lands (S0.28)",
+      "from_step": "S0.23",
+      "id": "LC-0-45",
+      "outcome": "retired",
+      "title": "Sampled landings leave every straight rule's total unchanged to a smallest unit per member"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.28",
+      "id": "LC-0-46",
+      "outcome": "pass",
+      "title": "The representation's measures are reported per day: agents, parties, persons, hits and bookings"
+    },
+    {
+      "detail": "there are no cells and no cell budget; the factor is the representation's one valve (S0.28)",
+      "from_step": "S0.24",
+      "id": "LC-0-47",
+      "outcome": "retired",
+      "title": "The cells carried never exceed the cell budget at any close"
+    },
+    {
+      "detail": "the individuals' rank reads the firms' positions (S1.03, F-048)",
+      "from_step": "S0.24",
+      "id": "LC-0-48",
+      "outcome": "not yet",
+      "title": "Every party within the individuals' rank is an individual, and no party with a public instrument is an agent"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.28",
+      "id": "LC-0-49",
+      "outcome": "pass",
+      "title": "The representation and its factor are reported every day, with its agents, parties and persons"
+    },
+    {
+      "detail": "agents are never renumbered (S0.28)",
+      "from_step": "S0.24",
+      "id": "LC-0-50",
+      "outcome": "retired",
+      "title": "The identity hash is equal immediately before and after each renumbering slice"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.25",
+      "id": "LC-0-51",
+      "outcome": "pass",
+      "title": "Day one passes every audit family with the full population"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.25",
+      "id": "LC-0-52",
+      "outcome": "pass",
+      "title": "The populations reconcile: births, deaths and entries; every person in one household; every household held"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.25",
+      "id": "LC-0-53",
+      "outcome": "pass",
+      "title": "Every death has a cause and a destination for everything held and owed; every estate settles or waits, named"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.25",
+      "id": "LC-0-54",
+      "outcome": "pass",
+      "title": "Realised mortality and illness per age class match their declared tables within sampling error"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.25",
+      "id": "LC-0-55",
+      "outcome": "pass",
+      "title": "Paydays, dues and pensions in payment settle through pooled flows; every fail has a cause and a waiting owner"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.25",
+      "id": "LC-0-56",
+      "outcome": "pass",
+      "title": "The GEN report lists every apportionment difference and every unmatched stratum"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.26",
+      "id": "LC-0-57",
+      "outcome": "pass",
+      "title": "the player's queued intents are decided on the first day their point runs; with none, the rule decides"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.26",
+      "id": "LC-0-58",
+      "outcome": "pass",
+      "title": "every public event was made public by the declared rule, with a date and subjects"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.26",
+      "id": "LC-0-59",
+      "outcome": "pass",
+      "title": "liveness: money circulates, fails are counted by cause, no quantity grows without a named cause"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.26",
+      "id": "LC-0-60",
+      "outcome": "pass",
+      "title": "each opening distribution's distance from the world's own, at settling's end and the year's"
+    },
+    {
+      "detail": "",
+      "from_step": "S0.17",
+      "id": "LC-0-61",
+      "outcome": "pass",
+      "title": "On sampled holders, every row due was read in the holder's run, and no head was later than its segment's earliest due day"
+    },
+    {
+      "detail": "outlooks are formed once households decide from them (S1.12)",
+      "from_step": "S1.01",
+      "id": "LC-1-01",
+      "outcome": "not yet",
+      "title": "outlooks disagree: their dispersion per variable is reported, positive where methods or histories differ, and wider after a large surprise"
+    },
+    {
+      "detail": "outlooks are formed once households decide from them (S1.12)",
+      "from_step": "S1.01",
+      "id": "LC-1-02",
+      "outcome": "not yet",
+      "title": "no outlook is formed after the stage that uses it"
+    },
+    {
+      "detail": "outlooks are formed once households decide from them (S1.12)",
+      "from_step": "S1.01",
+      "id": "LC-1-03",
+      "outcome": "not yet",
+      "title": "heuristic shares per series are reported and move over the run, their lead over price swings published"
+    },
+    {
+      "detail": "outlooks are formed once households decide from them (S1.12)",
+      "from_step": "S1.01",
+      "id": "LC-1-04",
+      "outcome": "not yet",
+      "title": "no variable is read by every party as one expectation, and things two parties with different histories value have more than one value"
+    },
+    {
+      "detail": "outlooks are formed once households decide from them (S1.12)",
+      "from_step": "S1.01",
+      "id": "LC-1-43",
+      "outcome": "not yet",
+      "title": "each method's lag behind each turning point of a published series, by memory type and heuristic mix"
+    },
+    {
+      "detail": "outlooks are formed once households decide from them (S1.12)",
+      "from_step": "S1.01",
+      "id": "LC-1-44",
+      "outcome": "not yet",
+      "title": "after each large surprise, the days until each stance's first changed decision, ranked by its surprise"
+    }
+  ],
+  "counters": {
+    "phx_exec.barriers_per_empty_day": 0,
+    "phx_geo.map_bytes": 7498388,
+    "phx_ledger.day_buffer_peak_bytes": 689359136,
+    "phx_ledger.fixed_point_iterations": 172688,
+    "phx_ledger.losers_drawn": 30238410,
+    "phx_ledger.payments": 2797977,
+    "phx_ledger.rows_streamed": 2806127,
+    "phx_ledger.run_heads_read": 968847,
+    "phx_ledger.run_rows_not_due": 81796,
+    "phx_ledger.run_rows_scanned": 2879350,
+    "phx_pop.agents_booked": 197,
+    "phx_pop.agents_gathered": 6145,
+    "phx_pop.bookings_read": 14032,
+    "phx_pop.hits": 203,
+    "phx_pop.redraws": 13988
+  },
+  "days": 730,
+  "days_run": 120,
+  "drift": {
+    "ended": {
+      "households_by_bank": {
+        "day": 27878,
+        "distance": 0.000043780965233240765
+      },
+      "households_by_persons": {
+        "day": 27878,
+        "distance": 0.002079617057683999
+      },
+      "households_by_region": {
+        "day": 27878,
+        "distance": 0.00015904041811932133
+      },
+      "small_firms_by_size": {
+        "day": 27878,
+        "distance": 0.0
+      }
+    },
+    "settled": {
+      "households_by_bank": {
+        "day": 27758,
+        "distance": 0.0
+      },
+      "households_by_persons": {
+        "day": 27758,
+        "distance": 0.0
+      },
+      "households_by_region": {
+        "day": 27758,
+        "distance": 0.0
+      },
+      "small_firms_by_size": {
+        "day": 27758,
+        "distance": 0.0
+      }
+    }
+  },
+  "findings": 0,
+  "findings_by": [],
+  "first_day": "2026-01-01",
+  "geo": {
+    "deposits": 1399,
+    "events": 25628,
+    "land_goes_round": {
+      "east_west": true,
+      "north_south": false
+    },
+    "land_tiles": 40000,
+    "phx_geo.generation_attempts": 1,
+    "regions": 25,
+    "rejections": [],
+    "sea_goes_round": {
+      "east_west": true,
+      "north_south": false
+    },
+    "zones": 2000
+  },
+  "inject_ms": 141474,
+  "injections": [
+    {
+      "alone": true,
+      "family": "PTY.names",
+      "lit": [
+        "PTY.names"
+      ],
+      "load_ns": 5818945947,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "TIME.stamps",
+      "lit": [
+        "TIME.stamps"
+      ],
+      "load_ns": 6311480512,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "GEO.places",
+      "lit": [
+        "GEO.places"
+      ],
+      "load_ns": 6332927449,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "GEO.deposits",
+      "lit": [
+        "GEO.deposits"
+      ],
+      "load_ns": 6101328880,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "REG.ownership",
+      "lit": [
+        "REG.ownership"
+      ],
+      "load_ns": 6064318305,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "REG.contracts",
+      "lit": [
+        "REG.contracts"
+      ],
+      "load_ns": 6048593042,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "MON.money",
+      "lit": [
+        "MON.money"
+      ],
+      "load_ns": 6068271987,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "SET.flows",
+      "lit": [
+        "SET.flows"
+      ],
+      "load_ns": 6099565334,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "NUM.units",
+      "lit": [
+        "NUM.units"
+      ],
+      "load_ns": 6167922176,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "MKT.prices",
+      "lit": [
+        "MKT.prices"
+      ],
+      "load_ns": 6057639601,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "ACC.equity",
+      "lit": [
+        "ACC.equity"
+      ],
+      "load_ns": 6181128048,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "ACC.periods",
+      "lit": [
+        "ACC.periods"
+      ],
+      "load_ns": 6120574283,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "ACC.claims",
+      "lit": [
+        "ACC.claims"
+      ],
+      "load_ns": 6191347435,
+      "refused": null
+    },
+    {
+      "alone": true,
+      "family": "REP.agents",
+      "lit": [
+        "REP.agents"
+      ],
+      "load_ns": 6148150452,
+      "refused": null
+    }
+  ],
+  "last_day": "2026-04-30",
+  "longest_turn_days": 4,
+  "markets": {
+    "market_days": 0,
+    "phx_market.commitments_drawn": 0,
+    "phx_market.failures": 0,
+    "phx_market.matches": 0,
+    "phx_market.rechoice_rounds": 0,
+    "prints": 0
+  },
+  "memory_budget_bytes": 2933915648,
+  "opening": {
+    "adjustments": [
+      {
+        "drawn": "16994090",
+        "set": "16994050",
+        "what": "country 0: small firms, a whole number of agents of 170 twins"
+      },
+      {
+        "drawn": "7338583",
+        "set": "7338560",
+        "what": "country 1: small firms, a whole number of agents of 170 twins"
+      },
+      {
+        "drawn": "5856094",
+        "set": "5855990",
+        "what": "country 2: small firms, a whole number of agents of 170 twins"
+      },
+      {
+        "drawn": "935531555417721",
+        "set": "935531555417580",
+        "what": "pool 0: shared a twin-th at a time over agents of 170 twins"
+      },
+      {
+        "drawn": "-379174059022892",
+        "set": "-379174059022870",
+        "what": "pool 1: shared a twin-th at a time over agents of 170 twins"
+      },
+      {
+        "drawn": "150000000",
+        "set": "149998990",
+        "what": "country 0: persons, each region's a whole number for 170 twins"
+      },
+      {
+        "drawn": "50976901386618",
+        "set": "50976901386510",
+        "what": "pool 0: shared a twin-th at a time over agents of 170 twins"
+      },
+      {
+        "drawn": "-34434190394623",
+        "set": "-34434190394480",
+        "what": "pool 1: shared a twin-th at a time over agents of 170 twins"
+      },
+      {
+        "drawn": "90000000",
+        "set": "89999190",
+        "what": "country 1: persons, each region's a whole number for 170 twins"
+      },
+      {
+        "drawn": "3605782493875",
+        "set": "3605782493860",
+        "what": "pool 0: shared a twin-th at a time over agents of 170 twins"
+      },
+      {
+        "drawn": "-1529572711050",
+        "set": "-1529572710950",
+        "what": "pool 1: shared a twin-th at a time over agents of 170 twins"
+      },
+      {
+        "drawn": "60000000",
+        "set": "59999800",
+        "what": "country 2: persons, each region's a whole number for 170 twins"
+      }
+    ],
+    "apportioned": 12805769,
+    "distributions": [
+      {
+        "name": "BNK.banks/0",
+        "source": "13 banks, a Zipf law of exponent 0.9318 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "BNK.banks/1",
+        "source": "12 banks, a Zipf law of exponent 1.3552 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "BNK.banks/2",
+        "source": "6 banks, a Zipf law of exponent 0.9444 fitted to GEN.bank_concentration5 and GEN.bank_top3_of_top5 (World Bank GFDD)"
+      },
+      {
+        "name": "FRM.firms/0",
+        "source": "the 22500 largest of 17016590 firms (FRM.firms_per_employed over 79048397 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      },
+      {
+        "name": "FRM.firms/1",
+        "source": "the 13500 largest of 7352083 firms (FRM.firms_per_employed over 35164309 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      },
+      {
+        "name": "FRM.firms/2",
+        "source": "the 9000 largest of 5865094 firms (FRM.firms_per_employed over 28052184 employed) by a Pareto law of exponent 1.059 (FRM.size_exponent, Axtell 2001)"
+      },
+      {
+        "name": "FRM.small_firms/0",
+        "source": "country 0: 16994050 small firms below the individuals' rank's smallest of 524 persons, as 99965 agents of 170 twins, employing 87002770 of 79048397 employed; regions by land, banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent); the firms' deposits, debt and plant shared over every firm by its employees, the small firms' plant not yet held"
+      },
+      {
+        "name": "FRM.small_firms/1",
+        "source": "country 1: 7338560 small firms below the individuals' rank's smallest of 386 persons, as 43168 agents of 170 twins, employing 36085050 of 35164309 employed; regions by land, banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent); the firms' deposits, debt and plant shared over every firm by its employees, the small firms' plant not yet held"
+      },
+      {
+        "name": "FRM.small_firms/2",
+        "source": "country 2: 5855990 small firms below the individuals' rank's smallest of 454 persons, as 34447 agents of 170 twins, employing 29991570 of 28052184 employed; regions by land, banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent); the firms' deposits, debt and plant shared over every firm by its employees, the small firms' plant not yet held"
+      },
+      {
+        "name": "DEM.households/0",
+        "source": "country 0: 78824920 households of 149998990 persons (people 150000000, 1.90 a household) as agents of 170 twins; 13.8% under 15 (GEN.share_under_15 13.8%), 19.2% 65 and over (GEN.share_65_plus 19.2%), 5.0% disabled; households by type as drawn (DEM.household_types at GEN.fertility) 42.6% (24.3%), 35.7% (20.3%), 10.1% (31.2%), 3.0% (9.4%), 3.9% (12.0%), 4.7% (2.7%); 0 children raised by an adult not their mother. Persons by age and sex (DEM.age_standard raked to GEN.share_under_15 and GEN.share_65_plus), formed into families by mothers' chances of children (DEM.minor_children), partners (DEM.partner_age_gap) and whom each type holds (DEM.household_members); health (DEM.disability_prevalence, DEM.disability_onset) and education (DEM.education_female, DEM.education_male)"
+      },
+      {
+        "name": "DEM.households/1",
+        "source": "country 1: 33335810 households of 89999190 persons (people 90000000, 2.70 a household) as agents of 170 twins; 28.9% under 15 (GEN.share_under_15 28.9%), 4.7% 65 and over (GEN.share_65_plus 4.7%), 3.2% disabled; households by type as drawn (DEM.household_types at GEN.fertility) 26.3% (9.8%), 25.7% (9.5%), 20.6% (37.5%), 6.0% (11.0%), 16.6% (30.4%), 5.0% (1.8%); 0 children raised by an adult not their mother. Persons by age and sex (DEM.age_standard raked to GEN.share_under_15 and GEN.share_65_plus), formed into families by mothers' chances of children (DEM.minor_children), partners (DEM.partner_age_gap) and whom each type holds (DEM.household_members); health (DEM.disability_prevalence, DEM.disability_onset) and education (DEM.education_female, DEM.education_male)"
+      },
+      {
+        "name": "DEM.households/2",
+        "source": "country 2: 18571650 households of 59999800 persons (people 60000000, 3.23 a household) as agents of 170 twins; 37.6% under 15 (GEN.share_under_15 37.6%), 3.9% 65 and over (GEN.share_65_plus 3.9%), 1.9% disabled; households by type as drawn (DEM.household_types at GEN.fertility) 24.6% (7.7%), 17.6% (5.4%), 22.8% (38.4%), 5.9% (10.0%), 21.7% (36.3%), 7.4% (2.3%); 0 children raised by an adult not their mother. Persons by age and sex (DEM.age_standard raked to GEN.share_under_15 and GEN.share_65_plus), formed into families by mothers' chances of children (DEM.minor_children), partners (DEM.partner_age_gap) and whom each type holds (DEM.household_members); health (DEM.disability_prevalence, DEM.disability_onset) and education (DEM.education_female, DEM.education_male)"
+      }
+    ],
+    "kinds": {
+      "bank": {
+        "equity": "-23350890380493",
+        "parties": 31
+      },
+      "central_bank": {
+        "equity": "3147472064350",
+        "parties": 3
+      },
+      "estate": {
+        "equity": "16388129710",
+        "parties": 5
+      },
+      "firm": {
+        "equity": "979472767688112",
+        "parties": 45000
+      },
+      "treasury": {
+        "equity": "-199373512474118",
+        "parties": 3
+      }
+    },
+    "lines": {
+      "central bank credit to the treasury": {
+        "asset": "725347752374237",
+        "liability": "-725347752374237"
+      },
+      "current account": {
+        "asset": "92923621551315",
+        "liability": "-165682512223285"
+      },
+      "employment": {
+        "asset": "0",
+        "liability": "0"
+      },
+      "firm term loan": {
+        "asset": "710048664724324",
+        "liability": "-408838737959264"
+      },
+      "household current account": {
+        "asset": "17189218840",
+        "liability": "-1178464967628510"
+      },
+      "household loan": {
+        "asset": "414521884337210",
+        "liability": "-801089130"
+      },
+      "reserves": {
+        "asset": "196226040409768",
+        "liability": "-196226040409768"
+      },
+      "state pension": {
+        "asset": "0",
+        "liability": "0"
+      },
+      "tenancy": {
+        "asset": "0",
+        "liability": "0"
+      },
+      "treasury account": {
+        "asset": "525974239900119",
+        "liability": "-525974239900119"
+      }
+    },
+    "writes": 2951958
+  },
+  "peak_resident_bytes": 2929700864,
+  "placeholders": 5,
+  "ratchet_failures": [],
+  "read_trace": true,
+  "reads": {
+    "histograms": {
+      "households_by_bank": {
+        "below": 0,
+        "counts": [
+          12008630,
+          40151620,
+          19357220,
+          12729600,
+          9485490,
+          7561260,
+          6289660,
+          4592210,
+          4011660,
+          3562350,
+          10860790,
+          0,
+          0
+        ],
+        "edges": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          20,
+          50
+        ]
+      },
+      "households_by_persons": {
+        "below": 0,
+        "counts": [
+          48618130,
+          46831600,
+          9369210,
+          11098620,
+          7757270,
+          4145790,
+          1825630,
+          884340,
+          75820,
+          4080
+        ],
+        "edges": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          10,
+          12
+        ]
+      },
+      "households_by_region": {
+        "below": 0,
+        "counts": [
+          6057610,
+          6057270,
+          6035000,
+          6066620,
+          6074950,
+          6068830,
+          6053020,
+          6062710,
+          6050300,
+          6059650,
+          12080370,
+          20336080,
+          19044420,
+          14848310,
+          3715350,
+          0,
+          0
+        ],
+        "edges": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          12,
+          16,
+          20,
+          24,
+          32,
+          48
+        ]
+      },
+      "small_firms_by_size": {
+        "below": 0,
+        "counts": [
+          15684540,
+          5063280,
+          3967970,
+          2881670,
+          1374450,
+          781490,
+          241910,
+          149430,
+          43010,
+          850,
+          0
+        ],
+        "edges": [
+          1,
+          2,
+          3,
+          5,
+          10,
+          20,
+          50,
+          100,
+          250,
+          500,
+          1000
+        ]
+      }
+    },
+    "series": {
+      "agents": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "946591"
+        },
+        "greatest": "946591",
+        "last": {
+          "day": 27878,
+          "value": "945878"
+        },
+        "least": "945878",
+        "sum": "113548550",
+        "unit": "agents"
+      },
+      "deaths": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "6630"
+        },
+        "greatest": "7990",
+        "last": {
+          "day": 27878,
+          "value": "6630"
+        },
+        "least": "3570",
+        "sum": "666060",
+        "unit": "persons"
+      },
+      "disability_onsets": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "680"
+        },
+        "greatest": "2890",
+        "last": {
+          "day": 27878,
+          "value": "1700"
+        },
+        "least": "510",
+        "sum": "181220",
+        "unit": "persons"
+      },
+      "estates_opened": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "3"
+        },
+        "greatest": "12",
+        "last": {
+          "day": 27878,
+          "value": "5"
+        },
+        "least": "1",
+        "sum": "673",
+        "unit": "estates"
+      },
+      "estates_settled": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "0"
+        },
+        "greatest": "24",
+        "last": {
+          "day": 27878,
+          "value": "8"
+        },
+        "least": "0",
+        "sum": "668",
+        "unit": "estates"
+      },
+      "gross_settled": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "0"
+        },
+        "greatest": "112479490757763",
+        "last": {
+          "day": 27878,
+          "value": "111521798292457"
+        },
+        "least": "0",
+        "sum": "553566383622060",
+        "unit": "smallest currency units"
+      },
+      "parties": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "160920300"
+        },
+        "greatest": "160920300",
+        "last": {
+          "day": 27878,
+          "value": "160799090"
+        },
+        "least": "160799090",
+        "sum": "19303233100",
+        "unit": "parties"
+      },
+      "payments_due": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "0"
+        },
+        "greatest": "2797977",
+        "last": {
+          "day": 27878,
+          "value": "2789730"
+        },
+        "least": "0",
+        "sum": "11331397",
+        "unit": "payments"
+      },
+      "payments_failed": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "0"
+        },
+        "greatest": "172253",
+        "last": {
+          "day": 27878,
+          "value": "172253"
+        },
+        "least": "0",
+        "sum": "449184",
+        "unit": "payments"
+      },
+      "payments_settled": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "0"
+        },
+        "greatest": "2720554",
+        "last": {
+          "day": 27878,
+          "value": "2512539"
+        },
+        "least": "0",
+        "sum": "10743148",
+        "unit": "payments"
+      },
+      "persons": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "299991350"
+        },
+        "greatest": "299991350",
+        "last": {
+          "day": 27878,
+          "value": "299331920"
+        },
+        "least": "299331920",
+        "sum": "35959606660",
+        "unit": "persons"
+      },
+      "persons_gone": {
+        "days": 120,
+        "first": {
+          "day": 27759,
+          "value": "6630"
+        },
+        "greatest": "7990",
+        "last": {
+          "day": 27878,
+          "value": "6630"
+        },
+        "least": "3570",
+        "sum": "666060",
+        "unit": "persons"
+      }
+    }
+  },
+  "representation": "twins at 170",
+  "reserved_bytes": 4563402752,
+  "run_ms": 55863,
+  "saves": [
+    {
+      "bytes": 110603652,
+      "check_ms": 3414,
+      "day": "2026-03-02",
+      "hash_matched": true,
+      "raw_bytes": 286816571,
+      "stores": [
+        {
+          "bytes": 259505,
+          "name": "world",
+          "raw_bytes": 1783242
+        },
+        {
+          "bytes": 44176207,
+          "name": "books",
+          "raw_bytes": 242118609
+        },
+        {
+          "bytes": 1728891,
+          "name": "population",
+          "raw_bytes": 18456452
+        },
+        {
+          "bytes": 17,
+          "name": "markets",
+          "raw_bytes": 56
+        },
+        {
+          "bytes": 1912387,
+          "name": "accounts",
+          "raw_bytes": 14682793
+        },
+        {
+          "bytes": 28,
+          "name": "records",
+          "raw_bytes": 76
+        },
+        {
+          "bytes": 136052,
+          "name": "events",
+          "raw_bytes": 1064364
+        },
+        {
+          "bytes": 5637276,
+          "name": "geo",
+          "raw_bytes": 8710979
+        }
+      ],
+      "write_ms": 3131
+    }
+  ],
+  "seed": 1,
+  "settle_years": 1,
+  "settled_on": "2025-12-31",
+  "settlement": {
+    "days": 120,
+    "days_with_payments": 84,
+    "failed": 449184,
+    "fails": {
+      "Funds": 213218,
+      "NoMoney": 137736
+    },
+    "fixed_point_iterations": 366647,
+    "gross": {
+      "0": "204243446852042",
+      "1": "17346012980881",
+      "2": "1065657247758"
+    },
+    "gross_paid": "553566383622060",
+    "heads_read": 4035731,
+    "largest_ring": 18539,
+    "lines_due": 175193,
+    "lost": 58234520,
+    "lost_past_failed": 0,
+    "payments": 11331397,
+    "ring_parties": 26640,
+    "ring_value": "5284228390822",
+    "rows_due": 11506508,
+    "rows_scanned": 16128077,
+    "runs_read": 1301082,
+    "settled": 10743148
+  },
+  "standing_shapes": 18,
+  "substeps": [
+    {
+      "days": 120,
+      "greatest_ns": 2829194,
+      "median_ns": 601553,
+      "substep": "1b",
+      "total_ms": 75
+    },
+    {
+      "days": 84,
+      "greatest_ns": 140491994,
+      "median_ns": 22176946,
+      "substep": "2d",
+      "total_ms": 1959
+    },
+    {
+      "days": 120,
+      "greatest_ns": 1719,
+      "median_ns": 804,
+      "substep": "2f",
+      "total_ms": 0
+    },
+    {
+      "days": 120,
+      "greatest_ns": 801391,
+      "median_ns": 464883,
+      "substep": "3a",
+      "total_ms": 58
+    },
+    {
+      "days": 120,
+      "greatest_ns": 43092423,
+      "median_ns": 26529930,
+      "substep": "3b",
+      "total_ms": 3279
+    },
+    {
+      "days": 120,
+      "greatest_ns": 36244323,
+      "median_ns": 1345945,
+      "substep": "3e",
+      "total_ms": 315
+    },
+    {
+      "days": 120,
+      "greatest_ns": 921,
+      "median_ns": 360,
+      "substep": "4b",
+      "total_ms": 0
+    },
+    {
+      "days": 120,
+      "greatest_ns": 284,
+      "median_ns": 86,
+      "substep": "5d",
+      "total_ms": 0
+    },
+    {
+      "days": 120,
+      "greatest_ns": 443,
+      "median_ns": 93,
+      "substep": "6d",
+      "total_ms": 0
+    },
+    {
+      "days": 84,
+      "greatest_ns": 5434015003,
+      "median_ns": 26568434,
+      "substep": "7c",
+      "total_ms": 22533
+    },
+    {
+      "days": 84,
+      "greatest_ns": 371569652,
+      "median_ns": 788252,
+      "substep": "9b",
+      "total_ms": 1309
+    },
+    {
+      "days": 84,
+      "greatest_ns": 2005,
+      "median_ns": 583,
+      "substep": "9e",
+      "total_ms": 0
+    },
+    {
+      "days": 120,
+      "greatest_ns": 339848,
+      "median_ns": 16589,
+      "substep": "10a",
+      "total_ms": 2
+    },
+    {
+      "days": 120,
+      "greatest_ns": 6866187,
+      "median_ns": 394185,
+      "substep": "10b",
+      "total_ms": 57
+    },
+    {
+      "days": 120,
+      "greatest_ns": 533917192,
+      "median_ns": 97505023,
+      "substep": "10d",
+      "total_ms": 16691
+    }
+  ],
+  "total_days": 120,
+  "turns": 84,
+  "workers": null,
+  "world_hash": "702d919f1cf22bf687b2c5f83e78697d"
+}
