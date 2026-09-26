@@ -5778,7 +5778,13 @@ run it to forecast (a signature check).
 
 ### S1.02 — `sys-tec`: products and the opening ways
 
-**Status**: building
+**Status**: done. Nineteen products and each country's 19 opening ways, derived from Eurostat's FIGARO tables,
+ILOSTAT, the OECD's fixed assets and the ICP's price levels (`tools/data/derive_tec.py`); `sys-tec` compiles them at
+assembly with each country's public set per industry; the family `TEC.production` checks every production against
+its way; LC-1-05 is registered. Both reviews were the builder's own: they found `if-base` holding behaviour (PC-08,
+moved to `sys-tec`), a leg's digest built outside the ledger (PC-25, moved to `inject_production`), and TEC.1's
+perishing goods, TEC.4's firms' own ways and TEC.9's producer's knowledge with no carrier here, handed to S1.05 and
+S1.03. The build run of fe1fa2b1 is clean (peak 2 764 MiB, the world's hash unchanged).
 
 **Clauses**:
 - STATE: TEC.2, TEC.3; TEC.1 *(part: products with their units, industries, storage and delivery; how fast a stored
@@ -5872,10 +5878,10 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 - a way used by a firm that does not know it.
 
 **Done when**
-- [ ] Products and opening ways are declared with sources.
-- [ ] TEC.9's family runs; LC-1-05 is registered, applies once firms produce (S1.03), and S1.12's Done when
+- [x] Products and opening ways are declared with sources.
+- [x] TEC.9's family runs; LC-1-05 is registered, applies once firms produce (S1.03), and S1.12's Done when
   requires it to pass.
-- [ ] Two reviews are done.
+- [x] Two reviews are done.
 
 ---
 
