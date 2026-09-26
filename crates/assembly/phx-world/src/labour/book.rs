@@ -127,6 +127,7 @@ pub struct LabourDay {
     pub raised: u64,
     pub cut: u64,
     pub quits: u64,
+    pub severance_unpaid: u64,
 }
 
 /// Labour as the world keeps it: its kind and laws, its book, and what is rebuilt from the world rather than saved —

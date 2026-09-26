@@ -317,7 +317,8 @@ impl<B: Backing> Books<B> {
     }
 
     /// Whether a party holds money in a currency: an account in it, or money it issues.
-    pub(crate) fn holds_money(&self, party: PartyId, ccy: Ccy) -> bool {
+    #[must_use]
+    pub fn holds_money(&self, party: PartyId, ccy: Ccy) -> bool {
         let mut issues = false;
         self.each_money_line(party, ccy, Side::Liability, |_| issues = true);
         issues || matches!(self.money_row(party, ccy), Missing::Present(_))

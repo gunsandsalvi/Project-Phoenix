@@ -304,6 +304,11 @@ impl World {
         else {
             violation!(clause = "LAB.12", "severance under a reason never declared");
         };
+        // A party that holds no money in the wage's currency can neither pay nor be paid it, as with any due.
+        if !self.books.holds_money(employer, wage.ccy()) || !self.books.holds_money(worker, wage.ccy()) {
+            self.labour.day.severance_unpaid += 1;
+            return;
+        }
         let mut legs = Vec::new();
         self.books.pay_into(employer, worker, (amount, wage.ccy()), &mut legs);
         let id = self.books.ledger.next_id(day);
