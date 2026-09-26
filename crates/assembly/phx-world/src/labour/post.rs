@@ -20,12 +20,12 @@ use crate::world::World;
 
 /// An employer's staff on one employment line: the line, its occupation, its weekly hours, its band and its members.
 #[derive(Clone, Copy, Debug)]
-struct Staff {
-    line: LineId,
-    occupation: u32,
-    hours: u32,
-    band: u32,
-    members: u32,
+pub(super) struct Staff {
+    pub line: LineId,
+    pub occupation: u32,
+    pub hours: u32,
+    pub band: u32,
+    pub members: u32,
 }
 
 /// What an employer's decision reads of its own facts.
@@ -112,20 +112,29 @@ impl World {
     /// least a match takes; else its newest staff's there; else the mean wage for the hours; never below the law's
     /// least.
     #[clause("LAB.4", "LAB.11", "REP.34")]
-    fn offer_point(&self, law: &Law, (employer, occupation): (PartyId, u32), staff: &[Staff], hours: u32) -> i64 {
+    pub(super) fn offer_point(
+        &self,
+        law: &Law,
+        (employer, occupation): (PartyId, u32),
+        staff: &[Staff],
+        hours: u32,
+    ) -> i64 {
+        let Some(kind) = self.labour.kind else {
+            violation!(clause = "REP.34", "a wage offered in a world with no labour");
+        };
         let fill = self.labour.book.fills.iter().find(|f| f.employer == employer && f.occupation == occupation);
         let newest =
             staff.iter().filter(|s| s.occupation == occupation).reduce(|a, b| if b.band > a.band { b } else { a });
         let share = f64::from(hours) / f64::from(law.full_time_hours);
-        let point = match (fill, newest) {
-            (Some(f), _) if f.days <= crate::consts::LEAST_MATCH_DAYS => f.point - 1,
-            (Some(f), _) => f.point,
-            (None, Some(s)) => i64::from(self.line_point(s.line)),
-            (None, None) => match self.labour.kind.and_then(|k| (k.point_near)(law, law.mean_monthly * share)) {
-                Some(p) => p,
-                None => violation!(clause = "REP.34", "a mean wage beyond the wage points"),
-            },
+        let Some(mean) = (kind.point_near)(law, law.mean_monthly * share) else {
+            violation!(clause = "REP.34", "a mean wage beyond the wage points");
         };
+        let point = (kind.adapt)(
+            fill.map_or(Missing::Absent, |f| Missing::Present((f.point, f.days))),
+            newest.map_or(Missing::Absent, |s| Missing::Present(i64::from(self.line_point(s.line)))),
+            mean,
+            crate::consts::LEAST_MATCH_DAYS,
+        );
         match law.minimum_monthly {
             Missing::Present(m) => match self.labour.kind.and_then(|k| (k.least_point)(law, m * share)) {
                 Some(least) if point < least => least,
@@ -189,6 +198,7 @@ impl World {
             Missing::Present(m) => m / (law.weeks_a_month * f64::from(law.full_time_hours)),
             Missing::Absent => 0.0,
         };
+        self.review(day, (row.party, country, twins), (&law, firm.price), &staff, &needs);
         let input = PostIn { price: firm.price, units_a_day: firm.units_a_day, financing, minimum_hour, needs };
         let out = (kind.post)(&input);
         self.apply_post(day, (row.party, country, region, twins), &law, &staff, &out);

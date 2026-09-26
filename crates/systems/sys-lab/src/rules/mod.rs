@@ -2,6 +2,7 @@
 
 pub mod accept;
 pub mod post;
+pub mod renegotiate;
 pub mod retire;
 pub mod search;
 pub mod select;

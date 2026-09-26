@@ -81,6 +81,18 @@ pub(crate) struct Fill {
     pub days: u32,
 }
 
+/// An employer's offer at its review of one of its lines, applied at the next start of work: the members it covers,
+/// the point offered and the most the work pays for, the point a counter may reach.
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
+pub(crate) struct Review {
+    pub employer: PartyId,
+    pub country: u8,
+    pub line: LineId,
+    pub count: u32,
+    pub offer: i64,
+    pub most: i64,
+}
+
 /// What the rounds carry across days.
 #[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub(crate) struct LabourBook {
@@ -91,6 +103,8 @@ pub(crate) struct LabourBook {
     pub separations: Vec<Separation>,
     pub fills: Vec<Fill>,
     pub retiring: Vec<PartyId>,
+    pub reviews: BTreeMap<PartyId, Day>,
+    pub reviewing: Vec<Review>,
     pub next: u32,
 }
 
@@ -109,6 +123,10 @@ pub struct LabourDay {
     pub retired: u64,
     pub posted: u64,
     pub match_days: u64,
+    pub reviewed: u64,
+    pub raised: u64,
+    pub cut: u64,
+    pub quits: u64,
 }
 
 /// Labour as the world keeps it: its kind and laws, its book, and what is rebuilt from the world rather than saved —

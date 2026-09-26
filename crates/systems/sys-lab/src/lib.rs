@@ -25,6 +25,7 @@ declare_stream! { pub MeetingStream = "LAB.meeting" { purpose: Meeting, keyed: f
 declare_stream! { pub LotStream = "LAB.select_lot" { purpose: Meeting, keyed: false, clause: "LAB.7" } }
 declare_stream! { pub LayoffStream = "LAB.layoff" { purpose: Meeting, keyed: false, clause: "REP.23" } }
 declare_stream! { pub RetirementStream = "LAB.retirement" { purpose: Birthday, keyed: false, clause: "LAB.6" } }
+declare_stream! { pub ReviewStream = "LAB.review_phase" { purpose: SchedulePhase, keyed: false, clause: "LAB.17" } }
 
 /// A person's labour state: not searching, searching or retired.
 pub const STATE: PersonAttrDecl = PersonAttrDecl {
@@ -183,12 +184,33 @@ declare_prim! {
     }
 }
 
+declare_prim! {
+    /// The months between an employer's reviews of its contracts' wages.
+    pub REVIEW_MONTHS = "LAB.review_months" { kind: Preference, value: Count, clause: "LAB.17", scope: Shared }
+}
+
+declare_prim! {
+    /// The price level an employee expects at its contract's next review over today's, until households hold their
+    /// own outlooks.
+    pub PRICE_OUTLOOK = "LAB.price_outlook" {
+        kind: Shape, value: Fixed { exp: 3 }, clause: "LAB.17", scope: Shared, shape: placeholder("HH")
+    }
+}
+
 /// A hire joining its employment line.
 pub const HIRED: ReasonDecl =
     ReasonDecl { name: "LAB hired", order: 2, paid: Effect::Equity, received: Effect::Equity, held: Missing::Absent };
 /// A separation leaving its employment line.
 pub const SEPARATED: ReasonDecl = ReasonDecl {
     name: "LAB separated",
+    order: 2,
+    paid: Effect::Equity,
+    received: Effect::Equity,
+    held: Missing::Absent,
+};
+/// A review's members moving to the line of the wage it concluded.
+pub const RENEGOTIATED: ReasonDecl = ReasonDecl {
+    name: "LAB renegotiated",
     order: 2,
     paid: Effect::Equity,
     received: Effect::Equity,
@@ -212,6 +234,7 @@ pub const LABOUR: LabourKind = LabourKind {
     hired: HIRED.name,
     separated: SEPARATED.name,
     severance: SEVERANCE.name,
+    renegotiated: RENEGOTIATED.name,
     state: STATE.name,
     occupation: OCCUPATION_ATTR.name,
     last_point: LAST_POINT.name,
@@ -220,21 +243,27 @@ pub const LABOUR: LabourKind = LabourKind {
     meeting_stream: MeetingStream::DECL.name,
     lot_stream: LotStream::DECL.name,
     layoff_stream: LayoffStream::DECL.name,
+    review_stream: ReviewStream::DECL.name,
     employer_visits: EMPLOYER_VISITS,
     retirement: RETIREMENT.name,
     law: law::law,
     search: &points::SEARCH,
     accept: &points::ACCEPT,
     retire: &points::RETIRE,
+    answer: &points::ANSWER,
+    review: rules::renegotiate::review,
+    conclude: rules::renegotiate::conclude,
     select: rules::select::select,
     post: rules::post::post,
     wage_at: wages::wage_at,
     point_near: wages::point_near,
     least_point: wages::least_point,
+    adapt: wages::adapt,
+    owed: wages::severance,
 };
 
-/// Labour's declarations in the books: the employment line's kind and the reasons its hires, separations and
-/// severance move under.
+/// Labour's declarations in the books: the employment line's kind and the reasons its hires, separations, severance
+/// and reviews move under.
 #[derive(Debug)]
 pub struct Declared;
 
@@ -261,7 +290,7 @@ impl Contribution for Declared {
     fn contribute(&self, opening: &mut Opening<'_>) {
         let ledger = &mut phx_ledger::books::of(opening).ledger;
         ledger.lines.declare_money(EMPLOYMENT);
-        for r in [HIRED, SEPARATED, SEVERANCE] {
+        for r in [HIRED, SEPARATED, SEVERANCE, RENEGOTIATED] {
             let _ = ledger.reasons.declare(r);
         }
     }
@@ -282,6 +311,7 @@ impl System for Lab {
             LotStream::DECL,
             LayoffStream::DECL,
             RetirementStream::DECL,
+            ReviewStream::DECL,
         ] {
             d.stream(s);
         }
@@ -293,7 +323,7 @@ impl System for Lab {
             part_time_hours: d.prim(&PART_TIME_HOURS),
             tenure: d.prim(&TENURE),
         };
-        for p in [&FULL_TIME_HOURS, &NOTICE_DAYS, &SEVERANCE_DAYS, &PATIENCE_DAYS, &BAND_YEARS] {
+        for p in [&FULL_TIME_HOURS, &NOTICE_DAYS, &SEVERANCE_DAYS, &PATIENCE_DAYS, &BAND_YEARS, &REVIEW_MONTHS] {
             let _: phx_core::Prim<Count> = d.prim(p);
         }
         let _: phx_core::Prim<Fixed<6>> = d.prim(&WAGE_POINT_RATIO);
@@ -302,6 +332,11 @@ impl System for Lab {
         let _: phx_core::Prim<Fixed<4>> = d.prim(&SEEN_CHANCE);
         let _: phx_core::Prim<Fixed<3>> = d.prim(&WAGE_WEIGHT);
         let _: phx_core::Prim<Fixed<3>> = d.prim(&RESERVATION_SHARE);
+        let _: phx_core::Prim<Fixed<3>> = d.prim(&PRICE_OUTLOOK);
+        d.decision(&points::SEARCH);
+        d.decision(&points::ACCEPT);
+        d.decision(&points::RETIRE);
+        d.decision(&points::ANSWER);
         for t in [&OCCUPATION_SKILL, &EDUCATION_SKILL] {
             let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(t);
         }

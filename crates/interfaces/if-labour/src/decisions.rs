@@ -81,3 +81,26 @@ pub struct RetireIn {
     pub age_months: i64,
     pub pension_months: i64,
 }
+
+/// What an employer reads at its contracts' review: the point a line pays, the point nearest what a month of the
+/// job's hours brings in at its price outlook, the point its own recent fills show the market pays for the work, and
+/// the least point the law allows for the job's hours. The output is the point it offers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ReviewIn {
+    pub current: i64,
+    pub revenue: i64,
+    pub market: i64,
+    pub least: phx_num::Missing<i64>,
+}
+
+/// What an employee reads when its contract's review offers a wage: the point offered, its reservation, the best
+/// monthly wage among the vacancies it can see for its work, the price level it expects at the next review over
+/// today's, and the ratio between neighbouring points. The output is the least point it stays for.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct AnswerIn {
+    pub offer: i64,
+    pub reservation: f64,
+    pub best: phx_num::Missing<f64>,
+    pub outlook: f64,
+    pub ratio: f64,
+}

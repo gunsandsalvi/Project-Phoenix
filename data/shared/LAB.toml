@@ -18,6 +18,23 @@ source_ref = "The days a vacancy stands before its employer raises its offer: th
 value = 27
 
 [[primitive]]
+id = "LAB.review_months"
+kind = "PREFERENCE"
+owner = "LAB"
+source = "estimated"
+source_ref = "The months between an employer's reviews of its wages: job stayers' base wages change about once a year, the hazard of a change spiking at twelve months since the last (Grigsby, Hurst and Yildirmaz, AER 2021, ADP payroll records 2008-2016)."
+value = 12
+
+[[primitive]]
+id = "LAB.price_outlook"
+kind = "SHAPE"
+owner = "LAB"
+source = "assumed"
+source_ref = "The price level an employee expects at its contract's next review over today's: prices held, until households hold their own outlooks."
+shape = "placeholder:HH"
+value = "1.000"
+
+[[primitive]]
 id = "LAB.applications_a_week"
 kind = "TECHNOLOGY"
 owner = "LAB"

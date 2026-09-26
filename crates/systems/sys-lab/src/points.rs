@@ -1,7 +1,7 @@
 //! Labour's decision points: the household's, which the player takes for its own, and the rules that take them for
 //! every other.
 
-use if_labour::decisions::{AcceptIn, RetireIn, SearchIn};
+use if_labour::decisions::{AcceptIn, AnswerIn, RetireIn, SearchIn};
 use phx_core::WakeKind;
 use phx_core::decisions::DecisionPointDecl;
 use phx_num::Missing;
@@ -39,4 +39,15 @@ pub const RETIRE: DecisionPointDecl<RetireIn, bool> = DecisionPointDecl {
     wakes: &[WakeKind::KinkDay],
     runs_on_non_business: true,
     clause: "LAB.6",
+};
+
+/// An employee's answer at its contract's review: the least point it stays for.
+pub const ANSWER: DecisionPointDecl<AnswerIn, i64> = DecisionPointDecl {
+    name: "LAB.answer",
+    system: "LAB",
+    rule: rules::renegotiate::answer,
+    schedule: Missing::Absent,
+    wakes: &[WakeKind::Message],
+    runs_on_non_business: true,
+    clause: "LAB.17",
 };

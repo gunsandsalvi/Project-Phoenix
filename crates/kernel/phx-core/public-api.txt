@@ -393,6 +393,8 @@ impl phx_core::decisions::QueuedPayload for alloc::vec::Vec<u32>
 pub fn alloc::vec::Vec<u32>::decode(&[i64]) -> core::option::Option<alloc::vec::Vec<u32>>
 impl phx_core::decisions::QueuedPayload for bool
 pub fn bool::decode(&[i64]) -> core::option::Option<bool>
+impl phx_core::decisions::QueuedPayload for i64
+pub fn i64::decode(&[i64]) -> core::option::Option<i64>
 pub fn phx_core::decisions::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>
 pub mod phx_core::directory
 pub enum phx_core::directory::PartyState
@@ -3787,6 +3789,8 @@ impl phx_core::decisions::QueuedPayload for alloc::vec::Vec<u32>
 pub fn alloc::vec::Vec<u32>::decode(&[i64]) -> core::option::Option<alloc::vec::Vec<u32>>
 impl phx_core::decisions::QueuedPayload for bool
 pub fn bool::decode(&[i64]) -> core::option::Option<bool>
+impl phx_core::decisions::QueuedPayload for i64
+pub fn i64::decode(&[i64]) -> core::option::Option<i64>
 pub trait phx_core::Reads<F: phx_core::facts::FactDef>
 pub trait phx_core::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
 pub fn phx_core::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)

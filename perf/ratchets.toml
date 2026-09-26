@@ -14,11 +14,12 @@ value = 13
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
-# the placeholders a stage brings for later systems. Five: BNK's two loan terms, XB's closed borders (S0.18), and the
-# wage and rent points (LAB, HSG, S0.25d) until firms and landlords post their own.
+# the placeholders a stage brings for later systems. Six: BNK's two loan terms, XB's closed borders (S0.18), the rent
+# points (HSG, S0.25d) until landlords post their own, and a searcher's reservation and an employee's price outlook
+# (HH, S1.08) until households weigh their own.
 [[ratchet]]
 counter = "phx_check.placeholder_count"
-value = 5
+value = 6
 direction = "down"
 
 # The distinct sets of ways the technology keeps: each country's public set per industry, three countries of sixteen

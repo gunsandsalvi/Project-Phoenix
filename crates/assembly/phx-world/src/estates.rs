@@ -74,6 +74,7 @@ impl World {
             self.agent_day.unlisted_sweeps += 1;
         }
         for estate in first.into_iter().chain(then) {
+            self.release_staff(day, estate);
             let destination = self.destination(estate);
             let subject = Subject::new(SubjectTag::Party, estate.get());
             let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S7c.ordinal());

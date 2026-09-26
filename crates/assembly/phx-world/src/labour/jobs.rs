@@ -111,8 +111,8 @@ impl World {
         line
     }
 
-    /// 4a: the hires join their lines, the layoffs whose notice has run leave theirs with their severance owed, and
-    /// the retired persons' jobs leave theirs.
+    /// 4a: the hires join their lines, the layoffs whose notice has run leave theirs with their severance owed, the
+    /// retired persons' jobs leave theirs, and the reviews offered yesterday are answered.
     #[clause("LAB.4", "LAB.6", "LAB.8", "LAB.12")]
     pub(crate) fn labour_start(&mut self, day: Day) {
         if self.labour.kind.is_none() {
@@ -129,6 +129,9 @@ impl World {
         }
         for party in std::mem::take(&mut self.labour.book.retiring) {
             self.retire_jobs(day, party);
+        }
+        for r in std::mem::take(&mut self.labour.book.reviewing) {
+            self.apply_review(day, &r);
         }
     }
 
@@ -155,17 +158,7 @@ impl World {
         if joined.is_err() {
             violation!(clause = "LAB.1", "a hire that did not join its line", party = h.employee.get());
         }
-        let (place, slot) = self.books.parties.row(h.employee);
-        let first = self.books.parties.first_cell_place();
-        if let Some(k) = place.checked_sub(first).map(usize::from) {
-            let table = Population::table_mut::<SystemBacking>(self.books.parties.cells_mut().0, k);
-            let mut words = table.attachments(slot).to_vec();
-            let Ok(person) = usize::try_from(h.person) else {
-                violation!(clause = "REP.26", "a hired person beyond a household's", party = h.employee.get());
-            };
-            words.push(Attachment { holder: Holder::Person(person), line, side: Side::Asset }.pack());
-            table.set_attachments(slot, &words);
-        }
+        self.attach(h.employee, h.person, line);
         let Some(occupation) = h.class.get(class::OCCUPATION).copied() else {
             violation!(clause = "LAB.1", "a hire whose class names no occupation", party = h.employee.get());
         };
@@ -178,6 +171,21 @@ impl World {
             &[(kind.state, class::NOT_SEARCHING), (kind.occupation, occupation), (kind.last_point, point)],
         );
         self.labour.day.hires += 1;
+    }
+
+    /// A person of an agent attached to an employment line it works on.
+    pub(crate) fn attach(&mut self, party: PartyId, person: u32, line: LineId) {
+        let Ok(person) = usize::try_from(person) else {
+            violation!(clause = "REP.26", "a person beyond a household's", party = party.get());
+        };
+        let (place, slot) = self.books.parties.row(party);
+        let first = self.books.parties.first_cell_place();
+        if let Some(k) = place.checked_sub(first).map(usize::from) {
+            let table = Population::table_mut::<SystemBacking>(self.books.parties.cells_mut().0, k);
+            let mut words = table.attachments(slot).to_vec();
+            words.push(Attachment { holder: Holder::Person(person), line, side: Side::Asset }.pack());
+            table.set_attachments(slot, &words);
+        }
     }
 
     /// A layoff taking effect: the employer's members leave its line with as many employees drawn from the other
@@ -228,6 +236,32 @@ impl World {
         self.labour.day.separated += u64::from(count);
     }
 
+    /// A failed firm's estate releasing its staff before it settles: each employment line it holds left at once, as
+    /// the firm can no longer give notice, through the separation path, and the severance owed paid ahead of the
+    /// estate's other debts.
+    #[clause("LAB.12")]
+    pub(crate) fn release_staff(&mut self, day: Day, estate: PartyId) {
+        let Some(kind) = self.labour.kind else { return };
+        let k = self.books.ledger.lines.kind_index(kind.line);
+        let (place, slot) = self.books.parties.row(estate);
+        let held: Vec<(LineId, u32)> = phx_ledger::rows::rows(self.books.parties.holder(place), slot)
+            .into_iter()
+            .filter(|r| r.side() == Side::Liability && self.books.ledger.lines.kind_of(r.row.line) == k)
+            .map(|r| (r.row.line, r.row.count))
+            .collect();
+        if held.is_empty() {
+            return;
+        }
+        let Missing::Present(country) = crate::world::geo_in(&self.own).country_of(self.books.parties.site(estate))
+        else {
+            violation!(clause = "PTY.5", "an estate sited in no country", estate = estate.get());
+        };
+        for (line, count) in held {
+            self.separate(day, &Separation { employer: estate, country: country.get(), line, count, effective: day });
+        }
+        self.labour_settle(SubStep::S7c);
+    }
+
     /// The wage point of an employment line, from its monthly wage.
     pub(crate) fn line_point(&self, line: LineId) -> u32 {
         let terms = self.books.ledger.terms.get(self.books.ledger.lines.terms(line));
@@ -260,8 +294,7 @@ impl World {
         };
         let years = i64::from(self.calendar.date(day).year()) - i64::from(*band);
         let law = super::law_of(&self.labour.laws, CountryId::new(country));
-        let per_day = phx_rand::float::from_i64(wage.amt()) / (law.weeks_a_month * crate::consts::DAYS_A_WEEK);
-        let owed = per_day * f64::from(*days) * phx_rand::float::from_i64(years) * f64::from(members);
+        let owed = (kind.owed)(law, phx_rand::float::from_i64(wage.amt()), *days, years, members);
         let amount = phx_ledger::opening::whole(owed);
         if amount <= 0 {
             return;

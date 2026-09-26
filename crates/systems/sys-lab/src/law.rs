@@ -77,5 +77,7 @@ pub fn law(register: &Register, c: &OpeningCountry) -> Result<Law, String> {
         occupation_skill: places(register, crate::OCCUPATION_SKILL.id, id)?,
         education_skill: places(register, crate::EDUCATION_SKILL.id, id)?,
         pension_months: pension_months(register, id)?,
+        review_months: whole(register, crate::REVIEW_MONTHS.id, id)?,
+        price_outlook: register.fixed(crate::PRICE_OUTLOOK.id)?,
     })
 }

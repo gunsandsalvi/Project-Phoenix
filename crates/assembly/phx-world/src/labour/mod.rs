@@ -1,10 +1,11 @@
-//! Labour in the world: the book of vacancies, applications, offers, hires and separations; the day's rounds at 5c,
-//! a round a day; the hires and separations of 4a; and severance paid at 7c. The rules are the labour kind's; the
+//! Labour in the world: the book of vacancies, applications, offers, hires, separations and reviews; the day's rounds
+//! at 5c, a round a day; the hires, separations and reviews of 4a; and severance paid at 7c. The rules are the labour kind's; the
 //! kernel builds each decision's input from the world and applies what it decides.
 
 pub mod book;
 mod jobs;
 mod post;
+mod review;
 mod round;
 
 pub use book::LabourDay;

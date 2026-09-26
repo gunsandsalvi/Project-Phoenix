@@ -5576,6 +5576,7 @@ values; PC-20 now also refuses any `&mut` into the world, or any write to a tabl
 | A firm estate releasing its staff before LAB's rules exist (naming LAB) | S1.03 | S1.08 |
 | The retail price's freight and consumption-tax components absent (naming FRT, TAX) | S1.06 | S1.07, S1.11 |
 | The reservation wage (naming HH) | S1.08 | S1.12 |
+| An employee's price outlook at its contract's review (naming HH) | S1.08 | S1.12 |
 
 **Placeholders this stage introduces** are listed in the tables of the stages that retire them, with S1.11's
 treasury that never borrows from the central bank (naming CB), retired by S3.02.
@@ -6708,8 +6709,9 @@ Counters, ratcheted: `phx_frt.shipments`, `phx_frt.refused_bookings`.
 **Status**: building
 
 **Clauses**:
-- STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: LAB.1–LAB.4, LAB.6–LAB.17, including collective
-  bargaining (LAB.10) where declared union coverage exists, and the minimum wage (LAB.11); PTY.3 *(completes it: a
+- STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: LAB.1–LAB.4, LAB.6–LAB.9, LAB.11–LAB.17,
+  including the minimum wage (LAB.11); collective bargaining (LAB.10) is S1.15's, which opens the union parties it
+  needs, since no party can bargain before one exists; PTY.3 *(completes it: a
   person's skills and labour-market state)*.
 - DECISION: LAB.5 *(part: search within the region; moving for work is S2.05, retraining S6.02)*; FRM.7 *(completes
   it: employing, with S1.03's buying)*; HH.6 *(part: search, acceptance, quits and retirement, with S1.12)*; REP.34
@@ -6748,9 +6750,23 @@ completes with the second.
     process at birthdays from the pension's age, its jobs left at the next 4a;
   - an employer decides nothing until its accounts give it a price and a planned output (S1.15), so the build run's
     market has searchers and no vacancies (LC-1-22 not yet).
-- **S1.08b — wages at review** (planned): renegotiation (LAB.17), collective bargaining and strikes (LAB.10), the
-  pension terms' placeholder naming PEN, and the unit tests `wage_point_adapts_to_fill_history`,
-  `severance_owed_by_terms` and `renegotiation_protocol_terminates`.
+- **S1.08b — wages at review** (built): renegotiation (LAB.17) and a failed firm's staff (LAB.12). As built:
+  - an employer reviews all its contracts' wages once a review period (`LAB.review_months`), a pay round, on a phase
+    it draws the first time its schedule comes due (`LAB.review_phase`), so rounds are staggered; the contracts of a
+    line are alike, so a pay round reviews each of the employer's lines, not each contract's anniversary;
+  - at 5c its rule offers each line the lesser of the point nearest a month of the job's revenue and its fill
+    history's point, never below the law's least; at the next 4a the employees are drawn from the line (REP.23) and
+    each answers through the household's decision point `LAB.answer` the least point it stays for, from its
+    reservation, the best vacancy it can see for its work in its region and the prices it expects by the next
+    review (a placeholder naming HH, `LAB.price_outlook`); the two conclude in two moves (`conclude`); a changed
+    wage moves the members to that point's line under `LAB renegotiated`, and one who quits searches; nothing moves
+    when the rule keeps the line as it pays;
+  - a failed firm's estate releases its staff before it settles: its employment lines left at once through the
+    separation path, their severance paid ahead of its other debts (the law's order of classes is S2.03's);
+  - the offer's adaptation to fill history and the severance owed are `sys-lab`'s arithmetic (`wages::adapt`,
+    `wages::severance`), which the kernel calls; layoffs are the posting rule's (`rules/post.rs`), not a file of
+    their own;
+  - a job carries no pension terms until PEN (S4.04), its placeholder below.
 
 **Goal**: people's time sold to employers by searchers who apply, choose and quit, for wages set by employers who
 post vacancies at wage points and compete for workers:
@@ -6767,7 +6783,6 @@ post vacancies at wage points and compete for workers:
 | `src/rules/search.rs` | LAB.5: the searcher's applications and reservation |
 | `src/rules/select.rs` | LAB.7: selection among applicants |
 | `src/rules/renegotiate.rs` | LAB.17 |
-| `src/rules/bargain.rs` | LAB.10 |
 | `src/handlers/*.rs` | 5c posting, applications, offers and acceptances, one step of each a day (below); 4a jobs starting and ending; notice and severance as legs of the separation instruction, settled at stage 7 |
 | `crates/interfaces/if-pop/src/labour.rs` | the household's labour decision points `search`, `accept`, `quit`, `retire` (the decider's crate), registered and implemented by `sys-lab` since they are LAB's clauses; they read the household's reservation through the rule handle `reservation`, which `sys-hh` implements at S1.12 (until then a placeholder naming HH: benefits and other household income plus the type's value of leisure) |
 | `data/<country>/LAB.toml` | search effort and reach; the meeting hazard per application (TECHNOLOGY of search); notice, severance and minimum-wage law; union coverage; wage points per occupation family (POLICY of the trade); vacancy patience and the renegotiation protocol (PREFERENCE of management) |
@@ -6816,7 +6831,7 @@ post vacancies at wage points and compete for workers:
   the lowest point that is, which the employer accepts if that is still below the work's expected revenue, and
   otherwise the employee quits, to that vacancy's search or out of work. The protocol ends in two moves. A new wage
   is a new line; members move rows.
-- **Collective bargaining** (LAB.10): where coverage exists (ENDOWMENT), a union party — opened by GEN III (S1.15) —
+- **Collective bargaining** (LAB.10, built at S1.15): where coverage exists (ENDOWMENT), a union party — opened by GEN III —
   negotiates one agreement for the covered lines by a declared alternating-offers protocol (Rubinstein, 1982, listed
   in `SHAPES.toml`). The union's offers read its members' price outlooks and the employer's published results (its
   latest filed accounts, GEN.5 at the opening, S2.10 from then); the employer's read what its renegotiation reads. A
@@ -7193,7 +7208,8 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
 - PRIMITIVE: HH.20.
 - Housing and borrowing (HH.8, HH.10) are S2.05; moving (HH.9) S2.05 and S5.05; insurance S4.03; voting S5.03;
   arrears actions and insolvency S2.11; HH.16–HH.17 S6.03.
-- This step retires S1.08's placeholder naming HH (the reservation).
+- This step retires S1.08's placeholders naming HH (the reservation, and the price outlook an employee reads at its
+  contract's review).
 
 **Architecture**: §7.3 (attention), §7.4 (standing flows), §7.5, §7.9.
 
@@ -7498,6 +7514,10 @@ decisions)*: every Stage 1 system's opening contribution.
   *(completes it, from S1.05: weather sets the yields of crops where they grow)*. MEASURE: GDS.11 *(completes it, from
   S1.05: its reads over the goods traded)*.
 - MEASURE: FRT.10 *(completes it, from S1.07: LC-1-20 reads freight rates against the price gaps)*.
+- PROCESS: LAB.10 *(collective bargaining, moved from S1.08: the union parties opened here negotiate their covered
+  lines' wages by a declared alternating-offers protocol (Rubinstein, 1982), reading their members' outlooks and the
+  employer's filed results, in `sys-lab`'s `rules/bargain.rs`; a strike stops the covered work's output and wages for
+  its days)*.
 - Its Done when requires LC-1-05, LC-1-11, LC-1-12, LC-1-13, LC-1-15, LC-1-20 and LC-1-46 to pass.
 
 **Architecture**: §10.
@@ -16782,7 +16802,8 @@ and are not mapped.
 | FRT | S1.07 | 1, 2, 3, 6, 7, 9, 11, 12 |
 | FRT | S1.15 | 4, 5, 10 |
 | FRT | S2.03 | 8 |
-| LAB | S1.08 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
+| LAB | S1.08 | 1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17 |
+| LAB | S1.15 | 10 |
 | LAB | S6.02 | 5 |
 | HSG | S2.05 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 |
 | TCR | S2.02 | 1, 2, 3, 4, 5, 6, 7, 8 |

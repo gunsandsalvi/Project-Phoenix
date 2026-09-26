@@ -52,6 +52,16 @@ impl QueuedPayload for bool {
     }
 }
 
+/// A number, queued as one word.
+impl QueuedPayload for i64 {
+    fn decode(words: &[i64]) -> Option<i64> {
+        match words {
+            [w] => Some(*w),
+            _ => None,
+        }
+    }
+}
+
 /// A choice among places, queued as a word each.
 impl QueuedPayload for Vec<u32> {
     fn decode(words: &[i64]) -> Option<Vec<u32>> {
@@ -194,6 +204,8 @@ mod tests {
         assert_eq!(bool::decode(&[1, 1]), None, "a yes or no is one word");
         assert_eq!(Vec::<u32>::decode(&[2, 0]), Some(vec![2, 0]));
         assert_eq!(Vec::<u32>::decode(&[-1]), None, "no place is negative");
+        assert_eq!(i64::decode(&[-4]), Some(-4));
+        assert_eq!(i64::decode(&[]), None, "a number is one word");
     }
 
     #[test]

@@ -7,7 +7,8 @@ use phx_num::Missing;
 /// the opening, and the least monthly wage a full-time job may pay, where the law sets one; the ratio between neighbouring wage points; the days a vacancy stands before
 /// its employer raises its offer; the applications a searcher sends a week and the chance an employer sees one; the
 /// weight of the wage in a searcher's choice; the reservation as a share of the searcher's last wage; the weeks in a
-/// month; the years of a start band; and the months of age each sex's pension begins at.
+/// month; the years of a start band; the months of age each sex's pension begins at; the months between an employer's
+/// reviews of its wages; and the price level an employee expects at the next review over today's.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Law {
     pub full_time_hours: u32,
@@ -28,4 +29,6 @@ pub struct Law {
     /// The skill level each education value gives, by the value's place.
     pub education_skill: Vec<u32>,
     pub pension_months: Vec<i64>,
+    pub review_months: u32,
+    pub price_outlook: f64,
 }

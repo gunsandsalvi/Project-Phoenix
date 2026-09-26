@@ -39,6 +39,12 @@ pub if_labour::decisions::AcceptIn::reservation: f64
 pub if_labour::decisions::AcceptIn::taste: f64
 pub if_labour::decisions::AcceptIn::wage: f64
 pub if_labour::decisions::AcceptIn::wage_weight: f64
+pub struct if_labour::decisions::AnswerIn
+pub if_labour::decisions::AnswerIn::best: phx_num::missing::Missing<f64>
+pub if_labour::decisions::AnswerIn::offer: i64
+pub if_labour::decisions::AnswerIn::outlook: f64
+pub if_labour::decisions::AnswerIn::ratio: f64
+pub if_labour::decisions::AnswerIn::reservation: f64
 pub struct if_labour::decisions::Applicant
 pub if_labour::decisions::Applicant::experience: u32
 pub if_labour::decisions::Applicant::lot: u64
@@ -64,6 +70,11 @@ pub if_labour::decisions::PostOut::withdraw: alloc::vec::Vec<(u32, u32)>
 pub struct if_labour::decisions::RetireIn
 pub if_labour::decisions::RetireIn::age_months: i64
 pub if_labour::decisions::RetireIn::pension_months: i64
+pub struct if_labour::decisions::ReviewIn
+pub if_labour::decisions::ReviewIn::current: i64
+pub if_labour::decisions::ReviewIn::least: phx_num::missing::Missing<i64>
+pub if_labour::decisions::ReviewIn::market: i64
+pub if_labour::decisions::ReviewIn::revenue: i64
 pub struct if_labour::decisions::SearchIn
 pub if_labour::decisions::SearchIn::applications: u32
 pub if_labour::decisions::SearchIn::reservation: f64
@@ -76,6 +87,9 @@ pub if_labour::decisions::SelectIn::open: u32
 pub mod if_labour::kind
 pub struct if_labour::kind::LabourKind
 pub if_labour::kind::LabourKind::accept: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AcceptIn, bool>
+pub if_labour::kind::LabourKind::adapt: if_labour::kind::Adapt
+pub if_labour::kind::LabourKind::answer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AnswerIn, i64>
+pub if_labour::kind::LabourKind::conclude: fn(i64, i64, i64) -> phx_num::missing::Missing<i64>
 pub if_labour::kind::LabourKind::education: &'static str
 pub if_labour::kind::LabourKind::employer_visits: &'static [&'static str]
 pub if_labour::kind::LabourKind::hired: &'static str
@@ -87,10 +101,14 @@ pub if_labour::kind::LabourKind::line: &'static str
 pub if_labour::kind::LabourKind::lot_stream: &'static str
 pub if_labour::kind::LabourKind::meeting_stream: &'static str
 pub if_labour::kind::LabourKind::occupation: &'static str
+pub if_labour::kind::LabourKind::owed: fn(&if_labour::law::Law, f64, u32, i64, u32) -> f64
 pub if_labour::kind::LabourKind::point_near: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>
 pub if_labour::kind::LabourKind::post: fn(&if_labour::decisions::PostIn) -> if_labour::decisions::PostOut
+pub if_labour::kind::LabourKind::renegotiated: &'static str
 pub if_labour::kind::LabourKind::retire: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::RetireIn, bool>
 pub if_labour::kind::LabourKind::retirement: &'static str
+pub if_labour::kind::LabourKind::review: fn(&if_labour::decisions::ReviewIn) -> i64
+pub if_labour::kind::LabourKind::review_stream: &'static str
 pub if_labour::kind::LabourKind::search: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SearchIn, alloc::vec::Vec<u32>>
 pub if_labour::kind::LabourKind::select: fn(&if_labour::decisions::SelectIn) -> alloc::vec::Vec<u32>
 pub if_labour::kind::LabourKind::separated: &'static str
@@ -98,6 +116,7 @@ pub if_labour::kind::LabourKind::severance: &'static str
 pub if_labour::kind::LabourKind::state: &'static str
 pub if_labour::kind::LabourKind::taste_stream: &'static str
 pub if_labour::kind::LabourKind::wage_at: fn(&if_labour::law::Law, i64) -> f64
+pub type if_labour::kind::Adapt = fn(phx_num::missing::Missing<(i64, u32)>, phx_num::missing::Missing<i64>, i64, u32) -> i64
 pub mod if_labour::law
 pub struct if_labour::law::Law
 pub if_labour::law::Law::applications_a_week: f64
@@ -111,7 +130,9 @@ pub if_labour::law::Law::occupation_skill: alloc::vec::Vec<u32>
 pub if_labour::law::Law::patience_days: u32
 pub if_labour::law::Law::pension_months: alloc::vec::Vec<i64>
 pub if_labour::law::Law::point_ratio: f64
+pub if_labour::law::Law::price_outlook: f64
 pub if_labour::law::Law::reservation_share: f64
+pub if_labour::law::Law::review_months: u32
 pub if_labour::law::Law::seen_chance: f64
 pub if_labour::law::Law::severance_days_a_year: u32
 pub if_labour::law::Law::wage_weight: f64

@@ -1120,6 +1120,13 @@ without end in both directions.
   employer's members are not named.
 - **Searchers** are the agents whose persons search, kept as an index by region and occupation, rebuilt on load from
   the attributes, so a day's rounds visit only them.
+- **Reviews** (LAB.17, LAB.9): an employer's pay round, once a review period at a phase it draws the first time its
+  schedule comes due (the book keeps each employer's next review day). At 5c its rule offers each of its lines a
+  point; at the next 4a the line's employees are drawn from its side (REP.23) and each answers the least point it
+  stays for; the two conclude in two moves, and a changed wage is a move of the members to that point's line
+  (`members_leave`, then `members_join`, the persons' attachments following), one who quits leaving to search.
+- **A failed firm's staff** (LAB.12): its estate's employment lines leave through the separation path before the
+  estate settles, their severance paid first.
 
 ---
 
