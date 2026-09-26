@@ -16,7 +16,7 @@ use phx_pop::population::Population;
 use phx_rand::{Subject, SubjectTag};
 use phx_store::SystemBacking;
 
-use super::book::{Hire, Separation};
+use super::book::{Hire, Owed, Separation};
 use crate::world::World;
 
 /// A person's attributes as their words hold them.
@@ -237,7 +237,7 @@ impl World {
     }
 
     /// A failed firm's estate releasing its staff before it settles: each employment line it holds left at once, as
-    /// the firm can no longer give notice, through the separation path, and the severance owed paid ahead of the
+    /// the firm can no longer give notice, through the separation path, its severance owed to be paid ahead of the
     /// estate's other debts.
     #[clause("LAB.12")]
     pub(crate) fn release_staff(&mut self, day: Day, estate: PartyId) {
@@ -259,7 +259,6 @@ impl World {
         for (line, count) in held {
             self.separate(day, &Separation { employer: estate, country: country.get(), line, count, effective: day });
         }
-        self.labour_settle(SubStep::S7c);
     }
 
     /// The wage point of an employment line, from its monthly wage.
@@ -299,34 +298,15 @@ impl World {
         let payer = i64::from(self.books.parties.unit(employer));
         let raw = phx_ledger::opening::whole((kind.owed)(law, phx_rand::float::from_i64(wage.amt()), *days, years, 1));
         let each = raw - raw.rem_euclid(payer);
-        let Some(amount) = each.checked_mul(i64::from(members)) else {
-            phx_num::capacity_exceeded!("a separation's severance", i64::MAX, each);
-        };
-        if amount <= 0 {
+        if each <= 0 {
             return;
         }
-        let Missing::Present(reason) =
-            self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(kind.severance))
-        else {
-            violation!(clause = "LAB.12", "severance under a reason never declared");
-        };
         // A party that holds no money in the wage's currency can neither pay nor be paid it, as with any due.
         if !self.books.holds_money(employer, wage.ccy()) || !self.books.holds_money(worker, wage.ccy()) {
             self.labour.day.severance_unpaid += 1;
             return;
         }
-        let mut legs = Vec::new();
-        self.books.pay_into(employer, worker, (amount, wage.ccy()), &mut legs);
-        let id = self.books.ledger.next_id(day);
-        self.labour.severance.push(Instruction {
-            id,
-            reason,
-            trade_day: day,
-            settle_day: day,
-            legs,
-            pays: Missing::Absent,
-            covers: Vec::new(),
-        });
+        self.labour.owed.push(Owed { employer, worker, each, members, ccy: wage.ccy() });
     }
 
     /// A retired agent's retired persons leave their jobs: each one's attachments on employment lines taken off it,
@@ -375,13 +355,66 @@ impl World {
         }
     }
 
-    /// 7c: the day's severance paid, each all or none. Layoffs take effect on business days, so what 4a owes 7c
-    /// pays the same day.
+    /// 7c: the day's severance paid, one instruction for each employer: all it owes where its money covers it, else
+    /// each member the same share of what its money holds, as a whole share for each twin; what is not paid is
+    /// counted unpaid. Layoffs take effect on business days, so what 4a owes 7c pays the same day.
     #[clause("LAB.12", "SET.1")]
-    pub(crate) fn labour_settle(&mut self, step: SubStep) {
-        let due = std::mem::take(&mut self.labour.severance);
-        if due.is_empty() {
+    pub(crate) fn labour_settle(&mut self, day: Day, step: SubStep) {
+        let Some(kind) = self.labour.kind else { return };
+        let owed = std::mem::take(&mut self.labour.owed);
+        if owed.is_empty() {
             return;
+        }
+        let Missing::Present(reason) =
+            self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(kind.severance))
+        else {
+            violation!(clause = "LAB.12", "severance under a reason never declared");
+        };
+        // An employer pays its wages in its country's currency, so its severance is owed in that one.
+        let mut by_employer: std::collections::BTreeMap<PartyId, Vec<Owed>> = std::collections::BTreeMap::new();
+        for o in owed {
+            by_employer.entry(o.employer).or_default().push(o);
+        }
+        let mut due = Vec::new();
+        for (employer, list) in by_employer {
+            let Some(ccy) = list.first().map(|o| o.ccy) else { continue };
+            let total: i128 = list.iter().map(|o| i128::from(o.each) * i128::from(o.members)).sum();
+            let held = match self.books.money_held(employer, ccy) {
+                Missing::Present(h) if h > 0 => i128::from(h),
+                _ => 0,
+            };
+            let payer = i128::from(self.books.parties.unit(employer));
+            let mut legs = Vec::new();
+            for o in &list {
+                let each = if held >= total {
+                    i128::from(o.each)
+                } else {
+                    let share = i128::from(o.each) * held / total;
+                    share - share.rem_euclid(payer)
+                };
+                let Ok(amount) = i64::try_from(each * i128::from(o.members)) else {
+                    phx_num::capacity_exceeded!("a separation's severance", i64::MAX, o.each);
+                };
+                if each < i128::from(o.each) {
+                    self.labour.day.severance_unpaid += 1;
+                }
+                if amount > 0 {
+                    self.books.pay_into(employer, o.worker, (amount, ccy), &mut legs);
+                }
+            }
+            if legs.is_empty() {
+                continue;
+            }
+            let id = self.books.ledger.next_id(day);
+            due.push(Instruction {
+                id,
+                reason,
+                trade_day: day,
+                settle_day: day,
+                legs,
+                pays: Missing::Absent,
+                covers: Vec::new(),
+            });
         }
         let books = &mut self.books;
         let _ = books.ledger.settle(&mut books.parties, ApplyAt::Day(step), due, self.audit.stream());

@@ -56,7 +56,7 @@ direction = "down"
 # from the S1.03 review, holding their rows longer, and 4 more (81 845).
 [[ratchet]]
 counter = "phx_ledger.rows_streamed"
-value = 2815195
+value = 2848010
 direction = "down"
 
 [[ratchet]]
@@ -64,9 +64,11 @@ counter = "phx_ledger.run_heads_read"
 value = 991630
 direction = "down"
 
+# The rows the dues' runs scanned and the payments on the heaviest day: restated at S1.08, whose employment lines are
+# each region's and occupation's, and whose lines held by one agent of many twins are cleared.
 [[ratchet]]
 counter = "phx_ledger.run_rows_scanned"
-value = 2888412
+value = 2928452
 direction = "down"
 
 [[ratchet]]
@@ -76,7 +78,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.payments"
-value = 2807045
+value = 2821888
 direction = "down"
 
 # The fixed point's visits restated from the twins gate run (aa48779e, two years): payers short of money multiply as
@@ -103,39 +105,42 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.agents_gathered"
-value = 6145
+value = 30207
 direction = "down"
 
-# The most agents a day's screening read and redrew: restated at S1.08, whose retirement is a hazard at birthdays
-# from the pension's age, so more agents are booked and redrawn on a day.
+# The most agents a day's screening read and redrew: restated at S1.08 (F-107), when a day's mass of failed firms
+# releases its staff to search and each changed person's hazards are drawn again, and retirement is a hazard at
+# birthdays from the pension's age.
 [[ratchet]]
 counter = "phx_pop.bookings_read"
-value = 15429
+value = 38608
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.redraws"
-value = 15393
+value = 19248
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.hits"
-value = 203
+value = 26375
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.agents_booked"
-value = 197
+value = 131242
 direction = "down"
 
 # The firms that default on the heaviest day, whose estates settle the next business day: first set at S1.03 on the
 # build run, where every firm whose loan falls due before it sells fails at the first grace's end (F-095); one more
 # once the grace is each country's (5 431); 4 more once agents losing contracts are no longer drawn again (8d3ca63b);
 # 6 311 once CAP holds the plant (S1.04), whose opening no longer draws on the small firms' stream, so their banks,
-# deposits and loans are drawn otherwise.
+# deposits and loans are drawn otherwise; 10 553 at S1.08 (F-107), whose jobs are dealt by region and occupation, so
+# a firm's wage bill no longer averages the country's and those whose bill passes their money fail after the first
+# payday's grace.
 [[ratchet]]
 counter = "phx_frm.defaults"
-value = 6311
+value = 10553
 direction = "down"
 
 # The estates open at a day's close at the most, the firms' and the households' together; the firms' price reviews and
@@ -144,10 +149,11 @@ direction = "down"
 # From the S1.03 review an estate that holds plant waits to sell it, which no market buys before S1.04 and S1.05, so
 # the firms' estates stay open (8 710; 8 714 once agents losing contracts are no longer drawn again, 8d3ca63b), and a
 # small firm's agent keeps the day of its last review (180 bytes). From S1.04 the small firms hold plant too, so their
-# estates wait to sell it as the large firms' do (9 965).
+# estates wait to sell it as the large firms' do (9 965); 26 285 at S1.08, whose earlier mass of failed firms (F-107)
+# leaves more estates waiting to sell.
 [[ratchet]]
 counter = "phx_frm.estates_open"
-value = 9965
+value = 26285
 direction = "down"
 
 [[ratchet]]
@@ -190,7 +196,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_frm.estates_unsold"
-value = 9928
+value = 26258
 direction = "down"
 
 [[ratchet]]
@@ -503,10 +509,11 @@ value = 1123989366
 direction = "down"
 # Labour's matching, the most on any day: agents with a searching person, the vacancies they could see, the
 # applications sent, and the mean rounds a match took. No firm posts before it holds a price and a planned output
-# (S1.15), so only searchers are counted until then; the budget (architecture §13.2) holds 0.1 M searching groups.
+# (S1.15), so only searchers are counted until then; the budget (architecture §13.2) holds 0.1 M searching groups,
+# which the failed firms' released staff pass while no firm posts (F-107).
 [[ratchet]]
 counter = "phx_lab.searching_groups"
-value = 37129
+value = 203528
 direction = "down"
 
 [[ratchet]]

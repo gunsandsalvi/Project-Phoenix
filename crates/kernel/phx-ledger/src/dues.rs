@@ -317,6 +317,16 @@ impl<B: Backing> Books<B> {
         account
     }
 
+    /// The money a party holds in its account in a currency, none without an account.
+    pub fn money_held(&self, party: PartyId, ccy: Ccy) -> Missing<i64> {
+        let Missing::Present(line) = self.money_row(party, ccy) else { return Missing::Absent };
+        let (place, slot) = self.parties.row(party);
+        match crate::rows::find(self.parties.holder(place), slot, line, Side::Asset).map(|r| r.optional.balance) {
+            Some(Missing::Present(b)) => Missing::Present(b),
+            _ => Missing::Absent,
+        }
+    }
+
     /// Whether a party holds money in a currency: an account in it, or money it issues.
     #[must_use]
     pub fn holds_money(&self, party: PartyId, ccy: Ccy) -> bool {

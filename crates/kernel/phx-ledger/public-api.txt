@@ -420,6 +420,7 @@ pub fn phx_ledger::books::Books<B>::to_procedure_line(&mut self, phx_ledger::tra
 pub fn phx_ledger::books::Books<B>::transfer(&mut self, phx_ledger::transfer::LineTransfer, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::holds_money(&self, phx_id::ids::PartyId, phx_num::money::Ccy) -> bool
+pub fn phx_ledger::books::Books<B>::money_held(&self, phx_id::ids::PartyId, phx_num::money::Ccy) -> phx_num::missing::Missing<i64>
 pub fn phx_ledger::books::Books<B>::pay_into(&self, phx_id::ids::PartyId, phx_id::ids::PartyId, (i64, phx_num::money::Ccy), &mut alloc::vec::Vec<phx_ledger::instruction::LegRec>)
 pub fn phx_ledger::books::Books<B>::side_counts(&self, phx_id::ids::LineId, phx_ledger::algebra::Side) -> alloc::vec::Vec<(phx_id::ids::PartyId, u32)>
 pub fn phx_ledger::books::Books<B>::trade_legs(&self, (phx_id::ids::PartyId, phx_id::ids::PartyId), (phx_id::ids::InstrumentId, i64), (i64, phx_num::money::Ccy)) -> alloc::vec::Vec<phx_ledger::instruction::LegRec>

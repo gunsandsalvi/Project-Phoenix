@@ -93,6 +93,16 @@ pub(crate) struct Review {
     pub most: i64,
 }
 
+/// Severance an employer owes a household's members, each member the same whole amount, paid at 7c.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Owed {
+    pub employer: PartyId,
+    pub worker: PartyId,
+    pub each: i64,
+    pub members: u32,
+    pub ccy: phx_num::Ccy,
+}
+
 /// What the rounds carry across days.
 #[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub(crate) struct LabourBook {
@@ -142,7 +152,7 @@ pub(crate) struct Labour {
     pub lines: BTreeMap<TermsId, LineId>,
     pub searchers: BTreeSet<PartyId>,
     pub employers_due: Vec<(crate::goods::Rows, phx_id::Slot)>,
-    pub severance: Vec<phx_ledger::instruction::Instruction>,
+    pub owed: Vec<Owed>,
 }
 
 impl Labour {
