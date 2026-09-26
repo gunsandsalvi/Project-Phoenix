@@ -6182,7 +6182,15 @@ kink days, dues and wear.
 
 ### S1.04 — `sys-cap`: plant
 
-**Status**: building
+**Status**: done. Every firm holds plant of six kinds by condition class from the opening; the plant review wears it
+from class to class and retires the last, its depreciation charged once to income and to the unit; `CAP.stock` is
+clean and LC-1-10 passes; LC-1-11 and LC-1-12 wait for S1.15. Both reviews were the builder's own: they found a cap on
+the units leaving a class, a bound, where a constant hazard's exit share never passes the whole (1 − e^(−r·t)), and a
+chain looked up again for every class the wear loop already knew; both fixed. The first build run (99b709fa) stopped
+at 2e: a small firm in default ended holding plant, which ending an agent refused; its estate now takes its holdings.
+The build run of 2b69847e passes every live check; its only failures were ratchets, restated: the defaults (6 311) and
+the estates open and unsold (9 965, 9 928) rise as the small firms' estates hold plant, and the plant's counters are
+first set.
 
 **Clauses**:
 - STATE: CAP.1.

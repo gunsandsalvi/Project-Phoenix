@@ -127,10 +127,12 @@ direction = "down"
 
 # The firms that default on the heaviest day, whose estates settle the next business day: first set at S1.03 on the
 # build run, where every firm whose loan falls due before it sells fails at the first grace's end (F-095); one more
-# once the grace is each country's (5 431); 4 more once agents losing contracts are no longer drawn again (8d3ca63b).
+# once the grace is each country's (5 431); 4 more once agents losing contracts are no longer drawn again (8d3ca63b);
+# 6 311 once CAP holds the plant (S1.04), whose opening no longer draws on the small firms' stream, so their banks,
+# deposits and loans are drawn otherwise.
 [[ratchet]]
 counter = "phx_frm.defaults"
-value = 5435
+value = 6311
 direction = "down"
 
 # The estates open at a day's close at the most, the firms' and the households' together; the firms' price reviews and
@@ -138,10 +140,11 @@ direction = "down"
 # visits on their production schedules; and the bytes a small firm's agent takes in its table: first set at S1.03.
 # From the S1.03 review an estate that holds plant waits to sell it, which no market buys before S1.04 and S1.05, so
 # the firms' estates stay open (8 710; 8 714 once agents losing contracts are no longer drawn again, 8d3ca63b), and a
-# small firm's agent keeps the day of its last review (180 bytes).
+# small firm's agent keeps the day of its last review (180 bytes). From S1.04 the small firms hold plant too, so their
+# estates wait to sell it as the large firms' do (9 965).
 [[ratchet]]
 counter = "phx_frm.estates_open"
-value = 8714
+value = 9965
 direction = "down"
 
 [[ratchet]]
@@ -180,12 +183,29 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_frm.estates_unsold"
-value = 4972
+value = 9928
 direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.unlisted_sweeps"
 value = 0
+direction = "down"
+
+# The plant's wear on the heaviest day: the rows the plant review wore, the units their last classes retired, and the
+# cost the worn units lost: first set at S1.04, a thirtieth of the firms reviewed a day.
+[[ratchet]]
+counter = "phx_cap.wear_realisations"
+value = 7643
+direction = "down"
+
+[[ratchet]]
+counter = "phx_cap.retired"
+value = 1451447961468
+direction = "down"
+
+[[ratchet]]
+counter = "phx_cap.depreciation"
+value = 1362729367556
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
