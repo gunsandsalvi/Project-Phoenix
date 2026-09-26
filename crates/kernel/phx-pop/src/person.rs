@@ -2,7 +2,7 @@
 
 use phx_core::Person;
 use phx_core::calendar::{civil_date, civil_serial};
-use phx_id::LineId;
+use phx_id::{Date, LineId};
 use phx_ledger::algebra::Side;
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
@@ -45,27 +45,35 @@ pub fn pack(kind: &PopKindDecl, p: &Person) -> u64 {
 #[clause("REP.26")]
 #[must_use]
 pub fn unpack(kind: &PopKindDecl, word: u64) -> Person {
+    let mut attrs = Vec::new();
+    let (role, born) = read(kind, word, &mut attrs);
+    Person { role, born, attrs, gone: false }
+}
+
+/// A person read back from its word into one already held, present, reusing its attributes' buffer.
+#[clause("REP.26")]
+pub fn unpack_into(kind: &PopKindDecl, word: u64, p: &mut Person) {
+    let (role, born) = read(kind, word, &mut p.attrs);
+    p.role = role;
+    p.born = born;
+    p.gone = false;
+}
+
+/// A word's role and birth date, its attributes written to `attrs`.
+fn read(kind: &PopKindDecl, word: u64, attrs: &mut Vec<(&'static str, u32)>) -> (&'static str, Date) {
     let Ok(low) = u32::try_from(word & mask(BIRTH_BITS)) else {
         violation!(clause = "REP.25", "a birth date wider than its bits");
     };
     let role = (word >> BIRTH_BITS) & mask(ROLE_BITS);
     let base = BIRTH_BITS + ROLE_BITS;
-    let attrs = kind
-        .person_attrs
-        .iter()
-        .map(|f| {
-            let Ok(v) = u32::try_from((word >> (base + f.shift)) & mask(f.bits)) else {
-                violation!(clause = "REP.26", "a person attribute wider than its bits");
-            };
-            (f.decl.name, v)
-        })
-        .collect();
-    Person {
-        role: kind.role_name(phx_rand::float::index(role)),
-        born: civil_date(i64::from(low.cast_signed())),
-        attrs,
-        gone: false,
-    }
+    attrs.clear();
+    attrs.extend(kind.person_attrs.iter().map(|f| {
+        let Ok(v) = u32::try_from((word >> (base + f.shift)) & mask(f.bits)) else {
+            violation!(clause = "REP.26", "a person attribute wider than its bits");
+        };
+        (f.decl.name, v)
+    }));
+    (kind.role_name(phx_rand::float::index(role)), civil_date(i64::from(low.cast_signed())))
 }
 
 /// Who in a household holds a contract: the household itself, or one of its persons by place.
@@ -114,7 +122,7 @@ mod tests {
     use phx_id::{Date, LineId};
     use phx_ledger::algebra::Side;
 
-    use super::{Attachment, Holder, pack, unpack};
+    use super::{Attachment, Holder, pack, unpack, unpack_into};
     use crate::kind::PopKindDecl;
 
     fn kind() -> PopKindDecl {
@@ -143,6 +151,27 @@ mod tests {
             };
             assert_eq!(unpack(&k, pack(&k, &p)), p);
         }
+    }
+
+    #[test]
+    fn a_person_read_into_one_held_is_the_person_read_fresh() {
+        let k = kind();
+        let old = Person {
+            role: "child",
+            born: Date::new(2020, 6, 1).unwrap(),
+            attrs: vec![("sex", 0), ("health", 0), ("education", 0)],
+            gone: true,
+        };
+        let new = Person {
+            role: "head",
+            born: Date::new(1970, 3, 9).unwrap(),
+            attrs: vec![("sex", 1), ("health", 1), ("education", 5)],
+            gone: false,
+        };
+        let mut held = old;
+        unpack_into(&k, pack(&k, &new), &mut held);
+        assert_eq!(held, new);
+        assert_eq!(held, unpack(&k, pack(&k, &new)));
     }
 
     #[test]

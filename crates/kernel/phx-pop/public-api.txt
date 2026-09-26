@@ -32,6 +32,7 @@ pub struct phx_pop::explicit::Written
 pub phx_pop::explicit::Written::ended: bool
 pub phx_pop::explicit::Written::leaving: alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 pub fn phx_pop::explicit::household<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &phx_pop::table::AgentTable<B>, phx_id::ids::Slot) -> phx_core::pop_process::Household
+pub fn phx_pop::explicit::household_into<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &mut phx_core::pop_process::Household)
 pub fn phx_pop::explicit::per_twin<B: phx_store::backing::Backing>(&phx_pop::table::AgentTable<B>, phx_id::ids::Slot) -> alloc::vec::Vec<((phx_id::ids::LineId, phx_ledger::algebra::Side), u32)>
 pub fn phx_pop::explicit::write_back<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &mut phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &phx_core::pop_process::Household) -> phx_pop::explicit::Written
 pub mod phx_pop::hazard
@@ -80,6 +81,7 @@ pub fn phx_pop::person::Attachment::pack(self) -> u64
 pub fn phx_pop::person::Attachment::unpack(u64) -> phx_pop::person::Attachment
 pub fn phx_pop::person::pack(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Person) -> u64
 pub fn phx_pop::person::unpack(&phx_pop::kind::PopKindDecl, u64) -> phx_core::pop_process::Person
+pub fn phx_pop::person::unpack_into(&phx_pop::kind::PopKindDecl, u64, &mut phx_core::pop_process::Person)
 pub mod phx_pop::population
 pub struct phx_pop::population::PopKind
 pub phx_pop::population::PopKind::decl: phx_pop::kind::PopKindDecl

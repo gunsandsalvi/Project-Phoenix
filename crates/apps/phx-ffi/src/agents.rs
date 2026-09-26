@@ -6,7 +6,7 @@ use phx_core::{AttrDecl, Household, Person, PersonAttrDecl, PopEntry, PopItem, R
 use phx_id::{Date, Day, LineId, PartyId, Slot, TableId};
 use phx_ledger::algebra::Side;
 use phx_num::Missing;
-use phx_pop::explicit::{household, write_back};
+use phx_pop::explicit::{household, household_into, write_back};
 use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::person::{Attachment, Holder, pack};
@@ -116,11 +116,33 @@ fn rate(p: &Person, date: Date) -> f64 {
     RATES.get(band).or(RATES.last()).copied().unwrap_or(0.0)
 }
 
+/// What drawing many agents' next hits reuses, as the world's pass does: the household each is read into and its
+/// persons' chances.
+#[derive(Debug)]
+pub(crate) struct HazardScratch {
+    household: Household,
+    qs: Vec<f64>,
+}
+
+impl HazardScratch {
+    pub(crate) fn new() -> HazardScratch {
+        HazardScratch { household: Household { attrs: Vec::new(), persons: Vec::new() }, qs: Vec::new() }
+    }
+}
+
 /// An agent's next hit drawn ahead from a day, as the world's booking draws it: its persons read on that day, their
 /// chances, and the wait to the first hit before the next birthday, which falls after it.
-pub(crate) fn hazard(a: &Agents, slot: Slot, (day, date): (Day, Date), d: &mut Draws) -> Booking {
-    let h = household(&a.decl, &a.table, slot);
-    let qs: Vec<f64> = h.present().map(|(_, p)| rate(p, date)).collect();
+pub(crate) fn hazard(
+    a: &Agents,
+    slot: Slot,
+    (day, date): (Day, Date),
+    d: &mut Draws,
+    scratch: &mut HazardScratch,
+) -> Booking {
+    household_into(&a.decl, &a.table, slot, &mut scratch.household);
+    let h = &scratch.household;
+    scratch.qs.clear();
+    scratch.qs.extend(h.present().map(|(_, p)| rate(p, date)));
     let change = h.present().map(|(_, p)| p.next_birthday(date)).fold(None, |first: Option<Date>, b| match first {
         Some(f) if f <= b => Some(f),
         _ => Some(b),
@@ -129,7 +151,7 @@ pub(crate) fn hazard(a: &Agents, slot: Slot, (day, date): (Day, Date), d: &mut D
         let days = phx_id::days_from_civil(c) - phx_id::days_from_civil(date);
         u32::try_from(days).ok().map(|n| Day::new(day.get() + n))
     });
-    next_booking(d, any_hit(&qs), day, change.map_or(Missing::Absent, Missing::Present))
+    next_booking(d, any_hit(&scratch.qs), day, change.map_or(Missing::Absent, Missing::Present))
 }
 
 /// A hit's outcome on an agent's household made explicit, as the world's 3e applies one: its persons reached drawn,

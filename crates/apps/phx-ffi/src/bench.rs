@@ -311,11 +311,12 @@ fn agent_costs(clock: &Mono) -> (u64, u64) {
     let Some(date) = phx_id::Date::new(2026, 3, 2) else { return (0, 0) };
     let slots = population.slots.clone();
     let n = u64::try_from(slots.len()).unwrap_or(0);
+    let mut scratch = crate::agents::HazardScratch::new();
     let t0 = clock.now_ns();
     for _ in 0..COST_DRAWS {
         let at = usize::try_from(phx_rand::below_u64(&mut d, n)).unwrap_or(0);
         if let Some(slot) = slots.get(at) {
-            black_box(crate::agents::hazard(&population, *slot, (phx_id::Day::new(0), date), &mut d));
+            black_box(crate::agents::hazard(&population, *slot, (phx_id::Day::new(0), date), &mut d, &mut scratch));
         }
     }
     let t1 = clock.now_ns();

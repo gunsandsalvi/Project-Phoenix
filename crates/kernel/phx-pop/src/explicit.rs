@@ -10,16 +10,32 @@ use phx_store::Backing;
 
 use crate::consts::MOST_PERSONS;
 use crate::kind::PopKindDecl;
-use crate::person::{Attachment, Holder, pack, unpack};
+use crate::person::{Attachment, Holder, pack, unpack, unpack_into};
 use crate::table::AgentTable;
 
 /// An agent's household as its outcomes read it.
 #[clause("REP.26", "REP.41")]
 #[must_use]
 pub fn household<B: Backing>(kind: &PopKindDecl, table: &AgentTable<B>, slot: Slot) -> Household {
-    let attrs = kind.attrs.iter().enumerate().map(|(i, a)| (a.item.name, table.attr(slot, i))).collect();
-    let persons = table.persons(slot).iter().map(|w| unpack(kind, *w)).collect();
-    Household { attrs, persons }
+    let mut h = Household { attrs: Vec::new(), persons: Vec::new() };
+    household_into(kind, table, slot, &mut h);
+    h
+}
+
+/// An agent's household read into one already held, reusing its buffers, so a pass over many agents allocates only
+/// for the largest household it meets.
+#[clause("REP.26", "REP.41")]
+pub fn household_into<B: Backing>(kind: &PopKindDecl, table: &AgentTable<B>, slot: Slot, h: &mut Household) {
+    h.attrs.clear();
+    h.attrs.extend(kind.attrs.iter().enumerate().map(|(i, a)| (a.item.name, table.attr(slot, i))));
+    let words = table.persons(slot);
+    h.persons.truncate(words.len());
+    for (i, w) in words.iter().enumerate() {
+        match h.persons.get_mut(i) {
+            Some(p) => unpack_into(kind, *w, p),
+            None => h.persons.push(unpack(kind, *w)),
+        }
+    }
 }
 
 /// What writing a household back did: the contracts its gone persons held, each a line side to leave at the agent's

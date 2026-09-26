@@ -16,7 +16,7 @@ use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
 use phx_store::SystemBacking;
 use serde::Deserialize;
 
-use crate::agents::{Agents, agents, hazard, outcomes};
+use crate::agents::{Agents, HazardScratch, agents, hazard, outcomes};
 use crate::bench::{BenchHost, BenchLine};
 use crate::json::Json;
 
@@ -381,10 +381,11 @@ impl Load {
                     let mut d = draws(4, first, day);
                     let len = u64::try_from(population.slots.len()).unwrap_or(0);
                     let mut hits = 0_u64;
+                    let mut scratch = HazardScratch::new();
                     for _ in 0..units {
                         let at = usize::try_from(below_u64(&mut d, len)).unwrap_or(0);
                         let Some(slot) = population.slots.get(at) else { continue };
-                        let booked = hazard(population, *slot, (Day::new(day), date), &mut d);
+                        let booked = hazard(population, *slot, (Day::new(day), date), &mut d, &mut scratch);
                         hits += u64::from(matches!(booked, phx_pop::hazard::Booking::Hit(_)));
                     }
                     hits

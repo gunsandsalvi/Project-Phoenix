@@ -553,9 +553,10 @@ keeps the rows its handlers visited and its wall time, its bytes and barriers ar
 The kernel's own small tables (regions, countries) keep their facts as columns (`FactColumns`) and are traversed chunk
 by chunk on the day's thread, since each is one chunk. The pool's traversal arrives with the first handler on a kind
 table, whose chunks are handed to workers as disjoint column views; the order of chunks and handlers, and
-so of intents, is the same either way. As built at Stage 0 the world runs on one thread: the only handlers are
-`phx-geo`'s on its kernel tables, and the kernel's work — 3b's hazard draws, 3e's outcomes, stage 7 and the audit —
-runs serially; `--workers` is only reported. Chunk-parallel traversals are the plan's F-056.
+so of intents, is the same either way. The kernel's own passes over agents — 3b's hazard draws, 3e's outcomes, 7a's
+and 7c's gathers and the audit — run on the pool in shards whose results are joined in slot order; each shard holds
+its scratch, the household it reads each agent into and the chances it fills, and reuses it for every agent it draws,
+so a pass allocates for its largest household rather than for each agent.
 
 ### 6.4 Compute, gather, apply
 

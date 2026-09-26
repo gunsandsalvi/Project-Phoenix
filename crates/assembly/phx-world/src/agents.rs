@@ -12,7 +12,7 @@ use phx_ledger::transfer::{LineTransfer, MoveAt};
 use phx_macros::clause;
 use phx_num::round::Round;
 use phx_num::{Missing, violation};
-use phx_pop::explicit::{household, write_back};
+use phx_pop::explicit::{household, household_into, write_back};
 use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::population::Population;
@@ -209,8 +209,8 @@ struct Reading<'a> {
     country_of: &'a (dyn Fn(u32) -> Option<CountryId> + Sync),
 }
 
-/// An agent's present persons as a process reads them on a day: their places, each one's daily chance of a hit, and
-/// the first day after it on which any of their chances may change.
+/// An agent's present persons as a process reads them on a day, written to `s`: their places and each one's daily
+/// chance of a hit; returned, the first day after it on which any of their chances may change.
 #[clause("REP.7", "REP.25")]
 fn chances(
     reading: &Reading<'_>,
@@ -218,14 +218,17 @@ fn chances(
     bound: &Bound,
     household: &Household,
     day: Day,
-) -> (Vec<usize>, Vec<f64>, Missing<Day>) {
+    s: &mut Buffers,
+) -> Missing<Day> {
     let date = reading.calendar.date(day);
     let attr = |name: &str| household.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
     let view = AgentView { kind, party, attr: &attr, country_of: reading.country_of, date };
-    let (mut places, mut qs, mut change) = (Vec::new(), Vec::new(), None::<Day>);
+    let mut change = None::<Day>;
+    s.places.clear();
+    s.qs.clear();
     for (i, person) in household.present() {
-        places.push(i);
-        qs.push(bound.process.rate(reading.register, &view, person));
+        s.places.push(i);
+        s.qs.push(bound.process.rate(reading.register, &view, person));
         if let Some(on) = bound.process.changes_after(person, date) {
             let Some(on) = reading.calendar.day(on) else {
                 violation!(clause = "TIME.2", "a person's chance changing before the epoch", party = party.get());
@@ -236,7 +239,31 @@ fn chances(
             });
         }
     }
-    (places, qs, change.map_or(Missing::Absent, Missing::Present))
+    change.map_or(Missing::Absent, Missing::Present)
+}
+
+/// The buffers reading chances fills, held by a pass over many agents and reused for each, so the pass allocates only
+/// for its largest household.
+#[derive(Debug, Default)]
+struct Buffers {
+    places: Vec<usize>,
+    qs: Vec<f64>,
+    open_places: Vec<usize>,
+    open_qs: Vec<f64>,
+    out: Vec<usize>,
+}
+
+/// A pass's scratch: the household it reads each agent into, and the buffers its chances fill.
+#[derive(Debug)]
+struct Scratch {
+    household: Household,
+    buffers: Buffers,
+}
+
+impl Scratch {
+    fn new() -> Scratch {
+        Scratch { household: Household { attrs: Vec::new(), persons: Vec::new() }, buffers: Buffers::default() }
+    }
 }
 
 /// An agent's next booking for a process drawn from `from` on, written to the agenda: a hit or a redraw on its day,
@@ -245,12 +272,12 @@ fn book(
     r: &Reading<'_>,
     who: (&'static str, PartyId),
     (b, table, slot): (&Bound, TableId, Slot),
-    h: &Household,
+    (h, buffers): (&Household, &mut Buffers),
     from: Day,
     (agenda, d): (&mut phx_core::Agenda, &mut Draws),
 ) {
-    let (_, qs, change) = chances(r, who, b, h, from);
-    match next_booking(d, any_hit(&qs), from, change) {
+    let change = chances(r, who, b, h, from, buffers);
+    match next_booking(d, any_hit(&buffers.qs), from, change) {
         Booking::Hit(day) => agenda.set_next_with(table, slot, b.reason, day, HIT),
         Booking::Redraw(day) => agenda.set_next_with(table, slot, b.reason, day, 0),
         Booking::Never => agenda.clear(table, slot, b.reason),
@@ -274,34 +301,27 @@ fn follow(
     r: &Reading<'_>,
     who: (&'static str, PartyId),
     b: &Bound,
-    h: &Household,
+    (h, buffers): (&Household, &mut Buffers),
     (today, start): (Day, (Day, bool)),
     d: &mut Draws,
 ) -> Followed {
     let (mut at, mut hit) = start;
-    let (mut reached_all, mut redraws, mut out) = (Vec::new(), 0_u64, Vec::new());
-    // The chances of the persons no hit has yet reached, from a day on.
-    let open = |day: Day, reached_all: &[usize]| {
-        let (places, qs, change) = chances(r, who, b, h, day);
-        let open: Vec<(usize, f64)> = places.into_iter().zip(qs).filter(|(p, _)| !reached_all.contains(p)).collect();
-        (open, change)
-    };
+    let (mut reached_all, mut redraws) = (Vec::new(), 0_u64);
     let next = loop {
         let from = if hit {
-            let (now, _) = open(at, &reached_all);
-            let qs: Vec<f64> = now.iter().map(|(_, q)| *q).collect();
-            if any_hit(&qs) > 0.0 {
-                reached(d, &qs, &mut out);
-                reached_all.extend(out.iter().filter_map(|i| now.get(*i).map(|(p, _)| *p)));
+            // The persons reached are drawn from the day's chances; when they change is the next draw's to read.
+            let _ = open(r, (who, b, h), at, &reached_all, buffers);
+            if any_hit(&buffers.open_qs) > 0.0 {
+                reached(d, &buffers.open_qs, &mut buffers.out);
+                reached_all.extend(buffers.out.iter().filter_map(|i| buffers.open_places.get(*i).copied()));
             }
             at.succ()
         } else {
             redraws += 1;
             at
         };
-        let (next, change) = open(from, &reached_all);
-        let qs: Vec<f64> = next.iter().map(|(_, q)| *q).collect();
-        match next_booking(d, any_hit(&qs), from, change) {
+        let change = open(r, (who, b, h), from, &reached_all, buffers);
+        match next_booking(d, any_hit(&buffers.open_qs), from, change) {
             Booking::Hit(day) if day <= today => (at, hit) = (day, true),
             Booking::Redraw(day) if day <= today => (at, hit) = (day, false),
             later => break later,
@@ -309,6 +329,27 @@ fn follow(
     };
     reached_all.sort_unstable();
     Followed { reached: reached_all, redraws, next }
+}
+
+/// The chances of the persons no hit has yet reached, from a day on, written to the buffers' open places and chances;
+/// returned, the day any may change.
+fn open(
+    r: &Reading<'_>,
+    (who, b, h): ((&'static str, PartyId), &Bound, &Household),
+    day: Day,
+    reached_all: &[usize],
+    s: &mut Buffers,
+) -> Missing<Day> {
+    let change = chances(r, who, b, h, day, s);
+    s.open_places.clear();
+    s.open_qs.clear();
+    for (p, q) in s.places.iter().zip(&s.qs) {
+        if !reached_all.contains(p) {
+            s.open_places.push(*p);
+            s.open_qs.push(*q);
+        }
+    }
+    change
 }
 
 /// A booking written to the agenda: a hit or a redraw on its day, or none.
@@ -368,10 +409,11 @@ impl World {
             let drawn = phx_exec::pool::map(self.books.pool(), GATHER_WAVE, |i| {
                 let from = lesser((wave + i) * each, due.len());
                 let to = lesser(from + each, due.len());
+                let mut scratch = Scratch::new();
                 due.get(from..to)
                     .unwrap_or(&[])
                     .iter()
-                    .filter_map(|&agent| self.draw_agent(day, agent))
+                    .filter_map(|&agent| self.draw_agent(day, agent, &mut scratch))
                     .collect::<Vec<_>>()
             });
             for g in drawn.into_iter().flatten() {
@@ -388,7 +430,12 @@ impl World {
     }
 
     /// An agent gathered today followed, process by process, reading the world only: none if it is no longer live.
-    fn draw_agent(&self, day: Day, (k, table_id, slot, mask): (usize, TableId, Slot, u32)) -> Option<Gathered> {
+    fn draw_agent(
+        &self,
+        day: Day,
+        (k, table_id, slot, mask): (usize, TableId, Slot, u32),
+        scratch: &mut Scratch,
+    ) -> Option<Gathered> {
         let regions = self.regions();
         let country_of = |r: u32| regions.get(usize::try_from(r).ok()?).copied();
         let r = Reading { register: &self.register, calendar: &self.calendar, country_of: &country_of };
@@ -398,7 +445,8 @@ impl World {
             return None;
         }
         let party = table.party(slot);
-        let h = household(&kd.decl, table, slot);
+        household_into(&kd.decl, table, slot, &mut scratch.household);
+        let Scratch { household: h, buffers } = scratch;
         let agenda = &self.population.agenda;
         let mut followed = Vec::new();
         for (p, b) in self.processes.iter().enumerate().filter(|(_, b)| b.kind == k) {
@@ -411,10 +459,10 @@ impl World {
             let start = (at, agenda.with(table_id, slot, b.reason) == HIT);
             let subject = Subject::new(SubjectTag::Party, party.get());
             let mut d = self.streams.open(&b.stream, subject, day, SubStep::S3b.ordinal());
-            followed.push((p, follow(&r, (kd.decl.kind, party), b, &h, (day, start), &mut d)));
+            followed.push((p, follow(&r, (kd.decl.kind, party), b, (h, buffers), (day, start), &mut d)));
         }
         let twins = u64::from(table.multiplicity(slot).get());
-        let household = rates::sampled(party).then_some(h);
+        let household = rates::sampled(party).then(|| h.clone());
         Some(Gathered { kind: k, table: table_id, slot, party, twins, due: mask, followed, household })
     }
 
@@ -667,7 +715,11 @@ impl World {
             }
             // An agent's holdings count one twin's, as the estate standing for its twins holds them.
             if let Err(f) = self.books.pass_holdings((party, estate), succeeded, m, self.audit.stream()) {
-                violation!(clause = "PTY.9", "an estate's succession to holdings did not settle", party = f.party.get());
+                violation!(
+                    clause = "PTY.9",
+                    "an estate's succession to holdings did not settle",
+                    party = f.party.get()
+                );
             }
             self.agent_day.estates += 1;
         }
@@ -727,6 +779,7 @@ impl World {
         let r = Reading { register: &self.register, calendar: &self.calendar, country_of: &country_of };
         let Population { kinds, agenda, .. } = &mut self.population;
         let cells = self.books.parties.cells_mut().0;
+        let mut scratch = Scratch::new();
         for (k, kd) in kinds.iter().enumerate() {
             let table = Population::table_mut::<SystemBacking>(cells, k);
             let changed = table.take_changed();
@@ -738,11 +791,12 @@ impl World {
             for slot in changed.into_iter().filter(|s| table.is_live(*s)) {
                 self.agent_day.booked += 1;
                 let party = table.party(slot);
-                let h = household(&kd.decl, table, slot);
+                household_into(&kd.decl, table, slot, &mut scratch.household);
+                let Scratch { household: h, buffers } = &mut scratch;
                 for b in self.processes.iter().filter(|b| b.kind == k) {
                     let subject = Subject::new(SubjectTag::Party, party.get());
                     let mut d = self.streams.open(&b.stream, subject, day, ordinal);
-                    book(&r, (kd.decl.kind, party), (b, id, slot), &h, day.succ(), (agenda, &mut d));
+                    book(&r, (kd.decl.kind, party), (b, id, slot), (h, buffers), day.succ(), (agenda, &mut d));
                 }
             }
         }
