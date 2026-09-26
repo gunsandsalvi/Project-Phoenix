@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 phx-core = { path = "../../kernel/phx-core" }
+phx-num = { path = "../../foundation/phx-num" }
 
 [lints]
 workspace = true

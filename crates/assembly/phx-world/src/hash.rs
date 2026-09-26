@@ -6,21 +6,22 @@ use phx_store::LogicalHasher;
 use crate::consts::HASH_KEY;
 use crate::world::World;
 
-/// The world store's content: the day, the fails waiting for the contract process, the player's queue, the bindings
-/// and the closed fact.
+/// The world store's content: the day, the fails waiting for the contract process, the player's queue, the bindings,
+/// the closed fact and the labour book.
 pub(crate) fn hash_world_store(
     h: &mut LogicalHasher,
     today: Day,
     unprocessed: &Vec<phx_ledger::fails::Fail>,
-    queue: &PlayerQueue,
-    bindings: &Bindings,
+    (queue, bindings): (&PlayerQueue, &Bindings),
     closed: &phx_ledger::pending::Closed,
+    labour: &crate::labour::LabourBook,
 ) {
     h.u64(u64::from(today.get()));
     phx_store::hash_saved(unprocessed, h);
     phx_store::hash_saved(queue, h);
     phx_store::hash_saved(bindings, h);
     phx_store::hash_saved(closed, h);
+    phx_store::hash_saved(labour, h);
 }
 
 /// The books store's content: the directory and the books.
@@ -53,7 +54,14 @@ pub(crate) fn hash_geo(h: &mut LogicalHasher, geo: &phx_geo::GeoState, tables: &
 #[must_use]
 pub fn world_hash(world: &World) -> u128 {
     let mut h = LogicalHasher::new(HASH_KEY);
-    hash_world_store(&mut h, world.today, &world.unprocessed, &world.queue, &world.bindings, &world.closed);
+    hash_world_store(
+        &mut h,
+        world.today,
+        &world.unprocessed,
+        (&world.queue, &world.bindings),
+        &world.closed,
+        &world.labour.book,
+    );
     hash_books(&mut h, &world.books);
     world.population.hash_into(&mut h);
     world.markets.hash_into(&mut h);

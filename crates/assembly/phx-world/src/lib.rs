@@ -9,6 +9,7 @@ pub mod goods;
 pub mod graph;
 pub mod hash;
 pub mod inspector;
+pub mod labour;
 mod losses;
 pub mod metrics;
 pub mod observe;

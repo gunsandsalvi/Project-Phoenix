@@ -288,6 +288,28 @@ fn members_leave_with_their_counterparts() {
     assert_eq!(sides, [1, 1]);
 }
 
+/// A hire onto a line no one holds yet opens both rows; a second hire of the same pair counts onto them, and the
+/// sides stay equal.
+#[test]
+fn members_join_with_their_counterparts() {
+    let mut w = world();
+    let m = at(&w);
+    let kind = w.books.ledger.lines.kind_of(w.loan);
+    let terms = w.books.ledger.lines.terms(w.loan);
+    let job = w.books.ledger.lines.open(kind, terms, Missing::Absent);
+    let hire = |w: &mut World, n| {
+        let (firm, bank, reason) = (w.firms[0], w.banks[0], w.reason);
+        w.books.members_join((firm, job, Side::Liability), bank, n, (reason, m), &mut Quiet).expect("settles")
+    };
+    let _ = hire(&mut w, 2);
+    assert_eq!(row(&w, w.firms[0], job, Side::Liability), (2, 0), "a row opened with the members, at nothing");
+    assert_eq!(row(&w, w.banks[0], job, Side::Asset), (2, 0));
+    let _ = hire(&mut w, 3);
+    assert_eq!(row(&w, w.banks[0], job, Side::Asset), (5, 0), "counted onto the held row");
+    let sides = [Side::Asset, Side::Liability].map(|s| w.books.ledger.lines.side_count(job, s));
+    assert_eq!(sides, [5, 5]);
+}
+
 /// A firm settled as an estate: its 10 000 pays its loan of 100, the 9 900 left is paid to the destination, its rows
 /// leave with a member of the bank's each, and it ends.
 #[test]

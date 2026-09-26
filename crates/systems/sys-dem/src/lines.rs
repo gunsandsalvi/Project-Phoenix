@@ -10,9 +10,7 @@ use std::collections::BTreeMap;
 use phx_core::{Adjustment, Apportioned, GenReport, OpeningCountry, OpeningCtx, Register, apportion};
 use phx_id::{Day, LineId, PartyId};
 use phx_ledger::algebra::Side;
-use phx_ledger::attachments::{
-    AttachmentDraw, Balance, CountryAttachments, Drawing, DrawnRow, Holder, LineSpec, shares,
-};
+use phx_ledger::attachments::{AttachmentDraw, Balance, CountryAttachments, Drawing, Holder, LineSpec, shares};
 use phx_ledger::books::Books;
 use phx_ledger::instruction::ReasonId;
 use phx_ledger::opening::{key, open_row, write};
@@ -98,11 +96,21 @@ impl Drawer {
         h: &mut phx_core::Household,
         (at, (wealth, income)): ((&OpeningCtx<'_>, Subject), (f64, f64)),
     ) -> Held {
-        let (mut rows, mut keys): (Vec<DrawnRow>, Vec<(&'static str, u32)>) = (Vec::new(), Vec::new());
+        let (mut rows, mut keys) = (Vec::new(), phx_ledger::attachments::Keys::default());
         for d in &mut self.draws {
             d.draw(books, Drawing { household: h, wealth, income }, at, &mut rows, &mut keys);
-            for (name, v) in keys.drain(..) {
+            for (name, v) in keys.household.drain(..) {
                 h.set_attr(name, v);
+            }
+            for (place, name, v) in keys.persons.drain(..) {
+                let Some(p) = h.persons.get_mut(place) else {
+                    violation!(
+                        clause = "REP.26",
+                        "an attribute set on a person the household does not hold",
+                        person = place
+                    );
+                };
+                p.put_attr(name, v);
             }
         }
         let mut held = Held { attachments: Vec::new(), rows: Vec::new(), balances: Vec::new() };
@@ -176,7 +184,7 @@ impl Drawer {
         lot: &mut Draws,
         report: &mut GenReport,
     ) {
-        let Drawer { draws, lines, sides, holders, balances, country, twins } = self;
+        let Drawer { mut draws, lines, sides, holders, balances, country, twins } = self;
         let mut counterparty_of: BTreeMap<LineId, PartyId> = BTreeMap::new();
         for (line, spec) in lines.into_values() {
             let Some((side, members)) = sides.get(&line).copied() else {
@@ -198,7 +206,7 @@ impl Drawer {
                 }
                 Missing::Absent => {
                     let eligible: Vec<(PartyId, u64)> =
-                        draws.iter().flat_map(|d| d.counterparties(books, &spec)).collect();
+                        draws.iter_mut().flat_map(|d| d.counterparties(books, &spec, lot)).collect();
                     if eligible.is_empty() {
                         violation!(
                             clause = "GEN.4",

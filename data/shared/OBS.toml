@@ -6,7 +6,7 @@ id = "OBS.public_events"
 kind = "SHAPE"
 owner = "OBS"
 source = "assumed"
-source_ref = "What somebody would notice: each region's weather, which everyone living there sees; a catastrophe that destroyed something somewhere, one permille of a struck tile's physical units being the least a severity is recorded to; not a household's death, disability or birthday, which are private and reach the public only through published statistics."
+source_ref = "What somebody would notice: each region's weather, which everyone living there sees; a catastrophe that destroyed something somewhere, one permille of a struck tile's physical units being the least a severity is recorded to; not a household's death, disability, birthday or retirement, which are private and reach the public only through published statistics."
 shape = "standing:news selection"
 value = [
   { kind = "GEO.temperature", notice = "always" },
@@ -20,4 +20,5 @@ value = [
   { kind = "DEM.died", notice = "never" },
   { kind = "DEM.disabled", notice = "never" },
   { kind = "DEM.aged", notice = "never" },
+  { kind = "LAB.retired", notice = "never" },
 ]

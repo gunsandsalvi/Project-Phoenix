@@ -161,7 +161,7 @@ impl CountryAttachments for Country {
         h: Drawing<'_>,
         (ctx, subject): (&OpeningCtx<'_>, Subject),
         rows: &mut Vec<DrawnRow>,
-        _: &mut Vec<(&'static str, u32)>,
+        _: &mut phx_ledger::attachments::Keys,
     ) {
         let mut d = ctx.draws(&TenancyStream::DECL, subject);
         if open_unit(&mut d) < self.owners {
@@ -185,7 +185,7 @@ impl CountryAttachments for Country {
         Vec::new()
     }
 
-    fn counterparties(&self, _: &Books, line: &LineSpec) -> Vec<(PartyId, u64)> {
+    fn counterparties(&mut self, _: &Books, line: &LineSpec, _: &mut phx_rand::Draws) -> Vec<(PartyId, u64)> {
         if line.kind == self.kind { self.landlords.clone() } else { Vec::new() }
     }
 }

@@ -449,10 +449,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "if-labour"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+ "phx-num",
+]
+
+[[package]]
 name = "if-pop"
 version = "0.1.0"
 dependencies = [
  "phx-core",
+ "phx-num",
 ]
 
 [[package]]
@@ -829,6 +838,7 @@ name = "phx-world"
 version = "0.1.0"
 dependencies = [
  "if-firm",
+ "if-labour",
  "phx-acct",
  "phx-audit",
  "phx-core",
@@ -1258,6 +1268,7 @@ dependencies = [
 name = "sys-lab"
 version = "0.1.0"
 dependencies = [
+ "if-labour",
  "if-pop",
  "libm",
  "phx-core",

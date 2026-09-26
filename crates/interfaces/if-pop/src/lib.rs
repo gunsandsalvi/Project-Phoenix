@@ -11,14 +11,20 @@ use crate::consts::{EDUCATION_VALUES, REGIONS};
 pub const HOUSEHOLD: &str = "household";
 
 /// A person's sex: female, male.
-pub const SEX: PersonAttrDecl = PersonAttrDecl { name: "DEM.sex", values: 2, clause: "REP.26" };
+pub const SEX: PersonAttrDecl =
+    PersonAttrDecl { name: "DEM.sex", values: 2, clause: "REP.26", initial: phx_num::Missing::Absent };
 /// A person's health: able, or disabled lastingly.
-pub const HEALTH: PersonAttrDecl = PersonAttrDecl { name: "DEM.health", values: 2, clause: "POP.4" };
+pub const HEALTH: PersonAttrDecl =
+    PersonAttrDecl { name: "DEM.health", values: 2, clause: "POP.4", initial: phx_num::Missing::Absent };
 /// An adult's highest level of education: none, incomplete primary, primary, lower secondary, upper secondary, short
 /// post-secondary, bachelor, master and higher; and a last value, not yet recorded, for a child and for a person who
 /// reached adulthood in the run before schooling is kept.
-pub const EDUCATION: PersonAttrDecl =
-    PersonAttrDecl { name: "DEM.education", values: EDUCATION_VALUES, clause: "REP.26" };
+pub const EDUCATION: PersonAttrDecl = PersonAttrDecl {
+    name: "DEM.education",
+    values: EDUCATION_VALUES,
+    clause: "REP.26",
+    initial: phx_num::Missing::Absent,
+};
 /// The education value of a person whose schooling the run has not recorded, the last.
 pub const EDUCATION_UNRECORDED: u32 = EDUCATION_VALUES - 1;
 pub const FEMALE: u32 = 0;

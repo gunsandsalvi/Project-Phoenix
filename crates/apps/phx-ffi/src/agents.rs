@@ -40,7 +40,12 @@ fn kind() -> PopKindDecl {
     let mut entries = vec![entry(PopItem::Attr(AttrDecl { name: "DEM.region", values: REGIONS, clause: "REP.41" }))];
     entries.extend(ROLES.map(|name| entry(PopItem::Role(RoleDecl { name, clause: "REP.26" }))));
     for (name, values) in [("DEM.sex", SEXES), ("DEM.health", HEALTH), ("DEM.education", EDUCATION)] {
-        entries.push(entry(PopItem::PersonAttr(PersonAttrDecl { name, values, clause: "REP.26" })));
+        entries.push(entry(PopItem::PersonAttr(PersonAttrDecl {
+            name,
+            values,
+            clause: "REP.26",
+            initial: phx_num::Missing::Absent,
+        })));
     }
     entries.push(entry(PopItem::SitedBy("DEM.region")));
     let Ok(k) = PopKindDecl::compile("household", &entries) else {

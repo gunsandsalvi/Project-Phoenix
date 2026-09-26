@@ -6727,6 +6727,31 @@ Counters, ratcheted: `phx_frt.shipments`, `phx_frt.refused_bookings`.
 
 **Depends on**: S1.07.
 
+**Sub-steps**: S1.08 is built in two, in order, with one build run at the end; the clause map names S1.08, which
+completes with the second.
+- **S1.08a — the market** (built): the employment line's class, the opening's jobs, vacancies, search, offers,
+  hiring, layoffs with notice and severance, and retirement. As built:
+  - an employment contract's class (`Terms::class`) holds its occupation family, skill level, weekly hours, notice
+    days, severance days a year, region and start band; its wage is a monthly fixed leg at a wage point; a person
+    carries its labour state (not searching, searching, retired), its occupation and its last wage point as
+    attributes declared with their initial values;
+  - the opening deals each region's jobs of an occupation over its firms by headcount weighted by the occupation's
+    share of their industry's hours (`TEC.labour`), the firms in an order drawn by lot, and records each person's
+    keys through the drawing's `Keys`;
+  - the labour kind (`if-labour`) is a market kind the world binds apart: its decision points (search, accept,
+    retire) go through the player's queue, its employer rules (post, select) and wage arithmetic are `sys-lab`'s
+    functions the kernel calls;
+  - 5c runs one step of each a day, in order: answers to offers, employers' selection among applications seen
+    (`LAB.meeting`, then `LAB.select_lot`), searchers' applications (`LAB.match_taste`), and the employers whose
+    `FRM.attend` visit came due post, withdraw, raise stale offers a point and lay off (`LAB.layoff`); 4a joins hires
+    to their lines and makes separations whose notice has run, with severance owed and paid at 7c; retirement is a
+    process at birthdays from the pension's age, its jobs left at the next 4a;
+  - an employer decides nothing until its accounts give it a price and a planned output (S1.15), so the build run's
+    market has searchers and no vacancies (LC-1-22 not yet).
+- **S1.08b — wages at review** (planned): renegotiation (LAB.17), collective bargaining and strikes (LAB.10), the
+  pension terms' placeholder naming PEN, and the unit tests `wage_point_adapts_to_fill_history`,
+  `severance_owed_by_terms` and `renegotiation_protocol_terminates`.
+
 **Goal**: people's time sold to employers by searchers who apply, choose and quit, for wages set by employers who
 post vacancies at wage points and compete for workers:
 - employment, unemployment, vacancies and wages are reads of contracts, applications and offers;
@@ -16563,6 +16588,9 @@ the final build within the budget on the phone.
 | F-101 | S1.04 | build, 2026-09-26 | Three of the plant's primitives are assumed, not measured: the developing and emerging groups' net stock of each kind per unit of GDP (the developed group's, the only one reporting), cultivated assets' service life and depreciation rate, and the lead times of intellectual property and cultivated assets; and no rate of plant failure is declared | the national accounts of the developing and emerging economies publish no net stock by asset, the BEA's tables hold no cultivated assets, and no source found measures failures of plant by kind | each assumed value measured where a source is found (the Penn World Table's capital by asset for the developing groups; the ABS's or FAO's livestock and orchard lives); failures of plant declared when a rate is measured, with the maintenance decision (S1.15) | open for S1.15 |
 | F-102 | S1.04 | build, 2026-09-26 | The build run's peak rose from 2 836 MiB (8d3ca63b) to 4 089 MiB (2b69847e), over its 2 923 MiB budget, which S1.04 did not catch before it was marked done | each wear appended a lot to every class it reached, so lots grew without end (about 200 MB by the fiftieth day); the plant's holdings themselves, 24 a firm with their lots, add about 270 MB from the opening, which no line of the run's budget holds; and the second month-end payday takes about 500 MB more than the first left, not the allocator's (the same with two malloc arenas) | a class's holding keeps one lot at average cost (done: the 62-day peak 3 686 MiB); the plant's line added to architecture §13.1 and the run's budget from a measure of its own part (F-100); the second payday's rise traced to its store | closed: the opening's report no longer holds its 20 M listed writes and apportionments (F-019), about 1.1 GB of the peak, and the build run at 3336bd6a peaks at 2 476 MiB against its 2 923 MiB budget, clean; the plant's line in §13.1 and the second payday's rise stay with the budget work of the Stage 1 gate (S1.16) |
 | F-103 | S1.07 | data, 2026-09-26 | Three of freight's values are assumed, not measured: a coastal vessel's payload, cost and days at sea (20 000 t, $100 million, half its days) and its day in port at each end; a sea lane's capacity, a regional port's 10 million tonnes a year; and a road segment as a four-lane freeway | no official source found gives coastal vessels' cost or a port's throughput in the world's terms, and the map's segments carry no road class | vessels' cost and productivity measured (MARAD's Modal Shift Study, UNCTAD's Review of Maritime Transport); a port's throughput by its size; road segments by class once infrastructure is capital (S2.05) | open for S2.05 |
+| F-104 | S1.08 | build, 2026-09-26 | A searching agent brings its members (its multiplicity, about 170 at the play resolution) to a vacancy as one applicant, so a vacancy with fewer jobs open than an applicant's members cannot be filled by it | the representation's unit of a searcher is the agent, and a large firm's vacancies are counted in persons | measured on the build run once firms post (S1.15): vacancies filled against posted by their size; the agents' split on hiring (REP) if small vacancies stand | open for S1.15 |
+| F-105 | S1.08 | data, 2026-09-26 | Four of labour's values are assumed, not measured: the developing group's tenure bands (the emerging group's), the skill level of education above upper secondary taken as ISCED's, the reservation as a share of the last wage (a placeholder naming HH), and retirement at the pension's age (until households weigh it) | the ILO's tenure tables hold no developing economy; the opening's education values are coarser than ISCED's | each measured where a source is found; the reservation and retirement from the household's decisions (S1.12) | open for S1.12 |
+| F-106 | S1.08 | build, 2026-09-26 | A part-time job's opening wage point is its household's earnings like a full-time one's, not scaled by its hours | the opening draws a household's wage from its earnings, not by person and hours | the opening's wage by person and hours when the household's earnings are split among its earners | open for S1.15 |
 
 ---
 

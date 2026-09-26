@@ -95,6 +95,26 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
         .collect()
 }
 
+/// The setup's countries as the opening reads them, with the setup's total population, the world's, and the divisor
+/// between them: a small world's countries hold one factor-th of the population, and everything the opening derives
+/// follows.
+fn opening_countries(
+    kernel: &KernelPrims,
+    c: &crate::compile::Compiled,
+    game: &NewGame,
+    geo: &phx_geo::GeoState,
+    representation: phx_pop::prims::Representation,
+) -> (Vec<phx_core::OpeningCountry>, u64, u64, u64) {
+    let total = kernel.opening.population.shared(&c.register).get();
+    let divisor = u64::from(representation.population_divisor);
+    let population = total / divisor;
+    let units: Vec<u64> = (0_u8..)
+        .take(game.countries.len())
+        .map(|i| kernel.opening.units_per_dollar.get(&c.register, CountryId::new(i)).get())
+        .collect();
+    (crate::opening::books::countries(game, geo, population, &units), total, population, divisor)
+}
+
 /// The world's books opened from the setup's countries, their people and their currencies' units.
 fn open(
     (d, facets, visits): (&mut Declarations, &[Facet], &[crate::visits::Bound]),
@@ -105,15 +125,7 @@ fn open(
     geo: &phx_geo::GeoState,
     (phases, pool, report): (&[phx_core::OpeningPhase], Option<&Arc<phx_exec::Pool>>, phx_core::GenReport),
 ) -> Result<(phx_ledger::books::Books, phx_pop::population::Population, phx_core::GenReport), String> {
-    // A small world's countries hold one factor-th of the population, and everything the opening derives follows.
-    let total = kernel.opening.population.shared(&c.register).get();
-    let divisor = u64::from(pop.1.population_divisor);
-    let population = total / divisor;
-    let units: Vec<u64> = (0_u8..)
-        .take(game.countries.len())
-        .map(|i| kernel.opening.units_per_dollar.get(&c.register, CountryId::new(i)).get())
-        .collect();
-    let countries = crate::opening::books::countries(game, geo, population, &units);
+    let (countries, total, population, divisor) = opening_countries(kernel, c, game, geo, pop.1);
     let (books, people, mut report) = crate::opening::books::open_books(
         (d, facets, &crate::visits::specs(visits)),
         pop,
@@ -390,6 +402,10 @@ fn prepare(
 fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<String>> {
     let (mut kinds, mut errors) = (phx_market::instances::Kinds::default(), Vec::new());
     for (system, kind) in &d.markets {
+        // Labour's matching is its own kind, which meets no market's rules.
+        if kind.downcast_ref::<if_labour::kind::LabourKind>().is_some() {
+            continue;
+        }
         let decl = kind
             .downcast_ref::<phx_market::market::MarketDecl>()
             .or_else(|| kind.downcast_ref::<phx_market::retail::RetailKind>().map(|r| &r.market))
@@ -477,6 +493,37 @@ fn unkept_handlers(p: &Prepared, tables: &[KernelTable]) -> Result<(), AssemblyE
 
 /// The world built from what the build supplies and a state: the audit over it, each system's own state, and the
 /// handlers checked against the tables it keeps.
+/// Each system's state its handlers are given: the map for GEO's, what each system compiles for its own, nothing for
+/// the rest.
+fn own_states(p: &mut Prepared, geo: &Arc<GeoState>) -> Result<Vec<(&'static str, OwnState)>, AssemblyErrors> {
+    let nothing = || -> OwnState { Box::new(()) };
+    let mut own: Vec<(&'static str, OwnState)> = p.entries.iter().map(|e| (e.code, nothing())).collect();
+    for (code, state) in &mut own {
+        if *code == phx_geo::Geo::CODE {
+            *state = Box::new(Arc::clone(geo));
+        }
+    }
+    let mut refused = Vec::new();
+    for (code, compile) in std::mem::take(&mut p.d.compiled) {
+        match (compile(&p.c.register, p.game.countries.len()), own.iter_mut().find(|(c, _)| *c == code)) {
+            (Ok(compiled), Some((_, state))) => *state = compiled,
+            (Ok(_), None) => refused.push(format!("`{code}` compiles state but is no system of the world")),
+            (Err(e), _) => refused.push(format!("{code}: {e}")),
+        }
+    }
+    if refused.is_empty() { Ok(own) } else { Err(AssemblyErrors(refused)) }
+}
+
+/// Labour's kind bound with each country's law, carrying its book.
+fn labour_of(
+    p: &Prepared,
+    geo: &phx_geo::GeoState,
+    book: crate::labour::LabourBook,
+) -> Result<crate::labour::Labour, AssemblyErrors> {
+    let (opening, _, _, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    crate::labour::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
+}
+
 fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, AssemblyErrors> {
     let State { geo, tables, books, population, markets, accounts, records, events, carried, run, space } = s;
     let mut families = kernel_families();
@@ -488,28 +535,12 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let names = names(&p.d, &p.pop, &p.market_kinds, &decls, &tables, &books);
     let settling_years = p.kernel.opening.settling_years.shared(&p.c.register);
     let save_every = p.kernel.save_every.shared(&p.c.register);
-    let nothing = || -> OwnState { Box::new(()) };
-    let mut own: Vec<(&'static str, OwnState)> = p.entries.iter().map(|e| (e.code, nothing())).collect();
-    for (code, state) in &mut own {
-        if *code == phx_geo::Geo::CODE {
-            *state = Box::new(Arc::clone(&geo));
-        }
-    }
-    let mut refused = Vec::new();
-    for (code, compile) in std::mem::take(&mut p.d.compiled) {
-        match (compile(&p.c.register, p.game.countries.len()), own.iter_mut().find(|(c, _)| *c == code)) {
-            (Ok(compiled), Some((_, state))) => *state = compiled,
-            (Ok(_), None) => refused.push(format!("`{code}` compiles state but is no system of the world")),
-            (Err(e), _) => refused.push(format!("{code}: {e}")),
-        }
-    }
-    if !refused.is_empty() {
-        return Err(AssemblyErrors(refused));
-    }
+    let own = own_states(&mut p, &geo)?;
     unkept_handlers(&p, &tables)?;
     let event_kinds: Vec<phx_core::EventKindDecl> = p.d.events.iter().map(|(_, e)| *e).collect();
     let news = phx_core::EventsRule::new(p.kernel.public_events.shared(&p.c.register), &event_kinds)
         .map_err(|e| AssemblyErrors(vec![e]))?;
+    let labour = labour_of(&p, &geo, carried.labour)?;
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
@@ -550,6 +581,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         markets,
         market_kinds: std::mem::take(&mut p.market_kinds),
         trade: p.trade.clone(),
+        labour,
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
@@ -624,6 +656,7 @@ pub fn assemble(
             queue: PlayerQueue::unseated(),
             bindings: Bindings::default(),
             closed: phx_ledger::pending::Closed::default(),
+            labour: crate::labour::LabourBook::default(),
         },
         run: crate::save::RunRecord {
             metrics: Metrics::default(),
@@ -639,6 +672,7 @@ pub fn assemble(
     world.open_player().map_err(one)?;
     // Every agent the opening began, the player's among them, is drawn its first bookings from the day after it.
     world.book_changed(world.today, SubStep::S10b.ordinal());
+    world.labour_rebuild();
     world.visits_book_all(world.today);
     world.books.ledger.opened();
     Ok(world)
@@ -750,6 +784,7 @@ pub fn load(
     let state = State { geo, tables, books, population, markets, accounts, records, events, carried, run, space };
     let mut world = finish(p, state, config)?;
     world.defaults_rebuild();
+    world.labour_rebuild();
     world.loaded = true;
     let rebuilt = crate::save::manifest::hex(crate::hash::world_hash(&world));
     if rebuilt != manifest.world_hash {

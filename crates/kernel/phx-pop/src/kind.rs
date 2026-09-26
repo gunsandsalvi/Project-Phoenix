@@ -177,8 +177,18 @@ mod tests {
         let entries = [
             entry(PopItem::Attr(AttrDecl { name: "region", values: 25, clause: "x" })),
             entry(PopItem::Role(RoleDecl { name: "head", clause: "x" })),
-            entry(PopItem::PersonAttr(PersonAttrDecl { name: "sex", values: 2, clause: "x" })),
-            entry(PopItem::PersonAttr(PersonAttrDecl { name: "education", values: 10, clause: "x" })),
+            entry(PopItem::PersonAttr(PersonAttrDecl {
+                name: "sex",
+                values: 2,
+                clause: "x",
+                initial: phx_num::Missing::Absent,
+            })),
+            entry(PopItem::PersonAttr(PersonAttrDecl {
+                name: "education",
+                values: 10,
+                clause: "x",
+                initial: phx_num::Missing::Absent,
+            })),
             entry(PopItem::SitedBy("region")),
         ];
         let k = PopKindDecl::compile("household", &entries).unwrap();

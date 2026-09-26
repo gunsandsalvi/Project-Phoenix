@@ -1,0 +1,118 @@
+pub mod if_labour
+pub mod if_labour::class
+pub const if_labour::class::BAND: usize
+pub const if_labour::class::HOURS: usize
+pub const if_labour::class::NOTICE: usize
+pub const if_labour::class::NOT_SEARCHING: u32
+pub const if_labour::class::NO_OCCUPATION: u32
+pub const if_labour::class::NO_POINT: u32
+pub const if_labour::class::OCCUPATION: usize
+pub const if_labour::class::OCCUPATIONS: u32
+pub const if_labour::class::PLACES: usize
+pub const if_labour::class::REGION: usize
+pub const if_labour::class::RETIRED: u32
+pub const if_labour::class::SEARCHING: u32
+pub const if_labour::class::SEVERANCE: usize
+pub const if_labour::class::SKILL: usize
+pub const if_labour::class::STATES: u32
+pub const if_labour::class::WAGE_POINTS: u32
+pub mod if_labour::consts
+pub const if_labour::consts::BAND: usize
+pub const if_labour::consts::HOURS: usize
+pub const if_labour::consts::NOTICE: usize
+pub const if_labour::consts::NOT_SEARCHING: u32
+pub const if_labour::consts::NO_OCCUPATION: u32
+pub const if_labour::consts::NO_POINT: u32
+pub const if_labour::consts::OCCUPATION: usize
+pub const if_labour::consts::OCCUPATIONS: u32
+pub const if_labour::consts::PLACES: usize
+pub const if_labour::consts::REGION: usize
+pub const if_labour::consts::RETIRED: u32
+pub const if_labour::consts::SEARCHING: u32
+pub const if_labour::consts::SEVERANCE: usize
+pub const if_labour::consts::SKILL: usize
+pub const if_labour::consts::STATES: u32
+pub const if_labour::consts::WAGE_POINTS: u32
+pub mod if_labour::decisions
+pub struct if_labour::decisions::AcceptIn
+pub if_labour::decisions::AcceptIn::reservation: f64
+pub if_labour::decisions::AcceptIn::taste: f64
+pub if_labour::decisions::AcceptIn::wage: f64
+pub if_labour::decisions::AcceptIn::wage_weight: f64
+pub struct if_labour::decisions::Applicant
+pub if_labour::decisions::Applicant::experience: u32
+pub if_labour::decisions::Applicant::lot: u64
+pub if_labour::decisions::Applicant::skill: u32
+pub if_labour::decisions::Applicant::unit: u32
+pub struct if_labour::decisions::Need
+pub if_labour::decisions::Need::hours_a_unit: f64
+pub if_labour::decisions::Need::job_hours: f64
+pub if_labour::decisions::Need::occupation: u32
+pub if_labour::decisions::Need::open_hours: f64
+pub if_labour::decisions::Need::staff_hours: f64
+pub if_labour::decisions::Need::wage_hour: f64
+pub struct if_labour::decisions::PostIn
+pub if_labour::decisions::PostIn::financing: f64
+pub if_labour::decisions::PostIn::minimum_hour: f64
+pub if_labour::decisions::PostIn::needs: alloc::vec::Vec<if_labour::decisions::Need>
+pub if_labour::decisions::PostIn::price: f64
+pub if_labour::decisions::PostIn::units_a_day: f64
+pub struct if_labour::decisions::PostOut
+pub if_labour::decisions::PostOut::layoff: alloc::vec::Vec<(u32, u32)>
+pub if_labour::decisions::PostOut::post: alloc::vec::Vec<(u32, u32)>
+pub if_labour::decisions::PostOut::withdraw: alloc::vec::Vec<(u32, u32)>
+pub struct if_labour::decisions::RetireIn
+pub if_labour::decisions::RetireIn::age_months: i64
+pub if_labour::decisions::RetireIn::pension_months: i64
+pub struct if_labour::decisions::SearchIn
+pub if_labour::decisions::SearchIn::applications: u32
+pub if_labour::decisions::SearchIn::reservation: f64
+pub if_labour::decisions::SearchIn::tastes: alloc::vec::Vec<f64>
+pub if_labour::decisions::SearchIn::wage_weight: f64
+pub if_labour::decisions::SearchIn::wages: alloc::vec::Vec<f64>
+pub struct if_labour::decisions::SelectIn
+pub if_labour::decisions::SelectIn::applicants: alloc::vec::Vec<if_labour::decisions::Applicant>
+pub if_labour::decisions::SelectIn::open: u32
+pub mod if_labour::kind
+pub struct if_labour::kind::LabourKind
+pub if_labour::kind::LabourKind::accept: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AcceptIn, bool>
+pub if_labour::kind::LabourKind::education: &'static str
+pub if_labour::kind::LabourKind::employer_visits: &'static [&'static str]
+pub if_labour::kind::LabourKind::hired: &'static str
+pub if_labour::kind::LabourKind::last_point: &'static str
+pub if_labour::kind::LabourKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_labour::law::Law, alloc::string::String>
+pub if_labour::kind::LabourKind::layoff_stream: &'static str
+pub if_labour::kind::LabourKind::least_point: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>
+pub if_labour::kind::LabourKind::line: &'static str
+pub if_labour::kind::LabourKind::lot_stream: &'static str
+pub if_labour::kind::LabourKind::meeting_stream: &'static str
+pub if_labour::kind::LabourKind::occupation: &'static str
+pub if_labour::kind::LabourKind::point_near: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>
+pub if_labour::kind::LabourKind::post: fn(&if_labour::decisions::PostIn) -> if_labour::decisions::PostOut
+pub if_labour::kind::LabourKind::retire: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::RetireIn, bool>
+pub if_labour::kind::LabourKind::retirement: &'static str
+pub if_labour::kind::LabourKind::search: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SearchIn, alloc::vec::Vec<u32>>
+pub if_labour::kind::LabourKind::select: fn(&if_labour::decisions::SelectIn) -> alloc::vec::Vec<u32>
+pub if_labour::kind::LabourKind::separated: &'static str
+pub if_labour::kind::LabourKind::severance: &'static str
+pub if_labour::kind::LabourKind::state: &'static str
+pub if_labour::kind::LabourKind::taste_stream: &'static str
+pub if_labour::kind::LabourKind::wage_at: fn(&if_labour::law::Law, i64) -> f64
+pub mod if_labour::law
+pub struct if_labour::law::Law
+pub if_labour::law::Law::applications_a_week: f64
+pub if_labour::law::Law::band_years: u32
+pub if_labour::law::Law::education_skill: alloc::vec::Vec<u32>
+pub if_labour::law::Law::full_time_hours: u32
+pub if_labour::law::Law::mean_monthly: f64
+pub if_labour::law::Law::minimum_monthly: phx_num::missing::Missing<f64>
+pub if_labour::law::Law::notice_days: u32
+pub if_labour::law::Law::occupation_skill: alloc::vec::Vec<u32>
+pub if_labour::law::Law::patience_days: u32
+pub if_labour::law::Law::pension_months: alloc::vec::Vec<i64>
+pub if_labour::law::Law::point_ratio: f64
+pub if_labour::law::Law::reservation_share: f64
+pub if_labour::law::Law::seen_chance: f64
+pub if_labour::law::Law::severance_days_a_year: u32
+pub if_labour::law::Law::wage_weight: f64
+pub if_labour::law::Law::weeks_a_month: f64

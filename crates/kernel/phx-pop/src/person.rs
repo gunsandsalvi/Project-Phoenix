@@ -30,8 +30,11 @@ pub fn pack(kind: &PopKindDecl, p: &Person) -> u64 {
     let mut word = u64::from(serial.cast_unsigned()) | (role << BIRTH_BITS);
     let base = BIRTH_BITS + ROLE_BITS;
     for f in &kind.person_attrs {
-        let Some(v) = p.attr(f.decl.name) else {
-            violation!(clause = "REP.26", "a person without an attribute its kind declares");
+        let v = match (p.attr(f.decl.name), f.decl.initial) {
+            (Some(v), _) | (None, phx_num::Missing::Present(v)) => v,
+            (None, phx_num::Missing::Absent) => {
+                violation!(clause = "REP.26", "a person without an attribute its kind declares")
+            }
         };
         if v >= f.decl.values {
             capacity_exceeded!("values of a person attribute", f.decl.values, v);
@@ -130,9 +133,24 @@ mod tests {
         let entries = [
             e(PopItem::Role(RoleDecl { name: "head", clause: "x" })),
             e(PopItem::Role(RoleDecl { name: "child", clause: "x" })),
-            e(PopItem::PersonAttr(PersonAttrDecl { name: "sex", values: 2, clause: "x" })),
-            e(PopItem::PersonAttr(PersonAttrDecl { name: "health", values: 2, clause: "x" })),
-            e(PopItem::PersonAttr(PersonAttrDecl { name: "education", values: 9, clause: "x" })),
+            e(PopItem::PersonAttr(PersonAttrDecl {
+                name: "sex",
+                values: 2,
+                clause: "x",
+                initial: phx_num::Missing::Absent,
+            })),
+            e(PopItem::PersonAttr(PersonAttrDecl {
+                name: "health",
+                values: 2,
+                clause: "x",
+                initial: phx_num::Missing::Absent,
+            })),
+            e(PopItem::PersonAttr(PersonAttrDecl {
+                name: "education",
+                values: 9,
+                clause: "x",
+                initial: phx_num::Missing::Absent,
+            })),
         ];
         PopKindDecl::compile("household", &entries).unwrap()
     }

@@ -305,6 +305,11 @@ impl Words {
             w.day_count(f.day_count);
         });
         self.missing(t.stay, |w, procedure| w.u(u64::from(procedure)));
+        self.tag("class");
+        self.len(t.class.len());
+        for c in &t.class {
+            self.u(u64::from(*c));
+        }
     }
 }
 
@@ -528,6 +533,7 @@ mod tests {
             underlying: Missing::Absent,
             facility: Missing::Absent,
             stay: Missing::Absent,
+            class: Vec::new(),
         }
     }
 

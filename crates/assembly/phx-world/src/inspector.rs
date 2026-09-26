@@ -69,6 +69,59 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.goods
     }
 
+    /// What each day's labour did: searchers, vacancies seen, applications, offers, matches, hires, layoffs,
+    /// separations and retirements.
+    pub fn labour_days(&self) -> &[(Day, crate::labour::LabourDay)] {
+        &self.world.metrics.labour
+    }
+
+    /// Employment as the books hold it: each employment line's two sides' members, and the people each employed
+    /// person's household holds, for the checks.
+    #[must_use]
+    pub fn employment_lines(&self) -> Vec<(u32, u64, u64)> {
+        let Some(kind) = self.world.labour.kind else { return Vec::new() };
+        let lines = &self.world.books.ledger.lines;
+        let k = lines.kind_index(kind.line);
+        (0..lines.len())
+            .filter_map(|i| u32::try_from(i).ok())
+            .filter(|i| lines.kind_of(phx_id::LineId::new(*i)) == k)
+            .map(|i| {
+                let l = phx_id::LineId::new(i);
+                let side = |s| u64::from(lines.side_count(l, s));
+                (i, side(phx_ledger::algebra::Side::Asset), side(phx_ledger::algebra::Side::Liability))
+            })
+            .collect()
+    }
+
+    /// The persons of the household agents whose jobs buy more than `most` hours a week between them.
+    #[must_use]
+    pub fn persons_over_hours(&self, most: u64) -> u64 {
+        let w = self.world;
+        let Some(kind) = w.labour.kind else { return 0 };
+        let Some(place) = w.labour_kind_place(&kind) else { return 0 };
+        let lines = &w.books.ledger.lines;
+        let k = lines.kind_index(kind.line);
+        let hours_of = |l: phx_id::LineId| {
+            let terms = w.books.ledger.terms.get(lines.terms(l));
+            terms.class.get(if_labour::class::HOURS).copied().map_or(0, u64::from)
+        };
+        let table = phx_pop::population::Population::table::<phx_store::SystemBacking>(w.books.parties.cells(), place);
+        let mut over = 0_u64;
+        for slot in table.slots() {
+            let mut by_person: std::collections::BTreeMap<usize, u64> = std::collections::BTreeMap::new();
+            for word in table.attachments(slot) {
+                let a = phx_pop::person::Attachment::unpack(*word);
+                if let phx_pop::person::Holder::Person(i) = a.holder
+                    && lines.kind_of(a.line) == k
+                {
+                    *by_person.entry(i).or_default() += hours_of(a.line);
+                }
+            }
+            over += phx_rand::float::len_u64(by_person.values().filter(|h| **h > most).count());
+        }
+        over
+    }
+
     /// The processes' realised and expected hits over the sampled agents.
     #[must_use]
     pub fn rates(&self) -> &crate::rates::Rates {

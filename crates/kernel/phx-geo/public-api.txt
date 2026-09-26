@@ -466,6 +466,7 @@ pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_n
 pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num::missing::Missing<phx_id::ids::ZoneId>>
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>
+pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>
 impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)
@@ -638,6 +639,7 @@ pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_n
 pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num::missing::Missing<phx_id::ids::ZoneId>>
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>
+pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>
 impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)

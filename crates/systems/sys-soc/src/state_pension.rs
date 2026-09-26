@@ -152,7 +152,7 @@ impl CountryAttachments for Country {
         h: Drawing<'_>,
         (ctx, subject): (&OpeningCtx<'_>, Subject),
         rows: &mut Vec<DrawnRow>,
-        _: &mut Vec<(&'static str, u32)>,
+        _: &mut phx_ledger::attachments::Keys,
     ) {
         let mut d = ctx.draws(&PensionStream::DECL, subject);
         let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
@@ -186,7 +186,7 @@ impl CountryAttachments for Country {
         Vec::new()
     }
 
-    fn counterparties(&self, _: &Books, _: &LineSpec) -> Vec<(PartyId, u64)> {
+    fn counterparties(&mut self, _: &Books, _: &LineSpec, _: &mut phx_rand::Draws) -> Vec<(PartyId, u64)> {
         Vec::new()
     }
 }

@@ -68,3 +68,12 @@ pub const METRES_PER_KM: f64 = 1_000.0;
 pub const KG_A_TONNE: f64 = 1_000.0;
 /// Kilograms in a tonne, whole, as segments' capacities are counted.
 pub const KG_A_TONNE_WHOLE: i64 = 1_000;
+/// Days of a week, over which weekly hours and applications are spread.
+pub const DAYS_A_WEEK: f64 = 7.0;
+/// The days the least match takes: a vacancy posted today is applied to tomorrow, offered the day after and
+/// accepted the day after that; one filled so fast was offered too high.
+pub const LEAST_MATCH_DAYS: u32 = 3;
+/// The Gregorian calendar's mean days a year, over which a yearly return is spread.
+pub const DAYS_A_YEAR: f64 = 365.2425;
+/// The places of decimals the required return a firm holds is written to.
+pub const HURDLE_EXP: u8 = 6;

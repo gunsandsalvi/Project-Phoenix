@@ -3,6 +3,7 @@ pub mod firms;
 pub mod freight;
 pub mod geo;
 pub mod goods;
+pub mod labour;
 pub mod ledger;
 pub mod markets;
 pub mod observer;
@@ -164,6 +165,9 @@ pub const CHECKS: &[Check] = &[
     retail::LC_1_18,
     freight::LC_1_19,
     freight::LC_1_20,
+    labour::LC_1_21,
+    labour::LC_1_22,
+    labour::LC_1_23,
     firms::LC_1_45,
     goods::LC_1_46,
     freight::LC_1_47,

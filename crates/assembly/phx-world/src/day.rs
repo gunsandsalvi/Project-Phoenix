@@ -60,14 +60,17 @@ const APPLY_POINTS: [SubStep; 23] = [
 /// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, stage 2's
 /// contract process at 2d, over the fails of the days since it last ran, and 2e's defaults of parties whose grace has
 /// ended, 3b's gathering of the population's agents due and 3e's outcomes of their hits, 5a's public outlooks over
-/// the markets' prints, 6a's meetings, 9b's accounts, posting the day's settled money, and 10a's public events.
-pub const KERNEL_WORK: [SubStep; 9] = [
+/// the markets' prints, 6a's meetings, 9b's accounts, posting the day's settled money, and 10a's public events; 4a's
+/// start of work and 5c's round of labour.
+pub const KERNEL_WORK: [SubStep; 11] = [
     SubStep::S1b,
     SubStep::S2d,
     SubStep::S2e,
     SubStep::S3b,
     SubStep::S3e,
+    SubStep::S4a,
     SubStep::S5a,
+    SubStep::S5c,
     SubStep::S6a,
     SubStep::S9b,
     SubStep::S10a,
@@ -190,10 +193,7 @@ impl World {
             if is_apply_point(info) {
                 self.apply(day, info.step, &mut pending);
             }
-            if info.step == SubStep::S5a {
-                self.arrivals(day);
-                self.goods_outlooks(day);
-            }
+            self.start_and_decide(day, info.step);
             if info.step == SubStep::S6a {
                 self.meet(day);
             }
@@ -211,6 +211,7 @@ impl World {
                 self.estates_settle(day);
                 self.markets_settle(SubStep::S7c);
                 self.freight_settle(day, SubStep::S7c);
+                self.labour_settle(SubStep::S7c);
             }
             if info.step == SubStep::S9b {
                 let period = crate::registry::period_of(&self.calendar, day);
@@ -238,6 +239,20 @@ impl World {
         let date = self.calendar.date(day);
         if date.month() == 1 && date.day() == 1 {
             self.calendar.move_window(date.year());
+        }
+    }
+
+    /// Stages 4 and 5's kernel work: the start of work at 4a; the day's arrivals and public outlooks at 5a; and the
+    /// round of labour at 5c, after the visits.
+    fn start_and_decide(&mut self, day: Day, step: SubStep) {
+        match step {
+            SubStep::S4a => self.labour_start(day),
+            SubStep::S5a => {
+                self.arrivals(day);
+                self.goods_outlooks(day);
+            }
+            SubStep::S5c => self.labour_round(day),
+            _ => {}
         }
     }
 

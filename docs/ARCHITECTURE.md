@@ -1086,6 +1086,41 @@ without end in both directions.
   or a hazard uses up, trades make nothing, and the opening plus what was made less what was used up, spoiled and
   destroyed, with what arrived less what was shipped, is what is in existence at the close.
 
+### 7.12 Labour
+
+- **Employment lines** (LAB.1, REP.3): a contract's terms carry, beside its monthly wage leg, a **class**
+  (`Terms::class`, by the places the employment kind declares): occupation family, skill, hours, notice days,
+  severance weeks a year of service, region and start band. Contracts differing in any are on different lines, so a
+  line is what LAB.1 says it is. The pension's kind and rates join the class with PEN (S4.04); until then a job carries
+  none.
+- **A person's labour state** (PTY.3): two person attributes, declared by LAB on the household kind: the occupation
+  family it last worked in or trained for (none for one never employed), and whether it searches. Employment is its
+  attachments on employment lines; nothing else counts it.
+- **The labour kind** (`if_labour::LabourKind`, declared by `sys-lab` as a market beside the goods kinds): the
+  employment line kind's name, the class's places, the attributes above, and its **decision points** — the employer's
+  posting and layoffs, its selection among applicants and its renegotiation offer; the searcher's applications, its
+  acceptance, its answer to a renegotiation, its quitting and its retiring; the union's offer — each an
+  `if_labour` input and output with its rule in `sys-lab`, dispatched through the player's queue for the player's
+  household (OBS.4). The kernel builds each input from the world and applies each output; no rule reads the world.
+- **The labour book** (`phx-world`'s `labour`, saved): vacancies (employer, region, class, wage point, jobs open,
+  posted day), each region and occupation's list of them; applications (vacancy, applicant agent and person, its unit,
+  skill and experience, sent day), which live until answered; offers (vacancy, applicant, day made), which live a day;
+  hires and separations due at the next 4a, with notice; and each employer's fill history by occupation (the point
+  and days its last vacancy took to fill).
+- **The day** (TIME.10, a round a day): at **5c**, after the visits, in order — offers made yesterday answered by
+  their applicants; applications sent yesterday seen by their employers at the meeting hazard and selected by skill,
+  then experience, then lot, up to the jobs open in whole units of the applicant (an agent's twins are hired
+  together); the searchers' applications to the vacancies standing at the start of the day; and the employers whose
+  production schedule came due today posting, withdrawing and laying off. At **4a** of the next day, the hires join
+  their lines and the separations whose notice has run leave them, their severance paid at stage 7 as legs of the
+  separation's instruction. A match therefore takes at least three days.
+- **Joining a line** (`Books::members_join`): a hire's members join the employee's row and as many join the
+  employer's, in one instruction, the rows opened where they do not exist; the hired person gains its attachment.
+  Leaving is `members_leave` (§7.4), drawing among the employee side's holders by their counts (REP.23) where the
+  employer's members are not named.
+- **Searchers** are the agents whose persons search, kept as an index by region and occupation, rebuilt on load from
+  the attributes, so a day's rounds visit only them.
+
 ---
 
 ## 8. Markets, valuation and expectations

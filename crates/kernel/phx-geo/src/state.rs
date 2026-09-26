@@ -250,6 +250,14 @@ impl GeoState {
         }
     }
 
+    /// The region a zone lies in, by its place among the regions.
+    pub fn zone_region(&self, zone: phx_id::ZoneId) -> Missing<u32> {
+        match usize::try_from(zone.get()).ok().and_then(|z| self.map.zones.get(z)) {
+            Some(z) => Missing::Present(u32::from(z.region.get())),
+            None => Missing::Absent,
+        }
+    }
+
     /// The country a zone lies in, by its region.
     pub fn zone_country(&self, zone: phx_id::ZoneId) -> Missing<CountryId> {
         let m = &self.map;

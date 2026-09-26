@@ -30,6 +30,9 @@ pub struct PersonAttrDecl {
     pub name: &'static str,
     pub values: u32,
     pub clause: &'static str,
+    /// The value a person holds whom no system has given one, as a child holds its labour state before it works;
+    /// none for an attribute its owner always sets.
+    pub initial: phx_num::Missing<u32>,
 }
 
 /// A position every agent of a kind holds: an amount, a stock or a rate of its own, missing until its

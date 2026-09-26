@@ -521,6 +521,16 @@ impl World {
     #[clause("REP.26", "REP.23", "REP.16", "PTY.9")]
     pub(crate) fn agents_outcomes(&mut self, day: Day) {
         let hits = std::mem::take(&mut self.agent_hits);
+        // The agents a person of which reached its pension's age leave its jobs at the next start of work.
+        if let Some(kind) = self.labour.kind {
+            let processes = &self.processes;
+            let retiring = hits
+                .iter()
+                .filter(|h| processes.get(h.process).is_some_and(|b| b.process.hazard() == kind.retirement))
+                .map(|h| h.party);
+            self.labour.book.retiring.extend(retiring);
+            self.labour.book.retiring.dedup();
+        }
         let agents: Vec<&[AgentHit]> = hits.chunk_by(|a, b| (a.kind, a.slot) == (b.kind, b.slot)).collect();
         let each = agents.len().div_ceil(GATHER_SHARDS);
         for wave in (0..GATHER_SHARDS).step_by(GATHER_WAVE).take_while(|w| w * each < agents.len()) {
@@ -634,10 +644,12 @@ impl World {
 
     /// The contracts agents drawn to leave with others' members lost, taken off their persons: each twin's share of
     /// the members left, drawn among the attachments it holds on that side of the line, so its persons still hold
-    /// what its rows count. An agent of no persons names no contracts and has none to lose.
+    /// what its rows count. An agent of no persons names no contracts and has none to lose. Returns each person that
+    /// lost a contract, by its agent and place.
     #[clause("REP.23", "REP.31")]
-    pub(crate) fn detach(&mut self, left: &[(PartyId, LineId, Side, u32)], d: &mut Draws) {
+    pub(crate) fn detach(&mut self, left: &[(PartyId, LineId, Side, u32)], d: &mut Draws) -> Vec<(PartyId, u32)> {
         let first = self.books.parties.first_cell_place();
+        let mut persons = Vec::new();
         for (party, line, side, count) in left {
             let (place, slot) = self.books.parties.row(*party);
             let Some(kind) = place.checked_sub(first).map(usize::from) else { continue };
@@ -676,10 +688,19 @@ impl World {
                     gone.push(on.swap_remove(i));
                 }
             }
+            for i in &gone {
+                if let Some(phx_pop::person::Holder::Person(p)) =
+                    words.get(*i).map(|w| phx_pop::person::Attachment::unpack(*w).holder)
+                    && let Ok(p) = u32::try_from(p)
+                {
+                    persons.push((*party, p));
+                }
+            }
             let words: Vec<u64> =
                 words.iter().enumerate().filter(|(i, _)| !gone.contains(i)).map(|(_, w)| *w).collect();
             table.set_attachments(slot, &words);
         }
+        persons
     }
 
     /// An agent no one is left in ended: what it holds passes to one estate sited in its region, and its row and
@@ -778,6 +799,7 @@ impl World {
         let visited = std::mem::replace(&mut self.visit_today, crate::visits::VisitDay::of(day));
         self.metrics.visits.push(visited);
         self.metrics.goods.push((day, std::mem::take(&mut self.market_day.tally)));
+        self.metrics.labour.push((day, std::mem::take(&mut self.labour.day)));
     }
 
     /// Every agent begun or changed since the last booking drawn afresh from the day after `day`; a kind no process
@@ -813,7 +835,7 @@ impl World {
 }
 
 /// What each of the day's instructions on agents needs besides its legs.
-fn move_at(register: &Register, day: Day, at: ApplyAt) -> MoveAt {
+pub(crate) fn move_at(register: &Register, day: Day, at: ApplyAt) -> MoveAt {
     MoveAt { contracts: phx_ledger::opening::contract_unit(register), rounding: Round::HalfEven, day, at }
 }
 

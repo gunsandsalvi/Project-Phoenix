@@ -250,6 +250,49 @@ impl<B: Backing> Books<B> {
         self.submit(p.reason, legs, m, audit).map(|_| new)
     }
 
+    /// The legs putting `count` new members onto a party's row on a side of a line: onto its row there, or a row opened
+    /// with the words its side keeps, each at nothing.
+    fn enter(&self, (party, line, side): At, count: u32, m: MoveAt) -> LegRec {
+        if self.row_on_side(party, line, side).is_some() {
+            return count_leg(party, line, side, i64::from(count), m.contracts, RowOp::Count);
+        }
+        let words = self.ledger.lines.side_decl(line, side).words;
+        let word = |flag: u8| if words & flag == 0 { Missing::Absent } else { Missing::Present(0) };
+        let optional = Optional {
+            balance: word(crate::rows::BALANCE),
+            pending: word(crate::rows::PENDING),
+            amount: Missing::Absent,
+        };
+        let new = NewRow { side, within: 0, count, point: 0, optional };
+        count_leg(party, line, side, i64::from(count), m.contracts, RowOp::Open(new))
+    }
+
+    /// Members joining a line with as many of its other side, as a hire joins an employee and its employer: `count`
+    /// members onto a party's row and as many onto its named counterparty's row on the other side, each row opened
+    /// where it does not exist, in one instruction. New members bring no balance.
+    ///
+    /// # Errors
+    /// The fail, when the instruction could not settle.
+    #[clause("REP.3", "REP.9", "LAB.1")]
+    pub fn members_join(
+        &mut self,
+        (party, line, side): At,
+        counterparty: PartyId,
+        count: u32,
+        (reason, m): (ReasonId, MoveAt),
+        audit: &mut dyn AuditStream,
+    ) -> Result<InstructionId, Fail> {
+        if count == 0 {
+            violation!(clause = "REG.14", "members joining a line, none of them", line = line.get());
+        }
+        let other = match side {
+            Side::Asset => Side::Liability,
+            Side::Liability => Side::Asset,
+        };
+        let legs = vec![self.enter((party, line, side), count, m), self.enter((counterparty, line, other), count, m)];
+        self.submit(reason, legs, m, audit)
+    }
+
     /// Members leaving a line with as many of its other side: `count` members off a party's row, and as many off the
     /// rows of the other side's holders, each drawn by the members its row has left and giving its whole unit, so the
     /// sides stay equal and an agent's twins alike, in one instruction. A member leaving takes no share of a row's balance, which would be a claim the line still

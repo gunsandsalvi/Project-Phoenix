@@ -510,6 +510,51 @@ impl Register {
         }
     }
 
+    /// A primitive's value in a country by its identifier: the world's, or the country's own.
+    fn value_in(&self, id: &str, country: CountryId) -> Result<&PrimValue, String> {
+        match self.stored_by_id(id)? {
+            Stored::Shared(v) => Ok(v),
+            Stored::PerCountry(v) => v
+                .get(usize::from(country.get()))
+                .ok_or_else(|| format!("`{id}` has no value in country {}", country.get())),
+        }
+    }
+
+    /// A count by its identifier, in a country, as a system compiles a country's law from its primitives.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is no count in the country.
+    pub fn count_in(&self, id: &str, country: CountryId) -> Result<u64, String> {
+        match self.value_in(id, country)? {
+            PrimValue::Count(c) => Ok(c.get()),
+            _ => Err(format!("`{id}` is no count")),
+        }
+    }
+
+    /// A fixed-point value by its identifier, in a country, as the number it stands for.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is no fixed-point value in the country.
+    pub fn fixed_in(&self, id: &str, country: CountryId) -> Result<f64, String> {
+        match self.value_in(id, country)? {
+            PrimValue::Fixed { raw, exp } => {
+                Ok(phx_rand::float::from_i64(*raw) / libm::pow(crate::consts::DECIMAL_BASE, f64::from(*exp)))
+            }
+            _ => Err(format!("`{id}` is no fixed-point value")),
+        }
+    }
+
+    /// A table of one axis by its identifier, in a country, as one system reads another's law.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is no such table in the country.
+    pub fn table1_in(&self, id: &str, country: CountryId) -> Result<&values::Table1, String> {
+        match self.value_in(id, country)? {
+            PrimValue::Table1(t) => Ok(t),
+            _ => Err(format!("`{id}` is no table of one axis in country {}", country.get())),
+        }
+    }
+
     /// A table of two axes by its identifier, in a country, as one system reads another's technology.
     ///
     /// # Errors
@@ -534,6 +579,14 @@ impl Register {
             Stored::Shared(PrimValue::Products(p)) => Ok(p),
             _ => Err(format!("`{id}` is not one shared list of products")),
         }
+    }
+
+    /// A primitive's declaration by its identifier, as a reader of another system's table learns its decimals.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier.
+    pub fn decl_by_id(&self, id: &str) -> Result<&PrimDecl, String> {
+        self.decls.iter().find(|d| d.id == id).ok_or_else(|| format!("no primitive `{id}` is declared"))
     }
 
     fn stored_by_id(&self, id: &str) -> Result<&Stored, String> {

@@ -187,6 +187,7 @@ pub fn phx_ledger::algebra::Seniority::load(&mut phx_store::save::Reader<'_>) ->
 pub fn phx_ledger::algebra::Seniority::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Terms
 pub phx_ledger::algebra::Terms::ccy: phx_num::money::Ccy
+pub phx_ledger::algebra::Terms::class: alloc::vec::Vec<u32>
 pub phx_ledger::algebra::Terms::collateral: phx_num::missing::Missing<phx_ledger::algebra::Collateral>
 pub phx_ledger::algebra::Terms::conversion: phx_num::missing::Missing<phx_ledger::algebra::Conversion>
 pub phx_ledger::algebra::Terms::default: phx_ledger::algebra::DefaultDefinition
@@ -200,7 +201,7 @@ pub phx_ledger::algebra::Terms::termination: phx_ledger::algebra::Termination
 pub phx_ledger::algebra::Terms::underlying: phx_num::missing::Missing<phx_ledger::algebra::Underlying>
 impl phx_ledger::algebra::Terms
 pub fn phx_ledger::algebra::Terms::account(phx_num::money::Ccy, phx_core::calendar::period::ScheduleDates) -> phx_ledger::algebra::Terms
-impl phx_store::save::Saved for phx_ledger::algebra::Terms where phx_num::money::Ccy: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::algebra::Leg>: phx_store::save::Saved, phx_ledger::algebra::Schedule: phx_store::save::Saved, phx_ledger::algebra::Seniority: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Collateral>: phx_store::save::Saved, phx_ledger::algebra::PaymentOrder: phx_store::save::Saved, phx_ledger::algebra::Termination: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Conversion>: phx_store::save::Saved, phx_ledger::algebra::DefaultDefinition: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Underlying>: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Facility>: phx_store::save::Saved, phx_num::missing::Missing<u16>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_ledger::algebra::Terms where phx_num::money::Ccy: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::algebra::Leg>: phx_store::save::Saved, phx_ledger::algebra::Schedule: phx_store::save::Saved, phx_ledger::algebra::Seniority: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Collateral>: phx_store::save::Saved, phx_ledger::algebra::PaymentOrder: phx_store::save::Saved, phx_ledger::algebra::Termination: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Conversion>: phx_store::save::Saved, phx_ledger::algebra::DefaultDefinition: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Underlying>: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Facility>: phx_store::save::Saved, phx_num::missing::Missing<u16>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved
 pub fn phx_ledger::algebra::Terms::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::algebra::Terms::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::algebra::due_at(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
@@ -323,6 +324,9 @@ pub phx_ledger::attachments::DrawnRow::balance: phx_ledger::attachments::Balance
 pub phx_ledger::attachments::DrawnRow::holder: phx_ledger::attachments::Holder
 pub phx_ledger::attachments::DrawnRow::line: phx_ledger::attachments::LineSpec
 pub phx_ledger::attachments::DrawnRow::side: phx_ledger::algebra::Side
+pub struct phx_ledger::attachments::Keys
+pub phx_ledger::attachments::Keys::household: alloc::vec::Vec<(&'static str, u32)>
+pub phx_ledger::attachments::Keys::persons: alloc::vec::Vec<(usize, &'static str, u32)>
 pub struct phx_ledger::attachments::LineSpec
 pub phx_ledger::attachments::LineSpec::counterparty: phx_num::missing::Missing<phx_id::ids::PartyId>
 pub phx_ledger::attachments::LineSpec::first: phx_num::missing::Missing<(phx_id::day::Day, u32)>
@@ -337,8 +341,8 @@ pub fn phx_ledger::attachments::Online::next(&mut self, &mut phx_rand::draws::Dr
 pub trait phx_ledger::attachments::AttachmentDraw: core::marker::Send + core::marker::Sync
 pub fn phx_ledger::attachments::AttachmentDraw::country(&self, &mut phx_ledger::books::Books, &phx_core::register::Register, (&phx_core::calendar::Calendar, phx_id::day::Day), &phx_core::contribution::OpeningCountry) -> alloc::boxed::Box<dyn phx_ledger::attachments::CountryAttachments>
 pub trait phx_ledger::attachments::CountryAttachments
-pub fn phx_ledger::attachments::CountryAttachments::counterparties(&self, &phx_ledger::books::Books, &phx_ledger::attachments::LineSpec) -> alloc::vec::Vec<(phx_id::ids::PartyId, u64)>
-pub fn phx_ledger::attachments::CountryAttachments::draw(&mut self, &mut phx_ledger::books::Books, phx_ledger::attachments::Drawing<'_>, (&phx_core::contribution::OpeningCtx<'_>, phx_rand::key::Subject), &mut alloc::vec::Vec<phx_ledger::attachments::DrawnRow>, &mut alloc::vec::Vec<(&'static str, u32)>)
+pub fn phx_ledger::attachments::CountryAttachments::counterparties(&mut self, &phx_ledger::books::Books, &phx_ledger::attachments::LineSpec, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<(phx_id::ids::PartyId, u64)>
+pub fn phx_ledger::attachments::CountryAttachments::draw(&mut self, &mut phx_ledger::books::Books, phx_ledger::attachments::Drawing<'_>, (&phx_core::contribution::OpeningCtx<'_>, phx_rand::key::Subject), &mut alloc::vec::Vec<phx_ledger::attachments::DrawnRow>, &mut phx_ledger::attachments::Keys)
 pub fn phx_ledger::attachments::CountryAttachments::pools(&self) -> alloc::vec::Vec<(u32, i64)>
 pub fn phx_ledger::attachments::shares(i64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<i64>
 pub mod phx_ledger::audit
@@ -409,6 +413,7 @@ pub fn phx_ledger::books::Books<B>::load_from(&mut phx_store::save::Reader<'_>, 
 pub fn phx_ledger::books::Books<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::forget_tallies(&mut self)
+pub fn phx_ledger::books::Books<B>::members_join(&mut self, (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side), phx_id::ids::PartyId, u32, (phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt), &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::members_leave(&mut self, (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side), u32, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> core::result::Result<alloc::vec::Vec<(phx_id::ids::PartyId, u32)>, phx_ledger::fails::Fail> where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::read_unlisted(&mut self, &[(phx_id::ids::LineId, phx_ledger::algebra::Side)]) -> bool where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::to_procedure_line(&mut self, phx_ledger::transfer::ToProcedureLine, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_id::ids::LineId, phx_ledger::fails::Fail>

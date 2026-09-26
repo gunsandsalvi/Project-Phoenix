@@ -33,6 +33,10 @@ pub const SMALL_DEBT: &str = "FRM.small_debt";
 pub const SMALL_BANKS: &str = "FRM.small_banks";
 /// Each small-firm agent with its twins.
 pub const SMALL_COUNTS: &str = "FRM.small_counts";
+/// Each small firm agent's region, as the jobs' opening places its employees.
+pub const SMALL_REGIONS: &str = "FRM.small_regions";
+/// Each small firm agent's industry, as the jobs' opening weighs the occupations it employs.
+pub const SMALL_INDUSTRIES_DRAWN: &str = "FRM.small_industries";
 
 /// Parties with an amount each, as the opening's draws are kept.
 type Amounts = Vec<(PartyId, u64)>;
@@ -110,16 +114,19 @@ fn draw_firms(
 }
 
 /// Each drawn firm begun as an agent of `k` twins, its region, size, bank and industry at their `places` among the
-/// kind's `width` attributes: the agents with the persons their twins employ, their banks, and their twins.
+/// kind's `width` attributes: the agents with the persons their twins employ, their banks, their twins, their regions
+/// and their industries.
 fn begin_agents(
     (table, directory, space): (&mut AgentTable<SystemBacking>, &mut Directory, &mut AddressSpace),
     (day, k, width): (Day, u64, usize),
     places: [usize; 4],
     firms: &[Firm],
-) -> (Amounts, Amounts, Amounts) {
+) -> [Amounts; 5] {
     let mut cells: Amounts = Vec::with_capacity(firms.len());
     let mut banked: Amounts = Vec::with_capacity(firms.len());
     let mut counts: Amounts = Vec::with_capacity(firms.len());
+    let mut regions: Amounts = Vec::with_capacity(firms.len());
+    let mut industries: Amounts = Vec::with_capacity(firms.len());
     let Ok(twins) = u32::try_from(k) else { capacity_exceeded!("twins of an agent", u32::MAX, k) };
     let twins = phx_core::Weight::new(twins);
     for f in firms {
@@ -134,8 +141,10 @@ fn begin_agents(
         cells.push((party, f.size * k));
         banked.push((party, f.bank.1.get()));
         counts.push((party, k));
+        regions.push((party, u64::from(f.region)));
+        industries.push((party, u64::from(f.industry)));
     }
-    (cells, banked, counts)
+    [cells, banked, counts, regions, industries]
 }
 
 impl SmallFirms {
@@ -179,7 +188,7 @@ impl SmallFirms {
         let (tables, directory, space) = books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(tables, at);
         let places = [region_at, size_at, bank_at, industry_at];
-        let (cells, banked, counts) =
+        let [cells, banked, counts, regions, industries] =
             begin_agents((table, directory, space), (*day, k, kd.decl.attrs.len()), places, &firms_drawn);
         let deposits = p.deposit_share.shared(register).to_f64() * derived(c, "GEN.bank_deposits") / PERCENT * c.gdp;
         let debt = derived(c, "GEN.firm_debt") / PERCENT * c.gdp;
@@ -210,6 +219,8 @@ impl SmallFirms {
             (SMALL_DEBT, debt),
             (SMALL_BANKS, banked),
             (SMALL_COUNTS, counts),
+            (SMALL_REGIONS, regions),
+            (SMALL_INDUSTRIES_DRAWN, industries),
             (DEPOSITS, large_deposits),
             (DEBT, large_debt),
         ] {

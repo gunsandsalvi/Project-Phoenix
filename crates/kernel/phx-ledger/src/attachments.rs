@@ -66,6 +66,13 @@ pub struct Drawing<'a> {
     pub income: f64,
 }
 
+/// The attributes a draw sets: the household's by name, and its persons' by their places and name.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Keys {
+    pub household: Vec<(&'static str, u32)>,
+    pub persons: Vec<(usize, &'static str, u32)>,
+}
+
 /// A system's draw of the households' lines in one country.
 pub trait CountryAttachments {
     /// A household's rows, and the key attributes its draw sets, from the system's own streams under the
@@ -76,15 +83,16 @@ pub trait CountryAttachments {
         household: Drawing<'_>,
         at: (&OpeningCtx<'_>, Subject),
         rows: &mut Vec<DrawnRow>,
-        keys: &mut Vec<(&'static str, u32)>,
+        keys: &mut Keys,
     );
 
     /// Each pool's total, as the households' rows on it sum it, their side's sign — a deposit's positive, a loan's
     /// negative — apportioned over them by their weights once every household is drawn.
     fn pools(&self) -> Vec<(u32, i64)>;
 
-    /// The parties a derived line's other side is apportioned over, with their drawn sizes.
-    fn counterparties(&self, books: &Books, line: &LineSpec) -> Vec<(PartyId, u64)>;
+    /// The parties a derived line's other side is apportioned over, with their drawn sizes; a system that deals its
+    /// lines' counterparties among them all at once draws the deal's lots from `lot`.
+    fn counterparties(&mut self, books: &Books, line: &LineSpec, lot: &mut phx_rand::Draws) -> Vec<(PartyId, u64)>;
 }
 
 /// A system's draw of the households' lines, made ready for each country once its institutions are drawn.

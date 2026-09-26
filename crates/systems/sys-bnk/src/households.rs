@@ -177,7 +177,7 @@ impl CountryAttachments for Country {
         h: Drawing<'_>,
         (ctx, subject): (&OpeningCtx<'_>, Subject),
         rows: &mut Vec<DrawnRow>,
-        keys: &mut Vec<(&'static str, u32)>,
+        keys: &mut phx_ledger::attachments::Keys,
     ) {
         let mut d = ctx.draws(&HouseholdsStream::DECL, subject);
         let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
@@ -194,7 +194,7 @@ impl CountryAttachments for Country {
         let Ok(place) = u32::try_from(at + 1) else {
             violation!(clause = "REP.41", "a bank beyond the attribute's values")
         };
-        keys.push((BANK_ATTR.name, place));
+        keys.household.push((BANK_ATTR.name, place));
         let (kind, terms, first) = self.deposit;
         rows.push(DrawnRow {
             line: LineSpec { kind, terms, counterparty: Missing::Present(bank), first },
@@ -217,7 +217,7 @@ impl CountryAttachments for Country {
         vec![(DEPOSITS, self.deposits), (DEBT, -self.debt)]
     }
 
-    fn counterparties(&self, _: &Books, _: &LineSpec) -> Vec<(PartyId, u64)> {
+    fn counterparties(&mut self, _: &Books, _: &LineSpec, _: &mut phx_rand::Draws) -> Vec<(PartyId, u64)> {
         Vec::new()
     }
 }

@@ -389,6 +389,10 @@ pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>)
 pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)
 pub trait phx_core::decisions::QueuedPayload: core::marker::Sized
 pub fn phx_core::decisions::QueuedPayload::decode(&[i64]) -> core::option::Option<Self>
+impl phx_core::decisions::QueuedPayload for alloc::vec::Vec<u32>
+pub fn alloc::vec::Vec<u32>::decode(&[i64]) -> core::option::Option<alloc::vec::Vec<u32>>
+impl phx_core::decisions::QueuedPayload for bool
+pub fn bool::decode(&[i64]) -> core::option::Option<bool>
 pub fn phx_core::decisions::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>
 pub mod phx_core::directory
 pub enum phx_core::directory::PartyState
@@ -1173,6 +1177,7 @@ pub phx_core::pop::AttrDecl::name: &'static str
 pub phx_core::pop::AttrDecl::values: u32
 pub struct phx_core::pop::PersonAttrDecl
 pub phx_core::pop::PersonAttrDecl::clause: &'static str
+pub phx_core::pop::PersonAttrDecl::initial: phx_num::missing::Missing<u32>
 pub phx_core::pop::PersonAttrDecl::name: &'static str
 pub phx_core::pop::PersonAttrDecl::values: u32
 pub struct phx_core::pop::PopEntry
@@ -1218,6 +1223,7 @@ pub fn phx_core::pop_process::Person::age_on(&self, phx_id::day::Date) -> i64
 pub fn phx_core::pop_process::Person::attr(&self, &str) -> core::option::Option<u32>
 pub fn phx_core::pop_process::Person::birthday_in(&self, i32) -> phx_id::day::Date
 pub fn phx_core::pop_process::Person::next_birthday(&self, phx_id::day::Date) -> phx_id::day::Date
+pub fn phx_core::pop_process::Person::put_attr(&mut self, &'static str, u32)
 pub fn phx_core::pop_process::Person::set_attr(&mut self, &str, u32)
 pub trait phx_core::pop_process::PopProcess: core::marker::Send + core::marker::Sync
 pub fn phx_core::pop_process::PopProcess::bind(&mut self, &phx_core::register::Register)
@@ -1669,10 +1675,13 @@ pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(),
 pub struct phx_core::register::Register
 impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
+pub fn phx_core::register::Register::count_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<u64, alloc::string::String>
 pub fn phx_core::register::Register::countries(&self) -> usize
 pub fn phx_core::register::Register::counts_per_country(&self, &str) -> core::result::Result<alloc::vec::Vec<u64>, alloc::string::String>
+pub fn phx_core::register::Register::decl_by_id(&self, &str) -> core::result::Result<&phx_core::register::PrimDecl, alloc::string::String>
 pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::Result<&phx_core::register::values::Distribution, alloc::string::String>
 pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>
+pub fn phx_core::register::Register::fixed_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<f64, alloc::string::String>
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
@@ -1680,6 +1689,7 @@ pub fn phx_core::register::Register::products(&self, &str) -> core::result::Resu
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
 pub fn phx_core::register::Register::standing_shapes(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::table1(&self, &str) -> core::result::Result<&phx_core::register::values::Table1, alloc::string::String>
+pub fn phx_core::register::Register::table1_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<&phx_core::register::values::Table1, alloc::string::String>
 pub fn phx_core::register::Register::table2_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<&phx_core::register::values::Table2, alloc::string::String>
 pub fn phx_core::register::Register::units(&self) -> &phx_core::register::units::Units
 pub fn phx_core::register::Register::unsourced(&self) -> alloc::vec::Vec<&'static str>
@@ -3193,9 +3203,11 @@ pub fn phx_core::pop_process::Person::age_on(&self, phx_id::day::Date) -> i64
 pub fn phx_core::pop_process::Person::attr(&self, &str) -> core::option::Option<u32>
 pub fn phx_core::pop_process::Person::birthday_in(&self, i32) -> phx_id::day::Date
 pub fn phx_core::pop_process::Person::next_birthday(&self, phx_id::day::Date) -> phx_id::day::Date
+pub fn phx_core::pop_process::Person::put_attr(&mut self, &'static str, u32)
 pub fn phx_core::pop_process::Person::set_attr(&mut self, &str, u32)
 pub struct phx_core::PersonAttrDecl
 pub phx_core::PersonAttrDecl::clause: &'static str
+pub phx_core::PersonAttrDecl::initial: phx_num::missing::Missing<u32>
 pub phx_core::PersonAttrDecl::name: &'static str
 pub phx_core::PersonAttrDecl::values: u32
 pub struct phx_core::Phase
@@ -3335,10 +3347,13 @@ pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::Pa
 pub struct phx_core::Register
 impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
+pub fn phx_core::register::Register::count_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<u64, alloc::string::String>
 pub fn phx_core::register::Register::countries(&self) -> usize
 pub fn phx_core::register::Register::counts_per_country(&self, &str) -> core::result::Result<alloc::vec::Vec<u64>, alloc::string::String>
+pub fn phx_core::register::Register::decl_by_id(&self, &str) -> core::result::Result<&phx_core::register::PrimDecl, alloc::string::String>
 pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::Result<&phx_core::register::values::Distribution, alloc::string::String>
 pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>
+pub fn phx_core::register::Register::fixed_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<f64, alloc::string::String>
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
@@ -3346,6 +3361,7 @@ pub fn phx_core::register::Register::products(&self, &str) -> core::result::Resu
 pub fn phx_core::register::Register::source_refs(&self) -> alloc::vec::Vec<(&'static str, &str)>
 pub fn phx_core::register::Register::standing_shapes(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::table1(&self, &str) -> core::result::Result<&phx_core::register::values::Table1, alloc::string::String>
+pub fn phx_core::register::Register::table1_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<&phx_core::register::values::Table1, alloc::string::String>
 pub fn phx_core::register::Register::table2_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<&phx_core::register::values::Table2, alloc::string::String>
 pub fn phx_core::register::Register::units(&self) -> &phx_core::register::units::Units
 pub fn phx_core::register::Register::unsourced(&self) -> alloc::vec::Vec<&'static str>
@@ -3767,6 +3783,10 @@ impl phx_core::extensions::PublicEventRule for phx_core::events_rule::EventsRule
 pub fn phx_core::events_rule::EventsRule::is_public(&self, &phx_core::events::Event) -> bool
 pub trait phx_core::QueuedPayload: core::marker::Sized
 pub fn phx_core::QueuedPayload::decode(&[i64]) -> core::option::Option<Self>
+impl phx_core::decisions::QueuedPayload for alloc::vec::Vec<u32>
+pub fn alloc::vec::Vec<u32>::decode(&[i64]) -> core::option::Option<alloc::vec::Vec<u32>>
+impl phx_core::decisions::QueuedPayload for bool
+pub fn bool::decode(&[i64]) -> core::option::Option<bool>
 pub trait phx_core::Reads<F: phx_core::facts::FactDef>
 pub trait phx_core::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
 pub fn phx_core::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)

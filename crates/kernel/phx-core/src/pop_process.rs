@@ -48,6 +48,15 @@ impl Person {
         *v = value;
     }
 
+    /// An attribute given its first value, as the opening's draws give a person the attributes other systems than
+    /// its composer declare; one it already holds is set.
+    pub fn put_attr(&mut self, name: &'static str, value: u32) {
+        match self.attrs.iter_mut().find(|(n, _)| *n == name) {
+            Some((_, v)) => *v = value,
+            None => self.attrs.push((name, value)),
+        }
+    }
+
     /// The whole years the person has lived on a date: one more on each birthday, a birthday on the 29th of February
     /// falling on the 1st of March in a common year.
     #[clause("REP.25")]

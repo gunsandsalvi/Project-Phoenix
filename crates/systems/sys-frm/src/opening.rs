@@ -12,6 +12,10 @@ use crate::industry::Industries;
 use crate::{CountPrim, FIRM, FixedPrim, OpeningStream, TablePrim};
 
 const FIRMS: &str = "FRM.firms";
+/// Each large firm's region, as the jobs' opening places its employees.
+pub const REGIONS: &str = "FRM.firm_regions";
+/// Each large firm's industry, as the jobs' opening weighs the occupations it employs.
+pub const INDUSTRIES_DRAWN: &str = "FRM.firm_industries";
 
 /// The primitives the firms' opening reads.
 #[derive(Clone, Copy, Debug)]
@@ -84,6 +88,8 @@ impl Parties {
         let by_size = industries(p.industries, register, c);
         let industry = <if_firm::known::Industry as FactDef>::ITEM.name;
         let mut headcounts: Vec<(PartyId, u64)> = Vec::with_capacity(sizes.len());
+        let mut regions: Vec<(PartyId, u64)> = Vec::with_capacity(sizes.len());
+        let mut industries: Vec<(PartyId, u64)> = Vec::with_capacity(sizes.len());
         for (ordinal, size) in (0_u32..).zip(&sizes) {
             let mut at = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, SITES, ordinal));
             let site = c.site(&mut at);
@@ -93,9 +99,16 @@ impl Parties {
             let firm = parties.begin(FIRM.name, site, day);
             parties.open_fact(firm, industry, i64::from(trade));
             headcounts.push((firm, *size));
+            let Some(region) = c.regions.iter().find(|(_, tiles)| tiles.contains(&site)).map(|(r, _)| *r) else {
+                violation!(clause = "PTY.5", "a firm sited in no region of its country", country = c.id.get());
+            };
+            regions.push((firm, u64::from(region)));
+            industries.push((firm, u64::from(trade)));
         }
         let (b, report) = books::split(opening);
         b.drawn.insert(key(FIRMS, c.id), headcounts);
+        b.drawn.insert(key(REGIONS, c.id), regions);
+        b.drawn.insert(key(INDUSTRIES_DRAWN, c.id), industries);
         report.distributions.push((
             key(FIRMS, c.id),
             format!(

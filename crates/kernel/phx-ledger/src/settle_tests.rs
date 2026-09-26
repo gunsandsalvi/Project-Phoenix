@@ -98,6 +98,7 @@ fn terms(facility: Missing<Facility>) -> Terms {
         underlying: Missing::Absent,
         facility,
         stay: Missing::Absent,
+        class: Vec::new(),
     }
 }
 

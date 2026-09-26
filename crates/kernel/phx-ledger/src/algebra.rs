@@ -279,6 +279,9 @@ pub struct Terms {
     pub facility: Missing<Facility>,
     /// The insolvency procedure whose stay suspends the dues of the rows on lines of these terms while it is open.
     pub stay: Missing<u16>,
+    /// What the contract fixes beyond its dues, by the places its line kind declares: an employment's occupation
+    /// family, skill, hours, notice, severance, region and start band. Contracts differing in any are different.
+    pub class: Vec<u32>,
 }
 
 impl Terms {
@@ -298,6 +301,7 @@ impl Terms {
             underlying: Missing::Absent,
             facility: Missing::Absent,
             stay: Missing::Absent,
+            class: Vec::new(),
         }
     }
 }
@@ -841,6 +845,7 @@ mod tests {
             underlying: Missing::Absent,
             facility: Missing::Absent,
             stay: Missing::Absent,
+            class: Vec::new(),
         }
     }
 

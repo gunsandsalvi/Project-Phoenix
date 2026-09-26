@@ -126,5 +126,6 @@ pub fn plain_terms(
         underlying: Missing::Absent,
         facility: Missing::<Facility>::Absent,
         stay: Missing::Absent,
+        class: Vec::new(),
     }
 }

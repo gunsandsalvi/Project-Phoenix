@@ -69,6 +69,7 @@ fn bond() -> (Calendar, Terms, Day) {
         underlying: Missing::Absent,
         facility: Missing::Absent,
         stay: Missing::Absent,
+        class: Vec::new(),
     };
     let day = schedule.day(&cal, 5);
     (cal, terms, day)

@@ -394,6 +394,7 @@ impl World {
                 pending.push(crate::goods::Gathered { step, rows: Missing::Present(rows), intents });
             }
             self.visits_taken(&b);
+            self.labour_after(b.decl.handler, rows, &slots);
             self.wear_after(i, &slots, (day, step));
             self.spoil_after(i, &slots, (day, step));
             self.visits_rebook(i, h.writes, &slots, (day, step));

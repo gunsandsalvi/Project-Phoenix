@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 libm.workspace = true
 if-pop = { path = "../../interfaces/if-pop" }
+if-labour = { path = "../../interfaces/if-labour" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-ledger = { path = "../../kernel/phx-ledger" }

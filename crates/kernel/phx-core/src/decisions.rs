@@ -42,6 +42,23 @@ pub trait QueuedPayload: Sized {
     fn decode(words: &[i64]) -> Option<Self>;
 }
 
+/// A yes or no, queued as one word: nothing is no, anything else yes.
+impl QueuedPayload for bool {
+    fn decode(words: &[i64]) -> Option<bool> {
+        match words {
+            [w] => Some(*w != 0),
+            _ => None,
+        }
+    }
+}
+
+/// A choice among places, queued as a word each.
+impl QueuedPayload for Vec<u32> {
+    fn decode(words: &[i64]) -> Option<Vec<u32>> {
+        words.iter().map(|w| u32::try_from(*w).ok()).collect()
+    }
+}
+
 /// A player's intent for one decision point, as queued for the next turn.
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct QueuedIntent {
@@ -169,6 +186,15 @@ mod tests {
         runs_on_non_business: true,
         clause: "HH.1",
     };
+
+    #[test]
+    fn plain_choices_decode_from_their_words() {
+        assert_eq!(bool::decode(&[0]), Some(false));
+        assert_eq!(bool::decode(&[3]), Some(true));
+        assert_eq!(bool::decode(&[1, 1]), None, "a yes or no is one word");
+        assert_eq!(Vec::<u32>::decode(&[2, 0]), Some(vec![2, 0]));
+        assert_eq!(Vec::<u32>::decode(&[-1]), None, "no place is negative");
+    }
 
     #[test]
     fn decision_point_needs_schedule_or_wakes() {
