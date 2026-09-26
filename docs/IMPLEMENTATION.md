@@ -6361,7 +6361,15 @@ a thirtieth of the firms a day. Counters, ratcheted: `phx_cap.wear_realisations`
 
 ### S1.05 — `sys-gds`: goods, commodities, stocks and extraction
 
-**Status**: building, in four sub-steps:
+**Status**: done. Goods are instruments per product, grade class and zone; commodities meet in a call at their
+place, other goods between firms at posted prices, both in whole lots and settled in stage 7; extraction by
+Hotelling's rule depletes deposits through GEO; spoilage is realised lot by lot from each lot's age; firms read their
+stock and sales from the ledger; the family of goods (`GDS.goods`) balances every good by place. Every goods mechanism
+waits for firms that hold stocks and rights, drawn at S1.15, so LC-1-13, LC-1-15 and LC-1-46 report not yet and
+LC-1-14 passes. Both reviews were the builder's own: they found the goods' balance counting a stray leg twice, once as
+itself and again in the balance, fixed by carrying strays in the balance; and, from the build run, that a save wrote
+the agents' attribute names a load did not know, so the injection could not load its save, fixed by declaring them.
+The build run of 43750f45 is clean (120 days, peak 2 474 MiB). Its sub-steps:
 - **a** *(built)*: the kernel of goods, orders and trades (architecture §7.11) — the goods table and the rights to
   extract, handlers' reads of their goods (`GoodsView`), transformation and order intents applied at their apply
   points, market kinds and their instances, the call and posted meetings between firms at 6a in whole lots, trades at
@@ -6482,10 +6490,10 @@ stock's and plant's values from here.
 - spoilage and storage as one number.
 
 **Done when**
-- [ ] Goods reconcile by place: the family of goods is registered and clean.
-- [ ] LC-1-14 passes; LC-1-13, LC-1-15 and LC-1-46 report not yet until firms hold and trade goods, and S1.15's Done
+- [x] Goods reconcile by place: the family of goods is registered and clean.
+- [x] LC-1-14 passes; LC-1-13, LC-1-15 and LC-1-46 report not yet until firms hold and trade goods, and S1.15's Done
   when requires them to pass.
-- [ ] Two reviews are done.
+- [x] Two reviews are done.
 
 ---
 
