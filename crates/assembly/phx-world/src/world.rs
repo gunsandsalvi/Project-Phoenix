@@ -77,6 +77,14 @@ pub struct World {
     pub(crate) wears: Vec<crate::wear::WearBound>,
     pub(crate) defaults: std::collections::BTreeSet<crate::defaults::Due>,
     pub(crate) markets: phx_market::markets::Markets,
+    /// The market kinds the systems declare, the templates of the instances the markets keep.
+    pub(crate) market_kinds: phx_market::instances::Kinds,
+    /// What the kernel reads to key goods.
+    pub(crate) goods_frame: crate::goods::Frame,
+    /// The day's orders, matches and trades, from their admission to their settlement.
+    pub(crate) market_day: crate::goods::MarketDay,
+    /// Each good's latest mark where it stands, for the handlers' reads.
+    pub(crate) marks: crate::goods::Marks,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,
     pub(crate) unprocessed: Vec<phx_ledger::fails::Fail>,

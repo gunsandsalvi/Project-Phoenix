@@ -141,6 +141,7 @@ pub fn book_day(orders: &[Order], rules: CallRules<'_>, tick: i64, lot: &mut Dra
             day: o.day,
             reason: o.reason,
             priority: o.priority,
+            lot: 1,
         };
         if let Ok(residue) = Order::new(poster, &asked, tick) {
             closing.push(residue);
@@ -176,6 +177,7 @@ mod tests {
             day: Day::new(1),
             reason: "trade",
             priority: Missing::Absent,
+            lot: 1,
         };
         Order::new(poster, &[Asked { limit: Missing::Present(PriceRaw::from_raw(limit)), qty }], 1).unwrap()
     }

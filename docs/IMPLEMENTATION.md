@@ -6361,7 +6361,18 @@ a thirtieth of the firms a day. Counters, ratcheted: `phx_cap.wear_realisations`
 
 ### S1.05 — `sys-gds`: goods, commodities, stocks and extraction
 
-**Status**: planned
+**Status**: in progress, in four sub-steps:
+- **a** *(built)*: the kernel of goods, orders and trades (architecture §7.11) — the goods table and the rights to
+  extract, handlers' reads of their goods (`GoodsView`), transformation and order intents applied at their apply
+  points, market kinds and their instances, the call and posted meetings between firms at 6a in whole lots, trades at
+  6d settled in stage 7 under `traded`, deliveries kept as sales;
+- **b**: `sys-gds` — `GDS.toml` (grade classes, spoilage rates, storage), the market kinds, extraction by Hotelling's
+  rule, stockists, spoilage realised at visits, crops and stocks lost to weather and catastrophes, the pressure fact;
+- **c**: the firms' wiring — input orders (FRM.7), revenue on delivery (FRM.13), surprise wakes (REP.35), the 5a
+  outlooks over prints (VAL.23), the cost flow (ACC.6), solvent closures;
+- **d**: the GDS.10 family, LC-1-13 to LC-1-15 and LC-1-46, counters, the reviews and the build run.
+
+Who holds each deposit's right is drawn at the Stage 1 opening (S1.15), with the firms' stocks.
 
 **Clauses**:
 - STATE: GDS.1, GDS.2; GDS.3 *(part: goods and commodities; land is HSG's, S2.05)*.

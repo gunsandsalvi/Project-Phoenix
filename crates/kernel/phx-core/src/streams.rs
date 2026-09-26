@@ -121,6 +121,12 @@ impl Streams {
         self.entries.is_empty()
     }
 
+    /// A declared stream by its name, as a market's declaration names the stream its lots are drawn from.
+    #[must_use]
+    pub fn named(&self, name: &str) -> Option<StreamDecl> {
+        self.entries.binary_search_by_key(&name, |e| e.decl.name).ok().and_then(|i| self.entries.get(i)).map(|e| e.decl)
+    }
+
     fn entry(&self, decl: &StreamDecl) -> Entry {
         let found =
             self.entries.binary_search_by_key(&decl.name, |e| e.decl.name).ok().and_then(|i| self.entries.get(i));

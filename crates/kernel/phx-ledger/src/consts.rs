@@ -49,3 +49,19 @@ pub const ROUTE_SHARDS: usize = 256;
 pub const RECORD_SHARDS: usize = 64;
 /// The bits of a run of slots dealt to one records shard: runs of a thousand slots keep a shard's records dense.
 pub const RECORD_RUN_BITS: u32 = 10;
+
+/// The words of a transformation's leg in a handler's intent: its product and grade, its quantity, its source's tag
+/// and value, and its cost.
+pub const LEG_WORDS: usize = 5;
+/// A leg's source tagged as the way that made it.
+pub const WAY: u64 = 0;
+/// A leg's source tagged as the deposit it was taken from.
+pub const DEPOSIT: u64 = 1;
+/// A leg's source tagged as the purchase that used it up.
+pub const PURCHASE: u64 = 2;
+/// A leg's source tagged as spoiling in stock.
+pub const SPOILAGE: u64 = 3;
+/// A leg's source tagged as the hazard that destroyed it.
+pub const HAZARD: u64 = 4;
+/// A leg's source tagged as the chain it wore along.
+pub const WEAR: u64 = 5;

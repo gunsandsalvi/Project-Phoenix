@@ -177,6 +177,8 @@ pub struct Ledger<B: Backing = SystemBacking> {
     pub procedures: BTreeSet<u16>,
     /// The chains of classes units wear along.
     pub chains: crate::chains::Chains,
+    /// The goods issued and the deposits' rights.
+    pub goods: crate::goods::Goods,
     pub(crate) day: DayBook,
 }
 
@@ -318,6 +320,7 @@ impl<B: Backing> Ledger<B> {
             numbered: (Day::new(0), 0),
             procedures: BTreeSet::new(),
             chains: crate::chains::Chains::default(),
+            goods: crate::goods::Goods::default(),
             day: DayBook::default(),
         }
     }
@@ -824,7 +827,11 @@ impl<B: Backing> Ledger<B> {
         if let Missing::Present((moved, ccy)) = worth
             && moved != 0
         {
-            let effect = if moved < 0 { decl.paid } else { decl.received };
+            let (paid, received) = match (leg.kind, decl.held) {
+                (LegKind::Row(_), _) | (_, Missing::Absent) => (decl.paid, decl.received),
+                (_, Missing::Present(held)) => held,
+            };
+            let effect = if moved < 0 { paid } else { received };
             let amount = Money::new(moved, ccy);
             self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
         }
@@ -1038,6 +1045,7 @@ impl<B: Backing> Ledger<B> {
         self.arrears.save(w);
         self.procedures.save(w);
         self.chains.save(w);
+        self.goods.save(w);
     }
 
     /// The ledger read back over the build's own declarations, which `decls` carries from the declarations phase.
@@ -1070,6 +1078,7 @@ impl<B: Backing> Ledger<B> {
             numbered: (Day::new(0), 0),
             procedures: BTreeSet::load(r)?,
             chains: crate::chains::Chains::load(r)?,
+            goods: crate::goods::Goods::load(r)?,
             day: DayBook::default(),
         })
     }

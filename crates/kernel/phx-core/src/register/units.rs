@@ -18,6 +18,8 @@ pub enum UnitKind {
     Dwellings,
     SquareMetres,
     Kilometres,
+    /// A right over a named place, such as to extract a deposit.
+    Rights,
 }
 
 /// A unit as the world declares it: its name, what it counts, and its price exponent, the power of ten by which a

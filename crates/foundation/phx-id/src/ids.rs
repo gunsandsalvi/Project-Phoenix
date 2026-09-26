@@ -40,7 +40,7 @@ id!(
     /// An instrument keeps its identity after it is retired, so the identity is never handed out twice.
     InstrumentId(u32)
 );
-id!(MarketId(u16));
+id!(MarketId(u32));
 id!(TileId(u32));
 id!(ZoneId(u32));
 id!(RegionId(u16));

@@ -59,6 +59,9 @@ pub struct Declarations {
     /// Each line-owning system's draw of the households' lines, which the household's formation calls; opaque here,
     /// since the kernel crate that knows lines lies above this one.
     pub attachments: Vec<(&'static str, Box<dyn core::any::Any + Send + Sync>)>,
+    /// Each market kind a system declares, the template of its instances; opaque here, since the kernel crate that
+    /// knows markets lies above this one.
+    pub markets: Vec<(&'static str, Box<dyn core::any::Any + Send + Sync>)>,
     pub pop: Vec<PopEntry>,
     pub pop_processes: Vec<(&'static str, Box<dyn crate::pop_process::PopProcess>)>,
     /// Each decision taken on the rows of a kind as they come due.
@@ -175,6 +178,11 @@ impl Declarations {
     /// A draw of the households' lines of the system's kinds, made with each household as the opening forms it.
     pub fn attachment(&mut self, draw: Box<dyn core::any::Any + Send + Sync>) {
         self.attachments.push((self.system, draw));
+    }
+
+    /// A kind of market the system runs, whose instances its orders name.
+    pub fn market(&mut self, kind: Box<dyn core::any::Any + Send + Sync>) {
+        self.markets.push((self.system, kind));
     }
 
     /// A process on a population kind's members, whose outcome the declaring system writes.

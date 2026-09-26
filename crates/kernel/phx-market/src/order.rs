@@ -40,12 +40,14 @@ pub enum Refusal {
     AnyPrice,
     NoQuantity,
     OffTick,
+    OffLot,
     Uncovered,
 }
 
 /// An order: its poster, market and side, its schedule of steps, when it meets on a book, the day it was posted and
-/// the decision point it came from, its place in a declared priority where the market rations by one, and the
-/// units covering it when it offers units its poster holds.
+/// the decision point it came from, its place in a declared priority where the market rations by one, the lot it
+/// trades in — an agent's multiplicity, so each twin's share stays whole, one for an individual — and the units
+/// covering it when it offers units its poster holds.
 #[clause("MKT.3", "MKT.9", "MKT.16", "MKT.17")]
 #[derive(Debug, PartialEq, Eq)]
 pub struct Order {
@@ -57,10 +59,12 @@ pub struct Order {
     pub day: Day,
     pub reason: &'static str,
     pub priority: Missing<u32>,
+    pub lot: i64,
     pub cover: Missing<Covered>,
 }
 
-/// Where an order comes from: its poster, market and side, when it meets, its day, its decision point and priority.
+/// Where an order comes from: its poster, market and side, when it meets, its day, its decision point, its priority
+/// and its lot.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Poster {
     pub party: PartyId,
@@ -70,11 +74,12 @@ pub struct Poster {
     pub day: Day,
     pub reason: &'static str,
     pub priority: Missing<u32>,
+    pub lot: i64,
 }
 
 impl Order {
     /// An order from its poster's steps on the market's tick, refused if any step has no limit or a limit at any
-    /// price, no quantity, or a limit off the tick.
+    /// price, no quantity, a limit off the tick, or a quantity that is not whole lots.
     ///
     /// # Errors
     /// The refusal, when a step breaks a rule.
@@ -91,6 +96,9 @@ impl Order {
             if limit.raw() % tick != 0 {
                 return Err(Refusal::OffTick);
             }
+            if poster.lot <= 0 || a.qty % poster.lot != 0 {
+                return Err(Refusal::OffLot);
+            }
             steps.push(Step { limit, qty: a.qty });
         }
         if steps.is_empty() {
@@ -105,6 +113,7 @@ impl Order {
             day: poster.day,
             reason: poster.reason,
             priority: poster.priority,
+            lot: poster.lot,
             cover: Missing::Absent,
         })
     }
@@ -155,6 +164,7 @@ mod tests {
             day: Day::new(3),
             reason: "invest",
             priority: Missing::Absent,
+            lot: 1,
         }
     }
 

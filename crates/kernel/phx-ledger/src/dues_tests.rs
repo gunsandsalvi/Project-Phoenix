@@ -175,6 +175,7 @@ fn opened() -> Opened {
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     let mut report = GenReport::new(Some(Box::new(kept)));
     let banked = [(firms[0], 0, 1_000_000), (firms[1], 1, 1_000_000), (firms[2], 0, 1_000)];
@@ -333,6 +334,7 @@ fn a_cleared_line_pays_row_by_row_and_draws_who_loses() {
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     let banked =
         [(payers[0], 0, 10_000), (payers[1], 1, 100), (claimants[0], 0, 0), (claimants[1], 1, 0), (claimants[2], 0, 0)];
@@ -422,6 +424,7 @@ fn a_cleared_line_fails_the_rows_of_holders_with_no_money() {
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     let banked = [(payers[0], 0, 10_000), (claimants[0], 0, 0), (claimants[1], 1, 0)];
     let mut legs = vec![open(cb, reserves, Side::Liability, 2, BALANCE)];

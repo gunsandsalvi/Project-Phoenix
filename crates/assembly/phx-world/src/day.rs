@@ -1,8 +1,8 @@
 use phx_audit::CloseInputs;
 use phx_core::StreamDef;
 use phx_core::{
-    AUDIT_SUBSTEP, ColumnTrace, CtxParts, EventIntent, EventStore, FactStore, IntentDef, Intents, NewEvent,
-    QueuedIntent, ReadTrace, SUB_STEPS, SubStep, SubStepInfo, SubStepKind,
+    AUDIT_SUBSTEP, ColumnTrace, CtxParts, EventIntent, FactStore, IntentDef, Intents, NewEvent, QueuedIntent,
+    ReadTrace, SUB_STEPS, SubStep, SubStepInfo, SubStepKind,
 };
 use phx_exec::Clock;
 use phx_exec::site::{self, Site};
@@ -135,7 +135,7 @@ impl World {
         // The agents' day counts from its first sub-step, as parties end in default at 2e before the agents at 3b.
         self.agent_day = crate::agents::AgentDay::of(day);
         self.visit_today = crate::visits::VisitDay::of(day);
-        let mut pending: Vec<(SubStep, Intents)> = Vec::new();
+        let mut pending: Vec<crate::goods::Gathered> = Vec::new();
         let mut dues = DaySettlement::default();
         for info in &SUB_STEPS {
             let has_handlers = self.graph.at(info.step).next().is_some();
@@ -179,7 +179,14 @@ impl World {
                 self.defaults_end(day);
             }
             if is_apply_point(info) {
-                apply(day, &mut pending, &mut self.events, self.event_kinds.len());
+                self.apply(day, info.step, &mut pending);
+            }
+            if info.step == SubStep::S6a {
+                self.markets_meet(day);
+                self.goods_marks();
+            }
+            if info.step == SubStep::S6d {
+                self.markets_trade(day);
             }
             if info.step == SubStep::S7c {
                 let streams = &self.streams;
@@ -190,6 +197,7 @@ impl World {
                 dues =
                     self.books.settle_day(&self.due, day, &self.calendar, &self.closed, &draws_of, self.audit.stream());
                 self.estates_settle(day);
+                self.markets_settle(SubStep::S7c);
             }
             if info.step == SubStep::S9b {
                 let period = crate::registry::period_of(&self.calendar, day);
@@ -225,7 +233,7 @@ impl World {
     /// built for the chunk. Intents join the pending list in (table, chunk, handler) order. A traced chunk records its
     /// reads, its writes and the streams it opens. Returns the rows visited.
     #[clause("TIME.6", "TIME.10")]
-    fn dispatch(&mut self, day: Day, step: SubStep, pending: &mut Vec<(SubStep, Intents)>) -> u64 {
+    fn dispatch(&mut self, day: Day, step: SubStep, pending: &mut Vec<crate::goods::Gathered>) -> u64 {
         let mut visited = 0_u64;
         if matches!(step, SubStep::S5b | SubStep::S5c) {
             visited += self.visits_run(day, step, pending);
@@ -271,6 +279,7 @@ impl World {
                                 let facts: &mut dyn FactStore = &mut table.columns;
                                 facts
                             },
+                            goods: &phx_core::NoGoods,
                             intents: &mut intents,
                             bindings: &mut self.bindings,
                             rules: &self.rules,
@@ -283,7 +292,7 @@ impl World {
                     for (stream, subject) in opens {
                         self.trace.opened(Open { stream, subject, substep: step.ordinal() });
                     }
-                    pending.push((step, intents));
+                    pending.push(crate::goods::Gathered { step, rows: Missing::Absent, intents });
                     site::leave();
                 }
             }
@@ -401,31 +410,63 @@ impl World {
     }
 }
 
-/// The one apply routine, in the order the intents were gathered: an event is recorded, dated by the sub-step that
-/// drew it; until settlement exists every other intent is refused, since none can be applied yet.
-#[clause("TIME.6", "CHN.4")]
-fn apply(day: Day, pending: &mut Vec<(SubStep, Intents)>, events: &mut EventStore, kinds: usize) {
-    for (step, intents) in pending.drain(..) {
-        for (name, words) in intents.iter() {
-            if name != EventIntent::NAME {
-                violation!(clause = "TIME.6", "an intent before the apply routine can settle it", words = words.len());
+impl World {
+    /// The one apply routine, in the order the intents were gathered: an event is recorded, dated by the sub-step that
+    /// drew it; a transformation of a row's goods is applied to the books; an order is admitted into the day's book.
+    #[clause("TIME.6", "CHN.4", "SET.9", "MKT.17")]
+    fn apply(&mut self, day: Day, at: SubStep, pending: &mut Vec<crate::goods::Gathered>) {
+        for g in std::mem::take(pending) {
+            for (name, words) in g.intents.iter() {
+                match name {
+                    EventIntent::NAME => self.record_event(day, g.step, words),
+                    phx_ledger::intents::Transform::NAME => {
+                        let Some(t) = phx_ledger::intents::Transform::decode(words) else {
+                            violation!(
+                                clause = "CHN.4",
+                                "a transformation its words do not encode",
+                                words = words.len()
+                            );
+                        };
+                        self.apply_transform(day, at, rows_of(g.rows), &t);
+                    }
+                    phx_market::intents::OrderIntent::NAME => {
+                        let Some(o) = phx_market::intents::OrderIntent::decode(words) else {
+                            violation!(clause = "CHN.4", "an order its words do not encode", words = words.len());
+                        };
+                        self.admit_order(day, g.step, rows_of(g.rows), &o);
+                    }
+                    _ => {
+                        violation!(clause = "TIME.6", "an intent the apply routine does not know", words = words.len())
+                    }
+                }
             }
-            let Some(e) = EventIntent::decode(words) else {
-                violation!(clause = "CHN.4", "an event intent its words do not encode", words = words.len());
-            };
-            if usize::from(e.kind) >= kinds {
-                violation!(clause = "CHN.4", "an event of a kind never declared", kind = e.kind);
-            }
-            events.record(NewEvent {
-                day,
-                substep: step,
-                kind: e.kind,
-                subjects: &e.subjects,
-                details: &e.details,
-                develops_from: Missing::Absent,
-            });
         }
     }
+
+    fn record_event(&mut self, day: Day, step: SubStep, words: &[u64]) {
+        let Some(e) = EventIntent::decode(words) else {
+            violation!(clause = "CHN.4", "an event intent its words do not encode", words = words.len());
+        };
+        if usize::from(e.kind) >= self.event_kinds.len() {
+            violation!(clause = "CHN.4", "an event of a kind never declared", kind = e.kind);
+        }
+        self.events.record(NewEvent {
+            day,
+            substep: step,
+            kind: e.kind,
+            subjects: &e.subjects,
+            details: &e.details,
+            develops_from: Missing::Absent,
+        });
+    }
+}
+
+/// The rows an intent acting on a party came from; a kernel table's rows are no parties.
+fn rows_of(rows: Missing<crate::goods::Rows>) -> crate::goods::Rows {
+    let Missing::Present(r) = rows else {
+        violation!(clause = "TIME.6", "an intent on a party from a table of no parties");
+    };
+    r
 }
 
 #[cfg(test)]

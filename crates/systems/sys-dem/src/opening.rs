@@ -34,7 +34,13 @@ use crate::{CompositionStream, EducationStream, HealthStream, MeansStream, Perso
 const HOUSEHOLDS: &str = "DEM.households";
 
 /// What the households' opening instructions are for: capital on both sides, since they open the books.
-const REASON: ReasonDecl = ReasonDecl { name: "DEM opening", order: 0, paid: Effect::Equity, received: Effect::Equity };
+const REASON: ReasonDecl = ReasonDecl {
+    name: "DEM opening",
+    order: 0,
+    paid: Effect::Equity,
+    received: Effect::Equity,
+    held: phx_num::Missing::Absent,
+};
 
 /// The households' declarations in the books: their opening's reason.
 #[derive(Debug)]

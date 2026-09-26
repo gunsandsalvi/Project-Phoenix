@@ -174,6 +174,7 @@ pub fn settlement<B: Backing>(
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     let mut report = GenReport::default();
     let cb = books.parties.begin(CENTRAL_BANK, TileId::new(0), Day::new(0));

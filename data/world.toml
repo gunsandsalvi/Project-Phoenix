@@ -212,3 +212,10 @@ kind = "physical"
 price_exp = 4
 source = "measured"
 source_ref = "The quantity of personal services one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+
+[[unit]]
+name = "extraction right"
+kind = "rights"
+price_exp = 0
+source = "assumed"
+source_ref = "A right to extract one deposit is one unit over its tile, held whole and priced whole in a currency's smallest units, as a mining lease or concession is granted and sold."

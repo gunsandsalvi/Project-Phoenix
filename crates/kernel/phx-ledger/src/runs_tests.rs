@@ -111,6 +111,7 @@ fn fixture() -> Fixture {
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     for line in lines {
         let legs = vec![open(bank, line, Side::Asset), open(firm, line, Side::Liability)];

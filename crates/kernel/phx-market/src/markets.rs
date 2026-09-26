@@ -39,6 +39,7 @@ pub struct Markets {
     pub tape: Tape,
     pub linked: BTreeMap<MarketId, LinkedCall>,
     pub days: Vec<MarketDay>,
+    pub made: crate::instances::Made,
 }
 
 /// The depth and width a meeting's orders posted.

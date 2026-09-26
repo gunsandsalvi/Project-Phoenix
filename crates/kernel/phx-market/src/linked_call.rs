@@ -87,7 +87,7 @@ mod tests {
         Node {
             key,
             cap: cap.map_or(Missing::Absent, Missing::Present),
-            market: if market { Missing::Present(MarketId::new(u16::try_from(key).unwrap())) } else { Missing::Absent },
+            market: if market { Missing::Present(MarketId::new(u32::try_from(key).unwrap())) } else { Missing::Absent },
             last: Missing::Absent,
         }
     }

@@ -33,25 +33,84 @@ pub struct DueReasons {
     /// Units worn from one class of a chain to the next, or out of its last: what they lose of their cost is the
     /// depreciation, an expense whichever class it leaves.
     pub worn: ReasonId,
+    /// Goods delivered against money at a market's price: the buyer's money becomes stock at what it paid, the
+    /// seller's money received is revenue and the cost its units carried out is the cost of what it sold.
+    pub traded: ReasonId,
 }
 
 impl DueReasons {
     pub fn declare(reasons: &mut Reasons) -> DueReasons {
-        let payment =
-            ReasonDecl { name: "contract payment", order: 0, paid: Effect::Liability, received: Effect::Asset };
-        let principal =
-            ReasonDecl { name: "principal repaid", order: 1, paid: Effect::Liability, received: Effect::Asset };
+        let payment = ReasonDecl {
+            name: "contract payment",
+            order: 0,
+            paid: Effect::Liability,
+            received: Effect::Asset,
+            held: phx_num::Missing::Absent,
+        };
+        let principal = ReasonDecl {
+            name: "principal repaid",
+            order: 1,
+            paid: Effect::Liability,
+            received: Effect::Asset,
+            held: phx_num::Missing::Absent,
+        };
         // Neither moves money, so they share a place after the payments in the order.
-        let left = ReasonDecl { name: "members left", order: 2, paid: Effect::Equity, received: Effect::Equity };
-        let succeeded =
-            ReasonDecl { name: "estate succeeded", order: 2, paid: Effect::Equity, received: Effect::Equity };
-        let destroyed =
-            ReasonDecl { name: "destroyed by a hazard", order: 2, paid: Effect::Expense, received: Effect::Equity };
-        let written_off = ReasonDecl { name: "written off", order: 2, paid: Effect::Expense, received: Effect::Equity };
-        let distributed =
-            ReasonDecl { name: "estate distributed", order: 2, paid: Effect::Equity, received: Effect::Equity };
-        let seated = ReasonDecl { name: "twin seated", order: 2, paid: Effect::Equity, received: Effect::Equity };
-        let worn = ReasonDecl { name: "worn", order: 2, paid: Effect::Expense, received: Effect::Expense };
+        let left = ReasonDecl {
+            name: "members left",
+            order: 2,
+            paid: Effect::Equity,
+            received: Effect::Equity,
+            held: phx_num::Missing::Absent,
+        };
+        let succeeded = ReasonDecl {
+            name: "estate succeeded",
+            order: 2,
+            paid: Effect::Equity,
+            received: Effect::Equity,
+            held: phx_num::Missing::Absent,
+        };
+        let destroyed = ReasonDecl {
+            name: "destroyed by a hazard",
+            order: 2,
+            paid: Effect::Expense,
+            received: Effect::Equity,
+            held: phx_num::Missing::Absent,
+        };
+        let written_off = ReasonDecl {
+            name: "written off",
+            order: 2,
+            paid: Effect::Expense,
+            received: Effect::Equity,
+            held: phx_num::Missing::Absent,
+        };
+        let distributed = ReasonDecl {
+            name: "estate distributed",
+            order: 2,
+            paid: Effect::Equity,
+            received: Effect::Equity,
+            held: phx_num::Missing::Absent,
+        };
+        let seated = ReasonDecl {
+            name: "twin seated",
+            order: 2,
+            paid: Effect::Equity,
+            received: Effect::Equity,
+            held: phx_num::Missing::Absent,
+        };
+        let worn = ReasonDecl {
+            name: "worn",
+            order: 2,
+            paid: Effect::Expense,
+            received: Effect::Expense,
+            held: phx_num::Missing::Absent,
+        };
+        let traded = ReasonDecl {
+            name: "traded",
+            order: 0,
+            paid: Effect::Asset,
+            received: Effect::Revenue,
+            held: phx_num::Missing::Present((Effect::Expense, Effect::Asset)),
+        };
         DueReasons {
             payment: reasons.declare(payment),
             principal: reasons.declare(principal),
@@ -62,6 +121,7 @@ impl DueReasons {
             distributed: reasons.declare(distributed),
             seated: reasons.declare(seated),
             worn: reasons.declare(worn),
+            traded: reasons.declare(traded),
         }
     }
 }
@@ -283,6 +343,37 @@ impl<B: Backing> Books<B> {
     pub(crate) fn pay(&self, from: PartyId, to: PartyId, x: i64, ccy: Ccy) -> Vec<LegRec> {
         let mut legs = Vec::new();
         self.pay_into(from, to, (x, ccy), &mut legs);
+        legs
+    }
+
+    /// The legs of a trade: a seller's units of an instrument delivered to the buyer, who holds them at what it paid,
+    /// against that amount of money paid by the buyer to the seller.
+    #[clause("SET.4", "GDS.2")]
+    #[must_use]
+    pub fn trade_legs(
+        &self,
+        (seller, buyer): (PartyId, PartyId),
+        (good, qty): (phx_id::InstrumentId, i64),
+        (amount, ccy): (i64, Ccy),
+    ) -> Vec<LegRec> {
+        let unit = self.ledger.instruments.get(good).unit;
+        let mut legs = vec![
+            LegRec {
+                party: seller,
+                account: AccountRef::Instrument(good),
+                qty: -qty,
+                denom: Denom::Unit(unit),
+                kind: LegKind::Units { cost: 0 },
+            },
+            LegRec {
+                party: buyer,
+                account: AccountRef::Instrument(good),
+                qty,
+                denom: Denom::Unit(unit),
+                kind: LegKind::Units { cost: amount },
+            },
+        ];
+        self.pay_into(buyer, seller, (amount, ccy), &mut legs);
         legs
     }
 

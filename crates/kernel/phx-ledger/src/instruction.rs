@@ -34,13 +34,23 @@ pub enum Effect {
 }
 
 /// A reason an instruction is made, as the system that makes it declares it: its place in the declared payment order
-/// within a sub-step, and its accounting effect on the side that pays and the side that receives.
+/// within a sub-step; its accounting effect on the side that pays and the side that receives; and, where it differs,
+/// the effect of the cost units carry out of a holding and into one, as a sale's cost of goods is an expense while
+/// its money received is revenue.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ReasonDecl {
     pub name: &'static str,
     pub order: u8,
     pub paid: Effect,
     pub received: Effect,
+    pub held: Missing<(Effect, Effect)>,
+}
+
+/// A declared name as one number, as a handler's intent carries a reason or a market kind: its FNV-1a hash, the same
+/// on every build.
+#[must_use]
+pub fn name_code(name: &str) -> u64 {
+    phx_rand::key::fnv1a64(name.as_bytes())
 }
 
 /// A declared reason.
@@ -56,6 +66,10 @@ pub struct Reasons {
 
 impl Reasons {
     pub fn declare(&mut self, decl: ReasonDecl) -> ReasonId {
+        let code = name_code(decl.name);
+        if self.decls.iter().any(|d| name_code(d.name) == code) {
+            violation!(clause = "SET.1", "two reasons of one name or code");
+        }
         let Ok(index) = u16::try_from(self.decls.len()) else {
             capacity_exceeded!("reasons", u16::MAX, self.decls.len());
         };
@@ -72,6 +86,15 @@ impl Reasons {
             capacity_exceeded!("reasons", u16::MAX, i);
         };
         ReasonId(index)
+    }
+
+    /// A declared reason by its name's code, as a handler's intent carries it.
+    pub fn coded(&self, code: u64) -> Missing<ReasonId> {
+        match self.decls.iter().position(|d| name_code(d.name) == code).map(u16::try_from) {
+            Some(Ok(i)) => Missing::Present(ReasonId(i)),
+            Some(Err(_)) => capacity_exceeded!("reasons", u16::MAX, self.decls.len()),
+            None => Missing::Absent,
+        }
     }
 
     /// Every declared reason's name, in the order declared.
@@ -182,14 +205,14 @@ pub enum RowOp {
 }
 
 /// What accounts for a transformation's units: the way that produced them, the deposit they were taken from, the
-/// purchase, storage or hazard event that used them up, or the wear of a declared chain of classes that moved them
-/// from one class to the next or retired them.
+/// purchase that used them up, their spoiling in stock over a number of days, the hazard event that destroyed them,
+/// or the wear of a declared chain of classes that moved them from one class to the next or retired them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Source {
     Way(u32),
     Deposit(u32),
     Purchase(u64),
-    Storage(u64),
+    Spoilage(u64),
     Hazard(u64),
     Wear(u32),
 }

@@ -141,6 +141,7 @@ fn world() -> World {
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     let mut legs = vec![open(cb, reserves, Side::Liability, 2, BALANCE)];
     for bank in banks {

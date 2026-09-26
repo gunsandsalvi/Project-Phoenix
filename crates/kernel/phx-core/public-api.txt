@@ -735,11 +735,15 @@ pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Lim
 pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
+pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
+pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
+pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
@@ -748,6 +752,7 @@ pub phx_core::handler::CtxParts::bindings: &'a mut phx_core::register::limit::Bi
 pub phx_core::handler::CtxParts::date: phx_id::day::Date
 pub phx_core::handler::CtxParts::day: phx_id::day::Day
 pub phx_core::handler::CtxParts::facts: &'a mut S
+pub phx_core::handler::CtxParts::goods: &'a dyn phx_core::handler::GoodsView
 pub phx_core::handler::CtxParts::intents: &'a mut phx_core::handler::Intents
 pub phx_core::handler::CtxParts::opens: core::option::Option<&'a mut alloc::vec::Vec<phx_core::handler::Opened>>
 pub phx_core::handler::CtxParts::own: &'a (dyn core::any::Any + core::marker::Send + core::marker::Sync)
@@ -755,11 +760,23 @@ pub phx_core::handler::CtxParts::queue: &'a mut phx_core::decisions::PlayerQueue
 pub phx_core::handler::CtxParts::register: &'a phx_core::register::Register
 pub phx_core::handler::CtxParts::rules: &'a phx_core::rules::RuleTable
 pub phx_core::handler::CtxParts::streams: &'a phx_core::streams::Streams
+pub struct phx_core::handler::HeldRight
+pub phx_core::handler::HeldRight::deposit: u32
+pub phx_core::handler::HeldRight::grade: i64
+pub phx_core::handler::HeldRight::opening: phx_num::missing::Missing<i64>
+pub phx_core::handler::HeldRight::product: u16
+pub phx_core::handler::HeldRight::remaining: phx_num::missing::Missing<i64>
 pub struct phx_core::handler::Intents
 impl phx_core::handler::Intents
 pub fn phx_core::handler::Intents::is_empty(&self) -> bool
 pub fn phx_core::handler::Intents::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (&'static str, &[u64])> + '_
 pub fn phx_core::handler::Intents::len(&self) -> usize
+pub struct phx_core::handler::NoGoods
+impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
+pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
 pub trait phx_core::handler::Emits<I: phx_core::handler::IntentDef>
 pub trait phx_core::handler::FactStore
@@ -771,6 +788,16 @@ pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::id
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+pub trait phx_core::handler::GoodsView: core::fmt::Debug
+pub fn phx_core::handler::GoodsView::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
+pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::HandlerDecl: 'static
 pub const phx_core::handler::HandlerDecl::CLAUSE: &'static str
 pub const phx_core::handler::HandlerDecl::INTENTS: &'static [&'static str]
@@ -1313,6 +1340,7 @@ pub phx_core::register::units::UnitKind::Hours
 pub phx_core::register::units::UnitKind::Kilometres
 pub phx_core::register::units::UnitKind::Persons
 pub phx_core::register::units::UnitKind::Physical
+pub phx_core::register::units::UnitKind::Rights
 pub phx_core::register::units::UnitKind::Shares
 pub phx_core::register::units::UnitKind::SquareMetres
 pub struct phx_core::register::units::UnitDecl
@@ -1708,6 +1736,7 @@ pub struct phx_core::streams::Streams
 impl phx_core::streams::Streams
 pub fn phx_core::streams::Streams::is_empty(&self) -> bool
 pub fn phx_core::streams::Streams::len(&self) -> usize
+pub fn phx_core::streams::Streams::named(&self, &str) -> core::option::Option<phx_core::streams::StreamDecl>
 pub fn phx_core::streams::Streams::new(phx_rand::key::Seed, &[phx_core::streams::StreamDecl]) -> core::result::Result<phx_core::streams::Streams, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::streams::Streams::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day, u8) -> phx_rand::draws::Draws
 pub fn phx_core::streams::Streams::open_keyed(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject) -> phx_rand::draws::Draws
@@ -1796,6 +1825,7 @@ pub phx_core::system::Declarations::hazards: alloc::vec::Vec<(&'static str, phx_
 pub phx_core::system::Declarations::insolvency: alloc::vec::Vec<(&'static str, phx_core::insolvency::InsolvencyDecl)>
 pub phx_core::system::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_core::kinds::KindDecl)>
 pub phx_core::system::Declarations::kinks: phx_core::kinks::KinkRegistry
+pub phx_core::system::Declarations::markets: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::system::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
 pub phx_core::system::Declarations::occasions: alloc::vec::Vec<(&'static str, phx_core::occasions::OccasionDecl)>
 pub phx_core::system::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
@@ -1822,6 +1852,7 @@ pub fn phx_core::system::Declarations::implement<I: 'static, O: 'static>(&mut se
 pub fn phx_core::system::Declarations::insolvency(&mut self, phx_core::insolvency::InsolvencyDecl)
 pub fn phx_core::system::Declarations::kind(&mut self, phx_core::kinds::KindDecl)
 pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl)
+pub fn phx_core::system::Declarations::market(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
 pub fn phx_core::system::Declarations::occasion(&mut self, phx_core::occasions::OccasionDecl)
@@ -2496,11 +2527,15 @@ pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Lim
 pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
+pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
+pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
+pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
@@ -2509,6 +2544,7 @@ pub phx_core::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
 pub phx_core::CtxParts::date: phx_id::day::Date
 pub phx_core::CtxParts::day: phx_id::day::Day
 pub phx_core::CtxParts::facts: &'a mut S
+pub phx_core::CtxParts::goods: &'a dyn phx_core::handler::GoodsView
 pub phx_core::CtxParts::intents: &'a mut phx_core::handler::Intents
 pub phx_core::CtxParts::opens: core::option::Option<&'a mut alloc::vec::Vec<phx_core::handler::Opened>>
 pub phx_core::CtxParts::own: &'a (dyn core::any::Any + core::marker::Send + core::marker::Sync)
@@ -2556,6 +2592,7 @@ pub phx_core::Declarations::hazards: alloc::vec::Vec<(&'static str, phx_core::ha
 pub phx_core::Declarations::insolvency: alloc::vec::Vec<(&'static str, phx_core::insolvency::InsolvencyDecl)>
 pub phx_core::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_core::kinds::KindDecl)>
 pub phx_core::Declarations::kinks: phx_core::kinks::KinkRegistry
+pub phx_core::Declarations::markets: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
 pub phx_core::Declarations::occasions: alloc::vec::Vec<(&'static str, phx_core::occasions::OccasionDecl)>
 pub phx_core::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
@@ -2582,6 +2619,7 @@ pub fn phx_core::system::Declarations::implement<I: 'static, O: 'static>(&mut se
 pub fn phx_core::system::Declarations::insolvency(&mut self, phx_core::insolvency::InsolvencyDecl)
 pub fn phx_core::system::Declarations::kind(&mut self, phx_core::kinds::KindDecl)
 pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl)
+pub fn phx_core::system::Declarations::market(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
 pub fn phx_core::system::Declarations::occasion(&mut self, phx_core::occasions::OccasionDecl)
@@ -2799,6 +2837,12 @@ pub phx_core::HazardDecl::source: &'static str
 pub phx_core::HazardDecl::stream: &'static str
 impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::HeldRight
+pub phx_core::HeldRight::deposit: u32
+pub phx_core::HeldRight::grade: i64
+pub phx_core::HeldRight::opening: phx_num::missing::Missing<i64>
+pub phx_core::HeldRight::product: u16
+pub phx_core::HeldRight::remaining: phx_num::missing::Missing<i64>
 pub struct phx_core::Household
 pub phx_core::Household::attrs: alloc::vec::Vec<(&'static str, u32)>
 pub phx_core::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
@@ -2995,6 +3039,12 @@ pub phx_core::NewIndividual::weight: u32
 pub struct phx_core::NewsEntry
 pub phx_core::NewsEntry::kind: alloc::string::String
 pub phx_core::NewsEntry::notice: phx_core::events_rule::Notice
+pub struct phx_core::NoGoods
+impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
+pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub struct phx_core::NotObserver
 pub struct phx_core::ObserverDraws<'a>
 impl<'a> phx_core::streams::ObserverDraws<'a>
@@ -3292,6 +3342,7 @@ pub struct phx_core::Streams
 impl phx_core::streams::Streams
 pub fn phx_core::streams::Streams::is_empty(&self) -> bool
 pub fn phx_core::streams::Streams::len(&self) -> usize
+pub fn phx_core::streams::Streams::named(&self, &str) -> core::option::Option<phx_core::streams::StreamDecl>
 pub fn phx_core::streams::Streams::new(phx_rand::key::Seed, &[phx_core::streams::StreamDecl]) -> core::result::Result<phx_core::streams::Streams, alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::streams::Streams::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day, u8) -> phx_rand::draws::Draws
 pub fn phx_core::streams::Streams::open_keyed(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject) -> phx_rand::draws::Draws
@@ -3459,6 +3510,16 @@ pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::id
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+pub trait phx_core::GoodsView: core::fmt::Debug
+pub fn phx_core::GoodsView::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
+pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::GroupDemand
 pub fn phx_core::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64
 pub trait phx_core::HandlerDecl: 'static

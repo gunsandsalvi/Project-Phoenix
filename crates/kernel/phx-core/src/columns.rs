@@ -224,6 +224,7 @@ mod tests {
                 let facts: &mut dyn FactStore = &mut t;
                 facts
             },
+            goods: &crate::handler::NoGoods,
             intents: &mut intents,
             bindings: &mut bindings,
             rules: &rules,

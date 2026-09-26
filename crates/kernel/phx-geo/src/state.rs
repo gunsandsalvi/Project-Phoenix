@@ -229,6 +229,43 @@ impl GeoState {
         }
     }
 
+    /// The zone a tile's land lies in; water and a tile off the map lie in none.
+    pub fn zone_of(&self, tile: TileId) -> Missing<phx_id::ZoneId> {
+        match self.map.tiles.get(self.map.grid.index(tile)).and_then(crate::tile::Tile::zone) {
+            Some(z) => Missing::Present(z),
+            None => Missing::Absent,
+        }
+    }
+
+    /// The country a zone lies in, by its region.
+    pub fn zone_country(&self, zone: phx_id::ZoneId) -> Missing<CountryId> {
+        let m = &self.map;
+        let found = usize::try_from(zone.get())
+            .ok()
+            .and_then(|z| m.zones.get(z))
+            .and_then(|z| m.regions.get(usize::from(z.region.get())));
+        match found {
+            Some(r) => Missing::Present(r.country),
+            None => Missing::Absent,
+        }
+    }
+
+    /// Each region's market zone, where what is held in the region by an agent, which has no tile of its own, stands:
+    /// the region's largest zone by its tiles, the first of equals.
+    #[clause("REP.24")]
+    #[must_use]
+    pub fn market_zones(&self) -> Vec<Missing<phx_id::ZoneId>> {
+        let mut best: Vec<Option<(u32, u32)>> = vec![None; self.map.regions.len()];
+        for (i, z) in (0_u32..).zip(&self.map.zones) {
+            if let Some(b) = best.get_mut(usize::from(z.region.get()))
+                && b.is_none_or(|(_, tiles)| z.tiles > tiles)
+            {
+                *b = Some((i, z.tiles));
+            }
+        }
+        best.into_iter().map(|b| b.map_or(Missing::Absent, |(z, _)| Missing::Present(phx_id::ZoneId::new(z)))).collect()
+    }
+
     /// Bytes the map holds: tiles, exposure columns, distances and deposits.
     #[must_use]
     pub fn bytes(&self) -> usize {

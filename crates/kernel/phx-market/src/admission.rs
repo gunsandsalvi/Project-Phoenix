@@ -103,6 +103,7 @@ mod tests {
             day: Day::new(1),
             reason: "hedge",
             priority: Missing::Absent,
+            lot: 1,
         };
         Order::new(poster, &[Asked { limit: Missing::Present(PriceRaw::from_raw(limit)), qty }], 1).unwrap()
     }

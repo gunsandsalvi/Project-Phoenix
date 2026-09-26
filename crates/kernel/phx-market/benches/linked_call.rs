@@ -40,6 +40,7 @@ fn order(party: u64, side: Side, limit: i64, qty: i64) -> Order {
         day: Day::new(1),
         reason: "fund",
         priority: Missing::Absent,
+        lot: 1,
     };
     Order::new(poster, &[Asked { limit: Missing::Present(PriceRaw::from_raw(limit)), qty }], 1).unwrap()
 }

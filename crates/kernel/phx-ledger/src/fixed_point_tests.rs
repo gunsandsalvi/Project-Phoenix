@@ -129,6 +129,7 @@ fn world(funds: &[i64], edges: &[(usize, usize, i64)], reserves: [i64; 2]) -> Wo
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     let at = |i: usize| i % 2;
     let mut legs = vec![open(cb, reserves_line, Side::Liability, 2, BALANCE)];

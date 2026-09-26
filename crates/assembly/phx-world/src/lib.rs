@@ -4,6 +4,7 @@ pub mod consts;
 pub mod day;
 mod defaults;
 mod estates;
+pub mod goods;
 pub mod graph;
 pub mod hash;
 pub mod inspector;

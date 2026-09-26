@@ -49,7 +49,13 @@ pub const UNITS: [&str; 6] = [
 ];
 
 /// What the opening's instructions are for: capital on both sides, since they open the books.
-const REASON: ReasonDecl = ReasonDecl { name: "CAP opening", order: 0, paid: Effect::Equity, received: Effect::Equity };
+const REASON: ReasonDecl = ReasonDecl {
+    name: "CAP opening",
+    order: 0,
+    paid: Effect::Equity,
+    received: Effect::Equity,
+    held: phx_num::Missing::Absent,
+};
 
 fn reason(b: &Books) -> ReasonId {
     b.ledger.reasons.named(REASON.name)

@@ -317,7 +317,7 @@ impl World {
 
     /// Runs each visit's handler at `step` on its rows due today, in runs of consecutive slots, reading and writing
     /// their table's facts, and books each row again after it. Returns the rows visited.
-    pub(crate) fn visits_run(&mut self, day: Day, step: SubStep, pending: &mut Vec<(SubStep, Intents)>) -> u64 {
+    pub(crate) fn visits_run(&mut self, day: Day, step: SubStep, pending: &mut Vec<crate::goods::Gathered>) -> u64 {
         if self.visits.is_empty() {
             return 0;
         }
@@ -354,12 +354,15 @@ impl World {
                 reads: h.reads,
                 writes: h.writes,
             });
+            let rows = crate::goods::Rows { place: b.table.get(), individuals: b.individuals };
+            let views: Vec<crate::goods::RunGoods> =
+                runs(&slots).into_iter().map(|r| self.run_goods(rows, r)).collect();
             let World { books, own, streams, register, bindings, rules, queue, .. } = self;
             let Some((_, own)) = own.iter().find(|(system, _)| *system == h.system) else {
                 violation!(clause = "TIME.6", "a handler whose system compiled no state", handler = id.0);
             };
             let first = books.parties.first_cell_place();
-            for range in runs(&slots) {
+            for (range, goods) in runs(&slots).into_iter().zip(&views) {
                 let mut intents = Intents::default();
                 let store: &mut dyn FactStore = if b.individuals {
                     let t = books.parties.table_mut(b.table.get());
@@ -379,6 +382,7 @@ impl World {
                         register,
                         own: own.as_ref(),
                         facts: store,
+                        goods,
                         intents: &mut intents,
                         bindings,
                         rules,
@@ -387,7 +391,7 @@ impl World {
                     },
                     range,
                 );
-                pending.push((step, intents));
+                pending.push(crate::goods::Gathered { step, rows: Missing::Present(rows), intents });
             }
             self.visits_taken(&b);
             self.wear_after(i, &slots, (day, step));

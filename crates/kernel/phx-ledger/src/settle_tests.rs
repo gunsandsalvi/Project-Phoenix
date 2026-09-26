@@ -159,12 +159,14 @@ fn world() -> World {
         order: 0,
         paid: Effect::Expense,
         received: Effect::Revenue,
+        held: phx_num::Missing::Absent,
     });
     let opening = ledger.reasons.declare(ReasonDecl {
         name: "opening",
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     let mut w = World { ledger, tables, reserves, deposits, pay, next: 0 };
     let mut legs = Vec::new();
@@ -543,6 +545,7 @@ fn declared_order_within_a_sub_step() {
         order: 1,
         paid: Effect::Expense,
         received: Effect::Revenue,
+        held: phx_num::Missing::Absent,
     });
     let line = w.deposits[0];
     let first = w.instruction(late, vec![money(4, line, Side::Asset, -1_000), money(5, line, Side::Asset, 1_000)]);

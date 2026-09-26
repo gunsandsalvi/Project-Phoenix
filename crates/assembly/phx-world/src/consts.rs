@@ -55,3 +55,6 @@ pub const GATHER_SHARDS: usize = 64;
 pub const GATHER_WAVE: usize = 8;
 /// Billionths in a whole, for a review's daily chance as a position holds it.
 pub const BILLION: f64 = 1e9;
+
+/// Ten, the base a unit's price exponent counts powers of.
+pub const DECADE: i64 = 10;

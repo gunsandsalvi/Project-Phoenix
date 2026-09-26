@@ -149,6 +149,37 @@ pub struct phx_market::grant::Drawn
 pub phx_market::grant::Drawn::in_money: i64
 pub phx_market::grant::Drawn::on_terms: i64
 pub fn phx_market::grant::draw(i64, i64) -> phx_market::grant::Drawn
+pub mod phx_market::instances
+pub struct phx_market::instances::Kinds
+impl phx_market::instances::Kinds
+pub fn phx_market::instances::Kinds::check(&self, &phx_market::instances::Made) -> core::result::Result<(), alloc::string::String>
+pub fn phx_market::instances::Kinds::decl(&self, &phx_market::instances::Made, phx_id::ids::MarketId) -> phx_market::market::MarketDecl
+pub fn phx_market::instances::Kinds::declare(&mut self, phx_market::market::MarketDecl)
+pub fn phx_market::instances::Kinds::instance(&self, &mut phx_market::instances::Made, u16, u64) -> phx_id::ids::MarketId
+pub fn phx_market::instances::Kinds::kind(&self, u64) -> phx_num::missing::Missing<u16>
+pub fn phx_market::instances::Kinds::kind_decl(&self, u16) -> &phx_market::market::MarketDecl
+pub fn phx_market::instances::Kinds::names(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
+pub struct phx_market::instances::Made
+impl phx_market::instances::Made
+pub fn phx_market::instances::Made::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::MarketId, u16, u64)> + '_
+pub fn phx_market::instances::Made::of(&self, u16, u64) -> phx_num::missing::Missing<phx_id::ids::MarketId>
+pub fn phx_market::instances::Made::subject_of(&self, phx_id::ids::MarketId) -> phx_num::missing::Missing<u64>
+impl phx_store::save::Saved for phx_market::instances::Made where alloc::vec::Vec<(u16, u64)>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<(u16, u64), phx_id::ids::MarketId>: phx_store::save::Saved
+pub fn phx_market::instances::Made::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::instances::Made::save(&self, &mut phx_store::save::Writer<'_>)
+pub mod phx_market::intents
+pub struct phx_market::intents::OrderIntent
+pub phx_market::intents::OrderIntent::grade: u8
+pub phx_market::intents::OrderIntent::kind: u64
+pub phx_market::intents::OrderIntent::product: u16
+pub phx_market::intents::OrderIntent::row: phx_id::ids::Slot
+pub phx_market::intents::OrderIntent::side: phx_market::order::Side
+pub phx_market::intents::OrderIntent::steps: alloc::vec::Vec<phx_market::order::Step>
+impl phx_market::intents::OrderIntent
+pub fn phx_market::intents::OrderIntent::decode(&[u64]) -> core::option::Option<phx_market::intents::OrderIntent>
+impl phx_core::handler::IntentDef for phx_market::intents::OrderIntent
+pub const phx_market::intents::OrderIntent::NAME: &'static str
+pub fn phx_market::intents::OrderIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub mod phx_market::linked_call
 pub struct phx_market::linked_call::LinkedCall
 pub phx_market::linked_call::LinkedCall::basis: phx_num::missing::Missing<phx_market::simplex::Basis>
@@ -219,6 +250,7 @@ pub fn phx_market::markets::MarketDay::save(&self, &mut phx_store::save::Writer<
 pub struct phx_market::markets::Markets
 pub phx_market::markets::Markets::days: alloc::vec::Vec<phx_market::markets::MarketDay>
 pub phx_market::markets::Markets::linked: alloc::collections::btree::map::BTreeMap<phx_id::ids::MarketId, phx_market::linked_call::LinkedCall>
+pub phx_market::markets::Markets::made: phx_market::instances::Made
 pub phx_market::markets::Markets::tape: phx_market::print::Tape
 impl phx_market::markets::Markets
 pub fn phx_market::markets::Markets::hash_into(&self, &mut phx_store::hash::LogicalHasher)
@@ -228,7 +260,7 @@ pub fn phx_market::markets::Markets::record_trades(&mut self, phx_id::ids::Marke
 pub fn phx_market::markets::Markets::record_zones(&mut self, &phx_market::coupled_call::NetworkCall<'_>, &[alloc::vec::Vec<phx_market::print::Match>], &phx_market::coupled_call::NetworkCleared, phx_market::market::Form, phx_id::day::Day, (phx_num::qty::UnitId, phx_num::money::Ccy))
 impl phx_core::family::MarketsAudit for phx_market::markets::Markets
 pub fn phx_market::markets::Markets::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-impl phx_store::save::Saved for phx_market::markets::Markets where phx_market::print::Tape: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::MarketId, phx_market::linked_call::LinkedCall>: phx_store::save::Saved, alloc::vec::Vec<phx_market::markets::MarketDay>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_market::markets::Markets where phx_market::print::Tape: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::MarketId, phx_market::linked_call::LinkedCall>: phx_store::save::Saved, alloc::vec::Vec<phx_market::markets::MarketDay>: phx_store::save::Saved, phx_market::instances::Made: phx_store::save::Saved
 pub fn phx_market::markets::Markets::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_market::markets::Markets::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_market::order
@@ -236,6 +268,7 @@ pub enum phx_market::order::Refusal
 pub phx_market::order::Refusal::AnyPrice
 pub phx_market::order::Refusal::NoLimit
 pub phx_market::order::Refusal::NoQuantity
+pub phx_market::order::Refusal::OffLot
 pub phx_market::order::Refusal::OffTick
 pub phx_market::order::Refusal::Uncovered
 pub enum phx_market::order::Side
@@ -250,6 +283,7 @@ pub phx_market::order::Asked::qty: i64
 pub struct phx_market::order::Order
 pub phx_market::order::Order::cover: phx_num::missing::Missing<phx_ledger::covered::Covered>
 pub phx_market::order::Order::day: phx_id::day::Day
+pub phx_market::order::Order::lot: i64
 pub phx_market::order::Order::market: phx_id::ids::MarketId
 pub phx_market::order::Order::party: phx_id::ids::PartyId
 pub phx_market::order::Order::priority: phx_num::missing::Missing<u32>
@@ -263,6 +297,7 @@ pub fn phx_market::order::Order::offer_held(phx_market::order::Poster, &[phx_mar
 pub fn phx_market::order::Order::qty(&self) -> i128
 pub struct phx_market::order::Poster
 pub phx_market::order::Poster::day: phx_id::day::Day
+pub phx_market::order::Poster::lot: i64
 pub phx_market::order::Poster::market: phx_id::ids::MarketId
 pub phx_market::order::Poster::party: phx_id::ids::PartyId
 pub phx_market::order::Poster::priority: phx_num::missing::Missing<u32>
@@ -281,6 +316,7 @@ pub struct phx_market::posted::Posting
 pub phx_market::posted::Posting::capacity: i64
 pub phx_market::posted::Posting::price: phx_num::price::PriceRaw
 pub phx_market::posted::Posting::seller: phx_id::ids::PartyId
+pub fn phx_market::posted::between(&[phx_market::order::Order], &mut phx_rand::draws::Draws) -> phx_market::posted::PostedDay
 pub fn phx_market::posted::posted(phx_id::ids::MarketId, &[phx_market::posted::Posting], &[(u64, alloc::vec::Vec<usize>)], &dyn phx_core::extensions::GroupDemand, &mut phx_rand::draws::Draws) -> phx_market::posted::PostedDay
 pub mod phx_market::print
 pub enum phx_market::print::Buyer

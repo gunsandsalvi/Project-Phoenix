@@ -83,6 +83,47 @@ pub trait FactStore {
     fn write(&mut self, fact: &'static str, slot: Slot, value: i64);
 }
 
+/// A deposit whose right a row's party holds, as the holder sees it: the deposit's place in the map's list, the
+/// product extracted from it, its grade in thousandths, and what it held at the opening and holds still, none for a
+/// deposit without end.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HeldRight {
+    pub deposit: u32,
+    pub product: u16,
+    pub grade: i64,
+    pub opening: Missing<i64>,
+    pub remaining: Missing<i64>,
+}
+
+/// What a row's party may read of goods beyond its facts: its units of each good at its place, one twin's for an
+/// agent; the deposits whose rights it holds; the units it has delivered since the world opened; and each good's
+/// latest mark at its place, which is public.
+pub trait GoodsView: core::fmt::Debug {
+    fn held(&self, slot: Slot, product: u16, grade: u8) -> i64;
+    fn rights(&self, slot: Slot) -> &[HeldRight];
+    fn delivered(&self, slot: Slot, product: u16, grade: u8) -> i64;
+    fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64>;
+}
+
+/// The view of rows that hold no goods, as a kernel table's are.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct NoGoods;
+
+impl GoodsView for NoGoods {
+    fn held(&self, _: Slot, _: u16, _: u8) -> i64 {
+        0
+    }
+    fn rights(&self, _: Slot) -> &[HeldRight] {
+        &[]
+    }
+    fn delivered(&self, _: Slot, _: u16, _: u8) -> i64 {
+        0
+    }
+    fn mark(&self, _: Slot, _: u16, _: u8) -> Missing<i64> {
+        Missing::Absent
+    }
+}
+
 /// A stream opened on a traced chunk: its name and subject.
 pub type Opened = (&'static str, u64);
 
@@ -96,6 +137,7 @@ pub struct CtxParts<'a, S: FactStore + ?Sized> {
     pub register: &'a Register,
     pub own: &'a (dyn Any + Send + Sync),
     pub facts: &'a mut S,
+    pub goods: &'a dyn GoodsView,
     pub intents: &'a mut Intents,
     pub bindings: &'a mut Bindings,
     pub rules: &'a RuleTable,
@@ -145,6 +187,29 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
         H: Writes<F>,
     {
         self.parts.facts.write(F::ITEM.name, slot, value);
+    }
+
+    /// The row's party's units of a good at its place: one twin's for an agent.
+    #[must_use]
+    pub fn held(&self, slot: Slot, product: u16, grade: u8) -> i64 {
+        self.parts.goods.held(slot, product, grade)
+    }
+
+    /// The deposits whose rights the row's party holds.
+    #[must_use]
+    pub fn rights(&self, slot: Slot) -> &[HeldRight] {
+        self.parts.goods.rights(slot)
+    }
+
+    /// The units of a good the row's party has delivered since the world opened, one twin's for an agent.
+    #[must_use]
+    pub fn delivered(&self, slot: Slot, product: u16, grade: u8) -> i64 {
+        self.parts.goods.delivered(slot, product, grade)
+    }
+
+    /// A good's latest mark at the row's place, in its market's raw price.
+    pub fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
+        self.parts.goods.mark(slot, product, grade)
     }
 
     pub fn emit<I: IntentDef>(&mut self, intent: &I)
@@ -318,6 +383,7 @@ mod tests {
             register: &register,
             own: &7_u32,
             facts: &mut facts,
+            goods: &crate::handler::NoGoods,
             intents: &mut intents,
             bindings: &mut bindings,
             rules: &rules,

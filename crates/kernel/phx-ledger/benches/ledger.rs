@@ -230,6 +230,7 @@ fn loans() -> (Books<Heap>, Calendar, Day) {
         order: 0,
         paid: Effect::Equity,
         received: Effect::Equity,
+        held: phx_num::Missing::Absent,
     });
     let mut legs = vec![open(cb, reserves, Side::Liability, 1, BALANCE), open(bank, reserves, Side::Asset, 1, BALANCE)];
     legs.push(open(bank, deposits, Side::Liability, FIRMS, BALANCE));

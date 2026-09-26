@@ -210,6 +210,8 @@ struct Prepared {
     /// The kinds under an insolvency law.
     laws: Vec<crate::defaults::Law>,
     wears: Vec<crate::wear::WearBound>,
+    /// The market kinds the systems declare.
+    market_kinds: phx_market::instances::Kinds,
     register_hash: u128,
 }
 
@@ -335,6 +337,10 @@ fn prepare(
         Vec::new()
     });
     errors.extend(unlawful_kinds(&d, &kernel, &c.register));
+    let market_kinds = market_kinds(&d).unwrap_or_else(|e| {
+        errors.extend(e);
+        phx_market::instances::Kinds::default()
+    });
     let (pop, processes) = match population_kinds(&mut d, &c.register) {
         Ok(bound) => bound,
         Err(e) => {
@@ -364,14 +370,41 @@ fn prepare(
         visits,
         laws,
         wears,
+        market_kinds,
         register_hash: data_hash(&files),
     })
+}
+
+/// The market kinds the systems declare, each refused if it is no market's declaration, breaks a market's rules, or
+/// settles after its day, which goods' trades cannot: they are delivered the day they are made.
+fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<String>> {
+    let (mut kinds, mut errors) = (phx_market::instances::Kinds::default(), Vec::new());
+    for (system, kind) in &d.markets {
+        let Some(decl) = kind.downcast_ref::<phx_market::market::MarketDecl>() else {
+            errors.push(format!("{system} declares a market kind that is no market's declaration"));
+            continue;
+        };
+        errors.extend(phx_market::market::refusals(decl));
+        if decl.settle_days != 0 {
+            errors.push(format!(
+                "market kind `{}` settles after its day; trades held across days wait for S3.01's securities",
+                decl.key.kind
+            ));
+        }
+        if kinds.names().any(|n| n == decl.key.kind) {
+            errors.push(format!("market kind `{}` declared twice", decl.key.kind));
+            continue;
+        }
+        kinds.declare(*decl);
+    }
+    if errors.is_empty() { Ok(kinds) } else { Err(errors) }
 }
 
 /// Every name the build declares that a store keeps: kinds, record kinds, streams, decision points, the audit's
 /// families and their clauses, the kernel tables and their facts, and the books' line kinds and reasons.
 fn names(
     d: &Declarations,
+    markets: &phx_market::instances::Kinds,
     families: &[phx_core::FamilyDecl],
     tables: &[KernelTable],
     books: &phx_ledger::books::Books,
@@ -389,9 +422,22 @@ fn names(
     }
     out.extend(books.ledger.lines.kind_names());
     out.extend(books.ledger.reasons.names());
+    out.extend(markets.names());
     out.sort_unstable();
     out.dedup();
     out
+}
+
+/// Every handler's table kept by the world: a kernel table, or a kind a visit reads.
+fn unkept_handlers(p: &Prepared, tables: &[KernelTable]) -> Result<(), AssemblyErrors> {
+    let kept = |name: &str| tables.iter().any(|t| t.name == name) || p.visits.iter().any(|v| v.decl.kind == name);
+    let unkept: Vec<String> =
+        p.h.entries
+            .iter()
+            .filter(|e| !kept(e.table))
+            .map(|e| format!("handler `{}` runs on `{}`, a table the world does not keep", e.name, e.table))
+            .collect();
+    if unkept.is_empty() { Ok(()) } else { Err(AssemblyErrors(unkept)) }
 }
 
 /// The world built from what the build supplies and a state: the audit over it, each system's own state, and the
@@ -404,7 +450,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let mut audit = Audit::new(families).map_err(AssemblyErrors)?;
     audit.resume(records.len(), events.len());
     let decls: Vec<phx_core::FamilyDecl> = audit.families().collect();
-    let names = names(&p.d, &decls, &tables, &books);
+    let names = names(&p.d, &p.market_kinds, &decls, &tables, &books);
     let settling_years = p.kernel.opening.settling_years.shared(&p.c.register);
     let save_every = p.kernel.save_every.shared(&p.c.register);
     let nothing = || -> OwnState { Box::new(()) };
@@ -425,21 +471,14 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     if !refused.is_empty() {
         return Err(AssemblyErrors(refused));
     }
-    let kept = |name: &str| tables.iter().any(|t| t.name == name) || p.visits.iter().any(|v| v.decl.kind == name);
-    let unkept: Vec<String> =
-        p.h.entries
-            .iter()
-            .filter(|e| !kept(e.table))
-            .map(|e| format!("handler `{}` runs on `{}`, a table the world does not keep", e.name, e.table))
-            .collect();
-    if !unkept.is_empty() {
-        return Err(AssemblyErrors(unkept));
-    }
+    unkept_handlers(&p, &tables)?;
     let event_kinds: Vec<phx_core::EventKindDecl> = p.d.events.iter().map(|(_, e)| *e).collect();
     let news = phx_core::EventsRule::new(p.kernel.public_events.shared(&p.c.register), &event_kinds)
         .map_err(|e| AssemblyErrors(vec![e]))?;
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
+    let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
+    p.market_kinds.check(&markets.made).map_err(|e| AssemblyErrors(vec![e]))?;
     Ok(World {
         records,
         events,
@@ -472,6 +511,10 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         wears: std::mem::take(&mut p.wears),
         defaults: std::collections::BTreeSet::new(),
         markets,
+        market_kinds: std::mem::take(&mut p.market_kinds),
+        goods_frame,
+        market_day: crate::goods::MarketDay::default(),
+        marks: crate::goods::Marks::default(),
         accounts,
         report: run.report,
         unprocessed: carried.unprocessed,
@@ -624,7 +667,7 @@ pub fn load(
         .chain(p.d.families.iter().map(|(_, f)| f.decl()))
         .chain(crate_families(p.game.countries.len(), !p.pop.is_empty()).iter().map(|f| f.decl()))
         .collect();
-    let names = names(&p.d, &families, &tables, &declared);
+    let names = names(&p.d, &p.market_kinds, &families, &tables, &declared);
     let mut declared = Some(declared);
     let books = read_file(dir, "books", &names, &mut |r| {
         let d = declared.take().ok_or_else(|| phx_store::LoadError::Invalid("the books read twice".to_owned()))?;

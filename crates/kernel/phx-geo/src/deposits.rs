@@ -88,3 +88,43 @@ pub fn draw(p: &GeoPrims, r: &Register, map: &Map, ctx: &OpeningCtx<'_>) -> Vec<
     }
     out
 }
+
+/// A deposit's row in the deposit table, which keeps a row for each finite deposit in the list's order; none for a
+/// deposit without end, which nothing depletes.
+pub fn row_of(deposits: &[Deposit], index: u32) -> phx_num::Missing<phx_id::Slot> {
+    let Some(at) = usize::try_from(index).ok().filter(|i| *i < deposits.len()) else {
+        phx_num::violation!(clause = "GDS.12", "a deposit the map does not hold", deposit = index);
+    };
+    match deposits.get(at).map(|d| d.opening) {
+        Some(Opening::Finite(_)) => {
+            let before = deposits.iter().take(at).filter(|d| matches!(d.opening, Opening::Finite(_))).count();
+            let Ok(row) = u32::try_from(before) else {
+                phx_num::capacity_exceeded!("deposit rows", u32::MAX, before);
+            };
+            phx_num::Missing::Present(phx_id::Slot::new(row))
+        }
+        _ => phx_num::Missing::Absent,
+    }
+}
+
+/// Units taken from a finite deposit, written by GEO alone: what was extracted rises and what remains falls by them.
+///
+/// # Errors
+/// When the deposit holds fewer than are taken, which leaves it as it was.
+#[clause("GEO.12", "GDS.12")]
+pub fn extract(table: &mut phx_core::FactColumns, row: phx_id::Slot, qty: i64) -> Result<(), String> {
+    use phx_core::{FactDef, FactStore};
+
+    use crate::audit::facts::{Extracted, Remaining};
+    let (phx_num::Missing::Present(extracted), phx_num::Missing::Present(remaining)) =
+        (table.value(Extracted::ITEM.name, row), table.value(Remaining::ITEM.name, row))
+    else {
+        return Err(format!("deposit row {} keeps no quantities", row.get()));
+    };
+    if qty < 0 || qty > remaining {
+        return Err(format!("{qty} taken from deposit row {} holding {remaining}", row.get()));
+    }
+    table.write(Extracted::ITEM.name, row, extracted + qty);
+    table.write(Remaining::ITEM.name, row, remaining - qty);
+    Ok(())
+}

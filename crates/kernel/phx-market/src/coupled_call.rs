@@ -510,6 +510,7 @@ pub(crate) mod tests {
             day: Day::new(1),
             reason: "trade",
             priority: Missing::Absent,
+            lot: 1,
         };
         Order::new(poster, &[Asked { limit: Missing::Present(PriceRaw::from_raw(limit)), qty }], 1).unwrap()
     }
@@ -518,7 +519,7 @@ pub(crate) mod tests {
         Node {
             key,
             cap: Missing::Absent,
-            market: Missing::Present(MarketId::new(u16::try_from(key).unwrap())),
+            market: Missing::Present(MarketId::new(u32::try_from(key).unwrap())),
             last: Missing::Absent,
         }
     }

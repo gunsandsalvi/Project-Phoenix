@@ -1000,6 +1000,55 @@ without end in both directions.
 - **Capacity** reads the classes: a way's capacity is the least over its kinds of units × the class's efficiency over
   the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound.
 
+### 7.11 Goods, orders and trades
+
+- **Goods** (GDS.1, GDS.2): a good is an instrument per **(product, grade class, zone)**, of the real-asset family, with
+  no issuer, counted in its product's unit and priced in its zone's country's currency. The ledger's goods table
+  (`phx_ledger::goods::Goods`, saved with the ledger) keys them and issues each the first time something names it, so
+  only goods somewhere made or held exist. A stock is its holder's holding of the good, its lots its cost (ACC.6): no
+  system keeps a second count of it. An individual's goods stand at its site's zone; an agent, which has no tile, holds
+  its goods at its region's **market zone**, the region's largest zone (`GeoState::market_zones`). A good moves between
+  zones only by a shipment (FRT, S1.07).
+- **Rights to extract** (GDS.3): each deposit's right is an instrument of one unit (`extraction right`) over its tile,
+  in the same table; who holds it is drawn at the Stage 1 opening (S1.15).
+- **Grades** (GDS.13): each storable product declares its grade classes (TECHNOLOGY). A commodity's grade class is its
+  system's reading of its deposit's or its land's grade; a made good has one class.
+- **What a handler reads of its goods** (§4.9): the `Ctx` gives a row its party's units of each good at its place (one
+  twin's for an agent), the deposits whose rights it holds with their grade, opening and remaining quantities, the
+  units it has delivered since the opening, and each good's latest mark at its place. The kernel builds this view
+  (`GoodsView`) for each run of rows before their handler runs, from the holder's own arenas.
+- **Transformations from handlers**: a handler asks for units of goods made or used up for its own row by a
+  **transformation intent** (`phx_ledger::intents::Transform`): its reason, carried as its name's code
+  (`name_code`, FNV-1a; two declared reasons of one code stop the run), and its legs, a twin's each, which the kernel
+  multiplies by the row's twins. It is applied at the handler's next apply point through `Ledger::apply`; a leg
+  taken from a deposit stands at the deposit's zone, needs its right and a product the deposit gives, and depletes it
+  by GEO's own write (`phx_geo::deposits::extract`), the deposit's one writer. A handler moves no money.
+- **Orders** (MKT.16, MKT.17): a handler asks to trade by an **order intent** (`phx_market::intents::OrderIntent`):
+  its market kind's code, the product and grade class it is over, at its row's zone, its side and a twin's steps. At
+  5d the kernel admits it into the day's book (one asked later stops the run): its instance of the kind over the good
+  (made the first time an order names it, `phx_market::instances`, saved with the markets), in **lots** of the
+  product's least quantity, ten to its price exponent, times the row's twins, so every trade's money is whole and each
+  twin's share of it and of the units stays whole (REP.9); an offer is covered by the ledger's commitment on the
+  poster's free units (`Covers::cover`), and one the units cannot cover, or whose steps break a rule, is refused and
+  counted.
+- **Meetings** (MKT.3, MKT.6, GDS.7): a system declares a **market kind** (`Declarations::market`, a `MarketDecl` whose
+  key names the kind); a kind that settles after its day is refused, since goods are delivered the day they trade.
+  At 6a the kernel meets every instance with orders by its kind's form, in the markets' order: a **call** at the
+  place, whose fills are cut to each order's whole lots, the side that gives more losing lots until the sides are
+  equal (`call::whole_lots`); or **posted** prices between firms (`posted::between`), each seller's offer standing
+  at its price and the buyers, in an order drawn by lot, taking from the cheapest they accept in quantities whole in
+  both parties' lots. Each meeting's print or failure is recorded; a call's print is its mark. Every order's cover is
+  released after its meeting.
+- **Trades** (SET.1, SET.2, SET.4): at 6d every match becomes a numbered **trade instruction** under the kernel's
+  reason `traded`: the seller's units to the buyer at what it paid, against that money from the buyer's account to
+  the seller's, the units covered again for exactly what it delivers. Trades settle in stage 7 after the day's dues
+  and estates, each all or none through the apply routine in declared order, so a buyer who cannot pay records a
+  fail with its cause (SET.3), the units stay with the seller and its cover is released.
+- **Revenue** (FRM.13) is recognised on delivery: `traded` declares the buyer's money paid an asset and the seller's
+  received revenue, and the cost its units carry out an expense, the cost of what it sold, while the buyer's lot comes
+  in as an asset (`ReasonDecl::held`). The units each party delivers are kept with the goods, which its visits read as
+  its sales.
+
 ---
 
 ## 8. Markets, valuation and expectations

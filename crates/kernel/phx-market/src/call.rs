@@ -241,6 +241,36 @@ pub(crate) fn pair_net(net: &BTreeMap<PartyId, i128>, price: PriceRaw) -> Vec<Ma
     out
 }
 
+/// Each order's fill in whole lots of its own, the two sides kept equal: a fill is first cut to its whole lots, then
+/// the side that gives more loses lots until it gives what the other takes, from the orders at the price before those
+/// better than it, the smallest lots first, the last posted first; so an agent trades whole shares for each twin.
+fn whole_lots(orders: &[Order], mut fills: Vec<i128>, price: i64) -> Vec<i128> {
+    for (o, f) in orders.iter().zip(fills.iter_mut()) {
+        *f -= *f % i128::from(o.lot);
+    }
+    let mut cutting: Vec<(usize, &Order)> = orders.iter().enumerate().collect();
+    cutting.sort_by_key(|(i, o)| (!o.steps.iter().any(|s| s.limit.raw() == price), o.lot, core::cmp::Reverse(*i)));
+    loop {
+        let side_total =
+            |side: Side| -> i128 { orders.iter().zip(&fills).filter(|(o, _)| o.side == side).map(|(_, f)| f).sum() };
+        let (bought, sold) = (side_total(Side::Buy), side_total(Side::Sell));
+        if bought == sold {
+            return fills;
+        }
+        let (larger, excess) = if bought > sold { (Side::Buy, bought - sold) } else { (Side::Sell, sold - bought) };
+        let Some((c, o)) =
+            cutting.iter().find(|(i, o)| o.side == larger && fills.get(*i).is_some_and(|f| *f > 0)).copied()
+        else {
+            violation!(clause = "MKT.3", "a call's sides unequal with nothing left to cut");
+        };
+        let lot = i128::from(o.lot);
+        if let Some(f) = fills.get_mut(c) {
+            let lots = lesser(*f / lot, (excess + lot - 1) / lot);
+            *f -= lots * lot;
+        }
+    }
+}
+
 /// The call auction: one price where posted supply meets posted demand on the tick grid, chosen among the prices
 /// that clear by the operator's tie sequence; steps better than the price fill in full and those at it are rationed
 /// by the declared rule. No overlap, no bid or no offer is a failure; the market adds nothing to clear.
@@ -280,7 +310,11 @@ pub fn call(orders: &[Order], rules: CallRules<'_>, lot: &mut Draws) -> Outcome 
     let volume = lesser(chosen.supply, chosen.demand);
     let bought = fill_side(orders, Side::Buy, *price, volume, rules.ration, lot);
     let sold = fill_side(orders, Side::Sell, *price, volume, rules.ration, lot);
-    let per_order: Vec<i128> = bought.iter().zip(&sold).map(|(b, s)| b + s).collect();
+    let per_order = whole_lots(orders, bought.iter().zip(&sold).map(|(b, s)| b + s).collect(), *price);
+    let volume: i128 = orders.iter().zip(&per_order).filter(|(o, _)| o.side == Side::Buy).map(|(_, f)| f).sum();
+    if volume == 0 {
+        return Outcome::Failed(FailureKind::NoOverlap);
+    }
     let price = PriceRaw::from_raw(*price);
     let matches = pair(orders, &per_order, price);
     let fills = per_order
@@ -331,6 +365,7 @@ mod tests {
             day: Day::new(1),
             reason: "trade",
             priority,
+            lot: 1,
         };
         let asked: Vec<Asked> =
             steps.iter().map(|(l, q)| Asked { limit: Missing::Present(PriceRaw::from_raw(*l)), qty: *q }).collect();
@@ -351,6 +386,19 @@ mod tests {
 
     fn filled(c: &Cleared, order: usize) -> i64 {
         c.fills.iter().filter(|f| f.order == order).map(|f| f.qty).sum()
+    }
+
+    #[test]
+    fn an_agent_fills_whole_lots_and_the_sides_stay_equal() {
+        let mut agent = order(1, Side::Buy, &[(10, 30)]);
+        agent.lot = 10;
+        let orders = vec![agent, order(2, Side::Buy, &[(10, 5)]), order(3, Side::Sell, &[(9, 23)])];
+        let Outcome::Cleared(c) = call(&orders, rules(None), &mut draws()) else { panic!("the call clears") };
+        let fill = |o: usize| c.fills.iter().find(|f| f.order == o).map_or(0, |f| f.qty);
+        assert_eq!(fill(0) % 10, 0, "the agent's fill is whole lots");
+        assert_eq!(fill(0) + fill(1), fill(2));
+        assert_eq!(c.volume, fill(2));
+        assert_eq!(c.matches.iter().map(|m| m.qty).sum::<i64>(), c.volume);
     }
 
     #[test]
