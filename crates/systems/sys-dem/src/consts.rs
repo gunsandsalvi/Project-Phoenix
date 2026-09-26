@@ -22,3 +22,5 @@ pub const GAP_TYPES: u16 = 10_000;
 /// The regions drawn at once, each on its own worker, before they are booked in order: enough for every worker the
 /// phone runs, and few enough that a wave's households are small beside the world.
 pub const REGION_WAVE: usize = 8;
+/// Parts in a million, for chances declared in millionths.
+pub const MILLION: f64 = 1_000_000.0;

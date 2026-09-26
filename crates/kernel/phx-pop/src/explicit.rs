@@ -17,7 +17,7 @@ use crate::table::AgentTable;
 #[clause("REP.26", "REP.41")]
 #[must_use]
 pub fn household<B: Backing>(kind: &PopKindDecl, table: &AgentTable<B>, slot: Slot) -> Household {
-    let mut h = Household { attrs: Vec::new(), persons: Vec::new() };
+    let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
     household_into(kind, table, slot, &mut h);
     h
 }
@@ -28,6 +28,10 @@ pub fn household<B: Backing>(kind: &PopKindDecl, table: &AgentTable<B>, slot: Sl
 pub fn household_into<B: Backing>(kind: &PopKindDecl, table: &AgentTable<B>, slot: Slot, h: &mut Household) {
     h.attrs.clear();
     h.attrs.extend(kind.attrs.iter().enumerate().map(|(i, a)| (a.item.name, table.attr(slot, i))));
+    h.positions.clear();
+    h.positions.extend(
+        kind.positions.iter().filter_map(|p| table.position(p.item.name).map(|c| (p.item.name, table.fact(slot, c)))),
+    );
     let words = table.persons(slot);
     h.persons.truncate(words.len());
     for (i, w) in words.iter().enumerate() {

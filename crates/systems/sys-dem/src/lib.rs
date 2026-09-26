@@ -1,24 +1,31 @@
 //! DEM, population and demography: the household kind, its persons and their roles, and the opening's households;
-//! mortality, illness and coming of age are processes on its persons.
+//! mortality, illness, leaving school, the decision to try for a child and conception are processes on its persons.
 
+mod births;
 mod compose;
 mod consts;
+mod fertility;
 mod household;
 mod life;
 mod lines;
 mod opening;
 mod prims;
 mod processes;
+mod school;
 
+use if_pop::fertility::{IDEAL, TRYING};
 use if_pop::{ADULT, CHILD, EDUCATION, HEAD, HEALTH, HOUSEHOLD, PARTNER, REGION, SEX};
 use phx_core::{
     Declarations, EventKindDecl, HandlerTable, SetupValue, StreamDef, System, declare_hazard, declare_kind,
     declare_stream,
 };
 
+pub use births::{Conception, Fertility};
+pub use fertility::{ChildIn, Scale, tries, value};
 pub use opening::Households;
 pub use prims::Prims;
-pub use processes::{Majority, Mortality, Onset};
+pub use processes::{Mortality, Onset};
+pub use school::LeavingSchool;
 
 declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", table: Cells, clause: "POP.2" } }
 
@@ -31,6 +38,8 @@ declare_stream! { pub MeansStream = "DEM.opening_means" { purpose: Opening, keye
 declare_stream! { pub MortalityStream = "DEM.mortality" { purpose: Mortality, keyed: false, clause: "CHN.3" } }
 declare_stream! { pub IllnessStream = "DEM.illness" { purpose: Illness, keyed: false, clause: "CHN.3" } }
 declare_stream! { pub BirthdayStream = "DEM.birthdays" { purpose: Birthday, keyed: false, clause: "CHN.3" } }
+declare_stream! { pub OccasionStream = "DEM.fertility_taste" { purpose: Taste, keyed: false, clause: "POP.10" } }
+declare_stream! { pub ConceptionStream = "DEM.conception" { purpose: Conception, keyed: false, clause: "CHN.3" } }
 
 declare_hazard! {
     pub DEATH = "DEM.death" {
@@ -48,9 +57,23 @@ declare_hazard! {
 }
 declare_hazard! {
     pub BIRTHDAY = "DEM.birthday" {
-        acts_on: Persons("household"), rate: "DEM.age_of_majority", axes: ["DEM.age"],
-        changes: [Birthday], outcome: "DEM.aged", scheme: Scheduled, stream: "DEM.birthdays",
-        source: "a child comes of age on its birthday at the country's age of majority", clause: "REP.25",
+        acts_on: Persons("household"), rate: "DEM.school_leaving_age", axes: ["DEM.age"],
+        changes: [Birthday], outcome: "DEM.left_school", scheme: Scheduled, stream: "DEM.birthdays",
+        source: "a child leaves school on its birthday at the country's school-leaving age", clause: "REP.25",
+    }
+}
+declare_hazard! {
+    pub OCCASION = "DEM.fertility_occasion" {
+        acts_on: Persons("household"), rate: "DEM.ideal_children", axes: ["DEM.age"],
+        changes: [Birthday], outcome: "DEM.decided", scheme: Scheduled, stream: "DEM.fertility_taste",
+        source: "a household decides whether to try for a child on its head's birthday", clause: "POP.10",
+    }
+}
+declare_hazard! {
+    pub CONCEPTION = "DEM.conception" {
+        acts_on: Persons("household"), rate: "DEM.fecundability", axes: ["DEM.age", "DEM.sex"],
+        changes: [Birthday], outcome: "DEM.born", scheme: Scheduled, stream: "DEM.conception",
+        source: "fecundability by age: Wesselink et al. (2017) and Leridon (2004)", clause: "POP.5",
     }
 }
 
@@ -62,7 +85,7 @@ pub struct Dem;
 /// sited.
 fn declare_household(d: &mut Declarations) {
     let mut k = d.pop_kind(HOUSEHOLD);
-    k.role(HEAD).role(PARTNER).role(ADULT).role(CHILD).attr(REGION);
+    k.role(HEAD).role(PARTNER).role(ADULT).role(CHILD).attr(REGION).attr(TRYING).attr(IDEAL);
     k.person_attr(SEX).person_attr(HEALTH).person_attr(EDUCATION);
     k.sited_by(REGION.name);
 }
@@ -83,13 +106,21 @@ impl System for Dem {
         ] {
             d.stream(stream);
         }
-        for stream in [MortalityStream::DECL, IllnessStream::DECL, BirthdayStream::DECL] {
+        for stream in [
+            MortalityStream::DECL,
+            IllnessStream::DECL,
+            BirthdayStream::DECL,
+            OccasionStream::DECL,
+            ConceptionStream::DECL,
+        ] {
             d.stream(stream);
         }
         d.event(EventKindDecl { name: "DEM.died", size_unit: "persons", clause: "POP.3" });
         d.event(EventKindDecl { name: "DEM.disabled", size_unit: "persons", clause: "POP.4" });
-        d.event(EventKindDecl { name: "DEM.aged", size_unit: "persons", clause: "REP.25" });
-        for hazard in [DEATH, ONSET, BIRTHDAY] {
+        d.event(EventKindDecl { name: "DEM.left_school", size_unit: "persons", clause: "REP.25" });
+        d.event(EventKindDecl { name: "DEM.decided", size_unit: "persons", clause: "POP.10" });
+        d.event(EventKindDecl { name: "DEM.born", size_unit: "persons", clause: "POP.5" });
+        for hazard in [DEATH, ONSET, BIRTHDAY, OCCASION, CONCEPTION] {
             d.hazard(hazard);
         }
         let prims = Prims::declare(d);
@@ -98,7 +129,9 @@ impl System for Dem {
         d.contribution(Box::new(Households { prims }));
         d.pop_process(Box::new(Mortality::new(prims)));
         d.pop_process(Box::new(Onset { prims }));
-        d.pop_process(Box::new(Majority::new(prims)));
+        d.pop_process(Box::new(LeavingSchool::new(prims)));
+        d.pop_process(Box::new(Fertility::new(prims)));
+        d.pop_process(Box::new(Conception::new(prims)));
     }
 
     fn handlers(_: &mut HandlerTable) {}

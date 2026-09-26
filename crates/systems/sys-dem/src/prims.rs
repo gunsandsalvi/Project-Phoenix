@@ -1,6 +1,6 @@
 //! DEM's primitives: the demography and households each country opens with, and the representation of households.
 
-use phx_core::register::values::{Distribution, Partition, Table2};
+use phx_core::register::values::{Distribution, Partition, Table1, Table2};
 use phx_core::{Declarations, Prim, declare_prim};
 use phx_num::{Count, Fixed};
 
@@ -108,6 +108,40 @@ declare_prim! {
         kind: Policy, decided_by: "parliament", value: Count, clause: "POP.16", scope: PerCountry
     }
 }
+declare_prim! {
+    /// The age at which the education law lets a child leave school.
+    pub SCHOOL_LEAVING = "DEM.school_leaving_age" {
+        kind: Policy, decided_by: "parliament", value: Count, clause: "POP.16", scope: PerCountry
+    }
+}
+declare_prim! {
+    /// The number of children a household would ideally have, drawn once for each household.
+    pub IDEAL_CHILDREN = "DEM.ideal_children" {
+        kind: Preference, value: Distribution { exp: 0 }, clause: "POP.16", scope: PerCountry
+    }
+}
+declare_prim! {
+    /// A woman's chance of a conception carried to a live birth in a cycle of trying, by her age.
+    pub FECUNDABILITY = "DEM.fecundability" {
+        kind: Technology, value: Table1 { axis_exp: 0, exp: 6 }, clause: "POP.16", scope: Shared
+    }
+}
+declare_prim! {
+    /// The days of a menstrual cycle.
+    pub CYCLE_DAYS = "DEM.cycle_days" { kind: Technology, value: Count, clause: "POP.16", scope: Shared }
+}
+declare_prim! {
+    /// What another member adds to a household's needs, as a share of its first adult's: another adult's, a child's.
+    pub EQUIVALENCE = "DEM.equivalence_scale" {
+        kind: Technology, value: Table1 { axis_exp: 0, exp: 2 }, clause: "POP.16", scope: Shared
+    }
+}
+declare_prim! {
+    /// The spread of a household's taste for a child at each decision, on the logistic.
+    pub TASTE_SPREAD = "DEM.fertility_taste_spread" {
+        kind: Preference, value: Fixed { exp: 2 }, clause: "POP.16", scope: Shared
+    }
+}
 
 /// DEM's primitives as its opening and processes read them.
 #[derive(Clone, Copy, Debug)]
@@ -127,6 +161,12 @@ pub struct Prims {
     pub wealth: Prim<Distribution>,
     pub age_classes: Prim<Partition>,
     pub majority: Prim<Count>,
+    pub school_leaving: Prim<Count>,
+    pub ideal_children: Prim<Distribution>,
+    pub fecundability: Prim<Table1>,
+    pub cycle_days: Prim<Count>,
+    pub equivalence: Prim<Table1>,
+    pub taste_spread: Prim<Fixed<2>>,
     pub members: Prim<Table2>,
     pub partner_gap: Prim<Distribution>,
     pub life_expectancy: Prim<Fixed<2>>,
@@ -150,6 +190,12 @@ impl Prims {
             wealth: d.prim(&WEALTH),
             age_classes: d.prim(&AGE_CLASSES),
             majority: d.prim(&MAJORITY),
+            school_leaving: d.prim(&SCHOOL_LEAVING),
+            ideal_children: d.prim(&IDEAL_CHILDREN),
+            fecundability: d.prim(&FECUNDABILITY),
+            cycle_days: d.prim(&CYCLE_DAYS),
+            equivalence: d.prim(&EQUIVALENCE),
+            taste_spread: d.prim(&TASTE_SPREAD),
             members: d.prim(&MEMBERS),
             partner_gap: d.prim(&PARTNER_GAP),
             life_expectancy: d.prim(&LIFE_EXPECTANCY),

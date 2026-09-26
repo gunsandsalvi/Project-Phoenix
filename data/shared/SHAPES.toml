@@ -35,3 +35,10 @@ owner = "VAL"
 reason = "How a party values a claim, a firm, a project, a dwelling, an offer or a policy is its own simple model of what it expects, not a price; the methods are the ones decision-makers report using."
 source = "measured"
 source_ref = "Discounted expected cash flows at a required return of patience plus risk aversion times the variance seen, and comparables where no history exists, as the survey of practice by Graham and Harvey (2001, Journal of Financial Economics 60(2-3)) reports for firms' capital budgeting."
+
+[[form]]
+id = "DEM.child_value"
+owner = "DEM"
+reason = "How a household weighs another child is not derived by any mechanism of the world; a discrete choice over the child's net value is the form the economics of fertility states."
+source = "measured"
+source_ref = "A discrete choice on the next child's net value, as in Becker (1960, An economic analysis of fertility, in Demographic and Economic Change in Developed Countries, NBER) and Hotz, Klerman and Willis (1997, The economics of fertility in developed countries, Handbook of Population and Family Economics 1A): the log of the step towards the household's ideal number of children, less the log of the step in its needs on the equivalence scale and of the care its youngest child still takes, one over one plus its age, and a logistic taste."

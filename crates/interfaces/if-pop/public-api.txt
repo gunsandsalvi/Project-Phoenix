@@ -1,6 +1,7 @@
 pub mod if_pop
 pub mod if_pop::consts
 pub const if_pop::consts::EDUCATION_VALUES: u32
+pub const if_pop::consts::IDEAL_VALUES: u32
 pub const if_pop::consts::REGIONS: u32
 pub mod if_pop::facts
 pub struct if_pop::facts::After
@@ -10,6 +11,12 @@ pub struct if_pop::facts::Income
 impl phx_core::facts::FactDef for if_pop::facts::Income
 pub const if_pop::facts::Income::ITEM: phx_core::facts::ItemDecl
 pub const if_pop::facts::POSITIONS: [phx_core::pop::PositionDecl; 2]
+pub mod if_pop::fertility
+pub const if_pop::fertility::IDEAL: phx_core::pop::AttrDecl
+pub const if_pop::fertility::IDEAL_UNDRAWN: u32
+pub const if_pop::fertility::NOT_TRYING: u32
+pub const if_pop::fertility::TRYING: phx_core::pop::AttrDecl
+pub const if_pop::fertility::TRYING_FOR_CHILD: u32
 pub const if_pop::ABLE: u32
 pub const if_pop::ADULT: phx_core::pop::RoleDecl
 pub const if_pop::CHILD: phx_core::pop::RoleDecl
@@ -20,6 +27,7 @@ pub const if_pop::FEMALE: u32
 pub const if_pop::HEAD: phx_core::pop::RoleDecl
 pub const if_pop::HEALTH: phx_core::pop::PersonAttrDecl
 pub const if_pop::HOUSEHOLD: &str
+pub const if_pop::ITEMS: &[phx_core::facts::ItemDecl]
 pub const if_pop::MALE: u32
 pub const if_pop::PARTNER: phx_core::pop::RoleDecl
 pub const if_pop::REGION: phx_core::pop::AttrDecl

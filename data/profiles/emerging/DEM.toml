@@ -16,3 +16,20 @@ owner = "DEM"
 source = "assumed"
 source_ref = "A man's age less his female partner's in a couple living together, normal: a mean of 3.5 years for the group, near the gap between men's and women's mean ages at first marriage that UN DESA's World Marriage Data reports for such economies, and a spread of 5 years, both assumed until the gap is derived from those data (F-036)."
 value = { family = "normal", discretisation = "equal_shares", mean = "3.5", sd = "5" }
+
+[[primitive]]
+id = "DEM.school_leaving_age"
+kind = "POLICY"
+owner = "DEM"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The age at which compulsory education ends, the theoretical entrance age of primary school plus the duration of compulsory education (World Bank WDI SE.PRM.AGES and SE.COM.DURS, from UNESCO, each country's latest year from 2010 to 2024): 16, the median over the group's 56 countries. Where schooling before primary is compulsory the sum overstates the ending age by up to two years."
+value = 16
+
+[[primitive]]
+id = "DEM.ideal_children"
+kind = "PREFERENCE"
+owner = "DEM"
+source = "assumed"
+source_ref = "A household's ideal number of children: a mean of 2.7, the median over 13 upper-middle-income countries of the DHS indicator of women's ideal number of children (women 15 to 49, each country's latest survey from 2010 on). The shares over the numbers are assumed about that mean, most at two as the surveys report, giving a mean of 2.68, until they are derived from the surveys' own distributions (F-113)."
+value = { family = "discrete", discretisation = "equal_shares", values = [0, 1, 2, 3, 4, 5], shares_ppm = [30000, 50000, 400000, 300000, 170000, 50000] }

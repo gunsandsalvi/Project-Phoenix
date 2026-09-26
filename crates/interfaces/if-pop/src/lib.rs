@@ -3,10 +3,14 @@
 
 pub mod consts;
 pub mod facts;
+pub mod fertility;
 
-use phx_core::{AttrDecl, PersonAttrDecl, RoleDecl};
+use phx_core::{AttrDecl, FactDef, ItemDecl, PersonAttrDecl, RoleDecl};
 
 use crate::consts::{EDUCATION_VALUES, REGIONS};
+
+/// Every item the crate exports.
+pub const ITEMS: &[ItemDecl] = &[<facts::Income as FactDef>::ITEM, <facts::After as FactDef>::ITEM];
 
 /// The population kind of households.
 pub const HOUSEHOLD: &str = "household";
@@ -40,5 +44,5 @@ pub const HEAD: RoleDecl = RoleDecl { name: "head", clause: "REP.26" };
 pub const PARTNER: RoleDecl = RoleDecl { name: "partner", clause: "REP.26" };
 /// Another adult of the household.
 pub const ADULT: RoleDecl = RoleDecl { name: "adult", clause: "REP.26" };
-/// A child under the age of majority.
+/// A child of the household still in school.
 pub const CHILD: RoleDecl = RoleDecl { name: "child", clause: "REP.26" };

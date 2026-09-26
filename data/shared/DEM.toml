@@ -15,3 +15,35 @@ owner = "DEM"
 source = "assumed"
 source_ref = "Who each basic type of household in DEM.household_types holds besides its head (rows in that order: one person, couple only, couple with children, single parent with children, extended family, non-relatives), one or none of each column: a partner, the children under the age of majority of the head's side, a relative of 65 and over, an adult who is no relative. The types are UN DESA's (Database on Household Size and Composition): a couple or a parent with children is a family nucleus, an extended family a nucleus with other relatives, here one older relative, and non-relatives persons sharing a dwelling, here two. A single parent is the children's mother. Each is an assumption of the opening's composition."
 value = { rows = [0, 1, 2, 3, 4, 5], columns = [0, 1, 2, 3], values = [[0, 0, 0, 0], [1, 0, 0, 0], [1, 1, 0, 0], [0, 1, 0, 0], [1, 1, 1, 0], [0, 0, 0, 1]], outside = "refuse" }
+
+[[primitive]]
+id = "DEM.fecundability"
+kind = "TECHNOLOGY"
+owner = "DEM"
+source = "estimated"
+source_ref = "A woman's chance a cycle of a conception carried to a live birth, by her age from each value's first age: 0.109 at 28 to 30, a constant chance a cycle that gives the 75% of women who conceive within a year of trying from 30 in Leridon (2004, Human Reproduction 19(7), abstract); at the other ages that value times Wesselink et al.'s (2017, American Journal of Obstetrics and Gynecology 217(6), table 2) adjusted fecundability ratios to 28 to 30 (1/0.88 at 21 to 24, held from 15; 0.91/0.88 at 25 to 27; 0.87/0.88, 0.82/0.88, 0.60/0.88 and 0.40/0.88 at 31, 34, 37 and 40 to 45). Nought before 15, and from 46, where no source counts a conception."
+value = { axis = [0, 15, 25, 28, 31, 34, 37, 40, 46], values = [0, 0.123864, 0.112716, 0.109000, 0.107761, 0.101568, 0.074318, 0.049545, 0], outside = "edge" }
+
+[[primitive]]
+id = "DEM.cycle_days"
+kind = "TECHNOLOGY"
+owner = "DEM"
+source = "measured"
+source_ref = "The mean length of a menstrual cycle, 29.3 days over some 600,000 cycles (Bull et al. 2019, npj Digital Medicine 2, 83), to the whole day."
+value = 29
+
+[[primitive]]
+id = "DEM.equivalence_scale"
+kind = "TECHNOLOGY"
+owner = "DEM"
+source = "measured"
+source_ref = "What another member adds to a household's needs as a share of its first adult's, at axis 0 another adult and at axis 1 a child: the OECD-modified equivalence scale, 0.5 and 0.3 (Hagenaars, de Vos and Zaidi 1994, Poverty Statistics in the Late 1980s, Eurostat; OECD, What are equivalence scales?)."
+value = { axis = [0, 1], values = [0.50, 0.30], outside = "refuse" }
+
+[[primitive]]
+id = "DEM.fertility_taste_spread"
+kind = "PREFERENCE"
+owner = "DEM"
+source = "assumed"
+source_ref = "The spread of a household's taste for a child at each decision, as a multiple of the standard logistic: 1, the logit's own scale, until it is estimated from panel data on couples' fertility intentions (F-113)."
+value = 1.00

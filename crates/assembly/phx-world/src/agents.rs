@@ -138,8 +138,10 @@ pub struct AgentDay {
     /// Bookings drawn again on the day a rate changed, and hits drawn.
     pub redraws: u64,
     pub hits: u64,
-    /// Persons the hits reached, and persons gone from households at 3e, each counted once for every twin.
+    /// Persons the hits reached, persons born into households and persons gone from them at 3e, each counted once for
+    /// every twin.
     pub persons_hit: u64,
+    pub born: u64,
     pub gone: u64,
     /// Agents whose households no one was left in, and the estates opened for those that held anything.
     pub ended: u64,
@@ -181,6 +183,7 @@ impl AgentDay {
             redraws: 0,
             hits: 0,
             persons_hit: 0,
+            born: 0,
             gone: 0,
             ended: 0,
             estates: 0,
@@ -243,10 +246,11 @@ fn chances(
 }
 
 /// An agent's household changed by its hits of the day: who it is, the words it is to be written back as, how many of
-/// its persons are gone, and the region it is sited by.
+/// its persons were born and how many are gone, and the region it is sited by.
 struct Changed {
     who: (usize, Slot, PartyId),
     rewrite: Rewrite,
+    born: u64,
     gone: u64,
     region: Option<u32>,
 }
@@ -271,7 +275,10 @@ struct Scratch {
 
 impl Scratch {
     fn new() -> Scratch {
-        Scratch { household: Household { attrs: Vec::new(), persons: Vec::new() }, buffers: Buffers::default() }
+        Scratch {
+            household: Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() },
+            buffers: Buffers::default(),
+        }
     }
 }
 
@@ -537,7 +544,7 @@ impl World {
             let changed = phx_exec::pool::map(self.books.pool(), GATHER_WAVE, |i| {
                 let from = lesser((wave + i) * each, agents.len());
                 let to = lesser(from + each, agents.len());
-                let mut h = Household { attrs: Vec::new(), persons: Vec::new() };
+                let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
                 agents
                     .get(from..to)
                     .unwrap_or(&[])
@@ -568,6 +575,7 @@ impl World {
             violation!(clause = "REP.7", "a hit whose agent left its slot before its outcomes", party = party.get());
         }
         household_into(&kd.decl, table, slot, h);
+        let before = h.persons.len();
         let attrs = h.attrs.clone();
         let attr = |name: &str| attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
         let view = AgentView { kind: kd.decl.kind, party, attr: &attr, country_of: &country_of, date };
@@ -589,20 +597,29 @@ impl World {
             Missing::Absent => None,
         };
         let gone = phx_rand::float::len_u64(h.persons.iter().filter(|p| p.gone).count());
-        Some(Changed { who: (kind, slot, party), rewrite: rewrite(&kd.decl, table, slot, h), gone, region })
+        let Some(born) = h.persons.len().checked_sub(before) else {
+            violation!(
+                clause = "REP.26",
+                "an outcome took persons out rather than marking them gone",
+                party = party.get()
+            );
+        };
+        let born = phx_rand::float::len_u64(born);
+        Some(Changed { who: (kind, slot, party), rewrite: rewrite(&kd.decl, table, slot, h), born, gone, region })
     }
 
     /// An agent's changed household written back in the day's order: its gone persons' contracts leaving their lines
     /// at its multiplicity, and an agent no one is left in ended, what it held passing to an estate.
     fn write_household(&mut self, day: Day, c: Changed) {
-        let Changed { who: (kind, slot, party), rewrite, gone, region } = c;
+        let Changed { who: (kind, slot, party), rewrite, born, gone, region } = c;
         let cells = self.books.parties.cells_mut().0;
         let table = Population::table_mut::<SystemBacking>(cells, kind);
         let twins = table.multiplicity(slot).get();
         let written = write_rewrite(table, slot, &rewrite);
         let k = u64::from(twins);
+        self.agent_day.born += born * k;
         self.agent_day.gone += gone * k;
-        self.population.count(kind, (0, 0), (0, gone * k));
+        self.population.count(kind, (0, 0), (born * k, gone * k));
         let subject = Subject::new(SubjectTag::Party, party.get());
         let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S3e.ordinal());
         self.leave(day, party, (&written.leaving, twins), &mut draws);

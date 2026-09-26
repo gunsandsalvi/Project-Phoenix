@@ -69,7 +69,7 @@ mod tests {
     }
 
     fn household(persons: Vec<Person>) -> Household {
-        Household { attrs: vec![(REGION.name, 3)], persons }
+        Household { attrs: vec![(REGION.name, 3)], persons, positions: Vec::new() }
     }
 
     #[test]

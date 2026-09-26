@@ -84,13 +84,15 @@ impl Person {
     }
 }
 
-/// A household made explicit for the day's outcomes: its attributes by name and its persons. An outcome changes it;
-/// the kernel then writes it back to its agent, or ends the agent when no one is left.
+/// A household made explicit for the day's outcomes: its attributes by name, its persons, and the positions its
+/// kind holds, as read. An outcome changes its attributes and persons; the kernel then writes them back to its agent,
+/// or ends the agent when no one is left. Its positions are handlers' to write, so they are never written back.
 #[clause("REP.26", "REP.41")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Household {
     pub attrs: Vec<(&'static str, u32)>,
     pub persons: Vec<Person>,
+    pub positions: Vec<(&'static str, phx_num::Missing<i64>)>,
 }
 
 impl Household {
@@ -109,6 +111,11 @@ impl Household {
             phx_num::violation!(clause = "REP.41", "a household given an attribute its kind does not hold");
         };
         *v = value;
+    }
+
+    /// A position's value as read; absent where the kind holds no such position or the household none yet.
+    pub fn position(&self, name: &str) -> phx_num::Missing<i64> {
+        self.positions.iter().find(|(n, _)| *n == name).map_or(phx_num::Missing::Absent, |(_, v)| *v)
     }
 
     /// The persons still in the household.

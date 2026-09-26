@@ -131,7 +131,10 @@ pub(crate) struct HazardScratch {
 
 impl HazardScratch {
     pub(crate) fn new() -> HazardScratch {
-        HazardScratch { household: Household { attrs: Vec::new(), persons: Vec::new() }, qs: Vec::new() }
+        HazardScratch {
+            household: Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() },
+            qs: Vec::new(),
+        }
     }
 }
 
@@ -204,7 +207,7 @@ pub(crate) fn outcomes(
         let lesser = |x: usize, y: usize| if x < y { x } else { y };
         let from = lesser(p * each, runs.len());
         let to = lesser(from + each, runs.len());
-        let mut h = Household { attrs: Vec::new(), persons: Vec::new() };
+        let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
         runs.get(from..to)
             .unwrap_or(&[])
             .iter()

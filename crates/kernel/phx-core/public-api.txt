@@ -1215,8 +1215,10 @@ pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatte
 pub struct phx_core::pop_process::Household
 pub phx_core::pop_process::Household::attrs: alloc::vec::Vec<(&'static str, u32)>
 pub phx_core::pop_process::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
+pub phx_core::pop_process::Household::positions: alloc::vec::Vec<(&'static str, phx_num::missing::Missing<i64>)>
 impl phx_core::pop_process::Household
 pub fn phx_core::pop_process::Household::attr(&self, &str) -> u32
+pub fn phx_core::pop_process::Household::position(&self, &str) -> phx_num::missing::Missing<i64>
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
 pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)
 pub struct phx_core::pop_process::Person
@@ -2925,8 +2927,10 @@ pub phx_core::HeldRight::remaining: phx_num::missing::Missing<i64>
 pub struct phx_core::Household
 pub phx_core::Household::attrs: alloc::vec::Vec<(&'static str, u32)>
 pub phx_core::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
+pub phx_core::Household::positions: alloc::vec::Vec<(&'static str, phx_num::missing::Missing<i64>)>
 impl phx_core::pop_process::Household
 pub fn phx_core::pop_process::Household::attr(&self, &str) -> u32
+pub fn phx_core::pop_process::Household::position(&self, &str) -> phx_num::missing::Missing<i64>
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
 pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)
 pub struct phx_core::InsolvencyDecl

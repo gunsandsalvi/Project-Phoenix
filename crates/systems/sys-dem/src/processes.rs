@@ -1,8 +1,7 @@
-//! The processes on households' persons: death by the country's life table at the person's exact age, the onset of
-//! lasting disability by age and sex, and a child coming of age, who becomes another adult on the birthday its
-//! country's age of majority falls on.
+//! The processes on households' persons: death by the country's life table at the person's exact age, and the onset
+//! of lasting disability by age and sex.
 
-use if_pop::{ADULT, CHILD, DISABLED, FEMALE, HEALTH, HOUSEHOLD, MALE, REGION, SEX};
+use if_pop::{DISABLED, FEMALE, HEALTH, HOUSEHOLD, MALE, REGION, SEX};
 use phx_core::calendar::daycount::actual_days;
 use phx_core::{AgentView, Household, Person, PopProcess, Register};
 use phx_id::{CountryId, Date};
@@ -16,7 +15,7 @@ use crate::household::succeed;
 use crate::life::{dies_at_age, level_for, survivorship};
 use crate::opening::value as read;
 
-fn country(agent: &AgentView<'_>) -> usize {
+pub(crate) fn country(agent: &AgentView<'_>) -> usize {
     let region = (agent.attr)(REGION.name).unwrap_or_else(|| {
         violation!(clause = "REP.41", "a household without its region");
     });
@@ -27,7 +26,7 @@ fn country(agent: &AgentView<'_>) -> usize {
 }
 
 /// Each country's value by its identity, found once at binding.
-fn per_country<T>(register: &Register, of: impl Fn(CountryId) -> T) -> Vec<T> {
+pub(crate) fn per_country<T>(register: &Register, of: impl Fn(CountryId) -> T) -> Vec<T> {
     (0..register.countries())
         .map(|c| {
             let Ok(c) = u8::try_from(c) else { violation!(clause = "GEN.1", "a country beyond identities") };
@@ -36,21 +35,21 @@ fn per_country<T>(register: &Register, of: impl Fn(CountryId) -> T) -> Vec<T> {
         .collect()
 }
 
-fn of_country<'a, T>(list: &'a [T], agent: &AgentView<'_>) -> &'a T {
+pub(crate) fn of_country<'a, T>(list: &'a [T], agent: &AgentView<'_>) -> &'a T {
     let Some(x) = list.get(country(agent)) else {
         violation!(clause = "POP.16", "a country the process was not bound for");
     };
     x
 }
 
-fn sex(p: &Person) -> u32 {
+pub(crate) fn sex(p: &Person) -> u32 {
     let Some(s) = p.attr(SEX.name).filter(|s| *s == FEMALE || *s == MALE) else {
         violation!(clause = "POP.1", "a person of a sex the tables do not hold");
     };
     s
 }
 
-fn age(p: &Person, date: Date) -> usize {
+pub(crate) fn age(p: &Person, date: Date) -> usize {
     let Ok(a) = usize::try_from(p.age_on(date)) else {
         violation!(clause = "REP.25", "a person read before it was born");
     };
@@ -160,54 +159,6 @@ impl PopProcess for Onset {
         for i in reached {
             if let Some(p) = h.persons.get_mut(*i) {
                 p.set_attr(HEALTH.name, DISABLED);
-            }
-        }
-    }
-}
-
-/// A child comes of age on the birthday its country's age of majority falls on, and becomes another adult of its
-/// household, its schooling not yet recorded.
-#[clause("REP.25", "REP.26", "POP.16")]
-#[derive(Debug)]
-pub struct Majority {
-    prims: Prims,
-    majority: Vec<i64>,
-}
-
-impl Majority {
-    #[must_use]
-    pub fn new(prims: Prims) -> Majority {
-        Majority { prims, majority: Vec::new() }
-    }
-}
-
-impl PopProcess for Majority {
-    fn bind(&mut self, register: &Register) {
-        self.majority = per_country(register, |c| {
-            let Ok(m) = i64::try_from(self.prims.majority.get(register, c).get()) else {
-                violation!(clause = "POP.16", "an age of majority beyond counting", country = c.get());
-            };
-            m
-        });
-    }
-    fn hazard(&self) -> &'static str {
-        crate::BIRTHDAY.name
-    }
-    fn kind(&self) -> &'static str {
-        HOUSEHOLD
-    }
-    /// Certain on the day a child reaches the age of majority, and nothing on any other.
-    fn rate(&self, _: &Register, agent: &AgentView<'_>, p: &Person) -> f64 {
-        let comes_of_age = p.role == CHILD.name && p.age_on(agent.date) >= *of_country(&self.majority, agent);
-        if comes_of_age { 1.0 } else { 0.0 }
-    }
-    fn changes_after(&self, p: &Person, date: Date) -> Option<Date> {
-        (p.role == CHILD.name).then(|| p.next_birthday(date))
-    }
-    fn outcome(&self, _: &Register, _: &AgentView<'_>, h: &mut Household, reached: &[usize], _: &mut Draws) {
-        for i in reached {
-            if let Some(p) = h.persons.get_mut(*i).filter(|p| p.role == CHILD.name) {
-                p.role = ADULT.name;
             }
         }
     }

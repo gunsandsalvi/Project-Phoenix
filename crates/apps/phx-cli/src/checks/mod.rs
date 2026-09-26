@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod births;
 pub mod central;
 pub mod credit;
 pub mod firms;
@@ -183,6 +184,9 @@ pub const CHECKS: &[Check] = &[
     households::LC_1_32,
     households::LC_1_33,
     households::LC_1_34,
+    births::LC_1_35,
+    births::LC_1_36,
+    births::LC_1_49,
     firms::LC_1_45,
     goods::LC_1_46,
     freight::LC_1_47,

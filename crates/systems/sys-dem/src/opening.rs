@@ -403,7 +403,7 @@ fn index(v: u32) -> usize {
 /// land, one in `REP.multiplicity` of each region's persons drawn by single age and sex, and households formed from them
 /// until none is left — families while a child is left, then households of adults — each person's health drawn by age
 /// and sex and each adult's education by age band and sex. Each household is an agent of that many twins.
-#[clause("GEN.2", "GEN.3", "POP.1", "POP.2", "REP.25", "REP.26", "REP.40")]
+#[clause("GEN.2", "GEN.3", "POP.1", "POP.2", "PTY.2", "REP.25", "REP.26", "REP.40")]
 #[derive(Debug)]
 pub struct Households {
     pub prims: Prims,
@@ -518,7 +518,7 @@ fn draw_region(
             *r = region;
         }
         let names: Vec<(&'static str, u32)> = kind.attrs.iter().zip(&attrs).map(|(a, v)| (a.item.name, *v)).collect();
-        let h = Household { attrs: names, persons };
+        let h = Household { attrs: names, persons, positions: Vec::new() };
         let mut means = opening_ctx.draws(&MeansStream::DECL, subject);
         let drawn = (
             country.wealth.draw(&mut means) / country.wealth.mean(),

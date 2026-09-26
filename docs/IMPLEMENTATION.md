@@ -7439,11 +7439,13 @@ on exact inputs, their entries, hit rate and solve time measured (`phx_hh.buffer
 
 ### S1.13 — `sys-dem`: births, and leaving school
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
-- STATE: PTY.2 *(completes it, moved from S1.12: households promoted and demoted by their rank)*.
-- DECISION: POP.10.
+- STATE: PTY.2 *(completes it: the individuals are those ranked at the opening and an agent stays an agent, promotion
+  and demotion being retired, REP.29)*.
+- DECISION: POP.10 *(part: income read as an outlook formed or not; the child's money cost at prices and the dwelling
+  with the households' finances and housing, S2.05)*.
 - PROCESS: POP.5; CHN.3 *(part: conception)*.
 - Education and skill (POP.6) are S6.02; until then leaving school is a placeholder naming POP (below).
 
@@ -7459,10 +7461,11 @@ outcome.
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-pop/src/fertility.rs` | the decision point `try_for_child` |
-| `crates/systems/sys-dem/src/rules/fertility.rs` | POP.10 |
-| `src/hazards.rs` | the conception hazard, acting only on the roles whose decision is to try |
+| `crates/interfaces/if-pop/src/fertility.rs` | the household's attributes `DEM.trying` and `DEM.ideal_children` |
+| `crates/systems/sys-dem/src/fertility.rs` | POP.10: the next child's value and the decision |
+| `src/births.rs` | the decision on its occasion, and the conception hazard, acting only on households whose decision is to try |
 | `src/school.rs` | the placeholder school-leaving rule |
+| `crates/apps/phx-cli/src/checks/births.rs` | LC-1-35, LC-1-36, LC-1-49 and the population's report |
 | `data/<country>/DEM.toml` | conception hazard by age (TECHNOLOGY); preference for children (PREFERENCE); the statutory school-leaving age (POLICY, education law) |
 
 **Design**
@@ -7480,10 +7483,31 @@ outcome.
   search decision (S1.08). The member reaching the age is drawn from the birth years (REP.25). A placeholder naming
   POP (S6.02), so cohorts enter the labour force and the run can go on.
 
+**As built**:
+- a household decides on each of its head's birthdays (`DEM.fertility_occasion`, stream `DEM.fertility_taste`): the
+  next child's value is `ln((1 + n*)/(1 + n)) − ln(e(n + 1)/e(n)) − ln(1 + 1/(1 + a)) + s·ε`, with `n*` its ideal
+  number of children (`DEM.ideal_children`, drawn from its country's shares at its first decision and held), `n` its
+  children, `e` its needs on the OECD-modified equivalence scale (`DEM.equivalence_scale`), `a` its youngest child's
+  age, `ε` a standard logistic taste at the decision and `s` its spread; a household with no outlook of a positive
+  income does not try. The form is `DEM.child_value` in `SHAPES.toml`;
+- while its household tries, each woman of its couple (head or partner) conceives by `DEM.fecundability`, her age's
+  chance a cycle, compounded over `DEM.cycle_days`; the conception is a birth at once (no gestation, F-113): a child
+  of the household, its sex by the sex ratio at birth, able and not yet schooled; the household stops trying until
+  its next decision;
+- a child leaves school on the birthday its country's `DEM.school_leaving_age` falls on and becomes another adult
+  (`LeavingSchool`, the retired `Majority`); the opening's children are those under the age of majority, so on day
+  one those past the leaving age leave (F-113);
+- the kernel counts births at 3e with deaths (`AgentDay.born`), and `Household` carries its kind's positions as read,
+  which outcomes read and never write back;
+- the run report's `population` holds the age structure by `DEM.age_classes` and sex, births, the general fertility
+  rate and school leavers.
+
 **Unit tests**
-- `fertility_value_inputs`: over given inputs, the value rises with income and space and falls with the youngest
-  child's closeness; households of every composition are evaluated by the one rule.
-- `conception_acts_only_on_deciders`: over given counts, the members exposed are those who decided.
+- `fertility_value_inputs`: over given inputs, the value falls with each child towards the ideal and with the
+  youngest child's closeness; no outlook of income, no decision to try; households of every composition are
+  evaluated by the one rule.
+- *(retired: `conception_acts_only_on_deciders` — the rate reads the household's decision directly, and LC-0-39
+  holds the hits to the rates read.)*
 
 **Live checks**
 - `LC-1-35`: POP.11 — the population equals births and arrivals minus deaths and departures.
@@ -7499,15 +7523,16 @@ outcome.
 **Not allowed**: a birth rate; a conception without a decision; a participation rate for school leavers.
 
 **Done when**
-- [ ] Births follow decisions and hazards; school leavers enter the adult roles.
-- [ ] LC-1-35, LC-1-36 and LC-1-49 pass.
-- [ ] Two reviews are done.
+- [x] Births follow decisions and hazards; school leavers enter the adult roles.
+- [x] LC-1-35, LC-1-36 and LC-1-49 pass *(at the Stage 1 gate's run: births begin once households hold an outlook of
+  their income and reach their head's birthday)*.
+- [x] Two reviews are done.
 
 ---
 
 ### S1.14 — `sys-idx` and `sys-sta`: price indices and published statistics
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: IDX.3; STA.1 *(part: national accounts, prices, labour, money and vital statistics; house prices come at
@@ -8544,6 +8569,8 @@ receivables by name; references resolve to the estate.
 **Status**: planned
 
 **Clauses**:
+- DECISION: POP.10 *(completes it, moved from S1.13: the child's cost at the prices and rents in reach and the
+  dwelling's rooms per member and tenure in the value)*.
 - STATE, DECISION: HH.3, HH.6 *(moved from S1.12: preference types drawn at formation; participation and hours with the reservation)*; HH.7 *(part, moved from S1.12: banknotes and bills)*; MON.4 *(completes it)*.
 - STATE: HSG.1, HSG.2, HSG.3, HSG.19; CAP.2; GDS.3 *(completes it: land grown on)*; GEO.4 *(part: private owners'
   life, maintenance and condition; public owners decide from S5.02, where it completes)*; GEO.5 *(land held, with
@@ -16713,6 +16740,7 @@ the final build within the budget on the phone.
 | F-110 | S1.11 | data, 2026-09-26 | Several of the state's values are assumed or constructed: the income tax bands are built from medians of marginal rates at points of the wage (developed, emerging from three countries) and, for the developing group, the IMF's means in multiples of output per person taken as multiples of the mean wage; the emerging benefit's months read from an ambiguous source; the claim's hours; the treasury's payment order; and a bill's discount is taken when it is sold rather than accrued, and the state pension keeps its opening terms' rank | no source gives a group's schedule as bands, relates the mean wage to output per person in the developing group, measures the time a claim takes, or states each parliament's payment order; accrual of discounts is ACC's (S2.10), and the pension's terms are SOC's (S5.02) | each measured where a source is found; the discount accrued with the accounts; the pension's rank read from the order when SOC's lines are rebuilt | open for S5.01 |
 | F-111 | S1.11 | build, 2026-09-26 | The developing group reports no policy rate (GEN.policy_rate left out for want of data), so its corridor and its banks' cost of funds are priced from its deposit rate | the BIS policy-rate series covers too few lower-middle- and low-income economies | a policy-rate source for the group (the IMF's International Financial Statistics) in `tools/data/derive.py`; the rate the committee sets from S3.02 | open for S3.02 |
 | F-112 | S1.12 | build, 2026-09-26 | Households are one preference type, the buffer-stock rule is solved once for shared inputs (its return and growth placeholders), and a household's income is read as the change in its money between decisions, which counts every inflow and every payment other than its spending | preference types, each household's own rate and outlook width, and its income by payer are not built; the handler sees its money only | the types drawn, the rule memoised on each household's exact inputs, and income read from its settled receipts, with the households' finances (S2.05); `buffer_solution_matches_published_values` then checks Carroll's published cases | open for S2.05 |
+| F-113 | S1.13 | build, 2026-09-26 | A conception is a birth at once, the opening's households all start not trying, the ideal number of children's shares are assumed about the surveys' means, the taste's spread is the logit's own, the opening's children are those under the age of majority though they leave school younger, and HH's positions were exported by no interface until this step (S1.12's world did not assemble) | no gestation, no post-partum infecundity, births ramp in over a year of decisions, day one moves the cohorts between the school-leaving age and majority into the adult roles | gestation as a pregnancy the household holds, the ideal shares and the taste's spread from DHS and Eurobarometer microdata, and the opening's children composed by the school-leaving age, with `sys-dem` in full (S6.02) | open for S6.02 |
 
 ---
 
@@ -16865,7 +16893,8 @@ and are not mapped.
 | VAL | S1.05 | 23 |
 | VAL | S1.15 | 12, 13, 14, 15 |
 | POP | S0.25 | 3, 4 |
-| POP | S1.13 | 5, 10 |
+| POP | S1.13 | 5 |
+| POP | S2.05 | 10 |
 | POP | S2.04 | 9, 15 |
 | POP | S6.02 | 1, 2, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 |
 | HH | S1.12 | 1, 2, 4, 5, 15, 18, 19, 20 |
