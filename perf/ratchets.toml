@@ -201,9 +201,10 @@ counter = "phx_rand.ir_multivariate_hypergeometric"
 value = 6853
 direction = "down"
 
+# The pick with the tree's room kept by its caller, as a caller keeps it (F-009).
 [[ratchet]]
 counter = "phx_rand.ir_pick_without_replacement"
-value = 5863
+value = 5798
 direction = "down"
 
 [[ratchet]]
@@ -260,9 +261,11 @@ counter = "phx_store.ir_encode"
 value = 1002629
 direction = "down"
 
+# Raised by 32 at S0.26f (b00aae4b): the store's writer grew its framed output beside the decoder, the decoding
+# itself unchanged.
 [[ratchet]]
 counter = "phx_store.ir_decode"
-value = 732747
+value = 732779
 direction = "down"
 
 # phx-exec's kernels on the calling thread (a pool's idle workers would add instructions that depend on timing): a

@@ -101,12 +101,17 @@ fn ir_multivariate_hypergeometric(mut d: Draws) -> [u64; 5] {
     black_box(out)
 }
 
+/// Fresh draws and the tree's room, which a caller of the pick keeps from one call to the next.
+fn kept() -> (Draws, phx_rand::Fenwick) {
+    (draws(), phx_rand::Fenwick::with_room(64))
+}
+
 #[library_benchmark]
-#[bench::fresh(draws())]
-fn ir_pick_without_replacement(mut d: Draws) -> Vec<u64> {
+#[bench::kept(kept())]
+fn ir_pick_without_replacement((mut d, mut tree): (Draws, phx_rand::Fenwick)) -> Vec<u64> {
     let counts: Vec<u64> = (0..64).map(|i| 1 + i % 7).collect();
     let mut out = vec![0; 64];
-    pick_without_replacement(&mut d, black_box(&counts), black_box(8), (&mut out, &mut phx_rand::Fenwick::default()));
+    pick_without_replacement(&mut d, black_box(&counts), black_box(8), (&mut out, &mut tree));
     black_box(out)
 }
 

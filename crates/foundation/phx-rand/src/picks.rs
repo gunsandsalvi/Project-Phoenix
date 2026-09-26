@@ -24,10 +24,17 @@ impl Fenwick {
         t
     }
 
+    /// An empty tree with room for `categories`, for a caller to keep and rebuild.
+    #[must_use]
+    pub fn with_room(categories: usize) -> Fenwick {
+        Fenwick { tree: Vec::with_capacity(categories + 1) }
+    }
+
     /// The tree made again over `counts`, in the room it already holds.
     pub fn rebuild(&mut self, counts: &[u64]) {
         let tree = &mut self.tree;
         tree.clear();
+        tree.reserve(counts.len() + 1);
         tree.push(0);
         tree.extend_from_slice(counts);
         for i in 1..tree.len() {
