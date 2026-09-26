@@ -5,8 +5,9 @@ use crate::draws::Draws;
 use crate::float::len_u64;
 use crate::uniform::below_u64;
 
-/// A Fenwick tree over counts: prefix sums and single decrements in O(log e).
-#[derive(Clone, Debug)]
+/// A Fenwick tree over counts: prefix sums and single decrements in O(log e); rebuilt in place, so a caller that keeps
+/// one allocates only when its categories outgrow it.
+#[derive(Clone, Debug, Default)]
 pub struct Fenwick {
     tree: Vec<u64>,
 }
@@ -18,7 +19,15 @@ fn lowbit(i: usize) -> usize {
 impl Fenwick {
     #[must_use]
     pub fn new(counts: &[u64]) -> Fenwick {
-        let mut tree = Vec::with_capacity(counts.len() + 1);
+        let mut t = Fenwick::default();
+        t.rebuild(counts);
+        t
+    }
+
+    /// The tree made again over `counts`, in the room it already holds.
+    pub fn rebuild(&mut self, counts: &[u64]) {
+        let tree = &mut self.tree;
+        tree.clear();
         tree.push(0);
         tree.extend_from_slice(counts);
         for i in 1..tree.len() {
@@ -29,7 +38,6 @@ impl Fenwick {
                 *p += own;
             }
         }
-        Fenwick { tree }
     }
 
     /// The index whose cumulative count first exceeds `target`.
@@ -61,9 +69,9 @@ impl Fenwick {
 }
 
 /// `k` picks without replacement from categories holding `counts`, as picks per category: each pick a uniform over
-/// what remains and a descent of the tree, O(e + k log e).
+/// what remains and a descent of the tree, O(e + k log e). The tree is built in the caller's scratch.
 #[clause("CHN.7")]
-pub fn pick_without_replacement(d: &mut Draws, counts: &[u64], k: u64, out: &mut [u64]) {
+pub fn pick_without_replacement(d: &mut Draws, counts: &[u64], k: u64, (out, tree): (&mut [u64], &mut Fenwick)) {
     if counts.len() != out.len() {
         violation!(clause = "CHN.2", "counts and outputs of different lengths");
     }
@@ -73,7 +81,7 @@ pub fn pick_without_replacement(d: &mut Draws, counts: &[u64], k: u64, out: &mut
     if k > remaining {
         violation!(clause = "CHN.2", "more picks than things to pick", k = k, total = remaining);
     }
-    let mut tree = Fenwick::new(counts);
+    tree.rebuild(counts);
     out.fill(0);
     for _ in 0..k {
         let i = tree.find(below_u64(d, remaining));
@@ -111,7 +119,7 @@ mod tests {
         let mut first_mvh = vec![0_u64; 8];
         let (mut out, mut out2) = ([0_u64; 5], [0_u64; 5]);
         for _ in 0..rounds {
-            pick_without_replacement(&mut dp, &counts, k, &mut out);
+            pick_without_replacement(&mut dp, &counts, k, (&mut out, &mut Fenwick::default()));
             multivariate_hypergeometric(&mut dm, &counts, k, &mut out2);
             assert_eq!(out.iter().sum::<u64>(), k);
             assert!(out.iter().zip(counts).all(|(o, c)| *o <= c));
@@ -145,7 +153,7 @@ mod tests {
         let mut picked = Vec::with_capacity(100_000);
         let mut out = [0_u64; 5];
         for _ in 0..100_000 {
-            pick_without_replacement(&mut d, &counts, 1, &mut out);
+            pick_without_replacement(&mut d, &counts, 1, (&mut out, &mut Fenwick::default()));
             assert_eq!(out.iter().sum::<u64>(), 1);
             picked.push(out.iter().position(|x| *x == 1).map_or(u64::MAX, |i| u64::try_from(i).unwrap()));
         }

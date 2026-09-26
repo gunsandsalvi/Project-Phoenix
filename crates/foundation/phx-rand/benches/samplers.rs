@@ -106,7 +106,7 @@ fn ir_multivariate_hypergeometric(mut d: Draws) -> [u64; 5] {
 fn ir_pick_without_replacement(mut d: Draws) -> Vec<u64> {
     let counts: Vec<u64> = (0..64).map(|i| 1 + i % 7).collect();
     let mut out = vec![0; 64];
-    pick_without_replacement(&mut d, black_box(&counts), black_box(8), &mut out);
+    pick_without_replacement(&mut d, black_box(&counts), black_box(8), (&mut out, &mut phx_rand::Fenwick::default()));
     black_box(out)
 }
 

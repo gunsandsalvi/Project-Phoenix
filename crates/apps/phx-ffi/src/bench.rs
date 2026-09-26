@@ -210,7 +210,8 @@ fn samplers(clock: &Mono, budget_ns: u64) -> Vec<(&'static str, u64, u64)> {
     run("hypergeometric_hrua", &mut |d| {
         black_box(hypergeometric(d, 1_000, 300, 100));
     });
-    run("pick_without_replacement", &mut |d| pick_without_replacement(d, &counts, 8, &mut picks));
+    let mut tree = phx_rand::Fenwick::default();
+    run("pick_without_replacement", &mut |d| pick_without_replacement(d, &counts, 8, (&mut picks, &mut tree)));
     run("geometric", &mut |d| {
         let _ = black_box(geometric(d, 0.01));
     });
