@@ -203,21 +203,24 @@ impl<B: Backing> Books<B> {
 
     /// How many of the sampled holders' runs do not hold against their rows, read before their heads are rewritten,
     /// and how many were read.
-    fn runs_broken(&self, due: &DueLines, day: Day, scanned: &BTreeSet<(u16, Slot)>) -> (u64, u64) {
+    fn runs_broken(&self, due: &DueLines, day: Day, scanned: &[(u16, Slot)]) -> (u64, u64, usize) {
+        let phase = day.get() % RUN_SAMPLE_PERIOD;
+        // Only today's slice of holders is sampled, so only the scanned among them are kept, sorted to be found.
+        let mut sampled: Vec<(u16, Slot)> =
+            scanned.iter().copied().filter(|(_, s)| s.get() % RUN_SAMPLE_PERIOD == phase).collect();
+        sampled.sort_unstable();
         let (mut read, mut broken) = (0_u64, 0_u64);
         for place in self.parties.places() {
             let table = self.parties.holder(place);
-            for slot in
-                phx_store::table::live_every(table.live_words(), day.get() % RUN_SAMPLE_PERIOD, RUN_SAMPLE_PERIOD)
-            {
+            for slot in phx_store::table::live_every(table.live_words(), phase, RUN_SAMPLE_PERIOD) {
                 let t = runs::truth(table, slot, day, due, &self.ledger.lines);
                 read += 1;
-                if !t.holds || (t.due > 0 && !scanned.contains(&(place, slot))) {
+                if !t.holds || (t.due > 0 && sampled.binary_search(&(place, slot)).is_err()) {
                     broken += 1;
                 }
             }
         }
-        (read, broken)
+        (read, broken, sampled.capacity())
     }
 
     /// A due that fell today recorded for the accounts: the interest in it, which the payee earned today, and the
@@ -512,8 +515,7 @@ impl<B: Backing> Books<B> {
         let buffers = self.buffers.stream_buffers();
         let mut streamed = self.stream(&heads, buffers, due, (day, calendar), closed, &mut found);
         let fixed = self.fixed_point(&mut streamed, due, day, calendar, &mut found, draws_of);
-        let scanned: BTreeSet<(u16, Slot)> = streamed.scanned.iter().copied().collect();
-        let (runs_read, runs_broken) = self.runs_broken(due, day, &scanned);
+        let (runs_read, runs_broken, sampled) = self.runs_broken(due, day, &streamed.scanned);
         let (g, nets) = self.gather(&streamed, &fixed, (due, day, calendar), closed, &mut found);
         let (lost, lost_past_failed) = self.record_lost(&found);
         let given = g.given.sorted();
@@ -530,23 +532,16 @@ impl<B: Backing> Books<B> {
         // Every day buffer by the room it holds, grown or not: what the phone must find free at the day's peak.
         let buffer_bytes = bytes::<(u32, Option<Record>)>(streamed.records.capacity() + g.given.capacity())
             + bytes::<(PartyId, u16, Slot)>(streamed.records.touched() + g.given.touched())
-            + bytes::<(u16, Slot)>(streamed.scanned.capacity() + scanned.len())
+            + bytes::<(u16, Slot)>(streamed.scanned.capacity() + sampled)
             + bytes::<Payment>(streamed.made.capacity())
             + bytes::<(NetKey, i128)>(g.nets.capacity())
-            + bytes::<Option<i128>>(g.nets.len() * 2)
+            + bytes::<Option<i64>>(before.capacity())
             + bytes::<((PartyId, u8), i128)>(g.crossing.len() + reserves_before.capacity())
             + bytes::<(LineId, PartyId)>(fixed.failed.len() + fixed.by_bank.len())
             + bytes::<PartyId>(g.failed_payers.len() + streamed.moneyless.len())
             + bytes::<u8>(found.bytes() + self.ledger.day.bytes());
         self.apply_nets(&g.nets, day, audit);
-        let after = self.balances(&g.nets);
-        let nets_missed = count(
-            g.nets
-                .iter()
-                .zip(before.iter().zip(&after))
-                .filter(|((k, q), (b, a))| !k.row && a.zip(**b).is_none_or(|(a, b)| a - b != *q))
-                .count(),
-        );
+        let nets_missed = self.nets_missed(&g.nets, &before);
         let reserves_missed = count(
             reserves_before
                 .iter()
@@ -690,13 +685,12 @@ impl<B: Backing> Books<B> {
         }
     }
 
-    /// The balances of the money accounts a day's nets move, read before or after they apply, on the pool in fixed
-    /// shards.
-    fn balances(&self, nets: &[(NetKey, i128)]) -> Vec<Option<i128>>
+    /// The balances of the money accounts a day's nets move, read before they apply, on the pool in fixed shards.
+    fn balances(&self, nets: &[(NetKey, i128)]) -> Vec<Option<i64>>
     where
         B: Sync,
     {
-        let mut out: Vec<Option<i128>> = vec![None; nets.len()];
+        let mut out: Vec<Option<i64>> = vec![None; nets.len()];
         let each = nets.len().div_ceil(crate::consts::STREAM_SHARDS);
         if each > 0 {
             let shards = nets.chunks(each).zip(out.chunks_mut(each));
@@ -709,14 +703,38 @@ impl<B: Backing> Books<B> {
         out
     }
 
+    /// The money nets whose account did not move by the net, read against the balances before the apply, on the pool
+    /// by fixed shards; no balances after are held, since each is compared as it is read.
+    fn nets_missed(&self, nets: &[(NetKey, i128)], before: &[Option<i64>]) -> u64
+    where
+        B: Sync,
+    {
+        let each = nets.len().div_ceil(crate::consts::STREAM_SHARDS);
+        if each == 0 {
+            return 0;
+        }
+        let mut missed: Vec<usize> = vec![0; nets.len().div_ceil(each)];
+        let shards = nets.chunks(each).zip(before.chunks(each)).zip(missed.iter_mut());
+        phx_exec::pool::each(self.pool.as_deref(), shards, |((keys, was), n)| {
+            *n = keys
+                .iter()
+                .zip(was)
+                .filter(|((k, q), b)| {
+                    !k.row && self.balance_of(k).zip(**b).is_none_or(|(a, b)| i128::from(a) - i128::from(b) != *q)
+                })
+                .count();
+        });
+        count(missed.iter().sum::<usize>())
+    }
+
     /// The balance of the money account a net moves; none for a net on a contract's rows.
-    fn balance_of(&self, k: &NetKey) -> Option<i128> {
+    fn balance_of(&self, k: &NetKey) -> Option<i64> {
         if k.row {
             return None;
         }
         let (place, slot) = self.parties.row(k.party);
         match crate::rows::find(self.parties.holder(place), slot, k.line, k.side).map(|r| r.optional.balance) {
-            Some(Missing::Present(b)) => Some(i128::from(b)),
+            Some(Missing::Present(b)) => Some(b),
             _ => None,
         }
     }
