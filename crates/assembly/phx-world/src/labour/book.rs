@@ -116,6 +116,9 @@ pub(crate) struct LabourBook {
     pub reviews: BTreeMap<PartyId, Day>,
     pub reviewing: Vec<Review>,
     pub next: u32,
+    /// Each employer's vacancies by identity, rebuilt from them rather than saved.
+    #[saved(skip)]
+    pub by_employer: BTreeMap<PartyId, Vec<u32>>,
 }
 
 /// The day's tally of the rounds, for the counters and the checks.
@@ -162,5 +165,41 @@ impl Labour {
 
     pub fn of(kind: &LabourKind, laws: Vec<Law>) -> Labour {
         Labour { kind: Some(*kind), laws, ..Labour::default() }
+    }
+}
+
+impl LabourBook {
+    /// A vacancy by its identity: the book keeps them in the order they were posted, so by their identities.
+    pub(crate) fn vacancy(&self, id: u32) -> Option<&Vacancy> {
+        self.vacancies.binary_search_by_key(&id, |v| v.id).ok().and_then(|i| self.vacancies.get(i))
+    }
+
+    pub(crate) fn vacancy_mut(&mut self, id: u32) -> Option<&mut Vacancy> {
+        self.vacancies.binary_search_by_key(&id, |v| v.id).ok().and_then(|i| self.vacancies.get_mut(i))
+    }
+
+    /// Each employer's vacancies indexed again from the book.
+    pub(crate) fn index_employers(&mut self) {
+        self.by_employer.clear();
+        for v in &self.vacancies {
+            self.by_employer.entry(v.employer).or_default().push(v.id);
+        }
+    }
+
+    /// A vacancy posted, the latest, indexed under its employer.
+    pub(crate) fn post(&mut self, v: Vacancy) {
+        self.by_employer.entry(v.employer).or_default().push(v.id);
+        self.vacancies.push(v);
+    }
+
+    /// The vacancies kept that `keep` keeps, the index with them.
+    pub(crate) fn keep(&mut self, keep: impl FnMut(&Vacancy) -> bool) {
+        self.vacancies.retain(keep);
+        self.index_employers();
+    }
+
+    /// An employer's vacancies' identities, oldest first.
+    pub(crate) fn of_employer(&self, employer: PartyId) -> &[u32] {
+        self.by_employer.get(&employer).map_or(&[], Vec::as_slice)
     }
 }

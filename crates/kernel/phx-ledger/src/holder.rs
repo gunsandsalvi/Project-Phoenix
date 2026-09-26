@@ -39,6 +39,14 @@ pub trait HolderArenas {
     /// Words removed from a holder's list.
     fn remove(&mut self, holder: Slot, list: ListKind, at: usize, count: usize);
     /// A holder's due-day run head.
+    /// Where a holder's row named by `key` was hinted to lie; none where its table keeps no hints.
+    fn row_hint(&self, _holder: Slot, _key: u64) -> Option<usize> {
+        None
+    }
+    /// A holder's row named by `key` hinted to lie at the word `at`.
+    fn set_row_hint(&mut self, _holder: Slot, _key: u64, _at: usize) {}
+    /// A holder's hints past the word `from` moved by the words put in or taken out.
+    fn shift_row_hints(&mut self, _holder: Slot, _from: usize, _by: (usize, bool)) {}
     fn run_head(&self, holder: Slot) -> RunHead;
     fn set_run_head(&mut self, holder: Slot, head: RunHead);
     /// Words put into a holder's list before the word at `at`, the rest moved after them.
@@ -66,6 +74,18 @@ impl<B: Backing> HolderArenas for KindTable<B> {
 
     fn table(&self) -> TableId {
         self.id()
+    }
+
+    fn row_hint(&self, holder: Slot, key: u64) -> Option<usize> {
+        KindTable::row_hint(self, holder, key)
+    }
+
+    fn set_row_hint(&mut self, holder: Slot, key: u64, at: usize) {
+        KindTable::set_row_hint(self, holder, key, at);
+    }
+
+    fn shift_row_hints(&mut self, holder: Slot, from: usize, by: (usize, bool)) {
+        KindTable::shift_row_hints(self, holder, from, by);
     }
 
     fn kind(&self) -> &'static str {

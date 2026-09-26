@@ -90,8 +90,8 @@ pub struct CapOwn {
     pub lead: Vec<phx_num::Missing<u32>>,
     /// Each product's lot, the units its price is posted for.
     pub lots: Vec<f64>,
-    /// The days between a firm's production decisions, over which its sales outlook runs.
-    pub production_days: f64,
+    /// The days between an owner's reviews of its plant.
+    pub review_days: f64,
 }
 
 impl CapOwn {
@@ -144,8 +144,8 @@ impl CapOwn {
                 }
             })
             .collect::<Result<Vec<_>, String>>()?;
-        let production_days = phx_rand::float::from_u64(register.count("FRM.production_days")?);
-        Ok(CapOwn { kinds, needs, bought_as, lead, lots, production_days })
+        let review_days = phx_rand::float::from_u64(register.count(REVIEW_DAYS.id)?);
+        Ok(CapOwn { kinds, needs, bought_as, lead, lots, review_days })
     }
 }
 
@@ -170,14 +170,24 @@ impl System for Cap {
         d.stream(OpeningStream::DECL);
         d.stream(VisitStream::DECL);
         d.compile(Box::new(move |register, countries| Ok(Box::new(CapOwn::compile(&prims, register, countries)?))));
-        let capacity = <if_firm::facts::Capacity as phx_core::FactDef>::ITEM;
-        d.claim(capacity.name);
-        d.facet(phx_core::FacetDecl { fact: capacity.name, kind: HOLDERS[0] });
-        d.pop_kind(HOLDERS[1]).position(phx_core::PositionDecl { name: capacity.name, clause: capacity.clause });
+        for item in [
+            <if_firm::facts::Capacity as phx_core::FactDef>::ITEM,
+            <if_firm::facts::DeliveredAtInvest as phx_core::FactDef>::ITEM,
+            <if_firm::facts::SoldAtInvest as phx_core::FactDef>::ITEM,
+        ] {
+            d.claim(item.name);
+            d.facet(phx_core::FacetDecl { fact: item.name, kind: HOLDERS[0] });
+            d.pop_kind(HOLDERS[1]).position(phx_core::PositionDecl { name: item.name, clause: item.clause });
+        }
         d.contribution(Box::new(opening::Declared));
         d.contribution(Box::new(Plant { prims, stock }));
         let cadence = Cadence::Schedule { days: REVIEW_DAYS.id, runs_on: RunsOn::Any };
-        for (handler, kind) in [(review::ReviewSmall::NAME, HOLDERS[1]), (review::ReviewLarge::NAME, HOLDERS[0])] {
+        for (handler, kind) in [
+            (review::ReviewSmall::NAME, HOLDERS[1]),
+            (review::ReviewLarge::NAME, HOLDERS[0]),
+            (review::InvestSmall::NAME, HOLDERS[1]),
+            (review::InvestLarge::NAME, HOLDERS[0]),
+        ] {
             d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes: &[], clause: "CAP.4" });
         }
         for visit in [review::ReviewSmall::NAME, review::ReviewLarge::NAME] {
@@ -189,5 +199,7 @@ impl System for Cap {
     fn handlers(h: &mut HandlerTable) {
         h.add::<review::ReviewSmall>();
         h.add::<review::ReviewLarge>();
+        h.add::<review::InvestSmall>();
+        h.add::<review::InvestLarge>();
     }
 }

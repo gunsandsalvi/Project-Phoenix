@@ -1051,8 +1051,9 @@ impl World {
         out
     }
 
-    /// What a row is worth on its books, one twin's: its claims less what it owes, at their balances, and its
-    /// holdings at their cost; none where a row carries no balance to read.
+    /// What winding a row down would return, one twin's: its claims less what it owes, at their balances, and the goods
+    /// it holds at their cost; its plant returns nothing, since no market buys used plant yet. None where a row carries
+    /// no balance to read.
     fn book_worth(&self, place: u16, slot: Slot, twins: i64) -> Missing<i64> {
         let arenas = self.books.parties.holder(place);
         let mut total = 0_i128;
@@ -1063,8 +1064,10 @@ impl World {
                 phx_ledger::algebra::Side::Liability => total -= i128::from(balance),
             }
         }
-        for (_, cost) in phx_ledger::holding::bases(arenas, slot) {
-            total += i128::from(cost);
+        for (instrument, cost) in phx_ledger::holding::bases(arenas, slot) {
+            if matches!(self.books.ledger.goods.key(instrument), Missing::Present(_)) {
+                total += i128::from(cost);
+            }
         }
         i64::try_from(total / i128::from(twins)).map_or(Missing::Absent, Missing::Present)
     }

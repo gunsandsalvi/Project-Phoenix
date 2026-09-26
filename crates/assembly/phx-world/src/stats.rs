@@ -369,8 +369,11 @@ impl World {
         let worn = self.books.dues.worn;
         let mut by: BTreeMap<phx_ledger::instruction::InstructionId, Vec<(PartyId, i64, bool)>> = BTreeMap::new();
         let mut income: BTreeMap<u8, i128> = BTreeMap::new();
+        // A party's sector is read once a day, however many effects it has.
+        let mut sectors: BTreeMap<PartyId, Option<(Sector, u8)>> = BTreeMap::new();
+        let mut sector = |w: &World, party: PartyId| *sectors.entry(party).or_insert_with(|| w.sector_of(party));
         for e in &book.effects {
-            let Some((sector, c)) = self.sector_of(e.party) else { continue };
+            let Some((sector, c)) = sector(self, e.party) else { continue };
             let earns =
                 matches!(e.effect, phx_ledger::instruction::Effect::Revenue | phx_ledger::instruction::Effect::Expense);
             // Wear is capital consumed, which the income measure counts gross of.
@@ -383,7 +386,7 @@ impl World {
             }
         }
         for (party, amount) in book.earned.sorted() {
-            if let Some((sector, c)) = self.sector_of(party)
+            if let Some((sector, c)) = sector(self, party)
                 && sector != Sector::Other
             {
                 *income.entry(c).or_insert(0) += *amount;
@@ -393,11 +396,11 @@ impl World {
         for (id, legs) in by {
             let sold: Vec<(PartyId, i64)> = legs
                 .iter()
-                .filter(|(p, a, _)| *a > 0 && matches!(self.sector_of(*p), Some((Sector::Firm, _))))
+                .filter(|(p, a, _)| *a > 0 && matches!(sector(self, *p), Some((Sector::Firm, _))))
                 .map(|(p, a, _)| (*p, *a))
                 .collect();
             let Some((seller, _)) = sold.first().copied() else { continue };
-            let Some((_, c)) = self.sector_of(seller) else { continue };
+            let Some((_, c)) = sector(self, seller) else { continue };
             let Some((law, _)) = self.sta_law(c) else { continue };
             let Some(schedule) = law.series.get(ACCOUNTS) else { continue };
             let subject = Subject::new(SubjectTag::Party, id.get());
@@ -415,7 +418,7 @@ impl World {
             // A seller's own payment within its sale is a levy on it, never a purchase.
             let sellers: Vec<PartyId> = sold.iter().map(|(p, _)| *p).collect();
             for (payer, amount, investment) in legs.iter().filter(|(p, a, _)| *a < 0 && !sellers.contains(p)) {
-                let item = match self.sector_of(*payer).map(|(s, _)| s) {
+                let item = match sector(self, *payer).map(|(s, _)| s) {
                     Some(Sector::Firm) if *investment => Item::Investment,
                     Some(Sector::Firm) => Item::Purchases,
                     Some(Sector::Household) => Item::Consumption,

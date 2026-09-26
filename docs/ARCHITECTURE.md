@@ -315,6 +315,11 @@ stay suspends only the debtor's dues and never a line other holders share.
 
 ### 4.5 Relationship rows
 
+A holder's row on a line is found by walking its rows; an individual whose rows run long — a bank's, one per loan
+and deposit line — keeps a hint of where each row it appended or inserted lies, moved as rows before it come and go
+and checked against the row's head on every read, so a stale hint costs only the walk (`KindTable::row_hint`, never
+saved).
+
 Every relationship of a holder to a line is a **row in the holder's chunk arena**, contiguous with the holder's other
 rows: `{line u32, count u32, record u32, point u16, role u8, flags u8}` (16 bytes, no padding), plus the optional
 columns its kind declares: `balance i64` for **accruing kinds** (deposits, loans, a collector's tax payable, any
@@ -999,11 +1004,14 @@ without end in both directions.
   receiving other than what the one before it gave the same holder); each wear leg's digest carries its chain and
   class, and `CAP.stock` checks the same from the audit's own record.
 - **Capacity** reads the classes: a way's capacity is the least over its kinds of units × the class's efficiency over
-  the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound. The owner's review (4a)
-  writes it as the fact `CAP.capacity`, one twin's units a day, which production and a service's stall read beside
-  what the staff can make.
+  the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound. The owner's plant review
+  (5c, with the wear) writes it as the fact `CAP.capacity`, one twin's units a day, which production and a service's
+  stall read the next day beside what the staff can make.
 - **Investment** (CAP.5, CAP.2): each chain has one more instrument, its **plant under construction**, held apart
-  from its classes (`Chains::declare_building`). The review emits a `CAP.invest` intent (the kind, the product it is
+  from its classes (`Chains::declare_building`). The investment review (5b, on the plant review's schedule) reads
+  what the firm sold since its last from its own deliveries, keeping the count and the period's sales as CAP's facts
+  (`CAP.delivered_seen`, `CAP.sales_seen`), their change its uncertainty, and yesterday's price and capacity, since the
+  day's 5b and 5c write them; it emits a `CAP.invest` intent (the kind, the product it is
   bought as, a twin's units, the stages its lead time gives); the world admits it at 5d and at 6a names the builder
   among the day's stalls of that product — the seller in the owner's reach and country at the lowest posted price —
   and begins a `Project` (saved in `Chains`) at that price. At 6d each project's stage is a trade under `CAP bought`:
@@ -1106,8 +1114,9 @@ without end in both directions.
   and discounted at their required return, against today's: they bid, at no more than that, with the money they hold
   beyond what their own planned sales cost, and when carrying no longer pays offer what they hold at no less.
 - **Closure** (FRM.15): at its production schedule an owner weighs the margin it expects a year, held for ever at its
-  required return, against what its firm is worth on its books (`Ctx::net_assets`: claims less debts at their
-  balances, holdings at cost, one twin's); when winding down is worth more it emits `FRM.close`, and the world ends
+  required return, against what winding it down returns (`Ctx::net_assets`: claims less debts at their balances and
+  goods at cost, one twin's; plant returns nothing until a market buys it); when winding down is worth more it emits
+  `FRM.close`, and the world ends
   the firm into an estate as a default does, counted as a closure.
 - **Catastrophes** (GEO.8, GDS.9): a struck tile's share of every physical unit its sited individuals hold is lost
   (`Source::Hazard`); an agent stands at a zone, so it loses the event's share of its zone — each struck tile's

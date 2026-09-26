@@ -1,6 +1,6 @@
-/// Years of business days each country's calendar keeps as a bitset from its first year; days beyond are computed
-/// from the rules, and the window moves forward a year at each year's start. Sixty-four years cover every contract
-/// date a run of a few decades reads, at 3 KiB per country.
+/// Years of business days each country's calendar keeps as a bitset after the current year, from the epoch's year on;
+/// days beyond are computed from the rules, and the window grows a year at each year's start. Sixty-four years cover
+/// every contract date a run of a few decades reads.
 pub const CALENDAR_WINDOW_YEARS: i32 = 64;
 
 /// A year without 29 February, against which a fixed holiday is checked to exist every year.

@@ -69,3 +69,7 @@ pub const WEAR: u64 = 5;
 pub const CARRIED: u64 = 6;
 /// A leg's source tagged as the construction project that built it.
 pub const BUILT: u64 = 7;
+
+/// The words a holder's relationship rows must already run to before a row appended there is hinted: past this, finding
+/// a row by scanning costs more than keeping where it lies.
+pub const HINTED_RUN_WORDS: usize = 256;

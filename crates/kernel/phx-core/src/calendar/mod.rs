@@ -42,9 +42,9 @@ pub struct CountryCalendar {
 }
 
 impl CountryCalendar {
-    fn build(country: CountryId, rules: CountryRules, first_year: i32) -> CountryCalendar {
+    fn build(country: CountryId, rules: CountryRules, (first_year, until_year): (i32, i32)) -> CountryCalendar {
         let (Some(first), Some(after)) =
-            (Date::new(first_year, 1, 1), Date::new(first_year + CALENDAR_WINDOW_YEARS, 1, 1))
+            (Date::new(first_year, 1, 1), Date::new(until_year + CALENDAR_WINDOW_YEARS, 1, 1))
         else {
             capacity_exceeded!("calendar years", i32::MAX, first_year);
         };
@@ -53,7 +53,7 @@ impl CountryCalendar {
             capacity_exceeded!("calendar window words", usize::MAX, end - start);
         };
         let mut bits = vec![0_u64; words];
-        for year in first_year..first_year + CALENDAR_WINDOW_YEARS {
+        for year in first_year..until_year + CALENDAR_WINDOW_YEARS {
             let holidays: Vec<i64> = rules.holidays_in(year).into_iter().map(days_from_civil).collect();
             let (Some(from), Some(to)) = (Date::new(year, 1, 1), Date::new(year + 1, 1, 1)) else {
                 capacity_exceeded!("calendar years", i32::MAX, year);
@@ -97,26 +97,29 @@ pub struct Calendar {
 }
 
 impl Calendar {
-    /// The calendar of the countries in `CountryId` order, their bitsets starting at `first_year`.
+    /// The calendar of the countries in `CountryId` order, their bitsets from the epoch's year to the window's years
+    /// after `year`.
     ///
     /// # Errors
     /// When a country's rules cannot describe a calendar, or the countries are not numbered from zero in order.
-    pub fn new(epoch: Date, countries: Vec<(CountryId, CountryRules)>, first_year: i32) -> Result<Calendar, String> {
+    pub fn new(epoch: Date, countries: Vec<(CountryId, CountryRules)>, year: i32) -> Result<Calendar, String> {
         let mut built = Vec::with_capacity(countries.len());
         for (i, (country, rules)) in countries.into_iter().enumerate() {
             if usize::from(country.get()) != i {
                 return Err(format!("country {} declared in place {i}", country.get()));
             }
             rules.validate().map_err(|e| format!("country {}: {e}", country.get()))?;
-            built.push(CountryCalendar::build(country, rules, first_year));
+            built.push(CountryCalendar::build(country, rules, (epoch.year(), year)));
         }
         Ok(Calendar { epoch, epoch_serial: days_from_civil(epoch), countries: built })
     }
 
-    /// Moves every country's bitset to start at `first_year`, as each year's start does.
-    pub fn move_window(&mut self, first_year: i32) {
+    /// Extends every country's bitset to the window's years after `year`, as each year's start does; it keeps every
+    /// year from the epoch's, since schedules and records read back to their anchors.
+    pub fn move_window(&mut self, year: i32) {
+        let first = self.epoch.year();
         for c in &mut self.countries {
-            *c = CountryCalendar::build(c.country, c.rules.clone(), first_year);
+            *c = CountryCalendar::build(c.country, c.rules.clone(), (first, year));
         }
     }
 

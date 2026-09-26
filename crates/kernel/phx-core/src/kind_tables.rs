@@ -92,6 +92,10 @@ pub struct KindTable<B: Backing = SystemBacking> {
     /// The facts the handlers moved to a new value, and how many times, since last taken.
     #[saved(skip)]
     moved: Vec<(&'static str, u64)>,
+    /// Where a row of a long list was put, by holder and the key its reader names it by: a hint the reader checks
+    /// against the row it finds there, so a stale one costs a scan and never a wrong row.
+    #[saved(skip)]
+    row_hints: std::collections::BTreeMap<(u32, u64), usize>,
 }
 
 /// The head of a holder's due-day run: the earliest day any row of its dated segment can fall due, and where the
@@ -149,6 +153,29 @@ fn put<T: phx_store::Pod, B: Backing>(column: &mut Column<T, B>, slot: Slot, val
 }
 
 impl<B: Backing> KindTable<B> {
+    /// Where a holder's row named by `key` was last put, if it was hinted.
+    #[must_use]
+    pub fn row_hint(&self, holder: Slot, key: u64) -> Option<usize> {
+        self.row_hints.get(&(holder.get(), key)).copied()
+    }
+
+    /// A holder's row named by `key` hinted to lie at the word `at`.
+    pub fn set_row_hint(&mut self, holder: Slot, key: u64, at: usize) {
+        self.row_hints.insert((holder.get(), key), at);
+    }
+
+    /// A holder's hints past the word `from` moved by `by` words, forward where words were put in and back where
+    /// they were taken out.
+    pub fn shift_row_hints(&mut self, holder: Slot, from: usize, (by, forward): (usize, bool)) {
+        let h = holder.get();
+        for ((_, _), at) in self.row_hints.range_mut((h, 0)..=(h, u64::MAX)) {
+            if *at > from || (forward && *at == from) {
+                // A hint inside the words taken out is stale either way, and its reader scans.
+                *at = if forward { *at + by } else { at.checked_sub(by).unwrap_or(from) };
+            }
+        }
+    }
+
     /// An empty table for a kind, of at most `max_rows`, whose parties carry one type per declared dimension.
     pub fn new(
         space: &mut AddressSpace,
@@ -178,6 +205,7 @@ impl<B: Backing> KindTable<B> {
             reader: None,
             undeclared: 0,
             moved: Vec::new(),
+            row_hints: std::collections::BTreeMap::new(),
             table,
         }
     }

@@ -184,12 +184,12 @@ impl World {
             if hours_a_unit <= 0.0 && held <= 0.0 {
                 continue;
             }
-            let open: f64 = self
-                .labour
-                .book
-                .vacancies
+            let book = &self.labour.book;
+            let open: f64 = book
+                .of_employer(row.party)
                 .iter()
-                .filter(|v| v.employer == row.party && v.occupation == occupation)
+                .filter_map(|id| book.vacancy(*id))
+                .filter(|v| v.occupation == occupation)
                 .map(|v| f64::from(v.open / twins) * f64::from(v.hours) / crate::consts::DAYS_A_WEEK)
                 .sum();
             let point = self.offer_point(&law, (row.party, occupation), &staff, law.full_time_hours);
@@ -208,8 +208,12 @@ impl World {
 
     /// The vacancies of an employer that stood past its patience raised a point.
     fn raise_stale(&mut self, day: Day, employer: PartyId, law: &Law) {
-        for v in self.labour.book.vacancies.iter_mut().filter(|v| v.employer == employer) {
-            if self.calendar.days_between(v.set, day).is_some_and(|d| d > law.patience_days) {
+        let ids = self.labour.book.of_employer(employer).to_vec();
+        for id in ids {
+            let Some(set) = self.labour.book.vacancy(id).map(|v| v.set) else { continue };
+            if self.calendar.days_between(set, day).is_some_and(|d| d > law.patience_days)
+                && let Some(v) = self.labour.book.vacancy_mut(id)
+            {
                 v.point += 1;
                 v.set = day;
             }
@@ -231,7 +235,7 @@ impl World {
             let Some(skill) = skill else { continue };
             let id = self.labour.book.next;
             self.labour.book.next += 1;
-            self.labour.book.vacancies.push(Vacancy {
+            self.labour.book.post(Vacancy {
                 id,
                 employer,
                 country: country.get(),
@@ -248,14 +252,9 @@ impl World {
         }
         for &(occupation, jobs) in &out.withdraw {
             let mut left = jobs * twins;
-            for v in self
-                .labour
-                .book
-                .vacancies
-                .iter_mut()
-                .rev()
-                .filter(|v| v.employer == employer && v.occupation == occupation)
-            {
+            let ids = self.labour.book.of_employer(employer).to_vec();
+            for id in ids.into_iter().rev() {
+                let Some(v) = self.labour.book.vacancy_mut(id).filter(|v| v.occupation == occupation) else { continue };
                 let take = if v.open < left { v.open } else { left };
                 v.open -= take;
                 left -= take;

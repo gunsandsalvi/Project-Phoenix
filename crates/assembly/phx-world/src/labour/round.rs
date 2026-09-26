@@ -43,13 +43,13 @@ impl World {
         let book = &mut self.labour.book;
         let live: BTreeSet<PartyId> = book.vacancies.iter().map(|v| v.employer).collect();
         let gone: BTreeSet<PartyId> = live.into_iter().filter(|p| !self.live(*p)).collect();
-        self.labour.book.vacancies.retain(|v| !gone.contains(&v.employer));
+        self.labour.book.keep(|v| !gone.contains(&v.employer));
         self.answer_offers(day, &kind);
         self.select_applicants(day, &kind);
         self.search(day, &kind);
         self.post(day);
         let held: BTreeSet<u32> = self.labour.book.offers.iter().map(|o| o.vacancy).collect();
-        self.labour.book.vacancies.retain(|v| v.open > 0 || held.contains(&v.id));
+        self.labour.book.keep(|v| v.open > 0 || held.contains(&v.id));
     }
 
     /// A stream the labour kind names, opened for a subject on the day.
@@ -126,7 +126,7 @@ impl World {
     fn answer_offers(&mut self, day: Day, kind: &LabourKind) {
         let offers = std::mem::take(&mut self.labour.book.offers);
         for o in offers {
-            let Some(v) = self.labour.book.vacancies.iter().find(|v| v.id == o.vacancy).cloned() else { continue };
+            let Some(v) = self.labour.book.vacancy(o.vacancy).cloned() else { continue };
             let seeker = if self.live(o.applicant) {
                 self.seekers(kind, o.applicant).into_iter().find(|s| s.person == o.person)
             } else {
@@ -178,7 +178,7 @@ impl World {
 
     /// Members an offer held returned to its vacancy.
     fn return_jobs(&mut self, vacancy: u32, unit: u32) {
-        if let Some(v) = self.labour.book.vacancies.iter_mut().find(|v| v.id == vacancy) {
+        if let Some(v) = self.labour.book.vacancy_mut(vacancy) {
             v.open += unit;
         }
     }
@@ -230,7 +230,7 @@ impl World {
         let mut by_vacancy: BTreeMap<u32, Vec<Application>> = BTreeMap::new();
         for a in apps {
             let mut d = self.labour_draws(kind.meeting_stream, Subject::new(SubjectTag::Party, a.applicant.get()), day);
-            let country = self.labour.book.vacancies.iter().find(|v| v.id == a.vacancy).map(|v| v.country);
+            let country = self.labour.book.vacancy(a.vacancy).map(|v| v.country);
             let Some(country) = country else { continue };
             let law = super::law_of(&self.labour.laws, CountryId::new(country));
             if phx_rand::open_unit(&mut d) < law.seen_chance {
@@ -238,7 +238,7 @@ impl World {
             }
         }
         for (id, met) in by_vacancy {
-            let Some(open) = self.labour.book.vacancies.iter().find(|v| v.id == id).map(|v| v.open) else { continue };
+            let Some(open) = self.labour.book.vacancy(id).map(|v| v.open) else { continue };
             let mut lots = self.labour_draws(kind.lot_stream, Subject::new(SubjectTag::Market, u64::from(id)), day);
             let applicants: Vec<Applicant> = met
                 .iter()
@@ -252,7 +252,7 @@ impl World {
             let chosen = (kind.select)(&SelectIn { applicants, open });
             for k in chosen {
                 let Some(a) = usize::try_from(k).ok().and_then(|k| met.get(k)) else { continue };
-                if let Some(v) = self.labour.book.vacancies.iter_mut().find(|v| v.id == id) {
+                if let Some(v) = self.labour.book.vacancy_mut(id) {
                     v.open -= a.unit;
                 }
                 self.labour.book.offers.push(Offer {

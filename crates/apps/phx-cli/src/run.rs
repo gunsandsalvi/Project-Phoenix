@@ -639,14 +639,54 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
     let date = |d| crate::measure::calendar::date_text(w.date(d));
     let phase = if turn.last < settle_end { "settling" } else { "running" };
     let wall = turn.wall_ns.map_or_else(|| "untimed".to_owned(), |ns| format!("{} ms", ns / 1_000_000));
+    // The turn's heaviest sub-steps, so a turn that runs over its budget shows where it went.
+    let mut by_step: Vec<(&'static str, u64)> = phx_core::SUB_STEPS
+        .iter()
+        .map(|info| {
+            let ns: u64 = w
+                .substep_records()
+                .iter()
+                .filter(|r| r.substep == info.step.ordinal() && r.day >= turn.first && r.day <= turn.last)
+                .filter_map(|r| r.wall_ns)
+                .sum();
+            (info.label, ns)
+        })
+        .collect();
+    by_step.sort_by_key(|(_, ns)| std::cmp::Reverse(*ns));
+    let heaviest: Vec<String> =
+        by_step.iter().take(HEAVIEST).map(|(label, ns)| format!("{label} {} ms", ns / 1_000_000)).collect();
+    let in_turn = |d: phx_id::Day| d >= turn.first && d <= turn.last;
+    let agents = w.agent_days().iter().filter(|a| in_turn(a.day));
+    let (mut defaults, mut closures, mut estates, mut born, mut gone) = (0, 0, 0, 0, 0);
+    for a in agents {
+        (defaults, closures, estates, born, gone) =
+            (defaults + a.defaults, closures + a.closures, estates + a.estates, born + a.born, gone + a.gone);
+    }
+    let goods = w.goods_days().iter().filter(|(d, _)| in_turn(*d)).map(|(_, g)| g);
+    let (mut made, mut orders, mut refused, mut failed_goods, mut projects) = (0, 0, 0, 0, 0);
+    for g in goods {
+        (made, orders, refused, failed_goods, projects) =
+            (made + g.made, orders + g.orders, refused + g.refused, failed_goods + g.failed, projects + g.projects);
+    }
+    let families: std::collections::BTreeMap<&str, usize> =
+        w.findings().iter().fold(std::collections::BTreeMap::new(), |mut m, f| {
+            *m.entry(f.family).or_insert(0) += 1;
+            m
+        });
     format!(
-        "{phase} {} to {}: {} days in {wall}; payments {due} due, {failed} failed; {} findings",
+        "{phase} {} to {}: {} days in {wall}; payments {due} due, {failed} failed; {} findings {families:?}; \
+         defaults {defaults}, closures {closures}, estates {estates}, born {born}, gone {gone}; made {made}, orders \
+         {orders}, refused {refused}, failed {failed_goods}, projects {projects}; heaviest {}",
         date(turn.first),
         date(turn.last),
         turn.days,
-        w.findings().len()
+        w.findings().len(),
+        heaviest.join(", ")
     )
 }
+
+/// The sub-steps a turn's line names as its heaviest.
+const HEAVIEST: usize = 6;
 
 /// Each sub-step's wall time over the days it ran, in the day's order: its total, median and greatest, so a run shows
 /// where its days go.

@@ -107,7 +107,10 @@ pub fn rehead<B: Backing>(arenas: &mut dyn HolderArenas, table: u16, holder: Slo
             violation!(clause = "REG.14", "a spent row beyond its holder's run", line = view.row.line.get());
         };
         arenas.remove(holder, ListKind::RelationshipRows, view.at, width);
+        arenas.shift_row_hints(holder, view.at, (width, false));
+        let end = arenas.read(holder, ListKind::RelationshipRows).len();
         arenas.append(holder, ListKind::RelationshipRows, &taken);
+        arenas.set_row_hint(holder, rows::hint_key(view.row.line, rows::side_of(view.row.role)), end);
         head.len -= word32(width);
     }
     let least = segment(arenas, holder, head)

@@ -136,6 +136,15 @@ pub fn iter(arenas: &dyn HolderArenas, holder: Slot) -> impl Iterator<Item = Row
 #[must_use]
 pub fn find(arenas: &dyn HolderArenas, holder: Slot, line: LineId, side: Side) -> Option<RowView> {
     let words = arenas.read(holder, ListKind::RelationshipRows);
+    // A long list's row is read first where it was hinted to lie, and trusted only if it is the row sought.
+    if let Some(at) = arenas.row_hint(holder, hint_key(line, side))
+        && let Some(head) = words.get(at..at + ROW)
+    {
+        let row: RelRow = from_words(head);
+        if row.line == line && side_of(row.role) == side {
+            return view_at(words, at);
+        }
+    }
     let mut at = 0;
     while at < words.len() {
         let Some(head) = words.get(at..at + ROW) else {
@@ -212,17 +221,27 @@ fn stored(row: &mut RelRow, optional: Optional, words: &mut [u64; ROW + OPTIONAL
     n
 }
 
-/// A row appended to its holder's run.
+/// The key a row's hint is kept by: its line and its side.
+pub(crate) fn hint_key(line: LineId, side: Side) -> u64 {
+    (u64::from(line.get()) << 1) | u64::from(side == Side::Liability)
+}
+
+/// A row appended to its holder's run, hinted where the run is long enough that finding it would cost a scan.
 pub(crate) fn append(arenas: &mut dyn HolderArenas, holder: Slot, mut row: RelRow, optional: Optional) {
     let mut words = [0_u64; ROW + OPTIONAL_WORDS];
     let n = stored(&mut row, optional, &mut words);
     let Some(written) = words.get(..n) else {
         violation!(clause = "REG.14", "a row wider than its head and optional words", line = row.line.get());
     };
+    let at = arenas.read(holder, ListKind::RelationshipRows).len();
     arenas.append(holder, ListKind::RelationshipRows, written);
+    if at >= crate::consts::HINTED_RUN_WORDS {
+        arenas.set_row_hint(holder, hint_key(row.line, side_of(row.role)), at);
+    }
 }
 
-/// A row put into its holder's run before the word at `at`. Returns the words it took.
+/// A row put into its holder's run before the word at `at`, hinted there where the run is long. Returns the words it
+/// took.
 pub(crate) fn insert(
     arenas: &mut dyn HolderArenas,
     holder: Slot,
@@ -236,6 +255,10 @@ pub(crate) fn insert(
         violation!(clause = "REG.14", "a row wider than its head and optional words", line = row.line.get());
     };
     arenas.insert(holder, ListKind::RelationshipRows, at, written);
+    arenas.shift_row_hints(holder, at, (n, true));
+    if arenas.read(holder, ListKind::RelationshipRows).len() >= crate::consts::HINTED_RUN_WORDS {
+        arenas.set_row_hint(holder, hint_key(row.line, side_of(row.role)), at);
+    }
     n
 }
 
@@ -274,5 +297,7 @@ pub(crate) fn rewrite(arenas: &mut dyn HolderArenas, holder: Slot, view: &RowVie
 
 /// A row removed from its holder's run.
 pub(crate) fn remove(arenas: &mut dyn HolderArenas, holder: Slot, view: &RowView) {
-    arenas.remove(holder, ListKind::RelationshipRows, view.at, width(view.row.flags));
+    let taken = width(view.row.flags);
+    arenas.remove(holder, ListKind::RelationshipRows, view.at, taken);
+    arenas.shift_row_hints(holder, view.at, (taken, false));
 }

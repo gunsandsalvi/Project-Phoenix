@@ -407,7 +407,7 @@ where
 }
 
 /// Whether the owner closes its firm: the margin it expects a year on the sales it expects, held for ever at the
-/// return it requires, against what the firm is worth on its books, what winding it down returns. A firm whose owner
+/// return it requires, against what winding it down returns. A firm whose owner
 /// requires no return, or lacks what the comparison reads, goes on.
 #[clause("FRM.15")]
 fn winds_down<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot) -> bool

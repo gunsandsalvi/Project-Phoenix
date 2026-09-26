@@ -1,9 +1,9 @@
-//! The owner's review of its plant, on its own schedule: the wear since the last is realised on the rows visited; the
-//! units a day its plant then lets its way make are found, the scarcest kind's; and where that plant keeps the firm
-//! from making what its staff could and its sales call for, whether to buy more of the scarcest kind. Maintaining,
-//! repairing, selling and scrapping are decided here once owners hold the prices they read.
+//! The owner's reviews of its plant, on its own schedule. At the plant review the wear since the last is realised on
+//! the rows visited, and the units a day the plant then lets its way make are found, the scarcest kind's. At the
+//! investment review, a day's decisions earlier, the owner reads what it sold since its last and, where its plant
+//! keeps it from making what its staff could and its sales call for, weighs buying more of the scarcest kind.
 
-use if_firm::facts::{Capacity, ExpectedSales, OutputRate, Price, RequiredReturn, SalesWidth, UnitCost};
+use if_firm::facts::{Capacity, DeliveredAtInvest, OutputRate, Price, RequiredReturn, SoldAtInvest, UnitCost};
 use if_firm::known::{Product, WayUsed};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
 use phx_core::{Emits, declare_handler};
@@ -20,11 +20,10 @@ use crate::rules::invest::{invests, waiting_multiple};
 declare_handler! {
     /// A small firm's review of its plant.
     pub ReviewSmall = "CAP.review_small" {
-        substep: S4a,
+        substep: S5c,
         table: "small_firm",
-        reads: [WayUsed, Product, ExpectedSales, SalesWidth, OutputRate, Price, UnitCost, RequiredReturn],
+        reads: [WayUsed],
         writes: [Capacity],
-        intents: [InvestIntent],
         clause: "CAP.4",
         body: review,
     }
@@ -33,13 +32,38 @@ declare_handler! {
 declare_handler! {
     /// A large firm's review of its plant.
     pub ReviewLarge = "CAP.review_large" {
-        substep: S4a,
+        substep: S5c,
         table: "firm",
-        reads: [WayUsed, Product, ExpectedSales, SalesWidth, OutputRate, Price, UnitCost, RequiredReturn],
+        reads: [WayUsed],
         writes: [Capacity],
-        intents: [InvestIntent],
         clause: "CAP.4",
         body: review,
+    }
+}
+
+declare_handler! {
+    /// A small firm's investment review.
+    pub InvestSmall = "CAP.invest_small" {
+        substep: S5b,
+        table: "small_firm",
+        reads: [WayUsed, Product, OutputRate, Price, UnitCost, RequiredReturn, Capacity, DeliveredAtInvest, SoldAtInvest],
+        writes: [DeliveredAtInvest, SoldAtInvest],
+        intents: [InvestIntent],
+        clause: "CAP.3",
+        body: invest,
+    }
+}
+
+declare_handler! {
+    /// A large firm's investment review.
+    pub InvestLarge = "CAP.invest_large" {
+        substep: S5b,
+        table: "firm",
+        reads: [WayUsed, Product, OutputRate, Price, UnitCost, RequiredReturn, Capacity, DeliveredAtInvest, SoldAtInvest],
+        writes: [DeliveredAtInvest, SoldAtInvest],
+        intents: [InvestIntent],
+        clause: "CAP.3",
+        body: invest,
     }
 }
 
@@ -55,34 +79,15 @@ where
     }
 }
 
-/// A review: the plant's wear realised, and the capacity its way's needs of each kind find in the efficient units of
-/// the plant held, a year's output over the days of a year. A way that needs no plant is not limited by it, and the
-/// firm keeps no capacity. Where the plant makes less than the firm's staff could and its sales call for, it weighs
-/// buying the plant of the scarcest kind that closes the gap: the margin the extra output earns a year over the
-/// kind's life, at the return it requires, against what the plant costs where it stands, by the value of waiting its
-/// uncertainty about its sales gives; and buys it when that pays and its money covers it.
-#[clause("CAP.9", "CAP.1", "CAP.3", "CAP.4", "CAP.5")]
-fn review<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
+/// The plant's efficient units of each kind, by the kind's place.
+fn held<H, S>(ctx: &Ctx<'_, H, S>, row: Slot) -> Vec<f64>
 where
-    H: HandlerDecl
-        + Reads<WayUsed>
-        + Reads<Product>
-        + Reads<ExpectedSales>
-        + Reads<SalesWidth>
-        + Reads<OutputRate>
-        + Reads<Price>
-        + Reads<UnitCost>
-        + Reads<RequiredReturn>
-        + Writes<Capacity>
-        + Emits<InvestIntent>,
+    H: HandlerDecl,
     S: FactStore + ?Sized,
 {
-    let Missing::Present(way) = ctx.read::<WayUsed>(row) else { return };
     let own: &crate::CapOwn = ctx.own::<crate::CapOwn>();
-    let Some(needs) = usize::try_from(way).ok().and_then(|w| own.needs.get(w)) else { return };
     let classes = own.kinds.classes;
-    let held: Vec<f64> = own
-        .kinds
+    own.kinds
         .kinds
         .iter()
         .enumerate()
@@ -95,42 +100,93 @@ where
             }
             efficient_units(&units, &kind.efficiencies(classes))
         })
-        .collect();
+        .collect()
+}
+
+/// The plant review: the capacity its way's needs of each kind find in the efficient units of the plant held, a
+/// year's output over the days of a year. A way that needs no plant is not limited by it, and the firm keeps no
+/// capacity.
+#[clause("CAP.9", "CAP.1")]
+fn review<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
+where
+    H: HandlerDecl + Reads<WayUsed> + Writes<Capacity>,
+    S: FactStore + ?Sized,
+{
+    let Missing::Present(way) = ctx.read::<WayUsed>(row) else { return };
+    let held = held(ctx, row);
+    let own: &crate::CapOwn = ctx.own::<crate::CapOwn>();
+    let Some(needs) = usize::try_from(way).ok().and_then(|w| own.needs.get(w)) else { return };
     let Missing::Present(a_year) = capacity(&held, needs) else { return };
-    let a_day = a_year / DAYS_A_YEAR;
-    if let Some(units) = floor_to_i64(a_day) {
+    if let Some(units) = floor_to_i64(a_year / DAYS_A_YEAR) {
         ctx.write::<Capacity>(row, units);
     }
-    let (Some(product), Some(expected), Some(width), Some(staff), Some(price), Some(cost), Some(required)) = (
-        read::<Product, H, S>(ctx, row).and_then(|p| u16::try_from(floor_to_i64(p)?).ok()),
-        read::<ExpectedSales, H, S>(ctx, row),
-        read::<SalesWidth, H, S>(ctx, row),
+}
+
+/// The investment review: what the firm sold since its last, a day's worth of it, and how much that moved from the
+/// period before, its uncertainty about its sales. Where the plant makes less a day than its staff could and its
+/// sales call for, it weighs buying the plant of the scarcest kind that closes the gap: the margin the extra output
+/// earns a year over the kind's life, at the return it requires, against what the plant costs where it stands, by
+/// the value of waiting that uncertainty gives; and buys it when that pays and its money covers it. A firm with no
+/// period before to compare decides nothing.
+#[clause("CAP.3", "CAP.5")]
+fn invest<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
+where
+    H: HandlerDecl
+        + Reads<WayUsed>
+        + Reads<Product>
+        + Reads<OutputRate>
+        + Reads<Price>
+        + Reads<UnitCost>
+        + Reads<RequiredReturn>
+        + Reads<Capacity>
+        + Reads<DeliveredAtInvest>
+        + Reads<SoldAtInvest>
+        + Writes<DeliveredAtInvest>
+        + Writes<SoldAtInvest>
+        + Emits<InvestIntent>,
+    S: FactStore + ?Sized,
+{
+    let Some(product) = read::<Product, H, S>(ctx, row).and_then(|p| u16::try_from(floor_to_i64(p)?).ok()) else {
+        return;
+    };
+    let delivered = ctx.delivered(row, product);
+    let (seen, before) = (read::<DeliveredAtInvest, H, S>(ctx, row), read::<SoldAtInvest, H, S>(ctx, row));
+    ctx.write::<DeliveredAtInvest>(row, delivered);
+    let Some(seen) = seen else { return };
+    let sold = from_i64(delivered) - seen;
+    if let Some(units) = floor_to_i64(sold) {
+        ctx.write::<SoldAtInvest>(row, units);
+    }
+    let (Some(before), Missing::Present(way), Some(staff), Some(price), Some(cost), Some(required), Some(plant)) = (
+        before,
+        ctx.read::<WayUsed>(row),
         read::<OutputRate, H, S>(ctx, row),
         read::<Price, H, S>(ctx, row),
         read::<UnitCost, H, S>(ctx, row),
         read::<RequiredReturn, H, S>(ctx, row),
+        read::<Capacity, H, S>(ctx, row),
     ) else {
         return;
     };
-    let wanted = {
-        let sales = expected / own.production_days;
-        if sales < staff { sales } else { staff }
-    };
-    let gap = wanted - a_day;
+    let held = held(ctx, row);
+    let own: &crate::CapOwn = ctx.own::<crate::CapOwn>();
+    let Some(needs) = usize::try_from(way).ok().and_then(|w| own.needs.get(w)) else { return };
+    let a_day = sold / own.review_days;
+    let wanted = if a_day < staff { a_day } else { staff };
+    let gap = wanted - plant;
     let Some(lot) = own.lots.get(usize::from(product)).copied() else { return };
     let margin = (price - cost) / lot;
-    if gap <= 0.0 || margin <= 0.0 || expected <= 0.0 {
+    if gap <= 0.0 || margin <= 0.0 || sold <= 0.0 || before <= 0.0 {
         return;
     }
     // The scarcest kind is the one whose plant allows the least output.
-    let scarcest =
-        needs.iter().filter(|(_, per)| *per > 0.0).fold(None, |best: Option<(usize, f64, f64)>, (k, per)| {
-            let allows = held.get(*k).copied().unwrap_or(0.0) / per;
-            match best {
-                Some((_, _, b)) if b <= allows => best,
-                _ => Some((*k, *per, allows)),
-            }
-        });
+    let mut scarcest: Option<(usize, f64, f64)> = None;
+    for (k, per) in needs.iter().filter(|(_, per)| *per > 0.0) {
+        let Some(allows) = held.get(*k).map(|h| h / per) else { continue };
+        if scarcest.is_none_or(|(_, _, b)| allows < b) {
+            scarcest = Some((*k, *per, allows));
+        }
+    }
     let Some((kind, per, _)) = scarcest else { return };
     // A kind no source gives a lead time for cannot be ordered, since its building would take no known time.
     let (Some(bought_as), Some(life), Some(Missing::Present(stages))) =
@@ -150,7 +206,9 @@ where
         Missing::Present(m) => from_i64(m),
         Missing::Absent => return,
     };
-    let waiting = waiting_multiple(rate, earned / value, width / expected);
+    // The change in sales from one period to the next, as a year's volatility over the periods a year holds.
+    let sigma = libm::fabs((sold - before) / before) * libm::sqrt(DAYS_A_YEAR / own.review_days);
+    let waiting = waiting_multiple(rate, earned / value, sigma);
     if invests(value, outlay, 0.0, waiting, money >= outlay)
         && let Some(units) = floor_to_i64(units).filter(|u| *u > 0)
         && let Ok(kind) = u8::try_from(kind)

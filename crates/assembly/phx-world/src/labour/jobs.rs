@@ -37,6 +37,7 @@ impl World {
     /// loads.
     #[clause("LAB.1", "LAB.5")]
     pub(crate) fn labour_rebuild(&mut self) {
+        self.labour.book.index_employers();
         let Some(kind) = self.labour.kind else { return };
         let k = self.books.ledger.lines.kind_index(kind.line);
         let lines = &self.books.ledger.lines;

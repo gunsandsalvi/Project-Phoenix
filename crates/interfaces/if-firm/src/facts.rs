@@ -107,6 +107,20 @@ declare_fact! {
     }
 }
 
+declare_fact! {
+    /// The units of its product the firm had delivered at its last investment review, a twin's.
+    pub DeliveredAtInvest = "CAP.delivered_seen" {
+        value: Qty, kinds: ["firm", "small_firm"], writer: "CAP", audience: Party, repr: Position, clause: "CAP.3",
+    }
+}
+
+declare_fact! {
+    /// The units the firm sold between its last two investment reviews, a twin's.
+    pub SoldAtInvest = "CAP.sales_seen" {
+        value: Qty, kinds: ["firm", "small_firm"], writer: "CAP", audience: Party, repr: Position, clause: "CAP.3",
+    }
+}
+
 /// A fact as the position a small firm's agent holds of the same name.
 const fn from_fact<F: FactDef>() -> PositionDecl {
     PositionDecl { name: F::ITEM.name, clause: F::ITEM.clause }
