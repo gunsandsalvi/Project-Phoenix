@@ -1,0 +1,85 @@
+# Outlooks (spec VAL): how parties forecast, the parameters of the heuristic menu's rules and of switching between
+# them, the experience weighting of long means, and the attention a surprise wakes. The menu itself is a standing
+# SHAPE: no mechanism of the world derives the rules deciders use, so it is the accepted stand-in from the
+# experimental and behavioural literature, listed with its sources in SHAPES.toml.
+
+[[primitive]]
+id = "VAL.memory_types"
+kind = "RESOLUTION"
+owner = "VAL"
+source = "assumed"
+source_ref = "Resolution (NUM.4): the adaptive gain's distribution cut into four memory types, each a quarter of its mass at its conditional mean, enough to tell slow from fast learners; a finer cut costs one method per type and series."
+value = 4
+
+[[primitive]]
+id = "VAL.adaptive_gain"
+kind = "PREFERENCE"
+owner = "VAL"
+source = "assumed"
+source_ref = "The share of the last surprise an adaptive outlook takes in at each print, beta: its mean 0.65, the adaptive rule Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)) fitted to the forecasts of learning-to-forecast experiments; its spread, a standard deviation of 0.14 (a = 6.5, b = 3.5), assumed until a survey's individual forecasts measure it."
+value = { family = "beta", discretisation = "equal_shares", a = "6.5", b = "3.5" }
+
+[[primitive]]
+id = "VAL.trend_gamma"
+kind = "PREFERENCE"
+owner = "VAL"
+source = "measured"
+source_ref = "How far the trend rule extrapolates the last change: 0.4, the weak trend-following rule of Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)), the trend rule their experiments' forecasters used most."
+value = "0.4"
+
+[[primitive]]
+id = "VAL.anchor_kappa"
+kind = "PREFERENCE"
+owner = "VAL"
+source = "measured"
+source_ref = "How far the anchor rule pulls toward its level at each print: a half, the anchoring and adjustment rule of Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)), which forecasts halfway between the last value and the long mean."
+value = "0.5"
+
+[[primitive]]
+id = "VAL.experience_theta"
+kind = "PREFERENCE"
+owner = "VAL"
+source = "measured"
+source_ref = "The exponent of the lived-years weights: 3.04, the weighting Malmendier and Nagel (2016, Learning from inflation experiences, Quarterly Journal of Economics 131(1)) estimated from the Michigan Survey of Consumers' inflation expectations by age, 1953-2009."
+value = "3.04"
+
+[[primitive]]
+id = "VAL.performance_memory"
+kind = "PREFERENCE"
+owner = "VAL"
+source = "measured"
+source_ref = "The weight of the last error in a heuristic's performance record: 0.3, one less the memory of 0.7 that Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)) fitted to their experiments' switching between rules."
+value = "0.3"
+
+[[primitive]]
+id = "VAL.switching_types"
+kind = "RESOLUTION"
+owner = "VAL"
+source = "assumed"
+source_ref = "Resolution (NUM.4): the switching intensity's distribution cut into three types, each a third of its mass at its conditional mean, enough to tell slow switchers from fast ones."
+value = 3
+
+[[primitive]]
+id = "VAL.switching_intensity"
+kind = "PREFERENCE"
+owner = "VAL"
+source = "assumed"
+source_ref = "How strongly a party moves toward the heuristic that has forecast best, per squared error in the method's widths, gamma: its mean 0.4, the intensity Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)) fitted to their experiments; its spread, a standard deviation of 0.2 (shape 4, scale 0.1), assumed until a survey's individual switching measures it."
+value = { family = "gamma", discretisation = "equal_shares", shape = "4", scale = "0.1" }
+
+[[primitive]]
+id = "VAL.attention_sensitivity"
+kind = "PREFERENCE"
+owner = "VAL"
+source = "assumed"
+source_ref = "How many widths a surprise must exceed to wake the parties it bears on (REP.35): two, a surprise outside the band a party's outlook holds about nineteen times in twenty; assumed until the review decisions of S1.12 measure it."
+value = "2"
+
+[[primitive]]
+id = "VAL.heuristics_tracked"
+kind = "SHAPE"
+owner = "VAL"
+source = "assumed"
+source_ref = "The menu's four rules, adaptive, trend, anchor and announcement (VAL.6), each scored on every print of the series it forecasts."
+shape = "standing:how people forecast: no mechanism in the world derives the rules deciders use, so the menu is the accepted stand-in from the experimental and behavioural literature"
+value = 4

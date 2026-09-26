@@ -24,6 +24,7 @@ pub struct KernelPrims {
     pub market: phx_market::reach::MarketPrims,
     pub acct: phx_acct::basis::AcctPrims,
     pub rep: phx_pop::prims::RepPrims,
+    pub val: phx_val::prims::ValPrims,
     pub save_every: Prim<phx_num::Count>,
 }
 
@@ -41,6 +42,7 @@ impl KernelPrims {
             market: phx_market::reach::MarketPrims::declare(d),
             acct: phx_acct::basis::AcctPrims::declare(d),
             rep: phx_pop::prims::RepPrims::declare(d),
+            val: phx_val::prims::ValPrims::declare(d),
             save_every: d.prim(&SAVE_EVERY),
         }
     }

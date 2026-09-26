@@ -18,6 +18,7 @@ phx-macros = { path = "../../foundation/phx-macros" }
 phx-market = { path = "../../kernel/phx-market" }
 phx-num = { path = "../../foundation/phx-num" }
 phx-pop = { path = "../../kernel/phx-pop" }
+phx-val = { path = "../../kernel/phx-val" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }
 sys-bnk = { path = "../../systems/sys-bnk" }

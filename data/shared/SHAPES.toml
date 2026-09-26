@@ -1,0 +1,37 @@
+# The decision rules' forms: each a standing SHAPE, the rule as the literature states how people decide, with why no
+# mechanism of the world derives it and where it comes from. The rules' parameters are primitives of their own.
+
+[[form]]
+id = "VAL.heuristic_menu"
+owner = "VAL"
+reason = "How people forecast is not derived by any mechanism of the world; the menu of simple rules is the stand-in the experiments and surveys support, and each party's use of them is chosen by their record."
+source = "measured"
+source_ref = "Adaptive, trend-following and anchoring rules as fitted to learning-to-forecast experiments by Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)) and Hommes (2011, Journal of Economic Dynamics and Control 35(1)); announcements entering on their effective day as in the survey evidence on anchored expectations of Coibion, Gorodnichenko and Kumar (2018, American Economic Review 108(9))."
+
+[[form]]
+id = "VAL.experience_weighting"
+owner = "VAL"
+reason = "Why people weight the years they lived through more than older history is not derived in the world; the weighting is the measured regularity of expectations by age."
+source = "measured"
+source_ref = "Lived-years weights (L - k)^theta over a person's lived years L: Malmendier and Nagel (2011, Quarterly Journal of Economics 126(1)) for stock returns and (2016, Quarterly Journal of Economics 131(1)) for inflation expectations."
+
+[[form]]
+id = "VAL.switching"
+owner = "VAL"
+reason = "How people choose among forecasting rules is not derived in the world; a discrete choice on each rule's recent squared error is the form the experiments fit."
+source = "measured"
+source_ref = "Heuristic switching by a logit on performance: Brock and Hommes (1997, Econometrica 65(5)), fitted to experiments by Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4))."
+
+[[form]]
+id = "VAL.attention"
+owner = "VAL"
+reason = "How often people review a decision is not derived from anything the world keeps below it; optimal inattention balances the loss of an unreviewed decision against the cost of reviewing it."
+source = "measured"
+source_ref = "Optimal inattention: Reis (2006, Inattentive consumers, Journal of Monetary Economics 53(8)), a review intensity of one half the square root of the loss's curvature times the variance over the review's cost."
+
+[[form]]
+id = "VAL.value_methods"
+owner = "VAL"
+reason = "How a party values a claim, a firm, a project, a dwelling, an offer or a policy is its own simple model of what it expects, not a price; the methods are the ones decision-makers report using."
+source = "measured"
+source_ref = "Discounted expected cash flows at a required return of patience plus risk aversion times the variance seen, and comparables where no history exists, as the survey of practice by Graham and Harvey (2001, Journal of Financial Economics 60(2-3)) reports for firms' capital budgeting."
