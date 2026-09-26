@@ -6612,16 +6612,8 @@ chooses from (N8.7). Counters, ratcheted: `phx_market.sellers_in_reach`, `phx_ma
 
 ### S1.07 — `sys-frt`: freight within each country, vehicles and infrastructure
 
-**Status**: building, in three sub-steps:
-- **a**: the network (GEO.4's part): segments of road and rail between the market zones of every two regions of a
-  country that share a border, over the land path between them, and sea lanes joining the parts of a country no land
-  path joins, each part to its nearest, the shortest first; each mode's capacity a day in tonnes; routes as the
-  shortest path of one mode;
-- **b**: the kernel of carriage: a shipper's want to carry goods to a zone by a mode (`ShipIntent`), the carriage
-  meeting at 6a at each origin and mode, segments' capacity binding by lot, bookings at 6d paid to the carrier with
-  the goods pledged to it, and arrivals on their day moving the goods from one place to the other (arrived and
-  shipped in GDS's family);
-- **c**: `sys-frt`: its data, the carriage kind, the rules, the live checks, counters, docs, reviews and the build run.
+**Status**: done (9dd0a7e9; build run clean, 120 days, peak 2 465 MiB). Built in three sub-steps: the network
+(a), the kernel of carriage (b) and `sys-frt` with its data (c).
 
 **Clauses**:
 - STATE: FRT.1, FRT.2, FRT.3; GEO.4 *(part: the network and its capacities; the infrastructure's life, maintenance
@@ -6705,15 +6697,15 @@ Counters, ratcheted: `phx_frt.shipments`, `phx_frt.refused_bookings`.
 - a location gap closed by formula.
 
 **Done when**
-- [ ] Goods move between places only on booked vehicles over real routes.
-- [ ] LC-1-19 and LC-1-47 pass; LC-1-20 reports not yet until goods are shipped (S1.15).
-- [ ] Two reviews are done.
+- [x] Goods move between places only on booked vehicles over real routes.
+- [x] LC-1-19 and LC-1-47 pass; LC-1-20 reports not yet until goods are shipped (S1.15).
+- [x] Two reviews are done.
 
 ---
 
 ### S1.08 — `sys-lab`: labour
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: LAB.1–LAB.4, LAB.6–LAB.17, including collective
