@@ -149,6 +149,16 @@ pub(crate) struct MarketDay {
     pub orders: Vec<Order>,
     pub matches: Vec<(MarketId, InstrumentId, Match)>,
     pub trades: Vec<(Instruction, PartyId, InstrumentId, i64)>,
+    pub tally: GoodsDay,
+}
+
+/// What a day's goods did: the calls met, the transformations that took units from a deposit, the orders admitted,
+/// the orders refused or lapsed unmet, and the transformations and trades that failed.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct GoodsDay {
+    pub auctions: u64,
+    pub extractions: u64,
+    pub orders: u64,
     pub refused: u64,
     pub failed: u64,
 }
@@ -340,8 +350,11 @@ impl World {
             covers: Vec::new(),
         };
         if self.books.apply(ApplyAt::Day(step), instruction, self.audit.stream()).is_err() {
-            self.market_day.failed += 1;
+            self.market_day.tally.failed += 1;
             return;
+        }
+        if t.legs.iter().any(|l| matches!(l.source, Source::Deposit(_))) {
+            self.market_day.tally.extractions += 1;
         }
         let deposits = self.tables.iter_mut().find(|k| k.name == phx_geo::audit::DEPOSIT_TABLE);
         let Some(table) = deposits else {
@@ -416,8 +429,11 @@ impl World {
             Side::Sell => self.covered_offer(poster, &asked, tick, key),
         };
         match order {
-            Some(order) => self.market_day.orders.push(order),
-            None => self.market_day.refused += 1,
+            Some(order) => {
+                self.market_day.orders.push(order);
+                self.market_day.tally.orders += 1;
+            }
+            None => self.market_day.tally.refused += 1,
         }
     }
 
@@ -467,7 +483,7 @@ impl World {
                         self.books.ledger.covers.release(cover);
                     }
                 }
-                self.market_day.refused += phx_rand::float::len_u64(orders.len());
+                self.market_day.tally.refused += phx_rand::float::len_u64(orders.len());
                 continue;
             }
             let good = self.good(key);
@@ -484,6 +500,7 @@ impl World {
                         Missing::Present(p) => Missing::Present(p.price()),
                         Missing::Absent => Missing::Absent,
                     };
+                    self.market_day.tally.auctions += 1;
                     let rules = phx_market::call::CallRules { ties: decl.ties, ration: decl.ration, last };
                     let outcome = phx_market::call::call(&orders, rules, &mut lot);
                     let _ = self.markets.record_call(&decl, day, quote, &orders, &outcome);
@@ -594,7 +611,7 @@ impl World {
                         self.books.ledger.goods.deliver(*seller, *good, *qty);
                     }
                 }
-                Err(_) => self.market_day.failed += 1,
+                Err(_) => self.market_day.tally.failed += 1,
             }
         }
     }

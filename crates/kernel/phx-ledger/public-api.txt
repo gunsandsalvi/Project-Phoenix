@@ -378,6 +378,7 @@ pub const phx_ledger::audit::OWNERSHIP: phx_core::family::FamilyDecl
 pub const phx_ledger::audit::UNITS: phx_core::family::FamilyDecl
 pub fn phx_ledger::audit::contracts<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::LineId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub fn phx_ledger::audit::families() -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>
+pub fn phx_ledger::audit::inject_good(&mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub fn phx_ledger::audit::inject_production(&mut dyn phx_core::family::InjectTarget, u32) -> core::result::Result<(), alloc::string::String>
 pub fn phx_ledger::audit::inject_wear(&mut dyn phx_core::family::InjectTarget, u32) -> core::result::Result<(), alloc::string::String>
 pub fn phx_ledger::audit::money_lines<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, (&[&dyn phx_ledger::holder::HolderArenas], &[&dyn phx_ledger::holder::HolderTable]), &[phx_id::ids::LineId]) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::audit::Gap)>
@@ -424,6 +425,7 @@ pub fn phx_ledger::books::Books<B>::side_counts(&self, phx_id::ids::LineId, phx_
 pub fn phx_ledger::books::Books<B>::trade_legs(&self, (phx_id::ids::PartyId, phx_id::ids::PartyId), (phx_id::ids::InstrumentId, i64), (i64, phx_num::money::Ccy)) -> alloc::vec::Vec<phx_ledger::instruction::LegRec>
 impl<B: phx_store::backing::Backing> phx_core::family::BooksAudit for phx_ledger::books::Books<B> where phx_ledger::books::Books<B>: core::fmt::Debug
 pub fn phx_ledger::books::Books<B>::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_ledger::books::Books<B>::good(&self, u64) -> phx_num::missing::Missing<phx_core::family::GoodStock>
 pub fn phx_ledger::books::Books<B>::instruments(&self) -> usize
 pub fn phx_ledger::books::Books<B>::lines(&self) -> usize
 pub fn phx_ledger::books::Books<B>::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -859,6 +861,8 @@ pub phx_ledger::instruction::Source::Purchase(u64)
 pub phx_ledger::instruction::Source::Spoilage(u64)
 pub phx_ledger::instruction::Source::Way(u32)
 pub phx_ledger::instruction::Source::Wear(u32)
+impl phx_ledger::instruction::Source
+pub fn phx_ledger::instruction::Source::transformed(self) -> phx_core::family::Transformed
 pub struct phx_ledger::instruction::DueRow
 pub phx_ledger::instruction::DueRow::line: phx_id::ids::LineId
 pub phx_ledger::instruction::DueRow::side: phx_ledger::algebra::Side

@@ -1,6 +1,7 @@
 pub mod accounts;
 pub mod firms;
 pub mod geo;
+pub mod goods;
 pub mod ledger;
 pub mod markets;
 pub mod observer;
@@ -153,5 +154,9 @@ pub const CHECKS: &[Check] = &[
     plant::LC_1_10,
     plant::LC_1_11,
     plant::LC_1_12,
+    goods::LC_1_13,
+    goods::LC_1_14,
+    goods::LC_1_15,
     firms::LC_1_45,
+    goods::LC_1_46,
 ];

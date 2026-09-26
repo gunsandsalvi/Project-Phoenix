@@ -1056,6 +1056,12 @@ without end in both directions.
   received revenue, and the cost its units carry out an expense, the cost of what it sold, while the buyer's lot comes
   in as an asset (`ReasonDecl::held`). The units each party delivers are kept with the goods, which its visits read as
   its sales.
+- **The goods' balance** (GDS.10): a leg's digest names the source of a transformation's units and, on an instrument,
+  what was issued of it before the leg, so the audit keeps per instrument the day moved (`StockDay`) its opening and
+  what moved it: paired legs, unpaired legs no transformation accounts for, and each source's units made and used
+  up. `GDS.goods` reads it for every good (`BooksAudit::good`): a way or a deposit makes, a way, a purchase, spoilage
+  or a hazard uses up, trades make nothing, and the opening plus what was made less what was used up, spoiled and
+  destroyed is what is in existence at the close. Freight's legs between places enter it as arrived and shipped.
 
 ---
 

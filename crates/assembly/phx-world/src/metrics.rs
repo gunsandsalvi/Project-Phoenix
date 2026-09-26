@@ -91,4 +91,7 @@ pub struct Metrics {
     /// reads them.
     #[saved(skip)]
     pub visits: Vec<crate::visits::VisitDay>,
+    /// What each day's goods did, which a save does not carry: the run's report reads them.
+    #[saved(skip)]
+    pub goods: Vec<(Day, crate::goods::GoodsDay)>,
 }

@@ -226,6 +226,20 @@ where
             Located::Live { .. } | Located::Ended => 0,
         }
     }
+
+    fn good(&self, account: u64) -> Missing<phx_core::GoodStock> {
+        let AccountRef::Instrument(id) = AccountRef::from_code(account) else { return Missing::Absent };
+        match self.ledger.goods.key(id) {
+            Missing::Present(k) => Missing::Present(phx_core::GoodStock {
+                instrument: id,
+                product: k.product,
+                grade: k.grade,
+                zone: k.zone.get(),
+                issued: self.ledger.instruments.get(id).issued.n(),
+            }),
+            Missing::Absent => Missing::Absent,
+        }
+    }
 }
 
 /// An index the audit counts in as an identity.
@@ -314,6 +328,8 @@ pub fn inject_production(target: &mut dyn InjectTarget, way: u32) -> Result<(), 
         money: false,
         made: Missing::Present(way),
         worn: Missing::Absent,
+        source: Missing::Absent,
+        issued: Missing::Absent,
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())
@@ -357,6 +373,8 @@ fn stray_leg(target: &mut dyn InjectTarget, before: i64, paired: bool, money: bo
         money,
         made: Missing::Absent,
         worn: Missing::Absent,
+        source: Missing::Absent,
+        issued: Missing::Absent,
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())
@@ -381,6 +399,57 @@ pub fn inject_wear(target: &mut dyn InjectTarget, chain: u32) -> Result<(), Stri
         money: false,
         made: Missing::Absent,
         worn: Missing::Present((chain, 1)),
+        source: Missing::Absent,
+        issued: Missing::Absent,
+    };
+    target.stream().leg(u64::MAX, digest);
+    Ok(())
+}
+
+/// A good's unit moved by nothing that accounts for it, on a real holder whose before is stated one short so its
+/// position still adds up, fed to the audit as if it had settled today: only the family that balances goods sees it.
+/// A save that holds no good yet has one issued, alike to its first instrument, with nothing of it in existence.
+///
+/// # Errors
+/// When the save's books are not the ledger's, or hold no instrument or no money line with a holder.
+pub fn inject_good(target: &mut dyn InjectTarget) -> Result<(), String> {
+    let books = books(target)?;
+    let (party, _, _, _) = money_holding(books)?;
+    let ledger = &mut books.ledger;
+    let first = ledger.goods.iter().next().map(|(_, id)| id);
+    let good = if let Some(id) = first {
+        id
+    } else {
+        if ledger.instruments.is_empty() {
+            return Err("the save's books hold no instrument to issue a good alike".to_owned());
+        }
+        let like = ledger.instruments.get(phx_id::InstrumentId::new(0));
+        let new = crate::instrument::NewInstrument {
+            family: crate::instrument::InstrumentFamily::RealAsset,
+            issuer: Missing::Absent,
+            unit: like.unit,
+            ccy: like.ccy,
+            terms: like.terms,
+        };
+        let key = crate::goods::GoodKey { product: 0, grade: 0, zone: phx_id::ZoneId::new(0) };
+        ledger.goods.issue(&mut ledger.instruments, key, new)
+    };
+    let account = AccountRef::Instrument(good).code();
+    let held = phx_core::BooksAudit::position(&*books, party, account);
+    let issued = books.ledger.instruments.get(good).issued.n();
+    let digest = LegDigest {
+        party,
+        account,
+        denom: Denom::Unit(books.ledger.instruments.get(good).unit).code(),
+        qty: 1,
+        flow: 0,
+        before: held - 1,
+        paired: false,
+        money: false,
+        made: Missing::Absent,
+        worn: Missing::Absent,
+        source: Missing::Absent,
+        issued: Missing::Present(issued),
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())

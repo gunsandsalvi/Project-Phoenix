@@ -93,6 +93,8 @@ pub trait BooksAudit: core::fmt::Debug + Sync {
     fn money(&self, lines: core::ops::Range<usize>) -> Vec<Gap>;
     /// What a party holds on an account, by the account's code.
     fn position(&self, party: PartyId, account: u64) -> i64;
+    /// The good an instrument account is, with the units of it in existence; nothing when it is not a good.
+    fn good(&self, account: u64) -> Missing<GoodStock>;
 }
 
 /// The markets' public tape as the audit reads it: the prints, marks and fixings the markets published on a day,
@@ -146,6 +148,8 @@ pub trait LegRecords: core::fmt::Debug + Sync {
     fn made(&self) -> Vec<Made>;
     /// The day's wear, each instruction's legs along its chains, in the order they settled.
     fn worn(&self) -> Vec<Worn>;
+    /// Each instrument the day's legs moved, with what moved it, by account.
+    fn stocks(&self) -> Vec<StockDay>;
 }
 
 /// Everything the audit reads at a close, as shared borrows: the world's stores, the rows the day touched, and the
@@ -370,6 +374,46 @@ pub struct LegDigest {
     pub money: bool,
     pub made: Missing<u32>,
     pub worn: Missing<(u32, u32)>,
+    /// What accounts for the units the leg made or used up, when it is a transformation's.
+    pub source: Missing<Transformed>,
+    /// Its instrument's issued amount before the leg, when the leg is on an instrument.
+    pub issued: Missing<i64>,
+}
+
+/// What accounts for units a transformation made or used up: the way that made or used them, the deposit they were
+/// taken from, the purchase that used them up, their spoiling in store, the hazard that destroyed them, or the chain
+/// they wore along.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Transformed {
+    Way,
+    Deposit,
+    Purchase,
+    Spoilage,
+    Hazard,
+    Wear,
+}
+
+/// One instrument's day as the audit kept it: what was issued of it before the day's first leg on it, what its paired
+/// legs moved in sum, what its unpaired legs that no transformation accounts for moved, and per transformation's
+/// source the units it made and the units it used up.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct StockDay {
+    pub account: u64,
+    pub opening: i64,
+    pub traded: i128,
+    pub unaccounted: i128,
+    pub transformed: Vec<(Transformed, i128, i128)>,
+}
+
+/// A good as the books hold it: its instrument, its product by place, its grade class, its zone, and the units of it
+/// in existence.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GoodStock {
+    pub instrument: phx_id::InstrumentId,
+    pub product: u16,
+    pub grade: u8,
+    pub zone: u32,
+    pub issued: i64,
 }
 
 /// One wear as the audit kept it: the instruction and every leg it moved along a chain of classes.

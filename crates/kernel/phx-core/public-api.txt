@@ -543,6 +543,13 @@ pub phx_core::family::FamilyMode::Incremental
 pub phx_core::family::FamilyMode::Rolling
 pub phx_core::family::FamilyMode::Rolling::cycle_days: u16
 pub phx_core::family::FamilyMode::Streaming
+pub enum phx_core::family::Transformed
+pub phx_core::family::Transformed::Deposit
+pub phx_core::family::Transformed::Hazard
+pub phx_core::family::Transformed::Purchase
+pub phx_core::family::Transformed::Spoilage
+pub phx_core::family::Transformed::Way
+pub phx_core::family::Transformed::Wear
 pub struct phx_core::family::AuditInputs<'a>
 pub phx_core::family::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
 pub phx_core::family::AuditInputs::agents: &'a dyn phx_core::family::AgentsAudit
@@ -595,16 +602,24 @@ pub phx_core::family::Gap::detail: alloc::string::String
 pub phx_core::family::Gap::owner: phx_core::findings::FindingOwner
 pub phx_core::family::Gap::size: i128
 pub phx_core::family::Gap::unit: phx_core::findings::Unit
+pub struct phx_core::family::GoodStock
+pub phx_core::family::GoodStock::grade: u8
+pub phx_core::family::GoodStock::instrument: phx_id::ids::InstrumentId
+pub phx_core::family::GoodStock::issued: i64
+pub phx_core::family::GoodStock::product: u16
+pub phx_core::family::GoodStock::zone: u32
 pub struct phx_core::family::LegDigest
 pub phx_core::family::LegDigest::account: u64
 pub phx_core::family::LegDigest::before: i64
 pub phx_core::family::LegDigest::denom: u32
 pub phx_core::family::LegDigest::flow: i64
+pub phx_core::family::LegDigest::issued: phx_num::missing::Missing<i64>
 pub phx_core::family::LegDigest::made: phx_num::missing::Missing<u32>
 pub phx_core::family::LegDigest::money: bool
 pub phx_core::family::LegDigest::paired: bool
 pub phx_core::family::LegDigest::party: phx_id::ids::PartyId
 pub phx_core::family::LegDigest::qty: i64
+pub phx_core::family::LegDigest::source: phx_num::missing::Missing<phx_core::family::Transformed>
 pub phx_core::family::LegDigest::worn: phx_num::missing::Missing<(u32, u32)>
 pub struct phx_core::family::Made
 pub phx_core::family::Made::instruction: u64
@@ -626,6 +641,12 @@ pub phx_core::family::Span::end: usize
 pub phx_core::family::Span::start: usize
 impl phx_core::family::Span
 pub fn phx_core::family::Span::iter(self) -> impl core::iter::traits::iterator::Iterator<Item = usize>
+pub struct phx_core::family::StockDay
+pub phx_core::family::StockDay::account: u64
+pub phx_core::family::StockDay::opening: i64
+pub phx_core::family::StockDay::traded: i128
+pub phx_core::family::StockDay::transformed: alloc::vec::Vec<(phx_core::family::Transformed, i128, i128)>
+pub phx_core::family::StockDay::unaccounted: i128
 pub struct phx_core::family::Worn
 pub phx_core::family::Worn::instruction: u64
 pub phx_core::family::Worn::legs: alloc::vec::Vec<phx_core::family::WornLeg>
@@ -655,6 +676,7 @@ pub fn phx_core::family::AuditStream::leg(&mut self, u64, phx_core::family::LegD
 pub fn phx_core::family::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub trait phx_core::family::BooksAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::family::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::BooksAudit::good(&self, u64) -> phx_num::missing::Missing<phx_core::family::GoodStock>
 pub fn phx_core::family::BooksAudit::instruments(&self) -> usize
 pub fn phx_core::family::BooksAudit::lines(&self) -> usize
 pub fn phx_core::family::BooksAudit::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -680,6 +702,7 @@ pub fn phx_core::family::LegRecords::instructions(&self) -> u64
 pub fn phx_core::family::LegRecords::made(&self) -> alloc::vec::Vec<phx_core::family::Made>
 pub fn phx_core::family::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::LegRecords::positions(&self) -> u64
+pub fn phx_core::family::LegRecords::stocks(&self) -> alloc::vec::Vec<phx_core::family::StockDay>
 pub fn phx_core::family::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::LegRecords::worn(&self) -> alloc::vec::Vec<phx_core::family::Worn>
 pub trait phx_core::family::MarketsAudit: core::fmt::Debug + core::marker::Sync
@@ -2341,6 +2364,13 @@ pub phx_core::Transform::Log
 pub phx_core::Transform::LogGrowthPercent
 pub phx_core::Transform::LogitPercent
 pub phx_core::Transform::LogitShare
+pub enum phx_core::Transformed
+pub phx_core::Transformed::Deposit
+pub phx_core::Transformed::Hazard
+pub phx_core::Transformed::Purchase
+pub phx_core::Transformed::Spoilage
+pub phx_core::Transformed::Way
+pub phx_core::Transformed::Wear
 pub enum phx_core::Unit
 pub phx_core::Unit::Count
 pub phx_core::Unit::Days
@@ -2834,6 +2864,12 @@ pub fn phx_core::contribution::GenReport::write(&mut self, phx_core::contributio
 impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved, alloc::vec::Vec<u64>: core::default::Default, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::GoodStock
+pub phx_core::GoodStock::grade: u8
+pub phx_core::GoodStock::instrument: phx_id::ids::InstrumentId
+pub phx_core::GoodStock::issued: i64
+pub phx_core::GoodStock::product: u16
+pub phx_core::GoodStock::zone: u32
 pub struct phx_core::HandlerEntry
 pub phx_core::HandlerEntry::clause: &'static str
 pub phx_core::HandlerEntry::intents: &'static [&'static str]
@@ -2992,11 +3028,13 @@ pub phx_core::LegDigest::account: u64
 pub phx_core::LegDigest::before: i64
 pub phx_core::LegDigest::denom: u32
 pub phx_core::LegDigest::flow: i64
+pub phx_core::LegDigest::issued: phx_num::missing::Missing<i64>
 pub phx_core::LegDigest::made: phx_num::missing::Missing<u32>
 pub phx_core::LegDigest::money: bool
 pub phx_core::LegDigest::paired: bool
 pub phx_core::LegDigest::party: phx_id::ids::PartyId
 pub phx_core::LegDigest::qty: i64
+pub phx_core::LegDigest::source: phx_num::missing::Missing<phx_core::family::Transformed>
 pub phx_core::LegDigest::worn: phx_num::missing::Missing<(u32, u32)>
 pub struct phx_core::LegalForm
 pub phx_core::LegalForm::endings: alloc::vec::Vec<alloc::string::String>
@@ -3365,6 +3403,12 @@ pub struct phx_core::SpoilageDecl
 pub phx_core::SpoilageDecl::clause: &'static str
 pub phx_core::SpoilageDecl::rates: fn(&phx_core::register::Register) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>
 pub phx_core::SpoilageDecl::visit: &'static str
+pub struct phx_core::StockDay
+pub phx_core::StockDay::account: u64
+pub phx_core::StockDay::opening: i64
+pub phx_core::StockDay::traded: i128
+pub phx_core::StockDay::transformed: alloc::vec::Vec<(phx_core::family::Transformed, i128, i128)>
+pub phx_core::StockDay::unaccounted: i128
 pub struct phx_core::StreamDecl
 pub phx_core::StreamDecl::clause: &'static str
 pub phx_core::StreamDecl::keyed: bool
@@ -3516,6 +3560,7 @@ pub fn phx_core::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
 pub fn phx_core::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub trait phx_core::BooksAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::BooksAudit::good(&self, u64) -> phx_num::missing::Missing<phx_core::family::GoodStock>
 pub fn phx_core::BooksAudit::instruments(&self) -> usize
 pub fn phx_core::BooksAudit::lines(&self) -> usize
 pub fn phx_core::BooksAudit::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -3594,6 +3639,7 @@ pub fn phx_core::LegRecords::instructions(&self) -> u64
 pub fn phx_core::LegRecords::made(&self) -> alloc::vec::Vec<phx_core::family::Made>
 pub fn phx_core::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::LegRecords::positions(&self) -> u64
+pub fn phx_core::LegRecords::stocks(&self) -> alloc::vec::Vec<phx_core::family::StockDay>
 pub fn phx_core::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::LegRecords::worn(&self) -> alloc::vec::Vec<phx_core::family::Worn>
 pub trait phx_core::Limited: core::marker::Copy

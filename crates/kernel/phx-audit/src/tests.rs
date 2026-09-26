@@ -168,6 +168,9 @@ impl phx_core::BooksAudit for NoBooks {
     fn position(&self, _: PartyId, _: u64) -> i64 {
         0
     }
+    fn good(&self, _: u64) -> phx_num::Missing<phx_core::GoodStock> {
+        phx_num::Missing::Absent
+    }
 }
 
 impl InjectTarget for Hand {
@@ -329,6 +332,8 @@ mod digests {
             money,
             made: phx_num::Missing::Absent,
             worn: phx_num::Missing::Absent,
+            source: phx_num::Missing::Absent,
+            issued: phx_num::Missing::Absent,
         }
     }
 

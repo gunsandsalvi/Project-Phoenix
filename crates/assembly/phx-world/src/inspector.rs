@@ -64,6 +64,11 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.visits
     }
 
+    /// What each day's goods did: calls met, extractions, orders admitted and refused, and failures.
+    pub fn goods_days(&self) -> &[(Day, crate::goods::GoodsDay)] {
+        &self.world.metrics.goods
+    }
+
     /// The processes' realised and expected hits over the sampled agents.
     #[must_use]
     pub fn rates(&self) -> &crate::rates::Rates {

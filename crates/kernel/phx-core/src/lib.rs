@@ -67,8 +67,8 @@ pub use facts::{
 };
 pub use family::{
     AUDIT_SUBSTEP, AccountsAudit, AgentsAudit, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx,
-    FamilyDecl, FamilyMode, Gap, InjectTarget, LegDigest, LegRecords, Made, MadeLeg, MarketsAudit, ReadTrace, Span,
-    Worn, WornLeg, rolling_slice,
+    FamilyDecl, FamilyMode, Gap, GoodStock, InjectTarget, LegDigest, LegRecords, Made, MadeLeg, MarketsAudit,
+    ReadTrace, Span, StockDay, Transformed, Worn, WornLeg, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{

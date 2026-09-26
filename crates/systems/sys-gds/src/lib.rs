@@ -4,6 +4,7 @@
 
 mod consts;
 pub mod extract;
+pub mod families;
 pub mod markets;
 pub mod rules;
 
@@ -158,6 +159,7 @@ impl System for Gds {
         d.stream(LotsStream::DECL);
         d.stream(VisitStream::DECL);
         d.contribution(Box::new(Declared));
+        d.family(Box::new(families::Goods));
         d.market(Box::new(markets::COMMODITIES));
         d.market(Box::new(markets::BETWEEN_FIRMS));
         d.compile(Box::new(move |register, _| Ok(Box::new(extract::Own::compile(&prims, register)?))));

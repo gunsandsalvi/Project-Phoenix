@@ -211,6 +211,18 @@ counter = "phx_cap.depreciation"
 value = 1362729367556
 direction = "down"
 
+# The goods' heaviest day: the calls met and the transformations that took units from a deposit. First set at S1.05,
+# at nothing until firms hold stocks and the rights to deposits (S1.15), which restates them.
+[[ratchet]]
+counter = "phx_gds.auctions"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_gds.extraction_orders"
+value = 0
+direction = "down"
+
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
 [[ratchet]]
 counter = "phx_num.ir_value_of"

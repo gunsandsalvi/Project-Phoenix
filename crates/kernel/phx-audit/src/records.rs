@@ -18,6 +18,8 @@ pub struct Digests {
     made: BTreeMap<u64, phx_core::Made>,
     /// Per instruction that wears plant, its legs along its chains.
     worn: BTreeMap<u64, phx_core::Worn>,
+    /// Per instrument account the day's legs moved, what was issued before them and what moved it.
+    stocks: BTreeMap<u64, phx_core::StockDay>,
 }
 
 /// A difference the records show: which instruction or position, which denomination, and by how much.
@@ -50,6 +52,25 @@ impl Digests {
         if let phx_num::Missing::Present((chain, class)) = leg.worn {
             let worn = self.worn.entry(instruction).or_insert_with(|| phx_core::Worn { instruction, legs: Vec::new() });
             worn.legs.push(phx_core::WornLeg { party: leg.party, chain, class, qty: leg.qty });
+        }
+        if let phx_num::Missing::Present(issued) = leg.issued {
+            let day = self.stocks.entry(leg.account).or_insert_with(|| phx_core::StockDay {
+                account: leg.account,
+                opening: issued,
+                ..phx_core::StockDay::default()
+            });
+            match leg.source {
+                phx_num::Missing::Present(source) => {
+                    if !day.transformed.iter().any(|t| t.0 == source) {
+                        day.transformed.push((source, 0, 0));
+                    }
+                    if let Some(t) = day.transformed.iter_mut().find(|t| t.0 == source) {
+                        if leg.qty < 0 { t.2 -= q } else { t.1 += q }
+                    }
+                }
+                phx_num::Missing::Absent if leg.paired => day.traded += q,
+                phx_num::Missing::Absent => day.unaccounted += q,
+            }
         }
     }
 
@@ -107,6 +128,7 @@ impl Digests {
         self.positions.clear();
         self.made.clear();
         self.worn.clear();
+        self.stocks.clear();
     }
 }
 
@@ -137,6 +159,10 @@ impl phx_core::LegRecords for Digests {
 
     fn worn(&self) -> Vec<phx_core::Worn> {
         self.worn.values().cloned().collect()
+    }
+
+    fn stocks(&self) -> Vec<phx_core::StockDay> {
+        self.stocks.values().cloned().collect()
     }
 }
 

@@ -777,6 +777,7 @@ impl World {
         self.metrics.agents.push(count);
         let visited = std::mem::replace(&mut self.visit_today, crate::visits::VisitDay::of(day));
         self.metrics.visits.push(visited);
+        self.metrics.goods.push((day, std::mem::take(&mut self.market_day.tally)));
     }
 
     /// Every agent begun or changed since the last booking drawn afresh from the day after `day`; a kind no process

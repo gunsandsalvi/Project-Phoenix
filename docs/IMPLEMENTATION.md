@@ -6388,22 +6388,28 @@ a thirtieth of the firms a day. Counters, ratcheted: `phx_cap.wear_realisations`
   Buying inputs (FRM.7's part) needs the way a firm runs, which production chooses, so it moves to S1.15 with
   production. A solvent owner's closure reads the value of continuing from filed accounts, so it moves there too; its
   rule is S1.03's `closes`, and `phx_frm.closures` is counted from there;
-- **d**: the GDS.10 family, LC-1-13 to LC-1-15 and LC-1-46, counters, the reviews and the build run.
+- **d** *(built)*: the family of goods (`GDS.goods`, GDS.10): the audit keeps, per instrument the day's legs moved,
+  what was issued of it before the first and what moved it (paired legs, legs no transformation accounts for, and
+  per transformation's source the units made and used up); per good, each source must account for its units only
+  in the way it can (a way or a deposit makes, a way, a purchase, spoilage or a hazard uses up), trades must make and
+  lose nothing, and the opening plus produced less consumed, spoiled and destroyed must be what is in existence at the
+  close. Arrived and shipped enter with freight (S1.07), which completes the family. LC-1-13 to LC-1-15 and LC-1-46
+  are registered, and the counters `phx_gds.auctions` and `phx_gds.extraction_orders` are kept per day.
 
 Who holds each deposit's right is drawn at the Stage 1 opening (S1.15), with the firms' stocks.
 
 **Clauses**:
 - STATE: GDS.1, GDS.2; GDS.3 *(part: goods and commodities; land is HSG's, S2.05)*.
 - STATE: TEC.1 *(completes it: a perishable good's spoilage while stored, a rate per product sourced here)*.
-- DECISION: GDS.4, GDS.5, GDS.6; FRM.7 *(part: firms buying inputs for planned production, from S1.03)*; a solvent
-  owner's closure of its firm (FRM.15's other way out, from S1.03), valuing its stock and plant at the prices it
-  expects to fetch.
-- PROCESS: GDS.7, GDS.8, GDS.9; GEO.9; FRM.13 *(from S1.03: revenue on delivery from the match set)*; REP.35
+- DECISION: GDS.4; GDS.5 *(part: the order intents and the markets they meet in; the firms' buying is S1.15's)*;
+  GDS.6 *(part: the stockists' rule; their visit is S1.06's, with the storage they buy)*.
+- PROCESS: GDS.7, GDS.8; GDS.9 *(part: hazards destroy stocks where they stand; weather's yields are production's,
+  S1.15)*; GEO.9; FRM.13 *(from S1.03: revenue on delivery from the match set)*; REP.35
   *(completes it, from S1.03: a surprise in a firm's sales wakes its price review)*.
 - STATE: ACC.6 *(from S1.03: the firm's choice of cost flow over its stocks' lots)*; VAL.23 *(completes it, from S1.03:
   the public-series outlooks at 5a over the markets' prints, the first public series, once per method in use)*.
-- INVARIANT: GDS.10; GEO.12.
-- MEASURE: GDS.11.
+- INVARIANT: GDS.10 *(part: the family by place; arrived and shipped are S1.07's)*; GEO.12.
+- MEASURE: GDS.11 *(part: its live check is registered; its reads need goods traded, S1.15)*.
 - FORBID: GDS.12.
 - PRIMITIVE: GDS.13.
 
@@ -6476,8 +6482,9 @@ stock's and plant's values from here.
 - spoilage and storage as one number.
 
 **Done when**
-- [ ] Goods reconcile by place.
-- [ ] LC-1-13 to LC-1-15 and LC-1-46 pass.
+- [ ] Goods reconcile by place: the family of goods is registered and clean.
+- [ ] LC-1-14 passes; LC-1-13, LC-1-15 and LC-1-46 report not yet until firms hold and trade goods, and S1.15's Done
+  when requires them to pass.
 - [ ] Two reviews are done.
 
 ---
@@ -6488,7 +6495,8 @@ stock's and plant's values from here.
 
 **Clauses**:
 - STATE: SRV.1, SRV.2.
-- DECISION: SRV.3, SRV.4; HH.5 *(part: the choice of seller, with S1.12)*.
+- DECISION: SRV.3, SRV.4; HH.5 *(part: the choice of seller, with S1.12)*; GDS.6 *(completes it, from S1.05: the
+  stockists' visit, holding stock in the storage they buy here)*.
 - PROCESS: SRV.5, SRV.6; REP.37; REP.22 *(part: tastes over sellers)*.
 - MEASURE: SRV.7.
 - FORBID: SRV.8.
@@ -6579,7 +6587,8 @@ index sorted by distance), never the set a buyer chooses from (N8.7). Counters, 
   and condition are S2.05's, with CAP.7)*.
 - DECISION: FRT.4, FRT.5.
 - PROCESS: FRT.6, FRT.7, FRT.8.
-- INVARIANT: FRT.9; GEO.13.
+- INVARIANT: FRT.9; GEO.13; GDS.10 *(completes it, from S1.05: goods arrived and shipped by freight enter each
+  place's balance)*.
 - MEASURE: FRT.10.
 - FORBID: FRT.11.
 - PRIMITIVE: FRT.12; GEO.18.
@@ -7412,7 +7421,12 @@ decisions)*: every Stage 1 system's opening contribution.
   its way)*.
 - MEASURE: CAP.10. FORBID: CAP.11. PRIMITIVE: CAP.13 *(completes it: the managements' hurdle and horizon
   distributions)*.
-- Its Done when requires LC-1-05, LC-1-11 and LC-1-12 to pass.
+- DECISION: GDS.5 *(completes it, from S1.05: firms buy their inputs for planned production)*; FRM.7 *(part, from
+  S1.05: the same buying)*; a solvent owner's closure of its firm (FRM.15's other way out, from S1.05), valuing its
+  stock and plant at the prices it expects to fetch, read from its filed accounts. PROCESS: GDS.9
+  *(completes it, from S1.05: weather sets the yields of crops where they grow)*. MEASURE: GDS.11 *(completes it, from
+  S1.05: its reads over the goods traded)*.
+- Its Done when requires LC-1-05, LC-1-11, LC-1-12, LC-1-13, LC-1-15 and LC-1-46 to pass.
 
 **Architecture**: §10.
 
@@ -16681,7 +16695,10 @@ and are not mapped.
 | CAP | S1.15 | 3, 4, 5, 6, 9, 10, 11, 13 |
 | CAP | S2.05 | 2 |
 | CAP | S5.02 | 7 |
-| GDS | S1.05 | 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 |
+| GDS | S1.05 | 1, 2, 4, 7, 8, 12, 13 |
+| GDS | S1.06 | 6 |
+| GDS | S1.07 | 10 |
+| GDS | S1.15 | 5, 9, 11 |
 | GDS | S2.05 | 3 |
 | SRV | S1.06 | 1, 2, 3, 4, 5, 6, 7, 8, 9 |
 | FRT | S1.07 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |

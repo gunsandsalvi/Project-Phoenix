@@ -719,7 +719,7 @@ impl<B: Backing> Ledger<B> {
                 };
                 d.write(at.table, at.slot, crate::rows::balance_word(word), next);
                 let table = holders.arenas(at.table).table();
-                self.record_leg(decl, s, (table, *at), leg, (before, Missing::Absent), Some(d), audit);
+                self.record_leg(decl, s, (table, *at), leg, (before, Missing::Absent, Missing::Absent), Some(d), audit);
                 continue;
             }
             let arenas = holders.arenas(at.table);
@@ -745,6 +745,10 @@ impl<B: Backing> Ledger<B> {
                 None => self.position(arenas, at.party, at.slot, leg.position_code()),
             };
             let basis = self.held_basis(arenas, *at, leg);
+            let issued = match leg.account {
+                AccountRef::Instrument(id) => Missing::Present(self.instruments.get(id).issued.n()),
+                _ => Missing::Absent,
+            };
             match &line_row {
                 Some((line, view)) => settle_balance(arenas, at.slot, (*line, view), leg.qty),
                 None => self.settle_leg(arenas, *at, leg, s.day, &mut taken),
@@ -758,15 +762,15 @@ impl<B: Backing> Ledger<B> {
                 Missing::Absent => Missing::Absent,
             };
             let table = arenas.table();
-            self.record_leg(decl, s, (table, *at), leg, (before, held_moved), None, audit);
+            self.record_leg(decl, s, (table, *at), leg, (before, held_moved, issued), None, audit);
         }
         if !taken.is_empty() {
             violation!(clause = "SET.11", "a named unit given that nobody received", id = s.id.get());
         }
     }
 
-    /// A settled leg recorded: the holder touched, the leg's digest for the audit, the money it paid or received,
-    /// and what else it moved of its party's net assets.
+    /// A settled leg recorded: the holder touched, the leg's digest for the audit with what its instrument had issued
+    /// before it, the money it paid or received, and what else it moved of its party's net assets.
     #[expect(clippy::too_many_arguments, reason = "the leg, where it settled, and what it moved")]
     fn record_leg(
         &mut self,
@@ -774,7 +778,7 @@ impl<B: Backing> Ledger<B> {
         s: Settling,
         (table, at): (phx_id::TableId, At),
         leg: &LegRec,
-        (before, held_moved): (i64, Missing<(i64, phx_num::Ccy)>),
+        (before, held_moved, issued): (i64, Missing<(i64, phx_num::Ccy)>, Missing<i64>),
         deferred: Option<&mut Deferred<'_>>,
         audit: &mut dyn AuditStream,
     ) {
@@ -803,6 +807,11 @@ impl<B: Backing> Ledger<B> {
                 },
                 _ => Missing::Absent,
             },
+            source: match leg.kind {
+                LegKind::Transformation { source, .. } => Missing::Present(source.transformed()),
+                _ => Missing::Absent,
+            },
+            issued,
         };
         audit.leg(s.id.get(), digest);
         if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {

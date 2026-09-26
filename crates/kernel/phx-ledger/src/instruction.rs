@@ -217,6 +217,21 @@ pub enum Source {
     Wear(u32),
 }
 
+impl Source {
+    /// What accounts for the units, as the audit keeps it.
+    #[must_use]
+    pub fn transformed(self) -> phx_core::Transformed {
+        match self {
+            Source::Way(_) => phx_core::Transformed::Way,
+            Source::Deposit(_) => phx_core::Transformed::Deposit,
+            Source::Purchase(_) => phx_core::Transformed::Purchase,
+            Source::Spoilage(_) => phx_core::Transformed::Spoilage,
+            Source::Hazard(_) => phx_core::Transformed::Hazard,
+            Source::Wear(_) => phx_core::Transformed::Wear,
+        }
+    }
+}
+
 /// How a leg settles.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LegKind {
