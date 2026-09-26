@@ -846,6 +846,7 @@ dependencies = [
  "sys-cb",
  "sys-dem",
  "sys-frm",
+ "sys-gds",
  "sys-hsg",
  "sys-lab",
  "sys-soc",
@@ -1202,6 +1203,21 @@ dependencies = [
  "phx-rand",
  "phx-store",
  "phx-val",
+]
+
+[[package]]
+name = "sys-gds"
+version = "0.1.0"
+dependencies = [
+ "if-firm",
+ "libm",
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-market",
+ "phx-num",
+ "phx-rand",
 ]
 
 [[package]]

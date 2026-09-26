@@ -210,6 +210,7 @@ struct Prepared {
     /// The kinds under an insolvency law.
     laws: Vec<crate::defaults::Law>,
     wears: Vec<crate::wear::WearBound>,
+    spoils: Vec<crate::spoil::SpoilBound>,
     /// The market kinds the systems declare.
     market_kinds: phx_market::instances::Kinds,
     register_hash: u128,
@@ -336,6 +337,10 @@ fn prepare(
         errors.extend(e);
         Vec::new()
     });
+    let spoils = crate::spoil::bind(&d, &visits, &c.register).unwrap_or_else(|e| {
+        errors.extend(e);
+        Vec::new()
+    });
     errors.extend(unlawful_kinds(&d, &kernel, &c.register));
     let market_kinds = market_kinds(&d).unwrap_or_else(|e| {
         errors.extend(e);
@@ -370,6 +375,7 @@ fn prepare(
         visits,
         laws,
         wears,
+        spoils,
         market_kinds,
         register_hash: data_hash(&files),
     })
@@ -509,12 +515,14 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         visit_today: crate::visits::VisitDay::of(carried.today),
         laws: std::mem::take(&mut p.laws),
         wears: std::mem::take(&mut p.wears),
+        spoils: std::mem::take(&mut p.spoils),
         defaults: std::collections::BTreeSet::new(),
         markets,
         market_kinds: std::mem::take(&mut p.market_kinds),
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
+        outlooks: crate::goods::Marks::default(),
         accounts,
         report: run.report,
         unprocessed: carried.unprocessed,

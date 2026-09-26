@@ -16,6 +16,7 @@ pub mod rates;
 pub mod refusals;
 pub mod registry;
 pub mod save;
+mod spoil;
 pub mod systems;
 pub mod trace;
 pub mod visits;

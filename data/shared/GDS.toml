@@ -1,0 +1,57 @@
+# The goods' technology (GDS.13), derived by tools/data/derive_gds.py; each value's source is its entry's.
+
+[[primitive]]
+id = "GDS.grade_bounds"
+kind = "TECHNOLOGY"
+owner = "GDS"
+source = "assumed"
+source_ref = "The upper bounds of each extracted product's first two grade classes (rows: metal ore, coal, oil and gas, building stone; columns: the classes) in the deposit's grade index: three classes each a third of the deposits the map draws, the terciles of GEO's log-normal grade, as markets grade commodities in a few classes (coal in four ranks, EIA; crude in three bands of API gravity)."
+value = { rows = [1, 2, 3, 4], columns = [0, 1], values = [[0.709, 1.411], [0.806, 1.240], [0.772, 1.295], [0.879, 1.138]], outside = "refuse" }
+
+[[primitive]]
+id = "GDS.grade_fall"
+kind = "ENDOWMENT"
+owner = "GDS"
+source = "assumed"
+source_ref = "How fast a deposit's grade falls as it is worked, the richest part first, by extracted product (metal ore, coal, oil and gas, building stone): the grade left when it is exhausted is e^-fall of the opening's; a quarry's stone is alike throughout."
+value = { axis = [1, 2, 3, 4], values = [0.500, 0.200, 0.300, 0.000], outside = "refuse" }
+
+[[primitive]]
+id = "GDS.spoilage_rate"
+kind = "TECHNOLOGY"
+owner = "GDS"
+source = "estimated"
+source_ref = "Each storable product's loss in stock a year (axis: the products' places): crops and livestock from APHLIS's 5.26% maize storage loss over a six-month store (FAO SOFA 2019 p.29 gives 0.3-15% by region); coal 2% a year of energy in managed piles (IEA CCC/212, 2012, p.37); food the US retail loss of 10% of supply (USDA ERS EIB-121, Table 1) and consumer goods the process and damage share of shrink, 27% of 1.6% of sales (NRF NRSS 2023), each times 9.2 turns a year (Census MTIS inventory to sales of 1.30 months); oil and gas and energy carriers 0.1% a year, assumed, from tank evaporation (EPA AP-42 7.1 gives no rate); ore, stone, materials and capital goods none, assumed, being inert in store."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], values = [0.1081, 0.0000, 0.0200, 0.0010, 0.0000, 0.9231, 0.0399, 0.0000, 0.0010, 0.0000], outside = "refuse" }
+
+[[primitive]]
+id = "GDS.storage"
+kind = "TECHNOLOGY"
+owner = "GDS"
+source = "measured"
+source_ref = "The room each storable product is kept in (axis: the products' places; 0 open yard, 1 dry warehouse, 2 cold store, 3 tank, 4 silo): grain in silos and bins (USDA NASS Grain Stocks), food in refrigerated warehouses (NASS Capacity of Refrigerated Warehouses), crude and fuels in tanks (EIA working storage capacity), ore, coal and stone in open stockpiles, other goods in dry warehouses."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], values = [4, 0, 0, 3, 0, 2, 1, 1, 3, 1], outside = "refuse" }
+
+[[primitive]]
+id = "GDS.standardised"
+kind = "TECHNOLOGY"
+owner = "GDS"
+source = "assumed"
+source_ref = "Whether each product is a standardised commodity traded in a call at each place (axis: the products' places): crops and livestock and the four extracted products, as exchanges list grains, livestock, metals, coal, crude and gas; made goods are sold between firms at posted prices."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], values = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], outside = "refuse" }
+
+[[primitive]]
+id = "GDS.extraction_days"
+kind = "PREFERENCE"
+owner = "GDS"
+source = "assumed"
+source_ref = "Days between an extractor's decisions on its deposits: a week, as firms plan production (FRM.production_days)."
+value = 7
+
+[[primitive]]
+id = "GDS.spoilage_days"
+kind = "RESOLUTION"
+owner = "GDS"
+source = "assumed"
+source_ref = "Days between the realisations of a holder's spoilage, each over the days since the last: a month, which the loss's yearly rates make small per realisation."
+value = 30

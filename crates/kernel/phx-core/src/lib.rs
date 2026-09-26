@@ -34,6 +34,7 @@ pub mod register;
 pub mod rules;
 pub mod schedule;
 pub mod schema;
+pub mod spoilage;
 pub mod streams;
 pub mod substep;
 pub mod system;
@@ -71,8 +72,8 @@ pub use family::{
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{
-    Ctx, CtxParts, DrawsFrom, Emits, FactStore, GoodsView, HandlerDecl, HeldRight, IntentDef, Intents, NoGoods, Opened,
-    Reads, RunChunk, Writes,
+    Ctx, CtxParts, DrawsFrom, Emits, FactStore, GoodsView, HandlerDecl, HeldGood, HeldRight, IntentDef, Intents,
+    NoGoods, Opened, Reads, RunChunk, Writes,
 };
 pub use hazards::{ActsOn, DrawScheme, HazardDecl, RateChange, RateFn, annual_to_daily};
 pub use insolvency::InsolvencyDecl;
@@ -107,6 +108,7 @@ pub use register::{
 pub use rules::{RuleSig, RuleTable};
 pub use schedule::{DecisionSchedule, Phase, RunsOn, WakeKind, next_due};
 pub use schema::{FactColumn, TableSchema};
+pub use spoilage::SpoilageDecl;
 pub use streams::{NotObserver, ObserverDraws, OpeningPhase, Purpose, StreamDecl, StreamDef, Streams};
 pub use substep::{SUB_STEPS, SubStep, SubStepInfo, SubStepKind};
 pub use system::{

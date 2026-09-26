@@ -82,13 +82,22 @@ declare_fact! {
     }
 }
 
+declare_fact! {
+    /// The return the firm's management requires of what it holds and does, a year: its hurdle, by which it
+    /// discounts what it expects and weighs holding against selling.
+    pub RequiredReturn = "FRM.required_return" {
+        value: Fixed { exp: 6 }, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position,
+        clause: "CAP.13",
+    }
+}
+
 /// A fact as the position a small firm's agent holds of the same name.
 const fn from_fact<F: FactDef>() -> PositionDecl {
     PositionDecl { name: F::ITEM.name, clause: F::ITEM.clause }
 }
 
 /// Every position a small firm's agent holds, in the order its table keeps them.
-pub const POSITIONS: [PositionDecl; 11] = [
+pub const POSITIONS: [PositionDecl; 12] = [
     from_fact::<Stock>(),
     from_fact::<ExpectedSales>(),
     from_fact::<SalesWidth>(),
@@ -100,10 +109,11 @@ pub const POSITIONS: [PositionDecl; 11] = [
     from_fact::<OutputRate>(),
     from_fact::<PriceAttention>(),
     from_fact::<WagePerHour>(),
+    from_fact::<RequiredReturn>(),
 ];
 
 /// Every fact a large firm keeps, by name.
-pub const FACTS: [&str; 11] = [
+pub const FACTS: [&str; 12] = [
     Stock::ITEM.name,
     ExpectedSales::ITEM.name,
     SalesWidth::ITEM.name,
@@ -115,4 +125,5 @@ pub const FACTS: [&str; 11] = [
     OutputRate::ITEM.name,
     PriceAttention::ITEM.name,
     WagePerHour::ITEM.name,
+    RequiredReturn::ITEM.name,
 ];

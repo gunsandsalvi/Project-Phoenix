@@ -95,14 +95,19 @@ pub struct HeldRight {
     pub remaining: Missing<i64>,
 }
 
+/// A good a row holds: its product, its grade class and its units, one twin's for an agent.
+pub type HeldGood = (u16, u8, i64);
+
 /// What a row's party may read of goods beyond its facts: its units of each good at its place, one twin's for an
-/// agent; the deposits whose rights it holds; the units it has delivered since the world opened; and each good's
-/// latest mark at its place, which is public.
+/// agent, and the list of them; the deposits whose rights it holds; the units it has delivered since the world
+/// opened; and each good's latest mark at its place and the public outlook of its price there, which are public.
 pub trait GoodsView: core::fmt::Debug {
     fn held(&self, slot: Slot, product: u16, grade: u8) -> i64;
+    fn goods(&self, slot: Slot) -> &[HeldGood];
     fn rights(&self, slot: Slot) -> &[HeldRight];
     fn delivered(&self, slot: Slot, product: u16, grade: u8) -> i64;
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64>;
+    fn outlook(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64>;
 }
 
 /// The view of rows that hold no goods, as a kernel table's are.
@@ -113,6 +118,9 @@ impl GoodsView for NoGoods {
     fn held(&self, _: Slot, _: u16, _: u8) -> i64 {
         0
     }
+    fn goods(&self, _: Slot) -> &[HeldGood] {
+        &[]
+    }
     fn rights(&self, _: Slot) -> &[HeldRight] {
         &[]
     }
@@ -120,6 +128,9 @@ impl GoodsView for NoGoods {
         0
     }
     fn mark(&self, _: Slot, _: u16, _: u8) -> Missing<i64> {
+        Missing::Absent
+    }
+    fn outlook(&self, _: Slot, _: u16, _: u8) -> Missing<i64> {
         Missing::Absent
     }
 }
@@ -193,6 +204,17 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     #[must_use]
     pub fn held(&self, slot: Slot, product: u16, grade: u8) -> i64 {
         self.parts.goods.held(slot, product, grade)
+    }
+
+    /// Every good the row's party holds at its place.
+    #[must_use]
+    pub fn goods(&self, slot: Slot) -> &[HeldGood] {
+        self.parts.goods.goods(slot)
+    }
+
+    /// The public outlook of a good's price at the row's place, in its market's raw price.
+    pub fn outlook(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
+        self.parts.goods.outlook(slot, product, grade)
     }
 
     /// The deposits whose rights the row's party holds.

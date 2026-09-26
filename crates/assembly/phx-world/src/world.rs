@@ -75,6 +75,8 @@ pub struct World {
     pub(crate) laws: Vec<crate::defaults::Law>,
     /// The declared wear of chains of classes, each realised at its visit.
     pub(crate) wears: Vec<crate::wear::WearBound>,
+    /// The declared spoilage of goods in stock, each realised at its visit.
+    pub(crate) spoils: Vec<crate::spoil::SpoilBound>,
     pub(crate) defaults: std::collections::BTreeSet<crate::defaults::Due>,
     pub(crate) markets: phx_market::markets::Markets,
     /// The market kinds the systems declare, the templates of the instances the markets keep.
@@ -83,8 +85,9 @@ pub struct World {
     pub(crate) goods_frame: crate::goods::Frame,
     /// The day's orders, matches and trades, from their admission to their settlement.
     pub(crate) market_day: crate::goods::MarketDay,
-    /// Each good's latest mark where it stands, for the handlers' reads.
+    /// Each good's latest mark where it stands, and the public outlook of its price there, for the handlers' reads.
     pub(crate) marks: crate::goods::Marks,
+    pub(crate) outlooks: crate::goods::Marks,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,
     pub(crate) unprocessed: Vec<phx_ledger::fails::Fail>,

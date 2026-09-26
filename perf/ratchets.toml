@@ -162,9 +162,11 @@ counter = "phx_frm.attention_visits"
 value = 124891
 direction = "down"
 
+# A small firm's row: restated at S1.05 by one position more, the return its management requires, which its
+# extraction and its holding of stock discount by.
 [[ratchet]]
 counter = "phx_pop.bytes_per_firm_cell"
-value = 180
+value = 188
 direction = "down"
 
 # The estates settled and ended on the heaviest day, those left waiting on a failed payment, and those waiting to sell

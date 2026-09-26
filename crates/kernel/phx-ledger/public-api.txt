@@ -632,6 +632,7 @@ pub phx_ledger::dues::DueReasons::left: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::payment: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::principal: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::seated: phx_ledger::instruction::ReasonId
+pub phx_ledger::dues::DueReasons::spoiled: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::succeeded: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::traded: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::worn: phx_ledger::instruction::ReasonId

@@ -44,7 +44,7 @@ pub fn carried(cost: i64, value_from: f64, value_to: f64) -> Option<i64> {
 }
 
 /// The nearest integer, a half to the even one.
-fn half_even(x: f64) -> Option<i64> {
+pub(crate) fn half_even(x: f64) -> Option<i64> {
     let floor = floor_to_i64(x)?;
     let twice = 2.0 * (x - from_i64(floor));
     Some(if twice > 1.0 || (twice >= 1.0 && floor % 2 != 0) { floor + 1 } else { floor })

@@ -21,6 +21,9 @@ pub const if_firm::facts::Price::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::PriceAttention
 impl phx_core::facts::FactDef for if_firm::facts::PriceAttention
 pub const if_firm::facts::PriceAttention::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::RequiredReturn
+impl phx_core::facts::FactDef for if_firm::facts::RequiredReturn
+pub const if_firm::facts::RequiredReturn::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::SalesSince
 impl phx_core::facts::FactDef for if_firm::facts::SalesSince
 pub const if_firm::facts::SalesSince::ITEM: phx_core::facts::ItemDecl
@@ -36,8 +39,8 @@ pub const if_firm::facts::UnitCost::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::WagePerHour
 impl phx_core::facts::FactDef for if_firm::facts::WagePerHour
 pub const if_firm::facts::WagePerHour::ITEM: phx_core::facts::ItemDecl
-pub const if_firm::facts::FACTS: [&str; 11]
-pub const if_firm::facts::POSITIONS: [phx_core::pop::PositionDecl; 11]
+pub const if_firm::facts::FACTS: [&str; 12]
+pub const if_firm::facts::POSITIONS: [phx_core::pop::PositionDecl; 12]
 pub mod if_firm::known
 pub struct if_firm::known::Industry
 impl phx_core::facts::FactDef for if_firm::known::Industry

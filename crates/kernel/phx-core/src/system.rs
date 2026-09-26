@@ -70,6 +70,8 @@ pub struct Declarations {
     pub insolvency: Vec<(&'static str, crate::insolvency::InsolvencyDecl)>,
     /// The wear of each system's chains of classes, realised at a visit.
     pub wear: Vec<(&'static str, crate::wear::WearDecl)>,
+    /// The spoilage of each system's goods in stock, realised at a visit.
+    pub spoilage: Vec<(&'static str, crate::spoilage::SpoilageDecl)>,
     pub setup_values: Vec<(&'static str, SetupValue)>,
     /// Each system's state compiled from the register at assembly, which its handlers and its family read.
     pub compiled: Vec<(&'static str, Compile)>,
@@ -198,6 +200,11 @@ impl Declarations {
     /// The wear of a system's chains of classes, realised on the rows of one of its visits.
     pub fn wear(&mut self, decl: crate::wear::WearDecl) {
         self.wear.push((self.system, decl));
+    }
+
+    /// The spoilage of goods in stock, realised on the rows of one of the system's visits.
+    pub fn spoilage(&mut self, decl: crate::spoilage::SpoilageDecl) {
+        self.spoilage.push((self.system, decl));
     }
 
     /// A decision taken on a kind's rows as they come due, by its schedule or its reviews.

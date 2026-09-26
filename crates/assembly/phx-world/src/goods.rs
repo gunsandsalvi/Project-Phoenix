@@ -6,7 +6,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use phx_core::{FactDef, GoodsView, HeldRight, SubStep};
+use phx_core::{FactDef, GoodsView, HeldGood, HeldRight, SubStep};
 use phx_id::{Day, InstrumentId, MarketId, PartyId, Slot, ZoneId};
 use phx_ledger::apply::ApplyAt;
 use phx_ledger::goods::GoodKey;
@@ -127,7 +127,7 @@ pub(crate) struct MarketDay {
 pub(crate) type Marks = Arc<BTreeMap<GoodKey, i64>>;
 
 /// A good a row holds or has delivered: its product, its grade class and its units, one twin's.
-type Units = (u16, u8, i64);
+type Units = HeldGood;
 
 /// What a run of rows may read of its goods, read before its handler runs.
 #[derive(Debug, Default)]
@@ -135,6 +135,7 @@ pub(crate) struct RunGoods {
     start: u32,
     rows: Vec<RowGoods>,
     marks: Marks,
+    outlooks: Marks,
 }
 
 #[derive(Debug)]
@@ -153,6 +154,12 @@ impl RowGoods {
 }
 
 impl RunGoods {
+    /// A good's price in a map, at the row's place.
+    fn at_place(&self, map: &Marks, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
+        let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
+        map.get(&GoodKey { product, grade, zone }).copied().map_or(Missing::Absent, Missing::Present)
+    }
+
     fn row(&self, slot: Slot) -> Option<&RowGoods> {
         slot.get().checked_sub(self.start).and_then(|i| self.rows.get(usize::try_from(i).ok()?))
     }
@@ -166,6 +173,9 @@ impl GoodsView for RunGoods {
     fn held(&self, slot: Slot, product: u16, grade: u8) -> i64 {
         self.row(slot).map_or(0, |r| units_of(&r.held, product, grade))
     }
+    fn goods(&self, slot: Slot) -> &[HeldGood] {
+        self.row(slot).map_or(&[], |r| r.held.as_slice())
+    }
     fn rights(&self, slot: Slot) -> &[HeldRight] {
         self.row(slot).map_or(&[], |r| r.rights.as_slice())
     }
@@ -173,8 +183,10 @@ impl GoodsView for RunGoods {
         self.row(slot).map_or(0, |r| units_of(&r.delivered, product, grade))
     }
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
-        let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
-        self.marks.get(&GoodKey { product, grade, zone }).copied().map_or(Missing::Absent, Missing::Present)
+        self.at_place(&self.marks, slot, product, grade)
+    }
+    fn outlook(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
+        self.at_place(&self.outlooks, slot, product, grade)
     }
 }
 
@@ -323,6 +335,9 @@ impl World {
         let gives = self.goods_frame.resources.get(usize::from(d.resource)).copied();
         if qty <= 0 || gives != Some(Missing::Present(product)) {
             violation!(clause = "GDS.12", "a deposit giving other than its resource", deposit = deposit);
+        }
+        if row.twins != 1 {
+            violation!(clause = "GDS.3", "a deposit's right held by an agent, which has no whole unit for each twin");
         }
         let Missing::Present(right) = self.books.ledger.goods.right(deposit) else {
             violation!(clause = "GDS.3", "units taken from a deposit no right is over", deposit = deposit);
@@ -554,7 +569,12 @@ impl World {
     /// What a run of rows may read of its goods: for each row, the goods it holds at its zone and the rights it
     /// holds, one twin's for an agent, and what it has delivered.
     pub(crate) fn run_goods(&self, rows: Rows, run: core::ops::Range<u32>) -> RunGoods {
-        let mut out = RunGoods { start: run.start, rows: Vec::new(), marks: Arc::clone(&self.marks) };
+        let mut out = RunGoods {
+            start: run.start,
+            rows: Vec::new(),
+            marks: Arc::clone(&self.marks),
+            outlooks: Arc::clone(&self.outlooks),
+        };
         let ledger = &self.books.ledger;
         for s in run {
             let slot = Slot::new(s);

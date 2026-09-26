@@ -36,6 +36,8 @@ pub struct DueReasons {
     /// Goods delivered against money at a market's price: the buyer's money becomes stock at what it paid, the
     /// seller's money received is revenue and the cost its units carried out is the cost of what it sold.
     pub traded: ReasonId,
+    /// Goods lost to spoiling in stock, which no one receives: the cost their lots carried is an expense.
+    pub spoiled: ReasonId,
 }
 
 impl DueReasons {
@@ -111,6 +113,13 @@ impl DueReasons {
             received: Effect::Revenue,
             held: phx_num::Missing::Present((Effect::Expense, Effect::Asset)),
         };
+        let spoiled = ReasonDecl {
+            name: "spoiled",
+            order: 2,
+            paid: Effect::Expense,
+            received: Effect::Expense,
+            held: phx_num::Missing::Absent,
+        };
         DueReasons {
             payment: reasons.declare(payment),
             principal: reasons.declare(principal),
@@ -122,6 +131,7 @@ impl DueReasons {
             seated: reasons.declare(seated),
             worn: reasons.declare(worn),
             traded: reasons.declare(traded),
+            spoiled: reasons.declare(spoiled),
         }
     }
 }

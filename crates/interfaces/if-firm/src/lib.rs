@@ -23,4 +23,5 @@ pub const ITEMS: &[ItemDecl] = &[
     <facts::OutputRate as FactDef>::ITEM,
     <facts::PriceAttention as FactDef>::ITEM,
     <facts::WagePerHour as FactDef>::ITEM,
+    <facts::RequiredReturn as FactDef>::ITEM,
 ];
