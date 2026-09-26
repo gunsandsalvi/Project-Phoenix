@@ -51,7 +51,8 @@ direction = "down"
 # rows streamed, scanned and payments up by 6, 12 and 6 (092c0edb). The firms' industries, drawn under a new purpose of
 # each country's opening stratum, move every firm's size and site draw, and the busiest day's rows streamed, scanned and
 # payments rise by 8 778, 8 900 and 8 778 (ac0f57ed). Firms in default end into estates from S1.03, which hold their
-# rows until they settle, so the busiest day reads 45 rows not due more (81 841).
+# rows until they settle, so the busiest day reads 45 rows not due more (81 841); estates that hold plant wait to sell it
+from the S1.03 review, holding their rows longer, and 4 more (81 845).
 [[ratchet]]
 counter = "phx_ledger.rows_streamed"
 value = 2815195
@@ -69,7 +70,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_ledger.run_rows_not_due"
-value = 81841
+value = 81845
 direction = "down"
 
 [[ratchet]]
@@ -125,18 +126,21 @@ value = 197
 direction = "down"
 
 # The firms that default on the heaviest day, whose estates settle the next business day: first set at S1.03 on the
-# build run, where every firm whose loan falls due before it sells fails at the first grace's end (F-095).
+# build run, where every firm whose loan falls due before it sells fails at the first grace's end (F-095); one more
+# once the grace is each country's (5 431).
 [[ratchet]]
 counter = "phx_frm.defaults"
-value = 5430
+value = 5431
 direction = "down"
 
 # The estates open at a day's close at the most, the firms' and the households' together; the firms' price reviews and
 # the prices they moved, which are none until the firms' latest filed accounts are drawn (S1.15); their attention's
 # visits on their production schedules; and the bytes a small firm's agent takes in its table: first set at S1.03.
+# From the S1.03 review an estate that holds plant waits to sell it, which no market buys before S1.04 and S1.05, so
+# the firms' estates stay open (8 710), and a small firm's agent keeps the day of its last review (180 bytes).
 [[ratchet]]
 counter = "phx_frm.estates_open"
-value = 5435
+value = 8710
 direction = "down"
 
 [[ratchet]]
@@ -156,7 +160,30 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.bytes_per_firm_cell"
-value = 172
+value = 180
+direction = "down"
+
+# The estates settled and ended on the heaviest day, those left waiting on a failed payment, and those waiting to sell
+# the units they hold; and the sweeps of holder tables for sides that keep no holder list, none since every side a
+# firm's end reaches keeps one: first set at the S1.03 review's build run.
+[[ratchet]]
+counter = "phx_frm.estates_settled"
+value = 4150
+direction = "down"
+
+[[ratchet]]
+counter = "phx_frm.estates_waiting"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_frm.estates_unsold"
+value = 4967
+direction = "down"
+
+[[ratchet]]
+counter = "phx_ledger.unlisted_sweeps"
+value = 0
 direction = "down"
 
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
