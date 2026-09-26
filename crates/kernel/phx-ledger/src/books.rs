@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use phx_core::kind_tables::{KindTable, ListKind, NewIndividual};
-use phx_core::{AuditStream, Directory, GenReport, Resolved, WriteRecord};
+use phx_core::{AuditStream, Directory, FactColumn, FactDecl, GenReport, Resolved, TableSchema, WriteRecord};
 use phx_id::{Day, LineId, PartyId, RowRef, Slot, TableId, TileId};
 
 use crate::algebra::Side;
@@ -135,6 +135,46 @@ impl<B: Backing> Parties<B> {
             );
         }
         party
+    }
+
+    /// A column on a kind's individuals for a fact its systems declare, absent in every row until written.
+    ///
+    /// # Errors
+    /// When the world keeps no table of the kind, the fact is not the kind's, or the kind keeps it already.
+    #[clause("PTY.8")]
+    pub fn add_facet(&mut self, kind: &str, name: &'static str, fact: &FactDecl) -> Result<(), String> {
+        let Some(table) = self.tables.iter_mut().find(|t| t.kind() == kind) else {
+            return Err(format!("`{name}` is kept on `{kind}`, a kind of individual the world does not keep"));
+        };
+        table.add_fact(&mut self.space, name, fact).map(|_| ())
+    }
+
+    /// An individual's table, its row and the column of one of its kind's facts.
+    fn facet_row(&mut self, party: PartyId, name: &str) -> (&mut KindTable<B>, Slot, FactColumn) {
+        let (place, slot) = self.row(party);
+        let Some(table) = self.tables.get_mut(usize::from(place)) else {
+            violation!(clause = "PTY.8", "a fact of a party that is no individual", party = party.get());
+        };
+        let Some(column) = table.facet_named(name) else {
+            violation!(clause = "PTY.8", "a fact its party's kind does not keep", party = party.get());
+        };
+        (table, slot, column)
+    }
+
+    /// An individual's fact, absent until its writer writes it.
+    pub fn fact(&self, party: PartyId, name: &str) -> Missing<i64> {
+        let (place, slot) = self.row(party);
+        let table = self.table(place);
+        let Some(column) = table.facet_named(name) else {
+            violation!(clause = "PTY.8", "a fact its party's kind does not keep", party = party.get());
+        };
+        table.fact(slot, column)
+    }
+
+    /// An individual's fact as the opening draws it: one of the opening's writes, before the day's writers run.
+    pub fn open_fact(&mut self, party: PartyId, name: &str, value: i64) {
+        let (table, slot, column) = self.facet_row(party, name);
+        table.write_fact(slot, column, value);
     }
 
     /// Where a party's row is.

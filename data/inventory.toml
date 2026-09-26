@@ -477,3 +477,11 @@ owner = "TEC"
 first_read = "S1.02"
 source = "Eurostat FIGARO 2022; ILOSTAT employment and hours by activity and occupation; OECD Tables 9A and 6; ICP 2021 price levels; World Bank agricultural land, Pink Sheet and USGS prices"
 status = "sourced: plant assumed at the developed ratios for the emerging and developing groups (F-090), extraction shared among the four resources (F-091), the emerging and developing groups thin (F-092), lead times assumed"
+
+[[row]]
+id = "FRM.industry_by_size"
+what = "each group's firms by industry, for each size class: the industry a firm of a size is drawn in"
+owner = "FRM"
+first_read = "S1.03"
+source = "ILOSTAT employment by status in employment and ISIC section (employers and own-account workers); OECD Structural and Demographic Business Statistics, enterprises by activity and size class"
+status = "sourced: the size tilt of the emerging and developing groups is the OECD's reporting economies', agriculture's assumed flat over the size classes (F-093)"

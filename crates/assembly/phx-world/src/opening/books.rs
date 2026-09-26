@@ -96,11 +96,11 @@ pub fn agent_tables(
     }
 }
 
-/// The world's books opened: a kind table for each kind of individual the systems declare and an agent table for each
-/// population kind, then each of the given contributing phases in order, its contributions in the order of their
+/// The world's books opened: a kind table for each kind of individual the systems declare, with a column for each fact
+/// they keep on it, and an agent table for each population kind, then each of the given contributing phases in order, its contributions in the order of their
 /// systems and names, each handed the books and the population under the representation in force.
 pub fn open_books(
-    d: &mut Declarations,
+    (d, facets): (&mut Declarations, &[crate::registry::Facet]),
     (pop, representation): (&[(phx_pop::kind::PopKindDecl, usize)], phx_pop::prims::Representation),
     compiled: &crate::compile::Compiled,
     countries: &[OpeningCountry],
@@ -111,6 +111,11 @@ pub fn open_books(
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
     let decls: Vec<phx_pop::kind::PopKindDecl> = pop.iter().map(|(d, _)| d.clone()).collect();
     let mut books: Books = Books::with_cells(&kinds, pop.len(), agent_tables(&decls), size());
+    for (kind, name, fact) in facets {
+        if books.parties.add_facet(kind, name, fact).is_err() {
+            phx_num::violation!(clause = "PTY.8", "a fact kept on a kind of individual the assembly let through");
+        }
+    }
     if let Some(pool) = pool {
         books.use_pool(std::sync::Arc::clone(pool));
     }

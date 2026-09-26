@@ -1,12 +1,18 @@
 //! FRM, firms: here its opening alone — each country's largest firms, the individuals within the promotion rank,
-//! sized by Zipf's law over the country's employment; their plant; the debt and deposits they draw, which the banks'
-//! contracts carry; and the small firms below the rank, held as agents. Their decisions arrive with their own step.
+//! sized by Zipf's law over the country's employment, each in an industry drawn by its size; their plant; the debt and
+//! deposits they draw, which the banks' contracts carry; and the small firms below the rank, held as agents. Their
+//! decisions arrive with their own step.
 
 mod consts;
+pub mod industry;
 mod opening;
 pub mod small;
 
-use phx_core::{AttrDecl, Declarations, HandlerTable, StreamDef, System, declare_kind, declare_prim, declare_stream};
+use phx_core::register::values::Table2;
+use phx_core::{
+    AttrDecl, Declarations, FacetDecl, FactDef, HandlerTable, StreamDef, System, declare_kind, declare_prim,
+    declare_stream,
+};
 use phx_num::{Count, Fixed};
 
 pub use opening::{Declared, Parties, Plant};
@@ -28,6 +34,14 @@ pub const BANK_ATTR: &str = "BNK.bank";
 declare_prim! {
     /// Enterprises per person employed in the business economy, which sets the scale of the firm-size law.
     pub FIRMS_PER_EMPLOYED = "FRM.firms_per_employed" { kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: PerCountry }
+}
+
+declare_prim! {
+    /// The share of each size class's firms (rows, by the class's smallest size in persons) in each industry
+    /// (columns, in the products' order).
+    pub INDUSTRY_BY_SIZE = "FRM.industry_by_size" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
+    }
 }
 
 declare_prim! {
@@ -66,7 +80,10 @@ impl System for Frm {
             rank: d.prim(&RANK_PER_MILLION),
             deposit_share: d.prim(&DEPOSIT_SHARE),
             depreciation: d.prim(&DEPRECIATION),
+            industries: d.prim(&INDUSTRY_BY_SIZE),
         };
+        d.claim(<if_firm::known::Industry as FactDef>::ITEM.name);
+        d.facet(FacetDecl { fact: <if_firm::known::Industry as FactDef>::ITEM.name, kind: FIRM.name });
         d.kind(SMALL_FIRM);
         d.stream(SmallStream::DECL);
         let small = small::SmallPrims {
@@ -74,8 +91,9 @@ impl System for Frm {
             size_exponent: prims.size_exponent,
             deposit_share: prims.deposit_share,
             depreciation: prims.depreciation,
+            industries: prims.industries,
         };
-        d.pop_kind(SMALL_FIRM.name).attr(REGION).attr(SIZE).sited_by(REGION.name);
+        d.pop_kind(SMALL_FIRM.name).attr(REGION).attr(SIZE).attr(if_firm::known::INDUSTRY).sited_by(REGION.name);
         d.contribution(Box::new(Declared));
         d.contribution(Box::new(Parties { prims }));
         d.contribution(Box::new(SmallFirms { prims: small }));
@@ -87,3 +105,4 @@ impl System for Frm {
 
 pub type FixedPrim = phx_core::Prim<Fixed<6>>;
 pub type CountPrim = phx_core::Prim<Count>;
+pub type TablePrim = phx_core::Prim<Table2>;

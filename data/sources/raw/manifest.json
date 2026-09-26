@@ -61,6 +61,10 @@
       "rows": 18176,
       "title": "Employed persons by sex and ICSE-93 status in employment, thousands (DF_EMP_TEMP_SEX_STE_NB), ILOSTAT"
     },
+    "ilo/status_by_activity": {
+      "rows": 51515,
+      "title": "Employment by status in employment (ICSE-93) and economic activity (ISIC Rev. 4 sections), thousands, both sexes (DF_EMP_TEMP_SEX_STE_ECO_NB), ILOSTAT"
+    },
     "imf/GGXWDG_NGDP": {
       "rows": 2083,
       "title": "General government gross debt (% of GDP), IMF World Economic Outlook"
@@ -120,6 +124,10 @@
     "sdbs/ENTR_T": {
       "rows": 336,
       "title": "Enterprises, business economy except financial, all sizes, OECD SDBS"
+    },
+    "sdbs/by_activity_size": {
+      "rows": 279554,
+      "title": "Enterprises (ENTR) and persons employed (EMPN) by ISIC Rev. 4 activity and size class, OECD Structural and Demographic Business Statistics"
     },
     "un/households": {
       "rows": 1099,
@@ -306,6 +314,11 @@
       "title": "ILOSTAT SDMX API",
       "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
     },
+    "ilo_status": {
+      "fetched": "2026-09-26",
+      "title": "ILOSTAT SDMX API",
+      "url": "https://sdmx.ilo.org/rest/data/ILO,DF_EMP_TEMP_SEX_STE_ECO_NB,1.0/.A..SEX_T.{status}.?startPeriod=2015"
+    },
     "imf": {
       "title": "IMF DataMapper API",
       "url": "https://www.imf.org/external/datamapper/api/v1/<series>"
@@ -333,6 +346,11 @@
       "fetched": "2026-09-24",
       "title": "OECD SDMX API, Structural and Demographic Business Statistics (ISIC Rev. 4)",
       "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN.BTN_95XK._T+S_GE250.?startPeriod=2015&format=csvfile"
+    },
+    "sdbs_activity": {
+      "fetched": "2026-09-26",
+      "title": "OECD Data Explorer, SDMX API",
+      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN...?startPeriod=2015&format=csvfile"
     },
     "un_households": {
       "fetched": "2026-09-24",

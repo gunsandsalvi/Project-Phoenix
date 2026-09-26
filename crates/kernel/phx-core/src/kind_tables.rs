@@ -360,6 +360,13 @@ impl<B: Backing> KindTable<B> {
         arena
     }
 
+    /// The column a fact is kept in, if the kind keeps it.
+    #[must_use]
+    pub fn facet_named(&self, name: &str) -> Option<FactColumn> {
+        let i = self.facets.iter().position(|f| f.name == name)?;
+        u32::try_from(i).ok().map(FactColumn)
+    }
+
     pub fn fact(&self, slot: Slot, column: FactColumn) -> Missing<i64> {
         self.live(slot);
         let facet = self.facet(column);

@@ -97,7 +97,7 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
 
 /// The world's books opened from the setup's countries, their people and their currencies' units.
 fn open(
-    d: &mut Declarations,
+    (d, facets): (&mut Declarations, &[Facet]),
     pop: (&[(phx_pop::kind::PopKindDecl, usize)], phx_pop::prims::Representation),
     kernel: &KernelPrims,
     c: &crate::compile::Compiled,
@@ -114,8 +114,14 @@ fn open(
         .map(|i| kernel.opening.units_per_dollar.get(&c.register, CountryId::new(i)).get())
         .collect();
     let countries = crate::opening::books::countries(game, geo, population, &units);
-    let (books, people, mut report) =
-        crate::opening::books::open_books(d, pop, c, &countries, kernel.day_zero.shared(&c.register), (phases, pool));
+    let (books, people, mut report) = crate::opening::books::open_books(
+        (d, facets),
+        pop,
+        c,
+        &countries,
+        kernel.day_zero.shared(&c.register),
+        (phases, pool),
+    );
     if population * divisor != total {
         report.adjustments.push(phx_core::Adjustment {
             what: format!("the population, one {divisor}-th of the setup's in whole persons"),
@@ -196,7 +202,43 @@ struct Prepared {
     kernel: KernelPrims,
     c: Compiled,
     entries: Vec<SystemEntry>,
+    /// Each fact a system keeps on a kind of individual: the kind, the fact's name and its declaration.
+    facets: Vec<Facet>,
     register_hash: u128,
+}
+
+/// A fact kept as a column of a kind's table of individuals: the kind, the fact's name and its declaration.
+pub(crate) type Facet = (&'static str, &'static str, phx_core::FactDecl);
+
+/// Each fact the systems keep on kinds of individuals, found among the interfaces' facts; a fact no interface
+/// exports, or not of the kind it is kept on, is refused.
+fn facets(d: &Declarations, items: &[ItemDecl]) -> (Vec<Facet>, Vec<String>) {
+    let mut out = Vec::new();
+    let mut errors = Vec::new();
+    let individual =
+        |kind: &str| d.kinds.iter().any(|(_, k)| k.name == kind && k.table == phx_core::KindTableRef::Individuals);
+    for (system, facet) in &d.facets {
+        if !individual(facet.kind) {
+            errors.push(format!("{system} keeps `{}` on `{}`, which is no kind of individual", facet.fact, facet.kind));
+            continue;
+        }
+        if out.iter().any(|(k, n, _)| *k == facet.kind && *n == facet.fact) {
+            errors.push(format!("`{}` kept twice on `{}`", facet.fact, facet.kind));
+            continue;
+        }
+        let fact = items.iter().find_map(|i| match i.kind {
+            phx_core::ItemKind::Fact(f) if i.name == facet.fact => Some(f),
+            _ => None,
+        });
+        match fact {
+            Some(f) if f.kinds.contains(&facet.kind) => out.push((facet.kind, facet.fact, f)),
+            Some(_) => {
+                errors.push(format!("{system} keeps `{}` on `{}`, which is not its kind", facet.fact, facet.kind));
+            }
+            None => errors.push(format!("{system} keeps `{}`, which no interface exports as a fact", facet.fact)),
+        }
+    }
+    (out, errors)
 }
 
 /// The world's state, however it came to be: opened by a new game, or read back from a save.
@@ -261,6 +303,8 @@ fn prepare(
     }
     let items: Vec<ItemDecl> = interfaces.iter().flat_map(|i| i.iter().copied()).collect();
     errors.extend(refusals(&d, &h, &items, &registered));
+    let (facets, unkept) = facets(&d, &items);
+    errors.extend(unkept);
     let compiled = match compile(&mut d, &kernel, &h.entries, &files, &levels, Seed::new(config.seed)) {
         Ok(c) => Some(c),
         Err(e) => {
@@ -297,6 +341,7 @@ fn prepare(
         kernel,
         c,
         entries,
+        facets,
         register_hash: data_hash(&files),
     })
 }
@@ -314,6 +359,7 @@ fn names(
     out.extend(d.records.iter().map(|(_, r)| r.name));
     out.extend(d.streams.iter().map(|(_, s)| s.name));
     out.extend(d.decisions.iter().map(|m| m.name));
+    out.extend(d.facets.iter().map(|(_, f)| f.fact));
     out.extend(families.iter().flat_map(|f| [f.name, f.clause]));
     for t in tables {
         out.push(t.name);
@@ -436,7 +482,7 @@ pub fn assemble(
     let countries = u32::try_from(p.game.countries.len()).map_err(|e| one(e.to_string()))?;
     let pop = (p.pop.as_slice(), p.representation);
     let (books, population, report) =
-        open(&mut p.d, pop, &p.kernel, &p.c, &p.game, &geo, (&phx_core::PHASES, config.pool.as_ref()));
+        open((&mut p.d, &p.facets), pop, &p.kernel, &p.c, &p.game, &geo, (&phx_core::PHASES, config.pool.as_ref()));
     let accounts = open_accounts(&p.d, &p.kernel, &p.c, &books, &geo);
     let tables = phx_geo::tables(&geo, countries);
     let mut space = AddressSpace::empty();
@@ -521,7 +567,8 @@ pub fn load(
     .map_err(one)?;
     let geo = Arc::new(geo);
     let pop = (p.pop.as_slice(), p.representation);
-    let (declared, _, _) = open(&mut p.d, pop, &p.kernel, &p.c, &p.game, &geo, (&[phx_core::DECLARATIONS], None));
+    let (declared, _, _) =
+        open((&mut p.d, &p.facets), pop, &p.kernel, &p.c, &p.game, &geo, (&[phx_core::DECLARATIONS], None));
     let families: Vec<phx_core::FamilyDecl> = kernel_families()
         .iter()
         .map(|f| f.decl())

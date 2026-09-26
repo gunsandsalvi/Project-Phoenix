@@ -8,12 +8,15 @@ publish.workspace = true
 
 [dependencies]
 if-base = { path = "../../interfaces/if-base" }
+if-firm = { path = "../../interfaces/if-firm" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-ledger = { path = "../../kernel/phx-ledger" }
 phx-macros = { path = "../../foundation/phx-macros" }
 phx-num = { path = "../../foundation/phx-num" }
+phx-pop = { path = "../../kernel/phx-pop" }
 phx-rand = { path = "../../foundation/phx-rand" }
+phx-store = { path = "../../kernel/phx-store" }
 
 
 [dev-dependencies]

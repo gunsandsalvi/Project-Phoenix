@@ -18,14 +18,9 @@ impl if_base::products::ProductId
 pub const fn if_base::products::ProductId::index(self) -> u16
 pub const fn if_base::products::ProductId::new(u16) -> if_base::products::ProductId
 pub struct if_base::products::Products
-impl if_base::products::Products
-pub fn if_base::products::Products::build(&[phx_core::products::ProductEntry], &phx_core::register::units::Units) -> core::result::Result<if_base::products::Products, alloc::string::String>
-pub fn if_base::products::Products::get(&self, if_base::products::ProductId) -> core::option::Option<&if_base::products::ProductDecl>
-pub fn if_base::products::Products::industries(&self) -> &[alloc::string::String]
-pub fn if_base::products::Products::is_empty(&self) -> bool
-pub fn if_base::products::Products::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = &if_base::products::ProductDecl>
-pub fn if_base::products::Products::len(&self) -> usize
-pub fn if_base::products::Products::name(&self, if_base::products::ProductId) -> core::option::Option<&str>
+pub if_base::products::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>
+pub if_base::products::Products::industries: alloc::vec::Vec<alloc::string::String>
+pub if_base::products::Products::names: alloc::vec::Vec<alloc::string::String>
 pub mod if_base::ways
 pub struct if_base::ways::CapKind(pub u8)
 pub struct if_base::ways::OccFamily(pub u8)
@@ -40,10 +35,6 @@ pub if_base::ways::Way::land: if_base::ways::PerUnit
 pub if_base::ways::Way::lead_time_days: u16
 pub if_base::ways::Way::product: if_base::products::ProductId
 pub if_base::ways::Way::yield_ppm: u32
-impl if_base::ways::Way
-pub fn if_base::ways::Way::consumed(&self, phx_num::qty::QtyRaw) -> impl core::iter::traits::iterator::Iterator<Item = (if_base::products::ProductId, phx_num::qty::QtyRaw)> + '_
-pub fn if_base::ways::Way::finished(&self, phx_num::qty::QtyRaw) -> phx_num::qty::QtyRaw
-pub fn if_base::ways::Way::takes(phx_num::qty::QtyRaw, if_base::ways::PerUnit) -> phx_num::qty::QtyRaw
 pub struct if_base::ways::WayId(_)
 impl if_base::ways::WayId
 pub const fn if_base::ways::WayId::index(self) -> u32
@@ -51,13 +42,7 @@ pub const fn if_base::ways::WayId::new(u32) -> if_base::ways::WayId
 pub struct if_base::ways::WaySetId(_)
 impl if_base::ways::WaySetId
 pub const fn if_base::ways::WaySetId::index(self) -> u32
-pub struct if_base::ways::WaySets
-impl if_base::ways::WaySets
-pub fn if_base::ways::WaySets::contains(&self, if_base::ways::WaySetId, if_base::ways::WayId) -> bool
-pub fn if_base::ways::WaySets::intern(&mut self, &[if_base::ways::WayId]) -> if_base::ways::WaySetId
-pub fn if_base::ways::WaySets::is_empty(&self) -> bool
-pub fn if_base::ways::WaySets::len(&self) -> usize
-pub fn if_base::ways::WaySets::ways(&self, if_base::ways::WaySetId) -> core::option::Option<&[if_base::ways::WayId]>
+pub const fn if_base::ways::WaySetId::new(u32) -> if_base::ways::WaySetId
 pub type if_base::ways::PerUnit = phx_num::fixed::Fixed<PER_UNIT_EXP>
 pub struct if_base::CapKind(pub u8)
 pub struct if_base::IndustryId(_)
@@ -77,14 +62,9 @@ impl if_base::products::ProductId
 pub const fn if_base::products::ProductId::index(self) -> u16
 pub const fn if_base::products::ProductId::new(u16) -> if_base::products::ProductId
 pub struct if_base::Products
-impl if_base::products::Products
-pub fn if_base::products::Products::build(&[phx_core::products::ProductEntry], &phx_core::register::units::Units) -> core::result::Result<if_base::products::Products, alloc::string::String>
-pub fn if_base::products::Products::get(&self, if_base::products::ProductId) -> core::option::Option<&if_base::products::ProductDecl>
-pub fn if_base::products::Products::industries(&self) -> &[alloc::string::String]
-pub fn if_base::products::Products::is_empty(&self) -> bool
-pub fn if_base::products::Products::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = &if_base::products::ProductDecl>
-pub fn if_base::products::Products::len(&self) -> usize
-pub fn if_base::products::Products::name(&self, if_base::products::ProductId) -> core::option::Option<&str>
+pub if_base::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>
+pub if_base::Products::industries: alloc::vec::Vec<alloc::string::String>
+pub if_base::Products::names: alloc::vec::Vec<alloc::string::String>
 pub struct if_base::Way
 pub if_base::Way::batch: phx_num::qty::QtyRaw
 pub if_base::Way::by_products: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>
@@ -96,10 +76,6 @@ pub if_base::Way::land: if_base::ways::PerUnit
 pub if_base::Way::lead_time_days: u16
 pub if_base::Way::product: if_base::products::ProductId
 pub if_base::Way::yield_ppm: u32
-impl if_base::ways::Way
-pub fn if_base::ways::Way::consumed(&self, phx_num::qty::QtyRaw) -> impl core::iter::traits::iterator::Iterator<Item = (if_base::products::ProductId, phx_num::qty::QtyRaw)> + '_
-pub fn if_base::ways::Way::finished(&self, phx_num::qty::QtyRaw) -> phx_num::qty::QtyRaw
-pub fn if_base::ways::Way::takes(phx_num::qty::QtyRaw, if_base::ways::PerUnit) -> phx_num::qty::QtyRaw
 pub struct if_base::WayId(_)
 impl if_base::ways::WayId
 pub const fn if_base::ways::WayId::index(self) -> u32
@@ -107,11 +83,5 @@ pub const fn if_base::ways::WayId::new(u32) -> if_base::ways::WayId
 pub struct if_base::WaySetId(_)
 impl if_base::ways::WaySetId
 pub const fn if_base::ways::WaySetId::index(self) -> u32
-pub struct if_base::WaySets
-impl if_base::ways::WaySets
-pub fn if_base::ways::WaySets::contains(&self, if_base::ways::WaySetId, if_base::ways::WayId) -> bool
-pub fn if_base::ways::WaySets::intern(&mut self, &[if_base::ways::WayId]) -> if_base::ways::WaySetId
-pub fn if_base::ways::WaySets::is_empty(&self) -> bool
-pub fn if_base::ways::WaySets::len(&self) -> usize
-pub fn if_base::ways::WaySets::ways(&self, if_base::ways::WaySetId) -> core::option::Option<&[if_base::ways::WayId]>
+pub const fn if_base::ways::WaySetId::new(u32) -> if_base::ways::WaySetId
 pub type if_base::PerUnit = phx_num::fixed::Fixed<PER_UNIT_EXP>

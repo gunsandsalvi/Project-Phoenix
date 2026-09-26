@@ -442,6 +442,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "if-firm"
+version = "0.1.0"
+dependencies = [
+ "phx-core",
+]
+
+[[package]]
 name = "if-pop"
 version = "0.1.0"
 dependencies = [
@@ -814,6 +821,7 @@ dependencies = [
 name = "phx-world"
 version = "0.1.0"
 dependencies = [
+ "if-firm",
  "phx-acct",
  "phx-audit",
  "phx-core",
@@ -1160,6 +1168,7 @@ dependencies = [
 name = "sys-frm"
 version = "0.1.0"
 dependencies = [
+ "if-firm",
  "if-pop",
  "phx-core",
  "phx-id",
@@ -1218,12 +1227,15 @@ name = "sys-tec"
 version = "0.1.0"
 dependencies = [
  "if-base",
+ "if-firm",
  "phx-core",
  "phx-id",
  "phx-ledger",
  "phx-macros",
  "phx-num",
+ "phx-pop",
  "phx-rand",
+ "phx-store",
  "trybuild",
 ]
 

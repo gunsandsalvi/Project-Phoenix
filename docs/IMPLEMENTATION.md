@@ -5887,7 +5887,7 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 
 ### S1.03 — `sys-frm`: firms decide, produce, price, pay, are born and end
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: FRM.1, FRM.2; FRM.23 *(part: cells keyed and positioned; cumulative output per way run is S6.01)*; ACC.6
@@ -5932,7 +5932,10 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 | File | Purpose |
 | --- | --- |
 | `crates/interfaces/if-firm/src/{facts,decisions,views}.rs` | firm facts (stock, capacity, known ways, output and input rates, unit cost, markup, pressure, sales outlook); decision points `produce`, `price`, `choose_way`, `buy_inputs`, `enter_exit`, `close`, `stance` |
-| `crates/interfaces/if-firm/src/known.rs` | the firm's industry and its own known ways, a `WaySetId` (TEC.4): a key attribute of a small firm and a fact of a large one; empty until firms discover, license or imitate (S6.01) |
+| `crates/interfaces/if-firm/src/known.rs` | the firm's industry (`FRM.industry`, written by FRM) and the ways it knows (`TEC.known`, a `WaySetId`, written by TEC) (TEC.4): key attributes of a small firm and facts of a large one; the known set is its industry's public set until firms discover, license or imitate (S6.01) |
+| `crates/systems/sys-frm/src/industry.rs` | the industry each opening firm is drawn in, by its size (GEN.2, FRM.2) |
+| `crates/systems/sys-tec/src/known.rs` | the opening's known ways: each firm its industry's public set in its country |
+| `data/profiles/<level>/FRM_industries.toml` | `FRM.industry_by_size`: each size class's firms over the industries (ENDOWMENT), derived by `tools/data/derive_frm.py` |
 | `crates/interfaces/if-pop/src/found.rs` | the household's decision point `found` (the decider's crate, architecture §3.1) |
 | `crates/systems/sys-frm/src/rules/produce.rs` | FRM.4: target output |
 | `src/rules/price.rs` | FRM.5 and REP.34: the price review, over the seller kind's declared pressure |
@@ -5949,6 +5952,17 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 
 **Design**
 
+- **The firm's industry and known ways at the opening** *(built, sub-step a)*: every firm is drawn in an industry
+  given its size, from `FRM.industry_by_size`, each size class's firms over the industries (the rows are the OECD's
+  size classes by their smallest persons employed, 1, 10, 50 and 250). A group's mix of firms is its business owners
+  (employers and own-account workers, ILOSTAT's labour force surveys) by ISIC section, a section split among its
+  industries by the OECD's enterprise counts; an industry's tilt toward a size class is its share of the class's
+  enterprises over its share of all, the median over the economies the OECD reports; agriculture, which the OECD does
+  not count, is spread as all firms are (F-093). A large firm keeps its industry as a fact of its row, a small firm as
+  an attribute of its agent (so twins share it). TEC then gives every firm its industry's public set in its country as
+  the ways it knows (TEC.4, spec Appendix E 42): a fact of a large firm, an attribute of a small one. Facts on kinds of
+  individuals are columns the systems declare on the kind (`Declarations::facet`), added to the kind's table before the
+  opening and saved with it. The opening reports the firms by industry per country.
 - **Outlooks in the day** (S1.01): the firms' stances are the first parties' methods and their attention the first
   review intensities, so the public-series outlooks at 5a (VAL.23), once per method in use and series published, the
   attention exposure at visits (REP.21, REP.38) and the wake of a surprise beyond its sensitivity (REP.35, architecture
@@ -16261,6 +16275,7 @@ the final build within the budget on the phone.
 | F-090 | S1.02 | data, 2026-09-26 | The OECD reports net fixed assets by activity and asset (Table 9A) for developed economies only, so the emerging and developing groups' ways take each section's stock per unit of value added at the developed median (`TEC.capital`, assumed), and only their value added per unit is their own | no source in hand gives capital by industry and asset for middle- and low-income economies | the Penn World Table's capital stocks by asset, or KLEMS databases for China, India and Latin America, scaling the developed structure by each group's own capital per worker | open |
 | F-091 | S1.02 | data, 2026-09-26 | The input-output tables report extraction as one product (CPA B), so metal ore, coal, oil and gas and building stone share its structure per dollar, each taken by the users of its resource (basic metals ore; refining and chemicals oil and gas; electricity coal; minerals and construction stone; any other user oil and gas): the hours and plant a tonne needs differ by resource only through its price | the tables' 64 products do not split mining | a supply-use table with the mining divisions (B05-B09), or the United States' detailed benchmark tables | open |
 | F-092 | S1.02 | data, 2026-09-26 | The FIGARO tables report seven economies of the emerging group and one of the developing group (India), fewer than the ten a group's measure needs, so those groups' ways are `estimated` from them | FIGARO covers the EU and eighteen other economies | the OECD's inter-country tables (76 economies) when their files can be fetched, or national tables of the group's economies | open |
+| F-093 | S1.03 | data, 2026-09-26 | The OECD's business statistics leave out agriculture, so its firms are taken as spread over the size classes as all firms are (`FRM.industry_by_size`): about a tenth of the developed group's largest firms are farms, where the business registers show far fewer; and the size tilt of every industry is the OECD's 46 reporting economies', all but eight developed, for the emerging and developing groups too | the OECD's structural statistics cover industry and services; agricultural censuses count holdings by area, not by persons employed | Eurostat's farm structure survey by labour force size class, or the agricultural censuses' holdings by workers (FAO World Programme for the Census of Agriculture); the World Bank Enterprise Surveys by size for the other groups | open |
 
 ---
 

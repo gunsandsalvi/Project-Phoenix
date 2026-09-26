@@ -228,8 +228,10 @@ row of the dealer kind, a party of its declared form (a bank's subsidiary or an 
 equity and books (DLR.1). Publishers — the curve publisher, the pricing service, benchmark administrators, index
 publishers, rating agencies, banks' analyst units and pollsters — are large firms with a **publisher facet** (their
 method, what they cover, their records), each its own party reading only public records and what it bought; finance
-companies are large firms whose form takes no deposits. Writing needs a token only the writer crate can build; reading
-needs a handle. Party creation and ending are kernel operations requested by declared systems (SUP.9 creates a bank;
+companies are large firms whose form takes no deposits. A system keeps a fact on a kind of individual by declaring it
+on the kind (`Declarations::facet`); the assembly refuses a fact no interface exports or not of that kind, and adds its
+column to the kind's table before the opening, absent in every row until written; the column is saved with the table.
+Writing needs a token only the writer crate can build; reading needs a handle. Party creation and ending are kernel operations requested by declared systems (SUP.9 creates a bank;
 SUP.5 ends one).
 
 ### 4.2 Messages

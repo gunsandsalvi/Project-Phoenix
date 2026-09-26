@@ -2,22 +2,24 @@
 //! twins, apportioned over the regions by their land and over the banks by the banks' drawn sizes, each with its own
 //! size drawn from the firm-size law cut at the smallest firm the rank admits.
 
+use phx_core::Directory;
 use phx_core::{
     Adjustment, Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, StreamDef, apportion, apportion_in_units,
     opening_subject,
 };
-use phx_id::PartyId;
+use phx_id::{Day, PartyId};
 use phx_ledger::books::Books;
 use phx_ledger::opening::{derived, key, whole};
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 use phx_pop::population::{PopKind, Population};
+use phx_pop::table::AgentTable;
 use phx_rand::AliasTable;
 use phx_rand::float::{from_u64, len_u64};
-use phx_store::SystemBacking;
+use phx_store::{AddressSpace, SystemBacking};
 
-use crate::consts::{AMOUNTS, CLASSES, PERCENT, SMALL_PURPOSES};
-use crate::{BANK_ATTR, FixedPrim, REGION, SIZE, SMALL_FIRM, SmallStream};
+use crate::consts::{AMOUNTS, CLASSES, PERCENT, SMALL_INDUSTRIES, SMALL_PURPOSES};
+use crate::{BANK_ATTR, FixedPrim, REGION, SIZE, SMALL_FIRM, SmallStream, TablePrim};
 
 const FIRMS: &str = "FRM.firms";
 const DEBT: &str = "FRM.debt";
@@ -43,6 +45,7 @@ pub struct SmallPrims {
     pub size_exponent: FixedPrim,
     pub deposit_share: FixedPrim,
     pub depreciation: FixedPrim,
+    pub industries: TablePrim,
 }
 
 /// Each country's small firms as agents, with their employees, deposits and debt drawn for the banks' and labour's
@@ -74,22 +77,23 @@ fn attr(kd: &PopKind, name: &str) -> usize {
     i
 }
 
-/// A small firm drawn: its region, its bank's place and party, its size.
+/// A small firm drawn: its region, its bank's place and party, its size and its industry.
 struct Firm {
     region: u32,
     bank: (u32, PartyId),
     size: u64,
+    industry: u16,
 }
 
 /// The country's small-firm agents apportioned over the regions by their land and each region's over the banks by the
-/// banks' drawn sizes, each with its size drawn from the firm-size law below the cut.
+/// banks' drawn sizes, each with its size drawn from the firm-size law below the cut and its industry by its size.
 #[clause("FRM.23", "GEN.2", "REP.41")]
 fn draw_firms(
     c: &OpeningCountry,
     agents: u64,
-    (cut, alpha): (u64, f64),
+    (cut, alpha, by_size): (u64, f64, &crate::industry::Industries),
     banks: &[(PartyId, u64)],
-    lot: &mut phx_rand::Draws,
+    (lot, trade): (&mut phx_rand::Draws, &mut phx_rand::Draws),
 ) -> Vec<Firm> {
     let tiles: Vec<u64> = c.regions.iter().map(|(_, t)| len_u64(t.len())).collect();
     let bank_weights: Vec<u64> = banks.iter().map(|(_, w)| *w).collect();
@@ -99,11 +103,41 @@ fn draw_firms(
         for ((place, (bank, _)), k) in (1_u32..).zip(banks).zip(apportion(m, &bank_weights, lot)) {
             for _ in 0..k {
                 let size = len_u64(sizes.draw(lot)) + 1;
-                firms.push(Firm { region: *region, bank: (place, *bank), size });
+                let industry = by_size.draw(size, trade);
+                firms.push(Firm { region: *region, bank: (place, *bank), size, industry });
             }
         }
     }
     firms
+}
+
+/// Each drawn firm begun as an agent of `k` twins, its region, size, bank and industry at their `places` among the
+/// kind's `width` attributes: the agents with the persons their twins employ, their banks, and their twins.
+fn begin_agents(
+    (table, directory, space): (&mut AgentTable<SystemBacking>, &mut Directory, &mut AddressSpace),
+    (day, k, width): (Day, u64, usize),
+    places: [usize; 4],
+    firms: &[Firm],
+) -> (Amounts, Amounts, Amounts) {
+    let mut cells: Amounts = Vec::with_capacity(firms.len());
+    let mut banked: Amounts = Vec::with_capacity(firms.len());
+    let mut counts: Amounts = Vec::with_capacity(firms.len());
+    let Ok(twins) = u32::try_from(k) else { capacity_exceeded!("twins of an agent", u32::MAX, k) };
+    let twins = phx_core::Weight::new(twins);
+    for f in firms {
+        let mut attrs = vec![0_u32; width];
+        let Ok(size) = u32::try_from(f.size) else { capacity_exceeded!("a small firm's size", u32::MAX, f.size) };
+        for (i, v) in places.into_iter().zip([f.region, size, f.bank.0, u32::from(f.industry)]) {
+            if let Some(x) = attrs.get_mut(i) {
+                *x = v;
+            }
+        }
+        let (_, party) = phx_pop::table::begin(table, directory, space, (day, twins, &attrs));
+        cells.push((party, f.size * k));
+        banked.push((party, f.bank.1.get()));
+        counts.push((party, k));
+    }
+    (cells, banked, counts)
 }
 
 impl SmallFirms {
@@ -137,29 +171,18 @@ impl SmallFirms {
         };
         let k = u64::from(population.representation.multiplicity);
         let Some(kd) = population.kinds.get(at) else { violation!(clause = "FRM.23", "a kind beyond the world's") };
-        let (region_at, size_at, bank_at) = (attr(kd, REGION.name), attr(kd, SIZE.name), attr(kd, BANK_ATTR));
-        let alpha = p.size_exponent.shared(register).to_f64();
-        let firms_drawn = draw_firms(c, small / k, (cut, alpha), &banks, &mut lot);
+        let at_of = |name: &str| attr(kd, name);
+        let [region_at, size_at, bank_at, industry_at] =
+            [REGION.name, SIZE.name, BANK_ATTR, if_firm::known::INDUSTRY.name].map(at_of);
+        let law =
+            (cut, p.size_exponent.shared(register).to_f64(), &crate::opening::industries(p.industries, register, c));
+        let mut trade = ctx.draws(&SmallStream::DECL, subject(SMALL_INDUSTRIES));
+        let firms_drawn = draw_firms(c, small / k, law, &banks, (&mut lot, &mut trade));
         let (tables, directory, space) = books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(tables, at);
-        let mut cells: Vec<(PartyId, u64)> = Vec::with_capacity(firms_drawn.len());
-        let mut banked: Vec<(PartyId, u64)> = Vec::with_capacity(firms_drawn.len());
-        let mut counts: Vec<(PartyId, u64)> = Vec::with_capacity(firms_drawn.len());
-        for f in &firms_drawn {
-            let mut attrs = vec![0_u32; kd.decl.attrs.len()];
-            let Ok(size) = u32::try_from(f.size) else { capacity_exceeded!("a small firm's size", u32::MAX, f.size) };
-            for (i, v) in [(region_at, f.region), (size_at, size), (bank_at, f.bank.0)] {
-                if let Some(x) = attrs.get_mut(i) {
-                    *x = v;
-                }
-            }
-            let Ok(twins) = u32::try_from(k) else { capacity_exceeded!("twins of an agent", u32::MAX, k) };
-            let twins = phx_core::Weight::new(twins);
-            let (_, party) = phx_pop::table::begin(table, directory, space, (*day, twins, &attrs));
-            cells.push((party, f.size * k));
-            banked.push((party, f.bank.1.get()));
-            counts.push((party, k));
-        }
+        let places = [region_at, size_at, bank_at, industry_at];
+        let (cells, banked, counts) =
+            begin_agents((table, directory, space), (*day, k, kd.decl.attrs.len()), places, &firms_drawn);
         let wear = p.depreciation.shared(register).to_f64();
         let capital = derived(c, "GEN.investment") / PERCENT / (derived(c, "GEN.growth") / PERCENT + wear) * c.gdp;
         let deposits = p.deposit_share.shared(register).to_f64() * derived(c, "GEN.bank_deposits") / PERCENT * c.gdp;
@@ -205,7 +228,8 @@ impl SmallFirms {
             format!(
                 "country {}: {firms_small} small firms below the individuals' rank's smallest of {cut} persons, as \
                  {agents} agents of {k} twins, employing {employed_small} of {employed:.0} employed; regions by land, \
-                 banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent); the \
+                 banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent) and its \
+                 industry by its size (FRM.industry_by_size); the \
                  firms' deposits, debt and plant shared over every firm by its employees, the small firms' plant not \
                  yet held",
                 c.id.get(),

@@ -18,7 +18,11 @@ from fetch import RAW, get, log
 from fetch_pop import countries, table
 
 FIRST = 2015
-ILO = "https://sdmx.ilo.org/rest/data/ILO,DF_EMP_TEMP_SEX_STE_ECO_NB,1.0/all?startPeriod=" + str(FIRST)
+# One status at a time, both sexes, annual: the whole flow outruns the API's gateway.
+ILO = ("https://sdmx.ilo.org/rest/data/ILO,DF_EMP_TEMP_SEX_STE_ECO_NB,1.0/.A..SEX_T.{status}.?startPeriod="
+       + str(FIRST))
+# Employers, own-account workers, and all employment.
+STATUSES = ("STE_ICSE93_2", "STE_ICSE93_3", "STE_ICSE93_TOTAL")
 ILO_CSV = "application/vnd.sdmx.data+csv;version=1.0.0"
 SDBS = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/"
         "A..ENTR+EMPN...?startPeriod=" + str(FIRST) + "&format=csvfile")
@@ -34,19 +38,20 @@ SIZES = {"_T", "S1T9", "S10T49", "S50T249", "S_GE250"}
 
 def ilo_status(cache: Path, manifest: dict, iso3: set) -> None:
     """Employment by status and ISIC section, both sexes; the ILO's modelled estimates are left out."""
-    path = cache / "DF_EMP_TEMP_SEX_STE_ECO_NB.csv"
-    if not path.exists():
-        log("downloading DF_EMP_TEMP_SEX_STE_ECO_NB")
-        path.write_bytes(get(ILO, timeout=3600, accept=ILO_CSV))
     rows = []
-    with path.open(encoding="utf-8-sig") as f:
-        for r in csv.DictReader(f):
-            if r["FREQ"] != "A" or r["REF_AREA"] not in iso3 or r["SEX"] != "SEX_T" or not r["OBS_VALUE"] \
-                    or not r["ECO"].startswith("ECO_ISIC4_") or not r["STE"].startswith("STE_ICSE93_") \
-                    or "Modelled" in r.get("SOURCE", ""):
-                continue
-            rows.append((r["REF_AREA"], int(r["TIME_PERIOD"]), r["ECO"][len("ECO_ISIC4_"):],
-                         r["STE"][len("STE_ICSE93_"):], r["OBS_VALUE"], r.get("SOURCE", "")))
+    for status in STATUSES:
+        path = cache / f"DF_EMP_TEMP_SEX_STE_ECO_NB_{status}.csv"
+        if not path.exists():
+            log(f"downloading DF_EMP_TEMP_SEX_STE_ECO_NB, {status}")
+            path.write_bytes(get(ILO.format(status=status), timeout=3600, accept=ILO_CSV))
+        with path.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                if r["FREQ"] != "A" or r["REF_AREA"] not in iso3 or r["SEX"] != "SEX_T" or not r["OBS_VALUE"] \
+                        or not r["ECO"].startswith("ECO_ISIC4_") or not r["STE"].startswith("STE_ICSE93_") \
+                        or "Modelled" in r.get("SOURCE", ""):
+                    continue
+                rows.append((r["REF_AREA"], int(r["TIME_PERIOD"]), r["ECO"][len("ECO_ISIC4_"):],
+                             r["STE"][len("STE_ICSE93_"):], r["OBS_VALUE"], r.get("SOURCE", "")))
     manifest["series"]["ilo/status_by_activity"] = {
         "title": "Employment by status in employment (ICSE-93) and economic activity (ISIC Rev. 4 sections), "
                  "thousands, both sexes (DF_EMP_TEMP_SEX_STE_ECO_NB), ILOSTAT",

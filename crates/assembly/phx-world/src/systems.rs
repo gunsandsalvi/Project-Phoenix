@@ -14,4 +14,4 @@ pub const SYSTEMS: &[fn() -> SystemEntry] = &[
 ];
 
 /// Every interface crate's items, one line each.
-pub const INTERFACES: &[&[ItemDecl]] = &[phx_geo::ITEMS];
+pub const INTERFACES: &[&[ItemDecl]] = &[phx_geo::ITEMS, if_firm::ITEMS];

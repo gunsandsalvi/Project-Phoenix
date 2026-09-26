@@ -1,7 +1,7 @@
 use phx_core::calendar::bizday::BusinessDayConvention;
 use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
 use phx_core::{
-    Contribution, DECLARATIONS, Opening, OpeningCountry, OpeningPhase, PARTIES, PHYSICAL_STOCK, StreamDef,
+    Contribution, DECLARATIONS, FactDef, Opening, OpeningCountry, OpeningPhase, PARTIES, PHYSICAL_STOCK, StreamDef,
     opening_subject,
 };
 use phx_id::{CountryId, PartyId};
@@ -15,8 +15,9 @@ use phx_num::{Missing, violation};
 use phx_rand::float::{floor_to_u64, from_u64};
 use phx_rand::open_unit;
 
-use crate::consts::{MILLION, PERCENT, PURPOSES, SITES, SIZES};
-use crate::{CountPrim, FIRM, FixedPrim, OpeningStream};
+use crate::consts::{INDUSTRIES, MILLION, PERCENT, PURPOSES, SITES, SIZES};
+use crate::industry::Industries;
+use crate::{CountPrim, FIRM, FixedPrim, OpeningStream, TablePrim};
 
 const FIRMS: &str = "FRM.firms";
 const PLANT: &str = "FRM.plant";
@@ -29,6 +30,17 @@ pub struct Prims {
     pub rank: CountPrim,
     pub deposit_share: FixedPrim,
     pub depreciation: FixedPrim,
+    pub industries: TablePrim,
+}
+
+/// The country's firms by industry and size, as its data declares them.
+pub(crate) fn industries(table: TablePrim, register: &phx_core::Register, c: &OpeningCountry) -> Industries {
+    match Industries::of(table.get(register, c.id)) {
+        Ok(i) => i,
+        Err(_) => {
+            violation!(clause = "GEN.2", "a country's firms by industry that are no spread", country = c.id.get())
+        }
+    }
 }
 
 fn subject(country: CountryId, purpose: u32, ordinal: u32) -> phx_rand::Subject {
@@ -58,7 +70,7 @@ pub fn largest(firms: u64, rank: u64, alpha: f64, draws: &mut phx_rand::Draws) -
 }
 
 /// Each country's largest firms: the persons employed, the firms the law's scale gives them, and the largest down to
-/// the promotion rank, drawn by size and sited in the country. Their debt, deposits and plant are drawn with the small
+/// the promotion rank, drawn by size, sited in the country and each in an industry drawn by its size. Their debt, deposits and plant are drawn with the small
 /// firms', over every firm.
 #[clause("GEN.2", "GEN.3", "REP.2", "PTY.9")]
 #[derive(Debug)]
@@ -79,11 +91,17 @@ impl Parties {
         let alpha = p.size_exponent.shared(register).to_f64();
         let mut draws = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, SIZES, 0));
         let sizes = largest(firms, rank, alpha, &mut draws);
+        let by_size = industries(p.industries, register, c);
+        let industry = <if_firm::known::Industry as FactDef>::ITEM.name;
         let mut headcounts: Vec<(PartyId, u64)> = Vec::with_capacity(sizes.len());
         for (ordinal, size) in (0_u32..).zip(&sizes) {
             let mut at = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, SITES, ordinal));
             let site = c.site(&mut at);
-            let firm = books::of(opening).parties.begin(FIRM.name, site, day);
+            let mut lot = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, INDUSTRIES, ordinal));
+            let trade = by_size.draw(*size, &mut lot);
+            let parties = &mut books::of(opening).parties;
+            let firm = parties.begin(FIRM.name, site, day);
+            parties.open_fact(firm, industry, i64::from(trade));
             headcounts.push((firm, *size));
         }
         let (b, report) = books::split(opening);
@@ -92,7 +110,8 @@ impl Parties {
             key(FIRMS, c.id),
             format!(
                 "the {rank} largest of {firms} firms (FRM.firms_per_employed over {employed:.0} employed) by a Pareto \
-                 law of exponent {alpha} (FRM.size_exponent, Axtell 2001)"
+                 law of exponent {alpha} (FRM.size_exponent, Axtell 2001), each in an industry drawn by its size \
+                 (FRM.industry_by_size)"
             ),
         ));
     }

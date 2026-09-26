@@ -374,7 +374,7 @@ pub const phx_ledger::audit::OWNERSHIP: phx_core::family::FamilyDecl
 pub const phx_ledger::audit::UNITS: phx_core::family::FamilyDecl
 pub fn phx_ledger::audit::contracts<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::LineId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub fn phx_ledger::audit::families() -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>
-pub fn phx_ledger::audit::holding_to_break(&mut dyn phx_core::family::InjectTarget) -> core::result::Result<(phx_id::ids::PartyId, u64, u32, i64), alloc::string::String>
+pub fn phx_ledger::audit::inject_production(&mut dyn phx_core::family::InjectTarget, u32) -> core::result::Result<(), alloc::string::String>
 pub fn phx_ledger::audit::money_lines<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, (&[&dyn phx_ledger::holder::HolderArenas], &[&dyn phx_ledger::holder::HolderTable]), &[phx_id::ids::LineId]) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::audit::Gap)>
 pub fn phx_ledger::audit::ownership<B: phx_store::backing::Backing>(&phx_ledger::instrument::Instruments<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::InstrumentId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub mod phx_ledger::books
@@ -427,6 +427,7 @@ pub phx_ledger::books::BooksSize::rows: u32
 pub phx_ledger::books::BooksSize::rows_per_chunk: u32
 pub struct phx_ledger::books::Parties<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Parties<B>
+pub fn phx_ledger::books::Parties<B>::add_facet(&mut self, &str, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<(), alloc::string::String>
 pub fn phx_ledger::books::Parties<B>::arenas(&self) -> alloc::vec::Vec<&dyn phx_ledger::holder::HolderArenas>
 pub fn phx_ledger::books::Parties<B>::begin(&mut self, &str, phx_id::ids::TileId, phx_id::day::Day) -> phx_id::ids::PartyId
 pub fn phx_ledger::books::Parties<B>::begin_weighted(&mut self, &str, phx_id::ids::TileId, phx_id::day::Day, u32) -> phx_id::ids::PartyId
@@ -435,11 +436,13 @@ pub fn phx_ledger::books::Parties<B>::cells_mut(&mut self) -> (&mut alloc::vec::
 pub fn phx_ledger::books::Parties<B>::compact_arenas(&mut self) -> u64
 pub fn phx_ledger::books::Parties<B>::directory(&self) -> &phx_core::directory::Directory
 pub fn phx_ledger::books::Parties<B>::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day)
+pub fn phx_ledger::books::Parties<B>::fact(&self, phx_id::ids::PartyId, &str) -> phx_num::missing::Missing<i64>
 pub fn phx_ledger::books::Parties<B>::first_cell_place(&self) -> u16
 pub fn phx_ledger::books::Parties<B>::holder(&self, u16) -> &dyn phx_ledger::holder::HolderTable
 pub fn phx_ledger::books::Parties<B>::holders(&self) -> impl core::iter::traits::iterator::Iterator<Item = &dyn phx_ledger::holder::HolderTable> + '_
 pub fn phx_ledger::books::Parties<B>::kinds(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
 pub fn phx_ledger::books::Parties<B>::of_kind(&self, &str) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::PartyId> + '_
+pub fn phx_ledger::books::Parties<B>::open_fact(&mut self, phx_id::ids::PartyId, &str, i64)
 pub fn phx_ledger::books::Parties<B>::place(&self, &str) -> u16
 pub fn phx_ledger::books::Parties<B>::places(&self) -> impl core::iter::traits::iterator::Iterator<Item = u16> + use<B>
 pub fn phx_ledger::books::Parties<B>::row(&self, phx_id::ids::PartyId) -> (u16, phx_id::ids::Slot)
