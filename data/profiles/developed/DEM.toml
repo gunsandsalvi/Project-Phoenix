@@ -31,5 +31,5 @@ id = "DEM.ideal_children"
 kind = "PREFERENCE"
 owner = "DEM"
 source = "assumed"
-source_ref = "A household's ideal number of children: a mean of 2.3, the median over the 27 EU countries of the personal ideal of women (2.32) and men (2.20) in the Eurobarometer 2011 (Testa 2012, Vienna Institute of Demography, Family sizes in Europe, table A.2.2). The shares over the numbers are assumed about that mean, most at two as the surveys report, giving a mean of 2.27, until they are derived from the surveys' own distributions (F-113)."
+source_ref = "A household's ideal number of children: a mean of 2.3, the median over the 27 EU countries of the personal ideal of women (2.32) and men (2.20) in the Eurobarometer 2011 (Testa 2012, Vienna Institute of Demography, Family sizes in Europe, table A.2.2). The shares over the numbers are assumed about that mean, most at two as the surveys report, giving a mean of 2.27, until they are derived from the surveys' own distributions."
 value = { family = "discrete", discretisation = "equal_shares", values = [0, 1, 2, 3, 4], shares_ppm = [50000, 80000, 520000, 250000, 100000] }

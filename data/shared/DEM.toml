@@ -45,5 +45,5 @@ id = "DEM.fertility_taste_spread"
 kind = "PREFERENCE"
 owner = "DEM"
 source = "assumed"
-source_ref = "The spread of a household's taste for a child at each decision, as a multiple of the standard logistic: 1, the logit's own scale, until it is estimated from panel data on couples' fertility intentions (F-113)."
+source_ref = "The spread of a household's taste for a child at each decision, as a multiple of the standard logistic: 1, the logit's own scale, until it is estimated from panel data on couples' fertility intentions."
 value = 1.00

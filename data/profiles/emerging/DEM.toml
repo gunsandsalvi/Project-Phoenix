@@ -31,5 +31,5 @@ id = "DEM.ideal_children"
 kind = "PREFERENCE"
 owner = "DEM"
 source = "assumed"
-source_ref = "A household's ideal number of children: a mean of 2.7, the median over 13 upper-middle-income countries of the DHS indicator of women's ideal number of children (women 15 to 49, each country's latest survey from 2010 on). The shares over the numbers are assumed about that mean, most at two as the surveys report, giving a mean of 2.68, until they are derived from the surveys' own distributions (F-113)."
+source_ref = "A household's ideal number of children: a mean of 2.7, the median over 13 upper-middle-income countries of the DHS indicator of women's ideal number of children (women 15 to 49, each country's latest survey from 2010 on). The shares over the numbers are assumed about that mean, most at two as the surveys report, giving a mean of 2.68, until they are derived from the surveys' own distributions."
 value = { family = "discrete", discretisation = "equal_shares", values = [0, 1, 2, 3, 4, 5], shares_ppm = [30000, 50000, 400000, 300000, 170000, 50000] }
