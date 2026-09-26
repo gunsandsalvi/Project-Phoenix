@@ -303,18 +303,19 @@ impl<B: Backing> Books<B> {
             // The party is not among those drawn to take its own members.
             let mine = ours.held(party);
             ours.adjust(party, -signed(mine));
-            let (passed, short) = ours.draw_many(rest, unit, d);
+            let (passed, short) = ours.pass(rest, d);
             if short != 0 {
                 violation!(
                     clause = "REP.31",
                     "members leaving a line whose sides hold none to take them in whole units",
-                    remaining = short
+                    remaining = short,
+                    line = line.get(),
+                    unit = unit
                 );
             }
             ours.adjust(party, signed(mine) - i64::from(rest));
             for (to, k) in passed {
-                // The draw took the taker's members; it gains them instead.
-                ours.adjust(to, 2 * i64::from(k));
+                ours.adjust(to, i64::from(k));
                 // The taker takes the contracts as they stand, never the leaving party's arrears on them.
                 let t = LineTransfer { line, side, from: party, to, count: k, reason: self.dues.succeeded };
                 let _ = self.move_members(t, m, audit)?;

@@ -249,6 +249,34 @@ impl Tally {
         c.parties.get(at).map(|p| (*p, c.unit))
     }
 
+    /// Takers for `count` members passed to the side's holders: one holder drawn by its members among those whose
+    /// unit fits in what is left, taking every whole unit of it, until no holder's unit fits; what each takes, in
+    /// holder order, and what remains. A taker is not bounded by what it holds, as a buyer takes what it is sold, and
+    /// nothing is taken from the tally.
+    pub(crate) fn pass(&mut self, count: u32, draws: &mut Draws) -> (Vec<(PartyId, u32)>, u32) {
+        let mut more: BTreeMap<PartyId, u32> = BTreeMap::new();
+        let mut remaining = count;
+        loop {
+            let eligible: u64 = self.classes.iter().filter(|c| c.unit <= remaining).map(|c| c.left).sum();
+            if eligible == 0 {
+                break;
+            }
+            let mut target = below_u64(draws, eligible);
+            let mut chosen = None;
+            for c in self.classes.iter().filter(|c| c.unit <= remaining) {
+                if target < c.left {
+                    chosen = c.parties.get(c.find(target)).map(|p| (*p, remaining - remaining % c.unit));
+                    break;
+                }
+                target -= c.left;
+            }
+            let Some((p, k)) = chosen else { break };
+            *more.entry(p).or_insert(0) += k;
+            remaining -= k;
+        }
+        (more.into_iter().collect(), remaining)
+    }
+
     /// Up to `count` members drawn from those left, like with like: among the holders of the leaving party's unit
     /// `like` while they hold what remains, else among the holders whose unit fits in what remains; each holder drawn
     /// from, with how many, in holder order, and what remains once no holder's unit fits.
@@ -450,6 +478,27 @@ mod tests {
             assert_eq!(taken.iter().map(|(_, k)| *k).sum::<u32>(), 340);
             assert_eq!(rest, 169);
         }
+    }
+
+    /// A remainder passed goes whole to takers whose unit fits, however little they hold, and never to a holder whose
+    /// unit is larger than what is left.
+    #[test]
+    fn a_passed_remainder_goes_to_takers_whose_unit_fits() {
+        let rows: Vec<(PartyId, u32, u32)> =
+            [(1, 1700, 170), (2, 3, 1), (3, 2, 1)].map(|(p, c, u)| (PartyId::new(p), c, u)).to_vec();
+        for t in 0..64_u64 {
+            let mut d = Draws::new(stream_key(Seed::new(t), "REP.cleared"), Subject::new(SubjectTag::Line, 1), 1, 0);
+            let mut tally = super::Tally::new(&rows);
+            let (passed, rest) = tally.pass(12, &mut d);
+            assert_eq!((passed.len(), passed.iter().map(|(_, k)| *k).sum::<u32>(), rest), (1, 12, 0));
+            assert!(passed.iter().all(|(p, _)| *p != PartyId::new(1)));
+            assert_eq!(tally.held(PartyId::new(2)) + tally.held(PartyId::new(3)), 5, "nothing taken from the tally");
+            let (passed, rest) = tally.pass(0, &mut d);
+            assert_eq!((passed, rest), (vec![], 0));
+        }
+        let lone = [(PartyId::new(1), 1700, 170)];
+        let mut d = Draws::new(stream_key(Seed::new(0), "REP.cleared"), Subject::new(SubjectTag::Line, 1), 1, 0);
+        assert_eq!(super::Tally::new(&lone).pass(12, &mut d), (vec![], 12), "no unit fits");
     }
 
     /// A holder whose members left beside the draws is drawn no more, and one given members is drawn by them.

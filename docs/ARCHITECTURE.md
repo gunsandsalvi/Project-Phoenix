@@ -852,9 +852,10 @@ Then:
   `members_leave` per row. A holder drawn gives its whole **unit** — an agent's multiplicity, one for an
   individual — and a draw is made only among the holders whose unit fits in what is left, so an agent's twins stay
   alike. What no unit fits (an individual's count need not be a multiple of the agents' units) passes instead, by
-  moving members, to other holders of the leaving party's own side drawn the same way, as a buyer of the contracts
-  would take them, with no arrears carried, since no one failed them (the plan's F-074); if none fits there either,
-  the run stops (REP.31). An agent drawn loses, from its persons, a
+  moving members, to other holders of the leaving party's own side whose unit fits in it, each drawn by its members
+  and taking every whole unit of what is left whatever it holds, as a buyer of the contracts would take them, with no
+  arrears carried, since no one failed them (the plan's F-074); if no holder's unit fits there either, the run stops
+  (REP.31). An agent drawn loses, from its persons, a
   twin's share of the members that left, drawn among its attachments on that side of the line
   (`World::detach`), so its persons still hold what its rows count. A side's members by holder are read once
   (a `Tally`, from the holder list's keys straight to their rows, in fixed shards on the pool) and kept, moved by
