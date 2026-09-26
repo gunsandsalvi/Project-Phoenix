@@ -410,6 +410,7 @@ fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<St
 /// families and their clauses, the kernel tables and their facts, and the books' line kinds and reasons.
 fn names(
     d: &Declarations,
+    pop: &[(phx_pop::kind::PopKindDecl, usize)],
     markets: &phx_market::instances::Kinds,
     families: &[phx_core::FamilyDecl],
     tables: &[KernelTable],
@@ -421,6 +422,7 @@ fn names(
     out.extend(d.streams.iter().map(|(_, s)| s.name));
     out.extend(d.decisions.iter().map(|m| m.name));
     out.extend(d.facets.iter().map(|(_, f)| f.fact));
+    out.extend(pop.iter().flat_map(|(k, _)| k.attrs.iter().map(|a| a.item.name)));
     out.extend(families.iter().flat_map(|f| [f.name, f.clause]));
     for t in tables {
         out.push(t.name);
@@ -456,7 +458,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let mut audit = Audit::new(families).map_err(AssemblyErrors)?;
     audit.resume(records.len(), events.len());
     let decls: Vec<phx_core::FamilyDecl> = audit.families().collect();
-    let names = names(&p.d, &p.market_kinds, &decls, &tables, &books);
+    let names = names(&p.d, &p.pop, &p.market_kinds, &decls, &tables, &books);
     let settling_years = p.kernel.opening.settling_years.shared(&p.c.register);
     let save_every = p.kernel.save_every.shared(&p.c.register);
     let nothing = || -> OwnState { Box::new(()) };
@@ -677,7 +679,7 @@ pub fn load(
         .chain(p.d.families.iter().map(|(_, f)| f.decl()))
         .chain(crate_families(p.game.countries.len(), !p.pop.is_empty()).iter().map(|f| f.decl()))
         .collect();
-    let names = names(&p.d, &p.market_kinds, &families, &tables, &declared);
+    let names = names(&p.d, &p.pop, &p.market_kinds, &families, &tables, &declared);
     let mut declared = Some(declared);
     let books = read_file(dir, "books", &names, &mut |r| {
         let d = declared.take().ok_or_else(|| phx_store::LoadError::Invalid("the books read twice".to_owned()))?;
