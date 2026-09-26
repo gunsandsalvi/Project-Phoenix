@@ -253,6 +253,7 @@ struct Changed {
     born: u64,
     gone: u64,
     region: Option<u32>,
+    vital: Vec<crate::stats::Vital>,
 }
 
 /// The buffers reading chances fills, held by a pass over many agents and reused for each, so the pass allocates only
@@ -576,6 +577,9 @@ impl World {
         }
         household_into(&kd.decl, table, slot, h);
         let before = h.persons.len();
+        let country = self.country_of_party(party);
+        let panel = self.life_panel(party, country, date);
+        let persons = panel.map(|_| h.persons.clone());
         let attrs = h.attrs.clone();
         let attr = |name: &str| attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
         let view = AgentView { kind: kd.decl.kind, party, attr: &attr, country_of: &country_of, date };
@@ -605,18 +609,30 @@ impl World {
             );
         };
         let born = phx_rand::float::len_u64(born);
-        Some(Changed { who: (kind, slot, party), rewrite: rewrite(&kd.decl, table, slot, h), born, gone, region })
+        let vital = match (panel, persons) {
+            (Some(early), Some(persons)) => self.vital_of(country, date, early, (&persons, h)),
+            _ => Vec::new(),
+        };
+        Some(Changed {
+            who: (kind, slot, party),
+            rewrite: rewrite(&kd.decl, table, slot, h),
+            born,
+            gone,
+            region,
+            vital,
+        })
     }
 
     /// An agent's changed household written back in the day's order: its gone persons' contracts leaving their lines
     /// at its multiplicity, and an agent no one is left in ended, what it held passing to an estate.
     fn write_household(&mut self, day: Day, c: Changed) {
-        let Changed { who: (kind, slot, party), rewrite, born, gone, region } = c;
+        let Changed { who: (kind, slot, party), rewrite, born, gone, region, vital } = c;
         let cells = self.books.parties.cells_mut().0;
         let table = Population::table_mut::<SystemBacking>(cells, kind);
         let twins = table.multiplicity(slot).get();
         let written = write_rewrite(table, slot, &rewrite);
         let k = u64::from(twins);
+        self.record_vital(self.calendar.date(day), &vital, k);
         self.agent_day.born += born * k;
         self.agent_day.gone += gone * k;
         self.population.count(kind, (0, 0), (born * k, gone * k));

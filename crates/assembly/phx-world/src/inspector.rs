@@ -87,7 +87,25 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.central
     }
 
-    /// What each day's state did: the consumption tax charged, the claims, the auctions.
+    /// Every statistic the agencies published, each vintage with its day.
+    #[must_use]
+    pub fn releases(&self) -> &[if_state::stats::Release] {
+        &self.world.state.book.stats.releases
+    }
+
+    /// The day a period's release of a vintage falls on in a country by its agency's calendar.
+    #[must_use]
+    pub fn release_day(&self, country: u8, series: usize, period: u32, vintage: u8) -> Option<Day> {
+        self.world.release_day(country, series, (period, vintage))
+    }
+
+    /// The month a day falls in, as the agencies number periods.
+    #[must_use]
+    pub fn month_of(&self, day: Day) -> u32 {
+        crate::stats::month_of(self.world.calendar.date(day))
+    }
+
+    /// What each day's state did: the consumption tax charged, the claims, the auctions, the statistics.
     pub fn state_days(&self) -> &[(Day, crate::state::StateDay)] {
         &self.world.metrics.state
     }

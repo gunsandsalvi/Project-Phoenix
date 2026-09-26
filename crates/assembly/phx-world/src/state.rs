@@ -41,6 +41,7 @@ pub(crate) struct StateBook {
     pub issued: BTreeMap<u8, i64>,
     pub redeemed: BTreeMap<u8, i64>,
     pub bills: BTreeMap<LineId, Day>,
+    pub stats: crate::stats::StatsBook,
 }
 
 /// A bill auction's result: the country, the face offered and bid, the face sold and its price.
@@ -60,6 +61,7 @@ pub struct StateDay {
     pub claims: u64,
     pub benefits_ended: u64,
     pub auctions: Vec<Auction>,
+    pub stats: crate::stats::StatsDay,
 }
 
 /// Each country's state: its taxes, its benefit, its bills, its payment order and its treasury.
@@ -78,6 +80,7 @@ pub(crate) struct State {
     pub benefit: Option<BenefitKind>,
     pub bills: Option<BillKind>,
     pub countries: Vec<Country>,
+    pub stats: crate::stats::Stats,
     pub book: StateBook,
     pub day: StateDay,
 }
@@ -124,7 +127,7 @@ pub(crate) fn bind(
     let benefit = take(one::<BenefitKind>(d), &mut errors);
     let bills = take(one::<BillKind>(d), &mut errors);
     let treasury = take(one::<TreasuryKind>(d), &mut errors);
-    let countries: Vec<Country> = countries
+    let compiled_countries: Vec<Country> = countries
         .iter()
         .map(|c| Country {
             tax: compiled("the taxes", c, tax.map(|k| (k.law)(register, c)), &mut errors),
@@ -133,8 +136,12 @@ pub(crate) fn bind(
             order: compiled("the payment order", c, treasury.map(|k| (k.order)(register, c)), &mut errors),
         })
         .collect();
+    let stats = crate::stats::bind(d, register, countries).unwrap_or_else(|e| {
+        errors.extend(e);
+        crate::stats::Stats::default()
+    });
     if errors.is_empty() {
-        Ok(State { tax, benefit, bills, countries, book, day: StateDay::default() })
+        Ok(State { tax, benefit, bills, countries: compiled_countries, stats, book, day: StateDay::default() })
     } else {
         Err(errors)
     }

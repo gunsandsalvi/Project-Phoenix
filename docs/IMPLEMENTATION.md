@@ -7532,14 +7532,15 @@ outcome.
 
 ### S1.14 — `sys-idx` and `sys-sta`: price indices and published statistics
 
-**Status**: building
+**Status**: done
 
 **Clauses**:
 - STATE: IDX.3; STA.1 *(part: national accounts, prices, labour, money and vital statistics; house prices come at
   S2.05, the balance of payments at S5.05)*; IDX.1 *(part: the price indices)*.
 - PROCESS: STA.2; IDX.4 *(part)*.
 - INVARIANT: IDX.5 *(part)*.
-- MEASURE: MON.10; STA.3.
+- MEASURE: MON.10; STA.3 *(moved to S1.15 with LC-1-37: output is measured three ways once firms produce and
+  sell)*.
 - FORBID: STA.4; IDX.6 *(part)*.
 - PRIMITIVE: STA.5; IDX.7 *(part)*.
 - Market indices, which complete the price-index clauses above, are S3.09.
@@ -7556,9 +7557,12 @@ that read aggregates read these.
 
 | File | Purpose |
 | --- | --- |
-| `crates/systems/sys-sta/src/*.rs` | the agency, its samples through the stream `STA.sample`, publication calendars, revisions |
-| `crates/systems/sys-idx/src/*.rs` | the CPI and PPI rules, chained |
-| `data/<country>/STA.toml` | survey designs, sample sizes, calendars, revision policies (POLICY) |
+| `crates/interfaces/if-state/src/stats.rs`, `consts.rs` | the series, the release record, the agency's and the indices' kinds |
+| `crates/systems/sys-sta/src/lib.rs` | the agency's law, its samples' streams `STA.sample` and `STA.returns`, rates, the latest release a reader reads |
+| `crates/systems/sys-idx/src/lib.rs` | the chained link and each country's base |
+| `crates/assembly/phx-world/src/stats.rs` | sampling at the close, the month's census and money, the calendar, releases and revisions |
+| `crates/apps/phx-cli/src/checks/stats.rs` | LC-1-37, LC-1-38, LC-1-51 |
+| `data/profiles/<level>/STA.toml`, `IDX.toml`, `data/shared/STA.toml` | calendars, sample shares, early returns, revisions, the base, the age classes (POLICY) |
 
 **Design**:
 - Statistics are computed from **samples** of the period's records: households' purchases (match-set records) for the
@@ -7577,13 +7581,32 @@ that read aggregates read these.
 - A published index is kept with each revision (IDX.1).
 - Each published series is a public series for the outlooks of S1.01, and its surprises are recorded per method.
 
-**Unit tests**: `chained_index_no_jump`; `revision_from_later_sample`: over given samples, the revision is the later
-estimate and both are kept with their dates.
+**As built**:
+- each country's agency publishes five series monthly, each on its calendar's business day in the month its lag
+  names, a first release from the returns in by then (`STA.early_returns`, each return's arrival drawn from
+  `STA.returns`) and a revision `STA.revision_months` later from every return; a reader reads the latest vintage of
+  the latest period published by its day (`sys_sta::latest`);
+- the consumer and producer indices sample the day's sales on the tape at the close (retail; the goods markets),
+  each sale kept by its keyed draw at `STA.sample_share`; a period's link weights each product's unit-value relative
+  by its share of the period before's sampled spending, and chains on the level last published for that period; the
+  first period priced opens at `IDX.base`, since no posted prices are sampled before it (F-114);
+- the labour force survey and the period life table read a panel of households drawn by `STA.sample`; the life
+  table's deaths and onsets by age class (`STA.age_classes`) and health are recorded at 3e as they happen, its
+  exposure the mean of the panel's persons at the period's first and last census times its days; each entry carries
+  its events, exposure and rate, the rate the one those give;
+- the money stock is the banks' and the central bank's complete reports at the month's end: reserves, and deposits by
+  their holders' legal form;
+- the national accounts, income and its distribution, vacancies, wages, credit, the fiscal balance and research
+  spending wait for the systems that make them (national accounts at S1.15, the rest with their systems), and the
+  published series join the public outlooks when a decision first reads one (F-114).
+
+**Unit tests**: `chained_index_no_jump`; `revision_from_later_sample`: over given releases, the revision is the later estimate and both
+are kept with their dates; `rates_are_events_a_year_over_exposure`.
 
 **Live checks**: `LC-1-37`: STA.3 — output by expenditure, income and production agree up to the published
 discrepancy; `LC-1-38`: STA.4 — no party read a statistic before its publication day; `LC-1-51`: STA.1 — the period
 life table is published on its calendar, each rate traceable to the sampled events and exposures it came from.
-`LC-1-39`: retired: IDX.5's check of market indices moved to S3.09's LC-3-12, where they exist.
+`LC-1-39`: retired: IDX.5's check of market indices moved to S3.09, where they exist.
 
 **Budget**: statistics are computed on their days from samples; within the "statistics" line. Counters, ratcheted:
 `phx_sta.records_sampled`, `phx_sta.publications`.
@@ -7593,19 +7616,22 @@ life table is published on its calendar, each rate traceable to the sampled even
 **Not allowed**: a statistic available before publication; an index input to its own constituents.
 
 **Done when**
-- [ ] Every country publishes on its calendar.
-- [ ] LC-1-37, LC-1-38 and LC-1-51 pass.
-- [ ] Two reviews are done.
+- [x] Every country publishes on its calendar.
+- [x] LC-1-38 and LC-1-51 pass; LC-1-37 moves to S1.15.
+- [x] Two reviews are done.
 
 ---
 
 ### S1.15 — GEN III: the Stage 1 opening
 
-**Status**: planned
+**Status**: building
 
 **Clauses**: GEN.2 *(part)*, GEN.3 *(part)*, GEN.4 *(part)*, GEN.5 *(part)* and GEN.13 *(part: day zero for Stage 1's
-- MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(complete them, moved from S1.12: LC-1-01, LC-1-03, LC-1-43 and LC-1-44 read the outlooks once firms sell to the households that ask)*.
 decisions)*: every Stage 1 system's opening contribution.
+- MEASURE: STA.3 *(moved from S1.14, with LC-1-37: output by expenditure, income and production from the sampled
+  sales, payrolls and accounts, and the discrepancy published)*.
+- MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(complete them, moved from S1.12: LC-1-01, LC-1-03, LC-1-43 and LC-1-44
+  read the outlooks once firms sell to the households that ask)*.
 - STATE: FRM.1, FRM.2 *(complete them, from S1.03: every firm holds its latest filed accounts' state)*.
 - DECISION: FRM.5, REP.38 *(complete them, from S1.03: firms review and post prices, at the attention they set, from
   the state drawn here)*.
@@ -16741,6 +16767,7 @@ the final build within the budget on the phone.
 | F-111 | S1.11 | build, 2026-09-26 | The developing group reports no policy rate (GEN.policy_rate left out for want of data), so its corridor and its banks' cost of funds are priced from its deposit rate | the BIS policy-rate series covers too few lower-middle- and low-income economies | a policy-rate source for the group (the IMF's International Financial Statistics) in `tools/data/derive.py`; the rate the committee sets from S3.02 | open for S3.02 |
 | F-112 | S1.12 | build, 2026-09-26 | Households are one preference type, the buffer-stock rule is solved once for shared inputs (its return and growth placeholders), and a household's income is read as the change in its money between decisions, which counts every inflow and every payment other than its spending | preference types, each household's own rate and outlook width, and its income by payer are not built; the handler sees its money only | the types drawn, the rule memoised on each household's exact inputs, and income read from its settled receipts, with the households' finances (S2.05); `buffer_solution_matches_published_values` then checks Carroll's published cases | open for S2.05 |
 | F-113 | S1.13 | build, 2026-09-26 | A conception is a birth at once, the opening's households all start not trying, the ideal number of children's shares are assumed about the surveys' means, the taste's spread is the logit's own, the opening's children are those under the age of majority though they leave school younger, and HH's positions were exported by no interface until this step (S1.12's world did not assemble) | no gestation, no post-partum infecundity, births ramp in over a year of decisions, day one moves the cohorts between the school-leaving age and majority into the adult roles | gestation as a pregnancy the household holds, the ideal shares and the taste's spread from DHS and Eurobarometer microdata, and the opening's children composed by the school-leaving age, with `sys-dem` in full (S6.02) | open for S6.02 |
+| F-114 | S1.14 | build, 2026-09-26 | The agencies' calendars, sample shares, early returns and revision months are assumed from a few agencies' practice; an index's first period opens at the base, not at day zero's posted prices; the published series are not yet public series of the outlooks; the month's census reads every household agent to find its panel | each index opens a month late, and no decision reads a statistic yet; the census costs a pass over the households each month | each agency's calendar and designs read from its own publications; posted prices sampled at the opening as the first link's base; the series registered as public variables when the first reader arrives (S2.05's households, S3.02's central bank); the panel kept as a list of its members | open for S3.02 |
 
 ---
 
@@ -17009,7 +17036,8 @@ and are not mapped.
 | OBS | S0.10 | 1 |
 | OBS | S0.26 | 9 |
 | OBS | S6.04 | 2, 3, 4, 5, 6, 7, 8 |
-| STA | S1.14 | 2, 3, 4, 5 |
+| STA | S1.14 | 2, 4, 5 |
+| STA | S1.15 | 3 |
 | STA | S5.05 | 1 |
 | L1–L12 | S7.02 | each chain held to its test (II.1), as N4 reads it from the run; L1's machinery is S2.01's, L3's S2.04's (the waterfall's S0.17's), L2's and L4's S3.11's |
 | N1 | S6.05 | the audit's families complete with the last system; the framework is S0.12 |

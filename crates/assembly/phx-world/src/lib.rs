@@ -23,6 +23,7 @@ pub mod retail;
 pub mod save;
 mod spoil;
 pub mod state;
+pub mod stats;
 pub mod systems;
 pub mod trace;
 pub mod visits;

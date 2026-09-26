@@ -1,0 +1,10 @@
+# The statistics agencies' shared primitives.
+
+[[primitive]]
+id = "STA.age_classes"
+kind = "POLICY"
+owner = "STA"
+decided_by = "statistics agency"
+source = "measured"
+source_ref = "The first ages of the classes an abridged life table reports by: under one, one to four, then ten-year classes from 5 and from 15 to 85 and over, as the UN's World Population Prospects and national agencies abridge their period life tables."
+value = [0, 1, 5, 15, 25, 35, 45, 55, 65, 75, 85]

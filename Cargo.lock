@@ -477,7 +477,10 @@ name = "if-state"
 version = "0.1.0"
 dependencies = [
  "phx-core",
+ "phx-id",
+ "phx-macros",
  "phx-num",
+ "phx-store",
 ]
 
 [[package]]
@@ -634,6 +637,7 @@ dependencies = [
  "clap",
  "if-firm",
  "if-pop",
+ "if-state",
  "phx-acct",
  "phx-core",
  "phx-exec",
@@ -654,6 +658,7 @@ dependencies = [
  "sys-frt",
  "sys-gds",
  "sys-srv",
+ "sys-sta",
  "sys-tec",
  "toml 0.9.12+spec-1.1.0",
 ]
@@ -883,10 +888,12 @@ dependencies = [
  "sys-gds",
  "sys-hh",
  "sys-hsg",
+ "sys-idx",
  "sys-lab",
  "sys-soc",
  "sys-sov",
  "sys-srv",
+ "sys-sta",
  "sys-tax",
  "sys-tec",
  "sys-trs",
@@ -1307,6 +1314,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sys-idx"
+version = "0.1.0"
+dependencies = [
+ "if-state",
+ "phx-core",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+]
+
+[[package]]
 name = "sys-lab"
 version = "0.1.0"
 dependencies = [
@@ -1360,6 +1378,18 @@ dependencies = [
  "phx-macros",
  "phx-market",
  "phx-num",
+]
+
+[[package]]
+name = "sys-sta"
+version = "0.1.0"
+dependencies = [
+ "if-state",
+ "phx-core",
+ "phx-id",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
 ]
 
 [[package]]

@@ -178,9 +178,7 @@ impl World {
                 self.agents_outcomes(day);
             }
             if info.step == SubStep::S10a {
-                // Yesterday's events recorded after its 10a are judged today; the rest are judged again the same way.
-                let from = day.get().checked_sub(1).map_or(day, Day::new);
-                self.events.publish(from, &self.news);
+                self.publish_day(day);
             }
             if info.step == SubStep::S10b {
                 self.agents_settle(day);
@@ -380,6 +378,14 @@ impl World {
 
     /// The day's close: the read trace sums the day, and every audit family reads what the day left behind.
     #[clause("N1")]
+    /// 10a: the day's public events and statistics published.
+    fn publish_day(&mut self, day: Day) {
+        // Yesterday's events recorded after its 10a are judged today; the rest are judged again the same way.
+        let from = day.get().checked_sub(1).map_or(day, Day::new);
+        self.events.publish(from, &self.news);
+        self.stats_close(day);
+    }
+
     fn close(&mut self, day: Day, dues: DaySettlement) {
         self.books.parties.compact_arenas();
         let book = self.books.close();

@@ -19,6 +19,7 @@ pub mod retail;
 pub mod saves;
 pub mod stage0;
 pub mod state;
+pub mod stats;
 pub mod technology;
 
 use phx_world::Inspector;
@@ -186,7 +187,11 @@ pub const CHECKS: &[Check] = &[
     households::LC_1_34,
     births::LC_1_35,
     births::LC_1_36,
+    stats::LC_1_37,
+    stats::LC_1_38,
+    stats::LC_1_39,
     births::LC_1_49,
+    stats::LC_1_51,
     firms::LC_1_45,
     goods::LC_1_46,
     freight::LC_1_47,

@@ -410,6 +410,8 @@ fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<St
             || kind.downcast_ref::<if_state::kinds::BenefitKind>().is_some()
             || kind.downcast_ref::<if_state::kinds::BillKind>().is_some()
             || kind.downcast_ref::<if_state::kinds::TreasuryKind>().is_some()
+            || kind.downcast_ref::<if_state::stats::StaKind>().is_some()
+            || kind.downcast_ref::<if_state::stats::IndexKind>().is_some()
         {
             continue;
         }
@@ -473,6 +475,7 @@ fn names(
     out.extend(d.decisions.iter().map(|m| m.name));
     out.extend(d.facets.iter().map(|(_, f)| f.fact));
     out.extend(pop.iter().flat_map(|(k, _)| k.attrs.iter().map(|a| a.item.name)));
+    out.extend(pop.iter().flat_map(|(k, _)| k.positions.iter().map(|p| p.item.name)));
     out.extend(families.iter().flat_map(|f| [f.name, f.clause]));
     for t in tables {
         out.push(t.name);

@@ -1,0 +1,10 @@
+# The developing group's price indices' base (spec IDX.7).
+
+[[primitive]]
+id = "IDX.base"
+kind = "POLICY"
+owner = "IDX"
+decided_by = "statistics agency"
+source = "assumed"
+source_ref = "The level a price index opens at: 100, the convention of every agency's index reference period."
+value = 100.00

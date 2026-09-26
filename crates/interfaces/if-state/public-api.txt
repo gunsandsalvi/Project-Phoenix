@@ -1,4 +1,16 @@
 pub mod if_state
+pub mod if_state::consts
+pub const if_state::consts::CPI: usize
+pub const if_state::consts::HOLDER_CLASSES: [&str; 2]
+pub const if_state::consts::LABOUR_FORCE: usize
+pub const if_state::consts::LABOUR_STATES: usize
+pub const if_state::consts::LIFE_ENTRY: usize
+pub const if_state::consts::LIFE_TABLE: usize
+pub const if_state::consts::MONEY: usize
+pub const if_state::consts::NAMES: [&str; 5]
+pub const if_state::consts::PLACES: [u8; 5]
+pub const if_state::consts::PPI: usize
+pub const if_state::consts::SERIES: usize
 pub mod if_state::kinds
 pub struct if_state::kinds::Allotment
 pub if_state::kinds::Allotment::price: f64
@@ -53,3 +65,50 @@ pub if_state::kinds::TaxLaw::bands: alloc::vec::Vec<(f64, f64)>
 pub if_state::kinds::TaxLaw::consumption_rate: f64
 pub struct if_state::kinds::TreasuryKind
 pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PaymentOrder, alloc::string::String>
+pub mod if_state::stats
+pub struct if_state::stats::IndexKind
+pub if_state::stats::IndexKind::base: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<f64, alloc::string::String>
+pub if_state::stats::IndexKind::link: fn(&[if_state::stats::Priced]) -> core::option::Option<f64>
+pub struct if_state::stats::Priced
+pub if_state::stats::Priced::before: f64
+pub if_state::stats::Priced::now: f64
+pub if_state::stats::Priced::weight: f64
+pub struct if_state::stats::Release
+pub if_state::stats::Release::country: u8
+pub if_state::stats::Release::period: u32
+pub if_state::stats::Release::published: phx_id::day::Day
+pub if_state::stats::Release::series: u8
+pub if_state::stats::Release::values: alloc::vec::Vec<i64>
+pub if_state::stats::Release::vintage: u8
+impl phx_store::save::Saved for if_state::stats::Release where u8: phx_store::save::Saved, u32: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
+pub fn if_state::stats::Release::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_state::stats::Release::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct if_state::stats::Schedule
+pub if_state::stats::Schedule::day: u32
+pub if_state::stats::Schedule::lag: u32
+pub if_state::stats::Schedule::sample: f64
+pub struct if_state::stats::StaKind
+pub if_state::stats::StaKind::classes: &'static str
+pub if_state::stats::StaKind::consumer: &'static [&'static str]
+pub if_state::stats::StaKind::latest: if_state::stats::Latest
+pub if_state::stats::StaKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::stats::StaLaw, alloc::string::String>
+pub if_state::stats::StaKind::producer: &'static [&'static str]
+pub if_state::stats::StaKind::rate: fn(f64, f64) -> core::option::Option<f64>
+pub if_state::stats::StaKind::returns: phx_core::streams::StreamDecl
+pub if_state::stats::StaKind::sample: phx_core::streams::StreamDecl
+pub struct if_state::stats::StaLaw
+pub if_state::stats::StaLaw::early: f64
+pub if_state::stats::StaLaw::revision: u32
+pub if_state::stats::StaLaw::series: alloc::vec::Vec<if_state::stats::Schedule>
+pub const if_state::stats::CPI: usize
+pub const if_state::stats::HOLDER_CLASSES: [&str; 2]
+pub const if_state::stats::LABOUR_FORCE: usize
+pub const if_state::stats::LABOUR_STATES: usize
+pub const if_state::stats::LIFE_ENTRY: usize
+pub const if_state::stats::LIFE_TABLE: usize
+pub const if_state::stats::MONEY: usize
+pub const if_state::stats::NAMES: [&str; 5]
+pub const if_state::stats::PLACES: [u8; 5]
+pub const if_state::stats::PPI: usize
+pub const if_state::stats::SERIES: usize
+pub type if_state::stats::Latest = for<'a> fn(&'a [if_state::stats::Release], (u8, u8), phx_id::day::Day) -> core::option::Option<&'a if_state::stats::Release>
