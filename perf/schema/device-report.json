@@ -554,9 +554,10 @@
       "required": [
         "load_version",
         "commit",
-        "population_cells",
-        "population_members_per_cell",
-        "population_profile_entries_per_cell",
+        "population_agents",
+        "population_multiplicity",
+        "population_persons_per_agent",
+        "population_attachments_per_agent",
         "built_ms",
         "built_vm_hwm_bytes",
         "days",
@@ -575,21 +576,25 @@
         "load_version": {
           "type": "integer",
           "enum": [
-            1
+            2
           ]
         },
         "commit": {
           "type": "string"
         },
-        "population_cells": {
+        "population_agents": {
           "type": "integer",
           "minimum": 0
         },
-        "population_members_per_cell": {
+        "population_multiplicity": {
           "type": "integer",
           "minimum": 0
         },
-        "population_profile_entries_per_cell": {
+        "population_persons_per_agent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "population_attachments_per_agent": {
           "type": "integer",
           "minimum": 0
         },
