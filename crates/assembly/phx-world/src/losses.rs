@@ -109,7 +109,7 @@ impl World {
                     account: AccountRef::Instrument(instrument),
                     qty: -lost,
                     denom: Denom::Unit(i.unit),
-                    kind: LegKind::Transformation(Source::Hazard(event)),
+                    kind: LegKind::Transformation { source: Source::Hazard(event), cost: 0 },
                 });
             }
         }

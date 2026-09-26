@@ -971,6 +971,27 @@ without end in both directions.
   register primitives (`data/shared/REP.toml`), which the manifest's register hash covers, so a load with a changed
   valve is refused as other data (§11).
 
+
+### 7.10 Plant
+
+- **Condition classes** (REP.24): each kind of plant is held in `CAP.condition_classes` classes of age, each an
+  instrument per (country, kind, class), so plant of one class is alike: an agent's twins hold it pooled like any
+  holding (§4.4) and nothing is kept per unit. A system declares each kind's classes to the ledger as a **chain**
+  (`phx_ledger::chains::Chains`, saved with the ledger), tagged with its kind; no instrument is in two chains.
+- **Wear** is declared, not coded per system: a `WearDecl` names the visit it follows and, from the register, each
+  tag's rate of leaving a class and each class's value. After that visit's handler has run on its rows, the kernel
+  (`phx-world`'s `wear`) realises every chain for each row visited, over the days since its last visit (the period;
+  on its first, the days since day zero): from each class, the share a constant yearly hazard takes over those days,
+  1 − e^(−r·t), half to even and whole for each twin, move to the next class carrying their lots' first-in cost times the ratio of the two classes' values, and the
+  last class's leave. One instruction per row, of `Transformation { source: Wear(chain), cost }` legs under the
+  reason `worn`, paid and received both an expense, so the cost the units lose is charged once to income through the
+  effect and once to the unit through its lot. The visit runs on calendar days, so its period is the days worn.
+- **The check**: the apply routine refuses a wear instruction whose legs leave a chain or make units (a class
+  receiving other than what the one before it gave the same holder); each wear leg's digest carries its chain and
+  class, and `CAP.stock` checks the same from the audit's own record.
+- **Capacity** reads the classes: a way's capacity is the least over its kinds of units × the class's efficiency over
+  the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound.
+
 ---
 
 ## 8. Markets, valuation and expectations
@@ -1295,8 +1316,10 @@ series of one, never a drawn past.
   rows' balances signed by side plus its holdings at cost, into the report. At the assembly's end, once the player is
   seated, the ledger forgets the opening's day book whole (`Ledger::opened`): the audit and the accounts read days, and
   the opening is none, so the accounts open on what the opening wrote.
-- **Plant** is a real asset per country, counted in its own unit priced in the currency's smallest unit, held at
-  cost; its size is the steady state's capital, investment over growth plus depreciation.
+- **Plant** is held by kind and condition class (§7.10), a real asset per (country, kind, class) counted in a cent of
+  the kind at world-average prices, held at cost: each country's stock of a kind, its GDP times the group's stock per
+  unit of GDP, apportioned over every firm by its employees times its industry's plant of the kind per hour worked,
+  and spread over the classes as a steady stock growing at the country's rate would be.
 - **Accounts** — reserves, the treasury's account, the central bank's claim on the treasury — have no dates and are
   marked spent at the opening; every other opening line falls due on the first date of its schedule after the
   snapshot.
@@ -2048,7 +2071,7 @@ A rule changes only with its reason recorded in §18.
       and aggregate per (insurer, model point), and schemes are valued per (line, holder's age class) in a declared
       sweep on valuation dates (§4.5, §8);
     - a hit carries its members' profile values to the systems a process declares interested, applied at 3e; victims
-      of harm to third parties are drawn from the (zone, class) index and the zone's pieces (§7.3, §7.10);
+      of harm to third parties are drawn from the (zone, class) index and the zone's pieces (§7.3, §7.8);
     - resolution of insurers and clearing houses is `sys-sup`'s on §9.2's timetable: a closed payer's legs are
       pending, a closed many-party payer's holders are paired once for the whole resolution, and a house recovers by
       haircutting its pending legs before its service is transferred or wound down (§6.5, §9.1, §9.2);
@@ -2064,7 +2087,7 @@ A rule changes only with its reason recorded in §18.
       kinks; value-added tax on a sale on terms is computed per invoice row at its statement and on a cash sale rides
       the sale's instruction; property tax is a holding levy driven from the (zone, class) index, joining the
       holder's existing leg; duty and import tax at a border are a demand customs issues, not a levy; returns are
-      day-local (§4.2, §4.3, §7.10);
+      day-local (§4.2, §4.3, §7.8);
     - a policy schedule's count of bands is the constitution's and fixed at compilation, so a budget moves values and
       edges only; an effective day re-keys only the cells whose signature words the moved kinks touch (§5.3, §7.6);
     - waits and pending claims are attachments, not pins; benefit rows are dated rows with no retail holder list;
@@ -2228,7 +2251,7 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | D2 | HH | `sys-hh` | 1 | 6 | planned |
 | E1 | TEC | `sys-tec` | 1 | 6 | building |
 | E2 | FRM | `sys-frm` | 0 | 6 | building |
-| E3 | CAP | `sys-cap` | 1 | 5 | planned |
+| E3 | CAP | `sys-cap` | 1 | 5 | building |
 | F1 | GDS | `sys-gds` | 1 | 2 | planned |
 | F2 | SRV | `sys-srv` | 1 | 1 | planned |
 | F3 | FRT | `sys-frt` | 1 | 1 | planned |

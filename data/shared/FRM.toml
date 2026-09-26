@@ -1,5 +1,5 @@
-# FRM's opening: the law firms' sizes follow, the promotion rank that makes the largest individuals, the deposits
-# they hold and the wear of their plant. The firm density is each profile's (data/profiles/<level>/FRM.toml).
+# FRM's opening: the law firms' sizes follow, the promotion rank that makes the largest individuals and the deposits
+# they hold; their plant is CAP's (data/shared/CAP.toml). The firm density is each profile's (data/profiles/<level>/FRM.toml).
 
 [[primitive]]
 id = "FRM.size_exponent"
@@ -24,14 +24,6 @@ owner = "FRM"
 source = "assumed"
 source_ref = "Non-financial corporations hold about a quarter of the deposits of the euro area's banks (ECB, MFI balance sheet statistics, deposits by sector), taken for every country until each country's sectoral deposits are sourced."
 value = "0.25"
-
-[[primitive]]
-id = "FRM.depreciation"
-kind = "TECHNOLOGY"
-owner = "FRM"
-source = "assumed"
-source_ref = "Plant wears out at about 5% a year, near the average rate of the capital stock in national accounts (Penn World Table's average depreciation rate is 4-5%), until the classes of capital goods are declared with their own lives."
-value = "0.05"
 
 # How firms decide (spec FRM.4, FRM.5, REP.21, REP.34, REP.38): their production schedule, the stock they aim for and
 # how fast they close a gap to it, how their markup and price move, what a review and a price change cost their staff,

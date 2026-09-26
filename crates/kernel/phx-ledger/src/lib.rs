@@ -4,6 +4,7 @@ pub mod apply_batch;
 pub mod attachments;
 pub mod audit;
 pub mod books;
+pub mod chains;
 pub mod check;
 pub mod cleared;
 pub mod commitment;

@@ -181,8 +181,9 @@ pub enum RowOp {
     Count,
 }
 
-/// What accounts for a transformation's units: the way that produced them, the deposit they were taken from, or the
-/// purchase, storage or hazard event that used them up.
+/// What accounts for a transformation's units: the way that produced them, the deposit they were taken from, the
+/// purchase, storage or hazard event that used them up, or the wear of a declared chain of classes that moved them
+/// from one class to the next or retired them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Source {
     Way(u32),
@@ -190,6 +191,7 @@ pub enum Source {
     Purchase(u64),
     Storage(u64),
     Hazard(u64),
+    Wear(u32),
 }
 
 /// How a leg settles.
@@ -202,8 +204,10 @@ pub enum LegKind {
     Units { cost: i64 },
     /// A row opened, retired or adjusted on a line.
     Row(RowOp),
-    /// Units made or used up, with what accounts for them; these legs alone need no other side.
-    Transformation(Source),
+    /// Units made or used up, with what accounts for them; these legs alone need no other side. Units made come as a
+    /// lot at `cost`, which is nothing but where they carry what other units brought, as a class's worn units do; units
+    /// used up carry what their lots cost, and no cost of their own.
+    Transformation { source: Source, cost: i64 },
     /// A balance or holding written by the opening before day one, naming the opening identity it served; units
     /// written come as a lot at `cost`.
     OpeningWrite { identity: u64, cost: i64 },
@@ -223,7 +227,7 @@ impl LegRec {
     /// Whether the leg is one of a pair: every leg but a transformation's or an opening write's.
     #[must_use]
     pub fn paired(&self) -> bool {
-        !matches!(self.kind, LegKind::Transformation(_) | LegKind::OpeningWrite { .. })
+        !matches!(self.kind, LegKind::Transformation { .. } | LegKind::OpeningWrite { .. })
     }
 
     /// The code of what the leg moves: its account's, marked as a row's member count for a row opened or retired.

@@ -56,11 +56,47 @@ source = "assumed"
 source_ref = "A dwelling is one unit, priced whole in a currency's smallest units, as dwellings are sold."
 
 [[unit]]
-name = "plant"
+name = "structures"
 kind = "physical"
 price_exp = 0
-source = "assumed"
-source_ref = "A firm's plant counted in its replacement value, a currency's smallest unit to a unit, until the classes of capital goods are declared with their own units and prices."
+source = "measured"
+source_ref = "A cent of structures at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+
+[[unit]]
+name = "transport equipment"
+kind = "physical"
+price_exp = 0
+source = "measured"
+source_ref = "A cent of transport equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+
+[[unit]]
+name = "ICT equipment"
+kind = "physical"
+price_exp = 0
+source = "measured"
+source_ref = "A cent of ICT equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+
+[[unit]]
+name = "other machinery"
+kind = "physical"
+price_exp = 0
+source = "measured"
+source_ref = "A cent of other machinery and equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+
+[[unit]]
+name = "cultivated assets"
+kind = "physical"
+price_exp = 0
+source = "measured"
+source_ref = "A cent of cultivated biological resources at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+
+[[unit]]
+name = "intellectual property"
+kind = "physical"
+price_exp = 0
+source = "measured"
+source_ref = "A cent of intellectual property products at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+
 
 [[unit]]
 name = "crops and livestock"

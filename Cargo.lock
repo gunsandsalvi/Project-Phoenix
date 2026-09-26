@@ -624,6 +624,7 @@ dependencies = [
  "phx-world",
  "serde",
  "serde_json",
+ "sys-cap",
  "sys-frm",
  "sys-tec",
  "toml 0.9.12+spec-1.1.0",
@@ -841,6 +842,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sys-bnk",
+ "sys-cap",
  "sys-cb",
  "sys-dem",
  "sys-frm",
@@ -1136,6 +1138,23 @@ dependencies = [
  "phx-macros",
  "phx-num",
  "phx-rand",
+]
+
+[[package]]
+name = "sys-cap"
+version = "0.1.0"
+dependencies = [
+ "if-firm",
+ "libm",
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-pop",
+ "phx-rand",
+ "phx-store",
+ "phx-val",
 ]
 
 [[package]]

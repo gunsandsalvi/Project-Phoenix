@@ -16,6 +16,8 @@ pub struct Digests {
     positions: BTreeMap<(PartyId, u64), (i64, i128)>,
     /// Per instruction that names a way, its legs made or used up.
     made: BTreeMap<u64, phx_core::Made>,
+    /// Per instruction that wears plant, its legs along its chains.
+    worn: BTreeMap<u64, phx_core::Worn>,
 }
 
 /// A difference the records show: which instruction or position, which denomination, and by how much.
@@ -44,6 +46,10 @@ impl Digests {
             let made =
                 self.made.entry(instruction).or_insert_with(|| phx_core::Made { instruction, way, legs: Vec::new() });
             made.legs.push(phx_core::MadeLeg { party: leg.party, denom: leg.denom, qty: leg.qty });
+        }
+        if let phx_num::Missing::Present((chain, class)) = leg.worn {
+            let worn = self.worn.entry(instruction).or_insert_with(|| phx_core::Worn { instruction, legs: Vec::new() });
+            worn.legs.push(phx_core::WornLeg { party: leg.party, chain, class, qty: leg.qty });
         }
     }
 
@@ -100,6 +106,7 @@ impl Digests {
         self.money.clear();
         self.positions.clear();
         self.made.clear();
+        self.worn.clear();
     }
 }
 
@@ -126,6 +133,10 @@ impl phx_core::LegRecords for Digests {
 
     fn made(&self) -> Vec<phx_core::Made> {
         self.made.values().cloned().collect()
+    }
+
+    fn worn(&self) -> Vec<phx_core::Worn> {
+        self.worn.values().cloned().collect()
     }
 }
 

@@ -1,0 +1,63 @@
+type,projects,months
+All projects,"$1,000 - $2,999",8.6
+All projects,"$10,000 - $99,999",18.8
+All projects,"$100,000 or more",28.2
+All projects,$250 - $999,5.8
+All projects,"$3,000 - $4,999",11.5
+All projects,"$5,000 - $9,999",13.6
+All projects,All Values,8.2
+All projects,Less than $250,4.1
+Amusement,"$1,000 - $2,999",9.2
+Amusement,"$10,000 - $99,999",18.2
+Amusement,"$100,000 or more",26.1
+Amusement,$250 - $999,5.9
+Amusement,"$3,000 - $4,999",10.9
+Amusement,"$5,000 - $9,999",13.2
+Amusement,All Values,8.1
+Amusement,Less than $250,4.4
+Commercial,"$1,000 - $2,999",8.3
+Commercial,"$10,000 - $99,999",17.6
+Commercial,"$100,000 or more",22.8
+Commercial,$250 - $999,5.8
+Commercial,"$3,000 - $4,999",11.8
+Commercial,"$5,000 - $9,999",13.6
+Commercial,All Values,7.7
+Commercial,Less than $250,4.2
+Education,"$1,000 - $2,999",7.5
+Education,"$10,000 - $99,999",20.5
+Education,"$100,000 or more",34.4
+Education,$250 - $999,5.0
+Education,"$3,000 - $4,999",9.5
+Education,"$5,000 - $9,999",15.2
+Education,All Values,10.6
+Education,Less than $250,2.2
+Health Care,"$1,000 - $2,999",8.9
+Health Care,"$10,000 - $99,999",19.6
+Health Care,"$100,000 or more",35.2
+Health Care,$250 - $999,5.7
+Health Care,"$3,000 - $4,999",12.3
+Health Care,"$5,000 - $9,999",14.3
+Health Care,All Values,9.8
+Health Care,Less than $250,3.9
+Manufacturing,"$1,000 - $2,999",8.5
+Manufacturing,"$10,000 - $99,999",18.4
+Manufacturing,"$100,000 or more",27.7
+Manufacturing,$250 - $999,6.3
+Manufacturing,"$3,000 - $4,999",11.1
+Manufacturing,"$5,000 - $9,999",12.2
+Manufacturing,All Values,11.3
+Manufacturing,Less than $250,2.5
+Office,"$1,000 - $2,999",8.6
+Office,"$10,000 - $99,999",18.0
+Office,"$100,000 or more",28.8
+Office,$250 - $999,5.9
+Office,"$3,000 - $4,999",11.3
+Office,"$5,000 - $9,999",12.3
+Office,All Values,7.0
+Office,Less than $250,4.2
+Religious,"$1,000 - $2,999",10.4
+Religious,"$10,000 - $99,999",21.3
+Religious,$250 - $999,6.7
+Religious,"$3,000 - $4,999",13.1
+Religious,"$5,000 - $9,999",15.4
+Religious,All Values,9.6

@@ -30,6 +30,9 @@ pub struct DueReasons {
     pub distributed: ReasonId,
     /// One twin's contracts moved from its agent to the household that stands alone for it.
     pub seated: ReasonId,
+    /// Units worn from one class of a chain to the next, or out of its last: what they lose of their cost is the
+    /// depreciation, an expense whichever class it leaves.
+    pub worn: ReasonId,
 }
 
 impl DueReasons {
@@ -48,6 +51,7 @@ impl DueReasons {
         let distributed =
             ReasonDecl { name: "estate distributed", order: 2, paid: Effect::Equity, received: Effect::Equity };
         let seated = ReasonDecl { name: "twin seated", order: 2, paid: Effect::Equity, received: Effect::Equity };
+        let worn = ReasonDecl { name: "worn", order: 2, paid: Effect::Expense, received: Effect::Expense };
         DueReasons {
             payment: reasons.declare(payment),
             principal: reasons.declare(principal),
@@ -57,6 +61,7 @@ impl DueReasons {
             written_off: reasons.declare(written_off),
             distributed: reasons.declare(distributed),
             seated: reasons.declare(seated),
+            worn: reasons.declare(worn),
         }
     }
 }

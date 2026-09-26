@@ -30,6 +30,7 @@ sys-soc = { path = "../../systems/sys-soc" }
 sys-lab = { path = "../../systems/sys-lab" }
 sys-frm = { path = "../../systems/sys-frm" }
 sys-tec = { path = "../../systems/sys-tec" }
+sys-cap = { path = "../../systems/sys-cap" }
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true

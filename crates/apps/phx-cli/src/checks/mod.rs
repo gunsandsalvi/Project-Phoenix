@@ -6,6 +6,7 @@ pub mod markets;
 pub mod observer;
 pub mod opening;
 pub mod outlooks;
+pub mod plant;
 pub mod population;
 pub mod saves;
 pub mod stage0;
@@ -149,5 +150,8 @@ pub const CHECKS: &[Check] = &[
     firms::LC_1_06,
     firms::LC_1_07,
     firms::LC_1_08,
+    plant::LC_1_10,
+    plant::LC_1_11,
+    plant::LC_1_12,
     firms::LC_1_45,
 ];

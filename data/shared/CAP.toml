@@ -1,0 +1,18 @@
+# How plant is carried and reviewed (spec CAP.13, REP.24). Each kind's life, rates, shape and lead time are derived
+# (data/shared/CAP_kinds.toml), and each group's stock is its profile's (data/profiles/<level>/CAP.toml).
+
+[[primitive]]
+id = "CAP.condition_classes"
+kind = "RESOLUTION"
+owner = "CAP"
+source = "assumed"
+source_ref = "The classes of age each kind of plant is held in, each spanning its service life over their number: four, so a class's efficiency and value are read at its mid-age within a quarter of a life, and a firm's plant takes six kinds times four holdings; set and reset, as every resolution is, by measuring the budget."
+value = 4
+
+[[primitive]]
+id = "CAP.review_days"
+kind = "PREFERENCE"
+owner = "CAP"
+source = "assumed"
+source_ref = "Days between an owner's reviews of its plant: its monthly close, at which firms book the depreciation of their fixed assets in their management accounts; a month taken as 30 days, so the wear realised at one review is one span of days."
+value = 30

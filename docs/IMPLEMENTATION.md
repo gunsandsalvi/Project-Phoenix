@@ -2451,7 +2451,7 @@ values, the instantiation of `data/<country>/` from its level's templates, and n
   (S5.05). Until then no distance crosses a border, and none is missing in its place: the one closure of a search is
   `phx-market`'s `XB.closed_borders` (S0.18).
 
-**Architecture**: §3.3 (`phx-geo`), §7.10; the owner's map decision (spec Appendix E 29) and the setup (E 43).
+**Architecture**: §3.3 (`phx-geo`), §7.8; the owner's map decision (spec Appendix E 29) and the setup (E 43).
 
 **Depends on**: S0.27.
 
@@ -3110,7 +3110,7 @@ and 6 by country) and 45 000 firms; 2.69 million dues fell due, 2.59 million set
   dates, each amount joining the holder's (party, bank) leg (S5.01); the payer pass and banks' nets per currency, a
   bank's conversion commitment drawn at 7a, and a leg in a currency with no stage 7 that day pending until a
   business day of both (S5.04); per-reason tallies, a per-category vector per payer at 7a added for the survivors at
-  7c (S5.05) (architecture §4.3, §4.4, §6.5, §7.4, §7.10).
+  7c (S5.05) (architecture §4.3, §4.4, §6.5, §7.4, §7.8).
 - TAX.2 *(part: the levy machinery)*; TAX.7 *(part: the levy machinery)*.
 
 **Architecture**: §4.3, §4.4, §6.5, §7.4.
@@ -4042,9 +4042,9 @@ saves read back to their closes' hashes and the thirteen injections each lit the
 - The extension points later steps use: hit records carrying the hit members' profile values to the systems a
   process declares interested (S4.03's claims), victims of a process that harms a second party (S4.03's harm to
   third parties), and a review occasion shared by several decision kinds, evaluated in their declared order
-  (S5.05's `migrate` before the housing review's `where_to_live`) (architecture §7.3, §7.10).
+  (S5.05's `migrate` before the housing review's `where_to_live`) (architecture §7.3, §7.8).
 
-**Architecture**: §7.3, §7.5 (occasions), §6.1 (3b, 3d, 3e), §7.10, §13.2.
+**Architecture**: §7.3, §7.5 (occasions), §6.1 (3b, 3d, 3e), §7.8, §13.2.
 
 **Depends on**: S0.21.
 
@@ -4119,7 +4119,7 @@ saves read back to their closes' hashes and the thirteen injections each lit the
   peril); each receives the hit as a message whose effects apply at 3e, while the process's owner stays the one writer
   of the outcome (a death, an illness).
 - **Victims**: a process whose hit harms a second party (harm to third parties, S4.03) names its victim by declared
-  draws: for damage to property, a holder drawn from the (zone, class) index of holdings (S0.13, architecture §7.10),
+  draws: for damage to property, a holder drawn from the (zone, class) index of holdings (S0.13, architecture §7.8),
   its units weighted by count; for injury, a member drawn from the zone's pieces (S0.23) weighted by their member
   counts, its profile values picked as any hit's. The victim's outcome is applied by the system that owns it
   (`sys-dem` for an illness), declared as the hit's reader.
@@ -4221,7 +4221,7 @@ alone.
   group aggregates (S2.09) (architecture §7.3, §7.4), and `combine` and `divide` of household parts (S6.02,
   architecture §7.5).
 
-**Architecture**: §7.3 (the key-clock reason), §7.4, §7.5, §7.6, §7.9, §7.10, §13.2.
+**Architecture**: §7.3 (the key-clock reason), §7.4, §7.5, §7.6, §7.9, §7.8, §13.2.
 
 **Depends on**: S0.22.
 
@@ -5010,7 +5010,7 @@ do without (F-068).
   the rest and passes what is left to the heirless destination, which is `HEIRLESS_DESTINATION`, a kind name in
   `phx-world`'s `consts.rs`, not a policy; it sells nothing and draws no heir (F-050), and dues in arrears are not in
   its waterfall (F-066).)*
-- **Catastrophes** (GEO.8): S0.13's events reach owners through the two-level draw of architecture §7.10:
+- **Catastrophes** (GEO.8): S0.13's events reach owners through the two-level draw of architecture §7.8:
   - units lost across holdings;
   - then each hit holder's dwelling-role attachments;
   - tenants reached through the landlord's tenancies;
@@ -5791,7 +5791,7 @@ S1.03. The build run of fe1fa2b1 is clean (peak 2 764 MiB, the world's hash unch
   good perishes is S1.05's, where stocks are held)*; TEC.4 *(part: each country's public ways per industry; a firm's
   own known ways and the industry it belongs to are S1.03's)*.
 - INVARIANT: TEC.9 *(part: every production names a registered way and uses what it states for what was started;
-  that its producer knew the way is checked from S1.04, when firms, which know ways from S1.03, first produce)*.
+  that its producer knew the way is checked from S1.15, when firms, which know ways from S1.03, first produce)*.
 - FORBID: TEC.12.
 - PRIMITIVE: TEC.13 *(part: the opening ways)*.
 - Research, imitation, learning and obsolescence (TEC.5–TEC.8, TEC.10, TEC.11) are S6.01.
@@ -5879,7 +5879,7 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 
 **Done when**
 - [x] Products and opening ways are declared with sources.
-- [x] TEC.9's family runs; LC-1-05 is registered, applies once firms produce (S1.04), and S1.12's Done when
+- [x] TEC.9's family runs; LC-1-05 is registered, applies once firms produce (S1.15), and S1.15's Done when
   requires it to pass.
 - [x] Two reviews are done.
 
@@ -5912,7 +5912,7 @@ ratchets are restated from it (peak 2 836 MiB).
   S1.15, when their reviews first run)*.
 - PROCESS: REP.21 *(part: reviews drawn at the attention rate, their cost in staff hours counted; completed at S1.15)*.
 - STATE: TEC.4 *(completes it: each firm's known ways, its industry's public set and its own, S1.02)*.
-- INVARIANT: TEC.9 *(carried: S1.02's family checks that a production's producer knew its way; completed at S1.04,
+- INVARIANT: TEC.9 *(carried: S1.02's family checks that a production's producer knew its way; completed at S1.15,
   when firms first produce)*.
 - INVARIANT: FRM.17; FRM.18 *(part: receivables and payables are the claims recognised to each party; completed at
   S2.02, when trade credit writes invoices)*.
@@ -5920,7 +5920,7 @@ ratchets are restated from it (peak 2 836 MiB).
   firms)*.
 - PRIMITIVE: FRM.22.
 - Each decision whose inputs a later step brings completes there, as the firm's rules and state here wait for them:
-  production, the way and entering or leaving a line (FRM.4, FRM.6, FRM.11) with the plant they read (S1.04); revenue
+  production, the way and entering or leaving a line (FRM.4, FRM.6, FRM.11) with the plant they read (S1.04, S1.15); revenue
   on delivery, the cost flow of stocks, buying inputs, the public-series outlooks and the surprise's wake (FRM.13,
   ACC.6, FRM.7's buying, VAL.23, REP.35) with the goods markets that deliver, stock and print (S1.05); unit cost and
   the size rank's report (FRM.14, REP.15) with the labour that completes a batch's cost and moves a firm's size
@@ -6182,88 +6182,156 @@ kink days, dues and wear.
 
 ### S1.04 — `sys-cap`: plant
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: CAP.1.
-- DECISION: CAP.3, CAP.4; FRM.8 *(completes it, with S1.03's part)*; FRM.4, FRM.6, FRM.11 *(from S1.03: production
-  reads the capacity its plant gives, the way the ways its plant supports, and entering a line the plant it invests
-  in; each waits, as the firm's other rules do, for the inputs, labour and prices later steps bring)*.
-- INVARIANT: TEC.9 *(completes it, from S1.02 and S1.03: S1.02's family checks every production's way against what
-  its producer knows, as firms first produce here)*.
-- MEASURE: CAP.10 *(its reads published through STA from S1.14)*.
-- PROCESS: CAP.5, CAP.6; REP.24 *(part: plant's wear and repair between condition classes)*.
-- INVARIANT: CAP.8, CAP.9.
-- FORBID: CAP.11, CAP.12.
-- PRIMITIVE: CAP.13.
+- INVARIANT: CAP.8 *(completes it: wear moves units only along a kind's classes, and every other move of plant is a
+  leg the units family already checks)*.
+- FORBID: CAP.12.
+- PROCESS: CAP.6 *(part: wear by age through condition classes, retirement at the end of service, and depreciation
+  charged once to income and once to the unit; failure and repair wait for a measured failure rate and the
+  maintenance decision, S1.15)*; REP.24 *(part: plant held by condition class, wear moving units between classes)*.
+- INVARIANT: CAP.9 *(part: the capacity a way's plant gives, the scarcest kind's, as a pure function; the check of
+  output against it runs once firms produce, S1.15)*.
+- DECISION: CAP.3, CAP.4 *(part: the rules of investment and of maintenance, each a pure function over what the
+  owner knows; the decisions run at S1.15, when firms hold the outlooks, prices and quotes they read)*.
+- PRIMITIVE: CAP.13 *(part: the kinds, lives, rates, efficiency shapes and lead times; the managements' hurdle and
+  horizon distributions are drawn with the managements at S1.15)*.
+- CAP.3, CAP.4, CAP.5 (purchase from a named producer, paid in stages), CAP.6, CAP.9, CAP.10, CAP.11 (no investment
+  rate) and CAP.13 complete at S1.15 with the decisions that make purchases, as do FRM.4, FRM.6, FRM.8 and FRM.11,
+  which read the capacity built here and the sales outlook, inputs, labour and financing rate S1.05, S1.08, S1.09
+  and S1.15 bring; and TEC.9, whose family first reads a production then.
 - Construction projects (CAP.2) are S2.05; infrastructure (CAP.7) is begun at S2.05 and completed at S5.02.
+- This step retires S1.03's single class of plant counted at its replacement value (`FRM.plant`,
+  `FRM.depreciation`), and F-049: the small firms hold plant.
 
-**Architecture**: §7.10, §4.4 (purchases).
+**Architecture**: §7.10 (plant), §4.4 (holdings and lots), §6.4 (the apply routine), §10.4a (the opening's plant).
 
 **Depends on**: S1.03.
 
 **Goal**: plant as real units:
-- bought from named producers of capital goods, paid in stages, in service after the lead time;
-- worn by use and age;
-- maintained, repaired, sold or scrapped by its owner's own comparison;
-- invested in only when the firm's own value of the project beats its marginal cost of money and hurdle, and it can
-  fund it.
+- of six kinds, each held by condition class, worn by age from class to class and retired at the end of its service,
+  its depreciation one schedule charged to income and to the unit;
+- held from the opening by every firm, large and small, by kind and class, the stock each kind's national accounts
+  show;
+- giving each way the capacity its scarcest kind allows;
+- with the rules by which owners will invest, maintain, repair, sell and scrap, which run once they hold what they
+  read.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-base/src/capital.rs` | `CapKind` (declared: capacity per unit, life, lead time, wear curve) |
-| `crates/interfaces/if-firm/src/plant.rs` | `CapUnit` for individuals, `(zone, kind, condition)` counts for cells |
-| `crates/systems/sys-cap/src/rules/invest.rs` | CAP.3 |
-| `src/rules/maintain.rs` | CAP.4 |
-| `src/hazards.rs` | equipment failure and accidents declared with `ActsOn::Holding(class)` (S0.10), screened by `phx-pop` at 3b |
-| `src/handlers/*.rs` | 3e failure outcomes; 4a completions; wear realised at visits and at its booked days; 5c investment and maintenance decisions on review and wake days |
-| `data/<country>/CAP.toml` | capital kinds, lives, lead times, wear curves (TECHNOLOGY); hurdle and horizon type sets (PREFERENCE) |
+| `tools/data/fetch_cap.py`, `tools/data/derive_cap.py` | the kinds' lives, rates and lead times from the BEA's fixed assets and depreciation tables, the M3 survey and the Census's construction times; each group's net stock of each kind per unit of GDP |
+| `data/shared/CAP_kinds.toml` | each kind's geometric depreciation rate, service life, efficiency shape, lead time and the product it is bought as (TECHNOLOGY), derived |
+| `data/shared/CAP.toml` | the condition classes (RESOLUTION) and the days between plant reviews (PREFERENCE) |
+| `data/profiles/<level>/CAP.toml` | `CAP.stock_per_gdp`: each kind's net stock per unit of GDP (ENDOWMENT), derived |
+| `data/world.toml` | a unit per kind of plant, a cent of it at world-average prices |
+| `crates/kernel/phx-ledger/src/{instruction,apply}.rs` | a transformation leg's units made carry their cost; a wear leg's source names its chain |
+| `crates/kernel/phx-ledger/src/chains.rs` | chains of class instruments, declared by their system, and the check of a wear instruction |
+| `crates/kernel/phx-core/src/wear.rs` | `WearDecl`: a system's wear, realised after a visit; the leaving and carried-cost arithmetic |
+| `crates/assembly/phx-world/src/wear.rs` | the kernel's realisation of the declared chains for each row a visit visits |
+| `crates/systems/sys-cap/src/{lib,kinds,opening,review}.rs` | the kinds read from the register; the class instruments and their chains; the opening plant by kind and class; the plant review visit |
+| `crates/systems/sys-cap/src/rules/{capacity,invest,maintain,wear}.rs` | CAP.9, CAP.3, CAP.4 and the classes' efficiency, value and flows, pure |
+| `crates/systems/sys-cap/src/families.rs` | `CAP.stock` (CAP.8) |
+| `crates/apps/phx-cli/src/checks/plant.rs` | LC-1-10, LC-1-11, LC-1-12 |
 
 **Design**
 
-- **Investment** (CAP.3), a lumpy decision on the firm's investment review days (quarterly by default):
-  - Value the project with VAL.8's `project_value`: the expected extra output sold over the plant's life at expected
+- **Kinds** *(sub-step a)*: the six kinds of TEC.capital's rows — structures, transport equipment, ICT equipment,
+  other machinery, cultivated biological resources, intellectual property — each declared (CAP.13) with:
+  - its mean service life L (the BEA's service lives, each asset weighted by its investment over 2015–2024);
+  - its geometric depreciation rate δ, the BEA's current-cost depreciation over its net stock, which covers the
+    kind's assets that have no stated life (computers, research and development, originals);
+  - its efficiency shape β, the hyperbolic age-efficiency's (0.75 for structures, 0.5 for equipment, software and
+    cultivated assets);
+  - the product it is bought as (construction, capital goods, crops and livestock, business services);
+  - its lead time where one is measured: the Census's months from start to completion for structures, the M3
+    survey's months of unfilled orders for equipment; none for intellectual property and cultivated assets (F-101).
+
+  A unit of each kind is a cent of it at world-average prices, as TEC.capital counts plant, so a way's plant per
+  unit of output reads straight against a holding. Cultivated assets' life and rate are assumed (F-101).
+- **Condition classes** *(sub-steps a, c)*: each kind is held in C classes of age (`CAP.condition_classes`,
+  RESOLUTION), each spanning L ÷ C years, as an instrument per (country, kind, class), declared to the ledger as the
+  kind's chain: plant of one class is alike, so an agent's twins hold it pooled and nothing is kept per unit
+  (REP.24). A class's **efficiency** is the hyperbolic (L − a) ÷ (L − β·a) at its mid-age a; its **value**, a share
+  of what the unit cost new, is e^(−δ·a). Units leave a class at the rate C ÷ L a year, so a unit's life is
+  Erlang-distributed about L, as a cohort's lives spread about their mean.
+- **Wear** *(sub-step b)*: `sys-cap` declares a `WearDecl` for the plant review, each kind's leaving rate and each
+  class's value. The review is a visit on its own schedule of calendar days (`CAP.review_days`); after its handler has
+  run on its rows, the kernel realises each chain for each row over the days since its last review (on its first,
+  since day zero): from each class, the share 1 − e^(−(C ÷ L)·t) of its units that leaves over those t years (half to
+  even, whole for each twin) moves to the next
+  class, carrying their lots' first-in cost times the ratio of the two classes' values; the last class's leavers
+  retire. One instruction per row, of transformation legs whose units made carry the cost they bring, under the
+  reason `worn` (paid and received both an expense): the cost the units lose is the depreciation, charged once to
+  income through the effect and once to the unit through its lot. The apply routine refuses a wear instruction that
+  leaves a chain or makes units. A catastrophe's share of a unit is destroyed as S0.25e built. The review decides
+  nothing yet: maintenance and scrapping (CAP.4) read prices of repair and resale that S1.05 brings and firms act on
+  from S1.15.
+- **The opening plant** *(sub-step c)*: each country's net stock of each kind is its GDP times the group's net stock
+  per unit of GDP (`CAP.stock_per_gdp`: the developed group's is the median over its reporting economies of the
+  national accounts' net stock of each asset over GDP; the developing and emerging groups', which report none, are
+  the developed group's, F-101), apportioned over every firm, large and small, by its employees times its industry's
+  plant of that kind per hour worked (TEC.capital over TEC.labour for the industry's products), an agent's in whole
+  shares for each twin. Each firm's plant of a kind is spread over the classes as a steady stock growing at the
+  country's growth rate g would be (each class ρ = (C ÷ L) ÷ (g + C ÷ L) times the one before), its units priced so
+  the classes' values sum to the stock's value, one currency unit a unit of plant new; its lot costs what it is
+  worth. The large firms' structures are the drawn sizes housing reads for its landlords. This retires `FRM.plant`,
+  `FRM.depreciation` and the replacement-value unit, and F-049.
+- **Capacity** (CAP.9): a way's capacity a year from a holder's plant is the least over the kinds the way needs of
+  Σ_classes units × efficiency ÷ the way's plant of that kind per unit of output a year — the scarcest kind's, as
+  CAP.1 states; with labour and inputs it limits production (FRM.4), a real limit, never a bound: a `DeclaredLimit`
+  from the physical units held. The function is built and tested here; production reads it from S1.15.
+- **Investment** (CAP.3), a lumpy decision on the firm's investment review days, whose rule is built here and which
+  runs from S1.15:
+  - value the project with VAL.8's `project_value`: the expected extra output sold over the plant's life at expected
     prices, less running costs, discounted at the firm's marginal cost of money now: its quoted borrowing rate for new
     debt (its bank's quote, S1.09) and its owners' required return, weighted by the mix of debt and own money its
-    management's leverage tolerance would fund the project with (CAP.3 names both).
-  - Invest when value − cost ≥ hurdle × cost and the firm can fund it: cash beyond its buffer, plus an accepted loan
-    offer.
-  - Utilisation above its target raises expected extra sales; the width of its demand outlook raises the option value
-    of waiting, which is a hurdle term (Dixit and Pindyck, 1994).
-- **Purchase** (CAP.5): an order to a named producer of the capital good (a bilateral contract, MKT.7), paid in stages
-  on the contract's schedule and delivered after the lead time. It is a commitment until delivery (REG.10) and in
-  service when complete.
-- **Wear** (CAP.6): condition classes move by use and age on the declared curve. The next day a unit class reaches
-  its next condition is computed from the curve and booked on the agenda (the wear reason), so wear is realised only
-  then and at visits. Depreciation is one schedule, charged both to income (ACC) and to the unit. Failures and
-  accidents are hazards on held units (`ActsOn::Holding`, stream `CAP.failure`), screened at 3b by `phx-pop`, whose
-  outcome `sys-cap` applies at 3e by moving units to a failed class; a catastrophe damages units (S0.25's two-level
-  draw).
-- **Maintain, repair, sell or scrap** (CAP.4): compare the value of each option with keeping as is. Selling goes
-  through a posted or bilateral market; scrapping retires the unit (CAP.8).
-- **Capacity** (CAP.9): a firm's capacity per way is the least over its plant kinds, labour and inputs of what each
-  allows. This is the scarcest-input rule of CAP.1, a real limit: `DeclaredLimit::from_physical` over the units the
-  firm holds (S0.09's physical token, built by `phx-ledger`), never a bound.
+    management's leverage tolerance would fund the project with (CAP.3 names both);
+  - invest when value ≥ cost × (1 + hurdle) × the value of waiting, and the firm can fund it: cash beyond its buffer,
+    plus an accepted loan offer;
+  - utilisation above its target raises expected extra sales; the width of its demand outlook raises the value of
+    waiting, the multiple of cost a project must beat before investing now pays (Dixit and Pindyck, 1994).
+- **Purchase** (CAP.5), from S1.15: an order to a named producer of the kind's product (a bilateral contract, MKT.7),
+  paid in stages on the contract's schedule and delivered after the lead time into the kind's newest class. It is a
+  commitment until delivery (REG.10) and in service when complete.
+- **Maintain, repair, sell or scrap** (CAP.4), a rule here and a decision at the plant review from S1.15: compare the
+  value of each option with keeping as is. Selling goes through a posted or bilateral market; scrapping retires the
+  unit. Failures and accidents, hazards on held units (`ActsOn::Holding`, stream `CAP.failure`) screened at 3b, wait
+  for a measured rate (F-101).
+- **Families, counters and checks** *(sub-step d)*: `CAP.stock` (CAP.8): each wear leg's digest carries its chain and
+  class, and per holder and chain each class receives what the class before it gave, the newest nothing and no class
+  beyond the last; with the units family, which checks every position against its legs, plant next day is plant
+  today plus what came in less what left, each by its leg. LC-1-10 reads it clean and wear realised; LC-1-11 (CAP.9)
+  and LC-1-12 (purchases from named producers, CAP.10's reads) are registered, not applicable before firms produce and
+  invest (S1.15). Counters, the heaviest day's: `phx_cap.wear_realisations` (rows worn), `phx_cap.retired` (units
+  retired), `phx_cap.depreciation` (the cost charged).
 
 **Unit tests**
+- `class_efficiency_and_value_fall_with_age`.
+- `steady_classes_sum_to_the_stock_value`.
+- `wear_moves_whole_twins_and_carries_value`.
+- `capacity_is_the_scarcest_kind`.
 - `invest_only_above_hurdle_and_funded`.
 - `waiting_value_rises_with_uncertainty`.
-- `wear_moves_condition_classes`.
-- `capacity_scarcest_input`.
+- `maintain_when_worth_more_than_keeping`.
+- `wear_along_a_chain_makes_and_loses_nothing` (the family's gaps).
+- In `phx-ledger`: `a_transformation_carries_the_cost_of_units_made`, `wear_moves_units_along_its_chain_only`.
 
 **Live checks**
-- `LC-1-10`: CAP.8 — per owner and kind, capital next day equals today plus completions minus retirements plus
-  transfers.
+- `LC-1-10`: CAP.8 — per owner and kind, plant next day equals today plus completions minus retirements plus
+  transfers: the family clean, and plant worn once the run has lasted a review period.
 - `LC-1-11`: CAP.9 — no output exceeds the capacity that made it.
 - `LC-1-12`: every investment is a purchase from a named producer, with a commitment until delivery; CAP.10's reads
   (investment's share and volatility, its response to borrowing costs and utilisation, the capital stock's age) are
   published.
 
-**Budget**: investment decisions are lumpy occasions (architecture §13.2); plant is counted per (zone, kind,
-condition) for cells; wear realisations are in "Physical flows realised". Counters, ratcheted: `phx_cap.investments`,
-`phx_cap.failures`, `phx_cap.wear_realisations`.
+**Budget**: plant is held per (country, kind, class) instrument, pooled for agents: six kinds × C classes of
+holdings a firm (§13.1); wear realisations are "Physical flows realised" (§13.2), one instruction per row reviewed,
+a thirtieth of the firms a day. Counters, ratcheted: `phx_cap.wear_realisations`, `phx_cap.retired`,
+`phx_cap.depreciation`; from S1.15 `phx_cap.investments` and `phx_cap.failures`.
 
 **Guards**: none new.
 
@@ -6274,8 +6342,9 @@ condition) for cells; wear realisations are in "Physical flows realised". Counte
 - depreciation charged twice.
 
 **Done when**
-- [ ] Plant is bought, worn, maintained and scrapped by owners' comparisons.
-- [ ] LC-1-10 to LC-1-12 pass.
+- [ ] Plant of six kinds is held by every firm by condition class from the opening, worn from class to class, retired
+  and depreciated once; capacity per way is the scarcest kind's; the investment and maintenance rules are built.
+- [ ] LC-1-10 passes; LC-1-11 and LC-1-12 are registered, and S1.15's Done when requires them to pass.
 - [ ] Two reviews are done.
 
 ---
@@ -6477,7 +6546,7 @@ index sorted by distance), never the set a buyer chooses from (N8.7). Counters, 
 - PRIMITIVE: FRT.12; GEO.18.
 - Freight across borders is S5.05. This step retires S1.06's placeholder naming FRT.
 
-**Architecture**: §7.10, §8.
+**Architecture**: §7.8, §8.
 
 **Depends on**: S1.06.
 
@@ -7295,6 +7364,16 @@ decisions)*: every Stage 1 system's opening contribution.
 - DECISION: FRM.5, REP.38 *(complete them, from S1.03: firms review and post prices, at the attention they set, from
   the state drawn here)*.
 - PROCESS: REP.21 *(completes it, from S1.03: the reviews run at the attention rate and their hours are counted)*.
+- DECISION: FRM.4, FRM.6, FRM.8, FRM.11 *(complete them, from S1.03 and S1.04: firms produce within the capacity
+  their plant gives, by the ways it supports, and enter and leave lines by investing)*; CAP.3, CAP.4 *(complete them,
+  from S1.04: the rules built there run at the firms' investment and plant reviews)*.
+- PROCESS: CAP.5 *(purchases from named producers, paid in stages, delivered into the newest class)*; CAP.6
+  *(completes it, from S1.04: failures and repairs)*.
+- INVARIANT: CAP.9, TEC.9 *(complete them, from S1.04 and S1.02: every production is checked against its capacity and
+  its way)*.
+- MEASURE: CAP.10. FORBID: CAP.11. PRIMITIVE: CAP.13 *(completes it: the managements' hurdle and horizon
+  distributions)*.
+- Its Done when requires LC-1-05, LC-1-11 and LC-1-12 to pass.
 
 **Architecture**: §10.
 
@@ -8246,7 +8325,7 @@ receivables by name; references resolve to the estate.
   enforcement wait) and S2.04's naming HSG (estates' dwellings wait).
 
 **Architecture**: §3.1 (decision-point homes), §4.2 (pins), §4.4 (the composite sale), §7.3, §7.4, §7.5, §7.9
-(rent points), §7.10, §9.1, §13.
+(rent points), §7.8, §9.1, §13.
 
 **Depends on**: S2.04.
 
@@ -12073,7 +12152,7 @@ each meeting in its own market, each with participants holding their own reasons
 - This step retires S0.25's placeholder deferring claims to insurers to INS.
 
 **Architecture**: §4.2 (claims as messages), §4.4 (the algebra's contingent legs, the split at a kink), §4.5, §6.1
-(2b, 3e, 5c, 6a, 7, 9a, 9b, 9c, 9e, 2e), §6.5 (pending legs, the resolution's pairing), §7.3, §7.5, §7.10, §9.1, §9.2.
+(2b, 3e, 5c, 6a, 7, 9a, 9b, 9c, 9e, 2e), §6.5 (pending legs, the resolution's pairing), §7.3, §7.5, §7.8, §9.1, §9.2.
 
 **Depends on**: S4.02.
 
@@ -12201,7 +12280,7 @@ each meeting in its own market, each with participants holding their own reasons
     one hazard process per table, acting on every declared class the table holds, so the household table uses 14 of
     its 16 agenda reasons and the firm table about 10 (S0.08);
   - a hit names its victim by S0.22's declared draws: for damage to property, a holder drawn from the (zone, class)
-    index of the harm's zone (architecture §7.10), its units damaged by the declared severity; for injury, a member
+    index of the harm's zone (architecture §7.8), its units damaged by the declared severity; for injury, a member
     drawn from the zone's pieces weighted by their member counts, whose illness outcome `sys-dem` applies as the
     hit's declared reader (POP.4), so the illness has one writer; streams `INS.third_party_harm` and
     `INS.victim_pairing`;
@@ -12214,7 +12293,7 @@ each meeting in its own market, each with participants holding their own reasons
     profile group with health and age, and in the dwelling role's group with zone and class (REP.32), so a hazard's
     pick of hit members carries their cover;
   - **opened at 3e**: every hit on a covered subject — a death, an illness onset, damage or an accident to a
-    dwelling, plant, vehicle or cargo, and a catastrophe's losses at owners (architecture §7.10) — reaches `sys-ins`
+    dwelling, plant, vehicle or cargo, and a catastrophe's losses at owners (architecture §7.8) — reaches `sys-ins`
     as a hit record (S0.22) carrying the hit members' attachments, drawn jointly within their role group by the
     hazard's own pick (REP.32), and applies at 3e. `sys-ins` opens one `Claim` per (policy line, holder, event) with
     the count and the loss measure (units or condition steps lost, the state entered). The paying insurers are drawn
@@ -13280,7 +13359,7 @@ stands in for a border (S0.13 declares none across a border until S5.05 adds cro
 - **Taxes** are levies (architecture §4.3) on flows that exist, each computed per member, rounded per member and
   multiplied by the count; the levies of one flow are evaluated in one pass with one search of their fused kinks. A
   collector's liability is a dated accruing row in its due-day run (S0.17). Property tax is a holding levy driven from
-  `phx-geo`'s (zone, class) index of holdings on the law's dates (S0.17, architecture §7.10), its amount joining the
+  `phx-geo`'s (zone, class) index of holdings on the law's dates (S0.17, architecture §7.8), its amount joining the
   holder's existing leg, with no row. Realised gains and capital income feed each adult role's year-to-date positions
   (architecture §7.8). Returns are day-local records; what they leave is a payment, a refund, an instalment row or an
   arrear. A crossing is not a flow, so duty and import tax are a demand customs issues (S5.05), not a levy.
@@ -13433,7 +13512,7 @@ after the remedies above; an election's eve in the largest country adds about 60
 
 **Architecture**: §3.4 (`if-state`), §4.3 (levies, collectors' liabilities, per-member bases, one kink search per
 flow, the holding levy), §4.5 (accruing rows, due-day runs), §4.6, §6.1 (2d, 2e, 5c, 7a, 9a, 9d), §6.5, §7.4
-(pooled flows and kinks), §7.8 (year-to-date positions), §7.10 (the holdings index), §9.1.
+(pooled flows and kinks), §7.8 (year-to-date positions), §7.8 (the holdings index), §9.1.
 
 **Depends on**: S4.07.
 
@@ -13501,7 +13580,7 @@ member and never on an aggregate:
   - **capital income** — interest, dividends, rents received — feeds the roles' taxable-income positions by the
     same rule, at the settlement of the flow that pays it;
   - **property tax**: a holding levy (S0.17's extension point). On the law's instalment dates `phx-geo`'s (zone,
-    class) index of holdings (architecture §7.10) lists the holders of each taxed dwelling and land class, and each
+    class) index of holdings (architecture §7.8) lists the holders of each taxed dwelling and land class, and each
     holder's amount — per member `rate × assessed value per unit × units per member`, rounded per member, times the
     count — joins its existing (party, bank) leg in that day's payer pass, or is a leg of its own. The assessed value
     per (zone, class) is the assessor's valuation — a named valuer, `sys-tax`'s, valuing from the period's sales
@@ -14392,7 +14471,7 @@ or a labelled tax base; no decision view has a `Reported` field (compile-level).
 
 **Architecture**: §3.4 (`if-open`, `if-state`), §4.2 (customs' demand), §4.3 (a crossing is not a levy's flow),
 §4.4, §4.5, §6.1 (3c, 4a, 4b, 5a, 5b, 5c, 6a, 7a, 7e, 8d, 8e, 9d), §6.5 (per-reason tallies; the capital rule at
-conversions), §7.3 (the shared review occasion), §7.9 (reach), §7.10, §9.1, §10.
+conversions), §7.3 (the shared review occasion), §7.9 (reach), §7.8, §9.1, §10.
 
 **Depends on**: S5.04.
 
@@ -16328,7 +16407,7 @@ the final build within the budget on the phone.
 | F-046 | S0.25d | build, 2026-09-25 | Persons reaching the state pension age during the run do not join the state pension line: only the opening's pensioners are paid, so the pensions in payment dwindle as they die | a person's joining is a once-only change that the cells' hazards cannot keep once-only: a person's age is a profile value that does not change when it joins, so a hazard over it would hit, and draw coverage for, the same person again; the person's claim is the state that records it, and that is SOC.3's claim decision (S1.11) | the claim at the pension age (S1.11's `sys-soc`), which gives the person the state its hazard reads, with members joining a line at 3e, the ledger's counterpart to `members_leave` | open for S1.11 |
 | F-047 | S0.25d | build, 2026-09-25 | The opening's large firms outgrew their arenas (`region elements`, 4 M and then 16 M words for a chunk of 4 096): every firm is party to every employment and tenancy line of its country, one per wage or rent point, and at 5% points a country has some 190 of each; the rows of individuals then far exceed the architecture's 2 M | the counterparty side of a line of many holders is apportioned over every eligible firm by its size, so a large firm takes a row on every point; and the arenas were never compacted | points a quarter apart (`LAB.wage_point_ratio`, `HSG.rent_point_ratio`, placeholders) and compaction at quiet moments; the points and the rows they cost measured on the phone (S0.26) and refined by the budget (N8.5); landlords drawn from the dwelling stock (F-043) and wage offers by firm (LAB) will set each firm's points | open |
 | F-048 | S0.25d | build, 2026-09-25 | The firms' ranks are not read: the kernel ranks a kind by a position, and a small firm's headcount is in its key (FRM.23) while its positions (cash, debt, inventory, output) arrive with S1.03; the large firms are rows of the kernel's firm kind table, not individuals of the small firms' table, so no rank read spans both | a rank measure read from the key, and the large firms as individuals of the firms' cell table, are neither built | a rank read over the large firms and the small firms together, LC-0-48 on firms with it, once labour moves a firm's size (S1.08: FRM.14's batch cost and REP.15's size rank); S1.03 gave the small firms their positions, none of which yet moves; at the opening every firm above the rank's edge is a large firm by construction | open for S1.08 |
-| F-049 | S0.25d | build, 2026-09-25 | The small firms hold no plant: the country's capital is apportioned over every firm by its employees, and the small firms' share is held by no one, so the opening's capital falls short of the steady path's by that share | a cell's holding of a physical class at the opening (a pooled holding counting its firms) is not drawn, and FRM.23's plant units are a key attribute that waits for S1.03 | the small firms' plant as their agents' holdings, keyed by plant units, with the plant's kinds and purchases (S1.04) | open for S1.04 |
+| F-049 | S0.25d | build, 2026-09-25 | The small firms hold no plant: the country's capital is apportioned over every firm by its employees, and the small firms' share is held by no one, so the opening's capital falls short of the steady path's by that share | a cell's holding of a physical class at the opening (a pooled holding counting its firms) is not drawn, and FRM.23's plant units are a key attribute that waits for S1.03 | the small firms' plant as their agents' holdings, keyed by plant units, with the plant's kinds and purchases (S1.04) | closed: S1.04 apportions each kind's stock over every firm, large and small, an agent's in whole shares for each twin, held by condition class |
 | F-050 | S0.25e | build, 2026-09-25 | No estate passes anything to an heir: every remainder goes to the country's treasury, and an estate settles on the next business day by one kernel rule (pay, write off, pass on), where the architecture's estates live about 25 days and sell what their debts need. What an estate leaves goes to the party of the kind `HEIRLESS_DESTINATION` names, `"treasury"`, a kind name in engine code (`phx-world`'s `consts.rs`, read by `estates.rs`), where POP.16 makes inheritance law a POLICY | kinship lines are not drawn at the opening (REP.23); there is no `sys-est` crate — estates are the ledger's `phx_ledger::estate`, run by `phx-world/src/estates.rs` — and no system's handler writes instructions yet, so no decision says what to sell, when or to whom; no per-country inheritance law names the destination | the kinship lines drawn with the households and heirs taken from their counts by the inheritance law (POP.9), and `sys-est`'s own handlers for sales and timing, when systems' handlers write instructions (Stage 1); in the same step, a per-country POLICY primitive naming the heirless destination retires `HEIRLESS_DESTINATION` | open for S1.13 |
 | F-051 | S0.25e | build, 2026-09-25 | Households that bank nowhere hold no money at all: their rents fail from the first due, and the wages and pensions paid them fail too, each as `NoMoney`, so they fall into arrears from the opening. The build run b1a62f6 onward stopped on it (REP.23, the unbanked tenant taken for its own top issuer). As built, a claimant with no money on a cleared line records its due as a failed due against the top issuer, the central bank, which owes it (a payable) while the payer's money has reached it (architecture §6.5, "A party with no money"); the claimant's receivable stands until it can be paid | jobs, tenancies and pensions are drawn for every household, banked or not, as they are in the countries the data describes, while banknotes are no one's holding until the households' liquidity choice (HH.7) | the households' banknotes, at the opening and by the liquidity choice, with dues and wages paid in cash where a party holds no account (S1.09's banknotes, S1.12's HH.7) | open for S1.09 |
 | F-052 | S0.26c | build, 2026-09-25 | A tracer never dies, ages or falls ill with its cell's members: a death or a disability onset reaches a count of a cell's members drawn at 3e, and a tracer among them is not drawn, so a tracer outlives its cell's deaths and keeps its opening values of the groups a person's event changes | the cells' per-member outcomes draw counts, not members, and the observer sees only the splits the day logs, not which members an outcome took | the day's per-member outcomes logged for traced cells as splits are (the members an outcome reached, by the values of their groups), each tracer following them with the observer's draws as it follows a split, and ending with its death | retired with tracers inside cells; every person is an agent's own, which S0.28 deleted (owner, §12, 2026-09-25) |
@@ -16379,7 +16458,8 @@ the final build within the budget on the phone.
 | F-097 | S1.03 | review, 2026-09-26 | An estate waiting to sell units has no liquidation stay: its contracts keep falling due and failing against it while it waits | the insolvency law's stay on an estate's dues, and its liquidation horizon, are not built; nothing sells its units before S1.04 and S1.05. Each waiting estate is examined again every business day: 4 967 on the build run of c328c49f, about 0.13 s a day more on the build machine | the stay and horizon of FRM.15's law (S2.03), with the estates' sales (S1.04, S1.05); an estate woken only when what it holds or is owed changes, if the waiting estates' cost is read as material | open for S2.03 |
 | F-098 | S1.03 | review, 2026-09-26 | Visits run serially: each handler's rows due at 5b and 5c are visited on one thread, table by table | the kernel's visits were built without sharding (as F-056 once was for 3b and 3e), and at S1.03 only the attention's visits run, at 124 891 on the busiest day | shard the visits over the pool by slot range when the firms' reviews run (S1.15) if the day misses its budget there | open for S1.15 |
 | F-099 | S1.03 | review, 2026-09-26 | A handler's read or write at a visit finds its column by the fact's name, a linear search of the kind's columns on every read | the fact store's interface is by name, as the handlers declare | resolve each handler's declared facts to columns once, when the visit is bound, if the visits' cost is read as material (S1.15) | open for S1.15 |
-| F-100 | S1.03 | build, 2026-09-26 | The build run's memory budget gained the firms' line (`FIRMS_BYTES`, architecture §13.1's 125 MB) when its peak rose past the sum of the others; the rise is not measured part by part, so the line is taken from the architecture, not read | the run reports only the process's peak, not each table's resident bytes | the build run reports each part's resident bytes (tables, arenas, agenda, lines) and each budget line is checked against its own part, when plant joins the firms' record (S1.04) | open for S1.04 |
+| F-100 | S1.03 | build, 2026-09-26 | The build run's memory budget gained the firms' line (`FIRMS_BYTES`, architecture §13.1's 125 MB) when its peak rose past the sum of the others; the rise is not measured part by part, so the line is taken from the architecture, not read | the run reports only the process's peak, not each table's resident bytes | the build run reports each part's resident bytes (tables, arenas, agenda, lines) and each budget line is checked against its own part; plant joined the firms' holdings, not their record, at S1.04, so the report waits for the Stage 1 opening's full firms (S1.15) | open for S1.15 |
+| F-101 | S1.04 | build, 2026-09-26 | Three of the plant's primitives are assumed, not measured: the developing and emerging groups' net stock of each kind per unit of GDP (the developed group's, the only one reporting), cultivated assets' service life and depreciation rate, and the lead times of intellectual property and cultivated assets; and no rate of plant failure is declared | the national accounts of the developing and emerging economies publish no net stock by asset, the BEA's tables hold no cultivated assets, and no source found measures failures of plant by kind | each assumed value measured where a source is found (the Penn World Table's capital by asset for the developing groups; the ABS's or FAO's livestock and orchard lives); failures of plant declared when a rate is measured, with the maintenance decision (S1.15) | open for S1.15 |
 
 ---
 
@@ -16543,22 +16623,22 @@ and are not mapped.
 | HH | S6.03 | 7, 16, 17 |
 | TEC | S1.02 | 2, 3, 12 |
 | TEC | S1.03 | 4 |
-| TEC | S1.04 | 9 |
 | TEC | S1.05 | 1 |
+| TEC | S1.15 | 9 |
 | TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14, 15 |
 | FRM | S1.03 | 17, 20, 22 |
-| FRM | S1.04 | 4, 6, 8, 11 |
 | FRM | S1.05 | 13 |
 | FRM | S1.08 | 7, 14 |
 | FRM | S1.12 | 21 |
-| FRM | S1.15 | 1, 2, 5 |
+| FRM | S1.15 | 1, 2, 4, 5, 6, 8, 11 |
 | FRM | S2.02 | 18 |
 | FRM | S2.03 | 15, 19 |
 | FRM | S3.05 | 3, 9, 10 |
 | FRM | S3.07 | 16 |
 | FRM | S4.06 | 12 |
 | FRM | S6.01 | 23 |
-| CAP | S1.04 | 1, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13 |
+| CAP | S1.04 | 1, 8, 12 |
+| CAP | S1.15 | 3, 4, 5, 6, 9, 10, 11, 13 |
 | CAP | S2.05 | 2 |
 | CAP | S5.02 | 7 |
 | GDS | S1.05 | 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 |

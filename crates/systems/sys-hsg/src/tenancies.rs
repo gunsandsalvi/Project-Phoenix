@@ -51,8 +51,8 @@ pub const TENANCY: LineKindDecl = LineKindDecl {
     transfer_requesters: &["HSG"],
 };
 
-/// The stratum of the firms' plant, whose owners stand in for the landlords.
-const PLANT: &str = "FRM.plant";
+/// The large firms' structures, whose owners stand in for the landlords.
+const PLANT: &str = "CAP.structures";
 
 /// The tenancy line's kind in the books.
 #[derive(Debug)]

@@ -236,6 +236,7 @@ pub phx_ledger::apply::DisposedRec::instrument: phx_id::ids::InstrumentId
 pub phx_ledger::apply::DisposedRec::party: phx_id::ids::PartyId
 pub phx_ledger::apply::DisposedRec::units: i64
 pub struct phx_ledger::apply::Ledger<B: phx_store::backing::Backing>
+pub phx_ledger::apply::Ledger::chains: phx_ledger::chains::Chains
 pub phx_ledger::apply::Ledger::commitments: phx_ledger::commitment::Commitments
 pub phx_ledger::apply::Ledger::covers: phx_ledger::covered::Covers
 pub phx_ledger::apply::Ledger::events: phx_ledger::events::InstrumentEvents
@@ -375,6 +376,7 @@ pub const phx_ledger::audit::UNITS: phx_core::family::FamilyDecl
 pub fn phx_ledger::audit::contracts<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::LineId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub fn phx_ledger::audit::families() -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>
 pub fn phx_ledger::audit::inject_production(&mut dyn phx_core::family::InjectTarget, u32) -> core::result::Result<(), alloc::string::String>
+pub fn phx_ledger::audit::inject_wear(&mut dyn phx_core::family::InjectTarget, u32) -> core::result::Result<(), alloc::string::String>
 pub fn phx_ledger::audit::money_lines<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, (&[&dyn phx_ledger::holder::HolderArenas], &[&dyn phx_ledger::holder::HolderTable]), &[phx_id::ids::LineId]) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::audit::Gap)>
 pub fn phx_ledger::audit::ownership<B: phx_store::backing::Backing>(&phx_ledger::instrument::Instruments<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::InstrumentId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub mod phx_ledger::books
@@ -460,6 +462,23 @@ pub fn phx_ledger::books::Parties<B>::arenas(&mut self, u16) -> &mut dyn phx_led
 pub fn phx_ledger::books::Parties<B>::locate(&self, phx_id::ids::PartyId) -> phx_ledger::apply::Located
 pub fn phx_ledger::books::of<'a>(&'a mut phx_core::contribution::Opening<'_>) -> &'a mut phx_ledger::books::Books
 pub fn phx_ledger::books::split<'a>(&'a mut phx_core::contribution::Opening<'_>) -> (&'a mut phx_ledger::books::Books, &'a mut phx_core::contribution::GenReport)
+pub mod phx_ledger::chains
+pub struct phx_ledger::chains::Chain
+pub phx_ledger::chains::Chain::classes: alloc::vec::Vec<phx_id::ids::InstrumentId>
+pub phx_ledger::chains::Chain::tag: u32
+impl phx_store::save::Saved for phx_ledger::chains::Chain where u32: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::InstrumentId>: phx_store::save::Saved
+pub fn phx_ledger::chains::Chain::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::chains::Chain::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_ledger::chains::Chains
+impl phx_ledger::chains::Chains
+pub fn phx_ledger::chains::Chains::check(&self, &[phx_ledger::instruction::LegRec])
+pub fn phx_ledger::chains::Chains::declare(&mut self, u32, alloc::vec::Vec<phx_id::ids::InstrumentId>) -> u32
+pub fn phx_ledger::chains::Chains::get(&self, u32) -> core::option::Option<&phx_ledger::chains::Chain>
+pub fn phx_ledger::chains::Chains::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_ledger::chains::Chain>
+pub fn phx_ledger::chains::Chains::of(&self, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<(u32, usize)>
+impl phx_store::save::Saved for phx_ledger::chains::Chains where alloc::vec::Vec<phx_ledger::chains::Chain>: phx_store::save::Saved
+pub fn phx_ledger::chains::Chains::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::chains::Chains::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::check
 pub enum phx_ledger::check::FailCause
 pub phx_ledger::check::FailCause::BankShort
@@ -605,6 +624,7 @@ pub phx_ledger::dues::DueReasons::payment: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::principal: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::seated: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::succeeded: phx_ledger::instruction::ReasonId
+pub phx_ledger::dues::DueReasons::worn: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::written_off: phx_ledger::instruction::ReasonId
 impl phx_ledger::dues::DueReasons
 pub fn phx_ledger::dues::DueReasons::declare(&mut phx_ledger::instruction::Reasons) -> phx_ledger::dues::DueReasons
@@ -748,6 +768,7 @@ impl phx_store::pod::__seal::Sealed for phx_ledger::holding::Lot
 pub const phx_ledger::holding::PLEDGED: u32
 pub fn phx_ledger::holding::bases(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<(phx_id::ids::InstrumentId, i64)>
 pub fn phx_ledger::holding::basis(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<i64>
+pub fn phx_ledger::holding::first_in_cost(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId, i64) -> phx_num::missing::Missing<i64>
 pub fn phx_ledger::holding::holding(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<phx_ledger::holding::IndividualHolding>
 pub fn phx_ledger::holding::lots(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> alloc::vec::Vec<phx_ledger::holding::Lot>
 pub fn phx_ledger::holding::mark_pledged(&mut dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId, bool)
@@ -778,7 +799,9 @@ pub phx_ledger::instruction::LegKind::OpeningWrite
 pub phx_ledger::instruction::LegKind::OpeningWrite::cost: i64
 pub phx_ledger::instruction::LegKind::OpeningWrite::identity: u64
 pub phx_ledger::instruction::LegKind::Row(phx_ledger::instruction::RowOp)
-pub phx_ledger::instruction::LegKind::Transformation(phx_ledger::instruction::Source)
+pub phx_ledger::instruction::LegKind::Transformation
+pub phx_ledger::instruction::LegKind::Transformation::cost: i64
+pub phx_ledger::instruction::LegKind::Transformation::source: phx_ledger::instruction::Source
 pub phx_ledger::instruction::LegKind::Units
 pub phx_ledger::instruction::LegKind::Units::cost: i64
 pub enum phx_ledger::instruction::RowOp
@@ -792,6 +815,7 @@ pub phx_ledger::instruction::Source::Hazard(u64)
 pub phx_ledger::instruction::Source::Purchase(u64)
 pub phx_ledger::instruction::Source::Storage(u64)
 pub phx_ledger::instruction::Source::Way(u32)
+pub phx_ledger::instruction::Source::Wear(u32)
 pub struct phx_ledger::instruction::DueRow
 pub phx_ledger::instruction::DueRow::line: phx_id::ids::LineId
 pub phx_ledger::instruction::DueRow::side: phx_ledger::algebra::Side

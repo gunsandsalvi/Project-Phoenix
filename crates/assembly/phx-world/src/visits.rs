@@ -390,6 +390,7 @@ impl World {
                 pending.push((step, intents));
             }
             self.visits_taken(&b);
+            self.wear_after(i, &slots, (day, step));
             self.visits_rebook(i, h.writes, &slots, (day, step));
         }
         visited

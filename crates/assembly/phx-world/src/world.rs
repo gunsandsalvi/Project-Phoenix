@@ -73,6 +73,8 @@ pub struct World {
     pub(crate) visit_today: crate::visits::VisitDay,
     /// The kinds under an insolvency law, and the days the grace of each contract in arrears ends.
     pub(crate) laws: Vec<crate::defaults::Law>,
+    /// The declared wear of chains of classes, each realised at its visit.
+    pub(crate) wears: Vec<crate::wear::WearBound>,
     pub(crate) defaults: std::collections::BTreeSet<crate::defaults::Due>,
     pub(crate) markets: phx_market::markets::Markets,
     pub(crate) accounts: phx_acct::accounts::Accounts,

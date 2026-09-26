@@ -328,6 +328,7 @@ mod digests {
             paired: true,
             money,
             made: phx_num::Missing::Absent,
+            worn: phx_num::Missing::Absent,
         }
     }
 

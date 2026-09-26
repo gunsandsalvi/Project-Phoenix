@@ -202,6 +202,36 @@ pub(crate) fn acquire(arenas: &mut dyn HolderArenas, holder: Slot, instrument: I
     }
 }
 
+/// What `taken` of a lot's units cost: the whole lot's cost when all go, else their share of it.
+fn lot_share(lot: &Lot, taken: i64) -> i64 {
+    let q = lot.quantity.raw();
+    if taken == q {
+        return lot.cost.raw();
+    }
+    let share = i128::from(lot.cost.raw()) * i128::from(taken) / i128::from(q);
+    let Ok(share) = i64::try_from(share) else {
+        violation!(clause = "Law 7", "a lot's share of its cost overflows", cost = lot.cost.raw());
+    };
+    share
+}
+
+/// What the first `units` of a holding would take of its lots' cost if they left it, earliest acquired first, as a
+/// disposal takes them; `Absent` when it holds fewer.
+#[clause("REG.1", "ACC.6")]
+pub fn first_in_cost(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId, units: i64) -> Missing<i64> {
+    let (mut left, mut cost) = (units, 0_i64);
+    for lot in lots(arenas, holder, instrument) {
+        if left == 0 {
+            break;
+        }
+        let q = lot.quantity.raw();
+        let taken = if q <= left { q } else { left };
+        cost += lot_share(&lot, taken);
+        left -= taken;
+    }
+    if left == 0 { Missing::Present(cost) } else { Missing::Absent }
+}
+
 /// Units that leave a holding, taken from its lots in the given order, each lot's cost going with its units in
 /// proportion; only free units can leave, so the caller gives what of the holding is pledged or committed.
 #[clause("REG.1", "REG.2", "REG.15")]
@@ -229,15 +259,7 @@ pub(crate) fn dispose(
         }
         let q = lot.quantity.raw();
         let taken = if q <= left { q } else { left };
-        let taken_cost = if taken == q {
-            lot.cost.raw()
-        } else {
-            let share = i128::from(lot.cost.raw()) * i128::from(taken) / i128::from(q);
-            let Ok(share) = i64::try_from(share) else {
-                violation!(clause = "Law 7", "a lot's share of its cost overflows", cost = lot.cost.raw());
-            };
-            share
-        };
+        let taken_cost = lot_share(lot, taken);
         cost += taken_cost;
         *lot = Lot::new(lot.acquired, q - taken, lot.cost.raw() - taken_cost);
         left -= taken;

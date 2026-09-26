@@ -11,6 +11,7 @@ pub const SYSTEMS: &[fn() -> SystemEntry] = &[
     SystemEntry::of::<sys_hsg::Hsg>,
     SystemEntry::of::<sys_soc::Soc>,
     SystemEntry::of::<sys_tec::Tec>,
+    SystemEntry::of::<sys_cap::Cap>,
 ];
 
 /// Every interface crate's items, one line each.

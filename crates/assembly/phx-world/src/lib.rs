@@ -18,6 +18,7 @@ pub mod save;
 pub mod systems;
 pub mod trace;
 pub mod visits;
+mod wear;
 pub mod world;
 
 pub use graph::{HandlerGraph, HandlerId};

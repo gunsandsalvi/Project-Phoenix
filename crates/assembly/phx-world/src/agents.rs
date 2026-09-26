@@ -162,6 +162,11 @@ pub struct AgentDay {
     pub defaults: u64,
     /// Sweeps of the holder tables for the members of sides that keep no holder list.
     pub unlisted_sweeps: u64,
+    /// Rows whose plant wear was realised at a visit, the units their last classes retired, and the cost the worn
+    /// units lost.
+    pub worn: u64,
+    pub retired: i128,
+    pub depreciation: i128,
 }
 
 impl AgentDay {
@@ -189,6 +194,9 @@ impl AgentDay {
             estates_written_off: 0,
             estates_unsold: 0,
             unlisted_sweeps: 0,
+            worn: 0,
+            retired: 0,
+            depreciation: 0,
             defaults: 0,
         }
     }

@@ -1,0 +1,42 @@
+# The kinds of plant (spec CAP.13, TEC.capital's rows), derived by tools/data/derive_cap.py; never edited
+# by hand.
+
+[[primitive]]
+id = "CAP.depreciation"
+kind = "TECHNOLOGY"
+owner = "CAP"
+source = "measured"
+source_ref = "Each kind's geometric rate of depreciation a year (axis: structures, transport equipment, ICT equipment, other machinery and equipment, cultivated biological resources, intellectual property products): the BEA's 2024 current-cost depreciation of the kind's private nonresidential assets over their mean net stock of 2023 and 2024 (BEA Fixed Assets, detailed estimates, fetched 2026-09-26), each kind's assets as tools/data/derive_cap.py maps the BEA's rows to it; cultivated assets, which the BEA does not capitalise, the median of the geometric rates of Soloveichik, Tracking Cultivated Assets in Measures of Capital, BEA Working Paper WP2021-6, section 4."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [0.028565, 0.149208, 0.202183, 0.123756, 0.100000, 0.253508], outside = "refuse" }
+
+[[primitive]]
+id = "CAP.service_life"
+kind = "TECHNOLOGY"
+owner = "CAP"
+source = "measured"
+source_ref = "Each kind's mean service life in years: its declining-balance rate over its geometric rate, as the BEA divides the one by a service life to reach the other; the declining-balance rate is the BEA table's (BEA Rates of Depreciation, Service Lives, Declining-Balance Rates, and Hulten-Wykoff Categories), each asset row weighted by its 2024 investment (BEA Fixed Assets, detailed estimates, fetched 2026-09-26), each kind's assets as tools/data/derive_cap.py maps the BEA's rows to it, over the rows that have one (structures 100% of the kind's investment, transport equipment 92% of the kind's investment, ICT equipment 45% of the kind's investment, other machinery and equipment 100% of the kind's investment, intellectual property products 43% of the kind's investment); cultivated assets the median of the mean lives of livestock and plantings in the ABS's Australian System of National Accounts: Concepts, Sources and Methods 2020-21, Table 14.4."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [32.374, 17.189, 8.161, 13.373, 10.300, 6.509], outside = "refuse" }
+
+[[primitive]]
+id = "CAP.efficiency_shape"
+kind = "TECHNOLOGY"
+owner = "CAP"
+source = "measured"
+source_ref = "Each kind's hyperbolic age-efficiency parameter \u03b2, a unit's efficiency (L \u2212 a) \u00f7 (L \u2212 \u03b2\u00b7a) at age a of a life L: 0.75 for structures and 0.5 for equipment, as the BLS assumes them close to Hulten and Wykoff's estimates (BLS Handbook of Methods, productivity measures, concepts); 0.5 for software and livestock, as the ABS sets them (Concepts, Sources and Methods 2020-21, paragraphs 14.37-14.38)."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [0.750, 0.500, 0.500, 0.500, 0.500, 0.500], outside = "refuse" }
+
+[[primitive]]
+id = "CAP.lead_days"
+kind = "TECHNOLOGY"
+owner = "CAP"
+source = "measured"
+source_ref = "Days from order to service of the kinds a source measures: a structure 8.2 months, the Census Bureau's average from start to completion of private nonresidential projects completed in 2024 and 2025 (Construction Length of Time, Table 1, 2026-09-26); equipment 3.81 months, the unfilled orders of nondefense capital goods excluding aircraft over their monthly shipments (Census M3 survey through FRED, 2025-09-01 to 2026-08-01), the months an order waits on the books; a month 365.25 \u00f7 12 days. Intellectual property and cultivated assets have no measured lead time."
+value = { axis = [0, 1, 2, 3], values = [250, 116, 116, 116], outside = "refuse" }
+
+[[primitive]]
+id = "CAP.bought_as"
+kind = "TECHNOLOGY"
+owner = "CAP"
+source = "measured"
+source_ref = "The product each kind is bought as, by its place in TEC.products: structures from construction (F), transport, ICT and other equipment from capital goods (C25-C30, C33), cultivated assets from crops and livestock (A01), intellectual property from business services (J58-J63, M71-M72), as the input-output tables' products make them."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [11, 9, 9, 9, 0, 15], outside = "refuse" }

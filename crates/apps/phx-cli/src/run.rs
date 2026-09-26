@@ -316,7 +316,7 @@ fn estates_open(w: Inspector<'_>) -> u64 {
     u64::try_from(most).unwrap_or(0)
 }
 
-fn counters(w: Inspector<'_>) -> [(&'static str, u64); 26] {
+fn counters(w: Inspector<'_>) -> [(&'static str, u64); 29] {
     let most =
         |f: fn(&phx_ledger::apply_batch::DaySettlement) -> u64| greatest(w.settlements().iter().map(|s| f(&s.dues)));
     let agents = |f: fn(&phx_world::agents::AgentDay) -> u64| greatest(w.agent_days().iter().map(f));
@@ -343,6 +343,9 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 26] {
         ("phx_frm.estates_waiting", agents(|d| d.estates_waiting)),
         ("phx_frm.estates_unsold", agents(|d| d.estates_unsold)),
         ("phx_ledger.unlisted_sweeps", agents(|d| d.unlisted_sweeps)),
+        ("phx_cap.wear_realisations", agents(|d| d.worn)),
+        ("phx_cap.retired", agents(|d| u64::try_from(d.retired).unwrap_or(u64::MAX))),
+        ("phx_cap.depreciation", agents(|d| u64::try_from(d.depreciation).unwrap_or(u64::MAX))),
         (
             "phx_frm.price_reviews",
             greatest(w.visit_days().iter().map(|v| {

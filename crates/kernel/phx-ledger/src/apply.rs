@@ -175,6 +175,8 @@ pub struct Ledger<B: Backing = SystemBacking> {
     pub(crate) numbered: (Day, u32),
     /// The insolvency procedures open, whose stays suspend the dues of their procedure lines.
     pub procedures: BTreeSet<u16>,
+    /// The chains of classes units wear along.
+    pub chains: crate::chains::Chains,
     pub(crate) day: DayBook,
 }
 
@@ -254,6 +256,7 @@ impl<B: Backing> Ledger<B> {
             applied: BTreeSet::new(),
             numbered: (Day::new(0), 0),
             procedures: BTreeSet::new(),
+            chains: crate::chains::Chains::default(),
             day: DayBook::default(),
         }
     }
@@ -413,6 +416,7 @@ impl<B: Backing> Ledger<B> {
                 ApplyAt::Day(_) | ApplyAt::Opening => {}
             }
         }
+        self.chains.check(legs);
         if let Some(d) = unbalanced(legs) {
             let denom = match d {
                 Denom::Ccy(c) => u32::from(c.index()),
@@ -475,7 +479,7 @@ impl<B: Backing> Ledger<B> {
                 Some((Position { now: b - pending, floor: Missing::Present(floor), short: FailCause::Funds }, leg.qty))
             }
             (
-                LegKind::Units { .. } | LegKind::Transformation(_) | LegKind::OpeningWrite { .. },
+                LegKind::Units { .. } | LegKind::Transformation { .. } | LegKind::OpeningWrite { .. },
                 AccountRef::Instrument(id),
             ) => {
                 let inst = self.instruments.get(id);
@@ -596,7 +600,19 @@ impl<B: Backing> Ledger<B> {
                 paired: leg.paired(),
                 money,
                 made: match leg.kind {
-                    LegKind::Transformation(crate::instruction::Source::Way(way)) => Missing::Present(way),
+                    LegKind::Transformation { source: crate::instruction::Source::Way(way), .. } => {
+                        Missing::Present(way)
+                    }
+                    _ => Missing::Absent,
+                },
+                worn: match (leg.kind, leg.account) {
+                    (
+                        LegKind::Transformation { source: crate::instruction::Source::Wear(_), .. },
+                        AccountRef::Instrument(id),
+                    ) => match self.chains.of(id) {
+                        Missing::Present((chain, class)) => Missing::Present((chain, narrow_class(class))),
+                        Missing::Absent => Missing::Absent,
+                    },
                     _ => Missing::Absent,
                 },
             };
@@ -679,13 +695,16 @@ impl<B: Backing> Ledger<B> {
             (LegKind::Units { cost }, AccountRef::Instrument(id)) => {
                 self.move_units(arenas, at, id, leg.qty, cost, day);
             }
-            (LegKind::Transformation(_) | LegKind::OpeningWrite { .. }, AccountRef::Instrument(id)) => {
+            (LegKind::Transformation { .. } | LegKind::OpeningWrite { .. }, AccountRef::Instrument(id)) => {
                 let why = if leg.qty > 0 { IssueChange::Issuance } else { IssueChange::Buyback };
                 self.instruments.change_issued(id, Qty::new(leg.qty, self.instruments.get(id).unit), why);
                 let cost = match leg.kind {
-                    LegKind::OpeningWrite { cost, .. } => cost,
+                    LegKind::OpeningWrite { cost, .. } | LegKind::Transformation { cost, .. } => cost,
                     _ => 0,
                 };
+                if leg.qty < 0 && cost != 0 {
+                    violation!(clause = "ACC.6", "units used up that carry a cost of their own", id = id.get());
+                }
                 self.move_units(arenas, at, id, leg.qty, cost, day);
             }
             (LegKind::Units { .. }, AccountRef::Unit(unit)) => {
@@ -815,6 +834,7 @@ impl<B: Backing> Ledger<B> {
         self.commitments.save(w);
         self.arrears.save(w);
         self.procedures.save(w);
+        self.chains.save(w);
     }
 
     /// The ledger read back over the build's own declarations, which `decls` carries from the declarations phase.
@@ -846,7 +866,16 @@ impl<B: Backing> Ledger<B> {
             applied: BTreeSet::new(),
             numbered: (Day::new(0), 0),
             procedures: BTreeSet::load(r)?,
+            chains: crate::chains::Chains::load(r)?,
             day: DayBook::default(),
         })
     }
+}
+
+/// A class's place in its chain, which a chain's few classes keep far below the digest's width.
+fn narrow_class(class: usize) -> u32 {
+    let Ok(c) = u32::try_from(class) else {
+        phx_num::capacity_exceeded!("classes of a chain", u32::MAX, class);
+    };
+    c
 }

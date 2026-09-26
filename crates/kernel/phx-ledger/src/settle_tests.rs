@@ -347,7 +347,7 @@ fn transformation_needs_source() {
         account: AccountRef::Instrument(wheat),
         qty,
         denom: Denom::Unit(unit),
-        kind: LegKind::Transformation(source),
+        kind: LegKind::Transformation { source, cost: 0 },
     };
     let i = w.instruction(w.pay, vec![made(40, Source::Way(3))]);
     let _ =
@@ -368,6 +368,50 @@ fn transformation_needs_source() {
     });
     assert_eq!(clause, Some("SET.11"), "units from nowhere without what accounts for them");
     let _: InstrumentId = wheat;
+}
+
+#[test]
+fn a_transformation_carries_the_cost_of_units_made() {
+    let mut w = world();
+    let unit = UnitId::new(7);
+    let new = w.ledger.instruments.issue(NewInstrument {
+        family: InstrumentFamily::RealAsset,
+        issuer: Missing::Absent,
+        unit,
+        ccy: EUR,
+        terms: crate::terms::TermsId::new(0),
+    });
+    let worn = w.ledger.instruments.issue(NewInstrument {
+        family: InstrumentFamily::RealAsset,
+        issuer: Missing::Absent,
+        unit,
+        ccy: EUR,
+        terms: crate::terms::TermsId::new(0),
+    });
+    let _ = w.ledger.chains.declare(0, vec![new, worn]);
+    let leg = |instrument, qty, source, cost| LegRec {
+        party: PartyId::new(4),
+        account: AccountRef::Instrument(instrument),
+        qty,
+        denom: Denom::Unit(unit),
+        kind: LegKind::Transformation { source, cost },
+    };
+    let i = w.instruction(w.pay, vec![leg(new, 10, Source::Way(3), 1_000)]);
+    let _ = w.ledger.apply(&mut w.tables, ApplyAt::Day(SubStep::S4b), i, &mut Seen::default()).expect("made at a cost");
+    let i = w.instruction(w.pay, vec![leg(new, -4, Source::Wear(0), 0), leg(worn, 4, Source::Wear(0), 300)]);
+    let _ = w.ledger.apply(&mut w.tables, ApplyAt::Day(SubStep::S4b), i, &mut Seen::default()).expect("worn");
+    let Located::Live { table, slot, .. } = w.tables.locate(PartyId::new(4)) else { unreachable!() };
+    let arenas = w.tables.arenas(table);
+    assert_eq!(
+        (crate::holding::basis(arenas, slot, new), crate::holding::basis(arenas, slot, worn)),
+        (Missing::Present(600), Missing::Present(300)),
+        "the worn units left their class at the cost of their lots and came to the next at the cost they carry"
+    );
+    let i = w.instruction(w.pay, vec![leg(worn, -1, Source::Wear(0), 75)]);
+    let clause = caught_clause(|| {
+        let _ = w.ledger.apply(&mut w.tables, ApplyAt::Day(SubStep::S4b), i, &mut Seen::default());
+    });
+    assert_eq!(clause, Some("ACC.6"), "units used up carry no cost of their own");
 }
 
 #[test]

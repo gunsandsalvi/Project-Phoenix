@@ -5,6 +5,30 @@
       "rows": 425,
       "title": "Central bank policy rate (%, end of year), BIS"
     },
+    "cap/ANXAUO": {
+      "rows": 416,
+      "title": "Unfilled orders, nondefense capital goods excluding aircraft, millions of dollars, seasonally adjusted (Census Bureau M3 survey, through FRED)"
+    },
+    "cap/ANXAVS": {
+      "rows": 416,
+      "title": "Value of shipments, nondefense capital goods excluding aircraft, millions of dollars, seasonally adjusted (Census Bureau M3 survey, through FRED)"
+    },
+    "cap/bea_depreciation": {
+      "rows": 14652,
+      "title": "Current-cost depreciation of private nonresidential fixed assets by industry and asset, millions of dollars (BEA Fixed Assets, detailed estimates, detailnonres_dep1.xlsx)"
+    },
+    "cap/bea_investment": {
+      "rows": 73260,
+      "title": "Investment in private nonresidential fixed assets by industry and asset, historical cost, millions of dollars (BEA Fixed Assets, detailed estimates, detailnonres_inv1.xlsx)"
+    },
+    "cap/bea_net_stock": {
+      "rows": 14652,
+      "title": "Current-cost net stock of private nonresidential fixed assets by industry and asset, millions of dollars, year end (BEA Fixed Assets, detailed estimates, detailnonres_stk1.xlsx)"
+    },
+    "cap/construction_months": {
+      "rows": 62,
+      "title": "Average number of months from start to completion for private nonresidential construction projects completed in 2024-2025, by value of project, all types (Census Bureau, Construction Length of Time, Table 1)"
+    },
     "cepalstat/tenure": {
       "rows": 552,
       "title": "Households by tenure status of the dwelling (owner, tenant, other forms), national, share of households, ECLAC CEPALSTAT indicator 166 (household surveys)"
@@ -279,10 +303,20 @@
     }
   },
   "sources": {
+    "bea_fixed_assets": {
+      "fetched": "2026-09-26",
+      "title": "U.S. Bureau of Economic Analysis, Fixed Assets Accounts, detailed estimates by industry and asset",
+      "url": "https://apps.bea.gov/national/FA2004/Details/xls/<workbook>"
+    },
     "bis": {
       "release": "2026-09-16",
       "title": "BIS, central bank policy rates, bulk CSV",
       "url": "https://data.bis.org/static/bulk/WS_CBPOL_csv_flat.zip"
+    },
+    "census_length": {
+      "fetched": "2026-09-26",
+      "title": "U.S. Census Bureau, Construction Length of Time",
+      "url": "https://www.census.gov/construction/c30/xlsx/t125.xlsx"
     },
     "figaro": {
       "fetched": "2026-09-26",
@@ -293,6 +327,11 @@
       "fetched": "2026-09-24",
       "title": "World Bank Global Findex Database (API source 28)",
       "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2010:2025&per_page=20000&source=28"
+    },
+    "fred_m3": {
+      "fetched": "2026-09-26",
+      "title": "Federal Reserve Bank of St. Louis, FRED",
+      "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
     },
     "housing": {
       "fetched": "2026-09-24",

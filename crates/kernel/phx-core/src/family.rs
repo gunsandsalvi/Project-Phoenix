@@ -144,6 +144,8 @@ pub trait LegRecords: core::fmt::Debug + Sync {
     fn unit_gaps(&self, books: &dyn BooksAudit) -> Vec<Gap>;
     /// The day's productions, each with the way it names, in the order they settled.
     fn made(&self) -> Vec<Made>;
+    /// The day's wear, each instruction's legs along its chains, in the order they settled.
+    fn worn(&self) -> Vec<Worn>;
 }
 
 /// Everything the audit reads at a close, as shared borrows: the world's stores, the rows the day touched, and the
@@ -354,8 +356,8 @@ pub trait AuditFamily: Send + Sync {
 /// A settled leg as the audit keeps it, apart from the books it moved: whose, on which account and in which
 /// denomination (each coded by the ledger), by how much, what it counts toward its instruction's balance (its quantity,
 /// or a liability row's member count against the asset side's, as a line's sides open and close together), what the
-/// account held before it, whether it is one of a pair, whether it moved money on a money line, and the way it was
-/// made or used up by, when it is production's.
+/// account held before it, whether it is one of a pair, whether it moved money on a money line, the way it was
+/// made or used up by, when it is production's, and the chain and class it wore, when it is wear's.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LegDigest {
     pub party: PartyId,
@@ -367,6 +369,23 @@ pub struct LegDigest {
     pub paired: bool,
     pub money: bool,
     pub made: Missing<u32>,
+    pub worn: Missing<(u32, u32)>,
+}
+
+/// One wear as the audit kept it: the instruction and every leg it moved along a chain of classes.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Worn {
+    pub instruction: u64,
+    pub legs: Vec<WornLeg>,
+}
+
+/// A leg of a wear: whose, on which chain and class, and how many units left or came in.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WornLeg {
+    pub party: PartyId,
+    pub chain: u32,
+    pub class: u32,
+    pub qty: i64,
 }
 
 /// One production as the audit kept it: the instruction, the way it names, and every leg it made or used up.

@@ -1,0 +1,10 @@
+# The developing group's stock of plant (spec CAP.1, GEN.2), derived by tools/data/derive_cap.py; never
+# edited by hand.
+
+[[primitive]]
+id = "CAP.stock_per_gdp"
+kind = "ENDOWMENT"
+owner = "CAP"
+source = "assumed"
+source_ref = "Each kind's net stock (axis: structures, transport equipment, ICT equipment, other machinery and equipment, cultivated biological resources, intellectual property products) per unit of GDP: the closing net stock at current prices of the sections the firms work in (ISIC A to J, M, N, P to S) over all gross value added, OECD Table 9A over Table 6 in national currency, the latest year to 2022 (OECD Data Explorer, SDMX API, fetched 2026-09-26); the OECD reports no economy of the group, so the developed group's median over 19 economies is assumed until a source covers the group."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [0.936989, 0.102345, 0.028687, 0.311622, 0.004519, 0.155689], outside = "refuse" }

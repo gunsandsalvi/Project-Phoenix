@@ -208,6 +208,7 @@ struct Prepared {
     visits: Vec<crate::visits::Bound>,
     /// The kinds under an insolvency law.
     laws: Vec<crate::defaults::Law>,
+    wears: Vec<crate::wear::WearBound>,
     register_hash: u128,
 }
 
@@ -328,6 +329,10 @@ fn prepare(
         errors.extend(e);
         Vec::new()
     });
+    let wears = crate::wear::bind(&d, &visits, &c.register).unwrap_or_else(|e| {
+        errors.extend(e);
+        Vec::new()
+    });
     errors.extend(unlawful_kinds(&d, &kernel, &c.register));
     let (pop, processes) = match population_kinds(&mut d, &c.register) {
         Ok(bound) => bound,
@@ -357,6 +362,7 @@ fn prepare(
         facets,
         visits,
         laws,
+        wears,
         register_hash: data_hash(&files),
     })
 }
@@ -462,6 +468,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         visit_reads: phx_core::ReadTrace::default(),
         visit_today: crate::visits::VisitDay::of(carried.today),
         laws: std::mem::take(&mut p.laws),
+        wears: std::mem::take(&mut p.wears),
         defaults: std::collections::BTreeSet::new(),
         markets,
         accounts,

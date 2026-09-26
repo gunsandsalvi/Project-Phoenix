@@ -313,6 +313,7 @@ pub fn inject_production(target: &mut dyn InjectTarget, way: u32) -> Result<(), 
         paired: false,
         money: false,
         made: Missing::Present(way),
+        worn: Missing::Absent,
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())
@@ -355,6 +356,31 @@ fn stray_leg(target: &mut dyn InjectTarget, before: i64, paired: bool, money: bo
         paired,
         money,
         made: Missing::Absent,
+        worn: Missing::Absent,
+    };
+    target.stream().leg(u64::MAX, digest);
+    Ok(())
+}
+
+/// A wear leg bringing one unit into the second class of `chain` that its first never gave, on a real holding whose
+/// before is stated one short so its position still adds up, fed to the audit as if it had settled today: only the
+/// family that checks wear sees it.
+///
+/// # Errors
+/// When the save's books are not the ledger's, or hold no money line with a holder.
+pub fn inject_wear(target: &mut dyn InjectTarget, chain: u32) -> Result<(), String> {
+    let (party, account, denom, held) = money_holding(books(target)?)?;
+    let digest = LegDigest {
+        party,
+        account,
+        denom,
+        qty: 1,
+        flow: 0,
+        before: held - 1,
+        paired: false,
+        money: false,
+        made: Missing::Absent,
+        worn: Missing::Present((chain, 1)),
     };
     target.stream().leg(u64::MAX, digest);
     Ok(())

@@ -36,6 +36,7 @@ pub fn phx_audit::records::Digests::made(&self) -> alloc::vec::Vec<phx_core::fam
 pub fn phx_audit::records::Digests::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_audit::records::Digests::positions(&self) -> u64
 pub fn phx_audit::records::Digests::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_audit::records::Digests::worn(&self) -> alloc::vec::Vec<phx_core::family::Worn>
 pub mod phx_audit::runner
 pub struct phx_audit::runner::Audit
 impl phx_audit::runner::Audit

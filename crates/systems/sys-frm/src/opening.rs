@@ -1,17 +1,9 @@
-use phx_core::calendar::bizday::BusinessDayConvention;
-use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
-use phx_core::{
-    Contribution, DECLARATIONS, FactDef, Opening, OpeningCountry, OpeningPhase, PARTIES, PHYSICAL_STOCK, StreamDef,
-    opening_subject,
-};
+use phx_core::{Contribution, FactDef, Opening, OpeningCountry, OpeningPhase, PARTIES, StreamDef, opening_subject};
 use phx_id::{CountryId, PartyId};
-use phx_ledger::algebra::Terms;
-use phx_ledger::books::{self, Books};
-use phx_ledger::instruction::{Effect, ReasonDecl, ReasonId};
-use phx_ledger::instrument::{InstrumentFamily, NewInstrument};
-use phx_ledger::opening::{currency, derived, hold, key};
+use phx_ledger::books;
+use phx_ledger::opening::{derived, key};
 use phx_macros::clause;
-use phx_num::{Missing, violation};
+use phx_num::violation;
 use phx_rand::float::{floor_to_u64, from_u64};
 use phx_rand::open_unit;
 
@@ -20,7 +12,6 @@ use crate::industry::Industries;
 use crate::{CountPrim, FIRM, FixedPrim, OpeningStream, TablePrim};
 
 const FIRMS: &str = "FRM.firms";
-const PLANT: &str = "FRM.plant";
 
 /// The primitives the firms' opening reads.
 #[derive(Clone, Copy, Debug)]
@@ -29,7 +20,6 @@ pub struct Prims {
     pub size_exponent: FixedPrim,
     pub rank: CountPrim,
     pub deposit_share: FixedPrim,
-    pub depreciation: FixedPrim,
     pub industries: TablePrim,
 }
 
@@ -141,108 +131,6 @@ impl Contribution for Parties {
         let countries = opening.countries;
         for c in countries {
             self.open_country(opening, c);
-        }
-    }
-}
-
-/// What the opening's instructions are for: capital on both sides, since they open the books.
-const REASON: ReasonDecl = ReasonDecl { name: "FRM opening", order: 0, paid: Effect::Equity, received: Effect::Equity };
-
-fn reason(b: &Books) -> ReasonId {
-    b.ledger.reasons.named(REASON.name)
-}
-
-/// The firms' declarations in the books: their opening's reason.
-#[clause("FRM.1")]
-#[derive(Debug)]
-pub struct Declared;
-
-impl Contribution for Declared {
-    fn name(&self) -> &'static str {
-        "firm declarations"
-    }
-    fn phase(&self) -> OpeningPhase {
-        DECLARATIONS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let b = books::of(opening);
-        let _ = b.ledger.reasons.declare(REASON);
-    }
-}
-
-/// Each firm's plant: units of the country's plant, a physical class counted in its replacement value until the
-/// classes of capital goods are declared, held as a lot at that value.
-#[clause("GEN.5", "REG.9")]
-#[derive(Debug)]
-pub struct Plant;
-
-impl Contribution for Plant {
-    fn name(&self) -> &'static str {
-        "plant"
-    }
-    fn phase(&self) -> OpeningPhase {
-        PHYSICAL_STOCK
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[PLANT]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &["FRM.plant_held"]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &["FRM.plant_held"]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let (countries, register, date) = (opening.countries, opening.register, opening.date);
-        let Missing::Present(unit) = register.units().named("plant") else {
-            violation!(clause = "NUM.3", "the world declares no unit of plant");
-        };
-        let Some(months) = Period::months(1) else { violation!(clause = "TIME.4", "a month that is no period") };
-        let (b, report) = books::split(opening);
-        let reason = reason(b);
-        for c in countries {
-            let ccy = currency(c.id);
-            let dates = ScheduleDates {
-                anchor: date,
-                period: months,
-                eom: EndOfMonth::Plain,
-                convention: BusinessDayConvention::Following,
-                country: c.id,
-            };
-            let terms = b.ledger.terms.intern(Terms::account(ccy, dates));
-            let plant = b.ledger.instruments.issue(NewInstrument {
-                family: InstrumentFamily::RealAsset,
-                issuer: Missing::Absent,
-                unit,
-                ccy,
-                terms,
-            });
-            let Some(held) = b.drawn.get(&key(PLANT, c.id)).cloned() else {
-                violation!(clause = "GEN.3", "plant held by firms not drawn", country = c.id.get());
-            };
-            for (firm, value) in held {
-                let Ok(v) = i64::try_from(value) else {
-                    violation!(clause = "MON.16", "plant beyond whole units", firm = firm.get());
-                };
-                b.open(reason, vec![hold(firm, plant, v, unit, v, firm.get())], firm.get(), report);
-            }
         }
     }
 }

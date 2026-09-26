@@ -24,7 +24,6 @@ use crate::{BANK_ATTR, FixedPrim, REGION, SIZE, SMALL_FIRM, SmallStream, TablePr
 const FIRMS: &str = "FRM.firms";
 const DEBT: &str = "FRM.debt";
 const DEPOSITS: &str = "FRM.deposits";
-const PLANT: &str = "FRM.plant";
 const BANKS: &str = "BNK.banks";
 /// Each small-firm agent with the persons its twins employ, their deposits and their debt.
 pub const SMALL_FIRMS: &str = "FRM.small_firms";
@@ -44,7 +43,6 @@ pub struct SmallPrims {
     pub firms_per_employed: FixedPrim,
     pub size_exponent: FixedPrim,
     pub deposit_share: FixedPrim,
-    pub depreciation: FixedPrim,
     pub industries: TablePrim,
 }
 
@@ -183,8 +181,6 @@ impl SmallFirms {
         let places = [region_at, size_at, bank_at, industry_at];
         let (cells, banked, counts) =
             begin_agents((table, directory, space), (*day, k, kd.decl.attrs.len()), places, &firms_drawn);
-        let wear = p.depreciation.shared(register).to_f64();
-        let capital = derived(c, "GEN.investment") / PERCENT / (derived(c, "GEN.growth") / PERCENT + wear) * c.gdp;
         let deposits = p.deposit_share.shared(register).to_f64() * derived(c, "GEN.bank_deposits") / PERCENT * c.gdp;
         let debt = derived(c, "GEN.firm_debt") / PERCENT * c.gdp;
         let firms: Vec<(PartyId, u64)> = large.iter().chain(&cells).copied().collect();
@@ -204,7 +200,6 @@ impl SmallFirms {
         };
         let (large_deposits, deposits) = share(deposits);
         let (large_debt, debt) = share(debt);
-        let (plant, _) = share(capital);
         let heads: Vec<u64> = cells.iter().map(|(_, n)| *n).collect();
         let employed_small: u64 = heads.iter().sum();
         let firms_small = k * len_u64(firms_drawn.len());
@@ -217,7 +212,6 @@ impl SmallFirms {
             (SMALL_COUNTS, counts),
             (DEPOSITS, large_deposits),
             (DEBT, large_debt),
-            (PLANT, plant),
         ] {
             books.drawn.insert(key(name, c.id), list);
         }
@@ -230,8 +224,7 @@ impl SmallFirms {
                  {agents} agents of {k} twins, employing {employed_small} of {employed:.0} employed; regions by land, \
                  banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent) and its \
                  industry by its size (FRM.industry_by_size); the \
-                 firms' deposits, debt and plant shared over every firm by its employees, the small firms' plant not \
-                 yet held",
+                 firms' deposits and debt shared over every firm by its employees",
                 c.id.get(),
             ),
         ));
@@ -265,10 +258,10 @@ impl Contribution for SmallFirms {
         &[FIRMS, BANKS]
     }
     fn writes(&self) -> &'static [&'static str] {
-        &[SMALL_FIRMS, SMALL_DEPOSITS, SMALL_DEBT, SMALL_BANKS, SMALL_COUNTS, DEPOSITS, DEBT, PLANT]
+        &[SMALL_FIRMS, SMALL_DEPOSITS, SMALL_DEBT, SMALL_BANKS, SMALL_COUNTS, DEPOSITS, DEBT]
     }
     fn drawn(&self) -> &'static [&'static str] {
-        &[SMALL_FIRMS, SMALL_BANKS, SMALL_COUNTS, DEPOSITS, DEBT, PLANT]
+        &[SMALL_FIRMS, SMALL_BANKS, SMALL_COUNTS, DEPOSITS, DEBT]
     }
     fn derived(&self) -> &'static [&'static str] {
         &[SMALL_DEPOSITS, SMALL_DEBT]

@@ -483,6 +483,7 @@ impl<B: Backing> Books<B> {
         phx_store::hash_saved(&l.commitments, h);
         phx_store::hash_saved(&l.arrears, h);
         phx_store::hash_saved(&l.procedures, h);
+        phx_store::hash_saved(&l.chains, h);
     }
 
     /// Stage 2d's contract process over the books.

@@ -475,6 +475,50 @@ impl Register {
         }
     }
 
+    /// A shared table of one axis by its identifier, in its table's decimals.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is not one shared table of one axis.
+    pub fn table1(&self, id: &str) -> Result<&values::Table1, String> {
+        match self.stored_by_id(id)? {
+            Stored::Shared(PrimValue::Table1(t)) => Ok(t),
+            _ => Err(format!("`{id}` is not one shared table of one axis")),
+        }
+    }
+
+    /// A table of two axes by its identifier, in a country, as one system reads another's technology.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is no such table in the country.
+    pub fn table2_in(&self, id: &str, country: CountryId) -> Result<&values::Table2, String> {
+        match self.stored_by_id(id)? {
+            Stored::Shared(PrimValue::Table2(t)) => Ok(t),
+            Stored::PerCountry(v) => match v.get(usize::from(country.get())) {
+                Some(PrimValue::Table2(t)) => Ok(t),
+                _ => Err(format!("`{id}` is no table of two axes in country {}", country.get())),
+            },
+            Stored::Shared(_) => Err(format!("`{id}` is no table of two axes")),
+        }
+    }
+
+    /// The products by the identifier of their declaration.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is not one shared list of products.
+    pub fn products(&self, id: &str) -> Result<&[crate::ProductEntry], String> {
+        match self.stored_by_id(id)? {
+            Stored::Shared(PrimValue::Products(p)) => Ok(p),
+            _ => Err(format!("`{id}` is not one shared list of products")),
+        }
+    }
+
+    fn stored_by_id(&self, id: &str) -> Result<&Stored, String> {
+        let Some(i) = self.decls.iter().position(|d| d.id == id) else {
+            return Err(format!("no primitive `{id}` is declared"));
+        };
+        self.stored.get(i).ok_or_else(|| format!("`{id}` holds no value"))
+    }
+
     /// A per-country count by its identifier, each country's value in turn, as a law's grace names its days.
     ///
     /// # Errors

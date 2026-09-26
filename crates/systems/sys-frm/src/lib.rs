@@ -1,5 +1,5 @@
 //! FRM, firms: at the opening each country's largest firms, the individuals within the promotion rank, sized by
-//! Zipf's law over the country's employment, each in an industry drawn by its size; their plant; the debt and deposits
+//! Zipf's law over the country's employment, each in an industry drawn by its size; the debt and deposits
 //! they draw, which the banks' contracts carry; and the small firms below the rank, held as agents. In the day, their
 //! decisions on the agenda, their default under the insolvency law, and the family of their revenue.
 
@@ -19,7 +19,7 @@ use phx_core::{
 };
 use phx_num::{Count, Fixed};
 
-pub use opening::{Declared, Parties, Plant};
+pub use opening::Parties;
 pub use small::SmallFirms;
 
 declare_kind! { pub FIRM = "firm" { legal_form: "company", table: Individuals, clause: "FRM.1" } }
@@ -64,11 +64,6 @@ declare_prim! {
     pub DEPOSIT_SHARE = "FRM.deposit_share" { kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: Shared }
 }
 
-declare_prim! {
-    /// The yearly rate at which plant wears out, in the steady state that sizes the opening's capital.
-    pub DEPRECIATION = "FRM.depreciation" { kind: Technology, value: Fixed { exp: 6 }, clause: "GEN.5", scope: Shared }
-}
-
 /// What the firms' handlers read of the register, compiled at assembly.
 #[derive(Debug)]
 pub struct Own {
@@ -105,7 +100,6 @@ impl System for Frm {
             size_exponent: d.prim(&SIZE_EXPONENT),
             rank: d.prim(&RANK_PER_MILLION),
             deposit_share: d.prim(&DEPOSIT_SHARE),
-            depreciation: d.prim(&DEPRECIATION),
             industries: d.prim(&INDUSTRY_BY_SIZE),
         };
         d.claim(<if_firm::known::Industry as FactDef>::ITEM.name);
@@ -116,14 +110,11 @@ impl System for Frm {
             firms_per_employed: prims.firms_per_employed,
             size_exponent: prims.size_exponent,
             deposit_share: prims.deposit_share,
-            depreciation: prims.depreciation,
             industries: prims.industries,
         };
         d.pop_kind(SMALL_FIRM.name).attr(REGION).attr(SIZE).attr(if_firm::known::INDUSTRY).sited_by(REGION.name);
-        d.contribution(Box::new(Declared));
         d.contribution(Box::new(Parties { prims }));
         d.contribution(Box::new(SmallFirms { prims: small }));
-        d.contribution(Box::new(Plant));
         declare_decisions(d);
         d.family(Box::new(families::Revenue));
     }

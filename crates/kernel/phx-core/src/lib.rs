@@ -39,6 +39,7 @@ pub mod substep;
 pub mod system;
 pub mod touched;
 pub mod visit;
+pub mod wear;
 pub mod weight;
 
 pub use accounting::{CarryingBasis, HeldFor, Permitted};
@@ -66,7 +67,7 @@ pub use facts::{
 pub use family::{
     AUDIT_SUBSTEP, AccountsAudit, AgentsAudit, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx,
     FamilyDecl, FamilyMode, Gap, InjectTarget, LegDigest, LegRecords, Made, MadeLeg, MarketsAudit, ReadTrace, Span,
-    rolling_slice,
+    Worn, WornLeg, rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{
@@ -113,4 +114,5 @@ pub use system::{
 };
 pub use touched::TouchedRows;
 pub use visit::{Cadence, VisitDecl};
+pub use wear::{WearDecl, WearSpec};
 pub use weight::Weight;

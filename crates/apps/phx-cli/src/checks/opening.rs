@@ -26,11 +26,13 @@ fn reported(w: Inspector<'_>) -> Outcome {
     }
     let parties = &w.books().parties;
     let opened = w.day_zero();
+    let named: std::collections::BTreeSet<phx_id::PartyId> =
+        report.writes.iter().flat_map(|x| [x.party, x.counter]).collect();
     for kind in parties.kinds() {
         let t = parties.table(parties.place(kind));
         // Parties begun during the run, as estates are, were begun by no opening.
-        let named = |p: phx_id::PartyId| report.writes.iter().any(|x| x.party == p || x.counter == p);
-        if let Some(p) = t.slots().filter(|s| t.created(*s) <= opened).map(|s| t.party(s)).find(|p| !named(*p)) {
+        if let Some(p) = t.slots().filter(|s| t.created(*s) <= opened).map(|s| t.party(s)).find(|p| !named.contains(p))
+        {
             return Outcome::Fail(format!("the {kind} {} is named by no opening write", p.get()));
         }
     }
