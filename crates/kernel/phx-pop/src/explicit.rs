@@ -46,10 +46,22 @@ pub struct Written {
     pub ended: bool,
 }
 
-/// A household written back to its agent: its attributes, its persons still there in their order, and their
-/// attachments at their new places; the attachments of persons gone are returned to leave their lines.
+/// A household's words as they will be written back, reckoned from its agent's table without changing it, so many
+/// agents' are reckoned on the pool and written one by one: the attributes that changed, the persons still there where
+/// any changed, and, where any person is gone, each person's new place. Attachments are moved when the rewrite is
+/// written, since writing another agent's household can take attachments off this one's persons.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Rewrite {
+    attrs: Vec<(usize, u32)>,
+    persons: Option<Vec<u64>>,
+    places: Option<Vec<Option<usize>>>,
+    ended: bool,
+}
+
+/// A household's rewrite: its attributes, and its persons still there in their order.
 #[clause("REP.26", "REP.31", "REP.16")]
-pub fn write_back<B: Backing>(kind: &PopKindDecl, table: &mut AgentTable<B>, slot: Slot, h: &Household) -> Written {
+#[must_use]
+pub fn rewrite<B: Backing>(kind: &PopKindDecl, table: &AgentTable<B>, slot: Slot, h: &Household) -> Rewrite {
     if h.persons.len() > MOST_PERSONS {
         violation!(
             clause = "REP.26",
@@ -57,53 +69,95 @@ pub fn write_back<B: Backing>(kind: &PopKindDecl, table: &mut AgentTable<B>, slo
             persons = h.persons.len()
         );
     }
+    let mut attrs = Vec::new();
     for (i, a) in kind.attrs.iter().enumerate() {
         let v = h.attr(a.item.name);
         if v >= a.item.values {
             violation!(clause = "REP.41", "an attribute set beyond its values", value = v);
         }
         if v != table.attr(slot, i) {
-            table.set_attr(slot, i, v);
+            attrs.push((i, v));
         }
     }
-    let mut place = vec![None; h.persons.len()];
-    let mut next = 0_usize;
-    for (i, p) in h.persons.iter().enumerate() {
-        if !p.gone {
-            if let Some(x) = place.get_mut(i) {
-                *x = Some(next);
+    let places = h.persons.iter().any(|p| p.gone).then(|| {
+        let mut next = 0_usize;
+        h.persons
+            .iter()
+            .map(|p| {
+                (!p.gone).then(|| {
+                    next += 1;
+                    next - 1
+                })
+            })
+            .collect()
+    });
+    if places.is_none() {
+        for w in table.attachments(slot) {
+            if let Holder::Person(i) = Attachment::unpack(*w).holder
+                && i >= h.persons.len()
+            {
+                violation!(clause = "REP.31", "an attachment of a person the household does not hold", person = i);
             }
-            next += 1;
-        }
-    }
-    let mut written = Written::default();
-    let mut kept = Vec::with_capacity(table.attachments(slot).len());
-    for w in table.attachments(slot) {
-        let mut a = Attachment::unpack(*w);
-        match a.holder {
-            Holder::Household => kept.push(a.pack()),
-            Holder::Person(i) => match place.get(i) {
-                Some(Some(now)) => {
-                    a.holder = Holder::Person(*now);
-                    kept.push(a.pack());
-                }
-                Some(None) => written.leaving.push((a.line, a.side)),
-                None => {
-                    violation!(clause = "REP.31", "an attachment of a person the household does not hold", person = i)
-                }
-            },
         }
     }
     let persons: Vec<u64> = h.persons.iter().filter(|p| !p.gone).map(|p| pack(kind, p)).collect();
-    written.ended = persons.is_empty();
+    let ended = persons.is_empty();
     // A household nothing changed keeps its words, so its arena gains no dead ones and it is not drawn again.
-    if persons != table.persons(slot) {
-        table.set_persons(slot, &persons);
+    let persons = (persons != table.persons(slot)).then_some(persons);
+    Rewrite { attrs, persons, places, ended }
+}
+
+/// A household's rewrite written to its agent, its attachments moved to their persons' new places; the attachments of
+/// persons gone are returned to leave their lines.
+#[clause("REP.26", "REP.31", "REP.16")]
+pub fn write_rewrite<B: Backing>(table: &mut AgentTable<B>, slot: Slot, r: &Rewrite) -> Written {
+    for &(i, v) in &r.attrs {
+        table.set_attr(slot, i, v);
     }
-    if kept != table.attachments(slot) {
+    let mut written = Written { leaving: Vec::new(), ended: r.ended };
+    let mut moved = None;
+    if let Some(places) = &r.places {
+        let held = table.attachments(slot);
+        let mut kept = Vec::with_capacity(held.len());
+        for w in held {
+            let mut a = Attachment::unpack(*w);
+            match a.holder {
+                Holder::Household => kept.push(a.pack()),
+                Holder::Person(i) => match places.get(i) {
+                    Some(Some(now)) => {
+                        a.holder = Holder::Person(*now);
+                        kept.push(a.pack());
+                    }
+                    Some(None) => written.leaving.push((a.line, a.side)),
+                    None => {
+                        violation!(
+                            clause = "REP.31",
+                            "an attachment of a person the household does not hold",
+                            person = i
+                        )
+                    }
+                },
+            }
+        }
+        if kept != held {
+            moved = Some(kept);
+        }
+    }
+    if let Some(persons) = &r.persons {
+        table.set_persons(slot, persons);
+    }
+    if let Some(kept) = moved {
         table.set_attachments(slot, &kept);
     }
     written
+}
+
+/// A household written back to its agent: its attributes, its persons still there in their order, and their
+/// attachments at their new places; the attachments of persons gone are returned to leave their lines.
+#[clause("REP.26", "REP.31", "REP.16")]
+pub fn write_back<B: Backing>(kind: &PopKindDecl, table: &mut AgentTable<B>, slot: Slot, h: &Household) -> Written {
+    let r = rewrite(kind, table, slot, h);
+    write_rewrite(table, slot, &r)
 }
 
 /// Contracts each attachment of an agent names, by line side: what each of its rows must count per twin.

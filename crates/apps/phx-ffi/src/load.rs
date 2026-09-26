@@ -382,10 +382,16 @@ impl Load {
                     let len = u64::try_from(population.slots.len()).unwrap_or(0);
                     let mut hits = 0_u64;
                     let mut scratch = HazardScratch::new();
-                    for _ in 0..units {
-                        let at = usize::try_from(below_u64(&mut d, len)).unwrap_or(0);
-                        let Some(slot) = population.slots.get(at) else { continue };
-                        let booked = hazard(population, *slot, (Day::new(day), date), &mut d, &mut scratch);
+                    // The agenda hands the world its agents due in slot order, and the draws read them so.
+                    let mut due: Vec<Slot> = (0..units)
+                        .filter_map(|_| {
+                            let at = usize::try_from(below_u64(&mut d, len)).ok()?;
+                            population.slots.get(at).copied()
+                        })
+                        .collect();
+                    due.sort_unstable();
+                    for slot in due {
+                        let booked = hazard(population, slot, (Day::new(day), date), &mut d, &mut scratch);
                         hits += u64::from(matches!(booked, phx_pop::hazard::Booking::Hit(_)));
                     }
                     hits

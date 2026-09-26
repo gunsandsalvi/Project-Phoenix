@@ -730,7 +730,10 @@ published technique it rests on:
   its net applies. A failed payer's shortfall is read at its cursor. Per-line balance totals are kept at the apply,
   so the audit's money and contract families read sums and a rolling slice. The accruals' mismatches are running sums
   per line. Arrears keep their start and compute their age when read.
-- **Agents.** 3e's outcomes run over agent chunks on the pool (an agent's writes are confined to it, PC-34). Hazards
+- **Agents.** 3e's outcomes run over agent chunks on the pool (an agent's writes are confined to it, PC-34): each
+  household is changed and the words it is to be written back as are reckoned there, and only the writing, with the
+  moves of attachments where a person is gone, follows in slot order on one thread, since a gone person's contracts
+  leaving can take attachments off other agents. 3b reads the agenda's agents in slot order. Hazards
   are drawn in batches with Philox's four-lane counter blocks (Salmon, Moraes, Dror and Shaw, *Parallel random numbers:
   as easy as 1, 2, 3*, 2011) and bounded integers by multiply-shift (Lemire, *Fast random integer generation in an
   interval*, 2019).

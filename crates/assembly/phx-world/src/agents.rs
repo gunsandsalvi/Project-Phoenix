@@ -12,7 +12,7 @@ use phx_ledger::transfer::{LineTransfer, MoveAt};
 use phx_macros::clause;
 use phx_num::round::Round;
 use phx_num::{Missing, violation};
-use phx_pop::explicit::{household, household_into, write_back};
+use phx_pop::explicit::{Rewrite, household_into, rewrite, write_rewrite};
 use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::population::Population;
@@ -240,6 +240,15 @@ fn chances(
         }
     }
     change.map_or(Missing::Absent, Missing::Present)
+}
+
+/// An agent's household changed by its hits of the day: who it is, the words it is to be written back as, how many of
+/// its persons are gone, and the region it is sited by.
+struct Changed {
+    who: (usize, Slot, PartyId),
+    rewrite: Rewrite,
+    gone: u64,
+    region: Option<u32>,
 }
 
 /// The buffers reading chances fills, held by a pass over many agents and reused for each, so the pass allocates only
@@ -518,23 +527,24 @@ impl World {
             let changed = phx_exec::pool::map(self.books.pool(), GATHER_WAVE, |i| {
                 let from = lesser((wave + i) * each, agents.len());
                 let to = lesser(from + each, agents.len());
+                let mut h = Household { attrs: Vec::new(), persons: Vec::new() };
                 agents
                     .get(from..to)
                     .unwrap_or(&[])
                     .iter()
-                    .filter_map(|a| self.changed_household(day, a))
+                    .filter_map(|a| self.changed_household(day, a, &mut h))
                     .collect::<Vec<_>>()
             });
-            for (who, h) in changed.into_iter().flatten() {
-                self.write_household(day, who, &h);
+            for c in changed.into_iter().flatten() {
+                self.write_household(day, c);
             }
         }
         self.books.forget_tallies();
     }
 
-    /// One agent's hits of the day applied to its household made explicit, by each process's outcome in order,
-    /// reading the world only, so agents are changed on the pool.
-    fn changed_household(&self, day: Day, hits: &[AgentHit]) -> Option<((usize, Slot, PartyId), Household)> {
+    /// One agent's hits of the day applied to its household made explicit, by each process's outcome in order, and
+    /// the words it is to be written back as, reading the world only, so agents are changed on the pool.
+    fn changed_household(&self, day: Day, hits: &[AgentHit], h: &mut Household) -> Option<Changed> {
         let first = hits.first()?;
         let (kind, slot, party) = (first.kind, first.slot, first.party);
         let regions = self.regions();
@@ -547,7 +557,7 @@ impl World {
         if !table.is_live(slot) || table.party(slot) != party {
             violation!(clause = "REP.7", "a hit whose agent left its slot before its outcomes", party = party.get());
         }
-        let mut h = household(&kd.decl, table, slot);
+        household_into(&kd.decl, table, slot, h);
         let attrs = h.attrs.clone();
         let attr = |name: &str| attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
         let view = AgentView { kind: kd.decl.kind, party, attr: &attr, country_of: &country_of, date };
@@ -562,26 +572,24 @@ impl World {
             }
             let mut d =
                 self.streams.open(&b.stream, Subject::new(SubjectTag::Party, party.get()), day, SubStep::S3e.ordinal());
-            b.process.outcome(&self.register, &view, &mut h, &places, &mut d);
+            b.process.outcome(&self.register, &view, h, &places, &mut d);
         }
-        Some(((kind, slot, party), h))
-    }
-
-    /// An agent's changed household written back in the day's order: its gone persons' contracts leaving their lines
-    /// at its multiplicity, and an agent no one is left in ended, what it held passing to an estate.
-    fn write_household(&mut self, day: Day, (kind, slot, party): (usize, Slot, PartyId), h: &Household) {
-        let cells = self.books.parties.cells_mut().0;
-        let Some(kd) = self.population.kinds.get(kind) else {
-            violation!(clause = "REP.7", "a hit on a kind the world does not keep", kind = kind);
-        };
-        let table = Population::table_mut::<SystemBacking>(cells, kind);
-        let twins = table.multiplicity(slot).get();
-        let gone = phx_rand::float::len_u64(h.persons.iter().filter(|p| p.gone).count());
         let region = match kd.decl.sited_by {
             Missing::Present(i) => kd.decl.attrs.get(i).map(|a| h.attr(a.item.name)),
             Missing::Absent => None,
         };
-        let written = write_back(&kd.decl, table, slot, h);
+        let gone = phx_rand::float::len_u64(h.persons.iter().filter(|p| p.gone).count());
+        Some(Changed { who: (kind, slot, party), rewrite: rewrite(&kd.decl, table, slot, h), gone, region })
+    }
+
+    /// An agent's changed household written back in the day's order: its gone persons' contracts leaving their lines
+    /// at its multiplicity, and an agent no one is left in ended, what it held passing to an estate.
+    fn write_household(&mut self, day: Day, c: Changed) {
+        let Changed { who: (kind, slot, party), rewrite, gone, region } = c;
+        let cells = self.books.parties.cells_mut().0;
+        let table = Population::table_mut::<SystemBacking>(cells, kind);
+        let twins = table.multiplicity(slot).get();
+        let written = write_rewrite(table, slot, &rewrite);
         let k = u64::from(twins);
         self.agent_day.gone += gone * k;
         self.population.count(kind, (0, 0), (0, gone * k));

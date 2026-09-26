@@ -6,7 +6,7 @@ use phx_core::{AttrDecl, Household, Person, PersonAttrDecl, PopEntry, PopItem, R
 use phx_id::{Date, Day, LineId, PartyId, Slot, TableId};
 use phx_ledger::algebra::Side;
 use phx_num::Missing;
-use phx_pop::explicit::{household, household_into, write_back};
+use phx_pop::explicit::{household, household_into, rewrite, write_back, write_rewrite};
 use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::person::{Attachment, Holder, pack};
@@ -176,9 +176,9 @@ pub(crate) fn outcome(a: &mut Agents, slot: Slot, date: Date, d: &mut Draws) {
     let _ = a.table.take_changed();
 }
 
-/// A day's outcomes on the agents hit, each as often as it was hit: the households made explicit and changed on the
-/// pool, each agent drawing from its own address so the work's order is no part of the result, and written back in
-/// slot order.
+/// A day's outcomes on the agents hit, each as often as it was hit: the households made explicit, changed and their
+/// words reckoned on the pool, each agent drawing from its own address so the work's order is no part of the result,
+/// and written back in slot order.
 pub(crate) fn outcomes(
     a: &mut Agents,
     (pool, pieces): (&phx_exec::Pool, usize),
@@ -199,21 +199,22 @@ pub(crate) fn outcomes(
         let lesser = |x: usize, y: usize| if x < y { x } else { y };
         let from = lesser(p * each, runs.len());
         let to = lesser(from + each, runs.len());
+        let mut h = Household { attrs: Vec::new(), persons: Vec::new() };
         runs.get(from..to)
             .unwrap_or(&[])
             .iter()
             .map(|&(slot, times)| {
-                let mut h = household(decl, table, slot);
+                household_into(decl, table, slot, &mut h);
                 let mut d = Draws::new(stream, Subject::new(SubjectTag::Party, u64::from(slot.get())), day, 0);
                 for _ in 0..times {
                     outcome_on(&mut h, date, &mut d);
                 }
-                (slot, h)
+                (slot, rewrite(decl, table, slot, &h))
             })
             .collect::<Vec<_>>()
     });
-    for (slot, h) in changed.into_iter().flatten() {
-        let _ = write_back(&a.decl, &mut a.table, slot, &h);
+    for (slot, r) in changed.into_iter().flatten() {
+        let _ = write_rewrite(&mut a.table, slot, &r);
     }
     let _ = a.table.take_changed();
 }

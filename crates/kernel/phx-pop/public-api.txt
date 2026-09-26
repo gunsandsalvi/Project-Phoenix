@@ -28,13 +28,16 @@ pub const phx_pop::consts::PERSON_ATTR_BITS: u32
 pub const phx_pop::consts::ROLE_BITS: u32
 pub const phx_pop::consts::SIDE_BIT: u32
 pub mod phx_pop::explicit
+pub struct phx_pop::explicit::Rewrite
 pub struct phx_pop::explicit::Written
 pub phx_pop::explicit::Written::ended: bool
 pub phx_pop::explicit::Written::leaving: alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 pub fn phx_pop::explicit::household<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &phx_pop::table::AgentTable<B>, phx_id::ids::Slot) -> phx_core::pop_process::Household
 pub fn phx_pop::explicit::household_into<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &mut phx_core::pop_process::Household)
 pub fn phx_pop::explicit::per_twin<B: phx_store::backing::Backing>(&phx_pop::table::AgentTable<B>, phx_id::ids::Slot) -> alloc::vec::Vec<((phx_id::ids::LineId, phx_ledger::algebra::Side), u32)>
+pub fn phx_pop::explicit::rewrite<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &phx_core::pop_process::Household) -> phx_pop::explicit::Rewrite
 pub fn phx_pop::explicit::write_back<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &mut phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &phx_core::pop_process::Household) -> phx_pop::explicit::Written
+pub fn phx_pop::explicit::write_rewrite<B: phx_store::backing::Backing>(&mut phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &phx_pop::explicit::Rewrite) -> phx_pop::explicit::Written
 pub mod phx_pop::hazard
 pub enum phx_pop::hazard::Booking
 pub phx_pop::hazard::Booking::Hit(phx_id::day::Day)
