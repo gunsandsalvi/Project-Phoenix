@@ -89,6 +89,9 @@ pub struct KindTable<B: Backing = SystemBacking> {
     reader: Option<crate::columns::ColumnTrace>,
     #[saved(skip)]
     undeclared: usize,
+    /// The facts the handlers moved to a new value, and how many times, since last taken.
+    #[saved(skip)]
+    moved: Vec<(&'static str, u64)>,
 }
 
 /// The head of a holder's due-day run: the earliest day any row of its dated segment can fall due, and where the
@@ -174,6 +177,7 @@ impl<B: Backing> KindTable<B> {
             facets: Vec::new(),
             reader: None,
             undeclared: 0,
+            moved: Vec::new(),
             table,
         }
     }
@@ -450,6 +454,11 @@ impl<B: Backing> KindTable<B> {
         std::mem::take(&mut self.undeclared)
     }
 
+    /// The facts handlers moved to a new value, each with how many times, since last taken.
+    pub fn take_moved(&mut self) -> Vec<(&'static str, u64)> {
+        std::mem::take(&mut self.moved)
+    }
+
     fn check(&mut self, fact: &str, written: bool) {
         if let Some(r) = self.reader
             && !r.writes.contains(&fact)
@@ -475,6 +484,9 @@ impl<B: Backing> crate::handler::FactStore for KindTable<B> {
         let Some(column) = self.facet_named(fact) else {
             violation!(clause = "PTY.8", "a fact the kind does not keep");
         };
+        if KindTable::fact(self, slot, column) != Missing::Present(value) {
+            crate::columns::count_moved(&mut self.moved, fact);
+        }
         self.write_fact(slot, column, value);
     }
 }

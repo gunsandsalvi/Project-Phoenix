@@ -205,6 +205,7 @@ pub phx_core::columns::KernelTable::name: &'static str
 impl phx_store::save::Saved for phx_core::columns::KernelTable where &'static str: phx_store::save::Saved, phx_core::columns::FactColumns: phx_store::save::Saved
 pub fn phx_core::columns::KernelTable::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::columns::KernelTable::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_core::columns::count_moved(&mut alloc::vec::Vec<(&'static str, u64)>, &'static str)
 pub mod phx_core::consts
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
@@ -615,6 +616,8 @@ pub const phx_core::family::AUDIT_SUBSTEP: phx_core::substep::SubStep
 pub trait phx_core::family::AccountsAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::family::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::family::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::family::AccountsAudit::income(&self) -> i128
+pub fn phx_core::family::AccountsAudit::invoices(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::family::AccountsAudit::parties(&self) -> usize
 pub fn phx_core::family::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub trait phx_core::family::AgentsAudit: core::fmt::Debug + core::marker::Sync
@@ -842,6 +845,7 @@ pub fn phx_core::kind_tables::KindTable<B>::weight_at(&self, phx_id::ids::Slot) 
 pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::take_moved(&mut self) -> alloc::vec::Vec<(&'static str, u64)>
 pub fn phx_core::kind_tables::KindTable<B>::take_undeclared(&mut self) -> usize
 pub fn phx_core::kind_tables::KindTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
@@ -849,7 +853,7 @@ pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default, alloc::vec::Vec<(&'static str, u64)>: core::default::Default
 pub fn phx_core::kind_tables::KindTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::kind_tables::KindTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::kind_tables::NewIndividual<'a>
@@ -2835,6 +2839,7 @@ pub fn phx_core::kind_tables::KindTable<B>::weight_at(&self, phx_id::ids::Slot) 
 pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::take_moved(&mut self) -> alloc::vec::Vec<(&'static str, u64)>
 pub fn phx_core::kind_tables::KindTable<B>::take_undeclared(&mut self) -> usize
 pub fn phx_core::kind_tables::KindTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
@@ -2842,7 +2847,7 @@ pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default, alloc::vec::Vec<(&'static str, u64)>: core::default::Default
 pub fn phx_core::kind_tables::KindTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::kind_tables::KindTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::KinkDecl
@@ -3333,6 +3338,8 @@ pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
 pub trait phx_core::AccountsAudit: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_core::AccountsAudit::income(&self) -> i128
+pub fn phx_core::AccountsAudit::invoices(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_core::AccountsAudit::parties(&self) -> usize
 pub fn phx_core::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub trait phx_core::AgentsAudit: core::fmt::Debug + core::marker::Sync

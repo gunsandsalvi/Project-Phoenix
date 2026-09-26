@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 if-firm = { path = "../../interfaces/if-firm" }
 if-pop = { path = "../../interfaces/if-pop" }
+phx-acct = { path = "../../kernel/phx-acct" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-ledger = { path = "../../kernel/phx-ledger" }

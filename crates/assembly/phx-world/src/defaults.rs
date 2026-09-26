@@ -109,8 +109,9 @@ impl World {
         }
     }
 
-    /// 2e: every party whose grace has ended on a contract still in arrears defaults and ends into an estate.
-    #[clause("FRM.15", "L3", "PTY.9")]
+    /// 2e: every party whose grace has ended on a contract still in arrears defaults and ends into an estate, so no
+    /// firm fails its payments for ever.
+    #[clause("FRM.15", "FRM.21", "L3", "PTY.9")]
     pub(crate) fn defaults_end(&mut self, day: Day) {
         let mut due: Vec<Due> = Vec::new();
         while let Some(first) = self.defaults.first().copied() {

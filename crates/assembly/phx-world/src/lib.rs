@@ -17,7 +17,7 @@ pub mod registry;
 pub mod save;
 pub mod systems;
 pub mod trace;
-mod visits;
+pub mod visits;
 pub mod world;
 
 pub use graph::{HandlerGraph, HandlerId};

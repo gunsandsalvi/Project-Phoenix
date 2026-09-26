@@ -105,6 +105,9 @@ pub struct AgentTable<B: Backing = SystemBacking> {
     reader: Option<phx_core::ColumnTrace>,
     #[saved(skip)]
     undeclared: usize,
+    /// The positions the handlers moved to a new value, and how many times, since last taken.
+    #[saved(skip)]
+    moved: Vec<(&'static str, u64)>,
 }
 
 #[inline]
@@ -165,6 +168,7 @@ impl<B: Backing> AgentTable<B> {
             changed: Vec::new(),
             reader: None,
             undeclared: 0,
+            moved: Vec::new(),
             table,
         }
     }
@@ -614,6 +618,11 @@ impl<B: Backing> AgentTable<B> {
         std::mem::take(&mut self.undeclared)
     }
 
+    /// The positions handlers moved to a new value, each with how many times, since last taken.
+    pub fn take_moved(&mut self) -> Vec<(&'static str, u64)> {
+        std::mem::take(&mut self.moved)
+    }
+
     fn check(&mut self, fact: &str, written: bool) {
         if let Some(r) = self.reader
             && !r.writes.contains(&fact)
@@ -635,6 +644,9 @@ impl<B: Backing> phx_core::FactStore for AgentTable<B> {
     fn write(&mut self, fact: &'static str, slot: Slot, value: i64) {
         self.check(fact, true);
         let column = self.named(fact);
+        if self.fact(slot, column) != Missing::Present(value) {
+            phx_core::columns::count_moved(&mut self.moved, fact);
+        }
         self.write_fact(slot, column, value);
     }
 }

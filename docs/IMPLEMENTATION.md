@@ -5890,25 +5890,25 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 **Status**: building
 
 **Clauses**:
-- STATE: FRM.1, FRM.2; FRM.23 *(part: cells keyed and positioned; cumulative output per way run is S6.01)*; ACC.6
-  *(completes it: the firm's choice of cost flow)*.
-- DECISION: FRM.4, FRM.5, FRM.6, FRM.11; FRM.7 *(part: buying inputs; employing is S1.08)*; FRM.8 *(part: the
-  production side; investing is S1.04)*; REP.34 *(part: posted prices of goods and services; wage points are S1.08,
-  lenders' rate points S1.09)*.
-- PROCESS: FRM.13, FRM.14; FRM.16 *(part: households found firms; firms and funds found them from S3.07)*; FRM.15
-  *(part: default of payment and liquidation; the balance-sheet test and restructuring are S2.03)*; L3 *(part: firm
-  estates liquidate through the waterfall)*.
-- STATE: VAL.23 *(completes it: the public-series outlooks at 5a, once per method in use)*.
+- STATE: FRM.1, FRM.2; FRM.23 *(part: cells keyed and positioned; cumulative output per way run is S6.01)*.
+- DECISION: FRM.5; REP.34 *(part: posted prices of goods and services; wage points are S1.08, lenders' rate points
+  S1.09)*.
+- PROCESS: FRM.15 *(part: default of payment and liquidation; the balance-sheet test and restructuring are S2.03)*; L3
+  *(part: firm estates liquidate through the waterfall)*.
 - DECISION: REP.38 *(completes it: the firms' attention, their first continuous decision of how often to review)*.
-- PROCESS: REP.21 *(completes it: reviews at the attention rate, their cost paid)*; REP.35 *(completes it: a
-  surprise raises attention and wakes the parties it bears on)*.
+- PROCESS: REP.21 *(completes it: reviews at the attention rate, their cost in staff hours counted)*.
 - STATE: TEC.4 *(completes it: each firm's known ways, its industry's public set and its own, S1.02)*.
 - INVARIANT: TEC.9 *(completes it: the family checks that a production's producer knew its way)*.
 - INVARIANT: FRM.17, FRM.18.
-- MEASURE: REP.15 *(completes it: reported per kind, with individuals, lines, events per agent and the twins whose
-  size would rank them individuals)*.
 - FORBID: FRM.20, FRM.21.
 - PRIMITIVE: FRM.22.
+- Each decision whose inputs a later step brings completes there, as the firm's rules and state here wait for them:
+  production, the way and entering or leaving a line (FRM.4, FRM.6, FRM.11) with the plant they read (S1.04); revenue
+  on delivery, the cost flow of stocks, buying inputs, the public-series outlooks and the surprise's wake (FRM.13,
+  ACC.6, FRM.7's buying, VAL.23, REP.35) with the goods markets that deliver, stock and print (S1.05); unit cost and
+  the size rank's report (FRM.14, REP.15) with the labour that completes a batch's cost and moves a firm's size
+  (S1.08); founding (FRM.16's part) with the households' decisions (S1.12); and a solvent owner's closure with the
+  values of stock and plant at the prices it expects (S1.05).
 - Financing, payouts, groups, distress and the rest of the lifecycle (FRM.3, FRM.9, FRM.10, FRM.12, FRM.19) are S2.03
   and S3.05.
 - This step retires S0.16's placeholders naming FRM for the opening large firms' decisions.
@@ -5945,6 +5945,9 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 | `src/rules/found.rs` | FRM.16: whether a household founds |
 | `src/rules/close.rs` | whether an owner closes a solvent firm |
 | `src/handlers/*.rs` | 5b production and input rates; 5c price, way, entry-and-exit and closure reviews on review and wake days, and founding decisions; 3c foundings executed; 2e failures after grace; the realisation of physical flows at visits and kinks |
+| `crates/systems/sys-frm/src/families.rs` | the families of the firms' revenue (FRM.17) and claims (FRM.18) |
+| `crates/assembly/phx-world/src/defaults.rs` | the insolvency law's grace queued from the contract process's fails, and each default at 2e |
+| `crates/apps/phx-cli/src/checks/firms.rs` | LC-1-06, LC-1-07, LC-1-08, LC-1-45 |
 | `crates/systems/sys-est/src/firm.rs` | firm estates: opening, selling stock through its market and plant bilaterally, the waterfall (S0.17), releasing staff |
 | `crates/systems/sys-frm/src/gen.rs` | small firms and household businesses' key attributes and positions beyond S0.25's; each firm's latest filed accounts, derived from its drawn books, lines and its industry's margins (GEN.5) |
 | `data/<country>/FRM.toml` | management type sets (target stock cover, adjustment times, markup adjustment speeds, pricing curvature, horizons: PREFERENCE); review schedules; price points per trade (POLICY of each trade); founding costs; the grace before a default of payment and the liquidation horizon (insolvency law, POLICY); review and menu costs in hours (TECHNOLOGY) |
@@ -5996,6 +5999,14 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
   lists from this step since a firm's end reaches them (architecture §4.5, §7.4, §9.1), each drawn agent losing a
   twin's share from its persons' attachments; what no agent's unit fits passes to the estate's side's other holders. The counter `phx_frm.defaults` is the day's most. Selling
   stock and plant waits for the markets (S1.05, S1.04); releasing staff on notice for LAB (S1.08).
+- **Families, counters and checks** *(built, sub-step f)*: `sys-frm/src/families.rs` declares `FRM.revenue`
+  (FRM.17): the day's income posted from dues and payments, summed over every party, is nothing, each revenue another's
+  outlay; and `FRM.invoices` (FRM.18): each party's receivables and payables as the accounts keep them are the sums of
+  the claims recognised to it, the invoices until trade credit writes its own (S2.02). The world keeps what each day's
+  visits did — the rows each handler visited and the facts they moved to a new value (`VisitDay`) — from which the run
+  reads `phx_frm.price_reviews`, `phx_frm.price_changes` and `phx_frm.attention_visits`; with `phx_frm.defaults`,
+  `phx_frm.estates_open` (all estates, until estates carry their origin) and `phx_pop.bytes_per_firm_cell`, each the
+  heaviest day's. LC-1-06, LC-1-07, LC-1-08 and LC-1-45 are registered.
 - **Outlooks in the day** (S1.01): the firms' stances are the first parties' methods and their attention the first
   review intensities, so the public-series outlooks at 5a (VAL.23), once per method in use and series published, the
   attention exposure at visits (REP.21, REP.38) and the wake of a surprise beyond its sensitivity (REP.35, architecture
@@ -6103,14 +6114,11 @@ kink days, dues and wear.
 - `close_compares_continuing_and_winding_down`.
 
 **Live checks**
-- `LC-0-26` takes on its full claim: payments *settle* on every business day in every country open, now that
-  firms earn (F-016).
 - `LC-1-06`: FRM.17 and FRM.18 families clean.
 - `LC-1-07`: every posted price is a point of its trade's table (REP.34), and prices change only on review or wake
   days.
 - `LC-1-08`: SRV.7 and FRM.19 reads — the frequency and size of price changes, and the markups, are reported per
   trade.
-- `LC-1-09`: every founding names a founder, the money it paid and the plant it bought (FRM.16, FRM.21).
 - `LC-1-45`: firms end every year in every industry that has firms, by closure and by default of payment, each with an
   estate or a successor, its sales and its waterfall (FRM.15, FRM.21, L3); no firm keeps failing payments past its
   grace without ending.
@@ -6122,6 +6130,8 @@ kink days, dues and wear.
   each an individual for weeks; counter `phx_frm.estates_open`, ratcheted, against architecture §9.1's estimate.
 - Counters, ratcheted: `phx_frm.price_reviews`, `phx_frm.price_changes`, `phx_frm.foundings`, `phx_frm.closures`,
   `phx_frm.defaults`, `phx_pop.bytes_per_firm_cell`.
+- Memory: the firms' record joins the build run's budget (`phx-cli`'s `FIRMS_BYTES`, architecture §13.1's 125 MB),
+  as the small firms' positions and the large firms' facts are built here.
 
 **Guards**: none new.
 
@@ -6134,11 +6144,11 @@ kink days, dues and wear.
 - a founding that reads another firm's private state.
 
 **Done when**
-- [ ] Firms produce, price, buy inputs, are founded and end from their own states; the families are clean.
-- [ ] LC-1-06 to LC-1-09 and LC-1-45 are registered; they are not applicable until the circular flow closes, and
-  S1.12's Done when requires them to pass.
+- [ ] Firms keep their state, review and post their prices from it at the attention it sets, and end in default of
+  payment into estates that liquidate; the families are clean.
+- [ ] LC-1-06, LC-1-07, LC-1-08 and LC-1-45 are registered; LC-1-06 passes, and the rest are not applicable until the
+  firms' opening state (S1.15) and closures (S1.05) exist; S1.12's Done when requires them to pass.
 - [ ] Two reviews are done.
-
 ---
 
 ### S1.04 — `sys-cap`: plant
@@ -6147,7 +6157,9 @@ kink days, dues and wear.
 
 **Clauses**:
 - STATE: CAP.1.
-- DECISION: CAP.3, CAP.4; FRM.8 *(completes it, with S1.03's part)*.
+- DECISION: CAP.3, CAP.4; FRM.8 *(completes it, with S1.03's part)*; FRM.4, FRM.6, FRM.11 *(from S1.03: production
+  reads the capacity its plant gives, the way the ways its plant supports, and entering a line the plant it invests
+  in; each waits, as the firm's other rules do, for the inputs, labour and prices later steps bring)*.
 - MEASURE: CAP.10 *(its reads published through STA from S1.14)*.
 - PROCESS: CAP.5, CAP.6; REP.24 *(part: plant's wear and repair between condition classes)*.
 - INVARIANT: CAP.8, CAP.9.
@@ -6244,8 +6256,13 @@ condition) for cells; wear realisations are in "Physical flows realised". Counte
 **Clauses**:
 - STATE: GDS.1, GDS.2; GDS.3 *(part: goods and commodities; land is HSG's, S2.05)*.
 - STATE: TEC.1 *(completes it: a perishable good's spoilage while stored, a rate per product sourced here)*.
-- DECISION: GDS.4, GDS.5, GDS.6.
-- PROCESS: GDS.7, GDS.8, GDS.9; GEO.9.
+- DECISION: GDS.4, GDS.5, GDS.6; FRM.7 *(part: firms buying inputs for planned production, from S1.03)*; a solvent
+  owner's closure of its firm (FRM.15's other way out, from S1.03), valuing its stock and plant at the prices it
+  expects to fetch.
+- PROCESS: GDS.7, GDS.8, GDS.9; GEO.9; FRM.13 *(from S1.03: revenue on delivery from the match set)*; REP.35
+  *(completes it, from S1.03: a surprise in a firm's sales wakes its price review)*.
+- STATE: ACC.6 *(from S1.03: the firm's choice of cost flow over its stocks' lots)*; VAL.23 *(completes it, from S1.03:
+  the public-series outlooks at 5a over the markets' prints, the first public series, once per method in use)*.
 - INVARIANT: GDS.10; GEO.12.
 - MEASURE: GDS.11.
 - FORBID: GDS.12.
@@ -6509,7 +6526,10 @@ Counters, ratcheted: `phx_frt.shipments`, `phx_frt.refused_bookings`.
 - DECISION: LAB.5 *(part: search within the region; moving for work is S2.05, retraining S6.02)*; FRM.7 *(completes
   it: employing, with S1.03's buying)*; HH.6 *(part: search, acceptance, quits and retirement, with S1.12)*; REP.34
   *(part: wage points)*.
-- PROCESS: REP.22 *(part: match quality as the taste over vacancies)*.
+- PROCESS: REP.22 *(part: match quality as the taste over vacancies)*; FRM.14 *(from S1.03: a batch's unit cost, its
+  inputs at their own cost with its labour and its plant's capital charge)*.
+- MEASURE: REP.15 *(completes it, from S1.03: the twins whose size would rank them individuals, by the persons they
+  employ, which hiring and quits move; at the opening every firm above the rank's edge is a large firm, F-048)*.
 - This step retires S0.25's placeholders naming LAB for the opening employment lines' decisions, and S1.03's naming
   LAB for a firm estate releasing its staff, which now follows the contracts' notice and severance by LAB's rules.
 - It introduces one placeholder naming PEN (S4.04): an employer with no pension terms of its own for a job (a new
@@ -6947,7 +6967,8 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
   HH.7 *(part: deposits, banknotes and bills at auction)*; REP.5.
 - STATE: MON.4 *(completes it, with S1.09's part: depositors withdraw and deposit banknotes)*.
 - PROCESS: HH.13 *(part: debt service on its dates and arrears; default's consequences come with S2.01, S2.05 and
-  S2.10, and HH.13 completes at S2.11)*.
+  S2.10, and HH.13 completes at S2.11)*; FRM.16 *(part, from S1.03: households found firms on their founding
+  occasions, with LC-1-09; firms and funds found them from S3.07)*.
 - MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(completes them: LC-1-01, LC-1-03, LC-1-43 and LC-1-44 measure the
   world's outlooks once households and firms decide from them)*.
 - INVARIANT: HH.15.
@@ -7067,6 +7088,9 @@ and standing-flow dues.
 - `LC-1-33`: households going without their needs are recorded as events and counted.
 - `LC-1-34`: liveness (N2) for the circular flow — wages paid, spending received, production, employment and lending
   are non-zero and respond when a primitive moves in the run by its owner's decision.
+- `LC-1-09` (from S1.03): every founding names a founder, the money it paid and the plant it bought (FRM.16, FRM.21).
+- `LC-0-26` takes on its full claim, from S1.03: payments *settle* on every business day in every country open, now
+  that firms earn (F-016).
 
 **Budget**: architecture §13.2's visits, occasion evaluations and standing flows; the memoised buffer solutions, keyed
 on exact inputs, their entries, hit rate and solve time measured (`phx_hh.buffer_memo_entries`,
@@ -16427,7 +16451,9 @@ and are not mapped.
 | GEO | S2.05 | 5 |
 | GEO | S5.02 | 4 |
 | REP | S0.28 | 1, 2, 3, 7, 9, 12, 13, 14, 16, 17, 23, 25, 26, 31, 40, 41 |
-| REP | S1.03 | 15, 21, 35, 38 |
+| REP | S1.03 | 21, 38 |
+| REP | S1.05 | 35 |
+| REP | S1.08 | 15 |
 | REP | S1.09 | 34 |
 | REP | S1.12 | 5, 20 |
 | REP | S2.05 | 22, 24 |
@@ -16450,14 +16476,14 @@ and are not mapped.
 | REG | S3.05 | 6, 11, 12 |
 | REG | S3.07 | 7 |
 | ACC | S0.19 | 1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
-| ACC | S1.03 | 6 |
+| ACC | S1.05 | 6 |
 | ACC | S2.01 | 7 |
 | ACC | S3.05 | 5 |
 | MKT | S0.18 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21 |
 | MKT | S3.06 | 5 |
 | MKT | S4.04 | 20 |
 | VAL | S1.01 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 22 |
-| VAL | S1.03 | 23 |
+| VAL | S1.05 | 23 |
 | VAL | S1.12 | 12, 13, 14, 15 |
 | POP | S0.25 | 3, 4 |
 | POP | S1.13 | 5, 10 |
@@ -16474,9 +16500,10 @@ and are not mapped.
 | TEC | S1.03 | 4, 9 |
 | TEC | S1.05 | 1 |
 | TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14, 15 |
-| FRM | S1.03 | 1, 2, 4, 5, 6, 11, 13, 14, 17, 18, 20, 21, 22 |
-| FRM | S1.04 | 8 |
-| FRM | S1.08 | 7 |
+| FRM | S1.03 | 1, 2, 5, 17, 18, 20, 21, 22 |
+| FRM | S1.04 | 4, 6, 8, 11 |
+| FRM | S1.05 | 13 |
+| FRM | S1.08 | 7, 14 |
 | FRM | S2.03 | 15, 19 |
 | FRM | S3.05 | 3, 9, 10 |
 | FRM | S3.07 | 16 |

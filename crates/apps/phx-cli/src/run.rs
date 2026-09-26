@@ -7,6 +7,8 @@ use phx_world::{Inspector, SaveMeasure, World, WorldConfig, assemble};
 use serde::Deserialize;
 use serde_json::json;
 
+use phx_core::handler::HandlerDecl;
+
 use crate::RunArgs;
 use crate::checks::{CHECKS, Observed, Outcome, Run};
 use crate::clock::WallClock;
@@ -23,6 +25,9 @@ const INDIVIDUALS_BYTES: u64 = 225 << 20;
 /// Resident memory the population may take: its agents, their persons and attachments at the run's factor.
 const POPULATION_BYTES: u64 = 275 << 20;
 
+/// Resident memory the firms' records may take: the small firms' positions and the large firms' facts.
+const FIRMS_BYTES: u64 = 125 << 20;
+
 /// Resident memory the lines the population holds may take: the relationship rows, the lines' holder lists with their
 /// slack, the lines themselves, and the interned keys and terms.
 const LINES_BYTES: u64 = (849 + 216 + 96 + 108) << 20;
@@ -34,8 +39,14 @@ const INDEXES_BYTES: u64 = 85 << 20;
 const DAY_BYTES: u64 = (600 + 214) << 20;
 
 /// Resident memory the world may take at its peak: the budgets of the stores it holds.
-const WORLD_BYTES: u64 =
-    EMPTY_WORLD_BYTES + MAP_BYTES + INDIVIDUALS_BYTES + POPULATION_BYTES + LINES_BYTES + INDEXES_BYTES + DAY_BYTES;
+const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES
+    + MAP_BYTES
+    + INDIVIDUALS_BYTES
+    + POPULATION_BYTES
+    + FIRMS_BYTES
+    + LINES_BYTES
+    + INDEXES_BYTES
+    + DAY_BYTES;
 const MONTHS_PER_YEAR: u16 = 12;
 /// Days after settling at whose close the save the injections load is taken.
 const INJECTION_SAVE_DAY: u16 = 30;
@@ -284,7 +295,28 @@ fn way_sets(w: Inspector<'_>) -> u64 {
     w.own::<sys_tec::Technology>("TEC").map_or(0, |t| u64::try_from(t.sets.len()).unwrap_or(u64::MAX))
 }
 
-fn counters(w: Inspector<'_>) -> [(&'static str, u64); 17] {
+/// The rows a small firm's agent takes in its table's columns, none when the world keeps no small firms.
+fn bytes_per_firm_agent(w: Inspector<'_>) -> u64 {
+    let kinds = &w.population().kinds;
+    kinds
+        .iter()
+        .position(|k| k.decl.kind == sys_frm::SMALL_FIRM.name)
+        .map_or(0, |k| u64::try_from(w.agent_table(k).bytes_per_row()).unwrap_or(u64::MAX))
+}
+
+/// The estates open at a day's close, at the most: those opened so far less those settled.
+fn estates_open(w: Inspector<'_>) -> u64 {
+    let (mut open, mut most) = (0_i128, 0_i128);
+    for d in w.agent_days() {
+        open += i128::from(d.estates) - i128::from(d.estates_settled);
+        if open > most {
+            most = open;
+        }
+    }
+    u64::try_from(most).unwrap_or(0)
+}
+
+fn counters(w: Inspector<'_>) -> [(&'static str, u64); 22] {
     let most =
         |f: fn(&phx_ledger::apply_batch::DaySettlement) -> u64| greatest(w.settlements().iter().map(|s| f(&s.dues)));
     let agents = |f: fn(&phx_world::agents::AgentDay) -> u64| greatest(w.agent_days().iter().map(f));
@@ -306,6 +338,28 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 17] {
         ("phx_pop.hits", agents(|d| d.hits)),
         ("phx_pop.agents_booked", agents(|d| d.booked)),
         ("phx_frm.defaults", agents(|d| d.defaults)),
+        ("phx_frm.estates_open", estates_open(w)),
+        (
+            "phx_frm.price_reviews",
+            greatest(w.visit_days().iter().map(|v| {
+                v.visits_of(<sys_frm::decide::ReviewSmall as HandlerDecl>::NAME)
+                    + v.visits_of(<sys_frm::decide::ReviewLarge as HandlerDecl>::NAME)
+            })),
+        ),
+        (
+            "phx_frm.price_changes",
+            greatest(
+                w.visit_days().iter().map(|v| v.moved_of(<if_firm::facts::Price as phx_core::FactDef>::ITEM.name)),
+            ),
+        ),
+        (
+            "phx_frm.attention_visits",
+            greatest(w.visit_days().iter().map(|v| {
+                v.visits_of(<sys_frm::decide::AttendSmall as HandlerDecl>::NAME)
+                    + v.visits_of(<sys_frm::decide::AttendLarge as HandlerDecl>::NAME)
+            })),
+        ),
+        ("phx_pop.bytes_per_firm_cell", bytes_per_firm_agent(w)),
     ]
 }
 

@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap.workspace = true
+if-firm = { path = "../../interfaces/if-firm" }
 if-pop = { path = "../../interfaces/if-pop" }
 phx-acct = { path = "../../kernel/phx-acct" }
 phx-core = { path = "../../kernel/phx-core" }
@@ -26,6 +27,7 @@ phx-pop = { path = "../../kernel/phx-pop" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }
 phx-world = { path = "../../assembly/phx-world" }
+sys-frm = { path = "../../systems/sys-frm" }
 sys-tec = { path = "../../systems/sys-tec" }
 serde.workspace = true
 serde_json.workspace = true

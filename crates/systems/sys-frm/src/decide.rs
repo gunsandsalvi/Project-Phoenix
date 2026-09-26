@@ -136,6 +136,13 @@ impl Management {
         })
     }
 
+    /// Whether a price is a point of the trade's table in some decade.
+    #[clause("REP.34")]
+    #[must_use]
+    pub fn is_point(&self, price: i64) -> bool {
+        self.points_near(from_i64(price)).contains(&price)
+    }
+
     /// The posted prices near a price: the points of the decade it lies in and of the decades either side, each point
     /// the table's part of its decade's top.
     #[clause("REP.34")]
@@ -342,5 +349,6 @@ mod tests {
         assert_eq!(m.points_near(250.0), vec![10, 20, 50, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
         assert_eq!(m.points_near(2500.0), vec![100, 199, 499, 999, 1000, 1990, 4990, 9990, 10000, 19900, 49900, 99900]);
         assert!(m.points_near(0.0).is_empty());
+        assert!(m.is_point(1990) && m.is_point(4990) && !m.is_point(2000));
     }
 }

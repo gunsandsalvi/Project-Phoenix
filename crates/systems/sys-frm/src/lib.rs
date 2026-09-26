@@ -1,10 +1,11 @@
-//! FRM, firms: here its opening alone — each country's largest firms, the individuals within the promotion rank,
-//! sized by Zipf's law over the country's employment, each in an industry drawn by its size; their plant; the debt and
-//! deposits they draw, which the banks' contracts carry; and the small firms below the rank, held as agents. Their
-//! decisions arrive with their own step.
+//! FRM, firms: at the opening each country's largest firms, the individuals within the promotion rank, sized by
+//! Zipf's law over the country's employment, each in an industry drawn by its size; their plant; the debt and deposits
+//! they draw, which the banks' contracts carry; and the small firms below the rank, held as agents. In the day, their
+//! decisions on the agenda, their default under the insolvency law, and the families of their revenue and claims.
 
 mod consts;
 pub mod decide;
+pub mod families;
 pub mod industry;
 mod opening;
 pub mod rules;
@@ -124,6 +125,8 @@ impl System for Frm {
         d.contribution(Box::new(SmallFirms { prims: small }));
         d.contribution(Box::new(Plant));
         declare_decisions(d);
+        d.family(Box::new(families::Revenue));
+        d.family(Box::new(families::Invoices));
     }
 
     fn handlers(h: &mut HandlerTable) {

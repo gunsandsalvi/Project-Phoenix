@@ -134,6 +134,7 @@ impl World {
         self.day_messages.lapse();
         // The agents' day counts from its first sub-step, as parties end in default at 2e before the agents at 3b.
         self.agent_day = crate::agents::AgentDay::of(day);
+        self.visit_today = crate::visits::VisitDay::of(day);
         let mut pending: Vec<(SubStep, Intents)> = Vec::new();
         let mut dues = DaySettlement::default();
         for info in &SUB_STEPS {

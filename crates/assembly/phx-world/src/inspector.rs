@@ -58,6 +58,12 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.agents
     }
 
+    /// What each day's visits did: the rows each handler visited and the facts they moved.
+    #[must_use]
+    pub fn visit_days(&self) -> &[crate::visits::VisitDay] {
+        &self.world.metrics.visits
+    }
+
     /// The processes' realised and expected hits over the sampled agents.
     #[must_use]
     pub fn rates(&self) -> &crate::rates::Rates {

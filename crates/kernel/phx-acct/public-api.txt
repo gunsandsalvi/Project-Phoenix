@@ -7,6 +7,7 @@ impl phx_acct::accounts::Accounts
 pub fn phx_acct::accounts::Accounts::close(&mut self, phx_id::ids::PartyId)
 pub fn phx_acct::accounts::Accounts::close_day(&self, &phx_ledger::apply::DayBook)
 pub fn phx_acct::accounts::Accounts::closed(&self) -> &[phx_acct::accounts::Closed]
+pub fn phx_acct::accounts::Accounts::day_income(&self) -> i128
 pub fn phx_acct::accounts::Accounts::end_day(&mut self)
 pub fn phx_acct::accounts::Accounts::form_of(&self, &str) -> phx_num::missing::Missing<&str>
 pub fn phx_acct::accounts::Accounts::forms(&self) -> &alloc::collections::btree::map::BTreeMap<&'static str, alloc::string::String>
@@ -38,11 +39,14 @@ pub fn phx_acct::accrual::Claims::hash_into(&self, &mut phx_store::hash::Logical
 pub fn phx_acct::accrual::Claims::lines(&self) -> usize
 pub fn phx_acct::accrual::Claims::mismatches(&self) -> alloc::vec::Vec<(phx_id::ids::LineId, i128, i128)>
 pub fn phx_acct::accrual::Claims::of(&self, phx_id::ids::PartyId) -> (i128, i128)
+pub fn phx_acct::accrual::Claims::parties(&self) -> usize
+pub fn phx_acct::accrual::Claims::party_gaps(&self) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_acct::accrual::Owed, phx_acct::accrual::Owed)>
 pub fn phx_acct::accrual::Claims::post(&mut self, &phx_ledger::effects::DueRec) -> [phx_acct::equity::EquityEvent; 2]
 pub fn phx_acct::accrual::Claims::totals(&self) -> (i128, i128)
 impl phx_store::save::Saved for phx_acct::accrual::Claims
 pub fn phx_acct::accrual::Claims::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_acct::accrual::Claims, phx_store::save::LoadError>
 pub fn phx_acct::accrual::Claims::save(&self, &mut phx_store::save::Writer<'_>)
+pub type phx_acct::accrual::Owed = (i128, i128)
 pub mod phx_acct::audit
 pub struct phx_acct::audit::AccountsView<'a, B: phx_store::backing::Backing>
 pub phx_acct::audit::AccountsView::accounts: &'a phx_acct::accounts::Accounts
@@ -54,6 +58,8 @@ pub fn phx_acct::audit::AccountsView<'_, B>::fmt(&self, &mut core::fmt::Formatte
 impl<B: phx_store::backing::Backing> phx_core::family::AccountsAudit for phx_acct::audit::AccountsView<'_, B>
 pub fn phx_acct::audit::AccountsView<'_, B>::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_acct::audit::AccountsView<'_, B>::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
+pub fn phx_acct::audit::AccountsView<'_, B>::income(&self) -> i128
+pub fn phx_acct::audit::AccountsView<'_, B>::invoices(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub fn phx_acct::audit::AccountsView<'_, B>::parties(&self) -> usize
 pub fn phx_acct::audit::AccountsView<'_, B>::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
 pub struct phx_acct::audit::Claims
@@ -75,6 +81,8 @@ pub const phx_acct::audit::CLAIMS: phx_core::family::FamilyDecl
 pub const phx_acct::audit::EQUITY: phx_core::family::FamilyDecl
 pub const phx_acct::audit::PERIODS: phx_core::family::FamilyDecl
 pub fn phx_acct::audit::families() -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>
+pub fn phx_acct::audit::inject_income(&mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
+pub fn phx_acct::audit::inject_invoices(&mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub mod phx_acct::basis
 pub struct phx_acct::basis::AcctPrims
 pub phx_acct::basis::AcctPrims::carrying_bases: phx_core::register::Prim<alloc::vec::Vec<phx_core::accounting::Permitted>>

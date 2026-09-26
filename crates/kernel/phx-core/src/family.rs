@@ -114,6 +114,12 @@ pub trait AccountsAudit: core::fmt::Debug + Sync {
     fn claims(&self) -> (u64, Vec<Gap>);
     /// Each closed period's income against its equity's change: the parties checked, and each gap.
     fn periods(&self, day: Day) -> (u64, Vec<Gap>);
+    /// The day's income posted from dues and earnings, summed over every party: each revenue against another's
+    /// outlay, so nothing where every one has its payer.
+    fn income(&self) -> i128;
+    /// Each party's receivables and payables against the sum of the claims recognised to it: the parties checked,
+    /// and each gap.
+    fn invoices(&self) -> (u64, Vec<Gap>);
 }
 
 /// The population's agents as the audit reads them: each agent's multiplicity against its contracts, and each

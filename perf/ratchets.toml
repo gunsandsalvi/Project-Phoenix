@@ -131,6 +131,34 @@ counter = "phx_frm.defaults"
 value = 5430
 direction = "down"
 
+# The estates open at a day's close at the most, the firms' and the households' together; the firms' price reviews and
+# the prices they moved, which are none until the firms' latest filed accounts are drawn (S1.15); their attention's
+# visits on their production schedules; and the bytes a small firm's agent takes in its table: first set at S1.03.
+[[ratchet]]
+counter = "phx_frm.estates_open"
+value = 5435
+direction = "down"
+
+[[ratchet]]
+counter = "phx_frm.price_reviews"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_frm.price_changes"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_frm.attention_visits"
+value = 124891
+direction = "down"
+
+[[ratchet]]
+counter = "phx_pop.bytes_per_firm_cell"
+value = 172
+direction = "down"
+
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
 [[ratchet]]
 counter = "phx_num.ir_value_of"

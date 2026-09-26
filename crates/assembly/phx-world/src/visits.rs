@@ -15,6 +15,34 @@ use phx_store::SystemBacking;
 use crate::consts::{AGENT_ROWS, BILLION, KIND_ROWS};
 use crate::world::World;
 
+/// What a day's visits did: the rows each handler visited, and the facts they moved to a new value, each by name.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VisitDay {
+    pub day: Day,
+    pub visits: Vec<(&'static str, u64)>,
+    pub moved: Vec<(&'static str, u64)>,
+}
+
+impl VisitDay {
+    /// A day before any visit.
+    #[must_use]
+    pub fn of(day: Day) -> VisitDay {
+        VisitDay { day, visits: Vec::new(), moved: Vec::new() }
+    }
+
+    /// The rows a handler visited on the day.
+    #[must_use]
+    pub fn visits_of(&self, handler: &str) -> u64 {
+        self.visits.iter().filter(|(h, _)| *h == handler).map(|(_, n)| n).sum()
+    }
+
+    /// The times a fact was moved to a new value on the day.
+    #[must_use]
+    pub fn moved_of(&self, fact: &str) -> u64 {
+        self.moved.iter().filter(|(f, _)| *f == fact).map(|(_, n)| n).sum()
+    }
+}
+
 /// A visit as the world runs it: its declaration and the schedule its period's count gives it, its kind's table,
 /// whether that table is a kind table of individuals, its reason among the table's visits, and its stream.
 #[derive(Clone, Copy, Debug)]
@@ -312,6 +340,10 @@ impl World {
                 continue;
             }
             visited += phx_rand::float::len_u64(slots.len());
+            match self.visit_today.visits.iter_mut().find(|(n, _)| *n == h.name) {
+                Some((_, n)) => *n += phx_rand::float::len_u64(slots.len()),
+                None => self.visit_today.visits.push((h.name, phx_rand::float::len_u64(slots.len()))),
+            }
             let trace = ColumnTrace { substep: step.ordinal(), handler: id.0, reads: h.reads, writes: h.writes };
             let World { books, own, streams, register, bindings, rules, queue, visit_reads, .. } = self;
             let Some((_, own)) = own.iter().find(|(system, _)| *system == h.system) else {
@@ -348,16 +380,23 @@ impl World {
                 );
                 pending.push((step, intents));
             }
-            visit_reads.undeclared_reads += if b.individuals {
+            let (undeclared, moved) = if b.individuals {
                 let t = books.parties.table_mut(b.table.get());
                 t.trace(None);
-                t.take_undeclared()
+                (t.take_undeclared(), t.take_moved())
             } else {
                 let k = agent_kind(b.table, first);
                 let t = Population::table_mut::<SystemBacking>(books.parties.cells_mut().0, k);
                 t.trace(None);
-                t.take_undeclared()
+                (t.take_undeclared(), t.take_moved())
             };
+            visit_reads.undeclared_reads += undeclared;
+            for (fact, n) in moved {
+                match self.visit_today.moved.iter_mut().find(|(f, _)| *f == fact) {
+                    Some((_, m)) => *m += n,
+                    None => self.visit_today.moved.push((fact, n)),
+                }
+            }
             for slot in slots {
                 self.book_visit(i, slot, day, step.ordinal(), false);
             }

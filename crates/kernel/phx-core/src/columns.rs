@@ -164,6 +164,14 @@ impl FactStore for FactColumns {
     }
 }
 
+/// One more move of a fact to a new value, counted by its name.
+pub fn count_moved(moved: &mut Vec<(&'static str, u64)>, fact: &'static str) {
+    match moved.iter_mut().find(|(f, _)| *f == fact) {
+        Some((_, n)) => *n += 1,
+        None => moved.push((fact, 1)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_id::Slot;

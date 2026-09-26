@@ -69,6 +69,8 @@ pub struct World {
     pub(crate) visit_due: Vec<(usize, phx_id::Slot)>,
     pub(crate) visit_day: Day,
     pub(crate) visit_reads: phx_core::ReadTrace,
+    /// What today's visits did, kept for the metrics at the day's close.
+    pub(crate) visit_today: crate::visits::VisitDay,
     /// The kinds under an insolvency law, and the days the grace of each contract in arrears ends.
     pub(crate) laws: Vec<crate::defaults::Law>,
     pub(crate) defaults: std::collections::BTreeSet<crate::defaults::Due>,

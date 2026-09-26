@@ -690,6 +690,8 @@ impl World {
         count.persons = pop.persons.iter().sum();
         self.agent_day = count;
         self.metrics.agents.push(count);
+        let visited = std::mem::replace(&mut self.visit_today, crate::visits::VisitDay::of(day));
+        self.metrics.visits.push(visited);
     }
 
     /// Every agent begun or changed since the last booking drawn afresh from the day after `day`; a kind no process

@@ -43,6 +43,9 @@ pub struct Accounts {
     period: u32,
     closed: Vec<Closed>,
     posted: (usize, usize),
+    /// The day's income posted from dues and earnings, summed over every party: nothing while each revenue is an
+    /// outlay of another. The day's alone, so never saved.
+    income: i128,
     permitted: Vec<Permitted>,
     forms: BTreeMap<&'static str, String>,
 }
@@ -109,6 +112,7 @@ impl Accounts {
         }
         for due in &book.dues {
             for event in self.claims.post(due) {
+                self.income += i128::from(event.amount());
                 self.equity.post(&event);
                 self.tally(&event);
             }
@@ -118,6 +122,7 @@ impl Accounts {
                 phx_num::capacity_exceeded!("a party's income of one day", i64::MAX, 0);
             };
             let event = EquityEvent::earned(party, amount);
+            self.income += i128::from(amount);
             self.equity.post(&event);
             self.tally(&event);
         }
@@ -155,6 +160,18 @@ impl Accounts {
     pub fn end_day(&mut self) {
         self.closed.clear();
         self.posted = (0, 0);
+        self.income = 0;
+    }
+
+    /// The day's income posted from dues and earnings over every party: what one earned less what another spent.
+    #[must_use]
+    pub fn day_income(&self) -> i128 {
+        self.income
+    }
+
+    /// An income posted with no one's outlay against it, for the audit's injection alone.
+    pub(crate) fn income_alone(&mut self, amount: i128) {
+        self.income += amount;
     }
 
     /// The accounts into the world's hash: each equity account, each unpaid claim, and the period's tallies.
@@ -180,7 +197,7 @@ impl Accounts {
     #[clause("SET.12")]
     pub fn save_to(&self, w: &mut phx_store::Writer<'_>) {
         use phx_store::Saved as _;
-        if !self.closed.is_empty() || self.posted != (0, 0) {
+        if !self.closed.is_empty() || self.posted != (0, 0) || self.income != 0 {
             violation!(clause = "SET.13", "accounts saved before the day's audit ended");
         }
         self.equity.save(w);
@@ -206,6 +223,7 @@ impl Accounts {
             period: u32::load(r)?,
             closed: Vec::new(),
             posted: (0, 0),
+            income: 0,
             permitted,
             forms,
         })

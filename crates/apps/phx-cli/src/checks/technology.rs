@@ -6,7 +6,7 @@ use super::Outcome;
 use crate::live_check;
 
 fn not_yet(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("firms produce from their plant once they decide what to make (S1.03)")
+    Outcome::NotYet("firms produce from their plant once they decide what to make (S1.04)")
 }
 
 pub const LC_1_05: super::Check = live_check! {

@@ -87,4 +87,8 @@ pub struct Metrics {
     pub agents: Vec<crate::agents::AgentDay>,
     /// The processes' realised rates over the sampled agents.
     pub rates: crate::rates::Rates,
+    /// What each day's visits did, by the handlers' and facts' names, which a save does not carry: the run's report
+    /// reads them.
+    #[saved(skip)]
+    pub visits: Vec<crate::visits::VisitDay>,
 }

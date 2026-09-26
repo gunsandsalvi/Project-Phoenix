@@ -607,6 +607,7 @@ name = "phx-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "if-firm",
  "if-pop",
  "phx-acct",
  "phx-core",
@@ -623,6 +624,7 @@ dependencies = [
  "phx-world",
  "serde",
  "serde_json",
+ "sys-frm",
  "sys-tec",
  "toml 0.9.12+spec-1.1.0",
 ]
@@ -1171,6 +1173,7 @@ dependencies = [
  "if-firm",
  "if-pop",
  "libm",
+ "phx-acct",
  "phx-core",
  "phx-id",
  "phx-ledger",

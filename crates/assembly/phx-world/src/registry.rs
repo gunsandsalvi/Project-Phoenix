@@ -460,6 +460,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         visit_due: Vec::new(),
         visit_day: carried.today,
         visit_reads: phx_core::ReadTrace::default(),
+        visit_today: crate::visits::VisitDay::of(carried.today),
         laws: std::mem::take(&mut p.laws),
         defaults: std::collections::BTreeSet::new(),
         markets,
