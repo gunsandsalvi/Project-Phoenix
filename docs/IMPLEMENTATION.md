@@ -5887,7 +5887,18 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 
 ### S1.03 — `sys-frm`: firms decide, produce, price, pay, are born and end
 
-**Status**: building
+**Status**: done. Firms of both sizes keep their state as facts and positions, attend to their price on their
+production schedule and review it at the chance their attention gives, and end in default of payment into estates
+that liquidate, waiting while they hold units; `FRM.revenue` is clean. Both reviews were the builder's own. Their
+findings are fixed in c328c49f and its follow-ups:
+- estates wrote off and distributed before selling what they held;
+- a leaving's remainder carried arrears, and was drawn from holdings too small to take it;
+- reviews ran at a stale attention;
+- the grace was one law for every country;
+- clauses were completed ahead of their inputs.
+
+The rest are recorded as F-096 to F-100. The build run of 8d3ca63b passes every live check; four of the estates'
+ratchets are restated from it (peak 2 836 MiB).
 
 **Clauses**:
 - STATE: FRM.1, FRM.2 *(part: firms by industry and size, and the state they keep; completed at S1.15, which draws
@@ -6162,11 +6173,11 @@ kink days, dues and wear.
 - a founding that reads another firm's private state.
 
 **Done when**
-- [ ] Firms keep their state, review and post their prices from it at the attention it sets, and end in default of
+- [x] Firms keep their state, review and post their prices from it at the attention it sets, and end in default of
   payment into estates that liquidate; the families are clean.
-- [ ] LC-1-06, LC-1-07, LC-1-08 and LC-1-45 are registered; LC-1-06 passes, and the rest are not applicable until the
+- [x] LC-1-06, LC-1-07, LC-1-08 and LC-1-45 are registered; LC-1-06 passes, and the rest are not applicable until the
   firms' opening state (S1.15) and closures (S1.05) exist; S1.12's Done when requires them to pass.
-- [ ] Two reviews are done.
+- [x] Two reviews are done.
 ---
 
 ### S1.04 — `sys-cap`: plant
