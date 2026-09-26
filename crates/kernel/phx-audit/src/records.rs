@@ -49,12 +49,11 @@ impl Digests {
             self.open = Some(instruction);
         }
         if leg.paired {
-            match self.open_flows.iter_mut().find(|(d, _)| *d == leg.denom) {
-                Some((_, sum)) => *sum += i128::from(leg.flow),
-                None => {
-                    self.flow_keys += 1;
-                    self.open_flows.push((leg.denom, i128::from(leg.flow)));
-                }
+            if let Some((_, sum)) = self.open_flows.iter_mut().find(|(d, _)| *d == leg.denom) {
+                *sum += i128::from(leg.flow);
+            } else {
+                self.flow_keys += 1;
+                self.open_flows.push((leg.denom, i128::from(leg.flow)));
             }
         }
         if leg.money {
