@@ -187,12 +187,18 @@ struct Settling {
     pays: Missing<DueRow>,
 }
 
+/// What a leg draws on before anything moves: the position its move is checked against, with the move.
+pub(crate) type Drawn = Option<(Position, i64)>;
+/// An instruction's legs as read before anything moves: where each leg's party is and what it draws, or the first leg
+/// whose party has ended.
+pub(crate) type LegReads = Result<(Vec<At>, Vec<Drawn>), usize>;
+
 /// A party as located: itself or its successor, its holder table's place and its slot.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct At {
-    party: PartyId,
-    table: u16,
-    slot: Slot,
+pub(crate) struct At {
+    pub(crate) party: PartyId,
+    pub(crate) table: u16,
+    pub(crate) slot: Slot,
 }
 
 /// A position a leg draws on, by who holds it and what: a row's member count apart from its balance, since the two
@@ -202,6 +208,11 @@ struct Key {
     table: u16,
     slot: Slot,
     code: u64,
+}
+
+/// The rows an instruction opens, by party and account: a leg adjusting one moves a row that holds nothing yet.
+pub(crate) fn opened(legs: &[LegRec]) -> Vec<(PartyId, AccountRef)> {
+    legs.iter().filter(|l| matches!(l.kind, LegKind::Row(RowOp::Open(_)))).map(|l| (l.party, l.account)).collect()
 }
 
 /// A row's balance moved by a leg's quantity, written over the row as it was found.
@@ -288,27 +299,75 @@ impl<B: Backing> Ledger<B> {
                 Located::Ended => return Err(self.fail(settling, FailCause::Ended, leg, covers)),
             }
         }
+        let opened = opened(&legs);
+        let drawn: Vec<Drawn> =
+            legs.iter().zip(&located).map(|(leg, at)| self.leg_draw(holders.arenas(at.table), *at, leg, &opened)).collect();
+        self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), audit)
+    }
+
+    /// The apply routine over legs already read: where each leg's party is and what it draws, or the first leg whose
+    /// party has ended; the reads were made before anything moved, as `apply` makes them.
+    ///
+    /// # Errors
+    /// The fail, when the instruction could not settle.
+    pub(crate) fn apply_read(
+        &mut self,
+        holders: &mut dyn Holders,
+        at: ApplyAt,
+        instruction: Instruction,
+        reads: LegReads,
+        audit: &mut dyn AuditStream,
+    ) -> Result<InstructionId, Fail> {
+        let Instruction { id, reason, settle_day, legs, pays, covers, .. } = instruction;
+        let settling = Settling { id, reason, day: settle_day, pays };
+        if !self.applied.insert(id) {
+            violation!(clause = "SET.11", "an instruction applied twice", id = id.get());
+        }
+        self.refuse(at, &legs, id);
+        match reads {
+            Ok((located, drawn)) => self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), audit),
+            Err(n) => {
+                let Some(leg) = legs.get(n) else {
+                    violation!(clause = "SET.7", "an ended party on no leg", id = id.get());
+                };
+                Err(self.fail(settling, FailCause::Ended, leg, covers))
+            }
+        }
+    }
+
+    /// What a leg draws on before anything moves: the position its move is checked against, with the move; none for a
+    /// leg that moves no position. A row the instruction opens holds nothing until it does, and nothing bounds it.
+    pub(crate) fn leg_draw(
+        &self,
+        arenas: &dyn HolderArenas,
+        at: At,
+        leg: &LegRec,
+        opened: &[(PartyId, AccountRef)],
+    ) -> Option<(Position, i64)> {
+        if matches!(leg.kind, LegKind::Row(RowOp::Adjust)) && opened.contains(&(leg.party, leg.account)) {
+            return Some((Position { now: 0, floor: Missing::Absent, short: FailCause::Funds }, leg.qty));
+        }
+        self.draws(arenas, at.party, at.slot, leg)
+    }
+
+    /// An instruction's moves checked against the positions its legs read, then all settled or none.
+    fn check_and_settle(
+        &mut self,
+        holders: &mut dyn Holders,
+        (settling, covers): (Settling, Vec<crate::covered::Covered>),
+        (legs, located, drawn): (&[LegRec], &[At], &[Drawn]),
+        audit: &mut dyn AuditStream,
+    ) -> Result<InstructionId, Fail> {
+        let id = settling.id;
         let mut keys: BTreeMap<Key, usize> = BTreeMap::new();
         let mut positions: Vec<Position> = Vec::new();
         let mut moves: Vec<(usize, i64)> = Vec::new();
         let mut moved_by: Vec<usize> = Vec::new();
-        let opened: Vec<(PartyId, AccountRef)> = legs
-            .iter()
-            .filter(|l| matches!(l.kind, LegKind::Row(RowOp::Open(_))))
-            .map(|l| (l.party, l.account))
-            .collect();
-        for (n, (leg, at)) in legs.iter().zip(&located).enumerate() {
-            let key = Key { table: at.table, slot: at.slot, code: leg.position_code() };
-            let fresh = matches!(leg.kind, LegKind::Row(RowOp::Adjust)) && opened.contains(&(leg.party, leg.account));
-            let drawn = if fresh {
-                // A row this instruction opens holds nothing until it does, and nothing bounds what it is given.
-                Some((Position { now: 0, floor: Missing::Absent, short: FailCause::Funds }, leg.qty))
-            } else {
-                self.draws(holders.arenas(at.table), at.party, at.slot, leg)
-            };
-            let Some((position, delta)) = drawn else {
+        for (n, ((leg, at), d)) in legs.iter().zip(located).zip(drawn).enumerate() {
+            let Some((position, delta)) = *d else {
                 continue;
             };
+            let key = Key { table: at.table, slot: at.slot, code: leg.position_code() };
             let at = *keys.entry(key).or_insert_with(|| {
                 positions.push(position);
                 positions.len() - 1
@@ -322,7 +381,7 @@ impl<B: Backing> Ledger<B> {
             };
             return Err(self.fail(settling, cause, &leg, covers));
         }
-        self.settle_legs(holders, settling, &legs, &located, audit);
+        self.settle_legs(holders, settling, legs, located, audit);
         for c in covers {
             self.covers.release(c);
         }

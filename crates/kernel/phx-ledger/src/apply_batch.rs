@@ -8,7 +8,7 @@ use phx_num::{Ccy, Missing, violation};
 use phx_store::Backing;
 
 use crate::algebra::Side;
-use crate::apply::ApplyAt;
+use crate::apply::{ApplyAt, Located};
 use crate::books::Books;
 use crate::check::FailCause;
 use crate::consts::RUN_SAMPLE_PERIOD;
@@ -366,6 +366,40 @@ impl<B: Backing> Books<B> {
         r
     }
 
+    /// An instruction's legs read on the pool in fixed shards before anything moves, as `apply` reads them: each leg's
+    /// party located, or the first leg whose party has ended, then what each leg draws.
+    fn read_legs(&self, legs: &[LegRec]) -> crate::apply::LegReads
+    where
+        B: Sync,
+    {
+        let each = legs.len().div_ceil(crate::consts::STREAM_SHARDS);
+        let chunk = |i: usize| {
+            let from = if i * each < legs.len() { i * each } else { legs.len() };
+            let to = if from + each < legs.len() { from + each } else { legs.len() };
+            (from, legs.get(from..to).unwrap_or(&[]))
+        };
+        let located = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_SHARDS, |i| {
+            chunk(i).1.iter().map(|l| crate::apply::Holders::locate(&self.parties, l.party)).collect::<Vec<_>>()
+        });
+        let mut at = Vec::with_capacity(legs.len());
+        for (n, l) in located.into_iter().flatten().enumerate() {
+            match l {
+                Located::Live { party, table, slot } => at.push(crate::apply::At { party, table, slot }),
+                Located::Ended => return Err(n),
+            }
+        }
+        let opened = crate::apply::opened(legs);
+        let located = &at;
+        let drawn = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_SHARDS, |i| {
+            let (from, of) = chunk(i);
+            of.iter()
+                .zip(located.get(from..).unwrap_or(&[]))
+                .map(|(leg, a)| self.ledger.leg_draw(self.parties.holder(a.table), *a, leg, &opened))
+                .collect::<Vec<_>>()
+        });
+        Ok((at, drawn.concat()))
+    }
+
     /// The dues the claimant members drawn on cleared lines lost, recorded as failed against the top issuer, which
     /// holds the failed payers' dues; the members drawn, and those drawn past the failed, which a claimant unit wider
     /// than what remained to draw leaves with the top issuer.
@@ -392,7 +426,10 @@ impl<B: Backing> Books<B> {
     }
 
     /// The nets applied, one instruction per line as its legs are read in order, so no batch of legs is held.
-    fn apply_nets(&mut self, nets: &[(NetKey, i128)], day: Day, audit: &mut dyn AuditStream) {
+    fn apply_nets(&mut self, nets: &[(NetKey, i128)], day: Day, audit: &mut dyn AuditStream)
+    where
+        B: Sync,
+    {
         let mut legs: Vec<LegRec> = Vec::new();
         let mut entries = nets.iter().peekable();
         while let Some((NetKey { line, party, side, row: is_row }, q)) = entries.next() {
@@ -424,7 +461,9 @@ impl<B: Backing> Books<B> {
                 pays: Missing::Absent,
                 covers: Vec::new(),
             };
-            if let Err(f) = self.ledger.apply(&mut self.parties, ApplyAt::Day(SubStep::S7c), instruction, audit) {
+            let reads = self.read_legs(&instruction.legs);
+            let applied = self.ledger.apply_read(&mut self.parties, ApplyAt::Day(SubStep::S7c), instruction, reads, audit);
+            if let Err(f) = applied {
                 violation!(
                     clause = "SET.6",
                     "a net the fixed point let stand would not settle",
