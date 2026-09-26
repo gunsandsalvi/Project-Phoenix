@@ -62,8 +62,7 @@ pub const PLEDGED: u32 = 1;
 
 /// Sets or clears the mark of liens on a holding.
 pub fn mark_pledged(arenas: &mut dyn HolderArenas, holder: Slot, instrument: InstrumentId, pledged: bool) {
-    let all = index(arenas, holder);
-    let Some((i, (mut h, _))) = all.iter().copied().enumerate().find(|(_, (h, _))| h.instrument == instrument) else {
+    let Some((i, mut h, _)) = find(arenas, holder, instrument) else {
         violation!(clause = "REG.2", "a lien on a holding the holder does not have", instrument = instrument.get());
     };
     h.flags = if pledged { h.flags | PLEDGED } else { h.flags & !PLEDGED };
@@ -120,10 +119,40 @@ fn index(arenas: &dyn HolderArenas, holder: Slot) -> Vec<(IndividualHolding, usi
         .collect()
 }
 
+/// A holder's holding of an instrument, read head by head until found: its place among the holdings, the holding, and
+/// where its lots begin in the holder's lot list.
+fn find(
+    arenas: &dyn HolderArenas,
+    holder: Slot,
+    instrument: InstrumentId,
+) -> Option<(usize, IndividualHolding, usize)> {
+    let mut lot_at = 0;
+    for (i, w) in arenas.read(holder, ListKind::Holdings).as_chunks::<HOLDING>().0.iter().enumerate() {
+        let h: IndividualHolding = from_words(w);
+        if h.instrument == instrument {
+            return Some((i, h, lot_at));
+        }
+        lot_at += usize_of(h.lots) * LOT;
+    }
+    None
+}
+
+/// A holding's lot words, from where its lots begin.
+fn lot_words<'a>(arenas: &'a dyn HolderArenas, holder: Slot, (h, at): (&IndividualHolding, usize)) -> &'a [u64] {
+    let Some(words) = arenas.read(holder, ListKind::Lots).get(at..at + usize_of(h.lots) * LOT) else {
+        violation!(
+            clause = "REG.4",
+            "a holding's lots missing from its holder's lot list",
+            instrument = h.instrument.get()
+        );
+    };
+    words
+}
+
 /// A holder's holding of an instrument, if it holds any.
 pub fn holding(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId) -> Missing<IndividualHolding> {
-    match index(arenas, holder).into_iter().find(|(h, _)| h.instrument == instrument) {
-        Some((h, _)) => Missing::Present(h),
+    match find(arenas, holder, instrument) {
+        Some((_, h, _)) => Missing::Present(h),
         None => Missing::Absent,
     }
 }
@@ -131,17 +160,10 @@ pub fn holding(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId
 /// A holding's lots, earliest acquired first.
 #[must_use]
 pub fn lots(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId) -> Vec<Lot> {
-    let Some((h, at)) = index(arenas, holder).into_iter().find(|(h, _)| h.instrument == instrument) else {
+    let Some((_, h, at)) = find(arenas, holder, instrument) else {
         return Vec::new();
     };
-    let Some(words) = arenas.read(holder, ListKind::Lots).get(at..at + usize_of(h.lots) * LOT) else {
-        violation!(
-            clause = "REG.4",
-            "a holding's lots missing from its holder's lot list",
-            instrument = instrument.get()
-        );
-    };
-    words.as_chunks::<LOT>().0.iter().map(|l| from_words(l)).collect()
+    lot_words(arenas, holder, (&h, at)).as_chunks::<LOT>().0.iter().map(|l| from_words(l)).collect()
 }
 
 /// Every holding of a holder with its basis, in the order of its holdings: the cost of the lots of the issue it
@@ -168,9 +190,16 @@ pub fn bases(arenas: &dyn HolderArenas, holder: Slot) -> Vec<(InstrumentId, i64)
 
 /// A holding's basis: the cost of its lots; a holder without the holding has none.
 pub fn basis(arenas: &dyn HolderArenas, holder: Slot, instrument: InstrumentId) -> Missing<i64> {
-    match holding(arenas, holder, instrument) {
-        Missing::Present(_) => Missing::Present(lots(arenas, holder, instrument).iter().map(|l| l.cost.raw()).sum()),
-        Missing::Absent => Missing::Absent,
+    match find(arenas, holder, instrument) {
+        Some((_, h, at)) => Missing::Present(
+            lot_words(arenas, holder, (&h, at))
+                .as_chunks::<LOT>()
+                .0
+                .iter()
+                .map(|l| from_words::<Lot>(l).cost.raw())
+                .sum(),
+        ),
+        None => Missing::Absent,
     }
 }
 
@@ -181,10 +210,7 @@ pub(crate) fn acquire(arenas: &mut dyn HolderArenas, holder: Slot, instrument: I
     if lot.quantity.raw() <= 0 {
         violation!(clause = "REG.15", "an acquisition of no units or fewer", units = lot.quantity.raw());
     }
-    let all = index(arenas, holder);
-    let found = all.iter().enumerate().find(|(_, (h, _))| h.instrument == instrument);
-    if let Some((i, (h, at))) = found {
-        let mut h = *h;
+    if let Some((i, mut h, at)) = find(arenas, holder, instrument) {
         let end = at + usize_of(h.lots) * LOT;
         arenas.insert(holder, ListKind::Lots, end, &to_words(&lot));
         h.lots += 1;
@@ -209,15 +235,13 @@ pub(crate) fn acquire_pooled(arenas: &mut dyn HolderArenas, holder: Slot, instru
     if lot.quantity.raw() <= 0 {
         violation!(clause = "REG.15", "an acquisition of no units or fewer", units = lot.quantity.raw());
     }
-    let all = index(arenas, holder);
-    let Some((i, (h, at))) = all.iter().enumerate().find(|(_, (h, _))| h.instrument == instrument) else {
+    let Some((i, mut h, at)) = find(arenas, holder, instrument) else {
         return acquire(arenas, holder, instrument, lot);
     };
     if h.lots != 1 {
         violation!(clause = "ACC.6", "a holding at average cost of other than one lot", lots = h.lots);
     }
-    let mut h = *h;
-    let Some(held) = arenas.read(holder, ListKind::Lots).get(*at..at + LOT).map(from_words::<Lot>) else {
+    let Some(held) = arenas.read(holder, ListKind::Lots).get(at..at + LOT).map(from_words::<Lot>) else {
         violation!(
             clause = "REG.4",
             "a holding's lot missing from its holder's lot list",
@@ -230,7 +254,7 @@ pub(crate) fn acquire_pooled(arenas: &mut dyn HolderArenas, holder: Slot, instru
         violation!(clause = "Law 7", "a holding's quantity or cost overflows", units = lot.quantity.raw());
     };
     let pooled = Lot::new(held.acquired, q, c);
-    arenas.overwrite(holder, ListKind::Lots, *at, &to_words(&pooled));
+    arenas.overwrite(holder, ListKind::Lots, at, &to_words(&pooled));
     h.quantity = QtyRaw::from_raw(q);
     arenas.overwrite(holder, ListKind::Holdings, i * HOLDING, &to_words(&h));
     false
@@ -276,8 +300,7 @@ pub(crate) fn dispose(
     disposal: Disposal,
 ) -> Disposed {
     let Disposal { units, bound, order } = disposal;
-    let all = index(arenas, holder);
-    let Some((i, (mut h, at))) = all.iter().copied().enumerate().find(|(_, (h, _))| h.instrument == instrument) else {
+    let Some((i, mut h, at)) = find(arenas, holder, instrument) else {
         violation!(clause = "REG.16", "units disposed of that the holder does not hold", instrument = instrument.get());
     };
     let free = h.quantity.raw() - bound;

@@ -81,7 +81,9 @@ pub fn compile(
         let id = CountryId::new(u8::try_from(i).map_err(|_| vec![format!("{} countries", countries.len())])?);
         rules.push((id, kernel.calendar.get(&register, id).clone()));
     }
-    let calendar = Calendar::new(epoch, rules, day_zero_date.year()).map_err(|e| vec![e])?;
+    // A schedule's next date is sought from the instance before the one a day falls in, which near day zero lies in
+    // the year before it, so the calendar's bits begin a year early.
+    let calendar = Calendar::new(epoch, rules, day_zero_date.year() - 1).map_err(|e| vec![e])?;
     let day_zero =
         calendar.day(day_zero_date).ok_or_else(|| vec![format!("day zero {day_zero_date:?} before the epoch")])?;
     let decls: Vec<_> = d.streams.iter().map(|(_, s)| *s).collect();

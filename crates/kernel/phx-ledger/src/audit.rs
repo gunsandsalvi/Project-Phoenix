@@ -96,7 +96,7 @@ pub fn contracts<B: Backing>(lines: &Lines<B>, tables: &[&dyn HolderArenas], lin
             continue;
         };
         let (_, slot) = keys.split(key);
-        for r in rows(t, slot).iter().filter(|r| r.row.line == line) {
+        for r in crate::rows::iter(t, slot).filter(|r| r.row.line == line) {
             let [a, l] = &mut counted;
             let side = match r.side() {
                 Side::Asset => a,
@@ -151,8 +151,8 @@ pub fn money_lines<B: Backing>(
                 continue;
             };
             let (_, slot) = keys.split(key);
-            for r in rows(t, slot).iter().filter(|r| r.row.line == *line && lines.listed_side(*line, r.side())) {
-                add(*line, r, &mut gaps);
+            for r in crate::rows::iter(t, slot).filter(|r| r.row.line == *line && lines.listed_side(*line, r.side())) {
+                add(*line, &r, &mut gaps);
             }
         }
     }
@@ -332,7 +332,7 @@ fn money_holding(books: &Books) -> Result<(PartyId, u64, u32, i64), String> {
         let Some(key) = lines.holders(line).next() else { continue };
         let Ok((t, _)) = table(&tables, lines.keys(), key) else { continue };
         let (_, slot) = lines.keys().split(key);
-        let Some(r) = rows(t, slot).into_iter().find(|r| r.row.line == line) else { continue };
+        let Some(r) = crate::rows::iter(t, slot).find(|r| r.row.line == line) else { continue };
         let party = t.party(slot);
         let account = AccountRef::Line { line, side: r.side() }.code();
         let ccy = Denom::Ccy(books.ledger.terms.get(lines.terms(line)).ccy).code();
