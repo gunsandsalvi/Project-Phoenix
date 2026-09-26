@@ -17,11 +17,11 @@ use phx_rand::{Subject, SubjectTag};
 use crate::world::World;
 
 /// A tile struck by an event, with the thousandths of what stands there it destroyed.
-type Struck = (u64, TileId, u64);
+pub(crate) type Struck = (u64, TileId, u64);
 
 impl World {
     /// Today's catastrophes, each struck tile with its event and share, in the order the events were recorded.
-    fn struck_today(&self, day: Day) -> Vec<Struck> {
+    pub(crate) fn struck_today(&self, day: Day) -> Vec<Struck> {
         let kinds: Vec<u16> = crate::world::geo_in(&self.own).hazards.iter().map(|h| h.event_kind).collect();
         let mut events = Vec::new();
         let mut id = phx_rand::float::len_u64(self.events.len());

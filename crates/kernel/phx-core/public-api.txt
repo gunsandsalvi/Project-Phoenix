@@ -544,6 +544,7 @@ pub phx_core::family::FamilyMode::Rolling
 pub phx_core::family::FamilyMode::Rolling::cycle_days: u16
 pub phx_core::family::FamilyMode::Streaming
 pub enum phx_core::family::Transformed
+pub phx_core::family::Transformed::Carried
 pub phx_core::family::Transformed::Deposit
 pub phx_core::family::Transformed::Hazard
 pub phx_core::family::Transformed::Purchase
@@ -2365,6 +2366,7 @@ pub phx_core::Transform::LogGrowthPercent
 pub phx_core::Transform::LogitPercent
 pub phx_core::Transform::LogitShare
 pub enum phx_core::Transformed
+pub phx_core::Transformed::Carried
 pub phx_core::Transformed::Deposit
 pub phx_core::Transformed::Hazard
 pub phx_core::Transformed::Purchase

@@ -1,0 +1,51 @@
+# Freight's technology: the chain vehicles are held in, what a unit of them carries and how fast, the loading at each
+# end of a trip, what carriage a tonne-km takes, and the weight of the storable goods. Each value's source is its
+# entry's; the modes' places are road, rail and sea.
+
+[[primitive]]
+id = "FRT.vehicles"
+kind = "TECHNOLOGY"
+owner = "FRT"
+source = "assumed"
+source_ref = "Vehicles are the plant of the kind transport equipment, the second of CAP's kinds (structures, transport equipment, ICT equipment, other machinery and equipment, cultivated biological resources, intellectual property products), as the national accounts class trucks, railcars, locomotives and ships."
+value = 1
+
+[[primitive]]
+id = "FRT.tonne_km"
+kind = "TECHNOLOGY"
+owner = "FRT"
+source = "estimated"
+source_ref = "The tonne-km a unit of vehicles (a cent of transport equipment) carries a day, by mode. Road: a tractor and trailer's typical load of 16.1 t (VIUS 2021 tractors' mileage-weighted operating weight of 66,400 lb less the 30,800 lb tare of FHWA's Comprehensive Truck Size and Weight Limits Study, Modal Shift Technical Report 2015, Table 4) over the 295 miles of an operating day (ATRI Operational Costs of Trucking 2025: 79,000 miles a truck over 268 days), on $201,300 of equipment (ICCT 2023's $158,000 diesel Class 8 tractor and Wabash's 2023 mean trailer of $43,300). Rail: a carload of 69.3 t (STB 2023 Waybill Reference Guide Table 1-2, carload traffic) on a round trip of two 726-mile hauls (STB 2023 Public Use Waybill Sample) at the 24.4 mph line-haul speed and with the 21.4 hours of terminal dwell at each end (STB EP 724, 2024), on a car of $123,635 (Trinity 10-K 2023) and its share of two $3.0 million locomotives (CARB 2021 Table 2) over a train of 3,948 tons (AAR 2023). Sea, assumed: a coastal vessel of 20,000 t costing $100 million sailing half its days at 11 knots (Crowley's articulated tug-barges); no official source gives vessels' cost."
+value = { axis = [0, 1, 2], values = [0.000381, 0.001117, 0.000489], outside = "refuse" }
+
+[[primitive]]
+id = "FRT.metres_a_day"
+kind = "TECHNOLOGY"
+owner = "FRT"
+source = "estimated"
+source_ref = "The metres a vehicle runs a day, by mode: road the 295 miles of a truck's operating day (ATRI 2025: 79,000 miles over 268 operating days); rail 24 hours at the Class I railroads' mean line-haul train speed of 24.4 mph (STB EP 724 weekly data, 2024); sea 24 hours at the 11 knots of a coastal articulated tug-barge (Crowley), assumed."
+value = { axis = [0, 1, 2], values = [474757, 942432, 488928], outside = "refuse" }
+
+[[primitive]]
+id = "FRT.loading_days"
+kind = "TECHNOLOGY"
+owner = "FRT"
+source = "estimated"
+source_ref = "The whole days loading takes at each end of a trip, by mode: road none, a truck's mean dwell at a shipper or receiver being 113 minutes (USDOT OIG ST2018019, 2018); rail one, the Class I railroads' mean terminal dwell being 21.4 hours (STB EP 724, 2024); sea one, a coastal vessel's day in port, assumed."
+value = { axis = [0, 1, 2], values = [0, 1, 1], outside = "refuse" }
+
+[[primitive]]
+id = "FRT.carriage_a_tonne_km"
+kind = "TECHNOLOGY"
+owner = "FRT"
+source = "estimated"
+source_ref = "The units of carriage (what a US cent bought) a tonne-km takes, by mode: road ATRI 2025's $2.260 a mile over the 83.3% of miles loaded and a load of 16.1 t (VIUS 2021, FHWA 2015); rail the Class I railroads' 4.05 cents a ton-mile (BTS National Transportation Statistics Table 3-21, 2013); sea the barge's 1.83 cents a ton-mile (the same table, 2003); tons of 907 kg and miles of 1,609 m."
+value = { axis = [0, 1, 2], values = [10.44, 2.77, 1.25], outside = "refuse" }
+
+[[primitive]]
+id = "FRT.units_a_tonne"
+kind = "TECHNOLOGY"
+owner = "FRT"
+source = "measured"
+source_ref = "The units of each storable product in a tonne (axis: the products' places): an extracted product's unit is the tonne; the others' unit is what a US cent bought, so a tonne holds its value in cents, from the 2022 Commodity Flow Survey's value over tons (Census CF2200A08, US, all distances) of the SCTG groups the product aggregates: crops and livestock 01-04 ($540 a ton), food 05-08 ($1,780), consumer goods 30, 39 and 40 ($8,361), materials 20-24, 26-29 and 31-33 ($1,655), energy carriers 17-19 ($751), capital goods 34-38 ($11,626); tons of 907 kg."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], values = [59525, 1, 1, 1, 1, 196211, 921642, 182433, 82784, 1281547], outside = "refuse" }

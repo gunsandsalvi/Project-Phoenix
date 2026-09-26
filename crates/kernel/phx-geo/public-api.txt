@@ -238,11 +238,30 @@ pub fn phx_geo::hydrology::upstream(&phx_geo::hydrology::Drainage) -> alloc::vec
 pub mod phx_geo::network
 pub struct phx_geo::network::Network
 pub phx_geo::network::Network::segments: alloc::vec::Vec<phx_geo::network::Segment>
+impl phx_geo::network::Network
+pub fn phx_geo::network::Network::bytes(&self) -> usize
+pub fn phx_geo::network::Network::route(&self, u16, phx_id::ids::ZoneId, phx_id::ids::ZoneId) -> core::option::Option<phx_geo::network::Route>
+impl phx_store::save::Saved for phx_geo::network::Network where alloc::vec::Vec<phx_geo::network::Segment>: phx_store::save::Saved
+pub fn phx_geo::network::Network::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::network::Network::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_geo::network::Route
+pub phx_geo::network::Route::metres: u64
+pub phx_geo::network::Route::mode: u16
+pub phx_geo::network::Route::segments: alloc::vec::Vec<usize>
 pub struct phx_geo::network::Segment
-pub phx_geo::network::Segment::capacity: u64
-pub phx_geo::network::Segment::from: phx_id::ids::TileId
-pub phx_geo::network::Segment::kind: u16
-pub phx_geo::network::Segment::to: phx_id::ids::TileId
+pub phx_geo::network::Segment::from: phx_id::ids::ZoneId
+pub phx_geo::network::Segment::metres: u64
+pub phx_geo::network::Segment::mode: u16
+pub phx_geo::network::Segment::to: phx_id::ids::ZoneId
+pub phx_geo::network::Segment::tonnes: u64
+impl phx_store::save::Saved for phx_geo::network::Segment where phx_id::ids::ZoneId: phx_store::save::Saved, u16: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_geo::network::Segment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_geo::network::Segment::save(&self, &mut phx_store::save::Writer<'_>)
+pub const phx_geo::network::LAND: [u16; 2]
+pub const phx_geo::network::RAIL: u16
+pub const phx_geo::network::ROAD: u16
+pub const phx_geo::network::SEA: u16
+pub fn phx_geo::network::generate(&phx_geo::generate::Map, &phx_geo::distance::ZoneDistances, &[phx_num::missing::Missing<phx_id::ids::ZoneId>], &[u64]) -> phx_geo::network::Network
 pub mod phx_geo::noise
 pub struct phx_geo::noise::Lattice
 impl phx_geo::noise::Lattice
@@ -292,6 +311,7 @@ pub phx_geo::prims::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed
 pub phx_geo::prims::GeoPrims::rugged_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::sea_depths: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::prims::GeoPrims::segment_tonnes: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::share_tolerance: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::terrain_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::terrain_relief: phx_core::register::Prim<phx_core::register::values::Table1>
@@ -378,6 +398,7 @@ pub const phx_geo::prims::ROUGHNESS: phx_core::register::PrimDecl
 pub const phx_geo::prims::RUGGED_M: phx_core::register::PrimDecl
 pub const phx_geo::prims::SEA_DEPTHS: phx_core::register::PrimDecl
 pub const phx_geo::prims::SEA_SHARE: phx_core::register::PrimDecl
+pub const phx_geo::prims::SEGMENT_TONNES: phx_core::register::PrimDecl
 pub const phx_geo::prims::SHARE_TOLERANCE: phx_core::register::PrimDecl
 pub const phx_geo::prims::STORM_COASTAL: phx_core::register::PrimDecl
 pub const phx_geo::prims::STORM_INLAND: phx_core::register::PrimDecl
@@ -434,6 +455,7 @@ pub phx_geo::state::GeoState::deposits: alloc::vec::Vec<phx_geo::deposits::Depos
 pub phx_geo::state::GeoState::distances: phx_geo::distance::ZoneDistances
 pub phx_geo::state::GeoState::hazards: alloc::vec::Vec<phx_geo::state::HazardState>
 pub phx_geo::state::GeoState::map: phx_geo::generate::Map
+pub phx_geo::state::GeoState::network: phx_geo::network::Network
 pub phx_geo::state::GeoState::params: phx_geo::generate::MapParams
 pub phx_geo::state::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>
 pub phx_geo::state::GeoState::weather_kinds: alloc::vec::Vec<u16>
@@ -444,7 +466,7 @@ pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_n
 pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num::missing::Missing<phx_id::ids::ZoneId>>
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>
-impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_geo::state::HazardState
@@ -587,6 +609,7 @@ pub phx_geo::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed::Fixed
 pub phx_geo::GeoPrims::rugged_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::sea_depths: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::GeoPrims::segment_tonnes: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::share_tolerance: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::terrain_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::terrain_relief: phx_core::register::Prim<phx_core::register::values::Table1>
@@ -604,6 +627,7 @@ pub phx_geo::GeoState::deposits: alloc::vec::Vec<phx_geo::deposits::Deposit>
 pub phx_geo::GeoState::distances: phx_geo::distance::ZoneDistances
 pub phx_geo::GeoState::hazards: alloc::vec::Vec<phx_geo::state::HazardState>
 pub phx_geo::GeoState::map: phx_geo::generate::Map
+pub phx_geo::GeoState::network: phx_geo::network::Network
 pub phx_geo::GeoState::params: phx_geo::generate::MapParams
 pub phx_geo::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>
 pub phx_geo::GeoState::weather_kinds: alloc::vec::Vec<u16>
@@ -614,7 +638,7 @@ pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_n
 pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num::missing::Missing<phx_id::ids::ZoneId>>
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>
-impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_geo::ITEMS: &[phx_core::facts::ItemDecl]

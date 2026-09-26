@@ -211,10 +211,10 @@ struct Prepared {
     laws: Vec<crate::defaults::Law>,
     wears: Vec<crate::wear::WearBound>,
     spoils: Vec<crate::spoil::SpoilBound>,
-    /// The market kinds the systems declare, and the retail kinds among them.
+    /// The market kinds the systems declare.
     market_kinds: phx_market::instances::Kinds,
-    retail: Vec<crate::retail::RetailBound>,
-    reach: phx_market::reach::Reach,
+    /// The retail and carriage kinds among them, and the reach of searches.
+    trade: crate::retail::TradeKinds,
     register_hash: u128,
 }
 
@@ -348,11 +348,7 @@ fn prepare(
         errors.extend(e);
         phx_market::instances::Kinds::default()
     });
-    let retail = crate::retail::bind(&d, &market_kinds, &c.register).unwrap_or_else(|e| {
-        errors.extend(e);
-        Vec::new()
-    });
-    let reach = phx_market::reach::Reach::new(&kernel.market, &c.register);
+    let trade = trade_kinds(&d, &market_kinds, &kernel, &c.register, &mut errors);
     let (pop, processes) = match population_kinds(&mut d, &c.register) {
         Ok(bound) => bound,
         Err(e) => {
@@ -384,8 +380,7 @@ fn prepare(
         wears,
         spoils,
         market_kinds,
-        retail,
-        reach,
+        trade,
         register_hash: data_hash(&files),
     })
 }
@@ -395,16 +390,13 @@ fn prepare(
 fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<String>> {
     let (mut kinds, mut errors) = (phx_market::instances::Kinds::default(), Vec::new());
     for (system, kind) in &d.markets {
-        let decl = match (
-            kind.downcast_ref::<phx_market::market::MarketDecl>(),
-            kind.downcast_ref::<phx_market::retail::RetailKind>(),
-        ) {
-            (Some(d), _) => d,
-            (None, Some(r)) => &r.market,
-            (None, None) => {
-                errors.push(format!("{system} declares a market kind that is no market's declaration"));
-                continue;
-            }
+        let decl = kind
+            .downcast_ref::<phx_market::market::MarketDecl>()
+            .or_else(|| kind.downcast_ref::<phx_market::retail::RetailKind>().map(|r| &r.market))
+            .or_else(|| kind.downcast_ref::<phx_market::carriage::FreightKind>().map(|f| &f.market));
+        let Some(decl) = decl else {
+            errors.push(format!("{system} declares a market kind that is no market's declaration"));
+            continue;
         };
         errors.extend(phx_market::market::refusals(decl));
         if decl.settle_days != 0 {
@@ -420,6 +412,25 @@ fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<St
         kinds.declare(*decl);
     }
     if errors.is_empty() { Ok(kinds) } else { Err(errors) }
+}
+
+/// The retail and carriage kinds bound, with the reach of searches; each refusal added to `errors`.
+fn trade_kinds(
+    d: &Declarations,
+    kinds: &phx_market::instances::Kinds,
+    kernel: &crate::compile::KernelPrims,
+    register: &phx_core::Register,
+    errors: &mut Vec<String>,
+) -> crate::retail::TradeKinds {
+    let retail = crate::retail::bind(d, kinds, register).unwrap_or_else(|e| {
+        errors.extend(e);
+        Vec::new()
+    });
+    let freight = crate::freight::bind(d, kinds, register).unwrap_or_else(|e| {
+        errors.extend(e);
+        Vec::new()
+    });
+    crate::retail::TradeKinds { retail, freight, reach: phx_market::reach::Reach::new(&kernel.market, register) }
 }
 
 /// Every name the build declares that a store keeps: kinds, record kinds, streams, decision points, the audit's
@@ -538,8 +549,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         defaults: std::collections::BTreeSet::new(),
         markets,
         market_kinds: std::mem::take(&mut p.market_kinds),
-        retail: std::mem::take(&mut p.retail),
-        reach: p.reach,
+        trade: p.trade.clone(),
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),

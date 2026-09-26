@@ -1,6 +1,6 @@
-//! The family of goods: per good and place, what was in existence at the day's opening plus what was made there
-//! equals what was used up, spoiled and destroyed there plus what is left; trades only move units between holders,
-//! and each transformation's source accounts for its units only in the way it can.
+//! The family of goods: per good and place, what was in existence at the day's opening plus what was made there and
+//! what arrived equals what was used up, shipped out, spoiled and destroyed there plus what is left; trades only move
+//! units between holders, and each transformation's source accounts for its units only in the way it can.
 
 use phx_core::{
     AuditFamily, FamilyCtx, FamilyDecl, Finding, FindingOwner, Findings, GoodStock, InjectTarget, StockDay,
@@ -15,7 +15,7 @@ declare_family! { pub GOODS = "GDS.goods" { mode: Streaming, clause: "GDS.10" } 
 #[derive(Debug)]
 pub struct Goods;
 
-/// Units a source can make: a way's output and a deposit's extraction.
+/// Units a source can make: a way's output and a deposit's extraction; a shipment's arrivals are counted apart.
 fn makes(source: Transformed) -> bool {
     matches!(source, Transformed::Way | Transformed::Deposit)
 }
@@ -27,15 +27,21 @@ fn uses(source: Transformed) -> bool {
 
 /// Where a good's day does not balance, each with its size in units: units a source cannot account for, units a trade
 /// made or lost, and units moved by no transformation, each once; then the opening plus what its ways and deposits
-/// made, less what its ways and purchases used up, what spoiled and what was destroyed, and what those strays moved,
-/// against what is in existence at the close.
+/// made and what shipments brought, less what its ways and purchases used up, what shipments took away, what spoiled
+/// and what was destroyed, and what those strays moved, against what is in existence at the close.
 #[clause("GDS.10", "GDS.12")]
 #[must_use]
 pub fn gaps(day: &StockDay, closing: i64) -> Vec<(i128, String)> {
     let mut out = Vec::new();
     let (mut produced, mut consumed, mut spoiled, mut destroyed) = (0_i128, 0_i128, 0_i128, 0_i128);
+    let (mut arrived, mut shipped) = (0_i128, 0_i128);
     let mut strays = day.traded + day.unaccounted;
     for &(source, made, used) in &day.transformed {
+        if source == Transformed::Carried {
+            arrived += made;
+            shipped += used;
+            continue;
+        }
         if makes(source) {
             produced += made;
         } else if made != 0 {
@@ -59,13 +65,14 @@ pub fn gaps(day: &StockDay, closing: i64) -> Vec<(i128, String)> {
     if day.unaccounted != 0 {
         out.push((day.unaccounted, format!("{} units moved by no transformation", day.unaccounted)));
     }
-    let expected = i128::from(day.opening) + produced - consumed - spoiled - destroyed + strays;
+    let expected = i128::from(day.opening) + produced + arrived - consumed - shipped - spoiled - destroyed + strays;
     if expected != i128::from(closing) {
         out.push((
             i128::from(closing) - expected,
             format!(
-                "opening {} plus {produced} produced less {consumed} consumed, {spoiled} spoiled and {destroyed} \
-                 destroyed, with {strays} moved otherwise, makes {expected}, where {closing} are in existence",
+                "opening {} plus {produced} produced and {arrived} arrived less {consumed} consumed, {shipped} \
+                 shipped, {spoiled} spoiled and {destroyed} destroyed, with {strays} moved otherwise, makes \
+                 {expected}, where {closing} are in existence",
                 day.opening
             ),
         ));
@@ -127,6 +134,8 @@ mod tests {
             (Transformed::Hazard, 0, 2),
         ]);
         assert!(gaps(&d, 120).is_empty(), "100 + 50 - 25 - 3 - 2 = 120");
+        let carried = day(vec![(Transformed::Carried, 30, 12)]);
+        assert!(gaps(&carried, 118).is_empty(), "100 + 30 arrived - 12 shipped = 118");
         assert_eq!(gaps(&d, 121).first().map(|g| g.0), Some(1));
         let wrong = day(vec![(Transformed::Spoilage, 4, 0), (Transformed::Deposit, 0, 4), (Transformed::Wear, 0, 1)]);
         assert_eq!(gaps(&wrong, 99).len(), 3, "spoilage never makes, a deposit never uses up, wear is not a good's");

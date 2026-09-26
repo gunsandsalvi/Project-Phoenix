@@ -64,3 +64,7 @@ pub const HALF: f64 = 0.5;
 
 /// Metres in a kilometre, the unit buyers weigh a seller's distance in.
 pub const METRES_PER_KM: f64 = 1_000.0;
+/// Kilograms in a tonne, the unit goods are weighed in to fill vehicles and segments.
+pub const KG_A_TONNE: f64 = 1_000.0;
+/// Kilograms in a tonne, whole, as segments' capacities are counted.
+pub const KG_A_TONNE_WHOLE: i64 = 1_000;

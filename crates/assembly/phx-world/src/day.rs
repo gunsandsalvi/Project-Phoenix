@@ -191,16 +191,14 @@ impl World {
                 self.apply(day, info.step, &mut pending);
             }
             if info.step == SubStep::S5a {
+                self.arrivals(day);
                 self.goods_outlooks(day);
             }
             if info.step == SubStep::S6a {
-                self.markets_meet(day);
-                self.goods_marks();
-                self.retail_meet(day);
+                self.meet(day);
             }
             if info.step == SubStep::S6d {
-                self.markets_trade(day);
-                self.retail_trade(day);
+                self.trade_day(day);
             }
             if info.step == SubStep::S7c {
                 let streams = &self.streams;
@@ -212,6 +210,7 @@ impl World {
                     self.books.settle_day(&self.due, day, &self.calendar, &self.closed, &draws_of, self.audit.stream());
                 self.estates_settle(day);
                 self.markets_settle(SubStep::S7c);
+                self.freight_settle(day, SubStep::S7c);
             }
             if info.step == SubStep::S9b {
                 let period = crate::registry::period_of(&self.calendar, day);
@@ -455,12 +454,33 @@ impl World {
                         };
                         self.admit_shop(g.step, rows_of(g.rows), &o);
                     }
+                    phx_market::intents::ShipIntent::NAME => {
+                        let Some(o) = phx_market::intents::ShipIntent::decode(words) else {
+                            violation!(clause = "CHN.4", "a consignment its words do not encode", words = words.len());
+                        };
+                        self.admit_ship(g.step, rows_of(g.rows), &o);
+                    }
                     _ => {
                         violation!(clause = "TIME.6", "an intent the apply routine does not know", words = words.len())
                     }
                 }
             }
         }
+    }
+
+    /// 6a: goods between firms, retail and carriage meet, and the goods' marks follow the day's prints.
+    fn meet(&mut self, day: Day) {
+        self.markets_meet(day);
+        self.goods_marks();
+        self.retail_meet(day);
+        self.freight_meet(day);
+    }
+
+    /// 6d: the day's matches, sales and bookings become what settles in stage 7.
+    fn trade_day(&mut self, day: Day) {
+        self.markets_trade(day);
+        self.retail_trade(day);
+        self.freight_trade(day);
     }
 
     fn record_event(&mut self, day: Day, step: SubStep, words: &[u64]) {

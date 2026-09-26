@@ -158,13 +158,17 @@ pub(crate) struct MarketDay {
     pub trades: Vec<(Instruction, PartyId, InstrumentId, i64)>,
     pub shops: Vec<crate::retail::Shop>,
     pub sales: Vec<crate::retail::Sale>,
+    pub ships: Vec<crate::freight::Ship>,
+    pub booked: Vec<crate::freight::Booked>,
+    pub freight: Vec<(Instruction, crate::freight::Booked)>,
     pub tally: GoodsDay,
 }
 
 /// What a day's goods did: the calls met, the transformations that took units from a deposit, the orders and wants
 /// admitted, those refused or lapsed unmet, the transformations and trades that failed; and at retail, the buyers,
 /// the sellers they had in reach, the rounds of choosing again, the buyers that found no seller, and the units of
-/// services delivered at once that no buyer took, which are lost.
+/// services delivered at once that no buyer took, which are lost; and in carriage, the shipments set on their way, the
+/// bookings refused, and the arrivals.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GoodsDay {
     pub auctions: u64,
@@ -177,6 +181,9 @@ pub struct GoodsDay {
     pub rounds: u64,
     pub unserved: u64,
     pub unused: u64,
+    pub shipments: u64,
+    pub refused_bookings: u64,
+    pub arrivals: u64,
 }
 
 /// Each good's latest mark where it stands, as the markets' marks give it, rebuilt after the day's marks.
@@ -292,7 +299,7 @@ impl World {
     /// A good's instrument, issued the first time something names it: a real asset in its product's unit, priced in
     /// its zone's country's currency.
     #[clause("GDS.1", "GDS.2")]
-    fn good(&mut self, key: GoodKey) -> InstrumentId {
+    pub(crate) fn good(&mut self, key: GoodKey) -> InstrumentId {
         if let Missing::Present(id) = self.books.ledger.goods.of(key) {
             return id;
         }

@@ -81,9 +81,8 @@ pub struct World {
     pub(crate) markets: phx_market::markets::Markets,
     /// The market kinds the systems declare, the templates of the instances the markets keep.
     pub(crate) market_kinds: phx_market::instances::Kinds,
-    /// The retail kinds and the one set of sellers a search reaches.
-    pub(crate) retail: Vec<crate::retail::RetailBound>,
-    pub(crate) reach: phx_market::reach::Reach,
+    /// The retail and carriage kinds and the one set of counterparties a search reaches.
+    pub(crate) trade: crate::retail::TradeKinds,
     /// What the kernel reads to key goods.
     pub(crate) goods_frame: crate::goods::Frame,
     /// The day's orders, matches and trades, from their admission to their settlement.

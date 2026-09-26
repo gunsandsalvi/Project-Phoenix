@@ -215,6 +215,7 @@ pub enum Source {
     Spoilage(u64),
     Hazard(u64),
     Wear(u32),
+    Carried(u64),
 }
 
 impl Source {
@@ -228,6 +229,7 @@ impl Source {
             Source::Spoilage(_) => phx_core::Transformed::Spoilage,
             Source::Hazard(_) => phx_core::Transformed::Hazard,
             Source::Wear(_) => phx_core::Transformed::Wear,
+            Source::Carried(_) => phx_core::Transformed::Carried,
         }
     }
 }

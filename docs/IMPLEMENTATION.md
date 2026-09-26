@@ -6499,7 +6499,15 @@ stock's and plant's values from here.
 
 ### S1.06 — `sys-srv`: services and distribution
 
-**Status**: building
+**Status**: done. A retail kind meets every product's buyers daily: stalls read in one pass over the sellers,
+buyers valuing the sellers in their reach by logit over price, distance and a taste drawn per seller and day, capacity
+rationed by lot with choosing again, and purchases settled in stage 7 under `SRV sold`. Buyers arrive with households
+(S1.12) and services' stalls with production (S1.15); LC-1-17 passes and LC-1-16 and LC-1-18 report not yet. Both
+reviews were the builder's own: the architecture pass found the stalls read once per product and every buyer searching
+every stall, a cost of firms times buyers, fixed by one pass over the sellers a day and the stalls in reach found once
+per buyer zone; the spec pass found a buyer at a zone of no country, and a seller's product beyond the products'
+places, skipped where they cannot exist, both made to stop the run. The build run of 304665d9 is clean (120 days, peak
+2 462 MiB).
 
 **Clauses**:
 - STATE: SRV.2; SRV.1 *(part: a provider's posted price; its capacity a day and the service made and delivered at
@@ -6595,80 +6603,95 @@ chooses from (N8.7). Counters, ratcheted: `phx_market.sellers_in_reach`, `phx_ma
 - a stored service.
 
 **Done when**
-- [ ] Retail meets daily with capacity and re-choice.
-- [ ] LC-1-17 passes; LC-1-16 and LC-1-18 report not yet until households buy (S1.12), and S1.12's Done when requires
+- [x] Retail meets daily with capacity and re-choice.
+- [x] LC-1-17 passes; LC-1-16 and LC-1-18 report not yet until households buy (S1.12), and S1.12's Done when requires
   them to pass.
-- [ ] Two reviews are done.
+- [x] Two reviews are done.
 
 ---
 
 ### S1.07 — `sys-frt`: freight within each country, vehicles and infrastructure
 
-**Status**: planned
+**Status**: building, in three sub-steps:
+- **a**: the network (GEO.4's part): segments of road and rail between the market zones of every two regions of a
+  country that share a border, over the land path between them, and sea lanes joining the parts of a country no land
+  path joins, each part to its nearest, the shortest first; each mode's capacity a day in tonnes; routes as the
+  shortest path of one mode;
+- **b**: the kernel of carriage: a shipper's want to carry goods to a zone by a mode (`ShipIntent`), the carriage
+  meeting at 6a at each origin and mode, segments' capacity binding by lot, bookings at 6d paid to the carrier with
+  the goods pledged to it, and arrivals on their day moving the goods from one place to the other (arrived and
+  shipped in GDS's family);
+- **c**: `sys-frt`: its data, the carriage kind, the rules, the live checks, counters, docs, reviews and the build run.
 
 **Clauses**:
 - STATE: FRT.1, FRT.2, FRT.3; GEO.4 *(part: the network and its capacities; the infrastructure's life, maintenance
   and condition are S2.05's, with CAP.7)*.
-- DECISION: FRT.4, FRT.5.
-- PROCESS: FRT.6, FRT.7, FRT.8.
+- DECISION: FRT.4 *(part: a carrier's room is its vehicles', at the price its review posts; the carriers and their
+  vehicles are drawn at S1.15)*; FRT.5 *(part: the shipper's rule; its visit reads the goods and prices of S1.15)*.
+- PROCESS: FRT.6, FRT.7; FRT.8 *(part: goods aboard a failed carrier still arrive, the owner's; their recovery delay
+  and cost come with the insolvency law, S2.03)*.
 - INVARIANT: FRT.9; GEO.13; GDS.10 *(completes it, from S1.05: goods arrived and shipped by freight enter each
   place's balance)*.
-- MEASURE: FRT.10.
 - FORBID: FRT.11.
 - PRIMITIVE: FRT.12; GEO.18.
-- Freight across borders is S5.05. This step retires S1.06's placeholder naming FRT.
+- FRT.10's reads need shipments, which S1.15's goods bring; they complete there. Freight across borders is S5.05.
+  This step retires S1.06's placeholder naming FRT.
 
-**Architecture**: §7.8, §8.
+**Architecture**: §7.11, §8.
 
 **Depends on**: S1.06.
 
 **Goal**: moving goods costs time and money and needs a vehicle, a route and capacity:
-- the opening infrastructure, with network segments and their capacities, owned by named parties;
-- vehicles as capital units;
-- carriers offering room from where their vehicles stand;
-- shippers booking when the price gap exceeds the freight;
-- goods pledged to the carrier in transit.
+- the opening infrastructure, segments with their capacities;
+- vehicles as capital units, a carrier's room from where they are based;
+- shippers booking room when the price gap exceeds the freight;
+- goods pledged to the carrier in transit, arriving on their day.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `crates/kernel/phx-geo/src/network.rs` | network segments (road, rail, sea lanes, pipelines, power lines) with capacity per day, generated at map time from the terrain and region centres, owned by declared parties (ENDOWMENT); the module is S0.13's declared extension point, filled here |
-| `crates/interfaces/if-firm/src/freight.rs` | `Vehicle`, `Route`, `Shipment` |
-| `crates/systems/sys-frt/src/rules/*.rs` | FRT.4: carriers' repositioning and the carriage **pressure** fact (load factor against target) that `sys-frm`'s review reads to set carriers' posted points; FRT.5: shippers' bookings |
-| `src/handlers/*.rs` | 5c bookings and repositioning; `phx-market` meets the route markets (posted) at 6a; arrivals realised on the day they are booked on the agenda; 3e closures from catastrophes |
-| `data/<country>/FRT.toml` | vehicle technologies, speeds, running and keeping costs, loading times (TECHNOLOGY) |
+| `crates/kernel/phx-geo/src/network.rs` | segments generated with the map; routes |
+| `crates/kernel/phx-market/src/carriage.rs` | the carriage meeting: shippers in an order drawn by lot, each at the cheapest carrier with room, the segments' capacity binding |
+| `crates/kernel/phx-ledger/src/goods.rs` | shipments in transit, saved with the goods |
+| `crates/assembly/phx-world/src/freight.rs` | admission, the meeting, bookings, arrivals, closures |
+| `crates/systems/sys-frt/src/*.rs` | the carriage kind, the rules, the data's primitives |
+| `data/shared/FRT.toml` | vehicles' productivity, speeds and loading days by mode; goods' tonnes a unit (TECHNOLOGY) |
+| `data/shared/GEO.toml` | each mode's segment capacity a day in tonnes (`GEO.segment_tonnes`, ENDOWMENT) |
 
 **Design**
 
-- **Infrastructure** (GEO.4): segments between tiles with a mode and a capacity per day, generated at map time by a
-  recorded procedure (shortest-path trees between region centres over land and, for sea lanes, between ports),
-  declared as ENDOWMENT. They are owned by the treasury or by named firms from GEN.
-- **Routes** (FRT.2): paths over segments between two sites, with every transfer between modes.
-- **Carriers** (FRT.4): offer room on routes from where their vehicles stand. The price of room is the carrier's
-  posted point, set by `sys-frm`'s review (S1.03) over running cost and the load-factor pressure `sys-frt` supplies.
-  They reposition empty vehicles when the expected margin elsewhere beats the empty run's cost.
-- **Shippers** (FRT.5): book room when the price gap between places exceeds the freight and loading costs. Otherwise
-  they hold, sell locally or do not trade.
-- **Transit** (FRT.6): goods are pledged to the carrier (a lien, S0.14) and released on arrival; a shipment's arrival
-  day is booked on the agenda, so shipments in transit are touched only at departure and arrival. Freight enters the
-  delivered price.
-- **Capacity** (GEO.13, FRT.9): a segment carries no more a day than its capacity. Bookings beyond it are refused by
-  lot (stream `FRT.capacity_lot`), never repriced by a multiplier (FRT.7).
-- **Failure** (FRT.8): the goods remain the owner's and are recovered after a declared delay and cost; lost cargo is a
-  claim in the carrier's estate.
+- **Infrastructure** (GEO.4): generated with the map by the procedure above (`phx_geo::network::generate`); each mode's
+  capacity a day in tonnes is ENDOWMENT (`GEO.segment_tonnes`). Ownership, life and condition come with
+  infrastructure as capital (S2.05).
+- **Vehicles** (FRT.1): a carrier's units of transport equipment (CAP's kind); its room a day is their units times
+  what a unit carries a day in tonne-km by its mode (`FRT.tonne_km`), its mode a fact (`FRT.mode`). Vehicles are
+  based where their carrier stands: a trip is out and back, so a booking holds the room for twice its transit, and
+  no vehicle is in two places (FRT.9).
+- **Routes** (FRT.2): the shortest path of the carrier's mode over the segments; a trip over two modes is two
+  bookings.
+- **Carriage** (FRT.6) at 6a, each origin zone and mode a meeting: shippers in an order drawn by lot
+  (`FRT.capacity_lot`), each at the cheapest carrier there with room for its tonne-km, equal prices by lot; a booking
+  whose route crosses a segment already carrying its day's capacity is refused, never repriced (FRT.7). At 6d each
+  booking is paid, freight at the carrier's price a tonne-km, under `FRT carried`, and the goods are pledged to the
+  carrier (a lien) and become a shipment in transit, due to arrive after the route's length at the mode's speed and
+  the loading days at each end.
+- **Arrivals** (FRT.3) at 5a of their day: the lien is released and the goods move, the same owner's units used up
+  where they left and made where they arrive under `FRT arrived`, carrying their lots' cost; in GDS's family they are
+  shipped and arrived. A carrier that failed meanwhile does not stop them (FRT.8's part).
+- **Closures** (FRT.7): a segment with an end in a zone a catastrophe struck today carries nothing today.
 
 **Unit tests**
 - `route_capacity_binds_by_lot`.
 - `shipper_books_only_above_freight`.
-- `arrival_day_from_route_and_speed`: over a given route's segments, modes and speeds.
+- `arrival_day_from_route_and_speed`: over a given route's length, mode speed and loading days.
+- `a_route_is_the_shortest_path_of_its_mode`.
 
 **Live checks**
-- `LC-1-19`: FRT.9 and GEO.13 — every shipment has one owner, carrier and vehicle; no vehicle is in two places; no
-  segment is over capacity.
-- `LC-1-20`: FRT.10 — freight rates and price gaps between places are reported, and gaps track freight.
-- `LC-1-47`: every lien of goods in transit is released on arrival or passes to the owner's claim in a failed
-  carrier's estate (FRT.6, FRT.8).
+- `LC-1-19`: FRT.9 and GEO.13 — every shipment has one owner, carrier and vehicle; no carrier holds more room than
+  its vehicles; no segment is over capacity.
+- `LC-1-20`: FRT.10 — freight rates and price gaps between places are reported, and gaps track freight (S1.15).
+- `LC-1-47`: every lien of goods in transit is released on arrival (FRT.6, FRT.8).
 
 **Budget**: shipments about 10⁵ a day, each touched at booking and arrival; within "Institutions, markets".
 Counters, ratcheted: `phx_frt.shipments`, `phx_frt.refused_bookings`.
@@ -6683,7 +6706,7 @@ Counters, ratcheted: `phx_frt.shipments`, `phx_frt.refused_bookings`.
 
 **Done when**
 - [ ] Goods move between places only on booked vehicles over real routes.
-- [ ] LC-1-19, LC-1-20 and LC-1-47 pass.
+- [ ] LC-1-19 and LC-1-47 pass; LC-1-20 reports not yet until goods are shipped (S1.15).
 - [ ] Two reviews are done.
 
 ---
@@ -7449,13 +7472,16 @@ decisions)*: every Stage 1 system's opening contribution.
   distributions)*.
 - DECISION: GDS.6 *(completes it, from S1.05: the stockists' visit, holding stock in storage bought at posted
   prices)*; SRV.1 *(completes it, from S1.06: a provider's capacity a day, the service made and delivered at once)*;
-  SRV.3 *(completes it, from S1.06: a distributor restocks by buying its goods at wholesale)*; GDS.5 *(completes
+  SRV.3 *(completes it, from S1.06: a distributor restocks by buying its goods at wholesale)*; FRT.4, FRT.5
+  *(complete them, from S1.07: carriers with their vehicles, and shippers booking where the gap exceeds the
+  freight)*; GDS.5 *(completes
   it, from S1.05: firms buy their inputs for planned production)*; FRM.7 *(part, from
   S1.05: the same buying)*; a solvent owner's closure of its firm (FRM.15's other way out, from S1.05), valuing its
   stock and plant at the prices it expects to fetch, read from its filed accounts. PROCESS: GDS.9
   *(completes it, from S1.05: weather sets the yields of crops where they grow)*. MEASURE: GDS.11 *(completes it, from
   S1.05: its reads over the goods traded)*.
-- Its Done when requires LC-1-05, LC-1-11, LC-1-12, LC-1-13, LC-1-15 and LC-1-46 to pass.
+- MEASURE: FRT.10 *(completes it, from S1.07: LC-1-20 reads freight rates against the price gaps)*.
+- Its Done when requires LC-1-05, LC-1-11, LC-1-12, LC-1-13, LC-1-15, LC-1-20 and LC-1-46 to pass.
 
 **Architecture**: §10.
 
@@ -8076,7 +8102,8 @@ of their own: they are in the cell's row list and its due-day run):
 - DECISION: FRM.9 *(part: retained cash, trade credit, bank loans and credit lines; bonds, paper and shares are S3.04
   and S3.05)*; FRM.10 *(part: dividends; buybacks are S3.05)*; FRM.12 *(part: every act of distress but seeking a
   buyer, which is S4.06)*.
-- PROCESS: FRM.15 *(completes it: the balance-sheet test, the law's procedures, restructuring)*.
+- PROCESS: FRM.15 *(completes it: the balance-sheet test, the law's procedures, restructuring)*; FRT.8 *(completes
+  it, from S1.07: goods aboard a failed carrier recovered from its estate after the law's delay and at its cost)*.
 - MEASURE: FRM.19.
 - This step retires S1.03's placeholder naming FRM (every insolvency liquidates) and S2.01's placeholder answer to a
   restructuring offer for firms.
@@ -16543,6 +16570,7 @@ the final build within the budget on the phone.
 | F-100 | S1.03 | build, 2026-09-26 | The build run's memory budget gained the firms' line (`FIRMS_BYTES`, architecture §13.1's 125 MB) when its peak rose past the sum of the others; the rise is not measured part by part, so the line is taken from the architecture, not read | the run reports only the process's peak, not each table's resident bytes | the build run reports each part's resident bytes (tables, arenas, agenda, lines) and each budget line is checked against its own part; plant joined the firms' holdings, not their record, at S1.04, so the report waits for the Stage 1 opening's full firms (S1.15) | open for S1.15 |
 | F-101 | S1.04 | build, 2026-09-26 | Three of the plant's primitives are assumed, not measured: the developing and emerging groups' net stock of each kind per unit of GDP (the developed group's, the only one reporting), cultivated assets' service life and depreciation rate, and the lead times of intellectual property and cultivated assets; and no rate of plant failure is declared | the national accounts of the developing and emerging economies publish no net stock by asset, the BEA's tables hold no cultivated assets, and no source found measures failures of plant by kind | each assumed value measured where a source is found (the Penn World Table's capital by asset for the developing groups; the ABS's or FAO's livestock and orchard lives); failures of plant declared when a rate is measured, with the maintenance decision (S1.15) | open for S1.15 |
 | F-102 | S1.04 | build, 2026-09-26 | The build run's peak rose from 2 836 MiB (8d3ca63b) to 4 089 MiB (2b69847e), over its 2 923 MiB budget, which S1.04 did not catch before it was marked done | each wear appended a lot to every class it reached, so lots grew without end (about 200 MB by the fiftieth day); the plant's holdings themselves, 24 a firm with their lots, add about 270 MB from the opening, which no line of the run's budget holds; and the second month-end payday takes about 500 MB more than the first left, not the allocator's (the same with two malloc arenas) | a class's holding keeps one lot at average cost (done: the 62-day peak 3 686 MiB); the plant's line added to architecture §13.1 and the run's budget from a measure of its own part (F-100); the second payday's rise traced to its store | closed: the opening's report no longer holds its 20 M listed writes and apportionments (F-019), about 1.1 GB of the peak, and the build run at 3336bd6a peaks at 2 476 MiB against its 2 923 MiB budget, clean; the plant's line in §13.1 and the second payday's rise stay with the budget work of the Stage 1 gate (S1.16) |
+| F-103 | S1.07 | data, 2026-09-26 | Three of freight's values are assumed, not measured: a coastal vessel's payload, cost and days at sea (20 000 t, $100 million, half its days) and its day in port at each end; a sea lane's capacity, a regional port's 10 million tonnes a year; and a road segment as a four-lane freeway | no official source found gives coastal vessels' cost or a port's throughput in the world's terms, and the map's segments carry no road class | vessels' cost and productivity measured (MARAD's Modal Shift Study, UNCTAD's Review of Maritime Transport); a port's throughput by its size; road segments by class once infrastructure is capital (S2.05) | open for S2.05 |
 
 ---
 
@@ -16731,7 +16759,9 @@ and are not mapped.
 | SRV | S1.06 | 2, 4, 5, 6, 8, 9 |
 | SRV | S1.12 | 7 |
 | SRV | S1.15 | 1, 3 |
-| FRT | S1.07 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
+| FRT | S1.07 | 1, 2, 3, 6, 7, 9, 11, 12 |
+| FRT | S1.15 | 4, 5, 10 |
+| FRT | S2.03 | 8 |
 | LAB | S1.08 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
 | LAB | S6.02 | 5 |
 | HSG | S2.05 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 |

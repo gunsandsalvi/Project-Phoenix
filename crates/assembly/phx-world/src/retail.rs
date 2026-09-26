@@ -33,6 +33,14 @@ pub(crate) struct RetailBound {
     pub reach: u64,
 }
 
+/// The kinds of market goods meet buyers and carriers in, with the one set of counterparties a search reaches.
+#[derive(Clone, Debug)]
+pub(crate) struct TradeKinds {
+    pub retail: Vec<RetailBound>,
+    pub freight: Vec<crate::freight::FreightBound>,
+    pub reach: phx_market::reach::Reach,
+}
+
 /// A buyer's want admitted for the day: its market, the product, the buyer, where it stands, its twins and what a twin
 /// wants.
 #[derive(Clone, Copy, Debug)]
@@ -126,7 +134,7 @@ impl World {
         let Missing::Present(kind) = self.market_kinds.kind(s.kind) else {
             violation!(clause = "MKT.1", "a want in a market kind never declared", party = row.party.get());
         };
-        if !self.retail.iter().any(|r| r.kind == kind) {
+        if !self.trade.retail.iter().any(|r| r.kind == kind) {
             violation!(clause = "SRV.4", "a want in a market that is no retail market", party = row.party.get());
         }
         let base = self.goods_frame.base(s.product);
@@ -230,7 +238,7 @@ impl World {
             by_market.entry(s.market).or_default().push(s);
         }
         let mut stalls_of: BTreeMap<(u16, u16), Vec<Placed>> = BTreeMap::new();
-        for bound in self.retail.clone() {
+        for bound in self.trade.retail.clone() {
             let products: BTreeSet<u16> = by_market
                 .values()
                 .flatten()
@@ -245,7 +253,8 @@ impl World {
         }
         for (market, shops) in by_market {
             let decl = self.market_kinds.decl(&self.markets.made, market);
-            let Some(bound) = self.retail.iter().find(|r| r.decl.market.key.kind == decl.key.kind).cloned() else {
+            let Some(bound) = self.trade.retail.iter().find(|r| r.decl.market.key.kind == decl.key.kind).cloned()
+            else {
                 violation!(
                     clause = "SRV.5",
                     "a retail want in a market no retail kind declares",
@@ -326,7 +335,8 @@ impl World {
                     violation!(clause = "GEO.2", "a buyer at a zone of no country", party = s.party.get());
                 };
                 let at = phx_market::reach::Site { zone: s.zone, country };
-                self.reach
+                self.trade
+                    .reach
                     .of(at, bound.reach, sites, &geo.distances)
                     .into_iter()
                     .map(|i| {
@@ -378,7 +388,9 @@ impl World {
                 violation!(clause = "SRV.5", "a retail sale to no party", market = s.market.get());
             };
             let decl = self.market_kinds.decl(&self.markets.made, s.market);
-            let Some(bound) = self.retail.iter().find(|r| r.decl.market.key.kind == decl.key.kind) else { continue };
+            let Some(bound) = self.trade.retail.iter().find(|r| r.decl.market.key.kind == decl.key.kind) else {
+                continue;
+            };
             let code = phx_ledger::instruction::name_code(bound.decl.reason);
             let Missing::Present(reason) = self.books.ledger.reasons.coded(code) else {
                 violation!(clause = "SET.1", "a purchase under a reason never declared", market = s.market.get());

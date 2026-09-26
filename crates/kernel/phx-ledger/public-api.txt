@@ -562,6 +562,7 @@ pub fn phx_ledger::commitment::RowSpec::load(&mut phx_store::save::Reader<'_>) -
 pub fn phx_ledger::commitment::RowSpec::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::commitment::empty_kinds(&[phx_ledger::commitment::CommitmentKindDecl]) -> alloc::vec::Vec<alloc::string::String>
 pub mod phx_ledger::consts
+pub const phx_ledger::consts::CARRIED: u64
 pub const phx_ledger::consts::DEPOSIT: u64
 pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::HAZARD: u64
@@ -712,9 +713,12 @@ pub fn phx_ledger::goods::GoodKey::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_ledger::goods::GoodKey::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::goods::Goods
 impl phx_ledger::goods::Goods
+pub fn phx_ledger::goods::Goods::arriving(&mut self, phx_id::day::Day) -> alloc::vec::Vec<(u64, phx_ledger::goods::Shipment)>
 pub fn phx_ledger::goods::Goods::deliver(&mut self, phx_id::ids::PartyId, phx_id::ids::InstrumentId, i64)
 pub fn phx_ledger::goods::Goods::delivered(&self, phx_id::ids::PartyId) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::InstrumentId, i64)> + '_
 pub fn phx_ledger::goods::Goods::deposit(&self, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<u32>
+pub fn phx_ledger::goods::Goods::dispatch(&mut self, phx_ledger::goods::Shipment) -> u64
+pub fn phx_ledger::goods::Goods::in_transit(&self) -> impl core::iter::traits::iterator::Iterator<Item = (u64, &phx_ledger::goods::Shipment)> + '_
 pub fn phx_ledger::goods::Goods::issue<B: phx_store::backing::Backing>(&mut self, &mut phx_ledger::instrument::Instruments<B>, phx_ledger::goods::GoodKey, phx_ledger::instrument::NewInstrument) -> phx_id::ids::InstrumentId
 pub fn phx_ledger::goods::Goods::issue_right<B: phx_store::backing::Backing>(&mut self, &mut phx_ledger::instrument::Instruments<B>, u32, phx_ledger::instrument::NewInstrument) -> phx_id::ids::InstrumentId
 pub fn phx_ledger::goods::Goods::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_ledger::goods::GoodKey, phx_id::ids::InstrumentId)> + '_
@@ -722,9 +726,21 @@ pub fn phx_ledger::goods::Goods::key(&self, phx_id::ids::InstrumentId) -> phx_nu
 pub fn phx_ledger::goods::Goods::of(&self, phx_ledger::goods::GoodKey) -> phx_num::missing::Missing<phx_id::ids::InstrumentId>
 pub fn phx_ledger::goods::Goods::right(&self, u32) -> phx_num::missing::Missing<phx_id::ids::InstrumentId>
 pub fn phx_ledger::goods::Goods::rights(&self) -> impl core::iter::traits::iterator::Iterator<Item = (u32, phx_id::ids::InstrumentId)> + '_
-impl phx_store::save::Saved for phx_ledger::goods::Goods where alloc::collections::btree::map::BTreeMap<phx_ledger::goods::GoodKey, phx_id::ids::InstrumentId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::InstrumentId, phx_ledger::goods::GoodKey>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<u32, phx_id::ids::InstrumentId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::InstrumentId, u32>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<(phx_id::ids::PartyId, phx_id::ids::InstrumentId), i64>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_ledger::goods::Goods where alloc::collections::btree::map::BTreeMap<phx_ledger::goods::GoodKey, phx_id::ids::InstrumentId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::InstrumentId, phx_ledger::goods::GoodKey>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<u32, phx_id::ids::InstrumentId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::InstrumentId, u32>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<(phx_id::ids::PartyId, phx_id::ids::InstrumentId), i64>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<(phx_id::day::Day, u64), phx_ledger::goods::Shipment>: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_ledger::goods::Goods::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::goods::Goods::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_ledger::goods::Shipment
+pub phx_ledger::goods::Shipment::arrives: phx_id::day::Day
+pub phx_ledger::goods::Shipment::carrier: phx_id::ids::PartyId
+pub phx_ledger::goods::Shipment::from: phx_id::ids::InstrumentId
+pub phx_ledger::goods::Shipment::left: phx_id::day::Day
+pub phx_ledger::goods::Shipment::lien: phx_ledger::lien::LienKey
+pub phx_ledger::goods::Shipment::owner: phx_id::ids::PartyId
+pub phx_ledger::goods::Shipment::qty: i64
+pub phx_ledger::goods::Shipment::to: phx_ledger::goods::GoodKey
+impl phx_store::save::Saved for phx_ledger::goods::Shipment where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_ledger::goods::GoodKey: phx_store::save::Saved, i64: phx_store::save::Saved, phx_ledger::lien::LienKey: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved
+pub fn phx_ledger::goods::Shipment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::goods::Shipment::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::holder
 pub struct phx_ledger::holder::HolderKeys
 impl phx_ledger::holder::HolderKeys
@@ -856,6 +872,7 @@ pub phx_ledger::instruction::RowOp::Close
 pub phx_ledger::instruction::RowOp::Count
 pub phx_ledger::instruction::RowOp::Open(phx_ledger::line::NewRow)
 pub enum phx_ledger::instruction::Source
+pub phx_ledger::instruction::Source::Carried(u64)
 pub phx_ledger::instruction::Source::Deposit(u32)
 pub phx_ledger::instruction::Source::Hazard(u64)
 pub phx_ledger::instruction::Source::Purchase(u64)
@@ -1028,6 +1045,7 @@ pub fn phx_ledger::lien::LienKey::load(&mut phx_store::save::Reader<'_>) -> core
 pub fn phx_ledger::lien::LienKey::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::lien::Liens
 impl phx_ledger::lien::Liens
+pub fn phx_ledger::lien::Liens::get(&self, phx_ledger::lien::LienKey) -> core::option::Option<&phx_ledger::lien::Lien>
 pub fn phx_ledger::lien::Liens::is_empty(&self) -> bool
 pub fn phx_ledger::lien::Liens::len(&self) -> usize
 pub fn phx_ledger::lien::Liens::on(&self, phx_id::ids::PartyId, phx_id::ids::InstrumentId) -> impl core::iter::traits::iterator::Iterator<Item = &phx_ledger::lien::Lien>

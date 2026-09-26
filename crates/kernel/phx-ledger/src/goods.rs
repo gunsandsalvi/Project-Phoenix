@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use phx_id::{InstrumentId, PartyId, ZoneId};
+use phx_id::{Day, InstrumentId, PartyId, ZoneId};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_store::Backing;
@@ -44,9 +44,25 @@ impl GoodKey {
     }
 }
 
-/// Every good issued and every deposit's right, each both ways; and the units of each good each party has delivered
-/// by trades settled since the world opened, which its sales are read from.
-#[clause("GDS.1", "GDS.3", "FRM.13")]
+/// Goods in transit: their owner, the carrier they are pledged to by the lien, the good they left and the good they
+/// arrive as, how many units, and the day they left and the day they arrive.
+#[clause("FRT.3", "FRT.6", "FRT.9")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
+pub struct Shipment {
+    pub owner: PartyId,
+    pub carrier: PartyId,
+    pub from: InstrumentId,
+    pub to: GoodKey,
+    pub qty: i64,
+    pub lien: crate::lien::LienKey,
+    pub left: Day,
+    pub arrives: Day,
+}
+
+/// Every good issued and every deposit's right, each both ways; the units of each good each party has delivered by
+/// trades settled since the world opened, which its sales are read from; and the shipments in transit, by the day
+/// they arrive and their number.
+#[clause("GDS.1", "GDS.3", "FRM.13", "FRT.3")]
 #[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Goods {
     by_key: BTreeMap<GoodKey, InstrumentId>,
@@ -54,6 +70,8 @@ pub struct Goods {
     rights: BTreeMap<u32, InstrumentId>,
     deposits: BTreeMap<InstrumentId, u32>,
     delivered: BTreeMap<(PartyId, InstrumentId), i64>,
+    transit: BTreeMap<(Day, u64), Shipment>,
+    shipped: u64,
 }
 
 impl Goods {
@@ -130,6 +148,29 @@ impl Goods {
         let lo = (party, InstrumentId::new(0));
         let hi = (party, InstrumentId::new(u32::MAX));
         self.delivered.range(lo..=hi).map(|((_, g), q)| (*g, *q))
+    }
+
+    /// A shipment set on its way; its number, one more than the last.
+    #[clause("FRT.3")]
+    pub fn dispatch(&mut self, s: Shipment) -> u64 {
+        let Some(n) = self.shipped.checked_add(1) else {
+            phx_num::capacity_exceeded!("shipments", u64::MAX, self.shipped);
+        };
+        self.shipped = n;
+        self.transit.insert((s.arrives, n), s);
+        n
+    }
+
+    /// The shipments arriving by `day`, taken out of transit, in the order they arrive and were numbered.
+    pub fn arriving(&mut self, day: Day) -> Vec<(u64, Shipment)> {
+        let later = self.transit.split_off(&(day.succ(), 0));
+        let due = std::mem::replace(&mut self.transit, later);
+        due.into_iter().map(|((_, n), s)| (n, s)).collect()
+    }
+
+    /// Every shipment in transit, with its number.
+    pub fn in_transit(&self) -> impl Iterator<Item = (u64, &Shipment)> + '_ {
+        self.transit.iter().map(|((_, n), s)| (*n, s))
     }
 
     /// Every good issued, by key.

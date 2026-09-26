@@ -44,6 +44,10 @@ impl phx_core::facts::FactDef for if_firm::facts::WagePerHour
 pub const if_firm::facts::WagePerHour::ITEM: phx_core::facts::ItemDecl
 pub const if_firm::facts::FACTS: [&str; 13]
 pub const if_firm::facts::POSITIONS: [phx_core::pop::PositionDecl; 13]
+pub mod if_firm::freight
+pub struct if_firm::freight::Mode
+impl phx_core::facts::FactDef for if_firm::freight::Mode
+pub const if_firm::freight::Mode::ITEM: phx_core::facts::ItemDecl
 pub mod if_firm::known
 pub struct if_firm::known::Industry
 impl phx_core::facts::FactDef for if_firm::known::Industry

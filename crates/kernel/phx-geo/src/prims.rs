@@ -125,6 +125,14 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// What a segment of the network carries a day, in tonnes, by its mode's place (road, rail, sea): the opening
+    /// infrastructure between two regions' market zones.
+    pub SEGMENT_TONNES = "GEO.segment_tonnes" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 0 }, clause: "GEO.4", scope: Shared
+    }
+}
+
+declare_prim! {
     /// The range of heights in metres within the land's windows of a tile's span, at each part per thousand of their
     /// area, least first, measured over the analogue region.
     pub LAND_RELIEF = "GEO.land_relief" {
@@ -520,6 +528,8 @@ pub struct GeoPrims {
     pub highland_elevation: Prim<Table1>,
     pub highland_class: Prim<Table1>,
     pub coast_m: Prim<Count>,
+    /// Declared so the register holds it; the network reads it by its identifier.
+    pub segment_tonnes: Prim<Table1>,
     pub weather: WeatherPrims,
     pub deposits: DepositPrims,
     pub hazards: Vec<HazardPrims>,
@@ -589,6 +599,7 @@ impl GeoPrims {
                 sun_b: d.prim(&SUN_B),
                 persistence: d.prim(&PERSISTENCE),
             },
+            segment_tonnes: d.prim(&SEGMENT_TONNES),
             deposits: DepositPrims {
                 density: d.prim(&DEPOSIT_DENSITY),
                 grade_mu: d.prim(&GRADE_MU),

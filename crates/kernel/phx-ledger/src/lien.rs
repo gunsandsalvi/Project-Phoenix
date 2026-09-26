@@ -34,6 +34,12 @@ fn range(holder: PartyId, instrument: InstrumentId) -> core::ops::RangeInclusive
 }
 
 impl Liens {
+    /// A lien by its key, if it stands.
+    #[must_use]
+    pub fn get(&self, key: LienKey) -> Option<&Lien> {
+        self.liens.get(&key)
+    }
+
     /// The units of a holding under liens of its holder's own; re-pledges pledge those same units again down a
     /// chain and are not counted twice.
     #[must_use]

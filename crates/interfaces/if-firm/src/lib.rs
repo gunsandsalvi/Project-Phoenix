@@ -4,6 +4,7 @@
 
 pub mod consts;
 pub mod facts;
+pub mod freight;
 pub mod known;
 
 use phx_core::{FactDef, ItemDecl};
@@ -25,4 +26,5 @@ pub const ITEMS: &[ItemDecl] = &[
     <facts::PriceAttention as FactDef>::ITEM,
     <facts::WagePerHour as FactDef>::ITEM,
     <facts::RequiredReturn as FactDef>::ITEM,
+    <freight::Mode as FactDef>::ITEM,
 ];

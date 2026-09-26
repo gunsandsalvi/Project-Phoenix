@@ -7,6 +7,7 @@ pub mod audit;
 pub mod bilateral;
 pub mod book;
 pub mod call;
+pub mod carriage;
 pub mod consts;
 pub mod coupled_call;
 pub mod dealer;

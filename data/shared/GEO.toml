@@ -242,3 +242,11 @@ source = "assumed"
 source_ref = "Crossing onto a river costs as much as 20 km of plain: before bridges, rivers bounded lands and parishes."
 value = 20000
 
+
+[[primitive]]
+id = "GEO.segment_tonnes"
+kind = "ENDOWMENT"
+owner = "GEO"
+source = "estimated"
+source_ref = "What a segment carries a day in tonnes, by mode. Road: a four-lane freeway's two lanes one way at the HCM's 2,400 passenger cars an hour a lane, trucks counting two on level ground and making the rural Interstate's 22.1% of traffic (FHWA Highway Statistics 2023, VM-1), 24 hours, each carrying VIUS 2021's 16.1 t. Rail: a double-track line with CTC at 75 mixed trains a day (Cambridge Systematics for AAR, National Rail Freight Infrastructure Capacity and Investment Study, 2007) of 3,948 tons (AAR 2023). Sea: a regional port handling 10 million tonnes a year, assumed."
+value = { axis = [0, 1, 2], values = [336701, 268617, 27397], outside = "refuse" }

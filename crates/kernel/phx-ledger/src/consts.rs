@@ -65,3 +65,5 @@ pub const SPOILAGE: u64 = 3;
 pub const HAZARD: u64 = 4;
 /// A leg's source tagged as the chain it wore along.
 pub const WEAR: u64 = 5;
+/// A leg's source tagged as the shipment that carried it between places.
+pub const CARRIED: u64 = 6;
