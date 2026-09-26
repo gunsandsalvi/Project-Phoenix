@@ -281,16 +281,27 @@ impl<B: Backing> Books<B> {
     /// depositor's, and between two issuers the same payment again one level up, until one issuer owes both.
     #[clause("MON.5", "MON.6")]
     pub(crate) fn pay(&self, from: PartyId, to: PartyId, x: i64, ccy: Ccy) -> Vec<LegRec> {
+        let mut legs = Vec::new();
+        self.pay_into(from, to, (x, ccy), &mut legs);
+        legs
+    }
+
+    /// The legs of a payment of money written after those `legs` holds, so a pass over many payments reuses one
+    /// buffer.
+    #[clause("MON.5", "MON.6")]
+    pub(crate) fn pay_into(&self, from: PartyId, to: PartyId, (x, ccy): (i64, Ccy), legs: &mut Vec<LegRec>) {
         let (paying, paid) = (self.money_row(from, ccy), self.money_row(to, ccy));
         if let Missing::Present(line) = paid
             && self.owed_by(line) == from
         {
-            return vec![money_leg(to, line, Side::Asset, x, ccy), money_leg(from, line, Side::Liability, -x, ccy)];
+            legs.extend([money_leg(to, line, Side::Asset, x, ccy), money_leg(from, line, Side::Liability, -x, ccy)]);
+            return;
         }
         if let Missing::Present(line) = paying
             && self.owed_by(line) == to
         {
-            return vec![money_leg(from, line, Side::Asset, -x, ccy), money_leg(to, line, Side::Liability, x, ccy)];
+            legs.extend([money_leg(from, line, Side::Asset, -x, ccy), money_leg(to, line, Side::Liability, x, ccy)]);
+            return;
         }
         let (Missing::Present(a), Missing::Present(b)) = (paying, paid) else {
             violation!(
@@ -301,14 +312,13 @@ impl<B: Backing> Books<B> {
             );
         };
         let (issuer_a, issuer_b) = (self.owed_by(a), self.owed_by(b));
-        let mut legs = vec![money_leg(from, a, Side::Asset, -x, ccy), money_leg(to, b, Side::Asset, x, ccy)];
+        legs.extend([money_leg(from, a, Side::Asset, -x, ccy), money_leg(to, b, Side::Asset, x, ccy)]);
         if a != b {
             legs.push(money_leg(issuer_a, a, Side::Liability, x, ccy));
             legs.push(money_leg(issuer_b, b, Side::Liability, -x, ccy));
         }
         if issuer_a != issuer_b {
-            legs.extend(self.pay(issuer_a, issuer_b, x, ccy));
+            self.pay_into(issuer_a, issuer_b, (x, ccy), legs);
         }
-        legs
     }
 }

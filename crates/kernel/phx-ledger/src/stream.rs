@@ -554,23 +554,31 @@ impl<B: Backing> Books<B> {
     /// and, between banks, reserves; and the principal repaid off the contract's rows. A cleared line's payment moves
     /// its row's holder's money up to the top issuer, or down from it.
     pub(crate) fn effects(&self, p: &Payment) -> Vec<LegRec> {
+        let mut legs = Vec::new();
+        self.effects_into(p, &mut legs);
+        legs
+    }
+
+    /// What a payment does, written over `legs`, so a pass over many payments reuses one buffer.
+    pub(crate) fn effects_into(&self, p: &Payment, legs: &mut Vec<LegRec>) {
+        legs.clear();
         if p.moneyless {
-            return Vec::new();
+            return;
         }
         if p.cleared {
-            let (legs, _) = if p.payer == p.reckoned_on {
+            let (route, _) = if p.payer == p.reckoned_on {
                 self.route(p.payer, p.amount, p.ccy)
             } else {
                 self.route(p.payee, -p.amount, p.ccy)
             };
-            return legs;
+            legs.extend(route);
+            return;
         }
-        let mut legs = self.pay(p.payer, p.payee, p.amount, p.ccy);
+        self.pay_into(p.payer, p.payee, (p.amount, p.ccy), legs);
         if p.principal != 0 {
             legs.push(row_leg(p.payee, p.line, Side::Asset, -p.principal, p.ccy));
             legs.push(row_leg(p.payer, p.line, Side::Liability, p.principal, p.ccy));
         }
-        legs
     }
 
     /// A party's account and what it may draw on at the start of stage 7: its balance less what is pending, and the
@@ -736,13 +744,14 @@ impl<B: Backing> Books<B> {
             let Some((rows, scanned)) = runs::due_rows(table, slot, day, due) else { continue };
             sh.steps.push(Step::Scanned { place, slot, read: scanned, due: count(rows.len()) });
             let holder = table.party(slot);
+            let mut legs = Vec::new();
             for row in rows {
                 match self.reckon(holder, &row, (day, calendar), plans.get(row.row.line)) {
                     None => {}
                     Some(Reckoned::Paid(p)) => {
                         let mut held = false;
                         if !p.moneyless {
-                            let legs = self.effects(&p);
+                            self.effects_into(&p, &mut legs);
                             held = closed.holds(p.payer, &issuers(&legs));
                             if !held {
                                 self.bookings(&legs, &mut sh.bookings);

@@ -352,8 +352,9 @@ impl<B: Backing> Books<B> {
             earned: phx_core::KernelMap::<PartyId, i128>::buckets(),
             ..Routed::default()
         };
+        let mut route = Vec::new();
         for (at, p) in (first..).zip(made).filter_map(|(at, made)| after_losers(made, found).map(|p| (at, p))) {
-            let route = self.effects(&p);
+            self.effects_into(&p, &mut route);
             if closed.holds(p.payer, &crate::stream::issuers(&route)) {
                 r.unsettled.push((at, true));
                 continue;
@@ -373,7 +374,7 @@ impl<B: Backing> Books<B> {
                 *r.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
                 *r.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
             }
-            for leg in route {
+            for leg in &route {
                 let AccountRef::Line { line, side } = leg.account else {
                     violation!(clause = "SET.1", "a payment's leg on no line", party = leg.party.get());
                 };
