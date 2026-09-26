@@ -98,6 +98,9 @@ pub struct HeldRight {
 /// A good a row holds: its product, its grade class and its units, one twin's for an agent.
 pub type HeldGood = (u16, u8, i64);
 
+/// Plant a row holds: its kind, its condition class and its units, one twin's for an agent.
+pub type HeldPlant = (u8, u8, i64);
+
 /// What a row's party may read of goods beyond its facts: its units of each good at its place, one twin's for an
 /// agent, and the list of them; the deposits whose rights it holds; the units of a product, of every grade, it has
 /// delivered since the world opened; and each good's latest mark at its place and the public outlook of its price
@@ -111,6 +114,8 @@ pub trait GoodsView: core::fmt::Debug {
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64>;
     /// The money the row's party holds on its account, one twin's for an agent; none without an account.
     fn money(&self, slot: Slot) -> Missing<i64>;
+    /// The plant the row holds.
+    fn plant(&self, slot: Slot) -> &[HeldPlant];
 }
 
 /// The view of rows that hold no goods, as a kernel table's are.
@@ -138,6 +143,9 @@ impl GoodsView for NoGoods {
     }
     fn money(&self, _: Slot) -> Missing<i64> {
         Missing::Absent
+    }
+    fn plant(&self, _: Slot) -> &[HeldPlant] {
+        &[]
     }
 }
 
@@ -216,6 +224,12 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     #[must_use]
     pub fn goods(&self, slot: Slot) -> &[HeldGood] {
         self.parts.goods.goods(slot)
+    }
+
+    /// The plant a row holds, by kind and condition class.
+    #[must_use]
+    pub fn plant(&self, slot: Slot) -> &[HeldPlant] {
+        self.parts.goods.plant(slot)
     }
 
     /// The public outlook of a good's price at the row's place by a method, in its market's raw price.

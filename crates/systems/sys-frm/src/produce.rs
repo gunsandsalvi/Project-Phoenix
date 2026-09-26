@@ -2,7 +2,7 @@
 //! make and its stocks of inputs allow; what it offers other firms of what it then holds; and what it buys of the
 //! inputs it will need, goods at the goods markets and services at retail, where a service is made as it is sold.
 
-use if_firm::facts::{ExpectedSales, OutputRate, Price, RequiredReturn, UnitCost};
+use if_firm::facts::{Capacity, ExpectedSales, OutputRate, Price, RequiredReturn, UnitCost};
 use if_firm::known::{Product, WayUsed};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads};
 use phx_core::{Emits, Register};
@@ -138,7 +138,8 @@ where
 }
 
 /// A production period: the output the production rule sets from the sales the firm expects, the stock it aims to
-/// cover them with and what it holds, its staff's output over the period, and its price against its cost carried
+/// cover them with and what it holds, its staff's or its plant's output over the period, whichever is less, and its
+/// price against its cost carried
 /// over the days a unit takes at the return it requires; made, when its stocks of inputs allow, by its way, whose
 /// inputs the kernel takes. Then its stock of its product offered to other firms at its posted price, less what that
 /// price leaves it after financing its stock; and for the next period, each storable input it will be short of
@@ -155,6 +156,7 @@ where
         + Reads<UnitCost>
         + Reads<Price>
         + Reads<RequiredReturn>
+        + Reads<Capacity>
         + Emits<Transform>
         + Emits<OrderIntent>
         + Emits<ShopIntent>,
@@ -185,7 +187,11 @@ where
             stock: from_i64(stock),
             cover: m.cover_days / days,
             adjustment: plant.adjustment_days / days,
-            capacity: from_i64(rate) * days,
+            // The staff's output, and the plant's where its last review found one, whichever is less.
+            capacity: match read::<Capacity, H, S>(ctx, row) {
+                Some(plant) if plant < rate => from_i64(plant) * days,
+                _ => from_i64(rate) * days,
+            },
             expected_price: from_i64(price),
             unit_cost: from_i64(cost),
             financing_rate: financing,

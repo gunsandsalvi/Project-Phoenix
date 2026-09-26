@@ -529,6 +529,12 @@ impl<B: Backing> AgentTable<B> {
         c.set(slot, value);
     }
 
+    /// An agent's position as the opening draws it: one of the opening's writes, before the day's writers run.
+    pub fn open_fact(&mut self, slot: Slot, name: &str, value: i64) {
+        let column = self.named(name);
+        self.write_fact(slot, column, value);
+    }
+
     /// A position's column, if the kind holds it.
     #[must_use]
     pub fn position(&self, name: &str) -> Option<FactColumn> {

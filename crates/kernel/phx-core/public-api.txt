@@ -296,6 +296,7 @@ pub phx_core::contribution::Opening::countries: &'a [phx_core::contribution::Ope
 pub phx_core::contribution::Opening::ctx: phx_core::contribution::OpeningCtx<'a>
 pub phx_core::contribution::Opening::date: phx_id::day::Date
 pub phx_core::contribution::Opening::day: phx_id::day::Day
+pub phx_core::contribution::Opening::geo: &'a dyn core::any::Any
 pub phx_core::contribution::Opening::population: &'a mut dyn core::any::Any
 pub phx_core::contribution::Opening::register: &'a phx_core::register::Register
 pub phx_core::contribution::Opening::report: &'a mut phx_core::contribution::GenReport
@@ -550,6 +551,7 @@ pub phx_core::family::FamilyMode::Rolling
 pub phx_core::family::FamilyMode::Rolling::cycle_days: u16
 pub phx_core::family::FamilyMode::Streaming
 pub enum phx_core::family::Transformed
+pub phx_core::family::Transformed::Built
 pub phx_core::family::Transformed::Carried
 pub phx_core::family::Transformed::Deposit
 pub phx_core::family::Transformed::Hazard
@@ -627,6 +629,7 @@ pub phx_core::family::LegDigest::paired: bool
 pub phx_core::family::LegDigest::party: phx_id::ids::PartyId
 pub phx_core::family::LegDigest::qty: i64
 pub phx_core::family::LegDigest::source: phx_num::missing::Missing<phx_core::family::Transformed>
+pub phx_core::family::LegDigest::unit: u32
 pub phx_core::family::LegDigest::worn: phx_num::missing::Missing<(u32, u32)>
 pub struct phx_core::family::Made
 pub phx_core::family::Made::instruction: u64
@@ -636,6 +639,7 @@ pub struct phx_core::family::MadeLeg
 pub phx_core::family::MadeLeg::denom: u32
 pub phx_core::family::MadeLeg::party: phx_id::ids::PartyId
 pub phx_core::family::MadeLeg::qty: i64
+pub phx_core::family::MadeLeg::unit: u32
 pub struct phx_core::family::ReadTrace
 pub phx_core::family::ReadTrace::duplicate_opens: usize
 pub phx_core::family::ReadTrace::later_writes: usize
@@ -775,6 +779,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8)
 pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
+pub fn phx_core::handler::Ctx<'a, H, S>::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
@@ -813,6 +818,7 @@ pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i6
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
 pub trait phx_core::handler::Emits<I: phx_core::handler::IntentDef>
@@ -832,6 +838,7 @@ pub fn phx_core::handler::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> 
 pub fn phx_core::handler::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
@@ -840,6 +847,7 @@ pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i6
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::HandlerDecl: 'static
 pub const phx_core::handler::HandlerDecl::CLAUSE: &'static str
@@ -860,6 +868,7 @@ pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub trait phx_core::handler::Reads<F: phx_core::facts::FactDef>
 pub trait phx_core::handler::Writes<F: phx_core::facts::FactDef>
 pub type phx_core::handler::HeldGood = (u16, u8, i64)
+pub type phx_core::handler::HeldPlant = (u8, u8, i64)
 pub type phx_core::handler::Opened = (&'static str, u64)
 pub type phx_core::handler::RunChunk = fn(phx_core::handler::CtxParts<'_, dyn phx_core::handler::FactStore>, core::ops::range::Range<u32>)
 pub mod phx_core::hazards
@@ -2384,6 +2393,7 @@ pub phx_core::Transform::LogGrowthPercent
 pub phx_core::Transform::LogitPercent
 pub phx_core::Transform::LogitShare
 pub enum phx_core::Transformed
+pub phx_core::Transformed::Built
 pub phx_core::Transformed::Carried
 pub phx_core::Transformed::Deposit
 pub phx_core::Transformed::Hazard
@@ -2606,6 +2616,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8)
 pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
+pub fn phx_core::handler::Ctx<'a, H, S>::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
@@ -3058,6 +3069,7 @@ pub phx_core::LegDigest::paired: bool
 pub phx_core::LegDigest::party: phx_id::ids::PartyId
 pub phx_core::LegDigest::qty: i64
 pub phx_core::LegDigest::source: phx_num::missing::Missing<phx_core::family::Transformed>
+pub phx_core::LegDigest::unit: u32
 pub phx_core::LegDigest::worn: phx_num::missing::Missing<(u32, u32)>
 pub struct phx_core::LegalForm
 pub phx_core::LegalForm::endings: alloc::vec::Vec<alloc::string::String>
@@ -3076,6 +3088,7 @@ pub struct phx_core::MadeLeg
 pub phx_core::MadeLeg::denom: u32
 pub phx_core::MadeLeg::party: phx_id::ids::PartyId
 pub phx_core::MadeLeg::qty: i64
+pub phx_core::MadeLeg::unit: u32
 #[repr(C)] pub struct phx_core::Message
 impl phx_core::messages::Message
 pub fn phx_core::messages::Message::addressee(&self) -> phx_core::messages::Address
@@ -3132,6 +3145,7 @@ pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i6
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub struct phx_core::NotObserver
 pub struct phx_core::ObserverDraws<'a>
@@ -3149,6 +3163,7 @@ pub phx_core::Opening::countries: &'a [phx_core::contribution::OpeningCountry]
 pub phx_core::Opening::ctx: phx_core::contribution::OpeningCtx<'a>
 pub phx_core::Opening::date: phx_id::day::Date
 pub phx_core::Opening::day: phx_id::day::Day
+pub phx_core::Opening::geo: &'a dyn core::any::Any
 pub phx_core::Opening::population: &'a mut dyn core::any::Any
 pub phx_core::Opening::register: &'a phx_core::register::Register
 pub phx_core::Opening::report: &'a mut phx_core::contribution::GenReport
@@ -3624,6 +3639,7 @@ pub fn phx_core::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
@@ -3632,6 +3648,7 @@ pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i6
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::GroupDemand
 pub fn phx_core::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64
@@ -3837,5 +3854,6 @@ pub fn phx_core::opening_subject(u32, u32) -> phx_rand::key::Subject
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
 pub fn phx_core::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
 pub type phx_core::HeldGood = (u16, u8, i64)
+pub type phx_core::HeldPlant = (u8, u8, i64)
 pub type phx_core::Opened = (&'static str, u64)
 pub type phx_core::RunChunk = fn(phx_core::handler::CtxParts<'_, dyn phx_core::handler::FactStore>, core::ops::range::Range<u32>)

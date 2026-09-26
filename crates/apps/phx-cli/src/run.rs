@@ -828,15 +828,31 @@ pub fn measure_budget(build_run: &Path, device: &Path, out: &Path) -> Result<boo
 }
 
 /// The run's findings counted by family and clause, each with its first day and detail, so a report says what fired.
+/// The examples of a family the report lists, enough to see its shapes without its every finding.
+const EXAMPLES: usize = 20;
+
 fn findings_by(findings: &[phx_core::Finding]) -> Vec<serde_json::Value> {
-    let mut by: std::collections::BTreeMap<(&str, &str), (usize, &phx_core::Finding)> =
-        std::collections::BTreeMap::new();
+    let mut by: std::collections::BTreeMap<(&str, &str), Vec<&phx_core::Finding>> = std::collections::BTreeMap::new();
     for f in findings {
-        by.entry((f.family, f.clause)).or_insert((0, f)).0 += 1;
+        by.entry((f.family, f.clause)).or_default().push(f);
     }
     by.into_iter()
-        .map(|((family, clause), (n, first))| {
-            json!({ "family": family, "clause": clause, "count": n, "first_day": first.day.get(), "first": first.detail })
+        .map(|((family, clause), list)| {
+            let mut days: std::collections::BTreeMap<u32, usize> = std::collections::BTreeMap::new();
+            for f in &list {
+                *days.entry(f.day.get()).or_insert(0) += 1;
+            }
+            let size: i128 = list.iter().map(|f| f.size).sum();
+            json!({
+                "family": family,
+                "clause": clause,
+                "count": list.len(),
+                "size": size.to_string(),
+                "first_day": list.first().map(|f| f.day.get()),
+                "first": list.first().map(|f| f.detail.clone()),
+                "examples": list.iter().take(EXAMPLES).map(|f| json!({"day": f.day.get(), "owner": format!("{:?}", f.owner), "size": f.size, "detail": f.detail})).collect::<Vec<_>>(),
+                "by_day": days.into_iter().map(|(d, n)| json!([d, n])).collect::<Vec<_>>(),
+            })
         })
         .collect()
 }

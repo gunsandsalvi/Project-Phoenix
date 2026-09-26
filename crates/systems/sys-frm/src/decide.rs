@@ -3,8 +3,8 @@
 //! outlook, price or unit cost yet takes no decision, which waits for its opening accounts.
 
 use if_firm::facts::{
-    DeliveredAtReview, DeliveredSeen, ExpectedSales, LastReview, Markup, Method, OutputRate, Price, PriceAttention,
-    RequiredReturn, SalesWidth, UnitCost, WagePerHour,
+    Capacity, DeliveredAtReview, DeliveredSeen, ExpectedSales, LastReview, Markup, Method, OutputRate, Price,
+    PriceAttention, RequiredReturn, SalesWidth, UnitCost, WagePerHour,
 };
 use if_firm::known::{Product, WayUsed};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
@@ -226,7 +226,7 @@ declare_handler! {
     pub AttendSmall = "FRM.attend_small" {
         substep: S5b,
         table: "small_firm",
-        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
         writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
         intents: [Transform, OrderIntent, ShopIntent],
         clause: "REP.38",
@@ -239,7 +239,7 @@ declare_handler! {
     pub AttendLarge = "FRM.attend_large" {
         substep: S5b,
         table: "firm",
-        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
         writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
         intents: [Transform, OrderIntent, ShopIntent],
         clause: "REP.38",
@@ -387,6 +387,7 @@ where
         + Reads<OutputRate>
         + Reads<UnitCost>
         + Reads<RequiredReturn>
+        + Reads<Capacity>
         + Writes<PriceAttention>
         + Writes<ExpectedSales>
         + Writes<SalesWidth>

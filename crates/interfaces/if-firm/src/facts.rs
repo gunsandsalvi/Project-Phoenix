@@ -100,6 +100,13 @@ declare_fact! {
     }
 }
 
+declare_fact! {
+    /// The units a day the firm's plant lets its way make, a twin's, as its last review of its plant found.
+    pub Capacity = "CAP.capacity" {
+        value: Qty, kinds: ["firm", "small_firm"], writer: "CAP", audience: Party, repr: Position, clause: "CAP.9",
+    }
+}
+
 /// A fact as the position a small firm's agent holds of the same name.
 const fn from_fact<F: FactDef>() -> PositionDecl {
     PositionDecl { name: F::ITEM.name, clause: F::ITEM.clause }

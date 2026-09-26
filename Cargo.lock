@@ -1194,12 +1194,14 @@ dependencies = [
 name = "sys-cap"
 version = "0.1.0"
 dependencies = [
+ "if-base",
  "if-firm",
  "libm",
  "phx-core",
  "phx-id",
  "phx-ledger",
  "phx-macros",
+ "phx-market",
  "phx-num",
  "phx-pop",
  "phx-rand",

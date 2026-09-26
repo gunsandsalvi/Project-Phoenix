@@ -165,6 +165,47 @@ impl ShipIntent {
     }
 }
 
+/// An owner's investment as a handler asks it: its row, the kind of plant, the product that kind is bought as, and
+/// the units a twin buys, from a named producer at its place, in the stages it is built in.
+#[clause("CAP.5", "CAP.3")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InvestIntent {
+    pub row: Slot,
+    pub kind: u8,
+    pub product: u16,
+    pub units: i64,
+    pub stages: u32,
+}
+
+impl IntentDef for InvestIntent {
+    const NAME: &'static str = "CAP.invest";
+
+    fn encode(&self, out: &mut Vec<u64>) {
+        out.extend([
+            u64::from(self.row.get()),
+            u64::from(self.kind),
+            u64::from(self.product),
+            self.units.cast_unsigned(),
+            u64::from(self.stages),
+        ]);
+    }
+}
+
+impl InvestIntent {
+    /// The intent its words encode, or none when they are not an investment.
+    #[must_use]
+    pub fn decode(words: &[u64]) -> Option<InvestIntent> {
+        let [row, kind, product, units, stages] = words else { return None };
+        Some(InvestIntent {
+            row: Slot::new(u32::try_from(*row).ok()?),
+            kind: u8::try_from(*kind).ok()?,
+            product: u16::try_from(*product).ok()?,
+            units: units.cast_signed(),
+            stages: u32::try_from(*stages).ok()?,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_core::IntentDef;

@@ -166,6 +166,9 @@ pub(crate) struct MarketDay {
     /// Each seller of a service at today's meetings, with the way it makes it by.
     pub makers: BTreeMap<PartyId, u32>,
     pub ships: Vec<crate::freight::Ship>,
+    pub investments: Vec<crate::invest::Invest>,
+    /// Each project stage among the day's trades, with its project and units.
+    pub stages: BTreeMap<phx_ledger::instruction::InstructionId, (u64, i64)>,
     pub booked: Vec<crate::freight::Booked>,
     pub freight: Vec<(Instruction, crate::freight::Booked)>,
     pub tally: GoodsDay,
@@ -174,8 +177,9 @@ pub(crate) struct MarketDay {
 /// What a day's goods did: the calls met, the transformations that took units from a deposit, the orders and wants
 /// admitted, those refused or lapsed unmet, the transformations and trades that failed; and at retail, the buyers,
 /// the sellers they had in reach, the rounds of choosing again, the buyers that found no seller, and the units of
-/// services delivered at once that no buyer took, which are lost; and in carriage, the shipments set on their way, the
-/// bookings refused, and the arrivals.
+/// services delivered at once that no buyer took, which are lost; in carriage, the shipments set on their way, the
+/// bookings refused, and the arrivals; and in plant, the projects begun, the stages that waited on their builder, and
+/// the projects completed.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GoodsDay {
     pub auctions: u64,
@@ -193,6 +197,9 @@ pub struct GoodsDay {
     pub shipments: u64,
     pub refused_bookings: u64,
     pub arrivals: u64,
+    pub projects: u64,
+    pub waiting: u64,
+    pub completed: u64,
 }
 
 /// Each good's latest mark where it stands, as the markets' marks give it, rebuilt after the day's marks.
@@ -216,6 +223,7 @@ pub(crate) struct RunGoods {
 struct RowGoods {
     zone: Missing<ZoneId>,
     held: Vec<Units>,
+    plant: Vec<phx_core::HeldPlant>,
     rights: Vec<HeldRight>,
     delivered: Vec<Units>,
     money: Missing<i64>,
@@ -227,6 +235,7 @@ impl RowGoods {
         RowGoods {
             zone: Missing::Absent,
             held: Vec::new(),
+            plant: Vec::new(),
             rights: Vec::new(),
             delivered: Vec::new(),
             money: Missing::Absent,
@@ -265,6 +274,9 @@ impl GoodsView for RunGoods {
         let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
         let key = (GoodKey { product, grade, zone }, method);
         self.outlooks.get(&key).copied().map_or(Missing::Absent, Missing::Present)
+    }
+    fn plant(&self, slot: Slot) -> &[phx_core::HeldPlant] {
+        self.row(slot).map_or(&[], |r| r.plant.as_slice())
     }
     fn money(&self, slot: Slot) -> Missing<i64> {
         self.row(slot).map_or(Missing::Absent, |r| r.money)
@@ -718,7 +730,7 @@ impl World {
     /// Stage 7, after the dues: the day's trades settled in declared order, each all or none; a buyer who cannot pay
     /// fails with its cause and the units stay with the seller. What each seller delivers is kept as its sales.
     #[clause("SET.3", "SET.4", "SET.6", "FRM.13")]
-    pub(crate) fn markets_settle(&mut self, step: SubStep) {
+    pub(crate) fn markets_settle(&mut self, day: Day, step: SubStep) {
         let trades = std::mem::take(&mut self.market_day.trades);
         if trades.is_empty() {
             return;
@@ -737,13 +749,16 @@ impl World {
                     if let Some((seller, good, qty)) = sold.get(&id) {
                         self.books.ledger.goods.deliver(*seller, *good, *qty);
                     }
+                    self.stage_settled(day, step, id);
                 }
                 Err(_) => self.market_day.tally.failed += 1,
             }
         }
+        // A stage that failed waits for another day.
+        self.market_day.stages.clear();
     }
 
-    /// The opening's snapshot of the goods' markets (GEN.5): each good the opening holds, in the market its product
+    /// The opening's snapshot of the goods' markets: each good the opening holds, in the market its product
     /// meets in, marked at its product's opening price for a lot, and that price its public series' one print, from
     /// which every method's first outlook is that price.
     #[clause("GEN.5", "VAL.10", "MKT.12")]
@@ -902,6 +917,12 @@ impl World {
                     && units > 0
                 {
                     goods.rights.push(self.held_right(deposit));
+                }
+                if let Missing::Present((chain, class)) = ledger.chains.of(instrument)
+                    && let Some(c) = ledger.chains.get(chain)
+                    && let (Ok(kind), Ok(class)) = (u8::try_from(c.tag), u8::try_from(class))
+                {
+                    goods.plant.push((kind, class, units));
                 }
             }
             if let Missing::Present(country) = self.geo().zone_country(row.zone) {

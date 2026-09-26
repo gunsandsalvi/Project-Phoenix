@@ -33,8 +33,9 @@ pub(crate) struct RetailBound {
     pub reach: u64,
 }
 
-/// A seller at a meeting: its party, its product, its price, capacity and way as read, its zone and its twins.
-type SellerRow = (PartyId, u16, [Missing<i64>; 3], ZoneId, i64);
+/// A seller at a meeting: its party, its product, its price, staff's output, way and plant's capacity as read, its
+/// zone and its twins.
+type SellerRow = (PartyId, u16, [Missing<i64>; 4], ZoneId, i64);
 
 /// The reason the firms make what they make under, a service as it is sold among them.
 const MADE: &str = "FRM made";
@@ -169,7 +170,7 @@ impl World {
     /// with no price, or no whole lot, has none.
     fn stalls(&mut self, bound: &RetailBound, products: &BTreeSet<u16>) -> BTreeMap<u16, Vec<Placed>> {
         let first = self.books.parties.first_cell_place();
-        let mut read: Vec<(Rows, phx_id::Slot, u16, [Missing<i64>; 3])> = Vec::new();
+        let mut read: Vec<(Rows, phx_id::Slot, u16, [Missing<i64>; 4])> = Vec::new();
         for &(place, individuals) in &bound.sellers {
             let agents = || {
                 let Some(k) = place.checked_sub(first) else {
@@ -197,7 +198,8 @@ impl World {
                     violation!(clause = "TEC.4", "a seller's product beyond the products' places", value = sells);
                 };
                 if products.contains(&product) {
-                    let facts = [bound.decl.price, bound.decl.capacity, bound.decl.way].map(|f| store.read(f, slot));
+                    let facts = [bound.decl.price, bound.decl.capacity, bound.decl.way, bound.decl.plant]
+                        .map(|f| store.read(f, slot));
                     read.push((Rows { place, individuals }, slot, product, facts));
                 }
             }
@@ -213,12 +215,16 @@ impl World {
             *pending.entry((m.seller, *good)).or_insert(0) += m.qty;
         }
         let mut out: BTreeMap<u16, Vec<Placed>> = BTreeMap::new();
-        for (seller, product, [price, capacity, way], zone, twins) in rows {
+        for (seller, product, [price, capacity, way, plant], zone, twins) in rows {
             let Missing::Present(price) = price else { continue };
             let base = self.goods_frame.base(product);
             // A service is made as it is sold, so its stall is what its maker's staff can serve today.
             if self.goods_frame.delivered_at_once(product) {
-                let (Missing::Present(rate), Missing::Present(way)) = (capacity, way) else { continue };
+                let (Missing::Present(staff), Missing::Present(way)) = (capacity, way) else { continue };
+                let rate = match plant {
+                    Missing::Present(p) if p < staff => p,
+                    _ => staff,
+                };
                 let (Some(capacity), Ok(way)) = (rate.checked_mul(twins), u32::try_from(way)) else { continue };
                 let units = match self.way_most(way, seller, zone) {
                     Missing::Present(m) if m < capacity => m,
@@ -253,8 +259,9 @@ impl World {
         out
     }
 
-    /// 6a: every retail market with buyers today met: the stalls of its product, each buyer's sellers in reach with
-    /// its taste for each drawn, the meeting, and each sale's units covered until its purchase settles.
+    /// 6a: every retail market with buyers today met: the stalls of its product, each owner's builder named among
+    /// them, each buyer's sellers in reach with its taste for each drawn, the meeting, and each sale's units covered
+    /// until its purchase settles.
     #[clause("SRV.5", "REP.22", "MKT.6", "HH.15")]
     pub(crate) fn retail_meet(&mut self, day: Day) {
         let mut by_market: BTreeMap<MarketId, Vec<Shop>> = BTreeMap::new();
@@ -262,12 +269,14 @@ impl World {
             by_market.entry(s.market).or_default().push(s);
         }
         let mut stalls_of: BTreeMap<(u16, u16), Vec<Placed>> = BTreeMap::new();
+        let building: BTreeSet<u16> = self.market_day.investments.iter().map(|i| i.product).collect();
         for bound in self.trade.retail.clone() {
             let products: BTreeSet<u16> = by_market
                 .values()
                 .flatten()
                 .filter(|s| self.market_kinds.decl(&self.markets.made, s.market).key.kind == bound.decl.market.key.kind)
                 .map(|s| s.product)
+                .chain(building.iter().copied())
                 .collect();
             if !products.is_empty() {
                 for (p, v) in self.stalls(&bound, &products) {
@@ -275,6 +284,8 @@ impl World {
                 }
             }
         }
+        // Owners name their builders before the day's shoppers meet, from the same stalls.
+        self.choose_builders(day, &stalls_of);
         for (market, shops) in by_market {
             let decl = self.market_kinds.decl(&self.markets.made, market);
             let Some(bound) = self.trade.retail.iter().find(|r| r.decl.market.key.kind == decl.key.kind).cloned()
@@ -386,6 +397,18 @@ impl World {
     /// inputs its maker holds; nothing for a good sold from stock.
     fn made_at_sale(&mut self, seller: PartyId, (key, good): (GoodKey, InstrumentId), qty: i64) -> Vec<LegRec> {
         let Some(way) = self.market_day.makers.get(&seller).copied() else { return Vec::new() };
+        self.made_by(seller, way, (key, good), qty)
+    }
+
+    /// A service's making by its maker's way, for a purchase of `qty` units: its units, and what the way takes of the
+    /// inputs its maker holds.
+    pub(crate) fn made_by(
+        &mut self,
+        seller: PartyId,
+        way: u32,
+        (key, good): (GoodKey, InstrumentId),
+        qty: i64,
+    ) -> Vec<LegRec> {
         let unit = self.books.ledger.instruments.get(good).unit;
         let source = Source::Way(way);
         // Each twin of a maker makes its own share, whole, so what they make together is a whole share for each.
@@ -414,7 +437,7 @@ impl World {
     }
 
     /// A service's making applied, under the firms' reason for what they make: whether its maker had the inputs.
-    fn make_for_sale(&mut self, day: Day, legs: Vec<LegRec>) -> bool {
+    pub(crate) fn make_for_sale(&mut self, day: Day, legs: Vec<LegRec>) -> bool {
         let Missing::Present(reason) = self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(MADE)) else {
             violation!(clause = "SET.1", "a service made under a reason never declared");
         };

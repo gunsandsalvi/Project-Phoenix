@@ -206,7 +206,8 @@ pub enum RowOp {
 
 /// What accounts for a transformation's units: the way that produced them, the deposit they were taken from, the
 /// purchase that used them up, their spoiling in stock over a number of days, the hazard event that destroyed them,
-/// or the wear of a declared chain of classes that moved them from one class to the next or retired them.
+/// the wear of a declared chain of classes that moved them from one class to the next or retired them, the shipment
+/// that carried them, or the construction project, by its number, that built them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Source {
     Way(u32),
@@ -216,6 +217,7 @@ pub enum Source {
     Hazard(u64),
     Wear(u32),
     Carried(u64),
+    Built(u64),
 }
 
 impl Source {
@@ -230,6 +232,7 @@ impl Source {
             Source::Hazard(_) => phx_core::Transformed::Hazard,
             Source::Wear(_) => phx_core::Transformed::Wear,
             Source::Carried(_) => phx_core::Transformed::Carried,
+            Source::Built(_) => phx_core::Transformed::Built,
         }
     }
 }

@@ -999,7 +999,20 @@ without end in both directions.
   receiving other than what the one before it gave the same holder); each wear leg's digest carries its chain and
   class, and `CAP.stock` checks the same from the audit's own record.
 - **Capacity** reads the classes: a way's capacity is the least over its kinds of units × the class's efficiency over
-  the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound.
+  the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound. The owner's review (5d)
+  writes it as the fact `CAP.capacity`, one twin's units a day, which production and a service's stall read beside
+  what the staff can make.
+- **Investment** (CAP.5, CAP.2): each chain has one more instrument, its **plant under construction**, held apart
+  from its classes (`Chains::declare_building`). The review emits a `CAP.invest` intent (the kind, the product it is
+  bought as, a twin's units, the stages its lead time gives); the world admits it at 5d and at 6a names the builder
+  among the day's stalls of that product — the seller in the owner's reach and country at the lowest posted price —
+  and begins a `Project` (saved in `Chains`) at that price. At 6d each project's stage is a trade under `CAP bought`:
+  the builder's goods, made by its way at delivery for a service or covered from its stock, used up by
+  `Purchase(owner)`; the owner's money to the builder; the units into the plant under construction by `Built(project)`
+  at what was paid. It settles with the day's trades in stage 7; a stage the builder cannot deliver waits. On the last
+  stage's settling, `CAP completed` moves the project's units from construction into the newest class at the cost they
+  carry. The apply routine refuses a `Built` leg on anything but a chain's construction or newest class, and plant put
+  in service other than what construction gave.
 
 ### 7.11 Goods, orders and trades
 

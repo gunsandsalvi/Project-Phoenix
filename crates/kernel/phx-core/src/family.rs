@@ -384,7 +384,7 @@ pub struct LegDigest {
 
 /// What accounts for units a transformation made or used up: the way that made or used them, the deposit they were
 /// taken from, the purchase that used them up, their spoiling in store, the hazard that destroyed them, the chain
-/// they wore along, or the shipment that carried them from one place to another.
+/// they wore along, the shipment that carried them from one place to another, or the construction that built them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Transformed {
     Way,
@@ -394,6 +394,7 @@ pub enum Transformed {
     Hazard,
     Wear,
     Carried,
+    Built,
 }
 
 /// One instrument's day as the audit kept it: what was issued of it before the day's first leg on it, what its paired

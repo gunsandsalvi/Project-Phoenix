@@ -490,14 +490,34 @@ pub fn phx_ledger::chains::Chain::load(&mut phx_store::save::Reader<'_>) -> core
 pub fn phx_ledger::chains::Chain::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::chains::Chains
 impl phx_ledger::chains::Chains
+pub fn phx_ledger::chains::Chains::begin(&mut self, phx_ledger::chains::Project) -> u64
+pub fn phx_ledger::chains::Chains::building(&self, u32) -> phx_num::missing::Missing<phx_id::ids::InstrumentId>
 pub fn phx_ledger::chains::Chains::check(&self, &[phx_ledger::instruction::LegRec])
 pub fn phx_ledger::chains::Chains::declare(&mut self, u32, alloc::vec::Vec<phx_id::ids::InstrumentId>) -> u32
+pub fn phx_ledger::chains::Chains::declare_building(&mut self, u32, phx_id::ids::InstrumentId)
+pub fn phx_ledger::chains::Chains::delivered(&mut self, u64, i64) -> phx_num::missing::Missing<phx_ledger::chains::Project>
 pub fn phx_ledger::chains::Chains::get(&self, u32) -> core::option::Option<&phx_ledger::chains::Chain>
 pub fn phx_ledger::chains::Chains::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_ledger::chains::Chain>
 pub fn phx_ledger::chains::Chains::of(&self, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<(u32, usize)>
-impl phx_store::save::Saved for phx_ledger::chains::Chains where alloc::vec::Vec<phx_ledger::chains::Chain>: phx_store::save::Saved
+pub fn phx_ledger::chains::Chains::projects(&self) -> impl core::iter::traits::iterator::Iterator<Item = (u64, &phx_ledger::chains::Project)>
+impl phx_store::save::Saved for phx_ledger::chains::Chains where alloc::vec::Vec<phx_ledger::chains::Chain>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<u32, phx_id::ids::InstrumentId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<u64, phx_ledger::chains::Project>: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_ledger::chains::Chains::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::chains::Chains::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_ledger::chains::Project
+pub phx_ledger::chains::Project::builder: phx_id::ids::PartyId
+pub phx_ledger::chains::Project::chain: u32
+pub phx_ledger::chains::Project::good: phx_id::ids::InstrumentId
+pub phx_ledger::chains::Project::left: i64
+pub phx_ledger::chains::Project::lot: i64
+pub phx_ledger::chains::Project::ordered: phx_id::day::Day
+pub phx_ledger::chains::Project::owner: phx_id::ids::PartyId
+pub phx_ledger::chains::Project::price: i64
+pub phx_ledger::chains::Project::stage: i64
+pub phx_ledger::chains::Project::total: i64
+pub phx_ledger::chains::Project::way: phx_num::missing::Missing<u32>
+impl phx_store::save::Saved for phx_ledger::chains::Project where phx_id::ids::PartyId: phx_store::save::Saved, u32: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_num::missing::Missing<u32>: phx_store::save::Saved, i64: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved
+pub fn phx_ledger::chains::Project::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::chains::Project::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::check
 pub enum phx_ledger::check::FailCause
 pub phx_ledger::check::FailCause::BankShort
@@ -574,6 +594,7 @@ pub fn phx_ledger::commitment::RowSpec::load(&mut phx_store::save::Reader<'_>) -
 pub fn phx_ledger::commitment::RowSpec::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::commitment::empty_kinds(&[phx_ledger::commitment::CommitmentKindDecl]) -> alloc::vec::Vec<alloc::string::String>
 pub mod phx_ledger::consts
+pub const phx_ledger::consts::BUILT: u64
 pub const phx_ledger::consts::CARRIED: u64
 pub const phx_ledger::consts::DEPOSIT: u64
 pub const phx_ledger::consts::DUES_PER_DAY: usize
@@ -778,6 +799,7 @@ pub fn phx_ledger::holder::HolderArenas::append(&mut self, phx_id::ids::Slot, ph
 pub fn phx_ledger::holder::HolderArenas::at_average_cost(&self) -> bool
 pub fn phx_ledger::holder::HolderArenas::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_ledger::holder::HolderArenas::kind(&self) -> &'static str
+pub fn phx_ledger::holder::HolderArenas::members(&self, phx_id::ids::Slot) -> u32
 pub fn phx_ledger::holder::HolderArenas::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_ledger::holder::HolderArenas::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &mut [(phx_id::ids::Slot, usize, u64)])
 pub fn phx_ledger::holder::HolderArenas::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
@@ -791,6 +813,7 @@ pub fn phx_core::kind_tables::KindTable<B>::append(&mut self, phx_id::ids::Slot,
 pub fn phx_core::kind_tables::KindTable<B>::at_average_cost(&self) -> bool
 pub fn phx_core::kind_tables::KindTable<B>::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
+pub fn phx_core::kind_tables::KindTable<B>::members(&self, phx_id::ids::Slot) -> u32
 pub fn phx_core::kind_tables::KindTable<B>::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_core::kind_tables::KindTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &mut [(phx_id::ids::Slot, usize, u64)])
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
@@ -885,6 +908,7 @@ pub phx_ledger::instruction::RowOp::Close
 pub phx_ledger::instruction::RowOp::Count
 pub phx_ledger::instruction::RowOp::Open(phx_ledger::line::NewRow)
 pub enum phx_ledger::instruction::Source
+pub phx_ledger::instruction::Source::Built(u64)
 pub phx_ledger::instruction::Source::Carried(u64)
 pub phx_ledger::instruction::Source::Deposit(u32)
 pub phx_ledger::instruction::Source::Hazard(u64)

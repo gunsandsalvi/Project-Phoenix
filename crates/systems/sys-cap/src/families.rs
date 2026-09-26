@@ -10,8 +10,6 @@ use phx_core::{
 use phx_id::PartyId;
 use phx_macros::clause;
 
-use crate::kinds::Kinds;
-
 declare_family! { pub STOCK = "CAP.stock" { mode: Streaming, clause: "CAP.8" } }
 
 /// The family, reading the day's wear from the audit's own record of its legs.
@@ -68,7 +66,9 @@ impl AuditFamily for Stock {
     }
 
     fn check(&self, ctx: &FamilyCtx<'_>, findings: &mut Findings) -> u64 {
-        let Some(kinds) = ctx.own::<Kinds>(<crate::Cap as phx_core::System>::CODE) else { return 0 };
+        let Some(kinds) = ctx.own::<crate::CapOwn>(<crate::Cap as phx_core::System>::CODE).map(|o| &o.kinds) else {
+            return 0;
+        };
         let Ok(classes) = u32::try_from(kinds.classes) else { return 0 };
         let worn = ctx.legs().worn();
         for w in &worn {

@@ -7,7 +7,7 @@ use phx_id::Slot;
 use phx_macros::clause;
 use phx_num::capacity_exceeded;
 
-use crate::consts::{CARRIED, DEPOSIT, HAZARD, LEG_WORDS, PURCHASE, SPOILAGE, WAY, WEAR};
+use crate::consts::{BUILT, CARRIED, DEPOSIT, HAZARD, LEG_WORDS, PURCHASE, SPOILAGE, WAY, WEAR};
 use crate::instruction::Source;
 
 /// Units of one good made (positive) or used up (negative), with what accounts for them and, for units made, the
@@ -40,6 +40,7 @@ fn source_words(s: Source) -> (u64, u64) {
         Source::Hazard(e) => (HAZARD, e),
         Source::Wear(c) => (WEAR, u64::from(c)),
         Source::Carried(s) => (CARRIED, s),
+        Source::Built(p) => (BUILT, p),
     }
 }
 
@@ -52,6 +53,7 @@ fn source_of(tag: u64, value: u64) -> Option<Source> {
         HAZARD => Source::Hazard(value),
         WEAR => Source::Wear(u32::try_from(value).ok()?),
         CARRIED => Source::Carried(value),
+        BUILT => Source::Built(value),
         _ => return None,
     })
 }

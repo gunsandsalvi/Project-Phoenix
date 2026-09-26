@@ -1,8 +1,12 @@
 pub mod if_firm
 pub mod if_firm::consts
 pub const if_firm::consts::INDUSTRIES: u32
+pub const if_firm::consts::PRODUCTS: u32
 pub const if_firm::consts::WAY_SETS: u32
 pub mod if_firm::facts
+pub struct if_firm::facts::Capacity
+impl phx_core::facts::FactDef for if_firm::facts::Capacity
+pub const if_firm::facts::Capacity::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::DeliveredAtReview
 impl phx_core::facts::FactDef for if_firm::facts::DeliveredAtReview
 pub const if_firm::facts::DeliveredAtReview::ITEM: phx_core::facts::ItemDecl
@@ -55,6 +59,14 @@ pub const if_firm::known::Industry::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::known::Known
 impl phx_core::facts::FactDef for if_firm::known::Known
 pub const if_firm::known::Known::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::known::Product
+impl phx_core::facts::FactDef for if_firm::known::Product
+pub const if_firm::known::Product::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::known::WayUsed
+impl phx_core::facts::FactDef for if_firm::known::WayUsed
+pub const if_firm::known::WayUsed::ITEM: phx_core::facts::ItemDecl
 pub const if_firm::known::INDUSTRY: phx_core::pop::AttrDecl
 pub const if_firm::known::KNOWN: phx_core::pop::AttrDecl
+pub const if_firm::known::PRODUCT: phx_core::pop::AttrDecl
+pub const if_firm::known::WAY: phx_core::pop::AttrDecl
 pub const if_firm::ITEMS: &[phx_core::facts::ItemDecl]

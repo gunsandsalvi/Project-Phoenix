@@ -57,6 +57,25 @@ const REASON: ReasonDecl = ReasonDecl {
     held: phx_num::Missing::Absent,
 };
 
+/// What a project's stages are: the owner's money for what it is building, at cost, and the builder's revenue, the
+/// goods it delivered carrying their cost out as the builder's expense and into the project as the owner's asset.
+pub const BOUGHT: ReasonDecl = ReasonDecl {
+    name: "CAP bought",
+    order: 2,
+    paid: Effect::Asset,
+    received: Effect::Revenue,
+    held: phx_num::Missing::Present((Effect::Expense, Effect::Asset)),
+};
+
+/// What a project's completion is: its plant under construction put in service at the cost it carries.
+pub const COMPLETED: ReasonDecl = ReasonDecl {
+    name: "CAP completed",
+    order: 2,
+    paid: Effect::Asset,
+    received: Effect::Asset,
+    held: phx_num::Missing::Present((Effect::Asset, Effect::Asset)),
+};
+
 fn reason(b: &Books) -> ReasonId {
     b.ledger.reasons.named(REASON.name)
 }
@@ -87,7 +106,10 @@ impl Contribution for Declared {
     }
 
     fn contribute(&self, opening: &mut Opening<'_>) {
-        let _ = books::of(opening).ledger.reasons.declare(REASON);
+        let reasons = &mut books::of(opening).ledger.reasons;
+        for r in [REASON, BOUGHT, COMPLETED] {
+            let _ = reasons.declare(r);
+        }
     }
 }
 
@@ -174,23 +196,7 @@ impl Plant {
             country: c.id,
         };
         let terms = b.ledger.terms.intern(Terms::account(ccy, dates));
-        // Each kind's classes, newest first, one chain a kind tagged by its place.
-        let mut classes: Vec<Vec<InstrumentId>> = Vec::with_capacity(kinds.kinds.len());
-        for (tag, unit) in (0_u32..).zip(units) {
-            let chain: Vec<InstrumentId> = (0..kinds.classes)
-                .map(|_| {
-                    b.ledger.instruments.issue(NewInstrument {
-                        family: InstrumentFamily::RealAsset,
-                        issuer: Missing::Absent,
-                        unit: *unit,
-                        ccy,
-                        terms,
-                    })
-                })
-                .collect();
-            let _ = b.ledger.chains.declare(tag, chain.clone());
-            classes.push(chain);
-        }
+        let classes = issue_chains(b, (kinds.classes, units), ccy, terms);
         let growth = derived(c, "GEN.growth") / PERCENT;
         let stock = self.stock.get(register, c.id);
         let mut legs: Vec<Vec<LegRec>> = firms.iter().map(|_| Vec::new()).collect();
@@ -232,8 +238,15 @@ impl Plant {
                     structures.push((f.party, per_twin));
                 }
                 let spread = rules::wear::steady_units(from_u64(per_twin), &steady, &values);
+                let twins = i64::try_from(f.twins).unwrap_or_else(|_| {
+                    violation!(clause = "REP.9", "a firm's twins beyond counting", firm = f.party.get())
+                });
                 for ((q, v), instrument) in spread.iter().zip(&values).zip(chain) {
-                    let (Some(units_held), Some(cost)) = (floor_to_i64(*q), floor_to_i64(q * v)) else {
+                    // Each twin holds its own share, whole, so the agent's position is a whole multiple of its twins.
+                    let (Some(units_held), Some(cost)) = (
+                        floor_to_i64(*q).and_then(|u| u.checked_mul(twins)),
+                        floor_to_i64(q * v).and_then(|c| c.checked_mul(twins)),
+                    ) else {
                         violation!(clause = "GEN.5", "a firm's plant beyond counting", firm = f.party.get());
                     };
                     if units_held > 0 {
@@ -261,6 +274,34 @@ impl Plant {
             ),
         ));
     }
+}
+
+/// Each kind's classes, newest first, one chain a kind tagged by its place, and its plant under construction, in a
+/// country's currency.
+fn issue_chains(
+    b: &mut Books,
+    (count, units): (usize, &[UnitId]),
+    ccy: phx_num::Ccy,
+    terms: phx_ledger::terms::TermsId,
+) -> Vec<Vec<InstrumentId>> {
+    let mut classes: Vec<Vec<InstrumentId>> = Vec::with_capacity(units.len());
+    for (tag, unit) in (0_u32..).zip(units) {
+        let mut issue = || {
+            b.ledger.instruments.issue(NewInstrument {
+                family: InstrumentFamily::RealAsset,
+                issuer: Missing::Absent,
+                unit: *unit,
+                ccy,
+                terms,
+            })
+        };
+        let chain: Vec<InstrumentId> = (0..count).map(|_| issue()).collect();
+        let building = issue();
+        let n = b.ledger.chains.declare(tag, chain.clone());
+        b.ledger.chains.declare_building(n, building);
+        classes.push(chain);
+    }
+    classes
 }
 
 /// Every firm of the country: the large firms, one twin each, and the small firms' agents.

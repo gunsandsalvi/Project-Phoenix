@@ -209,7 +209,7 @@ impl World {
                     self.books.settle_day(&self.due, day, &self.calendar, &self.closed, &draws_of, self.audit.stream());
                 self.bills_redeemed();
                 self.estates_settle(day);
-                self.markets_settle(SubStep::S7c);
+                self.markets_settle(day, SubStep::S7c);
                 self.freight_settle(day, SubStep::S7c);
                 self.labour_settle(day, SubStep::S7c);
                 self.credit_settle(day);
@@ -491,6 +491,16 @@ impl World {
                         };
                         self.admit_ship(g.step, rows_of(g.rows), &o);
                     }
+                    phx_market::intents::InvestIntent::NAME => {
+                        let Some(o) = phx_market::intents::InvestIntent::decode(words) else {
+                            violation!(
+                                clause = "CHN.4",
+                                "an order for plant its words do not encode",
+                                words = words.len()
+                            );
+                        };
+                        self.admit_invest(g.step, rows_of(g.rows), &o);
+                    }
                     _ => {
                         violation!(clause = "TIME.6", "an intent the apply routine does not know", words = words.len())
                     }
@@ -510,6 +520,7 @@ impl World {
     /// 6d: the day's matches, sales and bookings become what settles in stage 7.
     fn trade_day(&mut self, day: Day) {
         self.markets_trade(day);
+        self.invest_trade(day);
         self.retail_trade(day);
         self.freight_trade(day);
     }

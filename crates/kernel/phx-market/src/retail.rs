@@ -26,6 +26,8 @@ pub struct RetailKind {
     pub capacity: &'static str,
     /// The way a seller makes its product by.
     pub way: &'static str,
+    /// A seller's units a day its plant allows, where its plant limits it.
+    pub plant: &'static str,
     pub price_weight: &'static str,
     pub distance_weight: &'static str,
     pub reach: &'static str,

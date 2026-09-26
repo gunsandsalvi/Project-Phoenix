@@ -11,6 +11,7 @@ pub mod goods;
 pub mod graph;
 pub mod hash;
 pub mod inspector;
+mod invest;
 pub mod labour;
 mod losses;
 pub mod metrics;

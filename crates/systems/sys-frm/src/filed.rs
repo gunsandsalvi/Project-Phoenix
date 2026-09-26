@@ -566,10 +566,7 @@ fn write_facts(books: &mut Books, f: &Firm, facts: &[(&'static str, i64)]) {
             let (tables, _, _) = books.parties.cells_mut();
             let table = Population::table_mut::<SystemBacking>(tables, k);
             for (name, v) in facts {
-                let Some(column) = table.position(name) else {
-                    violation!(clause = "REP.20", "a small firm's position its kind does not hold");
-                };
-                table.write_fact(slot, column, *v);
+                table.open_fact(slot, name, *v);
             }
         }
     }

@@ -67,3 +67,5 @@ pub const HAZARD: u64 = 4;
 pub const WEAR: u64 = 5;
 /// A leg's source tagged as the shipment that carried it between places.
 pub const CARRIED: u64 = 6;
+/// A leg's source tagged as the construction project that built it.
+pub const BUILT: u64 = 7;
