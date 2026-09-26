@@ -218,6 +218,7 @@ pub const phx_core::consts::DAYS_366: i64
 pub const phx_core::consts::DAYS_PER_WEEK: u16
 pub const phx_core::consts::DAY_30: u8
 pub const phx_core::consts::DAY_31: u8
+pub const phx_core::consts::DECIMAL_BASE: f64
 pub const phx_core::consts::DECIMAL_RADIX: i64
 pub const phx_core::consts::DECIMAL_RADIX_F64: f64
 pub const phx_core::consts::EASTER_CENTURY: i32
@@ -735,13 +736,13 @@ pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Lim
 pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
-pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
 pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
@@ -775,11 +776,11 @@ pub fn phx_core::handler::Intents::iter(&self) -> impl core::iter::traits::itera
 pub fn phx_core::handler::Intents::len(&self) -> usize
 pub struct phx_core::handler::NoGoods
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
-pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
 pub trait phx_core::handler::Emits<I: phx_core::handler::IntentDef>
@@ -793,18 +794,18 @@ impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub trait phx_core::handler::GoodsView: core::fmt::Debug
-pub fn phx_core::handler::GoodsView::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::GoodsView::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
-pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::HandlerDecl: 'static
 pub const phx_core::handler::HandlerDecl::CLAUSE: &'static str
@@ -1646,6 +1647,8 @@ impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
 pub fn phx_core::register::Register::countries(&self) -> usize
 pub fn phx_core::register::Register::counts_per_country(&self, &str) -> core::result::Result<alloc::vec::Vec<u64>, alloc::string::String>
+pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::Result<&phx_core::register::values::Distribution, alloc::string::String>
+pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
@@ -2544,13 +2547,13 @@ pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Lim
 pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
 pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
-pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
 pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
@@ -3062,11 +3065,11 @@ pub phx_core::NewsEntry::kind: alloc::string::String
 pub phx_core::NewsEntry::notice: phx_core::events_rule::Notice
 pub struct phx_core::NoGoods
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
-pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub struct phx_core::NotObserver
 pub struct phx_core::ObserverDraws<'a>
@@ -3294,6 +3297,8 @@ impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
 pub fn phx_core::register::Register::countries(&self) -> usize
 pub fn phx_core::register::Register::counts_per_country(&self, &str) -> core::result::Result<alloc::vec::Vec<u64>, alloc::string::String>
+pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::Result<&phx_core::register::values::Distribution, alloc::string::String>
+pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
@@ -3538,18 +3543,18 @@ impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub trait phx_core::GoodsView: core::fmt::Debug
-pub fn phx_core::GoodsView::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::GoodsView::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
-pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16, u8) -> i64
+pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::GroupDemand
 pub fn phx_core::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64

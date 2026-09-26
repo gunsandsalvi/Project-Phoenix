@@ -59,10 +59,19 @@ const APPLY_POINTS: [SubStep; 23] = [
 
 /// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, stage 2's
 /// contract process at 2d, over the fails of the days since it last ran, and 2e's defaults of parties whose grace has
-/// ended, 3b's gathering of the population's agents due
-/// and 3e's outcomes of their hits, 9b's accounts, posting the day's settled money, and 10a's public events.
-pub const KERNEL_WORK: [SubStep; 7] =
-    [SubStep::S1b, SubStep::S2d, SubStep::S2e, SubStep::S3b, SubStep::S3e, SubStep::S9b, SubStep::S10a];
+/// ended, 3b's gathering of the population's agents due and 3e's outcomes of their hits, 5a's public outlooks over
+/// the markets' prints, 6a's meetings, 9b's accounts, posting the day's settled money, and 10a's public events.
+pub const KERNEL_WORK: [SubStep; 9] = [
+    SubStep::S1b,
+    SubStep::S2d,
+    SubStep::S2e,
+    SubStep::S3b,
+    SubStep::S3e,
+    SubStep::S5a,
+    SubStep::S6a,
+    SubStep::S9b,
+    SubStep::S10a,
+];
 
 /// The audit's sub-step, which runs every day.
 pub const AUDIT_AT: SubStep = AUDIT_SUBSTEP;
@@ -180,6 +189,9 @@ impl World {
             }
             if is_apply_point(info) {
                 self.apply(day, info.step, &mut pending);
+            }
+            if info.step == SubStep::S5a {
+                self.goods_outlooks(day);
             }
             if info.step == SubStep::S6a {
                 self.markets_meet(day);

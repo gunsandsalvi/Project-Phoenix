@@ -228,6 +228,15 @@ pub(crate) fn acquire(arenas: &mut dyn HolderArenas, holder: Slot, instrument: I
     }
 }
 
+/// The day a pooled lot stands at, its units' days averaged by their quantities, so what ages with the lot, as
+/// spoilage does, ages as its units do on average.
+fn average_day((a, qa): (phx_id::Day, i64), (b, qb): (phx_id::Day, i64)) -> Option<phx_id::Day> {
+    let (qa, qb) = (i128::from(qa), i128::from(qb));
+    let sum = qa.checked_add(qb).filter(|s| *s > 0)?;
+    let days = i128::from(a.get()) * qa + i128::from(b.get()) * qb;
+    u32::try_from(days / sum).ok().map(phx_id::Day::new)
+}
+
 /// Units acquired into a holding of alike units kept at average cost: they join its one lot, their cost added to the
 /// lot's, so however often it is acquired the holding keeps a single lot. Returns whether the holding is new.
 #[clause("REG.1", "ACC.6", "REP.24")]
@@ -253,7 +262,10 @@ pub(crate) fn acquire_pooled(arenas: &mut dyn HolderArenas, holder: Slot, instru
     else {
         violation!(clause = "Law 7", "a holding's quantity or cost overflows", units = lot.quantity.raw());
     };
-    let pooled = Lot::new(held.acquired, q, c);
+    let Some(day) = average_day((held.acquired, held.quantity.raw()), (lot.acquired, lot.quantity.raw())) else {
+        violation!(clause = "Law 7", "a holding's average day beyond reach", units = lot.quantity.raw());
+    };
+    let pooled = Lot::new(day, q, c);
     arenas.overwrite(holder, ListKind::Lots, at, &to_words(&pooled));
     h.quantity = QtyRaw::from_raw(q);
     arenas.overwrite(holder, ListKind::Holdings, i * HOLDING, &to_words(&h));

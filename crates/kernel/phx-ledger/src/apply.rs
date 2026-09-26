@@ -179,6 +179,8 @@ pub struct Ledger<B: Backing = SystemBacking> {
     pub chains: crate::chains::Chains,
     /// The goods issued and the deposits' rights.
     pub goods: crate::goods::Goods,
+    /// Each individual's cost flow over its stocks' lots, once chosen: weighted average (true) or first in, first out.
+    pub cost_flows: std::collections::BTreeMap<PartyId, bool>,
     pub(crate) day: DayBook,
 }
 
@@ -321,6 +323,7 @@ impl<B: Backing> Ledger<B> {
             procedures: BTreeSet::new(),
             chains: crate::chains::Chains::default(),
             goods: crate::goods::Goods::default(),
+            cost_flows: std::collections::BTreeMap::new(),
             day: DayBook::default(),
         }
     }
@@ -957,13 +960,28 @@ impl<B: Backing> Ledger<B> {
 
     fn move_units(&mut self, arenas: &mut dyn HolderArenas, at: At, id: InstrumentId, qty: i64, cost: i64, day: Day) {
         if qty > 0 {
-            // A class of a chain holds alike units, so its holding keeps one lot at average cost.
-            let pooled = matches!(self.chains.of(id), Missing::Present(_));
+            // A class of a chain holds alike units, and a holder at average cost keeps its goods so: one lot each.
+            let averaged = matches!(self.cost_flows.get(&at.party), Some(true)) || arenas.at_average_cost();
+            let pooled = averaged || matches!(self.chains.of(id), Missing::Present(_));
             self.instruments.acquire_as(arenas, (at.table, at.slot), id, Lot::new(day, qty, cost), pooled);
         } else if qty < 0 {
             let disposal = Disposal { units: -qty, bound: self.bound(at.party, id), order: LotOrder::FirstIn };
             let gone = self.instruments.dispose(arenas, at.table, at.slot, id, disposal);
             self.day.disposed.push(DisposedRec { party: at.party, instrument: id, units: -qty, cost: gone.cost, day });
+        }
+    }
+
+    /// A party's cost flow over its stocks' lots, chosen once and applied consistently; an agent's twins hold at
+    /// average cost, so it has no choice to make.
+    #[clause("ACC.6")]
+    pub fn choose_cost_flow(&mut self, party: PartyId, average: bool) {
+        match self.cost_flows.get(&party) {
+            Some(chosen) if *chosen != average => {
+                violation!(clause = "ACC.6", "a cost flow changed once chosen", party = party.get());
+            }
+            _ => {
+                self.cost_flows.insert(party, average);
+            }
         }
     }
 
@@ -1046,6 +1064,7 @@ impl<B: Backing> Ledger<B> {
         self.procedures.save(w);
         self.chains.save(w);
         self.goods.save(w);
+        self.cost_flows.save(w);
     }
 
     /// The ledger read back over the build's own declarations, which `decls` carries from the declarations phase.
@@ -1079,6 +1098,7 @@ impl<B: Backing> Ledger<B> {
             procedures: BTreeSet::load(r)?,
             chains: crate::chains::Chains::load(r)?,
             goods: crate::goods::Goods::load(r)?,
+            cost_flows: std::collections::BTreeMap::load(r)?,
             day: DayBook::default(),
         })
     }

@@ -2,7 +2,7 @@
 //! price there against the price it expects, and so how much to work and at what it will sell what it holds. And the
 //! stock visit, at whose rows the kernel realises what spoiled since the last.
 
-use if_firm::facts::{OutputRate, RequiredReturn, UnitCost};
+use if_firm::facts::{Method, OutputRate, RequiredReturn, UnitCost};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads};
 use phx_core::register::values::{Table1, Table2};
 use phx_core::{Emits, Prim, Register, declare_handler};
@@ -99,7 +99,7 @@ declare_handler! {
     pub ExtractSmall = "GDS.extract_small" {
         substep: S5c,
         table: "small_firm",
-        reads: [UnitCost, OutputRate, RequiredReturn],
+        reads: [UnitCost, OutputRate, RequiredReturn, Method],
         writes: [],
         intents: [Transform, OrderIntent],
         clause: "GDS.4",
@@ -112,7 +112,7 @@ declare_handler! {
     pub ExtractLarge = "GDS.extract_large" {
         substep: S5c,
         table: "firm",
-        reads: [UnitCost, OutputRate, RequiredReturn],
+        reads: [UnitCost, OutputRate, RequiredReturn, Method],
         writes: [],
         intents: [Transform, OrderIntent],
         clause: "GDS.4",
@@ -168,8 +168,8 @@ where
 /// price there, net of the firm's unit cost, beats the net price it expects discounted at the return it requires,
 /// the units its plant runs over the days to its next decision, no more than the deposit holds; and an offer of what
 /// it then holds of the good, at the least it would take rather than hold, the better of its cost and the price it
-/// expects, discounted. A firm without its cost, its run or its required return, or a good with no price or outlook
-/// there yet, decides nothing.
+/// expects by its method, discounted. A firm without its cost, its run, its required return or its method, or a good
+/// with no price or outlook there yet, decides nothing.
 #[clause("GDS.4", "GDS.13", "MKT.16")]
 fn extract<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
@@ -177,14 +177,18 @@ where
         + Reads<UnitCost>
         + Reads<OutputRate>
         + Reads<RequiredReturn>
+        + Reads<Method>
         + Emits<Transform>
         + Emits<OrderIntent>,
     S: FactStore + ?Sized,
 {
     let own: &Own = ctx.own::<Own>();
-    let (Some(cost), Some(per_day), Some(required)) =
-        (read::<UnitCost, H, S>(ctx, row), read::<OutputRate, H, S>(ctx, row), read::<RequiredReturn, H, S>(ctx, row))
-    else {
+    let (Some(cost), Some(per_day), Some(required), Some(method)) = (
+        read::<UnitCost, H, S>(ctx, row),
+        read::<OutputRate, H, S>(ctx, row),
+        read::<RequiredReturn, H, S>(ctx, row),
+        read::<Method, H, S>(ctx, row).and_then(|m| u16::try_from(m).ok()),
+    ) else {
         return;
     };
     let rate = from_i64(required) / crate::consts::RATE_SCALE;
@@ -199,7 +203,7 @@ where
         let grade = rules::grade::now(from_i64(right.grade) / crate::consts::GRADE_SCALE, product.fall, taken);
         let class = rules::grade::class(grade, &product.bounds);
         let (Missing::Present(price), Missing::Present(outlook)) =
-            (ctx.mark(row, right.product, class), ctx.outlook(row, right.product, class))
+            (ctx.mark(row, right.product, class), ctx.outlook(row, right.product, class, method))
         else {
             continue;
         };

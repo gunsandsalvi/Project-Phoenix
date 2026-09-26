@@ -87,7 +87,9 @@ pub struct World {
     pub(crate) market_day: crate::goods::MarketDay,
     /// Each good's latest mark where it stands, and the public outlook of its price there, for the handlers' reads.
     pub(crate) marks: crate::goods::Marks,
-    pub(crate) outlooks: crate::goods::Marks,
+    pub(crate) outlooks: crate::goods::Outlooks,
+    /// The methods public series are forecast by, each with its memory type's parameters, by the method's index.
+    pub(crate) val_methods: Vec<(phx_val::method::Method, phx_val::heuristic::Params)>,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,
     pub(crate) unprocessed: Vec<phx_ledger::fails::Fail>,

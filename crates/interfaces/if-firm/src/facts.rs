@@ -4,13 +4,6 @@
 use phx_core::{FactDef, PositionDecl, declare_fact};
 
 declare_fact! {
-    /// Units of output the firm holds, in its product's quantity.
-    pub Stock = "FRM.stock" {
-        value: Qty, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "FRM.1",
-    }
-}
-
-declare_fact! {
     /// Units the firm expects to sell in a production period: its sales outlook's mean.
     pub ExpectedSales = "FRM.expected_sales" {
         value: Qty, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "VAL.23",
@@ -25,9 +18,25 @@ declare_fact! {
 }
 
 declare_fact! {
-    /// Units the firm has sold since its last price review.
-    pub SalesSince = "FRM.sales_since" {
+    /// Units of its product the firm had delivered by its last price review, from which its sales since are counted.
+    pub DeliveredAtReview = "FRM.delivered_at_review" {
         value: Qty, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "FRM.13",
+    }
+}
+
+declare_fact! {
+    /// Units of its product the firm had delivered by its last production schedule, from which the sales its outlook
+    /// next observes are counted.
+    pub DeliveredSeen = "FRM.delivered_seen" {
+        value: Qty, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "VAL.23",
+    }
+}
+
+declare_fact! {
+    /// The method the firm forecasts public series by, its heuristic and its memory type as one index: the heuristic
+    /// times the memory types, plus the memory type.
+    pub Method = "FRM.method" {
+        value: Count, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "VAL.23",
     }
 }
 
@@ -97,11 +106,12 @@ const fn from_fact<F: FactDef>() -> PositionDecl {
 }
 
 /// Every position a small firm's agent holds, in the order its table keeps them.
-pub const POSITIONS: [PositionDecl; 12] = [
-    from_fact::<Stock>(),
+pub const POSITIONS: [PositionDecl; 13] = [
     from_fact::<ExpectedSales>(),
     from_fact::<SalesWidth>(),
-    from_fact::<SalesSince>(),
+    from_fact::<DeliveredAtReview>(),
+    from_fact::<DeliveredSeen>(),
+    from_fact::<Method>(),
     from_fact::<LastReview>(),
     from_fact::<UnitCost>(),
     from_fact::<Markup>(),
@@ -113,11 +123,12 @@ pub const POSITIONS: [PositionDecl; 12] = [
 ];
 
 /// Every fact a large firm keeps, by name.
-pub const FACTS: [&str; 12] = [
-    Stock::ITEM.name,
+pub const FACTS: [&str; 13] = [
     ExpectedSales::ITEM.name,
     SalesWidth::ITEM.name,
-    SalesSince::ITEM.name,
+    DeliveredAtReview::ITEM.name,
+    DeliveredSeen::ITEM.name,
+    Method::ITEM.name,
     LastReview::ITEM.name,
     UnitCost::ITEM.name,
     Markup::ITEM.name,

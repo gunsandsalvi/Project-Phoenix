@@ -58,3 +58,6 @@ pub const BILLION: f64 = 1e9;
 
 /// Ten, the base a unit's price exponent counts powers of.
 pub const DECADE: i64 = 10;
+
+/// A half, added before a floor to round to the nearest.
+pub const HALF: f64 = 0.5;

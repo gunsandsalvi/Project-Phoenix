@@ -484,6 +484,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
+    let val_methods = crate::goods::methods(&p.kernel.val, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     p.market_kinds.check(&markets.made).map_err(|e| AssemblyErrors(vec![e]))?;
     Ok(World {
         records,
@@ -522,7 +523,8 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
-        outlooks: crate::goods::Marks::default(),
+        outlooks: crate::goods::Outlooks::default(),
+        val_methods,
         accounts,
         report: run.report,
         unprocessed: carried.unprocessed,

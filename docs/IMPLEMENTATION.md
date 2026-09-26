@@ -6373,8 +6373,21 @@ a thirtieth of the firms a day. Counters, ratcheted: `phx_cap.wear_realisations`
   rule is built and tested; their visit waits for storage, a service bought from whoever owns the room (S1.06).
   Stocks lost to catastrophes are the kernel's losses (S0.25e); crops lost to weather are yields, read by production
   at S1.15. A firm's price review reads its own stock (sub-step c), so no separate pressure fact is kept;
-- **c**: the firms' wiring — input orders (FRM.7), revenue on delivery (FRM.13), surprise wakes (REP.35), the 5a
-  outlooks over prints (VAL.23), the cost flow (ACC.6), solvent closures;
+- **c** *(built)*: the firms' wiring:
+  - a firm reads its stock of its product from the ledger and its sales from the units it delivered (`FRM.stock` and
+    `FRM.sales_since` retire for `FRM.delivered_at_review` and `FRM.delivered_seen`); revenue is recognised on
+    delivery (FRM.13);
+  - at its production schedule its sales outlook takes in what it sold, by its memory type's gain (`FRM.method`,
+    drawn at S1.15), and a surprise beyond its sensitivity raises its attention to a certain review the next day
+    (REP.35);
+  - at 5a the kernel forms every method's outlook of each good's print series (VAL.23);
+  - an individual's cost flow over its stocks' lots is chosen once (`Ledger::choose_cost_flow`), and an agent's
+    twins hold at average cost; a pooled lot stands at its units' average day (ACC.6);
+  - a small firm's handler reads its key attributes by name, as a large firm's reads its facts.
+
+  Buying inputs (FRM.7's part) needs the way a firm runs, which production chooses, so it moves to S1.15 with
+  production. A solvent owner's closure reads the value of continuing from filed accounts, so it moves there too; its
+  rule is S1.03's `closes`, and `phx_frm.closures` is counted from there;
 - **d**: the GDS.10 family, LC-1-13 to LC-1-15 and LC-1-46, counters, the reviews and the build run.
 
 Who holds each deposit's right is drawn at the Stage 1 opening (S1.15), with the firms' stocks.

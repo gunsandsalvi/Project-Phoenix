@@ -109,3 +109,6 @@ pub const LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8) = (3, 1);
 /// The ids a page of an id map holds: a page is freed when its last id goes, so a map of ids issued in order follows
 /// the ids still held; 4 096 keeps a page of 16-byte entries at 64 KiB.
 pub const ID_PAGE_BITS: u32 = 12;
+
+/// Ten, the base a fixed point's places count.
+pub const DECIMAL_BASE: f64 = 10.0;

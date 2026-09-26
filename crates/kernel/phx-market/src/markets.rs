@@ -40,6 +40,21 @@ pub struct Markets {
     pub linked: BTreeMap<MarketId, LinkedCall>,
     pub days: Vec<MarketDay>,
     pub made: crate::instances::Made,
+    /// Each market's prints as a public series, with every method's outlook of it.
+    pub public: BTreeMap<MarketId, PublicSeries>,
+}
+
+/// A market's prints as a public series: the day of the last it has taken in, the last two prices, their sum and
+/// count, which its long mean is, and each method's outlook, by the method's index.
+#[clause("VAL.23")]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
+pub struct PublicSeries {
+    pub day: Day,
+    pub last: i64,
+    pub before: i64,
+    pub sum: i128,
+    pub count: u64,
+    pub outlooks: Vec<i64>,
 }
 
 /// The depth and width a meeting's orders posted.

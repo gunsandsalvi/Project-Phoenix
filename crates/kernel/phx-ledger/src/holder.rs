@@ -11,6 +11,10 @@ use crate::consts::HOLDER_SHARDS;
 /// own arena, contiguous with its other lists, and nothing outside the arena names a position in it.
 pub trait HolderArenas {
     /// The table's identity, which a holder key carries.
+    /// Whether the table's holders keep goods at average cost, one lot a holding: an agent's twins hold alike.
+    fn at_average_cost(&self) -> bool {
+        false
+    }
     fn table(&self) -> TableId;
     /// The kind of party the table holds, which a line side's declared holder kinds are checked against.
     fn kind(&self) -> &'static str;

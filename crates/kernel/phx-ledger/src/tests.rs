@@ -495,3 +495,13 @@ mod books {
         assert_eq!(refusals(&[InstrumentEventDecl { from: &[], ..DEFAULT }]).len(), 1);
     }
 }
+
+#[test]
+fn a_pooled_lot_stands_at_its_units_average_day() {
+    let mut space = AddressSpace::empty();
+    let mut firms = table(&mut space, "firm", 0);
+    let a = holder(&mut space, &mut firms, 1);
+    crate::holding::acquire_pooled(&mut firms, a, BOND, Lot::new(Day::new(10), 100, 1_000));
+    crate::holding::acquire_pooled(&mut firms, a, BOND, Lot::new(Day::new(40), 50, 800));
+    assert_eq!(lots(&firms, a, BOND), vec![Lot::new(Day::new(20), 150, 1_800)], "one lot, its day weighted by units");
+}

@@ -99,15 +99,16 @@ pub struct HeldRight {
 pub type HeldGood = (u16, u8, i64);
 
 /// What a row's party may read of goods beyond its facts: its units of each good at its place, one twin's for an
-/// agent, and the list of them; the deposits whose rights it holds; the units it has delivered since the world
-/// opened; and each good's latest mark at its place and the public outlook of its price there, which are public.
+/// agent, and the list of them; the deposits whose rights it holds; the units of a product, of every grade, it has
+/// delivered since the world opened; and each good's latest mark at its place and the public outlook of its price
+/// there by a method, which are public.
 pub trait GoodsView: core::fmt::Debug {
     fn held(&self, slot: Slot, product: u16, grade: u8) -> i64;
     fn goods(&self, slot: Slot) -> &[HeldGood];
     fn rights(&self, slot: Slot) -> &[HeldRight];
-    fn delivered(&self, slot: Slot, product: u16, grade: u8) -> i64;
+    fn delivered(&self, slot: Slot, product: u16) -> i64;
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64>;
-    fn outlook(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64>;
+    fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64>;
 }
 
 /// The view of rows that hold no goods, as a kernel table's are.
@@ -124,13 +125,13 @@ impl GoodsView for NoGoods {
     fn rights(&self, _: Slot) -> &[HeldRight] {
         &[]
     }
-    fn delivered(&self, _: Slot, _: u16, _: u8) -> i64 {
+    fn delivered(&self, _: Slot, _: u16) -> i64 {
         0
     }
     fn mark(&self, _: Slot, _: u16, _: u8) -> Missing<i64> {
         Missing::Absent
     }
-    fn outlook(&self, _: Slot, _: u16, _: u8) -> Missing<i64> {
+    fn outlook(&self, _: Slot, _: u16, _: u8, _: u16) -> Missing<i64> {
         Missing::Absent
     }
 }
@@ -212,9 +213,9 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
         self.parts.goods.goods(slot)
     }
 
-    /// The public outlook of a good's price at the row's place, in its market's raw price.
-    pub fn outlook(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
-        self.parts.goods.outlook(slot, product, grade)
+    /// The public outlook of a good's price at the row's place by a method, in its market's raw price.
+    pub fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64> {
+        self.parts.goods.outlook(slot, product, grade, method)
     }
 
     /// The deposits whose rights the row's party holds.
@@ -223,10 +224,11 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
         self.parts.goods.rights(slot)
     }
 
-    /// The units of a good the row's party has delivered since the world opened, one twin's for an agent.
+    /// The units of a product, of every grade, the row's party has delivered since the world opened, one twin's for
+    /// an agent.
     #[must_use]
-    pub fn delivered(&self, slot: Slot, product: u16, grade: u8) -> i64 {
-        self.parts.goods.delivered(slot, product, grade)
+    pub fn delivered(&self, slot: Slot, product: u16) -> i64 {
+        self.parts.goods.delivered(slot, product)
     }
 
     /// A good's latest mark at the row's place, in its market's raw price.

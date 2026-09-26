@@ -88,6 +88,36 @@ impl Frame {
     }
 }
 
+/// Every method public series are forecast by, heuristic by heuristic on the menu and within each memory type by
+/// memory type, so a method's index is its heuristic times the memory types plus its memory type; each with its
+/// memory type's parameters: its speed of correction, a type of the adaptive gain's distribution, and the trend's and
+/// anchor's shared pulls.
+pub(crate) fn methods(
+    p: &phx_val::prims::ValPrims,
+    register: &phx_core::Register,
+) -> Result<Vec<(phx_val::method::Method, phx_val::heuristic::Params)>, String> {
+    let types = u16::try_from(p.memory_types.shared(register).get()).map_err(|e| e.to_string())?;
+    let gain = p.adaptive_gain.shared(register);
+    let set = phx_core::register::values::TypeSet::build(gain, types)?;
+    let scale = (0..gain.exp).fold(1.0, |s, _| s * phx_rand::float::from_i64(crate::consts::DECADE));
+    let (gamma, kappa) = (p.trend_gamma.shared(register).to_f64(), p.anchor_kappa.shared(register).to_f64());
+    let mut out = Vec::new();
+    for h in 0..phx_val::heuristic::MENU.len() {
+        let heuristic = phx_val::heuristic::HeuristicId::new(u8::try_from(h).map_err(|e| e.to_string())?);
+        for (m, t) in (0_u8..).zip(set.types()) {
+            let method = phx_val::method::Method {
+                heuristic,
+                memory: phx_val::method::MemoryType(m),
+                window: phx_val::method::AgeWindow(0),
+            };
+            let params =
+                phx_val::heuristic::Params { lambda: phx_rand::float::from_i64(t.value) / scale, gamma, kappa };
+            out.push((method, params));
+        }
+    }
+    Ok(out)
+}
+
 /// The rows a handler's intents came from: a kind table's place among the books' holders, and whether its rows are
 /// individuals; none for a kernel table, whose rows are no parties.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -125,6 +155,8 @@ pub(crate) struct MarketDay {
 
 /// Each good's latest mark where it stands, as the markets' marks give it, rebuilt after the day's marks.
 pub(crate) type Marks = Arc<BTreeMap<GoodKey, i64>>;
+/// Each good's public outlook where it stands, by method, rebuilt at 5a.
+pub(crate) type Outlooks = Arc<BTreeMap<(GoodKey, u16), i64>>;
 
 /// A good a row holds or has delivered: its product, its grade class and its units, one twin's.
 type Units = HeldGood;
@@ -135,7 +167,7 @@ pub(crate) struct RunGoods {
     start: u32,
     rows: Vec<RowGoods>,
     marks: Marks,
-    outlooks: Marks,
+    outlooks: Outlooks,
 }
 
 #[derive(Debug)]
@@ -154,12 +186,6 @@ impl RowGoods {
 }
 
 impl RunGoods {
-    /// A good's price in a map, at the row's place.
-    fn at_place(&self, map: &Marks, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
-        let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
-        map.get(&GoodKey { product, grade, zone }).copied().map_or(Missing::Absent, Missing::Present)
-    }
-
     fn row(&self, slot: Slot) -> Option<&RowGoods> {
         slot.get().checked_sub(self.start).and_then(|i| self.rows.get(usize::try_from(i).ok()?))
     }
@@ -179,14 +205,17 @@ impl GoodsView for RunGoods {
     fn rights(&self, slot: Slot) -> &[HeldRight] {
         self.row(slot).map_or(&[], |r| r.rights.as_slice())
     }
-    fn delivered(&self, slot: Slot, product: u16, grade: u8) -> i64 {
-        self.row(slot).map_or(0, |r| units_of(&r.delivered, product, grade))
+    fn delivered(&self, slot: Slot, product: u16) -> i64 {
+        self.row(slot).map_or(0, |r| r.delivered.iter().filter(|(p, _, _)| *p == product).map(|(_, _, q)| q).sum())
     }
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
-        self.at_place(&self.marks, slot, product, grade)
+        let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
+        self.marks.get(&GoodKey { product, grade, zone }).copied().map_or(Missing::Absent, Missing::Present)
     }
-    fn outlook(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
-        self.at_place(&self.outlooks, slot, product, grade)
+    fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64> {
+        let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
+        let key = (GoodKey { product, grade, zone }, method);
+        self.outlooks.get(&key).copied().map_or(Missing::Absent, Missing::Present)
     }
 }
 
@@ -427,6 +456,20 @@ impl World {
         for (market, mut orders) in by_market {
             let decl = self.market_kinds.decl(&self.markets.made, market);
             let key = GoodKey::from_code(decl.key.subject);
+            // A place's markets meet on its country's business days; an order posted on another lapses unmet.
+            let meets = match self.geo().zone_country(key.zone) {
+                Missing::Present(country) => self.calendar.is_business(country, day),
+                Missing::Absent => false,
+            };
+            if !meets {
+                for o in &mut orders {
+                    if let Missing::Present(cover) = std::mem::replace(&mut o.cover, Missing::Absent) {
+                        self.books.ledger.covers.release(cover);
+                    }
+                }
+                self.market_day.refused += phx_rand::float::len_u64(orders.len());
+                continue;
+            }
             let good = self.good(key);
             let instrument = self.books.ledger.instruments.get(good);
             let Some(stream) = self.streams.named(decl.stream) else {
@@ -564,6 +607,72 @@ impl World {
             marks.insert(GoodKey::from_code(subject), mark.price.raw());
         }
         self.marks = Arc::new(marks);
+    }
+
+    /// 5a: every good's print series taken in since the last pass, and each method's outlook of it: the first print
+    /// is every method's first outlook, then each method's rule over what it saw. Then each good's outlooks
+    /// at its place for the handlers' reads.
+    #[clause("VAL.23", "VAL.5", "VAL.10")]
+    pub(crate) fn goods_outlooks(&mut self, day: Day) {
+        let methods = &self.val_methods;
+        let prints: Vec<(MarketId, Day, i64)> =
+            self.markets.tape.last_prints().map(|(m, p)| (m, p.day(), p.price().raw())).collect();
+        for (market, print_day, price) in prints {
+            let series = self.markets.public.entry(market).or_insert_with(|| phx_market::markets::PublicSeries {
+                day: print_day,
+                last: price,
+                before: price,
+                sum: 0,
+                count: 0,
+                outlooks: Vec::new(),
+            });
+            if series.count > 0 && print_day <= series.day {
+                continue;
+            }
+            let first = series.count == 0;
+            series.before = if first { price } else { series.last };
+            series.last = price;
+            series.day = print_day;
+            series.sum += i128::from(price);
+            series.count += 1;
+            let Some(mean) = i64::try_from(series.sum / i128::from(series.count)).ok() else {
+                phx_num::capacity_exceeded!("a series' mean price", i64::MAX, series.count);
+            };
+            let level = phx_rand::float::from_i64(mean);
+            let seen = |previous: f64| phx_val::heuristic::Seen {
+                previous,
+                last: phx_rand::float::from_i64(series.last),
+                before: phx_rand::float::from_i64(series.before),
+                level,
+                announced: Missing::Absent,
+                horizon_end: day,
+            };
+            let next: Vec<i64> = methods
+                .iter()
+                .enumerate()
+                .map(|(i, (method, params))| {
+                    let previous = match series.outlooks.get(i) {
+                        Some(o) if !first => phx_rand::float::from_i64(*o),
+                        _ => phx_rand::float::from_i64(price),
+                    };
+                    let x = phx_val::method::outlook(*method, &seen(previous), params);
+                    let Some(o) = phx_rand::float::floor_to_i64(x + crate::consts::HALF) else {
+                        violation!(clause = "VAL.23", "an outlook beyond a price", market = market.get());
+                    };
+                    o
+                })
+                .collect();
+            series.outlooks = next;
+        }
+        let mut out = BTreeMap::new();
+        for (market, series) in &self.markets.public {
+            let Missing::Present(subject) = self.markets.made.subject_of(*market) else { continue };
+            let key = GoodKey::from_code(subject);
+            for (m, o) in (0_u16..).zip(&series.outlooks) {
+                out.insert((key, m), *o);
+            }
+        }
+        self.outlooks = Arc::new(out);
     }
 
     /// What a run of rows may read of its goods: for each row, the goods it holds at its zone and the rights it

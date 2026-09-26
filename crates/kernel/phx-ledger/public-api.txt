@@ -238,6 +238,7 @@ pub phx_ledger::apply::DisposedRec::units: i64
 pub struct phx_ledger::apply::Ledger<B: phx_store::backing::Backing>
 pub phx_ledger::apply::Ledger::chains: phx_ledger::chains::Chains
 pub phx_ledger::apply::Ledger::commitments: phx_ledger::commitment::Commitments
+pub phx_ledger::apply::Ledger::cost_flows: alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, bool>
 pub phx_ledger::apply::Ledger::covers: phx_ledger::covered::Covers
 pub phx_ledger::apply::Ledger::events: phx_ledger::events::InstrumentEvents
 pub phx_ledger::apply::Ledger::goods: phx_ledger::goods::Goods
@@ -250,6 +251,7 @@ pub phx_ledger::apply::Ledger::terms: phx_ledger::terms::TermsInterner
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::apply(&mut self, &mut dyn phx_ledger::apply::Holders, phx_ledger::apply::ApplyAt, phx_ledger::instruction::Instruction, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::apply::Ledger<B>::arrears(&self) -> &phx_ledger::contract_process::Arrears
+pub fn phx_ledger::apply::Ledger<B>::choose_cost_flow(&mut self, phx_id::ids::PartyId, bool)
 pub fn phx_ledger::apply::Ledger<B>::close(&mut self) -> phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::Ledger<B>::day_book(&self) -> &phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::Ledger<B>::fails(&self) -> &[phx_ledger::fails::Fail]
@@ -741,6 +743,7 @@ pub fn phx_ledger::holder::CellHolders::load_like(&self, &mut phx_store::save::R
 pub fn phx_ledger::holder::CellHolders::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub trait phx_ledger::holder::HolderArenas
 pub fn phx_ledger::holder::HolderArenas::append(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, &[u64])
+pub fn phx_ledger::holder::HolderArenas::at_average_cost(&self) -> bool
 pub fn phx_ledger::holder::HolderArenas::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_ledger::holder::HolderArenas::kind(&self) -> &'static str
 pub fn phx_ledger::holder::HolderArenas::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
@@ -753,6 +756,7 @@ pub fn phx_ledger::holder::HolderArenas::set_run_head(&mut self, phx_id::ids::Sl
 pub fn phx_ledger::holder::HolderArenas::table(&self) -> phx_id::ids::TableId
 impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderArenas for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::append(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, &[u64])
+pub fn phx_core::kind_tables::KindTable<B>::at_average_cost(&self) -> bool
 pub fn phx_core::kind_tables::KindTable<B>::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])

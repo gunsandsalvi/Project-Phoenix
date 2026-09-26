@@ -12,10 +12,11 @@ use phx_core::{FactDef, ItemDecl};
 pub const ITEMS: &[ItemDecl] = &[
     <known::Industry as FactDef>::ITEM,
     <known::Known as FactDef>::ITEM,
-    <facts::Stock as FactDef>::ITEM,
     <facts::ExpectedSales as FactDef>::ITEM,
     <facts::SalesWidth as FactDef>::ITEM,
-    <facts::SalesSince as FactDef>::ITEM,
+    <facts::DeliveredAtReview as FactDef>::ITEM,
+    <facts::DeliveredSeen as FactDef>::ITEM,
+    <facts::Method as FactDef>::ITEM,
     <facts::LastReview as FactDef>::ITEM,
     <facts::UnitCost as FactDef>::ITEM,
     <facts::Markup as FactDef>::ITEM,

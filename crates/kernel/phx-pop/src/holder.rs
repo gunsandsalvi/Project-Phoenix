@@ -32,6 +32,10 @@ fn list_of(list: ListKind) -> AgentList {
 /// individual's in a kind table.
 #[clause("REP.3", "REG.4")]
 impl<B: Backing> HolderArenas for AgentTable<B> {
+    fn at_average_cost(&self) -> bool {
+        true
+    }
+
     fn table(&self) -> TableId {
         self.id()
     }

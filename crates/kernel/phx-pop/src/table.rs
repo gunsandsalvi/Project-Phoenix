@@ -85,6 +85,9 @@ pub struct AgentTable<B: Backing = SystemBacking> {
     created: Column<u32, B>,
     multiplicity: Column<u32, B>,
     attrs: Vec<Column<u32, B>>,
+    /// The kind's attributes by name, each the column of `attrs` at its place, which a handler reads as it reads a
+    /// large firm's key facts.
+    attr_names: Vec<&'static str>,
     /// The kind's positions by name, each the column of `facts` at its place.
     positions: Vec<&'static str>,
     facts: Vec<Column<i64, B>>,
@@ -157,6 +160,7 @@ impl<B: Backing> AgentTable<B> {
             created: table.column(space),
             multiplicity: table.column(space),
             attrs: kind.attrs.iter().map(|_| table.column(space)).collect(),
+            attr_names: kind.attrs.iter().map(|a| a.item.name).collect(),
             positions: kind.positions.iter().map(|p| p.item.name).collect(),
             facts: kind.positions.iter().map(|_| table.column(space)).collect(),
             lists: AgentList::ALL.iter().map(|_| table.column(space)).collect(),
@@ -660,6 +664,11 @@ impl<B: Backing> AgentTable<B> {
 impl<B: Backing> phx_core::FactStore for AgentTable<B> {
     fn read(&mut self, fact: &'static str, slot: Slot) -> Missing<i64> {
         self.check(fact, false);
+        if self.position(fact).is_none()
+            && let Some(i) = self.attr_names.iter().position(|a| *a == fact)
+        {
+            return Missing::Present(i64::from(self.attr(slot, i)));
+        }
         let column = self.named(fact);
         AgentTable::fact(self, slot, column)
     }

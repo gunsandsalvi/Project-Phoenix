@@ -1015,8 +1015,16 @@ without end in both directions.
   system's reading of its deposit's or its land's grade; a made good has one class.
 - **What a handler reads of its goods** (§4.9): the `Ctx` gives a row its party's units of each good at its place (one
   twin's for an agent), the deposits whose rights it holds with their grade, opening and remaining quantities, the
-  units it has delivered since the opening, and each good's latest mark at its place. The kernel builds this view
-  (`GoodsView`) for each run of rows before their handler runs, from the holder's own arenas.
+  units of a product it has delivered since the opening, and each good's latest mark and its public outlook by a
+  method at its place. The kernel builds this view (`GoodsView`) for each run of rows before their handler runs,
+  from the holder's own arenas. An agent's key attributes read by name as an individual's facts do.
+- **Public outlooks** (VAL.23): at 5a the kernel takes in each market's prints since the last pass as a public series
+  (`Markets::public`, saved) and forms every method's outlook of it, heuristic by memory type, the first print being
+  every method's first outlook (VAL.10); a firm reads the outlook of its own method (`FRM.method`).
+- **Cost flows** (ACC.6): an individual chooses first in, first out or weighted average once
+  (`Ledger::choose_cost_flow`, saved); an agent's twins hold at average cost. A holding at average cost keeps one lot,
+  whose day is its units' days averaged by quantity, so what ages with the lot, as spoilage does, ages as its units
+  do.
 - **Transformations from handlers**: a handler asks for units of goods made or used up for its own row by a
   **transformation intent** (`phx_ledger::intents::Transform`): its reason, carried as its name's code
   (`name_code`, FNV-1a; two declared reasons of one code stop the run), and its legs, a twin's each, which the kernel

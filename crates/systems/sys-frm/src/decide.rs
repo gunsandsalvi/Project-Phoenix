@@ -3,8 +3,10 @@
 //! outlook, price or unit cost yet takes no decision, which waits for its opening accounts.
 
 use if_firm::facts::{
-    ExpectedSales, LastReview, Markup, Price, PriceAttention, SalesSince, SalesWidth, Stock, UnitCost, WagePerHour,
+    DeliveredAtReview, DeliveredSeen, ExpectedSales, LastReview, Markup, Method, Price, PriceAttention, SalesWidth,
+    UnitCost, WagePerHour,
 };
+use if_firm::known::Industry;
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
 use phx_core::{Declarations, Prim, declare_handler, declare_prim};
 use phx_id::Slot;
@@ -110,6 +112,9 @@ pub struct Management {
     pub menu_hours: f64,
     /// The points within a decade, each over the decade's top.
     pub points: Vec<i64>,
+    /// Each memory type's speed of correction, by its place, and how many widths a surprise must pass to wake.
+    pub gains: Vec<f64>,
+    pub sensitivity: f64,
 }
 
 impl Management {
@@ -124,7 +129,17 @@ impl Management {
         if points.is_empty() {
             return Err("a trade with no price points".to_owned());
         }
+        let types = u16::try_from(register.count("VAL.memory_types")?).map_err(|e| e.to_string())?;
+        let gain = register.distribution("VAL.adaptive_gain")?;
+        let scale = libm::pow(crate::consts::DECADE, f64::from(gain.exp));
+        let gains = phx_core::register::values::TypeSet::build(gain, types)?
+            .types()
+            .iter()
+            .map(|t| from_i64(t.value) / scale)
+            .collect();
         Ok(Management {
+            gains,
+            sensitivity: register.fixed("VAL.attention_sensitivity")?,
             production_days: phx_rand::float::from_u64(days),
             cover_days: phx_rand::float::from_u64(p.cover_days.shared(register).get()),
             sales_speed: p.sales_speed.shared(register).to_f64(),
@@ -185,8 +200,8 @@ declare_handler! {
     pub ReviewSmall = "FRM.review_small" {
         substep: S5c,
         table: "small_firm",
-        reads: [ExpectedSales, SalesSince, LastReview, Stock, UnitCost, Markup, Price, PriceAttention, WagePerHour],
-        writes: [Markup, Price, SalesSince, LastReview],
+        reads: [Industry, ExpectedSales, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
+        writes: [Markup, Price, DeliveredAtReview, LastReview],
         clause: "FRM.5",
         body: review,
     }
@@ -197,8 +212,8 @@ declare_handler! {
     pub ReviewLarge = "FRM.review_large" {
         substep: S5c,
         table: "firm",
-        reads: [ExpectedSales, SalesSince, LastReview, Stock, UnitCost, Markup, Price, PriceAttention, WagePerHour],
-        writes: [Markup, Price, SalesSince, LastReview],
+        reads: [Industry, ExpectedSales, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
+        writes: [Markup, Price, DeliveredAtReview, LastReview],
         clause: "FRM.5",
         body: review,
     }
@@ -209,8 +224,8 @@ declare_handler! {
     pub AttendSmall = "FRM.attend_small" {
         substep: S5b,
         table: "small_firm",
-        reads: [ExpectedSales, SalesWidth, Markup, Price, WagePerHour],
-        writes: [PriceAttention],
+        reads: [Industry, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour],
+        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
         clause: "REP.38",
         body: attend,
     }
@@ -221,8 +236,8 @@ declare_handler! {
     pub AttendLarge = "FRM.attend_large" {
         substep: S5b,
         table: "firm",
-        reads: [ExpectedSales, SalesWidth, Markup, Price, WagePerHour],
-        writes: [PriceAttention],
+        reads: [Industry, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour],
+        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
         clause: "REP.38",
         body: attend,
     }
@@ -256,18 +271,19 @@ fn scale_of(item: phx_core::ItemDecl) -> f64 {
     }
 }
 
-/// A review: the markup moved by the sales since the last review against those expected over the same days, and the
-/// point nearest the desired price posted when the move gains more, over the days to its next review, than its
-/// staff's hours to make it cost. The competitors' prices the firm sees arrive with the goods markets; until then it
-/// sees none. Its sales since are counted afresh from today.
+/// A review: the markup moved by the sales since the last review — the units of its product delivered since then —
+/// against those expected over the same days, and the point nearest the desired price posted when the move gains
+/// more, over the days to its next review, than its staff's hours to make it cost; the pressure its stock of its
+/// product puts on the price is read from what it holds. The competitors' prices the firm sees arrive with the posted
+/// markets households buy in; until then it sees none.
 #[clause("FRM.5", "REP.34")]
 fn review<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
     H: HandlerDecl
+        + Reads<Industry>
         + Reads<ExpectedSales>
-        + Reads<SalesSince>
+        + Reads<DeliveredAtReview>
         + Reads<LastReview>
-        + Reads<Stock>
         + Reads<UnitCost>
         + Reads<Markup>
         + Reads<Price>
@@ -275,16 +291,17 @@ where
         + Reads<WagePerHour>
         + Writes<Markup>
         + Writes<Price>
-        + Writes<SalesSince>
+        + Writes<DeliveredAtReview>
         + Writes<LastReview>,
     S: FactStore + ?Sized,
 {
     let m: &Management = ctx.own::<crate::Own>().management();
-    let (Some(expected), Some(sold), Some(last), Some(stock), Some(cost), Some(markup), Some(price), Some(chance)) = (
+    let Some(product) = product_of(ctx, row) else { return };
+    let delivered = ctx.delivered(row, product);
+    let (Some(expected), Some(at_review), Some(last), Some(cost), Some(markup), Some(price), Some(chance)) = (
         read::<ExpectedSales, H, S>(ctx, row),
-        read::<SalesSince, H, S>(ctx, row),
+        read::<DeliveredAtReview, H, S>(ctx, row),
         read::<LastReview, H, S>(ctx, row),
-        read::<Stock, H, S>(ctx, row),
         read::<UnitCost, H, S>(ctx, row),
         read::<Markup, H, S>(ctx, row),
         read::<Price, H, S>(ctx, row),
@@ -292,6 +309,8 @@ where
     ) else {
         return;
     };
+    let sold = from_i64(delivered) - at_review;
+    let stock = from_i64(ctx.goods(row).iter().filter(|(p, _, _)| *p == product).map(|(_, _, q)| q).sum::<i64>());
     let Some(wage) = read::<WagePerHour, H, S>(ctx, row) else { return };
     let today = from_i64(i64::from(ctx.day().get()));
     let days = today - last;
@@ -318,7 +337,7 @@ where
     if let Some(markup) = whole(next * markup_scale) {
         ctx.write::<Markup>(row, markup);
     }
-    ctx.write::<SalesSince>(row, 0);
+    ctx.write::<DeliveredAtReview>(row, delivered);
     ctx.write::<LastReview>(row, i64::from(ctx.day().get()));
     let Some(current) = whole(price) else { return };
     // The price posted now stands, as the firm expects, until its next review.
@@ -329,30 +348,72 @@ where
     }
 }
 
-/// The attention a firm gives its price: its daily chance of a review from the loss a gap costs it, read from its
-/// revenue and markup, against the variance of its sales outlook, a review costing its staff's hours at their wage.
-#[clause("REP.38")]
+/// The firm's product, the industry it is in.
+fn product_of<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot) -> Option<u16>
+where
+    H: HandlerDecl + Reads<Industry>,
+    S: FactStore + ?Sized,
+{
+    match ctx.read::<Industry>(row) {
+        Missing::Present(p) => u16::try_from(p).ok(),
+        Missing::Absent => None,
+    }
+}
+
+/// The attention a firm gives its price, on its production schedule. First its sales outlook takes in what it sold
+/// since its last schedule, the units of its product it delivered: moved by its memory type's gain, and the width of
+/// its surprises with it, a surprise beyond the widths it is sensitive to waking a review for tomorrow.
+/// Then its daily chance of a review from the loss a gap costs it, read from its revenue and markup, against
+/// the variance of its sales outlook, a review costing its staff's hours at their wage. A firm with no method yet
+/// forecasts nothing, and counts its sales from today.
+#[clause("REP.38", "REP.35", "VAL.4", "VAL.23", "FRM.13")]
 fn attend<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
     H: HandlerDecl
+        + Reads<Industry>
         + Reads<ExpectedSales>
         + Reads<SalesWidth>
+        + Reads<DeliveredSeen>
+        + Reads<Method>
         + Reads<Markup>
         + Reads<Price>
         + Reads<WagePerHour>
-        + Writes<PriceAttention>,
+        + Writes<PriceAttention>
+        + Writes<ExpectedSales>
+        + Writes<SalesWidth>
+        + Writes<DeliveredSeen>,
     S: FactStore + ?Sized,
 {
     let m: &Management = ctx.own::<crate::Own>().management();
-    let (Some(expected), Some(width), Some(markup), Some(price), Some(wage)) = (
+    let Some(product) = product_of(ctx, row) else { return };
+    let delivered = ctx.delivered(row, product);
+    let (Some(mut expected), Some(mut width), Some(markup), Some(price), Some(wage)) = (
         read::<ExpectedSales, H, S>(ctx, row),
         read::<SalesWidth, H, S>(ctx, row),
         read::<Markup, H, S>(ctx, row),
         read::<Price, H, S>(ctx, row),
         read::<WagePerHour, H, S>(ctx, row),
     ) else {
+        ctx.write::<DeliveredSeen>(row, delivered);
         return;
     };
+    let mut woke = false;
+    let gain = read::<Method, H, S>(ctx, row).and_then(phx_rand::float::floor_to_u64).and_then(|method| {
+        let types = phx_rand::float::len_u64(m.gains.len());
+        if types == 0 { None } else { m.gains.get(usize::try_from(method % types).ok()?).copied() }
+    });
+    if let (Some(seen), Some(gain)) = (read::<DeliveredSeen, H, S>(ctx, row), gain) {
+        let sold = from_i64(delivered) - seen;
+        let surprise = phx_val::surprise::surprise(sold, expected);
+        woke = phx_val::surprise::wakes(surprise, width, m.sensitivity);
+        width = phx_val::surprise::width(Missing::Present(width), surprise, gain);
+        expected = phx_val::heuristics::adaptive(expected, sold, gain);
+        if let (Some(e), Some(w)) = (whole(expected), whole(width)) {
+            ctx.write::<ExpectedSales>(row, e);
+            ctx.write::<SalesWidth>(row, w);
+        }
+    }
+    ctx.write::<DeliveredSeen>(row, delivered);
     let cost = m.review_hours * wage;
     // A review costs its staff's hours; a firm whose hour costs nothing holds no staff to review with.
     if cost <= 0.0 {
@@ -360,7 +421,9 @@ where
     }
     let revenue_per_day = expected * price / m.production_days;
     let markup = markup / scale_of(<Markup as phx_core::FactDef>::ITEM);
-    let chance = if expected > 0.0 {
+    let chance = if woke {
+        1.0
+    } else if expected > 0.0 {
         let relative = width / expected;
         // The public series a firm reads arrive with the markets' prints.
         rules::attention::review_chance(revenue_per_day, markup, (relative * relative / m.production_days, &[]), cost)
@@ -388,6 +451,8 @@ mod tests {
             review_hours: 8.0,
             menu_hours: 2.0,
             points: vec![100, 199, 499, 999],
+            gains: vec![0.5],
+            sensitivity: 2.0,
         };
         assert_eq!(m.points_near(250.0), vec![10, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
         assert_eq!(m.points_near(2500.0), vec![100, 199, 499, 999, 1000, 1990, 4990, 9990, 10000, 19900, 49900, 99900]);

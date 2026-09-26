@@ -280,6 +280,11 @@ impl Tape {
         }
     }
 
+    /// Each market's last print, in the markets' order.
+    pub fn last_prints(&self) -> impl Iterator<Item = (MarketId, &Print)> + '_ {
+        self.last.iter().filter_map(|(m, id)| self.print_of(*id).map(|p| (*m, p)))
+    }
+
     pub fn mark_of(&self, market: MarketId) -> Missing<Mark> {
         match self.marks.get(&market) {
             Some(m) => Missing::Present(*m),

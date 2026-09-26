@@ -475,6 +475,30 @@ impl Register {
         }
     }
 
+    /// A shared distribution by its identifier, as a system reads the types another's primitive cuts a kind into.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is not one shared distribution.
+    pub fn distribution(&self, id: &str) -> Result<&values::Distribution, String> {
+        match self.stored_by_id(id)? {
+            Stored::Shared(PrimValue::Distribution(d)) => Ok(d),
+            _ => Err(format!("`{id}` is not one shared distribution")),
+        }
+    }
+
+    /// A shared fixed-point value by its identifier, as the number it stands for.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is not one shared fixed-point value.
+    pub fn fixed(&self, id: &str) -> Result<f64, String> {
+        match self.stored_by_id(id)? {
+            Stored::Shared(PrimValue::Fixed { raw, exp }) => {
+                Ok(phx_rand::float::from_i64(*raw) / libm::pow(crate::consts::DECIMAL_BASE, f64::from(*exp)))
+            }
+            _ => Err(format!("`{id}` is not one shared fixed-point value")),
+        }
+    }
+
     /// A shared table of one axis by its identifier, in its table's decimals.
     ///
     /// # Errors
