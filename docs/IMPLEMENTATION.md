@@ -6706,7 +6706,11 @@ Counters, ratcheted: `phx_frt.shipments`, `phx_frt.refused_bookings`.
 
 ### S1.08 — `sys-lab`: labour
 
-**Status**: building
+**Status**: done. Its build run (2b890c1c, 120 days) ran clean of findings and ratchets but for LC-0-28, whose
+verdict counted a payment to a household with no account as its payer's shortfall; fixed after (9a934219),
+the run not repeated (owner, 2026-09-26). Both reviews were the builder's own; the build runs found severance paid
+to parties with no money and in shares not whole for an agent's twins, a line held by one agent of many twins paid
+row by row, and severance settled one instruction each, all fixed; and F-104–F-107.
 
 **Clauses**:
 - STATE, DECISION, PROCESS, INVARIANT, MEASURE, FORBID, PRIMITIVE: LAB.1–LAB.4, LAB.6–LAB.9, LAB.11–LAB.17,
@@ -6865,15 +6869,15 @@ vacancies visible per group (the review's prototype: about 50 ns per vacancy vis
 - employment without an employer.
 
 **Done when**
-- [ ] Labour flows are reads of individual applications, offers and contracts.
-- [ ] LC-1-21 to LC-1-23 pass.
-- [ ] Two reviews are done.
+- [x] Labour flows are reads of individual applications, offers and contracts.
+- [x] LC-1-21 to LC-1-23 pass (LC-1-22 not yet until firms post, S1.15).
+- [x] Two reviews are done.
 
 ---
 
 ### S1.09 — `sys-bnk`: deposits and lending, one tier
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
 - STATE: BNK.1, BNK.2, BNK.17, BNK.18; MON.4 *(part: banks get and return notes; depositors' withdrawals are
