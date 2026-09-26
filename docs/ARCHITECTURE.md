@@ -639,8 +639,11 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
 - **7c** nets the surviving payments' legs per (line, party, side), money and rows apart, and applies them as one
   instruction per line in line order, read straight from the ordered nets: every account is checked once against its
   net, so no order of application can fail what 7b let stand, and banks' reserves move once per bank by net; applied
-  is final (SET.5). The apply is sequential while the day's payments are few, its nets an ordered `BTreeMap`; the
-  split by target chunk across the pool waits for the phone's measure to call for it (the plan's F-021). Failure is
+  is final (SET.5). Each line's rows are its own, so a line whose every leg moves a balance its read found, one leg
+  to a row, is checked and recorded in order while its balance writes are held back; at the end of the apply the held
+  writes land a holder chunk to a worker, a word written twice stopping the run, and what each party moved folds a
+  key shard to a worker. A line that opens, closes or twice moves a row writes what is held first and applies in
+  place. Failure is
   per payer (MON.5): a payer that cannot pay fails its own legs; where the pairing to its payees was not recorded, the
   payees who lose are drawn (REP.23).
 - **Verdicts**: 7c recomputes, over the payments that settle and the books as stage 7 found them, each party's
@@ -746,7 +749,8 @@ a records shard to a worker; 7c's gather, each payment's route made again and wh
 folded a key shard to a worker, the failed and pending recorded in the stream's order; 7c's balances, heads and leg
 reads; the audit's families, each into its own findings, kept in their order; the opening's regions; and saves, each
 store to its own file at once, in fixed 1 MiB zstd frames compressed a wave at a time. Rows are found by reading their
-heads, not by an index; 7b runs on one thread (F-088); 7c's writes apply line by line; the money and contract families
+heads, not by an index; 7b runs on one thread (F-088); 7c's balance writes land by holder chunk on the pool, its
+checks and records in line order on one thread; the money and contract families
 still read an unlisted side whole. The rest is carried to Stage 1 (the plan's S0.26f, F-087).
 
 ---

@@ -176,6 +176,7 @@ pub fn phx_pop::table::AgentTable<B>::live_words(&self) -> &[u64]
 pub fn phx_pop::table::AgentTable<B>::mark_changed(&mut self, phx_id::ids::Slot)
 pub fn phx_pop::table::AgentTable<B>::multiplicity(&self, phx_id::ids::Slot) -> phx_core::weight::Weight
 pub fn phx_pop::table::AgentTable<B>::new(&mut phx_store::backing::AddressSpace, &phx_pop::kind::PopKindDecl, phx_id::ids::TableId, u32, u32) -> phx_pop::table::AgentTable<B>
+pub fn phx_pop::table::AgentTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_pop::table::AgentList, &[(phx_id::ids::Slot, usize, u64)])
 pub fn phx_pop::table::AgentTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_pop::table::AgentTable<B>::persons(&self, phx_id::ids::Slot) -> &[u64]
 pub fn phx_pop::table::AgentTable<B>::persons_held(&self) -> u64
@@ -212,6 +213,7 @@ impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderArenas for phx_po
 pub fn phx_pop::table::AgentTable<B>::append(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, &[u64])
 pub fn phx_pop::table::AgentTable<B>::kind(&self) -> &'static str
 pub fn phx_pop::table::AgentTable<B>::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
+pub fn phx_pop::table::AgentTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &mut [(phx_id::ids::Slot, usize, u64)])
 pub fn phx_pop::table::AgentTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_pop::table::AgentTable<B>::read(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_pop::table::AgentTable<B>::remove(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, usize)

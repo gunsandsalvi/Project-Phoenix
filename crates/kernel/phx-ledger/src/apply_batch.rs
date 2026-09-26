@@ -449,12 +449,14 @@ impl<B: Backing> Books<B> {
         (members, past)
     }
 
-    /// The nets applied, one instruction per line as its legs are read in order, so no batch of legs is held.
+    /// The nets applied, one instruction per line as its legs are read in order, so no batch of legs is held; each
+    /// line's rows are its own, so their balance writes are held back and written by chunk on the pool at the end.
     fn apply_nets(&mut self, nets: &[(NetKey, i128)], day: Day, audit: &mut dyn AuditStream)
     where
         B: Sync,
     {
         let mut legs: Vec<LegRec> = Vec::new();
+        let mut deferred = crate::apply::Deferred::new(self.pool.as_deref());
         let mut entries = nets.iter().peekable();
         while let Some((NetKey { line, party, side, row: is_row }, q)) = entries.next() {
             let (line, party, side, is_row) = (*line, *party, *side, *is_row);
@@ -486,8 +488,8 @@ impl<B: Backing> Books<B> {
                 covers: Vec::new(),
             };
             let reads = self.read_legs(&instruction.legs);
-            let applied =
-                self.ledger.apply_read(&mut self.parties, ApplyAt::Day(SubStep::S7c), instruction, reads, audit);
+            let at = ApplyAt::Day(SubStep::S7c);
+            let applied = self.ledger.apply_read(&mut self.parties, at, instruction, reads, Some(&mut deferred), audit);
             if let Err(f) = applied {
                 violation!(
                     clause = "SET.6",
@@ -497,6 +499,7 @@ impl<B: Backing> Books<B> {
                 );
             }
         }
+        self.ledger.flush(&mut self.parties, &mut deferred);
     }
 
     /// Stage 7 over the books: the stream (7a), the fixed point (7b), and the apply (7c) of every surviving payment as

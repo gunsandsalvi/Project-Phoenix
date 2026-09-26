@@ -189,9 +189,43 @@ struct Settling {
     pays: Missing<DueRow>,
 }
 
-/// What a leg draws on before anything moves: the position its move is checked against, with the move.
-/// What a leg draws on, and where its line row was found when it moves one, so its apply need not look again.
-pub(crate) type Drawn = Option<(Position, i64, Missing<usize>)>;
+/// What a leg draws on before anything moves: the position its move is checked against, with the move; and, when it
+/// moves a line row's balance, where the row was found and the balance it held, so its apply need not look again.
+pub(crate) type Drawn = Option<(Position, i64, Missing<(usize, i64)>)>;
+
+/// Balance writes a batch of instructions holds back, each holder table's written by chunk on the pool when the batch
+/// ends, with the money each party moved, folded by party then. The batch's instructions move rows of their own, so
+/// no read waits on another instruction's writes; a row written twice stops the run.
+pub(crate) struct Deferred<'a> {
+    pool: Option<&'a phx_exec::Pool>,
+    writes: Vec<Vec<(Slot, usize, u64)>>,
+    moved: Vec<Vec<(Moved, i64)>>,
+}
+
+impl<'a> Deferred<'a> {
+    pub(crate) fn new(pool: Option<&'a phx_exec::Pool>) -> Deferred<'a> {
+        Deferred { pool, writes: Vec::new(), moved: phx_core::KernelMap::<Moved, (i128, i128)>::buckets() }
+    }
+
+    fn write(&mut self, table: u16, slot: Slot, word: usize, value: i64) {
+        let t = usize::from(table);
+        if self.writes.len() <= t {
+            self.writes.resize_with(t + 1, Vec::new);
+        }
+        if let Some(w) = self.writes.get_mut(t) {
+            w.push((slot, word, value.cast_unsigned()));
+        }
+    }
+}
+
+/// A party's money paid (negative) or received, added to what it moved that day.
+fn add_moved((paid, received): &mut (i128, i128), qty: i64) {
+    if qty < 0 {
+        *paid += i128::from(-qty);
+    } else {
+        *received += i128::from(qty);
+    }
+}
 /// An instruction's legs as read before anything moves: where each leg's party is and what it draws, or the first leg
 /// whose party has ended.
 pub(crate) type LegReads = Result<(Vec<At>, Vec<Drawn>), usize>;
@@ -309,7 +343,7 @@ impl<B: Backing> Ledger<B> {
             .zip(&located)
             .map(|(leg, at)| self.leg_draw(holders.arenas(at.table), *at, leg, &opened))
             .collect();
-        self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), audit)
+        self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), None, audit)
     }
 
     /// The apply routine over legs already read: where each leg's party is and what it draws, or the first leg whose
@@ -323,6 +357,7 @@ impl<B: Backing> Ledger<B> {
         at: ApplyAt,
         instruction: Instruction,
         reads: LegReads,
+        deferred: Option<&mut Deferred<'_>>,
         audit: &mut dyn AuditStream,
     ) -> Result<InstructionId, Fail> {
         let Instruction { id, reason, settle_day, legs, pays, covers, .. } = instruction;
@@ -333,7 +368,7 @@ impl<B: Backing> Ledger<B> {
         self.refuse(at, &legs, id);
         match reads {
             Ok((located, drawn)) => {
-                self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), audit)
+                self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), deferred, audit)
             }
             Err(n) => {
                 let Some(leg) = legs.get(n) else {
@@ -369,6 +404,7 @@ impl<B: Backing> Ledger<B> {
         holders: &mut dyn Holders,
         (settling, covers): (Settling, Vec<crate::covered::Covered>),
         (legs, located, drawn): (&[LegRec], &[At], &[Drawn]),
+        deferred: Option<&mut Deferred<'_>>,
         audit: &mut dyn AuditStream,
     ) -> Result<InstructionId, Fail> {
         let id = settling.id;
@@ -417,7 +453,17 @@ impl<B: Backing> Ledger<B> {
             };
             return Err(self.fail(settling, cause, &leg, covers));
         }
-        self.settle_legs(holders, settling, (legs, located, drawn), audit);
+        // Where each leg draws on a position of its own, no leg reads what another writes.
+        let distinct = moves.len() == legs.len() && positions.len() == moves.len();
+        let deferred = match deferred {
+            Some(d) if distinct => Some(d),
+            Some(d) => {
+                self.flush(holders, d);
+                None
+            }
+            None => None,
+        };
+        self.settle_legs(holders, settling, (legs, located, drawn), deferred, audit);
         for c in covers {
             self.covers.release(c);
         }
@@ -490,7 +536,7 @@ impl<B: Backing> Ledger<B> {
                 let money_holder = matches!(leg.kind, LegKind::Money) && side == Side::Asset;
                 if !money_holder {
                     let now = Position { now: b, floor: Missing::Absent, short: FailCause::Funds };
-                    return Some((now, leg.qty, Missing::Present(view.at)));
+                    return Some((now, leg.qty, Missing::Present((view.at, b))));
                 }
                 let pending = match view.optional.pending {
                     Missing::Present(p) => p,
@@ -506,7 +552,7 @@ impl<B: Backing> Ledger<B> {
                     Missing::Absent => 0,
                 };
                 let now = Position { now: b - pending, floor: Missing::Present(floor), short: FailCause::Funds };
-                Some((now, leg.qty, Missing::Present(view.at)))
+                Some((now, leg.qty, Missing::Present((view.at, b))))
             }
             (
                 LegKind::Units { .. } | LegKind::Transformation { .. } | LegKind::OpeningWrite { .. },
@@ -600,11 +646,26 @@ impl<B: Backing> Ledger<B> {
         holders: &mut dyn Holders,
         s: Settling,
         (legs, located, drawn): (&[LegRec], &[At], &[Drawn]),
+        deferred: Option<&mut Deferred<'_>>,
         audit: &mut dyn AuditStream,
     ) {
         let decl = self.reasons.get(s.reason);
         // Where no leg opens or closes a row, every holder's rows keep the places the reads found them at.
         let shaped = legs.iter().any(|l| matches!(l.kind, LegKind::Row(RowOp::Open(_) | RowOp::Close)));
+        // A batch holds back the writes of an instruction whose every leg moves a line row's balance where its read
+        // found it; any other settles in place, once what the batch held back is written.
+        let found_rows = legs.iter().zip(drawn).all(|(l, d)| {
+            matches!((l.kind, l.account), (LegKind::Money | LegKind::Row(RowOp::Adjust), AccountRef::Line { .. }))
+                && matches!(d, Some((_, _, Missing::Present(_))))
+        });
+        let mut deferred = match deferred {
+            Some(d) if !shaped && found_rows => Some(d),
+            Some(d) => {
+                self.flush(holders, d);
+                None
+            }
+            None => None,
+        };
         let mut taken: Vec<NamedUnit> = Vec::new();
         // Rows are opened before anything moves on them and retired after; between, what leaves goes before what
         // arrives.
@@ -617,6 +678,18 @@ impl<B: Backing> Ledger<B> {
         order.sort_by_key(|i| legs.get(*i).map(rank));
         for i in order {
             let (Some(leg), Some(at)) = (legs.get(i), located.get(i)) else { continue };
+            if let Some(d) = deferred.as_deref_mut() {
+                let Some(Some((_, _, Missing::Present((word, before))))) = drawn.get(i).copied() else {
+                    violation!(clause = "SET.11", "a held-back leg with no row its read found", id = s.id.get());
+                };
+                let Some(next) = before.checked_add(leg.qty) else {
+                    violation!(clause = "Law 7", "a balance overflows", party = at.party.get());
+                };
+                d.write(at.table, at.slot, crate::rows::balance_word(word), next);
+                let table = holders.arenas(at.table).table();
+                self.record_leg(decl, s, (table, *at), leg, (before, Missing::Absent), Some(d), audit);
+                continue;
+            }
             let arenas = holders.arenas(at.table);
             // A leg moving a line's balance reads its row once, for what it held before and what it holds after.
             let line_row = match (leg.kind, leg.account) {
@@ -625,7 +698,7 @@ impl<B: Backing> Ledger<B> {
                     AccountRef::Line { line, side },
                 ) => {
                     let found = match drawn.get(i).copied().flatten() {
-                        Some((_, _, Missing::Present(hint))) if !shaped => {
+                        Some((_, _, Missing::Present((hint, _)))) if !shaped => {
                             crate::rows::view_at_hint(arenas, at.slot, hint)
                                 .filter(|v| v.row.line == line && v.side() == side)
                         }
@@ -644,68 +717,111 @@ impl<B: Backing> Ledger<B> {
                 Some((line, view)) => settle_balance(arenas, at.slot, (*line, view), leg.qty),
                 None => self.settle_leg(arenas, *at, leg, s.day, &mut taken),
             }
-            audit.touched(arenas.table(), at.slot);
-            let money = matches!(leg.kind, LegKind::Money);
-            let digest = LegDigest {
-                party: at.party,
-                account: leg.position_code(),
-                denom: leg.denom.code(),
-                qty: leg.qty,
-                flow: crate::check::flow(leg),
-                before,
-                paired: leg.paired(),
-                money,
-                made: match leg.kind {
-                    LegKind::Transformation { source: crate::instruction::Source::Way(way), .. } => {
-                        Missing::Present(way)
-                    }
-                    _ => Missing::Absent,
-                },
-                worn: match (leg.kind, leg.account) {
-                    (
-                        LegKind::Transformation { source: crate::instruction::Source::Wear(_), .. },
-                        AccountRef::Instrument(id),
-                    ) => match self.chains.of(id) {
-                        Missing::Present((chain, class)) => Missing::Present((chain, narrow_class(class))),
-                        Missing::Absent => Missing::Absent,
-                    },
-                    _ => Missing::Absent,
-                },
-            };
-            audit.leg(s.id.get(), digest);
-            if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {
-                let effect = if leg.qty < 0 { decl.paid } else { decl.received };
-                let amount = Money::new(leg.qty, ccy);
-                self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
-                if matches!(leg.account, AccountRef::Line { side: Side::Asset, .. }) {
-                    let key = Moved { ccy: ccy.index(), party: at.party };
-                    let (paid, received) = self.day.moved.get_or_insert_with(key, || (0, 0));
-                    if leg.qty < 0 {
-                        *paid += i128::from(-leg.qty);
-                    } else {
-                        *received += i128::from(leg.qty);
-                    }
-                }
-            }
-            // What else the leg moved of its party's net assets: a row's balance, or the cost of a holding's lots.
-            let worth = match (leg.kind, leg.denom, basis) {
-                (LegKind::Row(RowOp::Adjust), Denom::Ccy(ccy), _) => Missing::Present((leg.qty, ccy)),
-                (_, _, Missing::Present((was, ccy))) => match self.held_basis(arenas, *at, leg) {
+            // What else the leg moved of its party's net assets: the cost of a holding's lots.
+            let held_moved = match basis {
+                Missing::Present((was, ccy)) => match self.held_basis(arenas, *at, leg) {
                     Missing::Present((now, _)) => Missing::Present((now - was, ccy)),
                     Missing::Absent => Missing::Absent,
                 },
-                _ => Missing::Absent,
+                Missing::Absent => Missing::Absent,
             };
-            if let Missing::Present((moved, ccy)) = worth
-                && moved != 0
-            {
-                let effect = if moved < 0 { decl.paid } else { decl.received };
-                let amount = Money::new(moved, ccy);
-                self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
-            }
+            let table = arenas.table();
+            self.record_leg(decl, s, (table, *at), leg, (before, held_moved), None, audit);
         }
         if !taken.is_empty() {
             violation!(clause = "SET.11", "a named unit given that nobody received", id = s.id.get());
+        }
+    }
+
+    /// A settled leg recorded: the holder touched, the leg's digest for the audit, the money it paid or received,
+    /// and what else it moved of its party's net assets.
+    #[expect(clippy::too_many_arguments, reason = "the leg, where it settled, and what it moved")]
+    fn record_leg(
+        &mut self,
+        decl: crate::instruction::ReasonDecl,
+        s: Settling,
+        (table, at): (phx_id::TableId, At),
+        leg: &LegRec,
+        (before, held_moved): (i64, Missing<(i64, phx_num::Ccy)>),
+        deferred: Option<&mut Deferred<'_>>,
+        audit: &mut dyn AuditStream,
+    ) {
+        audit.touched(table, at.slot);
+        let money = matches!(leg.kind, LegKind::Money);
+        let digest = LegDigest {
+            party: at.party,
+            account: leg.position_code(),
+            denom: leg.denom.code(),
+            qty: leg.qty,
+            flow: crate::check::flow(leg),
+            before,
+            paired: leg.paired(),
+            money,
+            made: match leg.kind {
+                LegKind::Transformation { source: crate::instruction::Source::Way(way), .. } => Missing::Present(way),
+                _ => Missing::Absent,
+            },
+            worn: match (leg.kind, leg.account) {
+                (
+                    LegKind::Transformation { source: crate::instruction::Source::Wear(_), .. },
+                    AccountRef::Instrument(id),
+                ) => match self.chains.of(id) {
+                    Missing::Present((chain, class)) => Missing::Present((chain, narrow_class(class))),
+                    Missing::Absent => Missing::Absent,
+                },
+                _ => Missing::Absent,
+            },
+        };
+        audit.leg(s.id.get(), digest);
+        if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {
+            let effect = if leg.qty < 0 { decl.paid } else { decl.received };
+            let amount = Money::new(leg.qty, ccy);
+            self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
+            if matches!(leg.account, AccountRef::Line { side: Side::Asset, .. }) {
+                let key = Moved { ccy: ccy.index(), party: at.party };
+                match deferred {
+                    Some(d) => {
+                        let shard = phx_core::KernelMap::<Moved, (i128, i128)>::shard_of(key);
+                        if let Some(b) = d.moved.get_mut(shard) {
+                            b.push((key, leg.qty));
+                        }
+                    }
+                    None => add_moved(self.day.moved.get_or_insert_with(key, || (0, 0)), leg.qty),
+                }
+            }
+        }
+        // What else the leg moved of its party's net assets: a row's balance, or the cost of a holding's lots.
+        let worth = match (leg.kind, leg.denom) {
+            (LegKind::Row(RowOp::Adjust), Denom::Ccy(ccy)) => Missing::Present((leg.qty, ccy)),
+            _ => held_moved,
+        };
+        if let Missing::Present((moved, ccy)) = worth
+            && moved != 0
+        {
+            let effect = if moved < 0 { decl.paid } else { decl.received };
+            let amount = Money::new(moved, ccy);
+            self.day.effects.push(EffectRec { instruction: s.id, party: at.party, effect, amount });
+        }
+    }
+
+    /// What a batch held back, written: each holder table's balance words by chunk on the pool, and the money each
+    /// party moved folded into the day's.
+    pub(crate) fn flush(&mut self, holders: &mut dyn Holders, d: &mut Deferred<'_>) {
+        for (place, writes) in d.writes.iter_mut().enumerate() {
+            if writes.is_empty() {
+                continue;
+            }
+            let Ok(place) = u16::try_from(place) else {
+                capacity_exceeded!("holder tables", u16::MAX, place);
+            };
+            holders.arenas(place).overwrite_words(d.pool, phx_core::kind_tables::ListKind::RelationshipRows, writes);
+            writes.clear();
+        }
+        if d.moved.iter().any(|b| !b.is_empty()) {
+            self.day.moved.fold(d.pool, core::slice::from_ref(&d.moved), || (0, 0), |m, q| add_moved(m, *q));
+            for b in &mut d.moved {
+                b.clear();
+            }
         }
     }
 

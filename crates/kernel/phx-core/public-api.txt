@@ -849,6 +849,7 @@ pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
 pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &[(phx_id::ids::Slot, usize, u64)])
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
 pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
@@ -886,6 +887,8 @@ pub fn phx_core::kind_tables::RunHead::due(self, phx_id::day::Day) -> bool
 impl phx_store::pod::Pod for phx_core::kind_tables::RunHead
 pub fn phx_core::kind_tables::RunHead::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::__seal::Sealed for phx_core::kind_tables::RunHead
+pub fn phx_core::kind_tables::deal_writes(&[(phx_id::ids::Slot, usize, u64)], u32, usize) -> alloc::vec::Vec<alloc::vec::Vec<(phx_id::ids::Slot, usize, u64)>>
+pub fn phx_core::kind_tables::written_once(&mut [(phx_id::ids::Slot, usize, u64)])
 pub mod phx_core::kinds
 pub enum phx_core::kinds::Feature
 pub phx_core::kinds::Feature::IssuesCurrency
@@ -2862,6 +2865,7 @@ pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
 pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
+pub fn phx_core::kind_tables::KindTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &[(phx_id::ids::Slot, usize, u64)])
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
 pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead

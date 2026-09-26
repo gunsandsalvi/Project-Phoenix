@@ -239,6 +239,12 @@ pub(crate) fn insert(
     n
 }
 
+/// The word of a holder's run where the balance of the row whose head lies at `at` is kept: its first optional word.
+#[must_use]
+pub(crate) fn balance_word(at: usize) -> usize {
+    at + ROW
+}
+
 /// The words a row takes in its holder's run.
 #[must_use]
 pub fn words_of_row(view: &RowView) -> usize {

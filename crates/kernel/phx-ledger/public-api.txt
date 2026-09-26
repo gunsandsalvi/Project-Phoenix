@@ -707,6 +707,7 @@ pub fn phx_ledger::holder::HolderArenas::append(&mut self, phx_id::ids::Slot, ph
 pub fn phx_ledger::holder::HolderArenas::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_ledger::holder::HolderArenas::kind(&self) -> &'static str
 pub fn phx_ledger::holder::HolderArenas::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
+pub fn phx_ledger::holder::HolderArenas::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &mut [(phx_id::ids::Slot, usize, u64)])
 pub fn phx_ledger::holder::HolderArenas::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_ledger::holder::HolderArenas::read(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_ledger::holder::HolderArenas::remove(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, usize)
@@ -718,6 +719,7 @@ pub fn phx_core::kind_tables::KindTable<B>::append(&mut self, phx_id::ids::Slot,
 pub fn phx_core::kind_tables::KindTable<B>::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
 pub fn phx_core::kind_tables::KindTable<B>::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
+pub fn phx_core::kind_tables::KindTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &mut [(phx_id::ids::Slot, usize, u64)])
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::read(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, usize)

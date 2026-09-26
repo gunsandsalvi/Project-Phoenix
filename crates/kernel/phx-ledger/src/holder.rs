@@ -21,6 +21,15 @@ pub trait HolderArenas {
     fn append(&mut self, holder: Slot, list: ListKind, words: &[u64]);
     /// Words written over a holder's list from a word on.
     fn overwrite(&mut self, holder: Slot, list: ListKind, at: usize, words: &[u64]);
+    /// Single words written over holders' lists, where the lists keep their places and lengths; a table may write
+    /// its chunks apart on the pool. No word is written twice in one batch.
+    fn overwrite_words(&mut self, pool: Option<&phx_exec::Pool>, list: ListKind, writes: &mut [(Slot, usize, u64)]) {
+        let _ = pool;
+        phx_core::kind_tables::written_once(writes);
+        for &(holder, at, word) in writes.iter() {
+            self.overwrite(holder, list, at, &[word]);
+        }
+    }
     /// Words removed from a holder's list.
     fn remove(&mut self, holder: Slot, list: ListKind, at: usize, count: usize);
     /// A holder's due-day run head.
@@ -72,6 +81,10 @@ impl<B: Backing> HolderArenas for KindTable<B> {
             };
             target.copy_from_slice(words);
         });
+    }
+
+    fn overwrite_words(&mut self, pool: Option<&phx_exec::Pool>, list: ListKind, writes: &mut [(Slot, usize, u64)]) {
+        KindTable::overwrite_words(self, pool, list, writes);
     }
 
     fn remove(&mut self, holder: Slot, list: ListKind, at: usize, count: usize) {

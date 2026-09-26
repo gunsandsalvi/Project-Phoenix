@@ -444,6 +444,29 @@ impl<B: Backing> AgentTable<B> {
         self.arena(slot).read(r)
     }
 
+    /// Single words written over agents' lists, each chunk's on its own worker; the lists keep their places and
+    /// lengths, so no reference moves.
+    pub fn overwrite_words(&mut self, pool: Option<&phx_exec::Pool>, list: AgentList, writes: &[(Slot, usize, u64)]) {
+        let mut chunks = phx_core::kind_tables::deal_writes(writes, self.table.rows_per_chunk(), self.arenas.len());
+        let Some(column) = self.lists.get(list.place()) else {
+            violation!(clause = "REP.3", "an agent list the table does not keep", list = list.place());
+        };
+        let table = &self.table;
+        phx_exec::pool::each(pool, self.arenas.iter_mut().zip(chunks.iter_mut()), |(arena, chunk)| {
+            phx_core::kind_tables::written_once(chunk);
+            for &(slot, word, value) in chunk.iter() {
+                if !table.slots.is_live(slot) {
+                    violation!(clause = "PTY.10", "a write to an agent no party holds", slot = slot.get());
+                }
+                let r = arena.resolve(Self::owner(slot, list), read(column, slot));
+                let Some(target) = arena.read_mut(r).get_mut(word) else {
+                    violation!(clause = "REG.14", "a word written beyond an agent's list", at = word);
+                };
+                *target = value;
+            }
+        });
+    }
+
     /// Edits an agent's list in its arena, writing back its reference, which an edit may move or lengthen past its
     /// compact form.
     pub fn edit_list<R>(

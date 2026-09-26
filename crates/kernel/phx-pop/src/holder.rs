@@ -61,6 +61,10 @@ impl<B: Backing> HolderArenas for AgentTable<B> {
         });
     }
 
+    fn overwrite_words(&mut self, pool: Option<&phx_exec::Pool>, list: ListKind, writes: &mut [(Slot, usize, u64)]) {
+        AgentTable::overwrite_words(self, pool, list_of(list), writes);
+    }
+
     fn remove(&mut self, holder: Slot, list: ListKind, at: usize, count: usize) {
         if count > 0 {
             self.edit_list(holder, list_of(list), |arena, r| arena.remove(r, word32(at), word32(count)));

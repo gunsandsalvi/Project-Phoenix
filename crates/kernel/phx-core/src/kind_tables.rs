@@ -363,6 +363,31 @@ impl<B: Backing> KindTable<B> {
         out
     }
 
+    /// Single words written over rows' lists, each chunk's on its own worker; the lists keep their places and
+    /// lengths, so no reference moves.
+    pub fn overwrite_words(
+        &mut self,
+        pool: Option<&phx_exec::pool::Pool>,
+        kind: ListKind,
+        writes: &[(Slot, usize, u64)],
+    ) {
+        let mut chunks = deal_writes(writes, self.table.rows_per_chunk(), self.arenas.len());
+        let (table, lists) = (&self.table, &self.lists);
+        phx_exec::pool::each(pool, self.arenas.iter_mut().zip(chunks.iter_mut()), |(arena, chunk)| {
+            written_once(chunk);
+            for &(slot, word, value) in chunk.iter() {
+                if !table.slots.is_live(slot) {
+                    violation!(clause = "PTY.10", "a write to a row no party holds", slot = slot.get());
+                }
+                let list = lists.of(kind).get(slot).unwrap_or_else(|| missing_row(slot));
+                let Some(target) = arena.read_mut(list).get_mut(word) else {
+                    violation!(clause = "REG.14", "a word written beyond a holder's list", at = word);
+                };
+                *target = value;
+            }
+        });
+    }
+
     /// The kind of individual the table holds.
     #[must_use]
     pub fn kind(&self) -> &'static str {
@@ -412,6 +437,34 @@ impl<B: Backing> KindTable<B> {
             violation!(clause = "Law 4", "a fact column the table does not have", column = column.0);
         };
         f
+    }
+}
+
+/// A batch's single-word writes dealt to the chunks their rows lie in, in the batch's order, so each chunk's are
+/// written on one worker.
+#[must_use]
+pub fn deal_writes(writes: &[(Slot, usize, u64)], rows_per_chunk: u32, chunks: usize) -> Vec<Vec<(Slot, usize, u64)>> {
+    let mut dealt: Vec<Vec<(Slot, usize, u64)>> = (0..chunks).map(|_| Vec::new()).collect();
+    let per = at(Slot::new(rows_per_chunk));
+    for w in writes {
+        let Some(chunk) = dealt.get_mut(at(w.0) / per) else {
+            violation!(clause = "PTY.10", "a write to a row beyond the table's chunks", slot = w.0.get());
+        };
+        chunk.push(*w);
+    }
+    dealt
+}
+
+/// A chunk's writes sorted by row and word, a word written twice in one batch stopping the run: the batch's writes
+/// land in no set order, so only one can be meant.
+pub fn written_once(chunk: &mut [(Slot, usize, u64)]) {
+    chunk.sort_unstable_by_key(|&(slot, word, _)| (slot, word));
+    for pair in chunk.windows(2) {
+        if let [a, b] = pair
+            && (a.0, a.1) == (b.0, b.1)
+        {
+            violation!(clause = "SET.11", "a word written twice in one batch", slot = a.0.get(), at = a.1);
+        }
     }
 }
 
@@ -549,6 +602,34 @@ mod tests {
             t.add(&mut s, NewIndividual { weight: 0, ..row(13) })
         }));
         assert!(none.is_err(), "a row standing for no party is refused");
+    }
+
+    #[test]
+    fn a_batch_of_words_lands_on_each_chunk_as_one_by_one_and_no_word_twice() {
+        let mut space = AddressSpace::empty();
+        let mut t: KindTable<HeapBacking<4096>> = KindTable::new(&mut space, "firm", TableId::new(0), 64, 8, 1);
+        let row = |p| NewIndividual {
+            party: PartyId::new(p),
+            site: TileId::new(0),
+            created: Day::new(1),
+            weight: 1,
+            types: TYPES,
+        };
+        let slots: Vec<Slot> = (1..21).map(|p| t.add(&mut space, row(p))).collect();
+        for (n, s) in (0_u64..).zip(&slots) {
+            t.edit_list(*s, ListKind::RelationshipRows, |arena, r| arena.append(r, &[n, n + 1, n + 2]));
+        }
+        let mut writes: Vec<(Slot, usize, u64)> = (0_u64..).zip(&slots).map(|(n, s)| (*s, 1, 100 + n)).collect();
+        writes.reverse();
+        t.overwrite_words(None, ListKind::RelationshipRows, &writes);
+        for (n, s) in (0_u64..).zip(&slots) {
+            assert_eq!(t.words(*s, ListKind::RelationshipRows), &[n, 100 + n, n + 2]);
+        }
+        let first = slots.first().copied().unwrap();
+        let twice = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            t.overwrite_words(None, ListKind::RelationshipRows, &[(first, 0, 1), (first, 0, 2)]);
+        }));
+        assert!(twice.is_err(), "a word written twice in one batch is refused");
     }
 
     #[test]
