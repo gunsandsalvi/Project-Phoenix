@@ -239,17 +239,18 @@ impl<B: Backing> Books<B> {
         self.line_holders(line).filter(|p| self.row_on_side(*p, line, side).is_some()).collect()
     }
 
-    /// How a line's dues are reckoned: on the other side's rows where one listed side holds one party, the owing
-    /// side's first, each row its own payment with that party; a line of many holders on both sides, whose pairing is
-    /// not recorded, cleared. A side that keeps no list is taken to hold many.
-    #[clause("REP.23")]
+    /// How a line's dues are reckoned: on the other side's rows where one listed side holds one party of one member
+    /// to a contract, the owing side's first, each row its own payment with that party; a line of many holders on both
+    /// sides, whose pairing is not recorded, cleared. A side that keeps no list is taken to hold many, and so is an
+    /// agent of many twins, each its own holder whose counterparts the line does not pair.
+    #[clause("REP.23", "REP.9")]
     pub(crate) fn reckoning(&self, line: LineId) -> Reckoning {
         let lines = &self.ledger.lines;
         let sole = |side: Side| {
             if !lines.side_decl(line, side).holder_list {
                 return None;
             }
-            lines.sole_holder(line, side).map(|k| self.party_of_key(k))
+            lines.sole_holder(line, side).map(|k| self.party_of_key(k)).filter(|p| self.parties.unit(*p) == 1)
         };
         if let Some(counter) = sole(Side::Liability) {
             return Reckoning::On { side: Side::Asset, counter };
