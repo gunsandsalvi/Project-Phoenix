@@ -19,12 +19,12 @@ use phx_store::SystemBacking;
 use crate::world::World;
 
 /// A kind's insolvency law as the world applies it: the kind's table among the books' holders, whether its parties
-/// are individuals, and the grace in days.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// are individuals, and each country's grace in days.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Law {
     pub place: u16,
     pub individuals: bool,
-    pub grace: u32,
+    pub grace: Vec<u32>,
 }
 
 /// A contract's grace ending: its day, then the party, the line and the side in arrears.
@@ -48,7 +48,10 @@ pub(crate) fn bind(d: &Declarations, register: &Register) -> Result<Vec<Law>, Ve
                 .push(format!("{system} puts `{}`, a kind the world does not keep, under an insolvency law", law.kind));
             continue;
         };
-        match (u16::try_from(place), register.count(law.grace_days).map(u32::try_from)) {
+        let grace = register
+            .counts_per_country(law.grace_days)
+            .map(|days| days.into_iter().map(u32::try_from).collect::<Result<Vec<u32>, _>>());
+        match (u16::try_from(place), grace) {
             (Ok(place), Ok(Ok(grace))) => out.push(Law { place, individuals: is_individual, grace }),
             (_, Err(e)) => errors.push(format!("`{}`'s grace: {e}", law.kind)),
             _ => errors.push(format!("`{}`'s grace or table beyond their widths", law.kind)),
@@ -69,16 +72,23 @@ fn side_of(code: u8) -> Side {
 }
 
 impl World {
-    /// The law a party is under, if any, from its table.
-    fn law_of(&self, party: PartyId) -> Option<Law> {
+    /// The law a party is under, if any, from its table, and its grace in the country it is sited in.
+    fn law_of(&self, party: PartyId) -> Option<(&Law, u32)> {
         let (place, _) = self.books.parties.row(party);
-        self.laws.iter().find(|l| l.place == place).copied()
+        let law = self.laws.iter().find(|l| l.place == place)?;
+        let Missing::Present(country) = self.country_of_party(party) else {
+            violation!(clause = "REP.41", "a party under an insolvency law sited in no country", party = party.get());
+        };
+        let Some(grace) = law.grace.get(usize::from(country.get())).copied() else {
+            violation!(clause = "NUM.3", "a country with no insolvency grace", party = party.get());
+        };
+        Some((law, grace))
     }
 
     /// Each contract in arrears of a party under a law, queued at the day its grace ends.
     fn queue_default(&mut self, (party, line, side): (PartyId, LineId, Side), since: Day) {
-        let Some(law) = self.law_of(party) else { return };
-        let Some(ends) = since.get().checked_add(law.grace) else {
+        let Some((_, grace)) = self.law_of(party) else { return };
+        let Some(ends) = since.get().checked_add(grace) else {
             violation!(clause = "FRM.15", "a grace ending beyond the world's days", party = party.get());
         };
         self.defaults.insert((Day::new(ends), party, line, side_code(side)));
@@ -127,19 +137,20 @@ impl World {
                 continue;
             }
             let phx_core::Resolved::Live(live, _) = self.books.parties.directory().resolve(party) else { continue };
-            let Some(law) = self.law_of(live) else { continue };
+            let Some((law, grace)) = self.law_of(live) else { continue };
+            let individuals = law.individuals;
             let Some(since) = self.books.ledger.arrears().of(line, side_of(side), live) else { continue };
-            if since.get().checked_add(law.grace).is_none_or(|e| e > ends.get()) {
+            if since.get().checked_add(grace).is_none_or(|e| e > ends.get()) {
                 continue;
             }
-            self.default(day, live, law);
+            self.default(day, live, individuals);
             ended.insert(live);
         }
     }
 
     /// A party in default ended into an estate standing for as many real parties as it did, at its site, which
     /// succeeds to every row and holding it had.
-    fn default(&mut self, day: Day, party: PartyId, law: Law) {
+    fn default(&mut self, day: Day, party: PartyId, individuals: bool) {
         let m = MoveAt {
             contracts: phx_ledger::opening::contract_unit(&self.register),
             rounding: Round::HalfEven,
@@ -147,13 +158,13 @@ impl World {
             at: ApplyAt::Day(SubStep::S2e),
         };
         let (place, slot) = self.books.parties.row(party);
-        if !law.individuals {
+        if !individuals {
             let first = self.books.parties.first_cell_place();
             let Some(kind) = place.checked_sub(first).map(usize::from) else {
                 violation!(clause = "REP.1", "an agent's table before the first", party = party.get());
             };
             let region = self.agent_region(kind, slot);
-            self.end_agent(day, (kind, slot, party), Some(region));
+            self.end_agent((day, SubStep::S2e), (kind, slot, party), Some(region));
             self.agent_day.defaults += 1;
             return;
         }
@@ -178,6 +189,21 @@ impl World {
         self.accounts.close(party);
         self.agent_day.estates += 1;
         self.agent_day.defaults += 1;
+    }
+
+    /// The country a live party is in: an individual's by its site, an agent's by the region it lives in.
+    pub(crate) fn country_of_party(&self, party: PartyId) -> Missing<phx_id::CountryId> {
+        let (place, slot) = self.books.parties.row(party);
+        let first = self.books.parties.first_cell_place();
+        let Some(kind) = place.checked_sub(first).map(usize::from) else {
+            return self.geo().country_of(self.books.parties.site(party));
+        };
+        let region = self.agent_region(kind, slot);
+        let regions = &self.geo().map.regions;
+        match usize::try_from(region).ok().and_then(|r| regions.get(r)) {
+            Some(r) => Missing::Present(r.country),
+            None => Missing::Absent,
+        }
     }
 
     /// The region an agent of a sited kind lives in.

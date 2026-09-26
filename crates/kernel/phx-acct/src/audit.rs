@@ -94,30 +94,6 @@ impl<B: Backing> AccountsAudit for AccountsView<'_, B> {
         self.accounts.day_income()
     }
 
-    #[clause("FRM.18")]
-    fn invoices(&self) -> (u64, Vec<Gap>) {
-        let gaps = self
-            .accounts
-            .claims
-            .party_gaps()
-            .into_iter()
-            .map(|(party, kept, from)| Gap {
-                owner: FindingOwner::Party(party),
-                size: (kept.0 - from.0) + (kept.1 - from.1),
-                unit: Unit::Count,
-                detail: format!(
-                    "party {}: {} receivable and {} payable kept against {} and {} in its claims",
-                    party.get(),
-                    kept.0,
-                    kept.1,
-                    from.0,
-                    from.1
-                ),
-            })
-            .collect();
-        (phx_rand::float::len_u64(self.accounts.claims.parties()), gaps)
-    }
-
     #[clause("ACC.11")]
     fn periods(&self, _: Day) -> (u64, Vec<Gap>) {
         let closed = self.accounts.closed();
@@ -168,18 +144,6 @@ fn accounts(target: &mut dyn InjectTarget) -> Result<&mut Accounts, String> {
 /// When the save's accounts are not the accounts'.
 pub fn inject_income(target: &mut dyn InjectTarget) -> Result<(), String> {
     accounts(target)?.income_alone(1);
-    Ok(())
-}
-
-/// A claim recorded on both sides of a line with no party's receivables or payables moved, which the firms' invoices
-/// family alone sees.
-///
-/// # Errors
-/// When the save's accounts are not the accounts', or keep no equity account.
-pub fn inject_invoices(target: &mut dyn InjectTarget) -> Result<(), String> {
-    let accounts = accounts(target)?;
-    let party = first_owned(accounts)?;
-    accounts.claims.recorded_alone(LineId::new(0), (party, party), 1);
     Ok(())
 }
 

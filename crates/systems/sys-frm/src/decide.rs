@@ -3,7 +3,7 @@
 //! outlook, price or unit cost yet takes no decision, which waits for its opening accounts.
 
 use if_firm::facts::{
-    ExpectedSales, Markup, Price, PriceAttention, SalesSince, SalesWidth, Stock, UnitCost, WagePerHour,
+    ExpectedSales, LastReview, Markup, Price, PriceAttention, SalesSince, SalesWidth, Stock, UnitCost, WagePerHour,
 };
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
 use phx_core::{Declarations, Prim, declare_handler, declare_prim};
@@ -136,36 +136,46 @@ impl Management {
         })
     }
 
+    /// A table point at a decade `k` from the table's own: the point times ten to the `k`, when that is a whole price.
+    fn at_decade(point: i64, k: i32) -> Option<i64> {
+        let ten = i64::from(crate::consts::TEN);
+        if k >= 0 {
+            (0..k).try_fold(point, |p, _| p.checked_mul(ten))
+        } else {
+            let down = (0..k.unsigned_abs()).try_fold(1_i64, |p, _| p.checked_mul(ten))?;
+            (point % down == 0).then_some(point / down)
+        }
+    }
+
+    /// The decade of a positive price from the table's own: how many powers of ten it lies above the table's top.
+    fn decade_of(&self, price: f64) -> Option<i32> {
+        let top = from_i64(*self.points.last()?);
+        if price <= 0.0 || top <= 0.0 {
+            return None;
+        }
+        let d = libm::floor(libm::log10(price)) - libm::floor(libm::log10(top));
+        i32::try_from(phx_rand::float::floor_to_i64(d)?).ok()
+    }
+
     /// Whether a price is a point of the trade's table in some decade.
     #[clause("REP.34")]
     #[must_use]
     pub fn is_point(&self, price: i64) -> bool {
-        self.points_near(from_i64(price)).contains(&price)
+        let Some(d) = self.decade_of(from_i64(price)) else { return false };
+        self.points.iter().any(|m| Self::at_decade(*m, d) == Some(price))
     }
 
     /// The posted prices near a price: the points of the decade it lies in and of the decades either side, each point
-    /// the table's part of its decade's top.
+    /// the table's part of its decade's top and whole at its scale.
     #[clause("REP.34")]
     #[must_use]
     pub fn points_near(&self, price: f64) -> Vec<i64> {
-        let Some(top) = self.points.last().copied().map(from_i64) else { return Vec::new() };
-        if price <= 0.0 || top <= 0.0 {
-            return Vec::new();
-        }
-        let decade = libm::floor(libm::log10(price)) - libm::floor(libm::log10(top));
-        let mut out = Vec::new();
-        for k in [decade - 1.0, decade, decade + 1.0] {
-            let scale = libm::pow(crate::consts::DECADE, k);
-            for m in &self.points {
-                if let Some(p) = whole(from_i64(*m) * scale)
-                    && p > 0
-                    && !out.contains(&p)
-                {
-                    out.push(p);
-                }
-            }
-        }
+        let Some(d) = self.decade_of(price) else { return Vec::new() };
+        let mut out: Vec<i64> =
+            [d - 1, d, d + 1].iter().flat_map(|k| self.points.iter().filter_map(|m| Self::at_decade(*m, *k))).collect();
+        out.retain(|p| *p > 0);
         out.sort_unstable();
+        out.dedup();
         out
     }
 }
@@ -175,8 +185,8 @@ declare_handler! {
     pub ReviewSmall = "FRM.review_small" {
         substep: S5c,
         table: "small_firm",
-        reads: [ExpectedSales, SalesSince, Stock, UnitCost, Markup, Price, WagePerHour],
-        writes: [Markup, Price],
+        reads: [ExpectedSales, SalesSince, LastReview, Stock, UnitCost, Markup, Price, PriceAttention, WagePerHour],
+        writes: [Markup, Price, SalesSince, LastReview],
         clause: "FRM.5",
         body: review,
     }
@@ -187,8 +197,8 @@ declare_handler! {
     pub ReviewLarge = "FRM.review_large" {
         substep: S5c,
         table: "firm",
-        reads: [ExpectedSales, SalesSince, Stock, UnitCost, Markup, Price, WagePerHour],
-        writes: [Markup, Price],
+        reads: [ExpectedSales, SalesSince, LastReview, Stock, UnitCost, Markup, Price, PriceAttention, WagePerHour],
+        writes: [Markup, Price, SalesSince, LastReview],
         clause: "FRM.5",
         body: review,
     }
@@ -235,52 +245,84 @@ where
     }
 }
 
-/// A review: the markup moved by the sales since the last against those expected, and the point nearest the desired
-/// price posted when the move gains more over the next period than its staff's hours to make it cost. The
-/// competitors' prices the firm sees arrive with the goods markets; until then it sees none.
+/// A value's scale in its fact: the powers of ten its fixed-point holding carries.
+fn scale_of(item: phx_core::ItemDecl) -> f64 {
+    match item.kind {
+        phx_core::ItemKind::Fact(f) => match f.value {
+            phx_core::FactType::Fixed { exp } => libm::pow(crate::consts::DECADE, f64::from(exp)),
+            _ => phx_num::violation!(clause = "NUM.3", "a scaled read of a fact that holds no fixed point"),
+        },
+        _ => phx_num::violation!(clause = "NUM.3", "a scaled read of an item that is no fact"),
+    }
+}
+
+/// A review: the markup moved by the sales since the last review against those expected over the same days, and the
+/// point nearest the desired price posted when the move gains more, over the days to its next review, than its
+/// staff's hours to make it cost. The competitors' prices the firm sees arrive with the goods markets; until then it
+/// sees none. Its sales since are counted afresh from today.
 #[clause("FRM.5", "REP.34")]
 fn review<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
     H: HandlerDecl
         + Reads<ExpectedSales>
         + Reads<SalesSince>
+        + Reads<LastReview>
         + Reads<Stock>
         + Reads<UnitCost>
         + Reads<Markup>
         + Reads<Price>
+        + Reads<PriceAttention>
         + Reads<WagePerHour>
         + Writes<Markup>
-        + Writes<Price>,
+        + Writes<Price>
+        + Writes<SalesSince>
+        + Writes<LastReview>,
     S: FactStore + ?Sized,
 {
     let m: &Management = ctx.own::<crate::Own>().management();
-    let (Some(expected), Some(sold), Some(stock), Some(cost), Some(markup), Some(price), Some(wage)) = (
+    let (Some(expected), Some(sold), Some(last), Some(stock), Some(cost), Some(markup), Some(price), Some(chance)) = (
         read::<ExpectedSales, H, S>(ctx, row),
         read::<SalesSince, H, S>(ctx, row),
+        read::<LastReview, H, S>(ctx, row),
         read::<Stock, H, S>(ctx, row),
         read::<UnitCost, H, S>(ctx, row),
         read::<Markup, H, S>(ctx, row),
         read::<Price, H, S>(ctx, row),
-        read::<WagePerHour, H, S>(ctx, row),
+        read::<PriceAttention, H, S>(ctx, row),
     ) else {
         return;
     };
-    let scale = crate::consts::MARKUP_SCALE;
-    let Missing::Present(next) =
-        rules::markup::update(markup / scale, (m.sales_speed, m.seen_speed), (sold, expected), Missing::Absent, price)
-    else {
+    let Some(wage) = read::<WagePerHour, H, S>(ctx, row) else { return };
+    let today = from_i64(i64::from(ctx.day().get()));
+    let days = today - last;
+    let chance = chance / scale_of(<PriceAttention as phx_core::FactDef>::ITEM);
+    if days <= 0.0 || chance <= 0.0 {
+        return;
+    }
+    let expected_since = expected * days / m.production_days;
+    let markup_scale = scale_of(<Markup as phx_core::FactDef>::ITEM);
+    let Missing::Present(next) = rules::markup::update(
+        markup / markup_scale,
+        (m.sales_speed, m.seen_speed),
+        (sold, expected_since),
+        Missing::Absent,
+        price,
+    ) else {
         return;
     };
     let target_stock = expected * m.cover_days / m.production_days;
-    let Missing::Present(pressure) = rules::price::pressure_stocked(sold, expected, target_stock, stock) else {
+    let Missing::Present(pressure) = rules::price::pressure_stocked(sold, expected_since, target_stock, stock) else {
         return;
     };
     let wanted = rules::price::desired(next, cost, pressure, m.curvature);
-    if let Some(markup) = whole(next * scale) {
+    if let Some(markup) = whole(next * markup_scale) {
         ctx.write::<Markup>(row, markup);
     }
+    ctx.write::<SalesSince>(row, 0);
+    ctx.write::<LastReview>(row, i64::from(ctx.day().get()));
     let Some(current) = whole(price) else { return };
-    let revenue = expected * price;
+    // The price posted now stands, as the firm expects, until its next review.
+    let revenue = expected / m.production_days * price / chance;
     let menu_cost = m.menu_hours * wage;
     if let Some(point) = rules::price::reprice(&m.points_near(wanted), current, wanted, revenue, next, menu_cost) {
         ctx.write::<Price>(row, point);
@@ -311,22 +353,23 @@ where
     ) else {
         return;
     };
-    if expected <= 0.0 {
-        return;
-    }
-    let revenue_per_day = expected * price / m.production_days;
-    let relative = width / expected;
-    let var_own = relative * relative / m.production_days;
     let cost = m.review_hours * wage;
+    // A review costs its staff's hours; a firm whose hour costs nothing holds no staff to review with.
     if cost <= 0.0 {
         return;
     }
-    let scale = crate::consts::MARKUP_SCALE;
-    if let Missing::Present(chance) =
-        rules::attention::review_chance(revenue_per_day, markup / scale, (var_own, 0.0), cost)
-        && let Some(billionths) = whole(chance * crate::consts::BILLIONTHS)
-    {
-        ctx.write::<PriceAttention>(row, billionths);
+    let revenue_per_day = expected * price / m.production_days;
+    let markup = markup / scale_of(<Markup as phx_core::FactDef>::ITEM);
+    let chance = if expected > 0.0 {
+        let relative = width / expected;
+        // The public series a firm reads arrive with the markets' prints.
+        rules::attention::review_chance(revenue_per_day, markup, (relative * relative / m.production_days, &[]), cost)
+    } else {
+        // A firm that expects to sell nothing loses nothing by a price left standing.
+        0.0
+    };
+    if let Some(chance) = whole(chance * scale_of(<PriceAttention as phx_core::FactDef>::ITEM)) {
+        ctx.write::<PriceAttention>(row, chance);
     }
 }
 
@@ -346,9 +389,10 @@ mod tests {
             menu_hours: 2.0,
             points: vec![100, 199, 499, 999],
         };
-        assert_eq!(m.points_near(250.0), vec![10, 20, 50, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
+        assert_eq!(m.points_near(250.0), vec![10, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
         assert_eq!(m.points_near(2500.0), vec![100, 199, 499, 999, 1000, 1990, 4990, 9990, 10000, 19900, 49900, 99900]);
         assert!(m.points_near(0.0).is_empty());
         assert!(m.is_point(1990) && m.is_point(4990) && !m.is_point(2000));
+        assert!(!m.points_near(25.0).contains(&20), "199 has no whole point a decade down");
     }
 }

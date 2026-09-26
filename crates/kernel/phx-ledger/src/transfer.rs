@@ -168,16 +168,22 @@ impl<B: Backing> Books<B> {
     /// The fail, when the instruction could not settle.
     #[clause("REP.9", "BNK.10", "L3")]
     pub fn transfer(&mut self, t: LineTransfer, m: MoveAt, audit: &mut dyn AuditStream) -> Result<InstructionId, Fail> {
-        let view = self.row_or_stop(t.from, t.line, t.side);
-        let moved = share(&view, t.count, m.rounding);
-        let mut legs = self.leave((t.from, t.line, t.side), t.count, moved, m);
-        legs.extend(self.arrive((t.to, t.line, t.side), t.count, moved, &view, m));
         let since = self.ledger.arrears.since(ArrearsKey::new(t.line, t.side, t.from));
-        let id = self.submit(t.reason, legs, m, audit)?;
+        let id = self.move_members(t, m, audit)?;
         if let Some(since) = since {
             self.carry_arrears(ArrearsKey::new(t.line, t.side, t.to), since);
         }
         Ok(id)
+    }
+
+    /// Members and their share of a row's balance moved to another party's row, one instruction, their arrears left
+    /// behind.
+    fn move_members(&mut self, t: LineTransfer, m: MoveAt, audit: &mut dyn AuditStream) -> Result<InstructionId, Fail> {
+        let view = self.row_or_stop(t.from, t.line, t.side);
+        let moved = share(&view, t.count, m.rounding);
+        let mut legs = self.leave((t.from, t.line, t.side), t.count, moved, m);
+        legs.extend(self.arrive((t.to, t.line, t.side), t.count, moved, &view, m));
+        self.submit(t.reason, legs, m, audit)
     }
 
     /// Arrears carried with members onto another row: the row is in arrears since the earlier of its own and theirs.
@@ -309,8 +315,9 @@ impl<B: Backing> Books<B> {
             for (to, k) in passed {
                 // The draw took the taker's members; it gains them instead.
                 ours.adjust(to, 2 * i64::from(k));
+                // The taker takes the contracts as they stand, never the leaving party's arrears on them.
                 let t = LineTransfer { line, side, from: party, to, count: k, reason: self.dues.succeeded };
-                let _ = self.transfer(t, m, audit)?;
+                let _ = self.move_members(t, m, audit)?;
             }
         }
         self.leaving.insert((line, side), (self.ledger.lines.side_version(line, side), ours));
@@ -339,9 +346,19 @@ impl<B: Backing> Books<B> {
                 line = line.get()
             );
         }
+        let split = self.ledger.lines.keys();
+        // A side of one holder is read at once, with no list to walk.
+        if let Some(key) = self.ledger.lines.sole_holder(line, side) {
+            let (place, slot) = split.split(key);
+            let t = self.parties.holder(place);
+            let rows: Vec<Held> = crate::rows::find(t, slot, line, side)
+                .map(|r| (t.party(slot), r.row.count, t.weight(slot)))
+                .into_iter()
+                .collect();
+            return crate::cleared::Tally::new(&rows);
+        }
         // The list's keys name each holder's table and slot, so its row is read there, not through the directory, in
         // fixed shards of the list on the pool, joined in the list's order.
-        let split = self.ledger.lines.keys();
         let keys: Vec<u32> = self.ledger.lines.holders(line).collect();
         let shards = crate::consts::STREAM_SHARDS;
         let each = keys.len().div_ceil(shards);
@@ -364,16 +381,17 @@ impl<B: Backing> Books<B> {
 
     /// The sides that keep no holder list, read in one pass over the tables of the kinds that may hold them, for
     /// members to leave against: each side's members by holder, at the side's version. Each table is read in fixed
-    /// shards of its slots, on the pool where the books have one, and the shards joined in slot order.
+    /// shards of its slots, on the pool where the books have one, and the shards joined in slot order. Whether the
+    /// tables were swept: not when every side keeps its list.
     #[clause("REP.23")]
-    pub fn read_unlisted(&mut self, sides: &[(LineId, Side)])
+    pub fn read_unlisted(&mut self, sides: &[(LineId, Side)]) -> bool
     where
         B: Sync,
     {
         let mut wanted: BTreeMap<(LineId, Side), Vec<Held>> =
             sides.iter().filter(|(l, s)| !self.ledger.lines.listed_side(*l, *s)).map(|k| (*k, Vec::new())).collect();
         if wanted.is_empty() {
-            return;
+            return false;
         }
         let lines = &self.ledger.lines;
         let holds = |kind: &str| wanted.keys().any(|(l, s)| lines.side_decl(*l, *s).holder_kinds.contains(&kind));
@@ -409,12 +427,13 @@ impl<B: Backing> Books<B> {
             let version = self.ledger.lines.side_version(line, side);
             self.leaving.insert((line, side), (version, crate::cleared::Tally::new(&rows)));
         }
+        true
     }
 
-    /// The sides read without a holder list let go once the members that needed them have left.
-    pub fn forget_unlisted(&mut self) {
-        let lines = &self.ledger.lines;
-        self.leaving.retain(|(l, s), _| lines.listed_side(*l, *s));
+    /// The sides' members kept for the leavings of a pass let go once the pass is done, so none outlives the changes
+    /// the next pass brings, and their room is taken back.
+    pub fn forget_tallies(&mut self) {
+        self.leaving.clear();
     }
 
     /// The balance share of members leaving a line, which must be nothing.

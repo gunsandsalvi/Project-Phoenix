@@ -25,9 +25,16 @@ declare_fact! {
 }
 
 declare_fact! {
-    /// Units the firm has sold since its last production decision.
+    /// Units the firm has sold since its last price review.
     pub SalesSince = "FRM.sales_since" {
         value: Qty, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "FRM.13",
+    }
+}
+
+declare_fact! {
+    /// The day of the firm's last price review, from which its sales since are counted.
+    pub LastReview = "FRM.last_review" {
+        value: Day, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "REP.21",
     }
 }
 
@@ -81,11 +88,12 @@ const fn from_fact<F: FactDef>() -> PositionDecl {
 }
 
 /// Every position a small firm's agent holds, in the order its table keeps them.
-pub const POSITIONS: [PositionDecl; 10] = [
+pub const POSITIONS: [PositionDecl; 11] = [
     from_fact::<Stock>(),
     from_fact::<ExpectedSales>(),
     from_fact::<SalesWidth>(),
     from_fact::<SalesSince>(),
+    from_fact::<LastReview>(),
     from_fact::<UnitCost>(),
     from_fact::<Markup>(),
     from_fact::<Price>(),
@@ -95,11 +103,12 @@ pub const POSITIONS: [PositionDecl; 10] = [
 ];
 
 /// Every fact a large firm keeps, by name.
-pub const FACTS: [&str; 10] = [
+pub const FACTS: [&str; 11] = [
     Stock::ITEM.name,
     ExpectedSales::ITEM.name,
     SalesWidth::ITEM.name,
     SalesSince::ITEM.name,
+    LastReview::ITEM.name,
     UnitCost::ITEM.name,
     Markup::ITEM.name,
     Price::ITEM.name,

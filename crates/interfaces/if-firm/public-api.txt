@@ -6,6 +6,9 @@ pub mod if_firm::facts
 pub struct if_firm::facts::ExpectedSales
 impl phx_core::facts::FactDef for if_firm::facts::ExpectedSales
 pub const if_firm::facts::ExpectedSales::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::LastReview
+impl phx_core::facts::FactDef for if_firm::facts::LastReview
+pub const if_firm::facts::LastReview::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::Markup
 impl phx_core::facts::FactDef for if_firm::facts::Markup
 pub const if_firm::facts::Markup::ITEM: phx_core::facts::ItemDecl
@@ -33,8 +36,8 @@ pub const if_firm::facts::UnitCost::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::WagePerHour
 impl phx_core::facts::FactDef for if_firm::facts::WagePerHour
 pub const if_firm::facts::WagePerHour::ITEM: phx_core::facts::ItemDecl
-pub const if_firm::facts::FACTS: [&str; 10]
-pub const if_firm::facts::POSITIONS: [phx_core::pop::PositionDecl; 10]
+pub const if_firm::facts::FACTS: [&str; 11]
+pub const if_firm::facts::POSITIONS: [phx_core::pop::PositionDecl; 11]
 pub mod if_firm::known
 pub struct if_firm::known::Industry
 impl phx_core::facts::FactDef for if_firm::known::Industry

@@ -70,21 +70,25 @@ impl World {
         }
         against.sort_unstable();
         against.dedup();
-        self.books.read_unlisted(&against);
+        if self.books.read_unlisted(&against) {
+            self.agent_day.unlisted_sweeps += 1;
+        }
         for estate in first.into_iter().chain(then) {
             let destination = self.destination(estate);
             let subject = Subject::new(SubjectTag::Party, estate.get());
             let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S7c.ordinal());
-            match self.books.settle_estate(estate, destination, m, &mut draws, self.audit.stream()) {
-                Ok(s) => {
-                    self.detach(&s.left, &mut draws);
-                    self.agent_day.estates_settled += 1;
-                    self.agent_day.estates_passed += i128::from(s.passed);
-                    self.agent_day.estates_written_off += i128::from(s.written_off);
-                }
-                Err(_) => self.agent_day.estates_waiting += 1,
+            let s = self.books.settle_estate(estate, destination, m, &mut draws, self.audit.stream());
+            self.detach(&s.left, &mut draws);
+            self.agent_day.estates_passed += i128::from(s.passed);
+            self.agent_day.estates_written_off += i128::from(s.written_off);
+            if s.fail.is_some() {
+                self.agent_day.estates_waiting += 1;
+            } else if s.ended {
+                self.agent_day.estates_settled += 1;
+            } else if s.unsold {
+                self.agent_day.estates_unsold += 1;
             }
         }
-        self.books.forget_unlisted();
+        self.books.forget_tallies();
     }
 }

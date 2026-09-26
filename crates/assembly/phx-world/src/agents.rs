@@ -156,8 +156,12 @@ pub struct AgentDay {
     pub estates_waiting: u64,
     pub estates_passed: i128,
     pub estates_written_off: i128,
+    /// Estates that paid what their money could and wait to sell the units they hold.
+    pub estates_unsold: u64,
     /// Parties under an insolvency law that defaulted and ended into estates.
     pub defaults: u64,
+    /// Sweeps of the holder tables for the members of sides that keep no holder list.
+    pub unlisted_sweeps: u64,
 }
 
 impl AgentDay {
@@ -183,6 +187,8 @@ impl AgentDay {
             estates_waiting: 0,
             estates_passed: 0,
             estates_written_off: 0,
+            estates_unsold: 0,
+            unlisted_sweeps: 0,
             defaults: 0,
         }
     }
@@ -467,6 +473,7 @@ impl World {
                 self.write_household(day, who, &h);
             }
         }
+        self.books.forget_tallies();
     }
 
     /// One agent's hits of the day applied to its household made explicit, by each process's outcome in order,
@@ -526,7 +533,7 @@ impl World {
         let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S3e.ordinal());
         self.leave(day, party, (&written.leaving, twins), &mut draws);
         if written.ended {
-            self.end_agent(day, (kind, slot, party), region);
+            self.end_agent((day, SubStep::S3e), (kind, slot, party), region);
         }
     }
 
@@ -583,16 +590,17 @@ impl World {
                     party = party.get()
                 );
             }
-            let mut words = table.attachments(slot).to_vec();
+            let words = table.attachments(slot).to_vec();
+            let mut on: Vec<usize> = (0..words.len())
+                .filter(|i| {
+                    words
+                        .get(*i)
+                        .map(|w| phx_pop::person::Attachment::unpack(*w))
+                        .is_some_and(|a| a.line == *line && a.side == *side)
+                })
+                .collect();
+            let mut gone: Vec<usize> = Vec::new();
             for _ in 0..count / twins {
-                let on: Vec<usize> = (0..words.len())
-                    .filter(|i| {
-                        words
-                            .get(*i)
-                            .map(|w| phx_pop::person::Attachment::unpack(*w))
-                            .is_some_and(|a| a.line == *line && a.side == *side)
-                    })
-                    .collect();
                 let Some(n) = u32::try_from(on.len()).ok().filter(|n| *n != 0) else {
                     violation!(
                         clause = "REP.31",
@@ -600,10 +608,14 @@ impl World {
                         party = party.get()
                     );
                 };
-                if let Some(at) = usize::try_from(phx_rand::below_u32(d, n)).ok().and_then(|i| on.get(i)) {
-                    let _ = words.remove(*at);
+                if let Some(i) = usize::try_from(phx_rand::below_u32(d, n)).ok().filter(|i| *i < on.len()) {
+                    gone.push(on.swap_remove(i));
                 }
             }
+            let words: Vec<u64> =
+                words.iter().enumerate().filter(|(i, _)| !gone.contains(i)).map(|(_, w)| *w).collect();
+            // Its persons' contracts changed, so what its hazards read may have: it is drawn afresh.
+            table.mark_changed(slot);
             table.set_attachments(slot, &words);
         }
     }
@@ -611,8 +623,13 @@ impl World {
     /// An agent no one is left in ended: what it holds passes to one estate sited in its region, and its row and
     /// identity end.
     #[clause("PTY.9", "POP.15", "REP.16")]
-    pub(crate) fn end_agent(&mut self, day: Day, (kind, slot, party): (usize, Slot, PartyId), region: Option<u32>) {
-        let m = move_at(&self.register, day, ApplyAt::Day(SubStep::S3e));
+    pub(crate) fn end_agent(
+        &mut self,
+        (day, step): (Day, SubStep),
+        (kind, slot, party): (usize, Slot, PartyId),
+        region: Option<u32>,
+    ) {
+        let m = move_at(&self.register, day, ApplyAt::Day(step));
         let (rows, twins): (Vec<(LineId, Side, u32)>, u32) = {
             let table = Population::table::<SystemBacking>(self.books.parties.cells(), kind);
             for list in [AgentList::Holdings, AgentList::Lots, AgentList::NamedUnits] {
@@ -633,7 +650,7 @@ impl World {
                 );
             };
             let subject = Subject::new(SubjectTag::Party, party.get());
-            let mut d = self.streams.open(&EstateSiteStream::DECL, subject, day, SubStep::S3e.ordinal());
+            let mut d = self.streams.open(&EstateSiteStream::DECL, subject, day, step.ordinal());
             let site = self.estate_site(region, &mut d);
             // An agent's twins leave an estate each, alike: one estate standing for them all.
             let estate = self.books.parties.begin_weighted(phx_core::ESTATE_KIND.name, site, day, twins);

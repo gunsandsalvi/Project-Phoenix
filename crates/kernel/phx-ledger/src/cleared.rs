@@ -177,13 +177,14 @@ impl Tally {
         Tally { index, classes }
     }
 
-    /// The members a holder has left to draw; none for a party the tally does not hold.
+    /// The members a holder has left to draw; the tally holds every holder of its side, so one it does not is a party
+    /// that holds no row there, which cannot leave it.
     pub(crate) fn held(&self, party: PartyId) -> u64 {
-        self.index
-            .get(&party)
-            .and_then(|(ci, i)| self.classes.get(*ci).and_then(|c| c.held.get(*i)))
-            .copied()
-            .unwrap_or(0)
+        let Some(held) = self.index.get(&party).and_then(|(ci, i)| self.classes.get(*ci).and_then(|c| c.held.get(*i)))
+        else {
+            violation!(clause = "REP.23", "members leaving a side its tally holds no row of", party = party.get());
+        };
+        *held
     }
 
     /// A holder's members moved by a change made beside the tally's draws, so it stays the side it reads.

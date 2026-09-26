@@ -9,9 +9,6 @@ use crate::equity::EquityEvent;
 /// A claim recognised and not yet paid, keyed by its line, its holder and its counterparty.
 type ClaimKey = (LineId, PartyId, PartyId);
 
-/// What a party is owed and owes.
-pub type Owed = (i128, i128);
-
 /// Receivables and payables, kept as two records — each side's from its own side of each due — so that they agree
 /// line by line is a check, not a construction.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -63,44 +60,6 @@ impl Claims {
         self.by_party.entry(due.payee).or_insert((0, 0)).0 += i128::from(owed);
         self.by_party.entry(due.payer).or_insert((0, 0)).1 += i128::from(owed);
         [EquityEvent::earned(due.payee, interest), EquityEvent::earned(due.payer, -interest)]
-    }
-
-    /// Each party whose receivables or payables, as kept, are not the sum of the claims recognised to it: the party,
-    /// what is kept, and what its claims sum to, owed and owing.
-    #[clause("FRM.18")]
-    #[must_use]
-    pub fn party_gaps(&self) -> Vec<(PartyId, Owed, Owed)> {
-        let mut summed: BTreeMap<PartyId, Owed> = BTreeMap::new();
-        for ((_, holder, _), v) in &self.receivable {
-            summed.entry(*holder).or_insert((0, 0)).0 += i128::from(*v);
-        }
-        for ((_, holder, _), v) in &self.payable {
-            summed.entry(*holder).or_insert((0, 0)).1 += i128::from(*v);
-        }
-        let mut parties: Vec<PartyId> = self.by_party.keys().chain(summed.keys()).copied().collect();
-        parties.sort_unstable();
-        parties.dedup();
-        parties
-            .into_iter()
-            .filter_map(|p| {
-                // A party absent from either side has no claim there: a count of nothing, not an unknown.
-                let kept = self.by_party.get(&p).copied().unwrap_or((0, 0));
-                let from = summed.get(&p).copied().unwrap_or((0, 0));
-                (kept != from).then_some((p, kept, from))
-            })
-            .collect()
-    }
-
-    /// The parties with receivables or payables kept.
-    #[must_use]
-    pub fn parties(&self) -> usize {
-        self.by_party.len()
-    }
-
-    /// A claim recorded on both sides of a line with neither party's totals moved, for the audit's injection alone.
-    pub(crate) fn recorded_alone(&mut self, line: LineId, (holder, other): (PartyId, PartyId), amount: i64) {
-        add(&mut self.receivable, (line, holder, other), amount);
-        add(&mut self.payable, (line, other, holder), amount);
     }
 
     /// A receivable recognised with no payable to meet it, for the audit's injection alone.

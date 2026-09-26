@@ -5588,7 +5588,7 @@ pure functions, with the registered series and the investor schedule's extension
 rule forms are in the register (assembly refuses a count of heuristics tracked other than the menu's); N3's and N4's
 definitions, Stage 1's macro reads, LC-1-01 to LC-1-04, LC-1-43, LC-1-44, PC-33, PC-90 and PC-91 are registered. No
 party holds a method or attention yet, so the 5a pass over public series, attention and the wake, and the `phx_val`
-counters join the day with the first stances, the firms' (S1.03), which completes VAL.23, REP.21, REP.35 and REP.38; VAL.12–VAL.15 are measured by
+counters join the day with the first stances, the firms' (S1.03), which carries VAL.23, REP.21, REP.35 and REP.38 to their completions; VAL.12–VAL.15 are measured by
 their live checks from S1.12. Both reviews were the builder's own: they found the menu's count unchecked against the
 data, the performance record's memory named as the party's memory speed, and a wrong probability in
 `VAL.attention_sensitivity`'s reason, all fixed; and, on the build run of c3dd7538, a peak 4 MiB over the build
@@ -5791,7 +5791,7 @@ S1.03. The build run of fe1fa2b1 is clean (peak 2 764 MiB, the world's hash unch
   good perishes is S1.05's, where stocks are held)*; TEC.4 *(part: each country's public ways per industry; a firm's
   own known ways and the industry it belongs to are S1.03's)*.
 - INVARIANT: TEC.9 *(part: every production names a registered way and uses what it states for what was started;
-  that its producer knew the way is S1.03's, when firms have industries and known ways)*.
+  that its producer knew the way is checked from S1.04, when firms, which know ways from S1.03, first produce)*.
 - FORBID: TEC.12.
 - PRIMITIVE: TEC.13 *(part: the opening ways)*.
 - Research, imitation, learning and obsolescence (TEC.5–TEC.8, TEC.10, TEC.11) are S6.01.
@@ -5879,7 +5879,7 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 
 **Done when**
 - [x] Products and opening ways are declared with sources.
-- [x] TEC.9's family runs; LC-1-05 is registered, applies once firms produce (S1.03), and S1.12's Done when
+- [x] TEC.9's family runs; LC-1-05 is registered, applies once firms produce (S1.04), and S1.12's Done when
   requires it to pass.
 - [x] Two reviews are done.
 
@@ -5890,17 +5890,23 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 **Status**: building
 
 **Clauses**:
-- STATE: FRM.1, FRM.2; FRM.23 *(part: cells keyed and positioned; cumulative output per way run is S6.01)*.
-- DECISION: FRM.5; REP.34 *(part: posted prices of goods and services; wage points are S1.08, lenders' rate points
-  S1.09)*.
+- STATE: FRM.1, FRM.2 *(part: firms by industry and size, and the state they keep; completed at S1.15, which draws
+  each firm's latest filed accounts)*; FRM.23 *(part: cells keyed and positioned; cumulative output per way run is
+  S6.01)*.
+- DECISION: FRM.5 *(part: the price review and its rules; completed at S1.15, when firms hold the state it reads)*;
+  REP.34 *(part: posted prices of goods and services; wage points are S1.08, lenders' rate points S1.09)*.
 - PROCESS: FRM.15 *(part: default of payment and liquidation; the balance-sheet test and restructuring are S2.03)*; L3
   *(part: firm estates liquidate through the waterfall)*.
-- DECISION: REP.38 *(completes it: the firms' attention, their first continuous decision of how often to review)*.
-- PROCESS: REP.21 *(completes it: reviews at the attention rate, their cost in staff hours counted)*.
+- DECISION: REP.38 *(part: the firms' attention, their first continuous decision of how often to review; completed at
+  S1.15, when their reviews first run)*.
+- PROCESS: REP.21 *(part: reviews drawn at the attention rate, their cost in staff hours counted; completed at S1.15)*.
 - STATE: TEC.4 *(completes it: each firm's known ways, its industry's public set and its own, S1.02)*.
-- INVARIANT: TEC.9 *(completes it: the family checks that a production's producer knew its way)*.
-- INVARIANT: FRM.17, FRM.18.
-- FORBID: FRM.20, FRM.21.
+- INVARIANT: TEC.9 *(carried: S1.02's family checks that a production's producer knew its way; completed at S1.04,
+  when firms first produce)*.
+- INVARIANT: FRM.17; FRM.18 *(part: receivables and payables are the claims recognised to each party; completed at
+  S2.02, when trade credit writes invoices)*.
+- FORBID: FRM.20; FRM.21 *(part: no firm that cannot run out of cash; completed at S1.12, when households found
+  firms)*.
 - PRIMITIVE: FRM.22.
 - Each decision whose inputs a later step brings completes there, as the firm's rules and state here wait for them:
   production, the way and entering or leaving a line (FRM.4, FRM.6, FRM.11) with the plant they read (S1.04); revenue
@@ -5945,12 +5951,15 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 | `src/rules/found.rs` | FRM.16: whether a household founds |
 | `src/rules/close.rs` | whether an owner closes a solvent firm |
 | `src/handlers/*.rs` | 5b production and input rates; 5c price, way, entry-and-exit and closure reviews on review and wake days, and founding decisions; 3c foundings executed; 2e failures after grace; the realisation of physical flows at visits and kinks |
-| `crates/systems/sys-frm/src/families.rs` | the families of the firms' revenue (FRM.17) and claims (FRM.18) |
-| `crates/assembly/phx-world/src/defaults.rs` | the insolvency law's grace queued from the contract process's fails, and each default at 2e |
+| `crates/systems/sys-frm/src/families.rs` | the family of the firms' revenue (FRM.17) |
+| `crates/kernel/phx-core/src/insolvency.rs` | `InsolvencyDecl`: the law a kind's parties are under, by the count of its grace |
+| `crates/assembly/phx-world/src/defaults.rs` | the insolvency law's grace, each country's, queued from the contract process's fails, and each default at 2e |
+| `crates/assembly/phx-world/src/visits.rs` | the kernel's visits, and what each day's did (`VisitDay`) |
+| `data/profiles/<level>/FRM_law.toml` | `FRM.insolvency_grace_days`: the days before a payment unpaid is a default of payment (POLICY) |
 | `crates/apps/phx-cli/src/checks/firms.rs` | LC-1-06, LC-1-07, LC-1-08, LC-1-45 |
 | `crates/systems/sys-est/src/firm.rs` | firm estates: opening, selling stock through its market and plant bilaterally, the waterfall (S0.17), releasing staff |
 | `crates/systems/sys-frm/src/gen.rs` | small firms and household businesses' key attributes and positions beyond S0.25's; each firm's latest filed accounts, derived from its drawn books, lines and its industry's margins (GEN.5) |
-| `data/<country>/FRM.toml` | management type sets (target stock cover, adjustment times, markup adjustment speeds, pricing curvature, horizons: PREFERENCE); review schedules; price points per trade (POLICY of each trade); founding costs; the grace before a default of payment and the liquidation horizon (insolvency law, POLICY); review and menu costs in hours (TECHNOLOGY) |
+| `data/<country>/FRM.toml` | management type sets (target stock cover, adjustment times, markup adjustment speeds, pricing curvature, horizons: PREFERENCE); review schedules; price points per trade (POLICY of each trade); founding costs; the liquidation horizon (insolvency law, POLICY); review and menu costs in hours (TECHNOLOGY) |
 | `data/<country>/gen/FRM.toml` | margins by industry and size, from national-accounts and company data, from which each firm's latest filed accounts are drawn (ENDOWMENT, GEN.5); its markup is what they show |
 
 **Design**
@@ -5991,22 +6000,29 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
   and its decisions wait, as they must: nothing is read as zero. Production's decision (FRM.4) waits for its capacity
   (S1.04) and its financing rate (S1.09), which it reads.
 - **Failure** *(built, sub-step e)*: firms and small firms are under their country's insolvency law
-  (`InsolvencyDecl`, grace `FRM.insolvency_grace_days`, POLICY): a contract of theirs the contract process leaves in
+  (`InsolvencyDecl`, grace `FRM.insolvency_grace_days`, POLICY, each country's in its profile's `FRM_law.toml`): a contract of theirs the contract process leaves in
   arrears queues the day its grace ends, and at 2e a party still in arrears on it then defaults (FRM.15) — a large firm
   into an estate that succeeds to its rows and holdings, a small firm's agent as a household's does — and its equity
   account closes. From the next business day the estate liquidates by S0.25e's settlement (L3): its tenants' tenancies
   and its staff's jobs end with its rows, the households drawn from the lines' households' sides, which keep holder
   lists from this step since a firm's end reaches them (architecture §4.5, §7.4, §9.1), each drawn agent losing a
-  twin's share from its persons' attachments; what no agent's unit fits passes to the estate's side's other holders. The counter `phx_frm.defaults` is the day's most. Selling
-  stock and plant waits for the markets (S1.05, S1.04); releasing staff on notice for LAB (S1.08).
+  twin's share from its persons' attachments; what no agent's unit fits passes to the estate's side's other holders,
+  without arrears (F-074). An estate first releases its rows that hold nothing, then pays what its money can; while it
+  still holds units it waits to sell them, writing nothing off and distributing nothing, and one that holds none writes
+  off the rest and passes its residue to the treasury (F-096). The counter `phx_frm.defaults` is the day's most.
+  Selling stock and plant waits for the markets (S1.05, S1.04); releasing staff on notice for LAB (S1.08).
 - **Families, counters and checks** *(built, sub-step f)*: `sys-frm/src/families.rs` declares `FRM.revenue`
   (FRM.17): the day's income posted from dues and payments, summed over every party, is nothing, each revenue another's
-  outlay; and `FRM.invoices` (FRM.18): each party's receivables and payables as the accounts keep them are the sums of
-  the claims recognised to it, the invoices until trade credit writes its own (S2.02). The world keeps what each day's
-  visits did — the rows each handler visited and the facts they moved to a new value (`VisitDay`) — from which the run
-  reads `phx_frm.price_reviews`, `phx_frm.price_changes` and `phx_frm.attention_visits`; with `phx_frm.defaults`,
-  `phx_frm.estates_open` (all estates, until estates carry their origin) and `phx_pop.bytes_per_firm_cell`, each the
-  heaviest day's. LC-1-06, LC-1-07, LC-1-08 and LC-1-45 are registered.
+  outlay. FRM.18's family is S2.02's, which writes the invoices it sums: until then the receivables are the claims the
+  accounts recognise, which ACC's families already check. The world keeps what each day's visits did — the rows each
+  handler visited and the facts they moved to a new value (`VisitDay`, a review skipped for a missing input visible as
+  a visit that moved nothing) — from which the run reads `phx_frm.price_reviews`, `phx_frm.price_changes` and
+  `phx_frm.attention_visits`; with `phx_frm.defaults`, `phx_frm.estates_open` (all estates, until estates carry their
+  origin), `phx_frm.estates_settled`, `phx_frm.estates_waiting`, `phx_frm.estates_unsold`,
+  `phx_ledger.unlisted_sweeps` (the sweeps for the members of sides that keep no holder list) and
+  `phx_pop.bytes_per_firm_cell`, each the heaviest day's. Handlers' reads at visits are checked against their
+  declarations on a run that traces reads, as the day's other handlers are. LC-1-06, LC-1-07 (with, per day, prices
+  moved only on days a firm was reviewed), LC-1-08 and LC-1-45 are registered.
 - **Outlooks in the day** (S1.01): the firms' stances are the first parties' methods and their attention the first
   review intensities, so the public-series outlooks at 5a (VAL.23), once per method in use and series published, the
   attention exposure at visits (REP.21, REP.38) and the wake of a surprise beyond its sensitivity (REP.35, architecture
@@ -6114,9 +6130,9 @@ kink days, dues and wear.
 - `close_compares_continuing_and_winding_down`.
 
 **Live checks**
-- `LC-1-06`: FRM.17 and FRM.18 families clean.
+- `LC-1-06`: the FRM.17 family clean (FRM.18's joins at S2.02).
 - `LC-1-07`: every posted price is a point of its trade's table (REP.34), and prices change only on review or wake
-  days.
+  days: on no day do prices move with no firm reviewed.
 - `LC-1-08`: SRV.7 and FRM.19 reads — the frequency and size of price changes, and the markups, are reported per
   trade.
 - `LC-1-45`: firms end every year in every industry that has firms, by closure and by default of payment, each with an
@@ -6128,8 +6144,10 @@ kink days, dues and wear.
   evaluations"; realisations are "Physical flows realised".
 - Estates: about 5 000 firm endings a day at the opening's size, grouped by (part, occasion) into about 800 estates,
   each an individual for weeks; counter `phx_frm.estates_open`, ratcheted, against architecture §9.1's estimate.
-- Counters, ratcheted: `phx_frm.price_reviews`, `phx_frm.price_changes`, `phx_frm.foundings`, `phx_frm.closures`,
-  `phx_frm.defaults`, `phx_pop.bytes_per_firm_cell`.
+- Counters, ratcheted: `phx_frm.price_reviews`, `phx_frm.price_changes`, `phx_frm.attention_visits`,
+  `phx_frm.defaults`, `phx_frm.estates_settled`, `phx_frm.estates_waiting`, `phx_frm.estates_unsold`,
+  `phx_ledger.unlisted_sweeps`, `phx_pop.bytes_per_firm_cell`; `phx_frm.foundings` joins at S1.12 and
+  `phx_frm.closures` at S1.05, with the decisions they count.
 - Memory: the firms' record joins the build run's budget (`phx-cli`'s `FIRMS_BYTES`, architecture §13.1's 125 MB),
   as the small firms' positions and the large firms' facts are built here.
 
@@ -6160,6 +6178,8 @@ kink days, dues and wear.
 - DECISION: CAP.3, CAP.4; FRM.8 *(completes it, with S1.03's part)*; FRM.4, FRM.6, FRM.11 *(from S1.03: production
   reads the capacity its plant gives, the way the ways its plant supports, and entering a line the plant it invests
   in; each waits, as the firm's other rules do, for the inputs, labour and prices later steps bring)*.
+- INVARIANT: TEC.9 *(completes it, from S1.02 and S1.03: S1.02's family checks every production's way against what
+  its producer knows, as firms first produce here)*.
 - MEASURE: CAP.10 *(its reads published through STA from S1.14)*.
 - PROCESS: CAP.5, CAP.6; REP.24 *(part: plant's wear and repair between condition classes)*.
 - INVARIANT: CAP.8, CAP.9.
@@ -6325,7 +6345,8 @@ catastrophes at named places.
 
 **Budget**: commodity auctions are a few thousand a business day; posted list prices between firms are inside the
 meetings line; spoilage is in "Physical flows realised". Counters, ratcheted: `phx_gds.auctions`,
-`phx_gds.extraction_orders`.
+`phx_gds.extraction_orders`, and `phx_frm.closures` (S1.03), the owners' closures of solvent firms, which read the
+stock's and plant's values from here.
 
 **Guards**: none new.
 
@@ -6969,6 +6990,8 @@ occasions. Counters, ratcheted: `phx_tax.returns_filed`, `phx_soc.claims`, `phx_
 - PROCESS: HH.13 *(part: debt service on its dates and arrears; default's consequences come with S2.01, S2.05 and
   S2.10, and HH.13 completes at S2.11)*; FRM.16 *(part, from S1.03: households found firms on their founding
   occasions, with LC-1-09; firms and funds found them from S3.07)*.
+- FORBID: FRM.21 *(completes it, from S1.03: firms are born only by named founders with named money, so no birth rate
+  and no constant population of firms; S1.03's firms already run out of cash and end)*.
 - MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(completes them: LC-1-01, LC-1-03, LC-1-43 and LC-1-44 measure the
   world's outlooks once households and firms decide from them)*.
 - INVARIANT: HH.15.
@@ -7095,7 +7118,8 @@ and standing-flow dues.
 **Budget**: architecture §13.2's visits, occasion evaluations and standing flows; the memoised buffer solutions, keyed
 on exact inputs, their entries, hit rate and solve time measured (`phx_hh.buffer_memo_entries`,
 `phx_hh.buffer_memo_hits`, `phx_hh.buffer_solves`). Counters, ratcheted: `phx_pop.bytes_per_household_cell` (at
-512), `phx_hh.going_without`, `phx_hh.bill_orders`, `phx_pop.keys_per_stance`, `phx_pop.parts_by_cause`.
+512), `phx_hh.going_without`, `phx_hh.bill_orders`, `phx_pop.keys_per_stance`, `phx_pop.parts_by_cause`, and
+`phx_frm.foundings` (S1.03), the firms households found.
 
 **Guards**: none new.
 
@@ -7256,6 +7280,10 @@ life table is published on its calendar, each rate traceable to the sampled even
 
 **Clauses**: GEN.2 *(part)*, GEN.3 *(part)*, GEN.4 *(part)*, GEN.5 *(part)* and GEN.13 *(part: day zero for Stage 1's
 decisions)*: every Stage 1 system's opening contribution.
+- STATE: FRM.1, FRM.2 *(complete them, from S1.03: every firm holds its latest filed accounts' state)*.
+- DECISION: FRM.5, REP.38 *(complete them, from S1.03: firms review and post prices, at the attention they set, from
+  the state drawn here)*.
+- PROCESS: REP.21 *(completes it, from S1.03: the reviews run at the attention rate and their hours are counted)*.
 
 **Architecture**: §10.
 
@@ -7715,7 +7743,8 @@ Loans can be sold to other banks at a negotiated price.
 - MEASURE: TCR.6.
 - FORBID: TCR.7.
 - PRIMITIVE: TCR.8.
-- FRM.18's family, completed at S1.03, now reads real invoices.
+- INVARIANT: FRM.18 *(completes it, from S1.03: the family of receivables and payables sums the invoices trade credit
+  writes)*.
 
 **Architecture**: §3.1 (decision-point homes), §4.4 (commitments drawn by matches, line transfers), §4.5 (accruing
 rows), §6.1 (2d, 5b, 5c, 6d, 7), §6.5, §13.1.
@@ -16287,8 +16316,8 @@ the final build within the budget on the phone.
 | F-045 | S0.25d | build, 2026-09-25 | No defined-benefit pension is in payment at the opening, though the occupational pensions' share of the over-65s' income is in hand (`PEN.occupational_income_share`) | the opening schemes need the share of pensioners a scheme pays, the schemes' number and sponsors, and the part of the pension funds' assets that backs defined benefits, and none has a source here: drawn without them they would be invented (GEN.11) | sources for defined-benefit coverage among pensioners and for the schemes' assets, then `sys-pen`'s opening schemes and pensions in payment, on per-point lines like the state pension's; an owner item for the Stage 0 gate | open for the owner: sources |
 | F-046 | S0.25d | build, 2026-09-25 | Persons reaching the state pension age during the run do not join the state pension line: only the opening's pensioners are paid, so the pensions in payment dwindle as they die | a person's joining is a once-only change that the cells' hazards cannot keep once-only: a person's age is a profile value that does not change when it joins, so a hazard over it would hit, and draw coverage for, the same person again; the person's claim is the state that records it, and that is SOC.3's claim decision (S1.11) | the claim at the pension age (S1.11's `sys-soc`), which gives the person the state its hazard reads, with members joining a line at 3e, the ledger's counterpart to `members_leave` | open for S1.11 |
 | F-047 | S0.25d | build, 2026-09-25 | The opening's large firms outgrew their arenas (`region elements`, 4 M and then 16 M words for a chunk of 4 096): every firm is party to every employment and tenancy line of its country, one per wage or rent point, and at 5% points a country has some 190 of each; the rows of individuals then far exceed the architecture's 2 M | the counterparty side of a line of many holders is apportioned over every eligible firm by its size, so a large firm takes a row on every point; and the arenas were never compacted | points a quarter apart (`LAB.wage_point_ratio`, `HSG.rent_point_ratio`, placeholders) and compaction at quiet moments; the points and the rows they cost measured on the phone (S0.26) and refined by the budget (N8.5); landlords drawn from the dwelling stock (F-043) and wage offers by firm (LAB) will set each firm's points | open |
-| F-048 | S0.25d | build, 2026-09-25 | The firms' ranks are not read: the kernel ranks a kind by a position, and a small firm's headcount is in its key (FRM.23) while its positions (cash, debt, inventory, output) arrive with S1.03; the large firms are rows of the kernel's firm kind table, not individuals of the small firms' table, so no rank read spans both | a rank measure read from the key, and the large firms as individuals of the firms' cell table, are neither built | the firms' positions and a rank read over the large firms and the small firms together (S1.03), LC-0-48 on firms with it; at the opening every firm above the rank's edge is a large firm by construction | open for S1.03 |
-| F-049 | S0.25d | build, 2026-09-25 | The small firms hold no plant: the country's capital is apportioned over every firm by its employees, and the small firms' share is held by no one, so the opening's capital falls short of the steady path's by that share | a cell's holding of a physical class at the opening (a pooled holding counting its firms) is not drawn, and FRM.23's plant units are a key attribute that waits for S1.03 | the small firms' plant as their cells' pooled holdings, keyed by plant units (S1.03) | open for S1.03 |
+| F-048 | S0.25d | build, 2026-09-25 | The firms' ranks are not read: the kernel ranks a kind by a position, and a small firm's headcount is in its key (FRM.23) while its positions (cash, debt, inventory, output) arrive with S1.03; the large firms are rows of the kernel's firm kind table, not individuals of the small firms' table, so no rank read spans both | a rank measure read from the key, and the large firms as individuals of the firms' cell table, are neither built | a rank read over the large firms and the small firms together, LC-0-48 on firms with it, once labour moves a firm's size (S1.08: FRM.14's batch cost and REP.15's size rank); S1.03 gave the small firms their positions, none of which yet moves; at the opening every firm above the rank's edge is a large firm by construction | open for S1.08 |
+| F-049 | S0.25d | build, 2026-09-25 | The small firms hold no plant: the country's capital is apportioned over every firm by its employees, and the small firms' share is held by no one, so the opening's capital falls short of the steady path's by that share | a cell's holding of a physical class at the opening (a pooled holding counting its firms) is not drawn, and FRM.23's plant units are a key attribute that waits for S1.03 | the small firms' plant as their agents' holdings, keyed by plant units, with the plant's kinds and purchases (S1.04) | open for S1.04 |
 | F-050 | S0.25e | build, 2026-09-25 | No estate passes anything to an heir: every remainder goes to the country's treasury, and an estate settles on the next business day by one kernel rule (pay, write off, pass on), where the architecture's estates live about 25 days and sell what their debts need. What an estate leaves goes to the party of the kind `HEIRLESS_DESTINATION` names, `"treasury"`, a kind name in engine code (`phx-world`'s `consts.rs`, read by `estates.rs`), where POP.16 makes inheritance law a POLICY | kinship lines are not drawn at the opening (REP.23); there is no `sys-est` crate — estates are the ledger's `phx_ledger::estate`, run by `phx-world/src/estates.rs` — and no system's handler writes instructions yet, so no decision says what to sell, when or to whom; no per-country inheritance law names the destination | the kinship lines drawn with the households and heirs taken from their counts by the inheritance law (POP.9), and `sys-est`'s own handlers for sales and timing, when systems' handlers write instructions (Stage 1); in the same step, a per-country POLICY primitive naming the heirless destination retires `HEIRLESS_DESTINATION` | open for S1.13 |
 | F-051 | S0.25e | build, 2026-09-25 | Households that bank nowhere hold no money at all: their rents fail from the first due, and the wages and pensions paid them fail too, each as `NoMoney`, so they fall into arrears from the opening. The build run b1a62f6 onward stopped on it (REP.23, the unbanked tenant taken for its own top issuer). As built, a claimant with no money on a cleared line records its due as a failed due against the top issuer, the central bank, which owes it (a payable) while the payer's money has reached it (architecture §6.5, "A party with no money"); the claimant's receivable stands until it can be paid | jobs, tenancies and pensions are drawn for every household, banked or not, as they are in the countries the data describes, while banknotes are no one's holding until the households' liquidity choice (HH.7) | the households' banknotes, at the opening and by the liquidity choice, with dues and wages paid in cash where a party holds no account (S1.09's banknotes, S1.12's HH.7) | open for S1.09 |
 | F-052 | S0.26c | build, 2026-09-25 | A tracer never dies, ages or falls ill with its cell's members: a death or a disability onset reaches a count of a cell's members drawn at 3e, and a tracer among them is not drawn, so a tracer outlives its cell's deaths and keeps its opening values of the groups a person's event changes | the cells' per-member outcomes draw counts, not members, and the observer sees only the splits the day logs, not which members an outcome took | the day's per-member outcomes logged for traced cells as splits are (the members an outcome reached, by the values of their groups), each tracer following them with the observer's draws as it follows a split, and ending with its death | retired with tracers inside cells; every person is an agent's own, which S0.28 deleted (owner, §12, 2026-09-25) |
@@ -16313,7 +16342,7 @@ the final build within the budget on the phone.
 | F-071 | S1.01 | build, 2026-09-25 | The outlook methods' spreads across parties are assumed (`data/shared/VAL.toml`): the adaptive gain's beta(2, 2) around the experiments' 0.65 and the surveys' slower gains, the switching intensity's gamma(2, 0.2) around the experiments' 0.4, and a surprise waking beyond two widths; the trend's, the anchor's, the experience exponent's and the performance memory's values are single estimates from experiments and one survey study | no source of their dispersion across a population is in the register | estimates from household expectation panels (the Michigan survey, the New York Fed's Survey of Consumer Expectations) before S1.12 decides from outlooks | open for S1.12 |
 | F-072 | S1.01 | build, 2026-09-25 | The benchmark ranges of N3's and N4's definitions (`data/measure/`) were written from the cited works as the builder recalled them, with no table or page checked; a range or a figure may not match its source | none: a transcription risk in the definitions | a reviewer checks each benchmark against its source before the first read that uses it; a mismatch is a new version citing `Measure-Change: defect` (PC-90) | open for S1.01 |
 | F-073 | S0.28 | trial, 2026-09-25 | `phx_ledger.run_heads_read` on the heaviest of ten days: 991 630 under twins at 170 (946 591 agents standing for 160.9 M parties and 300 M persons) and 946 900 in a small world at 170, against its ratchet of 274 774 set on the cell world: each agent is a holder whose run head is read on a day its lines fall due | the settlement stream reads every holder's run head on the days its lines are due | the ratchet stated anew with the factor the budget sets (R6), and settlement's per-payment path (F-020, F-057) in R5 | closed: the seven stage-7 ratchets restated on the twins build run at 170 (20afd3e4), the higher of the two representations on each; the per-payment path stays with F-020 and F-057 |
-| F-074 | S0.28 | build, 2026-09-25 | Whole units: every count on a line agents hold is a whole multiple of their multiplicity but the player's (one) and its donor's (the factor less one). A count to leave that no holder's unit fits stops the run (REP.31), and a cleared line's losers may pass the failed count by less than one multiplicity, the top issuer keeping the difference | the player's seat breaks the lines' common unit. Measured on 092c0edb (twins at 170): 4 808 members drawn past the failed over 120 days, of 56.8 M lost; more than the player and its donor can give, since an estate, a large firm and the player each gave a unit of one on lines whose other claimants give 170, and a draw of 170 can pass what one would have filled | estates carry their agent's multiplicity (0477f7c3); contracts leave like with like and the player's counterparts each seat a twin (the owner's decision, §12; 04151a2a, 90f1b158); the overshoot is REP.23's, held by the issuer the line settles through and owed as failed dues; `settlement.lost_past_failed` stays measured in the build runs under both representations; from S1.03 a large firm's estate leaves its lines against the households' agents, and the members no agent's unit fits pass by line transfer to the other holders of its side instead of stopping the run | open, watched in each gate run |
+| F-074 | S0.28 | build, 2026-09-25 | Whole units: every count on a line agents hold is a whole multiple of their multiplicity but the player's (one) and its donor's (the factor less one). A count to leave that no holder's unit fits stops the run (REP.31), and a cleared line's losers may pass the failed count by less than one multiplicity, the top issuer keeping the difference | the player's seat breaks the lines' common unit. Measured on 092c0edb (twins at 170): 4 808 members drawn past the failed over 120 days, of 56.8 M lost; more than the player and its donor can give, since an estate, a large firm and the player each gave a unit of one on lines whose other claimants give 170, and a draw of 170 can pass what one would have filled | estates carry their agent's multiplicity (0477f7c3); contracts leave like with like and the player's counterparts each seat a twin (the owner's decision, §12; 04151a2a, 90f1b158); the overshoot is REP.23's, held by the issuer the line settles through and owed as failed dues; `settlement.lost_past_failed` stays measured in the build runs under both representations; from S1.03 a large firm's estate leaves its lines against the households' agents, and the members no agent's unit fits pass to the other holders of its side instead of stopping the run, without arrears: a representation's remainder, not a debt anyone failed, which the owner may rule otherwise | open, watched in each gate run |
 | F-075 | S0.28 | trial, 2026-09-25 | Twins at the data's factor of 20 open past the banks' opening (quadratic until 6954e3bf) and stop after 240 s at the address space the world reserves: 68 733 272 064 bytes needed of 68 719 476 736 declared, eight and a half times the agents of the factor of 170 | the factor of 20 holds about 6.5 M household agents, beyond what the reservation, and the 4.5 GB budget, were sized for | the factor set by the measured budget (R6), which is not 20 | closed: the factor is 170 (owner, §12, 2026-09-25), at which twins reserve 4.6 GB and peak at 2.6 GiB on the build machine |
 | F-076 | S0.28 | build run, 2026-09-25 | Under twins at 170 (bd2341a1), LC-0-28 fails on one day of 120 (day 27878): one payer failed though it could pay given the payments that settled; the small world at 170 has none. Twins also fail more payments over the run: 717 459 of 11.3 M against 418 050 of 10.2 M | two faults. The fixed point took a failed payment off its payer's record in the other column: a debit taken away was booked as a credit, so the debits kept the failed payments' draws, and at the payer's next visit what it paid for others (its debits less its own standing payments) held them, and it failed payments it could pay (d0bf4b15). Then, on day 27878, a large firm failed its third payment for funds, and its bank (party 14), short by 596 bn, had every customer's payment through it removed, the firm's first two included; the removal counted as the bank's only the payments still standing, so the verifier held the firm to its third, which now looked affordable though it passed through the same bank | a payment taken away leaves the column it was booked in; a bank's removal is the bank's for every payment through it, even one its payer had failed (S0.28 R6) | fixed |
 | F-077 | S0.28 | build run, 2026-09-25 | On 20afd3e4 twins at 170 fail 717 459 payments of 11.3 M over 120 days, 494 520 of them for funds; the small world at 170 fails 418 050 of 10.2 M, 178 084 for funds. The no-money failures agree (137 736 and 137 684). Under twins a bank (party 14) fell 596 bn short on day 27878 and had every customer's payment through it removed | the banks' opening gave each bank its apportioned count of large firms as consecutive slices of the firms' list, which `sys-frm` draws largest first, so each country's largest bank (1, 14, 26) held its largest employers. With no sales (S1.03) and no intraday credit (S1.10) payroll drains an employer's bank monthly; under twins, whose 45 000 large firms reach far further into the size law's tail than the small world's 263, those banks lost 280 to 590 times the small world's net each payday (170 at the opening) and on the fourth (day 27878) three were short and had their customers' payments removed | which bank a large firm keeps drawn: the firms taken in an order drawn from the opening's lots, then apportioned by the banks' weights as before (S0.28 R6). On 092c0edb twins fail 443 378 payments, 206 777 for funds (small world before the change: 418 050 and 178 084), and no bank is short | fixed |
@@ -16333,8 +16362,13 @@ the final build within the budget on the phone.
 | F-091 | S1.02 | data, 2026-09-26 | The input-output tables report extraction as one product (CPA B), so metal ore, coal, oil and gas and building stone share its structure per dollar, each taken by the users of its resource (basic metals ore; refining and chemicals oil and gas; electricity coal; minerals and construction stone; any other user oil and gas): the hours and plant a tonne needs differ by resource only through its price | the tables' 64 products do not split mining | a supply-use table with the mining divisions (B05-B09), or the United States' detailed benchmark tables | open |
 | F-092 | S1.02 | data, 2026-09-26 | The FIGARO tables report seven economies of the emerging group and one of the developing group (India), fewer than the ten a group's measure needs, so those groups' ways are `estimated` from them | FIGARO covers the EU and eighteen other economies | the OECD's inter-country tables (76 economies) when their files can be fetched, or national tables of the group's economies | open |
 | F-093 | S1.03 | data, 2026-09-26 | The OECD's business statistics leave out agriculture, so its firms are taken as spread over the size classes as all firms are (`FRM.industry_by_size`): about a tenth of the developed group's largest firms are farms, where the business registers show far fewer; and the size tilt of every industry is the OECD's 46 reporting economies', all but eight developed, for the emerging and developing groups too | the OECD's structural statistics cover industry and services; agricultural censuses count holdings by area, not by persons employed | Eurostat's farm structure survey by labour force size class, or the agricultural censuses' holdings by workers (FAO World Programme for the Census of Agriculture); the World Bank Enterprise Surveys by size for the other groups | open |
-| F-094 | S1.03 | data, 2026-09-26 | The firms' management values — the production schedule, the markup's two speeds, the pressure's curvature, the staff hours of a review and of a price change — are one assumed type for every firm (`data/shared/FRM.toml`); only the stock cover (the United States' inventory-to-sales ratio) and the adjustment time (Blinder and Maccini's survey) are measured | no source gives the distribution of these across firms; the review and menu costs are case studies of one manufacturer and of supermarkets | management type sets drawn at the opening (S1.15) from the price-change frequency and size reads (FRM.19, SRV.7) once they can be compared with the micro price data (Nakamura and Steinsson 2008) | open |
+| F-094 | S1.03 | data, 2026-09-26 | The firms' management values — the production schedule, the markup's two speeds, the pressure's curvature, the staff hours of a review and of a price change — are one assumed type for every firm (`data/shared/FRM.toml`); only the stock cover (the United States' inventory-to-sales ratio) and the adjustment time (Blinder and Maccini's survey) are measured | no source gives the distribution of these across firms; the review and menu costs are case studies of one manufacturer and of supermarkets | management type sets drawn at the opening (S1.15) from the price-change frequency and size reads (FRM.19, SRV.7) once they can be compared with the micro price data (Nakamura and Steinsson 2008); the stock cover then each firm's own, since one economy's aggregate ratio is an outcome of its firms, not a preference any one holds (Law 2); and each trade's own point table (POLICY of each trade), where one table now serves every trade | open |
 | F-095 | S1.03 | build, 2026-09-26 | Firms default from the first grace's end: on the build machine's 120-day run, 5 430 on 21 April 2026 alone (`phx_frm.defaults`, the day's most), and 50 to 160 on other business days; their estates settle in 7c at about 0.35 ms each (1.95 s for the 5 435 of 22 April, 30–110 ms on other days, four workers), mostly the ledger's own instructions for the members that leave and pass | no firm earns before it produces and sells (F-016), so every firm whose loan falls due fails; each leaving is its own instruction | the firms' opening state and sales (S1.15, S1.05), after which defaults are the world's; the estates' leavings batched into one instruction per line if the gate's day misses the budget | open |
+| F-096 | S1.03 | review, 2026-09-26 | An estate's creditors rank as one class, paid pro rata from its money, and a residue left when it holds nothing more goes to the treasury | the owners' claims (S3.05) and the insolvency law's order of classes (FRM.15's restructuring and ranks, S2.03) are not built, so no one else can receive it and no class stands ahead | the law's order and the owners' residual claim (S2.03, S3.05) | open for S2.03 |
+| F-097 | S1.03 | review, 2026-09-26 | An estate waiting to sell units has no liquidation stay: its contracts keep falling due and failing against it while it waits | the insolvency law's stay on an estate's dues, and its liquidation horizon, are not built; nothing sells its units before S1.04 and S1.05 | the stay and horizon of FRM.15's law (S2.03), with the estates' sales (S1.04, S1.05) | open for S2.03 |
+| F-098 | S1.03 | review, 2026-09-26 | Visits run serially: each handler's rows due at 5b and 5c are visited on one thread, table by table | the kernel's visits were built without sharding (as F-056 once was for 3b and 3e), and at S1.03 only the attention's visits run, at 124 891 on the busiest day | shard the visits over the pool by slot range when the firms' reviews run (S1.15) if the day misses its budget there | open for S1.15 |
+| F-099 | S1.03 | review, 2026-09-26 | A handler's read or write at a visit finds its column by the fact's name, a linear search of the kind's columns on every read | the fact store's interface is by name, as the handlers declare | resolve each handler's declared facts to columns once, when the visit is bound, if the visits' cost is read as material (S1.15) | open for S1.15 |
+| F-100 | S1.03 | build, 2026-09-26 | The build run's memory budget gained the firms' line (`FIRMS_BYTES`, architecture §13.1's 125 MB) when its peak rose past the sum of the others; the rise is not measured part by part, so the line is taken from the architecture, not read | the run reports only the process's peak, not each table's resident bytes | the build run reports each part's resident bytes (tables, arenas, agenda, lines) and each budget line is checked against its own part, when plant joins the firms' record (S1.04) | open for S1.04 |
 
 ---
 
@@ -16451,11 +16485,11 @@ and are not mapped.
 | GEO | S2.05 | 5 |
 | GEO | S5.02 | 4 |
 | REP | S0.28 | 1, 2, 3, 7, 9, 12, 13, 14, 16, 17, 23, 25, 26, 31, 40, 41 |
-| REP | S1.03 | 21, 38 |
 | REP | S1.05 | 35 |
 | REP | S1.08 | 15 |
 | REP | S1.09 | 34 |
 | REP | S1.12 | 5, 20 |
+| REP | S1.15 | 21, 38 |
 | REP | S2.05 | 22, 24 |
 | REP | S6.05 | 18 |
 | GEN | S1.01 | 11 |
@@ -16497,13 +16531,17 @@ and are not mapped.
 | HH | S6.02 | 9 |
 | HH | S6.03 | 7, 16, 17 |
 | TEC | S1.02 | 2, 3, 12 |
-| TEC | S1.03 | 4, 9 |
+| TEC | S1.03 | 4 |
+| TEC | S1.04 | 9 |
 | TEC | S1.05 | 1 |
 | TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14, 15 |
-| FRM | S1.03 | 1, 2, 5, 17, 18, 20, 21, 22 |
+| FRM | S1.03 | 17, 20, 22 |
 | FRM | S1.04 | 4, 6, 8, 11 |
 | FRM | S1.05 | 13 |
 | FRM | S1.08 | 7, 14 |
+| FRM | S1.12 | 21 |
+| FRM | S1.15 | 1, 2, 5 |
+| FRM | S2.02 | 18 |
 | FRM | S2.03 | 15, 19 |
 | FRM | S3.05 | 3, 9, 10 |
 | FRM | S3.07 | 16 |

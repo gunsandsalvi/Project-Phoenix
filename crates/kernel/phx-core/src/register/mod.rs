@@ -475,6 +475,26 @@ impl Register {
         }
     }
 
+    /// A per-country count by its identifier, each country's value in turn, as a law's grace names its days.
+    ///
+    /// # Errors
+    /// When no primitive has the identifier, or it is not a count held per country.
+    pub fn counts_per_country(&self, id: &str) -> Result<Vec<u64>, String> {
+        let Some(i) = self.decls.iter().position(|d| d.id == id) else {
+            return Err(format!("no primitive `{id}` is declared"));
+        };
+        let Some(Stored::PerCountry(values)) = self.stored.get(i) else {
+            return Err(format!("`{id}` is not a count held per country"));
+        };
+        values
+            .iter()
+            .map(|v| match v {
+                PrimValue::Count(c) => Ok(c.get()),
+                _ => Err(format!("`{id}` is not a count held per country")),
+            })
+            .collect()
+    }
+
     /// The standing SHAPEs and their reasons.
     #[clause("NUM.7")]
     #[must_use]

@@ -828,13 +828,17 @@ its own. Catastrophes are drawn at 3a (§7.8).
 the wakes it answers, and its **cadence**: a continuous decision's schedule (TIME.5), each row at its own phase within
 the period, drawn once and kept beside its booking; or a lumpy decision's reviews (REP.21) at the daily chance the row's
 attention position holds (REP.38), none while it holds none. The assembly refuses a visit whose handler is not its
-system's, runs on another table or outside 5b and 5c, or whose attention the kind does not hold. The visits keep an
+system's, runs on another table or outside 5b and 5c, or whose attention the kind does not hold, and, until wakes
+reach visits with the markets that print surprises (plan S1.05), one that names a wake. The visits keep an
 agenda of their own beside the processes' (`Population::visits`), one table per visited kind, a reason per visit, saved
 with the population. Every row is booked once the opening is done; the rows due are gathered on the day's first decision
 sub-step, each visit's handler runs on its rows due in runs of consecutive slots over its kind's table — an agent
 table's positions (REP.20, declared on the kind with `PopKindBuilder::position`) or a kind table's facts — and each row is
-booked again after it: its schedule's next instance, or a review drawn afresh at the attention its decision left it. A
-handler's reads and writes on its rows are checked against its declaration and counted into the day's read trace. A row
+booked again after it: its schedule's next instance, or a review drawn afresh at the attention its decision left it.
+A review's row whose attention another visit's handler moves is booked afresh at the new attention the same day, so a
+review is never drawn at an attention the row no longer holds. On a run that traces reads, a handler's reads and writes
+on its rows are checked against its declaration and counted into the day's read trace. What each day's visits did —
+the rows each handler visited and the facts they moved to a new value — is kept as the day's `VisitDay`. A row
 that ends leaves its bookings to lapse: a due row no party holds is passed over.
 
 ### 7.4 Outcomes and endings
@@ -848,14 +852,16 @@ Then:
   `members_leave` per row. A holder drawn gives its whole **unit** — an agent's multiplicity, one for an
   individual — and a draw is made only among the holders whose unit fits in what is left, so an agent's twins stay
   alike. What no unit fits (an individual's count need not be a multiple of the agents' units) passes instead, by
-  line transfers, to other holders of the leaving party's own side drawn the same way, as a buyer of the contracts
-  would take them; if none fits there either, the run stops (REP.31). An agent drawn loses, from its persons, a
+  moving members, to other holders of the leaving party's own side drawn the same way, as a buyer of the contracts
+  would take them, with no arrears carried, since no one failed them (the plan's F-074); if none fits there either,
+  the run stops (REP.31). An agent drawn loses, from its persons, a
   twin's share of the members that left, drawn among its attachments on that side of the line
   (`World::detach`), so its persons still hold what its rows count. A side's members by holder are read once
   (a `Tally`, from the holder list's keys straight to their rows, in fixed shards on the pool) and kept, moved by
   each leaving and passing, while no other change reaches the side. A side that keeps no holder list is read once a
   day, by `Books::read_unlisted` in one pass over the tables of the kinds that may hold it, before the estates that
-  leave against it, and let go after (`forget_unlisted`); the households' sides of employment and tenancy keep
+  leave against it; every side's tally is let go once its pass is done (`forget_tallies`), so none outlives the
+  changes the next pass brings; the households' sides of employment and tenancy keep
   lists, since a firm's end reaches them (§4.5);
 - the household's persons and attributes are written back in place; the head's place, if emptied, is taken as the
   outcome says;
@@ -1034,15 +1040,18 @@ about 25 days, personal insolvencies' about 70 a day × about 45 days — about 
 
 As built at Stage 0 (plan S0.25e) there is no `sys-est`: estates are the ledger's `phx_ledger::estate` run by the
 world's `estates` (`phx-world/src/estates.rs`). An ended household's rows pass to one estate at 3e; from the next
-business day, in 7c's block once the day's dues are paid, the ledger settles it (`Books::settle_estate`) — its money
-pays its debts through the waterfall, what it owes beyond is written off, what is left is paid to the party of the kind
-`HEIRLESS_DESTINATION` names (the treasury) in its country, since no heir is drawn before the kinship lines exist (the
-plan's F-050) — and its rows leave with their counterparts and it ends; one whose payment fails waits, counted. Dues it
+business day, in 7c's block once the day's dues are paid, the ledger settles it (`Books::settle_estate`): its rows that
+hold nothing but money leave with their counterparts first; its money pays its debts through the waterfall, its
+creditors as one class (the plan's F-096); and while it still holds units it waits to sell them, counted, writing
+nothing off and distributing nothing. One that holds none writes off what it owes beyond, pays what is left to the
+party of the kind `HEIRLESS_DESTINATION` names (the treasury) in its country, since no heir is drawn before the kinship
+lines exist (the plan's F-050), and its rows leave with their counterparts and it ends; one whose payment fails waits,
+counted. Dues it
 owes in arrears are not claims in its waterfall (F-066). A catastrophe's struck tiles lose, at 3b, their share of every
 physical unit the individuals sited there hold, as a transformation naming the event (GEO.8).
 
 Firms end in **default of payment** from S1.03 (FRM.15): a kind is put under its country's insolvency law by an
-`InsolvencyDecl` naming the grace (`FRM.insolvency_grace_days`). The contract process's fails that leave a party of
+`InsolvencyDecl` naming the grace (`FRM.insolvency_grace_days`, each country's own). The contract process's fails that leave a party of
 such a kind in arrears queue the day its grace ends (`World::defaults`, rebuilt from the arrears when a save loads);
 at 2e a party whose contract is still in arrears at that day ends: a large firm into an estate that takes every row
 by line transfers and every holding (`pass_holdings`), a small firm's agent as a household's does (`end_agent`). Its

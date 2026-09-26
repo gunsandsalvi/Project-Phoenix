@@ -117,9 +117,6 @@ pub trait AccountsAudit: core::fmt::Debug + Sync {
     /// The day's income posted from dues and earnings, summed over every party: each revenue against another's
     /// outlay, so nothing where every one has its payer.
     fn income(&self) -> i128;
-    /// Each party's receivables and payables against the sum of the claims recognised to it: the parties checked,
-    /// and each gap.
-    fn invoices(&self) -> (u64, Vec<Gap>);
 }
 
 /// The population's agents as the audit reads them: each agent's multiplicity against its contracts, and each

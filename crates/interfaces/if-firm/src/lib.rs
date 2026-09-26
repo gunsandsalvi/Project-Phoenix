@@ -16,6 +16,7 @@ pub const ITEMS: &[ItemDecl] = &[
     <facts::ExpectedSales as FactDef>::ITEM,
     <facts::SalesWidth as FactDef>::ITEM,
     <facts::SalesSince as FactDef>::ITEM,
+    <facts::LastReview as FactDef>::ITEM,
     <facts::UnitCost as FactDef>::ITEM,
     <facts::Markup as FactDef>::ITEM,
     <facts::Price as FactDef>::ITEM,

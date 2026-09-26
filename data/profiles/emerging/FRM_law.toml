@@ -1,0 +1,10 @@
+# The emerging group's insolvency law (spec FRM.15).
+
+[[primitive]]
+id = "FRM.insolvency_grace_days"
+kind = "POLICY"
+owner = "FRM"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "Days a firm may leave a payment due unpaid before it is in default of payment: 21, the three weeks within which the managers of an illiquid company must file for insolvency under German law (Insolvenzordnung section 15a); each country's own law is assumed at it until the legal-origin data of the World Bank's resolving-insolvency indicators are mapped to it."
+value = 21

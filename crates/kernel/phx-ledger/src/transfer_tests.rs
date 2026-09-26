@@ -294,7 +294,8 @@ fn an_estate_pays_its_debts_passes_the_rest_and_ends() {
     let mut w = world();
     let m = MoveAt { at: ApplyAt::Day(SubStep::S7c), ..at(&w) };
     let mut d = crate::cleared::test_draws(w.loan);
-    let s = w.books.settle_estate(w.firms[0], w.firms[1], m, &mut d, &mut Quiet).expect("settles");
+    let s = w.books.settle_estate(w.firms[0], w.firms[1], m, &mut d, &mut Quiet);
+    assert!(s.fail.is_none() && s.ended && !s.unsold);
     assert_eq!((s.paid, s.written_off, s.passed), (100, 0, 9_900));
     assert_eq!(row(&w, w.firms[1], w.deposits, Side::Asset), (1, 19_900));
     assert_eq!(
@@ -314,8 +315,35 @@ fn an_estate_short_of_its_debts_writes_off_the_rest() {
     let legs = w.books.pay(w.firms[2], w.firms[1], 9_800, EUR);
     let _ = w.books.submit(w.reason, legs, m, &mut Quiet).expect("the payment settles");
     let mut d = crate::cleared::test_draws(w.loan);
-    let s = w.books.settle_estate(w.firms[2], w.firms[1], m, &mut d, &mut Quiet).expect("settles");
+    let s = w.books.settle_estate(w.firms[2], w.firms[1], m, &mut d, &mut Quiet);
+    assert!(s.fail.is_none() && s.ended);
     assert_eq!((s.paid, s.written_off, s.passed), (200, 100, 0));
     assert_eq!(row(&w, w.banks[0], w.loan, Side::Asset), (2, 300), "the bank's claims less the paid and the lost");
     assert_eq!(row(&w, w.firms[1], w.deposits, Side::Asset), (1, 19_800));
+}
+
+/// A firm holding plant settled as an estate with 200 against a loan of 300: it pays the 200, and while it holds the
+/// plant its creditor loses nothing yet, nothing passes on, and it waits to sell.
+#[test]
+fn an_estate_holding_units_waits_to_sell_them() {
+    let mut w = world();
+    let unit = UnitId::new(7);
+    let plant = w.books.ledger.instruments.issue(crate::instrument::NewInstrument {
+        family: crate::instrument::InstrumentFamily::RealAsset,
+        issuer: Missing::Absent,
+        unit,
+        ccy: EUR,
+        terms: crate::terms::TermsId::new(0),
+    });
+    let firm = w.firms[2];
+    w.books.open(w.reason, vec![crate::opening::hold(firm, plant, 5, unit, 500, 9)], 2, &mut GenReport::default());
+    let m = MoveAt { at: ApplyAt::Day(SubStep::S7c), ..at(&w) };
+    let legs = w.books.pay(firm, w.firms[1], 9_800, EUR);
+    let _ = w.books.submit(w.reason, legs, m, &mut Quiet).expect("the payment settles");
+    let mut d = crate::cleared::test_draws(w.loan);
+    let s = w.books.settle_estate(firm, w.firms[1], m, &mut d, &mut Quiet);
+    assert!(s.fail.is_none() && s.unsold && !s.ended);
+    assert_eq!((s.paid, s.written_off, s.passed), (200, 0, 0));
+    assert_eq!(row(&w, firm, w.loan, Side::Liability), (1, -100), "the rest still owed");
+    assert!(w.books.holds_units(firm));
 }

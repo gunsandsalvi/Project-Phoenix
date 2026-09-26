@@ -1,7 +1,7 @@
 //! FRM, firms: at the opening each country's largest firms, the individuals within the promotion rank, sized by
 //! Zipf's law over the country's employment, each in an industry drawn by its size; their plant; the debt and deposits
 //! they draw, which the banks' contracts carry; and the small firms below the rank, held as agents. In the day, their
-//! decisions on the agenda, their default under the insolvency law, and the families of their revenue and claims.
+//! decisions on the agenda, their default under the insolvency law, and the family of their revenue.
 
 mod consts;
 pub mod decide;
@@ -15,7 +15,7 @@ use phx_core::handler::HandlerDecl;
 use phx_core::register::values::Table2;
 use phx_core::{
     AttrDecl, Cadence, Declarations, FacetDecl, FactDef, HandlerTable, InsolvencyDecl, RunsOn, StreamDef, System,
-    VisitDecl, WakeKind, declare_kind, declare_prim, declare_stream,
+    VisitDecl, declare_kind, declare_prim, declare_stream,
 };
 use phx_num::{Count, Fixed};
 
@@ -86,7 +86,7 @@ declare_prim! {
     /// Days a firm may leave a payment due unpaid before it is in default of payment and liquidated: the insolvency
     /// law's grace.
     pub INSOLVENCY_GRACE_DAYS = "FRM.insolvency_grace_days" {
-        kind: Policy, decided_by: "parliament", value: Count, clause: "FRM.15", scope: Shared
+        kind: Policy, decided_by: "parliament", value: Count, clause: "FRM.15", scope: PerCountry
     }
 }
 
@@ -126,7 +126,6 @@ impl System for Frm {
         d.contribution(Box::new(Plant));
         declare_decisions(d);
         d.family(Box::new(families::Revenue));
-        d.family(Box::new(families::Invoices));
     }
 
     fn handlers(h: &mut HandlerTable) {
@@ -169,13 +168,6 @@ fn declare_decisions(d: &mut Declarations) {
         (decide::ReviewSmall::NAME, SMALL_FIRM.name, attention),
         (decide::ReviewLarge::NAME, FIRM.name, attention),
     ] {
-        d.visit(VisitDecl {
-            handler,
-            kind,
-            cadence,
-            stream: VisitStream::DECL.name,
-            wakes: &[WakeKind::Surprise],
-            clause: "REP.21",
-        });
+        d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes: &[], clause: "REP.21" });
     }
 }

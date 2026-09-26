@@ -64,7 +64,7 @@ pub struct Declarations {
     /// Each decision taken on the rows of a kind as they come due.
     pub visits: Vec<(&'static str, crate::visit::VisitDecl)>,
     /// Each kind's insolvency law: the grace after which a party in arrears defaults and ends into an estate.
-    pub insolvency: Vec<(&'static str, crate::visit::InsolvencyDecl)>,
+    pub insolvency: Vec<(&'static str, crate::insolvency::InsolvencyDecl)>,
     pub setup_values: Vec<(&'static str, SetupValue)>,
     /// Each system's state compiled from the register at assembly, which its handlers and its family read.
     pub compiled: Vec<(&'static str, Compile)>,
@@ -181,7 +181,7 @@ impl Declarations {
     }
 
     /// The insolvency law a kind's parties are under.
-    pub fn insolvency(&mut self, decl: crate::visit::InsolvencyDecl) {
+    pub fn insolvency(&mut self, decl: crate::insolvency::InsolvencyDecl) {
         self.insolvency.push((self.system, decl));
     }
 

@@ -86,6 +86,9 @@ pub(crate) fn bind(d: &Declarations, h: &HandlerTable, register: &Register) -> R
             }
             Some(_) => {}
         }
+        if !v.wakes.is_empty() {
+            errors.push(format!("`{}` answers wakes, which surprises bring once firms sell (S1.05)", v.handler));
+        }
         let mut schedule = None;
         if let Cadence::Schedule { days, runs_on } = v.cadence {
             match register.count(days).map(u16::try_from) {
@@ -344,8 +347,14 @@ impl World {
                 Some((_, n)) => *n += phx_rand::float::len_u64(slots.len()),
                 None => self.visit_today.visits.push((h.name, phx_rand::float::len_u64(slots.len()))),
             }
-            let trace = ColumnTrace { substep: step.ordinal(), handler: id.0, reads: h.reads, writes: h.writes };
-            let World { books, own, streams, register, bindings, rules, queue, visit_reads, .. } = self;
+            // Declared reads are checked only on a run that traces them, as the day's other handlers are.
+            let trace = self.read_trace.then_some(ColumnTrace {
+                substep: step.ordinal(),
+                handler: id.0,
+                reads: h.reads,
+                writes: h.writes,
+            });
+            let World { books, own, streams, register, bindings, rules, queue, .. } = self;
             let Some((_, own)) = own.iter().find(|(system, _)| *system == h.system) else {
                 violation!(clause = "TIME.6", "a handler whose system compiled no state", handler = id.0);
             };
@@ -354,12 +363,12 @@ impl World {
                 let mut intents = Intents::default();
                 let store: &mut dyn FactStore = if b.individuals {
                     let t = books.parties.table_mut(b.table.get());
-                    t.trace(Some(trace));
+                    t.trace(trace);
                     t
                 } else {
                     let k = agent_kind(b.table, first);
                     let t = Population::table_mut::<SystemBacking>(books.parties.cells_mut().0, k);
-                    t.trace(Some(trace));
+                    t.trace(trace);
                     t
                 };
                 run(
@@ -380,28 +389,55 @@ impl World {
                 );
                 pending.push((step, intents));
             }
-            let (undeclared, moved) = if b.individuals {
-                let t = books.parties.table_mut(b.table.get());
-                t.trace(None);
-                (t.take_undeclared(), t.take_moved())
-            } else {
-                let k = agent_kind(b.table, first);
-                let t = Population::table_mut::<SystemBacking>(books.parties.cells_mut().0, k);
-                t.trace(None);
-                (t.take_undeclared(), t.take_moved())
-            };
-            visit_reads.undeclared_reads += undeclared;
-            for (fact, n) in moved {
-                match self.visit_today.moved.iter_mut().find(|(f, _)| *f == fact) {
-                    Some((_, m)) => *m += n,
-                    None => self.visit_today.moved.push((fact, n)),
-                }
-            }
-            for slot in slots {
-                self.book_visit(i, slot, day, step.ordinal(), false);
-            }
+            self.visits_taken(&b);
+            self.visits_rebook(i, h.writes, &slots, (day, step));
         }
         visited
+    }
+
+    /// What a visit's handler did to its table, taken once it has run: its undeclared reads and the facts it moved.
+    fn visits_taken(&mut self, b: &Bound) {
+        let first = self.books.parties.first_cell_place();
+        let (undeclared, moved) = if b.individuals {
+            let t = self.books.parties.table_mut(b.table.get());
+            t.trace(None);
+            (t.take_undeclared(), t.take_moved())
+        } else {
+            let k = agent_kind(b.table, first);
+            let t = Population::table_mut::<SystemBacking>(self.books.parties.cells_mut().0, k);
+            t.trace(None);
+            (t.take_undeclared(), t.take_moved())
+        };
+        self.visit_reads.undeclared_reads += undeclared;
+        for (fact, n) in moved {
+            match self.visit_today.moved.iter_mut().find(|(f, _)| *f == fact) {
+                Some((_, m)) => *m += n,
+                None => self.visit_today.moved.push((fact, n)),
+            }
+        }
+    }
+
+    /// Each row visited booked again; and the visits whose reviews run at an attention the handler writes drawn
+    /// afresh for its rows, so no review is drawn at an attention the row no longer holds.
+    fn visits_rebook(&mut self, i: usize, writes: &[&str], slots: &[Slot], (day, step): (Day, SubStep)) {
+        let Some(table) = self.visits.get(i).map(|b| b.table) else { return };
+        let redrawn: Vec<usize> = self
+            .visits
+            .iter()
+            .enumerate()
+            .filter(|(j, v)| {
+                *j != i
+                    && v.table == table
+                    && matches!(v.decl.cadence, Cadence::Attention { position } if writes.contains(&position))
+            })
+            .map(|(j, _)| j)
+            .collect();
+        for slot in slots {
+            self.book_visit(i, *slot, day, step.ordinal(), false);
+            for j in &redrawn {
+                self.book_visit(*j, *slot, day, step.ordinal(), false);
+            }
+        }
     }
 
     /// A row that ends leaves the visits' agenda, if its table is visited.

@@ -117,9 +117,6 @@ impl phx_core::AccountsAudit for NoAccounts {
     fn income(&self) -> i128 {
         0
     }
-    fn invoices(&self) -> (u64, Vec<phx_core::Gap>) {
-        (0, Vec::new())
-    }
 }
 
 /// A population of no agents.

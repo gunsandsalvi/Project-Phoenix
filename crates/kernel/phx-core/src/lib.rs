@@ -17,6 +17,7 @@ pub mod family;
 pub mod findings;
 pub mod handler;
 pub mod hazards;
+pub mod insolvency;
 pub mod kind_tables;
 pub mod kinds;
 pub mod kinks;
@@ -72,6 +73,7 @@ pub use handler::{
     Ctx, CtxParts, DrawsFrom, Emits, FactStore, HandlerDecl, IntentDef, Intents, Opened, Reads, RunChunk, Writes,
 };
 pub use hazards::{ActsOn, DrawScheme, HazardDecl, RateChange, RateFn, annual_to_daily};
+pub use insolvency::InsolvencyDecl;
 pub use kind_tables::{FacetDecl, KindTable, ListKind, NewIndividual, RunHead};
 pub use kinds::{ESTATE_KIND, Feature, KindDecl, KindId, KindTableRef, LEGAL_FORMS, LegalForm};
 pub use kinks::{KinkDecl, KinkOn, KinkRegistry, KinkSource};
@@ -110,5 +112,5 @@ pub use system::{
     declare_system, handler_refusals,
 };
 pub use touched::TouchedRows;
-pub use visit::{Cadence, InsolvencyDecl, VisitDecl};
+pub use visit::{Cadence, VisitDecl};
 pub use weight::Weight;

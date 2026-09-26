@@ -402,14 +402,15 @@ pub fn phx_ledger::books::Books<B>::declared(&self, phx_ledger::books::BooksSize
 pub fn phx_ledger::books::Books<B>::load_from(&mut phx_store::save::Reader<'_>, phx_ledger::books::Books<B>) -> core::result::Result<phx_ledger::books::Books<B>, phx_store::save::LoadError>
 pub fn phx_ledger::books::Books<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
-pub fn phx_ledger::books::Books<B>::forget_unlisted(&mut self)
+pub fn phx_ledger::books::Books<B>::forget_tallies(&mut self)
 pub fn phx_ledger::books::Books<B>::members_leave(&mut self, (phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side), u32, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> core::result::Result<alloc::vec::Vec<(phx_id::ids::PartyId, u32)>, phx_ledger::fails::Fail> where B: core::marker::Sync
-pub fn phx_ledger::books::Books<B>::read_unlisted(&mut self, &[(phx_id::ids::LineId, phx_ledger::algebra::Side)]) where B: core::marker::Sync
+pub fn phx_ledger::books::Books<B>::read_unlisted(&mut self, &[(phx_id::ids::LineId, phx_ledger::algebra::Side)]) -> bool where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::to_procedure_line(&mut self, phx_ledger::transfer::ToProcedureLine, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_id::ids::LineId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::transfer(&mut self, phx_ledger::transfer::LineTransfer, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
+pub fn phx_ledger::books::Books<B>::holds_units(&self, phx_id::ids::PartyId) -> bool
 pub fn phx_ledger::books::Books<B>::pass_holdings(&mut self, (phx_id::ids::PartyId, phx_id::ids::PartyId), phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<i64, phx_ledger::fails::Fail>
-pub fn phx_ledger::books::Books<B>::settle_estate(&mut self, phx_id::ids::PartyId, phx_id::ids::PartyId, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::estate::Settled, phx_ledger::fails::Fail> where B: core::marker::Sync
+pub fn phx_ledger::books::Books<B>::settle_estate(&mut self, phx_id::ids::PartyId, phx_id::ids::PartyId, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::estate::Settled where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::unlisted_against(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &dyn core::ops::function::Fn(phx_id::ids::LineId) -> phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement where B: core::marker::Sync
@@ -626,9 +627,12 @@ pub phx_ledger::effects::EffectRec::instruction: phx_ledger::instruction::Instru
 pub phx_ledger::effects::EffectRec::party: phx_id::ids::PartyId
 pub mod phx_ledger::estate
 pub struct phx_ledger::estate::Settled
+pub phx_ledger::estate::Settled::ended: bool
+pub phx_ledger::estate::Settled::fail: core::option::Option<phx_ledger::fails::Fail>
 pub phx_ledger::estate::Settled::left: alloc::vec::Vec<(phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, u32)>
 pub phx_ledger::estate::Settled::paid: i64
 pub phx_ledger::estate::Settled::passed: i64
+pub phx_ledger::estate::Settled::unsold: bool
 pub phx_ledger::estate::Settled::written_off: i64
 pub mod phx_ledger::events
 pub struct phx_ledger::events::InstrumentEventDecl

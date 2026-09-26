@@ -121,6 +121,12 @@ impl<'a> Inspector<'a> {
         self.world.own.iter().find(|(code, _)| *code == system).and_then(|(_, s)| s.downcast_ref::<T>())
     }
 
+    /// The country a live party is in: an individual's by its site, an agent's by its region.
+    #[must_use]
+    pub fn country_of_party(&self, party: phx_id::PartyId) -> phx_num::Missing<phx_id::CountryId> {
+        self.world.country_of_party(party)
+    }
+
     /// GEO's compiled state: the accepted map and what was read from it.
     #[must_use]
     pub fn geo(&self) -> &phx_geo::GeoState {
