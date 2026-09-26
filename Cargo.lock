@@ -434,6 +434,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
+name = "if-base"
+version = "0.1.0"
+dependencies = [
+ "phx-macros",
+ "phx-num",
+]
+
+[[package]]
 name = "if-pop"
 version = "0.1.0"
 dependencies = [
@@ -608,6 +616,7 @@ dependencies = [
  "phx-world",
  "serde",
  "serde_json",
+ "sys-tec",
  "toml 0.9.12+spec-1.1.0",
 ]
 
@@ -828,6 +837,7 @@ dependencies = [
  "sys-hsg",
  "sys-lab",
  "sys-soc",
+ "sys-tec",
  "toml 0.9.12+spec-1.1.0",
 ]
 
@@ -1201,6 +1211,20 @@ dependencies = [
  "phx-macros",
  "phx-num",
  "phx-rand",
+]
+
+[[package]]
+name = "sys-tec"
+version = "0.1.0"
+dependencies = [
+ "if-base",
+ "phx-core",
+ "phx-id",
+ "phx-ledger",
+ "phx-macros",
+ "phx-num",
+ "phx-rand",
+ "trybuild",
 ]
 
 [[package]]

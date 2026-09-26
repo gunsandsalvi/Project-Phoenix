@@ -296,6 +296,28 @@ fn books(target: &mut dyn InjectTarget) -> Result<&mut Books, String> {
     target.books().downcast_mut::<Books>().ok_or_else(|| "the save's books are not the ledger's".to_owned())
 }
 
+/// A production leg that moves nothing, on a real money holding, naming `way`, fed to the audit as if it had settled
+/// today: no position changes, so only the family that checks production sees it.
+///
+/// # Errors
+/// When the save's books are not the ledger's, or hold no money line with a holder.
+pub fn inject_production(target: &mut dyn InjectTarget, way: u32) -> Result<(), String> {
+    let (party, account, denom, held) = money_holding(books(target)?)?;
+    let digest = LegDigest {
+        party,
+        account,
+        denom,
+        qty: 0,
+        flow: 0,
+        before: held,
+        paired: false,
+        money: false,
+        made: Missing::Present(way),
+    };
+    target.stream().leg(u64::MAX, digest);
+    Ok(())
+}
+
 /// A real holding to break: the first holder of a money line, the account of its row there, the line's currency and
 /// what the account holds.
 fn money_holding(books: &Books) -> Result<(PartyId, u64, u32, i64), String> {
@@ -323,7 +345,17 @@ fn money_holding(books: &Books) -> Result<(PartyId, u64, u32, i64), String> {
 /// what it says the account held, `qty` what it moved.
 fn stray_leg(target: &mut dyn InjectTarget, before: i64, paired: bool, money: bool) -> Result<(), String> {
     let (party, account, denom, held) = money_holding(books(target)?)?;
-    let digest = LegDigest { party, account, denom, qty: 1, flow: 1, before: held + before, paired, money };
+    let digest = LegDigest {
+        party,
+        account,
+        denom,
+        qty: 1,
+        flow: 1,
+        before: held + before,
+        paired,
+        money,
+        made: Missing::Absent,
+    };
     target.stream().leg(u64::MAX, digest);
     Ok(())
 }

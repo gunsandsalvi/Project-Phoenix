@@ -139,6 +139,8 @@ pub trait LegRecords: core::fmt::Debug + Sync {
     fn money_gaps(&self) -> Vec<Gap>;
     /// Positions whose holding before the day's first leg and the day's legs do not make what the books hold.
     fn unit_gaps(&self, books: &dyn BooksAudit) -> Vec<Gap>;
+    /// The day's productions, each with the way it names, in the order they settled.
+    fn made(&self) -> Vec<Made>;
 }
 
 /// Everything the audit reads at a close, as shared borrows: the world's stores, the rows the day touched, and the
@@ -349,7 +351,8 @@ pub trait AuditFamily: Send + Sync {
 /// A settled leg as the audit keeps it, apart from the books it moved: whose, on which account and in which
 /// denomination (each coded by the ledger), by how much, what it counts toward its instruction's balance (its quantity,
 /// or a liability row's member count against the asset side's, as a line's sides open and close together), what the
-/// account held before it, whether it is one of a pair, and whether it moved money on a money line.
+/// account held before it, whether it is one of a pair, whether it moved money on a money line, and the way it was
+/// made or used up by, when it is production's.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LegDigest {
     pub party: PartyId,
@@ -360,6 +363,23 @@ pub struct LegDigest {
     pub before: i64,
     pub paired: bool,
     pub money: bool,
+    pub made: Missing<u32>,
+}
+
+/// One production as the audit kept it: the instruction, the way it names, and every leg it made or used up.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Made {
+    pub instruction: u64,
+    pub way: u32,
+    pub legs: Vec<MadeLeg>,
+}
+
+/// A leg of a production: whose, in which denomination (coded by the ledger), and how much came out or went in.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MadeLeg {
+    pub party: PartyId,
+    pub denom: u32,
+    pub qty: i64,
 }
 
 /// The sink the apply routine feeds as it applies, which the audit implements and the assembly injects, so no kernel

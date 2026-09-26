@@ -5778,69 +5778,91 @@ run it to forecast (a signature check).
 
 ### S1.02 — `sys-tec`: products and the opening ways
 
-**Status**: planned
+**Status**: building
 
 **Clauses**:
-- STATE: TEC.1, TEC.2, TEC.3, TEC.4.
-- INVARIANT: TEC.9.
+- STATE: TEC.2, TEC.3; TEC.1 *(part: products with their units, industries, storage and delivery; how fast a stored
+  good perishes is S1.05's, where stocks are held)*; TEC.4 *(part: each country's public ways per industry; a firm's
+  own known ways and the industry it belongs to are S1.03's)*.
+- INVARIANT: TEC.9 *(part: every production names a registered way and uses what it states for what was started;
+  that its producer knew the way is S1.03's, when firms have industries and known ways)*.
 - FORBID: TEC.12.
 - PRIMITIVE: TEC.13 *(part: the opening ways)*.
 - Research, imitation, learning and obsolescence (TEC.5–TEC.8, TEC.10, TEC.11) are S6.01.
 
-**Architecture**: §3.5, §4.1.
+**Architecture**: §3.4 (`if-base`), §3.5, §4.1.
 
 **Depends on**: S1.01.
 
 **Goal**: what can be made, and how:
 - products (goods and services) with their physical units and industries;
 - ways with inputs, labour, capital, land or deposit, lead time, batch, yield and by-products, all in physical units;
-- the ways each firm knows;
-- TEC.9's family: every unit of output made by a known way from inputs actually consumed.
+- the public ways every firm of a country's industry knows;
+- TEC.9's family: every unit of output made by a registered way from the inputs it states.
 
 **Files**
 
 | File | Purpose |
 | --- | --- |
-| `crates/interfaces/if-base/src/products.rs` | `ProductDecl { id, unit, industry, storable: bool, spoil_rate: Missing<Rate>, delivered_at_once: bool }`: what differs between goods and services is declared data a mechanism reads (a service is not storable and is delivered as it is made), never a variant to branch on (Law 10) |
-| `crates/interfaces/if-base/src/ways.rs` | `WayId`; `Way { product, inputs: [(ProductId, QtyRaw per unit)], labour: [(OccFamily, Skill, hours per unit)], capital: [(CapKind, service units per unit)], land_or_deposit, lead_time: Period, batch: QtyRaw, yield_ppm: u32, by_products }`; `WaySetId`, an interned set of known ways |
-| `crates/interfaces/if-firm/src/known.rs` | the firm fact of its known ways, a `WaySetId` |
-| `crates/systems/sys-tec/src/*` | declarations; the way register; the TEC.9 audit family; the opening ways contribution |
-| `data/<country>/TEC.toml` | products and opening ways per country, from input–output and engineering data, with sources (TECHNOLOGY) |
+| `crates/kernel/phx-core/src/products.rs` | `ProductEntry`, a product as the register reads it (the `Products` value type): name, unit, industry, storable, delivered as made, the deposit resource it is extracted from; a product both stored and delivered as made is refused |
+| `crates/interfaces/if-base/src/products.rs` | `ProductId`, `IndustryId`, `ProductDecl { id, unit, industry, storable, delivered_at_once, extracts }` and `Products`: what differs between goods and services is declared data a mechanism reads (a service is not storable and is delivered as it is made), never a variant to branch on (Law 10) |
+| `crates/interfaces/if-base/src/ways.rs` | `WayId`, `OccFamily`, `CapKind`, `PerUnit` (nine places); `Way { product, inputs, labour, capital, land, deposit, lead_time_days, batch, yield_ppm, by_products }`; `WaySetId`. Data and signatures only (PC-08) |
+| `crates/systems/sys-tec/src/prims.rs` | `TEC.products`, `TEC.deposit_draw`, `TEC.lead_time`, `TEC.yield`, `TEC.batch` (shared) and each country's `TEC.inputs`, `TEC.labour`, `TEC.capital` (tables over the products) and `TEC.land` |
+| `src/products.rs`, `src/ways.rs`, `src/sets.rs` | the products built against the world's units; what a way takes and finishes for a quantity started, inputs rounded up and output down; the way-set interner |
+| `src/technology.rs` | the technology compiled at assembly (`Declarations::compile`): every country's way per product and its public set per industry |
+| `src/production.rs` | the family `TEC.production`: each day's productions, read from the audit's records of legs naming a way, against their ways |
+| `data/shared/TEC.toml`, `data/profiles/<level>/TEC.toml` | the products and the shared primitives; each group's ways, derived by `tools/data/derive_tec.py` from the sources `tools/data/fetch_tec.py` fetches |
+| `data/world.toml` | each product's unit |
 
 **Design**
 
-- **Products and ways are data** (Law 10). The spec's minimum set is enough for the circular flow and for the stylised
-  facts later:
-  - food, energy carriers (placeholders until ENE, S2.09), manufactured consumer goods, capital goods and
-    construction;
-  - services: retail distribution, personal services, health and education;
-  - commodities extracted from deposits.
-
-  Each product has the ways its sources describe, differing in input, labour and capital mix (TEC.3); the count per
-  product is TECHNOLOGY from data, not a representation choice, and nothing caps it. How finely products are
-  distinguished (the product space) is RESOLUTION, set for play by measurement (N8.5).
-- **Knowing a way** (TEC.4, spec Appendix E 42): every firm of an industry knows its **public ways** — the industry's
-  standard ways and ways whose patents have expired — held once per industry as the public set, in no firm's key. A
-  firm's own known ways, the rest, are a `WaySetId`, an interned set of 4 bytes in the key for cells (REP.19) and a
-  fact for individuals, so the key's width does not grow with the number of ways; at Stage 1 every firm's own set is
-  empty. The key record's
-  width is compiled from the declared key attributes in whole 8-byte words (S0.21), so no attribute is squeezed to
-  fit. Known ways are lost when a firm ends without a successor (S1.03's endings).
-- **Output** (TEC.9): production is a physical standing flow realised lazily (architecture §7.4): each realisation
-  writes one transformation record for its span, naming the way, the inputs consumed and the output finished after
-  the yield. The family checks every unit of output against a known way and inputs consumed.
+- **Products and ways are data** (Law 10). Nineteen products aggregate the 64 CPA products of Eurostat's FIGARO
+  input-output tables (2022): crops and livestock; metal ore, coal, oil and gas, and building stone, the four resources
+  of GEO's deposits; food; consumer goods; materials; energy carriers (a placeholder until ENE, S2.09); capital goods;
+  construction; water and waste; distribution; transport; accommodation and meals; business services; education;
+  health and care; personal services. Finance, real estate and public administration are paid for by fees, rents and
+  taxes, so no way uses them. How finely products are distinguished is RESOLUTION, set for play by measurement
+  (N8.5).
+- **Units**: an extracted product is counted in tonnes, as its deposits hold it; every other product is an aggregate
+  and is counted in the volume national accounts measure an aggregate in, what one US cent bought at world-average
+  prices in 2022 (the tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price
+  level of the product's heading). A way's quantities are fixed in these units, so a price change never changes a
+  physical draw (TEC.12).
+- **The opening ways** (TEC.13): one per product per country, its group's median over the economies the sources report:
+  - inputs: the tables' uses, summed over where they came from, per unit made;
+  - labour: hours by ISCO-08 major group, each section's employment times its weekly hours (ILOSTAT, the survey
+    nearest 2022), shared among the section's products by their compensation of employees;
+  - capital: net stock by SNA asset (structures, transport, ICT, other machinery, cultivated, intellectual property)
+    per unit of output a year, each section's stock per unit of value added (OECD Tables 9A and 6) times the product's
+    value added; the OECD reports it for the developed group only, so the emerging and developing groups' are assumed
+    at the developed ratios (F-090);
+  - land: agricultural land (World Bank) per unit of crops and livestock;
+  - deposit: a tonne of its resource per tonne extracted;
+  - lead time, yield and batch: a growing season for crops and livestock, a day for other goods and none for services
+    (assumed); every unit started is finished, since the tables measure inputs per unit finished; one unit.
+  The extraction column is one in the tables, so the four extracted products share its structure per dollar, each
+  taken by the users of its resource (F-091). The developing group's ways are India's alone and the emerging group's
+  seven economies', fewer than the ten a measure needs (F-092).
+- **Knowing a way** (TEC.4, spec Appendix E 42): every firm of an industry knows its **public ways**, held once per
+  country and industry as an interned set; a firm's own known ways, and the industry it belongs to, are S1.03's.
+- **Output** (TEC.9): a production is one instruction whose legs name its way; the audit keeps them apart from the
+  books, and the family checks that the way is registered, that the output is its product, and that each input used is
+  what the way states for the least start that finishes the output.
 
 **Unit tests**
-- `way_units_are_physical`: no value-share field exists (TEC.12, a compile-level refusal).
-- `yield_applied_exactly`: 1 000 started at 97% yield gives 970, with the declared rounding of units.
-- `product_kind_is_data` (compile-fail): `ProductDecl` has no kind field or enum, only the declared data above, so a
-  `match` on a product's kind cannot be written.
+- `way_units_are_physical` (compile-fail): no value-share field exists (TEC.12).
+- `product_kind_is_data` (compile-fail): `ProductDecl` has no kind field, so a `match` on a product's kind cannot be
+  written.
+- `yield_applied_exactly`: 1 000 started at 97% yield gives 970, and what does not reach a whole unit is not finished.
+- `the_least_start_that_finishes`, `inputs_taken_whole_and_never_short`, `a_set_is_interned_once`,
+  `a_service_is_not_stored`.
 
 **Live checks**
 - `LC-1-05`: TEC.9 — every production record in the run names a way its producer knew, with inputs consumed as
-  recorded.
+  recorded; registered here, applies once firms produce (S1.03).
 
-**Budget**: a way register of a few hundred ways; known-way sets interned (counter `phx_tec.way_sets`, ratcheted).
+**Budget**: 57 ways and 45 interned sets at the opening, compiled once at assembly; the family reads only the day's
+productions. Counter `phx_tec.way_sets`, ratcheted.
 
 **Guards**: none new.
 
@@ -5874,6 +5896,8 @@ run it to forecast (a signature check).
 - DECISION: REP.38 *(completes it: the firms' attention, their first continuous decision of how often to review)*.
 - PROCESS: REP.21 *(completes it: reviews at the attention rate, their cost paid)*; REP.35 *(completes it: a
   surprise raises attention and wakes the parties it bears on)*.
+- STATE: TEC.4 *(completes it: each firm's known ways, its industry's public set and its own, S1.02)*.
+- INVARIANT: TEC.9 *(completes it: the family checks that a production's producer knew its way)*.
 - INVARIANT: FRM.17, FRM.18.
 - MEASURE: REP.15 *(completes it: reported per kind, with individuals, lines, events per agent and the twins whose
   size would rank them individuals)*.
@@ -5902,6 +5926,7 @@ run it to forecast (a signature check).
 | File | Purpose |
 | --- | --- |
 | `crates/interfaces/if-firm/src/{facts,decisions,views}.rs` | firm facts (stock, capacity, known ways, output and input rates, unit cost, markup, pressure, sales outlook); decision points `produce`, `price`, `choose_way`, `buy_inputs`, `enter_exit`, `close`, `stance` |
+| `crates/interfaces/if-firm/src/known.rs` | the firm's industry and its own known ways, a `WaySetId` (TEC.4): a key attribute of a small firm and a fact of a large one; empty until firms discover, license or imitate (S6.01) |
 | `crates/interfaces/if-pop/src/found.rs` | the household's decision point `found` (the decider's crate, architecture §3.1) |
 | `crates/systems/sys-frm/src/rules/produce.rs` | FRM.4: target output |
 | `src/rules/price.rs` | FRM.5 and REP.34: the price review, over the seller kind's declared pressure |
@@ -6165,6 +6190,7 @@ condition) for cells; wear realisations are in "Physical flows realised". Counte
 
 **Clauses**:
 - STATE: GDS.1, GDS.2; GDS.3 *(part: goods and commodities; land is HSG's, S2.05)*.
+- STATE: TEC.1 *(completes it: a perishable good's spoilage while stored, a rate per product sourced here)*.
 - DECISION: GDS.4, GDS.5, GDS.6.
 - PROCESS: GDS.7, GDS.8, GDS.9; GEO.9.
 - INVARIANT: GDS.10; GEO.12.
@@ -16226,6 +16252,9 @@ the final build within the budget on the phone.
 | F-087 | S0.26 | build machine, 2026-09-25, 70d35dd4 (4 cores) | The full-load bench misses every target: median turn 13.6 s (≤ 1 s), worst 26.5 s (≤ 2 s), peak resident 8 307 MiB (≤ 4.5 GB; 6 769 MiB once built, before a day ran), a save 20–23 s (≤ 5 s) and two saves 8 272 MiB (≤ 4 GiB). A business day's median by kind: settlement 10 611 ms, outcomes on agents 678, the gathers standing for later stages' mechanisms 1 772 together, hazard draws 210; the heavy day's settlement 20 407 ms; a closed day, with no settlement, about 0.9 s | settlement reckons each due row's payment again in each pass that reads it (7a, 7b's visits and removals, 7c, the not-maximal count, the pending pass), each with its legs built on the heap and its parties found through maps, on one thread (F-020, F-056, F-057); outcomes on agents on one thread; the saves write the held stores as random words, which do not compress, and write stores the world never saves (day buffers, arena slack, save buffers) | S0.26 reopened (§12): a review of the most-used algorithms, then how the world is represented and traversed. Measured after each part of S0.26f on the build machine (median turn, worst, a business day's settlement): the paged directory (48f8e19d) 11.0 s, 24.3 s; line and money facts kept and 7a reading only the heads due (6d4f60aa) 9.7 s, 22.0 s under the profiler; stage 7's buffers kept and rows found by their heads (c1ab2d6f) 9.3 s, 20.5 s, settlement 6.5 s (14.3 s heavy) against architecture §13.2's 48 ms (243 ms heavy) at 30 ns a payment: the per-payment path, not the look-ups, is what remains; the day's records and settled dues folded (a589d976) and 7a in waves on the pool (a3e7459b) 7.9 s, 17.5 s, settlement 5.5 s (12.0 s heavy), saves 8–11 s at 4 136 MiB each; 7a's bookings and 7c's sums folded on the pool (16e75c26) 5.4 s, 10.6 s, settlement 3.1 s; saves of the saved stores in frames on the pool (01c76305) 4.7 s, two saves 3 256 MiB, which meets its target; stores saved at once and 7c's leg reads on the pool (44c7a02a) 4.5 s, 10.5 s, settlement 2.43 s (5.39 s heavy), a save 7.0 s, peak 7 952 MiB (6 780 MiB built), a closed day 0.8 s. A business day's settlement at 44c7a02a is 7a 0.45 s, 7c's gather 0.5 s, 7c's apply 0.75 s, heads 0.46 s, 7b 0.07–0.28 s; the rest of the turn is the gathers standing for later stages' mechanisms (1.3 s), hazard draws (0.2 s), outcomes on agents (0.27 s) and the stages' institutions (0.3 s). (N8.7) | open, carried to S1.16: Stage 0 closed as it is by the owner (§12, 2026-09-25) |
 | F-088 | S0.26 | review of 7b, 2026-09-26 | 7b fails a bank's customers' payments through it when the bank is still short after failing its own, and a customer whose own payment fails lowers the bank's debit, so whether a bank is removed depends on whether it is visited before or after its customers; architecture §6.6 says the removal is monotone and its greatest fixed point unique whatever the order | the worklist's order decides a bank's removal: the set that settles is deterministic but not the order-free greatest set §6.6 describes | the bank's removal read against its customers' payments that stand once their payers are done, so the result is the same in any order and 7b can run in rounds on the pool; a question of SET.6's mechanism, not of representation | open for S1.16 |
 | F-089 | S1.01 | data, 2026-09-26 | The adaptive gain's and the switching intensity's distributions (`VAL.adaptive_gain`, beta with mean 0.65 and standard deviation 0.14; `VAL.switching_intensity`, gamma with mean 0.4 and standard deviation 0.2) take their means from Anufriev and Hommes (2012) and their spreads by assumption: no source in hand measures how the gain and the intensity vary across people | the experiments report the rules' fitted parameters, not their spread across participants | the spreads read from individual forecasts in a survey panel (the Michigan Survey's or the New York Fed's Survey of Consumer Expectations' microdata), when S1.12's households first form outlooks | open for S1.12 |
+| F-090 | S1.02 | data, 2026-09-26 | The OECD reports net fixed assets by activity and asset (Table 9A) for developed economies only, so the emerging and developing groups' ways take each section's stock per unit of value added at the developed median (`TEC.capital`, assumed), and only their value added per unit is their own | no source in hand gives capital by industry and asset for middle- and low-income economies | the Penn World Table's capital stocks by asset, or KLEMS databases for China, India and Latin America, scaling the developed structure by each group's own capital per worker | open |
+| F-091 | S1.02 | data, 2026-09-26 | The input-output tables report extraction as one product (CPA B), so metal ore, coal, oil and gas and building stone share its structure per dollar, each taken by the users of its resource (basic metals ore; refining and chemicals oil and gas; electricity coal; minerals and construction stone; any other user oil and gas): the hours and plant a tonne needs differ by resource only through its price | the tables' 64 products do not split mining | a supply-use table with the mining divisions (B05-B09), or the United States' detailed benchmark tables | open |
+| F-092 | S1.02 | data, 2026-09-26 | The FIGARO tables report seven economies of the emerging group and one of the developing group (India), fewer than the ten a group's measure needs, so those groups' ways are `estimated` from them | FIGARO covers the EU and eighteen other economies | the OECD's inter-country tables (76 economies) when their files can be fetched, or national tables of the group's economies | open |
 
 ---
 
@@ -16385,7 +16414,9 @@ and are not mapped.
 | HH | S5.03 | 12 |
 | HH | S6.02 | 9 |
 | HH | S6.03 | 7, 16, 17 |
-| TEC | S1.02 | 1, 2, 3, 4, 9, 12 |
+| TEC | S1.02 | 2, 3, 12 |
+| TEC | S1.03 | 4, 9 |
+| TEC | S1.05 | 1 |
 | TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14, 15 |
 | FRM | S1.03 | 1, 2, 4, 5, 6, 11, 13, 14, 17, 18, 20, 21, 22 |
 | FRM | S1.04 | 8 |

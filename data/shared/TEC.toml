@@ -1,0 +1,62 @@
+# The products and what extraction takes from a deposit (spec TEC.1, TEC.2), derived by
+# tools/data/derive_tec.py; never edited by hand.
+
+[[primitive]]
+id = "TEC.products"
+kind = "TECHNOLOGY"
+owner = "TEC"
+source = "measured"
+source_ref = "The product space of the input-output tables (Eurostat FIGARO, CPA 2.1) aggregated to the products the circular flow needs: crops and livestock (A01, A02, A03); metal ore (B); coal (B); oil and gas (B); building stone (B); food (C10-12); consumer goods (C13-15, C31_32); materials (C16, C17, C18, C20, C21, C22, C23, C24); energy carriers (C19, D35); capital goods (C25, C26, C27, C28, C29, C30, C33); water and waste services (E36, E37-39); construction (F); distribution (G45, G46, G47); transport (H49, H50, H51, H52, H53); accommodation and meals (I); business services (J58, J59_60, J61, J62_63, M69_70, M71, M72, M73, M74_75, N77, N78, N79, N80-82); education (P85); health and care (Q86, Q87_88); personal services (R90-92, R93, S94, S95, S96). Finance, real estate, public administration and households as employers are left out, being paid for by fees, rents and taxes. A service is not storable and is delivered as it is made; construction is work done for its owner, not stored."
+value = [
+  { name = "crops and livestock", unit = "crops and livestock", industry = "agriculture", storable = true, delivered_at_once = false },
+  { name = "metal ore", unit = "metal ore", industry = "mining", storable = true, delivered_at_once = false, extracts = 0 },
+  { name = "coal", unit = "coal", industry = "mining", storable = true, delivered_at_once = false, extracts = 1 },
+  { name = "oil and gas", unit = "oil and gas", industry = "mining", storable = true, delivered_at_once = false, extracts = 2 },
+  { name = "building stone", unit = "building stone", industry = "mining", storable = true, delivered_at_once = false, extracts = 3 },
+  { name = "food", unit = "food", industry = "food manufacturing", storable = true, delivered_at_once = false },
+  { name = "consumer goods", unit = "consumer goods", industry = "consumer goods manufacturing", storable = true, delivered_at_once = false },
+  { name = "materials", unit = "materials", industry = "materials manufacturing", storable = true, delivered_at_once = false },
+  { name = "energy carriers", unit = "energy carriers", industry = "energy", storable = true, delivered_at_once = false },
+  { name = "capital goods", unit = "capital goods", industry = "capital goods manufacturing", storable = true, delivered_at_once = false },
+  { name = "water and waste services", unit = "water and waste services", industry = "utilities", storable = false, delivered_at_once = true },
+  { name = "construction", unit = "construction", industry = "construction", storable = false, delivered_at_once = false },
+  { name = "distribution", unit = "distribution", industry = "trade", storable = false, delivered_at_once = true },
+  { name = "transport", unit = "transport", industry = "transport", storable = false, delivered_at_once = true },
+  { name = "accommodation and meals", unit = "accommodation and meals", industry = "accommodation and food services", storable = false, delivered_at_once = true },
+  { name = "business services", unit = "business services", industry = "business services", storable = false, delivered_at_once = true },
+  { name = "education", unit = "education", industry = "education", storable = false, delivered_at_once = true },
+  { name = "health and care", unit = "health and care", industry = "health", storable = false, delivered_at_once = true },
+  { name = "personal services", unit = "personal services", industry = "personal services", storable = false, delivered_at_once = true },
+]
+
+[[primitive]]
+id = "TEC.deposit_draw"
+kind = "TECHNOLOGY"
+owner = "TEC"
+source = "measured"
+source_ref = "Tonnes an extracted product takes from its deposit per unit made: its unit is the tonne, so one; the others take none."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], outside = "refuse" }
+
+[[primitive]]
+id = "TEC.lead_time"
+kind = "TECHNOLOGY"
+owner = "TEC"
+source = "assumed"
+source_ref = "Days from starting a unit to finishing it: a growing season of 120 days for crops and livestock, about the months from sowing to harvest of the main field crops (FAO crop calendars: wheat, maize and rice take 90 to 150 days); none for a service, delivered as it is made; and a day for every other product, whose aggregate is made continuously and finishes within the day at the day's resolution."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [120, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0], outside = "refuse" }
+
+[[primitive]]
+id = "TEC.yield"
+kind = "TECHNOLOGY"
+owner = "TEC"
+source = "measured"
+source_ref = "The share of what is started that is finished, in parts per million: all of it, since the input-output tables measure inputs per unit finished, so what a process loses is already in its inputs."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000], outside = "refuse" }
+
+[[primitive]]
+id = "TEC.batch"
+kind = "TECHNOLOGY"
+owner = "TEC"
+source = "measured"
+source_ref = "The least quantity started at once, in units: one, since each product is an aggregate measured in continuous volume or tonnes, with no lot size the tables distinguish."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], outside = "refuse" }

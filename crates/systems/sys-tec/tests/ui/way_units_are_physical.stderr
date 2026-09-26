@@ -1,0 +1,7 @@
+error[E0609]: no field `value_shares` on type `&Way`
+ --> tests/ui/way_units_are_physical.rs:5:9
+  |
+5 |     way.value_shares[0].1.raw()
+  |         ^^^^^^^^^^^^ unknown field
+  |
+  = note: available fields are: `product`, `inputs`, `labour`, `capital`, `land` ... and 5 others

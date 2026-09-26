@@ -62,8 +62,15 @@ pub struct Declarations {
     pub pop: Vec<PopEntry>,
     pub pop_processes: Vec<(&'static str, Box<dyn crate::pop_process::PopProcess>)>,
     pub setup_values: Vec<(&'static str, SetupValue)>,
+    /// Each system's state compiled from the register at assembly, which its handlers and its family read.
+    pub compiled: Vec<(&'static str, Compile)>,
     kink_errors: Vec<String>,
 }
+
+/// A system's state compiled from the register and the number of countries: built once at assembly, and again
+/// from the same register when a save is loaded, so nothing it holds is saved.
+pub type Compile =
+    Box<dyn FnOnce(&crate::Register, usize) -> Result<Box<dyn core::any::Any + Send + Sync>, String> + Send>;
 
 /// A country primitive a new game sets from one of the country's derived values: the system's mapping of a derived
 /// value into the data its processes read, written with the country's data when the game is instantiated.
@@ -152,6 +159,11 @@ impl Declarations {
 
     pub fn contribution(&mut self, contribution: Box<dyn Contribution>) {
         self.contributions.push((self.system, contribution));
+    }
+
+    /// The state the system compiles from the register at assembly.
+    pub fn compile(&mut self, compile: Compile) {
+        self.compiled.push((self.system, compile));
     }
 
     /// A draw of the households' lines of the system's kinds, made with each household as the opening forms it.

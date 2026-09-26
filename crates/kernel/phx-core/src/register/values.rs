@@ -1,6 +1,6 @@
 use phx_id::{Date, Weekday};
 use phx_macros::clause;
-use phx_num::{Amount, Count, Fixed, PointTable, QtyRaw, Rate, RatePeriod};
+use phx_num::{Amount, Count, Fixed, Missing, PointTable, QtyRaw, Rate, RatePeriod};
 use phx_rand::{Draws, below_u64};
 use toml::Value;
 
@@ -46,6 +46,8 @@ pub enum ValueType {
     },
     Calendar,
     LegalForms,
+    /// The products, each with its unit, industry and how it is held and delivered.
+    Products,
     /// Which kinds of event become public, and from what size.
     NewsRule,
     /// The carrying bases each legal form may use for each purpose.
@@ -359,6 +361,7 @@ pub enum PrimValue {
     PointTable(PointTable),
     Calendar(CountryRules),
     LegalForms(Vec<LegalForm>),
+    Products(Vec<crate::ProductEntry>),
     NewsRule(Vec<NewsEntry>),
     CarryingBases(Vec<crate::accounting::Permitted>),
     Profile(JointProfile),
@@ -562,6 +565,35 @@ fn legal_forms(v: &Value) -> Result<Vec<LegalForm>, String> {
     Ok(forms)
 }
 
+fn products(v: &Value) -> Result<Vec<crate::ProductEntry>, String> {
+    let list = v.as_array().ok_or("the products are not a list")?;
+    let mut out: Vec<crate::ProductEntry> = Vec::with_capacity(list.len());
+    for p in list {
+        let t = table(p)?;
+        let flag = |key: &str| t.get(key).and_then(Value::as_bool).ok_or_else(|| format!("no flag `{key}`"));
+        let extracts = match t.get("extracts") {
+            None => Missing::Absent,
+            Some(x) => Missing::Present(
+                x.as_integer().and_then(|i| u16::try_from(i).ok()).ok_or_else(|| format!("`{x}` is no resource"))?,
+            ),
+        };
+        let product = crate::ProductEntry {
+            name: text(t, "name")?.to_owned(),
+            unit: text(t, "unit")?.to_owned(),
+            industry: text(t, "industry")?.to_owned(),
+            storable: flag("storable")?,
+            delivered_at_once: flag("delivered_at_once")?,
+            extracts,
+        };
+        product.validate()?;
+        if out.iter().any(|q| q.name == product.name) {
+            return Err(format!("two products named `{}`", product.name));
+        }
+        out.push(product);
+    }
+    Ok(out)
+}
+
 fn news_rule(v: &Value) -> Result<Vec<NewsEntry>, String> {
     let list = v.as_array().ok_or("the public-event rule is not a list")?;
     let mut out = Vec::with_capacity(list.len());
@@ -684,6 +716,7 @@ pub fn parse(v: &Value, ty: ValueType, period: Option<RatePeriod>) -> Result<Pri
         }
         ValueType::Calendar => Ok(PrimValue::Calendar(calendar(v)?)),
         ValueType::LegalForms => Ok(PrimValue::LegalForms(legal_forms(v)?)),
+        ValueType::Products => Ok(PrimValue::Products(products(v)?)),
         ValueType::NewsRule => Ok(PrimValue::NewsRule(news_rule(v)?)),
         ValueType::CarryingBases => Ok(PrimValue::CarryingBases(carrying_bases(v)?)),
         ValueType::Profile { exp } => Ok(PrimValue::Profile(crate::register::profile::parse(v, exp, decimal)?)),
@@ -763,6 +796,7 @@ read_ref!(Distribution, Distribution, ValueType::Distribution { .. });
 read_ref!(PointTable, PointTable, ValueType::PointTable { .. });
 read_ref!(CountryRules, Calendar, ValueType::Calendar);
 read_ref!(Vec<LegalForm>, LegalForms, ValueType::LegalForms);
+read_ref!(Vec<crate::ProductEntry>, Products, ValueType::Products);
 read_ref!(Vec<NewsEntry>, NewsRule, ValueType::NewsRule);
 read_ref!(Vec<crate::accounting::Permitted>, CarryingBases, ValueType::CarryingBases);
 read_ref!(JointProfile, Profile, ValueType::Profile { .. });

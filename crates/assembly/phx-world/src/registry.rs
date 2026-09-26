@@ -346,6 +346,17 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
             *state = Box::new(Arc::clone(&geo));
         }
     }
+    let mut refused = Vec::new();
+    for (code, compile) in std::mem::take(&mut p.d.compiled) {
+        match (compile(&p.c.register, p.game.countries.len()), own.iter_mut().find(|(c, _)| *c == code)) {
+            (Ok(compiled), Some((_, state))) => *state = compiled,
+            (Ok(_), None) => refused.push(format!("`{code}` compiles state but is no system of the world")),
+            (Err(e), _) => refused.push(format!("{code}: {e}")),
+        }
+    }
+    if !refused.is_empty() {
+        return Err(AssemblyErrors(refused));
+    }
     let kept = |name: &str| tables.iter().any(|t| t.name == name);
     let unkept: Vec<String> =
         p.h.entries

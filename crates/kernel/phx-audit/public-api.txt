@@ -32,6 +32,7 @@ pub fn phx_audit::records::Digests::unit_gaps(&self, &dyn core::ops::function::F
 impl phx_core::family::LegRecords for phx_audit::records::Digests
 pub fn phx_audit::records::Digests::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_audit::records::Digests::instructions(&self) -> u64
+pub fn phx_audit::records::Digests::made(&self) -> alloc::vec::Vec<phx_core::family::Made>
 pub fn phx_audit::records::Digests::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_audit::records::Digests::positions(&self) -> u64
 pub fn phx_audit::records::Digests::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>

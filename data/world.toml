@@ -61,3 +61,118 @@ kind = "physical"
 price_exp = 0
 source = "assumed"
 source_ref = "A firm's plant counted in its replacement value, a currency's smallest unit to a unit, until the classes of capital goods are declared with their own units and prices."
+
+[[unit]]
+name = "crops and livestock"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of crops and livestock one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "metal ore"
+kind = "physical"
+price_exp = 2
+source = "measured"
+source_ref = "A tonne of metal ore, the unit deposits hold it in and its world price is quoted in; a tonne's price to a hundredth of a currency's smallest unit."
+[[unit]]
+name = "coal"
+kind = "physical"
+price_exp = 2
+source = "measured"
+source_ref = "A tonne of coal, the unit deposits hold it in and its world price is quoted in; a tonne's price to a hundredth of a currency's smallest unit."
+[[unit]]
+name = "oil and gas"
+kind = "physical"
+price_exp = 2
+source = "measured"
+source_ref = "A tonne of oil and gas, the unit deposits hold it in and its world price is quoted in; a tonne's price to a hundredth of a currency's smallest unit."
+[[unit]]
+name = "building stone"
+kind = "physical"
+price_exp = 2
+source = "measured"
+source_ref = "A tonne of building stone, the unit deposits hold it in and its world price is quoted in; a tonne's price to a hundredth of a currency's smallest unit."
+[[unit]]
+name = "food"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of food one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "consumer goods"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of consumer goods one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "materials"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of materials one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "energy carriers"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of energy carriers one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "capital goods"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of capital goods one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "water and waste services"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of water and waste services one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "construction"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of construction one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "distribution"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of distribution one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "transport"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of transport one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "accommodation and meals"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of accommodation and meals one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "business services"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of business services one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "education"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of education one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "health and care"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of health and care one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+[[unit]]
+name = "personal services"
+kind = "physical"
+price_exp = 4
+source = "measured"
+source_ref = "The quantity of personal services one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."

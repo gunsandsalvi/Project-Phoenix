@@ -109,6 +109,12 @@ impl<'a> Inspector<'a> {
         &self.world.countries
     }
 
+    /// A system's state compiled at assembly, as its own type.
+    #[must_use]
+    pub fn own<T: 'static>(&self, system: &str) -> Option<&T> {
+        self.world.own.iter().find(|(code, _)| *code == system).and_then(|(_, s)| s.downcast_ref::<T>())
+    }
+
     /// GEO's compiled state: the accepted map and what was read from it.
     #[must_use]
     pub fn geo(&self) -> &phx_geo::GeoState {

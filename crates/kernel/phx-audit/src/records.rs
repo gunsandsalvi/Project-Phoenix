@@ -14,6 +14,8 @@ pub struct Digests {
     money: BTreeMap<(u64, u32), i128>,
     /// Per party and account, what it held before the day's first leg on it, and the day's net of its legs.
     positions: BTreeMap<(PartyId, u64), (i64, i128)>,
+    /// Per instruction that names a way, its legs made or used up.
+    made: BTreeMap<u64, phx_core::Made>,
 }
 
 /// A difference the records show: which instruction or position, which denomination, and by how much.
@@ -38,6 +40,11 @@ impl Digests {
             *self.money.entry((instruction, leg.denom)).or_insert(0) += q;
         }
         self.positions.entry((leg.party, leg.account)).or_insert((leg.before, 0)).1 += q;
+        if let phx_num::Missing::Present(way) = leg.made {
+            let made =
+                self.made.entry(instruction).or_insert_with(|| phx_core::Made { instruction, way, legs: Vec::new() });
+            made.legs.push(phx_core::MadeLeg { party: leg.party, denom: leg.denom, qty: leg.qty });
+        }
     }
 
     /// Every instruction's paired legs sum to nothing in each denomination.
@@ -92,6 +99,7 @@ impl Digests {
         self.flows.clear();
         self.money.clear();
         self.positions.clear();
+        self.made.clear();
     }
 }
 
@@ -114,6 +122,10 @@ impl phx_core::LegRecords for Digests {
 
     fn unit_gaps(&self, books: &dyn phx_core::BooksAudit) -> Vec<phx_core::Gap> {
         Digests::unit_gaps(self, &|p, a| books.position(p, a)).into_iter().map(Gap::found).collect()
+    }
+
+    fn made(&self) -> Vec<phx_core::Made> {
+        self.made.values().cloned().collect()
     }
 }
 

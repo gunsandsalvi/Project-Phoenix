@@ -586,10 +586,19 @@ pub phx_core::family::LegDigest::account: u64
 pub phx_core::family::LegDigest::before: i64
 pub phx_core::family::LegDigest::denom: u32
 pub phx_core::family::LegDigest::flow: i64
+pub phx_core::family::LegDigest::made: phx_num::missing::Missing<u32>
 pub phx_core::family::LegDigest::money: bool
 pub phx_core::family::LegDigest::paired: bool
 pub phx_core::family::LegDigest::party: phx_id::ids::PartyId
 pub phx_core::family::LegDigest::qty: i64
+pub struct phx_core::family::Made
+pub phx_core::family::Made::instruction: u64
+pub phx_core::family::Made::legs: alloc::vec::Vec<phx_core::family::MadeLeg>
+pub phx_core::family::Made::way: u32
+pub struct phx_core::family::MadeLeg
+pub phx_core::family::MadeLeg::denom: u32
+pub phx_core::family::MadeLeg::party: phx_id::ids::PartyId
+pub phx_core::family::MadeLeg::qty: i64
 pub struct phx_core::family::ReadTrace
 pub phx_core::family::ReadTrace::duplicate_opens: usize
 pub phx_core::family::ReadTrace::later_writes: usize
@@ -644,6 +653,7 @@ pub fn phx_core::family::InjectTarget::unhanded_party(&self) -> phx_id::ids::Par
 pub trait phx_core::family::LegRecords: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::family::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::LegRecords::instructions(&self) -> u64
+pub fn phx_core::family::LegRecords::made(&self) -> alloc::vec::Vec<phx_core::family::Made>
 pub fn phx_core::family::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::family::LegRecords::positions(&self) -> u64
 pub fn phx_core::family::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -1104,6 +1114,16 @@ pub fn phx_core::pop_process::PopProcess::hazard(&self) -> &'static str
 pub fn phx_core::pop_process::PopProcess::kind(&self) -> &'static str
 pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &mut phx_core::pop_process::Household, &[usize], &mut phx_rand::draws::Draws)
 pub fn phx_core::pop_process::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &phx_core::pop_process::Person) -> f64
+pub mod phx_core::products
+pub struct phx_core::products::ProductEntry
+pub phx_core::products::ProductEntry::delivered_at_once: bool
+pub phx_core::products::ProductEntry::extracts: phx_num::missing::Missing<u16>
+pub phx_core::products::ProductEntry::industry: alloc::string::String
+pub phx_core::products::ProductEntry::name: alloc::string::String
+pub phx_core::products::ProductEntry::storable: bool
+pub phx_core::products::ProductEntry::unit: alloc::string::String
+impl phx_core::products::ProductEntry
+pub fn phx_core::products::ProductEntry::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub mod phx_core::records
 pub struct phx_core::records::Reader
 pub phx_core::records::Reader::day: phx_id::day::Day
@@ -1308,6 +1328,7 @@ pub phx_core::register::values::PrimValue::Money(phx_num::money::Amount)
 pub phx_core::register::values::PrimValue::NewsRule(alloc::vec::Vec<phx_core::events_rule::NewsEntry>)
 pub phx_core::register::values::PrimValue::Partition(phx_core::register::values::Partition)
 pub phx_core::register::values::PrimValue::PointTable(phx_num::points::PointTable)
+pub phx_core::register::values::PrimValue::Products(alloc::vec::Vec<phx_core::products::ProductEntry>)
 pub phx_core::register::values::PrimValue::Profile(phx_core::register::profile::JointProfile)
 pub phx_core::register::values::PrimValue::Qty(phx_num::qty::QtyRaw)
 pub phx_core::register::values::PrimValue::Rate(phx_num::rate::Rate)
@@ -1330,6 +1351,7 @@ pub phx_core::register::values::ValueType::Partition
 pub phx_core::register::values::ValueType::Partition::exp: u8
 pub phx_core::register::values::ValueType::PointTable
 pub phx_core::register::values::ValueType::PointTable::exp: u8
+pub phx_core::register::values::ValueType::Products
 pub phx_core::register::values::ValueType::Profile
 pub phx_core::register::values::ValueType::Profile::exp: u8
 pub phx_core::register::values::ValueType::Qty
@@ -1409,6 +1431,10 @@ impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::kinds::L
 pub type alloc::vec::Vec<phx_core::kinds::LegalForm>::Read<'a> = &'a alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::kinds::LegalForm>>
 pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::products::ProductEntry>
+pub type alloc::vec::Vec<phx_core::products::ProductEntry>::Read<'a> = &'a alloc::vec::Vec<phx_core::products::ProductEntry>
+pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::products::ProductEntry>>
+pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
@@ -1705,6 +1731,7 @@ pub phx_core::system::DecisionMeta::valid: core::result::Result<(), &'static str
 pub struct phx_core::system::Declarations
 pub phx_core::system::Declarations::attachments: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::system::Declarations::claims: alloc::vec::Vec<(&'static str, &'static str)>
+pub phx_core::system::Declarations::compiled: alloc::vec::Vec<(&'static str, phx_core::system::Compile)>
 pub phx_core::system::Declarations::contributions: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)>
 pub phx_core::system::Declarations::decisions: alloc::vec::Vec<phx_core::system::DecisionMeta>
 pub phx_core::system::Declarations::events: alloc::vec::Vec<(&'static str, phx_core::events::EventKindDecl)>
@@ -1726,6 +1753,7 @@ impl phx_core::system::Declarations
 pub fn phx_core::system::Declarations::attachment(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
 pub fn phx_core::system::Declarations::claims(&self) -> core::result::Result<alloc::vec::Vec<phx_core::facts::Claim>, alloc::string::String>
+pub fn phx_core::system::Declarations::compile(&mut self, phx_core::system::Compile)
 pub fn phx_core::system::Declarations::contribution(&mut self, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)
 pub fn phx_core::system::Declarations::decision<I, O>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>)
 pub fn phx_core::system::Declarations::event(&mut self, phx_core::events::EventKindDecl)
@@ -1779,6 +1807,7 @@ pub fn phx_core::system::System::handlers(&mut phx_core::system::HandlerTable)
 pub fn phx_core::system::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::system::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
 pub fn phx_core::system::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
+pub type phx_core::system::Compile = alloc::boxed::Box<(dyn core::ops::function::FnOnce(&phx_core::register::Register, usize) -> core::result::Result<alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>, alloc::string::String> + core::marker::Send)>
 pub mod phx_core::touched
 pub struct phx_core::touched::TouchedRows
 impl phx_core::touched::TouchedRows
@@ -2046,6 +2075,7 @@ pub phx_core::PrimValue::Money(phx_num::money::Amount)
 pub phx_core::PrimValue::NewsRule(alloc::vec::Vec<phx_core::events_rule::NewsEntry>)
 pub phx_core::PrimValue::Partition(phx_core::register::values::Partition)
 pub phx_core::PrimValue::PointTable(phx_num::points::PointTable)
+pub phx_core::PrimValue::Products(alloc::vec::Vec<phx_core::products::ProductEntry>)
 pub phx_core::PrimValue::Profile(phx_core::register::profile::JointProfile)
 pub phx_core::PrimValue::Qty(phx_num::qty::QtyRaw)
 pub phx_core::PrimValue::Rate(phx_num::rate::Rate)
@@ -2192,6 +2222,7 @@ pub phx_core::ValueType::Partition
 pub phx_core::ValueType::Partition::exp: u8
 pub phx_core::ValueType::PointTable
 pub phx_core::ValueType::PointTable::exp: u8
+pub phx_core::ValueType::Products
 pub phx_core::ValueType::Profile
 pub phx_core::ValueType::Profile::exp: u8
 pub phx_core::ValueType::Qty
@@ -2422,6 +2453,7 @@ pub phx_core::DecisionSchedule::runs_on: phx_core::schedule::RunsOn
 pub struct phx_core::Declarations
 pub phx_core::Declarations::attachments: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::Declarations::claims: alloc::vec::Vec<(&'static str, &'static str)>
+pub phx_core::Declarations::compiled: alloc::vec::Vec<(&'static str, phx_core::system::Compile)>
 pub phx_core::Declarations::contributions: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)>
 pub phx_core::Declarations::decisions: alloc::vec::Vec<phx_core::system::DecisionMeta>
 pub phx_core::Declarations::events: alloc::vec::Vec<(&'static str, phx_core::events::EventKindDecl)>
@@ -2443,6 +2475,7 @@ impl phx_core::system::Declarations
 pub fn phx_core::system::Declarations::attachment(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
 pub fn phx_core::system::Declarations::claims(&self) -> core::result::Result<alloc::vec::Vec<phx_core::facts::Claim>, alloc::string::String>
+pub fn phx_core::system::Declarations::compile(&mut self, phx_core::system::Compile)
 pub fn phx_core::system::Declarations::contribution(&mut self, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)
 pub fn phx_core::system::Declarations::decision<I, O>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>)
 pub fn phx_core::system::Declarations::event(&mut self, phx_core::events::EventKindDecl)
@@ -2768,6 +2801,7 @@ pub phx_core::LegDigest::account: u64
 pub phx_core::LegDigest::before: i64
 pub phx_core::LegDigest::denom: u32
 pub phx_core::LegDigest::flow: i64
+pub phx_core::LegDigest::made: phx_num::missing::Missing<u32>
 pub phx_core::LegDigest::money: bool
 pub phx_core::LegDigest::paired: bool
 pub phx_core::LegDigest::party: phx_id::ids::PartyId
@@ -2781,6 +2815,14 @@ pub phx_core::LegalForm::owners: alloc::string::String
 impl phx_core::kinds::LegalForm
 pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::Made
+pub phx_core::Made::instruction: u64
+pub phx_core::Made::legs: alloc::vec::Vec<phx_core::family::MadeLeg>
+pub phx_core::Made::way: u32
+pub struct phx_core::MadeLeg
+pub phx_core::MadeLeg::denom: u32
+pub phx_core::MadeLeg::party: phx_id::ids::PartyId
+pub phx_core::MadeLeg::qty: i64
 #[repr(C)] pub struct phx_core::Message
 impl phx_core::messages::Message
 pub fn phx_core::messages::Message::addressee(&self) -> phx_core::messages::Address
@@ -2980,6 +3022,15 @@ pub phx_core::PrimDecl::value: phx_core::register::values::ValueType
 impl phx_core::register::PrimDecl
 pub fn phx_core::register::PrimDecl::owner(&self) -> core::result::Result<phx_id::ids::SystemCode, alloc::string::String>
 pub fn phx_core::register::PrimDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::ProductEntry
+pub phx_core::ProductEntry::delivered_at_once: bool
+pub phx_core::ProductEntry::extracts: phx_num::missing::Missing<u16>
+pub phx_core::ProductEntry::industry: alloc::string::String
+pub phx_core::ProductEntry::name: alloc::string::String
+pub phx_core::ProductEntry::storable: bool
+pub phx_core::ProductEntry::unit: alloc::string::String
+impl phx_core::products::ProductEntry
+pub fn phx_core::products::ProductEntry::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::ProfileValue
 pub phx_core::ProfileValue::countries: u32
 pub phx_core::ProfileValue::mean: i64
@@ -3284,6 +3335,7 @@ pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub trait phx_core::LegRecords: core::fmt::Debug + core::marker::Sync
 pub fn phx_core::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::LegRecords::instructions(&self) -> u64
+pub fn phx_core::LegRecords::made(&self) -> alloc::vec::Vec<phx_core::family::Made>
 pub fn phx_core::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
 pub fn phx_core::LegRecords::positions(&self) -> u64
 pub fn phx_core::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -3348,6 +3400,10 @@ impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::kinds::L
 pub type alloc::vec::Vec<phx_core::kinds::LegalForm>::Read<'a> = &'a alloc::vec::Vec<phx_core::kinds::LegalForm>
 pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::kinds::LegalForm>>
 pub fn alloc::vec::Vec<phx_core::kinds::LegalForm>::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::products::ProductEntry>
+pub type alloc::vec::Vec<phx_core::products::ProductEntry>::Read<'a> = &'a alloc::vec::Vec<phx_core::products::ProductEntry>
+pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::products::ProductEntry>>
+pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>

@@ -21,6 +21,13 @@ counter = "phx_check.placeholder_count"
 value = 5
 direction = "down"
 
+# The distinct sets of ways the technology keeps: each country's public set per industry, three countries of fifteen
+# industries. It rises with the ways firms discover, license and imitate from Stage 6, each rise stated.
+[[ratchet]]
+counter = "phx_tec.way_sets"
+value = 45
+direction = "down"
+
 # Barriers the day runner crosses on a day no handler runs, read by the build run.
 [[ratchet]]
 counter = "phx_exec.barriers_per_empty_day"

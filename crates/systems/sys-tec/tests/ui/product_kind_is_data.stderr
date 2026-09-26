@@ -1,0 +1,7 @@
+error[E0609]: no field `kind` on type `&ProductDecl`
+ --> tests/ui/product_kind_is_data.rs:5:16
+  |
+5 |     matches!(p.kind, _)
+  |                ^^^^ unknown field
+  |
+  = note: available fields are: `id`, `unit`, `industry`, `storable`, `delivered_at_once`, `extracts`

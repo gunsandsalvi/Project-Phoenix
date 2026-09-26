@@ -27,6 +27,7 @@ pub mod pages;
 pub mod policy;
 pub mod pop;
 pub mod pop_process;
+pub mod products;
 pub mod records;
 pub mod register;
 pub mod rules;
@@ -62,7 +63,8 @@ pub use facts::{
 };
 pub use family::{
     AUDIT_SUBSTEP, AccountsAudit, AgentsAudit, AuditFamily, AuditInputs, AuditStream, BooksAudit, FamilyCtx,
-    FamilyDecl, FamilyMode, Gap, InjectTarget, LegDigest, LegRecords, MarketsAudit, ReadTrace, Span, rolling_slice,
+    FamilyDecl, FamilyMode, Gap, InjectTarget, LegDigest, LegRecords, Made, MadeLeg, MarketsAudit, ReadTrace, Span,
+    rolling_slice,
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use handler::{
@@ -85,6 +87,7 @@ pub use phx_macros::{
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
 pub use pop::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, RoleDecl};
 pub use pop_process::{AgentView, Household, Person, PopProcess};
+pub use products::ProductEntry;
 pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};
 pub use register::limit::{Binding, Bindings, Bound, DeclaredLimit, Limited, PhysicalToken, TermsToken};
 pub use register::profile::{JointProfile, Pinned, ProfileValue, Transform, draw_profile};

@@ -595,6 +595,10 @@ impl<B: Backing> Ledger<B> {
                 before,
                 paired: leg.paired(),
                 money,
+                made: match leg.kind {
+                    LegKind::Transformation(crate::instruction::Source::Way(way)) => Missing::Present(way),
+                    _ => Missing::Absent,
+                },
             };
             audit.leg(s.id.get(), digest);
             if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {

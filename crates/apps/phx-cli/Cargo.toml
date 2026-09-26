@@ -26,6 +26,7 @@ phx-pop = { path = "../../kernel/phx-pop" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }
 phx-world = { path = "../../assembly/phx-world" }
+sys-tec = { path = "../../systems/sys-tec" }
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true

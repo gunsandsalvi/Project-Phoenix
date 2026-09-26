@@ -279,13 +279,19 @@ fn settlement_report(w: Inspector<'_>) -> serde_json::Value {
 /// The ratcheted counters the run reads: the empty day's barriers, the map's bytes, the most on any day of the
 /// settlement's rows, heads, payments, iterations, buffers and losers drawn, and of the agents' gathered, read, drawn
 /// again, hit and drawn afresh.
-fn counters(w: Inspector<'_>) -> [(&'static str, u64); 15] {
+/// The distinct sets of ways the technology keeps: none when the world keeps no technology.
+fn way_sets(w: Inspector<'_>) -> u64 {
+    w.own::<sys_tec::Technology>("TEC").map_or(0, |t| u64::try_from(t.sets.len()).unwrap_or(u64::MAX))
+}
+
+fn counters(w: Inspector<'_>) -> [(&'static str, u64); 16] {
     let most =
         |f: fn(&phx_ledger::apply_batch::DaySettlement) -> u64| greatest(w.settlements().iter().map(|s| f(&s.dues)));
     let agents = |f: fn(&phx_world::agents::AgentDay) -> u64| greatest(w.agent_days().iter().map(f));
     [
         ("phx_exec.barriers_per_empty_day", empty_day_barriers(w)),
         ("phx_geo.map_bytes", u64::try_from(w.geo().bytes()).unwrap_or(u64::MAX)),
+        ("phx_tec.way_sets", way_sets(w)),
         ("phx_ledger.rows_streamed", most(|d| d.rows_due)),
         ("phx_ledger.run_heads_read", most(|d| d.heads_read)),
         ("phx_ledger.run_rows_scanned", most(|d| d.rows_scanned)),

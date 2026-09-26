@@ -8,6 +8,7 @@ pub mod outlooks;
 pub mod population;
 pub mod saves;
 pub mod stage0;
+pub mod technology;
 
 use phx_world::Inspector;
 
@@ -143,4 +144,5 @@ pub const CHECKS: &[Check] = &[
     outlooks::LC_1_04,
     outlooks::LC_1_43,
     outlooks::LC_1_44,
+    technology::LC_1_05,
 ];

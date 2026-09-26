@@ -315,7 +315,17 @@ mod digests {
     use crate::records::{Digests, Gap};
 
     fn leg(party: u64, account: u64, qty: i64, before: i64, money: bool) -> LegDigest {
-        LegDigest { party: PartyId::new(party), account, denom: 0, qty, flow: qty, before, paired: true, money }
+        LegDigest {
+            party: PartyId::new(party),
+            account,
+            denom: 0,
+            qty,
+            flow: qty,
+            before,
+            paired: true,
+            money,
+            made: phx_num::Missing::Absent,
+        }
     }
 
     #[test]

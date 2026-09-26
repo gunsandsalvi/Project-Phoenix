@@ -374,6 +374,7 @@ pub const phx_ledger::audit::OWNERSHIP: phx_core::family::FamilyDecl
 pub const phx_ledger::audit::UNITS: phx_core::family::FamilyDecl
 pub fn phx_ledger::audit::contracts<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::LineId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub fn phx_ledger::audit::families() -> alloc::vec::Vec<alloc::boxed::Box<dyn phx_core::family::AuditFamily>>
+pub fn phx_ledger::audit::holding_to_break(&mut dyn phx_core::family::InjectTarget) -> core::result::Result<(phx_id::ids::PartyId, u64, u32, i64), alloc::string::String>
 pub fn phx_ledger::audit::money_lines<B: phx_store::backing::Backing>(&phx_ledger::line::Lines<B>, (&[&dyn phx_ledger::holder::HolderArenas], &[&dyn phx_ledger::holder::HolderTable]), &[phx_id::ids::LineId]) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::audit::Gap)>
 pub fn phx_ledger::audit::ownership<B: phx_store::backing::Backing>(&phx_ledger::instrument::Instruments<B>, &[&dyn phx_ledger::holder::HolderArenas], phx_id::ids::InstrumentId) -> alloc::vec::Vec<phx_ledger::audit::Gap>
 pub mod phx_ledger::books
