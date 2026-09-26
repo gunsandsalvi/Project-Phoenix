@@ -4,13 +4,14 @@
 
 use phx_macros::clause;
 
-use crate::schedule::{DecisionSchedule, WakeKind};
+use crate::schedule::{RunsOn, WakeKind};
 
 /// What brings a row's next visit.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Cadence {
-    /// A continuous decision, every period of the schedule at the row's own phase within it.
-    Schedule(DecisionSchedule),
+    /// A continuous decision, every period of `days` days (a shared count the register declares, a preference of the
+    /// deciders) at the row's own phase within it, on the days it runs on, a day it does not moved to the next.
+    Schedule { days: &'static str, runs_on: RunsOn },
     /// A lumpy decision's reviews: each day's chance of one is the position the row holds, in billionths; a row that
     /// holds none is not reviewed until it does.
     Attention { position: &'static str },

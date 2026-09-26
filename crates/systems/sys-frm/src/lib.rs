@@ -6,6 +6,7 @@
 mod consts;
 pub mod industry;
 mod opening;
+pub mod rules;
 pub mod small;
 
 use phx_core::register::values::Table2;

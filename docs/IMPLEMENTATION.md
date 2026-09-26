@@ -5966,7 +5966,15 @@ productions. Counter `phx_tec.way_sets`, ratcheted.
 - **Decisions on the agenda** *(built, sub-step b1)*: the kernel's visits (architecture §7.3): positions on
   population kinds (`PositionDecl`, one `i64` column each, by name), `VisitDecl` with a schedule or attention cadence,
   the visits' agenda in `Population`, the 5b and 5c pass over the rows due, their reads and writes checked, and their
-  rebooking; the save format moves to 9. No system declares a visit yet: the firms' are sub-step b2's.
+  rebooking; the save format moves to 9. A schedule's period is a shared count the register declares, read when the
+  visit is bound. No system declares a visit yet: the firms' are sub-step b2's.
+- **The rules** *(built, sub-step b2)*: `sys-frm/src/rules/` holds each decision as a pure function over what the
+  firm holds and sees — `produce::target` (FRM.4), `price::{pressure_stocked, pressure_service, desired,
+  nearest_point, reprice, curvature}` (FRM.5, REP.34), `markup::update`, `way::{unit_cost, cheapest}` (FRM.6, FRM.14),
+  `inputs::{order, carried_cost}` (GDS.5), `attention::review_chance` (REP.38) and `endings::{founds, closes}` (FRM.15,
+  FRM.16) — with the plan's unit tests. The loss a price gap costs is read from the firm's own markup: at a markup μ
+  over cost its demand's elasticity is (1 + μ) ÷ μ, and a log gap x loses R·x² ÷ (2μ) of revenue R, which sets both
+  the menu-cost comparison and the attention's curvature, so neither needs a primitive of its own.
 - **Outlooks in the day** (S1.01): the firms' stances are the first parties' methods and their attention the first
   review intensities, so the public-series outlooks at 5a (VAL.23), once per method in use and series published, the
   attention exposure at visits (REP.21, REP.38) and the wake of a surprise beyond its sensitivity (REP.35, architecture

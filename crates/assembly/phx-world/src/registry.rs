@@ -307,10 +307,7 @@ fn prepare(
     errors.extend(refusals(&d, &h, &items, &registered));
     let (facets, unkept) = facets(&d, &items);
     errors.extend(unkept);
-    let visits = crate::visits::bind(&d, &h).unwrap_or_else(|e| {
-        errors.extend(e);
-        Vec::new()
-    });
+
     let compiled = match compile(&mut d, &kernel, &h.entries, &files, &levels, Seed::new(config.seed)) {
         Ok(c) => Some(c),
         Err(e) => {
@@ -321,6 +318,10 @@ fn prepare(
     let Some(c) = compiled else {
         return Err(AssemblyErrors(errors));
     };
+    let visits = crate::visits::bind(&d, &h, &c.register).unwrap_or_else(|e| {
+        errors.extend(e);
+        Vec::new()
+    });
     errors.extend(unlawful_kinds(&d, &kernel, &c.register));
     let (pop, processes) = match population_kinds(&mut d, &c.register) {
         Ok(bound) => bound,

@@ -3,8 +3,8 @@
 //! first decision sub-step, the handler run on them, and each booked again after it.
 
 use phx_core::{
-    AgendaTableSpec, Cadence, ColumnTrace, CtxParts, Declarations, FactStore, HandlerTable, Intents, KindTableRef,
-    Phase, ReadTrace, StreamDecl, SubStep, VisitDecl, next_due,
+    AgendaTableSpec, BusinessDayConvention, Cadence, ColumnTrace, CtxParts, DecisionSchedule, Declarations, FactStore,
+    HandlerTable, Intents, KindTableRef, Period, Phase, ReadTrace, Register, StreamDecl, SubStep, VisitDecl, next_due,
 };
 use phx_id::{CountryId, Day, PartyId, Slot, TableId};
 use phx_num::{Missing, violation};
@@ -15,11 +15,12 @@ use phx_store::SystemBacking;
 use crate::consts::{AGENT_ROWS, BILLION, KIND_ROWS};
 use crate::world::World;
 
-/// A visit as the world runs it: its declaration, its kind's table, whether that table is a kind table of
-/// individuals, its reason among the table's visits, and its stream.
+/// A visit as the world runs it: its declaration and the schedule its period's count gives it, its kind's table,
+/// whether that table is a kind table of individuals, its reason among the table's visits, and its stream.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Bound {
     pub decl: VisitDecl,
+    pub schedule: Option<DecisionSchedule>,
     pub table: TableId,
     pub individuals: bool,
     pub reason: usize,
@@ -28,7 +29,7 @@ pub(crate) struct Bound {
 
 /// Every visit bound to its handler, table and stream, each its table's agenda reason in the order declared; every
 /// refusal at once.
-pub(crate) fn bind(d: &Declarations, h: &HandlerTable) -> Result<Vec<Bound>, Vec<String>> {
+pub(crate) fn bind(d: &Declarations, h: &HandlerTable, register: &Register) -> Result<Vec<Bound>, Vec<String>> {
     let individuals: Vec<&str> =
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
     let agents: Vec<&str> =
@@ -57,6 +58,20 @@ pub(crate) fn bind(d: &Declarations, h: &HandlerTable) -> Result<Vec<Bound>, Vec
             }
             Some(_) => {}
         }
+        let mut schedule = None;
+        if let Cadence::Schedule { days, runs_on } = v.cadence {
+            match register.count(days).map(u16::try_from) {
+                Ok(Ok(n)) => match Period::days(n) {
+                    Some(period) => {
+                        schedule =
+                            Some(DecisionSchedule { period, convention: BusinessDayConvention::Following, runs_on });
+                    }
+                    None => errors.push(format!("`{}`'s schedule of `{days}` is no period", v.handler)),
+                },
+                Ok(Err(_)) => errors.push(format!("`{}`'s schedule of `{days}` is beyond a period", v.handler)),
+                Err(e) => errors.push(format!("`{}`'s schedule: {e}", v.handler)),
+            }
+        }
         if let Cadence::Attention { position } = v.cadence {
             let held = if is_individual {
                 d.facets.iter().any(|(_, f)| f.kind == v.kind && f.fact == position)
@@ -79,7 +94,7 @@ pub(crate) fn bind(d: &Declarations, h: &HandlerTable) -> Result<Vec<Bound>, Vec
         };
         let table = TableId::new(place);
         let reason = out.iter().filter(|b: &&Bound| b.table == table).count();
-        out.push(Bound { decl: *v, table, individuals: is_individual, reason, stream: *stream });
+        out.push(Bound { decl: *v, schedule, table, individuals: is_individual, reason, stream: *stream });
     }
     if errors.is_empty() { Ok(out) } else { Err(errors) }
 }
@@ -186,7 +201,10 @@ impl World {
         let agenda = &mut self.population.visits;
         agenda.grow(b.table, slot.get() + 1);
         match b.decl.cadence {
-            Cadence::Schedule(s) => {
+            Cadence::Schedule { .. } => {
+                let Some(s) = b.schedule else {
+                    violation!(clause = "TIME.5", "a scheduled visit bound without its schedule");
+                };
                 let offset = if first {
                     below_u64(&mut d, shortest_days(s.period))
                 } else {

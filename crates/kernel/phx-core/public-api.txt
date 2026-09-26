@@ -1838,7 +1838,9 @@ pub mod phx_core::visit
 pub enum phx_core::visit::Cadence
 pub phx_core::visit::Cadence::Attention
 pub phx_core::visit::Cadence::Attention::position: &'static str
-pub phx_core::visit::Cadence::Schedule(phx_core::schedule::DecisionSchedule)
+pub phx_core::visit::Cadence::Schedule
+pub phx_core::visit::Cadence::Schedule::days: &'static str
+pub phx_core::visit::Cadence::Schedule::runs_on: phx_core::schedule::RunsOn
 pub struct phx_core::visit::VisitDecl
 pub phx_core::visit::VisitDecl::cadence: phx_core::visit::Cadence
 pub phx_core::visit::VisitDecl::clause: &'static str
@@ -1892,7 +1894,9 @@ pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_s
 pub enum phx_core::Cadence
 pub phx_core::Cadence::Attention
 pub phx_core::Cadence::Attention::position: &'static str
-pub phx_core::Cadence::Schedule(phx_core::schedule::DecisionSchedule)
+pub phx_core::Cadence::Schedule
+pub phx_core::Cadence::Schedule::days: &'static str
+pub phx_core::Cadence::Schedule::runs_on: phx_core::schedule::RunsOn
 pub enum phx_core::CarryingBasis
 pub phx_core::CarryingBasis::AmortisedCost
 pub phx_core::CarryingBasis::CostLessDepreciation
