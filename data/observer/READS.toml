@@ -75,6 +75,132 @@ title = "gross value settled in the day, over every currency's smallest units"
 unit = "smallest currency units"
 measure = "settlement.gross"
 
+# Stage 1's macro reads (S1.01), frozen before S1.16's gate run: each read with the relationship real economies show
+# that it is read against and where that is published, and the N3 fact it is, where it is one. A read over a system
+# not yet built records nothing until the step that brings it.
+
+[[read]]
+id = "output"
+title = "real output, per country"
+unit = "base-year currency units"
+measure = "sta.output"
+relationship = "real output grows on average and its expansions last several times longer than its recessions"
+source = "Penn World Table 10.01 (Feenstra, Inklaar and Timmer, 2015); NBER Business Cycle Dating Committee; Harding and Pagan (2002, Journal of Monetary Economics 49)"
+fact = "F01"
+
+[[read]]
+id = "consumption"
+title = "real household consumption, per country"
+unit = "base-year currency units"
+measure = "sta.consumption"
+relationship = "consumption of non-durables and services moves with output over the cycle and less than it; investment moves more"
+source = "Stock and Watson (1999, Business cycle fluctuations in US macroeconomic time series, Handbook of Macroeconomics 1A)"
+fact = "F02"
+
+[[read]]
+id = "employment_by_region_age"
+title = "persons employed, by region and age class"
+unit = "persons"
+measure = "sta.employment_by_region_age"
+relationship = "employment rises through the twenties, is highest in prime age (25 to 54) and falls toward the pension age, in every region"
+source = "ILO modelled estimates, employment-to-population ratio by age (ILOSTAT); OECD Employment Outlook, employment rates by age group"
+
+[[read]]
+id = "unemployment_by_region_age"
+title = "persons unemployed, by region and age class"
+unit = "persons"
+measure = "sta.unemployment_by_region_age"
+relationship = "unemployment falls when output grows faster than its trend, about half a point for each point of growth (Okun's law), and is highest among the young"
+source = "Okun (1962); Ball, Leigh and Loungani (2017, Journal of Money, Credit and Banking 49(7)); ILOSTAT unemployment rates by age"
+fact = "F04"
+
+[[read]]
+id = "consumption_by_income"
+title = "household consumption, by income decile"
+unit = "smallest currency units"
+measure = "households.consumption_by_income"
+relationship = "consumption is less unequal than income: its share falls from the bottom decile to the top"
+source = "Aguiar and Bils (2015, Has consumption inequality mirrored income inequality?, American Economic Review 105(9)); Attanasio and Pistaferri (2016, Journal of Economic Perspectives 30(2))"
+
+[[read]]
+id = "income_deciles"
+title = "household income, by decile"
+unit = "smallest currency units"
+measure = "households.income_deciles"
+relationship = "incomes have a Pareto top, and wealth is more unequal than income"
+source = "World Inequality Database (WID.world), pre-tax national income and net personal wealth shares"
+fact = "F13"
+
+[[read]]
+id = "firm_sizes"
+title = "firms by the persons they employ"
+unit = "firms"
+measure = "firms.employment_by_size"
+relationship = "firm sizes have a Pareto tail with an index near one"
+source = "Axtell (2001, Zipf distribution of U.S. firm sizes, Science 293)"
+fact = "F08"
+
+[[read]]
+id = "prices_by_category"
+title = "posted prices, by category"
+unit = "index points"
+measure = "idx.prices_by_category"
+relationship = "posted prices change seldom, most spells lasting months, and by large amounts when they change"
+source = "Bils and Klenow (2004, Journal of Political Economy 112(5)); Nakamura and Steinsson (2008, Quarterly Journal of Economics 123(4))"
+fact = "F12"
+
+[[read]]
+id = "money"
+title = "broad money, per currency"
+unit = "smallest currency units"
+measure = "sta.money"
+relationship = "broad money grows with nominal output over the long run, its velocity changing slowly"
+source = "Lucas (1980, Two illustrations of the quantity theory of money, American Economic Review 70(5)); Jordà, Schularick and Taylor, Macrohistory Database"
+
+[[read]]
+id = "credit"
+title = "bank credit to households and firms"
+unit = "smallest currency units"
+measure = "banks.credit"
+relationship = "credit is procyclical and its booms outrun output"
+source = "Schularick and Taylor (2012, American Economic Review 102(2)); Jordà, Schularick and Taylor, Macrohistory Database"
+fact = "F16"
+
+[[read]]
+id = "defaults"
+title = "firm defaults in the day"
+unit = "firms"
+measure = "banks.defaults"
+relationship = "defaults cluster in time, more than independent defaults would"
+source = "Das, Duffie, Kapadia and Saita (2007, Common failings: how corporate defaults are correlated, Journal of Finance 62(1))"
+fact = "F17"
+
+[[read]]
+id = "employment_spells"
+title = "unemployment spells ended, by their length"
+unit = "persons"
+measure = "labour.spells"
+relationship = "the chance of leaving unemployment falls with the spell's length"
+source = "Kroft, Lange and Notowidigdo (2013, Quarterly Journal of Economics 128(3)); Machin and Manning (1999, Handbook of Labor Economics 3C)"
+fact = "F15"
+
+[[read]]
+id = "decile_transitions"
+title = "households moving between income deciles over a year"
+unit = "households"
+measure = "households.decile_transitions"
+relationship = "income ranks persist: most households stay in or next to their decile over a year, the bottom and top most of all"
+source = "OECD (2018, A Broken Social Elevator? How to Promote Social Mobility), income mobility over four years; Auten, Gee and Turner (2013, National Tax Journal 66(4))"
+
+[[read]]
+id = "spending_after_income_change"
+title = "household spending in the months after a change of income"
+unit = "smallest currency units"
+measure = "households.spending_after_income_change"
+relationship = "households spend part of a transitory receipt within months, those with little liquid wealth the most"
+source = "Jappelli and Pistaferri (2010, Annual Review of Economics 2); Parker, Souleles, Johnson and McClelland (2013, American Economic Review 103(6))"
+fact = "F14"
+
 [[histogram]]
 id = "households_by_persons"
 title = "households by their persons"
