@@ -942,6 +942,7 @@ pub fn phx_core::map::KernelMap<K, V>::buckets<I>() -> alloc::vec::Vec<alloc::ve
 pub fn phx_core::map::KernelMap<K, V>::capacity(&self) -> usize
 pub fn phx_core::map::KernelMap<K, V>::clear(&mut self)
 pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
+pub fn phx_core::map::KernelMap<K, V>::each(&self) -> impl core::iter::traits::iterator::Iterator<Item = (K, &V)> + '_
 pub fn phx_core::map::KernelMap<K, V>::fold<I: core::marker::Sync>(&mut self, core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<alloc::vec::Vec<(K, I)>>], impl core::ops::function::Fn() -> V + core::marker::Sync, impl core::ops::function::Fn(&mut V, &I) + core::marker::Sync) where K: core::marker::Send + core::marker::Sync, V: core::marker::Send
 pub fn phx_core::map::KernelMap<K, V>::get(&self, K) -> core::option::Option<&V>
 pub fn phx_core::map::KernelMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
@@ -953,6 +954,7 @@ pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
 pub fn phx_core::map::KernelMap<K, V>::shard_of(K) -> usize
 pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
+pub fn phx_core::map::KernelMap<K, V>::with_room_of(&self) -> phx_core::map::KernelMap<K, V>
 impl<K: phx_core::map::MapKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::map::KernelMap<K, V>, phx_store::save::LoadError>
 pub fn phx_core::map::KernelMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
@@ -2812,6 +2814,7 @@ pub fn phx_core::map::KernelMap<K, V>::buckets<I>() -> alloc::vec::Vec<alloc::ve
 pub fn phx_core::map::KernelMap<K, V>::capacity(&self) -> usize
 pub fn phx_core::map::KernelMap<K, V>::clear(&mut self)
 pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
+pub fn phx_core::map::KernelMap<K, V>::each(&self) -> impl core::iter::traits::iterator::Iterator<Item = (K, &V)> + '_
 pub fn phx_core::map::KernelMap<K, V>::fold<I: core::marker::Sync>(&mut self, core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<alloc::vec::Vec<(K, I)>>], impl core::ops::function::Fn() -> V + core::marker::Sync, impl core::ops::function::Fn(&mut V, &I) + core::marker::Sync) where K: core::marker::Send + core::marker::Sync, V: core::marker::Send
 pub fn phx_core::map::KernelMap<K, V>::get(&self, K) -> core::option::Option<&V>
 pub fn phx_core::map::KernelMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
@@ -2823,6 +2826,7 @@ pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
 pub fn phx_core::map::KernelMap<K, V>::shard_of(K) -> usize
 pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
+pub fn phx_core::map::KernelMap<K, V>::with_room_of(&self) -> phx_core::map::KernelMap<K, V>
 impl<K: phx_core::map::MapKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::map::KernelMap<K, V>
 pub fn phx_core::map::KernelMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::map::KernelMap<K, V>, phx_store::save::LoadError>
 pub fn phx_core::map::KernelMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)

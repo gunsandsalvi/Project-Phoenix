@@ -1170,6 +1170,7 @@ pub fn phx_ledger::rows::iter_from(&dyn phx_ledger::holder::HolderArenas, phx_id
 pub fn phx_ledger::rows::role(phx_ledger::algebra::Side, u8) -> u8
 pub fn phx_ledger::rows::rows(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<phx_ledger::rows::RowView>
 pub fn phx_ledger::rows::side_of(u8) -> phx_ledger::algebra::Side
+pub fn phx_ledger::rows::view_at_hint(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, usize) -> core::option::Option<phx_ledger::rows::RowView>
 pub fn phx_ledger::rows::words_of_row(&phx_ledger::rows::RowView) -> usize
 pub mod phx_ledger::runs
 pub struct phx_ledger::runs::RunTruth
@@ -1230,6 +1231,7 @@ pub struct phx_ledger::stream::Records
 impl phx_ledger::stream::Records
 pub fn phx_ledger::stream::Records::capacity(&self) -> usize
 pub fn phx_ledger::stream::Records::clear(&mut self)
+pub fn phx_ledger::stream::Records::each(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::PartyId, phx_ledger::stream::Record)> + '_
 pub fn phx_ledger::stream::Records::get(&self, (u16, phx_id::ids::Slot)) -> core::option::Option<&phx_ledger::stream::Record>
 pub fn phx_ledger::stream::Records::get_or_insert_with(&mut self, phx_id::ids::PartyId, (u16, phx_id::ids::Slot), impl core::ops::function::FnOnce() -> phx_ledger::stream::Record) -> &mut phx_ledger::stream::Record
 pub fn phx_ledger::stream::Records::sorted(&self) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_ledger::stream::Record)>

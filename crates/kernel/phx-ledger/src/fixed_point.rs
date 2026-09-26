@@ -178,8 +178,8 @@ impl<B: Backing> Books<B> {
         found: &mut Found,
         draws_of: &dyn Fn(LineId) -> Draws,
     ) -> FixedPoint {
-        let short: Vec<PartyId> =
-            day.records.sorted().into_iter().filter(|(_, r)| r.standing() < 0).map(|(p, _)| p).collect();
+        let mut short: Vec<PartyId> = day.records.each().filter(|(_, r)| r.standing() < 0).map(|(p, _)| p).collect();
+        short.sort_unstable();
         let mut work = Work {
             books: self,
             due,

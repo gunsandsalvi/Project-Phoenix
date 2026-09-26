@@ -217,7 +217,7 @@ impl Records {
         &mut self,
         pool: Option<&phx_exec::pool::Pool>,
         sources: &[Vec<Vec<Booking>>],
-        make: &(dyn Fn(PartyId, LineId) -> Record + Sync),
+        make: &(dyn Fn(PartyId, (u16, Slot), LineId) -> Record + Sync),
     ) {
         if self.shards.is_empty() {
             self.shards.resize_with(RECORD_SHARDS, RecordShard::default);
@@ -225,7 +225,7 @@ impl Records {
         let day = self.day;
         phx_exec::pool::each(pool, self.shards.iter_mut().enumerate(), |(k, shard)| {
             for b in sources.iter().filter_map(|of| of.get(k)).flatten() {
-                let rec = shard.get_or_insert_with(day, b.party, b.at, || make(b.party, b.account));
+                let rec = shard.get_or_insert_with(day, b.party, b.at, || make(b.party, b.at, b.account));
                 if rec.account != b.account {
                     violation!(clause = "MON.5", "a party paying from two accounts in one day", party = b.party.get());
                 }
@@ -242,14 +242,14 @@ impl Records {
     /// Every record the day made, in party order.
     #[must_use]
     pub fn sorted(&self) -> Vec<(PartyId, Record)> {
-        let mut out: Vec<(PartyId, Record)> = self
-            .shards
-            .iter()
-            .flat_map(|s| s.touched.iter())
-            .filter_map(|&(p, t, s)| self.get((t, s)).map(|r| (p, *r)))
-            .collect();
+        let mut out: Vec<(PartyId, Record)> = self.each().collect();
         out.sort_unstable_by_key(|(p, _)| *p);
         out
+    }
+
+    /// Every record the day made, in the order they were made, for reads whose result no order changes.
+    pub fn each(&self) -> impl Iterator<Item = (PartyId, Record)> + '_ {
+        self.shards.iter().flat_map(|s| s.touched.iter()).filter_map(|&(p, t, s)| self.get((t, s)).map(|r| (p, *r)))
     }
 
     /// The parties the day's records were made for.
@@ -647,7 +647,7 @@ impl<B: Backing> Books<B> {
             let bookings: Vec<Vec<Vec<Booking>>> =
                 shards.iter_mut().map(|sh| std::mem::take(&mut sh.bookings)).collect();
             self.count_shards(shards, &mut out, closed, found);
-            out.records.fold(self.pool.as_deref(), &bookings, &|party, account| self.record_of(party, account));
+            out.records.fold(self.pool.as_deref(), &bookings, &|party, _, account| self.record_of(party, account));
         }
         out
     }

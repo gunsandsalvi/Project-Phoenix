@@ -144,7 +144,7 @@ impl DayBook {
     #[must_use]
     pub fn measure(&self) -> Settlement {
         let mut m = Settlement::default();
-        for (Moved { ccy, .. }, (paid, received)) in self.moved.sorted() {
+        for (Moved { ccy, .. }, (paid, received)) in self.moved.each() {
             *m.gross.entry(ccy).or_insert(0) += paid;
             let net = received - paid;
             if net > 0 {
@@ -190,7 +190,8 @@ struct Settling {
 }
 
 /// What a leg draws on before anything moves: the position its move is checked against, with the move.
-pub(crate) type Drawn = Option<(Position, i64)>;
+/// What a leg draws on, and where its line row was found when it moves one, so its apply need not look again.
+pub(crate) type Drawn = Option<(Position, i64, Missing<usize>)>;
 /// An instruction's legs as read before anything moves: where each leg's party is and what it draws, or the first leg
 /// whose party has ended.
 pub(crate) type LegReads = Result<(Vec<At>, Vec<Drawn>), usize>;
@@ -205,7 +206,7 @@ pub(crate) struct At {
 
 /// A position a leg draws on, by who holds it and what: a row's member count apart from its balance, since the two
 /// are counted in different denominations.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Key {
     table: u16,
     slot: Slot,
@@ -351,9 +352,13 @@ impl<B: Backing> Ledger<B> {
         at: At,
         leg: &LegRec,
         opened: &[(PartyId, AccountRef)],
-    ) -> Option<(Position, i64)> {
+    ) -> Drawn {
         if matches!(leg.kind, LegKind::Row(RowOp::Adjust)) && opened.contains(&(leg.party, leg.account)) {
-            return Some((Position { now: 0, floor: Missing::Absent, short: FailCause::Funds }, leg.qty));
+            return Some((
+                Position { now: 0, floor: Missing::Absent, short: FailCause::Funds },
+                leg.qty,
+                Missing::Absent,
+            ));
         }
         self.draws(arenas, at.party, at.slot, leg)
     }
@@ -367,20 +372,43 @@ impl<B: Backing> Ledger<B> {
         audit: &mut dyn AuditStream,
     ) -> Result<InstructionId, Fail> {
         let id = settling.id;
-        let mut keys: BTreeMap<Key, usize> = BTreeMap::new();
-        let mut positions: Vec<Position> = Vec::new();
-        let mut moves: Vec<(usize, i64)> = Vec::new();
-        let mut moved_by: Vec<usize> = Vec::new();
+        // Legs on one position are merged by sorting their keys; each position is numbered by the first leg on it, as
+        // the legs meet them, so the first failing position is the one the legs' order finds.
+        let mut keyed: Vec<(Key, usize)> = Vec::with_capacity(legs.len());
         for (n, ((leg, at), d)) in legs.iter().zip(located).zip(drawn).enumerate() {
-            let Some((position, delta)) = *d else {
-                continue;
+            if d.is_some() {
+                keyed.push((Key { table: at.table, slot: at.slot, code: leg.position_code() }, n));
+            }
+        }
+        keyed.sort_unstable();
+        let mut firsts: Vec<(usize, usize)> = Vec::new();
+        let mut group_of: Vec<usize> = vec![0; legs.len()];
+        for (i, (key, n)) in keyed.iter().enumerate() {
+            if i == 0 || keyed.get(i - 1).is_some_and(|(k, _)| k != key) {
+                firsts.push((*n, firsts.len()));
+            }
+            if let Some(g) = group_of.get_mut(*n) {
+                *g = firsts.len() - 1;
+            }
+        }
+        firsts.sort_unstable();
+        let mut number: Vec<usize> = vec![0; firsts.len()];
+        let mut positions: Vec<Position> = Vec::with_capacity(firsts.len());
+        for (k, (n, group)) in firsts.iter().enumerate() {
+            let (Some(Some((position, _, _))), Some(slot)) = (drawn.get(*n), number.get_mut(*group)) else {
+                violation!(clause = "SET.4", "a position with no leg that draws on it", id = id.get());
             };
-            let key = Key { table: at.table, slot: at.slot, code: leg.position_code() };
-            let at = *keys.entry(key).or_insert_with(|| {
-                positions.push(position);
-                positions.len() - 1
-            });
-            moves.push((at, delta));
+            *slot = k;
+            positions.push(*position);
+        }
+        let mut moves: Vec<(usize, i64)> = Vec::with_capacity(keyed.len());
+        let mut moved_by: Vec<usize> = Vec::with_capacity(keyed.len());
+        for (n, d) in drawn.iter().enumerate() {
+            let Some((_, delta, _)) = *d else { continue };
+            let Some(at) = group_of.get(n).and_then(|g| number.get(*g)) else {
+                violation!(clause = "SET.4", "a move of no position", id = id.get());
+            };
+            moves.push((*at, delta));
             moved_by.push(n);
         }
         if let Err((cause, m)) = check_legs(&positions, &moves) {
@@ -389,7 +417,7 @@ impl<B: Backing> Ledger<B> {
             };
             return Err(self.fail(settling, cause, &leg, covers));
         }
-        self.settle_legs(holders, settling, legs, located, audit);
+        self.settle_legs(holders, settling, (legs, located, drawn), audit);
         for c in covers {
             self.covers.release(c);
         }
@@ -444,7 +472,7 @@ impl<B: Backing> Ledger<B> {
     }
 
     /// What a leg draws on and how it moves it; a leg that can only add, or opens a row, draws on nothing.
-    fn draws(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, leg: &LegRec) -> Option<(Position, i64)> {
+    fn draws(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, leg: &LegRec) -> Drawn {
         match (leg.kind, leg.account) {
             (LegKind::Money | LegKind::Row(RowOp::Adjust), AccountRef::Line { line, side }) => {
                 let view = find(arenas, slot, line, side);
@@ -461,7 +489,8 @@ impl<B: Backing> Ledger<B> {
                 }
                 let money_holder = matches!(leg.kind, LegKind::Money) && side == Side::Asset;
                 if !money_holder {
-                    return Some((Position { now: b, floor: Missing::Absent, short: FailCause::Funds }, leg.qty));
+                    let now = Position { now: b, floor: Missing::Absent, short: FailCause::Funds };
+                    return Some((now, leg.qty, Missing::Present(view.at)));
                 }
                 let pending = match view.optional.pending {
                     Missing::Present(p) => p,
@@ -476,7 +505,8 @@ impl<B: Backing> Ledger<B> {
                     }
                     Missing::Absent => 0,
                 };
-                Some((Position { now: b - pending, floor: Missing::Present(floor), short: FailCause::Funds }, leg.qty))
+                let now = Position { now: b - pending, floor: Missing::Present(floor), short: FailCause::Funds };
+                Some((now, leg.qty, Missing::Present(view.at)))
             }
             (
                 LegKind::Units { .. } | LegKind::Transformation { .. } | LegKind::OpeningWrite { .. },
@@ -493,22 +523,34 @@ impl<B: Backing> Ledger<B> {
                 let issuing = matches!(leg.kind, LegKind::Units { .. }) && inst.issuer == Missing::Present(party);
                 if issuing {
                     let now = inst.issued.n();
-                    return Some((Position { now, floor: Missing::Present(0), short: FailCause::FreeUnits }, -leg.qty));
+                    return Some((
+                        Position { now, floor: Missing::Present(0), short: FailCause::FreeUnits },
+                        -leg.qty,
+                        Missing::Absent,
+                    ));
                 }
                 let held = match holding(arenas, slot, id) {
                     Missing::Present(h) => h.quantity.raw(),
                     Missing::Absent => 0,
                 };
                 let free = held - self.bound(party, id);
-                Some((Position { now: free, floor: Missing::Present(0), short: FailCause::FreeUnits }, leg.qty))
+                Some((
+                    Position { now: free, floor: Missing::Present(0), short: FailCause::FreeUnits },
+                    leg.qty,
+                    Missing::Absent,
+                ))
             }
             (LegKind::Units { .. }, AccountRef::Unit(unit)) => {
                 let now = i64::from(named(arenas, slot).iter().any(|u| u.id == unit));
-                Some((Position { now, floor: Missing::Present(0), short: FailCause::NotHeld }, leg.qty))
+                Some((
+                    Position { now, floor: Missing::Present(0), short: FailCause::NotHeld },
+                    leg.qty,
+                    Missing::Absent,
+                ))
             }
             (LegKind::OpeningWrite { .. }, AccountRef::Line { line, side }) => {
                 let b = balance(&find(arenas, slot, line, side), line);
-                Some((Position { now: b, floor: Missing::Absent, short: FailCause::Funds }, leg.qty))
+                Some((Position { now: b, floor: Missing::Absent, short: FailCause::Funds }, leg.qty, Missing::Absent))
             }
             (LegKind::Row(RowOp::Close), AccountRef::Line { line, side }) => {
                 let _ = find(arenas, slot, line, side);
@@ -517,7 +559,11 @@ impl<B: Backing> Ledger<B> {
             (LegKind::Row(RowOp::Open(_)), AccountRef::Line { .. }) => None,
             (LegKind::Row(RowOp::Count), AccountRef::Line { line, side }) => {
                 let now = i64::from(find(arenas, slot, line, side).row.count);
-                Some((Position { now, floor: Missing::Present(0), short: FailCause::FreeUnits }, leg.qty))
+                Some((
+                    Position { now, floor: Missing::Present(0), short: FailCause::FreeUnits },
+                    leg.qty,
+                    Missing::Absent,
+                ))
             }
             _ => violation!(clause = "SET.11", "a leg whose kind does not fit its account", party = party.get()),
         }
@@ -553,11 +599,12 @@ impl<B: Backing> Ledger<B> {
         &mut self,
         holders: &mut dyn Holders,
         s: Settling,
-        legs: &[LegRec],
-        located: &[At],
+        (legs, located, drawn): (&[LegRec], &[At], &[Drawn]),
         audit: &mut dyn AuditStream,
     ) {
         let decl = self.reasons.get(s.reason);
+        // Where no leg opens or closes a row, every holder's rows keep the places the reads found them at.
+        let shaped = legs.iter().any(|l| matches!(l.kind, LegKind::Row(RowOp::Open(_) | RowOp::Close)));
         let mut taken: Vec<NamedUnit> = Vec::new();
         // Rows are opened before anything moves on them and retired after; between, what leaves goes before what
         // arrives.
@@ -576,7 +623,16 @@ impl<B: Backing> Ledger<B> {
                 (
                     LegKind::Money | LegKind::Row(RowOp::Adjust) | LegKind::OpeningWrite { .. },
                     AccountRef::Line { line, side },
-                ) => Some((line, find(arenas, at.slot, line, side))),
+                ) => {
+                    let found = match drawn.get(i).copied().flatten() {
+                        Some((_, _, Missing::Present(hint))) if !shaped => {
+                            crate::rows::view_at_hint(arenas, at.slot, hint)
+                                .filter(|v| v.row.line == line && v.side() == side)
+                        }
+                        _ => None,
+                    };
+                    Some((line, found.unwrap_or_else(|| find(arenas, at.slot, line, side))))
+                }
                 _ => None,
             };
             let before = match &line_row {
@@ -772,7 +828,10 @@ impl<B: Backing> Ledger<B> {
     /// applied set starts again.
     pub fn close(&mut self) -> DayBook {
         self.applied.clear();
-        core::mem::take(&mut self.day)
+        let moved = self.day.moved.with_room_of();
+        let book = core::mem::take(&mut self.day);
+        self.day.moved = moved;
+        book
     }
 
     /// The opening's records forgotten: the audit and the accounts read days, and the opening is none; the accounts

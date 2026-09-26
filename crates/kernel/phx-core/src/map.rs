@@ -142,6 +142,22 @@ impl<K: MapKey, V> KernelMap<K, V> {
         all
     }
 
+    /// Every entry in no set order, for a read whose result no order changes, as a sum.
+    pub fn each(&self) -> impl Iterator<Item = (K, &V)> + '_ {
+        self.shards.iter().flat_map(|s| s.iter().map(|(k, v)| (*k, v)))
+    }
+
+    /// An empty map with the room this one holds, so a map begun afresh each day grows no more than the last did.
+    #[must_use]
+    pub fn with_room_of(&self) -> KernelMap<K, V> {
+        let shards = self
+            .shards
+            .iter()
+            .map(|s| HashMap::with_capacity_and_hasher(s.capacity(), FixedState::with_seed(MAP_SEED)))
+            .collect();
+        KernelMap { shards, len: 0 }
+    }
+
     /// Empties the map, keeping the room it holds, so a map filled again each day maps no new pages.
     pub fn clear(&mut self) {
         for s in &mut self.shards {

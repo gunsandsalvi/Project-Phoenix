@@ -171,6 +171,12 @@ pub fn iter_from(
 }
 
 /// The row whose head lies at the word `at`, read whole.
+/// A holder's row at a word a read found it at, while its rows have kept their places.
+#[must_use]
+pub fn view_at_hint(arenas: &dyn HolderArenas, holder: Slot, at: usize) -> Option<RowView> {
+    view_at(arenas.read(holder, ListKind::RelationshipRows), at)
+}
+
 fn view_at(words: &[u64], at: usize) -> Option<RowView> {
     let head = words.get(at..at + ROW)?;
     let row: RelRow = from_words(head);

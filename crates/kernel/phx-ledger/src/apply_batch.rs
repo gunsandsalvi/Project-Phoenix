@@ -288,7 +288,12 @@ impl<B: Backing> Books<B> {
             });
             let pool = self.pool.as_deref();
             let bookings: Vec<_> = routed.iter_mut().map(|r| std::mem::take(&mut r.given)).collect();
-            g.given.fold(pool, &bookings, &|party, account| self.record_of(party, account));
+            // A party's funds at the start of stage 7 are what 7a read for it, so they are taken from its records.
+            let opening = |party, at, account| match streamed.records.get(at) {
+                Some(r) if r.account == account => Record { account, funds: r.funds, debit: 0, credit: 0 },
+                _ => self.record_of(party, account),
+            };
+            g.given.fold(pool, &bookings, &opening);
             let legs: Vec<_> = routed.iter_mut().map(|r| std::mem::take(&mut r.nets)).collect();
             nets.fold(pool, &legs, || 0, |q, leg| *q += i128::from(*leg));
             let earned: Vec<_> = routed.iter_mut().map(|r| std::mem::take(&mut r.earned)).collect();
@@ -518,11 +523,11 @@ impl<B: Backing> Books<B> {
         let (runs_read, runs_broken, sampled) = self.runs_broken(due, day, &streamed.scanned);
         let (g, nets) = self.gather(&streamed, &fixed, (due, day, calendar), closed, &mut found);
         let (lost, lost_past_failed) = self.record_lost(&found);
-        let given = g.given.sorted();
-        let unsound = count(given.iter().filter(|(_, r)| r.standing() < 0).count());
-        let (ring_parties, ring_value) = given
-            .iter()
-            .map(|(_, r)| *r)
+        let unsound = count(g.given.each().filter(|(_, r)| r.standing() < 0).count());
+        let (ring_parties, ring_value) = g
+            .given
+            .each()
+            .map(|(_, r)| r)
             .filter(|r| r.debit > r.funds)
             .fold((0_u64, 0_i128), |(n, v), r| (n + 1, v + r.debit - r.funds));
         let not_maximal = self.not_maximal(&g.failed_payers, &fixed, &g.given, (due, day, calendar), &mut found);
