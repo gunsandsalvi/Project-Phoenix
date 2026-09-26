@@ -106,14 +106,16 @@ counter = "phx_pop.agents_gathered"
 value = 6145
 direction = "down"
 
+# The most agents a day's screening read and redrew: restated at S1.08, whose retirement is a hazard at birthdays
+# from the pension's age, so more agents are booked and redrawn on a day.
 [[ratchet]]
 counter = "phx_pop.bookings_read"
-value = 14032
+value = 15429
 direction = "down"
 
 [[ratchet]]
 counter = "phx_pop.redraws"
-value = 13988
+value = 15393
 direction = "down"
 
 [[ratchet]]
@@ -498,4 +500,26 @@ direction = "down"
 [[ratchet]]
 counter = "phx_market.ir_linked_call_warm"
 value = 1123989366
+direction = "down"
+# Labour's matching, the most on any day: agents with a searching person, the vacancies they could see, the
+# applications sent, and the mean rounds a match took. No firm posts before it holds a price and a planned output
+# (S1.15), so only searchers are counted until then; the budget (architecture §13.2) holds 0.1 M searching groups.
+[[ratchet]]
+counter = "phx_lab.searching_groups"
+value = 37129
+direction = "down"
+
+[[ratchet]]
+counter = "phx_lab.vacancies_visible"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_lab.applications"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_lab.rounds_to_match"
+value = 0
 direction = "down"
