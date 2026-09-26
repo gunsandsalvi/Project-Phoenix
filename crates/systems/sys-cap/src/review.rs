@@ -20,7 +20,7 @@ use crate::rules::invest::{invests, waiting_multiple};
 declare_handler! {
     /// A small firm's review of its plant.
     pub ReviewSmall = "CAP.review_small" {
-        substep: S5d,
+        substep: S4a,
         table: "small_firm",
         reads: [WayUsed, Product, ExpectedSales, SalesWidth, OutputRate, Price, UnitCost, RequiredReturn],
         writes: [Capacity],
@@ -33,7 +33,7 @@ declare_handler! {
 declare_handler! {
     /// A large firm's review of its plant.
     pub ReviewLarge = "CAP.review_large" {
-        substep: S5d,
+        substep: S4a,
         table: "firm",
         reads: [WayUsed, Product, ExpectedSales, SalesWidth, OutputRate, Price, UnitCost, RequiredReturn],
         writes: [Capacity],

@@ -9,7 +9,7 @@ use super::Outcome;
 use crate::live_check;
 
 /// Why the firms' prices are not read yet.
-const NO_PRICES: &str = "no firm posts a price before its latest filed accounts are drawn (S1.15)";
+const NO_PRICES: &str = "no firm posted a price in the run";
 
 /// The family of the firms' revenue is registered and found nothing.
 fn families_clean(w: Inspector<'_>) -> Outcome {
@@ -82,8 +82,23 @@ pub const LC_1_07: super::Check = live_check! {
     check: prices_are_points,
 };
 
-fn price_reads(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet(NO_PRICES)
+/// How often firms moved their prices over the run is read: the moves of the price fact, over the firms' reviews.
+fn price_reads(w: Inspector<'_>) -> Outcome {
+    let name = <if_firm::facts::Price as FactDef>::ITEM.name;
+    let reviews = [
+        <sys_frm::decide::ReviewSmall as phx_core::HandlerDecl>::NAME,
+        <sys_frm::decide::ReviewLarge as phx_core::HandlerDecl>::NAME,
+    ];
+    let days = w.visit_days();
+    let moved: u64 = days.iter().map(|v| v.moved_of(name)).sum();
+    let reviewed: u64 = days.iter().map(|v| reviews.iter().map(|r| v.visits_of(r)).sum::<u64>()).sum();
+    if reviewed == 0 {
+        return Outcome::NotYet("no firm reviewed its price in the run");
+    }
+    if moved > reviewed {
+        return Outcome::Fail(format!("{moved} prices moved over {reviewed} reviews"));
+    }
+    Outcome::Pass
 }
 
 pub const LC_1_08: super::Check = live_check! {

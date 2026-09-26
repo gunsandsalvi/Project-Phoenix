@@ -999,7 +999,7 @@ without end in both directions.
   receiving other than what the one before it gave the same holder); each wear leg's digest carries its chain and
   class, and `CAP.stock` checks the same from the audit's own record.
 - **Capacity** reads the classes: a way's capacity is the least over its kinds of units × the class's efficiency over
-  the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound. The owner's review (5d)
+  the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound. The owner's review (4a)
   writes it as the fact `CAP.capacity`, one twin's units a day, which production and a service's stall read beside
   what the staff can make.
 - **Investment** (CAP.5, CAP.2): each chain has one more instrument, its **plant under construction**, held apart
@@ -1098,7 +1098,7 @@ without end in both directions.
   world rebuilds an `AwayTable`: each good's mark at each region's market zone and the carriage market's mark at each
   origin and mode. A handler reads it through `Ctx::away` (`phx_core::Away`): for its row's zone, each other place in
   its country that marks the good, with the metres between (`ZoneDistances`) and each mode carriage is marked in
-  where the row stands. The shipper's visit (`FRT.ship_*`, every `FRT.shipping_days` at 5d) carries the whole lots it
+  where the row stands. The shipper's visit (`FRT.ship_*`, every `FRT.shipping_days` at 5c) carries the whole lots it
   holds beyond its planning days' expected sales to the place whose price less its own and the freight — its tonnes
   times the metres, in units of carriage at the carriage mark — is widest, when that is positive.
 - **Merchants** (GDS.6): the firms making `GDS.merchant_product` visit every `GDS.merchant_days` at 5c and, for each

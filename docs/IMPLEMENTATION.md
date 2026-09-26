@@ -6311,7 +6311,7 @@ first set.
     waiting, the multiple of cost a project must beat before investing now pays (Dixit and Pindyck, 1994).
 - **Purchase** (CAP.5), from S1.15: an order to a named producer of the kind's product (a bilateral contract, MKT.7),
   paid in stages on the contract's schedule and delivered after the lead time into the kind's newest class. It is a
-  commitment until delivery (REG.10) and in service when complete. *As built (S1.15)*: the review at 5d writes
+  commitment until delivery (REG.10) and in service when complete. *As built (S1.15)*: the review at 4a writes
   `CAP.capacity` and emits `CAP.invest` for the scarcest kind; at 6a the builder is the seller of the kind's product
   in the owner's reach and country at the lowest posted price; the project (`phx_ledger::chains::Project`) delivers
   one stage a day, `CAP.lead_days` stages, each a trade under `CAP bought` into the chain's plant under construction
@@ -7717,6 +7717,14 @@ no budget is set for it yet, and a total beyond ten minutes is raised with the o
 
 **Not allowed**: an opening parameter changed after a run; a posted price that is not a point; a stance drawn from a
 share.
+
+**As built**: firms' products, ways, opening stocks and filed accounts (`sys-frm`'s `filed.rs`), deposit rights to
+large firms (`sys-gds`'s `rights.rs`), production within staff and plant at the firm's schedule, inputs bought at the
+goods markets and services at retail, services and other made-to-order products made at their sale; plant capacity
+and investment from named builders in stages (architecture §7.10); carriers' modes and shippers' visits, merchants'
+carry of commodities, catastrophes striking agents, owners' closure of solvent firms (§7.11); the national accounts
+(§7.15). LAB.10, CAP.4, CAP.6's failures, CAP.13 and SRV.3 moved to S2.03, S2.05 and S2.10; the shortcuts are
+F-115 to F-120.
 
 **Done when**
 - [ ] The Stage 1 world opens, balances and settles.
@@ -16785,6 +16793,7 @@ the final build within the budget on the phone.
 | F-117 | S1.15 | build, 2026-09-26 | Merchants carry only the standardised goods of their own place and buy no storage, since no product sells room; distributors do not restock the made goods households buy, which their makers sell at retail themselves; an owner values winding down at its books' cost rather than the prices its stock and plant would fetch | the carry ignores storage's cost; retail margins are the makers' own; a firm whose plant would fetch less than its cost closes too readily | storage as a service bought from the owners of room, distributors holding and reselling made goods at retail, and the stock and plant valued at their marks, with the retail structure (S2.05) | open for S2.05 |
 | F-118 | S1.15 | build, 2026-09-26 | The national accounts are monthly; their income measure counts households' and firms' income only, so banks' margins and the state's are not in it, and every firm's income is read in full where an agency would read its filed accounts; a record is a whole instruction, so production and expenditure differ only by sampling | the income measure falls short of output by the financial sector's and the state's value added; the discrepancy is mostly that | quarterly accounts beside the monthly, the financial and government sectors' value added, and income read from the filed accounts the firms publish (S2.10) | open for S2.10 |
 | F-119 | S1.15 | build, 2026-09-26 | Day zero runs no stage of its own: the opening's derivations from the snapshot stand for the first decisions (each firm's price the point nearest its product's snapshot price, its filed accounts' output and costs), and every party's own first decision comes at its first visit, phased over its period from day one | the first period's decisions arrive staggered rather than all on the snapshot; nothing is drawn, but the first prices are the opening's, not each firm's rule | day zero's 5a–5d for the decision kinds each system declares as opening decisions, orders standing into day one, with the opening's refinement (S2.10) | open for S2.10 |
+| F-120 | S1.15 | build, 2026-09-26 | Several Stage 1 reads had waited on a step that is done: the outlooks' disagreement (LC-1-01, LC-1-04) and their formation before use (LC-1-02) now read the public series, the price moves (LC-1-08) the reviews, and the retail reads (LC-1-16, LC-1-18) the tape; but the run keeps no record over time of the heuristics' shares, of each decision's first change after a surprise, of the dispersion's widening after one, of the size of price moves or of the retail margin, so LC-1-03, LC-1-43 and LC-1-44 cannot run and LC-1-01, LC-1-08 and LC-1-16 read only part of what they name; LC-0-29's sample of levies is not kept either | the reads of how outlooks learn and react are missing from the gate | a per-day record of stance shares, surprises and the first changed decision, and of price moves' sizes and the retail margin, kept by the observer's reads (N2) with the gate's reads (S1.16) | open for S1.16 |
 
 ---
 

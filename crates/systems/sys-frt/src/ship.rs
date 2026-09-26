@@ -18,7 +18,7 @@ use crate::consts::METRES_A_KM;
 declare_handler! {
     /// A small firm's shipping.
     pub ShipSmall = "FRT.ship_small" {
-        substep: S5d,
+        substep: S5c,
         table: "small_firm",
         reads: [Product, ExpectedSales],
         writes: [],
@@ -31,7 +31,7 @@ declare_handler! {
 declare_handler! {
     /// A large firm's shipping.
     pub ShipLarge = "FRT.ship_large" {
-        substep: S5d,
+        substep: S5c,
         table: "firm",
         reads: [Product, ExpectedSales],
         writes: [],
