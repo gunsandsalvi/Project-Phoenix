@@ -67,6 +67,8 @@ pub struct World {
     /// gathered, and the undeclared reads their handlers made since the last close.
     pub(crate) visits: Vec<crate::visits::Bound>,
     pub(crate) visit_due: Vec<(usize, phx_id::Slot)>,
+    /// The room of the last visit's goods view, which the next visit reads its rows' goods into.
+    pub(crate) visit_goods: crate::goods::RunGoods,
     pub(crate) visit_day: Day,
     pub(crate) visit_reads: phx_core::ReadTrace,
     /// What today's visits did, kept for the metrics at the day's close.

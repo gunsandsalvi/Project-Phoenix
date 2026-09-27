@@ -39,6 +39,12 @@ impl MapKey for u64 {
     }
 }
 
+impl MapKey for (PartyId, u64) {
+    fn key64(self) -> u64 {
+        mix64(self.0.get()) ^ self.1
+    }
+}
+
 /// The kernel's one map: sharded as a keyed reduction shards, hashed with a fixed seed, and read whole only sorted by
 /// key, so no outcome can depend on the order of its entries.
 #[clause("CHN.6")]

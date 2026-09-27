@@ -117,6 +117,16 @@ impl DayBook {
             + self.disposed.capacity() * size_of::<DisposedRec>()
             + self.moved.capacity() * size_of::<(Moved, (i128, i128))>()
     }
+
+    /// Every record dropped, the room kept.
+    fn clear(&mut self) {
+        self.fails.clear();
+        self.effects.clear();
+        self.dues.clear();
+        self.earned.clear();
+        self.disposed.clear();
+        self.moved.clear();
+    }
 }
 
 /// Units that left a holding, with the cost their lots carried out, for the accounts to realise.
@@ -182,6 +192,8 @@ pub struct Ledger<B: Backing = SystemBacking> {
     /// Each individual's cost flow over its stocks' lots, once chosen: weighted average (true) or first in, first out.
     pub cost_flows: std::collections::BTreeMap<PartyId, bool>,
     pub(crate) day: DayBook,
+    /// The book of the day before last, emptied once its close has read it, whose room the next day records into.
+    spare: DayBook,
 }
 
 /// What every leg of an instruction settles with: its identity, reason and day, and the contract row it pays.
@@ -325,6 +337,7 @@ impl<B: Backing> Ledger<B> {
             goods: crate::goods::Goods::default(),
             cost_flows: std::collections::BTreeMap::new(),
             day: DayBook::default(),
+            spare: DayBook::default(),
         }
     }
 
@@ -1022,10 +1035,15 @@ impl<B: Backing> Ledger<B> {
     /// applied set starts again.
     pub fn close(&mut self) -> DayBook {
         self.applied.clear();
-        let moved = self.day.moved.with_room_of();
-        let book = core::mem::take(&mut self.day);
-        self.day.moved = moved;
-        book
+        let spare = core::mem::take(&mut self.spare);
+        core::mem::replace(&mut self.day, spare)
+    }
+
+    /// A closed day's book handed back once its close has read it: emptied, it keeps its room for a day to come, so
+    /// the day's records map no new pages once the heaviest day has sized them.
+    pub fn recycle(&mut self, mut book: DayBook) {
+        book.clear();
+        self.spare = book;
     }
 
     /// The opening's records forgotten: the audit and the accounts read days, and the opening is none; the accounts
@@ -1127,6 +1145,7 @@ impl<B: Backing> Ledger<B> {
             goods: crate::goods::Goods::load(r)?,
             cost_flows: std::collections::BTreeMap::load(r)?,
             day: DayBook::default(),
+            spare: DayBook::default(),
         })
     }
 }

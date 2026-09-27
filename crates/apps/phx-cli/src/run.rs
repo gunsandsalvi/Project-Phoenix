@@ -748,6 +748,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let (settle_end, end) = span(Inspector::new(&world), args.days, args.total_days)?;
     let definitions = phx_obs::Definitions::read(&args.data)?;
     let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;
+    println!("opened in {} ms", assembly_ns.map_or(0, |n| n / 1_000_000));
     let started = clock.now_ns();
     let injection_save = play(&mut world, args, settle_end, end, &clock, &mut obs)?;
     let run_ns = clock.now_ns().checked_sub(started);

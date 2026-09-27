@@ -260,6 +260,7 @@ pub fn phx_ledger::apply::Ledger<B>::new(phx_ledger::instrument::Instruments<B>,
 pub fn phx_ledger::apply::Ledger<B>::next_id(&mut self, phx_id::day::Day) -> phx_ledger::instruction::InstructionId
 pub fn phx_ledger::apply::Ledger<B>::opened(&mut self)
 pub fn phx_ledger::apply::Ledger<B>::position(&self, &dyn phx_ledger::holder::HolderArenas, phx_id::ids::PartyId, phx_id::ids::Slot, u64) -> i64
+pub fn phx_ledger::apply::Ledger<B>::recycle(&mut self, phx_ledger::apply::DayBook)
 pub fn phx_ledger::apply::Ledger<B>::settle(&mut self, &mut dyn phx_ledger::apply::Holders, phx_ledger::apply::ApplyAt, alloc::vec::Vec<phx_ledger::instruction::Instruction>, &mut dyn phx_core::family::AuditStream) -> alloc::vec::Vec<core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>>
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::contract_process(&mut self, &mut dyn phx_ledger::apply::Holders, &[phx_ledger::fails::Fail], phx_id::day::Day)
@@ -404,6 +405,7 @@ pub fn phx_ledger::books::Books<B>::new(&[&'static str], phx_ledger::books::Book
 pub fn phx_ledger::books::Books<B>::on_pool<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_ledger::books::Books<B>::open(&mut self, phx_ledger::instruction::ReasonId, alloc::vec::Vec<phx_ledger::instruction::LegRec>, u64, &mut phx_core::contribution::GenReport)
 pub fn phx_ledger::books::Books<B>::pool(&self) -> core::option::Option<&phx_exec::pool::Pool>
+pub fn phx_ledger::books::Books<B>::recycle(&mut self, phx_ledger::apply::DayBook)
 pub fn phx_ledger::books::Books<B>::row_on(&self, phx_id::ids::PartyId, &str) -> core::option::Option<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 pub fn phx_ledger::books::Books<B>::rows_of(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 pub fn phx_ledger::books::Books<B>::use_pool(&mut self, alloc::sync::Arc<phx_exec::pool::Pool>)
@@ -607,6 +609,7 @@ pub const phx_ledger::consts::MONTHS_A_YEAR: u8
 pub const phx_ledger::consts::PURCHASE: u64
 pub const phx_ledger::consts::RECORD_RUN_BITS: u32
 pub const phx_ledger::consts::RECORD_SHARDS: usize
+pub const phx_ledger::consts::RECORD_WORDS: usize
 pub const phx_ledger::consts::ROUTE_SHARDS: usize
 pub const phx_ledger::consts::ROW_OPTIONAL_WORDS: usize
 pub const phx_ledger::consts::RUN_SAMPLE_PERIOD: u32
@@ -876,7 +879,7 @@ pub const phx_ledger::holding::PLEDGED: u32
 pub fn phx_ledger::holding::bases(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<(phx_id::ids::InstrumentId, i64)>
 pub fn phx_ledger::holding::basis(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<i64>
 pub fn phx_ledger::holding::first_in_cost(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId, i64) -> phx_num::missing::Missing<i64>
-pub fn phx_ledger::holding::held(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<(phx_id::ids::InstrumentId, i64, i64)>
+pub fn phx_ledger::holding::held(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::InstrumentId, i64, i64)> + '_
 pub fn phx_ledger::holding::holding(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<phx_ledger::holding::IndividualHolding>
 pub fn phx_ledger::holding::lots(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> alloc::vec::Vec<phx_ledger::holding::Lot>
 pub fn phx_ledger::holding::mark_pledged(&mut dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId, bool)
@@ -1480,6 +1483,10 @@ pub phx_ledger::waterfall::Waterfall::left: alloc::vec::Vec<(phx_num::money::Ccy
 pub phx_ledger::waterfall::Waterfall::paid: alloc::vec::Vec<phx_ledger::waterfall::Paid>
 pub fn phx_ledger::waterfall::waterfall(&[phx_ledger::waterfall::Realised], &[phx_ledger::waterfall::Claim], &[u8], &[(phx_num::money::Ccy, u8, u32)]) -> phx_ledger::waterfall::Waterfall
 pub mod phx_ledger::words
+pub struct phx_ledger::words::Words
+impl core::ops::deref::Deref for phx_ledger::words::Words
+pub type phx_ledger::words::Words::Target = [u64]
+pub fn phx_ledger::words::Words::deref(&self) -> &[u64]
 pub fn phx_ledger::words::from_words<T: phx_store::pod::Pod>(&[u64]) -> T
-pub fn phx_ledger::words::to_words<T: phx_store::pod::Pod>(&T) -> alloc::vec::Vec<u64>
+pub fn phx_ledger::words::to_words<T: phx_store::pod::Pod>(&T) -> phx_ledger::words::Words
 pub const fn phx_ledger::words::words_of<T: phx_store::pod::Pod>() -> usize

@@ -614,6 +614,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         agent_day: crate::agents::AgentDay::of(carried.today),
         visits: std::mem::take(&mut p.visits),
         visit_due: Vec::new(),
+        visit_goods: crate::goods::RunGoods::default(),
         visit_day: carried.today,
         visit_reads: phx_core::ReadTrace::default(),
         visit_today: crate::visits::VisitDay::of(carried.today),

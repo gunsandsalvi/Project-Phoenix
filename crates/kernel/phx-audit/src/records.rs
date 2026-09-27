@@ -6,7 +6,7 @@ use phx_macros::clause;
 
 /// The audit's own record of a day's settled legs, kept as they apply and apart from the books they moved, so the
 /// families check the books against something the books did not write.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default)]
 pub struct Digests {
     /// The instruction whose legs are arriving, and its paired legs' and money legs' sums by denomination so far.
     open: Option<u64>,
@@ -19,7 +19,7 @@ pub struct Digests {
     /// The instructions and denominations whose legs were read.
     flow_keys: u64,
     /// Per party and account, what it held before the day's first leg on it, and the day's net of its legs.
-    positions: BTreeMap<(PartyId, u64), (i64, i128)>,
+    positions: phx_core::KernelMap<(PartyId, u64), (i64, i128)>,
     /// Per instruction that names a way, its legs made or used up.
     made: BTreeMap<u64, phx_core::Made>,
     /// Per instruction that wears plant, its legs along its chains.
@@ -62,7 +62,7 @@ impl Digests {
                 None => self.open_money.push((leg.denom, q)),
             }
         }
-        self.positions.entry((leg.party, leg.account)).or_insert((leg.before, 0)).1 += q;
+        self.positions.get_or_insert_with((leg.party, leg.account), || (leg.before, 0)).1 += q;
         if let phx_num::Missing::Present(way) = leg.made {
             let made =
                 self.made.entry(instruction).or_insert_with(|| phx_core::Made { instruction, way, legs: Vec::new() });
@@ -141,23 +141,19 @@ impl Digests {
     #[clause("NUM.5", "SET.8")]
     pub fn unit_gaps(&self, held: &dyn Fn(PartyId, u64) -> i64) -> Vec<Gap> {
         self.positions
-            .iter()
+            .sorted()
+            .into_iter()
             .filter_map(|((party, account), (opening, net))| {
                 let expected = i128::from(*opening) + net;
-                let now = held(*party, *account);
-                (expected != i128::from(now)).then_some(Gap::Units {
-                    party: *party,
-                    account: *account,
-                    expected,
-                    held: now,
-                })
+                let now = held(party, account);
+                (expected != i128::from(now)).then_some(Gap::Units { party, account, expected, held: now })
             })
             .collect()
     }
 
     /// The positions the day's legs touched, by party and account.
     pub fn positions(&self) -> impl Iterator<Item = (PartyId, u64)> + '_ {
-        self.positions.keys().copied()
+        self.positions.sorted().into_iter().map(|(key, _)| key)
     }
 
     /// Starts the next day's record.

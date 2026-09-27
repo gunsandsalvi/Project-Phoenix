@@ -48,6 +48,8 @@ pub struct Accounts {
     income: i128,
     permitted: Vec<Permitted>,
     forms: BTreeMap<&'static str, String>,
+    /// The room a day's events are posted from, emptied after each posting and kept, so a day maps no new pages.
+    events: Vec<EquityEvent>,
 }
 
 impl Accounts {
@@ -113,7 +115,7 @@ impl Accounts {
             }
             self.period = period;
         }
-        let mut events = Vec::with_capacity(book.effects.len());
+        let mut events = core::mem::take(&mut self.events);
         for due in &book.dues {
             for event in self.claims.post(due) {
                 self.income += i128::from(event.amount());
@@ -137,6 +139,8 @@ impl Accounts {
             self.equity.post_all(run);
             self.tally_all(run);
         }
+        events.clear();
+        self.events = events;
         self.posted = (book.dues.len() + book.earned.len(), book.effects.len());
     }
 
@@ -231,6 +235,7 @@ impl Accounts {
             income: 0,
             permitted,
             forms,
+            events: Vec::new(),
         })
     }
 

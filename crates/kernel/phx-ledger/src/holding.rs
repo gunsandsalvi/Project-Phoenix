@@ -189,23 +189,23 @@ pub fn bases(arenas: &dyn HolderArenas, holder: Slot) -> Vec<(InstrumentId, i64)
 }
 
 /// Each holding a holder has, with its units and the cost of its lots, in one pass over its lists.
-#[must_use]
-pub fn held(arenas: &dyn HolderArenas, holder: Slot) -> Vec<(InstrumentId, i64, i64)> {
+pub fn held(arenas: &dyn HolderArenas, holder: Slot) -> impl Iterator<Item = (InstrumentId, i64, i64)> + '_ {
     let lots = arenas.read(holder, ListKind::Lots);
-    index(arenas, holder)
-        .into_iter()
-        .map(|(h, at)| {
-            let Some(words) = lots.get(at..at + usize_of(h.lots) * LOT) else {
-                violation!(
-                    clause = "REG.4",
-                    "a holding's lots missing from its holder's lot list",
-                    instrument = h.instrument.get()
-                );
-            };
-            let cost = words.as_chunks::<LOT>().0.iter().map(|l| from_words::<Lot>(l).cost.raw()).sum();
-            (h.instrument, h.quantity.raw(), cost)
-        })
-        .collect()
+    let mut lot_at = 0;
+    arenas.read(holder, ListKind::Holdings).as_chunks::<HOLDING>().0.iter().map(move |w| {
+        let h: IndividualHolding = from_words(w);
+        let at = lot_at;
+        lot_at += usize_of(h.lots) * LOT;
+        let Some(words) = lots.get(at..lot_at) else {
+            violation!(
+                clause = "REG.4",
+                "a holding's lots missing from its holder's lot list",
+                instrument = h.instrument.get()
+            );
+        };
+        let cost = words.as_chunks::<LOT>().0.iter().map(|l| from_words::<Lot>(l).cost.raw()).sum();
+        (h.instrument, h.quantity.raw(), cost)
+    })
 }
 
 /// A holding's basis: the cost of its lots; a holder without the holding has none.
@@ -340,28 +340,34 @@ pub(crate) fn dispose(
         violation!(clause = "REG.2", "units that are not free leave a holding", units = units, free = free);
     }
     let LotOrder::FirstIn = order;
-    let mut lots: Vec<Lot> = lots(arenas, holder, instrument);
-    let (mut left, mut cost) = (units, 0_i64);
-    for lot in &mut lots {
+    // First in, first out: the lots taken whole lead the holding's list and at most the next is taken in part, so the
+    // list loses its leading lots and has at most one rewritten where it stands.
+    let (mut left, mut cost, mut whole) = (units, 0_i64, 0_u32);
+    let mut part: Option<Lot> = None;
+    for w in lot_words(arenas, holder, (&h, at)).as_chunks::<LOT>().0 {
         if left == 0 {
             break;
         }
+        let lot: Lot = from_words(w);
         let q = lot.quantity.raw();
         let taken = if q <= left { q } else { left };
-        let taken_cost = lot_share(lot, taken);
+        let taken_cost = lot_share(&lot, taken);
         cost += taken_cost;
-        *lot = Lot::new(lot.acquired, q - taken, lot.cost.raw() - taken_cost);
         left -= taken;
+        if taken == q {
+            whole += 1;
+        } else {
+            part = Some(Lot::new(lot.acquired, q - taken, lot.cost.raw() - taken_cost));
+        }
     }
-    lots.retain(|l| l.quantity.raw() > 0);
-    arenas.remove(holder, ListKind::Lots, at, usize_of(h.lots) * LOT);
-    let kept: Vec<u64> = lots.iter().flat_map(to_words).collect();
-    arenas.insert(holder, ListKind::Lots, at, &kept);
+    if whole > 0 {
+        arenas.remove(holder, ListKind::Lots, at, usize_of(whole) * LOT);
+    }
+    if let Some(lot) = part {
+        arenas.overwrite(holder, ListKind::Lots, at, &to_words(&lot));
+    }
     h.quantity = QtyRaw::from_raw(h.quantity.raw() - units);
-    let Ok(n) = u32::try_from(lots.len()) else {
-        capacity_exceeded!("lots of a holding", u32::MAX, lots.len());
-    };
-    h.lots = n;
+    h.lots -= whole;
     let emptied = h.quantity.raw() == 0;
     if emptied {
         arenas.remove(holder, ListKind::Holdings, i * HOLDING, HOLDING);

@@ -320,6 +320,12 @@ and deposit line — keeps a hint of where each row it appended or inserted lies
 and checked against the row's head on every read, so a stale hint costs only the walk (`KindTable::row_hint`, never
 saved).
 
+A record written to a holder's lists — a row, a holding, a lot — is built as words on the stack (`words::to_words`,
+at most `RECORD_WORDS`), never on the heap; a sale takes its lots first in, first out where they stand, removing the
+lots taken whole and rewriting at most the one taken in part. The day's large buffers — the ledger's day book, the
+accounts' events, a visit's goods view — are emptied and kept from one day to the next, so a day maps no new pages
+once the heaviest day has sized them.
+
 Every relationship of a holder to a line is a **row in the holder's chunk arena**, contiguous with the holder's other
 rows: `{line u32, count u32, record u32, point u16, role u8, flags u8}` (16 bytes, no padding), plus the optional
 columns its kind declares: `balance i64` for **accruing kinds** (deposits, loans, a collector's tax payable, any

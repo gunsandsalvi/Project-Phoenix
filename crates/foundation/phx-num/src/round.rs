@@ -31,6 +31,10 @@ pub enum Round {
 #[clause("Law 7")]
 #[must_use]
 pub fn div_round(n: i128, d: i128, r: Round) -> i128 {
+    // Operands that fit a word divide in one, which is the same division at a fraction of the cost.
+    if let (Ok(n), Ok(d)) = (i64::try_from(n), i64::try_from(d)) {
+        return i128::from(rounded(n, d, r));
+    }
     rounded(n, d, r)
 }
 

@@ -1074,6 +1074,8 @@ impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::Kern
 pub fn phx_core::map::KernelMap<K, V>::default() -> Self
 pub trait phx_core::map::MapKey: core::marker::Copy + core::cmp::Eq + core::hash::Hash + core::cmp::Ord
 pub fn phx_core::map::MapKey::key64(self) -> u64
+impl phx_core::map::MapKey for (phx_id::ids::PartyId, u64)
+pub fn (phx_id::ids::PartyId, u64)::key64(self) -> u64
 impl phx_core::map::MapKey for phx_id::ids::InstrumentId
 pub fn phx_id::ids::InstrumentId::key64(self) -> u64
 impl phx_core::map::MapKey for phx_id::ids::LineId
@@ -3745,6 +3747,8 @@ pub fn phx_num::qty::QtyRaw::smallest_units(self) -> i128
 pub fn phx_num::qty::QtyRaw::split(phx_num::qty::QtyRaw, phx_num::qty::QtyRaw) -> (phx_num::qty::QtyRaw, phx_num::qty::QtyRaw)
 pub trait phx_core::MapKey: core::marker::Copy + core::cmp::Eq + core::hash::Hash + core::cmp::Ord
 pub fn phx_core::MapKey::key64(self) -> u64
+impl phx_core::map::MapKey for (phx_id::ids::PartyId, u64)
+pub fn (phx_id::ids::PartyId, u64)::key64(self) -> u64
 impl phx_core::map::MapKey for phx_id::ids::InstrumentId
 pub fn phx_id::ids::InstrumentId::key64(self) -> u64
 impl phx_core::map::MapKey for phx_id::ids::LineId

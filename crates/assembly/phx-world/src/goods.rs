@@ -221,24 +221,30 @@ pub(crate) type Outlooks = Arc<BTreeMap<(GoodKey, u16), i64>>;
 /// A good a row holds or has delivered: its product, its grade class and its units, one twin's.
 type Units = HeldGood;
 
-/// What a run of rows may read of its goods, read before its handler runs.
+/// What a visit's rows may read of their goods, read before its handler runs: each row's found by its slot, and the
+/// lists of every row kept together, so a visit reads its rows' goods into a few buffers the next visit reuses.
 #[derive(Debug, Default)]
 pub(crate) struct RunGoods {
-    start: u32,
+    slots: Vec<u32>,
     rows: Vec<RowGoods>,
+    held: Vec<Units>,
+    plant: Vec<phx_core::HeldPlant>,
+    rights: Vec<HeldRight>,
+    delivered: Vec<Units>,
     marks: Marks,
     outlooks: Outlooks,
     away: Arc<AwayTable>,
     geo: Option<Arc<phx_geo::GeoState>>,
 }
 
-#[derive(Debug)]
+/// A row's goods: where it stands, its money and net assets, and where its lists lie among the visit's.
+#[derive(Clone, Copy, Debug)]
 struct RowGoods {
     zone: Missing<ZoneId>,
-    held: Vec<Units>,
-    plant: Vec<phx_core::HeldPlant>,
-    rights: Vec<HeldRight>,
-    delivered: Vec<Units>,
+    held: (usize, usize),
+    plant: (usize, usize),
+    rights: (usize, usize),
+    delivered: (usize, usize),
     money: Missing<i64>,
     net_assets: Missing<i64>,
 }
@@ -248,10 +254,10 @@ impl RowGoods {
     fn none() -> RowGoods {
         RowGoods {
             zone: Missing::Absent,
-            held: Vec::new(),
-            plant: Vec::new(),
-            rights: Vec::new(),
-            delivered: Vec::new(),
+            held: (0, 0),
+            plant: (0, 0),
+            rights: (0, 0),
+            delivered: (0, 0),
             money: Missing::Absent,
             net_assets: Missing::Absent,
         }
@@ -260,8 +266,23 @@ impl RowGoods {
 
 impl RunGoods {
     fn row(&self, slot: Slot) -> Option<&RowGoods> {
-        slot.get().checked_sub(self.start).and_then(|i| self.rows.get(usize::try_from(i).ok()?))
+        self.slots.binary_search(&slot.get()).ok().and_then(|i| self.rows.get(i))
     }
+
+    /// Every row and list emptied, the room kept.
+    fn clear(&mut self) {
+        self.slots.clear();
+        self.rows.clear();
+        self.held.clear();
+        self.plant.clear();
+        self.rights.clear();
+        self.delivered.clear();
+    }
+}
+
+/// A row's part of one of the visit's lists.
+fn part<T>(list: &[T], (from, to): (usize, usize)) -> &[T] {
+    list.get(from..to).unwrap_or(&[])
 }
 
 fn units_of(list: &[Units], product: u16, grade: u8) -> i64 {
@@ -270,16 +291,18 @@ fn units_of(list: &[Units], product: u16, grade: u8) -> i64 {
 
 impl GoodsView for RunGoods {
     fn held(&self, slot: Slot, product: u16, grade: u8) -> i64 {
-        self.row(slot).map_or(0, |r| units_of(&r.held, product, grade))
+        self.row(slot).map_or(0, |r| units_of(part(&self.held, r.held), product, grade))
     }
     fn goods(&self, slot: Slot) -> &[HeldGood] {
-        self.row(slot).map_or(&[], |r| r.held.as_slice())
+        self.row(slot).map_or(&[], |r| part(&self.held, r.held))
     }
     fn rights(&self, slot: Slot) -> &[HeldRight] {
-        self.row(slot).map_or(&[], |r| r.rights.as_slice())
+        self.row(slot).map_or(&[], |r| part(&self.rights, r.rights))
     }
     fn delivered(&self, slot: Slot, product: u16) -> i64 {
-        self.row(slot).map_or(0, |r| r.delivered.iter().filter(|(p, _, _)| *p == product).map(|(_, _, q)| q).sum())
+        self.row(slot).map_or(0, |r| {
+            part(&self.delivered, r.delivered).iter().filter(|(p, _, _)| *p == product).map(|(_, _, q)| q).sum()
+        })
     }
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
         let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
@@ -291,7 +314,7 @@ impl GoodsView for RunGoods {
         self.outlooks.get(&key).copied().map_or(Missing::Absent, Missing::Present)
     }
     fn plant(&self, slot: Slot) -> &[phx_core::HeldPlant] {
-        self.row(slot).map_or(&[], |r| r.plant.as_slice())
+        self.row(slot).map_or(&[], |r| part(&self.plant, r.plant))
     }
 
     fn net_assets(&self, slot: Slot) -> Missing<i64> {
@@ -992,21 +1015,17 @@ impl World {
         self.outlooks = Arc::new(out);
     }
 
-    /// What a run of rows may read of its goods: for each row, the goods it holds at its zone and the rights it
-    /// holds, one twin's for an agent, and what it has delivered.
-    pub(crate) fn run_goods(&self, rows: Rows, run: core::ops::Range<u32>) -> RunGoods {
-        let mut out = RunGoods {
-            start: run.start,
-            rows: Vec::new(),
-            marks: Arc::clone(&self.marks),
-            outlooks: Arc::clone(&self.outlooks),
-            away: Arc::clone(&self.away),
-            geo: Some(Arc::clone(crate::world::geo_arc(&self.own))),
-        };
+    /// What a visit's rows may read of their goods, read into the room of a view a visit before used.
+    pub(crate) fn run_goods(&self, rows: Rows, slots: &[Slot], mut out: RunGoods) -> RunGoods {
+        out.clear();
+        out.marks = Arc::clone(&self.marks);
+        out.outlooks = Arc::clone(&self.outlooks);
+        out.away = Arc::clone(&self.away);
+        out.geo = Some(Arc::clone(crate::world::geo_arc(&self.own)));
         let ledger = &self.books.ledger;
-        for s in run {
-            let slot = Slot::new(s);
-            let Some(row) = self.goods_row(rows, slot) else {
+        for slot in slots {
+            out.slots.push(slot.get());
+            let Some(row) = self.goods_row(rows, *slot) else {
                 out.rows.push(RowGoods::none());
                 continue;
             };
@@ -1014,26 +1033,30 @@ impl World {
             let (place, at) = self.books.parties.row(row.party);
             let arenas = self.books.parties.holder(place);
             let mut goods_cost = 0_i128;
+            let (held, plant, rights) = (out.held.len(), out.plant.len(), out.rights.len());
             for (instrument, quantity, cost) in phx_ledger::holding::held(arenas, at) {
                 let units = quantity / row.twins;
                 if let Missing::Present(key) = ledger.goods.key(instrument) {
                     goods_cost += i128::from(cost);
                     if key.zone == row.zone {
-                        goods.held.push((key.product, key.grade, units));
+                        out.held.push((key.product, key.grade, units));
                     }
                 }
                 if let Missing::Present(deposit) = ledger.goods.deposit(instrument)
                     && units > 0
                 {
-                    goods.rights.push(self.held_right(deposit));
+                    out.rights.push(self.held_right(deposit));
                 }
                 if let Missing::Present((chain, class)) = ledger.chains.of(instrument)
                     && let Some(c) = ledger.chains.get(chain)
                     && let (Ok(kind), Ok(class)) = (u8::try_from(c.tag), u8::try_from(class))
                 {
-                    goods.plant.push((kind, class, units));
+                    out.plant.push((kind, class, units));
                 }
             }
+            goods.held = (held, out.held.len());
+            goods.plant = (plant, out.plant.len());
+            goods.rights = (rights, out.rights.len());
             if let Missing::Present(country) = self.geo().zone_country(row.zone) {
                 let ccy = phx_ledger::opening::currency(country);
                 goods.money = match self.books.money_held(row.party, ccy) {
@@ -1042,11 +1065,13 @@ impl World {
                 };
             }
             goods.net_assets = self.book_worth(place, at, (goods_cost, row.twins));
+            let delivered = out.delivered.len();
             for (good, q) in ledger.goods.delivered(row.party) {
                 if let Missing::Present(key) = ledger.goods.key(good) {
-                    goods.delivered.push((key.product, key.grade, q / row.twins));
+                    out.delivered.push((key.product, key.grade, q / row.twins));
                 }
             }
+            goods.delivered = (delivered, out.delivered.len());
             out.rows.push(goods);
         }
         out

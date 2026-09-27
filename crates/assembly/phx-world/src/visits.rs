@@ -360,25 +360,26 @@ impl World {
                 writes: h.writes,
             });
             let rows = crate::goods::Rows { place: b.table.get(), individuals: b.individuals };
-            let views: Vec<crate::goods::RunGoods> =
-                runs(&slots).into_iter().map(|r| self.run_goods(rows, r)).collect();
+            let room = core::mem::take(&mut self.visit_goods);
+            let goods = self.run_goods(rows, &slots, room);
             let World { books, own, streams, register, bindings, rules, queue, .. } = self;
             let Some((_, own)) = own.iter().find(|(system, _)| *system == h.system) else {
                 violation!(clause = "TIME.6", "a handler whose system compiled no state", handler = id.0);
             };
             let first = books.parties.first_cell_place();
-            for (range, goods) in runs(&slots).into_iter().zip(&views) {
-                let mut intents = Intents::default();
-                let store: &mut dyn FactStore = if b.individuals {
-                    let t = books.parties.table_mut(b.table.get());
-                    t.trace(trace);
-                    t
-                } else {
-                    let k = agent_kind(b.table, first);
-                    let t = Population::table_mut::<SystemBacking>(books.parties.cells_mut().0, k);
-                    t.trace(trace);
-                    t
-                };
+            let store: &mut dyn FactStore = if b.individuals {
+                let t = books.parties.table_mut(b.table.get());
+                t.trace(trace);
+                t
+            } else {
+                let k = agent_kind(b.table, first);
+                let t = Population::table_mut::<SystemBacking>(books.parties.cells_mut().0, k);
+                t.trace(trace);
+                t
+            };
+            // The visit's intents gathered together, in the order of its rows.
+            let mut intents = Intents::default();
+            for range in runs(&slots) {
                 run(
                     CtxParts {
                         day,
@@ -386,8 +387,8 @@ impl World {
                         streams,
                         register,
                         own: own.as_ref(),
-                        facts: store,
-                        goods,
+                        facts: &mut *store,
+                        goods: &goods,
                         intents: &mut intents,
                         bindings,
                         rules,
@@ -396,8 +397,9 @@ impl World {
                     },
                     range,
                 );
-                pending.push(crate::goods::Gathered { step, rows: Missing::Present(rows), intents });
             }
+            pending.push(crate::goods::Gathered { step, rows: Missing::Present(rows), intents });
+            self.visit_goods = goods;
             self.visits_taken(&b);
             self.labour_after(b.decl.handler, rows, &slots);
             self.wear_after(i, &slots, (day, step));

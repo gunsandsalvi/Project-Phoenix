@@ -415,6 +415,7 @@ impl World {
             directory.retain(f.party);
         }
         self.unprocessed.extend(book.fails.iter().copied());
+        self.books.recycle(book);
         let mut reads = self.take_visit_reads();
         for t in &mut self.tables {
             let found = t.columns.take_trace();

@@ -498,6 +498,11 @@ impl<B: Backing> Books<B> {
     pub fn close(&mut self) -> DayBook {
         self.ledger.close()
     }
+
+    /// A closed day's book handed back once read, for its room.
+    pub fn recycle(&mut self, book: DayBook) {
+        self.ledger.recycle(book);
+    }
 }
 
 /// The world's books, as the assembly hands them to an opening contribution.
