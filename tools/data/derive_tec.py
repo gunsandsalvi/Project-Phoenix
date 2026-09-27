@@ -432,7 +432,8 @@ def write_level(level: str, members: dict, m: dict) -> None:
     lines += primitive(
         "TEC.land", thin(len(members)),
         f"Hectares of agricultural land a unit of output takes a year: the land-using product's is the World Bank's "
-        f"agricultural land over its output, the median over the group's economies; the others take none.",
+        f"agricultural land (AG.LND.AGRI.K2) in {YEAR} or the latest year before it, over its output in the {YEAR} "
+        f"inter-country input-output tables, the median over the group's economies; the others take none.",
         f"{{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
         + ", ".join(num(land if i == 0 else 0.0) for i in range(len(PRODUCTS))) + "], outside = \"refuse\" }")
     (PROFILES / level / "TEC.toml").write_text("\n".join(lines) + "\n")

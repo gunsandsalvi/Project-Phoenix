@@ -30,5 +30,5 @@ id = "TEC.land"
 kind = "TECHNOLOGY"
 owner = "TEC"
 source = "measured"
-source_ref = "Hectares of agricultural land a unit of output takes a year: the land-using product's is the World Bank's agricultural land over its output, the median over the group's economies; the others take none."
+source_ref = "Hectares of agricultural land a unit of output takes a year: the land-using product's is the World Bank's agricultural land (AG.LND.AGRI.K2) in 2019 or the latest year before it, over its output in the 2019 inter-country input-output tables, the median over the group's economies; the others take none."
 value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [0.000003788, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000, 0.000000000], outside = "refuse" }
