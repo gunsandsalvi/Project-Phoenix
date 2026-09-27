@@ -508,12 +508,52 @@ impl<B: Backing> Ledger<B> {
             }
             None => None,
         };
+        let first = self.day.effects.len();
         self.settle_legs(holders, settling, (legs, located, drawn), deferred, audit);
+        self.net_effects(first, self.reasons.get(settling.reason));
         for c in covers {
             self.covers.release(c);
         }
         audit.applied(id.get());
         Ok(id)
+    }
+
+    /// An instruction's money effects taken on each party's net: a bank whose customers pay each other through it
+    /// moves one deposit down and another up, and neither pays nor is paid, so only what a party paid beyond what it
+    /// received, or received beyond what it paid, is its payment's effect.
+    fn net_effects(&mut self, first: usize, decl: crate::instruction::ReasonDecl) {
+        let Some(recs) = self.day.effects.get(first..) else { return };
+        if recs.iter().filter(|e| !e.held).count() < 2 {
+            return;
+        }
+        let mut net: Vec<(PartyId, phx_num::Ccy, i64)> = Vec::new();
+        let mut kept: Vec<EffectRec> = Vec::new();
+        for e in recs {
+            if e.held {
+                kept.push(*e);
+                continue;
+            }
+            let ccy = e.amount.ccy();
+            match net.iter_mut().find(|(p, c, _)| *p == e.party && *c == ccy) {
+                Some((_, _, sum)) => *sum += e.amount.amt(),
+                None => net.push((e.party, ccy, e.amount.amt())),
+            }
+        }
+        let Some(template) = recs.first().copied() else { return };
+        let mut out: Vec<EffectRec> = net
+            .into_iter()
+            .filter(|(_, _, sum)| *sum != 0)
+            .map(|(party, ccy, sum)| EffectRec {
+                party,
+                effect: if sum < 0 { decl.paid } else { decl.received },
+                amount: Money::new(sum, ccy),
+                held: false,
+                ..template
+            })
+            .collect();
+        out.extend(kept);
+        self.day.effects.truncate(first);
+        self.day.effects.extend(out);
     }
 
     fn refuse(&self, at: ApplyAt, legs: &[LegRec], id: InstructionId) {

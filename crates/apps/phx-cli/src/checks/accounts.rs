@@ -31,9 +31,11 @@ fn accounts_clean(w: Inspector<'_>) -> Outcome {
         match accounts.net_assets(w.books(), party) {
             Err(why) => return Outcome::Fail(format!("unreadable at the run's end: {why}")),
             Ok(net) if net != i128::from(account.balance()) => {
+                let (place, _) = w.books().parties.row(party);
                 return Outcome::Fail(format!(
-                    "party {}: assets less liabilities {net} against an equity account of {} at the run's end",
+                    "party {} ({}): assets less liabilities {net} against an equity account of {} at the run's end",
                     party.get(),
+                    w.books().parties.table(place).kind(),
                     account.balance()
                 ));
             }
