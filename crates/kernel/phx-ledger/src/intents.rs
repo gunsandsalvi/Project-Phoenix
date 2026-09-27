@@ -28,6 +28,8 @@ pub struct Made {
 pub struct Transform {
     pub row: Slot,
     pub reason: u64,
+    /// The days of making what it makes stands for, the plant's days it uses.
+    pub days: u32,
     pub legs: Vec<Made>,
 }
 
@@ -65,7 +67,7 @@ impl IntentDef for Transform {
         let Ok(n) = u64::try_from(self.legs.len()) else {
             capacity_exceeded!("a transformation's legs", u64::MAX, self.legs.len());
         };
-        out.extend([u64::from(self.row.get()), self.reason, n]);
+        out.extend([u64::from(self.row.get()), self.reason, u64::from(self.days), n]);
         for leg in &self.legs {
             let (tag, value) = source_words(leg.source);
             out.extend([
@@ -83,7 +85,7 @@ impl Transform {
     /// The intent its words encode, or none when they are not a transformation's.
     #[must_use]
     pub fn decode(words: &[u64]) -> Option<Transform> {
-        let [row, reason, n, rest @ ..] = words else { return None };
+        let [row, reason, days, n, rest @ ..] = words else { return None };
         let n = usize::try_from(*n).ok()?;
         if rest.len() != n.checked_mul(LEG_WORDS)? {
             return None;
@@ -102,7 +104,12 @@ impl Transform {
                 })
             })
             .collect::<Option<Vec<Made>>>()?;
-        Some(Transform { row: Slot::new(u32::try_from(*row).ok()?), reason: *reason, legs })
+        Some(Transform {
+            row: Slot::new(u32::try_from(*row).ok()?),
+            reason: *reason,
+            days: u32::try_from(*days).ok()?,
+            legs,
+        })
     }
 }
 
@@ -143,6 +150,7 @@ mod tests {
         let t = Transform {
             row: Slot::new(41),
             reason: name_code("GDS spoiled"),
+            days: 7,
             legs: vec![
                 Made { product: 4, grade: 2, qty: 900, source: Source::Deposit(77), cost: 0 },
                 Made { product: 0, grade: 0, qty: -12, source: Source::Spoilage(7), cost: 0 },

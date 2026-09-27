@@ -223,7 +223,8 @@ where
                 source: Source::Deposit(right.deposit),
                 cost: 0,
             };
-            ctx.emit(&Transform { row, reason: name_code(crate::EXTRACTED.name), legs: vec![leg] });
+            let Ok(days) = u32::try_from(own.days) else { return };
+            ctx.emit(&Transform { row, reason: name_code(crate::EXTRACTED.name), days, legs: vec![leg] });
         }
         let held = ctx.held(row, right.product, class) + made;
         let offered = held - held % product.lot;

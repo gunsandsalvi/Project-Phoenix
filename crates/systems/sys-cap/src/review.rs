@@ -1,7 +1,8 @@
 //! The owner's reviews of its plant, on its own schedule. At the plant review the wear since the last is realised on
-//! the rows visited, and the units a day the plant then lets its way make are found, the scarcest kind's. At the
-//! investment review, a day's decisions earlier, the owner reads what it sold since its last and, where its plant
-//! keeps it from making what its staff could and its sales call for, weighs buying more of the scarcest kind.
+//! the rows visited, and the units a day the plant then lets its way make are found, the scarcest kind's, before the
+//! day's production reads them. At the investment review, in the same sub-step, the owner reads what it sold since
+//! its last and, where its plant keeps it from making what its staff could and its sales call for, weighs buying more
+//! of the scarcest kind.
 
 use if_firm::facts::{Capacity, DeliveredAtInvest, OutputRate, Price, RequiredReturn, SoldAtInvest, UnitCost};
 use if_firm::known::{Product, WayUsed};
@@ -46,7 +47,7 @@ declare_handler! {
     pub InvestSmall = "CAP.invest_small" {
         substep: S5b,
         table: "small_firm",
-        reads: [WayUsed, Product, OutputRate, Price, UnitCost, RequiredReturn, Capacity, DeliveredAtInvest, SoldAtInvest],
+        reads: [WayUsed, Product, OutputRate, Price, UnitCost, RequiredReturn, DeliveredAtInvest, SoldAtInvest],
         writes: [DeliveredAtInvest, SoldAtInvest],
         intents: [InvestIntent],
         clause: "CAP.3",
@@ -59,7 +60,7 @@ declare_handler! {
     pub InvestLarge = "CAP.invest_large" {
         substep: S5b,
         table: "firm",
-        reads: [WayUsed, Product, OutputRate, Price, UnitCost, RequiredReturn, Capacity, DeliveredAtInvest, SoldAtInvest],
+        reads: [WayUsed, Product, OutputRate, Price, UnitCost, RequiredReturn, DeliveredAtInvest, SoldAtInvest],
         writes: [DeliveredAtInvest, SoldAtInvest],
         intents: [InvestIntent],
         clause: "CAP.3",
@@ -138,7 +139,6 @@ where
         + Reads<Price>
         + Reads<UnitCost>
         + Reads<RequiredReturn>
-        + Reads<Capacity>
         + Reads<DeliveredAtInvest>
         + Reads<SoldAtInvest>
         + Writes<DeliveredAtInvest>
@@ -157,20 +157,23 @@ where
     if let Some(units) = floor_to_i64(sold) {
         ctx.write::<SoldAtInvest>(row, units);
     }
-    let (Some(before), Missing::Present(way), Some(staff), Some(price), Some(cost), Some(required), Some(plant)) = (
+    let (Some(before), Missing::Present(way), Some(staff), Some(price), Some(cost), Some(required)) = (
         before,
         ctx.read::<WayUsed>(row),
         read::<OutputRate, H, S>(ctx, row),
         read::<Price, H, S>(ctx, row),
         read::<UnitCost, H, S>(ctx, row),
         read::<RequiredReturn, H, S>(ctx, row),
-        read::<Capacity, H, S>(ctx, row),
     ) else {
         return;
     };
     let held = held(ctx, row);
     let own: &crate::CapOwn = ctx.own::<crate::CapOwn>();
     let Some(needs) = usize::try_from(way).ok().and_then(|w| own.needs.get(w)) else { return };
+    // The plant's units a day as the plant review finds them, read from what is held rather than from the review's
+    // fact, which the review writes in the same sub-step.
+    let Missing::Present(a_year) = capacity(&held, needs) else { return };
+    let plant = a_year / DAYS_A_YEAR;
     let a_day = sold / own.review_days;
     let wanted = if a_day < staff { a_day } else { staff };
     let gap = wanted - plant;

@@ -214,7 +214,8 @@ where
                 source: Source::Way(u32::try_from(w).unwrap_or(u32::MAX)),
                 cost: 0,
             };
-            ctx.emit(&Transform { row, reason: name_code(crate::MADE.name), legs: vec![leg] });
+            let Some(covers) = floor_to_i64(days).and_then(|d| u32::try_from(d).ok()) else { return };
+            ctx.emit(&Transform { row, reason: name_code(crate::MADE.name), days: covers, legs: vec![leg] });
         }
         let offered = stock + make;
         let lots = offered - offered % traded.lot;

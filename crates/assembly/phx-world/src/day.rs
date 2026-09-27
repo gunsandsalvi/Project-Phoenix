@@ -166,6 +166,7 @@ impl World {
             }
             let started = clock.now_ns();
             let rows = self.dispatch(day, info.step, &mut pending);
+            self.makings_decided(info.step, &pending);
             site::enter(Site { day: day.get(), substep: info.step.ordinal(), handler: 0, chunk: 0 });
             if info.step == SubStep::S1b {
                 self.due = self.books.ledger.mark_due(day, &self.calendar);
