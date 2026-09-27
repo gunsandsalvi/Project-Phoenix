@@ -289,6 +289,17 @@ impl World {
                 standing.entry((v.region, v.occupation)).or_default().push(i);
             }
         }
+        // Each open vacancy's monthly wage, reckoned once for every searcher who sees it: its law's wage at its point.
+        let wages: Vec<Option<f64>> = self
+            .labour
+            .book
+            .vacancies
+            .iter()
+            .map(|v| {
+                let law = self.region_country(v.region).map(|c| super::law_of(&self.labour.laws, c));
+                law.filter(|_| v.open > 0).map(|law| self.wage_at(law, v.point))
+            })
+            .collect();
         let searchers: Vec<PartyId> = self.labour.searchers.iter().copied().collect();
         for party in searchers {
             if !self.live(party) {
@@ -304,10 +315,9 @@ impl World {
             let mut d = self.labour_draws(kind.taste_stream, Subject::new(SubjectTag::Party, party.get()), day);
             for s in seekers.iter().filter(|s| !waiting.contains(&(s.party, s.person))) {
                 self.apply_round(
-                    day,
-                    kind,
+                    (day, kind),
                     s,
-                    standing.get(&(s.region, s.occupation)).map_or(&[][..], Vec::as_slice),
+                    (standing.get(&(s.region, s.occupation)).map_or(&[][..], Vec::as_slice), &wages),
                     &mut d,
                 );
             }
@@ -315,8 +325,14 @@ impl World {
     }
 
     /// One searching person's applications this round.
-    fn apply_round(&mut self, day: Day, kind: &LabourKind, s: &Seeker, standing: &[usize], d: &mut Draws) {
-        let law = super::law_of(&self.labour.laws, s.country).clone();
+    fn apply_round(
+        &mut self,
+        (day, kind): (Day, &LabourKind),
+        s: &Seeker,
+        (standing, wage_of): (&[usize], &[Option<f64>]),
+        d: &mut Draws,
+    ) {
+        let law = super::law_of(&self.labour.laws, s.country);
         let seen: Vec<usize> = standing
             .iter()
             .copied()
@@ -335,8 +351,10 @@ impl World {
         let applications = if phx_rand::open_unit(d) < rest { whole + 1 } else { whole };
         let wages: Vec<f64> = seen
             .iter()
-            .filter_map(|i| self.labour.book.vacancies.get(*i))
-            .map(|v| self.wage_at(&law, v.point))
+            .map(|i| match wage_of.get(*i).copied().flatten() {
+                Some(w) => w,
+                None => violation!(clause = "REP.34", "an open vacancy seen with no wage", vacancy = *i),
+            })
             .collect();
         let tastes: Vec<f64> = seen.iter().map(|_| phx_rand::gumbel(d, 0.0, 1.0)).collect();
         let input =
