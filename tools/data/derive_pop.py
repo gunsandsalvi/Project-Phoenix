@@ -299,7 +299,7 @@ def kin(level: str, members: set, m: dict) -> list:
     ind = pd.read_csv(RAW / "wpp" / "indicators.csv").set_index(["iso3", "year"])
     life = pd.read_csv(RAW / "wpp" / "life_table.csv")
     first = int(f.index.get_level_values("year").min())
-    tables, singles = [], []
+    tables, singles, olders = [], [], []
     for iso in sorted(members):
         if iso not in f.index.get_level_values("iso3"):
             continue
@@ -308,6 +308,7 @@ def kin(level: str, members: set, m: dict) -> list:
         lx = life[life.iso3 == iso].groupby("age").lx.mean().to_numpy() / 100000
         table = np.zeros((101 - 15, len(CHILD_BANDS)))
         single = np.zeros((101 - 15, MINOR_AGES))
+        older = np.zeros((101 - 15, 101 - MINOR_AGES))
         for a in range(15, 101):
             for k in range(0, a - 14):
                 mother = a - k
@@ -320,10 +321,14 @@ def kin(level: str, members: set, m: dict) -> list:
                 table[a - 15, band] += births * survive
                 if k < MINOR_AGES:
                     single[a - 15, k] += births * survive
+                else:
+                    older[a - 15, k - MINOR_AGES] += births * survive
         tables.append(table)
         singles.append(single)
+        olders.append(older)
     standard = np.median(np.stack(tables), axis=0)
     minors = np.median(np.stack(singles), axis=0)
+    grown = np.median(np.stack(olders), axis=0)
     ref = (f"Expected living children of a parent of each age 15-100 (rows) by the children's age band from its first "
            f"age (0-19, 20-39, 40-59, 60 and over): for a mother of that age, the births her cohort had at each age "
            f"15-49 by that year's age-specific fertility (the first year's, {first}, for years before it), each child "
@@ -334,7 +339,12 @@ def kin(level: str, members: set, m: dict) -> list:
     minors_ref = (f"Expected living children at each single age 0-{MINOR_AGES - 1} (columns) of a mother of each age "
                   f"15-100 (rows), computed as DEM.living_children is, the median over the group's {len(tables)} "
                   f"economies, from {fetched(m, 'wpp')}.")
+    grown_ref = (f"Expected living children at each single age {MINOR_AGES}-100 (columns) of a mother of each age "
+                 f"15-100 (rows), computed as DEM.living_children is, the median over the group's {len(tables)} "
+                 f"economies, from {fetched(m, 'wpp')}.")
     return [
+        entry("DEM.grown_children", "ENDOWMENT", "DEM", "measured", grown_ref,
+              table2(range(15, 101), range(MINOR_AGES, 101), grown, "refuse")),
         entry("DEM.living_children", "ENDOWMENT", "DEM", "measured", ref,
               table2(range(15, 101), CHILD_BANDS, standard, "refuse")),
         entry("DEM.minor_children", "ENDOWMENT", "DEM", "measured", minors_ref,

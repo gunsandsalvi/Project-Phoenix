@@ -57,6 +57,12 @@ declare_prim! {
     }
 }
 declare_prim! {
+    /// A mother's expected living children at each single age from the age of majority.
+    pub GROWN_CHILDREN = "DEM.grown_children" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "POP.1", scope: PerCountry
+    }
+}
+declare_prim! {
     /// A mother's expected living children at each single age under the age of majority.
     pub MINOR_CHILDREN = "DEM.minor_children" {
         kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "POP.1", scope: PerCountry
@@ -155,6 +161,7 @@ pub struct Prims {
     pub sizes: Prim<Table2>,
     pub older: Prim<Table2>,
     pub living_children: Prim<Table2>,
+    pub grown_children: Prim<Table2>,
     pub minor_children: Prim<Table2>,
     pub education: [Prim<Table2>; 2],
     pub income: Prim<Distribution>,
@@ -184,6 +191,7 @@ impl Prims {
             sizes: d.prim(&SIZES),
             older: d.prim(&OLDER),
             living_children: d.prim(&LIVING_CHILDREN),
+            grown_children: d.prim(&GROWN_CHILDREN),
             minor_children: d.prim(&MINOR_CHILDREN),
             education: [d.prim(&EDUCATION_FEMALE), d.prim(&EDUCATION_MALE)],
             income: d.prim(&INCOME),

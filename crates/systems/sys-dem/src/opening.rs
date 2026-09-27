@@ -25,7 +25,7 @@ use phx_store::SystemBacking;
 use crate::compose::{self, Member, Pick, Place, Pool, Rules, Type};
 use crate::consts::{
     BANDS, CHILDREN_COLUMN, GAP_TYPES, MEMBER_COLUMNS, OLD_AGE, OLDER, OTHER, PARTNER_COLUMN, PERCENT, REGION_WAVE,
-    WORKING_AGE,
+    SIZE_BINS, WORKING_AGE,
 };
 use crate::household::Role;
 use crate::lines::Drawer;
@@ -101,6 +101,8 @@ struct Country {
     education_rows: Vec<i64>,
     education: [Vec<AliasTable>; 2],
     shares: Vec<f64>,
+    /// Each size bin's share of households at the country's fertility, which the drawn are read against.
+    sizes: Vec<f64>,
     wealth: Distribution,
     income: Distribution,
 }
@@ -267,37 +269,102 @@ fn education(p: &Prims, register: &Register, id: CountryId) -> (Vec<i64>, [Vec<A
     (rows, tables)
 }
 
-/// Households by type at the country's drawn fertility and whom each type holds besides its head: the types with
-/// children and those without, each by its share, and every type's share.
-fn types(p: &Prims, register: &Register, c: &OpeningCountry) -> (Pick<Type>, Pick<Type>, Vec<f64>) {
+/// Households by type at the country's drawn fertility and whom each type holds besides its head: every type, the
+/// types with children and those without, each by its share; the types of one person and of a couple only; and
+/// every type's share.
+fn types(p: &Prims, register: &Register, c: &OpeningCountry) -> Types {
     let (table, decl) = (p.types.get(register, c.id), p.types.decl(register));
     let ln_fertility = libm::log(derived(c, "GEN.fertility"));
     let (Some(intercept), Some(slope)) = (table.columns().first(), table.columns().get(1)) else {
         violation!(clause = "GEN.2", "household types without an intercept and a slope");
     };
     let (m, md) = (p.members.shared(register), p.members.decl(register));
-    let mut with = Vec::new();
-    let mut without = Vec::new();
-    let mut shares = Vec::new();
+    let (mut all, mut with, mut without, mut shares) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
     for (r, index) in table.rows().iter().zip(0_usize..) {
         let share = libm::exp(value(table, decl, *r, *intercept) + value(table, decl, *r, *slope) * ln_fertility);
         let holds = |col: usize| {
             let Ok(at) = i64::try_from(col) else { violation!(clause = "GEN.2", "a members column beyond counting") };
             value(m, md, *r, at) > 0.0
         };
-        let t = Type { index, partner: holds(PARTNER_COLUMN), older: holds(OLDER), other: holds(OTHER) };
-        if holds(CHILDREN_COLUMN) {
+        let t = Type { index, holds: [PARTNER_COLUMN, CHILDREN_COLUMN, OLDER, OTHER].map(holds) };
+        if t.children() {
             with.push((t, share));
         } else {
             without.push((t, share));
         }
+        all.push((t, share));
         shares.push(share);
     }
     if MEMBER_COLUMNS != m.columns().len() {
         violation!(clause = "GEN.2", "a members table of other columns than a type's members");
     }
+    let only = |partner: bool| {
+        let found =
+            all.iter().map(|(t, _)| *t).find(|t| t.partner() == partner && !t.children() && !t.older() && !t.other());
+        let Some(t) = found else {
+            violation!(clause = "GEN.2", "no household type of one person or of a couple only");
+        };
+        t
+    };
+    let (alone, pair) = (only(false), only(true));
     let total: f64 = shares.iter().sum();
-    (Pick::new(with), Pick::new(without), shares.into_iter().map(|s| s / total).collect())
+    Types {
+        all: Pick::new(all),
+        with: Pick::new(with),
+        without: Pick::new(without),
+        alone,
+        pair,
+        shares: shares.into_iter().map(|s| s / total).collect(),
+    }
+}
+
+/// Each size bin's share of households at the country's drawn fertility, as `DEM.household_sizes` gives it.
+fn sizes(p: &Prims, register: &Register, c: &OpeningCountry) -> Vec<f64> {
+    let (table, decl) = (p.sizes.get(register, c.id), p.sizes.decl(register));
+    let ln_fertility = libm::log(derived(c, "GEN.fertility"));
+    let (Some(intercept), Some(slope)) = (table.columns().first(), table.columns().get(1)) else {
+        violation!(clause = "GEN.2", "household sizes without an intercept and a slope");
+    };
+    if table.rows().len() != SIZE_BINS.len() {
+        violation!(clause = "GEN.2", "household sizes of other bins than the report's");
+    }
+    let parts: Vec<f64> = table
+        .rows()
+        .iter()
+        .map(|r| libm::exp(value(table, decl, *r, *intercept) + value(table, decl, *r, *slope) * ln_fertility))
+        .collect();
+    let total: f64 = parts.iter().sum();
+    parts.into_iter().map(|s| s / total).collect()
+}
+
+/// The household types as the composition draws them.
+struct Types {
+    all: Pick<Type>,
+    with: Pick<Type>,
+    without: Pick<Type>,
+    alone: Type,
+    pair: Type,
+    shares: Vec<f64>,
+}
+
+/// A mother's expected living children at each single age from majority to the oldest, by her age from the first
+/// the chances hold (`DEM.grown_children`).
+fn grown(
+    p: &Prims,
+    register: &Register,
+    id: CountryId,
+    (majority, ages): (u32, u32),
+    first: u32,
+    mothers: usize,
+) -> Vec<Vec<f64>> {
+    let (table, decl) = (p.grown_children.get(register, id), p.grown_children.decl(register));
+    if table.columns().first().is_none_or(|c| *c > i64::from(majority)) {
+        violation!(clause = "GEN.2", "an age of majority before the grown children the kin table holds");
+    }
+    (first..)
+        .take(mothers)
+        .map(|mother| (majority..ages).map(|k| value(table, decl, i64::from(mother), i64::from(k))).collect())
+        .collect()
 }
 
 impl Country {
@@ -315,7 +382,9 @@ impl Country {
         };
         let (first_mother, chances) = chances(p, register, id, majority);
         let (first_gap, gaps) = gaps(p.partner_gap.get(register, id));
-        let (with_children, without, shares) = types(p, register, c);
+        let Types { all, with: with_children, without, alone, pair, shares } = types(p, register, c);
+        let grown = grown(p, register, id, (majority, age(oldest) + 1), first_mother, chances.len());
+        let size_shares = sizes(p, register, c);
         let (education_rows, education) = education(p, register, id);
         let rules = Rules {
             majority,
@@ -323,10 +392,14 @@ impl Country {
             old_age: age(OLD_AGE),
             first_mother,
             chances,
+            grown,
             first_gap,
             gaps,
+            all,
             with_children,
             without,
+            alone,
+            pair,
         };
         let (year_days, passed_days) = year_days(date);
         Country {
@@ -339,6 +412,7 @@ impl Country {
             education_rows,
             education,
             shares,
+            sizes: size_shares,
             wealth: p.wealth.get(register, id).clone(),
             income: p.income.get(register, id).clone(),
         }
@@ -419,6 +493,7 @@ struct Tally {
     bands: [u64; BANDS],
     disabled: u64,
     types: Vec<u64>,
+    sizes: [u64; SIZE_BINS.len()],
     raised: u64,
 }
 
@@ -429,6 +504,9 @@ impl Tally {
         self.disabled += other.disabled;
         self.raised += other.raised;
         for (a, b) in self.bands.iter_mut().zip(other.bands) {
+            *a += b;
+        }
+        for (a, b) in self.sizes.iter_mut().zip(other.sizes) {
             *a += b;
         }
         if self.types.len() < other.types.len() {
@@ -559,6 +637,10 @@ fn book_region(
         if let Some(t) = tally.types.get_mut(kind) {
             *t += twins;
         }
+        let size = len_u64(h.persons.len());
+        if let Some(b) = SIZE_BINS.iter().rposition(|first| *first <= size).and_then(|at| tally.sizes.get_mut(at)) {
+            *b += twins;
+        }
     }
 }
 
@@ -639,17 +721,21 @@ impl Contribution for Households {
 fn describe(c: &OpeningCountry, country: &Country, t: &Tally, twins: u32) -> String {
     let share = |n: u64| PERCENT * from_u64(n) / from_u64(t.persons);
     let [under, _, over] = t.bands;
-    let types: Vec<String> = t
-        .types
-        .iter()
-        .zip(&country.shares)
-        .map(|(n, s)| format!("{:.1}% ({:.1}%)", PERCENT * from_u64(*n) / from_u64(t.households), PERCENT * s))
-        .collect();
+    let against = |drawn: &[u64], shares: &[f64]| -> String {
+        let parts: Vec<String> = drawn
+            .iter()
+            .zip(shares)
+            .map(|(n, s)| format!("{:.1}% ({:.1}%)", PERCENT * from_u64(*n) / from_u64(t.households), PERCENT * s))
+            .collect();
+        parts.join(", ")
+    };
+    let types = against(&t.types, &country.shares);
+    let sizes = against(&t.sizes, &country.sizes);
     format!(
         "country {}: {} households of {} persons (people {}, {:.2} a household) as agents of {twins} twins; {:.1}% \
          under 15 (GEN.share_under_15 {:.1}%), {:.1}% 65 and over (GEN.share_65_plus {:.1}%), {:.1}% disabled; \
-         households by type as drawn (DEM.household_types at GEN.fertility) {}; {} children raised by an adult not \
-         their mother. Persons by age and sex (DEM.age_standard raked to GEN.share_under_15 and GEN.share_65_plus), \
+         households by type as drawn (DEM.household_types at GEN.fertility) {}; by size (1, 2-3, 4-5, 6 or more) \
+         as drawn (DEM.household_sizes at GEN.fertility) {}; {} children raised by an adult not their mother. Persons by age and sex (DEM.age_standard raked to GEN.share_under_15 and GEN.share_65_plus), \
          formed into families by mothers' chances of children (DEM.minor_children), partners (DEM.partner_age_gap) \
          and whom each type holds (DEM.household_members); health (DEM.disability_prevalence, DEM.disability_onset) \
          and education (DEM.education_female, DEM.education_male)",
@@ -663,7 +749,8 @@ fn describe(c: &OpeningCountry, country: &Country, t: &Tally, twins: u32) -> Str
         share(over),
         derived(c, "GEN.share_65_plus"),
         share(t.disabled),
-        types.join(", "),
+        types,
+        sizes,
         t.raised,
     )
 }

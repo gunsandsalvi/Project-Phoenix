@@ -2074,9 +2074,14 @@ what those persons make:
    the type holds one, from the pool's persons of 65 and over. A child whom no woman left in the pool can have
    mothered is raised by another adult of the pool, counted in the report; a child no adult is left to raise stops
    the opening, the distributions being inconsistent (GEN.2).
-3. **The rest.** While the pool holds an adult, a household's type is drawn among those without children in
-   proportion to their shares, and its persons from the pool as the type says: one person; a woman and a partner at
-   the gap; persons who are not relatives.
+3. **The rest.** While the pool holds an adult, a household's type is drawn among all types in proportion to their
+   shares, and its persons from the pool as the type says: one person; a woman and a partner at the gap; persons who
+   are not relatives; and for a type with children, a family of grown children — the mother drawn from the pool's
+   women in proportion to each age's women and their expected living children from majority, each of her grown
+   children at each age with her chance of a living child of that age (`DEM.grown_children`, derived as the minors'
+   table is), who hold the household's adult place; a mother none of whose grown children is left heads the type
+   without them, and when no woman left can have grown children a type without children is drawn instead. The
+   households' sizes are not drawn: the report reads them against `DEM.household_sizes` at the country's fertility.
 4. **The type follows the persons**: a person the pool no longer holds is not drawn, so the last households of a
    region hold whom the pool has left, and every person of the pool is in exactly one household.
 
