@@ -208,7 +208,7 @@ pub struct Ledger<B: Backing = SystemBacking> {
 }
 
 /// An instruction's working lists as it is checked: its legs keyed by position, each position's first leg, each leg's
-/// position, the positions and their moves, and the leg of each move.
+/// position, the positions and their moves, the leg of each move, and its effects as they are netted.
 #[derive(Debug, Default)]
 struct Scratch {
     keyed: Vec<(Key, usize)>,
@@ -219,7 +219,13 @@ struct Scratch {
     moves: Vec<(usize, i64)>,
     moved_by: Vec<usize>,
     order: Vec<usize>,
+    net: Vec<Netted>,
+    kept: Vec<EffectRec>,
 }
+
+/// An effect as it is netted: whether it is of a holding's cost, its party and currency, where the first of its kind
+/// lies among the instruction's effects, and the sum so far.
+type Netted = ((bool, PartyId, u8), usize, i64);
 
 /// What every leg of an instruction settles with: its identity, reason and day, and the contract row it pays.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -515,7 +521,7 @@ impl<B: Backing> Ledger<B> {
         audit: &mut dyn AuditStream,
     ) -> Result<InstructionId, Fail> {
         let id = settling.id;
-        let Scratch { keyed, firsts, group_of, number, positions, moves, moved_by, order } = scratch;
+        let Scratch { keyed, firsts, group_of, number, positions, moves, moved_by, order, net, kept } = scratch;
         for list in [&mut *group_of, &mut *number, &mut *moved_by] {
             list.clear();
         }
@@ -580,7 +586,7 @@ impl<B: Backing> Ledger<B> {
         let first = self.day.effects.len();
         self.settle_legs(holders, settling, (legs, located, drawn), (deferred, order), audit);
         let rows = legs.iter().any(|l| matches!(l.kind, LegKind::Row(_)));
-        self.net_effects(first, self.reasons.get(settling.reason), !rows);
+        self.net_effects(first, self.reasons.get(settling.reason), !rows, (net, kept));
         audit.applied(id.get());
         Ok(id)
     }
@@ -590,45 +596,53 @@ impl<B: Backing> Ledger<B> {
     /// instruction gives up its inputs' cost, the cost the service carried in and out again. So only what a party
     /// paid beyond what it received, and the cost it gave beyond what it took, are its effects. The cost of goods is
     /// netted only where no leg adjusts a row's balance, whose effect is the reason's own.
-    fn net_effects(&mut self, first: usize, decl: crate::instruction::ReasonDecl, goods: bool) {
+    fn net_effects(
+        &mut self,
+        first: usize,
+        decl: crate::instruction::ReasonDecl,
+        goods: bool,
+        (net, kept): (&mut Vec<Netted>, &mut Vec<EffectRec>),
+    ) {
         let Some(recs) = self.day.effects.get(first..) else { return };
         if recs.len() < 2 {
             return;
         }
         let Some(template) = recs.first().copied() else { return };
-        let mut net: Vec<(bool, PartyId, phx_num::Ccy, i64)> = Vec::new();
-        let mut kept: Vec<EffectRec> = Vec::new();
-        for e in recs {
+        net.clear();
+        kept.clear();
+        for (n, e) in recs.iter().enumerate() {
             if e.held && !goods {
                 kept.push(*e);
                 continue;
             }
-            let ccy = e.amount.ccy();
-            match net.iter_mut().find(|(h, p, c, _)| *h == e.held && *p == e.party && *c == ccy) {
-                Some((_, _, _, sum)) => *sum += e.amount.amt(),
-                None => net.push((e.held, e.party, ccy, e.amount.amt())),
-            }
+            net.push(((e.held, e.party, e.amount.ccy().index()), n, e.amount.amt()));
         }
+        // Each party's effects of a kind summed where the first of them lies, so the netted effects keep its order.
+        net.sort_unstable_by_key(|(key, n, _)| (*key, *n));
+        net.dedup_by(|later, earlier| {
+            let same = later.0 == earlier.0;
+            if same {
+                earlier.2 += later.2;
+            }
+            same
+        });
+        net.sort_unstable_by_key(|(_, n, _)| *n);
         let (held_paid, held_received) = match decl.held {
             Missing::Present(pair) => pair,
             Missing::Absent => (decl.paid, decl.received),
         };
-        let mut out: Vec<EffectRec> = net
-            .into_iter()
-            .filter(|(_, _, _, sum)| *sum != 0)
-            .map(|(held, party, ccy, sum)| {
-                let effect = match (held, sum < 0) {
-                    (false, true) => decl.paid,
-                    (false, false) => decl.received,
-                    (true, true) => held_paid,
-                    (true, false) => held_received,
-                };
-                EffectRec { party, effect, amount: Money::new(sum, ccy), held, ..template }
-            })
-            .collect();
-        out.extend(kept);
         self.day.effects.truncate(first);
+        let out = net.iter().filter(|(_, _, sum)| *sum != 0).map(|&((held, party, ccy), _, sum)| {
+            let effect = match (held, sum < 0) {
+                (false, true) => decl.paid,
+                (false, false) => decl.received,
+                (true, true) => held_paid,
+                (true, false) => held_received,
+            };
+            EffectRec { party, effect, amount: Money::new(sum, phx_num::Ccy::new(ccy)), held, ..template }
+        });
         self.day.effects.extend(out);
+        self.day.effects.extend(kept.iter().copied());
     }
 
     fn refuse(&self, at: ApplyAt, legs: &[LegRec], id: InstructionId) {
@@ -872,21 +886,21 @@ impl<B: Backing> Ledger<B> {
                 Some((line, view)) => balance(view, *line),
                 None => self.position(arenas, at.party, at.slot, leg.position_code()),
             };
-            let basis = self.held_basis(arenas, *at, leg);
+            let lots = self.holds_lots(*at, leg);
             let issued = match leg.account {
                 AccountRef::Instrument(id) => Missing::Present(self.instruments.get(id).issued.n()),
                 _ => Missing::Absent,
             };
-            match &line_row {
-                Some((line, view)) => settle_balance(arenas, at.slot, (*line, view), leg.qty),
+            let cost_moved = match &line_row {
+                Some((line, view)) => {
+                    settle_balance(arenas, at.slot, (*line, view), leg.qty);
+                    0
+                }
                 None => self.settle_leg(arenas, *at, leg, s.day, &mut taken),
-            }
+            };
             // What else the leg moved of its party's net assets: the cost of a holding's lots.
-            let held_moved = match basis {
-                Missing::Present((was, ccy)) => match self.held_basis(arenas, *at, leg) {
-                    Missing::Present((now, _)) => Missing::Present((now - was, ccy)),
-                    Missing::Absent => Missing::Absent,
-                },
+            let held_moved = match lots {
+                Missing::Present(ccy) => Missing::Present((cost_moved, ccy)),
                 Missing::Absent => Missing::Absent,
             };
             let table = arenas.table();
@@ -1007,22 +1021,17 @@ impl<B: Backing> Ledger<B> {
         }
     }
 
-    /// What a holder's lots of the instrument a leg moves cost, in the instrument's currency, where the leg moves
-    /// units a holder holds rather than an issuer's.
-    fn held_basis(&self, arenas: &dyn HolderArenas, at: At, leg: &LegRec) -> Missing<(i64, phx_num::Ccy)> {
+    /// The currency a leg's lots are costed in, where the leg moves units a holder holds rather than an issuer's.
+    fn holds_lots(&self, at: At, leg: &LegRec) -> Missing<phx_num::Ccy> {
         let AccountRef::Instrument(id) = leg.account else { return Missing::Absent };
         let instrument = self.instruments.get(id);
         if instrument.issuer == Missing::Present(at.party) {
             return Missing::Absent;
         }
-        // A holding not held has no lots, so costs nothing.
-        let cost = match crate::holding::basis(arenas, at.slot, id) {
-            Missing::Present(b) => b,
-            Missing::Absent => 0,
-        };
-        Missing::Present((cost, instrument.ccy))
+        Missing::Present(instrument.ccy)
     }
 
+    /// A leg settled where it lies; returns the cost its holder's lots gained, or lost when negative.
     fn settle_leg(
         &mut self,
         arenas: &mut dyn HolderArenas,
@@ -1030,8 +1039,9 @@ impl<B: Backing> Ledger<B> {
         leg: &LegRec,
         day: Day,
         taken: &mut Vec<NamedUnit>,
-    ) {
+    ) -> i64 {
         let At { party, slot, .. } = at;
+        let mut cost_moved = 0;
         match (leg.kind, leg.account) {
             (
                 LegKind::Money | LegKind::Row(RowOp::Adjust) | LegKind::OpeningWrite { .. },
@@ -1047,7 +1057,7 @@ impl<B: Backing> Ledger<B> {
                 self.instruments.change_issued(id, Qty::new(-leg.qty, self.instruments.get(id).unit), why);
             }
             (LegKind::Units { cost }, AccountRef::Instrument(id)) => {
-                self.move_units(arenas, at, id, leg.qty, cost, day);
+                cost_moved = self.move_units(arenas, at, id, leg.qty, cost, day);
             }
             (LegKind::Transformation { .. } | LegKind::OpeningWrite { .. }, AccountRef::Instrument(id)) => {
                 let why = if leg.qty > 0 { IssueChange::Issuance } else { IssueChange::Buyback };
@@ -1059,7 +1069,7 @@ impl<B: Backing> Ledger<B> {
                 if leg.qty < 0 && cost != 0 {
                     violation!(clause = "ACC.6", "units used up that carry a cost of their own", id = id.get());
                 }
-                self.move_units(arenas, at, id, leg.qty, cost, day);
+                cost_moved = self.move_units(arenas, at, id, leg.qty, cost, day);
             }
             (LegKind::Units { .. }, AccountRef::Unit(unit)) => {
                 if leg.qty < 0 {
@@ -1102,18 +1112,35 @@ impl<B: Backing> Ledger<B> {
             }
             _ => violation!(clause = "SET.11", "a leg whose kind does not fit its account", party = party.get()),
         }
+        cost_moved
     }
 
-    fn move_units(&mut self, arenas: &mut dyn HolderArenas, at: At, id: InstrumentId, qty: i64, cost: i64, day: Day) {
-        if qty > 0 {
-            // A class of a chain holds alike units, and a holder at average cost keeps its goods so: one lot each.
-            let averaged = matches!(self.cost_flows.get(&at.party), Some(true)) || arenas.at_average_cost();
-            let pooled = averaged || matches!(self.chains.of(id), Missing::Present(_));
-            self.instruments.acquire_as(arenas, (at.table, at.slot), id, Lot::new(day, qty, cost), pooled);
-        } else if qty < 0 {
-            let disposal = Disposal { units: -qty, bound: self.bound(at.party, id), order: LotOrder::FirstIn };
-            let gone = self.instruments.dispose(arenas, at.table, at.slot, id, disposal);
-            self.day.disposed.push(DisposedRec { party: at.party, instrument: id, units: -qty, cost: gone.cost, day });
+    /// Units moved in or out of a holding; returns the cost its lots gained, or lost when negative.
+    fn move_units(
+        &mut self,
+        arenas: &mut dyn HolderArenas,
+        at: At,
+        id: InstrumentId,
+        qty: i64,
+        cost: i64,
+        day: Day,
+    ) -> i64 {
+        match qty.cmp(&0) {
+            core::cmp::Ordering::Greater => {
+                // A class of a chain holds alike units, and a holder at average cost keeps its goods so: one lot each.
+                let averaged = matches!(self.cost_flows.get(&at.party), Some(true)) || arenas.at_average_cost();
+                let pooled = averaged || matches!(self.chains.of(id), Missing::Present(_));
+                self.instruments.acquire_as(arenas, (at.table, at.slot), id, Lot::new(day, qty, cost), pooled);
+                cost
+            }
+            core::cmp::Ordering::Less => {
+                let disposal = Disposal { units: -qty, bound: self.bound(at.party, id), order: LotOrder::FirstIn };
+                let gone = self.instruments.dispose(arenas, at.table, at.slot, id, disposal);
+                let rec = DisposedRec { party: at.party, instrument: id, units: -qty, cost: gone.cost, day };
+                self.day.disposed.push(rec);
+                -gone.cost
+            }
+            core::cmp::Ordering::Equal => 0,
         }
     }
 
