@@ -15,13 +15,12 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
             let message = format!("`{}` is not in the architecture's crate lists", c.name);
             breaches.push(Breach::new(RULE, ARCHITECTURE, 1, message));
         }
-        match steps.iter().find(|s| s.crates.contains(&c.name)) {
-            None => breaches.push(Breach::new(RULE, &c.manifest_path(), 1, "no step creates this crate")),
-            Some(step) if !matches!(step.status.as_deref(), Some("building" | "awaiting" | "held" | "done")) => {
-                let message = format!("`{}` exists before its step {} is building", c.name, step.id);
-                breaches.push(Breach::new(RULE, &c.manifest_path(), 1, message));
-            }
-            Some(_) => {}
+        // A crate no step names was made by a step done and gone from the plan.
+        if let Some(step) = steps.iter().find(|s| s.crates.contains(&c.name))
+            && !matches!(step.status.as_deref(), Some("building" | "awaiting" | "held" | "done"))
+        {
+            let message = format!("`{}` exists before its step {} is building", c.name, step.id);
+            breaches.push(Breach::new(RULE, &c.manifest_path(), 1, message));
         }
     }
     let mut building = 0_usize;

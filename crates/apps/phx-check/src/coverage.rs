@@ -78,7 +78,11 @@ fn derive_row(line: &str, named: &[(&Step, Vec<String>)], map: &[MapRow]) -> Opt
     let mut stages: Vec<u32> = naming.iter().map(|s| s.stage).chain(completions).collect();
     stages.sort_unstable();
     let first = *stages.first()?;
-    let status_of = |id: &str| named.iter().find(|(s, _)| s.id == id).and_then(|(s, _)| s.status.clone());
+    // A done step leaves the plan, so a completing step the plan no longer holds is done.
+    let status_of = |id: &str| match named.iter().find(|(s, _)| s.id == id) {
+        Some((s, _)) => s.status.clone(),
+        None => Some("done".to_owned()),
+    };
     let completing: Vec<Option<String>> = rows.iter().map(|r| status_of(&r.step)).collect();
     let involved = naming.iter().map(|s| s.status.clone()).chain(completing.iter().cloned());
     let status = if completing.iter().all(|s| s.as_deref() == Some("done")) {

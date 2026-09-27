@@ -8,8 +8,12 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
     match (docs::clauses(&ws.spec), docs::map(&ws.plan), docs::steps(&ws.plan)) {
         (Ok(clauses), Ok(map), Ok(steps)) => {
             let mut breaches = check(&clauses, &map);
-            let done: Vec<&str> =
-                steps.iter().filter(|s| s.status.as_deref() == Some("done")).map(|s| s.id.as_str()).collect();
+            // A done step leaves the plan, so a step the map names that the plan no longer holds is done.
+            let done: Vec<&str> = map
+                .iter()
+                .map(|r| r.step.as_str())
+                .filter(|id| steps.iter().find(|s| s.id == *id).is_none_or(|s| s.status.as_deref() == Some("done")))
+                .collect();
             let texts = ws
                 .crates
                 .iter()

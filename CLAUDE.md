@@ -26,9 +26,15 @@ about how to build.
 - **`docs/ARCHITECTURE.md`** records how the world is built — language, crates and their layers, how the population
   is laid out in memory, the day's sub-steps, the budgets — each decision taken against the spec and the budget
   (N8). A change of design is made there first, in the same change as the work that needs it.
-- **`docs/IMPLEMENTATION.md`** is the plan: every step of every stage, its clauses, files, design, tests, live
-  checks, budget and **Done when**, the findings (§11), the owner's decisions (§12) and the clause map (§13), which
-  names the one step that completes each clause. Work one step at a time, in its order; mark its status there.
+- **`docs/IMPLEMENTATION.md`** is the plan: every step still to build, its clauses, files, design, tests, live
+  checks, budget and **Done when**, the open findings (§11), the owner's decisions (§12) and the clause map (§13).
+  Work one step at a time, in its order, done well, with no deadline. **When a step is done its whole section is
+  removed from the plan** (owner, 2026-09-27); whatever needs keeping about how it was built goes in
+  `docs/ARCHITECTURE.md`.
+- **No device run** until the owner says the world has enough in it (owner, 2026-09-27).
+- **Smoke and long runs** may raise the twins K for speed (`phx run --representation twins:K`), for that run only;
+  the committed resolution stays the owner's.
+- The builder has full autonomy and authority over the code: act on issues, don't stop to ask.
 - **Two reviews per step.** Each step's code is attacked by two reviews — spec and laws; architecture, budget and
   shortcuts (the prompts are in §0.7 of the plan) — and their findings are fixed before it is final. Independent
   subagents review only major steps (each stage's gate, and steps the owner names); otherwise both passes are the
@@ -56,8 +62,10 @@ about how to build.
 ## Findings
 
 - A number that looks wrong, an audit family that fires, a mechanism that never runs, a measure that misses: each
-  is a **finding** about a missing or wrong mechanism. Write it down with what was measured and where, and carry on
-  with the work in hand.
+  is a **finding** about a missing or wrong mechanism. **Solve it at once** (owner, 2026-09-27): no F-row for
+  anything that can be coded now, and nothing postponed because it is long or complicated. Only what truly cannot be
+  settled now — an owner decision, or a mechanism of a later stage — is written down, with what was measured and
+  where.
 - **Never tune** a primitive, a rule or the opening world to make a result look right (N7, GEN.11). Never add a
   bound to stop a number exploding: build the mechanism that holds it (Law 6).
 - The exception is a state that cannot exist — a one-sided flow, a negative count of units, a fact with two
