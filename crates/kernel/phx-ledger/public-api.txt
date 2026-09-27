@@ -225,6 +225,7 @@ pub phx_ledger::apply::DayBook::dues: alloc::vec::Vec<phx_ledger::effects::DueRe
 pub phx_ledger::apply::DayBook::earned: phx_core::map::KernelMap<phx_id::ids::PartyId, i128>
 pub phx_ledger::apply::DayBook::effects: alloc::vec::Vec<phx_ledger::effects::EffectRec>
 pub phx_ledger::apply::DayBook::fails: alloc::vec::Vec<phx_ledger::fails::Fail>
+pub phx_ledger::apply::DayBook::levied: phx_core::map::KernelMap<phx_id::ids::PartyId, i128>
 impl phx_ledger::apply::DayBook
 pub fn phx_ledger::apply::DayBook::bytes(&self) -> usize
 pub fn phx_ledger::apply::DayBook::is_empty(&self) -> bool

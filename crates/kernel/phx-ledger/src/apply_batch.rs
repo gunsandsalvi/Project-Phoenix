@@ -111,6 +111,7 @@ struct Routed {
     given: Vec<Vec<crate::stream::Booking>>,
     nets: Vec<Vec<(NetKey, i64)>>,
     earned: Vec<Vec<(PartyId, i128)>>,
+    levied: Vec<Vec<(PartyId, i128)>>,
     crossing: BTreeMap<(PartyId, u8), i128>,
 }
 
@@ -299,6 +300,8 @@ impl<B: Backing> Books<B> {
             nets.fold(pool, &legs, || 0, |q, leg| *q += i128::from(*leg));
             let earned: Vec<_> = routed.iter_mut().map(|r| std::mem::take(&mut r.earned)).collect();
             self.ledger.day.earned.fold(pool, &earned, || 0, |v, add| *v += add);
+            let levied: Vec<_> = routed.iter_mut().map(|r| std::mem::take(&mut r.levied)).collect();
+            self.ledger.day.levied.fold(pool, &levied, || 0, |v, add| *v += add);
             for r in routed {
                 g.settled += r.settled;
                 for (key, q) in r.crossing {
@@ -351,6 +354,7 @@ impl<B: Backing> Books<B> {
             given: crate::stream::booking_buckets(),
             nets: phx_core::KernelMap::<NetKey, i128>::buckets(),
             earned: phx_core::KernelMap::<PartyId, i128>::buckets(),
+            levied: phx_core::KernelMap::<PartyId, i128>::buckets(),
             ..Routed::default()
         };
         let mut route = Vec::new();
@@ -370,10 +374,21 @@ impl<B: Backing> Books<B> {
                 push(&mut r.earned, phx_core::KernelMap::<PartyId, i128>::shard_of(party), (party, v));
             }
             self.bookings(&route, &mut r.given);
-            let (from, to) = (self.settles_at(p.payer, p.ccy), self.settles_at(p.payee, p.ccy));
-            if from != to {
-                *r.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(p.amount);
-                *r.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(p.amount);
+            // What is withheld crosses to the tax's payee's bank, not the payee's.
+            let withheld = self.withheld(&p).filter(|_| !(p.cleared && p.payer == p.reckoned_on));
+            let tax = withheld.map_or(0, |(_, t)| t);
+            if let Some((levier, tax)) = withheld {
+                for (party, v) in [(levier, i128::from(tax)), (p.payee, -i128::from(tax))] {
+                    push(&mut r.levied, phx_core::KernelMap::<PartyId, i128>::shard_of(party), (party, v));
+                }
+            }
+            let from = self.settles_at(p.payer, p.ccy);
+            for (payee, amount) in [(p.payee, p.amount - tax)].into_iter().chain(withheld) {
+                let to = self.settles_at(payee, p.ccy);
+                if from != to {
+                    *r.crossing.entry((from, p.ccy.index())).or_insert(0) -= i128::from(amount);
+                    *r.crossing.entry((to, p.ccy.index())).or_insert(0) += i128::from(amount);
+                }
             }
             for leg in &route {
                 let AccountRef::Line { line, side } = leg.account else {

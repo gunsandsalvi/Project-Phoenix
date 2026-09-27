@@ -122,7 +122,7 @@ impl Accounts {
                 events.push(event);
             }
         }
-        for (party, amount) in book.earned.sorted() {
+        for (party, amount) in book.earned.sorted().into_iter().chain(book.levied.sorted()) {
             let Ok(amount) = i64::try_from(*amount) else {
                 phx_num::capacity_exceeded!("a party's income of one day", i64::MAX, 0);
             };
@@ -141,14 +141,14 @@ impl Accounts {
         }
         events.clear();
         self.events = events;
-        self.posted = (book.dues.len() + book.earned.len(), book.effects.len());
+        self.posted = (book.dues.len() + book.earned.len() + book.levied.len(), book.effects.len());
     }
 
     /// The day's close: every due and effect of the day's book was posted when the accounts were read, since money
     /// settles before then; a record after it would move a balance no equity account follows.
     #[clause("ACC.4", "ACC.10")]
     pub fn close_day(&self, book: &DayBook) {
-        if (book.dues.len() + book.earned.len(), book.effects.len()) != self.posted {
+        if (book.dues.len() + book.earned.len() + book.levied.len(), book.effects.len()) != self.posted {
             violation!(
                 clause = "ACC.4",
                 "a due or effect recorded after the day's accounts were posted",

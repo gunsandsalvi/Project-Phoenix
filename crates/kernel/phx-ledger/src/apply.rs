@@ -91,6 +91,9 @@ pub struct DayBook {
     /// The interest of the day's dues that settled, folded by party, the payee's earned and the payer's spent: a
     /// settled due leaves no claim, so the accounts read only what each party earned.
     pub earned: phx_core::KernelMap<PartyId, i128>,
+    /// The tax withheld from the day's settled dues, folded by party: the tax's payee's income and the due's payee's
+    /// expense, kept apart from what was earned, which is counted gross of it.
+    pub levied: phx_core::KernelMap<PartyId, i128>,
     pub disposed: Vec<DisposedRec>,
     moved: phx_core::KernelMap<Moved, (i128, i128)>,
 }
@@ -103,6 +106,7 @@ impl DayBook {
             && self.effects.is_empty()
             && self.dues.is_empty()
             && self.earned.is_empty()
+            && self.levied.is_empty()
             && self.disposed.is_empty()
             && self.moved.is_empty()
     }
@@ -113,7 +117,7 @@ impl DayBook {
         self.fails.capacity() * size_of::<Fail>()
             + self.effects.capacity() * size_of::<EffectRec>()
             + self.dues.capacity() * size_of::<crate::effects::DueRec>()
-            + self.earned.capacity() * size_of::<(PartyId, i128)>()
+            + (self.earned.capacity() + self.levied.capacity()) * size_of::<(PartyId, i128)>()
             + self.disposed.capacity() * size_of::<DisposedRec>()
             + self.moved.capacity() * size_of::<(Moved, (i128, i128))>()
     }
@@ -124,6 +128,7 @@ impl DayBook {
         self.effects.clear();
         self.dues.clear();
         self.earned.clear();
+        self.levied.clear();
         self.disposed.clear();
         self.moved.clear();
     }

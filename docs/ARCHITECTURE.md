@@ -656,7 +656,9 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
   key shard to a worker. A line that opens, closes or twice moves a row writes what is held first and applies in
   place. Failure is
   per payer (MON.5): a payer that cannot pay fails its own legs; where the pairing to its payees was not recorded, the
-  payees who lose are drawn (REP.23).
+  payees who lose are drawn (REP.23). Tax withheld from a due goes to the tax's payee: it crosses from the payer's bank
+  to the tax payee's, and it is the due's payee's expense and the tax payee's income, kept in the day book apart from
+  what was earned (`DayBook::levied`), which the national accounts count gross of it.
 - **Verdicts**: 7c recomputes, over the payments that settle and the books as stage 7 found them, each party's
   standing (soundness), each failed payer's shortfall at its first failed payment (maximality), each account's
   movement against its net, and each bank's reserves against the net of its customers' payments across banks; one
