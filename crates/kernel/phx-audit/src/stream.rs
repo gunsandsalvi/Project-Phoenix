@@ -29,6 +29,11 @@ impl StreamAudit {
         &self.digests
     }
 
+    /// The day's legs folded into their positions, before the families read them.
+    pub fn fold(&mut self) {
+        self.digests.fold();
+    }
+
     /// Starts the next day's count.
     pub fn clear(&mut self) {
         self.applied = 0;

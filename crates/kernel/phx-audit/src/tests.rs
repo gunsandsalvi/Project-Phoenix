@@ -345,6 +345,7 @@ mod digests {
         d.record(1, leg(5, 8, 200, 1_000, true));
         d.record(2, leg(4, 8, -50, 800, true));
         d.record(2, leg(6, 16, 50, 0, false));
+        d.fold();
         assert!(d.flow_gaps().is_empty(), "each instruction has both its sides");
         assert_eq!(d.money_gaps(), vec![Gap::Money { instruction: 2, ccy: 0, sum: -50 }], "money gone to a loan row");
         let books = |p: PartyId, _: u64| match p.get() {

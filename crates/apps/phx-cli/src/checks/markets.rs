@@ -43,8 +43,10 @@ fn traced(w: Inspector<'_>) -> Outcome {
             ));
         }
     }
+    let failed: std::collections::BTreeSet<_> =
+        m.days.iter().filter(|d| d.failed > 0).map(|d| (d.market, d.day)).collect();
     for f in m.tape.failures() {
-        if !m.days.iter().any(|d| d.market == f.market && d.day == f.day && d.failed > 0) {
+        if !failed.contains(&(f.market, f.day)) {
             return Outcome::Fail(format!(
                 "a failure of market {} on day {} with no meeting",
                 f.market.get(),
@@ -61,6 +63,7 @@ fn measured(w: Inspector<'_>) -> Outcome {
         return Outcome::NotYet(NO_MEETING);
     }
     let m = w.markets();
+    let measured: std::collections::BTreeSet<_> = m.days.iter().map(|d| (d.market, d.day)).collect();
     let met_on = m
         .tape
         .prints()
@@ -68,7 +71,7 @@ fn measured(w: Inspector<'_>) -> Outcome {
         .map(|p| (p.market(), p.day()))
         .chain(m.tape.failures().iter().map(|f| (f.market, f.day)));
     for (market, day) in met_on {
-        if !m.days.iter().any(|d| d.market == market && d.day == day) {
+        if !measured.contains(&(market, day)) {
             return Outcome::Fail(format!("market {} met on day {} with no measures", market.get(), day.get()));
         }
     }

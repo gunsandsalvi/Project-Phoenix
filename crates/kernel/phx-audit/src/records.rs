@@ -4,6 +4,10 @@ use phx_core::LegDigest;
 use phx_id::PartyId;
 use phx_macros::clause;
 
+/// A position, by party and account, with what it held before the day's first leg on it and the day's net of its
+/// legs.
+type Position = ((PartyId, u64), (i64, i128));
+
 /// The audit's own record of a day's settled legs, kept as they apply and apart from the books they moved, so the
 /// families check the books against something the books did not write.
 #[derive(Debug, Default)]
@@ -18,8 +22,12 @@ pub struct Digests {
     money: Vec<((u64, u32), i128)>,
     /// The instructions and denominations whose legs were read.
     flow_keys: u64,
-    /// Per party and account, what it held before the day's first leg on it, and the day's net of its legs.
-    positions: phx_core::KernelMap<(PartyId, u64), (i64, i128)>,
+    /// Each leg's party and account, what it held before the leg and what the leg moved, in the order they settle;
+    /// kept as a list, not looked up by position, since a lookup per leg costs a random probe of a large table.
+    legs: Vec<((PartyId, u64), i64, i128)>,
+    /// Per party and account, what it held before the day's first leg on it, and the day's net of its legs: the legs
+    /// folded, by position.
+    positions: Vec<Position>,
     /// Per instruction that names a way, its legs made or used up.
     made: BTreeMap<u64, phx_core::Made>,
     /// Per instruction that wears plant, its legs along its chains.
@@ -62,7 +70,7 @@ impl Digests {
                 None => self.open_money.push((leg.denom, q)),
             }
         }
-        self.positions.get_or_insert_with((leg.party, leg.account), || (leg.before, 0)).1 += q;
+        self.legs.push(((leg.party, leg.account), leg.before, q));
         if let phx_num::Missing::Present(way) = leg.made {
             let made =
                 self.made.entry(instruction).or_insert_with(|| phx_core::Made { instruction, way, legs: Vec::new() });
@@ -91,6 +99,36 @@ impl Digests {
                 phx_num::Missing::Absent => day.unaccounted += q,
             }
         }
+    }
+
+    /// The legs recorded since the last fold folded into the positions: sorted by position, keeping their order within
+    /// one, so the first leg's holding before it is the position's opening.
+    pub fn fold(&mut self) {
+        if self.legs.is_empty() {
+            return;
+        }
+        let mut all: Vec<((PartyId, u64), i64, i128)> =
+            self.positions.drain(..).map(|(key, (opening, net))| (key, opening, net)).collect();
+        all.append(&mut self.legs);
+        all.sort_by_key(|(key, _, _)| *key);
+        for (key, before, q) in all {
+            match self.positions.last_mut() {
+                Some((k, (_, net))) if *k == key => *net += q,
+                _ => self.positions.push((key, (before, q))),
+            }
+        }
+    }
+
+    /// The positions folded, stopping the run where a leg is read before its fold.
+    fn folded(&self) -> &[Position] {
+        if !self.legs.is_empty() {
+            phx_num::violation!(
+                clause = "SET.8",
+                "the day's positions read with legs not yet folded",
+                legs = self.legs.len()
+            );
+        }
+        &self.positions
     }
 
     /// The open instruction's sums moved to the day's, where they are unbalanced.
@@ -140,11 +178,10 @@ impl Digests {
     /// out is what it holds now, read from the books by `held`.
     #[clause("NUM.5", "SET.8")]
     pub fn unit_gaps(&self, held: &dyn Fn(PartyId, u64) -> i64) -> Vec<Gap> {
-        self.positions
-            .sorted()
-            .into_iter()
-            .filter_map(|((party, account), (opening, net))| {
-                let expected = i128::from(*opening) + net;
+        self.folded()
+            .iter()
+            .filter_map(|&((party, account), (opening, net))| {
+                let expected = i128::from(opening) + net;
                 let now = held(party, account);
                 (expected != i128::from(now)).then_some(Gap::Units { party, account, expected, held: now })
             })
@@ -153,7 +190,7 @@ impl Digests {
 
     /// The positions the day's legs touched, by party and account.
     pub fn positions(&self) -> impl Iterator<Item = (PartyId, u64)> + '_ {
-        self.positions.sorted().into_iter().map(|(key, _)| key)
+        self.folded().iter().map(|(key, _)| *key)
     }
 
     /// Starts the next day's record.
@@ -164,6 +201,7 @@ impl Digests {
         self.flow_keys = 0;
         self.flows.clear();
         self.money.clear();
+        self.legs.clear();
         self.positions.clear();
         self.made.clear();
         self.worn.clear();
@@ -177,7 +215,7 @@ impl phx_core::LegRecords for Digests {
     }
 
     fn positions(&self) -> u64 {
-        phx_rand::float::len_u64(self.positions.len())
+        phx_rand::float::len_u64(self.folded().len())
     }
 
     fn flow_gaps(&self) -> Vec<phx_core::Gap> {

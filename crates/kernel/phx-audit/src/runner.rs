@@ -97,6 +97,7 @@ impl Audit {
     /// Runs every family over what the day wrote and touched, then starts the next day's count.
     pub fn close(&mut self, c: CloseInputs<'_>, findings: &mut Findings) -> CloseRecord {
         let before = findings.len();
+        self.stream.fold();
         let new_records = Span { start: self.records_seen, end: c.records.len() };
         let new_events = Span { start: self.events_seen, end: c.events.len() };
         let inputs = AuditInputs {

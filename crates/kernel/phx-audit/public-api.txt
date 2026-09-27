@@ -25,6 +25,7 @@ pub struct phx_audit::records::Digests
 impl phx_audit::records::Digests
 pub fn phx_audit::records::Digests::clear(&mut self)
 pub fn phx_audit::records::Digests::flow_gaps(&self) -> alloc::vec::Vec<phx_audit::records::Gap>
+pub fn phx_audit::records::Digests::fold(&mut self)
 pub fn phx_audit::records::Digests::money_gaps(&self) -> alloc::vec::Vec<phx_audit::records::Gap>
 pub fn phx_audit::records::Digests::positions(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::PartyId, u64)> + '_
 pub fn phx_audit::records::Digests::record(&mut self, u64, phx_core::family::LegDigest)
@@ -77,6 +78,7 @@ impl phx_audit::stream::StreamAudit
 pub fn phx_audit::stream::StreamAudit::applied_count(&self) -> u64
 pub fn phx_audit::stream::StreamAudit::clear(&mut self)
 pub fn phx_audit::stream::StreamAudit::digests(&self) -> &phx_audit::records::Digests
+pub fn phx_audit::stream::StreamAudit::fold(&mut self)
 pub fn phx_audit::stream::StreamAudit::touched_rows(&self) -> &phx_core::touched::TouchedRows
 impl phx_core::family::AuditStream for phx_audit::stream::StreamAudit
 pub fn phx_audit::stream::StreamAudit::applied(&mut self, u64)
@@ -131,6 +133,7 @@ impl phx_audit::stream::StreamAudit
 pub fn phx_audit::stream::StreamAudit::applied_count(&self) -> u64
 pub fn phx_audit::stream::StreamAudit::clear(&mut self)
 pub fn phx_audit::stream::StreamAudit::digests(&self) -> &phx_audit::records::Digests
+pub fn phx_audit::stream::StreamAudit::fold(&mut self)
 pub fn phx_audit::stream::StreamAudit::touched_rows(&self) -> &phx_core::touched::TouchedRows
 impl phx_core::family::AuditStream for phx_audit::stream::StreamAudit
 pub fn phx_audit::stream::StreamAudit::applied(&mut self, u64)
