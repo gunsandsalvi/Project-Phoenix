@@ -241,10 +241,13 @@ impl World {
         }
     }
 
-    /// A firm's required return, from its fact; none before its opening gives it one.
+    /// A firm's required return, from its fact; none before its opening gives it one, and none for a kind that keeps
+    /// no return to require, as an estate winding a firm down, which seeks no new loan.
     fn required_return(&mut self, party: PartyId) -> Missing<f64> {
         let (place, slot) = self.books.parties.row(party);
-        if place >= self.books.parties.first_cell_place() {
+        if place >= self.books.parties.first_cell_place()
+            || self.books.parties.table(place).facet_named(REQUIRED_RETURN).is_none()
+        {
             return Missing::Absent;
         }
         let store: &mut dyn FactStore = self.books.parties.table_mut(place);
