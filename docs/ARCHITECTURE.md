@@ -1302,7 +1302,12 @@ households the persons form and the small firms they employ, about 0.43 an agent
 The size is set by measuring the day (N8.5). On the build machine's four cores, 62-day runs (2026-09-27) gave a
 business day after the first payday of 1.0–1.2 s at 600 000 persons, 1.4–1.6 s at 750 000 and 2.0–2.3 s at 1 million,
 with the month's payday span (7c's settlement) at 2.5–6 s: 750 000 is the most within N8.2 there, and the register
-holds it until the device's measure resets it.
+holds it until the device's measure resets it. After the day's reads were sharded (visits, their goods, 6a's stalls
+and meetings, 5c's searchers), an instruction's effects netted by sort and short lists read off the pool, 45-day runs
+at 750 000 give 1.05–1.25 s a business day after the first payday and a payday span of about 3.9 s, 7c's share
+1.9 s. What stays serial is the ledger's settlement in the order instructions arrive: most trades cross banks and
+move the banks' reserves, so each trade can fail on what the one before left, and the trades of 7c (about a quarter
+of a business day) chain.
 
 Identical twins — agents standing for many parties each, the full population held at the same number of agents —
 were retired (spec Appendix E 44): their decisions moved their parties in lock-step, their lumps broke whole-unit
