@@ -1012,12 +1012,14 @@ without end in both directions.
 - **Capacity** reads the classes: a way's capacity is the least over its kinds of units × the class's efficiency over
   the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound. The owner's plant review
   (5c, with the wear) writes it as the fact `CAP.capacity`, one twin's units a day, which production and a service's
-  stall read the next day beside what the staff can make.
+  stall read the next day beside what the staff can make. A making's intent carries the days of making it stands for
+  (`Transform::days`), and each making is read against its maker's capacity over those days as its sub-step's
+  handlers decided it (`makings_decided`), before a later review moves the fact; one beyond is counted (CAP.9).
 - **Investment** (CAP.5, CAP.2): each chain has one more instrument, its **plant under construction**, held apart
   from its classes (`Chains::declare_building`). The investment review (5b, on the plant review's schedule) reads
   what the firm sold since its last from its own deliveries, keeping the count and the period's sales as CAP's facts
-  (`CAP.delivered_seen`, `CAP.sales_seen`), their change its uncertainty, and yesterday's price and capacity, since the
-  day's 5b and 5c write them; it emits a `CAP.invest` intent (the kind, the product it is
+  (`CAP.delivered_seen`, `CAP.sales_seen`), their change its uncertainty, yesterday's price, since the day's 5b and 5c
+  write it, and the capacity its plant held gives, found as the plant review finds it; it emits a `CAP.invest` intent (the kind, the product it is
   bought as, a twin's units, the stages its lead time gives); the world admits it at 5d and at 6a names the builder
   among the day's stalls of that product — the seller in the owner's reach and country at the lowest posted price —
   and begins a `Project` (saved in `Chains`) at that price. At 6d each project's stage is a trade under `CAP bought`:
@@ -1071,15 +1073,20 @@ without end in both directions.
   key names the kind); a kind that settles after its day is refused, since goods are delivered the day they trade.
   At 6a the kernel meets every instance with orders by its kind's form, in the markets' order: a **call** at the
   place, whose fills are cut to each order's whole lots, the side that gives more losing lots until the sides are
-  equal (`call::whole_lots`); or **posted** prices between firms (`posted::between`), each seller's offer standing
+  equal (`call::whole_lots`), then paired, the largest lots first, each match whole lots of both its parties, and what
+  no counterparty's lots can meet cut from both sides alike, so an agent trades a whole share for each twin with each
+  counterparty; fills that only net a party's own bids against its own offers fail the call as `OwnOrders`; or
+  **posted** prices between firms (`posted::between`), each seller's offer standing
   at its price and the buyers, in an order drawn by lot, taking from the cheapest they accept in quantities whole in
   both parties' lots. Each meeting's print or failure is recorded; a call's print is its mark. Every order's cover is
   released after its meeting.
 - **Trades** (SET.1, SET.2, SET.4): at 6d every match becomes a numbered **trade instruction** under the kernel's
   reason `traded`: the seller's units to the buyer at what it paid, against that money from the buyer's account to
-  the seller's, the units covered again for exactly what it delivers. Trades settle in stage 7 after the day's dues
-  and estates, each all or none through the apply routine in declared order, so a buyer who cannot pay records a
-  fail with its cause (SET.3), the units stay with the seller and its cover is released.
+  the seller's, the units covered again for exactly what it delivers, its money one twin's quantity priced, rounded
+  once, times the twins. Trades settle in stage 7 after the day's dues and estates, each all or none through the
+  apply routine in declared order, so a buyer who cannot pay records a fail with its cause (SET.3), the units stay
+  with the seller and its cover is released. An instruction's own covers count as free to it — the units they hold
+  back are the ones it delivers — and are released as it settles; the day's failed trades are counted by cause.
 - **Revenue** (FRM.13) is recognised on delivery: `traded` declares the buyer's money paid an asset and the seller's
   received revenue, and the cost its units carry out an expense, the cost of what it sold, while the buyer's lot comes
   in as an asset (`ReasonDecl::held`). The units each party delivers are kept with the goods, which its visits read as
@@ -1091,9 +1098,11 @@ without end in both directions.
   free units of the good where it stands, less what the day's matches between firms take. The stalls in reach of each
   buyer zone are found once; each buyer draws a Gumbel taste for each, values them at `−α·ln p − γ·km + ε` and goes to
   the best open one; a seller serves its buyers in an order drawn by lot in whole lots for every twin, and the rest
-  choose again. Each sale's units are covered at once and, at 6d, become a purchase under the kind's reason: the
-  buyer's money to the seller and the seller's units used up by the purchase naming the buyer, settled in stage 7
-  with the trades. A service is delivered as it is made and never held, so its stall and sale come with production.
+  choose again, a stall selling in lots whole for both the buyer's twins and its seller's. Each sale's units are
+  covered at once and, at 6d, become a purchase under the kind's reason: the buyer's money to the seller and the
+  seller's units used up by the purchase naming the buyer, settled in stage 7 with the trades. A service is
+  delivered as it is made and never held: each maker makes the day's sales of it in one making at 6d, and what no
+  settled sale takes perishes after the day's trades settle (`unsold_perish`), as a project stage made to order does.
 - **Freight** (FRT.1–FRT.9, GEO.4, GEO.13): the network is generated with the map (`phx_geo::network`): road and rail
   segments between the market zones of every two regions of a country that share a border, over their land path,
   and sea lanes joining a country's parts, the shortest first; each mode's capacity a day in tonnes. A carriage kind

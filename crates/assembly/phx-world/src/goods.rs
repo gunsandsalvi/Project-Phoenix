@@ -167,6 +167,8 @@ pub(crate) struct MarketDay {
     pub sales: Vec<crate::retail::Sale>,
     /// Each seller of a service at today's meetings, with the way it makes it by.
     pub makers: BTreeMap<PartyId, u32>,
+    /// What was made today to be sold as it is made, by its maker and good: what no sale takes is lost at the day's end.
+    pub made_to_order: std::collections::BTreeSet<(PartyId, InstrumentId)>,
     pub ships: Vec<crate::freight::Ship>,
     pub investments: Vec<crate::invest::Invest>,
     /// Each project stage among the day's trades, with its project and units.
@@ -204,6 +206,11 @@ pub struct GoodsDay {
     pub completed: u64,
     /// The makings of more units a twin than its maker's plant allows a day.
     pub beyond_capacity: u64,
+    /// The units made to order that no sale took, lost at the day's end.
+    pub perished: i64,
+    /// The trades that failed for want of the buyer's money, and of the seller's free units.
+    pub failed_funds: u64,
+    pub failed_units: u64,
 }
 
 /// Each good's latest mark where it stands, as the markets' marks give it, rebuilt after the day's marks.
@@ -510,9 +517,8 @@ impl World {
         if t.legs.iter().any(|l| matches!(l.source, Source::Deposit(_))) {
             self.market_day.tally.extractions += 1;
         }
-        if let Some(made) = t.legs.iter().find(|l| matches!(l.source, Source::Way(_)) && l.qty > 0).map(|l| l.qty) {
+        if t.legs.iter().any(|l| matches!(l.source, Source::Way(_)) && l.qty > 0) {
             self.market_day.tally.made += 1;
-            self.within_capacity(row.party, made);
         }
         let deposits = self.tables.iter_mut().find(|k| k.name == phx_geo::audit::DEPOSIT_TABLE);
         let Some(table) = deposits else {
@@ -547,16 +553,34 @@ impl World {
             .collect()
     }
 
-    /// The most units of its product a party can make by a way at a zone from what it holds of the way's inputs that
-    /// can be held: the least over them, each the most finished whose take of it the holding covers, each twin of
-    /// an agent from its own share.
-    #[clause("TEC.9")]
-    /// A making of `each` units a twin counted when its maker's plant allows fewer a day.
+    /// The makings a sub-step's handlers decided, each read against its maker's plant as they decided it, before a
+    /// later sub-step's review of the plant moves it.
+    pub(crate) fn makings_decided(&mut self, step: SubStep, pending: &[Gathered]) {
+        let mut decided: Vec<(PartyId, i64, u32)> = Vec::new();
+        for g in pending.iter().filter(|g| g.step == step) {
+            let Missing::Present(rows) = g.rows else { continue };
+            for (name, words) in g.intents.iter() {
+                if name != <Transform as phx_core::IntentDef>::NAME {
+                    continue;
+                }
+                let Some(t) = Transform::decode(words) else { continue };
+                let made = t.legs.iter().find(|l| matches!(l.source, Source::Way(_)) && l.qty > 0).map(|l| l.qty);
+                if let (Some(made), Some(row)) = (made, self.goods_row(rows, t.row)) {
+                    decided.push((row.party, made, t.days));
+                }
+            }
+        }
+        for (party, made, days) in decided {
+            self.within_capacity(party, made, days);
+        }
+    }
+
+    /// A making of `each` units a twin over `days` counted when its maker's plant allows fewer over them.
     #[clause("CAP.9")]
-    pub(crate) fn within_capacity(&mut self, maker: PartyId, each: i64) {
+    pub(crate) fn within_capacity(&mut self, maker: PartyId, each: i64, days: u32) {
         let name = <if_firm::facts::Capacity as phx_core::FactDef>::ITEM.name;
         if let Missing::Present(most) = self.party_fact(maker, name)
-            && each > most
+            && i128::from(each) > i128::from(most) * i128::from(days)
         {
             self.market_day.tally.beyond_capacity += 1;
         }
@@ -584,6 +608,10 @@ impl World {
         }
     }
 
+    /// The most units of its product a party can make by a way at a zone from what it holds of the way's inputs that
+    /// can be held: the least over them, each the most finished whose take of it the holding covers, each twin of
+    /// an agent from its own share.
+    #[clause("TEC.9")]
     pub(crate) fn way_most(&self, way: u32, party: PartyId, zone: ZoneId) -> Missing<i64> {
         let tech =
             self.own.iter().find(|(code, _)| *code == "TEC").and_then(|(_, s)| s.downcast_ref::<sys_tec::Technology>());
@@ -870,11 +898,54 @@ impl World {
                     }
                     self.stage_settled(day, step, id);
                 }
-                Err(_) => self.market_day.tally.failed += 1,
+                Err(f) => {
+                    self.market_day.tally.failed += 1;
+                    match f.cause {
+                        phx_ledger::check::FailCause::Funds => self.market_day.tally.failed_funds += 1,
+                        phx_ledger::check::FailCause::FreeUnits => self.market_day.tally.failed_units += 1,
+                        _ => {}
+                    }
+                }
             }
         }
         // A stage that failed waits for another day.
         self.market_day.stages.clear();
+        self.unsold_perish(day, step);
+    }
+
+    /// What was made today to be sold as it was made and no sale took, lost: a product that cannot be stored is not
+    /// kept, so a sale that failed leaves its maker the cost of what it made and nothing else.
+    #[clause("GDS.8", "SRV.6")]
+    fn unsold_perish(&mut self, day: Day, step: SubStep) {
+        for (maker, good) in std::mem::take(&mut self.market_day.made_to_order) {
+            let (place, slot) = self.books.parties.row(maker);
+            let Missing::Present(h) = phx_ledger::holding::holding(self.books.parties.holder(place), slot, good) else {
+                continue;
+            };
+            let left = h.quantity.raw();
+            if left <= 0 {
+                continue;
+            }
+            let instruction = Instruction {
+                id: self.books.ledger.next_id(day),
+                reason: self.books.dues.spoiled,
+                trade_day: day,
+                settle_day: day,
+                legs: vec![LegRec {
+                    party: maker,
+                    account: AccountRef::Instrument(good),
+                    qty: -left,
+                    denom: Denom::Unit(self.books.ledger.instruments.get(good).unit),
+                    kind: LegKind::Transformation { source: Source::Spoilage(0), cost: 0 },
+                }],
+                pays: Missing::Absent,
+                covers: Vec::new(),
+            };
+            if let Err(f) = self.books.apply(ApplyAt::Day(step), instruction, self.audit.stream()) {
+                violation!(clause = "GDS.8", "units made to order a holding could not give", party = f.party.get());
+            }
+            self.market_day.tally.perished += left;
+        }
     }
 
     /// The opening's snapshot of the goods' markets: each good the opening holds, in the market its product

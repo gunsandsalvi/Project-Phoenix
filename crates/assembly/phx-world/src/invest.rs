@@ -178,6 +178,7 @@ impl World {
                         self.market_day.tally.waiting += 1;
                         continue;
                     }
+                    self.market_day.made_to_order.insert((p.builder, p.good));
                     Vec::new()
                 }
                 Missing::Absent => {

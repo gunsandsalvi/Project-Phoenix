@@ -664,9 +664,12 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
     }
     let goods = w.goods_days().iter().filter(|(d, _)| in_turn(*d)).map(|(_, g)| g);
     let (mut made, mut orders, mut refused, mut failed_goods, mut projects) = (0, 0, 0, 0, 0);
+    let (mut short_funds, mut short_units, mut perished) = (0, 0, 0);
     for g in goods {
         (made, orders, refused, failed_goods, projects) =
             (made + g.made, orders + g.orders, refused + g.refused, failed_goods + g.failed, projects + g.projects);
+        (short_funds, short_units, perished) =
+            (short_funds + g.failed_funds, short_units + g.failed_units, perished + g.perished);
     }
     let mut visits: std::collections::BTreeMap<&str, u64> = std::collections::BTreeMap::new();
     for v in w.visit_days().iter().filter(|v| in_turn(v.day)) {
@@ -685,7 +688,8 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
     format!(
         "{phase} {} to {}: {} days in {wall}; payments {due} due, {failed} failed; {} findings {families:?}; \
          defaults {defaults}, closures {closures}, estates {estates}, born {born}, gone {gone}; made {made}, orders \
-         {orders}, refused {refused}, failed {failed_goods}, projects {projects}; heaviest {}; visits {}",
+         {orders}, refused {refused}, failed {failed_goods} ({short_funds} money, {short_units} units), perished \
+         {perished}, projects {projects}; heaviest {}; visits {}",
         date(turn.first),
         date(turn.last),
         turn.days,

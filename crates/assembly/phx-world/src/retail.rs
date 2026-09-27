@@ -423,7 +423,7 @@ impl World {
         // Each twin of a maker makes its own share, whole, so what they make together is a whole share for each.
         let twins = i64::from(self.books.parties.unit(seller));
         let each = qty / twins + i64::from(qty % twins != 0);
-        self.within_capacity(seller, each);
+        self.within_capacity(seller, each, 1);
         let mut legs = vec![LegRec {
             party: seller,
             account: phx_ledger::instruction::AccountRef::Instrument(good),
@@ -511,6 +511,7 @@ impl World {
             let legs = self.made_at_sale(seller, (key, good), qty);
             if !legs.is_empty() && self.make_for_sale(day, legs) {
                 made.insert((seller, good));
+                self.market_day.made_to_order.insert((seller, good));
             }
         }
         for s in sales {

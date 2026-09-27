@@ -167,6 +167,7 @@ pub phx_market::failure::FailureKind::Declined
 pub phx_market::failure::FailureKind::NoBid
 pub phx_market::failure::FailureKind::NoOverlap
 pub phx_market::failure::FailureKind::NoSeller
+pub phx_market::failure::FailureKind::OwnOrders
 impl phx_store::save::Saved for phx_market::failure::FailureKind
 pub fn phx_market::failure::FailureKind::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_market::failure::FailureKind::save(&self, &mut phx_store::save::Writer<'_>)

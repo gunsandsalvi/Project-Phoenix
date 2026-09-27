@@ -381,7 +381,7 @@ pub fn call(orders: &[Order], rules: CallRules<'_>, lot: &mut Draws) -> Outcome 
     let matches = pair(orders, &mut per_order, price);
     // Fills that only net a party's own bids against its own offers change no hands.
     if matches.is_empty() {
-        return Outcome::Failed(FailureKind::NoOverlap);
+        return Outcome::Failed(FailureKind::OwnOrders);
     }
     let volume: i128 = matches.iter().map(|m| i128::from(m.qty)).sum();
     let fills = per_order
