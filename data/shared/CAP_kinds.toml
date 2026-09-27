@@ -30,8 +30,8 @@ id = "CAP.lead_days"
 kind = "TECHNOLOGY"
 owner = "CAP"
 source = "measured"
-source_ref = "Days from order to service of the kinds a source measures: a structure 8.2 months, the Census Bureau's average from start to completion of private nonresidential projects completed in 2024 and 2025 (Construction Length of Time, Table 1, 2026-09-26); equipment 3.81 months, the unfilled orders of nondefense capital goods excluding aircraft over their monthly shipments (Census M3 survey through FRED, 2025-09-01 to 2026-08-01), the months an order waits on the books; a month 365.25 \u00f7 12 days. Intellectual property and cultivated assets have no measured lead time."
-value = { axis = [0, 1, 2, 3], values = [250, 116, 116, 116], outside = "refuse" }
+source_ref = "Days from order to service of the kinds a source measures: a structure 8.2 months, the Census Bureau's average from start to completion of private nonresidential projects completed in 2024 and 2025 (Construction Length of Time, Table 1, 2026-09-26); equipment 3.81 months, the unfilled orders of nondefense capital goods excluding aircraft over their monthly shipments (Census M3 survey through FRED, 2025-09-01 to 2026-08-01), the months an order waits on the books; a month 365.25 \u00f7 12 days; cultivated assets 25.0 months, dairy cows' average age at first calving (USDA APHIS, Dairy 2014 Part I, NAHMS), from a heifer calf bought to a cow in milk, livestock standing for every cultivated asset; intellectual property none, entering the stock as it is made, as the BEA capitalises R&D and software (Bureau of Labor Statistics, research paper EC070070, 2007)."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [250, 116, 116, 116, 761, 0], outside = "refuse" }
 
 [[primitive]]
 id = "CAP.bought_as"

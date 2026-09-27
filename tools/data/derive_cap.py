@@ -234,6 +234,11 @@ def kinds() -> list:
     return out
 
 
+# USDA APHIS, Dairy 2014 Part I (NAHMS): the average age of cows at first calving, 25.0 months, the months
+# from a heifer calf's purchase to its service as a milking cow.
+FIRST_CALVING_MONTHS = 25.0
+
+
 def lead_days() -> list:
     """Days from order to service: a structure's months from start to completion, and an equipment order's months of
     shipments on the books, each in days."""
@@ -244,7 +249,9 @@ def lead_days() -> list:
     last = sorted(set(orders) & set(shipped))[-BACKLOG_MONTHS:]
     backlog = sum(orders[m] / shipped[m] for m in last) / len(last)
     structures = months[ALL_PROJECTS]
-    return [round(structures * DAYS_A_MONTH)] + [round(backlog * DAYS_A_MONTH)] * 3, (structures, backlog, last)
+    # Intellectual property enters the stock as it is made (the BEA's capitalisation of R&D and software), so none.
+    days = [round(structures * DAYS_A_MONTH)] + [round(backlog * DAYS_A_MONTH)] * 3
+    return days + [round(FIRST_CALVING_MONTHS * DAYS_A_MONTH), 0], (structures, backlog, last)
 
 
 def num(x: float, places: int = 6) -> str:
@@ -301,8 +308,11 @@ def write_kinds(m: dict) -> None:
         f"(Construction Length of Time, Table 1, {m['sources']['census_length']['fetched']}); equipment {backlog:.2f} "
         "months, the unfilled orders of nondefense capital goods excluding aircraft over their monthly shipments "
         f"(Census M3 survey through FRED, {last[0]} to {last[-1]}), the months an order waits on the books; a month "
-        "365.25 ÷ 12 days. Intellectual property and cultivated assets have no measured lead time.",
-        table1(days, 0, axis=[0, 1, 2, 3]))
+        f"365.25 ÷ 12 days; cultivated assets {FIRST_CALVING_MONTHS} months, dairy cows' average age at first calving "
+        "(USDA APHIS, Dairy 2014 Part I, NAHMS), from a heifer calf bought to a cow in milk, livestock standing for "
+        "every cultivated asset; intellectual property none, entering the stock as it is made, as the BEA capitalises "
+        "R&D and software (Bureau of Labor Statistics, research paper EC070070, 2007).",
+        table1(days, 0, axis=[0, 1, 2, 3, 4, 5]))
     lines += primitive(
         "CAP.bought_as", "TECHNOLOGY", "measured",
         "The product each kind is bought as, by its place in TEC.products: structures from construction (F), transport, "
@@ -333,6 +343,25 @@ def stock_ratios() -> dict:
     return out
 
 
+# Each kind's Penn World Table asset: structures and transport equipment their own, ICT and other machinery its
+# machinery, cultivated assets and intellectual property its other assets.
+PWT_OF_KIND = ["Nc_Struc", "Nc_TraEq", "Nc_Mach", "Nc_Mach", "Nc_Other", "Nc_Other"]
+
+
+def pwt_scale(level: str) -> tuple:
+    """Each kind's stock per unit of GDP in a group over the developed group's, the medians over each group's
+    economies in the Penn World Table at their latest year to YEAR, and the economies counted."""
+    d = pd.read_csv(RAW / "pwt" / "capital.csv")
+    d = d[d.year <= YEAR].sort_values("year").groupby("iso3").last()
+    c = pd.read_csv(RAW / "wb" / "countries.csv").set_index("iso3").income_group.map(LEVELS)
+    d = d.join(c.rename("level"), how="inner")
+    assets = sorted(set(PWT_OF_KIND))
+    ratio = d[assets].div(d.v_gdp, axis=0)
+    median = {g: ratio[d.level == g].median() for g in (level, "developed")}
+    scale = np.array([median[level][a] / median["developed"][a] for a in PWT_OF_KIND])
+    return scale, int((d.level == level).sum()), int((d.level == "developed").sum())
+
+
 def write_levels(m: dict) -> None:
     ratios = stock_ratios()
     c = pd.read_csv(RAW / "wb" / "countries.csv").set_index("iso3").income_group.map(LEVELS).dropna()
@@ -340,12 +369,21 @@ def write_levels(m: dict) -> None:
     developed = [r for iso3, r in ratios.items() if c.get(iso3) == "developed"]
     for level in sorted(set(LEVELS.values())):
         own = {iso3: r for iso3, r in ratios.items() if c.get(iso3) == level}
-        values = np.median(np.stack(list(own.values()) or developed), axis=0)
-        source = "measured" if len(own) >= MIN_COUNTRIES else ("estimated" if own else "assumed")
-        who = (f"the median over the {len(own)} economies of the group the OECD reports ({', '.join(sorted(own))})"
-               if own else
-               f"the OECD reports no economy of the group, so the developed group's median over {len(developed)} "
-               "economies is assumed until a source covers the group")
+        if own:
+            values = np.median(np.stack(list(own.values())), axis=0)
+            source = "measured" if len(own) >= MIN_COUNTRIES else "estimated"
+            who = f"the median over the {len(own)} economies of the group the OECD reports ({', '.join(sorted(own))})"
+        else:
+            scale, n, n_dev = pwt_scale(level)
+            values = np.median(np.stack(developed), axis=0) * scale
+            source = "estimated"
+            pwt = m["sources"]["pwt"]
+            who = (f"the OECD reports no economy of the group, so the developed group's median over {len(developed)} "
+                   f"economies is scaled, kind by kind, by the group's median stock per unit of GDP over the developed "
+                   f"group's in the Penn World Table's assets (structures, transport equipment, machinery for ICT and "
+                   f"other machinery, other assets for cultivated assets and intellectual property; {n} and {n_dev} "
+                   f"economies, current national prices, the latest year to {YEAR}; {pwt['title']}, fetched "
+                   f"{pwt['fetched']}): " + ", ".join(f"{x:.3f}" for x in scale))
         lines = [f"# The {level} group's stock of plant (spec CAP.1, GEN.2), derived by tools/data/derive_cap.py; never",
                  "# edited by hand."]
         lines += ["", "[[primitive]]", 'id = "CAP.stock_per_gdp"', 'kind = "ENDOWMENT"', 'owner = "CAP"',

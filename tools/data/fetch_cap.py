@@ -112,14 +112,49 @@ def census(cache: Path, manifest: dict) -> None:
                                             "url": CENSUS_T1, "fetched": datetime.date.today().isoformat()}
 
 
+PWT = "https://dataverse.nl/api/access/datafile/{file}"
+# The Penn World Table 11.0's capital detail and national accounts (DOI 10.34894/FABVLR).
+PWT_FILES = {"capital": 554029, "accounts": 554022}
+# Each asset's net stock at current national prices, and GDP at current national prices.
+PWT_COLUMNS = {"capital": ["Nc_Struc", "Nc_Mach", "Nc_TraEq", "Nc_Other"], "accounts": ["v_gdp"]}
+PWT_FIRST = 2015
+
+
+def pwt(cache: Path, manifest: dict) -> None:
+    """Each economy's net stock of structures, machinery, transport equipment and other assets, and its GDP, at
+    current national prices, by year."""
+    by = {}
+    for name, file in PWT_FILES.items():
+        book = openpyxl.load_workbook(cached(cache, f"pwt110_{name}.xlsx", PWT.format(file=file)), read_only=True)
+        rows = book["Data"].iter_rows(values_only=True)
+        header = list(next(rows))
+        at = [header.index(c) for c in PWT_COLUMNS[name]]
+        for r in rows:
+            if r[1] is not None and int(r[1]) >= PWT_FIRST and all(r[i] is not None for i in at):
+                by.setdefault((r[0], int(r[1])), {}).update({c: r[i] for c, i in zip(PWT_COLUMNS[name], at)})
+    columns = [c for cs in PWT_COLUMNS.values() for c in cs]
+    rows = [(iso3, year, *(f"{v[c]:.6g}" for c in columns)) for (iso3, year), v in sorted(by.items())
+            if all(c in v for c in columns)]
+    manifest["series"]["pwt/capital"] = {
+        "title": "Net capital stock by asset (structures, machinery, transport equipment, other) and GDP, current "
+                 "national prices, Penn World Table 11.0",
+        "rows": table(RAW / "pwt" / "capital.csv", ["iso3", "year", *columns], rows),
+    }
+    manifest["sources"]["pwt"] = {"title": "Penn World Table 11.0 (Feenstra, Inklaar and Timmer), DataverseNL",
+                                  "url": PWT.format(file="<file>"), "fetched": datetime.date.today().isoformat()}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache", type=Path, default=None)
+    parser.add_argument("--only", nargs="*", choices=["bea", "fred", "census", "pwt"])
     args = parser.parse_args()
     cache = args.cache or Path(tempfile.mkdtemp())
     cache.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((RAW / "manifest.json").read_text())
-    for source in (bea, fred, census):
+    for source in (bea, fred, census, pwt):
+        if args.only and source.__name__ not in args.only:
+            continue
         source(cache, manifest)
         log(f"{source.__name__} done")
     (RAW / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")

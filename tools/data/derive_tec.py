@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 
 from derive import LEVELS, RAW
+from derive_cap import pwt_scale
 
 ROOT = Path(__file__).resolve().parents[2]
 PROFILES = ROOT / "data" / "profiles"
@@ -418,7 +419,7 @@ def write_level(level: str, members: dict, m: dict) -> None:
         f"added in the tables.",
         table2(range(len(OCCUPATIONS)), labour))
     lines += primitive(
-        "TEC.capital", "measured" if len(own_capital) >= MIN_COUNTRIES else "assumed",
+        "TEC.capital", "measured" if len(own_capital) >= MIN_COUNTRIES else "estimated",
         f"Net stock of each kind of plant (rows: " + ", ".join(a[0] for a in ASSETS) + ") a unit of output a year "
         f"needs, in cents of plant at world-average prices: each section's stock per unit of gross value added "
         f"(OECD Table 9A over Table 6, {oecd['fetched']}) times the product's value added in the tables, by the kind's "
@@ -426,8 +427,8 @@ def write_level(level: str, members: dict, m: dict) -> None:
         + (f"The stocks are the group's own, reported by {len(own_capital)} economies ({names(own_capital)})."
            if own_capital else
            "The OECD reports the stocks of no economy of the group, so each section's stock per unit of value added is "
-           "assumed at the median of the economies that report it, and the finding stands until a source covers the "
-           "group."),
+           "the developed economies' median scaled, kind by kind, by the group's stock of each Penn World Table asset "
+           "per unit of GDP over the developed group's (as CAP.stock_per_gdp's note gives)."),
         table2(range(len(ASSETS)), capital))
     lines += primitive(
         "TEC.land", thin(len(members)),
@@ -454,6 +455,9 @@ def main() -> None:
     developed = [ratios[c] for c in ratios if level_of.get(c) == "developed"]
     fallback = {sec: np.median(np.stack([r[sec] for r in developed if sec in r]), axis=0)
                 for sec in SECTIONS if any(sec in r for r in developed)}
+    # A group the OECD reports no economy of takes the developed ratios scaled by its Penn World Table stocks.
+    scaled = {level: {sec: v * pwt_scale(level)[0] for sec, v in fallback.items()}
+              for level in ["emerging", "developing"]}
     ways = {}
     for iso3, t in tables.items():
         if iso3 not in pls.index:
@@ -461,7 +465,8 @@ def main() -> None:
         inputs, made = economy_ways(t, pls.loc[iso3], deflator, unit_dollars)
         own = iso3 in ratios
         labour, capital = economy_factors(t, made, pls.loc[iso3], deflator,
-                                          hours[iso3][2] if iso3 in hours else None, ratios.get(iso3, fallback))
+                                          hours[iso3][2] if iso3 in hours else None,
+                                          ratios.get(iso3, scaled.get(level_of.get(iso3), fallback)))
         ways[iso3] = {"inputs": inputs, "labour": labour, "capital": capital, "capital_own": own,
                       "land": land_per_unit(t, made, land[iso3]) if iso3 in land.index else np.nan}
     write_shared(prices, m)

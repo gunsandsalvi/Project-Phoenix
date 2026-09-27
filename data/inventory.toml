@@ -476,7 +476,7 @@ what = "each group's opening way per product: inputs, hours by occupation group,
 owner = "TEC"
 first_read = "S1.02"
 source = "OECD ICIO 2019; ILOSTAT employment and hours by activity and occupation; OECD Tables 9A and 6; ICP 2021 price levels; World Bank agricultural land, Pink Sheet and USGS prices"
-status = "sourced: plant assumed at the developed ratios for the emerging and developing groups (F-090), each mining industry's output shared between its two resources by their users (F-091), lead times assumed"
+status = "sourced: the emerging and developing groups' plant the developed ratios scaled by their Penn World Table stocks, each mining industry's output shared between its two resources by their users (F-091), lead times assumed"
 
 [[row]]
 id = "FRM.industry_by_size"

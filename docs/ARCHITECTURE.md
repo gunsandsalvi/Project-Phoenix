@@ -295,8 +295,10 @@ sources report, a group reporting too few taking the developed group's, marked a
 - **CAP** (`data/shared/CAP_kinds.toml`, `data/profiles/<level>/CAP.toml`): each kind's geometric rate (the BEA's
   current-cost depreciation over its net stock), mean service life (the BEA's declining-balance rate over the
   geometric), efficiency shape (the BLS's and ABS's hyperbolic β), lead time (the Census's construction months for
-  structures, the M3 survey's months of unfilled orders for equipment, none elsewhere) and the product it is bought
-  as; each group's net stock of each kind per unit of GDP (OECD Table 9A over Table 6).
+  structures, the M3 survey's months of unfilled orders for equipment) and the product it is bought
+  as; each group's net stock of each kind per unit of GDP (OECD Table 9A over Table 6), a group the OECD does not
+  report taking the developed median scaled by its Penn World Table stock of each asset per unit of GDP; cultivated
+  assets' lead time a dairy cow's months to first calving, intellectual property's none.
 - **GDS** (`data/shared/GDS.toml`): three grade classes per extracted product at the terciles of GEO's log-normal
   grade index; the grade's fall as a deposit is worked; each storable product's yearly spoilage in stock and the room
   it is kept in; the standardised products (crops and livestock and the four extracted), which meet in calls.

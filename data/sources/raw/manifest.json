@@ -130,7 +130,7 @@
       "title": "Households by tenure (own outright, owner with mortgage, rent private, rent subsidised, other), share of households, by year, OECD Affordable Housing Database HM1.3.A1"
     },
     "oecd/fixed_assets": {
-      "rows": 47381,
+      "rows": 75568,
       "title": "Net fixed assets at current prices by activity and asset, closing stocks, national currency, millions (Table 9A), OECD"
     },
     "oecd/pensions": {
@@ -138,7 +138,7 @@
       "title": "Current normal pension age for a worker entering at 22 (years, by sex), gross replacement rate of mandatory schemes at average earnings (% of pre-retirement earnings, by sex), and public and occupational transfers' shares of the disposable income of people over 65 (%), OECD Pensions at a Glance (DF_PAG)"
     },
     "oecd/value_added": {
-      "rows": 20085,
+      "rows": 31964,
       "title": "Gross value added at current prices by activity, national currency, millions (Table 6), OECD"
     },
     "owid/labor-share-of-gdp": {
@@ -148,6 +148,10 @@
     "prices/commodities": {
       "rows": 5,
       "title": "2019 annual averages: crude oil, coal and iron ore from the World Bank's Pink Sheet (nominal US$), the crushed stone unit value from U.S. Geological Survey Mineral Commodity Summaries 2023, and the United States' GDP deflator (NY.GDP.DEFL.ZS) of 2022 over 2019"
+    },
+    "pwt/capital": {
+      "rows": 1620,
+      "title": "Net capital stock by asset (structures, machinery, transport equipment, other) and GDP, current national prices, Penn World Table 11.0"
     },
     "sdbs/EMPN_S_GE250": {
       "rows": 256,
@@ -400,7 +404,7 @@
     "oecd_nad": {
       "fetched": "2026-09-27",
       "title": "OECD Data Explorer, SDMX API",
-      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@<table>,/<key>?startPeriod=2015&endPeriod=2019&format=csvfile"
+      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@<table>,/<key>?startPeriod=2015&endPeriod=2022&format=csvfile"
     },
     "owid": {
       "title": "Our World in Data grapher CSV",
@@ -415,6 +419,11 @@
       "fetched": "2026-09-27",
       "title": "World Bank ICP 2021 and Pink Sheet; USGS Mineral Commodity Summaries",
       "url": "https://api.worldbank.org/v2/sources/90/country/all/series/<heading>/classification/PX.WL/time/YR2021?format=json&per_page=1000"
+    },
+    "pwt": {
+      "fetched": "2026-09-27",
+      "title": "Penn World Table 11.0 (Feenstra, Inklaar and Timmer), DataverseNL",
+      "url": "https://dataverse.nl/api/access/datafile/<file>"
     },
     "sdbs": {
       "fetched": "2026-09-24",

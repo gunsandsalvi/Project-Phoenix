@@ -50,7 +50,7 @@ ILO_FLOWS = {
 }
 
 OECD = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@{flow},/{key}?"
-        f"startPeriod={YEAR - 4}&endPeriod={YEAR}&format=csvfile")
+        f"startPeriod={YEAR - 4}&endPeriod={UNIT_YEAR}&format=csvfile")
 # Net stocks of the fixed assets firms produce with; dwellings are households' and landlords' and are left out.
 ASSETS = ["N112N", "N1131N", "N1132N", "N11ON", "N115N", "N117N"]
 OECD_FLOWS = {
