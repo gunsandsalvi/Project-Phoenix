@@ -103,7 +103,7 @@ impl Drawer {
         let (mut rows, mut keys) = (Vec::new(), phx_ledger::attachments::Keys::default());
         let mut drawn_by: Vec<usize> = Vec::new();
         for (i, d) in self.draws.iter_mut().enumerate() {
-            d.draw(books, Drawing { household: h, wealth, income }, at, &mut rows, &mut keys);
+            d.draw(books, Drawing { household: h, wealth, income, twins: self.twins }, at, &mut rows, &mut keys);
             drawn_by.resize(rows.len(), i);
             for (name, v) in keys.household.drain(..) {
                 h.set_attr(name, v);

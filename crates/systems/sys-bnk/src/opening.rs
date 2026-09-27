@@ -119,6 +119,7 @@ impl Contribution for Declared {
         b.ledger.lines.declare_deposits(HOLDERS.deposits(ACCOUNT));
         b.ledger.lines.declare_money(LOAN);
         b.ledger.lines.declare_deposits(crate::households::RETAIL.retail_deposits(crate::households::ACCOUNT));
+        b.ledger.lines.declare_means_of_payment(crate::households::RETAIL.cash());
         b.ledger.lines.declare_money(crate::households::LOAN);
     }
 }

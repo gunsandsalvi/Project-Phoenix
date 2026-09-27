@@ -1,7 +1,8 @@
 //! The households' banking at the opening: a household any of whose adults holds an account banks with one bank,
 //! chosen online in proportion to the banks' shares and held in its key; it keeps a deposit there, its share of the
 //! households' deposits by its wealth; and a household any of whose adults has borrowed owes its bank a loan, its
-//! share of the households' debt by its income.
+//! share of the households' debt by its income. A household that banks nowhere holds banknotes instead, its persons'
+//! share of the currency in circulation a head.
 
 use phx_core::calendar::daycount::DayCount;
 use phx_core::register::values::Table1;
@@ -68,6 +69,10 @@ pub const LOAN: LineKindDecl = LineKindDecl {
 /// The pools the households' balances are shares of.
 const DEPOSITS: u32 = 0;
 const DEBT: u32 = 1;
+const CASH: u32 = 2;
+
+/// The party the central bank of a country is drawn as, whose notes the households that bank nowhere hold.
+const CENTRAL_BANK: &str = "CB.central_bank";
 
 /// The published shares of adults with an account and having borrowed, at their places in the declared table.
 const HOLDS_ACCOUNT: i64 = 0;
@@ -92,6 +97,12 @@ struct Country {
     loan: (u16, Vec<TermsId>, Missing<(Day, u32)>),
     deposits: i64,
     debt: i64,
+    /// The banknotes' line, of the central bank's notes; the currency in circulation a head; and the persons of the
+    /// households drawn to hold them and the twins each stands for.
+    cash: (u16, TermsId, PartyId),
+    per_head: f64,
+    unbanked: u64,
+    twins: u64,
 }
 
 fn share(table: &Table1, at: i64) -> f64 {
@@ -155,6 +166,17 @@ impl AttachmentDraw for HouseholdLines {
             .collect();
         let lines = &books.ledger.lines;
         let deposits = whole(derived(c, "GEN.bank_deposits") / PERCENT * c.gdp) - firms;
+        let Some(&(central_bank, _)) = drawn(books, CENTRAL_BANK, c.id).first() else {
+            violation!(clause = "GEN.3", "households drawn before their country's central bank", country = c.id.get());
+        };
+        let Ok(currency_share) = register.fixed_in("CB.currency", c.id) else {
+            violation!(clause = "MON.4", "a country's currency in circulation unread", country = c.id.get());
+        };
+        let cash_terms = books.ledger.terms.intern(terms(
+            ccy,
+            Vec::new(),
+            Schedule { dates: monthly(date, c.id), count: Missing::Absent },
+        ));
         if deposits < 0 {
             violation!(clause = "GEN.4", "firms holding more deposits than the country's banks", country = c.id.get());
         }
@@ -167,6 +189,10 @@ impl AttachmentDraw for HouseholdLines {
             loan: (lines.kind_index(LOAN.name), loan_terms, first),
             deposits,
             debt: whole(derived(c, "GEN.household_debt") / PERCENT * c.gdp),
+            cash: (lines.kind_index(RETAIL.cash().name), cash_terms, central_bank),
+            per_head: currency_share / PERCENT * c.gdp / phx_rand::float::from_u64(c.people),
+            unbanked: 0,
+            twins: 1,
         })
     }
 }
@@ -199,7 +225,18 @@ impl CountryAttachments for Country {
         let adults = h.household.persons.iter().filter(|p| adult_roles.contains(&p.role)).count();
         let account = any_of(adults, self.account, &mut d);
         let borrowed = any_of(adults, self.borrowed, &mut d);
+        // A household that banks nowhere holds its persons' share of the currency in circulation, a head's each.
         if !account {
+            let persons = phx_rand::float::len_u64(h.household.persons.len());
+            self.unbanked += persons;
+            self.twins = h.twins;
+            let (kind, terms, central_bank) = self.cash;
+            rows.push(DrawnRow {
+                line: LineSpec { kind, terms, counterparty: Missing::Present(central_bank), first: Missing::Absent },
+                side: Side::Asset,
+                holder: Holder::Household,
+                balance: Balance::Share { pool: CASH, weight: persons },
+            });
             return;
         }
         let at = self.online.next(&mut d);
@@ -238,7 +275,11 @@ impl CountryAttachments for Country {
     }
 
     fn pools(&self) -> Vec<(u32, i64)> {
-        vec![(DEPOSITS, self.deposits), (DEBT, -self.debt)]
+        let each = whole(self.per_head * phx_rand::float::from_u64(self.unbanked));
+        let Some(cash) = i64::try_from(self.twins).ok().and_then(|t| each.checked_mul(t)) else {
+            phx_num::capacity_exceeded!("the households' banknotes", i64::MAX, self.unbanked);
+        };
+        vec![(DEPOSITS, self.deposits), (DEBT, -self.debt), (CASH, cash)]
     }
 
     fn counterparties(&mut self, _: &Books, _: &LineSpec, _: &mut phx_rand::Draws) -> Vec<(PartyId, u64)> {

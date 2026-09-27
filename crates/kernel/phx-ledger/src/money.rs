@@ -73,6 +73,28 @@ impl MoneyHolders {
         }
     }
 
+    /// Banknotes: a central bank's liability to each holder of its notes, which no bank's failure touches; many
+    /// holders to a line, each holding at most one row of it, with no dues.
+    #[clause("MON.4")]
+    #[must_use]
+    pub fn cash(&self) -> LineKindDecl {
+        let holders = SideDecl {
+            holder_kinds: self.depositors,
+            words: BALANCE,
+            holder_list: false,
+            holder_roles: &[],
+            exclusive: true,
+            many: false,
+        };
+        LineKindDecl {
+            name: "banknotes",
+            asset: holders,
+            liability: Self::side(self.central_banks, BALANCE, true),
+            transfer_requesters: self.requesters,
+            dated: false,
+        }
+    }
+
     /// The treasury's account: a central bank's liability to its own treasury.
     #[must_use]
     pub fn treasury_account(&self) -> LineKindDecl {

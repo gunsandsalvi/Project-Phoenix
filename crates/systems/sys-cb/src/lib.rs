@@ -20,6 +20,11 @@ declare_kind! { pub TREASURY = "treasury" { legal_form: "treasury", table: Indiv
 declare_stream! { pub OpeningStream = "CB.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 declare_prim! {
+    /// The central bank's currency in circulation, per cent of GDP, which the households that bank nowhere hold.
+    pub CURRENCY = "CB.currency" { kind: Endowment, value: Fixed { exp: 2 }, clause: "MON.4", scope: PerCountry }
+}
+
+declare_prim! {
     /// How far below the policy rate the deposit facility pays.
     pub DEPOSIT_SPREAD = "CB.deposit_spread" {
         kind: Shape, value: Fixed { exp: 4 }, clause: "CB.7", scope: Shared, shape: placeholder("CB")
@@ -94,6 +99,7 @@ impl System for Cb {
             let _: phx_core::Prim<Fixed<4>> = d.prim(p);
         }
         let _: phx_core::Prim<Fixed<2>> = d.prim(&LOAN_HAIRCUT);
+        let _: phx_core::Prim<Fixed<2>> = d.prim(&CURRENCY);
         d.market(Box::new(CENTRAL));
     }
 

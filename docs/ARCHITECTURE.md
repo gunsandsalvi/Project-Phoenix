@@ -889,8 +889,14 @@ rounded split lands its residue on the payer, the payee with the largest share, 
   `DaySettlement::lost` counts the contracts drawn, `lost_past_failed` those past the failed count). A short bank's customers lose their payments through it, but a
   cleared line's credits into it stand, since they only add to its reserves. A cleared payment through a closed bank
   waits for the resolution `sys-sup` brings (S2.08), and stops the run until then.
-- **A party with no money**: a payment whose payer or payee holds no money in its currency — no account, and none it
-  issues (`Books::holds_money`), as a household that banks nowhere until banknotes are held — has no
+- **Banknotes** (MON.4): a central bank's notes are its liability on a cash line of its country, `banknotes`, held by
+  households and estates, one row each and no dues; a household that banks nowhere holds its persons' share of the
+  currency in circulation a head (`CB.currency`, per cent of GDP) there from the opening, and pays and is paid in them
+  through the one money route, its notes its money account, the central bank the top issuer it reaches. The central
+  bank's treasury account is what its claim leaves after its reserves and its notes. A banked household's cash, its
+  liquidity choice, arrives with HH.7 (S2.05).
+- **A party with no money**: a payment whose payer or payee holds no money in its currency — no account, no notes and
+  none it issues (`Books::holds_money`) — has no
   legs and fails at the start of 7b, with the cause `FailCause::NoMoney` (MON.12). A cleared line's payer with none
   fails as a short one does, its dues lost by drawn claimant contracts; a cleared line's claimant with none
   loses its due against the top issuer, which holds no row to be in arrears on, and the top is the one the line's

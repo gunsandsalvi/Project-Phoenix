@@ -327,6 +327,7 @@ pub phx_ledger::attachments::Holder::Person(usize)
 pub struct phx_ledger::attachments::Drawing<'a>
 pub phx_ledger::attachments::Drawing::household: &'a phx_core::pop_process::Household
 pub phx_ledger::attachments::Drawing::income: f64
+pub phx_ledger::attachments::Drawing::twins: u64
 pub phx_ledger::attachments::Drawing::wealth: f64
 pub struct phx_ledger::attachments::DrawnRow
 pub phx_ledger::attachments::DrawnRow::balance: phx_ledger::attachments::Balance
@@ -1228,6 +1229,7 @@ pub phx_ledger::money::MoneyHolders::depositors: &'static [&'static str]
 pub phx_ledger::money::MoneyHolders::requesters: &'static [&'static str]
 pub phx_ledger::money::MoneyHolders::treasuries: &'static [&'static str]
 impl phx_ledger::money::MoneyHolders
+pub fn phx_ledger::money::MoneyHolders::cash(&self) -> phx_ledger::line::LineKindDecl
 pub fn phx_ledger::money::MoneyHolders::deposits(&self, &'static str) -> phx_ledger::line::LineKindDecl
 pub fn phx_ledger::money::MoneyHolders::reserves(&self) -> phx_ledger::line::LineKindDecl
 pub fn phx_ledger::money::MoneyHolders::retail_deposits(&self, &'static str) -> phx_ledger::line::LineKindDecl

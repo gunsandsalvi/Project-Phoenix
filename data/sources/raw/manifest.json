@@ -1,500 +1,513 @@
 {
-  "fetched": "2026-09-23",
-  "series": {
-    "bis/CBPOL": {
-      "rows": 425,
-      "title": "Central bank policy rate (%, end of year), BIS"
-    },
-    "cap/ANXAUO": {
-      "rows": 416,
-      "title": "Unfilled orders, nondefense capital goods excluding aircraft, millions of dollars, seasonally adjusted (Census Bureau M3 survey, through FRED)"
-    },
-    "cap/ANXAVS": {
-      "rows": 416,
-      "title": "Value of shipments, nondefense capital goods excluding aircraft, millions of dollars, seasonally adjusted (Census Bureau M3 survey, through FRED)"
-    },
-    "cap/bea_depreciation": {
-      "rows": 14652,
-      "title": "Current-cost depreciation of private nonresidential fixed assets by industry and asset, millions of dollars (BEA Fixed Assets, detailed estimates, detailnonres_dep1.xlsx)"
-    },
-    "cap/bea_investment": {
-      "rows": 73260,
-      "title": "Investment in private nonresidential fixed assets by industry and asset, historical cost, millions of dollars (BEA Fixed Assets, detailed estimates, detailnonres_inv1.xlsx)"
-    },
-    "cap/bea_net_stock": {
-      "rows": 14652,
-      "title": "Current-cost net stock of private nonresidential fixed assets by industry and asset, millions of dollars, year end (BEA Fixed Assets, detailed estimates, detailnonres_stk1.xlsx)"
-    },
-    "cap/construction_months": {
-      "rows": 62,
-      "title": "Average number of months from start to completion for private nonresidential construction projects completed in 2024-2025, by value of project, all types (Census Bureau, Construction Length of Time, Table 1)"
-    },
-    "cepalstat/tenure": {
-      "rows": 552,
-      "title": "Households by tenure status of the dwelling (owner, tenant, other forms), national, share of households, ECLAC CEPALSTAT indicator 166 (household surveys)"
-    },
-    "dhs/house_owners": {
-      "rows": 208,
-      "title": "Women and men aged 15-49 who own a house, alone or jointly: 100% less those who do not own one and those who do not know, DHS Program API (WE_OWNA_*_HNO, WE_OWNA_*_HDK)"
-    },
-    "eurostat/tenure": {
-      "rows": 2646,
-      "title": "Persons by tenure status of their household (OWN, OWN_L with a mortgage or loan, OWN_NL, RENT, RENT_MKT, RENT_FR reduced or free), share of persons, Eurostat EU-SILC ilc_lvho02"
-    },
-    "figaro/io": {
-      "rows": 201600,
-      "title": "Input-output table at basic prices, product by product, 2022, millions of euros, each use summed over the origins of what was used (naio_10_fcp_ip4), Eurostat FIGARO"
-    },
-    "findex/account.t.d": {
-      "rows": 705,
-      "title": "Account (% age 15+), World Bank Global Findex"
-    },
-    "findex/fin17a": {
-      "rows": 664,
-      "title": "Saved at a bank or similar financial institution (% age 15+), World Bank Global Findex"
-    },
-    "findex/fin22a": {
-      "rows": 521,
-      "title": "Borrowed from a formal bank or similar financial institution (% age 15+), World Bank Global Findex"
-    },
-    "icio/households": {
-      "rows": 3440,
-      "title": "Households' final consumption expenditure by industry, 2019, millions of US dollars, summed over origins, with taxes less subsidies on it, OECD ICIO 2023 edition"
-    },
-    "icio/io": {
-      "rows": 150921,
-      "title": "Inter-country input-output table, industry by industry, 2019, millions of US dollars, each use summed over the origins of what was used, OECD ICIO 2023 edition"
-    },
-    "icp/price_levels": {
-      "rows": 2219,
-      "title": "Price level index (world = 100) by expenditure heading, ICP 2021, World Bank"
-    },
-    "ilo/disability": {
-      "rows": 6395,
-      "title": "Population aged 15 and over with a disability and in total, thousands, by sex and age band (DF_POP_XWAP_SEX_AGE_DSB_NB), ILOSTAT"
-    },
-    "ilo/employment_by_activity": {
-      "rows": 103454,
-      "title": "Employment by economic activity and occupation, thousands (DF_EMP_TEMP_ECO_OCU_NB), ILOSTAT"
-    },
-    "ilo/employment_rate": {
-      "rows": 37918,
-      "title": "Employment-to-population ratio by sex and ten-year age band, % (DF_EMP_DWAP_SEX_AGE_RT), ILOSTAT"
-    },
-    "ilo/hours_by_activity": {
-      "rows": 91977,
-      "title": "Average weekly hours actually worked per employed person by economic activity and occupation (DF_HOW_TEMP_ECO_OCU_NB), ILOSTAT"
-    },
-    "ilo/mean_earnings": {
-      "rows": 1535,
-      "title": "Mean monthly earnings of employees, local currency, both sexes (DF_EAR_EMTA_SEX_CUR_NB), ILOSTAT"
-    },
-    "ilo/occupation": {
-      "rows": 31925,
-      "title": "Employed persons by sex and ISCO-08 major group, thousands (DF_EMP_TEMP_SEX_OCU_NB), ILOSTAT"
-    },
-    "ilo/protection": {
-      "rows": 2583,
-      "title": "Persons above statutory pensionable age receiving an old-age pension, and persons with severe disabilities receiving a disability benefit, share, by sex (SDG indicator 1.3.1, DF_SDG_0131_SEX_SOC_RT), ILOSTAT"
-    },
-    "ilo/status": {
-      "rows": 18176,
-      "title": "Employed persons by sex and ICSE-93 status in employment, thousands (DF_EMP_TEMP_SEX_STE_NB), ILOSTAT"
-    },
-    "ilo/status_by_activity": {
-      "rows": 51515,
-      "title": "Employment by status in employment (ICSE-93) and economic activity (ISIC Rev. 4 sections), thousands, both sexes (DF_EMP_TEMP_SEX_STE_ECO_NB), ILOSTAT"
-    },
-    "imf/GGXWDG_NGDP": {
-      "rows": 2083,
-      "title": "General government gross debt (% of GDP), IMF World Economic Outlook"
-    },
-    "imf/HH_LS": {
-      "rows": 823,
-      "title": "Household debt, loans and debt securities (% of GDP), IMF Global Debt Database"
-    },
-    "imf/NFC_LS": {
-      "rows": 823,
-      "title": "Nonfinancial corporate debt, loans and debt securities (% of GDP), IMF Global Debt Database"
-    },
-    "imf_sdmx/GF10_S13": {
-      "rows": 658,
-      "title": "General government expense on social protection (% of GDP), IMF Government Finance Statistics"
-    },
-    "imf_sdmx/MFS166": {
-      "rows": 780,
-      "title": "Monetary policy-related interest rate (% a year, end of year), IMF Monetary and Financial Statistics"
-    },
-    "oecd/ahd_cost": {
-      "rows": 996,
-      "title": "Median mortgage burden (principal and interest) of owners with a mortgage and rent burden of tenants, share of disposable income, by year, OECD Affordable Housing Database HC1.2.A1"
-    },
-    "oecd/ahd_tenure": {
-      "rows": 2583,
-      "title": "Households by tenure (own outright, owner with mortgage, rent private, rent subsidised, other), share of households, by year, OECD Affordable Housing Database HM1.3.A1"
-    },
-    "oecd/fixed_assets": {
-      "rows": 75568,
-      "title": "Net fixed assets at current prices by activity and asset, closing stocks, national currency, millions (Table 9A), OECD"
-    },
-    "oecd/pensions": {
-      "rows": 566,
-      "title": "Current normal pension age for a worker entering at 22 (years, by sex), gross replacement rate of mandatory schemes at average earnings (% of pre-retirement earnings, by sex), and public and occupational transfers' shares of the disposable income of people over 65 (%), OECD Pensions at a Glance (DF_PAG)"
-    },
-    "oecd/value_added": {
-      "rows": 31964,
-      "title": "Gross value added at current prices by activity, national currency, millions (Table 6), OECD"
-    },
-    "owid/labor-share-of-gdp": {
-      "rows": 1023,
-      "title": "Labour share of GDP (%), ILO, SDG indicator 10.4.1, via Our World in Data"
-    },
-    "prices/commodities": {
-      "rows": 5,
-      "title": "2019 annual averages: crude oil, coal and iron ore from the World Bank's Pink Sheet (nominal US$), the crushed stone unit value from U.S. Geological Survey Mineral Commodity Summaries 2023, and the United States' GDP deflator (NY.GDP.DEFL.ZS) of 2022 over 2019"
-    },
-    "pwt/capital": {
-      "rows": 1620,
-      "title": "Net capital stock by asset (structures, machinery, transport equipment, other) and GDP, current national prices, Penn World Table 11.0"
-    },
-    "sdbs/EMPN_S_GE250": {
-      "rows": 256,
-      "title": "Persons employed in enterprises of 250 or more, business economy except financial, OECD SDBS"
-    },
-    "sdbs/EMPN_T": {
-      "rows": 334,
-      "title": "Persons employed, business economy except financial, all sizes, OECD SDBS"
-    },
-    "sdbs/ENTR_S_GE250": {
-      "rows": 278,
-      "title": "Enterprises of 250 or more persons employed, business economy except financial, OECD SDBS"
-    },
-    "sdbs/ENTR_T": {
-      "rows": 336,
-      "title": "Enterprises, business economy except financial, all sizes, OECD SDBS"
-    },
-    "sdbs/by_activity_size": {
-      "rows": 279554,
-      "title": "Enterprises (ENTR) and persons employed (EMPN) by ISIC Rev. 4 activity and size class, OECD Structural and Demographic Business Statistics"
-    },
-    "smam/first_marriage": {
-      "rows": 1931,
-      "title": "Singulate mean age at first marriage by sex (SP.DYN.SMAM.FE, SP.DYN.SMAM.MA), UN DESA World Marriage Data via the World Bank's Gender Statistics"
-    },
-    "un/households": {
-      "rows": 1099,
-      "title": "Households by size and by basic and intergenerational type, % of households, and mean size, each source's reference year, UN DESA Database on Household Size and Composition 2026"
-    },
-    "un/older_persons": {
-      "rows": 9185,
-      "title": "Older persons (60+, 65+, 80+) by sex living alone, as a couple only, with a partner, with children under 20 and with children 20 or over, % of older persons, UN DESA Database on the Households and Living Arrangements of Older Persons 2026"
-    },
-    "wb/AG.LND.AGRI.K2": {
-      "rows": 1050,
-      "title": "Agricultural land, square kilometres (AG.LND.AGRI.K2), World Development Indicators"
-    },
-    "wb/FD.RES.LIQU.AS.ZS": {
-      "rows": 1521,
-      "title": "Bank liquid reserves to bank assets ratio (%), World Bank WDI"
-    },
-    "wb/GFDD.DI.02": {
-      "rows": 1149,
-      "title": "Deposit money banks' assets to GDP (%), World Bank GFDD"
-    },
-    "wb/GFDD.DI.06": {
-      "rows": 1084,
-      "title": "Central bank assets to GDP (%), World Bank GFDD"
-    },
-    "wb/GFDD.DI.13": {
-      "rows": 883,
-      "title": "Pension fund assets to GDP (%), World Bank Global Financial Development Database"
-    },
-    "wb/GFDD.OI.01": {
-      "rows": 1078,
-      "title": "Bank concentration (%): assets of the three largest commercial banks, World Bank GFDD"
-    },
-    "wb/GFDD.OI.02": {
-      "rows": 1134,
-      "title": "Bank deposits to GDP (%), World Bank GFDD"
-    },
-    "wb/GFDD.OI.06": {
-      "rows": 960,
-      "title": "5-bank asset concentration (%), World Bank GFDD"
-    },
-    "wb/NE.GDI.FTOT.ZS": {
-      "rows": 1826,
-      "title": "Gross fixed capital formation (% of GDP), World Bank WDI"
-    },
-    "wb/NY.GDP.MKTP.KD.ZG": {
-      "rows": 2271,
-      "title": "GDP growth (annual %), World Bank WDI"
-    },
-    "wcde/attainment": {
-      "rows": 55320,
-      "title": "Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher), % of each five-year age group from 15 and sex, 2020, Wittgenstein Centre Human Capital Data Explorer v3, SSP2"
-    },
-    "wdi/FB.BNK.CAPA.ZS": {
-      "rows": 1469,
-      "title": "Bank capital to assets ratio (%)"
-    },
-    "wdi/FP.CPI.TOTL.ZG": {
-      "rows": 1977,
-      "title": "Inflation, consumer prices (annual %)"
-    },
-    "wdi/FR.INR.DPST": {
-      "rows": 1223,
-      "title": "Deposit interest rate (%)"
-    },
-    "wdi/FR.INR.LEND": {
-      "rows": 1198,
-      "title": "Lending interest rate (%)"
-    },
-    "wdi/GC.TAX.TOTL.GD.ZS": {
-      "rows": 1294,
-      "title": "Tax revenue (% of GDP)"
-    },
-    "wdi/NE.TRD.GNFS.ZS": {
-      "rows": 1958,
-      "title": "Trade (% of GDP)"
-    },
-    "wdi/NV.AGR.TOTL.ZS": {
-      "rows": 2128,
-      "title": "Agriculture, forestry, and fishing, value added (% of GDP)"
-    },
-    "wdi/NV.IND.TOTL.ZS": {
-      "rows": 2156,
-      "title": "Industry (including construction), value added (% of GDP)"
-    },
-    "wdi/NV.SRV.TOTL.ZS": {
-      "rows": 2154,
-      "title": "Services, value added (% of GDP)"
-    },
-    "wdi/NY.GDP.PCAP.CN": {
-      "rows": 3343,
-      "title": "GDP per capita, current local currency units (NY.GDP.PCAP.CN), World Bank WDI"
-    },
-    "wdi/NY.GDP.PCAP.PP.KD": {
-      "rows": 2169,
-      "title": "GDP per capita, PPP (constant 2021 international $)"
-    },
-    "wdi/SI.POV.GINI": {
-      "rows": 729,
-      "title": "Gini index"
-    },
-    "wdi/SL.EMP.TOTL.SP.ZS": {
-      "rows": 2043,
-      "title": "Employment to population ratio, 15+, total (%) (modeled ILO estimate)"
-    },
-    "wdi/SL.UEM.TOTL.ZS": {
-      "rows": 2043,
-      "title": "Unemployment, total (% of total labor force) (modeled ILO estimate)"
-    },
-    "wdi/SP.DYN.LE00.IN": {
-      "rows": 2170,
-      "title": "Life expectancy at birth, total (years)"
-    },
-    "wdi/SP.DYN.TFRT.IN": {
-      "rows": 2170,
-      "title": "Fertility rate, total (births per woman)"
-    },
-    "wdi/SP.POP.0014.TO.ZS": {
-      "rows": 2387,
-      "title": "Population ages 0-14 (% of total population)"
-    },
-    "wdi/SP.POP.65UP.TO.ZS": {
-      "rows": 2387,
-      "title": "Population ages 65 and above (% of total population)"
-    },
-    "wid/shares": {
-      "rows": 31350,
-      "title": "Shares of pre-tax national income (sptincj992) and net personal wealth (shwealj992), equal-split adults, held by the bottom 50%, the middle 40%, the top 10%, 1% and 0.1%, 2010 on, WID"
-    },
-    "wid/shweal_p90p100_992_j": {
-      "rows": 2090,
-      "title": "Top 10% share of net personal wealth (adults, equal-split), WID"
-    },
-    "wid/whweal_p0p100_999_i": {
-      "rows": 2354,
-      "title": "Net household wealth to net national income ratio, WID"
-    },
-    "wpp/fertility_by_age": {
-      "rows": 15984,
-      "title": "Age-specific fertility rates by single age of mother 15-49, births per 1,000 women, 1950-2023, UN World Population Prospects 2024"
-    },
-    "wpp/indicators": {
-      "rows": 15984,
-      "title": "Under-five deaths per 1,000 live births (Q5) and males per 100 females at birth (SRB), 1950-2023, UN World Population Prospects 2024"
-    },
-    "wpp/life_table": {
-      "rows": 43632,
-      "title": "Complete life tables by sex, 2023: probability of dying between ages x and x+1 (qx) and survivors of 100,000 born (lx), UN World Population Prospects 2024"
-    },
-    "wpp/population_by_age": {
-      "rows": 21816,
-      "title": "Population by single age and sex, 1 July 2023, thousands, UN World Population Prospects 2024"
-    }
+ "fetched": "2026-09-23",
+ "series": {
+  "bis/CBPOL": {
+   "rows": 425,
+   "title": "Central bank policy rate (%, end of year), BIS"
   },
-  "sources": {
-    "bea_fixed_assets": {
-      "fetched": "2026-09-26",
-      "title": "U.S. Bureau of Economic Analysis, Fixed Assets Accounts, detailed estimates by industry and asset",
-      "url": "https://apps.bea.gov/national/FA2004/Details/xls/<workbook>"
-    },
-    "bis": {
-      "release": "2026-09-16",
-      "title": "BIS, central bank policy rates, bulk CSV",
-      "url": "https://data.bis.org/static/bulk/WS_CBPOL_csv_flat.zip"
-    },
-    "census_length": {
-      "fetched": "2026-09-26",
-      "title": "U.S. Census Bureau, Construction Length of Time",
-      "url": "https://www.census.gov/construction/c30/xlsx/t125.xlsx"
-    },
-    "figaro": {
-      "fetched": "2026-09-26",
-      "title": "Eurostat FIGARO, SDMX 2.1 API",
-      "url": "https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/naio_10_fcp_ip4/A...{dest}..?startPeriod=2022&endPeriod=2022&format=SDMX-CSV&compressed=true"
-    },
-    "findex": {
-      "fetched": "2026-09-24",
-      "title": "World Bank Global Findex Database (API source 28)",
-      "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2010:2025&per_page=20000&source=28"
-    },
-    "fred_m3": {
-      "fetched": "2026-09-26",
-      "title": "Federal Reserve Bank of St. Louis, FRED",
-      "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
-    },
-    "housing": {
-      "fetched": "2026-09-24",
-      "title": "OECD Affordable Housing Database (HM1.3, HC1.2); Eurostat SDMX API (ilc_lvho02); ECLAC CEPALSTAT API (indicator 166); DHS Program API",
-      "url": "https://webfs.oecd.org/Els-com/Affordable_Housing_Database/<file>; https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ilc_lvho02?format=SDMX-CSV&startPeriod=2015; https://api-cepalstat.cepal.org/; https://api.dhsprogram.com/"
-    },
-    "icio": {
-      "fetched": "2026-09-27",
-      "title": "OECD Inter-Country Input-Output tables, 2023 edition",
-      "url": "https://stats.oecd.org/wbos/fileview2.aspx?IDFile=d1ab2315-298c-4e93-9a81-c6f2273139fe"
-    },
-    "ilo_activity": {
-      "fetched": "2026-09-27",
-      "title": "ILOSTAT SDMX API",
-      "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2015"
-    },
-    "ilo_disability": {
-      "fetched": "2026-09-24",
-      "title": "ILOSTAT SDMX API",
-      "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
-    },
-    "ilo_employment": {
-      "fetched": "2026-09-24",
-      "title": "ILOSTAT SDMX API",
-      "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
-    },
-    "ilo_employment_rate": {
-      "fetched": "2026-09-27",
-      "title": "ILOSTAT SDMX API",
-      "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
-    },
-    "ilo_status": {
-      "fetched": "2026-09-26",
-      "title": "ILOSTAT SDMX API",
-      "url": "https://sdmx.ilo.org/rest/data/ILO,DF_EMP_TEMP_SEX_STE_ECO_NB,1.0/.A..SEX_T.{status}.?startPeriod=2015"
-    },
-    "imf": {
-      "title": "IMF DataMapper API",
-      "url": "https://www.imf.org/external/datamapper/api/v1/<series>"
-    },
-    "imf_sdmx": {
-      "fetched": "2026-09-27",
-      "title": "IMF SDMX 2.1 API",
-      "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}"
-    },
-    "oecd_nad": {
-      "fetched": "2026-09-27",
-      "title": "OECD Data Explorer, SDMX API",
-      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@<table>,/<key>?startPeriod=2015&endPeriod=2022&format=csvfile"
-    },
-    "owid": {
-      "title": "Our World in Data grapher CSV",
-      "url": "https://ourworldindata.org/grapher/<chart>.csv?v=1&csvType=full&useColumnShortNames=true"
-    },
-    "pensions": {
-      "fetched": "2026-09-24",
-      "title": "OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD",
-      "url": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SPD,DSD_PAG@DF_PAG,/all?format=csvfile; https://sdmx.ilo.org/rest/data/ILO,DF_SDG_0131_SEX_SOC_RT,1.0/all?startPeriod=2010"
-    },
-    "prices": {
-      "fetched": "2026-09-27",
-      "title": "World Bank ICP 2021 and Pink Sheet; USGS Mineral Commodity Summaries",
-      "url": "https://api.worldbank.org/v2/sources/90/country/all/series/<heading>/classification/PX.WL/time/YR2021?format=json&per_page=1000"
-    },
-    "pwt": {
-      "fetched": "2026-09-27",
-      "title": "Penn World Table 11.0 (Feenstra, Inklaar and Timmer), DataverseNL",
-      "url": "https://dataverse.nl/api/access/datafile/<file>"
-    },
-    "sdbs": {
-      "fetched": "2026-09-24",
-      "title": "OECD SDMX API, Structural and Demographic Business Statistics (ISIC Rev. 4)",
-      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN.BTN_95XK._T+S_GE250.?startPeriod=2015&format=csvfile"
-    },
-    "sdbs_activity": {
-      "fetched": "2026-09-26",
-      "title": "OECD Data Explorer, SDMX API",
-      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN...?startPeriod=2015&format=csvfile"
-    },
-    "smam": {
-      "fetched": "2026-09-27",
-      "title": "World Bank API, Gender Statistics (source 14)",
-      "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2000:2025&per_page=20000&source=14"
-    },
-    "un_households": {
-      "fetched": "2026-09-27",
-      "title": "UN DESA Population Division, Database on Household Size and Composition 2026 and Database on the Households and Living Arrangements of Older Persons 2026",
-      "url": "https://population.un.org/household/assets/UNDESA_PD_2026_hh-size-composition.xlsx; https://population.un.org/LivingArrangements/assets/UNDESA_PD_2026_living-arrangements-older-persons.xlsx"
-    },
-    "wage_to_output": {
-      "fetched": "2026-09-27",
-      "title": "ILOSTAT SDMX API; World Bank API",
-      "url": "https://sdmx.ilo.org/rest/data/ILO,DF_EAR_EMTA_SEX_CUR_NB,1.0/all?startPeriod=2010; https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CN?format=json&date=2010:2025&per_page=20000"
-    },
-    "wb": {
-      "fetched": "2026-09-24",
-      "title": "World Bank API (GFDD and WDI series)",
-      "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}"
-    },
-    "wb_land": {
-      "fetched": "2026-09-27",
-      "title": "World Bank API",
-      "url": "https://api.worldbank.org/v2/country/all/indicator/AG.LND.AGRI.K2?format=json&date=2015:2019&per_page=20000"
-    },
-    "wcde": {
-      "fetched": "2026-09-24",
-      "title": "Wittgenstein Centre for Demography and Global Human Capital, Human Capital Data Explorer v3 (2023), batch file",
-      "url": "https://wicshiny2023.iiasa.ac.at/wcde-data/wcde-v3-batch/2/prop.rds"
-    },
-    "wdi": {
-      "countries": "WDICountry.csv: every economy with an income group (FY2026 classification)",
-      "release": "2026-07-15",
-      "title": "World Bank, World Development Indicators, bulk CSV",
-      "url": "https://databankfiles.worldbank.org/public/ddpext_download/WDI_CSV.zip"
-    },
-    "wid": {
-      "release": "2026-09-09",
-      "title": "World Inequality Database, bulk download",
-      "url": "https://wid.world/bulk_download/wid_all_data.zip"
-    },
-    "wid_shares": {
-      "fetched": "2026-09-24",
-      "release": "2026-09-09",
-      "title": "World Inequality Database, bulk download",
-      "url": "https://wid.world/bulk_download/wid_all_data.zip"
-    },
-    "wpp": {
-      "fetched": "2026-09-24",
-      "title": "UN DESA, World Population Prospects 2024, standard projections (medium variant), CSV files",
-      "url": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/CSV_FILES/<file>"
-    }
+  "cap/ANXAUO": {
+   "rows": 416,
+   "title": "Unfilled orders, nondefense capital goods excluding aircraft, millions of dollars, seasonally adjusted (Census Bureau M3 survey, through FRED)"
   },
-  "years": "2015-2025"
+  "cap/ANXAVS": {
+   "rows": 416,
+   "title": "Value of shipments, nondefense capital goods excluding aircraft, millions of dollars, seasonally adjusted (Census Bureau M3 survey, through FRED)"
+  },
+  "cap/bea_depreciation": {
+   "rows": 14652,
+   "title": "Current-cost depreciation of private nonresidential fixed assets by industry and asset, millions of dollars (BEA Fixed Assets, detailed estimates, detailnonres_dep1.xlsx)"
+  },
+  "cap/bea_investment": {
+   "rows": 73260,
+   "title": "Investment in private nonresidential fixed assets by industry and asset, historical cost, millions of dollars (BEA Fixed Assets, detailed estimates, detailnonres_inv1.xlsx)"
+  },
+  "cap/bea_net_stock": {
+   "rows": 14652,
+   "title": "Current-cost net stock of private nonresidential fixed assets by industry and asset, millions of dollars, year end (BEA Fixed Assets, detailed estimates, detailnonres_stk1.xlsx)"
+  },
+  "cap/construction_months": {
+   "rows": 62,
+   "title": "Average number of months from start to completion for private nonresidential construction projects completed in 2024-2025, by value of project, all types (Census Bureau, Construction Length of Time, Table 1)"
+  },
+  "cepalstat/tenure": {
+   "rows": 552,
+   "title": "Households by tenure status of the dwelling (owner, tenant, other forms), national, share of households, ECLAC CEPALSTAT indicator 166 (household surveys)"
+  },
+  "dhs/house_owners": {
+   "rows": 208,
+   "title": "Women and men aged 15-49 who own a house, alone or jointly: 100% less those who do not own one and those who do not know, DHS Program API (WE_OWNA_*_HNO, WE_OWNA_*_HDK)"
+  },
+  "eurostat/tenure": {
+   "rows": 2646,
+   "title": "Persons by tenure status of their household (OWN, OWN_L with a mortgage or loan, OWN_NL, RENT, RENT_MKT, RENT_FR reduced or free), share of persons, Eurostat EU-SILC ilc_lvho02"
+  },
+  "figaro/io": {
+   "rows": 201600,
+   "title": "Input-output table at basic prices, product by product, 2022, millions of euros, each use summed over the origins of what was used (naio_10_fcp_ip4), Eurostat FIGARO"
+  },
+  "findex/account.t.d": {
+   "rows": 705,
+   "title": "Account (% age 15+), World Bank Global Findex"
+  },
+  "findex/fin17a": {
+   "rows": 664,
+   "title": "Saved at a bank or similar financial institution (% age 15+), World Bank Global Findex"
+  },
+  "findex/fin22a": {
+   "rows": 521,
+   "title": "Borrowed from a formal bank or similar financial institution (% age 15+), World Bank Global Findex"
+  },
+  "icio/households": {
+   "rows": 3440,
+   "title": "Households' final consumption expenditure by industry, 2019, millions of US dollars, summed over origins, with taxes less subsidies on it, OECD ICIO 2023 edition"
+  },
+  "icio/io": {
+   "rows": 150921,
+   "title": "Inter-country input-output table, industry by industry, 2019, millions of US dollars, each use summed over the origins of what was used, OECD ICIO 2023 edition"
+  },
+  "icp/price_levels": {
+   "rows": 2219,
+   "title": "Price level index (world = 100) by expenditure heading, ICP 2021, World Bank"
+  },
+  "ilo/disability": {
+   "rows": 6395,
+   "title": "Population aged 15 and over with a disability and in total, thousands, by sex and age band (DF_POP_XWAP_SEX_AGE_DSB_NB), ILOSTAT"
+  },
+  "ilo/employment_by_activity": {
+   "rows": 103454,
+   "title": "Employment by economic activity and occupation, thousands (DF_EMP_TEMP_ECO_OCU_NB), ILOSTAT"
+  },
+  "ilo/employment_rate": {
+   "rows": 37918,
+   "title": "Employment-to-population ratio by sex and ten-year age band, % (DF_EMP_DWAP_SEX_AGE_RT), ILOSTAT"
+  },
+  "ilo/hours_by_activity": {
+   "rows": 91977,
+   "title": "Average weekly hours actually worked per employed person by economic activity and occupation (DF_HOW_TEMP_ECO_OCU_NB), ILOSTAT"
+  },
+  "ilo/mean_earnings": {
+   "rows": 1535,
+   "title": "Mean monthly earnings of employees, local currency, both sexes (DF_EAR_EMTA_SEX_CUR_NB), ILOSTAT"
+  },
+  "ilo/occupation": {
+   "rows": 31925,
+   "title": "Employed persons by sex and ISCO-08 major group, thousands (DF_EMP_TEMP_SEX_OCU_NB), ILOSTAT"
+  },
+  "ilo/protection": {
+   "rows": 2583,
+   "title": "Persons above statutory pensionable age receiving an old-age pension, and persons with severe disabilities receiving a disability benefit, share, by sex (SDG indicator 1.3.1, DF_SDG_0131_SEX_SOC_RT), ILOSTAT"
+  },
+  "ilo/status": {
+   "rows": 18176,
+   "title": "Employed persons by sex and ICSE-93 status in employment, thousands (DF_EMP_TEMP_SEX_STE_NB), ILOSTAT"
+  },
+  "ilo/status_by_activity": {
+   "rows": 51515,
+   "title": "Employment by status in employment (ICSE-93) and economic activity (ISIC Rev. 4 sections), thousands, both sexes (DF_EMP_TEMP_SEX_STE_ECO_NB), ILOSTAT"
+  },
+  "imf/GGXWDG_NGDP": {
+   "rows": 2083,
+   "title": "General government gross debt (% of GDP), IMF World Economic Outlook"
+  },
+  "imf/HH_LS": {
+   "rows": 823,
+   "title": "Household debt, loans and debt securities (% of GDP), IMF Global Debt Database"
+  },
+  "imf/NFC_LS": {
+   "rows": 823,
+   "title": "Nonfinancial corporate debt, loans and debt securities (% of GDP), IMF Global Debt Database"
+  },
+  "imf_sdmx/CIC": {
+   "rows": 699,
+   "title": "Currency in circulation, national currency, end of year (S121_L_CIC_IMB_CBS), IMF Monetary and Financial Statistics, central bank survey"
+  },
+  "imf_sdmx/GF10_S13": {
+   "rows": 658,
+   "title": "General government expense on social protection (% of GDP), IMF Government Finance Statistics"
+  },
+  "imf_sdmx/MFS166": {
+   "rows": 780,
+   "title": "Monetary policy-related interest rate (% a year, end of year), IMF Monetary and Financial Statistics"
+  },
+  "oecd/ahd_cost": {
+   "rows": 996,
+   "title": "Median mortgage burden (principal and interest) of owners with a mortgage and rent burden of tenants, share of disposable income, by year, OECD Affordable Housing Database HC1.2.A1"
+  },
+  "oecd/ahd_tenure": {
+   "rows": 2583,
+   "title": "Households by tenure (own outright, owner with mortgage, rent private, rent subsidised, other), share of households, by year, OECD Affordable Housing Database HM1.3.A1"
+  },
+  "oecd/fixed_assets": {
+   "rows": 75568,
+   "title": "Net fixed assets at current prices by activity and asset, closing stocks, national currency, millions (Table 9A), OECD"
+  },
+  "oecd/pensions": {
+   "rows": 566,
+   "title": "Current normal pension age for a worker entering at 22 (years, by sex), gross replacement rate of mandatory schemes at average earnings (% of pre-retirement earnings, by sex), and public and occupational transfers' shares of the disposable income of people over 65 (%), OECD Pensions at a Glance (DF_PAG)"
+  },
+  "oecd/value_added": {
+   "rows": 31964,
+   "title": "Gross value added at current prices by activity, national currency, millions (Table 6), OECD"
+  },
+  "owid/labor-share-of-gdp": {
+   "rows": 1023,
+   "title": "Labour share of GDP (%), ILO, SDG indicator 10.4.1, via Our World in Data"
+  },
+  "prices/commodities": {
+   "rows": 5,
+   "title": "2019 annual averages: crude oil, coal and iron ore from the World Bank's Pink Sheet (nominal US$), the crushed stone unit value from U.S. Geological Survey Mineral Commodity Summaries 2023, and the United States' GDP deflator (NY.GDP.DEFL.ZS) of 2022 over 2019"
+  },
+  "pwt/capital": {
+   "rows": 1620,
+   "title": "Net capital stock by asset (structures, machinery, transport equipment, other) and GDP, current national prices, Penn World Table 11.0"
+  },
+  "sdbs/EMPN_S_GE250": {
+   "rows": 256,
+   "title": "Persons employed in enterprises of 250 or more, business economy except financial, OECD SDBS"
+  },
+  "sdbs/EMPN_T": {
+   "rows": 334,
+   "title": "Persons employed, business economy except financial, all sizes, OECD SDBS"
+  },
+  "sdbs/ENTR_S_GE250": {
+   "rows": 278,
+   "title": "Enterprises of 250 or more persons employed, business economy except financial, OECD SDBS"
+  },
+  "sdbs/ENTR_T": {
+   "rows": 336,
+   "title": "Enterprises, business economy except financial, all sizes, OECD SDBS"
+  },
+  "sdbs/by_activity_size": {
+   "rows": 279554,
+   "title": "Enterprises (ENTR) and persons employed (EMPN) by ISIC Rev. 4 activity and size class, OECD Structural and Demographic Business Statistics"
+  },
+  "smam/first_marriage": {
+   "rows": 1931,
+   "title": "Singulate mean age at first marriage by sex (SP.DYN.SMAM.FE, SP.DYN.SMAM.MA), UN DESA World Marriage Data via the World Bank's Gender Statistics"
+  },
+  "un/households": {
+   "rows": 1099,
+   "title": "Households by size and by basic and intergenerational type, % of households, and mean size, each source's reference year, UN DESA Database on Household Size and Composition 2026"
+  },
+  "un/older_persons": {
+   "rows": 9185,
+   "title": "Older persons (60+, 65+, 80+) by sex living alone, as a couple only, with a partner, with children under 20 and with children 20 or over, % of older persons, UN DESA Database on the Households and Living Arrangements of Older Persons 2026"
+  },
+  "wb/AG.LND.AGRI.K2": {
+   "rows": 1050,
+   "title": "Agricultural land, square kilometres (AG.LND.AGRI.K2), World Development Indicators"
+  },
+  "wb/FD.RES.LIQU.AS.ZS": {
+   "rows": 1521,
+   "title": "Bank liquid reserves to bank assets ratio (%), World Bank WDI"
+  },
+  "wb/GFDD.DI.02": {
+   "rows": 1149,
+   "title": "Deposit money banks' assets to GDP (%), World Bank GFDD"
+  },
+  "wb/GFDD.DI.06": {
+   "rows": 1084,
+   "title": "Central bank assets to GDP (%), World Bank GFDD"
+  },
+  "wb/GFDD.DI.13": {
+   "rows": 883,
+   "title": "Pension fund assets to GDP (%), World Bank Global Financial Development Database"
+  },
+  "wb/GFDD.OI.01": {
+   "rows": 1078,
+   "title": "Bank concentration (%): assets of the three largest commercial banks, World Bank GFDD"
+  },
+  "wb/GFDD.OI.02": {
+   "rows": 1134,
+   "title": "Bank deposits to GDP (%), World Bank GFDD"
+  },
+  "wb/GFDD.OI.06": {
+   "rows": 960,
+   "title": "5-bank asset concentration (%), World Bank GFDD"
+  },
+  "wb/NE.GDI.FTOT.ZS": {
+   "rows": 1826,
+   "title": "Gross fixed capital formation (% of GDP), World Bank WDI"
+  },
+  "wb/NY.GDP.MKTP.KD.ZG": {
+   "rows": 2271,
+   "title": "GDP growth (annual %), World Bank WDI"
+  },
+  "wcde/attainment": {
+   "rows": 55320,
+   "title": "Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher), % of each five-year age group from 15 and sex, 2020, Wittgenstein Centre Human Capital Data Explorer v3, SSP2"
+  },
+  "wdi/FB.BNK.CAPA.ZS": {
+   "rows": 1469,
+   "title": "Bank capital to assets ratio (%)"
+  },
+  "wdi/FP.CPI.TOTL.ZG": {
+   "rows": 1977,
+   "title": "Inflation, consumer prices (annual %)"
+  },
+  "wdi/FR.INR.DPST": {
+   "rows": 1223,
+   "title": "Deposit interest rate (%)"
+  },
+  "wdi/FR.INR.LEND": {
+   "rows": 1198,
+   "title": "Lending interest rate (%)"
+  },
+  "wdi/GC.TAX.TOTL.GD.ZS": {
+   "rows": 1294,
+   "title": "Tax revenue (% of GDP)"
+  },
+  "wdi/NE.TRD.GNFS.ZS": {
+   "rows": 1958,
+   "title": "Trade (% of GDP)"
+  },
+  "wdi/NV.AGR.TOTL.ZS": {
+   "rows": 2128,
+   "title": "Agriculture, forestry, and fishing, value added (% of GDP)"
+  },
+  "wdi/NV.IND.TOTL.ZS": {
+   "rows": 2156,
+   "title": "Industry (including construction), value added (% of GDP)"
+  },
+  "wdi/NV.SRV.TOTL.ZS": {
+   "rows": 2154,
+   "title": "Services, value added (% of GDP)"
+  },
+  "wdi/NY.GDP.MKTP.CN": {
+   "rows": 1056,
+   "title": "GDP, current local currency units (NY.GDP.MKTP.CN), World Bank WDI"
+  },
+  "wdi/NY.GDP.PCAP.CN": {
+   "rows": 3343,
+   "title": "GDP per capita, current local currency units (NY.GDP.PCAP.CN), World Bank WDI"
+  },
+  "wdi/NY.GDP.PCAP.PP.KD": {
+   "rows": 2169,
+   "title": "GDP per capita, PPP (constant 2021 international $)"
+  },
+  "wdi/SI.POV.GINI": {
+   "rows": 729,
+   "title": "Gini index"
+  },
+  "wdi/SL.EMP.TOTL.SP.ZS": {
+   "rows": 2043,
+   "title": "Employment to population ratio, 15+, total (%) (modeled ILO estimate)"
+  },
+  "wdi/SL.UEM.TOTL.ZS": {
+   "rows": 2043,
+   "title": "Unemployment, total (% of total labor force) (modeled ILO estimate)"
+  },
+  "wdi/SP.DYN.LE00.IN": {
+   "rows": 2170,
+   "title": "Life expectancy at birth, total (years)"
+  },
+  "wdi/SP.DYN.TFRT.IN": {
+   "rows": 2170,
+   "title": "Fertility rate, total (births per woman)"
+  },
+  "wdi/SP.POP.0014.TO.ZS": {
+   "rows": 2387,
+   "title": "Population ages 0-14 (% of total population)"
+  },
+  "wdi/SP.POP.65UP.TO.ZS": {
+   "rows": 2387,
+   "title": "Population ages 65 and above (% of total population)"
+  },
+  "wid/shares": {
+   "rows": 31350,
+   "title": "Shares of pre-tax national income (sptincj992) and net personal wealth (shwealj992), equal-split adults, held by the bottom 50%, the middle 40%, the top 10%, 1% and 0.1%, 2010 on, WID"
+  },
+  "wid/shweal_p90p100_992_j": {
+   "rows": 2090,
+   "title": "Top 10% share of net personal wealth (adults, equal-split), WID"
+  },
+  "wid/whweal_p0p100_999_i": {
+   "rows": 2354,
+   "title": "Net household wealth to net national income ratio, WID"
+  },
+  "wpp/fertility_by_age": {
+   "rows": 15984,
+   "title": "Age-specific fertility rates by single age of mother 15-49, births per 1,000 women, 1950-2023, UN World Population Prospects 2024"
+  },
+  "wpp/indicators": {
+   "rows": 15984,
+   "title": "Under-five deaths per 1,000 live births (Q5) and males per 100 females at birth (SRB), 1950-2023, UN World Population Prospects 2024"
+  },
+  "wpp/life_table": {
+   "rows": 43632,
+   "title": "Complete life tables by sex, 2023: probability of dying between ages x and x+1 (qx) and survivors of 100,000 born (lx), UN World Population Prospects 2024"
+  },
+  "wpp/population_by_age": {
+   "rows": 21816,
+   "title": "Population by single age and sex, 1 July 2023, thousands, UN World Population Prospects 2024"
+  }
+ },
+ "sources": {
+  "bea_fixed_assets": {
+   "fetched": "2026-09-26",
+   "title": "U.S. Bureau of Economic Analysis, Fixed Assets Accounts, detailed estimates by industry and asset",
+   "url": "https://apps.bea.gov/national/FA2004/Details/xls/<workbook>"
+  },
+  "bis": {
+   "release": "2026-09-16",
+   "title": "BIS, central bank policy rates, bulk CSV",
+   "url": "https://data.bis.org/static/bulk/WS_CBPOL_csv_flat.zip"
+  },
+  "census_length": {
+   "fetched": "2026-09-26",
+   "title": "U.S. Census Bureau, Construction Length of Time",
+   "url": "https://www.census.gov/construction/c30/xlsx/t125.xlsx"
+  },
+  "currency": {
+   "fetched": "2026-09-27",
+   "title": "IMF SDMX 2.1 API; World Bank API",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,MFS_CBS/*.S121_L_CIC_IMB_CBS.XDC.A?startPeriod=2015&endPeriod=2019; https://api.worldbank.org/v2/country/all/indicator/NY.GDP.MKTP.CN?format=json&date=2015:2019&per_page=20000"
+  },
+  "figaro": {
+   "fetched": "2026-09-26",
+   "title": "Eurostat FIGARO, SDMX 2.1 API",
+   "url": "https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/naio_10_fcp_ip4/A...{dest}..?startPeriod=2022&endPeriod=2022&format=SDMX-CSV&compressed=true"
+  },
+  "findex": {
+   "fetched": "2026-09-24",
+   "title": "World Bank Global Findex Database (API source 28)",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2010:2025&per_page=20000&source=28"
+  },
+  "fred_m3": {
+   "fetched": "2026-09-26",
+   "title": "Federal Reserve Bank of St. Louis, FRED",
+   "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
+  },
+  "housing": {
+   "fetched": "2026-09-24",
+   "title": "OECD Affordable Housing Database (HM1.3, HC1.2); Eurostat SDMX API (ilc_lvho02); ECLAC CEPALSTAT API (indicator 166); DHS Program API",
+   "url": "https://webfs.oecd.org/Els-com/Affordable_Housing_Database/<file>; https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ilc_lvho02?format=SDMX-CSV&startPeriod=2015; https://api-cepalstat.cepal.org/; https://api.dhsprogram.com/"
+  },
+  "icio": {
+   "fetched": "2026-09-27",
+   "title": "OECD Inter-Country Input-Output tables, 2023 edition",
+   "url": "https://stats.oecd.org/wbos/fileview2.aspx?IDFile=d1ab2315-298c-4e93-9a81-c6f2273139fe"
+  },
+  "ilo_activity": {
+   "fetched": "2026-09-27",
+   "title": "ILOSTAT SDMX API",
+   "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2015"
+  },
+  "ilo_disability": {
+   "fetched": "2026-09-24",
+   "title": "ILOSTAT SDMX API",
+   "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
+  },
+  "ilo_employment": {
+   "fetched": "2026-09-24",
+   "title": "ILOSTAT SDMX API",
+   "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
+  },
+  "ilo_employment_rate": {
+   "fetched": "2026-09-27",
+   "title": "ILOSTAT SDMX API",
+   "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
+  },
+  "ilo_status": {
+   "fetched": "2026-09-26",
+   "title": "ILOSTAT SDMX API",
+   "url": "https://sdmx.ilo.org/rest/data/ILO,DF_EMP_TEMP_SEX_STE_ECO_NB,1.0/.A..SEX_T.{status}.?startPeriod=2015"
+  },
+  "imf": {
+   "title": "IMF DataMapper API",
+   "url": "https://www.imf.org/external/datamapper/api/v1/<series>"
+  },
+  "imf_sdmx": {
+   "fetched": "2026-09-27",
+   "title": "IMF SDMX 2.1 API",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}"
+  },
+  "oecd_nad": {
+   "fetched": "2026-09-27",
+   "title": "OECD Data Explorer, SDMX API",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@<table>,/<key>?startPeriod=2015&endPeriod=2022&format=csvfile"
+  },
+  "owid": {
+   "title": "Our World in Data grapher CSV",
+   "url": "https://ourworldindata.org/grapher/<chart>.csv?v=1&csvType=full&useColumnShortNames=true"
+  },
+  "pensions": {
+   "fetched": "2026-09-24",
+   "title": "OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SPD,DSD_PAG@DF_PAG,/all?format=csvfile; https://sdmx.ilo.org/rest/data/ILO,DF_SDG_0131_SEX_SOC_RT,1.0/all?startPeriod=2010"
+  },
+  "prices": {
+   "fetched": "2026-09-27",
+   "title": "World Bank ICP 2021 and Pink Sheet; USGS Mineral Commodity Summaries",
+   "url": "https://api.worldbank.org/v2/sources/90/country/all/series/<heading>/classification/PX.WL/time/YR2021?format=json&per_page=1000"
+  },
+  "pwt": {
+   "fetched": "2026-09-27",
+   "title": "Penn World Table 11.0 (Feenstra, Inklaar and Timmer), DataverseNL",
+   "url": "https://dataverse.nl/api/access/datafile/<file>"
+  },
+  "sdbs": {
+   "fetched": "2026-09-24",
+   "title": "OECD SDMX API, Structural and Demographic Business Statistics (ISIC Rev. 4)",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN.BTN_95XK._T+S_GE250.?startPeriod=2015&format=csvfile"
+  },
+  "sdbs_activity": {
+   "fetched": "2026-09-26",
+   "title": "OECD Data Explorer, SDMX API",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN...?startPeriod=2015&format=csvfile"
+  },
+  "smam": {
+   "fetched": "2026-09-27",
+   "title": "World Bank API, Gender Statistics (source 14)",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2000:2025&per_page=20000&source=14"
+  },
+  "un_households": {
+   "fetched": "2026-09-27",
+   "title": "UN DESA Population Division, Database on Household Size and Composition 2026 and Database on the Households and Living Arrangements of Older Persons 2026",
+   "url": "https://population.un.org/household/assets/UNDESA_PD_2026_hh-size-composition.xlsx; https://population.un.org/LivingArrangements/assets/UNDESA_PD_2026_living-arrangements-older-persons.xlsx"
+  },
+  "wage_to_output": {
+   "fetched": "2026-09-27",
+   "title": "ILOSTAT SDMX API; World Bank API",
+   "url": "https://sdmx.ilo.org/rest/data/ILO,DF_EAR_EMTA_SEX_CUR_NB,1.0/all?startPeriod=2010; https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CN?format=json&date=2010:2025&per_page=20000"
+  },
+  "wb": {
+   "fetched": "2026-09-24",
+   "title": "World Bank API (GFDD and WDI series)",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}"
+  },
+  "wb_land": {
+   "fetched": "2026-09-27",
+   "title": "World Bank API",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/AG.LND.AGRI.K2?format=json&date=2015:2019&per_page=20000"
+  },
+  "wcde": {
+   "fetched": "2026-09-24",
+   "title": "Wittgenstein Centre for Demography and Global Human Capital, Human Capital Data Explorer v3 (2023), batch file",
+   "url": "https://wicshiny2023.iiasa.ac.at/wcde-data/wcde-v3-batch/2/prop.rds"
+  },
+  "wdi": {
+   "countries": "WDICountry.csv: every economy with an income group (FY2026 classification)",
+   "release": "2026-07-15",
+   "title": "World Bank, World Development Indicators, bulk CSV",
+   "url": "https://databankfiles.worldbank.org/public/ddpext_download/WDI_CSV.zip"
+  },
+  "wid": {
+   "release": "2026-09-09",
+   "title": "World Inequality Database, bulk download",
+   "url": "https://wid.world/bulk_download/wid_all_data.zip"
+  },
+  "wid_shares": {
+   "fetched": "2026-09-24",
+   "release": "2026-09-09",
+   "title": "World Inequality Database, bulk download",
+   "url": "https://wid.world/bulk_download/wid_all_data.zip"
+  },
+  "wpp": {
+   "fetched": "2026-09-24",
+   "title": "UN DESA, World Population Prospects 2024, standard projections (medium variant), CSV files",
+   "url": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/CSV_FILES/<file>"
+  }
+ },
+ "years": "2015-2025"
 }

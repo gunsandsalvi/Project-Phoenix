@@ -264,8 +264,8 @@ impl Contribution for Lines {
 
 /// The central bank's balance sheet in each country: the reserves each bank holds, the liquid part of its assets;
 /// the claim on the treasury, the central bank's assets; and the treasury's account, what of the claim the reserves
-/// do not take. Where the reserves exceed the central bank's drawn assets, the claim rises to them, the one change
-/// the accounts need, and is reported. Its books close with no equity of its own; the treasury's through its opening
+/// and the banknotes the households hold do not take. Where those exceed the central bank's drawn assets, the claim
+/// rises to them, the one change the accounts need, and is reported. Its books close with no equity of its own; the treasury's through its opening
 /// equity.
 #[clause("GEN.4", "MON.7", "CB.1")]
 #[derive(Debug)]
@@ -322,20 +322,39 @@ impl Contribution for Balances {
                 ];
                 b.open(reason, legs, bank.get(), report);
             }
-            let claim = if drawn_claim < reserves_total {
+            // The banknotes the households that bank nowhere hold, already written, are its liability too.
+            let notes = match b.row_on(cb, "banknotes").and_then(|(line, _)| {
+                phx_ledger::rows::find(
+                    b.parties.holder(b.parties.row(cb).0),
+                    b.parties.row(cb).1,
+                    line,
+                    Side::Liability,
+                )
+            }) {
+                Some(v) => match v.optional.balance {
+                    phx_num::Missing::Present(balance) => -balance,
+                    phx_num::Missing::Absent => {
+                        violation!(clause = "MON.4", "a central bank's notes with no balance", country = c.id.get())
+                    }
+                },
+                // A country none of whose households banks nowhere has no notes out.
+                None => 0,
+            };
+            let owed = reserves_total + notes;
+            let claim = if drawn_claim < owed {
                 report.adjustments.push(Adjustment {
                     what: format!(
-                        "country {}: the central bank's claim on the treasury, raised to its reserves",
+                        "country {}: the central bank's claim on the treasury, raised to its reserves and notes",
                         c.id.get()
                     ),
                     drawn: i128::from(drawn_claim),
-                    set: i128::from(reserves_total),
+                    set: i128::from(owed),
                 });
-                reserves_total
+                owed
             } else {
                 drawn_claim
             };
-            let account = claim - reserves_total;
+            let account = claim - owed;
             let (Some((k, _)), Some((a, _))) =
                 (b.row_on(treasury, CLAIM.name), b.row_on(treasury, HOLDERS.treasury_account().name))
             else {
