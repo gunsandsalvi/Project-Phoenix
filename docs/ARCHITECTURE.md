@@ -1204,7 +1204,8 @@ booked again after it. A visit of at least `VISIT_SHARD_ROWS` rows runs in `VISI
 runs and keeps the handler's writes aside, with its own intents and bindings; the shard holding the player's row runs
 after the others with the player's queue; and the writes, intents and bindings are taken in the shards' order, so the
 day is the one a row-by-row run makes on any pool. A row reads and writes only its own declared facts, and a read
-outside them on the pool stops the run. A traced run visits row by row. Each row is booked again: its schedule's next instance, or a review drawn afresh at the attention its decision left it.
+outside them on the pool stops the run. The goods, plant and rights a visit's rows hold are read for it in the same
+fixed shards (`World::run_goods`), each shard's lists joined in order. A traced run visits row by row. Each row is booked again: its schedule's next instance, or a review drawn afresh at the attention its decision left it.
 A review's row whose attention another visit's handler moves is booked afresh at the new attention the same day, so a
 review is never drawn at an attention the row no longer holds. On a run that traces reads, a handler's reads and writes
 on its rows are checked against its declaration and counted into the day's read trace. What each day's visits did —
@@ -1652,14 +1653,16 @@ Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the mee
   `if_labour` input and output with its rule in `sys-lab`, dispatched through the player's queue for the player's
   household (OBS.4). The kernel builds each input from the world and applies each output; no rule reads the world.
 - **The labour book** (`phx-world`'s `labour`, saved): vacancies (employer, region, class, wage point, jobs open,
-  posted day), each region and occupation's list of them; applications (vacancy, applicant agent and person, its unit,
+  posted day), each region and occupation's list of them; applications (vacancy, applicant agent and person,
   skill and experience, sent day), which live until answered; offers (vacancy, applicant, day made), which live a day;
-  hires and separations due at the next 4a, with notice; and each employer's fill history by occupation (the point
-  and days its last vacancy took to fill).
+  hires and separations due at the next 4a, with notice; and each employer's last fill by occupation, keyed by the two (the
+  point and days its last vacancy took to fill).
 - **The day** (TIME.10, a round a day): at **5c**, after the visits, in order — offers made yesterday answered by
   their applicants; applications sent yesterday seen by their employers at the meeting hazard and selected by skill,
   then experience, then lot, up to the jobs open; the searchers' applications to the vacancies standing at the start of the day; and the employers whose
-  production schedule came due today posting, withdrawing and laying off. At **4a** of the next day, the hires join
+  production schedule came due today posting, withdrawing and laying off. The searchers are read in
+  `SEARCH_SHARDS` fixed shards on the pool, each with its own taste stream, and their applications entered in the
+  searchers' order; the player's agent chooses from its queue after the others are read. At **4a** of the next day, the hires join
   their lines and the separations whose notice has run leave them, their severance paid at stage 7 as legs of the
   separation's instruction. A match therefore takes at least three days.
 - **Wage points** (REP.34): the monthly wage at point _n_ is `LAB.wage_point_ratio` to the _n_-th power, 128 points, the last meaning none; `sys-lab`'s `wages` holds the arithmetic the kernel calls (`wage_at`, `point_near`, `least_point`, the offer `adapt` and the severance `owed`).

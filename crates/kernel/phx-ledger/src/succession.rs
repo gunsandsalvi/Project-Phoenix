@@ -44,6 +44,11 @@ impl Successions {
         }
     }
 
+    /// Whether a party succeeded any party that still has units bound under its name.
+    fn succeeded_any(&self, party: PartyId) -> bool {
+        self.predecessors.get(&party).is_some_and(|list| !list.is_empty())
+    }
+
     /// The parties a party succeeded, directly or through others, that still have units bound under their names.
     fn predecessors(&self, party: PartyId) -> Vec<PartyId> {
         let mut out: Vec<PartyId> = Vec::new();
@@ -113,6 +118,10 @@ impl<B: Backing> Ledger<B> {
             return 0;
         }
         let under = |p: PartyId| self.liens.pledged(p, id) + self.covers.committed(p, id);
+        // Most parties succeeded no one, and are read without gathering their predecessors.
+        if !self.successions.succeeded_any(party) {
+            return under(party);
+        }
         under(party) + self.successions.predecessors(party).into_iter().map(under).sum::<i64>()
     }
 

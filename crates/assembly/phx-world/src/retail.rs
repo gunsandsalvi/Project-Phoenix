@@ -71,10 +71,6 @@ pub(crate) struct Shop {
     pub want: Want,
 }
 
-fn lesser(a: usize, b: usize) -> usize {
-    if a < b { a } else { b }
-}
-
 /// A market meeting today: its wants, its kind, its product, its stream of lots and the stalls in it.
 struct Meeting {
     market: MarketId,
@@ -237,11 +233,8 @@ impl World {
         }
         // Each seller's stall read on the pool, in fixed shards of the sellers, since reading one changes nothing.
         let shards = crate::consts::STALL_SHARDS;
-        let each = rows.len().div_ceil(shards);
         let read = phx_exec::pool::map(self.books.pool(), shards, |k| {
-            let from = lesser(k * each, rows.len());
-            let to = lesser(from + each, rows.len());
-            rows.get(from..to).unwrap_or(&[]).iter().filter_map(|r| self.stall_of(r, &pending)).collect::<Vec<_>>()
+            crate::shard::part(&rows, shards, k).iter().filter_map(|r| self.stall_of(r, &pending)).collect::<Vec<_>>()
         });
         let mut out: BTreeMap<u16, Vec<Placed>> = BTreeMap::new();
         for (product, zone, stall, made) in read.into_iter().flatten() {

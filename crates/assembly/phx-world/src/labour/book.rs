@@ -72,8 +72,6 @@ pub(crate) struct Separation {
 /// The wage point an employer last filled a vacancy of an occupation at, and the days that took.
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub(crate) struct Fill {
-    pub employer: PartyId,
-    pub occupation: u32,
     pub point: i64,
     pub days: u32,
 }
@@ -108,7 +106,7 @@ pub(crate) struct LabourBook {
     pub offers: Vec<Offer>,
     pub hires: Vec<Hire>,
     pub separations: Vec<Separation>,
-    pub fills: Vec<Fill>,
+    pub fills: BTreeMap<(PartyId, u32), Fill>,
     pub retiring: Vec<PartyId>,
     pub reviews: BTreeMap<PartyId, Day>,
     pub reviewing: Vec<Review>,

@@ -1151,7 +1151,8 @@ impl World {
         self.method_records = Arc::new(records);
     }
 
-    /// What a visit's rows may read of their goods, read into the room of a view a visit before used.
+    /// What a visit's rows may read of their goods, read into the room of a view a visit before used; a long visit's
+    /// rows read in fixed shards on the pool and joined in their order.
     pub(crate) fn run_goods(&self, rows: Rows, slots: &[Slot], mut out: RunGoods) -> RunGoods {
         out.clear();
         out.marks = Arc::clone(&self.marks);
@@ -1160,6 +1161,37 @@ impl World {
         out.outlooks = Arc::clone(&self.outlooks);
         out.away = Arc::clone(&self.away);
         out.geo = Some(Arc::clone(crate::world::geo_arc(&self.own)));
+        if slots.len() < crate::consts::VISIT_SHARD_ROWS {
+            self.goods_of(rows, slots, &mut out);
+            return out;
+        }
+        let shards = crate::consts::VISIT_SHARDS;
+        let read = phx_exec::pool::map(self.books.pool(), shards, |k| {
+            let mut part = RunGoods::default();
+            self.goods_of(rows, crate::shard::part(slots, shards, k), &mut part);
+            part
+        });
+        for part in read {
+            let shift = |(from, to): (usize, usize), by: usize| (from + by, to + by);
+            let (h, p, r, d) = (out.held.len(), out.plant.len(), out.rights.len(), out.delivered.len());
+            out.slots.extend(part.slots);
+            out.rows.extend(part.rows.into_iter().map(|g| RowGoods {
+                held: shift(g.held, h),
+                plant: shift(g.plant, p),
+                rights: shift(g.rights, r),
+                delivered: shift(g.delivered, d),
+                ..g
+            }));
+            out.held.extend(part.held);
+            out.plant.extend(part.plant);
+            out.rights.extend(part.rights);
+            out.delivered.extend(part.delivered);
+        }
+        out
+    }
+
+    /// The goods of the rows at `slots`, appended to a view's lists.
+    fn goods_of(&self, rows: Rows, slots: &[Slot], out: &mut RunGoods) {
         let ledger = &self.books.ledger;
         for slot in slots {
             out.slots.push(slot.get());
@@ -1210,7 +1242,6 @@ impl World {
             goods.delivered = (delivered, out.delivered.len());
             out.rows.push(goods);
         }
-        out
     }
 
     /// What winding a row down would return beyond the money it keeps either way: the goods it holds at

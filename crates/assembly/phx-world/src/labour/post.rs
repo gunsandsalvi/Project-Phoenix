@@ -138,7 +138,7 @@ impl World {
         let Some(kind) = self.labour.kind else {
             violation!(clause = "REP.34", "a wage offered in a world with no labour");
         };
-        let fill = self.labour.book.fills.iter().find(|f| f.employer == employer && f.occupation == occupation);
+        let fill = self.labour.book.fills.get(&(employer, occupation));
         let newest =
             staff.iter().filter(|s| s.occupation == occupation).reduce(|a, b| if b.band > a.band { b } else { a });
         let share = f64::from(hours) / f64::from(law.full_time_hours);

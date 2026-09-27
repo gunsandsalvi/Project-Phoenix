@@ -22,6 +22,7 @@ pub mod refusals;
 pub mod registry;
 pub mod retail;
 pub mod save;
+mod shard;
 mod spoil;
 pub mod stances;
 pub mod state;

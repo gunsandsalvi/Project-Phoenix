@@ -60,6 +60,8 @@ pub const STALL_SHARDS: usize = 64;
 pub const VISIT_SHARDS: usize = 32;
 /// See `VISIT_SHARDS`.
 pub const VISIT_SHARD_ROWS: usize = 256;
+/// The shards 5c's searchers are read in: fixed, never the number of workers, as `GATHER_SHARDS` are.
+pub const SEARCH_SHARDS: usize = 64;
 /// Billionths in a whole, for a review's daily chance as a position holds it.
 pub const BILLION: f64 = 1e9;
 

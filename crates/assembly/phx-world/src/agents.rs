@@ -390,11 +390,6 @@ struct Gathered {
     household: Option<Household>,
 }
 
-/// The lesser of two indexes.
-fn lesser(a: usize, b: usize) -> usize {
-    if a < b { a } else { b }
-}
-
 impl World {
     /// The country each region lies in.
     fn regions(&self) -> Vec<CountryId> {
@@ -423,11 +418,8 @@ impl World {
         let each = due.len().div_ceil(GATHER_SHARDS);
         for wave in (0..GATHER_SHARDS).step_by(GATHER_WAVE).take_while(|w| w * each < due.len()) {
             let drawn = phx_exec::pool::map(self.books.pool(), GATHER_WAVE, |i| {
-                let from = lesser((wave + i) * each, due.len());
-                let to = lesser(from + each, due.len());
                 let mut scratch = Scratch::new();
-                due.get(from..to)
-                    .unwrap_or(&[])
+                crate::shard::part(&due, GATHER_SHARDS, wave + i)
                     .iter()
                     .filter_map(|&agent| self.draw_agent(day, agent, &mut scratch))
                     .collect::<Vec<_>>()
@@ -541,15 +533,9 @@ impl World {
         let each = agents.len().div_ceil(GATHER_SHARDS);
         for wave in (0..GATHER_SHARDS).step_by(GATHER_WAVE).take_while(|w| w * each < agents.len()) {
             let changed = phx_exec::pool::map(self.books.pool(), GATHER_WAVE, |i| {
-                let from = lesser((wave + i) * each, agents.len());
-                let to = lesser(from + each, agents.len());
+                let shard = crate::shard::part(&agents, GATHER_SHARDS, wave + i);
                 let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
-                agents
-                    .get(from..to)
-                    .unwrap_or(&[])
-                    .iter()
-                    .filter_map(|a| self.changed_household(day, a, &mut h))
-                    .collect::<Vec<_>>()
+                shard.iter().filter_map(|a| self.changed_household(day, a, &mut h)).collect::<Vec<_>>()
             });
             for c in changed.into_iter().flatten() {
                 self.write_household(day, c);

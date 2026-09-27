@@ -34,6 +34,20 @@ struct Seeker {
     last: u32,
 }
 
+/// What the searchers' round reads alike for every searcher: the persons already waiting on an offer or a hire, the
+/// open vacancies by region and occupation, each vacancy's monthly wage and whether its employer is hiring.
+type Shared<'a> = (&'a BTreeSet<(PartyId, u32)>, &'a BTreeMap<(u32, u32), Vec<usize>>, &'a [Option<f64>], &'a [bool]);
+
+/// A searching agent's round as read on the pool.
+enum Search {
+    /// Dead, or with no person searching: it leaves the searchers.
+    Gone,
+    /// The player's agent, whose choices come from its queue on the calling thread.
+    Player(Vec<Seeker>),
+    /// The applications its persons' rule sends, and the vacancies they saw.
+    Sent { applications: Vec<Application>, visible: u64 },
+}
+
 impl World {
     /// 5c: the day's round of labour, a step of each part.
     #[clause("LAB.4", "LAB.5", "LAB.7", "LAB.8", "LAB.15", "TIME.10")]
@@ -234,16 +248,7 @@ impl World {
 
     /// An employer's fill of an occupation: the point it filled at and the days its vacancy stood.
     fn record_fill(&mut self, v: &super::book::Vacancy, days: u32) {
-        let fills = &mut self.labour.book.fills;
-        match fills.iter_mut().find(|f| f.employer == v.employer && f.occupation == v.occupation) {
-            Some(f) => {
-                f.point = v.point;
-                f.days = days;
-            }
-            None => {
-                fills.push(super::book::Fill { employer: v.employer, occupation: v.occupation, point: v.point, days });
-            }
-        }
+        self.labour.book.fills.insert((v.employer, v.occupation), super::book::Fill { point: v.point, days });
     }
 
     /// The class of the contracts a vacancy's hires join: its occupation, skill, hours and region, the country's
@@ -351,37 +356,90 @@ impl World {
         let hiring: Vec<bool> =
             self.labour.book.vacancies.iter().map(|v| v.open > 0 && self.live(v.employer)).collect();
         let searchers: Vec<PartyId> = self.labour.searchers.iter().copied().collect();
-        for party in searchers {
-            if !self.live(party) {
-                self.labour.searchers.remove(&party);
-                continue;
-            }
-            let seekers = self.seekers(kind, party);
-            if seekers.is_empty() {
-                self.labour.searchers.remove(&party);
-                continue;
-            }
-            self.labour.day.searching_groups += 1;
-            let mut d = self.labour_draws(kind.taste_stream, Subject::new(SubjectTag::Party, party.get()), day);
-            for s in seekers.iter().filter(|s| !waiting.contains(&(s.party, s.person))) {
-                self.apply_round(
-                    (day, kind),
-                    s,
-                    (standing.get(&(s.region, s.occupation)).map_or(&[][..], Vec::as_slice), &wages, &hiring),
-                    &mut d,
-                );
+        let shared = (&waiting, &standing, &wages[..], &hiring[..]);
+        let shards = crate::consts::SEARCH_SHARDS;
+        let read = phx_exec::pool::map(self.books.pool(), shards, |k| {
+            crate::shard::part(&searchers, shards, k)
+                .iter()
+                .map(|p| self.searched(day, kind, *p, shared))
+                .collect::<Vec<_>>()
+        });
+        for (party, out) in searchers.into_iter().zip(read.into_iter().flatten()) {
+            match out {
+                Search::Gone => {
+                    self.labour.searchers.remove(&party);
+                }
+                Search::Player(seekers) => {
+                    self.labour.day.searching_groups += 1;
+                    let mut d = self.labour_draws(kind.taste_stream, Subject::new(SubjectTag::Party, party.get()), day);
+                    for s in seekers.iter().filter(|s| !waiting.contains(&(s.party, s.person))) {
+                        let Some(standing) = standing.get(&(s.region, s.occupation)) else { continue };
+                        let (visible, prepared) = self.prepared(s, (standing, &wages, &hiring), &mut d);
+                        self.labour.day.vacancies_visible += visible;
+                        let Some((seen, input)) = prepared else { continue };
+                        let decider = self.queue.decider(s.party);
+                        let queued = self.queue.take(s.party, kind.search.name);
+                        let chosen = phx_core::decisions::dispatch(kind.search, decider, queued.as_deref(), &input);
+                        let sent = self.sent(day, s, &seen, chosen.unwrap_or_default());
+                        self.push_applications(sent);
+                    }
+                }
+                Search::Sent { applications, visible } => {
+                    self.labour.day.searching_groups += 1;
+                    self.labour.day.vacancies_visible += visible;
+                    self.push_applications(applications);
+                }
             }
         }
     }
 
-    /// One searching person's applications this round.
-    fn apply_round(
-        &mut self,
-        (day, kind): (Day, &LabourKind),
+    /// A searching agent's round read without touching the world: gone, left to its player's queue, or the
+    /// applications its persons' rule sends and the vacancies they saw.
+    fn searched(
+        &self,
+        day: Day,
+        kind: &LabourKind,
+        party: PartyId,
+        (waiting, standing, wages, hiring): Shared<'_>,
+    ) -> Search {
+        if !self.live(party) {
+            return Search::Gone;
+        }
+        let seekers = self.seekers(kind, party);
+        if seekers.is_empty() {
+            return Search::Gone;
+        }
+        if let phx_core::decisions::Decider::Player { .. } = self.queue.decider(party) {
+            return Search::Player(seekers);
+        }
+        let mut d = self.labour_draws(kind.taste_stream, Subject::new(SubjectTag::Party, party.get()), day);
+        let mut applications = Vec::new();
+        let mut visible = 0;
+        for s in seekers.iter().filter(|s| !waiting.contains(&(s.party, s.person))) {
+            let Some(standing) = standing.get(&(s.region, s.occupation)) else { continue };
+            let (seen_count, prepared) = self.prepared(s, (standing, wages, hiring), &mut d);
+            visible += seen_count;
+            let Some((seen, input)) = prepared else { continue };
+            let chosen = phx_core::decisions::dispatch(kind.search, phx_core::decisions::Decider::Rule, None, &input);
+            applications.extend(self.sent(day, s, &seen, chosen.unwrap_or_default()));
+        }
+        Search::Sent { applications, visible }
+    }
+
+    /// The day's applications entered in the book, in the order they were sent.
+    fn push_applications(&mut self, sent: Vec<Application>) {
+        self.labour.day.applications += phx_rand::float::len_u64(sent.len());
+        self.labour.book.applications.extend(sent);
+    }
+
+    /// One searching person's round up to its decision: the vacancies it sees, and, when it sees any, the rule's
+    /// input for them, its count of applications and its tastes drawn.
+    fn prepared(
+        &self,
         s: &Seeker,
         (standing, wage_of, hiring): (&[usize], &[Option<f64>], &[bool]),
         d: &mut Draws,
-    ) {
+    ) -> (u64, Option<(Vec<usize>, SearchIn)>) {
         let law = super::law_of(&self.labour.laws, s.country);
         let seen: Vec<usize> = standing
             .iter()
@@ -391,9 +449,9 @@ impl World {
                     && self.labour.book.vacancies.get(*i).is_some_and(|v| v.skill <= s.skill)
             })
             .collect();
-        self.labour.day.vacancies_visible += phx_rand::float::len_u64(seen.len());
+        let visible = phx_rand::float::len_u64(seen.len());
         if seen.is_empty() {
-            return;
+            return (visible, None);
         }
         // A week's applications spread over its days: the whole part every day, one more at the chance of the rest.
         let a_day = law.applications_a_week / crate::consts::DAYS_A_WEEK;
@@ -412,30 +470,24 @@ impl World {
         let tastes: Vec<f64> = seen.iter().map(|_| phx_rand::gumbel(d, 0.0, 1.0)).collect();
         let input =
             SearchIn { wages, tastes, reservation: self.reservation(s), applications, wage_weight: law.wage_weight };
-        let decider = self.queue.decider(s.party);
-        let queued = match decider {
-            phx_core::decisions::Decider::Player { .. } => self.queue.take(s.party, kind.search.name),
-            phx_core::decisions::Decider::Rule => None,
-        };
-        let Some(chosen) = phx_core::decisions::dispatch(kind.search, decider, queued.as_deref(), &input) else {
-            return;
-        };
-        for k in chosen {
-            let Some(v) =
+        (visible, Some((seen, input)))
+    }
+
+    /// The applications a person's choice of the vacancies it saw sends.
+    fn sent(&self, day: Day, s: &Seeker, seen: &[usize], chosen: Vec<u32>) -> Vec<Application> {
+        chosen
+            .into_iter()
+            .filter_map(|k| {
                 usize::try_from(k).ok().and_then(|k| seen.get(k)).and_then(|i| self.labour.book.vacancies.get(*i))
-            else {
-                continue;
-            };
-            let vacancy = v.id;
-            self.labour.book.applications.push(Application {
-                vacancy,
+            })
+            .map(|v| Application {
+                vacancy: v.id,
                 applicant: s.party,
                 person: s.person,
                 skill: s.skill,
                 experience: s.experience,
                 sent: day,
-            });
-            self.labour.day.applications += 1;
-        }
+            })
+            .collect()
     }
 }

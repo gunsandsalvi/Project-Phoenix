@@ -175,10 +175,6 @@ fn declared(reads: &[&'static str], writes: &[&'static str]) -> Vec<&'static str
     out
 }
 
-fn lesser(a: usize, b: usize) -> usize {
-    if a < b { a } else { b }
-}
-
 fn runs(slots: &[Slot]) -> Vec<core::ops::Range<u32>> {
     let mut out: Vec<core::ops::Range<u32>> = Vec::new();
     for s in slots {
@@ -458,11 +454,7 @@ impl World {
             Missing::Absent => None,
         };
         let shards = crate::consts::VISIT_SHARDS;
-        let each = slots.len().div_ceil(shards);
-        let shard = |k: usize| {
-            let from = lesser(k * each, slots.len());
-            slots.get(from..lesser(from + each, slots.len())).unwrap_or(&[])
-        };
+        let shard = |k: usize| crate::shard::part(slots, shards, k);
         let holds_player = |k: usize| player.is_some_and(|p| shard(k).contains(&p));
         let ran = {
             let base: &dyn phx_core::FactRead = if b.individuals {
