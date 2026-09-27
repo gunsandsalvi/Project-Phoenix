@@ -278,8 +278,8 @@ fn scale_of(item: phx_core::ItemDecl) -> f64 {
 /// A review: the markup moved by the sales since the last review — the units of its product delivered since then —
 /// against those expected over the same days, and the point nearest the desired price posted when the move gains
 /// more, over the days to its next review, than its staff's hours to make it cost; the pressure its stock of its
-/// product puts on the price is read from what it holds. The competitors' prices the firm sees arrive with the posted
-/// markets households buy in; until then it sees none.
+/// product puts on the price is read from what it holds; and what competitors charge enters as the price its product
+/// last sold at between firms where it stands, or at retail in its country.
 #[clause("FRM.5", "REP.34")]
 fn review<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
@@ -323,12 +323,21 @@ where
         return;
     }
     let expected_since = expected * days / m.production_days;
+    // What competitors charge, as the firm sees it: its product's last price between firms where it stands, or at
+    // retail in its country.
+    let seen = match ctx.mark(row, product, 0) {
+        Missing::Present(p) => Missing::Present(from_i64(p)),
+        Missing::Absent => match ctx.posted(row, product) {
+            Missing::Present(p) => Missing::Present(from_i64(p)),
+            Missing::Absent => Missing::Absent,
+        },
+    };
     let markup_scale = scale_of(<Markup as phx_core::FactDef>::ITEM);
     let Missing::Present(next) = rules::markup::update(
         markup / markup_scale,
         (m.sales_speed, m.seen_speed),
         (sold, expected_since),
-        Missing::Absent,
+        seen,
         price,
     ) else {
         return;

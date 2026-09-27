@@ -636,6 +636,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         goods_frame,
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
+        retail_marks: crate::goods::RetailMarks::default(),
         away: std::sync::Arc::default(),
         outlooks: crate::goods::Outlooks::default(),
         val_methods,

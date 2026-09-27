@@ -1232,7 +1232,9 @@ markup, posted price, output rate, price attention, the cost of its staff's hour
   the review is drawn for the next day: a surprise reaches a visit through its attention, since visits answer no
   wake. Production follows.
 - `FRM.review_*` (5c, at that attention): the markup moves by `rules::markup::update` over the sales since the last
-  review against those expected over its days (the competitors' term absent while none is seen), and the point
+  review against those expected over its days and by what competitors charge — its product's last price between
+  firms where it stands, or else its country's retail mark for it (`Ctx::posted`), absent while neither is marked —
+  and the point
   nearest `(1 + μ)·unit cost·π^η` is posted, π the stocked pressure read from its own stock of its product, only when
   the loss it saves over the days to the next expected review exceeds `FRM.menu_hours` at the staff's wage.
 

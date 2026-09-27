@@ -123,6 +123,8 @@ pub trait GoodsView: core::fmt::Debug {
     fn rights(&self, slot: Slot) -> &[HeldRight];
     fn delivered(&self, slot: Slot, product: u16) -> i64;
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64>;
+    /// The price a product last sold at, for a lot, at retail in the row's country: the market's mark.
+    fn posted(&self, slot: Slot, product: u16) -> Missing<i64>;
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64>;
     /// The money the row's party holds on its account, one twin's for an agent; none without an account.
     fn money(&self, slot: Slot) -> Missing<i64>;
@@ -153,6 +155,9 @@ impl GoodsView for NoGoods {
         0
     }
     fn mark(&self, _: Slot, _: u16, _: u8) -> Missing<i64> {
+        Missing::Absent
+    }
+    fn posted(&self, _: Slot, _: u16) -> Missing<i64> {
         Missing::Absent
     }
     fn outlook(&self, _: Slot, _: u16, _: u8, _: u16) -> Missing<i64> {
@@ -292,6 +297,10 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     /// A good's latest mark at the row's place, in its market's raw price.
     pub fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
         self.parts.goods.mark(slot, product, grade)
+    }
+
+    pub fn posted(&self, slot: Slot, product: u16) -> Missing<i64> {
+        self.parts.goods.posted(slot, product)
     }
 
     pub fn emit<I: IntentDef>(&mut self, intent: &I)

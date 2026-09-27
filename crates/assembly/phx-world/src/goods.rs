@@ -224,6 +224,8 @@ pub(crate) struct AwayTable {
     market: BTreeMap<(u16, u8), Vec<(ZoneId, i64)>>,
     carriage: BTreeMap<(ZoneId, u16), i64>,
 }
+/// Each product's retail mark in each country, rebuilt with the marks.
+pub(crate) type RetailMarks = Arc<BTreeMap<(u16, u8), i64>>;
 /// Each good's public outlook where it stands, by method, rebuilt at 5a.
 pub(crate) type Outlooks = Arc<BTreeMap<(GoodKey, u16), i64>>;
 
@@ -241,6 +243,7 @@ pub(crate) struct RunGoods {
     rights: Vec<HeldRight>,
     delivered: Vec<Units>,
     marks: Marks,
+    retail: RetailMarks,
     outlooks: Outlooks,
     away: Arc<AwayTable>,
     geo: Option<Arc<phx_geo::GeoState>>,
@@ -316,6 +319,13 @@ impl GoodsView for RunGoods {
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64> {
         let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
         self.marks.get(&GoodKey { product, grade, zone }).copied().map_or(Missing::Absent, Missing::Present)
+    }
+    fn posted(&self, slot: Slot, product: u16) -> Missing<i64> {
+        let (Some(Missing::Present(zone)), Some(geo)) = (self.row(slot).map(|r| r.zone), self.geo.as_ref()) else {
+            return Missing::Absent;
+        };
+        let Missing::Present(country) = geo.zone_country(zone) else { return Missing::Absent };
+        self.retail.get(&(product, country.get())).copied().map_or(Missing::Absent, Missing::Present)
     }
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64> {
         let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
@@ -1005,7 +1015,8 @@ impl World {
             .collect()
     }
 
-    /// Each good's mark where it stands, from the markets' marks, for the handlers' reads.
+    /// Each good's mark where it stands, and each product's retail mark in each country, from the markets' marks, for
+    /// the handlers' reads.
     pub(crate) fn goods_marks(&mut self) {
         let goods = self.goods_kinds();
         let carriage: Vec<u16> = self.trade.freight.iter().map(|f| f.kind).collect();
@@ -1018,6 +1029,8 @@ impl World {
                 Missing::Absent => None,
             })
             .collect();
+        let retail: Vec<u16> = self.trade.retail.iter().map(|r| r.kind).collect();
+        let mut posted = BTreeMap::new();
         let (mut marks, mut away) = (BTreeMap::new(), AwayTable::default());
         for (market, kind, subject) in self.markets.made.iter() {
             let Missing::Present(mark) = self.markets.tape.mark_of(market) else { continue };
@@ -1027,6 +1040,10 @@ impl World {
                 marks.insert(key, price);
                 if market_zones.contains(&key.zone) {
                     away.market.entry((key.product, key.grade)).or_default().push((key.zone, price));
+                }
+            } else if retail.contains(&kind) {
+                if let Some((product, country)) = crate::retail::retail_of(subject) {
+                    posted.insert((product, country.get()), price);
                 }
             } else if carriage.contains(&kind) {
                 let (Ok(zone), Ok(mode)) =
@@ -1038,6 +1055,7 @@ impl World {
             }
         }
         self.marks = Arc::new(marks);
+        self.retail_marks = Arc::new(posted);
         self.away = Arc::new(away);
     }
 
@@ -1120,6 +1138,7 @@ impl World {
     pub(crate) fn run_goods(&self, rows: Rows, slots: &[Slot], mut out: RunGoods) -> RunGoods {
         out.clear();
         out.marks = Arc::clone(&self.marks);
+        out.retail = Arc::clone(&self.retail_marks);
         out.outlooks = Arc::clone(&self.outlooks);
         out.away = Arc::clone(&self.away);
         out.geo = Some(Arc::clone(crate::world::geo_arc(&self.own)));
