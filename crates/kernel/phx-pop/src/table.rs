@@ -362,8 +362,11 @@ impl<B: Backing> AgentTable<B> {
         let Some(c) = self.attrs.get_mut(i) else {
             violation!(clause = "REP.41", "an attribute the kind does not hold", attr = i);
         };
-        c.set(slot, value);
-        self.changed.push(slot);
+        // Only a value that moves changes what the agent's chances read.
+        if read(c, slot) != value {
+            c.set(slot, value);
+            self.changed.push(slot);
+        }
     }
 
     /// Every attribute's value, in the kind's order.
@@ -380,6 +383,9 @@ impl<B: Backing> AgentTable<B> {
 
     /// The agent's persons written anew.
     pub fn set_persons(&mut self, slot: Slot, words: &[u64]) {
+        if self.words(slot, AgentList::Persons) == words {
+            return;
+        }
         let k = u64::from(self.multiplicity(slot).get());
         self.persons_held = self.persons_held - k * self.persons_of(slot) + k * phx_rand::float::len_u64(words.len());
         self.edit_list(slot, AgentList::Persons, |arena, r| {

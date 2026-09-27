@@ -333,10 +333,15 @@ impl World {
             let Missing::Present(run) = h.run else {
                 violation!(clause = "TIME.6", "a visit's handler with no body", handler = id.0);
             };
+            // The due rows are sorted by visit, so each visit's are one range of them.
+            let (from, to) =
+                (self.visit_due.partition_point(|(v, _)| *v < i), self.visit_due.partition_point(|(v, _)| *v <= i));
             let slots: Vec<Slot> = self
                 .visit_due
+                .get(from..to)
+                .unwrap_or(&[])
                 .iter()
-                .filter(|(v, s)| *v == i && self.visited_row(&b, *s).is_some())
+                .filter(|(_, s)| self.visited_row(&b, *s).is_some())
                 .map(|(_, s)| *s)
                 .collect();
             if slots.is_empty() {

@@ -668,6 +668,15 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
         (made, orders, refused, failed_goods, projects) =
             (made + g.made, orders + g.orders, refused + g.refused, failed_goods + g.failed, projects + g.projects);
     }
+    let mut visits: std::collections::BTreeMap<&str, u64> = std::collections::BTreeMap::new();
+    for v in w.visit_days().iter().filter(|v| in_turn(v.day)) {
+        for (h, n) in &v.visits {
+            *visits.entry(h).or_insert(0) += n;
+        }
+    }
+    let mut visits: Vec<(&str, u64)> = visits.into_iter().collect();
+    visits.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
+    let busiest: Vec<String> = visits.iter().take(HEAVIEST).map(|(h, n)| format!("{h} {n}")).collect();
     let families: std::collections::BTreeMap<&str, usize> =
         w.findings().iter().fold(std::collections::BTreeMap::new(), |mut m, f| {
             *m.entry(f.family).or_insert(0) += 1;
@@ -676,12 +685,13 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
     format!(
         "{phase} {} to {}: {} days in {wall}; payments {due} due, {failed} failed; {} findings {families:?}; \
          defaults {defaults}, closures {closures}, estates {estates}, born {born}, gone {gone}; made {made}, orders \
-         {orders}, refused {refused}, failed {failed_goods}, projects {projects}; heaviest {}",
+         {orders}, refused {refused}, failed {failed_goods}, projects {projects}; heaviest {}; visits {}",
         date(turn.first),
         date(turn.last),
         turn.days,
         w.findings().len(),
-        heaviest.join(", ")
+        heaviest.join(", "),
+        busiest.join(", ")
     )
 }
 

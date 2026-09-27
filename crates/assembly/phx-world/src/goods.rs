@@ -1013,13 +1013,14 @@ impl World {
             let mut goods = RowGoods { zone: Missing::Present(row.zone), ..RowGoods::none() };
             let (place, at) = self.books.parties.row(row.party);
             let arenas = self.books.parties.holder(place);
-            for (instrument, _) in phx_ledger::holding::bases(arenas, at) {
-                let Missing::Present(h) = phx_ledger::holding::holding(arenas, at, instrument) else { continue };
-                let units = h.quantity.raw() / row.twins;
-                if let Missing::Present(key) = ledger.goods.key(instrument)
-                    && key.zone == row.zone
-                {
-                    goods.held.push((key.product, key.grade, units));
+            let mut goods_cost = 0_i128;
+            for (instrument, quantity, cost) in phx_ledger::holding::held(arenas, at) {
+                let units = quantity / row.twins;
+                if let Missing::Present(key) = ledger.goods.key(instrument) {
+                    goods_cost += i128::from(cost);
+                    if key.zone == row.zone {
+                        goods.held.push((key.product, key.grade, units));
+                    }
                 }
                 if let Missing::Present(deposit) = ledger.goods.deposit(instrument)
                     && units > 0
@@ -1040,7 +1041,7 @@ impl World {
                     Missing::Absent => Missing::Absent,
                 };
             }
-            goods.net_assets = self.book_worth(place, at, row.twins);
+            goods.net_assets = self.book_worth(place, at, (goods_cost, row.twins));
             for (good, q) in ledger.goods.delivered(row.party) {
                 if let Missing::Present(key) = ledger.goods.key(good) {
                     goods.delivered.push((key.product, key.grade, q / row.twins));
@@ -1052,22 +1053,17 @@ impl World {
     }
 
     /// What winding a row down would return beyond the money it keeps either way, one twin's: the goods it holds at
-    /// their cost, less what it owes at its balances; its plant returns nothing, since no market buys used plant yet.
+    /// their cost, as the row's holdings were read, less what it owes at its balances; its plant returns nothing, since no market buys used plant yet.
     /// None where a debt carries no balance to read.
-    fn book_worth(&self, place: u16, slot: Slot, twins: i64) -> Missing<i64> {
+    fn book_worth(&self, place: u16, slot: Slot, (goods_cost, twins): (i128, i64)) -> Missing<i64> {
         let arenas = self.books.parties.holder(place);
-        let mut total = 0_i128;
-        for r in phx_ledger::rows::rows(arenas, slot) {
+        let mut total = goods_cost;
+        for r in phx_ledger::rows::iter(arenas, slot) {
             if r.side() != phx_ledger::algebra::Side::Liability {
                 continue;
             }
             let Missing::Present(balance) = r.optional.balance else { return Missing::Absent };
             total -= i128::from(balance);
-        }
-        for (instrument, cost) in phx_ledger::holding::bases(arenas, slot) {
-            if matches!(self.books.ledger.goods.key(instrument), Missing::Present(_)) {
-                total += i128::from(cost);
-            }
         }
         i64::try_from(total / i128::from(twins)).map_or(Missing::Absent, Missing::Present)
     }

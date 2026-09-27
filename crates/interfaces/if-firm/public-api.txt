@@ -7,6 +7,9 @@ pub mod if_firm::facts
 pub struct if_firm::facts::Capacity
 impl phx_core::facts::FactDef for if_firm::facts::Capacity
 pub const if_firm::facts::Capacity::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::DeliveredAtInvest
+impl phx_core::facts::FactDef for if_firm::facts::DeliveredAtInvest
+pub const if_firm::facts::DeliveredAtInvest::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::DeliveredAtReview
 impl phx_core::facts::FactDef for if_firm::facts::DeliveredAtReview
 pub const if_firm::facts::DeliveredAtReview::ITEM: phx_core::facts::ItemDecl
@@ -40,6 +43,9 @@ pub const if_firm::facts::RequiredReturn::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::SalesWidth
 impl phx_core::facts::FactDef for if_firm::facts::SalesWidth
 pub const if_firm::facts::SalesWidth::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::SoldAtInvest
+impl phx_core::facts::FactDef for if_firm::facts::SoldAtInvest
+pub const if_firm::facts::SoldAtInvest::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::UnitCost
 impl phx_core::facts::FactDef for if_firm::facts::UnitCost
 pub const if_firm::facts::UnitCost::ITEM: phx_core::facts::ItemDecl

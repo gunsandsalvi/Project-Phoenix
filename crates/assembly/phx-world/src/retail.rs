@@ -489,6 +489,21 @@ impl World {
     #[clause("SRV.6", "SET.1", "SET.4", "GDS.2")]
     pub(crate) fn retail_trade(&mut self, day: Day) {
         let sales = std::mem::take(&mut self.market_day.sales);
+        // What each maker sold of each good made as it is sold is made in one go before the purchases use it up.
+        let mut to_make: BTreeMap<(PartyId, InstrumentId), i64> = BTreeMap::new();
+        for s in sales.iter().filter(|s| self.market_day.makers.contains_key(&s.matched.seller)) {
+            *to_make.entry((s.matched.seller, s.good)).or_insert(0) += s.matched.qty;
+        }
+        let mut made: BTreeSet<(PartyId, InstrumentId)> = BTreeSet::new();
+        for ((seller, good), qty) in to_make {
+            let Missing::Present(key) = self.books.ledger.goods.key(good) else {
+                violation!(clause = "GDS.1", "a retail market over no good", party = seller.get());
+            };
+            let legs = self.made_at_sale(seller, (key, good), qty);
+            if !legs.is_empty() && self.make_for_sale(day, legs) {
+                made.insert((seller, good));
+            }
+        }
         for s in sales {
             let Buyer::Party(buyer) = s.matched.buyer else {
                 violation!(clause = "SRV.5", "a retail sale to no party", market = s.market.get());
@@ -509,9 +524,7 @@ impl World {
                 capacity_exceeded!("a purchase's money", i64::MAX, s.matched.qty);
             };
             let instrument = self.books.ledger.instruments.get(s.good);
-            // A service is made before the purchase that sells it uses it up, by an instruction of its own.
-            let made = self.made_at_sale(s.matched.seller, (key, s.good), s.matched.qty);
-            if !made.is_empty() && !self.make_for_sale(day, made) {
+            if self.market_day.makers.contains_key(&s.matched.seller) && !made.contains(&(s.matched.seller, s.good)) {
                 continue;
             }
             let mut legs = vec![];

@@ -500,7 +500,7 @@ pub fn phx_ledger::chains::Chains::get(&self, u32) -> core::option::Option<&phx_
 pub fn phx_ledger::chains::Chains::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_ledger::chains::Chain>
 pub fn phx_ledger::chains::Chains::of(&self, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<(u32, usize)>
 pub fn phx_ledger::chains::Chains::projects(&self) -> impl core::iter::traits::iterator::Iterator<Item = (u64, &phx_ledger::chains::Project)>
-impl phx_store::save::Saved for phx_ledger::chains::Chains where alloc::vec::Vec<phx_ledger::chains::Chain>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<u32, phx_id::ids::InstrumentId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<u64, phx_ledger::chains::Project>: phx_store::save::Saved, u64: phx_store::save::Saved
+impl phx_store::save::Saved for phx_ledger::chains::Chains where alloc::vec::Vec<phx_ledger::chains::Chain>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::InstrumentId, (u32, usize)>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<u32, phx_id::ids::InstrumentId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<u64, phx_ledger::chains::Project>: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_ledger::chains::Chains::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::chains::Chains::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::chains::Project
@@ -599,6 +599,7 @@ pub const phx_ledger::consts::CARRIED: u64
 pub const phx_ledger::consts::DEPOSIT: u64
 pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::HAZARD: u64
+pub const phx_ledger::consts::HINTED_RUN_WORDS: usize
 pub const phx_ledger::consts::HOLDER_SHARDS: u32
 pub const phx_ledger::consts::LEG_WORDS: usize
 pub const phx_ledger::consts::MONEY_ROWS_KEPT: usize
@@ -807,8 +808,11 @@ pub fn phx_ledger::holder::HolderArenas::overwrite_words(&mut self, core::option
 pub fn phx_ledger::holder::HolderArenas::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_ledger::holder::HolderArenas::read(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_ledger::holder::HolderArenas::remove(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, usize)
+pub fn phx_ledger::holder::HolderArenas::row_hint(&self, phx_id::ids::Slot, u64) -> core::option::Option<usize>
 pub fn phx_ledger::holder::HolderArenas::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
+pub fn phx_ledger::holder::HolderArenas::set_row_hint(&mut self, phx_id::ids::Slot, u64, usize)
 pub fn phx_ledger::holder::HolderArenas::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
+pub fn phx_ledger::holder::HolderArenas::shift_row_hints(&mut self, phx_id::ids::Slot, usize, (usize, bool))
 pub fn phx_ledger::holder::HolderArenas::table(&self) -> phx_id::ids::TableId
 impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderArenas for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::append(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, &[u64])
@@ -821,8 +825,11 @@ pub fn phx_core::kind_tables::KindTable<B>::overwrite_words(&mut self, core::opt
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
 pub fn phx_core::kind_tables::KindTable<B>::read(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
 pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, usize)
+pub fn phx_core::kind_tables::KindTable<B>::row_hint(&self, phx_id::ids::Slot, u64) -> core::option::Option<usize>
 pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
+pub fn phx_core::kind_tables::KindTable<B>::set_row_hint(&mut self, phx_id::ids::Slot, u64, usize)
 pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
+pub fn phx_core::kind_tables::KindTable<B>::shift_row_hints(&mut self, phx_id::ids::Slot, usize, (usize, bool))
 pub fn phx_core::kind_tables::KindTable<B>::table(&self) -> phx_id::ids::TableId
 pub trait phx_ledger::holder::HolderTable: phx_ledger::holder::HolderArenas + phx_ledger::positions::PayerPositions
 pub fn phx_ledger::holder::HolderTable::live_words(&self) -> &[u64]
@@ -869,6 +876,7 @@ pub const phx_ledger::holding::PLEDGED: u32
 pub fn phx_ledger::holding::bases(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<(phx_id::ids::InstrumentId, i64)>
 pub fn phx_ledger::holding::basis(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<i64>
 pub fn phx_ledger::holding::first_in_cost(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId, i64) -> phx_num::missing::Missing<i64>
+pub fn phx_ledger::holding::held(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot) -> alloc::vec::Vec<(phx_id::ids::InstrumentId, i64, i64)>
 pub fn phx_ledger::holding::holding(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> phx_num::missing::Missing<phx_ledger::holding::IndividualHolding>
 pub fn phx_ledger::holding::lots(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId) -> alloc::vec::Vec<phx_ledger::holding::Lot>
 pub fn phx_ledger::holding::mark_pledged(&mut dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::InstrumentId, bool)

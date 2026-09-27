@@ -60,12 +60,24 @@ pub enum WakeKind {
 
 /// The day of a schedule's `k`-th instance, its start placed from the epoch by the calendar's dates.
 fn instance(calendar: &Calendar, country: CountryId, s: DecisionSchedule, phase: Phase, k: u32) -> Day {
-    let Some(start) = calendar.day(advance(calendar.epoch(), s.period, k, EndOfMonth::Plain)) else {
-        violation!(clause = "TIME.5", "a schedule instance before the epoch", k = k);
+    // A period of days and a phase of days are counted in days, which the epoch starts at nought, with no dates.
+    let due = if s.period.month_count() == 0 {
+        let Some(n) =
+            k.checked_mul(u32::from(s.period.day_count())).and_then(|d| d.checked_add(u32::from(phase.offset_days)))
+        else {
+            violation!(clause = "TIME.5", "a schedule instance beyond the calendar's days", k = k);
+        };
+        Day::new(n)
+    } else {
+        let Some(start) = calendar.day(advance(calendar.epoch(), s.period, k, EndOfMonth::Plain)) else {
+            violation!(clause = "TIME.5", "a schedule instance before the epoch", k = k);
+        };
+        Period::days(phase.offset_days).map_or(start, |offset| calendar.plus(start, offset))
     };
-    let due = Period::days(phase.offset_days).map_or(start, |offset| calendar.plus(start, offset));
     match s.runs_on {
         RunsOn::Any => due,
+        // A business day already is where every convention leaves it.
+        RunsOn::Business if calendar.is_business(country, due) => due,
         RunsOn::Business => calendar.adjust(country, calendar.date(due), s.convention),
     }
 }

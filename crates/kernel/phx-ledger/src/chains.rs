@@ -41,6 +41,8 @@ pub struct Project {
 #[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Chains {
     declared: Vec<Chain>,
+    /// Each class's chain and place, by its instrument.
+    classes: BTreeMap<InstrumentId, (u32, usize)>,
     building: BTreeMap<u32, InstrumentId>,
     projects: BTreeMap<u64, Project>,
     numbered: u64,
@@ -56,6 +58,9 @@ impl Chains {
         let Ok(n) = u32::try_from(self.declared.len()) else {
             phx_num::capacity_exceeded!("chains of classes", u32::MAX, self.declared.len());
         };
+        for (at, class) in classes.iter().enumerate() {
+            self.classes.insert(*class, (n, at));
+        }
         self.declared.push(Chain { tag, classes });
         n
     }
@@ -130,12 +135,10 @@ impl Chains {
 
     /// The chain and class an instrument is, if it is one.
     pub fn of(&self, instrument: InstrumentId) -> Missing<(u32, usize)> {
-        for (n, c) in (0_u32..).zip(&self.declared) {
-            if let Some(at) = c.classes.iter().position(|i| *i == instrument) {
-                return Missing::Present((n, at));
-            }
+        match self.classes.get(&instrument) {
+            Some(at) => Missing::Present(*at),
+            None => Missing::Absent,
         }
-        Missing::Absent
     }
 
     /// Every chain in order.
