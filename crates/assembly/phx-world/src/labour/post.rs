@@ -359,7 +359,9 @@ impl World {
             let (line, members) = lines.swap_remove(i);
             let take = if members < left { members } else { left };
             left -= take;
-            let take = whole_agents(take, (unit, members), &mut d);
+            // An employer of one twin lays off whole worker agents; an agent's layoffs are its twins' jobs, whose
+            // members the line draws from the workers in whole units, passing what no unit fits.
+            let take = if twins > 1 { take } else { whole_agents(take, (unit, members), &mut d) };
             if take == 0 {
                 continue;
             }
