@@ -2,9 +2,8 @@
 
 [[primitive]]
 id = "HSG.rent_point_ratio"
-kind = "SHAPE"
+kind = "RESOLUTION"
 owner = "HSG"
 source = "assumed"
-source_ref = "Rents at the opening lie on points a quarter apart: each point is a line whose other side every large firm takes a row on, so the points set the individuals' rows (the plan's F-047); a resolution setting, refined by measuring the budget (N8.5), until each landlord sets its own rent on its trade's points."
-shape = "placeholder:HSG"
+source_ref = "Rents at the opening lie on points a quarter apart: each point is a line whose other side every large firm takes a row on, so the points set the individuals' rows; a resolution setting, refined by measuring the budget (N8.5)."
 value = "1.25"

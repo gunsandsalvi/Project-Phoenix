@@ -20,7 +20,7 @@ declare_prim! {
 declare_prim! {
     /// The ratio between neighbouring rent points, the round numbers rents are paid at, until landlords set their own.
     pub RENT_POINT_RATIO = "HSG.rent_point_ratio" {
-        kind: Shape, value: Fixed { exp: 6 }, clause: "REP.34", scope: Shared, shape: placeholder("HSG")
+        kind: Resolution, value: Fixed { exp: 6 }, clause: "REP.34", scope: Shared
     }
 }
 
