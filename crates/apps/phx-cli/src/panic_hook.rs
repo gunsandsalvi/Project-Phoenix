@@ -26,6 +26,15 @@ pub fn install(run: String, dir: PathBuf) {
                 .or_else(|| payload.downcast_ref::<String>().cloned());
             serde_json::json!({ "panic": text, "location": info.location().map(ToString::to_string), "site": site })
         };
+        let mut body = body;
+        if let (Some(map), Some(at)) = (body.as_object_mut(), info.location()) {
+            map.insert("location".to_owned(), serde_json::Value::String(at.to_string()));
+        }
+        // A backtrace only when the environment asks for one, as the standard library's own report does.
+        let trace = std::backtrace::Backtrace::capture();
+        if trace.status() == std::backtrace::BacktraceStatus::Captured {
+            eprintln!("{trace}");
+        }
         let path = dir.join(format!("{run}.json"));
         let written = std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&path, body.to_string()));
         eprintln!("the run stopped: {body}");

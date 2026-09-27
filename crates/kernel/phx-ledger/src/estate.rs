@@ -222,7 +222,14 @@ impl<B: phx_store::Backing> Books<B> {
             let line = r.row.line;
             let Missing::Present(balance) = r.optional.balance else { continue };
             if balance % unit != 0 {
-                violation!(clause = "REP.9", "an estate's balance not a whole share for each twin", line = line.get());
+                violation!(
+                    clause = "REP.9",
+                    "an estate's balance not a whole share for each twin",
+                    line = line.get(),
+                    kind = self.ledger.lines.kind_of(line),
+                    balance = balance,
+                    unit = unit
+                );
             }
             let balance = balance / unit;
             let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
