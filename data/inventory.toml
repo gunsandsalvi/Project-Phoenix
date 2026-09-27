@@ -149,7 +149,7 @@ what = "share of households owning their home"
 owner = "GEN"
 first_read = "S0.25"
 source = "the OECD Affordable Housing Database HM1.3 (owner households), then ECLAC CEPALSTAT 166 (owner households), then Eurostat ilc_lvho02 (persons in owner households), then the DHS surveys' adults 15-49 owning a house alone or jointly (a person-level proxy), each economy from the best it has (the owner's decision, F-008)"
-status = "profiled; the developing group's rests mostly on the DHS proxy, which counts persons 15-49 rather than households (F-035)"
+status = "profiled; the developing group's rests mostly on the DHS proxy, which counts persons 15-49 rather than households"
 
 [[row]]
 id = "GEN.tax_revenue"
@@ -256,7 +256,7 @@ what = "the housing stock, its tenure and its mortgages"
 owner = "HSG"
 first_read = "S0.25"
 source = "OECD Affordable Housing Database HM1.3 and HC1.2, Eurostat ilc_lvho02: owners with a mortgage, subsidised tenants and the median mortgage and rent burdens, for the groups that lack them the median of the ten reporting economies nearest in GDP per head (the owner's decision)"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/HSG.toml; a mortgage's rate and remaining term take S0.16's placeholder (the owner's decision, F-035)"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/HSG.toml; a mortgage's rate and remaining term take S0.16's placeholder until S2.05 draws them from the Survey of Consumer Finances"
 
 [[row]]
 id = "GEN.dist.health"
@@ -288,7 +288,7 @@ what = "defined-benefit pensions in payment and pension funds' assets"
 owner = "PEN"
 first_read = "S0.25"
 source = "OECD Pensions at a Glance (occupational transfers' share of the over-65s' income), for the groups that lack it the median of the ten reporting economies nearest in GDP per head; World Bank GFDD pension fund assets to GDP"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/PEN.toml; amounts' spread, indexation, survivors' shares and the defined-benefit share of assets have no source (F-035)"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/PEN.toml; the defined-benefit share of assets from the OECD's Global Pension Statistics at S4.04; amounts' spread, indexation and survivors' shares have no source"
 
 [[row]]
 id = "GEN.dist.banks"
