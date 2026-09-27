@@ -3,11 +3,12 @@
 
 use std::sync::Arc;
 
-use phx_id::Day;
+use phx_id::{Day, PartyId};
 use phx_macros::clause;
 use phx_num::Missing;
 use phx_world::Inspector;
 
+use crate::consts::MOBILITY_SAMPLE;
 use crate::histogram::Histogram;
 use crate::reads::{HistogramDecl, Recorder};
 
@@ -19,6 +20,9 @@ pub struct View {
     /// Each read's latest value, absent where the run has not yet recorded one.
     pub reads: Vec<(String, Missing<i128>)>,
     pub histograms: Vec<(String, Histogram)>,
+    /// For each histogram, the bin of each agent of a fixed sample, with its twins, so its members' moves within it
+    /// are read between two views.
+    pub sampled: Vec<Vec<(PartyId, Option<usize>, u64)>>,
 }
 
 /// What a histogram reads of each agent, which it counts once for every twin.
@@ -84,9 +88,11 @@ impl Views {
             .map(|s| (s.id.clone(), s.values.last().map_or(Missing::Absent, |(_, v)| Missing::Present(*v))))
             .collect();
         let mut histograms = Vec::with_capacity(self.histograms.len());
+        let mut sampled = Vec::with_capacity(self.histograms.len());
         for r in &self.histograms {
             let Ok(mut h) = Histogram::new(r.edges.clone()) else { continue };
             let table = w.agent_table(r.kind);
+            let mut sample = Vec::new();
             for slot in table.slots() {
                 let twins = u64::from(table.multiplicity(slot).get());
                 let value = match r.of {
@@ -94,10 +100,16 @@ impl Views {
                     Of::Attr(attr) => i64::from(table.attr(slot, attr)),
                 };
                 h.add(value, twins);
+                let party = table.party(slot);
+                if party.get() % MOBILITY_SAMPLE == 0 {
+                    sample.push((party, h.bin_of(value), twins));
+                }
             }
+            sample.sort_unstable_by_key(|(p, _, _)| *p);
             histograms.push((r.id.clone(), h));
+            sampled.push(sample);
         }
-        let view = Arc::new(View { day: w.today(), reads: latest, histograms });
+        let view = Arc::new(View { day: w.today(), reads: latest, histograms, sampled });
         self.current = Some(Arc::clone(&view));
         view
     }

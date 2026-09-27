@@ -31,11 +31,16 @@ impl Histogram {
 
     /// Counts `n` values of `value`.
     pub fn add(&mut self, value: i64, n: u64) {
-        let at = self.edges.partition_point(|e| *e <= value);
-        match at.checked_sub(1).and_then(|i| self.counts.get_mut(i)) {
+        match self.bin_of(value).and_then(|i| self.counts.get_mut(i)) {
             Some(c) => *c += n,
             None => self.below += n,
         }
+    }
+
+    /// The bin a value falls in; none below the first edge.
+    #[must_use]
+    pub fn bin_of(&self, value: i64) -> Option<usize> {
+        self.edges.partition_point(|e| *e <= value).checked_sub(1)
     }
 
     #[must_use]

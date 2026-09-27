@@ -303,14 +303,15 @@ fn drift(drifts: &[phx_obs::Drift]) -> Json {
         drifts
             .iter()
             .map(|d| {
-                let distance = match d.distance {
+                let of = |m: phx_num::Missing<f64>| match m {
                     phx_num::Missing::Present(x) => Json::Float(x),
                     phx_num::Missing::Absent => Json::Null,
                 };
                 Json::obj([
                     ("id", Json::str(d.id.clone())),
                     ("day", Json::UInt(u64::from(d.day.get()))),
-                    ("distance", distance),
+                    ("distance", of(d.distance)),
+                    ("moved", of(d.moved)),
                 ])
             })
             .collect(),

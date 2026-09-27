@@ -2385,7 +2385,11 @@ of one content hash equal. Metrics, findings, the read trace and wall time stay 
   agents, of an attribute's values counted by their multiplicities, over fixed lower edges with the values
   below the first counted apart. Each histogram is an opening distribution (GEN.8): the host keeps the opening's view
   and reports each histogram's distance from it (half the summed differences of the bins' shares) at settling's end
-  and at the run's end. A read may declare why it can rise on every day (`grows`); liveness fails a read that rises on
+  and at the run's end, and how far its members moved within it: each view keeps the bin of a fixed sample of the
+  kind's agents — one in `MOBILITY_SAMPLE` by party identity, so no draw picks it — and the share, by their twins,
+  of those in both views whose bin changed is read beside the distance (`phx_obs::moved`). The macro reads count every
+  event of a kind, private ones among them, since they measure the world's truth; what a player's page shows of
+  events is the public ones alone (OBS). A read may declare why it can rise on every day (`grows`); liveness fails a read that rises on
   every day without one. The observer is a `phx_world::Observer` passed to `run_turn_observed`: after each day it
   takes the reads through the inspector, inside the turn's time, and the world is the same
   world with it or without it. PC-20 refuses any `&mut` to the world's stores, and any naming of `World`, in

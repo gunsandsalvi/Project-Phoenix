@@ -509,11 +509,11 @@ fn drift_report(settled: &[phx_obs::Drift], ended: &[phx_obs::Drift]) -> serde_j
         drifts
             .iter()
             .map(|d| {
-                let distance = match d.distance {
+                let of = |m: phx_num::Missing<f64>| match m {
                     phx_num::Missing::Present(x) => json!(x),
                     phx_num::Missing::Absent => serde_json::Value::Null,
                 };
-                (d.id.clone(), json!({ "day": d.day.get(), "distance": distance }))
+                (d.id.clone(), json!({ "day": d.day.get(), "distance": of(d.distance), "moved": of(d.moved) }))
             })
             .collect()
     };

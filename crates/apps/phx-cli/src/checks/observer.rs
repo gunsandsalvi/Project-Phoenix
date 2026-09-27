@@ -125,7 +125,8 @@ fn alive(w: Inspector<'_>, o: &Observed<'_>) -> Outcome {
     Outcome::Pass
 }
 
-/// Each opening distribution has its distance from the world's own read at settling's end and at the run's end.
+/// Each opening distribution has its distance from the world's own, and the share of its members that moved within
+/// it, read at settling's end and at the run's end.
 fn drift_read(_: Inspector<'_>, o: &Observed<'_>) -> Outcome {
     for (when, drifts) in [("settling's end", o.settled), ("the run's end", o.ended)] {
         if drifts.is_empty() {
@@ -133,6 +134,9 @@ fn drift_read(_: Inspector<'_>, o: &Observed<'_>) -> Outcome {
         }
         if let Some(d) = drifts.iter().find(|d| d.distance == Missing::Absent) {
             return Outcome::Fail(format!("`{}` has no distance at {when}: a histogram empty or rebinned", d.id));
+        }
+        if let Some(d) = drifts.iter().find(|d| d.moved == Missing::Absent) {
+            return Outcome::Fail(format!("`{}` has no member sampled in both views at {when}", d.id));
         }
     }
     Outcome::Pass
@@ -147,7 +151,7 @@ pub const LC_0_59: super::Check = live_check! {
 
 pub const LC_0_60: super::Check = live_check! {
     id: "LC-0-60",
-    title: "each opening distribution's distance from the world's own, at settling's end and the year's",
+    title: "each opening distribution's distance from the world's own and its members' moves, at settling's end and the year's",
     from_step: "S0.26",
     observed: drift_read,
 };
