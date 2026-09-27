@@ -31,7 +31,7 @@ id = "FRT.loading_days"
 kind = "TECHNOLOGY"
 owner = "FRT"
 source = "estimated"
-source_ref = "The whole days loading takes at each end of a trip, by mode: road none, a truck's mean dwell at a shipper or receiver being 113 minutes (USDOT OIG ST2018019, 2018); rail one, the Class I railroads' mean terminal dwell being 21.4 hours (STB EP 724, 2024); sea one, a coastal vessel's day in port, assumed."
+source_ref = "The whole days loading takes at each end of a trip, by mode: road none, a truck's mean dwell at a shipper or receiver being 113 minutes (USDOT OIG ST2018019, 2018); rail one, the Class I railroads' mean terminal dwell being 21.4 hours (STB EP 724, 2024); sea one, the median time a ship spends in port at a call, 0.99 days over the world's port calls of 2023 (UNCTADstat, Port calls and performance statistics)."
 value = { axis = [0, 1, 2], values = [0, 1, 1], outside = "refuse" }
 
 [[primitive]]
