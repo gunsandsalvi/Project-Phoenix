@@ -44,6 +44,8 @@ const PRICE: &str = "FRM.price";
 const OUTPUT: &str = "FRM.output_rate";
 const HURDLE: &str = "FRM.required_return";
 const FIRM_HOURS: &str = "FRM.hours_a_unit";
+/// The attribute an employer agent's persons employed are kept in, one twin's.
+const HEADCOUNT: &str = "FRM.size";
 /// The technology an employer's work is read from: hours by occupation a unit, and the days a unit takes.
 const HOURS_A_UNIT: &str = "TEC.labour";
 const LEAD_TIME: &str = "TEC.lead_time";
@@ -184,6 +186,7 @@ impl World {
         let law = super::law_of(&self.labour.laws, country).clone();
         let Ok(twins) = u32::try_from(row.twins) else { return };
         let staff = self.staff(row.party, twins, noticed);
+        self.keep_headcount(rows, slot, &staff);
         self.raise_stale(day, row.party, &law);
         let Ok(hours_a_unit) = self.register.table2_in(HOURS_A_UNIT, country).cloned() else { return };
         let lead = self.register.table1(LEAD_TIME).ok().and_then(|t| t.at(firm.product).ok());
@@ -234,6 +237,19 @@ impl World {
         let input = PostIn { price: firm.price, units_a_day: firm.units_a_day, financing, minimum_hour, needs };
         let out = (kind.post)(&input);
         self.apply_post(day, (row.party, country, region, twins), &law, &staff, &out);
+    }
+
+    /// An employer agent's persons employed, one twin's, kept in its attribute as each of its decisions finds them.
+    fn keep_headcount(&mut self, rows: Rows, slot: Slot, staff: &[Staff]) {
+        if rows.individuals {
+            return;
+        }
+        let first = self.books.parties.first_cell_place();
+        let Some(k) = rows.place.checked_sub(first).map(usize::from) else { return };
+        let Some(at) = self.population.kinds.get(k).and_then(|kd| kd.decl.attr(HEADCOUNT)) else { return };
+        let persons: u32 = staff.iter().map(|s| s.members).sum();
+        let table = Population::table_mut::<SystemBacking>(self.books.parties.cells_mut().0, k);
+        table.set_attr(slot, at, persons);
     }
 
     /// The vacancies of an employer that stood past its patience raised a point.
