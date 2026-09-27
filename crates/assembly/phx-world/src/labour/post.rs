@@ -229,7 +229,24 @@ impl World {
         staff: &[Staff],
         out: &PostOut,
     ) {
+        let Some(kind) = self.labour.kind else { return };
+        let Some(stream) = self.streams.named(kind.vacancy_stream) else { return };
+        let mut d = self.streams.open(
+            &stream,
+            Subject::new(SubjectTag::Party, employer.get()),
+            day,
+            phx_core::SubStep::S5c.ordinal(),
+        );
+        // An employer of one twin posts and withdraws jobs in the whole agents that fill them, the searchers' unit;
+        // an agent's own twins make its jobs whole already.
+        let unit = self.population.representation.multiplicity;
+        let mut in_agents =
+            |jobs: u32| if twins > 1 { jobs * twins } else { whole_agents(jobs, (unit, u32::MAX), &mut d) };
         for &(occupation, jobs) in &out.post {
+            let open = in_agents(jobs);
+            if open == 0 {
+                continue;
+            }
             let point = self.offer_point(law, (employer, occupation), staff, law.full_time_hours);
             let skill = usize::try_from(occupation).ok().and_then(|o| law.occupation_skill.get(o)).copied();
             let Some(skill) = skill else { continue };
@@ -244,14 +261,14 @@ impl World {
                 skill,
                 hours: law.full_time_hours,
                 point,
-                open: jobs * twins,
+                open,
                 first: day,
                 set: day,
             });
-            self.labour.day.posted += u64::from(jobs);
+            self.labour.day.posted += u64::from(open);
         }
         for &(occupation, jobs) in &out.withdraw {
-            let mut left = jobs * twins;
+            let mut left = in_agents(jobs);
             let ids = self.labour.book.of_employer(employer).to_vec();
             for id in ids.into_iter().rev() {
                 let Some(v) = self.labour.book.vacancy_mut(id).filter(|v| v.occupation == occupation) else { continue };

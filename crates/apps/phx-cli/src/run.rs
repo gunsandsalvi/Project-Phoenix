@@ -675,6 +675,10 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
     for (_, s) in w.state_days().iter().filter(|(d, _)| in_turn(*d)) {
         (claims, pensions) = (claims + s.claims, pensions + s.pensions);
     }
+    let (mut posted, mut hires, mut layoffs) = (0, 0, 0);
+    for (_, l) in w.labour_days().iter().filter(|(d, _)| in_turn(*d)) {
+        (posted, hires, layoffs) = (posted + l.posted, hires + l.hires, layoffs + l.layoffs);
+    }
     let mut visits: std::collections::BTreeMap<&str, u64> = std::collections::BTreeMap::new();
     for v in w.visit_days().iter().filter(|v| in_turn(v.day)) {
         for (h, n) in &v.visits {
@@ -693,7 +697,8 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
         "{phase} {} to {}: {} days in {wall}; payments {due} due, {failed} failed; {} findings {families:?}; \
          defaults {defaults}, closures {closures}, estates {estates}, born {born}, gone {gone}; made {made}, orders \
          {orders}, refused {refused}, failed {failed_goods} ({short_funds} money, {short_units} units), perished \
-         {perished}, projects {projects}; benefit claims {claims}, pensions {pensions}; heaviest {}; visits {}",
+         {perished}, projects {projects}; jobs posted {posted}, hired {hires}, laid off {layoffs}; benefit claims {claims}, \
+         pensions {pensions}; heaviest {}; visits {}",
         date(turn.first),
         date(turn.last),
         turn.days,

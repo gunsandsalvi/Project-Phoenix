@@ -173,7 +173,7 @@ impl World {
             h.person,
             &[(kind.state, class::NOT_SEARCHING), (kind.occupation, occupation), (kind.last_point, point)],
         );
-        self.labour.day.hires += 1;
+        self.labour.day.hires += u64::from(h.unit);
     }
 
     /// A person of an agent attached to an employment line it works on.

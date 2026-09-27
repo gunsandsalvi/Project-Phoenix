@@ -130,6 +130,7 @@ pub struct LabourDay {
     pub offers: u64,
     pub acceptances: u64,
     pub matches: u64,
+    /// Persons hired, laid off and posted for, so the three compare.
     pub hires: u64,
     pub layoffs: u64,
     pub separated: u64,

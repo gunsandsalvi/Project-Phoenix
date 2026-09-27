@@ -30,6 +30,7 @@ pub struct LabourKind {
     pub meeting_stream: &'static str,
     pub lot_stream: &'static str,
     pub layoff_stream: &'static str,
+    pub vacancy_stream: &'static str,
     pub review_stream: &'static str,
     pub employer_visits: &'static [&'static str],
     pub retirement: &'static str,
