@@ -85,6 +85,15 @@ declare_fact! {
 }
 
 declare_fact! {
+    /// The hours of work a unit of the firm's product takes it, in millionths: its productivity, fixed by its filed
+    /// accounts, which its hiring spreads over the occupations by its way's mix.
+    pub HoursAUnit = "FRM.hours_a_unit" {
+        value: Fixed { exp: 6 }, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position,
+        clause: "FRM.2",
+    }
+}
+
+declare_fact! {
     /// What an hour of the firm's staff costs it, in its currency: its wage bill over its hours.
     pub WagePerHour = "FRM.wage_per_hour" {
         value: Money, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "FRM.14",
@@ -127,7 +136,7 @@ const fn from_fact<F: FactDef>() -> PositionDecl {
 }
 
 /// Every position a small firm's agent holds, in the order its table keeps them.
-pub const POSITIONS: [PositionDecl; 13] = [
+pub const POSITIONS: [PositionDecl; 14] = [
     from_fact::<ExpectedSales>(),
     from_fact::<SalesWidth>(),
     from_fact::<DeliveredAtReview>(),
@@ -141,10 +150,11 @@ pub const POSITIONS: [PositionDecl; 13] = [
     from_fact::<PriceAttention>(),
     from_fact::<WagePerHour>(),
     from_fact::<RequiredReturn>(),
+    from_fact::<HoursAUnit>(),
 ];
 
 /// Every fact a large firm keeps, by name.
-pub const FACTS: [&str; 13] = [
+pub const FACTS: [&str; 14] = [
     ExpectedSales::ITEM.name,
     SalesWidth::ITEM.name,
     DeliveredAtReview::ITEM.name,
@@ -158,4 +168,5 @@ pub const FACTS: [&str; 13] = [
     PriceAttention::ITEM.name,
     WagePerHour::ITEM.name,
     RequiredReturn::ITEM.name,
+    HoursAUnit::ITEM.name,
 ];

@@ -35,6 +35,7 @@ struct Firm {
     price: f64,
     units_a_day: f64,
     hurdle: f64,
+    hours_a_unit: f64,
 }
 
 /// The fact names an employer's decision reads.
@@ -42,6 +43,7 @@ const PRODUCT: &str = "FRM.product";
 const PRICE: &str = "FRM.price";
 const OUTPUT: &str = "FRM.output_rate";
 const HURDLE: &str = "FRM.required_return";
+const FIRM_HOURS: &str = "FRM.hours_a_unit";
 /// The technology an employer's work is read from: hours by occupation a unit, and the days a unit takes.
 const HOURS_A_UNIT: &str = "TEC.labour";
 const LEAD_TIME: &str = "TEC.lead_time";
@@ -55,10 +57,14 @@ impl World {
         }
     }
 
-    /// The employers whose schedule came due today decide.
+    /// The employers whose schedule came due today decide, each on the staff it keeps once the notices it gave run.
     pub(super) fn post(&mut self, day: Day) {
+        let mut noticed: std::collections::BTreeMap<(PartyId, LineId), u32> = std::collections::BTreeMap::new();
+        for s in &self.labour.book.separations {
+            *noticed.entry((s.employer, s.line)).or_insert(0) += s.count;
+        }
         for (rows, slot) in std::mem::take(&mut self.labour.employers_due) {
-            self.post_one(day, rows, slot);
+            self.post_one(day, rows, slot, &noticed);
         }
     }
 
@@ -77,6 +83,7 @@ impl World {
             Missing::Absent => None,
         };
         let (product, price, output, hurdle) = (read(PRODUCT)?, read(PRICE)?, read(OUTPUT)?, read(HURDLE)?);
+        let hours = read(FIRM_HOURS)?;
         let scale = |exp: u8| (0..exp).fold(1.0, |s, _| s * phx_core::consts::DECIMAL_BASE);
         let lot = phx_rand::float::from_i64(self.goods_frame.base(u16::try_from(product).ok()?));
         // A posted price is for a lot of the product; the work is weighed by what a unit fetches.
@@ -85,11 +92,17 @@ impl World {
             price: phx_rand::float::from_i64(price) / lot,
             units_a_day: phx_rand::float::from_i64(output),
             hurdle: phx_rand::float::from_i64(hurdle) / scale(crate::consts::HURDLE_EXP),
+            hours_a_unit: phx_rand::float::from_i64(hours) / scale(crate::consts::HOURS_EXP),
         })
     }
 
-    /// An employer's staff on employment lines, a twin's members each.
-    fn staff(&self, party: PartyId, twins: u32) -> Vec<Staff> {
+    /// An employer's staff on employment lines, a twin's members each, less those under notice.
+    fn staff(
+        &self,
+        party: PartyId,
+        twins: u32,
+        noticed: &std::collections::BTreeMap<(PartyId, LineId), u32>,
+    ) -> Vec<Staff> {
         let Some(kind) = self.labour.kind else { return Vec::new() };
         let k = self.books.ledger.lines.kind_index(kind.line);
         let (place, slot) = self.books.parties.row(party);
@@ -104,7 +117,11 @@ impl World {
                     occupation: at(class::OCCUPATION)?,
                     hours: at(class::HOURS)?,
                     band: at(class::BAND)?,
-                    members: r.row.count / twins,
+                    // Notices beyond the row's members leave it none: those gone since left before theirs ran.
+                    members: noticed
+                        .get(&(party, r.row.line))
+                        .map_or(Some(r.row.count), |n| r.row.count.checked_sub(*n))
+                        .map_or(0, |kept| kept / twins),
                 })
             })
             .collect()
@@ -149,7 +166,13 @@ impl World {
 
     /// One employer's decision on its production schedule, applied.
     #[clause("LAB.4", "LAB.11", "FRM.7")]
-    fn post_one(&mut self, day: Day, rows: Rows, slot: Slot) {
+    fn post_one(
+        &mut self,
+        day: Day,
+        rows: Rows,
+        slot: Slot,
+        noticed: &std::collections::BTreeMap<(PartyId, LineId), u32>,
+    ) {
         let Some(kind) = self.labour.kind else { return };
         let Some(row) = self.goods_row(rows, slot) else { return };
         let Some(firm) = self.firm_facts(rows, slot) else { return };
@@ -160,7 +183,7 @@ impl World {
         };
         let law = super::law_of(&self.labour.laws, country).clone();
         let Ok(twins) = u32::try_from(row.twins) else { return };
-        let staff = self.staff(row.party, twins);
+        let staff = self.staff(row.party, twins, noticed);
         self.raise_stale(day, row.party, &law);
         let Ok(hours_a_unit) = self.register.table2_in(HOURS_A_UNIT, country).cloned() else { return };
         let lead = self.register.table1(LEAD_TIME).ok().and_then(|t| t.at(firm.product).ok());
@@ -172,10 +195,17 @@ impl World {
             return;
         };
         let per_unit = (0..exp).fold(1.0, |s, _| s * phx_core::consts::DECIMAL_BASE);
+        // The way gives the occupations' mix; the firm's own hours a unit, its productivity, give their sum.
+        let way_hours =
+            |o: u32| hours_a_unit.at(i64::from(o), firm.product).ok().map(|h| phx_rand::float::from_i64(h) / per_unit);
+        let way_total: f64 = (0..class::NO_OCCUPATION).filter_map(way_hours).sum();
+        if way_total <= 0.0 {
+            return;
+        }
         let mut needs = Vec::new();
         for occupation in 0..class::NO_OCCUPATION {
-            let Ok(h) = hours_a_unit.at(i64::from(occupation), firm.product) else { continue };
-            let hours_a_unit = phx_rand::float::from_i64(h) / per_unit;
+            let Some(h) = way_hours(occupation) else { continue };
+            let hours_a_unit = firm.hours_a_unit * h / way_total;
             let held: f64 = staff
                 .iter()
                 .filter(|s| s.occupation == occupation)

@@ -5,8 +5,8 @@
 //! the method it forecasts by. Its decisions start from these.
 
 use if_firm::facts::{
-    DeliveredAtReview, ExpectedSales, LastReview, Markup, Method, OutputRate, Price, RequiredReturn, UnitCost,
-    WagePerHour,
+    DeliveredAtReview, ExpectedSales, HoursAUnit, LastReview, Markup, Method, OutputRate, Price, RequiredReturn,
+    UnitCost, WagePerHour,
 };
 use if_firm::known::{Industry, PRODUCT, Product};
 use phx_core::calendar::bizday::BusinessDayConvention;
@@ -529,6 +529,7 @@ impl Contribution for Filed {
                         _ => Some(x),
                     });
                     facts.push((<WagePerHour as FactDef>::ITEM.name, whole(wage)));
+                    facts.push((<HoursAUnit as FactDef>::ITEM.name, whole(hours_a_unit * crate::consts::FIXED_SCALE)));
                     facts.push((<OutputRate as FactDef>::ITEM.name, whole(per_day)));
                     facts.push((<ExpectedSales as FactDef>::ITEM.name, whole(per_day * m.production_days)));
                     facts.push((<UnitCost as FactDef>::ITEM.name, whole(cost)));
