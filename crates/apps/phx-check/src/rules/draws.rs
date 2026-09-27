@@ -29,8 +29,8 @@ const ALLOWED: &[Allowed] = &[
     },
     Allowed {
         name: "open_keyed",
-        places: &[("phx-core", &["/src/streams.rs", "/src/handler.rs"])],
-        why: "keyed streams are opened only by the handler context",
+        places: &[("phx-core", &["/src/streams.rs", "/src/handler.rs"]), ("phx-world", &["/src/state.rs"])],
+        why: "keyed streams are opened only by the handler context and by the state's claims, each drawn once for a person",
     },
     Allowed {
         name: "ObserverDraws",
