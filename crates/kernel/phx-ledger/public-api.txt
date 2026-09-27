@@ -613,6 +613,7 @@ pub const phx_ledger::consts::HOLDER_SHARDS: u32
 pub const phx_ledger::consts::LEG_WORDS: usize
 pub const phx_ledger::consts::MONEY_ROWS_KEPT: usize
 pub const phx_ledger::consts::MONTHS_A_YEAR: u8
+pub const phx_ledger::consts::POOLED_READS: usize
 pub const phx_ledger::consts::PURCHASE: u64
 pub const phx_ledger::consts::RECORD_RUN_BITS: u32
 pub const phx_ledger::consts::RECORD_SHARDS: usize

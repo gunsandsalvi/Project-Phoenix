@@ -39,6 +39,9 @@ pub const MONEY_ROWS_KEPT: usize = 4;
 /// The shards 7a's heads are read in: fixed, never the number of workers, so the stream's result is the same on any
 /// pool; many to a worker, so the pool balances shards of uneven work.
 pub const STREAM_SHARDS: usize = 64;
+/// The reads a list must hold before it is read on the pool: a shorter list is read on the calling thread in less
+/// time than a dispatch to the workers takes, as one shard.
+pub const POOLED_READS: usize = 1024;
 /// The shards of 7a read at once, so no more than a wave's payments wait to be booked; fixed, as the shards are.
 pub const STREAM_WAVE: usize = 8;
 /// The shards 7c routes the day's payments in, read a wave at a time: finer than 7a's, as a route is wider than the

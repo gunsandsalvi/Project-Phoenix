@@ -468,11 +468,11 @@ impl<B: Backing> Books<B> {
             return crate::cleared::Tally::new(&rows);
         }
         // The list's keys name each holder's table and slot, so its row is read there, not through the directory, in
-        // fixed shards of the list on the pool, joined in the list's order.
+        // fixed shards of the list, joined in the list's order.
         let keys: Vec<u32> = self.ledger.lines.holders(line).collect();
-        let shards = crate::consts::STREAM_SHARDS;
+        let (pool, shards) = self.pooled(keys.len());
         let each = keys.len().div_ceil(shards);
-        let found = phx_exec::pool::map(self.pool.as_deref(), shards, |k| {
+        let found = phx_exec::pool::map(pool, shards, |k| {
             let from = crate::stream::at_most(k * each, keys.len());
             let to = crate::stream::at_most(from + each, keys.len());
             keys.get(from..to)

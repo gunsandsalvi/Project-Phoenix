@@ -404,19 +404,28 @@ impl<B: Backing> Books<B> {
         r
     }
 
-    /// An instruction's legs read on the pool in fixed shards before anything moves, as `apply` reads them: each leg's
+    /// The pool and the fixed shards a list of `n` reads is read in: a short list on the calling thread, as one.
+    pub(crate) fn pooled(&self, n: usize) -> (Option<&phx_exec::pool::Pool>, usize) {
+        match self.pool.as_deref() {
+            Some(p) if n >= crate::consts::POOLED_READS => (Some(p), crate::consts::STREAM_SHARDS),
+            _ => (None, 1),
+        }
+    }
+
+    /// An instruction's legs read in fixed shards before anything moves, as `apply` reads them: each leg's
     /// party located, or the first leg whose party has ended, then what each leg draws.
     fn read_legs(&self, legs: &[LegRec]) -> crate::apply::LegReads
     where
         B: Sync,
     {
-        let each = legs.len().div_ceil(crate::consts::STREAM_SHARDS);
+        let (pool, shards) = self.pooled(legs.len());
+        let each = legs.len().div_ceil(shards);
         let chunk = |i: usize| {
             let from = if i * each < legs.len() { i * each } else { legs.len() };
             let to = if from + each < legs.len() { from + each } else { legs.len() };
             (from, legs.get(from..to).unwrap_or(&[]))
         };
-        let located = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_SHARDS, |i| {
+        let located = phx_exec::pool::map(pool, shards, |i| {
             chunk(i).1.iter().map(|l| crate::apply::Holders::locate(&self.parties, l.party)).collect::<Vec<_>>()
         });
         let mut at = Vec::with_capacity(legs.len());
@@ -428,7 +437,7 @@ impl<B: Backing> Books<B> {
         }
         let opened = crate::apply::opened(legs);
         let located = &at;
-        let drawn = phx_exec::pool::map(self.pool.as_deref(), crate::consts::STREAM_SHARDS, |i| {
+        let drawn = phx_exec::pool::map(pool, shards, |i| {
             let (from, of) = chunk(i);
             of.iter()
                 .zip(located.get(from..).unwrap_or(&[]))
