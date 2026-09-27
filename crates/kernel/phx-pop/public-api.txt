@@ -29,6 +29,8 @@ pub const phx_pop::consts::ROLE_BITS: u32
 pub const phx_pop::consts::SIDE_BIT: u32
 pub mod phx_pop::explicit
 pub struct phx_pop::explicit::Rewrite
+impl phx_pop::explicit::Rewrite
+pub fn phx_pop::explicit::Rewrite::places(&self) -> core::option::Option<&[core::option::Option<usize>]>
 pub struct phx_pop::explicit::Written
 pub phx_pop::explicit::Written::ended: bool
 pub phx_pop::explicit::Written::leaving: alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>

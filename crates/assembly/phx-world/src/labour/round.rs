@@ -121,58 +121,111 @@ impl World {
         law.reservation_share * self.wage_at(law, i64::from(s.last))
     }
 
-    /// The offers made the day before answered: each accepted becomes a hire at the next start of work, its vacancy's
-    /// fill recorded; each refused returns its members to its vacancy.
+    /// The offers made the day before answered, each person's together: of those it would accept, the one paying most
+    /// becomes a hire at the next start of work, its vacancy's fill recorded, ties to the vacancy posted first; every
+    /// other returns its members to its vacancy, since a person takes one job.
     fn answer_offers(&mut self, day: Day, kind: &LabourKind) {
-        let offers = std::mem::take(&mut self.labour.book.offers);
-        for o in offers {
-            let Some(v) = self.labour.book.vacancy(o.vacancy).cloned() else { continue };
-            let seeker = if self.live(o.applicant) {
-                self.seekers(kind, o.applicant).into_iter().find(|s| s.person == o.person)
+        let mut by_person: BTreeMap<(PartyId, u32), Vec<Offer>> = BTreeMap::new();
+        for o in std::mem::take(&mut self.labour.book.offers) {
+            by_person.entry((o.applicant, o.person)).or_default().push(o);
+        }
+        for ((applicant, person), offers) in by_person {
+            let seeker = if self.live(applicant) {
+                self.seekers(kind, applicant).into_iter().find(|s| s.person == person)
             } else {
                 None
             };
             let Some(s) = seeker else {
-                self.return_jobs(o.vacancy, o.unit);
+                for o in &offers {
+                    self.return_jobs(o.vacancy, o.unit);
+                }
                 continue;
             };
             let law = super::law_of(&self.labour.laws, s.country);
-            let mut d = self.labour_draws(kind.taste_stream, Subject::new(SubjectTag::Party, o.applicant.get()), day);
-            let taste = phx_rand::gumbel(&mut d, 0.0, 1.0) - phx_rand::gumbel(&mut d, 0.0, 1.0);
-            let input = AcceptIn {
-                wage: self.wage_at(law, v.point),
-                reservation: self.reservation(&s),
-                taste,
-                wage_weight: law.wage_weight,
-            };
-            let decider = self.queue.decider(o.applicant);
-            let queued = match decider {
-                phx_core::decisions::Decider::Player { .. } => self.queue.take(o.applicant, kind.accept.name),
-                phx_core::decisions::Decider::Rule => None,
-            };
-            let accepts = phx_core::decisions::dispatch(kind.accept, decider, queued.as_deref(), &input);
-            if accepts != Some(true) {
-                self.return_jobs(o.vacancy, o.unit);
-                continue;
+            let mut d = self.labour_draws(kind.taste_stream, Subject::new(SubjectTag::Party, applicant.get()), day);
+            let mut best: Option<(f64, u32)> = None;
+            for o in &offers {
+                let Some(v) = self.labour.book.vacancy(o.vacancy) else { continue };
+                let wage = self.wage_at(law, v.point);
+                let taste = phx_rand::gumbel(&mut d, 0.0, 1.0) - phx_rand::gumbel(&mut d, 0.0, 1.0);
+                let input = AcceptIn { wage, reservation: self.reservation(&s), taste, wage_weight: law.wage_weight };
+                let decider = self.queue.decider(applicant);
+                let queued = match decider {
+                    phx_core::decisions::Decider::Player { .. } => self.queue.take(applicant, kind.accept.name),
+                    phx_core::decisions::Decider::Rule => None,
+                };
+                let accepts = phx_core::decisions::dispatch(kind.accept, decider, queued.as_deref(), &input);
+                let better = |(w, id): (f64, u32)| wage.total_cmp(&w).then_with(|| id.cmp(&v.id)).is_gt();
+                if accepts == Some(true) && best.is_none_or(better) {
+                    best = Some((wage, v.id));
+                }
             }
-            self.labour.day.acceptances += 1;
-            let Some(stood) = self.calendar.days_between(v.first, day) else {
-                violation!(clause = "LAB.2", "a vacancy posted after its offer was answered", vacancy = v.id);
-            };
-            self.labour.day.match_days += u64::from(stood);
-            self.record_fill(&v, stood);
-            let class = self.class_of(&v);
-            self.labour.book.hires.push(Hire {
-                employer: v.employer,
-                employee: o.applicant,
-                person: o.person,
-                unit: o.unit,
-                country: v.country,
-                class,
-                point: v.point,
-                stood,
-            });
-            self.labour.day.matches += 1;
+            for o in offers {
+                let taken = best.is_some_and(|(_, id)| id == o.vacancy);
+                let v = self.labour.book.vacancy(o.vacancy).cloned();
+                let (true, Some(v)) = (taken, v) else {
+                    self.return_jobs(o.vacancy, o.unit);
+                    continue;
+                };
+                self.labour.day.acceptances += 1;
+                let Some(stood) = self.calendar.days_between(v.first, day) else {
+                    violation!(clause = "LAB.2", "a vacancy posted after its offer was answered", vacancy = v.id);
+                };
+                self.labour.day.match_days += u64::from(stood);
+                self.record_fill(&v, stood);
+                let class = self.class_of(&v);
+                self.labour.book.hires.push(Hire {
+                    employer: v.employer,
+                    employee: o.applicant,
+                    person: o.person,
+                    unit: o.unit,
+                    country: v.country,
+                    class,
+                    point: v.point,
+                    stood,
+                });
+                self.labour.day.matches += 1;
+            }
+        }
+    }
+
+    /// A household's persons moved to new places, or gone: its applications, offers and hires follow each person to
+    /// its place, and a gone person's are dropped, an offer's members returned to its vacancy.
+    pub(crate) fn labour_renumber(&mut self, party: PartyId, places: &[Option<usize>]) {
+        let place = |person: u32| {
+            usize::try_from(person)
+                .ok()
+                .and_then(|i| places.get(i).copied().flatten())
+                .and_then(|n| u32::try_from(n).ok())
+        };
+        let book = &mut self.labour.book;
+        book.applications.retain_mut(|a| {
+            if a.applicant != party {
+                return true;
+            }
+            place(a.person).map(|p| a.person = p).is_some()
+        });
+        book.hires.retain_mut(|h| {
+            if h.employee != party {
+                return true;
+            }
+            place(h.person).map(|p| h.person = p).is_some()
+        });
+        let mut returned: Vec<(u32, u32)> = Vec::new();
+        book.offers.retain_mut(|o| {
+            if o.applicant != party {
+                return true;
+            }
+            if let Some(p) = place(o.person) {
+                o.person = p;
+                true
+            } else {
+                returned.push((o.vacancy, o.unit));
+                false
+            }
+        });
+        for (vacancy, unit) in returned {
+            self.return_jobs(vacancy, unit);
         }
     }
 
@@ -271,8 +324,9 @@ impl World {
 impl World {
     /// The searchers' applications: each searching person of each searching agent, not already waiting on an
     /// application or an offer, sees the vacancies standing in its region in its occupation, at a skill it has, with
-    /// jobs open for its twins, draws a taste for each and applies to those its rule chooses, a round's share of a
-    /// week's applications. An agent none of whose persons search leaves the searchers.
+    /// jobs open for its twins in whole shares for the employer's twins, draws a taste for each and applies to those
+    /// its rule chooses, a round's share of a week's applications. An agent none of whose persons search leaves the
+    /// searchers.
     #[clause("LAB.5", "LAB.8", "REP.22")]
     fn search(&mut self, day: Day, kind: &LabourKind) {
         let waiting: BTreeSet<(PartyId, u32)> = self
@@ -300,6 +354,15 @@ impl World {
                 law.filter(|_| v.open > 0).map(|law| self.wage_at(law, v.point))
             })
             .collect();
+        // Each open vacancy's employer's twins, who each hire alike, so a searcher's twins take its jobs only in whole
+        // shares for them.
+        let twins: Vec<u32> = self
+            .labour
+            .book
+            .vacancies
+            .iter()
+            .map(|v| if v.open > 0 && self.live(v.employer) { self.books.parties.unit(v.employer) } else { 0 })
+            .collect();
         let searchers: Vec<PartyId> = self.labour.searchers.iter().copied().collect();
         for party in searchers {
             if !self.live(party) {
@@ -317,7 +380,7 @@ impl World {
                 self.apply_round(
                     (day, kind),
                     s,
-                    (standing.get(&(s.region, s.occupation)).map_or(&[][..], Vec::as_slice), &wages),
+                    (standing.get(&(s.region, s.occupation)).map_or(&[][..], Vec::as_slice), &wages, &twins),
                     &mut d,
                 );
             }
@@ -329,14 +392,17 @@ impl World {
         &mut self,
         (day, kind): (Day, &LabourKind),
         s: &Seeker,
-        (standing, wage_of): (&[usize], &[Option<f64>]),
+        (standing, wage_of, twins): (&[usize], &[Option<f64>], &[u32]),
         d: &mut Draws,
     ) {
         let law = super::law_of(&self.labour.laws, s.country);
+        let whole = |i: usize| twins.get(i).is_some_and(|t| *t > 0 && s.unit.is_multiple_of(*t));
         let seen: Vec<usize> = standing
             .iter()
             .copied()
-            .filter(|i| self.labour.book.vacancies.get(*i).is_some_and(|v| v.skill <= s.skill && v.open >= s.unit))
+            .filter(|i| {
+                whole(*i) && self.labour.book.vacancies.get(*i).is_some_and(|v| v.skill <= s.skill && v.open >= s.unit)
+            })
             .collect();
         self.labour.day.vacancies_visible += phx_rand::float::len_u64(seen.len());
         if seen.is_empty() {

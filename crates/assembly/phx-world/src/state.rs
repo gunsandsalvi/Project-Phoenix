@@ -428,9 +428,10 @@ impl World {
             day,
             SubStep::S4a.ordinal(),
         );
+        // The claim that ends is this person's own, so this person is detached, not one drawn among its household's.
         for line in on {
             if self.books.members_leave((party, line, Side::Asset), twins, m, &mut d, self.audit.stream()).is_ok() {
-                let _ = self.detach(&[(party, line, Side::Asset, twins)], &mut d);
+                self.detach_person((party, person), (line, Side::Asset));
                 self.state.day.benefits_ended += 1;
             }
         }

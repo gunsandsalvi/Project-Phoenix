@@ -186,7 +186,16 @@ impl World {
         if let Some(k) = place.checked_sub(first).map(usize::from) {
             let table = Population::table_mut::<SystemBacking>(self.books.parties.cells_mut().0, k);
             let mut words = table.attachments(slot).to_vec();
-            words.push(Attachment { holder: Holder::Person(person), line, side: Side::Asset }.pack());
+            let word = Attachment { holder: Holder::Person(person), line, side: Side::Asset }.pack();
+            if words.contains(&word) {
+                violation!(
+                    clause = "REP.26",
+                    "a person attached twice to one line",
+                    party = party.get(),
+                    line = line.get()
+                );
+            }
+            words.push(word);
             table.set_attachments(slot, &words);
         }
     }

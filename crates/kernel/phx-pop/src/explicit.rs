@@ -62,6 +62,14 @@ pub struct Rewrite {
     ended: bool,
 }
 
+impl Rewrite {
+    /// Each person's new place, none for one gone, when any person left; none when every person keeps its place.
+    #[must_use]
+    pub fn places(&self) -> Option<&[Option<usize>]> {
+        self.places.as_deref()
+    }
+}
+
 /// A household's rewrite: its attributes, and its persons still there in their order.
 #[clause("REP.26", "REP.31", "REP.16")]
 #[must_use]

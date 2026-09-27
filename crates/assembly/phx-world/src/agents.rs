@@ -634,6 +634,9 @@ impl World {
         let table = Population::table_mut::<SystemBacking>(cells, kind);
         let twins = table.multiplicity(slot).get();
         let written = write_rewrite(table, slot, &rewrite);
+        if let Some(places) = rewrite.places() {
+            self.labour_renumber(party, places);
+        }
         let k = u64::from(twins);
         self.record_vital(self.calendar.date(day), &vital, k);
         self.agent_day.born += born * k;
