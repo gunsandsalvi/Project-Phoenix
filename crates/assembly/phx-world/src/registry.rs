@@ -851,6 +851,9 @@ pub fn load(
     world.labour_rebuild();
     world.credit_rebuild();
     world.state_rebuild();
+    // The goods' marks are rebuilt at each day's meetings, after the day's decisions, so the first day after a load
+    // reads the marks its save's close left, as a run that went on would.
+    world.goods_marks();
     world.loaded = true;
     let rebuilt = crate::save::manifest::hex(crate::hash::world_hash(&world));
     if rebuilt != manifest.world_hash {
