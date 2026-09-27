@@ -128,9 +128,11 @@ impl PopProcess for Mortality {
             violation!(clause = "TIME.2", "a year of age beyond counting");
         };
         let a = age(p, agent.date);
-        let Some(share) = of_country(&self.disabled, agent).get(a).and_then(|s| s.get(usize::from(sex(p) == MALE)))
-        else {
-            violation!(clause = "POP.3", "a person older than the disability table", age = a);
+        let chances = of_country(&self.disabled, agent);
+        // The table's last age is open: those older read it, as they read the life table's last year.
+        let open = chances.len().checked_sub(1).filter(|last| a > *last);
+        let Some(share) = chances.get(open.unwrap_or(a)).and_then(|s| s.get(usize::from(sex(p) == MALE))) else {
+            violation!(clause = "POP.3", "a disability table of no ages", age = a);
         };
         let ratio = self.ratio(a);
         let able = -libm::log1p(-dies_at_age(table, a)) / (1.0 + share * (ratio - 1.0));
