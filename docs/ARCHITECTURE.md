@@ -51,7 +51,7 @@ The forces:
 | Engine | **Rust**, stable, pinned in `rust-toolchain.toml`, edition 2024 | Layout and allocation control, no GC pauses, data-race freedom, Android and Linux targets, crates as compiler-enforced boundaries. |
 | World mathematics | **`libm`** (pure Rust) for transcendental functions in world code | Platform-independent results. |
 | Parallelism | **Own pool** in `phx-exec` over **rayon-core**, pinned to fast and medium cores, with Android performance-hint sessions | Cost-sized fixed chunks, no little cores, few barriers. Only `phx-exec` depends on rayon. As built at Stage 0 the world runs on one thread: the pool serves only `phx-ffi`'s benches, and performance-hint sessions are not built (`PerfHint` has only `NoHint`, called by nothing); making the world's traversals parallel is the plan's F-056. |
-| Hash maps | **hashbrown** + fixed-seed **foldhash**, behind a kernel map type with no iteration, sharded where written in parallel | Fast lookups; no outcome depends on hash order. |
+| Hash maps | **hashbrown** + fixed-seed **foldhash**, behind a kernel map type iterated in key order where order matters (`sorted`) and in no set order only for order-free reads such as sums (`each`), sharded where written in parallel | Fast lookups; no outcome depends on hash order. |
 | Randomness | **Own Philox4x32-10** in `phx-rand`, batch-first, NEON-vectorised samplers | Draws addressable by (stream, identity, day, index): parallel, order-free, reproducible (CHN.1, CHN.6). |
 | Compression | **zstd** level 1 after per-column transforms (delta, zigzag, bit-packing) | Fast; transforms double the ratio on integer columns. |
 | Declared data | **TOML** + **serde**, at assembly only | Diffable, never on a hot path. |
@@ -121,6 +121,60 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | `phx-id` | TIME.1, TIME.2 (the day and civil dates), PTY.1 (identities) | Identifier types (`PartyId`, slots, `LineId`, `RowRef`, `InstrumentId`, day-local ids), `Day`, `Date`. |
 | `phx-macros` | — | `#[clause]` (which checks each name is a clause identifier), `#[derive(Pod)]`, `#[derive(Saved)]`, `declare_prim!`, `declare_fact!`, `declare_kind!`, `declare_facet!`, `declare_stream!`, `declare_message!`, `declare_hazard!`, `declare_decision!`, `declare_rule!`, `declare_record!`, `declare_family!`, `declare_handler!`. |
 
+**`phx-macros`.** `#[clause("…")]` emits its item unchanged and refuses, at compile time, any name that is not a
+system clause (`SYS.n`, two to four capitals), a law (`Law n`), a measurement (`Nn` or `Nn.m`) or a chain (`Ln`);
+`phx-check clauses` reads it with `syn`. `#[derive(Pod)]` is the one way a type becomes storable: it takes only a
+non-generic `#[repr(C)]` struct whose fields are all `Pod` and none `f32` or `f64`, asserts in a `const` that the
+fields' sizes sum to the type's (so padding is refused), and expands to `unsafe impl Pod` under
+`#[expect(unsafe_code)]` and the `Sealed` marker. `Pod::layout` lists each integer of the value with its save
+transform (`#[save(delta | zigzag | delta_zigzag | plain)]` per field). Hand-written `Pod` impls exist only in
+`phx-store/src/pod.rs`: the integers, `phx-id`'s ids and `phx-num`'s column forms, which lie below the derive's crate.
+
+**`phx-num`.** Each computing type has a bare column form that a column's declaration types: `Money { amt, ccy }` and
+`Amount`, `Qty { n, unit }` and `QtyRaw`, `Price { raw, ccy, unit }` and `PriceRaw`, `Missing<i64>` and `MaybeI64`
+(absent is `i64::MIN`, which no present value may take). A currency `Ccy(u8)` is the index of the country whose
+central bank issues it; a unit `UnitId(u16)` indexes the unit table, which gives each unit its kind and its price
+exponent (at most 18). `+`/`-` on `Money` or `Qty` of two currencies or units, and overflow, are violations, never
+`Err`; there is no `Mul<Money>`, no `f64` conversion and no empty `Sum` (`Money::sum_in(ccy, …)` instead), and a
+money figure is multiplied only by a `Count` of identical things. A price is smallest money units × 10⁻ᵉˣᵖ per unit
+and may be negative; `value_of(q, p, units, round)` is the one route from quantity to value, in checked `i128` and
+rounded once. `Rate { raw, per }` is a fraction × 10¹² per `Year`, `Month` or `Day`; `accrue` takes a `DayFraction`
+of the same period, or violates. `Fixed<E>` is a decimal of exponent `E` for positions and outlooks, entered from
+`f64` only through `from_f64`, which refuses non-finite and out-of-range values. Rounding is `Round` (`HalfEven`,
+`HalfAwayFromZero`, `TowardZero`, `Floor`, `Ceil`, `InFavourOf(Payer | Payee)`), applied by `div_round`;
+`split_total(total, k, w)` gives `round(k·total/w)` and the rest, so a split conserves by construction.
+`Missing<T>` has no `Default`, `unwrap_or`, `map_or` or `Option` conversions: a reader matches. A point table is a
+strictly increasing `i64` array in the registry, searched by `at_or_below` and `at_or_above`. `NumError` (overflow,
+non-finite, out of range, zero divisor) is only for pure functions whose inputs meet it in a legal world.
+
+**`phx-id`.** Every id is `repr(transparent)` over its integer, `Copy`, `Eq`, `Ord` and `Hash`, with no `Default`
+and no `From` between ids. `PartyId(u64)` comes from the directory's one monotone counter, is never zero, stays below
+2⁶⁰ and is never reused; `LineId` and `InstrumentId` are never reused either; a `Slot` is a storage index and may be.
+`Day(u32)` counts days from the epoch of `data/world.toml`, with day zero the day before the first; `Day::succ` is
+checked and `Day::earlier`/`Day::later` are the named comparisons. `Date` is proleptic Gregorian, converted by
+Hinnant's algorithms over `i64` serials; a weekday is derived from the epoch's civil date, which the caller passes,
+since `phx-id` reads no data.
+
+**`phx-rand`'s addressing.** A stream's key is words 0 and 1 of `philox([fnv_lo, fnv_hi, seed_lo, seed_hi],
+fixed key)`, `fnv` being FNV-1a-64 of the stream's name, so a key depends on its name and the seed alone and adding a
+stream changes no other (CHN.1). The counter is `[subject_lo, subject_hi, day, (sub-step ordinal << 24) | block]`,
+a `Subject` being a 4-bit tag (world, party, part, line, tile, region, zone, country, market, instrument, an opening's
+stratum and ordinal before its party exists, a profile value) over a 60-bit identity; a larger identity or more than
+2²⁴ blocks at one address is `capacity_exceeded!`. Draws for different subjects never share a counter, so processing
+order cannot change a draw (CHN.6). `Draws` is a cursor over one address; a sampler that rejects draws on from the
+same cursor, so its result depends only on the address. `philox_x4` runs four scalar blocks, so the batch cannot
+differ from the scalar. `open_unit` is (k + ½)·2⁻⁵², never 0 or 1, so every inversion's logarithm is finite; bounded
+integers are Lemire's multiply-shift with the `u128` product. Every sampler is exact up to the 52-bit uniform, with
+transcendental functions from `libm`: binomial by inversion, switching to BTPE when both n·p and n·(1−p) reach the
+switch point; `binomial_at_least_one` by inversion from one with the normaliser `−expm1(n·log1p(−p))` when zero is
+likely and by rejection of zeros otherwise; `binomials_joint_at_least_one` decides each value's zero in turn in log
+space, conditioned on the rest reaching one, then draws plain binomials after the first success; multinomial by
+conditional binomials, or alias draws when draws are fewer than categories; hypergeometric by HIN inversion when
+small and HRUA (Stadlober's ratio of uniforms) otherwise; picks without replacement by a Fenwick tree over counts in
+O(e + k log e); geometric as `floor(ln U / log1p(−p))`, `Absent` beyond `u64`, which a schedule reads as no success
+within representable time; normal by Wichura's AS241 inverse, gamma by Marsaglia and Tsang, beta from two gammas,
+Weibull by inversion.
+
 ### 3.3 Kernel
 
 | Crate | Carries | Owns |
@@ -153,7 +207,7 @@ interfaces' list in `phx-world/src/systems.rs` holds only `phx_geo::ITEMS`, `phx
 
 | Crate | Domain |
 | --- | --- |
-| `if-base` | shared identifiers and declared data: products, occupation families, skills, capital kinds, ways (issued at runtime from Stage 6, an improved way stored against its base as factors; the rule handle `labour_per_unit`), units; as built at S1.02, the products, the way and the way-set identity as data only, what a way takes and finishes and the way-set interner being `sys-tec`'s; rating scales and notches; money-market tenors, segments, collateral baskets, haircuts and limits; agents' participation per asset class; pension kinds, contribution rate points and fund-menu identifiers, so a job's terms need no later crate |
+| `if-base` | shared identifiers and declared data: products, occupation families, skills, capital kinds, ways (issued at runtime from Stage 6, an improved way stored against its base as factors; the rule handle `labour_per_unit`), units; as built, the products, the way and the way-set identity as data only, what a way takes and finishes and the way-set interner being `sys-tec`'s; rating scales and notches; money-market tenors, segments, collateral baskets, haircuts and limits; agents' participation per asset class; pension kinds, contribution rate points and fund-menu identifiers, so a job's terms need no later crate |
 | `if-pop` | households, persons, roles, demographic facts, household decision points (founding a firm among them; `enrol`, `form`, `separate`), personal insolvency law; the education record, schooling and the enrolment attachment; education and family law and the day-local `Meeting` message; the rule handles `skill_now`, `division_shares` and `type_at_formation` |
 | `if-firm` | firms, production facts, known ways (one writer, `sys-tec`), pricing and payout decision points; research, imitation and licensing (`innovate`, `licence_quote`, `licence_accept`), licence lines, the patent instrument and the patent register; company and insolvency law, plans and votes; filed accounts |
 | `if-labour` | employment terms (the pension's kind and contribution rates among them), the employment attachment's scheme component, vacancies, applications, offers, separations; the rule handle `labour_state`, a read of a role's attachments and participation |
@@ -184,6 +238,15 @@ interfaces' list in `phx-world/src/systems.rs` holds only `phx_geo::ITEMS`, `phx
 | `android/` | The Compose app and its `bench` flavour. |
 | `phx-check` | Law, layering and document checks (§16). |
 
+`phx-ffi`'s bench harness (`bench.rs`) runs inside the app's process: the probe of the phone (`phx_exec::probe`: each
+allowed core's rate of fixed work alone and with every core busy, at the run's start, middle and end beside the
+thermal status; random 8-byte reads over 1–3 GiB by every worker at once, with and without prefetch; sequential
+bandwidth; an empty dispatch hot) and the kernels' micro-benchmarks, each line sent to the app through the
+`BenchHost` callback as it completes and judged against its target, and the report written as JSON. An ignored test
+runs it whole on the build machine. The `android/` app has `play` and `bench` flavours, its AGP, Gradle and Kotlin
+versions pinned in `gradle/libs.versions.toml` and the wrapper; the bench flavour runs off the interface thread with
+the screen kept on.
+
 ### 3.7 Repository
 
 ```text
@@ -202,12 +265,44 @@ opening's inventory of derived values and distributions with their sources; `dat
 their notes. `tools/data/*.py` fetch the sources and derive the profiles from them; `tools/versions.toml` pins every
 tool beyond the Rust toolchain (the NDK and Android levels, the cargo tools, valgrind, the nightlies `miri` and
 `public-api` use). A country's `data/<country>/` is instantiated at a new game into the run's directory, never
-committed. From Stage 7, `data/measure/` holds the realism reads' registered definitions, which no world crate reads,
-and `perf/{realism,chains,register}/` their reports, append-only (§14.8). `perf/device/` and `perf/measure/` hold the
+committed. `data/measure/` holds the realism reads' registered definitions, which no world crate reads, and
+`perf/{realism,chains,register}/` their reports, append-only (§14.8). They are registered before any read of the world
+uses them: N3's facts `N3/F01.toml` to `F28.toml`, N4's chains `N4/L01.toml` to `L12.toml`, and the shared
+`CREDIT.toml`; later work adds estimators, never edits a definition. `phx-check`'s `preregistration` and `no_tuning`
+rules guard them (§16 item 10). `perf/device/` and `perf/measure/` hold the
 gates' reports; `perf/build-run/` the build runs' reports (§14.7); `perf/load/volumes.toml` the full-load bench's
 volumes (§14.6); `perf/schema/` the device report's schema; `perf/ratchets.toml` the counters' values.
 
 ---
+
+Each system's opening technology and distributions are derived by a pair of scripts, `fetch_<sys>.py` into
+`data/sources/raw/` and `derive_<sys>.py` into `data/`, each value its country group's median over the economies the
+sources report, a group reporting too few taking the developed group's, marked assumed:
+- **TEC** (`data/shared/TEC.toml`, `data/profiles/<level>/TEC.toml`): nineteen products aggregating the CPA products of
+  Eurostat's FIGARO input-output tables (2022); one opening way per product per country group — inputs per unit made
+  from the tables' uses summed over origins, hours by ISCO-08 major group from ILOSTAT's employment and hours by ISIC
+  section shared among a section's products by compensation, plant by kind per unit of output a year from the OECD's
+  net fixed assets (Table 9A) per unit of value added (Table 6), agricultural land (World Bank) for crops and
+  livestock, a tonne of deposit per tonne extracted; a growing season's lead time for crops and livestock, a day for
+  other goods, none for services; every unit started finished; a batch of one.
+- **FRM** (`data/profiles/<level>/FRM_industries.toml`, `FRM.industry_by_size`): each size class's firms (rows the
+  OECD's classes by their smallest persons employed) over the industries — the group's business owners (ILOSTAT's
+  employers and own-account workers) by ISIC section, split among a section's industries by the OECD's enterprise
+  counts, tilted toward a class by the industry's share of the class's enterprises over its share of all; agriculture,
+  which the OECD does not count, untilted. Finance, real estate and public administration make no product of the ways.
+- **CAP** (`data/shared/CAP_kinds.toml`, `data/profiles/<level>/CAP.toml`): each kind's geometric rate (the BEA's
+  current-cost depreciation over its net stock), mean service life (the BEA's declining-balance rate over the
+  geometric), efficiency shape (the BLS's and ABS's hyperbolic β), lead time (the Census's construction months for
+  structures, the M3 survey's months of unfilled orders for equipment, none elsewhere) and the product it is bought
+  as; each group's net stock of each kind per unit of GDP (OECD Table 9A over Table 6).
+- **GDS** (`data/shared/GDS.toml`): three grade classes per extracted product at the terciles of GEO's log-normal
+  grade index; the grade's fall as a deposit is worked; each storable product's yearly spoilage in stock and the room
+  it is kept in; the standardised products (crops and livestock and the four extracted), which meet in calls.
+
+`data/shared/FRT.toml` (vehicles' tonne-km a unit a day, speeds and loading days by mode; goods' tonnes a unit),
+`SRV.toml` (the weights of price and distance, the reach) and `VAL.toml` (memory and switching-intensity type sets,
+γ, κ, θ, the performance record's memory, attention sensitivity, the heuristics tracked) are declared with their
+sources by hand.
 
 ## 4. Channels between systems
 
@@ -274,6 +369,12 @@ holders (§7.8), and each holder's amount joins its (party, bank) leg in the pay
 so duty and import tax at a border are not levies: customs computes them per shipment through the tax's rule handles and
 issues a demand (§4.2).
 
+As built at Stage 1, income tax is a `phx_ledger::levy::Withholding` per (employment line kind, currency), bound on `Books` when the world opens or loads, its payee the country's treasury: each member's levy is the year's share of `TAX.income_band_*`'s marginal bands over the payment's per-member amount times the line's payments a year (a non-cumulative basis, since no year-to-date positions are kept), rounded once and multiplied by the members; the payer pass routes it to the treasury in the payment's own instruction (§6.5, `DayBook::levied`), and on a pooled line the losers drawn give up both parts. The consumption tax is inside the posted price: the seller owes `TAX.consumption_rate`'s share of the price paid, a whole share for each twin, paid to the treasury in the sale's instruction; a country that declares a value-added tax is charged it this way (a placeholder naming TAX).
+
+A levy's rates are read as `Rates`: a policy value's marginal bands, or one share from the line's terms or the payee's
+fact. Withholding (`levy::withhold`) splits a member's gross into the net paid and the remittance, which sum to the
+gross.
+
 ### 4.4 Contract algebra, lines, instructions and transfers
 
 Every contract's terms are a composition of **generic legs** — a fixed amount; a rate on a notional (fixed or floating
@@ -312,6 +413,11 @@ the count, so it is exact; it works over any row kind's per-contract amount (a b
 scheme's limit, an accrued pension under a guarantee fund's cap). A **stay** is a line transfer too: at an insolvency
 procedure's opening the debtor's rows move to **procedure lines** of the same kinds whose terms carry the stay, so a
 stay suspends only the debtor's dues and never a line other holders share.
+
+A `LineTransfer` moves a row's count with its balance pro rata, rounded by the transfer's declared convention.
+`split_at_kink` takes a holder's rows in the declared coverage order, each row's part per member within what the
+per-person limit times the holder's persons has left, bound against the member's share, times the row's count, and the
+rest of the row's total beside it, so any total splits exactly.
 
 ### 4.5 Relationship rows
 
@@ -391,6 +497,30 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
 - **Keyed position lists** (Stage 6): a kind may declare a list of positions keyed by an id in the agent's arena — a
   firm's cumulative output per way it has run — each entry a total, like a deposit row's balance, so no bound is set
   on how many ways an agent runs.
+- **The ledger's own records.** An instrument is a 32-byte row (issuer, issued amount, terms, unit, currency, family,
+  state), its issuer absent only for a real asset (a zero identity, since no party's is zero). Units enter and leave
+  holdings only through the instruments' `acquire` and `dispose`, which keep its holder list: a holder joins with its
+  first lot and leaves with its last unit. A line is a 36-byte row: kind, flags, terms, its two side counts kept as rows
+  change, `next_due`, `fallen` — the index of its schedule's date that fell last, advanced with `next_due` at 1b and
+  handed to `due_on`, so no due searches the schedule — and its holder list. An individual's holding is 24 bytes
+  (instrument, lots, quantity, flags), its lots (acquired, quantity, cost; 24 bytes each) the next `lots` entries of the
+  holder's lot list, kept in holding order, since a list reference inside a list would not survive compaction. An
+  individual's plant and dwellings are named units in its arena (`NamedUnit`, 24 bytes: identity, site, service day,
+  class, condition). Liens are one table keyed by (holder, instrument, sequence), a re-pledge naming the lien it pledges
+  on; an individual's pledged holding carries a flag, and free units are its quantity less the pledged total, a chain
+  counted once, at its first lien. Commitments are few and kept in an ordered map by identity.
+- **Interning and holder lists.** Terms are interned once and reference-counted (`TermsId`), in shards chosen by
+  `mix64` of the terms' canonical words. Holder lists are `phx_store::BlockList`s in several `BlockPool`s, each list's
+  pool chosen by `mix64` of its owning line or instrument, so parallel updates never share a pool and block ids never
+  depend on workers; a holder key (`HolderKeys`) is the holder table's place in the high bits and the slot below, the
+  split set by the number of holder tables.
+- **Line kinds** (`LineKindDecl`): a name; per side a `SideDecl` — the holder kinds allowed, the optional words its rows
+  carry, whether it keeps a holder list, the roles whose persons hold an agent's rows, whether a holder holds at most
+  one row (`exclusive`), and whether a row counts a member per counterpart (`many`); the systems that may request a
+  transfer; and whether it is `dated`. `due_on(terms, day, state, out)` writes a contract's dues into the caller's
+  `DueBuf`, pure and allocation-free; a floating or indexed leg carries its current fixing as a term, which stands until
+  its reference next fixes.
+
 
 ### 4.6 Policy values
 
@@ -399,12 +529,22 @@ after that it is a fact whose one writer is the owner's decision. Each
 change writes a dated announcement with its effective day, at least the next business day (VAL.6, POL.7). A change
 that moves a hazard's rate books its process afresh on the agents it concerns (§7.3).
 
+A `PolicyValue<T>` holds its opening value and its announcements in effective-day order, and is saved;
+`value_on(day)` is the last effective on or before the day. `announce` refuses a writer other than the owner's
+decision and an effective day before the next business day of the policy's country after the announcement.
+
 ### 4.7 Decision points, deciders and rule handles
 
 - Every decision the spec names is a **decision point**: an input view type and an output intent type from an
   interface crate, a rule function registered by its system, a declared **schedule** (TIME.5) and **wake conditions**,
   and a pure evaluation form usable off-world (REP.15). The **decider** is the kind's rule or the player, derived for
   a party from `PlayerQueue` (§12), not stored per party. The kernel dispatches inside the decision point.
+
+  A decision point's rule is one pure function and is its own evaluation form, so REP.15's estimates evaluate the
+  function that decides. A point needs a schedule or wakes. `Ctx::decide` takes the player's queued intent for the
+  point when one is queued; otherwise the rule decides only if the player's decider delegates, and else the decision
+  is not taken that day. `RuleTable::check` refuses a rule signature with no implementer or two, one implemented by
+  another system than its declared one, and an implementation of no declared signature.
 - A **rule handle** is a pure function declared in an interface crate and implemented by its owning system — the tax
   on a given income, a benefit entitlement, a lender's cap, a clearing house's margin for a trade, a platform's effect
   on a household — callable by any system with inputs it may read. It reads only its inputs and policy values. Market
@@ -420,6 +560,13 @@ reductions of this kind: each shard of payments puts what it adds with the shard
 to, and each shard of the day's records or of the kernel map is folded by one worker, taking the payment shards in
 order (§6.6). The other global structures are still updated in place on one thread.
 
+`KeyedReduce` stable-partitions each chunk's pairs by `mix64(key)` (the SplitMix64 finaliser, never `foldhash`, so no
+crate version decides a shard) into 256 shards; each shard concatenates its partitions in chunk order, radix-sorts
+by key and folds equal keys in (chunk, position) order, so a non-commutative fold gives one answer. `KernelMap`, the
+kernel's one hash map (hashbrown with fixed-seed foldhash), is sharded by the top eight bits of the same mix; it is
+read whole only sorted by key (`sorted`, `drain_sorted` for saves) or, for an order-free read such as a sum, unordered
+(`each`), and `fold` fills it from many sources on the pool, each shard taking the sources in order.
+
 ### 4.9 Records, audiences, scoped reads
 
 Decision kernels read what their party may: its own rows and facts; the relationship rows it is holder or counterparty
@@ -427,6 +574,20 @@ of; records whose audience includes it; earlier prints and marks. As built, a ha
 declared fact by slot (`read::<F>(slot)`, `write::<F>(slot, v)`), and has no per-party accessor. Audience is checked at
 compile and assembly time from declarations; `read-trace`, a run-time flag of release builds, on in every build run
 (§14.7), samples chunks and verifies reads at run time. Store-wide views go only to processes and applies.
+
+The sample is the first chunk of each (handler, table) in the run and every chunk whose index is congruent to the day
+modulo `TRACE_PERIOD` (64). A traced chunk's writes are stamped with their (sub-step, handler), and each read is checked
+against the reader's declaration and against a later stamp; every `Streams::open` is recorded unsampled, and at the
+close the day's opens are sorted and each repeated (stream, subject, sub-step) counted (`TraceLog`). What the trace
+finds is reported through the audit's Time family (§15); the stamps live for a day and the log is kept outside the
+world hash.
+
+A record kind declares its audience, its horizon and its writer; entries are dated by (day, sub-step) and are world
+state, hashed and saved. `RecordStore::read(kind, reader, calendar)` returns only entries whose audience includes the
+reader and that are dated before its own sub-step; a `PublicAfter(lag)` entry becomes visible to others on the day
+the calendar places at its date plus the lag. An event carries its kind, day and sub-step, its subjects and details
+(a subject with a size in the kind's declared unit — a catastrophe's struck tiles and severities) and may develop only
+from an event written before it.
 
 ### 4.10 Public events
 
@@ -484,6 +645,35 @@ layout change; nothing saturates (Law 6). A policy schedule's count of bands is 
 POL) and fixed here: a platform or a budget moves its values and edges, never the count, so the kink signature's
 compiled width holds for the run.
 
+**The register.** A primitive is a `const` `PrimDecl` written with `declare_prim!` — id, kind, unit, period,
+`decided_by` (present exactly for POLICY), value type, clause, SHAPE information (`Placeholder { retired_by }` or
+`Standing { reason }`) and scope (shared or per country); its owner is the system its id begins with. Each
+`[[primitive]]` entry of `data/` is checked against its declaration (id, kind, unit, value type, source, `source_ref`,
+a SHAPE's field); an undeclared entry, or a country missing an entry, stops assembly with the list. Values are
+immutable after assembly and read through the typed handle `Prim<T>` (`get(&Register, country)` or `shared`), one
+indexed read. Decimals in data are exact — an integer, a string, or a float read by its shortest decimal form — and
+more places than declared are refused, never rounded. Value types are scalars (`Fixed`, `Rate`, `Money`, `Qty`,
+`Count`, `Date`), one- and two-axis tables with a declared rule outside their axes, distributions (normal,
+log-normal, Pareto, log-normal with a Pareto tail, gamma, beta, Weibull, discrete, empirical), point tables, a
+country's calendar rules (`TIME.calendar`) and its legal forms. A **type set** is never declared: assembly cuts the
+declared distribution into the kind's RESOLUTION count of types by the entry's declared discretisation
+(`equal_shares`: equal shares of 10⁶ ppm, the remainder one part to each of the first, each type at its share's
+middle quantile), so a new count re-cuts the same distribution (NUM.4); gamma and beta quantiles invert their
+regularised incomplete functions by bisection. `DeclaredLimit::bind` returns a `#[must_use]` `Bound` whose `taken`
+is read only through `Ctx::bound`, which writes a binding record, audience the bound party, whenever the excess is
+positive (Law 6). `Register::placeholders()` and `standing_shapes()` feed NUM.7's report.
+
+**Streams.** Each stream is declared with one `Purpose`, a closed list mirroring CHN.3's (mortality, illness,
+birthday, conception, accident, damage, third-party harm, catastrophe, equipment failure, discovery, meeting, weather,
+type at birth, schedule phase, occasion, taste, pairing, sample, lot, the opening, the observer); none is an outcome
+(CHN.5). Assembly refuses two streams of one name and two names whose FNV-1a collide. `Streams::open(stream,
+subject, day, ordinal)` is the one constructor of `Draws` beyond `phx-rand`: handlers reach it through `Ctx::draws`
+with their day and sub-step, the map's generation and the opening through contexts that carry opening ordinals beyond
+the day's sub-steps, and the observer through `ObserverDraws`, which opens only `Observer` streams, as no other
+context may (Law 17). A **keyed** stream draws from (stream, subject) alone at an ordinal of its own (`open_keyed`), a
+pure function of identity recomputed whenever read, such as a schedule's phase; it is exempt from the duplicate-open
+check. PC-19 holds these call sites.
+
 ### 5.4 Assembly refusals
 
 A fact with no writer or two; a message kind with an unanswered addressee kind or no answering sub-step; two handlers
@@ -493,6 +683,10 @@ decision point without an evaluation form or schedule; a rule signature without 
 declared transfer requesters; a commitment kind without the legs it creates; a hazard without a draw scheme (REP.7);
 an interface item whose writer is not registered; a system handler at a kernel apply (§6.2); a handler with no body;
 a handler on a table the world does not keep.
+
+  For a population kind, every refusal is reported at once: a name declared twice, an attribute or person attribute
+  of no values, roles or person attributes beyond a person's word, a kind sited by two attributes or by one it does
+  not hold.
 
 ---
 
@@ -528,6 +722,30 @@ day their decision is taken, and payments that stages 3 and 4 give rise to (a fo
 recorded as pending, settling at the next business day's stage 7. Money moves only at 2c, 6d (banknotes), 7 and 8;
 estate distributions, resolution transfers and line transfers are instructions settled by that routine.
 
+Assembly runs every system's `declare`, then every `handlers`, then compilation, and reports every refusal at once, by
+item and system. `World::run_turn` queues the player's intents for 1c and runs each day from the day after the last turn
+up to `Calendar::next_turn_day`, keeping a `TurnRecord` whose wall time comes from the application's `Clock`
+(`phx-exec`) and reaches the metrics, never the world. `run_day` walks `SUB_STEPS` in order: a sub-step runs when it has
+handlers, when it is a kernel apply of a stage that runs, when it holds the kernel's own work, or when it is the
+audit's (10d), and a business-only one only when some country has a business day; each that runs leaves a
+`SubStepRecord`. A country's business days are its rules, which are the calendar's state, and a bitset built from them
+over the years from the epoch's to `CALENDAR_WINDOW_YEARS` past the current one, rebuilt each 1 January; outside the
+window the rules answer.
+
+**The calendar** (`phx-core::calendar`) is built at assembly from each country's declared rules: a weekend and
+holidays that are `Fixed`, `NthWeekday` (−1 the last), `EasterOffset` (the Gregorian computus) or `Substitute`
+(moved to the next day neither weekend nor holiday, in declared rule order). Business days are cached as a bitset per
+country over a window of 64 years from the current year, extended at each year's start and derived, outside the
+world hash; days beyond it are computed from the rules. `Calendar::plus(day, period)` is the only way to add a
+period to a day (PC-17): a `Period` is months or days, never both, and the n-th date of a schedule is advanced from
+its anchor, never from the previous date, cutting the day to the target month's length (`EndOfMonth::Keep` also
+keeps a month-end at the month-end). Business-day conventions are ISDA's (`Following`, `ModifiedFollowing`,
+`Preceding`, `ModifiedPreceding`, `Unadjusted`); day counts (`Act360`, `Act365F`, `ActActIsda`, `Thirty360Bond`,
+`Thirty360E`) give an exact `DayFraction` per year, Act/Act ISDA over the common denominator 365·366. A decision
+schedule is a period, a convention and business or any days; its instances are anchored at the epoch, and a party's
+due day is its phase — a keyed draw within the period — into the next instance strictly after, moved by the
+convention.
+
 ### 6.2 Order without order dependence
 
 Within a sub-step every handler reads the state as it was at the sub-step's start. A handler writes directly only its
@@ -541,6 +759,9 @@ writes at the granularity of (table, column or line kind), refuses two direct wr
 write another handler reads, so registration order carries no meaning; intent buffers are keyed (chunk, canonical
 handler id), so gathers and new identities do not depend on it either, which a logic-level test holds: the canonical
 ids a registration list yields are the same for every order of it (§14.3).
+
+A handler's canonical id (`HandlerId`) is its place in the order of (system code, handler name), which `HandlerGraph`
+keeps its handlers in.
 
 As built at Stage 0 no system's handler writes an instruction, so the world's apply routine (`phx_world::day`'s
 `apply`) records the day's event intents, dated by the sub-step that drew them, and stops the run on any other intent.
@@ -569,6 +790,19 @@ and 7c's gathers and the audit — run on the pool in shards whose results are j
 its scratch, the household it reads each agent into and the chances it fills, and reuses it for every agent it draws,
 so a pass allocates for its largest household rather than for each agent.
 
+`phx-exec`'s primitives give the same result whatever the worker count. Chunk boundaries depend only on the table's
+size, or on the agenda's rows and their declared cost: an agenda unit closes only at a table-chunk boundary once its
+cost reaches `CHUNK_COST`, so arena writes stay chunk-local. Workers take chunks as they free, but each result is
+stored at its chunk's index; gathers concatenate in (chunk, canonical handler) order; `reduce_tree` folds a
+left-balanced pairwise tree whose shape depends only on the number of results. Radix sorts are stable LSD over
+11-bit digits, skipping a digit every key shares, with a stable comparison sort below 2 048 pairs. `gather`,
+`KeyedReduce` and `radix_sort` take the pool as an option and give the same result without one. The pool pins each
+worker to a core whose `cpu_capacity` is at least half the largest (all allowed cores when capacities cannot be
+read; a pin refused leaves the worker unpinned and counted); idle workers spin a bounded number of rounds before
+parking, so back-to-back sub-steps pay no wake-up. Only `pool.rs` and `site.rs` read a worker's index; atomics and
+threads exist only inside `phx-exec` and never appear in its API. Wall time comes from an injected `Clock` and
+reaches counters and the application only (TIME.11).
+
 ### 6.4 Compute, gather, apply
 
 Handlers write their own rows and emit intents into (chunk, handler) buffers; gathers place them by prefix sum; applies
@@ -576,6 +810,23 @@ run in declared order, in parallel over disjoint targets. **One apply routine** 
 settles the instructions of reasons allowed there (§6.1), writes transformation records, and checks and feeds the
 streaming audit through `phx-core`'s `AuditStream`, which `phx-world` injects (§3.3). Every reduction runs over a fixed
 tree. At Stage 0 it applies event intents only; outcomes, settlement and estates are the kernel's own work (§6.2).
+
+An `Instruction` carries its identity — its day in the high word and its place in that day's gather order below — its
+reason, trade and settlement days, its legs, the contract row whose due it pays, if any, and the covers its trade's
+offer placed. A leg (`LegRec`) names its party, its account (a line side's row, an instrument, or a named unit), a
+signed quantity (received positive, given negative), its denomination (a currency, which is its issuing country's
+index, or a unit) and its kind: `Money`, `Units { cost }`, `Row` (open, close, adjust, count), `Transformation { source,
+cost }` or `OpeningWrite { identity, cost }`, the last two the only legs with no paired side. A money line's two sides
+carry one balance, the holder's owed to it and the issuer's owed by it, so each line's balances sum to nothing; a
+negative balance is allowed only on a deposit row whose terms carry a `Facility` (limit per member, rate, day count),
+and that balance is the loan. `Ledger::apply` reads every leg's position before anything moves, checks them with the
+pure `check_legs` — each position at or above its floor on the sum of the legs moving it, an issuer's liability having
+none — and applies all or none, a refusal recorded as a `Fail` with its cause and party; it keeps the reason's
+accounting effects, taken on each party's net in the instruction, releases the instruction's covers whether it settles
+or fails, and feeds the audit each settled leg with what its account held before, which `phx-audit`'s `Digests` keep
+apart from the books. Instructions of one sub-step apply by their reasons' declared payment order, then identity; an
+identity applied twice, an instruction with one side, or money moved where money does not move stops the run. A
+rounded split lands its residue on the payer, the payee with the largest share, or a named party (`RoundingLanding`).
 
 ### 6.5 Settlement
 
@@ -635,7 +886,7 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
   cleared line's credits into it stand, since they only add to its reserves. A cleared payment through a closed bank
   waits for the resolution `sys-sup` brings (S2.08), and stops the run until then.
 - **A party with no money**: a payment whose payer or payee holds no money in its currency — no account, and none it
-  issues (`Books::holds_money`), as a household that banks nowhere until banknotes are held (S1.09, S1.12) — has no
+  issues (`Books::holds_money`), as a household that banks nowhere until banknotes are held — has no
   legs and fails at the start of 7b, with the cause `FailCause::NoMoney` (MON.12). A cleared line's payer with none
   fails as a short one does, its dues lost by drawn claimant contracts; a cleared line's claimant with none
   loses its due against the top issuer, which holds no row to be in arrears on, and the top is the one the line's
@@ -680,6 +931,20 @@ tree. At Stage 0 it applies event intents only; outcomes, settlement and estates
   settle as before. On a many-party line whose paying side holds a closed party among others, the holders whose
   credits are its own are drawn once for the whole resolution (REP.23), and the same holders stay paired until it
   settles; the other payers pay theirs as before.
+- **Spent rows**: when a holder's segment is scanned, the rows of lines whose schedules are spent leave the segment for
+  the end of the holder's rows, so an empty segment is never due.
+- **Standing flows** (`standing.rs`): a rate per member per day on a row, plain or times its holder's region's daily
+  index (a weather index `phx-geo` writes at 3a) over its scale; the day's amount is the rate × the index × the members
+  reached, rounded once. On a business day it is a leg of the day's batch; otherwise it is pending on the payer's
+  deposit row, or paid in banknotes where its kind says so. A plain flow books on the agenda the first day its members'
+  position reaches a kink (`kink_day`); an indexed flow, whose index has no upper bound, books none and is tested by the
+  pooled-flow rule on every day it posts, pending or settling.
+- **The pooled-flow rule** (`pooled`) is pure: handed a payer's funds, its weight (`PayerPositions::weight`, one for an
+  individual, the multiplicity for an agent), its rows in payment order and the kinks on its members' positions, it
+  tests each row against the funds per member the rows before it left and the reached members' own position; a row the
+  funds cannot pay fails with every row after it, and one that carries its reached members across another kink (a band,
+  a means test), outward or inward, splits them off and is paid (`RowOutcome`).
+
 - **Currencies** (Stage 5): the payer pass tests each payer per (party, bank, currency), and banks' nets are per
   (bank, currency). A leg in a currency its payer does not hold draws its bank's **conversion commitment** at 7a: the
   bank is the counterparty of both legs, trading from its own currency book at its posted quote, so the payment
@@ -701,7 +966,7 @@ most O(log n) (N8.6). A pass over a world-sized store is allowed only as a decla
 day (the audit's thirtieth), counted in §13.2. Nothing a day does grows with elapsed time. A kernel that cannot meet
 the rule is a finding, not an exception.
 
-Where the day breaks it is the plan's F-087 and S0.26f. The representation that meets it, each part with the
+Where the day breaks it is the plan's F-087. The representation that meets it, each part with the
 published technique it rests on:
 
 - **Dense identity.** A party id indexes a dense array of its location (ids are issued in order, and the ended keep a
@@ -767,7 +1032,7 @@ reads; the audit's families, each into its own findings, kept in their order; th
 store to its own file at once, in fixed 1 MiB zstd frames compressed a wave at a time. Rows are found by reading their
 heads, not by an index; 7b runs on one thread (F-088); 7c's balance writes land by holder chunk on the pool, its
 checks and records in line order on one thread; the money and contract families
-still read an unlisted side whole. The rest is carried to Stage 1 (the plan's S0.26f, F-087).
+still read an unlisted side whole. The rest is carried to the Stage 1 gate (the plan's S1.16, F-087).
 
 ---
 
@@ -786,8 +1051,16 @@ directory and the saves reach agents as they reach individuals; `phx-pop` reache
 the tables do not hold — each kind's compiled declaration, the agenda and the members counted by event — is the
 world's `Population`, which the opening's contributions are handed beside the books.
 
+  A population kind is declared item by item by the systems that write it, through `Declarations::pop_kind`
+  (`PopKindBuilder`: `attr`, `role`, `person_attr`, `position`, `sited_by`), each item recorded with its declaring
+  system as its one writer (Law 10). `phx_pop::kind::PopKindDecl::compile` lays it out: attributes; roles and person
+  attributes packed into the person's word, each attribute the bits its values need; positions, a column each in the
+  order declared; and the attribute that sites the agent in its region. `AgentTable` implements `phx-ledger`'s
+  `HolderArenas`, `PayerPositions`, `HolderTable` and `CellHolders`, and `phx-core`'s `TableSchema` and `FactStore`.
+
 An agent row keeps, in columns: its party, the day it began, its **multiplicity** (`u32`), one `u32` per declared
-**attribute** (REP.41: a household's region and bank, a small firm's region, size and bank), the due-day run's head
+**attribute** (REP.41: a household's region and bank, a small firm's region, size, bank, industry (`FRM.industry`), product (`FRM.product`), the way-set it knows
+(`TEC.known`) and the way it runs (`TEC.way`)), the due-day run's head
 (§4.5), and arena references to its lists in its chunk's arena:
 
 - **rows** and **holdings**, the ledger's (§4.5), each row counting the agent's multiplicity times the contracts its
@@ -802,11 +1075,41 @@ Positions (REP.20) arrive as declared `i64` columns with the steps that need the
 they begin and end, and the population counts their parties and persons by the events that begin and end them, so
 the day's measures (REP.15) visit no agent; the agents family checks the three against the table (REP.14).
 
+A kind is declared item by item (`PopKindBuilder`), and the system that declares an item is its writer. The items are
+attributes (`AttrDecl`, with the number of values each takes), roles (`RoleDecl`), person attributes (`PersonAttrDecl`,
+with the value a person holds before any system gives it one), positions (`PositionDecl`), and the attribute whose value
+is the agent's region (`sited_by`). An estate is sited in that region. `phx-pop` compiles the items into the kind's
+layout, and each width comes from the number of values. An agent's persons and attachments are written only by
+`phx-pop`, by the openings that form households (`sys-dem`) and by the world. A twin is taken (`take_twin`) only by the
+world, and only at the opening. `phx-check`'s PC-34 refuses these writes from any other crate, and a twin taken after
+the opening stops the run (REP.17).
+
+A multiplicity is a `Weight(u32)`: it adds and subtracts with weights and becomes a `Count` for the arithmetic that
+multiplies per-member amounts by it, and nothing scales it (PTY.14).
+
 ### 7.2 Arenas, locality and identity
 
 - Variable-length lists live in **chunk-local arenas**, compacted in place per chunk with a chunk-sized scratch;
   freed pages return to the system. Columns sit in reserved address space; nothing reallocates; no store holds a
   heap-owning type.
+
+  As built (`phx-store`): a column reserves address space for its declared maximum rows through a `Backing`
+  (`mmap` with `PROT_NONE` and `MAP_NORESERVE`, committed by `mprotect`, decommitted by `MADV_DONTNEED`; a zeroed heap
+  allocation under Miri), and commits pages as it grows, at the page size read from the system; reservations count no
+  resident memory, and all of them together stay within 64 GiB (`VA_BUDGET`). Growth past a reservation is
+  `capacity_exceeded!`. Rows sit in chunks of a power-of-two `rows_per_chunk` declared per table (4 096 by default),
+  whose disjoint `&mut` views are what parallel handlers own. `SlotAlloc` hands out the lowest free slot, then extends;
+  a slot released during a day returns to use only after the close, so the slot a row receives depends only on the
+  order of allocations. A chunk's arena is 8-byte words holding its rows' lists by `ListRef { off, len, cap }` (an
+  agent table's compact `CellListRef` of 16-bit length and capacity, a longer list's reference kept in the arena's
+  overflow map); a list grows in place while it has room and otherwise moves to the arena's end with 5/4 of its need,
+  rounded up to four words, leaving its old span dead; removal shifts down, so a sorted list stays sorted. When dead
+  words pass an eighth of the used, compaction copies every live list in slot order through a chunk-sized scratch and
+  decommits the pages above the new end. Only a chunk's own rows hold references into its arena. Lists that are not a
+  chunk's own — a line's or an instrument's holders — are `BlockList`s: sorted sets held as a tree of 16-entry `u32`
+  blocks (one cache line) from a shared `BlockPool`, leaves chained for iteration and inner nodes keeping each
+  subtree's least entry, split and merged at half occupancy; adding a present entry or removing an absent one is a
+  violation.
 - Agents are drawn region by region at the opening, so a chunk holds neighbours; an agent keeps its slot for life,
   and an ended agent's slot is reused by the next one to begin, so no renumbering is needed.
 - The **directory** maps permanent identities to slots. A party that ends leaves a tombstone only while a record or
@@ -814,6 +1117,13 @@ the day's measures (REP.15) visit no agent; the agents family checks the three a
   case, so the day's legs that name it still resolve for the audit; its slot is recycled at once. A row's arrears go
   where its contracts go: a row retired takes its arrears entry with it, and a line transfer carries it to the row
   that takes the contracts.
+- As built, the directory keeps live parties in a paged map from identity to `RowRef` and ended ones in the kernel
+  map as `Ended { day, successor, refs }`. A record kind that may name a party retains and releases it; an ended
+  record is dropped when its references reach zero and the day has closed, releasing its successor in turn. `lookup`
+  gives live, ended or unknown — unknown below the counter meaning nothing retains it, so a store naming it is a Names
+  finding — and `resolve` follows successors to a live party or to an ended party with none (an estate that has
+  distributed), which reads as ended (PTY.10).
+
 
 ### 7.3 The agenda and hazards
 
@@ -822,6 +1132,18 @@ agents woken (a message, a surprise, the player's intent), and agents with a haz
 settlement stream's, §6.5). `phx-core` keeps each agent's next day per reason — a reason per process on its kind —
 and **one calendar entry per agent**, at the earliest of them, in a timing wheel of day buckets; 3b gathers today's
 bucket and reads each agent's reasons due today.
+
+Each table the agenda books declares between one and 16 reasons, so a row's next days, one `u32` each, fill at most
+one cache line; beside them the row keeps `booked`, the day of its one live entry, never later than its earliest
+reason. Setting a reason earlier than `booked` writes a new entry and leaves the old stale; a later one writes
+nothing. Each table has its own two-level wheel of slots: 1 024 day buckets for the current 1 024-day block and 1 024
+block buckets, whose entries cascade into day buckets on the block's first day and otherwise wait a turn of the
+wheel. Buckets are `BlockBag`s, chains of the block pool's 16-entry blocks, pushed to and drained whole. A gather
+walks every day since the last, drops stale entries (those not in the bucket of their row's `booked`), sorts the due
+slots once, returns each row's reasons due as a `u16` mask and books the row again at its earliest reason after the
+day, so a reason moved later is never lost. A table is compacted when its stale entries outnumber its live ones.
+Renumbering moves or swaps a row's reasons and entry; a released slot's entry goes stale. A save writes each row's
+next days, and the wheel is rebuilt on load.
 
 Every process on a kind is drawn **ahead** (REP.7, the next-reaction method). For an agent and a process, from a day
 _d_: every person's daily chance _q_ᵢ is read at _d_ from the agent's own state, and the agent's chance of a hit on a
@@ -832,6 +1154,14 @@ of a hit beside its day, and otherwise a **redraw** is booked at `c`. Both are e
 independent of the days before: the redraw starts afresh from its day. Whatever changes an agent — an outcome, a
 person leaving or joining, a new attribute — books every process on it afresh from the next day, at 10b; the
 opening's agents, the player's seat among them, are booked the same way once the opening is done.
+
+  _p_ is computed without cancellation, as −expm1(Σ log1p(−_q_ᵢ)), one when any _q_ᵢ is; a chance outside [0, 1]
+  stops the run. A process at _p_ = 0 with no day its rate may change is not booked (`hazard::Booking::Never`).
+
+A process's rate reads a table primitive at its declared axes; an annual probability _q_ becomes the daily
+`−expm1(log1p(−q) / days)`, with the calendar year's own days, so a year of daily chances compounds to _q_ exactly.
+A process acts on a role or every person of a kind's parties, a party, a holding of a class, or a tile, region or
+country; tile and region processes are `phx-geo`'s at 3a, the rest the population's at 3b.
 
 A booking come due is followed on from its own day until one falls after today: a hit reaches its persons and the
 next booking is drawn from the day after it, a redraw draws from its day, and the persons a hit reached are passed
@@ -844,13 +1174,25 @@ multiplicity _k_ is that person's hit in every twin (REP.1): the outcome is the 
 A hazard on a party itself (a firm's plant failing, a vehicle's accident) reads the agent with no persons: its _q_ is
 its own. Catastrophes are drawn at 3a (§7.8).
 
+**The processes on persons** are `sys-dem`'s `PopProcess`es. Each is bound to the register once, at assembly
+(`PopProcess::bind`), and there builds the tables it reads for each country. Death reads each country's life table by
+Brass's relational model: its survivorship logits are the sourced standard's plus one level, the same for both sexes.
+The level is solved at binding, by bracketing and then halving, so that life expectancy at birth equals the country's
+`DEM.life_expectancy` (§10.0), with the sexes weighted by the sex ratio at birth. Past the table's last age, the open age
+keeps the last year's hazard. A person's chance of dying before its next birthday, read at its exact age from its birth
+date, is compounded over the days of that year of age. The onset of lasting disability spreads its yearly hazard by age
+and sex over the same days, and is zero for a person already disabled. Both rates change on the person's next birthday
+(`changes_after`), so ageing is read from the birth date and never drawn. A death marks the person gone, and a dead
+head's place goes to the partner, else the eldest adult, else the eldest child (`household::succeed`). An onset makes
+the person disabled in place.
+
 **Decisions on the agenda (visits).** A system declares each decision it takes on the rows of a kind as a **visit**
 (`Declarations::visit`): the handler that takes it, the kind — a kind of individual or a population kind — its stream,
 the wakes it answers, and its **cadence**: a continuous decision's schedule (TIME.5), each row at its own phase within
 the period, drawn once and kept beside its booking; or a lumpy decision's reviews (REP.21) at the daily chance the row's
 attention position holds (REP.38), none while it holds none. The assembly refuses a visit whose handler is not its
-system's, runs on another table or outside 5b and 5c, or whose attention the kind does not hold, and, until wakes
-reach visits with the markets that print surprises (plan S1.05), one that names a wake. The visits keep an
+system's, runs on another table or outside 5b and 5c, or whose attention the kind does not hold, and one that names a
+wake, which no surprise yet brings to a visit. The visits keep an
 agenda of their own beside the processes' (`Population::visits`), one table per visited kind, a reason per visit, saved
 with the population. Every row is booked once the opening is done; the rows due are gathered on the day's first decision
 sub-step, each visit's handler runs on its rows due in runs of consecutive slots over its kind's table — an agent
@@ -861,6 +1203,32 @@ review is never drawn at an attention the row no longer holds. On a run that tra
 on its rows are checked against its declaration and counted into the day's read trace. What each day's visits did —
 the rows each handler visited and the facts they moved to a new value — is kept as the day's `VisitDay`. A row
 that ends leaves its bookings to lapse: a due row no party holds is passed over.
+
+**The firms' decisions** (FRM.5, REP.21, REP.34, REP.38). What a firm holds and expects is declared once in `if-firm`
+under one name for both kinds: a large firm's as facts of its row, a small firm's as positions of its agent
+(`if_firm::facts::POSITIONS`); its industry, product, known way-set and way run are keys, facts of a large firm and
+attributes of a small one, so twins share them. `FRM` writes the sales outlook (`FRM.expected_sales`,
+`FRM.sales_width`), the units delivered at its last schedule and last review, its method, last review day, unit cost,
+markup, posted price, output rate, price attention, the cost of its staff's hour and required return; `TEC` the ways;
+`CAP` the capacity and the investment review's counts. `sys-frm` declares two visits on each kind:
+- `FRM.attend_*` (5b, on the production schedule `FRM.production_days`, business days): closure is weighed first
+  (§7.11); then the units of its product delivered since the last schedule enter the sales outlook by its memory
+  type's adaptive gain (`FRM.method` modulo the memory types), the surprise's size the width; then the price
+  attention, the daily chance `phx_val::attention` gives from the loss's curvature — at a markup μ a log gap x loses
+  R·x² ÷ (2μ) of revenue R, so the curvature is daily revenue over μ, with no primitive of its own — the outlook's
+  relative variance a day, and a review's cost, `FRM.review_hours` at the staff's wage: none while it expects no
+  revenue, every day at or below cost. A surprise beyond `VAL.attention_sensitivity` widths sets the chance to one, so
+  the review is drawn for the next day: a surprise reaches a visit through its attention, since visits answer no
+  wake. Production follows.
+- `FRM.review_*` (5c, at that attention): the markup moves by `rules::markup::update` over the sales since the last
+  review against those expected over its days (the competitors' term absent while none is seen), and the point
+  nearest `(1 + μ)·unit cost·π^η` is posted, π the stocked pressure read from its own stock of its product, only when
+  the loss it saves over the days to the next expected review exceeds `FRM.menu_hours` at the staff's wage.
+
+A trade's point table (`FRM.price_points`) holds one decade's points; a price's candidates are its decade's and the
+two neighbours' points scaled by powers of ten, each whole (`Management::points_near`), so every posted price is a
+point at any scale. The management's values are one shared type (`data/shared/FRM.toml`), compiled once
+(`Management`). A firm missing an input its decision reads decides nothing; nothing is read as zero.
 
 ### 7.4 Outcomes and endings
 
@@ -891,10 +1259,19 @@ Then:
 - a household no one is left in **ends**: an estate is opened at a zone centre of its region, with the agent's
   multiplicity as its row's weight in the estates' kind table (one estate for each twin, REP.1), and every row it
   held passes to it whole by line transfers (PTY.9); its slot is freed and its identity ends. The estate's
-  waterfall runs on one twin's balances and pays each amount for every twin. Households hold no
-  holdings before Stage 3; one ending with any stops the run until its holdings pass the same way.
+  waterfall runs on one twin's balances and pays each amount for every twin. Its holdings pass to
+  the same estate (`Books::pass_holdings`), each counting one twin's, as the estate standing for its twins holds them —
+  a small firm's plant and goods among them; an agent ending with named units stops the run.
 
 Nothing is split or landed: an agent is changed where it is, or ends.
+
+**Births and leaving school** (`sys-dem`, POP.5, POP.10): a household decides on its head's birthday (`DEM.fertility_occasion`, taste `DEM.fertility_taste`) whether to try, and tries when the next child's value `ln((1 + n*)/(1 + n)) − ln(e(n + 1)/e(n)) − ln(1 + 1/(1 + a)) + s·ε` is positive — `n*` its ideal (`DEM.ideal_children`, drawn from its country's shares at its first decision and held as an attribute beside `DEM.trying`), `n` its children, `e` its needs on `DEM.equivalence_scale`, `a` its youngest child's age, `ε` a standard logistic draw; with no income outlook it does not try. While it tries, each woman of its couple conceives at `DEM.fecundability` a cycle compounded over `DEM.cycle_days` (`DEM.conception`), and a conception is a birth at once: a child in school, its sex by the sex ratio at birth, the household then trying no more until its next decision. A child leaves school on the birthday its country's `DEM.school_leaving_age` falls on and becomes an adult out of the labour force (`LeavingSchool`, a placeholder naming POP); the opening's children being those under the age of majority, those past the leaving age leave on day one.
+
+A side's `Tally` groups its holders by unit. Within each unit the holders sit in a Fenwick tree over the members they
+have left, so drawing a member and taking its holder's unit costs the log of the holders. A cleared line's `Losers` draw
+from the same structure. A member leaving takes no share of its row's balance, which stays a claim the line still holds,
+and its counterparts give up none of theirs. The leaving draws come from the stream `REP.leaving`, at 3e and at 7c for
+an estate's rows. An estate's site comes from `REP.estate_site`. Both streams are keyed by the party.
 
 ### 7.5 Lines, counts and settlement
 
@@ -934,6 +1311,11 @@ twin's share of every row — its count over the twins — moved to it by line t
 §10.4a), and one twin's share of every holding written to it, its basis's share rounded once (`Books::pass_share`);
 the agent keeps one twin fewer. A counterpart seated for the player, a small firm's agent among them, is seated alike.
 An agent of one twin, as in a small world, is the player's as it stands.
+
+The player's seat also reaches its counterparts. On each line the player holds whose other side holds agents, one of
+those agents, drawn by its contracts there, has one twin seated the same way; the player's donor is never drawn. The
+player's members and its donor's then each find a counterpart of their own unit when they leave (§7.4). Under twins,
+these seats are the only agents of multiplicity one, and their donors the only agents one twin short (REP.17).
 
 ### 7.7 Relationship counts and their levers
 
@@ -986,6 +1368,53 @@ distance. A row's climate is read at its place in the latitude cycle (GEO.18): i
 first row, its declared cool latitude half the world away, evenly between. The phone draws the map scrolling
 without end in both directions.
 
+A tile is 12 bytes (`Tile`: elevation in metres, surface, terrain and climate classes, zone); its coordinates derive
+from its row-major identity, and its region and country are read through its zone. The grid's side is set so the
+declared land count lies at the declared sea share. The map is generated in the opening's map phase
+(`phx_geo::generate`) from the stream `GEO.map`, one subject per attempt, which:
+
+1. raises the relief on a fine grid of four cells to a tile's side: plates over a warped closed plane, crusts blended
+   across their borders and ridged belts raised where they converge, and fractal gradient noise over a second warp
+   (`noise`, lattices drawn once per attempt), all repeating with the grid; the declared count of tiles of highest mean
+   is land;
+2. erodes it by the stream-power law over a priority flood's drainage (`hydrology`), solved implicitly from the outlets
+   up, the cells of a flat taking their turns by lot;
+3. ranks the land's cells onto ETOPO1's measured land heights and the sea's onto its depths; a tile's elevation is its
+   cells' mean, and its relief, their range, is ranked among the land tiles onto ETOPO1's ranges over windows of a
+   tile's span;
+4. reads terrain from elevation and relief by the declared classes; a tile's river is the largest stream of the fine
+   grid through it, draining where that stream flows on; its climate class by its row's latitude, distance to the sea
+   (coastal, inland, interior) and, above its band's declared elevation, the band's highland class;
+5. splits the land into countries, each country into regions and each region into zones by **exact halving**
+   (`partition::split`): the parts are cut into two groups, the tiles ranked by how much nearer one end they lie than
+   the other by travel cost (length over the ground, lengthened by relief climbed and a river crossed) and cut at the
+   first group's share, then each group halved again; the ends are the tile furthest from one drawn and the tile
+   furthest from that. Tiles of equal rank (a peninsula's) are never parted, and a tile off the largest piece ranks
+   with its nearest tile on it, so an island goes with the coast it faces;
+6. reads each land tile's exposure per hazard from its terrain and climate by the coastal, river or inland table, one
+   column per declared hazard, and draws its deposits per resource — present at its terrain's chance, grade and,
+   unless unbounded, quantity log-normal; assembly refuses a resource declared present on every terrain.
+
+An attempt that fails a declared construction condition — a country's land or a region's size beyond its tolerance, a
+country's mainland below its floor, a region in more than one piece, a zone outside its size range — is recorded with
+the condition and the next attempt drawn, nothing nudged; past `MAP_MAX_ATTEMPTS` the run stops at
+`capacity_exceeded!`. The curves come from NOAA's ETOPO1 over the analogue region (35–58°N, 10°W–60°E), the climate
+tables from NASA POWER's daily reanalysis (1991–2020) at 71 Old-World places, the hazard rates from EM-DAT over the
+World Bank's land area (`tools/data/{relief,climate,hazards}.py`, the raw data in `data/sources/raw/`).
+
+**Distances**: a leg is the three-dimensional distance between tile centres over their elevations, rounded to whole
+metres before summing. `ZoneDistances` holds the Dijkstra lengths between zone centroids (a zone's tile of least summed
+distance to its others) within each country, computed once when the map is accepted, none across a border;
+`path_length` between two tiles is A* on demand, bounded by the plane distance.
+
+**Weather and catastrophes** at 3a: a region's climate is its tiles' classes' parameters weighted by their count. Each
+region moves a latent Gaussian AR(1) per variable, persistence declared per class, and maps it through the month's
+declared marginal (`Marginal`): temperature normal, rain a zero-inflated gamma, wind Weibull, sunshine a beta over the
+day's clear-sky index. Per country, hazard and exposure class, the day's count of origins is one binomial over the
+class's land tiles at its daily chance, the origins picked uniformly among them (Floyd's method); a footprint spreads
+breadth first over the eight neighbours in tile-id order, each untried land tile joining at the hazard's spread chance
+for its exposure, and each struck tile draws its severity from its exposure's distribution.
+
 ### 7.9 The valve
 
 - **The world runs once** (spec Appendix E 36): there is no weight-one run, and no run at another resolution or seed
@@ -1002,6 +1431,19 @@ without end in both directions.
   instrument per (country, kind, class), so plant of one class is alike: an agent's twins hold it pooled like any
   holding (§4.4) and nothing is kept per unit. A system declares each kind's classes to the ledger as a **chain**
   (`phx_ledger::chains::Chains`, saved with the ledger), tagged with its kind; no instrument is in two chains.
+
+A kind of service life L in C classes gives each class a span L ÷ C; a class's **efficiency** is the hyperbolic
+(L − a) ÷ (L − β·a) at its mid-age a, its **value** e^(−δ·a) of the cost new, and units leave each class at C ÷ L a
+year, so a unit's life is Erlang about L (`sys-cap`'s `rules::wear`). The plant review is its own visit every
+`CAP.review_days` calendar days.
+
+(And at the end of the **Investment** bullet:)
+The rule (`rules::invest`): the project's value is the margin its extra output earns a year, an annuity over the
+kind's life at the firm's required return, against the plant's cost at the kind's product's mark where it stands;
+the multiple of cost it must beat is Dixit and Pindyck's β ÷ (β − 1), from the rate, the payout over value and the
+volatility of the firm's sales between its last two reviews; it invests when the value beats that and its money
+covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return weighted by leverage) and
+`rules::maintain::choose` are built and not yet read.
 - **Wear** is declared, not coded per system: a `WearDecl` names the visit it follows and, from the register, each
   tag's rate of leaving a class and each class's value. After that visit's handler has run on its rows, the kernel
   (`phx-world`'s `wear`) realises every chain for each row visited, over the days since its last visit (the period;
@@ -1042,11 +1484,23 @@ without end in both directions.
   only goods somewhere made or held exist. A stock is its holder's holding of the good, its lots its cost (ACC.6): no
   system keeps a second count of it. An individual's goods stand at its site's zone; an agent, which has no tile, holds
   its goods at its region's **market zone**, the region's largest zone (`GeoState::market_zones`). A good moves between
-  zones only by a shipment (FRT, S1.07).
+  zones only by a shipment (FRT).
 - **Rights to extract** (GDS.3): each deposit's right is an instrument of one unit (`extraction right`) over its tile,
   in the same table; who holds it is drawn at the Stage 1 opening (S1.15).
 - **Grades** (GDS.13): each storable product declares its grade classes (TECHNOLOGY). A commodity's grade class is its
   system's reading of its deposit's or its land's grade; a made good has one class.
+- **Products and ways** (TEC.1–TEC.4, TEC.9, TEC.12): products and ways are data (`if-base`), compiled at assembly
+  into `sys-tec`'s `Technology`: each country's one opening way per product and its public way-set per industry. An
+  extracted product is counted in tonnes, as deposits hold it; every other in what one US cent bought at world-average
+  prices in 2022, so a way's quantities are physical and no price moves a draw. A way states per unit made its
+  inputs, hours by occupation family, plant by kind per unit a year, land and deposit, with lead time, batch and yield
+  in parts per million; for a start it takes inputs rounded up and finishes output rounded down, and a making's start
+  is the least that finishes its output (`ways::started_for`), each twin's take rounded alone. Way-sets are interned
+  once, sorted (`WaySets`), so a firm's known ways are a four-byte identity and membership a binary search. The family
+  `TEC.production` reads each instruction whose legs name a way from the audit's own record: the way registered, its
+  output its product, each storable input used what the way states for the least start; a service input, used as it
+  is delivered, is never a production's leg.
+
 - **What a handler reads of its goods** (§4.9): the `Ctx` gives a row its party's units of each good at its place (one
   twin's for an agent), the deposits whose rights it holds with their grade, opening and remaining quantities, the
   units of a product it has delivered since the opening, and each good's latest mark and its public outlook by a
@@ -1107,6 +1561,15 @@ without end in both directions.
   seller's units used up by the purchase naming the buyer, settled in stage 7 with the trades. A service is
   delivered as it is made and never held: each maker makes the day's sales of it in one making at 6d, and what no
   settled sale takes perishes after the day's trades settle (`unsold_perish`), as a project stage made to order does.
+- **Households' spending** (`sys-hh`, HH.4, HH.5): a weekly visit at 5c (`HH.spend`, every `HH.spending_days`) reads the row's money (`Ctx::money`, one twin's, which the goods view gives every visited row) and two positions, `HH.income` (the outlook of its permanent income a year) and `HH.after` (what it held after its last decision). Its money less `HH.after`, grossed to a year, is taken into the outlook at `HH.income_gain`; it spends `c* + κ(m − m*)` years of that income a year, `m` its money over the outlook, never more than it holds; and it asks each product's `HH.budget_shares` of that at retail as a want of money. A first decision only notes what it holds. The buffer-stock rule is solved once at assembly by the endogenous grid method (Carroll, 1997) from `HH.patience`, `HH.risk_aversion`, the shocks' spreads and the chance of no income, with `HH.real_return` and `HH.income_growth` as placeholders naming BFL and HH; its target `m*`, consumption there `c*` and propensity `κ` are read from the solution, never declared. `tools/data/derive_hh.py` derives the budget shares per group from FIGARO's households' final use (P3_S14): the median over the group's economies of each industry's share, finance, real estate, public administration and households as employers left out, renormalised.
+
+
+`sys-srv` declares the kind (`SRV.retail`) over `FRM.product`, `FRM.price`, `FRM.output_rate`, `TEC.way` and
+`CAP.capacity`; purchases settle under `SRV sold`. The tastes are standard Gumbel draws from `SRV.taste`, so the choice
+is multinomial logit exactly, and the serving order is drawn from `SRV.capacity_lot`. A buyer with no stall left in
+reach goes without, kept for the day (`RetailDay::unserved`), and the re-choice rounds are counted. A service's stall
+is what its maker can make that day: the lesser of its staff's output rate and its plant's capacity, times its twins,
+no more than its held inputs let its way make (`way_most`), in whole lots.
 - **Freight** (FRT.1–FRT.9, GEO.4, GEO.13): the network is generated with the map (`phx_geo::network`): road and rail
   segments between the market zones of every two regions of a country that share a border, over their land path,
   and sea lanes joining a country's parts, the shortest first; each mode's capacity a day in tonnes. A carriage kind
@@ -1120,6 +1583,25 @@ without end in both directions.
   released and the goods move, used up where they left and made where they arrive, at the cost that left with them;
   GDS's family counts them shipped and arrived. A segment with an end in a zone a catastrophe struck carries nothing
   that day.
+- **The goods' markets** (GDS.7): `sys-gds` declares two kinds, `GDS.commodities` — a call at each place each business
+  day, for the products `GDS.standardised` names — and `GDS.between_firms`, posted prices, for the rest.
+- **Extraction** (GDS.4, GEO.9, GEO.12): the holder of a deposit's right visits on its own schedule
+  (`GDS.extraction_days`, 5c). A deposit's grade is its opening grade times e^(−κ·share taken) (`GDS.grade_fall`), the
+  richest part first, classed by `GDS.grade_bounds`. It works the deposit when today's mark less its unit cost is at
+  least its method's outlook less that cost discounted at its required return over the days to its next decision
+  (Hotelling; a deposit without end whenever the mark covers the cost), its output rate for those days, in whole lots
+  and no more than the deposit holds, as a transformation from the deposit; and offers what it then holds at no less
+  than the better of its cost and its discounted outlook.
+- **Spoilage** (GDS.8): a system declares each product's yearly loss in stock and the visit it follows
+  (`SpoilageDecl`; `sys-gds`'s stock visit at 5b every `GDS.spoilage_days` calendar days, deciding nothing). After it
+  the kernel (`phx-world`'s `spoil`) takes from each lot 1 − e^(−rate·t) of its units, t the days it was held within
+  the period, summed and rounded half to even for a twin: one instruction a row of transformation legs under
+  `spoiled`. Storage, the room goods are kept in, is a service bought, never the same number.
+
+A route is the shortest path of one mode over the segments (`Network::route`); a trip over two modes is two bookings.
+An arrival does not wait on its carrier: goods aboard a carrier that failed meanwhile still arrive, their owner's.
+Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the meeting's order is drawn from
+`FRT.capacity_lot`, equal prices by lot.
 - **Carriers and shippers** (FRT.4, FRT.5): at the opening each firm selling the carriage product is given a mode,
   drawn by the modes' shares of carriage employment (`FRT.mode_share`, stream `FRT.opening`). With the marks at 6a the
   world rebuilds an `AwayTable`: each good's mark at each region's market zone and the carriage market's mark at each
@@ -1152,11 +1634,14 @@ without end in both directions.
 
 - **Employment lines** (LAB.1, REP.3): a contract's terms carry, beside its monthly wage leg, a **class**
   (`Terms::class`, by the places the employment kind declares): occupation family, skill, hours, notice days,
-  severance weeks a year of service, region and start band. Contracts differing in any are on different lines, so a
+  severance days a year of service, region and start band. Contracts differing in any are on different lines, so a
   line is what LAB.1 says it is. The pension's kind and rates join the class with PEN (S4.04); until then a job carries
   none.
-- **A person's labour state** (PTY.3): two person attributes, declared by LAB on the household kind: the occupation
-  family it last worked in or trained for (none for one never employed), and whether it searches. Employment is its
+- **A person's labour state** (PTY.3): three person attributes, declared by LAB on the household kind: its state
+  (`LAB.state`: not searching, searching, retired), the occupation family it last worked in (`LAB.occupation`, none
+  for one never employed) and the wage point of its last job (`LAB.last_point`, at the opening the point of the wage it
+  would have earned; none for one never counted in work). A hire sets the occupation and point and stops the search; a
+  layoff or a quit sets it searching. Employment is its
   attachments on employment lines; nothing else counts it.
 - **The labour kind** (`if_labour::LabourKind`, declared by `sys-lab` as a market beside the goods kinds): the
   employment line kind's name, the class's places, the attributes above, and its **decision points** — the employer's
@@ -1176,6 +1661,13 @@ without end in both directions.
   production schedule came due today posting, withdrawing and laying off. At **4a** of the next day, the hires join
   their lines and the separations whose notice has run leave them, their severance paid at stage 7 as legs of the
   separation's instruction. A match therefore takes at least three days.
+- **Wage points** (REP.34): the monthly wage at point _n_ is `LAB.wage_point_ratio` to the _n_-th power, 128 points, the last meaning none; `sys-lab`'s `wages` holds the arithmetic the kernel calls (`wage_at`, `point_near`, `least_point`, the offer `adapt` and the severance `owed`).
+- **Posting** (LAB.4, `rules::post`): on its production schedule an employer reads, per occupation family, its hours a unit (`TEC.labour`), its staff's and its open vacancies' hours and an hour's wage at the point it would offer; it posts the whole jobs its planned output still needs when an hour's output at its price outlook is worth more than that wage plus financing it until the sale and than the law's least, withdraws the vacancies it no longer needs, and lays off the whole jobs by which its staff's hours exceed the need. It decides nothing while its facts give it no price or planned output. The point it offers is its last fill's in the occupation, one lower when that fill came in the least days a match takes, else its newest staff's there, else the mean wage's for the hours, never below the law's least; a vacancy standing past `LAB.vacancy_patience_days` is raised a point.
+- **Layoffs** come in whole agents: the jobs asked for over the line's unit, rounded up with the chance of the remainder (stream `LAB.layoff`), never more than the line holds; the employees are drawn from the line (REP.23) and the separation takes effect on the first business day of the employer's country by which its notice has run.
+- **Search and acceptance** (LAB.5, LAB.8, REP.22): each searching person not waiting on an application or an offer sees the vacancies standing in its region and occupation, at a skill it has, with jobs open for its twins; it draws a Gumbel taste for each (`LAB.match_taste`) and applies to the best by `LAB.wage_weight` times the wage's log plus taste, among those paying above its reservation, a round's share of `LAB.applications_a_week` — a draw without replacement from the logit. An application is seen at `LAB.seen_chance` (`LAB.meeting`). An offer is accepted when the weight times the log of the wage over the reservation, plus the match's taste, is positive. The reservation is `LAB.reservation_share` of the searcher's last wage and an employee's price outlook at a review is `LAB.price_outlook` (placeholders naming HH).
+- **Retirement** (LAB.6) is a scheduled hazard on persons (`LAB.retirement`, at `SOC.pension_age` by age and sex): on the first birthday an adult not retired has reached its pension's age, the `retire` decision point (a placeholder rule naming HH: retire at that age) sets it retired; at the next 4a its attachments on employment lines are taken off it and its members leave each line with as many of its employers', and it claims the state pension (§10.3).
+- **Severance** owed on a separation is the class's days a year for each whole year since the line's band began, of the line's daily wage, per member leaving. At 7c each employer's day's severance is one instruction: all of it where its money covers it, else each member the same share of what it holds, a whole share for each twin, the rest counted unpaid.
+
 - **Joining a line** (`Books::members_join`): a hire's members join the employee's row and as many join the
   employer's, in one instruction, the rows opened where they do not exist; the hired person gains its attachment.
   Leaving is `members_leave` (§7.4), drawing among the employee side's holders by their counts (REP.23) where the
@@ -1207,6 +1699,9 @@ without end in both directions.
   `Books::lend`: the two rows opened on a line of its own, the principal owed on them, and the principal paid into
   the borrower's account — a deposit the lender creates, or reserves paid to the bank that keeps it (MON.6).
 - **Losses**: an estate's settlement returns each debt it wrote off, which the bank that held it learns from.
+- **The rules** (`sys-bnk`'s `credit`, BNK.4, BNK.5, BNK.20): a borrower's class is the number of `BNK.cover_bounds` its interest cover reaches — its period's income to date grossed up to a year plus the interest its term loans charge, over that interest; none before a day of its period has passed or where it owes no interest, which is the worst class. A class's default frequency is `BNK.default_rates`' counted as `BNK.prior_loan_years` of the bank's own book, with the loan-years and defaults its book has seen; its loss given default likewise `BNK.loss_given_default` counted as `BNK.prior_recoveries`, with the shares of defaulted balances its write-offs lost. A quote is the rate it can earn instead (the country's policy rate at the opening, else its deposit rate; a placeholder naming BFL) plus the expected loss plus `BNK.risk_weight` × `BNK.capital_requirement` × `BNK.required_return` plus the loan's cost (`BNK.loan_cost_share` of output per person) over principal and years, rounded up to `BNK.rate_step`. A bank declines a class worse than its standard, or a loan its net assets cannot carry at the capital requirement over its risk-weighted firm loans; it begins at every class whose published frequency is below one, and each monthly review moves the standard a class tighter when its book's defaults cost more than the published frequencies priced, a class looser when less.
+- **Shopping** (BNK.6, BNK.19): a firm applies once, `BNK.refinance_lead_days` before its loan's maturity, for the balance and months again, to its own bank and further banks of its country, how many drawn from `BNK.lenders_asked`' shares; it takes the quote whose rate less its taste for the lender in rate steps (`BNK.lender_taste`) is lowest, if its rate is below the firm's required return. The loan written is a line of its own at the quoted rate, interest monthly on the balance from the day written and the principal at the end.
+
 
 ### 7.14 The central bank's fund stage
 
@@ -1218,6 +1713,9 @@ without end in both directions.
   kept in the book (`central`, saved) and remitted to the treasury's account on a month's first fund stage.
 - **Intraday credit** is the reserve accounts' facility (MON.3): settlement lets a bank's reserves fall below nothing
   within it, so a payment is not removed for a bank's intraday shortfall.
+- **The request** (a placeholder naming BFL, the credit kind's `request`): a bank's target is its reserves over its deposits when it first came to the fund stage, times its deposits now; it places what its reserves exceed the target by and borrows the shortfall as far as its collateral lends, `1 − CB.loan_haircut` of its firm loans' balances.
+- **The corridor** (placeholders naming CB): the policy rate at the opening, or the deposit rate where the group reports none, less `CB.deposit_spread` for the deposit facility and plus `CB.lending_spread` for the lending facility. A reserve account's terms let a bank overdraw it intraday by as much as every bank's reserves at the opening, at the lending rate. A month's net income remitted is its surplus only; a loss is kept against the central bank's equity.
+
 
 ---
 
@@ -1242,11 +1740,50 @@ is counted in full, as are firms' stocks of goods at cost at each census. A rele
 purchases plus the change in stocks), expenditure (consumption, investment and others' purchases plus the change in
 stocks), income, and the discrepancy of expenditure over income.
 
+**Series and vintages**: six monthly series (`if_state::consts::NAMES`: consumer and producer indices, the labour force survey, the money stock, the period life table, the national accounts), each released on its calendar's business day of the month its lag names. A period's first release (vintage 0) reads the returns in by then, each return's arrival drawn at `STA.early_returns`; its revision (vintage 1) `STA.revision_months` later reads every return; both are kept. `sys_sta::latest` returns the latest vintage of the latest period published by the reader's day.
+**The indices** (`sys-idx`): each sampled sale kept at `STA.sample_share` by its keyed draw; a period's link weights each product's unit-value relative by its share of the period before's sampled spending among the products priced in both, and chains on the level last published for the period before; the first period priced opens at `IDX.base`.
+**The life table and the survey**: a panel of households drawn by `STA.sample`; a period's exposure is the mean of the panel's persons, by age class (`STA.age_classes`) and health, at its first and last census, times the days between; each entry carries its events, person-days and rate a year, each estimate the panel's count over its sample share and, for a first release, over the share of returns in. The labour force counts the employed, the searching unemployed and those out of the labour force. **Money**: the banks' reserves and deposits by holder class (household, company, the rest).
+
+### 7.16 The state's first cut
+
+Four systems declare kinds the world binds (`if-state`'s `kinds`), kept in `phx-world`'s `state` (saved):
+- **The benefit** (`sys-soc`, SOC.3): a person laid off or released by a failed firm claims when the benefit's monthly
+  amount (its replacement share of the wage lost) times its months is worth more than the claiming hours at its last
+  wage; it joins its country's benefit line of that amount — opened the first time a claim needs it, paid monthly for
+  the benefit's months — with as many of the treasury's members. A hire ends it. A person who retires claims the state
+  pension (§10.3).
+- **Bills** (`sys-sov`, SOV): each country's auction runs at 8d on its declared weekday, before the facilities. The
+  treasury's placeholder plan (naming TRS) offers the face that keeps its cash at `SOV.buffer_weeks` of its last
+  week's outflow (its cash at the last auction less now) after the bills maturing before the next; each bank bids its
+  reserves above its target at the price whose yield is the deposit facility's rate; the uniform-price clearing takes
+  bids from the highest price down, the last price's sharing what is left pro rata in whole contracts. Each auction is
+  a bill line of its own whose face is paid at maturity by the dues, rows opened at face and the price paid to the
+  treasury (the difference to equity, `SOV sold`).
+- **The payment order** (`sys-trs`, TRS.10): the ranks of debt service, pensions and benefits, read from
+  `TRS.payment_order`, are carried on each such line's terms (`Terms::payment_order`), so a treasury short of cash
+  fails as a prefix of that order (§6.5).
+
 ## 8. Markets, valuation and expectations
 
 - `phx-market` implements each form once (MKT.3–MKT.8): call auctions (with admission hooks); the continuous book
   (arrival by lot, price–time priority, closing auction); the dealer market; posted prices with
   rationing by lot; bilateral quotes as a protocol over messages across days; administered facilities.
+- **The call** (`call::call`) finds its price on the tick grid among the prices that clear — something trades and every
+  step strictly better than the price fits within what the other side brings at it, so those fill in full — chosen by
+  the operator's tie sequence on the `MarketDecl` (`TieRule`: most volume, least imbalance, nearest the last print,
+  skipped with none, then the lower price, which leaves no tie). Steps at the price share the rest pro rata by largest
+  remainder with ties by lot, or by declared priority, pro rata within a priority. No overlap, no bid or no offer is a
+  failure. **The book** keeps each side in priority order, better price then earlier arrival, a resting step placed by
+  binary search; an incoming step trades at each resting step's price, passing over its poster's own; what rests and
+  the `AtTheClose` orders meet in the closing call. **A dealer request** trades on the best quote among the dealers
+  asked, within the client's limit and the quote's size, equal quotes by lot; no dealer quoting that side is the
+  dealers' failure, every quote beyond the limit the client's walking away. **The administered form** meets requests
+  in their parties' order, each as far as the facility's registered quantity response grants, within its limit. **A
+  linked call** drops the market nodes with no order that day, with their edges, before it meets. `posted::posted`
+  meets groups of buyers, whose demand at a price it reads through `phx_core::GroupDemand`, so `phx-market` depends on
+  no population crate; a group turned away chooses again among the sellers left, wanting at the new price what its
+  members want there less what they bought.
+
 - **The linked call** (MKT.3 over a network; the money market and the central bank's tenders at 8b): the coupled
   call with a cost on an edge and a capacity on a node. Each borrower's collateral is assigned to segments before the
   call at those segments' lenders' haircuts, so every capacity is cash on integer lots and the call stays a pure
@@ -1261,6 +1798,10 @@ stocks), income, and the discrepancy of expenditure over income.
   call's basis and each day's measures; it alone makes a print, from a meeting's matches. A posted meeting's buyer is
   a party, as its match set records sales per buyer. `Reach` is the one set of counterparties a search
   reaches, and the one reader of the border closure.
+
+  The audit's `MKT.prices` family (MKT.13, MKT.14) reads the day's tape through `MarketsAudit` every close: each print
+  traced to its match set and trading together what it says at its price, each mark from a print or a fixing its
+  market published.
 - Marks and fixings at 6b by each form's rule (MKT.12): an instrument's or a currency pair's fixing is made by
   `phx-market` by the pricing service's declared method (the volume-weighted mean of the day's trades, for dealer
   markets); with no trade there is none. **Benchmark reference rates** (IDX.2) are a different fact with one writer:
@@ -1271,6 +1812,24 @@ stocks), income, and the discrepancy of expenditure over income.
   methods are registered by their systems and read only prints and valuation inputs; each point is labelled traded,
   interpolated or, beyond the longest traded point, extrapolated by the valuer's own declared method. Valuers discount
   by the day's discount-factor table and never evaluate an exponential per flow.
+- **The accounts** (`phx_acct::Accounts`, saved in the `accounts` store) are two records kept apart (ACC.10): each
+  equity account, in its party's site's country's currency, opened at the opening's equity for every party of a kind
+  whose legal form has owners and moved only by the events posted from the day's book; and the party's assets less
+  its liabilities, read when asked (`net_assets`) from the register and the contracts at carrying values. The period
+  is the calendar month (`period_of`): a posting in a new month closes the last, each account's opening and closing
+  kept with the period's income and capital tallied apart for `ACC.periods`. The close stops the run if a due or
+  effect was recorded after the day's posting. Accounts, claims and tallies are ordered maps keyed by party.
+- **Carrying bases** (ACC.2, ACC.17): `ACC.carrying_bases` lists, per legal form and purpose (collect, trade, sell,
+  use), the bases the standard permits in its order. A position whose holder has not chosen is held for its
+  instrument family's purpose (a contract or debt to collect, a share or fund unit to trade, a real asset to use) and
+  carried on the first basis listed; a debt owed at amortised cost. A carrying value whose input is absent is
+  absent, and so is the party's `net_assets`, reported unreadable. On fair value a mark's move is income the day it
+  happens; on any other basis it stays an unrealised difference until a sale. A write-down's reversal stops at
+  original cost. A consolidated statement combines the members a group fact names, eliminates claims between them
+  from both sides and shows the minority's part, storing nothing.
+- **The Accounts families**: `ACC.equity` (ACC.10) rolling over a 30-day cycle, `ACC.periods` (ACC.11) on each period
+  closed, `ACC.claims` (ACC.12) every close.
+
 - **Admission hooks** (DRV.6, §4.7) take a member's whole order set at a meeting and allot its headroom across the
   orders in canonical order, so no arrival order decides; on a continuous book they run in the book's lot-drawn
   arrival sequence, carrying the headroom used as state.
@@ -1281,6 +1840,19 @@ stocks), income, and the discrepancy of expenditure over income.
   with each pair's value (closed-form claim or firm values) shared by every party using the method. A party's own
   outlooks are updated at its visits, an individual's of a registered series as its method's plus its own deviation,
   caught up in O(1); a **surprise** (VAL.4) wakes it and raises its attention (REP.35).
+
+`phx-val` is pure functions in `f64` through `libm`, never over the world: an `Outlook` stores its mean and width as
+`Fixed<6>` (`outlook::fixed`, a result no `i64` holds stopping the run), and a `Value` becomes only `Money`, never a
+print. The heuristic menu is one sealed trait (`Heuristic`, `MENU`: adaptive, trend, anchor, announcement), so no
+other crate adds a way of forecasting; assembly refuses `VAL.heuristics_tracked` other than the menu's length. The
+world's methods are compiled at assembly, every heuristic on the menu by every memory type (a type of
+`VAL.adaptive_gain`'s distribution, its λ), a method's index its heuristic times the memory types plus its memory
+type; γ and κ are shared, and the age window is none. The public series (`PublicSeries`) keeps its last and previous
+print, their running sum and count and each method's outlook; an anchor's level is the mean of its prints.
+Attention is λ_k = g_k·sqrt(σ²_own + σ²_pub), g_k = ½·sqrt(ψ_k ÷ c_k), its daily chance −expm1(−λ_k), and the
+exposure over spans of constant public variance one term a span (`attention::exposure`); switching shares are the
+logit of each heuristic's exponentially weighted squared error in the method's widths, equal while none is scored;
+experience weighting is (L − k)^θ over the annual means of the years lived.
 
 ---
 
@@ -1308,7 +1880,13 @@ law, the rate of openings times their life: firms' about 800 a day × about 40 d
 about 25 days, personal insolvencies' about 70 a day × about 45 days — about 60 thousand open, at 512 bytes each
 (§13.1). Their mean life and the number open are counted per kind.
 
-As built at Stage 0 (plan S0.25e) there is no `sys-est`: estates are the ledger's `phx_ledger::estate` run by the
+The waterfall (`phx_ledger::waterfall`) is pure and runs one currency at a time, never converting: each secured claim is
+paid first from its own collateral's proceeds, a surplus joining the general proceeds and a shortfall joining the
+claim's class; then the classes in the country's declared order, each paid in full while the proceeds last and the
+first they do not cover pro rata, the division's residue landing on the claim the law names for that class and
+currency; what is left is the owners'.
+
+As built there is no `sys-est`: estates are the ledger's `phx_ledger::estate` run by the
 world's `estates` (`phx-world/src/estates.rs`). An ended household's rows pass to one estate at 3e; from the next
 business day, in 7c's block once the day's dues are paid, the ledger settles it (`Books::settle_estate`): its rows that
 hold nothing but money leave with their counterparts first; its money pays its debts through the waterfall, its
@@ -1320,7 +1898,7 @@ counted. Dues it
 owes in arrears are not claims in its waterfall (F-066). A catastrophe's struck tiles lose, at 3b, their share of every
 physical unit the individuals sited there hold, as a transformation naming the event (GEO.8).
 
-Firms end in **default of payment** from S1.03 (FRM.15): a kind is put under its country's insolvency law by an
+Firms end in **default of payment** (FRM.15): a kind is put under its country's insolvency law by an
 `InsolvencyDecl` naming the grace (`FRM.insolvency_grace_days`, each country's own). The contract process's fails that leave a party of
 such a kind in arrears queue the day its grace ends (`World::defaults`, rebuilt from the arrears when a save loads);
 at 2e a party whose contract is still in arrears at that day ends: a large firm into an estate that takes every row
@@ -1413,6 +1991,37 @@ A world starts from a setup (spec GEN.14, GEN.15, Appendix E 43), so a new game 
 - The setup is named by every realism report (GEN.11). A save's manifest does not record it: its register hash is
   over the data files, the countries the setup instantiated among them, so a load with another setup is refused (§11).
 
+**The population's opening distributions** are derived offline by `tools/data/fetch_pop.py` and `derive_pop.py` into
+each level's `gen/` files. Each entry is a register value, with its source and mapping in `source_ref`, and is listed in
+`data/inventory.toml`. Each value is its group's standard: the median over the group's economies of each one's latest
+observation. Where fewer than ten of the group's economies report a value, the median of the ten reporting economies
+nearest the group's GDP per head stands in. The mapping says how a country's derived values move the standard:
+- survival is given as the standard's Brass logits, with the level solved when mortality is bound (§7.3);
+- households by type and size are log ratios on the drawn fertility, with one Theil–Sen slope and each group's
+  intercept;
+- income and wealth are each a log-normal body with a Pareto top above its 90th percentile, the exponent being the
+  group's. The body's sigma is solved to the country's drawn Gini (income) or top tenth's share (wealth), and the
+  result is scaled to the country's mean.
+
+The scripts give the same tables when rerun on the same fetched files. A new game copies a level's `gen/` file only for
+a system the world registers, since the register refuses an entry that no system declares.
+
+The profiles are derived by `tools/data/derive.py` from the series `tools/data/fetch.py` keeps in `data/sources/raw/`,
+each value's latest observation per country (2015–2025): the development levels are the World Bank's income groups
+(high income developed, upper-middle emerging, lower-middle and low developing); each value is put on its `Transform` —
+logs for positive amounts, logits for percentages and shares, the log growth factor for inflation, log ratios to
+services for the sector shares, so the three shares follow by identity — and its group's profile is the median, the
+interquartile range over 1.349, and Spearman correlations mapped to the normal's, made positive definite by Higham's
+nearest correlation matrix. The draw (`phx-core`'s `register::profile`) forms the moments, draws each pinned value
+within its part of its own marginal, then the rest from the joint normal conditional on them (Cholesky), and maps each
+back to its own scale; a value its group's profile lacks is missing, named as not derived. `new_game` resolves the
+setup — refusing one outside the guardrails with the rule it breaks, drawing open choices from `GEN.setup` — allots
+regions and land, draws each country's values and makes its name; `instantiate` writes into the run's directory
+(`phx run --setup --run-dir`) `setup.toml`, each country's record `countries/<id>.toml`, and its data `data/<id>/` —
+its level's templates, the level's opening tables of the systems the world keeps (`gen/<SYS>.toml`) and its derived
+values (`derived.toml`) — which the register reads in place of the templates. Each row of `data/inventory.toml` names a
+derived value's, distribution's or present value's owner and source, never a value.
+
 ### 10.1 Phases
 
 After the setup's derivation (§10.0), declared phases — **parties, physical stock, contracts, present values,
@@ -1443,17 +2052,12 @@ For every line kind and physical class, one side is **drawn** and the other **de
 
 ### 10.3 Canonical drawing
 
-- **Pass A**: institutions, firms and their drawn sizes are drawn; every household is drawn **complete** from
-  counter keys (a fixed counter block per person and attribute), region by region, and stratum counts are kept per
-  GEN chunk of about a million households, sparsely.
-- **Allocation and balancing** (GEN.4) run on the totals: counterparty sides are derived (§10.2); institutions'
-  balance sheets close through ledger operations of reason `Balancing`, each reported.
-- **Pass B** redraws every household identically from the same keys and applies the allocations: a household's
-  canonical rank within its stratum (its chunk's prefix count plus its place in the chunk) falls in one
-  counterparty's apportioned range, which assigns its bank and lenders without a second pass and independently of
-  chunking. Employment and tenancy lines record no pairing (REP.23): a household joins the line of the terms it drew,
-  and only the line's counterparty side is apportioned. Pass B is a replay of pass A's draws, and places each region's
-  agents in bulk before drawing the next, so the scratch is one region's.
+The opening draws each region once: institutions and firms with their drawn sizes first, then each region's
+households, each drawn complete from its own opening streams, persons first, its lines' counterparties chosen online
+as it is formed (§10.2), so no second pass, stratum ranks or counter blocks are needed. Regions are drawn in waves on
+the books' pool and booked in the regions' order, so the scratch is a wave's. Employment and tenancy lines record no
+pairing (REP.23): a household joins the line of the terms it drew, and only the line's counterparty side is
+apportioned; institutions' balance sheets close through the ledger's opening writes (GEN.4), each reported.
 
 **Households are drawn persons first** (GEN.2, REP.26), so the persons' ages are the country's and the households are
 what those persons make:
@@ -1478,6 +2082,11 @@ an explicit household, its persons held with their roles (§7.1), each person's 
 drawn by its age and sex from the household's own streams, and the region's households are placed one agent for every
 `REP.multiplicity` of them (§7.6), so the agents' multiplicities sum to the population (REP.13). The
 report gives each country's households by type and persons by age band against the drawn shares.
+
+A person's birth date follows from its age at the snapshot. Its birthday falls on a day drawn evenly over the year, and
+it was born in the snapshot's year less its age if that day has passed, or a year earlier if not. Its lasting disability
+is drawn at the chance the prevalence table gives its age band and sex. Below the table's first band, the chance is what
+the onset hazard gives from birth.
 
 **The households' lines** are drawn with the households, since a household's bank is its attribute and its jobs, loans,
 tenancy and pensions are its own rows (REP.3, REP.26). Each system that owns a line kind declares an **attachment
@@ -1540,10 +2149,24 @@ hold the firms' deposits and debt the large firms do not, by their employees, on
 employers on the employment lines by their headcount beside the large firms. The large firms are rows of the kernel's
 firm kind table, individuals (REP.2).
 
+Labour's draw (`sys-lab`'s `jobs`) employs each adult at the country's employment rate and as an employee at its sex's share; a job's occupation is drawn by sex among those its education's skill reaches, its hours part-time at its sex's share, its notice and severance the law's, its region its household's and its start band from the tenure shares; its wage is the labour share's mean wage times the household's income multiple, on the nearest point. Once the country is drawn, each region and occupation's jobs are apportioned over the region's firms by headcount weighted by the occupation's share of their industry's hours (`TEC.labour`), and dealt to the lines in an order drawn by lot. Of the adults not employed, the unemployed search at the rate that makes their share of the labour force the country's, and one past its pension's age is retired.
+
+Every firm, large and small, is drawn in an industry given its size, from an alias table per size class over
+`FRM.industry_by_size` (`sys-frm`'s `industry`): a large firm's a fact, a small firm's an attribute. `sys-tec` then
+gives each its industry's public way-set in its country as `TEC.known` (`sys-tec`'s `known`), and the opening
+reports the firms by industry per country.
+
+An adult is employed at the country's employment rate, and is an employee at its sex's share of the employed
+(`LAB.status_shares`). A household rents at one minus the country's home ownership. A job's monthly wage is the mean
+wage per worker that the labour share gives, times the household's income as a multiple of the mean. A tenancy's rent is
+the country's median rent burden applied to the household persons' share of the labour income, times the same multiple.
+Each amount is placed on the nearest point of its trade's grid. The points are a declared ratio apart
+(`LAB.wage_point_ratio`, `HSG.rent_point_ratio`: a quarter), since each point is a line on whose other side every large
+firm holds a row. The multiples of the mean come from the distributions' closed-form means (`Distribution::mean`).
+
 Nothing is balanced after drawing: finer attributes are drawn from their own counter keys, so a coarser setting is a
 projection of a finer one, and every number of preference types is a discretisation of the same declared distribution
-(NUM.4). Drawing the population takes tens of seconds on the phone's cores. As built the opening runs on one thread, and
-took about ten minutes on the build machine (the plan's F-038, F-062).
+(NUM.4). Drawing the population takes tens of seconds on the phone's cores.
 
 ### 10.4 The snapshot, day zero and settling
 
@@ -1586,6 +2209,10 @@ series of one, never a drawn past.
   the kind at world-average prices, held at cost: each country's stock of a kind, its GDP times the group's stock per
   unit of GDP, apportioned over every firm by its employees times its industry's plant of the kind per hour worked,
   and spread over the classes as a steady stock growing at the country's rate would be.
+
+— each class ρ = (C ÷ L) ÷ (g + C ÷ L) times the one before, its units priced so the classes' values sum to the
+stock's value, one currency unit a unit new, each lot costing what it is worth. The large firms' structures pass to
+housing in the books' `drawn` map (`CAP.structures`), whose owners stand in for the landlords.
 - **Accounts** — reserves, the treasury's account, the central bank's claim on the treasury — have no dates and are
   marked spent at the opening; every other opening line falls due on the first date of its schedule after the
   snapshot.
@@ -1596,10 +2223,23 @@ series of one, never a drawn past.
   opening (`bills_opened`). A bill's face is dollars at the country's units to the dollar. The public debt the banks'
   bills and the central bank's claim do not hold waits for the holders of later stages, and the difference from the
   derived debt is reported as an adjustment.
+- **Opening draws** use each system's stream `<SYS>.opening` with the subject `Opening(stratum, ordinal)`
+  (`phx_core::contribution`), so a party's draws exist before its identity; a country's strata are numbered by purpose.
+- **The institutions**: `sys-cb` opens one central bank and one treasury per country, sited on its land. Reserves are
+  the banks' liquid share of their assets, apportioned over the banks by their weights; the central bank's claim on the
+  treasury is its drawn assets, raised to the reserves where they are larger — the one change, reported as an
+  adjustment — and the treasury's account holds the rest. `sys-bnk` fits a Zipf law's count and exponent to the three-
+  and five-bank concentrations (`zipf.rs`) and apportions the firms, in a drawn order, over the banks by those shares,
+  largest remainder with ties by lot; each large firm keeps a current account at its bank and owes it a term loan whose
+  term is drawn between `BNK.loan_years_min` and `_max` and whose start falls uniformly over the days of its term before
+  the snapshot. `sys-frm`'s large firms are the top order statistics of the firm-size law down to the promotion rank,
+  drawn one after another in logs. Every kind's legal form is one of `PTY.legal_forms`, and assembly refuses a kind whose
+  form the law does not declare.
+
 
 ### 10.4b Dated flows before the payer pass *(retired)*
 
-Retired at S0.17, which brought the payer pass: stage 7 no longer pays each due as its own instruction from a pass
+Retired with the payer pass: stage 7 no longer pays each due as its own instruction from a pass
 over every holder's rows. Settlement is `Books::settle_day` — the stream over the holders' runs, the fixed point and
 one net per (line, party, side) applied one instruction per line — as §6.5 says, with the fails and the close there.
 
@@ -1644,13 +2284,23 @@ world on the phone. CI never runs the world.
   valve: the register hash covers them where they are data (§7.9, §10.0).
 - Saves are written at the moments SET.12 declares — when the player saves, when the app is set aside, and at the
   declared interval (an owner setting, by default every simulated quarter) — and the world pauses while one is written
-  (N8.10). As built, the stores are written one after another on one thread.
+  (N8.10). Each store is written by a task of its own on the worker pool, beside a task writing `run` and one hashing
+  the world. A store's bytes are cut into fixed frames of 1 MiB, each compressed on its own as a zstd frame, a wave of
+  sixteen at a time across the pool; the frames are cut by bytes alone, so the file is the same however they were
+  compressed. Columns go through their declared transforms; a chunk arena is written as its raw words
+  (`Transform::Plain`) with its dead-word count, since the transforms do not help interleaved records. A type's save
+  encoding is `#[derive(Saved)]`, with `#[saved(skip)]` on a derived index its owner rebuilds on load. Under miri,
+  which cannot run the foreign zstd, the stream is written as it stands.
 - **Every save is full** (SET.12, spec Appendix E 22): it writes every store whole, and a restore reads one save.
   Allocator state (free slots, block pools, interners) and the linked call's basis (§8) are
   saved with the stores, and derived indexes are rebuilt on load in canonical order; the world hash covers logical
   content only, so layout never makes two equal worlds differ (§14.3).
 - **Retention**: the latest complete save, plus the one being written; the older is deleted only after the new one is
   complete (SET.15), so the peak is two full saves (§13.3).
+
+  A save is written into a directory named partial; once every file and the directory are synced, it takes its
+  complete name and the root is synced, and only then is every other save in the root, complete or left partial by a
+  save that never finished, removed.
 - **No copies**: a save is loaded only to continue the one run, or, on the build machine, apart by `phx inject` to be
   audited and discarded, never run on (N1).
 - **Injection** (N1): the build run takes one more save, at the close of the 30th day after settling, into its own
@@ -1688,12 +2338,28 @@ world on the phone. CI never runs the world.
   - the calendar's window;
   - the audit's cursors, from the stores' lengths.
 
+  - the agenda's wheels, from each row's next day per reason;
+
   Allocator state is saved as it stands: the slot allocators, the arenas' words with their dead words, and the
   interner's free identities and reference counts.
 - **The world hash** covers every carried state a later day can read: with the directory, kind tables, instruments,
   lines, markets, accounts, records, events and kernel tables, also the run heads, the terms and their reference
   counts, liens, covers, commitments, arrears, the fails waiting and the player's queue. Layout, holder lists and
   other indexes stay out.
+
+It is `phx-store`'s `LogicalHasher`, SipHash-2-4 with a 128-bit result under a fixed key (`HASH_KEY`), reading live
+slots' rows in slot order and lists through their references, never offsets, dead words or freed slots, so two layouts
+of one content hash equal. Metrics, findings, the read trace and wall time stay outside it, and no handler reads them.
+- **Encoding** (`phx-store`): a column is encoded field by field, each field's transform declared with its type
+  (delta modulo 2⁶⁴, zigzag, both, or plain), then bit-packed per block of 1 024 values at the block's widest value.
+  Each field's stream is little-endian: magic `PXCL`, format version, field width, transform, element count, then per
+  block its bit width and packed values; streams go into zstd level-1 frames of at most 1 MiB, each preceded by its
+  length, so a store's frames compress at once on many workers. A decoder refuses a damaged, truncated, foreign or
+  unknown-version input with its reason, never a guess. The logical hash is SipHash-2-4 with 128-bit output
+  (`LogicalHasher`) over live slots' columns and lists read through their references in slot order, never offsets,
+  dead words, freed slots or page tails; a column descriptor tags each field (party, line, instrument, tile, day,
+  amount, quantity, plain), which the counters and the Names family read.
+
 
 ---
 
@@ -1709,7 +2375,8 @@ world on the phone. CI never runs the world.
   agents, of an attribute's values counted by their multiplicities, over fixed lower edges with the values
   below the first counted apart. Each histogram is an opening distribution (GEN.8): the host keeps the opening's view
   and reports each histogram's distance from it (half the summed differences of the bins' shares) at settling's end
-  and at the run's end. The observer is a `phx_world::Observer` passed to `run_turn_observed`: after each day it
+  and at the run's end. A read may declare why it can rise on every day (`grows`); liveness fails a read that rises on
+  every day without one. The observer is a `phx_world::Observer` passed to `run_turn_observed`: after each day it
   takes the reads through the inspector, inside the turn's time, and the world is the same
   world with it or without it. PC-20 refuses any `&mut` to the world's stores, and any naming of `World`, in
   `phx-obs`. On the phone the observer follows the measured turns, not settling, and the views are built twice, at
@@ -1761,12 +2428,12 @@ headroom, this document's margin for the estimates' error.
 
 | Store | Count | Bytes each | Budget |
 | --- | --- | --- | --- |
-| Household agents: attributes, positions (with each deposit row's), rates, review exposures and attention rates per kind, own outlooks, arena references, the due-day run's head (itemised in the plan, S0.21, S1.12; Stage 2's review kinds S2.05, S2.06) | 0.7 M | 576 | 403 MB |
+| Household agents: attributes, positions (with each deposit row's), rates, review exposures and attention rates per kind, own outlooks, arena references, the due-day run's head (Stage 2's review kinds S2.05, S2.06) | 0.7 M | 576 | 403 MB |
 | Household persons and attachments, a packed word each | 0.7 M × 43 words | 8 | 240 MB |
 | Relationship rows (40 per household agent, 12 per firm agent, 2 M of individuals; Stage 0's pensions in payment, 0.35 M state pension rows at 16 bytes and 0.5 M DB pensioner rows at 24; Stage 2's invoice rows, 10 per firm agent and 0.5 M of individuals, one per (holder, market, terms, statement period)) | 36.85 M | ≈ 23 average | 849 MB |
 | Line holder lists, with block slack (none on the pensions' retail side, §4.5) | 36 M | 6 | 216 MB |
 | Holdings and instruments' holder lists | 5.25 M | 28 | 147 MB |
-| Firm and business agents: the record (itemised in the plan, S1.03) | 0.25 M | 500 | 125 MB |
+| Firm and business agents: the record (itemised below) | 0.25 M | 500 | 125 MB |
 | Lines (kind, terms id, side counts, next due day, holder list; Stage 2's invoice lines are a few thousand) | 3 M | 32 | 96 MB |
 | Loan lines' balance totals per arrears stage (Stage 2) | 0.3 M × 4 | 8 | 10 MB |
 | Interned terms with their sharded hash (keys retired with cells) | 1.5 M | 72 | 108 MB |
@@ -1810,7 +2477,15 @@ about 1 KB, 50 MB; household persons' records 28 MB (the education record, schoo
 retirement); household agents 22 MB (672 bytes); relationship rows 6 MB (kin rows, licences); firm agents 1 MB (504
 bytes, past this table's 500-byte line by 4) and their cumulative-output lists 7 MB; ways, known-way sets and patents 7
 MB; views 10 MB; imitation pools 4 MB; receipts 1 MB; slack 11 MB — about 147 MB, to about **5.12 GB**: 14% over the
-budget itself, as the plan's F-007 records. How rows fall as the factor rises is measured (§14.6).
+budget itself. How rows fall as the factor rises is measured (§14.6).
+
+The firm agent's record, counted against 500 bytes: the hot record with its three leading position totals (output
+stock, cash, sales outlook) 64; input stocks, four, and work in progress 40; output and four input use rates 40; unit
+cost, markup, demand and revenue since review 32; the sales outlook's width and last surprise 16; review exposures,
+six lumpy kinds (price, way, entry and exit, closure, investment, vacancies) 48; attention gains, six at 4 bytes, 24;
+standing money rates, six, 48; the kink signature 8; arena references, eight (plant, employment, loan, deposit, supply
+rows, profiles) 64; the due-day run's head 8 — 392, the rest Stage 2–5's (trade credit, tax positions, learning).
+The firm table's agenda has about eight reasons: two hazards, reviews, wakes, schedules, kink days, dues and wear.
 
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
@@ -2007,10 +2682,21 @@ disappears. A check reads the world through its inspector (`Run::World`), or the
 beside it over the run — the reads' series and the opening distributions' drift (`Run::Observed`), as liveness and
 GEN.8 do.
 
+The realised rates (CHN.7) are measured live over a fixed sample of agents (`phx_world::rates`). An agent is sampled
+when the mix of its identity is a multiple of `RATE_SAMPLE` (64). The sample is found in one sweep on the first day
+measured, and an agent stays in it while it lives. Each day, for every process on its kind, each present person's
+chance adds its twins to the expected hits and to their variance, and each person reached adds its twins to the
+realised hits. The tallies are kept by process, calendar year and the person's whole years of age (`Rates`), and a
+check holds each one to its expectation within its sampling error.
+
+The suite is a hand-written `const CHECKS: &[Check]` in `phx-cli/src/checks/mod.rs`, each check's function and
+metadata defined by `live_check!`; `phx-check` requires every defined id to be in the list, and `Inspector` to have no
+public field and only `&self` methods.
+
 ### 14.3 Determinism by construction
 
 The world is never run twice to prove it deterministic. Determinism is carried by construction and checked at compile
-and logic level: chunking, gathers and reductions fixed by index, whatever the worker count (§6.2, the plan's S0.07
+and logic level: chunking, gathers and reductions fixed by index, whatever the worker count (§6.2, `phx-exec`'s
 tests); canonical ids, whatever the registration order (§6.2); a stream's key derived from its own name alone (CHN.1);
 observers, the audit and the realism recorder reaching the world only through `&self` accessors (Law 17, PC-20,
 PC-85). Every state that carries across days and can change an outcome is saved or canonical: a solver's warm start
@@ -2032,6 +2718,8 @@ runs only in `phx run` (F-060).
 | `phx chains` *(Stage 7)* | the chains' relationships (N4) read from the run (§14.8) |
 | `phx register-report` *(Stage 7)* | the primitive register's sources and the shares assumed and estimated (N7) |
 | `phx run --report` | the run's audit, liveness, live checks, REP.15's report, GEN.8 and NUM.7 |
+
+, and the population's age structure by `DEM.age_classes` and sex, births, the general fertility rate and school leavers
 
 At Stage 0 `phx measure` has two subcommands, `calendar` and `budget`; the representation's numbers of the third row
 are not yet read.
@@ -2111,8 +2799,12 @@ weakened. Before Stage 4's steps are built, `phx measure` also measures policy r
 | --- | --- | --- |
 | `ci.yml` | every push | format; clippy with disallowed lists; `cargo test` in the debug and the release profile; `phx-check`; `miri` over `phx-store`'s tests on the pinned nightly; `public-api`, the kernel and interface crates' API snapshots; the workspace built for Android; `android-app`, the engine built for the phone with the `device` profile, its Kotlin bindings and the bench flavour's APK, uploaded as an artifact (§18 item 33); kernel micro-benchmark instruction counts under valgrind, whose ratchets fail CI. The world is not run |
 
+Every job runs on push and pull request on a pinned runner image with a 30-minute timeout, reads its tools' versions
+from `tools/versions.toml`, caches on `Cargo.lock` and the toolchains, and may not fail. CODEOWNERS gives the owner
+`/perf/` (but `perf/build-run/`), `docs/PROJECT_PHOENIX.md` and `data/**/gen/`.
+
 **The build run** (`tools/build-run.sh`, on the build machine — the development VM, 4 cores and 15 GB — after each
-step's build, from S0.11, the first step with a world; S0.01 to S0.10 have none): a `--release` build (thin LTO; only
+step's build: a `--release` build (thin LTO; only
 the `device` profile is fat, §17); the world at the play resolution (§10.5), with `read-trace` on, the audit and every
 live check — an ordinary step's for 120 days from day zero, a stage gate's (`--gate`) settled at the owner's length and
 run two years after it; the engine's counter ratchets, whose moves fail the build run, not CI — as built, the barriers
@@ -2151,6 +2843,28 @@ credited while the world holds it (GEN.10).
   kept at apply time; issuers' own totals per deposit and loan line; issued amounts per instrument; banks' maintained
   totals of standing flows against their depositors' rates on a rolling cycle. Injection mode lights each family
   alone (`phx inject`).
+- **The runner** (`phx-audit`'s `Audit`) runs every declared family at each close, at 10d (`AUDIT_SUBSTEP`), after the
+  day's last write, and keeps a `CloseRecord` (families run, rows checked, findings, instructions applied). A family is
+  declared by the crate or system that owns its facts (`FamilyDecl`: name, owner, clause, mode), reads only through
+  `FamilyCtx`, whose methods are all `&self` reads — the register, directory, calendar, records, events, the day's
+  messages, kernel tables, the rows the day's applies touched (`TouchedRows`, a bitmap per table beside the audit
+  sink), the records and events written since the last close, the day's read trace, the books, markets, accounts and
+  agents through their audit traits, and the settled legs — and writes only `Finding`s. Its mode is `Streaming` (fed
+  by the apply through `AuditStream`), `Incremental` (what the day touched and wrote) or `Rolling { cycle_days }`, which
+  adds `rolling_slice`: the domain in slot order cut into `cycle_days` equal runs, each day taking the run its number
+  modulo the cycle names. A finding carries its family, clause, owner (a party, tile, line, instrument, market,
+  country, event, table, or the run itself), size in money, units, days or a count, and day. Each family declares its
+  injection (`AuditFamily::inject` over `InjectTarget`), a one-unit change to a fact only it owns.
+- **Names** (`PTY.names`, rolling over thirty days): every party a record, event or message names resolves through the
+  directory, on what the day wrote and a slice of the rest. **Time** (`TIME.stamps`, incremental): every record, event
+  and message the day wrote is stamped with the day and a sub-step before the audit's, a stamp on another day sized in
+  days and a late one in sub-steps; the read trace's findings, when it is on, are reported here.
+
+
+  A finding is `{ family, clause, owner (party, tile, line, instrument, market or country), size, unit, day, detail }`.
+  Findings, metrics and run records are kept outside the world: not hashed, and no handler can read them (Law 17).
+  A family reads through `FamilyCtx`, whose methods take only `&self`, and writes only findings; kernel crates below
+  `phx-audit` declare theirs in `phx-core`.
 - **Live checks** and the save check as above.
 
 ---
@@ -2170,6 +2884,9 @@ credited while the world holds it (GEN.10).
    literals only 0, 1, −1 and 2 in mechanisms, engineering constants in one `consts` item per crate; no clause
    identifiers in comments; interface crates without behaviour; no full sweep in a sub-step not declared as one
    (*not built*: no rule refuses an undeclared full sweep yet).
+
+; no forecast by running the world (`forecasts`): `phx-val` depends on nothing that holds the world, and no function of
+it takes the world, a table or a handler's context.
 4. **Types that refuse**: `Money`, `Qty`, `Missing` without `Default` or clamping; kind identifiers without equality
    outside the kernel; private-constructed handles; zero-sized systems.
 5. **The clause map**: every spec clause is assigned to a step in `IMPLEMENTATION.md`, and `phx-check clauses` refuses a
@@ -2195,7 +2912,7 @@ credited while the world holds it (GEN.10).
    attributes and of placeholders; the build run only the barriers per empty day, the map's bytes and seven stage-7
    counters, each the most on any day — rows streamed, run heads read, run rows scanned and those not due, payments,
    the fixed point's iterations and the day buffers' peak bytes. The day's draws, redraws, outcomes and new agents are
-   the world's day records (`CellDay`), which the live checks read, neither reported nor
+   the world's day records (`AgentDay`), which the live checks read, neither reported nor
    ratcheted; the other counters are not built (F-060).
 9. **The markets' rules** (the plan's PC-50 to PC-57): no bank's loan or deposit pricing takes a central-bank rate as
    its cost of funds except through `marginal_cost_of_funds`, while public administered rates may be read; no system
@@ -2210,6 +2927,50 @@ credited while the world holds it (GEN.10).
     trailers, read from `main`'s first-parent history so squash merges keep them; measurement code reaching the world
     only through the `Inspector`; every silent break of Part L mapped to what refuses it.
 
+    `coverage` derives §19's rows whose System is a spec code: the first stage is the earliest stage of a step whose
+    clauses name the system's, the stage complete is the latest of its map rows, and the status is `planned` while no
+    step naming its clauses is building or done, `done` when every step completing them is done, and `building`
+    otherwise; the Spec and Crate columns and the rows that are not a system's are kept as written.
+
+11. **`phx-check` itself** (`crates/apps/phx-check`) parses world crates with `syn` (with a small lexer for comments,
+    which `syn` drops) and reads `cargo metadata` for direct dependencies; no rule is a text search where either can
+    answer. World crates are those under `foundation/`, `kernel/`, `interfaces/`, `systems/` and `assembly/`; `apps/`
+    are held only to layering. Its rule table (`src/rules/mod.rs`) records each rule's id, title and the step that
+    introduced it; the rules of the foundation and first kernel crates are:
+
+    | Id | Refuses |
+    | --- | --- |
+    | PC-01 | a dependency against §3.1's layers and orders |
+    | PC-02 | a direct external dependency outside the allow-list (`rules/dependencies.rs`, by crate or layer; `proptest`, `trybuild` and `gungraun` as development dependencies anywhere) |
+    | PC-03 | `allow(unsafe_code)` outside `phx-store`, `phx-exec` and `phx-ffi` |
+    | PC-04 | `rayon` anywhere, `rayon-core` outside `phx-exec`, `libc` outside `phx-exec` and `phx-store` |
+    | PC-05 | a `static` item in a world crate, but `phx-exec/src/site.rs`'s thread-local |
+    | PC-06 | a numeric literal other than 0, 1, −1 and 2 in a world crate outside `consts.rs`, type positions, tests and benches, with the arguments of the assert, format, write, `vec!` and `violation!` macros parsed as expressions; a constant in `consts.rs` without a doc comment |
+    | PC-07 | a comment matching a clause id, `Law n`, `Nn`, `§`, `spec`, a document's name, a plan step, `TODO` or `FIXME` |
+    | PC-08 | a function in an interface crate other than a constructor or a field accessor |
+    | PC-09 | a crate missing from §3's lists; a plan step without a valid status or its sections in order (a retired one needs only its status); two steps building; a crate whose step, still in the plan, is not yet building |
+    | PC-10 | counts of `allow` and `expect` attributes in world crates above their ratchets |
+    | PC-11 | an `#[expect]` without a reason |
+    | PC-12 | a hand-written `impl Pod` or `Sealed` outside `phx-store/src/pod.rs`, and a float in a derived `Pod` |
+    | PC-13 | a direct dependency of a world crate on `rand`, `rand_core`, `getrandom`, `ahash` or `fxhash` |
+    | PC-14 | `Default` on an id of `phx-id` |
+    | PC-15 | a kernel or interface crate without a committed `public-api.txt`, or whose API differs from it |
+    | PC-16 | a per-crate `clippy.toml` other than the root file minus that crate's declared exemptions |
+    | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day |
+    | PC-18 | a primitive's value reached other than through `Prim` or `PolicyValue`; `TermsToken::new` outside `phx-ledger`, `PhysicalToken::new` outside `phx-ledger` and `phx-geo`; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`, `phx-ffi`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
+    | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `Streams`, `open_keyed` and `ObserverDraws` named outside their listed files (§5.3) |
+
+    The clippy exemptions are declared per crate in `phx-check` and realised by that crate's `clippy.toml`: `phx-exec`
+    the atomics, `std::thread::spawn` and `thread_local!`; `phx-rand`, `phx-store` and `phx-exec` the wrapping
+    integer methods, through named helpers; `phx-cli` `Instant::now`, `env::var` and the printing macros;
+    `phx-check` the printing macros; `phx-ffi` `Instant::now`. Its subcommands: `layering` (PC-01 to PC-04), `rules`
+    (the table), `docs` (PC-09 and §19 against the table `coverage` would write), `clauses` (the clause map and
+    carriers, item 5), `coverage [--write]`, `all`; `bench-ratchets` (the `gungraun` summaries against
+    `perf/ratchets.toml`, a count with no entry refused) and `public-api [--write]` (with the pinned
+    `cargo-public-api` and nightly) run in their own CI jobs; `check-all` (the cargo alias `check-all`) runs format,
+    clippy and tests as CI does, then `all`. `phx-check all` also refuses a committed device report that does not
+    validate against `perf/schema/device-report.json`.
+
 A rule changes only with its reason recorded in §18.
 
 ---
@@ -2219,6 +2980,27 @@ A rule changes only with its reason recorded in §18.
 - Release: `lto = "thin"`, `codegen-units = 1`, `panic = "abort"` with a hook that writes the violation report,
   overflow checks on; the build run builds it. The `device` profile, which CI builds the phone's library with,
   inherits it with `lto = "fat"`.
+
+The hook (`phx-cli`'s `panic_hook`) writes `violations/<run>.json`: the clause or the capacity exceeded, its keys, and
+the site the day runner last entered (`phx_exec::site`: day, sub-step, handler, chunk). `violation!` builds a
+`phx_num::Violation` — the clause, a message and at most eight keys as `i128` — and raises it with
+`std::panic::panic_any`; `capacity_exceeded!` does the same with its own payload. The hook, on the panicking thread,
+adds the site from `phx_exec::site::current()`: the (day, sub-step, handler, chunk) each thread records in the engine's
+one `thread_local!` as it starts a chunk or an apply. Stores refuse to compile on a big-endian target, since saves and
+hashes read their bytes as little-endian.
+
+- The workspace is `crates/*/*` under resolver 3, edition 2024, with `rust-version` equal to the pinned toolchain
+  (`rust-toolchain.toml`: components `rustfmt`, `clippy`, `rust-src`; targets x86-64 Linux, aarch64 Linux and
+  `aarch64-linux-android`; `rust-toolchain-miri.toml` pins the nightly only the `miri` job uses). `dev` and `test`
+  keep overflow checks on; `release` carries line tables only; `bench` inherits `release`. The phone's link passes
+  `-z max-page-size=16384`. `rustfmt.toml`: width 120, `use_small_heuristics = "Max"`, Unix newlines.
+- Every crate inherits `[workspace.lints]`: `unsafe_code` denied (lowered only in the three crates of §3.1),
+  `missing_debug_implementations` warned; clippy's `all` and `pedantic` denied, with `undocumented_unsafe_blocks`,
+  the lossy and sign casts, `as_conversions`, `float_cmp`, `unwrap_used`, `expect_used`, `panic`,
+  `indexing_slicing`, `allow_attributes` and `allow_attributes_without_reason` denied one by one. An exception is
+  `#[expect(lint, reason = "…")]`, never `#[allow]`, and no lint is turned off for a whole crate. Tests may unwrap,
+  expect, panic and index (`clippy.toml`).
+
 - Phone target features: `+lse,+rcpc,+dotprod,+fp16`; NEON by auto-vectorisation and in `phx-rand`'s samplers;
   64-byte aligned, padded columns; software prefetch on holder-list and index gathers.
 - Pool sized to fast and medium cores; performance-hint sessions per turn. As built at Stage 0 the world runs on one
@@ -2550,7 +3332,7 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | I3 | INS | `sys-ins` | 4 | 4 | planned |
 | I4 | PEN | `sys-pen` (no crate yet: Stage 0's state pension is `sys-soc`'s; F-045) | 0 | 5 | building |
 | J1 | TRS | `sys-trs` | 1 | 5 | building |
-| J2 | TAX | `sys-tax` (no crate yet) | 0 | 5 | building |
+| J2 | TAX | `sys-tax` | 0 | 5 | building |
 | J3 | SOC | `sys-soc` | 0 | 5 | building |
 | J4 | CB | `sys-cb` (from Stage 0: the central banks and treasuries as parties) | 1 | 5 | building |
 | J5 | SUP | `sys-sup` | 2 | 4 | planned |
@@ -2559,7 +3341,7 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | K2 | XB | `sys-xb` | 5 | 5 | planned |
 | M1 | OBS | `phx-core`, `phx-obs`, `android/` | 0 | 6 | building |
 | M2 | STA | `sys-sta` | 1 | 5 | building |
-| L3 | estates | `phx-ledger` and `phx-world` at Stage 0; `sys-est` from Stage 1 (S1.03) | 0 | 2 | building |
+| L3 | estates | `phx-ledger` and `phx-world` at Stage 0; `sys-est` from Stage 2 | 0 | 2 | building |
 | L1, L2, L4–L12 | transmission chains | read from the run by `phx chains` (N4) | 2 | 7 | planned |
 | N1 | audit | `phx-audit` and every system's families, run in every build run | 0 | 6 | building |
 | N2–N8 | measurement | `phx-cli`, `phx-world` metrics, `android/` bench | 0 | 7 | building |
