@@ -207,7 +207,6 @@ impl System for Gds {
         for (handler, kind, cadence) in [
             (merchant::MerchantSmall::NAME, HOLDERS[1], trade),
             (merchant::MerchantLarge::NAME, HOLDERS[0], trade),
-            (extract::ExtractSmall::NAME, HOLDERS[1], extraction),
             (extract::ExtractLarge::NAME, HOLDERS[0], extraction),
             (extract::StockSmall::NAME, HOLDERS[1], stock),
             (extract::StockLarge::NAME, HOLDERS[0], stock),
@@ -220,7 +219,6 @@ impl System for Gds {
     }
 
     fn handlers(h: &mut HandlerTable) {
-        h.add::<extract::ExtractSmall>();
         h.add::<extract::ExtractLarge>();
         h.add::<extract::StockSmall>();
         h.add::<extract::StockLarge>();

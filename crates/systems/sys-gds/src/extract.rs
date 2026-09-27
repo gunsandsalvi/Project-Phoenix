@@ -105,20 +105,8 @@ impl Own {
 }
 
 declare_handler! {
-    /// A small firm's decisions on the deposits whose rights it holds.
-    pub ExtractSmall = "GDS.extract_small" {
-        substep: S5c,
-        table: "small_firm",
-        reads: [UnitCost, OutputRate, RequiredReturn, Method],
-        writes: [],
-        intents: [Transform, OrderIntent],
-        clause: "GDS.4",
-        body: extract,
-    }
-}
-
-declare_handler! {
-    /// A large firm's decisions on the deposits whose rights it holds.
+    /// A large firm's decisions on the deposits whose rights it holds: only a large firm holds a right, since a deposit
+    /// is one thing an agent's twins could not each hold.
     pub ExtractLarge = "GDS.extract_large" {
         substep: S5c,
         table: "firm",
