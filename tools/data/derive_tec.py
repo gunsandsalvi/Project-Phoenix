@@ -175,7 +175,7 @@ def economy_ways(t: pd.DataFrame, pl: pd.Series, dollars_per_euro: float, unit_d
                 taken = sum(float(t.loc["B", c]) * share[cols.index(c), q[6]] for c in codes)
             else:
                 taken = float(t.loc[rows, codes].values.sum())
-            used[i, j] = taken * weight * units_per_euro[i]
+            used[i, j] = taken * MILLION * weight * units_per_euro[i]
     inputs = np.divide(used, made, out=np.zeros_like(used), where=made > 0)
     value_added = {s: 0.0 for s in SECTIONS}
     pay = {s: 0.0 for s in SECTIONS}

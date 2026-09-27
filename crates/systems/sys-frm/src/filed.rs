@@ -76,7 +76,6 @@ impl Contribution for Declared {
 /// and where its row is.
 struct Firm {
     party: PartyId,
-    heads: u64,
     twins: u64,
     industry: usize,
     agent: Option<(usize, Slot)>,
@@ -117,19 +116,19 @@ fn firms(books: &Books, population: &Population, c: &OpeningCountry) -> Vec<Firm
     let index =
         |i: i64| usize::try_from(i).unwrap_or_else(|_| violation!(clause = "TEC.4", "a firm of no industry", at = i));
     let mut out = Vec::new();
-    for (party, heads) in drawn(books, FIRMS, c) {
+    for (party, _) in drawn(books, FIRMS, c) {
         let Missing::Present(i) = books.parties.fact(party, <Industry as FactDef>::ITEM.name) else {
             violation!(clause = "TEC.4", "a firm with no industry", firm = party.get());
         };
-        out.push(Firm { party, heads, twins: 1, industry: index(i), agent: None });
+        out.push(Firm { party, twins: 1, industry: index(i), agent: None });
     }
     let k = small_kind(population);
     let industry_at = attr_at(population, k, if_firm::known::INDUSTRY.name);
     let table = Population::table::<SystemBacking>(books.parties.cells(), k);
-    for ((party, heads), (_, twins)) in drawn(books, SMALL_FIRMS, c).into_iter().zip(drawn(books, SMALL_COUNTS, c)) {
+    for ((party, _), (_, twins)) in drawn(books, SMALL_FIRMS, c).into_iter().zip(drawn(books, SMALL_COUNTS, c)) {
         let slot = books.parties.row(party).1;
         let industry = index(i64::from(table.attr(slot, industry_at)));
-        out.push(Firm { party, heads, twins, industry, agent: Some((k, slot)) });
+        out.push(Firm { party, twins, industry, agent: Some((k, slot)) });
     }
     out
 }
@@ -257,10 +256,9 @@ impl Contribution for Products {
     }
 }
 
-/// What a country's way for a product uses a unit: each product's units, and the hours of all occupations.
+/// What a country's way for a product uses a unit: each product's units, and the days a unit takes.
 struct Way {
     inputs: Vec<(u16, f64)>,
-    hours: f64,
     lead: f64,
 }
 
@@ -274,15 +272,11 @@ fn places(register: &Register, id: &str) -> f64 {
 }
 
 fn way_of(register: &Register, c: &OpeningCountry, product: u16) -> Way {
-    let (Ok(inputs), Ok(labour), Ok(lead)) = (
-        register.table2_in("TEC.inputs", c.id),
-        register.table2_in("TEC.labour", c.id),
-        register.table1("TEC.lead_time"),
-    ) else {
+    let (Ok(inputs), Ok(lead)) = (register.table2_in("TEC.inputs", c.id), register.table1("TEC.lead_time")) else {
         violation!(clause = "TEC.13", "a country's ways unread", country = c.id.get());
     };
     let column = |t: &Table2, row: i64| t.at(row, i64::from(product)).map_or(0.0, from_i64);
-    let (per_input, per_hour) = (places(register, "TEC.inputs"), places(register, "TEC.labour"));
+    let per_input = places(register, "TEC.inputs");
     let inputs = inputs
         .rows()
         .iter()
@@ -291,9 +285,8 @@ fn way_of(register: &Register, c: &OpeningCountry, product: u16) -> Way {
             (a > 0.0).then(|| u16::try_from(*r).ok().map(|q| (q, a)))?
         })
         .collect();
-    let hours = labour.rows().iter().map(|o| column(labour, *o)).sum::<f64>() / per_hour;
     let lead = lead.at(i64::from(product)).map_or(0.0, from_i64);
-    Way { inputs, hours, lead }
+    Way { inputs, lead }
 }
 
 /// The opening price of a unit of each product, in its currency's smallest units.
@@ -325,17 +318,9 @@ fn zone_of(books: &Books, population: &Population, geo: &GeoState, f: &Firm) -> 
     z
 }
 
-/// The units a firm's staff make a day, one twin's, working the law's full-time hours.
-fn daily(f: &Firm, weekly: f64, way: &Way) -> f64 {
-    if way.hours <= 0.0 {
-        return 0.0;
-    }
-    from_u64(f.heads) / from_u64(f.twins) * weekly / DAYS_A_WEEK / way.hours
-}
-
-/// The stocks each firm holds at the opening: of its product, the days of sales its management aims to cover; of each
-/// storable input its way uses, what the days of making it takes and those days cover use. What is delivered as it is
-/// made is never stocked.
+/// The stocks each firm holds at the opening, from the output its filed accounts show: of its product, the days of sales
+/// its management aims to cover; of each storable input its way uses, what the days of making it takes and those days
+/// cover use. What is delivered as it is made is never stocked.
 #[clause("FRM.4", "GDS.5", "GEN.2", "GEN.3")]
 #[derive(Debug)]
 pub struct Stocks {
@@ -347,10 +332,10 @@ impl Contribution for Stocks {
         "firm stocks"
     }
     fn phase(&self) -> OpeningPhase {
-        PHYSICAL_STOCK
+        PRESENT_VALUES
     }
     fn reads(&self) -> &'static [&'static str] {
-        &[FIRMS, SMALL_FIRMS, PRODUCTS_DRAWN]
+        &[FIRMS, SMALL_FIRMS, PRODUCTS_DRAWN, "FRM.filed_accounts"]
     }
     fn writes(&self) -> &'static [&'static str] {
         &[]
@@ -368,9 +353,6 @@ impl Contribution for Stocks {
         let price = prices(register);
         let cover = phx_rand::float::from_u64(self.prims.decide.cover_days.shared(register).get());
         for c in countries {
-            let Ok(weekly) = register.count_in("LAB.full_time_hours", c.id).map(from_u64) else {
-                violation!(clause = "LAB.1", "a country with no full-time hours", country = c.id.get());
-            };
             let (books, population, geo, report) = parts(opening);
             let chosen = drawn(books, PRODUCTS_DRAWN, c);
             let list = firms(books, population, c);
@@ -380,7 +362,11 @@ impl Contribution for Stocks {
             for (f, (_, product)) in list.iter().zip(&chosen) {
                 let Ok(p) = u16::try_from(*product) else { continue };
                 let way = way_of(register, c, p);
-                let per_day = daily(f, weekly, &way);
+                // The firm's filed output a day, a twin's, which its stocks cover.
+                let Missing::Present(per_day) = read_fact(books, f, <OutputRate as FactDef>::ITEM.name) else {
+                    continue;
+                };
+                let per_day = from_i64(per_day);
                 let zone = zone_of(books, population, geo, f);
                 let mut wanted: Vec<(u16, f64)> = Vec::new();
                 if storable(&products, p) {
@@ -510,6 +496,8 @@ impl Contribution for Filed {
             let (books, population, _, _) = parts(opening);
             let chosen = drawn(books, PRODUCTS_DRAWN, c);
             let list = firms(books, population, c);
+            // Labour's share of what the country's firms add, as its wages were drawn from.
+            let labour_share = phx_ledger::opening::derived(c, "GEN.labour_share") / crate::consts::PERCENT;
             for (f, (_, product)) in list.iter().zip(&chosen) {
                 let Ok(p) = u16::try_from(*product) else { continue };
                 let way = way_of(register, c, p);
@@ -525,12 +513,16 @@ impl Contribution for Filed {
                 if let Some(r) = floor_to_i64(f64::round(required * crate::consts::FIXED_SCALE)) {
                     facts.push((<RequiredReturn as FactDef>::ITEM.name, r));
                 }
-                if members > 0.0 && hours > 0.0 && way.hours > 0.0 {
+                let materials: f64 =
+                    way.inputs.iter().map(|(q, a)| a * price.get(usize::from(*q)).copied().unwrap_or(0.0)).sum();
+                let added = price.get(usize::from(p)).copied().unwrap_or(0.0) - materials;
+                if members > 0.0 && hours > 0.0 && added > 0.0 {
                     let wage = wages / (hours * weeks_a_month);
-                    let per_day = hours / from_u64(f.twins) / DAYS_A_WEEK / way.hours;
-                    let materials: f64 =
-                        way.inputs.iter().map(|(q, a)| a * price.get(usize::from(*q)).copied().unwrap_or(0.0)).sum();
-                    let cost = lot * (materials + way.hours * wage);
+                    // A firm's filed output is what its wage bill pays for at labour's share of what a unit adds, so
+                    // a firm that pays more makes more an hour, and its accounts show the rest of what it adds.
+                    let hours_a_unit = labour_share * added / wage;
+                    let per_day = hours / from_u64(f.twins) / DAYS_A_WEEK / hours_a_unit;
+                    let cost = lot * (materials + hours_a_unit * wage);
                     let snapshot = lot * price.get(usize::from(p)).copied().unwrap_or(0.0);
                     let posted = m.points_near(snapshot).into_iter().fold(None, |best: Option<i64>, x| match best {
                         Some(b) if (from_i64(b) - snapshot).abs() <= (from_i64(x) - snapshot).abs() => Some(b),
@@ -549,6 +541,21 @@ impl Contribution for Filed {
                     }
                 }
                 write_facts(books, f, &facts);
+            }
+        }
+    }
+}
+
+/// A firm's fact as the opening wrote it: a large firm's from its row, an agent's from its positions, one twin's.
+fn read_fact(books: &mut Books, f: &Firm, name: &str) -> Missing<i64> {
+    match f.agent {
+        None => books.parties.fact(f.party, name),
+        Some((k, slot)) => {
+            let (tables, _, _) = books.parties.cells_mut();
+            let table = Population::table_mut::<SystemBacking>(tables, k);
+            match table.position(name) {
+                Some(column) => table.fact(slot, column),
+                None => Missing::Absent,
             }
         }
     }

@@ -317,6 +317,10 @@ pub fn call(orders: &[Order], rules: CallRules<'_>, lot: &mut Draws) -> Outcome 
     }
     let price = PriceRaw::from_raw(*price);
     let matches = pair(orders, &per_order, price);
+    // Fills that only net a party's own bids against its own offers change no hands.
+    if matches.is_empty() {
+        return Outcome::Failed(FailureKind::NoOverlap);
+    }
     let fills = per_order
         .iter()
         .enumerate()

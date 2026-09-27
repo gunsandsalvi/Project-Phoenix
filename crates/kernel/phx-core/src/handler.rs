@@ -130,7 +130,8 @@ pub trait GoodsView: core::fmt::Debug {
     fn plant(&self, slot: Slot) -> &[HeldPlant];
     /// The other places in the row's country a good is marked at, by each mode carriage is marked in where it stands.
     fn away(&self, slot: Slot, product: u16, grade: u8) -> Vec<Away>;
-    /// What winding the row's party down would return: its claims and goods less what it owes, one twin's for an agent.
+    /// What winding the row's party down would return beyond the money it keeps either way: its goods less what it
+    /// owes, one twin's for an agent.
     fn net_assets(&self, slot: Slot) -> Missing<i64>;
 }
 

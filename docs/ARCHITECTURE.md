@@ -1114,8 +1114,9 @@ without end in both directions.
   and discounted at their required return, against today's: they bid, at no more than that, with the money they hold
   beyond what their own planned sales cost, and when carrying no longer pays offer what they hold at no less.
 - **Closure** (FRM.15): at its production schedule an owner weighs the margin it expects a year, held for ever at its
-  required return, against what winding it down returns (`Ctx::net_assets`: claims less debts at their balances and
-  goods at cost, one twin's; plant returns nothing until a market buys it); when winding down is worth more it emits
+  required return, against what winding it down returns beyond the money it keeps either way (`Ctx::net_assets`: its
+  goods at cost less its debts at their balances, one twin's; plant returns nothing until a market buys it); when
+  winding down is worth more it emits
   `FRM.close`, and the world ends
   the firm into an estate as a default does, counted as a closure.
 - **Catastrophes** (GEO.8, GDS.9): a struck tile's share of every physical unit its sited individuals hold is lost
