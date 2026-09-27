@@ -512,10 +512,6 @@ pub mod phx_market::retail
 pub enum phx_market::retail::Want
 pub phx_market::retail::Want::Money(i64)
 pub phx_market::retail::Want::Units(i64)
-pub struct phx_market::retail::InReach
-pub phx_market::retail::InReach::km: f64
-pub phx_market::retail::InReach::stall: usize
-pub phx_market::retail::InReach::taste: f64
 pub struct phx_market::retail::RetailDay
 pub phx_market::retail::RetailDay::in_reach: u64
 pub phx_market::retail::RetailDay::rounds: u64
@@ -536,7 +532,8 @@ pub phx_market::retail::RetailKind::tastes: &'static str
 pub phx_market::retail::RetailKind::way: &'static str
 pub struct phx_market::retail::Shopper
 pub phx_market::retail::Shopper::buyer: phx_id::ids::PartyId
-pub phx_market::retail::Shopper::reach: alloc::vec::Vec<phx_market::retail::InReach>
+pub phx_market::retail::Shopper::draws: phx_rand::draws::Draws
+pub phx_market::retail::Shopper::reach: usize
 pub phx_market::retail::Shopper::twins: i64
 pub phx_market::retail::Shopper::want: phx_market::retail::Want
 pub struct phx_market::retail::Stall
@@ -547,7 +544,8 @@ pub phx_market::retail::Stall::units: i64
 pub struct phx_market::retail::Weights
 pub phx_market::retail::Weights::distance: f64
 pub phx_market::retail::Weights::price: f64
-pub fn phx_market::retail::retail(&[phx_market::retail::Stall], &[phx_market::retail::Shopper], i64, phx_market::retail::Weights, &mut phx_rand::draws::Draws) -> phx_market::retail::RetailDay
+pub fn phx_market::retail::retail(&[phx_market::retail::Stall], &mut [phx_market::retail::Shopper], &[alloc::vec::Vec<phx_market::retail::Near>], i64, phx_market::retail::Weights, &mut phx_rand::draws::Draws) -> phx_market::retail::RetailDay
+pub type phx_market::retail::Near = (usize, f64)
 pub mod phx_market::simplex
 pub struct phx_market::simplex::Arc
 pub phx_market::simplex::Arc::cap: phx_num::missing::Missing<i64>

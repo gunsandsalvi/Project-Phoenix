@@ -12,7 +12,7 @@ use phx_ledger::instruction::{AccountRef, Denom, Instruction, LegKind, LegRec, S
 use phx_macros::clause;
 use phx_market::intents::ShopIntent;
 use phx_market::print::{Buyer, Match};
-use phx_market::retail::{InReach, RetailKind, Shopper, Stall, Want, Weights};
+use phx_market::retail::{Near, RetailKind, Shopper, Stall, Want, Weights};
 use phx_num::{Missing, Qty, violation};
 use phx_pop::population::Population;
 use phx_rand::{Subject, SubjectTag};
@@ -338,7 +338,7 @@ impl World {
                     Missing::Absent => violation!(clause = "GDS.1", "a stall at a zone of no country", zone = z.get()),
                 })
                 .collect();
-            let shoppers = self.shoppers(&bound, &shops, &sites, day);
+            let (mut shoppers, reaches) = self.shoppers(&bound, &shops, &sites, day);
             let Some(stream) = self.streams.named(decl.stream) else {
                 violation!(clause = "CHN.1", "a market drawing from a stream never declared", market = market.get());
             };
@@ -346,7 +346,7 @@ impl World {
             let mut lot = self.streams.open(&stream, subject, day, SubStep::S6a.ordinal());
             let only: Vec<Stall> = stalls.iter().map(|(s, _, _)| *s).collect();
             let base = self.goods_frame.base(product);
-            let outcome = phx_market::retail::retail(&only, &shoppers, base, bound.weights, &mut lot);
+            let outcome = phx_market::retail::retail(&only, &mut shoppers, &reaches, base, bound.weights, &mut lot);
             let t = &mut self.market_day.tally;
             t.shoppers += phx_rand::float::len_u64(shoppers.len());
             t.in_reach += outcome.in_reach;
@@ -381,28 +381,30 @@ impl World {
         }
     }
 
-    /// Each buyer's sellers in reach, among the stalls standing at `sites`, with its taste for each drawn today.
+    /// Each buyer with the place its sellers in reach are listed at, among the stalls standing at `sites`, and its
+    /// stream of choices for today; the stalls in reach of each buyer zone, each with its distance, found once.
     fn shoppers(
         &self,
         bound: &RetailBound,
         shops: &[Shop],
         sites: &[phx_market::reach::Site],
         day: Day,
-    ) -> Vec<Shopper> {
+    ) -> (Vec<Shopper>, Vec<Vec<Near>>) {
         let geo = self.geo();
         let Some(tastes) = self.streams.named(bound.decl.tastes) else {
             violation!(clause = "CHN.1", "retail tastes drawn from a stream never declared", kind = bound.kind);
         };
-        // The stalls in reach of a zone, each with its distance, are found once for all its buyers.
-        let mut near: BTreeMap<ZoneId, Vec<(usize, f64)>> = BTreeMap::new();
+        let mut places: BTreeMap<ZoneId, usize> = BTreeMap::new();
+        let mut reaches: Vec<Vec<Near>> = Vec::new();
         let mut out = Vec::with_capacity(shops.len());
         for s in shops {
-            let within = near.entry(s.zone).or_insert_with(|| {
+            let reach = *places.entry(s.zone).or_insert_with(|| {
                 let Missing::Present(country) = geo.zone_country(s.zone) else {
                     violation!(clause = "GEO.2", "a buyer at a zone of no country", party = s.party.get());
                 };
                 let at = phx_market::reach::Site { zone: s.zone, country };
-                self.trade
+                let near = self
+                    .trade
                     .reach
                     .of(at, bound.reach, sites, &geo.distances)
                     .into_iter()
@@ -412,17 +414,15 @@ impl World {
                         };
                         (i, phx_rand::float::from_u64(metres) / crate::consts::METRES_PER_KM)
                     })
-                    .collect()
+                    .collect();
+                reaches.push(near);
+                reaches.len() - 1
             });
             let subject = Subject::new(SubjectTag::Party, s.party.get());
-            let mut d = self.streams.open(&tastes, subject, day, SubStep::S6a.ordinal());
-            let reach = within
-                .iter()
-                .map(|&(stall, km)| InReach { stall, km, taste: phx_rand::gumbel(&mut d, 0.0, 1.0) })
-                .collect();
-            out.push(Shopper { buyer: s.party, twins: s.twins, want: s.want, reach });
+            let draws = self.streams.open(&tastes, subject, day, SubStep::S6a.ordinal());
+            out.push(Shopper { buyer: s.party, twins: s.twins, want: s.want, reach, draws });
         }
-        out
+        (out, reaches)
     }
 
     /// A service sold made in the purchase that sells it: its units by its maker's way, and what the way takes of the

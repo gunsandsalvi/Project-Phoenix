@@ -1568,8 +1568,10 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   of price and distance, the reach and the stream of tastes). A buyer's want (`ShopIntent`, units or money a twin) is
   admitted at 5d. At 6a, every day, the day's stalls are read in one pass over the sellers: each posted price and the
   free units of the good where it stands, less what the day's matches between firms take. The stalls in reach of each
-  buyer zone are found once; each buyer draws a Gumbel taste for each, values them at `−α·ln p − γ·km + ε` and goes to
-  the best open one; a seller serves its buyers in an order drawn by lot in whole lots for every twin, and the rest
+  buyer zone are found once; each buyer goes to the open seller it values most at `−α·ln p − γ·km + ε`, ε a Gumbel
+  taste, which is to each with the logit's chance, so it draws its choice from that chance, one uniform draw of its own
+  stream, over the sellers of its zone ordered by what a whole share there costs — the prefix it can pay for — never
+  drawing a taste per seller, and a buyer turned away draws again among the rest, as its tastes' ranking would; a seller serves its buyers in an order drawn by lot in whole lots for every twin, and the rest
   choose again, a stall selling in lots whole for both the buyer's twins and its seller's. Each sale's units are
   covered at once and, at 6d, become a purchase under the kind's reason: the buyer's money to the seller and the
   seller's units used up by the purchase naming the buyer, settled in stage 7 with the trades. A service is
