@@ -86,12 +86,14 @@ pub struct RetailDay {
     pub in_reach: u64,
 }
 
-/// A buyer still choosing: its place, what a twin still wants, and the sellers in its reach it can no longer buy from.
+/// A buyer still choosing: its place, what a twin still wants, whether it has bought, and, once it chooses again, the
+/// sellers in its reach it has not closed, best first, with how many it has passed.
 struct Choosing {
     at: usize,
     want: Want,
     bought: bool,
-    closed: Vec<bool>,
+    ranked: Vec<(f64, usize)>,
+    passed: usize,
 }
 
 /// Whole lots a twin wants at a price: its units' lots, or the lots its money buys.
@@ -137,54 +139,71 @@ pub fn retail(stalls: &[Stall], shoppers: &[Shopper], lot: i64, w: Weights, draw
     let mut left: Vec<i64> = stalls.iter().map(|s| s.units).collect();
     let in_reach = shoppers.iter().map(|s| phx_rand::float::len_u64(s.reach.len())).sum();
     let mut day = RetailDay { sales: Vec::new(), unserved: Vec::new(), rounds: 0, in_reach };
+    let log_price: Vec<Option<f64>> = stalls
+        .iter()
+        .map(|s| (s.price.raw() > 0).then(|| libm::log(phx_rand::float::from_i64(s.price.raw()))))
+        .collect();
     let value = |r: &InReach| -> Option<f64> {
-        let p = stalls.get(r.stall)?.price.raw();
-        (p > 0).then(|| -w.price * libm::log(phx_rand::float::from_i64(p)) - w.distance * r.km + r.taste)
+        log_price.get(r.stall).copied().flatten().map(|l| -w.price * l - w.distance * r.km + r.taste)
     };
     let mut choosing: Vec<Choosing> = shoppers
         .iter()
         .enumerate()
-        .map(|(at, s)| Choosing { at, want: s.want, bought: false, closed: vec![false; s.reach.len()] })
+        .map(|(at, s)| Choosing { at, want: s.want, bought: false, ranked: Vec::new(), passed: 0 })
         .collect();
+    let mut first = true;
+    let mut came: Vec<(usize, usize, usize)> = Vec::new();
     while !choosing.is_empty() {
         day.rounds += 1;
-        // Each buyer's best open seller, as the stall and its place in the buyer's reach.
-        let mut came: Vec<Vec<(usize, usize)>> = vec![Vec::new(); stalls.len()];
+        // Each buyer's best open seller, as the stall and its place in the buyer's reach. A seller once closed to a
+        // buyer, or with too few units left for it, stays so, since units only fall: a buyer choosing again reads
+        // its ranked sellers on from where it stopped.
+        came.clear();
         for (c, ch) in choosing.iter_mut().enumerate() {
             let Some(s) = shoppers.get(ch.at) else { continue };
-            let mut best: Option<(f64, usize)> = None;
-            for (k, r) in s.reach.iter().enumerate() {
-                let open = !ch.closed.get(k).copied().unwrap_or(true)
-                    && stalls
+            let open = |k: usize| {
+                s.reach.get(k).is_some_and(|r| {
+                    stalls
                         .get(r.stall)
                         .zip(left.get(r.stall))
-                        .is_some_and(|(st, u)| *u >= lot * s.twins * step(s.twins, st.twins));
-                let Some(v) = value(r).filter(|_| open) else { continue };
-                if best.is_none_or(|(b, _)| v > b) {
-                    best = Some((v, k));
-                }
-            }
-            match best.and_then(|(_, k)| s.reach.get(k).map(|r| (r.stall, k))) {
-                Some((stall, k)) => {
-                    if let Some(list) = came.get_mut(stall) {
-                        list.push((c, k));
+                        .is_some_and(|(st, u)| *u >= lot * s.twins * step(s.twins, st.twins))
+                })
+            };
+            let best = if first {
+                let mut best: Option<(f64, usize)> = None;
+                for (k, r) in s.reach.iter().enumerate() {
+                    let Some(v) = value(r).filter(|_| open(k)) else { continue };
+                    if best.is_none_or(|(b, _)| v > b) {
+                        best = Some((v, k));
                     }
                 }
+                best.map(|(_, k)| k)
+            } else {
+                while ch.ranked.get(ch.passed).is_some_and(|(_, k)| !open(*k)) {
+                    ch.passed += 1;
+                }
+                ch.ranked.get(ch.passed).map(|(_, k)| *k)
+            };
+            match best.and_then(|k| s.reach.get(k).map(|r| (r.stall, k))) {
+                Some((stall, k)) => came.push((stall, c, k)),
                 None => day.unserved.push((s.buyer, ch.want)),
             }
         }
+        // Stable, so those at a seller stay in the buyers' order before the lot is drawn.
+        came.sort_by_key(|(stall, _, _)| *stall);
         let mut again: Vec<bool> = vec![false; choosing.len()];
-        for (stall, mut list) in came.into_iter().enumerate() {
+        for group in came.chunk_by_mut(|a, b| a.0 == b.0) {
+            let stall = group.first().map_or(usize::MAX, |g| g.0);
             // Those who came are served in an order drawn by lot.
-            for i in (1..list.len()).rev() {
+            for i in (1..group.len()).rev() {
                 let Ok(j) = usize::try_from(below_u64(draws, phx_rand::float::len_u64(i + 1))) else {
                     capacity_exceeded!("buyers at a seller", usize::MAX, i);
                 };
-                list.swap(i, j);
+                group.swap(i, j);
             }
             let (Some(st), Some(units)) = (stalls.get(stall), left.get_mut(stall)) else { continue };
             let price = st.price.raw();
-            for (c, k) in list {
+            for &(_, c, k) in group.iter() {
                 let Some(ch) = choosing.get_mut(c) else { continue };
                 let Some(s) = shoppers.get(ch.at) else { continue };
                 let g = step(s.twins, st.twins);
@@ -210,9 +229,7 @@ pub fn retail(stalls: &[Stall], shoppers: &[Shopper], lot: i64, w: Weights, draw
                 let short = lots < wanted || (asked > 0 && wanted == 0);
                 let priced_out = asked == 0 && !ch.bought && matches!(ch.want, Want::Money(m) if m > 0);
                 if short || priced_out {
-                    if let Some(closed) = ch.closed.get_mut(k) {
-                        *closed = true;
-                    }
+                    close(ch, s, k, &value, first);
                     if let Some(a) = again.get_mut(c) {
                         *a = true;
                     }
@@ -220,8 +237,23 @@ pub fn retail(stalls: &[Stall], shoppers: &[Shopper], lot: i64, w: Weights, draw
             }
         }
         choosing = choosing.into_iter().zip(again).filter(|(_, a)| *a).map(|(c, _)| c).collect();
+        first = false;
     }
     day
+}
+
+/// Closes the seller at `k` in a buyer's reach: on its first choosing again the buyer ranks the rest best first, ties
+/// to the earlier in its reach, as a scan of its reach would choose; after that the closed one is the one it had
+/// reached.
+fn close(ch: &mut Choosing, s: &Shopper, k: usize, value: &impl Fn(&InReach) -> Option<f64>, first: bool) {
+    if first {
+        ch.ranked =
+            s.reach.iter().enumerate().filter(|(i, _)| *i != k).filter_map(|(i, r)| value(r).map(|v| (v, i))).collect();
+        ch.ranked.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
+        ch.passed = 0;
+    } else {
+        ch.passed += 1;
+    }
 }
 
 #[cfg(test)]
