@@ -125,6 +125,11 @@ pub trait GoodsView: core::fmt::Debug {
     fn mark(&self, slot: Slot, product: u16, grade: u8) -> Missing<i64>;
     /// The price a product last sold at, for a lot, at retail in the row's country: the market's mark.
     fn posted(&self, slot: Slot, product: u16) -> Missing<i64>;
+    /// A method's record on the series a stance over a product reads — its market between firms where the row stands,
+    /// or else its country's retail market — in millionths; none before the method's first surprise there.
+    fn record(&self, slot: Slot, product: u16, method: u16) -> Missing<i64>;
+    /// The party the row is, as a subject a draw of its own is keyed by.
+    fn party(&self, slot: Slot) -> Missing<phx_id::PartyId>;
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64>;
     /// The money the row's party holds on its account, one twin's for an agent; none without an account.
     fn money(&self, slot: Slot) -> Missing<i64>;
@@ -158,6 +163,12 @@ impl GoodsView for NoGoods {
         Missing::Absent
     }
     fn posted(&self, _: Slot, _: u16) -> Missing<i64> {
+        Missing::Absent
+    }
+    fn record(&self, _: Slot, _: u16, _: u16) -> Missing<i64> {
+        Missing::Absent
+    }
+    fn party(&self, _: Slot) -> Missing<phx_id::PartyId> {
         Missing::Absent
     }
     fn outlook(&self, _: Slot, _: u16, _: u8, _: u16) -> Missing<i64> {
@@ -301,6 +312,14 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
 
     pub fn posted(&self, slot: Slot, product: u16) -> Missing<i64> {
         self.parts.goods.posted(slot, product)
+    }
+
+    pub fn record(&self, slot: Slot, product: u16, method: u16) -> Missing<i64> {
+        self.parts.goods.record(slot, product, method)
+    }
+
+    pub fn party(&self, slot: Slot) -> Missing<phx_id::PartyId> {
+        self.parts.goods.party(slot)
     }
 
     pub fn emit<I: IntentDef>(&mut self, intent: &I)

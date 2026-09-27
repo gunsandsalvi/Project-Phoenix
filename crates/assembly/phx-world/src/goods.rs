@@ -175,6 +175,8 @@ pub(crate) struct MarketDay {
     pub stages: BTreeMap<phx_ledger::instruction::InstructionId, (u64, i64)>,
     pub booked: Vec<crate::freight::Booked>,
     pub freight: Vec<(Instruction, crate::freight::Booked)>,
+    /// The public series each method was surprised by at today's prints, beyond its sensitivity.
+    pub surprises: Vec<(MarketId, u16)>,
     pub tally: GoodsDay,
 }
 
@@ -226,6 +228,13 @@ pub(crate) struct AwayTable {
 }
 /// Each product's retail mark in each country, rebuilt with the marks.
 pub(crate) type RetailMarks = Arc<BTreeMap<(u16, u8), i64>>;
+/// Each method's record on each series a stance reads: a good's market where it stands, or a product's retail market
+/// in a country, rebuilt at 5a.
+#[derive(Debug, Default)]
+pub(crate) struct Records {
+    goods: BTreeMap<(GoodKey, u16), i64>,
+    retail: BTreeMap<((u16, u8), u16), i64>,
+}
 /// Each good's public outlook where it stands, by method, rebuilt at 5a.
 pub(crate) type Outlooks = Arc<BTreeMap<(GoodKey, u16), i64>>;
 
@@ -244,6 +253,7 @@ pub(crate) struct RunGoods {
     delivered: Vec<Units>,
     marks: Marks,
     retail: RetailMarks,
+    records: Arc<Records>,
     outlooks: Outlooks,
     away: Arc<AwayTable>,
     geo: Option<Arc<phx_geo::GeoState>>,
@@ -252,6 +262,7 @@ pub(crate) struct RunGoods {
 /// A row's goods: where it stands, its money and net assets, and where its lists lie among the visit's.
 #[derive(Clone, Copy, Debug)]
 struct RowGoods {
+    party: Missing<PartyId>,
     zone: Missing<ZoneId>,
     held: (usize, usize),
     plant: (usize, usize),
@@ -265,6 +276,7 @@ impl RowGoods {
     /// A row that holds, has delivered and stands nowhere yet.
     fn none() -> RowGoods {
         RowGoods {
+            party: Missing::Absent,
             zone: Missing::Absent,
             held: (0, 0),
             plant: (0, 0),
@@ -326,6 +338,18 @@ impl GoodsView for RunGoods {
         };
         let Missing::Present(country) = geo.zone_country(zone) else { return Missing::Absent };
         self.retail.get(&(product, country.get())).copied().map_or(Missing::Absent, Missing::Present)
+    }
+    fn party(&self, slot: Slot) -> Missing<PartyId> {
+        self.row(slot).map_or(Missing::Absent, |r| r.party)
+    }
+    fn record(&self, slot: Slot, product: u16, method: u16) -> Missing<i64> {
+        let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
+        if let Some(r) = self.records.goods.get(&(GoodKey { product, grade: 0, zone }, method)) {
+            return Missing::Present(*r);
+        }
+        let Some(geo) = self.geo.as_ref() else { return Missing::Absent };
+        let Missing::Present(country) = geo.zone_country(zone) else { return Missing::Absent };
+        self.records.retail.get(&((product, country.get()), method)).copied().map_or(Missing::Absent, Missing::Present)
     }
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64> {
         let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
@@ -997,6 +1021,8 @@ impl World {
                     sum: i128::from(price),
                     count: 1,
                     outlooks: vec![price; methods],
+                    widths: vec![Missing::Absent; methods],
+                    records: vec![Missing::Absent; methods],
                 },
             );
         }
@@ -1075,6 +1101,8 @@ impl World {
                 sum: 0,
                 count: 0,
                 outlooks: Vec::new(),
+                widths: Vec::new(),
+                records: Vec::new(),
             });
             if series.count > 0 && print_day <= series.day {
                 continue;
@@ -1085,6 +1113,11 @@ impl World {
             series.day = print_day;
             series.sum += i128::from(price);
             series.count += 1;
+            // Each method's surprise at the print: its width and record move, and one beyond its sensitivity is kept.
+            if !first {
+                let surprised = score(series, price, methods, self.val_rules, market);
+                self.market_day.surprises.extend(surprised.into_iter().map(|m| (market, m)));
+            }
             let Some(mean) = i64::try_from(series.sum / i128::from(series.count)).ok() else {
                 phx_num::capacity_exceeded!("a series' mean price", i64::MAX, series.count);
             };
@@ -1116,22 +1149,36 @@ impl World {
         }
         // Only a goods market's subject is a good where it stands; retail's and carriage's are read otherwise.
         let goods = self.goods_kinds();
+        let retail: Vec<u16> = self.trade.retail.iter().map(|r| r.kind).collect();
         let mut out = BTreeMap::new();
+        let mut records = Records::default();
         for (market, series) in &self.markets.public {
             let (Missing::Present(kind), Missing::Present(subject)) =
                 (self.markets.made.kind_of(*market), self.markets.made.subject_of(*market))
             else {
                 continue;
             };
+            let scored = (0_u16..).zip(&series.records).filter_map(|(m, r)| match r {
+                Missing::Present(r) => Some((m, *r)),
+                Missing::Absent => None,
+            });
+            if retail.contains(&kind) {
+                if let Some((product, country)) = crate::retail::retail_of(subject) {
+                    records.retail.extend(scored.map(|(m, r)| (((product, country.get()), m), r)));
+                }
+                continue;
+            }
             if !goods.contains(&kind) {
                 continue;
             }
             let key = GoodKey::from_code(subject);
+            records.goods.extend(scored.map(|(m, r)| ((key, m), r)));
             for (m, o) in (0_u16..).zip(&series.outlooks) {
                 out.insert((key, m), *o);
             }
         }
         self.outlooks = Arc::new(out);
+        self.method_records = Arc::new(records);
     }
 
     /// What a visit's rows may read of their goods, read into the room of a view a visit before used.
@@ -1139,6 +1186,7 @@ impl World {
         out.clear();
         out.marks = Arc::clone(&self.marks);
         out.retail = Arc::clone(&self.retail_marks);
+        out.records = Arc::clone(&self.method_records);
         out.outlooks = Arc::clone(&self.outlooks);
         out.away = Arc::clone(&self.away);
         out.geo = Some(Arc::clone(crate::world::geo_arc(&self.own)));
@@ -1149,7 +1197,8 @@ impl World {
                 out.rows.push(RowGoods::none());
                 continue;
             };
-            let mut goods = RowGoods { zone: Missing::Present(row.zone), ..RowGoods::none() };
+            let mut goods =
+                RowGoods { party: Missing::Present(row.party), zone: Missing::Present(row.zone), ..RowGoods::none() };
             let (place, at) = self.books.parties.row(row.party);
             let arenas = self.books.parties.holder(place);
             let mut goods_cost = 0_i128;
@@ -1232,4 +1281,51 @@ impl World {
         };
         HeldRight { deposit, product, grade: d.grade.raw(), opening, remaining }
     }
+}
+
+/// Each method's surprise at a series' new print: its width and its record move with it, and the methods whose surprise
+/// passed their sensitivity times the width before it are returned.
+#[clause("VAL.3", "VAL.4", "REP.35")]
+fn score(
+    series: &mut phx_market::markets::PublicSeries,
+    price: i64,
+    methods: &[(phx_val::method::Method, phx_val::heuristic::Params)],
+    (memory, sensitivity): (f64, f64),
+    market: MarketId,
+) -> Vec<u16> {
+    let mut surprised = Vec::new();
+    let mut widths = Vec::with_capacity(methods.len());
+    let mut records = Vec::with_capacity(methods.len());
+    for (i, (_, params)) in methods.iter().enumerate() {
+        let expected =
+            series.outlooks.get(i).copied().map_or(phx_rand::float::from_i64(price), phx_rand::float::from_i64);
+        let surprise = phx_val::surprise::surprise(phx_rand::float::from_i64(price), expected);
+        let before = match series.widths.get(i).copied().unwrap_or(Missing::Absent) {
+            Missing::Present(w) => Missing::Present(phx_rand::float::from_i64(w)),
+            Missing::Absent => Missing::Absent,
+        };
+        if let Missing::Present(w) = before
+            && phx_val::surprise::wakes(surprise, w, sensitivity)
+        {
+            surprised.push(u16::try_from(i).unwrap_or(u16::MAX));
+        }
+        let width = phx_val::surprise::width(before, surprise, params.lambda);
+        let error = if width > 0.0 { surprise / width } else { 0.0 };
+        let record = match series.records.get(i).copied().unwrap_or(Missing::Absent) {
+            Missing::Present(r) => Missing::Present(phx_num::Fixed::<6>::from_raw(r).to_f64()),
+            Missing::Absent => Missing::Absent,
+        };
+        let record = phx_val::switching::performance(record, error, memory);
+        let (Some(w), Ok(r)) = (
+            phx_rand::float::floor_to_i64(width + crate::consts::HALF),
+            phx_num::Fixed::<6>::from_f64(record, phx_num::round::Round::HalfEven),
+        ) else {
+            violation!(clause = "VAL.4", "a surprise's width or record beyond a word", market = market.get());
+        };
+        widths.push(Missing::Present(w));
+        records.push(Missing::Present(r.raw()));
+    }
+    series.widths = widths;
+    series.records = records;
+    surprised
 }

@@ -45,8 +45,10 @@ pub struct Markets {
 }
 
 /// A market's prints as a public series: the day of the last it has taken in, the last two prices, their sum and
-/// count, which its long mean is, and each method's outlook, by the method's index.
-#[clause("VAL.23")]
+/// count, which its long mean is, and each method's outlook, by the method's index; and each method's width of its
+/// recent surprises and its record, the weighted squared error in those widths, in millionths, none before its first
+/// surprise.
+#[clause("VAL.23", "VAL.3", "VAL.4")]
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct PublicSeries {
     pub day: Day,
@@ -55,6 +57,8 @@ pub struct PublicSeries {
     pub sum: i128,
     pub count: u64,
     pub outlooks: Vec<i64>,
+    pub widths: Vec<Missing<i64>>,
+    pub records: Vec<Missing<i64>>,
 }
 
 /// The depth and width a meeting's orders posted.

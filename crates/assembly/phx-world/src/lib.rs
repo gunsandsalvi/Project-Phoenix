@@ -23,6 +23,7 @@ pub mod registry;
 pub mod retail;
 pub mod save;
 mod spoil;
+pub mod stances;
 pub mod state;
 pub mod stats;
 pub mod systems;

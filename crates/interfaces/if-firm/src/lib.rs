@@ -20,6 +20,7 @@ pub const ITEMS: &[ItemDecl] = &[
     <facts::DeliveredAtReview as FactDef>::ITEM,
     <facts::DeliveredSeen as FactDef>::ITEM,
     <facts::Method as FactDef>::ITEM,
+    <facts::Switching as FactDef>::ITEM,
     <facts::LastReview as FactDef>::ITEM,
     <facts::UnitCost as FactDef>::ITEM,
     <facts::Markup as FactDef>::ITEM,

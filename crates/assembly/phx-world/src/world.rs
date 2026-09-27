@@ -97,10 +97,15 @@ pub struct World {
     /// Each good's latest mark where it stands, and the public outlook of its price there, for the handlers' reads.
     pub(crate) marks: crate::goods::Marks,
     pub(crate) retail_marks: crate::goods::RetailMarks,
+    pub(crate) method_records: std::sync::Arc<crate::goods::Records>,
     pub(crate) away: std::sync::Arc<crate::goods::AwayTable>,
     pub(crate) outlooks: crate::goods::Outlooks,
     /// The methods public series are forecast by, each with its memory type's parameters, by the method's index.
     pub(crate) val_methods: Vec<(phx_val::method::Method, phx_val::heuristic::Params)>,
+    /// The weight of a heuristic's last error in its record, and how many widths a surprise must pass to wake.
+    pub(crate) val_rules: (f64, f64),
+    /// Each day's stances.
+    pub(crate) stance_days: Vec<crate::stances::StanceDay>,
     pub(crate) accounts: phx_acct::accounts::Accounts,
     pub(crate) report: phx_core::GenReport,
     pub(crate) unprocessed: Vec<phx_ledger::fails::Fail>,

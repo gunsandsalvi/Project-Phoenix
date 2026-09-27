@@ -49,14 +49,17 @@ pub const if_firm::facts::SalesWidth::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::SoldAtInvest
 impl phx_core::facts::FactDef for if_firm::facts::SoldAtInvest
 pub const if_firm::facts::SoldAtInvest::ITEM: phx_core::facts::ItemDecl
+pub struct if_firm::facts::Switching
+impl phx_core::facts::FactDef for if_firm::facts::Switching
+pub const if_firm::facts::Switching::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::UnitCost
 impl phx_core::facts::FactDef for if_firm::facts::UnitCost
 pub const if_firm::facts::UnitCost::ITEM: phx_core::facts::ItemDecl
 pub struct if_firm::facts::WagePerHour
 impl phx_core::facts::FactDef for if_firm::facts::WagePerHour
 pub const if_firm::facts::WagePerHour::ITEM: phx_core::facts::ItemDecl
-pub const if_firm::facts::FACTS: [&str; 14]
-pub const if_firm::facts::POSITIONS: [phx_core::pop::PositionDecl; 14]
+pub const if_firm::facts::FACTS: [&str; 15]
+pub const if_firm::facts::POSITIONS: [phx_core::pop::PositionDecl; 15]
 pub mod if_firm::freight
 pub struct if_firm::freight::Mode
 impl phx_core::facts::FactDef for if_firm::freight::Mode

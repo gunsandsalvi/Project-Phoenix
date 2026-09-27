@@ -1203,7 +1203,10 @@ the wakes it answers, and its **cadence**: a continuous decision's schedule (TIM
 the period, drawn once and kept beside its booking; or a lumpy decision's reviews (REP.21) at the daily chance the row's
 attention position holds (REP.38), none while it holds none. The assembly refuses a visit whose handler is not its
 system's, runs on another table or outside 5b and 5c, or whose attention the kind does not hold, and one that names a
-wake, which no surprise yet brings to a visit. The visits keep an
+wake other than a surprise on a review drawn at attention. A surprise wakes such a review (REP.35): at 5a, after the
+public outlooks, `stance_wakes` reads each row's product, method and place, finds the series its stance reads — its
+product's market between firms where it stands, or else its country's retail market — and, where that series surprised
+its method at the day's print, books its review for the first day it can still run. The visits keep an
 agenda of their own beside the processes' (`Population::visits`), one table per visited kind, a reason per visit, saved
 with the population. Every row is booked once the opening is done; the rows due are gathered on the day's first decision
 sub-step, each visit's handler runs on its rows due in runs of consecutive slots over its kind's table — an agent
@@ -1229,8 +1232,8 @@ markup, posted price, output rate, price attention, the cost of its staff's hour
   R·x² ÷ (2μ) of revenue R, so the curvature is daily revenue over μ, with no primitive of its own — the outlook's
   relative variance a day, and a review's cost, `FRM.review_hours` at the staff's wage: none while it expects no
   revenue, every day at or below cost. A surprise beyond `VAL.attention_sensitivity` widths sets the chance to one, so
-  the review is drawn for the next day: a surprise reaches a visit through its attention, since visits answer no
-  wake. Production follows.
+  the review is drawn for the next day, as a surprise in the public series its stance reads wakes it (`stance_wakes`);
+  then its stance is reconsidered (VAL.7). Production follows.
 - `FRM.review_*` (5c, at that attention): the markup moves by `rules::markup::update` over the sales since the last
   review against those expected over its days and by what competitors charge — its product's last price between
   firms where it stands, or else its country's retail mark for it (`Ctx::posted`), absent while neither is marked —
@@ -1521,7 +1524,14 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   from the holder's own arenas. An agent's key attributes read by name as an individual's facts do.
 - **Public outlooks** (VAL.23): at 5a the kernel takes in each market's prints since the last pass as a public series
   (`Markets::public`, saved) and forms every method's outlook of it, heuristic by memory type, the first print being
-  every method's first outlook (VAL.10); a firm reads the outlook of its own method (`FRM.method`). The goods view
+  every method's first outlook (VAL.10); a firm reads the outlook of its own method (`FRM.method`). At each print
+  after the first, each method's surprise moves its width and its record — the exponentially weighted squared error in
+  widths (`VAL.performance_memory`) — kept with the series (`PublicSeries::widths`, `records`, millionths); a surprise
+  beyond `VAL.attention_sensitivity` of the width before it is kept for the day's wakes (REP.35). A firm's stance
+  (VAL.7) is reconsidered on its production schedule: among the heuristics of its memory type, the logit of their
+  records on the series its stance reads at its switching type's intensity (`FRM.switching`, a type of
+  `VAL.switching_intensity`, drawn at the opening), one drawn on `FRM.stance`; while any has no record the stance
+  stands. Each day's stances are counted (`StanceDay`: surprises, reviews woken, methods held, firms per heuristic). The goods view
   holds the outlooks of the goods markets alone — between firms and commodities — whose subject is a good where it
   stands, as the marks are; a retail or carriage market's series is read by its own subject.
 - **Cost flows** (ACC.6): an individual chooses first in, first out or weighted average once

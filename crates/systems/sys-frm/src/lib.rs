@@ -31,6 +31,7 @@ declare_kind! { pub SMALL_FIRM = "small_firm" { legal_form: "company", table: Ag
 declare_stream! { pub OpeningStream = "FRM.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub SmallStream = "FRM.opening_small" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub VisitStream = "FRM.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
+declare_stream! { pub StanceStream = "FRM.stance" { purpose: Occasion, keyed: false, clause: "VAL.7" } }
 
 declare_prim! {
     /// The return a firm's management requires of what it holds and does, a year, drawn for each firm.
@@ -210,6 +211,7 @@ fn declare_decisions(d: &mut Declarations) -> decide::DecidePrims {
         d.insolvency(InsolvencyDecl { kind, grace_days: INSOLVENCY_GRACE_DAYS.id, clause: "FRM.15" });
     }
     d.stream(VisitStream::DECL);
+    d.stream(StanceStream::DECL);
     for fact in if_firm::facts::FACTS {
         d.claim(fact);
         d.facet(FacetDecl { fact, kind: FIRM.name });
@@ -228,13 +230,15 @@ fn declare_decisions(d: &mut Declarations) -> decide::DecidePrims {
     }));
     let schedule = Cadence::Schedule { days: decide::PRODUCTION_DAYS.id, runs_on: RunsOn::Business };
     let attention = Cadence::Attention { position: <if_firm::facts::PriceAttention as FactDef>::ITEM.name };
-    for (handler, kind, cadence) in [
-        (decide::AttendSmall::NAME, SMALL_FIRM.name, schedule),
-        (decide::AttendLarge::NAME, FIRM.name, schedule),
-        (decide::ReviewSmall::NAME, SMALL_FIRM.name, attention),
-        (decide::ReviewLarge::NAME, FIRM.name, attention),
+    // A review is woken by a surprise in the public series its stance reads.
+    let surprise: &[phx_core::WakeKind] = &[phx_core::WakeKind::Surprise];
+    for (handler, kind, cadence, wakes) in [
+        (decide::AttendSmall::NAME, SMALL_FIRM.name, schedule, &[][..]),
+        (decide::AttendLarge::NAME, FIRM.name, schedule, &[][..]),
+        (decide::ReviewSmall::NAME, SMALL_FIRM.name, attention, surprise),
+        (decide::ReviewLarge::NAME, FIRM.name, attention, surprise),
     ] {
-        d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes: &[], clause: "REP.21" });
+        d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes, clause: "REP.21" });
     }
     prims
 }

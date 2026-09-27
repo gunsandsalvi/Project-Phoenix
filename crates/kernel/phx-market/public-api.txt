@@ -339,8 +339,10 @@ pub phx_market::markets::PublicSeries::count: u64
 pub phx_market::markets::PublicSeries::day: phx_id::day::Day
 pub phx_market::markets::PublicSeries::last: i64
 pub phx_market::markets::PublicSeries::outlooks: alloc::vec::Vec<i64>
+pub phx_market::markets::PublicSeries::records: alloc::vec::Vec<phx_num::missing::Missing<i64>>
 pub phx_market::markets::PublicSeries::sum: i128
-impl phx_store::save::Saved for phx_market::markets::PublicSeries where phx_id::day::Day: phx_store::save::Saved, i64: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
+pub phx_market::markets::PublicSeries::widths: alloc::vec::Vec<phx_num::missing::Missing<i64>>
+impl phx_store::save::Saved for phx_market::markets::PublicSeries where phx_id::day::Day: phx_store::save::Saved, i64: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved, alloc::vec::Vec<phx_num::missing::Missing<i64>>: phx_store::save::Saved
 pub fn phx_market::markets::PublicSeries::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_market::markets::PublicSeries::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_market::order

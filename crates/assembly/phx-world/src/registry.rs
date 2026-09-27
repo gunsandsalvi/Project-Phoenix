@@ -592,6 +592,10 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     calendar.move_window(calendar.date(carried.today).year());
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
     let val_methods = crate::goods::methods(&p.kernel.val, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
+    let val_rules = (
+        p.kernel.val.performance_memory.shared(&p.c.register).to_f64(),
+        p.c.register.fixed("VAL.attention_sensitivity").map_err(|e| AssemblyErrors(vec![e]))?,
+    );
     p.market_kinds.check(&markets.made).map_err(|e| AssemblyErrors(vec![e]))?;
     Ok(World {
         records,
@@ -637,9 +641,12 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         market_day: crate::goods::MarketDay::default(),
         marks: crate::goods::Marks::default(),
         retail_marks: crate::goods::RetailMarks::default(),
+        method_records: std::sync::Arc::default(),
         away: std::sync::Arc::default(),
         outlooks: crate::goods::Outlooks::default(),
         val_methods,
+        val_rules,
+        stance_days: Vec::new(),
         accounts,
         report: run.report,
         unprocessed: carried.unprocessed,

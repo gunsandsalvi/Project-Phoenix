@@ -786,9 +786,11 @@ pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_
 pub fn phx_core::handler::Ctx<'a, H, S>::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
+pub fn phx_core::handler::Ctx<'a, H, S>::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
 pub fn phx_core::handler::Ctx<'a, H, S>::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::Ctx<'a, H, S>::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
+pub fn phx_core::handler::Ctx<'a, H, S>::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
@@ -828,8 +830,10 @@ pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> ph
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
 pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
 pub trait phx_core::handler::Emits<I: phx_core::handler::IntentDef>
@@ -851,8 +855,10 @@ pub fn phx_core::handler::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> 
 pub fn phx_core::handler::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::GoodsView::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
 pub fn phx_core::handler::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::GoodsView::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::GoodsView::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
 pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
@@ -863,8 +869,10 @@ pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> ph
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
 pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::HandlerDecl: 'static
 pub const phx_core::handler::HandlerDecl::CLAUSE: &'static str
@@ -2626,9 +2634,11 @@ pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_
 pub fn phx_core::handler::Ctx<'a, H, S>::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
+pub fn phx_core::handler::Ctx<'a, H, S>::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
 pub fn phx_core::handler::Ctx<'a, H, S>::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::Ctx<'a, H, S>::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
+pub fn phx_core::handler::Ctx<'a, H, S>::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
@@ -3160,8 +3170,10 @@ pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> ph
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
 pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub struct phx_core::NotObserver
 pub struct phx_core::ObserverDraws<'a>
@@ -3654,8 +3666,10 @@ pub fn phx_core::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::
 pub fn phx_core::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::GoodsView::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
 pub fn phx_core::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::GoodsView::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::GoodsView::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
 pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
@@ -3666,8 +3680,10 @@ pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> ph
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
 pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::GroupDemand
 pub fn phx_core::GroupDemand::quantity_at(&self, phx_id::ids::MarketId, u64, i64) -> i64

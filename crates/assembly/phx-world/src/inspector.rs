@@ -61,6 +61,13 @@ impl<'a> Inspector<'a> {
 
     /// What each day's visits did: the rows each handler visited and the facts they moved.
     #[must_use]
+    /// Each day's stances: the public surprises, the reviews they woke, the methods held and the firms on each
+    /// heuristic.
+    pub fn stance_days(&self) -> &[crate::stances::StanceDay] {
+        &self.world.stance_days
+    }
+
+    #[must_use]
     pub fn visit_days(&self) -> &[crate::visits::VisitDay] {
         &self.world.metrics.visits
     }

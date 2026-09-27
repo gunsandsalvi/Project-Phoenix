@@ -86,8 +86,10 @@ pub(crate) fn bind(d: &Declarations, h: &HandlerTable, register: &Register) -> R
             }
             Some(_) => {}
         }
-        if !v.wakes.is_empty() {
-            errors.push(format!("`{}` answers wakes, which surprises bring once firms sell (S1.05)", v.handler));
+        // A surprise wakes a review drawn at its row's attention; nothing else wakes a visit yet.
+        let surprise = matches!(v.cadence, Cadence::Attention { .. });
+        if v.wakes.iter().any(|w| !(surprise && *w == phx_core::WakeKind::Surprise)) {
+            errors.push(format!("`{}` answers a wake no visit of its cadence answers", v.handler));
         }
         let mut schedule = None;
         if let Cadence::Schedule { days, runs_on } = v.cadence {

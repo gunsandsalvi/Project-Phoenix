@@ -4,7 +4,7 @@
 
 use if_firm::facts::{
     Capacity, DeliveredAtReview, DeliveredSeen, ExpectedSales, LastReview, Markup, Method, OutputRate, Price,
-    PriceAttention, RequiredReturn, SalesWidth, UnitCost, WagePerHour,
+    PriceAttention, RequiredReturn, SalesWidth, Switching, UnitCost, WagePerHour,
 };
 use if_firm::known::{Product, WayUsed};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
@@ -117,6 +117,8 @@ pub struct Management {
     /// Each memory type's speed of correction, by its place, and how many widths a surprise must pass to wake.
     pub gains: Vec<f64>,
     pub sensitivity: f64,
+    /// Each switching type's intensity, by its place.
+    pub intensities: Vec<f64>,
 }
 
 impl Management {
@@ -139,8 +141,17 @@ impl Management {
             .iter()
             .map(|t| from_i64(t.value) / scale)
             .collect();
+        let switching = u16::try_from(register.count("VAL.switching_types")?).map_err(|e| e.to_string())?;
+        let intensity = register.distribution("VAL.switching_intensity")?;
+        let per = libm::pow(crate::consts::DECADE, f64::from(intensity.exp));
+        let intensities = phx_core::register::values::TypeSet::build(intensity, switching)?
+            .types()
+            .iter()
+            .map(|t| from_i64(t.value) / per)
+            .collect();
         Ok(Management {
             gains,
+            intensities,
             sensitivity: register.fixed("VAL.attention_sensitivity")?,
             production_days: phx_rand::float::from_u64(days),
             cover_days: phx_rand::float::from_u64(p.cover_days.shared(register).get()),
@@ -226,8 +237,8 @@ declare_handler! {
     pub AttendSmall = "FRM.attend_small" {
         substep: S5b,
         table: "small_firm",
-        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
-        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Switching, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
+        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen, Method],
         intents: [Transform, OrderIntent, ShopIntent, CloseIntent],
         clause: "REP.38",
         body: attend,
@@ -239,8 +250,8 @@ declare_handler! {
     pub AttendLarge = "FRM.attend_large" {
         substep: S5b,
         table: "firm",
-        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
-        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Switching, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
+        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen, Method],
         intents: [Transform, OrderIntent, ShopIntent, CloseIntent],
         clause: "REP.38",
         body: attend,
@@ -361,6 +372,62 @@ where
     }
 }
 
+impl phx_core::DrawsFrom<crate::StanceStream> for AttendSmall {}
+impl phx_core::DrawsFrom<crate::StanceStream> for AttendLarge {}
+
+/// The firm's reconsidering of its stance on its production schedule, where it takes in what it sold: among the heuristics of its memory type, each
+/// weighted by its record on the series its stance reads at the firm's switching intensity, one drawn by the firm's
+/// own taste, as the shares a discrete choice gives; a series none of whose methods has a record yet leaves it where
+/// its taste put it.
+#[clause("VAL.7", "REP.22")]
+fn reconsider<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot, product: u16)
+where
+    H: HandlerDecl + Reads<Method> + Reads<Switching> + Writes<Method> + phx_core::DrawsFrom<crate::StanceStream>,
+    S: FactStore + ?Sized,
+{
+    let m: &Management = ctx.own::<crate::Own>().management();
+    let types = phx_rand::float::len_u64(m.gains.len());
+    let (Some(method), Some(switching), Missing::Present(party)) = (
+        read::<Method, H, S>(ctx, row).and_then(phx_rand::float::floor_to_u64),
+        read::<Switching, H, S>(ctx, row).and_then(phx_rand::float::floor_to_u64),
+        ctx.party(row),
+    ) else {
+        return;
+    };
+    let Some(beta) = usize::try_from(switching).ok().and_then(|i| m.intensities.get(i)).copied() else { return };
+    let Some(memory) = method.checked_rem(types) else { return };
+    let records: Vec<Missing<f64>> = (0..phx_rand::float::len_u64(phx_val::heuristic::MENU.len()))
+        .map(|h| {
+            let at = u16::try_from(h * types + memory).unwrap_or(u16::MAX);
+            match ctx.record(row, product, at) {
+                Missing::Present(r) => Missing::Present(phx_num::Fixed::<6>::from_raw(r).to_f64()),
+                Missing::Absent => Missing::Absent,
+            }
+        })
+        .collect();
+    if records.contains(&Missing::Absent) {
+        return;
+    }
+    let mut shares = vec![0.0; records.len()];
+    phx_val::switching::shares(&records, beta, &mut shares);
+    let mut d = ctx.draws::<crate::StanceStream>(phx_rand::Subject::new(phx_rand::SubjectTag::Party, party.get()));
+    let draw = phx_rand::open_unit(&mut d);
+    let mut sum = 0.0;
+    let chosen = shares.iter().position(|s| {
+        sum += s;
+        draw < sum
+    });
+    let heuristic = chosen.unwrap_or(shares.len() - 1);
+    let Some(next) = phx_rand::float::len_u64(heuristic).checked_mul(types).and_then(|h| h.checked_add(memory)) else {
+        return;
+    };
+    if next != method
+        && let Ok(next) = i64::try_from(next)
+    {
+        ctx.write::<Method>(row, next);
+    }
+}
+
 /// The product the firm makes.
 fn product_of<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot) -> Option<u16>
 where
@@ -397,10 +464,13 @@ where
         + Reads<UnitCost>
         + Reads<RequiredReturn>
         + Reads<Capacity>
+        + Reads<Switching>
         + Writes<PriceAttention>
         + Writes<ExpectedSales>
         + Writes<SalesWidth>
         + Writes<DeliveredSeen>
+        + Writes<Method>
+        + phx_core::DrawsFrom<crate::StanceStream>
         + phx_core::Emits<Transform>
         + phx_core::Emits<OrderIntent>
         + phx_core::Emits<ShopIntent>
@@ -412,6 +482,9 @@ where
         return;
     }
     attend_price(ctx, row);
+    if let Some(product) = product_of(ctx, row) {
+        reconsider(ctx, row, product);
+    }
     crate::produce::produce(ctx, row);
 }
 
@@ -536,6 +609,7 @@ mod tests {
             points: vec![100, 199, 499, 999],
             gains: vec![0.5],
             sensitivity: 2.0,
+            intensities: vec![1.0],
         };
         assert_eq!(m.points_near(250.0), vec![10, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
         assert_eq!(m.points_near(2500.0), vec![100, 199, 499, 999, 1000, 1990, 4990, 9990, 10000, 19900, 49900, 99900]);

@@ -59,11 +59,32 @@ pub const LC_1_02: super::Check = live_check! {
     check: formed_before_use,
 };
 
+/// The firms' shares by heuristic are kept each day and move over the run as their stances are reconsidered.
+fn shares_move(w: Inspector<'_>) -> Outcome {
+    let days = w.stance_days();
+    let (Some(first), Some(last)) = (days.first(), days.last()) else {
+        return Outcome::NotYet("no day's stances were counted in the run");
+    };
+    if first.by_heuristic.iter().sum::<u64>() == 0 {
+        return Outcome::NotYet("no firm held a stance in the run");
+    }
+    if days.iter().any(|d| d.by_heuristic != first.by_heuristic) {
+        Outcome::Pass
+    } else {
+        Outcome::Fail(format!(
+            "the firms' heuristics stood at {:?} on every day from day {} to {}",
+            first.by_heuristic,
+            first.day.get(),
+            last.day.get()
+        ))
+    }
+}
+
 pub const LC_1_03: super::Check = live_check! {
     id: "LC-1-03",
     title: "heuristic shares per series are reported and move over the run, their lead over price swings published",
     from_step: "S1.01",
-    check: not_yet,
+    check: shares_move,
 };
 
 pub const LC_1_04: super::Check = live_check! {

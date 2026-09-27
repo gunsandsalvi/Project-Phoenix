@@ -41,6 +41,13 @@ declare_fact! {
 }
 
 declare_fact! {
+    /// The firm's switching type: how strongly it moves toward the heuristic that has forecast best, by the type's place.
+    pub Switching = "FRM.switching" {
+        value: Count, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "VAL.7",
+    }
+}
+
+declare_fact! {
     /// The day of the firm's last price review, from which its sales since are counted.
     pub LastReview = "FRM.last_review" {
         value: Day, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "REP.21",
@@ -136,12 +143,13 @@ const fn from_fact<F: FactDef>() -> PositionDecl {
 }
 
 /// Every position a small firm's agent holds, in the order its table keeps them.
-pub const POSITIONS: [PositionDecl; 14] = [
+pub const POSITIONS: [PositionDecl; 15] = [
     from_fact::<ExpectedSales>(),
     from_fact::<SalesWidth>(),
     from_fact::<DeliveredAtReview>(),
     from_fact::<DeliveredSeen>(),
     from_fact::<Method>(),
+    from_fact::<Switching>(),
     from_fact::<LastReview>(),
     from_fact::<UnitCost>(),
     from_fact::<Markup>(),
@@ -154,12 +162,13 @@ pub const POSITIONS: [PositionDecl; 14] = [
 ];
 
 /// Every fact a large firm keeps, by name.
-pub const FACTS: [&str; 14] = [
+pub const FACTS: [&str; 15] = [
     ExpectedSales::ITEM.name,
     SalesWidth::ITEM.name,
     DeliveredAtReview::ITEM.name,
     DeliveredSeen::ITEM.name,
     Method::ITEM.name,
+    Switching::ITEM.name,
     LastReview::ITEM.name,
     UnitCost::ITEM.name,
     Markup::ITEM.name,

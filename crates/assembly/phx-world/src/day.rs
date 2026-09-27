@@ -256,6 +256,7 @@ impl World {
             SubStep::S5a => {
                 self.arrivals(day);
                 self.goods_outlooks(day);
+                self.stance_wakes(day);
             }
             SubStep::S5c => {
                 self.labour_round(day);

@@ -6,7 +6,7 @@
 
 use if_firm::facts::{
     DeliveredAtReview, ExpectedSales, HoursAUnit, LastReview, Markup, Method, OutputRate, Price, RequiredReturn,
-    UnitCost, WagePerHour,
+    Switching, UnitCost, WagePerHour,
 };
 use if_firm::known::{Industry, PRODUCT, Product};
 use phx_core::calendar::bizday::BusinessDayConvention;
@@ -457,7 +457,8 @@ fn staff(books: &Books, party: PartyId) -> (f64, f64, f64) {
 /// the units its staff's hours make a day; what a lot costs to make at the opening's prices and that wage; the posted
 /// price nearest the lot's opening price and the markup it is over that cost; the sales that rate gives over a
 /// production period; the day of its last review, today, and nothing delivered since; the return its management
-/// requires, drawn; and the method it forecasts by, drawn as its switching's taste alone chooses on day zero. A firm
+/// requires, drawn; the method it forecasts by, drawn as its switching's taste alone chooses on day zero, and its
+/// switching type, drawn. A firm
 /// with no staff files no rate, cost or price.
 #[clause("FRM.1", "FRM.2", "FRM.14", "GEN.5", "REP.34", "VAL.23")]
 #[derive(Debug)]
@@ -492,6 +493,9 @@ impl Contribution for Filed {
             violation!(clause = "FRM.5", "the firms' management unread at the opening");
         };
         let methods = FilingPrims::methods(register);
+        let Ok(switching_types) = register.count("VAL.switching_types") else {
+            violation!(clause = "VAL.7", "the switching types unread at the opening");
+        };
         for c in countries {
             let mut returns = opening.ctx.draws(&OpeningStream::DECL, subject(c, RETURNS, 0));
             let mut method_lot = opening.ctx.draws(&OpeningStream::DECL, subject(c, METHODS, 0));
@@ -510,10 +514,12 @@ impl Contribution for Filed {
                 let (members, hours, wages) = staff(books, f.party);
                 let required = hurdle.draw(&mut returns);
                 let method = phx_rand::below_u64(&mut method_lot, methods);
+                let switching = phx_rand::below_u64(&mut method_lot, switching_types);
                 let mut facts: Vec<(&'static str, i64)> = vec![
                     (<LastReview as FactDef>::ITEM.name, i64::from(day.get())),
                     (<DeliveredAtReview as FactDef>::ITEM.name, 0),
                     (<Method as FactDef>::ITEM.name, i64::try_from(method).unwrap_or(0)),
+                    (<Switching as FactDef>::ITEM.name, i64::try_from(switching).unwrap_or(0)),
                 ];
                 if let Some(r) = floor_to_i64(f64::round(required * crate::consts::FIXED_SCALE)) {
                     facts.push((<RequiredReturn as FactDef>::ITEM.name, r));
