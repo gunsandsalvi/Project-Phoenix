@@ -1508,7 +1508,10 @@ sourced aggregate — is apportioned over its rows by their summed weights and w
 banks' draw is the first: a household any of whose adults holds an account banks with one bank, chosen online and held
 as its attribute (`BNK.bank`), and keeps a household current account there, its share of the households' deposits (the
 country's deposits less the firms') by its wealth; a household any of whose adults has borrowed owes its bank a
-household loan, its share of the households' debt by its income. Neither side of a household's line keeps a holder list
+household loan, its share of the households' debt by its income, repaid monthly with its interest over the years it
+has left — drawn uniformly between `BNK.household_loan_years_min` and `_max` until housing's mortgages draw each term —
+each date taking the balance over the dates that remain (`Leg::Amortising`), so a row of many households repays its
+summed balance as each of them would. Neither side of a household's line keeps a holder list
 on the households' side. Labour's draw gives an employed adult a job, a person's row on the employment line of its wage
 point, whose employers are derived over the firms by headcount; housing's gives a renting household a tenancy on the
 line of its rent point, whose landlords are derived over the firms by their plant until the dwelling stock names them.

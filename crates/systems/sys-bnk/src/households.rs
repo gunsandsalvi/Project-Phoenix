@@ -17,11 +17,11 @@ use phx_ledger::money::MoneyHolders;
 use phx_ledger::opening::{currency, derived, key, whole};
 use phx_ledger::terms::TermsId;
 use phx_macros::clause;
-use phx_num::{Missing, violation};
+use phx_num::{Count, Missing, violation};
 use phx_rand::{Draws, Subject, open_unit};
 
 use crate::BANK;
-use crate::consts::{MOST_BANKS, PERCENT, SHARE_PARTS, WEALTH_PARTS};
+use crate::consts::{MONTHS_PER_YEAR, MOST_BANKS, PERCENT, SHARE_PARTS, WEALTH_PARTS};
 use crate::opening::{drawn, rate};
 use phx_ledger::opening::{monthly, plain_terms as terms};
 
@@ -77,6 +77,8 @@ const BORROWED: i64 = 2;
 #[derive(Debug)]
 pub struct HouseholdLines {
     pub accounts: Prim<Table1>,
+    /// The fewest and most years a household's loan has left to run.
+    pub loan_years: (Prim<Count>, Prim<Count>),
 }
 
 /// One country's banks as the households draw them.
@@ -86,7 +88,8 @@ struct Country {
     account: f64,
     borrowed: f64,
     deposit: (u16, TermsId, Missing<(Day, u32)>),
-    loan: (u16, TermsId, Missing<(Day, u32)>),
+    /// The loans' kind, their terms by the years they have left, the fewest first, and their first date.
+    loan: (u16, Vec<TermsId>, Missing<(Day, u32)>),
     deposits: i64,
     debt: i64,
 }
@@ -130,14 +133,26 @@ impl AttachmentDraw for HouseholdLines {
             }],
             Schedule { dates: monthly(date, c.id), count: Missing::Absent },
         ));
-        let loan_terms = books.ledger.terms.intern(terms(
-            ccy,
-            vec![Leg::RateOnNotional {
-                reference: Reference::Fixed(rate(derived(c, "GEN.lending_rate"))),
-                day_count: DayCount::Act365F,
-            }],
-            Schedule { dates: monthly(date, c.id), count: Missing::Absent },
-        ));
+        let (least, most) = (self.loan_years.0.shared(register).get(), self.loan_years.1.shared(register).get());
+        // A loan pays interest on what it owes and repays it in equal parts over the months it has left.
+        let loan_terms: Vec<TermsId> = (least..=most)
+            .map(|years| {
+                let Some(months) = u32::try_from(years).ok().and_then(|y| y.checked_mul(MONTHS_PER_YEAR)) else {
+                    violation!(clause = "GEN.2", "a household loan's term beyond a count of dates", years = years);
+                };
+                books.ledger.terms.intern(terms(
+                    ccy,
+                    vec![
+                        Leg::RateOnNotional {
+                            reference: Reference::Fixed(rate(derived(c, "GEN.lending_rate"))),
+                            day_count: DayCount::Act365F,
+                        },
+                        Leg::Amortising,
+                    ],
+                    Schedule { dates: monthly(date, c.id), count: Missing::Present(months) },
+                ))
+            })
+            .collect();
         let lines = &books.ledger.lines;
         let deposits = whole(derived(c, "GEN.bank_deposits") / PERCENT * c.gdp) - firms;
         if deposits < 0 {
@@ -203,7 +218,16 @@ impl CountryAttachments for Country {
             balance: Balance::Share { pool: DEPOSITS, weight: weight(h.wealth) },
         });
         if borrowed {
-            let (kind, terms, first) = self.loan;
+            let (kind, ref by_years, first) = self.loan;
+            // The years a loan has left, drawn alike over the range.
+            let span = phx_rand::float::from_u64(phx_rand::float::len_u64(by_years.len()));
+            let Some(terms) = phx_rand::float::floor_to_u64(open_unit(&mut d) * span)
+                .and_then(|i| usize::try_from(i).ok())
+                .and_then(|i| by_years.get(i))
+                .copied()
+            else {
+                violation!(clause = "GEN.2", "a household loan's term beyond those drawn");
+            };
             rows.push(DrawnRow {
                 line: LineSpec { kind, terms, counterparty: Missing::Present(bank), first },
                 side: Side::Liability,

@@ -78,6 +78,9 @@ pub enum Leg {
     FixedAmount(Money),
     /// The principal, paid back on the schedule.
     Principal { amount: Money, repayment: Repayment },
+    /// What the row still owes, paid back in equal parts over the scheduled dates that remain, reckoned on its balance,
+    /// as a line whose holders owe different amounts on the same terms repays.
+    Amortising,
     /// Interest on the outstanding principal at a rate over each period.
     RateOnNotional { reference: Reference, day_count: DayCount },
     /// A rate that steps up (or down) on the days given, each in force from its day, over the outstanding principal.
@@ -109,6 +112,7 @@ impl phx_store::Saved for Leg {
                 "principal".to_owned().save(w);
                 (*amount, *repayment).save(w);
             }
+            Leg::Amortising => "amortising".to_owned().save(w),
             Leg::RateOnNotional { reference, day_count } => {
                 "rate on notional".to_owned().save(w);
                 (*reference, *day_count).save(w);
@@ -155,6 +159,7 @@ impl phx_store::Saved for Leg {
                 let (amount, repayment) = <(Money, Repayment)>::load(r)?;
                 Leg::Principal { amount, repayment }
             }
+            "amortising" => Leg::Amortising,
             "rate on notional" => {
                 let (reference, day_count) = <(Reference, DayCount)>::load(r)?;
                 Leg::RateOnNotional { reference, day_count }
@@ -552,6 +557,10 @@ fn leg_due(
                 out.push(Due { leg: at, amount: Amount::Money(money(p)) });
             }
         }
+        Leg::Amortising => {
+            let (Some(Accrual { k, .. }), Some(n)) = (date, n) else { return };
+            out.push(Due { leg: at, amount: Amount::Money(money(amortised(state.outstanding, k, n))) });
+        }
         Leg::RateOnNotional { reference, day_count } => {
             let Some(period) = date else { return };
             let rate = match reference {
@@ -624,7 +633,16 @@ fn leg_due(
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Planned {
     Fixed(Amount),
-    Accrue { rate: Rate, fraction: DayFraction, scale: Option<(i64, i64)>, in_kind: Option<InstrumentId> },
+    /// The balance over the dates that remain, this one among them.
+    Share {
+        parts: u32,
+    },
+    Accrue {
+        rate: Rate,
+        fraction: DayFraction,
+        scale: Option<(i64, i64)>,
+        in_kind: Option<InstrumentId>,
+    },
 }
 
 /// A contract's dues on one day, fixed once for every row of its line: each leg's part the terms and the date decide,
@@ -683,6 +701,10 @@ fn plan_leg(
                 fixed(Amount::Money(money(p)));
             }
         }
+        Leg::Amortising => {
+            let (Some(Accrual { k, .. }), Some(n)) = (date, n) else { return };
+            plan.legs.push((at, Planned::Share { parts: remaining(k, n) }));
+        }
         Leg::RateOnNotional { reference, day_count } => {
             let Some(period) = date else { return };
             let rate = match reference {
@@ -725,6 +747,31 @@ fn plan_leg(
     }
 }
 
+/// A balance's part over `parts` dates, rounded once, the last taking what is left.
+fn share_of(outstanding: Money, parts: u32) -> Money {
+    if parts == 0 {
+        phx_num::violation!(clause = "REG.5", "a balance repaid over no dates");
+    }
+    let part = phx_num::round::div_round(i128::from(outstanding.amt()), i128::from(parts), Round::HalfEven);
+    let Ok(part) = i64::try_from(part) else {
+        capacity_exceeded!("a part of a balance", i64::MAX, outstanding.amt());
+    };
+    Money::new(part, outstanding.ccy())
+}
+
+/// The part of a balance date `k` of `n` repays: the balance over the dates that remain, this one among them.
+fn amortised(outstanding: Money, k: u32, n: u32) -> Money {
+    share_of(outstanding, remaining(k, n))
+}
+
+/// The dates from `k` of `n` to the last, this one among them.
+fn remaining(k: u32, n: u32) -> u32 {
+    let Some(after) = n.checked_sub(k) else {
+        phx_num::violation!(clause = "REG.5", "a date past a schedule's last", k = k, n = n);
+    };
+    after + 1
+}
+
 /// The dues a plan comes to on what a row owes, written into `out`, as `due_at` reckons them for a plan that is not
 /// `general`. It allocates nothing.
 pub fn due_by_plan(plan: &DuePlan, outstanding: Money, out: &mut DueBuf) {
@@ -732,6 +779,7 @@ pub fn due_by_plan(plan: &DuePlan, outstanding: Money, out: &mut DueBuf) {
     for (leg, planned) in &plan.legs {
         let amount = match *planned {
             Planned::Fixed(a) => a,
+            Planned::Share { parts } => Amount::Money(share_of(outstanding, parts)),
             Planned::Accrue { rate, fraction, scale, in_kind } => {
                 let accrued = accrue(outstanding, rate, fraction, Round::HalfEven);
                 let m = scale.map_or(accrued, |(current, base)| index(accrued, current, base));
@@ -1008,6 +1056,31 @@ mod tests {
             })
             .sum();
         assert_eq!(total, 1_000_003, "the parts sum to the principal exactly");
+    }
+
+    #[test]
+    fn a_balance_amortises_to_nothing_over_its_dates() {
+        use super::{due_by_plan, due_plan};
+        let cal = calendar();
+        let s = schedule(1, 7);
+        let loan = terms(vec![Leg::Amortising], s);
+        let mut owed = 1_000_003_i64;
+        for k in 1..=7 {
+            let paid: i64 = dues(&loan, &cal, s.day(&cal, k), owed, false)
+                .into_iter()
+                .map(|a| match a {
+                    Amount::Money(m) => m.amt(),
+                    _ => 0,
+                })
+                .sum();
+            assert!(paid > 0 && paid <= owed, "date {k} repays part of what is owed: {paid} of {owed}");
+            owed -= paid;
+        }
+        assert_eq!(owed, 0, "the last date repays what is left");
+        let plan = due_plan(&loan, Some(3), s.day(&cal, 3), &cal);
+        let mut planned = DueBuf::default();
+        due_by_plan(&plan, Money::new(500, EUR), &mut planned);
+        assert_eq!(planned.iter().next().map(|d| d.amount), Some(Amount::Money(Money::new(100, EUR))));
     }
 
     #[test]

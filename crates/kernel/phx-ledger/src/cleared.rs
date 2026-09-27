@@ -17,7 +17,7 @@ pub fn per_contract(leg: &Leg) -> bool {
         | Leg::PerTime { .. }
         | Leg::Contingent { .. }
         | Leg::Delivery(_) => true,
-        Leg::RateOnNotional { .. } | Leg::StepSchedule { .. } | Leg::PayableInKind { .. } => false,
+        Leg::RateOnNotional { .. } | Leg::StepSchedule { .. } | Leg::PayableInKind { .. } | Leg::Amortising => false,
         Leg::Indexed { leg, .. } => per_contract(leg),
         Leg::Elective { legs, .. } => {
             let all = legs.iter().all(per_contract);

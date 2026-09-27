@@ -156,6 +156,7 @@ impl Words {
                     Repayment::Linear => "linear",
                 });
             }
+            Leg::Amortising => self.tag("amortising"),
             Leg::RateOnNotional { reference, day_count } => {
                 self.tag("rate on notional");
                 match reference {

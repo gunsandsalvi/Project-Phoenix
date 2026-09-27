@@ -18,6 +18,24 @@ source_ref = "A firm's term loan at the opening runs ten years at most, as most 
 shape = "placeholder:BNK"
 value = 10
 
+[[primitive]]
+id = "BNK.household_loan_years_min"
+kind = "SHAPE"
+owner = "BNK"
+source = "assumed"
+source_ref = "A household's loan at the opening has one year left to run at least, the shortest term the statistics of loans by original maturity count as more than short-term, until housing's mortgages draw each loan's term."
+shape = "placeholder:HSG"
+value = 1
+
+[[primitive]]
+id = "BNK.household_loan_years_max"
+kind = "SHAPE"
+owner = "BNK"
+source = "assumed"
+source_ref = "A household's loan at the opening has thirty years left to run at most, the longest term a mortgage is commonly written for, until housing's mortgages draw each loan's term."
+shape = "placeholder:HSG"
+value = 30
+
 # The banks' lending (BNK.4-BNK.6, BNK.20): the published statistics a bank's assessment starts from, the capital a
 # loan consumes and the return required on it, the cost of making a loan, the step of quoted rates, and how many
 # lenders a borrower asks.

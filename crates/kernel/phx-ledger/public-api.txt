@@ -35,6 +35,7 @@ impl phx_store::save::Saved for phx_ledger::algebra::Conversion where phx_id::id
 pub fn phx_ledger::algebra::Conversion::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::algebra::Conversion::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_ledger::algebra::Leg
+pub phx_ledger::algebra::Leg::Amortising
 pub phx_ledger::algebra::Leg::Contingent
 pub phx_ledger::algebra::Leg::Contingent::amount: phx_ledger::algebra::ContingentAmount
 pub phx_ledger::algebra::Leg::Contingent::event: phx_ledger::algebra::EventRef

@@ -37,6 +37,20 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// The fewest years a household's loan at the opening has left to run.
+    pub HOUSEHOLD_LOAN_YEARS_MIN = "BNK.household_loan_years_min" {
+        kind: Shape, value: Count, clause: "GEN.2", scope: Shared, shape: placeholder("HSG")
+    }
+}
+
+declare_prim! {
+    /// The most years a household's loan at the opening has left to run.
+    pub HOUSEHOLD_LOAN_YEARS_MAX = "BNK.household_loan_years_max" {
+        kind: Shape, value: Count, clause: "GEN.2", scope: Shared, shape: placeholder("HSG")
+    }
+}
+
+declare_prim! {
     /// Adults with an account, saving at a bank and borrowing from one, which households' banking arrangements read.
     pub ACCOUNTS = "BNK.accounts_and_borrowing" {
         kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
@@ -160,7 +174,9 @@ impl System for Bnk {
         d.stream(households::HouseholdsStream::DECL);
         d.pop_kind(if_pop::HOUSEHOLD).attr(households::BANK_ATTR);
         d.pop_kind(opening::SMALL_FIRM).attr(households::BANK_ATTR);
-        let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> = Box::new(households::HouseholdLines { accounts });
+        let loan_years = (d.prim(&HOUSEHOLD_LOAN_YEARS_MIN), d.prim(&HOUSEHOLD_LOAN_YEARS_MAX));
+        let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> =
+            Box::new(households::HouseholdLines { accounts, loan_years });
         d.attachment(Box::new(draw));
         d.contribution(Box::new(Declared));
         d.contribution(Box::new(Parties));

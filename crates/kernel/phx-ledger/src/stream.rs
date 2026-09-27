@@ -393,7 +393,7 @@ impl<B: Backing> Books<B> {
         } else {
             due_by_plan(plan, outstanding, &mut buf);
         }
-        let (mut per, mut whole, mut principal) = (0_i64, 0_i64, 0_i64);
+        let (mut per, mut whole, mut principal, mut repaid) = (0_i64, 0_i64, 0_i64, 0_i64);
         for d in buf.iter() {
             let Amount::Money(m) = d.amount else {
                 violation!(
@@ -410,13 +410,15 @@ impl<B: Backing> Books<B> {
             } else {
                 whole += m.amt();
             }
-            if matches!(leg, Leg::Principal { .. }) {
-                principal += m.amt();
+            match leg {
+                Leg::Principal { .. } => principal += m.amt(),
+                Leg::Amortising => repaid += m.amt(),
+                _ => {}
             }
         }
         let members = row.row.count;
         let Reckoning::On { side: reckoned, counter } = reckoning else {
-            if !terms.legs.iter().all(per_contract) || principal != 0 {
+            if !terms.legs.iter().all(per_contract) || principal != 0 || repaid != 0 {
                 violation!(clause = "REP.23", "a cleared line whose dues are not paid per member", line = line.get());
             }
             return Some(Reckoned::Cleared { per, ccy: terms.ccy, order: terms.payment_order.0 });
@@ -436,7 +438,7 @@ impl<B: Backing> Books<B> {
             payer: from,
             payee: to,
             amount,
-            principal: times(principal, members),
+            principal: times(principal, members) + times(repaid, unit),
             ccy: terms.ccy,
             order: terms.payment_order.0,
             reckoned_on: holder,
