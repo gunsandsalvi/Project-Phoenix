@@ -1,13 +1,12 @@
 //! The households' lines at the opening: each system's draw called with each household as it is formed, a line
-//! opened for each distinct kind, terms and named counterparty, each agent's rows counting its twins' contracts, and,
-//! once the country is drawn, each line's other side — the counterparty the households named, or the parties
-//! apportioned over by their drawn sizes — with the balances written through the opening's writes, a whole share for
-//! each twin.
+//! opened for each distinct kind, terms and named counterparty, each agent's rows counting its contracts, and, once the
+//! country is drawn, each line's other side — the counterparty the households named, or the parties apportioned over
+//! by their drawn sizes — with the balances written through the opening's writes.
 
 use std::any::Any;
 use std::collections::BTreeMap;
 
-use phx_core::{Adjustment, Apportioned, GenReport, OpeningCountry, OpeningCtx, Register, apportion};
+use phx_core::{Apportioned, GenReport, OpeningCountry, OpeningCtx, Register, apportion};
 use phx_id::{Day, LineId, PartyId};
 use phx_ledger::algebra::Side;
 use phx_ledger::attachments::{AttachmentDraw, Balance, CountryAttachments, Drawing, Holder, LineSpec, shares};
@@ -19,7 +18,7 @@ use phx_num::{Missing, capacity_exceeded, violation};
 use phx_pop::person::{Attachment, Holder as Place};
 use phx_rand::{Draws, Subject};
 
-/// What a household's lines came to: its attachments as words, the contracts its twin holds on each line side, and
+/// What a household's lines came to: its attachments as words, the contracts it holds on each line side, and
 /// each line side whose balance is a share of a pool, with its weight.
 pub(crate) struct Held {
     pub attachments: Vec<u64>,
@@ -32,8 +31,7 @@ pub(crate) struct Held {
 type Pool = (usize, u32);
 
 /// What a country's households' lines came to: each line, the side the households hold and its contracts, each
-/// agent's row counts, each agent row whose balance is a share of a pool with its weight, and the twins an agent
-/// stands for.
+/// agent's row counts, and each agent row whose balance is a share of a pool with its weight.
 pub(crate) struct Drawer {
     draws: Vec<Box<dyn CountryAttachments>>,
     lines: BTreeMap<(u16, u32, bool, u64), (LineId, LineSpec)>,
@@ -41,7 +39,6 @@ pub(crate) struct Drawer {
     holders: BTreeMap<LineId, Vec<(PartyId, u64)>>,
     balances: Vec<(PartyId, LineId, Side, Pool, u64)>,
     country: phx_id::CountryId,
-    twins: u64,
 }
 
 fn other(side: Side) -> Side {
@@ -49,11 +46,6 @@ fn other(side: Side) -> Side {
         Side::Asset => Side::Liability,
         Side::Liability => Side::Asset,
     }
-}
-
-fn twins_i64(twins: u64) -> i64 {
-    let Ok(t) = i64::try_from(twins) else { capacity_exceeded!("twins of an agent", i64::MAX, twins) };
-    t
 }
 
 fn count32(n: u64) -> u32 {
@@ -69,7 +61,6 @@ impl Drawer {
         register: &Register,
         when: (&phx_core::Calendar, Day),
         country: &OpeningCountry,
-        twins: u32,
     ) -> Drawer {
         let draws = attachments
             .iter()
@@ -87,7 +78,6 @@ impl Drawer {
             holders: BTreeMap::new(),
             balances: Vec::new(),
             country: country.id,
-            twins: u64::from(twins),
         }
     }
 
@@ -103,7 +93,7 @@ impl Drawer {
         let (mut rows, mut keys) = (Vec::new(), phx_ledger::attachments::Keys::default());
         let mut drawn_by: Vec<usize> = Vec::new();
         for (i, d) in self.draws.iter_mut().enumerate() {
-            d.draw(books, Drawing { household: h, wealth, income, twins: self.twins }, at, &mut rows, &mut keys);
+            d.draw(books, Drawing { household: h, wealth, income }, at, &mut rows, &mut keys);
             drawn_by.resize(rows.len(), i);
             for (name, v) in keys.household.drain(..) {
                 h.set_attr(name, v);
@@ -152,15 +142,14 @@ impl Drawer {
         held
     }
 
-    /// An agent's rows kept to open with their lines' other sides once the country is drawn: each counting its twins'
+    /// An agent's rows kept to open with their lines' other sides once the country is drawn: each counting its
     /// contracts.
     #[clause("REP.3", "REP.31")]
-    pub(crate) fn agent(&mut self, party: PartyId, twins: u64, held: Held) {
+    pub(crate) fn agent(&mut self, party: PartyId, held: Held) {
         for (line, _, n) in held.rows {
-            let count = n * twins;
-            self.holders.entry(line).or_default().push((party, count));
+            self.holders.entry(line).or_default().push((party, n));
             if let Some((_, members)) = self.sides.get_mut(&line) {
-                *members += count;
+                *members += n;
             }
         }
         for (line, side, pool, weight) in held.balances {
@@ -179,8 +168,8 @@ impl Drawer {
     }
 
     /// The country's lines closed: a named line's counterparty takes one row counting the households' members; a
-    /// derived line's other side is apportioned over the parties its draw names by their drawn sizes, a whole share for
-    /// each twin, each apportioned share reported; each pool's total is apportioned over its rows by their weights and written against the line's
+    /// derived line's other side is apportioned over the parties its draw names by their drawn sizes, each apportioned
+    /// share reported; each pool's total is apportioned over its rows by their weights and written against the line's
     /// counterparty.
     #[clause("GEN.4", "REP.31", "REP.23")]
     pub(crate) fn close(
@@ -190,7 +179,7 @@ impl Drawer {
         lot: &mut Draws,
         report: &mut GenReport,
     ) {
-        let Drawer { mut draws, lines, sides, holders, balances, country, twins } = self;
+        let Drawer { mut draws, lines, sides, holders, balances, country } = self;
         let mut counterparty_of: BTreeMap<LineId, PartyId> = BTreeMap::new();
         for (line, spec) in lines.into_values() {
             let Some((side, members)) = sides.get(&line).copied() else {
@@ -221,9 +210,8 @@ impl Drawer {
                         );
                     }
                     let weights: Vec<u64> = eligible.iter().map(|(_, w)| *w).collect();
-                    // Each twin's contracts go to one counterparty, so the members are apportioned a twin-th at a time.
-                    let counts = apportion(members / twins, &weights, lot);
-                    for ((party, drawn), realised) in eligible.iter().zip(counts.into_iter().map(|c| c * twins)) {
+                    let counts = apportion(members, &weights, lot);
+                    for ((party, drawn), realised) in eligible.iter().zip(counts) {
                         report.apportion(Apportioned {
                             stratum: key(&format!("line {}", line.get()), country),
                             party: *party,
@@ -246,20 +234,7 @@ impl Drawer {
         for (pool, total) in totals {
             let mine: Vec<&(PartyId, LineId, Side, Pool, u64)> = balances.iter().filter(|b| b.3 == pool).collect();
             let weights: Vec<u64> = mine.iter().map(|b| b.4).collect();
-            // Each twin's share is whole, so the pool is shared out a twin-th at a time.
-            let per_twin = total / twins_i64(twins);
-            if per_twin * twins_i64(twins) != total {
-                report.adjustments.push(Adjustment {
-                    what: format!(
-                        "pool {} of draw {}: shared a twin-th at a time over agents of {twins} twins",
-                        pool.1, pool.0
-                    ),
-                    drawn: i128::from(total),
-                    set: i128::from(per_twin * twins_i64(twins)),
-                });
-            }
-            for ((agent, line, side, _, _), each) in mine.iter().zip(shares(per_twin, &weights, lot)) {
-                let amount = each * twins_i64(twins);
+            for ((agent, line, side, _, _), amount) in mine.iter().zip(shares(total, &weights, lot)) {
                 let Some(counterparty) = counterparty_of.get(line) else {
                     violation!(clause = "GEN.4", "a balance on a line with no named counterparty", line = line.get());
                 };

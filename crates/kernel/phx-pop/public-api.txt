@@ -34,9 +34,9 @@ pub fn phx_pop::explicit::Rewrite::places(&self) -> core::option::Option<&[core:
 pub struct phx_pop::explicit::Written
 pub phx_pop::explicit::Written::ended: bool
 pub phx_pop::explicit::Written::leaving: alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
+pub fn phx_pop::explicit::contracts<B: phx_store::backing::Backing>(&phx_pop::table::AgentTable<B>, phx_id::ids::Slot) -> alloc::vec::Vec<((phx_id::ids::LineId, phx_ledger::algebra::Side), u32)>
 pub fn phx_pop::explicit::household<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &phx_pop::table::AgentTable<B>, phx_id::ids::Slot) -> phx_core::pop_process::Household
 pub fn phx_pop::explicit::household_into<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &mut phx_core::pop_process::Household)
-pub fn phx_pop::explicit::per_twin<B: phx_store::backing::Backing>(&phx_pop::table::AgentTable<B>, phx_id::ids::Slot) -> alloc::vec::Vec<((phx_id::ids::LineId, phx_ledger::algebra::Side), u32)>
 pub fn phx_pop::explicit::rewrite<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &phx_core::pop_process::Household) -> phx_pop::explicit::Rewrite
 pub fn phx_pop::explicit::write_back<B: phx_store::backing::Backing>(&phx_pop::kind::PopKindDecl, &mut phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &phx_core::pop_process::Household) -> phx_pop::explicit::Written
 pub fn phx_pop::explicit::write_rewrite<B: phx_store::backing::Backing>(&mut phx_pop::table::AgentTable<B>, phx_id::ids::Slot, &phx_pop::explicit::Rewrite) -> phx_pop::explicit::Written
@@ -121,21 +121,18 @@ pub struct phx_pop::prims::LeavingStream
 impl phx_core::streams::StreamDef for phx_pop::prims::LeavingStream
 pub const phx_pop::prims::LeavingStream::DECL: phx_core::streams::StreamDecl
 pub struct phx_pop::prims::RepPrims
-pub phx_pop::prims::RepPrims::multiplicity: phx_core::register::Prim<phx_num::qty::Count>
-pub phx_pop::prims::RepPrims::population_divisor: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_pop::prims::RepPrims::persons: phx_core::register::Prim<phx_num::qty::Count>
 impl phx_pop::prims::RepPrims
 pub fn phx_pop::prims::RepPrims::declare(&mut phx_core::system::Declarations) -> phx_pop::prims::RepPrims
 pub struct phx_pop::prims::Representation
-pub phx_pop::prims::Representation::multiplicity: u32
-pub phx_pop::prims::Representation::population_divisor: u32
+pub phx_pop::prims::Representation::persons: u64
 impl phx_pop::prims::Representation
 pub fn phx_pop::prims::Representation::name(self) -> alloc::string::String
 pub fn phx_pop::prims::Representation::of(&phx_pop::prims::RepPrims, &phx_core::register::Register) -> phx_pop::prims::Representation
-impl phx_store::save::Saved for phx_pop::prims::Representation where u32: phx_store::save::Saved
+impl phx_store::save::Saved for phx_pop::prims::Representation where u64: phx_store::save::Saved
 pub fn phx_pop::prims::Representation::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_pop::prims::Representation::save(&self, &mut phx_store::save::Writer<'_>)
-pub const phx_pop::prims::MULTIPLICITY: phx_core::register::PrimDecl
-pub const phx_pop::prims::POPULATION_DIVISOR: phx_core::register::PrimDecl
+pub const phx_pop::prims::PERSONS: phx_core::register::PrimDecl
 pub mod phx_pop::table
 pub enum phx_pop::table::AgentList
 pub phx_pop::table::AgentList::Attachments
@@ -169,7 +166,6 @@ pub fn phx_pop::table::AgentTable<B>::chunk_of(&self, phx_id::ids::Slot) -> usiz
 pub fn phx_pop::table::AgentTable<B>::chunks(&self) -> usize
 pub fn phx_pop::table::AgentTable<B>::compact(&mut self, usize, &mut phx_store::region::Region<u64, B>)
 pub fn phx_pop::table::AgentTable<B>::compact_due(&mut self) -> u64
-pub fn phx_pop::table::AgentTable<B>::copy_facts(&mut self, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_pop::table::AgentTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
 pub fn phx_pop::table::AgentTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_pop::table::AgentList, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
 pub fn phx_pop::table::AgentTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
@@ -180,7 +176,6 @@ pub fn phx_pop::table::AgentTable<B>::kind(&self) -> &'static str
 pub fn phx_pop::table::AgentTable<B>::list(&self, phx_id::ids::Slot, phx_pop::table::AgentList) -> phx_store::arena::ListRef
 pub fn phx_pop::table::AgentTable<B>::live_words(&self) -> &[u64]
 pub fn phx_pop::table::AgentTable<B>::mark_changed(&mut self, phx_id::ids::Slot)
-pub fn phx_pop::table::AgentTable<B>::multiplicity(&self, phx_id::ids::Slot) -> phx_core::weight::Weight
 pub fn phx_pop::table::AgentTable<B>::new(&mut phx_store::backing::AddressSpace, &phx_pop::kind::PopKindDecl, phx_id::ids::TableId, u32, u32) -> phx_pop::table::AgentTable<B>
 pub fn phx_pop::table::AgentTable<B>::open_fact(&mut self, phx_id::ids::Slot, &str, i64)
 pub fn phx_pop::table::AgentTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_pop::table::AgentList, &[(phx_id::ids::Slot, usize, u64)])
@@ -196,8 +191,6 @@ pub fn phx_pop::table::AgentTable<B>::set_persons(&mut self, phx_id::ids::Slot, 
 pub fn phx_pop::table::AgentTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
 pub fn phx_pop::table::AgentTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_pop::table::AgentTable<B>::take_changed(&mut self) -> alloc::vec::Vec<phx_id::ids::Slot>
-pub fn phx_pop::table::AgentTable<B>::take_twin(&mut self, phx_id::ids::Slot)
-pub fn phx_pop::table::AgentTable<B>::twins(&self) -> u64
 pub fn phx_pop::table::AgentTable<B>::words(&self, phx_id::ids::Slot, phx_pop::table::AgentList) -> &[u64]
 pub fn phx_pop::table::AgentTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
 impl<B: phx_store::backing::Backing> phx_pop::table::AgentTable<B>
@@ -220,7 +213,6 @@ impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderArenas for phx_po
 pub fn phx_pop::table::AgentTable<B>::append(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, &[u64])
 pub fn phx_pop::table::AgentTable<B>::at_average_cost(&self) -> bool
 pub fn phx_pop::table::AgentTable<B>::kind(&self) -> &'static str
-pub fn phx_pop::table::AgentTable<B>::members(&self, phx_id::ids::Slot) -> u32
 pub fn phx_pop::table::AgentTable<B>::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_pop::table::AgentTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &mut [(phx_id::ids::Slot, usize, u64)])
 pub fn phx_pop::table::AgentTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
@@ -233,16 +225,12 @@ impl<B: phx_store::backing::Backing> phx_ledger::holder::HolderTable for phx_pop
 pub fn phx_pop::table::AgentTable<B>::live_words(&self) -> &[u64]
 impl<B: phx_store::backing::Backing> phx_ledger::positions::PayerPositions for phx_pop::table::AgentTable<B>
 pub fn phx_pop::table::AgentTable<B>::funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
-pub fn phx_pop::table::AgentTable<B>::kinks_into(&self, phx_id::ids::Slot, &mut alloc::vec::Vec<phx_ledger::pooled::Kink>)
-pub fn phx_pop::table::AgentTable<B>::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_pop::table::AgentTable<B>::standing_rate(&self, phx_id::ids::Slot, &phx_ledger::rows::RowView) -> phx_num::missing::Missing<i64>
-pub fn phx_pop::table::AgentTable<B>::weight(&self, phx_id::ids::Slot) -> u32
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::table::AgentTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u32, B>>: phx_store::save::Saved, alloc::vec::Vec<&'static str>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<i64, B>>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<phx_store::arena::CellListRef, B>>: phx_store::save::Saved, phx_store::column::Column<phx_pop::table::AgentRunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::Slot>: core::default::Default, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default, alloc::vec::Vec<(&'static str, u64)>: core::default::Default
 pub fn phx_pop::table::AgentTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_pop::table::AgentTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_pop::table::NewAgent<'a>
 pub phx_pop::table::NewAgent::attrs: &'a [u32]
 pub phx_pop::table::NewAgent::created: phx_id::day::Day
-pub phx_pop::table::NewAgent::multiplicity: phx_core::weight::Weight
 pub phx_pop::table::NewAgent::party: phx_id::ids::PartyId
-pub fn phx_pop::table::begin<B: phx_store::backing::Backing>(&mut phx_pop::table::AgentTable<B>, &mut phx_core::directory::Directory, &mut phx_store::backing::AddressSpace, (phx_id::day::Day, phx_core::weight::Weight, &[u32])) -> (phx_id::ids::Slot, phx_id::ids::PartyId)
+pub fn phx_pop::table::begin<B: phx_store::backing::Backing>(&mut phx_pop::table::AgentTable<B>, &mut phx_core::directory::Directory, &mut phx_store::backing::AddressSpace, (phx_id::day::Day, &[u32])) -> (phx_id::ids::Slot, phx_id::ids::PartyId)

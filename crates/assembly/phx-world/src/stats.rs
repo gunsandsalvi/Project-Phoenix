@@ -264,15 +264,15 @@ impl World {
     }
 
     /// Vital events recorded against their period.
-    pub(crate) fn record_vital(&mut self, date: Date, events: &[Vital], twins: u64) {
+    pub(crate) fn record_vital(&mut self, date: Date, events: &[Vital]) {
         let period = month_of(date);
         for v in events {
             let cell =
                 self.collecting(v.country, period).vital.entry((v.class, v.health, u8::from(v.onset))).or_default();
             if v.early {
-                cell.0 += twins;
+                cell.0 += 1;
             }
-            cell.1 += twins;
+            cell.1 += 1;
         }
     }
 
@@ -482,7 +482,6 @@ impl World {
                 let party = table.party(slot);
                 let Missing::Present(country) = self.country_of_party(party) else { continue };
                 let c = country.get();
-                let twins = u64::from(table.multiplicity(slot).get());
                 let life = self.panel(party, (c, LIFE_TABLE, period)).is_some();
                 let force = self.panel(party, (c, LABOUR_FORCE, period)).is_some();
                 if !life && !force {
@@ -507,7 +506,7 @@ impl World {
                         )
                         && let Some(cell) = persons.get_mut(usize::from(c))
                     {
-                        *cell.entry((class, health)).or_insert(0) += twins;
+                        *cell.entry((class, health)).or_insert(0) += 1;
                     }
                     if force
                         && p.role != if_pop::CHILD.name
@@ -525,7 +524,7 @@ impl World {
                             2
                         };
                         if let Some(n) = l.get_mut(state) {
-                            *n += twins;
+                            *n += 1;
                         }
                     }
                 }

@@ -8,20 +8,12 @@ use phx_num::{Ccy, Missing, PriceRaw, UnitId, capacity_exceeded, violation};
 use crate::failure::MarketFailure;
 use crate::market::Form;
 
-/// Who bought in a match: a named party, or a group of agents' twins buying in a posted-price meeting, whose members
-/// pay by their pooled legs and whose purchases the match set records per group.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
-pub enum Buyer {
-    Party(PartyId),
-    Group(u64),
-}
-
 /// One match: a buyer and a seller, the quantity that changes hands at a price, and the commitment of the seller's
 /// the purchase draws, when it draws one.
 #[clause("MKT.11", "MKT.13")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Match {
-    pub buyer: Buyer,
+    pub buyer: PartyId,
     pub seller: PartyId,
     pub qty: i64,
     pub price: PriceRaw,
@@ -335,13 +327,8 @@ mod tests {
         let mut tape = Tape::default();
         let market = MarketId::new(3);
         let price = PriceRaw::from_raw(100);
-        let m = |b, s, q| Match {
-            buyer: super::Buyer::Party(PartyId::new(b)),
-            seller: PartyId::new(s),
-            qty: q,
-            price,
-            draws: Missing::Absent,
-        };
+        let m =
+            |b, s, q| Match { buyer: PartyId::new(b), seller: PartyId::new(s), qty: q, price, draws: Missing::Absent };
         let traded = Traded { unit: UnitId::new(0), ccy: Ccy::new(0), price, matches: vec![m(1, 2, 5), m(3, 2, 7)] };
         let id = tape.print(market, Day::new(4), Form::Call, traded);
         let print = *tape.print_of(id).unwrap();

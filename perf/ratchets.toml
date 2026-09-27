@@ -471,16 +471,10 @@ counter = "phx_ledger.ir_due_on_between"
 value = 2295
 direction = "down"
 
-# phx-ledger's stage 7: sixty-four run heads read for whether they are due; the pooled-flow rule over sixteen rows
-# with two kinks; and 1b with the whole of stage 7 over sixteen loans due on one day, far over its budget (F-020).
+# phx-ledger's stage 7: sixty-four run heads read for whether they are due; and 1b with the whole of stage 7 over sixteen loans due on one day, far over its budget (F-020).
 [[ratchet]]
 counter = "phx_ledger.ir_run_heads_64"
 value = 878
-direction = "down"
-
-[[ratchet]]
-counter = "phx_ledger.ir_pooled_16_rows"
-value = 3400
 direction = "down"
 
 # A whole stage 7 over sixteen holders: from S0.19 it records each due that falls, with what became of it, for the

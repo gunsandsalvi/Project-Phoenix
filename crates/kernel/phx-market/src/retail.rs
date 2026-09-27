@@ -11,7 +11,7 @@ use phx_rand::Draws;
 use phx_rand::uniform::below_u64;
 
 use crate::market::MarketDecl;
-use crate::print::{Buyer, Match};
+use crate::print::Match;
 
 /// A retail market kind as its system declares it: its market, an instance per product; the kinds that sell in it;
 /// the facts naming what a seller sells and the price it posts; the primitives weighing price and distance and
@@ -37,17 +37,15 @@ pub struct RetailKind {
     pub reason: &'static str,
 }
 
-/// A seller at the meeting: who, its posted price for the product's least quantity, the units it can serve today, and
-/// its twins, who all sell alike.
+/// A seller at the meeting: who, its posted price for the product's least quantity, and the units it can serve today.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Stall {
     pub seller: PartyId,
     pub price: PriceRaw,
     pub units: i64,
-    pub twins: i64,
 }
 
-/// What a buyer wants, a twin's: units it needs, or money it spends.
+/// What a buyer wants: units it needs, or money it spends.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Want {
     Units(i64),
@@ -57,12 +55,11 @@ pub enum Want {
 /// A seller in reach of the place buyers stand at: its place among the stalls and how far it is in km.
 pub type Near = (usize, f64);
 
-/// A buyer: who, its twins, who all buy alike, what a twin wants, the place among the meeting's reaches its sellers
-/// in reach are listed at, and its own stream, which draws its choices.
+/// A buyer: who, what it wants, the place among the meeting's reaches its sellers in reach are listed at, and its own
+/// stream, which draws its choices.
 #[derive(Clone, Debug)]
 pub struct Shopper {
     pub buyer: PartyId,
-    pub twins: i64,
     pub want: Want,
     pub reach: usize,
     pub draws: Draws,
@@ -75,7 +72,7 @@ pub struct Weights {
     pub distance: f64,
 }
 
-/// The meeting's outcome: each sale, a buyer buying whole lots for every twin from a seller at its posted price; what
+/// The meeting's outcome: each sale, a buyer buying whole lots from a seller at its posted price; what
 /// each buyer that found no seller still wanted; the rounds capacity forced; and the sellers every buyer had in reach.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RetailDay {
@@ -85,7 +82,7 @@ pub struct RetailDay {
     pub in_reach: u64,
 }
 
-/// A buyer still choosing: its place, what a twin still wants, whether it has bought, and the sellers it was turned
+/// A buyer still choosing: its place, what it still wants, whether it has bought, and the sellers it was turned
 /// away from, by their places in its reach.
 struct Choosing {
     at: usize,
@@ -94,7 +91,7 @@ struct Choosing {
     closed: Vec<usize>,
 }
 
-/// Whole lots a twin wants at a price: its units' lots, or the lots its money buys.
+/// Whole lots a buyer wants at a price: its units' lots, or the lots its money buys.
 fn lots_wanted(want: Want, lot: i64, price: i64) -> i64 {
     match want {
         Want::Units(q) => q / lot,
@@ -103,22 +100,7 @@ fn lots_wanted(want: Want, lot: i64, price: i64) -> i64 {
     }
 }
 
-/// The greatest count dividing both.
-fn common(a: i64, b: i64) -> i64 {
-    let (mut a, mut b) = (a, b);
-    while b != 0 {
-        (a, b) = (b, a % b);
-    }
-    a
-}
-
-/// The lots a buyer's twin buys at a stall in steps of: as many as make the sale a whole share for every twin of the
-/// seller as well, since each of the seller's twins sells its own share.
-fn step(buyer: i64, seller: i64) -> i64 {
-    seller / common(buyer, seller)
-}
-
-/// What a twin still wants after buying `lots` at `price`.
+/// What a buyer still wants after buying `lots` at `price`.
 fn less(want: Want, lot: i64, lots: i64, price: i64) -> Want {
     match want {
         Want::Units(q) => Want::Units(q - lots * lot),
@@ -126,15 +108,15 @@ fn less(want: Want, lot: i64, lots: i64, price: i64) -> Want {
     }
 }
 
-/// The retail meeting over the day's stalls of one product, traded in lots of `lot` units a twin. Each buyer goes to
+/// The retail meeting over the day's stalls of one product, traded in lots of `lot` units. Each buyer goes to
 /// the open seller in its reach it values most, at `−w.price·ln(price) − w.distance·km + taste`, its taste for each a
 /// standard Gumbel draw: so it goes to each with the logit's chance, `exp(v) ÷ Σ exp(v)` over the open sellers it has
 /// not been turned away from, and that chance is what it draws from, one uniform draw of its own stream a choice,
 /// never its tastes, which nothing else reads; a buyer choosing again chooses among the rest by the same chance, as the
 /// order its tastes rank the sellers in is. A seller serves its buyers in an order drawn by lot, each as many whole
-/// lots for every twin as it wants and the seller's units allow; a buyer served short, or that its money cannot buy a
-/// lot from there, chooses again. A buyer with no seller left goes without.
-#[clause("SRV.4", "SRV.5", "MKT.6", "REP.22", "REP.1")]
+/// lots as it wants and the seller's units allow; a buyer served short, or that its money cannot buy a lot from there,
+/// chooses again. A buyer with no seller left goes without.
+#[clause("SRV.4", "SRV.5", "MKT.6", "REP.22")]
 #[must_use]
 pub fn retail(
     stalls: &[Stall],
@@ -170,7 +152,7 @@ pub fn retail(
         .enumerate()
         .map(|(at, s)| Choosing { at, want: s.want, bought: false, closed: Vec::new() })
         .collect();
-    let mut ranked: BTreeMap<(usize, i64, bool), Ranked> = BTreeMap::new();
+    let mut ranked: BTreeMap<(usize, bool), Ranked> = BTreeMap::new();
     let mut came: Vec<(usize, usize, usize)> = Vec::new();
     while !choosing.is_empty() {
         day.rounds += 1;
@@ -183,14 +165,12 @@ pub fn retail(
                 Want::Money(m) => (true, m),
                 Want::Units(q) => (false, q / lot),
             };
-            let r = ranked
-                .entry((s.reach, s.twins, by_money))
-                .or_insert_with(|| Ranked::new(near, stalls, s.twins, by_money));
+            let r = ranked.entry((s.reach, by_money)).or_insert_with(|| Ranked::new(near, stalls, by_money));
             if r.round != round {
-                r.open(near, stalls, &left, (lot, s.twins), weights.get(s.reach).map_or(&[][..], Vec::as_slice));
+                r.open(near, &left, lot, weights.get(s.reach).map_or(&[][..], Vec::as_slice));
                 r.round = round;
             }
-            // The sellers it can buy a whole share for every twin at are the first of the order.
+            // The sellers it can buy a lot at are the first of the order.
             let can = r.bound.partition_point(|b| *b <= brings);
             match choose(r, can, &ch.closed, &mut s.draws) {
                 Some(k) => {
@@ -221,17 +201,15 @@ pub fn retail(
             for &(_, c, k) in group.iter() {
                 let Some(ch) = choosing.get_mut(c) else { continue };
                 let Some(s) = shoppers.get(ch.at) else { continue };
-                let g = step(s.twins, st.twins);
-                let asked = lots_wanted(ch.want, lot, price);
-                let wanted = asked / g * g;
-                let fit = *units / (lot * s.twins) / g * g;
+                let wanted = lots_wanted(ch.want, lot, price);
+                let fit = *units / lot;
                 let lots = if wanted < fit { wanted } else { fit };
                 if lots > 0 {
-                    *units -= lots * lot * s.twins;
+                    *units -= lots * lot;
                     day.sales.push(Match {
-                        buyer: Buyer::Party(s.buyer),
+                        buyer: s.buyer,
                         seller: st.seller,
-                        qty: lots * lot * s.twins,
+                        qty: lots * lot,
                         price: st.price,
                         draws: phx_num::Missing::Absent,
                     });
@@ -240,9 +218,8 @@ pub fn retail(
                 }
                 // Served short, it chooses again; one whose money buys no lot here tries another if it has bought
                 // nothing, since what is left of a budget after buying is change, not want.
-                // One that wants less than the seller's twins can each sell a whole share of looks elsewhere too.
-                let short = lots < wanted || (asked > 0 && wanted == 0);
-                let priced_out = asked == 0 && !ch.bought && matches!(ch.want, Want::Money(m) if m > 0);
+                let short = lots < wanted;
+                let priced_out = wanted == 0 && !ch.bought && matches!(ch.want, Want::Money(m) if m > 0);
                 if short || priced_out {
                     ch.closed.push(k);
                     if let Some(a) = again.get_mut(c) {
@@ -256,9 +233,8 @@ pub fn retail(
     day
 }
 
-/// A place's sellers for buyers of so many twins, ordered by what a buyer must bring to buy a whole share for every
-/// twin at each — money, `price × step`, for a buyer with a budget; lots, the step, for one that needs units — so what
-/// a buyer can buy at is a prefix of the order; with each seller's place in the reach, its place in the order, and the
+/// A place's sellers ordered by what a buyer must bring to buy a lot at each — money, the price, for a buyer with a
+/// budget; for one that needs units, one lot at any — so what a buyer can buy at is a prefix of the order; with each seller's place in the reach, its place in the order, and the
 /// running sums of the open sellers' weights in the order as of the round they were summed in.
 struct Ranked {
     places: Vec<usize>,
@@ -269,22 +245,13 @@ struct Ranked {
 }
 
 impl Ranked {
-    fn new(near: &[Near], stalls: &[Stall], twins: i64, by_money: bool) -> Ranked {
+    fn new(near: &[Near], stalls: &[Stall], by_money: bool) -> Ranked {
         let mut order: Vec<(i64, usize)> = near
             .iter()
             .enumerate()
             .map(|(k, (stall, _))| {
                 let Some(st) = stalls.get(*stall) else { return (i64::MAX, k) };
-                let g = step(twins, st.twins);
-                let bound = if by_money {
-                    let Some(b) = st.price.raw().checked_mul(g) else {
-                        capacity_exceeded!("a price for every twin's share", i64::MAX, g);
-                    };
-                    b
-                } else {
-                    g
-                };
-                (bound, k)
+                (if by_money { st.price.raw() } else { 1 }, k)
             })
             .collect();
         order.sort_unstable();
@@ -298,18 +265,12 @@ impl Ranked {
         Ranked { bound: order.iter().map(|(b, _)| *b).collect(), places, at, sums: Vec::new(), round: 0 }
     }
 
-    /// The running sums summed again over the sellers whose units still hold a whole share of lots for each of the
-    /// buyers' `twins`.
-    fn open(&mut self, near: &[Near], stalls: &[Stall], left: &[i64], (lot, twins): (i64, i64), weights: &[f64]) {
+    /// The running sums summed again over the sellers whose units still hold a lot.
+    fn open(&mut self, near: &[Near], left: &[i64], lot: i64, weights: &[f64]) {
         let mut total = 0.0;
         self.sums.clear();
         for k in &self.places {
-            let fits = near.get(*k).is_some_and(|(stall, _)| {
-                stalls
-                    .get(*stall)
-                    .zip(left.get(*stall))
-                    .is_some_and(|(st, u)| *u >= lot * twins * step(twins, st.twins))
-            });
+            let fits = near.get(*k).is_some_and(|(stall, _)| left.get(*stall).is_some_and(|u| *u >= lot));
             if fits {
                 total += weights.get(*k).copied().unwrap_or(0.0);
             }
@@ -363,19 +324,18 @@ mod tests {
     use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
 
     use super::{Near, Shopper, Stall, Want, Weights, retail};
-    use crate::print::Buyer;
 
     fn draws(n: u64) -> Draws {
         Draws::new(stream_key(Seed::new(7), "SRV.taste"), Subject::new(SubjectTag::Market, n), 0, 0)
     }
 
     fn stall(seller: u64, price: i64, units: i64) -> Stall {
-        Stall { seller: PartyId::new(seller), price: PriceRaw::from_raw(price), units, twins: 1 }
+        Stall { seller: PartyId::new(seller), price: PriceRaw::from_raw(price), units }
     }
 
-    fn shopper(b: u64, twins: i64, want: Want) -> Shopper {
+    fn shopper(b: u64, want: Want) -> Shopper {
         let d = Draws::new(stream_key(Seed::new(7), "SRV.taste"), Subject::new(SubjectTag::Party, b), 0, 0);
-        Shopper { buyer: PartyId::new(b), twins, want, reach: 0, draws: d }
+        Shopper { buyer: PartyId::new(b), want, reach: 0, draws: d }
     }
 
     #[test]
@@ -384,7 +344,7 @@ mod tests {
         let near: Vec<Near> = vec![(0, 0.0), (1, 0.0), (2, 2.0)];
         let w = Weights { price: 1.7, distance: 0.3 };
         let n = 40_000_u64;
-        let mut shoppers: Vec<Shopper> = (0..n).map(|b| shopper(b + 10, 1, Want::Units(1))).collect();
+        let mut shoppers: Vec<Shopper> = (0..n).map(|b| shopper(b + 10, Want::Units(1))).collect();
         let day = retail(&stalls, &mut shoppers, std::slice::from_ref(&near), 1, w, &mut draws(2));
         let v: Vec<f64> = near
             .iter()
@@ -410,43 +370,41 @@ mod tests {
         let stalls = [stall(1, 10, 10), stall(2, 30, 1_000)];
         let near: Vec<Near> = vec![(0, 0.0), (1, 0.0)];
         let w = Weights { price: 1.0, distance: 0.0 };
-        let mut shoppers: Vec<Shopper> = (0..5).map(|b| shopper(b + 10, 1, Want::Units(4))).collect();
+        let mut shoppers: Vec<Shopper> = (0..5).map(|b| shopper(b + 10, Want::Units(4))).collect();
         let day = retail(&stalls, &mut shoppers, std::slice::from_ref(&near), 1, w, &mut draws(3));
         let at = |s: u64| day.sales.iter().filter(|m| m.seller == PartyId::new(s)).map(|m| m.qty).sum::<i64>();
         assert!(at(1) <= 10, "the cheap seller serves no more than its units");
         assert_eq!(at(1) + at(2), 20, "those served short choose again");
         assert!(day.unserved.is_empty());
         for b in 10..15 {
-            let got: i64 = day.sales.iter().filter(|m| m.buyer == Buyer::Party(PartyId::new(b))).map(|m| m.qty).sum();
+            let got: i64 = day.sales.iter().filter(|m| m.buyer == PartyId::new(b)).map(|m| m.qty).sum();
             assert_eq!(got, 4);
         }
-        let mut twins = [shopper(99, 3, Want::Money(25))];
+        let mut budget = [shopper(99, Want::Money(25))];
         let one = [stall(1, 10, 10)];
-        let day = retail(&one, &mut twins, &[vec![(0, 0.0)]], 1, w, &mut draws(4));
-        assert_eq!(day.sales.first().map(|m| m.qty), Some(6), "two lots a twin, whole for every twin");
+        let day = retail(&one, &mut budget, &[vec![(0, 0.0)]], 1, w, &mut draws(4));
+        assert_eq!(day.sales.first().map(|m| m.qty), Some(2), "the lots its money buys, its change kept");
     }
 
     #[test]
     fn a_turned_away_buyer_goes_without_when_none_is_left() {
         let stalls = [stall(1, 10, 1)];
         let w = Weights { price: 1.0, distance: 0.0 };
-        let mut shoppers = [shopper(10, 1, Want::Units(2))];
+        let mut shoppers = [shopper(10, Want::Units(2))];
         let day = retail(&stalls, &mut shoppers, &[vec![(0, 0.0)]], 1, w, &mut draws(8));
         assert_eq!(day.sales.first().map(|m| m.qty), Some(1));
         assert_eq!(day.unserved, vec![(PartyId::new(10), Want::Units(1))]);
     }
 
     #[test]
-    fn a_sale_is_whole_for_every_twin_of_both_sides() {
-        let stalls = [Stall { twins: 3, ..stall(1, 10, 1_000) }];
+    fn a_sale_is_whole_lots() {
+        let stalls = [stall(1, 10, 1_000)];
         let w = Weights { price: 1.0, distance: 0.0 };
         let reach = [vec![(0, 0.0)]];
-        let one = retail(&stalls, &mut [shopper(10, 1, Want::Units(7))], &reach, 1, w, &mut draws(5));
-        let [m] = one.sales.as_slice() else { panic!("one sale") };
-        assert_eq!(m.qty, 6, "a lone buyer takes lots in threes, one for each of the seller's twins");
-        let small = retail(&stalls, &mut [shopper(11, 1, Want::Units(2))], &reach, 1, w, &mut draws(6));
-        assert!(small.sales.is_empty(), "less than a share for each of the seller's twins buys nothing there");
-        let twins = retail(&stalls, &mut [shopper(12, 2, Want::Units(2))], &reach, 1, w, &mut draws(7));
-        assert!(twins.sales.is_empty(), "two twins wanting two lots each cannot split them among three");
+        let day = retail(&stalls, &mut [shopper(10, Want::Units(7))], &reach, 3, w, &mut draws(5));
+        let [m] = day.sales.as_slice() else { panic!("one sale") };
+        assert_eq!(m.qty, 6, "seven units wanted buy two lots of three");
+        let small = retail(&stalls, &mut [shopper(11, Want::Units(2))], &reach, 3, w, &mut draws(6));
+        assert!(small.sales.is_empty(), "less than a lot buys nothing");
     }
 }

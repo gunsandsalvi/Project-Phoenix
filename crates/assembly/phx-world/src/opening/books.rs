@@ -13,11 +13,10 @@ use crate::consts::{
 };
 use crate::opening::newgame::NewGame;
 
-/// Each country as the opening's contributions read it: its people, the setup's split of the world's agents, each
-/// counted with its twins;
-/// its derived values; and its land tiles, where its parties are sited.
+/// Each country as the opening's contributions read it: its people, the setup's split of the world's persons; its
+/// derived values; and its land tiles, where its parties are sited.
 #[must_use]
-pub fn countries(game: &NewGame, geo: &GeoState, (agents, twins): (u64, u64), units: &[u64]) -> Vec<OpeningCountry> {
+pub fn countries(game: &NewGame, geo: &GeoState, persons: u64, units: &[u64]) -> Vec<OpeningCountry> {
     let map = &geo.map;
     let region_of = |i: usize| {
         map.tiles
@@ -50,7 +49,7 @@ pub fn countries(game: &NewGame, geo: &GeoState, (agents, twins): (u64, u64), un
         .zip(sites.into_iter().zip(regions))
         .zip(0_u8..)
         .map(|(((country, share), (sites, regions)), i)| {
-            let people = agents * share / WHOLE * twins;
+            let people = persons * share / WHOLE;
             let per_head = country.derived.iter().find(|(n, _)| n == "GEN.gdp_per_head").map(|(_, v)| *v);
             let unit = units.get(usize::from(i)).copied().map(phx_rand::float::from_u64);
             let (Some(per_head), Some(unit)) = (per_head, unit) else {

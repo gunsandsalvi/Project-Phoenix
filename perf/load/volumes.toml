@@ -7,7 +7,6 @@
 # The population the bench builds: household agents with their persons and their attachments to shared lines.
 [population]
 agents = 700000                 # §13.1: household agents at the design point
-multiplicity = 170              # §13: the design point's factor under twins
 persons_per_agent = 3           # §13.1: persons held in each household agent
 attachments_per_agent = 40      # §13.1: 40 rows per household agent, one attachment each
 

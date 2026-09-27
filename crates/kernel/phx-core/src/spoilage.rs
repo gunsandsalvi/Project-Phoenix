@@ -17,18 +17,18 @@ pub struct SpoilageDecl {
     pub clause: &'static str,
 }
 
-/// Whole units one twin's stock loses over the visit's period: each lot, its units a twin's share of them, losing at
-/// the yearly rate for the days it was held within the period, 1 − e^(−rate·t) of it, the sum rounded half to even.
+/// Whole units a stock loses over the visit's period: each lot losing at the yearly rate for the days it was held
+/// within the period, 1 − e^(−rate·t) of it, the sum rounded half to even.
 /// `None` beyond an integer's reach.
 #[clause("GDS.8")]
 #[must_use]
-pub fn lost(lots: &[(i64, i64)], period: i64, rate: f64, twins: i64, days_a_year: i64) -> Option<i64> {
+pub fn lost(lots: &[(i64, i64)], period: i64, rate: f64, days_a_year: i64) -> Option<i64> {
     let mut sum = 0.0;
     for (held, age) in lots {
         let days = if *age < period { *age } else { period };
         sum += from_i64(*held) * -libm::expm1(-rate * from_i64(days) / from_i64(days_a_year));
     }
-    crate::wear::half_even(sum / from_i64(twins))
+    crate::wear::half_even(sum)
 }
 
 #[cfg(test)]
@@ -38,11 +38,9 @@ mod tests {
     #[test]
     fn spoilage_exact_units() {
         // A thousand units held a year at a tenth a year lose 1000 × (1 − e^−0.1) = 95.16, so 95.
-        assert_eq!(lost(&[(1000, 400)], 365, 0.1, 1, 365), Some(95));
+        assert_eq!(lost(&[(1000, 400)], 365, 0.1, 365), Some(95));
         // A lot bought ten days ago loses only for those ten days.
-        assert_eq!(lost(&[(1000, 10)], 365, 0.1, 1, 365), Some(3));
-        // An agent of ten twins loses a twin's whole units, the same share of each lot.
-        assert_eq!(lost(&[(10_000, 400)], 365, 0.1, 10, 365), Some(95));
-        assert_eq!(lost(&[(1000, 400)], 365, 0.0, 1, 365), Some(0), "a good that does not spoil loses nothing");
+        assert_eq!(lost(&[(1000, 10)], 365, 0.1, 365), Some(3));
+        assert_eq!(lost(&[(1000, 400)], 365, 0.0, 365), Some(0), "a good that does not spoil loses nothing");
     }
 }

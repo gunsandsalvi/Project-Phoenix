@@ -3,7 +3,7 @@ use phx_macros::clause;
 use phx_num::{Missing, PriceRaw, violation};
 
 use crate::order::Side;
-use crate::print::{Buyer, Match};
+use crate::print::Match;
 
 /// A facility a named institution stands behind at a rate or price it declares: which way it deals with those who
 /// come, the rate, and the most it meets in a meeting, where its law bounds it.
@@ -52,7 +52,7 @@ pub fn administer(facility: &Facility, wants: &[Want], response: &dyn Fn(&Want) 
             Side::Sell => (w.party, facility.institution),
             Side::Buy => (facility.institution, w.party),
         };
-        out.push(Match { buyer: Buyer::Party(buyer), seller, qty, price: facility.rate, draws: Missing::Absent });
+        out.push(Match { buyer, seller, qty, price: facility.rate, draws: Missing::Absent });
     }
     out
 }

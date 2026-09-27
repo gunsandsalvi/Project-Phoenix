@@ -52,24 +52,6 @@ impl<B: phx_store::Backing> Books<B> {
         m: MoveAt,
         audit: &mut dyn AuditStream,
     ) -> Result<i64, Fail> {
-        self.pass_share((from, to), 1, reason, m, audit)
-    }
-
-    /// One of `of` equal shares of every holding of one party passed to another, each its units and its basis's
-    /// share, rounded once: a twin's holdings to the agent it is seated as, whose units its twins hold alike.
-    /// Returns the bases passed.
-    ///
-    /// # Errors
-    /// The first move that could not settle.
-    #[clause("PTY.9", "REP.9", "L3")]
-    pub fn pass_share(
-        &mut self,
-        (from, to): (PartyId, PartyId),
-        of: i64,
-        reason: crate::instruction::ReasonId,
-        m: MoveAt,
-        audit: &mut dyn AuditStream,
-    ) -> Result<i64, Fail> {
         let (place, slot) = self.parties.row(from);
         let held: Vec<(phx_id::InstrumentId, i64, i64)> = {
             let table = self.parties.holder(place);
@@ -85,14 +67,6 @@ impl<B: phx_store::Backing> Books<B> {
         };
         let mut passed = 0_i64;
         for (instrument, units, basis) in held {
-            if of <= 0 || units % of != 0 {
-                violation!(clause = "REP.9", "a holding not held alike by its twins", instrument = instrument.get());
-            }
-            let units = units / of;
-            let Ok(basis) = i64::try_from(phx_num::round::div_round(i128::from(basis), i128::from(of), m.rounding))
-            else {
-                violation!(clause = "REP.9", "a basis's share beyond counting", instrument = instrument.get());
-            };
             let unit = self.ledger.instruments.get(instrument).unit;
             // Before day one units move only as the opening writes them, the units given carrying their lots out.
             let opening = matches!(m.at, crate::apply::ApplyAt::Opening);
@@ -250,23 +224,10 @@ impl<B: phx_store::Backing> Books<B> {
     {
         let (place, slot) = self.parties.row(estate);
         let rows = crate::rows::rows(self.parties.holder(place), slot);
-        // The waterfall runs on one twin's estate, and each of its amounts is paid for every twin alike.
-        let unit = i64::from(self.parties.unit(estate));
         let (mut realised, mut claims, mut debts): (Vec<Realised>, Vec<Claim>, Vec<Debt>) = Default::default();
         for r in &rows {
             let line = r.row.line;
             let Missing::Present(balance) = r.optional.balance else { continue };
-            if balance % unit != 0 {
-                violation!(
-                    clause = "REP.9",
-                    "an estate's balance not a whole share for each twin",
-                    line = line.get(),
-                    kind = self.ledger.lines.kind_of(line),
-                    balance = balance,
-                    unit = unit
-                );
-            }
-            let balance = balance / unit;
             let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
             match r.side() {
                 Side::Asset if self.ledger.lines.is_money(line) => {
@@ -292,14 +253,8 @@ impl<B: phx_store::Backing> Books<B> {
             }
         }
         let fall = waterfall(&realised, &claims, &[0], &firsts);
-        let every = |x: i64| {
-            let Some(all) = x.checked_mul(unit) else {
-                phx_num::capacity_exceeded!("an estate's amount for its twins", i64::MAX, x);
-            };
-            all
-        };
         for (paid, (claim, (line, creditor))) in fall.paid.iter().zip(claims.iter().zip(&debts)) {
-            let (paid, short) = (every(paid.paid), every(claim.amount - paid.paid));
+            let (paid, short) = (paid.paid, claim.amount - paid.paid);
             if paid > 0 {
                 let mut legs = self.pay(estate, *creditor, paid, claim.ccy);
                 legs.push(row_leg(estate, *line, Side::Liability, paid, claim.ccy));
@@ -322,7 +277,6 @@ impl<B: phx_store::Backing> Books<B> {
             return Ok(());
         }
         for (ccy, left) in fall.left {
-            let left = every(left);
             if left > 0 {
                 let legs = self.pay(estate, destination, left, ccy);
                 let _ = self.submit(self.dues.distributed, legs, m, audit)?;

@@ -846,16 +846,8 @@ impl<B: Backing> Ledger<B> {
                     violation!(clause = "Law 7", "a balance overflows", party = at.party.get());
                 };
                 d.write(at.table, at.slot, crate::rows::balance_word(word), next);
-                let (table, unit) = (holders.arenas(at.table).table(), holders.arenas(at.table).members(at.slot));
-                self.record_leg(
-                    decl,
-                    s,
-                    (table, *at, unit),
-                    leg,
-                    (before, Missing::Absent, Missing::Absent),
-                    Some(d),
-                    audit,
-                );
+                let table = holders.arenas(at.table).table();
+                self.record_leg(decl, s, (table, *at), leg, (before, Missing::Absent, Missing::Absent), Some(d), audit);
                 continue;
             }
             let arenas = holders.arenas(at.table);
@@ -897,8 +889,8 @@ impl<B: Backing> Ledger<B> {
                 },
                 Missing::Absent => Missing::Absent,
             };
-            let (table, unit) = (arenas.table(), arenas.members(at.slot));
-            self.record_leg(decl, s, (table, *at, unit), leg, (before, held_moved, issued), None, audit);
+            let table = arenas.table();
+            self.record_leg(decl, s, (table, *at), leg, (before, held_moved, issued), None, audit);
         }
         if !taken.is_empty() {
             violation!(clause = "SET.11", "a named unit given that nobody received", id = s.id.get());
@@ -912,7 +904,7 @@ impl<B: Backing> Ledger<B> {
         &mut self,
         decl: crate::instruction::ReasonDecl,
         s: Settling,
-        (table, at, unit): (phx_id::TableId, At, u32),
+        (table, at): (phx_id::TableId, At),
         leg: &LegRec,
         (before, held_moved, issued): (i64, Missing<(i64, phx_num::Ccy)>, Missing<i64>),
         deferred: Option<&mut Deferred<'_>>,
@@ -948,7 +940,6 @@ impl<B: Backing> Ledger<B> {
                 _ => Missing::Absent,
             },
             issued,
-            unit,
         };
         audit.leg(s.id.get(), digest);
         if let (LegKind::Money, Denom::Ccy(ccy)) = (leg.kind, leg.denom) {
@@ -1126,8 +1117,8 @@ impl<B: Backing> Ledger<B> {
         }
     }
 
-    /// A party's cost flow over its stocks' lots, chosen once and applied consistently; an agent's twins hold at
-    /// average cost, so it has no choice to make.
+    /// A party's cost flow over its stocks' lots, chosen once and applied consistently; a household or small firm
+    /// holds at average cost, so it has no choice to make.
     #[clause("ACC.6")]
     pub fn choose_cost_flow(&mut self, party: PartyId, average: bool) {
         match self.cost_flows.get(&party) {

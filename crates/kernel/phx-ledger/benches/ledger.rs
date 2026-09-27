@@ -23,7 +23,6 @@ use phx_ledger::instruction::{AccountRef, Denom, Effect, LegKind, LegRec, Reason
 use phx_ledger::line::{LineKindDecl, NewRow, SideDecl};
 use phx_ledger::money::MoneyHolders;
 use phx_ledger::pending::Closed;
-use phx_ledger::pooled::{Kink, PooledRow, pooled};
 use phx_ledger::rows::{BALANCE, Optional, PENDING};
 use phx_num::{Ccy, Missing, Money, Rate, RatePeriod, UnitId};
 use phx_store::HeapBacking;
@@ -117,19 +116,6 @@ fn heads() -> (Vec<RunHead>, u32) {
 #[bench::heads(setup = heads)]
 fn ir_run_heads_64((heads, day): (Vec<RunHead>, u32)) -> usize {
     black_box(&heads).iter().filter(|h| h.due(Day::new(day))).count()
-}
-
-/// Sixteen rows of a payer's order against its funds and two kinks, the last row failing.
-fn rows() -> (Vec<PooledRow>, Vec<Kink>) {
-    let rows =
-        (0..16).map(|i| PooledRow { per_member: 60 + i, reached: 3, position: 1_000, moves: -(60 + i) }).collect();
-    (rows, vec![Kink { at: 0, fails: true }, Kink { at: 500, fails: false }])
-}
-
-#[library_benchmark]
-#[bench::rows(setup = rows)]
-fn ir_pooled_16_rows((rows, kinks): (Vec<PooledRow>, Vec<Kink>)) -> usize {
-    pooled(black_box(3_000), 3, &rows, &kinks).len()
 }
 
 type Heap = HeapBacking<4096>;
@@ -263,7 +249,7 @@ fn ir_settle_day_16((mut books, cal, day): (Books<Heap>, Calendar, Day)) -> u64 
 
 library_benchmark_group!(
     name = ledger,
-    benchmarks = [ir_due_on_coupon, ir_due_on_between, ir_run_heads_64, ir_pooled_16_rows, ir_settle_day_16]
+    benchmarks = [ir_due_on_coupon, ir_due_on_between, ir_run_heads_64, ir_settle_day_16]
 );
 
 main!(library_benchmark_groups = ledger);

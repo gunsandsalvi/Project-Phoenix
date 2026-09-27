@@ -13,7 +13,6 @@ use crate::cleared::{Losers, times};
 use crate::due::DueLines;
 use crate::dues::Found;
 use crate::instruction::{AccountRef, LegKind, LegRec};
-use crate::pooled::{PooledRow, RowOutcome, pooled};
 use crate::stream::{DayRecords, Payment, Records};
 
 /// Stage 7b's result: the payments that fail, by line and payee, and how many times the worklist took a party.
@@ -86,11 +85,8 @@ impl<B: Backing> Work<'_, B> {
         let Some(day) = self.found.cleared.get(line) else {
             violation!(clause = "REP.23", "a cleared payment failed on a line never reckoned", line = line.get());
         };
-        let claimants: Vec<(PartyId, u32, u32)> = if day.losers.is_none() {
-            day.claimants.iter().map(|(p, (c, u))| (*p, *c, *u)).collect()
-        } else {
-            Vec::new()
-        };
+        let claimants: Vec<(PartyId, u32)> =
+            if day.losers.is_none() { day.claimants.iter().map(|(p, c)| (*p, *c)).collect() } else { Vec::new() };
         let draws_of = self.draws_of;
         let Some(day) = self.found.cleared.get_mut(line) else { return };
         day.failed += u64::from(members);
@@ -136,19 +132,16 @@ impl<B: Backing> Work<'_, B> {
             .collect();
         let own_draw: i128 = own.iter().map(|(_, d)| d).sum();
         let for_others = rec.debit - own_draw;
-        let rows: Vec<PooledRow> = own
-            .iter()
-            .map(|(_, d)| {
-                let Ok(per_member) = i64::try_from(*d) else {
-                    phx_num::capacity_exceeded!("a payment's draw", i64::MAX, 0);
-                };
-                PooledRow { per_member, reached: 1, position: 0, moves: 0 }
-            })
-            .collect();
-        let outcomes = pooled(rec.funds + rec.credit - for_others, 1, &rows, &[]);
-        for ((p, _), o) in own.iter().zip(outcomes) {
-            if o == RowOutcome::Fails {
+        // Payments are met in the payer's order while its funds last; the first it cannot meet fails with every one
+        // after it, so failure is a prefix of the order.
+        let mut left = rec.funds + rec.credit - for_others;
+        let mut failed = false;
+        for (p, d) in &own {
+            failed = failed || (*d > 0 && left < *d);
+            if failed {
                 self.fail(p);
+            } else {
+                left -= d;
             }
         }
         if self.records.get(self.books.parties.row(party)).is_some_and(|r| r.standing() < 0) {

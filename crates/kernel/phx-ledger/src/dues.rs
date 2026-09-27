@@ -20,7 +20,7 @@ pub struct DueReasons {
     /// Members leaving a line with their counterparts, as a job ends with its worker.
     pub left: ReasonId,
     /// A party succeeding to contracts another held: an estate to its party's, or a holder to the members a party
-    /// leaving a line passes it where its counterparts cannot leave with them in whole units.
+    /// leaving a line passes it where its counterparts cannot leave with it.
     pub succeeded: ReasonId,
     /// Units a hazard destroyed at their holder, which no one receives.
     pub destroyed: ReasonId,
@@ -28,8 +28,6 @@ pub struct DueReasons {
     pub written_off: ReasonId,
     /// What an estate held beyond what it owed, passed to its heirs or the law's destination.
     pub distributed: ReasonId,
-    /// One twin's contracts moved from its agent to the household that stands alone for it.
-    pub seated: ReasonId,
     /// Units worn from one class of a chain to the next, or out of its last: what they lose of their cost is the
     /// depreciation, an expense whichever class it leaves.
     pub worn: ReasonId,
@@ -92,13 +90,6 @@ impl DueReasons {
             received: Effect::Equity,
             held: phx_num::Missing::Absent,
         };
-        let seated = ReasonDecl {
-            name: "twin seated",
-            order: 2,
-            paid: Effect::Equity,
-            received: Effect::Equity,
-            held: phx_num::Missing::Absent,
-        };
         let worn = ReasonDecl {
             name: "worn",
             order: 2,
@@ -128,7 +119,6 @@ impl DueReasons {
             destroyed: reasons.declare(destroyed),
             written_off: reasons.declare(written_off),
             distributed: reasons.declare(distributed),
-            seated: reasons.declare(seated),
             worn: reasons.declare(worn),
             traded: reasons.declare(traded),
             spoiled: reasons.declare(spoiled),
@@ -151,7 +141,7 @@ pub(crate) enum Reckoning {
 pub(crate) struct ClearedDay {
     pub top: PartyId,
     pub per_member: i64,
-    pub claimants: BTreeMap<PartyId, (u32, u32)>,
+    pub claimants: BTreeMap<PartyId, u32>,
     pub failed: u64,
     pub losers: Option<Losers>,
 }
@@ -177,9 +167,7 @@ impl Found {
             .cleared
             .sorted()
             .iter()
-            .map(|(_, c)| {
-                c.claimants.len() * size_of::<(PartyId, (u32, u32))>() + c.losers.as_ref().map_or(0, Losers::bytes)
-            })
+            .map(|(_, c)| c.claimants.len() * size_of::<(PartyId, u32)>() + c.losers.as_ref().map_or(0, Losers::bytes))
             .sum();
         self.cleared.capacity() * size_of::<(LineId, ClearedDay)>()
             + self.plans.capacity() * size_of::<(LineId, crate::algebra::DuePlan)>()
@@ -241,16 +229,15 @@ impl<B: Backing> Books<B> {
 
     /// How a line's dues are reckoned: on the other side's rows where one listed side holds one party of one member
     /// to a contract, the owing side's first, each row its own payment with that party; a line of many holders on both
-    /// sides, whose pairing is not recorded, cleared. A side that keeps no list is taken to hold many, and so is an
-    /// agent of many twins, each its own holder whose counterparts the line does not pair.
-    #[clause("REP.23", "REP.9")]
+    /// sides, whose pairing is not recorded, cleared. A side that keeps no list is taken to hold many.
+    #[clause("REP.23")]
     pub(crate) fn reckoning(&self, line: LineId) -> Reckoning {
         let lines = &self.ledger.lines;
         let sole = |side: Side| {
             if !lines.side_decl(line, side).holder_list {
                 return None;
             }
-            lines.sole_holder(line, side).map(|k| self.party_of_key(k)).filter(|p| self.parties.unit(*p) == 1)
+            lines.sole_holder(line, side).map(|k| self.party_of_key(k))
         };
         if let Some(counter) = sole(Side::Liability) {
             return Reckoning::On { side: Side::Asset, counter };

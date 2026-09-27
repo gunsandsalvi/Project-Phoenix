@@ -20,12 +20,11 @@ pub struct View {
     /// Each read's latest value, absent where the run has not yet recorded one.
     pub reads: Vec<(String, Missing<i128>)>,
     pub histograms: Vec<(String, Histogram)>,
-    /// For each histogram, the bin of each agent of a fixed sample, with its twins, so its members' moves within it
-    /// are read between two views.
-    pub sampled: Vec<Vec<(PartyId, Option<usize>, u64)>>,
+    /// For each histogram, the bin of each agent of a fixed sample, so its moves within it are read between two views.
+    pub sampled: Vec<Vec<(PartyId, Option<usize>)>>,
 }
 
-/// What a histogram reads of each agent, which it counts once for every twin.
+/// What a histogram reads of each agent.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Of {
     /// Its persons.
@@ -94,18 +93,17 @@ impl Views {
             let table = w.agent_table(r.kind);
             let mut sample = Vec::new();
             for slot in table.slots() {
-                let twins = u64::from(table.multiplicity(slot).get());
                 let value = match r.of {
                     Of::Persons => i64::try_from(table.persons(slot).len()).unwrap_or(i64::MAX),
                     Of::Attr(attr) => i64::from(table.attr(slot, attr)),
                 };
-                h.add(value, twins);
+                h.add(value, 1);
                 let party = table.party(slot);
                 if party.get() % MOBILITY_SAMPLE == 0 {
-                    sample.push((party, h.bin_of(value), twins));
+                    sample.push((party, h.bin_of(value)));
                 }
             }
-            sample.sort_unstable_by_key(|(p, _, _)| *p);
+            sample.sort_unstable_by_key(|(p, _)| *p);
             histograms.push((r.id.clone(), h));
             sampled.push(sample);
         }

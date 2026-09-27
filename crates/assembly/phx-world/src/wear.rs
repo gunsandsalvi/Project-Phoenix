@@ -1,6 +1,6 @@
 //! Plant worn at its owners' visits: each system's chains of classes, the ledger's, realised by the kernel on each row
 //! a declared visit visits, for the days since the row's last: from each class the units the leaving rate takes over
-//! those days, whole for a twin, move to the next class carrying their cost times the ratio of the classes' values,
+//! those days, in whole units, move to the next class carrying their cost times the ratio of the classes' values,
 //! and the last class's leave, their cost written off. One instruction a row, of transformation legs under `worn`.
 
 use phx_core::{Cadence, Declarations, Register, RunsOn, SubStep, WearSpec};

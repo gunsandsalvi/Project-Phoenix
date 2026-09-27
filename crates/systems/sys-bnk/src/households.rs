@@ -98,11 +98,10 @@ struct Country {
     deposits: i64,
     debt: i64,
     /// The banknotes' line, of the central bank's notes; the currency in circulation a head; and the persons of the
-    /// households drawn to hold them and the twins each stands for.
+    /// households drawn to hold them.
     cash: (u16, TermsId, PartyId),
     per_head: f64,
     unbanked: u64,
-    twins: u64,
 }
 
 fn share(table: &Table1, at: i64) -> f64 {
@@ -192,7 +191,6 @@ impl AttachmentDraw for HouseholdLines {
             cash: (lines.kind_index(RETAIL.cash().name), cash_terms, central_bank),
             per_head: currency_share / PERCENT * c.gdp / phx_rand::float::from_u64(c.people),
             unbanked: 0,
-            twins: 1,
         })
     }
 }
@@ -229,7 +227,6 @@ impl CountryAttachments for Country {
         if !account {
             let persons = phx_rand::float::len_u64(h.household.persons.len());
             self.unbanked += persons;
-            self.twins = h.twins;
             let (kind, terms, central_bank) = self.cash;
             rows.push(DrawnRow {
                 line: LineSpec { kind, terms, counterparty: Missing::Present(central_bank), first: Missing::Absent },
@@ -275,10 +272,7 @@ impl CountryAttachments for Country {
     }
 
     fn pools(&self) -> Vec<(u32, i64)> {
-        let each = whole(self.per_head * phx_rand::float::from_u64(self.unbanked));
-        let Some(cash) = i64::try_from(self.twins).ok().and_then(|t| each.checked_mul(t)) else {
-            phx_num::capacity_exceeded!("the households' banknotes", i64::MAX, self.unbanked);
-        };
+        let cash = whole(self.per_head * phx_rand::float::from_u64(self.unbanked));
         vec![(DEPOSITS, self.deposits), (DEBT, -self.debt), (CASH, cash)]
     }
 

@@ -40,7 +40,6 @@ pub mod system;
 pub mod touched;
 pub mod visit;
 pub mod wear;
-pub mod weight;
 
 pub use accounting::{CarryingBasis, HeldFor, Permitted};
 pub use agenda::{Agenda, AgendaCounters, AgendaTableSpec, TableToday, TodayAgenda};
@@ -53,14 +52,13 @@ pub use calendar::{Calendar, CountryCalendar};
 pub use columns::{ColumnTrace, FactColumns, KernelTable};
 pub use contribution::{
     Adjustment, Apportioned, BALANCES, CONTRACTS, Contribution, DECLARATIONS, GenReport, Opening, OpeningCountry,
-    OpeningCtx, PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, ReportSink, WriteRecord, apportion,
-    apportion_in_units, opening_subject,
+    OpeningCtx, PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, ReportSink, WriteRecord, apportion, opening_subject,
 };
 pub use decisions::{Decider, DecisionPointDecl, Player, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
 pub use directory::{Directory, PartyState, Resolved};
 pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};
 pub use events_rule::{EventsRule, NewsEntry, Notice, PUBLIC_EVENTS};
-pub use extensions::{GroupDemand, PublicEventRule};
+pub use extensions::PublicEventRule;
 pub use facts::{
     Audience, Claim, FactDecl, FactDef, FactType, ItemDecl, ItemKind, Lag, ReprClass, Writer, check_claims,
 };
@@ -116,4 +114,3 @@ pub use system::{
 pub use touched::TouchedRows;
 pub use visit::{Cadence, VisitDecl};
 pub use wear::{WearDecl, WearSpec};
-pub use weight::Weight;

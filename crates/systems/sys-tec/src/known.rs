@@ -135,7 +135,7 @@ impl Contribution for Known {
                 let set = public(&tech, c, i);
                 agents.set_attr(slot, known_at, set);
                 agents.set_attr(slot, way_at, way_making(&tech, set, product_of(firm)));
-                tally(&mut small, i, u64::from(agents.multiplicity(slot).get()));
+                tally(&mut small, i, 1);
             }
             report.distributions.push((
                 key(<KnownFact as FactDef>::ITEM.name, c.id),

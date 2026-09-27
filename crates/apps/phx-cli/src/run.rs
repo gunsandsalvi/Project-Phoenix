@@ -273,7 +273,6 @@ fn settlement_report(w: Inspector<'_>) -> serde_json::Value {
         "payments": sum(|d| d.dues.payments),
         "failed": sum(|d| d.dues.failed),
         "lost": sum(|d| d.dues.lost),
-        "lost_past_failed": sum(|d| d.dues.lost_past_failed),
         "heads_read": sum(|d| d.dues.heads_read),
         "rows_scanned": sum(|d| d.dues.rows_scanned),
         "rows_due": sum(|d| d.dues.rows_due),
@@ -454,30 +453,23 @@ fn config(args: &RunArgs) -> Result<WorldConfig, String> {
         setup: args.setup.clone(),
         run_dir: args.run_dir.clone(),
         read_trace: args.read_trace,
-        representation: match &args.representation {
-            Some(named) => phx_num::Missing::Present(representation(named)?),
+        representation: match args.persons {
+            Some(n) => phx_num::Missing::Present(representation(n)?),
             None => phx_num::Missing::Absent,
         },
         pool: Some(pool(args.workers)?),
     })
 }
 
-/// The representation `twins:K` or `small:K` names.
+/// The representation of so many persons.
 ///
 /// # Errors
-/// Anything else, or a factor of nought.
-pub(crate) fn representation(named: &str) -> Result<phx_pop::prims::Representation, String> {
-    let bad = || format!("`{named}` is neither `twins:K` nor `small:K` for a factor K of one or more");
-    let (mode, factor) = named.split_once(':').ok_or_else(bad)?;
-    let k: u32 = factor.parse().map_err(|_| bad())?;
-    if k == 0 {
-        return Err(bad());
+/// A world of no one.
+pub(crate) fn representation(persons: u64) -> Result<phx_pop::prims::Representation, String> {
+    if persons == 0 {
+        return Err("a world of no persons holds no population".to_owned());
     }
-    match mode {
-        "twins" => Ok(phx_pop::prims::Representation { multiplicity: k, population_divisor: 1 }),
-        "small" => Ok(phx_pop::prims::Representation { multiplicity: 1, population_divisor: k }),
-        _ => Err(bad()),
-    }
+    Ok(phx_pop::prims::Representation { persons })
 }
 
 /// Each macro read's days, first and last value, least, greatest and sum, and the view's histograms at the close.
@@ -836,7 +828,6 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
         "representation": w.population().representation.name(),
-        "twins_over_edge": w.twins_over_edge(),
         "injections": crate::inject::report(w.injections()),
         "peak_resident_bytes": peak,
         "memory_budget_bytes": WORLD_BYTES,
@@ -947,13 +938,8 @@ mod tests {
     use super::representation;
 
     #[test]
-    fn representation_names_one_factor() {
-        let r = representation("twins:170").expect("twins");
-        assert_eq!((r.multiplicity, r.population_divisor), (170, 1));
-        let r = representation("small:170").expect("a small world");
-        assert_eq!((r.multiplicity, r.population_divisor), (1, 170));
-        for bad in ["twins:0", "small:0", "twins", "cells:4", "twins:-1"] {
-            assert!(representation(bad).is_err(), "`{bad}` refused");
-        }
+    fn representation_holds_its_persons() {
+        assert_eq!(representation(750_000).map(|r| r.persons), Ok(750_000));
+        assert!(representation(0).is_err(), "a world of no one refused");
     }
 }

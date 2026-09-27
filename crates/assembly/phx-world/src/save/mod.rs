@@ -250,8 +250,7 @@ impl World {
             date: format!("{:04}-{:02}-{:02}", date.year(), date.month(), date.day()),
             settling_years: self.settling_years.get(),
             read_trace: self.read_trace,
-            multiplicity: self.population.representation.multiplicity,
-            population_divisor: self.population.representation.population_divisor,
+            persons: self.population.representation.persons,
             stores: entries,
             world_hash: hex(world_hash),
         }

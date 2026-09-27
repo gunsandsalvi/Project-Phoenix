@@ -3,7 +3,6 @@ use phx_core::schema::{FactColumn, TableSchema};
 use phx_core::{ListKind, RunHead};
 use phx_id::{LineId, PartyId, Slot, TableId};
 use phx_ledger::holder::{CellHolders, HolderArenas, HolderTable};
-use phx_ledger::pooled::Kink;
 use phx_ledger::positions::PayerPositions;
 use phx_ledger::rows::RowView;
 use phx_macros::clause;
@@ -32,10 +31,6 @@ fn list_of(list: ListKind) -> AgentList {
 /// individual's in a kind table.
 #[clause("REP.3", "REG.4")]
 impl<B: Backing> HolderArenas for AgentTable<B> {
-    fn members(&self, holder: Slot) -> u32 {
-        self.multiplicity(holder).get()
-    }
-
     fn at_average_cost(&self) -> bool {
         true
     }
@@ -88,25 +83,12 @@ impl<B: Backing> HolderArenas for AgentTable<B> {
     }
 }
 
-/// What the settlement stream and the pooled-flow rule read of an agent: its multiplicity, one twin's share of an
-/// account, and the kinks its twins may cross, of which it has none yet.
-#[clause("REP.9", "REP.1")]
+/// What the settlement stream reads of an agent: its funds in an account.
+#[clause("REP.9")]
 impl<B: Backing> PayerPositions for AgentTable<B> {
-    fn weight(&self, holder: Slot) -> u32 {
-        self.multiplicity(holder).get()
+    fn funds(&self, holder: Slot, account: LineId, facility: i64) -> i128 {
+        phx_ledger::positions::account_funds(self, holder, account) + i128::from(facility)
     }
-
-    fn per_member_funds(&self, holder: Slot, account: LineId, facility_per_member: i64) -> i128 {
-        let (available, members) = phx_ledger::positions::account_funds(self, holder, account);
-        available / members + i128::from(facility_per_member)
-    }
-
-    fn funds(&self, holder: Slot, account: LineId, facility_per_member: i64) -> i128 {
-        let (available, members) = phx_ledger::positions::account_funds(self, holder, account);
-        available + i128::from(facility_per_member) * members
-    }
-
-    fn kinks_into(&self, _: Slot, _: &mut Vec<Kink>) {}
 
     fn standing_rate(&self, _: Slot, _: &RowView) -> Missing<i64> {
         Missing::Absent
@@ -168,10 +150,9 @@ impl<B: Backing> TableSchema for AgentTable<B> {
 
 #[cfg(test)]
 mod tests {
-    use phx_core::{AttrDecl, ListKind, PopEntry, PopItem, RunHead, Weight};
+    use phx_core::{AttrDecl, ListKind, PopEntry, PopItem, RunHead};
     use phx_id::{Day, PartyId, TableId};
     use phx_ledger::holder::HolderArenas;
-    use phx_ledger::positions::PayerPositions;
     use phx_store::{AddressSpace, HeapBacking};
 
     use crate::kind::PopKindDecl;
@@ -187,14 +168,9 @@ mod tests {
         let k = PopKindDecl::compile("household", &[region]).unwrap();
         let mut space = AddressSpace::empty();
         let mut t: AgentTable<HeapBacking> = AgentTable::new(&mut space, &k, TableId::new(4), 64, 8);
-        let new = |party, twins| NewAgent {
-            party: PartyId::new(party),
-            created: Day::new(1),
-            multiplicity: Weight::new(twins),
-            attrs: &[3],
-        };
-        let agent = t.add(&mut space, new(5, 20));
-        let other = t.add(&mut space, new(6, 1));
+        let new = |party| NewAgent { party: PartyId::new(party), created: Day::new(1), attrs: &[3] };
+        let agent = t.add(&mut space, new(5));
+        let other = t.add(&mut space, new(6));
         let h: &mut dyn HolderArenas = &mut t;
         h.append(agent, ListKind::RelationshipRows, &[1, 2, 3, 4]);
         h.overwrite(agent, ListKind::RelationshipRows, 1, &[9]);
@@ -208,15 +184,6 @@ mod tests {
         let wide = RunHead { next_due: 40, offset: 0, len: u32::from(u16::MAX) + 1 };
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| h.set_run_head(agent, wide))).is_err());
         assert_eq!((h.party(agent), h.kind()), (PartyId::new(5), "household"));
-        assert_eq!((t.weight(agent), t.weight(other), t.attr(agent, 0)), (20, 1, 3));
-    }
-
-    #[test]
-    fn an_agent_of_no_twins_is_refused() {
-        let k = PopKindDecl::compile("household", &[]).unwrap();
-        let mut space = AddressSpace::empty();
-        let mut t: AgentTable<HeapBacking> = AgentTable::new(&mut space, &k, TableId::new(4), 64, 8);
-        let none = NewAgent { party: PartyId::new(1), created: Day::new(1), multiplicity: Weight::new(0), attrs: &[] };
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| t.add(&mut space, none))).is_err());
+        assert_eq!(t.attr(agent, 0), 3);
     }
 }

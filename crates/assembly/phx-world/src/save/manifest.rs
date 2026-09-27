@@ -16,7 +16,7 @@ pub struct StoreEntry {
 }
 
 /// What a save is: the format it is written in, the build and register that wrote it, the run's seed and settings with
-/// its representation's multiplicity and divisor, the day it was written at the close of, each store, and the world
+/// the persons its representation holds, the day it was written at the close of, each store, and the world
 /// hash of that close. It is written last, so a save
 /// without one is incomplete.
 #[clause("SET.12", "N5")]
@@ -30,8 +30,7 @@ pub struct Manifest {
     pub date: String,
     pub settling_years: u64,
     pub read_trace: bool,
-    pub multiplicity: u32,
-    pub population_divisor: u32,
+    pub persons: u64,
     pub stores: Vec<StoreEntry>,
     pub world_hash: String,
 }
@@ -83,8 +82,7 @@ mod tests {
             date: "2027-02-05".to_owned(),
             settling_years: 1,
             read_trace: true,
-            multiplicity: 20,
-            population_divisor: 1,
+            persons: 750_000,
             stores: vec![StoreEntry {
                 name: "books".to_owned(),
                 file: "books.zst".to_owned(),

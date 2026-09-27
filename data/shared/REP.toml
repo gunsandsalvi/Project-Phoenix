@@ -1,19 +1,10 @@
-# The representation (spec REP.40, Appendix E 44): every household and small firm an agent, the full population as
-# agents of one multiplicity (twins) or one factor-th of it as agents of one party each (a small world). Twins is the
-# default; `phx run --representation twins:K|small:K` sets both for a build run.
+# The representation (spec REP.40, Appendix E 44): the persons the world holds of the setup's population, every
+# household and small firm they form one agent of one party. `phx run --persons N` sets it for a build run.
 
 [[primitive]]
-id = "REP.multiplicity"
+id = "REP.persons"
 kind = "RESOLUTION"
 owner = "REP"
 source = "assumed"
-source_ref = "Resolution (spec REP.40, N8.5): the twins every household and small firm agent stands for under the default representation, twins. The owner's setting (plan §12, 2026-09-25): 170, the design point of architecture §13, about 0.95 million agents for three countries of 300 million people; a factor of 20 exceeded the reserved address space (F-075)."
-value = 170
-
-[[primitive]]
-id = "REP.population_divisor"
-kind = "RESOLUTION"
-owner = "REP"
-source = "assumed"
-source_ref = "Resolution (spec REP.40): what the setup's total population is divided by before the countries are derived. One under twins, the full population; the factor under a small world."
-value = 1
+source_ref = "Resolution (spec REP.40, N8.5): the persons the world holds, set by measuring the budget. At 750 000 persons (221 515 household agents and 102 579 small firms at the opening of seed 1), a business day took 1.4 to 1.6 s on the build machine's four cores (2026-09-27, 62-day runs), the most within N8.2 there; the device's measure resets it."
+value = 750000

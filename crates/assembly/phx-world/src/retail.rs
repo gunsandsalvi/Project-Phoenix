@@ -11,7 +11,7 @@ use phx_ledger::goods::GoodKey;
 use phx_ledger::instruction::{AccountRef, Denom, Instruction, LegKind, LegRec, Source};
 use phx_macros::clause;
 use phx_market::intents::ShopIntent;
-use phx_market::print::{Buyer, Match};
+use phx_market::print::Match;
 use phx_market::retail::{Near, RetailKind, Shopper, Stall, Want, Weights};
 use phx_num::{Missing, Qty, violation};
 use phx_pop::population::Population;
@@ -46,9 +46,9 @@ pub(crate) struct RetailBound {
     pub reach: u64,
 }
 
-/// A seller at a meeting: its party, its product, its price, staff's output, way and plant's capacity as read, its
-/// zone and its twins.
-type SellerRow = (PartyId, u16, [Missing<i64>; 4], ZoneId, i64);
+/// A seller at a meeting: its party, its product, its price, staff's output, way and plant's capacity as read, and its
+/// zone.
+type SellerRow = (PartyId, u16, [Missing<i64>; 4], ZoneId);
 
 /// The reason the firms make what they make under, a service as it is sold among them.
 const MADE: &str = "FRM made";
@@ -61,15 +61,13 @@ pub(crate) struct TradeKinds {
     pub reach: phx_market::reach::Reach,
 }
 
-/// A buyer's want admitted for the day: its market, the product, the buyer, where it stands, its twins and what a twin
-/// wants.
+/// A buyer's want admitted for the day: its market, the product, the buyer, where it stands and what it wants.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Shop {
     pub market: MarketId,
     pub product: u16,
     pub party: PartyId,
     pub zone: ZoneId,
-    pub twins: i64,
     pub want: Want,
 }
 
@@ -144,8 +142,8 @@ pub(crate) fn place_of(d: &Declarations, kind: &str) -> Option<(u16, bool)> {
 
 impl World {
     /// A buyer's want of a product admitted into the product's retail market: a want of units in whole lots of the
-    /// product's least quantity, or of money, a twin's; one of neither is refused and counted.
-    #[clause("SRV.4", "HH.5", "REP.9")]
+    /// product's least quantity, or of money; one of neither is refused and counted.
+    #[clause("SRV.4", "HH.5")]
     pub(crate) fn admit_shop(&mut self, step: SubStep, rows: Rows, s: &ShopIntent) {
         if step.ordinal() > SubStep::S5d.ordinal() {
             violation!(clause = "TIME.6", "a want asked after the day's orders were admitted", step = step.ordinal());
@@ -170,14 +168,7 @@ impl World {
             violation!(clause = "GEO.2", "a buyer at a zone of no country", party = row.party.get());
         };
         let market = self.market_kinds.instance(&mut self.markets.made, kind, retail_subject(s.product, country));
-        self.market_day.shops.push(Shop {
-            market,
-            product: s.product,
-            party: row.party,
-            zone: row.zone,
-            twins: row.twins,
-            want: s.want,
-        });
+        self.market_day.shops.push(Shop { market, product: s.product, party: row.party, zone: row.zone, want: s.want });
         self.market_day.tally.orders += 1;
     }
 
@@ -223,7 +214,7 @@ impl World {
         let rows: Vec<SellerRow> = read
             .into_iter()
             .filter_map(|(rows, slot, product, facts)| {
-                self.goods_row(rows, slot).map(|r| (r.party, product, facts, r.zone, r.twins))
+                self.goods_row(rows, slot).map(|r| (r.party, product, facts, r.zone))
             })
             .collect();
         let mut pending: BTreeMap<(PartyId, InstrumentId), i64> = BTreeMap::new();
@@ -231,7 +222,7 @@ impl World {
             *pending.entry((m.seller, *good)).or_insert(0) += m.qty;
         }
         let mut out: BTreeMap<u16, Vec<Placed>> = BTreeMap::new();
-        for (seller, product, [price, capacity, way, plant], zone, twins) in rows {
+        for (seller, product, [price, capacity, way, plant], zone) in rows {
             let Missing::Present(price) = price else { continue };
             let base = self.goods_frame.base(product);
             // What cannot be stored is made as it is sold, so its stall is what its maker can make today.
@@ -241,20 +232,16 @@ impl World {
                     Missing::Present(p) if p < staff => p,
                     _ => staff,
                 };
-                let (Some(capacity), Ok(way)) = (rate.checked_mul(twins), u32::try_from(way)) else { continue };
+                let Ok(way) = u32::try_from(way) else { continue };
                 let units = match self.way_most(way, seller, zone) {
-                    Missing::Present(m) if m < capacity => m,
-                    _ => capacity,
+                    Missing::Present(m) if m < rate => m,
+                    _ => rate,
                 };
                 if price > 0 && units >= base {
                     let good = self.good(GoodKey { product, grade: 0, zone });
                     self.market_day.makers.insert(seller, way);
-                    let stall = Stall {
-                        seller,
-                        price: phx_num::PriceRaw::from_raw(price),
-                        units: units - units % base,
-                        twins: i64::from(self.books.parties.unit(seller)),
-                    };
+                    let stall =
+                        Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: units - units % base };
                     out.entry(product).or_default().push((stall, zone, good));
                 }
                 continue;
@@ -270,12 +257,7 @@ impl World {
             let free =
                 held - self.books.ledger.bound(seller, good) - pending.get(&(seller, good)).copied().unwrap_or(0);
             if price > 0 && free >= base {
-                let stall = Stall {
-                    seller,
-                    price: phx_num::PriceRaw::from_raw(price),
-                    units: free,
-                    twins: i64::from(self.books.parties.unit(seller)),
-                };
+                let stall = Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: free };
                 out.entry(product).or_default().push((stall, zone, good));
             }
         }
@@ -420,7 +402,7 @@ impl World {
             });
             let subject = Subject::new(SubjectTag::Party, s.party.get());
             let draws = self.streams.open(&tastes, subject, day, SubStep::S6a.ordinal());
-            out.push(Shopper { buyer: s.party, twins: s.twins, want: s.want, reach, draws });
+            out.push(Shopper { buyer: s.party, want: s.want, reach, draws });
         }
         (out, reaches)
     }
@@ -443,19 +425,15 @@ impl World {
     ) -> Vec<LegRec> {
         let unit = self.books.ledger.instruments.get(good).unit;
         let source = Source::Way(way);
-        // Each twin of a maker makes its own share, whole, so what they make together is a whole share for each.
-        let twins = i64::from(self.books.parties.unit(seller));
-        let each = qty / twins + i64::from(qty % twins != 0);
-        self.within_capacity(seller, each, 1);
+        self.within_capacity(seller, qty, 1);
         let mut legs = vec![LegRec {
             party: seller,
             account: phx_ledger::instruction::AccountRef::Instrument(good),
-            qty: each * twins,
+            qty,
             denom: phx_ledger::instruction::Denom::Unit(unit),
             kind: LegKind::Transformation { source, cost: 0 },
         }];
-        for (product, per_twin) in self.way_inputs(way, key.product, each) {
-            let took = per_twin * twins;
+        for (product, took) in self.way_inputs(way, key.product, qty) {
             let input = self.good(GoodKey { product, grade: 0, zone: key.zone });
             let unit = self.books.ledger.instruments.get(input).unit;
             legs.push(LegRec {
@@ -537,9 +515,7 @@ impl World {
             }
         }
         for s in sales {
-            let Buyer::Party(buyer) = s.matched.buyer else {
-                violation!(clause = "SRV.5", "a retail sale to no party", market = s.market.get());
-            };
+            let buyer = s.matched.buyer;
             let decl = self.market_kinds.decl(&self.markets.made, s.market);
             let Some(bound) = self.trade.retail.iter().find(|r| r.decl.market.key.kind == decl.key.kind) else {
                 continue;
@@ -552,7 +528,7 @@ impl World {
                 violation!(clause = "GDS.1", "a retail market over no good", market = s.market.get());
             };
             let base = self.goods_frame.base(key.product);
-            let amount = self.trade_amount((buyer, s.matched.seller), s.matched.qty, (s.matched.price.raw(), base));
+            let amount = Self::trade_amount(s.matched.qty, (s.matched.price.raw(), base));
             let instrument = self.books.ledger.instruments.get(s.good);
             if self.market_day.makers.contains_key(&s.matched.seller) && !made.contains(&(s.matched.seller, s.good)) {
                 continue;

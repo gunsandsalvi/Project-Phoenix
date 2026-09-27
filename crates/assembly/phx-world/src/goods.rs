@@ -17,7 +17,7 @@ use phx_macros::clause;
 use phx_market::intents::OrderIntent;
 use phx_market::market::Form;
 use phx_market::order::{Asked, Order, Poster, Side, Timing};
-use phx_market::print::{Buyer, Match};
+use phx_market::print::Match;
 use phx_num::{Missing, Qty, UnitId, capacity_exceeded, violation};
 use phx_pop::population::Population;
 use phx_rand::{Subject, SubjectTag};
@@ -148,12 +148,11 @@ pub(crate) struct Gathered {
     pub intents: phx_core::Intents,
 }
 
-/// A row as goods read it: its party, the zone its goods stand in and its twins, one for an individual.
+/// A row as goods read it: its party and the zone its goods stand in.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Row {
     pub party: PartyId,
     pub zone: ZoneId,
-    pub twins: i64,
 }
 
 /// The day's markets between their meeting and their settlement: the orders admitted, the matches each meeting
@@ -208,7 +207,7 @@ pub struct GoodsDay {
     pub waiting: u64,
     pub completed: u64,
     pub abandoned: u64,
-    /// The makings of more units a twin than its maker's plant allows a day.
+    /// The makings of more units than their maker's plant allows a day.
     pub beyond_capacity: u64,
     /// The units made to order that no sale took, lost at the day's end.
     pub perished: i64,
@@ -238,7 +237,7 @@ pub(crate) struct Records {
 /// Each good's public outlook where it stands, by method, rebuilt at 5a.
 pub(crate) type Outlooks = Arc<BTreeMap<(GoodKey, u16), i64>>;
 
-/// A good a row holds or has delivered: its product, its grade class and its units, one twin's.
+/// A good a row holds or has delivered: its product, its grade class and its units.
 type Units = HeldGood;
 
 /// What a visit's rows may read of their goods, read before its handler runs: each row's found by its slot, and the
@@ -389,40 +388,18 @@ impl GoodsView for RunGoods {
     }
 }
 
-/// A count for a quantity, as twins multiply it.
-fn times(q: i64, twins: i64) -> i64 {
-    let Some(t) = q.checked_mul(twins) else {
-        capacity_exceeded!("a quantity for every twin", i64::MAX, q);
-    };
-    t
-}
-
-/// The greatest count dividing both.
-fn common(a: i64, b: i64) -> i64 {
-    let (mut a, mut b) = (a, b);
-    while b != 0 {
-        (a, b) = (b, a % b);
-    }
-    a
-}
-
 impl World {
-    /// What `qty` of a good costs at `price` a lot of `base` units: one twin's quantity priced, rounded once, and paid
-    /// for each twin of the unit both parties' positions are whole multiples of, so every twin of either side pays or
-    /// is paid a whole amount. A quantity no such unit divides, as the player's own purchase, is priced whole.
-    pub(crate) fn trade_amount(&self, (buyer, seller): (PartyId, PartyId), qty: i64, (price, base): (i64, i64)) -> i64 {
-        let (b, s) = (i64::from(self.books.parties.unit(buyer)), i64::from(self.books.parties.unit(seller)));
-        let both = b / common(b, s) * s;
-        let unit = [both, b, s].into_iter().find(|u| qty % u == 0).unwrap_or(1);
-        let per = i128::from(qty / unit) * i128::from(price);
-        let amount = phx_num::round::div_round(per, i128::from(base), phx_num::Round::HalfEven) * i128::from(unit);
+    /// What `qty` of a good costs at `price` a lot of `base` units, rounded once.
+    pub(crate) fn trade_amount(qty: i64, (price, base): (i64, i64)) -> i64 {
+        let per = i128::from(qty) * i128::from(price);
+        let amount = phx_num::round::div_round(per, i128::from(base), phx_num::Round::HalfEven);
         let Ok(amount) = i64::try_from(amount) else {
             capacity_exceeded!("a trade's money", i64::MAX, qty);
         };
         amount
     }
 
-    /// A row's party, the zone its goods stand in and its twins; none when the row is no longer live.
+    /// A row's party and the zone its goods stand in; none when the row is no longer live.
     pub(crate) fn goods_row(&self, rows: Rows, slot: Slot) -> Option<Row> {
         let geo = self.geo();
         if rows.individuals {
@@ -433,7 +410,7 @@ impl World {
             let Missing::Present(zone) = geo.zone_of(t.site(slot)) else {
                 violation!(clause = "GDS.2", "a party sited where no zone is", party = t.party(slot).get());
             };
-            return Some(Row { party: t.party(slot), zone, twins: 1 });
+            return Some(Row { party: t.party(slot), zone });
         }
         let first = self.books.parties.first_cell_place();
         let k = usize::from(rows.place.checked_sub(first)?);
@@ -454,7 +431,7 @@ impl World {
         let Some(Missing::Present(zone)) = zone else {
             violation!(clause = "REP.24", "an agent in a region with no zone", region = region);
         };
-        Some(Row { party: t.party(slot), zone, twins: i64::from(t.multiplicity(slot).get()) })
+        Some(Row { party: t.party(slot), zone })
     }
 
     /// A good's instrument, issued the first time something names it: a real asset in its product's unit, priced in
@@ -492,7 +469,7 @@ impl World {
     }
 
     /// A transformation a handler asked for its row, applied by the one apply routine: its legs at the row's zone, or
-    /// at the deposit's for units taken from one, each a twin's times the row's twins. Units taken from a deposit need
+    /// at the deposit's for units taken from one. Units taken from a deposit need
     /// the right to it and a product the deposit gives, and deplete it by GEO's own write. A row no longer live asks
     /// nothing; one whose units fall short fails, counted.
     #[clause("SET.9", "GDS.2", "GDS.4", "GDS.12", "GEO.9", "GEO.12")]
@@ -508,7 +485,7 @@ impl World {
                 Source::Deposit(d) => {
                     let (zone, depleted) = self.extraction(row, d, leg.product, leg.qty);
                     if let Missing::Present(r) = depleted {
-                        taken.push((r, times(leg.qty, row.twins)));
+                        taken.push((r, leg.qty));
                     }
                     zone
                 }
@@ -519,9 +496,9 @@ impl World {
             legs.push(LegRec {
                 party: row.party,
                 account: AccountRef::Instrument(good),
-                qty: times(leg.qty, row.twins),
+                qty: leg.qty,
                 denom: Denom::Unit(unit),
-                kind: LegKind::Transformation { source: leg.source, cost: times(leg.cost, row.twins) },
+                kind: LegKind::Transformation { source: leg.source, cost: leg.cost },
             });
             if let Source::Way(w) = leg.source {
                 for (product, took) in self.way_inputs(w, leg.product, leg.qty) {
@@ -530,7 +507,7 @@ impl World {
                     legs.push(LegRec {
                         party: row.party,
                         account: AccountRef::Instrument(good),
-                        qty: -times(took, row.twins),
+                        qty: -took,
                         denom: Denom::Unit(unit),
                         kind: LegKind::Transformation { source: leg.source, cost: 0 },
                     });
@@ -567,7 +544,7 @@ impl World {
         }
     }
 
-    /// What a way takes of each input that can be held to finish units of its product, a twin's: its register's
+    /// What a way takes of each input that can be held to finish units of its product: its register's
     /// statement for what is started, rounded as the technology declares. A way that makes another product than the
     /// leg's is a contract broken.
     #[clause("TEC.9", "GDS.2")]
@@ -611,7 +588,7 @@ impl World {
         }
     }
 
-    /// A making of `each` units a twin over `days` counted when its maker's plant allows fewer over them.
+    /// A making of `each` units over `days` counted when its maker's plant allows fewer over them.
     #[clause("CAP.9")]
     pub(crate) fn within_capacity(&mut self, maker: PartyId, each: i64, days: u32) {
         let name = <if_firm::facts::Capacity as phx_core::FactDef>::ITEM.name;
@@ -645,8 +622,7 @@ impl World {
     }
 
     /// The most units of its product a party can make by a way at a zone from what it holds of the way's inputs that
-    /// can be held: the least over them, each the most finished whose take of it the holding covers, each twin of
-    /// an agent from its own share.
+    /// can be held: the least over them, each the most finished whose take of it the holding covers.
     #[clause("TEC.9")]
     pub(crate) fn way_most(&self, way: u32, party: PartyId, zone: ZoneId) -> Missing<i64> {
         let tech =
@@ -656,7 +632,6 @@ impl World {
         };
         let (place, slot) = self.books.parties.row(party);
         let arenas = self.books.parties.holder(place);
-        let twins = i64::from(self.books.parties.unit(party));
         let mut most: Missing<i64> = Missing::Absent;
         for (p, per) in
             w.inputs.iter().filter(|(p, _)| sys_tec::products::get(&t.products, *p).is_some_and(|d| d.storable))
@@ -668,7 +643,7 @@ impl World {
                     Missing::Absent => 0,
                 },
                 Missing::Absent => 0,
-            } / twins;
+            };
             let takes =
                 |f: i64| sys_tec::ways::takes(sys_tec::ways::started_for(w, phx_num::QtyRaw::from_raw(f)), *per).raw();
             // A take rounds up, so the most the holding covers is found by halving below a bound it cannot pass.
@@ -682,7 +657,7 @@ impl World {
                 let mid = low + (high - low) / 2 + (high - low) % 2;
                 if takes(mid) <= held { low = mid } else { high = mid - 1 }
             }
-            let f = low * twins;
+            let f = low;
             most = Missing::Present(match most {
                 Missing::Present(m) if m < f => m,
                 _ => f,
@@ -702,9 +677,6 @@ impl World {
         if qty <= 0 || gives != Some(Missing::Present(product)) {
             violation!(clause = "GDS.12", "a deposit giving other than its resource", deposit = deposit);
         }
-        if row.twins != 1 {
-            violation!(clause = "GDS.3", "a deposit's right held by an agent, which has no whole unit for each twin");
-        }
         let Missing::Present(right) = self.books.ledger.goods.right(deposit) else {
             violation!(clause = "GDS.3", "units taken from a deposit no right is over", deposit = deposit);
         };
@@ -720,8 +692,8 @@ impl World {
     }
 
     /// An order a handler asked for its row, admitted into the day's book: in its kind's instance over the good at
-    /// the row's zone, its steps a twin's times the row's twins, traded in lots of the product's least quantity for
-    /// each twin; an offer covered by the row's free units of the good. One refused is counted and never meets.
+    /// the row's zone, traded in lots of the product's least quantity; an offer covered by the row's free units of the
+    /// good. One refused is counted and never meets.
     #[clause("MKT.16", "MKT.17", "GDS.7", "REP.9")]
     pub(crate) fn admit_order(&mut self, day: Day, step: SubStep, rows: Rows, o: &OrderIntent) {
         if step.ordinal() > SubStep::S5d.ordinal() {
@@ -743,11 +715,11 @@ impl World {
             day,
             reason: decl.key.kind,
             priority: Missing::Absent,
-            lot: times(traded.base, row.twins),
+            lot: traded.base,
         };
         let tick = decl.tick;
         let asked: Vec<Asked> =
-            o.steps.iter().map(|s| Asked { limit: Missing::Present(s.limit), qty: times(s.qty, row.twins) }).collect();
+            o.steps.iter().map(|s| Asked { limit: Missing::Present(s.limit), qty: s.qty }).collect();
         let order = match o.side {
             Side::Buy => Order::new(poster, &asked, tick).ok(),
             Side::Sell => self.covered_offer(poster, &asked, tick, key),
@@ -863,9 +835,7 @@ impl World {
     #[clause("SET.1", "SET.2", "SET.4", "REG.10")]
     pub(crate) fn markets_trade(&mut self, day: Day) {
         for (market, good, m) in std::mem::take(&mut self.market_day.matches) {
-            let Buyer::Party(buyer) = m.buyer else {
-                violation!(clause = "GDS.7", "goods between firms bought by a group", market = market.get());
-            };
+            let buyer = m.buyer;
             let Missing::Present(key) = self.books.ledger.goods.key(good) else {
                 violation!(clause = "GDS.1", "a market over no good", market = market.get());
             };
@@ -873,7 +843,7 @@ impl World {
             if m.qty % base != 0 {
                 violation!(clause = "REP.9", "a match of less than whole lots", market = market.get());
             }
-            let amount = self.trade_amount((buyer, m.seller), m.qty, (m.price.raw(), base));
+            let amount = Self::trade_amount(m.qty, (m.price.raw(), base));
             let ccy = self.books.ledger.instruments.get(good).ccy;
             let (place, slot) = self.books.parties.row(m.seller);
             let held = match phx_ledger::holding::holding(self.books.parties.holder(place), slot, good) {
@@ -1204,7 +1174,7 @@ impl World {
             let mut goods_cost = 0_i128;
             let (held, plant, rights) = (out.held.len(), out.plant.len(), out.rights.len());
             for (instrument, quantity, cost) in phx_ledger::holding::held(arenas, at) {
-                let units = quantity / row.twins;
+                let units = quantity;
                 if let Missing::Present(key) = ledger.goods.key(instrument) {
                     goods_cost += i128::from(cost);
                     if key.zone == row.zone {
@@ -1228,16 +1198,13 @@ impl World {
             goods.rights = (rights, out.rights.len());
             if let Missing::Present(country) = self.geo().zone_country(row.zone) {
                 let ccy = phx_ledger::opening::currency(country);
-                goods.money = match self.books.money_held(row.party, ccy) {
-                    Missing::Present(m) => Missing::Present(m / row.twins),
-                    Missing::Absent => Missing::Absent,
-                };
+                goods.money = self.books.money_held(row.party, ccy);
             }
-            goods.net_assets = self.book_worth(place, at, (goods_cost, row.twins));
+            goods.net_assets = self.book_worth(place, at, goods_cost);
             let delivered = out.delivered.len();
             for (good, q) in ledger.goods.delivered(row.party) {
                 if let Missing::Present(key) = ledger.goods.key(good) {
-                    out.delivered.push((key.product, key.grade, q / row.twins));
+                    out.delivered.push((key.product, key.grade, q));
                 }
             }
             goods.delivered = (delivered, out.delivered.len());
@@ -1246,10 +1213,10 @@ impl World {
         out
     }
 
-    /// What winding a row down would return beyond the money it keeps either way, one twin's: the goods it holds at
+    /// What winding a row down would return beyond the money it keeps either way: the goods it holds at
     /// their cost, as the row's holdings were read, less what it owes, a liability's balance being negative; its plant
     /// returns nothing, since no market buys used plant yet. None where a debt carries no balance to read.
-    fn book_worth(&self, place: u16, slot: Slot, (goods_cost, twins): (i128, i64)) -> Missing<i64> {
+    fn book_worth(&self, place: u16, slot: Slot, goods_cost: i128) -> Missing<i64> {
         let arenas = self.books.parties.holder(place);
         let mut total = goods_cost;
         for r in phx_ledger::rows::iter(arenas, slot) {
@@ -1259,7 +1226,7 @@ impl World {
             let Missing::Present(balance) = r.optional.balance else { return Missing::Absent };
             total += i128::from(balance);
         }
-        i64::try_from(total / i128::from(twins)).map_or(Missing::Absent, Missing::Present)
+        i64::try_from(total).map_or(Missing::Absent, Missing::Present)
     }
 
     /// A deposit as its right's holder sees it.

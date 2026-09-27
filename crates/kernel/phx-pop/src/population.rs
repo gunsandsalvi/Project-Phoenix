@@ -24,8 +24,8 @@ pub struct PopKind {
 }
 
 /// Every population kind, in the order their tables follow the kind tables; the representation in force; each kind's
-/// real parties and persons as the events that began and ended them count them, which its agents' multiplicities are
-/// held to; and the agenda of the agents the processes act on, one table for each kind that has any.
+/// parties and persons as the events that began and ended them count them, which its agents are held to; and the
+/// agenda of the agents the processes act on, one table for each kind that has any.
 #[derive(Debug)]
 pub struct Population {
     pub kinds: Vec<PopKind>,

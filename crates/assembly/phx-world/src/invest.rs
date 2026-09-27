@@ -24,7 +24,7 @@ const BOUGHT: &str = "CAP bought";
 const COMPLETED: &str = "CAP completed";
 
 /// An owner's order for plant admitted for the day: the owner, where it stands, the chain it adds to, the product
-/// the kind is bought as, the units over all its twins and the units a stage delivers.
+/// the kind is bought as, the units and the units a stage delivers.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Invest {
     pub party: PartyId,
@@ -43,7 +43,7 @@ fn whole_up(x: i64, each: i64) -> Option<i64> {
 
 impl World {
     /// An owner's order for plant admitted: units of a kind it can hold in its country's chain, in whole lots of the
-    /// product for every twin, built in the stages its lead time gives. One of no units or no stages is refused and
+    /// product, built in the stages its lead time gives. One of no units or no stages is refused and
     /// counted.
     #[clause("CAP.5", "REP.9")]
     pub(crate) fn admit_invest(&mut self, step: SubStep, rows: Rows, s: &InvestIntent) {
@@ -67,14 +67,8 @@ impl World {
             violation!(clause = "CAP.1", "plant ordered of a kind its country keeps no chain of", kind = s.kind);
         };
         let lot = self.goods_frame.base(s.product);
-        let Some(each) = lot.checked_mul(row.twins) else {
-            capacity_exceeded!("a lot for every twin", i64::MAX, lot);
-        };
         let per_stage = s.units / i64::from(s.stages) + i64::from(s.units % i64::from(s.stages) != 0);
-        let (Some(units), Some(stage)) = (
-            s.units.checked_mul(row.twins).and_then(|u| whole_up(u, each)),
-            per_stage.checked_mul(row.twins).and_then(|u| whole_up(u, each)),
-        ) else {
+        let (Some(units), Some(stage)) = (whole_up(s.units, lot), whole_up(per_stage, lot)) else {
             capacity_exceeded!("plant ordered", i64::MAX, s.units);
         };
         self.market_day.investments.push(Invest {

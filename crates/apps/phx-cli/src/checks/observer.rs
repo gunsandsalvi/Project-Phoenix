@@ -35,9 +35,6 @@ fn player_seated(w: Inspector<'_>) -> Outcome {
     if table.id() != row.table {
         return Outcome::Fail("the player's party is not a household".to_owned());
     }
-    if table.multiplicity(row.slot).get() != 1 {
-        return Outcome::Fail("the player's household stands for more than one".to_owned());
-    }
     let Missing::Present(sited) = kd.decl.sited_by else {
         return Outcome::Fail("households are sited by no region".to_owned());
     };

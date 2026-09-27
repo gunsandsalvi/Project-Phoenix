@@ -25,7 +25,7 @@ pub struct SideDecl {
     /// Whether a holder holds at most one row of the kind on this side, as a person holds one job.
     pub exclusive: bool,
     /// Whether a holder's row counts a member for each of its counterparts, as an employer a job for each employee,
-    /// so a twin holds any number; otherwise each twin holds one, or one for each of its persons in `holder_roles`.
+    /// so it holds any number; otherwise it holds one, or one for each of its persons in `holder_roles`.
     pub many: bool,
 }
 

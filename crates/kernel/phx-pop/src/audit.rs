@@ -1,5 +1,5 @@
-//! The agents family: every agent's rows count its multiplicity times its twin's contracts, hold whole multiples of
-//! it, and name persons it holds; every population's multiplicities sum to it.
+//! The agents family: every household's rows count the contracts its persons hold and name persons it holds; every
+//! population's agents and persons are those its events counted.
 
 use phx_core::{
     AgentsAudit, AuditFamily, FamilyCtx, FamilyDecl, Finding, FindingOwner, Findings, Gap, InjectTarget, Unit,
@@ -9,36 +9,31 @@ use phx_id::{LineId, Slot};
 use phx_ledger::algebra::Side;
 use phx_ledger::rows;
 use phx_macros::clause;
-use phx_num::Missing;
 use phx_store::Backing;
 
-use crate::explicit::per_twin;
+use crate::explicit::contracts;
 use crate::person::{Attachment, Holder};
 use crate::population::Population;
 use crate::table::AgentTable;
 
 declare_family! { pub AGENTS = "REP.agents" { mode: Rolling { cycle_days: 30 }, clause: "REP.14" } }
 
-/// One agent against its multiplicity: at least one twin; each row counting its multiplicity times the contracts its
-/// attachments name there — a whole multiple of it for an agent of no persons — and its balance a whole multiple of it;
-/// every attachment naming a person it holds; and no person holding two contracts on one side of a line, so a line's
-/// contracts its persons hold never outnumber them.
-#[clause("REP.14", "REP.17", "REP.31", "PTY.11")]
+/// One agent against its contracts: each row of an agent that holds persons counting the contracts its attachments
+/// name there; every attachment naming a person it holds; and no person holding two contracts on one side of a line,
+/// so a line's contracts its persons hold never outnumber them.
+#[clause("REP.14", "REP.31", "PTY.11")]
 #[must_use]
 pub fn agent<B: Backing>(table: &AgentTable<B>, slot: Slot) -> Vec<Gap> {
     let owner = FindingOwner::Party(table.party(slot));
     let party = table.party(slot).get();
-    let k = table.multiplicity(slot).get();
     let mut gaps = Vec::new();
     let gap = |size: i128, detail: String| Gap { owner, size, unit: Unit::Count, detail };
-    if k == 0 {
-        gaps.push(gap(1, format!("agent {party}: no twins")));
+    let persons = table.persons(slot).len();
+    // An agent that holds no persons, a small firm, names no contracts, so its rows' counts are its own.
+    if persons == 0 {
         return gaps;
     }
-    let contracts = per_twin(table, slot);
-    let persons = table.persons(slot).len();
-    // An agent that holds no persons, a small firm, names no contracts: each of its rows is its twins' alike.
-    let attached = persons > 0;
+    let contracts = contracts(table, slot);
     let mut held: Vec<(usize, LineId, Side)> = Vec::new();
     for w in table.attachments(slot) {
         let a = Attachment::unpack(*w);
@@ -57,30 +52,15 @@ pub fn agent<B: Backing>(table: &AgentTable<B>, slot: Slot) -> Vec<Gap> {
             gaps.push(gap(1, format!("agent {party}: person {} holds two contracts on line {}", a.0, a.1.get())));
         }
     }
-    let k = i128::from(k);
     for r in rows::iter(table, slot) {
         let at = (r.row.line, r.side());
         let count = i128::from(r.row.count);
-        let expected = if attached {
-            k * i128::from(contracts.iter().find(|(x, _)| *x == at).map_or(0, |(_, n)| *n))
-        } else {
-            count - count % k
-        };
+        let expected = i128::from(contracts.iter().find(|(x, _)| *x == at).map_or(0, |(_, n)| *n));
         if count != expected {
             gaps.push(gap(
                 count - expected,
-                format!("agent {party}: line {} counts {count} where {k} twins hold {expected}", r.row.line.get()),
+                format!("agent {party}: line {} counts {count} where its persons hold {expected}", r.row.line.get()),
             ));
-        }
-        if let Missing::Present(b) = r.optional.balance
-            && i128::from(b) % k != 0
-        {
-            gaps.push(Gap {
-                owner,
-                size: i128::from(b) % k,
-                unit: Unit::Count,
-                detail: format!("agent {party}: line {} holds {b}, not a whole share for {k} twins", r.row.line.get()),
-            });
         }
     }
     gaps
@@ -130,16 +110,16 @@ impl<B: Backing> AgentsAudit for AgentsView<'_, B> {
         Vec::new()
     }
 
-    /// Each kind's multiplicities against its parties counted by event, and its persons times their agents'
-    /// multiplicities against its persons counted by event, both as the table keeps them, so no day visits each agent;
-    /// the rolling slice holds each agent to what it holds.
+    /// Each kind's agents against its parties counted by event, and its agents' persons against its persons counted
+    /// by event, both as the table keeps them, so no day visits each agent; the rolling slice holds each agent to what
+    /// it holds.
     #[clause("REP.13")]
     fn populations(&self) -> Vec<Gap> {
         let mut gaps = Vec::new();
         for ((t, (kind, counted)), persons_counted) in
             self.tables.iter().zip(&self.population.members).zip(&self.population.persons)
         {
-            let (held, persons) = (i128::from(t.twins()), i128::from(t.persons_held()));
+            let (held, persons) = (i128::from(t.agents()), i128::from(t.persons_held()));
             let checks = [("parties", held, *counted), ("persons", persons, *persons_counted)];
             for (what, have, want) in checks {
                 if have != i128::from(want) {
@@ -156,7 +136,7 @@ impl<B: Backing> AgentsAudit for AgentsView<'_, B> {
     }
 }
 
-/// Every agent against its multiplicity, a slice of the agents a day; every day, each population's agents against it.
+/// Every agent against its contracts, a slice of the agents a day; every day, each population's agents against it.
 #[derive(Debug)]
 pub struct Agents;
 
@@ -182,7 +162,7 @@ impl AuditFamily for Agents {
         phx_rand::float::len_u64(span.end - span.start)
     }
 
-    /// An agent's attachment dropped with its row as it was: the row counts its twins' contract once too often.
+    /// An agent's attachment dropped with its row as it was: the row counts one contract too many.
     fn inject(&self, target: &mut dyn InjectTarget) -> Result<(), String> {
         let Some(tables) = target.agents().downcast_mut::<Vec<Box<dyn phx_ledger::holder::CellHolders>>>() else {
             return Err("the save's agents are not the population's tables".to_owned());

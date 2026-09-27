@@ -13,7 +13,6 @@ use serde::Deserialize;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AgentCount {
     Persons,
-    Parties,
     Agents,
     Gone,
     Ended,
@@ -82,8 +81,7 @@ pub struct ReadDecl {
     pub fact: Option<String>,
 }
 
-/// One declared histogram over a population kind's real parties, over fixed lower edges, each agent counted once for
-/// every twin: of their persons (`of = "persons"`), or of an attribute's values (`of = "attr.<attribute>"`). Each is
+/// One declared histogram over a population kind's agents, over fixed lower edges: of their persons (`of = "persons"`), or of an attribute's values (`of = "attr.<attribute>"`). Each is
 /// an opening distribution whose distance from the world's own is read.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -126,7 +124,6 @@ pub fn measure(name: &str, event_kinds: &[&str]) -> Result<Measure, String> {
     use SettlementCount as S;
     let m = match name {
         "agents.persons" => Measure::Agents(A::Persons),
-        "agents.parties" => Measure::Agents(A::Parties),
         "agents.agents" => Measure::Agents(A::Agents),
         "agents.gone" => Measure::Agents(A::Gone),
         "agents.ended" => Measure::Agents(A::Ended),
@@ -247,7 +244,6 @@ impl Recorder {
 fn agent_count(d: &phx_world::agents::AgentDay, c: AgentCount) -> i128 {
     let n = match c {
         AgentCount::Persons => d.persons,
-        AgentCount::Parties => d.parties,
         AgentCount::Agents => d.agents,
         AgentCount::Gone => d.gone,
         AgentCount::Ended => d.ended,

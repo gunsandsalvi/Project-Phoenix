@@ -8,7 +8,7 @@ use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
 use phx_core::register::values::Table1;
 use phx_core::{
     Contribution, DECLARATIONS, FactDef, Opening, OpeningCountry, OpeningPhase, PHYSICAL_STOCK, Prim, Register,
-    StreamDef, apportion_in_units, opening_subject,
+    StreamDef, apportion, opening_subject,
 };
 use phx_id::{InstrumentId, PartyId};
 use phx_ledger::algebra::Terms;
@@ -26,11 +26,9 @@ use crate::consts::{PERCENT, WEIGHT_PARTS};
 use crate::kinds::{Kinds, Prims};
 use crate::{OpeningStream, rules};
 
-/// The large firms and their employees, the small firms' agents with the persons their twins employ, and each
-/// agent's twins, as the firms' opening draws them.
+/// The large firms and the small firms' agents with the persons each employs, as the firms' opening draws them.
 const FIRMS: &str = "FRM.firms";
 const SMALL_FIRMS: &str = "FRM.small_firms";
-const SMALL_COUNTS: &str = "FRM.small_counts";
 const SMALL_FIRM: &str = "small_firm";
 /// Each large firm with the structures it holds at the opening, whose owners stand in for the landlords.
 pub const STRUCTURES_HELD: &str = "CAP.structures";
@@ -121,11 +119,10 @@ pub struct Plant {
     pub stock: Prim<Table1>,
 }
 
-/// A firm at the opening: its party, the persons it employs over all its twins, its twins and its industry.
+/// A firm at the opening: its party, the persons it employs and its industry.
 struct Firm {
     party: PartyId,
     heads: u64,
-    twins: u64,
     industry: usize,
     large: bool,
 }
@@ -145,7 +142,7 @@ impl Contribution for Plant {
         PHYSICAL_STOCK
     }
     fn reads(&self) -> &'static [&'static str] {
-        &[FIRMS, SMALL_FIRMS, SMALL_COUNTS]
+        &[FIRMS, SMALL_FIRMS]
     }
     fn writes(&self) -> &'static [&'static str] {
         &[STRUCTURES_HELD, "CAP.plant_held"]
@@ -224,29 +221,20 @@ impl Plant {
             if total == 0 || weights.iter().all(|w| *w == 0) {
                 continue;
             }
-            let twins: Vec<u64> = firms.iter().map(|f| f.twins).collect();
-            let parts = apportion_in_units(total, &weights, &twins, &mut lot);
+            let parts = apportion(total, &weights, &mut lot);
             let values = kind.values(kinds.classes);
             let steady = rules::wear::steady_weights(kinds.classes, kind.life, growth);
             let (Some(chain), Some(unit)) = (classes.get(k), units.get(k)) else { continue };
             for ((f, part), firm_legs) in firms.iter().zip(&parts).zip(legs.iter_mut()) {
-                let per_twin = part / f.twins;
-                if per_twin == 0 {
+                if *part == 0 {
                     continue;
                 }
                 if k == 0 && f.large {
-                    structures.push((f.party, per_twin));
+                    structures.push((f.party, *part));
                 }
-                let spread = rules::wear::steady_units(from_u64(per_twin), &steady, &values);
-                let twins = i64::try_from(f.twins).unwrap_or_else(|_| {
-                    violation!(clause = "REP.9", "a firm's twins beyond counting", firm = f.party.get())
-                });
+                let spread = rules::wear::steady_units(from_u64(*part), &steady, &values);
                 for ((q, v), instrument) in spread.iter().zip(&values).zip(chain) {
-                    // Each twin holds its own share, whole, so the agent's position is a whole multiple of its twins.
-                    let (Some(units_held), Some(cost)) = (
-                        floor_to_i64(*q).and_then(|u| u.checked_mul(twins)),
-                        floor_to_i64(q * v).and_then(|c| c.checked_mul(twins)),
-                    ) else {
+                    let (Some(units_held), Some(cost)) = (floor_to_i64(*q), floor_to_i64(q * v)) else {
                         violation!(clause = "GEN.5", "a firm's plant beyond counting", firm = f.party.get());
                     };
                     if units_held > 0 {
@@ -304,7 +292,7 @@ fn issue_chains(
     classes
 }
 
-/// Every firm of the country: the large firms, one twin each, and the small firms' agents.
+/// Every firm of the country: the large firms and the small firms' agents.
 fn firms(opening: &mut Opening<'_>, c: &OpeningCountry) -> Vec<Firm> {
     let Opening { books, population, .. } = opening;
     let (Some(books), Some(population)) = (books.downcast_mut::<Books>(), population.downcast_mut::<Population>())
@@ -321,7 +309,7 @@ fn firms(opening: &mut Opening<'_>, c: &OpeningCountry) -> Vec<Firm> {
         let Missing::Present(i) = books.parties.fact(party, industry) else {
             violation!(clause = "TEC.4", "a firm with no industry", firm = party.get());
         };
-        out.push(Firm { party, heads, twins: 1, industry: industry_of(i), large: true });
+        out.push(Firm { party, heads, industry: industry_of(i), large: true });
     }
     let Some(at) = population.kinds.iter().position(|k| k.decl.kind == SMALL_FIRM) else {
         violation!(clause = "FRM.23", "a world that keeps no small firm kind");
@@ -329,19 +317,15 @@ fn firms(opening: &mut Opening<'_>, c: &OpeningCountry) -> Vec<Firm> {
     let Some(industry_at) = population.kinds.get(at).and_then(|kd| kd.decl.attr(if_firm::known::INDUSTRY.name)) else {
         violation!(clause = "REP.41", "a small firm kind without its industry");
     };
-    let counts = drawn(books, SMALL_COUNTS, c);
     let first = books.parties.first_cell_place();
-    for ((party, heads), (counted, twins)) in drawn(books, SMALL_FIRMS, c).into_iter().zip(counts) {
-        if party != counted {
-            violation!(clause = "GEN.3", "small firms' draws in different orders", firm = party.get());
-        }
+    for (party, heads) in drawn(books, SMALL_FIRMS, c) {
         let (place, slot) = books.parties.row(party);
         let Some(table) = place.checked_sub(first).map(usize::from) else {
             violation!(clause = "FRM.23", "a small firm that is no agent", firm = party.get());
         };
         let agents = Population::table::<SystemBacking>(books.parties.cells(), table);
         let industry = industry_of(i64::from(agents.attr(slot, industry_at)));
-        out.push(Firm { party, heads, twins, industry, large: false });
+        out.push(Firm { party, heads, industry, large: false });
     }
     out
 }

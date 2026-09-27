@@ -24,7 +24,6 @@ declare_stream! { pub TasteStream = "LAB.match_taste" { purpose: Meeting, keyed:
 declare_stream! { pub MeetingStream = "LAB.meeting" { purpose: Meeting, keyed: false, clause: "LAB.8" } }
 declare_stream! { pub LotStream = "LAB.select_lot" { purpose: Meeting, keyed: false, clause: "LAB.7" } }
 declare_stream! { pub LayoffStream = "LAB.layoff" { purpose: Meeting, keyed: false, clause: "REP.23" } }
-declare_stream! { pub VacancyStream = "LAB.vacancy_lot" { purpose: Lot, keyed: false, clause: "REP.23" } }
 declare_stream! { pub RetirementStream = "LAB.retirement" { purpose: Birthday, keyed: false, clause: "LAB.6" } }
 declare_stream! { pub ReviewStream = "LAB.review_phase" { purpose: SchedulePhase, keyed: false, clause: "LAB.17" } }
 
@@ -251,7 +250,6 @@ pub const LABOUR: LabourKind = LabourKind {
     meeting_stream: MeetingStream::DECL.name,
     lot_stream: LotStream::DECL.name,
     layoff_stream: LayoffStream::DECL.name,
-    vacancy_stream: VacancyStream::DECL.name,
     review_stream: ReviewStream::DECL.name,
     employer_visits: EMPLOYER_VISITS,
     retirement: RETIREMENT.name,
@@ -319,7 +317,6 @@ impl System for Lab {
             MeetingStream::DECL,
             LotStream::DECL,
             LayoffStream::DECL,
-            VacancyStream::DECL,
             RetirementStream::DECL,
             ReviewStream::DECL,
         ] {

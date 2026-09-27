@@ -1,5 +1,5 @@
+use phx_core::RunHead;
 use phx_core::schema::FactColumn;
-use phx_core::{RunHead, Weight};
 use phx_id::{Day, PartyId, Slot, TableId};
 use phx_macros::clause;
 use phx_num::consts::ABSENT_I64;
@@ -65,16 +65,15 @@ impl AgentRunHead {
     }
 }
 
-/// A new agent: its party, the day it began, its multiplicity and each of its kind's attributes in order.
+/// A new agent: its party, the day it began and each of its kind's attributes in order.
 #[derive(Clone, Copy, Debug)]
 pub struct NewAgent<'a> {
     pub party: PartyId,
     pub created: Day,
-    pub multiplicity: Weight,
     pub attrs: &'a [u32],
 }
 
-/// The table of one population kind: every agent's party, the day it began, its multiplicity, its attributes, its
+/// The table of one population kind: every agent's party, the day it began, its attributes, its
 /// facts, the due-day run head, and its lists in its chunk's arena.
 #[clause("REP.1", "REP.41", "REP.26")]
 #[derive(Debug, phx_macros::Saved)]
@@ -83,7 +82,6 @@ pub struct AgentTable<B: Backing = SystemBacking> {
     table: Table<B>,
     party: Column<u64, B>,
     created: Column<u32, B>,
-    multiplicity: Column<u32, B>,
     attrs: Vec<Column<u32, B>>,
     /// The kind's attributes by name, each the column of `attrs` at its place, which a handler reads as it reads a
     /// large firm's key facts.
@@ -94,10 +92,9 @@ pub struct AgentTable<B: Backing = SystemBacking> {
     lists: Vec<Column<CellListRef, B>>,
     runs: Column<AgentRunHead, B>,
     arenas: Vec<ChunkArena<B>>,
-    /// The agents live, the real parties they stand for and those parties' persons, kept as agents begin, change and
-    /// end, so no day need count them by visiting each.
+    /// The agents live and their persons, kept as agents begin, change and end, so no day need count them by visiting
+    /// each.
     agents: u64,
-    twins: u64,
     persons_held: u64,
     /// The day's agents added, removed or changed, whose hazards the world draws again.
     #[saved(skip)]
@@ -158,7 +155,6 @@ impl<B: Backing> AgentTable<B> {
             kind: kind.kind,
             party: table.column(space),
             created: table.column(space),
-            multiplicity: table.column(space),
             attrs: kind.attrs.iter().map(|_| table.column(space)).collect(),
             attr_names: kind.attrs.iter().map(|a| a.item.name).collect(),
             positions: kind.positions.iter().map(|p| p.item.name).collect(),
@@ -167,7 +163,6 @@ impl<B: Backing> AgentTable<B> {
             runs: table.column(space),
             arenas: Vec::new(),
             agents: 0,
-            twins: 0,
             persons_held: 0,
             changed: Vec::new(),
             reader: None,
@@ -203,7 +198,7 @@ impl<B: Backing> AgentTable<B> {
     #[must_use]
     pub fn bytes_per_row(&self) -> usize {
         size_of::<u64>()
-            + 2 * size_of::<u32>()
+            + size_of::<u32>()
             + size_of::<AgentRunHead>()
             + self.attrs.len() * size_of::<u32>()
             + self.facts.len() * size_of::<i64>()
@@ -212,9 +207,6 @@ impl<B: Backing> AgentTable<B> {
 
     /// A row for a new agent, with its attributes; its facts absent and its lists empty.
     pub fn add(&mut self, space: &mut AddressSpace, agent: NewAgent<'_>) -> Slot {
-        if agent.multiplicity == Weight::new(0) {
-            violation!(clause = "REP.17", "an agent of no twins", party = agent.party.get());
-        }
         if agent.attrs.len() != self.attrs.len() {
             violation!(
                 clause = "REP.41",
@@ -225,7 +217,6 @@ impl<B: Backing> AgentTable<B> {
         let slot = self.table.slots.alloc();
         put(&mut self.party, slot, agent.party.get());
         put(&mut self.created, slot, agent.created.get());
-        put(&mut self.multiplicity, slot, agent.multiplicity.get());
         for (column, v) in self.attrs.iter_mut().zip(agent.attrs) {
             put(column, slot, *v);
         }
@@ -243,7 +234,6 @@ impl<B: Backing> AgentTable<B> {
         // A reused slot's arena lists were cleared when its last agent ended.
         self.changed.push(slot);
         self.agents += 1;
-        self.twins += u64::from(agent.multiplicity.get());
         slot
     }
 
@@ -255,15 +245,14 @@ impl<B: Backing> AgentTable<B> {
                 violation!(clause = "PTY.10", "an agent removed with contracts still in its arena", slot = slot.get());
             }
         }
-        let (k, persons) = (u64::from(self.multiplicity(slot).get()), self.persons_of(slot));
+        let persons = self.persons_of(slot);
         for list in AgentList::ALL {
             self.edit_list(slot, list, ChunkArena::clear);
         }
         self.table.slots.release(slot);
         self.changed.push(slot);
         self.agents -= 1;
-        self.twins -= k;
-        self.persons_held -= k * persons;
+        self.persons_held -= persons;
     }
 
     /// The agents live in the table.
@@ -272,13 +261,7 @@ impl<B: Backing> AgentTable<B> {
         self.agents
     }
 
-    /// The real parties the table's agents stand for: their multiplicities summed.
-    #[must_use]
-    pub fn twins(&self) -> u64 {
-        self.twins
-    }
-
-    /// Those parties' persons: each agent's persons times its multiplicity, summed.
+    /// The agents' persons.
     #[must_use]
     pub fn persons_held(&self) -> u64 {
         self.persons_held
@@ -327,36 +310,6 @@ impl<B: Backing> AgentTable<B> {
         Day::new(read(&self.created, slot))
     }
 
-    /// The count of identical real parties the agent stands for.
-    #[clause("REP.1", "REP.17")]
-    pub fn multiplicity(&self, slot: Slot) -> Weight {
-        self.live(slot);
-        Weight::new(read(&self.multiplicity, slot))
-    }
-
-    /// One twin taken from an agent to stand alone, as the player's household is: its multiplicity one less, never
-    /// none.
-    #[clause("REP.1", "REP.17")]
-    pub fn take_twin(&mut self, slot: Slot) {
-        let k = self.multiplicity(slot).get();
-        let Some(left) = k.checked_sub(1).filter(|l| *l > 0) else {
-            violation!(clause = "REP.17", "a twin taken from an agent of one", slot = slot.get());
-        };
-        self.multiplicity.set(slot, left);
-        self.twins -= 1;
-        self.persons_held -= self.persons_of(slot);
-    }
-
-    /// Every position one agent holds written as another's, absent ones absent: a twin's, which its twins hold alike.
-    pub fn copy_facts(&mut self, from: Slot, to: Slot) {
-        self.live(from);
-        self.live(to);
-        for c in &mut self.facts {
-            let v = read(c, from);
-            c.set(to, v);
-        }
-    }
-
     /// An attribute's value, by its place among the kind's.
     #[must_use]
     pub fn attr(&self, slot: Slot, i: usize) -> u32 {
@@ -396,8 +349,7 @@ impl<B: Backing> AgentTable<B> {
         if self.words(slot, AgentList::Persons) == words {
             return;
         }
-        let k = u64::from(self.multiplicity(slot).get());
-        self.persons_held = self.persons_held - k * self.persons_of(slot) + k * phx_rand::float::len_u64(words.len());
+        self.persons_held = self.persons_held - self.persons_of(slot) + phx_rand::float::len_u64(words.len());
         self.edit_list(slot, AgentList::Persons, |arena, r| {
             arena.clear(r);
             arena.append(r, words);
@@ -646,10 +598,10 @@ pub fn begin<B: Backing>(
     table: &mut AgentTable<B>,
     directory: &mut phx_core::Directory,
     space: &mut AddressSpace,
-    (created, multiplicity, attrs): (Day, Weight, &[u32]),
+    (created, attrs): (Day, &[u32]),
 ) -> (Slot, PartyId) {
     let party = PartyId::new(directory.next());
-    let slot = table.add(space, NewAgent { party, created, multiplicity, attrs });
+    let slot = table.add(space, NewAgent { party, created, attrs });
     if directory.begin(phx_id::RowRef { table: table.id(), slot }) != party {
         violation!(clause = "PTY.9", "an agent begun under another identity than the directory's next");
     }

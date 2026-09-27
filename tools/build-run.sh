@@ -9,7 +9,7 @@ if [[ "${1:-}" == "--gate" ]]; then
     span=(--days 730)
     shift
 fi
-# Anything else is handed to the run, as `--representation small:K` to run the other representation.
+# Anything else is handed to the run, as `--persons N` to run a world of another size.
 extra=("$@")
 
 root="$(cd "$(dirname "$0")/.." && pwd)"

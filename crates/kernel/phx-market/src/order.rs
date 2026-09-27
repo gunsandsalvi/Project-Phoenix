@@ -46,8 +46,7 @@ pub enum Refusal {
 
 /// An order: its poster, market and side, its schedule of steps, when it meets on a book, the day it was posted and
 /// the decision point it came from, its place in a declared priority where the market rations by one, the lot it
-/// trades in — an agent's multiplicity, so each twin's share stays whole, one for an individual — and the units
-/// covering it when it offers units its poster holds.
+/// trades in, and the units covering it when it offers units its poster holds.
 #[clause("MKT.3", "MKT.9", "MKT.16", "MKT.17")]
 #[derive(Debug, PartialEq, Eq)]
 pub struct Order {

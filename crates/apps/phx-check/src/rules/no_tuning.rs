@@ -172,7 +172,9 @@ pub fn judge(before: &Dump, after: &Dump, message: &str, exists: &dyn Fn(&str) -
         .map(|(a, b)| (a.trim(), b.trim()))
         .collect();
     let finding = Regex::new(r"\bF-\d{3}\b").ok();
-    for t in changes.iter().chain(&fixes).chain(&resolutions) {
+    // A retired entry's citation only names what goes, so what its old source cited justifies nothing.
+    let remains = |t: &str| t.split_once(" — ").is_none_or(|(id, _)| after.keys().any(|(_, i)| i == id.trim()));
+    for t in changes.iter().chain(&fixes).chain(&resolutions).filter(|t| remains(t)) {
         if RESULTS.iter().any(|r| t.contains(r)) || finding.as_ref().is_some_and(|f| f.is_match(t)) {
             refusals.push(format!("a citation names a result, a finding or a measure: `{t}`"));
         }
@@ -289,5 +291,8 @@ mod tests {
         let decided = |p: &str| p == "plan §12, The factor";
         assert!(judge(&before, &after, "Resolution-Change: X.r — plan §12, The factor", &decided).is_empty());
         assert_eq!(judge(&before, &after, "Resolution-Change: X.r — plan §12, No such row", &decided).len(), 1);
+        let retiring = file(&[("X.a", "TECHNOLOGY", "1", "as F-012 showed")]);
+        let refused = judge(&retiring, &Dump::new(), "Primitive-Change: X.a — as F-012 showed", NONE);
+        assert!(refused.is_empty(), "a retirement cites the source it goes with: {refused:?}");
     }
 }

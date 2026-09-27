@@ -1,5 +1,5 @@
 //! The realised rates, measured live: over a fixed sample of agents, each process's expected hits a day — each person's
-//! chance, once for every twin — beside the hits it drew there, by the person's age, so a run's realised rate can be
+//! chance — beside the hits it drew there, by the person's age, so a run's realised rate can be
 //! held to the declared one within its sampling error.
 
 use std::collections::BTreeMap;
@@ -52,17 +52,10 @@ fn process_id(p: usize) -> u32 {
 }
 
 impl Rates {
-    /// A sampled agent's persons a process reached on a day, once for every twin.
-    pub fn realised(
-        &mut self,
-        (process, year): (usize, u32),
-        h: &Household,
-        reached: &[usize],
-        twins: u64,
-        date: Date,
-    ) {
+    /// A sampled agent's persons a process reached on a day.
+    pub fn realised(&mut self, (process, year): (usize, u32), h: &Household, reached: &[usize], date: Date) {
         for p in reached.iter().filter_map(|i| h.persons.get(*i)) {
-            self.0.entry((process_id(process), year, age_class(p, date))).or_default().realised += twins;
+            self.0.entry((process_id(process), year, age_class(p, date))).or_default().realised += 1;
         }
     }
 
@@ -102,14 +95,13 @@ impl World {
             let Some(kd) = kinds.get(k) else { phx_num::violation!(clause = "CHN.7", "a sampled agent of no kind") };
             let table = Population::table::<SystemBacking>(cells, k);
             let h = phx_pop::explicit::household(&kd.decl, table, slot);
-            let twins = u64::from(table.multiplicity(slot).get());
             let attr = |name: &str| h.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
             let view =
                 AgentView { kind: kd.decl.kind, party: table.party(slot), attr: &attr, country_of: &country_of, date };
             for (p, b) in self.processes.iter().enumerate().filter(|(_, b)| b.kind == k) {
                 for (_, person) in h.present() {
                     let rate = b.process.rate(&self.register, &view, person);
-                    rates.expect((p, year, age_class(person, date)), twins, rate);
+                    rates.expect((p, year, age_class(person, date)), 1, rate);
                 }
             }
         }

@@ -24,9 +24,9 @@ fn finding(w: Inspector<'_>, family: &str) -> Option<String> {
     w.findings().iter().find(|f| f.family == family).map(|f| format!("day {}: {}", f.day.get(), f.detail))
 }
 
-/// Every agent's row on each line counts its multiplicity times its attachments there, holds a whole share for each
-/// twin, and every person attachment names a present person, at the run's end; and the audit found none otherwise.
-fn rows_count_twins(w: Inspector<'_>) -> Outcome {
+/// Every agent's row on each line counts its attachments there, and every person attachment names a present person, at
+/// the run's end; and the audit found none otherwise.
+fn rows_count_contracts(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
     }
@@ -44,55 +44,18 @@ fn rows_count_twins(w: Inspector<'_>) -> Outcome {
     Outcome::Pass
 }
 
-/// Every agent's multiplicity is its kind's under the representation in force, but the seated twins, the player's
-/// and its counterparts', of one each, and their donors, of one twin fewer, as many as the seats.
-fn multiplicities_declared(w: Inspector<'_>) -> Outcome {
-    if !keeps_agents(w) {
-        return Outcome::NotYet(NO_AGENTS);
-    }
-    let k = w.population().representation.multiplicity;
-    let player = match w.player_queue().player() {
-        phx_num::Missing::Present(p) => p.party,
-        phx_num::Missing::Absent => return Outcome::Fail("no player was seated".to_owned()),
-    };
-    let (mut seats, mut donors, mut player_seated) = (0_u32, 0_u32, false);
-    for kind in 0..w.population().kinds.len() {
-        let table = w.agent_table(kind);
-        for slot in table.slots() {
-            let (party, m) = (table.party(slot), table.multiplicity(slot).get());
-            if m == k {
-                player_seated |= party == player;
-            } else if m == 1 {
-                seats += 1;
-                player_seated |= party == player;
-            } else if m + 1 == k {
-                donors += 1;
-            } else {
-                return Outcome::Fail(format!("agent {} of {m} twins under a factor of {k}", party.get()));
-            }
-        }
-    }
-    if !player_seated {
-        return Outcome::Fail("the player is no agent of one twin".to_owned());
-    }
-    if k > 1 && (seats == 0 || seats != donors) {
-        return Outcome::Fail(format!("{seats} seated twins and {donors} donors, where each seat has its donor"));
-    }
-    Outcome::Pass
-}
-
 pub const LC_0_37: Check = live_check! {
     id: "LC-0-37",
-    title: "Every agent's rows count its multiplicity times its attachments, which name its persons, one a line",
+    title: "Every agent's rows count its attachments, which name its persons, one a line",
     from_step: "S0.28",
-    check: rows_count_twins,
+    check: rows_count_contracts,
 };
 
 pub const LC_0_38: Check = live_check! {
     id: "LC-0-38",
     title: "Every agent's multiplicity is its kind's, but the seated twins of one and their donors of one fewer",
     from_step: "S0.28",
-    check: multiplicities_declared,
+    retired: "every agent is one party; there are no twins (decision 44)",
 };
 
 /// The tallies summed.
@@ -122,33 +85,21 @@ fn poisson_tail(lambda: f64, n: u64) -> f64 {
     if phx_rand::float::from_u64(n) >= lambda { 1.0 - below } else { below + pmf }
 }
 
-/// A tally within its sampling error, or why not. Under twins every hit counts once for each twin, so the tally's
-/// hits are its count over the factor; few expected hits are judged by the exact tail, many by the normal one.
-fn within(what: &str, t: &RateTally, twins: f64) -> Result<(), String> {
-    let hits = phx_rand::float::from_u64(t.realised) / twins;
-    let (lambda, variance) = (t.expected / twins, t.variance / twins);
+/// A tally within its sampling error, or why not: few expected hits are judged by the exact tail, many by the normal
+/// one.
+fn within(what: &str, t: &RateTally) -> Result<(), String> {
+    let hits = phx_rand::float::from_u64(t.realised);
+    let (lambda, variance) = (t.expected, t.variance);
     // A certain hit, or none, has no sampling error: it is exact.
     if variance <= 0.0 && (hits - lambda).abs() < HALF_A_HIT {
         return Ok(());
     }
     let off = (hits - lambda) / variance.sqrt();
-    let rounded = t.realised / twins_u64(twins);
-    let fine = if lambda < POISSON_BELOW { poisson_tail(lambda, rounded) >= TAIL } else { off.abs() <= RATE_SIGMAS };
+    let fine = if lambda < POISSON_BELOW { poisson_tail(lambda, t.realised) >= TAIL } else { off.abs() <= RATE_SIGMAS };
     if variance > 0.0 && fine {
         return Ok(());
     }
     Err(format!("{what}: {hits:.0} hits against {lambda:.2} expected ({off:.1} sigmas)"))
-}
-
-fn twins_u64(twins: f64) -> u64 {
-    let Some(k) = phx_rand::float::floor_to_u64(twins) else {
-        phx_num::violation!(clause = "REP.17", "a factor of twins beyond counting");
-    };
-    k
-}
-
-fn factor(w: Inspector<'_>) -> f64 {
-    f64::from(w.population().representation.multiplicity)
 }
 
 /// Every process's realised hits over the sampled agents within their sampling error of its declared rates, in total
@@ -159,17 +110,16 @@ fn realised_rates(w: Inspector<'_>) -> Outcome {
         return Outcome::NotYet(NO_AGENTS);
     }
     let rates = &w.rates().0;
-    let twins = factor(w);
     for (p, (hazard, _, _)) in (0_u32..).zip(&processes) {
         let t = total(rates.range((p, 0, 0)..=(p, u32::MAX, u32::MAX)).map(|(_, t)| t));
         if t.expected <= 0.0 {
             return Outcome::Fail(format!("{hazard} could hit nobody over the run"));
         }
-        if let Err(e) = within(hazard, &t, twins) {
+        if let Err(e) = within(hazard, &t) {
             return Outcome::Fail(e);
         }
         for ((_, year, age), t) in rates.range((p, 0, 0)..=(p, u32::MAX, u32::MAX)) {
-            if let Err(e) = within(&format!("{hazard} in {year} at age {age}"), t, twins) {
+            if let Err(e) = within(&format!("{hazard} in {year} at age {age}"), t) {
                 return Outcome::Fail(e);
             }
         }
@@ -248,8 +198,8 @@ pub const LC_0_42: Check = live_check! {
 };
 
 /// The agents family ran at every close and found nothing, nor did the contracts family, which holds every line's
-/// sides equal; and each kind's multiplicities sum to the parties the events that began and ended them count, its
-/// persons to the persons counted.
+/// sides equal; and each kind's agents are the parties the events that began and ended them count, their persons the
+/// persons counted.
 fn populations_whole(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
@@ -263,14 +213,11 @@ fn populations_whole(w: Inspector<'_>) -> Outcome {
     let pop = w.population();
     for (k, ((kind, parties), persons)) in pop.members.iter().zip(&pop.persons).enumerate() {
         let table = w.agent_table(k);
-        let twins: u64 = table.slots().map(|s| u64::from(table.multiplicity(s).get())).sum();
-        let held: u64 = table
-            .slots()
-            .map(|s| u64::from(table.multiplicity(s).get()) * phx_rand::float::len_u64(table.persons(s).len()))
-            .sum();
-        if twins != *parties || held != *persons {
+        let agents = phx_rand::float::len_u64(table.slots().count());
+        let held: u64 = table.slots().map(|s| phx_rand::float::len_u64(table.persons(s).len())).sum();
+        if agents != *parties || held != *persons {
             return Outcome::Fail(format!(
-                "the {kind}s stand for {twins} parties and {held} persons against {parties} and {persons} counted"
+                "the {kind}s are {agents} agents of {held} persons against {parties} and {persons} counted"
             ));
         }
     }
@@ -287,26 +234,20 @@ fn agents_hold_lines(w: Inspector<'_>) -> bool {
 
 const NO_LINES: &str = "no agent holds a line before the opening lines (S0.25d)";
 
-/// The representation's measures reported each day, one record a day from the first: the agents, the real parties
-/// they stand for, their persons, and the hits and bookings of the day.
+/// The representation's measures reported each day, one record a day from the first: the agents, their persons, and
+/// the hits and bookings of the day.
 fn measures_reported(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
     }
     let days = w.agent_days();
     let first = w.day_zero().succ();
-    let k = u64::from(w.population().representation.multiplicity);
     for (i, d) in (0_u32..).zip(days) {
         if d.day.get() != first.get() + i {
             return Outcome::Fail(format!("no record of the agents' day on day {}", first.get() + i));
         }
-        if d.agents == 0 || d.parties < d.agents || d.parties > d.agents * k {
-            return Outcome::Fail(format!(
-                "day {}: {} agents standing for {} parties at a factor of {k}",
-                d.day.get(),
-                d.agents,
-                d.parties
-            ));
+        if d.agents == 0 {
+            return Outcome::Fail(format!("day {}: no agent", d.day.get()));
         }
     }
     Outcome::Pass
@@ -314,7 +255,7 @@ fn measures_reported(w: Inspector<'_>) -> Outcome {
 
 pub const LC_0_43: Check = live_check! {
     id: "LC-0-43",
-    title: "Multiplicities sum to each population, persons to the persons counted, and lines' sides are equal",
+    title: "Agents are each population, their persons the persons counted, and lines' sides are equal",
     from_step: "S0.28",
     check: populations_whole,
 };
@@ -335,7 +276,7 @@ pub const LC_0_45: Check = live_check! {
 
 pub const LC_0_46: Check = live_check! {
     id: "LC-0-46",
-    title: "The representation's measures are reported per day: agents, parties, persons, hits and bookings",
+    title: "The representation's measures are reported per day: agents, persons, hits and bookings",
     from_step: "S0.28",
     check: measures_reported,
 };
@@ -347,13 +288,9 @@ pub const LC_0_47: Check = live_check! {
     retired: "there are no cells and no cell budget; the factor is the representation's one valve (S0.28)",
 };
 
-/// Every party within the individuals' rank an individual at the opening: no agent whose staff for each twin reach
-/// the least individual employer's; and every issuer of an instrument an individual.
+/// Every issuer of an instrument an individual at the opening.
 fn ranks_carried(w: Inspector<'_>) -> Outcome {
     let report = w.opening();
-    if report.over_edge > 0 {
-        return Outcome::Fail(format!("{} agents opened within the individuals' rank", report.over_edge));
-    }
     if report.agent_issuers > 0 {
         return Outcome::Fail(format!("{} agents issued an instrument at the opening", report.agent_issuers));
     }
@@ -362,42 +299,38 @@ fn ranks_carried(w: Inspector<'_>) -> Outcome {
 
 pub const LC_0_48: Check = live_check! {
     id: "LC-0-48",
-    title: "Every party within the individuals' rank is an individual, and no party with a public instrument is an agent",
+    title: "No party with a public instrument is an agent",
     from_step: "S0.24",
     check: ranks_carried,
 };
 
-/// The representation named every day beside its measures, and the last day's agents, the parties they stand for
-/// and those parties' persons the ones the agent tables hold at the run's end.
+/// The representation named every day beside its measures, and the last day's agents and their persons the ones the
+/// agent tables hold at the run's end.
 fn representation_named(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
     }
     let r = w.population().representation;
-    if r.multiplicity == 0 || r.population_divisor == 0 {
-        return Outcome::Fail(format!("the representation {} has a factor of nought", r.name()));
+    if r.persons == 0 {
+        return Outcome::Fail(format!("the representation of {} holds no one", r.name()));
     }
     if w.agent_days().iter().any(|d| d.persons == 0) {
         return Outcome::Fail("a day on which the agents held no person".to_owned());
     }
     let Some(last) = w.agent_days().last() else { return Outcome::NotYet("no day has run") };
-    let (mut agents, mut parties, mut persons) = (0_u64, 0_u64, 0_u64);
+    let (mut agents, mut persons) = (0_u64, 0_u64);
     for k in 0..w.population().kinds.len() {
         let table = w.agent_table(k);
         for s in table.slots() {
-            let m = u64::from(table.multiplicity(s).get());
             agents += 1;
-            parties += m;
-            persons += m * phx_rand::float::len_u64(table.persons(s).len());
+            persons += phx_rand::float::len_u64(table.persons(s).len());
         }
     }
-    if (last.agents, last.parties, last.persons) != (agents, parties, persons) {
+    if (last.agents, last.persons) != (agents, persons) {
         return Outcome::Fail(format!(
-            "day {} reported {} agents, {} parties and {} persons where the tables hold {agents}, {parties} and \
-             {persons}",
+            "day {} reported {} agents and {} persons where the tables hold {agents} and {persons}",
             last.day.get(),
             last.agents,
-            last.parties,
             last.persons
         ));
     }
@@ -406,7 +339,7 @@ fn representation_named(w: Inspector<'_>) -> Outcome {
 
 pub const LC_0_49: Check = live_check! {
     id: "LC-0-49",
-    title: "The representation and its factor are reported every day, with its agents, parties and persons",
+    title: "The representation and its factor are reported every day, with its agents and persons",
     from_step: "S0.28",
     check: representation_named,
 };
@@ -547,10 +480,9 @@ fn life_rates_by_class(w: Inspector<'_>) -> Outcome {
         let slot = by_class.entry((*p, *year, class(i64::from(*age)))).or_default();
         *slot = total([*slot, *t].iter());
     }
-    let twins = factor(w);
     for ((p, year, c), t) in &by_class {
         let hazard = lives.iter().find(|(q, _)| q == p).map_or("", |(_, h)| h);
-        if let Err(e) = within(&format!("{hazard} in {year} at age class {c}"), t, twins) {
+        if let Err(e) = within(&format!("{hazard} in {year} at age class {c}"), t) {
             return Outcome::Fail(e);
         }
     }
@@ -588,7 +520,7 @@ fn lines_pay(w: Inspector<'_>) -> Outcome {
             }
         }
     }
-    rows_count_twins(w)
+    rows_count_contracts(w)
 }
 
 /// The GEN report lists the counterparties each derived side was apportioned over, what each drew and what it was

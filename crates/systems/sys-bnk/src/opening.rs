@@ -31,7 +31,6 @@ const ACCOUNT: &str = "current account";
 /// The kind of the small firms' agents, and what they draw: their banks, their firms, their deposits and their debt.
 pub(crate) const SMALL_FIRM: &str = "small_firm";
 const SMALL_BANKS: &str = "FRM.small_banks";
-const SMALL_COUNTS: &str = "FRM.small_counts";
 pub(crate) const SMALL_DEPOSITS: &str = "FRM.small_deposits";
 const SMALL_DEBT: &str = "FRM.small_debt";
 
@@ -400,12 +399,11 @@ impl Small {
         (report, lot): (&mut phx_core::GenReport, &mut phx_rand::Draws),
     ) {
         let ccy = currency(c.id);
-        let (banked, counts) = (drawn(b, SMALL_BANKS, c.id), drawn(b, SMALL_COUNTS, c.id));
+        let banked = drawn(b, SMALL_BANKS, c.id);
         let (deposits, debts) = (drawn(b, SMALL_DEPOSITS, c.id), drawn(b, SMALL_DEBT, c.id));
         // Each agent's drawn amounts and firms found by its identity, as there are millions of agents.
         let (deposits, debts): (BTreeMap<PartyId, u64>, BTreeMap<PartyId, u64>) =
             (deposits.into_iter().collect(), debts.into_iter().collect());
-        let counts: BTreeMap<PartyId, u64> = counts.into_iter().collect();
         let amount = |list: &BTreeMap<PartyId, u64>, cell: PartyId| {
             let Some(&a) = list.get(&cell) else {
                 violation!(clause = "GEN.3", "a small firms' cell with no drawn amount", cell = cell.get());
@@ -421,18 +419,7 @@ impl Small {
         }
         for (bank, banked) in by_bank {
             let bank_party = PartyId::new(bank);
-            let cells: Vec<(PartyId, u32)> = banked
-                .iter()
-                .map(|cell| {
-                    let Some(&n) = counts.get(cell) else {
-                        violation!(clause = "GEN.3", "a small firms' cell with no drawn firms", cell = cell.get());
-                    };
-                    let Ok(n) = u32::try_from(n) else {
-                        phx_num::capacity_exceeded!("firms of a cell", u32::MAX, n);
-                    };
-                    (*cell, n)
-                })
-                .collect();
+            let cells: Vec<(PartyId, u32)> = banked.iter().map(|cell| (*cell, 1)).collect();
             let total: u64 = cells.iter().map(|(_, n)| u64::from(*n)).sum();
             let Ok(total) = u32::try_from(total) else {
                 phx_num::capacity_exceeded!("small firms of a bank", u32::MAX, total);
@@ -502,7 +489,7 @@ impl Contribution for Contracts {
         CONTRACTS
     }
     fn reads(&self) -> &'static [&'static str] {
-        &[BANKS, FIRMS, DEBT, SMALL_BANKS, SMALL_COUNTS, SMALL_DEPOSITS, SMALL_DEBT]
+        &[BANKS, FIRMS, DEBT, SMALL_BANKS, SMALL_DEPOSITS, SMALL_DEBT]
     }
     fn writes(&self) -> &'static [&'static str] {
         &[LENDERS]

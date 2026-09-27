@@ -26,7 +26,7 @@ pub struct WearDecl {
     pub clause: &'static str,
 }
 
-/// Whole units a twin's holding of a class loses to wear over `days`, half to even: the class's units times the share
+/// Whole units a holding of a class loses to wear over `days`, half to even: the class's units times the share
 /// that leaves over the days at the yearly rate, 1 − e^(−rate·t), each unit leaving at a constant hazard, so the
 /// share never passes the whole. `None` beyond an integer's reach.
 #[clause("CAP.6", "REP.24")]

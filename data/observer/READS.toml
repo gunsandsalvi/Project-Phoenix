@@ -10,12 +10,6 @@ unit = "persons"
 measure = "agents.persons"
 
 [[read]]
-id = "parties"
-title = "real households and small firms the population's agents stand for"
-unit = "parties"
-measure = "agents.parties"
-
-[[read]]
 id = "agents"
 title = "agents of every population kind"
 unit = "agents"

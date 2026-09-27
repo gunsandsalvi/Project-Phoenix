@@ -2,7 +2,7 @@
 //! table, their next hits drawn and their households made explicit and written back through the population's own
 //! kernels. Its numbers are costs, never the world's.
 
-use phx_core::{AttrDecl, Household, Person, PersonAttrDecl, PopEntry, PopItem, RoleDecl, Weight};
+use phx_core::{AttrDecl, Household, Person, PersonAttrDecl, PopEntry, PopItem, RoleDecl};
 use phx_id::{Date, Day, LineId, PartyId, Slot, TableId};
 use phx_ledger::algebra::Side;
 use phx_num::Missing;
@@ -68,7 +68,7 @@ pub(crate) struct Agents {
 
 /// `n` household agents of `persons` persons and `attachments` attachments each, each drawn from its own address of
 /// `stream`, as the world draws each party apart, so no count of agents exhausts one address.
-pub(crate) fn agents(n: u32, persons: u32, attachments: u32, twins: u32, stream: StreamKey) -> Agents {
+pub(crate) fn agents(n: u32, persons: u32, attachments: u32, stream: StreamKey) -> Agents {
     let decl = kind();
     let mut space = AddressSpace::empty();
     let mut table = AgentTable::<SystemBacking>::new(&mut space, &decl, TableId::new(0), n, ROWS_PER_CHUNK);
@@ -77,8 +77,7 @@ pub(crate) fn agents(n: u32, persons: u32, attachments: u32, twins: u32, stream:
         let party = PartyId::new(u64::from(i) + 1);
         let d = &mut Draws::new(stream, Subject::new(SubjectTag::Party, party.get()), 0, 0);
         let attrs = [draw(d, u64::from(REGIONS))];
-        let slot = table
-            .add(&mut space, NewAgent { party, created: Day::new(0), multiplicity: Weight::new(twins), attrs: &attrs });
+        let slot = table.add(&mut space, NewAgent { party, created: Day::new(0), attrs: &attrs });
         let words: Vec<u64> = (0..persons)
             .map(|p| {
                 let year = BORN_FROM + i32::try_from(below_u64(d, BORN_SPAN)).unwrap_or(0);

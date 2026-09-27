@@ -9,7 +9,7 @@ use phx_rand::Draws;
 use crate::failure::FailureKind;
 use crate::market::{Ration, TieRule};
 use crate::order::{Order, Side};
-use crate::print::{Buyer, Match};
+use crate::print::Match;
 use crate::simplex::at as entry;
 
 /// What a call reads besides its orders: the operator's tie sequence and rationing, and the market's last print.
@@ -212,8 +212,8 @@ fn common(a: i128, b: i128) -> i128 {
     a
 }
 
-/// The buyers' fills paired with the sellers' at the price, each pair a match in whole lots of both its parties, so
-/// an agent trades a whole share for each twin with each counterparty: the largest lots paired first, among parties
+/// The buyers' fills paired with the sellers' at the price, each pair a match in whole lots of both its parties: the
+/// largest lots paired first, among parties
 /// in their order; a party on both sides trades with itself for nothing, so only what it bought or sold beyond the
 /// other is matched. What no counterparty's lots can meet is cut from its fills, as many on each side, so the call
 /// still trades as much as it buys.
@@ -252,7 +252,7 @@ fn pair(orders: &[Order], fills: &mut [i128], price: PriceRaw) -> Vec<Match> {
             let Ok(qty) = i64::try_from(q) else {
                 capacity_exceeded!("a match's quantity", i64::MAX, 0);
             };
-            out.push(Match { buyer: Buyer::Party(buyer.0), seller: seller.0, qty, price, draws: Missing::Absent });
+            out.push(Match { buyer: buyer.0, seller: seller.0, qty, price, draws: Missing::Absent });
             buyer.1 -= q;
             seller.1 -= q;
             if buyer.1 == 0 {
@@ -289,7 +289,7 @@ pub(crate) fn pair_net(net: &BTreeMap<PartyId, i128>, price: PriceRaw) -> Vec<Ma
         let Ok(qty) = i64::try_from(q) else {
             capacity_exceeded!("a match's quantity", i64::MAX, 0);
         };
-        out.push(Match { buyer: Buyer::Party(buyer.0), seller: seller.0, qty, price, draws: Missing::Absent });
+        out.push(Match { buyer: buyer.0, seller: seller.0, qty, price, draws: Missing::Absent });
         buyer.1 -= q;
         seller.1 -= q;
         if buyer.1 == 0 {
@@ -304,7 +304,7 @@ pub(crate) fn pair_net(net: &BTreeMap<PartyId, i128>, price: PriceRaw) -> Vec<Ma
 
 /// Each order's fill in whole lots of its own, the two sides kept equal: a fill is first cut to its whole lots, then
 /// the side that gives more loses lots until it gives what the other takes, from the orders at the price before those
-/// better than it, the smallest lots first, the last posted first; so an agent trades whole shares for each twin.
+/// better than it, the smallest lots first, the last posted first.
 fn whole_lots(orders: &[Order], mut fills: Vec<i128>, price: i64) -> Vec<i128> {
     for (o, f) in orders.iter().zip(fills.iter_mut()) {
         *f -= *f % i128::from(o.lot);
@@ -461,7 +461,7 @@ mod tests {
         agent.lot = 3;
         let orders = vec![agent, order(2, Side::Sell, &[(9, 4)]), order(3, Side::Sell, &[(9, 2)])];
         let Outcome::Cleared(c) = call(&orders, rules(None), &mut draws()) else { panic!("the call clears") };
-        assert!(c.matches.iter().all(|m| m.qty % 3 == 0), "an agent of three twins trades threes: {:?}", c.matches);
+        assert!(c.matches.iter().all(|m| m.qty % 3 == 0), "an order of lots of three trades threes: {:?}", c.matches);
         assert_eq!(c.matches.iter().map(|m| m.qty).sum::<i64>(), c.volume, "the volume is what was matched");
         assert_eq!(c.volume, 3, "one seller's three is all the agent can take whole");
         let bought: i64 = c.fills.iter().filter(|f| f.order == 0).map(|f| f.qty).sum();
@@ -499,7 +499,7 @@ mod tests {
         assert_eq!((c.price.raw(), c.volume), (101, 50));
         let bought: i64 = c.matches.iter().map(|m| m.qty).sum();
         assert_eq!(bought, 50, "every unit bought is a unit sold, match by match");
-        assert!(c.matches.iter().all(|m| m.price.raw() == 101 && m.buyer != crate::print::Buyer::Party(m.seller)));
+        assert!(c.matches.iter().all(|m| m.price.raw() == 101 && m.buyer != m.seller));
         assert_eq!(
             (filled(&c, 2), filled(&c, 5)),
             (0, 5),

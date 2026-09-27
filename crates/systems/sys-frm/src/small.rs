@@ -1,12 +1,9 @@
-//! The opening's small firms: the country's firms below the individuals' rank as agents, one for every `k` firms under
-//! twins, apportioned over the regions by their land and over the banks by the banks' drawn sizes, each with its own
-//! size drawn from the firm-size law cut at the smallest firm the rank admits.
+//! The opening's small firms: the country's firms below the individuals' rank as agents, apportioned over the regions
+//! by their land and over the banks by the banks' drawn sizes, each with its own size drawn from the firm-size law cut
+//! at the smallest firm the rank admits.
 
 use phx_core::Directory;
-use phx_core::{
-    Adjustment, Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, StreamDef, apportion, apportion_in_units,
-    opening_subject,
-};
+use phx_core::{Contribution, Opening, OpeningCountry, OpeningPhase, PARTIES, StreamDef, apportion, opening_subject};
 use phx_id::{Day, PartyId};
 use phx_ledger::books::Books;
 use phx_ledger::opening::{derived, key, whole};
@@ -25,14 +22,12 @@ const FIRMS: &str = "FRM.firms";
 const DEBT: &str = "FRM.debt";
 const DEPOSITS: &str = "FRM.deposits";
 const BANKS: &str = "BNK.banks";
-/// Each small-firm agent with the persons its twins employ, their deposits and their debt.
+/// Each small-firm agent with the persons it employs, its deposits and its debt.
 pub const SMALL_FIRMS: &str = "FRM.small_firms";
 pub const SMALL_DEPOSITS: &str = "FRM.small_deposits";
 pub const SMALL_DEBT: &str = "FRM.small_debt";
-/// Each small-firm agent with the bank its twins bank with.
+/// Each small-firm agent with the bank it banks with.
 pub const SMALL_BANKS: &str = "FRM.small_banks";
-/// Each small-firm agent with its twins.
-pub const SMALL_COUNTS: &str = "FRM.small_counts";
 /// Each small firm agent's region, as the jobs' opening places its employees.
 pub const SMALL_REGIONS: &str = "FRM.small_regions";
 /// Each small firm agent's industry, as the jobs' opening weighs the occupations it employs.
@@ -106,22 +101,18 @@ fn draw_firms(
     firms
 }
 
-/// Each drawn firm begun as an agent of `k` twins, its region, size, bank and industry at their `places` among the
-/// kind's `width` attributes: the agents with the persons their twins employ, their banks, their twins, their regions
-/// and their industries.
+/// Each drawn firm begun as an agent, its region, size, bank and industry at their `places` among the kind's `width`
+/// attributes: the agents with the persons they employ, their banks, their regions and their industries.
 fn begin_agents(
     (table, directory, space): (&mut AgentTable<SystemBacking>, &mut Directory, &mut AddressSpace),
-    (day, k, width): (Day, u64, usize),
+    (day, width): (Day, usize),
     places: [usize; 4],
     firms: &[Firm],
-) -> [Amounts; 5] {
+) -> [Amounts; 4] {
     let mut cells: Amounts = Vec::with_capacity(firms.len());
     let mut banked: Amounts = Vec::with_capacity(firms.len());
-    let mut counts: Amounts = Vec::with_capacity(firms.len());
     let mut regions: Amounts = Vec::with_capacity(firms.len());
     let mut industries: Amounts = Vec::with_capacity(firms.len());
-    let Ok(twins) = u32::try_from(k) else { capacity_exceeded!("twins of an agent", u32::MAX, k) };
-    let twins = phx_core::Weight::new(twins);
     for f in firms {
         let mut attrs = vec![0_u32; width];
         let Ok(size) = u32::try_from(f.size) else { capacity_exceeded!("a small firm's size", u32::MAX, f.size) };
@@ -130,14 +121,13 @@ fn begin_agents(
                 *x = v;
             }
         }
-        let (_, party) = phx_pop::table::begin(table, directory, space, (day, twins, &attrs));
-        cells.push((party, f.size * k));
+        let (_, party) = phx_pop::table::begin(table, directory, space, (day, &attrs));
+        cells.push((party, f.size));
         banked.push((party, f.bank.1.get()));
-        counts.push((party, k));
         regions.push((party, u64::from(f.region)));
         industries.push((party, u64::from(f.industry)));
     }
-    [cells, banked, counts, regions, industries]
+    [cells, banked, regions, industries]
 }
 
 impl SmallFirms {
@@ -168,38 +158,31 @@ impl SmallFirms {
         let Some(at) = population.kinds.iter().position(|k| k.decl.kind == SMALL_FIRM.name) else {
             violation!(clause = "FRM.23", "a world that keeps no small firm kind");
         };
-        let k = u64::from(population.representation.multiplicity);
         let Some(kd) = population.kinds.get(at) else { violation!(clause = "FRM.23", "a kind beyond the world's") };
         let at_of = |name: &str| attr(kd, name);
         let [region_at, size_at, bank_at, industry_at] =
             [REGION.name, SIZE.name, BANK_ATTR, if_firm::known::INDUSTRY.name].map(at_of);
         // The small firms take the persons the large leave, the law's scale set so they do in expectation.
-        let agents = small / k;
         let persons = employed - from_u64(large.iter().map(|(_, n)| *n).sum());
         let alpha = p.size_exponent.shared(register).to_f64();
-        let law = crate::law::Law { scale: crate::law::scale_to(persons, agents * k, cut, alpha), alpha };
+        let law = crate::law::Law { scale: crate::law::scale_to(persons, small, cut, alpha), alpha };
         let law = (cut, law, &crate::opening::industries(p.industries, register, c));
         let mut trade = ctx.draws(&SmallStream::DECL, subject(SMALL_INDUSTRIES));
-        let firms_drawn = draw_firms(c, agents, law, &banks, (&mut lot, &mut trade));
+        let firms_drawn = draw_firms(c, small, law, &banks, (&mut lot, &mut trade));
         let (tables, directory, space) = books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(tables, at);
         let places = [region_at, size_at, bank_at, industry_at];
-        let [cells, banked, counts, regions, industries] =
-            begin_agents((table, directory, space), (*day, k, kd.decl.attrs.len()), places, &firms_drawn);
+        let [cells, banked, regions, industries] =
+            begin_agents((table, directory, space), (*day, kd.decl.attrs.len()), places, &firms_drawn);
         let deposits = p.deposit_share.shared(register).to_f64() * derived(c, "GEN.bank_deposits") / PERCENT * c.gdp;
         let debt = derived(c, "GEN.firm_debt") / PERCENT * c.gdp;
         let firms: Vec<(PartyId, u64)> = large.iter().chain(&cells).copied().collect();
         let heads: Vec<u64> = firms.iter().map(|(_, n)| *n).collect();
-        let units: Vec<u64> = large.iter().map(|_| 1).chain(cells.iter().map(|_| k)).collect();
         let mut split = ctx.draws(&SmallStream::DECL, subject(AMOUNTS));
-        // Each total apportioned over every firm by its drawn employees, an agent's in whole shares for each of its
-        // twins, what that leaves passing to the large firms.
+        // Each total apportioned over every firm by its drawn employees.
         let mut share = |total: f64| -> (Amounts, Amounts) {
-            let parts: Vec<(PartyId, u64)> = firms
-                .iter()
-                .zip(apportion_in_units(whole_u64(total), &heads, &units, &mut split))
-                .map(|((f, _), a)| (*f, a))
-                .collect();
+            let parts: Vec<(PartyId, u64)> =
+                firms.iter().zip(apportion(whole_u64(total), &heads, &mut split)).map(|((f, _), a)| (*f, a)).collect();
             let (mine, theirs) = parts.split_at(large.len());
             (mine.to_vec(), theirs.to_vec())
         };
@@ -207,14 +190,12 @@ impl SmallFirms {
         let (large_debt, debt) = share(debt);
         let heads: Vec<u64> = cells.iter().map(|(_, n)| *n).collect();
         let employed_small: u64 = heads.iter().sum();
-        let firms_small = k * len_u64(firms_drawn.len());
-        let agents = firms_drawn.len();
+        let firms_small = len_u64(firms_drawn.len());
         for (name, list) in [
             (SMALL_FIRMS, cells),
             (SMALL_DEPOSITS, deposits),
             (SMALL_DEBT, debt),
             (SMALL_BANKS, banked),
-            (SMALL_COUNTS, counts),
             (SMALL_REGIONS, regions),
             (SMALL_INDUSTRIES_DRAWN, industries),
             (DEPOSITS, large_deposits),
@@ -222,30 +203,18 @@ impl SmallFirms {
         ] {
             books.drawn.insert(key(name, c.id), list);
         }
-        whole_agents(report, c, (small, firms_small), k);
         population.count(at, (firms_small, 0), (0, 0));
         report.distributions.push((
             key(SMALL_FIRMS, c.id),
             format!(
-                "country {}: {firms_small} small firms of up to the individuals' rank's smallest, {cut} persons, as \
-                 {agents} agents of {k} twins, employing {employed_small} of {employed:.0} employed; regions by land, \
+                "country {}: {firms_small} small firms of up to the individuals' rank's smallest, {cut} persons, \
+                 employing {employed_small} of {employed:.0} employed; regions by land, \
                  banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent) and its \
                  industry by its size (FRM.industry_by_size); the \
                  firms' deposits and debt shared over every firm by its employees",
                 c.id.get(),
             ),
         ));
-    }
-}
-
-/// The small firms left over when the country's are drawn as whole agents of the twins, reported.
-fn whole_agents(report: &mut phx_core::GenReport, c: &OpeningCountry, (small, drawn): (u64, u64), k: u64) {
-    if drawn != small {
-        report.adjustments.push(Adjustment {
-            what: format!("country {}: small firms, a whole number of agents of {k} twins", c.id.get()),
-            drawn: i128::from(small),
-            set: i128::from(drawn),
-        });
     }
 }
 
@@ -265,10 +234,10 @@ impl Contribution for SmallFirms {
         &[FIRMS, BANKS]
     }
     fn writes(&self) -> &'static [&'static str] {
-        &[SMALL_FIRMS, SMALL_DEPOSITS, SMALL_DEBT, SMALL_BANKS, SMALL_COUNTS, DEPOSITS, DEBT]
+        &[SMALL_FIRMS, SMALL_DEPOSITS, SMALL_DEBT, SMALL_BANKS, DEPOSITS, DEBT]
     }
     fn drawn(&self) -> &'static [&'static str] {
-        &[SMALL_FIRMS, SMALL_BANKS, SMALL_COUNTS, DEPOSITS, DEBT]
+        &[SMALL_FIRMS, SMALL_BANKS, DEPOSITS, DEBT]
     }
     fn derived(&self) -> &'static [&'static str] {
         &[SMALL_DEPOSITS, SMALL_DEBT]

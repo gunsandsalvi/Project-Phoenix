@@ -1,6 +1,6 @@
 //! Goods spoiled in stock at their holders' visits: each system's declared rates, realised by the kernel on each row a
-//! declared visit visits, over each lot's days held since the row's last visit, whole for a twin. One instruction a
-//! row, of transformation legs under `spoiled`.
+//! declared visit visits, over each lot's days held since the row's last visit, in whole units. One instruction a row,
+//! of transformation legs under `spoiled`.
 
 use phx_core::{Cadence, Declarations, Register, RunsOn, SubStep};
 use phx_id::{Day, Slot};
@@ -90,8 +90,8 @@ impl World {
         spoiled
     }
 
-    /// A row's spoilage legs: each good it holds that spoils, its twin's whole units lost over each lot's days held
-    /// within the period, times its twins.
+    /// A row's spoilage legs: each good it holds that spoils, its whole units lost over each lot's days held within
+    /// the period.
     fn spoiled_legs(&self, rows: crate::goods::Rows, slot: Slot, s: &SpoilBound, day: Day) -> Vec<LegRec> {
         let Some(row) = self.goods_row(rows, slot) else { return Vec::new() };
         let (place, at) = self.books.parties.row(row.party);
@@ -104,16 +104,12 @@ impl World {
                 .iter()
                 .map(|l| (l.quantity.raw(), i64::from(day.get()) - i64::from(l.acquired.get())))
                 .collect();
-            let Some(lost) = phx_core::spoilage::lost(&lots, s.period, rate, row.twins, phx_core::consts::DAYS_365)
-            else {
+            let Some(qty) = phx_core::spoilage::lost(&lots, s.period, rate, phx_core::consts::DAYS_365) else {
                 violation!(clause = "GDS.8", "a stock's spoilage beyond an integer", party = row.party.get());
             };
-            if lost == 0 {
+            if qty == 0 {
                 continue;
             }
-            let Some(qty) = lost.checked_mul(row.twins) else {
-                phx_num::capacity_exceeded!("units spoiled for every twin", i64::MAX, lost);
-            };
             legs.push(LegRec {
                 party: row.party,
                 account: AccountRef::Instrument(instrument),

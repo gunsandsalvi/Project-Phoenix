@@ -6,12 +6,9 @@ use crate::workspace::{Source, Workspace};
 
 const RULE: &str = "PC-34";
 /// An agent's writes past its beginning, and the crates that may make each: the population itself, the openings that
-/// form households, and the world, which seats the player's twins.
-const WRITES: &[(&str, &[&str])] = &[
-    ("set_persons", &["phx-pop", "sys-dem", "phx-world"]),
-    ("set_attachments", &["phx-pop", "sys-dem", "phx-world"]),
-    ("take_twin", &["phx-pop", "phx-world"]),
-];
+/// form households, and the world, which writes back the households its processes changed.
+const WRITES: &[(&str, &[&str])] =
+    &[("set_persons", &["phx-pop", "sys-dem", "phx-world"]), ("set_attachments", &["phx-pop", "sys-dem", "phx-world"])];
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();
@@ -87,10 +84,9 @@ mod tests {
 
     #[test]
     fn agents_written_where_allowed_alone() {
-        assert_eq!(found("fn f(t: &mut T) { t.take_twin(s); t.set_persons(s, &w); }", "phx-world"), 0);
+        assert_eq!(found("fn f(t: &mut T) { t.set_persons(s, &w); }", "phx-world"), 0);
         assert_eq!(found("fn f(t: &mut T) { t.set_persons(s, &w); }", "sys-dem"), 0);
-        assert_eq!(found("fn f(t: &mut T) { t.take_twin(s); }", "sys-dem"), 1, "only the world seats twins");
         assert_eq!(found("fn f(t: &mut T) { t.set_attachments(s, &w); }", "sys-frm"), 1);
-        assert_eq!(found("#[cfg(test)] mod tests { fn f(t: &mut T) { t.take_twin(s); } }", "sys-frm"), 0);
+        assert_eq!(found("#[cfg(test)] mod tests { fn f(t: &mut T) { t.set_persons(s, &w); } }", "sys-frm"), 0);
     }
 }

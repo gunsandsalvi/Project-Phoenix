@@ -150,7 +150,7 @@ pub const RULES: &[Rule] = &[
     },
     Rule {
         id: "PC-34",
-        title: "an agent's persons, attachments and twins written by the population, the openings and the world alone",
+        title: "an agent's persons and attachments written by the population, the openings and the world alone",
         since: "S0.28",
         run: agent_writes::run,
     },

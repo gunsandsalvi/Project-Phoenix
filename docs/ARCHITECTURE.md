@@ -22,8 +22,8 @@ The architecture serves four goals, in this order when they conflict:
 The forces:
 
 - **Scale.** About 120 million households, 5 million incorporated small firms, 12 million household businesses,
-  tens of thousands of large firms and institutions. The population is carried as agents, in twins or a small world
-  (REP.40).
+  tens of thousands of large firms and institutions. The world holds a declared number of their persons, every
+  household and small firm they form an agent of one party (REP.40).
 - **Cost follows events** (REP.12, N8.6). A row is touched on a day only when it is on that day's **agenda**
   (§7.3): a decision it is scheduled to take, a wake, an occasion or hazard hit, a payment or a kink it reaches.
   Continuous decisions are taken on each party's own schedule (TIME.5) and their flows run between decisions as
@@ -183,7 +183,7 @@ Weibull by inversion.
 | `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. At Stage 0 the world calls none of the pool's traversals or `KeyedReduce` (§6.3); `phx-ffi`'s benches and the crates' tests do. |
 | `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry, the traits kernel crates meet through without depending on each other (`BooksAudit`, `MarketsAudit`, `AccountsAudit`, `LegRecords` and `CellsAudit`, the books, the tape, the accounts, the settled legs and the agent tables as the audit reads them, §10.4c); calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.8). |
-| `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings (agents' counting their multiplicity) with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and a party's pooled legs (§6.5); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
+| `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
 | `phx-pop` | REP | **Agent tables** (§7.1): attributes, positions and keyed position lists (§4.5), persons and attachments; hazards drawn ahead per agent and the persons a hit reaches (§7.3); outcomes and endings (§7.4), and a household's `combine` and `divide`; the representation (§7.6). |
 | `phx-market` | MKT | The six forms (§8), the coupled call and the **linked call** among them; prints, marks, and instruments' and currency pairs' fixings at 6b by the pricing service's declared method; admission hooks; market failures. |
 | `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts, with the receivables and payables of dues as they fall, posted from the day's settled records by the kernel's own work at 9b on a business day and, on a day with no 9b, at the audit's sub-step (10d) before the close reads them. The ledger's apply raises an equity effect for a money leg, a row leg that adjusts a balance, and a move of a holder's cost of lots, each signed by the leg's move of its party's net assets, so a leg passing through a party moves its equity by nothing; an instruction's money effects are taken on each party's net money in it, so a bank through which two customers pay each other, one deposit down and another up, neither pays nor is paid. |
@@ -348,7 +348,7 @@ across days (quotes, offers, redemptions, calls, claims) are snapshotted (SET.16
 later day (§7.3), or a commitment (an accepted mortgage offer, a pending sale, a trade that settles later than it
 fills) is held by the agent until it is answered, drawn or settled, and a reply reaches the agent that asked (REP.16,
 REP.23). Amounts that are balances — card purchases awaiting settlement, receivables, undrawn credit on a held line —
-are the agent's positions, whole multiples of its multiplicity (REP.9). A person's wait for a public service and its
+are the agent's positions (REP.9). A person's wait for a public service and its
 claim awaiting processing are values of its attachments (the service or benefit kind and a week band), changed in
 place when it is served. Duty
 and import tax at a border are a **demand** customs issues to the importer of record, a message like any other.
@@ -373,7 +373,7 @@ holders (§7.8), and each holder's amount joins its (party, bank) leg in the pay
 so duty and import tax at a border are not levies: customs computes them per shipment through the tax's rule handles and
 issues a demand (§4.2).
 
-As built at Stage 1, income tax is a `phx_ledger::levy::Withholding` per (employment line kind, currency), bound on `Books` when the world opens or loads, its payee the country's treasury: each member's levy is the year's share of `TAX.income_band_*`'s marginal bands over the payment's per-member amount times the line's payments a year (a non-cumulative basis, since no year-to-date positions are kept), rounded once and multiplied by the members; the payer pass routes it to the treasury in the payment's own instruction (§6.5, `DayBook::levied`), and on a pooled line the losers drawn give up both parts. The consumption tax is inside the posted price: the seller owes `TAX.consumption_rate`'s share of the price paid, a whole share for each twin, paid to the treasury in the sale's instruction; a country that declares a value-added tax is charged it this way (a placeholder naming TAX).
+As built at Stage 1, income tax is a `phx_ledger::levy::Withholding` per (employment line kind, currency), bound on `Books` when the world opens or loads, its payee the country's treasury: each member's levy is the year's share of `TAX.income_band_*`'s marginal bands over the payment's per-member amount times the line's payments a year (a non-cumulative basis, since no year-to-date positions are kept), rounded once and multiplied by the members; the payer pass routes it to the treasury in the payment's own instruction (§6.5, `DayBook::levied`), and on a pooled line the losers drawn give up both parts. The consumption tax is inside the posted price: the seller owes `TAX.consumption_rate`'s share of the price paid, paid to the treasury in the sale's instruction; a country that declares a value-added tax is charged it this way (a placeholder naming TAX).
 
 A levy's rates are read as `Rates`: a policy value's marginal bands, or one share from the line's terms or the payee's
 fact. Withholding (`levy::withhold`) splits a member's gross into the net paid and the remittance, which sum to the
@@ -459,8 +459,7 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
   held outside the tables — after each opening contribution and at each day's close — each with a transient
   scratch the size of its arena.
 - **Deposits.** An agent's **banking arrangement** — which deposit kinds it holds at which bank — is an
-  **attribute** (REP.41). Every deposit row of an agent therefore counts its multiplicity, and a twin's share of a
-  balance or a pending amount is it ÷ the multiplicity (REP.9). Each deposit kind declares which payments it funds and
+  **attribute** (REP.41). Every deposit row of an agent counts one account. Each deposit kind declares which payments it funds and
   in which order (current before savings; term deposits never). Changing bank is a lumpy decision of the agent
   (REP.5), made when the transfer of its balances settles; the
   arrangement's one writer is `sys-bfl`, which also rewrites it, at 7e, for the holders a resolution's transfer moved.
@@ -468,14 +467,12 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
   limit once; over the depositor's balances at that bank in the declared coverage order.
 - **Banknotes** are a holding (instrument: the central bank's notes in that currency, MON.1); a purchase paid in
   banknotes moves them between holding rows at 6d.
-- **Loans** carry balances; an agent's row holds its twins' identical loans, with one terms, vintage and payment
-  record, so each twin's balance is exact (REP.9).
+- **Loans** carry balances; an agent's row holds its loan, with its terms, vintage and payment record (REP.9).
 - **Fails** become fail records with the reason and the line; the owner of the line kind reads them at its declared
   sub-step (§6.1). **Payment records** are each row's own, never combined; lenders' and suppliers' views read them.
 - **Holdings** of instruments are rows in the holder's arena; each instrument keeps its holders sorted, so coupons,
-  dividends, bail-ins and REG.13's audit read holders directly (REG.4). An agent's are `{instrument u32, count u32,
-  quantity i64, pooled cost i64}` (24 bytes), one lot at average cost (REG.1), `count` its multiplicity, like a
-  relationship row: a twin's quantity is quantity ÷ count (REP.9). Which asset classes an agent holds directly —
+  dividends, bail-ins and REG.13's audit read holders directly (REG.4). An agent's holding keeps one lot at average cost
+  (REG.1, ACC.6). Which asset classes an agent holds directly —
   shares, bonds, fund units — is its **participation**, an attribute (REP.41), and income on a holding reaches the
   agent as one leg. An individual's
   holding is its lots, its basis read from them. The instrument's state (live, suspended, defaulted, ceased) has one
@@ -490,7 +487,7 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
   of its employment line, and the scheme a person belongs to is a component of its employment attachment (§7.1), so
   employment lines are not split by scheme. A DB row's `balance` is an accrued
   pension, a declared unit that is not money, converted to money only by the actuary's valuation and the pensioner
-  line's per-time due; each twin's right is its share (REP.9). A DC pot is a holding row of fund units with its
+  line's per-time due. A DC pot is a holding row of fund units with its
   count and a `pending` word for contributions awaiting their dealing; there is no membership row.
 - **Derivatives** are rows between individuals with no `amount` word: each margin account keeps the day its variation
   margin last settled, and a day's variation margin is read from the marks kept since.
@@ -851,14 +848,13 @@ rounded split lands its residue on the payer, the payee with the largest share, 
 - **7a** is **one stream over the holders' runs**, holder-major: in a scanned segment, a row whose line is due today
   is a debit if the holder is on its paying side and a credit otherwise, at the row's per-contract amount (a point
   lookup, levies per contract) times its count; each (party, bank) gets its debit and credit totals, tested for debits
-  by the pooled-flow rule (§7.5), with the first failing row recorded. Banks' nets are sums over parties. Nothing is
+  in its payment order, the first it cannot meet failing with every one after it, with the first failing row recorded. Banks' nets are sums over parties. Nothing is
   written per leg and no payee reduction is needed. For a due line with no retail holder list, the (holder, row) pairs
   met are gathered into the day buffers, which 7b and 7d read in its place. As built at Stage 0: the stream keeps a
   record per party, and the day's lookups (each line's reckoning and ower, each party's account), in the kernel's
-  fixed-seed map, read whole only in key order, and the claimants per line in `BTreeMap`s; the pooled-flow rule is
-  given each agent as one payer, every row reaching all its twins, so no row splits an agent's funds; and 7b reads
-  unlisted sides from the day's payments the stream keeps. The stream keeps the day's payments in its order (about 157 MB on the
-  twins payday of 2.8 M payments, the only field PC-27 lets keep a batch's items), and 7c's gather reads them, reckoning again only a cleared line's claimant credit
+  fixed-seed map, read whole only in key order, and the claimants per line in `BTreeMap`s; and 7b reads unlisted sides
+  from the day's payments the stream keeps. The stream keeps the day's payments in its order (about 157 MB on a
+  payday of 2.8 M payments, the only field PC-27 lets keep a batch's items), and 7c's gather reads them, reckoning again only a cleared line's claimant credit
   after its losers; both compute each payment's route, 7c nets it in the fixed-seed map and sorts the nets once, and
   a due record is kept per payment for the accounts (F-057).
 - **Reckoning**: a due line's dues are reckoned on one side's rows, each row its own payment with one counterparty.
@@ -946,17 +942,8 @@ rounded split lands its residue on the payer, the payee with the largest share, 
   settles; the other payers pay theirs as before.
 - **Spent rows**: when a holder's segment is scanned, the rows of lines whose schedules are spent leave the segment for
   the end of the holder's rows, so an empty segment is never due.
-- **Standing flows** (`standing.rs`): a rate per member per day on a row, plain or times its holder's region's daily
-  index (a weather index `phx-geo` writes at 3a) over its scale; the day's amount is the rate × the index × the members
-  reached, rounded once. On a business day it is a leg of the day's batch; otherwise it is pending on the payer's
-  deposit row, or paid in banknotes where its kind says so. A plain flow books on the agenda the first day its members'
-  position reaches a kink (`kink_day`); an indexed flow, whose index has no upper bound, books none and is tested by the
-  pooled-flow rule on every day it posts, pending or settling.
-- **The pooled-flow rule** (`pooled`) is pure: handed a payer's funds, its weight (`PayerPositions::weight`, one for an
-  individual, the multiplicity for an agent), its rows in payment order and the kinks on its members' positions, it
-  tests each row against the funds per member the rows before it left and the reached members' own position; a row the
-  funds cannot pay fails with every row after it, and one that carries its reached members across another kink (a band,
-  a means test), outward or inward, splits them off and is paid (`RowOutcome`).
+- **Standing flows** — a rate per member per day on a row, plain or times a region's daily index — arrive with the
+  stage that first declares one; nothing is built for them yet.
 
 - **Currencies** (Stage 5): the payer pass tests each payer per (party, bank, currency), and banks' nets are per
   (bank, currency). A leg in a currency its payer does not hold draws its bank's **conversion commitment** at 7a: the
@@ -1055,8 +1042,8 @@ still read an unlisted side whole. The rest is carried to the Stage 1 gate (the 
 ### 7.1 Tables
 
 One **agent table** per population kind — household, small firm — in `phx-pop`. Each row is an agent (REP.1): a
-household or small firm of its kind's multiplicity, never split, joined or averaged. The player's household is a row
-of multiplicity one (OBS.4). Institutions and the largest firms are rows of the kernel's kind tables of individuals
+household or small firm, one real party, never split, joined or averaged. The player's household is one of them
+(OBS.4). Institutions and the largest firms are rows of the kernel's kind tables of individuals
 (§4.1).
 
 The books keep the agent tables beside the kind tables, one holder place each after the kind tables', known to
@@ -1072,13 +1059,13 @@ world's `Population`, which the opening's contributions are handed beside the bo
   order declared; and the attribute that sites the agent in its region. `AgentTable` implements `phx-ledger`'s
   `HolderArenas`, `PayerPositions`, `HolderTable` and `CellHolders`, and `phx-core`'s `TableSchema` and `FactStore`.
 
-An agent row keeps, in columns: its party, the day it began, its **multiplicity** (`u32`), one `u32` per declared
+An agent row keeps, in columns: its party, the day it began, one `u32` per declared
 **attribute** (REP.41: a household's region and bank, a small firm's region, size, bank, industry (`FRM.industry`), product (`FRM.product`), the way-set it knows
 (`TEC.known`) and the way it runs (`TEC.way`)), the due-day run's head
 (§4.5), and arena references to its lists in its chunk's arena:
 
-- **rows** and **holdings**, the ledger's (§4.5), each row counting the agent's multiplicity times the contracts its
-  twin holds on the line (REP.3);
+- **rows** and **holdings**, the ledger's (§4.5), each row counting the contracts the agent holds on the line
+  (REP.3);
 - **persons** (REP.26), one word each: the birth date as the calendar's civil day serial (32 bits, so the oldest
   persons, born before the world's epoch, are held exactly), the role (head, partner, adult, child), and the kind's
   declared person attributes packed after it (sex, health, education), their widths compiled from their values;
@@ -1087,19 +1074,15 @@ An agent row keeps, in columns: its party, the day it began, its **multiplicity*
 
 Positions (REP.20) arrive as declared `i64` columns with the steps that need them. The table counts its agents as
 they begin and end, and the population counts their parties and persons by the events that begin and end them, so
-the day's measures (REP.15) visit no agent; the agents family checks the three against the table (REP.14).
+the day's measures (REP.15) visit no agent; the agents family checks the counts against the table (REP.13).
 
 A kind is declared item by item (`PopKindBuilder`), and the system that declares an item is its writer. The items are
 attributes (`AttrDecl`, with the number of values each takes), roles (`RoleDecl`), person attributes (`PersonAttrDecl`,
 with the value a person holds before any system gives it one), positions (`PositionDecl`), and the attribute whose value
 is the agent's region (`sited_by`). An estate is sited in that region. `phx-pop` compiles the items into the kind's
 layout, and each width comes from the number of values. An agent's persons and attachments are written only by
-`phx-pop`, by the openings that form households (`sys-dem`) and by the world. A twin is taken (`take_twin`) only by the
-world, and only at the opening. `phx-check`'s PC-34 refuses these writes from any other crate, and a twin taken after
-the opening stops the run (REP.17).
-
-A multiplicity is a `Weight(u32)`: it adds and subtracts with weights and becomes a `Count` for the arithmetic that
-multiplies per-member amounts by it, and nothing scales it (PTY.14).
+`phx-pop`, by the openings that form households (`sys-dem`) and by the world. `phx-check`'s PC-34 refuses these
+writes from any other crate.
 
 ### 7.2 Arenas, locality and identity
 
@@ -1182,8 +1165,7 @@ next booking is drawn from the day after it, a redraw draws from its day, and th
 over by the later draws of the day, since their outcomes have yet to change them.
 
 On a booked hit day, 3b draws which persons the hit reaches, each by its own _q_ᵢ **conditioned on at least one**
-(`binomials_joint_at_least_one`), records the event, and hands the agent to 3e. A hit on a person of an agent of
-multiplicity _k_ is that person's hit in every twin (REP.1): the outcome is the agent's, once.
+(`binomials_joint_at_least_one`), records the event, and hands the agent to 3e.
 
 A hazard on a party itself (a firm's plant failing, a vehicle's accident) reads the agent with no persons: its _q_ is
 its own. Catastrophes are drawn at 3a (§7.8).
@@ -1227,7 +1209,7 @@ that ends leaves its bookings to lapse: a due row no party holds is passed over.
 **The firms' decisions** (FRM.5, REP.21, REP.34, REP.38). What a firm holds and expects is declared once in `if-firm`
 under one name for both kinds: a large firm's as facts of its row, a small firm's as positions of its agent
 (`if_firm::facts::POSITIONS`); its industry, product, known way-set and way run are keys, facts of a large firm and
-attributes of a small one, so twins share them. `FRM` writes the sales outlook (`FRM.expected_sales`,
+attributes of a small one. `FRM` writes the sales outlook (`FRM.expected_sales`,
 `FRM.sales_width`), the units delivered at its last schedule and last review, its method, last review day, unit cost,
 markup, posted price, output rate, price attention, the cost of its staff's hour and required return; `TEC` the ways;
 `CAP` the capacity and the investment review's counts. `sys-frm` declares two visits on each kind:
@@ -1259,16 +1241,12 @@ positions as read, `phx_core::Household` — and each process's outcome changes 
 (POP.3 before POP.4). Its positions are handlers' and are never written back; a person an outcome adds is a birth, counted with the deaths.
 Then:
 
-- a person gone (a death) leaves every row its attachments name: the row's count falls by the multiplicity, and the
-  line's other side loses as many contracts, drawn from its holders by their counts (REP.23), in one
-  `members_leave` per row. A holder drawn gives its whole **unit** — an agent's multiplicity, one for an
-  individual — and a draw is made only among the holders whose unit fits in what is left, so an agent's twins stay
-  alike. What no unit fits (an individual's count need not be a multiple of the agents' units) passes instead, by
-  moving members, to other holders of the leaving party's own side whose unit fits in it, each drawn by its members
-  and taking every whole unit of what is left whatever it holds, as a buyer of the contracts would take them, with no
-  arrears carried, since no one failed them — a representation's remainder, not a debt; if no holder's unit fits there either, the run stops
-  (REP.31). An agent drawn loses, from its persons, a
-  twin's share of the members that left, drawn among its attachments on that side of the line
+- a person gone (a death) leaves every row its attachments name: the row's count falls by one, and the line's other
+  side loses as many contracts, drawn one at a time from its holders by their counts (REP.23), in one
+  `members_leave` per row. What the other side cannot give passes instead, by moving members, to another holder of
+  the leaving party's own side, drawn by its members, as a buyer of the contracts would take them, with no arrears
+  carried, since no one failed them; if that side holds no one else either, the run stops (REP.31). An agent drawn
+  loses, from its persons, the members that left, drawn among its attachments on that side of the line
   (`World::detach`), so its persons still hold what its rows count. A side's members by holder are read once
   (a `Tally`, from the holder list's keys straight to their rows, in fixed shards on the pool) and kept, moved by
   each leaving and passing, while no other change reaches the side. A side that keeps no holder list is read once a
@@ -1278,66 +1256,53 @@ Then:
   lists, since a firm's end reaches them (§4.5);
 - the household's persons and attributes are written back in place; the head's place, if emptied, is taken as the
   outcome says;
-- a household no one is left in **ends**: an estate is opened at a zone centre of its region, with the agent's
-  multiplicity as its row's weight in the estates' kind table (one estate for each twin, REP.1), and every row it
-  held passes to it whole by line transfers (PTY.9); its slot is freed and its identity ends. The estate's
-  waterfall runs on one twin's balances and pays each amount for every twin. Its holdings pass to
-  the same estate (`Books::pass_holdings`), each counting one twin's, as the estate standing for its twins holds them —
-  a small firm's plant and goods among them; an agent ending with named units stops the run.
+- a household no one is left in **ends**: an estate is opened at a zone centre of its region, and every row it held
+  passes to it whole by line transfers (PTY.9); its slot is freed and its identity ends. Its holdings pass to the
+  same estate (`Books::pass_holdings`), a small firm's plant and goods among them; an agent ending with named units
+  stops the run.
 
 Nothing is split or landed: an agent is changed where it is, or ends.
 
 **Births and leaving school** (`sys-dem`, POP.5, POP.10): a household decides on its head's birthday (`DEM.fertility_occasion`, taste `DEM.fertility_taste`) whether to try, and tries when the next child's value `ln((1 + n*)/(1 + n)) − ln(e(n + 1)/e(n)) − ln(1 + 1/(1 + a)) + s·ε` is positive — `n*` its ideal (`DEM.ideal_children`, drawn from its country's shares at its first decision and held as an attribute beside `DEM.trying`), `n` its children, `e` its needs on `DEM.equivalence_scale`, `a` its youngest child's age, `ε` a standard logistic draw; with no income outlook it does not try. While it tries, each woman of its couple conceives at `DEM.fecundability` a cycle compounded over `DEM.cycle_days` (`DEM.conception`), and a conception is a birth at once: a child in school, its sex by the sex ratio at birth, the household then trying no more until its next decision. A child leaves school on the birthday its country's `DEM.school_leaving_age` falls on and becomes an adult out of the labour force (`LeavingSchool`, a placeholder naming POP); the opening's children being those under the age of majority, those past the leaving age leave on day one.
 
-A side's `Tally` groups its holders by unit. Within each unit the holders sit in a Fenwick tree over the members they
-have left, so drawing a member and taking its holder's unit costs the log of the holders. A cleared line's `Losers` draw
+A side's `Tally` keeps its holders in a Fenwick tree over the members they have left, so drawing a member costs the
+log of the holders. A cleared line's `Losers` draw
 from the same structure. A member leaving takes no share of its row's balance, which stays a claim the line still holds,
 and its counterparts give up none of theirs. The leaving draws come from the stream `REP.leaving`, at 3e and at 7c for
 an estate's rows. An estate's site comes from `REP.estate_site`. Both streams are keyed by the party.
 
 ### 7.5 Lines, counts and settlement
 
-A row's count is the agent's multiplicity times its twin's contracts on the line (REP.3), so every line's two sides
-hold equal counts of real contracts in either representation. A rule's amount for an agent is its amount for one
-twin, rounded by its convention, times the multiplicity (REP.9), so every balance an agent holds is a whole
-multiple of its multiplicity and each twin's share is whole.
+A row's count is the contracts the agent holds on the line (REP.3), so every line's two sides hold equal counts of
+real contracts. A rule's amount for an agent is rounded once, by its convention (REP.9).
 
-Settlement reads agents as it reads individuals, through `PayerPositions`: an agent's weight is its multiplicity,
-its funds per member are its account's balance over it, and the pooled-flow rule tests each row against one twin's
-funds (§6.5). Since every row an agent holds reaches all its twins, no row ever reaches some of them: the rule pays
-or fails an agent's rows whole, and never asks for a split. A cleared line's claimants drawn to lose a failed
-payer's dues (REP.23) are drawn in whole units the same way (`Losers`), until at least the failed members are
-reached. The opening apportions a derived line's other side a twin's contracts at a time, so every agent's rows
-there are whole multiples too.
+Settlement reads agents as it reads individuals, through `PayerPositions`: an agent's funds are its account's balance
+less what is pending, with its facility, and its payments are met in its payment order while they last (§6.5). A
+cleared line's claimants drawn to lose a failed payer's dues (REP.23) are drawn one member at a time the same way
+(`Losers`), exactly as many as failed.
 
 ### 7.6 The representation
 
-Two register primitives (`data/shared/REP.toml`, RESOLUTION) set it (REP.40, spec Appendix E 44):
+One register primitive (`data/shared/REP.toml`, RESOLUTION) sets it (REP.40, spec Appendix E 44): `REP.persons`, the
+persons the world holds of the setup's `GEN.population`, which the opening splits among the countries, so
+everything derived from a country's people — the employed, firms, lines, the individuals' rank
+(`FRM.rank_per_million`) — follows the world's size, and every household and small firm drawn is one agent of one
+party; a size above the setup's population stops the run. `phx run --persons N` sets it before assembly in place of
+the register's, for a run of another size; the population's store and the save's manifest record it, so a save
+loads only under its own, and `phx inject` reads it from the manifest (§11). The agents are an outcome: the
+households the persons form and the small firms they employ, about 0.43 an agent a person (221 515 households and
+102 579 small firms at 750 000 persons, seed 1).
 
-- `REP.multiplicity` — the multiplicity of every agent of a population kind: the factor under twins, one under a
-  small world;
-- `REP.population_divisor` — what the setup's total population is divided by before the countries are derived: one
-  under twins, the factor under a small world.
+The size is set by measuring the day (N8.5). On the build machine's four cores, 62-day runs (2026-09-27) gave a
+business day after the first payday of 1.0–1.2 s at 600 000 persons, 1.4–1.6 s at 750 000 and 2.0–2.3 s at 1 million,
+with the month's payday span (7c's settlement) at 2.5–6 s: 750 000 is the most within N8.2 there, and the register
+holds it until the device's measure resets it.
 
-The opening divides `GEN.population` by the divisor before the split among the countries, so everything derived
-from a country's people — the employed, firms, lines, the individuals' rank (`FRM.rank_per_million`) — follows the
-smaller world; it then draws one agent for every `REP.multiplicity` households and small firms, each counting that
-many on its lines. `phx run --representation twins:K|small:K` sets both before assembly in place of the register's,
-for build runs comparing the two; the population's store and the save's manifest record the representation, so a
-save loads only under its own, and `phx inject` reads it from the manifest (§11). Twins is the default.
+Identical twins — agents standing for many parties each, the full population held at the same number of agents —
+were retired (spec Appendix E 44): their decisions moved their parties in lock-step, their lumps broke whole-unit
+trades and hires, and they held no more distinct agents than a world of the same agents' persons.
 
-The **player's household** (OBS.4) is drawn at the opening among the country's household agents, each weighted by
-its multiplicity, so every real household is as likely. Under twins one twin of the agent drawn is seated as an agent
-of its own, of multiplicity one, with the agent's attributes, persons, attachments and positions (each a twin's), one
-twin's share of every row — its count over the twins — moved to it by line transfers (the opening allows rows to move,
-§10.4a), and one twin's share of every holding written to it, its basis's share rounded once (`Books::pass_share`);
-the agent keeps one twin fewer. A counterpart seated for the player, a small firm's agent among them, is seated alike.
-An agent of one twin, as in a small world, is the player's as it stands.
-
-The player's seat also reaches its counterparts. On each line the player holds whose other side holds agents, one of
-those agents, drawn by its contracts there, has one twin seated the same way; the player's donor is never drawn. The
-player's members and its donor's then each find a counterpart of their own unit when they leave (§7.4). Under twins,
-these seats are the only agents of multiplicity one, and their donors the only agents one twin short (REP.17).
+The **player's household** (OBS.4) is drawn at the opening among the country's household agents, each equally likely.
 
 ### 7.7 Relationship counts and their levers
 
@@ -1450,7 +1415,7 @@ for its exposure, and each struck tile draws its severity from its exposure's di
 ### 7.10 Plant
 
 - **Condition classes** (REP.24): each kind of plant is held in `CAP.condition_classes` classes of age, each an
-  instrument per (country, kind, class), so plant of one class is alike: an agent's twins hold it pooled like any
+  instrument per (country, kind, class), so plant of one class is alike: an agent holds it at average cost like any
   holding (§4.4) and nothing is kept per unit. A system declares each kind's classes to the ledger as a **chain**
   (`phx_ledger::chains::Chains`, saved with the ledger), tagged with its kind; no instrument is in two chains.
 
@@ -1470,7 +1435,7 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   tag's rate of leaving a class and each class's value. After that visit's handler has run on its rows, the kernel
   (`phx-world`'s `wear`) realises every chain for each row visited, over the days since its last visit (the period;
   on its first, the days since day zero): from each class, the share a constant yearly hazard takes over those days,
-  1 − e^(−r·t), half to even and whole for each twin, move to the next class carrying their lots' first-in cost times the ratio of the two classes' values, and the
+  1 − e^(−r·t), half to even, move to the next class carrying their lots' first-in cost times the ratio of the two classes' values, and the
   last class's leave. One instruction per row, of `Transformation { source: Wear(chain), cost }` legs under the
   reason `worn`, paid and received both an expense, so the cost the units lose is charged once to income through the
   effect and once to the unit through its lot. The visit runs on calendar days, so its period is the days worn.
@@ -1479,7 +1444,7 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   class, and `CAP.stock` checks the same from the audit's own record.
 - **Capacity** reads the classes: a way's capacity is the least over its kinds of units × the class's efficiency over
   the way's plant per unit of output, a `DeclaredLimit` from what is held, never a bound. The owner's plant review
-  (5c, with the wear) writes it as the fact `CAP.capacity`, one twin's units a day, which production and a service's
+  (5c, with the wear) writes it as the fact `CAP.capacity`, its units a day, which production and a service's
   stall read the next day beside what the staff can make. A making's intent carries the days of making it stands for
   (`Transform::days`), and each making is read against its maker's capacity over those days as its sub-step's
   handlers decided it (`makings_decided`), before a later review moves the fact; one beyond is counted (CAP.9).
@@ -1488,7 +1453,7 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   what the firm sold since its last from its own deliveries, keeping the count and the period's sales as CAP's facts
   (`CAP.delivered_seen`, `CAP.sales_seen`), their change its uncertainty, yesterday's price, since the day's 5b and 5c
   write it, and the capacity its plant held gives, found as the plant review finds it; it emits a `CAP.invest` intent (the kind, the product it is
-  bought as, a twin's units, the stages its lead time gives); the world admits it at 5d and at 6a names the builder
+  bought as, its units, the stages its lead time gives); the world admits it at 5d and at 6a names the builder
   among the day's stalls of that product — the seller in the owner's reach and country at the lowest posted price —
   and begins a `Project` (saved in `Chains`) at that price. At 6d each project's stage is a trade under `CAP bought`:
   the builder's goods, made by its way at delivery for a service or covered from its stock, used up by
@@ -1517,14 +1482,14 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   prices in 2022, so a way's quantities are physical and no price moves a draw. A way states per unit made its
   inputs, hours by occupation family, plant by kind per unit a year, land and deposit, with lead time, batch and yield
   in parts per million; for a start it takes inputs rounded up and finishes output rounded down, and a making's start
-  is the least that finishes its output (`ways::started_for`), each twin's take rounded alone. Way-sets are interned
+  is the least that finishes its output (`ways::started_for`). Way-sets are interned
   once, sorted (`WaySets`), so a firm's known ways are a four-byte identity and membership a binary search. The family
   `TEC.production` reads each instruction whose legs name a way from the audit's own record: the way registered, its
   output its product, each storable input used what the way states for the least start; a service input, used as it
   is delivered, is never a production's leg.
 
-- **What a handler reads of its goods** (§4.9): the `Ctx` gives a row its party's units of each good at its place (one
-  twin's for an agent), the deposits whose rights it holds with their grade, opening and remaining quantities, the
+- **What a handler reads of its goods** (§4.9): the `Ctx` gives a row its party's units of each good at its place,
+  the deposits whose rights it holds with their grade, opening and remaining quantities, the
   units of a product it has delivered since the opening, and each good's latest mark and its public outlook by a
   method at its place. The kernel builds this view (`GoodsView`) for each run of rows before their handler runs,
   from the holder's own arenas. An agent's key attributes read by name as an individual's facts do.
@@ -1541,21 +1506,19 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   holds the outlooks of the goods markets alone — between firms and commodities — whose subject is a good where it
   stands, as the marks are; a retail or carriage market's series is read by its own subject.
 - **Cost flows** (ACC.6): an individual chooses first in, first out or weighted average once
-  (`Ledger::choose_cost_flow`, saved); an agent's twins hold at average cost. A holding at average cost keeps one lot,
+  (`Ledger::choose_cost_flow`, saved); an agent holds at average cost (ACC.6). A holding at average cost keeps one lot,
   whose day is its units' days averaged by quantity, so what ages with the lot, as spoilage does, ages as its units
   do.
 - **Transformations from handlers**: a handler asks for units of goods made or used up for its own row by a
   **transformation intent** (`phx_ledger::intents::Transform`): its reason, carried as its name's code
-  (`name_code`, FNV-1a; two declared reasons of one code stop the run), and its legs, a twin's each, which the kernel
-  multiplies by the row's twins. It is applied at the handler's next apply point through `Ledger::apply`; a leg
+  (`name_code`, FNV-1a; two declared reasons of one code stop the run), and its legs. It is applied at the handler's next apply point through `Ledger::apply`; a leg
   taken from a deposit stands at the deposit's zone, needs its right and a product the deposit gives, and depletes it
   by GEO's own write (`phx_geo::deposits::extract`), the deposit's one writer. A handler moves no money.
 - **Orders** (MKT.16, MKT.17): a handler asks to trade by an **order intent** (`phx_market::intents::OrderIntent`):
-  its market kind's code, the product and grade class it is over, at its row's zone, its side and a twin's steps. At
+  its market kind's code, the product and grade class it is over, at its row's zone, its side and its steps. At
   5d the kernel admits it into the day's book (one asked later stops the run): its instance of the kind over the good
   (made the first time an order names it, `phx_market::instances`, saved with the markets), in **lots** of the
-  product's least quantity, ten to its price exponent, times the row's twins, so every trade's money is whole and each
-  twin's share of it and of the units stays whole (REP.9); an offer is covered by the ledger's commitment on the
+  product's least quantity, ten to its price exponent, so every trade's money is whole (REP.9); an offer is covered by the ledger's commitment on the
   poster's free units (`Covers::cover`), and one the units cannot cover, or whose steps break a rule, is refused and
   counted.
 - **Meetings** (MKT.3, MKT.6, GDS.7): a system declares a **market kind** (`Declarations::market`, a `MarketDecl` whose
@@ -1563,16 +1526,15 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   At 6a the kernel meets every instance with orders by its kind's form, in the markets' order: a **call** at the
   place, whose fills are cut to each order's whole lots, the side that gives more losing lots until the sides are
   equal (`call::whole_lots`), then paired, the largest lots first, each match whole lots of both its parties, and what
-  no counterparty's lots can meet cut from both sides alike, so an agent trades a whole share for each twin with each
-  counterparty; fills that only net a party's own bids against its own offers fail the call as `OwnOrders`; or
+  no counterparty's lots can meet cut from both sides alike; fills that only net a party's own bids against its own offers fail the call as `OwnOrders`; or
   **posted** prices between firms (`posted::between`), each seller's offer standing
   at its price and the buyers, in an order drawn by lot, taking from the cheapest they accept in quantities whole in
   both parties' lots. Each meeting's print or failure is recorded; a call's print is its mark. Every order's cover is
   released after its meeting.
 - **Trades** (SET.1, SET.2, SET.4): at 6d every match becomes a numbered **trade instruction** under the kernel's
   reason `traded`: the seller's units to the buyer at what it paid, against that money from the buyer's account to
-  the seller's, the units covered again for exactly what it delivers, its money one twin's quantity priced, rounded
-  once, times the twins. Trades settle in stage 7 after the day's dues and estates, each all or none through the
+  the seller's, the units covered again for exactly what it delivers, its money the quantity priced, rounded once.
+  Trades settle in stage 7 after the day's dues and estates, each all or none through the
   apply routine in declared order, so a buyer who cannot pay records a fail with its cause (SET.3), the units stay
   with the seller and its cover is released. An instruction's own covers count as free to it — the units they hold
   back are the ones it delivers — and are released as it settles; the day's failed trades are counted by cause.
@@ -1583,27 +1545,26 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
 - **Retail** (SRV.4, SRV.5, REP.22): a system declares a retail kind (`phx_market::retail::RetailKind`: its market,
   one instance a product and country, so each market's prints are in one currency and it meets that country's
   sellers only, the kinds that sell, the facts naming what a seller sells and its posted price, the weights
-  of price and distance, the reach and the stream of tastes). A buyer's want (`ShopIntent`, units or money a twin) is
+  of price and distance, the reach and the stream of tastes). A buyer's want (`ShopIntent`, units or money) is
   admitted at 5d. At 6a, every day, the day's stalls are read in one pass over the sellers: each posted price and the
   free units of the good where it stands, less what the day's matches between firms take. The stalls in reach of each
   buyer zone are found once; each buyer goes to the open seller it values most at `−α·ln p − γ·km + ε`, ε a Gumbel
   taste, which is to each with the logit's chance, so it draws its choice from that chance, one uniform draw of its own
-  stream, over the sellers of its zone ordered by what a whole share there costs — the prefix it can pay for — never
-  drawing a taste per seller, and a buyer turned away draws again among the rest, as its tastes' ranking would; a seller serves its buyers in an order drawn by lot in whole lots for every twin, and the rest
-  choose again, a stall selling in lots whole for both the buyer's twins and its seller's. Each sale's units are
+  stream, over the sellers of its zone ordered by what a lot there costs — the prefix it can pay for — never drawing a
+  taste per seller, and a buyer turned away draws again among the rest, as its tastes' ranking would; a seller serves
+  its buyers in an order drawn by lot in whole lots, and the rest choose again. Each sale's units are
   covered at once and, at 6d, become a purchase under the kind's reason: the buyer's money to the seller and the
   seller's units used up by the purchase naming the buyer, settled in stage 7 with the trades. A service is
   delivered as it is made and never held: each maker makes the day's sales of it in one making at 6d, and what no
   settled sale takes perishes after the day's trades settle (`unsold_perish`), as a project stage made to order does.
-- **Households' spending** (`sys-hh`, HH.4, HH.5): a weekly visit at 5c (`HH.spend`, every `HH.spending_days`) reads the row's money (`Ctx::money`, one twin's, which the goods view gives every visited row) and two positions, `HH.income` (the outlook of its permanent income a year) and `HH.after` (what it held after its last decision). Its money less `HH.after`, grossed to a year, is taken into the outlook at `HH.income_gain`; it spends `c* + κ(m − m*)` years of that income a year, `m` its money over the outlook, never more than it holds; and it asks each product's `HH.budget_shares` of that at retail as a want of money. A first decision only notes what it holds. The buffer-stock rule is solved once at assembly by the endogenous grid method (Carroll, 1997) from `HH.patience`, `HH.risk_aversion`, the shocks' spreads and the chance of no income, with `HH.real_return` and `HH.income_growth` as placeholders naming BFL and HH; its target `m*`, consumption there `c*` and propensity `κ` are read from the solution, never declared. `tools/data/derive_hh.py` derives the budget shares per group from the inter-country tables' households' final consumption (HFCE, 2019): the median over the group's economies of each industry's share, finance, real estate, public administration and households as employers left out, renormalised.
+- **Households' spending** (`sys-hh`, HH.4, HH.5): a weekly visit at 5c (`HH.spend`, every `HH.spending_days`) reads the row's money (`Ctx::money`, which the goods view gives every visited row) and two positions, `HH.income` (the outlook of its permanent income a year) and `HH.after` (what it held after its last decision). Its money less `HH.after`, grossed to a year, is taken into the outlook at `HH.income_gain`; it spends `c* + κ(m − m*)` years of that income a year, `m` its money over the outlook, never more than it holds; and it asks each product's `HH.budget_shares` of that at retail as a want of money. A first decision only notes what it holds. The buffer-stock rule is solved once at assembly by the endogenous grid method (Carroll, 1997) from `HH.patience`, `HH.risk_aversion`, the shocks' spreads and the chance of no income, with `HH.real_return` and `HH.income_growth` as placeholders naming BFL and HH; its target `m*`, consumption there `c*` and propensity `κ` are read from the solution, never declared. `tools/data/derive_hh.py` derives the budget shares per group from the inter-country tables' households' final consumption (HFCE, 2019): the median over the group's economies of each industry's share, finance, real estate, public administration and households as employers left out, renormalised.
 
 
 `sys-srv` declares the kind (`SRV.retail`) over `FRM.product`, `FRM.price`, `FRM.output_rate`, `TEC.way` and
 `CAP.capacity`; purchases settle under `SRV sold`. The tastes are standard Gumbel draws from `SRV.taste`, so the choice
 is multinomial logit exactly, and the serving order is drawn from `SRV.capacity_lot`. A buyer with no stall left in
 reach goes without, kept for the day (`RetailDay::unserved`), and the re-choice rounds are counted. A service's stall
-is what its maker can make that day: the lesser of its staff's output rate and its plant's capacity, times its twins,
-no more than its held inputs let its way make (`way_most`), in whole lots.
+is what its maker can make that day: the lesser of its staff's output rate and its plant's capacity, no more than its held inputs let its way make (`way_most`), in whole lots.
 - **Freight** (FRT.1–FRT.9, GEO.4, GEO.13): the network is generated with the map (`phx_geo::network`): road and rail
   segments between the market zones of every two regions of a country that share a border, over their land path,
   and sea lanes joining a country's parts, the shortest first; each mode's capacity a day in tonnes. A carriage kind
@@ -1629,7 +1590,7 @@ no more than its held inputs let its way make (`way_most`), in whole lots.
 - **Spoilage** (GDS.8): a system declares each product's yearly loss in stock and the visit it follows
   (`SpoilageDecl`; `sys-gds`'s stock visit at 5b every `GDS.spoilage_days` calendar days, deciding nothing). After it
   the kernel (`phx-world`'s `spoil`) takes from each lot 1 − e^(−rate·t) of its units, t the days it was held within
-  the period, summed and rounded half to even for a twin: one instruction a row of transformation legs under
+  the period, summed and rounded half to even: one instruction a row of transformation legs under
   `spoiled`. Storage, the room goods are kept in, is a service bought, never the same number.
 
 A route is the shortest path of one mode over the segments (`Network::route`); a trip over two modes is two bookings.
@@ -1650,13 +1611,13 @@ Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the mee
   beyond what their own planned sales cost, and when carrying no longer pays offer what they hold at no less.
 - **Closure** (FRM.15): at its production schedule an owner weighs the margin it expects a year, held for ever at its
   required return, against what winding it down returns beyond the money it keeps either way (`Ctx::net_assets`: its
-  goods at cost less its debts at their balances, one twin's; plant returns nothing until a market buys it); when
+  goods at cost less its debts at their balances; plant returns nothing until a market buys it); when
   winding down is worth more it emits
   `FRM.close`, and the world ends
   the firm into an estate as a default does, counted as a closure.
 - **Catastrophes** (GEO.8, GDS.9): a struck tile's share of every physical unit its sited individuals hold is lost
   (`Source::Hazard`); an agent stands at a zone, so it loses the event's share of its zone — each struck tile's
-  thousandths over the zone's tiles — a whole part for each twin, of the plant it holds and the goods it holds there.
+  thousandths over the zone's tiles — in whole units, of the plant it holds and the goods it holds there.
 - **The goods' balance** (GDS.10): a leg's digest names the source of a transformation's units and, on an instrument,
   what was issued of it before the leg, so the audit keeps per instrument the day moved (`StockDay`) its opening and
   what moved it: paired legs, unpaired legs no transformation accounts for, and each source's units made and used
@@ -1690,20 +1651,17 @@ Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the mee
   and days its last vacancy took to fill).
 - **The day** (TIME.10, a round a day): at **5c**, after the visits, in order — offers made yesterday answered by
   their applicants; applications sent yesterday seen by their employers at the meeting hazard and selected by skill,
-  then experience, then lot, up to the jobs open in whole units of the applicant (an agent's twins are hired
-  together); the searchers' applications to the vacancies standing at the start of the day; and the employers whose
+  then experience, then lot, up to the jobs open; the searchers' applications to the vacancies standing at the start of the day; and the employers whose
   production schedule came due today posting, withdrawing and laying off. At **4a** of the next day, the hires join
   their lines and the separations whose notice has run leave them, their severance paid at stage 7 as legs of the
   separation's instruction. A match therefore takes at least three days.
 - **Wage points** (REP.34): the monthly wage at point _n_ is `LAB.wage_point_ratio` to the _n_-th power, 128 points, the last meaning none; `sys-lab`'s `wages` holds the arithmetic the kernel calls (`wage_at`, `point_near`, `least_point`, the offer `adapt` and the severance `owed`).
-- **Posting** (LAB.4, `rules::post`): on its production schedule an employer reads, per occupation family, its hours a unit — its own hours a unit (`FRM.hours_a_unit`, its productivity, fixed by its filed accounts as its staff's hours over its filed output) shared by its way's mix of occupations (`TEC.labour`) — its staff's hours less those under notice, its open vacancies' hours and an hour's wage at the point it would offer; it posts the whole jobs its planned output still needs when an hour's output at its price outlook is worth more than that wage plus financing it until the sale and than the law's least, withdraws the vacancies it no longer needs, and lays off the whole jobs by which its staff's hours exceed the need. It decides nothing while its facts give it no price or planned output. An employer agent's persons employed, one twin's, are kept in its `FRM.size` attribute as each of its decisions finds them. The point it offers is its last fill's in the occupation, one lower when that fill came in the least days a match takes, else its newest staff's there, else the mean wage's for the hours, never below the law's least; a vacancy standing past `LAB.vacancy_patience_days` is raised a point.
-- **Vacancies** of an employer of one twin are posted and withdrawn in whole agents, the searchers' unit: the jobs
-  asked for over the unit, rounded up with the chance of the remainder (stream `LAB.vacancy_lot`); an agent employer's
-  jobs are its twins' and whole already. A searcher applies only where as many jobs are open as it brings members.
-- **Layoffs** come in whole agents: an employer of one twin's jobs asked for over the workers' unit, rounded up with the chance of the remainder (stream `LAB.layoff`), never more than the line holds; an agent employer's are its twins' jobs, of which the line draws the workers in whole units and passes what no unit fits (§7.4); the employees are drawn from the line (REP.23) and the separation takes effect on the first business day of the employer's country by which its notice has run.
-- **Search and acceptance** (LAB.5, LAB.8, REP.22): each searching person not waiting on an application or an offer sees the vacancies standing in its region and occupation, at a skill it has, with jobs open for its twins; it draws a Gumbel taste for each (`LAB.match_taste`) and applies to the best by `LAB.wage_weight` times the wage's log plus taste, among those paying above its reservation, a round's share of `LAB.applications_a_week` — a draw without replacement from the logit. An application is seen at `LAB.seen_chance` (`LAB.meeting`). An offer is accepted when the weight times the log of the wage over the reservation, plus the match's taste, is positive. The reservation is `LAB.reservation_share` of the searcher's last wage and an employee's price outlook at a review is `LAB.price_outlook` (placeholders naming HH).
+- **Posting** (LAB.4, `rules::post`): on its production schedule an employer reads, per occupation family, its hours a unit — its own hours a unit (`FRM.hours_a_unit`, its productivity, fixed by its filed accounts as its staff's hours over its filed output) shared by its way's mix of occupations (`TEC.labour`) — its staff's hours less those under notice, its open vacancies' hours and an hour's wage at the point it would offer; it posts the whole jobs its planned output still needs when an hour's output at its price outlook is worth more than that wage plus financing it until the sale and than the law's least, withdraws the vacancies it no longer needs, and lays off the whole jobs by which its staff's hours exceed the need. It decides nothing while its facts give it no price or planned output. An employer agent's persons employed are kept in its `FRM.size` attribute as each of its decisions finds them. The point it offers is its last fill's in the occupation, one lower when that fill came in the least days a match takes, else its newest staff's there, else the mean wage's for the hours, never below the law's least; a vacancy standing past `LAB.vacancy_patience_days` is raised a point.
+- **Vacancies** are posted and withdrawn in the jobs the employer's rule asks for, one person a job.
+- **Layoffs** are the jobs the rule asks for, the lines they leave drawn by their members (stream `LAB.layoff`), never more than a line holds; the employees are drawn from the line (REP.23) and the separation takes effect on the first business day of the employer's country by which its notice has run.
+- **Search and acceptance** (LAB.5, LAB.8, REP.22): each searching person not waiting on an application or an offer sees the vacancies standing in its region and occupation, at a skill it has, with jobs open; it draws a Gumbel taste for each (`LAB.match_taste`) and applies to the best by `LAB.wage_weight` times the wage's log plus taste, among those paying above its reservation, a round's share of `LAB.applications_a_week` — a draw without replacement from the logit. An application is seen at `LAB.seen_chance` (`LAB.meeting`). An offer is accepted when the weight times the log of the wage over the reservation, plus the match's taste, is positive. The reservation is `LAB.reservation_share` of the searcher's last wage and an employee's price outlook at a review is `LAB.price_outlook` (placeholders naming HH).
 - **Retirement** (LAB.6) is a scheduled hazard on persons (`LAB.retirement`, at `SOC.pension_age` by age and sex): on the first birthday an adult not retired has reached its pension's age, the `retire` decision point (a placeholder rule naming HH: retire at that age) sets it retired; at the next 4a its attachments on employment lines are taken off it and its members leave each line with as many of its employers', and it claims the state pension (§10.3).
-- **Severance** owed on a separation is the class's days a year for each whole year since the line's band began, of the line's daily wage, per member leaving. At 7c each employer's day's severance is one instruction: all of it where its money covers it, else each member the same share of what it holds, a whole share for each twin, the rest counted unpaid.
+- **Severance** owed on a separation is the class's days a year for each whole year since the line's band began, of the line's daily wage, per member leaving. At 7c each employer's day's severance is one instruction: all of it where its money covers it, else each member the same share of what it holds, the rest counted unpaid.
 
 - **Joining a line** (`Books::members_join`): a hire's members join the employee's row and as many join the
   employer's, in one instruction, the rows opened where they do not exist; the hired person gains its attachment.
@@ -1911,8 +1869,8 @@ experience weighting is (L − k)^θ over the annual means of the years lived.
 | Public agency | `sys-soc` | Its duties and staff pass to a successor agency named by the budget |
 | Sovereign | `sys-trs` | Default and exchange offer |
 
-Estate rows are short-lived individuals, **one per ended party**: an agent's twins, which end together, share one
-estate, holding their count on every line and holding it succeeds to (§7.4). The ended party's identity names its
+Estate rows are short-lived individuals, **one per ended party**, holding its count on every line and holding it
+succeeds to (§7.4). The ended party's identity names its
 estate as successor (PTY.10), so a trade or payment in flight that names it settles with the estate; and its units
 pass with what binds them — covers of offers not yet settled, as a weekend's sales are, and pledges — which stay under
 its name and count on the estate (`phx_ledger::succession`: `Ledger::bound`, and every cover and pledge placed through
@@ -2025,10 +1983,9 @@ A world starts from a setup (spec GEN.14, GEN.15, Appendix E 43), so a new game 
   country, and each country's land is its share of the map, so regions are of like size. A country's persons and its
   small firms are apportioned over its regions by their land, the one weight the map gives before the dwelling stock
   places them.
-- **The factor divides once**: the setup's population is divided by the representation's factor before the countries,
-  and each country's agents are apportioned over its regions by their land, so both representations draw the same
-  agents (REP.40) — a small world's countries hold that many persons, twins' each agent's twins — and only the
-  population's remainder over the factor is reported.
+- **The world's persons split once**: the persons the representation holds are split among the countries by the
+  setup's shares, and each country's over its regions by their land (REP.40); what the split's rounding leaves is
+  reported.
 - **Names**: a real name labels the country's institutions and currency and pre-fills its choices; its economy is
   always derived. A generated name comes from the stream `GEN.names`.
 - The setup is named by every realism report (GEN.11). A save's manifest does not record it: its register hash is
@@ -2131,8 +2088,8 @@ what those persons make:
 
 The elder of a couple heads it, else the mother, else the one person or the first drawn. Each household is formed as
 an explicit household, its persons held with their roles (§7.1), each person's health and each adult's education
-drawn by its age and sex from the household's own streams, and the region's households are placed one agent for every
-`REP.multiplicity` of them (§7.6), so the agents' multiplicities sum to the population (REP.13). The
+drawn by its age and sex from the household's own streams, and each household is placed as one agent (§7.6), so the
+agents are the population (REP.13). The
 report gives each country's households by type and persons by age band against the drawn shares.
 
 A person's birth date follows from its age at the snapshot. Its birthday falls on a day drawn evenly over the year, and
@@ -2150,8 +2107,7 @@ treasury) or left to the derived side (employers, landlords, schemes), and its h
 of its roles. Where a counterparty is chosen in proportion to drawn sizes (the bank among the country's), the choice is
 made **online**: the n-th household of a stratum takes the counterparty furthest below its share of n, ties by lot, so
 every prefix of the region's households is apportioned within one of exact whatever the region's total, and no second
-pass is needed. An agent's row on a line counts its multiplicity times its twin's contracts, and its balance is its
-twins' total (REP.3, REP.9). A line is opened for each distinct (kind, terms, named counterparty); the counterparty's
+pass is needed. An agent's row on a line counts its contracts, and its balance is its own (REP.3, REP.9). A line is opened for each distinct (kind, terms, named counterparty); the counterparty's
 side of a named line is one row counting the agents' contracts. Lines whose other side is derived — jobs, tenancies,
 defined-benefit pensions — take it once every region is drawn, each line's count apportioned over the eligible
 counterparties by their drawn sizes (§10.2), and the unmatched strata and each counterparty's difference from its drawn
@@ -2195,8 +2151,8 @@ employs whole persons — sum to the employed in expectation (`sys-frm`'s `law`)
 rank (REP.2), are drawn first as the top order statistics of the law of scale one and scaled. The small firms are
 drawn with the parties, before the households: each country's firms below the rank, the law's scale solved again so
 they employ what the large firms leave, sized up to the smallest the rank admits, apportioned over the regions by their
-land and over the banks by the banks' drawn sizes, and placed as agents of the small-firm kind, one for every
-`REP.multiplicity` firms, with region, size and bank as attributes (§7.1). They
+land and over the banks by the banks' drawn sizes, and placed as agents of the small-firm kind, one a firm, with
+region, size and bank as attributes (§7.1). They
 hold the firms' deposits and debt the large firms do not, by their employees, on each bank's lines for them — a
 current account, and a loan line for each whole year a firm's loan may run (`BNK.loan_years_min` to `_max`), each
 agent's term drawn alike and its balance repaid monthly over the dates that remain (`Leg::Amortising`) — and are
@@ -2253,8 +2209,7 @@ series of one, never a drawn past.
 - **Drawn sizes** pass between contributions in the books' `drawn` map, keyed by stratum and country (a bank's
   weight, a firm's debt, deposits and plant, a firm's lender); the derived side reads them and apportions (§10.2).
 - **Balancing** is the ledger's `OpeningWrite` legs, applied by the one apply routine at `ApplyAt::Opening`, where
-  rows may also be opened, and moved whole between holders with their balances — as one twin's contracts move to the
-  player's seat (§7.6) — and nothing else moves. Each write is reported with its party, amount, the identity it
+  rows may also be opened, and moved whole between holders with their balances, and nothing else moves. Each write is reported with its party, amount, the identity it
   served and its counterparty; once every phase has run, each party's opening **equity** is computed once, as its
   rows' balances signed by side plus its holdings at cost, into the report. At the assembly's end, once the player is
   seated, the ledger forgets the opening's day book whole (`Ledger::opened`): the audit and the accounts read days, and
@@ -2313,8 +2268,8 @@ its day's moves still make what it holds. Every row placed, removed or recounted
 read, a party that has ended holds nothing of its own: what it held passed on when it ended. The money family reads its
 day's span of money lines together, a side of many small holders that keeps no list summed in one pass over the tables
 of the kinds that may hold it; as built this sweeps every live agent's rows whenever the span holds a retail deposit
-line, undeclared and uncounted (F-059). The representation family bounds a row by the agent's multiplicity times the
-persons its twin holds in the roles its side declares (REP.31), as a household's jobs count its adults; a side declared
+line, undeclared and uncounted (F-059). The representation family bounds a row by the persons the agent holds in the
+roles its side declares (REP.31), as a household's jobs count its adults; a side declared
 `many`, whose holder counts a contract for each counterpart (an employer, a bank), is bounded by no count per person.
 
 ### 10.5 Settled worlds for testing
@@ -2333,7 +2288,7 @@ world on the phone. CI never runs the world.
 - A **save** is a directory: a manifest and one file per store of zstd frames of transformed pages. The manifest
   (`save/manifest.rs`) holds the format, the build, the register (a hash of the data files the world was assembled
   over), the seed, the day and its date, the settling length (`settling_years`), whether the read trace was on, the
-  representation's multiplicity and divisor (§7.6), each
+  representation's factor (§7.6), each
   store's name, file, bytes compressed and raw and logical hash, and the world hash. It holds no policy hash, setup or
   valve: the register hash covers them where they are data (§7.9, §10.0).
 - Saves are written at the moments SET.12 declares — when the player saves, when the app is set aside, and at the
@@ -2426,11 +2381,11 @@ of one content hash equal. Metrics, findings, the read trace and wall time stay 
   settlement and the day's events — into the **macro reads** `data/observer/READS.toml` declares, each a named
   measure (`agents.persons`, `settlement.gross`, `events.<kind>` summing the sizes of the day's events of a declared
   kind, …); its `Views` build, at the turn's close, each read's latest value and the declared histograms of a kind's
-  agents, of an attribute's values counted by their multiplicities, over fixed lower edges with the values
+  agents, of an attribute's values, over fixed lower edges with the values
   below the first counted apart. Each histogram is an opening distribution (GEN.8): the host keeps the opening's view
   and reports each histogram's distance from it (half the summed differences of the bins' shares) at settling's end
   and at the run's end, and how far its members moved within it: each view keeps the bin of a fixed sample of the
-  kind's agents — one in `MOBILITY_SAMPLE` by party identity, so no draw picks it — and the share, by their twins,
+  kind's agents — one in `MOBILITY_SAMPLE` by party identity, so no draw picks it — and the share
   of those in both views whose bin changed is read beside the distance (`phx_obs::moved`). The macro reads count every
   event of a kind, private ones among them, since they measure the world's truth; what a player's page shows of
   events is the public ones alone (OBS). A read may declare why it can rise on every day (`grows`); liveness fails a read that rises on
@@ -2449,14 +2404,13 @@ of one content hash equal. Metrics, findings, the read trace and wall time stay 
 - **The representation**: the inspector's pages show REP.15's report — the representation, its factor and its
   counts — beside every distributional number (N5).
 - **An agent's page** (OBS.8) shows the agent itself: its attributes, persons, positions and rows, and the recorded
-  events that name it; under twins it says the agent stands for _k_ identical households or firms. Nothing is drawn
-  to show it.
-- **The player** is a party of multiplicity one (REP.1, OBS.4) whose decider fact names the player. A queued intent is
+  events that name it. Nothing is drawn to show it.
+- **The player** is an agent (REP.1, OBS.4) whose decider fact names the player. A queued intent is
   a **wake**: at 1c of the first day its decision point runs, it gives the player an occasion for that decision (REP.21)
   and is decided there; until then it stays queued. On days the player has queued nothing for a scheduled decision, the
   rule decides only if the player's settings delegate (OBS.4). It appears in every audit family. As built, the setup
   states the player's country and whether it delegates; at the end of the assembly the world draws a household of that
-  country from the stream `GEN.player`, each household equally likely, as an agent of multiplicity one (§7.1), and seats
+  country from the stream `GEN.player`, each household equally likely (§7.1), and seats
   it in `PlayerQueue`, saved and hashed with the world, which names the player's decider (`Decider::Player`) and refuses
   an intent queued for any other party.
 - **On the phone**, `phx-ffi` runs the engine on its own thread with the pinned pool: create, load, step a turn, read
@@ -2477,9 +2431,9 @@ of one content hash equal. Metrics, findings, the read trace and wall time stay 
 
 Every line below is **count × unit cost**, each with the counter that ratchets it (§16.8). Unit costs are the
 third review's **measured** kernels, scaled to a tuned phone core; counts are estimates for the coarsened
-representation (spec Appendix E 31). The **design point** is 0.7 million household agents (a multiplicity of about
-170 under twins), 0.25 million firm and business agents, and 2,000 zones. The first measurements (§14.6) replace every
-number here; the factor and zones are RESOLUTION and are set where both budgets hold (N8.5) with at least 10%
+representation (spec Appendix E 31). The **design point** is 0.7 million household agents (about 2.4 million persons), 0.25
+million firm and business agents, and 2,000 zones. The first measurements (§14.6) replace every
+number here; the size and zones are RESOLUTION and are set where both budgets hold (N8.5) with at least 10%
 headroom, this document's margin for the estimates' error.
 
 ### 13.1 Memory (4.5 GB resident, N8.4), at the worst day's peak, through Stage 2
@@ -2502,7 +2456,7 @@ headroom, this document's margin for the estimates' error.
 | Markets, marks and fixings history; public records (Stage 2's filed accounts over two years, 48 MB); events | — | — | 198 MB |
 | Map, network, deposits, stock per (tile, class) and its index | — | — | 80 MB |
 | Directory with bounded tombstones | — | — | 50 MB |
-| Day buffers at the worst day (payee reduction streamed shard by shard; intents; sort scratch), by their room; measured at 889 MB on Stage 0's twins payday, over this line (the plan's F-082) | — | — | 600 MB |
+| Day buffers at the worst day (payee reduction streamed shard by shard; intents; sort scratch), by their room; measured at 889 MB on Stage 0's payday of 2.8 M payments, over this line (the plan's F-082) | — | — | 600 MB |
 | Arena slack and page tails (15% of variable-length stores) | — | — | 214 MB |
 | Save buffers (the renumbering slice retired with cells) | — | — | 94 MB |
 | Views (tracers retired with cells) | — | — | 60 MB |
@@ -2535,7 +2489,7 @@ about 1 KB, 50 MB; household persons' records 28 MB (the education record, schoo
 retirement); household agents 22 MB (672 bytes); relationship rows 6 MB (kin rows, licences); firm agents 1 MB (504
 bytes, past this table's 500-byte line by 4) and their cumulative-output lists 7 MB; ways, known-way sets and patents 7
 MB; views 10 MB; imitation pools 4 MB; receipts 1 MB; slack 11 MB — about 147 MB, to about **5.12 GB**: 14% over the
-budget itself. How rows fall as the factor rises is measured (§14.6).
+budget itself. How rows fall with the size is measured (§14.6).
 
 The firm agent's record, counted against 500 bytes: the hot record with its three leading position totals (output
 stock, cash, sales outlook) 64; input stocks, four, and work in progress 40; output and four input use rates 40; unit
@@ -2743,8 +2697,7 @@ GEN.8 do.
 The realised rates (CHN.7) are measured live over a fixed sample of agents (`phx_world::rates`). An agent is sampled
 when the mix of its identity is a multiple of `RATE_SAMPLE` (64). The sample is found in one sweep on the first day
 measured, and an agent stays in it while it lives. Each day, for every process on its kind, each present person's
-chance adds its twins to the expected hits and to their variance, and each person reached adds its twins to the
-realised hits. The tallies are kept by process, calendar year and the person's whole years of age (`Rates`), and a
+chance adds to the expected hits and to their variance, and each person reached adds one to the realised hits. The tallies are kept by process, calendar year and the person's whole years of age (`Rates`), and a
 check holds each one to its expectation within its sampling error.
 
 The suite is a hand-written `const CHECKS: &[Check]` in `phx-cli/src/checks/mod.rs`, each check's function and
@@ -2837,7 +2790,7 @@ on the build machine:
    agent table — by `phx-ffi`'s `agents.rs`. It settles each business day through `Books::settle_day` and closes the
    ledger's day, draws agents' next hits through `phx_pop::hazard` on the pool, and applies hits' outcomes by making
    households explicit and writing them back (`phx_pop::explicit`); the audit is a sequential sweep of a slice of the
-   random words and of the agents' multiplicities, not the real families; the agenda, redraws and each visit's gathers
+   random words and of the agents' parties, not the real families; the agenda, redraws and each visit's gathers
    are reads and writes of random words; there are no views, members leaving, estates or 9b posting (F-064). The
    device report measures an agent's next hit drawn and a hit's outcome applied on the fastest core.
 
@@ -2847,7 +2800,7 @@ stance. From these, §13 is
 rewritten with measured numbers for every stage — the measured unit costs times each later stage's ledger counts — so
 each gate reports the whole world's projection, not only its own stage's, beside the full-load bench that decides it.
 If they do not fit, the remedies are, in order (N8.7): how the world is represented and traversed; then the play
-resolution — the factor and the zones. If none suffices, that is a finding, and the owner decides; no mechanism is
+resolution — the size and the zones. If none suffices, that is a finding, and the owner decides; no mechanism is
 weakened. Before Stage 4's steps are built, `phx measure` also measures policy rows per (agent, cover) on GEN's draws
 (the plan's S4.03) and the rows per agent of defined-benefit rights and DC pots (S4.04).
 
@@ -3330,15 +3283,25 @@ hashes read their bytes as little-endian.
       split, joined or averaged; with cells go keys, profiles, steps and tolerances, parts and landing, pooled flows
       across members, choice groups, the decision gap, promotion and demotion, tracers, seller spreads and
       renumbering (§7);
-    - an agent's multiplicity is the count of identical twins it stands for; a build holds its world as **twins**, the
-      full population as agents of multiplicity _k_, or a **small world**, one _k_-th of it as agents of multiplicity
-      one, set by `REP.multiplicity` and `REP.population_divisor`, twins by default (§7.6);
-    - lines still record many-party relationships as counts, an agent's count its multiplicity times its twin's
-      contracts (§7.5); individuals are the institutions and the parties ranked at the opening, and the player's household is an
-      agent of multiplicity one;
-    - the factor is the representation's one valve (N8.5, §7.9); §13 keeps its estimates, with the work only cells
+    - an agent stood for a multiplicity of identical twins, the full population held as agents of many twins or a
+      small world of a share of it, until 35 retired twins;
+    - lines still record many-party relationships as counts (§7.5); individuals are the institutions and the parties
+      ranked at the opening, and the player's household is an agent;
+    - the size is the representation's one valve (N8.5, §7.9); §13 keeps its estimates, with the work only cells
       needed marked retired, until the first measurements replace them.
 
+
+35. **One representation: a world of a declared size** (2026-09-27, the owner; spec REP.40, Appendix E 44):
+    - the world holds a declared number of the setup's persons and every household and small firm they form is one
+      agent of one party (§7.6); `REP.persons` is the one primitive, 750 000 on the build machine's measure until the
+      device resets it, and `phx run --persons N` sets another;
+    - twins are removed from every layer: the agent table's multiplicity column, the ledger's holder members and payer
+      weight, the pooled-flow rule and standing flows' kinks (built for twins and cells, used by nothing else), the
+      tally's unit classes and like-with-like draws, the losers drawn past the failed, a trade's and a tax's whole share
+      per twin, the labour round's units and the vacancy lot, the opening's twin counts and the player's seated twins;
+    - with twins went the reason only large firms held a deposit's right, so small firms draw rights and extract
+      (`GDS.extract_small`);
+    - the benches keep the design point's agents; the load report's version is 3.
 ---
 
 ## 19. Coverage

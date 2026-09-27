@@ -670,7 +670,7 @@ pub(crate) mod tests {
             let call =
                 NetworkCall { nodes: &nodes, edges: &edges, orders: &placed, ties: TIES, ration: Ration::ProRata };
             for m in zone_matches(&call, &c).iter().flatten() {
-                assert!(m.qty > 0 && m.buyer != crate::print::Buyer::Party(m.seller));
+                assert!(m.qty > 0 && m.buyer != m.seller);
             }
         }
     }
@@ -700,7 +700,7 @@ pub(crate) mod tests {
                 let v = i128::from(m.price.raw()) * i128::from(m.qty);
                 if m.seller == owner {
                     v
-                } else if m.buyer == crate::print::Buyer::Party(owner) {
+                } else if m.buyer == owner {
                     -v
                 } else {
                     0

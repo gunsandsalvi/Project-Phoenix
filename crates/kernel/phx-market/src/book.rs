@@ -5,7 +5,7 @@ use phx_rand::{Draws, below_u64};
 
 use crate::call::{CallRules, Outcome, call, lesser};
 use crate::order::{Asked, Order, Poster, Side, Timing};
-use crate::print::{Buyer, Match};
+use crate::print::Match;
 
 /// A step resting in the book: its order, poster and side, its limit and what is left of it, and when it arrived.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -89,7 +89,7 @@ pub(crate) fn continuous(orders: &[Order], sequence: &[usize]) -> (Vec<Match>, V
                     Side::Sell => (resting.party, order.party),
                 };
                 let price = PriceRaw::from_raw(resting.limit);
-                trades.push(Match { buyer: Buyer::Party(buyer), seller, qty, price, draws: Missing::Absent });
+                trades.push(Match { buyer, seller, qty, price, draws: Missing::Absent });
                 resting.left -= qty;
                 left -= qty;
             }
@@ -162,7 +162,6 @@ mod tests {
     use crate::call::{CallRules, Outcome};
     use crate::market::{Ration, TieRule};
     use crate::order::{Asked, Order, Poster, Side, Timing};
-    use crate::print::Buyer;
 
     fn lot() -> Draws {
         Draws::new(stream_key(Seed::new(1), "MKT.book"), Subject::new(SubjectTag::Market, 0), 1, 0)
@@ -193,7 +192,7 @@ mod tests {
         let (trades, resting) = continuous(&orders, &[0, 1, 2, 3]);
         let got: Vec<(u64, i64, i64)> = trades.iter().map(|t| (t.seller.get(), t.qty, t.price.raw())).collect();
         assert_eq!(got, vec![(3, 3, 100), (1, 5, 101), (2, 2, 101)], "the best price first, then the earlier arrival");
-        assert!(trades.iter().all(|t| t.buyer == Buyer::Party(PartyId::new(4))));
+        assert!(trades.iter().all(|t| t.buyer == PartyId::new(4)));
         assert_eq!(resting.len(), 1, "what is left of the later offer rests");
         assert_eq!(resting[0].left, 3);
         let (later, _) = continuous(&orders, &[1, 0, 2, 3]);

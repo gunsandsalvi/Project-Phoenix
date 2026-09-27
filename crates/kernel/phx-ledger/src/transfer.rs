@@ -17,8 +17,8 @@ use crate::instruction::{AccountRef, Denom, Instruction, InstructionId, LegKind,
 use crate::line::NewRow;
 use crate::rows::{Optional, RowView};
 
-/// A holder on a line side: the party, its members and its unit.
-type Held = (PartyId, u32, u32);
+/// A holder on a line side: the party and its members.
+type Held = (PartyId, u32);
 
 /// A tally's count of members as a change to it.
 fn signed(members: u64) -> i64 {
@@ -367,11 +367,11 @@ impl<B: Backing> Books<B> {
     }
 
     /// Members leaving a line with as many of its other side: `count` members off a party's row, and as many off the
-    /// rows of the other side's holders, each drawn by the members its row has left and giving its whole unit, so the
-    /// sides stay equal and an agent's twins alike, in one instruction. A member leaving takes no share of a row's balance, which would be a claim the line still
-    /// holds, and its counterparts none of theirs, which mirror the claims that stay. The members the other side
-    /// cannot give whole units for pass instead to other holders of the party's side, drawn alike, as a buyer of the
-    /// contracts would take them. A side that keeps no holder list is read beforehand, by `read_unlisted`.
+    /// rows of the other side's holders, each drawn by the members its row has left, so the sides stay equal, in one
+    /// instruction. A member leaving takes no share of a row's balance, which would be a claim the line still holds,
+    /// and its counterparts none of theirs, which mirror the claims that stay. The members the other side cannot give
+    /// pass instead to another holder of the party's side, drawn by its members, as a buyer of the contracts would
+    /// take them. A side that keeps no holder list is read beforehand, by `read_unlisted`.
     ///
     /// Returns the other side's holders drawn, with their members that left.
     ///
@@ -395,8 +395,7 @@ impl<B: Backing> Books<B> {
         };
         let mut theirs = self.side_tally(line, other);
         let ours = self.fresh_tally(line, side);
-        let unit = self.parties.unit(party);
-        let (taken, rest) = theirs.draw_many(count, unit, d);
+        let (taken, rest) = theirs.draw_many(count, d);
         let leaving = count - rest;
         if leaving != 0 {
             let mut legs = self.leave((party, line, side), leaving, self.no_share((party, line, side), leaving, m), m);
@@ -419,23 +418,19 @@ impl<B: Backing> Books<B> {
             // The party is not among those drawn to take its own members.
             let mine = ours.held(party);
             ours.adjust(party, -signed(mine));
-            let (passed, short) = ours.pass(rest, d);
-            if short != 0 {
+            let Some(to) = ours.pass(rest, d) else {
                 violation!(
                     clause = "REP.31",
-                    "members leaving a line whose sides hold none to take them in whole units",
-                    remaining = short,
-                    line = line.get(),
-                    unit = unit
+                    "members leaving a line whose sides hold none to take them",
+                    remaining = rest,
+                    line = line.get()
                 );
-            }
+            };
             ours.adjust(party, signed(mine) - i64::from(rest));
-            for (to, k) in passed {
-                ours.adjust(to, i64::from(k));
-                // The taker takes the contracts as they stand, never the leaving party's arrears on them.
-                let t = LineTransfer { line, side, from: party, to, count: k, reason: self.dues.succeeded };
-                let _ = self.move_members(t, m, audit)?;
-            }
+            ours.adjust(to, i64::from(rest));
+            // The taker takes the contracts as they stand, never the leaving party's arrears on them.
+            let t = LineTransfer { line, side, from: party, to, count: rest, reason: self.dues.succeeded };
+            let _ = self.move_members(t, m, audit)?;
         }
         self.leaving.insert((line, side), (self.ledger.lines.side_version(line, side), ours));
         Ok(taken)
@@ -468,10 +463,8 @@ impl<B: Backing> Books<B> {
         if let Some(key) = self.ledger.lines.sole_holder(line, side) {
             let (place, slot) = split.split(key);
             let t = self.parties.holder(place);
-            let rows: Vec<Held> = crate::rows::find(t, slot, line, side)
-                .map(|r| (t.party(slot), r.row.count, t.weight(slot)))
-                .into_iter()
-                .collect();
+            let rows: Vec<Held> =
+                crate::rows::find(t, slot, line, side).map(|r| (t.party(slot), r.row.count)).into_iter().collect();
             return crate::cleared::Tally::new(&rows);
         }
         // The list's keys name each holder's table and slot, so its row is read there, not through the directory, in
@@ -488,7 +481,7 @@ impl<B: Backing> Books<B> {
                 .filter_map(|key| {
                     let (place, slot) = split.split(*key);
                     let t = self.parties.holder(place);
-                    crate::rows::find(t, slot, line, side).map(|r| (t.party(slot), r.row.count, t.weight(slot)))
+                    crate::rows::find(t, slot, line, side).map(|r| (t.party(slot), r.row.count))
                 })
                 .collect::<Vec<Held>>()
         });
@@ -537,7 +530,7 @@ impl<B: Backing> Books<B> {
         });
         for (at, (p, c)) in found.into_iter().flatten() {
             if let Some(v) = wanted.get_mut(&at) {
-                v.push((p, c, self.parties.unit(p)));
+                v.push((p, c));
             }
         }
         for ((line, side), rows) in wanted {

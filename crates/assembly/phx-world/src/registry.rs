@@ -95,26 +95,30 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
         .collect()
 }
 
-/// The setup's countries as the opening reads them, with the setup's total population, the world's, and the factor
-/// between the setup's persons and the world's agents. The population is divided by the factor once, before the
-/// countries, so both representations draw the same agents: a small world's countries hold that many persons, and
-/// everything the opening derives follows; twins' countries hold that many agents' twins.
+/// The setup's countries as the opening reads them, and the world's persons they were split from. Everything the
+/// opening derives follows from the countries' persons; a world larger than the setup's population is refused.
 fn opening_countries(
     kernel: &KernelPrims,
     c: &crate::compile::Compiled,
     game: &NewGame,
     geo: &phx_geo::GeoState,
     representation: phx_pop::prims::Representation,
-) -> (Vec<phx_core::OpeningCountry>, u64, u64, u64) {
+) -> (Vec<phx_core::OpeningCountry>, u64) {
     let total = kernel.opening.population.shared(&c.register).get();
-    let twins = u64::from(representation.multiplicity);
-    let divisor = twins * u64::from(representation.population_divisor);
-    let agents = total / divisor;
+    let persons = representation.persons;
+    if persons > total {
+        phx_num::violation!(
+            clause = "REP.40",
+            "a world of more persons than the setup's population",
+            persons = persons,
+            population = total
+        );
+    }
     let units: Vec<u64> = (0_u8..)
         .take(game.countries.len())
         .map(|i| kernel.opening.units_per_dollar.get(&c.register, CountryId::new(i)).get())
         .collect();
-    (crate::opening::books::countries(game, geo, (agents, twins), &units), total, agents * twins, divisor)
+    (crate::opening::books::countries(game, geo, persons, &units), persons)
 }
 
 /// The world's books opened from the setup's countries, their people and their currencies' units.
@@ -127,7 +131,8 @@ fn open(
     geo: &phx_geo::GeoState,
     (phases, pool, report): (&[phx_core::OpeningPhase], Option<&Arc<phx_exec::Pool>>, phx_core::GenReport),
 ) -> Result<(phx_ledger::books::Books, phx_pop::population::Population, phx_core::GenReport), String> {
-    let (countries, total, population, divisor) = opening_countries(kernel, c, game, geo, pop.1);
+    let (countries, persons) = opening_countries(kernel, c, game, geo, pop.1);
+    let split: u64 = countries.iter().map(|c| c.people).sum();
     let (books, people, mut report) = crate::opening::books::open_books(
         (d, facets, &crate::visits::specs(visits)),
         pop,
@@ -137,12 +142,11 @@ fn open(
         (phases, pool),
         report,
     )?;
-    let whole = population / u64::from(pop.1.multiplicity) * divisor;
-    if whole != total {
+    if split != persons {
         report.adjustments.push(phx_core::Adjustment {
-            what: format!("the population, whole agents of one {divisor}-th of the setup's"),
-            drawn: i128::from(total),
-            set: i128::from(whole),
+            what: "the world's persons, split among the countries in whole persons".to_owned(),
+            drawn: i128::from(persons),
+            set: i128::from(split),
         });
     }
     Ok((books, people, report))
@@ -534,7 +538,7 @@ fn labour_of(
     geo: &phx_geo::GeoState,
     book: crate::labour::LabourBook,
 ) -> Result<crate::labour::Labour, AssemblyErrors> {
-    let (opening, _, _, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
     crate::labour::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
@@ -544,7 +548,7 @@ fn credit_of(
     geo: &phx_geo::GeoState,
     book: crate::credit::CreditBook,
 ) -> Result<crate::credit::Credit, AssemblyErrors> {
-    let (opening, _, _, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
     crate::credit::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
@@ -554,7 +558,7 @@ fn state_of(
     geo: &phx_geo::GeoState,
     book: crate::state::StateBook,
 ) -> Result<crate::state::State, AssemblyErrors> {
-    let (opening, _, _, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
     crate::state::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
@@ -564,7 +568,7 @@ fn central_of(
     geo: &phx_geo::GeoState,
     book: crate::central::CentralBook,
 ) -> Result<crate::central::Central, AssemblyErrors> {
-    let (opening, _, _, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
     crate::central::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
@@ -741,9 +745,7 @@ pub fn assemble(
     world.credit_rebuild();
     world.state_rebuild();
     world.bills_opened();
-    let over_edge = crate::Inspector::new(&world).twins_over_edge();
     let agent_issuers = crate::Inspector::new(&world).agent_issuers();
-    world.report.over_edge = over_edge;
     world.report.agent_issuers = agent_issuers;
     world.visits_book_all(world.today);
     world.books.ledger.opened();

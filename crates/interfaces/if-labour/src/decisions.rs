@@ -23,14 +23,12 @@ pub struct AcceptIn {
     pub wage_weight: f64,
 }
 
-/// An applicant as its employer reads it: its skill level, its years of experience, its lot, and the members it
-/// brings, its twins.
+/// An applicant as its employer reads it: its skill level, its years of experience and its lot.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Applicant {
     pub skill: u32,
     pub experience: u32,
     pub lot: u64,
-    pub unit: u32,
 }
 
 /// What an employer reads when it selects among a vacancy's applicants: them, and the jobs it has open. The output is

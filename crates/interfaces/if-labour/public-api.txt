@@ -51,7 +51,6 @@ pub struct if_labour::decisions::Applicant
 pub if_labour::decisions::Applicant::experience: u32
 pub if_labour::decisions::Applicant::lot: u64
 pub if_labour::decisions::Applicant::skill: u32
-pub if_labour::decisions::Applicant::unit: u32
 pub struct if_labour::decisions::Need
 pub if_labour::decisions::Need::hours_a_unit: f64
 pub if_labour::decisions::Need::job_hours: f64
@@ -117,7 +116,6 @@ pub if_labour::kind::LabourKind::separated: &'static str
 pub if_labour::kind::LabourKind::severance: &'static str
 pub if_labour::kind::LabourKind::state: &'static str
 pub if_labour::kind::LabourKind::taste_stream: &'static str
-pub if_labour::kind::LabourKind::vacancy_stream: &'static str
 pub if_labour::kind::LabourKind::wage_at: fn(&if_labour::law::Law, i64) -> f64
 pub type if_labour::kind::Adapt = fn(phx_num::missing::Missing<(i64, u32)>, phx_num::missing::Missing<i64>, i64, u32) -> i64
 pub mod if_labour::law

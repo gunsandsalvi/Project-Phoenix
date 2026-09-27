@@ -95,10 +95,10 @@ pub struct HeldRight {
     pub remaining: Missing<i64>,
 }
 
-/// A good a row holds: its product, its grade class and its units, one twin's for an agent.
+/// A good a row holds: its product, its grade class and its units.
 pub type HeldGood = (u16, u8, i64);
 
-/// Plant a row holds: its kind, its condition class and its units, one twin's for an agent.
+/// Plant a row holds: its kind, its condition class and its units.
 pub type HeldPlant = (u8, u8, i64);
 
 /// A place a good could be carried to from where a row stands, as the public prices show it: the zone, the mode,
@@ -113,8 +113,7 @@ pub struct Away {
     pub carriage: i64,
 }
 
-/// What a row's party may read of goods beyond its facts: its units of each good at its place, one twin's for an
-/// agent, and the list of them; the deposits whose rights it holds; the units of a product, of every grade, it has
+/// What a row's party may read of goods beyond its facts: its units of each good at its place, and the list of them; the deposits whose rights it holds; the units of a product, of every grade, it has
 /// delivered since the world opened; and each good's latest mark at its place and the public outlook of its price
 /// there by a method, which are public.
 pub trait GoodsView: core::fmt::Debug {
@@ -131,14 +130,14 @@ pub trait GoodsView: core::fmt::Debug {
     /// The party the row is, as a subject a draw of its own is keyed by.
     fn party(&self, slot: Slot) -> Missing<phx_id::PartyId>;
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64>;
-    /// The money the row's party holds on its account, one twin's for an agent; none without an account.
+    /// The money the row's party holds on its account; none without an account.
     fn money(&self, slot: Slot) -> Missing<i64>;
     /// The plant the row holds.
     fn plant(&self, slot: Slot) -> &[HeldPlant];
     /// The other places in the row's country a good is marked at, by each mode carriage is marked in where it stands.
     fn away(&self, slot: Slot, product: u16, grade: u8) -> Vec<Away>;
     /// What winding the row's party down would return beyond the money it keeps either way: its goods less what it
-    /// owes, one twin's for an agent.
+    /// owes.
     fn net_assets(&self, slot: Slot) -> Missing<i64>;
 }
 
@@ -253,7 +252,7 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
         self.parts.facts.write(F::ITEM.name, slot, value);
     }
 
-    /// The row's party's units of a good at its place: one twin's for an agent.
+    /// The row's party's units of a good at its place.
     #[must_use]
     pub fn held(&self, slot: Slot, product: u16, grade: u8) -> i64 {
         self.parts.goods.held(slot, product, grade)
@@ -271,7 +270,7 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
         self.parts.goods.plant(slot)
     }
 
-    /// What winding the row's party down would return, one twin's for an agent.
+    /// What winding the row's party down would return.
     pub fn net_assets(&self, slot: Slot) -> Missing<i64> {
         self.parts.goods.net_assets(slot)
     }
@@ -293,14 +292,13 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
         self.parts.goods.rights(slot)
     }
 
-    /// The units of a product, of every grade, the row's party has delivered since the world opened, one twin's for
-    /// an agent.
+    /// The units of a product, of every grade, the row's party has delivered since the world opened.
     #[must_use]
     pub fn delivered(&self, slot: Slot, product: u16) -> i64 {
         self.parts.goods.delivered(slot, product)
     }
 
-    /// The money the row's party holds on its account, one twin's for an agent.
+    /// The money the row's party holds on its account.
     pub fn money(&self, slot: Slot) -> Missing<i64> {
         self.parts.goods.money(slot)
     }

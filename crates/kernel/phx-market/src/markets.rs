@@ -10,7 +10,7 @@ use crate::failure::{FailureKind, MarketFailure};
 use crate::linked_call::LinkedCall;
 use crate::market::{Form, MarketDecl};
 use crate::order::{Order, Side};
-use crate::print::{Buyer, Mark, MarkSource, Match, MatchSetId, PrintId, Tape, Traded};
+use crate::print::{Mark, MarkSource, Match, MatchSetId, PrintId, Tape, Traded};
 
 /// A market's measures for a day it met: its meetings and those that formed no price, the depth posted on each side,
 /// the width between the best offer and the best bid, what it traded in quantity and value, and the age of its last
@@ -279,7 +279,7 @@ impl MarketsAudit for Markets {
                 gaps.push(gap(p.market(), format!("a print of {} traded {quantity}", p.quantity())));
             }
             for m in &set.matches {
-                if m.qty <= 0 || m.buyer == Buyer::Party(m.seller) || (one_price(p.form()) && m.price != p.price()) {
+                if m.qty <= 0 || m.buyer == m.seller || (one_price(p.form()) && m.price != p.price()) {
                     gaps.push(gap(
                         p.market(),
                         "a match of no quantity, with itself, or off its print's price".to_owned(),
@@ -316,7 +316,7 @@ mod tests {
     use crate::call::{Cleared, Outcome};
     use crate::failure::FailureKind;
     use crate::market::{Form, MarketDecl, MarketKey, Ration, TieRule};
-    use crate::print::{Buyer, Match};
+    use crate::print::Match;
 
     const DECL: MarketDecl = MarketDecl {
         id: MarketId::new(4),
@@ -339,13 +339,7 @@ mod tests {
     fn meetings_recorded_and_audited() {
         let mut markets = Markets::default();
         let price = PriceRaw::from_raw(100);
-        let m = Match {
-            buyer: Buyer::Party(PartyId::new(1)),
-            seller: PartyId::new(2),
-            qty: 5,
-            price,
-            draws: Missing::Absent,
-        };
+        let m = Match { buyer: PartyId::new(1), seller: PartyId::new(2), qty: 5, price, draws: Missing::Absent };
         let cleared = Outcome::Cleared(Cleared { price, volume: 5, fills: Vec::new(), matches: vec![m] });
         let quote = (UnitId::new(0), Ccy::new(0));
         assert!(matches!(markets.record_call(&DECL, Day::new(3), quote, &[], &cleared), Missing::Present(_)));

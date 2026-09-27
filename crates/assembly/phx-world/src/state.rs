@@ -207,7 +207,7 @@ impl World {
     }
 
     /// The consumption tax on a sale at the till: its rate's share of the price paid, which the seller owes its
-    /// country's treasury, a whole share for each of the seller's twins, paid in the sale's instruction.
+    /// country's treasury, paid in the sale's instruction.
     #[clause("TAX.1", "TAX.2", "TAX.5", "TAX.7")]
     pub(crate) fn consumption_tax(&mut self, seller: PartyId, (amount, ccy): (i64, Ccy), legs: &mut Vec<LegRec>) {
         let Missing::Present(country) = self.country_of_party(seller) else { return };
@@ -218,9 +218,7 @@ impl World {
         let rate = law.consumption_rate;
         let Some(tax_kind) = self.state.tax else { return };
         let Some(treasury) = self.treasury_of(country) else { return };
-        let raw = phx_ledger::opening::whole((tax_kind.included)(phx_rand::float::from_i64(amount), rate));
-        let unit = i64::from(self.books.parties.unit(seller));
-        let tax = raw - raw.rem_euclid(unit);
+        let tax = phx_ledger::opening::whole((tax_kind.included)(phx_rand::float::from_i64(amount), rate));
         if tax > 0 {
             self.books.pay_into(seller, treasury, (tax, ccy), legs);
             self.state.day.consumption.push((seller, amount, tax));
@@ -255,18 +253,13 @@ impl World {
         }
         let Some(treasury) = self.treasury_of(country) else { return };
         let line = self.benefit_line(&kind, country, (monthly, law.months), order);
-        let twins = self.books.parties.unit(party);
         let Missing::Present(reason) =
             self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(kind.claimed))
         else {
             violation!(clause = "SOC.3", "claims under a reason never declared");
         };
         let m = crate::agents::move_at(&self.register, day, ApplyAt::Day(SubStep::S4a));
-        if self
-            .books
-            .members_join((party, line, Side::Asset), treasury, twins, (reason, m), self.audit.stream())
-            .is_err()
-        {
+        if self.books.members_join((party, line, Side::Asset), treasury, 1, (reason, m), self.audit.stream()).is_err() {
             return;
         }
         self.attach(party, person, line);
@@ -315,18 +308,13 @@ impl World {
         }
         let Some(treasury) = self.treasury_of(country) else { return };
         let line = self.pension_line(&kind, country, monthly, order);
-        let twins = self.books.parties.unit(party);
         let Missing::Present(reason) =
             self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(kind.claimed))
         else {
             violation!(clause = "SOC.3", "claims under a reason never declared");
         };
         let m = crate::agents::move_at(&self.register, day, ApplyAt::Day(SubStep::S4a));
-        if self
-            .books
-            .members_join((party, line, Side::Asset), treasury, twins, (reason, m), self.audit.stream())
-            .is_err()
-        {
+        if self.books.members_join((party, line, Side::Asset), treasury, 1, (reason, m), self.audit.stream()).is_err() {
             return;
         }
         self.attach(party, person, line);
@@ -419,7 +407,6 @@ impl World {
         if on.is_empty() {
             return;
         }
-        let twins = self.books.parties.unit(party);
         let m = crate::agents::move_at(&self.register, day, ApplyAt::Day(SubStep::S4a));
         let Some(stream) = self.streams.named("LAB.layoff") else { return };
         let mut d = self.streams.open(
@@ -430,7 +417,7 @@ impl World {
         );
         // The claim that ends is this person's own, so this person is detached, not one drawn among its household's.
         for line in on {
-            if self.books.members_leave((party, line, Side::Asset), twins, m, &mut d, self.audit.stream()).is_ok() {
+            if self.books.members_leave((party, line, Side::Asset), 1, m, &mut d, self.audit.stream()).is_ok() {
                 self.detach_person((party, person), (line, Side::Asset));
                 self.state.day.benefits_ended += 1;
             }

@@ -14,8 +14,7 @@ const LIST_KINDS: &[&str] = &["RelationshipRows", "Holdings", "Lots", "NamedUnit
 /// cell keeps it; what it writes, the ledger alone asks for.
 const HOLDER_IMPLS: &[&str] = &["crates/kernel/phx-pop/src/holder.rs"];
 /// The ledger's stored records, which only it builds.
-const RECORDS: &[&str] =
-    &["IndividualHolding", "CellHolding", "RelRow", "Lien", "NamedUnit", "InstrumentRow", "LineRow"];
+const RECORDS: &[&str] = &["IndividualHolding", "RelRow", "Lien", "NamedUnit", "InstrumentRow", "LineRow"];
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();

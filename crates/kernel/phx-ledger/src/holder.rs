@@ -11,13 +11,11 @@ use crate::consts::HOLDER_SHARDS;
 /// own arena, contiguous with its other lists, and nothing outside the arena names a position in it.
 pub trait HolderArenas {
     /// The table's identity, which a holder key carries.
-    /// Whether the table's holders keep goods at average cost, one lot a holding: an agent's twins hold alike.
+    /// Whether the table's holders keep goods at average cost, one lot a holding, as households and small firms do.
     fn at_average_cost(&self) -> bool {
         false
     }
     fn table(&self) -> TableId;
-    /// The members a holder stands for: an agent's twins, one for an individual.
-    fn members(&self, holder: Slot) -> u32;
     /// The kind of party the table holds, which a line side's declared holder kinds are checked against.
     fn kind(&self) -> &'static str;
     fn party(&self, holder: Slot) -> PartyId;
@@ -68,10 +66,6 @@ fn word(n: usize) -> u32 {
 }
 
 impl<B: Backing> HolderArenas for KindTable<B> {
-    fn members(&self, holder: Slot) -> u32 {
-        self.weight_at(holder)
-    }
-
     fn table(&self) -> TableId {
         self.id()
     }

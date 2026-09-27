@@ -138,8 +138,7 @@ pub struct AgentDay {
     /// Bookings drawn again on the day a rate changed, and hits drawn.
     pub redraws: u64,
     pub hits: u64,
-    /// Persons the hits reached, persons born into households and persons gone from them at 3e, each counted once for
-    /// every twin.
+    /// Persons the hits reached, persons born into households and persons gone from them at 3e.
     pub persons_hit: u64,
     pub born: u64,
     pub gone: u64,
@@ -148,9 +147,8 @@ pub struct AgentDay {
     pub estates: u64,
     /// Agents drawn afresh at 10b, as they changed or began.
     pub booked: u64,
-    /// The agents at the day's end, the real parties they stand for, and those parties' persons.
+    /// The agents at the day's end and their persons.
     pub agents: u64,
-    pub parties: u64,
     pub persons: u64,
     /// Estates settled and ended, those left waiting on a payment that failed, and what the settled passed on and
     /// their creditors lost.
@@ -191,7 +189,6 @@ impl AgentDay {
             estates: 0,
             booked: 0,
             agents: 0,
-            parties: 0,
             persons: 0,
             estates_settled: 0,
             estates_waiting: 0,
@@ -388,7 +385,6 @@ struct Gathered {
     table: TableId,
     slot: Slot,
     party: PartyId,
-    twins: u64,
     due: u32,
     followed: Vec<(usize, Followed)>,
     household: Option<Household>,
@@ -481,9 +477,8 @@ impl World {
             let mut d = self.streams.open(&b.stream, subject, day, SubStep::S3b.ordinal());
             followed.push((p, follow(&r, (kd.decl.kind, party), b, (h, buffers), (day, start), &mut d)));
         }
-        let twins = u64::from(table.multiplicity(slot).get());
         let household = rates::sampled(party).then(|| h.clone());
-        Some(Gathered { kind: k, table: table_id, slot, party, twins, due: mask, followed, household })
+        Some(Gathered { kind: k, table: table_id, slot, party, due: mask, followed, household })
     }
 
     /// An agent followed at 3b written in the agenda's order: its next bookings, and each hit's event, counts and
@@ -502,10 +497,10 @@ impl World {
             let event = b.event;
             if let Some(h) = &g.household {
                 let year = rates::year_of(self.calendar.date(day));
-                self.metrics.rates.realised((p, year), h, &f.reached, g.twins, self.calendar.date(day));
+                self.metrics.rates.realised((p, year), h, &f.reached, self.calendar.date(day));
             }
             let subject = Subject::new(SubjectTag::Party, g.party.get());
-            let details = [(subject, persons_i64(f.reached.len(), g.twins))];
+            let details = [(subject, persons_i64(f.reached.len()))];
             self.events.record(NewEvent {
                 day,
                 substep: SubStep::S3b,
@@ -515,7 +510,7 @@ impl World {
                 develops_from: Missing::Absent,
             });
             self.agent_day.hits += 1;
-            self.agent_day.persons_hit += phx_rand::float::len_u64(f.reached.len()) * g.twins;
+            self.agent_day.persons_hit += phx_rand::float::len_u64(f.reached.len());
             self.agent_hits.push(AgentHit {
                 process: p,
                 kind: g.kind,
@@ -527,7 +522,7 @@ impl World {
     }
 
     /// 3e: each agent's hits of the day applied together to its household made explicit, by each process's outcome
-    /// in order; the household written back, its gone persons' contracts leaving their lines at its multiplicity, and
+    /// in order; the household written back, its gone persons' contracts leaving their lines, and
     /// an agent no one is left in ended, what it held passing to an estate.
     #[clause("REP.26", "REP.23", "REP.16", "PTY.9")]
     pub(crate) fn agents_outcomes(&mut self, day: Day) {
@@ -626,34 +621,31 @@ impl World {
         })
     }
 
-    /// An agent's changed household written back in the day's order: its gone persons' contracts leaving their lines
-    /// at its multiplicity, and an agent no one is left in ended, what it held passing to an estate.
+    /// An agent's changed household written back in the day's order: its gone persons' contracts leaving their lines,
+    /// and an agent no one is left in ended, what it held passing to an estate.
     fn write_household(&mut self, day: Day, c: Changed) {
         let Changed { who: (kind, slot, party), rewrite, born, gone, region, vital } = c;
         let cells = self.books.parties.cells_mut().0;
         let table = Population::table_mut::<SystemBacking>(cells, kind);
-        let twins = table.multiplicity(slot).get();
         let written = write_rewrite(table, slot, &rewrite);
         if let Some(places) = rewrite.places() {
             self.labour_renumber(party, places);
         }
-        let k = u64::from(twins);
-        self.record_vital(self.calendar.date(day), &vital, k);
-        self.agent_day.born += born * k;
-        self.agent_day.gone += gone * k;
-        self.population.count(kind, (0, 0), (born * k, gone * k));
+        self.record_vital(self.calendar.date(day), &vital);
+        self.agent_day.born += born;
+        self.agent_day.gone += gone;
+        self.population.count(kind, (0, 0), (born, gone));
         let subject = Subject::new(SubjectTag::Party, party.get());
         let mut draws = self.streams.open(&LeavingStream::DECL, subject, day, SubStep::S3e.ordinal());
-        self.leave(day, party, (&written.leaving, twins), &mut draws);
+        self.leave(day, party, &written.leaving, &mut draws);
         if written.ended {
             self.end_agent((day, SubStep::S3e), (kind, slot, party), region);
         }
     }
 
-    /// The contracts of an agent's gone persons leaving their lines, each once for every twin, with as many of the
-    /// lines' other sides.
+    /// The contracts of an agent's gone persons leaving their lines, with as many of the lines' other sides.
     #[clause("REP.23", "REP.31")]
-    fn leave(&mut self, day: Day, party: PartyId, (leaving, twins): (&[(LineId, Side)], u32), draws: &mut Draws) {
+    fn leave(&mut self, day: Day, party: PartyId, leaving: &[(LineId, Side)], draws: &mut Draws) {
         let m = move_at(&self.register, day, ApplyAt::Day(SubStep::S3e));
         let mut by_side: Vec<((LineId, Side), u32)> = Vec::new();
         for at in leaving {
@@ -663,10 +655,7 @@ impl World {
             }
         }
         by_side.sort_unstable();
-        for ((line, side), n) in by_side {
-            let Some(count) = n.checked_mul(twins) else {
-                phx_num::capacity_exceeded!("members leaving a line at once", u32::MAX, n);
-            };
+        for ((line, side), count) in by_side {
             let other = if side == Side::Asset { Side::Liability } else { Side::Asset };
             match self.books.members_leave((party, line, side), count, m, draws, self.audit.stream()) {
                 Ok(taken) => {
@@ -681,8 +670,8 @@ impl World {
         }
     }
 
-    /// The contracts agents drawn to leave with others' members lost, taken off their persons: each twin's share of
-    /// the members left, drawn among the attachments it holds on that side of the line, so its persons still hold
+    /// The contracts agents drawn to leave with others' members lost, taken off their persons: the members left, drawn
+    /// among the attachments it holds on that side of the line, so its persons still hold
     /// what its rows count. An agent of no persons names no contracts and has none to lose. Returns each person that
     /// lost a contract, by its agent and place.
     #[clause("REP.23", "REP.31")]
@@ -697,14 +686,6 @@ impl World {
             if table.persons(slot).is_empty() {
                 continue;
             }
-            let twins = table.multiplicity(slot).get();
-            if count % twins != 0 {
-                violation!(
-                    clause = "REP.31",
-                    "an agent's members left not a whole share for its twins",
-                    party = party.get()
-                );
-            }
             let words = table.attachments(slot).to_vec();
             let mut on: Vec<usize> = (0..words.len())
                 .filter(|i| {
@@ -715,7 +696,7 @@ impl World {
                 })
                 .collect();
             let mut gone: Vec<usize> = Vec::new();
-            for _ in 0..count / twins {
+            for _ in 0..*count {
                 let Some(n) = u32::try_from(on.len()).ok().filter(|n| *n != 0) else {
                     violation!(
                         clause = "REP.31",
@@ -770,14 +751,14 @@ impl World {
         region: Option<u32>,
     ) {
         let m = move_at(&self.register, day, ApplyAt::Day(step));
-        let (rows, twins, holds): (Vec<(LineId, Side, u32)>, u32, bool) = {
+        let (rows, holds): (Vec<(LineId, Side, u32)>, bool) = {
             let table = Population::table::<SystemBacking>(self.books.parties.cells(), kind);
             if table.list(slot, AgentList::NamedUnits).len != 0 {
                 violation!(clause = "POP.15", "an agent ended holding named units, which no estate takes yet");
             }
             let rows =
                 phx_ledger::rows::rows(table, slot).iter().map(|r| (r.row.line, r.side(), r.row.count)).collect();
-            (rows, table.multiplicity(slot).get(), table.list(slot, AgentList::Holdings).len != 0)
+            (rows, table.list(slot, AgentList::Holdings).len != 0)
         };
         let mut successor = Missing::Absent;
         if !rows.is_empty() || holds {
@@ -791,8 +772,7 @@ impl World {
             let subject = Subject::new(SubjectTag::Party, party.get());
             let mut d = self.streams.open(&EstateSiteStream::DECL, subject, day, step.ordinal());
             let site = self.estate_site(region, &mut d);
-            // An agent's twins leave an estate each, alike: one estate standing for them all.
-            let estate = self.books.parties.begin_weighted(phx_core::ESTATE_KIND.name, site, day, twins);
+            let estate = self.books.parties.begin(phx_core::ESTATE_KIND.name, site, day);
             let succeeded = self.books.dues.succeeded;
             // The estate takes what binds the agent's units with them: its offers not yet settled and its pledges.
             self.books.ledger.succeed(party, estate);
@@ -803,7 +783,6 @@ impl World {
                     violation!(clause = "PTY.9", "an estate's succession did not settle", party = f.party.get());
                 }
             }
-            // An agent's holdings count one twin's, as the estate standing for its twins holds them.
             if let Err(f) = self.books.pass_holdings((party, estate), succeeded, m, self.audit.stream()) {
                 violation!(
                     clause = "PTY.9",
@@ -818,7 +797,6 @@ impl World {
         }
         let (cells, directory, _) = self.books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(cells, kind);
-        let twins = u64::from(twins);
         let id = table.id();
         table.remove(slot);
         directory.end(party, day, successor);
@@ -826,7 +804,7 @@ impl World {
         if self.population.agenda_table(kind).is_some() {
             self.population.agenda.release(id, slot);
         }
-        self.population.count(kind, (0, twins), (0, 0));
+        self.population.count(kind, (0, 1), (0, 0));
         self.agent_day.ended += 1;
     }
 
@@ -846,14 +824,13 @@ impl World {
 
     /// 10b: every agent that began or changed today drawn afresh for each process on its kind, from tomorrow; and the
     /// day's counts kept.
-    #[clause("REP.7", "REP.12", "REP.13")]
+    #[clause("REP.7", "REP.12", "REP.13", "REP.15")]
     pub(crate) fn agents_settle(&mut self, day: Day) {
         self.book_changed(day, SubStep::S10b.ordinal());
         let mut count = self.agent_day;
         let cells = self.books.parties.cells();
         let pop = &self.population;
         count.agents = (0..pop.kinds.len()).map(|k| Population::table::<SystemBacking>(cells, k).agents()).sum();
-        count.parties = pop.members.iter().map(|(_, n)| n).sum();
         count.persons = pop.persons.iter().sum();
         self.agent_day = count;
         self.metrics.agents.push(count);
@@ -903,22 +880,20 @@ pub(crate) fn move_at(register: &Register, day: Day, at: ApplyAt) -> MoveAt {
     MoveAt { contracts: phx_ledger::opening::contract_unit(register), rounding: Round::HalfEven, day, at }
 }
 
-/// Persons a hit reached, each once for every twin, as an event's size.
-fn persons_i64(reached: usize, twins: u64) -> i64 {
-    let n = phx_rand::float::len_u64(reached) * twins;
+/// Persons a hit reached, as an event's size.
+fn persons_i64(reached: usize) -> i64 {
+    let n = phx_rand::float::len_u64(reached);
     let Ok(n) = i64::try_from(n) else { phx_num::capacity_exceeded!("persons hit", i64::MAX, n) };
     n
 }
 
 impl World {
-    /// The player's household, drawn at the opening from the households of the country the setup names, each real
-    /// household equally likely: one twin of the agent drawn is seated as an agent of its own, of multiplicity one,
-    /// with its persons, attributes and one twin's share of every contract, the agent left with one twin fewer; an
-    /// agent of one twin is the player's as it stands.
+    /// The player's household, drawn at the opening from the households of the country the setup names, each equally
+    /// likely.
     ///
     /// # Errors
     /// A world that keeps no household kind, or whose player's country holds no household.
-    #[clause("OBS.4", "REP.1")]
+    #[clause("OBS.4")]
     pub(crate) fn open_player(&mut self) -> Result<(), String> {
         let choice = self.game.setup.player;
         let country = choice
@@ -943,126 +918,20 @@ impl World {
             let region = usize::try_from(table.attr(slot, sited)).ok();
             region.and_then(|r| regions.get(r)) == Some(&country)
         };
-        let eligible: Vec<(Slot, u64)> =
-            table.slots().filter(|s| in_country(*s)).map(|s| (s, u64::from(table.multiplicity(s).get()))).collect();
-        let households: u64 = eligible.iter().map(|(_, w)| w).sum();
+        let eligible: Vec<Slot> = table.slots().filter(|s| in_country(*s)).collect();
+        let households = phx_rand::float::len_u64(eligible.len());
         if households == 0 {
             return Err(format!("the player's country {} holds no household", choice.country));
         }
         let subject = Subject::new(SubjectTag::Country, u64::from(country.get()));
         let mut d = self.streams.open(&crate::opening::prims::PLAYER_STREAM, subject, day, 0);
-        let mut at = phx_rand::below_u64(&mut d, households);
-        let Some((slot, twins)) = eligible.iter().find_map(|(s, w)| {
-            if at < *w {
-                Some((*s, *w))
-            } else {
-                at -= w;
-                None
-            }
-        }) else {
+        let at = phx_rand::below_u64(&mut d, households);
+        let Some(slot) = usize::try_from(at).ok().and_then(|i| eligible.get(i)) else {
             violation!(clause = "OBS.4", "a household drawn past the country's households");
         };
-        let donor = table.party(slot);
-        let player = if twins == 1 { donor } else { self.seat_twin(day, k, (slot, donor)) };
-        if twins > 1 {
-            self.seat_counterparts(day, (player, donor), &mut d);
-        }
+        let player = table.party(*slot);
         self.queue.seat(phx_core::Player { party: player, delegate: choice.delegate });
         Ok(())
-    }
-
-    /// On each line the player holds whose other side holds agents, one of them, drawn by its contracts there, seats
-    /// one twin as the player's was seated, so the player's members and its donor's each find a counterpart of their
-    /// own unit when they leave. The donor, already one twin short, is not drawn.
-    #[clause("REP.1", "REP.23")]
-    fn seat_counterparts(&mut self, day: Day, (player, donor): (PartyId, PartyId), d: &mut Draws) {
-        let (place, slot) = self.books.parties.row(player);
-        let held: Vec<(LineId, Side)> = phx_ledger::rows::rows(self.books.parties.holder(place), slot)
-            .iter()
-            .map(|r| (r.row.line, r.side()))
-            .collect();
-        let first = self.books.parties.first_cell_place();
-        let mut seated: std::collections::BTreeSet<PartyId> = std::collections::BTreeSet::new();
-        for (line, side) in held {
-            let other = if side == Side::Asset { Side::Liability } else { Side::Asset };
-            let agents: Vec<(PartyId, u64)> = self
-                .books
-                .side_counts(line, other)
-                .into_iter()
-                .filter(|(p, _)| {
-                    *p != donor && self.books.parties.row(*p).0 >= first && self.books.parties.unit(*p) > 1
-                })
-                .map(|(p, c)| (p, u64::from(c)))
-                .collect();
-            let contracts: u64 = agents.iter().map(|(_, c)| c).sum();
-            if contracts == 0 {
-                continue;
-            }
-            let mut at = phx_rand::below_u64(d, contracts);
-            let Some(counterpart) = agents.iter().find_map(|(p, c)| {
-                if at < *c {
-                    Some(*p)
-                } else {
-                    at -= c;
-                    None
-                }
-            }) else {
-                violation!(clause = "REP.23", "a counterpart drawn past the line's agents", line = line.get());
-            };
-            if seated.insert(counterpart) {
-                let (place, slot) = self.books.parties.row(counterpart);
-                let kind = usize::from(place - first);
-                let _ = self.seat_twin(day, kind, (slot, counterpart));
-            }
-        }
-    }
-
-    /// One twin of an agent seated as an agent of its own, of multiplicity one: its household, attributes and
-    /// positions copied, and one twin's share of each of the agent's contracts and holdings moved to it.
-    #[clause("REP.1", "REP.9", "REP.17")]
-    fn seat_twin(&mut self, day: Day, kind: usize, (slot, donor): (Slot, PartyId)) -> PartyId {
-        if day != self.day_zero {
-            violation!(clause = "REP.17", "a twin taken after the opening", party = donor.get());
-        }
-        let twins = {
-            let table = Population::table::<SystemBacking>(self.books.parties.cells(), kind);
-            table.multiplicity(slot).get()
-        };
-        // Each row counts its twins' contracts alike, so a twin's are its count over the twins.
-        let per_twin: Vec<((LineId, Side), u32)> = {
-            let (place, at) = self.books.parties.row(donor);
-            phx_ledger::rows::rows(self.books.parties.holder(place), at)
-                .iter()
-                .filter(|r| r.row.count > 0)
-                .map(|r| {
-                    if r.row.count % twins != 0 {
-                        violation!(clause = "REP.9", "a row its twins do not hold alike", party = donor.get());
-                    }
-                    ((r.row.line, r.side()), r.row.count / twins)
-                })
-                .collect()
-        };
-        let (cells, directory, space) = self.books.parties.cells_mut();
-        let table = Population::table_mut::<SystemBacking>(cells, kind);
-        let attrs = table.attrs(slot);
-        let (persons, attachments) = (table.persons(slot).to_vec(), table.attachments(slot).to_vec());
-        let (seat, player) = phx_pop::table::begin(table, directory, space, (day, phx_core::Weight::new(1), &attrs));
-        table.set_persons(seat, &persons);
-        table.set_attachments(seat, &attachments);
-        table.copy_facts(slot, seat);
-        table.take_twin(slot);
-        let m = move_at(&self.register, day, ApplyAt::Opening);
-        let seated = self.books.dues.seated;
-        for ((line, side), count) in per_twin {
-            let t = LineTransfer { line, side, from: donor, to: player, count, reason: seated };
-            if let Err(f) = self.books.transfer(t, m, self.audit.stream()) {
-                violation!(clause = "REP.9", "a twin's contracts did not move to its seat", party = f.party.get());
-            }
-        }
-        if let Err(f) = self.books.pass_share((donor, player), i64::from(twins), seated, m, self.audit.stream()) {
-            violation!(clause = "REP.9", "a twin's holdings did not move to its seat", party = f.party.get());
-        }
-        player
     }
 }
 

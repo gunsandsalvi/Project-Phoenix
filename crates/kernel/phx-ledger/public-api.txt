@@ -298,7 +298,6 @@ pub phx_ledger::apply_batch::DaySettlement::heads_read: u64
 pub phx_ledger::apply_batch::DaySettlement::iterations: u64
 pub phx_ledger::apply_batch::DaySettlement::lines: u64
 pub phx_ledger::apply_batch::DaySettlement::lost: u64
-pub phx_ledger::apply_batch::DaySettlement::lost_past_failed: u64
 pub phx_ledger::apply_batch::DaySettlement::nets_missed: u64
 pub phx_ledger::apply_batch::DaySettlement::not_maximal: u64
 pub phx_ledger::apply_batch::DaySettlement::payments: u64
@@ -327,7 +326,6 @@ pub phx_ledger::attachments::Holder::Person(usize)
 pub struct phx_ledger::attachments::Drawing<'a>
 pub phx_ledger::attachments::Drawing::household: &'a phx_core::pop_process::Household
 pub phx_ledger::attachments::Drawing::income: f64
-pub phx_ledger::attachments::Drawing::twins: u64
 pub phx_ledger::attachments::Drawing::wealth: f64
 pub struct phx_ledger::attachments::DrawnRow
 pub phx_ledger::attachments::DrawnRow::balance: phx_ledger::attachments::Balance
@@ -444,7 +442,6 @@ pub fn phx_ledger::books::Books<B>::trade_legs(&self, (phx_id::ids::PartyId, phx
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::holds_units(&self, phx_id::ids::PartyId) -> bool
 pub fn phx_ledger::books::Books<B>::pass_holdings(&mut self, (phx_id::ids::PartyId, phx_id::ids::PartyId), phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<i64, phx_ledger::fails::Fail>
-pub fn phx_ledger::books::Books<B>::pass_share(&mut self, (phx_id::ids::PartyId, phx_id::ids::PartyId), i64, phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<i64, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::settle_estate(&mut self, phx_id::ids::PartyId, phx_id::ids::PartyId, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::estate::Settled where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::unlisted_against(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
@@ -469,7 +466,6 @@ impl<B: phx_store::backing::Backing> phx_ledger::books::Parties<B>
 pub fn phx_ledger::books::Parties<B>::add_facet(&mut self, &str, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<(), alloc::string::String>
 pub fn phx_ledger::books::Parties<B>::arenas(&self) -> alloc::vec::Vec<&dyn phx_ledger::holder::HolderArenas>
 pub fn phx_ledger::books::Parties<B>::begin(&mut self, &str, phx_id::ids::TileId, phx_id::day::Day) -> phx_id::ids::PartyId
-pub fn phx_ledger::books::Parties<B>::begin_weighted(&mut self, &str, phx_id::ids::TileId, phx_id::day::Day, u32) -> phx_id::ids::PartyId
 pub fn phx_ledger::books::Parties<B>::cells(&self) -> &[alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>]
 pub fn phx_ledger::books::Parties<B>::cells_mut(&mut self) -> (&mut alloc::vec::Vec<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>>, &mut phx_core::directory::Directory, &mut phx_store::backing::AddressSpace)
 pub fn phx_ledger::books::Parties<B>::compact_arenas(&mut self) -> u64
@@ -488,7 +484,6 @@ pub fn phx_ledger::books::Parties<B>::row(&self, phx_id::ids::PartyId) -> (u16, 
 pub fn phx_ledger::books::Parties<B>::site(&self, phx_id::ids::PartyId) -> phx_id::ids::TileId
 pub fn phx_ledger::books::Parties<B>::table(&self, u16) -> &phx_core::kind_tables::KindTable<B>
 pub fn phx_ledger::books::Parties<B>::table_mut(&mut self, u16) -> &mut phx_core::kind_tables::KindTable<B>
-pub fn phx_ledger::books::Parties<B>::unit(&self, phx_id::ids::PartyId) -> u32
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Holders for phx_ledger::books::Parties<B>
 pub fn phx_ledger::books::Parties<B>::arenas(&mut self, u16) -> &mut dyn phx_ledger::holder::HolderArenas
 pub fn phx_ledger::books::Parties<B>::locate(&self, phx_id::ids::PartyId) -> phx_ledger::apply::Located
@@ -557,7 +552,7 @@ pub fn phx_ledger::cleared::Losers::bytes(&self) -> usize
 pub fn phx_ledger::cleared::Losers::draw_to(&mut self, u64) -> alloc::vec::Vec<(phx_id::ids::PartyId, u32)>
 pub fn phx_ledger::cleared::Losers::drawn(&self) -> u64
 pub fn phx_ledger::cleared::Losers::lost(&self, phx_id::ids::PartyId) -> u32
-pub fn phx_ledger::cleared::Losers::new(&[(phx_id::ids::PartyId, u32, u32)], phx_rand::draws::Draws) -> phx_ledger::cleared::Losers
+pub fn phx_ledger::cleared::Losers::new(&[(phx_id::ids::PartyId, u32)], phx_rand::draws::Draws) -> phx_ledger::cleared::Losers
 pub fn phx_ledger::cleared::per_contract(&phx_ledger::algebra::Leg) -> bool
 pub mod phx_ledger::commitment
 pub enum phx_ledger::commitment::CommitmentState
@@ -687,7 +682,6 @@ pub phx_ledger::dues::DueReasons::distributed: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::left: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::payment: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::principal: phx_ledger::instruction::ReasonId
-pub phx_ledger::dues::DueReasons::seated: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::spoiled: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::succeeded: phx_ledger::instruction::ReasonId
 pub phx_ledger::dues::DueReasons::traded: phx_ledger::instruction::ReasonId
@@ -819,7 +813,6 @@ pub fn phx_ledger::holder::HolderArenas::append(&mut self, phx_id::ids::Slot, ph
 pub fn phx_ledger::holder::HolderArenas::at_average_cost(&self) -> bool
 pub fn phx_ledger::holder::HolderArenas::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_ledger::holder::HolderArenas::kind(&self) -> &'static str
-pub fn phx_ledger::holder::HolderArenas::members(&self, phx_id::ids::Slot) -> u32
 pub fn phx_ledger::holder::HolderArenas::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_ledger::holder::HolderArenas::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &mut [(phx_id::ids::Slot, usize, u64)])
 pub fn phx_ledger::holder::HolderArenas::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
@@ -836,7 +829,6 @@ pub fn phx_core::kind_tables::KindTable<B>::append(&mut self, phx_id::ids::Slot,
 pub fn phx_core::kind_tables::KindTable<B>::at_average_cost(&self) -> bool
 pub fn phx_core::kind_tables::KindTable<B>::insert(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
-pub fn phx_core::kind_tables::KindTable<B>::members(&self, phx_id::ids::Slot) -> u32
 pub fn phx_core::kind_tables::KindTable<B>::overwrite(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, usize, &[u64])
 pub fn phx_core::kind_tables::KindTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &mut [(phx_id::ids::Slot, usize, u64)])
 pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
@@ -855,16 +847,6 @@ pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
 pub mod phx_ledger::holding
 pub enum phx_ledger::holding::LotOrder
 pub phx_ledger::holding::LotOrder::FirstIn
-#[repr(C)] pub struct phx_ledger::holding::CellHolding
-pub phx_ledger::holding::CellHolding::count: u32
-pub phx_ledger::holding::CellHolding::instrument: phx_id::ids::InstrumentId
-pub phx_ledger::holding::CellHolding::pooled_cost: phx_num::money::Amount
-pub phx_ledger::holding::CellHolding::quantity: phx_num::qty::QtyRaw
-impl phx_ledger::holding::CellHolding
-pub fn phx_ledger::holding::CellHolding::members(&self) -> phx_num::qty::Count
-impl phx_store::pod::Pod for phx_ledger::holding::CellHolding
-pub fn phx_ledger::holding::CellHolding::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
-impl phx_store::pod::__seal::Sealed for phx_ledger::holding::CellHolding
 pub struct phx_ledger::holding::Disposal
 pub phx_ledger::holding::Disposal::bound: i64
 pub phx_ledger::holding::Disposal::order: phx_ledger::holding::LotOrder
@@ -1260,35 +1242,14 @@ pub fn phx_ledger::pending::Closed::settled(&mut self, phx_id::ids::PartyId)
 impl phx_store::save::Saved for phx_ledger::pending::Closed where alloc::collections::btree::set::BTreeSet<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<(phx_id::ids::PartyId, phx_id::ids::LineId), alloc::vec::Vec<phx_id::ids::PartyId>>: phx_store::save::Saved
 pub fn phx_ledger::pending::Closed::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::pending::Closed::save(&self, &mut phx_store::save::Writer<'_>)
-pub mod phx_ledger::pooled
-pub enum phx_ledger::pooled::RowOutcome
-pub phx_ledger::pooled::RowOutcome::Fails
-pub phx_ledger::pooled::RowOutcome::Pooled
-pub phx_ledger::pooled::RowOutcome::Splits
-pub phx_ledger::pooled::RowOutcome::Splits::reached: u32
-pub struct phx_ledger::pooled::Kink
-pub phx_ledger::pooled::Kink::at: i64
-pub phx_ledger::pooled::Kink::fails: bool
-pub struct phx_ledger::pooled::PooledRow
-pub phx_ledger::pooled::PooledRow::moves: i64
-pub phx_ledger::pooled::PooledRow::per_member: i64
-pub phx_ledger::pooled::PooledRow::position: i64
-pub phx_ledger::pooled::PooledRow::reached: u32
-pub fn phx_ledger::pooled::pooled(i128, u32, &[phx_ledger::pooled::PooledRow], &[phx_ledger::pooled::Kink]) -> alloc::vec::Vec<phx_ledger::pooled::RowOutcome>
 pub mod phx_ledger::positions
 pub trait phx_ledger::positions::PayerPositions
 pub fn phx_ledger::positions::PayerPositions::funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
-pub fn phx_ledger::positions::PayerPositions::kinks_into(&self, phx_id::ids::Slot, &mut alloc::vec::Vec<phx_ledger::pooled::Kink>)
-pub fn phx_ledger::positions::PayerPositions::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_ledger::positions::PayerPositions::standing_rate(&self, phx_id::ids::Slot, &phx_ledger::rows::RowView) -> phx_num::missing::Missing<i64>
-pub fn phx_ledger::positions::PayerPositions::weight(&self, phx_id::ids::Slot) -> u32
 impl<B: phx_store::backing::Backing> phx_ledger::positions::PayerPositions for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
-pub fn phx_core::kind_tables::KindTable<B>::kinks_into(&self, phx_id::ids::Slot, &mut alloc::vec::Vec<phx_ledger::pooled::Kink>)
-pub fn phx_core::kind_tables::KindTable<B>::per_member_funds(&self, phx_id::ids::Slot, phx_id::ids::LineId, i64) -> i128
 pub fn phx_core::kind_tables::KindTable<B>::standing_rate(&self, phx_id::ids::Slot, &phx_ledger::rows::RowView) -> phx_num::missing::Missing<i64>
-pub fn phx_core::kind_tables::KindTable<B>::weight(&self, phx_id::ids::Slot) -> u32
-pub fn phx_ledger::positions::account_funds(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::LineId) -> (i128, i128)
+pub fn phx_ledger::positions::account_funds(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::ids::LineId) -> i128
 pub mod phx_ledger::rounding
 pub enum phx_ledger::rounding::Residue
 pub phx_ledger::rounding::Residue::Named(phx_id::ids::PartyId)
@@ -1350,19 +1311,6 @@ pub fn phx_ledger::runs::next_head<B: phx_store::backing::Backing>(&dyn phx_ledg
 pub fn phx_ledger::runs::rehead<B: phx_store::backing::Backing>(&mut dyn phx_ledger::holder::HolderArenas, u16, phx_id::ids::Slot, &mut phx_ledger::line::Lines<B>)
 pub fn phx_ledger::runs::segment(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_core::kind_tables::RunHead) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::rows::RowView> + '_
 pub fn phx_ledger::runs::truth<B: phx_store::backing::Backing>(&dyn phx_ledger::holder::HolderArenas, phx_id::ids::Slot, phx_id::day::Day, &phx_ledger::due::DueLines, &phx_ledger::line::Lines<B>) -> phx_ledger::runs::RunTruth
-pub mod phx_ledger::standing
-pub enum phx_ledger::standing::DayLeg
-pub phx_ledger::standing::DayLeg::Banknotes(i64)
-pub phx_ledger::standing::DayLeg::Batch(i64)
-pub phx_ledger::standing::DayLeg::Pending(i64)
-pub struct phx_ledger::standing::StandingFlow
-pub phx_ledger::standing::StandingFlow::banknotes: bool
-pub phx_ledger::standing::StandingFlow::index: phx_num::missing::Missing<&'static str>
-pub phx_ledger::standing::StandingFlow::per_member: i64
-pub fn phx_ledger::standing::day_amount(i64, phx_num::missing::Missing<(i64, i64)>, u32, phx_num::round::Round) -> i64
-pub fn phx_ledger::standing::day_leg(i64, bool, phx_ledger::standing::StandingFlow) -> phx_ledger::standing::DayLeg
-pub fn phx_ledger::standing::indexed_day(i128, u32, u32, i64, i64, &[phx_ledger::pooled::Kink]) -> phx_ledger::pooled::RowOutcome
-pub fn phx_ledger::standing::kink_day(i64, i64, i64) -> phx_num::missing::Missing<u32>
 pub mod phx_ledger::stream
 pub struct phx_ledger::stream::DayRecords
 pub phx_ledger::stream::DayRecords::gross: i128

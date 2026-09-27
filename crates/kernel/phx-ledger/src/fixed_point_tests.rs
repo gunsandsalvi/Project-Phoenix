@@ -363,7 +363,6 @@ fn pending_leg_outside_fixed_point() {
     assert_eq!(after, vec![40, 0, 60], "only the payment within the open bank moved money");
     assert_eq!((pending_on(&w, 0), pending_on(&w, 1)), (50, 50));
     let (place, slot) = w.books.parties.row(w.firms[0]);
-    let funds =
-        crate::positions::PayerPositions::per_member_funds(w.books.parties.table(place), slot, w.deposits[0], 0);
+    let funds = crate::positions::PayerPositions::funds(w.books.parties.table(place), slot, w.deposits[0], 0);
     assert_eq!(funds, -10, "the payer's funds exclude what it holds pending");
 }

@@ -134,9 +134,7 @@ impl World {
             self.market_day.tally.refused += 1;
             return;
         }
-        let Some(qty) = s.qty.checked_mul(row.twins) else {
-            capacity_exceeded!("units carried for every twin", i64::MAX, s.qty);
-        };
+        let qty = s.qty;
         let units_a_tonne = of(&bound.tech.units_a_tonne, usize::from(s.product));
         let Some(kg) =
             phx_rand::float::floor_to_i64(phx_rand::float::from_i64(qty) * crate::consts::KG_A_TONNE / units_a_tonne)

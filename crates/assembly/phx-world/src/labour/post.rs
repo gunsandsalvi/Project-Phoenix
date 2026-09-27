@@ -44,7 +44,7 @@ const PRICE: &str = "FRM.price";
 const OUTPUT: &str = "FRM.output_rate";
 const HURDLE: &str = "FRM.required_return";
 const FIRM_HOURS: &str = "FRM.hours_a_unit";
-/// The attribute an employer agent's persons employed are kept in, one twin's.
+/// The attribute an employer agent's persons employed are kept in.
 const HEADCOUNT: &str = "FRM.size";
 /// The technology an employer's work is read from: hours by occupation a unit, and the days a unit takes.
 const HOURS_A_UNIT: &str = "TEC.labour";
@@ -98,13 +98,8 @@ impl World {
         })
     }
 
-    /// An employer's staff on employment lines, a twin's members each, less those under notice.
-    fn staff(
-        &self,
-        party: PartyId,
-        twins: u32,
-        noticed: &std::collections::BTreeMap<(PartyId, LineId), u32>,
-    ) -> Vec<Staff> {
+    /// An employer's staff on employment lines, less those under notice.
+    fn staff(&self, party: PartyId, noticed: &std::collections::BTreeMap<(PartyId, LineId), u32>) -> Vec<Staff> {
         let Some(kind) = self.labour.kind else { return Vec::new() };
         let k = self.books.ledger.lines.kind_index(kind.line);
         let (place, slot) = self.books.parties.row(party);
@@ -123,7 +118,7 @@ impl World {
                     members: noticed
                         .get(&(party, r.row.line))
                         .map_or(Some(r.row.count), |n| r.row.count.checked_sub(*n))
-                        .map_or(0, |kept| kept / twins),
+                        .unwrap_or(0),
                 })
             })
             .collect()
@@ -184,8 +179,7 @@ impl World {
             return;
         };
         let law = super::law_of(&self.labour.laws, country).clone();
-        let Ok(twins) = u32::try_from(row.twins) else { return };
-        let staff = self.staff(row.party, twins, noticed);
+        let staff = self.staff(row.party, noticed);
         self.keep_headcount(rows, slot, &staff);
         self.raise_stale(day, row.party, &law);
         let Ok(hours_a_unit) = self.register.table2_in(HOURS_A_UNIT, country).cloned() else { return };
@@ -223,7 +217,7 @@ impl World {
                 .iter()
                 .filter_map(|id| book.vacancy(*id))
                 .filter(|v| v.occupation == occupation)
-                .map(|v| f64::from(v.open / twins) * f64::from(v.hours) / crate::consts::DAYS_A_WEEK)
+                .map(|v| f64::from(v.open) * f64::from(v.hours) / crate::consts::DAYS_A_WEEK)
                 .sum();
             let point = self.offer_point(&law, (row.party, occupation), &staff, law.full_time_hours);
             let wage_hour = self.wage_at(&law, point) / (law.weeks_a_month * f64::from(law.full_time_hours));
@@ -233,13 +227,13 @@ impl World {
             Missing::Present(m) => m / (law.weeks_a_month * f64::from(law.full_time_hours)),
             Missing::Absent => 0.0,
         };
-        self.review(day, (row.party, country, twins), (&law, firm.price), &staff, &needs);
+        self.review(day, (row.party, country), (&law, firm.price), &staff, &needs);
         let input = PostIn { price: firm.price, units_a_day: firm.units_a_day, financing, minimum_hour, needs };
         let out = (kind.post)(&input);
-        self.apply_post(day, (row.party, country, region, twins), &law, &staff, &out);
+        self.apply_post(day, (row.party, country, region), &law, &staff, &out);
     }
 
-    /// An employer agent's persons employed, one twin's, kept in its attribute as each of its decisions finds them.
+    /// An employer agent's persons employed, kept in its attribute as each of its decisions finds them.
     fn keep_headcount(&mut self, rows: Rows, slot: Slot, staff: &[Staff]) {
         if rows.individuals {
             return;
@@ -270,26 +264,12 @@ impl World {
     fn apply_post(
         &mut self,
         day: Day,
-        (employer, country, region, twins): (PartyId, CountryId, u32, u32),
+        (employer, country, region): (PartyId, CountryId, u32),
         law: &Law,
         staff: &[Staff],
         out: &PostOut,
     ) {
-        let Some(kind) = self.labour.kind else { return };
-        let Some(stream) = self.streams.named(kind.vacancy_stream) else { return };
-        let mut d = self.streams.open(
-            &stream,
-            Subject::new(SubjectTag::Party, employer.get()),
-            day,
-            phx_core::SubStep::S5c.ordinal(),
-        );
-        // An employer of one twin posts and withdraws jobs in the whole agents that fill them, the searchers' unit;
-        // an agent's own twins make its jobs whole already.
-        let unit = self.population.representation.multiplicity;
-        let mut in_agents =
-            |jobs: u32| if twins > 1 { jobs * twins } else { whole_agents(jobs, (unit, u32::MAX), &mut d) };
-        for &(occupation, jobs) in &out.post {
-            let open = in_agents(jobs);
+        for &(occupation, open) in &out.post {
             if open == 0 {
                 continue;
             }
@@ -314,7 +294,7 @@ impl World {
             self.labour.day.posted += u64::from(open);
         }
         for &(occupation, jobs) in &out.withdraw {
-            let mut left = in_agents(jobs);
+            let mut left = jobs;
             let ids = self.labour.book.of_employer(employer).to_vec();
             for id in ids.into_iter().rev() {
                 let Some(v) = self.labour.book.vacancy_mut(id).filter(|v| v.occupation == occupation) else { continue };
@@ -324,7 +304,7 @@ impl World {
             }
         }
         for &(occupation, jobs) in &out.layoff {
-            self.lay_off(day, (employer, country), staff, (occupation, jobs * twins), twins);
+            self.lay_off(day, (employer, country), staff, (occupation, jobs));
         }
     }
 
@@ -336,7 +316,6 @@ impl World {
         (employer, country): (PartyId, CountryId),
         staff: &[Staff],
         (occupation, count): (u32, u32),
-        twins: u32,
     ) {
         let Some(kind) = self.labour.kind else { return };
         let law = super::law_of(&self.labour.laws, country);
@@ -346,7 +325,7 @@ impl World {
         };
         let effective = self.calendar.on_or_after(country, self.calendar.plus(day, period));
         let mut lines: Vec<(LineId, u32)> =
-            staff.iter().filter(|s| s.occupation == occupation).map(|s| (s.line, s.members * twins)).collect();
+            staff.iter().filter(|s| s.occupation == occupation).map(|s| (s.line, s.members)).collect();
         let Some(stream) = self.streams.named(kind.layoff_stream) else { return };
         let mut d = self.streams.open(
             &stream,
@@ -354,7 +333,6 @@ impl World {
             day,
             phx_core::SubStep::S5c.ordinal(),
         );
-        let unit = self.population.representation.multiplicity;
         let mut left = count;
         while left > 0 && !lines.is_empty() {
             let total: u64 = lines.iter().map(|(_, m)| u64::from(*m)).sum();
@@ -375,9 +353,6 @@ impl World {
             let (line, members) = lines.swap_remove(i);
             let take = if members < left { members } else { left };
             left -= take;
-            // An employer of one twin lays off whole worker agents; an agent's layoffs are its twins' jobs, whose
-            // members the line draws from the workers in whole units, passing what no unit fits.
-            let take = if twins > 1 { take } else { whole_agents(take, (unit, members), &mut d) };
             if take == 0 {
                 continue;
             }
@@ -390,46 +365,5 @@ impl World {
             });
             self.labour.day.layoffs += u64::from(take);
         }
-    }
-}
-
-/// The jobs a line loses as whole agents: its workers are agents whose twins act alike, so an employer that is one
-/// party lays off whole agents, one more than the whole it asked for with the chance of what is left over, and never
-/// more than the line holds.
-fn whole_agents(count: u32, (unit, members): (u32, u32), d: &mut phx_rand::Draws) -> u32 {
-    if unit <= 1 {
-        return count;
-    }
-    let (whole, over) = (count / unit, count % unit);
-    let one_more = over > 0 && phx_rand::uniform::below_u64(d, u64::from(unit)) < u64::from(over);
-    let take = (whole + u32::from(one_more)) * unit;
-    let most = members - members % unit;
-    if take < most { take } else { most }
-}
-
-#[cfg(test)]
-mod tests {
-    use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
-
-    use super::whole_agents;
-
-    fn draws(n: u64) -> Draws {
-        Draws::new(stream_key(Seed::new(3), "LAB.layoffs"), Subject::new(SubjectTag::Party, n), 0, 0)
-    }
-
-    #[test]
-    fn layoffs_come_in_whole_agents_unbiased() {
-        assert_eq!(whole_agents(3_400, (1_700, 5_100), &mut draws(1)), 3_400, "whole agents stay whole");
-        assert_eq!(whole_agents(80, (1, 200), &mut draws(1)), 80, "agents of one twin take any count");
-        let (n, mut laid) = (4_000_u64, 0_u64);
-        for i in 0..n {
-            let take = whole_agents(170, (1_700, 5_100), &mut draws(i));
-            assert!(take == 0 || take == 1_700, "none or one whole agent: {take}");
-            laid += u64::from(take);
-        }
-        // A tenth of an agent asked for lays one off a tenth of the time.
-        let mean = phx_rand::float::from_u64(laid) / phx_rand::float::from_u64(n);
-        assert!((mean - 170.0).abs() < 20.0, "unbiased: {mean}");
-        assert_eq!(whole_agents(9_000, (1_700, 3_400), &mut draws(2)), 3_400, "never more than the line holds");
     }
 }

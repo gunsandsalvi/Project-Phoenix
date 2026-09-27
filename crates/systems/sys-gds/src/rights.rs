@@ -1,6 +1,6 @@
-//! The deposits' rights at the opening: each deposit on a country's land is worked by one of its large firms that make
-//! the deposit's product, drawn among them, since a deposit is one thing an agent's twins could not each hold; a
-//! deposit no such firm of the country could work is left unworked, its right unissued.
+//! The deposits' rights at the opening: each deposit on a country's land is worked by one of its firms that make the
+//! deposit's product, drawn among them; a deposit no such firm of the country could work is left unworked, its right
+//! unissued.
 
 use phx_core::calendar::bizday::BusinessDayConvention;
 use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
@@ -18,8 +18,6 @@ use crate::OpeningStream;
 
 /// Each firm with the product it makes, as the firms' opening draws it.
 const PRODUCTS_DRAWN: &str = "FRM.firm_products";
-/// The large firms, as the firms' opening draws them.
-const LARGE: &str = "FRM.firms";
 /// The unit a right is held in: a contract.
 const CONTRACT: &str = "contract";
 
@@ -36,7 +34,7 @@ impl Contribution for Rights {
         PHYSICAL_STOCK
     }
     fn reads(&self) -> &'static [&'static str] {
-        &[PRODUCTS_DRAWN, LARGE]
+        &[PRODUCTS_DRAWN]
     }
     fn writes(&self) -> &'static [&'static str] {
         &[]
@@ -63,13 +61,7 @@ impl Contribution for Rights {
             let (Some(books), Some(geo)) = (books.downcast_mut::<Books>(), geo.downcast_ref::<GeoState>()) else {
                 violation!(clause = "GEN.3", "an opening handed something other than the world's books and map");
             };
-            let large: Vec<PartyId> =
-                books.drawn.get(&key(LARGE, c.id)).map(|l| l.iter().map(|(p, _)| *p).collect()).unwrap_or_default();
-            let firms: Vec<(PartyId, u64)> = books
-                .drawn
-                .get(&key(PRODUCTS_DRAWN, c.id))
-                .map(|l| l.iter().copied().filter(|(p, _)| large.contains(p)).collect())
-                .unwrap_or_default();
+            let firms: Vec<(PartyId, u64)> = books.drawn.get(&key(PRODUCTS_DRAWN, c.id)).cloned().unwrap_or_default();
             let terms = terms(books, c, date);
             let reason = books.ledger.reasons.named(crate::RIGHTS_OPENED.name);
             for (deposit, d) in (0_u32..).zip(&geo.deposits).filter(|(_, d)| c.sites.contains(&d.tile)) {

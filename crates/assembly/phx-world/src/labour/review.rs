@@ -68,7 +68,7 @@ impl World {
     pub(super) fn review(
         &mut self,
         day: Day,
-        (employer, country, twins): (PartyId, CountryId, u32),
+        (employer, country): (PartyId, CountryId),
         (law, price): (&Law, f64),
         staff: &[Staff],
         needs: &[Need],
@@ -102,7 +102,7 @@ impl World {
                 employer,
                 country: country.get(),
                 line: s.line,
-                count: s.members * twins,
+                count: s.members,
                 offer,
                 most: revenue,
             });

@@ -76,8 +76,8 @@ impl OrderIntent {
     }
 }
 
-/// A buyer's want of a product as a handler asks it: its row, the retail kind's code, the product, and what a twin
-/// wants, units it needs or money it spends.
+/// A buyer's want of a product as a handler asks it: its row, the retail kind's code, the product, and what it wants,
+/// units it needs or money it spends.
 #[clause("SRV.4", "HH.5")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ShopIntent {
@@ -121,7 +121,7 @@ impl ShopIntent {
 }
 
 /// A shipper's want to carry goods as a handler asks it: its row, the carriage kind's code, the product and grade
-/// class of the goods where the row stands, units a twin, the zone they go to, and the mode.
+/// class of the goods where the row stands, the units, the zone they go to, and the mode.
 #[clause("FRT.5", "FRT.3")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ShipIntent {
@@ -166,7 +166,7 @@ impl ShipIntent {
 }
 
 /// An owner's investment as a handler asks it: its row, the kind of plant, the product that kind is bought as, and
-/// the units a twin buys, from a named producer at its place, in the stages it is built in.
+/// the units it buys, from a named producer at its place, in the stages it is built in.
 #[clause("CAP.5", "CAP.3")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvestIntent {

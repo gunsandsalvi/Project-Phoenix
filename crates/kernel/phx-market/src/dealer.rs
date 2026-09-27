@@ -6,7 +6,7 @@ use phx_rand::{Draws, below_u64};
 
 use crate::failure::FailureKind;
 use crate::order::Side;
-use crate::print::{Buyer, Match};
+use crate::print::Match;
 
 /// A dealer's two-way quote, posted by its own decision point from its inventory, funding and risk: the price and
 /// size it buys at and sells at, either side absent where it stepped back.
@@ -91,7 +91,7 @@ pub fn request(req: &Request, quotes: &mut [Quote], lot: &mut Draws) -> Result<M
         Side::Buy => (req.client, quote.dealer),
         Side::Sell => (quote.dealer, req.client),
     };
-    Ok(Match { buyer: Buyer::Party(buyer), seller, qty, price: p, draws: Missing::Absent })
+    Ok(Match { buyer, seller, qty, price: p, draws: Missing::Absent })
 }
 
 /// A fixing by the volume-weighted mean of the day's trades, the pricing service's method for dealer markets, on the
@@ -120,7 +120,6 @@ mod tests {
     use super::{Quote, Request, request, volume_weighted};
     use crate::failure::FailureKind;
     use crate::order::Side;
-    use crate::print::Buyer;
 
     fn lot() -> Draws {
         Draws::new(stream_key(Seed::new(1), "MKT.dealer"), Subject::new(SubjectTag::Market, 0), 1, 0)
@@ -143,7 +142,7 @@ mod tests {
         };
         let m = request(&ask(&[1, 2], 6, 105), &mut quotes, &mut lot()).unwrap();
         assert_eq!((m.seller.get(), m.qty, m.price.raw()), (2, 4, 101), "the best of those asked, up to its size");
-        assert_eq!(m.buyer, Buyer::Party(PartyId::new(9)));
+        assert_eq!(m.buyer, PartyId::new(9));
         assert_eq!(quotes[1].ask, Missing::Present((PriceRaw::from_raw(101), 0)), "the size is used up");
         assert_eq!(
             request(&ask(&[1], 5, 101), &mut quotes, &mut lot()),
@@ -156,7 +155,7 @@ mod tests {
     #[test]
     fn fixing_is_the_volume_weighted_mean() {
         let t = |q, p| crate::print::Match {
-            buyer: Buyer::Party(PartyId::new(1)),
+            buyer: PartyId::new(1),
             seller: PartyId::new(2),
             qty: q,
             price: PriceRaw::from_raw(p),

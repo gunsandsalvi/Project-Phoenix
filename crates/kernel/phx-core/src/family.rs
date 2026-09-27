@@ -121,14 +121,14 @@ pub trait AccountsAudit: core::fmt::Debug + Sync {
     fn income(&self) -> i128;
 }
 
-/// The population's agents as the audit reads them: each agent's multiplicity against its contracts, and each
-/// population's multiplicities against it. The population kernel implements it over its agent tables.
+/// The population's agents as the audit reads them: each agent's rows against its contracts, and each population's
+/// agents against it. The population kernel implements it over its agent tables.
 pub trait AgentsAudit: core::fmt::Debug + Sync {
     /// Agents' slots over every population table, by index.
     fn agents(&self) -> usize;
-    /// One agent's multiplicity and each of its rows' counts against it.
+    /// One agent's rows' counts against its contracts.
     fn agent(&self, at: usize) -> Vec<Gap>;
-    /// Each population's agents' multiplicities against its population.
+    /// Each population's agents and persons against its population.
     fn populations(&self) -> Vec<Gap>;
 }
 
@@ -378,8 +378,6 @@ pub struct LegDigest {
     pub source: Missing<Transformed>,
     /// Its instrument's issued amount before the leg, when the leg is on an instrument.
     pub issued: Missing<i64>,
-    /// The members its holder stands for: an agent's twins, one for an individual.
-    pub unit: u32,
 }
 
 /// What accounts for units a transformation made or used up: the way that made or used them, the deposit they were
@@ -450,7 +448,6 @@ pub struct MadeLeg {
     pub party: PartyId,
     pub denom: u32,
     pub qty: i64,
-    pub unit: u32,
 }
 
 /// The sink the apply routine feeds as it applies, which the audit implements and the assembly injects, so no kernel

@@ -1,7 +1,7 @@
 use phx_core::kind_tables::ListKind;
 use phx_id::{Day, InstrumentId, Slot};
 use phx_macros::{Pod, clause};
-use phx_num::{Amount, Count, Missing, QtyRaw, capacity_exceeded, violation};
+use phx_num::{Amount, Missing, QtyRaw, capacity_exceeded, violation};
 
 use crate::holder::HolderArenas;
 use crate::words::{from_words, to_words, words_of};
@@ -18,25 +18,6 @@ pub struct IndividualHolding {
     pub quantity: QtyRaw,
     pub flags: u32,
     pad: u32,
-}
-
-/// An agent's holding, 24 bytes: one lot at average cost held by `count` of its twins alike, so a twin's
-/// quantity is the quantity over the count.
-#[clause("REG.1", "REP.9", "ACC.6")]
-#[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Pod)]
-pub struct CellHolding {
-    pub instrument: InstrumentId,
-    pub count: u32,
-    pub quantity: QtyRaw,
-    pub pooled_cost: Amount,
-}
-
-impl CellHolding {
-    /// The members holding it.
-    pub fn members(&self) -> Count {
-        Count::new(u64::from(self.count))
-    }
 }
 
 /// Units acquired together: the day, how many, and what they cost in the instrument's currency, 24 bytes.

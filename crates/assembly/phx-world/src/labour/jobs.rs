@@ -150,13 +150,8 @@ impl World {
             violation!(clause = "LAB.1", "hires under a reason never declared");
         };
         let m = crate::agents::move_at(&self.register, day, ApplyAt::Day(SubStep::S4a));
-        let joined = self.books.members_join(
-            (h.employee, line, Side::Asset),
-            h.employer,
-            h.unit,
-            (reason, m),
-            self.audit.stream(),
-        );
+        let joined =
+            self.books.members_join((h.employee, line, Side::Asset), h.employer, 1, (reason, m), self.audit.stream());
         if joined.is_err() {
             violation!(clause = "LAB.1", "a hire that did not join its line", party = h.employee.get());
         }
@@ -173,7 +168,7 @@ impl World {
             h.person,
             &[(kind.state, class::NOT_SEARCHING), (kind.occupation, occupation), (kind.last_point, point)],
         );
-        self.labour.day.hires += u64::from(h.unit);
+        self.labour.day.hires += 1;
     }
 
     /// A person of an agent attached to an employment line it works on.
@@ -307,11 +302,7 @@ impl World {
         };
         let years = i64::from(self.calendar.date(day).year()) - i64::from(*band);
         let law = super::law_of(&self.labour.laws, CountryId::new(country));
-        // Each member is owed the same whole amount, a whole share for each of the payer's twins, so every twin on
-        // either side pays or receives an equal share.
-        let payer = i64::from(self.books.parties.unit(employer));
-        let raw = phx_ledger::opening::whole((kind.owed)(law, phx_rand::float::from_i64(wage.amt()), *days, years, 1));
-        let each = raw - raw.rem_euclid(payer);
+        let each = phx_ledger::opening::whole((kind.owed)(law, phx_rand::float::from_i64(wage.amt()), *days, years, 1));
         if each <= 0 {
             return;
         }
@@ -335,7 +326,6 @@ impl World {
         let k = self.books.ledger.lines.kind_index(kind.line);
         let (_, slot) = self.books.parties.row(party);
         let table = Population::table_mut::<SystemBacking>(self.books.parties.cells_mut().0, place);
-        let twins = table.multiplicity(slot).get();
         let retired: Vec<usize> = (0..table.persons(slot).len())
             .filter(|i| {
                 table.persons(slot).get(*i).map(|w| phx_pop::person::unpack(&decl, *w).attr(kind.state))
@@ -391,9 +381,7 @@ impl World {
             self.streams.open(&stream, Subject::new(SubjectTag::Party, party.get()), day, SubStep::S4a.ordinal());
         for w in leaving {
             let a = Attachment::unpack(w);
-            if let Err(f) =
-                self.books.members_leave((party, a.line, Side::Asset), twins, m, &mut d, self.audit.stream())
-            {
+            if let Err(f) = self.books.members_leave((party, a.line, Side::Asset), 1, m, &mut d, self.audit.stream()) {
                 violation!(clause = "LAB.6", "a retirement that did not leave its line", party = f.party.get());
             }
             self.labour.day.retired += 1;
@@ -401,7 +389,7 @@ impl World {
     }
 
     /// 7c: the day's severance paid, one instruction for each employer: all it owes where its money covers it, else
-    /// each member the same share of what its money holds, as a whole share for each twin; what is not paid is
+    /// each member the same share of what its money holds; what is not paid is
     /// counted unpaid. Layoffs take effect on business days, so what 4a owes 7c pays the same day.
     #[clause("LAB.12", "SET.1")]
     pub(crate) fn labour_settle(&mut self, day: Day, step: SubStep) {
@@ -428,15 +416,9 @@ impl World {
                 Missing::Present(h) if h > 0 => i128::from(h),
                 _ => 0,
             };
-            let payer = i128::from(self.books.parties.unit(employer));
             let mut legs = Vec::new();
             for o in &list {
-                let each = if held >= total {
-                    i128::from(o.each)
-                } else {
-                    let share = i128::from(o.each) * held / total;
-                    share - share.rem_euclid(payer)
-                };
+                let each = if held >= total { i128::from(o.each) } else { i128::from(o.each) * held / total };
                 let Ok(amount) = i64::try_from(each * i128::from(o.members)) else {
                     phx_num::capacity_exceeded!("a separation's severance", i64::MAX, o.each);
                 };

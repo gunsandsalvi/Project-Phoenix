@@ -4,7 +4,7 @@ use phx_num::{Missing, PriceRaw, violation};
 
 use crate::failure::{FailureKind, MarketFailure};
 use crate::order::Side;
-use crate::print::{Buyer, Match};
+use crate::print::Match;
 
 /// Terms one party offers another: a price and a quantity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -99,7 +99,7 @@ impl Negotiation {
             Side::Buy => (self.asker, from),
             Side::Sell => (from, self.asker),
         };
-        Match { buyer: Buyer::Party(buyer), seller, qty: t.qty, price: t.price, draws: Missing::Absent }
+        Match { buyer, seller, qty: t.qty, price: t.price, draws: Missing::Absent }
     }
 
     /// The asker walks away, or every party asked declined: the negotiation ends as a published failure.
@@ -123,7 +123,6 @@ mod tests {
     use super::{Answer, Negotiation, Stage, Terms};
     use crate::failure::FailureKind;
     use crate::order::Side;
-    use crate::print::Buyer;
 
     #[test]
     fn bilateral_protocol_states() {
@@ -136,7 +135,7 @@ mod tests {
         n.counter(bank_a, Day::new(13));
         n.answer(bank_a, terms(650, 100), Day::new(14));
         let m = n.accept(bank_a, Day::new(15));
-        assert_eq!((m.buyer, m.seller, m.price.raw(), m.qty), (Buyer::Party(firm), bank_a, 650, 100));
+        assert_eq!((m.buyer, m.seller, m.price.raw(), m.qty), (firm, bank_a, 650, 100));
         assert_eq!(n.stage, Stage::Matched);
         let mut refused = Negotiation::ask(MarketId::new(0), firm, Side::Buy, &[bank_b], Day::new(20));
         refused.answer(bank_b, Missing::Absent, Day::new(21));

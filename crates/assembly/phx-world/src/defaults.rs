@@ -181,7 +181,7 @@ impl World {
         }
         self.release_visits(place, slot);
         let site = self.books.parties.site(party);
-        let estate = self.books.parties.begin_weighted(phx_core::ESTATE_KIND.name, site, day, 1);
+        let estate = self.books.parties.begin(phx_core::ESTATE_KIND.name, site, day);
         let succeeded = self.books.dues.succeeded;
         // The estate takes what binds the party's units with them: its offers not yet settled and its pledges.
         self.books.ledger.succeed(party, estate);

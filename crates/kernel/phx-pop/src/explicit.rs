@@ -42,8 +42,8 @@ pub fn household_into<B: Backing>(kind: &PopKindDecl, table: &AgentTable<B>, slo
     }
 }
 
-/// What writing a household back did: the contracts its gone persons held, each a line side to leave at the agent's
-/// multiplicity, and whether no one is left.
+/// What writing a household back did: the contracts its gone persons held, each a line side to leave, and whether no
+/// one is left.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Written {
     pub leaving: Vec<(phx_id::LineId, Side)>,
@@ -172,9 +172,9 @@ pub fn write_back<B: Backing>(kind: &PopKindDecl, table: &mut AgentTable<B>, slo
     write_rewrite(table, slot, &r)
 }
 
-/// Contracts each attachment of an agent names, by line side: what each of its rows must count per twin.
+/// Contracts each attachment of an agent names, by line side: what each of its rows must count.
 #[must_use]
-pub fn per_twin<B: Backing>(table: &AgentTable<B>, slot: Slot) -> Vec<((phx_id::LineId, Side), u32)> {
+pub fn contracts<B: Backing>(table: &AgentTable<B>, slot: Slot) -> Vec<((phx_id::LineId, Side), u32)> {
     let mut out: Vec<((phx_id::LineId, Side), u32)> = Vec::new();
     for w in table.attachments(slot) {
         let a = Attachment::unpack(*w);

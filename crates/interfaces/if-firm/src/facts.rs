@@ -117,21 +117,21 @@ declare_fact! {
 }
 
 declare_fact! {
-    /// The units a day the firm's plant lets its way make, a twin's, as its last review of its plant found.
+    /// The units a day the firm's plant lets its way make, as its last review of its plant found.
     pub Capacity = "CAP.capacity" {
         value: Qty, kinds: ["firm", "small_firm"], writer: "CAP", audience: Party, repr: Position, clause: "CAP.9",
     }
 }
 
 declare_fact! {
-    /// The units of its product the firm had delivered at its last investment review, a twin's.
+    /// The units of its product the firm had delivered at its last investment review.
     pub DeliveredAtInvest = "CAP.delivered_seen" {
         value: Qty, kinds: ["firm", "small_firm"], writer: "CAP", audience: Party, repr: Position, clause: "CAP.3",
     }
 }
 
 declare_fact! {
-    /// The units the firm sold between its last two investment reviews, a twin's.
+    /// The units the firm sold between its last two investment reviews.
     pub SoldAtInvest = "CAP.sales_seen" {
         value: Qty, kinds: ["firm", "small_firm"], writer: "CAP", audience: Party, repr: Position, clause: "CAP.3",
     }

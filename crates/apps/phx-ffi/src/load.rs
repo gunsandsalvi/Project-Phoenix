@@ -21,7 +21,7 @@ use crate::bench::{BenchHost, BenchLine};
 use crate::json::Json;
 
 /// The report section's layout.
-const LOAD_VERSION: u64 = 2;
+const LOAD_VERSION: u64 = 3;
 /// The budget: a turn's median and worst wall time, peak resident memory, a full save's time and two saves' bytes.
 const MEDIAN_MS: u64 = 1_000;
 const WORST_MS: u64 = 2_000;
@@ -87,7 +87,6 @@ enum Kernel {
 #[serde(deny_unknown_fields)]
 struct PopulationVolumes {
     agents: u32,
-    multiplicity: u32,
     persons_per_agent: u32,
     attachments_per_agent: u32,
 }
@@ -440,9 +439,7 @@ impl Load {
                 let skip = usize::try_from(u64::from(day) % AUDIT_SLICES).unwrap_or(0);
                 let t = &self.population.table;
                 let slots = &self.population.slots;
-                black_box(
-                    slots.iter().skip(skip).step_by(step).fold(0, |a, s| fold(a, u64::from(t.multiplicity(*s).get()))),
-                );
+                black_box(slots.iter().skip(skip).step_by(step).fold(0, |a, s| fold(a, t.party(*s).get())));
             }
         }
     }
@@ -473,7 +470,7 @@ fn build(v: &Volumes, host: &dyn BenchHost, holidays: &[Date], (first, heavy): (
     show(host, "building", "the household agents, their persons and attachments".to_owned(), String::new(), "");
     let pv = &v.population;
     let stream = stream_key(Seed::new(3), "LOAD.bench");
-    let population = agents(pv.agents, pv.persons_per_agent, pv.attachments_per_agent, pv.multiplicity, stream);
+    let population = agents(pv.agents, pv.persons_per_agent, pv.attachments_per_agent, stream);
     show(host, "building", "the books' holders and their dated rows".to_owned(), String::new(), "");
     let sv = &v.settlement;
     let size = SettlementSize {
@@ -628,7 +625,6 @@ fn report_json(
         ("load_version", Json::UInt(LOAD_VERSION)),
         ("commit", Json::str(option_env!("PHX_COMMIT").unwrap_or("unknown"))),
         ("population_agents", Json::UInt(u64::from(v.population.agents))),
-        ("population_multiplicity", Json::UInt(u64::from(v.population.multiplicity))),
         ("population_persons_per_agent", Json::UInt(u64::from(v.population.persons_per_agent))),
         ("population_attachments_per_agent", Json::UInt(u64::from(v.population.attachments_per_agent))),
         ("built_ms", Json::UInt(built_ms)),

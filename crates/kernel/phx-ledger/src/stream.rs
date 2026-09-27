@@ -335,20 +335,6 @@ impl<B: Backing> Books<B> {
         }
     }
 
-    /// A balance a whole share for each of its holder's twins, or the run stops naming the line and the balance.
-    fn whole_share(&self, holder: PartyId, line: LineId, (balance, unit): (i64, u32)) {
-        if balance % i64::from(unit) != 0 {
-            violation!(
-                clause = "REP.9",
-                "an agent's balance not a whole share for each twin",
-                party = holder.get(),
-                line = line.get(),
-                kind = self.ledger.lines.kind_of(line),
-                balance = balance,
-                unit = unit
-            );
-        }
-    }
     /// A row's due as far as the row alone decides it: its payment, or on a cleared line the due it pays or is paid
     /// per member, which the line's day turns into a payment. Reads the day's plan of the line's dues where given.
     #[clause("REP.23", "REP.31")]
@@ -379,11 +365,7 @@ impl<B: Backing> Books<B> {
             Side::Asset => balance,
             Side::Liability => -balance,
         };
-        // A due on the balance is one twin's, rounded by its convention, times the agent's twins, so every twin's
-        // share stays whole.
-        let unit = self.parties.unit(holder);
-        self.whole_share(holder, line, (outstanding, unit));
-        let outstanding = Money::new(outstanding / i64::from(unit), terms.ccy);
+        let outstanding = Money::new(outstanding, terms.ccy);
         let mut buf = DueBuf::default();
         let k = self.ledger.lines.fallen(line);
         let planned;
@@ -435,7 +417,6 @@ impl<B: Backing> Books<B> {
             }
             return Some(Reckoned::Cleared { per, ccy: terms.ccy, order: terms.payment_order.0 });
         };
-        let whole = times(whole, unit);
         let amount = times(per, members) + whole;
         if amount == 0 {
             return None;
@@ -450,7 +431,7 @@ impl<B: Backing> Books<B> {
             payer: from,
             payee: to,
             amount,
-            principal: times(principal, members) + times(repaid, unit),
+            principal: times(principal, members) + repaid,
             ccy: terms.ccy,
             order: terms.payment_order.0,
             reckoned_on: holder,
@@ -501,7 +482,7 @@ impl<B: Backing> Books<B> {
             );
         }
         if row.side() == Side::Asset {
-            day.claimants.insert(holder, (row.row.count, self.parties.unit(holder)));
+            day.claimants.insert(holder, row.row.count);
         }
         let (from, to, members) = match row.side() {
             Side::Liability => (holder, top, row.row.count),

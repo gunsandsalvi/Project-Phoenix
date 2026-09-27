@@ -399,14 +399,7 @@ pub phx_market::posted::Posting::capacity: i64
 pub phx_market::posted::Posting::price: phx_num::price::PriceRaw
 pub phx_market::posted::Posting::seller: phx_id::ids::PartyId
 pub fn phx_market::posted::between(&[phx_market::order::Order], &mut phx_rand::draws::Draws) -> phx_market::posted::PostedDay
-pub fn phx_market::posted::posted(phx_id::ids::MarketId, &[phx_market::posted::Posting], &[(u64, alloc::vec::Vec<usize>)], &dyn phx_core::extensions::GroupDemand, &mut phx_rand::draws::Draws) -> phx_market::posted::PostedDay
 pub mod phx_market::print
-pub enum phx_market::print::Buyer
-pub phx_market::print::Buyer::Group(u64)
-pub phx_market::print::Buyer::Party(phx_id::ids::PartyId)
-impl phx_store::save::Saved for phx_market::print::Buyer where phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_market::print::Buyer::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::Buyer::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_market::print::MarkSource
 pub phx_market::print::MarkSource::Fixing(usize)
 pub phx_market::print::MarkSource::Print(phx_market::print::PrintId)
@@ -433,12 +426,12 @@ impl phx_store::save::Saved for phx_market::print::Mark where phx_id::ids::Marke
 pub fn phx_market::print::Mark::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_market::print::Mark::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::Match
-pub phx_market::print::Match::buyer: phx_market::print::Buyer
+pub phx_market::print::Match::buyer: phx_id::ids::PartyId
 pub phx_market::print::Match::draws: phx_num::missing::Missing<phx_ledger::commitment::CommitmentId>
 pub phx_market::print::Match::price: phx_num::price::PriceRaw
 pub phx_market::print::Match::qty: i64
 pub phx_market::print::Match::seller: phx_id::ids::PartyId
-impl phx_store::save::Saved for phx_market::print::Match where phx_market::print::Buyer: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, i64: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::commitment::CommitmentId>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_market::print::Match where phx_id::ids::PartyId: phx_store::save::Saved, i64: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::commitment::CommitmentId>: phx_store::save::Saved
 pub fn phx_market::print::Match::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_market::print::Match::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::print::MatchSet
@@ -536,12 +529,10 @@ pub struct phx_market::retail::Shopper
 pub phx_market::retail::Shopper::buyer: phx_id::ids::PartyId
 pub phx_market::retail::Shopper::draws: phx_rand::draws::Draws
 pub phx_market::retail::Shopper::reach: usize
-pub phx_market::retail::Shopper::twins: i64
 pub phx_market::retail::Shopper::want: phx_market::retail::Want
 pub struct phx_market::retail::Stall
 pub phx_market::retail::Stall::price: phx_num::price::PriceRaw
 pub phx_market::retail::Stall::seller: phx_id::ids::PartyId
-pub phx_market::retail::Stall::twins: i64
 pub phx_market::retail::Stall::units: i64
 pub struct phx_market::retail::Weights
 pub phx_market::retail::Weights::distance: f64

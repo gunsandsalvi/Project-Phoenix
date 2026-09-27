@@ -32,7 +32,7 @@ about how to build.
   removed from the plan** (owner, 2026-09-27); whatever needs keeping about how it was built goes in
   `docs/ARCHITECTURE.md`.
 - **No device run** until the owner says the world has enough in it (owner, 2026-09-27).
-- **Smoke and long runs** may raise the twins K for speed (`phx run --representation twins:K`), for that run only;
+- **Smoke and long runs** may lower the world's persons for speed (`phx run --persons N`), for that run only;
   the committed resolution stays the owner's.
 - The builder has full autonomy and authority over the code: act on issues, don't stop to ask.
 - **Two reviews per step.** Each step's code is attacked by two reviews — spec and laws; architecture, budget and

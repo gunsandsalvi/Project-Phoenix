@@ -64,8 +64,6 @@ pub struct Drawing<'a> {
     pub household: &'a phx_core::Household,
     pub wealth: f64,
     pub income: f64,
-    /// The twins its agent stands for, whose shares are whole.
-    pub twins: u64,
 }
 
 /// The attributes a draw sets: the household's by name, and its persons' by their places and name.

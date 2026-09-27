@@ -24,37 +24,34 @@ pub(crate) struct Vacancy {
     pub set: Day,
 }
 
-/// A searcher's application to a vacancy: the applicant agent and its person, the members it brings, its skill and
-/// experience, and the day it was sent.
+/// A searcher's application to a vacancy: the applicant agent and its person, its skill and experience, and the day it
+/// was sent.
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub(crate) struct Application {
     pub vacancy: u32,
     pub applicant: PartyId,
     pub person: u32,
-    pub unit: u32,
     pub skill: u32,
     pub experience: u32,
     pub sent: Day,
 }
 
-/// A job offered to an applicant, its members held from the vacancy until answered.
+/// A job offered to an applicant, held from the vacancy until answered.
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub(crate) struct Offer {
     pub vacancy: u32,
     pub applicant: PartyId,
     pub person: u32,
-    pub unit: u32,
     pub made: Day,
 }
 
 /// A hire accepted, to join its line at the next day's start of work: the employer, the employee and its person, the
-/// members, the country, the job's class and wage point, and the days its vacancy stood.
+/// country, the job's class and wage point, and the days its vacancy stood.
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub(crate) struct Hire {
     pub employer: PartyId,
     pub employee: PartyId,
     pub person: u32,
-    pub unit: u32,
     pub country: u8,
     pub class: Vec<u32>,
     pub point: i64,

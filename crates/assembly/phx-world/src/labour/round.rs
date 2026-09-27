@@ -20,13 +20,12 @@ use phx_store::SystemBacking;
 use super::book::{Application, Hire, Offer};
 use crate::world::World;
 
-/// A searching person as the round reads it: its agent, its place, its twins, its region and country, its skill,
+/// A searching person as the round reads it: its agent, its place, its region and country, its skill,
 /// its experience, its occupation and its last wage point.
 #[derive(Clone, Copy, Debug)]
 struct Seeker {
     party: PartyId,
     person: u32,
-    unit: u32,
     region: u32,
     country: CountryId,
     skill: u32,
@@ -70,7 +69,6 @@ impl World {
         let region = table.attr(slot, at);
         let Some(country) = self.region_country(region) else { return Vec::new() };
         let law = super::law_of(&self.labour.laws, country);
-        let unit = table.multiplicity(slot).get();
         let date = self.calendar.date(self.today);
         (0_u32..)
             .zip(table.persons(slot))
@@ -85,7 +83,6 @@ impl World {
                 Some(Seeker {
                     party,
                     person: i,
-                    unit,
                     region,
                     country,
                     skill,
@@ -137,7 +134,7 @@ impl World {
             };
             let Some(s) = seeker else {
                 for o in &offers {
-                    self.return_jobs(o.vacancy, o.unit);
+                    self.return_jobs(o.vacancy);
                 }
                 continue;
             };
@@ -164,7 +161,7 @@ impl World {
                 let taken = best.is_some_and(|(_, id)| id == o.vacancy);
                 let v = self.labour.book.vacancy(o.vacancy).cloned();
                 let (true, Some(v)) = (taken, v) else {
-                    self.return_jobs(o.vacancy, o.unit);
+                    self.return_jobs(o.vacancy);
                     continue;
                 };
                 self.labour.day.acceptances += 1;
@@ -178,7 +175,6 @@ impl World {
                     employer: v.employer,
                     employee: o.applicant,
                     person: o.person,
-                    unit: o.unit,
                     country: v.country,
                     class,
                     point: v.point,
@@ -211,7 +207,7 @@ impl World {
             }
             place(h.person).map(|p| h.person = p).is_some()
         });
-        let mut returned: Vec<(u32, u32)> = Vec::new();
+        let mut returned: Vec<u32> = Vec::new();
         book.offers.retain_mut(|o| {
             if o.applicant != party {
                 return true;
@@ -220,19 +216,19 @@ impl World {
                 o.person = p;
                 true
             } else {
-                returned.push((o.vacancy, o.unit));
+                returned.push(o.vacancy);
                 false
             }
         });
-        for (vacancy, unit) in returned {
-            self.return_jobs(vacancy, unit);
+        for vacancy in returned {
+            self.return_jobs(vacancy);
         }
     }
 
-    /// Members an offer held returned to its vacancy.
-    fn return_jobs(&mut self, vacancy: u32, unit: u32) {
+    /// The job an offer held returned to its vacancy.
+    fn return_jobs(&mut self, vacancy: u32) {
         if let Some(v) = self.labour.book.vacancy_mut(vacancy) {
-            v.open += unit;
+            v.open += 1;
         }
     }
 
@@ -299,20 +295,18 @@ impl World {
                     skill: a.skill,
                     experience: a.experience,
                     lot: phx_rand::uniform::below_u64(&mut lots, u64::MAX),
-                    unit: a.unit,
                 })
                 .collect();
             let chosen = (kind.select)(&SelectIn { applicants, open });
             for k in chosen {
                 let Some(a) = usize::try_from(k).ok().and_then(|k| met.get(k)) else { continue };
                 if let Some(v) = self.labour.book.vacancy_mut(id) {
-                    v.open -= a.unit;
+                    v.open -= 1;
                 }
                 self.labour.book.offers.push(Offer {
                     vacancy: id,
                     applicant: a.applicant,
                     person: a.person,
-                    unit: a.unit,
                     made: day,
                 });
                 self.labour.day.offers += 1;
@@ -324,7 +318,7 @@ impl World {
 impl World {
     /// The searchers' applications: each searching person of each searching agent, not already waiting on an
     /// application or an offer, sees the vacancies standing in its region in its occupation, at a skill it has, with
-    /// jobs open for its twins in whole shares for the employer's twins, draws a taste for each and applies to those
+    /// jobs open, draws a taste for each and applies to those
     /// its rule chooses, a round's share of a week's applications. An agent none of whose persons search leaves the
     /// searchers.
     #[clause("LAB.5", "LAB.8", "REP.22")]
@@ -354,15 +348,8 @@ impl World {
                 law.filter(|_| v.open > 0).map(|law| self.wage_at(law, v.point))
             })
             .collect();
-        // Each open vacancy's employer's twins, who each hire alike, so a searcher's twins take its jobs only in whole
-        // shares for them.
-        let twins: Vec<u32> = self
-            .labour
-            .book
-            .vacancies
-            .iter()
-            .map(|v| if v.open > 0 && self.live(v.employer) { self.books.parties.unit(v.employer) } else { 0 })
-            .collect();
+        let hiring: Vec<bool> =
+            self.labour.book.vacancies.iter().map(|v| v.open > 0 && self.live(v.employer)).collect();
         let searchers: Vec<PartyId> = self.labour.searchers.iter().copied().collect();
         for party in searchers {
             if !self.live(party) {
@@ -380,7 +367,7 @@ impl World {
                 self.apply_round(
                     (day, kind),
                     s,
-                    (standing.get(&(s.region, s.occupation)).map_or(&[][..], Vec::as_slice), &wages, &twins),
+                    (standing.get(&(s.region, s.occupation)).map_or(&[][..], Vec::as_slice), &wages, &hiring),
                     &mut d,
                 );
             }
@@ -392,16 +379,16 @@ impl World {
         &mut self,
         (day, kind): (Day, &LabourKind),
         s: &Seeker,
-        (standing, wage_of, twins): (&[usize], &[Option<f64>], &[u32]),
+        (standing, wage_of, hiring): (&[usize], &[Option<f64>], &[bool]),
         d: &mut Draws,
     ) {
         let law = super::law_of(&self.labour.laws, s.country);
-        let whole = |i: usize| twins.get(i).is_some_and(|t| *t > 0 && s.unit.is_multiple_of(*t));
         let seen: Vec<usize> = standing
             .iter()
             .copied()
             .filter(|i| {
-                whole(*i) && self.labour.book.vacancies.get(*i).is_some_and(|v| v.skill <= s.skill && v.open >= s.unit)
+                hiring.get(*i).copied().unwrap_or(false)
+                    && self.labour.book.vacancies.get(*i).is_some_and(|v| v.skill <= s.skill)
             })
             .collect();
         self.labour.day.vacancies_visible += phx_rand::float::len_u64(seen.len());
@@ -444,7 +431,6 @@ impl World {
                 vacancy,
                 applicant: s.party,
                 person: s.person,
-                unit: s.unit,
                 skill: s.skill,
                 experience: s.experience,
                 sent: day,

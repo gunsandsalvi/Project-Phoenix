@@ -95,7 +95,7 @@ mod tests {
     }
 
     #[test]
-    fn wear_moves_whole_twins_and_carries_value() {
+    fn wear_moves_whole_units_and_carries_value() {
         use phx_core::wear::{carried, leaving};
         let rate = leaving_rate(4, LIFE);
         assert_eq!(leaving(3_650, 30, rate, 365), Some(79), "3 650 × (1 − e^(−4/15 × 30/365))");

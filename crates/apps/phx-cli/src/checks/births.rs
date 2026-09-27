@@ -52,7 +52,7 @@ impl Structure {
     }
 }
 
-/// The population's structure at the run's end, each agent's persons counted once for each twin.
+/// The population's structure at the run's end.
 #[must_use]
 pub fn structure(w: Inspector<'_>) -> Option<Structure> {
     let k = households(w)?;
@@ -61,16 +61,15 @@ pub fn structure(w: Inspector<'_>) -> Option<Structure> {
     let (kd, table, date) = (w.population().kinds.get(k)?, w.agent_table(k), w.date(w.today()));
     let (mut women, mut persons) = (0_u64, 0_u64);
     for slot in table.slots() {
-        let twins = u64::from(table.multiplicity(slot).get());
         let h = phx_pop::explicit::household(&kd.decl, table, slot);
         for (_, p) in h.present() {
             let (age, s) = (p.age_on(date), p.attr(SEX.name)?);
             let class = bounds.partition_point(|b| *b <= age).checked_sub(1)?;
             let cell = classes.get_mut(class)?.1.get_mut(usize::try_from(s).ok()?)?;
-            *cell += twins;
-            persons += twins;
+            *cell += 1;
+            persons += 1;
             if s == FEMALE && (CHILDBEARING.0..CHILDBEARING.1).contains(&age) {
-                women += twins;
+                women += 1;
             }
         }
     }

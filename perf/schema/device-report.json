@@ -555,7 +555,6 @@
         "load_version",
         "commit",
         "population_agents",
-        "population_multiplicity",
         "population_persons_per_agent",
         "population_attachments_per_agent",
         "built_ms",
@@ -576,7 +575,8 @@
         "load_version": {
           "type": "integer",
           "enum": [
-            2
+            2,
+            3
           ]
         },
         "commit": {

@@ -1,6 +1,6 @@
 //! What a catastrophe destroys at its owners: each struck tile's share of every physical unit the parties sited there
 //! hold, lost as a transformation naming the event; and for an agent, which stands at a zone rather than a tile, the
-//! share of its zone's tiles the event struck, each twin losing its whole part of what it holds.
+//! share of its zone's tiles the event struck, in whole units of what it holds.
 
 use std::collections::BTreeMap;
 
@@ -91,8 +91,8 @@ impl World {
     }
 
     /// Each event's share of every zone it struck, the thousandths of each struck tile over the zone's tiles, taken
-    /// from what every agent standing there holds, a whole part for each twin.
-    #[clause("GEO.8", "GDS.9", "REP.9")]
+    /// from what every agent standing there holds.
+    #[clause("GEO.8", "GDS.9")]
     fn agents_struck(&mut self, day: Day, struck: &[Struck]) {
         let geo = crate::world::geo_arc(&self.own).clone();
         let mut shares: BTreeMap<(u64, phx_id::ZoneId), f64> = BTreeMap::new();
@@ -112,7 +112,7 @@ impl World {
         }
         let zones: std::collections::BTreeSet<phx_id::ZoneId> = shares.keys().map(|(_, z)| *z).collect();
         let first = self.books.parties.first_cell_place();
-        let mut standing: BTreeMap<phx_id::ZoneId, Vec<(PartyId, i64)>> = BTreeMap::new();
+        let mut standing: BTreeMap<phx_id::ZoneId, Vec<PartyId>> = BTreeMap::new();
         for k in 0..self.population.kinds.len() {
             let Some(place) = u16::try_from(k).ok().and_then(|k| first.checked_add(k)) else { continue };
             let rows = crate::goods::Rows { place, individuals: false };
@@ -124,14 +124,14 @@ impl World {
                 if let Some(row) = self.goods_row(rows, slot)
                     && zones.contains(&row.zone)
                 {
-                    standing.entry(row.zone).or_default().push((row.party, row.twins));
+                    standing.entry(row.zone).or_default().push(row.party);
                 }
             }
         }
         let reason = self.books.dues.destroyed;
         for ((event, zone), part) in shares {
-            for (party, twins) in standing.get(&zone).into_iter().flatten().copied() {
-                let legs = self.destroyed_of_twins(party, (event, zone), part, twins);
+            for party in standing.get(&zone).into_iter().flatten().copied() {
+                let legs = self.destroyed_in_zone(party, (event, zone), part);
                 if legs.is_empty() {
                     continue;
                 }
@@ -151,15 +151,9 @@ impl World {
         }
     }
 
-    /// The legs taking a part of every physical holding of an agent that stands in the struck zone, each twin its own
-    /// whole part, half to even; goods it holds at other places are not there to be struck.
-    fn destroyed_of_twins(
-        &self,
-        party: PartyId,
-        (event, zone): (u64, phx_id::ZoneId),
-        part: f64,
-        twins: i64,
-    ) -> Vec<LegRec> {
+    /// The legs taking a part of every physical holding of an agent that stands in the struck zone, whole units, half to
+    /// even; goods it holds at other places are not there to be struck.
+    fn destroyed_in_zone(&self, party: PartyId, (event, zone): (u64, phx_id::ZoneId), part: f64) -> Vec<LegRec> {
         let (place, slot) = self.books.parties.row(party);
         let arenas = self.books.parties.holder(place);
         let held: Vec<InstrumentId> =
@@ -174,9 +168,8 @@ impl World {
                 continue;
             }
             let Missing::Present(h) = phx_ledger::holding::holding(arenas, slot, instrument) else { continue };
-            let each = phx_rand::float::from_i64(h.quantity.raw() / twins) * part;
-            let Some(lost) = phx_rand::float::floor_to_i64(each.round_ties_even()).and_then(|l| l.checked_mul(twins))
-            else {
+            let each = phx_rand::float::from_i64(h.quantity.raw()) * part;
+            let Some(lost) = phx_rand::float::floor_to_i64(each.round_ties_even()) else {
                 violation!(clause = "GEO.8", "a loss beyond an integer", party = party.get());
             };
             if lost > 0 {

@@ -4,8 +4,8 @@ use if_labour::decisions::SelectIn;
 use phx_macros::clause;
 
 /// The applicants an employer offers its jobs: by skill, then experience, the higher first, and among equals by lot;
-/// each taken while its members fit the jobs still open, since an agent's twins are hired together.
-#[clause("LAB.7", "LAB.8", "REP.1")]
+/// each taken while jobs are still open.
+#[clause("LAB.7", "LAB.8")]
 #[must_use]
 pub fn select(i: &SelectIn) -> Vec<u32> {
     let Ok(n) = u32::try_from(i.applicants.len()) else {
@@ -19,16 +19,11 @@ pub fn select(i: &SelectIn) -> Vec<u32> {
         }
         _ => a.cmp(b),
     });
-    let mut open = i.open;
-    let mut chosen = Vec::new();
-    for k in order {
-        let Some(a) = at(&k) else { continue };
-        if a.unit != 0 && a.unit <= open {
-            open -= a.unit;
-            chosen.push(k);
-        }
-    }
-    chosen
+    let Ok(open) = usize::try_from(i.open) else {
+        phx_num::capacity_exceeded!("a vacancy's jobs open", usize::MAX, i.open);
+    };
+    order.truncate(open);
+    order
 }
 
 #[cfg(test)]
@@ -37,15 +32,15 @@ mod tests {
 
     use super::select;
 
-    fn a(skill: u32, experience: u32, lot: u64, unit: u32) -> Applicant {
-        Applicant { skill, experience, lot, unit }
+    fn a(skill: u32, experience: u32, lot: u64) -> Applicant {
+        Applicant { skill, experience, lot }
     }
 
     #[test]
     fn selection_ties_by_lot() {
-        let i = SelectIn { applicants: vec![a(2, 10, 7, 1), a(3, 1, 9, 1), a(2, 10, 3, 1), a(2, 20, 5, 1)], open: 3 };
+        let i = SelectIn { applicants: vec![a(2, 10, 7), a(3, 1, 9), a(2, 10, 3), a(2, 20, 5)], open: 3 };
         assert_eq!(select(&i), vec![1, 3, 2], "skill, then experience, then the lower lot");
-        let twins = SelectIn { applicants: vec![a(4, 0, 0, 5), a(1, 0, 0, 2)], open: 3 };
-        assert_eq!(select(&twins), vec![1], "an agent's twins fit whole or not at all");
+        let few = SelectIn { applicants: vec![a(4, 0, 0)], open: 3 };
+        assert_eq!(select(&few), vec![0], "every applicant while jobs are open");
     }
 }

@@ -37,8 +37,6 @@ pub struct DaySettlement {
     pub failed: u64,
     /// The claimant members drawn to lose on cleared lines whose payers failed.
     pub lost: u64,
-    /// The claimant members drawn past the failed members, a unit being wider than what remained to draw.
-    pub lost_past_failed: u64,
     pub iterations: u64,
     pub gross: i128,
     /// The closing ring: the parties whose settled payments their own funds could not cover without the day's
@@ -441,11 +439,10 @@ impl<B: Backing> Books<B> {
     }
 
     /// The dues the claimant members drawn on cleared lines lost, recorded as failed against the top issuer, which
-    /// holds the failed payers' dues; the members drawn, and those drawn past the failed, which a claimant unit wider
-    /// than what remained to draw leaves with the top issuer.
+    /// holds the failed payers' dues; the members drawn.
     #[clause("REP.23", "ACC.1")]
-    fn record_lost(&mut self, found: &Found) -> (u64, u64) {
-        let (mut members, mut past) = (0_u64, 0_u64);
+    fn record_lost(&mut self, found: &Found) -> u64 {
+        let mut members = 0_u64;
         for (line, c) in found.cleared.sorted() {
             let Some(losers) = &c.losers else { continue };
             let ccy = self.ledger.terms.get(self.ledger.lines.terms(line)).ccy;
@@ -460,9 +457,8 @@ impl<B: Backing> Books<B> {
                 });
             }
             members += losers.drawn();
-            past += losers.drawn() - c.failed;
         }
-        (members, past)
+        members
     }
 
     /// The nets applied, one instruction per line as its legs are read in order, so no batch of legs is held; each
@@ -544,7 +540,7 @@ impl<B: Backing> Books<B> {
         let fixed = self.fixed_point(&mut streamed, due, day, calendar, &mut found, draws_of);
         let (runs_read, runs_broken, sampled) = self.runs_broken(due, day, &streamed.scanned);
         let (g, nets) = self.gather(&streamed, &fixed, (due, day, calendar), closed, &mut found);
-        let (lost, lost_past_failed) = self.record_lost(&found);
+        let lost = self.record_lost(&found);
         let unsound = count(g.given.each().filter(|(_, r)| r.standing() < 0).count());
         let (ring_parties, ring_value) = g
             .given
@@ -593,7 +589,6 @@ impl<B: Backing> Books<B> {
             settled: g.settled,
             failed: g.failed,
             lost,
-            lost_past_failed,
             iterations: fixed.iterations,
             gross: streamed.gross,
             ring_parties,

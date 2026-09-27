@@ -41,8 +41,8 @@ pub fn still_from(series: &[Series]) -> Missing<Day> {
     still
 }
 
-/// One opening distribution's distance from the world's own at a later close, and the share of its sampled members,
-/// by their twins, whose bin moved since.
+/// One opening distribution's distance from the world's own at a later close, and the share of its sampled agents
+/// whose bin moved since.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Drift {
     pub id: String,
@@ -68,17 +68,17 @@ pub fn drift(opening: &View, later: &View) -> Vec<Drift> {
         .collect()
 }
 
-/// The share, by their twins then, of the members sampled in both views whose bin moved; absent when none is in both.
+/// The share of the agents sampled in both views whose bin moved; absent when none is in both.
 #[clause("GEN.8")]
-pub fn moved(then: &[(PartyId, Option<usize>, u64)], now: &[(PartyId, Option<usize>, u64)]) -> Missing<f64> {
+pub fn moved(then: &[(PartyId, Option<usize>)], now: &[(PartyId, Option<usize>)]) -> Missing<f64> {
     let (mut both, mut moved) = (0_u64, 0_u64);
-    for (party, bin, twins) in then {
-        if let Ok(at) = now.binary_search_by_key(party, |(p, _, _)| *p)
-            && let Some((_, later, _)) = now.get(at)
+    for (party, bin) in then {
+        if let Ok(at) = now.binary_search_by_key(party, |(p, _)| *p)
+            && let Some((_, later)) = now.get(at)
         {
-            both += twins;
+            both += 1;
             if later != bin {
-                moved += twins;
+                moved += 1;
             }
         }
     }
@@ -96,11 +96,11 @@ mod tests {
     use crate::reads::Series;
 
     #[test]
-    fn members_moved_are_counted_by_their_twins_then() {
+    fn agents_moved_are_counted_among_those_in_both() {
         let p = PartyId::new;
-        let then = [(p(64), Some(0), 10), (p(128), Some(1), 30), (p(192), None, 60)];
-        let now = [(p(64), Some(1), 10), (p(128), Some(1), 30)];
-        assert_eq!(moved(&then, &now), Missing::Present(0.25), "one of ten twins of forty in both moved");
+        let then = [(p(64), Some(0)), (p(128), Some(1)), (p(192), None), (p(256), Some(2)), (p(320), Some(2))];
+        let now = [(p(64), Some(1)), (p(128), Some(1)), (p(256), Some(2)), (p(320), Some(2))];
+        assert_eq!(moved(&then, &now), Missing::Present(0.25), "one of the four in both moved");
         assert_eq!(moved(&then, &[]), Missing::Absent, "none in both");
     }
 

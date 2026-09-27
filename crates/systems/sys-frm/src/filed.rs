@@ -27,11 +27,11 @@ use phx_ledger::opening::{currency, hold, key, whole};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_pop::population::Population;
-use phx_rand::float::{floor_to_i64, from_i64, from_u64, len_u64};
+use phx_rand::float::{floor_to_i64, from_i64, len_u64};
 use phx_store::SystemBacking;
 
 use crate::consts::{DAYS_A_WEEK, FILED_PURPOSES, METHODS, PRODUCTS_PURPOSE, RETURNS};
-use crate::small::{SMALL_COUNTS, SMALL_FIRMS};
+use crate::small::SMALL_FIRMS;
 use crate::{FilingPrims, OpeningStream, SMALL_FIRM};
 
 /// Each firm with the product it makes, for the deposits' rights and the stocks.
@@ -72,11 +72,9 @@ impl Contribution for Declared {
     }
 }
 
-/// A firm as the opening reads it: its party, the persons it employs over all its twins, its twins, its industry,
-/// and where its row is.
+/// A firm as the opening reads it: its party, its industry, and where its row is.
 struct Firm {
     party: PartyId,
-    twins: u64,
     industry: usize,
     agent: Option<(usize, Slot)>,
 }
@@ -111,7 +109,7 @@ fn attr_at(population: &Population, kind: usize, name: &str) -> usize {
     i
 }
 
-/// Every firm of the country: the large firms, one twin each, and the small firms' agents.
+/// Every firm of the country: the large firms and the small firms' agents.
 fn firms(books: &Books, population: &Population, c: &OpeningCountry) -> Vec<Firm> {
     let index =
         |i: i64| usize::try_from(i).unwrap_or_else(|_| violation!(clause = "TEC.4", "a firm of no industry", at = i));
@@ -120,15 +118,15 @@ fn firms(books: &Books, population: &Population, c: &OpeningCountry) -> Vec<Firm
         let Missing::Present(i) = books.parties.fact(party, <Industry as FactDef>::ITEM.name) else {
             violation!(clause = "TEC.4", "a firm with no industry", firm = party.get());
         };
-        out.push(Firm { party, twins: 1, industry: index(i), agent: None });
+        out.push(Firm { party, industry: index(i), agent: None });
     }
     let k = small_kind(population);
     let industry_at = attr_at(population, k, if_firm::known::INDUSTRY.name);
     let table = Population::table::<SystemBacking>(books.parties.cells(), k);
-    for ((party, _), (_, twins)) in drawn(books, SMALL_FIRMS, c).into_iter().zip(drawn(books, SMALL_COUNTS, c)) {
+    for (party, _) in drawn(books, SMALL_FIRMS, c) {
         let slot = books.parties.row(party).1;
         let industry = index(i64::from(table.attr(slot, industry_at)));
-        out.push(Firm { party, twins, industry, agent: Some((k, slot)) });
+        out.push(Firm { party, industry, agent: Some((k, slot)) });
     }
     out
 }
@@ -367,7 +365,7 @@ impl Contribution for Stocks {
             for (f, (_, product)) in list.iter().zip(&chosen) {
                 let Ok(p) = u16::try_from(*product) else { continue };
                 let way = way_of(register, c, p);
-                // The firm's filed output a day, a twin's, which its stocks cover.
+                // The firm's filed output a day, which its stocks cover.
                 let Missing::Present(per_day) = read_fact(books, f, <OutputRate as FactDef>::ITEM.name) else {
                     continue;
                 };
@@ -384,10 +382,7 @@ impl Contribution for Stocks {
                 }
                 let mut legs: Vec<LegRec> = Vec::new();
                 for (q, units) in wanted {
-                    let Some(per_twin) = floor_to_i64(units) else { continue };
-                    let Some(held) = per_twin.checked_mul(i64::try_from(f.twins).unwrap_or(i64::MAX)) else {
-                        phx_num::capacity_exceeded!("a firm's opening stock", i64::MAX, per_twin);
-                    };
+                    let Some(held) = floor_to_i64(units) else { continue };
                     if held <= 0 {
                         continue;
                     }
@@ -532,7 +527,7 @@ impl Contribution for Filed {
                     // A firm's filed output is what its wage bill pays for at labour's share of what a unit adds, so
                     // a firm that pays more makes more an hour, and its accounts show the rest of what it adds.
                     let hours_a_unit = labour_share * added / wage;
-                    let per_day = hours / from_u64(f.twins) / DAYS_A_WEEK / hours_a_unit;
+                    let per_day = hours / DAYS_A_WEEK / hours_a_unit;
                     let cost = lot * (materials + hours_a_unit * wage);
                     let snapshot = lot * price.get(usize::from(p)).copied().unwrap_or(0.0);
                     let posted = m.points_near(snapshot).into_iter().fold(None, |best: Option<i64>, x| match best {
@@ -558,7 +553,7 @@ impl Contribution for Filed {
     }
 }
 
-/// A firm's fact as the opening wrote it: a large firm's from its row, an agent's from its positions, one twin's.
+/// A firm's fact as the opening wrote it: a large firm's from its row, an agent's from its positions.
 fn read_fact(books: &mut Books, f: &Firm, name: &str) -> Missing<i64> {
     match f.agent {
         None => books.parties.fact(f.party, name),
@@ -573,7 +568,7 @@ fn read_fact(books: &mut Books, f: &Firm, name: &str) -> Missing<i64> {
     }
 }
 
-/// A firm's facts written: a large firm's to its row, an agent's to its positions, one twin's.
+/// A firm's facts written: a large firm's to its row, an agent's to its positions.
 fn write_facts(books: &mut Books, f: &Firm, facts: &[(&'static str, i64)]) {
     match f.agent {
         None => {
