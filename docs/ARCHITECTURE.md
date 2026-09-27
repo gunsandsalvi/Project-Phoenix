@@ -2153,7 +2153,9 @@ drawn with the parties, before the households: each country's firms below the ra
 they employ what the large firms leave, sized up to the smallest the rank admits, apportioned over the regions by their
 land and over the banks by the banks' drawn sizes, and placed as agents of the small-firm kind, one for every
 `REP.multiplicity` firms, with region, size and bank as attributes (§7.1). They
-hold the firms' deposits and debt the large firms do not, by their employees, on each bank's lines for them, and are
+hold the firms' deposits and debt the large firms do not, by their employees, on each bank's lines for them — a
+current account, and a loan line for each whole year a firm's loan may run (`BNK.loan_years_min` to `_max`), each
+agent's term drawn alike and its balance repaid monthly over the dates that remain (`Leg::Amortising`) — and are
 employers on the employment lines by their headcount beside the large firms. The large firms are rows of the kernel's
 firm kind table, individuals (REP.2).
 

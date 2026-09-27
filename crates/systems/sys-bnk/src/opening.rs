@@ -4,7 +4,7 @@ use phx_core::{
     Apportioned, BALANCES, CONTRACTS, Contribution, DECLARATIONS, Opening, OpeningCountry, OpeningPhase, PARTIES, Prim,
     StreamDef, apportion, opening_subject,
 };
-use phx_id::{CountryId, Date, PartyId};
+use phx_id::{CountryId, Date, LineId, PartyId};
 use phx_ledger::algebra::{Leg, Reference, Repayment, Schedule, Side};
 use phx_ledger::books::{self, Books};
 use phx_ledger::instruction::{Effect, ReasonDecl, ReasonId};
@@ -16,6 +16,7 @@ use phx_ledger::terms::TermsId;
 use phx_macros::clause;
 use phx_num::{Count, Missing, Money, Rate, RatePeriod, violation};
 use phx_rand::below_u64;
+use phx_rand::float::len_u64;
 use std::collections::BTreeMap;
 
 use crate::consts::{LOANS, LOTS, MONTHS_PER_YEAR, PERCENT, PURPOSES, RATE_ONE, SHARE_PARTS, SITES};
@@ -343,27 +344,48 @@ impl Contracts {
             }
         }
         b.drawn.insert(key(LENDERS, c.id), lenders);
-        let small_loans = b.ledger.terms.intern(terms(
-            ccy,
-            vec![Leg::RateOnNotional { reference: Reference::Fixed(lending), day_count: DayCount::Act365F }],
-            Schedule { dates: monthly(date, c.id), count: Missing::Absent },
-        ));
+        let small_loans = small_loan_terms(b, (ccy, lending), (min, max), (date, c.id));
         Small { kinds, deposits: deposit_terms, loans: small_loans, first: Missing::Present(first_due) }.open(
             b,
             (register, reason),
             c,
-            report,
+            (report, &mut loans),
         );
     }
 }
 
+/// The small firms' loan terms, one for each whole year a firm's loan may run: interest on what it owes and the
+/// balance repaid in equal parts over the months it has left.
+fn small_loan_terms(
+    b: &mut Books,
+    (ccy, lending): (phx_num::Ccy, Rate),
+    (min, max): (u64, u64),
+    (date, country): (Date, CountryId),
+) -> Vec<TermsId> {
+    (min..=max)
+        .map(|years| {
+            let Some(months) = u32::try_from(years).ok().and_then(|y| y.checked_mul(MONTHS_PER_YEAR)) else {
+                violation!(clause = "GEN.2", "a loan's term beyond a schedule's count", years = years);
+            };
+            b.ledger.terms.intern(terms(
+                ccy,
+                vec![
+                    Leg::RateOnNotional { reference: Reference::Fixed(lending), day_count: DayCount::Act365F },
+                    Leg::Amortising,
+                ],
+                Schedule { dates: monthly(date, country), count: Missing::Present(months) },
+            ))
+        })
+        .collect()
+}
+
 /// The small firms' lines at their banks: each bank's current account for the small firms that bank with it and a
-/// loan line they owe on, interest on the balance alone, a cell's row counting its firms; each cell's deposit and
-/// debt written on them.
+/// loan line for each term they owe on, an agent's row counting its firms, each agent's term drawn alike over the
+/// terms; each agent's deposit and debt written on them.
 struct Small {
     kinds: (u16, u16),
     deposits: TermsId,
-    loans: TermsId,
+    loans: Vec<TermsId>,
     first: Missing<(phx_id::Day, u32)>,
 }
 
@@ -374,7 +396,7 @@ impl Small {
         b: &mut Books,
         (register, reason): (&phx_core::Register, ReasonId),
         c: &OpeningCountry,
-        report: &mut phx_core::GenReport,
+        (report, lot): (&mut phx_core::GenReport, &mut phx_rand::Draws),
     ) {
         let ccy = currency(c.id);
         let (banked, counts) = (drawn(b, SMALL_BANKS, c.id), drawn(b, SMALL_COUNTS, c.id));
@@ -415,17 +437,16 @@ impl Small {
                 phx_num::capacity_exceeded!("small firms of a bank", u32::MAX, total);
             };
             let account = b.ledger.lines.open(self.kinds.0, self.deposits, self.first);
-            let loan = b.ledger.lines.open(self.kinds.1, self.loans, self.first);
-            let mut legs = vec![
-                open_row(register, bank_party, account, Side::Liability, total, BALANCE),
-                open_row(register, bank_party, loan, Side::Asset, total, BALANCE),
-            ];
+            let mut legs = vec![open_row(register, bank_party, account, Side::Liability, total, BALANCE)];
             for (cell, n) in &cells {
                 legs.push(open_row(register, *cell, account, Side::Asset, *n, BALANCE | PENDING));
-                legs.push(open_row(register, *cell, loan, Side::Liability, *n, BALANCE));
             }
             b.open(reason, legs, bank, report);
+            let loan_of = self.open_loans(b, (register, reason), (bank_party, &cells), (report, lot));
             for (cell, _) in &cells {
+                let Some(&loan) = loan_of.get(cell) else {
+                    violation!(clause = "GEN.3", "a small firms' agent with no loan line", cell = cell.get());
+                };
                 let (deposit, owed) = (amount(&deposits, *cell), amount(&debts, *cell));
                 let id = cell.get();
                 let legs = vec![
@@ -437,6 +458,38 @@ impl Small {
                 b.open(reason, legs, id, report);
             }
         }
+    }
+    /// Each agent's loan term drawn alike over the terms, then each term's line opened with its agents and the bank's
+    /// side counting them: the line each agent owes on.
+    fn open_loans(
+        &self,
+        b: &mut Books,
+        (register, reason): (&phx_core::Register, ReasonId),
+        (bank_party, cells): (PartyId, &[(PartyId, u32)]),
+        (report, lot): (&mut phx_core::GenReport, &mut phx_rand::Draws),
+    ) -> BTreeMap<PartyId, LineId> {
+        let mut by_term: BTreeMap<usize, Vec<(PartyId, u32)>> = BTreeMap::new();
+        for (cell, n) in cells {
+            let Ok(at) = usize::try_from(below_u64(lot, len_u64(self.loans.len()))) else {
+                violation!(clause = "GEN.2", "a loan term beyond those drawn");
+            };
+            by_term.entry(at).or_default().push((*cell, *n));
+        }
+        let mut loan_of: BTreeMap<PartyId, LineId> = BTreeMap::new();
+        for (at, agents) in by_term {
+            let Some(terms) = self.loans.get(at).copied() else {
+                violation!(clause = "GEN.2", "a loan term beyond those drawn");
+            };
+            let loan = b.ledger.lines.open(self.kinds.1, terms, self.first);
+            let firms: u32 = agents.iter().map(|(_, n)| n).sum();
+            let mut legs = vec![open_row(register, bank_party, loan, Side::Asset, firms, BALANCE)];
+            for (cell, n) in &agents {
+                legs.push(open_row(register, *cell, loan, Side::Liability, *n, BALANCE));
+                loan_of.insert(*cell, loan);
+            }
+            b.open(reason, legs, bank_party.get(), report);
+        }
+        loan_of
     }
 }
 
