@@ -5,7 +5,7 @@
 //! mean wage the labour share gives times its household's income as a multiple of the mean, on the nearest wage
 //! point. A job is a row on the employment line of its class and point. Once every household is drawn, each region and
 //! occupation's jobs are apportioned over the region's firms by their headcounts and the share of the occupation in
-//! their industry's work, and dealt to the lines in an order drawn by lot. Of those not employed, the
+//! their product's work, and dealt to the lines in an order drawn by lot. Of those not employed, the
 //! unemployed search, at the rate that makes their share of the labour force the country's; an adult past its
 //! pension's age not employed is retired.
 
@@ -59,18 +59,17 @@ const FIRMS: &str = "FRM.firms";
 const SMALL_FIRMS: &str = "FRM.small_firms";
 const FIRM_REGIONS: &str = "FRM.firm_regions";
 const SMALL_REGIONS: &str = "FRM.small_regions";
-const FIRM_INDUSTRIES: &str = "FRM.firm_industries";
-const SMALL_INDUSTRIES: &str = "FRM.small_industries";
-/// The hours each occupation's work takes in each industry's way, which weigh the occupations a firm employs.
+const FIRM_PRODUCTS: &str = "FRM.firm_products";
+/// The hours each occupation's work takes in each product's way, which weigh the occupations a firm employs.
 const HOURS_A_UNIT: &str = "TEC.labour";
 
-/// A firm as the jobs' deal reads it: its party, its headcount, its region and its industry.
+/// A firm as the jobs' deal reads it: its party, its headcount, its region and the product it makes.
 #[derive(Clone, Copy, Debug)]
 struct Employer {
     party: PartyId,
     headcount: u64,
     region: u32,
-    industry: i64,
+    product: i64,
 }
 
 /// Labour's draw of the households' jobs.
@@ -115,7 +114,7 @@ struct Country {
     ccy: phx_num::Ccy,
     terms: BTreeMap<(i64, Vec<u32>), TermsId>,
     firms: Vec<Employer>,
-    /// Each occupation's share of each industry's hours, by (occupation, industry), in parts of a whole.
+    /// Each occupation's share of each product's hours, by (occupation, product), in parts of a whole.
     shares: BTreeMap<(u32, i64), u64>,
     /// Each line's region, occupation and the jobs drawn on it.
     drawn: BTreeMap<TermsId, (u32, u32, u64)>,
@@ -361,7 +360,7 @@ impl CountryAttachments for Country {
     }
 }
 
-/// Every firm of a country, large and small, with its headcount, region and industry as the firms' opening drew them.
+/// Every firm of a country, large and small, with its headcount, region and product as the firms' opening drew them.
 fn employers(books: &Books, country: phx_id::CountryId) -> Vec<Employer> {
     let list = |name: &str| {
         let Some(l) = books.drawn.get(&key(name, country)) else {
@@ -369,28 +368,26 @@ fn employers(books: &Books, country: phx_id::CountryId) -> Vec<Employer> {
         };
         l
     };
+    let products: BTreeMap<PartyId, u64> = list(FIRM_PRODUCTS).iter().copied().collect();
     let mut out = Vec::new();
-    for (heads, regions, industries) in
-        [(FIRMS, FIRM_REGIONS, FIRM_INDUSTRIES), (SMALL_FIRMS, SMALL_REGIONS, SMALL_INDUSTRIES)]
-    {
-        for (((party, headcount), (_, region)), (_, industry)) in
-            list(heads).iter().zip(list(regions)).zip(list(industries))
-        {
-            let (Ok(region), Ok(industry)) = (u32::try_from(*region), i64::try_from(*industry)) else {
-                violation!(clause = "GEN.3", "a firm drawn in no region or industry", party = party.get());
+    for (heads, regions) in [(FIRMS, FIRM_REGIONS), (SMALL_FIRMS, SMALL_REGIONS)] {
+        for ((party, headcount), (_, region)) in list(heads).iter().zip(list(regions)) {
+            let product = products.get(party).and_then(|p| i64::try_from(*p).ok());
+            let (Ok(region), Some(product)) = (u32::try_from(*region), product) else {
+                violation!(clause = "GEN.3", "a firm drawn in no region or making no product", party = party.get());
             };
-            out.push(Employer { party: *party, headcount: *headcount, region, industry });
+            out.push(Employer { party: *party, headcount: *headcount, region, product });
         }
     }
     out
 }
 
-/// Each occupation's share of each industry's hours of work, in parts of a whole.
+/// Each occupation's share of each product's hours of work, in parts of a whole.
 fn occupation_shares(hours: &Table2) -> BTreeMap<(u32, i64), u64> {
     let mut out = BTreeMap::new();
-    for industry in hours.columns() {
+    for product in hours.columns() {
         let each: Vec<(i64, i64)> =
-            hours.rows().iter().filter_map(|o| hours.at(*o, *industry).ok().map(|h| (*o, h))).collect();
+            hours.rows().iter().filter_map(|o| hours.at(*o, *product).ok().map(|h| (*o, h))).collect();
         let total: i64 = each.iter().map(|(_, h)| h).sum();
         if total <= 0 {
             continue;
@@ -398,7 +395,7 @@ fn occupation_shares(hours: &Table2) -> BTreeMap<(u32, i64), u64> {
         for (o, h) in each {
             let part = phx_rand::float::from_i64(h) / phx_rand::float::from_i64(total) * SHARE_PARTS;
             if let (Ok(o), Some(part)) = (u32::try_from(o), phx_rand::float::floor_to_u64(part)) {
-                out.insert((o, *industry), part);
+                out.insert((o, *product), part);
             }
         }
     }
@@ -406,7 +403,7 @@ fn occupation_shares(hours: &Table2) -> BTreeMap<(u32, i64), u64> {
 }
 
 /// Each line's employers: each region and occupation's jobs apportioned over the region's firms by their headcounts
-/// times the occupation's share of their industry's hours (over the region's firms by headcount where none employs
+/// times the occupation's share of their product's hours (over the region's firms by headcount where none employs
 /// the occupation, and the country's where the region holds no firm), the firms taken in an order drawn by lot and
 /// dealt to the lines in theirs, each line's jobs from the next firm with jobs left.
 #[clause("GEN.4", "LAB.1")]
@@ -422,7 +419,7 @@ fn deal(
     let mut out = BTreeMap::new();
     for ((region, occupation), lines) in cells {
         let jobs: u64 = lines.iter().map(|(_, n)| n).sum();
-        let weigh = |f: &Employer| f.headcount * shares.get(&(occupation, f.industry)).copied().unwrap_or(0);
+        let weigh = |f: &Employer| f.headcount * shares.get(&(occupation, f.product)).copied().unwrap_or(0);
         let mut weighed: Vec<(PartyId, u64)> =
             firms.iter().filter(|f| f.region == region).map(|f| (f.party, weigh(f))).filter(|(_, w)| *w > 0).collect();
         if weighed.is_empty() {
