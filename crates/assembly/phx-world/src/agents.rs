@@ -992,21 +992,39 @@ impl World {
         }
     }
 
-    /// One twin of an agent seated as an agent of its own, of multiplicity one: its household copied, and one twin's
-    /// share of each of the agent's contracts moved to it.
+    /// One twin of an agent seated as an agent of its own, of multiplicity one: its household, attributes and
+    /// positions copied, and one twin's share of each of the agent's contracts and holdings moved to it.
     #[clause("REP.1", "REP.9", "REP.17")]
     fn seat_twin(&mut self, day: Day, kind: usize, (slot, donor): (Slot, PartyId)) -> PartyId {
         if day != self.day_zero {
             violation!(clause = "REP.17", "a twin taken after the opening", party = donor.get());
         }
+        let twins = {
+            let table = Population::table::<SystemBacking>(self.books.parties.cells(), kind);
+            table.multiplicity(slot).get()
+        };
+        // Each row counts its twins' contracts alike, so a twin's are its count over the twins.
+        let per_twin: Vec<((LineId, Side), u32)> = {
+            let (place, at) = self.books.parties.row(donor);
+            phx_ledger::rows::rows(self.books.parties.holder(place), at)
+                .iter()
+                .filter(|r| r.row.count > 0)
+                .map(|r| {
+                    if r.row.count % twins != 0 {
+                        violation!(clause = "REP.9", "a row its twins do not hold alike", party = donor.get());
+                    }
+                    ((r.row.line, r.side()), r.row.count / twins)
+                })
+                .collect()
+        };
         let (cells, directory, space) = self.books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(cells, kind);
         let attrs = table.attrs(slot);
-        let per_twin = phx_pop::explicit::per_twin(table, slot);
         let (persons, attachments) = (table.persons(slot).to_vec(), table.attachments(slot).to_vec());
         let (seat, player) = phx_pop::table::begin(table, directory, space, (day, phx_core::Weight::new(1), &attrs));
         table.set_persons(seat, &persons);
         table.set_attachments(seat, &attachments);
+        table.copy_facts(slot, seat);
         table.take_twin(slot);
         let m = move_at(&self.register, day, ApplyAt::Opening);
         let seated = self.books.dues.seated;
@@ -1015,6 +1033,9 @@ impl World {
             if let Err(f) = self.books.transfer(t, m, self.audit.stream()) {
                 violation!(clause = "REP.9", "a twin's contracts did not move to its seat", party = f.party.get());
             }
+        }
+        if let Err(f) = self.books.pass_share((donor, player), i64::from(twins), seated, m, self.audit.stream()) {
+            violation!(clause = "REP.9", "a twin's holdings did not move to its seat", party = f.party.get());
         }
         player
     }

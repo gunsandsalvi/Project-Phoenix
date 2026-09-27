@@ -347,6 +347,16 @@ impl<B: Backing> AgentTable<B> {
         self.persons_held -= self.persons_of(slot);
     }
 
+    /// Every position one agent holds written as another's, absent ones absent: a twin's, which its twins hold alike.
+    pub fn copy_facts(&mut self, from: Slot, to: Slot) {
+        self.live(from);
+        self.live(to);
+        for c in &mut self.facts {
+            let v = read(c, from);
+            c.set(to, v);
+        }
+    }
+
     /// An attribute's value, by its place among the kind's.
     #[must_use]
     pub fn attr(&self, slot: Slot, i: usize) -> u32 {

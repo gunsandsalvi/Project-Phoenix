@@ -436,6 +436,7 @@ pub fn phx_ledger::books::Books<B>::trade_legs(&self, (phx_id::ids::PartyId, phx
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::holds_units(&self, phx_id::ids::PartyId) -> bool
 pub fn phx_ledger::books::Books<B>::pass_holdings(&mut self, (phx_id::ids::PartyId, phx_id::ids::PartyId), phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<i64, phx_ledger::fails::Fail>
+pub fn phx_ledger::books::Books<B>::pass_share(&mut self, (phx_id::ids::PartyId, phx_id::ids::PartyId), i64, phx_ledger::instruction::ReasonId, phx_ledger::transfer::MoveAt, &mut dyn phx_core::family::AuditStream) -> core::result::Result<i64, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::settle_estate(&mut self, phx_id::ids::PartyId, phx_id::ids::PartyId, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::estate::Settled where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::unlisted_against(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>

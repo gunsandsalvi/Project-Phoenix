@@ -52,6 +52,24 @@ impl<B: phx_store::Backing> Books<B> {
         m: MoveAt,
         audit: &mut dyn AuditStream,
     ) -> Result<i64, Fail> {
+        self.pass_share((from, to), 1, reason, m, audit)
+    }
+
+    /// One of `of` equal shares of every holding of one party passed to another, each its units and its basis's
+    /// share, rounded once: a twin's holdings to the agent it is seated as, whose units its twins hold alike.
+    /// Returns the bases passed.
+    ///
+    /// # Errors
+    /// The first move that could not settle.
+    #[clause("PTY.9", "REP.9", "L3")]
+    pub fn pass_share(
+        &mut self,
+        (from, to): (PartyId, PartyId),
+        of: i64,
+        reason: crate::instruction::ReasonId,
+        m: MoveAt,
+        audit: &mut dyn AuditStream,
+    ) -> Result<i64, Fail> {
         let (place, slot) = self.parties.row(from);
         let held: Vec<(phx_id::InstrumentId, i64, i64)> = {
             let table = self.parties.holder(place);
@@ -67,13 +85,30 @@ impl<B: phx_store::Backing> Books<B> {
         };
         let mut passed = 0_i64;
         for (instrument, units, basis) in held {
+            if of <= 0 || units % of != 0 {
+                violation!(clause = "REP.9", "a holding not held alike by its twins", instrument = instrument.get());
+            }
+            let units = units / of;
+            let Ok(basis) = i64::try_from(phx_num::round::div_round(i128::from(basis), i128::from(of), m.rounding))
+            else {
+                violation!(clause = "REP.9", "a basis's share beyond counting", instrument = instrument.get());
+            };
             let unit = self.ledger.instruments.get(instrument).unit;
-            let leg = |party, qty, cost| crate::instruction::LegRec {
+            // Before day one units move only as the opening writes them, the units given carrying their lots out.
+            let opening = matches!(m.at, crate::apply::ApplyAt::Opening);
+            let leg = |party: PartyId, qty, cost| crate::instruction::LegRec {
                 party,
                 account: crate::instruction::AccountRef::Instrument(instrument),
                 qty,
                 denom: crate::instruction::Denom::Unit(unit),
-                kind: crate::instruction::LegKind::Units { cost },
+                kind: if opening {
+                    crate::instruction::LegKind::OpeningWrite {
+                        identity: to.get(),
+                        cost: if qty < 0 { 0 } else { cost },
+                    }
+                } else {
+                    crate::instruction::LegKind::Units { cost }
+                },
             };
             let _ = self.submit(reason, vec![leg(from, -units, -basis), leg(to, units, basis)], m, audit)?;
             passed += basis;

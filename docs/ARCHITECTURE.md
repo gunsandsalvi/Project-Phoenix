@@ -929,9 +929,11 @@ save loads only under its own, and `phx inject` reads it from the manifest (§11
 
 The **player's household** (OBS.4) is drawn at the opening among the country's household agents, each weighted by
 its multiplicity, so every real household is as likely. Under twins one twin of the agent drawn is seated as an agent
-of its own, of multiplicity one, with the agent's attributes, persons and attachments, and one twin's share of every
-row moved to it by line transfers (the opening allows rows to move, §10.4a); the agent keeps one twin fewer. An agent
-of one twin, as in a small world, is the player's as it stands.
+of its own, of multiplicity one, with the agent's attributes, persons, attachments and positions (each a twin's), one
+twin's share of every row — its count over the twins — moved to it by line transfers (the opening allows rows to move,
+§10.4a), and one twin's share of every holding written to it, its basis's share rounded once (`Books::pass_share`);
+the agent keeps one twin fewer. A counterpart seated for the player, a small firm's agent among them, is seated alike.
+An agent of one twin, as in a small world, is the player's as it stands.
 
 ### 7.7 Relationship counts and their levers
 
