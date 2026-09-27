@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use phx_core::calendar::Calendar;
 use phx_id::{Day, LineId, PartyId};
@@ -24,6 +24,8 @@ pub struct FixedPoint {
     /// whether or not their payer had failed them first, so none is its payer's to answer for.
     pub by_bank: BTreeSet<(LineId, PartyId)>,
     pub iterations: u64,
+    /// Each payer's payments among the day's, by their places in 7a's list, in payment order.
+    pub by_payer: BTreeMap<PartyId, Vec<usize>>,
 }
 
 /// What a payment draws on a party's account: its legs taking from the account the party holds.
@@ -38,11 +40,16 @@ pub(crate) fn draw(legs: &[LegRec], party: PartyId, account: LineId) -> i128 {
 
 struct Work<'a, B: Backing> {
     books: &'a Books<B>,
-    due: &'a DueLines,
-    day: Day,
-    calendar: &'a Calendar,
     found: &'a mut Found,
     records: &'a mut Records,
+    /// The day's payments, as 7a found them, and each payer's by its payment order: a payer's own payments are read
+    /// from here whatever lists its lines keep, so a side that keeps none is reached too.
+    made: &'a [Payment],
+    by_payer: BTreeMap<PartyId, Vec<usize>>,
+    /// The parties still short once their own payments failed, taken as banks that cannot cover their customers'
+    /// payments once every payer is done; and the banks whose customers' payments have been removed.
+    short_banks: BTreeSet<PartyId>,
+    removed_banks: BTreeSet<PartyId>,
     failed: BTreeSet<(LineId, PartyId)>,
     by_bank: BTreeSet<(LineId, PartyId)>,
     queue: VecDeque<PartyId>,
@@ -111,16 +118,20 @@ impl<B: Backing> Work<'_, B> {
 
     /// A party short of funds given the payments standing: it fails its own payments from its first unaffordable one
     /// on, a prefix of its payment order; if what it pays for others through its account still exceeds its funds, it
-    /// is a bank that cannot cover its net, and its customers' payments through it are removed.
+    /// is a bank that may not cover its net, answered once every payer is done.
     fn visit(&mut self, party: PartyId) {
         let Some(rec) = self.records.get(self.books.parties.row(party)).copied() else { return };
         if rec.standing() >= 0 {
             return;
         }
-        let all = self.books.payments_of(party, self.due, self.day, self.calendar, self.found);
-        let own: Vec<(Payment, i128)> = all
+        let made = self.made;
+        let own: Vec<(Payment, i128)> = self
+            .by_payer
+            .get(&party)
+            .map_or(&[][..], Vec::as_slice)
             .iter()
-            .filter(|p| p.payer == party && !self.failed.contains(&p.key()))
+            .filter_map(|i| made.get(*i))
+            .filter(|p| !self.failed.contains(&p.key()))
             .map(|p| (*p, draw(&self.books.effects(p), party, rec.account)))
             .collect();
         let own_draw: i128 = own.iter().map(|(_, d)| d).sum();
@@ -141,34 +152,36 @@ impl<B: Backing> Work<'_, B> {
             }
         }
         if self.records.get(self.books.parties.row(party)).is_some_and(|r| r.standing() < 0) {
-            self.remove_customers(party, rec.account);
+            self.short_banks.insert(party);
         }
     }
 
-    /// Every payment of a bank's customers whose legs pass through the bank's account, the bank's to answer for even
-    /// where its payer had failed it; a cleared line's credit to a customer only adds to the bank's reserves, and
-    /// stands.
+    /// Every payment of a bank's customers whose money passes through it, the bank's to answer for even where its payer
+    /// had failed it: those its paying customers make, and those its customers are paid but on a cleared line, whose
+    /// credit only adds to the bank's reserves and stands. Its customers are found among the day's payments, not by the
+    /// holders its lines list.
     #[clause("MON.5")]
-    fn remove_customers(&mut self, bank: PartyId, account: LineId) {
-        let issued: Vec<LineId> = self
+    fn remove_customers(&mut self, bank: PartyId) {
+        let issued: BTreeSet<LineId> = self
             .books
             .rows_of(bank)
             .into_iter()
             .filter(|(line, side)| *side == Side::Liability && self.books.ledger.lines.is_money(*line))
             .map(|(line, _)| line)
             .collect();
-        for line in issued {
-            for customer in self.books.side_holders(line, Side::Asset) {
-                for p in self.books.payments_of(customer, self.due, self.day, self.calendar, self.found) {
-                    if p.cleared && p.payee == customer {
-                        continue;
-                    }
-                    let legs = self.books.effects(&p);
-                    if draw(&legs, bank, account) > 0 || legs.iter().any(|l| l.party == bank) {
-                        self.by_bank.insert(p.key());
-                        self.fail(&p);
-                    }
-                }
+        let banked_here = |legs: &[LegRec], party: PartyId| {
+            legs.iter().any(|l| {
+                l.party == party
+                    && matches!(l.kind, LegKind::Money)
+                    && matches!(l.account, AccountRef::Line { line, side: Side::Asset } if issued.contains(&line))
+            })
+        };
+        let made = self.made;
+        for p in made {
+            let legs = self.books.effects(p);
+            if banked_here(&legs, p.payer) || (!p.cleared && banked_here(&legs, p.payee)) {
+                self.by_bank.insert(p.key());
+                self.fail(p);
             }
         }
     }
@@ -191,13 +204,21 @@ impl<B: Backing> Books<B> {
     ) -> FixedPoint {
         let mut short: Vec<PartyId> = day.records.each().filter(|(_, r)| r.standing() < 0).map(|(p, _)| p).collect();
         short.sort_unstable();
+        let mut by_payer: BTreeMap<PartyId, Vec<usize>> = BTreeMap::new();
+        for (i, p) in day.made.iter().enumerate() {
+            by_payer.entry(p.payer).or_default().push(i);
+        }
+        for list in by_payer.values_mut() {
+            list.sort_by_key(|i| day.made.get(*i).map(|p| (p.order, p.line, p.reckoned_on)));
+        }
         let mut work = Work {
             books: self,
-            due,
-            day: today,
-            calendar,
             found,
             records: &mut day.records,
+            made: &day.made,
+            by_payer,
+            short_banks: BTreeSet::new(),
+            removed_banks: BTreeSet::new(),
             failed: BTreeSet::new(),
             by_bank: BTreeSet::new(),
             queue: VecDeque::new(),
@@ -214,12 +235,29 @@ impl<B: Backing> Books<B> {
         for p in short {
             work.enqueue(p);
         }
+        // Payers fail their own payments until none is short but by what it pays for others; then every bank still
+        // short at that point loses its customers' payments at once, and the payers answer again. A payer's removal is
+        // monotone and a bank's is read only once the payers are done, so the result is the same in any order.
         let mut iterations = 0;
-        while let Some(party) = work.queue.pop_front() {
-            work.queued.remove(&party);
-            iterations += 1;
-            work.visit(party);
+        loop {
+            while let Some(party) = work.queue.pop_front() {
+                work.queued.remove(&party);
+                iterations += 1;
+                work.visit(party);
+            }
+            let banks: Vec<PartyId> = std::mem::take(&mut work.short_banks)
+                .into_iter()
+                .filter(|b| work.records.get(self.parties.row(*b)).is_some_and(|r| r.standing() < 0))
+                .filter(|b| !work.removed_banks.contains(b))
+                .collect();
+            if banks.is_empty() {
+                break;
+            }
+            for bank in banks {
+                work.removed_banks.insert(bank);
+                work.remove_customers(bank);
+            }
         }
-        FixedPoint { failed: work.failed, by_bank: work.by_bank, iterations }
+        FixedPoint { failed: work.failed, by_bank: work.by_bank, iterations, by_payer: work.by_payer }
     }
 }

@@ -520,38 +520,6 @@ impl<B: Backing> Books<B> {
         self.top_of(holder, ccy)
     }
 
-    /// Every payment a party takes part in today, in its payment order: its due rows in its run's order, by the
-    /// order of their terms; each claimant's row is its own payment, and each row owing a line is every payment the
-    /// line's claimants make due.
-    #[clause("REP.9")]
-    pub(crate) fn payments_of(
-        &self,
-        party: PartyId,
-        due: &DueLines,
-        day: Day,
-        calendar: &Calendar,
-        found: &mut Found,
-    ) -> Vec<Payment> {
-        let mut rows = self.due_rows_of(party, due);
-        rows.sort_by_key(|r| self.ledger.terms.get(self.ledger.lines.terms(r.row.line)).payment_order.0);
-        let mut out = Vec::new();
-        for r in rows {
-            let reckoned = match self.reckoning(r.row.line) {
-                Reckoning::On { side, .. } if side != r.side() => side,
-                _ => {
-                    out.extend(self.payment(party, &r, day, calendar, found));
-                    continue;
-                }
-            };
-            for other in self.line_holders_but(r.row.line, party) {
-                if let Some(row) = self.row_on_side(other, r.row.line, reckoned) {
-                    out.extend(self.payment(other, &row, day, calendar, found));
-                }
-            }
-        }
-        out
-    }
-
     /// What a payment does, leg by leg: the money from the payer's means of payment to the payee's, through deposits
     /// and, between banks, reserves; and the principal repaid off the contract's rows. A cleared line's payment moves
     /// its row's holder's money up to the top issuer, or down from it.

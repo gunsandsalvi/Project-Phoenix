@@ -741,6 +741,7 @@ pub fn phx_ledger::fails::Fail::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::fixed_point
 pub struct phx_ledger::fixed_point::FixedPoint
 pub phx_ledger::fixed_point::FixedPoint::by_bank: alloc::collections::btree::set::BTreeSet<(phx_id::ids::LineId, phx_id::ids::PartyId)>
+pub phx_ledger::fixed_point::FixedPoint::by_payer: alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, alloc::vec::Vec<usize>>
 pub phx_ledger::fixed_point::FixedPoint::failed: alloc::collections::btree::set::BTreeSet<(phx_id::ids::LineId, phx_id::ids::PartyId)>
 pub phx_ledger::fixed_point::FixedPoint::iterations: u64
 pub mod phx_ledger::goods

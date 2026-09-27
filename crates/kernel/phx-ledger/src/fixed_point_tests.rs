@@ -323,6 +323,22 @@ fn bank_net_removal_resettles() {
     assert_eq!(reserves, [30, 1_000], "no reserves moved: the settled payment stayed within the second bank");
 }
 
+#[test]
+fn a_bank_is_answered_once_its_customers_are_done() {
+    // The first bank holds 30 in reserves. Its customer 0, holding 10, owes 100 to 1 at the second bank; its customer
+    // 2, holding 30, owes 3 at the second bank 20. With both standing the bank owes 120 across and is short, but 0
+    // cannot pay its own, and once it fails the bank owes 20, which it covers: 2's payment settles, whichever of the
+    // bank and its customers is taken first.
+    let edges = [(0, 1, 100), (2, 3, 20)];
+    let mut w = world(&[10, 0, 30, 0], &edges, [30, 1_000]);
+    let (s, after) = settle(&mut w);
+    assert_eq!(after, vec![10, 0, 10, 20]);
+    assert_eq!((s.settled, s.failed), (1, 1));
+    assert_eq!((s.unsound, s.nets_missed, s.reserves_missed, s.not_maximal), (0, 0, 0, 0));
+    let reserves = w.banks.map(|b| balance(&w, b, w.reserves, Side::Asset));
+    assert_eq!(reserves, [10, 1_020], "the settled payment's 20 crossed from the first bank to the second");
+}
+
 fn pending_on(w: &World, i: usize) -> i64 {
     let (place, slot) = w.books.parties.row(w.firms[i]);
     let line = w.deposits[i % 2];

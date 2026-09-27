@@ -856,8 +856,8 @@ rounded split lands its residue on the payer, the payee with the largest share, 
   met are gathered into the day buffers, which 7b and 7d read in its place. As built at Stage 0: the stream keeps a
   record per party, and the day's lookups (each line's reckoning and ower, each party's account), in the kernel's
   fixed-seed map, read whole only in key order, and the claimants per line in `BTreeMap`s; the pooled-flow rule is
-  given each agent as one payer, every row reaching all its twins, so no row splits an agent's funds; and no
-  gather of unlisted sides is built (F-058). The stream keeps the day's payments in its order (about 157 MB on the
+  given each agent as one payer, every row reaching all its twins, so no row splits an agent's funds; and 7b reads
+  unlisted sides from the day's payments the stream keeps. The stream keeps the day's payments in its order (about 157 MB on the
   twins payday of 2.8 M payments, the only field PC-27 lets keep a batch's items), and 7c's gather reads them, reckoning again only a cleared line's claimant credit
   after its losers; both compute each payment's route, 7c nets it in the fixed-seed map and sorts the nets once, and
   a due record is kept per payment for the accounts (F-057).
@@ -896,12 +896,15 @@ rounded split lands its residue on the payer, the payee with the largest share, 
   loses its due against the top issuer, which holds no row to be in arrears on, and the top is the one the line's
   holders with money reach.
 - **7b** starts from every payment succeeding and removes, until nothing changes, the payers who cannot pay given the
-  payments still standing, and the customer legs of banks that cannot cover their nets after intraday credit (MON.3,
-  MON.5), each such payment failed with the bank's cause, `FailCause::BankShort`. A removal revisits the removed payer's due lines through their holder lists or the day's gather, lowering the
-  credits of their other side and the nets of their banks. As built, only through holder lists, so a side that keeps
-  none — a failing bank's household depositors, a lender's household loans — is not revisited (F-058). A payer fails as
-  a **prefix** of its payment order (REP.18), which is monotone, so the result is the **greatest** set that can settle,
-  and rings of payments that can settle together do (TIME.6).
+  payments still standing; then every bank still short once its payers are done, which cannot cover its net after
+  intraday credit (MON.3, MON.5), loses its customers' payments at once, each failed with the bank's cause,
+  `FailCause::BankShort`, and the payers answer again, round by round until no bank is short. A payer's own payments
+  and a bank's customers are read from the day's payments 7a found (`DayRecords::made`), indexed by payer in payment
+  order, not from the holders its lines list, so a side that keeps no list — household depositors, a wage line's
+  employees — is reached. A removal lowers the credits of the payment's other side and the nets of its banks, and takes
+  their parties again. A payer fails as a **prefix** of its payment order (REP.18), which is monotone, so the result is
+  the **greatest** set that can settle given the banks' removals, and rings of payments that can settle together do
+  (TIME.6).
 - **7c** nets the surviving payments' legs per (line, party, side), money and rows apart, and applies them as one
   instruction per line in line order, read straight from the ordered nets: every account is checked once against its
   net, so no order of application can fail what 7b let stand, and banks' reserves move once per bank by net; applied
@@ -1000,10 +1003,11 @@ published technique it rests on:
   customer's payments through a failing bank are that bank's index range. Queued and failed marks are epoch-stamped
   dense arrays, not ordered sets.
 - **Parallel without order.** A payer's removal of its own payments is monotone, so its greatest fixed point is unique
-  whatever the order (Tarski), and a round can take every short payer at once, on every worker, and reach the same set.
-  A bank's removal of its customers' payments is not yet: it reads the bank's debit, which a customer's own failure
-  lowers, so it must read the customers' payments that stand once their payers are done (F-088). A cleared line's
-  losers depend only on its failed count. The result is deterministic by construction (Blelloch, Fineman, Gibbons and
+  whatever the order (Tarski), and a round can take every short payer at once and reach the same set. A bank's
+  removal reads the bank's debit, which a customer's own failure lowers, so it is taken only once the payers are done,
+  every short bank of a round at once, which leaves the result the same in any order. 7b runs on one thread, its cost a
+  small part of stage 7's (0.07 to 0.28 s of the full load's 2.9 s). A cleared line's losers depend only on its failed
+  count. The result is deterministic by construction (Blelloch, Fineman, Gibbons and
   Shun, *Internally deterministic parallel algorithms can be fast*, 2012). 7a runs over due-holder shards, and 7c's
   nets are grouped by a counting sort on (line, party, side) and applied by target shard.
 - **Day buffers** live on the books across days: cleared by epoch, never freed. After the first heavy day the kernel
@@ -1034,7 +1038,7 @@ a records shard to a worker; 7c's gather, each payment's route made again and wh
 folded a key shard to a worker, the failed and pending recorded in the stream's order; 7c's balances, heads and leg
 reads; the audit's families, each into its own findings, kept in their order; the opening's regions; and saves, each
 store to its own file at once, in fixed 1 MiB zstd frames compressed a wave at a time. Rows are found by reading their
-heads, not by an index; 7b runs on one thread (F-088); 7c's balance writes land by holder chunk on the pool, its
+heads, not by an index; 7b runs on one thread; 7c's balance writes land by holder chunk on the pool, its
 checks and records in line order on one thread; the money and contract families
 still read an unlisted side whole. The rest is carried to the Stage 1 gate (the plan's S1.16, F-087).
 

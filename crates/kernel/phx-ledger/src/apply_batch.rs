@@ -552,7 +552,7 @@ impl<B: Backing> Books<B> {
             .map(|(_, r)| r)
             .filter(|r| r.debit > r.funds)
             .fold((0_u64, 0_i128), |(n, v), r| (n + 1, v + r.debit - r.funds));
-        let not_maximal = self.not_maximal(&g.failed_payers, &fixed, &g.given, (due, day, calendar), &mut found);
+        let not_maximal = self.not_maximal(&g.failed_payers, &fixed, &g.given, &streamed.made);
         let reserves_before: Vec<((PartyId, u8), Option<i128>)> =
             g.crossing.keys().map(|&(p, c)| ((p, c), self.reserves_of(p, Ccy::new(c)))).collect();
         let before = self.balances(&g.nets);
@@ -654,25 +654,22 @@ impl<B: Backing> Books<B> {
     /// How many payers that failed were not short: at its first failed payment in its own order, what a payer held
     /// given the payments that settle could pay it. A payment removed because a bank on its way was short is the bank's,
     /// and one to or from a party with no money is its own, failing whatever the payer holds.
-    fn not_maximal(
-        &self,
-        payers: &BTreeSet<PartyId>,
-        fixed: &FixedPoint,
-        given: &Records,
-        (due, day, calendar): Today<'_>,
-        found: &mut Found,
-    ) -> u64 {
-        let short = |payer: PartyId, found: &mut Found| {
-            let first = self.payments_of(payer, due, day, calendar, found).into_iter().find(|p| {
-                p.payer == payer && !p.moneyless && fixed.failed.contains(&p.key()) && !fixed.by_bank.contains(&p.key())
-            });
+    fn not_maximal(&self, payers: &BTreeSet<PartyId>, fixed: &FixedPoint, given: &Records, made: &[Payment]) -> u64 {
+        let short = |payer: PartyId| {
+            let first = fixed
+                .by_payer
+                .get(&payer)
+                .map_or(&[][..], Vec::as_slice)
+                .iter()
+                .filter_map(|i| made.get(*i))
+                .find(|p| !p.moneyless && fixed.failed.contains(&p.key()) && !fixed.by_bank.contains(&p.key()));
             let Some(p) = first else { return true };
-            let legs = self.effects(&p);
+            let legs = self.effects(p);
             let Missing::Present(account) = self.money_row(payer, p.ccy) else { return false };
             let rec = given.get(self.parties.row(payer)).copied().unwrap_or_else(|| self.record_of(payer, account));
             rec.standing() < crate::fixed_point::draw(&legs, payer, rec.account)
         };
-        count(payers.iter().filter(|p| !short(**p, found)).count())
+        count(payers.iter().filter(|p| !short(**p)).count())
     }
 
     /// The pending pass, after the day's nets are applied, so what a party could draw on at 7a is what the fixed point
