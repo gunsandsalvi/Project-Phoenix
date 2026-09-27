@@ -31,6 +31,7 @@ WDI_URL = "https://databankfiles.worldbank.org/public/ddpext_download/WDI_CSV.zi
 WID_URL = "https://wid.world/bulk_download/wid_all_data.zip"
 BIS_URL = "https://data.bis.org/static/bulk/WS_CBPOL_csv_flat.zip"
 IMF_URL = "https://www.imf.org/external/datamapper/api/v1/{code}"
+IMF_SDMX_URL = "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}"
 OWID_URL = "https://ourworldindata.org/grapher/{slug}.csv?v=1&csvType=full&useColumnShortNames=true"
 WB_API_URL = "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}"
 SDBS_URL = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/"
@@ -93,7 +94,15 @@ WID = {
 
 OWID = {
     "labor-share-of-gdp": "Labour share of GDP (%), ILO, SDG indicator 10.4.1, via Our World in Data",
-    "social-spending-oecd-longrun": "Public social spending (% of GDP), OECD SOCX via Our World in Data",
+}
+
+# Series read from the IMF's SDMX API: its dataflow, its key and its title. The policy rate is monthly, so a year's
+# is its last month's, the BIS's end of year; social protection is general government's (COFOG division 10).
+IMF_SDMX = {
+    "MFS166": ("MFS_IR", "*.MFS166_RT_PT_A_PT.M",
+               "Monetary policy-related interest rate (% a year, end of year), IMF Monetary and Financial Statistics"),
+    "GF10_S13": ("GFS_COFOG", "*.S13.G2MF.GF10_T.POGDP_PT.A",
+                 "General government expense on social protection (% of GDP), IMF Government Finance Statistics"),
 }
 
 
@@ -182,6 +191,24 @@ def imf(manifest: dict, iso3: set) -> None:
                     rows.append((iso, int(year), value))
         manifest["series"][f"imf/{code}"] = {"title": title, "rows": write(RAW / "imf" / f"{code}.csv", rows)}
     manifest["sources"]["imf"] = {"title": "IMF DataMapper API", "url": IMF_URL.format(code="<series>")}
+
+
+def imf_sdmx(manifest: dict, iso3: set) -> None:
+    for name, (flow, key, title) in IMF_SDMX.items():
+        url = IMF_SDMX_URL.format(flow=flow, key=key, first=FIRST)
+        text = get(url, timeout=600, accept="application/vnd.sdmx.data+csv;version=1.0.0").decode("utf-8-sig")
+        last = {}
+        for r in csv.DictReader(io.StringIO(text)):
+            iso, period, value = r["COUNTRY"], r["TIME_PERIOD"], r["OBS_VALUE"]
+            if iso not in iso3 or not value or not FIRST <= int(period[:4]) <= LAST:
+                continue
+            key_ = (iso, int(period[:4]))
+            if key_ not in last or period > last[key_][0]:
+                last[key_] = (period, value)
+        rows = [(iso, year, value) for (iso, year), (_, value) in last.items()]
+        manifest["series"][f"imf_sdmx/{name}"] = {"title": title,
+                                                  "rows": write(RAW / "imf_sdmx" / f"{name}.csv", rows)}
+    manifest["sources"]["imf_sdmx"] = {"title": "IMF SDMX 2.1 API", "url": IMF_SDMX_URL}
 
 
 def wid(cache: Path, manifest: dict, iso3_of: dict) -> None:
@@ -284,14 +311,14 @@ def owid(manifest: dict, iso3: set) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache", type=Path, default=None)
-    parser.add_argument("--only", nargs="*", choices=["wb", "sdbs"],
+    parser.add_argument("--only", nargs="*", choices=["wb", "sdbs", "imf_sdmx"],
                         help="fetch only these sources into the existing manifest, keeping the others' files")
     args = parser.parse_args()
     if args.only:
         manifest = json.loads((RAW / "manifest.json").read_text())
         iso3 = set(r["iso3"] for r in csv.DictReader((RAW / "wb" / "countries.csv").open()))
         for name in args.only:
-            {"wb": wb_api, "sdbs": sdbs}[name](manifest, iso3)
+            {"wb": wb_api, "sdbs": sdbs, "imf_sdmx": imf_sdmx}[name](manifest, iso3)
             manifest["sources"][name]["fetched"] = datetime.date.today().isoformat()
             log(f"{name} done")
         (RAW / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
@@ -305,6 +332,7 @@ def main() -> None:
     iso3 = set(iso3_of.values())
     log("WDI done")
     imf(manifest, iso3)
+    imf_sdmx(manifest, iso3)
     log("IMF done")
     owid(manifest, iso3)
     log("OWID done")

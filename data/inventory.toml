@@ -108,8 +108,8 @@ id = "GEN.policy_rate"
 what = "the central bank's policy rate at the snapshot"
 owner = "GEN"
 first_read = "S1.10"
-source = "BIS central bank policy rates (WS_CBPOL), end of year"
-status = "gap: the BIS covers two developing economies, too few for the developing group's profile"
+source = "BIS central bank policy rates (WS_CBPOL), end of year; the IMF's monetary policy-related rate (MFS_IR) at the year's last month for economies the BIS does not report"
+status = "profiled"
 
 [[row]]
 id = "GEN.household_debt"
@@ -164,8 +164,8 @@ id = "GEN.social_spending"
 what = "public social spending to GDP"
 owner = "GEN"
 first_read = "S1.11"
-source = "OECD SOCX via Our World in Data (social-spending-oecd-longrun)"
-status = "gap: OECD members only, so profiled for developed alone"
+source = "IMF Government Finance Statistics, general government expense on social protection (COFOG division 10)"
+status = "profiled"
 
 [[row]]
 id = "GEN.agriculture_to_services"

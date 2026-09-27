@@ -56,13 +56,13 @@ VALUES = [
     ("GEN.unemployment_rate", "logit_percent", ["wdi/SL.UEM.TOTL.ZS"], "% of labour force", None),
     ("GEN.labour_share", "logit_percent", ["owid/labor-share-of-gdp"], "% of GDP", None),
     ("GEN.inflation", "log_growth_percent", ["wdi/FP.CPI.TOTL.ZG"], "% a year", None),
-    ("GEN.policy_rate", "identity", ["bis/CBPOL"], "% a year, end of year", None),
+    ("GEN.policy_rate", "identity", ["rates/policy_rate"], "% a year, end of year", None),
     ("GEN.household_debt", "log", ["imf/HH_LS"], "% of GDP", None),
     ("GEN.firm_debt", "log", ["imf/NFC_LS"], "% of GDP", None),
     ("GEN.public_debt", "log", ["imf/GGXWDG_NGDP"], "% of GDP", None),
     ("GEN.bank_capital_ratio", "logit_percent", ["wdi/FB.BNK.CAPA.ZS"], "% of assets", None),
     ("GEN.tax_revenue", "logit_percent", ["wdi/GC.TAX.TOTL.GD.ZS"], "% of GDP", None),
-    ("GEN.social_spending", "logit_percent", ["owid/social-spending-oecd-longrun"], "% of GDP", None),
+    ("GEN.social_spending", "logit_percent", ["imf_sdmx/GF10_S13"], "% of GDP", None),
     ("GEN.agriculture_to_services", "log", ["wdi/NV.AGR.TOTL.ZS", "wdi/NV.SRV.TOTL.ZS"], "ratio of value added", "ratio"),
     ("GEN.industry_to_services", "log", ["wdi/NV.IND.TOTL.ZS", "wdi/NV.SRV.TOTL.ZS"], "ratio of value added", "ratio"),
     ("GEN.trade", "log", ["wdi/NE.TRD.GNFS.ZS"], "% of GDP", None),
@@ -111,8 +111,21 @@ def home_ownership() -> pd.DataFrame:
     return pd.concat(out).rename(columns={"share": "value"})
 
 
+def policy_rate() -> pd.DataFrame:
+    """Each economy's policy rate at the end of each year: the BIS's where it reports the economy, the IMF's
+    monetary policy-related rate at the year's last month otherwise."""
+    bis = pd.read_csv(RAW / "bis" / "CBPOL.csv")
+    imf = pd.read_csv(RAW / "imf_sdmx" / "MFS166.csv")
+    return pd.concat([bis, imf[~imf.iso3.isin(set(bis.iso3))]])
+
+
+COMBINED = {"housing/home_ownership": home_ownership, "rates/policy_rate": policy_rate}
+# The sources a combined series reads, as the manifest names them.
+COMBINED_SOURCES = {"rates": ["bis", "imf_sdmx"]}
+
+
 def latest(series: str) -> pd.DataFrame:
-    d = home_ownership() if series == "housing/home_ownership" else pd.read_csv(RAW / f"{series}.csv")
+    d = COMBINED[series]() if series in COMBINED else pd.read_csv(RAW / f"{series}.csv")
     d = d.sort_values("year").groupby("iso3").last().reset_index()
     return d.rename(columns={"value": series, "year": f"{series}@year"})
 
@@ -200,7 +213,8 @@ def write_profile(level: str, group: pd.DataFrame, manifest: dict) -> dict:
     stats, corr, gaps, thin, moved = profile(group)
     kinds = {v[0]: v[1] for v in VALUES}
     series = {v[0]: v[2] for v in VALUES}
-    used = sorted({s.split("/")[0] for name, *_ in stats for s in series[name]})
+    used = sorted({u for name, *_ in stats for s in series[name]
+                   for u in COMBINED_SOURCES.get(s.split("/")[0], [s.split("/")[0]])})
     sources = "; ".join(f"{manifest['sources'][s]['title']} "
                         f"({manifest['sources'][s].get('release', manifest['sources'][s].get('fetched', manifest['fetched']))})"
                         for s in used)
