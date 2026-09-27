@@ -39,7 +39,7 @@ pub fn declare_fact(input: TokenStream) -> TokenStream {
     decl::fact_decl(input.into()).into()
 }
 
-/// A kind of party, `pub NAME = "kind" { legal_form: "…", table: Individuals | Cells, clause: "…" }`.
+/// A kind of party, `pub NAME = "kind" { legal_form: "…", table: Individuals | Agents, clause: "…" }`.
 #[proc_macro]
 pub fn declare_kind(input: TokenStream) -> TokenStream {
     decl::kind_decl(input.into()).into()

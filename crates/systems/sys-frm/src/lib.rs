@@ -26,7 +26,7 @@ pub use opening::Parties;
 pub use small::SmallFirms;
 
 declare_kind! { pub FIRM = "firm" { legal_form: "company", table: Individuals, clause: "FRM.1" } }
-declare_kind! { pub SMALL_FIRM = "small_firm" { legal_form: "company", table: Cells, clause: "FRM.23" } }
+declare_kind! { pub SMALL_FIRM = "small_firm" { legal_form: "company", table: Agents, clause: "FRM.23" } }
 
 declare_stream! { pub OpeningStream = "FRM.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub SmallStream = "FRM.opening_small" { purpose: Opening, keyed: false, clause: "GEN.3" } }

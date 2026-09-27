@@ -27,7 +27,7 @@ const DEBT: &str = "FRM.debt";
 pub(crate) const DEPOSITS: &str = "FRM.deposits";
 const LENDERS: &str = "BNK.lenders";
 const ACCOUNT: &str = "current account";
-/// The kind of the small firms' cells, and what they draw: their banks, their firms, their deposits and their debt.
+/// The kind of the small firms' agents, and what they draw: their banks, their firms, their deposits and their debt.
 pub(crate) const SMALL_FIRM: &str = "small_firm";
 const SMALL_BANKS: &str = "FRM.small_banks";
 const SMALL_COUNTS: &str = "FRM.small_counts";

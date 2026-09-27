@@ -8,7 +8,7 @@ use phx_num::{Ccy, Missing, PriceRaw, UnitId, capacity_exceeded, violation};
 use crate::failure::MarketFailure;
 use crate::market::Form;
 
-/// Who bought in a match: a named party, or a group of cells' members buying in a posted-price meeting, whose members
+/// Who bought in a match: a named party, or a group of agents' twins buying in a posted-price meeting, whose members
 /// pay by their pooled legs and whose purchases the match set records per group.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
 pub enum Buyer {

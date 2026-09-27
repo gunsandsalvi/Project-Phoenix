@@ -37,14 +37,12 @@ pub fn phx_core::agenda::Agenda<B>::gather(&mut self, phx_id::day::Day) -> phx_c
 pub fn phx_core::agenda::Agenda<B>::grow(&mut self, phx_id::ids::TableId, u32)
 pub fn phx_core::agenda::Agenda<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::agenda::Agenda<B>::load_from(&mut phx_store::save::Reader<'_>, &mut phx_store::backing::AddressSpace, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<phx_core::agenda::Agenda<B>, phx_store::save::LoadError>
-pub fn phx_core::agenda::Agenda<B>::move_row(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, phx_id::day::Day, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<Self, alloc::string::String>
 pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
 pub fn phx_core::agenda::Agenda<B>::set_next_with(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day, u32)
-pub fn phx_core::agenda::Agenda<B>::swap_rows(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
 pub fn phx_core::agenda::Agenda<B>::with(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> u32
 pub struct phx_core::agenda::AgendaCounters
@@ -421,7 +419,6 @@ pub fn phx_core::directory::Directory::lookup(&self, phx_id::ids::PartyId) -> ph
 pub fn phx_core::directory::Directory::new() -> phx_core::directory::Directory
 pub fn phx_core::directory::Directory::next(&self) -> u64
 pub fn phx_core::directory::Directory::release(&mut self, phx_id::ids::PartyId)
-pub fn phx_core::directory::Directory::relocate(&mut self, phx_id::ids::PartyId, phx_id::ids::RowRef)
 pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> phx_core::directory::Resolved
 pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
 impl core::default::Default for phx_core::directory::Directory
@@ -1007,7 +1004,7 @@ pub phx_core::kinds::Feature::LimitedLiability
 pub phx_core::kinds::Feature::SeparateParty
 pub phx_core::kinds::Feature::TakesDeposits
 pub enum phx_core::kinds::KindTableRef
-pub phx_core::kinds::KindTableRef::Cells
+pub phx_core::kinds::KindTableRef::Agents
 pub phx_core::kinds::KindTableRef::Individuals
 pub struct phx_core::kinds::KindDecl
 pub phx_core::kinds::KindDecl::clause: &'static str
@@ -1150,16 +1147,6 @@ pub fn phx_core::messages::MessageStore<B>::release(&mut self, phx_id::ids::Slot
 pub fn phx_core::messages::MessageStore<B>::set_state(&mut self, phx_id::ids::Slot, phx_core::messages::MessageState)
 pub trait phx_core::messages::MessageDef
 pub const phx_core::messages::MessageDef::DECL: phx_core::messages::MessageKindDecl
-pub mod phx_core::occasions
-pub enum phx_core::occasions::OccasionKind
-pub phx_core::occasions::OccasionKind::Meeting
-pub phx_core::occasions::OccasionKind::Need
-pub phx_core::occasions::OccasionKind::Notice
-pub phx_core::occasions::OccasionKind::Review
-pub phx_core::occasions::OccasionKind::Review::schedule: &'static str
-pub struct phx_core::occasions::OccasionDecl
-pub phx_core::occasions::OccasionDecl::kind: phx_core::occasions::OccasionKind
-pub phx_core::occasions::OccasionDecl::point: &'static str
 pub mod phx_core::pages
 pub struct phx_core::pages::PagedMap<K, V>
 impl<K: phx_core::pages::PageKey, V> phx_core::pages::PagedMap<K, V>
@@ -1917,7 +1904,6 @@ pub phx_core::system::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_co
 pub phx_core::system::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::system::Declarations::markets: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::system::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
-pub phx_core::system::Declarations::occasions: alloc::vec::Vec<(&'static str, phx_core::occasions::OccasionDecl)>
 pub phx_core::system::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
 pub phx_core::system::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)>
 pub phx_core::system::Declarations::prims: phx_core::register::RegisterBuilder
@@ -1946,7 +1932,6 @@ pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl
 pub fn phx_core::system::Declarations::market(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
-pub fn phx_core::system::Declarations::occasion(&mut self, phx_core::occasions::OccasionDecl)
 pub fn phx_core::system::Declarations::pop_kind(&mut self, &'static str) -> phx_core::pop::PopKindBuilder<'_>
 pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
@@ -2204,7 +2189,7 @@ pub phx_core::ItemKind::LineKind
 pub phx_core::ItemKind::Message
 pub phx_core::ItemKind::RuleSignature
 pub enum phx_core::KindTableRef
-pub phx_core::KindTableRef::Cells
+pub phx_core::KindTableRef::Agents
 pub phx_core::KindTableRef::Individuals
 pub enum phx_core::KinkOn
 pub phx_core::KinkOn::PerMember(&'static str)
@@ -2238,12 +2223,6 @@ pub enum phx_core::Notice
 pub phx_core::Notice::Always
 pub phx_core::Notice::LargestAtLeast(u64)
 pub phx_core::Notice::Never
-pub enum phx_core::OccasionKind
-pub phx_core::OccasionKind::Meeting
-pub phx_core::OccasionKind::Need
-pub phx_core::OccasionKind::Notice
-pub phx_core::OccasionKind::Review
-pub phx_core::OccasionKind::Review::schedule: &'static str
 pub enum phx_core::Outside
 pub phx_core::Outside::Edge
 pub phx_core::Outside::Refuse
@@ -2498,14 +2477,12 @@ pub fn phx_core::agenda::Agenda<B>::gather(&mut self, phx_id::day::Day) -> phx_c
 pub fn phx_core::agenda::Agenda<B>::grow(&mut self, phx_id::ids::TableId, u32)
 pub fn phx_core::agenda::Agenda<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_core::agenda::Agenda<B>::load_from(&mut phx_store::save::Reader<'_>, &mut phx_store::backing::AddressSpace, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<phx_core::agenda::Agenda<B>, phx_store::save::LoadError>
-pub fn phx_core::agenda::Agenda<B>::move_row(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, phx_id::day::Day, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<Self, alloc::string::String>
 pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
 pub fn phx_core::agenda::Agenda<B>::set_next_with(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day, u32)
-pub fn phx_core::agenda::Agenda<B>::swap_rows(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, phx_id::ids::Slot)
 pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
 pub fn phx_core::agenda::Agenda<B>::with(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> u32
 pub struct phx_core::AgendaCounters
@@ -2707,7 +2684,6 @@ pub phx_core::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_core::kind
 pub phx_core::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::Declarations::markets: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
-pub phx_core::Declarations::occasions: alloc::vec::Vec<(&'static str, phx_core::occasions::OccasionDecl)>
 pub phx_core::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
 pub phx_core::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)>
 pub phx_core::Declarations::prims: phx_core::register::RegisterBuilder
@@ -2736,7 +2712,6 @@ pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl
 pub fn phx_core::system::Declarations::market(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
-pub fn phx_core::system::Declarations::occasion(&mut self, phx_core::occasions::OccasionDecl)
 pub fn phx_core::system::Declarations::pop_kind(&mut self, &'static str) -> phx_core::pop::PopKindBuilder<'_>
 pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
@@ -2767,7 +2742,6 @@ pub fn phx_core::directory::Directory::lookup(&self, phx_id::ids::PartyId) -> ph
 pub fn phx_core::directory::Directory::new() -> phx_core::directory::Directory
 pub fn phx_core::directory::Directory::next(&self) -> u64
 pub fn phx_core::directory::Directory::release(&mut self, phx_id::ids::PartyId)
-pub fn phx_core::directory::Directory::relocate(&mut self, phx_id::ids::PartyId, phx_id::ids::RowRef)
 pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> phx_core::directory::Resolved
 pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
 impl core::default::Default for phx_core::directory::Directory
@@ -3188,9 +3162,6 @@ pub struct phx_core::ObserverDraws<'a>
 impl<'a> phx_core::streams::ObserverDraws<'a>
 pub fn phx_core::streams::ObserverDraws<'a>::new(&'a phx_core::streams::Streams) -> phx_core::streams::ObserverDraws<'a>
 pub fn phx_core::streams::ObserverDraws<'a>::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day) -> core::result::Result<phx_rand::draws::Draws, phx_core::streams::NotObserver>
-pub struct phx_core::OccasionDecl
-pub phx_core::OccasionDecl::kind: phx_core::occasions::OccasionKind
-pub phx_core::OccasionDecl::point: &'static str
 pub struct phx_core::Opening<'a>
 pub phx_core::Opening::attachments: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
 pub phx_core::Opening::books: &'a mut dyn core::any::Any

@@ -111,14 +111,6 @@ impl Directory {
         id
     }
 
-    /// Moves a live party to another row, as renumbering does.
-    pub fn relocate(&mut self, id: PartyId, row: RowRef) {
-        let Some(live) = self.live.get_mut(id) else {
-            violation!(clause = "PTY.10", "a party moved that is not live", party = id.get());
-        };
-        live.row = row;
-    }
-
     /// Ends a live party, naming its successor if it has one; the successor must be live. The record is kept while
     /// anything names the ended party, and until the day's close in any case.
     #[clause("PTY.9", "PTY.13")]

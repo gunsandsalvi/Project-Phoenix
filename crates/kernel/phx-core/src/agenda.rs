@@ -385,58 +385,6 @@ impl<B: Backing> Agenda<B> {
         }
     }
 
-    /// Two rows exchange their reasons and entries, as renumbering swaps their slots: each is booked afresh at the
-    /// day it was booked for, so no due is lost or moved.
-    pub fn swap_rows(&mut self, table: TableId, a: Slot, b: Slot) {
-        if a == b {
-            return;
-        }
-        let today = self.today;
-        let (t, pool) = self.parts(table);
-        let (ra, rb): (Vec<u32>, Vec<u32>) = (t.reasons(a).to_vec(), t.reasons(b).to_vec());
-        let (wa, wb): (Vec<u32>, Vec<u32>) = (t.with(a).to_vec(), t.with(b).to_vec());
-        t.with_mut(a).copy_from_slice(&wb);
-        t.with_mut(b).copy_from_slice(&wa);
-        let (ba, bb) = (t.booked(a), t.booked(b));
-        for (s, booked) in [(a, ba), (b, bb)] {
-            if booked != NEVER {
-                t.set_booked(s, NEVER);
-                t.live -= 1;
-                t.stale += 1;
-            }
-        }
-        t.reasons_mut(a).copy_from_slice(&rb);
-        t.reasons_mut(b).copy_from_slice(&ra);
-        if bb != NEVER {
-            book(t, pool, today, a, bb, NEVER);
-        }
-        if ba != NEVER {
-            book(t, pool, today, b, ba, NEVER);
-        }
-    }
-
-    /// Moves a row's reasons and entry to another slot, which must hold none, as renumbering does.
-    pub fn move_row(&mut self, table: TableId, from: Slot, to: Slot) {
-        let today = self.today;
-        let (t, pool) = self.parts(table);
-        if t.booked(to) != NEVER || t.reasons(to).iter().any(|d| *d != NEVER) {
-            violation!(clause = "TIME.5", "a row moved onto a row the agenda books", from = from.get(), to = to.get());
-        }
-        let reasons: Vec<u32> = t.reasons(from).to_vec();
-        t.reasons_mut(to).copy_from_slice(&reasons);
-        t.reasons_mut(from).fill(NEVER);
-        let with: Vec<u32> = t.with(from).to_vec();
-        t.with_mut(to).copy_from_slice(&with);
-        t.with_mut(from).fill(0);
-        let booked = t.booked(from);
-        if booked != NEVER {
-            t.set_booked(from, NEVER);
-            t.live -= 1;
-            t.stale += 1;
-            book(t, pool, today, to, booked, NEVER);
-        }
-    }
-
     /// Moves the agenda to `day` and returns the rows due on the days since the last gather, with the reasons each is
     /// due for; each such row is re-booked at its earliest reason after `day`.
     #[clause("TIME.5")]
@@ -762,16 +710,14 @@ mod tests {
     }
 
     #[test]
-    fn agenda_release_and_move() {
+    fn agenda_release() {
         let mut a = agenda(0, &[(0, 8, 2)]);
         a.set_next(T, Slot::new(1), 0, Day::new(5));
         a.set_next(T, Slot::new(1), 1, Day::new(3_000));
         a.set_next(T, Slot::new(2), 0, Day::new(7));
         a.release(T, Slot::new(2));
         assert_eq!((a.booked(T, Slot::new(2)), a.next(T, Slot::new(2), 0)), (None, None));
-        a.move_row(T, Slot::new(1), Slot::new(6));
-        assert_eq!(a.booked(T, Slot::new(1)), None);
-        assert_eq!(a.next(T, Slot::new(6), 1), Some(Day::new(3_000)));
+        assert_eq!(a.next(T, Slot::new(1), 1), Some(Day::new(3_000)));
         let c = a.counters();
         assert_eq!(c.entries - c.stale, 1);
         let mut due = Vec::new();
@@ -780,30 +726,8 @@ mod tests {
                 due.extend(t.slots.iter().zip(&t.reasons).map(|(s, m)| (d, s.get(), *m)));
             }
         }
-        assert_eq!(due, vec![(5, 6, 0b01), (3_000, 6, 0b10)]);
+        assert_eq!(due, vec![(5, 1, 0b01), (3_000, 1, 0b10)]);
         assert_eq!(a.counters().entries, 0);
-    }
-
-    #[test]
-    fn agenda_swap_keeps_every_due() {
-        let mut a = agenda(0, &[(0, 8, 2)]);
-        a.set_next(T, Slot::new(1), 0, Day::new(5));
-        a.set_next_with(T, Slot::new(1), 1, Day::new(40), 7);
-        a.set_next(T, Slot::new(4), 0, Day::new(9));
-        a.swap_rows(T, Slot::new(1), Slot::new(4));
-        a.swap_rows(T, Slot::new(4), Slot::new(6));
-        assert_eq!(a.with(T, Slot::new(6), 1), 7, "what a booking was drawn with moves with its row");
-        assert_eq!((a.next(T, Slot::new(1), 0), a.next(T, Slot::new(4), 0)), (Some(Day::new(9)), None));
-        assert_eq!(a.next(T, Slot::new(6), 1), Some(Day::new(40)));
-        let mut due = Vec::new();
-        for d in 1..=40 {
-            for t in a.gather(Day::new(d)).per_table {
-                due.extend(t.slots.iter().zip(&t.reasons).map(|(s, m)| (d, s.get(), *m)));
-            }
-        }
-        assert_eq!(due, vec![(5, 6, 0b01), (9, 1, 0b01), (40, 6, 0b10)]);
-        let c = a.counters();
-        assert_eq!(c.entries - c.stale, 0);
     }
 
     #[test]

@@ -120,7 +120,7 @@ pub(crate) fn place_of(d: &Declarations, kind: &str) -> Option<(u16, bool)> {
     let individuals: Vec<&str> =
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
     let agents: Vec<&str> =
-        d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Cells).map(|(_, k)| k.name).collect();
+        d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Agents).map(|(_, k)| k.name).collect();
     let place = individuals
         .iter()
         .position(|k| *k == kind)

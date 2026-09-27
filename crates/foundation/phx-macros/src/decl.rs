@@ -354,7 +354,7 @@ fn kind(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
         return Err(syn::Error::new_spanned(&d.id, "a kind is named in snake_case"));
     }
     let form = string(required(&fields, "legal_form", span)?)?;
-    let table = variant(required(&fields, "table", span)?, &["Individuals", "Cells"])?;
+    let table = variant(required(&fields, "table", span)?, &["Individuals", "Agents"])?;
     let clause = clause_of(&fields, span)?;
     let id = &d.id;
     Ok((

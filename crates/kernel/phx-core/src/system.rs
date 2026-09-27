@@ -13,7 +13,6 @@ use crate::kind_tables::FacetDecl;
 use crate::kinds::KindDecl;
 use crate::kinks::{KinkDecl, KinkRegistry};
 use crate::messages::MessageKindDecl;
-use crate::occasions::OccasionDecl;
 use crate::pop::{PopEntry, PopKindBuilder};
 use crate::records::RecordKindDecl;
 use crate::register::values::PrimType;
@@ -47,7 +46,6 @@ pub struct Declarations {
     pub facets: Vec<(&'static str, FacetDecl)>,
     pub streams: Vec<(&'static str, StreamDecl)>,
     pub hazards: Vec<(&'static str, HazardDecl)>,
-    pub occasions: Vec<(&'static str, OccasionDecl)>,
     pub messages: Vec<(&'static str, MessageKindDecl)>,
     pub decisions: Vec<DecisionMeta>,
     pub rules: RuleTable,
@@ -131,10 +129,6 @@ impl Declarations {
 
     pub fn hazard(&mut self, decl: HazardDecl) {
         self.hazards.push((self.system, decl));
-    }
-
-    pub fn occasion(&mut self, decl: OccasionDecl) {
-        self.occasions.push((self.system, decl));
     }
 
     pub fn message(&mut self, decl: MessageKindDecl) {

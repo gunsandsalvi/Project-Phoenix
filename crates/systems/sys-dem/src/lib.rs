@@ -27,7 +27,7 @@ pub use prims::Prims;
 pub use processes::{Mortality, Onset};
 pub use school::LeavingSchool;
 
-declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", table: Cells, clause: "POP.2" } }
+declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", table: Agents, clause: "POP.2" } }
 
 declare_stream! { pub RegionsStream = "DEM.opening_regions" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub PersonsStream = "DEM.opening_persons" { purpose: Opening, keyed: false, clause: "GEN.3" } }

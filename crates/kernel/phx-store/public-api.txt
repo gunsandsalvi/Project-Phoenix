@@ -95,7 +95,6 @@ impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
 pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
 pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
 pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
-pub fn phx_store::arena::move_list<B: phx_store::backing::Backing>(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef)
 pub mod phx_store::backing
 pub struct phx_store::backing::AddressSpace
 impl phx_store::backing::AddressSpace
@@ -280,13 +279,6 @@ pub fn phx_store::encode::encode_column<T: phx_store::pod::Pod>(&phx_store::desc
 pub fn phx_store::encode::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>
 pub fn phx_store::encode::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>
 pub mod phx_store::hash
-pub struct phx_store::hash::IdentityHasher
-impl phx_store::hash::IdentityHasher
-pub fn phx_store::hash::IdentityHasher::finish(self) -> u128
-pub fn phx_store::hash::IdentityHasher::new([u64; 2]) -> phx_store::hash::IdentityHasher
-pub fn phx_store::hash::IdentityHasher::references<I: phx_store::hash::SlotIdentity + ?core::marker::Sized>(&mut self, phx_store::descriptor::FieldTag, impl core::iter::traits::collect::IntoIterator<Item = u64>, &I, &mut alloc::vec::Vec<u64>)
-pub fn phx_store::hash::IdentityHasher::row<I: phx_store::hash::SlotIdentity + ?core::marker::Sized>(&mut self, &phx_store::descriptor::ColumnDescriptor, &[u8], &I)
-pub fn phx_store::hash::IdentityHasher::u64(&mut self, u64)
 pub struct phx_store::hash::LogicalHasher
 impl phx_store::hash::LogicalHasher
 pub fn phx_store::hash::LogicalHasher::block_list<B: phx_store::backing::Backing>(&mut self, &phx_store::block_list::BlockPool<B>, phx_store::block_list::BlockList)
@@ -302,8 +294,6 @@ impl phx_store::hash::Sip128
 pub fn phx_store::hash::Sip128::finish(self) -> u128
 pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128
 pub fn phx_store::hash::Sip128::write(&mut self, &[u8])
-pub trait phx_store::hash::SlotIdentity
-pub fn phx_store::hash::SlotIdentity::identity(&self, phx_store::descriptor::FieldTag, u64) -> u64
 pub mod phx_store::pod
 pub mod phx_store::pod::__seal
 pub trait phx_store::pod::__seal::Sealed
@@ -767,13 +757,6 @@ pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::ran
 pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
 pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
 pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
-pub struct phx_store::IdentityHasher
-impl phx_store::hash::IdentityHasher
-pub fn phx_store::hash::IdentityHasher::finish(self) -> u128
-pub fn phx_store::hash::IdentityHasher::new([u64; 2]) -> phx_store::hash::IdentityHasher
-pub fn phx_store::hash::IdentityHasher::references<I: phx_store::hash::SlotIdentity + ?core::marker::Sized>(&mut self, phx_store::descriptor::FieldTag, impl core::iter::traits::collect::IntoIterator<Item = u64>, &I, &mut alloc::vec::Vec<u64>)
-pub fn phx_store::hash::IdentityHasher::row<I: phx_store::hash::SlotIdentity + ?core::marker::Sized>(&mut self, &phx_store::descriptor::ColumnDescriptor, &[u8], &I)
-pub fn phx_store::hash::IdentityHasher::u64(&mut self, u64)
 #[repr(C)] pub struct phx_store::ListRef
 pub phx_store::ListRef::cap: u32
 pub phx_store::ListRef::len: u32
@@ -1068,8 +1051,6 @@ pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
 pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>
 pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)
-pub trait phx_store::SlotIdentity
-pub fn phx_store::SlotIdentity::identity(&self, phx_store::descriptor::FieldTag, u64) -> u64
 pub trait phx_store::TableChunks
 pub type phx_store::TableChunks::Rows
 pub fn phx_store::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>
@@ -1099,7 +1080,6 @@ pub fn phx_store::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::
 pub fn phx_store::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>
 pub fn phx_store::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
 pub fn phx_store::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)
-pub fn phx_store::move_list<B: phx_store::backing::Backing>(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef)
 pub fn phx_store::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>
 pub fn phx_store::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>
 pub type phx_store::SystemBacking = phx_store::backing::MmapBacking

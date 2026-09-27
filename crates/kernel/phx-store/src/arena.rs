@@ -333,16 +333,6 @@ impl<B: Backing> ChunkArena<B> {
     }
 }
 
-/// Moves a list from one chunk's arena to another's, keeping its capacity, as renumbering does when a row changes
-/// chunk.
-pub fn move_list<B: Backing>(from: &mut ChunkArena<B>, to: &mut ChunkArena<B>, list: &mut ListRef) {
-    let src = from.read(*list);
-    let off = to.take(list.cap);
-    to.read_mut(ListRef { off, ..*list }).copy_from_slice(src);
-    from.dead += list.cap;
-    list.off = off;
-}
-
 impl<B: Backing> crate::save::Saved for ChunkArena<B> {
     fn save(&self, w: &mut crate::save::Writer<'_>) {
         self.dead.save(w);
@@ -367,7 +357,7 @@ impl<B: Backing> crate::save::Saved for ChunkArena<B> {
 mod tests {
     use phx_rand::{Draws, Seed, Subject, SubjectTag, below_u64, stream_key};
 
-    use super::{CellListRef, CellLists, ChunkArena, ListRef, move_list};
+    use super::{CellListRef, CellLists, ChunkArena, ListRef};
     use crate::backing::{AddressSpace, HeapBacking};
     use crate::region::Region;
 
@@ -480,17 +470,5 @@ mod tests {
             a.read(a.resolve(41, cells[1])),
             &[69_990, 69_991, 69_992, 69_993, 69_994, 69_995, 69_996, 69_997, 69_998, 69_999]
         );
-    }
-
-    #[test]
-    fn move_list_carries_words_and_capacity() {
-        let mut space = AddressSpace::empty();
-        let (mut from, mut to) = (arena(&mut space), arena(&mut space));
-        let mut x = ListRef::EMPTY;
-        from.append(&mut x, &[3, 1, 4]);
-        let mut y = ListRef::EMPTY;
-        to.append(&mut y, &[2]);
-        move_list(&mut from, &mut to, &mut x);
-        assert_eq!((to.read(x), x.cap, from.dead_words()), (&[3, 1, 4][..], 4, 4));
     }
 }

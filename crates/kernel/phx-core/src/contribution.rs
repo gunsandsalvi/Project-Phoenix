@@ -228,7 +228,7 @@ pub struct Opening<'a> {
     pub countries: &'a [OpeningCountry],
     pub report: &'a mut GenReport,
     pub books: &'a mut dyn Any,
-    /// The population kinds' keys, landing indexes and levels, beside the books that keep their cells.
+    /// The population: its kinds and their agent tables' counts, beside the books that keep the tables.
     pub population: &'a mut dyn Any,
     /// The systems' draws of the households' lines, in the order of their systems.
     pub attachments: &'a [(&'static str, Box<dyn Any + Send + Sync>)],

@@ -61,7 +61,7 @@ pub(crate) fn bind(d: &Declarations, h: &HandlerTable, register: &Register) -> R
     let individuals: Vec<&str> =
         d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Individuals).map(|(_, k)| k.name).collect();
     let agents: Vec<&str> =
-        d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Cells).map(|(_, k)| k.name).collect();
+        d.kinds.iter().filter(|(_, k)| k.table == KindTableRef::Agents).map(|(_, k)| k.name).collect();
     let (mut out, mut errors) = (Vec::new(), Vec::new());
     for (system, v) in &d.visits {
         let place = individuals

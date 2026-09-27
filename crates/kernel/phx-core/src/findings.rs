@@ -12,8 +12,7 @@ pub enum FindingOwner {
     Country(CountryId),
     /// An event, by its identity, when no party it concerns can own the finding.
     Event(u64),
-    /// A table of parties as a whole, when what is found is its members' sum: a population against its weights, the
-    /// day's landings against the totals they joined.
+    /// A table of parties as a whole, when what is found is its members' sum: a population against its weights.
     Table(TableId),
     /// The run's own conduct, such as what the read trace found, which no party owns.
     Run,

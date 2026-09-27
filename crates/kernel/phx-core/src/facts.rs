@@ -9,7 +9,7 @@ pub enum Writer {
     Placeholder { retired_by: &'static str },
 }
 
-/// How a fact is carried for cells: in the key, as a position, in a profile; or only on individuals.
+/// How a fact is carried for agents: as an attribute (`Key`), as a position, in a profile; or only on individuals.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ReprClass {
     Key,

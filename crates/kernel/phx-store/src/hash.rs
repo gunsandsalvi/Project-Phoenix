@@ -6,7 +6,6 @@ use crate::block_list::{BlockList, BlockPool};
 use crate::column::Column;
 use crate::consts::{SIP_C_ROUNDS, SIP_D_ROUNDS, SIP_INIT, SIP_LEN_SHIFT, SIP_ROT, SIP_TWEAK_128, SIP_TWEAK_SECOND};
 use crate::convert::{to_u64, to_usize};
-use crate::descriptor::{ColumnDescriptor, FieldTag};
 use crate::pod::{Pod, as_bytes};
 use crate::table::SlotAlloc;
 
@@ -152,86 +151,15 @@ impl LogicalHasher {
     }
 }
 
-/// Maps a stored reference to the permanent identity it names, which only the directory above the stores knows.
-pub trait SlotIdentity {
-    fn identity(&self, tag: FieldTag, raw: u64) -> u64;
-}
-
-fn is_reference(tag: FieldTag) -> bool {
-    matches!(tag, FieldTag::PartyRef | FieldTag::LineRef | FieldTag::InstrumentRef | FieldTag::TileRef)
-}
-
-/// The world's content by permanent identity: the caller feeds rows in identity order, references are translated
-/// to what they name, and lists of references are hashed sorted by identity, so two worlds equal but for where
-/// things are stored hash equal.
-#[derive(Clone, Debug)]
-pub struct IdentityHasher {
-    sip: Sip128,
-}
-
-impl IdentityHasher {
-    #[must_use]
-    pub fn new(key: [u64; 2]) -> IdentityHasher {
-        IdentityHasher { sip: Sip128::new(key) }
-    }
-
-    pub fn u64(&mut self, v: u64) {
-        self.sip.write(&v.to_le_bytes());
-    }
-
-    /// One row's fields as its descriptor lays them out, each reference replaced by its identity.
-    pub fn row<I: SlotIdentity + ?Sized>(&mut self, desc: &ColumnDescriptor, row: &[u8], ids: &I) {
-        if row.len() != usize::from(desc.elem_bytes) {
-            violation!(clause = "SET.12", "a row of another width than its descriptor", len = row.len());
-        }
-        for f in desc.fields {
-            let at = usize::from(f.offset);
-            let Some(field) = row.get(at..at + usize::from(f.width)) else {
-                violation!(clause = "SET.12", "a field outside its row", offset = f.offset);
-            };
-            let mut word = [0; WORD];
-            if let Some(dst) = word.get_mut(..field.len()) {
-                dst.copy_from_slice(field);
-            }
-            let raw = u64::from_le_bytes(word);
-            self.u64(if is_reference(f.tag) { ids.identity(f.tag, raw) } else { raw });
-        }
-    }
-
-    /// A list of references, translated and hashed in identity order rather than storage order.
-    pub fn references<I: SlotIdentity + ?Sized>(
-        &mut self,
-        tag: FieldTag,
-        raw: impl IntoIterator<Item = u64>,
-        ids: &I,
-        scratch: &mut Vec<u64>,
-    ) {
-        scratch.clear();
-        scratch.extend(raw.into_iter().map(|r| ids.identity(tag, r)));
-        scratch.sort_unstable();
-        self.u64(to_u64(scratch.len()));
-        for id in scratch.iter() {
-            self.u64(*id);
-        }
-    }
-
-    #[must_use]
-    pub fn finish(self) -> u128 {
-        self.sip.finish()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::fmt::Write;
 
     use phx_id::TableId;
 
-    use super::{IdentityHasher, LogicalHasher, Sip128, SlotIdentity};
+    use super::{LogicalHasher, Sip128};
     use crate::arena::{ChunkArena, ListRef};
     use crate::backing::{AddressSpace, HeapBacking};
-    use crate::descriptor::{ColumnDescriptor, FieldDescriptor, FieldTag, Transform};
-    use crate::pod::as_bytes;
     use crate::region::Region;
     use crate::table::Table;
 
@@ -366,49 +294,5 @@ mod tests {
         assert_eq!(hash(&arena, &refs, &weights), before, "a freed slot's row is not content");
         weights.set(phx_id::Slot::new(1), 99);
         assert_ne!(hash(&arena, &refs, &weights), before);
-    }
-
-    /// Slot `s` of world one names identity 100 + s; world two stores the same parties in reverse.
-    struct Reversed(bool);
-
-    impl SlotIdentity for Reversed {
-        fn identity(&self, tag: FieldTag, raw: u64) -> u64 {
-            assert_eq!(tag, FieldTag::PartyRef);
-            if self.0 { 100 + (3 - raw) } else { 100 + raw }
-        }
-    }
-
-    #[test]
-    fn identity_hash_ignores_storage_order() {
-        const FIELDS: &[FieldDescriptor] = &[
-            FieldDescriptor {
-                name: "owner",
-                offset: 0,
-                width: 4,
-                transform: Transform::Plain,
-                tag: FieldTag::PartyRef,
-            },
-            FieldDescriptor { name: "amount", offset: 4, width: 4, transform: Transform::Plain, tag: FieldTag::Plain },
-        ];
-        let desc = ColumnDescriptor::checked::<[u32; 2]>("claims", 8, FIELDS).unwrap();
-        // Rows by identity 100..104: (owner identity, amount); world two stores slot s at 3 − s.
-        let one: [[u32; 2]; 4] = [[1, 10], [3, 20], [0, 30], [2, 40]];
-        let mut two = [[0; 2]; 4];
-        for (s, [owner, amount]) in one.iter().enumerate() {
-            two[3 - s] = [3 - owner, *amount];
-        }
-        let hash = |rows: &[[u32; 2]; 4], reversed: bool| {
-            let ids = Reversed(reversed);
-            let mut h = IdentityHasher::new([3, 4]);
-            let order: Vec<usize> = if reversed { vec![3, 2, 1, 0] } else { vec![0, 1, 2, 3] };
-            for s in order {
-                h.row(&desc, as_bytes(&rows[s..=s]), &ids);
-            }
-            let holders: Vec<u64> = if reversed { vec![3, 1] } else { vec![0, 2] };
-            h.references(FieldTag::PartyRef, holders, &ids, &mut Vec::new());
-            h.finish()
-        };
-        assert_eq!(hash(&one, false), hash(&two, true));
-        assert_ne!(hash(&one, false), hash(&one, true));
     }
 }

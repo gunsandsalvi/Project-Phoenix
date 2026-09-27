@@ -23,7 +23,6 @@ pub mod kinds;
 pub mod kinks;
 pub mod map;
 pub mod messages;
-pub mod occasions;
 pub mod pages;
 pub mod policy;
 pub mod pop;
@@ -84,7 +83,6 @@ pub use map::{KernelMap, MapKey};
 pub use messages::{
     Address, Answering, Concerns, DayMessages, Message, MessageDef, MessageKindDecl, MessageState, MessageStore,
 };
-pub use occasions::{OccasionDecl, OccasionKind};
 pub use pages::{PageKey, PagedMap};
 pub use phx_macros::{
     declare_decision, declare_facet, declare_fact, declare_family, declare_handler, declare_hazard, declare_kind,

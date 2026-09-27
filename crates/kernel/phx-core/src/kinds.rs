@@ -33,11 +33,11 @@ impl KindId {
     }
 }
 
-/// Where a kind's parties are rows: the kernel's table of its individuals, or the population's cells.
+/// Where a kind's parties are rows: the kernel's table of its individuals, or the population's agent tables.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KindTableRef {
     Individuals,
-    Cells,
+    Agents,
 }
 
 /// A kind of party, its legal form named from its country's declared forms, and where its parties are rows.

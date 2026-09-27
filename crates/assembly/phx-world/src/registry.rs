@@ -286,7 +286,7 @@ struct State {
 /// its persons.
 fn population_kinds(d: &mut Declarations, register: &phx_core::Register) -> Result<crate::agents::Kinds, Vec<String>> {
     let kinds: Vec<&'static str> =
-        d.kinds.iter().filter(|(_, k)| k.table == phx_core::KindTableRef::Cells).map(|(_, k)| k.name).collect();
+        d.kinds.iter().filter(|(_, k)| k.table == phx_core::KindTableRef::Agents).map(|(_, k)| k.name).collect();
     let decls = phx_pop::population::Population::compile(&kinds, &d.pop)?;
     crate::agents::bind(d, register, decls)
 }

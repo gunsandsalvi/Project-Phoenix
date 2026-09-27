@@ -1,6 +1,6 @@
 //! The owner's reviews of its plant, on its own schedule. At the plant review the wear since the last is realised on
 //! the rows visited, and the units a day the plant then lets its way make are found, the scarcest kind's, before the
-//! day's production reads them. At the investment review, in the same sub-step, the owner reads what it sold since
+//! day's production reads them. At the investment review, a sub-step earlier, the owner reads what it sold since
 //! its last and, where its plant keeps it from making what its staff could and its sales call for, weighs buying more
 //! of the scarcest kind.
 
@@ -171,7 +171,7 @@ where
     let own: &crate::CapOwn = ctx.own::<crate::CapOwn>();
     let Some(needs) = usize::try_from(way).ok().and_then(|w| own.needs.get(w)) else { return };
     // The plant's units a day as the plant review finds them, read from what is held rather than from the review's
-    // fact, which the review writes in the same sub-step.
+    // fact, which the plant review writes later in the day.
     let Missing::Present(a_year) = capacity(&held, needs) else { return };
     let plant = a_year / DAYS_A_YEAR;
     let a_day = sold / own.review_days;
