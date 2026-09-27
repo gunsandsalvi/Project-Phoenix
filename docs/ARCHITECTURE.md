@@ -278,10 +278,12 @@ volumes (§14.6); `perf/schema/` the device report's schema; `perf/ratchets.toml
 Each system's opening technology and distributions are derived by a pair of scripts, `fetch_<sys>.py` into
 `data/sources/raw/` and `derive_<sys>.py` into `data/`, each value its country group's median over the economies the
 sources report, a group reporting too few taking the developed group's, marked assumed:
-- **TEC** (`data/shared/TEC.toml`, `data/profiles/<level>/TEC.toml`): nineteen products aggregating the CPA products of
-  Eurostat's FIGARO input-output tables (2022); one opening way per product per country group — inputs per unit made
-  from the tables' uses summed over origins, hours by ISCO-08 major group from ILOSTAT's employment and hours by ISIC
-  section shared among a section's products by compensation, plant by kind per unit of output a year from the OECD's
+- **TEC** (`data/shared/TEC.toml`, `data/profiles/<level>/TEC.toml`): nineteen products aggregating the industries of
+  the OECD's inter-country input-output tables (2019, 76 economies), each product's 2019 dollars carried to 2022 cents
+  by the US GDP deflator; one opening way per product per country group — inputs per unit made from the tables' uses
+  summed over origins, energy mining's output split into coal (to electricity) and oil and gas, other mining's into
+  ore (to basic metals) and stone, hours by ISCO-08 major group from ILOSTAT's employment and hours by ISIC section
+  shared among a section's industries by value added, plant by kind per unit of output a year from the OECD's
   net fixed assets (Table 9A) per unit of value added (Table 6), agricultural land (World Bank) for crops and
   livestock, a tonne of deposit per tonne extracted; a growing season's lead time for crops and livestock, a day for
   other goods, none for services; every unit started finished; a batch of one.
@@ -1561,7 +1563,7 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   seller's units used up by the purchase naming the buyer, settled in stage 7 with the trades. A service is
   delivered as it is made and never held: each maker makes the day's sales of it in one making at 6d, and what no
   settled sale takes perishes after the day's trades settle (`unsold_perish`), as a project stage made to order does.
-- **Households' spending** (`sys-hh`, HH.4, HH.5): a weekly visit at 5c (`HH.spend`, every `HH.spending_days`) reads the row's money (`Ctx::money`, one twin's, which the goods view gives every visited row) and two positions, `HH.income` (the outlook of its permanent income a year) and `HH.after` (what it held after its last decision). Its money less `HH.after`, grossed to a year, is taken into the outlook at `HH.income_gain`; it spends `c* + κ(m − m*)` years of that income a year, `m` its money over the outlook, never more than it holds; and it asks each product's `HH.budget_shares` of that at retail as a want of money. A first decision only notes what it holds. The buffer-stock rule is solved once at assembly by the endogenous grid method (Carroll, 1997) from `HH.patience`, `HH.risk_aversion`, the shocks' spreads and the chance of no income, with `HH.real_return` and `HH.income_growth` as placeholders naming BFL and HH; its target `m*`, consumption there `c*` and propensity `κ` are read from the solution, never declared. `tools/data/derive_hh.py` derives the budget shares per group from FIGARO's households' final use (P3_S14): the median over the group's economies of each industry's share, finance, real estate, public administration and households as employers left out, renormalised.
+- **Households' spending** (`sys-hh`, HH.4, HH.5): a weekly visit at 5c (`HH.spend`, every `HH.spending_days`) reads the row's money (`Ctx::money`, one twin's, which the goods view gives every visited row) and two positions, `HH.income` (the outlook of its permanent income a year) and `HH.after` (what it held after its last decision). Its money less `HH.after`, grossed to a year, is taken into the outlook at `HH.income_gain`; it spends `c* + κ(m − m*)` years of that income a year, `m` its money over the outlook, never more than it holds; and it asks each product's `HH.budget_shares` of that at retail as a want of money. A first decision only notes what it holds. The buffer-stock rule is solved once at assembly by the endogenous grid method (Carroll, 1997) from `HH.patience`, `HH.risk_aversion`, the shocks' spreads and the chance of no income, with `HH.real_return` and `HH.income_growth` as placeholders naming BFL and HH; its target `m*`, consumption there `c*` and propensity `κ` are read from the solution, never declared. `tools/data/derive_hh.py` derives the budget shares per group from the inter-country tables' households' final consumption (HFCE, 2019): the median over the group's economies of each industry's share, finance, real estate, public administration and households as employers left out, renormalised.
 
 
 `sys-srv` declares the kind (`SRV.retail`) over `FRM.product`, `FRM.price`, `FRM.output_rate`, `TEC.way` and

@@ -467,7 +467,7 @@ id = "TEC.products"
 what = "the products, each with its unit, industry, and how it is held and delivered"
 owner = "TEC"
 first_read = "S1.02"
-source = "Eurostat FIGARO 2022 input-output tables, CPA 2.1 aggregated to nineteen products"
+source = "OECD inter-country input-output tables (2023 edition), 2019, ISIC Rev. 4 industries aggregated to nineteen products"
 status = "sourced: extracted products in tonnes, the rest in volumes at world-average 2022 prices"
 
 [[row]]
@@ -475,8 +475,8 @@ id = "TEC.ways"
 what = "each group's opening way per product: inputs, hours by occupation group, plant by kind, land, deposit, lead time, yield, batch"
 owner = "TEC"
 first_read = "S1.02"
-source = "Eurostat FIGARO 2022; ILOSTAT employment and hours by activity and occupation; OECD Tables 9A and 6; ICP 2021 price levels; World Bank agricultural land, Pink Sheet and USGS prices"
-status = "sourced: plant assumed at the developed ratios for the emerging and developing groups (F-090), extraction shared among the four resources (F-091), the emerging and developing groups thin (F-092), lead times assumed"
+source = "OECD ICIO 2019; ILOSTAT employment and hours by activity and occupation; OECD Tables 9A and 6; ICP 2021 price levels; World Bank agricultural land, Pink Sheet and USGS prices"
+status = "sourced: plant assumed at the developed ratios for the emerging and developing groups (F-090), each mining industry's output shared between its two resources by their users (F-091), lead times assumed"
 
 [[row]]
 id = "FRM.industry_by_size"
