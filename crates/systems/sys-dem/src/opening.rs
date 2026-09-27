@@ -221,7 +221,7 @@ fn gaps(gap: &Distribution) -> (i64, Vec<f64>) {
 
 /// The chance of lasting disability at each age by sex: the prevalence where it is observed, and below its first
 /// band what the onset hazard gives from birth.
-fn disabled(p: &Prims, register: &Register, id: CountryId, oldest: i64) -> Vec<[f64; 2]> {
+pub(crate) fn disabled(p: &Prims, register: &Register, id: CountryId, oldest: i64) -> Vec<[f64; 2]> {
     let (prevalence, pd) = (p.disability.get(register, id), p.disability.decl(register));
     let (onset, od) = (p.onset.get(register, id), p.onset.decl(register));
     let Some(first) = prevalence.rows().first().copied() else {

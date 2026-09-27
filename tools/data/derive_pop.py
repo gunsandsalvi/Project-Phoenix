@@ -130,10 +130,19 @@ def demography(level: str, members: set, m: dict) -> list:
         entry("DEM.age_standard", "ENDOWMENT", "DEM", "measured", age_ref,
               table2(range(0, 101), [0, 1], age_standard, "refuse", 9)),
     ]
-    return out + disability(level, members, m, age_standard)
+    return out + disability(level, members, m, age_standard, lx)
 
 
-def disability(level: str, members: set, m: dict, age_standard: np.ndarray) -> list:
+def disabled_mortality() -> tuple:
+    """The disabled's mortality over the able's by age, as data/shared/DEM.toml declares it: its first ages and
+    values."""
+    import tomllib
+    shared = tomllib.loads((ROOT / "data" / "shared" / "DEM.toml").read_text())
+    value = next(e for e in shared["primitive"] if e["id"] == "DEM.disabled_mortality")["value"]
+    return np.array(value["axis"]), np.array([float(v) for v in value["values"]])
+
+
+def disability(level: str, members: set, m: dict, age_standard: np.ndarray, lx: np.ndarray) -> list:
     d = pd.read_csv(RAW / "ilo" / "disability.csv")
     d = d[d.iso3.isin(members)]
     latest = d.groupby("iso3").year.max().rename("last")
@@ -162,10 +171,22 @@ def disability(level: str, members: set, m: dict, age_standard: np.ndarray) -> l
         lo, hi = BAND_AGES[band]
         w = age_standard[lo:hi + 1]
         mean_age[i] = (w * np.arange(lo, hi + 1)[:, None]).sum(axis=0) / w.sum(axis=0)
+    # The yearly hazard of death at each whole age by sex from the standard's survivorship, and the disabled's ratio.
+    survivors = np.vstack([np.ones((1, 2)), lx])
+    mu = -np.log(survivors[1:] / survivors[:-1])
+    first_ages, ratios = disabled_mortality()
     onset = np.zeros((len(DISABILITY_BANDS) - 1, 2))
     for i in range(len(DISABILITY_BANDS) - 1):
         span = mean_age[i + 1] - mean_age[i]
-        onset[i] = np.log((1 - prevalence[i]) / (1 - prevalence[i + 1])) / span
+        # Prevalence moves by onset less the disabled's excess deaths: dP/da = h(1 - P) - P(1 - P)(mu_d - mu_a),
+        # so the hazard adds the mean prevalence times the excess, the able's hazard being mu / (1 + P(r - 1)).
+        p = (prevalence[i] + prevalence[i + 1]) / 2
+        for j in range(2):
+            lo, hi = int(np.ceil(mean_age[i, j])), int(np.floor(mean_age[i + 1, j]))
+            mid = (mean_age[i, j] + mean_age[i + 1, j]) / 2
+            r = ratios[np.searchsorted(first_ages, mid, side="right") - 1]
+            excess = (r - 1) * mu[lo:hi + 1, j].mean() / (1 + p[j] * (r - 1))
+            onset[i, j] = np.log((1 - prevalence[i, j]) / (1 - prevalence[i + 1, j])) / span[j] + p[j] * excess
     ages = [BAND_AGES[b][0] for b in DISABILITY_BANDS]
     prev_ref = (f"Share of persons with a disability (mostly the Washington Group's questions, each survey's own) by "
                 f"age band from its first age (15-24, 25-54, 55-64, 65 and over) and sex (female, male): the median "
@@ -175,8 +196,10 @@ def disability(level: str, members: set, m: dict, age_standard: np.ndarray) -> l
     onset_ref = (f"Annual hazard of the onset of lasting disability by age from the row's age (the bands' mean ages in "
                  f"the group's standard population, the sexes averaged) and sex (female, male), derived from "
                  f"DEM.disability_prevalence by the owner's mapping: between consecutive bands' mean ages, "
-                 f"ln((1 - P1)/(1 - P2)) over the years between, which holds if no one recovers and the disabled die "
-                 f"at the others' rates, both assumptions of the mapping. Before the first row and after the last, "
+                 f"ln((1 - P1)/(1 - P2)) over the years between, plus the mean prevalence times the disabled's excess "
+                 f"hazard of death there (DEM.disabled_mortality over the group's standard life table, the able's "
+                 f"hazard the table's over 1 + P(r - 1)), which holds if no one recovers, an assumption of the "
+                 f"mapping. Before the first row and after the last, "
                  f"the nearest row's hazard. A negative value is a fall in prevalence the mapping cannot give, a "
                  f"finding, not a recovery rate.")
     return [

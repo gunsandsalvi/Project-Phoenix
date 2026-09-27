@@ -47,3 +47,11 @@ owner = "DEM"
 source = "assumed"
 source_ref = "The spread of a household's taste for a child at each decision, as a multiple of the standard logistic: 1, the logit's own scale, until it is estimated from panel data on couples' fertility intentions."
 value = 1.00
+
+[[primitive]]
+id = "DEM.disabled_mortality"
+kind = "TECHNOLOGY"
+owner = "DEM"
+source = "measured"
+source_ref = "The disabled's hazard of death over the able's of the same age and sex, by age from each value's first age: 1.89 from 18 to 64 and 1.47 from 65, the adjusted hazard ratios of any disability against none in Forman-Hoffman et al. (2015, Medical Care 53(4), Table 2), the US National Health Interview Survey's disability supplement of 1994-95 linked to deaths to 2006. The study holds no children: below 18 the ratio from 18 is taken; one economy's study, taken for every group."
+value = { axis = [0, 65], values = [1.89, 1.47], outside = "edge" }

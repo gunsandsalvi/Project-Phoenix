@@ -1181,8 +1181,11 @@ its own. Catastrophes are drawn at 3a (§7.8).
 Brass's relational model: its survivorship logits are the sourced standard's plus one level, the same for both sexes.
 The level is solved at binding, by bracketing and then halving, so that life expectancy at birth equals the country's
 `DEM.life_expectancy` (§10.0), with the sexes weighted by the sex ratio at birth. Past the table's last age, the open age
-keeps the last year's hazard. A person's chance of dying before its next birthday, read at its exact age from its birth
-date, is compounded over the days of that year of age. The onset of lasting disability spreads its yearly hazard by age
+keeps the last year's hazard. That hazard is split by health: the disabled's is `DEM.disabled_mortality` times the
+able's, and the able's is the table's over 1 + P(r − 1), P being the chance of disability at that age and sex as the
+opening draws it, so the two weighted make the table's. A person's chance of dying before its next birthday, read at
+its exact age from its birth date and its health, is compounded over the days of that year of age; a change of health
+draws its next death afresh. The onset of lasting disability spreads its yearly hazard by age
 and sex over the same days, and is zero for a person already disabled. Both rates change on the person's next birthday
 (`changes_after`), so ageing is read from the birth date and never drawn. A death marks the person gone, and a dead
 head's place goes to the partner, else the eldest adult, else the eldest child (`household::succeed`). An onset makes

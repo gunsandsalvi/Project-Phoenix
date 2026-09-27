@@ -37,8 +37,8 @@ id = "DEM.disability_onset"
 kind = "TECHNOLOGY"
 owner = "DEM"
 source = "measured"
-source_ref = "Annual hazard of the onset of lasting disability by age from the row's age (the bands' mean ages in the group's standard population, the sexes averaged) and sex (female, male), derived from DEM.disability_prevalence by the owner's mapping: between consecutive bands' mean ages, ln((1 - P1)/(1 - P2)) over the years between, which holds if no one recovers and the disabled die at the others' rates, both assumptions of the mapping. Before the first row and after the last, the nearest row's hazard. A negative value is a fall in prevalence the mapping cannot give, a finding, not a recovery rate."
-value = { rows = [19.54, 39.53, 59.4], columns = [0, 1], values = [[0.000689, 0.000746], [0.001670, 0.002020], [0.006678, 0.004131]], outside = "edge" }
+source_ref = "Annual hazard of the onset of lasting disability by age from the row's age (the bands' mean ages in the group's standard population, the sexes averaged) and sex (female, male), derived from DEM.disability_prevalence by the owner's mapping: between consecutive bands' mean ages, ln((1 - P1)/(1 - P2)) over the years between, plus the mean prevalence times the disabled's excess hazard of death there (DEM.disabled_mortality over the group's standard life table, the able's hazard the table's over 1 + P(r - 1)), which holds if no one recovers, an assumption of the mapping. Before the first row and after the last, the nearest row's hazard. A negative value is a fall in prevalence the mapping cannot give, a finding, not a recovery rate."
+value = { rows = [19.54, 39.53, 59.4], columns = [0, 1], values = [[0.000697, 0.000763], [0.001748, 0.002171], [0.007165, 0.004817]], outside = "edge" }
 
 [[primitive]]
 id = "DEM.household_types"

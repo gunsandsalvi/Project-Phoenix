@@ -3,6 +3,7 @@
 
 use if_pop::{DISABLED, FEMALE, HEALTH, HOUSEHOLD, MALE, REGION, SEX};
 use phx_core::calendar::daycount::actual_days;
+use phx_core::register::values::Table1;
 use phx_core::{AgentView, Household, Person, PopProcess, Register};
 use phx_id::{CountryId, Date};
 use phx_macros::clause;
@@ -74,26 +75,45 @@ fn life_table(p: &Prims, register: &Register, id: CountryId) -> [Vec<f64>; 2] {
     [survivorship(&f, level), survivorship(&m, level)]
 }
 
-/// Death: a person's chance of dying before its next birthday by the country's life table at its exact age,
-/// compounding over the days of that year of age. The dead leave the household; the partner, else the eldest adult,
-/// else the eldest child takes a dead head's place; a household no one is left in ends.
+/// Death: a person's chance of dying before its next birthday by the country's life table at its exact age, split
+/// between the able and the disabled so the disabled's hazard is the declared multiple of the able's and the two,
+/// weighted by the chance of disability at that age, make the table's; compounding over the days of that year of age.
+/// The dead leave the household; the partner, else the eldest adult, else the eldest child takes a dead head's place;
+/// a household no one is left in ends.
 #[clause("POP.3", "POP.16", "REP.25", "REP.26")]
 #[derive(Debug)]
 pub struct Mortality {
     prims: Prims,
     tables: Vec<[Vec<f64>; 2]>,
+    disabled: Vec<Vec<[f64; 2]>>,
+    ratio: Option<Table1>,
 }
 
 impl Mortality {
     #[must_use]
     pub fn new(prims: Prims) -> Mortality {
-        Mortality { prims, tables: Vec::new() }
+        Mortality { prims, tables: Vec::new(), disabled: Vec::new(), ratio: None }
+    }
+
+    /// The disabled's hazard over the able's at an age.
+    fn ratio(&self, a: usize) -> f64 {
+        let Some(table) = &self.ratio else { violation!(clause = "POP.3", "a death before its binding") };
+        let at = i64::try_from(a).ok().and_then(|a| table.at(a).ok());
+        let Some(raw) = at else { violation!(clause = "POP.3", "an age outside the disabled's mortality", age = a) };
+        from_i64(raw) / crate::consts::PERCENT
     }
 }
 
 impl PopProcess for Mortality {
     fn bind(&mut self, register: &Register) {
         self.tables = per_country(register, |c| life_table(&self.prims, register, c));
+        self.disabled = per_country(register, |c| {
+            let Some(oldest) = self.prims.age_standard.get(register, c).rows().last().copied() else {
+                violation!(clause = "GEN.2", "an age standard of no ages", country = c.get());
+            };
+            crate::opening::disabled(&self.prims, register, c, oldest)
+        });
+        self.ratio = Some(self.prims.disabled_mortality.shared(register).clone());
     }
     fn hazard(&self) -> &'static str {
         crate::DEATH.name
@@ -107,7 +127,15 @@ impl PopProcess for Mortality {
         let Ok(days) = u32::try_from(year_of_age(p, agent.date)) else {
             violation!(clause = "TIME.2", "a year of age beyond counting");
         };
-        phx_core::annual_to_daily(dies_at_age(table, age(p, agent.date)), days)
+        let a = age(p, agent.date);
+        let Some(share) = of_country(&self.disabled, agent).get(a).and_then(|s| s.get(usize::from(sex(p) == MALE)))
+        else {
+            violation!(clause = "POP.3", "a person older than the disability table", age = a);
+        };
+        let ratio = self.ratio(a);
+        let able = -libm::log1p(-dies_at_age(table, a)) / (1.0 + share * (ratio - 1.0));
+        let hazard = if p.attr(HEALTH.name) == Some(DISABLED) { ratio * able } else { able };
+        phx_core::annual_to_daily(-libm::expm1(-hazard), days)
     }
     fn changes_after(&self, p: &Person, date: Date) -> Option<Date> {
         Some(p.next_birthday(date))

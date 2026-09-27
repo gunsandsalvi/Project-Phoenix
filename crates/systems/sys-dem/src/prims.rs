@@ -100,6 +100,12 @@ declare_prim! {
     pub PARTNER_GAP = "DEM.partner_age_gap" { kind: Endowment, value: Distribution { exp: 2 }, clause: "GEN.2", scope: PerCountry }
 }
 declare_prim! {
+    /// The disabled's mortality over the able's of the same age and sex, by age from each value's first age.
+    pub DISABLED_MORTALITY = "DEM.disabled_mortality" {
+        kind: Technology, value: Table1 { axis_exp: 0, exp: 2 }, clause: "POP.3", scope: Shared
+    }
+}
+declare_prim! {
     /// The share of single parents living with their children who are fathers.
     pub SINGLE_FATHERS = "DEM.single_father_share" {
         kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: PerCountry
@@ -183,6 +189,7 @@ pub struct Prims {
     pub members: Prim<Table2>,
     pub partner_gap: Prim<Distribution>,
     pub single_fathers: Prim<Fixed<6>>,
+    pub disabled_mortality: Prim<Table1>,
     pub life_expectancy: Prim<Fixed<2>>,
 }
 
@@ -214,6 +221,7 @@ impl Prims {
             members: d.prim(&MEMBERS),
             partner_gap: d.prim(&PARTNER_GAP),
             single_fathers: d.prim(&SINGLE_FATHERS),
+            disabled_mortality: d.prim(&DISABLED_MORTALITY),
             life_expectancy: d.prim(&LIFE_EXPECTANCY),
         }
     }
