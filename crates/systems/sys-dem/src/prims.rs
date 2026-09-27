@@ -100,6 +100,12 @@ declare_prim! {
     pub PARTNER_GAP = "DEM.partner_age_gap" { kind: Endowment, value: Distribution { exp: 2 }, clause: "GEN.2", scope: PerCountry }
 }
 declare_prim! {
+    /// The share of single parents living with their children who are fathers.
+    pub SINGLE_FATHERS = "DEM.single_father_share" {
+        kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: PerCountry
+    }
+}
+declare_prim! {
     /// The country's life expectancy at birth in years, the sexes weighted by the sex ratio at birth, as its new game
     /// drew it.
     pub LIFE_EXPECTANCY = "DEM.life_expectancy" { kind: Endowment, value: Fixed { exp: 2 }, clause: "GEN.15", scope: PerCountry }
@@ -176,6 +182,7 @@ pub struct Prims {
     pub taste_spread: Prim<Fixed<2>>,
     pub members: Prim<Table2>,
     pub partner_gap: Prim<Distribution>,
+    pub single_fathers: Prim<Fixed<6>>,
     pub life_expectancy: Prim<Fixed<2>>,
 }
 
@@ -206,6 +213,7 @@ impl Prims {
             taste_spread: d.prim(&TASTE_SPREAD),
             members: d.prim(&MEMBERS),
             partner_gap: d.prim(&PARTNER_GAP),
+            single_fathers: d.prim(&SINGLE_FATHERS),
             life_expectancy: d.prim(&LIFE_EXPECTANCY),
         }
     }

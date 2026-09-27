@@ -169,6 +169,10 @@
       "rows": 279554,
       "title": "Enterprises (ENTR) and persons employed (EMPN) by ISIC Rev. 4 activity and size class, OECD Structural and Demographic Business Statistics"
     },
+    "smam/first_marriage": {
+      "rows": 1931,
+      "title": "Singulate mean age at first marriage by sex (SP.DYN.SMAM.FE, SP.DYN.SMAM.MA), UN DESA World Marriage Data via the World Bank's Gender Statistics"
+    },
     "un/households": {
       "rows": 1099,
       "title": "Households by size and by basic and intergenerational type, % of households, and mean size, each source's reference year, UN DESA Database on Household Size and Composition 2026"
@@ -422,8 +426,13 @@
       "title": "OECD Data Explorer, SDMX API",
       "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/A..ENTR+EMPN...?startPeriod=2015&format=csvfile"
     },
+    "smam": {
+      "fetched": "2026-09-27",
+      "title": "World Bank API, Gender Statistics (source 14)",
+      "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2000:2025&per_page=20000&source=14"
+    },
     "un_households": {
-      "fetched": "2026-09-24",
+      "fetched": "2026-09-27",
       "title": "UN DESA Population Division, Database on Household Size and Composition 2026 and Database on the Households and Living Arrangements of Older Persons 2026",
       "url": "https://population.un.org/household/assets/UNDESA_PD_2026_hh-size-composition.xlsx; https://population.un.org/LivingArrangements/assets/UNDESA_PD_2026_living-arrangements-older-persons.xlsx"
     },

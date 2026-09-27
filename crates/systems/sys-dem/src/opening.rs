@@ -395,6 +395,7 @@ impl Country {
             grown,
             first_gap,
             gaps,
+            single_fathers: p.single_fathers.get(register, id).to_f64(),
             all,
             with_children,
             without,
@@ -736,7 +737,7 @@ fn describe(c: &OpeningCountry, country: &Country, t: &Tally, twins: u32) -> Str
          under 15 (GEN.share_under_15 {:.1}%), {:.1}% 65 and over (GEN.share_65_plus {:.1}%), {:.1}% disabled; \
          households by type as drawn (DEM.household_types at GEN.fertility) {}; by size (1, 2-3, 4-5, 6 or more) \
          as drawn (DEM.household_sizes at GEN.fertility) {}; {} children raised by an adult not their mother. Persons by age and sex (DEM.age_standard raked to GEN.share_under_15 and GEN.share_65_plus), \
-         formed into families by mothers' chances of children (DEM.minor_children), partners (DEM.partner_age_gap) \
+         formed into families by mothers' chances of children (DEM.minor_children), partners (DEM.partner_age_gap), lone fathers (DEM.single_father_share) \
          and whom each type holds (DEM.household_members); health (DEM.disability_prevalence, DEM.disability_onset) \
          and education (DEM.education_female, DEM.education_male)",
         c.id.get(),

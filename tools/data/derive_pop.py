@@ -290,6 +290,58 @@ def households(members_of: dict, m: dict) -> dict:
     return out
 
 
+# Hemez (2023, US Census Bureau working paper SEHSD-WP2023-10, table 1): opposite-sex married couples' mean absolute
+# age gap in the 2021 American Community Survey, in years.
+MEAN_ABSOLUTE_GAP_US = 3.69
+
+
+def normal_absolute_mean(mu: float, sigma: float) -> float:
+    """The mean of |X| for X normal with mean mu and standard deviation sigma."""
+    z = mu / sigma
+    return sigma * math.sqrt(2 / math.pi) * math.exp(-z * z / 2) + mu * math.erf(z / math.sqrt(2))
+
+
+def couples(members_of: dict, m: dict) -> dict:
+    """The partner age gap: its mean the median over the group of men's mean age at first marriage less women's at
+    each economy's latest year reporting both, its spread the one at which a normal gap at the United States' mean has
+    the mean absolute gap US married couples have; and the share of single parents living with their children who
+    are fathers, the median over the group of each economy's latest source reporting both."""
+    g = groups()
+    f = pd.read_csv(RAW / "un" / "first_marriage.csv").pivot_table(index=["iso3", "year"], columns="sex", values="age")
+    f = f.dropna().reset_index().sort_values("year").groupby("iso3").last()
+    gap = f["male"] - f["female"]
+    us = float(gap["USA"])
+    lo, hi = 0.1, 20.0
+    while hi - lo > 1e-9:
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if normal_absolute_mean(us, mid) < MEAN_ABSOLUTE_GAP_US else (lo, mid)
+    sigma = (lo + hi) / 2
+    h = pd.read_csv(RAW / "un" / "households.csv").dropna(subset=["single_mother", "single_father"])
+    h = h[(h.single_mother + h.single_father) > 0].sort_values("year").groupby("iso3").last()
+    fathers = h.single_father / (h.single_mother + h.single_father)
+    out = {}
+    for level, members in members_of.items():
+        gaps = gap[gap.index.isin(members)]
+        shares = fathers[fathers.index.isin(members)]
+        gap_ref = (f"A man's age less his female partner's in a couple living together, normal: its mean {gaps.median():.2f} "
+                   f"years, the median over the group's {len(gaps)} economies of men's singulate mean age at first "
+                   f"marriage less women's at each one's latest year reporting both ({fetched(m, 'smam')}); its "
+                   f"spread {sigma:.2f} years, at which a normal gap at the United States' mean of {us:.2f} years has "
+                   f"the mean absolute gap of {MEAN_ABSOLUTE_GAP_US} years of US married couples in the 2021 American "
+                   f"Community Survey (Hemez 2023, US Census Bureau working paper SEHSD-WP2023-10), one economy's "
+                   f"spread taken for every group.")
+        father_ref = (f"The share of single parents living with their children who are fathers: the median over the "
+                      f"group's {len(shares)} economies of single fathers with children over single parents with "
+                      f"children at each one's latest source reporting both ({fetched(m, 'un_households')}).")
+        out[level] = [
+            entry("DEM.partner_age_gap", "ENDOWMENT", "DEM", "estimated", gap_ref,
+                  f'{{ family = "normal", discretisation = "equal_shares", mean = "{gaps.median():.2f}", '
+                  f'sd = "{sigma:.2f}" }}'),
+            entry("DEM.single_father_share", "ENDOWMENT", "DEM", "measured", father_ref, f'"{shares.median():.6f}"'),
+        ]
+    return out
+
+
 def kin(level: str, members: set, m: dict) -> list:
     """Each parent age's expected living children by the children's age band, and each mother age's expected living
     children at each single age under the age of majority: the births her cohort had at each age, from each year's
@@ -689,10 +741,11 @@ def main() -> None:
     m = manifest()
     members_of = {level: set(g[g.level == level].iso3) for level in sorted(set(LEVELS.values()))}
     hh = households(members_of, m)
+    pairs = couples(members_of, m)
     pen = pensions(members_of, m)
     for level, members in members_of.items():
         money = income_wealth(level, members, m)
-        dem = demography(level, members, m) + hh[level] + education(level, members, m) + money
+        dem = demography(level, members, m) + hh[level] + pairs[level] + education(level, members, m) + money
         write(level, "DEM", f"# The {level} group's demography, households, and shapes of income and wealth (spec "
                             "POP.3, POP.4, GEN.2), derived by tools/data/derive_pop.py; never edited by hand. DEM "
                             "declares income and wealth until HH does.", dem)

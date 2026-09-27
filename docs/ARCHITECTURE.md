@@ -2074,14 +2074,18 @@ what those persons make:
    mother is drawn from the pool's women in proportion to each age's women and their chance of a living child of
    that age; her other children at each age with her chance of one, while the pool holds one; the family's type among
    those with children in proportion to their shares at the country's fertility; a partner, when the type holds one,
-   from the pool's men in proportion to each age's men and the partner gap's chance at it; an older relative, when
+   from the pool's men in proportion to each age's men and the partner gap's chance at it; when the type holds none,
+   the lone parent is, at the country's share of lone parents who are fathers (`DEM.single_father_share`), a man
+   drawn at the partner gap from a woman of the mother's age, who is drawn but stays in the pool, and the children
+   are drawn by her age; else the mother; an older relative, when
    the type holds one, from the pool's persons of 65 and over. A child whom no woman left in the pool can have
    mothered is raised by another adult of the pool, counted in the report; a child no adult is left to raise stops
    the opening, the distributions being inconsistent (GEN.2).
 3. **The rest.** While the pool holds an adult, a household's type is drawn among all types in proportion to their
    shares, and its persons from the pool as the type says: one person; a woman and a partner at the gap; persons who
    are not relatives; and for a type with children, a family of grown children — the mother drawn from the pool's
-   women in proportion to each age's women and their expected living children from majority, each of her grown
+   women in proportion to each age's women and their expected living children from majority, or a lone father at
+   the gap from her as for minors, each of her grown
    children at each age with her chance of a living child of that age (`DEM.grown_children`, derived as the minors'
    table is), who hold the household's adult place; a mother none of whose grown children is left heads the type
    without them, and when no woman left can have grown children a type without children is drawn instead. The

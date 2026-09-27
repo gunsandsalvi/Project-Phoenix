@@ -143,6 +143,8 @@ HH_COLUMNS = {
     "Couple only": "couple_only",
     "Couple with children": "couple_children",
     "Single parent with children": "single_parent",
+    "Single mother with children": "single_mother",
+    "Single father with children": "single_father",
     "Extended family": "extended",
     "Non-relatives": "non_relatives",
     "Unknown": "unknown",
@@ -474,6 +476,27 @@ def findex(cache: Path, manifest: dict, iso3: set) -> None:
                                      "url": FINDEX_URL.format(code="<series>")}
 
 
+SMAM = {"SP.DYN.SMAM.FE": "female", "SP.DYN.SMAM.MA": "male"}
+SMAM_URL = "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date=2000:2025&per_page=20000&source=14"
+
+
+def smam(cache: Path, manifest: dict, iso3: set) -> None:
+    """Women's and men's mean ages at first marriage, from UN DESA's World Marriage Data via the World Bank's gender
+    statistics, by year."""
+    rows = []
+    for code, sex in SMAM.items():
+        page = json.loads(get(SMAM_URL.format(code=code)))
+        rows.extend((r["countryiso3code"], int(r["date"]), sex, f"{r['value']:.2f}") for r in page[1] or []
+                    if r["value"] is not None and r["countryiso3code"] in iso3)
+    manifest["series"]["smam/first_marriage"] = {
+        "title": "Singulate mean age at first marriage by sex (SP.DYN.SMAM.FE, SP.DYN.SMAM.MA), UN DESA World "
+                 "Marriage Data via the World Bank's Gender Statistics",
+        "rows": table(RAW / "un" / "first_marriage.csv", ["iso3", "year", "sex", "age"], rows),
+    }
+    manifest["sources"]["smam"] = {"title": "World Bank API, Gender Statistics (source 14)",
+                                   "url": SMAM_URL.format(code="<series>")}
+
+
 PAG_URL = "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SPD,DSD_PAG@DF_PAG,/all?format=csvfile"
 PAG = {"CRPLF22": "pension_age", "GPRR100": "replacement_rate", "OCOP": "occupational_income", "PTOP": "public_income"}
 
@@ -522,7 +545,7 @@ def pensions(cache: Path, manifest: dict, iso3: set) -> None:
     }
 
 
-SOURCES = {"pensions": pensions, "housing": housing, "findex": findex, "wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares,
+SOURCES = {"pensions": pensions, "housing": housing, "findex": findex, "wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "smam": smam, "wid_shares": wid_shares,
            "ilo_employment": ilo_employment, "ilo_employment_rate": ilo_employment_rate, "wcde": wcde}
 
 

@@ -215,6 +215,19 @@ impl Pool {
     pub(crate) fn take_weighted(
         &mut self,
         sex: u32,
+        span: (u32, u32),
+        weight: impl Fn(u32) -> f64,
+        d: &mut Draws,
+    ) -> Option<u32> {
+        let age = self.draw_weighted(sex, span, weight, d)?;
+        self.take_at(sex, wide(age));
+        Some(age)
+    }
+
+    /// The age of a person drawn as `take_weighted` draws one, left in the pool.
+    pub(crate) fn draw_weighted(
+        &self,
+        sex: u32,
         (lo, hi): (u32, u32),
         weight: impl Fn(u32) -> f64,
         d: &mut Draws,
@@ -241,9 +254,7 @@ impl Pool {
             }
             place -= w;
         }
-        let age = chosen?;
-        self.take_at(sex, wide(age));
-        Some(age)
+        chosen
     }
 }
 
@@ -280,7 +291,7 @@ impl Type {
 /// What households are formed by: the age of majority, one past the oldest age, the first age of old age; each
 /// woman's chance of a living child at each single age under majority by her age from `first_mother`, and at each
 /// single age from majority (`grown`); the chance of each whole year of a partner's age above the woman's from
-/// `first_gap`; every type by its share, the types with children and those without by theirs, and the types of one
+/// `first_gap`; the share of lone parents who are fathers; every type by its share, the types with children and those without by theirs, and the types of one
 /// person and of a couple only.
 #[derive(Debug)]
 pub(crate) struct Rules {
@@ -292,6 +303,7 @@ pub(crate) struct Rules {
     pub grown: Vec<Vec<f64>>,
     pub first_gap: i64,
     pub gaps: Vec<f64>,
+    pub single_fathers: f64,
     pub all: Pick<Type>,
     pub with_children: Pick<Type>,
     pub without: Pick<Type>,
@@ -367,6 +379,28 @@ fn couple(pool: &mut Pool, rules: &Rules, woman: u32, d: &mut Draws, out: &mut V
     }
 }
 
+/// A lone parent of the children of a woman of `mother`'s age: a father at the partner gap from her, as the share of
+/// lone parents who are fathers has it, else a woman of her age; drawn over `weight`, her chance of the children.
+/// None when no woman left can be their mother. The children are drawn by the mother's age whoever raises them.
+fn lone_parent(
+    pool: &mut Pool,
+    rules: &Rules,
+    weight: impl Fn(u32) -> f64,
+    d: &mut Draws,
+    out: &mut Vec<Member>,
+) -> Option<u32> {
+    if open_unit(d) < rules.single_fathers {
+        let mother = pool.draw_weighted(FEMALE, rules.mothers(), &weight, d)?;
+        if let Some(father) = pool.take_weighted(MALE, (rules.majority, rules.ages), |a| rules.gap(mother, a), d) {
+            out.push(Member { place: Place::Head, age: father, sex: MALE });
+            return Some(mother);
+        }
+    }
+    let mother = pool.take_weighted(FEMALE, rules.mothers(), weight, d)?;
+    out.push(Member { place: Place::Head, age: mother, sex: FEMALE });
+    Some(mother)
+}
+
 /// The type's relatives and other adults, while the pool holds them.
 fn extras(pool: &mut Pool, rules: &Rules, t: Type, d: &mut Draws, out: &mut Vec<Member>) {
     if t.older()
@@ -381,15 +415,21 @@ fn extras(pool: &mut Pool, rules: &Rules, t: Type, d: &mut Draws, out: &mut Vec<
     }
 }
 
-/// A family: a child of the pool, each alike; its mother by her age's women and their chance of a child of its age;
-/// her other children with her chance of each, while the pool holds one; then the type's partner and extras. A child
-/// no woman left can have mothered is raised by another adult of the pool.
+/// A family: a child of the pool, each alike; its mother by her age's women and their chance of a child of its age,
+/// with the type's partner, or else its lone parent; her other children with her chance of each, while the pool holds
+/// one; then the type's extras. A child no woman left can have mothered is raised by another adult of the pool.
 fn family(pool: &mut Pool, rules: &Rules, d: &mut Draws, out: &mut Vec<Member>) -> Formed {
     let Some((child, sex)) = pool.take(0, rules.majority, &SEXES, d) else {
         violation!(clause = "GEN.2", "a family formed from a pool with no child");
     };
     let t = rules.with_children.draw(d);
-    let Some(mother) = pool.take_weighted(FEMALE, rules.mothers(), |m| rules.chance(m, child), d) else {
+    let parent = if t.partner() {
+        pool.take_weighted(FEMALE, rules.mothers(), |m| rules.chance(m, child), d)
+            .inspect(|m| couple(pool, rules, *m, d, out))
+    } else {
+        lone_parent(pool, rules, |m| rules.chance(m, child), d, out)
+    };
+    let Some(mother) = parent else {
         let Some((age, s)) = pool.take(rules.majority, rules.ages, &SEXES, d) else {
             violation!(clause = "GEN.2", "a child with no adult left in its region to raise it", age = child);
         };
@@ -397,11 +437,6 @@ fn family(pool: &mut Pool, rules: &Rules, d: &mut Draws, out: &mut Vec<Member>) 
         out.push(Member { place: Place::Child, age: child, sex });
         return Formed { kind: t, raised: true };
     };
-    if t.partner() {
-        couple(pool, rules, mother, d, out);
-    } else {
-        out.push(Member { place: Place::Head, age: mother, sex: FEMALE });
-    }
     out.push(Member { place: Place::Child, age: child, sex });
     for k in (0..rules.majority).filter(|k| *k != child) {
         if open_unit(d) < rules.chance(mother, k)
@@ -414,12 +449,17 @@ fn family(pool: &mut Pool, rules: &Rules, d: &mut Draws, out: &mut Vec<Member>) 
     Formed { kind: t, raised: false }
 }
 
-/// A family of grown children: a mother by her age's women and her expected living children from majority, the
-/// type's partner, each of her grown children the pool still holds with her chance of a living child of its age,
+/// A family of grown children: a mother by her age's women and her expected living children from majority, with the
+/// type's partner, or else its lone parent; each of her grown children the pool still holds with her chance of a living child of its age,
 /// then the type's extras; a mother none of whose grown children is left heads the household of her type without
 /// children. None when no woman left can have grown children.
 fn grown_family(pool: &mut Pool, rules: &Rules, t: Type, d: &mut Draws, out: &mut Vec<Member>) -> Option<Formed> {
-    let mother = pool.take_weighted(FEMALE, rules.mothers(), |m| rules.grown_expected(m), d)?;
+    let mother = if t.partner() {
+        pool.take_weighted(FEMALE, rules.mothers(), |m| rules.grown_expected(m), d)
+            .inspect(|m| couple(pool, rules, *m, d, out))?
+    } else {
+        lone_parent(pool, rules, |m| rules.grown_expected(m), d, out)?
+    };
     let mut children = Vec::new();
     for k in rules.majority..rules.ages {
         if open_unit(d) < rules.grown_chance(mother, k)
@@ -427,11 +467,6 @@ fn grown_family(pool: &mut Pool, rules: &Rules, t: Type, d: &mut Draws, out: &mu
         {
             children.push(Member { place: Place::Adult, age, sex });
         }
-    }
-    if t.partner() {
-        couple(pool, rules, mother, d, out);
-    } else {
-        out.push(Member { place: Place::Head, age: mother, sex: FEMALE });
     }
     if children.is_empty() {
         return Some(Formed { kind: if t.partner() { rules.pair } else { rules.alone }, raised: false });
@@ -514,6 +549,7 @@ mod tests {
             grown,
             first_gap: 0,
             gaps: vec![0.1, 0.2, 0.4, 0.2, 0.1],
+            single_fathers: 0.0,
             all: Pick::new(types.to_vec()),
             with_children: Pick::new(types.iter().copied().filter(|(t, _)| t.children()).collect()),
             without: Pick::new(types.iter().copied().filter(|(t, _)| !t.children()).collect()),
@@ -580,6 +616,45 @@ mod tests {
             assert_eq!((got_w, got_m), (women, men), "the pool's persons, each once");
             assert!(raised < 50, "a child raised by another adult is rare where women abound: {raised}");
         }
+    }
+
+    /// Lone parents are fathers at their share: with every lone parent a father, the households of children with no
+    /// partner are headed by men, of age to be the father of the eldest, but where the pool has no man left at the gap;
+    /// the pool's persons are each in one household.
+    #[test]
+    fn lone_parents_are_fathers_at_their_share() {
+        let rules = Rules { single_fathers: 1.0, ..rules() };
+        let (mut pool, women, men) = pool(20_000);
+        let (mut got_w, mut got_m) = (vec![0_u64; 91], vec![0_u64; 91]);
+        let (mut out, mut d, mut fathers, mut mothers) = (Vec::new(), draws(9), 0, 0);
+        while let Some(formed) = household(&mut pool, &rules, &mut d, &mut out) {
+            let head = *out.iter().find(|m| m.place == Place::Head).unwrap();
+            let eldest =
+                out.iter().filter(|m| m.place == Place::Child).map(|m| m.age).reduce(|a, b| if b > a { b } else { a });
+            if formed.kind == LONE_PARENT
+                && !formed.raised
+                && let Some(eldest) = eldest
+            {
+                if head.sex == MALE {
+                    assert!(
+                        head.age >= eldest + 18 - 2,
+                        "a father at the gap from a mother of age to have the children"
+                    );
+                    fathers += 1;
+                } else {
+                    mothers += 1;
+                }
+            }
+            for m in &out {
+                let got = if m.sex == MALE { &mut got_m } else { &mut got_w };
+                got[usize::try_from(m.age).unwrap()] += 1;
+            }
+        }
+        assert!(
+            fathers > 100 && mothers * 10 < fathers,
+            "lone fathers {fathers}, mothers where no man was left {mothers}"
+        );
+        assert_eq!((got_w, got_m), (women, men), "the pool's persons, each once");
     }
 
     /// A pool of adults alone forms families around grown children: each grown child at home is at least eighteen
