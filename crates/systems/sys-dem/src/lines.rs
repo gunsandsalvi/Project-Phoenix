@@ -24,8 +24,12 @@ use phx_rand::{Draws, Subject};
 pub(crate) struct Held {
     pub attachments: Vec<u64>,
     rows: Vec<(LineId, Side, u64)>,
-    balances: Vec<(LineId, Side, u32, u64)>,
+    balances: Vec<(LineId, Side, Pool, u64)>,
 }
+
+/// A pool of balances: the draw that declares it, by its place among the country's draws, and its number there, so
+/// two systems' pools never meet.
+type Pool = (usize, u32);
 
 /// What a country's households' lines came to: each line, the side the households hold and its contracts, each
 /// agent's row counts, each agent row whose balance is a share of a pool with its weight, and the twins an agent
@@ -35,7 +39,7 @@ pub(crate) struct Drawer {
     lines: BTreeMap<(u16, u32, bool, u64), (LineId, LineSpec)>,
     sides: BTreeMap<LineId, (Side, u64)>,
     holders: BTreeMap<LineId, Vec<(PartyId, u64)>>,
-    balances: Vec<(PartyId, LineId, Side, u32, u64)>,
+    balances: Vec<(PartyId, LineId, Side, Pool, u64)>,
     country: phx_id::CountryId,
     twins: u64,
 }
@@ -97,8 +101,10 @@ impl Drawer {
         (at, (wealth, income)): ((&OpeningCtx<'_>, Subject), (f64, f64)),
     ) -> Held {
         let (mut rows, mut keys) = (Vec::new(), phx_ledger::attachments::Keys::default());
-        for d in &mut self.draws {
+        let mut drawn_by: Vec<usize> = Vec::new();
+        for (i, d) in self.draws.iter_mut().enumerate() {
             d.draw(books, Drawing { household: h, wealth, income }, at, &mut rows, &mut keys);
+            drawn_by.resize(rows.len(), i);
             for (name, v) in keys.household.drain(..) {
                 h.set_attr(name, v);
             }
@@ -114,7 +120,7 @@ impl Drawer {
             }
         }
         let mut held = Held { attachments: Vec::new(), rows: Vec::new(), balances: Vec::new() };
-        for r in rows {
+        for (r, by) in rows.into_iter().zip(drawn_by) {
             let line = self.line(books, r.line);
             match self.sides.get(&line) {
                 Some((side, _)) if *side != r.side => {
@@ -140,7 +146,7 @@ impl Drawer {
                 None => held.rows.push((line, r.side, 1)),
             }
             if let Balance::Share { pool, weight } = r.balance {
-                held.balances.push((line, r.side, pool, weight));
+                held.balances.push((line, r.side, (by, pool), weight));
             }
         }
         held
@@ -232,15 +238,22 @@ impl Drawer {
                 }
             }
         }
-        let totals: BTreeMap<u32, i64> = draws.iter().flat_map(|d| d.pools()).collect();
+        let totals: BTreeMap<Pool, i64> = draws
+            .iter()
+            .enumerate()
+            .flat_map(|(i, d)| d.pools().into_iter().map(move |(pool, total)| ((i, pool), total)))
+            .collect();
         for (pool, total) in totals {
-            let mine: Vec<&(PartyId, LineId, Side, u32, u64)> = balances.iter().filter(|b| b.3 == pool).collect();
+            let mine: Vec<&(PartyId, LineId, Side, Pool, u64)> = balances.iter().filter(|b| b.3 == pool).collect();
             let weights: Vec<u64> = mine.iter().map(|b| b.4).collect();
             // Each twin's share is whole, so the pool is shared out a twin-th at a time.
             let per_twin = total / twins_i64(twins);
             if per_twin * twins_i64(twins) != total {
                 report.adjustments.push(Adjustment {
-                    what: format!("pool {pool}: shared a twin-th at a time over agents of {twins} twins"),
+                    what: format!(
+                        "pool {} of draw {}: shared a twin-th at a time over agents of {twins} twins",
+                        pool.1, pool.0
+                    ),
                     drawn: i128::from(total),
                     set: i128::from(per_twin * twins_i64(twins)),
                 });
