@@ -15,9 +15,11 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
             let message = format!("`{}` is not in the architecture's crate lists", c.name);
             breaches.push(Breach::new(RULE, ARCHITECTURE, 1, message));
         }
-        // A crate no step names was made by a step done and gone from the plan.
+        // A system's crate is begun by its system's first step; a crate no step names, one whose system the coverage
+        // table records as begun, and a crate of no system were made by steps done and gone from the plan.
         if let Some(step) = steps.iter().find(|s| s.crates.contains(&c.name))
             && !matches!(step.status.as_deref(), Some("building" | "awaiting" | "held" | "done"))
+            && begun(&ws.architecture, &c.name) == Some(false)
         {
             let message = format!("`{}` exists before its step {} is building", c.name, step.id);
             breaches.push(Breach::new(RULE, &c.manifest_path(), 1, message));
@@ -34,6 +36,21 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     breaches
+}
+
+/// Whether the architecture's coverage table records the system of a crate as building or done; `None` for a crate
+/// of no system.
+fn begun(architecture: &str, name: &str) -> Option<bool> {
+    let named = format!("`{name}`");
+    let mut in_section = false;
+    architecture.lines().find_map(|line| {
+        if line.starts_with("## ") {
+            in_section = line.starts_with("## 19. ");
+        }
+        let cells: Vec<&str> = line.split('|').map(str::trim).collect();
+        (in_section && cells.get(3).is_some_and(|c| c.starts_with(&named)))
+            .then(|| cells.get(6).is_some_and(|s| matches!(*s, "building" | "done")))
+    })
 }
 
 /// A step has a known status and, unless retired, every section in order.
@@ -63,7 +80,9 @@ mod tests {
     use crate::workspace::fixture::krate;
     use crate::workspace::{Layer, Workspace};
 
-    const ARCH: &str = "## 3. Layers and crates\n`phx-check` `phx-core`\n## 4. Next\n`phx-cli`\n";
+    const ARCH: &str = "## 3. Layers and crates\n`phx-check` `phx-core` `phx-cli` `sys-abc` `sys-def`\n## 4. Next\n`phx-cli`\n\
+                        ## 19. Coverage\n| Spec | System | Crate | First | Complete | Status |\n| --- | --- | --- | --- | --- | --- |\n\
+                        | A1 | ABC | `sys-abc` | 1 | 1 | planned |\n| A2 | DEF | `sys-def` | 0 | 1 | building |\n";
 
     fn step(id: &str, status: &str, skip: &str, crate_path: &str) -> String {
         let mut text = format!("### {id} — x\n\n");
@@ -90,10 +109,17 @@ mod tests {
     #[test]
     fn docs_subset_rule() {
         let plan = step("S0.01", "building", "", "crates/apps/phx-check/Cargo.toml")
-            + &step("S0.02", "planned", "", "crates/apps/phx-cli/src/main.rs");
+            + &step("S0.02", "planned", "", "crates/systems/sys-abc/src/lib.rs")
+            + &step("S0.03", "planned", "", "crates/systems/sys-def/src/lib.rs")
+            + &step("S0.04", "planned", "", "crates/apps/phx-cli/src/main.rs");
         assert!(run(&ws(plan.clone(), &["phx-check"])).is_empty());
-        let breaches = run(&ws(plan, &["phx-check", "phx-cli"]));
-        assert_eq!(breaches.len(), 2, "{breaches:?}");
+        let breaches = run(&ws(plan, &["phx-check", "sys-abc", "sys-def", "phx-cli", "phx-x"]));
+        let messages: Vec<&str> = breaches.iter().map(|b| b.message.as_str()).collect();
+        assert_eq!(
+            messages,
+            ["`sys-abc` exists before its step S0.02 is building", "`phx-x` is not in the architecture's crate lists"],
+            "a begun system's crate and a crate of no system are done work's"
+        );
     }
 
     #[test]

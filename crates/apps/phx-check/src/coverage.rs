@@ -85,12 +85,21 @@ fn derive_row(line: &str, named: &[(&Step, Vec<String>)], map: &[MapRow]) -> Opt
     };
     let completing: Vec<Option<String>> = rows.iter().map(|r| status_of(&r.step)).collect();
     let involved = naming.iter().map(|s| s.status.clone()).chain(completing.iter().cloned());
+    // Done steps leave the plan, so what the table recorded of them stands: a system's first stage never moves later
+    // and a system begun is never planned again.
+    let recorded = cells.get(5).map(String::as_str);
     let status = if completing.iter().all(|s| s.as_deref() == Some("done")) {
         "done"
-    } else if involved.into_iter().any(|s| matches!(s.as_deref(), Some("building" | "awaiting" | "held" | "done"))) {
+    } else if matches!(recorded, Some("building" | "done"))
+        || involved.into_iter().any(|s| matches!(s.as_deref(), Some("building" | "awaiting" | "held" | "done")))
+    {
         "building"
     } else {
         "planned"
+    };
+    let first = match cells.get(3).and_then(|c| c.parse::<u32>().ok()) {
+        Some(was) if was < first => was,
+        _ => first,
     };
     for (index, value) in [(3, first.to_string()), (4, complete.to_string()), (5, status.to_owned())] {
         *cells.get_mut(index)? = value;
