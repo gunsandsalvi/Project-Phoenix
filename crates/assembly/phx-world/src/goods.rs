@@ -994,15 +994,20 @@ impl World {
         Ok(())
     }
 
-    /// Each good's mark where it stands, from the markets' marks, for the handlers' reads.
-    pub(crate) fn goods_marks(&mut self) {
-        let goods: Vec<u16> = ["GDS.commodities", "GDS.between_firms"]
+    /// The kinds of market a good trades in where it stands, between firms and as a commodity.
+    fn goods_kinds(&self) -> Vec<u16> {
+        ["GDS.commodities", "GDS.between_firms"]
             .iter()
             .filter_map(|n| match self.market_kinds.kind(phx_ledger::instruction::name_code(n)) {
                 Missing::Present(k) => Some(k),
                 Missing::Absent => None,
             })
-            .collect();
+            .collect()
+    }
+
+    /// Each good's mark where it stands, from the markets' marks, for the handlers' reads.
+    pub(crate) fn goods_marks(&mut self) {
+        let goods = self.goods_kinds();
         let carriage: Vec<u16> = self.trade.freight.iter().map(|f| f.kind).collect();
         let market_zones: std::collections::BTreeSet<ZoneId> = self
             .goods_frame
@@ -1091,9 +1096,18 @@ impl World {
                 .collect();
             series.outlooks = next;
         }
+        // Only a goods market's subject is a good where it stands; retail's and carriage's are read otherwise.
+        let goods = self.goods_kinds();
         let mut out = BTreeMap::new();
         for (market, series) in &self.markets.public {
-            let Missing::Present(subject) = self.markets.made.subject_of(*market) else { continue };
+            let (Missing::Present(kind), Missing::Present(subject)) =
+                (self.markets.made.kind_of(*market), self.markets.made.subject_of(*market))
+            else {
+                continue;
+            };
+            if !goods.contains(&kind) {
+                continue;
+            }
             let key = GoodKey::from_code(subject);
             for (m, o) in (0_u16..).zip(&series.outlooks) {
                 out.insert((key, m), *o);

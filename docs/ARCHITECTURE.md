@@ -1519,7 +1519,9 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   from the holder's own arenas. An agent's key attributes read by name as an individual's facts do.
 - **Public outlooks** (VAL.23): at 5a the kernel takes in each market's prints since the last pass as a public series
   (`Markets::public`, saved) and forms every method's outlook of it, heuristic by memory type, the first print being
-  every method's first outlook (VAL.10); a firm reads the outlook of its own method (`FRM.method`).
+  every method's first outlook (VAL.10); a firm reads the outlook of its own method (`FRM.method`). The goods view
+  holds the outlooks of the goods markets alone — between firms and commodities — whose subject is a good where it
+  stands, as the marks are; a retail or carriage market's series is read by its own subject.
 - **Cost flows** (ACC.6): an individual chooses first in, first out or weighted average once
   (`Ledger::choose_cost_flow`, saved); an agent's twins hold at average cost. A holding at average cost keeps one lot,
   whose day is its units' days averaged by quantity, so what ages with the lot, as spoilage does, ages as its units
@@ -1561,7 +1563,8 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   in as an asset (`ReasonDecl::held`). The units each party delivers are kept with the goods, which its visits read as
   its sales.
 - **Retail** (SRV.4, SRV.5, REP.22): a system declares a retail kind (`phx_market::retail::RetailKind`: its market,
-  one instance a product, the kinds that sell, the facts naming what a seller sells and its posted price, the weights
+  one instance a product and country, so each market's prints are in one currency and it meets that country's
+  sellers only, the kinds that sell, the facts naming what a seller sells and its posted price, the weights
   of price and distance, the reach and the stream of tastes). A buyer's want (`ShopIntent`, units or money a twin) is
   admitted at 5d. At 6a, every day, the day's stalls are read in one pass over the sellers: each posted price and the
   free units of the good where it stands, less what the day's matches between firms take. The stalls in reach of each

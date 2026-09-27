@@ -301,7 +301,7 @@ impl World {
         for (s, set) in sets.iter().enumerate().skip(from) {
             let decl = self.market_kinds.decl(&self.markets.made, set.market);
             let (series, product) = if kind.consumer.contains(&decl.key.kind) {
-                (CPI, u16::try_from(decl.key.subject).ok())
+                (CPI, crate::retail::retail_of(decl.key.subject).map(|(p, _)| p))
             } else if kind.producer.contains(&decl.key.kind) {
                 (PPI, Some(phx_ledger::goods::GoodKey::from_code(decl.key.subject).product))
             } else {

@@ -196,6 +196,7 @@ pub fn phx_market::instances::Kinds::names(&self) -> impl core::iter::traits::it
 pub struct phx_market::instances::Made
 impl phx_market::instances::Made
 pub fn phx_market::instances::Made::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::MarketId, u16, u64)> + '_
+pub fn phx_market::instances::Made::kind_of(&self, phx_id::ids::MarketId) -> phx_num::missing::Missing<u16>
 pub fn phx_market::instances::Made::of(&self, u16, u64) -> phx_num::missing::Missing<phx_id::ids::MarketId>
 pub fn phx_market::instances::Made::subject_of(&self, phx_id::ids::MarketId) -> phx_num::missing::Missing<u64>
 impl phx_store::save::Saved for phx_market::instances::Made where alloc::vec::Vec<(u16, u64)>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<(u16, u64), phx_id::ids::MarketId>: phx_store::save::Saved

@@ -21,6 +21,19 @@ use phx_store::SystemBacking;
 use crate::goods::Rows;
 use crate::world::World;
 
+/// A retail market's subject: its product and the country it meets in, so each market's prints are in the one
+/// currency its sellers price in.
+pub(crate) fn retail_subject(product: u16, country: phx_id::CountryId) -> u64 {
+    (u64::from(country.get()) << u16::BITS) | u64::from(product)
+}
+
+/// The product and country a retail market's subject names.
+pub(crate) fn retail_of(subject: u64) -> Option<(u16, phx_id::CountryId)> {
+    let product = u16::try_from(subject & u64::from(u16::MAX)).ok()?;
+    let country = u8::try_from(subject >> u16::BITS).ok()?;
+    Some((product, phx_id::CountryId::new(country)))
+}
+
 /// A retail kind as the world meets it: its place among the market kinds, its declaration, the tables of the kinds
 /// that sell in it (each its place among the holders and whether its rows are individuals), how its buyers weigh
 /// sellers, and how far in metres they reach.
@@ -153,7 +166,10 @@ impl World {
             self.market_day.tally.refused += 1;
             return;
         }
-        let market = self.market_kinds.instance(&mut self.markets.made, kind, u64::from(s.product));
+        let Missing::Present(country) = self.geo().zone_country(row.zone) else {
+            violation!(clause = "GEO.2", "a buyer at a zone of no country", party = row.party.get());
+        };
+        let market = self.market_kinds.instance(&mut self.markets.made, kind, retail_subject(s.product, country));
         self.market_day.shops.push(Shop {
             market,
             product: s.product,
@@ -303,9 +319,18 @@ impl World {
                     market = market.get()
                 );
             };
-            let Some(product) = shops.first().map(|s| s.product) else { continue };
-            let stalls = stalls_of.remove(&(bound.kind, product)).unwrap_or_default();
+            let Some((product, country)) = retail_of(decl.key.subject) else {
+                violation!(clause = "SRV.5", "a retail market of no product and country", market = market.get());
+            };
             let geo = self.geo();
+            // A country's market meets its own sellers only, who price in its currency.
+            let stalls: Vec<Placed> = stalls_of
+                .get(&(bound.kind, product))
+                .into_iter()
+                .flatten()
+                .filter(|(_, z, _)| geo.zone_country(*z) == Missing::Present(country))
+                .copied()
+                .collect();
             let sites: Vec<phx_market::reach::Site> = stalls
                 .iter()
                 .map(|(_, z, _)| match geo.zone_country(*z) {

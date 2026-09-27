@@ -110,6 +110,14 @@ impl Made {
         }
     }
 
+    /// An instance's kind, by its place among the kinds.
+    pub fn kind_of(&self, market: MarketId) -> Missing<u16> {
+        match usize::try_from(market.get()).ok().and_then(|i| self.list.get(i)) {
+            Some((k, _)) => Missing::Present(*k),
+            None => Missing::Absent,
+        }
+    }
+
     /// Every instance made, by identity: its kind's place and its subject.
     pub fn iter(&self) -> impl Iterator<Item = (MarketId, u16, u64)> + '_ {
         (0_u32..).zip(&self.list).map(|(i, (k, s))| (MarketId::new(i), *k, *s))
