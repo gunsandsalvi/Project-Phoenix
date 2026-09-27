@@ -199,6 +199,24 @@ pub struct Ledger<B: Backing = SystemBacking> {
     pub(crate) day: DayBook,
     /// The book of the day before last, emptied once its close has read it, whose room the next day records into.
     spare: DayBook,
+    /// An instruction's working lists, kept from one to the next and emptied, so checking one allocates nothing.
+    scratch: Scratch,
+    /// Where an instruction's legs' parties are and what each leg draws, kept likewise.
+    reads: (Vec<At>, Vec<Drawn>),
+}
+
+/// An instruction's working lists as it is checked: its legs keyed by position, each position's first leg, each leg's
+/// position, the positions and their moves, and the leg of each move.
+#[derive(Debug, Default)]
+struct Scratch {
+    keyed: Vec<(Key, usize)>,
+    firsts: Vec<(usize, usize)>,
+    group_of: Vec<usize>,
+    number: Vec<usize>,
+    positions: Vec<Position>,
+    moves: Vec<(usize, i64)>,
+    moved_by: Vec<usize>,
+    order: Vec<usize>,
 }
 
 /// What every leg of an instruction settles with: its identity, reason and day, and the contract row it pays.
@@ -343,6 +361,8 @@ impl<B: Backing> Ledger<B> {
             cost_flows: std::collections::BTreeMap::new(),
             day: DayBook::default(),
             spare: DayBook::default(),
+            scratch: Scratch::default(),
+            reads: (Vec::new(), Vec::new()),
         }
     }
 
@@ -380,20 +400,32 @@ impl<B: Backing> Ledger<B> {
             violation!(clause = "SET.11", "an instruction applied twice", id = id.get());
         }
         self.refuse(at, &legs, id);
-        let mut located = Vec::with_capacity(legs.len());
+        let (mut located, mut drawn) = core::mem::take(&mut self.reads);
+        located.clear();
+        drawn.clear();
+        let mut ended = None;
         for leg in &legs {
             match holders.locate(leg.party) {
                 Located::Live { party, table, slot } => located.push(At { party, table, slot }),
-                Located::Ended => return Err(self.fail(settling, FailCause::Ended, leg, covers)),
+                Located::Ended => {
+                    ended = Some(*leg);
+                    break;
+                }
             }
         }
-        let opened = opened(&legs);
-        let drawn: Vec<Drawn> = legs
-            .iter()
-            .zip(&located)
-            .map(|(leg, at)| self.leg_draw(holders.arenas(at.table), *at, leg, (&opened, &covers)))
-            .collect();
-        self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), None, audit)
+        let result = if let Some(leg) = ended {
+            Err(self.fail(settling, FailCause::Ended, &leg, covers))
+        } else {
+            let opened = opened(&legs);
+            drawn.extend(
+                legs.iter()
+                    .zip(&located)
+                    .map(|(leg, at)| self.leg_draw(holders.arenas(at.table), *at, leg, (&opened, &covers))),
+            );
+            self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), None, audit)
+        };
+        self.reads = (located, drawn);
+        result
     }
 
     /// The apply routine over legs already read: where each leg's party is and what it draws, or the first leg whose
@@ -457,18 +489,46 @@ impl<B: Backing> Ledger<B> {
         deferred: Option<&mut Deferred<'_>>,
         audit: &mut dyn AuditStream,
     ) -> Result<InstructionId, Fail> {
+        let mut scratch = core::mem::take(&mut self.scratch);
+        let result = self.check_and_settle_in(
+            &mut scratch,
+            holders,
+            (settling, covers),
+            (legs, located, drawn),
+            deferred,
+            audit,
+        );
+        self.scratch = scratch;
+        result
+    }
+
+    fn check_and_settle_in(
+        &mut self,
+        scratch: &mut Scratch,
+        holders: &mut dyn Holders,
+        (settling, covers): (Settling, Vec<crate::covered::Covered>),
+        (legs, located, drawn): (&[LegRec], &[At], &[Drawn]),
+        deferred: Option<&mut Deferred<'_>>,
+        audit: &mut dyn AuditStream,
+    ) -> Result<InstructionId, Fail> {
         let id = settling.id;
+        let Scratch { keyed, firsts, group_of, number, positions, moves, moved_by, order } = scratch;
+        for list in [&mut *group_of, &mut *number, &mut *moved_by] {
+            list.clear();
+        }
+        keyed.clear();
+        firsts.clear();
+        positions.clear();
+        moves.clear();
         // Legs on one position are merged by sorting their keys; each position is numbered by the first leg on it, as
         // the legs meet them, so the first failing position is the one the legs' order finds.
-        let mut keyed: Vec<(Key, usize)> = Vec::with_capacity(legs.len());
         for (n, ((leg, at), d)) in legs.iter().zip(located).zip(drawn).enumerate() {
             if d.is_some() {
                 keyed.push((Key { table: at.table, slot: at.slot, code: leg.position_code() }, n));
             }
         }
         keyed.sort_unstable();
-        let mut firsts: Vec<(usize, usize)> = Vec::new();
-        let mut group_of: Vec<usize> = vec![0; legs.len()];
+        group_of.resize(legs.len(), 0);
         for (i, (key, n)) in keyed.iter().enumerate() {
             if i == 0 || keyed.get(i - 1).is_some_and(|(k, _)| k != key) {
                 firsts.push((*n, firsts.len()));
@@ -478,8 +538,7 @@ impl<B: Backing> Ledger<B> {
             }
         }
         firsts.sort_unstable();
-        let mut number: Vec<usize> = vec![0; firsts.len()];
-        let mut positions: Vec<Position> = Vec::with_capacity(firsts.len());
+        number.resize(firsts.len(), 0);
         for (k, (n, group)) in firsts.iter().enumerate() {
             let (Some(Some((position, _, _))), Some(slot)) = (drawn.get(*n), number.get_mut(*group)) else {
                 violation!(clause = "SET.4", "a position with no leg that draws on it", id = id.get());
@@ -487,8 +546,6 @@ impl<B: Backing> Ledger<B> {
             *slot = k;
             positions.push(*position);
         }
-        let mut moves: Vec<(usize, i64)> = Vec::with_capacity(keyed.len());
-        let mut moved_by: Vec<usize> = Vec::with_capacity(keyed.len());
         for (n, d) in drawn.iter().enumerate() {
             let Some((_, delta, _)) = *d else { continue };
             let Some(at) = group_of.get(n).and_then(|g| number.get(*g)) else {
@@ -497,7 +554,7 @@ impl<B: Backing> Ledger<B> {
             moves.push((*at, delta));
             moved_by.push(n);
         }
-        if let Err((cause, m)) = check_legs(&positions, &moves) {
+        if let Err((cause, m)) = check_legs(positions, moves) {
             let Some(leg) = moved_by.get(m).and_then(|n| legs.get(*n)).copied() else {
                 violation!(clause = "SET.4", "a failing move with no leg", id = id.get());
             };
@@ -518,7 +575,7 @@ impl<B: Backing> Ledger<B> {
             self.covers.release(c);
         }
         let first = self.day.effects.len();
-        self.settle_legs(holders, settling, (legs, located, drawn), deferred, audit);
+        self.settle_legs(holders, settling, (legs, located, drawn), (deferred, order), audit);
         let rows = legs.iter().any(|l| matches!(l.kind, LegKind::Row(_)));
         self.net_effects(first, self.reasons.get(settling.reason), !rows);
         audit.applied(id.get());
@@ -752,7 +809,7 @@ impl<B: Backing> Ledger<B> {
         holders: &mut dyn Holders,
         s: Settling,
         (legs, located, drawn): (&[LegRec], &[At], &[Drawn]),
-        deferred: Option<&mut Deferred<'_>>,
+        (deferred, order): (Option<&mut Deferred<'_>>, &mut Vec<usize>),
         audit: &mut dyn AuditStream,
     ) {
         let decl = self.reasons.get(s.reason);
@@ -781,9 +838,10 @@ impl<B: Backing> Ledger<B> {
             let makes = matches!(l.kind, LegKind::Transformation { .. }) && l.qty > 0;
             (closes, !opens, !makes, l.qty >= 0)
         };
-        let mut order: Vec<usize> = (0..legs.len()).collect();
+        order.clear();
+        order.extend(0..legs.len());
         order.sort_by_key(|i| legs.get(*i).map(rank));
-        for i in order {
+        for &i in order.iter() {
             let (Some(leg), Some(at)) = (legs.get(i), located.get(i)) else { continue };
             if let Some(d) = deferred.as_deref_mut() {
                 let Some(Some((_, _, Missing::Present((word, before))))) = drawn.get(i).copied() else {
@@ -1208,6 +1266,8 @@ impl<B: Backing> Ledger<B> {
             cost_flows: std::collections::BTreeMap::load(r)?,
             day: DayBook::default(),
             spare: DayBook::default(),
+            scratch: Scratch::default(),
+            reads: (Vec::new(), Vec::new()),
         })
     }
 }
