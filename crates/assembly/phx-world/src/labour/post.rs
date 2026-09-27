@@ -291,6 +291,7 @@ impl World {
             day,
             phx_core::SubStep::S5c.ordinal(),
         );
+        let unit = self.population.representation.multiplicity;
         let mut left = count;
         while left > 0 && !lines.is_empty() {
             let total: u64 = lines.iter().map(|(_, m)| u64::from(*m)).sum();
@@ -311,6 +312,10 @@ impl World {
             let (line, members) = lines.swap_remove(i);
             let take = if members < left { members } else { left };
             left -= take;
+            let take = whole_agents(take, (unit, members), &mut d);
+            if take == 0 {
+                continue;
+            }
             self.labour.book.separations.push(Separation {
                 employer,
                 country: country.get(),
@@ -320,5 +325,46 @@ impl World {
             });
             self.labour.day.layoffs += u64::from(take);
         }
+    }
+}
+
+/// The jobs a line loses as whole agents: its workers are agents whose twins act alike, so an employer that is one
+/// party lays off whole agents, one more than the whole it asked for with the chance of what is left over, and never
+/// more than the line holds.
+fn whole_agents(count: u32, (unit, members): (u32, u32), d: &mut phx_rand::Draws) -> u32 {
+    if unit <= 1 {
+        return count;
+    }
+    let (whole, over) = (count / unit, count % unit);
+    let one_more = over > 0 && phx_rand::uniform::below_u64(d, u64::from(unit)) < u64::from(over);
+    let take = (whole + u32::from(one_more)) * unit;
+    let most = members - members % unit;
+    if take < most { take } else { most }
+}
+
+#[cfg(test)]
+mod tests {
+    use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
+
+    use super::whole_agents;
+
+    fn draws(n: u64) -> Draws {
+        Draws::new(stream_key(Seed::new(3), "LAB.layoffs"), Subject::new(SubjectTag::Party, n), 0, 0)
+    }
+
+    #[test]
+    fn layoffs_come_in_whole_agents_unbiased() {
+        assert_eq!(whole_agents(3_400, (1_700, 5_100), &mut draws(1)), 3_400, "whole agents stay whole");
+        assert_eq!(whole_agents(80, (1, 200), &mut draws(1)), 80, "agents of one twin take any count");
+        let (n, mut laid) = (4_000_u64, 0_u64);
+        for i in 0..n {
+            let take = whole_agents(170, (1_700, 5_100), &mut draws(i));
+            assert!(take == 0 || take == 1_700, "none or one whole agent: {take}");
+            laid += u64::from(take);
+        }
+        // A tenth of an agent asked for lays one off a tenth of the time.
+        let mean = phx_rand::float::from_u64(laid) / phx_rand::float::from_u64(n);
+        assert!((mean - 170.0).abs() < 20.0, "unbiased: {mean}");
+        assert_eq!(whole_agents(9_000, (1_700, 3_400), &mut draws(2)), 3_400, "never more than the line holds");
     }
 }
