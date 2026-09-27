@@ -208,6 +208,24 @@ impl<'a> Inspector<'a> {
         over
     }
 
+    /// The parties that issue an instrument and are held in a population: none, since every issuer is an individual.
+    #[clause("REP.2")]
+    #[must_use]
+    pub fn agent_issuers(&self) -> u64 {
+        let books = &self.world.books;
+        let first = books.parties.first_cell_place();
+        let mut issuers: std::collections::BTreeSet<phx_id::PartyId> = std::collections::BTreeSet::new();
+        for i in 0..books.ledger.instruments.len() {
+            let Ok(i) = u32::try_from(i) else { break };
+            if let phx_num::Missing::Present(issuer) = books.ledger.instruments.get(phx_id::InstrumentId::new(i)).issuer
+            {
+                issuers.insert(issuer);
+            }
+        }
+        let live = |p: phx_id::PartyId| matches!(books.parties.directory().lookup(p), phx_core::PartyState::Live(_));
+        phx_rand::float::len_u64(issuers.into_iter().filter(|p| live(*p) && books.parties.row(*p).0 >= first).count())
+    }
+
     /// The persons of the household agents whose jobs buy more than `most` hours a week between them.
     #[must_use]
     pub fn persons_over_hours(&self, most: u64) -> u64 {

@@ -181,8 +181,9 @@ impl Markets {
         }
     }
 
-    /// A posted-price meeting's sales recorded: each seller's sales at its posted price print, and the day's
-    /// measures count what was posted, what sold and the rounds of re-choice.
+    /// A posted-price meeting's sales recorded: each seller's sales at its posted price print, the print that traded
+    /// the most the market's mark, the lower price where two traded alike, and the day's measures count what was
+    /// posted, what sold and the rounds of re-choice.
     #[clause("MKT.2", "MKT.6", "MKT.15")]
     pub fn record_posted(
         &mut self,
@@ -199,9 +200,17 @@ impl Markets {
         for s in &outcome.sales {
             by_seller.entry((s.seller, s.price.raw())).or_default().push(*s);
         }
+        let mut most: Option<(i64, i64, PrintId)> = None;
         for ((_, price), matches) in by_seller {
+            let volume: i64 = matches.iter().map(|m| m.qty).sum();
             let traded = Traded { unit: quote.0, ccy: quote.1, price: PriceRaw::from_raw(price), matches };
-            let _ = self.tape.print(market, day, Form::Posted, traded);
+            let id = self.tape.print(market, day, Form::Posted, traded);
+            if most.is_none_or(|(v, p, _)| volume > v || (volume == v && price < p)) {
+                most = Some((volume, price, id));
+            }
+        }
+        if let Some((_, price, id)) = most {
+            self.tape.mark(Mark { market, day, price: PriceRaw::from_raw(price), source: MarkSource::Print(id) });
         }
         if outcome.sales.is_empty() {
             let kind = if postings.is_empty() { FailureKind::NoSeller } else { FailureKind::NoBid };

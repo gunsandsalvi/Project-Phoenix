@@ -132,6 +132,10 @@ pub struct GenReport {
     pub unfounded: Vec<Apportioned>,
     pub adjustments: Vec<Adjustment>,
     pub equity: Vec<(PartyId, i128)>,
+    /// The agents whose size at the opening would rank them individuals but that stand for twins.
+    pub over_edge: u64,
+    /// The parties that issue an instrument and are held in a population, where every issuer is an individual.
+    pub agent_issuers: u64,
     /// The parties the writes named, a bit to a party, while the opening runs.
     #[saved(skip)]
     named: Vec<u64>,

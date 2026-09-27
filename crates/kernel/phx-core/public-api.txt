@@ -273,9 +273,11 @@ pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_
 pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::contribution::GenReport
 pub phx_core::contribution::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
+pub phx_core::contribution::GenReport::agent_issuers: u64
 pub phx_core::contribution::GenReport::apportioned: u64
 pub phx_core::contribution::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
 pub phx_core::contribution::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>
+pub phx_core::contribution::GenReport::over_edge: u64
 pub phx_core::contribution::GenReport::unfounded: alloc::vec::Vec<phx_core::contribution::Apportioned>
 pub phx_core::contribution::GenReport::unnamed: alloc::vec::Vec<phx_id::ids::PartyId>
 pub phx_core::contribution::GenReport::writes: u64
@@ -2908,9 +2910,11 @@ pub phx_core::Gap::size: i128
 pub phx_core::Gap::unit: phx_core::findings::Unit
 pub struct phx_core::GenReport
 pub phx_core::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
+pub phx_core::GenReport::agent_issuers: u64
 pub phx_core::GenReport::apportioned: u64
 pub phx_core::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
 pub phx_core::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>
+pub phx_core::GenReport::over_edge: u64
 pub phx_core::GenReport::unfounded: alloc::vec::Vec<phx_core::contribution::Apportioned>
 pub phx_core::GenReport::unnamed: alloc::vec::Vec<phx_id::ids::PartyId>
 pub phx_core::GenReport::writes: u64

@@ -347,9 +347,17 @@ pub const LC_0_47: Check = live_check! {
     retired: "there are no cells and no cell budget; the factor is the representation's one valve (S0.28)",
 };
 
-/// Every party within the individuals' rank an individual at the opening.
-fn ranks_carried(_: Inspector<'_>) -> Outcome {
-    Outcome::NotYet("the individuals' rank reads the firms' positions (S1.03, F-048)")
+/// Every party within the individuals' rank an individual at the opening: no agent whose staff for each twin reach
+/// the least individual employer's; and every issuer of an instrument an individual.
+fn ranks_carried(w: Inspector<'_>) -> Outcome {
+    let report = w.opening();
+    if report.over_edge > 0 {
+        return Outcome::Fail(format!("{} agents opened within the individuals' rank", report.over_edge));
+    }
+    if report.agent_issuers > 0 {
+        return Outcome::Fail(format!("{} agents issued an instrument at the opening", report.agent_issuers));
+    }
+    Outcome::Pass
 }
 
 pub const LC_0_48: Check = live_check! {
