@@ -1171,8 +1171,8 @@ impl World {
     }
 
     /// What winding a row down would return beyond the money it keeps either way, one twin's: the goods it holds at
-    /// their cost, as the row's holdings were read, less what it owes at its balances; its plant returns nothing, since no market buys used plant yet.
-    /// None where a debt carries no balance to read.
+    /// their cost, as the row's holdings were read, less what it owes, a liability's balance being negative; its plant
+    /// returns nothing, since no market buys used plant yet. None where a debt carries no balance to read.
     fn book_worth(&self, place: u16, slot: Slot, (goods_cost, twins): (i128, i64)) -> Missing<i64> {
         let arenas = self.books.parties.holder(place);
         let mut total = goods_cost;
@@ -1181,7 +1181,7 @@ impl World {
                 continue;
             }
             let Missing::Present(balance) = r.optional.balance else { return Missing::Absent };
-            total -= i128::from(balance);
+            total += i128::from(balance);
         }
         i64::try_from(total / i128::from(twins)).map_or(Missing::Absent, Missing::Present)
     }
