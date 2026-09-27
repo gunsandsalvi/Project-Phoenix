@@ -335,6 +335,20 @@ impl<B: Backing> Books<B> {
         }
     }
 
+    /// A balance a whole share for each of its holder's twins, or the run stops naming the line and the balance.
+    fn whole_share(&self, holder: PartyId, line: LineId, (balance, unit): (i64, u32)) {
+        if balance % i64::from(unit) != 0 {
+            violation!(
+                clause = "REP.9",
+                "an agent's balance not a whole share for each twin",
+                party = holder.get(),
+                line = line.get(),
+                kind = self.ledger.lines.kind_of(line),
+                balance = balance,
+                unit = unit
+            );
+        }
+    }
     /// A row's due as far as the row alone decides it: its payment, or on a cleared line the due it pays or is paid
     /// per member, which the line's day turns into a payment. Reads the day's plan of the line's dues where given.
     #[clause("REP.23", "REP.31")]
@@ -368,9 +382,7 @@ impl<B: Backing> Books<B> {
         // A due on the balance is one twin's, rounded by its convention, times the agent's twins, so every twin's
         // share stays whole.
         let unit = self.parties.unit(holder);
-        if outstanding % i64::from(unit) != 0 {
-            violation!(clause = "REP.9", "an agent's balance not a whole share for each twin", party = holder.get());
-        }
+        self.whole_share(holder, line, (outstanding, unit));
         let outstanding = Money::new(outstanding / i64::from(unit), terms.ccy);
         let mut buf = DueBuf::default();
         let k = self.ledger.lines.fallen(line);
