@@ -201,7 +201,43 @@ fn catastrophe_rates(w: Inspector<'_>) -> Outcome {
             return Outcome::Fail(format!("{}: {observed} events against {expected:.2} expected", spec.event.name));
         }
     }
-    Outcome::Pass
+    losses_cluster(w, &days)
+}
+
+/// A catastrophe's losses cluster in place and time: their shares over the regions and months of the run are more
+/// concentrated than the same losses spread evenly over them, their Herfindahl index above one over the cells.
+fn losses_cluster(w: Inspector<'_>, days: &[Date]) -> Outcome {
+    let geo = w.geo();
+    let mut cells: std::collections::BTreeMap<(u32, i32, u8), u64> = std::collections::BTreeMap::new();
+    for spec in HAZARDS {
+        for e in events_of(w, spec.event.name) {
+            let date = w.date(e.day);
+            for (subject, share) in &e.details {
+                let tile = phx_rand::Subject::from_raw(*subject).and_then(|s| u32::try_from(s.id()).ok());
+                let region = tile.map(phx_id::TileId::new).map(|t| match geo.zone_of(t) {
+                    Missing::Present(z) => geo.zone_region(z),
+                    Missing::Absent => Missing::Absent,
+                });
+                let (Some(Missing::Present(region)), Ok(share)) = (region, u64::try_from(*share)) else {
+                    return Outcome::Fail(format!("{}: a loss on no region's land", spec.event.name));
+                };
+                *cells.entry((region, date.year(), date.month())).or_insert(0) += share;
+            }
+        }
+    }
+    let total: u64 = cells.values().sum();
+    if total == 0 {
+        return Outcome::Pass;
+    }
+    let months: std::collections::BTreeSet<(i32, u8)> = days.iter().map(|d| (d.year(), d.month())).collect();
+    let regions = geo.map.regions.len();
+    let cells_run = from_u64(phx_rand::float::len_u64(months.len() * regions));
+    let index: f64 = cells.values().map(|l| (from_u64(*l) / from_u64(total)).powi(2)).sum();
+    if index * cells_run > 1.0 {
+        Outcome::Pass
+    } else {
+        Outcome::Fail(format!("catastrophe losses spread evenly: an index of {index:.4} over {cells_run} cells"))
+    }
 }
 
 fn deposits_balance(w: Inspector<'_>) -> Outcome {
@@ -251,7 +287,7 @@ pub const LC_0_13: Check = live_check! {
 
 pub const LC_0_14: Check = live_check! {
     id: "LC-0-14",
-    title: "Catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the run",
+    title: "Catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the run, and their losses cluster in place and time",
     from_step: "S0.13",
     check: catastrophe_rates,
 };

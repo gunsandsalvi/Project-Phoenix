@@ -1984,7 +1984,9 @@ A world starts from a setup (spec GEN.14, GEN.15, Appendix E 43), so a new game 
   life table is solved to when the process is bound; its opening distributions and present values follow by declared mappings and accounting
   identities, never an equilibrium solve (GEN.4).
 - **Land and regions** follow the split: the 25 regions are allotted by largest remainder with at least three per
-  country, and each country's land is its share of the map, so regions are of like size.
+  country, and each country's land is its share of the map, so regions are of like size. A country's persons and its
+  small firms are apportioned over its regions by their land, the one weight the map gives before the dwelling stock
+  places them.
 - **The factor divides once**: the setup's population is divided by the representation's factor before the countries,
   and each country's agents are apportioned over its regions by their land, so both representations draw the same
   agents (REP.40) — a small world's countries hold that many persons, twins' each agent's twins — and only the
