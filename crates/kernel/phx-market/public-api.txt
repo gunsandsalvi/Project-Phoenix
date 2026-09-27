@@ -540,6 +540,7 @@ pub phx_market::retail::Shopper::want: phx_market::retail::Want
 pub struct phx_market::retail::Stall
 pub phx_market::retail::Stall::price: phx_num::price::PriceRaw
 pub phx_market::retail::Stall::seller: phx_id::ids::PartyId
+pub phx_market::retail::Stall::twins: i64
 pub phx_market::retail::Stall::units: i64
 pub struct phx_market::retail::Weights
 pub phx_market::retail::Weights::distance: f64

@@ -354,7 +354,31 @@ fn times(q: i64, twins: i64) -> i64 {
     t
 }
 
+/// The greatest count dividing both.
+fn common(a: i64, b: i64) -> i64 {
+    let (mut a, mut b) = (a, b);
+    while b != 0 {
+        (a, b) = (b, a % b);
+    }
+    a
+}
+
 impl World {
+    /// What `qty` of a good costs at `price` a lot of `base` units: one twin's quantity priced, rounded once, and paid
+    /// for each twin of the unit both parties' positions are whole multiples of, so every twin of either side pays or
+    /// is paid a whole amount. A quantity no such unit divides, as the player's own purchase, is priced whole.
+    pub(crate) fn trade_amount(&self, (buyer, seller): (PartyId, PartyId), qty: i64, (price, base): (i64, i64)) -> i64 {
+        let (b, s) = (i64::from(self.books.parties.unit(buyer)), i64::from(self.books.parties.unit(seller)));
+        let both = b / common(b, s) * s;
+        let unit = [both, b, s].into_iter().find(|u| qty % u == 0).unwrap_or(1);
+        let per = i128::from(qty / unit) * i128::from(price);
+        let amount = phx_num::round::div_round(per, i128::from(base), phx_num::Round::HalfEven) * i128::from(unit);
+        let Ok(amount) = i64::try_from(amount) else {
+            capacity_exceeded!("a trade's money", i64::MAX, qty);
+        };
+        amount
+    }
+
     /// A row's party, the zone its goods stand in and its twins; none when the row is no longer live.
     pub(crate) fn goods_row(&self, rows: Rows, slot: Slot) -> Option<Row> {
         let geo = self.geo();
@@ -787,9 +811,7 @@ impl World {
             if m.qty % base != 0 {
                 violation!(clause = "REP.9", "a match of less than whole lots", market = market.get());
             }
-            let Some(amount) = (m.qty / base).checked_mul(m.price.raw()) else {
-                capacity_exceeded!("a trade's money", i64::MAX, m.qty);
-            };
+            let amount = self.trade_amount((buyer, m.seller), m.qty, (m.price.raw(), base));
             let ccy = self.books.ledger.instruments.get(good).ccy;
             let (place, slot) = self.books.parties.row(m.seller);
             let held = match phx_ledger::holding::holding(self.books.parties.holder(place), slot, good) {

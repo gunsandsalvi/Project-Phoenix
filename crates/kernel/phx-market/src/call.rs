@@ -203,18 +203,79 @@ fn fill_side(orders: &[Order], side: Side, price: i64, volume: i128, rule: Ratio
     fills
 }
 
-/// The buyers' fills paired with the sellers' in the order of their parties, each pair a match at the price; a
-/// party on both sides trades with itself for nothing, so only what it bought or sold beyond the other is matched.
-fn pair(orders: &[Order], fills: &[i128], price: PriceRaw) -> Vec<Match> {
-    let mut net: BTreeMap<PartyId, i128> = BTreeMap::new();
-    for (o, f) in orders.iter().zip(fills) {
+/// The greatest count dividing both.
+fn common(a: i128, b: i128) -> i128 {
+    let (mut a, mut b) = (a, b);
+    while b != 0 {
+        (a, b) = (b, a % b);
+    }
+    a
+}
+
+/// The buyers' fills paired with the sellers' at the price, each pair a match in whole lots of both its parties, so
+/// an agent trades a whole share for each twin with each counterparty: the largest lots paired first, among parties
+/// in their order; a party on both sides trades with itself for nothing, so only what it bought or sold beyond the
+/// other is matched. What no counterparty's lots can meet is cut from its fills, as many on each side, so the call
+/// still trades as much as it buys.
+fn pair(orders: &[Order], fills: &mut [i128], price: PriceRaw) -> Vec<Match> {
+    let mut net: BTreeMap<PartyId, (i128, i128)> = BTreeMap::new();
+    for (o, f) in orders.iter().zip(fills.iter()) {
         let signed = match o.side {
             Side::Buy => *f,
             Side::Sell => -*f,
         };
-        *net.entry(o.party).or_insert(0) += signed;
+        let e = net.entry(o.party).or_insert((0, i128::from(o.lot)));
+        e.0 += signed;
+        if i128::from(o.lot) > e.1 {
+            e.1 = i128::from(o.lot);
+        }
     }
-    pair_net(&net, price)
+    let side = |buying: bool| -> Vec<(PartyId, i128, i128)> {
+        let mut v: Vec<(PartyId, i128, i128)> = net
+            .iter()
+            .filter(|(_, (q, _))| if buying { *q > 0 } else { *q < 0 })
+            .map(|(p, (q, lot))| (*p, q.abs(), *lot))
+            .collect();
+        v.sort_by_key(|(p, _, lot)| (core::cmp::Reverse(*lot), *p));
+        v
+    };
+    let (mut buyers, mut sellers) = (side(true), side(false));
+    let mut out = Vec::new();
+    for buyer in &mut buyers {
+        for seller in &mut sellers {
+            let step = buyer.2 / common(buyer.2, seller.2) * seller.2;
+            let q = lesser(buyer.1, seller.1);
+            let q = q - q % step;
+            if q <= 0 {
+                continue;
+            }
+            let Ok(qty) = i64::try_from(q) else {
+                capacity_exceeded!("a match's quantity", i64::MAX, 0);
+            };
+            out.push(Match { buyer: Buyer::Party(buyer.0), seller: seller.0, qty, price, draws: Missing::Absent });
+            buyer.1 -= q;
+            seller.1 -= q;
+            if buyer.1 == 0 {
+                break;
+            }
+        }
+    }
+    // What stayed unpaired leaves the fills of the orders on its party's net side, the last first.
+    for (party, left, _) in buyers.iter().chain(&sellers).filter(|(_, left, _)| *left > 0) {
+        let mut left = *left;
+        let buying = net.get(party).is_some_and(|(q, _)| *q > 0);
+        for (o, f) in orders.iter().zip(fills.iter_mut()).rev() {
+            if left == 0 {
+                break;
+            }
+            if o.party == *party && (o.side == Side::Buy) == buying {
+                let cut = lesser(*f, left);
+                *f -= cut;
+                left -= cut;
+            }
+        }
+    }
+    out
 }
 
 /// Parties' net purchases (positive) and sales (negative) at one price paired in the order of their parties.
@@ -316,11 +377,13 @@ pub fn call(orders: &[Order], rules: CallRules<'_>, lot: &mut Draws) -> Outcome 
         return Outcome::Failed(FailureKind::NoOverlap);
     }
     let price = PriceRaw::from_raw(*price);
-    let matches = pair(orders, &per_order, price);
+    let mut per_order = per_order;
+    let matches = pair(orders, &mut per_order, price);
     // Fills that only net a party's own bids against its own offers change no hands.
     if matches.is_empty() {
         return Outcome::Failed(FailureKind::NoOverlap);
     }
+    let volume: i128 = matches.iter().map(|m| i128::from(m.qty)).sum();
     let fills = per_order
         .iter()
         .enumerate()
@@ -390,6 +453,20 @@ mod tests {
 
     fn filled(c: &Cleared, order: usize) -> i64 {
         c.fills.iter().filter(|f| f.order == order).map(|f| f.qty).sum()
+    }
+
+    #[test]
+    fn each_match_is_whole_lots_of_both_parties() {
+        let mut agent = order(1, Side::Buy, &[(10, 6)]);
+        agent.lot = 3;
+        let orders = vec![agent, order(2, Side::Sell, &[(9, 4)]), order(3, Side::Sell, &[(9, 2)])];
+        let Outcome::Cleared(c) = call(&orders, rules(None), &mut draws()) else { panic!("the call clears") };
+        assert!(c.matches.iter().all(|m| m.qty % 3 == 0), "an agent of three twins trades threes: {:?}", c.matches);
+        assert_eq!(c.matches.iter().map(|m| m.qty).sum::<i64>(), c.volume, "the volume is what was matched");
+        assert_eq!(c.volume, 3, "one seller's three is all the agent can take whole");
+        let bought: i64 = c.fills.iter().filter(|f| f.order == 0).map(|f| f.qty).sum();
+        let sold: i64 = c.fills.iter().filter(|f| f.order > 0).map(|f| f.qty).sum();
+        assert_eq!(bought, sold, "what could not pair is cut from both sides alike");
     }
 
     #[test]

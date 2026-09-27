@@ -13,7 +13,7 @@ use phx_macros::clause;
 use phx_market::intents::ShopIntent;
 use phx_market::print::{Buyer, Match};
 use phx_market::retail::{InReach, RetailKind, Shopper, Stall, Want, Weights};
-use phx_num::{Missing, Qty, capacity_exceeded, violation};
+use phx_num::{Missing, Qty, violation};
 use phx_pop::population::Population;
 use phx_rand::{Subject, SubjectTag};
 use phx_store::SystemBacking;
@@ -233,8 +233,12 @@ impl World {
                 if price > 0 && units >= base {
                     let good = self.good(GoodKey { product, grade: 0, zone });
                     self.market_day.makers.insert(seller, way);
-                    let stall =
-                        Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: units - units % base };
+                    let stall = Stall {
+                        seller,
+                        price: phx_num::PriceRaw::from_raw(price),
+                        units: units - units % base,
+                        twins: i64::from(self.books.parties.unit(seller)),
+                    };
                     out.entry(product).or_default().push((stall, zone, good));
                 }
                 continue;
@@ -252,7 +256,12 @@ impl World {
                 - self.books.ledger.covers.committed(seller, good)
                 - pending.get(&(seller, good)).copied().unwrap_or(0);
             if price > 0 && free >= base {
-                let stall = Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: free };
+                let stall = Stall {
+                    seller,
+                    price: phx_num::PriceRaw::from_raw(price),
+                    units: free,
+                    twins: i64::from(self.books.parties.unit(seller)),
+                };
                 out.entry(product).or_default().push((stall, zone, good));
             }
         }
@@ -520,9 +529,7 @@ impl World {
                 violation!(clause = "GDS.1", "a retail market over no good", market = s.market.get());
             };
             let base = self.goods_frame.base(key.product);
-            let Some(amount) = (s.matched.qty / base).checked_mul(s.matched.price.raw()) else {
-                capacity_exceeded!("a purchase's money", i64::MAX, s.matched.qty);
-            };
+            let amount = self.trade_amount((buyer, s.matched.seller), s.matched.qty, (s.matched.price.raw(), base));
             let instrument = self.books.ledger.instruments.get(s.good);
             if self.market_day.makers.contains_key(&s.matched.seller) && !made.contains(&(s.matched.seller, s.good)) {
                 continue;
