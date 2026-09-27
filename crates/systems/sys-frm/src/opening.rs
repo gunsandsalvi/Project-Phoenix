@@ -41,12 +41,12 @@ fn subject(country: CountryId, purpose: u32, ordinal: u32) -> phx_rand::Subject 
     opening_subject(u32::from(country.get()) * PURPOSES + purpose, ordinal)
 }
 
-/// The sizes, in persons employed, of the `rank` largest of `firms` firms whose sizes follow a Pareto law of exponent
-/// `alpha` from one person up, largest first: the top order statistics drawn one after another, each the one before
+/// The sizes, on the firm-size law of scale one, of the `rank` largest of `firms` firms whose sizes follow a Pareto
+/// law of exponent `alpha`, largest first: the top order statistics drawn one after another, each the one before
 /// times a uniform to the power of one over the firms left, in logs so the largest keep their precision.
 #[clause("GEN.2")]
 #[must_use]
-pub fn largest(firms: u64, rank: u64, alpha: f64, draws: &mut phx_rand::Draws) -> Vec<u64> {
+pub fn largest(firms: u64, rank: u64, alpha: f64, draws: &mut phx_rand::Draws) -> Vec<f64> {
     if rank > firms {
         violation!(clause = "REP.2", "a promotion rank beyond the country's firms", rank = rank, firms = firms);
     }
@@ -54,11 +54,7 @@ pub fn largest(firms: u64, rank: u64, alpha: f64, draws: &mut phx_rand::Draws) -
     (0..rank)
         .map(|k| {
             log_cdf += open_unit(draws).ln() / from_u64(firms - k);
-            let size = (-log_cdf.exp_m1()).powf(-1.0 / alpha);
-            let Some(n) = floor_to_u64(size) else {
-                violation!(clause = "GEN.2", "a firm's size beyond counting", rank = k);
-            };
-            n
+            (-log_cdf.exp_m1()).powf(-1.0 / alpha)
         })
         .collect()
 }
@@ -84,7 +80,10 @@ impl Parties {
         let rank = p.rank.shared(register).get() * c.people / MILLION;
         let alpha = p.size_exponent.shared(register).to_f64();
         let mut draws = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, SIZES, 0));
-        let sizes = largest(firms, rank, alpha, &mut draws);
+        let standard = largest(firms, rank, alpha, &mut draws);
+        // The law's scale is where the firms' sizes sum to the employed, the firms counted by their density.
+        let law = crate::law::Law { scale: crate::law::scale(employed, &standard, firms - rank, alpha), alpha };
+        let sizes: Vec<u64> = standard.iter().map(|y| law.whole(*y)).collect();
         let by_size = industries(p.industries, register, c);
         let industry = <if_firm::known::Industry as FactDef>::ITEM.name;
         let mut headcounts: Vec<(PartyId, u64)> = Vec::with_capacity(sizes.len());
@@ -113,8 +112,9 @@ impl Parties {
             key(FIRMS, c.id),
             format!(
                 "the {rank} largest of {firms} firms (FRM.firms_per_employed over {employed:.0} employed) by a Pareto \
-                 law of exponent {alpha} (FRM.size_exponent, Axtell 2001), each in an industry drawn by its size \
-                 (FRM.industry_by_size)"
+                 law of exponent {alpha} (FRM.size_exponent, Axtell 2001) from {:.4} persons, the scale at which the \
+                 firms' sizes sum to the employed, each in an industry drawn by its size (FRM.industry_by_size)",
+                law.scale
             ),
         ));
     }

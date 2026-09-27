@@ -8,6 +8,7 @@ pub mod decide;
 pub mod families;
 pub mod filed;
 pub mod industry;
+mod law;
 mod opening;
 pub mod produce;
 pub mod rules;

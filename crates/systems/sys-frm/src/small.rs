@@ -58,13 +58,6 @@ pub struct SmallFirms {
     pub prims: SmallPrims,
 }
 
-/// The share of firms of a Pareto law of exponent `alpha` from one person up whose whole size is `k`, and so falls
-/// between `k` and `k + 1`.
-fn at_size(k: u64, alpha: f64) -> f64 {
-    let k = from_u64(k);
-    k.powf(-alpha) - (k + 1.0).powf(-alpha)
-}
-
 fn drawn(b: &Books, name: &str, c: &OpeningCountry) -> Vec<(PartyId, u64)> {
     let Some(list) = b.drawn.get(&key(name, c.id)) else {
         violation!(clause = "GEN.3", "a small firms' draw read before it is drawn", country = c.id.get());
@@ -88,18 +81,18 @@ struct Firm {
 }
 
 /// The country's small-firm agents apportioned over the regions by their land and each region's over the banks by the
-/// banks' drawn sizes, each with its size drawn from the firm-size law below the cut and its industry by its size.
+/// banks' drawn sizes, each with its size drawn from the firm-size law up to the cut and its industry by its size.
 #[clause("FRM.23", "GEN.2", "REP.41")]
 fn draw_firms(
     c: &OpeningCountry,
     agents: u64,
-    (cut, alpha, by_size): (u64, f64, &crate::industry::Industries),
+    (cut, law, by_size): (u64, crate::law::Law, &crate::industry::Industries),
     banks: &[(PartyId, u64)],
     (lot, trade): (&mut phx_rand::Draws, &mut phx_rand::Draws),
 ) -> Vec<Firm> {
     let tiles: Vec<u64> = c.regions.iter().map(|(_, t)| len_u64(t.len())).collect();
     let bank_weights: Vec<u64> = banks.iter().map(|(_, w)| *w).collect();
-    let sizes = AliasTable::new(&(1..cut).map(|k| at_size(k, alpha)).collect::<Vec<f64>>());
+    let sizes = AliasTable::new(&(1..=cut).map(|k| law.at_size(k)).collect::<Vec<f64>>());
     let mut firms = Vec::new();
     for ((region, _), m) in c.regions.iter().zip(apportion(agents, &tiles, lot)) {
         for ((place, (bank, _)), k) in (1_u32..).zip(banks).zip(apportion(m, &bank_weights, lot)) {
@@ -181,10 +174,14 @@ impl SmallFirms {
         let at_of = |name: &str| attr(kd, name);
         let [region_at, size_at, bank_at, industry_at] =
             [REGION.name, SIZE.name, BANK_ATTR, if_firm::known::INDUSTRY.name].map(at_of);
-        let law =
-            (cut, p.size_exponent.shared(register).to_f64(), &crate::opening::industries(p.industries, register, c));
+        // The small firms take the persons the large leave, the law's scale set so they do in expectation.
+        let agents = small / k;
+        let persons = employed - from_u64(large.iter().map(|(_, n)| *n).sum());
+        let alpha = p.size_exponent.shared(register).to_f64();
+        let law = crate::law::Law { scale: crate::law::scale_to(persons, agents * k, cut, alpha), alpha };
+        let law = (cut, law, &crate::opening::industries(p.industries, register, c));
         let mut trade = ctx.draws(&SmallStream::DECL, subject(SMALL_INDUSTRIES));
-        let firms_drawn = draw_firms(c, small / k, law, &banks, (&mut lot, &mut trade));
+        let firms_drawn = draw_firms(c, agents, law, &banks, (&mut lot, &mut trade));
         let (tables, directory, space) = books.parties.cells_mut();
         let table = Population::table_mut::<SystemBacking>(tables, at);
         let places = [region_at, size_at, bank_at, industry_at];
@@ -231,7 +228,7 @@ impl SmallFirms {
         report.distributions.push((
             key(SMALL_FIRMS, c.id),
             format!(
-                "country {}: {firms_small} small firms below the individuals' rank's smallest of {cut} persons, as \
+                "country {}: {firms_small} small firms of up to the individuals' rank's smallest, {cut} persons, as \
                  {agents} agents of {k} twins, employing {employed_small} of {employed:.0} employed; regions by land, \
                  banks by the banks' drawn sizes, each firm's size by the firm-size law (FRM.size_exponent) and its \
                  industry by its size (FRM.industry_by_size); the \
@@ -283,17 +280,5 @@ impl Contribution for SmallFirms {
         for c in countries {
             self.open_country(opening, c);
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::at_size;
-
-    #[test]
-    fn the_law_shares_sum_to_the_firms_from_one_person() {
-        let alpha = 1.059;
-        let within: f64 = (1..100_000_u64).map(|k| at_size(k, alpha)).sum();
-        assert!((within - (1.0 - 100_000_f64.powf(-alpha))).abs() < 1e-12);
     }
 }

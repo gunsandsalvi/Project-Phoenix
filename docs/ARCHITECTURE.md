@@ -1527,10 +1527,15 @@ line, a flat monthly amount — the replacement rate of the mean wage — whose 
 who retires in the run claims it as it retires (`claim_pension`, beside the benefit's claim): a draw fixed for the
 person by a keyed stream (`SOC.pension_covered`) decides once whether its country's coverage takes it in, and if so it
 joins its country's pension line of its sex's replacement rate of the mean wage then, opened the first time a claim
-needs it, with as many of the treasury's members. The defined-benefit schemes lack sources (plan §11, F-045). The small firms are drawn with the parties, before the households: each country's firms below the
-individuals' rank (REP.2), by the firm-size law cut at the smallest the rank admits, counted by employment size class,
-apportioned over the regions by their land and over the banks by the banks' drawn sizes, and placed as agents of the
-small-firm kind, one for every `REP.multiplicity` firms, with region, size class and bank as attributes (§7.1). They
+needs it, with as many of the treasury's members. The defined-benefit schemes lack sources (plan §11, F-045). The firms are counted by
+their density over the employed (`FRM.firms_per_employed`) and sized by a Pareto law of the sourced exponent
+(`FRM.size_exponent`) whose scale is solved, by halving, so that the firms' whole sizes — each rounded up, as a firm
+employs whole persons — sum to the employed in expectation (`sys-frm`'s `law`). The largest, down to the individuals'
+rank (REP.2), are drawn first as the top order statistics of the law of scale one and scaled. The small firms are
+drawn with the parties, before the households: each country's firms below the rank, the law's scale solved again so
+they employ what the large firms leave, sized up to the smallest the rank admits, apportioned over the regions by their
+land and over the banks by the banks' drawn sizes, and placed as agents of the small-firm kind, one for every
+`REP.multiplicity` firms, with region, size and bank as attributes (§7.1). They
 hold the firms' deposits and debt the large firms do not, by their employees, on each bank's lines for them, and are
 employers on the employment lines by their headcount beside the large firms. The large firms are rows of the kernel's
 firm kind table, individuals (REP.2).
