@@ -876,7 +876,7 @@ Then:
   alike. What no unit fits (an individual's count need not be a multiple of the agents' units) passes instead, by
   moving members, to other holders of the leaving party's own side whose unit fits in it, each drawn by its members
   and taking every whole unit of what is left whatever it holds, as a buyer of the contracts would take them, with no
-  arrears carried, since no one failed them (the plan's F-074); if no holder's unit fits there either, the run stops
+  arrears carried, since no one failed them — a representation's remainder, not a debt; if no holder's unit fits there either, the run stops
   (REP.31). An agent drawn loses, from its persons, a
   twin's share of the members that left, drawn among its attachments on that side of the line
   (`World::detach`), so its persons still hold what its rows count. A side's members by holder are read once
