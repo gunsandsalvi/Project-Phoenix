@@ -74,7 +74,7 @@
       "title": "Population aged 15 and over with a disability and in total, thousands, by sex and age band (DF_POP_XWAP_SEX_AGE_DSB_NB), ILOSTAT"
     },
     "ilo/employment_by_activity": {
-      "rows": 52504,
+      "rows": 103454,
       "title": "Employment by economic activity and occupation, thousands (DF_EMP_TEMP_ECO_OCU_NB), ILOSTAT"
     },
     "ilo/employment_rate": {
@@ -82,7 +82,7 @@
       "title": "Employment-to-population ratio by sex and ten-year age band, % (DF_EMP_DWAP_SEX_AGE_RT), ILOSTAT"
     },
     "ilo/hours_by_activity": {
-      "rows": 45907,
+      "rows": 91977,
       "title": "Average weekly hours actually worked per employed person by economic activity and occupation (DF_HOW_TEMP_ECO_OCU_NB), ILOSTAT"
     },
     "ilo/occupation": {
@@ -130,7 +130,7 @@
       "title": "Households by tenure (own outright, owner with mortgage, rent private, rent subsidised, other), share of households, by year, OECD Affordable Housing Database HM1.3.A1"
     },
     "oecd/fixed_assets": {
-      "rows": 47120,
+      "rows": 47381,
       "title": "Net fixed assets at current prices by activity and asset, closing stocks, national currency, millions (Table 9A), OECD"
     },
     "oecd/pensions": {
@@ -138,7 +138,7 @@
       "title": "Current normal pension age for a worker entering at 22 (years, by sex), gross replacement rate of mandatory schemes at average earnings (% of pre-retirement earnings, by sex), and public and occupational transfers' shares of the disposable income of people over 65 (%), OECD Pensions at a Glance (DF_PAG)"
     },
     "oecd/value_added": {
-      "rows": 20037,
+      "rows": 20085,
       "title": "Gross value added at current prices by activity, national currency, millions (Table 6), OECD"
     },
     "owid/labor-share-of-gdp": {
@@ -147,7 +147,7 @@
     },
     "prices/commodities": {
       "rows": 5,
-      "title": "2022 annual averages: crude oil, coal and iron ore from the World Bank's Pink Sheet (nominal US$), the crushed stone unit value from U.S. Geological Survey Mineral Commodity Summaries 2023, and the euro area's official exchange rate (PA.NUS.FCRF)"
+      "title": "2019 annual averages: crude oil, coal and iron ore from the World Bank's Pink Sheet (nominal US$), the crushed stone unit value from U.S. Geological Survey Mineral Commodity Summaries 2023, and the United States' GDP deflator (NY.GDP.DEFL.ZS) of 2022 over 2019"
     },
     "sdbs/EMPN_S_GE250": {
       "rows": 256,
@@ -178,7 +178,7 @@
       "title": "Older persons (60+, 65+, 80+) by sex living alone, as a couple only, with a partner, with children under 20 and with children 20 or over, % of older persons, UN DESA Database on the Households and Living Arrangements of Older Persons 2026"
     },
     "wb/AG.LND.AGRI.K2": {
-      "rows": 1049,
+      "rows": 1050,
       "title": "Agricultural land, square kilometres (AG.LND.AGRI.K2), World Development Indicators"
     },
     "wb/FD.RES.LIQU.AS.ZS": {
@@ -360,7 +360,7 @@
       "url": "https://stats.oecd.org/wbos/fileview2.aspx?IDFile=d1ab2315-298c-4e93-9a81-c6f2273139fe"
     },
     "ilo_activity": {
-      "fetched": "2026-09-26",
+      "fetched": "2026-09-27",
       "title": "ILOSTAT SDMX API",
       "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2015"
     },
@@ -394,9 +394,9 @@
       "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}"
     },
     "oecd_nad": {
-      "fetched": "2026-09-26",
+      "fetched": "2026-09-27",
       "title": "OECD Data Explorer, SDMX API",
-      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@<table>,/<key>?startPeriod=2018&endPeriod=2022&format=csvfile"
+      "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@<table>,/<key>?startPeriod=2015&endPeriod=2019&format=csvfile"
     },
     "owid": {
       "title": "Our World in Data grapher CSV",
@@ -408,7 +408,7 @@
       "url": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SPD,DSD_PAG@DF_PAG,/all?format=csvfile; https://sdmx.ilo.org/rest/data/ILO,DF_SDG_0131_SEX_SOC_RT,1.0/all?startPeriod=2010"
     },
     "prices": {
-      "fetched": "2026-09-26",
+      "fetched": "2026-09-27",
       "title": "World Bank ICP 2021 and Pink Sheet; USGS Mineral Commodity Summaries",
       "url": "https://api.worldbank.org/v2/sources/90/country/all/series/<heading>/classification/PX.WL/time/YR2021?format=json&per_page=1000"
     },
@@ -433,9 +433,9 @@
       "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}"
     },
     "wb_land": {
-      "fetched": "2026-09-26",
+      "fetched": "2026-09-27",
       "title": "World Bank API",
-      "url": "https://api.worldbank.org/v2/country/all/indicator/AG.LND.AGRI.K2?format=json&date=2018:2022&per_page=20000"
+      "url": "https://api.worldbank.org/v2/country/all/indicator/AG.LND.AGRI.K2?format=json&date=2015:2019&per_page=20000"
     },
     "wcde": {
       "fetched": "2026-09-24",
