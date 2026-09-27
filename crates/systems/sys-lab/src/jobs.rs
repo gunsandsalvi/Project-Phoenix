@@ -210,7 +210,7 @@ impl AttachmentDraw for Jobs {
             searching,
             occupations,
             tenure,
-            wage: crate::law::mean_wage(c),
+            wage: phx_ledger::opening::mean_wage(c),
             mean_hours,
             kind: books.ledger.lines.kind_index(EMPLOYMENT.name),
             schedule: Schedule { dates, count: Missing::Absent },

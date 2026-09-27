@@ -89,6 +89,24 @@ pub fn derived(country: &OpeningCountry, name: &str) -> f64 {
     v
 }
 
+/// The persons a country employs at the opening: its people from 15 at its employment rate.
+#[clause("GEN.2")]
+#[must_use]
+pub fn employed(country: &OpeningCountry) -> f64 {
+    let percent = phx_core::consts::PERCENT_F64;
+    let adults = 1.0 - derived(country, "GEN.share_under_15") / percent;
+    phx_rand::float::from_u64(country.people) * adults * derived(country, "GEN.employment_rate") / percent
+}
+
+/// The mean monthly wage of the employed at the opening: labour's share of the country's output over them, a
+/// month's.
+#[clause("GEN.2")]
+#[must_use]
+pub fn mean_wage(country: &OpeningCountry) -> f64 {
+    let share = derived(country, "GEN.labour_share") / phx_core::consts::PERCENT_F64;
+    share * country.gdp / employed(country) / f64::from(crate::consts::MONTHS_A_YEAR)
+}
+
 /// Monthly dates from an anchor, on the anchor's day of each month, a date on no business day moved to the next.
 #[must_use]
 pub fn monthly(anchor: phx_id::Date, country: CountryId) -> phx_core::calendar::period::ScheduleDates {

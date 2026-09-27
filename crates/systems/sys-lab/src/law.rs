@@ -6,7 +6,7 @@ use phx_id::CountryId;
 use phx_macros::clause;
 use phx_num::Missing;
 
-use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, MONTHS_PER_YEAR, PERCENT};
+use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, MONTHS_PER_YEAR};
 
 /// A table of one axis over places in order, whole.
 fn places(register: &Register, id: &str, country: CountryId) -> Result<Vec<u32>, String> {
@@ -19,17 +19,6 @@ fn places(register: &Register, id: &str, country: CountryId) -> Result<Vec<u32>,
 
 fn whole(register: &Register, id: &str, country: CountryId) -> Result<u32, String> {
     u32::try_from(register.count_in(id, country)?).map_err(|e| format!("`{id}`: {e}"))
-}
-
-/// The mean monthly wage of a job at the opening: the labour share of the country's output over its employed, a
-/// month's.
-#[clause("GEN.2", "LAB.1")]
-#[must_use]
-pub fn mean_wage(c: &OpeningCountry) -> f64 {
-    let d = |name| phx_ledger::opening::derived(c, name);
-    let adults = 1.0 - d("GEN.share_under_15") / PERCENT;
-    let workers = phx_rand::float::from_u64(c.people) * adults * d("GEN.employment_rate") / PERCENT;
-    d("GEN.labour_share") / PERCENT * c.gdp / workers / MONTHS_PER_YEAR
 }
 
 /// The months of age each sex's state pension begins at, by the sex's place, from its law in years.
@@ -63,9 +52,13 @@ pub fn law(register: &Register, c: &OpeningCountry) -> Result<Law, String> {
         full_time_hours: whole(register, crate::FULL_TIME_HOURS.id, id)?,
         notice_days: whole(register, crate::NOTICE_DAYS.id, id)?,
         severance_days_a_year: whole(register, crate::SEVERANCE_DAYS.id, id)?,
-        mean_monthly: mean_wage(c),
+        mean_monthly: phx_ledger::opening::mean_wage(c),
         // A law that sets no minimum declares none, as no share of the mean wage.
-        minimum_monthly: if share > 0.0 { Missing::Present(share * mean_wage(c)) } else { Missing::Absent },
+        minimum_monthly: if share > 0.0 {
+            Missing::Present(share * phx_ledger::opening::mean_wage(c))
+        } else {
+            Missing::Absent
+        },
         point_ratio: register.fixed(crate::WAGE_POINT_RATIO.id)?,
         patience_days: whole(register, crate::PATIENCE_DAYS.id, id)?,
         applications_a_week: register.fixed(crate::APPLICATIONS.id)?,

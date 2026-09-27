@@ -1,13 +1,13 @@
 use phx_core::{Contribution, FactDef, Opening, OpeningCountry, OpeningPhase, PARTIES, StreamDef, opening_subject};
 use phx_id::{CountryId, PartyId};
 use phx_ledger::books;
-use phx_ledger::opening::{derived, key};
+use phx_ledger::opening::key;
 use phx_macros::clause;
 use phx_num::violation;
 use phx_rand::float::{floor_to_u64, from_u64};
 use phx_rand::open_unit;
 
-use crate::consts::{INDUSTRIES, MILLION, PERCENT, PURPOSES, SITES, SIZES};
+use crate::consts::{INDUSTRIES, MILLION, PURPOSES, SITES, SIZES};
 use crate::industry::Industries;
 use crate::{CountPrim, FIRM, FixedPrim, OpeningStream, TablePrim};
 
@@ -72,8 +72,7 @@ impl Parties {
     fn open_country(&self, opening: &mut Opening<'_>, c: &OpeningCountry) {
         let (register, day) = (opening.register, opening.day);
         let p = self.prims;
-        let adults = 1.0 - derived(c, "GEN.share_under_15") / PERCENT;
-        let employed = from_u64(c.people) * adults * derived(c, "GEN.employment_rate") / PERCENT;
+        let employed = phx_ledger::opening::employed(c);
         let Some(firms) = floor_to_u64(employed * p.firms_per_employed.get(register, c.id).to_f64()) else {
             violation!(clause = "GEN.2", "a country's firms beyond counting", country = c.id.get());
         };

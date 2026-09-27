@@ -149,8 +149,7 @@ impl SmallFirms {
             violation!(clause = "GEN.3", "an opening handed something other than the world's books and population");
         };
         let p = self.prims;
-        let adults = 1.0 - derived(c, "GEN.share_under_15") / PERCENT;
-        let employed = from_u64(c.people) * adults * derived(c, "GEN.employment_rate") / PERCENT;
+        let employed = phx_ledger::opening::employed(c);
         let large = drawn(books, FIRMS, c);
         let Some(firms) = phx_rand::float::floor_to_u64(employed * p.firms_per_employed.get(register, c.id).to_f64())
         else {

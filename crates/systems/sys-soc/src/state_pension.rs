@@ -12,14 +12,14 @@ use phx_ledger::algebra::{Leg, Schedule, Side};
 use phx_ledger::attachments::{AttachmentDraw, Balance, CountryAttachments, Drawing, DrawnRow, Holder, LineSpec};
 use phx_ledger::books::{self, Books};
 use phx_ledger::line::{LineKindDecl, SideDecl};
-use phx_ledger::opening::{currency, derived, key, monthly, plain_terms, whole};
+use phx_ledger::opening::{currency, key, monthly, plain_terms, whole};
 use phx_ledger::rows::BALANCE;
 use phx_ledger::terms::TermsId;
 use phx_macros::clause;
 use phx_num::{Missing, Money, violation};
 use phx_rand::{Subject, open_unit};
 
-use crate::consts::{AGE_PARTS, MONTHS_PER_YEAR, PERCENT, SHARE_PARTS};
+use crate::consts::{AGE_PARTS, SHARE_PARTS};
 
 declare_stream! { pub PensionStream = "SOC.opening_pensions" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 
@@ -146,9 +146,7 @@ impl AttachmentDraw for StatePension {
         let Some(&[(treasury, _)]) = books.drawn.get(&key(TREASURIES, c.id)).map(Vec::as_slice) else {
             violation!(clause = "GEN.3", "the state pension read before one treasury is drawn", country = c.id.get());
         };
-        let adults = 1.0 - derived(c, "GEN.share_under_15") / PERCENT;
-        let workers = phx_rand::float::from_u64(c.people) * adults * derived(c, "GEN.employment_rate") / PERCENT;
-        let wage = derived(c, "GEN.labour_share") / PERCENT * c.gdp / workers / MONTHS_PER_YEAR;
+        let wage = phx_ledger::opening::mean_wage(c);
         let ccy = currency(c.id);
         let date = calendar.date(today);
         let dates = monthly(date, c.id);
