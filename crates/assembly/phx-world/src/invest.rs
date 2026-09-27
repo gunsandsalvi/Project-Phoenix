@@ -151,15 +151,23 @@ impl World {
     /// 6d: each project's stage, due today: the builder's goods, made as they are delivered for a service or taken
     /// from its stock, used up by the purchase that names the owner; the owner's money to the builder at the agreed
     /// price; and the units into the owner's plant under construction at what it paid. A stage its builder cannot
-    /// deliver waits for another day.
+    /// deliver waits for another day, and a project whose last stage has not settled yet, as over a weekend, waits for
+    /// it, since what it has left is known only once that stage settles.
     #[clause("CAP.5", "CAP.2", "SET.1")]
     pub(crate) fn invest_trade(&mut self, day: Day) {
         let Missing::Present(reason) = self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(BOUGHT))
         else {
             violation!(clause = "SET.1", "a project's stage under a reason never declared");
         };
-        let due: Vec<(u64, Project)> =
-            self.books.ledger.chains.projects().filter(|(_, p)| p.ordered <= day).map(|(n, p)| (n, *p)).collect();
+        let in_flight: std::collections::BTreeSet<u64> = self.market_day.stages.values().map(|(n, _)| *n).collect();
+        let due: Vec<(u64, Project)> = self
+            .books
+            .ledger
+            .chains
+            .projects()
+            .filter(|(n, p)| p.ordered <= day && !in_flight.contains(n))
+            .map(|(n, p)| (n, *p))
+            .collect();
         for (n, p) in due {
             let qty = if p.left < p.stage { p.left } else { p.stage };
             let Missing::Present(key) = self.books.ledger.goods.key(p.good) else {
