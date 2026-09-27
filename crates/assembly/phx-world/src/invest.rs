@@ -195,10 +195,8 @@ impl World {
                         Missing::Present(h) => h.quantity.raw(),
                         Missing::Absent => 0,
                     };
-                    let pledged = self.books.ledger.liens.pledged(p.builder, p.good);
                     let unit = self.books.ledger.instruments.get(p.good).unit;
-                    let Ok(c) = self.books.ledger.covers.cover(p.builder, p.good, Qty::new(qty, unit), held, pledged)
-                    else {
+                    let Ok(c) = self.books.ledger.cover(p.builder, p.good, Qty::new(qty, unit), held) else {
                         self.market_day.tally.waiting += 1;
                         continue;
                     };

@@ -153,9 +153,8 @@ impl World {
             Missing::Present(h) => h.quantity.raw(),
             Missing::Absent => 0,
         };
-        let pledged = self.books.ledger.liens.pledged(row.party, good);
         let unit = self.books.ledger.instruments.get(good).unit;
-        let Ok(cover) = self.books.ledger.covers.cover(row.party, good, Qty::new(qty, unit), held, pledged) else {
+        let Ok(cover) = self.books.ledger.cover(row.party, good, Qty::new(qty, unit), held) else {
             self.market_day.tally.refused += 1;
             return;
         };
@@ -437,9 +436,7 @@ impl World {
                 Missing::Present(h) => h.quantity.raw(),
                 Missing::Absent => 0,
             };
-            let bound_units = self.books.ledger.covers.committed(b.ship.party, b.ship.good);
-            let lien =
-                self.books.ledger.liens.pledge(b.ship.party, b.ship.good, b.ship.qty, b.carrier, held, bound_units);
+            let lien = self.books.ledger.pledge(b.ship.party, b.ship.good, b.ship.qty, b.carrier, held);
             let Some(period) = u16::try_from(days).ok().and_then(phx_core::calendar::period::Period::days) else {
                 capacity_exceeded!("a shipment's days", u16::MAX, days);
             };

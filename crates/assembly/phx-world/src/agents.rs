@@ -739,8 +739,26 @@ impl World {
         persons
     }
 
+    /// One named person of an agent detached from a line, where the contract that left was that person's own.
+    pub(crate) fn detach_person(&mut self, (party, person): (PartyId, u32), (line, side): (LineId, Side)) {
+        let (place, slot) = self.books.parties.row(party);
+        let first = self.books.parties.first_cell_place();
+        let Some(kind) = place.checked_sub(first).map(usize::from) else { return };
+        let Ok(at) = usize::try_from(person) else {
+            violation!(clause = "REP.26", "a person beyond a household's", party = party.get());
+        };
+        let word = phx_pop::person::Attachment { holder: phx_pop::person::Holder::Person(at), line, side }.pack();
+        let table = Population::table_mut::<SystemBacking>(self.books.parties.cells_mut().0, kind);
+        let words = table.attachments(slot).to_vec();
+        let Some(i) = words.iter().position(|w| *w == word) else {
+            violation!(clause = "REP.26", "a person detached from a line it is not on", party = party.get());
+        };
+        let kept: Vec<u64> = words.iter().enumerate().filter(|(j, _)| *j != i).map(|(_, w)| *w).collect();
+        table.set_attachments(slot, &kept);
+    }
+
     /// An agent no one is left in ended: what it holds passes to one estate sited in its region, and its row and
-    /// identity end.
+    /// identity end, naming that estate its successor.
     #[clause("PTY.9", "POP.15", "REP.16")]
     pub(crate) fn end_agent(
         &mut self,
@@ -758,6 +776,7 @@ impl World {
                 phx_ledger::rows::rows(table, slot).iter().map(|r| (r.row.line, r.side(), r.row.count)).collect();
             (rows, table.multiplicity(slot).get(), table.list(slot, AgentList::Holdings).len != 0)
         };
+        let mut successor = Missing::Absent;
         if !rows.is_empty() || holds {
             let Some(region) = region else {
                 violation!(
@@ -772,6 +791,9 @@ impl World {
             // An agent's twins leave an estate each, alike: one estate standing for them all.
             let estate = self.books.parties.begin_weighted(phx_core::ESTATE_KIND.name, site, day, twins);
             let succeeded = self.books.dues.succeeded;
+            // The estate takes what binds the agent's units with them: its offers not yet settled and its pledges.
+            self.books.ledger.succeed(party, estate);
+            successor = Missing::Present(estate);
             for (line, side, count) in rows {
                 let t = LineTransfer { line, side, from: party, to: estate, count, reason: succeeded };
                 if let Err(f) = self.books.transfer(t, m, self.audit.stream()) {
@@ -796,7 +818,7 @@ impl World {
         let twins = u64::from(twins);
         let id = table.id();
         table.remove(slot);
-        directory.end(party, day, Missing::Absent);
+        directory.end(party, day, successor);
         self.accounts.close(party);
         if self.population.agenda_table(kind).is_some() {
             self.population.agenda.release(id, slot);

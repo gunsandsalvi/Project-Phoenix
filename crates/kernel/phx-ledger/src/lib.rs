@@ -37,6 +37,7 @@ pub mod rows;
 pub mod runs;
 pub mod standing;
 pub mod stream;
+pub mod succession;
 pub mod synthetic;
 pub mod terms;
 pub mod transfer;

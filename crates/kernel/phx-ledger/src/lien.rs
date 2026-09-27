@@ -112,6 +112,13 @@ impl Liens {
         lien
     }
 
+    /// Whether any lien stands on a holder's units.
+    #[must_use]
+    pub fn binds(&self, holder: PartyId) -> bool {
+        let from = LienKey { holder, instrument: InstrumentId::new(0), seq: 0 };
+        self.liens.range(from..).next().is_some_and(|(k, _)| k.holder == holder)
+    }
+
     /// The liens on a holding, in order.
     pub fn on(&self, holder: PartyId, instrument: InstrumentId) -> impl Iterator<Item = &Lien> {
         self.liens.range(range(holder, instrument)).map(|(_, l)| l)

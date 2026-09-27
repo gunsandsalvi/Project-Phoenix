@@ -265,6 +265,12 @@ pub fn phx_ledger::apply::Ledger<B>::position(&self, &dyn phx_ledger::holder::Ho
 pub fn phx_ledger::apply::Ledger<B>::recycle(&mut self, phx_ledger::apply::DayBook)
 pub fn phx_ledger::apply::Ledger<B>::settle(&mut self, &mut dyn phx_ledger::apply::Holders, phx_ledger::apply::ApplyAt, alloc::vec::Vec<phx_ledger::instruction::Instruction>, &mut dyn phx_core::family::AuditStream) -> alloc::vec::Vec<core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>>
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
+pub fn phx_ledger::apply::Ledger<B>::bound(&self, phx_id::ids::PartyId, phx_id::ids::InstrumentId) -> i64
+pub fn phx_ledger::apply::Ledger<B>::cover(&mut self, phx_id::ids::PartyId, phx_id::ids::InstrumentId, phx_num::qty::Qty, i64) -> core::result::Result<phx_ledger::covered::Covered, phx_ledger::covered::Uncovered>
+pub fn phx_ledger::apply::Ledger<B>::pledge(&mut self, phx_id::ids::PartyId, phx_id::ids::InstrumentId, i64, phx_id::ids::PartyId, i64) -> phx_ledger::lien::LienKey
+pub fn phx_ledger::apply::Ledger<B>::prune_successions(&mut self)
+pub fn phx_ledger::apply::Ledger<B>::succeed(&mut self, phx_id::ids::PartyId, phx_id::ids::PartyId)
+impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
 pub fn phx_ledger::apply::Ledger<B>::contract_process(&mut self, &mut dyn phx_ledger::apply::Holders, &[phx_ledger::fails::Fail], phx_id::day::Day)
 pub fn phx_ledger::apply::Ledger<B>::cure(&mut self, &mut dyn phx_ledger::apply::Holders, phx_id::ids::LineId, phx_ledger::algebra::Side, phx_id::ids::PartyId)
 impl<B: phx_store::backing::Backing> phx_ledger::apply::Ledger<B>
@@ -401,6 +407,7 @@ impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::apply(&mut self, phx_ledger::apply::ApplyAt, phx_ledger::instruction::Instruction, &mut dyn phx_core::family::AuditStream) -> core::result::Result<phx_ledger::instruction::InstructionId, phx_ledger::fails::Fail>
 pub fn phx_ledger::books::Books<B>::close(&mut self) -> phx_ledger::apply::DayBook
 pub fn phx_ledger::books::Books<B>::contract_process(&mut self, &[phx_ledger::fails::Fail], phx_id::day::Day)
+pub fn phx_ledger::books::Books<B>::end_into(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_id::ids::PartyId)
 pub fn phx_ledger::books::Books<B>::equity(&self, phx_id::ids::PartyId) -> i128
 pub fn phx_ledger::books::Books<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_ledger::books::Books<B>::new(&[&'static str], phx_ledger::books::BooksSize) -> phx_ledger::books::Books<B>
@@ -657,6 +664,7 @@ pub fn phx_ledger::covered::Covered::instrument(&self) -> phx_id::ids::Instrumen
 pub fn phx_ledger::covered::Covered::qty(&self) -> phx_num::qty::Qty
 pub struct phx_ledger::covered::Covers
 impl phx_ledger::covered::Covers
+pub fn phx_ledger::covered::Covers::binds(&self, phx_id::ids::PartyId) -> bool
 pub fn phx_ledger::covered::Covers::committed(&self, phx_id::ids::PartyId, phx_id::ids::InstrumentId) -> i64
 pub fn phx_ledger::covered::Covers::cover(&mut self, phx_id::ids::PartyId, phx_id::ids::InstrumentId, phx_num::qty::Qty, i64, i64) -> core::result::Result<phx_ledger::covered::Covered, phx_ledger::covered::Uncovered>
 pub fn phx_ledger::covered::Covers::release(&mut self, phx_ledger::covered::Covered)
@@ -1115,6 +1123,7 @@ pub fn phx_ledger::lien::LienKey::load(&mut phx_store::save::Reader<'_>) -> core
 pub fn phx_ledger::lien::LienKey::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::lien::Liens
 impl phx_ledger::lien::Liens
+pub fn phx_ledger::lien::Liens::binds(&self, phx_id::ids::PartyId) -> bool
 pub fn phx_ledger::lien::Liens::get(&self, phx_ledger::lien::LienKey) -> core::option::Option<&phx_ledger::lien::Lien>
 pub fn phx_ledger::lien::Liens::is_empty(&self) -> bool
 pub fn phx_ledger::lien::Liens::len(&self) -> usize
@@ -1394,6 +1403,14 @@ pub fn phx_ledger::stream::Records::get_or_insert_with(&mut self, phx_id::ids::P
 pub fn phx_ledger::stream::Records::sorted(&self) -> alloc::vec::Vec<(phx_id::ids::PartyId, phx_ledger::stream::Record)>
 pub fn phx_ledger::stream::Records::touched(&self) -> usize
 pub fn phx_ledger::stream::issuers(&[phx_ledger::instruction::LegRec]) -> alloc::vec::Vec<phx_id::ids::PartyId>
+pub mod phx_ledger::succession
+pub struct phx_ledger::succession::Successions
+impl phx_ledger::succession::Successions
+pub fn phx_ledger::succession::Successions::has_successor(&self, phx_id::ids::PartyId) -> bool
+pub fn phx_ledger::succession::Successions::stands_for(&self, phx_id::ids::PartyId, phx_id::ids::PartyId) -> bool
+impl phx_store::save::Saved for phx_ledger::succession::Successions where alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, phx_id::ids::PartyId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, alloc::vec::Vec<phx_id::ids::PartyId>>: phx_store::save::Saved
+pub fn phx_ledger::succession::Successions::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::succession::Successions::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::synthetic
 pub struct phx_ledger::synthetic::Settlement<B: phx_store::backing::Backing>
 pub phx_ledger::synthetic::Settlement::books: phx_ledger::books::Books<B>

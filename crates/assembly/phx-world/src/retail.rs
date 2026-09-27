@@ -251,10 +251,8 @@ impl World {
                 Missing::Present(h) => h.quantity.raw(),
                 Missing::Absent => 0,
             };
-            let free = held
-                - self.books.ledger.liens.pledged(seller, good)
-                - self.books.ledger.covers.committed(seller, good)
-                - pending.get(&(seller, good)).copied().unwrap_or(0);
+            let free =
+                held - self.books.ledger.bound(seller, good) - pending.get(&(seller, good)).copied().unwrap_or(0);
             if price > 0 && free >= base {
                 let stall = Stall {
                     seller,
@@ -484,9 +482,8 @@ impl World {
                 Missing::Present(h) => h.quantity.raw(),
                 Missing::Absent => 0,
             };
-            let pledged = self.books.ledger.liens.pledged(m.seller, good);
             let unit = self.books.ledger.instruments.get(good).unit;
-            let Ok(cover) = self.books.ledger.covers.cover(m.seller, good, Qty::new(m.qty, unit), held, pledged) else {
+            let Ok(cover) = self.books.ledger.cover(m.seller, good, Qty::new(m.qty, unit), held) else {
                 violation!(clause = "REG.10", "a sale of units its seller holds no more", party = m.seller.get());
             };
             self.market_day.sales.push(Sale { market, good, matched: m, cover: Missing::Present(cover) });

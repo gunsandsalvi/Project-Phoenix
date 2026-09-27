@@ -318,6 +318,18 @@ pub struct BooksSize {
 }
 
 impl<B: Backing> Books<B> {
+    /// Ends an individual whose rows and holdings have all passed to its successor, which `Ledger::succeed` named: its
+    /// row freed and its identity ended naming the successor, so what names it reaches the successor.
+    #[clause("PTY.9", "PTY.10", "L3")]
+    pub fn end_into(&mut self, party: PartyId, day: Day, successor: PartyId) {
+        let (place, slot) = self.parties.row(party);
+        let Some(table) = self.parties.tables.get_mut(usize::from(place)) else {
+            violation!(clause = "PTY.9", "a party ended outside the tables of individuals", party = party.get());
+        };
+        table.remove(slot);
+        self.parties.directory.end(party, day, Missing::Present(successor));
+    }
+
     /// The workers the books were given, if any.
     #[must_use]
     pub fn pool(&self) -> Option<&phx_exec::Pool> {
@@ -487,6 +499,7 @@ impl<B: Backing> Books<B> {
         phx_store::hash_saved(&l.arrears, h);
         phx_store::hash_saved(&l.procedures, h);
         phx_store::hash_saved(&l.chains, h);
+        phx_store::hash_saved(&l.successions, h);
     }
 
     /// Stage 2d's contract process over the books.
@@ -496,6 +509,7 @@ impl<B: Backing> Books<B> {
 
     /// The day's book, handed to the close.
     pub fn close(&mut self) -> DayBook {
+        self.ledger.prune_successions();
         self.ledger.close()
     }
 

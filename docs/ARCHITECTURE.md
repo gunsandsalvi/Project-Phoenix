@@ -1889,7 +1889,11 @@ experience weighting is (L − k)^θ over the annual means of the years lived.
 | Sovereign | `sys-trs` | Default and exchange offer |
 
 Estate rows are short-lived individuals, **one per ended party**: an agent's twins, which end together, share one
-estate, holding their count on every line and holding it succeeds to (§7.4). How many are open follows Little's
+estate, holding their count on every line and holding it succeeds to (§7.4). The ended party's identity names its
+estate as successor (PTY.10), so a trade or payment in flight that names it settles with the estate; and its units
+pass with what binds them — covers of offers not yet settled, as a weekend's sales are, and pledges — which stay under
+its name and count on the estate (`phx_ledger::succession`: `Ledger::bound`, and every cover and pledge placed through
+`Ledger::cover` and `Ledger::pledge`), a succession forgotten at the close once nothing is bound under the old name. How many are open follows Little's
 law, the rate of openings times their life: firms' about 800 a day × about 40 days, households' about 1 000 a day ×
 about 25 days, personal insolvencies' about 70 a day × about 45 days — about 60 thousand open, at 512 bytes each
 (§13.1). Their mean life and the number open are counted per kind.

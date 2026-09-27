@@ -160,7 +160,7 @@ impl World {
     }
 
     /// A party in default ended into an estate standing for as many real parties as it did, at its site, which
-    /// succeeds to every row and holding it had.
+    /// succeeds to every row and holding it had and is named its successor.
     fn default(&mut self, day: Day, party: PartyId, individuals: bool) {
         let m = MoveAt {
             contracts: phx_ledger::opening::contract_unit(&self.register),
@@ -183,6 +183,8 @@ impl World {
         let site = self.books.parties.site(party);
         let estate = self.books.parties.begin_weighted(phx_core::ESTATE_KIND.name, site, day, 1);
         let succeeded = self.books.dues.succeeded;
+        // The estate takes what binds the party's units with them: its offers not yet settled and its pledges.
+        self.books.ledger.succeed(party, estate);
         let rows: Vec<(LineId, Side, u32)> = phx_ledger::rows::rows(self.books.parties.holder(place), slot)
             .iter()
             .map(|r| (r.row.line, r.side(), r.row.count))
@@ -196,7 +198,7 @@ impl World {
         if let Err(f) = self.books.pass_holdings((party, estate), succeeded, m, self.audit.stream()) {
             violation!(clause = "PTY.9", "an estate's succession to holdings did not settle", party = f.party.get());
         }
-        self.books.parties.end(party, day);
+        self.books.end_into(party, day, estate);
         self.accounts.close(party);
         self.agent_day.estates += 1;
         self.agent_day.defaults += 1;

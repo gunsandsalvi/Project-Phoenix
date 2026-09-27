@@ -53,6 +53,12 @@ impl Covers {
         self.committed.get(&(holder, instrument)).copied().unwrap_or(0)
     }
 
+    /// Whether any of a holder's units cover an open offer.
+    #[must_use]
+    pub fn binds(&self, holder: PartyId) -> bool {
+        self.committed.range((holder, InstrumentId::new(0))..).next().is_some_and(|((h, _), _)| *h == holder)
+    }
+
     /// Units covering an offer, from those held or borrowed that are neither pledged nor already covering one.
     ///
     /// # Errors

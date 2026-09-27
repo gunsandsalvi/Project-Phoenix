@@ -196,6 +196,8 @@ pub struct Ledger<B: Backing = SystemBacking> {
     pub goods: crate::goods::Goods,
     /// Each individual's cost flow over its stocks' lots, once chosen: weighted average (true) or first in, first out.
     pub cost_flows: std::collections::BTreeMap<PartyId, bool>,
+    /// The parties ended into a successor while units under their names were still bound.
+    pub(crate) successions: crate::succession::Successions,
     pub(crate) day: DayBook,
     /// The book of the day before last, emptied once its close has read it, whose room the next day records into.
     spare: DayBook,
@@ -359,6 +361,7 @@ impl<B: Backing> Ledger<B> {
             chains: crate::chains::Chains::default(),
             goods: crate::goods::Goods::default(),
             cost_flows: std::collections::BTreeMap::new(),
+            successions: crate::succession::Successions::default(),
             day: DayBook::default(),
             spare: DayBook::default(),
             scratch: Scratch::default(),
@@ -737,11 +740,7 @@ impl<B: Backing> Ledger<B> {
                     Missing::Absent => 0,
                 };
                 // The units the instruction's own covers hold back are the ones it delivers, so they are free to it.
-                let mine: i64 = own
-                    .iter()
-                    .filter(|c| c.holder() == party && c.instrument() == id)
-                    .map(|c| c.qty().raw().raw())
-                    .sum();
+                let mine: i64 = own.iter().filter(|c| self.covers_for(c, party, id)).map(|c| c.qty().raw().raw()).sum();
                 let free = held - self.bound(party, id) + mine;
                 Some((
                     Position { now: free, floor: Missing::Present(0), short: FailCause::FreeUnits },
@@ -800,10 +799,6 @@ impl<B: Backing> Ledger<B> {
     }
 
     /// What of a holding is bound elsewhere: pledged, or covering an open offer.
-    fn bound(&self, party: PartyId, id: InstrumentId) -> i64 {
-        self.liens.pledged(party, id) + self.covers.committed(party, id)
-    }
-
     fn settle_legs(
         &mut self,
         holders: &mut dyn Holders,
@@ -1230,6 +1225,7 @@ impl<B: Backing> Ledger<B> {
         self.chains.save(w);
         self.goods.save(w);
         self.cost_flows.save(w);
+        self.successions.save(w);
     }
 
     /// The ledger read back over the build's own declarations, which `decls` carries from the declarations phase.
@@ -1264,6 +1260,7 @@ impl<B: Backing> Ledger<B> {
             chains: crate::chains::Chains::load(r)?,
             goods: crate::goods::Goods::load(r)?,
             cost_flows: std::collections::BTreeMap::load(r)?,
+            successions: crate::succession::Successions::load(r)?,
             day: DayBook::default(),
             spare: DayBook::default(),
             scratch: Scratch::default(),

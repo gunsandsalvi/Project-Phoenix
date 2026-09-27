@@ -736,9 +736,7 @@ impl World {
             Missing::Present(h) => h.quantity.raw(),
             Missing::Absent => 0,
         };
-        let pledged = self.books.ledger.liens.pledged(poster.party, good);
-        let cover =
-            self.books.ledger.covers.cover(poster.party, good, Qty::new(offered, traded_unit), held, pledged).ok()?;
+        let cover = self.books.ledger.cover(poster.party, good, Qty::new(offered, traded_unit), held).ok()?;
         match Order::offer_held(poster, asked, tick, cover) {
             Ok(order) => Some(order),
             Err((_, cover)) => {
@@ -846,14 +844,8 @@ impl World {
                 Missing::Present(h) => h.quantity.raw(),
                 Missing::Absent => 0,
             };
-            let pledged = self.books.ledger.liens.pledged(m.seller, good);
-            let covers = match self.books.ledger.covers.cover(
-                m.seller,
-                good,
-                Qty::new(m.qty, self.books.ledger.instruments.get(good).unit),
-                held,
-                pledged,
-            ) {
+            let unit = self.books.ledger.instruments.get(good).unit;
+            let covers = match self.books.ledger.cover(m.seller, good, Qty::new(m.qty, unit), held) {
                 Ok(c) => vec![c],
                 Err(_) => violation!(
                     clause = "REG.10",
