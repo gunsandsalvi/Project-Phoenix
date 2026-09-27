@@ -230,13 +230,18 @@ impl Contribution for Products {
             let (books, population, geo, _) = parts(opening);
             let list = firms(books, population, c);
             let mut chosen: Vec<(PartyId, u64)> = Vec::with_capacity(list.len());
+            // An industry's products and their weights by the country's deposits, read once for all its firms.
+            let mut by_industry: std::collections::BTreeMap<_, (Vec<u16>, Vec<u64>)> =
+                std::collections::BTreeMap::new();
             for f in &list {
-                let made = made_by(&products, &industries, f.industry);
+                let (made, weights) = by_industry.entry(f.industry).or_insert_with(|| {
+                    let made = made_by(&products, &industries, f.industry);
+                    let weights = if made.len() == 1 { Vec::new() } else { deposit_weights(geo, &products, &made, c) };
+                    (made, weights)
+                });
                 let pick = match made.as_slice() {
                     [one] => Some(*one),
-                    _ => weighted(&deposit_weights(geo, &products, &made, c), &mut lot)
-                        .and_then(|i| made.get(i))
-                        .copied(),
+                    _ => weighted(weights, &mut lot).and_then(|i| made.get(i)).copied(),
                 };
                 let Some(product) = pick else {
                     violation!(clause = "TEC.4", "an industry none of whose products can be made", at = f.industry);
