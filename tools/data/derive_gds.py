@@ -126,7 +126,14 @@ source = "assumed"
 source_ref = "Days between the realisations of a holder's spoilage, each over the days since the last: a month, which the loss's yearly rates make small per realisation."
 value = 30
 '''
-    (SHARED / "GDS.toml").write_text(out)
+    # Primitives GDS declares by hand after these, which this tool does not derive, are kept as they stand.
+    path = SHARED / "GDS.toml"
+    written = {e["id"] for e in tomllib.loads(out)["primitive"]}
+    if path.exists():
+        kept = [block for block in path.read_text().split("\n[[primitive]]\n")[1:]
+                if tomllib.loads("[[primitive]]\n" + block)["primitive"][0]["id"] not in written]
+        out = out.rstrip("\n") + "".join("\n\n[[primitive]]\n" + block.rstrip("\n") for block in kept) + "\n"
+    path.write_text(out)
 
 
 if __name__ == "__main__":

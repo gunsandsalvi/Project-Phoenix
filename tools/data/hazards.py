@@ -6,7 +6,10 @@ number a year of 1994-2023, over the world's land (World Bank AG.LND.TOTL.K2) in
 tile. Its exposure classes scale it by a quarter, one and four, sheltered to exposed ground. A tile's class comes
 from its terrain and its climate class, read from the measured climate (GEO_climate.toml): floods on humid plains,
 storms where the wind is strong, droughts where dry days prevail, earthquakes in mountains; the coast raises floods
-and storms one class, and a river raises floods one class. The spread and severity of each class, and the deposits, are assumed, each with its reason.
+and storms one class, and a river raises floods one class. Each hazard's spread matches its measured footprints
+(flood, storm and earthquake maps; drought clusters), the same for every class; floods' and earthquakes' mean share
+destroyed is measured, storms' and droughts' assumed, and how widely it varies is assumed for all. Metal ore's and oil
+and gas's deposit sizes and ore's grades are measured; the rest of the deposits are assumed, each with its reason.
 
     python3 tools/data/hazards.py [--fetch]
 """
@@ -34,10 +37,32 @@ MULTIPLIERS = [0.25, 1.0, 4.0]
 # stands on a struck tile it destroys, with the beta's first shape. Spreads stay below site percolation's threshold on
 # the eight-neighbour grid (about 0.407), so a footprint ends; the nearer the threshold, the wider it runs.
 HAZARDS = {
-    "flood": ("Flood", [0.15, 0.25, 0.32], [0.01, 0.03, 0.08], 0.8),
-    "storm": ("Extreme weather", [0.20, 0.30, 0.36], [0.005, 0.02, 0.05], 0.8),
-    "earthquake": ("Earthquake", [0.10, 0.25, 0.33], [0.01, 0.05, 0.15], 0.6),
-    "drought": ("Drought", [0.30, 0.36, 0.39], [0.02, 0.05, 0.12], 1.0),
+    "flood": ("Flood", [0.35] * 3, [0.036] * 3, 0.8),
+    "storm": ("Extreme weather", [0.36] * 3, [0.005, 0.02, 0.05], 0.8),
+    "earthquake": ("Earthquake", [0.315] * 3, [0.0057] * 3, 0.6),
+    "drought": ("Drought", [0.39] * 3, [0.02, 0.05, 0.12], 1.0),
+}
+# Where each spread comes from: the chance at which a footprint grown on the eight-neighbour grid, each untested
+# neighbour of a struck tile struck once, matches a measured footprint in 100-km2 tiles (tiles struck at a chance of
+# 0.315: median 22; 0.35: 61; 0.36: 88; 0.39: 722), the same for every class, no source varying it by exposure.
+SPREAD_SOURCES = {
+    "flood": "the median flood's tiles at least a tenth inundated in the Global Flood Database's 913 mapped floods of "
+             "2000-2018 (Tellman et al. 2021, Nature 596), which a chance of 0.345 to 0.355 matches",
+    "storm": "the median land swath of hurricane-force winds (64 kt, where damage begins) of the 338 storms reaching land "
+             "in IBTrACS v04r01, 2004-2023, 118 tiles, which a chance of 0.36 to 0.365 matches",
+    "earthquake": "the median land footprint of shaking of intensity VI and above in the USGS ShakeMaps of the 357 "
+                  "earthquakes of 2010-2023 of magnitude 4.5 and above that reached intensity VII, 24 tiles",
+    "drought": "droughts' clusters of 200,000 km2 and more (Herrera-Estrada et al. 2017, Geophysical Research Letters), "
+               "2,000 tiles and more, which a chance of 0.39 to 0.40 reaches",
+}
+# Where each mean share destroyed comes from, where a source measures it.
+SEVERITY_SOURCES = {
+    "flood": ("measured", "0.036, the mean inundated share of a struck tile in the Global Flood Database (0.108) times "
+              "the JRC's damage factor at half a metre of water (0.33; Huizinga, de Moel and Szewczyk 2017, JRC105688, "
+              "Table 3-2), the depth assumed, the database mapping none"),
+    "earthquake": ("measured", "0.0057, the median over Japan, Chile, California, Turkey and Italy of the USGS PAGER "
+                   "loss ratios (Jaiswal and Wald 2011, Open-File Report 2011-1116, Table 4) averaged over the "
+                   "ShakeMaps' land tiles of intensity VI and above by intensity"),
 }
 
 
@@ -124,31 +149,41 @@ def main():
         parts.append(prim(f"GEO.{name}_rate", "TECHNOLOGY", "estimated",
             f"Yearly chance {'an' if name[0] in 'aeiou' else 'a'} {name} starts on a tile, by exposure class: EM-DAT's {per_year[entity]:.1f} a year ({entity}, {FIRST}-{LAST}, via Our World in Data) over the world's {land:,.0f} km2 of land ({land_year}, World Bank AG.LND.TOTL.K2) in tiles of {tile_km2:.0f} km2, scaled by a quarter, one and four from sheltered to exposed ground.",
             table1([rate * m for m in MULTIPLIERS], 8)))
-        parts.append(prim(f"GEO.{name}_spread", "TECHNOLOGY", "assumed",
-            f"Chance a {name} spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground.",
+        parts.append(prim(f"GEO.{name}_spread", "TECHNOLOGY", "measured",
+            f"Chance a {name} spreads to a neighbouring tile, by the neighbour's exposure class: {spread[0]}, where a footprint grown on the eight-neighbour grid matches {SPREAD_SOURCES[name]}; below site percolation's threshold (about 0.407), so every footprint ends. No source varies it by exposure.",
             table1(spread, 3)))
         b = [a * (1 - m) / m for m in mean_share]
+        measured, why = SEVERITY_SOURCES.get(name, ("assumed", f"mean shares {mean_share}, most damaged, little destroyed"))
         parts.append(prim(f"GEO.{name}_severity_a", "TECHNOLOGY", "assumed",
-            f"First shape of the share of what stands on a struck tile a {name} destroys, by exposure class: most is damaged, little destroyed, mean shares {mean_share}.",
+            f"First shape of the share of what stands on a struck tile a {name} destroys, by exposure class: how widely it varies from tile to tile, which no source measures.",
             table1([a] * len(mean_share), 2)))
-        parts.append(prim(f"GEO.{name}_severity_b", "TECHNOLOGY", "assumed",
-            f"Second shape of the share a {name} destroys, by exposure class, giving the mean shares {mean_share}.",
+        parts.append(prim(f"GEO.{name}_severity_b", "TECHNOLOGY", measured,
+            f"Second shape of the share a {name} destroys, by exposure class, giving its mean share: {why}.",
             table1(b, 2)))
     deposits = [
-        ("metal ore", [0.0, 0.002, 0.006, 0.012], 0.0, 0.8, 16.1, 1.5, 0),
+        ("metal ore", [0.0, 0.002, 0.006, 0.012], 0.0, 0.31, 18.95, 2.10, 0),
         ("coal", [0.004, 0.006, 0.003, 0.0], 0.0, 0.5, 17.7, 1.5, 0),
-        ("oil and gas", [0.004, 0.002, 0.0005, 0.0], 0.0, 0.6, 16.1, 2.0, 0),
+        ("oil and gas", [0.004, 0.002, 0.0005, 0.0], 0.0, 0.6, 16.63, 1.82, 0),
         ("building stone", [0.0, 0.03, 0.05, 0.08], 0.0, 0.3, 0.0, 0.0, 1),
     ]
     names = ", ".join(f"{i} {d[0]}" for i, d in enumerate(deposits))
     parts.append(prim("GEO.deposit_density", "ENDOWMENT", "assumed",
         f"Chance a tile holds a deposit, by resource ({names}) and terrain class: ores and stone in raised ground, coal in plains and hills, oil and gas in sedimentary lowlands; none is present on every terrain. The resources' own data come with the goods that extract them.",
         f'{{ rows = {list(range(len(deposits)))}, columns = {list(range(terrains))}, values = {[d[1] for d in deposits]}, outside = "refuse" }}'))
-    for key, i, doc, exp in [("grade_mu", 2, "Mean of a deposit's log grade, a quality index around one", 3),
-                             ("grade_sigma", 3, "Standard deviation of a deposit's log grade", 3),
-                             ("quantity_mu", 4, "Mean of a finite deposit's log opening quantity in tonnes (ore about ten million, coal fifty million)", 3),
-                             ("quantity_sigma", 5, "Standard deviation of a finite deposit's log opening quantity: deposit sizes span orders of magnitude", 3)]:
-        parts.append(prim(f"GEO.deposit_{key}", "ENDOWMENT", "assumed", f"{doc}, by resource ({names}).",
+    ore = ("metal ore's from the grade and tonnage of 66 Algoma and Superior iron deposits (Mosier and Singer in Cox "
+           "and Singer 1986, USGS Bulletin 1693, Model 34a, Figs. 172-173: Fe grade 30, 53 and 66 per cent and tonnage "
+           "11, 170 and 2,400 million t at the 90th, 50th and 10th percentiles, so sigma ln(66/30)/2.563 and mu "
+           "ln(170e6), sigma ln(2400/11)/2.563)")
+    oil = ("oil and gas's from the original recoverable reserves of the Norwegian shelf's 142 fields (Sodir FactPages, "
+           "field reserves: 1.83, 18.7 and 195 million Sm3 of oil equivalent at the 10th, 50th and 90th percentiles, at "
+           "0.858 t a Sm3), one basin's")
+    for key, i, doc, exp, measured in [
+            ("grade_mu", 2, "Mean of a deposit's log grade, a quality index around one: nought, the index centred on the median deposit", 3, "the grade index's own centre"),
+            ("grade_sigma", 3, "Standard deviation of a deposit's log grade", 3, ore),
+            ("quantity_mu", 4, "Mean of a finite deposit's log opening quantity in tonnes", 3, f"{ore}; {oil}"),
+            ("quantity_sigma", 5, "Standard deviation of a finite deposit's log opening quantity", 3, f"{ore}; {oil}")]:
+        parts.append(prim(f"GEO.deposit_{key}", "ENDOWMENT", "estimated",
+            f"{doc}, by resource ({names}): {measured}; the others assumed.",
             table1([d[i] for d in deposits], exp)))
     parts.append(prim("GEO.deposit_unbounded", "ENDOWMENT", "assumed",
         f"Whether a resource's deposits are unbounded, by resource ({names}): building stone is, at the scale of a world's quarries.",

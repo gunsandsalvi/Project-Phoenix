@@ -36,25 +36,25 @@ value = { axis = [0, 1, 2], values = [2.989e-05, 0.00011958, 0.00047831], outsid
 id = "GEO.flood_spread"
 kind = "TECHNOLOGY"
 owner = "GEO"
-source = "assumed"
-source_ref = "Chance a flood spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground."
-value = { axis = [0, 1, 2], values = [0.15, 0.25, 0.32], outside = "refuse" }
+source = "measured"
+source_ref = "Chance a flood spreads to a neighbouring tile, by the neighbour's exposure class: 0.35, where a footprint grown on the eight-neighbour grid matches the median flood's tiles at least a tenth inundated in the Global Flood Database's 913 mapped floods of 2000-2018 (Tellman et al. 2021, Nature 596), which a chance of 0.345 to 0.355 matches; below site percolation's threshold (about 0.407), so every footprint ends. No source varies it by exposure."
+value = { axis = [0, 1, 2], values = [0.35, 0.35, 0.35], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.flood_severity_a"
 kind = "TECHNOLOGY"
 owner = "GEO"
 source = "assumed"
-source_ref = "First shape of the share of what stands on a struck tile a flood destroys, by exposure class: most is damaged, little destroyed, mean shares [0.01, 0.03, 0.08]."
+source_ref = "First shape of the share of what stands on a struck tile a flood destroys, by exposure class: how widely it varies from tile to tile, which no source measures."
 value = { axis = [0, 1, 2], values = [0.8, 0.8, 0.8], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.flood_severity_b"
 kind = "TECHNOLOGY"
 owner = "GEO"
-source = "assumed"
-source_ref = "Second shape of the share a flood destroys, by exposure class, giving the mean shares [0.01, 0.03, 0.08]."
-value = { axis = [0, 1, 2], values = [79.2, 25.87, 9.2], outside = "refuse" }
+source = "measured"
+source_ref = "Second shape of the share a flood destroys, by exposure class, giving its mean share: 0.036, the mean inundated share of a struck tile in the Global Flood Database (0.108) times the JRC's damage factor at half a metre of water (0.33; Huizinga, de Moel and Szewczyk 2017, JRC105688, Table 3-2), the depth assumed, the database mapping none."
+value = { axis = [0, 1, 2], values = [21.42, 21.42, 21.42], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.storm_exposure_inland"
@@ -92,16 +92,16 @@ value = { axis = [0, 1, 2], values = [1.954e-05, 7.817e-05, 0.00031267], outside
 id = "GEO.storm_spread"
 kind = "TECHNOLOGY"
 owner = "GEO"
-source = "assumed"
-source_ref = "Chance a storm spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground."
-value = { axis = [0, 1, 2], values = [0.2, 0.3, 0.36], outside = "refuse" }
+source = "measured"
+source_ref = "Chance a storm spreads to a neighbouring tile, by the neighbour's exposure class: 0.36, where a footprint grown on the eight-neighbour grid matches the median land swath of hurricane-force winds (64 kt, where damage begins) of the 338 storms reaching land in IBTrACS v04r01, 2004-2023, 118 tiles, which a chance of 0.36 to 0.365 matches; below site percolation's threshold (about 0.407), so every footprint ends. No source varies it by exposure."
+value = { axis = [0, 1, 2], values = [0.36, 0.36, 0.36], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.storm_severity_a"
 kind = "TECHNOLOGY"
 owner = "GEO"
 source = "assumed"
-source_ref = "First shape of the share of what stands on a struck tile a storm destroys, by exposure class: most is damaged, little destroyed, mean shares [0.005, 0.02, 0.05]."
+source_ref = "First shape of the share of what stands on a struck tile a storm destroys, by exposure class: how widely it varies from tile to tile, which no source measures."
 value = { axis = [0, 1, 2], values = [0.8, 0.8, 0.8], outside = "refuse" }
 
 [[primitive]]
@@ -109,7 +109,7 @@ id = "GEO.storm_severity_b"
 kind = "TECHNOLOGY"
 owner = "GEO"
 source = "assumed"
-source_ref = "Second shape of the share a storm destroys, by exposure class, giving the mean shares [0.005, 0.02, 0.05]."
+source_ref = "Second shape of the share a storm destroys, by exposure class, giving its mean share: mean shares [0.005, 0.02, 0.05], most damaged, little destroyed."
 value = { axis = [0, 1, 2], values = [159.2, 39.2, 15.2], outside = "refuse" }
 
 [[primitive]]
@@ -148,25 +148,25 @@ value = { axis = [0, 1, 2], values = [5.13e-06, 2.052e-05, 8.21e-05], outside = 
 id = "GEO.earthquake_spread"
 kind = "TECHNOLOGY"
 owner = "GEO"
-source = "assumed"
-source_ref = "Chance a earthquake spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground."
-value = { axis = [0, 1, 2], values = [0.1, 0.25, 0.33], outside = "refuse" }
+source = "measured"
+source_ref = "Chance a earthquake spreads to a neighbouring tile, by the neighbour's exposure class: 0.315, where a footprint grown on the eight-neighbour grid matches the median land footprint of shaking of intensity VI and above in the USGS ShakeMaps of the 357 earthquakes of 2010-2023 of magnitude 4.5 and above that reached intensity VII, 24 tiles; below site percolation's threshold (about 0.407), so every footprint ends. No source varies it by exposure."
+value = { axis = [0, 1, 2], values = [0.315, 0.315, 0.315], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.earthquake_severity_a"
 kind = "TECHNOLOGY"
 owner = "GEO"
 source = "assumed"
-source_ref = "First shape of the share of what stands on a struck tile a earthquake destroys, by exposure class: most is damaged, little destroyed, mean shares [0.01, 0.05, 0.15]."
+source_ref = "First shape of the share of what stands on a struck tile a earthquake destroys, by exposure class: how widely it varies from tile to tile, which no source measures."
 value = { axis = [0, 1, 2], values = [0.6, 0.6, 0.6], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.earthquake_severity_b"
 kind = "TECHNOLOGY"
 owner = "GEO"
-source = "assumed"
-source_ref = "Second shape of the share a earthquake destroys, by exposure class, giving the mean shares [0.01, 0.05, 0.15]."
-value = { axis = [0, 1, 2], values = [59.4, 11.4, 3.4], outside = "refuse" }
+source = "measured"
+source_ref = "Second shape of the share a earthquake destroys, by exposure class, giving its mean share: 0.0057, the median over Japan, Chile, California, Turkey and Italy of the USGS PAGER loss ratios (Jaiswal and Wald 2011, Open-File Report 2011-1116, Table 4) averaged over the ShakeMaps' land tiles of intensity VI and above by intensity."
+value = { axis = [0, 1, 2], values = [104.66, 104.66, 104.66], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.drought_exposure_inland"
@@ -204,16 +204,16 @@ value = { axis = [0, 1, 2], values = [4.87e-06, 1.95e-05, 7.799e-05], outside = 
 id = "GEO.drought_spread"
 kind = "TECHNOLOGY"
 owner = "GEO"
-source = "assumed"
-source_ref = "Chance a drought spreads to a neighbouring tile, by the neighbour's exposure class: below site percolation's threshold on the eight-neighbour grid (about 0.407), so every footprint ends, wider the more exposed the ground."
-value = { axis = [0, 1, 2], values = [0.3, 0.36, 0.39], outside = "refuse" }
+source = "measured"
+source_ref = "Chance a drought spreads to a neighbouring tile, by the neighbour's exposure class: 0.39, where a footprint grown on the eight-neighbour grid matches droughts' clusters of 200,000 km2 and more (Herrera-Estrada et al. 2017, Geophysical Research Letters), 2,000 tiles and more, which a chance of 0.39 to 0.40 reaches; below site percolation's threshold (about 0.407), so every footprint ends. No source varies it by exposure."
+value = { axis = [0, 1, 2], values = [0.39, 0.39, 0.39], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.drought_severity_a"
 kind = "TECHNOLOGY"
 owner = "GEO"
 source = "assumed"
-source_ref = "First shape of the share of what stands on a struck tile a drought destroys, by exposure class: most is damaged, little destroyed, mean shares [0.02, 0.05, 0.12]."
+source_ref = "First shape of the share of what stands on a struck tile a drought destroys, by exposure class: how widely it varies from tile to tile, which no source measures."
 value = { axis = [0, 1, 2], values = [1.0, 1.0, 1.0], outside = "refuse" }
 
 [[primitive]]
@@ -221,7 +221,7 @@ id = "GEO.drought_severity_b"
 kind = "TECHNOLOGY"
 owner = "GEO"
 source = "assumed"
-source_ref = "Second shape of the share a drought destroys, by exposure class, giving the mean shares [0.02, 0.05, 0.12]."
+source_ref = "Second shape of the share a drought destroys, by exposure class, giving its mean share: mean shares [0.02, 0.05, 0.12], most damaged, little destroyed."
 value = { axis = [0, 1, 2], values = [49.0, 19.0, 7.33], outside = "refuse" }
 
 [[primitive]]
@@ -236,33 +236,33 @@ value = { rows = [0, 1, 2, 3], columns = [0, 1, 2, 3], values = [[0.0, 0.002, 0.
 id = "GEO.deposit_grade_mu"
 kind = "ENDOWMENT"
 owner = "GEO"
-source = "assumed"
-source_ref = "Mean of a deposit's log grade, a quality index around one, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone)."
+source = "estimated"
+source_ref = "Mean of a deposit's log grade, a quality index around one: nought, the index centred on the median deposit, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone): the grade index's own centre; the others assumed."
 value = { axis = [0, 1, 2, 3], values = [0.0, 0.0, 0.0, 0.0], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.deposit_grade_sigma"
 kind = "ENDOWMENT"
 owner = "GEO"
-source = "assumed"
-source_ref = "Standard deviation of a deposit's log grade, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone)."
-value = { axis = [0, 1, 2, 3], values = [0.8, 0.5, 0.6, 0.3], outside = "refuse" }
+source = "estimated"
+source_ref = "Standard deviation of a deposit's log grade, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone): metal ore's from the grade and tonnage of 66 Algoma and Superior iron deposits (Mosier and Singer in Cox and Singer 1986, USGS Bulletin 1693, Model 34a, Figs. 172-173: Fe grade 30, 53 and 66 per cent and tonnage 11, 170 and 2,400 million t at the 90th, 50th and 10th percentiles, so sigma ln(66/30)/2.563 and mu ln(170e6), sigma ln(2400/11)/2.563); the others assumed."
+value = { axis = [0, 1, 2, 3], values = [0.31, 0.5, 0.6, 0.3], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.deposit_quantity_mu"
 kind = "ENDOWMENT"
 owner = "GEO"
-source = "assumed"
-source_ref = "Mean of a finite deposit's log opening quantity in tonnes (ore about ten million, coal fifty million), by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone)."
-value = { axis = [0, 1, 2, 3], values = [16.1, 17.7, 16.1, 0.0], outside = "refuse" }
+source = "estimated"
+source_ref = "Mean of a finite deposit's log opening quantity in tonnes, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone): metal ore's from the grade and tonnage of 66 Algoma and Superior iron deposits (Mosier and Singer in Cox and Singer 1986, USGS Bulletin 1693, Model 34a, Figs. 172-173: Fe grade 30, 53 and 66 per cent and tonnage 11, 170 and 2,400 million t at the 90th, 50th and 10th percentiles, so sigma ln(66/30)/2.563 and mu ln(170e6), sigma ln(2400/11)/2.563); oil and gas's from the original recoverable reserves of the Norwegian shelf's 142 fields (Sodir FactPages, field reserves: 1.83, 18.7 and 195 million Sm3 of oil equivalent at the 10th, 50th and 90th percentiles, at 0.858 t a Sm3), one basin's; the others assumed."
+value = { axis = [0, 1, 2, 3], values = [18.95, 17.7, 16.63, 0.0], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.deposit_quantity_sigma"
 kind = "ENDOWMENT"
 owner = "GEO"
-source = "assumed"
-source_ref = "Standard deviation of a finite deposit's log opening quantity: deposit sizes span orders of magnitude, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone)."
-value = { axis = [0, 1, 2, 3], values = [1.5, 1.5, 2.0, 0.0], outside = "refuse" }
+source = "estimated"
+source_ref = "Standard deviation of a finite deposit's log opening quantity, by resource (0 metal ore, 1 coal, 2 oil and gas, 3 building stone): metal ore's from the grade and tonnage of 66 Algoma and Superior iron deposits (Mosier and Singer in Cox and Singer 1986, USGS Bulletin 1693, Model 34a, Figs. 172-173: Fe grade 30, 53 and 66 per cent and tonnage 11, 170 and 2,400 million t at the 90th, 50th and 10th percentiles, so sigma ln(66/30)/2.563 and mu ln(170e6), sigma ln(2400/11)/2.563); oil and gas's from the original recoverable reserves of the Norwegian shelf's 142 fields (Sodir FactPages, field reserves: 1.83, 18.7 and 195 million Sm3 of oil equivalent at the 10th, 50th and 90th percentiles, at 0.858 t a Sm3), one basin's; the others assumed."
+value = { axis = [0, 1, 2, 3], values = [2.1, 1.5, 1.82, 0.0], outside = "refuse" }
 
 [[primitive]]
 id = "GEO.deposit_unbounded"

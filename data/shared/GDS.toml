@@ -6,7 +6,7 @@ kind = "TECHNOLOGY"
 owner = "GDS"
 source = "assumed"
 source_ref = "The upper bounds of each extracted product's first two grade classes (rows: metal ore, coal, oil and gas, building stone; columns: the classes) in the deposit's grade index: three classes each a third of the deposits the map draws, the terciles of GEO's log-normal grade, as markets grade commodities in a few classes (coal in four ranks, EIA; crude in three bands of API gravity)."
-value = { rows = [1, 2, 3, 4], columns = [0, 1], values = [[0.709, 1.411], [0.806, 1.240], [0.772, 1.295], [0.879, 1.138]], outside = "refuse" }
+value = { rows = [1, 2, 3, 4], columns = [0, 1], values = [[0.875, 1.143], [0.806, 1.240], [0.772, 1.295], [0.879, 1.138]], outside = "refuse" }
 
 [[primitive]]
 id = "GDS.grade_fall"
