@@ -852,7 +852,7 @@ rounded split lands its residue on the payer, the payee with the largest share, 
   met are gathered into the day buffers, which 7b and 7d read in its place. As built at Stage 0: the stream keeps a
   record per party, and the day's lookups (each line's reckoning and ower, each party's account), in the kernel's
   fixed-seed map, read whole only in key order, and the claimants per line in `BTreeMap`s; the pooled-flow rule is
-  given each agent as one payer, every row reaching all its twins, so no row splits an agent's funds (F-065); and no
+  given each agent as one payer, every row reaching all its twins, so no row splits an agent's funds; and no
   gather of unlisted sides is built (F-058). The stream keeps the day's payments in its order (about 157 MB on the
   twins payday of 2.8 M payments, the only field PC-27 lets keep a batch's items), and 7c's gather reads them, reckoning again only a cleared line's claimant credit
   after its losers; both compute each payment's route, 7c nets it in the fixed-seed map and sorts the nets once, and
@@ -1893,12 +1893,12 @@ As built there is no `sys-est`: estates are the ledger's `phx_ledger::estate` ru
 world's `estates` (`phx-world/src/estates.rs`). An ended household's rows pass to one estate at 3e; from the next
 business day, in 7c's block once the day's dues are paid, the ledger settles it (`Books::settle_estate`): its rows that
 hold nothing but money leave with their counterparts first; its money pays its debts through the waterfall, its
-creditors as one class (the plan's F-096); and while it still holds units it waits to sell them, counted, writing
+creditors as one class until the insolvency law's order of classes (S2.03); and while it still holds units it waits to sell them, counted, writing
 nothing off and distributing nothing. One that holds none writes off what it owes beyond, pays what is left to the
 party of the kind `HEIRLESS_DESTINATION` names (the treasury) in its country, since no heir is drawn before the kinship
 lines exist (the plan's F-050), and its rows leave with their counterparts and it ends; one whose payment fails waits,
 counted. Dues it
-owes in arrears are not claims in its waterfall (F-066). A catastrophe's struck tiles lose, at 3b, their share of every
+owes in arrears are not claims in its waterfall until S2.04. A catastrophe's struck tiles lose, at 3b, their share of every
 physical unit the individuals sited there hold, as a transformation naming the event (GEO.8).
 
 Firms end in **default of payment** (FRM.15): a kind is put under its country's insolvency law by an
