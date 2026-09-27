@@ -1,9 +1,9 @@
 //! The households' jobs and their persons' labour state at the opening. Each adult is employed at the country's
 //! employment rate, and an employee at its sex's share of employees among the employed. An employee's job has an
 //! occupation drawn by its sex among those its skill reaches, part-time hours at its sex's share, the law's notice and
-//! severance, its household's region and the band its tenure, drawn from the tenure shares, began in. Its wage is the
-//! mean wage the labour share gives times its household's income as a multiple of the mean, on the nearest wage
-//! point. A job is a row on the employment line of its class and point. Once every household is drawn, each region and
+//! severance, its household's region and the band its tenure, drawn from the tenure shares, began in. Its wage is its
+//! hours times the mean wage the labour share gives an employee's mean hours, times its household's income as a
+//! multiple of the mean, on the nearest wage point. A job is a row on the employment line of its class and point. Once every household is drawn, each region and
 //! occupation's jobs are apportioned over the region's firms by their headcounts and the share of the occupation in
 //! their product's work, and dealt to the lines in an order drawn by lot. Of those not employed, the
 //! unemployed search, at the rate that makes their share of the labour force the country's; an adult past its
@@ -107,6 +107,8 @@ struct Country {
     occupations: Vec<[f64; 2]>,
     tenure: Vec<(i64, f64)>,
     wage: f64,
+    /// An employee's mean weekly hours, over the sexes' shares of employees and their part-time shares.
+    mean_hours: f64,
     kind: u16,
     schedule: Schedule,
     first: Missing<(Day, u32)>,
@@ -170,19 +172,29 @@ impl AttachmentDraw for Jobs {
         let date = calendar.date(today);
         let dates = phx_ledger::opening::monthly(date, c.id);
         let first = Missing::Present((dates.nth(calendar, 1), 1));
+        let part_time_hours = match u32::try_from(self.part_time_hours.get(register, c.id).get()) {
+            Ok(h) => h,
+            Err(_) => violation!(clause = "LAB.1", "part-time hours beyond a week's", country = c.id.get()),
+        };
+        let of_employees: f64 = employees.iter().sum();
+        let mean_hours: f64 = employees
+            .iter()
+            .zip(&part_time)
+            .map(|(e, p)| {
+                e / of_employees * (p * f64::from(part_time_hours) + (1.0 - p) * f64::from(law.full_time_hours))
+            })
+            .sum();
         Box::new(Country {
             law,
             employed,
             employees,
             part_time,
-            part_time_hours: match u32::try_from(self.part_time_hours.get(register, c.id).get()) {
-                Ok(h) => h,
-                Err(_) => violation!(clause = "LAB.1", "part-time hours beyond a week's", country = c.id.get()),
-            },
+            part_time_hours,
             searching,
             occupations,
             tenure,
             wage: crate::law::mean_wage(c),
+            mean_hours,
             kind: books.ledger.lines.kind_index(EMPLOYMENT.name),
             schedule: Schedule { dates, count: Missing::Absent },
             first,
@@ -198,6 +210,18 @@ impl AttachmentDraw for Jobs {
 }
 
 impl Country {
+    /// The wage point nearest a month's wage.
+    fn point_of(&self, wage: f64) -> u32 {
+        let Some(point) = phx_rand::float::floor_to_i64(libm::rint(libm::log(wage) / libm::log(self.law.point_ratio)))
+        else {
+            violation!(clause = "REP.34", "a wage beyond the wage points");
+        };
+        let Some(point) = u32::try_from(point).ok().filter(|p| *p < if_labour::class::WAGE_POINTS) else {
+            violation!(clause = "REP.34", "a wage point beyond those a person can record", point = point);
+        };
+        point
+    }
+
     /// The terms of a wage point and a class: its amount paid on each monthly date.
     fn terms(&mut self, books: &mut Books, point: i64, class: Vec<u32>) -> TermsId {
         if let Some(t) = self.terms.get(&(point, class.clone())) {
@@ -275,14 +299,10 @@ impl CountryAttachments for Country {
         let mut d = ctx.draws(&JobsStream::DECL, subject);
         let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
         let region = h.household.attr(if_pop::REGION.name);
-        let wage = self.wage * h.income;
-        let Some(point) = phx_rand::float::floor_to_i64(libm::rint(libm::log(wage) / libm::log(self.law.point_ratio)))
-        else {
-            violation!(clause = "REP.34", "a wage beyond the wage points");
-        };
-        let Some(last) = u32::try_from(point).ok().filter(|p| *p < if_labour::class::WAGE_POINTS) else {
-            violation!(clause = "REP.34", "a wage point beyond those a person can record", point = point);
-        };
+        // A week's hour of the household's work pays the mean wage over an employee's mean hours, at its income's
+        // multiple; a person's recorded point is what full time would pay it.
+        let hourly = self.wage * h.income / self.mean_hours;
+        let last = self.point_of(hourly * f64::from(self.law.full_time_hours));
         for (place, p) in h.household.persons.iter().enumerate().filter(|(_, p)| adult_roles.contains(&p.role)) {
             let Some(sex) = p.attr(if_pop::SEX.name) else { violation!(clause = "REP.26", "a person with no sex") };
             let s = usize::try_from(sex).unwrap_or(usize::MAX);
@@ -321,6 +341,7 @@ impl CountryAttachments for Country {
                 continue;
             }
             let hours = if open_unit(&mut d) < part_time { self.part_time_hours } else { self.law.full_time_hours };
+            let point = i64::from(self.point_of(hourly * f64::from(hours)));
             let mut class = vec![0; PLACES];
             let places = [
                 (if_labour::class::OCCUPATION, occupation),
