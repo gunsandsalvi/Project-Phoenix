@@ -57,6 +57,14 @@
       "rows": 521,
       "title": "Borrowed from a formal bank or similar financial institution (% age 15+), World Bank Global Findex"
     },
+    "icio/households": {
+      "rows": 3440,
+      "title": "Households' final consumption expenditure by industry, 2019, millions of US dollars, summed over origins, with taxes less subsidies on it, OECD ICIO 2023 edition"
+    },
+    "icio/io": {
+      "rows": 150921,
+      "title": "Inter-country input-output table, industry by industry, 2019, millions of US dollars, each use summed over the origins of what was used, OECD ICIO 2023 edition"
+    },
     "icp/price_levels": {
       "rows": 2219,
       "title": "Price level index (world = 100) by expenditure heading, ICP 2021, World Bank"
@@ -345,6 +353,11 @@
       "fetched": "2026-09-24",
       "title": "OECD Affordable Housing Database (HM1.3, HC1.2); Eurostat SDMX API (ilc_lvho02); ECLAC CEPALSTAT API (indicator 166); DHS Program API",
       "url": "https://webfs.oecd.org/Els-com/Affordable_Housing_Database/<file>; https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ilc_lvho02?format=SDMX-CSV&startPeriod=2015; https://api-cepalstat.cepal.org/; https://api.dhsprogram.com/"
+    },
+    "icio": {
+      "fetched": "2026-09-27",
+      "title": "OECD Inter-Country Input-Output tables, 2023 edition",
+      "url": "https://stats.oecd.org/wbos/fileview2.aspx?IDFile=d1ab2315-298c-4e93-9a81-c6f2273139fe"
     },
     "ilo_activity": {
       "fetched": "2026-09-26",

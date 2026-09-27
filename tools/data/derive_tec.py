@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Derives the products and each country group's opening ways from the fetched sources in data/sources/raw/.
 
-A product is an aggregate of the input-output tables' products (CPA 2.1). Its unit is physical where the product has
-one the world measures it in (the extracted products, in tonnes, as deposits hold them) and otherwise the volume the
-national accounts measure an aggregate in: what one US cent bought at the world's average prices in 2022, the euros
-of the tables turned into dollars at the euro's rate and into quantities by the ICP's price level of the product's
-heading. A way states, per unit of output, what it uses of each product, the hours of each occupation group, the
-stock of each kind of plant per unit of output a year, and the land it needs. Each is the group's median over the
+A product is an aggregate of the input-output tables' industries' outputs (ISIC Rev. 4, the OECD's inter-country
+tables of 2019). Its unit is physical where the product has one the world measures it in (the extracted products, in
+tonnes, as deposits hold them) and otherwise the volume the national accounts measure an aggregate in: what one US
+cent bought at the world's average prices in 2022, the tables' dollars of 2019 carried to 2022 by the United States'
+GDP deflator and turned into quantities by the ICP's price level of the product's heading. A way states, per unit of
+output, what it uses of each product, the hours of each occupation group, the stock of each kind of plant per unit of
+output a year, and the land it needs. Each is the group's median over the
 economies the sources report for it; what the group's economies lack is named in the note of what it rests on.
 
     python3 tools/data/derive_tec.py
@@ -25,58 +26,58 @@ from derive import LEVELS, RAW
 ROOT = Path(__file__).resolve().parents[2]
 PROFILES = ROOT / "data" / "profiles"
 SHARED = ROOT / "data" / "shared"
-YEAR = 2022
+YEAR = 2019
+UNIT_YEAR = 2022
 MIN_COUNTRIES = 10
 EXP = 9
 WEEKS = 52
 CENTS = 100
-# The tables report millions of euros.
+# The tables report millions of dollars.
 MILLION = 1e6
 HECTARES_PER_KM2 = 100
 LEAD_SEASON = 120
 TONNES_PER_BARREL = 1 / 7.33
 
-# The products: name, industry, the CPA codes they aggregate, the ICP headings their price level is read from (none:
-# priced at world prices, as traded commodities are), storable, delivered as made, the deposit resource extracted.
+# The products: name, industry, the ICIO industries whose output they aggregate, the ICP headings their price level is
+# read from (none: priced at world prices, as traded commodities are), storable, delivered as made, the deposit
+# resource extracted.
 PRODUCTS = [
-    ("crops and livestock", "agriculture", ["A01", "A02", "A03"], ["1101100"], True, False, None),
-    ("metal ore", "mining", ["B"], [], True, False, 0),
-    ("coal", "mining", ["B"], [], True, False, 1),
-    ("oil and gas", "mining", ["B"], [], True, False, 2),
-    ("building stone", "mining", ["B"], [], True, False, 3),
-    ("food", "food manufacturing", ["C10-12"], ["1101000"], True, False, None),
-    ("consumer goods", "consumer goods manufacturing", ["C13-15", "C31_32"], ["1103000", "1105000"], True, False, None),
-    ("materials", "materials manufacturing", ["C16", "C17", "C18", "C20", "C21", "C22", "C23", "C24"], ["1501300"],
+    ("crops and livestock", "agriculture", ["A01_02", "A03"], ["1101100"], True, False, None),
+    ("metal ore", "mining", ["B07_08"], [], True, False, 0),
+    ("coal", "mining", ["B05_06"], [], True, False, 1),
+    ("oil and gas", "mining", ["B05_06"], [], True, False, 2),
+    ("building stone", "mining", ["B07_08"], [], True, False, 3),
+    ("food", "food manufacturing", ["C10T12"], ["1101000"], True, False, None),
+    ("consumer goods", "consumer goods manufacturing", ["C13T15", "C31T33"], ["1103000", "1105000"], True, False, None),
+    ("materials", "materials manufacturing", ["C16", "C17_18", "C20", "C21", "C22", "C23", "C24"], ["1501300"],
      True, False, None),
-    ("energy carriers", "energy", ["C19", "D35"], ["1000000"], True, False, None),
-    ("capital goods", "capital goods manufacturing", ["C25", "C26", "C27", "C28", "C29", "C30", "C33"], ["1501100"],
+    ("energy carriers", "energy", ["C19", "D"], ["1000000"], True, False, None),
+    ("capital goods", "capital goods manufacturing", ["C25", "C26", "C27", "C28", "C29", "C30"], ["1501100"],
      True, False, None),
-    ("water and waste services", "utilities", ["E36", "E37-39"], ["1000000"], False, True, None),
+    ("water and waste services", "utilities", ["E"], ["1000000"], False, True, None),
     ("construction", "construction", ["F"], ["1501200"], False, False, None),
-    ("distribution", "trade", ["G45", "G46", "G47"], ["1000000"], False, True, None),
+    ("distribution", "trade", ["G"], ["1000000"], False, True, None),
     ("transport", "transport", ["H49", "H50", "H51", "H52", "H53"], ["1107300"], False, True, None),
     ("accommodation and meals", "accommodation and food services", ["I"], ["1111000"], False, True, None),
-    ("business services", "business services",
-     ["J58", "J59_60", "J61", "J62_63", "M69_70", "M71", "M72", "M73", "M74_75", "N77", "N78", "N79", "N80-82"],
-     ["1000000"], False, True, None),
-    ("education", "education", ["P85"], ["9120000"], False, True, None),
-    ("health and care", "health", ["Q86", "Q87_88"], ["9080000"], False, True, None),
-    ("personal services", "personal services", ["R90-92", "R93", "S94", "S95", "S96"], ["9140000"], False, True, None),
+    ("business services", "business services", ["B09", "J58T60", "J61", "J62_63", "M", "N"], ["1000000"], False, True,
+     None),
+    ("education", "education", ["P"], ["9120000"], False, True, None),
+    ("health and care", "health", ["Q"], ["9080000"], False, True, None),
+    ("personal services", "personal services", ["R", "S"], ["9140000"], False, True, None),
 ]
 # Products the ways leave out, paid for otherwise: finance by fees and interest (BNK), real estate by rents (HSG),
 # public administration by taxes (TRS), households' own employment and extraterritorial bodies.
-LEFT_OUT = ["K64", "K65", "K66", "L", "O84", "T", "U"]
-# The value-added and product-tax rows each product's output is its column's sum over.
-VALUE_ROWS = ["B2A3G", "D1", "D29X39", "OP_RES", "OP_NRES"]
-PRODUCT_TAX = "D21X31"
-# The deposit resource a using product's extraction input is taken from: the resource its industry transforms.
-RESOURCE_OF_USER = {"C19": 2, "C20": 2, "D35": 1, "C24": 0, "C23": 3, "F": 3}
-# The resource any other product's extraction input is taken from: the fuel industries run on.
-OTHER_USERS = 2
+LEFT_OUT = ["K", "L", "O", "T"]
+# The value-added row.
+VALUE_ADDED = "VA"
+# Each mining industry's resources: the one a using industry's input is taken from, where it transforms one, and the
+# one any other user's is. Energy mining yields coal to electricity and oil and gas to the rest, which run on fuel;
+# other mining yields ore to the basic metals and stone to the rest, the minerals and construction above all.
+MINES = {"B05_06": ({"D": 1}, 2), "B07_08": ({"C24": 0}, 3)}
 # The world price per tonne each extracted resource is sold at, from the Pink Sheet and the USGS.
 RESOURCE_PRICE = {0: "Iron ore, cfr spot", 1: "Coal, Australian", 2: "Crude oil, average",
                   3: "Crushed stone, United States, average unit value"}
-# The ISIC section each CPA code's industry belongs to, for hours and occupations (ILO) and fixed assets (OECD).
+# The ISIC section each industry belongs to, for hours and occupations (ILO) and fixed assets (OECD).
 SECTIONS = "ABCDEFGHIJKLMNOPQRSTU"
 # The kinds of plant, SNA asset codes: other buildings and structures, transport equipment, ICT equipment, other
 # machinery and equipment, cultivated biological resources, intellectual property products.
@@ -86,8 +87,8 @@ ASSETS = [("structures", "N112N", "1501200"), ("transport equipment", "N1131N", 
 OCCUPATIONS = [str(i) for i in range(10)]
 
 
-def section(cpa: str) -> str:
-    return cpa[0]
+def section(industry: str) -> str:
+    return industry[0]
 
 
 def num(x: float, places: int = EXP) -> str:
@@ -108,11 +109,10 @@ def groups() -> pd.Series:
 
 
 def io_tables() -> dict:
-    """Each economy's table: rows are used products and value-added components, columns the products made."""
-    d = pd.read_csv(RAW / "figaro" / f"io_{YEAR}.csv")
-    d["row"] = d.row.str.replace("CPA_", "", regex=False)
-    d["product"] = d["product"].str.replace("CPA_", "", regex=False)
-    return {c: g.pivot_table(index="row", columns="product", values="value", aggfunc="sum", fill_value=0.0)
+    """Each economy's table: rows are the industries whose output was used, taxes less subsidies and value added,
+    columns the industries that used it."""
+    d = pd.read_csv(RAW / "icio" / f"io_{YEAR}.csv")
+    return {c: g.pivot_table(index="row", columns="industry", values="value", aggfunc="sum", fill_value=0.0)
             for c, g in d.groupby("iso3")}
 
 
@@ -133,56 +133,58 @@ def product_level(pl: pd.Series, headings: list) -> float:
     return float(np.exp(np.mean([np.log(pl[h] / 100.0) for h in headings])))
 
 
-def per_unit(prices: dict) -> np.ndarray:
-    """Each product's dollars per unit: a cent, or the price of a tonne of what is extracted."""
+def per_unit(prices: dict, deflator: float) -> np.ndarray:
+    """Each product's dollars of the unit's year per unit: a cent, or the price of a tonne of what is extracted in the
+    tables' year carried to the unit's."""
     out = np.full(len(PRODUCTS), 1.0 / CENTS)
     for i, p in enumerate(PRODUCTS):
         if p[6] is not None:
             price = prices[RESOURCE_PRICE[p[6]]]
-            out[i] = price / TONNES_PER_BARREL if p[6] == 2 else price
+            out[i] = (price / TONNES_PER_BARREL if p[6] == 2 else price) * deflator
     return out
 
 
-def extraction_shares(t: pd.DataFrame) -> np.ndarray:
-    """How much of each using CPA code's extraction input comes from each resource: all of it from the resource its
-    industry transforms."""
-    return np.array([[1.0 if RESOURCE_OF_USER.get(c, OTHER_USERS) == r else 0.0 for r in range(4)]
-                     for c in t.columns])
+def taken_share(user: str, resource: int) -> float:
+    """How much of a using industry's input from its mining industry comes from a resource: all of it from the one
+    its industry transforms, or else from the one other users take."""
+    for mine, (own, other) in MINES.items():
+        if resource in own.values() or resource == other:
+            return 1.0 if own.get(user, other) == resource else 0.0
+    raise ValueError(resource)
 
 
-def economy_ways(t: pd.DataFrame, pl: pd.Series, dollars_per_euro: float, unit_dollars: np.ndarray):
-    """One economy's inputs per unit of output, its output in units, and its value added and compensation by
-    product, from its table and price levels."""
+def mine_of(p) -> str:
+    return p[2][0]
+
+
+def extracted_weight(t: pd.DataFrame, p) -> float:
+    """An extracted product's part of its mining industry's output: the part its resource's users take."""
+    mine = mine_of(p)
+    users = t.loc[mine, :]
+    return float(sum(users[c] * taken_share(c, p[6]) for c in t.columns) / users.sum())
+
+
+def economy_ways(t: pd.DataFrame, pl: pd.Series, deflator: float, unit_dollars: np.ndarray):
+    """One economy's inputs per unit of output and its output in units, from its table and price levels."""
     cols = list(t.columns)
     output = t.sum(axis=0)
     level = np.array([product_level(pl, p[3]) for p in PRODUCTS])
-    units_per_euro = dollars_per_euro / (level * unit_dollars)
+    units_per_dollar = deflator / (level * unit_dollars)
     n = len(PRODUCTS)
     made = np.zeros(n)
     used = np.zeros((n, n))
-    share = extraction_shares(t)
     for j, p in enumerate(PRODUCTS):
         codes = [c for c in p[2] if c in cols]
-        if p[6] is not None:
-            # An extracted product is the part of the extraction output its resource's users take.
-            weight = float((t.loc["B", :].values * share[:, p[6]]).sum() / t.loc["B", :].sum())
-        else:
-            weight = 1.0
-        made[j] = output[codes].sum() * MILLION * weight * units_per_euro[j]
+        weight = extracted_weight(t, p) if p[6] is not None else 1.0
+        made[j] = output[codes].sum() * MILLION * weight * units_per_dollar[j]
         for i, q in enumerate(PRODUCTS):
-            rows = [c for c in q[2] if c in t.index]
             if q[6] is not None:
-                taken = sum(float(t.loc["B", c]) * share[cols.index(c), q[6]] for c in codes)
+                taken = sum(float(t.loc[mine_of(q), c]) * taken_share(c, q[6]) for c in codes if mine_of(q) in t.index)
             else:
-                taken = float(t.loc[rows, codes].values.sum())
-            used[i, j] = taken * MILLION * weight * units_per_euro[i]
+                taken = float(t.loc[[c for c in q[2] if c in t.index], codes].values.sum())
+            used[i, j] = taken * MILLION * weight * units_per_dollar[i]
     inputs = np.divide(used, made, out=np.zeros_like(used), where=made > 0)
-    value_added = {s: 0.0 for s in SECTIONS}
-    pay = {s: 0.0 for s in SECTIONS}
-    for c in cols:
-        value_added[section(c)] += float(t.loc[[r for r in ["B2A3G", "D1", "D29X39"] if r in t.index], c].sum())
-        pay[section(c)] += float(t.loc["D1", c]) if "D1" in t.index else 0.0
-    return inputs, made, value_added, pay, units_per_euro
+    return inputs, made
 
 
 def nearest_year(years) -> int:
@@ -257,29 +259,26 @@ def capital_ratios() -> dict:
     return out
 
 
-def economy_factors(t, made, pl, dollars_per_euro, hours, ratios):
-    """One economy's hours per unit by occupation group, stock of each kind of plant per unit a year, and hours and
-    stocks attributed within each section by the product's compensation of employees and value added."""
+def economy_factors(t, made, pl, deflator, hours, ratios):
+    """One economy's hours per unit by occupation group and stock of each kind of plant per unit a year, each
+    section's hours and stocks attributed to its industries by their value added."""
     cols = list(t.columns)
-    pay = {c: float(t.loc["D1", c]) for c in cols}
-    added = {c: float(t.loc[[r for r in ["B2A3G", "D1", "D29X39"] if r in t.index], c].sum()) for c in cols}
-    section_pay = {s: sum(v for c, v in pay.items() if section(c) == s) for s in SECTIONS}
-    share = extraction_shares(t)
+    added = {c: float(t.loc[VALUE_ADDED, c]) for c in cols}
+    section_added = {s: sum(v for c, v in added.items() if section(c) == s) for s in SECTIONS}
     n = len(PRODUCTS)
     labour = np.full((len(OCCUPATIONS), n), np.nan)
     capital = np.full((len(ASSETS), n), np.nan)
     asset_level = np.array([pl[a[2]] / 100.0 for a in ASSETS])
     for j, p in enumerate(PRODUCTS):
         codes = [c for c in p[2] if c in cols]
-        weight = 1.0
-        if p[6] is not None:
-            weight = float((t.loc["B", :].values * share[:, p[6]]).sum() / t.loc["B", :].sum())
+        weight = extracted_weight(t, p) if p[6] is not None else 1.0
         if hours is not None and all(section(c) in hours for c in codes):
-            h = sum(hours[section(c)] * pay[c] / section_pay[section(c)] for c in codes if section_pay[section(c)] > 0)
+            h = sum(hours[section(c)] * added[c] / section_added[section(c)] for c in codes
+                    if section_added[section(c)] > 0)
             labour[:, j] = h * weight / made[j]
         if ratios is not None and all(section(c) in ratios for c in codes):
-            stock_euros = sum(ratios[section(c)] * added[c] for c in codes) * MILLION * weight
-            capital[:, j] = stock_euros * dollars_per_euro * CENTS / asset_level / made[j]
+            stock_dollars = sum(ratios[section(c)] * added[c] for c in codes) * MILLION * weight
+            capital[:, j] = stock_dollars * deflator * CENTS / asset_level / made[j]
     return labour, capital
 
 
@@ -299,8 +298,10 @@ def write_shared(prices: dict, src: dict) -> None:
         'owner = "TEC"',
         'source = "measured"',
         "source_ref = " + json.dumps(
-            "The product space of the input-output tables (Eurostat FIGARO, CPA 2.1) aggregated to the products the "
-            "circular flow needs: " + "; ".join(f"{p[0]} ({', '.join(p[2])})" for p in PRODUCTS) + ". Finance, real "
+            "The industries of the input-output tables (OECD ICIO, ISIC Rev. 4) aggregated to the products the "
+            "circular flow needs: " + "; ".join(f"{p[0]} ({', '.join(p[2])})" for p in PRODUCTS) + ". Energy mining "
+            "yields coal and oil and gas, other mining ore and stone, each in the part its resource's users take. "
+            "Finance, real "
             "estate, public administration and households as employers are left out, being paid for by fees, rents "
             "and taxes. A service is not storable and is delivered as it is made; construction is work done for its "
             "owner, not stored."),
@@ -384,10 +385,10 @@ def primitive(pid: str, source: str, ref: str, value: str) -> list:
 
 def write_level(level: str, members: dict, m: dict) -> None:
     """The group's ways: each quantity the median over the group's economies that report it."""
-    fig, ilo, oecd = (m["sources"][k] for k in ("figaro", "ilo_activity", "oecd_nad"))
-    unit_note = ("per unit of output: a unit is a tonne of an extracted product and otherwise what one US cent bought "
-                 "at world-average prices in 2022, each product's euros turned into dollars at the euro's 2022 rate "
-                 "and into quantities by its ICP 2021 price level")
+    tables, ilo, oecd = (m["sources"][k] for k in ("icio", "ilo_activity", "oecd_nad"))
+    unit_note = (f"per unit of output: a unit is a tonne of an extracted product and otherwise what one US cent bought "
+                 f"at world-average prices in {UNIT_YEAR}, each product's dollars of {YEAR} carried to {UNIT_YEAR} by "
+                 f"the United States' GDP deflator and turned into quantities by its ICP 2021 price level")
     names = lambda cs: ", ".join(sorted(cs))
     inputs = median([w["inputs"] for w in members.values()])
     lab = {c: w for c, w in members.items() if not np.all(np.isnan(w["labour"]))}
@@ -402,18 +403,19 @@ def write_level(level: str, members: dict, m: dict) -> None:
     lines += primitive(
         "TEC.inputs", thin(len(members)),
         f"What a way uses of each product (rows) {unit_note}, for each product made (columns): the median over the "
-        f"{len(members)} economies of the World Bank's {level} income groups the FIGARO {YEAR} input-output tables "
-        f"report ({names(members)}), each use summed over where it came from ({fig['title']}, fetched "
-        f"{fig['fetched']}). An extracted product's use is the extraction column's, taken by the users of its resource; "
-        f"what products take from extraction is taken from the resource each one's industry transforms.",
+        f"{len(members)} economies of the World Bank's {level} income groups the {YEAR} inter-country input-output "
+        f"tables report ({names(members)}), each use summed over where it came from ({tables['title']}, fetched "
+        f"{tables['fetched']}). An extracted product's use is its mining industry's column's, in the part its "
+        f"resource's users take; what an industry takes from a mining industry is taken from the resource the "
+        f"industry transforms, or else from the one other users take.",
         table2(range(len(PRODUCTS)), inputs))
     lines += primitive(
         "TEC.labour", thin(len(lab)),
         f"Hours of each occupation group (rows, ISCO-08 major groups 0 armed forces to 9 elementary) {unit_note}: the "
         f"median over the {len(lab)} economies of the group that both ILOSTAT's surveys and the tables report "
         f"({names(lab)}), each section's employment times its average weekly hours times {WEEKS} in the survey nearest "
-        f"{YEAR} ({ilo['title']}, fetched {ilo['fetched']}), shared among the section's products by their compensation "
-        f"of employees in the tables.",
+        f"{YEAR} ({ilo['title']}, fetched {ilo['fetched']}), shared among the section's industries by their value "
+        f"added in the tables.",
         table2(range(len(OCCUPATIONS)), labour))
     lines += primitive(
         "TEC.capital", "measured" if len(own_capital) >= MIN_COUNTRIES else "assumed",
@@ -442,8 +444,8 @@ def main() -> None:
     pls = price_levels()
     prices = commodities()
     level_of = groups()
-    dollars_per_euro = 1.0 / prices["Euro, official exchange rate"]
-    unit_dollars = per_unit(prices)
+    deflator = prices[f"United States GDP deflator, {UNIT_YEAR} over {YEAR}"]
+    unit_dollars = per_unit(prices, deflator)
     hours = labour_hours()
     ratios = capital_ratios()
     land = pd.read_csv(RAW / "wb" / "AG.LND.AGRI.K2.csv")
@@ -455,9 +457,9 @@ def main() -> None:
     for iso3, t in tables.items():
         if iso3 not in pls.index:
             continue
-        inputs, made, _, _, _ = economy_ways(t, pls.loc[iso3], dollars_per_euro, unit_dollars)
+        inputs, made = economy_ways(t, pls.loc[iso3], deflator, unit_dollars)
         own = iso3 in ratios
-        labour, capital = economy_factors(t, made, pls.loc[iso3], dollars_per_euro,
+        labour, capital = economy_factors(t, made, pls.loc[iso3], deflator,
                                           hours[iso3][2] if iso3 in hours else None, ratios.get(iso3, fallback))
         ways[iso3] = {"inputs": inputs, "labour": labour, "capital": capital, "capital_own": own,
                       "land": land_per_unit(t, made, land[iso3]) if iso3 in land.index else np.nan}

@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Fetches the published data the opening ways are derived from, into data/sources/raw/.
 
-- Eurostat's FIGARO inter-country input-output tables at basic prices, product by product, 2022: for each reporting
-  economy, what each product used of every product, summed over the countries it came from, and its value added and
-  taxes less subsidies on products, so each product's output is its column's sum.
+- The OECD's inter-country input-output tables (ICIO, 2023 edition), industry by industry, 2019, the last year before
+  the pandemic: for each of the 76 economies they report, what each industry used of every industry's output, summed
+  over the countries it came from, with its taxes less subsidies on products and its value added, so each industry's
+  output is its column's sum; and households' final consumption of each industry's output.
 - ILOSTAT's employment and average weekly hours actually worked by economic activity (ISIC Rev. 4 sections) and
   occupation (ISCO-08 major groups), from labour force surveys.
 - The OECD's national accounts: net fixed assets at current prices by activity and asset (Table 9A) and gross value
   added at current prices by activity (Table 6), in national currency, so an asset's stock per unit of value added
   needs no exchange rate.
 - The World Bank's agricultural land area; the International Comparison Program's 2021 price levels by expenditure
-  category (world = 100) and the euro's 2022 exchange rate, which turn each product's euros into a quantity at
-  world-average prices; and its commodity prices (the Pink Sheet) and the U.S. Geological Survey's unit value of
-  crushed stone, which turn the extracted products' quantities into tonnes.
+  category (world = 100) and the United States' GDP deflator from the tables' year to the unit's, which turn each
+  product's dollars into a quantity at world-average prices; and its commodity prices (the Pink Sheet) and the U.S.
+  Geological Survey's unit value of crushed stone, which turn the extracted products' quantities into tonnes.
 
     python3 tools/data/fetch_tec.py [--cache DIR] [--only NAME ...]
 """
@@ -21,23 +22,22 @@ import csv
 import datetime
 import gzip
 import json
+import io
 import tempfile
+import zipfile
 from pathlib import Path
 
 from fetch import RAW, get, log
 from fetch_pop import countries, table
 
-YEAR = 2022
-FIGARO = ("https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/naio_10_fcp_ip4/A...{dest}..?"
-          f"startPeriod={YEAR}&endPeriod={YEAR}&format=SDMX-CSV&compressed=true")
-# The economies FIGARO reports as destinations; the rest of the world is reported only as an origin.
-FIGARO_ECONOMIES = [
-    "AR", "AT", "AU", "BE", "BG", "BR", "CA", "CH", "CN", "CY", "CZ", "DE", "DK", "EE", "EL", "ES", "FI", "FR", "HR",
-    "HU", "ID", "IE", "IN", "IT", "JP", "KR", "LT", "LU", "LV", "MT", "MX", "NL", "NO", "PL", "PT", "RO", "RU", "SA",
-    "SE", "SI", "SK", "TR", "UK", "US", "ZA",
-]
-# Eurostat's codes where they differ from ISO 3166.
-EUROSTAT_ISO2 = {"EL": "GR", "UK": "GB"}
+YEAR = 2019
+# The year a product's unit is priced in: what a US cent bought at world-average prices then.
+UNIT_YEAR = 2022
+ICIO = "https://stats.oecd.org/wbos/fileview2.aspx?IDFile=d1ab2315-298c-4e93-9a81-c6f2273139fe"
+# The rest of the world, reported only as an origin and a destination, not an economy.
+ICIO_REST = "ROW"
+# The rows below the industries: taxes less subsidies on the products used, and value added.
+ICIO_ROWS = ["TLS", "VA"]
 
 ILO = "https://sdmx.ilo.org/rest/data/ILO,{flow},1.0/all?startPeriod=2015"
 ILO_CSV = "application/vnd.sdmx.data+csv;version=1.0.0"
@@ -83,50 +83,67 @@ ICP_SERIES = {
     "9120000": "ACTUAL EDUCATION",
     "9140000": "ACTUAL MISCELLANEOUS GOODS AND SERVICES",
 }
-EURO_RATE = (f"https://api.worldbank.org/v2/country/EMU/indicator/PA.NUS.FCRF?format=json&date={YEAR}:{YEAR}")
+DEFLATOR = (f"https://api.worldbank.org/v2/country/USA/indicator/NY.GDP.DEFL.ZS?format=json&date={YEAR}:{UNIT_YEAR}")
 PINK = ("https://thedocs.worldbank.org/en/doc/5d903e848db1d1b83e0ec8f744e55570-0350012021/related/"
         "CMO-Historical-Data-Annual.xlsx")
 PINK_SERIES = ["Crude oil, average", "Coal, Australian", "Iron ore, cfr spot"]
 USGS_STONE = "https://pubs.usgs.gov/periodicals/mcs2023/mcs2023-stone-crushed.pdf"
 
 
-def iso3_of() -> dict:
-    return {r["iso2"]: r["iso3"] for r in csv.DictReader((RAW / "wb" / "countries.csv").open())}
+def pd_economies() -> list:
+    """The economies the input-output tables report."""
+    with (RAW / "icio" / f"io_{YEAR}.csv").open() as f:
+        return sorted({r["iso3"] for r in csv.DictReader(f)})
 
 
-def figaro(cache: Path, manifest: dict, _iso3: set) -> None:
-    """Each economy's uses summed over the origins of what it used: the row is the product used or the value-added
-    component, the column the product made."""
-    to3 = iso3_of()
-    rows = []
-    for dest in FIGARO_ECONOMIES:
-        path = cache / f"figaro_{dest}.csv.gz"
-        if not path.exists():
-            log(f"downloading FIGARO for {dest}")
-            path.write_bytes(get(FIGARO.format(dest=dest), timeout=900))
-        summed = {}
-        with gzip.open(path, "rt", encoding="utf-8-sig") as f:
-            for r in csv.DictReader(f):
-                if r["unit"] != "MIO_EUR" or not r["prd_use"].startswith("CPA_") or not r["OBS_VALUE"]:
+def icio(cache: Path, manifest: dict, iso3: set) -> None:
+    """Each economy's uses summed over the origins of what it used: the row is the industry whose output was used, or
+    taxes less subsidies, or value added, the column the industry that used it; and its households' consumption of
+    each industry's output, likewise summed over origins, with the taxes on it."""
+    path = cache / "icio_2016_2020.zip"
+    if not path.exists():
+        log("downloading ICIO")
+        path.write_bytes(get(ICIO, timeout=1800))
+    with zipfile.ZipFile(path) as z, z.open(f"{YEAR}_SML.csv") as f:
+        reader = csv.reader(io.TextIOWrapper(f, encoding="utf-8-sig"))
+        header = next(reader)[1:]
+        uses, bought = {}, {}
+        for r in reader:
+            row, values = r[0], r[1:]
+            used = row if row in ICIO_ROWS else row.split("_", 1)[1] if "_" in row else None
+            if used is None:
+                continue
+            for col, v in zip(header, values):
+                if not v or float(v) == 0.0 or "_" not in col:
                     continue
-                key = (r["prd_ava"], r["prd_use"])
-                summed[key] = summed.get(key, 0.0) + float(r["OBS_VALUE"])
-        iso3 = to3[EUROSTAT_ISO2.get(dest, dest)]
-        rows.extend((iso3, ava, use, f"{v:.3f}") for (ava, use), v in summed.items())
-    manifest["series"]["figaro/io"] = {
-        "title": f"Input-output table at basic prices, product by product, {YEAR}, millions of euros, each use summed "
-                 "over the origins of what was used (naio_10_fcp_ip4), Eurostat FIGARO",
-        "rows": table(RAW / "figaro" / f"io_{YEAR}.csv", ["iso3", "row", "product", "value"], rows),
+                economy, what = col.split("_", 1)
+                if economy == ICIO_REST or economy not in iso3:
+                    continue
+                if what == "HFCE":
+                    bought[(economy, used)] = bought.get((economy, used), 0.0) + float(v)
+                elif what[0].isalpha() and what[0].isupper() and what not in ("NPISH", "GGFC", "GFCF", "INVNT",
+                                                                              "DPABR"):
+                    uses[(economy, used, what)] = uses.get((economy, used, what), 0.0) + float(v)
+    manifest["series"]["icio/io"] = {
+        "title": f"Inter-country input-output table, industry by industry, {YEAR}, millions of US dollars, each use "
+                 "summed over the origins of what was used, OECD ICIO 2023 edition",
+        "rows": table(RAW / "icio" / f"io_{YEAR}.csv", ["iso3", "row", "industry", "value"],
+                      [(e, u, w, f"{v:.3f}") for (e, u, w), v in uses.items()]),
     }
-    manifest["sources"]["figaro"] = {"title": "Eurostat FIGARO, SDMX 2.1 API", "url": FIGARO}
+    manifest["series"]["icio/households"] = {
+        "title": f"Households' final consumption expenditure by industry, {YEAR}, millions of US dollars, summed over "
+                 "origins, with taxes less subsidies on it, OECD ICIO 2023 edition",
+        "rows": table(RAW / "icio" / f"households_{YEAR}.csv", ["iso3", "row", "value"],
+                      [(e, u, f"{v:.3f}") for (e, u), v in bought.items()]),
+    }
+    manifest["sources"]["icio"] = {"title": "OECD Inter-Country Input-Output tables, 2023 edition", "url": ICIO}
 
 
 def ilo(cache: Path, manifest: dict, iso3: set) -> None:
     """Employment and hours by ISIC Rev. 4 section and ISCO-08 major group, for the economies the input-output
     tables report and the years around theirs; the ILO's modelled estimates are left out, and each economy keeps
     every year and source it reports."""
-    to3 = iso3_of()
-    economies = {to3[EUROSTAT_ISO2.get(e, e)] for e in FIGARO_ECONOMIES} & iso3
+    economies = set(pd_economies()) & iso3
     for flow, (name, title) in ILO_FLOWS.items():
         path = cache / f"{flow}.csv"
         if not path.exists():
@@ -197,7 +214,7 @@ def prices(cache: Path, manifest: dict, iso3: set) -> None:
         "title": "Price level index (world = 100) by expenditure heading, ICP 2021, World Bank",
         "rows": table(RAW / "icp" / "price_levels_2021.csv", ["iso3", "heading", "value"], rows),
     }
-    rate = json.loads(get(EURO_RATE))[1][0]["value"]
+    deflator = {int(r["date"]): r["value"] for r in json.loads(get(DEFLATOR))[1]}
     import openpyxl
     path = cache / "pink.xlsx"
     if not path.exists():
@@ -214,20 +231,21 @@ def prices(cache: Path, manifest: dict, iso3: set) -> None:
         path.write_bytes(get(USGS_STONE, timeout=300))
     text = pypdf.PdfReader(path).pages[0].extract_text()
     line = next(l for l in text.splitlines() if l.startswith("Price, average unit value, dollars per metric ton"))
-    stone = line.split()[-1]
+    stone = line.split()[-(UNIT_YEAR - YEAR + 1)]
     commodity.append(("Crushed stone, United States, average unit value", "($/mt)", stone))
-    commodity.append(("Euro, official exchange rate", "(euros per US$)", f"{rate:.6f}"))
+    commodity.append((f"United States GDP deflator, {UNIT_YEAR} over {YEAR}", "(ratio)",
+                      f"{deflator[UNIT_YEAR] / deflator[YEAR]:.6f}"))
     manifest["series"]["prices/commodities"] = {
         "title": f"{YEAR} annual averages: crude oil, coal and iron ore from the World Bank's Pink Sheet (nominal US$), "
                  "the crushed stone unit value from U.S. Geological Survey Mineral Commodity Summaries 2023, and the "
-                 "euro area's official exchange rate (PA.NUS.FCRF)",
+                 f"United States' GDP deflator (NY.GDP.DEFL.ZS) of {UNIT_YEAR} over {YEAR}",
         "rows": table(RAW / "prices" / f"commodities_{YEAR}.csv", ["name", "unit", "value"], commodity),
     }
     manifest["sources"]["prices"] = {"title": "World Bank ICP 2021 and Pink Sheet; USGS Mineral Commodity Summaries",
                                       "url": ICP.format(series="<heading>")}
 
 
-SOURCES = {"figaro": figaro, "ilo": ilo, "oecd": oecd, "land": land, "prices": prices}
+SOURCES = {"icio": icio, "ilo": ilo, "oecd": oecd, "land": land, "prices": prices}
 
 
 def main() -> None:
@@ -241,7 +259,7 @@ def main() -> None:
     iso3 = countries()
     for name in args.only or sorted(SOURCES):
         SOURCES[name](cache, manifest, iso3)
-        source = {"figaro": "figaro", "ilo": "ilo_activity", "oecd": "oecd_nad", "land": "wb_land",
+        source = {"icio": "icio", "ilo": "ilo_activity", "oecd": "oecd_nad", "land": "wb_land",
                   "prices": "prices"}[name]
         manifest["sources"][source]["fetched"] = datetime.date.today().isoformat()
         log(f"{name} done")
