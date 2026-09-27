@@ -2,6 +2,8 @@
 //! treasury's placeholder plan, each a contract its holders are paid at maturity. Bonds, dealers and the funding plan
 //! arrive with their own steps.
 
+mod consts;
+mod opening;
 mod rules;
 
 use if_state::kinds::{BillKind, BillLaw};
@@ -15,10 +17,11 @@ use phx_ledger::rows::BALANCE;
 use phx_macros::clause;
 use phx_num::{Count, Fixed, Missing};
 
+pub use opening::{Bills, bills_held};
 pub use rules::{bid, clear, size};
 
 declare_prim! {
-    /// A bill's face, the unit its holders' contracts are counted in.
+    /// A bill's face in dollars, the unit its holders' contracts are counted in.
     pub FACE = "SOV.bill_face" { kind: Policy, decided_by: "parliament", value: Count, clause: "SOV.1", scope: Shared }
 }
 
@@ -42,7 +45,10 @@ declare_prim! {
 }
 
 /// A bill: the treasury's liability to the banks that hold it, each holding the contracts it bought.
-const BILL: LineKindDecl = LineKindDecl {
+/// The opening's units of a currency to the dollar.
+const UNITS_PER_DOLLAR: &str = "GEN.units_per_dollar";
+
+pub(crate) const BILL: LineKindDecl = LineKindDecl {
     name: "treasury bill",
     asset: SideDecl {
         holder_kinds: &["bank"],
@@ -73,13 +79,26 @@ pub const SOLD: ReasonDecl =
 /// # Errors
 /// A primitive missing or of another shape.
 #[clause("SOV.1", "SOV.3", "TRS.9")]
-pub fn law(register: &Register, _: &OpeningCountry) -> Result<BillLaw, String> {
+pub fn law(register: &Register, country: &OpeningCountry) -> Result<BillLaw, String> {
     Ok(BillLaw {
-        face: i64::try_from(register.count(FACE.id)?).map_err(|e| e.to_string())?,
+        face: face(register, country.id)?,
         weeks: u16::try_from(register.count(WEEKS.id)?).map_err(|e| e.to_string())?,
         weekday: u32::try_from(register.count(WEEKDAY.id)?).map_err(|e| e.to_string())?,
         buffer_weeks: register.fixed(BUFFER_WEEKS.id)?,
     })
+}
+
+/// A bill's face in the currency's smallest units: its face in dollars, at the country's units to the dollar.
+///
+/// # Errors
+/// A primitive missing or of another shape, or a face beyond whole units.
+pub fn face(register: &Register, country: phx_id::CountryId) -> Result<i64, String> {
+    let dollars = register.count(FACE.id)?;
+    let units = register.count_in(UNITS_PER_DOLLAR, country)?;
+    dollars
+        .checked_mul(units)
+        .and_then(|f| i64::try_from(f).ok())
+        .ok_or_else(|| format!("a bill's face of {dollars} dollars beyond whole units"))
 }
 
 /// The sovereign's bills, which the kernel runs.
@@ -114,6 +133,7 @@ impl Contribution for Declared {
         let ledger = &mut phx_ledger::books::of(opening).ledger;
         ledger.lines.declare_money(BILL);
         let _ = ledger.reasons.declare(SOLD);
+        let _ = ledger.reasons.declare(opening::OPENED);
     }
 }
 
@@ -130,6 +150,7 @@ impl System for Sov {
         }
         let _: phx_core::Prim<Fixed<1>> = d.prim(&BUFFER_WEEKS);
         d.contribution(Box::new(Declared));
+        d.contribution(Box::new(Bills));
         d.market(Box::new(BILLS));
     }
 

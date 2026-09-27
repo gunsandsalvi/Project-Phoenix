@@ -728,6 +728,7 @@ pub fn assemble(
     world.labour_rebuild();
     world.credit_rebuild();
     world.state_rebuild();
+    world.bills_opened();
     world.visits_book_all(world.today);
     world.books.ledger.opened();
     Ok(world)

@@ -6,7 +6,7 @@ kind = "POLICY"
 owner = "SOV"
 decided_by = "parliament"
 source = "measured"
-source_ref = "A bill's face, the unit its holders' contracts count: 100 units of the currency, the least face a US Treasury bill is sold in (TreasuryDirect)."
+source_ref = "A bill's face, the unit its holders' contracts count: 100 dollars, the least face a US Treasury bill is sold in (TreasuryDirect), at each country's units to the dollar."
 value = 100
 
 [[primitive]]

@@ -157,6 +157,16 @@ impl World {
     /// Income tax bound to the books as the world opens or loads: withheld from every payment on the taxed line kind
     /// in each country's currency, into its treasury's account, by its bands over a member's yearly wage.
     #[clause("TAX.2", "TAX.7")]
+    /// The bills the opening wrote, each with the day it matures, so the auctions roll them over as they fall due.
+    pub(crate) fn bills_opened(&mut self) {
+        let Some(kind) = self.state.bills else { return };
+        let lines = &self.books.ledger.lines;
+        let k = lines.kind_index(kind.line);
+        let opened: Vec<(LineId, Day)> =
+            lines.ids().filter(|l| lines.kind_of(*l) == k).map(|l| (l, lines.next_due(l))).collect();
+        self.state.book.bills.extend(opened);
+    }
+
     pub(crate) fn state_rebuild(&mut self) {
         let Some(tax) = self.state.tax else { return };
         let kind = self.books.ledger.lines.kind_index(tax.withheld_from);

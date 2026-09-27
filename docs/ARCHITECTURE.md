@@ -132,7 +132,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 | `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings (agents' counting their multiplicity) with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); **standing flows** and a party's pooled legs (§6.5); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
 | `phx-pop` | REP | **Agent tables** (§7.1): attributes, positions and keyed position lists (§4.5), persons and attachments; hazards drawn ahead per agent and the persons a hit reaches (§7.3); outcomes and endings (§7.4), and a household's `combine` and `divide`; the representation (§7.6). |
 | `phx-market` | MKT | The six forms (§8), the coupled call and the **linked call** among them; prints, marks, and instruments' and currency pairs' fixings at 6b by the pricing service's declared method; admission hooks; market failures. |
-| `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts, with the receivables and payables of dues as they fall, posted from the day's settled records by the kernel's own work at 9b on a business day and, on a day with no 9b, at the audit's sub-step (10d) before the close reads them. The ledger's apply raises an equity effect for a money leg, a row leg that adjusts a balance, and a move of a holder's cost of lots, each signed by the leg's move of its party's net assets, so a leg passing through a party moves its equity by nothing. |
+| `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts, with the receivables and payables of dues as they fall, posted from the day's settled records by the kernel's own work at 9b on a business day and, on a day with no 9b, at the audit's sub-step (10d) before the close reads them. The ledger's apply raises an equity effect for a money leg, a row leg that adjusts a balance, and a move of a holder's cost of lots, each signed by the leg's move of its party's net assets, so a leg passing through a party moves its equity by nothing; an instruction's money effects are taken on each party's net money in it, so a bank through which two customers pay each other, one deposit down and another up, neither pays nor is paid. |
 | `phx-val` | VAL | Outlook methods as pure functions; public-series outlooks once per method per day, and for registered series only per registered pair on days with a new print; surprise and confidence arithmetic; the investor schedule. |
 | `phx-audit` | N1 | Families; streaming checks, the `AuditStream` the apply routine feeds; independent records (§15); incremental and rolling checks; injection mode. |
 
@@ -1562,6 +1562,13 @@ series of one, never a drawn past.
 - **Accounts** — reserves, the treasury's account, the central bank's claim on the treasury — have no dates and are
   marked spent at the opening; every other opening line falls due on the first date of its schedule after the
   snapshot.
+- **The sovereign's bills** close the banks' books, last of the balances (`sys-sov`'s `Bills`): once each bank's
+  deposits, loans and reserves are written, it holds the bills that bring its equity to its country's capital ratio of
+  its assets (`GEN.bank_capital_ratio`), none where its assets already carry more, spread over a bill's weeks as one
+  line maturing each week, so the weekly auctions roll a week's part over; the world's bill book learns them after the
+  opening (`bills_opened`). A bill's face is dollars at the country's units to the dollar. The public debt the banks'
+  bills and the central bank's claim do not hold waits for the holders of later stages, and the difference from the
+  derived debt is reported as an adjustment.
 
 ### 10.4b Dated flows before the payer pass *(retired)*
 
