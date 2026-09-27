@@ -502,6 +502,7 @@ pub fn phx_ledger::chains::Chain::load(&mut phx_store::save::Reader<'_>) -> core
 pub fn phx_ledger::chains::Chain::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::chains::Chains
 impl phx_ledger::chains::Chains
+pub fn phx_ledger::chains::Chains::abandon(&mut self, u64) -> phx_ledger::chains::Project
 pub fn phx_ledger::chains::Chains::begin(&mut self, phx_ledger::chains::Project) -> u64
 pub fn phx_ledger::chains::Chains::building(&self, u32) -> phx_num::missing::Missing<phx_id::ids::InstrumentId>
 pub fn phx_ledger::chains::Chains::check(&self, &[phx_ledger::instruction::LegRec])

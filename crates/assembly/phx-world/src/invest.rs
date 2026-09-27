@@ -152,7 +152,8 @@ impl World {
     /// from its stock, used up by the purchase that names the owner; the owner's money to the builder at the agreed
     /// price; and the units into the owner's plant under construction at what it paid. A stage its builder cannot
     /// deliver waits for another day, and a project whose last stage has not settled yet, as over a weekend, waits for
-    /// it, since what it has left is known only once that stage settles.
+    /// it, since what it has left is known only once that stage settles. A project whose owner or builder has ended is
+    /// abandoned.
     #[clause("CAP.5", "CAP.2", "SET.1")]
     pub(crate) fn invest_trade(&mut self, day: Day) {
         let Missing::Present(reason) = self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(BOUGHT))
@@ -160,6 +161,22 @@ impl World {
             violation!(clause = "SET.1", "a project's stage under a reason never declared");
         };
         let in_flight: std::collections::BTreeSet<u64> = self.market_day.stages.values().map(|(n, _)| *n).collect();
+        // A project whose owner or builder has ended is abandoned once no stage of it is settling: an estate neither
+        // builds nor invests, and what was built stays with the owner's successor.
+        let directory = self.books.parties.directory();
+        let itself = |p: PartyId| matches!(directory.resolve(p), phx_core::Resolved::Live(q, _) if q == p);
+        let ended: Vec<u64> = self
+            .books
+            .ledger
+            .chains
+            .projects()
+            .filter(|(n, p)| !in_flight.contains(n) && (!itself(p.owner) || !itself(p.builder)))
+            .map(|(n, _)| n)
+            .collect();
+        for n in ended {
+            let _ = self.books.ledger.chains.abandon(n);
+            self.market_day.tally.abandoned += 1;
+        }
         let due: Vec<(u64, Project)> = self
             .books
             .ledger

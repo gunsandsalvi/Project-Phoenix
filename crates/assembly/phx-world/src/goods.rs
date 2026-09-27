@@ -182,8 +182,9 @@ pub(crate) struct MarketDay {
 /// admitted, those refused or lapsed unmet, the transformations and trades that failed; and at retail, the buyers,
 /// the sellers they had in reach, the rounds of choosing again, the buyers that found no seller, and the units of
 /// services delivered at once that no buyer took, which are lost; in carriage, the shipments set on their way, the
-/// bookings refused, and the arrivals; and in plant, the projects begun, the stages that waited on their builder, and
-/// the projects completed; and the makings beyond their plant's capacity.
+/// bookings refused, and the arrivals; and in plant, the projects begun, the stages that waited on their builder, the
+/// projects completed and those abandoned as their owner or builder ended; and the makings beyond their plant's
+/// capacity.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GoodsDay {
     pub auctions: u64,
@@ -204,6 +205,7 @@ pub struct GoodsDay {
     pub projects: u64,
     pub waiting: u64,
     pub completed: u64,
+    pub abandoned: u64,
     /// The makings of more units a twin than its maker's plant allows a day.
     pub beyond_capacity: u64,
     /// The units made to order that no sale took, lost at the day's end.

@@ -127,6 +127,15 @@ impl Chains {
         }
     }
 
+    /// A project abandoned before it is complete: what was built of it stays with its owner, under construction.
+    #[clause("CAP.5")]
+    pub fn abandon(&mut self, project: u64) -> Project {
+        let Some(p) = self.projects.remove(&project) else {
+            violation!(clause = "CAP.5", "a project abandoned that is not building", project = project);
+        };
+        p
+    }
+
     /// A chain by its number.
     #[must_use]
     pub fn get(&self, chain: u32) -> Option<&Chain> {
