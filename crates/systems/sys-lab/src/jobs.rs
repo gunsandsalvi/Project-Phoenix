@@ -172,9 +172,8 @@ impl AttachmentDraw for Jobs {
         let date = calendar.date(today);
         let dates = phx_ledger::opening::monthly(date, c.id);
         let first = Missing::Present((dates.nth(calendar, 1), 1));
-        let part_time_hours = match u32::try_from(self.part_time_hours.get(register, c.id).get()) {
-            Ok(h) => h,
-            Err(_) => violation!(clause = "LAB.1", "part-time hours beyond a week's", country = c.id.get()),
+        let Ok(part_time_hours) = u32::try_from(self.part_time_hours.get(register, c.id).get()) else {
+            violation!(clause = "LAB.1", "part-time hours beyond a week's", country = c.id.get())
         };
         let of_employees: f64 = employees.iter().sum();
         let mean_hours: f64 = employees
