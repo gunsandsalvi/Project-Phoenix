@@ -15,16 +15,16 @@ value = 4
 id = "VAL.adaptive_gain"
 kind = "PREFERENCE"
 owner = "VAL"
-source = "assumed"
-source_ref = "The share of the last surprise an adaptive outlook takes in at each print, beta: its mean 0.65, the adaptive rule Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)) fitted to the forecasts of learning-to-forecast experiments; its spread, a standard deviation of 0.14 (a = 6.5, b = 3.5), assumed until a survey's individual forecasts measure it."
-value = { family = "beta", discretisation = "equal_shares", a = "6.5", b = "3.5" }
+source = "measured"
+source_ref = "The share of the last surprise an adaptive outlook takes in at each print, beta: its mean 0.65, the linear rule estimated for the subjects of the converging groups of Hommes et al.'s learning-to-forecast experiments (Anufriev and Hommes 2012, American Economic Journal: Microeconomics 4(4); Hommes 2011, Journal of Economic Dynamics and Control 35(1), p. 29); its spread across people, a standard deviation of 0.126, the adaptive participants' individually estimated first-order rules in Heemeijer, Hommes, Sonnemans and Tuinstra (2009, Journal of Economic Dynamics and Control 33(5), Appendix C, Table 3: the gain α1/(α1+α2) of the seven positive-feedback participants with an adaptive term, mean 0.517, standard deviation 0.126): a = 8.66, b = 4.67."
+value = { family = "beta", discretisation = "equal_shares", a = "8.66", b = "4.67" }
 
 [[primitive]]
 id = "VAL.trend_gamma"
 kind = "PREFERENCE"
 owner = "VAL"
 source = "measured"
-source_ref = "How far the trend rule extrapolates the last change: 0.4, the weak trend-following rule of Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)), the trend rule their experiments' forecasters used most."
+source_ref = "How far the trend rule extrapolates the last change: 0.4, the weak trend rule of Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)), the smallest trend coefficient estimated for the individual forecasters of Hommes et al. (2005) (Hommes 2011, Journal of Economic Dynamics and Control 35(1), p. 29)."
 value = "0.4"
 
 [[primitive]]
@@ -47,8 +47,8 @@ value = "3.04"
 id = "VAL.performance_memory"
 kind = "PREFERENCE"
 owner = "VAL"
-source = "measured"
-source_ref = "The weight of the last error in a heuristic's performance record: 0.3, one less the memory of 0.7 that Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)) fitted to their experiments' switching between rules."
+source = "assumed"
+source_ref = "The weight of the last error in a heuristic's performance record: 0.3, one less the memory of 0.7 of Anufriev and Hommes' heuristic-switching model, a value they chose by trial-and-error simulation of their experiments, not an estimate (Hommes 2011, Journal of Economic Dynamics and Control 35(1), p. 29, note 13); no study measures it across people."
 value = "0.3"
 
 [[primitive]]
@@ -64,16 +64,16 @@ id = "VAL.switching_intensity"
 kind = "PREFERENCE"
 owner = "VAL"
 source = "assumed"
-source_ref = "How strongly a party moves toward the heuristic that has forecast best, per squared error in the method's widths, gamma: its mean 0.4, the intensity Anufriev and Hommes (2012, American Economic Journal: Microeconomics 4(4)) fitted to their experiments; its spread, a standard deviation of 0.2 (shape 4, scale 0.1), assumed until a survey's individual switching measures it."
+source_ref = "How strongly a party moves toward the heuristic that has forecast best, per squared error in the method's widths, gamma: its mean 0.4, the intensity of Anufriev and Hommes' heuristic-switching model, chosen by trial-and-error simulation of their experiments (Hommes 2011, Journal of Economic Dynamics and Control 35(1), p. 29, note 13); its spread, a standard deviation of 0.2 (shape 4, scale 0.1), assumed: the experiments estimate the intensity on aggregate choices only (Anufriev, Bao and Tuinstra 2016, Journal of Economic Behavior and Organization 129, note 22)."
 value = { family = "gamma", discretisation = "equal_shares", shape = "4", scale = "0.1" }
 
 [[primitive]]
 id = "VAL.attention_sensitivity"
 kind = "PREFERENCE"
 owner = "VAL"
-source = "assumed"
-source_ref = "How many widths a surprise must exceed to wake the parties it bears on (REP.35): two, the width being the mean absolute surprise, so a band of about 1.6 standard deviations that holds a normal surprise about nine times in ten; assumed until the review decisions of S1.12 measure it."
-value = "2"
+source = "estimated"
+source_ref = "How many widths a surprise must exceed to wake the parties it bears on (REP.35): 0.78, the width being the mean absolute surprise, 0.798 standard deviations of a normal surprise. Between 40.15 and 52.83 per cent of the New York Fed's Survey of Consumer Expectations respondents shown new information do not revise their expectations (Armantier, Nelson, Topa, van der Klaauw and Zafar 2016, Review of Economics and Statistics 98(3); Staff Report 543, p. 12); a normal surprise stays within 0.62 standard deviations 46.5 per cent of the time, the middle of that range, which is 0.78 widths."
+value = "0.78"
 
 [[primitive]]
 id = "VAL.heuristics_tracked"
