@@ -1,5 +1,5 @@
 id = "F15"
-version = 1
+version = 2
 title = "Unemployment spells and duration dependence"
 series = ["persons' labour-market states, tracers"]
 unit = "spell"
@@ -15,12 +15,12 @@ earlier_reads = []
 
 [[benchmark]]
 statistic = "long-term share of the unemployed (a year and more)"
-range = [0.1, 0.6]
+range = [0.1, 0.7]
 source = "OECD Labour Force Statistics, incidence of long-term unemployment"
-source_ref = "The share of the unemployed out of work for a year or more ranges from about 10 per cent in the US to 40 to 50 per cent in much of continental Europe."
+source_ref = "OECD incidence of unemployment of a year or more, both sexes, all ages: the US 12.7 per cent (2019) and 12.2 (2024); in 2024 France 23.1, Germany 27.8, Spain 33.5, Belgium 36.4, Italy 52.0, Greece 54.9 and Slovakia 65.1; Greece 70.2 in 2019."
 
 [[benchmark]]
 statistic = "exit hazard at twelve months over exit hazard at one month"
-range = [0.15, 0.85]
+range = [0.1, 1.0]
 source = "Machin and Manning (1999), Handbook of Labor Economics 3C; Kroft, Lange and Notowidigdo (2013), Quarterly Journal of Economics 128(3)"
-source_ref = "Exit rates from unemployment fall with duration."
+source_ref = "Neither source gives the ratio: Kroft, Lange and Notowidigdo find the callback rate falls significantly with the spell's length, most of the fall in the first eight months, and Machin and Manning that exit rates fall with duration. The range asks only that the hazard at twelve months be below the first month's."

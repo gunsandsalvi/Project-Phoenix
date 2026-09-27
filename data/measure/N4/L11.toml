@@ -1,5 +1,5 @@
 id = "L11"
-version = 1
+version = 2
 title = "Expectations"
 first_link = "a regional shock"
 traces = ["first revisions spread from the struck region outward", "spending and investment outside the region respond"]
@@ -8,13 +8,13 @@ suspects = ["VAL", "HH", "FRM"]
 estimator = { id = "event", version = 1 }
 
 [[benchmark]]
-statistic = "correlation of outlook dispersion with the unemployment rate"
+statistic = "correlation of outlook dispersion with inflation"
 series = "outlook dispersion per variable (LC-1-01); STA unemployment"
 horizon = "quarterly"
 sign = "positive"
-range = [0.1, 0.8]
+range = [0.05, 0.9]
 source = "Mankiw, Reis and Wolfers (2003), NBER Macroeconomics Annual 18"
-source_ref = "Disagreement about inflation expectations rises in recessions and with inflation."
+source_ref = "Disagreement about inflation expectations rises with inflation, with sharp changes in it and with the dispersion of relative prices; its link to the output gap is weak and not robust (NBER Working Paper 9796). The range asks only that the correlation with inflation be positive."
 
 [[benchmark]]
 statistic = "coefficient of later forecast errors on forecast revisions"
@@ -23,4 +23,4 @@ horizon = "one year"
 sign = "positive"
 range = [0.3, 2.0]
 source = "Coibion and Gorodnichenko (2015), American Economic Review 105(8)"
-source_ref = "Revisions of consensus forecasts predict their later errors, a coefficient near 1.2 for inflation: information spreads slowly."
+source_ref = "Regressing consensus forecast errors on forecast revisions gives a coefficient of 1.23 (standard error 0.50) for the Survey of Professional Forecasters' inflation forecasts over 1969-2010 (IMF Working Paper 12/296, the article's working paper)."

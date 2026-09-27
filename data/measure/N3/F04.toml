@@ -1,5 +1,5 @@
 id = "F04"
-version = 1
+version = 2
 title = "Okun's law"
 series = ["STA unemployment rate, annual", "STA real output, annual"]
 unit = "country-year"
@@ -17,4 +17,4 @@ earlier_reads = []
 statistic = "OLS slope of the change in the unemployment rate on output growth"
 range = [-0.9, -0.1]
 source = "Ball, Leigh and Loungani (2017), Journal of Money, Credit and Banking 49(7)"
-source_ref = "Okun coefficients for twenty advanced economies over 1980-2011 lie between about -0.15 (Japan) and -0.85 (Spain), near -0.4 for the US."
+source_ref = "Okun coefficients of the unemployment gap on the output gap for twenty advanced economies over 1980-2011 lie between -0.14 (Austria) and -0.85 (Spain), -0.45 for the US (Table 5); the US slope of the change in unemployment on output growth over 1948-2011 is -0.41 (Table 1)."

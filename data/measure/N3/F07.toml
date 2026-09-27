@@ -1,5 +1,5 @@
 id = "F07"
-version = 1
+version = 2
 title = "Fat tails in output growth"
 series = ["STA real output, quarterly"]
 unit = "country-quarter"
@@ -15,6 +15,6 @@ earlier_reads = []
 
 [[benchmark]]
 statistic = "exponential-power shape of standardised output growth (1 Laplace, 2 normal)"
-range = [0.6, 1.6]
+range = [0.6, 1.7]
 source = "Fagiolo, Napoletano and Roventini (2008), Journal of Applied Econometrics 23(5)"
-source_ref = "Quarterly output growth rates of OECD countries have exponential-power shapes near 1, well below the normal's 2."
+source_ref = "US quarterly output growth over 1947-2005 has an exponential-power shape of 1.18; the monthly industrial production growth of twelve OECD economies over 1975-1998 shapes of 0.81 (Denmark) to 1.65 (Canada); US monthly industrial production from 1921, 0.62."

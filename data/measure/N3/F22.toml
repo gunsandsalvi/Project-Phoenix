@@ -1,5 +1,5 @@
 id = "F22"
-version = 1
+version = 2
 title = "Housing: volume and prices move together"
 series = ["dwelling transactions and prices by region, quarterly (HSG, STA)"]
 unit = "region-quarter"
@@ -17,10 +17,10 @@ earlier_reads = []
 statistic = "contemporaneous correlation of transaction volume with price growth"
 range = [0.1, 0.85]
 source = "Stein (1995), Quarterly Journal of Economics 110(2); Clayton, Miller and Peng (2010), Journal of Real Estate Finance and Economics 40"
-source_ref = "Housing prices and trading volume are strongly positively correlated."
+source_ref = "Housing cycles show a positive correlation of prices and trading volume; the source gives no value, so the range asks only that it be positive and not trivial."
 
 [[benchmark]]
-statistic = "lag in quarters at which volume's correlation with later price growth peaks"
-range = [0.0, 6.0]
+statistic = "lag in quarters at which volume's correlation with later price growth peaks (negative: prices lead)"
+range = [-4.0, 4.0]
 source = "Clayton, Miller and Peng (2010)"
-source_ref = "Volume moves with or ahead of prices."
+source_ref = "Home prices Granger-cause trading volume, asymmetrically (falls cut volume, rises do not); volume Granger-causes prices only in markets with inelastic supply."

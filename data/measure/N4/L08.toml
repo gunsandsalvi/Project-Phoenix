@@ -1,5 +1,5 @@
 id = "L08"
-version = 1
+version = 2
 title = "The fiscal and political loop"
 first_link = "downturns in the world's own dating (F01)"
 traces = ["benefits and receipts", "deficit and issuance"]
@@ -14,13 +14,13 @@ horizon = "annual"
 sign = "positive"
 range = [0.05, 0.6]
 source = "Laubach (2009), Journal of the European Economic Association 7(4)"
-source_ref = "A one-point rise in the projected deficit ratio raises long-term forward rates by about 20 to 30 basis points."
+source_ref = "A one-point rise in the projected deficit to output raises the five-year forward rate five years ahead by about 25 basis points, and a point of projected debt by 3 to 4."
 
 [[benchmark]]
-statistic = "incumbents' vote share per point of unemployment"
+statistic = "incumbents' vote share per point of real output growth a head"
 series = "election results and unemployment (POL, STA)"
 horizon = "the election"
 sign = "negative"
-range = [-3.0, -0.1]
-source = "Fair (1978), Review of Economics and Statistics 60(2)"
-source_ref = "Incumbents lose votes when the economy does badly."
+range = [0.1, 3.0]
+source = "Fair (1978), Review of Economics and Statistics 60(2); Fair (1996), Journal of Economic Perspectives 10(3)"
+source_ref = "The most important economic variable for the incumbent party's vote share is the growth of real output a head, with a positive effect; inflation's effect is small and insignificant (Fair 1996, Journal of Economic Perspectives 10(3), on the equation of 1978). The range asks only for a positive effect of the order of a point."

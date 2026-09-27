@@ -1,5 +1,5 @@
 id = "F11"
-version = 1
+version = 2
 title = "Young firms exit more; survivors grow"
 series = ["foundings and endings by firm age (FRM records)", "employment of survivors"]
 unit = "cohort"
@@ -17,10 +17,10 @@ earlier_reads = []
 statistic = "five-year survival of a founding cohort"
 range = [0.3, 0.65]
 source = "US Census Business Dynamics Statistics; Haltiwanger, Jarmin and Miranda (2013), Review of Economics and Statistics 95(2)"
-source_ref = "About half of US establishments and firms survive five years; young firms' exit rates are the highest and fall with age."
+source_ref = "From the Business Dynamics Statistics' firm-age table, firms aged five in year t+5 over firms aged zero in year t average 0.47 (0.43 to 0.54) for the cohorts of 1978-2017; Haltiwanger, Jarmin and Miranda find exits remove about 47 per cent of start-ups' jobs within five years."
 
 [[benchmark]]
 statistic = "exit rate at age one over exit rate at ages ten and above"
 range = [1.3, 6.0]
-source = "Haltiwanger, Jarmin and Miranda (2013)"
-source_ref = "Exit rates fall steeply with age, from near 20 per cent at age one to under 10 per cent for mature firms."
+source = "US Census Business Dynamics Statistics, firm age table (bds2022_fa)"
+source_ref = "Firm exit rates in the Business Dynamics Statistics are 21 to 29 per cent at age one and 5 to 7 per cent at ages eleven and above over 2003-2022, a ratio of about 3 to 4."

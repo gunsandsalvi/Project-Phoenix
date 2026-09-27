@@ -1,5 +1,5 @@
 id = "L12"
-version = 1
+version = 2
 title = "Growth"
 first_link = "discoveries, imitations and licences (TEC records)"
 traces = ["total factor productivity growth traced to ways discovered in the run (LC-6-06)"]
@@ -23,4 +23,4 @@ horizon = "annual"
 sign = "positive"
 range = [0.5, 0.95]
 source = "Syverson (2011), Journal of Economic Literature 49(2); Foster, Haltiwanger and Syverson (2008), American Economic Review 98(1)"
-source_ref = "Productivity differences within industries are large and persistent."
+source_ref = "Year-on-year autoregressive coefficients of plant TFP are about 0.6 to 0.8 (Syverson, citing Foster, Haltiwanger and Syverson)."

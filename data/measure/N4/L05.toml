@@ -1,5 +1,5 @@
 id = "L05"
-version = 1
+version = 2
 title = "The credit and housing cycle"
 first_link = "changes in collateral values (HSG prices, marks)"
 traces = ["published lending standards"]
@@ -12,15 +12,15 @@ statistic = "correlation of credit growth with earlier house-price growth, at it
 series = "STA credit to households; HSG prices"
 horizon = "up to eight quarters"
 sign = "positive"
-range = [0.2, 0.9]
+range = [0.0, 0.9]
 source = "Goodhart and Hofmann (2008), Oxford Review of Economic Policy 24(1)"
-source_ref = "House prices and credit move together, with effects running in both directions."
+source_ref = "A panel VAR of 17 industrial countries over 1970-2006 finds a significant multidirectional link between house prices, money and credit, house prices influencing credit; the source gives no correlation, so the range asks only that it be positive."
 
 [[benchmark]]
 statistic = "foreclosure sales' share of transactions after house-price peaks over before"
 series = "dwelling transactions by cause (HSG)"
 horizon = "eight quarters either side of a peak"
 sign = "positive"
-range = [1.2, 6.0]
-source = "Campbell, Giglio and Pathak (2011)"
-source_ref = "Forced sales rise as prices fall after peaks."
+range = [2.0, 20.0]
+source = "Campbell, Giglio and Pathak (2011), American Economic Review 101(5)"
+source_ref = "In Massachusetts foreclosure-related sales were negligible in 1987 and under one per cent of sales in the mid-2000s, and rose to 9.7 per cent in 1993 and 12.7 per cent in the first quarter of 2008, after the price peaks (NBER Working Paper 14866)."

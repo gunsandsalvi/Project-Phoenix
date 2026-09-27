@@ -1,5 +1,5 @@
 id = "L06"
-version = 1
+version = 2
 title = "Runs and contagion"
 first_link = "a bank's published losses (ACC reports)"
 traces = ["forced sales, funding cost and facility use at the struck bank", "losses along named exposures"]
@@ -14,4 +14,4 @@ horizon = "four weeks"
 sign = "positive"
 range = [0.01, 0.4]
 source = "Iyer and Puri (2012), American Economic Review 102(4)"
-source_ref = "In a bank run, depositors above the insurance limit withdraw far more often than insured ones."
+source_ref = "Depositors above the insurance limit are about 30 percentage points more likely to run (0.307 to 0.331 for transaction accounts, Table 2); for term deposits the difference is about 2 points (NBER Working Paper 14280)."

@@ -1,5 +1,5 @@
 id = "F06"
-version = 1
+version = 2
 title = "The Phillips curve and its instability"
 series = ["STA wage inflation, quarterly", "IDX consumer-price inflation, quarterly", "unemployment gap: STA unemployment rate less its HP trend (smoothing 1600)"]
 unit = "country-quarter"
@@ -17,10 +17,10 @@ earlier_reads = []
 statistic = "median slope of wage inflation on the unemployment gap across windows"
 range = [-1.5, -0.05]
 source = "Galí (2011), Journal of the European Economic Association 9(3); Blanchard (2016), American Economic Review 106(5)"
-source_ref = "Wage-inflation slopes on unemployment are negative, near -0.5 to -1 in Galí's post-war US estimates; price-inflation slopes have flattened since 1990 to about -0.2 (Blanchard)."
+source_ref = "Galí's US wage-inflation equation over 1964-2009 (quarterly rates) puts -0.18 to -0.55 on current unemployment, offset in part by +0.15 to +0.45 on its lag; Blanchard's price-inflation slope fell from about -0.7 in the mid-1970s to about -0.2, flat since the late 1980s."
 
 [[benchmark]]
 statistic = "share of windows whose slope has the opposite sign to the median's"
-range = [0.0, 0.4]
+range = [0.0, 0.5]
 source = "Blanchard (2016)"
-source_ref = "Rolling estimates of the curve drift in size and sometimes lose significance but seldom reverse sign for long."
+source_ref = "Neither source counts sign reversals: Blanchard's time-varying slope stays negative (between about -0.17 and -0.77 over 1961-2014); Galí's raw correlation of wage inflation with unemployment is +0.02 over the full sample and -0.76 after 1984. The range admits reversal in up to half the windows, the direction the sources show."

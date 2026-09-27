@@ -1,5 +1,5 @@
 id = "F24"
-version = 1
+version = 2
 title = "Credit spreads are countercyclical and predict output"
 series = ["issuers' bond spreads over maturity-matched sovereign yields (CRD prints)", "STA real output", "default events"]
 unit = "country-quarter"
@@ -16,11 +16,11 @@ earlier_reads = []
 [[benchmark]]
 statistic = "correlation of the average spread with output growth"
 range = [-0.85, -0.1]
-source = "Gilchrist and Zakrajšek (2012), American Economic Review 102(4)"
-source_ref = "Corporate credit spreads widen in downturns."
+source = "Gilchrist and Zakrajšek (2012), American Economic Review 102(4); the Federal Reserve's GZ spread series; FRED series GDPC1"
+source_ref = "The contemporaneous correlation of the GZ spread with year-on-year real GDP growth over 1973Q1-2010Q3, computed from the Federal Reserve's published spread and FRED's GDPC1: -0.50."
 
 [[benchmark]]
 statistic = "slope of future four-quarter output growth on the spread, points per point"
 range = [-3.0, -0.2]
 source = "Gilchrist and Zakrajšek (2012)"
-source_ref = "A wider spread predicts slower output growth."
+source_ref = "A rise of 100 basis points in the GZ spread is followed by real GDP growth more than 1.25 percentage points slower over the next four quarters (NBER Working Paper 17021, Table 3)."

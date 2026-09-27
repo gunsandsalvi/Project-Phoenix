@@ -1,5 +1,5 @@
 id = "F28"
-version = 1
+version = 2
 title = "Births, moves and housing"
 series = ["births by tenure and region, moves by region (POP records, STA)", "house prices, incomes, unemployment and wages by region"]
 unit = "region-year"
@@ -17,22 +17,22 @@ earlier_reads = []
 statistic = "owners' births per ten per cent house-price rise, per cent"
 range = [0.0, 10.0]
 source = "Dettling and Kearney (2014), Journal of Public Economics 110"
-source_ref = "Rising house prices raise owners' fertility and lower non-owners'."
+source_ref = "A $10,000 rise in house prices raises owners' fertility by 5 per cent (US metropolitan areas, 1990-2006). The source reports no elasticity; the range asks for a positive effect of the order it reports."
 
 [[benchmark]]
 statistic = "non-owners' births per ten per cent house-price rise, per cent"
 range = [-8.0, 0.0]
 source = "Dettling and Kearney (2014)"
-source_ref = "Non-owners' fertility falls as house prices rise."
+source_ref = "A $10,000 rise in house prices lowers non-owners' fertility by 2.4 per cent, a net rise of 0.8 per cent at the mean ownership rate. The range asks for a negative effect of the order it reports."
 
 [[benchmark]]
 statistic = "births per point of unemployment, per cent"
 range = [-6.0, 0.0]
 source = "Currie and Schwandt (2014), Proceedings of the National Academy of Sciences 111(41)"
-source_ref = "Fertility falls when unemployment rises."
+source_ref = "A one-point rise in unemployment at ages 20 to 24 cuts conceptions by six per 1,000 women in the short run and completed births by 14.2 per 1,000 by age 40; at US fertility rates of the ages, about 100 per 1,000, a few per cent."
 
 [[benchmark]]
 statistic = "net migration per point of earnings gap, per cent of population"
-range = [0.0, 1.0]
+range = [0.0, 2.0]
 source = "Blanchard and Katz (1992), Brookings Papers on Economic Activity 1992(1)"
-source_ref = "People move toward regions whose earnings and employment rise."
+source_ref = "Blanchard and Katz report no migration per point of earnings gap: a state's unemployment and participation return to normal within five to seven years of a shock because workers leave, and states' employment growth correlates with their net migration at 0.84 (1950-1987) and 0.91 (1970-1987). The range asks only that people move toward the regions whose earnings rise."

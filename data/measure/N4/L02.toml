@@ -1,5 +1,5 @@
 id = "L02"
-version = 1
+version = 2
 title = "The forced seller"
 first_link = "forced-sale prints by door: a margin call unmet, a redemption beyond a buffer, a funding line withdrawn, a mandate boundary crossed, an estate's liquidation"
 traces = ["other holders' mark losses", "second-round calls and redemptions at those holders"]
@@ -14,7 +14,7 @@ horizon = "one quarter"
 sign = "negative"
 range = [-0.15, -0.01]
 source = "Coval and Stafford (2007), Journal of Financial Economics 86(2)"
-source_ref = "Stocks sold by funds facing extreme outflows fall in price, then recover."
+source_ref = "Stocks under widespread forced selling by funds with extreme outflows show abnormal returns of -10.1 per cent over the selling quarter (t = -11.5), -2.5 per cent for isolated selling (NBER Working Paper 11357, the article's working paper)."
 
 [[benchmark]]
 statistic = "share of that change reversed within the following year"
@@ -23,5 +23,5 @@ horizon = "four quarters"
 sign = "positive"
 range = [0.3, 1.2]
 source = "Coval and Stafford (2007)"
-source_ref = "The price pressure of fire sales reverses over the following quarters."
+source_ref = "7.7 of the 10.1 points, about three-quarters of the drop, reverse in months four to twelve; robustness cuts give 0.83 and 1.12."
 order = 2

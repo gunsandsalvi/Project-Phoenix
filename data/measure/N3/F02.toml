@@ -1,5 +1,5 @@
 id = "F02"
-version = 1
+version = 2
 title = "Relative volatilities over the cycle"
 series = ["STA real output, quarterly", "STA real fixed investment, quarterly", "household spending on non-durables and services from match-set records, durability from each product's declaration, quarterly"]
 unit = "country-quarter"
@@ -16,11 +16,11 @@ earlier_reads = []
 [[benchmark]]
 statistic = "sd of cyclical fixed investment over sd of cyclical output"
 range = [1.8, 4.5]
-source = "Stock and Watson (1999), Handbook of Macroeconomics 1A, ch. 1"
-source_ref = "HP-filtered US post-war fixed investment is about 2.5 to 3 times as volatile as output; Backus, Kehoe and Kydland (1992, JPE 100) find investment 2 to 4 times output's volatility across OECD economies."
+source = "Stock and Watson (1999), Handbook of Macroeconomics 1A, ch. 1; Backus, Kehoe and Kydland (1992), Journal of Political Economy 100"
+source_ref = "Band-pass filtered US fixed investment over 1953-1996 has a standard deviation of 4.97 against output's 1.66, a ratio of 2.99 (Stock and Watson, Table 2); Backus, Kehoe and Kydland's HP-filtered series over 1970-1990 give 1.95 (Italy) to 3.27 (US) across ten OECD economies."
 
 [[benchmark]]
 statistic = "sd of cyclical non-durables and services consumption over sd of cyclical output"
-range = [0.3, 1.0]
+range = [0.3, 1.2]
 source = "Stock and Watson (1999); Backus, Kehoe and Kydland (1992)"
-source_ref = "Consumption of non-durables and services moves less than output: about half as much in the US, and between about 0.5 and 1 across OECD economies."
+source_ref = "US non-durables and services consumption has a standard deviation of 0.78 against output's 1.66, a ratio of 0.47 (Stock and Watson, Table 2); Backus, Kehoe and Kydland's total consumption, durables included, gives 0.66 (Australia) to 1.15 (UK)."

@@ -1,5 +1,5 @@
 id = "F27"
-version = 1
+version = 2
 title = "Sudden stops, more with foreign-currency debt"
 series = ["financial and current accounts (STA balance of payments)", "foreign-currency debt shares (ACC)"]
 unit = "country-year"
@@ -17,10 +17,10 @@ earlier_reads = []
 statistic = "sudden stops per country-year"
 range = [0.01, 0.1]
 source = "Calvo, Izquierdo and Mejía (2004), NBER Working Paper 10520"
-source_ref = "Sudden stops occur in a few per cent of emerging-market country-years."
+source_ref = "Counted from the paper's list of episodes (Appendix Table 3: 21 sudden stops over 32 economies, 1992-2001): about 0.07 a country-year overall, 0.11 for the 15 emerging markets and 0.03 for developed economies."
 
 [[benchmark]]
 statistic = "frequency with high foreign-currency debt less with low, per country-year"
-range = [0.0, 0.2]
+range = [0.0, 0.7]
 source = "Calvo, Izquierdo and Mejía (2004)"
-source_ref = "Domestic liability dollarisation raises the probability of a sudden stop."
+source_ref = "At the largest current-account deficit a highly dollarised economy's probability of a sudden stop exceeds a lowly dollarised one's by about 0.65, and by about 0.30 with no deficit (Figure 4)."

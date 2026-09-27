@@ -1,5 +1,5 @@
 id = "F19"
-version = 1
+version = 2
 title = "Loan rates follow the policy rate partly and slowly"
 series = ["new-loan rates by product (BNK publications)", "the policy rate"]
 unit = "country-month"
@@ -15,12 +15,12 @@ earlier_reads = []
 
 [[benchmark]]
 statistic = "impact pass-through to loan rates"
-range = [0.1, 0.8]
+range = [0.1, 0.5]
 source = "de Bondt (2005), German Economic Review 6(1)"
-source_ref = "Euro-area retail lending rates take up about half of a market-rate change within a month."
+source_ref = "The immediate pass-through of market interest rates to euro-area bank deposit and lending rates is at most 50 per cent."
 
 [[benchmark]]
 statistic = "long-run pass-through to loan rates"
 range = [0.5, 1.2]
 source = "de Bondt (2005)"
-source_ref = "In the long run the pass-through to corporate lending rates is close to complete."
+source_ref = "The final pass-through is typically close to 100 per cent, in particular for lending rates."

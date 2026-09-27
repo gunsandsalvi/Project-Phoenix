@@ -1,5 +1,5 @@
 id = "F26"
-version = 1
+version = 2
 title = "Exchange rates are near random walks"
 series = ["monthly FX fixings", "relative money, output and rates (STA, CB)"]
 unit = "currency pair-month"
@@ -17,4 +17,4 @@ earlier_reads = []
 statistic = "RMSE of the fundamentals model over the random walk's"
 range = [0.95, 1.4]
 source = "Meese and Rogoff (1983), Journal of International Economics 14; Cheung, Chinn and Pascual (2005), Journal of International Money and Finance 24(7)"
-source_ref = "Structural exchange-rate models do not beat the random walk out of sample at horizons up to a year."
+source_ref = "Of 186 out-of-sample MSE ratios of structural models against the random walk, 141 are insignificant, 43 favour the random walk and 2 the model (Cheung, Chinn and Pascual); the range asks for a ratio of root errors near or above one, as the sources find."

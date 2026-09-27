@@ -1,5 +1,5 @@
 id = "F01"
-version = 1
+version = 2
 title = "Business cycles: growth, and expansions longer than recessions"
 series = ["STA real output, quarterly, per country"]
 unit = "country-quarter"
@@ -15,24 +15,24 @@ earlier_reads = []
 
 [[benchmark]]
 statistic = "mean annual growth of real output, per cent"
-range = [0.5, 6.0]
+range = [0.8, 7.0]
 source = "Penn World Table 10.01 (Feenstra, Inklaar and Timmer, 2015), rgdpna"
-source_ref = "Country means of annual real GDP growth over 1950-2019: nearly all economies between about 1 and 5 per cent a year; the range adds half a point at each end for the three development levels."
+source_ref = "Country means of annual rgdpna growth over 1950-2019 for the 181 economies with twenty years or more: median 3.9 per cent, 5th to 95th percentile 1.3 to 6.5; the 55 economies observed from 1950 lie between 2.1 and 5.9. The range adds a little at each end."
 
 [[benchmark]]
 statistic = "mean expansion length over mean recession length"
 range = [2.5, 9.0]
 source = "NBER Business Cycle Dating Committee chronology; Harding and Pagan (2002), Journal of Monetary Economics 49"
-source_ref = "US post-war expansions average about 58 months against about 11 for recessions, a ratio near 5; Harding and Pagan's quarterly dating of other industrial economies gives ratios between about 3 and 8."
+source_ref = "NBER's chronology over 1945-2020: expansions average 64.2 months, contractions 10.3, a ratio of 6.2. Harding and Pagan's quarterly dating of GDP: the US 17.8 quarters over 3.0 (5.9), the UK 16.1 over 3.75 (4.3), Australia 20.6 over 3.3 (6.2)."
 
 [[benchmark]]
 statistic = "mean recession length, quarters"
 range = [2.0, 6.0]
 source = "NBER Business Cycle Dating Committee chronology; Harding and Pagan (2002)"
-source_ref = "Post-war recessions last on average three to four quarters in the US and other industrial economies' quarterly dating."
+source_ref = "NBER's post-war contractions average 10.3 months, about 3.4 quarters; Harding and Pagan's quarterly dating gives 3.0 (US), 3.75 (UK) and 3.3 (Australia) quarters."
 
 [[benchmark]]
 statistic = "coefficient of variation of expansion lengths"
 range = [0.3, 1.1]
 source = "NBER Business Cycle Dating Committee chronology"
-source_ref = "Post-war US expansions range from 12 to 128 months around a mean near 58, a coefficient of variation near 0.6."
+source_ref = "The twelve post-war US expansions range from 12 to 128 months, a mean of 64.2 and a standard deviation of 39.0: a coefficient of variation of 0.61."
