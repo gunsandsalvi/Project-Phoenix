@@ -436,20 +436,21 @@ fn day_one_whole(w: Inspector<'_>) -> Outcome {
     }
 }
 
-/// The persons reconcile day by day — each day's persons are the last day's less those gone, none being born or
-/// entering yet — and every household holds a head.
+/// The persons reconcile day by day — each day's persons are the last day's less those gone and with those born — and
+/// every household holds a head.
 fn populations_reconcile(w: Inspector<'_>) -> Outcome {
     if !keeps_agents(w) {
         return Outcome::NotYet(NO_AGENTS);
     }
     for pair in w.agent_days().windows(2) {
         let [before, after] = pair else { continue };
-        if before.persons.checked_sub(after.gone) != Some(after.persons) {
+        if before.persons.checked_sub(after.gone).and_then(|p| p.checked_add(after.born)) != Some(after.persons) {
             return Outcome::Fail(format!(
-                "day {}: {} persons, {} gone, {} left",
+                "day {}: {} persons, {} gone, {} born, {} left",
                 after.day.get(),
                 before.persons,
                 after.gone,
+                after.born,
                 after.persons
             ));
         }
