@@ -23,6 +23,36 @@ use crate::consts::{AGE_PARTS, MONTHS_PER_YEAR, PERCENT, SHARE_PARTS};
 
 declare_stream! { pub PensionStream = "SOC.opening_pensions" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 
+declare_stream! {
+    /// Whether a person who retires is among those its country's state pension covers, drawn once for each person.
+    pub CoveredStream = "SOC.pension_covered" { purpose: Occasion, keyed: true, clause: "SOC.3" }
+}
+
+/// A country's state pension as a person who retires claims it.
+///
+/// # Errors
+/// A primitive missing or of another shape.
+#[clause("SOC.3", "GEN.2")]
+pub fn law(register: &Register, c: &OpeningCountry) -> Result<if_state::kinds::PensionLaw, String> {
+    let at = |id: &str| -> Result<[f64; 2], String> {
+        let table = register.table1_in(id, c.id)?;
+        let mut out = [0.0; 2];
+        for (slot, sex) in out.iter_mut().zip([if_pop::FEMALE, if_pop::MALE]) {
+            *slot = phx_rand::float::from_i64(table.at(i64::from(sex)).map_err(|e| format!("{e:?}"))?) / SHARE_PARTS;
+        }
+        Ok(out)
+    };
+    Ok(if_state::kinds::PensionLaw { replacement: at(crate::REPLACEMENT.id)?, coverage: at(crate::COVERAGE.id)? })
+}
+
+/// The state pension, which the kernel binds.
+pub const PENSIONS: if_state::kinds::PensionKind = if_state::kinds::PensionKind {
+    line: STATE_PENSION.name,
+    claimed: crate::benefit::CLAIMED.name,
+    covered: CoveredStream::DECL.name,
+    law,
+};
+
 /// The state pension: the treasury owes it to each pensioner, one member a pensioner.
 pub const STATE_PENSION: LineKindDecl = LineKindDecl {
     name: "state pension",

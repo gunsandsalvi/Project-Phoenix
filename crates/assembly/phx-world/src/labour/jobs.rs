@@ -334,6 +334,37 @@ impl World {
             })
             .collect();
         let lines = &self.books.ledger.lines;
+        // The retired who draw no state pension yet claim it, each once, as they retire.
+        let pension = self.state.pension.map(|p| lines.kind_index(p.line));
+        let pensioned: Vec<usize> = table
+            .attachments(slot)
+            .iter()
+            .map(|w| Attachment::unpack(*w))
+            .filter(|a| Some(lines.kind_of(a.line)) == pension)
+            .filter_map(|a| match a.holder {
+                Holder::Person(i) => Some(i),
+                Holder::Household => None,
+            })
+            .collect();
+        let claiming: Vec<(u32, u32)> = retired
+            .iter()
+            .filter(|i| !pensioned.contains(i))
+            .filter_map(|i| {
+                let sex = table
+                    .persons(slot)
+                    .get(*i)
+                    .and_then(|w| phx_pop::person::unpack(&decl, *w).attr(if_pop::SEX.name))?;
+                Some((u32::try_from(*i).ok()?, sex))
+            })
+            .collect();
+        if let Missing::Present(country) = self.country_of_party(party) {
+            for (person, sex) in claiming {
+                self.claim_pension(day, (party, person), (country, sex));
+            }
+        }
+        let lines = &self.books.ledger.lines;
+        let (_, slot) = self.books.parties.row(party);
+        let table = Population::table_mut::<SystemBacking>(self.books.parties.cells_mut().0, place);
         let (leaving, kept): (Vec<u64>, Vec<u64>) = table.attachments(slot).iter().partition(|w| {
             let a = Attachment::unpack(**w);
             matches!(a.holder, Holder::Person(i) if retired.contains(&i)) && lines.kind_of(a.line) == k

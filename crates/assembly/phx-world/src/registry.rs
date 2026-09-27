@@ -408,6 +408,7 @@ fn market_kinds(d: &Declarations) -> Result<phx_market::instances::Kinds, Vec<St
             || kind.downcast_ref::<if_credit::central::CentralKind>().is_some()
             || kind.downcast_ref::<if_state::kinds::TaxKind>().is_some()
             || kind.downcast_ref::<if_state::kinds::BenefitKind>().is_some()
+            || kind.downcast_ref::<if_state::kinds::PensionKind>().is_some()
             || kind.downcast_ref::<if_state::kinds::BillKind>().is_some()
             || kind.downcast_ref::<if_state::kinds::TreasuryKind>().is_some()
             || kind.downcast_ref::<if_state::stats::StaKind>().is_some()

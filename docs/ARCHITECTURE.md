@@ -1512,9 +1512,11 @@ point, whose employers are derived over the firms by headcount; housing's gives 
 line of its rent point, whose landlords are derived over the firms by their plant until the dwelling stock names them.
 Both are lines of many holders on both sides, so they are cleared (§6.5). Social protection's draw gives each adult who
 has reached its sex's pension age the state pension at its sex's coverage: a person's row on its sex's state pension
-line, a flat monthly amount — the replacement rate of the mean wage — whose payer, the treasury, is named. Persons
-reaching the pension age during the run join with the claim (S1.11); the defined-benefit schemes lack sources (plan §11,
-F-045, F-046). The small firms are drawn with the parties, before the households: each country's firms below the
+line, a flat monthly amount — the replacement rate of the mean wage — whose payer, the treasury, is named. A person
+who retires in the run claims it as it retires (`claim_pension`, beside the benefit's claim): a draw fixed for the
+person by a keyed stream (`SOC.pension_covered`) decides once whether its country's coverage takes it in, and if so it
+joins its country's pension line of its sex's replacement rate of the mean wage then, opened the first time a claim
+needs it, with as many of the treasury's members. The defined-benefit schemes lack sources (plan §11, F-045). The small firms are drawn with the parties, before the households: each country's firms below the
 individuals' rank (REP.2), by the firm-size law cut at the smallest the rank admits, counted by employment size class,
 apportioned over the regions by their land and over the banks by the banks' drawn sizes, and placed as agents of the
 small-firm kind, one for every `REP.multiplicity` firms, with region, size class and bank as attributes (§7.1). They

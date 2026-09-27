@@ -6,8 +6,8 @@
 use std::collections::BTreeMap;
 
 use if_state::kinds::{
-    BenefitKind, BenefitLaw, Bid, BidIn, BillKind, BillLaw, ClaimIn, PaymentOrder, SizeIn, TaxKind, TaxLaw,
-    TreasuryKind,
+    BenefitKind, BenefitLaw, Bid, BidIn, BillKind, BillLaw, ClaimIn, PaymentOrder, PensionKind, PensionLaw, SizeIn,
+    TaxKind, TaxLaw, TreasuryKind,
 };
 use phx_core::calendar::period::{Period, ScheduleDates};
 use phx_core::{Declarations, OpeningCountry, Register, SubStep};
@@ -31,12 +31,13 @@ const WEEK: [phx_id::Weekday; 7] = [
     phx_id::Weekday::Sunday,
 ];
 
-/// What the state carries across days: each benefit line by its country and monthly amount; each country's
-/// treasury's cash at its last auction; the face of bills each country has issued and redeemed; and each bill line's
-/// maturity.
+/// What the state carries across days: each benefit line and each state pension line opened in the run by its
+/// country and monthly amount; each country's treasury's cash at its last auction; the face of bills each country has
+/// issued and redeemed; and each bill line's maturity.
 #[derive(Clone, Debug, Default, PartialEq, phx_macros::Saved)]
 pub(crate) struct StateBook {
     pub benefits: BTreeMap<(u8, i64), LineId>,
+    pub pensions: BTreeMap<(u8, i64), LineId>,
     pub cash: BTreeMap<u8, i64>,
     pub issued: BTreeMap<u8, i64>,
     pub redeemed: BTreeMap<u8, i64>,
@@ -59,6 +60,8 @@ pub struct Auction {
 pub struct StateDay {
     pub consumption: Vec<(PartyId, i64, i64)>,
     pub claims: u64,
+    /// The persons who retired and joined their country's state pension.
+    pub pensions: u64,
     pub benefits_ended: u64,
     pub auctions: Vec<Auction>,
     pub stats: crate::stats::StatsDay,
@@ -71,6 +74,7 @@ pub(crate) struct Country {
     pub benefit: Missing<BenefitLaw>,
     pub bills: Missing<BillLaw>,
     pub order: Missing<PaymentOrder>,
+    pub pension: Missing<PensionLaw>,
 }
 
 /// The state as the world keeps it: its kinds, each country's law, its book and the day's tally.
@@ -79,6 +83,7 @@ pub(crate) struct State {
     pub tax: Option<TaxKind>,
     pub benefit: Option<BenefitKind>,
     pub bills: Option<BillKind>,
+    pub pension: Option<PensionKind>,
     pub countries: Vec<Country>,
     pub stats: crate::stats::Stats,
     pub book: StateBook,
@@ -126,6 +131,7 @@ pub(crate) fn bind(
     let tax = take(one::<TaxKind>(d), &mut errors);
     let benefit = take(one::<BenefitKind>(d), &mut errors);
     let bills = take(one::<BillKind>(d), &mut errors);
+    let pension = take(one::<PensionKind>(d), &mut errors);
     let treasury = take(one::<TreasuryKind>(d), &mut errors);
     let compiled_countries: Vec<Country> = countries
         .iter()
@@ -134,6 +140,7 @@ pub(crate) fn bind(
             benefit: compiled("the benefit", c, benefit.map(|k| (k.law)(register, c)), &mut errors),
             bills: compiled("the bills", c, bills.map(|k| (k.law)(register, c)), &mut errors),
             order: compiled("the payment order", c, treasury.map(|k| (k.order)(register, c)), &mut errors),
+            pension: compiled("the state pension", c, pension.map(|k| (k.law)(register, c)), &mut errors),
         })
         .collect();
     let stats = crate::stats::bind(d, register, countries).unwrap_or_else(|e| {
@@ -141,7 +148,7 @@ pub(crate) fn bind(
         crate::stats::Stats::default()
     });
     if errors.is_empty() {
-        Ok(State { tax, benefit, bills, countries: compiled_countries, stats, book, day: StateDay::default() })
+        Ok(State { tax, benefit, bills, pension, countries: compiled_countries, stats, book, day: StateDay::default() })
     } else {
         Err(errors)
     }
@@ -264,6 +271,96 @@ impl World {
         }
         self.attach(party, person, line);
         self.state.day.claims += 1;
+    }
+
+    /// A person who retires claims the state pension where its country's pension covers it, which a draw fixed for the
+    /// person decides once: its row on its country's pension line of its sex's replacement rate of the mean wage, paid
+    /// monthly while it lives, joined with as many of the treasury's members.
+    #[clause("SOC.3", "LAB.6")]
+    pub(crate) fn claim_pension(
+        &mut self,
+        day: Day,
+        (party, person): (PartyId, u32),
+        (country, sex): (CountryId, u32),
+    ) {
+        let Some(kind) = self.state.pension else { return };
+        let Some(Country { pension: Missing::Present(law), order, .. }) =
+            self.state.countries.get(usize::from(country.get())).cloned()
+        else {
+            return;
+        };
+        let at = match sex {
+            if_pop::FEMALE => 0,
+            if_pop::MALE => 1,
+            _ => violation!(clause = "REP.26", "a sex beyond the two", sex = sex),
+        };
+        let (Some(share), Some(rate)) = (law.coverage.get(at).copied(), law.replacement.get(at).copied()) else {
+            return;
+        };
+        let Some(stream) = self.streams.named(kind.covered) else {
+            violation!(clause = "CHN.1", "pension coverage drawn from a stream never declared");
+        };
+        let mut d = self.streams.open_keyed(&stream, phx_rand::Subject::new(phx_rand::SubjectTag::Party, party.get()));
+        let mut drawn = phx_rand::open_unit(&mut d);
+        for _ in 0..person {
+            drawn = phx_rand::open_unit(&mut d);
+        }
+        if drawn >= share {
+            return;
+        }
+        let Some(labour) = self.labour.laws.get(usize::from(country.get())) else { return };
+        let monthly = phx_ledger::opening::whole(rate * labour.mean_monthly);
+        if monthly <= 0 {
+            return;
+        }
+        let Some(treasury) = self.treasury_of(country) else { return };
+        let line = self.pension_line(&kind, country, monthly, order);
+        let twins = self.books.parties.unit(party);
+        let Missing::Present(reason) =
+            self.books.ledger.reasons.coded(phx_ledger::instruction::name_code(kind.claimed))
+        else {
+            violation!(clause = "SOC.3", "claims under a reason never declared");
+        };
+        let m = crate::agents::move_at(&self.register, day, ApplyAt::Day(SubStep::S4a));
+        if self
+            .books
+            .members_join((party, line, Side::Asset), treasury, twins, (reason, m), self.audit.stream())
+            .is_err()
+        {
+            return;
+        }
+        self.attach(party, person, line);
+        self.state.day.pensions += 1;
+    }
+
+    /// A country's state pension line of a monthly amount, opened the first time a claim needs it: paid monthly with no
+    /// end, at the pensions' rank in the treasury's payment order.
+    fn pension_line(
+        &mut self,
+        kind: &PensionKind,
+        country: CountryId,
+        monthly: i64,
+        order: Missing<PaymentOrder>,
+    ) -> LineId {
+        if let Some(l) = self.state.book.pensions.get(&(country.get(), monthly)) {
+            return *l;
+        }
+        let ccy = phx_ledger::opening::currency(country);
+        let dates = phx_ledger::opening::monthly(self.calendar.date(self.today), country);
+        let mut terms = phx_ledger::opening::plain_terms(
+            ccy,
+            vec![Leg::FixedAmount(Money::new(monthly, ccy))],
+            Schedule { dates, count: Missing::Absent },
+        );
+        if let Missing::Present(o) = order {
+            terms.payment_order = Order(o.pensions);
+        }
+        let id = self.books.ledger.terms.intern(terms);
+        let k = self.books.ledger.lines.kind_index(kind.line);
+        let first = dates.nth(&self.calendar, 1);
+        let line = self.books.ledger.lines.open(k, id, Missing::Present((first, 1)));
+        self.state.book.pensions.insert((country.get(), monthly), line);
+        line
     }
 
     /// A country's benefit line of a monthly amount, opened the first time a claim needs it: paid monthly for the
