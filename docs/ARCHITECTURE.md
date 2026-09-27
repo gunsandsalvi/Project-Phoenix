@@ -1402,6 +1402,10 @@ A world starts from a setup (spec GEN.14, GEN.15, Appendix E 43), so a new game 
   identities, never an equilibrium solve (GEN.4).
 - **Land and regions** follow the split: the 25 regions are allotted by largest remainder with at least three per
   country, and each country's land is its share of the map, so regions are of like size.
+- **The factor divides once**: the setup's population is divided by the representation's factor before the countries,
+  and each country's agents are apportioned over its regions by their land, so both representations draw the same
+  agents (REP.40) — a small world's countries hold that many persons, twins' each agent's twins — and only the
+  population's remainder over the factor is reported.
 - **Names**: a real name labels the country's institutions and currency and pre-fills its choices; its economy is
   always derived. A generated name comes from the stream `GEN.names`.
 - The setup is named by every realism report (GEN.11). A save's manifest does not record it: its register hash is

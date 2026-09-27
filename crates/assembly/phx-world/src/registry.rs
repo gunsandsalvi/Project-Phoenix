@@ -95,9 +95,10 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
         .collect()
 }
 
-/// The setup's countries as the opening reads them, with the setup's total population, the world's, and the divisor
-/// between them: a small world's countries hold one factor-th of the population, and everything the opening derives
-/// follows.
+/// The setup's countries as the opening reads them, with the setup's total population, the world's, and the factor
+/// between the setup's persons and the world's agents. The population is divided by the factor once, before the
+/// countries, so both representations draw the same agents: a small world's countries hold that many persons, and
+/// everything the opening derives follows; twins' countries hold that many agents' twins.
 fn opening_countries(
     kernel: &KernelPrims,
     c: &crate::compile::Compiled,
@@ -106,13 +107,14 @@ fn opening_countries(
     representation: phx_pop::prims::Representation,
 ) -> (Vec<phx_core::OpeningCountry>, u64, u64, u64) {
     let total = kernel.opening.population.shared(&c.register).get();
-    let divisor = u64::from(representation.population_divisor);
-    let population = total / divisor;
+    let twins = u64::from(representation.multiplicity);
+    let divisor = twins * u64::from(representation.population_divisor);
+    let agents = total / divisor;
     let units: Vec<u64> = (0_u8..)
         .take(game.countries.len())
         .map(|i| kernel.opening.units_per_dollar.get(&c.register, CountryId::new(i)).get())
         .collect();
-    (crate::opening::books::countries(game, geo, population, &units), total, population, divisor)
+    (crate::opening::books::countries(game, geo, (agents, twins), &units), total, agents * twins, divisor)
 }
 
 /// The world's books opened from the setup's countries, their people and their currencies' units.
@@ -135,11 +137,12 @@ fn open(
         (phases, pool),
         report,
     )?;
-    if population * divisor != total {
+    let whole = population / u64::from(pop.1.multiplicity) * divisor;
+    if whole != total {
         report.adjustments.push(phx_core::Adjustment {
-            what: format!("the population, one {divisor}-th of the setup's in whole persons"),
+            what: format!("the population, whole agents of one {divisor}-th of the setup's"),
             drawn: i128::from(total),
-            set: i128::from(population * divisor),
+            set: i128::from(whole),
         });
     }
     Ok((books, people, report))

@@ -6,8 +6,8 @@ use if_pop::{EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEALTH, HOUSEHOLD, MALE, R
 use phx_core::calendar::daycount::actual_days;
 use phx_core::register::values::{Distribution, Table2, TypeSet};
 use phx_core::{
-    Adjustment, CONTRACTS, Contribution, DECLARATIONS, Household, Opening, OpeningCountry, OpeningPhase, Person,
-    PrimDecl, Register, StreamDef, ValueType, apportion, opening_subject,
+    CONTRACTS, Contribution, DECLARATIONS, Household, Opening, OpeningCountry, OpeningPhase, Person, PrimDecl,
+    Register, StreamDef, ValueType, apportion, opening_subject,
 };
 use phx_id::{CountryId, Date};
 use phx_ledger::books::Books;
@@ -610,16 +610,16 @@ impl Contribution for Households {
             let mut drawer = Drawer::new(attachments, books, register, (calendar, *day), c, twins);
             let tiles: Vec<u64> = c.regions.iter().map(|(_, tiles)| len_u64(tiles.len())).collect();
             let mut lot = ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 0));
-            let shares = apportion(c.people, &tiles, &mut lot);
+            // The country's agents are apportioned over its regions, so each region's persons are whole agents.
+            let shares = apportion(c.people / u64::from(twins), &tiles, &mut lot);
             let mut tally = Tally::default();
-            let mut whole = 0_u64;
-            let regions: Vec<(u32, u64)> = c.regions.iter().map(|(r, _)| *r).zip(shares).collect();
+            let regions: Vec<(u32, u64)> =
+                c.regions.iter().map(|(r, _)| *r).zip(shares.into_iter().map(|a| a * u64::from(twins))).collect();
             // A wave of regions drawn at once on the books' workers, then booked in the regions' order.
             for wave in regions.chunks(REGION_WAVE) {
                 let drawn =
                     books.on_pool(wave.len(), |i| wave.get(i).map(|r| draw_region(&country, ctx, *r, (&kind, twins))));
-                for ((_, people), (formed, counted)) in wave.iter().zip(drawn.into_iter().flatten()) {
-                    whole += people - people % u64::from(twins);
+                for (formed, counted) in drawn.into_iter().flatten() {
                     tally.add(&counted);
                     let mut into = Into { books, kind: &kind, at, day: *day, twins };
                     book_region(formed, ctx, &mut into, &mut drawer, &mut tally);
@@ -629,13 +629,6 @@ impl Contribution for Households {
             drawer.close(books, (register, reason), &mut lot, report);
             if tally.households == 0 {
                 violation!(clause = "GEN.3", "a country whose people make no household", country = c.id.get());
-            }
-            if whole != c.people {
-                report.adjustments.push(Adjustment {
-                    what: format!("country {}: persons, each region's a whole number for {twins} twins", c.id.get()),
-                    drawn: i128::from(c.people),
-                    set: i128::from(whole),
-                });
             }
             population.count(at, (tally.households, 0), (tally.persons, 0));
             report.distributions.push((key(HOUSEHOLDS, c.id), describe(c, &country, &tally, twins)));
