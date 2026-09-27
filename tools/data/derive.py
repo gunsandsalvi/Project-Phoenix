@@ -250,30 +250,47 @@ def write_profile(level: str, group: pd.DataFrame, manifest: dict) -> dict:
             "stats": {s[0]: (s[1], s[2]) for s in stats}}
 
 
+def owners_per_employed(levels: pd.Series) -> pd.DataFrame:
+    """Employers and own-account workers over everyone employed, all activities, at each economy's latest labour force
+    survey (ILOSTAT, ICSE-93), its survey the one listed last where two report that year."""
+    d = pd.read_csv(RAW / "ilo" / "status_by_activity.csv", dtype={"status": str})
+    d = d[d.activity == "TOTAL"]
+    rows = []
+    for (iso3, year, source), g in d.groupby(["iso3", "year", "source"]):
+        by = g.groupby("status").value.sum()
+        if {"2", "3", "TOTAL"} <= set(by.index) and by["TOTAL"] > 0:
+            rows.append((iso3, year, source, (by["2"] + by["3"]) / by["TOTAL"]))
+    ratios = pd.DataFrame(rows, columns=["iso3", "year", "source", "ratio"])
+    ratios = ratios.sort_values(["iso3", "year", "source"]).groupby("iso3").last()
+    return ratios.join(levels.rename("level"), how="left")
+
+
 def write_firms(manifest: dict, levels: pd.Series) -> dict:
-    """Firms per person employed in the business economy (enterprises over persons employed, OECD SDBS), per
-    country's latest year: measured as the developed group's median, and for the emerging and developing groups,
-    which SDBS barely covers, assumed at the median over every economy SDBS reports (the owner's decision, plan
-    section 12)."""
+    """Firms per person employed, per country's latest year: the developed group's the median of enterprises over
+    persons employed in the business economy (OECD SDBS), the owner's decision (plan section 12); the emerging and
+    developing groups', which SDBS barely covers, the median of employers and own-account workers over everyone
+    employed (ILOSTAT), the source that decision waited for. The two count different things: registers count firms
+    of no one employed and side businesses, surveys a person's main job."""
     ent, emp = latest("sdbs/ENTR_T"), latest("sdbs/EMPN_T")
     d = ent.merge(emp, on="iso3").merge(levels.rename("level"), left_on="iso3", right_index=True, how="left")
     d["ratio"] = d["sdbs/ENTR_T"] / d["sdbs/EMPN_T"]
-    everyone = float(d.ratio.median())
+    owners = owners_per_employed(levels)
     out = {}
-    src = manifest["sources"]["sdbs"]
+    sdbs, ilo = manifest["sources"]["sdbs"], manifest["sources"]["ilo_status"]
     for level in ["developed", "emerging", "developing"]:
-        group = d[d.level == level].ratio.dropna()
-        if len(group) >= MIN_COUNTRIES:
-            value, source = float(group.median()), "measured"
+        if level == "developed":
+            group = d[d.level == level].ratio.dropna()
             ref = (f"Derived by tools/data/derive.py: the median over {len(group)} economies of the World Bank's {level} "
                    f"income groups of enterprises over persons employed in the business economy except finance, "
-                   f"latest year 2015-2025, from {src['title']} (fetched {src.get('fetched', manifest['fetched'])}).")
+                   f"latest year 2015-2025, from {sdbs['title']} (fetched {sdbs.get('fetched', manifest['fetched'])}).")
         else:
-            value, source = everyone, "assumed"
-            ref = (f"SDBS reports {len(group)} economies of the World Bank's {level} income groups, too few to measure; "
-                   f"assumed at the median over all {len(d)} economies it reports ({src['title']}), the owner's "
-                   f"decision of 2026-09-24 (plan section 12): firm sizes follow Zipf's law across countries, and the "
-                   f"density of firms per worker sets the law's scale. A finding until a source covers the group.")
+            group = owners[owners.level == level].ratio.dropna()
+            ref = (f"Derived by tools/data/derive.py: the median over {len(group)} economies of the World Bank's {level} "
+                   f"income groups of employers and own-account workers over everyone employed, all activities, each at "
+                   f"its latest labour force survey 2015-2025 (DF_EMP_TEMP_SEX_STE_ECO_NB, ICSE-93), from {ilo['title']} "
+                   f"(fetched {ilo.get('fetched', manifest['fetched'])}); the OECD's business statistics, the developed "
+                   f"group's source, report too few of the group's economies.")
+        value = float(group.median())
         out[level] = value
         lines = [
             f"# The {level} group's firm density (spec GEN.2, FRM), derived by tools/data/derive.py; never edited by hand.",
@@ -282,7 +299,7 @@ def write_firms(manifest: dict, levels: pd.Series) -> dict:
             'id = "FRM.firms_per_employed"',
             'kind = "ENDOWMENT"',
             'owner = "FRM"',
-            f'source = "{source}"',
+            'source = "measured"',
             f"source_ref = {json.dumps(ref)}",
             f'value = "{num(value)}"',
         ]
