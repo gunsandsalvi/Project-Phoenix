@@ -60,6 +60,13 @@ impl Intents {
         self.items.push((I::NAME, start, self.words.len() - start));
     }
 
+    /// Another's intents after these, in their order.
+    pub fn append(&mut self, other: Intents) {
+        let shift = self.words.len();
+        self.words.extend(other.words);
+        self.items.extend(other.items.into_iter().map(|(name, start, len)| (name, start + shift, len)));
+    }
+
     /// Each intent's kind and words, in emission order.
     pub fn iter(&self) -> impl Iterator<Item = (&'static str, &[u64])> + '_ {
         self.items.iter().filter_map(|(name, start, len)| self.words.get(*start..start + len).map(|w| (*name, w)))
@@ -81,6 +88,63 @@ impl Intents {
 pub trait FactStore {
     fn read(&mut self, fact: &'static str, slot: Slot) -> Missing<i64>;
     fn write(&mut self, fact: &'static str, slot: Slot, value: i64);
+}
+
+/// A table's facts read without recording the read, as rows visited on the pool read them.
+pub trait FactRead: Sync {
+    fn peek(&self, fact: &'static str, slot: Slot) -> Missing<i64>;
+}
+
+/// A shard of a visit's rows: the facts its handler declares, read from the table before it runs, and the handler's
+/// writes kept aside, a row reading back what it wrote, until they are written to the table in the rows' order once
+/// every shard has run. A row reads and writes only its own declared facts, so no shard sees another's writes.
+#[derive(Debug)]
+pub struct FactOverlay {
+    facts: Vec<&'static str>,
+    slots: Vec<Slot>,
+    values: Vec<Missing<i64>>,
+    writes: Vec<(Slot, &'static str, i64)>,
+}
+
+impl FactOverlay {
+    /// The declared `facts` of the rows at `slots`, in the slots' order, read from `base`.
+    #[must_use]
+    pub fn read_from(base: &dyn FactRead, facts: Vec<&'static str>, slots: &[Slot]) -> FactOverlay {
+        let values = slots.iter().flat_map(|s| facts.iter().map(move |f| base.peek(f, *s))).collect();
+        FactOverlay { facts, slots: slots.to_vec(), values, writes: Vec::new() }
+    }
+
+    /// The writes kept, in the order they were made.
+    #[must_use]
+    pub fn into_writes(self) -> Vec<(Slot, &'static str, i64)> {
+        self.writes
+    }
+
+    fn at(&self, fact: &'static str, slot: Slot) -> usize {
+        let (Ok(row), Some(f)) = (self.slots.binary_search(&slot), self.facts.iter().position(|x| *x == fact)) else {
+            violation!(
+                clause = "TIME.6",
+                "a handler on the pool read a row or fact outside its shard's",
+                slot = slot.get()
+            );
+        };
+        row * self.facts.len() + f
+    }
+}
+
+impl FactStore for FactOverlay {
+    fn read(&mut self, fact: &'static str, slot: Slot) -> Missing<i64> {
+        let at = self.at(fact, slot);
+        self.values.get(at).copied().unwrap_or(Missing::Absent)
+    }
+
+    fn write(&mut self, fact: &'static str, slot: Slot, value: i64) {
+        let at = self.at(fact, slot);
+        if let Some(v) = self.values.get_mut(at) {
+            *v = Missing::Present(value);
+        }
+        self.writes.push((slot, fact, value));
+    }
 }
 
 /// A deposit whose right a row's party holds, as the holder sees it: the deposit's place in the map's list, the

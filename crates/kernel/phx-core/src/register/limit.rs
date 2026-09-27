@@ -195,6 +195,11 @@ impl Bindings {
         bound.taken()
     }
 
+    /// Another's bindings after these, in their order.
+    pub fn append(&mut self, mut other: Bindings) {
+        self.records.append(&mut other.records);
+    }
+
     /// The bindings recorded since the last drain, in the order they were taken.
     pub fn drain(&mut self) -> impl Iterator<Item = Binding> + '_ {
         self.records.drain(..)

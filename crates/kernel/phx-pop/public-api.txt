@@ -204,6 +204,8 @@ pub fn phx_pop::table::AgentTable<B>::compact_due(&mut self) -> u64
 pub fn phx_pop::table::AgentTable<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
 pub fn phx_pop::table::AgentTable<B>::load_like(&self, &mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>, phx_store::save::LoadError>
 pub fn phx_pop::table::AgentTable<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_pop::table::AgentTable<B> where phx_pop::table::AgentTable<B>: core::marker::Sync
+pub fn phx_pop::table::AgentTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_pop::table::AgentTable<B>
 pub fn phx_pop::table::AgentTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_pop::table::AgentTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)

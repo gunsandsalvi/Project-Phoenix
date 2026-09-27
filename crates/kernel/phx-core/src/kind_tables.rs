@@ -543,6 +543,19 @@ impl<B: Backing> KindTable<B> {
     }
 }
 
+/// A kind of individual's facts read on the pool.
+impl<B: Backing> crate::handler::FactRead for KindTable<B>
+where
+    KindTable<B>: Sync,
+{
+    fn peek(&self, fact: &'static str, slot: Slot) -> Missing<i64> {
+        let Some(column) = self.facet_named(fact) else {
+            violation!(clause = "PTY.8", "a fact the kind does not keep");
+        };
+        KindTable::fact(self, slot, column)
+    }
+}
+
 /// A handler's rows of a kind of individual: their facts, by name.
 impl<B: Backing> crate::handler::FactStore for KindTable<B> {
     fn read(&mut self, fact: &'static str, slot: Slot) -> Missing<i64> {

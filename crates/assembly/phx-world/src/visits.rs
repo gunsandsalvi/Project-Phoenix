@@ -164,6 +164,21 @@ fn agent_kind(table: TableId, first: u16) -> usize {
 }
 
 /// The runs of consecutive slots among sorted slots, as the row ranges a handler's body is given.
+/// The facts a handler declares, read or written, each once.
+fn declared(reads: &[&'static str], writes: &[&'static str]) -> Vec<&'static str> {
+    let mut out: Vec<&'static str> = reads.to_vec();
+    for w in writes {
+        if !out.contains(w) {
+            out.push(w);
+        }
+    }
+    out
+}
+
+fn lesser(a: usize, b: usize) -> usize {
+    if a < b { a } else { b }
+}
+
 fn runs(slots: &[Slot]) -> Vec<core::ops::Range<u32>> {
     let mut out: Vec<core::ops::Range<u32>> = Vec::new();
     for s in slots {
@@ -364,42 +379,47 @@ impl World {
             let rows = crate::goods::Rows { place: b.table.get(), individuals: b.individuals };
             let room = core::mem::take(&mut self.visit_goods);
             let goods = self.run_goods(rows, &slots, room);
-            let World { books, own, streams, register, bindings, rules, queue, .. } = self;
-            let Some((_, own)) = own.iter().find(|(system, _)| *system == h.system) else {
-                violation!(clause = "TIME.6", "a handler whose system compiled no state", handler = id.0);
-            };
-            let first = books.parties.first_cell_place();
-            let store: &mut dyn FactStore = if b.individuals {
-                let t = books.parties.table_mut(b.table.get());
-                t.trace(trace);
-                t
-            } else {
-                let k = agent_kind(b.table, first);
-                let t = Population::table_mut::<SystemBacking>(books.parties.cells_mut().0, k);
-                t.trace(trace);
-                t
-            };
             // The visit's intents gathered together, in the order of its rows.
-            let mut intents = Intents::default();
-            for range in runs(&slots) {
-                run(
-                    CtxParts {
-                        day,
-                        date,
-                        streams,
-                        register,
-                        own: own.as_ref(),
-                        facts: &mut *store,
-                        goods: &goods,
-                        intents: &mut intents,
-                        bindings,
-                        rules,
-                        queue,
-                        opens: None,
-                    },
-                    range,
-                );
-            }
+            let intents = if trace.is_none() && slots.len() >= crate::consts::VISIT_SHARD_ROWS {
+                self.visit_sharded(&b, (run, h.system, id), (&slots, declared(h.reads, h.writes)), &goods, (day, date))
+            } else {
+                let World { books, own, streams, register, bindings, rules, queue, .. } = self;
+                let Some((_, own)) = own.iter().find(|(system, _)| *system == h.system) else {
+                    violation!(clause = "TIME.6", "a handler whose system compiled no state", handler = id.0);
+                };
+                let first = books.parties.first_cell_place();
+                let store: &mut dyn FactStore = if b.individuals {
+                    let t = books.parties.table_mut(b.table.get());
+                    t.trace(trace);
+                    t
+                } else {
+                    let k = agent_kind(b.table, first);
+                    let t = Population::table_mut::<SystemBacking>(books.parties.cells_mut().0, k);
+                    t.trace(trace);
+                    t
+                };
+                let mut intents = Intents::default();
+                for range in runs(&slots) {
+                    run(
+                        CtxParts {
+                            day,
+                            date,
+                            streams,
+                            register,
+                            own: own.as_ref(),
+                            facts: &mut *store,
+                            goods: &goods,
+                            intents: &mut intents,
+                            bindings,
+                            rules,
+                            queue,
+                            opens: None,
+                        },
+                        range,
+                    );
+                }
+                intents
+            };
             pending.push(crate::goods::Gathered { step, rows: Missing::Present(rows), intents });
             self.visit_goods = goods;
             self.visits_taken(&b);
@@ -409,6 +429,95 @@ impl World {
             self.visits_rebook(i, h.writes, &slots, (day, step));
         }
         visited
+    }
+
+    /// A visit's rows run in fixed shards on the pool, each reading the table and keeping its writes aside, with its
+    /// own intents and bindings; the shard holding the player's row runs after, with the player's queue, since only
+    /// the player's party takes from it. The writes, intents and bindings are then taken in the shards' order, so the
+    /// day is the same on any pool as row by row.
+    fn visit_sharded(
+        &mut self,
+        b: &Bound,
+        (run, system, id): (phx_core::handler::RunChunk, &'static str, crate::graph::HandlerId),
+        (slots, declared): (&[Slot], Vec<&'static str>),
+        goods: &crate::goods::RunGoods,
+        (day, date): (Day, phx_id::Date),
+    ) -> Intents {
+        let World { books, own, streams, register, bindings, rules, queue, .. } = self;
+        let Some((_, own)) = own.iter().find(|(s, _)| *s == system) else {
+            violation!(clause = "TIME.6", "a handler whose system compiled no state", handler = id.0);
+        };
+        let own = own.as_ref();
+        let first = books.parties.first_cell_place();
+        let place = b.table.get();
+        let player = match queue.player() {
+            Missing::Present(p) => {
+                let (at, slot) = books.parties.row(p.party);
+                (at == place).then_some(slot)
+            }
+            Missing::Absent => None,
+        };
+        let shards = crate::consts::VISIT_SHARDS;
+        let each = slots.len().div_ceil(shards);
+        let shard = |k: usize| {
+            let from = lesser(k * each, slots.len());
+            slots.get(from..lesser(from + each, slots.len())).unwrap_or(&[])
+        };
+        let holds_player = |k: usize| player.is_some_and(|p| shard(k).contains(&p));
+        let ran = {
+            let base: &dyn phx_core::FactRead = if b.individuals {
+                books.parties.table(place)
+            } else {
+                Population::table::<SystemBacking>(books.parties.cells(), agent_kind(b.table, first))
+            };
+            let run_shard = |k: usize, queue: &mut phx_core::decisions::PlayerQueue| {
+                let mut facts = phx_core::FactOverlay::read_from(base, declared.clone(), shard(k));
+                let (mut intents, mut taken) = (Intents::default(), phx_core::register::limit::Bindings::default());
+                for range in runs(shard(k)) {
+                    run(
+                        CtxParts {
+                            day,
+                            date,
+                            streams,
+                            register,
+                            own,
+                            facts: &mut facts,
+                            goods,
+                            intents: &mut intents,
+                            bindings: &mut taken,
+                            rules,
+                            queue: &mut *queue,
+                            opens: None,
+                        },
+                        range,
+                    );
+                }
+                (facts.into_writes(), intents, taken)
+            };
+            let mut ran = phx_exec::pool::map(books.pool(), shards, |k| {
+                (!holds_player(k)).then(|| run_shard(k, &mut phx_core::decisions::PlayerQueue::unseated()))
+            });
+            for (k, r) in ran.iter_mut().enumerate() {
+                if r.is_none() && holds_player(k) {
+                    *r = Some(run_shard(k, queue));
+                }
+            }
+            ran
+        };
+        let store: &mut dyn FactStore = if b.individuals {
+            books.parties.table_mut(place)
+        } else {
+            Population::table_mut::<SystemBacking>(books.parties.cells_mut().0, agent_kind(b.table, first))
+        };
+        let mut intents = Intents::default();
+        for (writes, i, taken) in ran.into_iter().flatten() {
+            for (slot, fact, value) in writes {
+                store.write(fact, slot, value);
+            }
+            intents.append(i);
+            bindings.append(taken);
+        }
+        intents
     }
 
     /// What a visit's handler did to its table, taken once it has run: its undeclared reads and the facts it moved.

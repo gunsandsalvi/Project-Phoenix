@@ -634,6 +634,21 @@ impl<B: Backing> AgentTable<B> {
     }
 }
 
+/// A population kind's positions and attributes read on the pool.
+impl<B: Backing> phx_core::FactRead for AgentTable<B>
+where
+    AgentTable<B>: Sync,
+{
+    fn peek(&self, fact: &'static str, slot: Slot) -> Missing<i64> {
+        if self.position(fact).is_none()
+            && let Some(i) = self.attr_names.iter().position(|a| *a == fact)
+        {
+            return Missing::Present(i64::from(self.attr(slot, i)));
+        }
+        AgentTable::fact(self, slot, self.named(fact))
+    }
+}
+
 /// A handler's rows of a population kind: its agents' positions, by name.
 impl<B: Backing> phx_core::FactStore for AgentTable<B> {
     fn read(&mut self, fact: &'static str, slot: Slot) -> Missing<i64> {

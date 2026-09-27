@@ -53,6 +53,13 @@ pub const PLAYER_KIND: &str = "household";
 pub const GATHER_SHARDS: usize = 64;
 /// See `GATHER_SHARDS`.
 pub const GATHER_WAVE: usize = 8;
+/// The shards 6a's sellers' stalls are read in: fixed, never the number of workers, as `GATHER_SHARDS` are.
+pub const STALL_SHARDS: usize = 64;
+/// The shards a visit's rows run in, and the fewest rows a visit shards: fixed, never the number of workers, as
+/// `GATHER_SHARDS` are; a visit of fewer rows runs as one.
+pub const VISIT_SHARDS: usize = 32;
+/// See `VISIT_SHARDS`.
+pub const VISIT_SHARD_ROWS: usize = 256;
 /// Billionths in a whole, for a review's daily chance as a position holds it.
 pub const BILLION: f64 = 1e9;
 

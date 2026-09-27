@@ -803,6 +803,13 @@ pub phx_core::handler::CtxParts::queue: &'a mut phx_core::decisions::PlayerQueue
 pub phx_core::handler::CtxParts::register: &'a phx_core::register::Register
 pub phx_core::handler::CtxParts::rules: &'a phx_core::rules::RuleTable
 pub phx_core::handler::CtxParts::streams: &'a phx_core::streams::Streams
+pub struct phx_core::handler::FactOverlay
+impl phx_core::handler::FactOverlay
+pub fn phx_core::handler::FactOverlay::into_writes(self) -> alloc::vec::Vec<(phx_id::ids::Slot, &'static str, i64)>
+pub fn phx_core::handler::FactOverlay::read_from(&dyn phx_core::handler::FactRead, alloc::vec::Vec<&'static str>, &[phx_id::ids::Slot]) -> phx_core::handler::FactOverlay
+impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
+pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub struct phx_core::handler::HeldRight
 pub phx_core::handler::HeldRight::deposit: u32
 pub phx_core::handler::HeldRight::grade: i64
@@ -811,6 +818,7 @@ pub phx_core::handler::HeldRight::product: u16
 pub phx_core::handler::HeldRight::remaining: phx_num::missing::Missing<i64>
 pub struct phx_core::handler::Intents
 impl phx_core::handler::Intents
+pub fn phx_core::handler::Intents::append(&mut self, phx_core::handler::Intents)
 pub fn phx_core::handler::Intents::is_empty(&self) -> bool
 pub fn phx_core::handler::Intents::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (&'static str, &[u64])> + '_
 pub fn phx_core::handler::Intents::len(&self) -> usize
@@ -831,12 +839,19 @@ pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) ->
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
 pub trait phx_core::handler::Emits<I: phx_core::handler::IntentDef>
+pub trait phx_core::handler::FactRead: core::marker::Sync
+pub fn phx_core::handler::FactRead::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_core::kind_tables::KindTable<B> where phx_core::kind_tables::KindTable<B>: core::marker::Sync
+pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub trait phx_core::handler::FactStore
 pub fn phx_core::handler::FactStore::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
+pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
@@ -976,6 +991,8 @@ impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::take_moved(&mut self) -> alloc::vec::Vec<(&'static str, u64)>
 pub fn phx_core::kind_tables::KindTable<B>::take_undeclared(&mut self) -> usize
 pub fn phx_core::kind_tables::KindTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
+impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_core::kind_tables::KindTable<B> where phx_core::kind_tables::KindTable<B>: core::marker::Sync
+pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
@@ -1328,6 +1345,7 @@ pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>
 pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::register::limit::Bindings
 impl phx_core::register::limit::Bindings
+pub fn phx_core::register::limit::Bindings::append(&mut self, phx_core::register::limit::Bindings)
 pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_
 pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T
 impl phx_store::save::Saved for phx_core::register::limit::Bindings where alloc::vec::Vec<phx_core::register::limit::Binding>: phx_store::save::Saved
@@ -2547,6 +2565,7 @@ pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>
 pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Bindings
 impl phx_core::register::limit::Bindings
+pub fn phx_core::register::limit::Bindings::append(&mut self, phx_core::register::limit::Bindings)
 pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_
 pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T
 impl phx_store::save::Saved for phx_core::register::limit::Bindings where alloc::vec::Vec<phx_core::register::limit::Binding>: phx_store::save::Saved
@@ -2822,6 +2841,13 @@ pub phx_core::FactDecl::kinds: &'static [&'static str]
 pub phx_core::FactDecl::repr: phx_core::facts::ReprClass
 pub phx_core::FactDecl::unit: phx_num::missing::Missing<&'static str>
 pub phx_core::FactDecl::value: phx_core::facts::FactType
+pub struct phx_core::FactOverlay
+impl phx_core::handler::FactOverlay
+pub fn phx_core::handler::FactOverlay::into_writes(self) -> alloc::vec::Vec<(phx_id::ids::Slot, &'static str, i64)>
+pub fn phx_core::handler::FactOverlay::read_from(&dyn phx_core::handler::FactRead, alloc::vec::Vec<&'static str>, &[phx_id::ids::Slot]) -> phx_core::handler::FactOverlay
+impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
+pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub struct phx_core::FamilyCtx<'a>
 impl<'a> phx_core::family::FamilyCtx<'a>
 pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
@@ -2949,6 +2975,7 @@ pub phx_core::InsolvencyDecl::grace_days: &'static str
 pub phx_core::InsolvencyDecl::kind: &'static str
 pub struct phx_core::Intents
 impl phx_core::handler::Intents
+pub fn phx_core::handler::Intents::append(&mut self, phx_core::handler::Intents)
 pub fn phx_core::handler::Intents::is_empty(&self) -> bool
 pub fn phx_core::handler::Intents::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (&'static str, &[u64])> + '_
 pub fn phx_core::handler::Intents::len(&self) -> usize
@@ -3038,6 +3065,8 @@ impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::take_moved(&mut self) -> alloc::vec::Vec<(&'static str, u64)>
 pub fn phx_core::kind_tables::KindTable<B>::take_undeclared(&mut self) -> usize
 pub fn phx_core::kind_tables::KindTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
+impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_core::kind_tables::KindTable<B> where phx_core::kind_tables::KindTable<B>: core::marker::Sync
+pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
@@ -3612,12 +3641,19 @@ pub trait phx_core::DrawsFrom<S: phx_core::streams::StreamDef>
 pub trait phx_core::Emits<I: phx_core::handler::IntentDef>
 pub trait phx_core::FactDef
 pub const phx_core::FactDef::ITEM: phx_core::facts::ItemDecl
+pub trait phx_core::FactRead: core::marker::Sync
+pub fn phx_core::FactRead::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_core::kind_tables::KindTable<B> where phx_core::kind_tables::KindTable<B>: core::marker::Sync
+pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub trait phx_core::FactStore
 pub fn phx_core::FactStore::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
+pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
 pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)

@@ -1199,7 +1199,12 @@ agenda of their own beside the processes' (`Population::visits`), one table per 
 with the population. Every row is booked once the opening is done; the rows due are gathered on the day's first decision
 sub-step, each visit's handler runs on its rows due in runs of consecutive slots over its kind's table — an agent
 table's positions (REP.20, declared on the kind with `PopKindBuilder::position`) or a kind table's facts — and each row is
-booked again after it: its schedule's next instance, or a review drawn afresh at the attention its decision left it.
+booked again after it. A visit of at least `VISIT_SHARD_ROWS` rows runs in `VISIT_SHARDS` fixed shards on the pool
+(`World::visit_sharded`): each shard reads its rows' declared facts into a `phx_core::FactOverlay` before its handler
+runs and keeps the handler's writes aside, with its own intents and bindings; the shard holding the player's row runs
+after the others with the player's queue; and the writes, intents and bindings are taken in the shards' order, so the
+day is the one a row-by-row run makes on any pool. A row reads and writes only its own declared facts, and a read
+outside them on the pool stops the run. A traced run visits row by row. Each row is booked again: its schedule's next instance, or a review drawn afresh at the attention its decision left it.
 A review's row whose attention another visit's handler moves is booked afresh at the new attention the same day, so a
 review is never drawn at an attention the row no longer holds. On a run that traces reads, a handler's reads and writes
 on its rows are checked against its declaration and counted into the day's read trace. What each day's visits did —
@@ -1546,8 +1551,10 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   one instance a product and country, so each market's prints are in one currency and it meets that country's
   sellers only, the kinds that sell, the facts naming what a seller sells and its posted price, the weights
   of price and distance, the reach and the stream of tastes). A buyer's want (`ShopIntent`, units or money) is
-  admitted at 5d. At 6a, every day, the day's stalls are read in one pass over the sellers: each posted price and the
-  free units of the good where it stands, less what the day's matches between firms take. The stalls in reach of each
+  admitted at 5d. At 6a, every day, the day's stalls are read in `STALL_SHARDS` fixed shards of the sellers on the pool:
+  each posted price and the free units of the good where it stands, less what the day's matches between firms take;
+  a service's good is issued, and its maker named, afterwards in the sellers' order. Each market then meets on the
+  pool, its buyers, sellers and draws none of another's, and the outcomes are covered in the markets' order. The stalls in reach of each
   buyer zone are found once; each buyer goes to the open seller it values most at `−α·ln p − γ·km + ε`, ε a Gumbel
   taste, which is to each with the logit's chance, so it draws its choice from that chance, one uniform draw of its own
   stream, over the sellers of its zone ordered by what a lot there costs — the prefix it can pay for — never drawing a

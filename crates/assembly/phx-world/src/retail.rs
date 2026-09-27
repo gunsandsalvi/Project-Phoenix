@@ -71,6 +71,20 @@ pub(crate) struct Shop {
     pub want: Want,
 }
 
+fn lesser(a: usize, b: usize) -> usize {
+    if a < b { a } else { b }
+}
+
+/// A market meeting today: its wants, its kind, its product, its stream of lots and the stalls in it.
+struct Meeting {
+    market: MarketId,
+    shops: Vec<Shop>,
+    bound: RetailBound,
+    product: u16,
+    stream: phx_core::StreamDecl,
+    stalls: Vec<Placed>,
+}
+
 /// A stall where it stands: the seller's offer, its zone, and the good it sells there.
 pub(crate) type Placed = (Stall, ZoneId, InstrumentId);
 
@@ -221,47 +235,71 @@ impl World {
         for (_, good, m) in &self.market_day.matches {
             *pending.entry((m.seller, *good)).or_insert(0) += m.qty;
         }
+        // Each seller's stall read on the pool, in fixed shards of the sellers, since reading one changes nothing.
+        let shards = crate::consts::STALL_SHARDS;
+        let each = rows.len().div_ceil(shards);
+        let read = phx_exec::pool::map(self.books.pool(), shards, |k| {
+            let from = lesser(k * each, rows.len());
+            let to = lesser(from + each, rows.len());
+            rows.get(from..to).unwrap_or(&[]).iter().filter_map(|r| self.stall_of(r, &pending)).collect::<Vec<_>>()
+        });
         let mut out: BTreeMap<u16, Vec<Placed>> = BTreeMap::new();
-        for (seller, product, [price, capacity, way, plant], zone) in rows {
-            let Missing::Present(price) = price else { continue };
-            let base = self.goods_frame.base(product);
-            // What cannot be stored is made as it is sold, so its stall is what its maker can make today.
-            if self.goods_frame.made_to_order(product) {
-                let (Missing::Present(staff), Missing::Present(way)) = (capacity, way) else { continue };
-                let rate = match plant {
-                    Missing::Present(p) if p < staff => p,
-                    _ => staff,
-                };
-                let Ok(way) = u32::try_from(way) else { continue };
-                let units = match self.way_most(way, seller, zone) {
-                    Missing::Present(m) if m < rate => m,
-                    _ => rate,
-                };
-                if price > 0 && units >= base {
-                    let good = self.good(GoodKey { product, grade: 0, zone });
-                    self.market_day.makers.insert(seller, way);
-                    let stall =
-                        Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: units - units % base };
-                    out.entry(product).or_default().push((stall, zone, good));
+        for (product, zone, stall, made) in read.into_iter().flatten() {
+            let good = match made {
+                // A service's good is issued the first time a stall names it, in the sellers' order.
+                Missing::Present(way) => {
+                    self.market_day.makers.insert(stall.seller, way);
+                    self.good(GoodKey { product, grade: 0, zone })
                 }
-                continue;
-            }
-            let Missing::Present(good) = self.books.ledger.goods.of(GoodKey { product, grade: 0, zone }) else {
-                continue;
+                Missing::Absent => match self.books.ledger.goods.of(GoodKey { product, grade: 0, zone }) {
+                    Missing::Present(g) => g,
+                    Missing::Absent => continue,
+                },
             };
-            let (place, slot) = self.books.parties.row(seller);
-            let held = match phx_ledger::holding::holding(self.books.parties.holder(place), slot, good) {
-                Missing::Present(h) => h.quantity.raw(),
-                Missing::Absent => 0,
-            };
-            let free =
-                held - self.books.ledger.bound(seller, good) - pending.get(&(seller, good)).copied().unwrap_or(0);
-            if price > 0 && free >= base {
-                let stall = Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: free };
-                out.entry(product).or_default().push((stall, zone, good));
-            }
+            out.entry(product).or_default().push((stall, zone, good));
         }
         out
+    }
+
+    /// A seller's stall as read: its product and zone, its offer, and the way it makes it by where it is made to
+    /// order. What cannot be stored is made as it is sold, so its stall is what its maker can make today; a stocked
+    /// stall offers its free units, less what the day's matches between firms already take. None where it offers
+    /// less than a lot.
+    fn stall_of(
+        &self,
+        &(seller, product, [price, capacity, way, plant], zone): &SellerRow,
+        pending: &BTreeMap<(PartyId, InstrumentId), i64>,
+    ) -> Option<(u16, ZoneId, Stall, Missing<u32>)> {
+        let Missing::Present(price) = price else { return None };
+        let base = self.goods_frame.base(product);
+        if price <= 0 {
+            return None;
+        }
+        if self.goods_frame.made_to_order(product) {
+            let (Missing::Present(staff), Missing::Present(way)) = (capacity, way) else { return None };
+            let rate = match plant {
+                Missing::Present(p) if p < staff => p,
+                _ => staff,
+            };
+            let way = u32::try_from(way).ok()?;
+            let units = match self.way_most(way, seller, zone) {
+                Missing::Present(m) if m < rate => m,
+                _ => rate,
+            };
+            let stall = Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: units - units % base };
+            return (units >= base).then_some((product, zone, stall, Missing::Present(way)));
+        }
+        let Missing::Present(good) = self.books.ledger.goods.of(GoodKey { product, grade: 0, zone }) else {
+            return None;
+        };
+        let (place, slot) = self.books.parties.row(seller);
+        let held = match phx_ledger::holding::holding(self.books.parties.holder(place), slot, good) {
+            Missing::Present(h) => h.quantity.raw(),
+            Missing::Absent => 0,
+        };
+        let free = held - self.books.ledger.bound(seller, good) - pending.get(&(seller, good)).copied().unwrap_or(0);
+        let stall = Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: free };
+        (free >= base).then_some((product, zone, stall, Missing::Absent))
     }
 
     /// 6a: every retail market with buyers today met: the stalls of its product, each owner's builder named among
@@ -291,6 +329,9 @@ impl World {
         }
         // Owners name their builders before the day's shoppers meet, from the same stalls.
         self.choose_builders(day, &stalls_of);
+        // Each market's stalls, read before any meets, since meetings of one product in different countries share
+        // no seller.
+        let mut meetings: Vec<Meeting> = Vec::with_capacity(by_market.len());
         for (market, shops) in by_market {
             let decl = self.market_kinds.decl(&self.markets.made, market);
             let Some(bound) = self.trade.retail.iter().find(|r| r.decl.market.key.kind == decl.key.kind).cloned()
@@ -304,6 +345,9 @@ impl World {
             let Some((product, country)) = retail_of(decl.key.subject) else {
                 violation!(clause = "SRV.5", "a retail market of no product and country", market = market.get());
             };
+            let Some(stream) = self.streams.named(decl.stream) else {
+                violation!(clause = "CHN.1", "a market drawing from a stream never declared", market = market.get());
+            };
             let geo = self.geo();
             // A country's market meets its own sellers only, who price in its currency.
             let stalls: Vec<Placed> = stalls_of
@@ -313,40 +357,34 @@ impl World {
                 .filter(|(_, z, _)| geo.zone_country(*z) == Missing::Present(country))
                 .copied()
                 .collect();
-            let sites: Vec<phx_market::reach::Site> = stalls
-                .iter()
-                .map(|(_, z, _)| match geo.zone_country(*z) {
-                    Missing::Present(country) => phx_market::reach::Site { zone: *z, country },
-                    Missing::Absent => violation!(clause = "GDS.1", "a stall at a zone of no country", zone = z.get()),
-                })
-                .collect();
-            let (mut shoppers, reaches) = self.shoppers(&bound, &shops, &sites, day);
-            let Some(stream) = self.streams.named(decl.stream) else {
-                violation!(clause = "CHN.1", "a market drawing from a stream never declared", market = market.get());
-            };
-            let subject = Subject::new(SubjectTag::Market, u64::from(market.get()));
-            let mut lot = self.streams.open(&stream, subject, day, SubStep::S6a.ordinal());
-            let only: Vec<Stall> = stalls.iter().map(|(s, _, _)| *s).collect();
-            let base = self.goods_frame.base(product);
-            let outcome = phx_market::retail::retail(&only, &mut shoppers, &reaches, base, bound.weights, &mut lot);
+            meetings.push(Meeting { market, shops, bound, product, stream, stalls });
+        }
+        // The meetings are each their own: their buyers, sellers and draws are none of another's, so they meet on
+        // the pool and are written in the markets' order.
+        let met = phx_exec::pool::map(self.books.pool(), meetings.len(), |i| {
+            meetings.get(i).map(|m| self.meet_market(m, day))
+        });
+        for (m, outcome) in meetings.into_iter().zip(met) {
+            let Some((shoppers, outcome)) = outcome else { continue };
+            let only: Vec<Stall> = m.stalls.iter().map(|(s, _, _)| *s).collect();
             let t = &mut self.market_day.tally;
-            t.shoppers += phx_rand::float::len_u64(shoppers.len());
+            t.shoppers += shoppers;
             t.in_reach += outcome.in_reach;
             t.rounds += outcome.rounds;
             t.unserved += phx_rand::float::len_u64(outcome.unserved.len());
-            if matches!(self.goods_frame.at_once.get(usize::from(product)), Some(true)) {
+            if matches!(self.goods_frame.at_once.get(usize::from(m.product)), Some(true)) {
                 let offered: i64 = only.iter().map(|s| s.units).sum();
-                let sold: i64 = outcome.sales.iter().map(|m| m.qty).sum();
+                let sold: i64 = outcome.sales.iter().map(|x| x.qty).sum();
                 let Ok(left) = u64::try_from(offered - sold) else {
                     violation!(
                         clause = "SRV.5",
                         "a meeting that sold more than its sellers could",
-                        market = market.get()
+                        market = m.market.get()
                     );
                 };
                 self.market_day.tally.unused += left;
             }
-            if let Some((_, _, good)) = stalls.first() {
+            if let Some((_, _, good)) = m.stalls.first() {
                 let i = self.books.ledger.instruments.get(*good);
                 let postings: Vec<phx_market::posted::Posting> = only
                     .iter()
@@ -357,10 +395,30 @@ impl World {
                     unserved: BTreeMap::new(),
                     rounds: outcome.rounds,
                 };
-                self.markets.record_posted(market, day, (i.unit, i.ccy), &postings, &day_out);
+                self.markets.record_posted(m.market, day, (i.unit, i.ccy), &postings, &day_out);
             }
-            self.cover_sales(market, &stalls, outcome.sales);
+            self.cover_sales(m.market, &m.stalls, outcome.sales);
         }
+    }
+
+    /// One market's meeting: its shoppers, placed among its stalls' reach, meeting them; the shoppers and the day.
+    fn meet_market(&self, m: &Meeting, day: Day) -> (u64, phx_market::retail::RetailDay) {
+        let geo = self.geo();
+        let sites: Vec<phx_market::reach::Site> = m
+            .stalls
+            .iter()
+            .map(|(_, z, _)| match geo.zone_country(*z) {
+                Missing::Present(country) => phx_market::reach::Site { zone: *z, country },
+                Missing::Absent => violation!(clause = "GDS.1", "a stall at a zone of no country", zone = z.get()),
+            })
+            .collect();
+        let (mut shoppers, reaches) = self.shoppers(&m.bound, &m.shops, &sites, day);
+        let subject = Subject::new(SubjectTag::Market, u64::from(m.market.get()));
+        let mut lot = self.streams.open(&m.stream, subject, day, SubStep::S6a.ordinal());
+        let only: Vec<Stall> = m.stalls.iter().map(|(s, _, _)| *s).collect();
+        let base = self.goods_frame.base(m.product);
+        let outcome = phx_market::retail::retail(&only, &mut shoppers, &reaches, base, m.bound.weights, &mut lot);
+        (phx_rand::float::len_u64(shoppers.len()), outcome)
     }
 
     /// Each buyer with the place its sellers in reach are listed at, among the stalls standing at `sites`, and its
