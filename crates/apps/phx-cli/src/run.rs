@@ -50,6 +50,9 @@ const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES
 const MONTHS_PER_YEAR: u16 = 12;
 /// Days after settling at whose close the save the injections load is taken.
 const INJECTION_SAVE_DAY: u16 = 30;
+
+/// The live check that reads each family's injection into the day-30 save.
+const INJECTION_CHECK: &str = "LC-0-10";
 /// The key of a build's identity hash: any fixed value.
 const BUILD_KEY: [u64; 2] = [0x5048_5820_4255_494c, 0x4420_4944_2031_3131];
 
@@ -612,15 +615,30 @@ fn play(
     let mut injection_save = None;
     obs.settling(w, settle_end);
     while world.today() < end {
+        let seen = Inspector::new(world).findings().len();
         world.run_turn_observed(&[], clock, Some(&mut obs.watch));
         println!("{}", progress(Inspector::new(world), settle_end));
+        // Each finding as the turn found it, so a run that stops later still shows what the audit saw.
+        for f in Inspector::new(world).findings().iter().skip(seen) {
+            println!(
+                "finding {} {} day {}: {:?} {} {:?}: {}",
+                f.family,
+                f.clause,
+                f.day.get(),
+                f.owner,
+                f.size,
+                f.unit,
+                f.detail
+            );
+        }
         obs.settling(Inspector::new(world), settle_end);
         let now = save_period(Inspector::new(world), world.today())?;
         if now != period {
             save_and_check(world, &saves, &build, clock)?;
             period = now;
         }
-        if injection_save.is_none() && world.today() >= injection_day {
+        // The injections' save serves the check that reads them alone, so a run that does not ask for it takes none.
+        if injection_save.is_none() && world.today() >= injection_day && selected(&args.checks, INJECTION_CHECK) {
             injection_save = Some(world.save(&args.run_dir.join("inject-save"), &build)?.dir);
         }
     }
