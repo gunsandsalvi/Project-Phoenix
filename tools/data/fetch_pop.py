@@ -268,6 +268,33 @@ def ilo_employment(cache: Path, manifest: dict, iso3: set) -> None:
     manifest["sources"]["ilo_employment"] = {"title": "ILOSTAT SDMX API", "url": ILO.format(flow="<dataflow>")}
 
 
+GDP_PER_HEAD_LCU = ("https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CN?format=json&date=2010:2025"
+                    "&per_page=20000")
+
+
+def wage_to_output(cache: Path, manifest: dict, iso3: set) -> None:
+    """Mean monthly earnings of employees in local currency (both sexes, from surveys and censuses, the ILO's modelled
+    estimates left out), and GDP per head in local currency, by year."""
+    rows = []
+    for r in ilo_rows(cache, "DF_EAR_EMTA_SEX_CUR_NB"):
+        if r["FREQ"] == "A" and r["REF_AREA"] in iso3 and r["SEX"] == "SEX_T" and r["CUR"] == "CUR_TYPE_LCU" \
+                and r["OBS_VALUE"] and "Modelled" not in r["SOURCE"]:
+            rows.append((r["REF_AREA"], int(r["TIME_PERIOD"]), r["OBS_VALUE"], r["SOURCE"]))
+    manifest["series"]["ilo/mean_earnings"] = {
+        "title": "Mean monthly earnings of employees, local currency, both sexes (DF_EAR_EMTA_SEX_CUR_NB), ILOSTAT",
+        "rows": table(RAW / "ilo" / "mean_earnings.csv", ["iso3", "year", "value", "source"], rows),
+    }
+    page = json.loads(get(GDP_PER_HEAD_LCU))
+    rows = [(r["countryiso3code"], int(r["date"]), r["value"]) for r in page[1] or []
+            if r["value"] is not None and r["countryiso3code"] in iso3]
+    manifest["series"]["wdi/NY.GDP.PCAP.CN"] = {
+        "title": "GDP per capita, current local currency units (NY.GDP.PCAP.CN), World Bank WDI",
+        "rows": table(RAW / "wdi" / "NY.GDP.PCAP.CN.csv", ["iso3", "year", "value"], rows),
+    }
+    manifest["sources"]["wage_to_output"] = {"title": "ILOSTAT SDMX API; World Bank API",
+                                             "url": f"{ILO.format(flow='DF_EAR_EMTA_SEX_CUR_NB')}; {GDP_PER_HEAD_LCU}"}
+
+
 def ilo_employment_rate(cache: Path, manifest: dict, iso3: set) -> None:
     """The employed as a share of the population, by sex and ten-year age band from 15, and of both sexes from 15,
     from labour force surveys and censuses; the ILO's modelled estimates are left out."""
@@ -545,7 +572,7 @@ def pensions(cache: Path, manifest: dict, iso3: set) -> None:
     }
 
 
-SOURCES = {"pensions": pensions, "housing": housing, "findex": findex, "wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "smam": smam, "wid_shares": wid_shares,
+SOURCES = {"pensions": pensions, "housing": housing, "findex": findex, "wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "smam": smam, "wage_to_output": wage_to_output, "wid_shares": wid_shares,
            "ilo_employment": ilo_employment, "ilo_employment_rate": ilo_employment_rate, "wcde": wcde}
 
 

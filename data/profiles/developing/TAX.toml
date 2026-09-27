@@ -1,4 +1,4 @@
-# The developing group's taxes (spec TAX.1): the income tax's marginal bands over a member's yearly wage and the consumption tax's rate.
+# The developing group's taxes (spec TAX.1): the income tax's marginal bands over a member's yearly wage and the consumption tax's rate, derived by tools/data/derive_tax.py; never edited by hand.
 
 [[primitive]]
 id = "TAX.income_band_edges"
@@ -6,8 +6,8 @@ kind = "POLICY"
 owner = "TAX"
 decided_by = "parliament"
 source = "measured"
-source_ref = "Each income tax band's lower edge as a multiple of the mean wage: the IMF's means for low-income developing countries: tax starting at 1.3 times output per person at a lowest rate of 10.4%, the top rate 29% from 34 times (Collecting Taxes data, IMF Working Paper 22/20, 2019 values), the multiples of output per person taken as multiples of the mean wage, which no source relates for these economies."
-value = { axis = [0, 1, 2], values = [0.00, 1.30, 34.00], outside = "refuse" }
+source_ref = "Each income tax band's lower edge as a multiple of the mean wage: the IMF's means for low-income developing countries: tax starting at 1.3 times output per person at a lowest rate of 10.4%, the top rate 29% from 34 times (Collecting Taxes data, IMF Working Paper 22/20, 2019 values), each multiple of output per person over the group's mean wage over output per person, 1.72: the median over 62 economies of the group of employees' mean monthly earnings times twelve over GDP per head, both in local currency at each one's latest year reporting both (ILOSTAT DF_EAR_EMTA_SEX_CUR_NB, World Bank NY.GDP.PCAP.CN, fetched 2026-09-27)."
+value = { axis = [0, 1, 2], values = [0.00, 0.76, 19.82], outside = "refuse" }
 
 [[primitive]]
 id = "TAX.income_band_rates"
@@ -15,7 +15,7 @@ kind = "POLICY"
 owner = "TAX"
 decided_by = "parliament"
 source = "measured"
-source_ref = "Each income tax band's marginal rate: the IMF's means for low-income developing countries: tax starting at 1.3 times output per person at a lowest rate of 10.4%, the top rate 29% from 34 times (Collecting Taxes data, IMF Working Paper 22/20, 2019 values), the multiples of output per person taken as multiples of the mean wage, which no source relates for these economies."
+source_ref = "Each income tax band's marginal rate: the IMF's means for low-income developing countries: tax starting at 1.3 times output per person at a lowest rate of 10.4%, the top rate 29% from 34 times (Collecting Taxes data, IMF Working Paper 22/20, 2019 values)."
 value = { axis = [0, 1, 2], values = [0.000, 0.104, 0.290], outside = "refuse" }
 
 [[primitive]]

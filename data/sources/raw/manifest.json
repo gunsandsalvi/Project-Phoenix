@@ -85,6 +85,10 @@
       "rows": 91977,
       "title": "Average weekly hours actually worked per employed person by economic activity and occupation (DF_HOW_TEMP_ECO_OCU_NB), ILOSTAT"
     },
+    "ilo/mean_earnings": {
+      "rows": 1535,
+      "title": "Mean monthly earnings of employees, local currency, both sexes (DF_EAR_EMTA_SEX_CUR_NB), ILOSTAT"
+    },
     "ilo/occupation": {
       "rows": 31925,
       "title": "Employed persons by sex and ISCO-08 major group, thousands (DF_EMP_TEMP_SEX_OCU_NB), ILOSTAT"
@@ -265,6 +269,10 @@
       "rows": 2154,
       "title": "Services, value added (% of GDP)"
     },
+    "wdi/NY.GDP.PCAP.CN": {
+      "rows": 3343,
+      "title": "GDP per capita, current local currency units (NY.GDP.PCAP.CN), World Bank WDI"
+    },
     "wdi/NY.GDP.PCAP.PP.KD": {
       "rows": 2169,
       "title": "GDP per capita, PPP (constant 2021 international $)"
@@ -444,6 +452,11 @@
       "fetched": "2026-09-27",
       "title": "UN DESA Population Division, Database on Household Size and Composition 2026 and Database on the Households and Living Arrangements of Older Persons 2026",
       "url": "https://population.un.org/household/assets/UNDESA_PD_2026_hh-size-composition.xlsx; https://population.un.org/LivingArrangements/assets/UNDESA_PD_2026_living-arrangements-older-persons.xlsx"
+    },
+    "wage_to_output": {
+      "fetched": "2026-09-27",
+      "title": "ILOSTAT SDMX API; World Bank API",
+      "url": "https://sdmx.ilo.org/rest/data/ILO,DF_EAR_EMTA_SEX_CUR_NB,1.0/all?startPeriod=2010; https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CN?format=json&date=2010:2025&per_page=20000"
     },
     "wb": {
       "fetched": "2026-09-24",
