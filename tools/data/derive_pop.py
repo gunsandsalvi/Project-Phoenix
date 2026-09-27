@@ -471,6 +471,23 @@ def employment(level: str, members: set, m: dict) -> list:
                f"group's standard at every drawn value.")
         out.append(entry(pid, "ENDOWMENT", "LAB", "measured", ref,
                          table2([int(c) for c in classes], [0, 1], np.column_stack(cols), "refuse")))
+    bands = ["15-24", "25-34", "35-44", "45-54", "55-64", "GE65"]
+    d = pd.read_csv(RAW / "ilo" / "employment_rate.csv")
+    d = latest_survey(d[d.iso3.isin(members) & (d.year >= FIRST_YEAR) & d.age.isin(bands + ["GE15"])])
+    whole = d[(d.sex == "T") & (d.age == "GE15")].set_index("iso3").rate
+    cols = []
+    for sex in ("F", "M"):
+        x = d[(d.sex == sex) & d.age.isin(bands)].pivot_table(index="iso3", columns="age", values="rate")
+        x = x.reindex(columns=bands).div(whole, axis=0)
+        cols.append(x.median().to_numpy())
+    n = d[d.age == "GE15"].iso3.nunique()
+    ref = (f"The employment rate of each sex and ten-year age band from 15 (rows: each band's first year, the last "
+           f"65 and over; columns: female, male) over the employment rate of both sexes from 15: the median over the "
+           f"group's {n} economies of each ratio at their latest survey or census {FIRST_YEAR}-2025, the ILO's modelled "
+           f"estimates left out, from {fetched(m, 'ilo_employment_rate')}. A country's person is employed at its "
+           f"employment rate times its band's ratio.")
+    out.append(entry("LAB.employment_by_age", "ENDOWMENT", "LAB", "measured", ref,
+                     table2([15, 25, 35, 45, 55, 65], [0, 1], np.column_stack(cols), "refuse")))
     return out
 
 

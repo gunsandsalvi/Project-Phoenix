@@ -266,6 +266,23 @@ def ilo_employment(cache: Path, manifest: dict, iso3: set) -> None:
     manifest["sources"]["ilo_employment"] = {"title": "ILOSTAT SDMX API", "url": ILO.format(flow="<dataflow>")}
 
 
+def ilo_employment_rate(cache: Path, manifest: dict, iso3: set) -> None:
+    """The employed as a share of the population, by sex and ten-year age band from 15, and of both sexes from 15,
+    from labour force surveys and censuses; the ILO's modelled estimates are left out."""
+    rows = []
+    for r in ilo_rows(cache, "DF_EMP_DWAP_SEX_AGE_RT"):
+        if r["FREQ"] != "A" or r["REF_AREA"] not in iso3 or not r["AGE"].startswith("AGE_10YRBANDS_") \
+                or r["SEX"] not in ("SEX_M", "SEX_F", "SEX_T") or not r["OBS_VALUE"] or "Modelled" in r["SOURCE"]:
+            continue
+        rows.append((r["REF_AREA"], int(r["TIME_PERIOD"]), r["SEX"][4:], r["AGE"][len("AGE_10YRBANDS_Y"):],
+                     r["OBS_VALUE"], r["SOURCE"]))
+    manifest["series"]["ilo/employment_rate"] = {
+        "title": "Employment-to-population ratio by sex and ten-year age band, % (DF_EMP_DWAP_SEX_AGE_RT), ILOSTAT",
+        "rows": table(RAW / "ilo" / "employment_rate.csv", ["iso3", "year", "sex", "age", "rate", "source"], rows),
+    }
+    manifest["sources"]["ilo_employment_rate"] = {"title": "ILOSTAT SDMX API", "url": ILO.format(flow="<dataflow>")}
+
+
 WCDE_URL = "https://wicshiny2023.iiasa.ac.at/wcde-data/wcde-v3-batch/2/prop.rds"
 WCDE_YEAR = 2020
 WCDE_LEVELS = ["No Education", "Incomplete Primary", "Primary", "Lower Secondary", "Upper Secondary",
@@ -506,7 +523,7 @@ def pensions(cache: Path, manifest: dict, iso3: set) -> None:
 
 
 SOURCES = {"pensions": pensions, "housing": housing, "findex": findex, "wpp": wpp, "ilo_disability": ilo_disability, "un_households": un_households, "wid_shares": wid_shares,
-           "ilo_employment": ilo_employment, "wcde": wcde}
+           "ilo_employment": ilo_employment, "ilo_employment_rate": ilo_employment_rate, "wcde": wcde}
 
 
 def main() -> None:

@@ -69,6 +69,10 @@
       "rows": 52504,
       "title": "Employment by economic activity and occupation, thousands (DF_EMP_TEMP_ECO_OCU_NB), ILOSTAT"
     },
+    "ilo/employment_rate": {
+      "rows": 37918,
+      "title": "Employment-to-population ratio by sex and ten-year age band, % (DF_EMP_DWAP_SEX_AGE_RT), ILOSTAT"
+    },
     "ilo/hours_by_activity": {
       "rows": 45907,
       "title": "Average weekly hours actually worked per employed person by economic activity and occupation (DF_HOW_TEMP_ECO_OCU_NB), ILOSTAT"
@@ -350,6 +354,11 @@
     },
     "ilo_employment": {
       "fetched": "2026-09-24",
+      "title": "ILOSTAT SDMX API",
+      "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
+    },
+    "ilo_employment_rate": {
+      "fetched": "2026-09-27",
       "title": "ILOSTAT SDMX API",
       "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/all?startPeriod=2010"
     },

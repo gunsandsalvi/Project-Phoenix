@@ -67,6 +67,13 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// Each sex's and ten-year age band's employment rate over the rate of both sexes from 15.
+    pub EMPLOYMENT_BY_AGE = "LAB.employment_by_age" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
+    }
+}
+
+declare_prim! {
     /// The employed by occupation family (ISCO-08 major group), by sex.
     pub OCCUPATION = "LAB.occupation_shares" {
         kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
@@ -321,6 +328,7 @@ impl System for Lab {
         let jobs = Jobs {
             status: d.prim(&STATUS),
             occupation: d.prim(&OCCUPATION),
+            by_age: d.prim(&EMPLOYMENT_BY_AGE),
             unemployment: d.prim(&UNEMPLOYMENT),
             part_time: d.prim(&PART_TIME),
             part_time_hours: d.prim(&PART_TIME_HOURS),

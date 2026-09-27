@@ -77,6 +77,7 @@ struct Employer {
 pub struct Jobs {
     pub status: Prim<Table2>,
     pub occupation: Prim<Table2>,
+    pub by_age: Prim<Table2>,
     pub unemployment: Prim<Table1>,
     pub part_time: Prim<Table1>,
     pub part_time_hours: Prim<Count>,
@@ -100,6 +101,8 @@ fn by_sex(t: &Table1, sex: u32) -> f64 {
 struct Country {
     law: Law,
     employed: f64,
+    /// Each ten-year band's first age and each sex's employment rate there over the country's.
+    by_age: Vec<(i64, [f64; 2])>,
     employees: [f64; 2],
     part_time: [f64; 2],
     part_time_hours: u32,
@@ -183,9 +186,24 @@ impl AttachmentDraw for Jobs {
                 e / of_employees * (p * f64::from(part_time_hours) + (1.0 - p) * f64::from(law.full_time_hours))
             })
             .sum();
+        let t = self.by_age.get(register, c.id);
+        let by_age = t
+            .rows()
+            .iter()
+            .map(|a| {
+                (
+                    *a,
+                    [if_pop::FEMALE, if_pop::MALE].map(|sex| match t.at(*a, i64::from(sex)) {
+                        Ok(v) => share(v),
+                        Err(_) => violation!(clause = "GEN.2", "no employment ratio for an age and sex", age = *a),
+                    }),
+                )
+            })
+            .collect();
         Box::new(Country {
             law,
             employed,
+            by_age,
             employees,
             part_time,
             part_time_hours,
@@ -317,11 +335,17 @@ impl CountryAttachments for Country {
             let Some(skill) = education.and_then(|e| self.law.education_skill.get(e)).copied() else {
                 violation!(clause = "LAB.3", "an education that gives no skill level");
             };
-            let retired = p.age_on(self.date) * crate::consts::MONTHS_A_YEAR >= months;
+            let age = p.age_on(self.date);
+            let retired = age * crate::consts::MONTHS_A_YEAR >= months;
+            // A person is employed at the country's rate times its age band's and sex's ratio to it.
+            let Some(ratio) = self.by_age.iter().rev().find(|(first, _)| *first <= age).and_then(|(_, r)| r.get(s))
+            else {
+                violation!(clause = "GEN.2", "an adult younger than the employment bands", age = age);
+            };
             let (works, as_employee, looks) = (open_unit(&mut d), open_unit(&mut d), open_unit(&mut d));
             let occupation = self.occupation(s, skill, &mut d);
             keys.persons.push((place, crate::LAST_POINT.name, last));
-            if works >= self.employed {
+            if works >= self.employed * ratio {
                 let state = if retired {
                     RETIRED
                 } else if looks < searching {
