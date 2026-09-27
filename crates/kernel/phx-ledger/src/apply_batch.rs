@@ -419,7 +419,7 @@ impl<B: Backing> Books<B> {
             let (from, of) = chunk(i);
             of.iter()
                 .zip(located.get(from..).unwrap_or(&[]))
-                .map(|(leg, a)| self.ledger.leg_draw(self.parties.holder(a.table), *a, leg, &opened))
+                .map(|(leg, a)| self.ledger.leg_draw(self.parties.holder(a.table), *a, leg, (&opened, &[])))
                 .collect::<Vec<_>>()
         });
         Ok((at, drawn.concat()))

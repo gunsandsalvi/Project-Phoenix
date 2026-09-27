@@ -386,7 +386,7 @@ impl<B: Backing> Ledger<B> {
         let drawn: Vec<Drawn> = legs
             .iter()
             .zip(&located)
-            .map(|(leg, at)| self.leg_draw(holders.arenas(at.table), *at, leg, &opened))
+            .map(|(leg, at)| self.leg_draw(holders.arenas(at.table), *at, leg, (&opened, &covers)))
             .collect();
         self.check_and_settle(holders, (settling, covers), (&legs, &located, &drawn), None, audit)
     }
@@ -431,7 +431,7 @@ impl<B: Backing> Ledger<B> {
         arenas: &dyn HolderArenas,
         at: At,
         leg: &LegRec,
-        opened: &[(PartyId, AccountRef)],
+        (opened, own): (&[(PartyId, AccountRef)], &[Covered]),
     ) -> Drawn {
         if matches!(leg.kind, LegKind::Row(RowOp::Adjust)) && opened.contains(&(leg.party, leg.account)) {
             return Some((
@@ -440,7 +440,7 @@ impl<B: Backing> Ledger<B> {
                 Missing::Absent,
             ));
         }
-        self.draws(arenas, at.party, at.slot, leg)
+        self.draws(arenas, at.party, at.slot, leg, own)
     }
 
     /// An instruction's moves checked against the positions its legs read, then all settled or none.
@@ -508,47 +508,57 @@ impl<B: Backing> Ledger<B> {
             }
             None => None,
         };
-        let first = self.day.effects.len();
-        self.settle_legs(holders, settling, (legs, located, drawn), deferred, audit);
-        self.net_effects(first, self.reasons.get(settling.reason));
+        // The units an instruction's covers held back are the ones it delivers, freed as it settles.
         for c in covers {
             self.covers.release(c);
         }
+        let first = self.day.effects.len();
+        self.settle_legs(holders, settling, (legs, located, drawn), deferred, audit);
+        let rows = legs.iter().any(|l| matches!(l.kind, LegKind::Row(_)));
+        self.net_effects(first, self.reasons.get(settling.reason), !rows);
         audit.applied(id.get());
         Ok(id)
     }
 
-    /// An instruction's money effects taken on each party's net: a bank whose customers pay each other through it
-    /// moves one deposit down and another up, and neither pays nor is paid, so only what a party paid beyond what it
-    /// received, or received beyond what it paid, is its payment's effect.
-    fn net_effects(&mut self, first: usize, decl: crate::instruction::ReasonDecl) {
+    /// An instruction's effects taken on each party's net: a bank whose customers pay each other through it moves one
+    /// deposit down and another up, and neither pays nor is paid; a maker that makes a service and sells it in one
+    /// instruction gives up its inputs' cost, the cost the service carried in and out again. So only what a party
+    /// paid beyond what it received, and the cost it gave beyond what it took, are its effects. The cost of goods is
+    /// netted only where no leg adjusts a row's balance, whose effect is the reason's own.
+    fn net_effects(&mut self, first: usize, decl: crate::instruction::ReasonDecl, goods: bool) {
         let Some(recs) = self.day.effects.get(first..) else { return };
-        if recs.iter().filter(|e| !e.held).count() < 2 {
+        if recs.len() < 2 {
             return;
         }
-        let mut net: Vec<(PartyId, phx_num::Ccy, i64)> = Vec::new();
+        let Some(template) = recs.first().copied() else { return };
+        let mut net: Vec<(bool, PartyId, phx_num::Ccy, i64)> = Vec::new();
         let mut kept: Vec<EffectRec> = Vec::new();
         for e in recs {
-            if e.held {
+            if e.held && !goods {
                 kept.push(*e);
                 continue;
             }
             let ccy = e.amount.ccy();
-            match net.iter_mut().find(|(p, c, _)| *p == e.party && *c == ccy) {
-                Some((_, _, sum)) => *sum += e.amount.amt(),
-                None => net.push((e.party, ccy, e.amount.amt())),
+            match net.iter_mut().find(|(h, p, c, _)| *h == e.held && *p == e.party && *c == ccy) {
+                Some((_, _, _, sum)) => *sum += e.amount.amt(),
+                None => net.push((e.held, e.party, ccy, e.amount.amt())),
             }
         }
-        let Some(template) = recs.first().copied() else { return };
+        let (held_paid, held_received) = match decl.held {
+            Missing::Present(pair) => pair,
+            Missing::Absent => (decl.paid, decl.received),
+        };
         let mut out: Vec<EffectRec> = net
             .into_iter()
-            .filter(|(_, _, sum)| *sum != 0)
-            .map(|(party, ccy, sum)| EffectRec {
-                party,
-                effect: if sum < 0 { decl.paid } else { decl.received },
-                amount: Money::new(sum, ccy),
-                held: false,
-                ..template
+            .filter(|(_, _, _, sum)| *sum != 0)
+            .map(|(held, party, ccy, sum)| {
+                let effect = match (held, sum < 0) {
+                    (false, true) => decl.paid,
+                    (false, false) => decl.received,
+                    (true, true) => held_paid,
+                    (true, false) => held_received,
+                };
+                EffectRec { party, effect, amount: Money::new(sum, ccy), held, ..template }
             })
             .collect();
         out.extend(kept);
@@ -603,7 +613,7 @@ impl<B: Backing> Ledger<B> {
     }
 
     /// What a leg draws on and how it moves it; a leg that can only add, or opens a row, draws on nothing.
-    fn draws(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, leg: &LegRec) -> Drawn {
+    fn draws(&self, arenas: &dyn HolderArenas, party: PartyId, slot: Slot, leg: &LegRec, own: &[Covered]) -> Drawn {
         match (leg.kind, leg.account) {
             (LegKind::Money | LegKind::Row(RowOp::Adjust), AccountRef::Line { line, side }) => {
                 let view = find(arenas, slot, line, side);
@@ -664,7 +674,13 @@ impl<B: Backing> Ledger<B> {
                     Missing::Present(h) => h.quantity.raw(),
                     Missing::Absent => 0,
                 };
-                let free = held - self.bound(party, id);
+                // The units the instruction's own covers hold back are the ones it delivers, so they are free to it.
+                let mine: i64 = own
+                    .iter()
+                    .filter(|c| c.holder() == party && c.instrument() == id)
+                    .map(|c| c.qty().raw().raw())
+                    .sum();
+                let free = held - self.bound(party, id) + mine;
                 Some((
                     Position { now: free, floor: Missing::Present(0), short: FailCause::FreeUnits },
                     leg.qty,
@@ -752,12 +768,13 @@ impl<B: Backing> Ledger<B> {
             None => None,
         };
         let mut taken: Vec<NamedUnit> = Vec::new();
-        // Rows are opened before anything moves on them and retired after; between, what leaves goes before what
-        // arrives.
+        // Rows are opened before anything moves on them and retired after; units made come into being before any
+        // leave, as a service made in the sale that sells it; between, what leaves goes before what arrives.
         let rank = |l: &LegRec| {
             let (opens, closes) =
                 (matches!(l.kind, LegKind::Row(RowOp::Open(_))), matches!(l.kind, LegKind::Row(RowOp::Close)));
-            (closes, !opens, l.qty >= 0)
+            let makes = matches!(l.kind, LegKind::Transformation { .. }) && l.qty > 0;
+            (closes, !opens, !makes, l.qty >= 0)
         };
         let mut order: Vec<usize> = (0..legs.len()).collect();
         order.sort_by_key(|i| legs.get(*i).map(rank));

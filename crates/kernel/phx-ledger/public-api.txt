@@ -1042,6 +1042,7 @@ pub phx_ledger::intents::Made::product: u16
 pub phx_ledger::intents::Made::qty: i64
 pub phx_ledger::intents::Made::source: phx_ledger::instruction::Source
 pub struct phx_ledger::intents::Transform
+pub phx_ledger::intents::Transform::days: u32
 pub phx_ledger::intents::Transform::legs: alloc::vec::Vec<phx_ledger::intents::Made>
 pub phx_ledger::intents::Transform::reason: u64
 pub phx_ledger::intents::Transform::row: phx_id::ids::Slot
