@@ -1,19 +1,25 @@
 //! The due wheel: every dated contract waits in the bucket of its next due day, so a day takes the contracts due on
 //! it and nothing else. A contract whose due moves or that closes is not taken out: its stale entry is skipped by its
-//! reader, which checks the contract's own next due against the day.
+//! reader, which checks the contract's own next due against the day, and a contract put in one bucket twice is taken
+//! once.
 
 use phx_id::Day;
+use phx_macros::clause;
 use phx_num::violation;
 
 /// Buckets for the days of a horizon, reused round the wheel, and the entries due beyond it, which enter a bucket as
 /// the wheel comes within reach of their day.
+#[clause("TIME.3", "REP.12")]
 #[derive(Debug)]
 pub struct DueWheel {
     first: Day,
     buckets: Vec<Vec<u32>>,
     far: Vec<(Day, u32)>,
-    /// The earliest day in `far`, so a day scans it only when an entry comes within reach.
-    far_first: Option<Day>,
+    /// Turns until the far entries are next read for those within reach: every half horizon, so each is read a
+    /// bounded number of times before its day, and none is missed, since an entry beyond reach at one reading is within
+    /// it at the next, before its day.
+    far_in: u32,
+    far_scratch: Vec<(Day, u32)>,
     /// The sort's pairs and scratch, kept so a day's take allocates nothing once the heaviest has sized them.
     pairs: Vec<(u32, u32)>,
     scratch: Vec<(u32, u32)>,
@@ -30,7 +36,8 @@ impl DueWheel {
             first,
             buckets: (0..horizon).map(|_| Vec::new()).collect(),
             far: Vec::new(),
-            far_first: None,
+            far_in: 0,
+            far_scratch: Vec::new(),
             pairs: Vec::new(),
             scratch: Vec::new(),
         }
@@ -67,9 +74,6 @@ impl DueWheel {
             self.bucket(day).push(edge);
         } else {
             self.far.push((day, edge));
-            if self.far_first.is_none_or(|f| day < f) {
-                self.far_first = Some(day);
-            }
         }
     }
 
@@ -90,14 +94,19 @@ impl DueWheel {
         } else {
             out.sort_unstable();
         }
+        out.dedup();
         self.first = day.succ();
-        let reach = self.first.get() + self.horizon() - 1;
-        if self.far_first.is_some_and(|f| f.get() <= reach) {
-            let far = std::mem::take(&mut self.far);
-            self.far_first = None;
-            for (d, edge) in far {
+        if self.far_in == 0 {
+            // Kept buffers swap, so the reading allocates nothing once the far list has its size.
+            std::mem::swap(&mut self.far, &mut self.far_scratch);
+            let mut far = std::mem::take(&mut self.far_scratch);
+            for (d, edge) in far.drain(..) {
                 self.schedule(edge, d);
             }
+            self.far_scratch = far;
+            self.far_in = self.horizon() / 2;
+        } else {
+            self.far_in -= 1;
         }
     }
 }
@@ -113,12 +122,13 @@ mod tests {
         let mut w = DueWheel::new(Day::new(10), 4);
         w.schedule(7, Day::new(11));
         w.schedule(3, Day::new(11));
+        w.schedule(7, Day::new(11));
         w.schedule(9, Day::new(30));
         let mut out = Vec::new();
         w.take(Day::new(10), &mut out, None);
         assert!(out.is_empty());
         w.take(Day::new(11), &mut out, None);
-        assert_eq!(out, vec![3, 7], "sorted, whatever the order scheduled");
+        assert_eq!(out, vec![3, 7], "sorted, whatever the order scheduled, and a contract put twice taken once");
         // Each due contract moves to its next date, as a monthly one does.
         for e in out.clone() {
             w.schedule(e, Day::new(14));

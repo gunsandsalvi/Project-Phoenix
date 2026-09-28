@@ -3,6 +3,7 @@
 //! party's kind keeps, so opening and closing a contract takes the same time however many a party holds.
 
 use phx_id::{PartyKey, Slot};
+use phx_macros::clause;
 use phx_num::violation;
 
 use crate::backing::{AddressSpace, Backing, SystemBacking};
@@ -20,6 +21,7 @@ struct Links<B: Backing> {
 }
 
 /// A family's contracts: slots, each contract's two parties, and the list links of each side that keeps lists.
+#[clause("REP.3", "REG.8")]
 #[derive(Debug)]
 pub struct EdgeTable<B: Backing = SystemBacking> {
     slots: SlotAlloc<B>,
@@ -100,13 +102,17 @@ impl<B: Backing> EdgeTable<B> {
         };
         col.set(edge, to);
         unlink(links.as_mut(), from_head, edge);
-        if let (Some(l), Some(h)) = (links.as_mut(), to_head) {
-            l.next.set(edge, *h);
-            l.prev.set(edge, NONE);
-            if *h != NONE {
-                l.prev.set(Slot::new(*h), edge.get());
+        match (links.as_mut(), to_head) {
+            (Some(l), Some(h)) => {
+                l.next.set(edge, *h);
+                l.prev.set(edge, NONE);
+                if *h != NONE {
+                    l.prev.set(Slot::new(*h), edge.get());
+                }
+                *h = edge.get();
             }
-            *h = edge.get();
+            (None, None) => {}
+            _ => violation!(clause = "REP.3", "a side's list head handed in where the side keeps none, or not"),
         }
     }
 
@@ -126,16 +132,22 @@ impl<B: Backing> EdgeTable<B> {
         self.slots.is_live(edge)
     }
 
-    /// A party's contracts on a side that keeps lists, from its head, most recently opened first.
+    /// A party's contracts on a side that keeps lists, from its head, most recently opened first; a side that keeps
+    /// none is refused.
     pub fn list(&self, side: usize, head: u32) -> impl Iterator<Item = Slot> + '_ {
-        let next = self.links.get(side).and_then(Option::as_ref).map(|l| &l.next);
-        let mut at = if next.is_some() { head } else { NONE };
+        let Some(Some(links)) = self.links.get(side) else {
+            violation!(clause = "REP.3", "a party's contracts listed on a side that keeps no lists", side = side);
+        };
+        let mut at = head;
         std::iter::from_fn(move || {
             if at == NONE {
                 return None;
             }
             let edge = Slot::new(at);
-            at = next.and_then(|n| n.get(edge)).unwrap_or(NONE);
+            let Some(next) = links.next.get(edge) else {
+                violation!(clause = "REP.3", "a listed contract with no link", edge = edge.get());
+            };
+            at = next;
             Some(edge)
         })
     }

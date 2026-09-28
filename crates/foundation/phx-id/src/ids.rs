@@ -87,6 +87,7 @@ impl PartyId {
 
 /// Where a party is held: its kind's table, its slot there, and the slot's generation when it took the party, so a
 /// reference kept past the party's end is known stale once the slot holds another.
+#[clause("PTY.1", "PTY.10")]
 #[must_use]
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -137,6 +138,7 @@ impl PartyRef {
 /// A party's place within the day: its kind's table and its slot, in one word, as the day's flows and the contracts
 /// between parties name it. It carries no generation: a contract's side moves when its party ends and a slot is
 /// reused only after the day closes, so neither outlives the party it names.
+#[clause("PTY.1", "REP.3")]
 #[must_use]
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]

@@ -1,26 +1,35 @@
-//! A kind's parties: the slots its table hands out, each with the generation that tells a live party's reference
-//! from a stale one once its slot holds another.
+//! A kind's parties: the slots its table hands out, each with its party's permanent identity and the generation that
+//! tells a live party's reference from a stale one once its slot holds another.
 
-use phx_id::{PartyRef, Slot};
+use phx_id::{PartyId, PartyRef, Slot};
+use phx_macros::clause;
 use phx_num::violation;
 
 use crate::backing::{AddressSpace, Backing, SystemBacking};
 use crate::column::Column;
 use crate::table::SlotAlloc;
 
-/// The parties of one kind: slots allocated lowest first and released at the day's close, and each slot's
-/// generation, raised each time the slot takes a new party.
+/// The parties of one kind: slots allocated lowest first and released at the day's close, each slot's party's
+/// identity, and each slot's generation, raised each time the slot takes a new party. Which event begins or ends a
+/// party, and where an ended party's holdings go, is the world's; this is where the party is held.
+#[clause("PTY.1", "REP.13")]
 #[derive(Debug)]
 pub struct Parties<B: Backing = SystemBacking> {
     kind: u8,
     slots: SlotAlloc<B>,
     generations: Column<u32, B>,
+    ids: Column<PartyId, B>,
 }
 
 impl<B: Backing> Parties<B> {
     /// A kind's table of at most `max` parties, chunked by `rows_per_chunk`.
     pub fn new(space: &mut AddressSpace, kind: u8, max: u32, rows_per_chunk: u32) -> Parties<B> {
-        Parties { kind, slots: SlotAlloc::new(space, max), generations: Column::new(space, max, rows_per_chunk) }
+        Parties {
+            kind,
+            slots: SlotAlloc::new(space, max),
+            generations: Column::new(space, max, rows_per_chunk),
+            ids: Column::new(space, max, rows_per_chunk),
+        }
     }
 
     #[must_use]
@@ -28,12 +37,19 @@ impl<B: Backing> Parties<B> {
         self.kind
     }
 
-    /// A new party's reference: the lowest free slot, at its next generation.
-    pub fn begin(&mut self) -> PartyRef {
+    /// A new party of identity `id`: the lowest free slot, at its next generation.
+    pub fn begin(&mut self, id: PartyId) -> PartyRef {
         let slot = self.slots.alloc();
         let generation = self.generations.get(slot).map_or(0, |g| g + 1);
         self.generations.put(slot, generation);
+        self.ids.put(slot, id);
         PartyRef::new(self.kind, generation, slot)
+    }
+
+    /// The identity of the party at a slot, live or ended this day.
+    #[must_use]
+    pub fn id(&self, slot: Slot) -> Option<PartyId> {
+        self.ids.get(slot)
     }
 
     /// Ends a live party; its slot is handed out again after the day closes.
@@ -81,7 +97,7 @@ impl<B: Backing> Parties<B> {
 
 #[cfg(test)]
 mod tests {
-    use phx_id::Slot;
+    use phx_id::{PartyId, Slot};
 
     use super::Parties;
     use crate::backing::{AddressSpace, HeapBacking};
@@ -90,17 +106,18 @@ mod tests {
     fn slots_reuse_with_new_generation() {
         let mut space = AddressSpace::empty();
         let mut p: Parties<HeapBacking> = Parties::new(&mut space, 3, 16, 4);
-        let a = p.begin();
-        let b = p.begin();
+        let a = p.begin(PartyId::new(7));
+        let b = p.begin(PartyId::new(8));
         assert_eq!((a.kind(), a.slot(), b.slot()), (3, Slot::new(0), Slot::new(1)));
         p.end(a);
         assert_eq!(p.resolve(a), None, "an ended party no longer resolves");
         p.close_day();
-        let c = p.begin();
+        let c = p.begin(PartyId::new(9));
         assert_eq!(c.slot(), a.slot(), "the lowest free slot is reused after the close");
         assert_eq!(c.generation(), a.generation() + 1);
         assert_eq!(p.resolve(a), None, "a stale reference is refused once the slot holds another");
         assert_eq!(p.resolve(c), Some(a.slot()));
         assert_eq!(p.at(Slot::new(1)), Some(b));
+        assert_eq!(p.id(c.slot()), Some(PartyId::new(9)), "the slot holds its new party's identity");
     }
 }

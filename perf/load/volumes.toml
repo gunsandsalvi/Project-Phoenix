@@ -232,6 +232,7 @@ line = "HH.4: weekly on its own day, every day"
 name = "household monthly decisions"
 kernel = "handler"
 table = "household"
+payee = "institution"
 reads = 10
 writes = 4
 rule_ns = 400
@@ -276,6 +277,7 @@ line = "LAB.8: searchers and on-the-job seekers, about fifteen vacancies seen ea
 name = "institutions"
 kernel = "handler"
 table = "institution"
+payee = "household"
 reads = 20
 writes = 10
 rule_ns = 2000
@@ -304,6 +306,12 @@ name = "dues"
 kernel = "dues"
 per_million = [1, 0, 1]
 line = "SET, REG.5: every dated contract due today, from the families above"
+
+[[work]]
+name = "turnover"
+kernel = "turnover"
+per_million = [3000, 1000, 3000]
+line = "LAB.5, BNK, HSG, INS, POP: contracts opened and closed — hires and separations, loans written and repaid, tenancies, policies — and a tenth as many parties begun and ended"
 
 [[work]]
 name = "settlement"

@@ -112,3 +112,6 @@ pub const ID_PAGE_BITS: u32 = 12;
 
 /// Ten, the base a fixed point's places count.
 pub const DECIMAL_BASE: f64 = 10.0;
+
+/// The bit of a flow's denomination that marks units, not money: a `u16`'s top bit.
+pub const UNITS_BIT: u16 = 15;

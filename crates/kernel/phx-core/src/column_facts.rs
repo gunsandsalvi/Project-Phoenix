@@ -2,6 +2,7 @@
 //! in that list is an indexed load, and a read by name finds the place first.
 
 use phx_id::Slot;
+use phx_macros::clause;
 use phx_num::{MaybeI64, Missing, violation};
 
 use crate::handler::FactStore;
@@ -14,6 +15,7 @@ pub enum FactSlice<'a> {
 }
 
 /// One chunk's declared facts: the chunk's first slot and, for each fact, its column's rows in the chunk.
+#[clause("TIME.6")]
 #[derive(Debug)]
 pub struct ColumnFacts<'a> {
     first: u32,
@@ -84,31 +86,33 @@ impl FactStore for ColumnFacts<'_> {
 /// A handler's facts over its chunk's party records, row-major: each party's facts one record of `stride` words,
 /// a fact at its declared offset in it, so a visit to a sparse row reads one or two cache lines rather than one a
 /// fact. The handler owns its chunk's records; `writable` lists the offsets its declaration lets it write.
+#[clause("TIME.6", "REP.41")]
 #[derive(Debug)]
 pub struct RecordFacts<'a> {
     first: u32,
     stride: usize,
     records: &'a mut [MaybeI64],
-    offsets: &'a [usize],
-    writable: &'a [bool],
+    layout: Layout<'a>,
+}
+
+/// A handler's declared facts in a kind's records, in the declaration's order: each fact's name, its offset in a
+/// record, and whether the handler writes it.
+#[derive(Debug, Clone, Copy)]
+pub struct Layout<'a> {
+    pub names: &'a [&'static str],
+    pub offsets: &'a [usize],
+    pub writable: &'a [bool],
 }
 
 impl<'a> RecordFacts<'a> {
-    /// The records of the chunk whose first slot is `first`; `offsets[place]` is where the fact declared at `place`
-    /// sits in a record, and `writable[place]` whether the handler writes it.
+    /// The records of the chunk whose first slot is `first`, `stride` words a party, read by the handler's layout.
     #[must_use]
-    pub fn new(
-        first: Slot,
-        stride: usize,
-        records: &'a mut [MaybeI64],
-        offsets: &'a [usize],
-        writable: &'a [bool],
-    ) -> RecordFacts<'a> {
-        RecordFacts { first: first.get(), stride, records, offsets, writable }
+    pub fn new(first: Slot, stride: usize, records: &'a mut [MaybeI64], layout: Layout<'a>) -> RecordFacts<'a> {
+        RecordFacts { first: first.get(), stride, records, layout }
     }
 
     fn cell(&self, place: usize, slot: Slot) -> usize {
-        let (Some(row), Some(off)) = (slot.get().checked_sub(self.first), self.offsets.get(place)) else {
+        let (Some(row), Some(off)) = (slot.get().checked_sub(self.first), self.layout.offsets.get(place)) else {
             violation!(clause = "TIME.6", "a handler read a row or fact outside its chunk", slot = slot.get());
         };
         usize::try_from(row).unwrap_or(usize::MAX) * self.stride + off
@@ -124,7 +128,7 @@ impl<'a> RecordFacts<'a> {
 
     /// Writes the row's value of the fact declared at `place`, which the handler writes.
     pub fn write_at(&mut self, place: usize, slot: Slot, value: i64) {
-        if !self.writable.get(place).copied().unwrap_or(false) {
+        if !self.layout.writable.get(place).copied().unwrap_or(false) {
             violation!(clause = "TIME.6", "a handler wrote a fact it only reads", slot = slot.get());
         }
         let at = self.cell(place, slot);
@@ -132,6 +136,22 @@ impl<'a> RecordFacts<'a> {
             violation!(clause = "TIME.6", "a handler wrote a row past its chunk", slot = slot.get());
         };
         *cell = MaybeI64::present(value);
+    }
+}
+
+impl FactStore for RecordFacts<'_> {
+    fn read(&mut self, fact: &'static str, slot: Slot) -> Missing<i64> {
+        let Some(place) = self.layout.names.iter().position(|f| std::ptr::eq(*f, fact) || *f == fact) else {
+            violation!(clause = "TIME.6", "a handler read a fact its layout does not declare", slot = slot.get());
+        };
+        self.read_at(place, slot)
+    }
+
+    fn write(&mut self, fact: &'static str, slot: Slot, value: i64) {
+        let Some(place) = self.layout.names.iter().position(|f| std::ptr::eq(*f, fact) || *f == fact) else {
+            violation!(clause = "TIME.6", "a handler wrote a fact its layout does not declare", slot = slot.get());
+        };
+        self.write_at(place, slot, value);
     }
 }
 
@@ -171,17 +191,17 @@ mod tests {
     #[test]
     fn record_facts_read_their_offsets_and_refuse_unwritable() {
         let mut records = [MaybeI64::present(1), MaybeI64::present(2), MaybeI64::ABSENT, MaybeI64::present(4)];
-        let offsets = [1, 0];
-        let writable = [false, true];
-        let mut f = super::RecordFacts::new(Slot::new(10), 2, &mut records, &offsets, &writable);
+        let layout = super::Layout { names: &[INCOME, AFTER], offsets: &[1, 0], writable: &[false, true] };
+        let mut f = super::RecordFacts::new(Slot::new(10), 2, &mut records, layout);
         assert_eq!(f.read_at(0, Slot::new(10)), Missing::Present(2));
         assert_eq!(f.read_at(1, Slot::new(11)), Missing::Absent);
         f.write_at(1, Slot::new(11), 9);
-        assert_eq!(f.read_at(1, Slot::new(11)), Missing::Present(9));
+        assert_eq!(f.read(AFTER, Slot::new(11)), Missing::Present(9), "read by name as the context reads");
         assert!(
             std::panic::catch_unwind(move || {
                 let mut r = [MaybeI64::ABSENT; 2];
-                let mut g = super::RecordFacts::new(Slot::new(0), 2, &mut r, &[1, 0], &[false, true]);
+                let layout = super::Layout { names: &[INCOME, AFTER], offsets: &[1, 0], writable: &[false, true] };
+            let mut g = super::RecordFacts::new(Slot::new(0), 2, &mut r, layout);
                 g.write_at(0, Slot::new(0), 1);
             })
             .is_err()

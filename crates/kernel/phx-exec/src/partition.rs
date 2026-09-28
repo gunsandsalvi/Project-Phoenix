@@ -9,7 +9,7 @@ use std::mem::MaybeUninit;
 use phx_num::violation;
 
 use crate::consts::RADIX_CHUNK;
-use crate::pool::{Pool, map};
+use crate::pool::{Pool, each, map};
 
 /// Items grouped by bucket, each bucket's items in input order, with where each bucket starts; kept across days so
 /// a day partitions without allocating once the heaviest day has sized it.
@@ -17,11 +17,14 @@ use crate::pool::{Pool, map};
 pub struct Partitioned<T> {
     pub items: Vec<T>,
     pub starts: Vec<usize>,
+    /// Each piece's count in each bucket, then each piece's first and next place in each bucket, pieces × buckets.
+    counts: Vec<usize>,
+    places: Vec<usize>,
 }
 
 impl<T> Default for Partitioned<T> {
     fn default() -> Partitioned<T> {
-        Partitioned { items: Vec::new(), starts: Vec::new() }
+        Partitioned { items: Vec::new(), starts: Vec::new(), counts: Vec::new(), places: Vec::new() }
     }
 }
 
@@ -66,28 +69,33 @@ pub fn partition_map_into<T: Sync, U: Copy + Send + Sync>(
     map_item: impl Fn(&T) -> U + Sync,
     out: &mut Partitioned<U>,
 ) {
+    if buckets == 0 {
+        violation!(clause = "TIME.6", "a partition into no buckets");
+    }
     let pieces: Vec<&[T]> = inputs.iter().flat_map(|i| i.chunks(RADIX_CHUNK)).collect();
-    let counts: Vec<Vec<usize>> = map(pool, pieces.len(), |p| {
-        let mut c = vec![0_usize; buckets];
-        for item in pieces.get(p).copied().unwrap_or(&[]) {
+    let cells = pieces.len() * buckets;
+    out.counts.clear();
+    out.counts.resize(cells, 0);
+    each(pool, out.counts.chunks_mut(buckets).zip(&pieces), |(c, piece)| {
+        for item in *piece {
             let Some(n) = c.get_mut(key(item)) else {
                 violation!(clause = "TIME.6", "an item keyed outside the buckets", buckets = buckets);
             };
             *n += 1;
         }
-        c
     });
-    // Each piece's first position in each bucket: the bucket's start plus the earlier pieces' counts in it.
+    // Each piece's first place in each bucket: the bucket's start plus the earlier pieces' counts in it.
     out.starts.clear();
     out.starts.push(0);
-    let mut offsets: Vec<Vec<usize>> = vec![vec![0; buckets]; pieces.len()];
+    out.places.clear();
+    out.places.resize(cells, 0);
     let mut at = 0_usize;
     for b in 0..buckets {
-        for (p, c) in counts.iter().enumerate() {
-            if let Some(o) = offsets.get_mut(p).and_then(|o| o.get_mut(b)) {
+        for p in 0..pieces.len() {
+            if let Some(o) = out.places.get_mut(p * buckets + b) {
                 *o = at;
             }
-            at += c.get(b).copied().unwrap_or(0);
+            at += out.counts.get(p * buckets + b).copied().unwrap_or(0);
         }
         out.starts.push(at);
     }
@@ -95,18 +103,36 @@ pub fn partition_map_into<T: Sync, U: Copy + Send + Sync>(
     out.items.reserve(at);
     let dst = Out(out.items.spare_capacity_mut().as_mut_ptr());
     let dst = &dst;
-    map(pool, pieces.len(), |p| {
-        let (Some(piece), Some(offs)) = (pieces.get(p), offsets.get(p)) else { return };
-        let mut next = offs.clone();
+    let counts = &out.counts;
+    // Each piece writes only below its own end in each bucket, which the counts give: a key that answers differently
+    // the second time stops the run rather than writing another piece's places or past the reservation.
+    let whole: Vec<bool> = map(pool, pieces.len(), |p| {
+        let (Some(piece), Some(first), Some(count)) =
+            (pieces.get(p), out.places.get(p * buckets..(p + 1) * buckets), counts.get(p * buckets..(p + 1) * buckets))
+        else {
+            return false;
+        };
+        let mut next = first.to_vec();
         for item in *piece {
-            let Some(pos) = next.get_mut(key(item)) else { return };
-            // SAFETY: `pos` lies below `at`, the reserved length, and no other piece is given it: the offsets split
-            // each bucket's positions among the pieces by their counts.
+            let b = key(item);
+            let (Some(pos), Some(start), Some(n)) = (next.get_mut(b), first.get(b), count.get(b)) else {
+                violation!(clause = "TIME.6", "an item keyed outside the buckets", buckets = buckets);
+            };
+            if *pos >= start + n {
+                violation!(clause = "TIME.6", "a partition's key answered differently the second time", bucket = b);
+            }
+            // SAFETY: `pos` lies in this piece's own places of bucket `b`, `start .. start + n`, below `at`, the
+            // reserved length; the pieces' places split each bucket by their counts, so no other piece writes it.
             unsafe { dst.0.add(*pos).write(MaybeUninit::new(map_item(item))) };
             *pos += 1;
         }
+        next.iter().zip(first.iter().zip(count)).all(|(x, (f, n))| *x == f + n)
     });
-    // SAFETY: every position below `at` was written once by the scatter, the counts summing to `at`.
+    if !whole.iter().all(|w| *w) {
+        violation!(clause = "TIME.6", "a partition's piece left places of its buckets unwritten");
+    }
+    // SAFETY: every piece wrote each of its places once, the checks above hold, and the places of all pieces and
+    // buckets cover every position below `at`.
     unsafe { out.items.set_len(at) };
 }
 

@@ -112,15 +112,17 @@ impl<T: Pod, B: Backing> Column<T, B> {
         }
     }
 
-    /// Writes the row at a slot, growing the column with zero rows up to it, as a table whose slots are handed out
-    /// by an allocator fills its columns; zero is a value of every stored type.
+    /// Writes the row at a slot: an existing row, or the next one, as a table whose allocator hands out the slot one
+    /// past its highest fills its columns. A slot beyond that is refused, so no row is ever filled with a stand-in.
     pub fn put(&mut self, slot: Slot, value: T) {
         let at = to_usize(slot.get());
-        if at >= self.len {
-            let n = at + 1 - self.len;
-            self.append_zeroed(n);
+        match at.cmp(&self.len) {
+            std::cmp::Ordering::Equal => self.push(value),
+            std::cmp::Ordering::Less => self.set(slot, value),
+            std::cmp::Ordering::Greater => {
+                violation!(clause = "SET.12", "a row written past the next slot", slot = slot.get(), len = self.len);
+            }
         }
-        self.set(slot, value);
     }
 
     /// The row at a slot, or none past the column's end.
