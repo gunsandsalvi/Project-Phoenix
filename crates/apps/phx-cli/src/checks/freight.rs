@@ -15,7 +15,16 @@ fn one_owner_one_carrier(w: Inspector<'_>) -> Outcome {
             return Outcome::Fail(format!("shipment {n} in transit with no lien standing"));
         };
         if lien.to != s.carrier || lien.units > s.qty || lien.key.holder != s.owner {
-            return Outcome::Fail(format!("shipment {n}'s lien is not its owner's to its carrier for its units"));
+            return Outcome::Fail(format!(
+                "shipment {n}'s lien is not its owner's to its carrier for its units: lien of {} to {} for {}, \
+                 shipment of {} by {} of {}",
+                lien.key.holder.get(),
+                lien.to.get(),
+                lien.units,
+                s.owner.get(),
+                s.carrier.get(),
+                s.qty
+            ));
         }
         if s.arrives <= s.left {
             return Outcome::Fail(format!("shipment {n} arrives the day it left or before"));
