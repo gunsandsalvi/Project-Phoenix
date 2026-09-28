@@ -335,6 +335,10 @@ not use.
 
 - A system reads a primitive only through the typed handle its declaration returns. Assembly refuses an entry with
   no declaration, and a declaration with no entry.
+- **The data are in hand.** Every published series a step reads is already in `data/sources/raw/`, listed in its
+  `manifest.json` with the steps that read it (`for`) and, when derived, typed from a paper or simulated, how
+  (`note`). A step maps those series into its primitives with a derivation under `tools/data/`; it never searches for
+  data (owner, 2026-09-28).
 - **State holds no floating-point number.** Money and units are `i64`, and rates and positions are fixed-point `i64`
   in declared units. Floats exist only inside pure functions (§2.19).
 - **No `min`, `max` or `clamp` on a number the world decides** (Law 6). Three typed operations replace them:

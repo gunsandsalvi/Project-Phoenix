@@ -1,9 +1,10 @@
 # The opening's inventory (spec GEN.2, GEN.15): one row per derived value, distribution and present value the
 # opening needs, naming its owner, the step that first reads it, and the dataset and table it comes from. A row
 # never holds a value. A step that needs a new derived value or mapping adds its row here, in that step's commit,
-# before its data. `status` says whether the source is in hand ("profiled": in the country-group profiles of
-# data/profiles/<level>/GEN.toml, derived by tools/data/derive.py), still to be taken at the step that first reads it
-# ("to source"), or missing for some groups ("gap"), which is an open item for the owner.
+# before its data. `status` says where the value stands: "profiled", in the country-group profiles of
+# data/profiles/<level>/GEN.toml, derived by tools/data/derive.py; "sourced", derived into the file it names; "in hand",
+# its published series already in data/sources/raw/ (manifest.json names them), mapped into primitives at the step
+# that first reads it; or "mapped", a present value the step that first reads it computes from derived values.
 
 # The derived values (spec GEN.15), drawn at a new game from their level's joint profile.
 
@@ -420,7 +421,7 @@ what = "each administered rate in force: the policy rate and the facilities' rat
 owner = "CB"
 first_read = "S1.10"
 source = "the derived policy rate, by the central bank's declared corridor"
-status = "gap: the developing group's policy rate (above)"
+status = "mapped: from GEN.policy_rate, profiled for every group, by the central bank's corridor at S1.10"
 
 [[row]]
 id = "GEN.present.prices_and_fixings"
@@ -428,7 +429,7 @@ what = "each market's latest price and each currency pair's fixing"
 owner = "MKT"
 first_read = "S0.18"
 source = "each market's own mapping from the derived values, at the step that opens it"
-status = "to source"
+status = "mapped: each market's latest price from the derived values at the step that opens it; no series of its own"
 
 [[row]]
 id = "GEN.present.reference_rates_and_indices"
@@ -436,7 +437,7 @@ what = "each reference rate and index level"
 owner = "IDX"
 first_read = "S1.14"
 source = "the derived values by the index's declared method"
-status = "to source"
+status = "mapped: each index's level by its declared method from the derived values at S1.14; no series of its own"
 
 [[row]]
 id = "GEN.present.statistics"
@@ -444,7 +445,7 @@ what = "each published statistic's latest release"
 owner = "STA"
 first_read = "S1.14"
 source = "the derived values themselves, as the statistics office would publish them"
-status = "to source"
+status = "mapped: the derived values as the statistics office publishes them, at S1.14; no series of its own"
 
 [[row]]
 id = "GEN.present.ratings"
