@@ -10,24 +10,31 @@ use libm::{log, pow};
 use phx_macros::clause;
 use phx_num::Missing;
 
+/// Demand against expected, each counting a period's expected demand, so a period that sold nothing, as a seller of
+/// whole lots often does, reads as weak demand rather than as none at any price.
+fn demand_ratio(demand: f64, expected: f64) -> f64 {
+    (demand + expected) / (expected + expected)
+}
+
 /// The pressure on a stocked good's seller: demand against expected, and the stock it aims for against what it holds,
-/// each counting a period's expected demand, so it is defined at no stock; missing while it expects no demand.
+/// each counting a period's expected demand, so it is defined at no sales and at no stock; missing while it expects no
+/// demand.
 #[clause("FRM.5", "REP.34")]
 pub fn pressure_stocked(demand: f64, expected: f64, target_stock: f64, stock: f64) -> Missing<f64> {
     if expected <= 0.0 {
         return Missing::Absent;
     }
-    Missing::Present((demand / expected) * ((target_stock + expected) / (stock + expected)))
+    Missing::Present(demand_ratio(demand, expected) * ((target_stock + expected) / (stock + expected)))
 }
 
-/// The pressure on a service's seller: demand against expected, and the fill it aims for against its fill; missing
-/// while it expects no demand or has no fill.
+/// The pressure on a service's seller: demand against expected, counting a period's expected demand, and the fill it
+/// aims for against its fill; missing while it expects no demand or has no fill.
 #[clause("FRM.5", "REP.34")]
 pub fn pressure_service(demand: f64, expected: f64, target_fill: f64, fill: f64) -> Missing<f64> {
     if expected <= 0.0 || fill <= 0.0 {
         return Missing::Absent;
     }
-    Missing::Present((demand / expected) * (target_fill / fill))
+    Missing::Present(demand_ratio(demand, expected) * (target_fill / fill))
 }
 
 /// The price the firm would like: `(1 + μ)·E[unit cost]·π^η`.
@@ -95,7 +102,8 @@ mod tests {
         assert_eq!(pressure_stocked(100.0, 100.0, 200.0, 200.0), Missing::Present(1.0));
         assert_eq!(pressure_stocked(100.0, 100.0, 200.0, 0.0), Missing::Present(3.0));
         assert_eq!(pressure_stocked(100.0, 0.0, 200.0, 0.0), Missing::Absent);
-        assert_eq!(pressure_service(120.0, 100.0, 0.8, 0.8), Missing::Present(1.2));
+        assert_eq!(pressure_stocked(0.0, 100.0, 200.0, 200.0), Missing::Present(0.5), "no sales: weak, not none");
+        assert_eq!(pressure_service(140.0, 100.0, 0.8, 0.8), Missing::Present(1.2));
     }
 
     #[test]

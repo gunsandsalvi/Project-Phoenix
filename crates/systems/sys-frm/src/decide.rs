@@ -213,8 +213,8 @@ declare_handler! {
     pub ReviewSmall = "FRM.review_small" {
         substep: S5c,
         table: "small_firm",
-        reads: [Product, ExpectedSales, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
-        writes: [Markup, Price, DeliveredAtReview, LastReview],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
+        writes: [Markup, Price, DeliveredAtReview, LastReview, PriceAttention],
         clause: "FRM.5",
         body: review,
     }
@@ -225,8 +225,8 @@ declare_handler! {
     pub ReviewLarge = "FRM.review_large" {
         substep: S5c,
         table: "firm",
-        reads: [Product, ExpectedSales, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
-        writes: [Markup, Price, DeliveredAtReview, LastReview],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredAtReview, LastReview, UnitCost, Markup, Price, PriceAttention, WagePerHour],
+        writes: [Markup, Price, DeliveredAtReview, LastReview, PriceAttention],
         clause: "FRM.5",
         body: review,
     }
@@ -279,8 +279,9 @@ where
 /// against those expected over the same days, and the point nearest the desired price posted when the move gains
 /// more, over the days to its next review, than its staff's hours to make it cost; the pressure its stock of its
 /// product puts on the price is read from what it holds; and what competitors charge enters as the price its product
-/// last sold at between firms where it stands, or at retail in its country.
-#[clause("FRM.5", "REP.34")]
+/// last sold at between firms where it stands, or at retail in its country. Its attention then returns to the chance
+/// its loss's curvature gives, so a surprise that woke it wakes one review.
+#[clause("FRM.5", "REP.34", "REP.38")]
 fn review<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
     H: HandlerDecl
@@ -293,10 +294,12 @@ where
         + Reads<Price>
         + Reads<PriceAttention>
         + Reads<WagePerHour>
+        + Reads<SalesWidth>
         + Writes<Markup>
         + Writes<Price>
         + Writes<DeliveredAtReview>
-        + Writes<LastReview>,
+        + Writes<LastReview>
+        + Writes<PriceAttention>,
     S: FactStore + ?Sized,
 {
     let m: &Management = ctx.own::<crate::Own>().management();
@@ -352,6 +355,18 @@ where
     }
     ctx.write::<DeliveredAtReview>(row, delivered);
     ctx.write::<LastReview>(row, i64::from(ctx.day().get()));
+    // The review answers the surprise that may have woken it: its attention returns to what its loss's curvature and
+    // its outlook's width give, as its production schedule sets them.
+    if let Some(width) = read::<SalesWidth, H, S>(ctx, row).filter(|_| expected > 0.0) {
+        let relative = width / expected;
+        let revenue_per_day = expected * price / m.production_days;
+        let variance = relative * relative / m.production_days;
+        let next_chance =
+            rules::attention::review_chance(revenue_per_day, next, (variance, &[]), m.review_hours * wage);
+        if let Some(c) = whole(next_chance * phx_core::fact_scale(<PriceAttention as phx_core::FactDef>::ITEM)) {
+            ctx.write::<PriceAttention>(row, c);
+        }
+    }
     let Some(current) = whole(price) else { return };
     // The price posted now stands, as the firm expects, until its next review.
     let revenue = expected / m.production_days * price / chance;

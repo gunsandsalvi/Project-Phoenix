@@ -1251,8 +1251,12 @@ markup, posted price, output rate, price attention, the cost of its staff's hour
   review against those expected over its days and by what competitors charge — its product's last price between
   firms where it stands, or else its country's retail mark for it (`Ctx::posted`), absent while neither is marked —
   and the point
-  nearest `(1 + μ)·unit cost·π^η` is posted, π the stocked pressure read from its own stock of its product, only when
-  the loss it saves over the days to the next expected review exceeds `FRM.menu_hours` at the staff's wage.
+  nearest `(1 + μ)·unit cost·π^η` is posted, π the stocked pressure — the sales since the last review against those
+  expected over its days, and the stock it aims for against what it holds of its product, each ratio counting a
+  period's expected sales, so a period that sold nothing, as a seller of whole lots often has, reads as weak demand
+  rather than as none at any price — only when the loss it saves over the days to the next expected review exceeds
+  `FRM.menu_hours` at the staff's wage. The review then sets its attention back to the chance its loss's curvature and
+  its outlook's width give, so a surprise wakes one review, not one a day until its next production schedule.
 
 A trade's point table (`FRM.price_points`) holds one decade's points; a price's candidates are its decade's and the
 two neighbours' points scaled by powers of ten, each whole (`Management::points_near`), so every posted price is a
