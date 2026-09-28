@@ -105,6 +105,30 @@ impl World {
         };
         let pop_day = self.core.run_hazards(&ctx, day);
         self.core.pop_days.push((day, pop_day));
+        if let Some(kind) = self.labour.kind.as_ref() {
+            let lctx = crate::core_labour::LabourCtx {
+                register: &self.register,
+                calendar: &self.calendar,
+                streams: &self.streams,
+                kind,
+                regions: &regions,
+            };
+            let _ = self.core.labour_day(&lctx, day);
+        }
+        let own_hh = self.own.iter().find(|(c, _)| *c == <sys_hh::Hh as phx_core::System>::CODE);
+        if let (Some(rule), Ok(weights)) =
+            (own_hh.and_then(|(_, s)| s.downcast_ref::<sys_hh::Own>()), crate::registry::retail_weights(&self.register))
+        {
+            let gctx = crate::core_goods::GoodsCtx {
+                register: &self.register,
+                calendar: &self.calendar,
+                streams: &self.streams,
+                rule,
+                regions: &regions,
+                weights,
+            };
+            let _ = self.core.goods_day(&gctx, day);
+        }
         let _ = self.core.run_day(day, &self.calendar, &self.streams, &crate::opening::prims::SETTLE_ORDER);
         if let (Some(ns), Some(last)) = (clock.now_ns().checked_sub(start), self.core.days.last_mut()) {
             last.ns = ns;

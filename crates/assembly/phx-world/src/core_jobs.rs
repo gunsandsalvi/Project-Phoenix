@@ -116,11 +116,18 @@ impl Core {
                     }) else {
                         violation!(clause = "LAB.1", "a job with no wage", line = a.line.get());
                     };
-                    let (Some(occupation), Some(region)) = (
-                        terms.class.get(if_labour::consts::OCCUPATION).copied(),
-                        terms.class.get(if_labour::consts::REGION).copied(),
+                    let at = |i: usize| terms.class.get(i).copied();
+                    let (Some(occupation), Some(region), Some(hours), Some(band)) = (
+                        at(if_labour::consts::OCCUPATION),
+                        at(if_labour::consts::REGION),
+                        at(if_labour::consts::HOURS),
+                        at(if_labour::consts::BAND),
                     ) else {
-                        violation!(clause = "LAB.1", "a job with no occupation or region", line = a.line.get());
+                        violation!(
+                            clause = "LAB.1",
+                            "a job with no occupation, region, hours or band",
+                            line = a.line.get()
+                        );
                     };
                     let (dates, next) = (terms.schedule.dates, ledger.lines.next_due(a.line));
                     let mut nth = 0_u32;
@@ -130,6 +137,7 @@ impl Core {
                     let schedule = u32::try_from(family.schedules.len())
                         .unwrap_or_else(|_| violation!(clause = "TIME.4", "more schedules than a contract can name"));
                     family.schedules.push((dates, terms.ccy.index(), terms.payment_order.0));
+                    family.classes.push([occupation, hours, band]);
                     (amount, schedule, nth, occupation, region)
                 });
                 let (amount, schedule, nth, occupation, region) = read;
@@ -193,6 +201,7 @@ impl Core {
             ),
             reason: WAGE,
             schedules: Vec::new(),
+            classes: Vec::new(),
         }
     }
 
@@ -216,6 +225,7 @@ impl Core {
         let mut public = self.job_family("LAB.public_employment", treasury, household, o.today);
         let jobs = self.read_jobs(o, &mut family, household);
         public.schedules.clone_from(&family.schedules);
+        public.classes.clone_from(&family.classes);
         let firms = self.firm_hours(o, firm)?;
         let mut groups: BTreeMap<(u32, u32), Vec<usize>> = BTreeMap::new();
         for (i, j) in jobs.iter().enumerate() {

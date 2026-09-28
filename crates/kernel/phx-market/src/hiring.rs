@@ -28,12 +28,12 @@ pub struct Vacancy {
     pub open: u32,
 }
 
-/// A person searching for work: its household and its place there, the identity its draws are made for, where it
-/// looks, the skill and years of experience it brings, and the least monthly wage it takes.
+/// A person searching for work: its household and its identity, the identity its draws are made for, where it looks,
+/// the skill and years of experience it brings, and the least monthly wage it takes.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Seeker {
     pub household: PartyKey,
-    pub person: u32,
+    pub person: u64,
     pub subject: u64,
     pub region: u32,
     pub occupation: u32,
@@ -212,7 +212,7 @@ pub fn answer(
     offers: &[Application],
     accepts: impl Fn(&Application, &Vacancy) -> bool,
 ) -> Vec<Application> {
-    let mut by_person: Vec<(u32, u32, u32, usize)> = (0..offers.len())
+    let mut by_person: Vec<(u32, u64, u32, usize)> = (0..offers.len())
         .filter_map(|k| offers.get(k).map(|o| (o.seeker.household.word(), o.seeker.person, o.vacancy, k)))
         .collect();
     by_person.sort_unstable();

@@ -126,7 +126,7 @@ impl LabourLoad {
                 let slot = to_u32(h % u64::from(self.households));
                 Seeker {
                     household: PartyKey::new(self.household, Slot::new(slot)),
-                    person: to_u32((h >> 40) % 2),
+                    person: (h >> 40) % 2,
                     subject: h & SUBJECT_BITS,
                     region: slot % self.regions,
                     occupation: to_u32((h >> 16) % u64::from(OCCUPATIONS)),

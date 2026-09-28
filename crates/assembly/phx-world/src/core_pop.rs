@@ -193,6 +193,8 @@ impl Core {
         let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
         self.read_household((place, decl), slot, &mut h);
         let before = h.persons.len();
+        let held: Vec<phx_pop::persons::Held> =
+            self.persons.get(place).and_then(Option::as_ref).map(|p| p.of(slot).collect()).unwrap_or_default();
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();
         let attrs = h.attrs.clone();
         let attr = |name: &str| attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
@@ -222,6 +224,7 @@ impl Core {
             );
         }
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), slot);
+        self.write_changed((place, decl), key, &h.persons, &held);
         // The gone leave from the last, so each earlier place still reads the person the outcome marked.
         for at in (0..before).rev() {
             if h.persons.get(at).is_some_and(|p| p.gone) {
@@ -260,6 +263,34 @@ impl Core {
         let rest = Household { attrs, persons: left, positions: Vec::new() };
         let mut buffers = Buffers::default();
         self.book_all(ctx, (place, decl), slot, (&rest, &mut buffers), day.succ());
+    }
+
+    /// The persons an outcome changed and kept, written back; one who retired leaves its jobs and the searchers.
+    #[clause("REP.26", "LAB.6")]
+    fn write_changed(
+        &mut self,
+        (place, decl): (usize, &PopKindDecl),
+        key: PartyKey,
+        persons: &[Person],
+        held: &[phx_pop::persons::Held],
+    ) {
+        let state = sys_lab::STATE.name;
+        for (at, (p, h)) in persons.iter().zip(held).enumerate() {
+            if p.gone {
+                continue;
+            }
+            let word = pack(decl, p);
+            if word == h.word {
+                continue;
+            }
+            if let Some(Some(ps)) = self.persons.get_mut(place) {
+                ps.set_word(&mut self.space, key.slot(), at, word);
+            }
+            let was = unpack(decl, h.word).attr(state);
+            if p.attr(state) == Some(if_labour::class::RETIRED) && was != Some(if_labour::class::RETIRED) {
+                self.leave_jobs(key, h.id);
+            }
+        }
     }
 
     /// A person gone from its household: every contract naming it closes.

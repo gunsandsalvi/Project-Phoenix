@@ -137,6 +137,18 @@ impl<B: Backing> Persons<B> {
         self.held -= 1;
     }
 
+    /// The word of the person at `at` written anew, its identity kept: a change of its attributes.
+    pub fn set_word(&mut self, space: &mut AddressSpace, slot: Slot, at: usize, word: u64) {
+        if at >= self.count(slot) {
+            violation!(clause = "REP.26", "a person rewritten that its household does not hold", at = at);
+        }
+        self.edit(space, slot, |arena, list| {
+            if let Some(w) = arena.read_mut(*list).get_mut(at * WORDS) {
+                *w = word;
+            }
+        });
+    }
+
     /// A party's persons let go, as it ends.
     pub fn clear(&mut self, space: &mut AddressSpace, slot: Slot) {
         let before = count(self.count(slot));

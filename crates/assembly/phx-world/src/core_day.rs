@@ -40,16 +40,18 @@ impl Row for Due {
     }
 }
 
-pub use crate::consts::reason::{ESTATE, PENSION, WAGE};
+pub use crate::consts::reason::{ESTATE, PENSION, SEVERANCE, WAGE};
 
 /// A family of dated contracts: its store, the reason its flows carry, and the schedules its contracts' dates are
-/// read from, each with its currency and the payment order its payer gives the family's flows.
+/// read from, each with its currency and the payment order its payer gives the family's flows; and, for a family of
+/// jobs, each schedule's occupation, weekly hours and the year its jobs began.
 #[derive(Debug)]
 pub struct DatedFamily {
     pub name: &'static str,
     pub store: Family<Due, SystemBacking>,
     pub reason: u8,
     pub schedules: Vec<(ScheduleDates, u8, u8)>,
+    pub classes: Vec<[u32; 3]>,
 }
 
 /// What the core's day did: the flows made, settled, failed and committed.
@@ -225,6 +227,7 @@ impl Core {
         if let Some(buf) = work.flows.chunks_mut().first_mut() {
             let before = buf.len();
             settling = self.estates_pay(day, calendar, buf);
+            buf.append(&mut self.pending);
             record.flows += phx_rand::float::len_u64(buf.len() - before);
         }
         let high: Vec<u32> = self.kinds.iter().map(|k| k.parties.high_water()).collect();

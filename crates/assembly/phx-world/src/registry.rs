@@ -579,7 +579,7 @@ fn core_of(
     geo: &phx_geo::GeoState,
     (books, population): (&phx_ledger::books::Books, &phx_pop::population::Population),
     (state, calendar, today): (&crate::state::State, &phx_core::calendar::Calendar, phx_id::Day),
-    own: &[(&'static str, OwnState)],
+    (own, labour): (&[(&'static str, OwnState)], Option<&if_labour::kind::LabourKind>),
 ) -> Result<crate::core::Core, AssemblyErrors> {
     let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
     let sheets = opening
@@ -628,9 +628,42 @@ fn core_of(
             stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
         })
         .map_err(|e| AssemblyErrors(vec![e]))?;
+    if let Some(kind) = labour {
+        let lctx = crate::core_labour::LabourCtx {
+            register: &p.c.register,
+            calendar,
+            streams: &p.c.streams,
+            kind,
+            regions: &regions,
+        };
+        core.open_labour(&lctx, &opening, today).map_err(|e| AssemblyErrors(vec![e]))?;
+    }
+    if let Some(rule) = own
+        .iter()
+        .find(|(c, _)| *c == <sys_hh::Hh as phx_core::System>::CODE)
+        .and_then(|(_, s)| s.downcast_ref::<sys_hh::Own>())
+    {
+        let gctx = crate::core_goods::GoodsCtx {
+            register: &p.c.register,
+            calendar,
+            streams: &p.c.streams,
+            rule,
+            regions: &regions,
+            weights: retail_weights(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?,
+        };
+        core.open_goods(&gctx, today).map_err(|e| AssemblyErrors(vec![e]))?;
+    }
 
     let _ = population;
     Ok(core)
+}
+
+/// The retail logit's weights: of a seller's price's log and of its distance.
+pub(crate) fn retail_weights(register: &phx_core::Register) -> Result<phx_market::retail::Weights, String> {
+    Ok(phx_market::retail::Weights {
+        price: register.fixed(sys_srv::PRICE_WEIGHT.id)?,
+        distance: register.fixed(sys_srv::DISTANCE_WEIGHT.id)?,
+    })
 }
 
 /// The weight of a heuristic's last error in its record, and how many widths a surprise must pass to wake.
@@ -664,7 +697,8 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let val_rules = val_rules(&p)?;
     let mut calendar = p.c.calendar.clone();
     calendar.move_window(calendar.date(carried.today).year());
-    let core = core_of(&p, &geo, (&books, &population), (&state, &calendar, carried.today), &own)?;
+    let core =
+        core_of(&p, &geo, (&books, &population), (&state, &calendar, carried.today), (&own, labour.kind.as_ref()))?;
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
     let val_methods = crate::goods::methods(&p.kernel.val, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     p.market_kinds.check(&markets.made).map_err(|e| AssemblyErrors(vec![e]))?;

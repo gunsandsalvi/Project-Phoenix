@@ -136,6 +136,15 @@ impl Streams {
         *e
     }
 
+    /// A day stream's key, which a meeting draws each round's tastes from by its buyers' subjects.
+    pub fn key(&self, decl: &StreamDecl) -> StreamKey {
+        let e = self.entry(decl);
+        if e.decl.keyed {
+            violation!(clause = "CHN.6", "a keyed stream drawn by day");
+        }
+        e.key
+    }
+
     /// The draws of a stream for a subject at a day's sub-step or an opening phase's ordinal: the one way to make
     /// draws.
     #[clause("CHN.1")]

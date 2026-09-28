@@ -2,7 +2,7 @@
 //! permanent income, and asks for its budget's shares of what it spends at retail. Its work, savings and founding
 //! arrive with their own steps.
 
-mod buffer;
+pub mod buffer;
 mod consts;
 
 pub use buffer::{Model, Solution, solve, spend};

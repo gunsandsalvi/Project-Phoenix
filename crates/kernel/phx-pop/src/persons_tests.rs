@@ -54,6 +54,8 @@ fn a_persons_word_and_identity_stay_together() {
     p.set(&mut space, Slot::new(1), &[Held { word: 7, id: 70 }, Held { word: 8, id: 80 }]);
     p.remove(&mut space, Slot::new(1), 0);
     assert_eq!(p.of(Slot::new(1)).collect::<Vec<_>>(), [Held { word: 8, id: 80 }]);
+    p.set_word(&mut space, Slot::new(1), 0, 9);
+    assert_eq!(p.of(Slot::new(1)).collect::<Vec<_>>(), [Held { word: 9, id: 80 }], "a rewrite keeps the identity");
 }
 
 #[test]

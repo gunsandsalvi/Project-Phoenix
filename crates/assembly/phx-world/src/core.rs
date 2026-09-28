@@ -64,6 +64,10 @@ pub struct Core {
     /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.
     pub banks_of: Vec<Vec<(u32, u64)>>,
     pub pop_days: Vec<(phx_id::Day, crate::core_pop::PopDay)>,
+    pub labour: crate::core_labour::CoreLabour,
+    pub goods: crate::core_goods::CoreGoods,
+    /// Flows owed today beside the families' dues: severance at a separation, and the day's retail sales.
+    pub pending: Vec<phx_core::flows::Flow>,
 }
 
 pub(crate) fn kind_number(place: usize) -> u8 {
@@ -177,6 +181,9 @@ impl Core {
             next_id,
             banks_of: Vec::new(),
             pop_days: Vec::new(),
+            labour: crate::core_labour::CoreLabour::default(),
+            goods: crate::core_goods::CoreGoods::default(),
+            pending: Vec::new(),
         }
     }
 
@@ -340,6 +347,7 @@ impl Core {
             ),
             reason: crate::core_day::PENSION,
             schedules: Vec::new(),
+            classes: Vec::new(),
         };
         // Each pension line read once: its amount, and where its schedule and next date are among the family's.
         let mut lines: std::collections::BTreeMap<phx_id::LineId, Option<(i64, u32, u32)>> =

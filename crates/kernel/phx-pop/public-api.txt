@@ -103,6 +103,7 @@ pub fn phx_pop::persons::Persons<B>::place_of(&self, phx_id::ids::Slot, u64) -> 
 pub fn phx_pop::persons::Persons<B>::push(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, phx_pop::persons::Held)
 pub fn phx_pop::persons::Persons<B>::remove(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize)
 pub fn phx_pop::persons::Persons<B>::set(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, &[phx_pop::persons::Held])
+pub fn phx_pop::persons::Persons<B>::set_word(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize, u64)
 pub mod phx_pop::population
 pub struct phx_pop::population::PopKind
 pub phx_pop::population::PopKind::decl: phx_pop::kind::PopKindDecl

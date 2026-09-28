@@ -2105,6 +2105,7 @@ pub phx_core::streams::StreamDecl::purpose: phx_core::streams::Purpose
 pub struct phx_core::streams::Streams
 impl phx_core::streams::Streams
 pub fn phx_core::streams::Streams::is_empty(&self) -> bool
+pub fn phx_core::streams::Streams::key(&self, &phx_core::streams::StreamDecl) -> phx_rand::key::StreamKey
 pub fn phx_core::streams::Streams::len(&self) -> usize
 pub fn phx_core::streams::Streams::named(&self, &str) -> core::option::Option<phx_core::streams::StreamDecl>
 pub fn phx_core::streams::Streams::new(phx_rand::key::Seed, &[phx_core::streams::StreamDecl]) -> core::result::Result<phx_core::streams::Streams, alloc::vec::Vec<alloc::string::String>>
@@ -3809,6 +3810,7 @@ pub phx_core::StreamDecl::purpose: phx_core::streams::Purpose
 pub struct phx_core::Streams
 impl phx_core::streams::Streams
 pub fn phx_core::streams::Streams::is_empty(&self) -> bool
+pub fn phx_core::streams::Streams::key(&self, &phx_core::streams::StreamDecl) -> phx_rand::key::StreamKey
 pub fn phx_core::streams::Streams::len(&self) -> usize
 pub fn phx_core::streams::Streams::named(&self, &str) -> core::option::Option<phx_core::streams::StreamDecl>
 pub fn phx_core::streams::Streams::new(phx_rand::key::Seed, &[phx_core::streams::StreamDecl]) -> core::result::Result<phx_core::streams::Streams, alloc::vec::Vec<alloc::string::String>>

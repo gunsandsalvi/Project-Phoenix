@@ -123,6 +123,11 @@ fn apportion(total: u64, weights: &[u64]) -> Vec<u64> {
         .collect()
 }
 
+/// A firm's opening stock: its output's days of cover, its management's.
+fn stock_of(output: i64, cover_days: f64) -> i64 {
+    floor_to_i64((from_i64(output) * cover_days / crate::consts::DAYS_A_YEAR).round()).unwrap_or(0)
+}
+
 /// An amount split over weights exactly, each part in proportion to its weight; nothing where no weight is.
 fn apportion_amount(total: i64, weights: &[u64]) -> Vec<i64> {
     let (mut left, mut whole): (i64, u64) = (total, weights.iter().sum());
@@ -266,6 +271,7 @@ impl Core {
             }
         }
         let price_weight = o.register.fixed("SRV.price_weight")?;
+        let cover_days = o.management.cover_days;
         let mut store: KindStore<SystemBacking> =
             KindStore::new(&mut self.space, crate::core::kind_number(firm), AGENT_ROWS, AGENT_ROWS_PER_CHUNK, RECORD)
                 .with_accounts(&mut self.space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK);
@@ -298,6 +304,7 @@ impl Core {
                     MaybeI64::present(d.productivity),
                     MaybeI64::present(d.price),
                     MaybeI64::present(output),
+                    MaybeI64::present(stock_of(output, cover_days)),
                 ];
                 let id = PartyId::new(self.next_id);
                 self.next_id += 1;

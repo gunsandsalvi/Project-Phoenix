@@ -728,7 +728,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (a moved to i; b done; c1 done: persons' lasting identity, the opening's jobs as contracts)
+**Status**: building (a moved to i; b and c done; d and e begun: production within staff, households' spending and retail sales on the core)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
@@ -755,17 +755,25 @@ world switches to the core.
     from SOC's rule; no copy of the books.
   - b. Firms of one kind on the core (done): counts per region and industry, productivity, sites, the day-zero price
     and the output its price wins.
-  - c. Labour on the core: the opening's staff derived and hired as employment contracts (c1, done), wages by shape,
-    the hiring round, layoffs and retirement (c2, c3). The self-employed hold no employment contract: the employees
+  - c. Labour on the core (done): the opening's staff hired as employment contracts; each country's level by
+    occupation (its staff's hours over its ways' at the opening output); the posting rule on each firm's production
+    schedule, the daily search, selection and answer through the hiring kernel, hires as contracts; layoffs with
+    notice, severance for the years served, the laid-off searching again; retirement closing jobs. Wage reviews at
+    contracts' review dates remain for e, with the firms' reviews. The self-employed hold no employment contract: the employees
     the books draw (49,453 at 150,000 persons, seed 1) are fewer than the employed firms are counted from (70,861);
     the rest are own-account workers, whose businesses are their own (FRM.23, PTY.3), opened in c3 as persons running
     unincorporated firms of the firm kind, with the firms' count.
   - d. Goods and services on the core: plant and stocks derived and held, production within plant, the retail and
-    between-firms meetings with their goods legs, spoilage, wear and shipments, the goods family. Until firms sell on
+    between-firms meetings with their goods legs, spoilage, wear and shipments, the goods family. Begun: each firm's
+    stock opens at its management's days of cover and grows by its planned output's day within what its staff's
+    hours make; each product's retail meeting sells it to households at posted prices, the distance term at zero
+    until S2.13's cells (the inputs a way uses, plant, the goods legs as holdings, between-firms trade and shipments
+    remain). Until firms sell on
     the core they pay wages from their opening deposits alone: at the first payday 1,467 of 67,478 flows failed
     (150,000 persons, seed 1); d's revenue settles it.
   - e. Households' spending, firms' price reviews and the outlooks (HH, FRM.5, VAL), the firms' management types
-    drawn. Each `_small`/`_large` handler pair is merged as its system ports, in c to e.
+    drawn. Begun: households decide on their spending schedule by the buffer-stock rule at their cash on hand and
+    ask their country's budget shares at retail (price reviews, outlooks and management types remain). Each `_small`/`_large` handler pair is merged as its system ports, in c to e.
   - f. Credit and the central bank on the core: loans by shape, the lending placeholder, deposit and lending rates,
     reserves and the fund stage; arrears from failed flows at 2d.
   - g. The state on the core: taxes withheld and at the till, benefits, bills and the payment order; the public

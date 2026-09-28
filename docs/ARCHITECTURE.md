@@ -2043,6 +2043,21 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   household, naming the person by its identity and paying the wage on the job's dates. Jobs no firm's way in their
   region takes (the armed forces') are the state's, contracts from their country's treasury in `LAB.public_employment`,
   until the public agencies hold their staff.
+- **Labour on the core** (`core_labour`): each country's level by occupation is its opening staff's hours in it over
+  the hours its ways ask of it at the opening output, so a firm's hours a unit of an occupation are its way's, fewer by
+  its productivity, at that level. Each firm decides on its production schedule (a phase drawn per firm) by the
+  labour kind's posting rule; its vacancies stand in `CoreLabour`, searchers are an index of (household, person)
+  kept at events, and the round is `phx_market::hiring`'s search, select and answer, a day apart each. A hire is a
+  contract in `LAB.employment` on its country's monthly dates, its class (occupation, hours, start year) held per
+  schedule. Layoffs are drawn by lot among the firm's jobs in the occupation, given the law's notice; at its end the
+  contract closes, severance for the years served is a flow from firm to household, and the person searches again.
+  A person whose hazard outcome retires it leaves its jobs; every changed person is written back.
+- **Goods on the core** (`core_goods`): a firm's record holds its stock; each day it grows by the planned output's
+  day in whole units counted from the core's first day, within what its staff's hours make at its hours a unit.
+  Households decide on their spending schedule by the buffer-stock rule, their income outlook, what they received
+  and the month counted in their record's positions, and ask each product's budget share. Each product's retail
+  meeting (`phx_market::meet`) has a place per region with its firms at no distance; each sale is a flow in the
+  day's pending flows and its units leave the seller's stock.
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, stores, partition, flows, wheel, settlement,
   facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over

@@ -218,7 +218,7 @@ pub struct phx_market::hiring::Seeker
 pub phx_market::hiring::Seeker::experience: u32
 pub phx_market::hiring::Seeker::household: phx_id::ids::PartyKey
 pub phx_market::hiring::Seeker::occupation: u32
-pub phx_market::hiring::Seeker::person: u32
+pub phx_market::hiring::Seeker::person: u64
 pub phx_market::hiring::Seeker::region: u32
 pub phx_market::hiring::Seeker::reservation: f64
 pub phx_market::hiring::Seeker::skill: u32
