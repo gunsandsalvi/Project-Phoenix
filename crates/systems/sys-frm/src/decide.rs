@@ -558,9 +558,10 @@ where
             ctx.write::<SalesWidth>(row, w);
         }
     }
+    // What it delivered is seen now, so its next schedule measures a surprise against it.
+    ctx.write::<DeliveredSeen>(row, delivered);
     // A firm that has seen no surprise yet knows no width to weigh its attention by.
     let Some(width) = width else { return };
-    ctx.write::<DeliveredSeen>(row, delivered);
     let cost = m.review_hours * wage;
     // A review costs its staff's hours; a firm whose hour costs nothing holds no staff to review with.
     if cost <= 0.0 {
