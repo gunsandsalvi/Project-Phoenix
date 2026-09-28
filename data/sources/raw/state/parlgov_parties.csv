@@ -1,0 +1,855 @@
+iso3,party_id,party,family,left_right,state_market,liberty_authority,eu_anti_pro
+AUS,120,Australian Democrats,Social democracy,3.7004,3.3684,1.1579,
+AUS,1253,Australian Labor Party,Social democracy,3.8833,4.0351,3.2632,
+AUS,1396,no party affiliation,no family,,,,
+AUS,1411,Liberal Party of Australia,Conservative,7.3903,8.4211,6.9825,
+AUS,154,Liberal National Party of Queensland,Liberal,6.0,6.7,3.6,
+AUS,1650,Christian Democratic Party,Christian democracy,6.2,5.7,7.1,
+AUS,184,National (Country) Party | National Party of Australia,Conservative,7.8222,6.2456,8.4561,
+AUS,1912,United Australia Party,Conservative,7.4,6.4,6.9,
+AUS,1927,Liberal Democratic Party (New South Wales),Liberal,6.0,6.7,3.6,
+AUS,215,Country Liberal Party,Liberal,6.0,6.7,3.6,
+AUS,2258,Katter's Australian Party,Social democracy,3.3,3.5,3.5,
+AUS,2259,Palmer United Party,Liberal,6.0,6.7,3.6,
+AUS,2630,Nick Xenophon Team,Liberal,6.0,6.7,3.6,
+AUS,386,One Nation Party,Right-wing,8.1579,5.3008,7.9649,
+AUS,446,Family First Party,Conservative,7.4,6.4,6.9,
+AUS,751,Australian Greens,Green/Ecologist,1.5439,1.2982,0.5614,
+AUT,1013,Austrian People's Party,Christian democracy,6.4733,6.9485,7.6198,8.8451
+AUT,1429,The Greens -- The Green Alternative,Green/Ecologist,2.4604,2.7489,1.4308,6.6845
+AUT,1536,Alliance for the Future of Austria,Right-wing,8.83,6.0,8.83,2.5
+AUT,1746,The Citizens' Forum Austria,Social democracy,3.3,3.5,3.5,8.1
+AUT,2150,Team Stronach,Liberal,6.0,6.7,3.6,8.7
+AUT,2255,NEOS -- The New Austria,Liberal,6.0,6.7,3.6,8.7
+AUT,2651,JETZT -- Pilz List,Green/Ecologist,2.5,2.5,1.8,6.5
+AUT,2652,My Vote Counts!,Special issue,,,,
+AUT,272,no party affiliation,no family,,,,
+AUT,50,Freedom Party of Austria,Right-wing,8.3494,6.3291,8.5149,1.9815
+AUT,669,Hans-Peter Martin's List,Special issue,4.2,5.0,3.4,2.85
+AUT,769,Communist Party of Austria,Communist/Socialist,0.5,1.4,3.0,0.0
+AUT,955,Liberal Forum,Liberal,4.8806,7.3667,1.8667,9.6125
+AUT,973,Social Democratic Party of Austria,Social democracy,3.7293,3.4728,3.4766,8.4495
+BEL,1029,Socialist Party,Social democracy,3.2459,3.0183,3.0805,7.9023
+BEL,1110,Party of Liberty and Progress | Flemish Liberals and Democrats,Liberal,7.0053,7.7639,3.7139,8.7549
+BEL,1113,Socialist Party Different / Social Liberal Party,Social democracy,3.255,3.0183,3.0805,7.6571
+BEL,1192,Francophone Christian Social Party -- Humanist Democratic Centre,Christian democracy,5.4974,5.3711,6.6409,8.7795
+BEL,1378,Socialist Party [Francophone],Social democracy,2.9307,2.5938,3.1712,8.1465
+BEL,1594,Agalev -- Green,Green/Ecologist,2.5762,2.0089,1.0234,7.2593
+BEL,161,Confederated ecologists for the organisation of original struggles,Green/Ecologist,2.641,2.3887,1.3744,7.5411
+BEL,171,National Front,Right-wing,9.655,8.0831,9.1382,1.5539
+BEL,221,"List Dedecker | Libertarian, Direct, Democratic",Liberal,6.0,6.7,3.6,8.7
+BEL,2368,"Belgians, Rise Up!",Right-wing,8.8,5.9,8.5,2.3
+BEL,256,Workers' Party of Belgium,Communist/Socialist,1.3,1.4,3.0,3.3
+BEL,438,People's Party,Conservative,7.4,6.4,6.9,7.9
+BEL,501,New Flemish Alliance,Conservative,6.5321,5.8809,6.06,6.4243
+BEL,723,Flemish Christian Peoples Party | Christian Democrats & Flemish,Christian democracy,5.7667,5.5876,7.2083,8.9013
+BEL,915,Reformist Movement,Liberal,6.6889,7.1934,4.2102,8.3003
+BEL,969,Francophone Democratic Front,Liberal,6.1259,6.25,5.8,8.7274
+BEL,972,Christian-Democrat and Flemish / New Flemish Alliance,Christian democracy,6.2,5.7,7.1,8.3
+BEL,993,Flemish Block | Flemish Interest,Right-wing,9.6622,7.695,9.5234,2.756
+BGR,1149,Union for Tzar [Simeon II],Special issue,,,,
+BGR,1160,Coalition for Bulgaria | Democratic Left,Social democracy,2.8982,2.9629,5.741,8.6402
+BGR,1254,Blue Coalition,Conservative,7.4,6.4,6.9,7.9
+BGR,1286,Movement for Rights and Freedoms,Liberal,4.5828,4.413,6.229,9.0094
+BGR,133,no party affiliation,no family,,,,
+BGR,1362,George's Day Movement,Right-wing,6.3158,6.1053,2.8289,8.3158
+BGR,1375,Bulgarian People's Union,Conservative,5.8,6.0,5.44,8.3333
+BGR,15,Simeon II Coalition,Special issue,6.86,6.29,6.33,7.7833
+BGR,1541,Citizens for European Development of Bulgaria,Right-wing,8.8,5.9,8.5,2.3
+BGR,2178,Euroroma,Special issue,,,,
+BGR,2179,Coalition of the Rose,Social democracy,3.3,3.5,3.5,8.1
+BGR,2180,New Times,Green/Ecologist,2.5,2.5,1.8,6.5
+BGR,2211,National Front for the Salvation of Bulgaria,Right-wing,8.8,5.9,8.5,2.3
+BGR,2212,IMRO -- Bulgarian National Movement,Conservative,7.4,6.4,6.9,7.9
+BGR,2213,Bulgaria for Citizens Movement,Conservative,7.4,6.4,6.9,7.9
+BGR,2214,People's Voice,Special issue,,,,
+BGR,2362,Bulgaria Without Censorship,Conservative,7.4,6.4,6.9,7.9
+BGR,2363,Reformist Bloc,Conservative,7.4,6.4,6.9,7.9
+BGR,2364,Alternative for Bulgarian Revival,Social democracy,3.3,3.5,3.5,8.1
+BGR,2379,Movement 21,Social democracy,3.3,3.5,3.5,8.1
+BGR,2595,Centre -- Freedom and Dignity,Liberal,6.0,6.7,3.6,8.7
+BGR,2637,Will,Right-wing,8.8,5.9,8.5,2.3
+BGR,2638,"Yes, Bulgaria!",Liberal,6.0,6.7,3.6,8.7
+BGR,2639,"Democrats for Responsibility, Solidarity and Tolerance",Liberal,6.0,6.7,3.6,8.7
+BGR,2640,Revival,Right-wing,8.8,5.9,8.5,2.3
+BGR,2814,Republicans for Bulgaria,Conservative,7.4,6.4,6.9,7.9
+BGR,2836,There Is Such a People,Conservative,7.4,6.4,6.9,7.9
+BGR,2838,Stand up!,Social democracy,3.3,3.5,3.5,8.1
+BGR,2840,Bulgarian National Unification | Bulgarian Summer,Right-wing,8.8,5.9,8.5,2.3
+BGR,2847,We Continue the Change,Special issue,,,,
+BGR,2871,Bulgarian Rise,Conservative,7.4,6.4,6.9,7.9
+BGR,423,Union of Democratic Forces,Christian democracy,6.1111,5.7,7.1,8.3
+BGR,535,Attack,Right-wing,5.46,3.25,9.17,2.4333
+BGR,544,National Movement Simeon II,Liberal,5.7567,5.8948,4.008,9.3468
+BGR,566,Lider,Liberal,6.0,6.7,3.6,8.7
+BGR,57,Democrats for a Strong Bulgaria | Democratic Bulgaria,Conservative,7.85,7.83,4.5,8.9667
+BGR,636,"Order, Lawfulness and Justice",Right-wing,8.8,5.9,8.5,2.3
+BGR,784,United Democratic Forces,Conservative,6.9611,6.917,3.8431,9.7427
+BGR,982,Bulgarian Socialist Party,Social democracy,3.0064,2.9187,4.5029,8.1871
+CAN,1189,no party affiliation,no family,,,,
+CAN,1255,Conservative Party of Canada,Conservative,8.6608,8.7668,9.0688,
+CAN,1259,Green Party of Canada,Green/Ecologist,1.9018,2.2467,2.0327,
+CAN,2067,no seat,no family,,,,
+CAN,2791,People's Party of Canada,Right-wing,8.8,5.9,8.5,
+CAN,296,Co-operative Commonwealth Federation | New Democratic Party,Social democracy,2.46,1.9195,1.1134,
+CAN,368,Liberal Party of Canada,Liberal,5.0552,5.3509,3.4615,
+CAN,448,Quebec Bloc,Social democracy,3.0215,3.1207,2.2063,
+CAN,794,Progressive Conservative Party of Canada,Conservative,6.7112,6.9659,5.997,
+CAN,897,Reform Party of Canada,Conservative,8.7748,8.7668,9.0688,
+CHE,1012,Christian Social Party,Christian democracy,6.2,5.7,7.1,8.3
+CHE,1167,Swiss Party of Labour,Communist/Socialist,0.5263,0.5835,1.6148,6.8893
+CHE,1213,Conservative Democratic Party of Switzerland,Conservative,7.4,6.4,6.9,7.9
+CHE,1226,Solidarity,Communist/Socialist,1.3,1.4,3.0,3.3
+CHE,1318,Federal Democratic Union of Switzerland,Conservative,8.6579,6.3816,9.4247,0.9868
+CHE,141,Greens,Green/Ecologist,1.6886,1.7263,1.0316,6.507
+CHE,1500,Ticino League,Right-wing,8.8,5.9,8.5,2.3
+CHE,1602,Automobile Party | Freedom Party of Switzerland,Right-wing,8.0556,5.9,8.5,0.0
+CHE,2303,one seat,no family,,,,
+CHE,2579,others,no family,,,,
+CHE,2599,Geneva Citizens' Movement,Right-wing,8.8,5.9,8.5,2.3
+CHE,26,Radical Democratic Party,Liberal,6.3249,8.0105,3.4159,6.4439
+CHE,308,Green Liberal Party,Green/Ecologist,2.5,2.5,1.8,6.5
+CHE,35,Social Democratic Party of Switzerland,Social democracy,1.8319,1.7579,1.2281,9.0614
+CHE,458,Liberal Party of Switzerland,Liberal,7.2961,8.477,4.2441,7.6667
+CHE,531,Catholic Conservative / Christian Democratic Peoples Party,Christian democracy,4.7288,5.6421,7.1414,6.3386
+CHE,569,Feminists and Green-Alternative Groups,Green/Ecologist,2.5,2.5,1.8,2.5
+CHE,602,Protestant Peoples Party,Christian democracy,4.9248,4.4498,7.5812,5.0504
+CHE,628,National Action -- Swiss Democrats,Right-wing,9.4247,6.2573,9.0409,0.2384
+CHE,750,Swiss People's Party,Agrarian,7.3575,8.9684,8.3385,0.6368
+CYP,1049,Fighting Democratic Movement,Right-wing,7.7632,5.2632,5.0,
+CYP,1151,Liberal Party,Liberal,6.0,6.7,3.6,
+CYP,1523,United Democrats,Liberal,7.1053,6.0526,4.3421,
+CYP,1575,Democratic Rally,Conservative,8.6842,7.3684,5.0,
+CYP,1621,Ecological and Environmental Movement,Green/Ecologist,5.7895,5.5263,5.7895,
+CYP,1735,Free Citizens Movement,to be coded,,,,
+CYP,1768,National Popular Front,Right-wing,8.8,5.9,8.5,
+CYP,2341,Citizen's Alliance,Social democracy,3.3,3.5,3.5,
+CYP,2626,Solidarity Movement,Right-wing,8.8,5.9,8.5,
+CYP,2627,Animal Party Cyprus,Special issue,,,,
+CYP,2741,Democratic Alignment,Liberal,6.0,6.7,3.6,
+CYP,2815,Active Citizens,Communist/Socialist,1.3,1.4,3.0,
+CYP,2817,Independents Movement,Liberal,6.0,6.7,3.6,
+CYP,2818,Famagusta for Cyprus,Liberal,6.0,6.7,3.6,
+CYP,2819,Awakening 2020,Special issue,,,,
+CYP,2820,People's Breath,Right-wing,8.8,5.9,8.5,
+CYP,491,European Party,Liberal,6.0,6.7,3.6,
+CYP,572,Progressive Party of Working People,Communist/Socialist,1.0526,2.6316,6.1842,
+CYP,6,New Horizons,Right-wing,9.3421,6.5789,7.1053,
+CYP,851,Democratic Party,Conservative,5.1316,4.0789,6.0526,
+CYP,945,Movement for Social Democracy EDEK,Social democracy,3.2895,4.7368,5.9211,
+CZE,1173,Communist Party of Bohemia and Moravia,Communist/Socialist,0.7498,1.2243,6.4265,2.4656
+CZE,1245,Christian Democratic Union -- People's Party,Christian democracy,5.8099,6.0784,7.9119,8.4535
+CZE,1532,SNK European Democrats,Liberal,6.0929,6.5934,3.4947,8.3662
+CZE,1567,no party affiliation,no family,,,,
+CZE,1613,Sovereignty -- Jana Bobosikova Bloc,Right-wing,8.8,5.9,8.5,2.3
+CZE,196,Green Party,Green/Ecologist,4.123,3.8917,1.8596,7.8505
+CZE,2,Tradition Responsibility Prosperity 09,Conservative,7.4,6.4,6.9,7.9
+CZE,2024,Mayors and Independents,Liberal,6.0,6.7,3.6,8.7
+CZE,2042,LIDEM -- Liberal Democrats,Liberal,6.0,6.7,3.6,8.7
+CZE,2261,Czech Pirate Party,Special issue,,,,
+CZE,2262,Dawn of Direct Democracy,Conservative,7.4,6.4,6.9,7.9
+CZE,2263,Action of Dissatisfied Citizens 2011,Liberal,6.0,6.7,3.6,8.7
+CZE,2654,Freedom and Direct Democracy ,Right-wing,8.8,5.9,8.5,2.3
+CZE,2831,Oath,Special issue,,,,
+CZE,2832,Tricolour Citizens' Movement,Right-wing,8.8,5.9,8.5,2.3
+CZE,2854,Free Bloc,Right-wing,8.8,5.9,8.5,2.3
+CZE,29,Czech National Social(ist) Party,Right-wing,8.8,5.9,8.5,2.3
+CZE,336,Public Affairs,Liberal,6.0,6.7,3.6,8.7
+CZE,363,Party of Free Citizens,Right-wing,8.8,5.9,8.5,2.3
+CZE,406,Party of Civic Rights -- Zemanovci,Social democracy,3.3,3.5,3.5,8.1
+CZE,688,Freedom Union,Liberal,7.2204,7.5343,2.3792,9.4344
+CZE,789,Czech Social Democratic Party,Social democracy,3.0463,3.0031,4.2463,8.5647
+CZE,795,Workers' Party of Social Justice,Right-wing,8.8,5.9,8.5,2.3
+CZE,829,Civic Democratic Party,Conservative,7.3637,7.8985,4.0087,4.456
+DEU,1180,Christian Social Union,Christian democracy,7.2871,6.5615,7.8675,6.668
+DEU,1537,National Democratic Party,Right-wing,9.8246,4.2105,9.4219,0.7989
+DEU,1727,Christian Democratic Union / Christian Social Union,Christian democracy,6.2503,6.3498,6.9333,8.5024
+DEU,2253,Alternative for Germany,Right-wing,8.8,5.9,8.5,2.3
+DEU,2649,The PARTY,Special issue,,,,
+DEU,2821,Grassroots Democratic Party of Germany,Special issue,,,,
+DEU,2850,South Schleswig Voter League,Special issue,,,,
+DEU,301,Animal Protection Party,Special issue,,,,
+DEU,41,Free Voters,Conservative,7.4,6.4,6.9,7.9
+DEU,524,The Republicans,Right-wing,9.2752,6.1901,9.3871,0.941
+DEU,543,Free Democratic Party,Liberal,5.9233,8.2173,3.0695,8.4855
+DEU,558,Social Democratic Party of Germany,Social democracy,3.6451,3.8443,3.9791,7.9318
+DEU,772,Alliance 90 / Greens,Green/Ecologist,2.9308,4.3268,1.3251,7.6101
+DEU,791,PDS | The Left,Communist/Socialist,1.2152,1.0617,3.205,4.3508
+DEU,808,Christian Democratic Union,Christian democracy,6.2503,6.3498,6.9333,8.5024
+DEU,865,German Pirate Party,Special issue,,,,
+DNK,1324,Centre Democrats,Conservative,5.5609,4.8029,4.9307,9.1468
+DNK,1331,Christian People's Party,Christian democracy,5.6982,5.0887,7.0474,5.8301
+DNK,1418,Danish Peoples Party,Right-wing,8.2269,5.7081,7.8954,1.183
+DNK,1605,Liberal Party,Liberal,7.292,7.3696,4.9957,9.0268
+DNK,1629,Social Democrats,Social democracy,3.8011,3.5292,4.2722,7.4311
+DNK,1644,Socialist Peoples Party,Green/Ecologist,2.1347,2.1035,2.1476,3.5917
+DNK,1891,Community of the People,Communist/Socialist,1.3,1.4,3.0,3.3
+DNK,1892,Union Party (Faroe Islands),Conservative,7.4,6.4,6.9,7.9
+DNK,1894,Social Democratic Party (Faroe Islands),Social democracy,3.3,3.5,3.5,8.1
+DNK,2058,no seat,no family,,,,
+DNK,211,Danish Social Liberal Party,Liberal,4.8736,5.318,2.3903,7.8594
+DNK,2567,The Alternative,Green/Ecologist,2.5,2.5,1.8,6.5
+DNK,2568,Republic (Faroe Islands),Communist/Socialist,1.3,1.4,3.0,3.3
+DNK,2574,People's Party (Faroe Islands),Conservative,7.4,6.4,6.9,7.9
+DNK,2781,The New Right,Right-wing,8.8,5.9,8.5,2.3
+DNK,2782,Hard Line,Right-wing,8.8,5.9,8.5,2.3
+DNK,2887,Moderates,Liberal,6.0,6.7,3.6,8.7
+DNK,2888,Denmark Demokrats,Right-wing,8.8,5.9,8.5,2.3
+DNK,306,Red-Green Alliance,Communist/Socialist,0.8912,1.2012,1.7524,0.9971
+DNK,376,New-Liberal Alliance,Liberal,6.0,6.7,3.6,8.7
+DNK,590,Conservatives,Conservative,7.2186,7.2931,6.5055,7.7791
+DNK,74,Forward (Greenland),Social democracy,3.3,3.5,3.5,8.1
+DNK,978,Progress Party,Liberal,9.0259,8.8396,6.6509,1.4475
+ESP,118,Communist Party | United Left,Communist/Socialist,2.0183,1.8937,1.7351,5.2186
+ESP,1361,Basque Nationalist Party,Christian democracy,6.2144,5.7468,6.5139,7.8556
+ESP,1367,Aragonese Council,Special issue,2.75,2.38,1.88,6.6667
+ESP,2056,no seat,no family,,,,
+ESP,2294,one seat,no family,,,,
+ESP,2330,Initiative for Catalonia Greens,Green/Ecologist,2.5,2.5,1.8,6.5
+ESP,234,Canary Coalition,Special issue,5.9789,5.9,5.7694,8.0278
+ESP,2375,Citizens -- Party of the Citizenry,Liberal,6.0,6.7,3.6,8.7
+ESP,2376,We Can,Communist/Socialist,1.3,1.4,3.0,3.3
+ESP,2380,Voice,Right-wing,8.8,5.9,8.5,2.3
+ESP,2381,Animalist Party Against Mistreatment to Animals,Special issue,,,,
+ESP,2603,Basque Country Unite,Special issue,,,,
+ESP,2604,En Masse | Common Group of the Left,Communist/Socialist,1.3,1.4,3.0,3.3
+ESP,2605,Democratic Convergence | Together for Catalonia,Conservative,7.4,6.4,6.9,7.9
+ESP,2606,In Common We Can,Communist/Socialist,1.3,1.4,3.0,3.3
+ESP,2607,Compromise | A la valenciana,Communist/Socialist,1.3,1.4,3.0,3.3
+ESP,2723,Sum Navarre,Conservative,7.4,6.4,6.9,7.9
+ESP,2724,United We Can,Communist/Socialist,1.3,1.4,3.0,3.3
+ESP,2792,Popular Unity Candidacy,Communist/Socialist,1.3,1.4,3.0,3.3
+ESP,2804,Equo,Green/Ecologist,2.5,2.5,1.8,6.5
+ESP,370,Andalusian Party,Social democracy,4.85,4.86,4.43,8.725
+ESP,385,Yes,Special issue,,,,
+ESP,520,Galician Nationalist Bloc,Special issue,2.9117,2.81,2.9378,6.6096
+ESP,551,"Union, Progress and Democracy",Liberal,6.0,6.7,3.6,8.7
+ESP,645,People's Alliance-Party,Conservative,7.5969,7.619,7.8127,7.7368
+ESP,757,Republican Left of Catalonia,Special issue,3.1072,2.9073,2.7325,7.0389
+ESP,845,Basque Solidarity,Special issue,4.3115,4.7873,4.555,7.4841
+ESP,894,Convergence and Union,Conservative,6.2564,6.3998,6.1104,8.7309
+ESP,902,Spanish Socialist Workers Party,Social democracy,3.7377,4.0098,3.0399,9.129
+EST,113,Estonian Reform Party,Liberal,7.8969,8.6246,5.2737,8.5715
+EST,1137,Estonian Centre Party,Social democracy,3.9562,3.6421,4.9947,5.0118
+EST,1448,Social Democratic Party | Moderates,Social democracy,4.1915,3.4667,3.1737,7.7982
+EST,1590,Constitution Party -- Estonian United People's Party,Social democracy,2.0282,2.9413,6.3158,4.9241
+EST,1597,Pro Patria and Res Publica Union,Conservative,8.4962,8.2456,6.1053,9.2632
+EST,219,Estonian Greens,Green/Ecologist,2.5,2.5,1.8,6.5
+EST,2409,Free Party,Conservative,7.4,6.4,6.9,7.9
+EST,2720,Estonia 200,Liberal,6.0,6.7,3.6,8.7
+EST,2721,Richness of Life,Green/Ecologist,2.5,2.5,1.8,6.5
+EST,2892,Estonian United Left Party,Communist/Socialist,1.3,1.4,3.0,3.3
+EST,2893,the Right,Conservative,7.4,6.4,6.9,7.9
+EST,417,People's Union of Estonia / Conservative People's Party,Conservative,4.5812,4.8509,6.9474,6.0627
+EST,428,Res Publica Party,Conservative,8.4962,8.2456,6.1053,9.2632
+EST,486,Estonian Coalition Party,Liberal,7.2222,6.7,3.6,8.7
+EST,609,Estonian Christian Democrats,Christian democracy,7.5789,4.7368,9.7895,1.0526
+EST,846,Pro Patria Union,Conservative,7.6169,6.414,7.3789,8.5189
+FIN,1062,Green League,Green/Ecologist,3.6465,3.4279,2.2671,6.9709
+FIN,1118,National Coalition Party,Conservative,7.2451,7.6408,5.5872,9.0846
+FIN,1119,no party affiliation,no family,,,,
+FIN,1292,Democratic Union | Left Alliance,Communist/Socialist,2.1843,1.8661,3.3406,5.165
+FIN,1463,Christian Democrats,Christian democracy,7.1884,4.9438,8.3076,3.2103
+FIN,200,Finnish Party | True Finns,Agrarian,6.6331,4.8745,7.999,1.0945
+FIN,2054,no seat,no family,,,,
+FIN,2412,Pirate Party Finland,Special issue,,,,
+FIN,2413,one seat,no family,,,,
+FIN,2645,New Alternative | Blue Reform,Right-wing,8.8,5.9,8.5,2.3
+FIN,2801,Movement Now,Liberal,6.0,6.7,3.6,8.7
+FIN,395,Social Democratic Party of Finland,Social democracy,3.5595,3.5454,4.2417,8.621
+FIN,585,Swedish People's Party,Liberal,6.3906,6.7295,3.8385,8.5284
+FIN,638,Reform Group,Special issue,6.6,5.8,6.8,5.0
+FIN,66,Aland Coalition,Special issue,,,,
+FIN,806,Communist  Party of Finland (Unity),Communist/Socialist,1.3,1.4,3.0,3.3
+FIN,94,Centre Party,Agrarian,5.8027,4.9349,7.2203,5.5267
+FRA,1058,New Centre,Liberal,6.0,6.7,3.6,8.7
+FRA,1101,Movement for France,Conservative,8.1721,7.5376,8.6774,1.0651
+FRA,1176,Workers' Struggle,Communist/Socialist,0.0,1.4,3.0,3.3
+FRA,1263,National Republican Movement,Right-wing,8.2786,8.5714,9.7143,0.5556
+FRA,1328,others,no family,,,,
+FRA,138,Rally for the Republic,Conservative,7.4997,6.5934,7.1854,6.9862
+FRA,1492,Radical Party of the Left,Social democracy,4.0813,4.1676,4.2381,7.9361
+FRA,1539,Socialist Party,Social democracy,3.2493,3.248,2.9367,7.9448
+FRA,177,other left,Social democracy,3.3,3.5,3.5,8.1
+FRA,2077,Martinican Independence Movement,Special issue,,,,
+FRA,2078,Centrist Alliance,Liberal,6.0,6.7,3.6,8.7
+FRA,2079,other far-right,Right-wing,8.8,5.9,8.5,2.3
+FRA,2080,no seat,no family,,,,
+FRA,2083,other far-left,Communist/Socialist,1.3,1.4,3.0,3.3
+FRA,2143,Citizens' Movement,Communist/Socialist,1.3,1.4,3.0,3.3
+FRA,2249,other ecologists,Green/Ecologist,2.5,2.5,1.8,6.5
+FRA,2252,Rally for France,Conservative,7.4,6.7849,8.5048,1.0885
+FRA,2272,Democratic and Republican Left,Communist/Socialist,1.3,1.4,3.0,3.3
+FRA,2273,Union of Democrats and Independents,Conservative,7.4,6.4,6.9,7.9
+FRA,2399,Republic Arise | France Arise,Conservative,7.4,6.4,6.9,7.9
+FRA,259,"Hunting, Fishing, Nature, Tradition",Agrarian,7.8,7.25,7.875,2.2222
+FRA,2643,The Republic Onwards! | Renaissance,Liberal,6.0,6.7,3.6,8.7
+FRA,2644,Unbowed France,Communist/Socialist,1.3,1.4,3.0,3.3
+FRA,270,National Rally,Right-wing,9.6854,7.4011,9.2889,0.2157
+FRA,2813,Ecologist Party,Green/Ecologist,2.5,2.5,1.8,6.5
+FRA,285,other right,Conservative,7.6583,9.0,9.0,5.8333
+FRA,2857,Horizons,Liberal,6.0,6.7,3.6,8.7
+FRA,2858,other centre,Liberal,6.0,6.7,3.6,8.7
+FRA,2859,one seat,no family,,,,
+FRA,2860,Reconquest,Right-wing,8.8,5.9,8.5,2.3
+FRA,2862,"Act, the constructive right",Conservative,7.4,6.4,6.9,7.9
+FRA,401,Radical Socialist Party,Conservative,3.9896,4.1676,4.2381,7.9361
+FRA,442,Revolutionary Communist League,Communist/Socialist,0.0714,0.2143,6.0,0.4762
+FRA,509,Union for French Democracy | Democratic Movement,Conservative,6.1017,6.2021,5.4999,8.8995
+FRA,59,Independent Republicans | Liberal Democracy,Conservative,7.0577,7.7993,6.1743,8.246
+FRA,658,Union for a Popular Movement | The Republicans,Conservative,7.4997,6.5934,7.1854,6.9862
+FRA,686,French Communist Party,Communist/Socialist,1.3741,1.056,4.5083,2.3595
+FRA,873,Greens,Green/Ecologist,3.155,2.8774,1.4772,6.4585
+FRA,947,no party affiliation,no family,,,,
+GBR,1023,Social Democratic and Labour Party,Social democracy,3.3,3.5,3.5,8.6667
+GBR,1057,Respect -- The Unity Coalition,to be coded,,,,
+GBR,1210,Ulster Unionist Party,Conservative,8.3,6.4,6.9,7.9
+GBR,1250,British National Party,Right-wing,8.8,5.9,8.5,2.3
+GBR,1272,United Kingdom Independence Party,Right-wing,7.8429,8.0938,7.8507,0.0
+GBR,1284,Scottish National Party,Social democracy,3.5871,3.0627,3.9623,7.8641
+GBR,1556,Labour,Social democracy,4.3562,4.5741,4.2779,6.9923
+GBR,2063,The Christian Party -- Christian Peoples Alliance in England,Christian democracy,6.2,5.7,7.1,8.3
+GBR,2296,one seat,no family,,,,
+GBR,2729,Brexit Party,Right-wing,8.8,5.9,8.5,2.3
+GBR,2731,Alliance Party of Northern Ireland,Liberal,6.0,6.7,3.6,8.7
+GBR,311,Plaid Cymru,Special issue,3.1183,2.6251,3.7107,7.8314
+GBR,319,Democratic Unionist Party,Conservative,7.4,6.4,6.9,7.9
+GBR,453,others,no family,,,,
+GBR,467,Green Party,Green/Ecologist,2.57,2.3775,2.0139,4.9858
+GBR,659,Liberals,Liberal,4.2875,4.1064,2.6109,9.2231
+GBR,689,Sinn Fein,Communist/Socialist,1.3,1.4,3.0,3.3
+GBR,773,Conservatives,Conservative,7.4261,7.5725,7.1901,2.3243
+GRC,1179,Popular Orthodox Rally,Right-wing,9.11,5.33,9.63,2.3
+GRC,1280,Ecologist Greens,Green/Ecologist,2.5,2.5,1.8,6.5
+GRC,1338,Panhellenic Socialist Movement,Social democracy,4.4968,4.8797,3.6025,9.2535
+GRC,1358,no party affiliation,no family,,,,
+GRC,1441,Coalition of the Left,Communist/Socialist,2.7683,2.6259,2.0238,6.8943
+GRC,1592,Coalition of the Radical Left,Communist/Socialist,2.8947,2.9123,2.0066,7.1382
+GRC,2091,Independent Greeks,Right-wing,8.8,5.9,8.5,2.3
+GRC,2092,Peoples Association -- Golden Dawn,Right-wing,8.8,5.9,8.5,2.3
+GRC,2093,Democratic Left,Social democracy,3.3,3.5,3.5,8.1
+GRC,2094,Democratic Alliance,Liberal,6.0,6.7,3.6,8.7
+GRC,2095,Recreate Greece,Conservative,7.4,6.4,6.9,7.9
+GRC,2096,Action -- Liberal Alliance,Liberal,6.0,6.7,3.6,8.7
+GRC,2097,Front of the Greek Anticapitalist Left,Communist/Socialist,1.3,1.4,3.0,0.0
+GRC,2165,Union of Centrists,Social democracy,3.3,3.5,3.5,8.1
+GRC,2346,The River,Social democracy,3.3,3.5,3.5,8.1
+GRC,2407,Movement of Democratic Socialists,Social democracy,3.3,3.5,3.5,8.1
+GRC,2408,Dot -- Apostolos Gkletsos,Social democracy,3.3,3.5,3.5,8.1
+GRC,2596,Popular Unity | Course of Freedom,Communist/Socialist,1.3,1.4,3.0,3.3
+GRC,2742,European Realistic Disobedience Front,Communist/Socialist,1.3,1.4,3.0,3.3
+GRC,2780,Greek Solution,Conservative,7.4,6.4,6.9,7.9
+GRC,2901,Victory,Right-wing,8.8,5.9,8.5,2.3
+GRC,2902,Spartans,Right-wing,8.8,5.9,8.5,2.3
+GRC,47,New Democracy,Christian democracy,6.7365,6.9754,6.6712,8.9869
+GRC,614,Communist Party of Greece,Communist/Socialist,1.253,0.8404,5.1503,0.2722
+GRC,720,Democratic Social Movement,Social democracy,2.3,1.8286,5.5493,3.6349
+HRV,1044,Croatian Party of Rights,Right-wing,8.7719,3.5088,7.3684,3.3333
+HRV,1081,Democratic Centre,Liberal,5.9649,4.8421,6.4912,7.3684
+HRV,1102,Croatian Social Liberal Party,Liberal,7.193,4.6491,5.5263,5.0877
+HRV,1384,Croatian People's Party -- Liberal Democrats,Liberal,1.8421,6.5789,1.7544,8.9474
+HRV,1457,Liberal Party,Liberal,2.807,6.5789,1.4035,8.5965
+HRV,1465,Croatian Peasant Party,Agrarian,6.2281,4.2982,7.807,6.2281
+HRV,1493,Social Democratic Party of Croatia,Social democracy,3.2456,5.5263,2.3684,8.7719
+HRV,1627,Istrian Democratic Assembly,Liberal,3.4211,6.2281,2.5439,9.2105
+HRV,2133, Independent Democratic Serb Party,Social democracy,3.3,3.5,3.5,8.1
+HRV,2134,Croatian Party of Pensioners,Special issue,,,,
+HRV,2135,Croatian Democratic Alliance of Slavonia and Baranja,Right-wing,8.8,5.9,8.5,2.3
+HRV,2181,Croatian Party of Rights -- Dr. Ante Starcevic,Right-wing,8.8,5.9,8.5,2.3
+HRV,2182,Croatian Labourists -- Labour Party,Communist/Socialist,1.3,1.4,3.0,3.3
+HRV,2185,Croatian Growth,Christian democracy,6.2,5.7,7.1,8.3
+HRV,2191,abroad,no family,,,,
+HRV,2192,ethnic,no family,,,,
+HRV,2193,Croatian Civic Party,Right-wing,8.8,5.9,8.5,2.3
+HRV,2195,Independent List -- PhD Ivan Grubisic,no family,,,,
+HRV,2196,Alliance of Primorje-Gorski,Special issue,,,,
+HRV,2197,no party affiliation,no family,,,,
+HRV,2198,Croatian Democratic Peasant Party,Agrarian,5.3,4.9,6.5,5.4
+HRV,2199,Croatian Party of Right of 1861,Right-wing,8.8,5.9,8.5,2.3
+HRV,2202,Croatian Peasant's People's Party,Agrarian,5.3,4.9,6.5,5.4
+HRV,2203,Croatian People's Party,Conservative,7.4,6.4,6.9,7.9
+HRV,2270,Party of Democratic Action of Croatia,Conservative,7.4,6.4,6.9,7.9
+HRV,2295,one seat,no family,,,,
+HRV,2382,Sustainable Development of Croatia,Green/Ecologist,2.5,2.5,1.8,6.5
+HRV,2612,Human Shield ,Right-wing,8.8,5.9,8.5,2.3
+HRV,2614,People's Party -- Reformists ,Liberal,6.0,6.7,3.6,8.7
+HRV,2615,Bridge of Independent Lists,Conservative,7.4,6.4,6.9,7.9
+HRV,2628,Milan Bandic 365 -- The Party of Labour and Solidarity,Social democracy,3.3,3.5,3.5,8.1
+HRV,276,Croatian Democratic Union,Christian democracy,7.1053,5.7018,6.9298,7.1053
+HRV,2772,Intelligently,Liberal,6.0,6.7,3.6,8.7
+HRV,2809,Homeland Movement,Right-wing,8.8,5.9,8.5,2.3
+HRV,2810,We Can! -- Political Platform,Green/Ecologist,2.5,2.5,1.8,6.5
+HRV,316,Croatian Bloc,Right-wing,9.386,3.1579,7.6842,1.8421
+HRV,90,Party of Liberal Democrats,Liberal,3.7719,6.7544,3.2456,8.6842
+HUN,1202,Hungarian Workers' Party,Communist/Socialist,0.6316,2.6842,5.809,3.3388
+HUN,1426,Alliance of Free Democrats,Liberal,3.9659,7.7361,1.4381,9.7873
+HUN,1591,Hungarian Socialist Party,Social democracy,2.8743,5.5702,3.5897,9.6567
+HUN,1617,no party affiliation,no family,,,,
+HUN,1970,Democratic Coalition,Social democracy,3.3,3.5,3.5,8.1
+HUN,2318,Together -- Party for a New Era,Social democracy,3.3,3.5,3.5,8.1
+HUN,2349,Dialogue for Hungary,Green/Ecologist,2.5,2.5,1.8,6.5
+HUN,2659,Momentum Movement,Conservative,7.4,6.4,6.9,7.9
+HUN,2660,Hungarian Two-tailed Dog Party,Special issue,,,,
+HUN,2745,Our Homeland Movement,Right-wing,8.8,5.9,8.5,2.3
+HUN,2855,Solution Movement ,Liberal,6.0,6.7,3.6,8.7
+HUN,403,Politics Can Be Different,Green/Ecologist,2.5,2.5,1.8,6.5
+HUN,434,Christian Democratic People's Party,Christian democracy,7.4,2.17,8.33,5.8333
+HUN,437,Fidesz -- Hungarian Civic Party / Christian Democratic People's Party,Conservative,6.5432,3.9949,7.5275,6.6143
+HUN,546,Hungarian Democratic Forum,Conservative,6.4826,5.0761,6.8263,8.4922
+HUN,600,Jobbik Movement for a Better Hungary,Right-wing,8.8,5.9,8.5,2.3
+HUN,870,Independent Small Holders Party,Conservative,9.0186,4.7149,8.6235,3.7053
+HUN,921,Fidesz -- Hungarian Civic Union,Conservative,6.5432,3.9949,7.5275,6.6143
+HUN,95,Hungarian Justice and Life Party,Right-wing,9.6065,3.807,9.5894,0.9358
+HUN,952,one seat,no family,,,,
+IRL,1014,Socialist Party,Communist/Socialist,1.3,1.4,3.0,3.3
+IRL,1393,Fine Gael (Familiy of the Irish),Christian democracy,6.4372,6.1603,5.787,9.1708
+IRL,1573,Green Party,Green/Ecologist,2.435,2.462,2.1754,3.0472
+IRL,1804,People Before Profit Alliance,Communist/Socialist,1.3,1.4,3.0,3.3
+IRL,2216,no seat,no family,,,,
+IRL,2217,Sinn Fein,Communist/Socialist,2.7935,2.0316,4.5005,3.3
+IRL,2298,one seat,no family,,,,
+IRL,2329,Independent -- Marian Harkin,no family,,,,
+IRL,2619,Social Democrats ,Social democracy,3.3,3.5,3.5,8.1
+IRL,2620,Renua Ireland,Conservative,7.4,6.4,6.9,7.9
+IRL,2621,Independents 4 Change,Communist/Socialist,1.3,1.4,3.0,3.3
+IRL,2622,Independent Alliance,no family,,,,
+IRL,2776,Solidarity -- People Before Profit,Communist/Socialist,1.3,1.4,3.0,3.3
+IRL,2795,Aontu,Conservative,7.4,6.4,6.9,7.9
+IRL,280,Fianna Fail,Conservative,6.0713,5.8991,6.9898,7.8389
+IRL,30,no party affiliation,no family,,,,
+IRL,318,Labour Party,Social democracy,3.6252,3.353,3.1071,7.1292
+IRL,651,Progressive Democrats,Liberal,8.0109,8.3901,3.7011,8.4528
+ISL,1006,Social Democratic Alliance,Social democracy,4.0789,4.2982,1.0088,
+ISL,1342,Independence Party,Conservative,7.4854,7.6316,4.0351,
+ISL,1455,Progressive Party,Agrarian,5.0365,5.6579,3.8596,
+ISL,210,Left-Green Movement,Green/Ecologist,1.1842,1.4474,1.6667,
+ISL,2112,no seat,no family,,,,
+ISL,2115,Icelandic Movement -- Living Country,Green/Ecologist,2.5,2.5,1.8,
+ISL,2204,Bright Future,Liberal,6.0,6.7,3.6,
+ISL,2205,Pirate Party,Green/Ecologist,2.5,2.5,1.8,
+ISL,2206,"Dawn -- Organization of justice, fairness and democracy",Special issue,,,,
+ISL,2207,Households Party,Special issue,,,,
+ISL,2208,Iceland Democratic Party,Green/Ecologist,2.5,2.5,1.8,
+ISL,2209,RIght-Green People's Party,Liberal,6.0,6.7,3.6,
+ISL,2210,Rainbow,Communist/Socialist,1.3,1.4,3.0,
+ISL,2632,People's Party,Special issue,,,,
+ISL,2633,Revival,Conservative,7.4,6.4,6.9,
+ISL,2655,Centre Party,Liberal,6.0,6.7,3.6,
+ISL,2852,Icelandic Socialist Party,Communist/Socialist,1.3,1.4,3.0,
+ISL,506,Liberal Party,Liberal,6.2201,5.5981,3.0,
+ISL,587,Civic Movement -- The Movement,Liberal,6.0,6.7,3.6,
+ISR,123,no party affiliation,no family,,,,
+ISR,1303,United Torah Judaism,Conservative,6.9396,2.8146,9.7556,
+ISR,1357,National Union--Tkuma  | Religious Zionist Party,Right-wing,9.5906,5.7895,8.1474,
+ISR,1419,Energy,Social democracy,1.7786,3.2632,0.6667,
+ISR,1816,Israel Our Home,Right-wing,8.8,5.9,8.5,
+ISR,1846,United Arab List,Special issue,,,,
+ISR,1850,Change,Liberal,5.4776,8.6207,1.7423,
+ISR,1862,Bridge -- 1996,Conservative,7.4,6.4,6.9,
+ISR,1863,Centre Party,Liberal,6.0,6.7,3.6,
+ISR,1867,Meimad,Social democracy,3.3,3.5,3.5,
+ISR,1870,Forward,Liberal,6.0,6.7,3.6,
+ISR,1873,Pensioners of Israel,Special issue,,,,
+ISR,2043,Sia'at Ha'Atzma'ut,Social democracy,3.3,3.5,3.5,
+ISR,214,National Religious Party | The Jewish Home,Right-wing,8.6207,3.9035,9.3466,
+ISR,2308,no seat,no family,,,,
+ISR,2320,The Movement,Liberal,6.0,6.7,3.6,
+ISR,2321,There is a Future,Liberal,6.0,6.7,3.6,
+ISR,2322,Jewish Power,Special issue,,,,
+ISR,2323,Green Leaf,Green/Ecologist,2.5,2.5,1.8,
+ISR,2324,Whole Nation,Special issue,,,,
+ISR,2353,Arab Movement for Renewal,Special issue,,,,
+ISR,2361,Herut -- The National Movement,Right-wing,8.8,5.9,8.5,
+ISR,2410,All of Us,Liberal,6.0,6.7,3.6,
+ISR,2411,Together,Right-wing,8.8,5.9,8.5,
+ISR,2421,The Greens,Green/Ecologist,2.5,2.5,1.8,
+ISR,244,Alignment | Labor,Social democracy,3.3,3.5,3.5,
+ISR,249,Banner of the Torah,Conservative,7.4,6.4,6.9,
+ISR,265,Union of Israel,Special issue,,,,
+ISR,2718,New Right,Right-wing,8.8,5.9,8.5,
+ISR,2725,Blue and White,Liberal,6.0,6.7,3.6,
+ISR,2726,Rightwards,Right-wing,8.8,5.9,8.5,
+ISR,2727,Zehut,Right-wing,8.8,5.9,8.5,
+ISR,277,Israel for Immigration,Liberal,6.0,6.7,3.6,
+ISR,2787,Bridge,Liberal,6.0,6.7,3.6,
+ISR,2835,New Hope,Right-wing,8.8,5.9,8.5,
+ISR,2889,Pleasentness,Right-wing,8.8,5.9,8.5,
+ISR,615,One Nation,Social democracy,2.9825,1.7053,4.349,
+ISR,678,The Consolidation,Conservative,6.6788,7.4912,6.0,
+ISR,732,New Communist List | Democratic Front,Communist/Socialist,1.3,1.4,3.0,
+ISR,788,Sephardi Guardians,Special issue,7.0417,2.1637,9.6842,
+ISR,805,National Democratic Assembly,Special issue,0.7407,2.4163,5.2322,
+ITA,1005,Democracy is Freedom -- The Daisy,Liberal,3.9893,4.2347,4.7353,9.2935
+ITA,1030,South Tyrol Peoples Party,Special issue,5.4,5.085,6.9,7.6083
+ITA,1040,Movement for Autonomy,Christian democracy,6.2,5.7,7.1,8.3
+ITA,1048,Centre Left,Social democracy,3.3,3.5,3.5,8.1
+ITA,1063,Autonomy Liberty Democracy,Liberal,6.0,6.7,3.6,8.7
+ITA,1145,Union of republican democrats,Christian democracy,6.2,5.7,7.1,8.3
+ITA,1246,The Union-Prodi,Social democracy,2.6216,2.9825,2.0943,7.834
+ITA,1278,Italian Democratic Socialists | Party,Social democracy,3.9895,4.3906,3.208,7.0658
+ITA,1287,New PSI,Social democracy,5.43,5.67,3.57,7.2167
+ITA,1296,Radicals,Social democracy,3.9732,7.0784,0.3338,8.2722
+ITA,1321,Communist Refoundation Party,Communist/Socialist,0.8849,0.6622,1.9878,3.5439
+ITA,1436,North League,Right-wing,7.8007,7.9138,7.9003,3.2088
+ITA,1477,Future and Freedom for Italy,Conservative,7.4,6.4,6.9,7.9
+ITA,1552,no party affiliation,no family,,,,
+ITA,1661,Party of the Italian Communists,Communist/Socialist,1.0423,0.9046,1.2704,4.5086
+ITA,176,Fiamma Tricolore,Right-wing,9.5762,4.0871,9.4093,1.8252
+ITA,2001,Prime minister,no family,,,,
+ITA,2153, Democratic Centre,Liberal,6.0,6.7,3.6,8.7
+ITA,2154,Brothers of Italy,Right-wing,8.8,5.9,8.5,2.3
+ITA,2155,Five Star Movement,no family,,,,
+ITA,2156,Civic Choice,Liberal,6.0,6.7,3.6,8.7
+ITA,2158,Stop the Decline,Liberal,6.0,6.7,3.6,8.7
+ITA,226,Union / Centre,Christian democracy,6.1092,5.1181,7.8038,7.128
+ITA,2268,New Centre-Right | Popular Alternative,Conservative,7.4,6.4,6.9,7.9
+ITA,2302,one seat,no family,,,,
+ITA,2671,South American Union Italian Emigrants,Conservative,7.4,6.4,6.9,7.9
+ITA,2737,More Europe,Liberal,6.0,6.7,3.6,8.7
+ITA,2794,Italy Alive,Liberal,6.0,6.7,3.6,8.7
+ITA,2861,Together for the Future,no family,,,,
+ITA,2873,Italexit for Italy,Conservative,7.4,6.4,6.9,7.9
+ITA,2874,Sovereign and Popular Italy,Right-wing,8.8,5.9,8.5,2.3
+ITA,373,National Alliance,Conservative,8.0871,4.9559,8.8366,4.3389
+ITA,382,Democratic Party,Social democracy,2.6216,2.9825,2.0943,7.834
+ITA,399,Union of Democrats for Europe,Christian democracy,5.285,4.61,7.195,8.3833
+ITA,465,Left,Communist/Socialist,1.3,1.4,3.0,3.3
+ITA,488,European Democracy,Christian democracy,6.2,5.7,7.1,8.3
+ITA,52,Christian Democracy for the Autonomies,Christian democracy,6.2,5.7,7.1,8.3
+ITA,596,Go Italy -- The People of Freedom,Conservative,7.1459,7.913,6.5983,5.0946
+ITA,627,Christian Democratic Centre / United Christian Democrats,Christian democracy,5.9067,5.1167,7.5833,8.5
+ITA,630,Dini List -- Italian Renewal,Social democracy,5.0317,5.9683,5.515,8.6833
+ITA,693,Italy of Values,Liberal,4.8712,4.5664,5.5255,7.1295
+ITA,809,Democrats of the Left,Social democracy,2.6277,3.1839,2.5869,9.069
+ITA,825,others,no family,,,,
+ITA,840,Popular Party for Prodi,Christian democracy,6.2,5.7,7.1,8.3
+ITA,910,Federation of the Greens,Green/Ecologist,2.3725,2.9566,1.0675,7.4499
+ITA,927,Associative Italians Abroad,Special issue,,,,
+ITA,93,Republican Party,Liberal,4.9704,5.8,5.1667,9.0278
+ITA,961,Democracy,Christian democracy,4.0844,4.3378,4.41,9.6944
+ITA,974,Valdotanian Union,Special issue,,,,
+ITA,99,Christian Democratic Centre,Christian democracy,5.9067,5.1167,7.5833,8.5
+JPN,1055,others,no family,,,,
+JPN,1124,Your Party,Liberal,6.0,6.7,3.6,
+JPN,1165,Liberal League,Liberal,6.0,6.7,3.6,
+JPN,1175,New Party Nippon,Liberal,6.0,6.7,3.6,
+JPN,1193,Liberal Democratic Party,Conservative,8.0252,4.8094,7.7747,
+JPN,1382,New Conservative Party,Conservative,8.2675,5.6522,8.032,
+JPN,1540,Japan Communist Party,Communist/Socialist,1.148,4.072,4.032,
+JPN,1812,vacancy,no family,,,,
+JPN,2069,People's Life First Party,Conservative,7.4,6.4,6.9,
+JPN,2136,Japan Restoration Party,Conservative,7.4,6.4,6.9,
+JPN,2141,no seat,no family,,,,
+JPN,2404,Party for Future Generations,Right-wing,8.8,5.9,8.5,
+JPN,247,New Party Daichi,Liberal,6.0,6.7,3.6,
+JPN,2656,Party of Hope,Conservative,7.4,6.4,6.9,
+JPN,2657,Constitutional Democratic Party of Japan,Social democracy,3.3,3.5,3.5,
+JPN,2785,Tomorrow Party of Japan,Green/Ecologist,2.5,2.5,1.8,
+JPN,2826,Japan Innovation Party,Right-wing,8.8,5.9,8.5,
+JPN,2827,Democratic Party for the People,Conservative,7.4,6.4,6.9,
+JPN,2828,Reiwa Shinsengumi,Communist/Socialist,1.3,1.4,3.0,
+JPN,2851,Happiness Realization Party,Right-wing,8.8,5.9,8.5,
+JPN,2853,The party that protects those who do not pay the NHK license fee,Special issue,,,,
+JPN,4,People's New Party,Conservative,7.4,6.4,6.9,
+JPN,439,Democratic Party of Japan,Conservative,5.5717,5.06,4.1541,
+JPN,462,Liberal Party,Conservative,7.4,6.4,6.9,
+JPN,695,Independent's Club,no family,,,,
+JPN,837,Komeito Party,Conservative,5.6871,4.4549,6.25,
+JPN,905,no party affiliation,no family,,,,
+JPN,940,Japan Socialist Party,Social democracy,2.6344,4.1367,3.121,
+LTU,1045,Homeland Union,Conservative,7.4004,6.694,7.1939,9.7006
+LTU,1056,Socialist People's Front,Communist/Socialist,1.3,1.4,3.0,3.3
+LTU,1261,Lithuanian Womens Party -- New Democratic Party,Social democracy,3.2,3.75,6.25,7.0
+LTU,1277,Lithuanian Social Democratic Party,Social democracy,3.1972,3.8262,5.2732,9.0702
+LTU,1408,Lithuanian Social Democratic Party -- 1989,Social democracy,4.0,3.5,3.5,8.1
+LTU,1421,Order and Justice -- Liberal Democratic Party,Conservative,5.2955,4.9093,7.2116,7.3184
+LTU,1502,National Resurrection Party,Liberal,6.0,6.7,3.6,8.7
+LTU,1562,Lithuanian Liberty Union,Right-wing,7.8,0.75,8.75,2.0
+LTU,1632,Lithuanian Peasant Party,Agrarian,2.645,2.75,8.0,6.525
+LTU,191,Lithuanian Peasant Union,Agrarian,3.2687,3.7152,5.8514,5.2909
+LTU,2007,United Faction of the Liberal and Centre Union and Nations Resurrection Party,Conservative,7.4,6.4,6.9,7.9
+LTU,2039,"Peoples Union ""For Just Lithuania""",to be coded,,,,
+LTU,21,Lithuanian Green Party,Green/Ecologist,2.5,2.5,1.8,6.5
+LTU,2121,The Way of Courage,Special issue,,,,
+LTU,2122,YES -- Homeland Revival and Perspective,Liberal,6.0,6.7,3.6,8.7
+LTU,2634,Lithuanian Freedom Union (Liberals),Liberal,6.0,6.7,3.6,8.7
+LTU,2635,Lithuanian Centre Party,Right-wing,8.8,5.9,8.5,2.3
+LTU,2636,no seat,no family,,,,
+LTU,2762,PEC -- Vytautas Radzvilas: Recover the State!,no family,,,,
+LTU,2763,Social Democratic Labour Party of Lithuania,Social democracy,3.3,3.5,3.5,8.1
+LTU,28,Election Action of Lithuania's Poles,Special issue,3.865,3.9,7.325,7.4667
+LTU,2805,Freedom Party,Liberal,6.0,6.7,3.6,8.7
+LTU,383,Young Lithuania,Right-wing,9.8,2.25,8.6,1.0
+LTU,482,Liberals Movement of the Republic of Lithuania,Liberal,7.7562,8.2271,2.8532,9.2244
+LTU,493,Christian Democratic Union,Christian democracy,6.2,5.7,7.1,8.3
+LTU,519,Democratic Labour Party of Lithuania,Social democracy,3.3333,3.5,3.5,8.1
+LTU,58,no party affiliation,no family,,,,
+LTU,581,Labour Party,Liberal,3.86,4.29,5.8,8.5667
+LTU,652,one seat,no family,,,,
+LTU,675,Lithuanian Christian Democrats,Christian democracy,6.2385,4.258,8.6845,7.5032
+LTU,676,Civic Democratic Party,Liberal,6.0,6.7,3.6,8.7
+LTU,709,Christian Conservative Social Union,Christian democracy,6.4579,5.9079,7.3618,7.5877
+LTU,856,New Union (Social Liberals),Liberal,4.2686,4.1125,4.9071,8.6647
+LTU,863,Lithuanian Russian Union,Special issue,2.2,2.25,7.0,5.3333
+LTU,887,Centre Union of Lithuania,Liberal,4.8833,6.25,4.2,9.0
+LTU,983,Liberal and Centre Union,Liberal,7.7562,8.2271,2.8532,9.2244
+LUX,1234,Christian Social People's Party,Christian democracy,6.4474,6.7105,7.5,
+LUX,151,Communist Party of Luxembourg,Communist/Socialist,1.3,1.4,3.0,
+LUX,1582,Action Committee Pensions | Alternative Democratic Reform Party,Conservative,8.8158,6.3158,7.5,
+LUX,2256,Pirate Party Luxembourg,Special issue,,,,
+LUX,2257,Party for Full Democracy,Conservative,7.4,6.4,6.9,
+LUX,310,The Greens,Green/Ecologist,2.5,1.5789,0.7895,
+LUX,457,The Left,Communist/Socialist,0.5263,0.8772,1.0526,
+LUX,701,Luxembourg Socialist Workers' Party,Social democracy,3.2895,3.9474,1.3158,
+LUX,967,Democratic Party,Liberal,6.5789,7.3684,2.7632,
+LVA,1001,Latvian Green Party,Green/Ecologist,4.6711,5.0216,6.0661,6.5643
+LVA,1043,Latvia's First Party,Conservative,6.3377,6.8461,8.4916,8.1287
+LVA,1100,Harmony,Social democracy,3.0,3.25,4.25,7.5
+LVA,1294,New Democrats,Conservative,7.4,6.4,6.9,7.9
+LVA,1518,New Era,Conservative,7.3026,7.0789,5.6407,8.7865
+LVA,1520,For Human Rights in a United Latvia,Social democracy,1.25,2.1093,5.5837,4.8684
+LVA,1608,Social Democratic Party,Social democracy,3.3,3.5,3.5,8.1
+LVA,1656,Latvian Social Democratic Workers' Party,Social democracy,2.5,2.625,6.835,6.875
+LVA,1666,Unity,Conservative,7.4,6.4,6.9,7.9
+LVA,1667,For a Good Latvia,Conservative,7.4,6.4,6.9,7.9
+LVA,1942,Reform Party,Conservative,7.4,6.4,6.9,7.9
+LVA,2365,For Latvia from the Heart,Conservative,7.4,6.4,6.9,7.9
+LVA,2366,Latvian Association of Regions,Conservative,7.4,6.4,6.9,7.9
+LVA,2367,United for Latvia,Liberal,6.0,6.7,3.6,8.7
+LVA,2392,For Latvia's Development,Liberal,6.0,6.7,3.6,8.7
+LVA,257,Social Democratic Welfare Party,Social democracy,3.3,3.5,3.5,8.1
+LVA,2715,Who owns the state?,Right-wing,8.8,5.9,8.5,2.3
+LVA,2716,The Progressive,Social democracy,3.3,3.5,3.5,8.1
+LVA,2717,New Conservative Party,Conservative,7.4,6.4,6.9,7.9
+LVA,2875,For Stability!,Special issue,,,,
+LVA,2876,Latvia First,Right-wing,8.8,5.9,8.5,2.3
+LVA,2877,Republic,Social democracy,3.3,3.5,3.5,8.1
+LVA,2878,Development/For!,Special issue,,,,
+LVA,288,no party affiliation,no family,,,,
+LVA,2880,For Each and Every One,Right-wing,8.8,5.9,8.5,2.3
+LVA,2881,People's Servants for Latvia,Special issue,,,,
+LVA,2882,Sovereign Power,Special issue,,,,
+LVA,2883,Power of the People,to be coded,,,,
+LVA,32,National Harmony Party,Liberal,1.864,2.1751,5.2767,5.7675
+LVA,445,Civic Union,Conservative,7.4,6.4,6.9,7.9
+LVA,466,Green and Farmers' Union,Agrarian,5.2632,5.3947,6.1184,6.7763
+LVA,521,National Alliance / For Fatherland and Freedom / LNNK,Right-wing,8.2588,6.4433,7.4251,7.0102
+LVA,526,Latvian Way,Liberal,6.125,7.165,4.835,10.0
+LVA,550,New Era Party,Conservative,7.4,6.4,6.9,7.9
+LVA,662,Latvian First Party / Latvian Way Party,Conservative,7.4,6.4,6.9,7.9
+LVA,801,All For Latvia!,Conservative,7.4,6.4,6.9,7.9
+LVA,811,People's Party,Conservative,7.7544,7.7942,6.1316,9.0205
+LVA,956,Light of Latgale,Special issue,,,,
+MLT,1003,Malta Labour Party,Social democracy,4.2105,5.1128,6.3158,
+MLT,360,Democratic Alternative,Green/Ecologist,3.7895,3.2632,4.6316,
+MLT,984,Nationalist Party,Conservative,5.7143,4.6617,6.9173,
+NLD,112,General Senior Union | United Seniors Party,Special issue,,,,
+NLD,1206,ChristianUnion,Christian democracy,6.1732,4.6769,8.6005,4.4157
+NLD,1251,Political Reformed Party,Conservative,8.7531,6.3487,9.7744,2.9307
+NLD,1409,People's Party for Freedom and Democracy,Liberal,7.3482,7.8979,4.3887,5.9471
+NLD,1501,Party for Freedom,Right-wing,8.8,8.29,6.57,0.9167
+NLD,2109,50PLUS,Special issue,,,,
+NLD,2110,no seat,no family,,,,
+NLD,2288,one seat,no family,,,,
+NLD,235,Christian Democratic Appeal,Christian democracy,5.9376,5.8848,6.6882,7.7157
+NLD,2641,Think,Social democracy,3.3,3.5,3.5,8.1
+NLD,2642,Forum for Democracy,Right-wing,8.8,5.9,8.5,2.3
+NLD,2735,Volt Netherlands,Special issue,,,,
+NLD,2823,Right Answer 2021,Right-wing,8.8,5.9,8.5,2.3
+NLD,2824,Farmer-Citizen Movement,Agrarian,5.3,4.9,6.5,5.4
+NLD,345,Democrats 66,Liberal,4.5066,4.9917,1.7625,8.6233
+NLD,357,Socialist Party,Communist/Socialist,1.3682,1.0421,4.2099,2.5049
+NLD,456,Fortuyn List,Right-wing,8.5609,8.0776,4.7759,2.5798
+NLD,674,no party affiliation,no family,,,,
+NLD,742,Labour Party,Social democracy,3.6118,3.868,3.2028,7.9904
+NLD,744,Livable Netherlands,Right-wing,8.8,5.9,8.5,2.3
+NLD,756,GreenLeft,Green/Ecologist,2.0454,2.1108,1.644,6.1973
+NLD,990,Party for the Animals,Special issue,,,,
+NOR,104,Norwegian Labour Party,Social democracy,3.3706,2.9574,2.7105,8.2933
+NOR,1435,Conservative Party,Conservative,7.8994,8.2957,3.584,9.5074
+NOR,1538,Christian Democratic Party,Christian democracy,5.8516,4.5865,9.198,3.1003
+NOR,1638,Red Electoral Alliance,Communist/Socialist,0.4089,0.5764,1.0,0.4511
+NOR,2254,Green Party,Green/Ecologist,2.5,2.5,1.8,6.5
+NOR,2816,Democrats,Conservative,7.4,6.4,6.9,7.9
+NOR,351,Progress Party,Right-wing,8.7595,7.5,5.5388,6.119
+NOR,474,one seat,no family,,,,
+NOR,647,Liberal Party of Norway,Liberal,5.1467,5.9148,3.2581,4.0766
+NOR,702,Centre Party,Agrarian,4.6565,2.807,5.7644,0.188
+NOR,733,Pensioners Party,Special issue,,,,
+NOR,780,Coastal Party,Conservative,7.4,6.4,6.9,7.9
+NOR,81,Socialist Left Party,Communist/Socialist,1.5839,1.3534,1.5038,1.1568
+NZL,114,Maori Party,Special issue,,,,
+NZL,1171,Green Party,Green/Ecologist,1.7729,2.2438,1.8,
+NZL,1313,United Future New Zealand,Liberal,6.1219,6.3158,3.6,
+NZL,1444,Alliance,Social democracy,2.0757,1.1111,3.5,
+NZL,1972,Mana Party,Special issue,,,,
+NZL,1973,Conservatice Party of New Zealand,Conservative,7.4,6.4,6.9,
+NZL,2070,no seat,no family,,,,
+NZL,2072,Christian Heritage Party of New Zealand,Christian democracy,6.2,5.7,7.1,
+NZL,2074,Outdoor Recreation New Zealand,Special issue,,,,
+NZL,2650,The Opportunities Party,Liberal,6.0,6.7,3.6,
+NZL,2806,New Conservative Party,Right-wing,8.8,5.9,8.5,
+NZL,354,Progressive Party,Social democracy,3.0194,2.6316,3.5,
+NZL,617,ACT New Zealand,Liberal,9.0263,8.9751,3.6,
+NZL,878,Labour Party,Social democracy,4.483,3.9889,3.5,
+NZL,891,New Zealand First Party,Conservative,6.0388,5.4386,6.9,
+NZL,997,National Party,Conservative,6.7193,7.2299,6.9,
+POL,1011,no party affiliation,no family,,,,
+POL,1104,Democratic | Freedom | Union,Liberal,5.2295,7.3132,2.1208,9.7641
+POL,1140,Social Democracy of Poland,Social democracy,3.0,4.67,1.43,8.5667
+POL,1355,Solidarity Electoral Action,Christian democracy,7.1286,4.6148,8.1427,7.0491
+POL,148,Movement for the Reconstruction of Poland,Conservative,5.7895,5.2632,6.9,2.6316
+POL,1549,Real Politics Union | Congress of the New Right,Conservative,9.7368,9.4737,8.1579,2.3684
+POL,1679,Poland is the Most Important,Conservative,7.4,6.4,6.9,7.9
+POL,180,Left and Democrats,Social democracy,2.6486,2.6316,2.1902,9.1283
+POL,1945,Your (Palikot's) Movement,Liberal,6.0,6.7,3.6,8.7
+POL,207,Self-Defense of the Republic Poland,Agrarian,3.997,2.008,7.3253,2.1473
+POL,2287,one seat,no family,,,,
+POL,2398,National Movement ,Right-wing,8.8,5.9,8.5,2.3
+POL,2600,Kukiz'15,Right-wing,8.8,5.9,8.5,2.3
+POL,2601,Modern,Liberal,6.0,6.7,3.6,8.7
+POL,2602,Coalition for the Renewal of the Republic -- Liberty and Hope,Conservative,7.4,6.4,6.9,7.9
+POL,2625,Together Party,Social democracy,3.3,3.5,3.5,8.1
+POL,2740,Spring,Social democracy,3.3,3.5,3.5,8.1
+POL,2790,Left Together,Social democracy,3.3,3.5,3.5,8.1
+POL,512,Civic Platform,Conservative,6.2355,8.236,3.7102,9.3705
+POL,528,Law and Justice,Conservative,7.6997,4.0466,8.2514,5.4813
+POL,629,Democratic Left Alliance,Social democracy,2.8299,3.8505,1.8801,9.0872
+POL,664,Polish People's Party,Agrarian,4.1856,2.8942,6.5491,5.3573
+POL,838,Labour Union,Social democracy,2.0348,1.8898,1.3726,8.7816
+POL,900,German minority,Special issue,,,,
+POL,987,League of Polish Families,Conservative,8.8852,2.3257,9.7522,0.2933
+PRT,107,Popular Monarchist Party,Conservative,7.4,6.4,6.9,5.0
+PRT,1273,Social Democratic Party,Liberal,6.2949,6.8488,7.0224,8.4691
+PRT,1295,Unified Democratic Coalition,Communist/Socialist,2.2233,1.48,2.6433,3.2
+PRT,1535,Ecology Party -- Greens,Green/Ecologist,1.6579,2.1711,1.3158,3.8596
+PRT,1781,Party for Animals and Nature,Green/Ecologist,2.5,2.5,1.8,6.5
+PRT,2374,Livre,Social democracy,3.3,3.5,3.5,8.1
+PRT,251,Democratic and Social Centre -- People's Party,Christian democracy,8.0222,8.1963,8.9916,4.3909
+PRT,2597,Republican Democratic Party,Conservative,7.4,6.4,6.9,7.9
+PRT,2756,Alliance,Liberal,6.0,6.7,3.6,8.7
+PRT,2788,Liberal Initiative,Liberal,6.0,6.7,3.6,8.7
+PRT,2789,Enough,Right-wing,8.8,5.9,8.5,2.3
+PRT,281,Communist Party of the Portuguese Workers / Reorganizative Movement of the Party of the Proletariat,Communist/Socialist,1.3,1.4,3.0,3.3
+PRT,2864,no seat,no family,,,,
+PRT,514,Portuguese Communist Party,Communist/Socialist,2.1754,1.6343,1.6291,2.0461
+PRT,557,Bloc of the Left,Communist/Socialist,1.6425,1.9526,1.267,3.7018
+PRT,725,Socialist Party,Social democracy,4.0492,4.2716,3.5411,9.2233
+ROU,1015,National Liberal Party,Liberal,6.0543,7.245,3.5474,9.6079
+ROU,1120,Social Democratic Party,Social democracy,3.2325,2.4518,6.2794,8.6459
+ROU,1332,New Generation Party -- Christian Democratic,Christian democracy,6.2,5.7,7.1,8.3
+ROU,1601,Romanian Social Democratic Party,Social democracy,3.3,3.5,3.5,8.1
+ROU,2002,National Union for the Progress of Romania,Social democracy,3.3,3.5,3.5,8.1
+ROU,2040,Alliance for Romania,Social democracy,3.3,3.5,3.5,8.1
+ROU,2041,National Liberal Party Campeanu,Liberal,6.0,6.7,3.6,8.7
+ROU,2129,Civic Force,Christian democracy,6.2,5.7,7.1,8.3
+ROU,2130,People's Party -- Dan Diaconescu,Communist/Socialist,1.3,1.4,3.0,3.3
+ROU,2395,People's Movement Party,Christian democracy,6.2,5.7,7.1,8.3
+ROU,2646,"Save Romania Union | Party of Liberty, Unity and Solidarity",Liberal,6.0,6.7,3.6,8.7
+ROU,2647,Liberal Reformist Party | Alliance of Liberals and Democrats,Liberal,6.0,6.7,3.6,8.7
+ROU,2648,United Romania Party,Right-wing,8.8,5.9,8.5,2.3
+ROU,2746,PRO Romania,Liberal,6.0,6.7,3.6,8.7
+ROU,2807,Alliance for the Unity of Romanians,Right-wing,8.8,5.9,8.5,2.3
+ROU,356,Romanian Democratic Convention,Christian democracy,6.29,6.71,4.43,9.7667
+ROU,419,Democratic Party,Liberal,5.3875,5.1868,3.9647,9.5309
+ROU,425,Romanian ethnic minorities parties,no family,,,,
+ROU,5,Humanist Party | Conservative Party,Conservative,4.7622,4.7538,6.2779,8.2028
+ROU,648,Romanian National Unity Party,Right-wing,5.5556,5.9,8.5,2.3
+ROU,713,Greater Romania Party,Right-wing,6.6618,2.1497,9.5131,4.9488
+ROU,761,no party affiliation,no family,,,,
+ROU,792,Romanian Ecologist Party,Green/Ecologist,2.5,2.5,1.8,6.5
+ROU,888,Christian-Democratic National Peasants' Party,Christian democracy,5.5341,4.9393,6.8421,8.8158
+ROU,948,Democratic Union of Hungarians in Romania,Conservative,6.016,5.9825,3.8813,9.4801
+ROU,958,Democratic Liberal Party,Liberal,5.3875,5.1868,3.9647,9.5309
+SVK,1072,Slovak National Party,Right-wing,7.0198,4.5191,8.46,3.838
+SVK,1142,Movement for a Democratic Slovakia,Conservative,4.8914,4.8199,5.9161,7.2855
+SVK,1200,Alliance of the New Citizen,Liberal,7.2404,7.945,1.9712,9.4714
+SVK,131,Slovak Democratic and Christian Union -- Democratic Party,Christian democracy,7.3591,7.4401,5.0433,9.3905
+SVK,1359,no party affiliation,no family,,,,
+SVK,1415,Party of the Democratic Left,Communist/Socialist,3.2398,2.5658,1.9079,7.7961
+SVK,1432,Christian Democratic Movement,Christian democracy,7.1082,6.9698,8.8217,6.6998
+SVK,1460,Freedom and Solidarity,Liberal,6.0,6.7,3.6,8.7
+SVK,1615,People's Union -- Liberal Party,Conservative,7.3684,5.2632,6.3158,9.4737
+SVK,1620,Most-Hid,Conservative,7.4,6.4,6.9,7.9
+SVK,1645,Civic Conservative Party,Conservative,8.4211,8.4211,8.4211,2.6316
+SVK,1759,Ordinary People and Independent,Conservative,7.4,6.4,6.9,7.9
+SVK,20,Real Slovak National Party,Right-wing,8.5,3.75,8.62,3.45
+SVK,2013,"Change from the Bottom, DU",Liberal,6.0,6.7,3.6,8.7
+SVK,2015,99 Percent -- Civic Voice,Communist/Socialist,1.3,1.4,3.0,3.3
+SVK,2160,Movement for Democracy,Conservative,7.4,6.4,6.9,7.9
+SVK,220,Direction -- Social Democracy,Social democracy,3.3799,3.5124,3.6548,7.1697
+SVK,2317,Party of the Democratic Left -- 2005,Social democracy,3.3,3.5,3.5,8.1
+SVK,2391,Nation and Justice -- Our Party,Right-wing,8.8,5.9,8.5,2.3
+SVK,2623,We are family -- Boris Kollar,Right-wing,8.8,5.9,8.5,2.3
+SVK,2624,Network,Conservative,7.4,6.4,6.9,7.9
+SVK,2751,Progressive Slovakia,Liberal,6.0,6.7,3.6,8.7
+SVK,2752,TOGETHER -- Civic Democracy,Liberal,6.0,6.7,3.6,8.7
+SVK,2796,For the People,Liberal,6.0,6.7,3.6,8.7
+SVK,2797,Good Choice,Social democracy,3.3,3.5,3.5,8.1
+SVK,2798,Homeland,Right-wing,8.8,5.9,8.5,2.3
+SVK,44,Communist Party of Slovakia,Communist/Socialist,0.5275,0.937,4.5302,3.5075
+SVK,559,Hungarian Coalition,Conservative,6.5005,6.0172,6.1761,9.3803
+SVK,586,People's Party Our Slovakia,Right-wing,8.8,5.9,8.5,2.3
+SVK,64,Social Democratic Alternative,Social democracy,3.0526,2.5965,1.7544,8.1754
+SVK,752,Free Forum,Liberal,5.46,6.58,3.18,7.95
+SVN,1047,New Slovenia -- Christian People's Party,Christian democracy,7.9345,5.9719,8.3998,8.4866
+SVN,1252,Liberal Democracy of Slovenia,Liberal,3.7351,4.6316,2.5756,9.1901
+SVN,1370,no party affiliation,no family,,,,
+SVN,1512,Youth Party of Slovenia,Green/Ecologist,4.2263,4.2719,2.7009,7.1388
+SVN,1587,Democratic Party of Pensioners of Slovenia,Special issue,3.2292,3.225,5.0708,7.0936
+SVN,16,Slovenian People's Party,Christian democracy,6.6953,5.0282,7.6299,6.8549
+SVN,1619,Greens of Slovenia,Green/Ecologist,2.5,2.5,1.8,6.5
+SVN,179,Slovenian Democratic Party,Christian democracy,6.9996,5.6339,6.7947,8.804
+SVN,1946,Party Lime Tree,Right-wing,8.8,5.9,8.5,2.3
+SVN,1987,Zoran Jankovic's List -- Positive Slovenia,Social democracy,3.3,3.5,3.5,8.1
+SVN,1988,Civic List,Liberal,6.0,6.7,3.6,8.7
+SVN,1989,Party for Sustainable Development of Slovenia,Social democracy,3.3,3.5,3.5,8.1
+SVN,199,Italian national community,Special issue,,,,
+SVN,2019,Slovenia is Ours,Special issue,,,,
+SVN,2333,Modern Center Party,Social democracy,3.3,3.5,3.5,8.1
+SVN,2334,United Left,Communist/Socialist,1.3,1.4,3.0,3.3
+SVN,2337,Alliance of Alenka Bratusek,Social democracy,3.3,3.5,3.5,8.1
+SVN,2338,Slovenian Pirate Party,Special issue,,,,
+SVN,2668,List of Marjan Sarec,Social democracy,3.3,3.5,3.5,8.1
+SVN,2669,Good Country,Social democracy,3.3,3.5,3.5,8.1
+SVN,2670,The Left,Communist/Socialist,1.3,1.4,3.0,3.3
+SVN,2856,Freedom Movement,Social democracy,3.3,3.5,3.5,8.1
+SVN,2865,Vesna -- the Green Party,Green/Ecologist,2.5,2.5,1.8,6.5
+SVN,2866,Our Country,Green/Ecologist,2.5,2.5,1.8,6.5
+SVN,2884,Let's Connect Slovenia ,Conservative,7.4,6.4,6.9,7.9
+SVN,2885,Resni.ca,Special issue,,,,
+SVN,2886,Healthy Society Movement,Special issue,,,,
+SVN,326,For Real,Social democracy,3.3,3.5,3.5,8.1
+SVN,380,Active Slovenia,Liberal,4.6,3.8,2.6,7.3333
+SVN,65,Hungarian national community,Special issue,,,,
+SVN,706,United List -- Social Democrats,Social democracy,3.0637,3.8001,2.9642,8.1513
+SVN,981,Slovenian National Party,to be coded,4.7941,4.3938,6.0148,2.6754
+SWE,1154,Greens,Green/Ecologist,3.3789,3.3866,2.5198,0.9875
+SWE,1461,Centre Party,Agrarian,5.8084,5.9903,6.0583,5.5679
+SWE,1521,Feminist Initiative,Special issue,,,,
+SWE,1546,Sweden Democrats,Right-wing,8.8,5.9,8.5,2.3
+SWE,2405,no seat,no family,,,,
+SWE,282,Christian Democrats,Christian democracy,7.195,6.7938,7.9997,7.8597
+SWE,657,Moderate Party,Conservative,7.8907,8.4089,5.6977,8.5872
+SWE,721,Pirate Party,Special issue,,,,
+SWE,882,Left Party (Communists),Communist/Socialist,1.5464,1.4121,2.4562,1.2042
+SWE,892,People's Party,Liberal,6.2906,7.3062,2.8515,9.4643
+SWE,904,Social Democrats,Social democracy,3.4447,3.5655,4.4407,7.4445
+TUR,1141,Right Path Party,Conservative,6.8239,5.2047,7.6316,6.7057
+TUR,1315,Felicity Party,Conservative,7.4,6.4,6.9,7.9
+TUR,1334,Motherland Party,Conservative,6.213,5.7287,5.8991,9.2308
+TUR,1399,no party affiliation,no family,,,,
+TUR,1647,Young Party,Right-wing,8.3821,6.2657,7.5731,2.5359
+TUR,2304,New Turkey Party,Social democracy,3.3,3.5,3.5,8.1
+TUR,2305,People's Democracy Party,Communist/Socialist,2.2267,2.5329,5.0175,8.5088
+TUR,240,Great Union Party,Right-wing,8.8,5.9,8.5,2.3
+TUR,2572,Peoples' Democratic Party,Communist/Socialist,1.3,1.4,3.0,3.3
+TUR,2702,Iyi Party,Right-wing,8.8,5.9,8.5,2.3
+TUR,2895,Party of Greens and the Left Future,Green/Ecologist,2.5,2.5,1.8,6.5
+TUR,2896,Worker's Party of Turkey,Communist/Socialist,1.3,1.4,3.0,3.3
+TUR,2897,New Welfare Party,Special issue,,,,
+TUR,2898,Victory Party,Right-wing,8.8,5.9,8.5,2.3
+TUR,329,Democratic Left Party,Social democracy,3.8377,2.8138,5.2851,5.7263
+TUR,408,National Action Party,Right-wing,8.6587,4.0081,9.4332,2.0078
+TUR,507,Social Democratic Populist Party | Republican People's Party,Social democracy,3.2661,2.8138,4.6154,7.3887
+TUR,901,Justice and Development Party,Conservative,6.9873,3.797,8.499,8.6278

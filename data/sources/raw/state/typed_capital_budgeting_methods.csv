@@ -1,0 +1,8 @@
+technique,pct_always_or_almost_always,mean_score_0_4,mean_score_small,mean_score_large,source
+internal_rate_of_return,75.61,3.09,2.87,3.41,"Graham and Harvey, The theory and practice of corporate finance: evidence from the field, Journal of Financial Economics 60 (2001) 187-243, Table 2, p. 198"
+net_present_value,74.93,3.08,2.83,3.42,"Graham and Harvey, The theory and practice of corporate finance: evidence from the field, Journal of Financial Economics 60 (2001) 187-243, Table 2, p. 198"
+payback_period,56.74,2.53,2.72,2.25,"Graham and Harvey, The theory and practice of corporate finance: evidence from the field, Journal of Financial Economics 60 (2001) 187-243, Table 2, p. 198"
+hurdle_rate,56.94,2.48,2.13,2.95,"Graham and Harvey, The theory and practice of corporate finance: evidence from the field, Journal of Financial Economics 60 (2001) 187-243, Table 2, p. 198"
+sensitivity_analysis,51.54,2.31,2.13,2.56,"Graham and Harvey, The theory and practice of corporate finance: evidence from the field, Journal of Financial Economics 60 (2001) 187-243, Table 2, p. 198"
+earnings_multiple,38.92,1.89,1.79,2.01,"Graham and Harvey, The theory and practice of corporate finance: evidence from the field, Journal of Financial Economics 60 (2001) 187-243, Table 2, p. 198"
+discounted_payback_period,29.45,1.56,1.58,1.55,"Graham and Harvey, The theory and practice of corporate finance: evidence from the field, Journal of Financial Economics 60 (2001) 187-243, Table 2, p. 198"

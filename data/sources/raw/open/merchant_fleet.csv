@@ -1,0 +1,3295 @@
+iso3,year,ship_type,ships,dwt_thousands,gt_thousands,avg_age_years
+AGO,2018,Bulk carriers,0,0,0,
+AGO,2018,Container ships,0,0,0,
+AGO,2018,General cargo,14,13.402,9.838,46.72
+AGO,2018,Oil tankers,8,16.627,9.566,37.82
+AGO,2018,Other types of ships,33,287.704,154.342,23.94
+AGO,2018,Total fleet,55,317.733,173.746,31.76
+AGO,2019,Bulk carriers,0,0,0,
+AGO,2019,Container ships,0,0,0,
+AGO,2019,General cargo,13,12.881,8.889,47.17
+AGO,2019,Oil tankers,8,16.627,9.566,38.82
+AGO,2019,Other types of ships,33,287.704,154.342,24.94
+AGO,2019,Total fleet,54,317.212,172.797,32.35
+AGO,2020,Bulk carriers,0,0,0,
+AGO,2020,Container ships,0,0,0,
+AGO,2020,General cargo,13,12.881,8.889,48.17
+AGO,2020,Oil tankers,8,16.627,9.566,39.82
+AGO,2020,Other types of ships,33,291.439,156.493,25.71
+AGO,2020,Total fleet,54,320.947,174.948,33.21
+ALB,2018,Bulk carriers,1,10.62,6.917,39.92
+ALB,2018,Container ships,0,0,0,
+ALB,2018,General cargo,50,47.436,33.369,41.36
+ALB,2018,Oil tankers,1,0.605,0.463,59.59
+ALB,2018,Other types of ships,15,3.254,10.271,39.61
+ALB,2018,Total fleet,67,61.915,51.02,41.22
+ALB,2019,Bulk carriers,0,0,0,
+ALB,2019,Container ships,0,0,0,
+ALB,2019,General cargo,47,44.073,30.919,41.84
+ALB,2019,Oil tankers,1,0.605,0.463,60.59
+ALB,2019,Other types of ships,19,3.53,11.113,39.24
+ALB,2019,Total fleet,67,48.208,42.495,41.38
+ALB,2020,Bulk carriers,0,0,0,
+ALB,2020,Container ships,0,0,0,
+ALB,2020,General cargo,48,46.462,32.462,42.08
+ALB,2020,Oil tankers,1,0.605,0.463,61.59
+ALB,2020,Other types of ships,19,3.53,11.113,40.24
+ALB,2020,Total fleet,68,50.596,44.038,41.86
+ARE,2018,Bulk carriers,0,0,0,
+ARE,2018,Container ships,2,27.888,22.346,6.67
+ARE,2018,General cargo,106,158.933,128.213,18.27
+ARE,2018,Oil tankers,22,212.328,106.8,22.94
+ARE,2018,Other types of ships,507,421.737,456.573,19.54
+ARE,2018,Total fleet,637,820.886,713.932,19.4
+ARE,2019,Bulk carriers,0,0,0,
+ARE,2019,Container ships,2,27.888,22.346,7.67
+ARE,2019,General cargo,111,187.393,172.41,18.04
+ARE,2019,Oil tankers,17,42.379,26.693,25.2
+ARE,2019,Other types of ships,495,415.756,463.641,20.06
+ARE,2019,Total fleet,625,673.415,685.09,19.8
+ARE,2020,Bulk carriers,0,0,0,
+ARE,2020,Container ships,3,66.388,55.314,10.25
+ARE,2020,General cargo,120,207.95,186.547,18.09
+ARE,2020,Oil tankers,18,42.559,27.025,25.94
+ARE,2020,Other types of ships,492,410.464,472.827,20.46
+ARE,2020,Total fleet,633,727.361,741.713,20.12
+ARG,2018,Bulk carriers,0,0,0,
+ARG,2018,Container ships,1,14.967,12.563,15.34
+ARG,2018,General cargo,8,10.35,6.956,40.53
+ARG,2018,Oil tankers,29,371.613,214.464,35.14
+ARG,2018,Other types of ships,151,173.215,162.617,32.01
+ARG,2018,Total fleet,189,570.144,396.6,32.76
+ARG,2019,Bulk carriers,0,0,0,
+ARG,2019,Container ships,1,14.967,12.563,16.34
+ARG,2019,General cargo,8,10.35,6.956,41.53
+ARG,2019,Oil tankers,30,418.913,242.011,35.4
+ARG,2019,Other types of ships,152,176.495,163.61,32.76
+ARG,2019,Total fleet,191,620.724,425.14,33.45
+ARG,2020,Bulk carriers,0,0,0,
+ARG,2020,Container ships,1,14.967,12.563,17.34
+ARG,2020,General cargo,8,10.35,6.956,42.53
+ARG,2020,Oil tankers,32,558.194,322.076,35.08
+ARG,2020,Other types of ships,159,260.083,218.125,32.98
+ARG,2020,Total fleet,200,843.593,559.72,33.62
+ATG,2018,Bulk carriers,33,1260.93,747.688,10.28
+ATG,2018,Container ships,188,2977.365,2407.854,12.39
+ATG,2018,General cargo,558,4001.189,3082.307,14.12
+ATG,2018,Oil tankers,2,1.53,0.744,35.84
+ATG,2018,Other types of ships,62,289.616,257.182,15.88
+ATG,2018,Total fleet,843,8530.63,6495.775,13.77
+ATG,2019,Bulk carriers,32,1195.631,710.887,11.26
+ATG,2019,Container ships,150,2213.216,1778.951,13.24
+ATG,2019,General cargo,533,3813.636,2939.655,14.93
+ATG,2019,Oil tankers,2,1.53,0.744,36.84
+ATG,2019,Other types of ships,57,253.15,213.181,16.19
+ATG,2019,Total fleet,774,7477.163,5643.418,14.6
+ATG,2020,Bulk carriers,27,877.029,530.976,12.58
+ATG,2020,Container ships,135,1934.865,1555.432,14.3
+ATG,2020,General cargo,501,3547.482,2731.208,15.76
+ATG,2020,Oil tankers,2,1.53,0.744,37.84
+ATG,2020,Other types of ships,53,259.744,216.103,17.03
+ATG,2020,Total fleet,718,6620.65,5034.463,15.52
+AUS,2018,Bulk carriers,4,107.973,75.077,23.8
+AUS,2018,Container ships,0,0,0,
+AUS,2018,General cargo,77,103.55,129.165,26.93
+AUS,2018,Oil tankers,8,19.759,14.014,4.23
+AUS,2018,Other types of ships,475,2011.294,1631.085,22.23
+AUS,2018,Total fleet,564,2242.576,1849.341,22.62
+AUS,2019,Bulk carriers,4,107.973,75.077,24.8
+AUS,2019,Container ships,0,0,0,
+AUS,2019,General cargo,80,108.795,133.551,27.47
+AUS,2019,Oil tankers,7,14.076,10.186,5.11
+AUS,2019,Other types of ships,483,2233.823,1936.217,22.62
+AUS,2019,Total fleet,574,2464.667,2155.031,23.09
+AUS,2020,Bulk carriers,3,56.394,40.784,25.73
+AUS,2020,Container ships,0,0,0,
+AUS,2020,General cargo,78,106.943,146.967,28.5
+AUS,2020,Oil tankers,6,10.47,7.947,5.88
+AUS,2020,Other types of ships,496,2247.879,1953.944,22.96
+AUS,2020,Total fleet,583,2421.686,2149.642,23.54
+AUT,2018,Bulk carriers,0,0,0,
+AUT,2018,Container ships,0,0,0,
+AUT,2018,General cargo,0,0,0,
+AUT,2018,Oil tankers,0,0,0,
+AUT,2018,Other types of ships,1,0.378,0.373,22
+AUT,2018,Total fleet,1,0.378,0.373,22
+AUT,2019,Bulk carriers,0,0,0,
+AUT,2019,Container ships,0,0,0,
+AUT,2019,General cargo,0,0,0,
+AUT,2019,Oil tankers,0,0,0,
+AUT,2019,Other types of ships,1,0.378,0.373,23
+AUT,2019,Total fleet,1,0.378,0.373,23
+AUT,2020,Bulk carriers,0,0,0,
+AUT,2020,Container ships,0,0,0,
+AUT,2020,General cargo,0,0,0,
+AUT,2020,Oil tankers,0,0,0,
+AUT,2020,Other types of ships,1,0.378,0.373,24
+AUT,2020,Total fleet,1,0.378,0.373,24
+AZE,2018,Bulk carriers,0,0,0,
+AZE,2018,Container ships,0,0,0,
+AZE,2018,General cargo,40,170.244,168.273,27.46
+AZE,2018,Oil tankers,44,322.973,220.188,25.44
+AZE,2018,Other types of ships,213,213.856,391.891,31.11
+AZE,2018,Total fleet,297,707.073,780.352,29.78
+AZE,2019,Bulk carriers,0,0,0,
+AZE,2019,Container ships,0,0,0,
+AZE,2019,General cargo,40,170.244,168.273,28.46
+AZE,2019,Oil tankers,47,368.533,247.411,25.53
+AZE,2019,Other types of ships,215,219.537,392.611,31.9
+AZE,2019,Total fleet,302,758.314,808.295,30.46
+AZE,2020,Bulk carriers,0,0,0,
+AZE,2020,Container ships,0,0,0,
+AZE,2020,General cargo,38,165.116,164.989,30.1
+AZE,2020,Oil tankers,45,342.526,231.707,27.29
+AZE,2020,Other types of ships,220,232.792,402.11,32.32
+AZE,2020,Total fleet,303,740.434,798.806,31.29
+BEL,2018,Bulk carriers,18,2459.234,1287.685,8.37
+BEL,2018,Container ships,0,0,0,
+BEL,2018,General cargo,18,76.323,121.149,24.07
+BEL,2018,Oil tankers,21,4509.658,2319.778,9.77
+BEL,2018,Other types of ships,141,1460.584,1536.4,18.37
+BEL,2018,Total fleet,198,8505.799,5265.012,17.07
+BEL,2019,Bulk carriers,21,2987.781,1570.22,8.56
+BEL,2019,Container ships,0,0,0,
+BEL,2019,General cargo,16,73.436,119.291,22.66
+BEL,2019,Oil tankers,23,5656.98,2922.656,7.4
+BEL,2019,Other types of ships,133,1472.067,1487.815,17.9
+BEL,2019,Total fleet,193,10190.264,6099.982,16.03
+BEL,2020,Bulk carriers,21,2775.506,1470.11,7.43
+BEL,2020,Container ships,5,262.305,208.793,10.2
+BEL,2020,General cargo,15,71.42,117.918,22.96
+BEL,2020,Oil tankers,22,5461.164,2829.918,8.78
+BEL,2020,Other types of ships,135,1520.474,1523.403,18.54
+BEL,2020,Total fleet,198,10090.869,6150.142,16.4
+BEN,2018,Bulk carriers,0,0,0,
+BEN,2018,Container ships,0,0,0,
+BEN,2018,General cargo,0,0,0,
+BEN,2018,Oil tankers,0,0,0,
+BEN,2018,Other types of ships,6,0.897,1.292,25.23
+BEN,2018,Total fleet,6,0.897,1.292,25.23
+BEN,2019,Bulk carriers,0,0,0,
+BEN,2019,Container ships,0,0,0,
+BEN,2019,General cargo,0,0,0,
+BEN,2019,Oil tankers,0,0,0,
+BEN,2019,Other types of ships,6,0.897,1.292,26.23
+BEN,2019,Total fleet,6,0.897,1.292,26.23
+BEN,2020,Bulk carriers,0,0,0,
+BEN,2020,Container ships,0,0,0,
+BEN,2020,General cargo,0,0,0,
+BEN,2020,Oil tankers,0,0,0,
+BEN,2020,Other types of ships,6,0.897,1.292,27.23
+BEN,2020,Total fleet,6,0.897,1.292,27.23
+BGD,2018,Bulk carriers,33,1555.006,883.885,20.17
+BGD,2018,Container ships,4,16.234,13.041,14.13
+BGD,2018,General cargo,85,135.262,85.315,30.7
+BGD,2018,Oil tankers,131,324.211,175.269,20.03
+BGD,2018,Other types of ships,103,60.608,53.363,32.88
+BGD,2018,Total fleet,356,2091.321,1210.873,26.24
+BGD,2019,Bulk carriers,36,1741.996,993.892,17.64
+BGD,2019,Container ships,4,16.234,13.041,15.13
+BGD,2019,General cargo,96,175.909,110.153,26.61
+BGD,2019,Oil tankers,138,448.406,244.614,20.42
+BGD,2019,Other types of ships,104,73.587,61.845,33.09
+BGD,2019,Total fleet,378,2456.132,1423.545,25.16
+BGD,2020,Bulk carriers,46,2313.82,1314.835,17.05
+BGD,2020,Container ships,4,16.234,13.041,16.13
+BGD,2020,General cargo,118,254.096,166.935,22.32
+BGD,2020,Oil tankers,144,646.888,368.162,20.98
+BGD,2020,Other types of ships,122,91.842,78.927,30.13
+BGD,2020,Total fleet,434,3322.88,1941.9,23.45
+BGR,2018,Bulk carriers,2,33.617,23.554,6.63
+BGR,2018,Container ships,0,0,0,
+BGR,2018,General cargo,16,45.836,55.383,37.96
+BGR,2018,Oil tankers,8,7.473,4.892,45.65
+BGR,2018,Other types of ships,55,23.536,36.565,38.24
+BGR,2018,Total fleet,81,110.462,120.394,38.13
+BGR,2019,Bulk carriers,5,79.18,53.087,22.64
+BGR,2019,Container ships,0,0,0,
+BGR,2019,General cargo,16,45.637,55.401,38.83
+BGR,2019,Oil tankers,8,7.473,4.892,46.65
+BGR,2019,Other types of ships,54,21.015,34.397,38.56
+BGR,2019,Total fleet,83,153.306,147.777,38.44
+BGR,2020,Bulk carriers,5,79.18,53.087,23.64
+BGR,2020,Container ships,0,0,0,
+BGR,2020,General cargo,15,44.855,54.983,39.76
+BGR,2020,Oil tankers,8,7.473,4.892,47.65
+BGR,2020,Other types of ships,53,20.812,34.413,38.9
+BGR,2020,Total fleet,81,152.32,147.375,38.98
+BHR,2018,Bulk carriers,1,36.7,26.162,27.25
+BHR,2018,Container ships,1,8.918,7.171,19.25
+BHR,2018,General cargo,12,45.732,30.278,32.87
+BHR,2018,Oil tankers,4,2.369,1.323,41.98
+BHR,2018,Other types of ships,239,221.25,218.904,19.21
+BHR,2018,Total fleet,257,314.969,283.838,20.23
+BHR,2019,Bulk carriers,1,36.7,26.162,28.25
+BHR,2019,Container ships,1,8.918,7.171,20.25
+BHR,2019,General cargo,11,39.822,26.263,35.15
+BHR,2019,Oil tankers,4,2.369,1.323,42.98
+BHR,2019,Other types of ships,239,219.312,219.657,19.47
+BHR,2019,Total fleet,256,307.121,280.576,20.55
+BHR,2020,Bulk carriers,0,0,0,
+BHR,2020,Container ships,0,0,0,
+BHR,2020,General cargo,11,39.822,26.263,36.15
+BHR,2020,Oil tankers,4,2.338,1.323,43.98
+BHR,2020,Other types of ships,220,290.281,310.492,20.42
+BHR,2020,Total fleet,235,332.441,338.078,21.56
+BHS,2018,Bulk carriers,329,19932.365,11510.699,10.77
+BHS,2018,Container ships,49,1209.697,1086.237,13.61
+BHS,2018,General cargo,79,307.971,269.273,28.64
+BHS,2018,Oil tankers,269,32702.812,17788.607,9.85
+BHS,2018,Other types of ships,659,22755.626,29829.134,16.38
+BHS,2018,Total fleet,1385,76908.471,60483.95,14.38
+BHS,2019,Bulk carriers,333,19999.415,11588.567,11.19
+BHS,2019,Container ships,49,1251.991,1120.195,13.9
+BHS,2019,General cargo,76,296.295,259.593,29.34
+BHS,2019,Oil tankers,266,32417.175,17625.012,10.22
+BHS,2019,Other types of ships,675,23847.348,31527.596,16.51
+BHS,2019,Total fleet,1399,77812.224,62120.963,14.65
+BHS,2020,Bulk carriers,345,21232.128,12249.048,11.42
+BHS,2020,Container ships,53,1729.65,1572.103,14.62
+BHS,2020,General cargo,69,273.071,237.619,29.93
+BHS,2020,Oil tankers,240,29198.677,15874.379,10.7
+BHS,2020,Other types of ships,665,25199.979,33387.092,16.77
+BHS,2020,Total fleet,1372,77633.505,63320.241,14.94
+BLR,2018,Bulk carriers,0,0,0,
+BLR,2018,Container ships,0,0,0,
+BLR,2018,General cargo,0,0,0,
+BLR,2018,Oil tankers,0,0,0,
+BLR,2018,Other types of ships,4,1.069,1.201,48.42
+BLR,2018,Total fleet,4,1.069,1.201,48.42
+BLR,2019,Bulk carriers,0,0,0,
+BLR,2019,Container ships,0,0,0,
+BLR,2019,General cargo,0,0,0,
+BLR,2019,Oil tankers,0,0,0,
+BLR,2019,Other types of ships,4,1.069,1.201,49.42
+BLR,2019,Total fleet,4,1.069,1.201,49.42
+BLR,2020,Bulk carriers,0,0,0,
+BLR,2020,Container ships,0,0,0,
+BLR,2020,General cargo,0,0,0,
+BLR,2020,Oil tankers,0,0,0,
+BLR,2020,Other types of ships,4,1.069,1.201,50.42
+BLR,2020,Total fleet,4,1.069,1.201,50.42
+BLZ,2018,Bulk carriers,55,1582.715,949.459,20.15
+BLZ,2018,Container ships,5,31.762,24.119,22.65
+BLZ,2018,General cargo,390,1182.389,786.418,26.6
+BLZ,2018,Oil tankers,55,117.978,71.829,32.39
+BLZ,2018,Other types of ships,251,305.585,285.054,31.82
+BLZ,2018,Total fleet,756,3220.429,2116.879,28.26
+BLZ,2019,Bulk carriers,56,1613.509,969.156,20.57
+BLZ,2019,Container ships,4,29.134,21.486,25.44
+BLZ,2019,General cargo,403,1238.925,809.254,26.43
+BLZ,2019,Oil tankers,65,191.677,118.726,32.16
+BLZ,2019,Other types of ships,251,315.393,283.302,32.04
+BLZ,2019,Total fleet,779,3388.637,2201.924,28.29
+BLZ,2020,Bulk carriers,50,1443.058,869.705,20.33
+BLZ,2020,Container ships,4,35.982,26.46,24.94
+BLZ,2020,General cargo,408,1265.532,822.346,26.84
+BLZ,2020,Oil tankers,67,148.457,92.956,32.64
+BLZ,2020,Other types of ships,260,324.555,306.235,32.19
+BLZ,2020,Total fleet,789,3217.584,2117.702,28.68
+BMU,2018,Bulk carriers,6,1062.113,543.314,8.75
+BMU,2018,Container ships,11,536.119,480.808,18.35
+BMU,2018,General cargo,0,0,0,
+BMU,2018,Oil tankers,20,1620.692,878.122,9.98
+BMU,2018,Other types of ships,120,7288.93,9311.987,12.92
+BMU,2018,Total fleet,157,10507.854,11214.231,12.77
+BMU,2019,Bulk carriers,2,362.055,185.984,2.8
+BMU,2019,Container ships,11,536.119,480.808,19.35
+BMU,2019,General cargo,0,0,0,
+BMU,2019,Oil tankers,19,1547.81,836.938,10.77
+BMU,2019,Other types of ships,118,7088.229,9361.805,13.45
+BMU,2019,Total fleet,150,9534.213,10865.535,13.4
+BMU,2020,Bulk carriers,0,0,0,
+BMU,2020,Container ships,12,583.947,536.802,20.02
+BMU,2020,General cargo,0,0,0,
+BMU,2020,Oil tankers,18,1475.061,795.349,11.55
+BMU,2020,Other types of ships,110,5756.447,8686.221,12.96
+BMU,2020,Total fleet,140,7815.455,10018.372,13.38
+BOL,2018,Bulk carriers,0,0,0,
+BOL,2018,Container ships,0,0,0,
+BOL,2018,General cargo,29,102.895,59.04,27.88
+BOL,2018,Oil tankers,1,11.867,6.482,37
+BOL,2018,Other types of ships,12,10.917,11.476,24.2
+BOL,2018,Total fleet,42,125.679,76.998,27.04
+BOL,2019,Bulk carriers,0,0,0,
+BOL,2019,Container ships,0,0,0,
+BOL,2019,General cargo,27,94.741,55.117,28.76
+BOL,2019,Oil tankers,2,14.72,9.45,33.63
+BOL,2019,Other types of ships,13,12.323,12.116,26.16
+BOL,2019,Total fleet,42,121.785,76.683,28.19
+BOL,2020,Bulk carriers,0,0,0,
+BOL,2020,Container ships,0,0,0,
+BOL,2020,General cargo,27,95.606,58.515,29.28
+BOL,2020,Oil tankers,2,5.199,4.947,33.92
+BOL,2020,Other types of ships,14,13.263,12.898,28.55
+BOL,2020,Total fleet,43,114.069,76.36,29.26
+BRA,2018,Bulk carriers,13,677.962,390.055,18.03
+BRA,2018,Container ships,14,621.403,496.86,5.75
+BRA,2018,General cargo,44,121.018,93.117,46.21
+BRA,2018,Oil tankers,38,2377.455,1325.166,22.43
+BRA,2018,Other types of ships,732,1382.495,1182.175,16.39
+BRA,2018,Total fleet,841,5180.333,3487.373,18.07
+BRA,2019,Bulk carriers,12,639.776,368.044,17.4
+BRA,2019,Container ships,17,743.666,607.829,8.12
+BRA,2019,General cargo,41,93.884,73.86,46.98
+BRA,2019,Oil tankers,40,2718.383,1507.311,20.58
+BRA,2019,Other types of ships,754,1432.185,1244.507,16.63
+BRA,2019,Total fleet,864,5627.894,3801.551,18.1
+BRA,2020,Bulk carriers,12,639.776,368.044,18.4
+BRA,2020,Container ships,18,780.527,639.197,8.64
+BRA,2020,General cargo,40,88.633,70.85,47.64
+BRA,2020,Oil tankers,41,2943.975,1628.576,19.88
+BRA,2020,Other types of ships,766,1181.751,1145.245,17.32
+BRA,2020,Total fleet,877,5634.662,3851.912,18.66
+BRB,2018,Bulk carriers,21,967.833,554.545,13.29
+BRB,2018,Container ships,0,0,0,
+BRB,2018,General cargo,82,393.691,288.185,20.68
+BRB,2018,Oil tankers,0,0,0,
+BRB,2018,Other types of ships,17,153.754,146.999,25.03
+BRB,2018,Total fleet,120,1515.278,989.729,20
+BRB,2019,Bulk carriers,25,1093.842,631.75,14.06
+BRB,2019,Container ships,0,0,0,
+BRB,2019,General cargo,91,443.197,325.909,20.76
+BRB,2019,Oil tankers,0,0,0,
+BRB,2019,Other types of ships,14,128.587,120.211,26.8
+BRB,2019,Total fleet,130,1665.626,1077.87,20.12
+BRB,2020,Bulk carriers,31,1417.819,815.703,12.88
+BRB,2020,Container ships,0,0,0,
+BRB,2020,General cargo,99,432,311.882,22.17
+BRB,2020,Oil tankers,0,0,0,
+BRB,2020,Other types of ships,16,170.667,147.406,26.07
+BRB,2020,Total fleet,146,2020.486,1274.991,20.62
+BRN,2018,Bulk carriers,0,0,0,
+BRN,2018,Container ships,0,0,0,
+BRN,2018,General cargo,18,10.085,5.947,24.71
+BRN,2018,Oil tankers,2,0.52,0.501,21.92
+BRN,2018,Other types of ships,76,551.19,652.064,20.66
+BRN,2018,Total fleet,96,561.795,658.512,21.45
+BRN,2019,Bulk carriers,0,0,0,
+BRN,2019,Container ships,0,0,0,
+BRN,2019,General cargo,18,10.085,5.947,25.71
+BRN,2019,Oil tankers,2,0.52,0.501,22.92
+BRN,2019,Other types of ships,74,456.683,566.51,15.65
+BRN,2019,Total fleet,94,467.288,572.958,17.73
+BRN,2020,Bulk carriers,0,0,0,
+BRN,2020,Container ships,0,0,0,
+BRN,2020,General cargo,18,10.085,5.947,26.71
+BRN,2020,Oil tankers,2,0.52,0.501,23.92
+BRN,2020,Other types of ships,73,456.613,566.296,16.67
+BRN,2020,Total fleet,93,467.218,572.744,18.77
+CAN,2018,Bulk carriers,16,507.02,327.99,23.69
+CAN,2018,Container ships,1,14.747,14.639,12.59
+CAN,2018,General cargo,79,1328.559,915.497,38.61
+CAN,2018,Oil tankers,16,837.855,483.339,25.07
+CAN,2018,Other types of ships,549,818.989,1194.31,39.26
+CAN,2018,Total fleet,661,3507.171,2935.775,38.43
+CAN,2019,Bulk carriers,18,513.423,333.335,22.92
+CAN,2019,Container ships,1,14.747,14.639,13.59
+CAN,2019,General cargo,72,1252.837,858.478,37.85
+CAN,2019,Oil tankers,15,689.724,407.265,26.04
+CAN,2019,Other types of ships,557,876.935,1252.29,39.39
+CAN,2019,Total fleet,663,3347.666,2866.007,38.44
+CAN,2020,Bulk carriers,20,577.525,370.005,22.87
+CAN,2020,Container ships,1,14.747,14.639,14.59
+CAN,2020,General cargo,74,1246.548,860.409,35.9
+CAN,2020,Oil tankers,15,689.724,407.265,27.04
+CAN,2020,Other types of ships,588,972.952,1328.715,38.44
+CAN,2020,Total fleet,698,3501.496,2981.033,37.44
+CHE,2018,Bulk carriers,28,1379.206,805.603,8.34
+CHE,2018,Container ships,0,0,0,
+CHE,2018,General cargo,4,65.664,54.66,5.84
+CHE,2018,Oil tankers,1,6.603,5.832,7.59
+CHE,2018,Other types of ships,4,15.791,12.244,33.11
+CHE,2018,Total fleet,37,1467.264,878.339,10.73
+CHE,2019,Bulk carriers,24,1145.424,677.021,8.3
+CHE,2019,Container ships,0,0,0,
+CHE,2019,General cargo,4,65.664,54.66,6.84
+CHE,2019,Oil tankers,1,6.603,5.832,8.59
+CHE,2019,Other types of ships,3,8.196,6.822,43.45
+CHE,2019,Total fleet,32,1225.887,744.335,11.42
+CHE,2020,Bulk carriers,21,1047.513,616.623,8.46
+CHE,2020,Container ships,0,0,0,
+CHE,2020,General cargo,3,53.081,44.722,6.45
+CHE,2020,Oil tankers,1,6.603,5.832,9.59
+CHE,2020,Other types of ships,3,8.196,6.822,44.45
+CHE,2020,Total fleet,28,1115.393,673.999,12.14
+CHL,2018,Bulk carriers,9,361.251,214.241,13.25
+CHL,2018,Container ships,5,126.918,107.987,11.97
+CHL,2018,General cargo,50,86.414,74.185,36.9
+CHL,2018,Oil tankers,16,641.48,370.815,16.19
+CHL,2018,Other types of ships,142,124.307,139.527,18.91
+CHL,2018,Total fleet,222,1340.371,906.755,22.38
+CHL,2019,Bulk carriers,7,304.147,178.192,12.66
+CHL,2019,Container ships,5,126.918,107.987,12.97
+CHL,2019,General cargo,52,89.895,76.912,37.32
+CHL,2019,Oil tankers,14,531.208,304.313,17.87
+CHL,2019,Other types of ships,143,128.686,144.358,18.9
+CHL,2019,Total fleet,221,1180.854,811.762,22.84
+CHL,2020,Bulk carriers,8,321.16,188.153,13.52
+CHL,2020,Container ships,5,126.918,107.987,13.97
+CHL,2020,General cargo,62,100.574,91.541,34.22
+CHL,2020,Oil tankers,13,425.43,248.141,19.16
+CHL,2020,Other types of ships,149,128.993,136.143,19.11
+CHL,2020,Total fleet,237,1103.075,771.965,22.77
+CHN,2018,Bulk carriers,1374,54533.35,31970.662,9.35
+CHN,2018,Container ships,268,8783.75,7136.578,12.18
+CHN,2018,General cargo,865,5838.559,4003.136,16.52
+CHN,2018,Oil tankers,915,14367.38,8455.503,13.01
+CHN,2018,Other types of ships,2416,7085.9,8083.165,14.16
+CHN,2018,Total fleet,5838,90608.94,59649.044,13.11
+CHN,2019,Bulk carriers,1483,60542.553,35324.531,10.49
+CHN,2019,Container ships,297,9788.829,7839.048,11.88
+CHN,2019,General cargo,978,6349.796,4361.356,16.66
+CHN,2019,Oil tankers,990,14885.022,8806.353,13.15
+CHN,2019,Other types of ships,2538,7459.433,8553.313,14.44
+CHN,2019,Total fleet,6286,99025.633,64884.601,13.53
+CHN,2020,Bulk carriers,1535,62931.459,36734.049,11.1
+CHN,2020,Container ships,334,10443.446,8300.852,11.62
+CHN,2020,General cargo,1119,6892.055,4707.815,16.35
+CHN,2020,Oil tankers,1047,15319.646,9080.498,12.9
+CHN,2020,Other types of ships,2673,7734.876,8833.661,14.77
+CHN,2020,Total fleet,6708,103321.482,67656.875,13.75
+CIV,2018,Bulk carriers,0,0,0,
+CIV,2018,Container ships,0,0,0,
+CIV,2018,General cargo,0,0,0,
+CIV,2018,Oil tankers,2,1.17,0.789,40.71
+CIV,2018,Other types of ships,23,1.968,3.445,13.64
+CIV,2018,Total fleet,25,3.138,4.234,15.81
+CIV,2019,Bulk carriers,0,0,0,
+CIV,2019,Container ships,0,0,0,
+CIV,2019,General cargo,0,0,0,
+CIV,2019,Oil tankers,2,1.17,0.789,41.71
+CIV,2019,Other types of ships,23,1.968,3.445,14.64
+CIV,2019,Total fleet,25,3.138,4.234,16.81
+CIV,2020,Bulk carriers,0,0,0,
+CIV,2020,Container ships,0,0,0,
+CIV,2020,General cargo,0,0,0,
+CIV,2020,Oil tankers,2,1.17,0.789,42.71
+CIV,2020,Other types of ships,23,1.968,3.445,15.64
+CIV,2020,Total fleet,25,3.138,4.234,17.81
+CMR,2018,Bulk carriers,0,0,0,
+CMR,2018,Container ships,0,0,0,
+CMR,2018,General cargo,10,7.936,6.286,51.33
+CMR,2018,Oil tankers,0,0,0,
+CMR,2018,Other types of ships,18,436.578,217.034,33.18
+CMR,2018,Total fleet,28,444.514,223.32,39.66
+CMR,2019,Bulk carriers,0,0,0,
+CMR,2019,Container ships,0,0,0,
+CMR,2019,General cargo,10,15.938,12.709,47.07
+CMR,2019,Oil tankers,1,112.118,62.385,17.17
+CMR,2019,Other types of ships,22,434.847,216.557,32.85
+CMR,2019,Total fleet,33,562.903,291.651,36.69
+CMR,2020,Bulk carriers,1,52.191,30.374,16.75
+CMR,2020,Container ships,0,0,0,
+CMR,2020,General cargo,32,86.821,69.813,41.19
+CMR,2020,Oil tankers,3,228.255,123.865,10.22
+CMR,2020,Other types of ships,28,709.062,371.73,30.66
+CMR,2020,Total fleet,64,1076.329,595.782,34.75
+COD,2018,Bulk carriers,0,0,0,
+COD,2018,Container ships,0,0,0,
+COD,2018,General cargo,4,12.51,10.248,39.03
+COD,2018,Oil tankers,2,3.202,1.953,39.13
+COD,2018,Other types of ships,15,11.222,10.194,38.2
+COD,2018,Total fleet,21,26.934,22.395,38.45
+COD,2019,Bulk carriers,0,0,0,
+COD,2019,Container ships,0,0,0,
+COD,2019,General cargo,4,12.51,10.248,40.03
+COD,2019,Oil tankers,2,3.202,1.953,40.13
+COD,2019,Other types of ships,16,17.766,15.158,38.8
+COD,2019,Total fleet,22,33.478,27.359,39.14
+COD,2020,Bulk carriers,0,0,0,
+COD,2020,Container ships,0,0,0,
+COD,2020,General cargo,4,12.51,10.248,41.02
+COD,2020,Oil tankers,2,3.202,1.953,41.13
+COD,2020,Other types of ships,16,17.766,15.158,39.8
+COD,2020,Total fleet,22,33.478,27.359,40.14
+COG,2018,Bulk carriers,0,0,0,
+COG,2018,Container ships,0,0,0,
+COG,2018,General cargo,2,5.783,3.838,31.71
+COG,2018,Oil tankers,1,1.219,0.797,44.92
+COG,2018,Other types of ships,9,1.832,2.217,28.53
+COG,2018,Total fleet,12,8.834,6.852,30.43
+COG,2019,Bulk carriers,0,0,0,
+COG,2019,Container ships,0,0,0,
+COG,2019,General cargo,1,3.026,1.999,26.92
+COG,2019,Oil tankers,1,1.219,0.797,45.92
+COG,2019,Other types of ships,9,1.832,2.217,29.53
+COG,2019,Total fleet,11,6.077,5.013,30.78
+COG,2020,Bulk carriers,0,0,0,
+COG,2020,Container ships,0,0,0,
+COG,2020,General cargo,1,3.026,1.999,27.92
+COG,2020,Oil tankers,1,1.219,0.797,46.92
+COG,2020,Other types of ships,9,1.832,2.217,30.53
+COG,2020,Total fleet,11,6.077,5.013,31.78
+COL,2018,Bulk carriers,0,0,0,
+COL,2018,Container ships,0,0,0,
+COL,2018,General cargo,21,42.191,29.498,44.05
+COL,2018,Oil tankers,9,20.266,11.535,43.44
+COL,2018,Other types of ships,84,37.793,40.355,20.41
+COL,2018,Total fleet,114,100.25,81.388,26.59
+COL,2019,Bulk carriers,0,0,0,
+COL,2019,Container ships,0,0,0,
+COL,2019,General cargo,23,37.05,26.412,41.49
+COL,2019,Oil tankers,10,20.421,11.636,40.48
+COL,2019,Other types of ships,88,42.34,45.035,21.2
+COL,2019,Total fleet,121,99.811,83.083,26.65
+COL,2020,Bulk carriers,0,0,0,
+COL,2020,Container ships,0,0,0,
+COL,2020,General cargo,28,37.778,27.088,37.19
+COL,2020,Oil tankers,13,18.771,10.454,31.65
+COL,2020,Other types of ships,105,47.619,49.682,21.18
+COL,2020,Total fleet,146,104.168,87.224,25.18
+COM,2018,Bulk carriers,7,170.619,105.316,24.66
+COM,2018,Container ships,3,70.414,56.737,28.78
+COM,2018,General cargo,99,430.84,337.308,34.62
+COM,2018,Oil tankers,29,540.321,310.36,34.67
+COM,2018,Other types of ships,76,90.593,107.596,33.97
+COM,2018,Total fleet,214,1302.787,917.317,33.99
+COM,2019,Bulk carriers,7,157.247,96.341,26.54
+COM,2019,Container ships,5,83.222,66.847,29.3
+COM,2019,General cargo,105,422.814,320.429,35.06
+COM,2019,Oil tankers,29,353.536,214.685,36.5
+COM,2019,Other types of ships,66,93.098,115.186,34.41
+COM,2019,Total fleet,212,1109.917,813.488,34.64
+COM,2020,Bulk carriers,7,120.344,75.036,28.42
+COM,2020,Container ships,9,627.777,590.693,17.74
+COM,2020,General cargo,109,453.652,337.919,35.65
+COM,2020,Oil tankers,31,529.184,306.412,36.81
+COM,2020,Other types of ships,78,148.687,164.466,34.41
+COM,2020,Total fleet,234,1879.644,1474.526,34.49
+CPV,2018,Bulk carriers,0,0,0,
+CPV,2018,Container ships,0,0,0,
+CPV,2018,General cargo,16,20.564,15.752,43.63
+CPV,2018,Oil tankers,2,4.361,2.877,26.51
+CPV,2018,Other types of ships,23,15.27,27.973,33.98
+CPV,2018,Total fleet,41,40.195,46.602,37.38
+CPV,2019,Bulk carriers,0,0,0,
+CPV,2019,Container ships,0,0,0,
+CPV,2019,General cargo,16,20.383,15.618,44.6
+CPV,2019,Oil tankers,2,4.361,2.877,27.51
+CPV,2019,Other types of ships,25,16.908,30.468,35.63
+CPV,2019,Total fleet,43,41.652,48.963,38.59
+CPV,2020,Bulk carriers,0,0,0,
+CPV,2020,Container ships,0,0,0,
+CPV,2020,General cargo,16,20.383,15.618,45.6
+CPV,2020,Oil tankers,2,4.361,2.877,28.51
+CPV,2020,Other types of ships,27,17.547,31.19,35.45
+CPV,2020,Total fleet,45,42.291,49.685,38.75
+CRI,2018,Bulk carriers,0,0,0,
+CRI,2018,Container ships,0,0,0,
+CRI,2018,General cargo,0,0,0,
+CRI,2018,Oil tankers,0,0,0,
+CRI,2018,Other types of ships,10,2.498,4.944,28.09
+CRI,2018,Total fleet,10,2.498,4.944,28.09
+CRI,2019,Bulk carriers,0,0,0,
+CRI,2019,Container ships,0,0,0,
+CRI,2019,General cargo,0,0,0,
+CRI,2019,Oil tankers,0,0,0,
+CRI,2019,Other types of ships,11,2.627,5.145,28.23
+CRI,2019,Total fleet,11,2.627,5.145,28.23
+CRI,2020,Bulk carriers,0,0,0,
+CRI,2020,Container ships,0,0,0,
+CRI,2020,General cargo,0,0,0,
+CRI,2020,Oil tankers,0,0,0,
+CRI,2020,Other types of ships,11,2.627,5.145,29.23
+CRI,2020,Total fleet,11,2.627,5.145,29.23
+CUB,2018,Bulk carriers,0,0,0,
+CUB,2018,Container ships,0,0,0,
+CUB,2018,General cargo,12,14.401,10.568,31.49
+CUB,2018,Oil tankers,3,3.257,2.438,32.03
+CUB,2018,Other types of ships,34,11.658,14.345,32.36
+CUB,2018,Total fleet,49,29.317,27.351,32.13
+CUB,2019,Bulk carriers,0,0,0,
+CUB,2019,Container ships,0,0,0,
+CUB,2019,General cargo,12,14.401,10.568,32.49
+CUB,2019,Oil tankers,3,3.257,2.438,33.03
+CUB,2019,Other types of ships,37,17.346,18.521,31.28
+CUB,2019,Total fleet,52,35.005,31.527,31.66
+CUB,2020,Bulk carriers,0,0,0,
+CUB,2020,Container ships,0,0,0,
+CUB,2020,General cargo,12,14.401,10.568,33.49
+CUB,2020,Oil tankers,6,199.552,119.319,24.78
+CUB,2020,Other types of ships,38,40.603,36.881,32.11
+CUB,2020,Total fleet,56,254.557,166.768,31.62
+CUW,2018,Bulk carriers,0,0,0,
+CUW,2018,Container ships,0,0,0,
+CUW,2018,General cargo,9,42.731,28.82,25.58
+CUW,2018,Oil tankers,1,0.48,0.182,17.42
+CUW,2018,Other types of ships,70,1739.128,1272.226,22.88
+CUW,2018,Total fleet,80,1782.339,1301.228,23.12
+CUW,2019,Bulk carriers,0,0,0,
+CUW,2019,Container ships,0,0,0,
+CUW,2019,General cargo,9,42.731,28.82,26.58
+CUW,2019,Oil tankers,1,0.48,0.182,18.42
+CUW,2019,Other types of ships,63,1595.997,1162.675,23.79
+CUW,2019,Total fleet,73,1639.208,1191.677,24.06
+CUW,2020,Bulk carriers,0,0,0,
+CUW,2020,Container ships,0,0,0,
+CUW,2020,General cargo,8,32.874,22.459,29.04
+CUW,2020,Oil tankers,1,0.48,0.182,19.42
+CUW,2020,Other types of ships,55,1383.316,997.85,22.91
+CUW,2020,Total fleet,64,1416.67,1020.491,23.62
+CYM,2018,Bulk carriers,31,1748.741,1013.819,7.29
+CYM,2018,Container ships,0,0,0,
+CYM,2018,General cargo,4,15.313,11.573,16.05
+CYM,2018,Oil tankers,19,2203.408,1186.272,9.54
+CYM,2018,Other types of ships,111,2153.258,2075.735,12.22
+CYM,2018,Total fleet,165,6120.72,4287.399,11.08
+CYM,2019,Bulk carriers,33,2027.515,1149.596,8.05
+CYM,2019,Container ships,0,0,0,
+CYM,2019,General cargo,4,15.313,11.573,17.05
+CYM,2019,Oil tankers,22,2640.962,1413.436,8.16
+CYM,2019,Other types of ships,110,2110.102,2008.193,13.17
+CYM,2019,Total fleet,169,6793.892,4582.798,11.61
+CYM,2020,Bulk carriers,33,2104.146,1189.287,9.43
+CYM,2020,Container ships,0,0,0,
+CYM,2020,General cargo,3,13.088,10.191,15.17
+CYM,2020,Oil tankers,23,2755.98,1477.757,8.8
+CYM,2020,Other types of ships,107,2008.286,1965.704,14.35
+CYM,2020,Total fleet,166,6881.5,4642.939,12.62
+CYP,2018,Bulk carriers,313,23506.757,12902.26,8.95
+CYP,2018,Container ships,187,4855.234,4090.2,10.72
+CYP,2018,General cargo,174,1235.792,951.17,15.55
+CYP,2018,Oil tankers,51,3466.929,1950.7,14.33
+CYP,2018,Other types of ships,290,2014.182,2506.393,17.13
+CYP,2018,Total fleet,1015,35078.894,22400.723,13.01
+CYP,2019,Bulk carriers,304,23399.74,12799.653,9.72
+CYP,2019,Container ships,189,4908.891,4187.615,11.26
+CYP,2019,General cargo,183,1317.183,1016.993,16.61
+CYP,2019,Oil tankers,43,2653.844,1512.94,16.08
+CYP,2019,Other types of ships,310,2278.23,3066.185,17.21
+CYP,2019,Total fleet,1029,34557.888,22583.386,13.75
+CYP,2020,Bulk carriers,286,22842.057,12444.502,10.29
+CYP,2020,Container ships,197,5318.273,4544.221,12.04
+CYP,2020,General cargo,189,1328.952,1043.876,17.57
+CYP,2020,Oil tankers,49,2539.088,1490.029,15.62
+CYP,2020,Other types of ships,338,2513.379,3626.921,18.09
+CYP,2020,Total fleet,1059,34541.749,23149.549,14.65
+DEU,2018,Bulk carriers,,,,
+DEU,2018,Bulk carriers,1,322.398,155.051,20.25
+DEU,2018,Container ships,,,,
+DEU,2018,Container ships,105,8483.805,7808.067,10.45
+DEU,2018,General cargo,,,,
+DEU,2018,General cargo,88,268.63,226.428,42.58
+DEU,2018,Oil tankers,,,,
+DEU,2018,Oil tankers,39,555.509,357.813,32.36
+DEU,2018,Other types of ships,,,,
+DEU,2018,Other types of ships,397,357.131,673.74,31.8
+DEU,2018,Total fleet,,,,
+DEU,2018,Total fleet,630,9987.474,9221.099,29.76
+DEU,2019,Bulk carriers,,,,
+DEU,2019,Bulk carriers,1,322.398,155.051,21.25
+DEU,2019,Container ships,,,,
+DEU,2019,Container ships,88,7078.812,6465.746,11.74
+DEU,2019,General cargo,,,,
+DEU,2019,General cargo,83,233.346,201.491,43.76
+DEU,2019,Oil tankers,,,,
+DEU,2019,Oil tankers,38,552.75,356.853,33.27
+DEU,2019,Other types of ships,,,,
+DEU,2019,Other types of ships,403,421.909,762.641,32.05
+DEU,2019,Total fleet,,,,
+DEU,2019,Total fleet,613,8609.215,7941.782,30.78
+DEU,2020,Bulk carriers,,,,
+DEU,2020,Bulk carriers,1,322.398,155.051,22.25
+DEU,2020,Container ships,,,,
+DEU,2020,Container ships,89,7343.912,6744.412,12.74
+DEU,2020,General cargo,,,,
+DEU,2020,General cargo,85,234.692,202.727,44.9
+DEU,2020,Oil tankers,,,,
+DEU,2020,Oil tankers,37,478.802,314.843,34.89
+DEU,2020,Other types of ships,,,,
+DEU,2020,Other types of ships,400,409.317,753.903,32.65
+DEU,2020,Total fleet,,,,
+DEU,2020,Total fleet,612,8789.121,8170.936,31.57
+DJI,2018,Bulk carriers,0,0,0,
+DJI,2018,Container ships,0,0,0,
+DJI,2018,General cargo,0,0,0,
+DJI,2018,Oil tankers,0,0,0,
+DJI,2018,Other types of ships,16,5,6.571,28.14
+DJI,2018,Total fleet,16,5,6.571,28.14
+DJI,2019,Bulk carriers,0,0,0,
+DJI,2019,Container ships,0,0,0,
+DJI,2019,General cargo,2,2.536,2.085,25.88
+DJI,2019,Oil tankers,0,0,0,
+DJI,2019,Other types of ships,18,6.4,8.783,30.45
+DJI,2019,Total fleet,20,8.936,10.868,29.99
+DJI,2020,Bulk carriers,0,0,0,
+DJI,2020,Container ships,0,0,0,
+DJI,2020,General cargo,5,4.394,3.285,13.42
+DJI,2020,Oil tankers,0,0,0,
+DJI,2020,Other types of ships,17,5.803,7.455,30.8
+DJI,2020,Total fleet,22,10.197,10.74,26.85
+DMA,2018,Bulk carriers,0,0,0,
+DMA,2018,Container ships,0,0,0,
+DMA,2018,General cargo,30,66.172,44.34,32.54
+DMA,2018,Oil tankers,27,816.452,447.167,23.79
+DMA,2018,Other types of ships,47,121.713,89.174,29.68
+DMA,2018,Total fleet,104,1004.338,580.681,28.97
+DMA,2019,Bulk carriers,0,0,0,
+DMA,2019,Container ships,0,0,0,
+DMA,2019,General cargo,29,70.261,46.364,31.21
+DMA,2019,Oil tankers,29,921.433,506.886,22.4
+DMA,2019,Other types of ships,49,208.405,143.744,29.21
+DMA,2019,Total fleet,107,1200.099,696.994,27.9
+DMA,2020,Bulk carriers,0,0,0,
+DMA,2020,Container ships,0,0,0,
+DMA,2020,General cargo,29,72.759,47.252,31.3
+DMA,2020,Oil tankers,22,1034.849,563.757,21.85
+DMA,2020,Other types of ships,46,122.508,87.528,29.51
+DMA,2020,Total fleet,97,1230.116,698.537,28.3
+DNK,2018,Bulk carriers,7,357.648,198.272,10.08
+DNK,2018,Container ships,125,13051.574,12351.917,12.36
+DNK,2018,General cargo,64,280.966,495.668,34.63
+DNK,2018,Oil tankers,73,3570.148,2136.482,11.64
+DNK,2018,Other types of ships,379,1670.767,1900.279,24.13
+DNK,2018,Total fleet,648,18931.103,17082.618,21.34
+DNK,2019,Bulk carriers,7,357.648,198.272,11.08
+DNK,2019,Container ships,150,16389.925,15637.206,10.7
+DNK,2019,General cargo,61,251.218,449.723,36.52
+DNK,2019,Oil tankers,75,3812.325,2263.56,12.25
+DNK,2019,Other types of ships,382,1714.854,1944.283,24.32
+DNK,2019,Total fleet,675,22525.97,20493.044,20.91
+DNK,2020,Bulk carriers,1,75.726,38.892,13.17
+DNK,2020,Container ships,149,16596.332,15969.33,10.99
+DNK,2020,General cargo,65,291.883,543.182,36.78
+DNK,2020,Oil tankers,83,4354.382,2557.631,11.06
+DNK,2020,Other types of ships,394,1856.291,2063.541,24.11
+DNK,2020,Total fleet,692,23174.614,21172.576,20.9
+DOM,2018,Bulk carriers,0,0,0,
+DOM,2018,Container ships,0,0,0,
+DOM,2018,General cargo,2,1.002,0.647,52.92
+DOM,2018,Oil tankers,1,36.457,20.2,23.25
+DOM,2018,Other types of ships,32,16.69,18.657,31.68
+DOM,2018,Total fleet,35,54.149,39.504,32.65
+DOM,2019,Bulk carriers,0,0,0,
+DOM,2019,Container ships,1,7.562,5.796,28.67
+DOM,2019,General cargo,2,1.002,0.647,53.92
+DOM,2019,Oil tankers,1,36.457,20.2,24.25
+DOM,2019,Other types of ships,33,17.092,18.911,31.97
+DOM,2019,Total fleet,37,62.113,45.554,32.86
+DOM,2020,Bulk carriers,0,0,0,
+DOM,2020,Container ships,1,7.562,5.796,29.67
+DOM,2020,General cargo,2,1.002,0.647,54.92
+DOM,2020,Oil tankers,1,36.457,20.2,25.25
+DOM,2020,Other types of ships,34,22.598,23.351,32.99
+DOM,2020,Total fleet,38,67.619,49.994,33.85
+DZA,2018,Bulk carriers,0,0,0,
+DZA,2018,Container ships,2,36.455,28.886,3.05
+DZA,2018,General cargo,11,105.675,88.011,12.73
+DZA,2018,Oil tankers,10,22.155,15.898,32.26
+DZA,2018,Other types of ships,81,490.173,559.868,27.26
+DZA,2018,Total fleet,104,654.458,692.663,25.74
+DZA,2019,Bulk carriers,0,0,0,
+DZA,2019,Container ships,2,36.455,28.886,4.05
+DZA,2019,General cargo,11,105.675,88.011,13.73
+DZA,2019,Oil tankers,10,22.155,15.898,33.26
+DZA,2019,Other types of ships,91,502.286,575.626,25.19
+DZA,2019,Total fleet,114,666.571,708.421,24.42
+DZA,2020,Bulk carriers,1,53.481,32.637,7.51
+DZA,2020,Container ships,2,36.455,28.886,5.05
+DZA,2020,General cargo,11,105.675,88.011,14.73
+DZA,2020,Oil tankers,11,62.126,42.269,31.15
+DZA,2020,Other types of ships,89,415.651,497.213,25.65
+DZA,2020,Total fleet,114,673.388,689.016,24.6
+ECU,2018,Bulk carriers,0,0,0,
+ECU,2018,Container ships,1,5.273,3.978,20.17
+ECU,2018,General cargo,6,12.411,9.874,38.17
+ECU,2018,Oil tankers,30,359.505,214.742,28.35
+ECU,2018,Other types of ships,102,40.481,59.965,23.18
+ECU,2018,Total fleet,139,417.67,288.559,24.92
+ECU,2019,Bulk carriers,0,0,0,
+ECU,2019,Container ships,1,5.273,3.978,21.17
+ECU,2019,General cargo,6,16.856,11.461,35.48
+ECU,2019,Oil tankers,27,222.635,138.216,28.98
+ECU,2019,Other types of ships,103,40.46,58.891,24.04
+ECU,2019,Total fleet,137,285.224,212.546,25.49
+ECU,2020,Bulk carriers,0,0,0,
+ECU,2020,Container ships,1,5.273,3.978,22.17
+ECU,2020,General cargo,8,20.802,15.547,28.99
+ECU,2020,Oil tankers,28,262.461,163.22,29.1
+ECU,2020,Other types of ships,110,56.026,75.38,23.79
+ECU,2020,Total fleet,147,344.563,258.125,25.07
+EGY,2018,Bulk carriers,14,898.418,492.57,17.06
+EGY,2018,Container ships,8,149.308,120.709,18.86
+EGY,2018,General cargo,28,94.268,95.247,28.55
+EGY,2018,Oil tankers,36,224.925,129.029,37.85
+EGY,2018,Other types of ships,304,218.842,244.461,30.72
+EGY,2018,Total fleet,390,1585.76,1082.016,30.49
+EGY,2019,Bulk carriers,13,879.174,480.247,16.82
+EGY,2019,Container ships,7,124.747,99.37,19.82
+EGY,2019,General cargo,28,111.015,105.387,29.63
+EGY,2019,Oil tankers,35,233.72,131.616,38.12
+EGY,2019,Other types of ships,314,230.016,257.89,30.59
+EGY,2019,Total fleet,397,1578.671,1074.51,30.55
+EGY,2020,Bulk carriers,14,905.494,496.097,19.05
+EGY,2020,Container ships,8,143.199,113.611,20.68
+EGY,2020,General cargo,28,111.015,105.387,30.63
+EGY,2020,Oil tankers,37,237.075,133.663,37.33
+EGY,2020,Other types of ships,316,230.661,259.044,31.14
+EGY,2020,Total fleet,403,1627.443,1107.802,31.05
+ERI,2018,Bulk carriers,0,0,0,
+ERI,2018,Container ships,0,0,0,
+ERI,2018,General cargo,4,10.329,9.659,43.38
+ERI,2018,Oil tankers,1,3.177,2.025,38
+ERI,2018,Other types of ships,4,0.414,0.691,25.9
+ERI,2018,Total fleet,9,13.92,12.375,35.01
+ERI,2019,Bulk carriers,0,0,0,
+ERI,2019,Container ships,0,0,0,
+ERI,2019,General cargo,4,10.329,9.659,44.38
+ERI,2019,Oil tankers,1,3.177,2.025,39
+ERI,2019,Other types of ships,4,0.414,0.691,26.9
+ERI,2019,Total fleet,9,13.92,12.375,36.01
+ERI,2020,Bulk carriers,0,0,0,
+ERI,2020,Container ships,0,0,0,
+ERI,2020,General cargo,4,10.329,9.659,45.38
+ERI,2020,Oil tankers,1,3.177,2.025,40
+ERI,2020,Other types of ships,4,0.414,0.691,27.9
+ERI,2020,Total fleet,9,13.92,12.375,37.01
+ESP,2018,Bulk carriers,1,10.947,8.291,6.67
+ESP,2018,Container ships,2,36.182,28.032,10.09
+ESP,2018,General cargo,38,167.221,162.879,28.61
+ESP,2018,Oil tankers,27,434.6,254.249,13.71
+ESP,2018,Other types of ships,404,1394.128,1995.759,25.72
+ESP,2018,Total fleet,472,2043.078,2449.21,25.15
+ESP,2019,Bulk carriers,1,10.947,8.291,7.67
+ESP,2019,Container ships,2,36.182,28.032,11.09
+ESP,2019,General cargo,37,166.884,200.15,28.95
+ESP,2019,Oil tankers,26,278.081,167.875,13.19
+ESP,2019,Other types of ships,418,1432.218,2049.214,25.9
+ESP,2019,Total fleet,484,1924.311,2453.562,25.35
+ESP,2020,Bulk carriers,1,10.947,8.291,8.67
+ESP,2020,Container ships,0,0,0,
+ESP,2020,General cargo,36,164.234,195.193,29.52
+ESP,2020,Oil tankers,25,128.091,84.281,14.18
+ESP,2020,Other types of ships,425,1626.853,2280.574,26.18
+ESP,2020,Total fleet,487,1930.125,2568.339,25.78
+EST,2018,Bulk carriers,0,0,0,
+EST,2018,Container ships,0,0,0,
+EST,2018,General cargo,1,0.72,0.486,59.76
+EST,2018,Oil tankers,6,13.953,9.163,34.52
+EST,2018,Other types of ships,61,65.992,372.436,27.49
+EST,2018,Total fleet,68,80.665,382.085,28.59
+EST,2019,Bulk carriers,0,0,0,
+EST,2019,Container ships,0,0,0,
+EST,2019,General cargo,1,0.72,0.486,60.76
+EST,2019,Oil tankers,6,13.953,9.163,35.52
+EST,2019,Other types of ships,58,65.741,369.9,27.79
+EST,2019,Total fleet,65,80.414,379.549,29.01
+EST,2020,Bulk carriers,0,0,0,
+EST,2020,Container ships,0,0,0,
+EST,2020,General cargo,2,1.852,1.739,51.67
+EST,2020,Oil tankers,5,10.129,6.359,35.87
+EST,2020,Other types of ships,60,68.492,371.826,29.13
+EST,2020,Total fleet,67,80.473,379.924,30.3
+ETH,2018,Bulk carriers,,,,
+ETH,2018,Bulk carriers,0,0,0,
+ETH,2018,Container ships,,,,
+ETH,2018,Container ships,0,0,0,
+ETH,2018,General cargo,,,,
+ETH,2018,General cargo,9,251.456,187.612,5.95
+ETH,2018,Oil tankers,,,,
+ETH,2018,Oil tankers,2,84.34,53.654,5
+ETH,2018,Other types of ships,,,,
+ETH,2018,Other types of ships,0,0,0,
+ETH,2018,Total fleet,,,,
+ETH,2018,Total fleet,11,335.796,241.266,5.78
+ETH,2019,Bulk carriers,,,,
+ETH,2019,Bulk carriers,0,0,0,
+ETH,2019,Container ships,,,,
+ETH,2019,Container ships,0,0,0,
+ETH,2019,General cargo,,,,
+ETH,2019,General cargo,9,251.456,187.612,6.95
+ETH,2019,Oil tankers,,,,
+ETH,2019,Oil tankers,2,84.34,53.654,6
+ETH,2019,Other types of ships,,,,
+ETH,2019,Other types of ships,0,0,0,
+ETH,2019,Total fleet,,,,
+ETH,2019,Total fleet,11,335.796,241.266,6.78
+ETH,2020,Bulk carriers,,,,
+ETH,2020,Bulk carriers,0,0,0,
+ETH,2020,Container ships,,,,
+ETH,2020,Container ships,0,0,0,
+ETH,2020,General cargo,,,,
+ETH,2020,General cargo,9,251.456,187.612,7.95
+ETH,2020,Oil tankers,,,,
+ETH,2020,Oil tankers,2,84.34,53.654,7
+ETH,2020,Other types of ships,,,,
+ETH,2020,Other types of ships,0,0,0,
+ETH,2020,Total fleet,,,,
+ETH,2020,Total fleet,11,335.796,241.266,7.78
+FIN,2018,Bulk carriers,7,200.88,134.308,12.54
+FIN,2018,Container ships,1,13.65,9.953,15.17
+FIN,2018,General cargo,75,395.569,618.758,35.48
+FIN,2018,Oil tankers,4,223.96,130.064,47.59
+FIN,2018,Other types of ships,177,227.952,696.465,40.67
+FIN,2018,Total fleet,264,1062.011,1589.548,38.46
+FIN,2019,Bulk carriers,8,226.48,154.266,11.88
+FIN,2019,Container ships,1,13.65,9.953,16.17
+FIN,2019,General cargo,80,422.795,631.884,34.86
+FIN,2019,Oil tankers,4,223.96,130.064,48.59
+FIN,2019,Other types of ships,178,237.774,741.873,41.25
+FIN,2019,Total fleet,271,1124.659,1668.04,38.51
+FIN,2020,Bulk carriers,9,250.13,174.221,11.6
+FIN,2020,Container ships,1,13.65,9.953,17.17
+FIN,2020,General cargo,78,423.205,628.492,35.25
+FIN,2020,Oil tankers,4,223.96,130.064,49.59
+FIN,2020,Other types of ships,188,251.778,770.885,40.96
+FIN,2020,Total fleet,280,1162.723,1713.615,38.47
+FJI,2018,Bulk carriers,0,0,0,
+FJI,2018,Container ships,0,0,0,
+FJI,2018,General cargo,18,42.779,27.759,25.75
+FJI,2018,Oil tankers,4,9.086,4.22,26.55
+FJI,2018,Other types of ships,42,15.287,42.941,38.32
+FJI,2018,Total fleet,64,67.152,74.92,34.05
+FJI,2019,Bulk carriers,0,0,0,
+FJI,2019,Container ships,0,0,0,
+FJI,2019,General cargo,20,46.279,30.476,25.02
+FJI,2019,Oil tankers,5,11.186,4.919,28.15
+FJI,2019,Other types of ships,44,15.269,43.115,37.4
+FJI,2019,Total fleet,69,72.734,78.51,33.14
+FJI,2020,Bulk carriers,0,0,0,
+FJI,2020,Container ships,0,0,0,
+FJI,2020,General cargo,20,46.279,30.476,26.02
+FJI,2020,Oil tankers,5,11.186,4.919,29.15
+FJI,2020,Other types of ships,48,16.973,45.732,38.18
+FJI,2020,Total fleet,73,74.438,81.127,34.23
+FRA,2018,Bulk carriers,0,0,0,
+FRA,2018,Container ships,23,2239.351,2056.784,10.27
+FRA,2018,General cargo,49,77.983,152.43,32.33
+FRA,2018,Oil tankers,28,3650.831,1909.1,12.66
+FRA,2018,Other types of ships,414,1040.001,1719.04,23.92
+FRA,2018,Total fleet,514,7008.166,5837.354,23.5
+FRA,2019,Bulk carriers,0,0,0,
+FRA,2019,Container ships,25,2543.845,2366.162,10.93
+FRA,2019,General cargo,48,77.273,151.899,33.07
+FRA,2019,Oil tankers,28,3659.529,1914.725,13.37
+FRA,2019,Other types of ships,416,1013.753,1730.922,24.38
+FRA,2019,Total fleet,517,7294.4,6163.708,23.94
+FRA,2020,Bulk carriers,0,0,0,
+FRA,2020,Container ships,30,2797.78,2608.275,9.1
+FRA,2020,General cargo,48,80.336,154.407,34.47
+FRA,2020,Oil tankers,28,3537.07,1845.406,13.86
+FRA,2020,Other types of ships,422,1011.348,1756.612,24.42
+FRA,2020,Total fleet,528,7426.535,6364.7,23.9
+FRO,2018,Bulk carriers,0,0,0,
+FRO,2018,Container ships,3,30.436,25.124,11.67
+FRO,2018,General cargo,44,161.682,135.789,29.15
+FRO,2018,Oil tankers,1,2.8,1.586,17.51
+FRO,2018,Other types of ships,54,198.069,196.894,22.61
+FRO,2018,Total fleet,102,392.987,359.393,25.06
+FRO,2019,Bulk carriers,0,0,0,
+FRO,2019,Container ships,6,76.783,64.558,14.87
+FRO,2019,General cargo,45,168.403,139.242,29.28
+FRO,2019,Oil tankers,1,2.653,1.685,18.51
+FRO,2019,Other types of ships,53,163.112,174.379,23.78
+FRO,2019,Total fleet,105,410.951,379.864,25.57
+FRO,2020,Bulk carriers,0,0,0,
+FRO,2020,Container ships,6,76.783,64.558,15.87
+FRO,2020,General cargo,46,170.419,140.615,30.36
+FRO,2020,Oil tankers,1,2.653,1.685,19.51
+FRO,2020,Other types of ships,47,143.38,159.741,25.11
+FRO,2020,Total fleet,100,393.235,366.599,26.91
+FSM,2018,Bulk carriers,0,0,0,
+FSM,2018,Container ships,0,0,0,
+FSM,2018,General cargo,21,41.214,35.729,33.45
+FSM,2018,Oil tankers,9,47.019,27.218,31.57
+FSM,2018,Other types of ships,18,32.849,26.127,24.34
+FSM,2018,Total fleet,48,121.082,89.074,29.68
+FSM,2019,Bulk carriers,0,0,0,
+FSM,2019,Container ships,0,0,0,
+FSM,2019,General cargo,20,39.607,29.325,33.45
+FSM,2019,Oil tankers,4,10.058,5.034,30.46
+FSM,2019,Other types of ships,16,31.654,23.159,24.21
+FSM,2019,Total fleet,40,81.319,57.518,29.45
+FSM,2020,Bulk carriers,0,0,0,
+FSM,2020,Container ships,0,0,0,
+FSM,2020,General cargo,19,28.953,23.19,33.1
+FSM,2020,Oil tankers,4,10.058,5.034,31.46
+FSM,2020,Other types of ships,14,23.989,19.172,28.25
+FSM,2020,Total fleet,37,63,47.396,31.08
+GAB,2018,Bulk carriers,0,0,0,
+GAB,2018,Container ships,1,23.692,17.134,27.84
+GAB,2018,General cargo,11,10.754,7.766,27.83
+GAB,2018,Oil tankers,1,0.48,0.305,49.92
+GAB,2018,Other types of ships,18,389.944,196.055,30.48
+GAB,2018,Total fleet,31,424.871,221.26,30.08
+GAB,2019,Bulk carriers,0,0,0,
+GAB,2019,Container ships,1,23.692,17.134,28.84
+GAB,2019,General cargo,11,10.754,7.766,28.83
+GAB,2019,Oil tankers,1,0.48,0.305,50.92
+GAB,2019,Other types of ships,17,389.831,195.906,33.12
+GAB,2019,Total fleet,30,424.757,221.111,32
+GAB,2020,Bulk carriers,0,0,0,
+GAB,2020,Container ships,0,0,0,
+GAB,2020,General cargo,17,33.716,24.691,26.76
+GAB,2020,Oil tankers,6,184.279,108.308,19.14
+GAB,2020,Other types of ships,18,390.734,196.941,36.37
+GAB,2020,Total fleet,41,608.729,329.94,29.86
+GBR,2018,Bulk carriers,25,2959.728,1572.802,6.5
+GBR,2018,Container ships,97,8381.974,7878.845,8.99
+GBR,2018,General cargo,94,789.235,1059.092,18.88
+GBR,2018,Oil tankers,43,1432.247,882.072,14.78
+GBR,2018,Other types of ships,784,3235.945,4665.191,20.49
+GBR,2018,Total fleet,1043,16799.129,16058.002,18.7
+GBR,2019,Bulk carriers,30,3258.773,1747.748,7.48
+GBR,2019,Container ships,96,8666.547,8133.133,9.56
+GBR,2019,General cargo,97,776.056,1024.871,20.71
+GBR,2019,Oil tankers,36,1146.554,710.656,16.82
+GBR,2019,Other types of ships,774,3224.792,4254.033,20.65
+GBR,2019,Total fleet,1033,17072.722,15870.441,19.11
+GBR,2020,Bulk carriers,34,3905.896,2081.164,7.34
+GBR,2020,Container ships,46,3641.888,3400.203,11.98
+GBR,2020,General cargo,87,713.503,958.453,20.44
+GBR,2020,Oil tankers,20,398.082,246.986,23.44
+GBR,2020,Other types of ships,758,3099.656,3904.513,20.94
+GBR,2020,Total fleet,945,11759.025,10591.319,20.02
+GEO,2018,Bulk carriers,1,34.318,20.306,40.25
+GEO,2018,Container ships,0,0,0,
+GEO,2018,General cargo,21,29.225,23.001,41.57
+GEO,2018,Oil tankers,2,1.679,1.264,43.71
+GEO,2018,Other types of ships,53,13.884,17.232,36.17
+GEO,2018,Total fleet,77,79.106,61.803,37.89
+GEO,2019,Bulk carriers,3,98.744,57.945,25.26
+GEO,2019,Container ships,0,0,0,
+GEO,2019,General cargo,3,1.658,1.223,47.58
+GEO,2019,Oil tankers,0,0,0,
+GEO,2019,Other types of ships,17,8.533,9.027,27.73
+GEO,2019,Total fleet,23,108.936,68.195,30
+GEO,2020,Bulk carriers,2,46.553,27.571,31
+GEO,2020,Container ships,0,0,0,
+GEO,2020,General cargo,3,2.784,1.853,47.92
+GEO,2020,Oil tankers,0,0,0,
+GEO,2020,Other types of ships,19,8.852,9.591,28.72
+GEO,2020,Total fleet,24,58.189,39.015,31.31
+GHA,2018,Bulk carriers,0,0,0,
+GHA,2018,Container ships,0,0,0,
+GHA,2018,General cargo,6,10.51,8.271,51.28
+GHA,2018,Oil tankers,3,7.899,7.077,33.97
+GHA,2018,Other types of ships,41,21.724,20.152,35.44
+GHA,2018,Total fleet,50,40.133,35.5,37.25
+GHA,2019,Bulk carriers,0,0,0,
+GHA,2019,Container ships,0,0,0,
+GHA,2019,General cargo,6,10.51,8.271,52.28
+GHA,2019,Oil tankers,3,7.899,7.077,34.97
+GHA,2019,Other types of ships,40,20.85,19.366,36.18
+GHA,2019,Total fleet,49,39.259,34.714,38.08
+GHA,2020,Bulk carriers,0,0,0,
+GHA,2020,Container ships,0,0,0,
+GHA,2020,General cargo,6,10.51,8.271,53.28
+GHA,2020,Oil tankers,3,7.899,7.077,35.97
+GHA,2020,Other types of ships,42,21.951,20.399,37.45
+GHA,2020,Total fleet,51,40.36,35.747,39.22
+GIB,2018,Bulk carriers,11,597.689,352.345,7.07
+GIB,2018,Container ships,26,368.327,302.183,13.07
+GIB,2018,General cargo,77,471,497.589,15.35
+GIB,2018,Oil tankers,25,191.835,136.522,15.09
+GIB,2018,Other types of ships,107,876.595,918.977,10.88
+GIB,2018,Total fleet,246,2505.446,2207.616,12.77
+GIB,2019,Bulk carriers,10,504.67,301.136,8.14
+GIB,2019,Container ships,24,340.225,281.383,13.44
+GIB,2019,General cargo,71,424.643,460.286,16.16
+GIB,2019,Oil tankers,23,141.18,101.267,16.57
+GIB,2019,Other types of ships,104,813.274,830.684,11.47
+GIB,2019,Total fleet,232,2223.992,1974.756,13.47
+GIB,2020,Bulk carriers,9,409.529,247.622,8.94
+GIB,2020,Container ships,24,339.915,281.55,14.44
+GIB,2020,General cargo,64,404.286,443.137,17.02
+GIB,2020,Oil tankers,21,190.658,129.033,17.92
+GIB,2020,Other types of ships,101,744.729,778.629,12.6
+GIB,2020,Total fleet,219,2089.117,1879.971,14.45
+GIN,2018,Bulk carriers,0,0,0,
+GIN,2018,Container ships,0,0,0,
+GIN,2018,General cargo,0,0,0,
+GIN,2018,Oil tankers,0,0,0,
+GIN,2018,Other types of ships,2,0.38,0.513,17.96
+GIN,2018,Total fleet,2,0.38,0.513,17.96
+GIN,2019,Bulk carriers,0,0,0,
+GIN,2019,Container ships,0,0,0,
+GIN,2019,General cargo,0,0,0,
+GIN,2019,Oil tankers,0,0,0,
+GIN,2019,Other types of ships,2,0.38,0.513,18.96
+GIN,2019,Total fleet,2,0.38,0.513,18.96
+GIN,2020,Bulk carriers,0,0,0,
+GIN,2020,Container ships,0,0,0,
+GIN,2020,General cargo,0,0,0,
+GIN,2020,Oil tankers,0,0,0,
+GIN,2020,Other types of ships,2,0.38,0.513,19.96
+GIN,2020,Total fleet,2,0.38,0.513,19.96
+GMB,2018,Bulk carriers,0,0,0,
+GMB,2018,Container ships,0,0,0,
+GMB,2018,General cargo,1,2.273,1.475,40.42
+GMB,2018,Oil tankers,0,0,0,
+GMB,2018,Other types of ships,8,5.474,29.175,23.63
+GMB,2018,Total fleet,9,7.747,30.65,25.5
+GMB,2019,Bulk carriers,0,0,0,
+GMB,2019,Container ships,0,0,0,
+GMB,2019,General cargo,0,0,0,
+GMB,2019,Oil tankers,0,0,0,
+GMB,2019,Other types of ships,8,5.474,29.175,24.63
+GMB,2019,Total fleet,8,5.474,29.175,24.63
+GMB,2020,Bulk carriers,0,0,0,
+GMB,2020,Container ships,0,0,0,
+GMB,2020,General cargo,0,0,0,
+GMB,2020,Oil tankers,0,0,0,
+GMB,2020,Other types of ships,8,5.474,29.175,25.63
+GMB,2020,Total fleet,8,5.474,29.175,25.63
+GNB,2018,Bulk carriers,0,0,0,
+GNB,2018,Container ships,0,0,0,
+GNB,2018,General cargo,5,1.265,0.808,37.73
+GNB,2018,Oil tankers,0,0,0,
+GNB,2018,Other types of ships,3,0.727,0.541,45.89
+GNB,2018,Total fleet,8,1.992,1.349,40.79
+GNB,2019,Bulk carriers,0,0,0,
+GNB,2019,Container ships,0,0,0,
+GNB,2019,General cargo,5,1.265,0.808,38.73
+GNB,2019,Oil tankers,0,0,0,
+GNB,2019,Other types of ships,3,0.727,0.541,46.89
+GNB,2019,Total fleet,8,1.992,1.349,41.79
+GNB,2020,Bulk carriers,0,0,0,
+GNB,2020,Container ships,0,0,0,
+GNB,2020,General cargo,5,1.265,0.808,39.73
+GNB,2020,Oil tankers,0,0,0,
+GNB,2020,Other types of ships,3,0.727,0.541,47.89
+GNB,2020,Total fleet,8,1.992,1.349,42.79
+GNQ,2018,Bulk carriers,0,0,0,
+GNQ,2018,Container ships,1,9.41,7.361,25
+GNQ,2018,General cargo,7,5.941,3.693,35.23
+GNQ,2018,Oil tankers,7,13.28,7.497,37.39
+GNQ,2018,Other types of ships,24,7.176,13.07,37.05
+GNQ,2018,Total fleet,39,35.807,31.621,36.47
+GNQ,2019,Bulk carriers,1,26.031,16.405,20.67
+GNQ,2019,Container ships,0,0,0,
+GNQ,2019,General cargo,7,5.941,3.693,36.23
+GNQ,2019,Oil tankers,6,12.061,6.767,36.53
+GNQ,2019,Other types of ships,27,7.672,15.403,37.6
+GNQ,2019,Total fleet,41,51.705,42.268,36.8
+GNQ,2020,Bulk carriers,1,26.031,16.405,21.67
+GNQ,2020,Container ships,0,0,0,
+GNQ,2020,General cargo,9,9.848,6.174,34.47
+GNQ,2020,Oil tankers,6,12.061,6.767,37.53
+GNQ,2020,Other types of ships,27,7.672,15.403,38.6
+GNQ,2020,Total fleet,43,55.612,44.749,37.19
+GRC,2018,Bulk carriers,190,21527.275,11413.84,9.49
+GRC,2018,Container ships,7,563.944,546.376,12.8
+GRC,2018,General cargo,96,170.236,143.163,47.7
+GRC,2018,Oil tankers,399,46847.97,24798.233,17.2
+GRC,2018,Other types of ships,635,3013.081,4328.194,30.69
+GRC,2018,Total fleet,1327,72122.506,41229.806,24.73
+GRC,2019,Bulk carriers,180,20647.761,10941.468,9.99
+GRC,2019,Container ships,6,524.562,517.784,13.89
+GRC,2019,General cargo,85,163.386,138.327,46.83
+GRC,2019,Oil tankers,369,45019.248,23764.463,16.53
+GRC,2019,Other types of ships,642,3127.73,4452.992,30.27
+GRC,2019,Total fleet,1282,69482.687,39815.034,24.49
+GRC,2020,Bulk carriers,165,18865.222,9979.002,10.33
+GRC,2020,Container ships,6,535.807,527.064,13.41
+GRC,2020,General cargo,84,162.803,150.074,46.66
+GRC,2020,Oil tankers,373,45787.351,24161.456,16.74
+GRC,2020,Other types of ships,679,3683.659,5147.041,29.62
+GRC,2020,Total fleet,1307,69034.842,39964.637,24.53
+GRD,2018,Bulk carriers,0,0,0,
+GRD,2018,Container ships,0,0,0,
+GRD,2018,General cargo,3,1.14,0.621,64.86
+GRD,2018,Oil tankers,0,0,0,
+GRD,2018,Other types of ships,3,0.316,0.501,29.31
+GRD,2018,Total fleet,6,1.457,1.122,47.09
+GRD,2019,Bulk carriers,0,0,0,
+GRD,2019,Container ships,0,0,0,
+GRD,2019,General cargo,3,1.14,0.621,65.86
+GRD,2019,Oil tankers,0,0,0,
+GRD,2019,Other types of ships,3,0.316,0.501,30.31
+GRD,2019,Total fleet,6,1.457,1.122,48.09
+GRD,2020,Bulk carriers,0,0,0,
+GRD,2020,Container ships,0,0,0,
+GRD,2020,General cargo,3,1.14,0.621,66.86
+GRD,2020,Oil tankers,0,0,0,
+GRD,2020,Other types of ships,3,0.316,0.501,31.31
+GRD,2020,Total fleet,6,1.457,1.122,49.09
+GRL,2018,Bulk carriers,0,0,0,
+GRL,2018,Container ships,0,0,0,
+GRL,2018,General cargo,1,0.225,0.254,57.92
+GRL,2018,Oil tankers,0,0,0,
+GRL,2018,Other types of ships,8,1.059,3.975,35.92
+GRL,2018,Total fleet,9,1.284,4.229,38.36
+GRL,2019,Bulk carriers,0,0,0,
+GRL,2019,Container ships,0,0,0,
+GRL,2019,General cargo,0,0,0,
+GRL,2019,Oil tankers,0,0,0,
+GRL,2019,Other types of ships,8,1.059,3.975,36.92
+GRL,2019,Total fleet,8,1.059,3.975,36.92
+GRL,2020,Bulk carriers,0,0,0,
+GRL,2020,Container ships,0,0,0,
+GRL,2020,General cargo,0,0,0,
+GRL,2020,Oil tankers,0,0,0,
+GRL,2020,Other types of ships,8,1.059,3.975,37.92
+GRL,2020,Total fleet,8,1.059,3.975,37.92
+GTM,2018,Bulk carriers,0,0,0,
+GTM,2018,Container ships,0,0,0,
+GTM,2018,General cargo,0,0,0,
+GTM,2018,Oil tankers,1,0.95,0.298,72.34
+GTM,2018,Other types of ships,7,0.709,0.974,21.94
+GTM,2018,Total fleet,8,1.659,1.272,28.24
+GTM,2019,Bulk carriers,0,0,0,
+GTM,2019,Container ships,0,0,0,
+GTM,2019,General cargo,0,0,0,
+GTM,2019,Oil tankers,1,0.95,0.298,73.34
+GTM,2019,Other types of ships,7,0.709,0.974,22.94
+GTM,2019,Total fleet,8,1.659,1.272,29.24
+GTM,2020,Bulk carriers,0,0,0,
+GTM,2020,Container ships,0,0,0,
+GTM,2020,General cargo,0,0,0,
+GTM,2020,Oil tankers,1,0.95,0.298,74.34
+GTM,2020,Other types of ships,8,1.082,1.264,21
+GTM,2020,Total fleet,9,2.032,1.562,26.93
+GUM,2018,Bulk carriers,0,0,0,
+GUM,2018,Container ships,0,0,0,
+GUM,2018,General cargo,0,0,0,
+GUM,2018,Oil tankers,0,0,0,
+GUM,2018,Other types of ships,3,0.34,0.723,48.23
+GUM,2018,Total fleet,3,0.34,0.723,48.23
+GUM,2019,Bulk carriers,0,0,0,
+GUM,2019,Container ships,0,0,0,
+GUM,2019,General cargo,0,0,0,
+GUM,2019,Oil tankers,0,0,0,
+GUM,2019,Other types of ships,3,0.34,0.723,49.23
+GUM,2019,Total fleet,3,0.34,0.723,49.23
+GUM,2020,Bulk carriers,0,0,0,
+GUM,2020,Container ships,0,0,0,
+GUM,2020,General cargo,0,0,0,
+GUM,2020,Oil tankers,0,0,0,
+GUM,2020,Other types of ships,3,0.34,0.723,50.22
+GUM,2020,Total fleet,3,0.34,0.723,50.22
+GUY,2018,Bulk carriers,0,0,0,
+GUY,2018,Container ships,0,0,0,
+GUY,2018,General cargo,29,23.264,16.651,58.43
+GUY,2018,Oil tankers,7,16.198,11.961,48.63
+GUY,2018,Other types of ships,22,12.967,13.149,40.26
+GUY,2018,Total fleet,58,52.429,41.761,50.36
+GUY,2019,Bulk carriers,0,0,0,
+GUY,2019,Container ships,0,0,0,
+GUY,2019,General cargo,26,20.981,14.946,59.77
+GUY,2019,Oil tankers,6,13.345,8.993,53.03
+GUY,2019,Other types of ships,22,12.967,13.149,41.26
+GUY,2019,Total fleet,54,47.293,37.088,51.48
+GUY,2020,Bulk carriers,0,0,0,
+GUY,2020,Container ships,0,0,0,
+GUY,2020,General cargo,26,20.981,14.946,60.76
+GUY,2020,Oil tankers,7,15.938,10.727,51.5
+GUY,2020,Other types of ships,23,13.894,14.171,42.34
+GUY,2020,Total fleet,56,50.813,39.844,52.04
+HKG,2018,Bulk carriers,1144,100348.558,54931.665,7.14
+HKG,2018,Container ships,502,32301.196,29346.224,8.42
+HKG,2018,General cargo,212,3105.882,2329.141,10.28
+HKG,2018,Oil tankers,355,40654.407,21797.883,10.02
+HKG,2018,Other types of ships,406,6103.848,5373.386,19.04
+HKG,2018,Total fleet,2619,182513.891,113778.299,9.88
+HKG,2019,Bulk carriers,1164,108008.168,58864.888,7.58
+HKG,2019,Container ships,540,37597.285,34444.964,9
+HKG,2019,General cargo,206,3026.139,2274.011,11.31
+HKG,2019,Oil tankers,377,43240.404,23171.706,10.04
+HKG,2019,Other types of ships,419,6958.292,6339.498,19.2
+HKG,2019,Total fleet,2706,198830.288,125095.067,10.29
+HKG,2020,Bulk carriers,1156,109596.102,59629.937,8.31
+HKG,2020,Container ships,551,39095.162,36013.812,9.46
+HKG,2020,General cargo,192,2783.472,2090.365,12.11
+HKG,2020,Oil tankers,376,42560.805,22803.5,10.48
+HKG,2020,Other types of ships,426,7386.829,6815.305,19.55
+HKG,2020,Total fleet,2701,201422.37,127352.919,10.89
+HND,2018,Bulk carriers,0,0,0,
+HND,2018,Container ships,0,0,0,
+HND,2018,General cargo,247,245.122,162.939,48.96
+HND,2018,Oil tankers,84,126.827,69.058,42.06
+HND,2018,Other types of ships,190,95.205,97.934,47.31
+HND,2018,Total fleet,521,467.153,329.931,47.25
+HND,2019,Bulk carriers,0,0,0,
+HND,2019,Container ships,0,0,0,
+HND,2019,General cargo,239,243.624,162.535,49.4
+HND,2019,Oil tankers,81,114.004,61.02,43.08
+HND,2019,Other types of ships,179,86.736,91.057,48.57
+HND,2019,Total fleet,499,444.364,314.612,48.08
+HND,2020,Bulk carriers,0,0,0,
+HND,2020,Container ships,0,0,0,
+HND,2020,General cargo,239,240.28,160.241,50.42
+HND,2020,Oil tankers,82,425.193,218.996,43.8
+HND,2020,Other types of ships,180,86.27,91.061,49.31
+HND,2020,Total fleet,501,751.744,470.298,48.94
+HRV,2018,Bulk carriers,17,926.33,527.291,10.83
+HRV,2018,Container ships,0,0,0,
+HRV,2018,General cargo,33,12.995,9.479,59.85
+HRV,2018,Oil tankers,20,1128.808,634.724,16.3
+HRV,2018,Other types of ships,249,63.916,174.5,25.46
+HRV,2018,Total fleet,319,2132.049,1345.994,27.66
+HRV,2019,Bulk carriers,15,869.602,491.386,10.97
+HRV,2019,Container ships,0,0,0,
+HRV,2019,General cargo,30,11.556,8.479,60.26
+HRV,2019,Oil tankers,18,1028.828,575.154,18.83
+HRV,2019,Other types of ships,276,68.335,187.044,24.57
+HRV,2019,Total fleet,339,1978.321,1262.063,26.82
+HRV,2020,Bulk carriers,14,794.47,451.964,11.04
+HRV,2020,Container ships,0,0,0,
+HRV,2020,General cargo,31,11.706,8.635,59.3
+HRV,2020,Oil tankers,17,976.218,544.516,20.37
+HRV,2020,Other types of ships,292,70.479,193.823,23.94
+HRV,2020,Total fleet,354,1852.874,1198.938,26.36
+HTI,2018,Bulk carriers,0,0,0,
+HTI,2018,Container ships,0,0,0,
+HTI,2018,General cargo,3,1.004,0.744,52.92
+HTI,2018,Oil tankers,0,0,0,
+HTI,2018,Other types of ships,1,0.112,0.147,68
+HTI,2018,Total fleet,4,1.116,0.891,56.69
+HTI,2019,Bulk carriers,0,0,0,
+HTI,2019,Container ships,0,0,0,
+HTI,2019,General cargo,3,1.004,0.744,53.92
+HTI,2019,Oil tankers,0,0,0,
+HTI,2019,Other types of ships,1,0.112,0.147,69
+HTI,2019,Total fleet,4,1.116,0.891,57.69
+HTI,2020,Bulk carriers,0,0,0,
+HTI,2020,Container ships,0,0,0,
+HTI,2020,General cargo,3,1.004,0.744,54.92
+HTI,2020,Oil tankers,0,0,0,
+HTI,2020,Other types of ships,1,0.112,0.147,70
+HTI,2020,Total fleet,4,1.116,0.891,58.69
+HUN,2019,Bulk carriers,0,0,0,
+HUN,2019,Container ships,0,0,0,
+HUN,2019,General cargo,0,0,0,
+HUN,2019,Oil tankers,0,0,0,
+HUN,2019,Other types of ships,1,0.135,0.145,5.17
+HUN,2019,Total fleet,1,0.135,0.145,5.17
+HUN,2020,Bulk carriers,0,0,0,
+HUN,2020,Container ships,0,0,0,
+HUN,2020,General cargo,0,0,0,
+HUN,2020,Oil tankers,0,0,0,
+HUN,2020,Other types of ships,1,0.135,0.145,6.17
+HUN,2020,Total fleet,1,0.135,0.145,6.17
+IDN,2018,Bulk carriers,97,4029.517,2320.527,20.74
+IDN,2018,Container ships,206,2398.08,1849.309,17.48
+IDN,2018,General cargo,2199,4347.827,3189.154,27.51
+IDN,2018,Oil tankers,610,6969.313,4243.504,24.54
+IDN,2018,Other types of ships,6622,6010.041,5781.529,14.46
+IDN,2018,Total fleet,9734,23754.778,17384.023,18.17
+IDN,2019,Bulk carriers,109,4695.15,2696.741,19.97
+IDN,2019,Container ships,218,2428.113,1885.014,16.94
+IDN,2019,General cargo,2215,4502.176,3288.209,27.73
+IDN,2019,Oil tankers,635,7242.371,4406.052,24.42
+IDN,2019,Other types of ships,6870,6546.515,6229.847,14.92
+IDN,2019,Total fleet,10047,25414.326,18505.863,18.44
+IDN,2020,Bulk carriers,130,5798.639,3309.582,19.74
+IDN,2020,Container ships,225,2437.984,1905.466,16.36
+IDN,2020,General cargo,2265,4527.213,3313.816,27.98
+IDN,2020,Oil tankers,667,8065.16,4889.842,24.22
+IDN,2020,Other types of ships,7262,6407.79,6244.014,15.25
+IDN,2020,Total fleet,10549,27236.787,19662.72,18.63
+IMN,2018,Bulk carriers,104,12908.051,6879.177,7.73
+IMN,2018,Container ships,12,518.142,478.215,9.67
+IMN,2018,General cargo,34,222.489,237.45,15.21
+IMN,2018,Oil tankers,113,10622.977,5981.456,9.04
+IMN,2018,Other types of ships,148,2995.648,2925.241,10.61
+IMN,2018,Total fleet,411,27267.307,16501.539,9.8
+IMN,2019,Bulk carriers,112,14367.284,7629.355,8.63
+IMN,2019,Container ships,12,434.308,339.567,9.07
+IMN,2019,General cargo,29,198.193,220.372,14.19
+IMN,2019,Oil tankers,102,9835.208,5511.652,9.31
+IMN,2019,Other types of ships,132,3053.662,3025.942,9.9
+IMN,2019,Total fleet,387,27888.655,16726.888,9.67
+IMN,2020,Bulk carriers,109,14303.171,7561.977,8.93
+IMN,2020,Container ships,12,504.171,399.662,9.8
+IMN,2020,General cargo,30,211.477,249.568,15.06
+IMN,2020,Oil tankers,78,6106.668,3525.306,9.66
+IMN,2020,Other types of ships,119,2975.944,3062.874,10.66
+IMN,2020,Total fleet,348,24101.431,14799.387,10.25
+IND,2018,Bulk carriers,73,4949.226,2728.676,12.71
+IND,2018,Container ships,23,561.341,434.683,15.8
+IND,2018,General cargo,575,1248.953,787.015,15.44
+IND,2018,Oil tankers,138,9779.978,5363.8,17.23
+IND,2018,Other types of ships,925,1991.148,1911.764,19.28
+IND,2018,Total fleet,1734,18530.646,11225.938,17.52
+IND,2019,Bulk carriers,66,4453.656,2449.537,12.79
+IND,2019,Container ships,25,686.513,531.908,17.01
+IND,2019,General cargo,578,1256.902,789.797,16.37
+IND,2019,Oil tankers,132,9072.513,4973.871,17.25
+IND,2019,Other types of ships,947,1972.366,1902.673,19.5
+IND,2019,Total fleet,1748,17441.95,10647.786,18
+IND,2020,Bulk carriers,63,4288.81,2348.222,12.88
+IND,2020,Container ships,23,668.832,518.622,17.74
+IND,2020,General cargo,584,1270.952,794.054,17.1
+IND,2020,Oil tankers,141,9509.476,5247.525,17.85
+IND,2020,Other types of ships,978,1745.428,1691.896,19.66
+IND,2020,Total fleet,1789,17483.498,10600.319,18.42
+IRL,2018,Bulk carriers,8,155.746,104.2,6.15
+IRL,2018,Container ships,0,0,0,
+IRL,2018,General cargo,34,139.457,89.443,16.31
+IRL,2018,Oil tankers,1,0.274,0.191,25.17
+IRL,2018,Other types of ships,45,11.837,17.906,35.36
+IRL,2018,Total fleet,88,307.314,211.74,25.23
+IRL,2019,Bulk carriers,9,172.389,114.199,6.37
+IRL,2019,Container ships,0,0,0,
+IRL,2019,General cargo,37,161.969,103.348,17.39
+IRL,2019,Oil tankers,1,0.274,0.191,26.17
+IRL,2019,Other types of ships,46,11.972,18.015,37
+IRL,2019,Total fleet,93,346.604,235.753,26.12
+IRL,2020,Bulk carriers,11,206.111,134.272,6.11
+IRL,2020,Container ships,0,0,0,
+IRL,2020,General cargo,37,166.122,105.427,17.99
+IRL,2020,Oil tankers,1,0.274,0.191,27.17
+IRL,2020,Other types of ships,48,12.05,18.297,36.66
+IRL,2020,Total fleet,97,384.557,258.187,25.98
+IRN,2018,Bulk carriers,31,1957.271,1112.672,11.42
+IRN,2018,Container ships,26,1126.793,922.174,12.41
+IRN,2018,General cargo,372,750.268,521.031,24.01
+IRN,2018,Oil tankers,18,353.842,207.832,30.59
+IRN,2018,Other types of ships,349,178.527,196.844,27.38
+IRN,2018,Total fleet,796,4366.701,2960.553,24.77
+IRN,2019,Bulk carriers,31,1957.271,1112.672,12.42
+IRN,2019,Container ships,26,1126.793,922.174,13.41
+IRN,2019,General cargo,371,747.264,518.494,24.99
+IRN,2019,Oil tankers,17,318.772,182.618,32.59
+IRN,2019,Other types of ships,357,187.755,204.068,28.16
+IRN,2019,Total fleet,802,4337.855,2940.026,25.7
+IRN,2020,Bulk carriers,32,2009.737,1142.736,13.45
+IRN,2020,Container ships,27,1156.663,945.459,13.9
+IRN,2020,General cargo,394,747.541,518.819,24.85
+IRN,2020,Oil tankers,83,15513.161,8162.125,19.66
+IRN,2020,Other types of ships,388,405.363,342.933,27.49
+IRN,2020,Total fleet,924,19832.465,11112.072,24.78
+IRQ,2018,Bulk carriers,0,0,0,
+IRQ,2018,Container ships,0,0,0,
+IRQ,2018,General cargo,1,1,0.48,13.92
+IRQ,2018,Oil tankers,6,29.654,19.137,29.88
+IRQ,2018,Other types of ships,62,66.162,60.711,29.59
+IRQ,2018,Total fleet,69,96.816,80.328,29.39
+IRQ,2019,Bulk carriers,0,0,0,
+IRQ,2019,Container ships,0,0,0,
+IRQ,2019,General cargo,1,1,0.48,14.92
+IRQ,2019,Oil tankers,6,29.654,19.137,30.88
+IRQ,2019,Other types of ships,61,65.865,60.213,30.95
+IRQ,2019,Total fleet,68,96.519,79.83,30.71
+IRQ,2020,Bulk carriers,0,0,0,
+IRQ,2020,Container ships,0,0,0,
+IRQ,2020,General cargo,1,1,0.48,15.92
+IRQ,2020,Oil tankers,6,29.654,19.137,31.88
+IRQ,2020,Other types of ships,62,71.216,64.661,31.55
+IRQ,2020,Total fleet,69,101.87,84.278,31.35
+ISL,2018,Bulk carriers,0,0,0,
+ISL,2018,Container ships,0,0,0,
+ISL,2018,General cargo,5,2.088,2.067,37.7
+ISL,2018,Oil tankers,1,0.465,0.372,39.17
+ISL,2018,Other types of ships,30,15.973,26.458,32.43
+ISL,2018,Total fleet,36,18.526,28.897,33.35
+ISL,2019,Bulk carriers,0,0,0,
+ISL,2019,Container ships,0,0,0,
+ISL,2019,General cargo,5,2.088,2.067,38.7
+ISL,2019,Oil tankers,2,1.243,0.868,20.09
+ISL,2019,Other types of ships,30,11.984,22.024,32.82
+ISL,2019,Total fleet,37,15.315,24.959,32.93
+ISL,2020,Bulk carriers,0,0,0,
+ISL,2020,Container ships,0,0,0,
+ISL,2020,General cargo,5,2.088,2.067,39.7
+ISL,2020,Oil tankers,2,1.243,0.868,21.09
+ISL,2020,Other types of ships,33,12.618,25.714,32.08
+ISL,2020,Total fleet,40,15.949,28.649,32.48
+ISR,2018,Bulk carriers,0,0,0,
+ISR,2018,Container ships,5,288.259,241.98,11.42
+ISR,2018,General cargo,5,29.402,21.133,28.84
+ISR,2018,Oil tankers,3,2.186,1.086,39.7
+ISR,2018,Other types of ships,29,6.42,10.736,26.36
+ISR,2018,Total fleet,42,326.267,274.935,25.83
+ISR,2019,Bulk carriers,0,0,0,
+ISR,2019,Container ships,5,288.259,241.98,12.42
+ISR,2019,General cargo,2,12.967,8.873,22.42
+ISR,2019,Oil tankers,3,2.186,1.086,40.7
+ISR,2019,Other types of ships,29,5.95,10.58,25.54
+ISR,2019,Total fleet,39,309.362,262.519,24.86
+ISR,2020,Bulk carriers,0,0,0,
+ISR,2020,Container ships,6,310.102,253.619,12.36
+ISR,2020,General cargo,2,12.967,8.873,23.42
+ISR,2020,Oil tankers,3,2.186,1.086,41.7
+ISR,2020,Other types of ships,30,5.224,9.866,23.55
+ISR,2020,Total fleet,41,330.479,273.444,23.23
+ITA,2018,Bulk carriers,59,4785.67,2624.868,8.43
+ITA,2018,Container ships,10,623.368,550.048,12.28
+ITA,2018,General cargo,118,1594.786,2841.624,20.32
+ITA,2018,Oil tankers,130,5356.145,3091.276,17.45
+ITA,2018,Other types of ships,1045,2678.413,6726.701,28.04
+ITA,2018,Total fleet,1362,15038.382,15834.517,25.39
+ITA,2019,Bulk carriers,48,4006.123,2174.513,9.51
+ITA,2019,Container ships,9,569.724,508.028,13.49
+ITA,2019,General cargo,116,1607.257,2906.614,20.17
+ITA,2019,Oil tankers,119,4633.218,2678.201,18.98
+ITA,2019,Other types of ships,1033,2620.687,6785.046,28.44
+ITA,2019,Total fleet,1325,13437.009,15052.402,26.07
+ITA,2020,Bulk carriers,42,3609.944,1959.54,9.86
+ITA,2020,Container ships,7,462.491,423.988,15.39
+ITA,2020,General cargo,113,1570.477,2866.872,21.04
+ITA,2020,Oil tankers,106,3706.713,2149.715,20.73
+ITA,2020,Other types of ships,1042,2627.966,7167.639,29.05
+ITA,2020,Total fleet,1310,11977.591,14567.754,27
+JAM,2018,Bulk carriers,1,10.083,6.609,7.34
+JAM,2018,Container ships,8,81.198,64.813,10.92
+JAM,2018,General cargo,9,43.483,30.482,9.46
+JAM,2018,Oil tankers,0,0,0,
+JAM,2018,Other types of ships,24,14.087,56.401,32.38
+JAM,2018,Total fleet,42,148.85,158.305,22.79
+JAM,2019,Bulk carriers,1,10.083,6.609,8.34
+JAM,2019,Container ships,8,81.198,64.813,11.92
+JAM,2019,General cargo,6,30.363,21.628,10.32
+JAM,2019,Oil tankers,0,0,0,
+JAM,2019,Other types of ships,24,14.523,56.648,31.79
+JAM,2019,Total fleet,39,136.167,149.698,23.81
+JAM,2020,Bulk carriers,1,10.083,6.609,9.34
+JAM,2020,Container ships,7,67.438,54.856,12.62
+JAM,2020,General cargo,8,43.185,30.64,8.59
+JAM,2020,Oil tankers,1,3.271,1.943,21.09
+JAM,2020,Other types of ships,29,16.477,58.13,29.39
+JAM,2020,Total fleet,46,140.454,152.178,22.61
+JOR,2018,Bulk carriers,0,0,0,
+JOR,2018,Container ships,0,0,0,
+JOR,2018,General cargo,8,87.27,62.155,16.76
+JOR,2018,Oil tankers,1,2.5,1.959,1.67
+JOR,2018,Other types of ships,23,10.86,29.127,12.65
+JOR,2018,Total fleet,32,100.63,93.241,13.33
+JOR,2019,Bulk carriers,0,0,0,
+JOR,2019,Container ships,0,0,0,
+JOR,2019,General cargo,7,89.532,62.848,17.52
+JOR,2019,Oil tankers,1,2.5,1.959,2.67
+JOR,2019,Other types of ships,26,13.664,32.708,12.22
+JOR,2019,Total fleet,34,105.696,97.515,13.03
+JOR,2020,Bulk carriers,0,0,0,
+JOR,2020,Container ships,0,0,0,
+JOR,2020,General cargo,7,89.532,62.848,18.52
+JOR,2020,Oil tankers,1,2.5,1.959,3.67
+JOR,2020,Other types of ships,27,14.861,33.892,13.29
+JOR,2020,Total fleet,35,106.893,98.699,14.06
+JPN,2018,Bulk carriers,157,19576.617,10476.943,9.95
+JPN,2018,Container ships,30,944.52,923.538,6.48
+JPN,2018,General cargo,1777,2780.078,1786.594,19.56
+JPN,2018,Oil tankers,673,10114.581,5377.572,17.91
+JPN,2018,Other types of ships,2356,4292.819,7760.525,22.23
+JPN,2018,Total fleet,4993,37708.615,26325.172,20.21
+JPN,2019,Bulk carriers,158,19712.795,10603.623,9.53
+JPN,2019,Container ships,38,1575.166,1578.518,5.79
+JPN,2019,General cargo,1869,2953.398,1865.338,19.22
+JPN,2019,Oil tankers,660,10413.55,5515.441,18.51
+JPN,2019,Other types of ships,2366,4562.285,8294.923,22.72
+JPN,2019,Total fleet,5091,39217.194,27857.843,20.36
+JPN,2020,Bulk carriers,161,20213.625,10898.221,9.6
+JPN,2020,Container ships,44,2272.917,2300.692,6.09
+JPN,2020,General cargo,2040,3243.708,2019.366,18.28
+JPN,2020,Oil tankers,683,10088.023,5341.467,18.51
+JPN,2020,Other types of ships,2542,4930.839,8843.122,21.87
+JPN,2020,Total fleet,5470,40749.112,29402.868,19.62
+KAZ,2018,Bulk carriers,0,0,0,
+KAZ,2018,Container ships,0,0,0,
+KAZ,2018,General cargo,3,11.743,8.859,6.87
+KAZ,2018,Oil tankers,10,102.203,60.153,14.11
+KAZ,2018,Other types of ships,111,47.821,66.24,19.2
+KAZ,2018,Total fleet,124,161.767,135.252,18.49
+KAZ,2019,Bulk carriers,0,0,0,
+KAZ,2019,Container ships,0,0,0,
+KAZ,2019,General cargo,2,10.977,8.364,10.38
+KAZ,2019,Oil tankers,6,50.359,29.377,18.57
+KAZ,2019,Other types of ships,115,60.514,72.366,18.43
+KAZ,2019,Total fleet,123,121.85,110.107,18.3
+KAZ,2020,Bulk carriers,0,0,0,
+KAZ,2020,Container ships,0,0,0,
+KAZ,2020,General cargo,3,18.123,14.05,8.64
+KAZ,2020,Oil tankers,8,76.366,45.081,17.03
+KAZ,2020,Other types of ships,113,56.421,70.316,19.48
+KAZ,2020,Total fleet,124,150.91,129.447,19.06
+KEN,2018,Bulk carriers,0,0,0,
+KEN,2018,Container ships,0,0,0,
+KEN,2018,General cargo,0,0,0,
+KEN,2018,Oil tankers,2,2.073,0.971,51.76
+KEN,2018,Other types of ships,22,8.519,8.571,32.44
+KEN,2018,Total fleet,24,10.592,9.542,34.05
+KEN,2019,Bulk carriers,0,0,0,
+KEN,2019,Container ships,0,0,0,
+KEN,2019,General cargo,0,0,0,
+KEN,2019,Oil tankers,3,3.026,1.6,37.81
+KEN,2019,Other types of ships,22,8.519,8.571,33.44
+KEN,2019,Total fleet,25,11.545,10.171,33.96
+KEN,2020,Bulk carriers,0,0,0,
+KEN,2020,Container ships,0,0,0,
+KEN,2020,General cargo,0,0,0,
+KEN,2020,Oil tankers,3,3.026,1.6,38.81
+KEN,2020,Other types of ships,22,8.519,8.571,34.44
+KEN,2020,Total fleet,25,11.545,10.171,34.96
+KHM,2018,Bulk carriers,0,0,0,
+KHM,2018,Container ships,2,13.686,9.065,26.09
+KHM,2018,General cargo,179,402.093,269.7,31.21
+KHM,2018,Oil tankers,19,40.243,21.643,35.17
+KHM,2018,Other types of ships,70,63.426,77.475,34.81
+KHM,2018,Total fleet,270,519.448,377.883,32.38
+KHM,2019,Bulk carriers,0,0,0,
+KHM,2019,Container ships,2,13.686,9.065,27.09
+KHM,2019,General cargo,167,370.92,246.93,32.1
+KHM,2019,Oil tankers,19,40.243,21.643,36.17
+KHM,2019,Other types of ships,66,47.266,61.863,35.69
+KHM,2019,Total fleet,254,472.116,339.501,33.3
+KHM,2020,Bulk carriers,0,0,0,
+KHM,2020,Container ships,2,13.686,9.065,28.09
+KHM,2020,General cargo,162,359.543,238.441,33.1
+KHM,2020,Oil tankers,19,40.243,21.643,37.17
+KHM,2020,Other types of ships,64,34.839,51.762,36.78
+KHM,2020,Total fleet,247,448.312,320.911,34.33
+KIR,2018,Bulk carriers,3,46.702,29.756,9.17
+KIR,2018,Container ships,0,0,0,
+KIR,2018,General cargo,48,190.565,125.237,15.3
+KIR,2018,Oil tankers,13,80.077,50.414,30.14
+KIR,2018,Other types of ships,45,107.97,93.878,29.02
+KIR,2018,Total fleet,109,425.315,299.285,22.56
+KIR,2019,Bulk carriers,1,11.224,7.532,11.09
+KIR,2019,Container ships,0,0,0,
+KIR,2019,General cargo,39,150.498,100.062,16.98
+KIR,2019,Oil tankers,11,28.717,18.648,32.94
+KIR,2019,Other types of ships,37,73.989,74.991,28.28
+KIR,2019,Total fleet,88,264.428,201.233,23.66
+KIR,2020,Bulk carriers,2,81.571,45.082,18.88
+KIR,2020,Container ships,0,0,0,
+KIR,2020,General cargo,39,140.188,95.735,17.01
+KIR,2020,Oil tankers,10,21.127,13.111,34.88
+KIR,2020,Other types of ships,34,56.419,63.122,27.63
+KIR,2020,Total fleet,85,299.305,217.05,23.4
+KNA,2018,Bulk carriers,4,189.017,109.209,25.65
+KNA,2018,Container ships,6,84.513,68.124,18.88
+KNA,2018,General cargo,41,162.433,127.268,27.36
+KNA,2018,Oil tankers,56,711.779,413.213,34.12
+KNA,2018,Other types of ships,125,171.956,226.475,29.46
+KNA,2018,Total fleet,232,1319.698,944.289,29.87
+KNA,2019,Bulk carriers,3,117.756,67.891,20.23
+KNA,2019,Container ships,3,70.947,53.573,20.12
+KNA,2019,General cargo,32,121.11,97.648,32.89
+KNA,2019,Oil tankers,52,447.408,262.41,35.16
+KNA,2019,Other types of ships,113,151.88,153.948,28.89
+KNA,2019,Total fleet,203,909.101,635.47,30.87
+KNA,2020,Bulk carriers,4,159.781,91.165,23.3
+KNA,2020,Container ships,3,70.947,53.573,21.11
+KNA,2020,General cargo,36,131.913,102.607,31.69
+KNA,2020,Oil tankers,51,698.87,413.139,34.59
+KNA,2020,Other types of ships,110,226.645,187.657,27.92
+KNA,2020,Total fleet,204,1288.156,848.141,30.06
+KOR,2018,Bulk carriers,92,7547.228,4064.67,16.62
+KOR,2018,Container ships,87,1397.642,1094.432,16.26
+KOR,2018,General cargo,368,1391.867,993.055,26.67
+KOR,2018,Oil tankers,192,875.821,490.663,27.38
+KOR,2018,Other types of ships,1131,2716.025,3130.918,24.61
+KOR,2018,Total fleet,1870,13928.583,9773.738,24.52
+KOR,2019,Bulk carriers,83,6670.408,3605.791,16.5
+KOR,2019,Container ships,86,1392.06,1093.327,17.06
+KOR,2019,General cargo,365,1380.079,990.157,27.14
+KOR,2019,Oil tankers,190,699.821,415.467,27.26
+KOR,2019,Other types of ships,1160,2900.925,3256.99,24.75
+KOR,2019,Total fleet,1884,13043.293,9361.732,24.75
+KOR,2020,Bulk carriers,88,6871.012,3699.008,16.06
+KOR,2020,Container ships,84,1802.86,1451.36,16.44
+KOR,2020,General cargo,358,1316.562,933.277,27.85
+KOR,2020,Oil tankers,199,1635.525,882.327,26.71
+KOR,2020,Other types of ships,1289,3348.299,3941.3,23.52
+KOR,2020,Total fleet,2018,14974.259,10907.272,23.98
+KWT,2018,Bulk carriers,0,0,0,
+KWT,2018,Container ships,0,0,0,
+KWT,2018,General cargo,16,59.611,72.675,32.77
+KWT,2018,Oil tankers,26,4582.346,2422.634,10.12
+KWT,2018,Other types of ships,115,252.08,228.885,22.16
+KWT,2018,Total fleet,157,4894.038,2724.194,21.25
+KWT,2019,Bulk carriers,0,0,0,
+KWT,2019,Container ships,0,0,0,
+KWT,2019,General cargo,15,51.681,67.188,35.21
+KWT,2019,Oil tankers,24,3961.38,2105.628,10.34
+KWT,2019,Other types of ships,115,152.602,139.377,22.71
+KWT,2019,Total fleet,154,4165.663,2312.193,22
+KWT,2020,Bulk carriers,0,0,0,
+KWT,2020,Container ships,0,0,0,
+KWT,2020,General cargo,15,51.681,67.188,36.21
+KWT,2020,Oil tankers,24,3961.38,2105.628,11.34
+KWT,2020,Other types of ships,120,207.585,190.566,22.75
+KWT,2020,Total fleet,159,4220.646,2363.382,22.29
+LAO,2018,Bulk carriers,0,0,0,
+LAO,2018,Container ships,0,0,0,
+LAO,2018,General cargo,1,1.562,0.483,37.59
+LAO,2018,Oil tankers,0,0,0,
+LAO,2018,Other types of ships,0,0,0,
+LAO,2018,Total fleet,1,1.562,0.483,37.59
+LAO,2019,Bulk carriers,0,0,0,
+LAO,2019,Container ships,0,0,0,
+LAO,2019,General cargo,1,1.562,0.483,38.59
+LAO,2019,Oil tankers,0,0,0,
+LAO,2019,Other types of ships,0,0,0,
+LAO,2019,Total fleet,1,1.562,0.483,38.59
+LAO,2020,Bulk carriers,0,0,0,
+LAO,2020,Container ships,0,0,0,
+LAO,2020,General cargo,1,1.562,0.483,39.59
+LAO,2020,Oil tankers,0,0,0,
+LAO,2020,Other types of ships,0,0,0,
+LAO,2020,Total fleet,1,1.562,0.483,39.59
+LBN,2018,Bulk carriers,1,22.242,13.706,25.25
+LBN,2018,Container ships,1,4.83,2.986,21.34
+LBN,2018,General cargo,38,139.791,173.998,45.96
+LBN,2018,Oil tankers,1,0.8,0.373,21.76
+LBN,2018,Other types of ships,12,14.023,14.929,42.46
+LBN,2018,Total fleet,53,181.686,205.992,43.86
+LBN,2019,Bulk carriers,2,45.965,28.137,24.25
+LBN,2019,Container ships,1,4.83,2.986,22.34
+LBN,2019,General cargo,36,136.984,176.439,44.92
+LBN,2019,Oil tankers,1,0.8,0.373,22.76
+LBN,2019,Other types of ships,13,14.346,15.529,43.57
+LBN,2019,Total fleet,53,202.925,223.464,42.96
+LBN,2020,Bulk carriers,2,45.965,28.137,25.25
+LBN,2020,Container ships,0,0,0,
+LBN,2020,General cargo,33,119.572,156.419,46.09
+LBN,2020,Oil tankers,1,0.8,0.373,23.75
+LBN,2020,Other types of ships,14,18.566,22.58,44.92
+LBN,2020,Total fleet,50,184.903,207.509,44.48
+LBR,2018,Bulk carriers,1087,90170.921,49296.904,8.06
+LBR,2018,Container ships,828,45144.141,39227.947,10.71
+LBR,2018,General cargo,130,1922.931,1511.666,12.22
+LBR,2018,Oil tankers,723,73369.169,40154.353,10.85
+LBR,2018,Other types of ships,546,13450.029,12393.408,15.43
+LBR,2018,Total fleet,3314,224057.191,142584.278,10.71
+LBR,2019,Bulk carriers,1161,98101.188,53496.375,8.64
+LBR,2019,Container ships,851,45966.158,40061.199,11.56
+LBR,2019,General cargo,145,2191.736,1717.797,13.15
+LBR,2019,Oil tankers,763,81605.973,44506.299,10.83
+LBR,2019,Other types of ships,562,16021.662,14296.545,15.17
+LBR,2019,Total fleet,3482,243886.717,154078.215,11.08
+LBR,2020,Bulk carriers,1326,116478.008,63398.925,8.82
+LBR,2020,Container ships,855,47571.507,41664.261,12.38
+LBR,2020,General cargo,142,2154.593,1679.151,14.34
+LBR,2020,Oil tankers,819,92112.331,50141.175,10.9
+LBR,2020,Other types of ships,573,16925.907,14745.59,14.74
+LBR,2020,Total fleet,3715,275242.346,171629.102,11.22
+LBY,2018,Bulk carriers,0,0,0,
+LBY,2018,Container ships,0,0,0,
+LBY,2018,General cargo,2,1.192,0.97,41.3
+LBY,2018,Oil tankers,16,1392.619,742.499,15.55
+LBY,2018,Other types of ships,80,739.122,423.219,27.41
+LBY,2018,Total fleet,98,2132.933,1166.688,25.76
+LBY,2019,Bulk carriers,0,0,0,
+LBY,2019,Container ships,0,0,0,
+LBY,2019,General cargo,2,1.192,0.97,42.3
+LBY,2019,Oil tankers,12,884.705,478.919,18.51
+LBY,2019,Other types of ships,80,739.122,423.219,28.41
+LBY,2019,Total fleet,94,1625.019,903.108,27.44
+LBY,2020,Bulk carriers,0,0,0,
+LBY,2020,Container ships,0,0,0,
+LBY,2020,General cargo,2,1.192,0.97,43.3
+LBY,2020,Oil tankers,12,884.705,478.919,19.51
+LBY,2020,Other types of ships,80,739.122,423.219,29.41
+LBY,2020,Total fleet,94,1625.019,903.108,28.44
+LKA,2018,Bulk carriers,9,272.171,163.255,14.45
+LKA,2018,Container ships,1,16.855,15.633,8.25
+LKA,2018,General cargo,17,84.981,63.314,12.47
+LKA,2018,Oil tankers,11,20.296,11.444,29.77
+LKA,2018,Other types of ships,54,38.372,37.101,23.68
+LKA,2018,Total fleet,92,432.675,290.747,21.27
+LKA,2019,Bulk carriers,8,248.931,148.824,14.39
+LKA,2019,Container ships,1,16.855,15.633,9.25
+LKA,2019,General cargo,17,84.981,63.314,13.47
+LKA,2019,Oil tankers,13,29.703,18.901,25.29
+LKA,2019,Other types of ships,56,39.003,38.212,23.87
+LKA,2019,Total fleet,95,419.473,284.884,21.25
+LKA,2020,Bulk carriers,6,225.462,134.827,13.61
+LKA,2020,Container ships,1,16.855,15.633,10.25
+LKA,2020,General cargo,19,84.272,63.147,15.37
+LKA,2020,Oil tankers,12,27.717,18.203,25.78
+LKA,2020,Other types of ships,60,40.585,39.175,23.69
+LKA,2020,Total fleet,98,394.891,270.985,21.58
+LTU,2018,Bulk carriers,0,0,0,
+LTU,2018,Container ships,3,32.735,23.877,14.2
+LTU,2018,General cargo,24,74.465,115.251,32.23
+LTU,2018,Oil tankers,2,4.612,2.971,42.8
+LTU,2018,Other types of ships,34,92.409,223.12,26.03
+LTU,2018,Total fleet,63,204.221,365.219,28.36
+LTU,2019,Bulk carriers,0,0,0,
+LTU,2019,Container ships,3,32.735,23.877,15.2
+LTU,2019,General cargo,21,66.339,109.471,33.01
+LTU,2019,Oil tankers,2,4.612,2.971,43.8
+LTU,2019,Other types of ships,34,76.241,176.256,26.89
+LTU,2019,Total fleet,60,179.927,312.575,29.01
+LTU,2020,Bulk carriers,0,0,0,
+LTU,2020,Container ships,4,46.495,33.843,15.63
+LTU,2020,General cargo,23,94.164,153.907,32.33
+LTU,2020,Oil tankers,2,4.612,2.971,44.79
+LTU,2020,Other types of ships,33,75.695,175.92,27.07
+LTU,2020,Total fleet,62,220.966,366.641,28.86
+LUX,2018,Bulk carriers,4,339.856,186.587,2.44
+LUX,2018,Container ships,9,561.953,488.984,11.88
+LUX,2018,General cargo,7,35.032,32.119,13.68
+LUX,2018,Oil tankers,2,76.478,48.804,9.3
+LUX,2018,Other types of ships,127,865.128,700.662,10.11
+LUX,2018,Total fleet,149,1878.447,1457.156,10.17
+LUX,2019,Bulk carriers,4,339.856,186.587,3.44
+LUX,2019,Container ships,4,234.296,202.927,13.88
+LUX,2019,General cargo,14,60.48,56.043,14.83
+LUX,2019,Oil tankers,3,151.477,92.788,7
+LUX,2019,Other types of ships,119,839.506,679.814,10.87
+LUX,2019,Total fleet,144,1625.615,1218.159,11.05
+LUX,2020,Bulk carriers,4,173.776,101.69,5
+LUX,2020,Container ships,1,23.58,18.334,16.59
+LUX,2020,General cargo,21,103.828,102.945,17.22
+LUX,2020,Oil tankers,3,151.477,92.788,8
+LUX,2020,Other types of ships,119,839.833,671.754,10.96
+LUX,2020,Total fleet,148,1292.494,987.511,11.66
+LVA,2018,Bulk carriers,0,0,0,
+LVA,2018,Container ships,0,0,0,
+LVA,2018,General cargo,17,49.636,33.543,20.86
+LVA,2018,Oil tankers,8,8.867,6.907,39.72
+LVA,2018,Other types of ships,41,44.387,105.494,33.77
+LVA,2018,Total fleet,66,102.89,145.944,31.17
+LVA,2019,Bulk carriers,0,0,0,
+LVA,2019,Container ships,0,0,0,
+LVA,2019,General cargo,11,22.589,15.815,23.22
+LVA,2019,Oil tankers,8,8.867,6.907,40.72
+LVA,2019,Other types of ships,40,44.335,105.35,35.31
+LVA,2019,Total fleet,59,75.791,128.072,33.79
+LVA,2020,Bulk carriers,0,0,0,
+LVA,2020,Container ships,0,0,0,
+LVA,2020,General cargo,16,40.995,29.631,22.86
+LVA,2020,Oil tankers,9,12.691,9.711,41.5
+LVA,2020,Other types of ships,41,56.35,115.185,35.96
+LVA,2020,Total fleet,66,110.036,154.527,33.54
+MAC,2018,Bulk carriers,0,0,0,
+MAC,2018,Container ships,0,0,0,
+MAC,2018,General cargo,0,0,0,
+MAC,2018,Oil tankers,0,0,0,
+MAC,2018,Other types of ships,1,2.184,2.007,50.59
+MAC,2018,Total fleet,1,2.184,2.007,50.59
+MAC,2019,Bulk carriers,0,0,0,
+MAC,2019,Container ships,0,0,0,
+MAC,2019,General cargo,0,0,0,
+MAC,2019,Oil tankers,0,0,0,
+MAC,2019,Other types of ships,1,2.184,2.007,51.59
+MAC,2019,Total fleet,1,2.184,2.007,51.59
+MAC,2020,Bulk carriers,0,0,0,
+MAC,2020,Container ships,0,0,0,
+MAC,2020,General cargo,0,0,0,
+MAC,2020,Oil tankers,0,0,0,
+MAC,2020,Other types of ships,1,2.184,2.007,52.59
+MAC,2020,Total fleet,1,2.184,2.007,52.59
+MAR,2018,Bulk carriers,0,0,0,
+MAR,2018,Container ships,6,78.203,63.837,19.84
+MAR,2018,General cargo,6,9.081,11.24,39.14
+MAR,2018,Oil tankers,3,12.794,9.738,13.78
+MAR,2018,Other types of ships,72,63.182,162.424,26.41
+MAR,2018,Total fleet,87,163.26,247.239,26.4
+MAR,2019,Bulk carriers,0,0,0,
+MAR,2019,Container ships,4,60.521,45.792,19.96
+MAR,2019,General cargo,4,3.874,2.28,40.92
+MAR,2019,Oil tankers,3,12.794,9.738,14.78
+MAR,2019,Other types of ships,75,56.703,124.407,25.86
+MAR,2019,Total fleet,86,133.892,182.217,25.9
+MAR,2020,Bulk carriers,0,0,0,
+MAR,2020,Container ships,7,94.631,74.372,19.77
+MAR,2020,General cargo,4,3.874,2.28,41.92
+MAR,2020,Oil tankers,2,7.801,5.774,12.42
+MAR,2020,Other types of ships,75,54.751,111.97,26.35
+MAR,2020,Total fleet,88,161.057,194.396,26.22
+MCO,2018,Bulk carriers,0,0,0,
+MCO,2018,Container ships,0,0,0,
+MCO,2018,General cargo,0,0,0,
+MCO,2018,Oil tankers,0,0,0,
+MCO,2018,Other types of ships,2,1.594,2.539,14.25
+MCO,2018,Total fleet,2,1.594,2.539,14.25
+MCO,2019,Bulk carriers,0,0,0,
+MCO,2019,Container ships,0,0,0,
+MCO,2019,General cargo,0,0,0,
+MCO,2019,Oil tankers,0,0,0,
+MCO,2019,Other types of ships,1,0.094,0.341,26.92
+MCO,2019,Total fleet,1,0.094,0.341,26.92
+MCO,2020,Bulk carriers,0,0,0,
+MCO,2020,Container ships,0,0,0,
+MCO,2020,General cargo,0,0,0,
+MCO,2020,Oil tankers,0,0,0,
+MCO,2020,Other types of ships,1,0.094,0.341,27.92
+MCO,2020,Total fleet,1,0.094,0.341,27.92
+MDA,2018,Bulk carriers,3,78.316,46.143,33.39
+MDA,2018,Container ships,3,29.006,21.229,27.92
+MDA,2018,General cargo,101,351.499,278.909,37.76
+MDA,2018,Oil tankers,8,60.323,33.972,35.85
+MDA,2018,Other types of ships,24,15.297,12.902,38.96
+MDA,2018,Total fleet,139,534.441,393.155,37.55
+MDA,2019,Bulk carriers,4,104.37,62.093,31.9
+MDA,2019,Container ships,4,34.342,25.228,27.96
+MDA,2019,General cargo,95,333.078,265.566,38.14
+MDA,2019,Oil tankers,8,18.587,10.814,36.16
+MDA,2019,Other types of ships,26,21.378,17.884,36.41
+MDA,2019,Total fleet,137,511.755,381.585,37.22
+MDA,2020,Bulk carriers,5,136.154,81.827,30.37
+MDA,2020,Container ships,5,40.614,29.616,27.14
+MDA,2020,General cargo,83,279.453,213.29,38.7
+MDA,2020,Oil tankers,7,16.016,10.048,37.18
+MDA,2020,Other types of ships,27,19.372,18.038,37.7
+MDA,2020,Total fleet,127,491.609,352.819,37.62
+MDG,2018,Bulk carriers,0,0,0,
+MDG,2018,Container ships,0,0,0,
+MDG,2018,General cargo,15,7.514,4.877,47.21
+MDG,2018,Oil tankers,2,0.391,0.324,50.42
+MDG,2018,Other types of ships,11,2.639,3.339,34.16
+MDG,2018,Total fleet,28,10.544,8.54,42.31
+MDG,2019,Bulk carriers,0,0,0,
+MDG,2019,Container ships,0,0,0,
+MDG,2019,General cargo,13,6.339,4.128,45.02
+MDG,2019,Oil tankers,2,0.391,0.324,51.42
+MDG,2019,Other types of ships,11,2.639,3.339,35.16
+MDG,2019,Total fleet,26,9.369,7.791,41.34
+MDG,2020,Bulk carriers,0,0,0,
+MDG,2020,Container ships,0,0,0,
+MDG,2020,General cargo,15,7,4.578,41.93
+MDG,2020,Oil tankers,2,0.391,0.324,52.42
+MDG,2020,Other types of ships,11,2.639,3.339,36.16
+MDG,2020,Total fleet,28,10.03,8.241,40.41
+MDV,2018,Bulk carriers,1,12.63,9.529,19.76
+MDV,2018,Container ships,0,0,0,
+MDV,2018,General cargo,19,21.583,14.282,38.24
+MDV,2018,Oil tankers,16,16.904,8.411,35.23
+MDV,2018,Other types of ships,27,14.568,12.557,29.57
+MDV,2018,Total fleet,63,65.684,44.779,33.47
+MDV,2019,Bulk carriers,1,12.63,9.529,20.76
+MDV,2019,Container ships,0,0,0,
+MDV,2019,General cargo,19,21.583,14.282,39.24
+MDV,2019,Oil tankers,18,20.981,10.62,33.88
+MDV,2019,Other types of ships,28,14.71,12.748,31.37
+MDV,2019,Total fleet,66,69.903,47.179,34.16
+MDV,2020,Bulk carriers,0,0,0,
+MDV,2020,Container ships,0,0,0,
+MDV,2020,General cargo,30,23.692,16.069,24.97
+MDV,2020,Oil tankers,20,24.084,11.974,35.12
+MDV,2020,Other types of ships,29,14.793,12.858,31.34
+MDV,2020,Total fleet,79,62.569,40.901,29.88
+MEX,2018,Bulk carriers,6,276.765,153.604,28.13
+MEX,2018,Container ships,0,0,0,
+MEX,2018,General cargo,9,27.387,43.369,41.89
+MEX,2018,Oil tankers,35,994.706,612.532,23.36
+MEX,2018,Other types of ships,592,954.985,840.735,24.26
+MEX,2018,Total fleet,642,2253.843,1650.24,24.5
+MEX,2019,Bulk carriers,6,276.765,153.604,29.13
+MEX,2019,Container ships,0,0,0,
+MEX,2019,General cargo,10,39.737,64.54,40.08
+MEX,2019,Oil tankers,35,1028.703,634.147,23.61
+MEX,2019,Other types of ships,591,956.341,837.364,24.36
+MEX,2019,Total fleet,642,2301.547,1689.655,24.61
+MEX,2020,Bulk carriers,6,276.765,153.604,30.13
+MEX,2020,Container ships,0,0,0,
+MEX,2020,General cargo,11,58.785,87.092,36.87
+MEX,2020,Oil tankers,34,1026.665,632.52,24.15
+MEX,2020,Other types of ships,618,1027.198,880.299,24.4
+MEX,2020,Total fleet,669,2389.413,1753.515,24.64
+MHL,2018,Bulk carriers,1435,109044.085,60102.408,7.41
+MHL,2018,Container ships,255,14268.688,12685.813,8.35
+MHL,2018,General cargo,68,1116.97,893.415,12.03
+MHL,2018,Oil tankers,839,87547.044,48083.325,7.99
+MHL,2018,Other types of ships,825,26097.359,26129.144,9.3
+MHL,2018,Total fleet,3422,238074.146,147894.105,8.17
+MHL,2019,Bulk carriers,1537,116192.48,64101.052,8.07
+MHL,2019,Container ships,258,14369.63,12659.856,9.06
+MHL,2019,General cargo,68,1050.041,856.381,12.33
+MHL,2019,Oil tankers,857,86448.799,47621.506,8.36
+MHL,2019,Other types of ships,819,27654.036,27713.866,9.9
+MHL,2019,Total fleet,3539,245714.986,152952.661,8.72
+MHL,2020,Bulk carriers,1648,123301.305,68123.085,8.56
+MHL,2020,Container ships,248,14036.293,12378.551,9.77
+MHL,2020,General cargo,75,1146.394,930.452,12.94
+MHL,2020,Oil tankers,920,97103.753,53164.571,8.63
+MHL,2020,Other types of ships,796,26467.279,26580.526,10.26
+MHL,2020,Total fleet,3687,262055.024,161177.185,9.12
+MLT,2018,Bulk carriers,646,47298.183,26156.743,8.17
+MLT,2018,Container ships,281,17249.146,15283.515,8.95
+MLT,2018,General cargo,269,2086.363,2173.997,16.53
+MLT,2018,Oil tankers,393,35497.616,19450.39,10.72
+MLT,2018,Other types of ships,607,6995.21,9691.68,13.26
+MLT,2018,Total fleet,2196,109126.518,72756.325,11.16
+MLT,2019,Bulk carriers,637,46931.229,25972.837,8.75
+MLT,2019,Container ships,270,17964.821,16071.959,9.17
+MLT,2019,General cargo,250,1997.483,2138.82,17.29
+MLT,2019,Oil tankers,414,36735.55,20165.654,10.82
+MLT,2019,Other types of ships,606,7263.113,10816.461,13.77
+MLT,2019,Total fleet,2177,110892.196,75165.731,11.58
+MLT,2020,Bulk carriers,617,45216.171,25058.182,9.53
+MLT,2020,Container ships,313,22847.707,20659.89,9.38
+MLT,2020,General cargo,237,1956.868,2253.87,17.43
+MLT,2020,Oil tankers,423,37898.563,20829.119,11.23
+MLT,2020,Other types of ships,613,7674.625,11675.437,14.38
+MLT,2020,Total fleet,2203,115593.934,80476.498,12.03
+MMR,2018,Bulk carriers,1,18.315,11.176,22.51
+MMR,2018,Container ships,0,0,0,
+MMR,2018,General cargo,41,157.56,117.882,24.94
+MMR,2018,Oil tankers,6,6.333,3.6,29.59
+MMR,2018,Other types of ships,49,22.405,30.843,35.54
+MMR,2018,Total fleet,97,204.613,163.501,30.56
+MMR,2019,Bulk carriers,1,18.315,11.176,23.51
+MMR,2019,Container ships,0,0,0,
+MMR,2019,General cargo,42,139.599,101.702,24.03
+MMR,2019,Oil tankers,6,6.333,3.6,30.59
+MMR,2019,Other types of ships,49,22.405,30.843,36.54
+MMR,2019,Total fleet,98,186.652,147.321,30.68
+MMR,2020,Bulk carriers,2,30.951,21.819,14.01
+MMR,2020,Container ships,0,0,0,
+MMR,2020,General cargo,48,147.34,101.449,21.42
+MMR,2020,Oil tankers,5,5.53,3.136,37.24
+MMR,2020,Other types of ships,51,22.093,30.645,35.22
+MMR,2020,Total fleet,106,205.914,157.049,28.66
+MNE,2018,Bulk carriers,4,139.974,93.488,4.42
+MNE,2018,Container ships,0,0,0,
+MNE,2018,General cargo,0,0,0,
+MNE,2018,Oil tankers,0,0,0,
+MNE,2018,Other types of ships,10,1.777,2.669,44.92
+MNE,2018,Total fleet,14,141.751,96.157,33.35
+MNE,2019,Bulk carriers,4,139.974,93.488,5.42
+MNE,2019,Container ships,0,0,0,
+MNE,2019,General cargo,0,0,0,
+MNE,2019,Oil tankers,0,0,0,
+MNE,2019,Other types of ships,11,1.813,2.889,45.18
+MNE,2019,Total fleet,15,141.787,96.377,34.58
+MNE,2020,Bulk carriers,4,139.974,93.488,6.42
+MNE,2020,Container ships,0,0,0,
+MNE,2020,General cargo,0,0,0,
+MNE,2020,Oil tankers,0,0,0,
+MNE,2020,Other types of ships,14,2.634,3.983,42.48
+MNE,2020,Total fleet,18,142.608,97.471,34.47
+MNG,2018,Bulk carriers,5,104.011,63.823,28.99
+MNG,2018,Container ships,3,27.422,19.926,22.31
+MNG,2018,General cargo,99,215.177,144.915,19.9
+MNG,2018,Oil tankers,64,261.284,152.478,32.4
+MNG,2018,Other types of ships,82,86.397,129.834,30.09
+MNG,2018,Total fleet,253,694.291,510.976,26.57
+MNG,2019,Bulk carriers,2,52.71,31.829,25.92
+MNG,2019,Container ships,3,29.239,21.713,23.12
+MNG,2019,General cargo,116,267.529,179.858,20.37
+MNG,2019,Oil tankers,75,347.026,204.411,32.69
+MNG,2019,Other types of ships,89,125.066,178.976,28.87
+MNG,2019,Total fleet,285,821.57,616.787,26.34
+MNG,2020,Bulk carriers,3,105.935,64.322,20.45
+MNG,2020,Container ships,4,32.062,24.485,23.9
+MNG,2020,General cargo,130,283.106,196.644,20.6
+MNG,2020,Oil tankers,71,298.914,177.976,33.81
+MNG,2020,Other types of ships,104,136.797,157.938,28.67
+MNG,2020,Total fleet,312,856.814,621.365,26.34
+MOZ,2018,Bulk carriers,0,0,0,
+MOZ,2018,Container ships,0,0,0,
+MOZ,2018,General cargo,9,11.409,6.603,37.72
+MOZ,2018,Oil tankers,0,0,0,
+MOZ,2018,Other types of ships,19,17.306,16.328,26.5
+MOZ,2018,Total fleet,28,28.715,22.931,30.11
+MOZ,2019,Bulk carriers,0,0,0,
+MOZ,2019,Container ships,0,0,0,
+MOZ,2019,General cargo,9,11.409,6.603,38.72
+MOZ,2019,Oil tankers,0,0,0,
+MOZ,2019,Other types of ships,19,17.306,16.328,27.47
+MOZ,2019,Total fleet,28,28.715,22.931,31.08
+MOZ,2020,Bulk carriers,0,0,0,
+MOZ,2020,Container ships,0,0,0,
+MOZ,2020,General cargo,9,11.409,6.603,39.72
+MOZ,2020,Oil tankers,0,0,0,
+MOZ,2020,Other types of ships,20,19.331,18.328,27.05
+MOZ,2020,Total fleet,29,30.74,24.931,30.98
+MRT,2018,Bulk carriers,0,0,0,
+MRT,2018,Container ships,0,0,0,
+MRT,2018,General cargo,2,1.031,0.499,37.42
+MRT,2018,Oil tankers,0,0,0,
+MRT,2018,Other types of ships,3,0.389,0.554,22.81
+MRT,2018,Total fleet,5,1.42,1.053,28.65
+MRT,2019,Bulk carriers,0,0,0,
+MRT,2019,Container ships,0,0,0,
+MRT,2019,General cargo,2,1.031,0.499,38.42
+MRT,2019,Oil tankers,0,0,0,
+MRT,2019,Other types of ships,3,0.389,0.554,23.81
+MRT,2019,Total fleet,5,1.42,1.053,29.65
+MRT,2020,Bulk carriers,0,0,0,
+MRT,2020,Container ships,0,0,0,
+MRT,2020,General cargo,2,1.031,0.499,39.42
+MRT,2020,Oil tankers,0,0,0,
+MRT,2020,Other types of ships,3,0.389,0.554,24.81
+MRT,2020,Total fleet,5,1.42,1.053,30.65
+MUS,2018,Bulk carriers,0,0,0,
+MUS,2018,Container ships,0,0,0,
+MUS,2018,General cargo,1,0.218,0.141,35.92
+MUS,2018,Oil tankers,4,76.946,43.427,14.07
+MUS,2018,Other types of ships,24,46.92,56.399,22.03
+MUS,2018,Total fleet,29,124.085,99.967,21.41
+MUS,2019,Bulk carriers,0,0,0,
+MUS,2019,Container ships,0,0,0,
+MUS,2019,General cargo,1,0.218,0.141,36.92
+MUS,2019,Oil tankers,4,76.946,43.427,15.07
+MUS,2019,Other types of ships,23,46.817,56.297,23.38
+MUS,2019,Total fleet,28,123.981,99.865,22.67
+MUS,2020,Bulk carriers,0,0,0,
+MUS,2020,Container ships,0,0,0,
+MUS,2020,General cargo,1,0.218,0.141,37.92
+MUS,2020,Oil tankers,5,79.869,45.448,13
+MUS,2020,Other types of ships,26,64.496,76.33,23.95
+MUS,2020,Total fleet,32,144.583,121.919,22.68
+MYS,2018,Bulk carriers,15,775.076,430.448,11.7
+MYS,2018,Container ships,21,253.557,194.185,21.17
+MYS,2018,General cargo,184,304.32,209.963,25.53
+MYS,2018,Oil tankers,142,3109.139,1714.006,23.02
+MYS,2018,Other types of ships,1370,5831.341,5629.391,14.76
+MYS,2018,Total fleet,1732,10273.433,8177.993,16.63
+MYS,2019,Bulk carriers,15,775.076,430.448,12.7
+MYS,2019,Container ships,22,283.289,218.813,21.44
+MYS,2019,General cargo,180,298.062,206.352,26.68
+MYS,2019,Oil tankers,142,2900.375,1601.864,23.86
+MYS,2019,Other types of ships,1388,6179.072,6014.138,15.3
+MYS,2019,Total fleet,1747,10435.874,8471.615,17.23
+MYS,2020,Bulk carriers,16,783.657,436.996,13.23
+MYS,2020,Container ships,26,338.872,263.147,20.83
+MYS,2020,General cargo,186,298.012,204.332,26.6
+MYS,2020,Oil tankers,153,3070.105,1699.695,24.78
+MYS,2020,Other types of ships,1424,5917.336,5790.771,15.82
+MYS,2020,Total fleet,1805,10407.982,8394.941,17.74
+NAM,2018,Bulk carriers,0,0,0,
+NAM,2018,Container ships,0,0,0,
+NAM,2018,General cargo,1,0.648,2.858,5.51
+NAM,2018,Oil tankers,0,0,0,
+NAM,2018,Other types of ships,13,41.184,59.57,28.4
+NAM,2018,Total fleet,14,41.832,62.428,26.77
+NAM,2019,Bulk carriers,0,0,0,
+NAM,2019,Container ships,0,0,0,
+NAM,2019,General cargo,1,0.648,2.858,6.51
+NAM,2019,Oil tankers,0,0,0,
+NAM,2019,Other types of ships,13,41.184,59.57,29.4
+NAM,2019,Total fleet,14,41.832,62.428,27.77
+NAM,2020,Bulk carriers,0,0,0,
+NAM,2020,Container ships,0,0,0,
+NAM,2020,General cargo,1,0.648,2.858,7.51
+NAM,2020,Oil tankers,0,0,0,
+NAM,2020,Other types of ships,13,41.184,59.57,30.4
+NAM,2020,Total fleet,14,41.832,62.428,28.77
+NCL,2018,Bulk carriers,0,0,0,
+NCL,2018,Container ships,0,0,0,
+NCL,2018,General cargo,4,7.31,5.447,14.01
+NCL,2018,Oil tankers,1,1.367,0.821,21
+NCL,2018,Other types of ships,20,3.133,6.082,16.45
+NCL,2018,Total fleet,25,11.81,12.35,16.24
+NCL,2019,Bulk carriers,0,0,0,
+NCL,2019,Container ships,0,0,0,
+NCL,2019,General cargo,5,9.473,7.027,17.06
+NCL,2019,Oil tankers,1,1.367,0.821,22
+NCL,2019,Other types of ships,19,2.982,5.884,17.68
+NCL,2019,Total fleet,25,13.823,13.732,17.73
+NCL,2020,Bulk carriers,0,0,0,
+NCL,2020,Container ships,0,0,0,
+NCL,2020,General cargo,5,9.473,7.027,18.05
+NCL,2020,Oil tankers,1,1.367,0.821,23
+NCL,2020,Other types of ships,19,2.982,5.884,18.68
+NCL,2020,Total fleet,25,13.823,13.732,18.73
+NER,2018,Bulk carriers,0,0,0,
+NER,2018,Container ships,0,0,0,
+NER,2018,General cargo,1,0.699,0.199,24
+NER,2018,Oil tankers,0,0,0,
+NER,2018,Other types of ships,0,0,0,
+NER,2018,Total fleet,1,0.699,0.199,24
+NER,2019,Bulk carriers,0,0,0,
+NER,2019,Container ships,0,0,0,
+NER,2019,General cargo,1,0.699,0.199,25
+NER,2019,Oil tankers,0,0,0,
+NER,2019,Other types of ships,0,0,0,
+NER,2019,Total fleet,1,0.699,0.199,25
+NER,2020,Bulk carriers,0,0,0,
+NER,2020,Container ships,0,0,0,
+NER,2020,General cargo,1,0.699,0.199,26
+NER,2020,Oil tankers,0,0,0,
+NER,2020,Other types of ships,0,0,0,
+NER,2020,Total fleet,1,0.699,0.199,26
+NGA,2018,Bulk carriers,0,0,0,
+NGA,2018,Container ships,0,0,0,
+NGA,2018,General cargo,15,31.454,22.36,46.1
+NGA,2018,Oil tankers,96,704.731,449.566,34.21
+NGA,2018,Other types of ships,549,3258.798,2115.404,24.23
+NGA,2018,Total fleet,660,3994.983,2587.33,26.18
+NGA,2019,Bulk carriers,0,0,0,
+NGA,2019,Container ships,0,0,0,
+NGA,2019,General cargo,14,30.886,21.993,45.97
+NGA,2019,Oil tankers,106,1073.091,679.406,33.98
+NGA,2019,Other types of ships,612,3298.4,2162.301,24.24
+NGA,2019,Total fleet,732,4402.377,2863.7,26.07
+NGA,2020,Bulk carriers,0,0,0,
+NGA,2020,Container ships,0,0,0,
+NGA,2020,General cargo,14,30.886,21.993,46.97
+NGA,2020,Oil tankers,107,1177.964,743.516,33.99
+NGA,2020,Other types of ships,670,3325.187,2190.7,24.01
+NGA,2020,Total fleet,791,4534.037,2956.209,25.77
+NIC,2018,Bulk carriers,0,0,0,
+NIC,2018,Container ships,0,0,0,
+NIC,2018,General cargo,1,1.175,0.498,49.92
+NIC,2018,Oil tankers,1,0.92,0.69,72.92
+NIC,2018,Other types of ships,3,0.626,0.542,37.67
+NIC,2018,Total fleet,5,2.721,1.73,47.17
+NIC,2019,Bulk carriers,0,0,0,
+NIC,2019,Container ships,0,0,0,
+NIC,2019,General cargo,1,1.175,0.498,50.92
+NIC,2019,Oil tankers,1,0.92,0.69,73.92
+NIC,2019,Other types of ships,3,0.626,0.542,38.67
+NIC,2019,Total fleet,5,2.721,1.73,48.17
+NIC,2020,Bulk carriers,0,0,0,
+NIC,2020,Container ships,0,0,0,
+NIC,2020,General cargo,1,1.175,0.498,51.92
+NIC,2020,Oil tankers,1,0.92,0.69,74.92
+NIC,2020,Other types of ships,3,0.626,0.542,39.67
+NIC,2020,Total fleet,5,2.721,1.73,49.17
+NLD,2018,Bulk carriers,13,409.003,259.746,8.43
+NLD,2018,Container ships,41,744.273,639.07,14.77
+NLD,2018,General cargo,580,4262.909,3296.399,12.47
+NLD,2018,Oil tankers,20,130.536,87.032,13.45
+NLD,2018,Other types of ships,570,1712.518,2587.899,24.62
+NLD,2018,Total fleet,1224,7259.239,6870.146,18.18
+NLD,2019,Bulk carriers,13,409.003,259.746,9.43
+NLD,2019,Container ships,43,750.63,644.678,16.04
+NLD,2019,General cargo,566,4196.136,3267.509,12.86
+NLD,2019,Oil tankers,21,141.85,98.566,11.99
+NLD,2019,Other types of ships,565,1649.544,2654.253,25.13
+NLD,2019,Total fleet,1208,7147.163,6924.752,18.66
+NLD,2020,Bulk carriers,10,237.431,159.81,11.36
+NLD,2020,Container ships,45,741.149,637.139,16.47
+NLD,2020,General cargo,554,4242.295,3296.914,13.38
+NLD,2020,Oil tankers,23,153.127,109.467,12.91
+NLD,2020,Other types of ships,561,1677.209,2638.138,25.45
+NLD,2020,Total fleet,1193,7051.211,6841.468,19.15
+NOR,2018,Bulk carriers,102,5898.44,3559.45,10.2
+NOR,2018,Container ships,0,0,0,
+NOR,2018,General cargo,213,458.261,506.358,48.4
+NOR,2018,Oil tankers,81,7042.877,3876.015,16.68
+NOR,2018,Other types of ships,1144,8288.999,9994.527,22.26
+NOR,2018,Total fleet,1540,21688.577,17936.35,24.79
+NOR,2019,Bulk carriers,98,5572.994,3370.988,10.66
+NOR,2019,Container ships,0,0,0,
+NOR,2019,General cargo,212,490.766,526.554,47.89
+NOR,2019,Oil tankers,88,7396.565,4090.299,16.51
+NOR,2019,Other types of ships,1154,8566.79,10302.459,22.57
+NOR,2019,Total fleet,1552,22027.116,18290.3,24.93
+NOR,2020,Bulk carriers,102,5766.692,3478.704,10.54
+NOR,2020,Container ships,0,0,0,
+NOR,2020,General cargo,236,636.625,636.092,45.68
+NOR,2020,Oil tankers,92,7823.082,4352.852,16.15
+NOR,2020,Other types of ships,1197,8841.941,10743.814,22.58
+NOR,2020,Total fleet,1627,23068.34,19211.462,24.81
+NRU,2019,Bulk carriers,0,0,0,
+NRU,2019,Container ships,0,0,0,
+NRU,2019,General cargo,0,0,0,
+NRU,2019,Oil tankers,1,5.233,3.434,26.17
+NRU,2019,Other types of ships,1,6.584,4.343,11
+NRU,2019,Total fleet,2,11.817,7.777,18.59
+NRU,2020,Bulk carriers,0,0,0,
+NRU,2020,Container ships,0,0,0,
+NRU,2020,General cargo,0,0,0,
+NRU,2020,Oil tankers,2,54.299,33.763,24.46
+NRU,2020,Other types of ships,3,7.527,5.106,13.61
+NRU,2020,Total fleet,5,61.826,38.869,17.95
+NZL,2018,Bulk carriers,0,0,0,
+NZL,2018,Container ships,0,0,0,
+NZL,2018,General cargo,14,44.992,34.996,27.12
+NZL,2018,Oil tankers,5,150.875,90.38,14.14
+NZL,2018,Other types of ships,91,52.922,110.357,26.16
+NZL,2018,Total fleet,110,248.789,235.733,25.74
+NZL,2019,Bulk carriers,0,0,0,
+NZL,2019,Container ships,0,0,0,
+NZL,2019,General cargo,12,35.817,28.276,26.15
+NZL,2019,Oil tankers,4,104.151,62.585,13.96
+NZL,2019,Other types of ships,93,51.826,109.93,26.43
+NZL,2019,Total fleet,109,191.794,200.791,25.94
+NZL,2020,Bulk carriers,0,0,0,
+NZL,2020,Container ships,1,23.305,18.358,8.59
+NZL,2020,General cargo,12,24.367,19.906,25.95
+NZL,2020,Oil tankers,4,104.151,62.585,14.96
+NZL,2020,Other types of ships,97,53.436,129.083,26.32
+NZL,2020,Total fleet,114,205.259,229.932,25.73
+OMN,2018,Bulk carriers,0,0,0,
+OMN,2018,Container ships,0,0,0,
+OMN,2018,General cargo,9,3.107,2.414,33.53
+OMN,2018,Oil tankers,0,0,0,
+OMN,2018,Other types of ships,40,13.202,29.988,11.9
+OMN,2018,Total fleet,49,16.309,32.402,15.87
+OMN,2019,Bulk carriers,0,0,0,
+OMN,2019,Container ships,0,0,0,
+OMN,2019,General cargo,10,4.047,3.247,32.83
+OMN,2019,Oil tankers,0,0,0,
+OMN,2019,Other types of ships,43,13.976,29.599,11.77
+OMN,2019,Total fleet,53,18.022,32.846,15.75
+OMN,2020,Bulk carriers,0,0,0,
+OMN,2020,Container ships,0,0,0,
+OMN,2020,General cargo,10,3.902,3.247,33.85
+OMN,2020,Oil tankers,0,0,0,
+OMN,2020,Other types of ships,45,14.329,30.041,12.77
+OMN,2020,Total fleet,55,18.231,33.288,16.61
+PAK,2018,Bulk carriers,5,255.177,140.804,13
+PAK,2018,Container ships,0,0,0,
+PAK,2018,General cargo,0,0,0,
+PAK,2018,Oil tankers,5,426.829,230.446,15.86
+PAK,2018,Other types of ships,42,33.829,30.984,26.7
+PAK,2018,Total fleet,52,715.835,402.234,24.34
+PAK,2019,Bulk carriers,5,255.177,140.804,14
+PAK,2019,Container ships,0,0,0,
+PAK,2019,General cargo,0,0,0,
+PAK,2019,Oil tankers,5,426.829,230.446,16.86
+PAK,2019,Other types of ships,42,35.271,31.846,26.36
+PAK,2019,Total fleet,52,717.277,403.096,24.26
+PAK,2020,Bulk carriers,5,255.177,140.804,15
+PAK,2020,Container ships,0,0,0,
+PAK,2020,General cargo,0,0,0,
+PAK,2020,Oil tankers,7,576.315,315.268,14.73
+PAK,2020,Other types of ships,46,36.763,33.603,25.47
+PAK,2020,Total fleet,58,868.255,489.675,23.27
+PAN,2018,Bulk carriers,,,,
+PAN,2018,Bulk carriers,2582,195168.232,107466.496,9.02
+PAN,2018,Container ships,,,,
+PAN,2018,Container ships,588,35913.231,32516.723,13.6
+PAN,2018,General cargo,,,,
+PAN,2018,General cargo,1314,7736.636,5837.076,25.62
+PAN,2018,Oil tankers,,,,
+PAN,2018,Oil tankers,795,67144.071,36383.802,18.56
+PAN,2018,Other types of ships,,,,
+PAN,2018,Other types of ships,2520,29556.272,36378.06,21.62
+PAN,2018,Total fleet,,,,
+PAN,2018,Total fleet,7799,335518.442,218582.157,17.21
+PAN,2019,Bulk carriers,,,,
+PAN,2019,Bulk carriers,2567,191291.957,105624.524,9.82
+PAN,2019,Container ships,,,,
+PAN,2019,Container ships,607,37571.486,34247.649,14
+PAN,2019,General cargo,,,,
+PAN,2019,General cargo,1326,7758.223,5847.428,26.06
+PAN,2019,Oil tankers,,,,
+PAN,2019,Oil tankers,794,66574.623,36048.369,18.93
+PAN,2019,Other types of ships,,,,
+PAN,2019,Other types of ships,2514,30591.511,37217.28,21.68
+PAN,2019,Total fleet,,,,
+PAN,2019,Total fleet,7808,333787.8,218985.25,17.65
+PAN,2020,Bulk carriers,,,,
+PAN,2020,Bulk carriers,2603,192420.761,106285.745,10.48
+PAN,2020,Container ships,,,,
+PAN,2020,Container ships,615,39472.481,36365.073,14.24
+PAN,2020,General cargo,,,,
+PAN,2020,General cargo,1368,8100.269,6083.025,26.41
+PAN,2020,Oil tankers,,,,
+PAN,2020,Oil tankers,795,58847.143,32093.097,19.79
+PAN,2020,Other types of ships,,,,
+PAN,2020,Other types of ships,2524,30291.167,37536.902,22.12
+PAN,2020,Total fleet,,,,
+PAN,2020,Total fleet,7905,329131.82,218363.842,18.18
+PER,2018,Bulk carriers,0,0,0,
+PER,2018,Container ships,2,37.6,28.587,20.59
+PER,2018,General cargo,0,0,0,
+PER,2018,Oil tankers,12,347.369,212.419,22.59
+PER,2018,Other types of ships,84,223.388,162.822,24.77
+PER,2018,Total fleet,98,608.357,403.828,24.42
+PER,2019,Bulk carriers,0,0,0,
+PER,2019,Container ships,1,22.9,16.6,20.17
+PER,2019,General cargo,0,0,0,
+PER,2019,Oil tankers,10,290.009,175.153,21.95
+PER,2019,Other types of ships,89,219.656,157.972,26.17
+PER,2019,Total fleet,100,532.565,349.725,25.68
+PER,2020,Bulk carriers,0,0,0,
+PER,2020,Container ships,0,0,0,
+PER,2020,General cargo,1,5.055,4.276,22.84
+PER,2020,Oil tankers,10,290.009,175.153,22.95
+PER,2020,Other types of ships,90,216.09,155.836,26.44
+PER,2020,Total fleet,101,511.154,335.265,26.06
+PHL,2018,Bulk carriers,59,2765.077,1622.305,5.43
+PHL,2018,Container ships,43,359.068,283.267,20.46
+PHL,2018,General cargo,682,1536.155,1107.606,31.98
+PHL,2018,Oil tankers,193,528.689,311.488,28.03
+PHL,2018,Other types of ships,721,753.645,799.288,33.06
+PHL,2018,Total fleet,1698,5942.634,4123.954,30.78
+PHL,2019,Bulk carriers,54,2447.982,1447.544,6.29
+PHL,2019,Container ships,46,310.724,244.376,22.08
+PHL,2019,General cargo,721,1616.566,1166.041,31.31
+PHL,2019,Oil tankers,201,519.692,309.158,27.8
+PHL,2019,Other types of ships,757,772.128,807.156,32.88
+PHL,2019,Total fleet,1779,5667.091,3974.275,30.58
+PHL,2020,Bulk carriers,69,3381.901,1974.339,5.38
+PHL,2020,Container ships,45,307.484,241.631,23
+PHL,2020,General cargo,748,1644.376,1156.026,31.38
+PHL,2020,Oil tankers,210,532.913,317.382,27.83
+PHL,2020,Other types of ships,790,758.114,835.139,32.99
+PHL,2020,Total fleet,1862,6624.788,4524.517,30.5
+PLW,2018,Bulk carriers,8,186.478,116.266,23.31
+PLW,2018,Container ships,14,198.973,167.799,25.17
+PLW,2018,General cargo,98,352.759,286.633,28.16
+PLW,2018,Oil tankers,35,708.166,403.447,26.7
+PLW,2018,Other types of ships,67,266.459,242.077,21.81
+PLW,2018,Total fleet,222,1712.835,1216.222,25.65
+PLW,2019,Bulk carriers,10,245.703,151.029,23.92
+PLW,2019,Container ships,11,231.155,212.353,24.23
+PLW,2019,General cargo,97,342.457,263.804,25.58
+PLW,2019,Oil tankers,31,366.487,215.207,29.79
+PLW,2019,Other types of ships,72,245.149,220.283,21.85
+PLW,2019,Total fleet,221,1430.951,1062.676,24.82
+PLW,2020,Bulk carriers,14,386.598,237.341,23.07
+PLW,2020,Container ships,9,74.262,55.526,23.07
+PLW,2020,General cargo,107,405.797,309.413,27.56
+PLW,2020,Oil tankers,25,560.654,311.25,28.38
+PLW,2020,Other types of ships,89,311.623,305.026,21.14
+PLW,2020,Total fleet,244,1738.934,1218.556,24.88
+PNG,2018,Bulk carriers,0,0,0,
+PNG,2018,Container ships,7,41.528,31.539,21.16
+PNG,2018,General cargo,78,122.003,91.852,23.44
+PNG,2018,Oil tankers,3,2.736,1.811,43.25
+PNG,2018,Other types of ships,83,31.263,34.034,27.68
+PNG,2018,Total fleet,171,197.53,159.236,25.75
+PNG,2019,Bulk carriers,0,0,0,
+PNG,2019,Container ships,7,41.528,31.539,22.16
+PNG,2019,General cargo,78,120.599,90.945,24.52
+PNG,2019,Oil tankers,3,2.736,1.811,44.25
+PNG,2019,Other types of ships,84,31.505,34.285,28.54
+PNG,2019,Total fleet,172,196.368,158.58,26.73
+PNG,2020,Bulk carriers,0,0,0,
+PNG,2020,Container ships,6,36.181,27.561,23.19
+PNG,2020,General cargo,88,136.292,102.858,23.52
+PNG,2020,Oil tankers,3,2.736,1.811,45.25
+PNG,2020,Other types of ships,100,31.895,35.435,25.54
+PNG,2020,Total fleet,197,207.104,167.665,24.87
+POL,2018,Bulk carriers,0,0,0,
+POL,2018,Container ships,1,7.562,5.796,27.67
+POL,2018,General cargo,10,22.173,16.023,33.48
+POL,2018,Oil tankers,7,7.458,5.314,41.49
+POL,2018,Other types of ships,126,77.387,74.341,37.54
+POL,2018,Total fleet,144,114.58,101.474,37.38
+POL,2019,Bulk carriers,0,0,0,
+POL,2019,Container ships,0,0,0,
+POL,2019,General cargo,9,19.132,14.063,35.53
+POL,2019,Oil tankers,7,7.458,5.314,42.49
+POL,2019,Other types of ships,127,77.989,74.489,38.04
+POL,2019,Total fleet,143,104.579,93.866,38.1
+POL,2020,Bulk carriers,0,0,0,
+POL,2020,Container ships,0,0,0,
+POL,2020,General cargo,6,10.007,8.183,41.35
+POL,2020,Oil tankers,7,8.948,6.244,40.37
+POL,2020,Other types of ships,130,78.31,74.818,38.76
+POL,2020,Total fleet,143,97.265,89.245,38.95
+PRK,2018,Bulk carriers,8,179.249,108.332,28.76
+PRK,2018,Container ships,5,27.535,20.123,25.29
+PRK,2018,General cargo,190,699.593,473.892,29.32
+PRK,2018,Oil tankers,33,76.989,42.65,31.34
+PRK,2018,Other types of ships,29,46.012,44.036,39.73
+PRK,2018,Total fleet,265,1029.379,689.033,30.62
+PRK,2019,Bulk carriers,8,179.249,108.332,29.76
+PRK,2019,Container ships,5,27.535,20.123,26.29
+PRK,2019,General cargo,191,721.744,492.337,30.04
+PRK,2019,Oil tankers,33,80.339,44.6,31.31
+PRK,2019,Other types of ships,29,44.85,42.409,40.62
+PRK,2019,Total fleet,266,1053.718,707.801,31.27
+PRK,2020,Bulk carriers,8,177.738,107.138,30.45
+PRK,2020,Container ships,5,27.535,20.123,27.29
+PRK,2020,General cargo,189,726.715,496.412,30.8
+PRK,2020,Oil tankers,33,80.339,44.6,32.31
+PRK,2020,Other types of ships,30,46.334,42.905,41.26
+PRK,2020,Total fleet,265,1058.662,711.178,32.1
+PRT,2018,Bulk carriers,69,6111.171,3361.069,4.97
+PRT,2018,Container ships,242,11808.976,10258.159,10.95
+PRT,2018,General cargo,83,610.784,502.565,17.59
+PRT,2018,Oil tankers,11,788.05,420.819,10.8
+PRT,2018,Other types of ships,184,449.184,600.469,28.94
+PRT,2018,Total fleet,589,19768.165,15143.081,16.8
+PRT,2019,Bulk carriers,65,5610.749,3101.431,5.44
+PRT,2019,Container ships,248,10900.884,9298.054,11.9
+PRT,2019,General cargo,98,721.33,576.705,16.51
+PRT,2019,Oil tankers,21,1860.29,997.234,8.27
+PRT,2019,Other types of ships,190,511.942,695.084,29.45
+PRT,2019,Total fleet,622,19605.195,14668.508,17.19
+PRT,2020,Bulk carriers,74,6212.462,3436.577,5.13
+PRT,2020,Container ships,255,10688.39,9067.624,12.58
+PRT,2020,General cargo,123,968.503,802.212,15.95
+PRT,2020,Oil tankers,23,2418.675,1299.67,6.91
+PRT,2020,Other types of ships,200,510.798,699.105,29.46
+PRT,2020,Total fleet,675,20798.828,15305.188,17.18
+PRY,2018,Bulk carriers,0,0,0,
+PRY,2018,Container ships,3,11.705,9.855,43.95
+PRY,2018,General cargo,24,46.928,43.906,43.37
+PRY,2018,Oil tankers,5,11.826,8.125,50.3
+PRY,2018,Other types of ships,75,27.728,41.816,36.17
+PRY,2018,Total fleet,107,98.187,103.702,38.66
+PRY,2019,Bulk carriers,0,0,0,
+PRY,2019,Container ships,3,11.705,9.855,44.95
+PRY,2019,General cargo,24,46.824,43.839,45.95
+PRY,2019,Oil tankers,5,11.826,8.125,51.3
+PRY,2019,Other types of ships,76,28.109,42.353,36.83
+PRY,2019,Total fleet,108,98.464,104.172,39.75
+PRY,2020,Bulk carriers,0,0,0,
+PRY,2020,Container ships,3,11.705,9.855,45.95
+PRY,2020,General cargo,25,50.78,50.906,46.26
+PRY,2020,Oil tankers,5,11.826,8.125,52.3
+PRY,2020,Other types of ships,73,27.073,40.433,37.2
+PRY,2020,Total fleet,106,101.385,109.319,40.3
+PYF,2018,Bulk carriers,0,0,0,
+PYF,2018,Container ships,0,0,0,
+PYF,2018,General cargo,13,13.652,16.519,30.98
+PYF,2018,Oil tankers,0,0,0,
+PYF,2018,Other types of ships,10,7.256,21.839,19.93
+PYF,2018,Total fleet,23,20.908,38.358,26.17
+PYF,2019,Bulk carriers,0,0,0,
+PYF,2019,Container ships,0,0,0,
+PYF,2019,General cargo,15,15.907,18.129,33.08
+PYF,2019,Oil tankers,0,0,0,
+PYF,2019,Other types of ships,10,7.256,21.839,20.93
+PYF,2019,Total fleet,25,23.163,39.968,28.22
+PYF,2020,Bulk carriers,0,0,0,
+PYF,2020,Container ships,0,0,0,
+PYF,2020,General cargo,14,14.852,17.016,33.64
+PYF,2020,Oil tankers,0,0,0,
+PYF,2020,Other types of ships,10,7.24,22.76,21.93
+PYF,2020,Total fleet,24,22.092,39.776,28.76
+QAT,2018,Bulk carriers,10,566.748,319.566,16.85
+QAT,2018,Container ships,6,105.583,85.156,9.52
+QAT,2018,General cargo,6,11.275,6.769,35.15
+QAT,2018,Oil tankers,7,399.262,222.905,15.11
+QAT,2018,Other types of ships,111,97.071,120.417,12.99
+QAT,2018,Total fleet,140,1179.939,754.813,14.17
+QAT,2019,Bulk carriers,9,529.797,293.264,19.48
+QAT,2019,Container ships,6,105.583,85.156,10.52
+QAT,2019,General cargo,4,4.78,3.544,31.27
+QAT,2019,Oil tankers,7,399.262,222.905,16.11
+QAT,2019,Other types of ships,109,109.59,133.266,12.63
+QAT,2019,Total fleet,135,1149.012,738.135,13.72
+QAT,2020,Bulk carriers,8,540.458,292.337,16.02
+QAT,2020,Container ships,6,105.583,85.156,11.52
+QAT,2020,General cargo,4,4.78,3.544,32.27
+QAT,2020,Oil tankers,4,212.704,114.846,18.19
+QAT,2020,Other types of ships,107,114.681,137.882,12.98
+QAT,2020,Total fleet,129,978.206,633.765,13.86
+ROU,2018,Bulk carriers,0,0,0,
+ROU,2018,Container ships,0,0,0,
+ROU,2018,General cargo,11,15.675,11.16,44.82
+ROU,2018,Oil tankers,8,11.102,6.911,38.68
+ROU,2018,Other types of ships,96,55.136,77.054,36.37
+ROU,2018,Total fleet,115,81.913,95.125,37.34
+ROU,2019,Bulk carriers,0,0,0,
+ROU,2019,Container ships,0,0,0,
+ROU,2019,General cargo,11,15.675,11.16,45.82
+ROU,2019,Oil tankers,8,11.509,7.378,41.74
+ROU,2019,Other types of ships,101,56.194,78.254,37.22
+ROU,2019,Total fleet,120,83.378,96.792,38.31
+ROU,2020,Bulk carriers,0,0,0,
+ROU,2020,Container ships,0,0,0,
+ROU,2020,General cargo,11,15.675,11.16,46.82
+ROU,2020,Oil tankers,7,7.713,5.012,41.07
+ROU,2020,Other types of ships,102,56.674,78.474,38.12
+ROU,2020,Total fleet,120,80.062,94.646,39.09
+RUS,2018,Bulk carriers,15,383.892,252.978,20.38
+RUS,2018,Container ships,14,91.233,70.952,20.7
+RUS,2018,General cargo,872,3138.203,2667.719,31.73
+RUS,2018,Oil tankers,411,3201.166,2250.779,28.42
+RUS,2018,Other types of ships,1373,1917.466,2378.279,27.87
+RUS,2018,Total fleet,2685,8731.96,7620.707,29.13
+RUS,2019,Bulk carriers,16,418.059,273.815,21.41
+RUS,2019,Container ships,14,93.553,73.675,19.77
+RUS,2019,General cargo,898,3287.555,2774.431,32.1
+RUS,2019,Oil tankers,403,2751.422,2002.025,29.25
+RUS,2019,Other types of ships,1434,2711.718,2853.498,27.98
+RUS,2019,Total fleet,2765,9262.307,7977.444,29.42
+RUS,2020,Bulk carriers,15,469.296,299.941,15.87
+RUS,2020,Container ships,16,113.677,90.59,18.53
+RUS,2020,General cargo,922,3465.328,2897.197,32.42
+RUS,2020,Oil tankers,405,2929.073,2116.61,29.99
+RUS,2020,Other types of ships,1462,2898.16,3031.772,28.23
+RUS,2020,Total fleet,2820,9875.534,8436.11,29.73
+SAU,2018,Bulk carriers,5,409.284,219.47,3.9
+SAU,2018,Container ships,1,5.2,3.838,21.42
+SAU,2018,General cargo,19,190.178,347.112,21.05
+SAU,2018,Oil tankers,66,11272.606,5928.764,17.23
+SAU,2018,Other types of ships,292,1672.231,1226.422,23.62
+SAU,2018,Total fleet,383,13549.499,7725.606,22.13
+SAU,2019,Bulk carriers,5,409.284,219.47,4.9
+SAU,2019,Container ships,1,5.2,3.838,22.42
+SAU,2019,General cargo,20,197.024,351.411,22.63
+SAU,2019,Oil tankers,59,11058.448,5795.131,18.05
+SAU,2019,Other types of ships,286,1486.987,1098.471,24.5
+SAU,2019,Total fleet,371,13156.943,7468.321,23.11
+SAU,2020,Bulk carriers,5,409.284,219.47,5.9
+SAU,2020,Container ships,1,5.2,3.838,23.42
+SAU,2020,General cargo,22,200.47,354.729,22.2
+SAU,2020,Oil tankers,62,11735.563,6116.076,18.25
+SAU,2020,Other types of ships,286,1551.106,1141.047,25.32
+SAU,2020,Total fleet,376,13901.623,7835.16,23.71
+SDN,2018,Bulk carriers,,,,
+SDN,2018,Bulk carriers,0,0,0,
+SDN,2018,Container ships,,,,
+SDN,2018,Container ships,0,0,0,
+SDN,2018,General cargo,,,,
+SDN,2018,General cargo,1,12.905,9.874,38
+SDN,2018,Oil tankers,,,,
+SDN,2018,Oil tankers,0,0,0,
+SDN,2018,Other types of ships,,,,
+SDN,2018,Other types of ships,15,5.872,12.421,35.64
+SDN,2018,Total fleet,,,,
+SDN,2018,Total fleet,16,18.777,22.295,35.79
+SDN,2019,Bulk carriers,,,,
+SDN,2019,Bulk carriers,0,0,0,
+SDN,2019,Container ships,,,,
+SDN,2019,Container ships,0,0,0,
+SDN,2019,General cargo,,,,
+SDN,2019,General cargo,0,0,0,
+SDN,2019,Oil tankers,,,,
+SDN,2019,Oil tankers,0,0,0,
+SDN,2019,Other types of ships,,,,
+SDN,2019,Other types of ships,15,5.872,12.421,36.64
+SDN,2019,Total fleet,,,,
+SDN,2019,Total fleet,15,5.872,12.421,36.64
+SDN,2020,Bulk carriers,,,,
+SDN,2020,Bulk carriers,0,0,0,
+SDN,2020,Container ships,,,,
+SDN,2020,Container ships,0,0,0,
+SDN,2020,General cargo,,,,
+SDN,2020,General cargo,0,0,0,
+SDN,2020,Oil tankers,,,,
+SDN,2020,Oil tankers,0,0,0,
+SDN,2020,Other types of ships,,,,
+SDN,2020,Other types of ships,15,5.872,12.421,37.64
+SDN,2020,Total fleet,,,,
+SDN,2020,Total fleet,15,5.872,12.421,37.64
+SEN,2018,Bulk carriers,0,0,0,
+SEN,2018,Container ships,0,0,0,
+SEN,2018,General cargo,4,8.183,6.824,34.75
+SEN,2018,Oil tankers,1,0.28,0.274,48.76
+SEN,2018,Other types of ships,25,7.597,14.86,33.3
+SEN,2018,Total fleet,30,16.06,21.958,34.01
+SEN,2019,Bulk carriers,0,0,0,
+SEN,2019,Container ships,0,0,0,
+SEN,2019,General cargo,5,8.894,7.355,37.79
+SEN,2019,Oil tankers,1,0.28,0.274,49.76
+SEN,2019,Other types of ships,27,7.79,15.181,31.78
+SEN,2019,Total fleet,33,16.964,22.81,33.23
+SEN,2020,Bulk carriers,0,0,0,
+SEN,2020,Container ships,0,0,0,
+SEN,2020,General cargo,5,8.894,7.355,38.79
+SEN,2020,Oil tankers,1,0.28,0.274,50.75
+SEN,2020,Other types of ships,29,8.162,15.883,30.86
+SEN,2020,Total fleet,35,17.336,23.512,32.56
+SGP,2018,Bulk carriers,602,51946.83,28484.452,6.32
+SGP,2018,Container ships,488,26266.999,23423.483,10.37
+SGP,2018,General cargo,130,1645.407,1416.682,9.32
+SGP,2018,Oil tankers,726,37081.201,20828.602,9.69
+SGP,2018,Other types of ships,1508,11263.107,11328.43,9.8
+SGP,2018,Total fleet,3454,128203.543,85481.649,9.23
+SGP,2019,Bulk carriers,585,52252.505,28543.012,6.77
+SGP,2019,Container ships,492,27628.484,24788.457,10.92
+SGP,2019,General cargo,128,1649.376,1430.895,10.17
+SGP,2019,Oil tankers,716,35925.002,20210.822,9.89
+SGP,2019,Other types of ships,1455,11791.432,11864.468,10.23
+SGP,2019,Total fleet,3376,129246.799,86837.654,9.66
+SGP,2020,Bulk carriers,570,53778.966,29255.481,7.1
+SGP,2020,Container ships,497,28439.97,25473.829,11.47
+SGP,2020,General cargo,121,1591.87,1391.707,10.73
+SGP,2020,Oil tankers,743,41123.235,23043.886,9.75
+SGP,2020,Other types of ships,1455,14977.041,13776.014,10.97
+SGP,2020,Total fleet,3386,139911.083,92940.917,10.12
+SLB,2018,Bulk carriers,0,0,0,
+SLB,2018,Container ships,0,0,0,
+SLB,2018,General cargo,6,1.341,0.923,46.47
+SLB,2018,Oil tankers,1,0.601,0.348,8.34
+SLB,2018,Other types of ships,15,2.517,3.848,34.92
+SLB,2018,Total fleet,22,4.46,5.119,36.86
+SLB,2019,Bulk carriers,0,0,0,
+SLB,2019,Container ships,0,0,0,
+SLB,2019,General cargo,8,3.596,3.209,40.7
+SLB,2019,Oil tankers,1,0.601,0.348,9.34
+SLB,2019,Other types of ships,15,2.517,3.848,35.92
+SLB,2019,Total fleet,24,6.714,7.405,36.41
+SLB,2020,Bulk carriers,0,0,0,
+SLB,2020,Container ships,0,0,0,
+SLB,2020,General cargo,9,3.996,3.409,37.36
+SLB,2020,Oil tankers,1,0.601,0.348,10.34
+SLB,2020,Other types of ships,17,2.856,4.309,34.33
+SLB,2020,Total fleet,27,7.453,8.066,34.45
+SLE,2018,Bulk carriers,22,500.337,309.575,21.77
+SLE,2018,Container ships,10,46.859,39.685,26.77
+SLE,2018,General cargo,270,856.666,609.083,26.64
+SLE,2018,Oil tankers,79,342.405,206.961,31.51
+SLE,2018,Other types of ships,109,334.981,223.197,31.77
+SLE,2018,Total fleet,490,2081.247,1388.501,28.35
+SLE,2019,Bulk carriers,30,651.316,403.233,21.98
+SLE,2019,Container ships,10,43.239,35.209,25.44
+SLE,2019,General cargo,278,812.117,571.613,25.47
+SLE,2019,Oil tankers,96,449.159,263.838,31.32
+SLE,2019,Other types of ships,114,331.17,189.742,32.99
+SLE,2019,Total fleet,528,2287.001,1463.635,27.96
+SLE,2020,Bulk carriers,31,696.97,429.304,23.03
+SLE,2020,Container ships,12,54.943,40.656,26.14
+SLE,2020,General cargo,310,892.114,619.478,25.37
+SLE,2020,Oil tankers,106,455.315,270.272,31.91
+SLE,2020,Other types of ships,123,400.145,246.065,31.36
+SLE,2020,Total fleet,582,2499.487,1605.775,27.72
+SLV,2018,Bulk carriers,0,0,0,
+SLV,2018,Container ships,0,0,0,
+SLV,2018,General cargo,0,0,0,
+SLV,2018,Oil tankers,0,0,0,
+SLV,2018,Other types of ships,2,0.204,0.269,31.75
+SLV,2018,Total fleet,2,0.204,0.269,31.75
+SLV,2019,Bulk carriers,0,0,0,
+SLV,2019,Container ships,0,0,0,
+SLV,2019,General cargo,0,0,0,
+SLV,2019,Oil tankers,0,0,0,
+SLV,2019,Other types of ships,2,0.204,0.269,32.75
+SLV,2019,Total fleet,2,0.204,0.269,32.75
+SLV,2020,Bulk carriers,0,0,0,
+SLV,2020,Container ships,0,0,0,
+SLV,2020,General cargo,0,0,0,
+SLV,2020,Oil tankers,0,0,0,
+SLV,2020,Other types of ships,2,0.204,0.269,33.75
+SLV,2020,Total fleet,2,0.204,0.269,33.75
+SOM,2018,Bulk carriers,0,0,0,
+SOM,2018,Container ships,0,0,0,
+SOM,2018,General cargo,1,0.449,0.25,55.92
+SOM,2018,Oil tankers,0,0,0,
+SOM,2018,Other types of ships,3,0.18,0.471,40.23
+SOM,2018,Total fleet,4,0.629,0.721,44.15
+SOM,2019,Bulk carriers,0,0,0,
+SOM,2019,Container ships,0,0,0,
+SOM,2019,General cargo,1,0.449,0.25,56.92
+SOM,2019,Oil tankers,0,0,0,
+SOM,2019,Other types of ships,3,0.18,0.471,41.23
+SOM,2019,Total fleet,4,0.629,0.721,45.15
+SOM,2020,Bulk carriers,0,0,0,
+SOM,2020,Container ships,0,0,0,
+SOM,2020,General cargo,1,0.449,0.25,57.92
+SOM,2020,Oil tankers,0,0,0,
+SOM,2020,Other types of ships,3,0.18,0.471,42.23
+SOM,2020,Total fleet,4,0.629,0.721,46.15
+STP,2018,Bulk carriers,0,0,0,
+STP,2018,Container ships,0,0,0,
+STP,2018,General cargo,11,10.56,8.15,47.66
+STP,2018,Oil tankers,0,0,0,
+STP,2018,Other types of ships,7,1.28,1.913,38.8
+STP,2018,Total fleet,18,11.84,10.063,44.21
+STP,2019,Bulk carriers,0,0,0,
+STP,2019,Container ships,0,0,0,
+STP,2019,General cargo,10,9.862,7.753,47.13
+STP,2019,Oil tankers,0,0,0,
+STP,2019,Other types of ships,7,1.28,1.913,39.8
+STP,2019,Total fleet,17,11.142,9.666,44.11
+STP,2020,Bulk carriers,0,0,0,
+STP,2020,Container ships,0,0,0,
+STP,2020,General cargo,11,12.832,9.593,48.16
+STP,2020,Oil tankers,0,0,0,
+STP,2020,Other types of ships,5,1.011,1.133,47.49
+STP,2020,Total fleet,16,13.843,10.726,47.95
+SUR,2018,Bulk carriers,0,0,0,
+SUR,2018,Container ships,0,0,0,
+SUR,2018,General cargo,5,3.421,2.525,60.45
+SUR,2018,Oil tankers,3,3.145,2.031,38.75
+SUR,2018,Other types of ships,2,0.353,0.346,43.42
+SUR,2018,Total fleet,10,6.919,4.902,50.54
+SUR,2019,Bulk carriers,0,0,0,
+SUR,2019,Container ships,0,0,0,
+SUR,2019,General cargo,5,3.421,2.525,61.45
+SUR,2019,Oil tankers,3,3.145,2.031,39.75
+SUR,2019,Other types of ships,2,0.353,0.346,44.42
+SUR,2019,Total fleet,10,6.919,4.902,51.54
+SUR,2020,Bulk carriers,0,0,0,
+SUR,2020,Container ships,0,0,0,
+SUR,2020,General cargo,5,3.421,2.525,62.45
+SUR,2020,Oil tankers,3,3.145,2.031,40.75
+SUR,2020,Other types of ships,2,0.353,0.346,45.42
+SUR,2020,Total fleet,10,6.919,4.902,52.54
+SVN,2018,Bulk carriers,0,0,0,
+SVN,2018,Container ships,0,0,0,
+SVN,2018,General cargo,0,0,0,
+SVN,2018,Oil tankers,0,0,0,
+SVN,2018,Other types of ships,8,1.627,2.648,37.84
+SVN,2018,Total fleet,8,1.627,2.648,37.84
+SVN,2019,Bulk carriers,0,0,0,
+SVN,2019,Container ships,0,0,0,
+SVN,2019,General cargo,0,0,0,
+SVN,2019,Oil tankers,0,0,0,
+SVN,2019,Other types of ships,8,1.627,2.648,38.84
+SVN,2019,Total fleet,8,1.627,2.648,38.84
+SVN,2020,Bulk carriers,0,0,0,
+SVN,2020,Container ships,0,0,0,
+SVN,2020,General cargo,0,0,0,
+SVN,2020,Oil tankers,0,0,0,
+SVN,2020,Other types of ships,9,1.981,3.114,35.88
+SVN,2020,Total fleet,9,1.981,3.114,35.88
+SWE,2018,Bulk carriers,0,0,0,
+SWE,2018,Container ships,0,0,0,
+SWE,2018,General cargo,50,183.155,277.24,56.54
+SWE,2018,Oil tankers,20,25.846,17.797,49.1
+SWE,2018,Other types of ships,283,775.423,1847.401,42.94
+SWE,2018,Total fleet,353,984.423,2142.438,45.22
+SWE,2019,Bulk carriers,0,0,0,
+SWE,2019,Container ships,0,0,0,
+SWE,2019,General cargo,50,171.276,252.861,58.86
+SWE,2019,Oil tankers,20,25.846,17.797,50.1
+SWE,2019,Other types of ships,292,887.309,1922.817,42.41
+SWE,2019,Total fleet,362,1084.43,2193.475,45.11
+SWE,2020,Bulk carriers,0,0,0,
+SWE,2020,Container ships,0,0,0,
+SWE,2020,General cargo,47,145.854,203.474,61.26
+SWE,2020,Oil tankers,20,73.042,45.851,50.09
+SWE,2020,Other types of ships,297,859.336,1846.717,42.91
+SWE,2020,Total fleet,364,1078.232,2096.042,45.67
+SYC,2018,Bulk carriers,0,0,0,
+SYC,2018,Container ships,0,0,0,
+SYC,2018,General cargo,4,3.918,3.917,30.48
+SYC,2018,Oil tankers,6,200.453,121.604,11.35
+SYC,2018,Other types of ships,16,1.826,3.744,25.15
+SYC,2018,Total fleet,26,206.197,129.265,22.78
+SYC,2019,Bulk carriers,0,0,0,
+SYC,2019,Container ships,0,0,0,
+SYC,2019,General cargo,4,3.918,3.917,31.48
+SYC,2019,Oil tankers,6,200.453,121.604,12.35
+SYC,2019,Other types of ships,16,1.826,3.744,26.15
+SYC,2019,Total fleet,26,206.197,129.265,23.78
+SYC,2020,Bulk carriers,0,0,0,
+SYC,2020,Container ships,0,0,0,
+SYC,2020,General cargo,5,4.305,4.167,26.92
+SYC,2020,Oil tankers,7,201.153,122.077,11.94
+SYC,2020,Other types of ships,17,2.058,3.783,26.1
+SYC,2020,Total fleet,29,207.516,130.027,22.83
+SYR,2018,Bulk carriers,1,18.908,11.767,8.92
+SYR,2018,Container ships,0,0,0,
+SYR,2018,General cargo,7,39.56,30.386,38.09
+SYR,2018,Oil tankers,0,0,0,
+SYR,2018,Other types of ships,13,2.713,2.562,32.02
+SYR,2018,Total fleet,21,61.181,44.715,32.94
+SYR,2019,Bulk carriers,1,18.908,11.767,9.92
+SYR,2019,Container ships,0,0,0,
+SYR,2019,General cargo,11,58.323,41.685,39.69
+SYR,2019,Oil tankers,0,0,0,
+SYR,2019,Other types of ships,14,3.018,4.296,33.43
+SYR,2019,Total fleet,26,80.249,57.748,35.17
+SYR,2020,Bulk carriers,1,18.908,11.767,10.92
+SYR,2020,Container ships,0,0,0,
+SYR,2020,General cargo,11,58.323,41.685,40.69
+SYR,2020,Oil tankers,0,0,0,
+SYR,2020,Other types of ships,16,4.778,5.453,34.85
+SYR,2020,Total fleet,28,82.009,58.905,36.29
+TCA,2018,Bulk carriers,0,0,0,
+TCA,2018,Container ships,0,0,0,
+TCA,2018,General cargo,1,0.161,0.122,101.92
+TCA,2018,Oil tankers,0,0,0,
+TCA,2018,Other types of ships,2,0.412,0.652,56.92
+TCA,2018,Total fleet,3,0.573,0.774,71.92
+TCA,2019,Bulk carriers,0,0,0,
+TCA,2019,Container ships,0,0,0,
+TCA,2019,General cargo,1,0.161,0.122,102.92
+TCA,2019,Oil tankers,0,0,0,
+TCA,2019,Other types of ships,2,0.412,0.652,57.92
+TCA,2019,Total fleet,3,0.573,0.774,72.92
+TCA,2020,Bulk carriers,0,0,0,
+TCA,2020,Container ships,0,0,0,
+TCA,2020,General cargo,1,0.161,0.122,103.92
+TCA,2020,Oil tankers,0,0,0,
+TCA,2020,Other types of ships,2,0.412,0.652,58.92
+TCA,2020,Total fleet,3,0.573,0.774,73.92
+TGO,2018,Bulk carriers,7,117.146,73.493,21.18
+TGO,2018,Container ships,4,17.511,14.185,28.59
+TGO,2018,General cargo,235,862.348,657.482,32.28
+TGO,2018,Oil tankers,50,391.606,248.205,37.87
+TGO,2018,Other types of ships,64,113.387,95.785,35.57
+TGO,2018,Total fleet,360,1501.998,1089.15,33.39
+TGO,2019,Bulk carriers,4,74.55,46.236,24.73
+TGO,2019,Container ships,5,22.961,19.178,27.67
+TGO,2019,General cargo,273,1005.775,755.514,32.66
+TGO,2019,Oil tankers,52,372.799,235.876,36.61
+TGO,2019,Other types of ships,73,120.654,112.309,34.15
+TGO,2019,Total fleet,407,1596.739,1169.113,33.29
+TGO,2020,Bulk carriers,4,74.55,46.236,25.73
+TGO,2020,Container ships,8,34.503,28.246,27.77
+TGO,2020,General cargo,273,1027.271,770.443,32.27
+TGO,2020,Oil tankers,51,302.024,187.773,36.62
+TGO,2020,Other types of ships,79,116.931,111.023,34.06
+TGO,2020,Total fleet,415,1555.278,1143.721,33
+THA,2018,Bulk carriers,27,1172.907,700.915,8.88
+THA,2018,Container ships,25,275.195,211.473,13.78
+THA,2018,General cargo,89,377.382,256.723,32.88
+THA,2018,Oil tankers,252,3749.373,2014.992,29.89
+THA,2018,Other types of ships,435,710.348,623.339,27.74
+THA,2018,Total fleet,828,6285.206,3807.442,27.91
+THA,2019,Bulk carriers,27,1172.907,700.915,9.88
+THA,2019,Container ships,27,315.202,247.385,13.7
+THA,2019,General cargo,98,380.839,257.406,31.6
+THA,2019,Oil tankers,245,3138.65,1685.079,30.74
+THA,2019,Other types of ships,448,796.176,701.944,27.94
+THA,2019,Total fleet,845,5803.774,3592.729,28.14
+THA,2020,Bulk carriers,26,1119.833,671.611,10.67
+THA,2020,Container ships,28,340.979,273.622,13.36
+THA,2020,General cargo,97,372.507,250.244,32.19
+THA,2020,Oil tankers,258,4057.59,2180.349,30.49
+THA,2020,Other types of ships,444,810.746,709.578,28.59
+THA,2020,Total fleet,853,6701.655,4085.404,28.53
+TKM,2018,Bulk carriers,0,0,0,
+TKM,2018,Container ships,0,0,0,
+TKM,2018,General cargo,7,19.299,17.347,29.98
+TKM,2018,Oil tankers,8,50.91,34.69,11.09
+TKM,2018,Other types of ships,55,53.651,69.054,22.46
+TKM,2018,Total fleet,70,123.86,121.091,21.91
+TKM,2019,Bulk carriers,0,0,0,
+TKM,2019,Container ships,0,0,0,
+TKM,2019,General cargo,6,14.699,13.071,32.62
+TKM,2019,Oil tankers,8,50.91,34.69,12.09
+TKM,2019,Other types of ships,56,55.901,75.361,20.04
+TKM,2019,Total fleet,70,121.51,123.122,20.21
+TKM,2020,Bulk carriers,0,0,0,
+TKM,2020,Container ships,0,0,0,
+TKM,2020,General cargo,6,14.699,13.071,33.61
+TKM,2020,Oil tankers,8,50.91,34.69,13.09
+TKM,2020,Other types of ships,56,58.552,77.256,20.66
+TKM,2020,Total fleet,70,124.161,125.017,20.9
+TLS,2019,Bulk carriers,0,0,0,
+TLS,2019,Container ships,0,0,0,
+TLS,2019,General cargo,0,0,0,
+TLS,2019,Oil tankers,0,0,0,
+TLS,2019,Other types of ships,1,0.262,1.134,11.92
+TLS,2019,Total fleet,1,0.262,1.134,11.92
+TLS,2020,Bulk carriers,0,0,0,
+TLS,2020,Container ships,0,0,0,
+TLS,2020,General cargo,0,0,0,
+TLS,2020,Oil tankers,0,0,0,
+TLS,2020,Other types of ships,1,0.262,1.134,12.92
+TLS,2020,Total fleet,1,0.262,1.134,12.92
+TON,2018,Bulk carriers,1,52.466,30.064,12.59
+TON,2018,Container ships,1,2.565,2.24,42
+TON,2018,General cargo,15,17.266,9.728,43.27
+TON,2018,Oil tankers,1,0.152,0.398,57.92
+TON,2018,Other types of ships,12,4.83,8.753,39.04
+TON,2018,Total fleet,30,77.279,51.183,41
+TON,2019,Bulk carriers,0,0,0,
+TON,2019,Container ships,4,15.714,12.9,36.23
+TON,2019,General cargo,13,13.715,7.642,44.49
+TON,2019,Oil tankers,1,0.152,0.398,58.92
+TON,2019,Other types of ships,13,6.062,8.987,33.75
+TON,2019,Total fleet,31,35.643,29.927,39.39
+TON,2020,Bulk carriers,1,13.553,8.416,11.59
+TON,2020,Container ships,3,12.224,9.861,36.92
+TON,2020,General cargo,13,13.715,7.642,45.49
+TON,2020,Oil tankers,1,0.152,0.398,59.92
+TON,2020,Other types of ships,14,6.384,9.407,33.84
+TON,2020,Total fleet,32,46.028,35.724,38.98
+TTO,2018,Bulk carriers,0,0,0,
+TTO,2018,Container ships,0,0,0,
+TTO,2018,General cargo,1,1.135,0.733,75.09
+TTO,2018,Oil tankers,0,0,0,
+TTO,2018,Other types of ships,102,26.588,40.995,31.24
+TTO,2018,Total fleet,103,27.722,41.728,31.66
+TTO,2019,Bulk carriers,0,0,0,
+TTO,2019,Container ships,0,0,0,
+TTO,2019,General cargo,1,1.135,0.733,76.09
+TTO,2019,Oil tankers,0,0,0,
+TTO,2019,Other types of ships,105,26.827,45.093,31.52
+TTO,2019,Total fleet,106,27.961,45.826,31.94
+TTO,2020,Bulk carriers,0,0,0,
+TTO,2020,Container ships,0,0,0,
+TTO,2020,General cargo,1,1.135,0.733,77.09
+TTO,2020,Oil tankers,0,0,0,
+TTO,2020,Other types of ships,101,25.163,43.449,32.38
+TTO,2020,Total fleet,102,26.298,44.182,32.82
+TUN,2018,Bulk carriers,0,0,0,
+TUN,2018,Container ships,0,0,0,
+TUN,2018,General cargo,10,43.324,55.21,13.6
+TUN,2018,Oil tankers,1,130.319,73.637,22.51
+TUN,2018,Other types of ships,58,145.793,200.813,34.56
+TUN,2018,Total fleet,69,319.436,329.66,31.35
+TUN,2019,Bulk carriers,0,0,0,
+TUN,2019,Container ships,0,0,0,
+TUN,2019,General cargo,9,39.907,53.238,15.08
+TUN,2019,Oil tankers,1,130.319,73.637,23.51
+TUN,2019,Other types of ships,59,147.186,202.075,34.71
+TUN,2019,Total fleet,69,317.412,328.95,31.99
+TUN,2020,Bulk carriers,0,0,0,
+TUN,2020,Container ships,0,0,0,
+TUN,2020,General cargo,9,39.907,53.238,16.08
+TUN,2020,Oil tankers,1,130.319,73.637,24.51
+TUN,2020,Other types of ships,60,147.492,202.726,36.04
+TUN,2020,Total fleet,70,317.718,329.601,33.31
+TUR,2018,Bulk carriers,60,2785.968,1629.105,14.12
+TUR,2018,Container ships,56,1222.633,981.759,13.89
+TUR,2018,General cargo,385,1402.823,1399.671,34.24
+TUR,2018,Oil tankers,122,1964.843,1064.515,24.05
+TUR,2018,Other types of ships,633,598.876,649.407,23.67
+TUR,2018,Total fleet,1256,7975.144,5724.457,26.06
+TUR,2019,Bulk carriers,57,2673.198,1561.495,15.18
+TUR,2019,Container ships,54,1207.989,969.441,14.5
+TUR,2019,General cargo,359,1306.341,1333.991,35.11
+TUR,2019,Oil tankers,124,1646.085,900.422,24.55
+TUR,2019,Other types of ships,648,725.399,755.107,23.73
+TUR,2019,Total fleet,1242,7559.013,5520.456,26.31
+TUR,2020,Bulk carriers,49,2317.569,1343.506,15.83
+TUR,2020,Container ships,42,930.195,745.712,15.36
+TUR,2020,General cargo,335,1230.434,1386.284,36.25
+TUR,2020,Oil tankers,123,1699.085,935.251,25.25
+TUR,2020,Other types of ships,692,886.627,894.996,23.37
+TUR,2020,Total fleet,1241,7063.91,5305.749,26.46
+TUV,2018,Bulk carriers,25,839.518,500.96,16.51
+TUV,2018,Container ships,1,5.384,2.967,29.84
+TUV,2018,General cargo,42,107.534,68.688,22.39
+TUV,2018,Oil tankers,22,288.85,175.952,26.84
+TUV,2018,Other types of ships,146,795.38,528.793,15.63
+TUV,2018,Total fleet,236,2036.667,1277.36,18.03
+TUV,2019,Bulk carriers,20,640.2,385.055,18.7
+TUV,2019,Container ships,3,50.798,41.233,24.14
+TUV,2019,General cargo,40,115.745,115.831,21.4
+TUV,2019,Oil tankers,22,355.93,218.913,27.04
+TUV,2019,Other types of ships,148,730.588,493.291,15.59
+TUV,2019,Total fleet,233,1893.262,1254.323,18.04
+TUV,2020,Bulk carriers,20,605.22,366.343,19.44
+TUV,2020,Container ships,3,50.798,41.233,25.14
+TUV,2020,General cargo,38,104.65,82.06,24.04
+TUV,2020,Oil tankers,20,333.942,207.596,27.32
+TUV,2020,Other types of ships,155,837.092,568.263,16.21
+TUV,2020,Total fleet,236,1931.703,1265.495,18.8
+TZA,2018,Bulk carriers,5,67.79,44.644,31.77
+TZA,2018,Container ships,8,33.568,28.222,26.05
+TZA,2018,General cargo,205,623.101,480.681,36.08
+TZA,2018,Oil tankers,52,185.164,103.558,34.45
+TZA,2018,Other types of ships,123,128.369,110.347,32.83
+TZA,2018,Total fleet,393,1037.992,767.452,34.59
+TZA,2019,Bulk carriers,4,60.985,39.499,31.09
+TZA,2019,Container ships,7,28.118,23.229,28.05
+TZA,2019,General cargo,178,518.526,395.23,36.96
+TZA,2019,Oil tankers,46,139.275,79.222,35.47
+TZA,2019,Other types of ships,118,97.259,89.031,33.6
+TZA,2019,Total fleet,353,844.163,626.211,35.4
+TZA,2020,Bulk carriers,3,49.283,30.602,32.95
+TZA,2020,Container ships,5,21.158,18.031,32.12
+TZA,2020,General cargo,159,444.063,343.524,36.68
+TZA,2020,Oil tankers,45,141.019,80.791,36.46
+TZA,2020,Other types of ships,117,81.016,79.838,32.73
+TZA,2020,Total fleet,329,736.539,552.786,35.14
+UKR,2018,Bulk carriers,0,0,0,
+UKR,2018,Container ships,1,2.45,2.073,19.59
+UKR,2018,General cargo,87,199.739,166.193,40.16
+UKR,2018,Oil tankers,14,30.563,17.592,40.29
+UKR,2018,Other types of ships,301,120.014,184.474,35.79
+UKR,2018,Total fleet,403,352.766,370.332,36.85
+UKR,2019,Bulk carriers,0,0,0,
+UKR,2019,Container ships,1,2.45,2.073,20.59
+UKR,2019,General cargo,86,195.804,162.978,41.35
+UKR,2019,Oil tankers,15,33.648,20.47,40.08
+UKR,2019,Other types of ships,305,121.402,186.072,36.77
+UKR,2019,Total fleet,407,353.304,371.593,37.82
+UKR,2020,Bulk carriers,0,0,0,
+UKR,2020,Container ships,1,2.45,2.073,21.59
+UKR,2020,General cargo,87,202.731,175.544,42.25
+UKR,2020,Oil tankers,15,33.648,20.47,41.08
+UKR,2020,Other types of ships,308,124.576,187.749,37.25
+UKR,2020,Total fleet,411,363.405,385.836,38.41
+URY,2018,Bulk carriers,0,0,0,
+URY,2018,Container ships,1,3.144,2.749,28.42
+URY,2018,General cargo,6,12.654,9.692,50.25
+URY,2018,Oil tankers,4,9.94,6.4,38.01
+URY,2018,Other types of ships,53,28.496,63.698,29.74
+URY,2018,Total fleet,64,54.234,82.539,32.16
+URY,2019,Bulk carriers,0,0,0,
+URY,2019,Container ships,1,3.144,2.749,29.42
+URY,2019,General cargo,4,7.734,5.527,42.21
+URY,2019,Oil tankers,4,9.94,6.4,39.01
+URY,2019,Other types of ships,51,25.004,61.161,31.32
+URY,2019,Total fleet,60,45.822,75.837,32.52
+URY,2020,Bulk carriers,0,0,0,
+URY,2020,Container ships,1,3.144,2.749,30.42
+URY,2020,General cargo,4,7.734,5.527,43.21
+URY,2020,Oil tankers,3,6.714,3.884,39.84
+URY,2020,Other types of ships,53,32.124,65.761,31.89
+URY,2020,Total fleet,61,49.716,77.921,33
+USA,2018,Bulk carriers,5,226.672,130.686,24.14
+USA,2018,Container ships,62,2909.435,2621.119,20.79
+USA,2018,General cargo,104,2013.633,1323.937,43.54
+USA,2018,Oil tankers,68,4124.938,2475.462,14.78
+USA,2018,Other types of ships,3400,3200.577,3971.83,30.16
+USA,2018,Total fleet,3639,12475.254,10523.034,30.09
+USA,2019,Bulk carriers,5,226.672,130.686,25.14
+USA,2019,Container ships,62,3031.335,2701.452,19.35
+USA,2019,General cargo,102,2018.951,1380.531,42.94
+USA,2019,Oil tankers,68,4000.431,2411.485,15.2
+USA,2019,Other types of ships,3395,3155.751,3965.319,30.67
+USA,2019,Total fleet,3632,12433.14,10589.473,30.52
+USA,2020,Bulk carriers,5,226.672,130.686,26.14
+USA,2020,Container ships,64,3137.776,2783.29,18.89
+USA,2020,General cargo,101,2055.647,1423.201,44.03
+USA,2020,Oil tankers,68,4000.431,2411.485,16.2
+USA,2020,Other types of ships,3394,3177.522,4130.552,31.28
+USA,2020,Total fleet,3632,12598.048,10879.214,31.12
+VCT,2018,Bulk carriers,22,752.711,447.084,18.46
+VCT,2018,Container ships,13,300.057,235.774,19.45
+VCT,2018,General cargo,173,525.465,387.305,36.83
+VCT,2018,Oil tankers,17,80.073,50.534,30.51
+VCT,2018,Other types of ships,573,1398.372,1110.399,20.82
+VCT,2018,Total fleet,798,3056.678,2231.096,24.41
+VCT,2019,Bulk carriers,19,667.834,396.077,17.43
+VCT,2019,Container ships,12,214.979,170.842,17.33
+VCT,2019,General cargo,168,473.562,354.349,37.07
+VCT,2019,Oil tankers,17,85.454,55.512,29.29
+VCT,2019,Other types of ships,561,1164.605,956.433,21
+VCT,2019,Total fleet,777,2606.434,1933.213,24.51
+VCT,2020,Bulk carriers,22,755.621,453.905,17.36
+VCT,2020,Container ships,17,322.774,251.338,14.38
+VCT,2020,General cargo,158,429.128,327.059,38.44
+VCT,2020,Oil tankers,16,85.342,55.934,29.8
+VCT,2020,Other types of ships,553,591.753,592.446,20.71
+VCT,2020,Total fleet,766,2184.619,1680.682,24.32
+VEN,2018,Bulk carriers,4,320.309,176.657,32.07
+VEN,2018,Container ships,1,2.21,1.621,47.09
+VEN,2018,General cargo,26,91.726,73.403,37.61
+VEN,2018,Oil tankers,27,1043.944,601.206,20.93
+VEN,2018,Other types of ships,238,376.931,333.368,29.83
+VEN,2018,Total fleet,296,1835.12,1186.255,29.79
+VEN,2019,Bulk carriers,4,320.309,176.657,33.07
+VEN,2019,Container ships,1,2.21,1.621,48.09
+VEN,2019,General cargo,25,90.804,72.904,37.84
+VEN,2019,Oil tankers,23,924.235,530.001,21.31
+VEN,2019,Other types of ships,232,360.642,309.166,30.55
+VEN,2019,Total fleet,285,1698.199,1090.349,30.54
+VEN,2020,Bulk carriers,4,318.701,176.657,34.07
+VEN,2020,Container ships,1,2.21,1.621,49.09
+VEN,2020,General cargo,26,91.011,73.038,39.27
+VEN,2020,Oil tankers,20,784.159,446.725,22.51
+VEN,2020,Other types of ships,230,340.093,295.101,31.62
+VEN,2020,Total fleet,281,1536.174,993.142,31.77
+VGB,2018,Bulk carriers,0,0,0,
+VGB,2018,Container ships,0,0,0,
+VGB,2018,General cargo,3,1.004,0.751,73.58
+VGB,2018,Oil tankers,0,0,0,
+VGB,2018,Other types of ships,22,4.255,7.212,15.96
+VGB,2018,Total fleet,25,5.259,7.963,22.87
+VGB,2019,Bulk carriers,0,0,0,
+VGB,2019,Container ships,0,0,0,
+VGB,2019,General cargo,2,0.53,0.381,79.42
+VGB,2019,Oil tankers,0,0,0,
+VGB,2019,Other types of ships,26,5.076,8.348,15.99
+VGB,2019,Total fleet,28,5.606,8.729,20.52
+VGB,2020,Bulk carriers,0,0,0,
+VGB,2020,Container ships,0,0,0,
+VGB,2020,General cargo,3,9.264,7.095,60.47
+VGB,2020,Oil tankers,0,0,0,
+VGB,2020,Other types of ships,27,5.201,8.787,16.76
+VGB,2020,Total fleet,30,14.465,15.882,21.13
+VIR,2018,Bulk carriers,0,0,0,
+VIR,2018,Container ships,0,0,0,
+VIR,2018,General cargo,0,0,0,
+VIR,2018,Oil tankers,0,0,0,
+VIR,2018,Other types of ships,1,0.397,0.144,51.92
+VIR,2018,Total fleet,1,0.397,0.144,51.92
+VIR,2019,Bulk carriers,0,0,0,
+VIR,2019,Container ships,0,0,0,
+VIR,2019,General cargo,1,1.488,0.499,29.92
+VIR,2019,Oil tankers,0,0,0,
+VIR,2019,Other types of ships,1,0.397,0.144,52.92
+VIR,2019,Total fleet,2,1.885,0.643,41.42
+VIR,2020,Bulk carriers,0,0,0,
+VIR,2020,Container ships,0,0,0,
+VIR,2020,General cargo,1,1.488,0.499,30.92
+VIR,2020,Oil tankers,0,0,0,
+VIR,2020,Other types of ships,1,0.397,0.144,53.92
+VIR,2020,Total fleet,2,1.885,0.643,42.42
+VNM,2018,Bulk carriers,85,2207.357,1352.456,14.71
+VNM,2018,Container ships,39,414.081,318.016,14.37
+VNM,2018,General cargo,1207,2935.365,1707.645,14.69
+VNM,2018,Oil tankers,114,1502.319,910.961,17.8
+VNM,2018,Other types of ships,386,1181.314,816.389,16.68
+VNM,2018,Total fleet,1831,8240.436,5105.467,15.3
+VNM,2019,Bulk carriers,91,2417.365,1476.249,15
+VNM,2019,Container ships,39,414.942,322.382,15.51
+VNM,2019,General cargo,1200,2918.46,1698.549,15.63
+VNM,2019,Oil tankers,118,1532.08,924.956,18.07
+VNM,2019,Other types of ships,416,1237.816,866.51,16.76
+VNM,2019,Total fleet,1864,8520.663,5288.646,16
+VNM,2020,Bulk carriers,103,2827.194,1726.201,15.3
+VNM,2020,Container ships,39,422.61,326.668,16.4
+VNM,2020,General cargo,1198,2920.994,1701.394,16.57
+VNM,2020,Oil tankers,121,1691.101,1017.469,18.73
+VNM,2020,Other types of ships,453,1331.594,946.107,16.67
+VNM,2020,Total fleet,1914,9193.493,5717.839,16.66
+VUT,2018,Bulk carriers,27,1261.787,773.764,10.36
+VUT,2018,Container ships,0,0,0,
+VUT,2018,General cargo,36,110.942,82.52,30
+VUT,2018,Oil tankers,0,0,0,
+VUT,2018,Other types of ships,333,987.822,990.768,16.95
+VUT,2018,Total fleet,396,2360.551,1847.052,17.68
+VUT,2019,Bulk carriers,26,1247.997,763.949,10.79
+VUT,2019,Container ships,0,0,0,
+VUT,2019,General cargo,45,144.473,104.909,30.51
+VUT,2019,Oil tankers,0,0,0,
+VUT,2019,Other types of ships,276,705.848,741.402,18.21
+VUT,2019,Total fleet,347,2098.318,1610.26,19.25
+VUT,2020,Bulk carriers,23,1084.253,670.719,11.55
+VUT,2020,Container ships,1,5.336,3.998,26
+VUT,2020,General cargo,44,136.31,95.536,29.96
+VUT,2020,Oil tankers,0,0,0,
+VUT,2020,Other types of ships,259,640.06,661.768,19.3
+VUT,2020,Total fleet,327,1865.959,1432.021,20.21
+WLD,2018,Bulk carriers,11384,822905.785,455358.333,9.043
+WLD,2018,Container ships,5198,253632.593,224985.762,11.847
+WLD,2018,General cargo,19079,75701.56,60587.541,25.555
+WLD,2018,Oil tankers,10852,563188.284,309682.747,18.434
+WLD,2018,Other types of ships,49137,222348.584,254725.689,22.269
+WLD,2018,Total fleet,95650,1937776.814,1305340.072,20.35
+WLD,2019,Bulk carriers,11623,846461.296,468192.068,9.69
+WLD,2019,Container ships,5305,266129.351,237099.611,12.278
+WLD,2019,General cargo,19287,76424.796,61202.07,25.735
+WLD,2019,Oil tankers,10996,568037.37,312317.583,18.643
+WLD,2019,Other types of ships,49922,232871.12,266616.673,22.585
+WLD,2019,Total fleet,97133,1989923.936,1345428.005,20.658
+WLD,2020,Bulk carriers,11987,879826.009,486311.765,10.169
+WLD,2020,Container ships,5384,275040.953,246023.132,12.69
+WLD,2020,General cargo,19887,77929.495,62470.754,25.822
+WLD,2020,Oil tankers,11354,601672.2,330384.642,18.805
+WLD,2020,Other types of ships,51536,238841.941,274936.247,22.773
+WLD,2020,Total fleet,100148,2073310.611,1400126.54,20.878
+WSM,2018,Bulk carriers,0,0,0,
+WSM,2018,Container ships,0,0,0,
+WSM,2018,General cargo,4,4.359,3.717,33.59
+WSM,2018,Oil tankers,2,9.479,6.51,19.04
+WSM,2018,Other types of ships,7,4.097,5.842,25.65
+WSM,2018,Total fleet,13,17.935,16.069,27.07
+WSM,2019,Bulk carriers,0,0,0,
+WSM,2019,Container ships,0,0,0,
+WSM,2019,General cargo,4,2.725,2.552,35.11
+WSM,2019,Oil tankers,1,7.079,5.511,7.92
+WSM,2019,Other types of ships,7,4.097,5.842,26.65
+WSM,2019,Total fleet,12,13.901,13.905,27.91
+WSM,2020,Bulk carriers,0,0,0,
+WSM,2020,Container ships,0,0,0,
+WSM,2020,General cargo,4,2.725,2.552,36.11
+WSM,2020,Oil tankers,1,1.2,0.497,28
+WSM,2020,Other types of ships,6,0.731,3.316,26.13
+WSM,2020,Total fleet,11,4.656,6.365,29.93
+YEM,2018,Bulk carriers,,,,
+YEM,2018,Bulk carriers,0,0,0,
+YEM,2018,Container ships,,,,
+YEM,2018,Container ships,0,0,0,
+YEM,2018,General cargo,,,,
+YEM,2018,General cargo,3,4.185,4.78,48.11
+YEM,2018,Oil tankers,,,,
+YEM,2018,Oil tankers,4,27.854,16.919,33.88
+YEM,2018,Other types of ships,,,,
+YEM,2018,Other types of ships,27,411.821,198.582,31.93
+YEM,2018,Total fleet,,,,
+YEM,2018,Total fleet,34,443.86,220.281,33.59
+YEM,2019,Bulk carriers,,,,
+YEM,2019,Bulk carriers,0,0,0,
+YEM,2019,Container ships,,,,
+YEM,2019,Container ships,0,0,0,
+YEM,2019,General cargo,,,,
+YEM,2019,General cargo,2,1.685,1.159,53.21
+YEM,2019,Oil tankers,,,,
+YEM,2019,Oil tankers,4,27.854,16.919,34.88
+YEM,2019,Other types of ships,,,,
+YEM,2019,Other types of ships,28,412.985,200.868,32.61
+YEM,2019,Total fleet,,,,
+YEM,2019,Total fleet,34,442.524,218.946,34.09
+YEM,2020,Bulk carriers,,,,
+YEM,2020,Bulk carriers,0,0,0,
+YEM,2020,Container ships,,,,
+YEM,2020,Container ships,0,0,0,
+YEM,2020,General cargo,,,,
+YEM,2020,General cargo,2,1.685,1.159,54.21
+YEM,2020,Oil tankers,,,,
+YEM,2020,Oil tankers,4,27.854,16.919,35.88
+YEM,2020,Other types of ships,,,,
+YEM,2020,Other types of ships,28,412.985,200.868,33.61
+YEM,2020,Total fleet,,,,
+YEM,2020,Total fleet,34,442.524,218.946,35.09
+ZAF,2018,Bulk carriers,2,358.498,180.315,15.76
+ZAF,2018,Container ships,0,0,0,
+ZAF,2018,General cargo,1,0.142,0.134,60.92
+ZAF,2018,Oil tankers,6,27.413,16.078,10.96
+ZAF,2018,Other types of ships,92,61.901,72.784,26.25
+ZAF,2018,Total fleet,101,447.954,269.311,25.47
+ZAF,2019,Bulk carriers,2,358.498,180.315,16.76
+ZAF,2019,Container ships,0,0,0,
+ZAF,2019,General cargo,1,0.142,0.134,61.92
+ZAF,2019,Oil tankers,6,27.413,16.078,11.96
+ZAF,2019,Other types of ships,93,62.037,72.919,27.11
+ZAF,2019,Total fleet,102,448.091,269.446,26.36
+ZAF,2020,Bulk carriers,3,414.473,211.562,15.75
+ZAF,2020,Container ships,0,0,0,
+ZAF,2020,General cargo,1,0.142,0.134,62.92
+ZAF,2020,Oil tankers,6,27.413,16.078,12.96
+ZAF,2020,Other types of ships,94,57.133,69.672,27.49
+ZAF,2020,Total fleet,104,499.162,297.446,26.66

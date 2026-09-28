@@ -1,0 +1,8 @@
+transaction,term,value,article
+business_to_business,default_period_days_when_contract_silent,30,"Art. 3(3)(b), Directive 2011/7/EU of 16 February 2011 on combating late payment in commercial transactions, OJ L 48, 23.2.2011"
+business_to_business,max_contract_period_days_unless_expressly_agreed,60,"Art. 3(5), Directive 2011/7/EU of 16 February 2011 on combating late payment in commercial transactions, OJ L 48, 23.2.2011"
+business_to_business,max_acceptance_procedure_days,30,"Art. 3(4), Directive 2011/7/EU of 16 February 2011 on combating late payment in commercial transactions, OJ L 48, 23.2.2011"
+public_authority_debtor,max_period_days,30,"Art. 4(3)(a), Directive 2011/7/EU of 16 February 2011 on combating late payment in commercial transactions, OJ L 48, 23.2.2011"
+public_authority_debtor,max_period_days_extended_public_undertakings_and_healthcare,60,"Art. 4(4), Directive 2011/7/EU of 16 February 2011 on combating late payment in commercial transactions, OJ L 48, 23.2.2011"
+all,statutory_interest_margin_over_reference_rate_pp_minimum,8,"Art. 2(6), Directive 2011/7/EU of 16 February 2011 on combating late payment in commercial transactions, OJ L 48, 23.2.2011"
+all,fixed_recovery_compensation_eur_minimum,40,"Art. 6(1), Directive 2011/7/EU of 16 February 2011 on combating late payment in commercial transactions, OJ L 48, 23.2.2011"

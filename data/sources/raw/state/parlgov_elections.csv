@@ -1,0 +1,2512 @@
+iso3,date,party_id,party,vote_share,seats,seats_total,left_right
+AUS,2001-11-10,120,Australian Democrats,5.4,0,150,3.7004
+AUS,2001-11-10,1253,Australian Labor Party,37.8,65,150,3.8833
+AUS,2001-11-10,1396,no party affiliation,4.4,3,150,
+AUS,2001-11-10,1411,Liberal Party of Australia,37.1,68,150,7.3903
+AUS,2001-11-10,184,National (Country) Party | National Party of Australia,5.6,13,150,7.8222
+AUS,2001-11-10,215,Country Liberal Party,0.3,1,150,6.0
+AUS,2001-11-10,386,One Nation Party,4.3,0,150,8.1579
+AUS,2001-11-10,751,Australian Greens,5.0,0,150,1.5439
+AUS,2004-10-09,120,Australian Democrats,1.2,0,150,3.7004
+AUS,2004-10-09,1253,Australian Labor Party,37.6,60,150,3.8833
+AUS,2004-10-09,1396,no party affiliation,4.0,3,150,
+AUS,2004-10-09,1411,Liberal Party of Australia,40.5,74,150,7.3903
+AUS,2004-10-09,184,National (Country) Party | National Party of Australia,5.9,12,150,7.8222
+AUS,2004-10-09,215,Country Liberal Party,0.3,1,150,6.0
+AUS,2004-10-09,386,One Nation Party,1.2,0,150,8.1579
+AUS,2004-10-09,446,Family First Party,2.0,0,150,7.4
+AUS,2004-10-09,751,Australian Greens,7.2,0,150,1.5439
+AUS,2007-11-24,1253,Australian Labor Party,43.4,83,150,3.8833
+AUS,2007-11-24,1396,no party affiliation,3.7,2,150,
+AUS,2007-11-24,1411,Liberal Party of Australia,36.3,55,150,7.3903
+AUS,2007-11-24,184,National (Country) Party | National Party of Australia,5.5,10,150,7.8222
+AUS,2007-11-24,446,Family First Party,2.0,0,150,7.4
+AUS,2007-11-24,751,Australian Greens,7.8,0,150,1.5439
+AUS,2010-08-21,1253,Australian Labor Party,37.99,72,150,3.8833
+AUS,2010-08-21,1396,no party affiliation,2.52,4,150,
+AUS,2010-08-21,1411,Liberal Party of Australia,30.46,44,150,7.3903
+AUS,2010-08-21,154,Liberal National Party of Queensland,9.12,21,150,6.0
+AUS,2010-08-21,184,National (Country) Party | National Party of Australia,3.73,7,150,7.8222
+AUS,2010-08-21,215,Country Liberal Party,0.31,1,150,6.0
+AUS,2010-08-21,446,Family First Party,2.25,0,150,7.4
+AUS,2010-08-21,751,Australian Greens,11.76,1,150,1.5439
+AUS,2013-09-07,1253,Australian Labor Party,33.38,55,150,3.8833
+AUS,2013-09-07,1396,no party affiliation,1.37,2,150,
+AUS,2013-09-07,1411,Liberal Party of Australia,32.02,58,150,7.3903
+AUS,2013-09-07,154,Liberal National Party of Queensland,8.92,22,150,6.0
+AUS,2013-09-07,184,National (Country) Party | National Party of Australia,4.29,9,150,7.8222
+AUS,2013-09-07,215,Country Liberal Party,0.32,1,150,6.0
+AUS,2013-09-07,2258,Katter's Australian Party,1.04,1,150,3.3
+AUS,2013-09-07,2259,Palmer United Party,5.49,1,150,6.0
+AUS,2013-09-07,446,Family First Party,1.41,0,150,7.4
+AUS,2013-09-07,751,Australian Greens,8.65,1,150,1.5439
+AUS,2016-07-02,1253,Australian Labor Party,34.73,69,150,3.8833
+AUS,2016-07-02,1396,no party affiliation,2.81,2,150,
+AUS,2016-07-02,1411,Liberal Party of Australia,28.67,45,150,7.3903
+AUS,2016-07-02,154,Liberal National Party of Queensland,8.52,21,150,6.0
+AUS,2016-07-02,1650,Christian Democratic Party,1.31,0,150,6.2
+AUS,2016-07-02,184,National (Country) Party | National Party of Australia,4.61,10,150,7.8222
+AUS,2016-07-02,2258,Katter's Australian Party,0.54,1,150,3.3
+AUS,2016-07-02,2630,Nick Xenophon Team,1.85,1,150,6.0
+AUS,2016-07-02,386,One Nation Party,1.29,0,150,8.1579
+AUS,2016-07-02,446,Family First Party,1.49,0,150,7.4
+AUS,2016-07-02,751,Australian Greens,10.23,1,150,1.5439
+AUS,2019-05-18,1253,Australian Labor Party,33.34,68,151,3.8833
+AUS,2019-05-18,1396,no party affiliation,3.37,3,151,
+AUS,2019-05-18,1411,Liberal Party of Australia,27.99,44,151,7.3903
+AUS,2019-05-18,154,Liberal National Party of Queensland,8.67,23,151,6.0
+AUS,2019-05-18,184,National (Country) Party | National Party of Australia,4.51,10,151,7.8222
+AUS,2019-05-18,2258,Katter's Australian Party,0.49,1,151,3.3
+AUS,2019-05-18,2259,Palmer United Party,3.43,0,151,6.0
+AUS,2019-05-18,2630,Nick Xenophon Team,0.33,1,151,6.0
+AUS,2019-05-18,386,One Nation Party,3.08,0,151,8.1579
+AUS,2019-05-18,751,Australian Greens,10.4,1,151,1.5439
+AUS,2022-05-21,1253,Australian Labor Party,32.58,77,151,3.8833
+AUS,2022-05-21,1396,no party affiliation,5.29,10,151,
+AUS,2022-05-21,1411,Liberal Party of Australia,23.89,27,151,7.3903
+AUS,2022-05-21,154,Liberal National Party of Queensland,8.0,21,151,6.0
+AUS,2022-05-21,184,National (Country) Party | National Party of Australia,3.6,10,151,7.8222
+AUS,2022-05-21,1912,United Australia Party,4.12,0,151,7.4
+AUS,2022-05-21,1927,Liberal Democratic Party (New South Wales),1.73,0,151,6.0
+AUS,2022-05-21,2258,Katter's Australian Party,0.38,1,151,3.3
+AUS,2022-05-21,2630,Nick Xenophon Team,0.25,1,151,6.0
+AUS,2022-05-21,386,One Nation Party,4.96,0,151,8.1579
+AUS,2022-05-21,751,Australian Greens,12.25,4,151,1.5439
+AUT,2002-11-24,1013,Austrian People's Party,42.3,79,183,6.4733
+AUT,2002-11-24,1429,The Greens -- The Green Alternative,9.47,17,183,2.4604
+AUT,2002-11-24,50,Freedom Party of Austria,10.01,18,183,8.3494
+AUT,2002-11-24,955,Liberal Forum,0.98,0,183,4.8806
+AUT,2002-11-24,973,Social Democratic Party of Austria,36.51,69,183,3.7293
+AUT,2006-10-01,1013,Austrian People's Party,34.3,66,183,6.4733
+AUT,2006-10-01,1429,The Greens -- The Green Alternative,11.1,21,183,2.4604
+AUT,2006-10-01,1536,Alliance for the Future of Austria,4.1,7,183,8.83
+AUT,2006-10-01,50,Freedom Party of Austria,11.0,21,183,8.3494
+AUT,2006-10-01,669,Hans-Peter Martin's List,2.8,0,183,4.2
+AUT,2006-10-01,769,Communist Party of Austria,1.0,0,183,0.5
+AUT,2006-10-01,973,Social Democratic Party of Austria,35.3,68,183,3.7293
+AUT,2008-09-28,1013,Austrian People's Party,25.98,51,183,6.4733
+AUT,2008-09-28,1429,The Greens -- The Green Alternative,10.43,20,183,2.4604
+AUT,2008-09-28,1536,Alliance for the Future of Austria,10.7,21,183,8.83
+AUT,2008-09-28,1746,The Citizens' Forum Austria,1.76,0,183,3.3
+AUT,2008-09-28,50,Freedom Party of Austria,17.54,34,183,8.3494
+AUT,2008-09-28,955,Liberal Forum,2.09,0,183,4.8806
+AUT,2008-09-28,973,Social Democratic Party of Austria,29.26,57,183,3.7293
+AUT,2013-09-29,1013,Austrian People's Party,24.0,47,183,6.4733
+AUT,2013-09-29,1429,The Greens -- The Green Alternative,12.4,24,183,2.4604
+AUT,2013-09-29,1536,Alliance for the Future of Austria,3.5,0,183,8.83
+AUT,2013-09-29,2150,Team Stronach,5.7,11,183,6.0
+AUT,2013-09-29,2255,NEOS -- The New Austria,5.0,9,183,6.0
+AUT,2013-09-29,50,Freedom Party of Austria,20.5,40,183,8.3494
+AUT,2013-09-29,769,Communist Party of Austria,1.0,0,183,0.5
+AUT,2013-09-29,973,Social Democratic Party of Austria,26.8,52,183,3.7293
+AUT,2017-10-15,1013,Austrian People's Party,31.5,62,183,6.4733
+AUT,2017-10-15,1429,The Greens -- The Green Alternative,3.8,0,183,2.4604
+AUT,2017-10-15,2255,NEOS -- The New Austria,5.3,10,183,6.0
+AUT,2017-10-15,2651,JETZT -- Pilz List,4.4,8,183,2.5
+AUT,2017-10-15,2652,My Vote Counts!,1.0,0,183,
+AUT,2017-10-15,50,Freedom Party of Austria,26.0,51,183,8.3494
+AUT,2017-10-15,973,Social Democratic Party of Austria,26.9,52,183,3.7293
+AUT,2019-09-29,1013,Austrian People's Party,37.5,71,183,6.4733
+AUT,2019-09-29,1429,The Greens -- The Green Alternative,13.9,26,183,2.4604
+AUT,2019-09-29,2255,NEOS -- The New Austria,8.1,15,183,6.0
+AUT,2019-09-29,2651,JETZT -- Pilz List,1.9,0,183,2.5
+AUT,2019-09-29,50,Freedom Party of Austria,16.2,31,183,8.3494
+AUT,2019-09-29,973,Social Democratic Party of Austria,21.2,40,183,3.7293
+BEL,2003-05-18,1110,Party of Liberty and Progress | Flemish Liberals and Democrats,15.36,25,150,7.0053
+BEL,2003-05-18,1113,Socialist Party Different / Social Liberal Party,14.91,23,150,3.255
+BEL,2003-05-18,1192,Francophone Christian Social Party -- Humanist Democratic Centre,5.47,8,150,5.4974
+BEL,2003-05-18,1378,Socialist Party [Francophone],13.02,25,150,2.9307
+BEL,2003-05-18,1594,Agalev -- Green,2.47,0,150,2.5762
+BEL,2003-05-18,161,Confederated ecologists for the organisation of original struggles,3.06,4,150,2.641
+BEL,2003-05-18,171,National Front,1.98,1,150,9.655
+BEL,2003-05-18,501,New Flemish Alliance,3.06,1,150,6.5321
+BEL,2003-05-18,723,Flemish Christian Peoples Party | Christian Democrats & Flemish,13.25,21,150,5.7667
+BEL,2003-05-18,915,Reformist Movement,11.4,24,150,6.6889
+BEL,2003-05-18,993,Flemish Block | Flemish Interest,11.59,18,150,9.6622
+BEL,2007-06-10,1110,Party of Liberty and Progress | Flemish Liberals and Democrats,11.83,18,150,7.0053
+BEL,2007-06-10,1113,Socialist Party Different / Social Liberal Party,10.26,14,150,3.255
+BEL,2007-06-10,1192,Francophone Christian Social Party -- Humanist Democratic Centre,6.1,10,150,5.4974
+BEL,2007-06-10,1378,Socialist Party [Francophone],10.86,20,150,2.9307
+BEL,2007-06-10,1594,Agalev -- Green,3.98,4,150,2.5762
+BEL,2007-06-10,161,Confederated ecologists for the organisation of original struggles,5.1,8,150,2.641
+BEL,2007-06-10,171,National Front,2.0,1,150,9.655
+BEL,2007-06-10,221,"List Dedecker | Libertarian, Direct, Democratic",4.03,5,150,6.0
+BEL,2007-06-10,256,Workers' Party of Belgium,0.84,0,150,1.3
+BEL,2007-06-10,915,Reformist Movement,12.5,23,150,6.6889
+BEL,2007-06-10,972,Christian-Democrat and Flemish / New Flemish Alliance,18.5,30,150,6.2
+BEL,2007-06-10,993,Flemish Block | Flemish Interest,12.0,17,150,9.6622
+BEL,2010-06-13,1029,Socialist Party,9.24,13,150,3.2459
+BEL,2010-06-13,1110,Party of Liberty and Progress | Flemish Liberals and Democrats,8.64,13,150,7.0053
+BEL,2010-06-13,1192,Francophone Christian Social Party -- Humanist Democratic Centre,5.52,9,150,5.4974
+BEL,2010-06-13,1378,Socialist Party [Francophone],13.7,26,150,2.9307
+BEL,2010-06-13,1594,Agalev -- Green,4.38,5,150,2.5762
+BEL,2010-06-13,161,Confederated ecologists for the organisation of original struggles,4.8,8,150,2.641
+BEL,2010-06-13,221,"List Dedecker | Libertarian, Direct, Democratic",2.31,1,150,6.0
+BEL,2010-06-13,256,Workers' Party of Belgium,1.55,0,150,1.3
+BEL,2010-06-13,438,People's Party,1.29,1,150,7.4
+BEL,2010-06-13,501,New Flemish Alliance,17.4,27,150,6.5321
+BEL,2010-06-13,723,Flemish Christian Peoples Party | Christian Democrats & Flemish,10.85,17,150,5.7667
+BEL,2010-06-13,915,Reformist Movement,9.28,18,150,6.6889
+BEL,2010-06-13,993,Flemish Block | Flemish Interest,7.76,12,150,9.6622
+BEL,2014-05-25,1029,Socialist Party,8.83,13,150,3.2459
+BEL,2014-05-25,1110,Party of Liberty and Progress | Flemish Liberals and Democrats,9.78,14,150,7.0053
+BEL,2014-05-25,1192,Francophone Christian Social Party -- Humanist Democratic Centre,4.98,9,150,5.4974
+BEL,2014-05-25,1378,Socialist Party [Francophone],11.67,23,150,2.9307
+BEL,2014-05-25,1594,Agalev -- Green,5.32,6,150,2.5762
+BEL,2014-05-25,161,Confederated ecologists for the organisation of original struggles,3.3,6,150,2.641
+BEL,2014-05-25,2368,"Belgians, Rise Up!",0.86,0,150,8.8
+BEL,2014-05-25,256,Workers' Party of Belgium,3.72,2,150,1.3
+BEL,2014-05-25,438,People's Party,1.52,1,150,7.4
+BEL,2014-05-25,501,New Flemish Alliance,20.26,33,150,6.5321
+BEL,2014-05-25,723,Flemish Christian Peoples Party | Christian Democrats & Flemish,11.61,18,150,5.7667
+BEL,2014-05-25,915,Reformist Movement,9.64,20,150,6.6889
+BEL,2014-05-25,969,Francophone Democratic Front,1.8,2,150,6.1259
+BEL,2014-05-25,993,Flemish Block | Flemish Interest,3.67,3,150,9.6622
+BEL,2019-05-26,1029,Socialist Party,6.71,9,150,3.2459
+BEL,2019-05-26,1110,Party of Liberty and Progress | Flemish Liberals and Democrats,8.54,12,150,7.0053
+BEL,2019-05-26,1192,Francophone Christian Social Party -- Humanist Democratic Centre,3.7,5,150,5.4974
+BEL,2019-05-26,1378,Socialist Party [Francophone],9.46,20,150,2.9307
+BEL,2019-05-26,1594,Agalev -- Green,6.1,8,150,2.5762
+BEL,2019-05-26,161,Confederated ecologists for the organisation of original struggles,6.14,13,150,2.641
+BEL,2019-05-26,256,Workers' Party of Belgium,8.62,12,150,1.3
+BEL,2019-05-26,438,People's Party,1.11,0,150,7.4
+BEL,2019-05-26,501,New Flemish Alliance,16.03,25,150,6.5321
+BEL,2019-05-26,723,Flemish Christian Peoples Party | Christian Democrats & Flemish,8.89,12,150,5.7667
+BEL,2019-05-26,915,Reformist Movement,7.56,14,150,6.6889
+BEL,2019-05-26,969,Francophone Democratic Front,2.22,2,150,6.1259
+BEL,2019-05-26,993,Flemish Block | Flemish Interest,11.95,18,150,9.6622
+BGR,2001-06-18,1149,Union for Tzar [Simeon II],1.7,0,240,
+BGR,2001-06-18,1160,Coalition for Bulgaria | Democratic Left,17.15,48,240,2.8982
+BGR,2001-06-18,1286,Movement for Rights and Freedoms,7.45,21,240,4.5828
+BGR,2001-06-18,1362,George's Day Movement,3.63,0,240,6.3158
+BGR,2001-06-18,15,Simeon II Coalition,3.44,0,240,6.86
+BGR,2001-06-18,544,National Movement Simeon II,42.74,120,240,5.7567
+BGR,2001-06-18,784,United Democratic Forces,18.18,51,240,6.9611
+BGR,2005-06-25,1160,Coalition for Bulgaria | Democratic Left,30.95,82,240,2.8982
+BGR,2005-06-25,1286,Movement for Rights and Freedoms,12.81,34,240,4.5828
+BGR,2005-06-25,1375,Bulgarian People's Union,5.19,13,240,5.8
+BGR,2005-06-25,2178,Euroroma,1.25,0,240,
+BGR,2005-06-25,2179,Coalition of the Rose,1.3,0,240,3.3
+BGR,2005-06-25,2180,New Times,2.95,0,240,2.5
+BGR,2005-06-25,535,Attack,8.14,21,240,5.46
+BGR,2005-06-25,544,National Movement Simeon II,19.88,53,240,5.7567
+BGR,2005-06-25,57,Democrats for a Strong Bulgaria | Democratic Bulgaria,6.44,17,240,7.85
+BGR,2005-06-25,784,United Democratic Forces,7.68,20,240,6.9611
+BGR,2009-07-05,1160,Coalition for Bulgaria | Democratic Left,17.7,40,240,2.8982
+BGR,2009-07-05,1254,Blue Coalition,6.76,15,240,7.4
+BGR,2009-07-05,1286,Movement for Rights and Freedoms,14.45,38,240,4.5828
+BGR,2009-07-05,1541,Citizens for European Development of Bulgaria,39.72,116,240,8.8
+BGR,2009-07-05,535,Attack,9.36,21,240,5.46
+BGR,2009-07-05,544,National Movement Simeon II,3.02,0,240,5.7567
+BGR,2009-07-05,566,Lider,3.26,0,240,6.0
+BGR,2009-07-05,636,"Order, Lawfulness and Justice",4.13,10,240,8.8
+BGR,2013-05-12,1160,Coalition for Bulgaria | Democratic Left,26.609,84,240,2.8982
+BGR,2013-05-12,1286,Movement for Rights and Freedoms,11.306,36,240,4.5828
+BGR,2013-05-12,1541,Citizens for European Development of Bulgaria,30.535,97,240,8.8
+BGR,2013-05-12,2211,National Front for the Salvation of Bulgaria,3.703,0,240,8.8
+BGR,2013-05-12,2212,IMRO -- Bulgarian National Movement,1.886,0,240,7.4
+BGR,2013-05-12,2213,Bulgaria for Citizens Movement,3.252,0,240,7.4
+BGR,2013-05-12,2214,People's Voice,1.339,0,240,
+BGR,2013-05-12,2595,Centre -- Freedom and Dignity,1.626,0,240,6.0
+BGR,2013-05-12,423,Union of Democratic Forces,1.374,0,240,6.1111
+BGR,2013-05-12,535,Attack,7.297,23,240,5.46
+BGR,2013-05-12,566,Lider,1.736,0,240,6.0
+BGR,2013-05-12,57,Democrats for a Strong Bulgaria | Democratic Bulgaria,2.926,0,240,7.85
+BGR,2013-05-12,636,"Order, Lawfulness and Justice",1.67,0,240,8.8
+BGR,2014-10-05,1160,Coalition for Bulgaria | Democratic Left,15.4,39,240,2.8982
+BGR,2014-10-05,1286,Movement for Rights and Freedoms,14.84,38,240,4.5828
+BGR,2014-10-05,1541,Citizens for European Development of Bulgaria,32.67,84,240,8.8
+BGR,2014-10-05,2211,National Front for the Salvation of Bulgaria,7.28,19,240,8.8
+BGR,2014-10-05,2214,People's Voice,1.14,0,240,
+BGR,2014-10-05,2362,Bulgaria Without Censorship,5.69,15,240,7.4
+BGR,2014-10-05,2363,Reformist Bloc,8.89,23,240,7.4
+BGR,2014-10-05,2364,Alternative for Bulgarian Revival,4.15,11,240,3.3
+BGR,2014-10-05,2379,Movement 21,1.19,0,240,3.3
+BGR,2014-10-05,535,Attack,4.52,11,240,5.46
+BGR,2017-03-26,1160,Coalition for Bulgaria | Democratic Left,27.93,80,240,2.8982
+BGR,2017-03-26,1286,Movement for Rights and Freedoms,9.24,26,240,4.5828
+BGR,2017-03-26,1541,Citizens for European Development of Bulgaria,33.54,95,240,8.8
+BGR,2017-03-26,2211,National Front for the Salvation of Bulgaria,9.31,27,240,8.8
+BGR,2017-03-26,2363,Reformist Bloc,3.14,0,240,7.4
+BGR,2017-03-26,2364,Alternative for Bulgarian Revival,1.59,0,240,3.3
+BGR,2017-03-26,2637,Will,4.26,12,240,8.8
+BGR,2017-03-26,2638,"Yes, Bulgaria!",2.96,0,240,6.0
+BGR,2017-03-26,2639,"Democrats for Responsibility, Solidarity and Tolerance",2.94,0,240,6.0
+BGR,2017-03-26,2640,Revival,1.11,0,240,8.8
+BGR,2017-03-26,57,Democrats for a Strong Bulgaria | Democratic Bulgaria,2.54,0,240,7.85
+BGR,2021-04-04,1160,Coalition for Bulgaria | Democratic Left,15.01,43,240,2.8982
+BGR,2021-04-04,1286,Movement for Rights and Freedoms,10.51,30,240,4.5828
+BGR,2021-04-04,1541,Citizens for European Development of Bulgaria,26.18,75,240,8.8
+BGR,2021-04-04,2211,National Front for the Salvation of Bulgaria,2.37,0,240,8.8
+BGR,2021-04-04,2212,IMRO -- Bulgarian National Movement,3.64,0,240,7.4
+BGR,2021-04-04,2640,Revival,2.45,0,240,8.8
+BGR,2021-04-04,2814,Republicans for Bulgaria,1.3,0,240,7.4
+BGR,2021-04-04,2836,There Is Such a People,17.66,51,240,7.4
+BGR,2021-04-04,2838,Stand up!,4.72,14,240,3.3
+BGR,2021-04-04,2840,Bulgarian National Unification | Bulgarian Summer,2.95,0,240,8.8
+BGR,2021-04-04,57,Democrats for a Strong Bulgaria | Democratic Bulgaria,9.45,27,240,7.85
+BGR,2021-07-11,1160,Coalition for Bulgaria | Democratic Left,13.39,36,240,2.8982
+BGR,2021-07-11,1286,Movement for Rights and Freedoms,10.71,29,240,4.5828
+BGR,2021-07-11,1541,Citizens for European Development of Bulgaria,23.51,63,240,8.8
+BGR,2021-07-11,2212,IMRO -- Bulgarian National Movement,3.1,0,240,7.4
+BGR,2021-07-11,2640,Revival,3.01,0,240,8.8
+BGR,2021-07-11,2836,There Is Such a People,24.08,65,240,7.4
+BGR,2021-07-11,2838,Stand up!,5.01,13,240,3.3
+BGR,2021-07-11,2840,Bulgarian National Unification | Bulgarian Summer,1.82,0,240,8.8
+BGR,2021-07-11,57,Democrats for a Strong Bulgaria | Democratic Bulgaria,12.64,34,240,7.85
+BGR,2021-11-14,1160,Coalition for Bulgaria | Democratic Left,10.21,26,240,2.8982
+BGR,2021-11-14,1286,Movement for Rights and Freedoms,13.0,34,240,4.5828
+BGR,2021-11-14,1541,Citizens for European Development of Bulgaria,22.74,59,240,8.8
+BGR,2021-11-14,2212,IMRO -- Bulgarian National Movement,1.08,0,240,7.4
+BGR,2021-11-14,2640,Revival,4.86,13,240,8.8
+BGR,2021-11-14,2836,There Is Such a People,9.52,25,240,7.4
+BGR,2021-11-14,2838,Stand up!,2.29,0,240,3.3
+BGR,2021-11-14,2847,We Continue the Change,25.67,67,240,
+BGR,2021-11-14,57,Democrats for a Strong Bulgaria | Democratic Bulgaria,6.28,16,240,7.85
+BGR,2022-10-02,1286,Movement for Rights and Freedoms,13.75,36,240,4.5828
+BGR,2022-10-02,1541,Citizens for European Development of Bulgaria,25.33,67,240,8.8
+BGR,2022-10-02,2638,"Yes, Bulgaria!",7.45,20,240,6.0
+BGR,2022-10-02,2640,Revival,10.18,27,240,8.8
+BGR,2022-10-02,2836,There Is Such a People,3.83,0,240,7.4
+BGR,2022-10-02,2838,Stand up!,1.01,0,240,3.3
+BGR,2022-10-02,2847,We Continue the Change,20.2,53,240,
+BGR,2022-10-02,2871,Bulgarian Rise,4.63,12,240,7.4
+BGR,2022-10-02,982,Bulgarian Socialist Party,9.3,25,240,3.0064
+BGR,2023-04-02,1286,Movement for Rights and Freedoms,13.18,36,240,4.5828
+BGR,2023-04-02,1541,Citizens for European Development of Bulgaria,25.39,69,240,8.8
+BGR,2023-04-02,2640,Revival,13.58,37,240,8.8
+BGR,2023-04-02,2836,There Is Such a People,3.94,11,240,7.4
+BGR,2023-04-02,2838,Stand up!,2.14,0,240,3.3
+BGR,2023-04-02,2847,We Continue the Change,23.54,64,240,
+BGR,2023-04-02,2871,Bulgarian Rise,2.93,0,240,7.4
+BGR,2023-04-02,982,Bulgarian Socialist Party,8.56,23,240,3.0064
+CAN,2000-11-27,1259,Green Party of Canada,0.81,0,301,1.9018
+CAN,2000-11-27,296,Co-operative Commonwealth Federation | New Democratic Party,8.51,13,301,2.46
+CAN,2000-11-27,368,Liberal Party of Canada,40.85,172,301,5.0552
+CAN,2000-11-27,448,Quebec Bloc,10.72,38,301,3.0215
+CAN,2000-11-27,794,Progressive Conservative Party of Canada,12.19,12,301,6.7112
+CAN,2000-11-27,897,Reform Party of Canada,25.49,66,301,8.7748
+CAN,2004-06-28,1189,no party affiliation,0.11,1,308,
+CAN,2004-06-28,1255,Conservative Party of Canada,29.63,99,308,8.6608
+CAN,2004-06-28,1259,Green Party of Canada,4.29,0,308,1.9018
+CAN,2004-06-28,296,Co-operative Commonwealth Federation | New Democratic Party,15.68,19,308,2.46
+CAN,2004-06-28,368,Liberal Party of Canada,36.73,135,308,5.0552
+CAN,2004-06-28,448,Quebec Bloc,12.39,54,308,3.0215
+CAN,2006-01-23,1189,no party affiliation,0.14,1,308,
+CAN,2006-01-23,1255,Conservative Party of Canada,36.27,124,308,8.6608
+CAN,2006-01-23,1259,Green Party of Canada,4.5,0,308,1.9018
+CAN,2006-01-23,296,Co-operative Commonwealth Federation | New Democratic Party,17.48,29,308,2.46
+CAN,2006-01-23,368,Liberal Party of Canada,30.23,103,308,5.0552
+CAN,2006-01-23,448,Quebec Bloc,10.48,51,308,3.0215
+CAN,2008-10-14,1189,no party affiliation,0.31,2,308,
+CAN,2008-10-14,1255,Conservative Party of Canada,37.7,143,308,8.6608
+CAN,2008-10-14,1259,Green Party of Canada,6.8,0,308,1.9018
+CAN,2008-10-14,296,Co-operative Commonwealth Federation | New Democratic Party,18.2,37,308,2.46
+CAN,2008-10-14,368,Liberal Party of Canada,26.3,77,308,5.0552
+CAN,2008-10-14,448,Quebec Bloc,10.0,49,308,3.0215
+CAN,2011-05-02,1255,Conservative Party of Canada,39.6,166,308,8.6608
+CAN,2011-05-02,1259,Green Party of Canada,3.9,1,308,1.9018
+CAN,2011-05-02,2067,no seat,0.1,0,308,
+CAN,2011-05-02,296,Co-operative Commonwealth Federation | New Democratic Party,30.6,103,308,2.46
+CAN,2011-05-02,368,Liberal Party of Canada,18.9,34,308,5.0552
+CAN,2011-05-02,448,Quebec Bloc,6.1,4,308,3.0215
+CAN,2015-10-19,1189,no party affiliation,0.23,0,338,
+CAN,2015-10-19,1255,Conservative Party of Canada,31.89,99,338,8.6608
+CAN,2015-10-19,1259,Green Party of Canada,3.45,1,338,1.9018
+CAN,2015-10-19,296,Co-operative Commonwealth Federation | New Democratic Party,19.71,44,338,2.46
+CAN,2015-10-19,368,Liberal Party of Canada,39.47,184,338,5.0552
+CAN,2015-10-19,448,Quebec Bloc,4.66,10,338,3.0215
+CAN,2019-10-21,1189,no party affiliation,0.4,1,338,
+CAN,2019-10-21,1255,Conservative Party of Canada,34.34,121,338,8.6608
+CAN,2019-10-21,1259,Green Party of Canada,6.55,3,338,1.9018
+CAN,2019-10-21,2791,People's Party of Canada,1.62,0,338,8.8
+CAN,2019-10-21,296,Co-operative Commonwealth Federation | New Democratic Party,15.98,24,338,2.46
+CAN,2019-10-21,368,Liberal Party of Canada,33.12,157,338,5.0552
+CAN,2019-10-21,448,Quebec Bloc,7.63,32,338,3.0215
+CAN,2021-09-20,1255,Conservative Party of Canada,33.83,119,338,8.6608
+CAN,2021-09-20,1259,Green Party of Canada,2.34,2,338,1.9018
+CAN,2021-09-20,2791,People's Party of Canada,4.9,0,338,8.8
+CAN,2021-09-20,296,Co-operative Commonwealth Federation | New Democratic Party,17.87,25,338,2.46
+CAN,2021-09-20,368,Liberal Party of Canada,32.7,160,338,5.0552
+CAN,2021-09-20,448,Quebec Bloc,7.66,32,338,3.0215
+CHE,2003-10-19,1012,Christian Social Party,0.4,1,200,6.2
+CHE,2003-10-19,1167,Swiss Party of Labour,0.7,2,200,0.5263
+CHE,2003-10-19,1226,Solidarity,0.5,1,200,1.3
+CHE,2003-10-19,1318,Federal Democratic Union of Switzerland,1.3,2,200,8.6579
+CHE,2003-10-19,141,Greens,7.4,13,200,1.6886
+CHE,2003-10-19,1500,Ticino League,0.4,1,200,8.8
+CHE,2003-10-19,1602,Automobile Party | Freedom Party of Switzerland,0.2,0,200,8.0556
+CHE,2003-10-19,26,Radical Democratic Party,17.3,36,200,6.3249
+CHE,2003-10-19,35,Social Democratic Party of Switzerland,23.3,52,200,1.8319
+CHE,2003-10-19,458,Liberal Party of Switzerland,2.2,4,200,7.2961
+CHE,2003-10-19,531,Catholic Conservative / Christian Democratic Peoples Party,14.4,28,200,4.7288
+CHE,2003-10-19,569,Feminists and Green-Alternative Groups,0.5,1,200,2.5
+CHE,2003-10-19,602,Protestant Peoples Party,2.3,3,200,4.9248
+CHE,2003-10-19,628,National Action -- Swiss Democrats,1.0,1,200,9.4247
+CHE,2003-10-19,750,Swiss People's Party,26.7,55,200,7.3575
+CHE,2007-10-21,1012,Christian Social Party,0.4,1,200,6.2
+CHE,2007-10-21,1167,Swiss Party of Labour,0.7,1,200,0.5263
+CHE,2007-10-21,1318,Federal Democratic Union of Switzerland,1.3,1,200,8.6579
+CHE,2007-10-21,141,Greens,9.6,20,200,1.6886
+CHE,2007-10-21,1500,Ticino League,0.6,1,200,8.8
+CHE,2007-10-21,26,Radical Democratic Party,15.8,31,200,6.3249
+CHE,2007-10-21,308,Green Liberal Party,1.4,3,200,2.5
+CHE,2007-10-21,35,Social Democratic Party of Switzerland,19.5,43,200,1.8319
+CHE,2007-10-21,458,Liberal Party of Switzerland,1.9,4,200,7.2961
+CHE,2007-10-21,531,Catholic Conservative / Christian Democratic Peoples Party,14.5,31,200,4.7288
+CHE,2007-10-21,602,Protestant Peoples Party,2.4,2,200,4.9248
+CHE,2007-10-21,628,National Action -- Swiss Democrats,0.5,0,200,9.4247
+CHE,2007-10-21,750,Swiss People's Party,28.9,62,200,7.3575
+CHE,2011-10-23,1213,Conservative Democratic Party of Switzerland,5.42,9,200,7.4
+CHE,2011-10-23,1318,Federal Democratic Union of Switzerland,1.27,0,200,8.6579
+CHE,2011-10-23,141,Greens,8.43,15,200,1.6886
+CHE,2011-10-23,1500,Ticino League,0.8,2,200,8.8
+CHE,2011-10-23,2303,one seat,,1,200,
+CHE,2011-10-23,2599,Geneva Citizens' Movement,0.44,1,200,8.8
+CHE,2011-10-23,26,Radical Democratic Party,15.1,30,200,6.3249
+CHE,2011-10-23,308,Green Liberal Party,5.38,12,200,2.5
+CHE,2011-10-23,35,Social Democratic Party of Switzerland,18.72,46,200,1.8319
+CHE,2011-10-23,531,Catholic Conservative / Christian Democratic Peoples Party,12.3,28,200,4.7288
+CHE,2011-10-23,602,Protestant Peoples Party,2.0,2,200,4.9248
+CHE,2011-10-23,750,Swiss People's Party,26.56,54,200,7.3575
+CHE,2015-10-18,1167,Swiss Party of Labour,0.86,1,200,0.5263
+CHE,2015-10-18,1213,Conservative Democratic Party of Switzerland,4.1,7,200,7.4
+CHE,2015-10-18,1318,Federal Democratic Union of Switzerland,1.19,0,200,8.6579
+CHE,2015-10-18,141,Greens,7.06,11,200,1.6886
+CHE,2015-10-18,1500,Ticino League,1.0,2,200,8.8
+CHE,2015-10-18,2579,others,,1,200,
+CHE,2015-10-18,2599,Geneva Citizens' Movement,0.32,1,200,8.8
+CHE,2015-10-18,26,Radical Democratic Party,16.4,33,200,6.3249
+CHE,2015-10-18,308,Green Liberal Party,4.63,7,200,2.5
+CHE,2015-10-18,35,Social Democratic Party of Switzerland,18.84,43,200,1.8319
+CHE,2015-10-18,531,Catholic Conservative / Christian Democratic Peoples Party,11.65,27,200,4.7288
+CHE,2015-10-18,602,Protestant Peoples Party,2.1,2,200,4.9248
+CHE,2015-10-18,750,Swiss People's Party,29.39,65,200,7.3575
+CHE,2019-10-20,1012,Christian Social Party,0.26,0,200,6.2
+CHE,2019-10-20,1167,Swiss Party of Labour,1.05,1,200,0.5263
+CHE,2019-10-20,1213,Conservative Democratic Party of Switzerland,2.44,3,200,7.4
+CHE,2019-10-20,1226,Solidarity,,1,200,1.3
+CHE,2019-10-20,1318,Federal Democratic Union of Switzerland,1.0,1,200,8.6579
+CHE,2019-10-20,141,Greens,13.2,28,200,1.6886
+CHE,2019-10-20,1500,Ticino League,0.75,1,200,8.8
+CHE,2019-10-20,2599,Geneva Citizens' Movement,0.22,0,200,8.8
+CHE,2019-10-20,26,Radical Democratic Party,15.11,29,200,6.3249
+CHE,2019-10-20,308,Green Liberal Party,7.8,16,200,2.5
+CHE,2019-10-20,35,Social Democratic Party of Switzerland,16.84,39,200,1.8319
+CHE,2019-10-20,531,Catholic Conservative / Christian Democratic Peoples Party,11.38,25,200,4.7288
+CHE,2019-10-20,569,Feminists and Green-Alternative Groups,0.32,0,200,2.5
+CHE,2019-10-20,602,Protestant Peoples Party,2.08,3,200,4.9248
+CHE,2019-10-20,628,National Action -- Swiss Democrats,0.13,0,200,9.4247
+CHE,2019-10-20,750,Swiss People's Party,25.59,53,200,7.3575
+CYP,2001-05-27,1049,Fighting Democratic Movement,2.2,1,56,7.7632
+CYP,2001-05-27,1523,United Democrats,2.6,1,56,7.1053
+CYP,2001-05-27,1575,Democratic Rally,34.0,19,56,8.6842
+CYP,2001-05-27,1621,Ecological and Environmental Movement,2.0,1,56,5.7895
+CYP,2001-05-27,572,Progressive Party of Working People,34.7,20,56,1.0526
+CYP,2001-05-27,6,New Horizons,3.0,1,56,9.3421
+CYP,2001-05-27,851,Democratic Party,14.8,9,56,5.1316
+CYP,2001-05-27,945,Movement for Social Democracy EDEK,6.5,4,56,3.2895
+CYP,2006-05-21,1523,United Democrats,1.56,0,56,7.1053
+CYP,2006-05-21,1575,Democratic Rally,30.34,18,56,8.6842
+CYP,2006-05-21,1621,Ecological and Environmental Movement,1.95,1,56,5.7895
+CYP,2006-05-21,1735,Free Citizens Movement,1.22,0,56,
+CYP,2006-05-21,491,European Party,5.75,3,56,6.0
+CYP,2006-05-21,572,Progressive Party of Working People,31.13,18,56,1.0526
+CYP,2006-05-21,851,Democratic Party,17.92,11,56,5.1316
+CYP,2006-05-21,945,Movement for Social Democracy EDEK,8.91,5,56,3.2895
+CYP,2011-05-22,1575,Democratic Rally,34.28,20,56,8.6842
+CYP,2011-05-22,1621,Ecological and Environmental Movement,2.21,1,56,5.7895
+CYP,2011-05-22,1768,National Popular Front,1.08,0,56,8.8
+CYP,2011-05-22,491,European Party,3.88,2,56,6.0
+CYP,2011-05-22,572,Progressive Party of Working People,32.67,19,56,1.0526
+CYP,2011-05-22,851,Democratic Party,15.76,9,56,5.1316
+CYP,2011-05-22,945,Movement for Social Democracy EDEK,8.93,5,56,3.2895
+CYP,2016-05-22,1575,Democratic Rally,30.69,18,56,8.6842
+CYP,2016-05-22,1621,Ecological and Environmental Movement,4.81,2,56,5.7895
+CYP,2016-05-22,1768,National Popular Front,3.71,2,56,8.8
+CYP,2016-05-22,2341,Citizen's Alliance,6.01,3,56,3.3
+CYP,2016-05-22,2626,Solidarity Movement,5.24,3,56,8.8
+CYP,2016-05-22,2627,Animal Party Cyprus,1.16,0,56,
+CYP,2016-05-22,572,Progressive Party of Working People,25.67,16,56,1.0526
+CYP,2016-05-22,851,Democratic Party,14.49,9,56,5.1316
+CYP,2016-05-22,945,Movement for Social Democracy EDEK,6.18,3,56,3.2895
+CYP,2021-05-30,1575,Democratic Rally,27.77,17,56,8.6842
+CYP,2021-05-30,1621,Ecological and Environmental Movement,4.41,3,56,5.7895
+CYP,2021-05-30,1768,National Popular Front,6.78,4,56,8.8
+CYP,2021-05-30,2626,Solidarity Movement,2.31,0,56,8.8
+CYP,2021-05-30,2627,Animal Party Cyprus,1.0,0,56,
+CYP,2021-05-30,2741,Democratic Alignment,6.1,4,56,6.0
+CYP,2021-05-30,2815,Active Citizens,3.27,0,56,1.3
+CYP,2021-05-30,2817,Independents Movement,2.82,0,56,6.0
+CYP,2021-05-30,2818,Famagusta for Cyprus,1.56,,56,6.0
+CYP,2021-05-30,2819,Awakening 2020,1.35,0,56,
+CYP,2021-05-30,2820,People's Breath,1.28,,56,8.8
+CYP,2021-05-30,572,Progressive Party of Working People,22.34,15,56,1.0526
+CYP,2021-05-30,851,Democratic Party,11.29,9,56,5.1316
+CYP,2021-05-30,945,Movement for Social Democracy EDEK,6.72,4,56,3.2895
+CZE,2002-06-15,1173,Communist Party of Bohemia and Moravia,18.51,41,200,0.7498
+CZE,2002-06-15,1245,Christian Democratic Union -- People's Party,14.27,22,200,5.8099
+CZE,2002-06-15,1532,SNK European Democrats,2.78,0,200,6.0929
+CZE,2002-06-15,196,Green Party,2.36,0,200,4.123
+CZE,2002-06-15,688,Freedom Union,,9,200,7.2204
+CZE,2002-06-15,789,Czech Social Democratic Party,30.2,70,200,3.0463
+CZE,2002-06-15,829,Civic Democratic Party,24.47,58,200,7.3637
+CZE,2006-06-03,1173,Communist Party of Bohemia and Moravia,12.81,26,200,0.7498
+CZE,2006-06-03,1245,Christian Democratic Union -- People's Party,7.22,13,200,5.8099
+CZE,2006-06-03,1532,SNK European Democrats,2.08,0,200,6.0929
+CZE,2006-06-03,196,Green Party,6.29,6,200,4.123
+CZE,2006-06-03,789,Czech Social Democratic Party,32.32,74,200,3.0463
+CZE,2006-06-03,829,Civic Democratic Party,35.38,81,200,7.3637
+CZE,2010-05-29,1173,Communist Party of Bohemia and Moravia,11.27,26,200,0.7498
+CZE,2010-05-29,1245,Christian Democratic Union -- People's Party,4.39,0,200,5.8099
+CZE,2010-05-29,1613,Sovereignty -- Jana Bobosikova Bloc,3.67,0,200,8.8
+CZE,2010-05-29,196,Green Party,2.44,0,200,4.123
+CZE,2010-05-29,2,Tradition Responsibility Prosperity 09,16.7,38,200,7.4
+CZE,2010-05-29,2024,Mayors and Independents,,3,200,6.0
+CZE,2010-05-29,336,Public Affairs,10.88,24,200,6.0
+CZE,2010-05-29,406,Party of Civic Rights -- Zemanovci,4.33,0,200,3.3
+CZE,2010-05-29,789,Czech Social Democratic Party,22.08,56,200,3.0463
+CZE,2010-05-29,795,Workers' Party of Social Justice,1.14,0,200,8.8
+CZE,2010-05-29,829,Civic Democratic Party,20.22,53,200,7.3637
+CZE,2013-10-25,1173,Communist Party of Bohemia and Moravia,14.91,33,200,0.7498
+CZE,2013-10-25,1245,Christian Democratic Union -- People's Party,6.78,14,200,5.8099
+CZE,2013-10-25,196,Green Party,3.19,0,200,4.123
+CZE,2013-10-25,2,Tradition Responsibility Prosperity 09,11.99,21,200,7.4
+CZE,2013-10-25,2024,Mayors and Independents,,5,200,6.0
+CZE,2013-10-25,2261,Czech Pirate Party,2.66,0,200,
+CZE,2013-10-25,2262,Dawn of Direct Democracy,6.88,14,200,7.4
+CZE,2013-10-25,2263,Action of Dissatisfied Citizens 2011,18.65,47,200,6.0
+CZE,2013-10-25,363,Party of Free Citizens,2.46,0,200,8.8
+CZE,2013-10-25,406,Party of Civic Rights -- Zemanovci,1.51,0,200,3.3
+CZE,2013-10-25,789,Czech Social Democratic Party,20.45,50,200,3.0463
+CZE,2013-10-25,829,Civic Democratic Party,7.72,16,200,7.3637
+CZE,2017-10-21,1173,Communist Party of Bohemia and Moravia,7.76,15,200,0.7498
+CZE,2017-10-21,1245,Christian Democratic Union -- People's Party,5.8,10,200,5.8099
+CZE,2017-10-21,196,Green Party,1.46,0,200,4.123
+CZE,2017-10-21,2,Tradition Responsibility Prosperity 09,5.31,7,200,7.4
+CZE,2017-10-21,2024,Mayors and Independents,5.18,6,200,6.0
+CZE,2017-10-21,2261,Czech Pirate Party,10.79,22,200,
+CZE,2017-10-21,2263,Action of Dissatisfied Citizens 2011,29.64,78,200,6.0
+CZE,2017-10-21,2654,Freedom and Direct Democracy ,10.64,22,200,8.8
+CZE,2017-10-21,363,Party of Free Citizens,1.56,0,200,8.8
+CZE,2017-10-21,789,Czech Social Democratic Party,7.27,15,200,3.0463
+CZE,2017-10-21,829,Civic Democratic Party,11.32,25,200,7.3637
+CZE,2021-10-09,1173,Communist Party of Bohemia and Moravia,3.61,0,200,0.7498
+CZE,2021-10-09,196,Green Party,0.99,0,200,4.123
+CZE,2021-10-09,2024,Mayors and Independents,15.62,37,200,6.0
+CZE,2021-10-09,2263,Action of Dissatisfied Citizens 2011,27.13,72,200,6.0
+CZE,2021-10-09,2654,Freedom and Direct Democracy ,9.56,20,200,8.8
+CZE,2021-10-09,2831,Oath,4.68,0,200,
+CZE,2021-10-09,2832,Tricolour Citizens' Movement,2.76,0,200,8.8
+CZE,2021-10-09,2854,Free Bloc,1.33,0,200,8.8
+CZE,2021-10-09,789,Czech Social Democratic Party,4.66,0,200,3.0463
+CZE,2021-10-09,829,Civic Democratic Party,27.79,71,200,7.3637
+DEU,2002-09-22,1180,Christian Social Union,9.0,58,603,7.2871
+DEU,2002-09-22,524,The Republicans,0.6,0,603,9.2752
+DEU,2002-09-22,543,Free Democratic Party,7.4,47,603,5.9233
+DEU,2002-09-22,558,Social Democratic Party of Germany,38.5,251,603,3.6451
+DEU,2002-09-22,772,Alliance 90 / Greens,8.6,55,603,2.9308
+DEU,2002-09-22,791,PDS | The Left,4.0,2,603,1.2152
+DEU,2002-09-22,808,Christian Democratic Union,29.5,190,603,6.2503
+DEU,2005-09-18,1180,Christian Social Union,7.4,46,614,7.2871
+DEU,2005-09-18,1537,National Democratic Party,1.6,0,614,9.8246
+DEU,2005-09-18,543,Free Democratic Party,9.8,61,614,5.9233
+DEU,2005-09-18,558,Social Democratic Party of Germany,34.2,222,614,3.6451
+DEU,2005-09-18,772,Alliance 90 / Greens,8.1,51,614,2.9308
+DEU,2005-09-18,791,PDS | The Left,8.7,54,614,1.2152
+DEU,2005-09-18,808,Christian Democratic Union,27.8,180,614,6.2503
+DEU,2009-09-27,1180,Christian Social Union,6.5,45,622,7.2871
+DEU,2009-09-27,1537,National Democratic Party,1.5,0,622,9.8246
+DEU,2009-09-27,543,Free Democratic Party,14.6,93,622,5.9233
+DEU,2009-09-27,558,Social Democratic Party of Germany,23.0,146,622,3.6451
+DEU,2009-09-27,772,Alliance 90 / Greens,10.7,68,622,2.9308
+DEU,2009-09-27,791,PDS | The Left,11.9,76,622,1.2152
+DEU,2009-09-27,808,Christian Democratic Union,27.3,194,622,6.2503
+DEU,2009-09-27,865,German Pirate Party,2.0,0,622,
+DEU,2013-09-22,1180,Christian Social Union,7.4,56,631,7.2871
+DEU,2013-09-22,1537,National Democratic Party,1.3,0,631,9.8246
+DEU,2013-09-22,2253,Alternative for Germany,4.7,0,631,8.8
+DEU,2013-09-22,543,Free Democratic Party,4.8,0,631,5.9233
+DEU,2013-09-22,558,Social Democratic Party of Germany,25.7,193,631,3.6451
+DEU,2013-09-22,772,Alliance 90 / Greens,8.4,63,631,2.9308
+DEU,2013-09-22,791,PDS | The Left,8.6,64,631,1.2152
+DEU,2013-09-22,808,Christian Democratic Union,34.1,255,631,6.2503
+DEU,2013-09-22,865,German Pirate Party,2.2,0,631,
+DEU,2017-09-24,1180,Christian Social Union,6.2,46,709,7.2871
+DEU,2017-09-24,2253,Alternative for Germany,12.6,94,709,8.8
+DEU,2017-09-24,2649,The PARTY,1.0,0,709,
+DEU,2017-09-24,41,Free Voters,1.0,0,709,7.4
+DEU,2017-09-24,543,Free Democratic Party,10.7,80,709,5.9233
+DEU,2017-09-24,558,Social Democratic Party of Germany,20.5,153,709,3.6451
+DEU,2017-09-24,772,Alliance 90 / Greens,8.9,67,709,2.9308
+DEU,2017-09-24,791,PDS | The Left,9.2,69,709,1.2152
+DEU,2017-09-24,808,Christian Democratic Union,26.8,200,709,6.2503
+DEU,2021-09-26,1180,Christian Social Union,5.17,45,736,7.2871
+DEU,2021-09-26,2253,Alternative for Germany,10.34,83,736,8.8
+DEU,2021-09-26,2649,The PARTY,0.99,0,736,
+DEU,2021-09-26,2821,Grassroots Democratic Party of Germany,1.36,0,736,
+DEU,2021-09-26,2850,South Schleswig Voter League,0.12,1,736,
+DEU,2021-09-26,301,Animal Protection Party,1.45,0,736,
+DEU,2021-09-26,41,Free Voters,2.43,0,736,7.4
+DEU,2021-09-26,543,Free Democratic Party,11.46,92,736,5.9233
+DEU,2021-09-26,558,Social Democratic Party of Germany,25.74,206,736,3.6451
+DEU,2021-09-26,772,Alliance 90 / Greens,14.75,118,736,2.9308
+DEU,2021-09-26,791,PDS | The Left,4.89,39,736,1.2152
+DEU,2021-09-26,808,Christian Democratic Union,18.9,152,736,6.2503
+DNK,2001-11-20,1324,Centre Democrats,1.8,0,179,5.5609
+DNK,2001-11-20,1331,Christian People's Party,2.3,4,179,5.6982
+DNK,2001-11-20,1418,Danish Peoples Party,12.0,22,179,8.2269
+DNK,2001-11-20,1605,Liberal Party,31.2,56,179,7.292
+DNK,2001-11-20,1629,Social Democrats,29.1,52,179,3.8011
+DNK,2001-11-20,1644,Socialist Peoples Party,6.4,12,179,2.1347
+DNK,2001-11-20,1891,Community of the People,,1,179,1.3
+DNK,2001-11-20,1892,Union Party (Faroe Islands),,1,179,7.4
+DNK,2001-11-20,211,Danish Social Liberal Party,5.2,9,179,4.8736
+DNK,2001-11-20,2568,Republic (Faroe Islands),,1,179,1.3
+DNK,2001-11-20,306,Red-Green Alliance,2.4,4,179,0.8912
+DNK,2001-11-20,590,Conservatives,9.1,16,179,7.2186
+DNK,2001-11-20,74,Forward (Greenland),,1,179,3.3
+DNK,2001-11-20,978,Progress Party,0.5,0,179,9.0259
+DNK,2005-02-08,1324,Centre Democrats,1.0,0,179,5.5609
+DNK,2005-02-08,1331,Christian People's Party,1.7,0,179,5.6982
+DNK,2005-02-08,1418,Danish Peoples Party,13.3,24,179,8.2269
+DNK,2005-02-08,1605,Liberal Party,29.0,52,179,7.292
+DNK,2005-02-08,1629,Social Democrats,25.8,47,179,3.8011
+DNK,2005-02-08,1644,Socialist Peoples Party,6.0,11,179,2.1347
+DNK,2005-02-08,1891,Community of the People,,1,179,1.3
+DNK,2005-02-08,211,Danish Social Liberal Party,9.2,17,179,4.8736
+DNK,2005-02-08,2568,Republic (Faroe Islands),,1,179,1.3
+DNK,2005-02-08,2574,People's Party (Faroe Islands),,1,179,7.4
+DNK,2005-02-08,306,Red-Green Alliance,3.4,6,179,0.8912
+DNK,2005-02-08,590,Conservatives,10.3,18,179,7.2186
+DNK,2005-02-08,74,Forward (Greenland),,1,179,3.3
+DNK,2007-11-13,1331,Christian People's Party,0.9,0,179,5.6982
+DNK,2007-11-13,1418,Danish Peoples Party,13.9,25,179,8.2269
+DNK,2007-11-13,1605,Liberal Party,26.2,46,179,7.292
+DNK,2007-11-13,1629,Social Democrats,25.5,45,179,3.8011
+DNK,2007-11-13,1644,Socialist Peoples Party,13.0,23,179,2.1347
+DNK,2007-11-13,1891,Community of the People,,1,179,1.3
+DNK,2007-11-13,1892,Union Party (Faroe Islands),,1,179,7.4
+DNK,2007-11-13,211,Danish Social Liberal Party,5.1,9,179,4.8736
+DNK,2007-11-13,2568,Republic (Faroe Islands),,1,179,1.3
+DNK,2007-11-13,306,Red-Green Alliance,2.2,4,179,0.8912
+DNK,2007-11-13,376,New-Liberal Alliance,2.8,5,179,6.0
+DNK,2007-11-13,590,Conservatives,10.4,18,179,7.2186
+DNK,2007-11-13,74,Forward (Greenland),,1,179,3.3
+DNK,2011-09-15,1331,Christian People's Party,0.78,0,179,5.6982
+DNK,2011-09-15,1418,Danish Peoples Party,12.3,22,179,8.2269
+DNK,2011-09-15,1605,Liberal Party,26.7,47,179,7.292
+DNK,2011-09-15,1629,Social Democrats,24.8,44,179,3.8011
+DNK,2011-09-15,1644,Socialist Peoples Party,9.2,16,179,2.1347
+DNK,2011-09-15,1891,Community of the People,,1,179,1.3
+DNK,2011-09-15,1892,Union Party (Faroe Islands),,1,179,7.4
+DNK,2011-09-15,1894,Social Democratic Party (Faroe Islands),,1,179,3.3
+DNK,2011-09-15,211,Danish Social Liberal Party,9.5,17,179,4.8736
+DNK,2011-09-15,306,Red-Green Alliance,6.7,12,179,0.8912
+DNK,2011-09-15,376,New-Liberal Alliance,5.0,9,179,6.0
+DNK,2011-09-15,590,Conservatives,4.9,8,179,7.2186
+DNK,2011-09-15,74,Forward (Greenland),,1,179,3.3
+DNK,2015-06-18,1331,Christian People's Party,0.8,0,179,5.6982
+DNK,2015-06-18,1418,Danish Peoples Party,21.1,37,179,8.2269
+DNK,2015-06-18,1605,Liberal Party,19.5,34,179,7.292
+DNK,2015-06-18,1629,Social Democrats,26.3,47,179,3.8011
+DNK,2015-06-18,1644,Socialist Peoples Party,4.2,7,179,2.1347
+DNK,2015-06-18,1891,Community of the People,,1,179,1.3
+DNK,2015-06-18,1894,Social Democratic Party (Faroe Islands),,1,179,3.3
+DNK,2015-06-18,211,Danish Social Liberal Party,4.6,8,179,4.8736
+DNK,2015-06-18,2567,The Alternative,4.8,9,179,2.5
+DNK,2015-06-18,2568,Republic (Faroe Islands),,1,179,1.3
+DNK,2015-06-18,306,Red-Green Alliance,7.8,14,179,0.8912
+DNK,2015-06-18,376,New-Liberal Alliance,7.5,13,179,6.0
+DNK,2015-06-18,590,Conservatives,3.4,6,179,7.2186
+DNK,2015-06-18,74,Forward (Greenland),,1,179,3.3
+DNK,2019-06-05,1331,Christian People's Party,1.7,0,179,5.6982
+DNK,2019-06-05,1418,Danish Peoples Party,8.7,16,179,8.2269
+DNK,2019-06-05,1605,Liberal Party,23.4,43,179,7.292
+DNK,2019-06-05,1629,Social Democrats,25.9,48,179,3.8011
+DNK,2019-06-05,1644,Socialist Peoples Party,7.7,14,179,2.1347
+DNK,2019-06-05,1891,Community of the People,,1,179,1.3
+DNK,2019-06-05,1892,Union Party (Faroe Islands),,1,179,7.4
+DNK,2019-06-05,1894,Social Democratic Party (Faroe Islands),,1,179,3.3
+DNK,2019-06-05,211,Danish Social Liberal Party,8.6,16,179,4.8736
+DNK,2019-06-05,2567,The Alternative,3.0,5,179,2.5
+DNK,2019-06-05,2781,The New Right,2.4,4,179,8.8
+DNK,2019-06-05,2782,Hard Line,1.8,0,179,8.8
+DNK,2019-06-05,306,Red-Green Alliance,6.9,13,179,0.8912
+DNK,2019-06-05,376,New-Liberal Alliance,2.3,4,179,6.0
+DNK,2019-06-05,590,Conservatives,6.6,12,179,7.2186
+DNK,2019-06-05,74,Forward (Greenland),,1,179,3.3
+DNK,2022-11-01,1418,Danish Peoples Party,2.6,5,179,8.2269
+DNK,2022-11-01,1605,Liberal Party,13.3,23,179,7.292
+DNK,2022-11-01,1629,Social Democrats,27.5,50,179,3.8011
+DNK,2022-11-01,1644,Socialist Peoples Party,8.3,15,179,2.1347
+DNK,2022-11-01,1891,Community of the People,,1,179,1.3
+DNK,2022-11-01,1892,Union Party (Faroe Islands),,1,179,7.4
+DNK,2022-11-01,1894,Social Democratic Party (Faroe Islands),,1,179,3.3
+DNK,2022-11-01,2058,no seat,0.9,0,179,
+DNK,2022-11-01,211,Danish Social Liberal Party,3.8,7,179,4.8736
+DNK,2022-11-01,2567,The Alternative,3.3,6,179,2.5
+DNK,2022-11-01,2781,The New Right,3.7,6,179,8.8
+DNK,2022-11-01,2887,Moderates,9.3,16,179,6.0
+DNK,2022-11-01,2888,Denmark Demokrats,8.1,14,179,8.8
+DNK,2022-11-01,306,Red-Green Alliance,5.1,9,179,0.8912
+DNK,2022-11-01,376,New-Liberal Alliance,7.9,14,179,6.0
+DNK,2022-11-01,590,Conservatives,5.5,10,179,7.2186
+DNK,2022-11-01,74,Forward (Greenland),,1,179,3.3
+ESP,2000-03-12,118,Communist Party | United Left,5.54,8,350,2.0183
+ESP,2000-03-12,1361,Basque Nationalist Party,1.55,7,350,6.2144
+ESP,2000-03-12,1367,Aragonese Council,0.33,1,350,2.75
+ESP,2000-03-12,2056,no seat,0.32,0,350,
+ESP,2000-03-12,2330,Initiative for Catalonia Greens,0.52,1,350,2.5
+ESP,2000-03-12,234,Canary Coalition,1.09,4,350,5.9789
+ESP,2000-03-12,370,Andalusian Party,0.9,1,350,4.85
+ESP,2000-03-12,520,Galician Nationalist Bloc,1.34,3,350,2.9117
+ESP,2000-03-12,645,People's Alliance-Party,45.24,183,350,7.5969
+ESP,2000-03-12,757,Republican Left of Catalonia,0.85,1,350,3.1072
+ESP,2000-03-12,845,Basque Solidarity,0.44,1,350,4.3115
+ESP,2000-03-12,894,Convergence and Union,4.25,15,350,6.2564
+ESP,2000-03-12,902,Spanish Socialist Workers Party,34.71,125,350,3.7377
+ESP,2004-03-14,118,Communist Party | United Left,5.04,5,350,2.0183
+ESP,2004-03-14,1361,Basque Nationalist Party,1.65,7,350,6.2144
+ESP,2004-03-14,1367,Aragonese Council,0.37,1,350,2.75
+ESP,2004-03-14,234,Canary Coalition,0.92,3,350,5.9789
+ESP,2004-03-14,370,Andalusian Party,0.71,0,350,4.85
+ESP,2004-03-14,385,Yes,0.24,1,350,
+ESP,2004-03-14,520,Galician Nationalist Bloc,0.82,2,350,2.9117
+ESP,2004-03-14,645,People's Alliance-Party,38.31,148,350,7.5969
+ESP,2004-03-14,757,Republican Left of Catalonia,2.56,8,350,3.1072
+ESP,2004-03-14,845,Basque Solidarity,0.32,1,350,4.3115
+ESP,2004-03-14,894,Convergence and Union,3.28,10,350,6.2564
+ESP,2004-03-14,902,Spanish Socialist Workers Party,43.27,164,350,3.7377
+ESP,2008-03-09,118,Communist Party | United Left,3.81,2,350,2.0183
+ESP,2008-03-09,1361,Basque Nationalist Party,1.2,6,350,6.2144
+ESP,2008-03-09,2056,no seat,0.27,0,350,
+ESP,2008-03-09,234,Canary Coalition,0.69,2,350,5.9789
+ESP,2008-03-09,385,Yes,0.25,1,350,
+ESP,2008-03-09,520,Galician Nationalist Bloc,0.84,2,350,2.9117
+ESP,2008-03-09,551,"Union, Progress and Democracy",1.2,1,350,6.0
+ESP,2008-03-09,645,People's Alliance-Party,40.1,154,350,7.5969
+ESP,2008-03-09,757,Republican Left of Catalonia,1.17,3,350,3.1072
+ESP,2008-03-09,894,Convergence and Union,3.06,10,350,6.2564
+ESP,2008-03-09,902,Spanish Socialist Workers Party,44.36,169,350,3.7377
+ESP,2011-11-20,118,Communist Party | United Left,7.02,11,350,2.0183
+ESP,2011-11-20,1361,Basque Nationalist Party,1.35,5,350,6.2144
+ESP,2011-11-20,2294,one seat,,2,350,
+ESP,2011-11-20,234,Canary Coalition,0.6,2,350,5.9789
+ESP,2011-11-20,2804,Equo,0.9,0,350,2.5
+ESP,2011-11-20,385,Yes,0.18,1,350,
+ESP,2011-11-20,520,Galician Nationalist Bloc,0.77,2,350,2.9117
+ESP,2011-11-20,551,"Union, Progress and Democracy",4.76,5,350,6.0
+ESP,2011-11-20,645,People's Alliance-Party,41.9,186,350,7.5969
+ESP,2011-11-20,757,Republican Left of Catalonia,1.07,3,350,3.1072
+ESP,2011-11-20,845,Basque Solidarity,1.39,7,350,4.3115
+ESP,2011-11-20,894,Convergence and Union,4.23,16,350,6.2564
+ESP,2011-11-20,902,Spanish Socialist Workers Party,29.16,110,350,3.7377
+ESP,2015-12-20,118,Communist Party | United Left,3.67,2,350,2.0183
+ESP,2015-12-20,1361,Basque Nationalist Party,1.2,6,350,6.2144
+ESP,2015-12-20,234,Canary Coalition,0.33,1,350,5.9789
+ESP,2015-12-20,2375,Citizens -- Party of the Citizenry,13.93,40,350,6.0
+ESP,2015-12-20,2376,We Can,12.67,42,350,1.3
+ESP,2015-12-20,2381,Animalist Party Against Mistreatment to Animals,0.87,0,350,
+ESP,2015-12-20,2603,Basque Country Unite,0.87,2,350,
+ESP,2015-12-20,2604,En Masse | Common Group of the Left,1.63,6,350,1.3
+ESP,2015-12-20,2605,Democratic Convergence | Together for Catalonia,2.25,8,350,7.4
+ESP,2015-12-20,2606,In Common We Can,3.69,12,350,1.3
+ESP,2015-12-20,2607,Compromise | A la valenciana,2.67,9,350,1.3
+ESP,2015-12-20,645,People's Alliance-Party,28.72,123,350,7.5969
+ESP,2015-12-20,757,Republican Left of Catalonia,2.39,9,350,3.1072
+ESP,2015-12-20,902,Spanish Socialist Workers Party,22.01,90,350,3.7377
+ESP,2016-06-26,1361,Basque Nationalist Party,1.2,5,350,6.2144
+ESP,2016-06-26,234,Canary Coalition,0.33,1,350,5.9789
+ESP,2016-06-26,2375,Citizens -- Party of the Citizenry,13.05,32,350,6.0
+ESP,2016-06-26,2376,We Can,13.37,45,350,1.3
+ESP,2016-06-26,2381,Animalist Party Against Mistreatment to Animals,1.19,0,350,
+ESP,2016-06-26,2603,Basque Country Unite,0.77,2,350,
+ESP,2016-06-26,2604,En Masse | Common Group of the Left,1.44,5,350,1.3
+ESP,2016-06-26,2605,Democratic Convergence | Together for Catalonia,2.01,8,350,7.4
+ESP,2016-06-26,2606,In Common We Can,3.55,12,350,1.3
+ESP,2016-06-26,2607,Compromise | A la valenciana,2.74,9,350,1.3
+ESP,2016-06-26,645,People's Alliance-Party,33.03,137,350,7.5969
+ESP,2016-06-26,757,Republican Left of Catalonia,2.63,9,350,3.1072
+ESP,2016-06-26,902,Spanish Socialist Workers Party,22.66,85,350,3.7377
+ESP,2019-04-28,1361,Basque Nationalist Party,1.51,6,350,6.2144
+ESP,2019-04-28,2294,one seat,0.86,2,350,
+ESP,2019-04-28,234,Canary Coalition,0.53,2,350,5.9789
+ESP,2019-04-28,2375,Citizens -- Party of the Citizenry,15.86,57,350,6.0
+ESP,2019-04-28,2376,We Can,11.05,33,350,1.3
+ESP,2019-04-28,2380,Voice,10.26,24,350,8.8
+ESP,2019-04-28,2381,Animalist Party Against Mistreatment to Animals,1.25,0,350,
+ESP,2019-04-28,2603,Basque Country Unite,0.99,4,350,
+ESP,2019-04-28,2604,En Masse | Common Group of the Left,0.91,2,350,1.3
+ESP,2019-04-28,2605,Democratic Convergence | Together for Catalonia,1.91,7,350,7.4
+ESP,2019-04-28,2606,In Common We Can,2.36,7,350,1.3
+ESP,2019-04-28,2723,Sum Navarre,0.41,2,350,7.4
+ESP,2019-04-28,645,People's Alliance-Party,16.7,66,350,7.5969
+ESP,2019-04-28,757,Republican Left of Catalonia,3.89,15,350,3.1072
+ESP,2019-04-28,902,Spanish Socialist Workers Party,28.68,123,350,3.7377
+ESP,2019-11-10,1361,Basque Nationalist Party,1.56,6,350,6.2144
+ESP,2019-11-10,2294,one seat,0.37,2,350,
+ESP,2019-11-10,234,Canary Coalition,0.51,2,350,5.9789
+ESP,2019-11-10,2375,Citizens -- Party of the Citizenry,6.8,10,350,6.0
+ESP,2019-11-10,2376,We Can,9.82,26,350,1.3
+ESP,2019-11-10,2380,Voice,15.08,52,350,8.8
+ESP,2019-11-10,2381,Animalist Party Against Mistreatment to Animals,0.94,0,350,
+ESP,2019-11-10,2603,Basque Country Unite,1.14,5,350,
+ESP,2019-11-10,2604,En Masse | Common Group of the Left,0.78,2,350,1.3
+ESP,2019-11-10,2605,Democratic Convergence | Together for Catalonia,2.19,8,350,7.4
+ESP,2019-11-10,2606,In Common We Can,2.26,7,350,1.3
+ESP,2019-11-10,2607,Compromise | A la valenciana,0.73,1,350,1.3
+ESP,2019-11-10,2723,Sum Navarre,0.41,2,350,7.4
+ESP,2019-11-10,2792,Popular Unity Candidacy,1.02,2,350,1.3
+ESP,2019-11-10,2804,Equo,1.46,2,350,2.5
+ESP,2019-11-10,520,Galician Nationalist Bloc,0.5,1,350,2.9117
+ESP,2019-11-10,645,People's Alliance-Party,20.81,89,350,7.5969
+ESP,2019-11-10,757,Republican Left of Catalonia,3.61,13,350,3.1072
+ESP,2019-11-10,902,Spanish Socialist Workers Party,28.0,120,350,3.7377
+EST,2003-03-02,113,Estonian Reform Party,17.7,19,101,7.8969
+EST,2003-03-02,1137,Estonian Centre Party,25.4,28,101,3.9562
+EST,2003-03-02,1448,Social Democratic Party | Moderates,7.0,6,101,4.1915
+EST,2003-03-02,1590,Constitution Party -- Estonian United People's Party,2.2,0,101,2.0282
+EST,2003-03-02,417,People's Union of Estonia / Conservative People's Party,13.0,13,101,4.5812
+EST,2003-03-02,428,Res Publica Party,24.6,28,101,8.4962
+EST,2003-03-02,609,Estonian Christian Democrats,1.1,0,101,7.5789
+EST,2003-03-02,846,Pro Patria Union,7.3,7,101,7.6169
+EST,2007-03-04,113,Estonian Reform Party,27.8,31,101,7.8969
+EST,2007-03-04,1137,Estonian Centre Party,26.1,29,101,3.9562
+EST,2007-03-04,1448,Social Democratic Party | Moderates,10.6,10,101,4.1915
+EST,2007-03-04,1590,Constitution Party -- Estonian United People's Party,1.0,0,101,2.0282
+EST,2007-03-04,1597,Pro Patria and Res Publica Union,17.9,19,101,8.4962
+EST,2007-03-04,219,Estonian Greens,7.1,6,101,2.5
+EST,2007-03-04,417,People's Union of Estonia / Conservative People's Party,7.1,6,101,4.5812
+EST,2007-03-04,609,Estonian Christian Democrats,1.7,0,101,7.5789
+EST,2011-03-06,113,Estonian Reform Party,28.6,33,101,7.8969
+EST,2011-03-06,1137,Estonian Centre Party,23.3,26,101,3.9562
+EST,2011-03-06,1448,Social Democratic Party | Moderates,17.1,19,101,4.1915
+EST,2011-03-06,1597,Pro Patria and Res Publica Union,20.5,23,101,8.4962
+EST,2011-03-06,219,Estonian Greens,3.8,0,101,2.5
+EST,2011-03-06,417,People's Union of Estonia / Conservative People's Party,2.1,0,101,4.5812
+EST,2015-03-01,113,Estonian Reform Party,27.69,30,101,7.8969
+EST,2015-03-01,1137,Estonian Centre Party,24.81,27,101,3.9562
+EST,2015-03-01,1448,Social Democratic Party | Moderates,15.19,15,101,4.1915
+EST,2015-03-01,1597,Pro Patria and Res Publica Union,13.71,14,101,8.4962
+EST,2015-03-01,219,Estonian Greens,0.9,0,101,2.5
+EST,2015-03-01,2409,Free Party,8.69,8,101,7.4
+EST,2015-03-01,417,People's Union of Estonia / Conservative People's Party,8.15,7,101,4.5812
+EST,2019-03-03,113,Estonian Reform Party,28.9,34,101,7.8969
+EST,2019-03-03,1137,Estonian Centre Party,23.1,26,101,3.9562
+EST,2019-03-03,1448,Social Democratic Party | Moderates,9.8,10,101,4.1915
+EST,2019-03-03,1597,Pro Patria and Res Publica Union,11.4,12,101,8.4962
+EST,2019-03-03,219,Estonian Greens,1.8,0,101,2.5
+EST,2019-03-03,2409,Free Party,1.2,0,101,7.4
+EST,2019-03-03,2720,Estonia 200,4.4,0,101,6.0
+EST,2019-03-03,2721,Richness of Life,1.2,0,101,2.5
+EST,2019-03-03,417,People's Union of Estonia / Conservative People's Party,17.8,19,101,4.5812
+EST,2023-03-05,113,Estonian Reform Party,31.2,37,101,7.8969
+EST,2023-03-05,1137,Estonian Centre Party,15.3,16,101,3.9562
+EST,2023-03-05,1448,Social Democratic Party | Moderates,9.3,9,101,4.1915
+EST,2023-03-05,1597,Pro Patria and Res Publica Union,8.2,8,101,8.4962
+EST,2023-03-05,219,Estonian Greens,1.0,0,101,2.5
+EST,2023-03-05,2720,Estonia 200,13.3,14,101,6.0
+EST,2023-03-05,2892,Estonian United Left Party,2.4,0,101,1.3
+EST,2023-03-05,2893,the Right,2.3,0,101,7.4
+EST,2023-03-05,417,People's Union of Estonia / Conservative People's Party,16.1,17,101,4.5812
+FIN,2003-03-16,1062,Green League,8.0,14,200,3.6465
+FIN,2003-03-16,1118,National Coalition Party,18.6,40,200,7.2451
+FIN,2003-03-16,1292,Democratic Union | Left Alliance,9.9,19,200,2.1843
+FIN,2003-03-16,1463,Christian Democrats,5.3,7,200,7.1884
+FIN,2003-03-16,200,Finnish Party | True Finns,1.6,3,200,6.6331
+FIN,2003-03-16,395,Social Democratic Party of Finland,24.5,53,200,3.5595
+FIN,2003-03-16,585,Swedish People's Party,4.6,8,200,6.3906
+FIN,2003-03-16,66,Aland Coalition,0.4,1,200,
+FIN,2003-03-16,806,Communist  Party of Finland (Unity),0.8,0,200,1.3
+FIN,2003-03-16,94,Centre Party,24.7,55,200,5.8027
+FIN,2007-03-18,1062,Green League,8.5,15,200,3.6465
+FIN,2007-03-18,1118,National Coalition Party,22.3,50,200,7.2451
+FIN,2007-03-18,1292,Democratic Union | Left Alliance,8.8,17,200,2.1843
+FIN,2007-03-18,1463,Christian Democrats,4.9,7,200,7.1884
+FIN,2007-03-18,200,Finnish Party | True Finns,4.1,5,200,6.6331
+FIN,2007-03-18,395,Social Democratic Party of Finland,21.4,45,200,3.5595
+FIN,2007-03-18,585,Swedish People's Party,4.6,9,200,6.3906
+FIN,2007-03-18,66,Aland Coalition,0.4,1,200,
+FIN,2007-03-18,806,Communist  Party of Finland (Unity),0.7,0,200,1.3
+FIN,2007-03-18,94,Centre Party,23.1,51,200,5.8027
+FIN,2011-04-17,1062,Green League,7.3,10,200,3.6465
+FIN,2011-04-17,1118,National Coalition Party,20.4,44,200,7.2451
+FIN,2011-04-17,1292,Democratic Union | Left Alliance,8.1,14,200,2.1843
+FIN,2011-04-17,1463,Christian Democrats,4.0,6,200,7.1884
+FIN,2011-04-17,200,Finnish Party | True Finns,19.1,39,200,6.6331
+FIN,2011-04-17,2412,Pirate Party Finland,0.5,0,200,
+FIN,2011-04-17,395,Social Democratic Party of Finland,19.1,42,200,3.5595
+FIN,2011-04-17,585,Swedish People's Party,4.3,9,200,6.3906
+FIN,2011-04-17,66,Aland Coalition,0.2,1,200,
+FIN,2011-04-17,94,Centre Party,15.8,35,200,5.8027
+FIN,2015-04-19,1062,Green League,8.53,15,200,3.6465
+FIN,2015-04-19,1118,National Coalition Party,18.2,37,200,7.2451
+FIN,2015-04-19,1292,Democratic Union | Left Alliance,7.13,12,200,2.1843
+FIN,2015-04-19,1463,Christian Democrats,3.54,5,200,7.1884
+FIN,2015-04-19,200,Finnish Party | True Finns,17.65,38,200,6.6331
+FIN,2015-04-19,2412,Pirate Party Finland,0.85,0,200,
+FIN,2015-04-19,2413,one seat,0.56,1,200,
+FIN,2015-04-19,395,Social Democratic Party of Finland,16.51,34,200,3.5595
+FIN,2015-04-19,585,Swedish People's Party,4.88,9,200,6.3906
+FIN,2015-04-19,94,Centre Party,21.1,49,200,5.8027
+FIN,2019-04-14,1062,Green League,11.5,20,200,3.6465
+FIN,2019-04-14,1118,National Coalition Party,17.0,38,200,7.2451
+FIN,2019-04-14,1292,Democratic Union | Left Alliance,8.2,16,200,2.1843
+FIN,2019-04-14,1463,Christian Democrats,3.9,5,200,7.1884
+FIN,2019-04-14,200,Finnish Party | True Finns,17.5,39,200,6.6331
+FIN,2019-04-14,2645,New Alternative | Blue Reform,0.97,0,200,8.8
+FIN,2019-04-14,2801,Movement Now,2.25,1,200,6.0
+FIN,2019-04-14,395,Social Democratic Party of Finland,17.7,40,200,3.5595
+FIN,2019-04-14,585,Swedish People's Party,4.5,9,200,6.3906
+FIN,2019-04-14,66,Aland Coalition,0.38,1,200,
+FIN,2019-04-14,94,Centre Party,13.8,31,200,5.8027
+FIN,2023-04-02,1062,Green League,7.0,13,200,3.6465
+FIN,2023-04-02,1118,National Coalition Party,20.8,48,200,7.2451
+FIN,2023-04-02,1292,Democratic Union | Left Alliance,7.1,11,200,2.1843
+FIN,2023-04-02,1463,Christian Democrats,4.2,5,200,7.1884
+FIN,2023-04-02,200,Finnish Party | True Finns,20.1,46,200,6.6331
+FIN,2023-04-02,2054,no seat,0.5,0,200,
+FIN,2023-04-02,2801,Movement Now,2.4,1,200,6.0
+FIN,2023-04-02,395,Social Democratic Party of Finland,19.9,43,200,3.5595
+FIN,2023-04-02,585,Swedish People's Party,4.3,9,200,6.3906
+FIN,2023-04-02,94,Centre Party,11.3,23,200,5.8027
+FRA,2002-06-16,1101,Movement for France,0.8,2,577,8.1721
+FRA,2002-06-16,1176,Workers' Struggle,1.2,0,577,0.0
+FRA,2002-06-16,1263,National Republican Movement,1.09,0,577,8.2786
+FRA,2002-06-16,1492,Radical Party of the Left,1.54,7,577,4.0813
+FRA,2002-06-16,1539,Socialist Party,24.11,141,577,3.2493
+FRA,2002-06-16,177,other left,1.09,3,577,3.3
+FRA,2002-06-16,2143,Citizens' Movement,1.19,0,577,1.3
+FRA,2002-06-16,2249,other ecologists,1.17,0,577,2.5
+FRA,2002-06-16,2252,Rally for France,0.37,5,577,7.4
+FRA,2002-06-16,259,"Hunting, Fishing, Nature, Tradition",1.67,0,577,7.8
+FRA,2002-06-16,270,National Rally,11.34,0,577,9.6854
+FRA,2002-06-16,285,other right,3.65,7,577,7.6583
+FRA,2002-06-16,442,Revolutionary Communist League,1.27,0,577,0.0714
+FRA,2002-06-16,509,Union for French Democracy | Democratic Movement,4.85,28,577,6.1017
+FRA,2002-06-16,59,Independent Republicans | Liberal Democracy,0.41,1,577,7.0577
+FRA,2002-06-16,658,Union for a Popular Movement | The Republicans,33.3,356,577,7.4997
+FRA,2002-06-16,686,French Communist Party,4.82,24,577,1.3741
+FRA,2002-06-16,873,Greens,4.51,3,577,3.155
+FRA,2007-06-17,1058,New Centre,2.37,22,577,6.0
+FRA,2007-06-17,1101,Movement for France,1.2,1,577,8.1721
+FRA,2007-06-17,1492,Radical Party of the Left,1.32,7,577,4.0813
+FRA,2007-06-17,1539,Socialist Party,24.73,186,577,3.2493
+FRA,2007-06-17,177,other left,1.97,15,577,3.3
+FRA,2007-06-17,2077,Martinican Independence Movement,0.51,1,577,
+FRA,2007-06-17,2083,other far-left,3.41,0,577,1.3
+FRA,2007-06-17,270,National Rally,4.29,0,577,9.6854
+FRA,2007-06-17,285,other right,2.47,9,577,7.6583
+FRA,2007-06-17,509,Union for French Democracy | Democratic Movement,7.61,3,577,6.1017
+FRA,2007-06-17,658,Union for a Popular Movement | The Republicans,39.54,313,577,7.4997
+FRA,2007-06-17,686,French Communist Party,4.3,15,577,1.3741
+FRA,2007-06-17,873,Greens,3.25,4,577,3.155
+FRA,2007-06-17,947,no party affiliation,,1,577,
+FRA,2012-06-17,1058,New Centre,2.2,12,577,6.0
+FRA,2012-06-17,1492,Radical Party of the Left,1.65,12,577,4.0813
+FRA,2012-06-17,1539,Socialist Party,29.35,280,577,3.2493
+FRA,2012-06-17,177,other left,3.4,22,577,3.3
+FRA,2012-06-17,2077,Martinican Independence Movement,0.56,2,577,
+FRA,2012-06-17,2078,Centrist Alliance,0.6,2,577,6.0
+FRA,2012-06-17,2079,other far-right,0.19,1,577,8.8
+FRA,2012-06-17,2080,no seat,0.96,0,577,
+FRA,2012-06-17,270,National Rally,13.6,2,577,9.6854
+FRA,2012-06-17,285,other right,3.51,15,577,7.6583
+FRA,2012-06-17,401,Radical Socialist Party,1.24,6,577,3.9896
+FRA,2012-06-17,509,Union for French Democracy | Democratic Movement,1.77,2,577,6.1017
+FRA,2012-06-17,658,Union for a Popular Movement | The Republicans,27.12,194,577,7.4997
+FRA,2012-06-17,686,French Communist Party,6.91,10,577,1.3741
+FRA,2012-06-17,873,Greens,5.46,17,577,3.155
+FRA,2017-06-18,1328,others,,3,577,
+FRA,2017-06-18,1492,Radical Party of the Left,0.47,3,577,4.0813
+FRA,2017-06-18,1539,Socialist Party,7.44,30,577,3.2493
+FRA,2017-06-18,177,other left,1.6,12,577,3.3
+FRA,2017-06-18,2079,other far-right,0.3,1,577,8.8
+FRA,2017-06-18,2083,other far-left,0.77,0,577,1.3
+FRA,2017-06-18,2273,Union of Democrats and Independents,3.03,18,577,7.4
+FRA,2017-06-18,2399,Republic Arise | France Arise,1.17,1,577,7.4
+FRA,2017-06-18,2643,The Republic Onwards! | Renaissance,28.21,308,577,6.0
+FRA,2017-06-18,2644,Unbowed France,11.03,17,577,1.3
+FRA,2017-06-18,270,National Rally,13.2,8,577,9.6854
+FRA,2017-06-18,285,other right,2.76,6,577,7.6583
+FRA,2017-06-18,509,Union for French Democracy | Democratic Movement,4.12,42,577,6.1017
+FRA,2017-06-18,658,Union for a Popular Movement | The Republicans,15.77,112,577,7.4997
+FRA,2017-06-18,686,French Communist Party,2.72,10,577,1.3741
+FRA,2017-06-18,873,Greens,4.3,1,577,3.155
+FRA,2017-06-18,947,no party affiliation,,5,577,
+FRA,2022-06-19,1328,others,0.85,1,577,
+FRA,2022-06-19,177,other left,3.14,22,577,3.3
+FRA,2022-06-19,2083,other far-left,1.17,0,577,1.3
+FRA,2022-06-19,2273,Union of Democrats and Independents,0.87,3,577,7.4
+FRA,2022-06-19,2643,The Republic Onwards! | Renaissance,25.75,245,577,6.0
+FRA,2022-06-19,2644,Unbowed France,25.66,131,577,1.3
+FRA,2022-06-19,270,National Rally,18.68,89,577,9.6854
+FRA,2022-06-19,2813,Ecologist Party,2.67,0,577,2.5
+FRA,2022-06-19,285,other right,2.33,10,577,7.6583
+FRA,2022-06-19,2858,other centre,1.25,4,577,6.0
+FRA,2022-06-19,2859,one seat,0.9,1,577,
+FRA,2022-06-19,2860,Reconquest,4.24,0,577,8.8
+FRA,2022-06-19,658,Union for a Popular Movement | The Republicans,10.42,61,577,7.4997
+FRA,2022-06-19,947,no party affiliation,1.28,10,577,
+GBR,2001-06-07,1023,Social Democratic and Labour Party,0.6,3,659,3.3
+GBR,2001-06-07,1210,Ulster Unionist Party,0.8,6,659,8.3
+GBR,2001-06-07,1272,United Kingdom Independence Party,1.5,0,659,7.8429
+GBR,2001-06-07,1284,Scottish National Party,1.8,5,659,3.5871
+GBR,2001-06-07,1556,Labour,40.7,412,659,4.3562
+GBR,2001-06-07,311,Plaid Cymru,0.7,4,659,3.1183
+GBR,2001-06-07,319,Democratic Unionist Party,0.7,5,659,7.4
+GBR,2001-06-07,453,others,,2,659,
+GBR,2001-06-07,659,Liberals,18.3,52,659,4.2875
+GBR,2001-06-07,689,Sinn Fein,0.7,4,659,1.3
+GBR,2001-06-07,773,Conservatives,31.7,166,659,7.4261
+GBR,2005-05-05,1023,Social Democratic and Labour Party,0.5,3,646,3.3
+GBR,2005-05-05,1057,Respect -- The Unity Coalition,0.3,1,646,
+GBR,2005-05-05,1210,Ulster Unionist Party,0.5,1,646,8.3
+GBR,2005-05-05,1272,United Kingdom Independence Party,2.2,0,646,7.8429
+GBR,2005-05-05,1284,Scottish National Party,1.5,6,646,3.5871
+GBR,2005-05-05,1556,Labour,35.2,355,646,4.3562
+GBR,2005-05-05,311,Plaid Cymru,0.6,3,646,3.1183
+GBR,2005-05-05,319,Democratic Unionist Party,0.9,9,646,7.4
+GBR,2005-05-05,453,others,,3,646,
+GBR,2005-05-05,467,Green Party,1.0,0,646,2.57
+GBR,2005-05-05,659,Liberals,22.0,62,646,4.2875
+GBR,2005-05-05,689,Sinn Fein,0.6,5,646,1.3
+GBR,2005-05-05,773,Conservatives,32.4,198,646,7.4261
+GBR,2010-05-06,1023,Social Democratic and Labour Party,0.4,3,650,3.3
+GBR,2010-05-06,1250,British National Party,1.9,0,650,8.8
+GBR,2010-05-06,1272,United Kingdom Independence Party,3.1,0,650,7.8429
+GBR,2010-05-06,1284,Scottish National Party,1.7,6,650,3.5871
+GBR,2010-05-06,1556,Labour,29.0,258,650,4.3562
+GBR,2010-05-06,2296,one seat,0.14,1,650,
+GBR,2010-05-06,311,Plaid Cymru,0.6,3,650,3.1183
+GBR,2010-05-06,319,Democratic Unionist Party,0.6,8,650,7.4
+GBR,2010-05-06,453,others,,1,650,
+GBR,2010-05-06,467,Green Party,1.0,1,650,2.57
+GBR,2010-05-06,659,Liberals,23.0,57,650,4.2875
+GBR,2010-05-06,689,Sinn Fein,0.6,5,650,1.3
+GBR,2010-05-06,773,Conservatives,36.1,307,650,7.4261
+GBR,2015-05-07,1023,Social Democratic and Labour Party,0.33,3,650,3.3
+GBR,2015-05-07,1210,Ulster Unionist Party,0.37,2,650,8.3
+GBR,2015-05-07,1272,United Kingdom Independence Party,12.65,1,650,7.8429
+GBR,2015-05-07,1284,Scottish National Party,4.74,56,650,3.5871
+GBR,2015-05-07,1556,Labour,30.46,232,650,4.3562
+GBR,2015-05-07,2063,The Christian Party -- Christian Peoples Alliance in England,0.2,0,650,6.2
+GBR,2015-05-07,2296,one seat,0.54,1,650,
+GBR,2015-05-07,311,Plaid Cymru,0.59,3,650,3.1183
+GBR,2015-05-07,319,Democratic Unionist Party,0.6,8,650,7.4
+GBR,2015-05-07,467,Green Party,3.77,1,650,2.57
+GBR,2015-05-07,659,Liberals,7.87,8,650,4.2875
+GBR,2015-05-07,689,Sinn Fein,0.57,4,650,1.3
+GBR,2015-05-07,773,Conservatives,36.93,331,650,7.4261
+GBR,2017-06-08,1272,United Kingdom Independence Party,1.8,0,650,7.8429
+GBR,2017-06-08,1284,Scottish National Party,3.0,35,650,3.5871
+GBR,2017-06-08,1556,Labour,39.99,262,650,4.3562
+GBR,2017-06-08,2296,one seat,0.58,1,650,
+GBR,2017-06-08,311,Plaid Cymru,0.5,4,650,3.1183
+GBR,2017-06-08,319,Democratic Unionist Party,0.9,10,650,7.4
+GBR,2017-06-08,467,Green Party,1.63,1,650,2.57
+GBR,2017-06-08,659,Liberals,7.37,12,650,4.2875
+GBR,2017-06-08,689,Sinn Fein,0.7,7,650,1.3
+GBR,2017-06-08,773,Conservatives,42.45,318,650,7.4261
+GBR,2019-12-12,1023,Social Democratic and Labour Party,0.37,2,650,3.3
+GBR,2019-12-12,1284,Scottish National Party,3.88,48,650,3.5871
+GBR,2019-12-12,1556,Labour,32.16,203,650,4.3562
+GBR,2019-12-12,2729,Brexit Party,2.01,0,650,8.8
+GBR,2019-12-12,2731,Alliance Party of Northern Ireland,0.42,1,650,6.0
+GBR,2019-12-12,311,Plaid Cymru,0.48,4,650,3.1183
+GBR,2019-12-12,319,Democratic Unionist Party,0.76,8,650,7.4
+GBR,2019-12-12,467,Green Party,2.7,1,650,2.57
+GBR,2019-12-12,659,Liberals,11.55,11,650,4.2875
+GBR,2019-12-12,689,Sinn Fein,0.57,7,650,1.3
+GBR,2019-12-12,773,Conservatives,43.63,365,650,7.4261
+GRC,2000-04-09,1338,Panhellenic Socialist Movement,43.79,158,300,4.4968
+GRC,2000-04-09,1441,Coalition of the Left,3.2,6,300,2.7683
+GRC,2000-04-09,47,New Democracy,42.74,125,300,6.7365
+GRC,2000-04-09,614,Communist Party of Greece,5.52,11,300,1.253
+GRC,2000-04-09,720,Democratic Social Movement,2.69,0,300,2.3
+GRC,2004-03-07,1179,Popular Orthodox Rally,2.19,0,300,9.11
+GRC,2004-03-07,1338,Panhellenic Socialist Movement,40.55,116,300,4.4968
+GRC,2004-03-07,1441,Coalition of the Left,,6,300,2.7683
+GRC,2004-03-07,1592,Coalition of the Radical Left,3.26,,300,2.8947
+GRC,2004-03-07,47,New Democracy,45.36,166,300,6.7365
+GRC,2004-03-07,614,Communist Party of Greece,5.9,12,300,1.253
+GRC,2004-03-07,720,Democratic Social Movement,1.79,0,300,2.3
+GRC,2007-09-16,1179,Popular Orthodox Rally,3.8,10,300,9.11
+GRC,2007-09-16,1280,Ecologist Greens,1.05,0,300,2.5
+GRC,2007-09-16,1338,Panhellenic Socialist Movement,38.1,102,300,4.4968
+GRC,2007-09-16,1592,Coalition of the Radical Left,5.04,14,300,2.8947
+GRC,2007-09-16,47,New Democracy,41.84,152,300,6.7365
+GRC,2007-09-16,614,Communist Party of Greece,8.15,22,300,1.253
+GRC,2009-10-04,1179,Popular Orthodox Rally,5.63,15,300,9.11
+GRC,2009-10-04,1280,Ecologist Greens,2.53,0,300,2.5
+GRC,2009-10-04,1338,Panhellenic Socialist Movement,43.92,160,300,4.4968
+GRC,2009-10-04,1592,Coalition of the Radical Left,4.6,13,300,2.8947
+GRC,2009-10-04,47,New Democracy,33.47,91,300,6.7365
+GRC,2009-10-04,614,Communist Party of Greece,7.54,21,300,1.253
+GRC,2012-05-06,1179,Popular Orthodox Rally,2.89,0,300,9.11
+GRC,2012-05-06,1280,Ecologist Greens,2.93,0,300,2.5
+GRC,2012-05-06,1338,Panhellenic Socialist Movement,13.18,41,300,4.4968
+GRC,2012-05-06,1592,Coalition of the Radical Left,16.79,52,300,2.8947
+GRC,2012-05-06,2091,Independent Greeks,10.62,33,300,8.8
+GRC,2012-05-06,2092,Peoples Association -- Golden Dawn,6.97,21,300,8.8
+GRC,2012-05-06,2093,Democratic Left,6.11,19,300,3.3
+GRC,2012-05-06,2094,Democratic Alliance,2.55,0,300,6.0
+GRC,2012-05-06,2095,Recreate Greece,2.15,0,300,7.4
+GRC,2012-05-06,2096,Action -- Liberal Alliance,1.8,0,300,6.0
+GRC,2012-05-06,2097,Front of the Greek Anticapitalist Left,1.19,0,300,1.3
+GRC,2012-05-06,47,New Democracy,18.85,108,300,6.7365
+GRC,2012-05-06,614,Communist Party of Greece,8.48,26,300,1.253
+GRC,2012-06-17,1179,Popular Orthodox Rally,1.58,0,300,9.11
+GRC,2012-06-17,1338,Panhellenic Socialist Movement,12.28,33,300,4.4968
+GRC,2012-06-17,1592,Coalition of the Radical Left,26.89,71,300,2.8947
+GRC,2012-06-17,2091,Independent Greeks,7.51,20,300,8.8
+GRC,2012-06-17,2092,Peoples Association -- Golden Dawn,6.92,18,300,8.8
+GRC,2012-06-17,2093,Democratic Left,6.26,17,300,3.3
+GRC,2012-06-17,2095,Recreate Greece,1.59,0,300,7.4
+GRC,2012-06-17,47,New Democracy,29.66,129,300,6.7365
+GRC,2012-06-17,614,Communist Party of Greece,4.5,12,300,1.253
+GRC,2015-01-25,1179,Popular Orthodox Rally,1.03,0,300,9.11
+GRC,2015-01-25,1338,Panhellenic Socialist Movement,4.68,13,300,4.4968
+GRC,2015-01-25,1592,Coalition of the Radical Left,36.34,149,300,2.8947
+GRC,2015-01-25,2091,Independent Greeks,4.75,13,300,8.8
+GRC,2015-01-25,2092,Peoples Association -- Golden Dawn,6.28,17,300,8.8
+GRC,2015-01-25,2165,Union of Centrists,1.79,0,300,3.3
+GRC,2015-01-25,2346,The River,6.05,17,300,3.3
+GRC,2015-01-25,2407,Movement of Democratic Socialists,2.46,0,300,3.3
+GRC,2015-01-25,2408,Dot -- Apostolos Gkletsos,1.77,0,300,3.3
+GRC,2015-01-25,47,New Democracy,27.81,76,300,6.7365
+GRC,2015-01-25,614,Communist Party of Greece,5.47,15,300,1.253
+GRC,2015-09-20,1338,Panhellenic Socialist Movement,6.28,17,300,4.4968
+GRC,2015-09-20,1592,Coalition of the Radical Left,35.46,145,300,2.8947
+GRC,2015-09-20,2091,Independent Greeks,3.69,10,300,8.8
+GRC,2015-09-20,2092,Peoples Association -- Golden Dawn,6.99,18,300,8.8
+GRC,2015-09-20,2165,Union of Centrists,3.43,9,300,3.3
+GRC,2015-09-20,2346,The River,4.09,11,300,3.3
+GRC,2015-09-20,2596,Popular Unity | Course of Freedom,2.86,0,300,1.3
+GRC,2015-09-20,47,New Democracy,28.1,75,300,6.7365
+GRC,2015-09-20,614,Communist Party of Greece,5.55,15,300,1.253
+GRC,2019-07-07,1338,Panhellenic Socialist Movement,8.1,22,300,4.4968
+GRC,2019-07-07,1592,Coalition of the Radical Left,31.53,86,300,2.8947
+GRC,2019-07-07,2092,Peoples Association -- Golden Dawn,2.93,0,300,8.8
+GRC,2019-07-07,2165,Union of Centrists,1.24,0,300,3.3
+GRC,2019-07-07,2596,Popular Unity | Course of Freedom,1.46,0,300,1.3
+GRC,2019-07-07,2742,European Realistic Disobedience Front,3.44,9,300,1.3
+GRC,2019-07-07,2780,Greek Solution,3.7,10,300,7.4
+GRC,2019-07-07,47,New Democracy,39.85,158,300,6.7365
+GRC,2019-07-07,614,Communist Party of Greece,5.3,15,300,1.253
+GRC,2023-05-21,1338,Panhellenic Socialist Movement,11.5,41,300,4.4968
+GRC,2023-05-21,1592,Coalition of the Radical Left,20.7,71,300,2.8947
+GRC,2023-05-21,2596,Popular Unity | Course of Freedom,2.9,0,300,1.3
+GRC,2023-05-21,2742,European Realistic Disobedience Front,2.63,0,300,1.3
+GRC,2023-05-21,2780,Greek Solution,4.45,16,300,7.4
+GRC,2023-05-21,2901,Victory,2.9,0,300,8.8
+GRC,2023-05-21,47,New Democracy,40.8,146,300,6.7365
+GRC,2023-05-21,614,Communist Party of Greece,7.2,26,300,1.253
+GRC,2023-06-25,1338,Panhellenic Socialist Movement,11.84,32,300,4.4968
+GRC,2023-06-25,1592,Coalition of the Radical Left,17.83,47,300,2.8947
+GRC,2023-06-25,2596,Popular Unity | Course of Freedom,3.17,8,300,1.3
+GRC,2023-06-25,2742,European Realistic Disobedience Front,2.5,0,300,1.3
+GRC,2023-06-25,2780,Greek Solution,4.44,12,300,7.4
+GRC,2023-06-25,2901,Victory,3.7,10,300,8.8
+GRC,2023-06-25,2902,Spartans,4.68,12,300,8.8
+GRC,2023-06-25,47,New Democracy,40.56,158,300,6.7365
+GRC,2023-06-25,614,Communist Party of Greece,7.69,21,300,1.253
+HRV,2000-01-03,1044,Croatian Party of Rights,5.3,5,151,8.7719
+HRV,2000-01-03,1102,Croatian Social Liberal Party,,24,151,7.193
+HRV,2000-01-03,1384,Croatian People's Party -- Liberal Democrats,,2,151,1.8421
+HRV,2000-01-03,1457,Liberal Party,,2,151,2.807
+HRV,2000-01-03,1465,Croatian Peasant Party,15.6,17,151,6.2281
+HRV,2000-01-03,1493,Social Democratic Party of Croatia,40.8,44,151,3.2456
+HRV,2000-01-03,1627,Istrian Democratic Assembly,,4,151,3.4211
+HRV,2000-01-03,2134,Croatian Party of Pensioners,1.9,0,151,
+HRV,2000-01-03,2192,ethnic,,1,151,
+HRV,2000-01-03,2196,Alliance of Primorje-Gorski,,2,151,
+HRV,2000-01-03,2197,no party affiliation,0.7,3,151,
+HRV,2000-01-03,2199,Croatian Party of Right of 1861,1.1,0,151,8.8
+HRV,2000-01-03,2202,Croatian Peasant's People's Party,1.4,0,151,5.3
+HRV,2000-01-03,2203,Croatian People's Party,1.4,0,151,7.4
+HRV,2000-01-03,2295,one seat,,1,151,
+HRV,2000-01-03,276,Croatian Democratic Union,24.4,46,151,7.1053
+HRV,2003-11-23,1044,Croatian Party of Rights,6.5,8,152,8.7719
+HRV,2003-11-23,1102,Croatian Social Liberal Party,4.1,2,152,7.193
+HRV,2003-11-23,1384,Croatian People's Party -- Liberal Democrats,8.3,10,152,1.8421
+HRV,2003-11-23,1457,Liberal Party,,2,152,2.807
+HRV,2003-11-23,1465,Croatian Peasant Party,7.3,10,152,6.2281
+HRV,2003-11-23,1493,Social Democratic Party of Croatia,23.3,34,152,3.2456
+HRV,2003-11-23,1627,Istrian Democratic Assembly,,4,152,3.4211
+HRV,2003-11-23,2133, Independent Democratic Serb Party,,3,152,3.3
+HRV,2003-11-23,2134,Croatian Party of Pensioners,4.1,3,152,
+HRV,2003-11-23,2196,Alliance of Primorje-Gorski,,1,152,
+HRV,2003-11-23,2197,no party affiliation,2.3,4,152,
+HRV,2003-11-23,2198,Croatian Democratic Peasant Party,1.0,1,152,5.3
+HRV,2003-11-23,2270,Party of Democratic Action of Croatia,,1,152,7.4
+HRV,2003-11-23,276,Croatian Democratic Union,33.2,66,152,7.1053
+HRV,2003-11-23,316,Croatian Bloc,1.3,0,152,9.386
+HRV,2003-11-23,90,Party of Liberal Democrats,,3,152,3.7719
+HRV,2007-11-25,1044,Croatian Party of Rights,3.4,1,153,8.7719
+HRV,2007-11-25,1102,Croatian Social Liberal Party,,2,153,7.193
+HRV,2007-11-25,1384,Croatian People's Party -- Liberal Democrats,6.7,7,153,1.8421
+HRV,2007-11-25,1465,Croatian Peasant Party,6.4,6,153,6.2281
+HRV,2007-11-25,1493,Social Democratic Party of Croatia,30.8,56,153,3.2456
+HRV,2007-11-25,1627,Istrian Democratic Assembly,1.5,3,153,3.4211
+HRV,2007-11-25,2133, Independent Democratic Serb Party,1.5,3,153,3.3
+HRV,2007-11-25,2134,Croatian Party of Pensioners,4.0,1,153,
+HRV,2007-11-25,2135,Croatian Democratic Alliance of Slavonia and Baranja,1.8,3,153,8.8
+HRV,2007-11-25,2192,ethnic,,4,153,
+HRV,2007-11-25,2270,Party of Democratic Action of Croatia,,1,153,7.4
+HRV,2007-11-25,276,Croatian Democratic Union,35.9,66,153,7.1053
+HRV,2011-12-04,1044,Croatian Party of Rights,3.0,0,151,8.7719
+HRV,2011-12-04,1081,Democratic Centre,,1,151,5.9649
+HRV,2011-12-04,1102,Croatian Social Liberal Party,3.0,0,151,7.193
+HRV,2011-12-04,1384,Croatian People's Party -- Liberal Democrats,,13,151,1.8421
+HRV,2011-12-04,1465,Croatian Peasant Party,0.64,1,151,6.2281
+HRV,2011-12-04,1493,Social Democratic Party of Croatia,41.08,61,151,3.2456
+HRV,2011-12-04,1627,Istrian Democratic Assembly,,3,151,3.4211
+HRV,2011-12-04,2133, Independent Democratic Serb Party,,3,151,3.3
+HRV,2011-12-04,2134,Croatian Party of Pensioners,,3,151,
+HRV,2011-12-04,2135,Croatian Democratic Alliance of Slavonia and Baranja,2.96,6,151,8.8
+HRV,2011-12-04,2181,Croatian Party of Rights -- Dr. Ante Starcevic,0.64,1,151,8.8
+HRV,2011-12-04,2182,Croatian Labourists -- Labour Party,4.19,6,151,1.3
+HRV,2011-12-04,2191,abroad,,3,151,
+HRV,2011-12-04,2192,ethnic,,5,151,
+HRV,2011-12-04,2193,Croatian Civic Party,,2,151,8.8
+HRV,2011-12-04,2195,Independent List -- PhD Ivan Grubisic,1.25,2,151,
+HRV,2011-12-04,2196,Alliance of Primorje-Gorski,2.8,0,151,
+HRV,2011-12-04,276,Croatian Democratic Union,23.5,41,151,7.1053
+HRV,2015-11-08,1102,Croatian Social Liberal Party,,2,151,7.193
+HRV,2015-11-08,1384,Croatian People's Party -- Liberal Democrats,,9,151,1.8421
+HRV,2015-11-08,1465,Croatian Peasant Party,,1,151,6.2281
+HRV,2015-11-08,1493,Social Democratic Party of Croatia,32.83,42,151,3.2456
+HRV,2015-11-08,1627,Istrian Democratic Assembly,1.86,3,151,3.4211
+HRV,2015-11-08,2133, Independent Democratic Serb Party,,3,151,3.3
+HRV,2015-11-08,2134,Croatian Party of Pensioners,,2,151,
+HRV,2015-11-08,2135,Croatian Democratic Alliance of Slavonia and Baranja,1.35,2,151,8.8
+HRV,2015-11-08,2181,Croatian Party of Rights -- Dr. Ante Starcevic,,3,151,8.8
+HRV,2015-11-08,2182,Croatian Labourists -- Labour Party,,3,151,1.3
+HRV,2015-11-08,2185,Croatian Growth,,1,151,6.2
+HRV,2015-11-08,2192,ethnic,1.66,5,151,
+HRV,2015-11-08,2295,one seat,,2,151,
+HRV,2015-11-08,2382,Sustainable Development of Croatia,1.73,0,151,2.5
+HRV,2015-11-08,2612,Human Shield ,4.19,1,151,8.8
+HRV,2015-11-08,2614,People's Party -- Reformists ,1.54,1,151,6.0
+HRV,2015-11-08,2615,Bridge of Independent Lists,13.42,19,151,7.4
+HRV,2015-11-08,2628,Milan Bandic 365 -- The Party of Labour and Solidarity,3.34,2,151,3.3
+HRV,2015-11-08,276,Croatian Democratic Union,34.08,50,151,7.1053
+HRV,2016-09-11,1384,Croatian People's Party -- Liberal Democrats,,9,151,1.8421
+HRV,2016-09-11,1465,Croatian Peasant Party,,5,151,6.2281
+HRV,2016-09-11,1493,Social Democratic Party of Croatia,32.18,39,151,3.2456
+HRV,2016-09-11,1627,Istrian Democratic Assembly,2.18,3,151,3.4211
+HRV,2016-09-11,2133, Independent Democratic Serb Party,,3,151,3.3
+HRV,2016-09-11,2134,Croatian Party of Pensioners,,1,151,
+HRV,2016-09-11,2135,Croatian Democratic Alliance of Slavonia and Baranja,1.19,1,151,8.8
+HRV,2016-09-11,2192,ethnic,1.92,5,151,
+HRV,2016-09-11,2295,one seat,0.26,1,151,
+HRV,2016-09-11,2612,Human Shield ,5.92,8,151,8.8
+HRV,2016-09-11,2615,Bridge of Independent Lists,9.43,13,151,7.4
+HRV,2016-09-11,2628,Milan Bandic 365 -- The Party of Labour and Solidarity,3.84,2,151,3.3
+HRV,2016-09-11,276,Croatian Democratic Union,35.17,61,151,7.1053
+HRV,2020-07-05,1384,Croatian People's Party -- Liberal Democrats,1.3,1,151,1.8421
+HRV,2020-07-05,1493,Social Democratic Party of Croatia,23.88,41,151,3.2456
+HRV,2020-07-05,2133, Independent Democratic Serb Party,0.78,3,151,3.3
+HRV,2020-07-05,2192,ethnic,1.76,5,151,
+HRV,2020-07-05,2612,Human Shield ,2.26,0,151,8.8
+HRV,2020-07-05,2614,People's Party -- Reformists ,1.01,1,151,6.0
+HRV,2020-07-05,2615,Bridge of Independent Lists,7.39,8,151,7.4
+HRV,2020-07-05,276,Croatian Democratic Union,37.26,66,151,7.1053
+HRV,2020-07-05,2772,Intelligently,3.98,3,151,6.0
+HRV,2020-07-05,2809,Homeland Movement,10.89,16,151,8.8
+HRV,2020-07-05,2810,We Can! -- Political Platform,6.99,7,151,2.5
+HUN,2002-04-21,1202,Hungarian Workers' Party,2.16,0,386,0.6316
+HUN,2002-04-21,1426,Alliance of Free Democrats,5.57,20,386,3.9659
+HUN,2002-04-21,1591,Hungarian Socialist Party,42.05,178,386,2.8743
+HUN,2002-04-21,434,Christian Democratic People's Party,3.9,0,386,7.4
+HUN,2002-04-21,546,Hungarian Democratic Forum,,24,386,6.4826
+HUN,2002-04-21,921,Fidesz -- Hungarian Civic Union,41.07,164,386,6.5432
+HUN,2002-04-21,95,Hungarian Justice and Life Party,4.37,0,386,9.6065
+HUN,2006-04-09,1426,Alliance of Free Democrats,6.5,20,386,3.9659
+HUN,2006-04-09,1591,Hungarian Socialist Party,43.2,190,386,2.8743
+HUN,2006-04-09,434,Christian Democratic People's Party,,23,386,7.4
+HUN,2006-04-09,437,Fidesz -- Hungarian Civic Party / Christian Democratic People's Party,42.0,,386,6.5432
+HUN,2006-04-09,546,Hungarian Democratic Forum,5.0,11,386,6.4826
+HUN,2006-04-09,921,Fidesz -- Hungarian Civic Union,,141,386,6.5432
+HUN,2006-04-09,95,Hungarian Justice and Life Party,2.2,0,386,9.6065
+HUN,2006-04-09,952,one seat,,1,386,
+HUN,2010-04-25,1591,Hungarian Socialist Party,19.3,59,386,2.8743
+HUN,2010-04-25,1617,no party affiliation,,1,386,
+HUN,2010-04-25,403,Politics Can Be Different,7.48,16,386,2.5
+HUN,2010-04-25,434,Christian Democratic People's Party,,36,386,7.4
+HUN,2010-04-25,437,Fidesz -- Hungarian Civic Party / Christian Democratic People's Party,52.73,,386,6.5432
+HUN,2010-04-25,546,Hungarian Democratic Forum,2.18,0,386,6.4826
+HUN,2010-04-25,600,Jobbik Movement for a Better Hungary,16.67,47,386,8.8
+HUN,2010-04-25,921,Fidesz -- Hungarian Civic Union,,227,386,6.5432
+HUN,2014-04-06,1202,Hungarian Workers' Party,0.56,0,199,0.6316
+HUN,2014-04-06,1591,Hungarian Socialist Party,25.57,29,199,2.8743
+HUN,2014-04-06,1970,Democratic Coalition,,4,199,3.3
+HUN,2014-04-06,2318,Together -- Party for a New Era,,3,199,3.3
+HUN,2014-04-06,2349,Dialogue for Hungary,,1,199,2.5
+HUN,2014-04-06,403,Politics Can Be Different,5.34,5,199,2.5
+HUN,2014-04-06,434,Christian Democratic People's Party,,16,199,7.4
+HUN,2014-04-06,437,Fidesz -- Hungarian Civic Party / Christian Democratic People's Party,44.87,,199,6.5432
+HUN,2014-04-06,600,Jobbik Movement for a Better Hungary,20.22,23,199,8.8
+HUN,2014-04-06,921,Fidesz -- Hungarian Civic Union,,117,199,6.5432
+HUN,2014-04-06,952,one seat,,1,199,
+HUN,2018-04-08,1591,Hungarian Socialist Party,11.91,20,199,2.8743
+HUN,2018-04-08,1970,Democratic Coalition,5.37,9,199,3.3
+HUN,2018-04-08,2318,Together -- Party for a New Era,0.66,1,199,3.3
+HUN,2018-04-08,2659,Momentum Movement,3.06,0,199,7.4
+HUN,2018-04-08,2660,Hungarian Two-tailed Dog Party,1.73,0,199,
+HUN,2018-04-08,403,Politics Can Be Different,7.06,8,199,2.5
+HUN,2018-04-08,434,Christian Democratic People's Party,,16,199,7.4
+HUN,2018-04-08,437,Fidesz -- Hungarian Civic Party / Christian Democratic People's Party,49.28,,199,6.5432
+HUN,2018-04-08,600,Jobbik Movement for a Better Hungary,19.06,26,199,8.8
+HUN,2018-04-08,870,Independent Small Holders Party,,1,199,9.0186
+HUN,2018-04-08,921,Fidesz -- Hungarian Civic Union,,117,199,6.5432
+HUN,2018-04-08,952,one seat,0.46,1,199,
+HUN,2022-04-03,1591,Hungarian Socialist Party,,10,199,2.8743
+HUN,2022-04-03,1617,no party affiliation,,1,199,
+HUN,2022-04-03,1970,Democratic Coalition,35.74,15,199,3.3
+HUN,2022-04-03,2349,Dialogue for Hungary,,6,199,2.5
+HUN,2022-04-03,2659,Momentum Movement,,10,199,7.4
+HUN,2022-04-03,2660,Hungarian Two-tailed Dog Party,3.27,0,199,
+HUN,2022-04-03,2745,Our Homeland Movement,5.88,6,199,8.8
+HUN,2022-04-03,2855,Solution Movement ,1.04,0,199,6.0
+HUN,2022-04-03,403,Politics Can Be Different,,5,199,2.5
+HUN,2022-04-03,434,Christian Democratic People's Party,,18,199,7.4
+HUN,2022-04-03,437,Fidesz -- Hungarian Civic Party / Christian Democratic People's Party,54.13,,199,6.5432
+HUN,2022-04-03,600,Jobbik Movement for a Better Hungary,,10,199,8.8
+HUN,2022-04-03,921,Fidesz -- Hungarian Civic Union,,117,199,6.5432
+HUN,2022-04-03,952,one seat,,1,199,
+IRL,2002-05-17,1014,Socialist Party,0.8,1,166,1.3
+IRL,2002-05-17,1393,Fine Gael (Familiy of the Irish),22.48,31,166,6.4372
+IRL,2002-05-17,1573,Green Party,3.85,6,166,2.435
+IRL,2002-05-17,2216,no seat,0.26,0,166,
+IRL,2002-05-17,2217,Sinn Fein,6.51,5,166,2.7935
+IRL,2002-05-17,2329,Independent -- Marian Harkin,0.46,1,166,
+IRL,2002-05-17,280,Fianna Fail,41.48,81,166,6.0713
+IRL,2002-05-17,30,no party affiliation,,12,166,
+IRL,2002-05-17,318,Labour Party,10.77,21,166,3.6252
+IRL,2002-05-17,651,Progressive Democrats,3.96,8,166,8.0109
+IRL,2007-05-24,1014,Socialist Party,0.64,0,166,1.3
+IRL,2007-05-24,1393,Fine Gael (Familiy of the Irish),27.32,51,166,6.4372
+IRL,2007-05-24,1573,Green Party,4.69,6,166,2.435
+IRL,2007-05-24,2217,Sinn Fein,6.94,4,166,2.7935
+IRL,2007-05-24,280,Fianna Fail,41.56,78,166,6.0713
+IRL,2007-05-24,30,no party affiliation,,5,166,
+IRL,2007-05-24,318,Labour Party,10.13,20,166,3.6252
+IRL,2007-05-24,651,Progressive Democrats,2.73,2,166,8.0109
+IRL,2011-02-25,1014,Socialist Party,1.21,2,166,1.3
+IRL,2011-02-25,1393,Fine Gael (Familiy of the Irish),36.1,76,166,6.4372
+IRL,2011-02-25,1573,Green Party,1.85,0,166,2.435
+IRL,2011-02-25,1804,People Before Profit Alliance,0.97,2,166,1.3
+IRL,2011-02-25,2217,Sinn Fein,9.94,14,166,2.7935
+IRL,2011-02-25,2298,one seat,0.5,1,166,
+IRL,2011-02-25,280,Fianna Fail,17.45,20,166,6.0713
+IRL,2011-02-25,30,no party affiliation,12.17,14,166,
+IRL,2011-02-25,318,Labour Party,19.45,37,166,3.6252
+IRL,2016-02-26,1014,Socialist Party,3.95,6,158,1.3
+IRL,2016-02-26,1393,Fine Gael (Familiy of the Irish),25.52,50,158,6.4372
+IRL,2016-02-26,1573,Green Party,2.72,2,158,2.435
+IRL,2016-02-26,2217,Sinn Fein,13.85,23,158,2.7935
+IRL,2016-02-26,2298,one seat,0.35,1,158,
+IRL,2016-02-26,2619,Social Democrats ,3.01,3,158,3.3
+IRL,2016-02-26,2620,Renua Ireland,2.18,0,158,7.4
+IRL,2016-02-26,2621,Independents 4 Change,1.47,4,158,1.3
+IRL,2016-02-26,2622,Independent Alliance,4.21,6,158,
+IRL,2016-02-26,280,Fianna Fail,24.35,44,158,6.0713
+IRL,2016-02-26,30,no party affiliation,11.14,12,158,
+IRL,2016-02-26,318,Labour Party,6.61,7,158,3.6252
+IRL,2020-02-08,1393,Fine Gael (Familiy of the Irish),20.86,35,160,6.4372
+IRL,2020-02-08,1573,Green Party,7.13,12,160,2.435
+IRL,2020-02-08,2216,no seat,0.25,0,160,
+IRL,2020-02-08,2217,Sinn Fein,24.53,37,160,2.7935
+IRL,2020-02-08,2619,Social Democrats ,2.9,6,160,3.3
+IRL,2020-02-08,2621,Independents 4 Change,0.39,1,160,1.3
+IRL,2020-02-08,2776,Solidarity -- People Before Profit,2.63,5,160,1.3
+IRL,2020-02-08,2795,Aontu,1.9,1,160,7.4
+IRL,2020-02-08,280,Fianna Fail,22.18,38,160,6.0713
+IRL,2020-02-08,30,no party affiliation,12.2,19,160,
+IRL,2020-02-08,318,Labour Party,4.38,6,160,3.6252
+ISL,2003-05-10,1006,Social Democratic Alliance,31.0,20,63,4.0789
+ISL,2003-05-10,1342,Independence Party,33.7,22,63,7.4854
+ISL,2003-05-10,1455,Progressive Party,17.7,12,63,5.0365
+ISL,2003-05-10,210,Left-Green Movement,8.8,5,63,1.1842
+ISL,2003-05-10,2112,no seat,0.98,0,63,
+ISL,2003-05-10,506,Liberal Party,7.4,4,63,6.2201
+ISL,2007-05-12,1006,Social Democratic Alliance,26.8,18,63,4.0789
+ISL,2007-05-12,1342,Independence Party,36.6,25,63,7.4854
+ISL,2007-05-12,1455,Progressive Party,11.7,7,63,5.0365
+ISL,2007-05-12,210,Left-Green Movement,14.3,9,63,1.1842
+ISL,2007-05-12,2115,Icelandic Movement -- Living Country,3.3,0,63,2.5
+ISL,2007-05-12,506,Liberal Party,7.3,4,63,6.2201
+ISL,2009-04-25,1006,Social Democratic Alliance,29.8,20,63,4.0789
+ISL,2009-04-25,1342,Independence Party,23.7,16,63,7.4854
+ISL,2009-04-25,1455,Progressive Party,14.8,9,63,5.0365
+ISL,2009-04-25,210,Left-Green Movement,21.7,14,63,1.1842
+ISL,2009-04-25,506,Liberal Party,2.2,0,63,6.2201
+ISL,2009-04-25,587,Civic Movement -- The Movement,7.2,4,63,6.0
+ISL,2013-04-27,1006,Social Democratic Alliance,12.85,9,63,4.0789
+ISL,2013-04-27,1342,Independence Party,26.7,19,63,7.4854
+ISL,2013-04-27,1455,Progressive Party,24.43,19,63,5.0365
+ISL,2013-04-27,210,Left-Green Movement,10.87,7,63,1.1842
+ISL,2013-04-27,2204,Bright Future,8.25,6,63,6.0
+ISL,2013-04-27,2205,Pirate Party,5.1,3,63,2.5
+ISL,2013-04-27,2206,"Dawn -- Organization of justice, fairness and democracy",3.1,0,63,
+ISL,2013-04-27,2207,Households Party,3.02,0,63,
+ISL,2013-04-27,2208,Iceland Democratic Party,2.46,0,63,2.5
+ISL,2013-04-27,2209,RIght-Green People's Party,1.73,0,63,6.0
+ISL,2013-04-27,2210,Rainbow,1.07,0,63,1.3
+ISL,2016-10-29,1006,Social Democratic Alliance,5.58,3,63,4.0789
+ISL,2016-10-29,1342,Independence Party,28.17,21,63,7.4854
+ISL,2016-10-29,1455,Progressive Party,11.16,8,63,5.0365
+ISL,2016-10-29,210,Left-Green Movement,15.45,10,63,1.1842
+ISL,2016-10-29,2204,Bright Future,6.96,4,63,6.0
+ISL,2016-10-29,2205,Pirate Party,14.06,10,63,2.5
+ISL,2016-10-29,2632,People's Party,3.44,0,63,
+ISL,2016-10-29,2633,Revival,10.18,7,63,7.4
+ISL,2017-10-28,1006,Social Democratic Alliance,12.1,7,63,4.0789
+ISL,2017-10-28,1342,Independence Party,25.2,16,63,7.4854
+ISL,2017-10-28,1455,Progressive Party,10.7,8,63,5.0365
+ISL,2017-10-28,210,Left-Green Movement,16.9,11,63,1.1842
+ISL,2017-10-28,2204,Bright Future,1.2,0,63,6.0
+ISL,2017-10-28,2205,Pirate Party,9.2,6,63,2.5
+ISL,2017-10-28,2632,People's Party,6.9,4,63,
+ISL,2017-10-28,2633,Revival,6.7,4,63,7.4
+ISL,2017-10-28,2655,Centre Party,10.9,7,63,6.0
+ISL,2021-09-25,1006,Social Democratic Alliance,9.9,6,63,4.0789
+ISL,2021-09-25,1342,Independence Party,24.4,16,63,7.4854
+ISL,2021-09-25,1455,Progressive Party,17.3,13,63,5.0365
+ISL,2021-09-25,210,Left-Green Movement,12.6,8,63,1.1842
+ISL,2021-09-25,2205,Pirate Party,8.6,6,63,2.5
+ISL,2021-09-25,2632,People's Party,8.8,6,63,
+ISL,2021-09-25,2633,Revival,8.3,5,63,7.4
+ISL,2021-09-25,2655,Centre Party,5.4,3,63,6.0
+ISL,2021-09-25,2852,Icelandic Socialist Party,4.1,0,63,1.3
+ISR,2003-01-28,1303,United Torah Judaism,4.29,5,120,6.9396
+ISR,2003-01-28,1357,National Union--Tkuma  | Religious Zionist Party,5.53,7,120,9.5906
+ISR,2003-01-28,1419,Energy,5.21,6,120,1.7786
+ISR,2003-01-28,1846,United Arab List,2.08,2,120,
+ISR,2003-01-28,1850,Change,12.28,15,120,5.4776
+ISR,2003-01-28,214,National Religious Party | The Jewish Home,4.2,6,120,8.6207
+ISR,2003-01-28,2323,Green Leaf,1.2,0,120,2.5
+ISR,2003-01-28,2361,Herut -- The National Movement,1.15,0,120,8.8
+ISR,2003-01-28,244,Alignment | Labor,14.46,19,120,3.3
+ISR,2003-01-28,277,Israel for Immigration,2.15,2,120,6.0
+ISR,2003-01-28,615,One Nation,2.76,3,120,2.9825
+ISR,2003-01-28,678,The Consolidation,29.39,38,120,6.6788
+ISR,2003-01-28,732,New Communist List | Democratic Front,2.98,3,120,1.3
+ISR,2003-01-28,788,Sephardi Guardians,8.22,11,120,7.0417
+ISR,2003-01-28,805,National Democratic Assembly,2.26,3,120,0.7407
+ISR,2006-03-28,1303,United Torah Judaism,4.7,6,120,6.9396
+ISR,2006-03-28,1357,National Union--Tkuma  | Religious Zionist Party,7.1,9,120,9.5906
+ISR,2006-03-28,1419,Energy,3.8,5,120,1.7786
+ISR,2006-03-28,1816,Israel Our Home,9.0,11,120,8.8
+ISR,2006-03-28,1846,United Arab List,3.0,4,120,
+ISR,2006-03-28,1870,Forward,22.0,29,120,6.0
+ISR,2006-03-28,1873,Pensioners of Israel,5.9,7,120,
+ISR,2006-03-28,2421,The Greens,1.52,0,120,2.5
+ISR,2006-03-28,244,Alignment | Labor,15.1,19,120,3.3
+ISR,2006-03-28,678,The Consolidation,9.0,12,120,6.6788
+ISR,2006-03-28,732,New Communist List | Democratic Front,2.7,3,120,1.3
+ISR,2006-03-28,788,Sephardi Guardians,9.5,12,120,7.0417
+ISR,2006-03-28,805,National Democratic Assembly,2.3,3,120,0.7407
+ISR,2009-02-10,1303,United Torah Judaism,4.4,5,120,6.9396
+ISR,2009-02-10,1357,National Union--Tkuma  | Religious Zionist Party,3.3,4,120,9.5906
+ISR,2009-02-10,1419,Energy,3.0,3,120,1.7786
+ISR,2009-02-10,1816,Israel Our Home,11.7,15,120,8.8
+ISR,2009-02-10,1846,United Arab List,3.4,4,120,
+ISR,2009-02-10,1867,Meimad,0.82,0,120,3.3
+ISR,2009-02-10,1870,Forward,22.5,28,120,6.0
+ISR,2009-02-10,214,National Religious Party | The Jewish Home,2.9,3,120,8.6207
+ISR,2009-02-10,244,Alignment | Labor,9.9,13,120,3.3
+ISR,2009-02-10,678,The Consolidation,21.6,27,120,6.6788
+ISR,2009-02-10,732,New Communist List | Democratic Front,3.3,4,120,1.3
+ISR,2009-02-10,788,Sephardi Guardians,8.5,11,120,7.0417
+ISR,2009-02-10,805,National Democratic Assembly,2.5,3,120,0.7407
+ISR,2013-01-22,1303,United Torah Judaism,5.16,7,120,6.9396
+ISR,2013-01-22,1419,Energy,4.55,6,120,1.7786
+ISR,2013-01-22,1846,United Arab List,3.65,4,120,
+ISR,2013-01-22,1870,Forward,2.08,2,120,6.0
+ISR,2013-01-22,214,National Religious Party | The Jewish Home,9.12,12,120,8.6207
+ISR,2013-01-22,2320,The Movement,4.99,6,120,6.0
+ISR,2013-01-22,2321,There is a Future,14.33,19,120,6.0
+ISR,2013-01-22,2322,Jewish Power,1.76,0,120,
+ISR,2013-01-22,2323,Green Leaf,1.15,0,120,2.5
+ISR,2013-01-22,2324,Whole Nation,1.2,0,120,
+ISR,2013-01-22,244,Alignment | Labor,11.39,15,120,3.3
+ISR,2013-01-22,678,The Consolidation,23.34,31,120,6.6788
+ISR,2013-01-22,732,New Communist List | Democratic Front,2.99,4,120,1.3
+ISR,2013-01-22,788,Sephardi Guardians,8.75,11,120,7.0417
+ISR,2013-01-22,805,National Democratic Assembly,2.56,3,120,0.7407
+ISR,2015-03-17,1303,United Torah Judaism,4.99,6,120,6.9396
+ISR,2015-03-17,1419,Energy,3.93,5,120,1.7786
+ISR,2015-03-17,1816,Israel Our Home,5.1,6,120,8.8
+ISR,2015-03-17,1846,United Arab List,10.61,13,120,
+ISR,2015-03-17,214,National Religious Party | The Jewish Home,6.74,8,120,8.6207
+ISR,2015-03-17,2321,There is a Future,8.82,11,120,6.0
+ISR,2015-03-17,2323,Green Leaf,1.12,0,120,2.5
+ISR,2015-03-17,2410,All of Us,7.49,10,120,6.0
+ISR,2015-03-17,2411,Together,2.97,0,120,8.8
+ISR,2015-03-17,244,Alignment | Labor,18.67,24,120,3.3
+ISR,2015-03-17,678,The Consolidation,23.4,30,120,6.6788
+ISR,2015-03-17,788,Sephardi Guardians,5.74,7,120,7.0417
+ISR,2019-04-09,1303,United Torah Judaism,5.78,8,120,6.9396
+ISR,2019-04-09,1419,Energy,3.63,4,120,1.7786
+ISR,2019-04-09,1816,Israel Our Home,4.01,5,120,8.8
+ISR,2019-04-09,1846,United Arab List,3.33,4,120,
+ISR,2019-04-09,2410,All of Us,3.54,4,120,6.0
+ISR,2019-04-09,244,Alignment | Labor,4.43,6,120,3.3
+ISR,2019-04-09,2718,New Right,3.22,0,120,8.8
+ISR,2019-04-09,2725,Blue and White,26.13,35,120,6.0
+ISR,2019-04-09,2726,Rightwards,3.7,5,120,8.8
+ISR,2019-04-09,2727,Zehut,2.74,0,120,8.8
+ISR,2019-04-09,2787,Bridge,1.73,0,120,6.0
+ISR,2019-04-09,678,The Consolidation,26.46,35,120,6.6788
+ISR,2019-04-09,732,New Communist List | Democratic Front,4.49,6,120,1.3
+ISR,2019-04-09,788,Sephardi Guardians,5.99,8,120,7.0417
+ISR,2019-09-17,1303,United Torah Judaism,6.06,7,120,6.9396
+ISR,2019-09-17,1419,Energy,4.34,5,120,1.7786
+ISR,2019-09-17,1816,Israel Our Home,6.99,8,120,8.8
+ISR,2019-09-17,2322,Jewish Power,1.88,0,120,
+ISR,2019-09-17,244,Alignment | Labor,4.8,6,120,3.3
+ISR,2019-09-17,2725,Blue and White,25.95,33,120,6.0
+ISR,2019-09-17,2726,Rightwards,5.87,7,120,8.8
+ISR,2019-09-17,678,The Consolidation,25.1,32,120,6.6788
+ISR,2019-09-17,732,New Communist List | Democratic Front,10.6,13,120,1.3
+ISR,2019-09-17,788,Sephardi Guardians,7.44,9,120,7.0417
+ISR,2020-03-02,1303,United Torah Judaism,5.98,7,120,6.9396
+ISR,2020-03-02,1816,Israel Our Home,5.24,7,120,8.8
+ISR,2020-03-02,2322,Jewish Power,0.42,0,120,
+ISR,2020-03-02,244,Alignment | Labor,5.83,7,120,3.3
+ISR,2020-03-02,2725,Blue and White,26.59,33,120,6.0
+ISR,2020-03-02,2726,Rightwards,5.24,6,120,8.8
+ISR,2020-03-02,678,The Consolidation,29.46,36,120,6.6788
+ISR,2020-03-02,732,New Communist List | Democratic Front,12.67,15,120,1.3
+ISR,2020-03-02,788,Sephardi Guardians,7.69,9,120,7.0417
+ISR,2021-03-23,1303,United Torah Judaism,5.63,7,120,6.9396
+ISR,2021-03-23,1357,National Union--Tkuma  | Religious Zionist Party,5.12,6,120,9.5906
+ISR,2021-03-23,1419,Energy,4.59,6,120,1.7786
+ISR,2021-03-23,1816,Israel Our Home,5.63,7,120,8.8
+ISR,2021-03-23,1846,United Arab List,3.79,4,120,
+ISR,2021-03-23,2308,no seat,0.79,0,120,
+ISR,2021-03-23,2321,There is a Future,13.93,17,120,6.0
+ISR,2021-03-23,244,Alignment | Labor,6.09,7,120,3.3
+ISR,2021-03-23,2725,Blue and White,6.63,8,120,6.0
+ISR,2021-03-23,2726,Rightwards,6.21,7,120,8.8
+ISR,2021-03-23,2835,New Hope,4.74,6,120,8.8
+ISR,2021-03-23,678,The Consolidation,24.19,30,120,6.6788
+ISR,2021-03-23,732,New Communist List | Democratic Front,4.82,6,120,1.3
+ISR,2021-03-23,788,Sephardi Guardians,7.17,9,120,7.0417
+ISR,2022-11-01,1303,United Torah Judaism,5.88,7,120,6.9396
+ISR,2022-11-01,1357,National Union--Tkuma  | Religious Zionist Party,10.84,14,120,9.5906
+ISR,2022-11-01,1419,Energy,3.16,0,120,1.7786
+ISR,2022-11-01,1816,Israel Our Home,4.48,6,120,8.8
+ISR,2022-11-01,1846,United Arab List,4.07,5,120,
+ISR,2022-11-01,214,National Religious Party | The Jewish Home,1.19,0,120,8.6207
+ISR,2022-11-01,2321,There is a Future,17.79,24,120,6.0
+ISR,2022-11-01,244,Alignment | Labor,3.69,4,120,3.3
+ISR,2022-11-01,2725,Blue and White,9.08,12,120,6.0
+ISR,2022-11-01,678,The Consolidation,23.41,32,120,6.6788
+ISR,2022-11-01,732,New Communist List | Democratic Front,3.75,5,120,1.3
+ISR,2022-11-01,788,Sephardi Guardians,8.25,11,120,7.0417
+ISR,2022-11-01,805,National Democratic Assembly,2.91,0,120,0.7407
+ITA,2001-05-13,1005,Democracy is Freedom -- The Daisy,14.52,83,630,3.9893
+ITA,2001-05-13,1030,South Tyrol Peoples Party,0.54,3,630,5.4
+ITA,2001-05-13,1287,New PSI,0.95,3,630,5.43
+ITA,2001-05-13,1296,Radicals,2.2,0,630,3.9732
+ITA,2001-05-13,1321,Communist Refoundation Party,5.03,11,630,0.8849
+ITA,2001-05-13,1436,North League,3.94,30,630,7.8007
+ITA,2001-05-13,1661,Party of the Italian Communists,1.67,10,630,1.0423
+ITA,2001-05-13,2302,one seat,,3,630,
+ITA,2001-05-13,373,National Alliance,12.02,99,630,8.0871
+ITA,2001-05-13,488,European Democracy,2.4,0,630,6.2
+ITA,2001-05-13,596,Go Italy -- The People of Freedom,29.43,194,630,7.1459
+ITA,2001-05-13,627,Christian Democratic Centre / United Christian Democrats,3.22,40,630,5.9067
+ITA,2001-05-13,693,Italy of Values,4.01,0,630,4.8712
+ITA,2001-05-13,809,Democrats of the Left,16.57,136,630,2.6277
+ITA,2001-05-13,910,Federation of the Greens,2.17,17,630,2.3725
+ITA,2001-05-13,974,Valdotanian Union,0.07,1,630,
+ITA,2006-04-09,1030,South Tyrol Peoples Party,0.47,4,630,5.4
+ITA,2006-04-09,1048,Centre Left,30.43,220,630,3.3
+ITA,2006-04-09,1063,Autonomy Liberty Democracy,0.09,1,630,6.0
+ITA,2006-04-09,1246,The Union-Prodi,1.08,6,630,2.6216
+ITA,2006-04-09,1296,Radicals,2.53,18,630,3.9732
+ITA,2006-04-09,1321,Communist Refoundation Party,5.69,41,630,0.8849
+ITA,2006-04-09,1436,North League,4.51,26,630,7.8007
+ITA,2006-04-09,1661,Party of the Italian Communists,2.25,16,630,1.0423
+ITA,2006-04-09,226,Union / Centre,6.75,39,630,6.1092
+ITA,2006-04-09,2302,one seat,0.18,1,630,
+ITA,2006-04-09,373,National Alliance,12.01,71,630,8.0871
+ITA,2006-04-09,399,Union of Democrats for Europe,1.39,10,630,5.285
+ITA,2006-04-09,52,Christian Democracy for the Autonomies,0.73,4,630,6.2
+ITA,2006-04-09,596,Go Italy -- The People of Freedom,23.6,140,630,7.1459
+ITA,2006-04-09,693,Italy of Values,2.31,17,630,4.8712
+ITA,2006-04-09,910,Federation of the Greens,2.0,15,630,2.3725
+ITA,2006-04-09,927,Associative Italians Abroad,0.25,1,630,
+ITA,2008-04-13,1030,South Tyrol Peoples Party,0.4,2,630,5.4
+ITA,2008-04-13,1040,Movement for Autonomy,1.12,8,630,6.2
+ITA,2008-04-13,1063,Autonomy Liberty Democracy,0.08,1,630,6.0
+ITA,2008-04-13,1321,Communist Refoundation Party,3.16,0,630,0.8849
+ITA,2008-04-13,1436,North League,8.29,60,630,7.8007
+ITA,2008-04-13,176,Fiamma Tricolore,2.46,0,630,9.5762
+ITA,2008-04-13,226,Union / Centre,5.85,36,630,6.1092
+ITA,2008-04-13,382,Democratic Party,34.04,217,630,2.6216
+ITA,2008-04-13,596,Go Italy -- The People of Freedom,38.23,276,630,7.1459
+ITA,2008-04-13,693,Italy of Values,4.48,29,630,4.8712
+ITA,2008-04-13,927,Associative Italians Abroad,0.24,1,630,
+ITA,2013-02-25,1030,South Tyrol Peoples Party,0.43,5,630,5.4
+ITA,2013-02-25,1321,Communist Refoundation Party,2.3,0,630,0.8849
+ITA,2013-02-25,1436,North League,4.1,18,630,7.8007
+ITA,2013-02-25,2153, Democratic Centre,0.49,6,630,6.0
+ITA,2013-02-25,2154,Brothers of Italy,1.97,9,630,8.8
+ITA,2013-02-25,2155,Five Star Movement,25.88,109,630,
+ITA,2013-02-25,2156,Civic Choice,8.84,39,630,6.0
+ITA,2013-02-25,2158,Stop the Decline,1.15,0,630,6.0
+ITA,2013-02-25,226,Union / Centre,1.79,8,630,6.1092
+ITA,2013-02-25,2671,South American Union Italian Emigrants,0.13,1,630,7.4
+ITA,2013-02-25,382,Democratic Party,26.27,297,630,2.6216
+ITA,2013-02-25,465,Left,3.25,37,630,1.3
+ITA,2013-02-25,596,Go Italy -- The People of Freedom,21.99,98,630,7.1459
+ITA,2013-02-25,927,Associative Italians Abroad,0.41,2,630,
+ITA,2013-02-25,974,Valdotanian Union,0.05,1,630,
+ITA,2018-03-04,1030,South Tyrol Peoples Party,0.41,4,630,5.4
+ITA,2018-03-04,1321,Communist Refoundation Party,1.13,0,630,0.8849
+ITA,2018-03-04,1436,North League,17.39,124,630,7.8007
+ITA,2018-03-04,2153, Democratic Centre,,1,630,6.0
+ITA,2018-03-04,2154,Brothers of Italy,4.35,31,630,8.8
+ITA,2018-03-04,2155,Five Star Movement,33.33,227,630,
+ITA,2018-03-04,226,Union / Centre,1.34,4,630,6.1092
+ITA,2018-03-04,2302,one seat,0.58,1,630,
+ITA,2018-03-04,2671,South American Union Italian Emigrants,0.21,1,630,7.4
+ITA,2018-03-04,2737,More Europe,2.76,2,630,6.0
+ITA,2018-03-04,382,Democratic Party,18.76,112,630,2.6216
+ITA,2018-03-04,465,Left,3.39,14,630,1.3
+ITA,2018-03-04,596,Go Italy -- The People of Freedom,14.0,106,630,7.1459
+ITA,2018-03-04,693,Italy of Values,0.54,2,630,4.8712
+ITA,2018-03-04,927,Associative Italians Abroad,0.33,1,630,
+ITA,2022-09-25,1030,South Tyrol Peoples Party,0.42,3,400,5.4
+ITA,2022-09-25,1278,Italian Democratic Socialists | Party,3.63,11,400,3.9895
+ITA,2022-09-25,1321,Communist Refoundation Party,1.43,0,400,0.8849
+ITA,2022-09-25,1436,North League,8.77,66,400,7.8007
+ITA,2022-09-25,2154,Brothers of Italy,26.0,118,400,8.8
+ITA,2022-09-25,2155,Five Star Movement,15.43,52,400,
+ITA,2022-09-25,226,Union / Centre,0.91,9,400,6.1092
+ITA,2022-09-25,2302,one seat,0.76,1,400,
+ITA,2022-09-25,2737,More Europe,2.83,3,400,6.0
+ITA,2022-09-25,2794,Italy Alive,7.79,21,400,6.0
+ITA,2022-09-25,2873,Italexit for Italy,1.9,0,400,7.4
+ITA,2022-09-25,2874,Sovereign and Popular Italy,1.24,0,400,8.8
+ITA,2022-09-25,382,Democratic Party,19.07,69,400,2.6216
+ITA,2022-09-25,596,Go Italy -- The People of Freedom,8.11,44,400,7.1459
+ITA,2022-09-25,825,others,,3,400,
+JPN,2000-06-25,1165,Liberal League,1.1,1,480,6.0
+JPN,2000-06-25,1193,Liberal Democratic Party,28.31,233,480,8.0252
+JPN,2000-06-25,1382,New Conservative Party,0.41,7,480,8.2675
+JPN,2000-06-25,1540,Japan Communist Party,11.23,20,480,1.148
+JPN,2000-06-25,439,Democratic Party of Japan,25.18,127,480,5.5717
+JPN,2000-06-25,462,Liberal Party,11.01,22,480,7.4
+JPN,2000-06-25,695,Independent's Club,0.25,5,480,
+JPN,2000-06-25,837,Komeito Party,12.97,31,480,5.6871
+JPN,2000-06-25,905,no party affiliation,,15,480,
+JPN,2000-06-25,940,Japan Socialist Party,9.36,19,480,2.6344
+JPN,2003-11-09,1165,Liberal League,,1,480,6.0
+JPN,2003-11-09,1193,Liberal Democratic Party,35.0,237,480,8.0252
+JPN,2003-11-09,1382,New Conservative Party,,4,480,8.2675
+JPN,2003-11-09,1540,Japan Communist Party,7.8,9,480,1.148
+JPN,2003-11-09,439,Democratic Party of Japan,37.4,177,480,5.5717
+JPN,2003-11-09,695,Independent's Club,,1,480,
+JPN,2003-11-09,837,Komeito Party,14.8,34,480,5.6871
+JPN,2003-11-09,905,no party affiliation,,11,480,
+JPN,2003-11-09,940,Japan Socialist Party,5.1,6,480,2.6344
+JPN,2005-09-11,1175,New Party Nippon,2.42,1,480,6.0
+JPN,2005-09-11,1193,Liberal Democratic Party,38.18,296,480,8.0252
+JPN,2005-09-11,1540,Japan Communist Party,7.25,9,480,1.148
+JPN,2005-09-11,247,New Party Daichi,0.64,1,480,6.0
+JPN,2005-09-11,4,People's New Party,1.74,4,480,7.4
+JPN,2005-09-11,439,Democratic Party of Japan,31.02,113,480,5.5717
+JPN,2005-09-11,837,Komeito Party,13.25,31,480,5.6871
+JPN,2005-09-11,905,no party affiliation,,18,480,
+JPN,2005-09-11,940,Japan Socialist Party,5.49,7,480,2.6344
+JPN,2009-08-30,1124,Your Party,4.27,5,480,6.0
+JPN,2009-08-30,1175,New Party Nippon,0.75,1,480,6.0
+JPN,2009-08-30,1193,Liberal Democratic Party,26.73,119,480,8.0252
+JPN,2009-08-30,1540,Japan Communist Party,7.03,9,480,1.148
+JPN,2009-08-30,247,New Party Daichi,0.62,1,480,6.0
+JPN,2009-08-30,4,People's New Party,1.73,3,480,7.4
+JPN,2009-08-30,439,Democratic Party of Japan,42.41,308,480,5.5717
+JPN,2009-08-30,837,Komeito Party,11.45,21,480,5.6871
+JPN,2009-08-30,905,no party affiliation,,6,480,
+JPN,2009-08-30,940,Japan Socialist Party,4.27,7,480,2.6344
+JPN,2012-12-16,1124,Your Party,8.7,18,480,6.0
+JPN,2012-12-16,1193,Liberal Democratic Party,27.6,294,480,8.0252
+JPN,2012-12-16,1540,Japan Communist Party,6.1,8,480,1.148
+JPN,2012-12-16,2136,Japan Restoration Party,20.4,54,480,7.4
+JPN,2012-12-16,247,New Party Daichi,0.6,1,480,6.0
+JPN,2012-12-16,2785,Tomorrow Party of Japan,5.69,9,480,2.5
+JPN,2012-12-16,2851,Happiness Realization Party,0.36,0,480,8.8
+JPN,2012-12-16,4,People's New Party,0.1,1,480,7.4
+JPN,2012-12-16,439,Democratic Party of Japan,16.0,57,480,5.5717
+JPN,2012-12-16,837,Komeito Party,11.8,31,480,5.6871
+JPN,2012-12-16,905,no party affiliation,,5,480,
+JPN,2012-12-16,940,Japan Socialist Party,2.4,2,480,2.6344
+JPN,2014-12-14,1193,Liberal Democratic Party,33.11,290,475,8.0252
+JPN,2014-12-14,1540,Japan Communist Party,11.37,21,475,1.148
+JPN,2014-12-14,2069,People's Life First Party,1.93,2,475,7.4
+JPN,2014-12-14,2136,Japan Restoration Party,15.72,41,475,7.4
+JPN,2014-12-14,2141,no seat,0.03,0,475,
+JPN,2014-12-14,2404,Party for Future Generations,2.65,2,475,8.8
+JPN,2014-12-14,439,Democratic Party of Japan,18.33,73,475,5.5717
+JPN,2014-12-14,837,Komeito Party,13.71,35,475,5.6871
+JPN,2014-12-14,905,no party affiliation,,9,475,
+JPN,2014-12-14,940,Japan Socialist Party,2.46,2,475,2.6344
+JPN,2017-10-22,1193,Liberal Democratic Party,33.28,281,465,8.0252
+JPN,2017-10-22,1540,Japan Communist Party,7.9,12,465,1.148
+JPN,2017-10-22,2136,Japan Restoration Party,6.07,11,465,7.4
+JPN,2017-10-22,2656,Party of Hope,17.36,50,465,7.4
+JPN,2017-10-22,2657,Constitutional Democratic Party of Japan,19.88,54,465,3.3
+JPN,2017-10-22,2851,Happiness Realization Party,0.52,0,465,8.8
+JPN,2017-10-22,837,Komeito Party,12.51,29,465,5.6871
+JPN,2017-10-22,905,no party affiliation,,26,465,
+JPN,2017-10-22,940,Japan Socialist Party,1.69,2,465,2.6344
+JPN,2021-10-31,1193,Liberal Democratic Party,34.66,72,176,8.0252
+JPN,2021-10-31,1540,Japan Communist Party,7.25,9,176,1.148
+JPN,2021-10-31,2657,Constitutional Democratic Party of Japan,20.0,39,176,3.3
+JPN,2021-10-31,2826,Japan Innovation Party,14.01,25,176,8.8
+JPN,2021-10-31,2827,Democratic Party for the People,4.51,5,176,7.4
+JPN,2021-10-31,2828,Reiwa Shinsengumi,3.86,3,176,1.3
+JPN,2021-10-31,2853,The party that protects those who do not pay the NHK license fee,1.39,0,176,
+JPN,2021-10-31,837,Komeito Party,12.38,23,176,5.6871
+JPN,2021-10-31,940,Japan Socialist Party,1.77,0,176,2.6344
+LTU,2000-10-08,1045,Homeland Union,8.62,9,141,7.4004
+LTU,2000-10-08,1261,Lithuanian Womens Party -- New Democratic Party,,3,141,3.2
+LTU,2000-10-08,1408,Lithuanian Social Democratic Party -- 1989,,19,141,4.0
+LTU,2000-10-08,1562,Lithuanian Liberty Union,1.27,1,141,7.8
+LTU,2000-10-08,1632,Lithuanian Peasant Party,4.08,4,141,2.645
+LTU,2000-10-08,2039,"Peoples Union ""For Just Lithuania""",1.47,0,141,
+LTU,2000-10-08,28,Election Action of Lithuania's Poles,1.95,2,141,3.865
+LTU,2000-10-08,383,Young Lithuania,1.15,1,141,9.8
+LTU,2000-10-08,493,Christian Democratic Union,4.19,1,141,6.2
+LTU,2000-10-08,519,Democratic Labour Party of Lithuania,31.08,26,141,3.3333
+LTU,2000-10-08,58,no party affiliation,,3,141,
+LTU,2000-10-08,652,one seat,,1,141,
+LTU,2000-10-08,675,Lithuanian Christian Democrats,3.07,2,141,6.2385
+LTU,2000-10-08,709,Christian Conservative Social Union,2.01,1,141,6.4579
+LTU,2000-10-08,856,New Union (Social Liberals),19.64,29,141,4.2686
+LTU,2000-10-08,863,Lithuanian Russian Union,,3,141,2.2
+LTU,2000-10-08,887,Centre Union of Lithuania,2.86,2,141,4.8833
+LTU,2000-10-08,983,Liberal and Centre Union,17.25,34,141,7.7562
+LTU,2004-10-24,1045,Homeland Union,14.75,25,141,7.4004
+LTU,2004-10-24,1277,Lithuanian Social Democratic Party,20.65,20,141,3.1972
+LTU,2004-10-24,1421,Order and Justice -- Liberal Democratic Party,11.36,10,141,5.2955
+LTU,2004-10-24,191,Lithuanian Peasant Union,6.6,10,141,3.2687
+LTU,2004-10-24,28,Election Action of Lithuania's Poles,3.79,2,141,3.865
+LTU,2004-10-24,58,no party affiliation,,6,141,
+LTU,2004-10-24,581,Labour Party,28.44,39,141,3.86
+LTU,2004-10-24,675,Lithuanian Christian Democrats,1.37,0,141,6.2385
+LTU,2004-10-24,709,Christian Conservative Social Union,1.96,0,141,6.4579
+LTU,2004-10-24,856,New Union (Social Liberals),,11,141,4.2686
+LTU,2004-10-24,983,Liberal and Centre Union,9.19,18,141,7.7562
+LTU,2008-10-12,1045,Homeland Union,19.72,45,141,7.4004
+LTU,2008-10-12,1056,Socialist People's Front,3.24,0,141,1.3
+LTU,2008-10-12,1277,Lithuanian Social Democratic Party,11.72,25,141,3.1972
+LTU,2008-10-12,1421,Order and Justice -- Liberal Democratic Party,12.68,15,141,5.2955
+LTU,2008-10-12,1502,National Resurrection Party,15.09,16,141,6.0
+LTU,2008-10-12,191,Lithuanian Peasant Union,3.73,3,141,3.2687
+LTU,2008-10-12,28,Election Action of Lithuania's Poles,4.79,3,141,3.865
+LTU,2008-10-12,383,Young Lithuania,1.75,0,141,9.8
+LTU,2008-10-12,482,Liberals Movement of the Republic of Lithuania,5.73,11,141,7.7562
+LTU,2008-10-12,58,no party affiliation,,4,141,
+LTU,2008-10-12,581,Labour Party,8.99,10,141,3.86
+LTU,2008-10-12,676,Civic Democratic Party,1.11,0,141,6.0
+LTU,2008-10-12,856,New Union (Social Liberals),3.64,1,141,4.2686
+LTU,2008-10-12,983,Liberal and Centre Union,5.34,8,141,7.7562
+LTU,2012-10-14,1045,Homeland Union,15.08,33,141,7.4004
+LTU,2012-10-14,1056,Socialist People's Front,1.21,0,141,1.3
+LTU,2012-10-14,1277,Lithuanian Social Democratic Party,18.37,38,141,3.1972
+LTU,2012-10-14,1421,Order and Justice -- Liberal Democratic Party,7.31,12,141,5.2955
+LTU,2012-10-14,191,Lithuanian Peasant Union,3.88,1,141,3.2687
+LTU,2012-10-14,2121,The Way of Courage,7.99,7,141,
+LTU,2012-10-14,2122,YES -- Homeland Revival and Perspective,1.76,0,141,6.0
+LTU,2012-10-14,28,Election Action of Lithuania's Poles,5.83,8,141,3.865
+LTU,2012-10-14,482,Liberals Movement of the Republic of Lithuania,8.57,10,141,7.7562
+LTU,2012-10-14,58,no party affiliation,,3,141,
+LTU,2012-10-14,581,Labour Party,19.82,29,141,3.86
+LTU,2012-10-14,709,Christian Conservative Social Union,1.2,0,141,6.4579
+LTU,2012-10-14,983,Liberal and Centre Union,2.06,0,141,7.7562
+LTU,2016-10-09,1045,Homeland Union,22.63,31,141,7.4004
+LTU,2016-10-09,1277,Lithuanian Social Democratic Party,15.04,17,141,3.1972
+LTU,2016-10-09,1421,Order and Justice -- Liberal Democratic Party,5.55,8,141,5.2955
+LTU,2016-10-09,191,Lithuanian Peasant Union,22.45,54,141,3.2687
+LTU,2016-10-09,21,Lithuanian Green Party,2.03,1,141,2.5
+LTU,2016-10-09,2634,Lithuanian Freedom Union (Liberals),2.23,0,141,6.0
+LTU,2016-10-09,2635,Lithuanian Centre Party,6.32,1,141,8.8
+LTU,2016-10-09,2636,no seat,1.05,0,141,
+LTU,2016-10-09,28,Election Action of Lithuania's Poles,5.72,8,141,3.865
+LTU,2016-10-09,482,Liberals Movement of the Republic of Lithuania,9.45,14,141,7.7562
+LTU,2016-10-09,58,no party affiliation,,4,141,
+LTU,2016-10-09,581,Labour Party,4.88,2,141,3.86
+LTU,2016-10-09,652,one seat,1.8,1,141,
+LTU,2020-10-11,1045,Homeland Union,25.77,50,141,7.4004
+LTU,2020-10-11,1277,Lithuanian Social Democratic Party,9.58,13,141,3.1972
+LTU,2020-10-11,191,Lithuanian Peasant Union,18.07,32,141,3.2687
+LTU,2020-10-11,21,Lithuanian Green Party,1.7,1,141,2.5
+LTU,2020-10-11,2121,The Way of Courage,1.18,0,141,
+LTU,2020-10-11,2634,Lithuanian Freedom Union (Liberals),2.06,1,141,6.0
+LTU,2020-10-11,2635,Lithuanian Centre Party,2.36,0,141,8.8
+LTU,2020-10-11,2762,PEC -- Vytautas Radzvilas: Recover the State!,2.21,0,141,
+LTU,2020-10-11,2763,Social Democratic Labour Party of Lithuania,3.28,3,141,3.3
+LTU,2020-10-11,28,Election Action of Lithuania's Poles,4.97,3,141,3.865
+LTU,2020-10-11,2805,Freedom Party,9.45,11,141,6.0
+LTU,2020-10-11,482,Liberals Movement of the Republic of Lithuania,7.04,13,141,7.7562
+LTU,2020-10-11,58,no party affiliation,,4,141,
+LTU,2020-10-11,581,Labour Party,9.77,10,141,3.86
+LUX,2004-06-13,1234,Christian Social People's Party,35.81,24,60,6.4474
+LUX,2004-06-13,151,Communist Party of Luxembourg,1.15,0,60,1.3
+LUX,2004-06-13,1582,Action Committee Pensions | Alternative Democratic Reform Party,9.04,5,60,8.8158
+LUX,2004-06-13,310,The Greens,11.54,7,60,2.5
+LUX,2004-06-13,457,The Left,2.01,0,60,0.5263
+LUX,2004-06-13,701,Luxembourg Socialist Workers' Party,25.43,14,60,3.2895
+LUX,2004-06-13,967,Democratic Party,14.94,10,60,6.5789
+LUX,2009-06-07,1234,Christian Social People's Party,38.04,26,60,6.4474
+LUX,2009-06-07,151,Communist Party of Luxembourg,1.47,0,60,1.3
+LUX,2009-06-07,1582,Action Committee Pensions | Alternative Democratic Reform Party,8.13,4,60,8.8158
+LUX,2009-06-07,310,The Greens,11.71,7,60,2.5
+LUX,2009-06-07,457,The Left,3.29,1,60,0.5263
+LUX,2009-06-07,701,Luxembourg Socialist Workers' Party,21.56,13,60,3.2895
+LUX,2009-06-07,967,Democratic Party,14.98,9,60,6.5789
+LUX,2013-10-20,1234,Christian Social People's Party,33.68,23,60,6.4474
+LUX,2013-10-20,151,Communist Party of Luxembourg,1.64,0,60,1.3
+LUX,2013-10-20,1582,Action Committee Pensions | Alternative Democratic Reform Party,6.64,3,60,8.8158
+LUX,2013-10-20,2256,Pirate Party Luxembourg,2.94,0,60,
+LUX,2013-10-20,2257,Party for Full Democracy,1.5,0,60,7.4
+LUX,2013-10-20,310,The Greens,10.13,6,60,2.5
+LUX,2013-10-20,457,The Left,4.94,2,60,0.5263
+LUX,2013-10-20,701,Luxembourg Socialist Workers' Party,20.28,13,60,3.2895
+LUX,2013-10-20,967,Democratic Party,18.25,13,60,6.5789
+LUX,2018-10-14,1234,Christian Social People's Party,27.08,21,60,6.4474
+LUX,2018-10-14,151,Communist Party of Luxembourg,1.07,0,60,1.3
+LUX,2018-10-14,1582,Action Committee Pensions | Alternative Democratic Reform Party,8.02,4,60,8.8158
+LUX,2018-10-14,2256,Pirate Party Luxembourg,6.2,2,60,
+LUX,2018-10-14,310,The Greens,14.1,9,60,2.5
+LUX,2018-10-14,457,The Left,4.72,2,60,0.5263
+LUX,2018-10-14,701,Luxembourg Socialist Workers' Party,15.72,10,60,3.2895
+LUX,2018-10-14,967,Democratic Party,16.4,12,60,6.5789
+LVA,2002-10-05,1043,Latvia's First Party,9.5,10,100,6.3377
+LVA,2002-10-05,1518,New Era,23.9,26,100,7.3026
+LVA,2002-10-05,1520,For Human Rights in a United Latvia,19.0,25,100,1.25
+LVA,2002-10-05,1608,Social Democratic Party,1.5,0,100,3.3
+LVA,2002-10-05,1656,Latvian Social Democratic Workers' Party,4.0,0,100,2.5
+LVA,2002-10-05,257,Social Democratic Welfare Party,1.3,0,100,3.3
+LVA,2002-10-05,466,Green and Farmers' Union,9.4,12,100,5.2632
+LVA,2002-10-05,521,National Alliance / For Fatherland and Freedom / LNNK,5.4,7,100,8.2588
+LVA,2002-10-05,526,Latvian Way,4.9,0,100,6.125
+LVA,2002-10-05,811,People's Party,16.6,20,100,7.7544
+LVA,2002-10-05,956,Light of Latgale,1.6,0,100,
+LVA,2006-10-07,1100,Harmony,14.42,17,100,3.0
+LVA,2006-10-07,1294,New Democrats,1.27,0,100,7.4
+LVA,2006-10-07,1518,New Era,16.38,18,100,7.3026
+LVA,2006-10-07,1520,For Human Rights in a United Latvia,6.03,6,100,1.25
+LVA,2006-10-07,1656,Latvian Social Democratic Workers' Party,3.5,0,100,2.5
+LVA,2006-10-07,257,Social Democratic Welfare Party,2.08,0,100,3.3
+LVA,2006-10-07,466,Green and Farmers' Union,16.71,18,100,5.2632
+LVA,2006-10-07,521,National Alliance / For Fatherland and Freedom / LNNK,6.94,8,100,8.2588
+LVA,2006-10-07,662,Latvian First Party / Latvian Way Party,8.58,10,100,7.4
+LVA,2006-10-07,801,All For Latvia!,1.48,0,100,7.4
+LVA,2006-10-07,811,People's Party,19.56,23,100,7.7544
+LVA,2010-10-02,1100,Harmony,26.61,29,100,3.0
+LVA,2010-10-02,1520,For Human Rights in a United Latvia,1.47,0,100,1.25
+LVA,2010-10-02,1666,Unity,31.9,33,100,7.4
+LVA,2010-10-02,1667,For a Good Latvia,7.82,8,100,7.4
+LVA,2010-10-02,466,Green and Farmers' Union,20.11,22,100,5.2632
+LVA,2010-10-02,521,National Alliance / For Fatherland and Freedom / LNNK,7.84,8,100,8.2588
+LVA,2011-09-17,1100,Harmony,28.36,31,100,3.0
+LVA,2011-09-17,1666,Unity,18.83,20,100,7.4
+LVA,2011-09-17,1942,Reform Party,20.83,22,100,7.4
+LVA,2011-09-17,466,Green and Farmers' Union,12.22,13,100,5.2632
+LVA,2011-09-17,521,National Alliance / For Fatherland and Freedom / LNNK,13.88,14,100,8.2588
+LVA,2011-09-17,662,Latvian First Party / Latvian Way Party,2.41,0,100,7.4
+LVA,2014-10-04,1100,Harmony,23.0,24,100,3.0
+LVA,2014-10-04,1520,For Human Rights in a United Latvia,1.58,0,100,1.25
+LVA,2014-10-04,1666,Unity,21.87,23,100,7.4
+LVA,2014-10-04,2365,For Latvia from the Heart,6.85,7,100,7.4
+LVA,2014-10-04,2366,Latvian Association of Regions,6.66,8,100,7.4
+LVA,2014-10-04,2367,United for Latvia,1.18,0,100,6.0
+LVA,2014-10-04,466,Green and Farmers' Union,19.53,21,100,5.2632
+LVA,2014-10-04,521,National Alliance / For Fatherland and Freedom / LNNK,16.61,17,100,8.2588
+LVA,2018-10-06,1100,Harmony,19.92,23,100,3.0
+LVA,2018-10-06,1520,For Human Rights in a United Latvia,3.22,0,100,1.25
+LVA,2018-10-06,1666,Unity,6.74,8,100,7.4
+LVA,2018-10-06,2366,Latvian Association of Regions,4.17,0,100,7.4
+LVA,2018-10-06,2715,Who owns the state?,14.33,16,100,8.8
+LVA,2018-10-06,2716,The Progressive,2.63,0,100,3.3
+LVA,2018-10-06,2717,New Conservative Party,13.67,16,100,7.4
+LVA,2018-10-06,2878,Development/For!,12.04,13,100,
+LVA,2018-10-06,466,Green and Farmers' Union,9.97,11,100,5.2632
+LVA,2018-10-06,521,National Alliance / For Fatherland and Freedom / LNNK,11.08,13,100,8.2588
+LVA,2022-10-01,1001,Latvian Green Party,11.01,15,100,4.6711
+LVA,2022-10-01,1100,Harmony,4.81,0,100,3.0
+LVA,2022-10-01,1520,For Human Rights in a United Latvia,3.63,0,100,1.25
+LVA,2022-10-01,1666,Unity,18.97,26,100,7.4
+LVA,2022-10-01,2716,The Progressive,6.16,10,100,3.3
+LVA,2022-10-01,2717,New Conservative Party,3.09,0,100,7.4
+LVA,2022-10-01,2875,For Stability!,6.8,11,100,
+LVA,2022-10-01,2876,Latvia First,6.24,9,100,8.8
+LVA,2022-10-01,2877,Republic,1.76,0,100,3.3
+LVA,2022-10-01,2878,Development/For!,4.97,0,100,
+LVA,2022-10-01,2880,For Each and Every One,3.67,0,100,8.8
+LVA,2022-10-01,2881,People's Servants for Latvia,1.0,0,100,
+LVA,2022-10-01,2882,Sovereign Power,3.24,0,100,
+LVA,2022-10-01,2883,Power of the People,1.13,0,100,
+LVA,2022-10-01,466,Green and Farmers' Union,12.44,16,100,5.2632
+LVA,2022-10-01,521,National Alliance / For Fatherland and Freedom / LNNK,9.29,13,100,8.2588
+MLT,2003-04-12,1003,Malta Labour Party,47.51,30,65,4.2105
+MLT,2003-04-12,360,Democratic Alternative,0.68,0,65,3.7895
+MLT,2003-04-12,984,Nationalist Party,51.79,35,65,5.7143
+MLT,2008-03-08,1003,Malta Labour Party,48.79,34,69,4.2105
+MLT,2008-03-08,360,Democratic Alternative,1.31,0,69,3.7895
+MLT,2008-03-08,984,Nationalist Party,49.34,35,69,5.7143
+MLT,2013-03-09,1003,Malta Labour Party,54.83,39,69,4.2105
+MLT,2013-03-09,360,Democratic Alternative,1.8,0,69,3.7895
+MLT,2013-03-09,984,Nationalist Party,43.34,30,69,5.7143
+MLT,2017-06-03,1003,Malta Labour Party,55.04,37,67,4.2105
+MLT,2017-06-03,360,Democratic Alternative,0.83,0,67,3.7895
+MLT,2017-06-03,984,Nationalist Party,43.68,30,67,5.7143
+NLD,2002-05-15,112,General Senior Union | United Seniors Party,0.41,0,150,
+NLD,2002-05-15,1206,ChristianUnion,2.54,4,150,6.1732
+NLD,2002-05-15,1251,Political Reformed Party,1.72,2,150,8.7531
+NLD,2002-05-15,1409,People's Party for Freedom and Democracy,15.44,24,150,7.3482
+NLD,2002-05-15,235,Christian Democratic Appeal,27.93,43,150,5.9376
+NLD,2002-05-15,345,Democrats 66,5.1,7,150,4.5066
+NLD,2002-05-15,357,Socialist Party,5.9,9,150,1.3682
+NLD,2002-05-15,456,Fortuyn List,17.0,26,150,8.5609
+NLD,2002-05-15,742,Labour Party,15.11,23,150,3.6118
+NLD,2002-05-15,744,Livable Netherlands,1.61,2,150,8.8
+NLD,2002-05-15,756,GreenLeft,6.95,10,150,2.0454
+NLD,2003-01-22,1206,ChristianUnion,2.12,3,150,6.1732
+NLD,2003-01-22,1251,Political Reformed Party,1.56,2,150,8.7531
+NLD,2003-01-22,1409,People's Party for Freedom and Democracy,17.91,28,150,7.3482
+NLD,2003-01-22,235,Christian Democratic Appeal,28.62,44,150,5.9376
+NLD,2003-01-22,345,Democrats 66,4.07,6,150,4.5066
+NLD,2003-01-22,357,Socialist Party,6.32,9,150,1.3682
+NLD,2003-01-22,456,Fortuyn List,5.7,8,150,8.5609
+NLD,2003-01-22,742,Labour Party,27.26,42,150,3.6118
+NLD,2003-01-22,756,GreenLeft,5.14,8,150,2.0454
+NLD,2003-01-22,990,Party for the Animals,0.49,0,150,
+NLD,2006-11-22,1206,ChristianUnion,3.97,6,150,6.1732
+NLD,2006-11-22,1251,Political Reformed Party,1.56,2,150,8.7531
+NLD,2006-11-22,1409,People's Party for Freedom and Democracy,14.67,22,150,7.3482
+NLD,2006-11-22,1501,Party for Freedom,5.89,9,150,8.8
+NLD,2006-11-22,2110,no seat,0.64,0,150,
+NLD,2006-11-22,235,Christian Democratic Appeal,26.51,41,150,5.9376
+NLD,2006-11-22,345,Democrats 66,1.96,3,150,4.5066
+NLD,2006-11-22,357,Socialist Party,16.58,25,150,1.3682
+NLD,2006-11-22,742,Labour Party,21.19,33,150,3.6118
+NLD,2006-11-22,756,GreenLeft,4.6,7,150,2.0454
+NLD,2006-11-22,990,Party for the Animals,1.83,2,150,
+NLD,2010-06-09,1206,ChristianUnion,3.24,5,150,6.1732
+NLD,2010-06-09,1251,Political Reformed Party,1.74,2,150,8.7531
+NLD,2010-06-09,1409,People's Party for Freedom and Democracy,20.49,31,150,7.3482
+NLD,2010-06-09,1501,Party for Freedom,15.45,24,150,8.8
+NLD,2010-06-09,2110,no seat,0.56,0,150,
+NLD,2010-06-09,235,Christian Democratic Appeal,13.61,21,150,5.9376
+NLD,2010-06-09,345,Democrats 66,6.95,10,150,4.5066
+NLD,2010-06-09,357,Socialist Party,9.82,15,150,1.3682
+NLD,2010-06-09,742,Labour Party,19.63,30,150,3.6118
+NLD,2010-06-09,756,GreenLeft,6.67,10,150,2.0454
+NLD,2010-06-09,990,Party for the Animals,1.3,2,150,
+NLD,2012-09-12,1206,ChristianUnion,3.13,5,150,6.1732
+NLD,2012-09-12,1251,Political Reformed Party,2.09,3,150,8.7531
+NLD,2012-09-12,1409,People's Party for Freedom and Democracy,26.58,41,150,7.3482
+NLD,2012-09-12,1501,Party for Freedom,10.08,15,150,8.8
+NLD,2012-09-12,2109,50PLUS,1.88,2,150,
+NLD,2012-09-12,2110,no seat,0.32,0,150,
+NLD,2012-09-12,235,Christian Democratic Appeal,8.51,13,150,5.9376
+NLD,2012-09-12,345,Democrats 66,8.03,12,150,4.5066
+NLD,2012-09-12,357,Socialist Party,9.65,15,150,1.3682
+NLD,2012-09-12,742,Labour Party,24.84,38,150,3.6118
+NLD,2012-09-12,756,GreenLeft,2.33,4,150,2.0454
+NLD,2012-09-12,990,Party for the Animals,1.93,2,150,
+NLD,2017-03-15,1206,ChristianUnion,3.4,5,150,6.1732
+NLD,2017-03-15,1251,Political Reformed Party,2.1,3,150,8.7531
+NLD,2017-03-15,1409,People's Party for Freedom and Democracy,21.3,33,150,7.3482
+NLD,2017-03-15,1501,Party for Freedom,13.1,20,150,8.8
+NLD,2017-03-15,2109,50PLUS,3.1,4,150,
+NLD,2017-03-15,2110,no seat,0.4,0,150,
+NLD,2017-03-15,235,Christian Democratic Appeal,12.4,19,150,5.9376
+NLD,2017-03-15,2641,Think,2.1,3,150,3.3
+NLD,2017-03-15,2642,Forum for Democracy,1.8,2,150,8.8
+NLD,2017-03-15,345,Democrats 66,12.2,19,150,4.5066
+NLD,2017-03-15,357,Socialist Party,9.1,14,150,1.3682
+NLD,2017-03-15,742,Labour Party,5.7,9,150,3.6118
+NLD,2017-03-15,756,GreenLeft,9.1,14,150,2.0454
+NLD,2017-03-15,990,Party for the Animals,3.2,5,150,
+NLD,2021-03-17,1206,ChristianUnion,3.37,5,150,6.1732
+NLD,2021-03-17,1251,Political Reformed Party,2.07,3,150,8.7531
+NLD,2021-03-17,1409,People's Party for Freedom and Democracy,21.87,34,150,7.3482
+NLD,2021-03-17,1501,Party for Freedom,10.79,17,150,8.8
+NLD,2021-03-17,2109,50PLUS,1.02,1,150,
+NLD,2021-03-17,2110,no seat,0.39,0,150,
+NLD,2021-03-17,2288,one seat,0.84,1,150,
+NLD,2021-03-17,235,Christian Democratic Appeal,9.5,15,150,5.9376
+NLD,2021-03-17,2641,Think,2.03,3,150,3.3
+NLD,2021-03-17,2642,Forum for Democracy,5.02,8,150,8.8
+NLD,2021-03-17,2735,Volt Netherlands,2.42,3,150,
+NLD,2021-03-17,2823,Right Answer 2021,2.37,3,150,8.8
+NLD,2021-03-17,2824,Farmer-Citizen Movement,1.0,1,150,5.3
+NLD,2021-03-17,345,Democrats 66,15.02,24,150,4.5066
+NLD,2021-03-17,357,Socialist Party,5.98,9,150,1.3682
+NLD,2021-03-17,742,Labour Party,5.73,9,150,3.6118
+NLD,2021-03-17,756,GreenLeft,5.16,8,150,2.0454
+NLD,2021-03-17,990,Party for the Animals,3.84,6,150,
+NOR,2001-09-10,104,Norwegian Labour Party,24.3,43,165,3.3706
+NOR,2001-09-10,1435,Conservative Party,21.2,38,165,7.8994
+NOR,2001-09-10,1538,Christian Democratic Party,12.5,22,165,5.8516
+NOR,2001-09-10,1638,Red Electoral Alliance,1.2,0,165,0.4089
+NOR,2001-09-10,351,Progress Party,14.7,26,165,8.7595
+NOR,2001-09-10,647,Liberal Party of Norway,3.9,2,165,5.1467
+NOR,2001-09-10,702,Centre Party,5.6,10,165,4.6565
+NOR,2001-09-10,780,Coastal Party,1.7,1,165,7.4
+NOR,2001-09-10,81,Socialist Left Party,12.5,23,165,1.5839
+NOR,2005-09-12,104,Norwegian Labour Party,32.7,61,169,3.3706
+NOR,2005-09-12,1435,Conservative Party,14.1,23,169,7.8994
+NOR,2005-09-12,1538,Christian Democratic Party,6.8,11,169,5.8516
+NOR,2005-09-12,1638,Red Electoral Alliance,1.2,0,169,0.4089
+NOR,2005-09-12,351,Progress Party,22.1,38,169,8.7595
+NOR,2005-09-12,647,Liberal Party of Norway,5.9,10,169,5.1467
+NOR,2005-09-12,702,Centre Party,6.5,11,169,4.6565
+NOR,2005-09-12,81,Socialist Left Party,8.8,15,169,1.5839
+NOR,2009-09-14,104,Norwegian Labour Party,35.4,64,169,3.3706
+NOR,2009-09-14,1435,Conservative Party,17.2,30,169,7.8994
+NOR,2009-09-14,1538,Christian Democratic Party,5.5,10,169,5.8516
+NOR,2009-09-14,1638,Red Electoral Alliance,1.4,0,169,0.4089
+NOR,2009-09-14,351,Progress Party,22.9,41,169,8.7595
+NOR,2009-09-14,647,Liberal Party of Norway,3.9,2,169,5.1467
+NOR,2009-09-14,702,Centre Party,6.2,11,169,4.6565
+NOR,2009-09-14,81,Socialist Left Party,6.2,11,169,1.5839
+NOR,2013-09-09,104,Norwegian Labour Party,30.8,55,169,3.3706
+NOR,2013-09-09,1435,Conservative Party,25.8,48,169,7.8994
+NOR,2013-09-09,1538,Christian Democratic Party,5.6,10,169,5.8516
+NOR,2013-09-09,1638,Red Electoral Alliance,1.1,0,169,0.4089
+NOR,2013-09-09,2254,Green Party,2.8,1,169,2.5
+NOR,2013-09-09,351,Progress Party,16.3,29,169,8.7595
+NOR,2013-09-09,647,Liberal Party of Norway,5.2,9,169,5.1467
+NOR,2013-09-09,702,Centre Party,5.5,10,169,4.6565
+NOR,2013-09-09,81,Socialist Left Party,4.1,7,169,1.5839
+NOR,2017-09-11,104,Norwegian Labour Party,27.4,49,169,3.3706
+NOR,2017-09-11,1435,Conservative Party,25.0,45,169,7.8994
+NOR,2017-09-11,1538,Christian Democratic Party,4.2,8,169,5.8516
+NOR,2017-09-11,1638,Red Electoral Alliance,2.4,1,169,0.4089
+NOR,2017-09-11,2254,Green Party,3.2,1,169,2.5
+NOR,2017-09-11,351,Progress Party,15.2,27,169,8.7595
+NOR,2017-09-11,647,Liberal Party of Norway,4.4,8,169,5.1467
+NOR,2017-09-11,702,Centre Party,10.3,19,169,4.6565
+NOR,2017-09-11,733,Pensioners Party,0.4,0,169,
+NOR,2017-09-11,81,Socialist Left Party,6.0,11,169,1.5839
+NOR,2021-09-13,104,Norwegian Labour Party,26.3,48,169,3.3706
+NOR,2021-09-13,1435,Conservative Party,20.4,36,169,7.8994
+NOR,2021-09-13,1538,Christian Democratic Party,3.8,3,169,5.8516
+NOR,2021-09-13,1638,Red Electoral Alliance,4.7,8,169,0.4089
+NOR,2021-09-13,2254,Green Party,3.9,3,169,2.5
+NOR,2021-09-13,2816,Democrats,1.1,0,169,7.4
+NOR,2021-09-13,351,Progress Party,11.6,21,169,8.7595
+NOR,2021-09-13,474,one seat,0.2,1,169,
+NOR,2021-09-13,647,Liberal Party of Norway,4.6,8,169,5.1467
+NOR,2021-09-13,702,Centre Party,13.5,28,169,4.6565
+NOR,2021-09-13,81,Socialist Left Party,7.6,13,169,1.5839
+NZL,2002-07-27,1171,Green Party,7.0,9,120,1.7729
+NZL,2002-07-27,1313,United Future New Zealand,6.69,8,120,6.1219
+NZL,2002-07-27,1444,Alliance,1.27,0,120,2.0757
+NZL,2002-07-27,2072,Christian Heritage Party of New Zealand,1.35,0,120,6.2
+NZL,2002-07-27,2074,Outdoor Recreation New Zealand,1.28,0,120,
+NZL,2002-07-27,354,Progressive Party,1.7,2,120,3.0194
+NZL,2002-07-27,617,ACT New Zealand,7.14,9,120,9.0263
+NZL,2002-07-27,878,Labour Party,41.26,52,120,4.483
+NZL,2002-07-27,891,New Zealand First Party,10.38,13,120,6.0388
+NZL,2002-07-27,997,National Party,20.93,27,120,6.7193
+NZL,2005-09-17,114,Maori Party,2.12,4,121,
+NZL,2005-09-17,1171,Green Party,5.3,6,121,1.7729
+NZL,2005-09-17,1313,United Future New Zealand,2.67,3,121,6.1219
+NZL,2005-09-17,2070,no seat,0.62,0,121,
+NZL,2005-09-17,354,Progressive Party,1.16,1,121,3.0194
+NZL,2005-09-17,617,ACT New Zealand,1.51,2,121,9.0263
+NZL,2005-09-17,878,Labour Party,41.1,50,121,4.483
+NZL,2005-09-17,891,New Zealand First Party,5.72,7,121,6.0388
+NZL,2005-09-17,997,National Party,39.1,48,121,6.7193
+NZL,2008-11-08,114,Maori Party,2.39,5,122,
+NZL,2008-11-08,1171,Green Party,6.72,9,122,1.7729
+NZL,2008-11-08,1313,United Future New Zealand,0.87,1,122,6.1219
+NZL,2008-11-08,354,Progressive Party,0.91,1,122,3.0194
+NZL,2008-11-08,617,ACT New Zealand,3.65,5,122,9.0263
+NZL,2008-11-08,878,Labour Party,33.99,43,122,4.483
+NZL,2008-11-08,891,New Zealand First Party,4.07,0,122,6.0388
+NZL,2008-11-08,997,National Party,44.93,58,122,6.7193
+NZL,2011-11-26,114,Maori Party,1.43,3,121,
+NZL,2011-11-26,1171,Green Party,11.06,14,121,1.7729
+NZL,2011-11-26,1313,United Future New Zealand,0.6,1,121,6.1219
+NZL,2011-11-26,1972,Mana Party,1.08,1,121,
+NZL,2011-11-26,1973,Conservatice Party of New Zealand,2.65,0,121,7.4
+NZL,2011-11-26,617,ACT New Zealand,1.07,1,121,9.0263
+NZL,2011-11-26,878,Labour Party,27.48,34,121,4.483
+NZL,2011-11-26,891,New Zealand First Party,6.59,8,121,6.0388
+NZL,2011-11-26,997,National Party,47.31,59,121,6.7193
+NZL,2014-09-20,114,Maori Party,1.32,2,121,
+NZL,2014-09-20,1171,Green Party,10.7,14,121,1.7729
+NZL,2014-09-20,1313,United Future New Zealand,0.22,1,121,6.1219
+NZL,2014-09-20,1972,Mana Party,1.42,0,121,
+NZL,2014-09-20,1973,Conservatice Party of New Zealand,3.97,0,121,7.4
+NZL,2014-09-20,617,ACT New Zealand,0.69,1,121,9.0263
+NZL,2014-09-20,878,Labour Party,25.13,32,121,4.483
+NZL,2014-09-20,891,New Zealand First Party,8.66,11,121,6.0388
+NZL,2014-09-20,997,National Party,47.04,60,121,6.7193
+NZL,2017-09-23,114,Maori Party,1.2,0,120,
+NZL,2017-09-23,1171,Green Party,6.3,8,120,1.7729
+NZL,2017-09-23,2650,The Opportunities Party,2.4,0,120,6.0
+NZL,2017-09-23,617,ACT New Zealand,0.5,1,120,9.0263
+NZL,2017-09-23,878,Labour Party,36.9,46,120,4.483
+NZL,2017-09-23,891,New Zealand First Party,7.2,9,120,6.0388
+NZL,2017-09-23,997,National Party,44.4,56,120,6.7193
+NZL,2020-10-17,114,Maori Party,1.17,2,120,
+NZL,2020-10-17,1171,Green Party,7.86,10,120,1.7729
+NZL,2020-10-17,2806,New Conservative Party,1.48,0,120,8.8
+NZL,2020-10-17,617,ACT New Zealand,7.59,10,120,9.0263
+NZL,2020-10-17,878,Labour Party,50.01,65,120,4.483
+NZL,2020-10-17,891,New Zealand First Party,2.6,0,120,6.0388
+NZL,2020-10-17,997,National Party,25.58,33,120,6.7193
+POL,2001-09-23,1104,Democratic | Freedom | Union,3.1,0,460,5.2295
+POL,2001-09-23,1355,Solidarity Electoral Action,5.6,0,460,7.1286
+POL,2001-09-23,207,Self-Defense of the Republic Poland,10.2,53,460,3.997
+POL,2001-09-23,512,Civic Platform,12.7,65,460,6.2355
+POL,2001-09-23,528,Law and Justice,9.5,44,460,7.6997
+POL,2001-09-23,629,Democratic Left Alliance,41.04,200,460,2.8299
+POL,2001-09-23,664,Polish People's Party,9.0,42,460,4.1856
+POL,2001-09-23,838,Labour Union,,16,460,2.0348
+POL,2001-09-23,900,German minority,0.4,2,460,
+POL,2001-09-23,987,League of Polish Families,7.9,38,460,8.8852
+POL,2005-09-25,1104,Democratic | Freedom | Union,2.45,0,460,5.2295
+POL,2005-09-25,1140,Social Democracy of Poland,3.89,0,460,3.0
+POL,2005-09-25,148,Movement for the Reconstruction of Poland,1.05,0,460,5.7895
+POL,2005-09-25,1549,Real Politics Union | Congress of the New Right,1.57,0,460,9.7368
+POL,2005-09-25,207,Self-Defense of the Republic Poland,11.4,56,460,3.997
+POL,2005-09-25,512,Civic Platform,24.1,133,460,6.2355
+POL,2005-09-25,528,Law and Justice,27.0,155,460,7.6997
+POL,2005-09-25,629,Democratic Left Alliance,11.3,55,460,2.8299
+POL,2005-09-25,664,Polish People's Party,7.0,25,460,4.1856
+POL,2005-09-25,900,German minority,0.29,2,460,
+POL,2005-09-25,987,League of Polish Families,8.0,34,460,8.8852
+POL,2007-10-19,1011,no party affiliation,,5,460,
+POL,2007-10-19,1104,Democratic | Freedom | Union,,1,460,5.2295
+POL,2007-10-19,1140,Social Democracy of Poland,,10,460,3.0
+POL,2007-10-19,180,Left and Democrats,13.15,,460,2.6486
+POL,2007-10-19,207,Self-Defense of the Republic Poland,1.53,0,460,3.997
+POL,2007-10-19,512,Civic Platform,41.51,209,460,6.2355
+POL,2007-10-19,528,Law and Justice,32.11,166,460,7.6997
+POL,2007-10-19,629,Democratic Left Alliance,,37,460,2.8299
+POL,2007-10-19,664,Polish People's Party,8.91,31,460,4.1856
+POL,2007-10-19,838,Labour Union,,0,460,2.0348
+POL,2007-10-19,900,German minority,0.2,1,460,
+POL,2007-10-19,987,League of Polish Families,1.3,0,460,8.8852
+POL,2011-10-09,1549,Real Politics Union | Congress of the New Right,1.06,0,460,9.7368
+POL,2011-10-09,1679,Poland is the Most Important,2.19,0,460,7.4
+POL,2011-10-09,1945,Your (Palikot's) Movement,10.02,40,460,6.0
+POL,2011-10-09,512,Civic Platform,39.18,207,460,6.2355
+POL,2011-10-09,528,Law and Justice,29.89,157,460,7.6997
+POL,2011-10-09,629,Democratic Left Alliance,8.24,27,460,2.8299
+POL,2011-10-09,664,Polish People's Party,8.36,28,460,4.1856
+POL,2011-10-09,900,German minority,0.19,1,460,
+POL,2015-10-25,2600,Kukiz'15,8.81,42,460,8.8
+POL,2015-10-25,2601,Modern,7.6,28,460,6.0
+POL,2015-10-25,2602,Coalition for the Renewal of the Republic -- Liberty and Hope,4.76,0,460,7.4
+POL,2015-10-25,2625,Together Party,3.62,0,460,3.3
+POL,2015-10-25,512,Civic Platform,24.09,138,460,6.2355
+POL,2015-10-25,528,Law and Justice,37.58,235,460,7.6997
+POL,2015-10-25,629,Democratic Left Alliance,7.55,0,460,2.8299
+POL,2015-10-25,664,Polish People's Party,5.13,16,460,4.1856
+POL,2015-10-25,900,German minority,0.18,1,460,
+POL,2019-10-13,1011,no party affiliation,,3,460,
+POL,2019-10-13,1104,Democratic | Freedom | Union,,1,460,5.2295
+POL,2019-10-13,2287,one seat,,1,460,
+POL,2019-10-13,2398,National Movement ,,5,460,8.8
+POL,2019-10-13,2600,Kukiz'15,,6,460,8.8
+POL,2019-10-13,2602,Coalition for the Renewal of the Republic -- Liberty and Hope,6.81,5,460,7.4
+POL,2019-10-13,2740,Spring,,19,460,3.3
+POL,2019-10-13,2790,Left Together,,6,460,3.3
+POL,2019-10-13,512,Civic Platform,27.4,134,460,6.2355
+POL,2019-10-13,528,Law and Justice,43.59,235,460,7.6997
+POL,2019-10-13,629,Democratic Left Alliance,12.56,24,460,2.8299
+POL,2019-10-13,664,Polish People's Party,8.55,20,460,4.1856
+POL,2019-10-13,900,German minority,0.17,1,460,
+PRT,2002-03-17,1273,Social Democratic Party,41.01,105,230,6.2949
+PRT,2002-03-17,1295,Unified Democratic Coalition,7.08,,230,2.2233
+PRT,2002-03-17,1535,Ecology Party -- Greens,,2,230,1.6579
+PRT,2002-03-17,251,Democratic and Social Centre -- People's Party,8.9,14,230,8.0222
+PRT,2002-03-17,281,Communist Party of the Portuguese Workers / Reorganizative Movement of the Party of the Proletariat,0.67,0,230,1.3
+PRT,2002-03-17,514,Portuguese Communist Party,,10,230,2.1754
+PRT,2002-03-17,557,Bloc of the Left,2.79,3,230,1.6425
+PRT,2002-03-17,725,Socialist Party,38.55,96,230,4.0492
+PRT,2005-02-20,1273,Social Democratic Party,29.64,75,230,6.2949
+PRT,2005-02-20,1295,Unified Democratic Coalition,7.77,,230,2.2233
+PRT,2005-02-20,1535,Ecology Party -- Greens,,2,230,1.6579
+PRT,2005-02-20,251,Democratic and Social Centre -- People's Party,7.46,12,230,8.0222
+PRT,2005-02-20,281,Communist Party of the Portuguese Workers / Reorganizative Movement of the Party of the Proletariat,0.86,0,230,1.3
+PRT,2005-02-20,514,Portuguese Communist Party,,12,230,2.1754
+PRT,2005-02-20,557,Bloc of the Left,6.54,8,230,1.6425
+PRT,2005-02-20,725,Socialist Party,46.4,121,230,4.0492
+PRT,2009-09-27,1273,Social Democratic Party,30.04,81,230,6.2949
+PRT,2009-09-27,1295,Unified Democratic Coalition,8.11,15,230,2.2233
+PRT,2009-09-27,251,Democratic and Social Centre -- People's Party,10.77,21,230,8.0222
+PRT,2009-09-27,281,Communist Party of the Portuguese Workers / Reorganizative Movement of the Party of the Proletariat,0.96,0,230,1.3
+PRT,2009-09-27,557,Bloc of the Left,10.12,16,230,1.6425
+PRT,2009-09-27,725,Socialist Party,37.73,97,230,4.0492
+PRT,2011-06-05,1273,Social Democratic Party,40.31,108,230,6.2949
+PRT,2011-06-05,1295,Unified Democratic Coalition,8.23,16,230,2.2233
+PRT,2011-06-05,1781,Party for Animals and Nature,1.08,0,230,2.5
+PRT,2011-06-05,251,Democratic and Social Centre -- People's Party,12.21,24,230,8.0222
+PRT,2011-06-05,281,Communist Party of the Portuguese Workers / Reorganizative Movement of the Party of the Proletariat,1.17,0,230,1.3
+PRT,2011-06-05,557,Bloc of the Left,5.39,8,230,1.6425
+PRT,2011-06-05,725,Socialist Party,29.24,74,230,4.0492
+PRT,2015-10-04,1273,Social Democratic Party,39.84,107,230,6.2949
+PRT,2015-10-04,1295,Unified Democratic Coalition,8.56,17,230,2.2233
+PRT,2015-10-04,1781,Party for Animals and Nature,1.44,1,230,2.5
+PRT,2015-10-04,2597,Republican Democratic Party,1.19,0,230,7.4
+PRT,2015-10-04,281,Communist Party of the Portuguese Workers / Reorganizative Movement of the Party of the Proletariat,1.15,0,230,1.3
+PRT,2015-10-04,557,Bloc of the Left,10.58,19,230,1.6425
+PRT,2015-10-04,725,Socialist Party,33.57,86,230,4.0492
+PRT,2019-10-06,1273,Social Democratic Party,29.19,79,230,6.2949
+PRT,2019-10-06,1295,Unified Democratic Coalition,6.66,12,230,2.2233
+PRT,2019-10-06,1781,Party for Animals and Nature,3.49,4,230,2.5
+PRT,2019-10-06,2374,Livre,1.14,1,230,3.3
+PRT,2019-10-06,251,Democratic and Social Centre -- People's Party,4.44,5,230,8.0222
+PRT,2019-10-06,2756,Alliance,0.81,0,230,6.0
+PRT,2019-10-06,2788,Liberal Initiative,1.35,1,230,6.0
+PRT,2019-10-06,2789,Enough,1.35,1,230,8.8
+PRT,2019-10-06,557,Bloc of the Left,10.01,19,230,1.6425
+PRT,2019-10-06,725,Socialist Party,38.21,108,230,4.0492
+PRT,2022-01-30,107,Popular Monarchist Party,0.51,2,230,7.4
+PRT,2022-01-30,1273,Social Democratic Party,28.41,72,230,6.2949
+PRT,2022-01-30,1781,Party for Animals and Nature,1.63,1,230,2.5
+PRT,2022-01-30,2374,Livre,1.31,1,230,3.3
+PRT,2022-01-30,251,Democratic and Social Centre -- People's Party,1.65,3,230,8.0222
+PRT,2022-01-30,2788,Liberal Initiative,5.05,8,230,6.0
+PRT,2022-01-30,2789,Enough,7.38,12,230,8.8
+PRT,2022-01-30,2864,no seat,0.43,0,230,
+PRT,2022-01-30,514,Portuguese Communist Party,4.41,6,230,2.1754
+PRT,2022-01-30,557,Bloc of the Left,4.52,5,230,1.6425
+PRT,2022-01-30,725,Socialist Party,42.5,120,230,4.0492
+ROU,2000-11-26,1015,National Liberal Party,6.89,30,345,6.0543
+ROU,2000-11-26,1120,Social Democratic Party,36.61,155,345,3.2325
+ROU,2000-11-26,2040,Alliance for Romania,4.07,0,345,3.3
+ROU,2000-11-26,2041,National Liberal Party Campeanu,1.4,0,345,6.0
+ROU,2000-11-26,356,Romanian Democratic Convention,5.04,0,345,6.29
+ROU,2000-11-26,419,Democratic Party,7.03,31,345,5.3875
+ROU,2000-11-26,425,Romanian ethnic minorities parties,,18,345,
+ROU,2000-11-26,648,Romanian National Unity Party,1.38,0,345,5.5556
+ROU,2000-11-26,713,Greater Romania Party,19.48,84,345,6.6618
+ROU,2000-11-26,948,Democratic Union of Hungarians in Romania,6.8,27,345,6.016
+ROU,2004-11-28,1015,National Liberal Party,31.3,64,332,6.0543
+ROU,2004-11-28,1120,Social Democratic Party,36.6,132,332,3.2325
+ROU,2004-11-28,1332,New Generation Party -- Christian Democratic,2.2,0,332,6.2
+ROU,2004-11-28,419,Democratic Party,,48,332,5.3875
+ROU,2004-11-28,425,Romanian ethnic minorities parties,,18,332,
+ROU,2004-11-28,713,Greater Romania Party,13.0,48,332,6.6618
+ROU,2004-11-28,888,Christian-Democratic National Peasants' Party,1.8,0,332,5.5341
+ROU,2004-11-28,948,Democratic Union of Hungarians in Romania,6.2,22,332,6.016
+ROU,2008-11-30,1015,National Liberal Party,18.57,65,334,6.0543
+ROU,2008-11-30,1120,Social Democratic Party,33.09,110,334,3.2325
+ROU,2008-11-30,1332,New Generation Party -- Christian Democratic,2.27,0,334,6.2
+ROU,2008-11-30,425,Romanian ethnic minorities parties,,18,334,
+ROU,2008-11-30,5,Humanist Party | Conservative Party,,4,334,4.7622
+ROU,2008-11-30,713,Greater Romania Party,3.15,0,334,6.6618
+ROU,2008-11-30,948,Democratic Union of Hungarians in Romania,6.17,22,334,6.016
+ROU,2008-11-30,958,Democratic Liberal Party,32.36,115,334,5.3875
+ROU,2012-12-09,1015,National Liberal Party,,100,412,6.0543
+ROU,2012-12-09,1120,Social Democratic Party,58.63,150,412,3.2325
+ROU,2012-12-09,2002,National Union for the Progress of Romania,,10,412,3.3
+ROU,2012-12-09,2129,Civic Force,,3,412,6.2
+ROU,2012-12-09,2130,People's Party -- Dan Diaconescu,13.99,47,412,1.3
+ROU,2012-12-09,425,Romanian ethnic minorities parties,,18,412,
+ROU,2012-12-09,5,Humanist Party | Conservative Party,,13,412,4.7622
+ROU,2012-12-09,713,Greater Romania Party,1.25,0,412,6.6618
+ROU,2012-12-09,888,Christian-Democratic National Peasants' Party,,1,412,5.5341
+ROU,2012-12-09,948,Democratic Union of Hungarians in Romania,5.13,18,412,6.016
+ROU,2012-12-09,958,Democratic Liberal Party,16.51,52,412,5.3875
+ROU,2016-12-11,1015,National Liberal Party,20.04,69,329,6.0543
+ROU,2016-12-11,1120,Social Democratic Party,45.48,154,329,3.2325
+ROU,2016-12-11,2395,People's Movement Party,5.35,18,329,6.2
+ROU,2016-12-11,2646,"Save Romania Union | Party of Liberty, Unity and Solidarity",8.87,30,329,6.0
+ROU,2016-12-11,2647,Liberal Reformist Party | Alliance of Liberals and Democrats,5.62,20,329,6.0
+ROU,2016-12-11,2648,United Romania Party,2.79,0,329,8.8
+ROU,2016-12-11,425,Romanian ethnic minorities parties,,17,329,
+ROU,2016-12-11,713,Greater Romania Party,1.04,0,329,6.6618
+ROU,2016-12-11,948,Democratic Union of Hungarians in Romania,6.19,21,329,6.016
+ROU,2020-12-06,1015,National Liberal Party,25.19,93,330,6.0543
+ROU,2020-12-06,1120,Social Democratic Party,28.9,110,330,3.2325
+ROU,2020-12-06,2395,People's Movement Party,4.82,0,330,6.2
+ROU,2020-12-06,2646,"Save Romania Union | Party of Liberty, Unity and Solidarity",15.37,55,330,6.0
+ROU,2020-12-06,2746,PRO Romania,4.09,0,330,6.0
+ROU,2020-12-06,2807,Alliance for the Unity of Romanians,9.08,33,330,8.8
+ROU,2020-12-06,425,Romanian ethnic minorities parties,,18,330,
+ROU,2020-12-06,5,Humanist Party | Conservative Party,1.01,0,330,4.7622
+ROU,2020-12-06,792,Romanian Ecologist Party,1.12,0,330,2.5
+ROU,2020-12-06,948,Democratic Union of Hungarians in Romania,5.74,21,330,6.016
+SVK,2002-09-21,1072,Slovak National Party,3.32,0,150,7.0198
+SVK,2002-09-21,1142,Movement for a Democratic Slovakia,19.5,36,150,4.8914
+SVK,2002-09-21,1200,Alliance of the New Citizen,8.01,15,150,7.2404
+SVK,2002-09-21,131,Slovak Democratic and Christian Union -- Democratic Party,15.09,28,150,7.3591
+SVK,2002-09-21,1415,Party of the Democratic Left,1.36,0,150,3.2398
+SVK,2002-09-21,1432,Christian Democratic Movement,8.25,15,150,7.1082
+SVK,2002-09-21,20,Real Slovak National Party,3.65,0,150,8.5
+SVK,2002-09-21,2160,Movement for Democracy,3.28,0,150,7.4
+SVK,2002-09-21,220,Direction -- Social Democracy,13.46,25,150,3.3799
+SVK,2002-09-21,44,Communist Party of Slovakia,6.32,11,150,0.5275
+SVK,2002-09-21,559,Hungarian Coalition,11.16,20,150,6.5005
+SVK,2002-09-21,64,Social Democratic Alternative,1.79,0,150,3.0526
+SVK,2006-06-17,1072,Slovak National Party,11.73,20,150,7.0198
+SVK,2006-06-17,1142,Movement for a Democratic Slovakia,8.79,15,150,4.8914
+SVK,2006-06-17,1200,Alliance of the New Citizen,1.42,0,150,7.2404
+SVK,2006-06-17,131,Slovak Democratic and Christian Union -- Democratic Party,18.35,31,150,7.3591
+SVK,2006-06-17,1432,Christian Democratic Movement,8.31,14,150,7.1082
+SVK,2006-06-17,220,Direction -- Social Democracy,29.14,50,150,3.3799
+SVK,2006-06-17,44,Communist Party of Slovakia,3.88,0,150,0.5275
+SVK,2006-06-17,559,Hungarian Coalition,11.68,20,150,6.5005
+SVK,2006-06-17,752,Free Forum,3.47,0,150,5.46
+SVK,2010-06-12,1072,Slovak National Party,5.07,9,150,7.0198
+SVK,2010-06-12,1142,Movement for a Democratic Slovakia,4.32,0,150,4.8914
+SVK,2010-06-12,131,Slovak Democratic and Christian Union -- Democratic Party,15.42,28,150,7.3591
+SVK,2010-06-12,1432,Christian Democratic Movement,8.52,15,150,7.1082
+SVK,2010-06-12,1460,Freedom and Solidarity,12.14,18,150,6.0
+SVK,2010-06-12,1620,Most-Hid,8.12,10,150,7.4
+SVK,2010-06-12,1645,Civic Conservative Party,,4,150,8.4211
+SVK,2010-06-12,1759,Ordinary People and Independent,,4,150,7.4
+SVK,2010-06-12,220,Direction -- Social Democracy,34.79,62,150,3.3799
+SVK,2010-06-12,2317,Party of the Democratic Left -- 2005,2.41,0,150,3.3
+SVK,2010-06-12,559,Hungarian Coalition,4.33,0,150,6.5005
+SVK,2010-06-12,586,People's Party Our Slovakia,1.33,0,150,8.8
+SVK,2012-03-10,1072,Slovak National Party,4.55,0,150,7.0198
+SVK,2012-03-10,1200,Alliance of the New Citizen,1.22,0,150,7.2404
+SVK,2012-03-10,131,Slovak Democratic and Christian Union -- Democratic Party,6.09,11,150,7.3591
+SVK,2012-03-10,1432,Christian Democratic Movement,8.82,16,150,7.1082
+SVK,2012-03-10,1460,Freedom and Solidarity,5.88,11,150,6.0
+SVK,2012-03-10,1620,Most-Hid,6.89,13,150,7.4
+SVK,2012-03-10,1759,Ordinary People and Independent,8.55,16,150,7.4
+SVK,2012-03-10,2013,"Change from the Bottom, DU",1.29,0,150,6.0
+SVK,2012-03-10,2015,99 Percent -- Civic Voice,1.58,0,150,1.3
+SVK,2012-03-10,220,Direction -- Social Democracy,44.41,83,150,3.3799
+SVK,2012-03-10,559,Hungarian Coalition,4.28,0,150,6.5005
+SVK,2012-03-10,586,People's Party Our Slovakia,1.58,0,150,8.8
+SVK,2016-03-06,1072,Slovak National Party,8.64,15,150,7.0198
+SVK,2016-03-06,1432,Christian Democratic Movement,4.94,0,150,7.1082
+SVK,2016-03-06,1460,Freedom and Solidarity,12.1,21,150,6.0
+SVK,2016-03-06,1620,Most-Hid,6.5,11,150,7.4
+SVK,2016-03-06,1759,Ordinary People and Independent,11.03,19,150,7.4
+SVK,2016-03-06,220,Direction -- Social Democracy,28.28,49,150,3.3799
+SVK,2016-03-06,2623,We are family -- Boris Kollar,6.63,11,150,8.8
+SVK,2016-03-06,2624,Network,5.61,10,150,7.4
+SVK,2016-03-06,559,Hungarian Coalition,4.05,0,150,6.5005
+SVK,2016-03-06,586,People's Party Our Slovakia,8.04,14,150,8.8
+SVK,2020-02-29,1072,Slovak National Party,3.16,0,150,7.0198
+SVK,2020-02-29,1432,Christian Democratic Movement,4.65,0,150,7.1082
+SVK,2020-02-29,1460,Freedom and Solidarity,6.22,13,150,6.0
+SVK,2020-02-29,1620,Most-Hid,2.05,0,150,7.4
+SVK,2020-02-29,1759,Ordinary People and Independent,25.02,53,150,7.4
+SVK,2020-02-29,220,Direction -- Social Democracy,18.29,38,150,3.3799
+SVK,2020-02-29,2623,We are family -- Boris Kollar,8.24,17,150,8.8
+SVK,2020-02-29,2751,Progressive Slovakia,6.96,0,150,6.0
+SVK,2020-02-29,2752,TOGETHER -- Civic Democracy,,0,150,6.0
+SVK,2020-02-29,2796,For the People,5.77,12,150,6.0
+SVK,2020-02-29,2797,Good Choice,3.06,0,150,3.3
+SVK,2020-02-29,2798,Homeland,2.93,0,150,8.8
+SVK,2020-02-29,559,Hungarian Coalition,3.9,0,150,6.5005
+SVK,2020-02-29,586,People's Party Our Slovakia,7.97,17,150,8.8
+SVN,2000-10-15,1047,New Slovenia -- Christian People's Party,8.66,8,90,7.9345
+SVN,2000-10-15,1252,Liberal Democracy of Slovenia,36.26,34,90,3.7351
+SVN,2000-10-15,1512,Youth Party of Slovenia,4.34,4,90,4.2263
+SVN,2000-10-15,1587,Democratic Party of Pensioners of Slovenia,5.17,4,90,3.2292
+SVN,2000-10-15,16,Slovenian People's Party,9.54,9,90,6.6953
+SVN,2000-10-15,179,Slovenian Democratic Party,15.81,14,90,6.9996
+SVN,2000-10-15,199,Italian national community,,1,90,
+SVN,2000-10-15,65,Hungarian national community,,1,90,
+SVN,2000-10-15,706,United List -- Social Democrats,12.08,11,90,3.0637
+SVN,2000-10-15,981,Slovenian National Party,4.39,4,90,4.7941
+SVN,2004-10-03,1047,New Slovenia -- Christian People's Party,9.09,9,90,7.9345
+SVN,2004-10-03,1252,Liberal Democracy of Slovenia,22.8,23,90,3.7351
+SVN,2004-10-03,1512,Youth Party of Slovenia,2.08,0,90,4.2263
+SVN,2004-10-03,1587,Democratic Party of Pensioners of Slovenia,4.04,4,90,3.2292
+SVN,2004-10-03,16,Slovenian People's Party,6.82,7,90,6.6953
+SVN,2004-10-03,179,Slovenian Democratic Party,29.08,29,90,6.9996
+SVN,2004-10-03,199,Italian national community,,1,90,
+SVN,2004-10-03,2019,Slovenia is Ours,2.62,0,90,
+SVN,2004-10-03,380,Active Slovenia,3.97,0,90,4.6
+SVN,2004-10-03,65,Hungarian national community,,1,90,
+SVN,2004-10-03,706,United List -- Social Democrats,10.17,10,90,3.0637
+SVN,2004-10-03,981,Slovenian National Party,6.27,6,90,4.7941
+SVN,2008-09-21,1047,New Slovenia -- Christian People's Party,3.4,0,90,7.9345
+SVN,2008-09-21,1252,Liberal Democracy of Slovenia,5.21,5,90,3.7351
+SVN,2008-09-21,1587,Democratic Party of Pensioners of Slovenia,7.45,7,90,3.2292
+SVN,2008-09-21,16,Slovenian People's Party,5.21,5,90,6.6953
+SVN,2008-09-21,179,Slovenian Democratic Party,29.26,28,90,6.9996
+SVN,2008-09-21,1946,Party Lime Tree,1.81,0,90,8.8
+SVN,2008-09-21,199,Italian national community,,1,90,
+SVN,2008-09-21,326,For Real,9.37,9,90,3.3
+SVN,2008-09-21,65,Hungarian national community,,1,90,
+SVN,2008-09-21,706,United List -- Social Democrats,30.45,29,90,3.0637
+SVN,2008-09-21,981,Slovenian National Party,5.4,5,90,4.7941
+SVN,2011-12-04,1047,New Slovenia -- Christian People's Party,4.88,4,90,7.9345
+SVN,2011-12-04,1252,Liberal Democracy of Slovenia,1.48,0,90,3.7351
+SVN,2011-12-04,1587,Democratic Party of Pensioners of Slovenia,6.97,6,90,3.2292
+SVN,2011-12-04,16,Slovenian People's Party,6.83,6,90,6.6953
+SVN,2011-12-04,179,Slovenian Democratic Party,26.19,26,90,6.9996
+SVN,2011-12-04,1987,Zoran Jankovic's List -- Positive Slovenia,28.51,28,90,3.3
+SVN,2011-12-04,1988,Civic List,8.37,8,90,6.0
+SVN,2011-12-04,1989,Party for Sustainable Development of Slovenia,1.22,0,90,3.3
+SVN,2011-12-04,199,Italian national community,,1,90,
+SVN,2011-12-04,65,Hungarian national community,,1,90,
+SVN,2011-12-04,706,United List -- Social Democrats,10.52,10,90,3.0637
+SVN,2011-12-04,981,Slovenian National Party,1.8,0,90,4.7941
+SVN,2014-07-13,1047,New Slovenia -- Christian People's Party,5.59,5,90,7.9345
+SVN,2014-07-13,1587,Democratic Party of Pensioners of Slovenia,10.18,10,90,3.2292
+SVN,2014-07-13,16,Slovenian People's Party,3.95,0,90,6.6953
+SVN,2014-07-13,179,Slovenian Democratic Party,20.71,21,90,6.9996
+SVN,2014-07-13,1987,Zoran Jankovic's List -- Positive Slovenia,2.97,0,90,3.3
+SVN,2014-07-13,199,Italian national community,,1,90,
+SVN,2014-07-13,2333,Modern Center Party,34.49,36,90,3.3
+SVN,2014-07-13,2334,United Left,5.97,6,90,1.3
+SVN,2014-07-13,2337,Alliance of Alenka Bratusek,4.38,4,90,3.3
+SVN,2014-07-13,2338,Slovenian Pirate Party,1.34,0,90,
+SVN,2014-07-13,65,Hungarian national community,,1,90,
+SVN,2014-07-13,706,United List -- Social Democrats,5.98,6,90,3.0637
+SVN,2014-07-13,981,Slovenian National Party,2.2,0,90,4.7941
+SVN,2018-06-03,1047,New Slovenia -- Christian People's Party,7.16,7,90,7.9345
+SVN,2018-06-03,1587,Democratic Party of Pensioners of Slovenia,4.93,5,90,3.2292
+SVN,2018-06-03,16,Slovenian People's Party,2.62,0,90,6.6953
+SVN,2018-06-03,1619,Greens of Slovenia,1.09,0,90,2.5
+SVN,2018-06-03,179,Slovenian Democratic Party,24.92,25,90,6.9996
+SVN,2018-06-03,199,Italian national community,,1,90,
+SVN,2018-06-03,2333,Modern Center Party,9.75,10,90,3.3
+SVN,2018-06-03,2337,Alliance of Alenka Bratusek,5.11,5,90,3.3
+SVN,2018-06-03,2338,Slovenian Pirate Party,2.15,0,90,
+SVN,2018-06-03,2668,List of Marjan Sarec,12.6,13,90,3.3
+SVN,2018-06-03,2669,Good Country,1.52,0,90,3.3
+SVN,2018-06-03,2670,The Left,9.33,9,90,1.3
+SVN,2018-06-03,65,Hungarian national community,,1,90,
+SVN,2018-06-03,706,United List -- Social Democrats,9.93,10,90,3.0637
+SVN,2018-06-03,981,Slovenian National Party,4.17,4,90,4.7941
+SVN,2022-04-22,1047,New Slovenia -- Christian People's Party,6.86,8,90,7.9345
+SVN,2022-04-22,179,Slovenian Democratic Party,23.48,27,90,6.9996
+SVN,2022-04-22,199,Italian national community,,1,90,
+SVN,2022-04-22,2337,Alliance of Alenka Bratusek,2.61,0,90,3.3
+SVN,2022-04-22,2338,Slovenian Pirate Party,1.63,0,90,
+SVN,2022-04-22,2668,List of Marjan Sarec,3.72,0,90,3.3
+SVN,2022-04-22,2669,Good Country,1.7,0,90,3.3
+SVN,2022-04-22,2670,The Left,4.46,5,90,1.3
+SVN,2022-04-22,2856,Freedom Movement,34.45,41,90,3.3
+SVN,2022-04-22,2865,Vesna -- the Green Party,1.35,0,90,2.5
+SVN,2022-04-22,2866,Our Country,1.5,0,90,2.5
+SVN,2022-04-22,2884,Let's Connect Slovenia ,3.72,0,90,7.4
+SVN,2022-04-22,2885,Resni.ca,2.86,0,90,
+SVN,2022-04-22,2886,Healthy Society Movement,1.76,0,90,
+SVN,2022-04-22,65,Hungarian national community,,1,90,
+SVN,2022-04-22,706,United List -- Social Democrats,6.69,7,90,3.0637
+SVN,2022-04-22,981,Slovenian National Party,1.49,0,90,4.7941
+SWE,2002-09-15,1154,Greens,4.6,17,349,3.3789
+SWE,2002-09-15,1461,Centre Party,6.2,22,349,5.8084
+SWE,2002-09-15,1546,Sweden Democrats,1.44,0,349,8.8
+SWE,2002-09-15,282,Christian Democrats,9.1,33,349,7.195
+SWE,2002-09-15,657,Moderate Party,15.3,55,349,7.8907
+SWE,2002-09-15,882,Left Party (Communists),8.4,30,349,1.5464
+SWE,2002-09-15,892,People's Party,13.4,48,349,6.2906
+SWE,2002-09-15,904,Social Democrats,39.9,144,349,3.4447
+SWE,2006-09-17,1154,Greens,5.2,19,349,3.3789
+SWE,2006-09-17,1461,Centre Party,7.9,29,349,5.8084
+SWE,2006-09-17,1546,Sweden Democrats,2.9,0,349,8.8
+SWE,2006-09-17,282,Christian Democrats,6.6,24,349,7.195
+SWE,2006-09-17,657,Moderate Party,26.1,97,349,7.8907
+SWE,2006-09-17,882,Left Party (Communists),5.8,22,349,1.5464
+SWE,2006-09-17,892,People's Party,7.5,28,349,6.2906
+SWE,2006-09-17,904,Social Democrats,35.2,130,349,3.4447
+SWE,2010-09-19,1154,Greens,7.34,25,349,3.3789
+SWE,2010-09-19,1461,Centre Party,6.56,23,349,5.8084
+SWE,2010-09-19,1546,Sweden Democrats,5.7,20,349,8.8
+SWE,2010-09-19,282,Christian Democrats,5.6,19,349,7.195
+SWE,2010-09-19,657,Moderate Party,30.06,107,349,7.8907
+SWE,2010-09-19,721,Pirate Party,0.65,0,349,
+SWE,2010-09-19,882,Left Party (Communists),5.6,19,349,1.5464
+SWE,2010-09-19,892,People's Party,7.06,24,349,6.2906
+SWE,2010-09-19,904,Social Democrats,30.66,112,349,3.4447
+SWE,2014-09-14,1154,Greens,6.89,25,349,3.3789
+SWE,2014-09-14,1461,Centre Party,6.11,22,349,5.8084
+SWE,2014-09-14,1521,Feminist Initiative,3.12,0,349,
+SWE,2014-09-14,1546,Sweden Democrats,12.86,49,349,8.8
+SWE,2014-09-14,282,Christian Democrats,4.57,16,349,7.195
+SWE,2014-09-14,657,Moderate Party,23.33,84,349,7.8907
+SWE,2014-09-14,882,Left Party (Communists),5.72,21,349,1.5464
+SWE,2014-09-14,892,People's Party,5.42,19,349,6.2906
+SWE,2014-09-14,904,Social Democrats,31.01,113,349,3.4447
+SWE,2018-09-09,1154,Greens,4.41,16,349,3.3789
+SWE,2018-09-09,1461,Centre Party,8.61,31,349,5.8084
+SWE,2018-09-09,1546,Sweden Democrats,17.53,62,349,8.8
+SWE,2018-09-09,282,Christian Democrats,6.32,22,349,7.195
+SWE,2018-09-09,657,Moderate Party,19.84,70,349,7.8907
+SWE,2018-09-09,882,Left Party (Communists),8.0,28,349,1.5464
+SWE,2018-09-09,892,People's Party,5.49,20,349,6.2906
+SWE,2018-09-09,904,Social Democrats,28.26,100,349,3.4447
+SWE,2022-09-11,1154,Greens,5.08,18,349,3.3789
+SWE,2022-09-11,1461,Centre Party,6.71,24,349,5.8084
+SWE,2022-09-11,1546,Sweden Democrats,20.54,73,349,8.8
+SWE,2022-09-11,2405,no seat,0.44,0,349,
+SWE,2022-09-11,282,Christian Democrats,5.34,19,349,7.195
+SWE,2022-09-11,657,Moderate Party,19.1,68,349,7.8907
+SWE,2022-09-11,882,Left Party (Communists),6.75,24,349,1.5464
+SWE,2022-09-11,892,People's Party,4.61,16,349,6.2906
+SWE,2022-09-11,904,Social Democrats,30.33,107,349,3.4447
+TUR,2002-11-03,1141,Right Path Party,9.54,0,550,6.8239
+TUR,2002-11-03,1315,Felicity Party,2.49,0,550,7.4
+TUR,2002-11-03,1334,Motherland Party,5.13,0,550,6.213
+TUR,2002-11-03,1399,no party affiliation,,9,550,
+TUR,2002-11-03,1647,Young Party,7.25,0,550,8.3821
+TUR,2002-11-03,2304,New Turkey Party,1.15,0,550,3.3
+TUR,2002-11-03,2305,People's Democracy Party,6.22,0,550,2.2267
+TUR,2002-11-03,240,Great Union Party,1.02,0,550,8.8
+TUR,2002-11-03,329,Democratic Left Party,1.22,0,550,3.8377
+TUR,2002-11-03,408,National Action Party,8.36,0,550,8.6587
+TUR,2002-11-03,507,Social Democratic Populist Party | Republican People's Party,19.39,178,550,3.2661
+TUR,2002-11-03,901,Justice and Development Party,34.28,363,550,6.9873
+TUR,2007-07-22,1141,Right Path Party,5.42,0,550,6.8239
+TUR,2007-07-22,1315,Felicity Party,2.34,0,550,7.4
+TUR,2007-07-22,1399,no party affiliation,,5,550,
+TUR,2007-07-22,1647,Young Party,3.04,0,550,8.3821
+TUR,2007-07-22,2305,People's Democracy Party,,20,550,2.2267
+TUR,2007-07-22,240,Great Union Party,,1,550,8.8
+TUR,2007-07-22,329,Democratic Left Party,,13,550,3.8377
+TUR,2007-07-22,408,National Action Party,14.3,71,550,8.6587
+TUR,2007-07-22,507,Social Democratic Populist Party | Republican People's Party,20.9,99,550,3.2661
+TUR,2007-07-22,901,Justice and Development Party,46.66,341,550,6.9873
+TUR,2011-06-12,1315,Felicity Party,1.27,0,550,7.4
+TUR,2011-06-12,1399,no party affiliation,,6,550,
+TUR,2011-06-12,2305,People's Democracy Party,,29,550,2.2267
+TUR,2011-06-12,408,National Action Party,13.01,53,550,8.6587
+TUR,2011-06-12,507,Social Democratic Populist Party | Republican People's Party,25.98,135,550,3.2661
+TUR,2011-06-12,901,Justice and Development Party,49.83,327,550,6.9873
+TUR,2015-06-07,1315,Felicity Party,2.06,0,550,7.4
+TUR,2015-06-07,1399,no party affiliation,1.06,0,550,
+TUR,2015-06-07,2572,Peoples' Democratic Party,13.12,80,550,1.3
+TUR,2015-06-07,408,National Action Party,16.29,80,550,8.6587
+TUR,2015-06-07,507,Social Democratic Populist Party | Republican People's Party,24.95,132,550,3.2661
+TUR,2015-06-07,901,Justice and Development Party,40.87,258,550,6.9873
+TUR,2015-11-01,2572,Peoples' Democratic Party,10.76,59,550,1.3
+TUR,2015-11-01,408,National Action Party,11.9,40,550,8.6587
+TUR,2015-11-01,507,Social Democratic Populist Party | Republican People's Party,25.32,134,550,3.2661
+TUR,2015-11-01,901,Justice and Development Party,49.5,317,550,6.9873
+TUR,2018-06-24,1315,Felicity Party,1.35,0,600,7.4
+TUR,2018-06-24,2572,Peoples' Democratic Party,11.72,67,600,1.3
+TUR,2018-06-24,2702,Iyi Party,9.97,43,600,8.8
+TUR,2018-06-24,408,National Action Party,11.12,49,600,8.6587
+TUR,2018-06-24,507,Social Democratic Populist Party | Republican People's Party,22.67,146,600,3.2661
+TUR,2018-06-24,901,Justice and Development Party,42.62,295,600,6.9873
+TUR,2023-05-14,2702,Iyi Party,9.7,43,600,8.8
+TUR,2023-05-14,2895,Party of Greens and the Left Future,8.8,61,600,2.5
+TUR,2023-05-14,2896,Worker's Party of Turkey,1.7,4,600,1.3
+TUR,2023-05-14,2897,New Welfare Party,2.8,5,600,
+TUR,2023-05-14,2898,Victory Party,2.2,0,600,8.8
+TUR,2023-05-14,408,National Action Party,10.0,50,600,8.6587
+TUR,2023-05-14,507,Social Democratic Populist Party | Republican People's Party,25.3,169,600,3.2661
+TUR,2023-05-14,901,Justice and Development Party,35.6,268,600,6.9873

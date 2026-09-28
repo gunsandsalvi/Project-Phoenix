@@ -1,0 +1,760 @@
+iso3,year,market,port_calls,median_days_in_port,avg_vessel_age_years,avg_size_gt,avg_dwt,avg_teu
+AUS,2018,All ships,62029,1.48,19,25949,78485,4361
+AUS,2018,Container ships,4425,1.2,12,47387,,4361
+AUS,2018,Dry breakbulk carriers,2530,1.79,12,16537,23130,
+AUS,2018,Dry bulk carriers,14690,1.65,9,59510,111657,
+AUS,2018,Liquefied natural gas carriers,1053,1.22,9,110313,84221,
+AUS,2018,Liquefied petroleum gas carriers,360,0.9,11,12252,14296,
+AUS,2018,Liquid bulk carriers,3673,1.34,7,23943,40913,
+AUS,2018,Passenger ships,32246,,28,4682,,
+AUS,2018,Roll-on/ roll-off ships,3052,,14,40761,15442,
+AUS,2019,All ships,66076,1.4299,20,25317,78863,4505
+AUS,2019,Container ships,4400,1.1785,12,48715,,4505
+AUS,2019,Dry breakbulk carriers,2539,1.6701,13,17566,24636,
+AUS,2019,Dry bulk carriers,15399,1.5757,10,59168,110881,
+AUS,2019,Liquefied natural gas carriers,1179,1.2257,8,112324,84625,
+AUS,2019,Liquefied petroleum gas carriers,425,0.9344,10,13432,15393,
+AUS,2019,Liquid bulk carriers,3692,1.3153,9,24057,41130,
+AUS,2019,Passenger ships,35366,,28,4401,,
+AUS,2019,Roll-on/ roll-off ships,3076,,13,39069,15187,
+AUS,2020,All ships,58474,1.5069,21,26033,81621,4774
+AUS,2020,Container ships,3658,1.4146,13,52451,,4774
+AUS,2020,Dry breakbulk carriers,1817,2.0181,12,20317,29494,
+AUS,2020,Dry bulk carriers,14750,1.6111,10,59379,111119,
+AUS,2020,Liquefied natural gas carriers,1157,1.1927,11,111798,85340,
+AUS,2020,Liquefied petroleum gas carriers,434,0.9194,9,13571,15419,
+AUS,2020,Liquid bulk carriers,3252,1.2726,8,22886,38833,
+AUS,2020,Passenger ships,30737,,30,3463,,
+AUS,2020,Roll-on/ roll-off ships,2669,,13,38035,14729,
+AUS,2021,All ships,54859,1.5684,20,27620,82439,4641
+AUS,2021,Container ships,3583,1.5771,14,51536,,4641
+AUS,2021,Dry breakbulk carriers,1921,1.9812,11,17733,27277,
+AUS,2021,Dry bulk carriers,15106,1.6799,10,59684,111650,
+AUS,2021,Liquefied natural gas carriers,1153,1.2569,10,112135,85926,
+AUS,2021,Liquefied petroleum gas carriers,420,0.9149,11,13457,15282,
+AUS,2021,Liquid bulk carriers,3147,1.2882,8,23519,39750,
+AUS,2021,Passenger ships,26718,,30,2402,,
+AUS,2021,Roll-on/ roll-off ships,2811,,11,43317,15902,
+CAN,2018,All ships,86533,0.65,24,14037,35138,5185
+CAN,2018,Container ships,2131,1.49,12,57740,,5185
+CAN,2018,Dry breakbulk carriers,3281,0.28,9,10014,12623,
+CAN,2018,Dry bulk carriers,13562,0.32,23,27302,46973,
+CAN,2018,Liquid bulk carriers,4721,1.12,11,22294,37213,
+CAN,2018,Passenger ships,59308,,27,8948,,
+CAN,2018,Roll-on/ roll-off ships,3530,,24,14882,7767,
+CAN,2019,All ships,104330,0.7576,26,12495,34760,5258
+CAN,2019,Container ships,2197,1.525,13,58131,,5258
+CAN,2019,Dry breakbulk carriers,3240,0.4392,11,11144,14882,
+CAN,2019,Dry bulk carriers,13147,0.3681,23,27834,48012,
+CAN,2019,Liquefied petroleum gas carriers,16,1.5903,7,44360,50572,
+CAN,2019,Liquid bulk carriers,5229,1.0965,11,21791,36248,
+CAN,2019,Passenger ships,76278,,29,7924,,
+CAN,2019,Roll-on/ roll-off ships,4223,,21,12971,6834,
+CAN,2020,All ships,103297,0.7743,27,11067,34669,5198
+CAN,2020,Container ships,2041,1.7962,13,58222,,5198
+CAN,2020,Dry breakbulk carriers,2993,0.5736,12,11759,16360,
+CAN,2020,Dry bulk carriers,13119,0.4059,22,27583,47008,
+CAN,2020,Liquefied petroleum gas carriers,41,1.5076,12,41742,49632,
+CAN,2020,Liquid bulk carriers,4331,1.084,12,23600,39461,
+CAN,2020,Passenger ships,76302,,30,6220,,
+CAN,2020,Roll-on/ roll-off ships,4470,,19,10912,6129,
+CAN,2021,All ships,111934,0.7396,27,10818,34847,5073
+CAN,2021,Container ships,2059,1.8108,15,56008,,5073
+CAN,2021,Dry breakbulk carriers,2888,0.7521,13,11994,16944,
+CAN,2021,Dry bulk carriers,13673,0.3368,23,27333,46992,
+CAN,2021,Liquefied petroleum gas carriers,36,1.509,8,46450,53033,
+CAN,2021,Liquid bulk carriers,4394,1.0632,12,24339,40745,
+CAN,2021,Passenger ships,84060,,29,6279,,
+CAN,2021,Roll-on/ roll-off ships,4824,,22,10532,5789,
+CHN,2018,All ships,240385,1.02,12,32362,44290,4645
+CHN,2018,Container ships,71535,0.62,11,50155,,4645
+CHN,2018,Dry breakbulk carriers,28805,1.17,15,10073,14487,
+CHN,2018,Dry bulk carriers,54901,2,11,40984,74512,
+CHN,2018,Liquefied natural gas carriers,694,1.21,9,102730,83166,
+CHN,2018,Liquefied petroleum gas carriers,7061,1,12,9873,10939,
+CHN,2018,Liquid bulk carriers,35842,1.1,10,19514,34087,
+CHN,2018,Passenger ships,34937,,10,17597,,
+CHN,2018,Roll-on/ roll-off ships,6610,,14,29658,9806,
+CHN,2019,All ships,254868,1.0378,12,32173,45062,4664
+CHN,2019,Container ships,72583,0.6007,12,50062,,4664
+CHN,2019,Dry breakbulk carriers,30007,1.1833,16,10098,14349,
+CHN,2019,Dry bulk carriers,60420,2.0083,12,41595,75685,
+CHN,2019,Liquefied natural gas carriers,979,1.1906,9,97276,77155,
+CHN,2019,Liquefied petroleum gas carriers,7893,0.9882,14,8541,9493,
+CHN,2019,Liquid bulk carriers,40702,1.0833,11,19622,34314,
+CHN,2019,Passenger ships,35413,,12,16579,,
+CHN,2019,Roll-on/ roll-off ships,6871,,14,29334,9474,
+CHN,2020,All ships,261269,1.0764,13,32258,45917,4637
+CHN,2020,Container ships,74413,0.6208,12,49495,,4637
+CHN,2020,Dry breakbulk carriers,30338,1.2736,16,10101,14315,
+CHN,2020,Dry bulk carriers,65234,2.0181,13,40924,74435,
+CHN,2020,Liquefied natural gas carriers,1151,1.1913,10,96308,76726,
+CHN,2020,Liquefied petroleum gas carriers,8353,1.0222,14,8813,9664,
+CHN,2020,Liquid bulk carriers,44594,1.1375,11,20301,35530,
+CHN,2020,Passenger ships,32169,,13,15690,,
+CHN,2020,Roll-on/ roll-off ships,5017,,14,34742,11396,
+CHN,2021,All ships,260464,1.15,13,31075,45243,4401
+CHN,2021,Container ships,70506,0.7278,13,47249,,4401
+CHN,2021,Dry breakbulk carriers,29249,1.4965,17,10165,14306,
+CHN,2021,Dry bulk carriers,65524,2.0438,14,40869,74396,
+CHN,2021,Liquefied natural gas carriers,1328,1.1906,9,96008,76438,
+CHN,2021,Liquefied petroleum gas carriers,9014,1.0417,14,9412,10249,
+CHN,2021,Liquid bulk carriers,44797,1.1458,12,19543,34011,
+CHN,2021,Passenger ships,33250,,14,14420,,
+CHN,2021,Roll-on/ roll-off ships,6796,,12,32386,11260,
+DEU,2018,All ships,106613,0.56,18,13449,8454,3901
+DEU,2018,Container ships,9589,0.79,11,42651,,3901
+DEU,2018,Dry breakbulk carriers,18293,0.5,20,3507,4753,
+DEU,2018,Dry bulk carriers,1430,2.48,12,29434,51933,
+DEU,2018,Liquefied petroleum gas carriers,907,0.75,12,4983,5474,
+DEU,2018,Liquid bulk carriers,14394,0.36,18,4428,7437,
+DEU,2018,Passenger ships,56349,,19,12180,,
+DEU,2018,Roll-on/ roll-off ships,5651,,14,29040,12056,
+DEU,2019,All ships,108634,0.4896,18,13251,8370,3855
+DEU,2019,Container ships,9543,0.7403,13,42018,,3855
+DEU,2019,Dry breakbulk carriers,19479,0.3486,20,3555,4828,
+DEU,2019,Dry bulk carriers,1354,2.3583,12,29250,51502,
+DEU,2019,Liquefied petroleum gas carriers,1155,0.6958,12,5210,5681,
+DEU,2019,Liquid bulk carriers,15318,0.3535,17,4767,7922,
+DEU,2019,Passenger ships,55734,,19,12069,,
+DEU,2019,Roll-on/ roll-off ships,6051,,15,29424,11557,
+DEU,2020,All ships,88445,0.8076,19,13701,9051,4442
+DEU,2020,Container ships,7139,0.984,13,48831,,4442
+DEU,2020,Dry breakbulk carriers,12754,0.9535,21,3605,4759,
+DEU,2020,Dry bulk carriers,1346,2.3729,13,28149,49056,
+DEU,2020,Liquefied petroleum gas carriers,807,0.8438,13,5508,6008,
+DEU,2020,Liquid bulk carriers,12253,0.5111,18,4871,8049,
+DEU,2020,Passenger ships,49091,,20,11507,,
+DEU,2020,Roll-on/ roll-off ships,5055,,17,29718,11841,
+DEU,2021,All ships,95586,0.8389,19,13557,9279,4497
+DEU,2021,Container ships,7082,1.1306,13,49641,,4497
+DEU,2021,Dry breakbulk carriers,13324,0.8514,21,3634,4867,
+DEU,2021,Dry bulk carriers,1407,2.4993,12,30241,52613,
+DEU,2021,Liquefied petroleum gas carriers,899,0.8722,14,5294,5862,
+DEU,2021,Liquid bulk carriers,12447,0.5535,17,4924,7994,
+DEU,2021,Passenger ships,55383,,20,11410,,
+DEU,2021,Roll-on/ roll-off ships,5044,,17,30802,12263,
+DNK,2018,All ships,113642,0.74,18,9777,7455,1942
+DNK,2018,Container ships,1171,0.49,13,21242,,1942
+DNK,2018,Dry breakbulk carriers,8151,0.84,23,3051,4150,
+DNK,2018,Dry bulk carriers,783,0.87,29,9528,15216,
+DNK,2018,Liquefied petroleum gas carriers,78,1.07,12,4690,5045,
+DNK,2018,Liquid bulk carriers,2840,0.65,16,8100,12998,
+DNK,2018,Passenger ships,99434,,18,10116,,
+DNK,2018,Roll-on/ roll-off ships,1185,,18,20778,11935,
+DNK,2019,All ships,113170,0.7507,19,9847,7773,1785
+DNK,2019,Container ships,1322,0.4611,17,19536,,1785
+DNK,2019,Dry breakbulk carriers,7667,0.8931,23,3083,4193,
+DNK,2019,Dry bulk carriers,861,0.8417,41,9282,14964,
+DNK,2019,Liquefied petroleum gas carriers,63,1.0444,10,5014,5687,
+DNK,2019,Liquid bulk carriers,2934,0.6854,16,8387,13434,
+DNK,2019,Passenger ships,99228,,19,10175,,
+DNK,2019,Roll-on/ roll-off ships,1095,,19,20399,12139,
+DNK,2020,All ships,102178,0.7729,19,9537,7542,1787
+DNK,2020,Container ships,1380,0.4469,16,19470,,1787
+DNK,2020,Dry breakbulk carriers,7662,0.9312,24,3021,4079,
+DNK,2020,Dry bulk carriers,826,0.8608,13,8954,14516,
+DNK,2020,Liquefied petroleum gas carriers,51,1.034,11,4735,5326,
+DNK,2020,Liquid bulk carriers,2810,0.6951,16,8331,13165,
+DNK,2020,Passenger ships,88368,,19,9851,,
+DNK,2020,Roll-on/ roll-off ships,1081,,19,21214,12247,
+DNK,2021,All ships,106560,0.7507,20,9563,7275,1932
+DNK,2021,Container ships,1205,0.5056,15,21530,,1932
+DNK,2021,Dry breakbulk carriers,8536,0.8507,24,3186,4313,
+DNK,2021,Dry bulk carriers,863,0.8285,11,8186,13298,
+DNK,2021,Liquefied petroleum gas carriers,46,1.1035,11,3717,4140,
+DNK,2021,Liquid bulk carriers,2834,0.6924,17,8234,13066,
+DNK,2021,Passenger ships,91979,,20,9904,,
+DNK,2021,Roll-on/ roll-off ships,1097,,20,22242,10745,
+ESP,2018,All ships,139717,0.86,17,15770,13991,3219
+ESP,2018,Container ships,14915,0.66,13,35327,,3219
+ESP,2018,Dry breakbulk carriers,13656,1.14,15,5165,7239,
+ESP,2018,Dry bulk carriers,3139,2.27,13,25255,44230,
+ESP,2018,Liquefied natural gas carriers,246,1.05,11,95788,75572,
+ESP,2018,Liquefied petroleum gas carriers,1400,0.96,11,7204,8251,
+ESP,2018,Liquid bulk carriers,14882,0.84,11,10859,17867,
+ESP,2018,Passenger ships,80391,,19,13547,,
+ESP,2018,Roll-on/ roll-off ships,11088,,16,21858,7901,
+ESP,2019,All ships,142773,0.8792,17,16226,13971,3235
+ESP,2019,Container ships,15137,0.6521,14,35592,,3235
+ESP,2019,Dry breakbulk carriers,13374,1.1653,15,5127,7197,
+ESP,2019,Dry bulk carriers,3279,1.899,16,22414,38830,
+ESP,2019,Liquefied natural gas carriers,362,1.0368,10,92790,73120,
+ESP,2019,Liquefied petroleum gas carriers,1486,0.9576,11,7631,8761,
+ESP,2019,Liquid bulk carriers,16042,0.8972,11,11074,18168,
+ESP,2019,Passenger ships,81564,,19,14158,,
+ESP,2019,Roll-on/ roll-off ships,11529,,17,22418,7733,
+ESP,2020,All ships,105046,0.9021,17,15791,14380,3258
+ESP,2020,Container ships,14321,0.6625,14,35736,,3258
+ESP,2020,Dry breakbulk carriers,11584,1.2104,16,5207,7248,
+ESP,2020,Dry bulk carriers,2943,1.7906,17,21771,37445,
+ESP,2020,Liquefied natural gas carriers,318,1.0424,9,99625,79060,
+ESP,2020,Liquefied petroleum gas carriers,1176,1.0392,13,8316,9683,
+ESP,2020,Liquid bulk carriers,15144,0.9063,12,10527,17155,
+ESP,2020,Passenger ships,51580,,19,12155,,
+ESP,2020,Roll-on/ roll-off ships,7980,,18,24412,9077,
+ESP,2021,All ships,118511,0.9014,17,15962,15000,3029
+ESP,2021,Container ships,14705,0.6507,15,32737,,3029
+ESP,2021,Dry breakbulk carriers,12782,1.1799,17,5059,7118,
+ESP,2021,Dry bulk carriers,3247,1.7819,16,23575,40995,
+ESP,2021,Liquefied natural gas carriers,371,1.0458,11,94636,74249,
+ESP,2021,Liquefied petroleum gas carriers,1348,1.0208,12,6724,7556,
+ESP,2021,Liquid bulk carriers,16010,0.9038,13,10917,17861,
+ESP,2021,Passenger ships,62728,,19,13767,,
+ESP,2021,Roll-on/ roll-off ships,7320,,15,25481,9345,
+FRA,2018,All ships,71705,1.11,16,23182,17614,5017
+FRA,2018,Container ships,5564,0.75,12,55654,,5017
+FRA,2018,Dry breakbulk carriers,7916,1.5,15,4662,6518,
+FRA,2018,Dry bulk carriers,1647,3.14,12,27522,48791,
+FRA,2018,Liquefied natural gas carriers,232,1.2,8,101383,79032,
+FRA,2018,Liquefied petroleum gas carriers,1132,1.07,11,8026,8836,
+FRA,2018,Liquid bulk carriers,8206,1.06,12,13320,22742,
+FRA,2018,Passenger ships,44675,,17,24168,,
+FRA,2018,Roll-on/ roll-off ships,2333,,15,28503,11428,
+FRA,2019,All ships,72014,1.1153,17,23166,17359,5060
+FRA,2019,Container ships,5447,0.7451,13,56344,,5060
+FRA,2019,Dry breakbulk carriers,7595,1.5795,16,4566,6371,
+FRA,2019,Dry bulk carriers,1755,3.0049,13,26041,45754,
+FRA,2019,Liquefied natural gas carriers,329,1.1472,8,103818,81478,
+FRA,2019,Liquefied petroleum gas carriers,1110,1.117,11,8870,9837,
+FRA,2019,Liquid bulk carriers,9103,1.0292,12,12238,20803,
+FRA,2019,Passenger ships,44280,,18,24337,,
+FRA,2019,Roll-on/ roll-off ships,2395,,15,28419,11254,
+FRA,2020,All ships,58537,1.1479,16,21626,16422,5089
+FRA,2020,Container ships,4650,0.7819,14,56667,,5089
+FRA,2020,Dry breakbulk carriers,7025,1.6375,17,4630,6416,
+FRA,2020,Dry bulk carriers,1559,2.9281,13,23701,41119,
+FRA,2020,Liquefied natural gas carriers,279,1.1625,9,104568,81457,
+FRA,2020,Liquefied petroleum gas carriers,961,1.1205,12,9100,10207,
+FRA,2020,Liquid bulk carriers,8112,1.0549,13,11630,19268,
+FRA,2020,Passenger ships,33998,,17,22427,,
+FRA,2020,Roll-on/ roll-off ships,1953,,15,30259,12053,
+FRA,2021,All ships,66103,1.1632,17,21464,16120,5105
+FRA,2021,Container ships,4521,0.9563,14,56024,,5105
+FRA,2021,Dry breakbulk carriers,7522,1.5681,18,4642,6424,
+FRA,2021,Dry bulk carriers,1640,2.9604,14,25272,44753,
+FRA,2021,Liquefied natural gas carriers,277,1.1243,10,98336,75779,
+FRA,2021,Liquefied petroleum gas carriers,1019,1.0806,12,9365,10491,
+FRA,2021,Liquid bulk carriers,8679,1.025,13,11048,18348,
+FRA,2021,Passenger ships,40206,,18,22509,,
+FRA,2021,Roll-on/ roll-off ships,2239,,17,29527,12235,
+GRC,2018,All ships,155072,0.71,20,8526,7365,3754
+GRC,2018,Container ships,3807,0.95,14,40706,,3754
+GRC,2018,Dry breakbulk carriers,6366,1.07,31,2768,3861,
+GRC,2018,Dry bulk carriers,2928,0.35,25,5792,9656,
+GRC,2018,Liquefied natural gas carriers,15,0.99,20,73812,64140,
+GRC,2018,Liquefied petroleum gas carriers,438,0.88,25,4616,5267,
+GRC,2018,Liquid bulk carriers,12275,0.54,22,5301,8444,
+GRC,2018,Passenger ships,126537,,19,8000,,
+GRC,2018,Roll-on/ roll-off ships,2706,,32,19239,8260,
+GRC,2019,All ships,159583,0.7413,21,8716,7442,3839
+GRC,2019,Container ships,3781,1.0514,15,41464,,3839
+GRC,2019,Dry breakbulk carriers,6531,1.1229,31,2869,3983,
+GRC,2019,Dry bulk carriers,3001,0.3316,26,6104,10220,
+GRC,2019,Liquefied natural gas carriers,51,1.0993,13,100441,82289,
+GRC,2019,Liquefied petroleum gas carriers,423,0.9229,26,4920,5709,
+GRC,2019,Liquid bulk carriers,12175,0.5313,21,5232,8279,
+GRC,2019,Passenger ships,130621,,21,8188,,
+GRC,2019,Roll-on/ roll-off ships,3000,,31,18886,7767,
+GRC,2020,All ships,136718,0.8243,21,8018,7586,3886
+GRC,2020,Container ships,3802,0.9799,15,41708,,3886
+GRC,2020,Dry breakbulk carriers,6232,1.1639,33,2756,3844,
+GRC,2020,Dry bulk carriers,2767,0.4271,26,5993,10057,
+GRC,2020,Liquefied natural gas carriers,45,1.2174,11,110612,90715,
+GRC,2020,Liquefied petroleum gas carriers,459,0.9799,23,5315,6316,
+GRC,2020,Liquid bulk carriers,11818,0.6167,21,5581,8889,
+GRC,2020,Passenger ships,108198,,21,7158,,
+GRC,2020,Roll-on/ roll-off ships,3397,,32,16495,6975,
+GRC,2021,All ships,153559,0.8479,22,8251,7669,4235
+GRC,2021,Container ships,3430,1.0465,16,45184,,4235
+GRC,2021,Dry breakbulk carriers,6330,1.1465,33,2744,3828,
+GRC,2021,Dry bulk carriers,2699,0.6417,26,6661,11147,
+GRC,2021,Liquefied natural gas carriers,35,1.2042,10,98074,77869,
+GRC,2021,Liquefied petroleum gas carriers,471,0.9944,24,5373,6316,
+GRC,2021,Liquid bulk carriers,11562,0.6153,22,5753,9172,
+GRC,2021,Passenger ships,124790,,21,7507,,
+GRC,2021,Roll-on/ roll-off ships,4242,,34,15881,6664,
+HRV,2018,All ships,68378,1.2,15,3981,16967,3592
+HRV,2018,Container ships,394,0.59,12,39567,,3592
+HRV,2018,Dry breakbulk carriers,765,2.63,21,4750,6369,
+HRV,2018,Dry bulk carriers,362,1.81,33,9704,16749,
+HRV,2018,Liquid bulk carriers,572,1.04,13,17864,31278,
+HRV,2018,Passenger ships,66285,,15,3609,,
+HRV,2019,All ships,71023,1.2639,16,3925,15519,3548
+HRV,2019,Container ships,395,0.6611,14,38667,,3548
+HRV,2019,Dry breakbulk carriers,730,2.7344,22,4738,6278,
+HRV,2019,Dry bulk carriers,337,2.4531,35,8683,14939,
+HRV,2019,Liquid bulk carriers,572,1.0597,13,16001,27655,
+HRV,2019,Passenger ships,68989,,16,3594,,
+HRV,2020,All ships,60198,1.1118,16,3534,15614,3147
+HRV,2020,Container ships,453,0.6097,13,33387,,3147
+HRV,2020,Dry breakbulk carriers,779,2.2649,22,4828,6481,
+HRV,2020,Dry bulk carriers,348,2.3528,34,7893,13051,
+HRV,2020,Liquid bulk carriers,615,0.9215,14,16523,28633,
+HRV,2020,Passenger ships,58003,,16,3119,,
+HRV,2021,All ships,73290,1.1708,16,3565,15990,3635
+HRV,2021,Container ships,379,0.5951,14,38415,,3635
+HRV,2021,Dry breakbulk carriers,810,2.4899,23,4671,6306,
+HRV,2021,Dry bulk carriers,328,2.501,28,11426,19336,
+HRV,2021,Liquefied natural gas carriers,11,1.5611,8,118462,95783,
+HRV,2021,Liquid bulk carriers,619,0.9063,15,14919,25471,
+HRV,2021,Passenger ships,71143,,16,3214,,
+IDN,2018,All ships,150429,1.34,20,8135,17303,1440
+IDN,2018,Container ships,13747,1.09,14,15430,,1440
+IDN,2018,Dry breakbulk carriers,14462,1.26,19,5030,6460,
+IDN,2018,Dry bulk carriers,10342,3.55,16,26071,46019,
+IDN,2018,Liquefied natural gas carriers,237,1.38,19,91139,69996,
+IDN,2018,Liquefied petroleum gas carriers,2799,1.13,19,9455,10620,
+IDN,2018,Liquid bulk carriers,15935,1.28,15,8199,12733,
+IDN,2018,Passenger ships,88370,,22,5096,,
+IDN,2018,Roll-on/ roll-off ships,4537,,31,8841,3799,
+IDN,2019,All ships,175242,1.2813,20,7924,17041,1469
+IDN,2019,Container ships,14715,1.0479,14,15475,,1469
+IDN,2019,Dry breakbulk carriers,15196,1.3118,19,5126,6637,
+IDN,2019,Dry bulk carriers,10556,3.2642,16,26278,46409,
+IDN,2019,Liquefied natural gas carriers,320,1.3781,22,88594,68723,
+IDN,2019,Liquefied petroleum gas carriers,3049,1.1354,19,9398,10498,
+IDN,2019,Liquid bulk carriers,19122,1.1771,15,8066,12518,
+IDN,2019,Passenger ships,107488,,22,5126,,
+IDN,2019,Roll-on/ roll-off ships,4796,,33,9038,4003,
+IDN,2020,All ships,166578,1.2222,20,7670,16098,1509
+IDN,2020,Container ships,15019,0.9889,14,15475,,1509
+IDN,2020,Dry breakbulk carriers,15003,1.1465,20,4983,6594,
+IDN,2020,Dry bulk carriers,9505,3.0771,17,24896,43621,
+IDN,2020,Liquefied natural gas carriers,304,1.4042,19,85052,67074,
+IDN,2020,Liquefied petroleum gas carriers,3230,1.0938,19,9855,10914,
+IDN,2020,Liquid bulk carriers,17587,1.2188,15,7924,12259,
+IDN,2020,Passenger ships,101713,,22,4908,,
+IDN,2020,Roll-on/ roll-off ships,4217,,33,8903,4146,
+IDN,2021,All ships,181658,1.2896,20,7904,16989,1218
+IDN,2021,Container ships,15648,1.0639,15,13513,,1218
+IDN,2021,Dry breakbulk carriers,16414,1.1826,21,5063,6759,
+IDN,2021,Dry bulk carriers,10681,2.8042,17,25551,44904,
+IDN,2021,Liquefied natural gas carriers,346,1.4229,18,88669,70289,
+IDN,2021,Liquefied petroleum gas carriers,3815,1.0771,19,9256,10091,
+IDN,2021,Liquid bulk carriers,22136,1.3042,15,9026,14221,
+IDN,2021,Passenger ships,107839,,22,5175,,
+IDN,2021,Roll-on/ roll-off ships,4779,,32,9284,4194,
+ITA,2018,All ships,229930,1.25,27,10230,18793,3693
+ITA,2018,Container ships,8920,0.82,14,40870,,3693
+ITA,2018,Dry breakbulk carriers,7279,1.93,18,6081,8422,
+ITA,2018,Dry bulk carriers,2158,3.55,13,24040,41564,
+ITA,2018,Liquefied petroleum gas carriers,1223,1.44,13,8630,9913,
+ITA,2018,Liquid bulk carriers,9667,1.29,16,17196,29280,
+ITA,2018,Passenger ships,190665,,30,7416,,
+ITA,2018,Roll-on/ roll-off ships,10018,,13,30019,12387,
+ITA,2019,All ships,233081,1.2771,26,10346,18524,4067
+ITA,2019,Container ships,8171,0.9056,15,44772,,4067
+ITA,2019,Dry breakbulk carriers,7344,1.9847,18,5996,8290,
+ITA,2019,Dry bulk carriers,2130,3.5222,13,22887,39146,
+ITA,2019,Liquefied petroleum gas carriers,1123,1.4493,13,8531,9646,
+ITA,2019,Liquid bulk carriers,9856,1.25,18,16751,28462,
+ITA,2019,Passenger ships,194992,,28,7631,,
+ITA,2019,Roll-on/ roll-off ships,9465,,14,30650,12526,
+ITA,2020,All ships,200074,1.3111,27,9472,17927,3886
+ITA,2020,Container ships,7929,0.9208,16,42692,,3886
+ITA,2020,Dry breakbulk carriers,6351,2.0444,19,6064,8308,
+ITA,2020,Dry bulk carriers,1811,3.525,15,21689,37026,
+ITA,2020,Liquefied petroleum gas carriers,908,1.6354,13,8644,9740,
+ITA,2020,Liquid bulk carriers,9359,1.2833,17,15870,26815,
+ITA,2020,Passenger ships,164891,,29,6364,,
+ITA,2020,Roll-on/ roll-off ships,8825,,13,30939,12342,
+ITA,2021,All ships,230097,1.3444,28,9752,18804,3642
+ITA,2021,Container ships,7746,0.9639,16,39638,,3642
+ITA,2021,Dry breakbulk carriers,6826,1.9674,20,5985,8261,
+ITA,2021,Dry bulk carriers,2178,3.4951,15,22540,38524,
+ITA,2021,Liquefied petroleum gas carriers,1008,1.6403,14,8394,9543,
+ITA,2021,Liquid bulk carriers,9484,1.2847,18,16844,28530,
+ITA,2021,Passenger ships,193464,,30,7046,,
+ITA,2021,Roll-on/ roll-off ships,9391,,13,33606,13066,
+JPN,2018,All ships,265518,0.41,14,11586,15156,1650
+JPN,2018,Container ships,38238,0.35,12,17334,,1650
+JPN,2018,Dry breakbulk carriers,27153,1.12,14,6559,8765,
+JPN,2018,Dry bulk carriers,28835,0.9,14,17830,31350,
+JPN,2018,Liquefied natural gas carriers,2023,0.99,13,75696,54400,
+JPN,2018,Liquefied petroleum gas carriers,6398,0.32,16,6011,6575,
+JPN,2018,Liquid bulk carriers,44382,0.31,12,7913,13474,
+JPN,2018,Passenger ships,85118,,15,6414,,
+JPN,2018,Roll-on/ roll-off ships,33371,,12,18953,7860,
+JPN,2019,All ships,280874,0.4083,16,11337,15418,1640
+JPN,2019,Container ships,39066,0.3472,12,17205,,1640
+JPN,2019,Dry breakbulk carriers,26317,1.1497,14,6766,9699,
+JPN,2019,Dry bulk carriers,30528,0.8514,20,17436,30475,
+JPN,2019,Liquefied natural gas carriers,1901,0.9931,13,76193,54452,
+JPN,2019,Liquefied petroleum gas carriers,6368,0.3361,16,6243,6852,
+JPN,2019,Liquid bulk carriers,44633,0.3083,12,8291,14143,
+JPN,2019,Passenger ships,97066,,16,6331,,
+JPN,2019,Roll-on/ roll-off ships,34995,,23,18080,7639,
+JPN,2020,All ships,259583,0.3972,14,10683,14768,1620
+JPN,2020,Container ships,37959,0.3375,13,16904,,1620
+JPN,2020,Dry breakbulk carriers,23882,1.1333,15,6595,8848,
+JPN,2020,Dry bulk carriers,28308,0.8313,14,16951,29450,
+JPN,2020,Liquefied natural gas carriers,1800,1.0125,13,75744,54834,
+JPN,2020,Liquefied petroleum gas carriers,5978,0.3368,15,6348,6931,
+JPN,2020,Liquid bulk carriers,42233,0.309,12,7879,13338,
+JPN,2020,Passenger ships,86856,,15,4969,,
+JPN,2020,Roll-on/ roll-off ships,32567,,11,17055,7416,
+JPN,2021,All ships,272723,0.416,14,10420,14940,1541
+JPN,2021,Container ships,35526,0.3625,13,16069,,1541
+JPN,2021,Dry breakbulk carriers,24475,1.1944,15,6712,8914,
+JPN,2021,Dry bulk carriers,31589,0.8333,14,16812,29068,
+JPN,2021,Liquefied natural gas carriers,1934,1.0278,13,73660,53212,
+JPN,2021,Liquefied petroleum gas carriers,6423,0.3187,13,6375,6893,
+JPN,2021,Liquid bulk carriers,42730,0.3111,12,7881,13300,
+JPN,2021,Passenger ships,95907,,15,4755,,
+JPN,2021,Roll-on/ roll-off ships,34139,,11,17558,7574,
+KOR,2018,All ships,71602,0.79,15,20316,21384,2884
+KOR,2018,Container ships,20777,0.6,13,31178,,2884
+KOR,2018,Dry breakbulk carriers,11874,1.29,17,5589,8505,
+KOR,2018,Dry bulk carriers,5967,2.34,13,29254,53064,
+KOR,2018,Liquefied natural gas carriers,582,1.03,10,112954,89028,
+KOR,2018,Liquefied petroleum gas carriers,2457,0.72,15,7354,8112,
+KOR,2018,Liquid bulk carriers,17397,0.79,13,13319,23141,
+KOR,2018,Passenger ships,5840,,20,14763,,
+KOR,2018,Roll-on/ roll-off ships,6708,,18,24487,10391,
+KOR,2019,All ships,95992,0.7931,17,19442,21918,2880
+KOR,2019,Container ships,23933,0.5813,14,30951,,2880
+KOR,2019,Dry breakbulk carriers,17837,1.1701,18,5370,7914,
+KOR,2019,Dry bulk carriers,9593,2.0444,14,28580,51436,
+KOR,2019,Liquefied natural gas carriers,578,1.033,11,111064,87415,
+KOR,2019,Liquefied petroleum gas carriers,4275,0.766,16,7323,8047,
+KOR,2019,Liquid bulk carriers,26262,0.7486,23,13975,24250,
+KOR,2019,Passenger ships,6609,,17,15356,,
+KOR,2019,Roll-on/ roll-off ships,6905,,18,27747,11276,
+KOR,2020,All ships,73563,0.8562,15,21416,23371,3056
+KOR,2020,Container ships,21461,0.6403,13,32781,,3056
+KOR,2020,Dry breakbulk carriers,14488,1.2167,18,5303,7534,
+KOR,2020,Dry bulk carriers,8257,2.0257,14,29007,52277,
+KOR,2020,Liquefied natural gas carriers,668,1.0313,30,103762,81673,
+KOR,2020,Liquefied petroleum gas carriers,3143,0.851,17,7787,8513,
+KOR,2020,Liquid bulk carriers,17160,0.7931,12,15093,26232,
+KOR,2020,Passenger ships,3826,,16,16964,,
+KOR,2020,Roll-on/ roll-off ships,4560,,17,30239,12178,
+KOR,2021,All ships,94594,0.8938,15,19381,21476,2958
+KOR,2021,Container ships,20652,0.7153,14,31645,,2958
+KOR,2021,Dry breakbulk carriers,18424,1.1861,19,5277,7514,
+KOR,2021,Dry bulk carriers,9067,2.1382,14,29341,52844,
+KOR,2021,Liquefied natural gas carriers,885,1.0458,12,107580,85047,
+KOR,2021,Liquefied petroleum gas carriers,4068,0.8188,15,7600,8325,
+KOR,2021,Liquid bulk carriers,26525,0.75,13,13647,23515,
+KOR,2021,Passenger ships,6996,,12,16901,,
+KOR,2021,Roll-on/ roll-off ships,7977,,20,26351,10862,
+NLD,2018,All ships,123726,0.57,15,13088,14081,2886
+NLD,2018,Container ships,12309,0.78,12,31216,,2886
+NLD,2018,Dry breakbulk carriers,26709,0.4,18,4062,5371,
+NLD,2018,Dry bulk carriers,4355,0.84,10,36464,65406,
+NLD,2018,Liquefied natural gas carriers,159,1.3,5,62032,48844,
+NLD,2018,Liquefied petroleum gas carriers,2331,0.94,11,7216,8057,
+NLD,2018,Liquid bulk carriers,41843,0.49,15,9440,17211,
+NLD,2018,Passenger ships,23383,,13,15805,,
+NLD,2018,Roll-on/ roll-off ships,12637,,21,13971,5833,
+NLD,2019,All ships,124059,0.5736,16,13362,14620,2990
+NLD,2019,Container ships,12155,0.7986,13,32385,,2990
+NLD,2019,Dry breakbulk carriers,27301,0.4125,19,3929,5282,
+NLD,2019,Dry bulk carriers,4477,0.6472,13,36340,64885,
+NLD,2019,Liquefied natural gas carriers,199,1.0736,5,63635,50321,
+NLD,2019,Liquefied petroleum gas carriers,2582,0.9465,11,6866,7643,
+NLD,2019,Liquid bulk carriers,41042,0.5063,15,10050,18522,
+NLD,2019,Passenger ships,23809,,14,15028,,
+NLD,2019,Roll-on/ roll-off ships,12494,,21,15479,6356,
+NLD,2020,All ships,117420,0.5799,17,12799,13654,2942
+NLD,2020,Container ships,11595,0.8014,14,32000,,2942
+NLD,2020,Dry breakbulk carriers,25990,0.4056,19,3834,5190,
+NLD,2020,Dry bulk carriers,3838,0.7726,11,34736,61262,
+NLD,2020,Liquefied natural gas carriers,183,1.0382,6,64880,49905,
+NLD,2020,Liquefied petroleum gas carriers,2225,1.0174,12,7144,8001,
+NLD,2020,Liquid bulk carriers,41150,0.5253,16,9343,17150,
+NLD,2020,Passenger ships,20654,,15,14409,,
+NLD,2020,Roll-on/ roll-off ships,11785,,22,16043,6358,
+NLD,2021,All ships,121650,0.6187,17,12841,14119,2819
+NLD,2021,Container ships,11516,0.8882,15,30474,,2819
+NLD,2021,Dry breakbulk carriers,25937,0.4285,20,3944,5282,
+NLD,2021,Dry bulk carriers,4244,1.2201,11,37250,66566,
+NLD,2021,Liquefied natural gas carriers,233,1.0128,7,58538,45787,
+NLD,2021,Liquefied petroleum gas carriers,2564,0.951,15,6458,7114,
+NLD,2021,Liquid bulk carriers,42294,0.5688,17,9256,17036,
+NLD,2021,Passenger ships,22531,,14,14315,,
+NLD,2021,Roll-on/ roll-off ships,12331,,22,16749,6494,
+NOR,2018,All ships,524469,0.43,17,4310,6874,783
+NOR,2018,Container ships,3536,0.33,15,8377,,783
+NOR,2018,Dry breakbulk carriers,32692,0.34,22,2802,3297,
+NOR,2018,Dry bulk carriers,2282,0.87,18,16467,27662,
+NOR,2018,Liquefied natural gas carriers,562,0.32,10,20473,14533,
+NOR,2018,Liquefied petroleum gas carriers,1142,0.75,11,10677,12053,
+NOR,2018,Liquid bulk carriers,5600,0.61,15,11449,18131,
+NOR,2018,Passenger ships,475130,,17,4164,,
+NOR,2018,Roll-on/ roll-off ships,3525,,14,10037,5809,
+NOR,2019,All ships,586161,0.4174,17,4306,6958,789
+NOR,2019,Container ships,3461,0.3264,16,8327,,789
+NOR,2019,Dry breakbulk carriers,33564,0.3271,22,2834,3323,
+NOR,2019,Dry bulk carriers,2237,0.8292,17,17154,28837,
+NOR,2019,Liquefied natural gas carriers,594,0.3358,11,18764,13280,
+NOR,2019,Liquefied petroleum gas carriers,1067,0.7486,11,10862,12120,
+NOR,2019,Liquid bulk carriers,5911,0.6028,15,11422,18341,
+NOR,2019,Passenger ships,535649,,16,4172,,
+NOR,2019,Roll-on/ roll-off ships,3678,,17,9966,6006,
+NOR,2020,All ships,584421,0.4028,14,3947,7209,848
+NOR,2020,Container ships,3159,0.3319,15,8968,,848
+NOR,2020,Dry breakbulk carriers,33907,0.3104,23,2704,3240,
+NOR,2020,Dry bulk carriers,2384,0.8319,15,17300,29233,
+NOR,2020,Liquefied natural gas carriers,510,0.2701,14,14772,10663,
+NOR,2020,Liquefied petroleum gas carriers,1050,0.7625,11,10741,11957,
+NOR,2020,Liquid bulk carriers,5803,0.6062,15,12715,20749,
+NOR,2020,Passenger ships,533858,,14,3772,,
+NOR,2020,Roll-on/ roll-off ships,3750,,18,10402,6346,
+NOR,2021,All ships,696827,0.416,13,3906,7267,834
+NOR,2021,Container ships,3209,0.3507,16,8796,,834
+NOR,2021,Dry breakbulk carriers,34118,0.3257,24,2751,3294,
+NOR,2021,Dry bulk carriers,2432,0.8104,16,18320,30510,
+NOR,2021,Liquefied natural gas carriers,350,0.2903,15,5842,4682,
+NOR,2021,Liquefied petroleum gas carriers,976,0.8455,10,10754,11890,
+NOR,2021,Liquid bulk carriers,6385,0.5986,15,11881,19263,
+NOR,2021,Passenger ships,645035,,13,3749,,
+NOR,2021,Roll-on/ roll-off ships,4322,,17,11264,6984,
+PHL,2018,All ships,37484,1.04,19,6970,10592,1737
+PHL,2018,Container ships,4027,0.87,15,18115,,1737
+PHL,2018,Dry breakbulk carriers,9833,1.05,19,4219,5520,
+PHL,2018,Dry bulk carriers,1719,4.38,12,22763,39727,
+PHL,2018,Liquefied petroleum gas carriers,443,0.9,11,7411,8273,
+PHL,2018,Liquid bulk carriers,3452,0.9,12,7931,12901,
+PHL,2018,Passenger ships,16169,,21,3064,,
+PHL,2018,Roll-on/ roll-off ships,1841,,26,14937,6705,
+PHL,2019,All ships,47506,0.9812,20,7075,11452,1816
+PHL,2019,Container ships,5492,0.8431,15,19124,,1816
+PHL,2019,Dry breakbulk carriers,10340,0.975,19,4271,5589,
+PHL,2019,Dry bulk carriers,2226,4.3472,11,24599,42979,
+PHL,2019,Liquefied petroleum gas carriers,606,0.8101,12,6296,6986,
+PHL,2019,Liquid bulk carriers,4345,0.9069,12,7095,11427,
+PHL,2019,Passenger ships,22784,,23,3057,,
+PHL,2019,Roll-on/ roll-off ships,1713,,26,16273,7520,
+PHL,2020,All ships,38640,0.9868,20,8179,11997,1858
+PHL,2020,Container ships,5181,0.8858,15,20089,,1858
+PHL,2020,Dry breakbulk carriers,10266,0.9847,20,4167,5471,
+PHL,2020,Dry bulk carriers,2159,4.5674,12,25660,44953,
+PHL,2020,Liquefied petroleum gas carriers,459,0.9132,10,8437,9525,
+PHL,2020,Liquid bulk carriers,3975,0.8149,14,7934,12600,
+PHL,2020,Passenger ships,15363,,23,3755,,
+PHL,2020,Roll-on/ roll-off ships,1237,,26,16731,7622,
+PHL,2021,All ships,46338,0.975,19,7631,11844,1673
+PHL,2021,Container ships,5816,0.9403,16,17933,,1673
+PHL,2021,Dry breakbulk carriers,12100,0.9146,20,4084,5386,
+PHL,2021,Dry bulk carriers,2437,4.2979,13,26935,47314,
+PHL,2021,Liquefied petroleum gas carriers,549,0.8938,13,7424,8313,
+PHL,2021,Liquid bulk carriers,4262,0.8646,12,7393,11740,
+PHL,2021,Passenger ships,19709,,21,3597,,
+PHL,2021,Roll-on/ roll-off ships,1465,,27,18959,7799,
+RUS,2018,All ships,81187,1.33,23,9310,14563,1511
+RUS,2018,Container ships,3886,1.4,15,16922,,1511
+RUS,2018,Dry breakbulk carriers,30312,1.56,28,3907,4988,
+RUS,2018,Dry bulk carriers,6498,2.5,13,25096,43693,
+RUS,2018,Liquefied natural gas carriers,261,1.1,7,110982,80481,
+RUS,2018,Liquefied petroleum gas carriers,423,1.34,9,11498,13096,
+RUS,2018,Liquid bulk carriers,23399,1.04,22,11609,19452,
+RUS,2018,Passenger ships,12976,,17,5303,,
+RUS,2018,Roll-on/ roll-off ships,3432,,26,9990,5787,
+RUS,2019,All ships,71412,1.2938,25,11770,16895,1542
+RUS,2019,Container ships,3987,1.3028,16,17215,,1542
+RUS,2019,Dry breakbulk carriers,28837,1.6118,30,4008,5117,
+RUS,2019,Dry bulk carriers,7134,2.2101,14,25833,44815,
+RUS,2019,Liquefied natural gas carriers,519,1.066,7,98481,72855,
+RUS,2019,Liquefied petroleum gas carriers,444,1.233,10,9985,11298,
+RUS,2019,Liquid bulk carriers,25745,1.0271,23,13386,22656,
+RUS,2019,Passenger ships,1727,,29,23268,,
+RUS,2019,Roll-on/ roll-off ships,3019,,27,10507,5465,
+RUS,2020,All ships,67438,1.3507,27,11113,16177,1509
+RUS,2020,Container ships,4184,1.3097,18,16598,,1509
+RUS,2020,Dry breakbulk carriers,29275,1.5708,33,3992,5068,
+RUS,2020,Dry bulk carriers,6524,2.4083,14,27595,48317,
+RUS,2020,Liquefied natural gas carriers,544,1.0986,7,99592,73283,
+RUS,2020,Liquefied petroleum gas carriers,288,1.3576,12,8957,10261,
+RUS,2020,Liquid bulk carriers,23065,1.0646,24,12492,21012,
+RUS,2020,Passenger ships,1056,,36,8156,,
+RUS,2020,Roll-on/ roll-off ships,2502,,32,11843,6001,
+RUS,2021,All ships,64406,1.466,25,11522,16921,1500
+RUS,2021,Container ships,4077,1.5653,16,16620,,1500
+RUS,2021,Dry breakbulk carriers,27454,1.7729,31,4210,5478,
+RUS,2021,Dry bulk carriers,6397,2.5062,15,26907,47052,
+RUS,2021,Liquefied natural gas carriers,571,1.1396,10,95689,70933,
+RUS,2021,Liquefied petroleum gas carriers,238,1.5042,17,7944,9297,
+RUS,2021,Liquid bulk carriers,22031,1.1,23,13136,22168,
+RUS,2021,Passenger ships,1380,,31,7093,,
+RUS,2021,Roll-on/ roll-off ships,2258,,30,13685,6614,
+SGP,2018,All ships,,,,,,
+SGP,2018,Container ships,,,,,,
+SGP,2018,Dry breakbulk carriers,,,,,,
+SGP,2018,Dry bulk carriers,,,,,,
+SGP,2018,Liquefied natural gas carriers,,,,,,
+SGP,2018,Liquefied petroleum gas carriers,,,,,,
+SGP,2018,Liquid bulk carriers,,,,,,
+SGP,2018,Passenger ships,,,,,,
+SGP,2018,Roll-on/ roll-off ships,,,,,,
+SGP,2019,All ships,,,,,,
+SGP,2019,Container ships,,,,,,
+SGP,2019,Dry breakbulk carriers,,,,,,
+SGP,2019,Dry bulk carriers,,,,,,
+SGP,2019,Liquefied natural gas carriers,,,,,,
+SGP,2019,Liquefied petroleum gas carriers,,,,,,
+SGP,2019,Liquid bulk carriers,,,,,,
+SGP,2019,Passenger ships,,,,,,
+SGP,2019,Roll-on/ roll-off ships,,,,,,
+SGP,2020,All ships,,,,,,
+SGP,2020,Container ships,,,,,,
+SGP,2020,Dry breakbulk carriers,,,,,,
+SGP,2020,Dry bulk carriers,,,,,,
+SGP,2020,Liquefied natural gas carriers,,,,,,
+SGP,2020,Liquefied petroleum gas carriers,,,,,,
+SGP,2020,Liquid bulk carriers,,,,,,
+SGP,2020,Passenger ships,,,,,,
+SGP,2020,Roll-on/ roll-off ships,,,,,,
+SGP,2021,All ships,,,,,,
+SGP,2021,Container ships,,,,,,
+SGP,2021,Dry breakbulk carriers,,,,,,
+SGP,2021,Dry bulk carriers,,,,,,
+SGP,2021,Liquefied natural gas carriers,,,,,,
+SGP,2021,Liquefied petroleum gas carriers,,,,,,
+SGP,2021,Liquid bulk carriers,,,,,,
+SGP,2021,Passenger ships,,,,,,
+SGP,2021,Roll-on/ roll-off ships,,,,,,
+SWE,2018,All ships,79238,0.8,22,15203,8629,1504
+SWE,2018,Container ships,2161,0.63,13,16250,,1504
+SWE,2018,Dry breakbulk carriers,10938,1.04,19,3493,4948,
+SWE,2018,Dry bulk carriers,1443,0.51,28,6838,10016,
+SWE,2018,Liquefied natural gas carriers,107,0.61,3,10163,7072,
+SWE,2018,Liquefied petroleum gas carriers,741,0.82,14,7072,7975,
+SWE,2018,Liquid bulk carriers,7143,0.68,14,8330,12976,
+SWE,2018,Passenger ships,53777,,24,18268,,
+SWE,2018,Roll-on/ roll-off ships,2928,,18,25010,11314,
+SWE,2019,All ships,78766,0.8007,22,15712,8928,1505
+SWE,2019,Container ships,2254,0.6292,14,16380,,1505
+SWE,2019,Dry breakbulk carriers,11062,1.059,20,3725,5223,
+SWE,2019,Dry bulk carriers,1612,0.4139,27,9760,15038,
+SWE,2019,Liquefied petroleum gas carriers,689,0.8535,14,7745,8694,
+SWE,2019,Liquid bulk carriers,6759,0.683,14,8321,12788,
+SWE,2019,Passenger ships,53027,,24,18688,,
+SWE,2019,Roll-on/ roll-off ships,3363,,19,27110,10476,
+SWE,2020,All ships,67477,0.7965,22,15578,8797,1516
+SWE,2020,Container ships,2132,0.6208,15,16328,,1516
+SWE,2020,Dry breakbulk carriers,10277,1.0507,21,3775,5296,
+SWE,2020,Dry bulk carriers,1298,0.4868,28,7448,11165,
+SWE,2020,Liquefied natural gas carriers,46,0.8219,6,12575,9610,
+SWE,2020,Liquefied petroleum gas carriers,752,0.8333,14,7141,7764,
+SWE,2020,Liquid bulk carriers,6814,0.6785,14,8626,13140,
+SWE,2020,Passenger ships,42949,,24,19057,,
+SWE,2020,Roll-on/ roll-off ships,3209,,20,26376,10058,
+SWE,2021,All ships,67288,0.7715,23,16366,8572,1579
+SWE,2021,Container ships,1964,0.659,16,17014,,1579
+SWE,2021,Dry breakbulk carriers,10487,1.0083,22,3791,5350,
+SWE,2021,Dry bulk carriers,1306,0.4535,26,6370,9558,
+SWE,2021,Liquefied natural gas carriers,37,0.7069,7,13161,10073,
+SWE,2021,Liquefied petroleum gas carriers,765,0.8069,15,7451,8235,
+SWE,2021,Liquid bulk carriers,6922,0.6597,15,8247,12442,
+SWE,2021,Passenger ships,42378,,26,20351,,
+SWE,2021,Roll-on/ roll-off ships,3429,,20,27417,10298,
+TUR,2018,All ships,184169,1.19,23,5541,14776,3075
+TUR,2018,Container ships,10485,0.63,15,33910,,3075
+TUR,2018,Dry breakbulk carriers,19404,1.52,26,3873,5466,
+TUR,2018,Dry bulk carriers,3799,4,13,24982,43143,
+TUR,2018,Liquefied natural gas carriers,90,1.31,11,113052,92634,
+TUR,2018,Liquefied petroleum gas carriers,683,1.36,15,18983,22278,
+TUR,2018,Liquid bulk carriers,6873,1.11,13,16713,28853,
+TUR,2018,Passenger ships,136681,,25,1654,,
+TUR,2018,Roll-on/ roll-off ships,6154,,26,21268,8928,
+TUR,2019,All ships,200494,1.1778,24,5465,15712,3130
+TUR,2019,Container ships,11011,0.6313,16,34599,,3130
+TUR,2019,Dry breakbulk carriers,20211,1.475,27,3976,5564,
+TUR,2019,Dry bulk carriers,4395,3.5681,15,24756,42515,
+TUR,2019,Liquefied natural gas carriers,127,1.2632,11,111566,90060,
+TUR,2019,Liquefied petroleum gas carriers,736,1.2931,15,17965,20804,
+TUR,2019,Liquid bulk carriers,6977,1.1573,13,18665,32407,
+TUR,2019,Passenger ships,151199,,25,1640,,
+TUR,2019,Roll-on/ roll-off ships,5838,,27,20546,8454,
+TUR,2020,All ships,169964,1.1917,25,5954,15845,3034
+TUR,2020,Container ships,11594,0.6153,16,33437,,3034
+TUR,2020,Dry breakbulk carriers,19471,1.5326,28,4132,5804,
+TUR,2020,Dry bulk carriers,4216,3.8868,15,25351,43760,
+TUR,2020,Liquefied natural gas carriers,141,1.2931,10,112460,91068,
+TUR,2020,Liquefied petroleum gas carriers,724,1.2826,16,18784,21470,
+TUR,2020,Liquid bulk carriers,6517,1.2056,14,17981,30910,
+TUR,2020,Passenger ships,122870,,26,1611,,
+TUR,2020,Roll-on/ roll-off ships,4431,,25,20834,7934,
+TUR,2021,All ships,204553,1.2139,24,5561,16857,2969
+TUR,2021,Container ships,12171,0.6326,17,32607,,2969
+TUR,2021,Dry breakbulk carriers,21551,1.5375,29,4135,5775,
+TUR,2021,Dry bulk carriers,5230,3.8965,16,24835,42733,
+TUR,2021,Liquefied natural gas carriers,142,1.2278,9,110745,88091,
+TUR,2021,Liquefied petroleum gas carriers,776,1.2069,19,16159,18663,
+TUR,2021,Liquid bulk carriers,7462,1.1653,14,18755,32460,
+TUR,2021,Passenger ships,153436,,25,1638,,
+TUR,2021,Roll-on/ roll-off ships,3785,,24,26995,10578,
+USA,2018,All ships,284429,1.41,24,16319,46801,5326
+USA,2018,Container ships,19817,1,13,59644,,5326
+USA,2018,Dry breakbulk carriers,8016,1.79,16,11949,15972,
+USA,2018,Dry bulk carriers,15710,1.84,18,29030,51716,
+USA,2018,Liquefied natural gas carriers,470,1.28,5,91039,73123,
+USA,2018,Liquefied petroleum gas carriers,1787,2.03,8,30301,34666,
+USA,2018,Liquid bulk carriers,22011,1.64,10,36124,62748,
+USA,2018,Passenger ships,209015,,28,7854,,
+USA,2018,Roll-on/ roll-off ships,7603,,13,55430,20786,
+USA,2019,All ships,290748,1.4326,24,16506,46637,5322
+USA,2019,Container ships,20820,1.025,13,59336,,5322
+USA,2019,Dry breakbulk carriers,7610,1.833,17,12253,16551,
+USA,2019,Dry bulk carriers,15048,1.858,21,28069,50068,
+USA,2019,Liquefied natural gas carriers,693,1.2882,5,97819,79450,
+USA,2019,Liquefied petroleum gas carriers,2019,1.9656,9,30823,35301,
+USA,2019,Liquid bulk carriers,22413,1.6472,10,35433,61411,
+USA,2019,Passenger ships,215173,,28,8322,,
+USA,2019,Roll-on/ roll-off ships,6972,,13,57802,21091,
+USA,2020,All ships,246863,1.4528,24,15680,47136,5347
+USA,2020,Container ships,20037,1.0337,14,59997,,5347
+USA,2020,Dry breakbulk carriers,6654,1.9139,17,13047,18173,
+USA,2020,Dry bulk carriers,14117,1.9889,19,28870,51059,
+USA,2020,Liquefied natural gas carriers,859,1.2576,6,103165,82123,
+USA,2020,Liquefied petroleum gas carriers,2326,1.9736,9,31315,35752,
+USA,2020,Liquid bulk carriers,20269,1.6174,11,34662,59821,
+USA,2020,Passenger ships,176727,,28,5893,,
+USA,2020,Roll-on/ roll-off ships,5874,,13,59546,22420,
+USA,2021,All ships,260187,1.5743,26,15546,47736,5417
+USA,2021,Container ships,18816,1.2486,15,60554,,5417
+USA,2021,Dry breakbulk carriers,7327,2.0285,17,12703,17358,
+USA,2021,Dry bulk carriers,15391,2.2097,19,29718,53227,
+USA,2021,Liquefied natural gas carriers,1256,1.2681,6,105208,83898,
+USA,2021,Liquefied petroleum gas carriers,2596,1.8288,9,30329,34475,
+USA,2021,Liquid bulk carriers,21298,1.5944,11,34735,60081,
+USA,2021,Passenger ships,187300,,30,5968,,
+USA,2021,Roll-on/ roll-off ships,6203,,13,58940,21558,
+WLD,2018,All ships,4112944,0.97,18,15066,24210,3538
+WLD,2018,Container ships,454016,0.7,13,38520,,3538
+WLD,2018,Dry breakbulk carriers,430344,1.11,19,5438,7384,
+WLD,2018,Dry bulk carriers,259551,2.05,13,31940,57181,
+WLD,2018,Liquefied natural gas carriers,10617,1.11,10,93791,72964,
+WLD,2018,Liquefied petroleum gas carriers,49357,1.02,14,10662,12046,
+WLD,2018,Liquid bulk carriers,494120,0.94,13,15543,27014,
+WLD,2018,Passenger ships,2227407,,21,8928,,
+WLD,2018,Roll-on/ roll-off ships,187532,,17,25368,10232,
+WLD,2019,All ships,4362737,0.966,18,14980,24578,3513
+WLD,2019,Container ships,474553,0.6924,13,38172,,3513
+WLD,2019,Dry breakbulk carriers,446817,1.1021,20,5476,7498,
+WLD,2019,Dry bulk carriers,277872,2.0062,15,32011,57261,
+WLD,2019,Liquefied natural gas carriers,12222,1.1083,10,95469,74107,
+WLD,2019,Liquefied petroleum gas carriers,55227,1.0139,14,10300,11625,
+WLD,2019,Liquid bulk carriers,526202,0.9347,14,15702,27287,
+WLD,2019,Passenger ships,2378937,,21,8859,,
+WLD,2019,Roll-on/ roll-off ships,190907,,19,25277,10101,
+WLD,2020,All ships,3906987,0.9986,18,14663,24956,3543
+WLD,2020,Container ships,459417,0.7063,14,38308,,3543
+WLD,2020,Dry breakbulk carriers,413961,1.15,21,5439,7405,
+WLD,2020,Dry bulk carriers,266337,2.066,14,32146,57453,
+WLD,2020,Liquefied natural gas carriers,12386,1.1194,12,95270,74229,
+WLD,2020,Liquefied petroleum gas carriers,52639,1.0417,15,10826,12164,
+WLD,2020,Liquid bulk carriers,488876,0.9681,14,15704,27242,
+WLD,2020,Passenger ships,2047156,,20,7439,,
+WLD,2020,Roll-on/ roll-off ships,166215,,17,25389,10242,
+WLD,2021,All ships,4286204,1.0465,18,14022,24995,3431
+WLD,2021,Container ships,446589,0.8028,14,37223,,3431
+WLD,2021,Dry breakbulk carriers,435529,1.1736,21,5463,7427,
+WLD,2021,Dry bulk carriers,284807,2.1132,14,32011,57268,
+WLD,2021,Liquefied natural gas carriers,13577,1.1299,11,95356,74522,
+WLD,2021,Liquefied petroleum gas carriers,58412,1.0264,15,10541,11799,
+WLD,2021,Liquid bulk carriers,518130,0.9806,14,15739,27275,
+WLD,2021,Passenger ships,2348995,,20,7327,,
+WLD,2021,Roll-on/ roll-off ships,180165,,17,26118,10412,

@@ -1,0 +1,1796 @@
+table,country,iso3,group,technology,item,value
+Table 3.1,,,,ACAES,plants_countries,1 / 1
+Table 3.1,,,,ACAES,net_capacity_mwe_min,250
+Table 3.1,,,,ACAES,net_capacity_mwe_mean,250
+Table 3.1,,,,ACAES,net_capacity_mwe_median,250
+Table 3.1,,,,ACAES,net_capacity_mwe_max,250
+Table 3.1,,,,ACAES,overnight_usd_per_kwe_min,1695
+Table 3.1,,,,ACAES,overnight_usd_per_kwe_mean,1695
+Table 3.1,,,,ACAES,overnight_usd_per_kwe_median,1695
+Table 3.1,,,,ACAES,overnight_usd_per_kwe_max,1695
+Table 3.1,,,,Lithium-ion battery,plants_countries,4 / 4
+Table 3.1,,,,Lithium-ion battery,net_capacity_mwe_min,1.0
+Table 3.1,,,,Lithium-ion battery,net_capacity_mwe_mean,7.5
+Table 3.1,,,,Lithium-ion battery,net_capacity_mwe_median,2.0
+Table 3.1,,,,Lithium-ion battery,net_capacity_mwe_max,19
+Table 3.1,,,,Lithium-ion battery,overnight_usd_per_kwe_min,452
+Table 3.1,,,,Lithium-ion battery,overnight_usd_per_kwe_mean,932
+Table 3.1,,,,Lithium-ion battery,overnight_usd_per_kwe_median,655
+Table 3.1,,,,Lithium-ion battery,overnight_usd_per_kwe_max,1967
+Table 3.1,,,,Biomass,plants_countries,4 / 3
+Table 3.1,,,,Biomass,net_capacity_mwe_min,0.42
+Table 3.1,,,,Biomass,net_capacity_mwe_mean,18
+Table 3.1,,,,Biomass,net_capacity_mwe_median,25
+Table 3.1,,,,Biomass,net_capacity_mwe_max,30
+Table 3.1,,,,Biomass,overnight_usd_per_kwe_min,833
+Table 3.1,,,,Biomass,overnight_usd_per_kwe_mean,2501
+Table 3.1,,,,Biomass,overnight_usd_per_kwe_median,1095
+Table 3.1,,,,Biomass,overnight_usd_per_kwe_max,6545
+Table 3.1,,,,Biomass (CHP),plants_countries,5 / 2
+Table 3.1,,,,Biomass (CHP),net_capacity_mwe_min,0.42
+Table 3.1,,,,Biomass (CHP),net_capacity_mwe_mean,130
+Table 3.1,,,,Biomass (CHP),net_capacity_mwe_median,130
+Table 3.1,,,,Biomass (CHP),net_capacity_mwe_max,358
+Table 3.1,,,,Biomass (CHP),overnight_usd_per_kwe_min,2538
+Table 3.1,,,,Biomass (CHP),overnight_usd_per_kwe_mean,4689
+Table 3.1,,,,Biomass (CHP),overnight_usd_per_kwe_median,4689
+Table 3.1,,,,Biomass (CHP),overnight_usd_per_kwe_max,6545
+Table 3.1,,,,Coal,plants_countries,11 / 6
+Table 3.1,,,,Coal,net_capacity_mwe_min,138
+Table 3.1,,,,Coal,net_capacity_mwe_mean,693
+Table 3.1,,,,Coal,net_capacity_mwe_median,722
+Table 3.1,,,,Coal,net_capacity_mwe_max,954
+Table 3.1,,,,Coal,overnight_usd_per_kwe_min,800
+Table 3.1,,,,Coal,overnight_usd_per_kwe_mean,1897
+Table 3.1,,,,Coal,overnight_usd_per_kwe_median,1785
+Table 3.1,,,,Coal,overnight_usd_per_kwe_max,4382
+Table 3.1,,,,Coal (CCUS),plants_countries,4 / 2
+Table 3.1,,,,Coal (CCUS),net_capacity_mwe_min,499
+Table 3.1,,,,Coal (CCUS),net_capacity_mwe_mean,641
+Table 3.1,,,,Coal (CCUS),net_capacity_mwe_median,641
+Table 3.1,,,,Coal (CCUS),net_capacity_mwe_max,650
+Table 3.1,,,,Coal (CCUS),overnight_usd_per_kwe_min,4490
+Table 3.1,,,,Coal (CCUS),overnight_usd_per_kwe_mean,4572
+Table 3.1,,,,Coal (CCUS),overnight_usd_per_kwe_median,4572
+Table 3.1,,,,Coal (CCUS),overnight_usd_per_kwe_max,5991
+Table 3.1,,,,Coal (CHP),plants_countries,1 / 1
+Table 3.1,,,,Coal (CHP),net_capacity_mwe_min,700
+Table 3.1,,,,Coal (CHP),net_capacity_mwe_mean,700
+Table 3.1,,,,Coal (CHP),net_capacity_mwe_median,700
+Table 3.1,,,,Coal (CHP),net_capacity_mwe_max,700
+Table 3.1,,,,Coal (CHP),overnight_usd_per_kwe_min,2240
+Table 3.1,,,,Coal (CHP),overnight_usd_per_kwe_mean,2240
+Table 3.1,,,,Coal (CHP),overnight_usd_per_kwe_median,2240
+Table 3.1,,,,Coal (CHP),overnight_usd_per_kwe_max,2240
+Table 3.1,,,,Fuel cell,plants_countries,4 / 2
+Table 3.1,,,,Fuel cell,net_capacity_mwe_min,0.003
+Table 3.1,,,,Fuel cell,net_capacity_mwe_mean,0.20
+Table 3.1,,,,Fuel cell,net_capacity_mwe_median,0.20
+Table 3.1,,,,Fuel cell,net_capacity_mwe_max,15
+Table 3.1,,,,Fuel cell,overnight_usd_per_kwe_min,2361
+Table 3.1,,,,Fuel cell,overnight_usd_per_kwe_mean,4715
+Table 3.1,,,,Fuel cell,overnight_usd_per_kwe_median,4715
+Table 3.1,,,,Fuel cell,overnight_usd_per_kwe_max,6492
+Table 3.1,,,,Gas (CCGT),plants_countries,16 / 11
+Table 3.1,,,,Gas (CCGT),net_capacity_mwe_min,471
+Table 3.1,,,,Gas (CCGT),net_capacity_mwe_mean,762
+Table 3.1,,,,Gas (CCGT),net_capacity_mwe_median,743
+Table 3.1,,,,Gas (CCGT),net_capacity_mwe_max,1372
+Table 3.1,,,,Gas (CCGT),overnight_usd_per_kwe_min,254
+Table 3.1,,,,Gas (CCGT),overnight_usd_per_kwe_mean,823
+Table 3.1,,,,Gas (CCGT),overnight_usd_per_kwe_median,955
+Table 3.1,,,,Gas (CCGT),overnight_usd_per_kwe_max,1109
+Table 3.1,,,,"Gas (CCGT, CCUS)",plants_countries,2 / 2
+Table 3.1,,,,"Gas (CCGT, CCUS)",net_capacity_mwe_min,437
+Table 3.1,,,,"Gas (CCGT, CCUS)",net_capacity_mwe_mean,541
+Table 3.1,,,,"Gas (CCGT, CCUS)",net_capacity_mwe_median,541
+Table 3.1,,,,"Gas (CCGT, CCUS)",net_capacity_mwe_max,646
+Table 3.1,,,,"Gas (CCGT, CCUS)",overnight_usd_per_kwe_min,2412
+Table 3.1,,,,"Gas (CCGT, CCUS)",overnight_usd_per_kwe_mean,2619
+Table 3.1,,,,"Gas (CCGT, CCUS)",overnight_usd_per_kwe_median,2619
+Table 3.1,,,,"Gas (CCGT, CCUS)",overnight_usd_per_kwe_max,2826
+Table 3.1,,,,"Gas (CCGT, CHP)",plants_countries,2 / 2
+Table 3.1,,,,"Gas (CCGT, CHP)",net_capacity_mwe_min,5.80
+Table 3.1,,,,"Gas (CCGT, CHP)",net_capacity_mwe_mean,253
+Table 3.1,,,,"Gas (CCGT, CHP)",net_capacity_mwe_median,253
+Table 3.1,,,,"Gas (CCGT, CHP)",net_capacity_mwe_max,500
+Table 3.1,,,,"Gas (CCGT, CHP)",overnight_usd_per_kwe_min,1024
+Table 3.1,,,,"Gas (CCGT, CHP)",overnight_usd_per_kwe_mean,1092
+Table 3.1,,,,"Gas (CCGT, CHP)",overnight_usd_per_kwe_median,1092
+Table 3.1,,,,"Gas (CCGT, CHP)",overnight_usd_per_kwe_max,1160
+Table 3.1,,,,Gas (OCGT/int. comb.),plants_countries,8 / 5
+Table 3.1,,,,Gas (OCGT/int. comb.),net_capacity_mwe_min,100
+Table 3.1,,,,Gas (OCGT/int. comb.),net_capacity_mwe_mean,464
+Table 3.1,,,,Gas (OCGT/int. comb.),net_capacity_mwe_median,500
+Table 3.1,,,,Gas (OCGT/int. comb.),net_capacity_mwe_max,980
+Table 3.1,,,,Gas (OCGT/int. comb.),overnight_usd_per_kwe_min,325
+Table 3.1,,,,Gas (OCGT/int. comb.),overnight_usd_per_kwe_mean,630
+Table 3.1,,,,Gas (OCGT/int. comb.),overnight_usd_per_kwe_median,668
+Table 3.1,,,,Gas (OCGT/int. comb.),overnight_usd_per_kwe_max,1141
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",plants_countries,3 / 3
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",net_capacity_mwe_min,35.90
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",net_capacity_mwe_mean,119
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",net_capacity_mwe_median,125
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",net_capacity_mwe_max,195
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",overnight_usd_per_kwe_min,330
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",overnight_usd_per_kwe_mean,707
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",overnight_usd_per_kwe_median,684
+Table 3.1,,,,"Gas (OCGT/int. comb., CHP)",overnight_usd_per_kwe_max,1107
+Table 3.1,,,,Geothermal,plants_countries,6 / 2
+Table 3.1,,,,Geothermal,net_capacity_mwe_min,5
+Table 3.1,,,,Geothermal,net_capacity_mwe_mean,19
+Table 3.1,,,,Geothermal,net_capacity_mwe_median,19
+Table 3.1,,,,Geothermal,net_capacity_mwe_max,40
+Table 3.1,,,,Geothermal,overnight_usd_per_kwe_min,3851
+Table 3.1,,,,Geothermal,overnight_usd_per_kwe_mean,6647
+Table 3.1,,,,Geothermal,overnight_usd_per_kwe_median,6647
+Table 3.1,,,,Geothermal,overnight_usd_per_kwe_max,10959
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",plants_countries,4 / 4
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",net_capacity_mwe_min,11.95
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",net_capacity_mwe_mean,58
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",net_capacity_mwe_median,23
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",net_capacity_mwe_max,175
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",overnight_usd_per_kwe_min,1899
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",overnight_usd_per_kwe_mean,3319
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",overnight_usd_per_kwe_median,2778
+Table 3.1,,,,"Hydro (reservoir, >= 5 MW)",overnight_usd_per_kwe_max,5819
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",plants_countries,1 / 1
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",net_capacity_mwe_min,0.32
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",net_capacity_mwe_mean,0.32
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",net_capacity_mwe_median,0.32
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",net_capacity_mwe_max,0.32
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",overnight_usd_per_kwe_min,3966
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",overnight_usd_per_kwe_mean,3966
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",overnight_usd_per_kwe_median,3966
+Table 3.1,,,,"Hydro (reservoir, < 5 MW)",overnight_usd_per_kwe_max,3966
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",plants_countries,7 / 4
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",net_capacity_mwe_min,5
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",net_capacity_mwe_mean,85
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",net_capacity_mwe_median,44
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",net_capacity_mwe_max,248
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",overnight_usd_per_kwe_min,2326
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",overnight_usd_per_kwe_mean,3557
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",overnight_usd_per_kwe_median,3026
+Table 3.1,,,,"Hydro (run of river, >= 5 MW)",overnight_usd_per_kwe_max,6681
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",plants_countries,18 / 4
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",net_capacity_mwe_min,0.02
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",net_capacity_mwe_mean,2.54
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",net_capacity_mwe_median,3.00
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",net_capacity_mwe_max,4.80
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",overnight_usd_per_kwe_min,956
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",overnight_usd_per_kwe_mean,3507
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",overnight_usd_per_kwe_median,2801
+Table 3.1,,,,"Hydro (run of river, < 5 MW)",overnight_usd_per_kwe_max,7484
+Table 3.1,,,,Lignite,plants_countries,2 / 2
+Table 3.1,,,,Lignite,net_capacity_mwe_min,709
+Table 3.1,,,,Lignite,net_capacity_mwe_mean,805
+Table 3.1,,,,Lignite,net_capacity_mwe_median,805
+Table 3.1,,,,Lignite,net_capacity_mwe_max,900
+Table 3.1,,,,Lignite,overnight_usd_per_kwe_min,2189
+Table 3.1,,,,Lignite,overnight_usd_per_kwe_mean,2973
+Table 3.1,,,,Lignite,overnight_usd_per_kwe_median,2973
+Table 3.1,,,,Lignite,overnight_usd_per_kwe_max,3756
+Table 3.1,,,,Lignite (CCUS),plants_countries,1 / 1
+Table 3.1,,,,Lignite (CCUS),net_capacity_mwe_min,570
+Table 3.1,,,,Lignite (CCUS),net_capacity_mwe_mean,570
+Table 3.1,,,,Lignite (CCUS),net_capacity_mwe_median,570
+Table 3.1,,,,Lignite (CCUS),net_capacity_mwe_max,570
+Table 3.1,,,,Lignite (CCUS),overnight_usd_per_kwe_min,6891
+Table 3.1,,,,Lignite (CCUS),overnight_usd_per_kwe_mean,6891
+Table 3.1,,,,Lignite (CCUS),overnight_usd_per_kwe_median,6891
+Table 3.1,,,,Lignite (CCUS),overnight_usd_per_kwe_max,6891
+Table 3.1,,,,Lignite (CHP),plants_countries,1 / 1
+Table 3.1,,,,Lignite (CHP),net_capacity_mwe_min,2900
+Table 3.1,,,,Lignite (CHP),net_capacity_mwe_mean,2900
+Table 3.1,,,,Lignite (CHP),net_capacity_mwe_median,2900
+Table 3.1,,,,Lignite (CHP),net_capacity_mwe_max,2900
+Table 3.1,,,,Lignite (CHP),overnight_usd_per_kwe_min,1015
+Table 3.1,,,,Lignite (CHP),overnight_usd_per_kwe_mean,1015
+Table 3.1,,,,Lignite (CHP),overnight_usd_per_kwe_median,1015
+Table 3.1,,,,Lignite (CHP),overnight_usd_per_kwe_max,1015
+Table 3.1,,,,Nuclear,plants_countries,8 / 8
+Table 3.1,,,,Nuclear,net_capacity_mwe_min,950
+Table 3.1,,,,Nuclear,net_capacity_mwe_mean,1234
+Table 3.1,,,,Nuclear,net_capacity_mwe_median,1137
+Table 3.1,,,,Nuclear,net_capacity_mwe_max,1650
+Table 3.1,,,,Nuclear,overnight_usd_per_kwe_min,2157
+Table 3.1,,,,Nuclear,overnight_usd_per_kwe_mean,3606
+Table 3.1,,,,Nuclear,overnight_usd_per_kwe_median,3370
+Table 3.1,,,,Nuclear,overnight_usd_per_kwe_max,6920
+Table 3.1,,,,Nuclear (LTO),plants_countries,4 / 4
+Table 3.1,,,,Nuclear (LTO),net_capacity_mwe_min,1000
+Table 3.1,,,,Nuclear (LTO),net_capacity_mwe_mean,1000
+Table 3.1,,,,Nuclear (LTO),net_capacity_mwe_median,1000
+Table 3.1,,,,Nuclear (LTO),net_capacity_mwe_max,1000
+Table 3.1,,,,Nuclear (LTO),overnight_usd_per_kwe_min,391
+Table 3.1,,,,Nuclear (LTO),overnight_usd_per_kwe_mean,504
+Table 3.1,,,,Nuclear (LTO),overnight_usd_per_kwe_median,497
+Table 3.1,,,,Nuclear (LTO),overnight_usd_per_kwe_max,629
+Table 3.1,,,,Pumped storage,plants_countries,3 / 3
+Table 3.1,,,,Pumped storage,net_capacity_mwe_min,175
+Table 3.1,,,,Pumped storage,net_capacity_mwe_mean,458
+Table 3.1,,,,Pumped storage,net_capacity_mwe_median,200
+Table 3.1,,,,Pumped storage,net_capacity_mwe_max,1000
+Table 3.1,,,,Pumped storage,overnight_usd_per_kwe_min,563
+Table 3.1,,,,Pumped storage,overnight_usd_per_kwe_mean,1962
+Table 3.1,,,,Pumped storage,overnight_usd_per_kwe_median,897
+Table 3.1,,,,Pumped storage,overnight_usd_per_kwe_max,4426
+Table 3.1,,,,Solar PV (floating),plants_countries,1 / 1
+Table 3.1,,,,Solar PV (floating),net_capacity_mwe_min,8
+Table 3.1,,,,Solar PV (floating),net_capacity_mwe_mean,8
+Table 3.1,,,,Solar PV (floating),net_capacity_mwe_median,8
+Table 3.1,,,,Solar PV (floating),net_capacity_mwe_max,8
+Table 3.1,,,,Solar PV (floating),overnight_usd_per_kwe_min,860
+Table 3.1,,,,Solar PV (floating),overnight_usd_per_kwe_mean,860
+Table 3.1,,,,Solar PV (floating),overnight_usd_per_kwe_median,860
+Table 3.1,,,,Solar PV (floating),overnight_usd_per_kwe_max,860
+Table 3.1,,,,Solar PV (utility scale),plants_countries,21 / 14
+Table 3.1,,,,Solar PV (utility scale),net_capacity_mwe_min,0.83
+Table 3.1,,,,Solar PV (utility scale),net_capacity_mwe_mean,26
+Table 3.1,,,,Solar PV (utility scale),net_capacity_mwe_median,20
+Table 3.1,,,,Solar PV (utility scale),net_capacity_mwe_max,100
+Table 3.1,,,,Solar PV (utility scale),overnight_usd_per_kwe_min,534
+Table 3.1,,,,Solar PV (utility scale),overnight_usd_per_kwe_mean,995
+Table 3.1,,,,Solar PV (utility scale),overnight_usd_per_kwe_median,923
+Table 3.1,,,,Solar PV (utility scale),overnight_usd_per_kwe_max,2006
+Table 3.1,,,,Solar PV (commercial),plants_countries,15 / 8
+Table 3.1,,,,Solar PV (commercial),net_capacity_mwe_min,0.05
+Table 3.1,,,,Solar PV (commercial),net_capacity_mwe_mean,0.25
+Table 3.1,,,,Solar PV (commercial),net_capacity_mwe_median,0.24
+Table 3.1,,,,Solar PV (commercial),net_capacity_mwe_max,0.50
+Table 3.1,,,,Solar PV (commercial),overnight_usd_per_kwe_min,846
+Table 3.1,,,,Solar PV (commercial),overnight_usd_per_kwe_mean,1065
+Table 3.1,,,,Solar PV (commercial),overnight_usd_per_kwe_median,1085
+Table 3.1,,,,Solar PV (commercial),overnight_usd_per_kwe_max,1357
+Table 3.1,,,,Solar PV (residential),plants_countries,15 / 8
+Table 3.1,,,,Solar PV (residential),net_capacity_mwe_min,0.004
+Table 3.1,,,,Solar PV (residential),net_capacity_mwe_mean,0.01
+Table 3.1,,,,Solar PV (residential),net_capacity_mwe_median,0.01
+Table 3.1,,,,Solar PV (residential),net_capacity_mwe_max,0.02
+Table 3.1,,,,Solar PV (residential),overnight_usd_per_kwe_min,719
+Table 3.1,,,,Solar PV (residential),overnight_usd_per_kwe_mean,1583
+Table 3.1,,,,Solar PV (residential),overnight_usd_per_kwe_median,1653
+Table 3.1,,,,Solar PV (residential),overnight_usd_per_kwe_max,2597
+Table 3.1,,,,Solar thermal (CSP),plants_countries,4 / 2
+Table 3.1,,,,Solar thermal (CSP),net_capacity_mwe_min,100
+Table 3.1,,,,Solar thermal (CSP),net_capacity_mwe_mean,125
+Table 3.1,,,,Solar thermal (CSP),net_capacity_mwe_median,125
+Table 3.1,,,,Solar thermal (CSP),net_capacity_mwe_max,150
+Table 3.1,,,,Solar thermal (CSP),overnight_usd_per_kwe_min,5238
+Table 3.1,,,,Solar thermal (CSP),overnight_usd_per_kwe_mean,5857
+Table 3.1,,,,Solar thermal (CSP),overnight_usd_per_kwe_median,5857
+Table 3.1,,,,Solar thermal (CSP),overnight_usd_per_kwe_max,6475
+Table 3.1,,,,Offshore wind,plants_countries,23 / 8
+Table 3.1,,,,Offshore wind,net_capacity_mwe_min,11.25
+Table 3.1,,,,Offshore wind,net_capacity_mwe_mean,186
+Table 3.1,,,,Offshore wind,net_capacity_mwe_median,100
+Table 3.1,,,,Offshore wind,net_capacity_mwe_max,600
+Table 3.1,,,,Offshore wind,overnight_usd_per_kwe_min,1721
+Table 3.1,,,,Offshore wind,overnight_usd_per_kwe_mean,2876
+Table 3.1,,,,Offshore wind,overnight_usd_per_kwe_median,2740
+Table 3.1,,,,Offshore wind,overnight_usd_per_kwe_max,4039
+Table 3.1,,,,Onshore wind (>= 1 MW),plants_countries,33 / 18
+Table 3.1,,,,Onshore wind (>= 1 MW),net_capacity_mwe_min,1
+Table 3.1,,,,Onshore wind (>= 1 MW),net_capacity_mwe_mean,58
+Table 3.1,,,,Onshore wind (>= 1 MW),net_capacity_mwe_median,40
+Table 3.1,,,,Onshore wind (>= 1 MW),net_capacity_mwe_max,280
+Table 3.1,,,,Onshore wind (>= 1 MW),overnight_usd_per_kwe_min,877
+Table 3.1,,,,Onshore wind (>= 1 MW),overnight_usd_per_kwe_mean,1391
+Table 3.1,,,,Onshore wind (>= 1 MW),overnight_usd_per_kwe_median,1439
+Table 3.1,,,,Onshore wind (>= 1 MW),overnight_usd_per_kwe_max,3022
+Table 3.1,,,,Onshore wind (< 1 MW),plants_countries,11 / 1
+Table 3.1,,,,Onshore wind (< 1 MW),net_capacity_mwe_min,0.01
+Table 3.1,,,,Onshore wind (< 1 MW),net_capacity_mwe_mean,0.19
+Table 3.1,,,,Onshore wind (< 1 MW),net_capacity_mwe_median,0.19
+Table 3.1,,,,Onshore wind (< 1 MW),net_capacity_mwe_max,0.90
+Table 3.1,,,,Onshore wind (< 1 MW),overnight_usd_per_kwe_min,1782
+Table 3.1,,,,Onshore wind (< 1 MW),overnight_usd_per_kwe_mean,2852
+Table 3.1,,,,Onshore wind (< 1 MW),overnight_usd_per_kwe_median,2852
+Table 3.1,,,,Onshore wind (< 1 MW),overnight_usd_per_kwe_max,5539
+Table 3.2a,Australia,AUS,OECD,CCGT,net_capacity_mwe,506
+Table 3.2a,Australia,AUS,OECD,CCGT,efficiency_pct,48.0
+Table 3.2a,Australia,AUS,OECD,CCGT,overnight_usd_per_kwe,955
+Table 3.2a,Australia,AUS,OECD,CCGT,investment_usd_per_kwe_at_3pct,998
+Table 3.2a,Australia,AUS,OECD,CCGT,investment_usd_per_kwe_at_7pct,1058
+Table 3.2a,Australia,AUS,OECD,CCGT,investment_usd_per_kwe_at_10pct,1105
+Table 3.2a,Australia,AUS,OECD,CCGT (CCUS),net_capacity_mwe,437
+Table 3.2a,Australia,AUS,OECD,CCGT (CCUS),efficiency_pct,41.0
+Table 3.2a,Australia,AUS,OECD,CCGT (CCUS),overnight_usd_per_kwe,2826
+Table 3.2a,Australia,AUS,OECD,CCGT (CCUS),investment_usd_per_kwe_at_3pct,2955
+Table 3.2a,Australia,AUS,OECD,CCGT (CCUS),investment_usd_per_kwe_at_7pct,3133
+Table 3.2a,Australia,AUS,OECD,CCGT (CCUS),investment_usd_per_kwe_at_10pct,3271
+Table 3.2a,Belgium,BEL,OECD,CCGT,net_capacity_mwe,500
+Table 3.2a,Belgium,BEL,OECD,CCGT,efficiency_pct,60.0
+Table 3.2a,Belgium,BEL,OECD,CCGT,overnight_usd_per_kwe,767
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_3pct,802
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_7pct,850
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_10pct,888
+Table 3.2a,Belgium,BEL,OECD,CCGT,net_capacity_mwe,500
+Table 3.2a,Belgium,BEL,OECD,CCGT,efficiency_pct,64.0
+Table 3.2a,Belgium,BEL,OECD,CCGT,overnight_usd_per_kwe,1009
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_3pct,1055
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_7pct,1119
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_10pct,1168
+Table 3.2a,Belgium,BEL,OECD,CCGT,net_capacity_mwe,500
+Table 3.2a,Belgium,BEL,OECD,CCGT,efficiency_pct,58.0
+Table 3.2a,Belgium,BEL,OECD,CCGT,overnight_usd_per_kwe,974
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_3pct,1018
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_7pct,1079
+Table 3.2a,Belgium,BEL,OECD,CCGT,investment_usd_per_kwe_at_10pct,1127
+Table 3.2a,Canada,CAN,OECD,CCGT,net_capacity_mwe,471
+Table 3.2a,Canada,CAN,OECD,CCGT,efficiency_pct,57.0
+Table 3.2a,Canada,CAN,OECD,CCGT,overnight_usd_per_kwe,1058
+Table 3.2a,Canada,CAN,OECD,CCGT,investment_usd_per_kwe_at_3pct,1106
+Table 3.2a,Canada,CAN,OECD,CCGT,investment_usd_per_kwe_at_7pct,1173
+Table 3.2a,Canada,CAN,OECD,CCGT,investment_usd_per_kwe_at_10pct,1224
+Table 3.2a,Italy,ITA,OECD,CCGT,net_capacity_mwe,790
+Table 3.2a,Italy,ITA,OECD,CCGT,efficiency_pct,60.0
+Table 3.2a,Italy,ITA,OECD,CCGT,overnight_usd_per_kwe,590
+Table 3.2a,Italy,ITA,OECD,CCGT,investment_usd_per_kwe_at_3pct,617
+Table 3.2a,Italy,ITA,OECD,CCGT,investment_usd_per_kwe_at_7pct,654
+Table 3.2a,Italy,ITA,OECD,CCGT,investment_usd_per_kwe_at_10pct,683
+Table 3.2a,Japan,JPN,OECD,CCGT,net_capacity_mwe,1372
+Table 3.2a,Japan,JPN,OECD,CCGT,efficiency_pct,56.0
+Table 3.2a,Japan,JPN,OECD,CCGT,overnight_usd_per_kwe,1109
+Table 3.2a,Japan,JPN,OECD,CCGT,investment_usd_per_kwe_at_3pct,1160
+Table 3.2a,Japan,JPN,OECD,CCGT,investment_usd_per_kwe_at_7pct,1229
+Table 3.2a,Japan,JPN,OECD,CCGT,investment_usd_per_kwe_at_10pct,1283
+Table 3.2a,Korea,KOR,OECD,CCGT,net_capacity_mwe,491
+Table 3.2a,Korea,KOR,OECD,CCGT,efficiency_pct,56.0
+Table 3.2a,Korea,KOR,OECD,CCGT,overnight_usd_per_kwe,1107
+Table 3.2a,Korea,KOR,OECD,CCGT,investment_usd_per_kwe_at_3pct,1158
+Table 3.2a,Korea,KOR,OECD,CCGT,investment_usd_per_kwe_at_7pct,1228
+Table 3.2a,Korea,KOR,OECD,CCGT,investment_usd_per_kwe_at_10pct,1281
+Table 3.2a,Korea,KOR,OECD,CCGT,net_capacity_mwe,982
+Table 3.2a,Korea,KOR,OECD,CCGT,efficiency_pct,59.0
+Table 3.2a,Korea,KOR,OECD,CCGT,overnight_usd_per_kwe,838
+Table 3.2a,Korea,KOR,OECD,CCGT,investment_usd_per_kwe_at_3pct,877
+Table 3.2a,Korea,KOR,OECD,CCGT,investment_usd_per_kwe_at_7pct,929
+Table 3.2a,Korea,KOR,OECD,CCGT,investment_usd_per_kwe_at_10pct,970
+Table 3.2a,Mexico,MEX,OECD,CCGT,net_capacity_mwe,503
+Table 3.2a,Mexico,MEX,OECD,CCGT,efficiency_pct,51.0
+Table 3.2a,Mexico,MEX,OECD,CCGT,overnight_usd_per_kwe,669
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_3pct,700
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_7pct,742
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_10pct,775
+Table 3.2a,Mexico,MEX,OECD,CCGT,net_capacity_mwe,785
+Table 3.2a,Mexico,MEX,OECD,CCGT,efficiency_pct,60.0
+Table 3.2a,Mexico,MEX,OECD,CCGT,overnight_usd_per_kwe,667
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_3pct,698
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_7pct,740
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_10pct,772
+Table 3.2a,Mexico,MEX,OECD,CCGT,net_capacity_mwe,835
+Table 3.2a,Mexico,MEX,OECD,CCGT,efficiency_pct,58.0
+Table 3.2a,Mexico,MEX,OECD,CCGT,overnight_usd_per_kwe,466
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_3pct,488
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_7pct,517
+Table 3.2a,Mexico,MEX,OECD,CCGT,investment_usd_per_kwe_at_10pct,540
+Table 3.2a,Romania,ROU,OECD,CCGT,net_capacity_mwe,750
+Table 3.2a,Romania,ROU,OECD,CCGT,efficiency_pct,58.0
+Table 3.2a,Romania,ROU,OECD,CCGT,overnight_usd_per_kwe,254
+Table 3.2a,Romania,ROU,OECD,CCGT,investment_usd_per_kwe_at_3pct,265
+Table 3.2a,Romania,ROU,OECD,CCGT,investment_usd_per_kwe_at_7pct,281
+Table 3.2a,Romania,ROU,OECD,CCGT,investment_usd_per_kwe_at_10pct,294
+Table 3.2a,United States,USA,OECD,CCGT,net_capacity_mwe,727
+Table 3.2a,United States,USA,OECD,CCGT,efficiency_pct,59.0
+Table 3.2a,United States,USA,OECD,CCGT,overnight_usd_per_kwe,952
+Table 3.2a,United States,USA,OECD,CCGT,investment_usd_per_kwe_at_3pct,995
+Table 3.2a,United States,USA,OECD,CCGT,investment_usd_per_kwe_at_7pct,1055
+Table 3.2a,United States,USA,OECD,CCGT,investment_usd_per_kwe_at_10pct,1102
+Table 3.2a,United States,USA,OECD,CCGT (CCUS),net_capacity_mwe,646
+Table 3.2a,United States,USA,OECD,CCGT (CCUS),efficiency_pct,48.0
+Table 3.2a,United States,USA,OECD,CCGT (CCUS),overnight_usd_per_kwe,2412
+Table 3.2a,United States,USA,OECD,CCGT (CCUS),investment_usd_per_kwe_at_3pct,2522
+Table 3.2a,United States,USA,OECD,CCGT (CCUS),investment_usd_per_kwe_at_7pct,2674
+Table 3.2a,United States,USA,OECD,CCGT (CCUS),investment_usd_per_kwe_at_10pct,2791
+Table 3.2a,Brazil,BRA,non-OECD,CCGT,net_capacity_mwe,980
+Table 3.2a,Brazil,BRA,non-OECD,CCGT,efficiency_pct,58.0
+Table 3.2a,Brazil,BRA,non-OECD,CCGT,overnight_usd_per_kwe,958
+Table 3.2a,Brazil,BRA,non-OECD,CCGT,investment_usd_per_kwe_at_3pct,1002
+Table 3.2a,Brazil,BRA,non-OECD,CCGT,investment_usd_per_kwe_at_7pct,1062
+Table 3.2a,Brazil,BRA,non-OECD,CCGT,investment_usd_per_kwe_at_10pct,1108
+Table 3.2a,China,CHN,non-OECD,CCGT,net_capacity_mwe,475
+Table 3.2a,China,CHN,non-OECD,CCGT,efficiency_pct,58.0
+Table 3.2a,China,CHN,non-OECD,CCGT,overnight_usd_per_kwe,560
+Table 3.2a,China,CHN,non-OECD,CCGT,investment_usd_per_kwe_at_3pct,586
+Table 3.2a,China,CHN,non-OECD,CCGT,investment_usd_per_kwe_at_7pct,621
+Table 3.2a,China,CHN,non-OECD,CCGT,investment_usd_per_kwe_at_10pct,648
+Table 3.2b,Autralia,AUS,OECD,OCGT,net_capacity_mwe,537
+Table 3.2b,Autralia,AUS,OECD,OCGT,efficiency_pct,31.0
+Table 3.2b,Autralia,AUS,OECD,OCGT,overnight_usd_per_kwe,668
+Table 3.2b,Autralia,AUS,OECD,OCGT,investment_usd_per_kwe_at_3pct,688
+Table 3.2b,Autralia,AUS,OECD,OCGT,investment_usd_per_kwe_at_7pct,715
+Table 3.2b,Autralia,AUS,OECD,OCGT,investment_usd_per_kwe_at_10pct,736
+Table 3.2b,Belgium,BEL,OECD,OCGT,net_capacity_mwe,350
+Table 3.2b,Belgium,BEL,OECD,OCGT,efficiency_pct,40.0
+Table 3.2b,Belgium,BEL,OECD,OCGT,overnight_usd_per_kwe,531
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_3pct,547
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_7pct,569
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_10pct,585
+Table 3.2b,Belgium,BEL,OECD,OCGT,net_capacity_mwe,500
+Table 3.2b,Belgium,BEL,OECD,OCGT,efficiency_pct,41.0
+Table 3.2b,Belgium,BEL,OECD,OCGT,overnight_usd_per_kwe,670
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_3pct,691
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_7pct,718
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_10pct,738
+Table 3.2b,Belgium,BEL,OECD,OCGT,net_capacity_mwe,500
+Table 3.2b,Belgium,BEL,OECD,OCGT,efficiency_pct,38.0
+Table 3.2b,Belgium,BEL,OECD,OCGT,overnight_usd_per_kwe,590
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_3pct,608
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_7pct,632
+Table 3.2b,Belgium,BEL,OECD,OCGT,investment_usd_per_kwe_at_10pct,650
+Table 3.2b,Canada,CAN,OECD,OCGT,net_capacity_mwe,100
+Table 3.2b,Canada,CAN,OECD,OCGT,efficiency_pct,41.0
+Table 3.2b,Canada,CAN,OECD,OCGT,overnight_usd_per_kwe,1141
+Table 3.2b,Canada,CAN,OECD,OCGT,investment_usd_per_kwe_at_3pct,1175
+Table 3.2b,Canada,CAN,OECD,OCGT,investment_usd_per_kwe_at_7pct,1221
+Table 3.2b,Canada,CAN,OECD,OCGT,investment_usd_per_kwe_at_10pct,1256
+Table 3.2b,Canada,CAN,OECD,OCGT,net_capacity_mwe,243
+Table 3.2b,Canada,CAN,OECD,OCGT,efficiency_pct,40.0
+Table 3.2b,Canada,CAN,OECD,OCGT,overnight_usd_per_kwe,518
+Table 3.2b,Canada,CAN,OECD,OCGT,investment_usd_per_kwe_at_3pct,533
+Table 3.2b,Canada,CAN,OECD,OCGT,investment_usd_per_kwe_at_7pct,554
+Table 3.2b,Canada,CAN,OECD,OCGT,investment_usd_per_kwe_at_10pct,570
+Table 3.2b,Italy,ITA,OECD,OCGT,net_capacity_mwe,130
+Table 3.2b,Italy,ITA,OECD,OCGT,efficiency_pct,37.0
+Table 3.2b,Italy,ITA,OECD,OCGT,overnight_usd_per_kwe,325
+Table 3.2b,Italy,ITA,OECD,OCGT,investment_usd_per_kwe_at_3pct,334
+Table 3.2b,Italy,ITA,OECD,OCGT,investment_usd_per_kwe_at_7pct,348
+Table 3.2b,Italy,ITA,OECD,OCGT,investment_usd_per_kwe_at_10pct,357
+Table 3.2b,Brazil,BRA,non-OECD,OCGT,net_capacity_mwe,980
+Table 3.2b,Brazil,BRA,non-OECD,OCGT,efficiency_pct,44.0
+Table 3.2b,Brazil,BRA,non-OECD,OCGT,overnight_usd_per_kwe,739
+Table 3.2b,Brazil,BRA,non-OECD,OCGT,investment_usd_per_kwe_at_3pct,761
+Table 3.2b,Brazil,BRA,non-OECD,OCGT,investment_usd_per_kwe_at_7pct,791
+Table 3.2b,Brazil,BRA,non-OECD,OCGT,investment_usd_per_kwe_at_10pct,814
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised,net_capacity_mwe,722
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised,efficiency_pct,40.0
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised,overnight_usd_per_kwe,2433
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised,investment_usd_per_kwe_at_3pct,2583
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised,investment_usd_per_kwe_at_7pct,2794
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised,investment_usd_per_kwe_at_10pct,2961
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (CCUS),net_capacity_mwe,633
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (CCUS),efficiency_pct,30.0
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (CCUS),overnight_usd_per_kwe,4490
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (CCUS),investment_usd_per_kwe_at_3pct,4766
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (CCUS),investment_usd_per_kwe_at_7pct,5155
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (CCUS),investment_usd_per_kwe_at_10pct,5463
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite),net_capacity_mwe,709
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite),efficiency_pct,32.0
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite),overnight_usd_per_kwe,3756
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite),investment_usd_per_kwe_at_3pct,3987
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite),investment_usd_per_kwe_at_7pct,4312
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite),investment_usd_per_kwe_at_10pct,4571
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite. CCUS),net_capacity_mwe,570
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite. CCUS),efficiency_pct,21.0
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite. CCUS),overnight_usd_per_kwe,6891
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite. CCUS),investment_usd_per_kwe_at_3pct,7315
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite. CCUS),investment_usd_per_kwe_at_7pct,7912
+Table 3.3,Australia,AUS,OECD,Supercritical pulverised (lignite. CCUS),investment_usd_per_kwe_at_10pct,8386
+Table 3.3,Japan,JPN,OECD,Ultra-supercritical,net_capacity_mwe,749
+Table 3.3,Japan,JPN,OECD,Ultra-supercritical,efficiency_pct,41.0
+Table 3.3,Japan,JPN,OECD,Ultra-supercritical,overnight_usd_per_kwe,2419
+Table 3.3,Japan,JPN,OECD,Ultra-supercritical,investment_usd_per_kwe_at_3pct,2568
+Table 3.3,Japan,JPN,OECD,Ultra-supercritical,investment_usd_per_kwe_at_7pct,2777
+Table 3.3,Japan,JPN,OECD,Ultra-supercritical,investment_usd_per_kwe_at_10pct,2943
+Table 3.3,Korea,KOR,OECD,Ultra-supercritical,net_capacity_mwe,954
+Table 3.3,Korea,KOR,OECD,Ultra-supercritical,efficiency_pct,43.0
+Table 3.3,Korea,KOR,OECD,Ultra-supercritical,overnight_usd_per_kwe,1151
+Table 3.3,Korea,KOR,OECD,Ultra-supercritical,investment_usd_per_kwe_at_3pct,1221
+Table 3.3,Korea,KOR,OECD,Ultra-supercritical,investment_usd_per_kwe_at_7pct,1321
+Table 3.3,Korea,KOR,OECD,Ultra-supercritical,investment_usd_per_kwe_at_10pct,1400
+Table 3.3,United States,USA,OECD,Pulverised,net_capacity_mwe,138
+Table 3.3,United States,USA,OECD,Pulverised,efficiency_pct,36.0
+Table 3.3,United States,USA,OECD,Pulverised,overnight_usd_per_kwe,4382
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_3pct,4651
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_7pct,5031
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_10pct,5332
+Table 3.3,United States,USA,OECD,Pulverised,net_capacity_mwe,140
+Table 3.3,United States,USA,OECD,Pulverised,efficiency_pct,36.0
+Table 3.3,United States,USA,OECD,Pulverised,overnight_usd_per_kwe,3447
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_3pct,3659
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_7pct,3958
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_10pct,4195
+Table 3.3,United States,USA,OECD,Pulverised,net_capacity_mwe,650
+Table 3.3,United States,USA,OECD,Pulverised,efficiency_pct,40.0
+Table 3.3,United States,USA,OECD,Pulverised,overnight_usd_per_kwe,2478
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_3pct,2630
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_7pct,2845
+Table 3.3,United States,USA,OECD,Pulverised,investment_usd_per_kwe_at_10pct,3015
+Table 3.3,United States,USA,OECD,Pulverised (CCUS),net_capacity_mwe,650
+Table 3.3,United States,USA,OECD,Pulverised (CCUS),efficiency_pct,31.0
+Table 3.3,United States,USA,OECD,Pulverised (CCUS),overnight_usd_per_kwe,4604
+Table 3.3,United States,USA,OECD,Pulverised (CCUS),investment_usd_per_kwe_at_3pct,4887
+Table 3.3,United States,USA,OECD,Pulverised (CCUS),investment_usd_per_kwe_at_7pct,5286
+Table 3.3,United States,USA,OECD,Pulverised (CCUS),investment_usd_per_kwe_at_10pct,5603
+Table 3.3,United States,USA,OECD,Supercritical pulverised,net_capacity_mwe,650
+Table 3.3,United States,USA,OECD,Supercritical pulverised,efficiency_pct,42.0
+Table 3.3,United States,USA,OECD,Supercritical pulverised,overnight_usd_per_kwe,2582
+Table 3.3,United States,USA,OECD,Supercritical pulverised,investment_usd_per_kwe_at_3pct,2741
+Table 3.3,United States,USA,OECD,Supercritical pulverised,investment_usd_per_kwe_at_7pct,2965
+Table 3.3,United States,USA,OECD,Supercritical pulverised,investment_usd_per_kwe_at_10pct,3142
+Table 3.3,United States,USA,OECD,Supercritical pulverised (CCUS),net_capacity_mwe,650
+Table 3.3,United States,USA,OECD,Supercritical pulverised (CCUS),efficiency_pct,33.0
+Table 3.3,United States,USA,OECD,Supercritical pulverised (CCUS),overnight_usd_per_kwe,4654
+Table 3.3,United States,USA,OECD,Supercritical pulverised (CCUS),investment_usd_per_kwe_at_3pct,4940
+Table 3.3,United States,USA,OECD,Supercritical pulverised (CCUS),investment_usd_per_kwe_at_7pct,5344
+Table 3.3,United States,USA,OECD,Supercritical pulverised (CCUS),investment_usd_per_kwe_at_10pct,5663
+Table 3.3,United States,USA,OECD,Ultra-supercritical,net_capacity_mwe,641
+Table 3.3,United States,USA,OECD,Ultra-supercritical,efficiency_pct,43.0
+Table 3.3,United States,USA,OECD,Ultra-supercritical,overnight_usd_per_kwe,4157
+Table 3.3,United States,USA,OECD,Ultra-supercritical,investment_usd_per_kwe_at_3pct,4413
+Table 3.3,United States,USA,OECD,Ultra-supercritical,investment_usd_per_kwe_at_7pct,4773
+Table 3.3,United States,USA,OECD,Ultra-supercritical,investment_usd_per_kwe_at_10pct,5059
+Table 3.3,United States,USA,OECD,Other coal (CCUS),net_capacity_mwe,499
+Table 3.3,United States,USA,OECD,Other coal (CCUS),efficiency_pct,31.0
+Table 3.3,United States,USA,OECD,Other coal (CCUS),overnight_usd_per_kwe,5991
+Table 3.3,United States,USA,OECD,Other coal (CCUS),investment_usd_per_kwe_at_3pct,6359
+Table 3.3,United States,USA,OECD,Other coal (CCUS),investment_usd_per_kwe_at_7pct,6879
+Table 3.3,United States,USA,OECD,Other coal (CCUS),investment_usd_per_kwe_at_10pct,7290
+Table 3.3,Brazil,BRA,non-OECD,Other coal (lignite),net_capacity_mwe,900
+Table 3.3,Brazil,BRA,non-OECD,Other coal (lignite),efficiency_pct,34.0
+Table 3.3,Brazil,BRA,non-OECD,Other coal (lignite),overnight_usd_per_kwe,2189
+Table 3.3,Brazil,BRA,non-OECD,Other coal (lignite),investment_usd_per_kwe_at_3pct,2324
+Table 3.3,Brazil,BRA,non-OECD,Other coal (lignite),investment_usd_per_kwe_at_7pct,2514
+Table 3.3,Brazil,BRA,non-OECD,Other coal (lignite),investment_usd_per_kwe_at_10pct,2664
+Table 3.3,China,CHN,non-OECD,Ultra-supercritical,net_capacity_mwe,347
+Table 3.3,China,CHN,non-OECD,Ultra-supercritical,efficiency_pct,45.0
+Table 3.3,China,CHN,non-OECD,Ultra-supercritical,overnight_usd_per_kwe,800
+Table 3.3,China,CHN,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_3pct,849
+Table 3.3,China,CHN,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_7pct,919
+Table 3.3,China,CHN,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_10pct,974
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,net_capacity_mwe,400
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,efficiency_pct,45.0
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,overnight_usd_per_kwe,1148
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_3pct,1218
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_7pct,1318
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_10pct,1397
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,net_capacity_mwe,400
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,efficiency_pct,45.0
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,overnight_usd_per_kwe,1111
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_3pct,1179
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_7pct,1276
+Table 3.3,India,IND,non-OECD,Ultra-supercritical,investment_usd_per_kwe_at_10pct,1352
+Table 3.4a,France,FRA,OECD,EPR,net_capacity_mwe,1650
+Table 3.4a,France,FRA,OECD,EPR,overnight_usd_per_kwe,4013
+Table 3.4a,France,FRA,OECD,EPR,investment_usd_per_kwe_at_3pct,4459
+Table 3.4a,France,FRA,OECD,EPR,investment_usd_per_kwe_at_7pct,5132
+Table 3.4a,France,FRA,OECD,EPR,investment_usd_per_kwe_at_10pct,5705
+Table 3.4a,Japan,JPN,OECD,ALWR,net_capacity_mwe,1152
+Table 3.4a,Japan,JPN,OECD,ALWR,overnight_usd_per_kwe,3963
+Table 3.4a,Japan,JPN,OECD,ALWR,investment_usd_per_kwe_at_3pct,4402
+Table 3.4a,Japan,JPN,OECD,ALWR,investment_usd_per_kwe_at_7pct,5068
+Table 3.4a,Japan,JPN,OECD,ALWR,investment_usd_per_kwe_at_10pct,5633
+Table 3.4a,Korea,KOR,OECD,ALWR,net_capacity_mwe,1377
+Table 3.4a,Korea,KOR,OECD,ALWR,overnight_usd_per_kwe,2157
+Table 3.4a,Korea,KOR,OECD,ALWR,investment_usd_per_kwe_at_3pct,2396
+Table 3.4a,Korea,KOR,OECD,ALWR,investment_usd_per_kwe_at_7pct,2759
+Table 3.4a,Korea,KOR,OECD,ALWR,investment_usd_per_kwe_at_10pct,3066
+Table 3.4a,Russia,RUS,OECD,VVER,net_capacity_mwe,1122
+Table 3.4a,Russia,RUS,OECD,VVER,overnight_usd_per_kwe,2271
+Table 3.4a,Russia,RUS,OECD,VVER,investment_usd_per_kwe_at_3pct,2523
+Table 3.4a,Russia,RUS,OECD,VVER,investment_usd_per_kwe_at_7pct,2904
+Table 3.4a,Russia,RUS,OECD,VVER,investment_usd_per_kwe_at_10pct,3228
+Table 3.4a,Slovak Republic,SVK,OECD,Other nuclear,net_capacity_mwe,1004
+Table 3.4a,Slovak Republic,SVK,OECD,Other nuclear,overnight_usd_per_kwe,6920
+Table 3.4a,Slovak Republic,SVK,OECD,Other nuclear,investment_usd_per_kwe_at_3pct,7688
+Table 3.4a,Slovak Republic,SVK,OECD,Other nuclear,investment_usd_per_kwe_at_7pct,8850
+Table 3.4a,Slovak Republic,SVK,OECD,Other nuclear,investment_usd_per_kwe_at_10pct,9837
+Table 3.4a,United States,USA,OECD,LWR,net_capacity_mwe,1100
+Table 3.4a,United States,USA,OECD,LWR,overnight_usd_per_kwe,4250
+Table 3.4a,United States,USA,OECD,LWR,investment_usd_per_kwe_at_3pct,4721
+Table 3.4a,United States,USA,OECD,LWR,investment_usd_per_kwe_at_7pct,5435
+Table 3.4a,United States,USA,OECD,LWR,investment_usd_per_kwe_at_10pct,6041
+Table 3.4a,China,CHN,non-OECD,LWR,net_capacity_mwe,950
+Table 3.4a,China,CHN,non-OECD,LWR,overnight_usd_per_kwe,2500
+Table 3.4a,China,CHN,non-OECD,LWR,investment_usd_per_kwe_at_3pct,2777
+Table 3.4a,China,CHN,non-OECD,LWR,investment_usd_per_kwe_at_7pct,3197
+Table 3.4a,China,CHN,non-OECD,LWR,investment_usd_per_kwe_at_10pct,3554
+Table 3.4a,India,IND,non-OECD,LWR,net_capacity_mwe,950
+Table 3.4a,India,IND,non-OECD,LWR,overnight_usd_per_kwe,2778
+Table 3.4a,India,IND,non-OECD,LWR,investment_usd_per_kwe_at_3pct,3086
+Table 3.4a,India,IND,non-OECD,LWR,investment_usd_per_kwe_at_7pct,3552
+Table 3.4a,India,IND,non-OECD,LWR,investment_usd_per_kwe_at_10pct,3949
+Table 3.4b,Switzerland,CHE,OECD,LTO,net_capacity_mwe,1000
+Table 3.4b,Switzerland,CHE,OECD,LTO,overnight_usd_per_kwe,550
+Table 3.4b,Switzerland,CHE,OECD,LTO,investment_usd_per_kwe_at_3pct,567
+Table 3.4b,Switzerland,CHE,OECD,LTO,investment_usd_per_kwe_at_7pct,589
+Table 3.4b,Switzerland,CHE,OECD,LTO,investment_usd_per_kwe_at_10pct,606
+Table 3.4b,France,FRA,OECD,LTO,net_capacity_mwe,1000
+Table 3.4b,France,FRA,OECD,LTO,overnight_usd_per_kwe,629
+Table 3.4b,France,FRA,OECD,LTO,investment_usd_per_kwe_at_3pct,648
+Table 3.4b,France,FRA,OECD,LTO,investment_usd_per_kwe_at_7pct,673
+Table 3.4b,France,FRA,OECD,LTO,investment_usd_per_kwe_at_10pct,693
+Table 3.4b,Sweden,SWE,OECD,LTO,net_capacity_mwe,1000
+Table 3.4b,Sweden,SWE,OECD,LTO,overnight_usd_per_kwe,444
+Table 3.4b,Sweden,SWE,OECD,LTO,investment_usd_per_kwe_at_3pct,457
+Table 3.4b,Sweden,SWE,OECD,LTO,investment_usd_per_kwe_at_7pct,475
+Table 3.4b,Sweden,SWE,OECD,LTO,investment_usd_per_kwe_at_10pct,489
+Table 3.4b,United States,USA,OECD,LTO,net_capacity_mwe,1000
+Table 3.4b,United States,USA,OECD,LTO,overnight_usd_per_kwe,391
+Table 3.4b,United States,USA,OECD,LTO,investment_usd_per_kwe_at_3pct,403
+Table 3.4b,United States,USA,OECD,LTO,investment_usd_per_kwe_at_7pct,419
+Table 3.4b,United States,USA,OECD,LTO,investment_usd_per_kwe_at_10pct,431
+Table 3.5,Austria,AUT,OECD,Solar PV (residential),net_capacity_mwe,0.02
+Table 3.5,Austria,AUT,OECD,Solar PV (residential),capacity_factor_pct,11.0
+Table 3.5,Austria,AUT,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Austria,AUT,OECD,Solar PV (residential),overnight_usd_per_kwe,719
+Table 3.5,Austria,AUT,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,730
+Table 3.5,Austria,AUT,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,744
+Table 3.5,Austria,AUT,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,754
+Table 3.5,Australia,AUS,OECD,Solar PV (utility scale),net_capacity_mwe,100
+Table 3.5,Australia,AUS,OECD,Solar PV (utility scale),capacity_factor_pct,28.0
+Table 3.5,Australia,AUS,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Australia,AUS,OECD,Solar PV (utility scale),overnight_usd_per_kwe,882
+Table 3.5,Australia,AUS,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,895
+Table 3.5,Australia,AUS,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,912
+Table 3.5,Australia,AUS,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,925
+Table 3.5,Australia,AUS,OECD,Solar thermal (CSP),net_capacity_mwe,150
+Table 3.5,Australia,AUS,OECD,Solar thermal (CSP),capacity_factor_pct,47.0
+Table 3.5,Australia,AUS,OECD,Solar thermal (CSP),annual_efficiency_loss_pct,0.0
+Table 3.5,Australia,AUS,OECD,Solar thermal (CSP),overnight_usd_per_kwe,5238
+Table 3.5,Australia,AUS,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_3pct,5316
+Table 3.5,Australia,AUS,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_7pct,5419
+Table 3.5,Australia,AUS,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_10pct,5494
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),capacity_factor_pct,13.0
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),overnight_usd_per_kwe,1841
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1869
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1905
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1931
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),capacity_factor_pct,12.0
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),overnight_usd_per_kwe,1346
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1366
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1392
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1411
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),capacity_factor_pct,13.0
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),overnight_usd_per_kwe,1009
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1024
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1043
+Table 3.5,Belgium,BEL,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1058
+Table 3.5,Belgium,BEL,OECD,Solar PV (utility scale),net_capacity_mwe,1.00
+Table 3.5,Belgium,BEL,OECD,Solar PV (utility scale),capacity_factor_pct,13.0
+Table 3.5,Belgium,BEL,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Belgium,BEL,OECD,Solar PV (utility scale),overnight_usd_per_kwe,992
+Table 3.5,Belgium,BEL,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1006
+Table 3.5,Belgium,BEL,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1026
+Table 3.5,Belgium,BEL,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1040
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),net_capacity_mwe,20
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),capacity_factor_pct,25.0
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),overnight_usd_per_kwe,1354
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1375
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1401
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1421
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),net_capacity_mwe,20
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),capacity_factor_pct,19.0
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),overnight_usd_per_kwe,1264
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1283
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1308
+Table 3.5,Canada,CAN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1326
+Table 3.5,Denmark,DNK,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,Denmark,DNK,OECD,Solar PV (residential),capacity_factor_pct,12.0
+Table 3.5,Denmark,DNK,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Denmark,DNK,OECD,Solar PV (residential),overnight_usd_per_kwe,1176
+Table 3.5,Denmark,DNK,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1194
+Table 3.5,Denmark,DNK,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1217
+Table 3.5,Denmark,DNK,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1234
+Table 3.5,Denmark,DNK,OECD,Solar PV (commercial),net_capacity_mwe,0.10
+Table 3.5,Denmark,DNK,OECD,Solar PV (commercial),capacity_factor_pct,13.0
+Table 3.5,Denmark,DNK,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Denmark,DNK,OECD,Solar PV (commercial),overnight_usd_per_kwe,847
+Table 3.5,Denmark,DNK,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,860
+Table 3.5,Denmark,DNK,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,876
+Table 3.5,Denmark,DNK,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,889
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),net_capacity_mwe,8
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),capacity_factor_pct,16.0
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),overnight_usd_per_kwe,534
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,542
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,553
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,561
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),net_capacity_mwe,8
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),capacity_factor_pct,18.0
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),overnight_usd_per_kwe,623
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,632
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,645
+Table 3.5,Denmark,DNK,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,654
+Table 3.5,France,FRA,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,France,FRA,OECD,Solar PV (residential),capacity_factor_pct,18.0
+Table 3.5,France,FRA,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,France,FRA,OECD,Solar PV (residential),overnight_usd_per_kwe,1700
+Table 3.5,France,FRA,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1725
+Table 3.5,France,FRA,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1758
+Table 3.5,France,FRA,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1783
+Table 3.5,France,FRA,OECD,Solar PV (commercial),net_capacity_mwe,0.50
+Table 3.5,France,FRA,OECD,Solar PV (commercial),capacity_factor_pct,18.0
+Table 3.5,France,FRA,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,France,FRA,OECD,Solar PV (commercial),overnight_usd_per_kwe,850
+Table 3.5,France,FRA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,863
+Table 3.5,France,FRA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,879
+Table 3.5,France,FRA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,891
+Table 3.5,France,FRA,OECD,Solar PV (utility scale),net_capacity_mwe,25
+Table 3.5,France,FRA,OECD,Solar PV (utility scale),capacity_factor_pct,24.0
+Table 3.5,France,FRA,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,France,FRA,OECD,Solar PV (utility scale),overnight_usd_per_kwe,708
+Table 3.5,France,FRA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,719
+Table 3.5,France,FRA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,733
+Table 3.5,France,FRA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,743
+Table 3.5,Hungary,HUN,OECD,Solar PV (residential),net_capacity_mwe,0.004
+Table 3.5,Hungary,HUN,OECD,Solar PV (residential),capacity_factor_pct,15.0
+Table 3.5,Hungary,HUN,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Hungary,HUN,OECD,Solar PV (residential),overnight_usd_per_kwe,1901
+Table 3.5,Hungary,HUN,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1929
+Table 3.5,Hungary,HUN,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1966
+Table 3.5,Hungary,HUN,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1994
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),net_capacity_mwe,0.05
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),capacity_factor_pct,14.0
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),overnight_usd_per_kwe,1297
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1316
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1341
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1360
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),net_capacity_mwe,0.50
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),capacity_factor_pct,14.0
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),overnight_usd_per_kwe,1075
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1091
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1112
+Table 3.5,Hungary,HUN,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1127
+Table 3.5,Hungary,HUN,OECD,Solar PV (utility scale),net_capacity_mwe,20
+Table 3.5,Hungary,HUN,OECD,Solar PV (utility scale),capacity_factor_pct,14.0
+Table 3.5,Hungary,HUN,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Hungary,HUN,OECD,Solar PV (utility scale),overnight_usd_per_kwe,964
+Table 3.5,Hungary,HUN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,978
+Table 3.5,Hungary,HUN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,997
+Table 3.5,Hungary,HUN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1011
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),net_capacity_mwe,0.08
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),capacity_factor_pct,20.0
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),overnight_usd_per_kwe,1306
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1325
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1350
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1369
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),net_capacity_mwe,0.21
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),capacity_factor_pct,17.0
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),overnight_usd_per_kwe,907
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,920
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,938
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,951
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),net_capacity_mwe,0.42
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),capacity_factor_pct,20.0
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),overnight_usd_per_kwe,1210
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1228
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1252
+Table 3.5,Italy,ITA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1269
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),net_capacity_mwe,0.004
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),capacity_factor_pct,20.0
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),overnight_usd_per_kwe,1846
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1873
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1909
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1936
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),capacity_factor_pct,17.0
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),overnight_usd_per_kwe,1368
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1389
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1415
+Table 3.5,Italy,ITA,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1435
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),net_capacity_mwe,0.83
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),capacity_factor_pct,20.0
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),overnight_usd_per_kwe,827
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,840
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,856
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,868
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),net_capacity_mwe,0.83
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),capacity_factor_pct,27.0
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),overnight_usd_per_kwe,836
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,849
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,865
+Table 3.5,Italy,ITA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,877
+Table 3.5,Japan,JPN,OECD,Solar PV (residential),net_capacity_mwe,0.004
+Table 3.5,Japan,JPN,OECD,Solar PV (residential),capacity_factor_pct,12.0
+Table 3.5,Japan,JPN,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,Japan,JPN,OECD,Solar PV (residential),overnight_usd_per_kwe,2333
+Table 3.5,Japan,JPN,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,2367
+Table 3.5,Japan,JPN,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,2413
+Table 3.5,Japan,JPN,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,2447
+Table 3.5,Japan,JPN,OECD,Solar PV (utility scale),net_capacity_mwe,2
+Table 3.5,Japan,JPN,OECD,Solar PV (utility scale),capacity_factor_pct,14.0
+Table 3.5,Japan,JPN,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Japan,JPN,OECD,Solar PV (utility scale),overnight_usd_per_kwe,2006
+Table 3.5,Japan,JPN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,2036
+Table 3.5,Japan,JPN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,2075
+Table 3.5,Japan,JPN,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,2104
+Table 3.5,Korea,KOR,OECD,Solar PV (commercial),net_capacity_mwe,0.10
+Table 3.5,Korea,KOR,OECD,Solar PV (commercial),capacity_factor_pct,15.0
+Table 3.5,Korea,KOR,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Korea,KOR,OECD,Solar PV (commercial),overnight_usd_per_kwe,1240
+Table 3.5,Korea,KOR,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1259
+Table 3.5,Korea,KOR,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1283
+Table 3.5,Korea,KOR,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1301
+Table 3.5,Korea,KOR,OECD,Solar PV (utility scale),net_capacity_mwe,2.97
+Table 3.5,Korea,KOR,OECD,Solar PV (utility scale),capacity_factor_pct,15.0
+Table 3.5,Korea,KOR,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Korea,KOR,OECD,Solar PV (utility scale),overnight_usd_per_kwe,1226
+Table 3.5,Korea,KOR,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1244
+Table 3.5,Korea,KOR,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1268
+Table 3.5,Korea,KOR,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1286
+Table 3.5,Netherlands,NLD,OECD,Solar PV (floating),net_capacity_mwe,8
+Table 3.5,Netherlands,NLD,OECD,Solar PV (floating),capacity_factor_pct,14.0
+Table 3.5,Netherlands,NLD,OECD,Solar PV (floating),annual_efficiency_loss_pct,0.5
+Table 3.5,Netherlands,NLD,OECD,Solar PV (floating),overnight_usd_per_kwe,860
+Table 3.5,Netherlands,NLD,OECD,Solar PV (floating),investment_usd_per_kwe_at_3pct,873
+Table 3.5,Netherlands,NLD,OECD,Solar PV (floating),investment_usd_per_kwe_at_7pct,890
+Table 3.5,Netherlands,NLD,OECD,Solar PV (floating),investment_usd_per_kwe_at_10pct,902
+Table 3.5,Netherlands,NLD,OECD,Solar PV (commercial),net_capacity_mwe,0.20
+Table 3.5,Netherlands,NLD,OECD,Solar PV (commercial),capacity_factor_pct,14.0
+Table 3.5,Netherlands,NLD,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Netherlands,NLD,OECD,Solar PV (commercial),overnight_usd_per_kwe,846
+Table 3.5,Netherlands,NLD,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,858
+Table 3.5,Netherlands,NLD,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,875
+Table 3.5,Netherlands,NLD,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,887
+Table 3.5,Netherlands,NLD,OECD,Solar PV (utility scale),net_capacity_mwe,8
+Table 3.5,Netherlands,NLD,OECD,Solar PV (utility scale),capacity_factor_pct,14.0
+Table 3.5,Netherlands,NLD,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Netherlands,NLD,OECD,Solar PV (utility scale),overnight_usd_per_kwe,807
+Table 3.5,Netherlands,NLD,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,819
+Table 3.5,Netherlands,NLD,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,835
+Table 3.5,Netherlands,NLD,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,847
+Table 3.5,Norway,NOR,OECD,Solar PV (commercial),net_capacity_mwe,0.30
+Table 3.5,Norway,NOR,OECD,Solar PV (commercial),capacity_factor_pct,10.0
+Table 3.5,Norway,NOR,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,Norway,NOR,OECD,Solar PV (commercial),overnight_usd_per_kwe,984
+Table 3.5,Norway,NOR,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,998
+Table 3.5,Norway,NOR,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1018
+Table 3.5,Norway,NOR,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1032
+Table 3.5,United States,USA,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,United States,USA,OECD,Solar PV (residential),capacity_factor_pct,14.0
+Table 3.5,United States,USA,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (residential),overnight_usd_per_kwe,1884
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1913
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1949
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1976
+Table 3.5,United States,USA,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,United States,USA,OECD,Solar PV (residential),capacity_factor_pct,16.0
+Table 3.5,United States,USA,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (residential),overnight_usd_per_kwe,1884
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,1913
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,1949
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,1976
+Table 3.5,United States,USA,OECD,Solar PV (residential)***,net_capacity_mwe,0.01
+Table 3.5,United States,USA,OECD,Solar PV (residential)***,capacity_factor_pct,17.0
+Table 3.5,United States,USA,OECD,Solar PV (residential)***,annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (residential)***,overnight_usd_per_kwe,1884
+Table 3.5,United States,USA,OECD,Solar PV (residential)***,investment_usd_per_kwe_at_3pct,1913
+Table 3.5,United States,USA,OECD,Solar PV (residential)***,investment_usd_per_kwe_at_7pct,1949
+Table 3.5,United States,USA,OECD,Solar PV (residential)***,investment_usd_per_kwe_at_10pct,1976
+Table 3.5,United States,USA,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,United States,USA,OECD,Solar PV (residential),capacity_factor_pct,19.0
+Table 3.5,United States,USA,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (residential),overnight_usd_per_kwe,2597
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,2635
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,2686
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,2723
+Table 3.5,United States,USA,OECD,Solar PV (residential),net_capacity_mwe,0.01
+Table 3.5,United States,USA,OECD,Solar PV (residential),capacity_factor_pct,21.0
+Table 3.5,United States,USA,OECD,Solar PV (residential),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (residential),overnight_usd_per_kwe,2597
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_3pct,2635
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_7pct,2686
+Table 3.5,United States,USA,OECD,Solar PV (residential),investment_usd_per_kwe_at_10pct,2723
+Table 3.5,United States,USA,OECD,Solar PV (commercial),net_capacity_mwe,0.30
+Table 3.5,United States,USA,OECD,Solar PV (commercial),capacity_factor_pct,13.0
+Table 3.5,United States,USA,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (commercial),overnight_usd_per_kwe,1357
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1377
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1403
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1423
+Table 3.5,United States,USA,OECD,Solar PV (commercial),net_capacity_mwe,0.30
+Table 3.5,United States,USA,OECD,Solar PV (commercial),capacity_factor_pct,15.0
+Table 3.5,United States,USA,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (commercial),overnight_usd_per_kwe,1357
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1377
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1403
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1423
+Table 3.5,United States,USA,OECD,Solar PV (commercial)***,net_capacity_mwe,0.30
+Table 3.5,United States,USA,OECD,Solar PV (commercial)***,capacity_factor_pct,16.0
+Table 3.5,United States,USA,OECD,Solar PV (commercial)***,annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (commercial)***,overnight_usd_per_kwe,1357
+Table 3.5,United States,USA,OECD,Solar PV (commercial)***,investment_usd_per_kwe_at_3pct,1377
+Table 3.5,United States,USA,OECD,Solar PV (commercial)***,investment_usd_per_kwe_at_7pct,1403
+Table 3.5,United States,USA,OECD,Solar PV (commercial)***,investment_usd_per_kwe_at_10pct,1423
+Table 3.5,United States,USA,OECD,Solar PV (commercial),net_capacity_mwe,0.30
+Table 3.5,United States,USA,OECD,Solar PV (commercial),capacity_factor_pct,19.0
+Table 3.5,United States,USA,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (commercial),overnight_usd_per_kwe,1357
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1377
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1403
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1423
+Table 3.5,United States,USA,OECD,Solar PV (commercial),net_capacity_mwe,0.30
+Table 3.5,United States,USA,OECD,Solar PV (commercial),capacity_factor_pct,20.0
+Table 3.5,United States,USA,OECD,Solar PV (commercial),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (commercial),overnight_usd_per_kwe,1357
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_3pct,1377
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_7pct,1403
+Table 3.5,United States,USA,OECD,Solar PV (commercial),investment_usd_per_kwe_at_10pct,1423
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),net_capacity_mwe,100
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),capacity_factor_pct,23.0
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),overnight_usd_per_kwe,1072
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1088
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1109
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1124
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),net_capacity_mwe,100
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),capacity_factor_pct,26.0
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),overnight_usd_per_kwe,1072
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1088
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1109
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1124
+Table 3.5,United States,USA,OECD,Solar PV (utility scale)***,net_capacity_mwe,100
+Table 3.5,United States,USA,OECD,Solar PV (utility scale)***,capacity_factor_pct,28.0
+Table 3.5,United States,USA,OECD,Solar PV (utility scale)***,annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (utility scale)***,overnight_usd_per_kwe,1072
+Table 3.5,United States,USA,OECD,Solar PV (utility scale)***,investment_usd_per_kwe_at_3pct,1088
+Table 3.5,United States,USA,OECD,Solar PV (utility scale)***,investment_usd_per_kwe_at_7pct,1109
+Table 3.5,United States,USA,OECD,Solar PV (utility scale)***,investment_usd_per_kwe_at_10pct,1124
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),net_capacity_mwe,100
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),capacity_factor_pct,33.0
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),overnight_usd_per_kwe,1072
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1088
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1109
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1124
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),net_capacity_mwe,100
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),capacity_factor_pct,36.0
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),overnight_usd_per_kwe,1072
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1088
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1109
+Table 3.5,United States,USA,OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1124
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),net_capacity_mwe,100
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),capacity_factor_pct,50.0
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),annual_efficiency_loss_pct,0.0
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),overnight_usd_per_kwe,6475
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_3pct,6571
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_7pct,6698
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_10pct,6791
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),net_capacity_mwe,100
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),capacity_factor_pct,61.0
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),annual_efficiency_loss_pct,0.0
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),overnight_usd_per_kwe,6475
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_3pct,6571
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_7pct,6698
+Table 3.5,United States,USA,OECD,Solar thermal (CSP),investment_usd_per_kwe_at_10pct,6791
+Table 3.5,United States,USA,OECD,Solar thermal (CSP)***,net_capacity_mwe,100
+Table 3.5,United States,USA,OECD,Solar thermal (CSP)***,capacity_factor_pct,64.0
+Table 3.5,United States,USA,OECD,Solar thermal (CSP)***,annual_efficiency_loss_pct,0.0
+Table 3.5,United States,USA,OECD,Solar thermal (CSP)***,overnight_usd_per_kwe,6475
+Table 3.5,United States,USA,OECD,Solar thermal (CSP)***,investment_usd_per_kwe_at_3pct,6571
+Table 3.5,United States,USA,OECD,Solar thermal (CSP)***,investment_usd_per_kwe_at_7pct,6698
+Table 3.5,United States,USA,OECD,Solar thermal (CSP)***,investment_usd_per_kwe_at_10pct,6791
+Table 3.5,Brazil,BRA,non-OECD,Solar PV (utility scale),net_capacity_mwe,25
+Table 3.5,Brazil,BRA,non-OECD,Solar PV (utility scale),capacity_factor_pct,31.0
+Table 3.5,Brazil,BRA,non-OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,Brazil,BRA,non-OECD,Solar PV (utility scale),overnight_usd_per_kwe,1197
+Table 3.5,Brazil,BRA,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,1215
+Table 3.5,Brazil,BRA,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,1239
+Table 3.5,Brazil,BRA,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,1256
+Table 3.5,China,CHN,non-OECD,Solar PV (utility scale),net_capacity_mwe,20
+Table 3.5,China,CHN,non-OECD,Solar PV (utility scale),capacity_factor_pct,18.0
+Table 3.5,China,CHN,non-OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,China,CHN,non-OECD,Solar PV (utility scale),overnight_usd_per_kwe,730
+Table 3.5,China,CHN,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,741
+Table 3.5,China,CHN,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,756
+Table 3.5,China,CHN,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,766
+Table 3.5,India,IND,non-OECD,Solar PV (utility scale),net_capacity_mwe,35
+Table 3.5,India,IND,non-OECD,Solar PV (utility scale),capacity_factor_pct,20.0
+Table 3.5,India,IND,non-OECD,Solar PV (utility scale),annual_efficiency_loss_pct,0.5
+Table 3.5,India,IND,non-OECD,Solar PV (utility scale),overnight_usd_per_kwe,629
+Table 3.5,India,IND,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_3pct,638
+Table 3.5,India,IND,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_7pct,650
+Table 3.5,India,IND,non-OECD,Solar PV (utility scale),investment_usd_per_kwe_at_10pct,659
+Table 3.6a,Austria,AUT,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,3.00
+Table 3.6a,Austria,AUT,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,27.0
+Table 3.6a,Austria,AUT,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1458
+Table 3.6a,Austria,AUT,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1479
+Table 3.6a,Austria,AUT,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1508
+Table 3.6a,Austria,AUT,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1529
+Table 3.6a,Australia,AUS,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,Australia,AUS,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,42.0
+Table 3.6a,Australia,AUS,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1432
+Table 3.6a,Australia,AUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1454
+Table 3.6a,Australia,AUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1482
+Table 3.6a,Australia,AUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1502
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,4.50
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,25.0
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1534
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1557
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1587
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1609
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,5.00
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,30.0
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1475
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1497
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1526
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1547
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,30
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,28.0
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1416
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1438
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1465
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1486
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,30
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,28.0
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1326
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1345
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1371
+Table 3.6a,Belgium,BEL,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1390
+Table 3.6a,Canada,CAN,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,200
+Table 3.6a,Canada,CAN,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,40.0
+Table 3.6a,Canada,CAN,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1361
+Table 3.6a,Canada,CAN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1382
+Table 3.6a,Canada,CAN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1408
+Table 3.6a,Canada,CAN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1428
+Table 3.6a,Denmark,DNK,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,4.48
+Table 3.6a,Denmark,DNK,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,40.0
+Table 3.6a,Denmark,DNK,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,918
+Table 3.6a,Denmark,DNK,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,931
+Table 3.6a,Denmark,DNK,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,949
+Table 3.6a,Denmark,DNK,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,962
+Table 3.6a,Finland,FIN,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,30
+Table 3.6a,Finland,FIN,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,40.0
+Table 3.6a,Finland,FIN,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1534
+Table 3.6a,Finland,FIN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1557
+Table 3.6a,Finland,FIN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1587
+Table 3.6a,Finland,FIN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1609
+Table 3.6a,France,FRA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,50
+Table 3.6a,France,FRA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,38.0
+Table 3.6a,France,FRA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1475
+Table 3.6a,France,FRA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1497
+Table 3.6a,France,FRA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1526
+Table 3.6a,France,FRA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1547
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.01
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,17.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,5317
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,5396
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,5500
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,5576
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.02
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,32.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,5539
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,5621
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,5729
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,5809
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.06
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,20.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,4075
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,4136
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,4215
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,4274
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.06
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,33.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,4616
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,4685
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,4775
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,4841
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.10
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,31.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,3323
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,3373
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,3438
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,3485
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.19
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,18.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,2852
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,2895
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,2950
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,2991
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.50
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,33.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,2659
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,2698
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,2750
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,2788
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.80
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,32.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,1782
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,1809
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,1844
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,1869
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.83
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,30.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,2269
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,2302
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,2347
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,2379
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.90
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,48.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,2727
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,2767
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,2820
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,2860
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),net_capacity_mwe,0.90
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),capacity_factor_pct,43.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),overnight_usd_per_kwe,2786
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_3pct,2827
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_7pct,2882
+Table 3.6a,Italy,ITA,OECD,Onshore wind (< 1 MW),investment_usd_per_kwe_at_10pct,2922
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,1.00
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,39.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,3022
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,3067
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,3126
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,3169
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,10
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,37.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1429
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1450
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1478
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1499
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,20
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,30.0
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1499
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1521
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1551
+Table 3.6a,Italy,ITA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1572
+Table 3.6a,Japan,JPN,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,20
+Table 3.6a,Japan,JPN,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,20.0
+Table 3.6a,Japan,JPN,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,2282
+Table 3.6a,Japan,JPN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,2316
+Table 3.6a,Japan,JPN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,2360
+Table 3.6a,Japan,JPN,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,2393
+Table 3.6a,Korea,KOR,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,14.85
+Table 3.6a,Korea,KOR,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,23.0
+Table 3.6a,Korea,KOR,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1982
+Table 3.6a,Korea,KOR,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,2011
+Table 3.6a,Korea,KOR,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,2050
+Table 3.6a,Korea,KOR,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,2078
+Table 3.6a,Netherlands,NLD,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,50
+Table 3.6a,Netherlands,NLD,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,48.0
+Table 3.6a,Netherlands,NLD,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1250
+Table 3.6a,Netherlands,NLD,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1269
+Table 3.6a,Netherlands,NLD,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1293
+Table 3.6a,Netherlands,NLD,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1311
+Table 3.6a,Norway,NOR,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,130
+Table 3.6a,Norway,NOR,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,44.0
+Table 3.6a,Norway,NOR,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,932
+Table 3.6a,Norway,NOR,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,946
+Table 3.6a,Norway,NOR,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,964
+Table 3.6a,Norway,NOR,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,977
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,60
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,27.0
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1598
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1622
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1653
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1676
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,280
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,27.0
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1472
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1494
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1523
+Table 3.6a,Russia,RUS,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1544
+Table 3.6a,Sweden,SWE,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,5
+Table 3.6a,Sweden,SWE,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,42.0
+Table 3.6a,Sweden,SWE,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1098
+Table 3.6a,Sweden,SWE,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1114
+Table 3.6a,Sweden,SWE,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1136
+Table 3.6a,Sweden,SWE,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1151
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,53.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1430
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1451
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1479
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1500
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,49.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1338
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1358
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1384
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1404
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,47.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1323
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1343
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1369
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1388
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW)*,net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW)*,capacity_factor_pct,45.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW)*,overnight_usd_per_kwe,1319
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW)*,investment_usd_per_kwe_at_3pct,1339
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW)*,investment_usd_per_kwe_at_7pct,1365
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW)*,investment_usd_per_kwe_at_10pct,1384
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,43.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1342
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1361
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1388
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1407
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,41.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1523
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1546
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1575
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1597
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,37.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1615
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1639
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1670
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1694
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,33.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1968
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1997
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,2035
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,2064
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,28.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,2180
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,2213
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,2255
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,2287
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),net_capacity_mwe,100
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),capacity_factor_pct,18.0
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,2329
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,2364
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,2410
+Table 3.6a,United States,USA,OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,2443
+Table 3.6a,Brazil,BRA,non-OECD,Onshore wind (>= 1 MW),net_capacity_mwe,30
+Table 3.6a,Brazil,BRA,non-OECD,Onshore wind (>= 1 MW),capacity_factor_pct,47.0
+Table 3.6a,Brazil,BRA,non-OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1314
+Table 3.6a,Brazil,BRA,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1333
+Table 3.6a,Brazil,BRA,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1359
+Table 3.6a,Brazil,BRA,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1378
+Table 3.6a,China,CHN,non-OECD,Onshore wind (>= 1 MW),net_capacity_mwe,50
+Table 3.6a,China,CHN,non-OECD,Onshore wind (>= 1 MW),capacity_factor_pct,26.0
+Table 3.6a,China,CHN,non-OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,1174
+Table 3.6a,China,CHN,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,1191
+Table 3.6a,China,CHN,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,1214
+Table 3.6a,China,CHN,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,1231
+Table 3.6a,India,IND,non-OECD,Onshore wind (>= 1 MW),net_capacity_mwe,65
+Table 3.6a,India,IND,non-OECD,Onshore wind (>= 1 MW),capacity_factor_pct,27.0
+Table 3.6a,India,IND,non-OECD,Onshore wind (>= 1 MW),overnight_usd_per_kwe,877
+Table 3.6a,India,IND,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_3pct,890
+Table 3.6a,India,IND,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_7pct,907
+Table 3.6a,India,IND,non-OECD,Onshore wind (>= 1 MW),investment_usd_per_kwe_at_10pct,920
+Table 3.6b,Australia,AUS,OECD,Offshore wind,net_capacity_mwe,100
+Table 3.6b,Australia,AUS,OECD,Offshore wind,capacity_factor_pct,51.0
+Table 3.6b,Australia,AUS,OECD,Offshore wind,overnight_usd_per_kwe,3474
+Table 3.6b,Australia,AUS,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,3526
+Table 3.6b,Australia,AUS,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,3594
+Table 3.6b,Australia,AUS,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,3644
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,net_capacity_mwe,12
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,capacity_factor_pct,39.0
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,overnight_usd_per_kwe,2361
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2396
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2442
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2476
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,net_capacity_mwe,50
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,capacity_factor_pct,39.0
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,overnight_usd_per_kwe,2361
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2396
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2442
+Table 3.6b,Belgium,BEL,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2476
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,net_capacity_mwe,11.25
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,capacity_factor_pct,52.0
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,overnight_usd_per_kwe,2012
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2042
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2081
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2110
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,net_capacity_mwe,11.5
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,capacity_factor_pct,52.0
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,overnight_usd_per_kwe,1721
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,1746
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,1780
+Table 3.6b,Denmark,DNK,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,1805
+Table 3.6b,France,FRA,OECD,Offshore wind,net_capacity_mwe,500
+Table 3.6b,France,FRA,OECD,Offshore wind,capacity_factor_pct,45.0
+Table 3.6b,France,FRA,OECD,Offshore wind,overnight_usd_per_kwe,3069
+Table 3.6b,France,FRA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,3115
+Table 3.6b,France,FRA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,3175
+Table 3.6b,France,FRA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,3219
+Table 3.6b,Japan,JPN,OECD,Offshore wind,net_capacity_mwe,100
+Table 3.6b,Japan,JPN,OECD,Offshore wind,capacity_factor_pct,30.0
+Table 3.6b,Japan,JPN,OECD,Offshore wind,overnight_usd_per_kwe,4039
+Table 3.6b,Japan,JPN,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,4099
+Table 3.6b,Japan,JPN,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,4178
+Table 3.6b,Japan,JPN,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,4236
+Table 3.6b,Korea,KOR,OECD,Offshore wind,net_capacity_mwe,99
+Table 3.6b,Korea,KOR,OECD,Offshore wind,capacity_factor_pct,30.0
+Table 3.6b,Korea,KOR,OECD,Offshore wind,overnight_usd_per_kwe,3520
+Table 3.6b,Korea,KOR,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,3572
+Table 3.6b,Korea,KOR,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,3641
+Table 3.6b,Korea,KOR,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,3692
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,47.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,1952
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,1981
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2019
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2047
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,46.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,1958
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,1987
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2025
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2054
+Table 3.6b,United States,USA,OECD,Offshore wind*,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind*,capacity_factor_pct,46.0
+Table 3.6b,United States,USA,OECD,Offshore wind*,overnight_usd_per_kwe,2060
+Table 3.6b,United States,USA,OECD,Offshore wind*,investment_usd_per_kwe_at_3pct,2091
+Table 3.6b,United States,USA,OECD,Offshore wind*,investment_usd_per_kwe_at_7pct,2131
+Table 3.6b,United States,USA,OECD,Offshore wind*,investment_usd_per_kwe_at_10pct,2161
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,46.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2151
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2183
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2225
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2256
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,45.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2189
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2222
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2264
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2296
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,39.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2209
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2242
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2285
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2317
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,30.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2411
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2447
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2494
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2529
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,53.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2410
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2446
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2493
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2528
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,51.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2420
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2456
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2503
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2538
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,50.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2486
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2523
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2572
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2607
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,50.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2577
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2615
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2666
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2703
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,47.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2604
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2643
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2694
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2732
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,37.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2607
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2646
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2697
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2735
+Table 3.6b,United States,USA,OECD,Offshore wind,net_capacity_mwe,600
+Table 3.6b,United States,USA,OECD,Offshore wind,capacity_factor_pct,31.0
+Table 3.6b,United States,USA,OECD,Offshore wind,overnight_usd_per_kwe,2864
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2907
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2963
+Table 3.6b,United States,USA,OECD,Offshore wind,investment_usd_per_kwe_at_10pct,3004
+Table 3.6b,China,CHN,non-OECD,Offshore wind,net_capacity_mwe,50
+Table 3.6b,China,CHN,non-OECD,Offshore wind,capacity_factor_pct,35.0
+Table 3.6b,China,CHN,non-OECD,Offshore wind,overnight_usd_per_kwe,2265
+Table 3.6b,China,CHN,non-OECD,Offshore wind,investment_usd_per_kwe_at_3pct,2299
+Table 3.6b,China,CHN,non-OECD,Offshore wind,investment_usd_per_kwe_at_7pct,2343
+Table 3.6b,China,CHN,non-OECD,Offshore wind,investment_usd_per_kwe_at_10pct,2375
+Table 3.7a,Austria,AUT,OECD,Run of river (< 5 MW),net_capacity_mwe,2.2
+Table 3.7a,Austria,AUT,OECD,Run of river (< 5 MW),capacity_factor_pct,51.0
+Table 3.7a,Austria,AUT,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,2361
+Table 3.7a,Austria,AUT,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,2544
+Table 3.7a,Austria,AUT,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,2809
+Table 3.7a,Austria,AUT,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,3023
+Table 3.7a,Germany,DEU,OECD,Run of river (>= 5 MW),net_capacity_mwe,24.5
+Table 3.7a,Germany,DEU,OECD,Run of river (>= 5 MW),capacity_factor_pct,65.0
+Table 3.7a,Germany,DEU,OECD,Run of river (>= 5 MW),overnight_usd_per_kwe,3000
+Table 3.7a,Germany,DEU,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_3pct,3233
+Table 3.7a,Germany,DEU,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_7pct,3569
+Table 3.7a,Germany,DEU,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_10pct,3842
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.02
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,55.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,6510
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,7015
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,7745
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,8336
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.1
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,34.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,3013
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,3247
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,3585
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,3859
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.2
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,55.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,5503
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,5930
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,6547
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,7047
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.25
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,15.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,3647
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,3930
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,4339
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,4670
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.25
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,8.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,3266
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,3520
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,3886
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,4183
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.25
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,19.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,1592
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,1715
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,1894
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,2039
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.5
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,20.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,1070
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,1153
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,1273
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,1370
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.50
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,15.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,3782
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,4075
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,4499
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,4843
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.50
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,22.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,2398
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,2584
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,2853
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,3071
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,0.7
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,55.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,4411
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,4753
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,5248
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,5649
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,1
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,15.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,956
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,1030
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,1137
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,1224
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),net_capacity_mwe,2.1
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),capacity_factor_pct,50.0
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,3216
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,3466
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,3826
+Table 3.7a,Italy,ITA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,4119
+Table 3.7a,Italy,ITA,OECD,Run of river (>= 5 MW),net_capacity_mwe,5
+Table 3.7a,Italy,ITA,OECD,Run of river (>= 5 MW),capacity_factor_pct,37.0
+Table 3.7a,Italy,ITA,OECD,Run of river (>= 5 MW),overnight_usd_per_kwe,3052
+Table 3.7a,Italy,ITA,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_3pct,3289
+Table 3.7a,Italy,ITA,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_7pct,3631
+Table 3.7a,Italy,ITA,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_10pct,3908
+Table 3.7a,Italy,ITA,OECD,Reservoir (< 5 MW),net_capacity_mwe,0.32
+Table 3.7a,Italy,ITA,OECD,Reservoir (< 5 MW),capacity_factor_pct,65.0
+Table 3.7a,Italy,ITA,OECD,Reservoir (< 5 MW),overnight_usd_per_kwe,3966
+Table 3.7a,Italy,ITA,OECD,Reservoir (< 5 MW),investment_usd_per_kwe_at_3pct,4274
+Table 3.7a,Italy,ITA,OECD,Reservoir (< 5 MW),investment_usd_per_kwe_at_7pct,4719
+Table 3.7a,Italy,ITA,OECD,Reservoir (< 5 MW),investment_usd_per_kwe_at_10pct,5079
+Table 3.7a,Italy,ITA,OECD,Reservoir (>= 5 MW),net_capacity_mwe,15
+Table 3.7a,Italy,ITA,OECD,Reservoir (>= 5 MW),capacity_factor_pct,38.0
+Table 3.7a,Italy,ITA,OECD,Reservoir (>= 5 MW),overnight_usd_per_kwe,3108
+Table 3.7a,Italy,ITA,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_3pct,3349
+Table 3.7a,Italy,ITA,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_7pct,3697
+Table 3.7a,Italy,ITA,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_10pct,3980
+Table 3.7a,Japan,JPN,OECD,Reservoir (>= 5 MW),net_capacity_mwe,12
+Table 3.7a,Japan,JPN,OECD,Reservoir (>= 5 MW),capacity_factor_pct,45.0
+Table 3.7a,Japan,JPN,OECD,Reservoir (>= 5 MW),overnight_usd_per_kwe,5819
+Table 3.7a,Japan,JPN,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_3pct,6271
+Table 3.7a,Japan,JPN,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_7pct,6923
+Table 3.7a,Japan,JPN,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_10pct,7452
+Table 3.7a,Norway,NOR,OECD,Reservoir (>= 5 MW),net_capacity_mwe,30
+Table 3.7a,Norway,NOR,OECD,Reservoir (>= 5 MW),capacity_factor_pct,52.0
+Table 3.7a,Norway,NOR,OECD,Reservoir (>= 5 MW),overnight_usd_per_kwe,1899
+Table 3.7a,Norway,NOR,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_3pct,2047
+Table 3.7a,Norway,NOR,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_7pct,2260
+Table 3.7a,Norway,NOR,OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_10pct,2432
+Table 3.7a,Norway,NOR,OECD,Run of river (< 5 MW),net_capacity_mwe,3.0
+Table 3.7a,Norway,NOR,OECD,Run of river (< 5 MW),capacity_factor_pct,47.0
+Table 3.7a,Norway,NOR,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,1964
+Table 3.7a,Norway,NOR,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,2117
+Table 3.7a,Norway,NOR,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,2337
+Table 3.7a,Norway,NOR,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,2515
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,net_capacity_mwe,4.8
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,capacity_factor_pct,62.0
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,overnight_usd_per_kwe,6383
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,investment_usd_per_kwe_at_3pct,6879
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,investment_usd_per_kwe_at_7pct,7594
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,investment_usd_per_kwe_at_10pct,8175
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)*,net_capacity_mwe,82
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)*,capacity_factor_pct,64.0
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)*,overnight_usd_per_kwe,5810
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)*,investment_usd_per_kwe_at_3pct,6261
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)*,investment_usd_per_kwe_at_7pct,6912
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)*,investment_usd_per_kwe_at_10pct,7441
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,net_capacity_mwe,4.2
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,capacity_factor_pct,60.0
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,overnight_usd_per_kwe,4275
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,investment_usd_per_kwe_at_3pct,4607
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,investment_usd_per_kwe_at_7pct,5086
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW)*,investment_usd_per_kwe_at_10pct,5475
+Table 3.7a,United States,USA,OECD,"Run of river (>= 5 MW)*,**",net_capacity_mwe,45
+Table 3.7a,United States,USA,OECD,"Run of river (>= 5 MW)*,**",capacity_factor_pct,60.0
+Table 3.7a,United States,USA,OECD,"Run of river (>= 5 MW)*,**",overnight_usd_per_kwe,4031
+Table 3.7a,United States,USA,OECD,"Run of river (>= 5 MW)*,**",investment_usd_per_kwe_at_3pct,4344
+Table 3.7a,United States,USA,OECD,"Run of river (>= 5 MW)*,**",investment_usd_per_kwe_at_7pct,4795
+Table 3.7a,United States,USA,OECD,"Run of river (>= 5 MW)*,**",investment_usd_per_kwe_at_10pct,5162
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),net_capacity_mwe,3.7
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),capacity_factor_pct,66.0
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,7484
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,8065
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,8904
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,9585
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW),net_capacity_mwe,44
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW),capacity_factor_pct,66.0
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW),overnight_usd_per_kwe,6681
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_3pct,7200
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_7pct,7949
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_10pct,8556
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),net_capacity_mwe,4.3
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),capacity_factor_pct,62.0
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),overnight_usd_per_kwe,6544
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_3pct,7052
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_7pct,7786
+Table 3.7a,United States,USA,OECD,Run of river (< 5 MW),investment_usd_per_kwe_at_10pct,8380
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)**,net_capacity_mwe,94
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)**,capacity_factor_pct,66.0
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)**,overnight_usd_per_kwe,5891
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)**,investment_usd_per_kwe_at_3pct,6349
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)**,investment_usd_per_kwe_at_7pct,7009
+Table 3.7a,United States,USA,OECD,Run of river (>= 5 MW)**,investment_usd_per_kwe_at_10pct,7544
+Table 3.7a,Brazil,BRA,non-OECD,Run of river (>= 5 MW),net_capacity_mwe,248
+Table 3.7a,Brazil,BRA,non-OECD,Run of river (>= 5 MW),capacity_factor_pct,50.0
+Table 3.7a,Brazil,BRA,non-OECD,Run of river (>= 5 MW),overnight_usd_per_kwe,2326
+Table 3.7a,Brazil,BRA,non-OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_3pct,2507
+Table 3.7a,Brazil,BRA,non-OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_7pct,2768
+Table 3.7a,Brazil,BRA,non-OECD,Run of river (>= 5 MW),investment_usd_per_kwe_at_10pct,2979
+Table 3.7a,India,IND,non-OECD,Reservoir (>= 5 MW),net_capacity_mwe,175
+Table 3.7a,India,IND,non-OECD,Reservoir (>= 5 MW),capacity_factor_pct,60.0
+Table 3.7a,India,IND,non-OECD,Reservoir (>= 5 MW),overnight_usd_per_kwe,2449
+Table 3.7a,India,IND,non-OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_3pct,2639
+Table 3.7a,India,IND,non-OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_7pct,2914
+Table 3.7a,India,IND,non-OECD,Reservoir (>= 5 MW),investment_usd_per_kwe_at_10pct,3136
+Table 3.7b,Italy,ITA,OECD,Biomass,net_capacity_mwe,0.5
+Table 3.7b,Italy,ITA,OECD,Biomass,capacity_factor_pct,89.0
+Table 3.7b,Italy,ITA,OECD,Biomass,overnight_usd_per_kwe,4605
+Table 3.7b,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_3pct,4888
+Table 3.7b,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_7pct,5288
+Table 3.7b,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_10pct,5604
+Table 3.7b,Italy,ITA,OECD,Biomass,net_capacity_mwe,0.42
+Table 3.7b,Italy,ITA,OECD,Biomass,capacity_factor_pct,89.0
+Table 3.7b,Italy,ITA,OECD,Biomass,overnight_usd_per_kwe,6545
+Table 3.7b,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_3pct,6948
+Table 3.7b,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_7pct,7515
+Table 3.7b,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_10pct,7965
+Table 3.7b,Brazil,BRA,non-OECD,Biomass,net_capacity_mwe,25
+Table 3.7b,Brazil,BRA,non-OECD,Biomass,capacity_factor_pct,30.0
+Table 3.7b,Brazil,BRA,non-OECD,Biomass,overnight_usd_per_kwe,1095
+Table 3.7b,Brazil,BRA,non-OECD,Biomass,investment_usd_per_kwe_at_3pct,1162
+Table 3.7b,Brazil,BRA,non-OECD,Biomass,investment_usd_per_kwe_at_7pct,1257
+Table 3.7b,Brazil,BRA,non-OECD,Biomass,investment_usd_per_kwe_at_10pct,1332
+Table 3.7b,India,IND,non-OECD,Biomass,net_capacity_mwe,30
+Table 3.7b,India,IND,non-OECD,Biomass,capacity_factor_pct,85.0
+Table 3.7b,India,IND,non-OECD,Biomass,overnight_usd_per_kwe,833
+Table 3.7b,India,IND,non-OECD,Biomass,investment_usd_per_kwe_at_3pct,885
+Table 3.7b,India,IND,non-OECD,Biomass,investment_usd_per_kwe_at_7pct,957
+Table 3.7b,India,IND,non-OECD,Biomass,investment_usd_per_kwe_at_10pct,1014
+Table 3.7c,Italy,ITA,OECD,Geothermal,net_capacity_mwe,40
+Table 3.7c,Italy,ITA,OECD,Geothermal,capacity_factor_pct,76.0
+Table 3.7c,Italy,ITA,OECD,Geothermal,overnight_usd_per_kwe,3851
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_3pct,4150
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_7pct,4581
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_10pct,4932
+Table 3.7c,Italy,ITA,OECD,Geothermal,net_capacity_mwe,15
+Table 3.7c,Italy,ITA,OECD,Geothermal,capacity_factor_pct,86.0
+Table 3.7c,Italy,ITA,OECD,Geothermal,overnight_usd_per_kwe,7132
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_3pct,7686
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_7pct,8485
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_10pct,9134
+Table 3.7c,Italy,ITA,OECD,Geothermal,net_capacity_mwe,10
+Table 3.7c,Italy,ITA,OECD,Geothermal,capacity_factor_pct,86.0
+Table 3.7c,Italy,ITA,OECD,Geothermal,overnight_usd_per_kwe,9799
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_3pct,10560
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_7pct,11659
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_10pct,12549
+Table 3.7c,Italy,ITA,OECD,Geothermal,net_capacity_mwe,5
+Table 3.7c,Italy,ITA,OECD,Geothermal,capacity_factor_pct,86.0
+Table 3.7c,Italy,ITA,OECD,Geothermal,overnight_usd_per_kwe,10959
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_3pct,11810
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_7pct,13038
+Table 3.7c,Italy,ITA,OECD,Geothermal,investment_usd_per_kwe_at_10pct,14034
+Table 3.7c,United States,USA,OECD,Geothermal,net_capacity_mwe,30
+Table 3.7c,United States,USA,OECD,Geothermal,capacity_factor_pct,90.0
+Table 3.7c,United States,USA,OECD,Geothermal,overnight_usd_per_kwe,4120
+Table 3.7c,United States,USA,OECD,Geothermal,investment_usd_per_kwe_at_3pct,4440
+Table 3.7c,United States,USA,OECD,Geothermal,investment_usd_per_kwe_at_7pct,4901
+Table 3.7c,United States,USA,OECD,Geothermal,investment_usd_per_kwe_at_10pct,5276
+Table 3.7c,United States,USA,OECD,Geothermal,net_capacity_mwe,25
+Table 3.7c,United States,USA,OECD,Geothermal,capacity_factor_pct,80.0
+Table 3.7c,United States,USA,OECD,Geothermal,overnight_usd_per_kwe,5538
+Table 3.7c,United States,USA,OECD,Geothermal,investment_usd_per_kwe_at_3pct,5968
+Table 3.7c,United States,USA,OECD,Geothermal,investment_usd_per_kwe_at_7pct,6588
+Table 3.7c,United States,USA,OECD,Geothermal,investment_usd_per_kwe_at_10pct,7092
+Table 3.8,Denmark,DNK,OECD,Biomass,net_capacity_mwe,177
+Table 3.8,Denmark,DNK,OECD,Biomass,capacity_factor_pct,46.0
+Table 3.8,Denmark,DNK,OECD,Biomass,overnight_usd_per_kwe,4013
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_3pct,4260
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_7pct,4608
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_10pct,4884
+Table 3.8,Denmark,DNK,OECD,Biomass,net_capacity_mwe,261
+Table 3.8,Denmark,DNK,OECD,Biomass,capacity_factor_pct,46.0
+Table 3.8,Denmark,DNK,OECD,Biomass,overnight_usd_per_kwe,2715
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_3pct,2882
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_7pct,3117
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_10pct,3304
+Table 3.8,Denmark,DNK,OECD,Biomass,net_capacity_mwe,258
+Table 3.8,Denmark,DNK,OECD,Biomass,capacity_factor_pct,57.0
+Table 3.8,Denmark,DNK,OECD,Biomass,overnight_usd_per_kwe,2951
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_3pct,3132
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_7pct,3388
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_10pct,3591
+Table 3.8,Denmark,DNK,OECD,Biomass,net_capacity_mwe,358
+Table 3.8,Denmark,DNK,OECD,Biomass,capacity_factor_pct,57.0
+Table 3.8,Denmark,DNK,OECD,Biomass,overnight_usd_per_kwe,2538
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_3pct,2694
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_7pct,2914
+Table 3.8,Denmark,DNK,OECD,Biomass,investment_usd_per_kwe_at_10pct,3088
+Table 3.8,Denmark,DNK,OECD,Coal (Ultra-supercritical),net_capacity_mwe,700
+Table 3.8,Denmark,DNK,OECD,Coal (Ultra-supercritical),capacity_factor_pct,57.0
+Table 3.8,Denmark,DNK,OECD,Coal (Ultra-supercritical),overnight_usd_per_kwe,2240
+Table 3.8,Denmark,DNK,OECD,Coal (Ultra-supercritical),investment_usd_per_kwe_at_3pct,2378
+Table 3.8,Denmark,DNK,OECD,Coal (Ultra-supercritical),investment_usd_per_kwe_at_7pct,2572
+Table 3.8,Denmark,DNK,OECD,Coal (Ultra-supercritical),investment_usd_per_kwe_at_10pct,2726
+Table 3.8,Denmark,DNK,OECD,Gas (CCGT),net_capacity_mwe,500
+Table 3.8,Denmark,DNK,OECD,Gas (CCGT),capacity_factor_pct,57.0
+Table 3.8,Denmark,DNK,OECD,Gas (CCGT),overnight_usd_per_kwe,1024
+Table 3.8,Denmark,DNK,OECD,Gas (CCGT),investment_usd_per_kwe_at_3pct,1071
+Table 3.8,Denmark,DNK,OECD,Gas (CCGT),investment_usd_per_kwe_at_7pct,1135
+Table 3.8,Denmark,DNK,OECD,Gas (CCGT),investment_usd_per_kwe_at_10pct,1185
+Table 3.8,Denmark,DNK,OECD,Gas (OCGT),net_capacity_mwe,125
+Table 3.8,Denmark,DNK,OECD,Gas (OCGT),capacity_factor_pct,46.0
+Table 3.8,Denmark,DNK,OECD,Gas (OCGT),overnight_usd_per_kwe,684
+Table 3.8,Denmark,DNK,OECD,Gas (OCGT),investment_usd_per_kwe_at_3pct,705
+Table 3.8,Denmark,DNK,OECD,Gas (OCGT),investment_usd_per_kwe_at_7pct,732
+Table 3.8,Denmark,DNK,OECD,Gas (OCGT),investment_usd_per_kwe_at_10pct,753
+Table 3.8,Italy,ITA,OECD,Biomass,net_capacity_mwe,0.4
+Table 3.8,Italy,ITA,OECD,Biomass,capacity_factor_pct,89.0
+Table 3.8,Italy,ITA,OECD,Biomass,overnight_usd_per_kwe,6545
+Table 3.8,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_3pct,6948
+Table 3.8,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_7pct,7515
+Table 3.8,Italy,ITA,OECD,Biomass,investment_usd_per_kwe_at_10pct,7965
+Table 3.8,Romania,ROU,OECD,Pulverised (Lignite),net_capacity_mwe,2900
+Table 3.8,Romania,ROU,OECD,Pulverised (Lignite),capacity_factor_pct,50.0
+Table 3.8,Romania,ROU,OECD,Pulverised (Lignite),overnight_usd_per_kwe,1015
+Table 3.8,Romania,ROU,OECD,Pulverised (Lignite),investment_usd_per_kwe_at_3pct,1077
+Table 3.8,Romania,ROU,OECD,Pulverised (Lignite),investment_usd_per_kwe_at_7pct,1165
+Table 3.8,Romania,ROU,OECD,Pulverised (Lignite),investment_usd_per_kwe_at_10pct,1235
+Table 3.8,Romania,ROU,OECD,Gas (OCGT),net_capacity_mwe,195
+Table 3.8,Romania,ROU,OECD,Gas (OCGT),capacity_factor_pct,90.0
+Table 3.8,Romania,ROU,OECD,Gas (OCGT),overnight_usd_per_kwe,330
+Table 3.8,Romania,ROU,OECD,Gas (OCGT),investment_usd_per_kwe_at_3pct,340
+Table 3.8,Romania,ROU,OECD,Gas (OCGT),investment_usd_per_kwe_at_7pct,353
+Table 3.8,Romania,ROU,OECD,Gas (OCGT),investment_usd_per_kwe_at_10pct,363
+Table 3.8,Slovak Republic,SVK,OECD,Gas (CCGT),net_capacity_mwe,6
+Table 3.8,Slovak Republic,SVK,OECD,Gas (CCGT),capacity_factor_pct,70.0
+Table 3.8,Slovak Republic,SVK,OECD,Gas (CCGT),overnight_usd_per_kwe,1160
+Table 3.8,Slovak Republic,SVK,OECD,Gas (CCGT),investment_usd_per_kwe_at_3pct,1213
+Table 3.8,Slovak Republic,SVK,OECD,Gas (CCGT),investment_usd_per_kwe_at_7pct,1286
+Table 3.8,Slovak Republic,SVK,OECD,Gas (CCGT),investment_usd_per_kwe_at_10pct,1343
+Table 3.8,Slovak Republic,SVK,OECD,Gas (OCGT),net_capacity_mwe,36
+Table 3.8,Slovak Republic,SVK,OECD,Gas (OCGT),capacity_factor_pct,98.0
+Table 3.8,Slovak Republic,SVK,OECD,Gas (OCGT),overnight_usd_per_kwe,1107
+Table 3.8,Slovak Republic,SVK,OECD,Gas (OCGT),investment_usd_per_kwe_at_3pct,1141
+Table 3.8,Slovak Republic,SVK,OECD,Gas (OCGT),investment_usd_per_kwe_at_7pct,1186
+Table 3.8,Slovak Republic,SVK,OECD,Gas (OCGT),investment_usd_per_kwe_at_10pct,1220
+Table 3.9,Australia,AUS,OECD,Pumped storage,net_capacity_mwe,200
+Table 3.9,Australia,AUS,OECD,Pumped storage,capacity_factor_pct,15.0
+Table 3.9,Australia,AUS,OECD,Pumped storage,overnight_usd_per_kwe,897
+Table 3.9,Australia,AUS,OECD,Pumped storage,investment_usd_per_kwe_at_3pct,910
+Table 3.9,Australia,AUS,OECD,Pumped storage,investment_usd_per_kwe_at_7pct,927
+Table 3.9,Australia,AUS,OECD,Pumped storage,investment_usd_per_kwe_at_10pct,940
+Table 3.9,Canada,CAN,OECD,ACAES*,net_capacity_mwe,250
+Table 3.9,Canada,CAN,OECD,ACAES*,storage_hours,4
+Table 3.9,Canada,CAN,OECD,ACAES*,capacity_factor_pct,15.0
+Table 3.9,Canada,CAN,OECD,ACAES*,overnight_usd_per_kwe,1695
+Table 3.9,Canada,CAN,OECD,ACAES*,investment_usd_per_kwe_at_3pct,1772
+Table 3.9,Canada,CAN,OECD,ACAES*,investment_usd_per_kwe_at_7pct,1879
+Table 3.9,Canada,CAN,OECD,ACAES*,investment_usd_per_kwe_at_10pct,1961
+Table 3.9,Denmark,DNK,OECD,Lithium-ion battery,net_capacity_mwe,19
+Table 3.9,Denmark,DNK,OECD,Lithium-ion battery,storage_hours,0.33
+Table 3.9,Denmark,DNK,OECD,Lithium-ion battery,capacity_factor_pct,15.0
+Table 3.9,Denmark,DNK,OECD,Lithium-ion battery,overnight_usd_per_kwe,484
+Table 3.9,Denmark,DNK,OECD,Lithium-ion battery,investment_usd_per_kwe_at_3pct,491
+Table 3.9,Denmark,DNK,OECD,Lithium-ion battery,investment_usd_per_kwe_at_7pct,501
+Table 3.9,Denmark,DNK,OECD,Lithium-ion battery,investment_usd_per_kwe_at_10pct,508
+Table 3.9,Denmark,DNK,OECD,Pumped storage,net_capacity_mwe,1000
+Table 3.9,Denmark,DNK,OECD,Pumped storage,capacity_factor_pct,15.0
+Table 3.9,Denmark,DNK,OECD,Pumped storage,overnight_usd_per_kwe,4426
+Table 3.9,Denmark,DNK,OECD,Pumped storage,investment_usd_per_kwe_at_3pct,4492
+Table 3.9,Denmark,DNK,OECD,Pumped storage,investment_usd_per_kwe_at_7pct,4579
+Table 3.9,Denmark,DNK,OECD,Pumped storage,investment_usd_per_kwe_at_10pct,4642
+Table 3.9,Finland,FIN,OECD,Lithium-ion battery,net_capacity_mwe,1.14
+Table 3.9,Finland,FIN,OECD,Lithium-ion battery,storage_hours,5.26
+Table 3.9,Finland,FIN,OECD,Lithium-ion battery,capacity_factor_pct,15.0
+Table 3.9,Finland,FIN,OECD,Lithium-ion battery,overnight_usd_per_kwe,1967
+Table 3.9,Finland,FIN,OECD,Lithium-ion battery,investment_usd_per_kwe_at_3pct,1997
+Table 3.9,Finland,FIN,OECD,Lithium-ion battery,investment_usd_per_kwe_at_7pct,2035
+Table 3.9,Finland,FIN,OECD,Lithium-ion battery,investment_usd_per_kwe_at_10pct,2063
+Table 3.9,Italy,ITA,OECD,Lithium-ion battery,net_capacity_mwe,2
+Table 3.9,Italy,ITA,OECD,Lithium-ion battery,storage_hours,0.5
+Table 3.9,Italy,ITA,OECD,Lithium-ion battery,capacity_factor_pct,15.0
+Table 3.9,Italy,ITA,OECD,Lithium-ion battery,overnight_usd_per_kwe,452
+Table 3.9,Italy,ITA,OECD,Lithium-ion battery,investment_usd_per_kwe_at_3pct,459
+Table 3.9,Italy,ITA,OECD,Lithium-ion battery,investment_usd_per_kwe_at_7pct,468
+Table 3.9,Italy,ITA,OECD,Lithium-ion battery,investment_usd_per_kwe_at_10pct,474
+Table 3.9,India,IND,non-OECD,Lithium-ion battery,net_capacity_mwe,1
+Table 3.9,India,IND,non-OECD,Lithium-ion battery,storage_hours,4
+Table 3.9,India,IND,non-OECD,Lithium-ion battery,capacity_factor_pct,15.0
+Table 3.9,India,IND,non-OECD,Lithium-ion battery,overnight_usd_per_kwe,826
+Table 3.9,India,IND,non-OECD,Lithium-ion battery,investment_usd_per_kwe_at_3pct,838
+Table 3.9,India,IND,non-OECD,Lithium-ion battery,investment_usd_per_kwe_at_7pct,854
+Table 3.9,India,IND,non-OECD,Lithium-ion battery,investment_usd_per_kwe_at_10pct,866
+Table 3.9,India,IND,non-OECD,Pumped storage,net_capacity_mwe,175
+Table 3.9,India,IND,non-OECD,Pumped storage,capacity_factor_pct,15.0
+Table 3.9,India,IND,non-OECD,Pumped storage,overnight_usd_per_kwe,563
+Table 3.9,India,IND,non-OECD,Pumped storage,investment_usd_per_kwe_at_3pct,571
+Table 3.9,India,IND,non-OECD,Pumped storage,investment_usd_per_kwe_at_7pct,582
+Table 3.9,India,IND,non-OECD,Pumped storage,investment_usd_per_kwe_at_10pct,590
+Table 3.10,France,FRA,OECD,Fuel cell,net_capacity_mwe,0.003
+Table 3.10,France,FRA,OECD,Fuel cell,capacity_factor_pct,85.0
+Table 3.10,France,FRA,OECD,Fuel cell,overnight_usd_per_kwe,6492
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_3pct,6589
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_7pct,6715
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_10pct,6809
+Table 3.10,France,FRA,OECD,Fuel cell,net_capacity_mwe,0.2
+Table 3.10,France,FRA,OECD,Fuel cell,capacity_factor_pct,85.0
+Table 3.10,France,FRA,OECD,Fuel cell,overnight_usd_per_kwe,5902
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_3pct,5990
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_7pct,6105
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_10pct,6190
+Table 3.10,France,FRA,OECD,Fuel cell,net_capacity_mwe,15
+Table 3.10,France,FRA,OECD,Fuel cell,capacity_factor_pct,85.0
+Table 3.10,France,FRA,OECD,Fuel cell,overnight_usd_per_kwe,2361
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_3pct,2396
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_7pct,2442
+Table 3.10,France,FRA,OECD,Fuel cell,investment_usd_per_kwe_at_10pct,2476
+Table 3.10,Norway,NOR,OECD,Fuel cell,net_capacity_mwe,1
+Table 3.10,Norway,NOR,OECD,Fuel cell,capacity_factor_pct,85.0
+Table 3.10,Norway,NOR,OECD,Fuel cell,overnight_usd_per_kwe,3529
+Table 3.10,Norway,NOR,OECD,Fuel cell,investment_usd_per_kwe_at_3pct,3582
+Table 3.10,Norway,NOR,OECD,Fuel cell,investment_usd_per_kwe_at_7pct,3650
+Table 3.10,Norway,NOR,OECD,Fuel cell,investment_usd_per_kwe_at_10pct,3701

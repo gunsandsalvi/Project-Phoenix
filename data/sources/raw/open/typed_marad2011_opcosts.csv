@@ -1,0 +1,17 @@
+vessel_type,flag,year,wages_usd_per_day,stores_lubes_usd_per_day,maintenance_repair_usd_per_day,insurance_usd_per_day,overhead_usd_per_day,total_usd_per_day
+Containership,US,2009,14620,1328,3529,1024,2446,22947
+Containership,US,2010,14872,1053,2866,959,1444,21194
+Containership,Foreign,2009,2671,2143,3118,960,571,9462
+Containership,Foreign,2010,2698,2200,3237,868,581,9583
+Ro/Ro,US,2009,12288,1065,4294,1250,1012,19909
+Ro/Ro,US,2010,12618,1251,3035,1047,1249,19200
+Ro/Ro,Foreign,2009,2426,493,1778,582,569,5848
+Ro/Ro,Foreign,2010,2450,513,1837,535,580,5915
+Bulk carrier,US,2009,11962,1681,5049,1643,198,20532
+Bulk carrier,US,2010,11490,1362,3019,1527,257,17656
+Bulk carrier,Foreign,2009,1993,620,1680,765,663,5721
+Bulk carrier,Foreign,2010,2013,638,1736,745,676,5807
+All vessel types,US,2009,13616,1303,3976,1158,1722,21774
+All vessel types,US,2010,13655,1158,2994,1057,1189,20053
+All vessel types,Foreign,2009,2565,1041,2294,817,693,7410
+All vessel types,Foreign,2010,2590,1073,2390,692,709,7454

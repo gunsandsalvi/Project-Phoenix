@@ -1,0 +1,54 @@
+indicator,title
+bready_fin26,"[B-READY] Percent of firms reporting unfavorable rates, collateral, or procedures as main reason for not applying for loans"
+bready_fin27,[B-READY] Average days to receive a decision on loan application
+bready_fin28,[B-READY] Average proportion of sales paid by customers electronically
+bready_fin29,[B-READY] Average days to receive the main type of electronic payment
+bready_fin30,[B-READY] Average cost to receive main type of electronic payment (% of transaction)
+bready_fin31,[B-READY] Average proportion of payments made electronically
+bready_fin32,[B-READY] Average cost to make main type of electronic payment (% of transaction)
+bready_fin33,[B-READY] Average perceptions index of access to finance as a constraint
+bready_t1,[B-READY] Percent of firms with an internationally-recognized quality certification
+bready_t10,[B-READY] Percent of medium and large firms that spend on R&D in the last fiscal years
+bready_t7_ml,[B-READY] Percent of medium and large firms that introduced a new product/service over last 3 years
+bready_t9_ml,[B-READY] Percent of medium and large firms that introduced a process innovation over last 3 years
+car1,Average age of the establishment (years)
+car2,Average proportion of private domestic ownership in a firm (%)
+car7,Percent of firms with at least 10% of foreign ownership
+car8,Percent of firms with at least 10% of government/state ownership
+fin1,Average proportion of investment financed internally (%)
+fin11,Average proportion of loans requiring collateral (%)
+fin12,Percent of firms using banks to finance investments
+fin13,Percent of firms using banks to finance working capital
+fin14,Percent of firms with a bank loan/line of credit
+fin15,Percent of firms with a checking or savings account
+fin16,Percent of firms identifying access to finance as a major or very severe constraint
+fin2,Average proportion of investment financed by banks (%)
+fin20,Percent of firms not needing a loan
+fin21,Percent of firms whose recent loan application was rejected
+fin23,Percent of firms that are fully credit constrained
+fin24,Percent of firms that are partially credit constrained
+fin3,Average proportion of investment financed by supplier/customer credit (%)
+fin34,Percent of firms that are fully or partially credit constrained
+fin4,Average proportion of investment financed by equity or stock sales (%)
+fin5,Average proportion of investment financed by other financing (%)
+fin7,Average proportion of working capital financed by banks (%)
+jobs1,Jobs share
+jobs2,Firms that added jobs (%)
+jobs3,Job expansion (%)
+jobs4,Share in job expansion (%)
+jobs5,Firms that reduced jobs (%)
+jobs6,Job contraction (%)
+jobs7,Share in job contraction (%)
+jobs8,Net job creation (%)
+jobs9,Share in net job creation (%)
+lform3,Percent of firms with legal status of Sole Proprietorship
+perf1,Average real annual sales growth (%)
+perf2,Average annual employment growth (%)
+perf3,Average real annual labor productivity growth (%)
+perf4,Percent of firms buying fixed assets
+t3,Average capacity utilization (%)*
+t4,Percent of firms using technology licensed from foreign companies*
+t5,Percent of firms having their own web site
+t7,Percent of firms that introduced a new product/service over last 3 years
+t8,Percent of firms whose new product/service is also new to the main market
+t9,Percent of firms that introduced a process innovation over last 3 years

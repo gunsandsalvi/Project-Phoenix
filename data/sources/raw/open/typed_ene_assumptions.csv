@@ -1,0 +1,40 @@
+item,technology,value,unit,source
+lifetime,Battery storage,10,years,PCGE2020 s2.2 p.36
+lifetime,"Solar PV, onshore and offshore wind",25,years,PCGE2020 s2.2 p.36
+lifetime,Gas-fired power plants,30,years,PCGE2020 s2.2 p.36
+lifetime,Coal-fired power and geothermal plants,40,years,PCGE2020 s2.2 p.36
+lifetime,Nuclear power plants,60,years,PCGE2020 s2.2 p.36
+lifetime,Hydropower plants,80,years,PCGE2020 s2.2 p.36
+lifetime_extension_min,Nuclear long-term operation,10,years,PCGE2020 s2.2 p.36
+lifetime_extension_max,Nuclear long-term operation,20,years,PCGE2020 s2.2 p.36
+construction_length,"Non-hydro/-geothermal renewables, fuel cells",1,years,PCGE2020 s2.2 p.38
+construction_length,OCGT power plants,2,years,PCGE2020 s2.2 p.38
+construction_length,CCGT power plants,3,years,PCGE2020 s2.2 p.38
+construction_length,Coal- and biomass-fired power plants,4,years,PCGE2020 s2.2 p.38
+construction_length,Geothermal and hydro plants,5,years,PCGE2020 s2.2 p.38
+construction_length,Nuclear power plants,7,years,PCGE2020 s2.2 p.38
+construction_length,Nuclear long-term operation,2,years,PCGE2020 s2.2 p.38
+contingency_share_of_overnight,Nuclear energy (except LTO),15,%,PCGE2020 s2.2 p.38
+contingency_share_of_overnight,All other technologies,5,%,PCGE2020 s2.2 p.38
+capacity_factor_assumed,"CCGT, coal, fuel cells, nuclear (baseload)",85,%,PCGE2020 s2.2 p.37
+capacity_factor_assumed,OCGT,30,%,PCGE2020 s2.2 p.37
+annual_efficiency_loss,Solar PV,0.5,%,PCGE2020 s2.2 p.38
+fuel_price_hard_coal,Asia,83,USD/tonne (6000 kcal/kg),PCGE2020 Table 2.1 p.39
+fuel_price_hard_coal,Americas,51,USD/tonne (6000 kcal/kg),PCGE2020 Table 2.1 p.39
+fuel_price_hard_coal,China,88,USD/tonne (6000 kcal/kg),PCGE2020 Table 2.1 p.39
+fuel_price_hard_coal,Europe,75,USD/tonne (6000 kcal/kg),PCGE2020 Table 2.1 p.39
+fuel_price_natural_gas,Asia,10,USD/MBtu,PCGE2020 Table 2.1 p.39
+fuel_price_natural_gas,Americas,3.2,USD/MBtu,PCGE2020 Table 2.1 p.39
+fuel_price_natural_gas,China,9.1,USD/MBtu,PCGE2020 Table 2.1 p.39
+fuel_price_natural_gas,Europe,8,USD/MBtu,PCGE2020 Table 2.1 p.39
+fuel_price_natural_gas,Australia,7.8,USD/MBtu,PCGE2020 p.39
+nuclear_fuel_front_end,Nuclear (harmonised),7,USD/MWh,PCGE2020 p.39
+nuclear_fuel_back_end,Nuclear (harmonised),2.33,USD/MWh,PCGE2020 p.39
+carbon_price,All technologies (harmonised),30,USD/tCO2,PCGE2020 p.39
+decommissioning_period,Nuclear power plants,10,years,PCGE2020 p.40
+decommissioning_period,All other technologies,2,years,PCGE2020 p.40
+decommissioning_net_cost_share_of_overnight,Nuclear energy,15,%,PCGE2020 p.40
+decommissioning_net_cost_share_of_overnight,All other technologies,5,%,PCGE2020 p.40
+round_trip_efficiency_2019,"Utility-scale batteries (US fleet, average monthly)",82,%,EIA TIE 2021-02-12
+round_trip_efficiency_2019,"Pumped-storage hydropower (US fleet, average monthly)",79,%,EIA TIE 2021-02-12
+storage_duration_2019,"Utility-scale batteries (US, capacity-weighted)",1.5,hours,EIA TIE 2021-02-12

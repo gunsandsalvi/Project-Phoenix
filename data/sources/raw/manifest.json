@@ -121,6 +121,20 @@
    "rows": 699,
    "title": "Currency in circulation, national currency, end of year (S121_L_CIC_IMB_CBS), IMF Monetary and Financial Statistics, central bank survey"
   },
+  "imf_sdmx/GF07_S13": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 658,
+   "title": "General government expense on health (% of GDP), IMF Government Finance Statistics (COFOG 07)"
+  },
+  "imf_sdmx/GF09_S13": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 658,
+   "title": "General government expense on education (% of GDP), IMF Government Finance Statistics (COFOG 09)"
+  },
   "imf_sdmx/GF10_S13": {
    "rows": 658,
    "title": "General government expense on social protection (% of GDP), IMF Government Finance Statistics"
@@ -253,6 +267,138 @@
    "rows": 15810,
    "title": "Gross value added by activity and its parts, compensation of employees (D1), gross operating surplus and mixed income (B2A3G) and other taxes less subsidies on production (D29X39), 2019, current prices, national currency (Table 6), OECD"
   },
+  "open/atb_electricity": {
+   "for": [
+    "S2.09"
+   ],
+   "rows": 933,
+   "title": "Electricity generation technologies, United States: capital cost (CAPEX, overnight OCC, $/kW), fixed O&M ($/kW-yr), variable O&M ($/MWh), heat rate (MMBtu/MWh), capacity factor, fuel cost ($/MWh); the 2020 edition's 2019 values (2018 dollars) and the 2023 edition's 2021 values (2021 dollars), moderate scenario, market case, 30-year cost recovery; NREL ATB"
+  },
+  "open/capital_controls": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 495,
+   "title": "Capital control measures, 0 (none) to 1 (restricted), by economy and year: overall (ka), inflows (kai), outflows (kao) and by asset category - equity (eq), bonds (bo), money market (mm), collective investment (ci), derivatives (de), commercial credit (cc), financial credit (fc), guarantees (gs), direct investment (di, ldi liquidation), real estate (re) - and transaction (plbn purchase locally by non-residents, siln sale or issue locally by non-residents, pabr purchase abroad by residents, siar sale or issue abroad by residents); Fern\u00e1ndez et al. (2016), IMF Economic Review 64(3), 2021 update"
+  },
+  "open/ember_electricity": {
+   "for": [
+    "S2.09"
+   ],
+   "rows": 10534,
+   "title": "Electricity by economy and year 2015-2025: capacity (GW), generation (TWh) and power-sector emissions (MtCO2) by fuel, with total generation, emissions, demand (TWh) and net imports (TWh) in the total column; WLD is the world; Ember yearly electricity data"
+  },
+  "open/gppd_plants": {
+   "for": [
+    "S2.09"
+   ],
+   "rows": 34886,
+   "title": "Power plants of 1 MW and more by economy: primary and first other fuel, capacity (MW), commissioning year (capacity-weighted mean year of the units, fractional), year of the capacity data, reported 2019 generation (GWh, where published); WRI Global Power Plant Database v1.3"
+  },
+  "open/icio_exports_by_level": {
+   "for": [
+    "S5.05"
+   ],
+   "note": "derived: the OECD ICIO 2023 edition's 2019 table (millions of US dollars, basic prices) with the rows' origins kept and grouped by the World Bank income group of the origin or destination (high: developed; upper middle: emerging; lower middle and low: developing; the rest of the world and Chinese Taipei, which has no group in wb/countries.csv: unclassified), the groups being wb/countries.csv's current ones, not those of 2019; flows within an economy are left out, so domestic use is icio/flows less these imports",
+   "rows": 12773,
+   "title": "Exports by economy, product industry and destination's development level, 2019, millions of US dollars, intermediate and final use; OECD ICIO"
+  },
+  "open/icio_imports_by_level": {
+   "for": [
+    "S5.05"
+   ],
+   "note": "derived: the OECD ICIO 2023 edition's 2019 table (millions of US dollars, basic prices) with the rows' origins kept and grouped by the World Bank income group of the origin or destination (high: developed; upper middle: emerging; lower middle and low: developing; the rest of the world and Chinese Taipei, which has no group in wb/countries.csv: unclassified), the groups being wb/countries.csv's current ones, not those of 2019; flows within an economy are left out, so domestic use is icio/flows less these imports",
+   "rows": 13200,
+   "title": "Imports by economy, product industry (ICIO's 45) and origin's development level, 2019, millions of US dollars, by use: intermediate (all industries), households (with purchases abroad), NPISH, government, fixed investment, inventories; OECD ICIO"
+  },
+  "open/invoicing_currency": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 796,
+   "title": "Shares of exports and imports invoiced in US dollars, euros, the home currency, other currencies and unclassified (%), by economy and year 2010-2019; Boz et al. (2022)"
+  },
+  "open/merchant_fleet": {
+   "for": [
+    "S1.07",
+    "S5.05"
+   ],
+   "rows": 3294,
+   "title": "Merchant fleet by flag of registration and ship type, 2018-2020: ships, deadweight and gross tonnage (thousands), average age (years); WLD the world; UNCTADstat"
+  },
+  "open/mining_divisions": {
+   "for": [
+    "S1.02",
+    "S2.09"
+   ],
+   "rows": 8115,
+   "title": "Mining divisions B05 (coal and lignite), B06 (crude petroleum and natural gas), B07 (metal ores), B08 (other mining and quarrying), B09 (support services), 2018-2020: output (PROD), value added (VALU), gross exports (EXGR) and imports (IMGR), US dollars (TiVA 2025), employment (EMPN, persons) and labour compensation (LABR, US dollars, and PT_VA as a percentage of value added) (TiM 2025); value times 10^unit_mult; OECD"
+  },
+  "open/port_calls": {
+   "for": [
+    "S1.07",
+    "S5.05"
+   ],
+   "rows": 759,
+   "title": "Port calls by economy and market segment, 2018-2021: number of calls, median time in port (days), average vessel age (years), size (GT), cargo capacity (dwt), container capacity (TEU); UNCTADstat (from AIS)"
+  },
+  "open/shipbuilding": {
+   "for": [
+    "S1.07"
+   ],
+   "note": "derived: usd_per_gt_built = c301_output_usd / gt_built, the value of a gross ton of new ships where the industry's output is mostly ships delivered; its output also counts boats, naval vessels and work in progress, so the ratio is read for the large builders (China, Korea, Japan), whose deliveries dominate",
+   "rows": 897,
+   "title": "Ships built by economy, 2015-2022: gross tonnage delivered (UNCTADstat), output of ISIC C301 building of ships and boats (US dollars, OECD TiVA 2025) and their ratio, US dollars of output per gross ton built"
+  },
+  "open/typed_ene_assumptions": {
+   "for": [
+    "S2.09"
+   ],
+   "note": "typed: the tables were read from the report's PDF (downloaded 2026-09-28) with a table extractor and checked by eye against the page; values as printed, footnote marks dropped from country names, the report's 'Autralia' read as Australia, 'na' cells left out. IEA/NEA (2020), Projected Costs of Generating Electricity 2020 Edition, OECD Publishing, Paris; EIA, Today in Energy, 12 February 2021, 'Utility-scale batteries and pumped storage return about 80% of the electricity they store'",
+   "rows": 39,
+   "title": "Harmonised assumptions of Projected Costs of Generating Electricity 2020 (section 2.2, pp. 36-40: lifetimes, construction lengths, contingency, decommissioning, fuel prices of Table 2.1, carbon price) and the EIA's 2019 round-trip efficiencies of US batteries and pumped storage"
+  },
+  "open/typed_imo4ghg_fleet_2018": {
+   "for": [
+    "S1.07",
+    "S5.05"
+   ],
+   "note": "typed: Table 35 (pp. 99-101 of the report, PDF pp. 127-129) read with a table extractor from the full report and annexes PDF downloaded from GreenVoyage2050 and checked by eye; IMO (2020), Fourth IMO Greenhouse Gas Study 2020, London",
+   "rows": 70,
+   "title": "World fleet 2018 by ship type and size (international, domestic and fishing): ships by IHS match type, average deadweight, main engine power (kW), design speed, days at sea, days on international voyages, days in SECAs, speed at sea (kn), distance (nm), median AER, fuel (kt: main, auxiliary, boiler), GHG and CO2 (Mt); Fourth IMO GHG Study 2020, Table 35"
+  },
+  "open/typed_marad2011_opcosts": {
+   "for": [
+    "S1.07",
+    "S5.05"
+   ],
+   "note": "typed: Appendix B tables (PDF pp. 17-18) of US Maritime Administration (2011), Comparison of U.S. and Foreign-Flag Operating Costs, September 2011, read from the PDF on ROSA P and checked: the five categories sum to the total within a dollar",
+   "rows": 16,
+   "title": "Daily operating costs of oceangoing vessels, US and foreign flag, 2009 and 2010, US dollars per day: wages, stores and lubricants, maintenance and repair, insurance, overhead, total; by type (containership, Ro/Ro, bulk carrier, all types); MARAD (2011), Appendix B"
+  },
+  "open/typed_pcge2020_lcoe": {
+   "for": [
+    "S2.09"
+   ],
+   "note": "typed: the tables were read from the report's PDF (downloaded 2026-09-28) with a table extractor and checked by eye against the page; values as printed, footnote marks dropped from country names, the report's 'Autralia' read as Australia, 'na' cells left out. IEA/NEA (2020), Projected Costs of Generating Electricity 2020 Edition, OECD Publishing, Paris; EIA, Today in Energy, 12 February 2021, 'Utility-scale batteries and pumped storage return about 80% of the electricity they store'",
+   "rows": 3093,
+   "title": "Projected Costs of Generating Electricity 2020, Tables 3.11-3.19 (pp. 56-69, CHP excluded): per plant, the levelised cost's parts (investment, decommissioning, fuel, carbon, O&M, charging) and LCOE at 3, 7 and 10% (2018 USD/MWh); row numbers pair each left-page row with its right-page row"
+  },
+  "open/typed_pcge2020_plants": {
+   "for": [
+    "S2.09"
+   ],
+   "note": "typed: the tables were read from the report's PDF (downloaded 2026-09-28) with a table extractor and checked by eye against the page; values as printed, footnote marks dropped from country names, the report's 'Autralia' read as Australia, 'na' cells left out. IEA/NEA (2020), Projected Costs of Generating Electricity 2020 Edition, OECD Publishing, Paris; EIA, Today in Energy, 12 February 2021, 'Utility-scale batteries and pumped storage return about 80% of the electricity they store'",
+   "rows": 1795,
+   "title": "Projected Costs of Generating Electricity 2020, Tables 3.1-3.10 (pp. 43-55): per plant submitted by country, net capacity (MWe), electrical efficiency (%), capacity factor (%), storage hours, overnight and investment costs at 3, 7 and 10% (2018 USD/kWe); Table 3.1's summary by technology"
+  },
+  "open/wits_tariffs": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 20964,
+   "title": "Tariff rates by product group (HS sections 01-05_Animal ... 90-99_Miscellan, UNCTAD stages of processing SoP1 raw, SoP2 intermediate, SoP3 consumer, SoP4 capital goods, WITS groups and Total), %, 2017-2021: effectively applied, weighted and simple means, and MFN weighted mean, against the world; WITS/TRAINS"
+  },
   "owid/labor-share-of-gdp": {
    "rows": 1023,
    "title": "Labour share of GDP (%), ILO, SDG indicator 10.4.1, via Our World in Data"
@@ -281,6 +427,259 @@
    "rows": 1931,
    "title": "Singulate mean age at first marriage by sex (SP.DYN.SMAM.FE, SP.DYN.SMAM.MA), UN DESA World Marriage Data via the World Bank's Gender Statistics"
   },
+  "state/anberd": {
+   "for": [
+    "S6.01"
+   ],
+   "rows": 23717,
+   "title": "Business enterprise R&D expenditure by main activity, ISIC Rev. 4 industry, current prices, US dollars PPP, OECD ANBERD"
+  },
+  "state/doing_business": {
+   "for": [
+    "S2.01",
+    "S2.03",
+    "S2.04",
+    "S2.10",
+    "S5.01",
+    "S5.05",
+    "S2.05"
+   ],
+   "note": "Economies measured in two cities take the national (population-weighted) figure the file gives.",
+   "rows": 12924,
+   "title": "Doing Business 2020 (data as of May 2019): every measured indicator of starting a business, construction permits, registering property, getting credit (legal rights, credit information depth, registry and bureau coverage % of adults), paying taxes (payments, hours, total tax and contribution rate % of profit and its parts), trading across borders (hours and USD, export and import, documentary and border), enforcing contracts (days, % of claim), resolving insolvency (recovery cents on the dollar, years, % of estate), World Bank"
+  },
+  "state/election_cycle": {
+   "for": [
+    "S5.03"
+   ],
+   "note": "Derived from state/idea_turnout's parliamentary election dates.",
+   "rows": 191,
+   "title": "Years between consecutive parliamentary elections since 1990: median, minimum and maximum, and the number of elections"
+  },
+  "state/enterprise_surveys": {
+   "for": [
+    "S1.22",
+    "S1.24",
+    "S2.02",
+    "S2.03",
+    "S6.01"
+   ],
+   "note": "The shares of sales and purchases on credit (fin17, fin18) and of working capital from supplier credit (fin8, fin22) are not published by the portal; investment financed by supplier credit (fin3) is.",
+   "rows": 54339,
+   "title": "Enterprise Surveys indicators by economy and survey year (2013 on), all firms and by size (5-19, 20-99, 100+ employees): finance (shares of investment and working capital by source, loans, collateral, credit constraints, electronic payments), firm profile (age, ownership, real sales, employment and labour productivity growth, capacity use), job flows and jobs share, innovation and R&D, World Bank; titles in state/enterprise_surveys_indicators"
+  },
+  "state/enterprise_surveys_indicators": {
+   "for": [
+    "S1.22",
+    "S1.24",
+    "S2.02",
+    "S2.03",
+    "S6.01"
+   ],
+   "rows": 53,
+   "title": "Enterprise Surveys indicator codes and titles"
+  },
+  "state/idea_electoral_systems": {
+   "for": [
+    "S5.03"
+   ],
+   "rows": 1512,
+   "title": "Electoral system family and system for the national legislature, tiers, legislature size (directly elected and voting members), system for the president, by year of change, International IDEA Electoral System Design Database"
+  },
+  "state/idea_political_finance": {
+   "for": [
+    "S5.03"
+   ],
+   "note": "The database records the rules, not their amounts: no public funding per vote is published.",
+   "rows": 2506,
+   "title": "Political finance rules: direct public funding of parties, its eligibility and allocation, earmarking, free media access, and limits on parties' and candidates' spending (questions 28-37, 39-42), International IDEA Political Finance Database"
+  },
+  "state/idea_turnout": {
+   "for": [
+    "S5.03"
+   ],
+   "rows": 2568,
+   "title": "Parliamentary and presidential elections since 1990: date, turnout of registered voters (%), total vote, registered voters, turnout of the voting-age population (%), invalid votes (%), compulsory voting, International IDEA Voter Turnout Database"
+  },
+  "state/msti": {
+   "for": [
+    "S6.01"
+   ],
+   "rows": 24345,
+   "title": "Main Science and Technology Indicators: R&D expenditure by performing sector and source of funds (% of GDP, % of GERD or BERD), researchers and R&D personnel (full-time equivalent), triadic and PCT patent counts, OECD MSTI"
+  },
+  "state/net_replacement_rates": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 18720,
+   "title": "Net replacement rates in unemployment, % of disposable household income before job loss, 2019, singles without children and with two, previous earnings 67% and 100% of the average wage, by month of unemployment (1-60), with and without social assistance, no housing benefit, OECD TaxBEN"
+  },
+  "state/parlgov_cabinets": {
+   "for": [
+    "S5.03"
+   ],
+   "rows": 4021,
+   "title": "Cabinets since 2000: every party in parliament, whether in the cabinet and holding the prime minister, its seats, ParlGov"
+  },
+  "state/parlgov_elections": {
+   "for": [
+    "S5.03"
+   ],
+   "rows": 2511,
+   "title": "Parliamentary elections since 2000: each party's vote share (%), seats and the chamber's seats, with its left-right position (0-10), ParlGov"
+  },
+  "state/parlgov_parties": {
+   "for": [
+    "S5.03"
+   ],
+   "rows": 854,
+   "title": "Parties' family and positions: left-right, state-market, liberty-authority, EU (0-10 expert means), ParlGov"
+  },
+  "state/revenue_by_tax": {
+   "for": [
+    "S5.01"
+   ],
+   "rows": 62667,
+   "title": "Tax revenue of general government by tax category (OECD classification: income and profits, social security, payroll, property incl. recurrent immovable property and estate, inheritance and gift, goods and services), % of GDP, OECD Global Revenue Statistics"
+  },
+  "state/ssc_employee": {
+   "for": [
+    "S5.01"
+   ],
+   "rows": 2038,
+   "title": "Employee social security contribution schedules: rates by band (% of earnings), lower and upper thresholds and maxima (national currency), OECD Tax Database"
+  },
+  "state/ssc_employer": {
+   "for": [
+    "S5.01"
+   ],
+   "rows": 2024,
+   "title": "Employer social security contribution schedules: rates by band (% of earnings), thresholds and maxima (national currency), OECD Tax Database"
+  },
+  "state/ssc_self": {
+   "for": [
+    "S5.01"
+   ],
+   "rows": 3403,
+   "title": "Self-employed social security contribution schedules: rates by band (% of earnings), thresholds and maxima (national currency), OECD Tax Database"
+  },
+  "state/tax_cit": {
+   "for": [
+    "S5.01"
+   ],
+   "rows": 5481,
+   "title": "Corporate income tax rates, statutory and targeted at small business: central, sub-central and combined, % of taxable income, OECD Corporate Tax Statistics"
+  },
+  "state/tax_pit_central": {
+   "for": [
+    "S5.01"
+   ],
+   "rows": 4263,
+   "title": "Personal income tax, central government: marginal rates (% of taxable income) and income thresholds, allowances and credits (national currency) by band, single person, OECD Tax Database"
+  },
+  "state/tax_pit_top": {
+   "for": [
+    "S5.01"
+   ],
+   "rows": 2508,
+   "title": "Top statutory personal income tax rate and its earnings threshold (national currency, multiple of the average wage), and the average wage, OECD Tax Database"
+  },
+  "state/typed_adoption_lags": {
+   "for": [
+    "S6.01"
+   ],
+   "note": "Typed from Comin and Hobijn, An Exploration of Technology Diffusion (HBS Working Paper 08-093; AER 2010), Table 2. The CHAT data the lags are estimated from (data.nber.org/data-appendix/w15319) were not kept: 6 MB of raw usage series.",
+   "rows": 16,
+   "title": "Estimated adoption lags (years from invention to a country's adoption): mean, standard deviation and percentiles over countries, 15 technologies, with invention years"
+  },
+  "state/typed_capital_budgeting_methods": {
+   "for": [
+    "S2.03"
+   ],
+   "note": "Typed from Graham and Harvey (2001), Journal of Financial Economics 60, Table 2.",
+   "rows": 7,
+   "title": "Share of CFOs always or almost always using each capital budgeting technique (%) and mean score (0 never to 4 always), all, small and large firms, 392 US and Canadian CFOs, 1999"
+  },
+  "state/typed_hurdle_rates": {
+   "for": [
+    "S2.03"
+   ],
+   "note": "Typed from Graham (2022), NBER Working Paper 29841, Table II.",
+   "rows": 15,
+   "title": "Mean hurdle rate, weighted average cost of capital and their difference (% a year) by company characteristic, 220 US firms, Duke CFO Survey March 2019"
+  },
+  "state/typed_late_payment_terms": {
+   "for": [
+    "S2.02"
+   ],
+   "note": "Typed from Directive 2011/7/EU, Articles 2, 3, 4 and 6 (OJ L 48, 23.2.2011).",
+   "rows": 7,
+   "title": "EU late payment rules: default and maximum payment periods between undertakings and for public authorities (days), the statutory interest margin (percentage points over the reference rate) and the fixed recovery compensation (EUR)"
+  },
+  "state/typed_learning_curves": {
+   "for": [
+    "S6.01"
+   ],
+   "note": "Typed from Nagy, Farmer, Bui and Trancik, PLoS ONE 8(2) e52669 (2013), File S1, Table 1 (the Santa Fe Performance Curve Database).",
+   "rows": 62,
+   "title": "Learning curves of 62 technologies: Wright's exponent w (cost against cumulative production), the progress ratio 2^-w, production growth and cost decline exponents, periods"
+  },
+  "state/typed_patents_in_force": {
+   "for": [
+    "S6.01"
+   ],
+   "note": "Typed from WIPO, World Intellectual Property Indicators 2020, Table A59, read from the report's text; office names matched to iso3, regional offices kept under their own codes (EPO, OAPI, ARIPO, EAPO, GCCPO, WORLD for the total). The WIPO data center has no open download of patents in force.",
+   "rows": 182,
+   "title": "Patent grants by office (total, resident, non-resident), equivalent grants by origin, and patents in force by office, 2019, national and regional offices"
+  },
+  "state/typed_planning_horizon": {
+   "for": [
+    "S2.03"
+   ],
+   "note": "Typed from the text of Graham (2022), NBER Working Paper 29841, p. 20; the paper's Figure 7 has the distribution only as bars.",
+   "rows": 2,
+   "title": "Years over which US CFOs judge their plans reliable, 2018 and 2013"
+  },
+  "state/typed_tfp_dispersion": {
+   "for": [
+    "S1.22",
+    "S1.24"
+   ],
+   "note": "Typed from Hsieh and Klenow, NBER Working Paper 13290 (2007), Tables 1 and 2. The one per-level dispersion the draw can read: the United States for developed, China (upper-middle income) for emerging, India (lower-middle income) for developing; the method is the paper's (deviations of log TFP from the industry mean, value-added weighted). Cusolito and Maloney (2018, Productivity Revisited) and the Enterprise Surveys' TFP note (Francis et al. 2020) were read: they give these moments only as figures. OECD MultiProd and CompNet publish no downloadable tables.",
+   "rows": 54,
+   "title": "Dispersion of plants' log TFPQ and log TFPR around their industry means (standard deviation, 75-25 and 90-10 differences; industries weighted by value added), manufacturing, United States 1977-97, China 1998-2005, India 1987-94, with the World Bank level each economy stands at in 2019"
+  },
+  "state/typed_winfrey_s3": {
+   "for": [
+    "S2.03"
+   ],
+   "note": "Typed from BEA, Fixed Assets and Consumer Durable Goods in the United States, 1925-97, Table D. With each kind's mean service life (cap/, derive_cap.py) it gives the annual retirement hazard by age; the BEA applies it explicitly only to missiles and nuclear fuel, other assets' retirements being implied by their geometric rates, and no source measures failures of plant as such.",
+   "rows": 24,
+   "title": "Cumulative percent of a vintage's expenditure discarded by age, as percent of the mean service life: the BEA's modified Winfrey S-3 retirement pattern (retirements from 45% to 155% of the mean life)"
+  },
+  "state/vparty": {
+   "for": [
+    "S5.03"
+   ],
+   "rows": 3901,
+   "title": "Parties at each national legislative election 2000-2019: seat share (%), seats, total seats, vote share (%), government support, left-right economic position, welfare, immigration, cultural, religious positions, populism and anti-elitism (expert-coded latent scales), V-Dem V-Party v2"
+  },
+  "state/wipo_fields": {
+   "for": [
+    "S6.01"
+   ],
+   "rows": 36,
+   "title": "WIPO technology fields: number and name"
+  },
+  "state/wipo_grants_by_field": {
+   "for": [
+    "S6.01"
+   ],
+   "note": "By origin sums one origin's grants over every office, so a family granted at several offices counts at each. Field names in state/wipo_fields.",
+   "rows": 33238,
+   "title": "Patent grants by technology field (WIPO 35-field concordance of IPC), by granting office (iso3) and by applicant's origin (summed over the offices granting), count, WIPO IP Statistics"
+  },
   "un/households": {
    "rows": 1099,
    "title": "Households by size and by basic and intergenerational type, % of households, and mean size, each source's reference year, UN DESA Database on Household Size and Composition 2026"
@@ -292,6 +691,20 @@
   "wb/AG.LND.AGRI.K2": {
    "rows": 1050,
    "title": "Agricultural land, square kilometres (AG.LND.AGRI.K2), World Development Indicators"
+  },
+  "wb/EG.ELC.ACCS.ZS": {
+   "for": [
+    "S2.09"
+   ],
+   "rows": 2150,
+   "title": "Access to electricity (% of population), World Bank WDI"
+  },
+  "wb/EG.ELC.LOSS.ZS": {
+   "for": [
+    "S2.09"
+   ],
+   "rows": 1379,
+   "title": "Electric power transmission and distribution losses (% of output), World Bank WDI"
   },
   "wb/FD.RES.LIQU.AS.ZS": {
    "rows": 1521,
@@ -329,6 +742,62 @@
    "rows": 2271,
    "title": "GDP growth (annual %), World Bank WDI"
   },
+  "wb/TM.TAX.MANF.SM.AR.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1163,
+   "title": "Tariff rate, applied, simple mean, manufactured products (%), World Bank WDI"
+  },
+  "wb/TM.TAX.MANF.WM.AR.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1163,
+   "title": "Tariff rate, applied, weighted mean, manufactured products (%), World Bank WDI"
+  },
+  "wb/TM.TAX.MRCH.SM.AR.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1163,
+   "title": "Tariff rate, applied, simple mean, all products (%), World Bank WDI"
+  },
+  "wb/TM.TAX.MRCH.SM.FN.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1177,
+   "title": "Tariff rate, most favored nation, simple mean, all products (%), World Bank WDI"
+  },
+  "wb/TM.TAX.MRCH.WM.AR.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1163,
+   "title": "Tariff rate, applied, weighted mean, all products (%), World Bank WDI"
+  },
+  "wb/TM.TAX.MRCH.WM.FN.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1165,
+   "title": "Tariff rate, most favored nation, weighted mean, all products (%), World Bank WDI"
+  },
+  "wb/TM.TAX.TCOM.SM.AR.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1163,
+   "title": "Tariff rate, applied, simple mean, primary products (%), World Bank WDI"
+  },
+  "wb/TM.TAX.TCOM.WM.AR.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1163,
+   "title": "Tariff rate, applied, weighted mean, primary products (%), World Bank WDI"
+  },
   "wcde/attainment": {
    "rows": 62235,
    "title": "Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher, 8 post-secondary where the three are not reported apart), % of each five-year age group from 15 and sex, 2020, Wittgenstein Centre Human Capital Data Explorer v3, SSP2"
@@ -349,9 +818,30 @@
    "rows": 1198,
    "title": "Lending interest rate (%)"
   },
+  "wdi/GB.XPD.RSDV.GD.ZS": {
+   "for": [
+    "S6.01"
+   ],
+   "rows": 853,
+   "title": "Research and development expenditure (% of GDP), World Bank WDI"
+  },
   "wdi/GC.TAX.TOTL.GD.ZS": {
    "rows": 1294,
    "title": "Tax revenue (% of GDP)"
+  },
+  "wdi/IP.PAT.NRES": {
+   "for": [
+    "S6.01"
+   ],
+   "rows": 894,
+   "title": "Patent applications, nonresidents, World Bank WDI"
+  },
+  "wdi/IP.PAT.RESD": {
+   "for": [
+    "S6.01"
+   ],
+   "rows": 831,
+   "title": "Patent applications, residents, World Bank WDI"
   },
   "wdi/NE.TRD.GNFS.ZS": {
    "rows": 1958,
@@ -381,6 +871,62 @@
    "rows": 2169,
    "title": "GDP per capita, PPP (constant 2021 international $)"
   },
+  "wdi/SE.PRM.ENRL.TC.ZS": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 513,
+   "title": "Pupil-teacher ratio, primary, World Bank WDI"
+  },
+  "wdi/SE.SEC.ENRL.TC.ZS": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 420,
+   "title": "Pupil-teacher ratio, secondary, World Bank WDI"
+  },
+  "wdi/SE.XPD.TOTL.GD.ZS": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 1496,
+   "title": "Government expenditure on education, total (% of GDP), World Bank WDI"
+  },
+  "wdi/SH.MED.BEDS.ZS": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 1139,
+   "title": "Hospital beds (per 1,000 people), World Bank WDI"
+  },
+  "wdi/SH.MED.NUMW.P3": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 1192,
+   "title": "Nurses and midwives (per 1,000 people), World Bank WDI"
+  },
+  "wdi/SH.MED.PHYS.ZS": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 1126,
+   "title": "Physicians (per 1,000 people), World Bank WDI"
+  },
+  "wdi/SH.XPD.CHEX.GD.ZS": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 1752,
+   "title": "Current health expenditure (% of GDP), World Bank WDI"
+  },
+  "wdi/SH.XPD.GHED.GD.ZS": {
+   "for": [
+    "S5.02"
+   ],
+   "rows": 1737,
+   "title": "Domestic general government health expenditure (% of GDP), World Bank WDI"
+  },
   "wdi/SI.POV.GINI": {
    "rows": 729,
    "title": "Gini index"
@@ -408,6 +954,13 @@
   "wdi/SP.POP.65UP.TO.ZS": {
    "rows": 2387,
    "title": "Population ages 65 and above (% of total population)"
+  },
+  "wdi/SP.POP.SCIE.RD.P6": {
+   "for": [
+    "S6.01"
+   ],
+   "rows": 763,
+   "title": "Researchers in R&D (per million people), World Bank WDI"
   },
   "wid/shares": {
    "rows": 31350,
@@ -596,6 +1149,72 @@
    "title": "OECD Data Explorer, SDMX API, sector accounts",
    "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,<table>,/<key>?startPeriod=2019&endPeriod=2019&format=csvfile"
   },
+  "open/atb": {
+   "fetched": "2026-09-28",
+   "title": "NREL Annual Technology Baseline, electricity, CSV (2020 and 2023 editions)",
+   "url": "https://oedi-data-lake.s3.amazonaws.com/ATB/electricity/csv/<edition>/ATBe.csv"
+  },
+  "open/boz": {
+   "fetched": "2026-09-28",
+   "title": "Boz, Casas, Georgiadis, Gopinath, Le Mezo, Mehl and Nguyen (2022), Patterns of invoicing currency in global trade: new evidence, J. Int. Econ. 136; Mendeley Data 10.17632/6z6w78968m.1, Section2.zip",
+   "url": "https://data.mendeley.com/public-files/datasets/6z6w78968m/files/4aaaadea-370e-4d8a-ac4f-2e6a47d36428/file_downloaded"
+  },
+  "open/comtrade_areas": {
+   "fetched": "2026-09-28",
+   "title": "UN Comtrade partner areas (M49 numeric to ISO alpha-3)",
+   "url": "https://comtradeapi.un.org/files/v1/app/reference/partnerAreas.json"
+  },
+  "open/eia_storage": {
+   "fetched": "2026-09-28",
+   "title": "EIA Today in Energy, round-trip efficiency of storage, 2019",
+   "url": "https://www.eia.gov/todayinenergy/detail.php?id=46756"
+  },
+  "open/ember": {
+   "fetched": "2026-09-28",
+   "title": "Ember, Yearly electricity data, long format",
+   "url": "https://storage.googleapis.com/emb-prod-bkt-publicdata/public-downloads/yearly_full_release_long_format.csv"
+  },
+  "open/fkrsu": {
+   "fetched": "2026-09-28",
+   "title": "Fern\u00e1ndez, Klein, Rebucci, Schindler and Uribe, Capital Control Measures, 2021 update (12 August 2021)",
+   "url": "https://www.columbia.edu/~mu2166/fkrsu/2021-FKRSU-Update-12-08-2021.xlsx"
+  },
+  "open/gppd": {
+   "fetched": "2026-09-28",
+   "release": "2021-06-02",
+   "title": "WRI Global Power Plant Database v1.3",
+   "url": "https://wri-dataportal-prod.s3.amazonaws.com/manual/global_power_plant_database_v_1_3.zip"
+  },
+  "open/imo4ghg": {
+   "fetched": "2026-09-28",
+   "title": "IMO, Fourth IMO GHG Study 2020, full report and annexes (pdf)",
+   "url": "https://greenvoyage2050.imo.org/wp-content/uploads/2021/07/Fourth-IMO-GHG-Study-2020-Full-report-and-annexes_compressed.pdf"
+  },
+  "open/marad2011": {
+   "fetched": "2026-09-28",
+   "title": "MARAD, Comparison of U.S. and Foreign-Flag Operating Costs (2011, pdf)",
+   "url": "https://rosap.ntl.bts.gov/view/dot/42874/dot_42874_DS1.pdf"
+  },
+  "open/oecd_tiva_tim_2025": {
+   "fetched": "2026-09-28",
+   "title": "OECD Trade in Value Added and Trade in Employment, 2025 editions (from the ICIO 2025 tables), SDMX API",
+   "url": "https://sdmx.oecd.org/<sti-public|public>/rest/data/OECD.STI.PIE,<flow>/<key>?startPeriod=<y>&endPeriod=<y>&format=csvfile"
+  },
+  "open/pcge2020": {
+   "fetched": "2026-09-28",
+   "title": "IEA/NEA, Projected Costs of Generating Electricity 2020 Edition (pdf)",
+   "url": "https://iea.blob.core.windows.net/assets/ae17da3d-e8a5-4163-a3ec-2e6fb0b5677d/Projected-Costs-of-Generating-Electricity-2020.pdf"
+  },
+  "open/unctadstat": {
+   "fetched": "2026-09-28",
+   "title": "UNCTADstat bulk downloads (7z): US.PortCalls, US.PortCallsArrivals, US.MerchantFleet, US.ShipBuilding",
+   "url": "https://unctadstat-api.unctad.org/bulkdownload/<dataset>/<file>"
+  },
+  "open/wits": {
+   "fetched": "2026-09-28",
+   "title": "WITS TradeStats-Tariff API (UNCTAD TRAINS)",
+   "url": "https://wits.worldbank.org/API/V1/SDMX/V21/datasource/tradestats-tariff/reporter/all/year/<year>/partner/wld/product/all/indicator/<indicator>"
+  },
   "owid": {
    "title": "Our World in Data grapher CSV",
    "url": "https://ourworldindata.org/grapher/<chart>.csv?v=1&csvType=full&useColumnShortNames=true"
@@ -630,6 +1249,97 @@
    "title": "World Bank API, Gender Statistics (source 14)",
    "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2000:2025&per_page=20000&source=14"
   },
+  "state/doing_business": {
+   "fetched": "2026-09-28",
+   "title": "World Bank, Doing Business historical data (DB2020 complete dataset with scores, corrected 2021)",
+   "url": "https://archive.doingbusiness.org/content/dam/doingBusiness/excel/db2020/Historical-data---COMPLETE-dataset-with-scores.xlsx"
+  },
+  "state/enterprise_surveys": {
+   "fetched": "2026-09-28",
+   "title": "World Bank Enterprise Surveys, indicators portal API",
+   "url": "https://extdataportal.worldbank.org/api/esapi/GetTopicIndicatorData/topicid/<topic>/subtopicid/0/regionid/0/cutsId/6/colstartindex/0?lang=en"
+  },
+  "state/idea": {
+   "fetched": "2026-09-28",
+   "title": "International IDEA data tools, xlsx exports (voter turnout, electoral system design, political finance)",
+   "url": "https://www.idea.int/data-tools/export?type=region_only&themeId=<theme>&world=all&loc=home"
+  },
+  "state/imf_cofog": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API, GFS_COFOG",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}"
+  },
+  "state/oecd_anberd": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.STI.STP DSD_ANBERD@DF_ANBERDi4",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.STI.STP,DSD_ANBERD@DF_ANBERDi4,/..MA..USD_PPP.V.B?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/oecd_msti": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.STI.STP DSD_MSTI@DF_MSTI",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.STI.STP,DSD_MSTI@DF_MSTI,/all?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/oecd_net_replacement_rates": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.ELS.JAI DSD_TAXBEN_NRR@DF_NRR",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.JAI,DSD_TAXBEN_NRR@DF_NRR,/..PT_INC_DISP_HH_BJL.S_C0+S_C2.Y4_6.AW67+AW100._Z..NO+YES.NO.A?startPeriod=2019&endPeriod=2019&format=csvfile"
+  },
+  "state/oecd_revenue_by_tax": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.CTP.TPS DSD_REV_COMP_GLOBAL@DF_RSGLOBAL",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.CTP.TPS,DSD_REV_COMP_GLOBAL@DF_RSGLOBAL,/.TAX_REV.S13.._T.PT_B1GQ.A?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/oecd_ssc_employee": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.CTP.TPS DSD_TAX_SSC@DF_SSC_EMPLOYEE",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.CTP.TPS,DSD_TAX_SSC@DF_SSC_EMPLOYEE,/all?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/oecd_ssc_employer": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.CTP.TPS DSD_TAX_SSC@DF_SSC_EMPLOYER",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.CTP.TPS,DSD_TAX_SSC@DF_SSC_EMPLOYER,/all?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/oecd_ssc_self": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.CTP.TPS DSD_TAX_SSC@DF_SSC_SELF",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.CTP.TPS,DSD_TAX_SSC@DF_SSC_SELF,/all?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/oecd_tax_cit": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.CTP.TPS DSD_TAX_CIT@DF_CIT",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.CTP.TPS,DSD_TAX_CIT@DF_CIT,/all?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/oecd_tax_pit_central": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.CTP.TPS DSD_TAX_PIT@DF_PIT_CENT",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.CTP.TPS,DSD_TAX_PIT@DF_PIT_CENT,/all?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/oecd_tax_pit_top": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, OECD.CTP.TPS DSD_TAX_PIT@DF_PIT_TOP_EARN_THRESH",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.CTP.TPS,DSD_TAX_PIT@DF_PIT_TOP_EARN_THRESH,/all?startPeriod=2015&endPeriod=2025&format=csvfile"
+  },
+  "state/parlgov": {
+   "fetched": "2026-09-28",
+   "title": "ParlGov development version, CSV views",
+   "url": "https://www.parlgov.org/data/parlgov-development_csv-utf-8/<view>.csv"
+  },
+  "state/vparty": {
+   "fetched": "2026-09-28",
+   "release": "2022-02",
+   "title": "V-Dem Institute, V-Party dataset version 2 (country-party-date, CSV)",
+   "url": "https://www.v-dem.net/media/datasets/CPD_V-Party_CSV_v2.zip"
+  },
+  "state/wdi_api": {
+   "fetched": "2026-09-28",
+   "title": "World Bank API, WDI (source 2)",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source=2"
+  },
+  "state/wipo": {
+   "fetched": "2026-09-28",
+   "title": "WIPO IP Statistics, patent indicators by technology (bulk zip)",
+   "url": "https://www.wipo.int/documents/d/ip-statistics/wipo-data-patent-indicators.zip"
+  },
   "un_households": {
    "fetched": "2026-09-27",
    "title": "UN DESA Population Division, Database on Household Size and Composition 2026 and Database on the Households and Living Arrangements of Older Persons 2026",
@@ -649,6 +1359,11 @@
    "fetched": "2026-09-27",
    "title": "World Bank API",
    "url": "https://api.worldbank.org/v2/country/all/indicator/AG.LND.AGRI.K2?format=json&date=2015:2019&per_page=20000"
+  },
+  "wb_open": {
+   "fetched": "2026-09-28",
+   "title": "World Bank API, WDI (source 2): electricity and tariff series",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2015:2025&per_page=20000&source=2"
   },
   "wcde": {
    "fetched": "2026-09-28",

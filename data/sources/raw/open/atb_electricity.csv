@@ -1,0 +1,934 @@
+atb_edition,year,technology,techdetail,techdetail2,parameter,units,value
+2020,2019,Battery,2Hr Battery Storage,,CAPEX,$/kW,910
+2020,2019,Battery,2Hr Battery Storage,,CF,,0.85
+2020,2019,Battery,2Hr Battery Storage,,Fixed O&M,$/KW-yr,38.6
+2020,2019,Battery,4Hr Battery Storage,,CAPEX,$/kW,1544
+2020,2019,Battery,4Hr Battery Storage,,CF,,0.85
+2020,2019,Battery,4Hr Battery Storage,,Fixed O&M,$/KW-yr,38.6
+2020,2019,Biopower,CofireNew,,CAPEX,$/kW,4229.36
+2020,2019,Biopower,CofireNew,,CF,,0.606
+2020,2019,Biopower,CofireNew,,Fixed O&M,$/KW-yr,39.6955
+2020,2019,Biopower,CofireNew,,Fuel,$/MWh,3.13565
+2020,2019,Biopower,CofireNew,,Variable O&M,$/MWh,4.40079
+2020,2019,Biopower,CofireOld,,CAPEX,$/kW,4229.36
+2020,2019,Biopower,CofireOld,,CF,,0.606
+2020,2019,Biopower,CofireOld,,Fixed O&M,$/KW-yr,39.6955
+2020,2019,Biopower,CofireOld,,Fuel,$/MWh,3.13565
+2020,2019,Biopower,CofireOld,,Variable O&M,$/MWh,4.40079
+2020,2019,Biopower,Dedicated,,CAPEX,$/kW,4335.18
+2020,2019,Biopower,Dedicated,,CF,,0.606
+2020,2019,Biopower,Dedicated,,Fixed O&M,$/KW-yr,122.976
+2020,2019,Biopower,Dedicated,,Fuel,$/MWh,3.13565
+2020,2019,Biopower,Dedicated,,Variable O&M,$/MWh,4.72495
+2020,2019,CSP,Class1,,CAPEX,$/kW,7472.2
+2020,2019,CSP,Class1,,CF,,0.504
+2020,2019,CSP,Class1,,Fixed O&M,$/KW-yr,67.612
+2020,2019,CSP,Class1,,Variable O&M,$/MWh,4.20014
+2020,2019,CSP,Class3,,CAPEX,$/kW,7472.2
+2020,2019,CSP,Class3,,CF,,0.612
+2020,2019,CSP,Class3,,Fixed O&M,$/KW-yr,67.612
+2020,2019,CSP,Class3,,Variable O&M,$/MWh,4.20014
+2020,2019,CSP,Class5,,CAPEX,$/kW,7472.2
+2020,2019,CSP,Class5,,CF,,0.638
+2020,2019,CSP,Class5,,Fixed O&M,$/KW-yr,67.612
+2020,2019,CSP,Class5,,Variable O&M,$/MWh,4.20014
+2020,2019,Coal,CCS30AvgCF,,CAPEX,$/kW,5279.29
+2020,2019,Coal,CCS30AvgCF,,CF,,0.536
+2020,2019,Coal,CCS30AvgCF,,Fixed O&M,$/KW-yr,53.1139
+2020,2019,Coal,CCS30AvgCF,,Fuel,$/MMBTU,19.6202
+2020,2019,Coal,CCS30AvgCF,,Variable O&M,$/MWh,6.92534
+2020,2019,Coal,CCS30HighCF,,CAPEX,$/kW,5279.29
+2020,2019,Coal,CCS30HighCF,,CF,,0.85
+2020,2019,Coal,CCS30HighCF,,Fixed O&M,$/KW-yr,53.1139
+2020,2019,Coal,CCS30HighCF,,Fuel,$/MMBTU,19.6202
+2020,2019,Coal,CCS30HighCF,,Variable O&M,$/MWh,6.92534
+2020,2019,Coal,CCS90AvgCF,,CAPEX,$/kW,6805.22
+2020,2019,Coal,CCS90AvgCF,,CF,,0.536
+2020,2019,Coal,CCS90AvgCF,,Fixed O&M,$/KW-yr,58.2417
+2020,2019,Coal,CCS90AvgCF,,Fuel,$/MMBTU,25.1656
+2020,2019,Coal,CCS90AvgCF,,Variable O&M,$/MWh,10.7367
+2020,2019,Coal,CCS90HighCF,,CAPEX,$/kW,6805.22
+2020,2019,Coal,CCS90HighCF,,CF,,0.85
+2020,2019,Coal,CCS90HighCF,,Fixed O&M,$/KW-yr,58.2417
+2020,2019,Coal,CCS90HighCF,,Fuel,$/MMBTU,25.1656
+2020,2019,Coal,CCS90HighCF,,Variable O&M,$/MWh,10.7367
+2020,2019,Coal,IGCCAvgCF,,CAPEX,$/kW,4698.47
+2020,2019,Coal,IGCCAvgCF,,CF,,0.536
+2020,2019,Coal,IGCCAvgCF,,Fixed O&M,$/KW-yr,56.0707
+2020,2019,Coal,IGCCAvgCF,,Fuel,$/MMBTU,17.2959
+2020,2019,Coal,IGCCAvgCF,,Variable O&M,$/MWh,7.88067
+2020,2019,Coal,IGCCHighCF,,CAPEX,$/kW,4698.47
+2020,2019,Coal,IGCCHighCF,,CF,,0.85
+2020,2019,Coal,IGCCHighCF,,Fixed O&M,$/KW-yr,56.0707
+2020,2019,Coal,IGCCHighCF,,Fuel,$/MMBTU,17.2959
+2020,2019,Coal,IGCCHighCF,,Variable O&M,$/MWh,7.88067
+2020,2019,Coal,newAvgCF,,CAPEX,$/kW,4144.22
+2020,2019,Coal,newAvgCF,,CF,,0.536
+2020,2019,Coal,newAvgCF,,Fixed O&M,$/KW-yr,39.6955
+2020,2019,Coal,newAvgCF,,Fuel,$/MMBTU,17.3807
+2020,2019,Coal,newAvgCF,,Variable O&M,$/MWh,4.40079
+2020,2019,Coal,newHighCF,,CAPEX,$/kW,4144.22
+2020,2019,Coal,newHighCF,,CF,,0.85
+2020,2019,Coal,newHighCF,,Fixed O&M,$/KW-yr,39.6955
+2020,2019,Coal,newHighCF,,Fuel,$/MMBTU,17.3807
+2020,2019,Coal,newHighCF,,Variable O&M,$/MWh,4.40079
+2020,2019,CommPV,Chicago,,CAPEX,$/kW,1812.52
+2020,2019,CommPV,Chicago,,CF,,0.14513
+2020,2019,CommPV,Chicago,,Fixed O&M,$/KW-yr,13
+2020,2019,CommPV,Daggett,,CAPEX,$/kW,1812.52
+2020,2019,CommPV,Daggett,,CF,,0.195864
+2020,2019,CommPV,Daggett,,Fixed O&M,$/KW-yr,13
+2020,2019,CommPV,KansasCity,,CAPEX,$/kW,1812.52
+2020,2019,CommPV,KansasCity,,CF,,0.154808
+2020,2019,CommPV,KansasCity,,Fixed O&M,$/KW-yr,13
+2020,2019,CommPV,LosAngeles,,CAPEX,$/kW,1812.52
+2020,2019,CommPV,LosAngeles,,CF,,0.180933
+2020,2019,CommPV,LosAngeles,,Fixed O&M,$/KW-yr,13
+2020,2019,CommPV,Seattle,,CAPEX,$/kW,1812.52
+2020,2019,CommPV,Seattle,,CF,,0.125184
+2020,2019,CommPV,Seattle,,Fixed O&M,$/KW-yr,13
+2020,2019,Geothermal,DeepEGSBinary,,CAPEX,$/kW,46079.3
+2020,2019,Geothermal,DeepEGSBinary,,CF,,0.8
+2020,2019,Geothermal,DeepEGSBinary,,Fixed O&M,$/KW-yr,691.497
+2020,2019,Geothermal,DeepEGSFlash,,CAPEX,$/kW,20131.9
+2020,2019,Geothermal,DeepEGSFlash,,CF,,0.9
+2020,2019,Geothermal,DeepEGSFlash,,Fixed O&M,$/KW-yr,264.197
+2020,2019,Geothermal,HydroBinary,,CAPEX,$/kW,8604.01
+2020,2019,Geothermal,HydroBinary,,CF,,0.8
+2020,2019,Geothermal,HydroBinary,,Fixed O&M,$/KW-yr,180.711
+2020,2019,Geothermal,HydroFlash,,CAPEX,$/kW,6597.9
+2020,2019,Geothermal,HydroFlash,,CF,,0.9
+2020,2019,Geothermal,HydroFlash,,Fixed O&M,$/KW-yr,136.558
+2020,2019,Geothermal,NFEGSBinary,,CAPEX,$/kW,46079.3
+2020,2019,Geothermal,NFEGSBinary,,CF,,0.8
+2020,2019,Geothermal,NFEGSBinary,,Fixed O&M,$/KW-yr,691.497
+2020,2019,Geothermal,NFEGSFlash,,CAPEX,$/kW,20131.9
+2020,2019,Geothermal,NFEGSFlash,,CF,,0.9
+2020,2019,Geothermal,NFEGSFlash,,Fixed O&M,$/KW-yr,264.197
+2020,2019,Hydropower,NPD1,,CAPEX,$/kW,6672.86
+2020,2019,Hydropower,NPD1,,CF,,0.617276
+2020,2019,Hydropower,NPD1,,Fixed O&M,$/KW-yr,120.253
+2020,2019,Hydropower,NPD2,,CAPEX,$/kW,6073.58
+2020,2019,Hydropower,NPD2,,CF,,0.636562
+2020,2019,Hydropower,NPD2,,Fixed O&M,$/KW-yr,33.0867
+2020,2019,Hydropower,NPD3,,CAPEX,$/kW,4468.96
+2020,2019,Hydropower,NPD3,,CF,,0.597169
+2020,2019,Hydropower,NPD3,,Fixed O&M,$/KW-yr,127.726
+2020,2019,Hydropower,NPD4,,CAPEX,$/kW,4213.45
+2020,2019,Hydropower,NPD4,,CF,,0.59783
+2020,2019,Hydropower,NPD4,,Fixed O&M,$/KW-yr,43.6277
+2020,2019,Hydropower,NSD1,,CAPEX,$/kW,7823.71
+2020,2019,Hydropower,NSD1,,CF,,0.656435
+2020,2019,Hydropower,NSD1,,Fixed O&M,$/KW-yr,134.55
+2020,2019,Hydropower,NSD2,,CAPEX,$/kW,6984.42
+2020,2019,Hydropower,NSD2,,CF,,0.661947
+2020,2019,Hydropower,NSD2,,Fixed O&M,$/KW-yr,43.8739
+2020,2019,Hydropower,NSD3,,CAPEX,$/kW,6840.83
+2020,2019,Hydropower,NSD3,,CF,,0.623502
+2020,2019,Hydropower,NSD3,,Fixed O&M,$/KW-yr,126.576
+2020,2019,Hydropower,NSD4,,CAPEX,$/kW,6158.3
+2020,2019,Hydropower,NSD4,,CF,,0.664552
+2020,2019,Hydropower,NSD4,,Fixed O&M,$/KW-yr,31.1385
+2020,2019,LandbasedWind,LTRG1,,CAPEX,$/kW,1714.84
+2020,2019,LandbasedWind,LTRG1,,CF,,0.522811
+2020,2019,LandbasedWind,LTRG1,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG10,,CAPEX,$/kW,2805.82
+2020,2019,LandbasedWind,LTRG10,,CF,,0.166813
+2020,2019,LandbasedWind,LTRG10,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG2,,CAPEX,$/kW,1584.18
+2020,2019,LandbasedWind,LTRG2,,CF,,0.469988
+2020,2019,LandbasedWind,LTRG2,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG3,,CAPEX,$/kW,1544.56
+2020,2019,LandbasedWind,LTRG3,,CF,,0.449236
+2020,2019,LandbasedWind,LTRG3,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG4,,CAPEX,$/kW,1532.53
+2020,2019,LandbasedWind,LTRG4,,CF,,0.432051
+2020,2019,LandbasedWind,LTRG4,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG5,,CAPEX,$/kW,1578.35
+2020,2019,LandbasedWind,LTRG5,,CF,,0.412726
+2020,2019,LandbasedWind,LTRG5,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG6,,CAPEX,$/kW,1697.11
+2020,2019,LandbasedWind,LTRG6,,CF,,0.384403
+2020,2019,LandbasedWind,LTRG6,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG7,,CAPEX,$/kW,1895.75
+2020,2019,LandbasedWind,LTRG7,,CF,,0.348818
+2020,2019,LandbasedWind,LTRG7,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG8,,CAPEX,$/kW,2218.01
+2020,2019,LandbasedWind,LTRG8,,CF,,0.307693
+2020,2019,LandbasedWind,LTRG8,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,LandbasedWind,LTRG9,,CAPEX,$/kW,2671.04
+2020,2019,LandbasedWind,LTRG9,,CF,,0.263137
+2020,2019,LandbasedWind,LTRG9,,Fixed O&M,$/KW-yr,42.8508
+2020,2019,NaturalGas,CCAvgCF,,CAPEX,$/kW,1077.13
+2020,2019,NaturalGas,CCAvgCF,,CF,,0.55
+2020,2019,NaturalGas,CCAvgCF,,Fixed O&M,$/KW-yr,12.8635
+2020,2019,NaturalGas,CCAvgCF,,Fuel,$/MMBTU,2.80824
+2020,2019,NaturalGas,CCAvgCF,,Variable O&M,$/MWh,2.1611
+2020,2019,NaturalGas,CCCCSAvgCF,,CAPEX,$/kW,2737.58
+2020,2019,NaturalGas,CCCCSAvgCF,,CF,,0.55
+2020,2019,NaturalGas,CCCCSAvgCF,,Fixed O&M,$/KW-yr,26.9941
+2020,2019,NaturalGas,CCCCSAvgCF,,Fuel,$/MMBTU,2.80824
+2020,2019,NaturalGas,CCCCSAvgCF,,Variable O&M,$/MWh,5.71709
+2020,2019,NaturalGas,CCCCSHighCF,,CAPEX,$/kW,2737.58
+2020,2019,NaturalGas,CCCCSHighCF,,CF,,0.87
+2020,2019,NaturalGas,CCCCSHighCF,,Fixed O&M,$/KW-yr,26.9941
+2020,2019,NaturalGas,CCCCSHighCF,,Fuel,$/MMBTU,2.80824
+2020,2019,NaturalGas,CCCCSHighCF,,Variable O&M,$/MWh,5.71709
+2020,2019,NaturalGas,CCHighCF,,CAPEX,$/kW,1077.13
+2020,2019,NaturalGas,CCHighCF,,CF,,0.87
+2020,2019,NaturalGas,CCHighCF,,Fixed O&M,$/KW-yr,12.8635
+2020,2019,NaturalGas,CCHighCF,,Fuel,$/MMBTU,2.80824
+2020,2019,NaturalGas,CCHighCF,,Variable O&M,$/MWh,2.1611
+2020,2019,NaturalGas,CTAvgCF,,CAPEX,$/kW,978.284
+2020,2019,NaturalGas,CTAvgCF,,CF,,0.119
+2020,2019,NaturalGas,CTAvgCF,,Fixed O&M,$/KW-yr,11.3949
+2020,2019,NaturalGas,CTAvgCF,,Fuel,$/MMBTU,2.80824
+2020,2019,NaturalGas,CTAvgCF,,Variable O&M,$/MWh,4.49902
+2020,2019,NaturalGas,CTHighCF,,CAPEX,$/kW,978.284
+2020,2019,NaturalGas,CTHighCF,,CF,,0.3
+2020,2019,NaturalGas,CTHighCF,,Fixed O&M,$/KW-yr,11.3949
+2020,2019,NaturalGas,CTHighCF,,Fuel,$/MMBTU,2.80824
+2020,2019,NaturalGas,CTHighCF,,Variable O&M,$/MWh,4.49902
+2020,2019,Nuclear,Nuclear,,CAPEX,$/kW,7148.97
+2020,2019,Nuclear,Nuclear,,CF,,0.925
+2020,2019,Nuclear,Nuclear,,Fixed O&M,$/KW-yr,118.988
+2020,2019,Nuclear,Nuclear,,Fuel,$/MWh,6.97063
+2020,2019,Nuclear,Nuclear,,Variable O&M,$/MWh,2.31827
+2020,2019,OffShoreWind,OTRG1,,CAPEX,$/kW,3837.73
+2020,2019,OffShoreWind,OTRG1,,CF,,0.449698
+2020,2019,OffShoreWind,OTRG1,,Fixed O&M,$/KW-yr,116.367
+2020,2019,OffShoreWind,OTRG10,,CAPEX,$/kW,5484.71
+2020,2019,OffShoreWind,OTRG10,,CF,,0.493983
+2020,2019,OffShoreWind,OTRG10,,Fixed O&M,$/KW-yr,89.4619
+2020,2019,OffShoreWind,OTRG11,,CAPEX,$/kW,5874.77
+2020,2019,OffShoreWind,OTRG11,,CF,,0.487299
+2020,2019,OffShoreWind,OTRG11,,Fixed O&M,$/KW-yr,96.8042
+2020,2019,OffShoreWind,OTRG12,,CAPEX,$/kW,6128.25
+2020,2019,OffShoreWind,OTRG12,,CF,,0.459131
+2020,2019,OffShoreWind,OTRG12,,Fixed O&M,$/KW-yr,102.98
+2020,2019,OffShoreWind,OTRG13,,CAPEX,$/kW,6294.11
+2020,2019,OffShoreWind,OTRG13,,CF,,0.366134
+2020,2019,OffShoreWind,OTRG13,,Fixed O&M,$/KW-yr,105.556
+2020,2019,OffShoreWind,OTRG14,,CAPEX,$/kW,6360.48
+2020,2019,OffShoreWind,OTRG14,,CF,,0.300937
+2020,2019,OffShoreWind,OTRG14,,Fixed O&M,$/KW-yr,95.2909
+2020,2019,OffShoreWind,OTRG2,,CAPEX,$/kW,3882.88
+2020,2019,OffShoreWind,OTRG2,,CF,,0.438233
+2020,2019,OffShoreWind,OTRG2,,Fixed O&M,$/KW-yr,118.868
+2020,2019,OffShoreWind,OTRG3,,CAPEX,$/kW,4038.13
+2020,2019,OffShoreWind,OTRG3,,CF,,0.441509
+2020,2019,OffShoreWind,OTRG3,,Fixed O&M,$/KW-yr,120.993
+2020,2019,OffShoreWind,OTRG4,,CAPEX,$/kW,4193.43
+2020,2019,OffShoreWind,OTRG4,,CF,,0.4395
+2020,2019,OffShoreWind,OTRG4,,Fixed O&M,$/KW-yr,122.12
+2020,2019,OffShoreWind,OTRG5,,CAPEX,$/kW,4399
+2020,2019,OffShoreWind,OTRG5,,CF,,0.432418
+2020,2019,OffShoreWind,OTRG5,,Fixed O&M,$/KW-yr,125.488
+2020,2019,OffShoreWind,OTRG6,,CAPEX,$/kW,4368.51
+2020,2019,OffShoreWind,OTRG6,,CF,,0.371252
+2020,2019,OffShoreWind,OTRG6,,Fixed O&M,$/KW-yr,123.716
+2020,2019,OffShoreWind,OTRG7,,CAPEX,$/kW,4411.22
+2020,2019,OffShoreWind,OTRG7,,CF,,0.286803
+2020,2019,OffShoreWind,OTRG7,,Fixed O&M,$/KW-yr,118.228
+2020,2019,OffShoreWind,OTRG8,,CAPEX,$/kW,5270.09
+2020,2019,OffShoreWind,OTRG8,,CF,,0.515496
+2020,2019,OffShoreWind,OTRG8,,Fixed O&M,$/KW-yr,85.0175
+2020,2019,OffShoreWind,OTRG9,,CAPEX,$/kW,5366.88
+2020,2019,OffShoreWind,OTRG9,,CF,,0.502895
+2020,2019,OffShoreWind,OTRG9,,Fixed O&M,$/KW-yr,85.9785
+2020,2019,ResPV,Chicago,,CAPEX,$/kW,2796.25
+2020,2019,ResPV,Chicago,,CF,,0.154575
+2020,2019,ResPV,Chicago,,Fixed O&M,$/KW-yr,21
+2020,2019,ResPV,Daggett,,CAPEX,$/kW,2796.25
+2020,2019,ResPV,Daggett,,CF,,0.207804
+2020,2019,ResPV,Daggett,,Fixed O&M,$/KW-yr,21
+2020,2019,ResPV,KansasCity,,CAPEX,$/kW,2796.25
+2020,2019,ResPV,KansasCity,,CF,,0.165426
+2020,2019,ResPV,KansasCity,,Fixed O&M,$/KW-yr,21
+2020,2019,ResPV,LosAngeles,,CAPEX,$/kW,2796.25
+2020,2019,ResPV,LosAngeles,,CF,,0.190234
+2020,2019,ResPV,LosAngeles,,Fixed O&M,$/KW-yr,21
+2020,2019,ResPV,Seattle,,CAPEX,$/kW,2796.25
+2020,2019,ResPV,Seattle,,CF,,0.133881
+2020,2019,ResPV,Seattle,,Fixed O&M,$/KW-yr,21
+2020,2019,UtilityPV,Chicago,,CAPEX,$/kW,1405.26
+2020,2019,UtilityPV,Chicago,,CF,,0.253374
+2020,2019,UtilityPV,Chicago,,Fixed O&M,$/KW-yr,16.08
+2020,2019,UtilityPV,Daggett,,CAPEX,$/kW,1405.26
+2020,2019,UtilityPV,Daggett,,CF,,0.353194
+2020,2019,UtilityPV,Daggett,,Fixed O&M,$/KW-yr,16.08
+2020,2019,UtilityPV,KansasCity,,CAPEX,$/kW,1405.26
+2020,2019,UtilityPV,KansasCity,,CF,,0.273951
+2020,2019,UtilityPV,KansasCity,,Fixed O&M,$/KW-yr,16.08
+2020,2019,UtilityPV,LosAngeles,,CAPEX,$/kW,1405.26
+2020,2019,UtilityPV,LosAngeles,,CF,,0.320517
+2020,2019,UtilityPV,LosAngeles,,Fixed O&M,$/KW-yr,16.08
+2020,2019,UtilityPV,Seattle,,CAPEX,$/kW,1405.26
+2020,2019,UtilityPV,Seattle,,CF,,0.219572
+2020,2019,UtilityPV,Seattle,,Fixed O&M,$/KW-yr,16.08
+2023,2021,Biopower,Dedicated,Biopower,CAPEX,$/kW,5390.58
+2023,2021,Biopower,Dedicated,Biopower,CF,,0.635
+2023,2021,Biopower,Dedicated,Biopower,Fixed O&M,$/kW-yr,157.22
+2023,2021,Biopower,Dedicated,Biopower,Fuel,$/MWh,70.6725
+2023,2021,Biopower,Dedicated,Biopower,Heat Rate,MMBtu/MWh,13.5
+2023,2021,Biopower,Dedicated,Biopower,OCC,$/kW,4799.71
+2023,2021,Biopower,Dedicated,Biopower,Variable O&M,$/MWh,5.04
+2023,2021,CSP,Class2,CSP,CAPEX,$/kW,7253.78
+2023,2021,CSP,Class2,CSP,CF,,0.666
+2023,2021,CSP,Class2,CSP,Fixed O&M,$/kW-yr,69.102
+2023,2021,CSP,Class2,CSP,OCC,$/kW,6822
+2023,2021,CSP,Class2,CSP,Variable O&M,$/MWh,3.6645
+2023,2021,CSP,Class3,CSP,CAPEX,$/kW,7253.78
+2023,2021,CSP,Class3,CSP,CF,,0.647
+2023,2021,CSP,Class3,CSP,Fixed O&M,$/kW-yr,69.102
+2023,2021,CSP,Class3,CSP,OCC,$/kW,6822
+2023,2021,CSP,Class3,CSP,Variable O&M,$/MWh,3.6645
+2023,2021,CSP,Class8,CSP,CAPEX,$/kW,7253.78
+2023,2021,CSP,Class8,CSP,CF,,0.514
+2023,2021,CSP,Class8,CSP,Fixed O&M,$/kW-yr,69.102
+2023,2021,CSP,Class8,CSP,OCC,$/kW,6822
+2023,2021,CSP,Class8,CSP,Variable O&M,$/MWh,3.6645
+2023,2021,Coal_FE,,95%-CCS,CAPEX,$/kW,5896.09
+2023,2021,Coal_FE,,95%-CCS,Fixed O&M,$/kW-yr,122.1
+2023,2021,Coal_FE,,95%-CCS,Heat Rate,MMBtu/MWh,10.938
+2023,2021,Coal_FE,,95%-CCS,OCC,$/kW,4745.4
+2023,2021,Coal_FE,,95%-CCS,Variable O&M,$/MWh,14.69
+2023,2021,Coal_FE,,99%-CCS,CAPEX,$/kW,6032.52
+2023,2021,Coal_FE,,99%-CCS,Fixed O&M,$/kW-yr,124.6
+2023,2021,Coal_FE,,99%-CCS,Heat Rate,MMBtu/MWh,11.116
+2023,2021,Coal_FE,,99%-CCS,OCC,$/kW,4855.2
+2023,2021,Coal_FE,,99%-CCS,Variable O&M,$/MWh,15.05
+2023,2021,Coal_FE,,IGCC,CAPEX,$/kW,6215.41
+2023,2021,Coal_FE,,IGCC,Fixed O&M,$/kW-yr,150.1
+2023,2021,Coal_FE,,IGCC,Heat Rate,MMBtu/MWh,8.308
+2023,2021,Coal_FE,,IGCC,OCC,$/kW,5002.4
+2023,2021,Coal_FE,,IGCC,Variable O&M,$/MWh,14.77
+2023,2021,Coal_FE,,New,CAPEX,$/kW,3549.41
+2023,2021,Coal_FE,,New,Fixed O&M,$/kW-yr,77.6
+2023,2021,Coal_FE,,New,Heat Rate,MMBtu/MWh,8.49
+2023,2021,Coal_FE,,New,OCC,$/kW,2856.7
+2023,2021,Coal_FE,,New,Variable O&M,$/MWh,8.46
+2023,2021,Coal_Retrofits,,90%-CCS,Fixed O&M,$/kW-yr,143.6
+2023,2021,Coal_Retrofits,,90%-CCS,Heat Rate,MMBtu/MWh,11.612
+2023,2021,Coal_Retrofits,,90%-CCS,Variable O&M,$/MWh,16.01
+2023,2021,Coal_Retrofits,,95%-CCS,Fixed O&M,$/kW-yr,147.1
+2023,2021,Coal_Retrofits,,95%-CCS,Heat Rate,MMBtu/MWh,11.793
+2023,2021,Coal_Retrofits,,95%-CCS,Variable O&M,$/MWh,16.38
+2023,2021,CommPV,Class1,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class1,Rooftop PV,CF,,0.188167
+2023,2021,CommPV,Class1,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class1,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class10,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class10,Rooftop PV,CF,,0.12097
+2023,2021,CommPV,Class10,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class10,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class2,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class2,Rooftop PV,CF,,0.181343
+2023,2021,CommPV,Class2,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class2,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class3,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class3,Rooftop PV,CF,,0.171663
+2023,2021,CommPV,Class3,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class3,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class4,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class4,Rooftop PV,CF,,0.162592
+2023,2021,CommPV,Class4,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class4,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class5,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class5,Rooftop PV,CF,,0.155158
+2023,2021,CommPV,Class5,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class5,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class6,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class6,Rooftop PV,CF,,0.153101
+2023,2021,CommPV,Class6,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class6,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class7,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class7,Rooftop PV,CF,,0.145875
+2023,2021,CommPV,Class7,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class7,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class8,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class8,Rooftop PV,CF,,0.138542
+2023,2021,CommPV,Class8,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class8,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,CommPV,Class9,Rooftop PV,CAPEX,$/kW,1753.8
+2023,2021,CommPV,Class9,Rooftop PV,CF,,0.132985
+2023,2021,CommPV,Class9,Rooftop PV,Fixed O&M,$/kW-yr,17.9014
+2023,2021,CommPV,Class9,Rooftop PV,OCC,$/kW,1691.12
+2023,2021,Commercial Battery Storage,1Hr Battery Storage,Lithium Ion - 1 Hr,Fixed O&M,$/kW-yr,30.6305
+2023,2021,Commercial Battery Storage,1Hr Battery Storage,Lithium Ion - 1 Hr,OCC,$/kW,1225.22
+2023,2021,Commercial Battery Storage,2Hr Battery Storage,Lithium Ion - 2 Hr,Fixed O&M,$/kW-yr,36.4961
+2023,2021,Commercial Battery Storage,2Hr Battery Storage,Lithium Ion - 2 Hr,OCC,$/kW,1459.84
+2023,2021,Commercial Battery Storage,4Hr Battery Storage,Lithium Ion - 4 Hr,Fixed O&M,$/kW-yr,48.2272
+2023,2021,Commercial Battery Storage,4Hr Battery Storage,Lithium Ion - 4 Hr,OCC,$/kW,1929.09
+2023,2021,Commercial Battery Storage,6Hr Battery Storage,Lithium Ion - 6 Hr,Fixed O&M,$/kW-yr,59.9584
+2023,2021,Commercial Battery Storage,6Hr Battery Storage,Lithium Ion - 6 Hr,OCC,$/kW,2398.33
+2023,2021,Commercial Battery Storage,8Hr Battery Storage,Lithium Ion - 8 Hr,Fixed O&M,$/kW-yr,71.6895
+2023,2021,Commercial Battery Storage,8Hr Battery Storage,Lithium Ion - 8 Hr,OCC,$/kW,2867.58
+2023,2021,DistributedWind,CommercialScaleClass1,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass1,Distributed Wind,CF,,0.452058
+2023,2021,DistributedWind,CommercialScaleClass1,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass1,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass10,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass10,Distributed Wind,CF,,0.126959
+2023,2021,DistributedWind,CommercialScaleClass10,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass10,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass2,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass2,Distributed Wind,CF,,0.412025
+2023,2021,DistributedWind,CommercialScaleClass2,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass2,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass3,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass3,Distributed Wind,CF,,0.398204
+2023,2021,DistributedWind,CommercialScaleClass3,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass3,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass4,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass4,Distributed Wind,CF,,0.383919
+2023,2021,DistributedWind,CommercialScaleClass4,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass4,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass5,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass5,Distributed Wind,CF,,0.366342
+2023,2021,DistributedWind,CommercialScaleClass5,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass5,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass6,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass6,Distributed Wind,CF,,0.340202
+2023,2021,DistributedWind,CommercialScaleClass6,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass6,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass7,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass7,Distributed Wind,CF,,0.303704
+2023,2021,DistributedWind,CommercialScaleClass7,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass7,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass8,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass8,Distributed Wind,CF,,0.259408
+2023,2021,DistributedWind,CommercialScaleClass8,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass8,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,CommercialScaleClass9,Distributed Wind,CAPEX,$/kW,4510.74
+2023,2021,DistributedWind,CommercialScaleClass9,Distributed Wind,CF,,0.211526
+2023,2021,DistributedWind,CommercialScaleClass9,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,CommercialScaleClass9,Distributed Wind,OCC,$/kW,4348.75
+2023,2021,DistributedWind,LargeScaleClass1,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass1,Distributed Wind,CF,,0.47664
+2023,2021,DistributedWind,LargeScaleClass1,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass1,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass10,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass10,Distributed Wind,CF,,0.146334
+2023,2021,DistributedWind,LargeScaleClass10,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass10,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass2,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass2,Distributed Wind,CF,,0.438334
+2023,2021,DistributedWind,LargeScaleClass2,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass2,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass3,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass3,Distributed Wind,CF,,0.424841
+2023,2021,DistributedWind,LargeScaleClass3,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass3,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass4,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass4,Distributed Wind,CF,,0.410895
+2023,2021,DistributedWind,LargeScaleClass4,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass4,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass5,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass5,Distributed Wind,CF,,0.393585
+2023,2021,DistributedWind,LargeScaleClass5,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass5,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass6,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass6,Distributed Wind,CF,,0.367588
+2023,2021,DistributedWind,LargeScaleClass6,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass6,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass7,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass7,Distributed Wind,CF,,0.330858
+2023,2021,DistributedWind,LargeScaleClass7,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass7,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass8,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass8,Distributed Wind,CF,,0.285681
+2023,2021,DistributedWind,LargeScaleClass8,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass8,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,LargeScaleClass9,Distributed Wind,CAPEX,$/kW,2331.36
+2023,2021,DistributedWind,LargeScaleClass9,Distributed Wind,CF,,0.236224
+2023,2021,DistributedWind,LargeScaleClass9,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,LargeScaleClass9,Distributed Wind,OCC,$/kW,2247.64
+2023,2021,DistributedWind,MidsizeScaleClass1,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass1,Distributed Wind,CF,,0.42348
+2023,2021,DistributedWind,MidsizeScaleClass1,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass1,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass10,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass10,Distributed Wind,CF,,0.114036
+2023,2021,DistributedWind,MidsizeScaleClass10,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass10,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass2,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass2,Distributed Wind,CF,,0.38375
+2023,2021,DistributedWind,MidsizeScaleClass2,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass2,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass3,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass3,Distributed Wind,CF,,0.370124
+2023,2021,DistributedWind,MidsizeScaleClass3,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass3,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass4,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass4,Distributed Wind,CF,,0.356045
+2023,2021,DistributedWind,MidsizeScaleClass4,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass4,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass5,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass5,Distributed Wind,CF,,0.338903
+2023,2021,DistributedWind,MidsizeScaleClass5,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass5,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass6,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass6,Distributed Wind,CF,,0.313298
+2023,2021,DistributedWind,MidsizeScaleClass6,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass6,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass7,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass7,Distributed Wind,CF,,0.278143
+2023,2021,DistributedWind,MidsizeScaleClass7,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass7,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass8,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass8,Distributed Wind,CF,,0.23593
+2023,2021,DistributedWind,MidsizeScaleClass8,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass8,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,MidsizeScaleClass9,Distributed Wind,CAPEX,$/kW,2928.74
+2023,2021,DistributedWind,MidsizeScaleClass9,Distributed Wind,CF,,0.191243
+2023,2021,DistributedWind,MidsizeScaleClass9,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,MidsizeScaleClass9,Distributed Wind,OCC,$/kW,2823.56
+2023,2021,DistributedWind,ResidentialScaleClass1,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass1,Distributed Wind,CF,,0.39759
+2023,2021,DistributedWind,ResidentialScaleClass1,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass1,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass10,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass10,Distributed Wind,CF,,0.185803
+2023,2021,DistributedWind,ResidentialScaleClass10,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass10,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass2,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass2,Distributed Wind,CF,,0.366315
+2023,2021,DistributedWind,ResidentialScaleClass2,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass2,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass3,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass3,Distributed Wind,CF,,0.355202
+2023,2021,DistributedWind,ResidentialScaleClass3,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass3,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass4,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass4,Distributed Wind,CF,,0.343607
+2023,2021,DistributedWind,ResidentialScaleClass4,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass4,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass5,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass5,Distributed Wind,CF,,0.329207
+2023,2021,DistributedWind,ResidentialScaleClass5,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass5,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass6,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass6,Distributed Wind,CF,,0.307304
+2023,2021,DistributedWind,ResidentialScaleClass6,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass6,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass7,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass7,Distributed Wind,CF,,0.276636
+2023,2021,DistributedWind,ResidentialScaleClass7,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass7,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass8,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass8,Distributed Wind,CF,,0.23933
+2023,2021,DistributedWind,ResidentialScaleClass8,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass8,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,DistributedWind,ResidentialScaleClass9,Distributed Wind,CAPEX,$/kW,6007.4
+2023,2021,DistributedWind,ResidentialScaleClass9,Distributed Wind,CF,,0.199387
+2023,2021,DistributedWind,ResidentialScaleClass9,Distributed Wind,Fixed O&M,$/kW-yr,36.4984
+2023,2021,DistributedWind,ResidentialScaleClass9,Distributed Wind,OCC,$/kW,5791.66
+2023,2021,Geothermal,DeepEGSBinary,Deep EGS / Binary,CAPEX,$/kW,40394
+2023,2021,Geothermal,DeepEGSBinary,Deep EGS / Binary,CF,,0.8
+2023,2021,Geothermal,DeepEGSBinary,Deep EGS / Binary,Fixed O&M,$/kW-yr,510.888
+2023,2021,Geothermal,DeepEGSBinary,Deep EGS / Binary,OCC,$/kW,27822.5
+2023,2021,Geothermal,DeepEGSFlash,Deep EGS / Flash,CAPEX,$/kW,17055.7
+2023,2021,Geothermal,DeepEGSFlash,Deep EGS / Flash,CF,,0.9
+2023,2021,Geothermal,DeepEGSFlash,Deep EGS / Flash,Fixed O&M,$/kW-yr,200.617
+2023,2021,Geothermal,DeepEGSFlash,Deep EGS / Flash,OCC,$/kW,11747.6
+2023,2021,Geothermal,HydroBinary,Hydro / Binary,CAPEX,$/kW,8971.09
+2023,2021,Geothermal,HydroBinary,Hydro / Binary,CF,,0.8
+2023,2021,Geothermal,HydroBinary,Hydro / Binary,Fixed O&M,$/kW-yr,151.057
+2023,2021,Geothermal,HydroBinary,Hydro / Binary,OCC,$/kW,6043.12
+2023,2021,Geothermal,HydroFlash,Hydro / Flash,CAPEX,$/kW,6750.07
+2023,2021,Geothermal,HydroFlash,Hydro / Flash,CF,,0.9
+2023,2021,Geothermal,HydroFlash,Hydro / Flash,Fixed O&M,$/kW-yr,113.622
+2023,2021,Geothermal,HydroFlash,Hydro / Flash,OCC,$/kW,4547
+2023,2021,Geothermal,NFEGSBinary,NF EGS / Binary,CAPEX,$/kW,28237
+2023,2021,Geothermal,NFEGSBinary,NF EGS / Binary,CF,,0.8
+2023,2021,Geothermal,NFEGSBinary,NF EGS / Binary,Fixed O&M,$/kW-yr,452.518
+2023,2021,Geothermal,NFEGSBinary,NF EGS / Binary,OCC,$/kW,19449
+2023,2021,Geothermal,NFEGSFlash,NF EGS / Flash,CAPEX,$/kW,14010.8
+2023,2021,Geothermal,NFEGSFlash,NF EGS / Flash,CF,,0.9
+2023,2021,Geothermal,NFEGSFlash,NF EGS / Flash,Fixed O&M,$/kW-yr,202.546
+2023,2021,Geothermal,NFEGSFlash,NF EGS / Flash,OCC,$/kW,9650.31
+2023,2021,Hydropower,NPD1,NPD 1,CAPEX,$/kW,3007.71
+2023,2021,Hydropower,NPD1,NPD 1,CF,,0.33
+2023,2021,Hydropower,NPD1,NPD 1,Fixed O&M,$/kW-yr,85
+2023,2021,Hydropower,NPD1,NPD 1,OCC,$/kW,2820
+2023,2021,Hydropower,NPD2,NPD 2,CAPEX,$/kW,5898.1
+2023,2021,Hydropower,NPD2,NPD 2,CF,,0.41
+2023,2021,Hydropower,NPD2,NPD 2,Fixed O&M,$/kW-yr,87
+2023,2021,Hydropower,NPD2,NPD 2,OCC,$/kW,5530
+2023,2021,Hydropower,NPD3,NPD 3,CAPEX,$/kW,6019.69
+2023,2021,Hydropower,NPD3,NPD 3,CF,,0.33
+2023,2021,Hydropower,NPD3,NPD 3,Fixed O&M,$/kW-yr,104
+2023,2021,Hydropower,NPD3,NPD 3,OCC,$/kW,5644
+2023,2021,Hydropower,NPD4,NPD 4,CAPEX,$/kW,13211.5
+2023,2021,Hydropower,NPD4,NPD 4,CF,,0.38
+2023,2021,Hydropower,NPD4,NPD 4,Fixed O&M,$/kW-yr,174
+2023,2021,Hydropower,NPD4,NPD 4,OCC,$/kW,12387
+2023,2021,Hydropower,NPD5,NPD 5,CAPEX,$/kW,4843.27
+2023,2021,Hydropower,NPD5,NPD 5,CF,,0.42
+2023,2021,Hydropower,NPD5,NPD 5,Fixed O&M,$/kW-yr,32
+2023,2021,Hydropower,NPD5,NPD 5,OCC,$/kW,4541
+2023,2021,Hydropower,NPD6,NPD 6,CAPEX,$/kW,7292.1
+2023,2021,Hydropower,NPD6,NPD 6,CF,,0.44
+2023,2021,Hydropower,NPD6,NPD 6,Fixed O&M,$/kW-yr,36
+2023,2021,Hydropower,NPD6,NPD 6,OCC,$/kW,6837
+2023,2021,Hydropower,NPD7,NPD 7,CAPEX,$/kW,14656.7
+2023,2021,Hydropower,NPD7,NPD 7,CF,,0.62
+2023,2021,Hydropower,NPD7,NPD 7,Fixed O&M,$/kW-yr,62
+2023,2021,Hydropower,NPD7,NPD 7,OCC,$/kW,13742
+2023,2021,Hydropower,NPD8,NPD 8,CAPEX,$/kW,19946.9
+2023,2021,Hydropower,NPD8,NPD 8,CF,,0.4
+2023,2021,Hydropower,NPD8,NPD 8,Fixed O&M,$/kW-yr,189
+2023,2021,Hydropower,NPD8,NPD 8,OCC,$/kW,18702
+2023,2021,Hydropower,NSD1,NSD 1,CAPEX,$/kW,8461.05
+2023,2021,Hydropower,NSD1,NSD 1,CF,,0.66
+2023,2021,Hydropower,NSD1,NSD 1,Fixed O&M,$/kW-yr,143
+2023,2021,Hydropower,NSD1,NSD 1,OCC,$/kW,7933
+2023,2021,Hydropower,NSD2,NSD 2,CAPEX,$/kW,7553.4
+2023,2021,Hydropower,NSD2,NSD 2,CF,,0.66
+2023,2021,Hydropower,NSD2,NSD 2,Fixed O&M,$/kW-yr,47
+2023,2021,Hydropower,NSD2,NSD 2,OCC,$/kW,7082
+2023,2021,Hydropower,NSD3,NSD 3,CAPEX,$/kW,7397.69
+2023,2021,Hydropower,NSD3,NSD 3,CF,,0.62
+2023,2021,Hydropower,NSD3,NSD 3,Fixed O&M,$/kW-yr,135
+2023,2021,Hydropower,NSD3,NSD 3,OCC,$/kW,6936
+2023,2021,Hydropower,NSD4,NSD 4,CAPEX,$/kW,6659.62
+2023,2021,Hydropower,NSD4,NSD 4,CF,,0.66
+2023,2021,Hydropower,NSD4,NSD 4,Fixed O&M,$/kW-yr,33
+2023,2021,Hydropower,NSD4,NSD 4,OCC,$/kW,6244
+2023,2021,LandbasedWind,Class1,Wind Turbine Technology 1,CAPEX,$/kW,1363
+2023,2021,LandbasedWind,Class1,Wind Turbine Technology 1,CF,,0.49815
+2023,2021,LandbasedWind,Class1,Wind Turbine Technology 1,Fixed O&M,$/kW-yr,30.3
+2023,2021,LandbasedWind,Class1,Wind Turbine Technology 1,OCC,$/kW,1283.88
+2023,2021,LandbasedWind,Class10,Wind Turbine Technology 4,CAPEX,$/kW,1961
+2023,2021,LandbasedWind,Class10,Wind Turbine Technology 4,CF,,0.25839
+2023,2021,LandbasedWind,Class10,Wind Turbine Technology 4,Fixed O&M,$/kW-yr,30.3
+2023,2021,LandbasedWind,Class10,Wind Turbine Technology 4,OCC,$/kW,1847.17
+2023,2021,LandbasedWind,Class2,Wind Turbine Technology 1,CAPEX,$/kW,1363
+2023,2021,LandbasedWind,Class2,Wind Turbine Technology 1,CF,,0.46737
+2023,2021,LandbasedWind,Class2,Wind Turbine Technology 1,Fixed O&M,$/kW-yr,30.3
+2023,2021,LandbasedWind,Class2,Wind Turbine Technology 1,OCC,$/kW,1283.88
+2023,2021,LandbasedWind,Class3,Wind Turbine Technology 1,CAPEX,$/kW,1363
+2023,2021,LandbasedWind,Class3,Wind Turbine Technology 1,CF,,0.45684
+2023,2021,LandbasedWind,Class3,Wind Turbine Technology 1,Fixed O&M,$/kW-yr,30.3
+2023,2021,LandbasedWind,Class3,Wind Turbine Technology 1,OCC,$/kW,1283.88
+2023,2021,LandbasedWind,Class4,Wind Turbine Technology 1,CAPEX,$/kW,1363
+2023,2021,LandbasedWind,Class4,Wind Turbine Technology 1,CF,,0.44469
+2023,2021,LandbasedWind,Class4,Wind Turbine Technology 1,Fixed O&M,$/kW-yr,30.3
+2023,2021,LandbasedWind,Class4,Wind Turbine Technology 1,OCC,$/kW,1283.88
+2023,2021,LandbasedWind,Class5,Wind Turbine Technology 1,CAPEX,$/kW,1363
+2023,2021,LandbasedWind,Class5,Wind Turbine Technology 1,CF,,0.43011
+2023,2021,LandbasedWind,Class5,Wind Turbine Technology 1,Fixed O&M,$/kW-yr,30.3
+2023,2021,LandbasedWind,Class5,Wind Turbine Technology 1,OCC,$/kW,1283.88
+2023,2021,LandbasedWind,Class6,Wind Turbine Technology 1,CAPEX,$/kW,1363
+2023,2021,LandbasedWind,Class6,Wind Turbine Technology 1,CF,,0.40743
+2023,2021,LandbasedWind,Class6,Wind Turbine Technology 1,Fixed O&M,$/kW-yr,30.3
+2023,2021,LandbasedWind,Class6,Wind Turbine Technology 1,OCC,$/kW,1283.88
+2023,2021,LandbasedWind,Class7,Wind Turbine Technology 1,CAPEX,$/kW,1363
+2023,2021,LandbasedWind,Class7,Wind Turbine Technology 1,CF,,0.37584
+2023,2021,LandbasedWind,Class7,Wind Turbine Technology 1,Fixed O&M,$/kW-yr,30.3
+2023,2021,LandbasedWind,Class7,Wind Turbine Technology 1,OCC,$/kW,1283.88
+2023,2021,LandbasedWind,Class8,Wind Turbine Technology 2,CAPEX,$/kW,1489
+2023,2021,LandbasedWind,Class8,Wind Turbine Technology 2,CF,,0.33939
+2023,2021,LandbasedWind,Class8,Wind Turbine Technology 2,Fixed O&M,$/kW-yr,28.5
+2023,2021,LandbasedWind,Class8,Wind Turbine Technology 2,OCC,$/kW,1402.57
+2023,2021,LandbasedWind,Class9,Wind Turbine Technology 3,CAPEX,$/kW,1416
+2023,2021,LandbasedWind,Class9,Wind Turbine Technology 3,CF,,0.32805
+2023,2021,LandbasedWind,Class9,Wind Turbine Technology 3,Fixed O&M,$/kW-yr,38.4
+2023,2021,LandbasedWind,Class9,Wind Turbine Technology 3,OCC,$/kW,1333.81
+2023,2021,NaturalGas_FE,,F-Frame CC,CAPEX,$/kW,1247.53
+2023,2021,NaturalGas_FE,,F-Frame CC,Fixed O&M,$/kW-yr,31.1
+2023,2021,NaturalGas_FE,,F-Frame CC,Heat Rate,MMBtu/MWh,6.363
+2023,2021,NaturalGas_FE,,F-Frame CC,OCC,$/kW,1116.4
+2023,2021,NaturalGas_FE,,F-Frame CC,Variable O&M,$/MWh,1.96
+2023,2021,NaturalGas_FE,,F-Frame CC 95% CCS,CAPEX,$/kW,2661.24
+2023,2021,NaturalGas_FE,,F-Frame CC 95% CCS,Fixed O&M,$/kW-yr,63.7
+2023,2021,NaturalGas_FE,,F-Frame CC 95% CCS,Heat Rate,MMBtu/MWh,7.22
+2023,2021,NaturalGas_FE,,F-Frame CC 95% CCS,OCC,$/kW,2381.5
+2023,2021,NaturalGas_FE,,F-Frame CC 95% CCS,Variable O&M,$/MWh,4.63
+2023,2021,NaturalGas_FE,,F-Frame CC 97% CCS,CAPEX,$/kW,2701.91
+2023,2021,NaturalGas_FE,,F-Frame CC 97% CCS,Fixed O&M,$/kW-yr,64.6
+2023,2021,NaturalGas_FE,,F-Frame CC 97% CCS,Heat Rate,MMBtu/MWh,7.26
+2023,2021,NaturalGas_FE,,F-Frame CC 97% CCS,OCC,$/kW,2417.9
+2023,2021,NaturalGas_FE,,F-Frame CC 97% CCS,Variable O&M,$/MWh,4.71
+2023,2021,NaturalGas_FE,,F-Frame CT,CAPEX,$/kW,1120.37
+2023,2021,NaturalGas_FE,,F-Frame CT,Fixed O&M,$/kW-yr,24
+2023,2021,NaturalGas_FE,,F-Frame CT,Heat Rate,MMBtu/MWh,9.717
+2023,2021,NaturalGas_FE,,F-Frame CT,OCC,$/kW,1002.6
+2023,2021,NaturalGas_FE,,F-Frame CT,Variable O&M,$/MWh,6.44
+2023,2021,NaturalGas_FE,,H-Frame CC,CAPEX,$/kW,1283.07
+2023,2021,NaturalGas_FE,,H-Frame CC,Fixed O&M,$/kW-yr,30.8
+2023,2021,NaturalGas_FE,,H-Frame CC,Heat Rate,MMBtu/MWh,6.196
+2023,2021,NaturalGas_FE,,H-Frame CC,OCC,$/kW,1148.2
+2023,2021,NaturalGas_FE,,H-Frame CC,Variable O&M,$/MWh,1.96
+2023,2021,NaturalGas_FE,,H-Frame CC 95% CCS,CAPEX,$/kW,2531.39
+2023,2021,NaturalGas_FE,,H-Frame CC 95% CCS,Fixed O&M,$/kW-yr,59.3
+2023,2021,NaturalGas_FE,,H-Frame CC 95% CCS,Heat Rate,MMBtu/MWh,7.007
+2023,2021,NaturalGas_FE,,H-Frame CC 95% CCS,OCC,$/kW,2265.3
+2023,2021,NaturalGas_FE,,H-Frame CC 95% CCS,Variable O&M,$/MWh,4.4
+2023,2021,NaturalGas_FE,,H-Frame CC 97% CCS,CAPEX,$/kW,2567.59
+2023,2021,NaturalGas_FE,,H-Frame CC 97% CCS,Fixed O&M,$/kW-yr,60.1
+2023,2021,NaturalGas_FE,,H-Frame CC 97% CCS,Heat Rate,MMBtu/MWh,7.045
+2023,2021,NaturalGas_FE,,H-Frame CC 97% CCS,OCC,$/kW,2297.7
+2023,2021,NaturalGas_FE,,H-Frame CC 97% CCS,Variable O&M,$/MWh,4.48
+2023,2021,NaturalGas_Retrofits,,F-Frame CC 90%-CCS,Fixed O&M,$/kW-yr,64.5
+2023,2021,NaturalGas_Retrofits,,F-Frame CC 90%-CCS,Heat Rate,MMBtu/MWh,7.218
+2023,2021,NaturalGas_Retrofits,,F-Frame CC 90%-CCS,Variable O&M,$/MWh,4.63
+2023,2021,NaturalGas_Retrofits,,F-Frame CC 95%-CCS,Fixed O&M,$/kW-yr,66
+2023,2021,NaturalGas_Retrofits,,F-Frame CC 95%-CCS,Heat Rate,MMBtu/MWh,7.27
+2023,2021,NaturalGas_Retrofits,,F-Frame CC 95%-CCS,Variable O&M,$/MWh,4.75
+2023,2021,NaturalGas_Retrofits,,H-Frame CC 90%-CCS,Fixed O&M,$/kW-yr,60
+2023,2021,NaturalGas_Retrofits,,H-Frame CC 90%-CCS,Heat Rate,MMBtu/MWh,7.001
+2023,2021,NaturalGas_Retrofits,,H-Frame CC 90%-CCS,Variable O&M,$/MWh,4.4
+2023,2021,NaturalGas_Retrofits,,H-Frame CC 95%-CCS,Fixed O&M,$/kW-yr,61.3
+2023,2021,NaturalGas_Retrofits,,H-Frame CC 95%-CCS,Heat Rate,MMBtu/MWh,7.051
+2023,2021,NaturalGas_Retrofits,,H-Frame CC 95%-CCS,Variable O&M,$/MWh,4.51
+2023,2021,Nuclear,Nuclear,Nuclear,CAPEX,$/kW,9440.14
+2023,2021,Nuclear,Nuclear,Nuclear,CF,,0.927
+2023,2021,Nuclear,Nuclear,Nuclear,Fixed O&M,$/kW-yr,152.12
+2023,2021,Nuclear,Nuclear,Nuclear,Fuel,$/MWh,6.87637
+2023,2021,Nuclear,Nuclear,Nuclear,Heat Rate,MMBtu/MWh,10.447
+2023,2021,Nuclear,Nuclear,Nuclear,OCC,$/kW,7467.68
+2023,2021,Nuclear,Nuclear,Nuclear,Variable O&M,$/MWh,2.47
+2023,2021,Nuclear,NuclearSMR,Nuclear,CAPEX,$/kW,10134.6
+2023,2021,Nuclear,NuclearSMR,Nuclear,CF,,0.927
+2023,2021,Nuclear,NuclearSMR,Nuclear,Fixed O&M,$/kW-yr,118.8
+2023,2021,Nuclear,NuclearSMR,Nuclear,Fuel,$/MWh,6.87637
+2023,2021,Nuclear,NuclearSMR,Nuclear,Heat Rate,MMBtu/MWh,10.447
+2023,2021,Nuclear,NuclearSMR,Nuclear,OCC,$/kW,8017.03
+2023,2021,Nuclear,NuclearSMR,Nuclear,Variable O&M,$/MWh,3.13
+2023,2021,OffShoreWind,Class1,Fixed-Bottom,CAPEX,$/kW,3396.2
+2023,2021,OffShoreWind,Class1,Fixed-Bottom,CF,,0.46352
+2023,2021,OffShoreWind,Class1,Fixed-Bottom,Fixed O&M,$/kW-yr,107.297
+2023,2021,OffShoreWind,Class1,Fixed-Bottom,OCC,$/kW,2242.18
+2023,2021,OffShoreWind,Class10,Floating,CAPEX,$/kW,5048.24
+2023,2021,OffShoreWind,Class10,Floating,CF,,0.502026
+2023,2021,OffShoreWind,Class10,Floating,Fixed O&M,$/kW-yr,83.0533
+2023,2021,OffShoreWind,Class10,Floating,OCC,$/kW,3516.41
+2023,2021,OffShoreWind,Class11,Floating,CAPEX,$/kW,5404.85
+2023,2021,OffShoreWind,Class11,Floating,CF,,0.495273
+2023,2021,OffShoreWind,Class11,Floating,Fixed O&M,$/kW-yr,89.8697
+2023,2021,OffShoreWind,Class11,Floating,OCC,$/kW,3644.89
+2023,2021,OffShoreWind,Class12,Floating,CAPEX,$/kW,5635.71
+2023,2021,OffShoreWind,Class12,Floating,CF,,0.466818
+2023,2021,OffShoreWind,Class12,Floating,Fixed O&M,$/kW-yr,95.6028
+2023,2021,OffShoreWind,Class12,Floating,OCC,$/kW,3683.9
+2023,2021,OffShoreWind,Class13,Floating,CAPEX,$/kW,5786.34
+2023,2021,OffShoreWind,Class13,Floating,CF,,0.372871
+2023,2021,OffShoreWind,Class13,Floating,Fixed O&M,$/kW-yr,97.9945
+2023,2021,OffShoreWind,Class13,Floating,OCC,$/kW,3687.89
+2023,2021,OffShoreWind,Class14,Floating,CAPEX,$/kW,5853.79
+2023,2021,OffShoreWind,Class14,Floating,CF,,0.307009
+2023,2021,OffShoreWind,Class14,Floating,Fixed O&M,$/kW-yr,88.4648
+2023,2021,OffShoreWind,Class14,Floating,OCC,$/kW,4051.29
+2023,2021,OffShoreWind,Class2,Fixed-Bottom,CAPEX,$/kW,3436.44
+2023,2021,OffShoreWind,Class2,Fixed-Bottom,CF,,0.451779
+2023,2021,OffShoreWind,Class2,Fixed-Bottom,Fixed O&M,$/kW-yr,109.604
+2023,2021,OffShoreWind,Class2,Fixed-Bottom,OCC,$/kW,2249.05
+2023,2021,OffShoreWind,Class3,Fixed-Bottom,CAPEX,$/kW,3573.46
+2023,2021,OffShoreWind,Class3,Fixed-Bottom,CF,,0.455134
+2023,2021,OffShoreWind,Class3,Fixed-Bottom,Fixed O&M,$/kW-yr,111.563
+2023,2021,OffShoreWind,Class3,Fixed-Bottom,OCC,$/kW,2366.03
+2023,2021,OffShoreWind,Class4,Fixed-Bottom,CAPEX,$/kW,3710.68
+2023,2021,OffShoreWind,Class4,Fixed-Bottom,CF,,0.453077
+2023,2021,OffShoreWind,Class4,Fixed-Bottom,Fixed O&M,$/kW-yr,112.602
+2023,2021,OffShoreWind,Class4,Fixed-Bottom,OCC,$/kW,2470.59
+2023,2021,OffShoreWind,Class5,Fixed-Bottom,CAPEX,$/kW,3893.71
+2023,2021,OffShoreWind,Class5,Fixed-Bottom,CF,,0.445824
+2023,2021,OffShoreWind,Class5,Fixed-Bottom,Fixed O&M,$/kW-yr,115.707
+2023,2021,OffShoreWind,Class5,Fixed-Bottom,OCC,$/kW,2514.18
+2023,2021,OffShoreWind,Class6,Fixed-Bottom,CAPEX,$/kW,3866.13
+2023,2021,OffShoreWind,Class6,Fixed-Bottom,CF,,0.383186
+2023,2021,OffShoreWind,Class6,Fixed-Bottom,Fixed O&M,$/kW-yr,114.074
+2023,2021,OffShoreWind,Class6,Fixed-Bottom,OCC,$/kW,2537.46
+2023,2021,OffShoreWind,Class7,Fixed-Bottom,CAPEX,$/kW,3900.95
+2023,2021,OffShoreWind,Class7,Fixed-Bottom,CF,,0.296705
+2023,2021,OffShoreWind,Class7,Fixed-Bottom,Fixed O&M,$/kW-yr,109.013
+2023,2021,OffShoreWind,Class7,Fixed-Bottom,OCC,$/kW,2769.25
+2023,2021,OffShoreWind,Class8,Floating,CAPEX,$/kW,4851.3
+2023,2021,OffShoreWind,Class8,Floating,CF,,0.523758
+2023,2021,OffShoreWind,Class8,Floating,Fixed O&M,$/kW-yr,78.9273
+2023,2021,OffShoreWind,Class8,Floating,OCC,$/kW,3409.32
+2023,2021,OffShoreWind,Class9,Floating,CAPEX,$/kW,4939.41
+2023,2021,OffShoreWind,Class9,Floating,CF,,0.511029
+2023,2021,OffShoreWind,Class9,Floating,Fixed O&M,$/kW-yr,79.8195
+2023,2021,OffShoreWind,Class9,Floating,OCC,$/kW,3422.26
+2023,2021,Pumped Storage Hydropower,NatlClass1,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass1,Pumped Storage Hydropower,OCC,$/kW,2109.27
+2023,2021,Pumped Storage Hydropower,NatlClass1,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass10,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass10,Pumped Storage Hydropower,OCC,$/kW,3402.26
+2023,2021,Pumped Storage Hydropower,NatlClass10,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass11,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass11,Pumped Storage Hydropower,OCC,$/kW,3528
+2023,2021,Pumped Storage Hydropower,NatlClass11,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass12,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass12,Pumped Storage Hydropower,OCC,$/kW,3662.41
+2023,2021,Pumped Storage Hydropower,NatlClass12,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass13,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass13,Pumped Storage Hydropower,OCC,$/kW,3813.07
+2023,2021,Pumped Storage Hydropower,NatlClass13,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass14,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass14,Pumped Storage Hydropower,OCC,$/kW,3976.58
+2023,2021,Pumped Storage Hydropower,NatlClass14,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass15,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass15,Pumped Storage Hydropower,OCC,$/kW,4156.94
+2023,2021,Pumped Storage Hydropower,NatlClass15,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass2,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass2,Pumped Storage Hydropower,OCC,$/kW,2391.26
+2023,2021,Pumped Storage Hydropower,NatlClass2,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass3,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass3,Pumped Storage Hydropower,OCC,$/kW,2566.67
+2023,2021,Pumped Storage Hydropower,NatlClass3,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass4,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass4,Pumped Storage Hydropower,OCC,$/kW,2705.74
+2023,2021,Pumped Storage Hydropower,NatlClass4,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass5,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass5,Pumped Storage Hydropower,OCC,$/kW,2828.86
+2023,2021,Pumped Storage Hydropower,NatlClass5,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass6,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass6,Pumped Storage Hydropower,OCC,$/kW,2947.13
+2023,2021,Pumped Storage Hydropower,NatlClass6,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass7,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass7,Pumped Storage Hydropower,OCC,$/kW,3055.11
+2023,2021,Pumped Storage Hydropower,NatlClass7,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass8,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass8,Pumped Storage Hydropower,OCC,$/kW,3166.17
+2023,2021,Pumped Storage Hydropower,NatlClass8,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,Pumped Storage Hydropower,NatlClass9,Pumped Storage Hydropower,Fixed O&M,$/kW-yr,18.66
+2023,2021,Pumped Storage Hydropower,NatlClass9,Pumped Storage Hydropower,OCC,$/kW,3279.71
+2023,2021,Pumped Storage Hydropower,NatlClass9,Pumped Storage Hydropower,Variable O&M,$/MWh,0.54
+2023,2021,ResPV,Class1,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class1,Rooftop PV,CF,,0.185031
+2023,2021,ResPV,Class1,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class1,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class10,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class10,Rooftop PV,CF,,0.119915
+2023,2021,ResPV,Class10,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class10,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class2,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class2,Rooftop PV,CF,,0.182168
+2023,2021,ResPV,Class2,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class2,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class3,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class3,Rooftop PV,CF,,0.169947
+2023,2021,ResPV,Class3,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class3,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class4,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class4,Rooftop PV,CF,,0.160595
+2023,2021,ResPV,Class4,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class4,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class5,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class5,Rooftop PV,CF,,0.15211
+2023,2021,ResPV,Class5,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class5,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class6,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class6,Rooftop PV,CF,,0.150222
+2023,2021,ResPV,Class6,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class6,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class7,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class7,Rooftop PV,CF,,0.143599
+2023,2021,ResPV,Class7,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class7,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class8,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class8,Rooftop PV,CF,,0.136793
+2023,2021,ResPV,Class8,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class8,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,ResPV,Class9,Rooftop PV,CAPEX,$/kW,2858.73
+2023,2021,ResPV,Class9,Rooftop PV,CF,,0.131348
+2023,2021,ResPV,Class9,Rooftop PV,Fixed O&M,$/kW-yr,30.3276
+2023,2021,ResPV,Class9,Rooftop PV,OCC,$/kW,2858.73
+2023,2021,Residential Battery Storage,5kW/20kWh Battery Storage,Lithium Ion - 5 kW - 20 kWh,Fixed O&M,$/kW-yr,118.952
+2023,2021,Residential Battery Storage,5kW/20kWh Battery Storage,Lithium Ion - 5 kW - 20 kWh,OCC,$/kW,4758.08
+2023,2021,Residential Battery Storage,ShortDurationResStorage,Lithium Ion - 5 kW - 12.5 kWh,Fixed O&M,$/kW-yr,92.0292
+2023,2021,Residential Battery Storage,ShortDurationResStorage,Lithium Ion - 5 kW - 12.5 kWh,OCC,$/kW,3681.17
+2023,2021,Utility-Scale Battery Storage,10Hr Battery Storage,Lithium Ion - 10 Hr,Fixed O&M,$/kW-yr,87.989
+2023,2021,Utility-Scale Battery Storage,10Hr Battery Storage,Lithium Ion - 10 Hr,OCC,$/kW,3519.56
+2023,2021,Utility-Scale Battery Storage,2Hr Battery Storage,Lithium Ion - 2 Hr,Fixed O&M,$/kW-yr,23.5787
+2023,2021,Utility-Scale Battery Storage,2Hr Battery Storage,Lithium Ion - 2 Hr,OCC,$/kW,943.15
+2023,2021,Utility-Scale Battery Storage,4Hr Battery Storage,Lithium Ion - 4 Hr,Fixed O&M,$/kW-yr,39.6813
+2023,2021,Utility-Scale Battery Storage,4Hr Battery Storage,Lithium Ion - 4 Hr,OCC,$/kW,1587.25
+2023,2021,Utility-Scale Battery Storage,6Hr Battery Storage,Lithium Ion - 6 Hr,Fixed O&M,$/kW-yr,55.7839
+2023,2021,Utility-Scale Battery Storage,6Hr Battery Storage,Lithium Ion - 6 Hr,OCC,$/kW,2231.35
+2023,2021,Utility-Scale Battery Storage,8Hr Battery Storage,Lithium Ion - 8 Hr,Fixed O&M,$/kW-yr,71.8864
+2023,2021,Utility-Scale Battery Storage,8Hr Battery Storage,Lithium Ion - 8 Hr,OCC,$/kW,2875.46
+2023,2021,Utility-Scale PV-Plus-Battery,Class1,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class1,Utility-Scale PV-Plus Battery,CF,,0.326973
+2023,2021,Utility-Scale PV-Plus-Battery,Class1,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class1,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class10,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class10,Utility-Scale PV-Plus Battery,CF,,0.210667
+2023,2021,Utility-Scale PV-Plus-Battery,Class10,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class10,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class2,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class2,Utility-Scale PV-Plus Battery,CF,,0.316773
+2023,2021,Utility-Scale PV-Plus-Battery,Class2,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class2,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class3,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class3,Utility-Scale PV-Plus Battery,CF,,0.302332
+2023,2021,Utility-Scale PV-Plus-Battery,Class3,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class3,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class4,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class4,Utility-Scale PV-Plus Battery,CF,,0.288501
+2023,2021,Utility-Scale PV-Plus-Battery,Class4,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class4,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class5,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class5,Utility-Scale PV-Plus Battery,CF,,0.274733
+2023,2021,Utility-Scale PV-Plus-Battery,Class5,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class5,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class6,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class6,Utility-Scale PV-Plus Battery,CF,,0.261174
+2023,2021,Utility-Scale PV-Plus-Battery,Class6,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class6,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class7,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class7,Utility-Scale PV-Plus Battery,CF,,0.248415
+2023,2021,Utility-Scale PV-Plus-Battery,Class7,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class7,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class8,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class8,Utility-Scale PV-Plus Battery,CF,,0.239374
+2023,2021,Utility-Scale PV-Plus-Battery,Class8,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class8,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,Utility-Scale PV-Plus-Battery,Class9,Utility-Scale PV-Plus Battery,CAPEX,$/kW,2101.72
+2023,2021,Utility-Scale PV-Plus-Battery,Class9,Utility-Scale PV-Plus Battery,CF,,0.228417
+2023,2021,Utility-Scale PV-Plus-Battery,Class9,Utility-Scale PV-Plus Battery,Fixed O&M,$/kW-yr,61.661
+2023,2021,Utility-Scale PV-Plus-Battery,Class9,Utility-Scale PV-Plus Battery,OCC,$/kW,2028.47
+2023,2021,UtilityPV,Class1,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class1,Tracking PV,CF,,0.31318
+2023,2021,UtilityPV,Class1,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class1,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class10,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class10,Tracking PV,CF,,0.196874
+2023,2021,UtilityPV,Class10,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class10,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class2,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class2,Tracking PV,CF,,0.302979
+2023,2021,UtilityPV,Class2,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class2,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class3,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class3,Tracking PV,CF,,0.288539
+2023,2021,UtilityPV,Class3,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class3,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class4,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class4,Tracking PV,CF,,0.274707
+2023,2021,UtilityPV,Class4,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class4,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class5,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class5,Tracking PV,CF,,0.26094
+2023,2021,UtilityPV,Class5,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class5,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class6,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class6,Tracking PV,CF,,0.247381
+2023,2021,UtilityPV,Class6,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class6,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class7,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class7,Tracking PV,CF,,0.234622
+2023,2021,UtilityPV,Class7,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class7,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class8,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class8,Tracking PV,CF,,0.22558
+2023,2021,UtilityPV,Class8,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class8,Tracking PV,OCC,$/kW,1245.82
+2023,2021,UtilityPV,Class9,Tracking PV,CAPEX,$/kW,1290.81
+2023,2021,UtilityPV,Class9,Tracking PV,CF,,0.214624
+2023,2021,UtilityPV,Class9,Tracking PV,Fixed O&M,$/kW-yr,22.5289
+2023,2021,UtilityPV,Class9,Tracking PV,OCC,$/kW,1245.82
