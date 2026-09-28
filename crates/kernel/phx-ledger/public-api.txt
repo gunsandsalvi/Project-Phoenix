@@ -445,6 +445,8 @@ pub fn phx_ledger::books::Books<B>::pass_holdings(&mut self, (phx_id::ids::Party
 pub fn phx_ledger::books::Books<B>::settle_estate(&mut self, phx_id::ids::PartyId, phx_id::ids::PartyId, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::estate::Settled where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::unlisted_against(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
+pub fn phx_ledger::books::Books<B>::owed_between(&self, phx_id::ids::PartyId, (phx_id::day::Day, phx_id::day::Day), &phx_core::calendar::Calendar) -> i128
+impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &dyn core::ops::function::Fn(phx_id::ids::LineId) -> phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement where B: core::marker::Sync
 impl<B: phx_store::backing::Backing> phx_core::family::BooksAudit for phx_ledger::books::Books<B> where phx_ledger::books::Books<B>: core::fmt::Debug
 pub fn phx_ledger::books::Books<B>::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -927,6 +929,7 @@ pub phx_ledger::instruction::Source::Spoilage(u64)
 pub phx_ledger::instruction::Source::Way(u32)
 pub phx_ledger::instruction::Source::Wear(u32)
 impl phx_ledger::instruction::Source
+pub fn phx_ledger::instruction::Source::physical_loss(self) -> bool
 pub fn phx_ledger::instruction::Source::transformed(self) -> phx_core::family::Transformed
 pub struct phx_ledger::instruction::DueRow
 pub phx_ledger::instruction::DueRow::line: phx_id::ids::LineId
@@ -1231,6 +1234,7 @@ pub fn phx_ledger::opening::open_row(&phx_core::register::Register, phx_id::ids:
 pub fn phx_ledger::opening::plain_terms(phx_num::money::Ccy, alloc::vec::Vec<phx_ledger::algebra::Leg>, phx_ledger::algebra::Schedule) -> phx_ledger::algebra::Terms
 pub fn phx_ledger::opening::whole(f64) -> i64
 pub fn phx_ledger::opening::write(phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, i64, phx_num::money::Ccy, u64) -> phx_ledger::instruction::LegRec
+pub mod phx_ledger::owed
 pub mod phx_ledger::pending
 pub struct phx_ledger::pending::Closed
 pub phx_ledger::pending::Closed::issuers: alloc::collections::btree::set::BTreeSet<phx_id::ids::PartyId>

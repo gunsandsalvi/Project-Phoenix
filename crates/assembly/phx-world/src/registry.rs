@@ -745,6 +745,7 @@ pub fn assemble(
     world.credit_rebuild();
     world.state_rebuild();
     world.bills_opened();
+    world.positions_opened();
     let agent_issuers = crate::Inspector::new(&world).agent_issuers();
     world.report.agent_issuers = agent_issuers;
     world.visits_book_all(world.today);

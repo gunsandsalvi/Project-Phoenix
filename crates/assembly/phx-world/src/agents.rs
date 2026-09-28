@@ -921,6 +921,56 @@ impl World {
     }
 }
 
+impl World {
+    /// The positions the opening writes, as each kind declares them: an outlook of income as what the agent's contracts
+    /// owe it over the year after the opening, read on the pool in fixed shards of each table's agents.
+    #[clause("REP.20", "HH.2", "GEN.3")]
+    pub(crate) fn positions_opened(&mut self) {
+        let today = self.today;
+        let date = self.calendar.date(today);
+        let Some(next) = phx_id::Date::new(date.year() + 1, date.month(), date.day())
+            .or_else(|| phx_id::Date::new(date.year() + 1, date.month(), date.day() - 1))
+        else {
+            violation!(clause = "TIME.2", "a year after the opening with no date");
+        };
+        let Some(year_on) = self.calendar.day(next) else {
+            violation!(clause = "TIME.2", "a year after the opening before the epoch");
+        };
+        let span = (today.succ(), year_on.succ());
+        for (k, kind) in self.population.kinds.iter().enumerate() {
+            let owed: Vec<&'static str> = kind
+                .decl
+                .positions
+                .iter()
+                .filter(|p| p.item.opening == phx_core::PositionOpening::OwedAYear)
+                .map(|p| p.item.name)
+                .collect();
+            if owed.is_empty() {
+                continue;
+            }
+            let table = Population::table::<SystemBacking>(self.books.parties.cells(), k);
+            let agents: Vec<(Slot, PartyId)> =
+                table.slots().filter(|s| table.is_live(*s)).map(|s| (s, table.party(s))).collect();
+            let read = phx_exec::pool::map(self.books.pool(), GATHER_SHARDS, |i| {
+                crate::shard::part(&agents, GATHER_SHARDS, i)
+                    .iter()
+                    .map(|(slot, party)| (*slot, self.books.owed_between(*party, span, &self.calendar)))
+                    .collect::<Vec<_>>()
+            });
+            let (cells, _, _) = self.books.parties.cells_mut();
+            let table = Population::table_mut::<SystemBacking>(cells, k);
+            for (slot, value) in read.into_iter().flatten() {
+                let Ok(value) = i64::try_from(value) else {
+                    phx_num::capacity_exceeded!("a year's income owed", i64::MAX, 0);
+                };
+                for name in &owed {
+                    table.open_fact(slot, name, value);
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_core::streams::Purpose;

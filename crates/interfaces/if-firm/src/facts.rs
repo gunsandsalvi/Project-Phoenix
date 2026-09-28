@@ -139,7 +139,7 @@ declare_fact! {
 
 /// A fact as the position a small firm's agent holds of the same name.
 const fn from_fact<F: FactDef>() -> PositionDecl {
-    PositionDecl { name: F::ITEM.name, clause: F::ITEM.clause }
+    PositionDecl { name: F::ITEM.name, clause: F::ITEM.clause, opening: phx_core::PositionOpening::Missing }
 }
 
 /// Every position a small firm's agent holds, in the order its table keeps them.

@@ -10,7 +10,13 @@ pub const if_pop::facts::After::ITEM: phx_core::facts::ItemDecl
 pub struct if_pop::facts::Income
 impl phx_core::facts::FactDef for if_pop::facts::Income
 pub const if_pop::facts::Income::ITEM: phx_core::facts::ItemDecl
-pub const if_pop::facts::POSITIONS: [phx_core::pop::PositionDecl; 2]
+pub struct if_pop::facts::Looked
+impl phx_core::facts::FactDef for if_pop::facts::Looked
+pub const if_pop::facts::Looked::ITEM: phx_core::facts::ItemDecl
+pub struct if_pop::facts::Received
+impl phx_core::facts::FactDef for if_pop::facts::Received
+pub const if_pop::facts::Received::ITEM: phx_core::facts::ItemDecl
+pub const if_pop::facts::POSITIONS: [phx_core::pop::PositionDecl; 4]
 pub mod if_pop::fertility
 pub const if_pop::fertility::IDEAL: phx_core::pop::AttrDecl
 pub const if_pop::fertility::IDEAL_UNDRAWN: u32

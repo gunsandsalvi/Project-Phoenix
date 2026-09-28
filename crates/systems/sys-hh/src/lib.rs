@@ -7,7 +7,7 @@ mod consts;
 
 pub use buffer::{Model, Solution, solve, spend};
 
-use if_pop::facts::{After, Income};
+use if_pop::facts::{After, Income, Looked, Received};
 use phx_core::{
     Cadence, Ctx, Declarations, FactStore, HandlerDecl, HandlerTable, Reads, RunsOn, StreamDef, System, VisitDecl,
     Writes, declare_handler, declare_prim, declare_stream,
@@ -18,7 +18,7 @@ use phx_market::intents::ShopIntent;
 use phx_market::retail::Want;
 use phx_num::{Count, Fixed, Missing};
 
-use crate::consts::WEEKS_A_YEAR;
+use crate::consts::{DAYS_A_YEAR, MONTHS_A_YEAR, MONTHS_A_YEAR_COUNT};
 
 declare_stream! { pub VisitStream = "HH.visits" { purpose: SchedulePhase, keyed: false, clause: "HH.4" } }
 
@@ -81,11 +81,12 @@ declare_prim! {
 }
 
 /// What the households' decisions read, compiled at assembly: the buffer-stock rule solved for the type, the outlook's
-/// gain, and each country's budget shares.
+/// gain, the share of a year between two decisions, and each country's budget shares.
 #[derive(Debug)]
 pub struct Own {
     pub rule: Solution,
     pub gain: f64,
+    pub period: f64,
     pub shares: Vec<Vec<f64>>,
 }
 
@@ -93,45 +94,77 @@ pub struct Own {
 const RETAIL: &str = "SRV.retail";
 
 declare_handler! {
-    /// A household's spending on its weekly schedule.
+    /// A household's spending on its schedule.
     pub Spend = "HH.spend" {
         substep: S5c,
         table: "household",
-        reads: [Income, After],
-        writes: [Income, After],
+        reads: [Income, After, Received, Looked],
+        writes: [Income, After, Received, Looked],
         intents: [ShopIntent],
         clause: "HH.4",
         body: spend_week,
     }
 }
 
-/// A household's week: its income since its last decision taken into its outlook of its permanent income, its
-/// spending set by the rule at its cash on hand over that outlook, and its budget's share of that asked of each product
-/// at retail. On its first decision it only notes what it holds.
+/// A household's decision: the money it took in since its last counted; once a month, as its pay comes, the month's
+/// income taken into its outlook of its permanent income; its spending set by the rule at its cash on hand — its
+/// money and the year's income it expects, in years of that income — never more than it holds; and its country's
+/// budget shares of that asked of each product at retail.
 #[clause("HH.1", "HH.2", "HH.4", "HH.5", "HH.18", "HH.19", "REP.5")]
 fn spend_week<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
-    H: HandlerDecl + Reads<Income> + Reads<After> + Writes<Income> + Writes<After> + phx_core::Emits<ShopIntent>,
+    H: HandlerDecl
+        + Reads<Income>
+        + Reads<After>
+        + Reads<Received>
+        + Reads<Looked>
+        + Writes<Income>
+        + Writes<After>
+        + Writes<Received>
+        + Writes<Looked>
+        + phx_core::Emits<ShopIntent>,
     S: FactStore + ?Sized,
 {
     let own: &Own = ctx.own::<Own>();
     let Missing::Present(money) = ctx.money(row) else { return };
-    let Missing::Present(after) = ctx.read::<After>(row) else {
+    let month = months(ctx.date());
+    // A first decision starts the count: nothing is taken in before it.
+    let (received, looked) = match (ctx.read::<After>(row), ctx.read::<Received>(row), ctx.read::<Looked>(row)) {
+        (Missing::Present(after), Missing::Present(received), Missing::Present(looked)) => {
+            (received + money - after, looked)
+        }
+        _ => (0, month),
+    };
+    let mut outlook = match ctx.read::<Income>(row) {
+        Missing::Present(p) => Some(phx_rand::float::from_i64(p)),
+        Missing::Absent => None,
+    };
+    let (received, looked) = if month > looked {
+        let seen = phx_rand::float::from_i64(received) * MONTHS_A_YEAR / phx_rand::float::from_i64(month - looked);
+        outlook = Some(match outlook {
+            Some(p) => phx_val::heuristics::adaptive(p, seen, own.gain),
+            None => seen,
+        });
+        (0, month)
+    } else {
+        (received, looked)
+    };
+    ctx.write::<Received>(row, received);
+    ctx.write::<Looked>(row, looked);
+    let Some(income) = outlook.filter(|y| *y > 0.0) else {
         ctx.write::<After>(row, money);
         return;
     };
-    let week = phx_rand::float::from_i64(money - after) * WEEKS_A_YEAR;
-    let income = match ctx.read::<Income>(row) {
-        Missing::Present(p) => phx_val::heuristics::adaptive(phx_rand::float::from_i64(p), week, own.gain),
-        Missing::Absent => week,
+    let cash = phx_rand::float::from_i64(money) / income + 1.0;
+    let wanted = buffer::spend(&own.rule, cash) * income * own.period;
+    let held = phx_rand::float::from_i64(money);
+    let spent = if wanted < held { wanted } else { held };
+    let Missing::Present(country) = ctx.country(row) else {
+        phx_num::violation!(clause = "HH.5", "a household that stands in no country");
     };
-    if income <= 0.0 {
-        ctx.write::<After>(row, money);
-        return;
-    }
-    let cash = phx_rand::float::from_i64(money) / income;
-    let spent = buffer::spend(&own.rule, cash) * income / WEEKS_A_YEAR;
-    let Some(shares) = own.shares.first() else { return };
+    let Some(shares) = own.shares.get(usize::from(country.get())) else {
+        phx_num::violation!(clause = "HH.5", "a household's country with no budget shares", country = country.get());
+    };
     let mut total = 0;
     for (product, share) in (0_u16..).zip(shares) {
         let Some(amount) = phx_rand::float::floor_to_i64(spent * share) else {
@@ -154,6 +187,11 @@ where
     ctx.write::<After>(row, money - total);
 }
 
+/// A date's month, counted from the calendar's year zero.
+fn months(date: phx_id::Date) -> i64 {
+    i64::from(date.year()) * MONTHS_A_YEAR_COUNT + i64::from(date.month())
+}
+
 /// Households.
 #[derive(Debug)]
 pub struct Hh;
@@ -172,7 +210,12 @@ impl System for Hh {
         let _: phx_core::Prim<Fixed<2>> = d.prim(&INCOME_GAIN);
         let _: phx_core::Prim<Count> = d.prim(&SPENDING_DAYS);
         let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&BUDGET_SHARES);
-        for fact in [<Income as phx_core::FactDef>::ITEM.name, <After as phx_core::FactDef>::ITEM.name] {
+        for fact in [
+            <Income as phx_core::FactDef>::ITEM.name,
+            <After as phx_core::FactDef>::ITEM.name,
+            <Received as phx_core::FactDef>::ITEM.name,
+            <Looked as phx_core::FactDef>::ITEM.name,
+        ] {
             d.claim(fact);
         }
         let mut household = d.pop_kind(if_pop::HOUSEHOLD);
@@ -197,7 +240,9 @@ impl System for Hh {
                     Ok(t.values().iter().map(|v| phx_rand::float::from_i64(*v) / crate::consts::SHARE_PARTS).collect())
                 })
                 .collect::<Result<Vec<Vec<f64>>, String>>()?;
-            Ok(Box::new(Own { rule, gain: register.fixed(INCOME_GAIN.id)?, shares }))
+            let days = register.count(SPENDING_DAYS.id)?;
+            let period = phx_rand::float::from_u64(days) / DAYS_A_YEAR;
+            Ok(Box::new(Own { rule, gain: register.fixed(INCOME_GAIN.id)?, period, shares }))
         }));
         d.visit(VisitDecl {
             handler: Spend::NAME,

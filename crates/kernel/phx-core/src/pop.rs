@@ -36,12 +36,23 @@ pub struct PersonAttrDecl {
 }
 
 /// A position every agent of a kind holds: an amount, a stock or a rate of its own, missing until its
-/// writer writes it.
+/// writer writes it unless the opening writes it as it declares.
 #[clause("REP.20")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PositionDecl {
     pub name: &'static str,
     pub clause: &'static str,
+    pub opening: PositionOpening,
+}
+
+/// What a position holds when the opening is done.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PositionOpening {
+    /// Missing, until its writer first writes it.
+    Missing,
+    /// The money the agent's contracts owe it over the year after the opening: an outlook of its income drawn from
+    /// what it is owed.
+    OwedAYear,
 }
 
 /// One item of a population kind.

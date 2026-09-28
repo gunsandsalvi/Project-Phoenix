@@ -196,6 +196,8 @@ pub trait GoodsView: core::fmt::Debug {
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64>;
     /// The money the row's party holds on its account; none without an account.
     fn money(&self, slot: Slot) -> Missing<i64>;
+    /// The country the row stands in.
+    fn country(&self, slot: Slot) -> Missing<phx_id::CountryId>;
     /// The plant the row holds.
     fn plant(&self, slot: Slot) -> &[HeldPlant];
     /// The other places in the row's country a good is marked at, by each mode carriage is marked in where it stands.
@@ -238,6 +240,9 @@ impl GoodsView for NoGoods {
         Missing::Absent
     }
     fn money(&self, _: Slot) -> Missing<i64> {
+        Missing::Absent
+    }
+    fn country(&self, _: Slot) -> Missing<phx_id::CountryId> {
         Missing::Absent
     }
     fn plant(&self, _: Slot) -> &[HeldPlant] {
@@ -365,6 +370,11 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     /// The money the row's party holds on its account.
     pub fn money(&self, slot: Slot) -> Missing<i64> {
         self.parts.goods.money(slot)
+    }
+
+    /// The country the row stands in.
+    pub fn country(&self, slot: Slot) -> Missing<phx_id::CountryId> {
+        self.parts.goods.country(slot)
     }
 
     /// A good's latest mark at the row's place, in its market's raw price.

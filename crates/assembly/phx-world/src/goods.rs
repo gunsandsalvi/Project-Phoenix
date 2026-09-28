@@ -341,6 +341,12 @@ impl GoodsView for RunGoods {
     fn party(&self, slot: Slot) -> Missing<PartyId> {
         self.row(slot).map_or(Missing::Absent, |r| r.party)
     }
+    fn country(&self, slot: Slot) -> Missing<phx_id::CountryId> {
+        let (Some(Missing::Present(zone)), Some(geo)) = (self.row(slot).map(|r| r.zone), self.geo.as_ref()) else {
+            return Missing::Absent;
+        };
+        geo.zone_country(zone)
+    }
     fn record(&self, slot: Slot, product: u16, method: u16) -> Missing<i64> {
         let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return Missing::Absent };
         if let Some(r) = self.records.goods.get(&(GoodKey { product, grade: 0, zone }, method)) {

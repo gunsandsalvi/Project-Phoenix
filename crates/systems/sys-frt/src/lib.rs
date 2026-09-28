@@ -263,7 +263,11 @@ impl System for Frt {
         let mode = <if_firm::freight::Mode as FactDef>::ITEM;
         d.claim(mode.name);
         d.facet(FacetDecl { fact: mode.name, kind: FIRM });
-        d.pop_kind(SMALL_FIRM).position(PositionDecl { name: mode.name, clause: mode.clause });
+        d.pop_kind(SMALL_FIRM).position(PositionDecl {
+            name: mode.name,
+            clause: mode.clause,
+            opening: phx_core::PositionOpening::Missing,
+        });
         let share = d.prim::<Table1>(&MODE_SHARE);
         let product = d.prim::<Count>(&CARRIAGE_PRODUCT);
         let _ = d.prim::<Count>(&SHIPPING_DAYS);

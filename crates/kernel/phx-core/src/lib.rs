@@ -87,7 +87,7 @@ pub use phx_macros::{
     declare_message, declare_prim, declare_record, declare_rule, declare_stream,
 };
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
-pub use pop::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, RoleDecl};
+pub use pop::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, PositionOpening, RoleDecl};
 pub use pop_process::{AgentView, Household, Person, PopProcess};
 pub use products::ProductEntry;
 pub use records::{Reader, RecordEntry, RecordKindDecl, RecordStamp, RecordStore};

@@ -177,7 +177,11 @@ impl System for Cap {
         ] {
             d.claim(item.name);
             d.facet(phx_core::FacetDecl { fact: item.name, kind: HOLDERS[0] });
-            d.pop_kind(HOLDERS[1]).position(phx_core::PositionDecl { name: item.name, clause: item.clause });
+            d.pop_kind(HOLDERS[1]).position(phx_core::PositionDecl {
+                name: item.name,
+                clause: item.clause,
+                opening: phx_core::PositionOpening::Missing,
+            });
         }
         d.contribution(Box::new(opening::Declared));
         d.contribution(Box::new(Plant { prims, stock }));

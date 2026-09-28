@@ -10,7 +10,12 @@ use phx_core::{AttrDecl, FactDef, ItemDecl, PersonAttrDecl, RoleDecl};
 use crate::consts::{EDUCATION_VALUES, REGIONS};
 
 /// Every item the crate exports.
-pub const ITEMS: &[ItemDecl] = &[<facts::Income as FactDef>::ITEM, <facts::After as FactDef>::ITEM];
+pub const ITEMS: &[ItemDecl] = &[
+    <facts::Income as FactDef>::ITEM,
+    <facts::After as FactDef>::ITEM,
+    <facts::Received as FactDef>::ITEM,
+    <facts::Looked as FactDef>::ITEM,
+];
 
 /// The population kind of households.
 pub const HOUSEHOLD: &str = "household";
