@@ -600,6 +600,12 @@ fn core_of(
         regions: &regions,
     };
     core.open_hazards(&ctx, &p.pop, today.succ());
+    core.open_firms(
+        &p.c.register,
+        (&opening, &sheets),
+        (&p.c.streams, &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL),
+    )
+    .map_err(|e| AssemblyErrors(vec![e]))?;
     let _ = population;
     Ok(core)
 }

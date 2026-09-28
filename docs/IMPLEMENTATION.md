@@ -727,7 +727,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: planned
+**Status**: building (b1 done: firms of one kind counted, placed, banked and funded on the core)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
@@ -800,7 +800,12 @@ world switches to the core.
 - **Firms earn from the opening** (their share of the SAM's sales), so defaults at the first grace's end, the
   searchers their staff become and the banks' declined refinancing are read at S1.16 as the world's.
 - **Firms at the opening.**
-  - Per region and industry, the count comes from S1.22's firms per employed.
+  - Per region and industry, the count comes from S1.22's firms per employed (b1, `phx_world::core_firms`).
+  - Staff follow from the output and the way, and the persons the world employs are its people from 15 at the
+    employment rate (REP.40): at the opening's output the ways' hours employ, over a full-time year, 1.20 times the
+    employed in the developed country, 0.97 times in the emerging and 0.33 times in the developing (seed 1, 150,000
+    persons). b3 settles it where staff are derived: the hours a person works, part time and the self-employed's
+    included, and the developing group's ways measured on economies whose GDP per head is the group's.
   - Each firm draws its productivity from the industry's dispersion, its sites (PTY: a site per establishment), and
     its management types.
   - Its day-zero price is its own decision from its cost (GEN.13).

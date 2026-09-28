@@ -61,10 +61,12 @@ pub struct Core {
     pub estates: Vec<(PartyKey, phx_id::CountryId, phx_id::Day)>,
     /// The next identity the core hands a party it begins.
     pub next_id: u64,
+    /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.
+    pub banks_of: Vec<Vec<(u32, u64)>>,
     pub pop_days: Vec<(phx_id::Day, crate::core_pop::PopDay)>,
 }
 
-fn kind_number(place: usize) -> u8 {
+pub(crate) fn kind_number(place: usize) -> u8 {
     match u8::try_from(place) {
         Ok(k) if k < NATURE_KIND => k,
         _ => violation!(clause = "REP.1", "more kinds of party than a key can name", kind = place),
@@ -153,6 +155,7 @@ impl Core {
             treasuries: Vec::new(),
             estates: Vec::new(),
             next_id,
+            banks_of: Vec::new(),
             pop_days: Vec::new(),
         }
     }
@@ -197,6 +200,8 @@ impl Core {
                 );
             }
         }
+        let bank_countries: Vec<(usize, u32)> =
+            held.iter().filter(|h| Some(h.kind) == bank_kind).map(|h| (h.country, h.slot.get())).collect();
         for ((country, c), sheet) in countries.iter().enumerate().zip(sheets) {
             for (_, sector, instrument) in ACCOUNTS {
                 let parts: Vec<&Held> = held
@@ -236,6 +241,28 @@ impl Core {
                 }
             }
         }
+        let owed = phx_core::store::deposits_of(
+            self.kinds.iter(),
+            self.bank_kind
+                .and_then(|b| self.kinds.get(usize::from(b)))
+                .map_or(0, |k| usize::try_from(k.parties.high_water()).unwrap_or(0)),
+        );
+        self.banks_of = (0..countries.len())
+            .map(|c| {
+                bank_countries
+                    .iter()
+                    .filter(|(country, _)| *country == c)
+                    .map(|(_, slot)| {
+                        (
+                            *slot,
+                            owed.get(usize::try_from(*slot).unwrap_or(usize::MAX))
+                                .and_then(|o| u64::try_from(*o).ok())
+                                .unwrap_or(0),
+                        )
+                    })
+                    .collect()
+            })
+            .collect();
     }
 
     /// Each country's central bank found as the issuer of its currency, and each country's treasury.

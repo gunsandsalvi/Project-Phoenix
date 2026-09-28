@@ -2018,6 +2018,14 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   currency and reserves and lends banks the remainder, the banks' reserves and equity at their ratios and bonds held
   by households balancing them, deposits beyond lending held as more paper, firms' equity their assets less debts).
   A sheet the closures cannot balance, or one that breaks an identity, is refused at assembly.
+- **Firms of one kind** (`core_firms`): the mirrored firms of both old tables are let go and the firm kind's store is
+  begun anew (the small firms' kept empty, so the kinds keep their numbers). A country's firms are its employed — its
+  people from 15 at its employment rate — times its firms per employed, shared over the products by the persons each
+  product's opening output employs by its way over a full-time year, and over the regions by the persons the core's
+  households hold there. A firm's record is its product, region, site tile and productivity (billionths of a log
+  point, drawn from the group's spread); its bank is drawn by the banks' deposits, and the country's firms' deposits
+  on the sheet are split evenly over them until their output is known. Its productivity and site each draw from their
+  own subject under the firms' opening stream.
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, stores, partition, flows, wheel, settlement,
   facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
