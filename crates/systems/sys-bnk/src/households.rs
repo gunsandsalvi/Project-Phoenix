@@ -86,12 +86,96 @@ pub struct HouseholdLines {
     pub loan_years: (Prim<Count>, Prim<Count>),
 }
 
-/// One country's banks as the households draw them.
-struct Country {
-    banks: Vec<PartyId>,
+/// One country's banking as its households draw it: the banks chosen online by their shares, and the shares of adults
+/// with an account and having borrowed.
+#[derive(Clone, Debug)]
+pub struct Banking {
     online: Online,
     account: f64,
     borrowed: f64,
+    /// The choices of years a loan has left.
+    years: usize,
+}
+
+/// A household's banking as drawn: none, its persons holding banknotes; or its bank among the country's, by its place
+/// there, its deposit's weight by its wealth, and its loan's place among the years' choices and weight by its income
+/// where it has borrowed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Banked {
+    Unbanked { persons: u64 },
+    At { bank: usize, deposit: u64, loan: Option<(usize, u64)> },
+}
+
+impl HouseholdLines {
+    /// The banks' draw with its primitives found in the register.
+    ///
+    /// # Errors
+    /// A primitive the draw reads that the register does not hold as declared.
+    pub fn of(register: &Register) -> Result<HouseholdLines, String> {
+        Ok(HouseholdLines {
+            accounts: register.handle(&crate::ACCOUNTS)?,
+            loan_years: (
+                register.handle(&crate::HOUSEHOLD_LOAN_YEARS_MIN)?,
+                register.handle(&crate::HOUSEHOLD_LOAN_YEARS_MAX)?,
+            ),
+        })
+    }
+
+    /// The fewest and most years a household's loan has left.
+    #[must_use]
+    pub fn years(&self, register: &Register) -> (u64, u64) {
+        (self.loan_years.0.shared(register).get(), self.loan_years.1.shared(register).get())
+    }
+
+    /// A country's banking as its households draw it, over its banks' weights.
+    #[must_use]
+    pub fn banking(&self, register: &Register, c: &OpeningCountry, banks: Vec<u64>) -> Banking {
+        let table = self.accounts.get(register, c.id);
+        let (least, most) = self.years(register);
+        let Some(span) = most.checked_sub(least) else {
+            violation!(clause = "GEN.2", "a household loan's fewest years past its most");
+        };
+        Banking {
+            online: Online::new(banks),
+            account: share(table, HOLDS_ACCOUNT),
+            borrowed: share(table, BORROWED),
+            years: usize::try_from(span + 1).unwrap_or(usize::MAX),
+        }
+    }
+}
+
+impl Banking {
+    /// A household's banking: whether any of its adults holds an account, and any has borrowed, each adult drawn
+    /// once; a household with an account banks at a bank chosen online by the banks' shares.
+    #[clause("GEN.2", "REP.23", "BNK.1")]
+    pub fn draw(&mut self, household: &phx_core::Household, (wealth, income): (f64, f64), d: &mut Draws) -> Banked {
+        let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
+        let adults = household.persons.iter().filter(|p| adult_roles.contains(&p.role)).count();
+        let account = any_of(adults, self.account, d);
+        let borrowed = any_of(adults, self.borrowed, d);
+        if !account {
+            return Banked::Unbanked { persons: phx_rand::float::len_u64(household.persons.len()) };
+        }
+        let bank = self.online.next(d);
+        let loan = borrowed.then(|| {
+            // The years a loan has left, drawn alike over the range.
+            let span = phx_rand::float::from_u64(phx_rand::float::len_u64(self.years));
+            let Some(at) = phx_rand::float::floor_to_u64(open_unit(d) * span)
+                .and_then(|i| usize::try_from(i).ok())
+                .filter(|i| *i < self.years)
+            else {
+                violation!(clause = "GEN.2", "a household loan's term beyond those drawn");
+            };
+            (at, weight(income))
+        });
+        Banked::At { bank, deposit: weight(wealth), loan }
+    }
+}
+
+/// One country's banks as the books' households draw them.
+struct Country {
+    banks: Vec<PartyId>,
+    banking: Banking,
     deposit: (u16, TermsId, Missing<(Day, u32)>),
     /// The loans' kind, their terms by the years they have left, the fewest first, and their first date.
     loan: (u16, Vec<TermsId>, Missing<(Day, u32)>),
@@ -120,7 +204,6 @@ impl AttachmentDraw for HouseholdLines {
         (calendar, today): (&phx_core::Calendar, Day),
         c: &OpeningCountry,
     ) -> Box<dyn CountryAttachments> {
-        let table = self.accounts.get(register, c.id);
         let banks = drawn(books, crate::opening::BANKS, c.id);
         let firms: i64 = drawn(books, crate::opening::DEPOSITS, c.id)
             .iter()
@@ -180,10 +263,8 @@ impl AttachmentDraw for HouseholdLines {
             violation!(clause = "GEN.4", "firms holding more deposits than the country's banks", country = c.id.get());
         }
         Box::new(Country {
-            online: Online::new(banks.iter().map(|(_, w)| *w).collect()),
+            banking: self.banking(register, c, banks.iter().map(|(_, w)| *w).collect()),
             banks: banks.into_iter().map(|(b, _)| b).collect(),
-            account: share(table, HOLDS_ACCOUNT),
-            borrowed: share(table, BORROWED),
             deposit: (lines.kind_index(ACCOUNT), deposit_terms, first),
             loan: (lines.kind_index(LOAN.name), loan_terms, first),
             deposits,
@@ -219,55 +300,51 @@ impl CountryAttachments for Country {
         keys: &mut phx_ledger::attachments::Keys,
     ) {
         let mut d = ctx.draws(&HouseholdsStream::DECL, subject);
-        let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
-        let adults = h.household.persons.iter().filter(|p| adult_roles.contains(&p.role)).count();
-        let account = any_of(adults, self.account, &mut d);
-        let borrowed = any_of(adults, self.borrowed, &mut d);
-        // A household that banks nowhere holds its persons' share of the currency in circulation, a head's each.
-        if !account {
-            let persons = phx_rand::float::len_u64(h.household.persons.len());
-            self.unbanked += persons;
-            let (kind, terms, central_bank) = self.cash;
-            rows.push(DrawnRow {
-                line: LineSpec { kind, terms, counterparty: Missing::Present(central_bank), first: Missing::Absent },
-                side: Side::Asset,
-                holder: Holder::Household,
-                balance: Balance::Share { pool: CASH, weight: persons },
-            });
-            return;
-        }
-        let at = self.online.next(&mut d);
-        let Some(bank) = self.banks.get(at).copied() else {
-            violation!(clause = "GEN.4", "a bank chosen beyond the country's banks");
-        };
-        let Ok(place) = u32::try_from(at + 1) else {
-            violation!(clause = "REP.41", "a bank beyond the attribute's values")
-        };
-        keys.household.push((BANK_ATTR.name, place));
-        let (kind, terms, first) = self.deposit;
-        rows.push(DrawnRow {
-            line: LineSpec { kind, terms, counterparty: Missing::Present(bank), first },
-            side: Side::Asset,
-            holder: Holder::Household,
-            balance: Balance::Share { pool: DEPOSITS, weight: weight(h.wealth) },
-        });
-        if borrowed {
-            let (kind, ref by_years, first) = self.loan;
-            // The years a loan has left, drawn alike over the range.
-            let span = phx_rand::float::from_u64(phx_rand::float::len_u64(by_years.len()));
-            let Some(terms) = phx_rand::float::floor_to_u64(open_unit(&mut d) * span)
-                .and_then(|i| usize::try_from(i).ok())
-                .and_then(|i| by_years.get(i))
-                .copied()
-            else {
-                violation!(clause = "GEN.2", "a household loan's term beyond those drawn");
-            };
-            rows.push(DrawnRow {
-                line: LineSpec { kind, terms, counterparty: Missing::Present(bank), first },
-                side: Side::Liability,
-                holder: Holder::Household,
-                balance: Balance::Share { pool: DEBT, weight: weight(h.income) },
-            });
+        match self.banking.draw(h.household, (h.wealth, h.income), &mut d) {
+            // A household that banks nowhere holds its persons' share of the currency in circulation, a head's each.
+            Banked::Unbanked { persons } => {
+                self.unbanked += persons;
+                let (kind, terms, central_bank) = self.cash;
+                rows.push(DrawnRow {
+                    line: LineSpec {
+                        kind,
+                        terms,
+                        counterparty: Missing::Present(central_bank),
+                        first: Missing::Absent,
+                    },
+                    side: Side::Asset,
+                    holder: Holder::Household,
+                    balance: Balance::Share { pool: CASH, weight: persons },
+                });
+            }
+            Banked::At { bank: at, deposit, loan } => {
+                let Some(bank) = self.banks.get(at).copied() else {
+                    violation!(clause = "GEN.4", "a bank chosen beyond the country's banks");
+                };
+                let Ok(place) = u32::try_from(at + 1) else {
+                    violation!(clause = "REP.41", "a bank beyond the attribute's values")
+                };
+                keys.household.push((BANK_ATTR.name, place));
+                let (kind, terms, first) = self.deposit;
+                rows.push(DrawnRow {
+                    line: LineSpec { kind, terms, counterparty: Missing::Present(bank), first },
+                    side: Side::Asset,
+                    holder: Holder::Household,
+                    balance: Balance::Share { pool: DEPOSITS, weight: deposit },
+                });
+                if let Some((years, weight)) = loan {
+                    let (kind, ref by_years, first) = self.loan;
+                    let Some(terms) = by_years.get(years).copied() else {
+                        violation!(clause = "GEN.2", "a household loan's term beyond those drawn");
+                    };
+                    rows.push(DrawnRow {
+                        line: LineSpec { kind, terms, counterparty: Missing::Present(bank), first },
+                        side: Side::Liability,
+                        holder: Holder::Household,
+                        balance: Balance::Share { pool: DEBT, weight },
+                    });
+                }
+            }
         }
     }
 

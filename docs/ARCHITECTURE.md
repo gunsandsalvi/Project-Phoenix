@@ -1978,51 +1978,27 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   its chunk's arena and found by its slot; `set`, `push`, `remove` (the rest keep their order) and `clear` keep the
   count held, `place_of` finds a person by its identity, and `compact_due` closes a chunk's gaps in slot order once
   its dead words pass their share. A person's identity is drawn from the same counter as the parties' (a person is a
-  party, PTY.1): the mirrored persons take theirs after the books' last party, a newborn the next.
-- **The world on the core, during the port** (`phx_world::core::Core`): at assembly and at load, every party the
-  books hold is begun again on the core under its identity, a `KindStore` for each of the books' tables in their place
-  order (so a kind's number is its place): an individual's record is the tile it is sited on; an agent's, its
-  attributes then its positions, and a household's persons are copied into `Persons`, the copy refused if it holds
-  other persons than the books'. `Core::key` finds a party's key by its identity. The inspector reads it. Each kind
-  that holds an account (households, firms of both tables, banks, the treasury; the central bank issues) is given
-  accounts, and each party's is opened at the bank the books hold it at (a bank's own, its reserves, at the issuer):
-  each sector's total is its country's sheet's share of GDP made whole, split over the country's parties of that
-  sector by `split_total` in proportion to the balance the books gave each (equal parts where they gave none), so the
-  totals are the sheet's exactly; money with no party to hold it stops the run. It runs no day yet.
-- **The core's day** (`phx_world::core_day`), run after the books' day while the port runs beside them: each dated
-  family's contracts due today (`DatedFamily`, rows of payer, payee, amount, the date of its schedule that comes
-  next and the schedule, one of the family's, each with its currency and its payer's payment order) make their flows
-  into the day's `FlowBufs`, each rescheduled on its wheel at its schedule's next date; then each currency's flows are
-  grouped and settled over every kind's accounts with its central bank the issuer, on its country's business days,
-  the tie lot the declared stream `SET.order`, and committed to pending on its closed days. Each day's record keeps
-  the flows made, settled, failed and committed. The state pensions in payment are its first family: every pension
-  line a household's person holds on the books is a contract from its country's treasury to the household, at the
-  line's amount, currency, payment order and next date.
-- **Chance on the core's persons** (`phx_world::core_pop`): each process on the households' persons keeps a wheel of
-  each household's next booking, its day and whether it is a hit kept by slot, so an entry a household was booked
-  past is skipped. A household due is read into its explicit form (attributes by name from its record, persons
-  unpacked), its booking followed to today by the same rules the books' day reads (`agents::follow`), and its hits'
-  outcomes applied in process order. Its gone persons leave from the last place down, each one's contracts closing;
-  its newborns join it; one no one is left in ends, its contracts closing; a household changed is booked again for
-  every process from the next day. Contracts name the payee's person by its identity (`Due::person`), so a person's
-  contracts follow it whatever its place. A household that ends holding money passes it to an estate the core begins
-  (under an identity the core hands out after the books' last) at the same bank, a succession, not a payment; on its
-  country's next business day the estate pays what it holds to its country's treasury, the destination the law names
-  where no heir is drawn, and ends after that day's settlement.
-- **The core's money family**, read each day after settlement and never repairing: each bank owes what its customers
-  hold; the money every party but the banks holds does not move, nor the banks' reserves with every account held at
-  the issuer, since the issuer makes no flow on the core yet. Each day's record keeps its breaks and its time; at
-  750 000 persons the core's day, chance and settlement on one thread, took 32 ms at the median and 169 ms at worst
-  over 40 days on the build machine.
-- **A country's balance sheet** (`opening::sheet`): its group's matrices moved by its drawn profile. Households' and
-  firms' debt, the government's, the banks' deposits, capital and reserves are the drawn levels; who holds each is
-  the group's split; the dataset's closures balance the rest (the central bank holds government paper for its
-  currency and reserves and lends banks the remainder, the banks' reserves and equity at their ratios and bonds held
+  party, PTY.1): each is handed the next as its household begins, a newborn the next after.
+- **The core's opening** (`phx_world::core_open`): the core draws its own world, no copy of anything. Its kinds are
+  declared in their order (`consts::kinds`: central bank, treasury, bank, firm, estate, household), a kind's number its
+  place. Each country's central bank and treasury share a site drawn by CB's; its banks are as many as the Zipf law
+  fitted to their concentration gives (`sys_bnk::bank_weights`), each sited by BNK's draw. Its households are drawn
+  region by region by DEM (`sys_dem::draw_country`), and each household's adults' labour (`sys_lab::Rule::draw`), its
+  banking (`sys_bnk::households::Banking::draw`) and its pensioners (`sys_soc::Pensions::draw`) by their systems' pure
+  rules, each keyed by the household's subject; a rule is built from the register alone (`Register::handle` finds a
+  declared primitive's handle). The draws' attributes are written to the persons and the household, the household is
+  begun with its positions as its kind opens them (its income a year as the wages and pensions drawn times the
+  year's months), and each person takes the next identity. Accounts come from the country's balance sheet: the banks'
+  reserves by their shares and the treasury's deposits at the issuer, the households' deposits over those that bank
+  by their wealth at their bank, the households' currency over those that bank nowhere by their persons at the issuer.
+  The pensions are opened at once from the treasury, naming the person; the jobs and the households' loans are kept
+  (`core_open::Drawn`) until the firms are drawn, then dealt (`core_jobs`) and apportioned the sheet's loans to
+  households by income (`core_credit`). `Core::key` finds a party's key by its identity. The balance sheet itself
+  (`opening::sheet`) closes each country's sectors (the central bank's currency and reserves and lends banks the remainder, the banks' reserves and equity at their ratios and bonds held
   by households balancing them, deposits beyond lending held as more paper, firms' equity their assets less debts).
   A sheet the closures cannot balance, or one that breaks an identity, is refused at assembly.
-- **Firms of one kind** (`core_firms`): the mirrored firms of both old tables are let go and the firm kind's store is
-  begun anew (the small firms' kept empty, so the kinds keep their numbers). A country's firms are its employed — its
-  people from 15 at its employment rate — times its firms per employed, shared over the products by the persons each
+- **Firms of one kind** (`core_firms`): the firm kind's store is begun with every country's firms. A country's firms
+  are its employed — its people from 15 at its employment rate — times its firms per employed, shared over the products by the persons each
   product's opening output employs by its way over a full-time year, and over the regions by the persons the core's
   households hold there. A firm's record is its product, region, site tile, productivity (billionths of a log point,
   drawn from the group's spread), its posted price of a lot and its output a year in units. Its productivity and site

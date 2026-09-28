@@ -22,7 +22,7 @@ use phx_core::{
 
 pub use births::{Conception, Fertility};
 pub use fertility::{ChildIn, Scale, tries, value};
-pub use opening::Households;
+pub use opening::{Formed, Households, draw_country};
 pub use prims::Prims;
 pub use processes::{Mortality, Onset};
 pub use school::LeavingSchool;

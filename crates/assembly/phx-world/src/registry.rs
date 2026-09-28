@@ -573,11 +573,34 @@ fn central_of(
     crate::central::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
-/// The world's parties on the core, mirrored from the books, each account apportioned from its country's sheet.
+/// The core's own opening over the population's household kind.
+fn open_core(
+    p: &Prepared,
+    (countries, sheets): (&[phx_core::OpeningCountry], &[crate::opening::sheet::Sheet]),
+    calendar: &phx_core::calendar::Calendar,
+    today: phx_id::Day,
+) -> Result<crate::core::Core, AssemblyErrors> {
+    let found = p.pop.iter().enumerate().find(|(_, (d, _))| d.kind == if_pop::HOUSEHOLD);
+    let Some((household_pop, (household, _))) = found else {
+        return Err(AssemblyErrors(vec!["no household kind among the population's".to_owned()]));
+    };
+    crate::core::Core::open(&crate::core_open::CoreOpening {
+        register: &p.c.register,
+        countries,
+        sheets,
+        streams: &p.c.streams,
+        calendar,
+        today,
+        household: (household, household_pop),
+    })
+    .map_err(|e| AssemblyErrors(vec![e]))
+}
+
+/// The world on the core, drawn by its own opening: its parties and their accounts, then its firms, jobs, loans,
+/// labour, state and goods.
 fn core_of(
     p: &Prepared,
     geo: &phx_geo::GeoState,
-    (books, population): (&phx_ledger::books::Books, &phx_pop::population::Population),
     (state, calendar, today): (&crate::state::State, &phx_core::calendar::Calendar, phx_id::Day),
     (own, labour): (&[(&'static str, OwnState)], Option<&if_labour::kind::LabourKind>),
 ) -> Result<crate::core::Core, AssemblyErrors> {
@@ -587,11 +610,7 @@ fn core_of(
         .map(|c| crate::opening::sheet::country_sheet(&p.c.register, c))
         .collect::<Result<Vec<_>, String>>()
         .map_err(|e| AssemblyErrors(vec![e]))?;
-    let mut core = crate::core::Core::mirror(books, population);
-    core.open_money(books, &opening, &sheets);
-    if let Some(pension) = state.pension {
-        core.open_pensions(books, pension.line, (calendar, today), opening.len());
-    }
+    let mut core = open_core(p, (&opening, &sheets), calendar, today)?;
     let regions: Vec<phx_id::CountryId> = geo.map.regions.iter().map(|r| r.country).collect();
     let ctx = crate::core_pop::Ctx {
         register: &p.c.register,
@@ -620,7 +639,6 @@ fn core_of(
     .map_err(|e| AssemblyErrors(vec![e]))?;
     let _ = core
         .open_jobs(&crate::core_jobs::JobsOpening {
-            books,
             register: &p.c.register,
             countries: &opening,
             calendar,
@@ -630,7 +648,6 @@ fn core_of(
         })
         .map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_loans(&crate::core_credit::CreditOpening {
-        books,
         register: &p.c.register,
         countries: &opening,
         sheets: &sheets,
@@ -676,7 +693,6 @@ fn core_of(
         core.open_goods(&gctx, (&opening, cover), today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
 
-    let _ = population;
     Ok(core)
 }
 
@@ -719,8 +735,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let val_rules = val_rules(&p)?;
     let mut calendar = p.c.calendar.clone();
     calendar.move_window(calendar.date(carried.today).year());
-    let core =
-        core_of(&p, &geo, (&books, &population), (&state, &calendar, carried.today), (&own, labour.kind.as_ref()))?;
+    let core = core_of(&p, &geo, (&state, &calendar, carried.today), (&own, labour.kind.as_ref()))?;
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
     let val_methods = crate::goods::methods(&p.kernel.val, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     p.market_kinds.check(&markets.made).map_err(|e| AssemblyErrors(vec![e]))?;

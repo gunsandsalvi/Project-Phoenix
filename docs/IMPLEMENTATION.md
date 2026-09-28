@@ -728,7 +728,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (b and c done; d–g on the core, their openings still read from the books; next: the native opening and the switch, then h)
+**Status**: building (a, b and c done: the core draws its own opening; d–g on the core; next: the switch, then h)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
@@ -786,12 +786,12 @@ world switches to the core.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening comes next —
     households, persons, jobs, loans, pensions and deposits drawn on the core from the opening dataset and the
     systems' draws — then the switch and the old kernel's deletion, then h on the core alone.
-  - Built on the core, their openings still read from the books until the native opening: goods as holdings (each
+  - The native opening is built (a): the core reads nothing of the books. Built on the core: goods as holdings (each
     firm's stocks, making by the production rule within its staff and stored inputs, inputs bought at posted prices,
     the goods' identity read daily); the treasury's collective consumption and firms' fixed investment from the
     accounts' final uses, until public agencies and plant decide them; firms' price reviews by the pricing rule over
     their own markup, expected sales and sales since their last review; loans as amortising dated contracts reckoned
-    by their terms' shape (households' from the books, firms' re-dealt from the sheet by turnover); income tax
+    by their terms' shape (households' drawn by BNK's rule and apportioned the sheet's loans to households by income, firms' dealt from the sheet by turnover); income tax
     withheld from wages by band, consumption tax at the till, the benefit claimed on a job lost and ended at a hire;
     the money check counting what banks and parties pay each other.
 - **Persons as parties** (PTY.1, PTY.3, REP.26, Appendix E 46, owner 2026-09-28): each person keeps one identity from
@@ -821,8 +821,8 @@ world switches to the core.
   - each firm's stock cover its own, drawn from the Enterprise Surveys' days of inventory by size
     (`state/enterprise_surveys`); the markup's speeds, the pressure's curvature and a review's and a price change's
     hours stay one declared management type, no source measuring their spread across firms.
-- **From S1.23**: the core runs beside the books, mirrored from them at assembly and load (`phx_world::core`); this
-  step makes the core the committed world, its opening drawn on the core itself rather than copied, the core's
+- **From S1.23**: the core ran beside the books, mirrored from them; it now draws its own opening (`core_open`), and
+  this step makes the core the committed world, the core's
   checks (LC-0-62 to LC-0-65) its Stage 0 checks, and the old kernel's checks retired with it; the primitives the
   balance sheet replaces (CAP's stock per GDP, CB's currency, the openings' reads of the profile's debt levels and
   bank capital) retire with the old openings; households' currency opens with the retail payments; party kinds'

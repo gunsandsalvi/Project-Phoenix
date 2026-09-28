@@ -225,4 +225,40 @@ impl Prims {
             life_expectancy: d.prim(&LIFE_EXPECTANCY),
         }
     }
+
+    /// The households' primitives found in the register, for a draw built from the register alone.
+    ///
+    /// # Errors
+    /// A primitive the register does not hold as declared.
+    pub fn of(register: &phx_core::Register) -> Result<Prims, String> {
+        Ok(Prims {
+            survival: register.handle(&SURVIVAL)?,
+            sex_ratio: register.handle(&SEX_RATIO)?,
+            age_standard: register.handle(&AGE_STANDARD)?,
+            disability: register.handle(&DISABILITY)?,
+            onset: register.handle(&ONSET)?,
+            types: register.handle(&TYPES)?,
+            sizes: register.handle(&SIZES)?,
+            older: register.handle(&OLDER)?,
+            living_children: register.handle(&LIVING_CHILDREN)?,
+            grown_children: register.handle(&GROWN_CHILDREN)?,
+            minor_children: register.handle(&MINOR_CHILDREN)?,
+            education: [register.handle(&EDUCATION_FEMALE)?, register.handle(&EDUCATION_MALE)?],
+            income: register.handle(&INCOME)?,
+            wealth: register.handle(&WEALTH)?,
+            age_classes: register.handle(&AGE_CLASSES)?,
+            majority: register.handle(&MAJORITY)?,
+            school_leaving: register.handle(&SCHOOL_LEAVING)?,
+            ideal_children: register.handle(&IDEAL_CHILDREN)?,
+            fecundability: register.handle(&FECUNDABILITY)?,
+            cycle_days: register.handle(&CYCLE_DAYS)?,
+            equivalence: register.handle(&EQUIVALENCE)?,
+            taste_spread: register.handle(&TASTE_SPREAD)?,
+            members: register.handle(&MEMBERS)?,
+            partner_gap: register.handle(&PARTNER_GAP)?,
+            single_fathers: register.handle(&SINGLE_FATHERS)?,
+            disabled_mortality: register.handle(&DISABLED_MORTALITY)?,
+            life_expectancy: register.handle(&LIFE_EXPECTANCY)?,
+        })
+    }
 }

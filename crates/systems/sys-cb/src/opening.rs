@@ -141,6 +141,12 @@ fn banks(b: &Books, country: CountryId) -> Vec<(PartyId, u64)> {
     v.clone()
 }
 
+/// The site a country's central bank and treasury share, drawn among its land.
+pub fn site(ctx: &phx_core::OpeningCtx<'_>, c: &phx_core::OpeningCountry) -> phx_id::TileId {
+    let mut draws = ctx.draws(&OpeningStream::DECL, opening_subject(u32::from(c.id.get()), 0));
+    c.site(&mut draws)
+}
+
 /// Each country's central bank and its treasury, sited together in the country.
 #[clause("CB.1", "PTY.9")]
 #[derive(Debug)]
@@ -169,8 +175,7 @@ impl Contribution for Parties {
     fn contribute(&self, opening: &mut Opening<'_>) {
         let (countries, day) = (opening.countries, opening.day);
         for c in countries {
-            let mut draws = opening.ctx.draws(&OpeningStream::DECL, opening_subject(u32::from(c.id.get()), 0));
-            let site = c.site(&mut draws);
+            let site = site(&opening.ctx, c);
             let b = books::of(opening);
             let cb = b.parties.begin(CENTRAL_BANK.name, site, day);
             let treasury = b.parties.begin(TREASURY.name, site, day);

@@ -18,7 +18,7 @@ use phx_core::{
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_num::{Count, Fixed, Missing};
 
-pub use jobs::{EMPLOYMENT, Jobs, JobsStream};
+pub use jobs::{Drawn, DrawnJob, EMPLOYMENT, Jobs, JobsStream, Rule};
 
 declare_stream! { pub TasteStream = "LAB.match_taste" { purpose: Meeting, keyed: false, clause: "REP.22" } }
 declare_stream! { pub MeetingStream = "LAB.meeting" { purpose: Meeting, keyed: false, clause: "LAB.8" } }

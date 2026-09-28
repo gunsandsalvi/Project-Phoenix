@@ -1,6 +1,6 @@
 //! Credit on the core: the loans the country's sheet holds, each a dated contract from its borrower to its bank paying
 //! interest on what it owes and an equal part of it on each monthly date that remains, as its terms' shape reckons.
-//! A household's loan is the one the books' opening drew for it; a firm's is its share, by its turnover, of the
+//! A household's loan is the one the opening drew for it, its share by its income of the sheet's loans to households; a firm's is its share, by its turnover, of the
 //! sheet's loans to firms, at the lending rate, over a term drawn between the declared years, lent by its own bank.
 
 use phx_core::calendar::Calendar;
@@ -8,12 +8,9 @@ use phx_core::calendar::daycount::DayCount;
 use phx_core::{OpeningCountry, Register, StreamDecl, Streams, opening_subject};
 use phx_id::{Day, PartyKey, Slot};
 use phx_ledger::algebra::{Leg, Reference, Schedule, Terms};
-use phx_ledger::books::Books;
 use phx_macros::clause;
 use phx_num::{Missing, violation};
-use phx_pop::population::Population;
 use phx_rand::float::{from_i64, len_u64};
-use phx_store::SystemBacking;
 
 use crate::consts::firm::{LOANS_PURPOSE, OUTPUT, PRICE, PRODUCT, PURPOSES, REGION};
 use crate::consts::reason::REPAID;
@@ -24,7 +21,6 @@ use crate::core_day::{DatedFamily, Due};
 /// What the loans' opening reads besides the core.
 #[derive(Debug)]
 pub struct CreditOpening<'a> {
-    pub books: &'a Books,
     pub register: &'a Register,
     pub countries: &'a [OpeningCountry],
     pub sheets: &'a [crate::opening::sheet::Sheet],
@@ -33,9 +29,6 @@ pub struct CreditOpening<'a> {
     pub streams: &'a Streams,
     pub stream: &'a StreamDecl,
 }
-
-/// The line kind a household's loan is drawn on at the books' opening.
-const HOUSEHOLD_LOAN: &str = "household loan";
 
 impl Core {
     /// The state's laws on the core from the state's, and its benefit's family: each country's income tax as bands of
@@ -131,7 +124,7 @@ impl Core {
         (b != phx_core::settle::AT_ISSUER).then(|| PartyKey::new(bank, Slot::new(b)))
     }
 
-    /// The loans opened on the core: the households' from the books, the firms' from the sheet.
+    /// The loans opened on the core: the households' as the opening drew them, the firms' from the sheet.
     ///
     /// # Errors
     /// A primitive the opening reads that the register does not hold.
@@ -144,55 +137,34 @@ impl Core {
         ) else {
             return Ok(());
         };
-        let households = self.household_loans(o, household, bank);
+        let households = self.household_loans(o, household, bank)?;
         let firms = self.firm_loans(o, firm, bank)?;
         self.families.push(households);
         self.families.push(firms);
         Ok(())
     }
 
-    /// Each household's loans as the books drew them: its balance, its terms, and its next date; lent by its bank and
-    /// owed by its head.
-    fn household_loans(&mut self, o: &CreditOpening<'_>, household: usize, bank: usize) -> DatedFamily {
+    /// Each household's loan as the opening drew it: its share of the loans to households, lent by its bank at the
+    /// lending rate over the years it has left, repaid monthly in equal parts with interest on what it owes; owed by
+    /// its head.
+    fn household_loans(&mut self, o: &CreditOpening<'_>, household: usize, bank: usize) -> Result<DatedFamily, String> {
         let mut family = self.loan_family("BNK.household_loans", household, bank, o.today);
-        let Some(pop_at) = household.checked_sub(usize::from(self.first_agents)) else { return family };
-        let ledger = &o.books.ledger;
-        let Ok(place) = u16::try_from(household) else { return family };
-        let holder = o.books.parties.holder(place);
-        let table = Population::table::<SystemBacking>(o.books.parties.cells(), pop_at);
-        let mut schedules: std::collections::BTreeMap<phx_id::LineId, u32> = std::collections::BTreeMap::new();
-        for slot in table.slots() {
-            let Some(key) = self.key(table.party(slot)) else { continue };
-            let Some(lender) = self.bank_of(key) else { continue };
-            let Some(head) = self.person_at(key, 0) else { continue };
-            for r in phx_ledger::rows::iter(holder, slot) {
-                if r.side() != phx_ledger::algebra::Side::Liability
-                    || ledger.lines.kind_name(r.row.line) != HOUSEHOLD_LOAN
-                {
-                    continue;
-                }
-                let Missing::Present(balance) = r.optional.balance else { continue };
-                let owed = balance.abs();
-                if owed == 0 {
-                    continue;
-                }
-                let terms = ledger.terms.get(ledger.lines.terms(r.row.line)).clone();
-                let (dates, next) = (terms.schedule.dates, ledger.lines.next_due(r.row.line));
-                let mut nth = 0_u32;
-                while dates.nth(o.calendar, nth) < next {
-                    nth += 1;
-                }
-                let schedule = *schedules.entry(r.row.line).or_insert_with(|| {
-                    family.schedules.push((dates, terms.ccy.index(), terms.payment_order.0));
-                    family.classes.push([0, 0, 0]);
-                    family.terms.push(Some(terms.clone()));
-                    u32::try_from(family.schedules.len() - 1).unwrap_or(u32::MAX)
-                });
-                let due = Due { ends: [key, lender], amount: owed, nth, schedule, person: head };
-                let _ = family.store.open(due, Some(dates.nth(o.calendar, nth)));
+        let date = o.calendar.date(o.today);
+        for l in std::mem::take(&mut self.drawn.loans) {
+            let Some(c) = o.countries.iter().find(|c| c.id.get() == l.country) else {
+                return Err(format!("a loan drawn in country {}, which the world does not hold", l.country));
+            };
+            let Ok(amount) = i64::try_from(l.weight) else { continue };
+            if amount == 0 {
+                continue;
             }
+            let terms = loan_terms(c, date, l.years)?;
+            let schedule = family.schedule_of((c, date), [0, 0, 0], Some(terms));
+            let due = Due { ends: [l.household, l.bank], amount, nth: 1, schedule, person: l.person };
+            let first = family.first(o.calendar, schedule);
+            let _ = family.store.open(due, first);
         }
-        family
+        Ok(family)
     }
 
     /// Each firm's share of its country's loans to firms, by its turnover, lent by its bank at the lending rate over
@@ -270,4 +242,18 @@ impl Core {
         }
         Ok(family)
     }
+}
+
+/// A loan's terms in a country: interest at its lending rate on what it owes, and an equal part repaid, on each
+/// monthly date of the years it has left.
+fn loan_terms(c: &OpeningCountry, date: phx_id::Date, years: u64) -> Result<Terms, String> {
+    let rate = sys_bnk::rate(c.derived("GEN.lending_rate").ok_or("no lending rate")?);
+    let Some(months) = u32::try_from(years).ok().and_then(|y| y.checked_mul(u32::try_from(MONTHS).ok()?)) else {
+        violation!(clause = "GEN.2", "a loan's term beyond a schedule's count", years = years);
+    };
+    Ok(phx_ledger::opening::plain_terms(
+        phx_ledger::opening::currency(c.id),
+        vec![Leg::RateOnNotional { reference: Reference::Fixed(rate), day_count: DayCount::Act365F }, Leg::Amortising],
+        Schedule { dates: phx_ledger::opening::monthly(date, c.id), count: Missing::Present(months) },
+    ))
 }

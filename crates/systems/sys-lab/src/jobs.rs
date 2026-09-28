@@ -97,8 +97,9 @@ fn by_sex(t: &Table1, sex: u32) -> f64 {
     share(v)
 }
 
-/// One country's labour as the households draw it.
-struct Country {
+/// One country's labour as its households draw it, read from the register alone.
+#[derive(Clone, Debug)]
+pub struct Rule {
     law: Law,
     employed: f64,
     /// Each ten-year band's first age and each sex's employment rate there over the country's.
@@ -112,10 +113,34 @@ struct Country {
     wage: f64,
     /// An employee's mean weekly hours, over the sexes' shares of employees and their part-time shares.
     mean_hours: f64,
+    date: phx_id::Date,
+}
+
+/// An adult's labour as drawn: its place in its household, its state, the occupation recorded on it, the wage point
+/// full time would pay it, and its job where it is an employee.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Drawn {
+    pub place: usize,
+    pub state: u32,
+    pub occupation: u32,
+    pub last: u32,
+    pub job: Option<DrawnJob>,
+}
+
+/// An employee's job as drawn: its wage point and its class — occupation, skill, hours, notice, severance, region
+/// and the band its tenure began in.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DrawnJob {
+    pub point: i64,
+    pub class: Vec<u32>,
+}
+
+/// One country's labour as the books' households draw it.
+struct Country {
+    rule: Rule,
     kind: u16,
     schedule: Schedule,
     first: Missing<(Day, u32)>,
-    date: phx_id::Date,
     ccy: phx_num::Ccy,
     terms: BTreeMap<(i64, Vec<u32>), TermsId>,
     firms: Vec<Employer>,
@@ -127,15 +152,27 @@ struct Country {
     dealt: Option<BTreeMap<TermsId, Vec<(PartyId, u64)>>>,
 }
 
-impl AttachmentDraw for Jobs {
-    #[clause("GEN.2", "LAB.1", "PTY.3")]
-    fn country(
-        &self,
-        books: &mut Books,
-        register: &Register,
-        (calendar, today): (&phx_core::Calendar, Day),
-        c: &OpeningCountry,
-    ) -> Box<dyn CountryAttachments> {
+impl Jobs {
+    /// Labour's draw with its primitives found in the register.
+    ///
+    /// # Errors
+    /// A primitive the draw reads that the register does not hold as declared.
+    pub fn of(register: &Register) -> Result<Jobs, String> {
+        Ok(Jobs {
+            status: register.handle(&crate::STATUS)?,
+            occupation: register.handle(&crate::OCCUPATION)?,
+            by_age: register.handle(&crate::EMPLOYMENT_BY_AGE)?,
+            unemployment: register.handle(&crate::UNEMPLOYMENT)?,
+            part_time: register.handle(&crate::PART_TIME)?,
+            part_time_hours: register.handle(&crate::PART_TIME_HOURS)?,
+            tenure: register.handle(&crate::TENURE)?,
+        })
+    }
+
+    /// A country's labour as its households draw it, on the opening's date.
+    #[clause("GEN.2", "LAB.1")]
+    #[must_use]
+    pub fn rule(&self, register: &Register, date: phx_id::Date, c: &OpeningCountry) -> Rule {
         let status = self.status.get(register, c.id);
         let employees = [if_pop::FEMALE, if_pop::MALE].map(|sex| {
             let Ok(v) = status.at(EMPLOYEES, i64::from(sex)) else {
@@ -167,14 +204,6 @@ impl AttachmentDraw for Jobs {
             .collect();
         let t = self.tenure.get(register, c.id);
         let tenure = t.axis().iter().copied().zip(t.values().iter().map(|v| share(*v))).collect();
-        let firms = employers(books, c.id);
-        let Ok(hours) = register.table2_in(HOURS_A_UNIT, c.id) else {
-            violation!(clause = "GEN.3", "labour's opening with no hours of work by occupation", country = c.id.get());
-        };
-        let shares = occupation_shares(hours);
-        let date = calendar.date(today);
-        let dates = phx_ledger::opening::monthly(date, c.id);
-        let first = Missing::Present((dates.nth(calendar, 1), 1));
         let Ok(part_time_hours) = u32::try_from(self.part_time_hours.get(register, c.id).get()) else {
             violation!(clause = "LAB.1", "part-time hours beyond a week's", country = c.id.get())
         };
@@ -200,7 +229,7 @@ impl AttachmentDraw for Jobs {
                 )
             })
             .collect();
-        Box::new(Country {
+        Rule {
             law,
             employed,
             by_age,
@@ -212,10 +241,32 @@ impl AttachmentDraw for Jobs {
             tenure,
             wage: phx_ledger::opening::mean_wage(c),
             mean_hours,
+            date,
+        }
+    }
+}
+
+impl AttachmentDraw for Jobs {
+    #[clause("GEN.2", "LAB.1", "PTY.3")]
+    fn country(
+        &self,
+        books: &mut Books,
+        register: &Register,
+        (calendar, today): (&phx_core::Calendar, Day),
+        c: &OpeningCountry,
+    ) -> Box<dyn CountryAttachments> {
+        let firms = employers(books, c.id);
+        let Ok(hours) = register.table2_in(HOURS_A_UNIT, c.id) else {
+            violation!(clause = "GEN.3", "labour's opening with no hours of work by occupation", country = c.id.get());
+        };
+        let shares = occupation_shares(hours);
+        let date = calendar.date(today);
+        let dates = phx_ledger::opening::monthly(date, c.id);
+        Box::new(Country {
+            rule: self.rule(register, date, c),
             kind: books.ledger.lines.kind_index(EMPLOYMENT.name),
             schedule: Schedule { dates, count: Missing::Absent },
-            first,
-            date,
+            first: Missing::Present((dates.nth(calendar, 1), 1)),
             ccy: currency(c.id),
             terms: BTreeMap::new(),
             firms,
@@ -226,7 +277,7 @@ impl AttachmentDraw for Jobs {
     }
 }
 
-impl Country {
+impl Rule {
     /// The wage point nearest a month's wage.
     fn point_of(&self, wage: f64) -> u32 {
         let Some(point) = phx_rand::float::floor_to_i64(libm::rint(libm::log(wage) / libm::log(self.law.point_ratio)))
@@ -239,21 +290,10 @@ impl Country {
         point
     }
 
-    /// The terms of a wage point and a class: its amount paid on each monthly date.
-    fn terms(&mut self, books: &mut Books, point: i64, class: Vec<u32>) -> TermsId {
-        if let Some(t) = self.terms.get(&(point, class.clone())) {
-            return *t;
-        }
-        let amount = whole(libm::pow(self.law.point_ratio, phx_rand::float::from_i64(point)));
-        let mut terms = phx_ledger::opening::plain_terms(
-            self.ccy,
-            vec![Leg::FixedAmount(Money::new(amount, self.ccy))],
-            self.schedule,
-        );
-        terms.class.clone_from(&class);
-        let t = books.ledger.terms.intern(terms);
-        self.terms.insert((point, class), t);
-        t
+    /// A wage point's month's wage in whole smallest units.
+    #[must_use]
+    pub fn wage_at(&self, point: i64) -> i64 {
+        whole(libm::pow(self.law.point_ratio, phx_rand::float::from_i64(point)))
     }
 
     /// An occupation drawn by sex among those the skill reaches.
@@ -301,26 +341,21 @@ impl Country {
         };
         first
     }
-}
 
-impl CountryAttachments for Country {
+    /// Each adult's labour in a household drawn at the opening: employed at the country's rate times its age band's
+    /// and sex's ratio to it, an employee at its sex's share, with its job's occupation, hours, wage point and class;
+    /// of those not employed, searching at the rate that makes the unemployed the country's share, or retired past
+    /// the pension's age. A week's hour of the household's work pays the mean wage over an employee's mean hours at
+    /// its income's multiple.
     #[clause("GEN.2", "LAB.1", "REP.34", "PTY.3")]
-    fn draw(
-        &mut self,
-        books: &mut Books,
-        h: Drawing<'_>,
-        (ctx, subject): (&OpeningCtx<'_>, Subject),
-        rows: &mut Vec<DrawnRow>,
-        keys: &mut Keys,
-    ) {
-        let mut d = ctx.draws(&JobsStream::DECL, subject);
+    #[must_use]
+    pub fn draw(&self, household: &phx_core::Household, income: f64, d: &mut Draws) -> Vec<Drawn> {
         let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
-        let region = h.household.attr(if_pop::REGION.name);
-        // A week's hour of the household's work pays the mean wage over an employee's mean hours, at its income's
-        // multiple; a person's recorded point is what full time would pay it.
-        let hourly = self.wage * h.income / self.mean_hours;
+        let region = household.attr(if_pop::REGION.name);
+        let hourly = self.wage * income / self.mean_hours;
         let last = self.point_of(hourly * f64::from(self.law.full_time_hours));
-        for (place, p) in h.household.persons.iter().enumerate().filter(|(_, p)| adult_roles.contains(&p.role)) {
+        let mut out = Vec::new();
+        for (place, p) in household.persons.iter().enumerate().filter(|(_, p)| adult_roles.contains(&p.role)) {
             let Some(sex) = p.attr(if_pop::SEX.name) else { violation!(clause = "REP.26", "a person with no sex") };
             let s = usize::try_from(sex).unwrap_or(usize::MAX);
             let (Some(employee), Some(part_time), Some(searching), Some(months)) = (
@@ -337,14 +372,12 @@ impl CountryAttachments for Country {
             };
             let age = p.age_on(self.date);
             let retired = age * crate::consts::MONTHS_A_YEAR >= months;
-            // A person is employed at the country's rate times its age band's and sex's ratio to it.
             let Some(ratio) = self.by_age.iter().rev().find(|(first, _)| *first <= age).and_then(|(_, r)| r.get(s))
             else {
                 violation!(clause = "GEN.2", "an adult younger than the employment bands", age = age);
             };
-            let (works, as_employee, looks) = (open_unit(&mut d), open_unit(&mut d), open_unit(&mut d));
-            let occupation = self.occupation(s, skill, &mut d);
-            keys.persons.push((place, crate::LAST_POINT.name, last));
+            let (works, as_employee, looks) = (open_unit(d), open_unit(d), open_unit(d));
+            let occupation = self.occupation(s, skill, d);
             if works >= self.employed * ratio {
                 let state = if retired {
                     RETIRED
@@ -354,16 +387,15 @@ impl CountryAttachments for Country {
                     NOT_SEARCHING
                 };
                 let known = if state == SEARCHING { occupation } else { NO_OCCUPATION };
-                keys.persons.push((place, crate::STATE.name, state));
-                keys.persons.push((place, crate::OCCUPATION_ATTR.name, known));
+                out.push(Drawn { place, state, occupation: known, last, job: None });
                 continue;
             }
-            keys.persons.push((place, crate::STATE.name, if retired { RETIRED } else { NOT_SEARCHING }));
-            keys.persons.push((place, crate::OCCUPATION_ATTR.name, occupation));
+            let state = if retired { RETIRED } else { NOT_SEARCHING };
             if as_employee >= employee {
+                out.push(Drawn { place, state, occupation, last, job: None });
                 continue;
             }
-            let hours = if open_unit(&mut d) < part_time { self.part_time_hours } else { self.law.full_time_hours };
+            let hours = if open_unit(d) < part_time { self.part_time_hours } else { self.law.full_time_hours };
             let point = i64::from(self.point_of(hourly * f64::from(hours)));
             let mut class = vec![0; PLACES];
             let places = [
@@ -373,19 +405,62 @@ impl CountryAttachments for Country {
                 (if_labour::class::NOTICE, self.law.notice_days),
                 (if_labour::class::SEVERANCE, self.law.severance_days_a_year),
                 (if_labour::class::REGION, region),
-                (if_labour::class::BAND, self.band(&mut d)),
+                (if_labour::class::BAND, self.band(d)),
             ];
             for (i, v) in places {
                 if let Some(c) = class.get_mut(i) {
                     *c = v;
                 }
             }
-            let terms = self.terms(books, point, class);
+            out.push(Drawn { place, state, occupation, last, job: Some(DrawnJob { point, class }) });
+        }
+        out
+    }
+}
+
+impl Country {
+    /// The terms of a wage point and a class: its amount paid on each monthly date.
+    fn terms(&mut self, books: &mut Books, point: i64, class: Vec<u32>) -> TermsId {
+        if let Some(t) = self.terms.get(&(point, class.clone())) {
+            return *t;
+        }
+        let amount = self.rule.wage_at(point);
+        let mut terms = phx_ledger::opening::plain_terms(
+            self.ccy,
+            vec![Leg::FixedAmount(Money::new(amount, self.ccy))],
+            self.schedule,
+        );
+        terms.class.clone_from(&class);
+        let t = books.ledger.terms.intern(terms);
+        self.terms.insert((point, class), t);
+        t
+    }
+}
+
+impl CountryAttachments for Country {
+    #[clause("GEN.2", "LAB.1", "REP.34", "PTY.3")]
+    fn draw(
+        &mut self,
+        books: &mut Books,
+        h: Drawing<'_>,
+        (ctx, subject): (&OpeningCtx<'_>, Subject),
+        rows: &mut Vec<DrawnRow>,
+        keys: &mut Keys,
+    ) {
+        let mut d = ctx.draws(&JobsStream::DECL, subject);
+        let region = h.household.attr(if_pop::REGION.name);
+        for drawn in self.rule.draw(h.household, h.income, &mut d) {
+            keys.persons.push((drawn.place, crate::LAST_POINT.name, drawn.last));
+            keys.persons.push((drawn.place, crate::STATE.name, drawn.state));
+            keys.persons.push((drawn.place, crate::OCCUPATION_ATTR.name, drawn.occupation));
+            let Some(job) = drawn.job else { continue };
+            let occupation = drawn.occupation;
+            let terms = self.terms(books, job.point, job.class);
             self.drawn.entry(terms).or_insert((region, occupation, 0)).2 += 1;
             rows.push(DrawnRow {
                 line: LineSpec { kind: self.kind, terms, counterparty: Missing::Absent, first: self.first },
                 side: Side::Asset,
-                holder: Holder::Person(place),
+                holder: Holder::Person(drawn.place),
                 balance: Balance::None,
             });
         }

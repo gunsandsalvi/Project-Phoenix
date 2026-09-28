@@ -54,7 +54,7 @@ impl Core {
     /// The household kind's place on the core and among the population's kinds.
     fn household(&self) -> Option<(usize, usize)> {
         let place = self.names.iter().position(|n| *n == "household")?;
-        Some((place, place.checked_sub(usize::from(self.first_agents))?))
+        Some((place, self.household_pop))
     }
 
     /// A household read into its explicit form: its attributes by name from its record, its persons unpacked.

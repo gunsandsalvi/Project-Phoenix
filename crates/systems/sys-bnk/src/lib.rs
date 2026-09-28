@@ -7,7 +7,7 @@ mod consts;
 pub mod credit;
 pub mod households;
 mod opening;
-pub use opening::rate;
+pub use opening::{bank_site, bank_weights, rate};
 pub mod zipf;
 
 use if_credit::kind::CreditKind;

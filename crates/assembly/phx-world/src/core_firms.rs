@@ -257,28 +257,16 @@ fn share_output(drafts: &mut [Draft], snap: &Snapshot, persons: &[(u32, u64)], p
 }
 
 impl Core {
-    /// The firms drawn on the core, of one kind: the mirrored firms of both of the books' tables let go, and every
-    /// country's firms begun by product and region, each with its productivity drawn from its group's spread around
-    /// one, its site drawn among its region's land, an account at a bank drawn by the banks' deposits, its day-zero
-    /// price posted from its own cost and its output the demand that price wins; each country's firms' deposits
-    /// shared over them by their turnover.
+    /// The firms drawn on the core, of one kind: every country's firms begun by product and region, each with its
+    /// productivity drawn from its group's spread around one, its site drawn among its region's land, an account at a
+    /// bank drawn by the banks' deposits, its day-zero price posted from its own cost and its output the demand that
+    /// price wins; each country's firms' deposits shared over them by their turnover.
     ///
     /// # Errors
     /// A primitive the opening reads that the register does not hold, or a product the accounts leave unpriced.
     #[clause("GEN.2", "GEN.13", "FRM.23", "FRM.2", "PTY.5")]
     pub fn open_firms(&mut self, o: &FirmsOpening<'_>) -> Result<(), String> {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
-        for name in ["firm", "small_firm"] {
-            let Some(k) = self.names.iter().position(|n| *n == name) else { continue };
-            self.keys.retain(|(_, key)| usize::from(key.kind()) != k);
-            if let Some(store) = self.kinds.get_mut(k) {
-                let live: Vec<_> = store.parties.live_slots().filter_map(|s| store.parties.at(s)).collect();
-                for r in live {
-                    store.parties.end(r);
-                }
-                store.parties.close_day();
-            }
-        }
         let price_weight = o.register.fixed("SRV.price_weight")?;
         let mut store: KindStore<SystemBacking> =
             KindStore::new(&mut self.space, crate::core::kind_number(firm), AGENT_ROWS, AGENT_ROWS_PER_CHUNK, RECORD)
@@ -327,12 +315,6 @@ impl Core {
         }
         if let Some(k) = self.kinds.get_mut(firm) {
             *k = store;
-        }
-        // The small firms' table is kept, empty and holding no money, so the kinds keep their numbers.
-        if let Some(k) = self.names.iter().position(|n| *n == "small_firm")
-            && let Some(store) = self.kinds.get_mut(k)
-        {
-            *store = KindStore::new(&mut self.space, crate::core::kind_number(k), AGENT_ROWS, AGENT_ROWS_PER_CHUNK, 1);
         }
         Ok(())
     }

@@ -9,7 +9,7 @@ mod state_pension;
 use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_prim};
 use phx_num::{Count, Fixed};
 
-pub use state_pension::{CoveredStream, Declared, PENSIONS, PensionStream, STATE_PENSION, StatePension};
+pub use state_pension::{CoveredStream, Declared, PENSIONS, PensionStream, Pensions, STATE_PENSION, StatePension};
 
 declare_prim! {
     /// The normal pension age by sex, in years.

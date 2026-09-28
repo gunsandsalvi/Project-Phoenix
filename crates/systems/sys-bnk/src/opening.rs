@@ -201,6 +201,32 @@ fn next_date(dates: &ScheduleDates, calendar: &phx_core::Calendar, day: phx_id::
     (due, k)
 }
 
+/// A country's banks: how many, the exponent of the Zipf law fitted to the published concentration of the three and
+/// the five largest, and each bank's share of the banks' assets in parts of a whole.
+#[clause("GEN.2", "GEN.3")]
+#[must_use]
+pub fn bank_weights(c: &OpeningCountry) -> (u32, f64, Vec<u64>) {
+    let c5 = derived(c, "GEN.bank_concentration5") / PERCENT;
+    let c3 = derived(c, "GEN.bank_top3_of_top5") * c5;
+    let (n, a) = zipf::fit(c3, c5);
+    let weights = zipf::shares(n, a)
+        .into_iter()
+        .map(|share| {
+            let Ok(weight) = u64::try_from(whole(share * SHARE_PARTS)) else {
+                violation!(clause = "GEN.2", "a bank's share below nothing");
+            };
+            weight
+        })
+        .collect();
+    (n, a, weights)
+}
+
+/// The site a country's bank is drawn at, by its place among the country's banks.
+pub fn bank_site(ctx: &phx_core::OpeningCtx<'_>, c: &OpeningCountry, k: u32) -> phx_id::TileId {
+    let mut draws = ctx.draws(&OpeningStream::DECL, subject(c.id, SITES, k));
+    c.site(&mut draws)
+}
+
 /// Each country's banks: how many, and each one's share of the banks' assets, from a Zipf law fitted to the
 /// published concentration of the three and the five largest; each sited in the country.
 #[clause("GEN.2", "GEN.3", "PTY.9")]
@@ -230,17 +256,12 @@ impl Contribution for Parties {
     fn contribute(&self, opening: &mut Opening<'_>) {
         let (countries, day) = (opening.countries, opening.day);
         for c in countries {
-            let c5 = derived(c, "GEN.bank_concentration5") / PERCENT;
-            let c3 = derived(c, "GEN.bank_top3_of_top5") * c5;
-            let (n, a) = zipf::fit(c3, c5);
+            let (n, a, weights) = bank_weights(c);
             let mut banks = Vec::new();
-            for (k, share) in (0_u32..).zip(zipf::shares(n, a)) {
+            for (k, weight) in (0_u32..).zip(weights) {
                 let mut draws = opening.ctx.draws(&OpeningStream::DECL, subject(c.id, SITES, k));
                 let site = c.site(&mut draws);
                 let bank = books::of(opening).parties.begin(BANK.name, site, day);
-                let Ok(weight) = u64::try_from(whole(share * SHARE_PARTS)) else {
-                    violation!(clause = "GEN.2", "a bank's share below nothing", bank = bank.get());
-                };
                 banks.push((bank, weight));
             }
             let (b, report) = books::split(opening);

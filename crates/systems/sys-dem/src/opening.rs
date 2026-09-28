@@ -545,12 +545,36 @@ fn person(country: &Country, m: &Member, (d, health, school): (&mut Draws, &mut 
 
 /// A household drawn in a region, before the books hold it: the subject its draws are keyed by, what formed it, its
 /// persons and the means it was drawn.
-struct Formed {
-    subject: phx_rand::Subject,
-    raised: bool,
-    kind: usize,
-    h: Household,
-    drawn: (f64, f64),
+#[derive(Debug)]
+pub struct Formed {
+    pub subject: phx_rand::Subject,
+    pub raised: bool,
+    pub kind: usize,
+    pub h: Household,
+    pub drawn: (f64, f64),
+}
+
+/// A country's households drawn region by region, its persons apportioned over its regions by their land: each
+/// region with its households in their order.
+#[clause("GEN.2", "GEN.3", "POP.1", "POP.2", "PTY.2")]
+#[must_use]
+pub fn draw_country(
+    p: &Prims,
+    register: &Register,
+    (opening_ctx, date): (&phx_core::OpeningCtx<'_>, phx_id::Date),
+    c: &OpeningCountry,
+    kind: &PopKindDecl,
+) -> Vec<(u32, Vec<Formed>)> {
+    let country = Country::of(p, register, c, date);
+    let tiles: Vec<u64> = c.regions.iter().map(|(_, tiles)| len_u64(tiles.len())).collect();
+    let mut lot = opening_ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 0));
+    let shares = apportion(c.people, &tiles, &mut lot);
+    c.regions
+        .iter()
+        .map(|(r, _)| *r)
+        .zip(shares)
+        .map(|(region, people)| (region, draw_region(&country, opening_ctx, (region, people), kind).0))
+        .collect()
 }
 
 /// One region's households formed from its persons, each household's draws keyed by the region and

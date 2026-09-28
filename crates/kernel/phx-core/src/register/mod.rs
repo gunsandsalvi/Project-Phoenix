@@ -589,6 +589,23 @@ impl Register {
         self.decls.iter().find(|d| d.id == id).ok_or_else(|| format!("no primitive `{id}` is declared"))
     }
 
+    /// The handle of a declared primitive, found by its declaration, for a rule built from the register alone.
+    ///
+    /// # Errors
+    /// When no primitive has the declaration's identifier, or it is declared otherwise.
+    pub fn handle<T: PrimType>(&self, decl: &PrimDecl) -> Result<Prim<T>, String> {
+        let Some(i) = self.decls.iter().position(|d| d.id == decl.id) else {
+            return Err(format!("no primitive `{}` is declared", decl.id));
+        };
+        if self.decls.get(i) != Some(decl) || !T::reads(decl.value) {
+            return Err(format!("`{}` is declared otherwise than it is read", decl.id));
+        }
+        let Ok(index) = u32::try_from(i) else {
+            phx_num::capacity_exceeded!("primitives", u32::MAX, i);
+        };
+        Ok(Prim { index, marker: PhantomData })
+    }
+
     fn stored_by_id(&self, id: &str) -> Result<&Stored, String> {
         let Some(i) = self.decls.iter().position(|d| d.id == id) else {
             return Err(format!("no primitive `{id}` is declared"));

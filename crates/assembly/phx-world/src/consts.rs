@@ -101,6 +101,16 @@ pub const RATE_ONE: f64 = 1_000_000_000_000.0;
 pub const SECTORS_WORTH_NOTHING: [usize; 3] = [1, 2, 3];
 /// The balance sheet's sectors by their column, and its instruments and closing real assets by their row, as the
 /// dataset's derivation lays them out.
+/// The kinds of party on the core, in their order, and each one's place: those sited by a tile, then the households.
+pub mod kinds {
+    pub const KINDS: [&str; 6] = ["central_bank", "treasury", "bank", "firm", phx_core::ESTATE_KIND.name, "household"];
+    pub const CENTRAL_BANK: usize = 0;
+    pub const TREASURY: usize = 1;
+    pub const BANK: usize = 2;
+    pub const FIRM: usize = 3;
+    pub const ESTATE: usize = 4;
+    pub const HOUSEHOLD: usize = 5;
+}
 pub mod sheet {
     pub const HOUSEHOLDS: usize = 0;
     pub const FIRMS: usize = 1;
@@ -120,16 +130,6 @@ pub mod sheet {
     pub const FIRMS_EQUITY: usize = 10;
     pub const INSTRUMENTS: usize = 11;
     pub const SECTORS: usize = 5;
-    /// Each kind of party that holds an account: its sector in the balance sheet and the instrument its accounts hold
-    /// there. The central bank issues the money and holds none.
-    pub const ACCOUNTS: [(&str, usize, usize); 6] = [
-        ("household", HOUSEHOLDS, DEPOSITS),
-        ("estate", HOUSEHOLDS, DEPOSITS),
-        ("small_firm", FIRMS, DEPOSITS),
-        ("firm", FIRMS, DEPOSITS),
-        ("bank", BANKS, RESERVES),
-        ("treasury", GOVERNMENT, DEPOSITS),
-    ];
 }
 /// A percentage's whole.
 pub const PERCENT: f64 = 100.0;

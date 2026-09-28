@@ -1,22 +1,19 @@
-//! Jobs on the core. Each job the books' opening drew for a household's person is dealt to one of the core's firms in
+//! Jobs on the core. Each job the opening drew for a household's person is dealt to one of the core's firms in
 //! its region: a region's jobs of an occupation are shared over its firms by the hours their output takes of that
 //! occupation, and dealt to them in an order drawn by lot. Each job is a contract from its firm to the household,
 //! naming the person by its identity and paying the job's wage on its dates. A job whose occupation no firm's way in
 //! its region takes — the armed forces' — is the state's, a contract from its country's treasury until the public
-//! agencies take their staff. The employed are the persons the books drew employed, so the staff is exactly the
-//! employed the population gives.
+//! agencies take their staff. The employed are the persons drawn employed, so the staff is exactly the employed the
+//! population gives.
 
 use std::collections::BTreeMap;
 
 use phx_core::calendar::Calendar;
 use phx_core::{OpeningCountry, Register, StreamDecl, Streams, opening_subject};
-use phx_id::{Day, LineId, PartyKey, Slot};
-use phx_ledger::books::Books;
+use phx_id::{Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::violation;
-use phx_pop::population::Population;
 use phx_rand::float::{floor_to_i64, from_i64, len_u64};
-use phx_store::SystemBacking;
 
 use crate::consts::firm::{JOBS_PURPOSE, OUTPUT, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, PURPOSES, REGION};
 use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_WHEEL_DAYS};
@@ -24,7 +21,7 @@ use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, WAGE};
 use crate::opening::economy::table;
 
-/// A job read from the books: its household, its person, its wage, where its schedule is, its region and occupation.
+/// A job as dealt: its household, its person, its wage, where its schedule is, its region and occupation.
 #[derive(Clone, Copy, Debug)]
 struct Job {
     household: PartyKey,
@@ -60,7 +57,6 @@ type ByRegion = BTreeMap<u32, Vec<(Slot, Vec<f64>)>>;
 /// What the jobs' opening reads besides the core.
 #[derive(Debug)]
 pub struct JobsOpening<'a> {
-    pub books: &'a Books,
     pub register: &'a Register,
     pub countries: &'a [OpeningCountry],
     pub calendar: &'a Calendar,
@@ -93,64 +89,27 @@ pub fn deal(n: u64, weights: &[f64]) -> Vec<u64> {
 }
 
 impl Core {
-    /// The jobs the books hold on employment lines, each read once a line: its wage, its schedule and next date, its
-    /// region and occupation.
-    fn read_jobs(&self, o: &JobsOpening<'_>, family: &mut DatedFamily, household: usize) -> Vec<Job> {
-        let Some(pop_at) = household.checked_sub(usize::from(self.first_agents)) else { return Vec::new() };
-        let ledger = &o.books.ledger;
-        let table = Population::table::<SystemBacking>(o.books.parties.cells(), pop_at);
-        let mut lines: BTreeMap<LineId, (i64, u32, u32, u32, u32)> = BTreeMap::new();
-        let mut jobs = Vec::new();
-        for slot in table.slots() {
-            let Some(key) = self.key(table.party(slot)) else { continue };
-            for word in table.attachments(slot) {
-                let a = phx_pop::person::Attachment::unpack(*word);
-                if ledger.lines.kind_name(a.line) != if_labour::consts::EMPLOYMENT_LINE {
-                    continue;
-                }
-                let read = *lines.entry(a.line).or_insert_with(|| {
-                    let terms = ledger.terms.get(ledger.lines.terms(a.line));
-                    let Some(amount) = terms.legs.iter().find_map(|l| match l {
-                        phx_ledger::algebra::Leg::FixedAmount(m) => Some(m.amt()),
-                        _ => None,
-                    }) else {
-                        violation!(clause = "LAB.1", "a job with no wage", line = a.line.get());
-                    };
-                    let at = |i: usize| terms.class.get(i).copied();
-                    let (Some(occupation), Some(region), Some(hours), Some(band)) = (
-                        at(if_labour::consts::OCCUPATION),
-                        at(if_labour::consts::REGION),
-                        at(if_labour::consts::HOURS),
-                        at(if_labour::consts::BAND),
-                    ) else {
-                        violation!(
-                            clause = "LAB.1",
-                            "a job with no occupation, region, hours or band",
-                            line = a.line.get()
-                        );
-                    };
-                    let (dates, next) = (terms.schedule.dates, ledger.lines.next_due(a.line));
-                    let mut nth = 0_u32;
-                    while dates.nth(o.calendar, nth) < next {
-                        nth += 1;
-                    }
-                    let schedule = u32::try_from(family.schedules.len())
-                        .unwrap_or_else(|_| violation!(clause = "TIME.4", "more schedules than a contract can name"));
-                    family.schedules.push((dates, terms.ccy.index(), terms.payment_order.0));
-                    family.classes.push([occupation, hours, band]);
-                    (amount, schedule, nth, occupation, region)
-                });
-                let (amount, schedule, nth, occupation, region) = read;
-                let phx_pop::person::Holder::Person(place) = a.holder else {
-                    violation!(clause = "LAB.1", "a job held by a household, not a person", line = a.line.get());
-                };
-                let Some(person) = self.person_at(key, place) else {
-                    violation!(clause = "REP.26", "a job held by a person its household does not hold");
-                };
-                jobs.push(Job { household: key, person, amount, schedule, nth, region, occupation });
-            }
+    /// The jobs the opening drew, each with its schedule in the family: its country's monthly dates and its class.
+    fn drawn_jobs(&mut self, o: &JobsOpening<'_>, family: &mut DatedFamily) -> Result<Vec<Job>, String> {
+        let date = o.calendar.date(o.today);
+        let mut jobs = Vec::with_capacity(self.drawn.jobs.len());
+        for j in std::mem::take(&mut self.drawn.jobs) {
+            let Some(c) = o.countries.iter().find(|c| c.id.get() == j.country) else {
+                return Err(format!("a job drawn in country {}, which the world does not hold", j.country));
+            };
+            let schedule = family.schedule_of((c, date), j.class, None);
+            let [occupation, _, _] = j.class;
+            jobs.push(Job {
+                household: j.household,
+                person: j.person,
+                amount: j.amount,
+                schedule,
+                nth: 1,
+                region: j.region,
+                occupation,
+            });
         }
-        jobs
+        Ok(jobs)
     }
 
     /// Each firm's hours a year of each occupation its output takes: its output times its way's hours of the
@@ -225,9 +184,10 @@ impl Core {
         };
         let mut family = self.job_family("LAB.employment", firm, household, o.today);
         let mut public = self.job_family("LAB.public_employment", treasury, household, o.today);
-        let jobs = self.read_jobs(o, &mut family, household);
+        let jobs = self.drawn_jobs(o, &mut family)?;
         public.schedules.clone_from(&family.schedules);
         public.classes.clone_from(&family.classes);
+        public.terms.clone_from(&family.terms);
         let firms = self.firm_hours(o, firm)?;
         let mut groups: BTreeMap<(u32, u32), Vec<usize>> = BTreeMap::new();
         for (i, j) in jobs.iter().enumerate() {

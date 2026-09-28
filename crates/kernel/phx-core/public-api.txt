@@ -1922,6 +1922,7 @@ pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::
 pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>
 pub fn phx_core::register::Register::fixed_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<f64, alloc::string::String>
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms
+pub fn phx_core::register::Register::handle<T: phx_core::register::values::PrimType>(&self, &phx_core::register::PrimDecl) -> core::result::Result<phx_core::register::Prim<T>, alloc::string::String>
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::products(&self, &str) -> core::result::Result<&[phx_core::products::ProductEntry], alloc::string::String>
@@ -3731,6 +3732,7 @@ pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::
 pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>
 pub fn phx_core::register::Register::fixed_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<f64, alloc::string::String>
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms
+pub fn phx_core::register::Register::handle<T: phx_core::register::values::PrimType>(&self, &phx_core::register::PrimDecl) -> core::result::Result<phx_core::register::Prim<T>, alloc::string::String>
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>
 pub fn phx_core::register::Register::products(&self, &str) -> core::result::Result<&[phx_core::products::ProductEntry], alloc::string::String>
