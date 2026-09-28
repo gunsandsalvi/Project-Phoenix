@@ -25,6 +25,21 @@ pub fn phx_market::audit::Prices::check(&self, &phx_core::family::FamilyCtx<'_>,
 pub fn phx_market::audit::Prices::decl(&self) -> phx_core::family::FamilyDecl
 pub fn phx_market::audit::Prices::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
 pub const phx_market::audit::PRICES: phx_core::family::FamilyDecl
+pub mod phx_market::between
+pub struct phx_market::between::Between
+pub phx_market::between::Between::sales: alloc::vec::Vec<phx_market::meet::Sale>
+pub phx_market::between::Between::unserved: alloc::vec::Vec<(phx_id::ids::PartyKey, i64)>
+pub struct phx_market::between::Bid
+pub phx_market::between::Bid::buyer: phx_id::ids::PartyKey
+pub phx_market::between::Bid::limit: i64
+pub phx_market::between::Bid::lot: i64
+pub phx_market::between::Bid::units: i64
+pub struct phx_market::between::Offer
+pub phx_market::between::Offer::lot: i64
+pub phx_market::between::Offer::price: i64
+pub phx_market::between::Offer::seller: phx_id::ids::PartyKey
+pub phx_market::between::Offer::units: i64
+pub fn phx_market::between::between(&[phx_market::between::Offer], &[phx_market::between::Bid], i64, &mut phx_rand::draws::Draws) -> phx_market::between::Between
 pub mod phx_market::bilateral
 pub enum phx_market::bilateral::Answer
 pub phx_market::bilateral::Answer::Declined

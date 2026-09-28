@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use phx_id::{MarketId, PartyId};
 use phx_macros::clause;
 use phx_num::{Missing, PriceRaw, capacity_exceeded, violation};
@@ -76,7 +74,13 @@ fn arc_key(tag: u128, owner: u64, rank: i64) -> u128 {
 
 /// The steps of one side at one node and price, gathered into one arc: which orders they came from, what each asked
 /// and its priority.
-type Gathered = BTreeMap<(usize, Side, i64), Vec<(usize, i128, Missing<u32>)>>;
+type Gathered = Vec<(StepKey, Vec<Member>)>;
+
+/// A step's node, side and price.
+type StepKey = (usize, Side, i64);
+
+/// A step's order, what it asked and its priority.
+type Member = (usize, i128, Missing<u32>);
 
 /// The simplex's nodes for a call node: where offers and incoming edges arrive and where bids and outgoing edges
 /// leave, the same node unless a capacity lies between them.
@@ -259,16 +263,21 @@ struct Built {
 /// sink back to the source at a cost of one a unit, so among flows of equal surplus the one trading most wins.
 fn build(call: &NetworkCall<'_>) -> Built {
     let ends = ends(call.nodes);
-    let mut gathered: Gathered = BTreeMap::new();
+    // Each step keyed by its node, side and price, gathered in the keys' order, each key's steps in the orders'.
+    let mut steps: Vec<(StepKey, Member)> = Vec::new();
     for (i, placed) in call.orders.iter().enumerate() {
         for step in &placed.order.steps {
-            gathered.entry((placed.node, placed.order.side, step.limit.raw())).or_default().push((
-                i,
-                i128::from(step.qty),
-                placed.order.priority,
+            steps.push((
+                (placed.node, placed.order.side, step.limit.raw()),
+                (i, i128::from(step.qty), placed.order.priority),
             ));
         }
     }
+    steps.sort_by_key(|(k, (i, _, _))| (*k, *i));
+    let gathered: Gathered = steps
+        .chunk_by(|a, b| a.0 == b.0)
+        .filter_map(|g| Some((g.first()?.0, g.iter().map(|x| x.1).collect())))
+        .collect();
     let offered: i128 =
         gathered.iter().filter(|((_, s, _), _)| *s == Side::Sell).flat_map(|(_, v)| v).map(|m| m.1).sum();
     let scale = offered + 1;
@@ -422,7 +431,7 @@ pub fn network_call(call: &NetworkCall<'_>, start: Missing<&Basis>, lot: &mut Dr
     let solution = solve(&built.network, start);
     let flow = |a: usize| at(&solution.flow, a);
     let mut fills = vec![0_i128; call.orders.len()];
-    for (a, members) in built.gathered.values().enumerate() {
+    for (a, (_, members)) in built.gathered.iter().enumerate() {
         for (m, got) in members.iter().zip(ration(i128::from(flow(a)), members, call.ration, lot)) {
             if let Some(f) = fills.get_mut(m.0) {
                 *f += got;
@@ -455,14 +464,14 @@ pub fn zone_matches(call: &NetworkCall<'_>, cleared: &NetworkCleared) -> Vec<Vec
             out.push(Vec::new());
             continue;
         };
-        let mut net: BTreeMap<PartyId, i128> = BTreeMap::new();
+        let mut each: Vec<(PartyId, i128)> = Vec::new();
         for (placed, fill) in call.orders.iter().zip(&cleared.fills) {
             if placed.node == v && *fill > 0 {
                 let signed = match placed.order.side {
                     Side::Buy => i128::from(*fill),
                     Side::Sell => -i128::from(*fill),
                 };
-                *net.entry(placed.order.party).or_insert(0) += signed;
+                each.push((placed.order.party, signed));
             }
         }
         for (e, f) in call.edges.iter().zip(&cleared.flows) {
@@ -473,12 +482,17 @@ pub fn zone_matches(call: &NetworkCall<'_>, cleared: &NetworkCleared) -> Vec<Vec
                 violation!(clause = "MKT.11", "a line that carried flow with no owner to trade it", edge = e.key);
             };
             if e.to == v {
-                *net.entry(owner).or_insert(0) -= i128::from(*f);
+                each.push((owner, -i128::from(*f)));
             }
             if e.from == v {
-                *net.entry(owner).or_insert(0) += i128::from(*f);
+                each.push((owner, i128::from(*f)));
             }
         }
+        each.sort_by_key(|(p, _)| *p);
+        let net: Vec<(PartyId, i128)> = each
+            .chunk_by(|a, b| a.0 == b.0)
+            .filter_map(|g| Some((g.first()?.0, g.iter().map(|x| x.1).sum())))
+            .collect();
         out.push(pair_net(&net, price));
     }
     out

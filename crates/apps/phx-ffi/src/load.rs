@@ -19,7 +19,8 @@ use phx_ledger::algebra::{
     Amount as DueAmount, DefaultDefinition, DueBuf, Leg, PaymentOrder, Reference, Repayment, Schedule, Seniority,
     ShapePlan, Termination, Terms, due_by_shape, shape_of, shape_plan,
 };
-use phx_market::meet::{Buyer, GoodsLeg, Meeting, Place, Stall, Tastes, meet};
+use phx_market::between::{Bid, Offer, between};
+use phx_market::meet::{Buyer, GoodsLeg, Meeting, Place, Sale, Stall, Tastes, meet};
 use phx_market::retail::{Want, Weights};
 use phx_num::MaybeI64;
 use phx_num::Money;
@@ -89,6 +90,8 @@ const STALL_SLACK_DEN: u64 = 10;
 /// Posted prices, in money a unit: the least, and the span above it a firm's record draws from.
 const PRICE_FLOOR: i64 = 200;
 const PRICE_RANGE: i64 = 1_000;
+/// The spread of a firm's limit for an input between firms above the least price.
+const PRICE_SPAN: u64 = 1_000;
 /// The farthest a seller stands from its region's buyers, in km.
 const MAX_KM: u64 = 20;
 /// One buyer in so many spends money rather than buying a unit, and what it spends.
@@ -447,8 +450,8 @@ const PREFETCH_AHEAD: usize = 8;
 /// A contract's next due when it has none: closed, or on terms with no dates.
 const NEVER: u32 = u32::MAX;
 
-/// A worker's meeting, its buyers and the goods its sales sold, kept from day to day.
-type Kept = (Meeting, Vec<Buyer>, Vec<Sold>);
+/// A worker's meeting, its buyers, the goods its sales sold and the sales, kept from day to day.
+type Kept = (Meeting, Vec<Buyer>, Vec<Sold>, Vec<Sale>);
 
 /// A handler's agenda: its kind's rows by the phase of their schedule, each bucket in slot order; a day's rows are its
 /// bucket's, as the schedule hands them.
@@ -708,7 +711,7 @@ fn choices(
     for (b, (batch, bufs)) in markets.chunks(w).zip(bufs.chunks_mut(w)).enumerate() {
         let jobs: Vec<_> = batch.iter().zip(bufs).zip(meetings.iter_mut()).enumerate().collect();
         let seen: &GoodsLoad = goods;
-        let done: Vec<u64> = pool.map_items(jobs, |(k, (((stalls, places), buf), (meeting, buyers, sold)))| {
+        let done: Vec<u64> = pool.map_items(jobs, |(k, (((stalls, places), buf), (meeting, buyers, sold, sales)))| {
             let p = b * w + k;
             let (first, n) = piece(count, products, p);
             buyers.clear();
@@ -722,11 +725,43 @@ fn choices(
                     place: to_u32(b % regions),
                 })
             }));
-            let tastes = Tastes { key: taste, day, substep: to_u32(index_u64(p)).to_le_bytes()[0] };
-            meet(meeting, None, (stalls, places, buyers), (1, MEETING_WEIGHTS), tastes, &lots);
+            // A firm buys a good between firms, region by region at the sellers' posted prices; everything else is bought
+            // at the posted-price meeting.
+            sales.clear();
+            let rounds = if holds && seen.is_goods(to_u32(index_u64(p))) {
+                for (r, place) in (0_u32..).zip(places.iter()) {
+                    let offers: Vec<Offer> = place
+                        .near
+                        .iter()
+                        .filter_map(|(at, _)| stalls.get(to_usize(u64::from(*at))))
+                        .map(|st| Offer { seller: st.seller, price: st.price, units: st.units, lot: 1 })
+                        .collect();
+                    let bids: Vec<Bid> = buyers
+                        .iter()
+                        .filter(|b| b.place == r)
+                        .map(|b| {
+                            let limit = PRICE_FLOOR + i64::try_from(mix64(b.subject) % PRICE_SPAN).unwrap_or(0);
+                            let units = match b.want {
+                                Want::Units(q) => q,
+                                Want::Money(m) => m / limit,
+                            };
+                            Bid { buyer: b.party, limit, units, lot: 1 }
+                        })
+                        .collect();
+                    let subject = Subject::new(SubjectTag::Market, index_u64(p) * regions + u64::from(r));
+                    let mut d = Draws::new(lot_key, subject, day, 0);
+                    sales.extend(between(&offers, &bids, 1, &mut d).sales);
+                }
+                1
+            } else {
+                let tastes = Tastes { key: taste, day, substep: to_u32(index_u64(p)).to_le_bytes()[0] };
+                meet(meeting, None, (stalls, places, buyers), (1, MEETING_WEIGHTS), tastes, &lots);
+                sales.extend(meeting.sales());
+                meeting.rounds
+            };
             // A good's units go with the sale, a service is used as it is bought.
             sold.clear();
-            for sale in meeting.sales() {
+            for sale in sales.iter() {
                 let leg = seen.seller_unit(sale.seller.slot().get()).map(|unit| GoodsLeg {
                     unit: Denom::units(unit),
                     reason: PURCHASED_GOODS,
@@ -741,10 +776,10 @@ fn choices(
                     sold.push(Sold { leg: f, paid: sale.paid });
                 }
             }
-            meeting.rounds
+            rounds
         });
         rounds += done.iter().sum::<u64>();
-        for (_, _, sold) in meetings.iter().take(batch.len()) {
+        for (_, _, sold, _) in meetings.iter().take(batch.len()) {
             goods.add_sales(sold);
         }
     }

@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use phx_core::contribution::apportion;
 use phx_id::PartyId;
 use phx_macros::clause;
@@ -144,20 +142,25 @@ pub(crate) fn ration(
     match rule {
         Ration::ProRata => pro_rata(share, &at_price.iter().map(|s| s.1).collect::<Vec<_>>(), lot),
         Ration::Priority => {
-            let mut ranks: BTreeMap<u32, Vec<usize>> = BTreeMap::new();
-            for (i, (_, _, p)) in at_price.iter().enumerate() {
-                let Missing::Present(rank) = p else {
-                    violation!(clause = "MKT.3", "an order with no priority in a market that rations by priority");
-                };
-                ranks.entry(*rank).or_default().push(i);
-            }
+            // The steps by rank, highest priority first, each rank's in the order they came.
+            let mut ranked: Vec<(u32, usize)> = at_price
+                .iter()
+                .enumerate()
+                .map(|(i, (_, _, p))| match p {
+                    Missing::Present(rank) => (*rank, i),
+                    Missing::Absent => {
+                        violation!(clause = "MKT.3", "an order with no priority in a market that rations by priority")
+                    }
+                })
+                .collect();
+            ranked.sort_unstable();
             let mut out = vec![0_i128; at_price.len()];
             let mut left = share;
-            for members in ranks.values() {
-                let asked: Vec<i128> = members.iter().filter_map(|i| at_price.get(*i)).map(|s| s.1).collect();
+            for members in ranked.chunk_by(|a, b| a.0 == b.0) {
+                let asked: Vec<i128> = members.iter().filter_map(|(_, i)| at_price.get(*i)).map(|s| s.1).collect();
                 let total: i128 = asked.iter().sum();
                 let given = if left >= total { asked } else { pro_rata(left, &asked, lot) };
-                for (i, g) in members.iter().zip(given) {
+                for ((_, i), g) in members.iter().zip(given) {
                     if let Some(o) = out.get_mut(*i) {
                         *o = g;
                     }
@@ -218,23 +221,32 @@ fn common(a: i128, b: i128) -> i128 {
 /// other is matched. What no counterparty's lots can meet is cut from its fills, as many on each side, so the call
 /// still trades as much as it buys.
 fn pair(orders: &[Order], fills: &mut [i128], price: PriceRaw) -> Vec<Match> {
-    let mut net: BTreeMap<PartyId, (i128, i128)> = BTreeMap::new();
-    for (o, f) in orders.iter().zip(fills.iter()) {
-        let signed = match o.side {
-            Side::Buy => *f,
-            Side::Sell => -*f,
-        };
-        let e = net.entry(o.party).or_insert((0, i128::from(o.lot)));
-        e.0 += signed;
-        if i128::from(o.lot) > e.1 {
-            e.1 = i128::from(o.lot);
-        }
-    }
+    // Each party's net bought, sold negative, and its largest lot, in the parties' order.
+    let mut each: Vec<(PartyId, i128, i128)> = orders
+        .iter()
+        .zip(fills.iter())
+        .map(|(o, f)| {
+            let signed = match o.side {
+                Side::Buy => *f,
+                Side::Sell => -*f,
+            };
+            (o.party, signed, i128::from(o.lot))
+        })
+        .collect();
+    each.sort_by_key(|(p, _, _)| *p);
+    let net: Vec<(PartyId, i128, i128)> = each
+        .chunk_by(|a, b| a.0 == b.0)
+        .filter_map(|g| {
+            let party = g.first()?.0;
+            let lot = g.iter().map(|x| x.2).reduce(|a, b| if b > a { b } else { a })?;
+            Some((party, g.iter().map(|x| x.1).sum(), lot))
+        })
+        .collect();
     let side = |buying: bool| -> Vec<(PartyId, i128, i128)> {
         let mut v: Vec<(PartyId, i128, i128)> = net
             .iter()
-            .filter(|(_, (q, _))| if buying { *q > 0 } else { *q < 0 })
-            .map(|(p, (q, lot))| (*p, q.abs(), *lot))
+            .filter(|(_, q, _)| if buying { *q > 0 } else { *q < 0 })
+            .map(|(p, q, lot)| (*p, q.abs(), *lot))
             .collect();
         v.sort_by_key(|(p, _, lot)| (core::cmp::Reverse(*lot), *p));
         v
@@ -263,7 +275,8 @@ fn pair(orders: &[Order], fills: &mut [i128], price: PriceRaw) -> Vec<Match> {
     // What stayed unpaired leaves the fills of the orders on its party's net side, the last first.
     for (party, left, _) in buyers.iter().chain(&sellers).filter(|(_, left, _)| *left > 0) {
         let mut left = *left;
-        let buying = net.get(party).is_some_and(|(q, _)| *q > 0);
+        let buying =
+            net.binary_search_by_key(party, |(p, _, _)| *p).ok().and_then(|i| net.get(i)).is_some_and(|x| x.1 > 0);
         for (o, f) in orders.iter().zip(fills.iter_mut()).rev() {
             if left == 0 {
                 break;
@@ -278,10 +291,11 @@ fn pair(orders: &[Order], fills: &mut [i128], price: PriceRaw) -> Vec<Match> {
     out
 }
 
-/// Parties' net purchases (positive) and sales (negative) at one price paired in the order of their parties.
-pub(crate) fn pair_net(net: &BTreeMap<PartyId, i128>, price: PriceRaw) -> Vec<Match> {
-    let mut buyers: Vec<(PartyId, i128)> = net.iter().filter(|(_, q)| **q > 0).map(|(p, q)| (*p, *q)).collect();
-    let mut sellers: Vec<(PartyId, i128)> = net.iter().filter(|(_, q)| **q < 0).map(|(p, q)| (*p, -*q)).collect();
+/// Parties' net purchases (positive) and sales (negative) at one price, one a party in the parties' order, paired in
+/// that order.
+pub(crate) fn pair_net(net: &[(PartyId, i128)], price: PriceRaw) -> Vec<Match> {
+    let mut buyers: Vec<(PartyId, i128)> = net.iter().filter(|(_, q)| *q > 0).copied().collect();
+    let mut sellers: Vec<(PartyId, i128)> = net.iter().filter(|(_, q)| *q < 0).map(|(p, q)| (*p, -*q)).collect();
     let (mut b, mut s) = (0, 0);
     let mut out = Vec::new();
     while let (Some(buyer), Some(seller)) = (buyers.get_mut(b), sellers.get_mut(s)) {

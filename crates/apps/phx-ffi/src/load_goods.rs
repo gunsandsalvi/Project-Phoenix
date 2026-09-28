@@ -178,7 +178,7 @@ impl GoodsLoad {
         self.unit_of.get(to_usize(u64::from(region * self.products + product))).copied().unwrap_or(u16::MAX)
     }
 
-    fn is_goods(&self, product: u32) -> bool {
+    pub fn is_goods(&self, product: u32) -> bool {
         u64::from(product) * THOUSAND < u64::from(self.products) * GOODS_SHARE
     }
 

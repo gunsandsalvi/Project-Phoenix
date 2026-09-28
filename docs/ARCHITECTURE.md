@@ -1945,6 +1945,13 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
     the leaving alone for a unit leaving the chain.
   - `capacity` is a holder's units of a kind, each at its condition's efficiency, at a zone or wherever they stand;
     a way's capacity is the least over its kinds of that over what it needs a unit (CAP.9).
+- **The posted meeting between firms** (`phx_market::between`): the sellers' offers are sorted once into price levels,
+  each level's offers with units left leading it; the buyers come in an order drawn by lot, each step of a buyer's,
+  its highest limit first, taking from the cheapest level at or below its limit, the level's offers in an order drawn
+  by lot for the step, in quantities whole in both parties' lots. A level sold out is passed by every later step. The
+  sales are the posted-price meeting's `Sale`s, money pro rata to the price's lot, and make their flows as those do.
+- **Calls** (`phx_market::call`, `coupled_call`) meet as before over their orders sorted by price point. Their
+  grouping by priority rank, by party and by node, side and price is over sorted buffers, in the order the maps gave.
 - **Labour matching** (`phx_market::hiring`), a step a day:
   - `Standing` groups the open vacancies by region and occupation, each group by the skill it asks, least first, so a
     seeker's reach is a prefix of its group.
@@ -1959,7 +1966,7 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
     listed first, and every other offer's job returns.
   - The hires go on to become employment contracts where the world applies them.
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel, settlement,
-  facts, goods, capital, posted-price meeting or labour matching.
+  facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
   its three sustained cores, never below the wall; page faults per day stand for allocation during the day.
 
@@ -1970,6 +1977,7 @@ month through these kernels:
 - purchases at the posted-price meeting, a product's buyers against its sellers' stalls (price, a good's free stock or
   a service's 1.3 times the product's demand spread evenly, a few km from their region's buyers), products side by
   side, one kept `Meeting` a worker, each sale a money flow and, for a good, a goods leg covering the seller's units;
+  a firm buys a good between firms instead, region by region, at a limit drawn for it;
 - goods (`load_goods.rs`), in stocks sharded by the firms' netting ranges, each range's worker writing its own:
   - each goods firm holds its product and two inputs at the opening;
   - after settlement each covered sale is delivered, used up by a household or held by a firm at what it paid, or

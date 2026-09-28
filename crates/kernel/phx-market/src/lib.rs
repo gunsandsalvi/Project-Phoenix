@@ -4,6 +4,7 @@
 pub mod administered;
 pub mod admission;
 pub mod audit;
+pub mod between;
 pub mod bilateral;
 pub mod book;
 pub mod call;
