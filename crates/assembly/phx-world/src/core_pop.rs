@@ -240,7 +240,16 @@ impl Core {
         }
         let left: Vec<Person> = h.persons.into_iter().filter(|p| !p.gone).collect();
         if left.is_empty() {
-            self.end_household(key);
+            let sited = match decl.sited_by {
+                phx_num::Missing::Present(i) => decl.attrs.get(i),
+                phx_num::Missing::Absent => None,
+            };
+            let region = sited.and_then(|a| h.attrs.iter().find(|(n, _)| *n == a.item.name).map(|(_, v)| *v));
+            let country = region.and_then(|r| ctx.regions.get(usize::try_from(r).ok()?).copied());
+            let Some(country) = country else {
+                violation!(clause = "PTY.5", "an ended household sited in no country", party = id.get());
+            };
+            self.end_household(key, (country, day));
             record.ended += 1;
             return;
         }
@@ -269,9 +278,23 @@ impl Core {
         }
     }
 
-    /// A household no one is left in ends: its contracts close and its slot is released after the day.
+    /// A household no one is left in ends: its contracts close, what its account holds passes to an estate that
+    /// opens at the same bank, and its slot is released after the day.
     #[clause("PTY.9")]
-    fn end_household(&mut self, key: PartyKey) {
+    fn end_household(&mut self, key: PartyKey, (country, day): (CountryId, Day)) {
+        let place = usize::from(key.kind());
+        let account = self.kinds.get(place).and_then(|k| k.accounts.as_ref()).and_then(|a| {
+            let (bank, balance) = (a.bank.get(key.slot())?, a.balance.get(key.slot())?);
+            let pending = a.pending.get(key.slot())?;
+            Some((bank, balance + pending))
+        });
+        if let Some((bank, money)) = account.filter(|(_, m)| *m != 0) {
+            self.open_estate((bank, money), (country, day));
+            if let Some(a) = self.kinds.get_mut(place).and_then(|k| k.accounts.as_mut()) {
+                a.balance.set(key.slot(), 0);
+                a.pending.set(key.slot(), 0);
+            }
+        }
         for family in &mut self.families {
             let Some(side) = family.store.kinds.iter().position(|k| *k == key.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, key.slot()).collect();
@@ -279,7 +302,6 @@ impl Core {
                 family.store.close(edge);
             }
         }
-        let place = usize::from(key.kind());
         if let Some(Some(p)) = self.persons.get_mut(place) {
             p.clear(&mut self.space, key.slot());
         }

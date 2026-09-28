@@ -122,8 +122,9 @@ pub mod sheet {
     pub const SECTORS: usize = 5;
     /// Each kind of party that holds an account: its sector in the balance sheet and the instrument its accounts hold
     /// there. The central bank issues the money and holds none.
-    pub const ACCOUNTS: [(&str, usize, usize); 5] = [
+    pub const ACCOUNTS: [(&str, usize, usize); 6] = [
         ("household", HOUSEHOLDS, DEPOSITS),
+        ("estate", HOUSEHOLDS, DEPOSITS),
         ("small_firm", FIRMS, DEPOSITS),
         ("firm", FIRMS, DEPOSITS),
         ("bank", BANKS, RESERVES),

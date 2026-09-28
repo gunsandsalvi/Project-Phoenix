@@ -65,3 +65,32 @@ pub const LC_0_63: Check = live_check! {
     from_step: "S1.23",
     check: core_persons_live,
 };
+
+/// Days an estate may wait for its country's next business day: a weekend and a holiday on either side.
+const ESTATE_WAIT_DAYS: u32 = 5;
+
+/// Every estate the core opened settles on its country's next business day, paying what it holds, and ends.
+fn core_estates_settle(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let today = w.today();
+    if let Some((e, c, opened)) = core.estates.iter().find(|(_, _, d)| d.get() + ESTATE_WAIT_DAYS < today.get()) {
+        return Outcome::Fail(format!(
+            "an estate of country {} opened on day {} is still waiting on day {} (slot {})",
+            c.get(),
+            opened.get(),
+            today.get(),
+            e.slot().get()
+        ));
+    }
+    if core.days.iter().all(|d| d.estates == 0) {
+        return Outcome::NotYet("no estate on the core has settled yet");
+    }
+    Outcome::Pass
+}
+
+pub const LC_0_64: Check = live_check! {
+    id: "LC-0-64",
+    title: "Every estate on the core settles on its country's next business day and ends",
+    from_step: "S1.23",
+    check: core_estates_settle,
+};

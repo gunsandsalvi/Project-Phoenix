@@ -56,6 +56,11 @@ pub struct Core {
     pub household_decl: Option<phx_pop::kind::PopKindDecl>,
     /// The persons the households held when the core opened.
     pub persons_opened: u64,
+    /// Each country's treasury, and the estates waiting to settle: each with its country and the day it opened.
+    pub treasuries: Vec<Option<PartyKey>>,
+    pub estates: Vec<(PartyKey, phx_id::CountryId, phx_id::Day)>,
+    /// The next identity the core hands a party it begins.
+    pub next_id: u64,
     pub pop_days: Vec<(phx_id::Day, crate::core_pop::PopDay)>,
 }
 
@@ -128,6 +133,7 @@ impl Core {
         keys.sort_unstable_by_key(|(id, _)| *id);
         let bank_kind = names.iter().position(|n| *n == "bank").map(kind_number);
         let persons_opened = persons.iter().flatten().map(Persons::held).sum();
+        let next_id = keys.last().map_or(1, |(id, _)| id.get() + 1);
         Core {
             space,
             first_agents: parties.first_cell_place(),
@@ -144,6 +150,9 @@ impl Core {
             hazards: Vec::new(),
             household_decl: None,
             persons_opened,
+            treasuries: Vec::new(),
+            estates: Vec::new(),
+            next_id,
             pop_days: Vec::new(),
         }
     }
@@ -268,6 +277,7 @@ impl Core {
     ) {
         let (issuers, treasuries) = self.institutions(books, countries);
         self.issuers = issuers;
+        self.treasuries.clone_from(&treasuries);
         let Some(household) = self.names.iter().position(|n| *n == "household") else { return };
         let Some(treasury) = self.names.iter().position(|n| *n == "treasury") else { return };
         let Some(pop_at) = household.checked_sub(usize::from(self.first_agents)) else { return };

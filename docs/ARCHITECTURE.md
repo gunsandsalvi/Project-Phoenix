@@ -2003,7 +2003,10 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   outcomes applied in process order. Its gone persons leave from the last place down, each one's contracts closing and
   the contracts naming a later place moving up one; its newborns join it; one no one is left in ends, its contracts
   closing; a household changed is booked again for every process from the next day. Contracts name the payee's
-  person by its place (`Due::person`).
+  person by its place (`Due::person`). A household that ends holding money passes it to an estate the core begins
+  (under an identity the core hands out after the books' last) at the same bank, a succession, not a payment; on its
+  country's next business day the estate pays what it holds to its country's treasury, the destination the law names
+  where no heir is drawn, and ends after that day's settlement.
 - **A country's balance sheet** (`opening::sheet`): its group's matrices moved by its drawn profile. Households' and
   firms' debt, the government's, the banks' deposits, capital and reserves are the drawn levels; who holds each is
   the group's split; the dataset's closures balance the rest (the central bank holds government paper for its

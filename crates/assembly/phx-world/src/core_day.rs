@@ -44,6 +44,7 @@ impl Row for Due {
 
 /// The reasons the core's flows are made for, by their code.
 pub const PENSION: u8 = 1;
+pub const ESTATE: u8 = 2;
 
 /// A family of dated contracts: its store, the reason its flows carry, and the schedules its contracts' dates are
 /// read from, each with its currency and the payment order its payer gives the family's flows.
@@ -63,6 +64,8 @@ pub struct CoreDay {
     pub settled: u64,
     pub failed: u64,
     pub committed: u64,
+    /// The estates settled and ended.
+    pub estates: u64,
 }
 
 /// The day's working state, kept across days so a day allocates nothing once the heaviest has sized it.
@@ -113,17 +116,83 @@ impl DatedFamily {
 }
 
 impl Core {
+    /// An estate begun with a household's money at its bank, to settle on its country's next business day.
+    #[clause("PTY.9")]
+    pub(crate) fn open_estate(&mut self, (bank, money): (u32, i64), (country, day): (CountryId, Day)) {
+        let Some(place) = self.names.iter().position(|n| *n == phx_core::ESTATE_KIND.name) else {
+            violation!(clause = "PTY.9", "an estate with no kind to hold it");
+        };
+        let id = phx_id::PartyId::new(self.next_id);
+        self.next_id += 1;
+        let Some(store) = self.kinds.get_mut(place) else { return };
+        let party = store.begin(id, &[], Some(phx_core::store::Opening { bank, balance: money }));
+        let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), party.slot());
+        let at = self.keys.partition_point(|(i, _)| *i < id);
+        self.keys.insert(at, (id, key));
+        self.estates.push((key, country, day));
+    }
+
+    /// Each estate opened before today, on its country's business day, pays what it holds to the party the law names
+    /// where no heir is drawn — its country's treasury — and is ended after the day's settlement.
+    #[clause("PTY.9", "POP.15")]
+    fn estates_pay(&mut self, day: Day, calendar: &Calendar, out: &mut Vec<Flow>) -> Vec<PartyKey> {
+        let mut settling = Vec::new();
+        let treasury = self.names.iter().position(|n| *n == crate::consts::HEIRLESS_DESTINATION);
+        for (estate, country, opened) in &self.estates {
+            if *opened >= day || !calendar.is_business(*country, day) {
+                continue;
+            }
+            let Some(to) = treasury.and_then(|t| {
+                self.treasuries
+                    .get(usize::from(country.get()))
+                    .copied()
+                    .flatten()
+                    .filter(|k| usize::from(k.kind()) == t)
+            }) else {
+                violation!(
+                    clause = "POP.15",
+                    "an estate's country with no heirless destination",
+                    country = country.get()
+                );
+            };
+            let held = self
+                .kinds
+                .get(usize::from(estate.kind()))
+                .and_then(|k| k.accounts.as_ref())
+                .and_then(|a| Some(a.balance.get(estate.slot())? + a.pending.get(estate.slot())?));
+            if let Some(amount) = held.filter(|m| *m > 0) {
+                out.push(Flow {
+                    payer: *estate,
+                    payee: to,
+                    amount,
+                    source: estate.slot().get(),
+                    denomination: Denom::money(country.get()),
+                    reason: ESTATE,
+                    order: 0,
+                });
+            }
+            settling.push(*estate);
+        }
+        settling
+    }
+
     /// Runs the core's day: every family's dues made flows, then each currency's flows settled on its country's
     /// business day or committed on its closed day.
     #[clause("SET.4", "SET.6", "MON.5")]
     pub fn run_day(&mut self, day: Day, calendar: &Calendar, streams: &Streams, order: &StreamDecl) -> CoreDay {
         let mut work = std::mem::take(&mut self.work);
         work.flows.reset(1);
-        let mut record = CoreDay { day, flows: 0, settled: 0, failed: 0, committed: 0 };
+        let mut record = CoreDay { day, flows: 0, settled: 0, failed: 0, committed: 0, estates: 0 };
         for family in &mut self.families {
             if let Some(buf) = work.flows.chunks_mut().first_mut() {
                 record.flows += family.dues(day, calendar, &mut work.due, buf);
             }
+        }
+        let mut settling = Vec::new();
+        if let Some(buf) = work.flows.chunks_mut().first_mut() {
+            let before = buf.len();
+            settling = self.estates_pay(day, calendar, buf);
+            record.flows += phx_rand::float::len_u64(buf.len() - before);
         }
         let high: Vec<u32> = self.kinds.iter().map(|k| k.parties.high_water()).collect();
         let ranges = Ranges::new(self.range_bits, &high);
@@ -155,6 +224,20 @@ impl Core {
             }
         }
         self.work = work;
+        for estate in settling {
+            let empty = self.kinds.get(usize::from(estate.kind())).and_then(|k| k.accounts.as_ref()).is_some_and(|a| {
+                a.balance.get(estate.slot()).unwrap_or(0) == 0 && a.pending.get(estate.slot()).unwrap_or(0) == 0
+            });
+            if empty {
+                self.estates.retain(|(e, _, _)| *e != estate);
+                if let Some(k) = self.kinds.get_mut(usize::from(estate.kind()))
+                    && let Some(r) = k.parties.at(estate.slot())
+                {
+                    k.parties.end(r);
+                }
+                record.estates += 1;
+            }
+        }
         for k in &mut self.kinds {
             k.parties.close_day();
         }
