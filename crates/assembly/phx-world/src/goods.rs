@@ -1047,8 +1047,8 @@ impl World {
     }
 
     /// The opening's snapshot of the goods' markets: each good the opening holds, in the market its product
-    /// meets in, marked at its product's opening price for a lot, and that price its public series' one print, from
-    /// which every method's first outlook is that price.
+    /// meets in, marked for a lot at its product's world price at the price level of the country it stands in, and that
+    /// price its public series' one print, from which every method's first outlook is that price.
     #[clause("GEN.5", "VAL.10", "MKT.12")]
     pub(crate) fn snapshot_markets(&mut self, day: Day) -> Result<(), String> {
         let prices = self.register.table1("GDS.opening_price")?.values().to_vec();
@@ -1056,6 +1056,13 @@ impl World {
             i64::try_from(phx_num::price::pow10(match self.register.decl_by_id("GDS.opening_price")?.value {
                 phx_core::ValueType::Table1 { exp, .. } => exp,
                 _ => return Err("`GDS.opening_price` is no table of one axis".to_owned()),
+            }))
+            .map_err(|e| e.to_string())?,
+        );
+        let level_places = phx_rand::float::from_i64(
+            i64::try_from(phx_num::price::pow10(match self.register.decl_by_id("GDS.price_level")?.value {
+                phx_core::ValueType::Table1 { exp, .. } => exp,
+                _ => return Err("`GDS.price_level` is no table of one axis".to_owned()),
             }))
             .map_err(|e| e.to_string())?,
         );
@@ -1086,9 +1093,12 @@ impl World {
                 continue;
             };
             let Some(per_unit) = prices.get(usize::from(key.product)) else { continue };
+            let Missing::Present(country) = self.geo().zone_country(key.zone) else { continue };
+            let level = self.register.table1_in("GDS.price_level", country)?.at(i64::from(key.product));
+            let level = phx_rand::float::from_i64(level.map_err(|e| format!("{e:?}"))?) / level_places;
             let lot = phx_rand::float::from_i64(self.goods_frame.base(key.product));
             let Some(price) =
-                phx_rand::float::floor_to_i64((phx_rand::float::from_i64(*per_unit) / scale * lot).round())
+                phx_rand::float::floor_to_i64((phx_rand::float::from_i64(*per_unit) / scale * level * lot).round())
             else {
                 return Err(format!("product {}'s opening price beyond a price", key.product));
             };

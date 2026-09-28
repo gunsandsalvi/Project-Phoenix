@@ -27,7 +27,7 @@ use phx_ledger::opening::{currency, hold, key, whole};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_pop::population::Population;
-use phx_rand::float::{floor_to_i64, from_i64, len_u64};
+use phx_rand::float::{floor_to_i64, from_i64};
 use phx_store::SystemBacking;
 
 use crate::consts::{DAYS_A_WEEK, FILED_PURPOSES, METHODS, PRODUCTS_PURPOSE, RETURNS};
@@ -37,6 +37,8 @@ use crate::{FilingPrims, OpeningStream, SMALL_FIRM};
 /// Each firm with the product it makes, for the deposits' rights and the stocks.
 pub const PRODUCTS_DRAWN: &str = "FRM.firm_products";
 const FIRMS: &str = "FRM.firms";
+/// The hours of each occupation a way takes a unit.
+const HOURS: &str = "TEC.labour";
 
 /// The opening's instructions for stocks: capital on both sides, since they open the books.
 pub const REASON: ReasonDecl =
@@ -76,6 +78,7 @@ impl Contribution for Declared {
 struct Firm {
     party: PartyId,
     industry: usize,
+    size: u64,
     agent: Option<(usize, Slot)>,
 }
 
@@ -114,19 +117,19 @@ fn firms(books: &Books, population: &Population, c: &OpeningCountry) -> Vec<Firm
     let index =
         |i: i64| usize::try_from(i).unwrap_or_else(|_| violation!(clause = "TEC.4", "a firm of no industry", at = i));
     let mut out = Vec::new();
-    for (party, _) in drawn(books, FIRMS, c) {
+    for (party, size) in drawn(books, FIRMS, c) {
         let Missing::Present(i) = books.parties.fact(party, <Industry as FactDef>::ITEM.name) else {
             violation!(clause = "TEC.4", "a firm with no industry", firm = party.get());
         };
-        out.push(Firm { party, industry: index(i), agent: None });
+        out.push(Firm { party, industry: index(i), size, agent: None });
     }
     let k = small_kind(population);
     let industry_at = attr_at(population, k, if_firm::known::INDUSTRY.name);
     let table = Population::table::<SystemBacking>(books.parties.cells(), k);
-    for (party, _) in drawn(books, SMALL_FIRMS, c) {
+    for (party, size) in drawn(books, SMALL_FIRMS, c) {
         let slot = books.parties.row(party).1;
         let industry = index(i64::from(table.attr(slot, industry_at)));
-        out.push(Firm { party, industry, agent: Some((k, slot)) });
+        out.push(Firm { party, industry, size, agent: Some((k, slot)) });
     }
     out
 }
@@ -151,42 +154,53 @@ fn made_by(products: &[ProductEntry], industries: &[String], industry: usize) ->
     (0_u16..).zip(products).filter(|(_, p)| &p.industry == name).map(|(i, _)| i).collect()
 }
 
-/// Each of the products' deposits on the ground: in the country's land where it has any, else anywhere.
-fn deposit_weights(geo: &GeoState, products: &[ProductEntry], made: &[u16], c: &OpeningCountry) -> Vec<u64> {
-    let count = |here: bool| -> Vec<u64> {
-        made.iter()
-            .map(|p| {
-                let resource = products.get(usize::from(*p)).and_then(|e| match e.extracts {
-                    Missing::Present(r) => Some(r),
-                    Missing::Absent => None,
-                });
-                len_u64(
-                    geo.deposits
-                        .iter()
-                        .filter(|d| Some(d.resource) == resource && (!here || c.sites.contains(&d.tile)))
-                        .count(),
-                )
-            })
-            .collect()
+/// The hours an industry's products take of its firms, each product's part of the industry's output over its opening
+/// price times the hours its way takes a unit: none for a product whose resource the country's land holds no deposit of,
+/// unless it holds none of any.
+fn product_weights(
+    (geo, register): (&GeoState, &Register),
+    (products, made): (&[ProductEntry], &[u16]),
+    (shares, price): (&phx_core::register::values::Table1, &[f64]),
+    c: &OpeningCountry,
+) -> Vec<f64> {
+    let hours = |p: u16| {
+        let share = shares.at(i64::from(p)).map_or(0.0, |v| from_i64(v) / places(register, crate::PRODUCT_SHARE.id));
+        let unit = price.get(usize::from(p)).copied().unwrap_or(0.0);
+        if unit > 0.0 { share / unit * way_of(register, c, p).hours } else { 0.0 }
     };
-    let local = count(true);
-    if local.iter().any(|w| *w > 0) { local } else { count(false) }
+    let here = |p: u16| match products.get(usize::from(p)).map(|e| e.extracts) {
+        Some(Missing::Present(r)) => geo.deposits.iter().any(|d| d.resource == r && c.sites.contains(&d.tile)),
+        _ => true,
+    };
+    let all: Vec<f64> = made.iter().map(|p| hours(*p)).collect();
+    let local: Vec<f64> = made.iter().zip(&all).map(|(p, h)| if here(*p) { *h } else { 0.0 }).collect();
+    if local.iter().any(|w| *w > 0.0) { local } else { all }
 }
 
-/// A pick weighted by whole weights.
-fn weighted(weights: &[u64], draws: &mut phx_rand::Draws) -> Option<usize> {
-    let total: u64 = weights.iter().sum();
-    if total == 0 {
-        return None;
+/// An industry's firms, by their places and persons, each dealt one of its products by their places in `weights`: the
+/// largest first, those of a size in an order drawn by lot, each to the product whose persons dealt fall furthest below
+/// its weight's part of all dealt with it, so the products' parts of the industry's persons are its weights'.
+fn deal(firms: &[(usize, u64)], weights: &[f64], lot: &mut phx_rand::Draws) -> Vec<(usize, usize)> {
+    let mut order: Vec<(usize, u64)> = firms.to_vec();
+    for i in (1..order.len()).rev() {
+        let Ok(j) = usize::try_from(phx_rand::below_u64(lot, phx_rand::float::len_u64(i + 1))) else { continue };
+        order.swap(i, j);
     }
-    let mut left = phx_rand::below_u64(draws, total);
-    for (i, w) in weights.iter().enumerate() {
-        if left < *w {
-            return Some(i);
+    order.sort_by_key(|(_, size)| std::cmp::Reverse(*size));
+    let total: f64 = weights.iter().sum();
+    let mut dealt = vec![0.0; weights.len()];
+    let mut all = 0.0;
+    let mut out = Vec::with_capacity(order.len());
+    for (firm, size) in order {
+        all += phx_rand::float::from_u64(size);
+        let short = |k: usize| weights.get(k).map_or(0.0, |w| w / total * all) - dealt.get(k).copied().unwrap_or(0.0);
+        let Some(k) = (0..weights.len()).reduce(|a, b| if short(b) > short(a) { b } else { a }) else { continue };
+        if let Some(d) = dealt.get_mut(k) {
+            *d += phx_rand::float::from_u64(size);
         }
-        left -= w;
+        out.push((firm, k));
     }
-    None
+    out
 }
 
 fn subject(c: &OpeningCountry, purpose: u32, ordinal: usize) -> phx_rand::Subject {
@@ -194,11 +208,14 @@ fn subject(c: &OpeningCountry, purpose: u32, ordinal: usize) -> phx_rand::Subjec
     opening_subject(u32::from(c.id.get()) * FILED_PURPOSES + purpose, o)
 }
 
-/// The product each firm makes: its industry's one, or, of an industry of several, one drawn by the deposits of each
-/// on the ground, since what it extracts is what the ground gives.
+/// The product each firm makes: its industry's one, or, of an industry of several, one dealt by the hours each takes of
+/// the industry's firms where the country's land holds its resource, so the industry's output is shared among its
+/// products as the country's is.
 #[clause("FRM.1", "TEC.4", "GEN.2", "GEN.3")]
 #[derive(Debug)]
-pub struct Products;
+pub struct Products {
+    pub shares: phx_core::Prim<phx_core::register::values::Table1>,
+}
 
 impl Contribution for Products {
     fn name(&self) -> &'static str {
@@ -224,23 +241,41 @@ impl Contribution for Products {
         let (register, countries) = (opening.register, opening.countries);
         let (products, industries) = catalogue(register);
         for c in countries {
+            let price = prices(register, c);
+            let shares = self.shares.get(register, c.id);
             let mut lot = opening.ctx.draws(&OpeningStream::DECL, subject(c, PRODUCTS_PURPOSE, 0));
             let (books, population, geo, _) = parts(opening);
             let list = firms(books, population, c);
             let mut chosen: Vec<(PartyId, u64)> = Vec::with_capacity(list.len());
-            // An industry's products and their weights by the country's deposits, read once for all its firms.
-            let mut by_industry: std::collections::BTreeMap<_, (Vec<u16>, Vec<u64>)> =
-                std::collections::BTreeMap::new();
-            for f in &list {
-                let (made, weights) = by_industry.entry(f.industry).or_insert_with(|| {
-                    let made = made_by(&products, &industries, f.industry);
-                    let weights = if made.len() == 1 { Vec::new() } else { deposit_weights(geo, &products, &made, c) };
-                    (made, weights)
-                });
-                let pick = match made.as_slice() {
-                    [one] => Some(*one),
-                    _ => weighted(weights, &mut lot).and_then(|i| made.get(i)).copied(),
-                };
+            // Each industry's firms, in the order they are listed.
+            let mut by_industry: std::collections::BTreeMap<usize, Vec<usize>> = std::collections::BTreeMap::new();
+            for (i, f) in list.iter().enumerate() {
+                by_industry.entry(f.industry).or_default().push(i);
+            }
+            let mut picks: Vec<Option<u16>> = vec![None; list.len()];
+            for (industry, members) in &by_industry {
+                let made = made_by(&products, &industries, *industry);
+                if let [one] = made.as_slice() {
+                    for i in members {
+                        if let Some(x) = picks.get_mut(*i) {
+                            *x = Some(*one);
+                        }
+                    }
+                    continue;
+                }
+                let weights = product_weights((geo, register), (&products, &made), (shares, &price), c);
+                if !weights.iter().any(|w| *w > 0.0) {
+                    violation!(clause = "TEC.4", "an industry none of whose products can be made", at = *industry);
+                }
+                let sizes: Vec<(usize, u64)> =
+                    members.iter().filter_map(|i| list.get(*i).map(|f| (*i, f.size))).collect();
+                for (i, k) in deal(&sizes, &weights, &mut lot) {
+                    if let Some(x) = picks.get_mut(i) {
+                        *x = made.get(k).copied();
+                    }
+                }
+            }
+            for (f, pick) in list.iter().zip(picks) {
                 let Some(product) = pick else {
                     violation!(clause = "TEC.4", "an industry none of whose products can be made", at = f.industry);
                 };
@@ -259,9 +294,10 @@ impl Contribution for Products {
     }
 }
 
-/// What a country's way for a product uses a unit: each product's units, and the days a unit takes.
+/// What a country's way for a product uses a unit: each product's units, the hours of work, and the days a unit takes.
 struct Way {
     inputs: Vec<(u16, f64)>,
+    hours: f64,
     lead: f64,
 }
 
@@ -275,7 +311,9 @@ fn places(register: &Register, id: &str) -> f64 {
 }
 
 fn way_of(register: &Register, c: &OpeningCountry, product: u16) -> Way {
-    let (Ok(inputs), Ok(lead)) = (register.table2_in("TEC.inputs", c.id), register.table1("TEC.lead_time")) else {
+    let (Ok(inputs), Ok(labour), Ok(lead)) =
+        (register.table2_in("TEC.inputs", c.id), register.table2_in(HOURS, c.id), register.table1("TEC.lead_time"))
+    else {
         violation!(clause = "TEC.13", "a country's ways unread", country = c.id.get());
     };
     let column = |t: &Table2, row: i64| t.at(row, i64::from(product)).map_or(0.0, from_i64);
@@ -288,17 +326,26 @@ fn way_of(register: &Register, c: &OpeningCountry, product: u16) -> Way {
             (a > 0.0).then(|| u16::try_from(*r).ok().map(|q| (q, a)))?
         })
         .collect();
+    let hours = labour.rows().iter().map(|r| column(labour, *r)).sum::<f64>() / places(register, HOURS);
     let lead = lead.at(i64::from(product)).map_or(0.0, from_i64);
-    Way { inputs, lead }
+    Way { inputs, hours, lead }
 }
 
-/// The opening price of a unit of each product, in its currency's smallest units.
-fn prices(register: &Register) -> Vec<f64> {
-    let Ok(t) = register.table1(crate::OPENING_PRICE) else {
-        violation!(clause = "GEN.5", "the products' opening prices unread");
+/// The opening price of a unit of each product in a country, in its currency's smallest units: its world price at its
+/// price level there.
+fn prices(register: &Register, c: &OpeningCountry) -> Vec<f64> {
+    let (Ok(world), Ok(level)) = (register.table1(crate::OPENING_PRICE), register.table1_in(crate::PRICE_LEVEL, c.id))
+    else {
+        violation!(clause = "GEN.5", "the products' opening prices unread", country = c.id.get());
     };
-    let scale = places(register, crate::OPENING_PRICE);
-    t.values().iter().map(|v| from_i64(*v) / scale).collect()
+    let (scale, per) = (places(register, crate::OPENING_PRICE), places(register, crate::PRICE_LEVEL));
+    let axis: Vec<i64> = world.axis().to_vec();
+    axis.iter()
+        .map(|p| match (world.at(*p), level.at(*p)) {
+            (Ok(w), Ok(l)) => from_i64(w) / scale * from_i64(l) / per,
+            _ => violation!(clause = "GEN.5", "a product with no opening price", product = *p),
+        })
+        .collect()
 }
 
 fn storable(products: &[ProductEntry], p: u16) -> bool {
@@ -353,9 +400,9 @@ impl Contribution for Stocks {
     fn contribute(&self, opening: &mut Opening<'_>) {
         let (register, countries, date) = (opening.register, opening.countries, opening.date);
         let (products, _) = catalogue(register);
-        let price = prices(register);
         let cover = phx_rand::float::from_u64(self.prims.decide.cover_days.shared(register).get());
         for c in countries {
+            let price = prices(register, c);
             let (books, population, geo, report) = parts(opening);
             let chosen = drawn(books, PRODUCTS_DRAWN, c);
             let list = firms(books, population, c);
@@ -483,7 +530,6 @@ impl Contribution for Filed {
 
     fn contribute(&self, opening: &mut Opening<'_>) {
         let (register, countries, day) = (opening.register, opening.countries, opening.day);
-        let price = prices(register);
         let Ok(m) = crate::decide::Management::compile(&self.prims.decide, register) else {
             violation!(clause = "FRM.5", "the firms' management unread at the opening");
         };
@@ -492,6 +538,7 @@ impl Contribution for Filed {
             violation!(clause = "VAL.7", "the switching types unread at the opening");
         };
         for c in countries {
+            let price = prices(register, c);
             let mut returns = opening.ctx.draws(&OpeningStream::DECL, subject(c, RETURNS, 0));
             let mut method_lot = opening.ctx.draws(&OpeningStream::DECL, subject(c, METHODS, 0));
             let hurdle = self.prims.required_return.shared(register).clone();
@@ -500,13 +547,20 @@ impl Contribution for Filed {
             let (books, population, _, _) = parts(opening);
             let chosen = drawn(books, PRODUCTS_DRAWN, c);
             let list = firms(books, population, c);
-            // Labour's share of what the country's firms add, as its wages were drawn from.
             let labour_share = phx_ledger::opening::derived(c, "GEN.labour_share") / crate::consts::PERCENT;
+            let mut ways: std::collections::BTreeMap<u16, Way> = std::collections::BTreeMap::new();
+            let mut filing: Vec<Filing<'_>> = Vec::with_capacity(list.len());
             for (f, (_, product)) in list.iter().zip(&chosen) {
                 let Ok(p) = u16::try_from(*product) else { continue };
-                let way = way_of(register, c, p);
+                let way = ways.entry(p).or_insert_with(|| way_of(register, c, p));
+                let materials: f64 =
+                    way.inputs.iter().map(|(q, a)| a * price.get(usize::from(*q)).copied().unwrap_or(0.0)).sum();
+                filing.push((f, p, staff(books, f.party), materials));
+            }
+            let productivity = productivity(&filing, &ways, &price, labour_share);
+            for (f, p, (members, hours, wages), materials) in filing {
+                let Some(way) = ways.get(&p) else { continue };
                 let lot = FilingPrims::lot(register, p);
-                let (members, hours, wages) = staff(books, f.party);
                 let required = hurdle.draw(&mut returns);
                 let method = phx_rand::below_u64(&mut method_lot, methods);
                 let switching = phx_rand::below_u64(&mut method_lot, switching_types);
@@ -519,14 +573,12 @@ impl Contribution for Filed {
                 if let Some(r) = floor_to_i64(f64::round(required * crate::consts::FIXED_SCALE)) {
                     facts.push((<RequiredReturn as FactDef>::ITEM.name, r));
                 }
-                let materials: f64 =
-                    way.inputs.iter().map(|(q, a)| a * price.get(usize::from(*q)).copied().unwrap_or(0.0)).sum();
                 let added = price.get(usize::from(p)).copied().unwrap_or(0.0) - materials;
-                if members > 0.0 && hours > 0.0 && added > 0.0 {
+                if members > 0.0 && hours > 0.0 && added > 0.0 && way.hours > 0.0 {
                     let wage = wages / (hours * weeks_a_month);
-                    // A firm's filed output is what its wage bill pays for at labour's share of what a unit adds, so
-                    // a firm that pays more makes more an hour, and its accounts show the rest of what it adds.
-                    let hours_a_unit = labour_share * added / wage;
+                    // A firm's hours a unit are its way's at the country's productivity, and fewer as it pays more,
+                    // since a wage is what an hour's work is worth to the firm that pays it.
+                    let hours_a_unit = way.hours * productivity / wage;
                     let per_day = hours / DAYS_A_WEEK / hours_a_unit;
                     let cost = lot * (materials + hours_a_unit * wage);
                     let snapshot = lot * price.get(usize::from(p)).copied().unwrap_or(0.0);
@@ -552,6 +604,30 @@ impl Contribution for Filed {
             }
         }
     }
+}
+
+/// A firm as its accounts are filed: it, its product, its staff's members, hours a week and wages a month, and what its
+/// way's inputs cost a unit at the opening's prices.
+type Filing<'a> = (&'a Firm, u16, (f64, f64, f64), f64);
+
+/// The value an hour of the ways' work adds in a country, at which its firms' wage bill is labour's share of what they
+/// add: the wage-weighted mean over its firms of each way's value added over its hours, times labour's share.
+fn productivity(
+    filing: &[Filing<'_>],
+    ways: &std::collections::BTreeMap<u16, Way>,
+    price: &[f64],
+    labour_share: f64,
+) -> f64 {
+    let (mut adds, mut bill) = (0.0, 0.0);
+    for (_, p, (_, hours, wages), materials) in filing {
+        let Some(way) = ways.get(p) else { continue };
+        let added = price.get(usize::from(*p)).copied().unwrap_or(0.0) - materials;
+        if *hours > 0.0 && added > 0.0 && way.hours > 0.0 {
+            adds += wages * added / way.hours;
+            bill += wages;
+        }
+    }
+    labour_share * adds / bill
 }
 
 /// A firm's fact as the opening wrote it: a large firm's from its row, an agent's from its positions.

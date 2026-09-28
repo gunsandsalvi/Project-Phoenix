@@ -485,3 +485,19 @@ owner = "FRM"
 first_read = "S1.03"
 source = "ILOSTAT employment by status in employment and ISIC section (employers and own-account workers); OECD Structural and Demographic Business Statistics, enterprises by activity and size class"
 status = "sourced: the size tilt of the emerging and developing groups is the OECD's reporting economies', agriculture's assumed flat over the size classes (F-093)"
+
+[[row]]
+id = "FRM.product_share"
+what = "each group's products' parts of their industries' output: the mix an industry of several products deals its firms"
+owner = "FRM"
+first_read = "S1.15"
+source = "OECD ICIO 2019"
+status = "sourced: each mining industry's output shared between its two resources by their users (F-091)"
+
+[[row]]
+id = "GDS.price_level"
+what = "each group's products' price levels over GDP's: a product's opening price over its world price"
+owner = "GDS"
+first_read = "S1.15"
+source = "World Bank ICP 2021 price level indices by expenditure heading"
+status = "sourced: energy carriers at world prices, the ICP publishing no heading for energy alone"

@@ -60,42 +60,42 @@ name = "structures"
 kind = "physical"
 price_exp = 0
 source = "measured"
-source_ref = "A cent of structures at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+source_ref = "A cent of structures at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, a unit new costing at the opening the price level in its country of the product it is bought as (GDS.price_level)."
 
 [[unit]]
 name = "transport equipment"
 kind = "physical"
 price_exp = 0
 source = "measured"
-source_ref = "A cent of transport equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+source_ref = "A cent of transport equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, a unit new costing at the opening the price level in its country of the product it is bought as (GDS.price_level)."
 
 [[unit]]
 name = "ICT equipment"
 kind = "physical"
 price_exp = 0
 source = "measured"
-source_ref = "A cent of ICT equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+source_ref = "A cent of ICT equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, a unit new costing at the opening the price level in its country of the product it is bought as (GDS.price_level)."
 
 [[unit]]
 name = "other machinery"
 kind = "physical"
 price_exp = 0
 source = "measured"
-source_ref = "A cent of other machinery and equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+source_ref = "A cent of other machinery and equipment at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, a unit new costing at the opening the price level in its country of the product it is bought as (GDS.price_level)."
 
 [[unit]]
 name = "cultivated assets"
 kind = "physical"
 price_exp = 0
 source = "measured"
-source_ref = "A cent of cultivated biological resources at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+source_ref = "A cent of cultivated biological resources at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, a unit new costing at the opening the price level in its country of the product it is bought as (GDS.price_level)."
 
 [[unit]]
 name = "intellectual property"
 kind = "physical"
 price_exp = 0
 source = "measured"
-source_ref = "A cent of intellectual property products at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, one of which bought a unit new at the opening."
+source_ref = "A cent of intellectual property products at world-average prices, the unit TEC.capital counts a way's plant in (OECD Table 9A's net stocks turned into quantities by the ICP 2021 price level of the kind's heading), so a holding reads straight against a way's needs; priced whole in a currency's smallest units, a unit new costing at the opening the price level in its country of the product it is bought as (GDS.price_level)."
 
 
 [[unit]]
@@ -151,7 +151,7 @@ name = "energy carriers"
 kind = "physical"
 price_exp = 4
 source = "measured"
-source_ref = "The quantity of energy carriers one US cent bought at world-average prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities by the ICP 2021 price level of its heading. Its price, near a currency's smallest unit, is carried to four places beyond it."
+source_ref = "The quantity of energy carriers one US cent bought at world prices in 2022, the volume national accounts measure an aggregate in: the input-output tables' euros turned into dollars at the euro's rate and into quantities at world prices, as the fuels they are made from are priced, the ICP publishing no price level for energy alone. Its price, near a currency's smallest unit, is carried to four places beyond it."
 [[unit]]
 name = "capital goods"
 kind = "physical"

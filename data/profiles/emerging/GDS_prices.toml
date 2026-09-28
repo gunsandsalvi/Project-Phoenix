@@ -1,0 +1,10 @@
+# The emerging group's products' price levels (spec GEN.5, GDS.1), derived by tools/data/derive_tec.py;
+# never edited by hand.
+
+[[primitive]]
+id = "GDS.price_level"
+kind = "ENDOWMENT"
+owner = "GDS"
+source = "measured"
+source_ref = "Each product's price at the opening over its world price (axis: the products' places): its ICP 2021 price level over GDP's, the geometric mean over its headings' (World Bank ICP 2021, fetched 2026-09-27), or one over GDP's for a product priced at world prices, as the extracted products are; the median over the economies the ICP reports of the 17 of the World Bank's emerging income groups the 2019 inter-country input-output tables report (ARG, BLR, BRA, CHN, COL, IDN, JOR, KAZ, MEX, MYS, PER, PHL, THA, TUR, UKR, VNM, ZAF). A currency's smallest unit buys a US cent's worth at world-average prices, a GDP at purchasing power parity, so a unit that costs a US cent at world-average prices costs its price level over GDP's."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [1.395704, 1.726208, 1.726208, 1.726208, 1.726208, 1.396479, 1.243765, 1.472293, 1.726208, 1.765884, 1.000000, 0.900901, 1.000000, 1.371257, 0.864956, 1.000000, 0.682196, 0.653011, 0.918610], outside = "refuse" }

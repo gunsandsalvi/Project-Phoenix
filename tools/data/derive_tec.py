@@ -12,8 +12,10 @@ economies the sources report for it; what the group's economies lack is named in
 
     python3 tools/data/derive_tec.py
 
-Writes data/shared/TEC.toml (the products and what extraction takes from a deposit) and
-data/profiles/<level>/TEC.toml (the group's ways).
+Writes data/shared/TEC.toml (the products and what extraction takes from a deposit),
+data/profiles/<level>/TEC.toml (the group's ways), data/profiles/<level>/FRM_products.toml (each product's part of
+its industry's output, which a firm of an industry of several products is dealt its product by) and
+data/profiles/<level>/GDS_prices.toml (each product's price level over GDP's, which its opening price is carried by).
 """
 import json
 from pathlib import Path
@@ -31,6 +33,8 @@ YEAR = 2019
 UNIT_YEAR = 2022
 MIN_COUNTRIES = 10
 EXP = 9
+# The places a product's part of its industry's output and its price level are written to.
+SHARE_EXP = 6
 WEEKS = 52
 CENTS = 100
 # Kilograms in a tonne, the extracted products' world prices being quoted by the tonne.
@@ -42,8 +46,8 @@ LEAD_SEASON = 120
 TONNES_PER_BARREL = 1 / 7.33
 
 # The products: name, industry, the ICIO industries whose output they aggregate, the ICP headings their price level is
-# read from (none: priced at world prices, as traded commodities are), storable, delivered as made, the deposit
-# resource extracted.
+# read from (none: priced at world prices, as traded commodities are, and energy carriers as the fuels they are made
+# from, the ICP publishing no heading for energy alone), storable, delivered as made, the deposit resource extracted.
 PRODUCTS = [
     ("crops and livestock", "agriculture", ["A01_02", "A03"], ["1101100"], True, False, None),
     ("metal ore", "mining", ["B07_08"], [], True, False, 0),
@@ -54,7 +58,7 @@ PRODUCTS = [
     ("consumer goods", "consumer goods manufacturing", ["C13T15", "C31T33"], ["1103000", "1105000"], True, False, None),
     ("materials", "materials manufacturing", ["C16", "C17_18", "C20", "C21", "C22", "C23", "C24"], ["1501300"],
      True, False, None),
-    ("energy carriers", "energy", ["C19", "D"], ["1000000"], True, False, None),
+    ("energy carriers", "energy", ["C19", "D"], [], True, False, None),
     ("capital goods", "capital goods manufacturing", ["C25", "C26", "C27", "C28", "C29", "C30"], ["1501100"],
      True, False, None),
     ("water and waste services", "utilities", ["E"], ["1000000"], False, True, None),
@@ -68,6 +72,8 @@ PRODUCTS = [
     ("health and care", "health", ["Q"], ["9080000"], False, True, None),
     ("personal services", "personal services", ["R", "S"], ["9140000"], False, True, None),
 ]
+# The ICP's heading for GDP, whose price level is the economy's.
+GDP_HEADING = "1000000"
 # Products the ways leave out, paid for otherwise: finance by fees and interest (BNK), real estate by rents (HSG),
 # public administration by taxes (TRS), households' own employment and extraterritorial bodies.
 LEFT_OUT = ["K", "L", "O", "T"]
@@ -165,6 +171,28 @@ def extracted_weight(t: pd.DataFrame, p) -> float:
     mine = mine_of(p)
     users = t.loc[mine, :]
     return float(sum(users[c] * taken_share(c, p[6]) for c in t.columns) / users.sum())
+
+
+def output_shares(t: pd.DataFrame) -> np.ndarray:
+    """Each product's part of its industry's output: an extracted product's the part its resource's users take of its
+    mining industry's output, and every other product all of its industry's."""
+    output = t.sum(axis=0)
+    value = np.array([sum(float(output[c]) for c in p[2] if c in output.index)
+                      * (extracted_weight(t, p) if p[6] is not None else 1.0) for p in PRODUCTS])
+    return by_industry(value)
+
+
+def relative_levels(pl: pd.Series) -> np.ndarray:
+    """Each product's price level over the economy's GDP's: what a unit costs in the currency a GDP at purchasing power
+    parity is counted in, the quantity a US cent buys at world-average prices."""
+    gdp = pl[GDP_HEADING] / 100.0
+    return np.array([product_level(pl, p[3]) / gdp for p in PRODUCTS])
+
+
+def by_industry(value: np.ndarray) -> np.ndarray:
+    """Each product's value over its industry's."""
+    total = {ind: sum(v for v, q in zip(value, PRODUCTS) if q[1] == ind) for ind in {p[1] for p in PRODUCTS}}
+    return np.array([v / total[p[1]] if total[p[1]] > 0 else 0.0 for v, p in zip(value, PRODUCTS)])
 
 
 def economy_ways(t: pd.DataFrame, pl: pd.Series, deflator: float, unit_dollars: np.ndarray):
@@ -391,7 +419,8 @@ def write_level(level: str, members: dict, m: dict) -> None:
     tables, ilo, oecd = (m["sources"][k] for k in ("icio", "ilo_activity", "oecd_nad"))
     unit_note = (f"per unit of output: a unit is a kilogram of an extracted product and otherwise what one US cent bought "
                  f"at world-average prices in {UNIT_YEAR}, each product's dollars of {YEAR} carried to {UNIT_YEAR} by "
-                 f"the United States' GDP deflator and turned into quantities by its ICP 2021 price level")
+                 f"the United States' GDP deflator and turned into quantities by its ICP 2021 price level, energy "
+                 f"carriers' at world prices as the fuels they are made from, the ICP publishing no level for energy")
     names = lambda cs: ", ".join(sorted(cs))
     inputs = median([w["inputs"] for w in members.values()])
     lab = {c: w for c, w in members.items() if not np.all(np.isnan(w["labour"]))}
@@ -440,6 +469,33 @@ def write_level(level: str, members: dict, m: dict) -> None:
         f"{{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
         + ", ".join(num(land if i == 0 else 0.0) for i in range(len(PRODUCTS))) + "], outside = \"refuse\" }")
     (PROFILES / level / "TEC.toml").write_text("\n".join(lines) + "\n")
+    shares = by_industry(median([w["shares"] for w in members.values()]))
+    ref = (f"Each product's part of its industry's output (axis: the products' places): the median over the "
+           f"{len(members)} economies of the World Bank's {level} income groups the {YEAR} inter-country input-output "
+           f"tables report ({names(members)}), each renormalised over its industry ({tables['title']}, fetched "
+           f"{tables['fetched']}); an extracted product's is the part its resource's users take of its mining "
+           f"industry's output, every other product is all of its industry's.")
+    frm = [f"# The {level} group's products' parts of their industries' output (spec GEN.2, FRM.1), derived by",
+           "# tools/data/derive_tec.py; never edited by hand.", "", "[[primitive]]", 'id = "FRM.product_share"',
+           'kind = "ENDOWMENT"', 'owner = "FRM"', f'source = "{thin(len(members))}"', f"source_ref = {json.dumps(ref)}",
+           f"value = {{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
+           + ", ".join(num(v, SHARE_EXP) for v in shares) + "], outside = \"refuse\" }"]
+    (PROFILES / level / "FRM_products.toml").write_text("\n".join(frm) + "\n")
+    levels = median([w["levels"] for w in members.values()])
+    icp = m["sources"]["prices"]
+    ref = (f"Each product's price at the opening over its world price (axis: the products' places): its ICP 2021 price "
+           f"level over GDP's, the geometric mean over its headings' (World Bank ICP 2021, fetched {icp['fetched']}), or "
+           f"one over GDP's for a product priced at world prices, as the extracted products are; the median over the "
+           f"economies the ICP reports of the {len(members)} of the World Bank's {level} income groups the {YEAR} inter-country input-output "
+           f"tables report ({names(members)}). A currency's smallest unit buys a US cent's worth at world-average "
+           f"prices, a GDP at purchasing power parity, so a unit that costs a US cent at world-average prices costs "
+           f"its price level over GDP's.")
+    gds = [f"# The {level} group's products' price levels (spec GEN.5, GDS.1), derived by tools/data/derive_tec.py;",
+           "# never edited by hand.", "", "[[primitive]]", 'id = "GDS.price_level"', 'kind = "ENDOWMENT"',
+           'owner = "GDS"', f'source = "{thin(len(members))}"', f"source_ref = {json.dumps(ref)}",
+           f"value = {{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
+           + ", ".join(num(v, SHARE_EXP) for v in levels) + "], outside = \"refuse\" }"]
+    (PROFILES / level / "GDS_prices.toml").write_text("\n".join(gds) + "\n")
 
 
 def main() -> None:
@@ -470,7 +526,8 @@ def main() -> None:
                                           hours[iso3][2] if iso3 in hours else None,
                                           ratios.get(iso3, scaled.get(level_of.get(iso3), fallback)))
         ways[iso3] = {"inputs": inputs, "labour": labour, "capital": capital, "capital_own": own,
-                      "land": land_per_unit(t, made, land[iso3]) if iso3 in land.index else np.nan}
+                      "land": land_per_unit(t, made, land[iso3]) if iso3 in land.index else np.nan,
+                      "shares": output_shares(t), "levels": relative_levels(pls.loc[iso3])}
     write_shared(prices, m)
     for level in ["developed", "emerging", "developing"]:
         members = {c: w for c, w in ways.items() if level_of.get(c) == level}

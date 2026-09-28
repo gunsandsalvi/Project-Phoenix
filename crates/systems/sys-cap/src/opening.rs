@@ -32,6 +32,8 @@ const SMALL_FIRMS: &str = "FRM.small_firms";
 const SMALL_FIRM: &str = "small_firm";
 /// Each large firm with the structures it holds at the opening, whose owners stand in for the landlords.
 pub const STRUCTURES_HELD: &str = "CAP.structures";
+/// Each product's price at the opening over its world price, by country.
+const PRICE_LEVEL: &str = "GDS.price_level";
 /// The technology the firms' plant per hour worked is read from.
 const PRODUCTS: &str = "TEC.products";
 const CAPITAL: &str = "TEC.capital";
@@ -176,6 +178,27 @@ impl Contribution for Plant {
     }
 }
 
+/// What a unit of each kind costs new in a country: the price level there of the product it is bought as.
+fn price_levels(register: &phx_core::Register, c: &OpeningCountry) -> Vec<f64> {
+    let (Ok(bought), Ok(level), Ok(decl)) =
+        (register.table1(crate::BOUGHT_AS.id), register.table1_in(PRICE_LEVEL, c.id), register.decl_by_id(PRICE_LEVEL))
+    else {
+        violation!(clause = "GEN.5", "the plant's price levels unread", country = c.id.get());
+    };
+    let phx_core::ValueType::Table1 { exp, .. } = decl.value else {
+        violation!(clause = "NUM.3", "a price level that is no table of one axis");
+    };
+    let scale = libm::pow(crate::consts::TEN, f64::from(exp));
+    bought
+        .values()
+        .iter()
+        .map(|p| match level.at(*p) {
+            Ok(l) => from_i64(l) / scale,
+            Err(_) => violation!(clause = "GEN.5", "a kind bought as a product with no price level", product = *p),
+        })
+        .collect()
+}
+
 impl Plant {
     fn open_country(&self, opening: &mut Opening<'_>, c: &OpeningCountry, (kinds, units): (&Kinds, &[UnitId])) {
         let (register, date) = (opening.register, opening.date);
@@ -196,6 +219,7 @@ impl Plant {
         let classes = issue_chains(b, (kinds.classes, units), ccy, terms);
         let growth = derived(c, "GEN.growth") / PERCENT;
         let stock = self.stock.get(register, c.id);
+        let level = price_levels(register, c);
         let mut legs: Vec<Vec<LegRec>> = firms.iter().map(|_| Vec::new()).collect();
         let mut structures: Vec<(PartyId, u64)> = Vec::new();
         for (k, kind) in kinds.kinds.iter().enumerate() {
@@ -204,7 +228,11 @@ impl Plant {
             else {
                 violation!(clause = "GEN.2", "a kind of plant with no stock per unit of GDP", kind = k);
             };
-            let Some(total) = floor_to_u64(ratio * c.gdp) else {
+            // The stock is a value, a unit of the kind costing its product's price level in the country.
+            let Some(at) = level.get(k).copied() else {
+                violation!(clause = "GEN.5", "a kind of plant with no price level", kind = k);
+            };
+            let Some(total) = floor_to_u64(ratio * c.gdp / at) else {
                 violation!(clause = "GEN.2", "a country's plant beyond counting", country = c.id.get());
             };
             let weights: Vec<u64> = firms
@@ -234,7 +262,7 @@ impl Plant {
                 }
                 let spread = rules::wear::steady_units(from_u64(*part), &steady, &values);
                 for ((q, v), instrument) in spread.iter().zip(&values).zip(chain) {
-                    let (Some(units_held), Some(cost)) = (floor_to_i64(*q), floor_to_i64(q * v)) else {
+                    let (Some(units_held), Some(cost)) = (floor_to_i64(*q), floor_to_i64(q * v * at)) else {
                         violation!(clause = "GEN.5", "a firm's plant beyond counting", firm = f.party.get());
                     };
                     if units_held > 0 {

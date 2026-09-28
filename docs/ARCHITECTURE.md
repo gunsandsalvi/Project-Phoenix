@@ -281,7 +281,8 @@ sources report, a group reporting too few taking the developed group's, marked a
 - **TEC** (`data/shared/TEC.toml`, `data/profiles/<level>/TEC.toml`): nineteen products aggregating the industries of
   the OECD's inter-country input-output tables (2019, 76 economies), each product's 2019 dollars carried to 2022 cents
   by the US GDP deflator; one opening way per product per country group — inputs per unit made from the tables' uses
-  summed over origins, energy mining's output split into coal (to electricity) and oil and gas, other mining's into
+  summed over origins (energy carriers turned into quantities at world prices, as the fuels they are made from), energy
+  mining's output split into coal (to electricity) and oil and gas, other mining's into
   ore (to basic metals) and stone, hours by ISCO-08 major group from ILOSTAT's employment and hours by ISIC section
   shared among a section's industries by value added, plant by kind per unit of output a year from the OECD's
   net fixed assets (Table 9A) per unit of value added (Table 6), agricultural land (World Bank) for crops and
@@ -301,7 +302,13 @@ sources report, a group reporting too few taking the developed group's, marked a
   assets' lead time a dairy cow's months to first calving, intellectual property's none.
 - **GDS** (`data/shared/GDS.toml`): three grade classes per extracted product at the terciles of GEO's log-normal
   grade index; the grade's fall as a deposit is worked; each storable product's yearly spoilage in stock and the room
-  it is kept in; the standardised products (crops and livestock and the four extracted), which meet in calls.
+  it is kept in; the standardised products (crops and livestock and the four extracted), which meet in calls. Each
+  group's product price levels (`data/profiles/<level>/GDS_prices.toml`, `GDS.price_level`): a product's ICP 2021 price
+  level over GDP's, the median over the group's economies in the input-output tables, since a currency's smallest unit
+  is a GDP at purchasing power parity's cent while a product's unit is what a cent bought at world-average prices;
+  those priced at world prices — the extracted products and energy carriers, the ICP publishing no heading for energy
+  alone — at one over GDP's level. Without it every product costs a cent everywhere, the developed group's services
+  cost less than their hours and the developing group's traded goods add implausibly much.
 
 `data/shared/FRT.toml` (vehicles' tonne-km a unit a day, speeds and loading days by mode; goods' tonnes a unit),
 `SRV.toml` (the weights of price and distance, the reach) and `VAL.toml` (memory and switching-intensity type sets,
@@ -1608,8 +1615,9 @@ is what its maker can make that day: the lesser of its staff's output rate and i
   that day.
 - **The goods' markets** (GDS.7): `sys-gds` declares two kinds, `GDS.commodities` — a call at each place each business
   day, for the products `GDS.standardised` names — and `GDS.between_firms`, posted prices, for the rest. The opening
-  marks every good its places trade at `GDS.opening_price` (`World::snapshot_markets`): each good held at the opening,
-  and each grade class of what each deposit yields where its goods stand.
+  marks every good its places trade at `GDS.opening_price`, its world price, times its price level in the country it
+  stands in (`GDS.price_level`) (`World::snapshot_markets`): each good held at the opening, and each grade class of what
+  each deposit yields where its goods stand.
 - **Extraction** (GDS.4, GEO.9, GEO.12): the holder of a deposit's right visits on its own schedule
   (`GDS.extraction_days`, 5c). A deposit's grade is its opening grade times e^(−κ·share taken) (`GDS.grade_fall`), the
   richest part first, classed by `GDS.grade_bounds`. It works the deposit when today's mark less its unit cost is at
@@ -2209,6 +2217,21 @@ Every firm, large and small, is drawn in an industry given its size, from an ali
 gives each its industry's public way-set in its country as `TEC.known` (`sys-tec`'s `known`), and the opening
 reports the firms by industry per country.
 
+A firm of an industry of one product makes it; the firms of an industry of several (mining: ore, coal, oil and gas,
+stone) are dealt their products (`sys-frm`'s `filed::Products`) largest first, those of a size in an order drawn by
+lot, each to the product whose persons dealt fall furthest below its part of the industry's hours: its part of the
+industry's output (`FRM.product_share`, the input-output tables' split of each mining industry by its resource's
+users, derived by `tools/data/derive_tec.py`) over its opening price times its way's hours a unit, none for a
+resource the country's land holds no deposit of. A draw per firm would leave a country's few mining firms, whose
+sizes differ by orders, making whatever product its largest drew. Once staff are hired, each firm's filed accounts
+(`filed::Filed`) give it hours a unit of its way's hours (`TEC.labour`, summed over the occupations) times the
+country's productivity over its own hourly wage: the productivity is labour's share (`GEN.labour_share`) of the
+wage-weighted mean over the country's firms of what their ways add a unit over the hours a unit takes, so the
+country's firms' wage bill is labour's share of what they add, each product keeps its way's labour intensity, and a
+firm paying more makes more an hour. Its output a day is its staff's hours over that; its unit cost the way's inputs
+at opening prices and the hours at its wage; its price the point nearest the lot's opening price at the country's
+price level, the markup what that is over the cost.
+
 An adult is employed at the country's employment rate, and is an employee at its sex's share of the employed
 (`LAB.status_shares`). A household rents at one minus the country's home ownership. A job's monthly wage is the mean
 wage per worker that the labour share gives, times the household's income as a multiple of the mean. A tenancy's rent is
@@ -2259,11 +2282,11 @@ series of one, never a drawn past.
   the opening is none, so the accounts open on what the opening wrote.
 - **Plant** is held by kind and condition class (§7.10), a real asset per (country, kind, class) counted in a cent of
   the kind at world-average prices, held at cost: each country's stock of a kind, its GDP times the group's stock per
-  unit of GDP, apportioned over every firm by its employees times its industry's plant of the kind per hour worked,
+  unit of GDP over the price level there of the product the kind is bought as (`GDS.price_level`), apportioned over every firm by its employees times its industry's plant of the kind per hour worked,
   and spread over the classes as a steady stock growing at the country's rate would be.
 
 — each class ρ = (C ÷ L) ÷ (g + C ÷ L) times the one before, its units priced so the classes' values sum to the
-stock's value, one currency unit a unit new, each lot costing what it is worth. The large firms' structures pass to
+stock's value, a unit new costing that price level, each lot costing what it is worth. The large firms' structures pass to
 housing in the books' `drawn` map (`CAP.structures`), whose owners stand in for the landlords.
 - **Accounts** — reserves, the treasury's account, the central bank's claim on the treasury — have no dates and are
   marked spent at the opening; every other opening line falls due on the first date of its schedule after the

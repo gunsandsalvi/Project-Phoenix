@@ -25,10 +25,18 @@ declare_stream! { pub VisitStream = "GDS.visits" { purpose: Occasion, keyed: fal
 declare_stream! { pub OpeningStream = "GDS.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 declare_prim! {
-    /// Each product's price at the opening, a unit's in its currency's smallest units, by the product's place: the
-    /// snapshot's latest print of it.
+    /// Each product's world price at the opening, a unit's in a currency's smallest units, by the product's place: what a
+    /// country's snapshot prints it at over its price level there.
     pub OPENING_PRICE = "GDS.opening_price" {
         kind: Endowment, value: Table1 { axis_exp: 0, exp: 2 }, clause: "GEN.5", scope: Shared
+    }
+}
+
+declare_prim! {
+    /// Each product's price at the opening over its world price in a country, by the product's place: its price level
+    /// over the country's.
+    pub PRICE_LEVEL = "GDS.price_level" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.5", scope: PerCountry
     }
 }
 
@@ -195,6 +203,7 @@ impl System for Gds {
         d.stream(VisitStream::DECL);
         d.stream(OpeningStream::DECL);
         let _ = d.prim::<Table1>(&OPENING_PRICE);
+        let _ = d.prim::<Table1>(&PRICE_LEVEL);
         d.contribution(Box::new(Declared));
         d.contribution(Box::new(rights::Rights));
         d.family(Box::new(families::Goods));

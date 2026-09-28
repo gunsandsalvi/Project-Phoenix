@@ -1,0 +1,10 @@
+# The developed group's products' price levels (spec GEN.5, GDS.1), derived by tools/data/derive_tec.py;
+# never edited by hand.
+
+[[primitive]]
+id = "GDS.price_level"
+kind = "ENDOWMENT"
+owner = "GDS"
+source = "measured"
+source_ref = "Each product's price at the opening over its world price (axis: the products' places): its ICP 2021 price level over GDP's, the geometric mean over its headings' (World Bank ICP 2021, fetched 2026-09-27), or one over GDP's for a product priced at world prices, as the extracted products are; the median over the economies the ICP reports of the 44 of the World Bank's developed income groups the 2019 inter-country input-output tables report (AUS, AUT, BEL, BGR, BRN, CAN, CHE, CHL, CRI, CYP, CZE, DEU, DNK, ESP, EST, FIN, FRA, GBR, GRC, HKG, HRV, HUN, IRL, ISL, ISR, ITA, JPN, KOR, LTU, LUX, LVA, MLT, NLD, NOR, NZL, POL, PRT, ROU, SAU, SGP, SVK, SVN, SWE, USA). A currency's smallest unit buys a US cent's worth at world-average prices, a GDP at purchasing power parity, so a unit that costs a US cent at world-average prices costs its price level over GDP's."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [1.170392, 0.868456, 0.868456, 0.868456, 0.868456, 1.166562, 1.037493, 0.768918, 0.868456, 0.860024, 1.000000, 1.177403, 1.000000, 1.696410, 1.160239, 1.000000, 1.020194, 0.954833, 0.937664], outside = "refuse" }

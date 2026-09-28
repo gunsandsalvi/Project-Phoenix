@@ -42,6 +42,8 @@ declare_prim! {
 
 /// The products' opening prices, a unit's in its currency's smallest units, which the goods' system declares.
 pub const OPENING_PRICE: &str = "GDS.opening_price";
+/// Each product's price at the opening over its world price, by country.
+pub const PRICE_LEVEL: &str = "GDS.price_level";
 
 /// What the firms' opening state reads: the days of sales their stocks cover, the management's handles, and the
 /// hurdles their managements are drawn from.
@@ -90,6 +92,14 @@ declare_prim! {
     /// (columns, in the products' order).
     pub INDUSTRY_BY_SIZE = "FRM.industry_by_size" {
         kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// Each product's part of its industry's output, by which a firm of an industry of several products is drawn to
+    /// make one.
+    pub PRODUCT_SHARE = "FRM.product_share" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
     }
 }
 
@@ -185,7 +195,8 @@ impl System for Frm {
         let decide = declare_decisions(d);
         let filing = FilingPrims { decide, required_return: d.prim(&REQUIRED_RETURN) };
         d.contribution(Box::new(filed::Declared));
-        d.contribution(Box::new(filed::Products));
+        let shares = d.prim(&PRODUCT_SHARE);
+        d.contribution(Box::new(filed::Products { shares }));
         d.contribution(Box::new(filed::Stocks { prims: filing }));
         d.contribution(Box::new(filed::Filed { prims: filing }));
         d.family(Box::new(families::Revenue));
