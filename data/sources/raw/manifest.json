@@ -57,6 +57,10 @@
    "rows": 521,
    "title": "Borrowed from a formal bank or similar financial institution (% age 15+), World Bank Global Findex"
   },
+  "icio/flows": {
+   "rows": 167349,
+   "title": "Inter-country input-output table, 2019, millions of US dollars: every use of each industry's output (row) by each industry and final use (column: households with their purchases abroad, non-profit institutions serving them, government, fixed investment, inventories), summed over the origins of what was used, with the taxes less subsidies on products and the value added of each column; OECD ICIO 2023 edition"
+  },
   "icio/households": {
    "rows": 3440,
    "title": "Households' final consumption expenditure by industry, 2019, millions of US dollars, summed over origins, with taxes less subsidies on it, OECD ICIO 2023 edition"
@@ -137,9 +141,17 @@
    "rows": 2583,
    "title": "Households by tenure (own outright, owner with mortgage, rent private, rent subsidised, other), share of households, by year, OECD Affordable Housing Database HM1.3.A1"
   },
+  "oecd/financial_balance_sheets": {
+   "rows": 5035,
+   "title": "Financial balance sheets, non-consolidated, closing stocks 2019, by sector, counterpart the whole economy, assets (A) and liabilities (L), by instrument, national currency (Table 720), OECD"
+  },
   "oecd/fixed_assets": {
    "rows": 75568,
    "title": "Net fixed assets at current prices by activity and asset, closing stocks, national currency, millions (Table 9A), OECD"
+  },
+  "oecd/nonfinancial_balance_sheets": {
+   "rows": 1926,
+   "title": "Balance sheets for non-financial assets, closing stocks 2019, by sector and asset, net, current prices, national currency (Table 9B), OECD"
   },
   "oecd/pensions": {
    "rows": 566,
@@ -148,6 +160,10 @@
   "oecd/value_added": {
    "rows": 31964,
    "title": "Gross value added at current prices by activity, national currency, millions (Table 6), OECD"
+  },
+  "oecd/value_added_parts": {
+   "rows": 15810,
+   "title": "Gross value added by activity and its parts, compensation of employees (D1), gross operating surplus and mixed income (B2A3G) and other taxes less subsidies on production (D29X39), 2019, current prices, national currency (Table 6), OECD"
   },
   "owid/labor-share-of-gdp": {
    "rows": 1023,
@@ -384,7 +400,7 @@
    "url": "https://webfs.oecd.org/Els-com/Affordable_Housing_Database/<file>; https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ilc_lvho02?format=SDMX-CSV&startPeriod=2015; https://api-cepalstat.cepal.org/; https://api.dhsprogram.com/"
   },
   "icio": {
-   "fetched": "2026-09-27",
+   "fetched": "2026-09-28",
    "title": "OECD Inter-Country Input-Output tables, 2023 edition",
    "url": "https://stats.oecd.org/wbos/fileview2.aspx?IDFile=d1ab2315-298c-4e93-9a81-c6f2273139fe"
   },
@@ -423,9 +439,14 @@
    "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}"
   },
   "oecd_nad": {
-   "fetched": "2026-09-27",
+   "fetched": "2026-09-28",
    "title": "OECD Data Explorer, SDMX API",
    "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@<table>,/<key>?startPeriod=2015&endPeriod=2022&format=csvfile"
+  },
+  "oecd_sectors": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, sector accounts",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,<table>,/<key>?startPeriod=2019&endPeriod=2019&format=csvfile"
   },
   "owid": {
    "title": "Our World in Data grapher CSV",
