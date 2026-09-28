@@ -778,9 +778,8 @@ world switches to the core.
   birth to death, the persons store holding it beside the person's word, and every contract naming a person names it
   by that identity, never by its place in its household (c, with the employment contracts, the pensions moving to it);
   each person owns its own accounts, holdings and debts, a household's read as their sum, the country sheet's
-  household sector apportioned over persons (i, with the native opening; until it is decided how a household's budget
-  draws on its persons' accounts, Appendix E 48, a household pays from its head's account and each person's income is
-  paid to its own). An owner-managed firm's owner is a person (i). The memory this adds is measured on the bench.
+  household sector apportioned over persons (i, with the native opening; a household's shared payments drawn from its
+  persons' accounts in proportion to what each holds, a person's own debts from its own first, Appendix E 48). An owner-managed firm's owner is a person (i). The memory this adds is measured on the bench.
 - **Values the port takes from the data in hand**, in place of today's assumed ones:
   - whom an extended or non-relative household holds besides its head, assumed today (`DEM.household_members`: one
     relative of 65 and over, one unrelated adult), derived per group from the DHS household structure
@@ -10127,6 +10126,7 @@ S5.02 and S6.04, or deleted where the core's restructure retired what they measu
 | Data gathered once (GEN.15, NUM.3) | every published source the remaining steps read is fetched at S1.22, into `data/sources/raw/`, and every matrix the opening reads is derived then; what no source gives is derived from those that do or simulated by a declared procedure, and said so in its note; no later step searches for data. Downloads the derivations do not read are removed | 2026-09-28 |
 | No findings table (§0.5) | a finding is solved in its step or written into the step that will fix it; §11 is retired, its open rows moved into their steps or deleted where the core retired what they measured; every data point no source gives is closed by a derivation, a paper's table or a declared simulation, named in the step that reads it | 2026-09-28 |
 | Every person a party, every office a person's (PTY.1, PTY.3, PTY.16–18, Appendix E 46) | wealth is individual: each person owns its accounts, holdings and debts, a household is its persons and what it holds their sum; each person keeps one identity from birth to death, whichever household it lives in; every office (board member, chief executive, governor, member of parliament, head of state or government, minister, a party's leader and candidates) is held by a named person filled by its declared process, so a person's life can be followed; built in S1.24 (identity, accounts), S3.02, S2.08, S3.05 and S5.03 (offices) | 2026-09-28 |
+| Office holders and household budgets (Appendix E 47, 48) | an institution's rule reads its office holders' own preferences and outlooks, so a new chief executive, governor or minister changes how it decides; a household's shared payments are drawn from its members' accounts in proportion to what each holds, each income paid to its earner's own account and a person's own debts paid from its own first | 2026-09-28 |
 
 ---
 

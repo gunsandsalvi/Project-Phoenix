@@ -5273,6 +5273,15 @@ Decisions taken in writing this version, and decisions still open.
     owns, whom it lives with, the firm it founds, its rise to a board or a chief executive's office, its election.
     What this costs is measured against the budget (N8) like any other state.
 
+47. **An office holder decides with its own mind** (PTY.16, FRM.1, BNK, POL; owner, 2026-09-28). An institution
+    decides by its own rule, and the preferences and outlooks that rule reads are its office holders' own — a chief
+    executive's risk aversion and patience, a governor's stance, a minister's — so a new holder changes how the
+    institution decides, and whoever fills an office weighs that among the candidates' records. An institution with
+    no one in an office yet reads the preferences drawn at its founding.
+48. **A household's budget pooled by rule** (PTY.3, HH; owner, 2026-09-28). Each person's income is paid to its own
+    account; a payment the household makes as one is drawn from its members' accounts in proportion to what each
+    holds; a person's own debts are paid from its own account first.
+
 **Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
 it.
 
@@ -5280,13 +5289,6 @@ it.
     inputs by product. Whether a richer grade yields more in use — more metal from a tonne of ore, more heat from a
     tonne of coal — and so what sets one grade's price against another's, the text does not say. Until it is decided,
     a way takes an input's units of any grade alike.
-47. **What an office holder brings to its office's decisions** (PTY.16, FRM.1, BNK, POL). An institution decides by
-    its own rule; whether the preferences and outlooks that rule reads are its office holders' own — a chief
-    executive's risk aversion, a governor's stance — or the institution's, drawn at its founding, the text does not
-    say. Until it is decided, the institution's are read, and its office holders are held and paid.
-48. **How a household's budget draws on its persons' accounts** (PTY.3, HH). A household decides as one over its
-    persons' money; which person's account a payment is made from, and how incomes pool, the text does not say. Until
-    it is decided, a household pays from its head's account and its persons' incomes are paid to their own.
 
 ---
 
