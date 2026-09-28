@@ -1834,33 +1834,64 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   party ends and a slot is reused only after the close.
 - **Parties** (`phx_store::Parties`): a kind's slots, allocated lowest first and released at the close (`SlotAlloc`),
   and each slot's generation, raised as the slot takes a new party; `resolve` refuses a stale reference.
-- **Contracts** (`phx_store::EdgeTable`): a family's contracts, each between two named parties, in columns; a side that
-  keeps its parties' lists threads each party's contracts through `next` and `prev` columns from a head its kind keeps,
-  so opening, closing and moving a side (`move_end`) take the same time however many a party holds; a broken link or a
-  head handed in for a side that keeps none stops the run. A family's own columns (amount, next due, terms) are its
-  declarer's, one value a contract slot, made by `EdgeTable::column` at the table's capacity; `Column::put` writes an
-  existing row or the next and refuses a gap. A contract closed today frees its slot only after the close, so a
-  family's capacity holds its contracts and a day's openings.
+- **Contracts** (`phx_store::EdgeTable`): a family's contracts, each a row (`Row`) of its two named parties beside the
+  words the family reads on the day's paths (amount, balance, next due, shape of terms), so a contract is read in one
+  line; a family with no words keeps `Pair`s. A side that keeps its parties' lists threads each party's contracts
+  through `next` and `prev` columns from a head its kind keeps, so opening, closing and moving a side (`move_end`) take
+  the same time however many a party holds; a broken link or a head handed in for a side that keeps none stops the
+  run. A family's colder words are columns of its own, made by `EdgeTable::column` at the table's capacity;
+  `Column::put` writes an existing row or the next and refuses a gap. A contract closed today frees its slot only
+  after the close, so a family's capacity holds its contracts and a day's openings; its reader marks it closed in its
+  own words.
 - **The due wheel** (`phx_core::wheel::DueWheel`): a bucket a day over a horizon, reused round the wheel, and the dues
   beyond it, read every half horizon for those come within reach. A day's dues move on together (`schedule_all`), in
   slot order, so a bucket is mostly one sorted run; a take sorts only what follows that run (radix on the pool) and
   merges it in, and the contracts due are read in slot order. A contract whose due moves or that closes is not taken
   out; its reader skips a stale entry by the contract's own next due.
 - **Flows** (`phx_core::flows`): every movement names payer and payee, amount, source, reason, denomination (money of a
-  currency or units of a declared unit, never netted together) and payment order, 24 bytes, appended to the buffer of the chunk that makes it (`FlowBufs`). `Ranges` cuts each kind's slots into
-  ranges of `2^range_bits`; `Grouped` groups a day's flows by payer range, whole, since a payer's failures follow its
-  flows' order, and by payee range as 16-byte credits, with `phx_exec::partition` (stable, pieces fixed by the inputs'
-  lengths, counted and scattered in parallel into disjoint places, the same for any worker count; a key that answers
-  differently twice stops the run); `apply` adds a range's credits and takes its debits on its parties' money in
-  place, and a flow naming a party outside its range stops the run. On a closed day card payments are held pending
-  on the parties' accounts (SET.2) and the next business day settles them, so no day's flows are carried.
+  currency or units of a declared unit, never netted together) and payment order, 24 bytes, appended to the buffer of
+  the chunk that makes it (`FlowBufs`). A handler makes one through its context (`Ctx::flow`) for a reason it
+  declares (`pays: [...]`): a `ReasonDef` carries the reason's code, which says the lines it posts to, and the payment
+  order its flows keep; paying an undeclared reason does not compile, and a negative amount stops the run. `Ranges`
+  cuts each kind's slots into ranges of `2^range_bits`. A buffer groups itself (`FlowBufs::group`): each chunk puts its
+  flows of the settled denomination in its payers' ranges' order in place, the rest last, and makes credits (payee,
+  amount, reason, 16 bytes) in its payees' ranges' order, chunks on the pool; within a range a chunk's flows keep an
+  order of its own making, which is enough, since a payer's ties fall by lot. `Grouped` is the day's view: each range's
+  slices across the chunks, and a place for every flow in the day's order, range after range. Nothing is copied: the
+  heaviest day's 21 million flows cost 40 bytes each, where a global partition cost 64.
+- **Settlement** (`phx_core::settle`), the ledger's 7b on the core, over a currency's `Books`: each money kind's
+  accounts (the bank each is held at, balance, pending commitments, what is held through closed banks, the facility,
+  and cash lines if the kind keeps them), the banks' kind, whose balances are their reserves, each bank's deposits, the
+  banks closed and the issuer.
+  - Pass one, range by range on the pool, adds the commitments to the balances, nets every flow into its parties' nets,
+    sums what each bank's customers pay out of it and are paid into it, which its reserves move by, and posts each flow
+    to its sides' cash lines (ACC.9); the parties short, banks aside, come out of the same pass.
+  - Flows through a closed bank are held, and count against the payer's funds from the next day on (SET.2).
+  - The worklist runs in rounds. Each short party decides, range by range on the pool and from the round's state, the
+    suffix of its flows in payment order it cannot pay — ties among one payer's flows of one order drawn by lot from a
+    stream the caller opens for the payer — gathered from a per-range index by payer built once a day for the ranges
+    shorts fall in. The round's failures are then taken off range by range on the pool, payer sides where decided and
+    payee sides grouped by range, each job's bank moves summed after. A failure only takes from others, so deciding on
+    the round's state keeps the greatest set that can settle, rings included; what a round misses the next finds.
+  - A bank still short once its customers are done loses every flow through it (MON.5), the bank's to answer for.
+  - The nets are added in place, each bank's deposits move with its customers' nets, and the failed and held flows
+    are taken back from the cash lines. A closed day's flows are committed (`commit`): netted into pending, the banks'
+    moves into theirs, posted, nothing failed.
+  - `Books::deposit_breaks` is the money family's identity: each bank owes what its customers hold.
+  - Settlement's state keeps no flow (PC-27): the outcome hands back the failed, with why, and the held.
+- **Dues by shape** (`phx_ledger::algebra::shape`): terms split into a shape, the terms with each amount a contract
+  fixes for itself taken out, shared by every contract of that kind of terms, and the contract's own amounts. A shape's
+  dues on a date are planned once (`shape_plan`), and a contract's due is its amounts and balance through the plan
+  (`due_by_shape`), with the algebra's roundings; a leg waiting on an event or an election leaves the plan general,
+  reckoned whole from `terms_of`.
 - **A handler's facts**: `RecordFacts` over its chunk's party records, row-major — each party one record of `stride`
   words, a fact at its declared offset — so a visit to a sparse row reads a line or two, not a line a fact; and
   `ColumnFacts` over column slices for a pass over dense rows. Both read and write by a fact's place in the handler's
   declaration, an indexed load, inlined across crates.
 - **Draws** (`phx_rand::Draws`) build an address's counter once, so a block is one Philox call and its words are read
   inline; an address holds 2^24 blocks, so bulk work takes an address a chunk.
-- **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel or facts.
+- **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel, settlement or
+  facts.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
   its three sustained cores, never below the wall; page faults per day stand for allocation during the day.
 
@@ -1869,16 +1900,21 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
 month through these kernels:
 - hazards, and handlers over the day's agenda by phase, spending their rules' declared arithmetic;
 - purchases drawn by each buyer from its own stream over its (region, product)'s alias table of logit weights;
-- the wheel's dues, monthly and quarterly, the quarterly through the far list;
+- the wheel's dues, monthly and quarterly, the quarterly through the far list, each reckoned through its family's shape
+  of terms (a fixed sum, interest, an annuity, a principal once) from its contract's row, a row a few dues ahead asked
+  for early;
 - contracts closed and opened, family by family on the pool, and a tenth as many parties ended and begun;
-- every flow grouped and applied, card payments on closed days held pending and settled on the next business day;
-- the audit: money and pending conserved, and a rolling thirtieth of the contracts;
+- settlement: accounts at banks drawn for them, reserves a tenth of deposits, balances spread over four decades, cash
+  lines of what each party paid and received, closed days' flows committed;
+- the audit: reserves conserved, each bank owing what its customers hold, and a rolling thirtieth of the contracts;
 - full saves.
 
 Its day's work is three halves of the finished world's estimate (owner, 2026-09-28). Unit costs are CPU time over
-units, the rules' declared arithmetic taken off handler rows. The numbers measured at the design point, and the gap
-S1.20 and S1.21 close first, are in the plan (S1.20's first work). The old kernel's bench gave 7.7 s, 29 s and 9 GB
-at a smaller world.
+units, the rules' declared arithmetic taken off handler rows. On the build machine at S1.20's end (2026-09-28), a
+flow grouped, netted, posted and applied cost 86 core-ns, a due 179, a handler row 127, a purchase 159; a business day
+failed about 3% of its flows, since the bench's random economy drifts short over its month; the peak was 4 427 MiB,
+928 bytes a person. These numbers compare kernels with their targets; the budget is judged on the phone (N8.8). The
+old kernel's bench gave 7.7 s, 29 s and 9 GB at a smaller world.
 
 ## 8. Markets, valuation and expectations
 

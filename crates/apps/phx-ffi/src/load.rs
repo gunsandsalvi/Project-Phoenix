@@ -878,9 +878,15 @@ impl Load {
         if reserves != self.reserves_total {
             return Err(format!("reserves changed from {} to {reserves} on day {day}", self.reserves_total));
         }
-        let owed = deposits_of(&self.kinds, self.deposits.len());
-        if let Some(b) = owed.iter().zip(&self.deposits).position(|(o, d)| o != d) {
-            return Err(format!("bank {b}'s customers hold other than it owes them on day {day}"));
+        let books = Books {
+            kinds: self.kinds.iter_mut().map(Kind::book).collect(),
+            banks: self.bank_kind,
+            deposits: &mut self.deposits,
+            closed: &self.closed,
+            issuer: self.issuer,
+        };
+        if let Some((b, owed, deposits)) = books.deposit_breaks().first() {
+            return Err(format!("bank {b} owes {deposits} but its customers hold {owed} on day {day}"));
         }
         let slice = u64::from(day) % AUDIT_SLICES;
         let contracts: i64 = self

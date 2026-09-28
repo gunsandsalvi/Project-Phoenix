@@ -1926,6 +1926,9 @@ pub phx_core::settle::Books::closed: &'a [bool]
 pub phx_core::settle::Books::deposits: &'a mut [i64]
 pub phx_core::settle::Books::issuer: phx_id::ids::PartyKey
 pub phx_core::settle::Books::kinds: alloc::vec::Vec<core::option::Option<phx_core::settle::Book<'a>>>
+impl phx_core::settle::Books<'_>
+pub fn phx_core::settle::Books<'_>::deposit_breaks(&self) -> alloc::vec::Vec<(u32, i64, i64)>
+pub fn phx_core::settle::Books<'_>::owed(&self) -> alloc::vec::Vec<i64>
 pub struct phx_core::settle::Lines<'a>
 pub phx_core::settle::Lines::amounts: &'a mut [i64]
 pub phx_core::settle::Lines::paid: &'a [core::option::Option<usize>]

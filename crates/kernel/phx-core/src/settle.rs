@@ -144,6 +144,37 @@ impl<'a> Books<'a> {
     }
 }
 
+impl Books<'_> {
+    /// What each bank's customers hold with it, their pending included: what the bank owes them.
+    #[must_use]
+    pub fn owed(&self) -> Vec<i64> {
+        let mut owed = vec![0_i64; self.deposits.len()];
+        for (k, book) in self.kinds.iter().enumerate() {
+            let Some(b) = book.as_ref().filter(|_| u8::try_from(k).ok() != Some(self.banks)) else { continue };
+            for ((at, balance), pending) in b.bank.iter().zip(b.balance.iter()).zip(b.pending.iter()) {
+                if let Some(o) = owed.get_mut(to_usize(*at)) {
+                    *o += balance + pending;
+                }
+            }
+        }
+        owed
+    }
+
+    /// The banks whose deposits are other than their customers hold, with both: the money family's identity, which the
+    /// audit reads and never repairs.
+    #[clause("N1")]
+    #[must_use]
+    pub fn deposit_breaks(&self) -> Vec<(u32, i64, i64)> {
+        self.owed()
+            .into_iter()
+            .zip(self.deposits.iter())
+            .enumerate()
+            .filter(|(_, (o, d))| o != *d)
+            .map(|(b, (o, d))| (u32::try_from(b).unwrap_or(u32::MAX), o, *d))
+            .collect()
+    }
+}
+
 fn slot(p: PartyKey) -> usize {
     to_usize(p.slot().get())
 }
@@ -375,8 +406,18 @@ impl Settle {
         let (Some(balance), Some(held), Some(facility)) = (b.balance.get(i), b.held.get(i), b.facility.get(i)) else {
             violation!(clause = "Law 5", "a party its kind's accounts do not hold", slot = i);
         };
-        let net = self.net.get(usize::from(p.kind())).and_then(|n| n.get(i)).copied().unwrap_or(0);
-        let reserves = if p.kind() == books.banks { self.cust.get(i).copied().unwrap_or(0) } else { 0 };
+        let Some(net) = self.net.get(usize::from(p.kind())).and_then(|n| n.get(i)).copied() else {
+            violation!(clause = "Law 5", "a party the day's nets do not hold", slot = i);
+        };
+        // Only a bank's reserves move by its customers' flows; any other party's by nothing.
+        let reserves = if p.kind() == books.banks {
+            let Some(moves) = self.cust.get(i).copied() else {
+                violation!(clause = "MON.5", "a bank the day's reserve moves do not hold", bank = i);
+            };
+            moves
+        } else {
+            0
+        };
         balance - held + facility + net + reserves
     }
 

@@ -731,101 +731,6 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ---
 
-### S1.20 — Money and settlement on the core
-
-**Status**: planned
-
-**Clauses**: MON.1–MON.16, SET.1–SET.16, REG.5–REG.10, ACC *(the account lines fed by settled flows)*, BNK.8,
-BNK.19, CB.7 *(as S1.09–S1.10 built them)*, TAX *(withholding, as S1.11 built it)*, N1 *(the money and contract
-families as identities)*, as now built and on the core.
-
-**Architecture**: §4.3, §4.4, §6.5 (restated), §9, §15.
-
-**Depends on**: S1.19 (done: the core and the bench, ARCHITECTURE §7.17).
-
-**First work: the gap S1.19 left.** The bench at the design point (build machine, 2026-09-28, 5 million persons,
-the day's work × 1.5, a month; phone time = CPU time over the phone's three sustained cores, never below the wall):
-
-| Measure | Measured | Target |
-| --- | --- | --- |
-| A flow grouped and applied | 31 core-ns | 25 |
-| A due taken, read and emitted | 158 core-ns | 20 |
-| A handler row beyond its rule | 72 core-ns | 40 |
-| A purchase drawn (S1.21) | 156 core-ns | 50 |
-| A hazard hit | 414 core-ns | 100 |
-| A contract or party opened or closed | 684 core-ns | 100 |
-| The audit's identities | 1 core-ms a million persons | 3 |
-| Resident memory | 1 011 bytes a person; peak 4 824 MiB | 800; 4.5 GB |
-| Median turn | 1 272 ms | 1 000 |
-| Worst turn (three closed days and the quarter's payday) | 3 816 ms | 2 000 |
-| Two full saves | 1 963 MiB, 2.8-4.6 s each | 4 GB, 5 s |
-
-A business day spends about 3.8 core-seconds: the rules' declared arithmetic 1.5, purchases 1.1, settlement 0.4,
-handler rows 0.2. A hazard hit and a contract opened or closed are each a few cache misses on random rows. They miss
-their targets but cost about 40 core-ms a day between them. This step brings the flow, the due and the handler row to
-their targets:
-- **Dues** as compiled programs over the family's columns (the design below): a due read in one pass over the day's
-  sorted contracts, with no second read of its columns.
-- **Settlement's buffers**: the payer and payee groups are the largest transient store, about 40 bytes a flow twice
-  over. Grouping by index into the chunk buffers, and netting the payee side by range as it is scattered, brings
-  memory under the budget.
-- **The handler context** (`Ctx::flow`, and the handler API over `RecordFacts`) is built here, where the first real
-  handlers move onto the core.
-
-These are the build machine's numbers, read to compare kernels with their targets. The budget itself is judged on the
-phone, at the stage's end (N8.8).
-
-**Goal**: accounts, banknotes, reserves, loans and every dated contract settle by batch on the core, with the fixed
-point's semantics unchanged: the greatest set that can settle, rings, short banks, and fails to arrears. Accounts are
-fed and the money and contract families run as identities.
-
-**Files**
-
-| File | Purpose |
-| --- | --- |
-| `crates/kernel/phx-ledger/` | rewritten: accounts, edge families' compiled schedules, flows' settlement, fails, arrears, levies, line transfers as edge transfers, the estate waterfall |
-| `crates/kernel/phx-acct/` | per-party account lines as accumulator columns fed by reason |
-| `crates/kernel/phx-audit/` | the identity families, the rolling per-party cycle |
-
-**Design**:
-- The contract algebra stays. `terms::compile` turns interned terms into a schedule and a per-date program: a fixed
-  amount, a rate on the balance, an annuity's instalment and principal split, an indexed amount read at its fixing.
-- A due is the program run on the edge's words.
-- Settlement runs as the five passes above.
-- Payment order is declared per reason, as now, and ties among one payer's flows of one order are drawn by lot from
-  `SET.order` keyed by (payer, day).
-- A short bank fails every flow through it, and its customers answer again (MON.3). A pending leg on a closed bank
-  keeps SET.2's state.
-- Fails go to their edges' arrears at the next 2d, as now.
-- Levies (§4.3) are flows emitted with their base flow, from the same fused kinks.
-- Accounts: each reason declares the account lines it feeds on each side. Settled flows add to accumulator columns
-  of their parties, and 9b reads those columns.
-- The audit's families:
-  - **money**: Σ balances per bank against the bank's deposit liability, and Σ reserves against the central bank's;
-  - **flows**: each batch nets to nothing per currency and unit;
-  - **contracts**: each edge's balance against its schedule's arithmetic, on the rolling cycle;
-  - a share of the slots checked in full each day (N8.6).
-
-**Unit tests**: the fixed point's existing logic-level tests (`fixed_point_tests.rs`, `settle_tests.rs`) re-pointed
-at the new passes, with the same expectations: greatest set, rings, a prefix failure, a short bank. Also
-`compiled_program_matches_algebra`: every leg shape's due equals the algebra's `due_on` for hand-built terms.
-
-**Live checks**: none until S1.23.
-
-**Budget**: a flow at most 25 ns and a due at most 20 ns on the bench; the heavy day's settlement within the day's
-share.
-
-**Guards**: settlement reads no map; PC-27's batch rule restated for flow buffers.
-
-**Not allowed**: a flow with one side; netting across currencies; a failure outside payment order; an audit that
-repairs.
-
-**Done when**
-- [ ] Every settlement test passes on the core, and the bench's settlement lines meet their targets.
-- [ ] Two reviews are done.
-
----
-
 ### S1.21 — Markets, goods and named units on the core
 
 **Status**: planned
@@ -835,7 +740,7 @@ spoilage, shipments, liens)*; CAP *(named units)*; LAB.2–LAB.6 *(matching)*, a
 
 **Architecture**: §7.10–§7.12, §8.
 
-**Depends on**: S1.20.
+**Depends on**: S1.20 (done: settlement on the core, dues by shape, contract rows, ARCHITECTURE §7.17).
 
 **Goal**: every Stage 1 market meets over order buffers on the core, each match becoming flows. Goods are held as
 per-firm arrays and named units as tables.
@@ -871,7 +776,7 @@ table's probabilities against the weights, exactly, and `rationing_by_lot_order_
 **Live checks**: none until S1.24.
 
 **Budget**: a choice at most 50 ns and a rationing round at most 30 ns per unserved buyer-product, on the bench.
-- The bench's purchase costs 156 core-ns (S1.20's table). The largest part is the buyer's own Philox block, about
+- The bench's purchase costs about 159 core-ns (ARCHITECTURE §7.17). The largest part is the buyer's own Philox block, about
   25 ns of dependent multiplies, then two flows written. The posted-price meeting therefore draws four buyers'
   blocks at once (`philox_x4`), each still from its own address, so the result does not change.
 
@@ -972,7 +877,7 @@ treasury and the central bank, deposits, pensions in payment, the opening's bala
 
 **Architecture**: §7, §10.
 
-**Depends on**: S1.20, S1.22.
+**Depends on**: S1.20 (done), S1.22.
 
 **Goal**: the world assembles on the core and runs Stage 0's world: persons, households, hazards, deposits, pensions
 and the state's payments. The Stage 0 live checks and audit families run on it.
@@ -990,6 +895,12 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 - The world holds both cores during the port. The old one serves the committed world until S1.24 switches it.
 - The opening apportions S1.22's balance sheet over parties by the shapes, exactly (`split_total`).
 - Estates follow PTY.9 and the waterfall on edges.
+- Settlement runs over the world's `Books`: every money kind's accounts, the banks' reserves and deposits, the issuer.
+  The tie lot is the declared stream `SET.order`, opened for the payer at 7b. Each reason is a `ReasonDef` with the
+  payment order its terms declare, and each kind's cash lines are those its accounts report (ACC.9).
+- The audit's money family reads `Books::deposit_breaks` and the reserves' conservation against the issuer's
+  outstanding reserves; its contracts family checks each contract's balance against its shape's arithmetic on the
+  rolling cycle (N8.6). Both read and never repair.
 
 **Unit tests**: the ported systems' tests.
 
@@ -1039,6 +950,10 @@ world switches to the core.
   - A firm with several establishments serves each one's reach.
 - **Merged handlers.** One body reads the firm's columns. What differed between the pairs is either declared kind data
   or was representation, and is gone.
+- Settlement's hand-back: each failed flow's source contract takes it into arrears at the next 2d, as now, and a flow
+  failed through a short bank is the bank's to answer for, never its payer's. Levies (§4.3) are flows made beside their
+  base flow from the same fused kinks. Every dated family keeps its rows' shape of terms and is reckoned by
+  `due_by_shape`.
 - The lending placeholder begun in S1.15 (a firm borrowing its month's shortfall against its dues, naming FRM,
   retired by S2.03) is rebuilt on the core. A borrower meeting dues takes the best quote whatever its required
   return: failing the dues costs it the firm.

@@ -257,10 +257,10 @@ fn the_same_for_any_workers() {
     let run = |workers| {
         let mut w = Fixture::new(&funds, [300, 200]);
         let out = settle_flows(&mut w, &flows(&edges), workers);
-        for b in 0..2 {
-            let owed: i64 = w.balance.iter().skip(b).step_by(2).sum();
-            assert_eq!(owed, w.deposits[b], "a bank owes what its customers hold");
-        }
+        assert!(w.books().deposit_breaks().is_empty(), "a bank owes what its customers hold");
+        w.deposits[1] += 1;
+        assert_eq!(w.books().deposit_breaks().len(), 1, "a bank owing other than its customers hold is found");
+        w.deposits[1] -= 1;
         (w.balance, w.reserves, out.settled, out.failed.iter().map(|(f, _)| f.source).collect::<Vec<_>>())
     };
     let one = run(None);
