@@ -53,6 +53,232 @@
    "rows": 521,
    "title": "Borrowed from a formal bank or similar financial institution (% age 15+), World Bank Global Findex"
   },
+  "households/ahd_rooms": {
+   "for": [
+    "S2.05"
+   ],
+   "rows": 1751,
+   "title": "Average number of rooms per household member by tenure (own outright, owner with mortgage, rent private, rent subsidised), by year; OECD Affordable Housing Database HC2.1.A1"
+  },
+  "households/ahd_stock": {
+   "for": [
+    "S2.05"
+   ],
+   "rows": 354,
+   "title": "Dwelling stock (number and per 1000 inhabitants), dwellings completed in the year, around 2011, around 2018 and the latest year, and vacant dwellings excluding seasonal homes as a percentage of the stock (latest year, around 2022); OECD Affordable Housing Database HM1.1 (tables A1, A2 and figure 1.1.2's data)"
+  },
+  "households/bis_property_prices": {
+   "for": [
+    "S2.05"
+   ],
+   "rows": 5016,
+   "title": "Residential property prices, quarterly, index 2010 = 100, nominal (N) and real (R); BIS selected residential property price series (WS_SPP)"
+  },
+  "households/coal_mine_quality": {
+   "for": [
+    "F-010",
+    "S0.13"
+   ],
+   "note": "summed from the plant-month receipts; each average is weighted by the tons of the receipts that report it, and is blank where none does",
+   "rows": 341,
+   "title": "Coal delivered to US power plants in 2019 by originating mine (MSHA id, or IMP for imports and blank where not reported), mine state and county, mine type (S surface, U underground, P preparation plant, SU/US mixed), and coal rank (BIT bituminous, SUB subbituminous, LIG lignite, ANT anthracite, WC waste coal, RC refined): tons received, and the quantity-weighted heat content (MMBtu per ton), sulfur and ash (% by weight); US EIA-923 schedule 2 (fuel receipts and costs)"
+  },
+  "households/coal_mines": {
+   "for": [
+    "F-010",
+    "S0.13"
+   ],
+   "rows": 934,
+   "title": "US coal mines in 2019: MSHA identifier, state, county, status, surface or underground, coal supply region, production (short tons), average employees and labour hours; US EIA and MSHA, historical coal production data"
+  },
+  "households/coal_reserves": {
+   "for": [
+    "F-010",
+    "S0.13"
+   ],
+   "rows": 270,
+   "title": "Table 15.  Recoverable Coal Reserves at Producing Mines, Estimated Recoverable Reserves, and Demonstrated Reserve Base by Mining Method, 2024: million short tons by coal-resource state and mining method (recoverable reserves at producing mines, estimated recoverable reserves, demonstrated reserve base); US EIA Annual Coal Report Table 15"
+  },
+  "households/doing_business_property": {
+   "for": [
+    "S2.05"
+   ],
+   "note": "the case studied is a commercial property transfer between two firms and a warehouse's permit, the nearest cross-country measure of a dwelling sale's legal costs and a builder's permission lead time; economy-level rows only (the city rows of the eleven two-city economies are left out)",
+   "rows": 6474,
+   "title": "Registering property (procedures, days, cost as % of the property's value, quality of land administration index 0-30) and dealing with construction permits (procedures, days, cost as % of the warehouse's value), by Doing Business year 2016-2020 (data of the year before); World Bank Doing Business, DB2020 historical data"
+  },
+  "households/eurostat_farms_by_size": {
+   "for": [
+    "F-093",
+    "S1.03"
+   ],
+   "rows": 14130,
+   "title": "Agricultural holdings (HLD), their standard output (EUR) and annual work units (AWU), and their labour force in persons (PER) and AWU by work status (sole holders, family members, regular non-family workers, non-regular, not directly employed, managers), by economic size class of standard output (EUR 0-2k, 2-8k, 8-25k, 25-100k, 100k+), all legal forms, by country and survey year; Eurostat farm structure survey and integrated farm statistics (ef_m_farmleg, ef_lf_leg)"
+  },
+  "households/eurostat_moved_5y": {
+   "for": [
+    "S2.05"
+   ],
+   "rows": 611,
+   "title": "Share of population having moved to another dwelling within the last five years (%), by tenure (owner with and without loan, tenant at market and reduced rent) and degree of urbanisation, 2012; Eurostat EU-SILC ad hoc module (ilc_hcmp05)"
+  },
+  "households/hazus_flood_damage": {
+   "for": [
+    "S2.05",
+    "S4.03"
+   ],
+   "rows": 1903,
+   "title": "Flood depth-damage functions: percent of the building's (Bldg), contents' (Cont) or inventory's (Inv) value damaged at each depth of water above the first floor (feet, -4 to 24), by occupancy class; FEMA HAZUS default and Federal Insurance Administration curves (HAZUS 5.1 library, archived by A. Pollack, Zenodo doi 10.5281/zenodo.10027236)"
+  },
+  "households/hfcs2017_tables": {
+   "for": [
+    "S3.05",
+    "S6.03",
+    "S6.05"
+   ],
+   "note": "point values only; standard errors, 'M' (missing) and 'N' (too few observations) left out; each table's title in hfcs2017_titles.csv",
+   "rows": 14028,
+   "title": "Household Finance and Consumption Survey, wave 2017 (reference years 2016-2018 by country), statistical tables A-K: medians, means, participation rates, shares and ratios of households' real and financial assets, debt, debt burdens, income and net wealth, broken down by income and net wealth quantile, age of the reference person, household size, housing status and more, per country and the euro area (EMU), in each table's unit (EUR thousands, %, ratios); ECB"
+  },
+  "households/hfcs2017_titles": {
+   "for": [
+    "S3.05",
+    "S6.03",
+    "S6.05"
+   ],
+   "rows": 45,
+   "title": "Titles of the HFCS wave 2017 statistical tables, by table code; ECB"
+  },
+  "households/jrc_flood_damage": {
+   "for": [
+    "S2.05",
+    "S4.03"
+   ],
+   "rows": 270,
+   "title": "Flood depth-damage functions: share of the maximum damage destroyed at each flood depth (m), by damage class (residential, commercial and industrial buildings, transport, roads, agriculture) and continent, with the standard deviation across the curves averaged; JRC global flood depth-damage functions (Huizinga, de Moel and Szewczyk 2017, EUR 28552 EN)"
+  },
+  "households/jrc_max_damage": {
+   "for": [
+    "S2.05",
+    "S4.03"
+   ],
+   "rows": 579,
+   "title": "Construction cost per square metre of building (EUR of 2010) by country and building class, and the maximum flood damage to structure and to content per square metre (EUR of 2010, building based); JRC global flood depth-damage functions database"
+  },
+  "households/oecd_house_prices": {
+   "for": [
+    "S2.05"
+   ],
+   "rows": 2884,
+   "title": "Analytical house price indicators, annual: nominal (HPI) and real (RHP) house prices, rent prices (RPI), price-to-rent (HPI_RPI) and price-to-income (HPI_YDH) ratios as indices (2015 = 100), and the two ratios against their long-term average (_AVG); OECD"
+  },
+  "households/oecd_regional_house_prices": {
+   "for": [
+    "S2.05"
+   ],
+   "rows": 3785,
+   "title": "Regional house price indices, annual, not seasonally adjusted, index (base per series), by region (large and small territorial regions, cities, whole country), dwelling type and vintage, real (RHPI) and nominal (OHPI); OECD"
+  },
+  "households/recs2020": {
+   "for": [
+    "S2.09"
+   ],
+   "note": "numbers rounded to five significant figures",
+   "rows": 18496,
+   "title": "Residential Energy Consumption Survey 2020, one row per household: census region, building-America climate zone, urban type, heating and cooling degree-days (base 65 F, 2020), housing unit type, tenure, year built range, rooms, floor area (sq ft), household members, children, householder's age, income range, main heating fuel, air conditioning, energy use by fuel (electricity, natural gas, propane, fuel oil, wood; thousand Btu), space heating, water heating and electric cooling use (thousand Btu), total use and total spending (USD), and the final weight NWEIGHT (replicate weights left out); US EIA"
+  },
+  "households/scf2019": {
+   "for": [
+    "S2.05",
+    "S2.11",
+    "S3.05",
+    "S6.03",
+    "S6.05"
+   ],
+   "note": "summary extract variables as published (SCFP2019.csv); full-file variables read from p19i6.dta by Y1; summary values rounded to five significant figures",
+   "rows": 28885,
+   "title": "Survey of Consumer Finances 2019, one row per household and implicate (Y1; five implicates per household; the weights WGT summed over all five implicates give the population of households, each implicate's summing to a fifth of it): the head's age, sex, education class, marital status, children, labour force status and occupation; income, wages and normal income; net worth and every asset and debt item of the summary extract (US dollars of 2019); payments on mortgages; bankruptcy and foreclosure in the last five years, 60 days late and turned down for credit; and from the full public file the first mortgage on the home: year obtained or last refinanced (X802), amount borrowed (X804) and owed (X805), term in years (X806, -1 none set), expected payoff year when not on schedule (X815), rate in hundredths of a percent (X816, -1 no interest) and adjustable rate (X820: 1 yes, 5 no), 0 where inapplicable; Federal Reserve Board"
+  },
+  "households/typed_crop_temperature": {
+   "for": [
+    "S2.05"
+   ],
+   "note": "typed from Schlenker and Roberts, Estimating the Impact of Climate Change on Crop Yields: The Importance of Nonlinear Temperature Effects, NBER Working Paper 13799 (February 2008; published PNAS 106(37), 2009), https://www.nber.org/papers/w13799, abstract and section on results (text p. 14); the slopes below and above the threshold are shown only in the paper's Figure 2, not tabulated",
+   "rows": 6,
+   "title": "Crop yields' response to temperature and rain in the United States (county yields 1950-2005): the temperature above which yields fall, yield-maximising growing-season precipitation and the effect on corn of a day at 40 C instead of 29 C"
+  },
+  "households/typed_ctif_fires": {
+   "for": [
+    "S4.03"
+   ],
+   "note": "typed from CTIF Center of Fire Statistics, World Fire Statistics Report No. 26 (2021), Table 1.2 (common indicators of fire statistics in the countries of the world in 2019) and Table 1.4 (distribution of fires by type), https://www.ctif.org/sites/default/files/2021-06/CTIF_Report26_0.pdf; the report's first row (population 328 240 thousand) carries no name and is the United States (Table 1.4's first row, same population); residential shares only where Table 1.4's row reads unambiguously",
+   "rows": 34,
+   "title": "Fire service calls and fires per 1000 inhabitants, fire deaths and injuries per 100,000 inhabitants and per 100 fires, and residential buildings' share of fires (%), 2019"
+  },
+  "households/typed_mpc": {
+   "for": [
+    "S6.03"
+   ],
+   "note": "typed from the two papers' working-paper versions downloaded on the fetch date; each row names its paper and table",
+   "rows": 46,
+   "title": "Marginal propensities to consume (share of a windfall spent within the year) by cash on hand, income, financial assets, deposits, debt and windfall size, and the rest of the windfall's use, from two papers (Italy, survey; Norway, lottery prizes)"
+  },
+  "households/typed_wind_damage": {
+   "for": [
+    "S2.05",
+    "S4.03",
+    "F-010"
+   ],
+   "note": "typed from Eberenz, L\u00fcthi and Bresch, Regional tropical cyclone impact functions for globally consistent risk assessments, Natural Hazards and Earth System Sciences 21, 393-415, 2021, Table A1 (regions) and Table A2 (Vhalf), section 2.2.3 (Vthresh 25.7 m/s, default Vhalf 74.7 m/s, Emanuel 2011's form); https://nhess.copernicus.org/articles/21/393/2021/nhess-21-393-2021.pdf",
+   "rows": 10,
+   "title": "Tropical cyclone wind damage: share destroyed f = v^3 / (1 + v^3), v = max(V - Vthresh, 0) / (Vhalf - Vthresh), V the maximum sustained wind (m/s); Vthresh and Vhalf per calibration region, calibrated on the spread of event damage ratios (vhalf_rmsf) and on total damage (vhalf_tdr), with the region's economies"
+  },
+  "households/uk_individual_insolvency": {
+   "for": [
+    "S2.11"
+   ],
+   "note": "England and Wales only (Scotland and Northern Ireland have their own procedures); sums of the four quarters of each complete year, a procedure not yet existing in a quarter ('[z]') counting none",
+   "rows": 9,
+   "title": "Individual insolvencies in England and Wales by calendar year: total, bankruptcies, debt relief orders and individual voluntary arrangements (not seasonally adjusted, sums of quarters), and the individual insolvency rate per 10,000 adults in the twelve months to Q4; UK Insolvency Service, long-run series"
+  },
+  "households/us_bankruptcy_filings": {
+   "for": [
+    "S2.11"
+   ],
+   "rows": 140,
+   "title": "US bankruptcy cases commenced in the calendar year, by chapter (7, 11, 13, other) and predominant nature of debt (all, business, nonbusiness), whole country; Administrative Office of the US Courts, Table F-2 (12 months ending 31 December)"
+  },
+  "households/us_farms_hired_workers": {
+   "for": [
+    "F-093",
+    "S1.03"
+   ],
+   "note": "values withheld for disclosure ('(D)') are left out",
+   "rows": 1057,
+   "title": "US farm operations and hired farm labour in 2017, national: operations by area operated, economic class, sales, NAICS industry, legal organisation, producers and tenure; operations with hired workers, workers and labour expense, by number of hired workers (1, 2, 3-4, 5-9, 10 or more), days worked (150 or more, under 150) and expense class; USDA NASS Census of Agriculture 2017 (Quick Stats bulk file)"
+  },
+  "households/us_mobility": {
+   "for": [
+    "S2.05"
+   ],
+   "note": "survey years 2020 and 2021 appear twice, with 2010 and 2020 population controls, as published",
+   "rows": 198,
+   "title": "Annual geographic mobility of persons one year old and over, by survey year (the year to March), in thousands and percent: total, same residence, movers, movers within the United States (same county; different county, same state; different state) and from abroad; US Census Bureau, CPS ASEC, historical table A-1"
+  },
+  "households/us_residential_construction_months": {
+   "for": [
+    "S2.05"
+   ],
+   "rows": 360,
+   "title": "Average number of months from start to completion of new privately owned residential buildings started in permit-issuing places, by year of completion, region, buildings with one unit (by purpose: built for sale, contractor-built, owner-built) and with two or more units (by units in the building); US Census Bureau, Survey of Construction"
+  },
+  "households/who_fire_death_rate": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 184,
+   "title": "Age-standardised death rate from fires, both sexes (per 100,000), 2004; WHO Global Health Observatory (SA_0000001443)"
+  },
   "icio/flows": {
    "rows": 167349,
    "title": "Inter-country input-output table, 2019, millions of US dollars: every use of each industry's output (row) by each industry and final use (column: households with their purchases abroad, non-profit institutions serving them, government, fixed investment, inventories), summed over the origins of what was used, with the taxes less subsidies on products and the value added of each column; OECD ICIO 2023 edition"
@@ -1234,6 +1460,13 @@
    "rows": 1126,
    "title": "Physicians (per 1,000 people), World Bank WDI"
   },
+  "wdi/SH.STA.TRAF.P5": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 918,
+   "title": "Mortality caused by road traffic injury (per 100,000 population), WHO via World Bank WDI"
+  },
   "wdi/SH.XPD.CHEX.GD.ZS": {
    "for": [
     "S5.02"
@@ -1357,6 +1590,66 @@
    "fetched": "2026-09-26",
    "title": "Federal Reserve Bank of St. Louis, FRED",
    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
+  },
+  "households/accidents": {
+   "fetched": "2026-09-28",
+   "title": "World Bank API (WDI); WHO Global Health Observatory OData API; CTIF World Fire Statistics No. 26",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/SH.STA.TRAF.P5?format=json&date={first}:{last}&per_page=20000; https://ghoapi.azureedge.net/api/SA_0000001443; https://www.ctif.org/sites/default/files/2021-06/CTIF_Report26_0.pdf"
+  },
+  "households/bis_spp": {
+   "fetched": "2026-09-28",
+   "title": "BIS, selected residential property prices, bulk CSV",
+   "url": "https://data.bis.org/static/bulk/WS_SPP_csv_flat.zip"
+  },
+  "households/coal": {
+   "fetched": "2026-09-28",
+   "title": "US EIA: historical coal production data (mine level), EIA-923 fuel receipts, Annual Coal Report Table 15",
+   "url": "https://www.eia.gov/coal/data/public/xls/coalpublic2019.xls; https://www.eia.gov/electricity/data/eia923/archive/xls/f923_2019.zip; https://www.eia.gov/coal/annual/xls/table15.xlsx"
+  },
+  "households/farms": {
+   "fetched": "2026-09-28",
+   "title": "Eurostat API (ef_m_farmleg, ef_lf_leg); USDA NASS Quick Stats, Census of Agriculture 2017 bulk file",
+   "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/<dataset>; https://www.nass.usda.gov/datasets/qs.census2017.txt.gz"
+  },
+  "households/hazards": {
+   "fetched": "2026-09-28",
+   "title": "JRC global flood depth-damage functions (xlsx); HAZUS flood depth-damage library (Zenodo); Eberenz et al. 2021 (NHESS); Schlenker and Roberts, NBER WP 13799",
+   "url": "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC105688/copy_of_global_flood_depth-damage_functions__30102017.xlsx; https://zenodo.org/api/records/10027236/files/<file>/content; https://nhess.copernicus.org/articles/21/393/2021/nhess-21-393-2021.pdf; https://www.nber.org/system/files/working_papers/w13799/w13799.pdf"
+  },
+  "households/hfcs": {
+   "fetched": "2026-09-28",
+   "title": "ECB, HFCS statistical tables, wave 2017 (June 2026 release)",
+   "url": "https://www.ecb.europa.eu/home/pdf/research/hfcn/HFCS_Statistical_Tables_Wave_2017_June_2026.zip"
+  },
+  "households/housing": {
+   "fetched": "2026-09-28",
+   "title": "OECD Affordable Housing Database; Eurostat API; US Census Bureau CPS ASEC and Survey of Construction; World Bank Doing Business archive",
+   "url": "https://webfs.oecd.org/Els-com/Affordable_Housing_Database/; https://ec.europa.eu/eurostat/api/dissemination/; https://www2.census.gov/programs-surveys/demo/tables/geographic-mobility/time-series/historic/hst_mig_a_1.xlsx; https://www.census.gov/construction/nrc/xls/avg_starttocomp_cust.xls; https://archive.doingbusiness.org/content/dam/doingBusiness/excel/db2020/Historical-data---COMPLETE-dataset-with-scores.xlsx"
+  },
+  "households/insolvency": {
+   "fetched": "2026-09-28",
+   "title": "US Courts, Table F-2 (Business and Nonbusiness Cases Commenced, by Chapter); UK Insolvency Service, individual insolvency statistics, long-run series CSV",
+   "url": "https://www.uscourts.gov/data-news/data-tables/<year>/12/31/bankruptcy-filings/f-2; https://assets.publishing.service.gov.uk/media/65b78f380c75e30012d8019e/Long-Run_Series_in_CSV_Format_-_Individual_Insolvency_Statistics_October_to_December_2023.csv"
+  },
+  "households/mpc": {
+   "fetched": "2026-09-28",
+   "title": "Jappelli and Pistaferri (CSEF WP 325); Fagereng, Holm and Natvik (Statistics Norway DP 852)",
+   "url": "https://www.csef.it/WP/wp325.pdf; https://www.ssb.no/en/forskning/discussion-papers/mpc-heterogeneity-and-household-balance-sheets"
+  },
+  "households/oecd_house_prices": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, analytical house price indicators and regional house price indices",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.ECO.MPD,DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES,1.0/all?startPeriod=2015&format=csvfile; https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_RHPI_TARGET@DF_RHPI_TARGET,/all?startPeriod=2015&format=csvfile"
+  },
+  "households/recs": {
+   "fetched": "2026-09-28",
+   "title": "US EIA, Residential Energy Consumption Survey 2020, public use microdata (v7)",
+   "url": "https://www.eia.gov/consumption/residential/data/2020/csv/recs2020_public_v7.csv"
+  },
+  "households/scf": {
+   "fetched": "2026-09-28",
+   "title": "Federal Reserve Board, Survey of Consumer Finances 2019, summary extract (CSV) and full public data set (Stata)",
+   "url": "https://www.federalreserve.gov/econres/files/scfp2019excel.zip; https://www.federalreserve.gov/econres/files/scf2019s.zip"
   },
   "housing": {
    "fetched": "2026-09-24",

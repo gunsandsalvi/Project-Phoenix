@@ -1,0 +1,1904 @@
+function,occupancy,occupancy_name,cover,source,description,depth_ft,damage_pct
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),0,0
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),1,3
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),2,4
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),3,5
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),4,9
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),5,12
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),6,15
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),7,15
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),8,15
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),9,15
+10,PWTO,,Other_Cover,Hazus Dflt,Open Treatmet Plant Less than Average Damage (All),10,15
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",-4,0
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",-3,0
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",-2,0
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",-1,0
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",0,18
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",1,22
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",2,25
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",3,28
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",4,30
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",5,31
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",6,40
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",7,43
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",8,43
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",9,45
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",10,46
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",11,47
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",12,47
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",13,49
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",14,50
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",15,50
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",16,50
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",17,51
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",18,51
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",19,52
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",20,52
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",21,53
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",22,53
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",23,54
+105,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, A-Zone",24,54
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",-4,7
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",-3,7
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",-2,7
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",-1,11
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",0,17
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",1,21
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",2,29
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",3,34
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",4,38
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",5,43
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",6,50
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",7,50
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",8,54
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",9,55
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",10,55
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",11,57
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",12,58
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",13,60
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",14,62
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",15,63
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",16,65
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",17,67
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",18,69
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",19,70
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",20,72
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",21,74
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",22,76
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",23,77
+106,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, A-Zone",24,79
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",-4,0
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",-3,0
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",-2,0
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",-1,0
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",0,11
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",1,12
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",2,14
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",3,18
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",4,20
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",5,22
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",6,24
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",7,26
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",8,30
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",9,34
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",10,38
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",11,39
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",12,40
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",13,42
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",14,43
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",15,44
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",16,45
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",17,47
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",18,48
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",19,49
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",20,50
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",21,52
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",22,53
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",23,54
+107,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, A-Zone",24,56
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",-4,4
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",-3,4
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",-2,8
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",-1,14
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",0,19
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",1,21
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",2,26
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",3,29
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",4,34
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",5,39
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",6,44
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",7,50
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",8,55
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",9,57
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",10,59
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",11,61
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",12,63
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",13,65
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",14,66
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",15,68
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",16,69
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",17,71
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",18,72
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",19,74
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",20,75
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",21,77
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",22,79
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",23,80
+108,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, A-Zone",24,82
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",-4,0
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",-3,0
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",-2,0
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",-1,0
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",0,5
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",1,8
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",2,12
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",3,17
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",4,19
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",5,22
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",6,24
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",7,25
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",8,30
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",9,35
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",10,38
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",11,39
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",12,40
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",13,42
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",14,43
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",15,44
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",16,45
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",17,47
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",18,48
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",19,49
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",20,50
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",21,52
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",22,53
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",23,54
+109,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, A-Zone",24,56
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),0,0
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),1,8
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),2,12
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),3,15
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),4,26
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),5,36
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),6,45
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),7,45
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),8,45
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),9,45
+11,PWTO,,Other_Cover,Hazus Dflt,Open Treatment Plant Greater than Average Damage (All),10,45
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",-4,3
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",-3,3
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",-2,6
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",-1,10
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",0,12
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",1,14
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",2,20
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",3,25
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",4,31
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",5,36
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",6,38
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",7,41
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",8,44
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",9,48
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",10,50
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",11,52
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",12,54
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",13,56
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",14,57
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",15,59
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",16,61
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",17,63
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",18,65
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",19,67
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",20,69
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",21,71
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",22,73
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",23,75
+110,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, A-Zone",24,77
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",-4,0
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",-3,0
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",-2,0
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",-1,0
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",0,3
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",1,9
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",2,13
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",3,25
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",4,27
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",5,28
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",6,33
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",7,34
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",8,41
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",9,43
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",10,45
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",11,46
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",12,47
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",13,48
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",14,49
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",15,50
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",16,51
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",17,52
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",18,53
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",19,54
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",20,55
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",21,56
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",22,57
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",23,58
+111,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, A-Zone",24,59
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",-4,6
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",-3,6
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",-2,9
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",-1,14
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",0,15
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",1,24
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",2,27
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",3,30
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",4,35
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",5,40
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",6,43
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",7,44
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",8,52
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",9,56
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",10,58
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",11,60
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",12,62
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",13,64
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",14,66
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",15,68
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",16,70
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",17,72
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",18,74
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",19,76
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",20,78
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",21,81
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",22,83
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",23,85
+112,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, A-Zone",24,87
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",-4,0
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",-3,0
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",-2,0
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",-1,0
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",0,8
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",1,10
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",2,14
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",3,26
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",4,28
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",5,29
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",6,41
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",7,43
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",8,44
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",9,45
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",10,46
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",11,47
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",12,48
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",13,49
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",14,50
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",15,51
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",16,52
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",17,53
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",18,54
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",19,55
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",20,56
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",21,57
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",22,58
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",23,59
+113,RES1,Single Family Dwelling,Bldg,FIA,"one floor, no basement, Structure, V-Zone",24,60
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",-4,7
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",-3,7
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",-2,10
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",-1,14
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",0,17
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",1,21
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",2,29
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",3,34
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",4,38
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",5,43
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",6,47
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",7,52
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",8,53
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",9,54
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",10,55
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",11,56
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",12,57
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",13,58
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",14,59
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",15,60
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",16,61
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",17,62
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",18,63
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",19,64
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",20,65
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",21,66
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",22,67
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",23,68
+114,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"one floor, w/ basement, Structure, V-Zone",24,69
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",-4,0
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",-3,0
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",-2,0
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",-1,0
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",0,5
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",1,9
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",2,13
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",3,18
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",4,20
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",5,22
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",6,24
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",7,26
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",8,30
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",9,34
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",10,38
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",11,40
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",12,42
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",13,44
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",14,46
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",15,48
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",16,50
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",17,52
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",18,54
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",19,56
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",20,58
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",21,60
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",22,62
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",23,64
+115,RES1,Single Family Dwelling,Bldg,FIA,"two floors, no basement, Structure, V-Zone",24,66
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",-4,4
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",-3,4
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",-2,8
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",-1,14
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",0,17
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",1,24
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",2,26
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",3,29
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",4,34
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",5,39
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",6,44
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",7,50
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",8,55
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",9,57
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",10,59
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",11,61
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",12,63
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",13,65
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",14,67
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",15,69
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",16,71
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",17,73
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",18,75
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",19,77
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",20,79
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",21,81
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",22,83
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",23,85
+116,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"two floors, w/ basement, Structure, V-Zone",24,87
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",-4,0
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",-3,0
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",-2,0
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",-1,0
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",0,4
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",1,8
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",2,12
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",3,17
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",4,19
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",5,22
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",6,24
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",7,25
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",8,30
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",9,35
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",10,38
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",11,40
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",12,42
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",13,44
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",14,46
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",15,48
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",16,50
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",17,52
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",18,54
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",19,56
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",20,58
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",21,60
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",22,62
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",23,64
+117,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, no basement, Structure, V-Zone",24,66
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",-4,3
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",-3,3
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",-2,6
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",-1,10
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",0,11
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",1,14
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",2,20
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",3,25
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",4,31
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",5,36
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",6,38
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",7,41
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",8,44
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",9,47
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",10,50
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",11,52
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",12,54
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",13,56
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",14,58
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",15,60
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",16,62
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",17,64
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",18,66
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",19,68
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",20,70
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",21,72
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",22,74
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",23,76
+118,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"three or more floors, w/ basement, Structure, V-Zone",24,78
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",-4,0
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",-3,0
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",-2,0
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",-1,0
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",0,3
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",1,9
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",2,13
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",3,25
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",4,27
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",5,28
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",6,32
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",7,37
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",8,41
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",9,43
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",10,45
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",11,47
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",12,49
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",13,51
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",14,53
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",15,55
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",16,57
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",17,59
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",18,61
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",19,63
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",20,65
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",21,67
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",22,69
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",23,71
+119,RES1,Single Family Dwelling,Bldg,FIA,"split level, no basement, Structure, V-Zone",24,73
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),0,0
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),1,1
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),2,2
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),3,5
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),4,15
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),5,30
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),6,40
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),7,40
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),8,40
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),9,40
+12,PWTL,,Other_Cover,Hazus Dflt,Large Closed or Pressure Treatment Plant (>200 MGD),10,40
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",-4,6
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",-3,6
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",-2,6
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",-1,14
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",0,15
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",1,24
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",2,27
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",3,30
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",4,35
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",5,41
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",6,44
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",7,48
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",8,52
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",9,57
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",10,59
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",11,61
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",12,63
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",13,65
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",14,67
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",15,69
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",16,71
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",17,73
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",18,75
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",19,77
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",20,79
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",21,81
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",22,83
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",23,85
+120,RES1,Single Family Dwelling,Bldg,FIA (MOD.),"split level, w/ basement, Structure, V-Zone",24,87
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",-4,0
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",-3,0
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",-2,0
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",-1,0
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",0,6
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",1,10
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",2,18
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",3,23
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",4,27
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",5,32
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",6,39
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",7,39
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",8,43
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",9,44
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",10,44
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",11,46
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",12,47
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",13,48
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",14,49
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",15,50
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",16,51
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",17,52
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",18,53
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",19,54
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",20,55
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",21,56
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",22,57
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",23,58
+121,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, A-Zone",24,59
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",-4,0
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",-3,0
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",-2,4
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",-1,8
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",0,13
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",1,15
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",2,20
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",3,23
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",4,27
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",5,32
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",6,37
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",7,43
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",8,48
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",9,51
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",10,53
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",11,55
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",12,57
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",13,59
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",14,60
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",15,61
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",16,62
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",17,63
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",18,64
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",19,65
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",20,66
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",21,67
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",22,68
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",23,69
+122,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure,  A-Zone",24,70
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",-4,0
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",-3,0
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",-2,3
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",-1,5
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",0,7
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",1,9
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",2,15
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",3,20
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",4,26
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",5,31
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",6,33
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",7,36
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",8,39
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",9,43
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",10,45
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",11,46
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",12,47
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",13,48
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",14,49
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",15,50
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",16,51
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",17,52
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",18,53
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",19,54
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",20,55
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",21,56
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",22,57
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",23,58
+123,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, A-Zone",24,59
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",-4,0
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",-3,0
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",-2,3
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",-1,5
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",0,6
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",1,16
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",2,19
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",3,22
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",4,27
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",5,32
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",6,35
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",7,36
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",8,44
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",9,48
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",10,50
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",11,52
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",12,54
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",13,56
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",14,58
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",15,59
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",16,60
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",17,61
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",18,62
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",19,63
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",20,64
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",21,65
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",22,66
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",23,67
+124,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, A-Zone",24,68
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",-4,0
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",-3,0
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",-2,0
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",-1,0
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",0,6
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",1,10
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",2,18
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",3,23
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",4,27
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",5,32
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",6,39
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",7,39
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",8,43
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",9,44
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",10,44
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",11,46
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",12,47
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",13,48
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",14,49
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",15,50
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",16,51
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",17,52
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",18,53
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",19,54
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",20,55
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",21,56
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",22,57
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",23,58
+125,RES1,Single Family Dwelling,Bldg,FIA,"one floor, w/ basement, Structure, V-Zone",24,59
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",-4,0
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",-3,0
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",-2,4
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",-1,8
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",0,11
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",1,18
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",2,20
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",3,23
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",4,28
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",5,33
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",6,38
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",7,44
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",8,49
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",9,51
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",10,53
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",11,55
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",12,57
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",13,59
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",14,60
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",15,61
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",16,62
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",17,63
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",18,64
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",19,65
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",20,66
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",21,67
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",22,68
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",23,69
+126,RES1,Single Family Dwelling,Bldg,FIA,"two floors, w/ basement, Structure, V-Zone",24,70
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",-4,0
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",-3,0
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",-2,3
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",-1,5
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",0,6
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",1,9
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",2,15
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",3,20
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",4,26
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",5,31
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",6,33
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",7,36
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",8,39
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",9,42
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",10,45
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",11,46
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",12,47
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",13,48
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",14,49
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",15,50
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",16,51
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",17,52
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",18,53
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",19,54
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",20,55
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",21,56
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",22,57
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",23,58
+127,RES1,Single Family Dwelling,Bldg,FIA,"three or more floors, w/ basement, Structure, V-Zone",24,59
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",-4,0
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",-3,0
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",-2,0
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",-1,5
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",0,6
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",1,16
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",2,19
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",3,22
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",4,27
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",5,32
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",6,35
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",7,42
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",8,48
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",9,50
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",10,52
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",11,54
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",12,56
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",13,58
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",14,59
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",15,60
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",16,61
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",17,62
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",18,63
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",19,64
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",20,65
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",21,66
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",22,67
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",23,68
+128,RES1,Single Family Dwelling,Bldg,FIA,"split level, w/ basement, Structure, V-Zone",24,69
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),0,0
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),1,1
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),2,2
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),3,5
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),4,15
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),5,30
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),6,40
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),7,40
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),8,40
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),9,40
+13,PWTM,,Other_Cover,Hazus Dflt,Medium Closed or Pressure Treatment Plant (50-200 MGD),10,40
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),0,0
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),1,1
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),2,2
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),3,5
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),4,15
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),5,30
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),6,40
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),7,40
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),8,40
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),9,40
+14,PWTS,,Other_Cover,Hazus Dflt,Small Closed or Pressure Treatment Plant (<50 MGD),10,40
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),0,0
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),1,1
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),2,1
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),3,3
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),4,8
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),5,15
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),6,20
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),7,20
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),8,20
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),9,20
+15,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Less than Average Damage (All),10,20
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),0,0
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),1,2
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),2,3
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),3,8
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),4,23
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),5,45
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),6,60
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),7,60
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),8,60
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),9,60
+16,PWTC,,Other_Cover,Hazus Dflt,Closed Treatment Plant Greater than Average Damage (All),10,60
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),0,0
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),1,0
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),2,0
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),3,0
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),4,40
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),5,40
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),6,40
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),7,40
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),8,40
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),9,40
+17,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Below Grade (>50 MGD),10,40
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),0,0
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),1,0
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),2,0
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),3,0
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),4,40
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),5,40
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),6,40
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),7,40
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),8,40
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),9,40
+18,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Below Grade (10 - 50 MGD),10,40
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",-4,0
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",-3,0
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",-2,0
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",-1,0
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",0,11
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",1,44
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",2,63
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",3,73
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",4,78
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",5,79
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",6,81
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",7,82
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",8,83
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",9,84
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",10,85
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",11,86
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",12,88
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",13,89
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",14,90
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",15,91
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",16,92
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",17,94
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",18,95
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",19,96
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",20,97
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",21,98
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",22,99
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",23,100
+189,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, A-Zone",24,100
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),0,0
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),1,0
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),2,0
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),3,0
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),4,40
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),5,40
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),6,40
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),7,40
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),8,40
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),9,40
+19,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Below Grade (<10 MGD),10,40
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",-4,0
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",-3,0
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",-2,0
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",-1,0
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",0,8
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",1,45
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",2,64
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",3,74
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",4,79
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",5,80
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",6,81
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",7,82
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",8,83
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",9,84
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",10,85
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",11,86
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",12,87
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",13,88
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",14,89
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",15,90
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",16,91
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",17,92
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",18,93
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",19,94
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",20,95
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",21,96
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",22,97
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",23,98
+190,RES2,Mobile Home,Bldg,FIA,"Mobile home, structure, V-Zone",24,99
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),0,0
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),1,1
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),2,2
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),3,5
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),4,15
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),5,30
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),6,40
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),7,40
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),8,40
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),9,40
+20,PPPL,,Other_Cover,Hazus Dflt,Large Pumping Plant Above Grade (> 50MGD),10,40
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),0,0
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),1,1
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),2,2
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),3,5
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),4,15
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),5,30
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),6,40
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),7,40
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),8,40
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),9,40
+21,PPPM,,Other_Cover,Hazus Dflt,Medium Pumping Plant Above Grade (10 - 50 MGD),10,40
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",-4,0
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",-3,0
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",-2,0
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",-1,0
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",0,12
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",1,25
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",2,35
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",3,36
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",4,38
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",5,41
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",6,45
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",7,50
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",8,55
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",9,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",10,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",11,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",12,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",13,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",14,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",15,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",16,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",17,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",18,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",19,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",20,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",21,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",22,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",23,60
+21,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, A-Zone",24,60
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),0,0
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),1,1
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),2,2
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),3,5
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),4,15
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),5,30
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),6,40
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),7,40
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),8,40
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),9,40
+22,PPPS,,Other_Cover,Hazus Dflt,Small Pumping Plant Above Grade (<10 MGD),10,40
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",-4,0
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",-3,5
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",-2,7
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",-1,8
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",0,16
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",1,20
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",2,22
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",3,28
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",4,33
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",5,39
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",6,44
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",7,50
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",8,55
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",9,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",10,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",11,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",12,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",13,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",14,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",15,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",16,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",17,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",18,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",19,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",20,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",21,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",22,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",23,60
+22,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, A-Zone",24,60
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,0,0
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,1,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,2,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,3,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,4,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,5,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,6,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,7,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,8,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,9,40
+23,PCVS,,Other_Cover,Hazus Dflt,Control Vaults and Control Stations,10,40
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",-4,0
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",-3,0
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",-2,0
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",-1,0
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",0,8
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",1,11
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",2,19
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",3,23
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",4,28
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",5,33
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",6,39
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",7,44
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",8,50
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",9,54
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",10,58
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",11,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",12,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",13,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",14,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",15,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",16,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",17,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",18,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",19,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",20,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",21,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",22,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",23,60
+23,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, A-Zone",24,60
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,0,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,1,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,2,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,3,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,4,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,5,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,6,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,7,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,8,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,9,0
+24,PSTAS,,Other_Cover,Hazus Dflt,Elevated Tanks,10,0
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",-4,0
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",-3,5
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",-2,7
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",-1,8
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",0,16
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",1,18
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",2,25
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",3,29
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",4,33
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",5,37
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",6,42
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",7,46
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",8,52
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",9,55
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",10,58
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",11,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",12,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",13,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",14,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",15,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",16,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",17,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",18,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",19,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",20,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",21,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",22,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",23,60
+24,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, A-Zone",24,60
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,0,0
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,1,0
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,2,0
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,3,0
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,4,5
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,5,5
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,6,5
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,7,5
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,8,5
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,9,5
+25,PSTBC,,Other_Cover,Hazus Dflt,Buried Concrete Tank,10,5
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",-4,0
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",-3,0
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",-2,0
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",-1,0
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",0,7
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",1,15
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",2,21
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",3,22
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",4,23
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",5,25
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",6,27
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",7,30
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",8,35
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",9,40
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",10,43
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",11,45
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",12,48
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",13,50
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",14,52
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",15,54
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",16,56
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",17,58
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",18,60
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",19,60
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",20,60
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",21,60
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",22,60
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",23,60
+25,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, A-Zone",24,60
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,0,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,1,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,2,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,3,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,4,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,5,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,6,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,7,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,8,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,9,0
+26,PSTGC,,Other_Cover,Hazus Dflt,At Grade Concrete Tank,10,0
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",-4,0
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",-3,5
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",-2,7
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",-1,8
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",0,15
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",1,22
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",2,27
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",3,28
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",4,29
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",5,30
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",6,32
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",7,35
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",8,39
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",9,43
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",10,46
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",11,47
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",12,50
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",13,52
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",14,53
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",15,55
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",16,57
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",17,58
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",18,60
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",19,60
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",20,60
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",21,60
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",22,60
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",23,60
+26,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, A-Zone",24,60
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,0,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,1,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,2,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,3,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,4,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,5,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,6,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,7,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,8,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,9,0
+27,PSTGS,,Other_Cover,Hazus Dflt,At Grade Steel Tank,10,0
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",-4,0
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",-3,0
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",-2,0
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",-1,0
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",0,8
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",1,11
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",2,19
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",3,23
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",4,28
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",5,33
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",6,39
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",7,44
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",8,50
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",9,54
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",10,58
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",11,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",12,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",13,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",14,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",15,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",16,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",17,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",18,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",19,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",20,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",21,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",22,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",23,60
+27,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, A-Zone",24,60
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,0,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,1,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,2,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,3,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,4,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,5,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,6,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,7,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,8,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,9,0
+28,PSTGW,,Other_Cover,Hazus Dflt,At Grade Wood Tank,10,0
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",-4,0
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",-3,5
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",-2,7
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",-1,8
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",0,16
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",1,18
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",2,25
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",3,29
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",4,33
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",5,37
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",6,42
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",7,46
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",8,52
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",9,55
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",10,58
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",11,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",12,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",13,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",14,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",15,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",16,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",17,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",18,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",19,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",20,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",21,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",22,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",23,60
+28,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, A-Zone",24,60
+29,PWE,,Other_Cover,Hazus Dflt,Wells,0,0
+29,PWE,,Other_Cover,Hazus Dflt,Wells,1,1
+29,PWE,,Other_Cover,Hazus Dflt,Wells,2,2
+29,PWE,,Other_Cover,Hazus Dflt,Wells,3,5
+29,PWE,,Other_Cover,Hazus Dflt,Wells,4,20
+29,PWE,,Other_Cover,Hazus Dflt,Wells,5,25
+29,PWE,,Other_Cover,Hazus Dflt,Wells,6,30
+29,PWE,,Other_Cover,Hazus Dflt,Wells,7,30
+29,PWE,,Other_Cover,Hazus Dflt,Wells,8,30
+29,PWE,,Other_Cover,Hazus Dflt,Wells,9,30
+29,PWE,,Other_Cover,Hazus Dflt,Wells,10,30
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",-4,0
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",-3,0
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",-2,0
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",-1,0
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",0,10
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",1,17
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",2,23
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",3,29
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",4,35
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",5,40
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",6,45
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",7,50
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",8,55
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",9,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",10,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",11,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",12,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",13,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",14,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",15,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",16,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",17,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",18,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",19,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",20,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",21,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",22,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",23,60
+29,RES1,Single Family Dwelling,Cont,FIA,"one floor, no basement, Contents, V-Zone",24,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",-4,0
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",-3,5
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",-2,7
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",-1,8
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",0,15
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",1,20
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",2,22
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",3,28
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",4,33
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",5,39
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",6,44
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",7,50
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",8,55
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",9,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",10,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",11,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",12,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",13,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",14,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",15,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",16,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",17,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",18,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",19,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",20,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",21,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",22,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",23,60
+30,RES1,Single Family Dwelling,Cont,FIA,"one floor, w/ basement, Contents, V-Zone",24,60
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),0,0
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),1,0
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),2,0
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),3,0
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),4,40
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),5,40
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),6,40
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),7,40
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),8,40
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),9,40
+30,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Dry Well (>50 MGD),10,40
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",-4,0
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",-3,0
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",-2,0
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",-1,0
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",0,7
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",1,9
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",2,17
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",3,22
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",4,28
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",5,33
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",6,39
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",7,44
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",8,50
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",9,54
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",10,58
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",11,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",12,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",13,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",14,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",15,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",16,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",17,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",18,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",19,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",20,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",21,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",22,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",23,60
+31,RES1,Single Family Dwelling,Cont,FIA,"two floors, no basement, Contents, V-Zone",24,60
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),0,0
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),1,0
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),2,0
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),3,0
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),4,40
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),5,40
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),6,40
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),7,40
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),8,40
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),9,40
+31,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Wet Well (>50 MGD),10,40
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",-4,0
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",-3,5
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",-2,7
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",-1,8
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",0,15
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",1,17
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",2,23
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",3,28
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",4,33
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",5,37
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",6,42
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",7,46
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",8,52
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",9,55
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",10,58
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",11,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",12,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",13,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",14,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",15,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",16,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",17,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",18,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",19,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",20,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",21,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",22,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",23,60
+32,RES1,Single Family Dwelling,Cont,FIA (MOD.),"two floors, w/ basement, Contents, V-Zone",24,60
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),0,0
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),1,0
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),2,0
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),3,0
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),4,10
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),5,10
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),6,10
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),7,10
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),8,10
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),9,10
+32,WLSL,,Other_Cover,Hazus Dflt,Large Lift Station Submersible (>50 MGD),10,10
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",-4,0
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",-3,0
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",-2,0
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",-1,0
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",0,6
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",1,11
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",2,15
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",3,19
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",4,23
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",5,26
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",6,29
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",7,32
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",8,35
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",9,41
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",10,43
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",11,45
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",12,48
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",13,50
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",14,52
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",15,54
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",16,56
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",17,58
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",18,60
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",19,60
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",20,60
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",21,60
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",22,60
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",23,60
+33,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, no basement, Contents, V-Zone",24,60
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),0,0
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),1,0
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),2,0
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),3,0
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),4,40
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),5,40
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),6,40
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),7,40
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),8,40
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),9,40
+33,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Dry Well (10 - 50 MGD),10,40
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",-4,0
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",-3,5
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",-2,7
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",-1,8
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",0,14
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",1,18
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",2,22
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",3,25
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",4,29
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",5,31
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",6,34
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",7,36
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",8,39
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",9,44
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",10,46
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",11,47
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",12,50
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",13,52
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",14,53
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",15,55
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",16,57
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",17,58
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",18,60
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",19,60
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",20,60
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",21,60
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",22,60
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",23,60
+34,RES1,Single Family Dwelling,Cont,FIA (MOD.),"three or more floors, w/ basement, Contents, V-Zone",24,60
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),0,0
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),1,0
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),2,0
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),3,0
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),4,40
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),5,40
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),6,40
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),7,40
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),8,40
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),9,40
+34,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Wet Well (10 - 50 MGD),10,40
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",-4,0
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",-3,0
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",-2,0
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",-1,0
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",0,7
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",1,9
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",2,17
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",3,22
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",4,28
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",5,33
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",6,39
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",7,44
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",8,50
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",9,54
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",10,58
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",11,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",12,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",13,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",14,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",15,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",16,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",17,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",18,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",19,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",20,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",21,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",22,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",23,60
+35,RES1,Single Family Dwelling,Cont,FIA,"split level, no basement, Contents, V-Zone",24,60
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),0,0
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),1,0
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),2,0
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),3,0
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),4,10
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),5,10
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),6,10
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),7,10
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),8,10
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),9,10
+35,WLSM,,Other_Cover,Hazus Dflt,Medium Lift Station Submersible (10 - 50 MGD),10,10
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",-4,0
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",-3,5
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",-2,7
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",-1,8
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",0,15
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",1,17
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",2,23
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",3,28
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",4,33
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",5,37
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",6,42
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",7,46
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",8,52
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",9,55
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",10,58
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",11,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",12,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",13,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",14,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",15,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",16,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",17,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",18,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",19,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",20,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",21,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",22,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",23,60
+36,RES1,Single Family Dwelling,Cont,FIA (MOD.),"split level, w/ basement, Contents, V-Zone",24,60
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),0,0
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),1,0
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),2,0
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),3,0
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),4,40
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),5,40
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),6,40
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),7,40
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),8,40
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),9,40
+36,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Dry Well (<10 MGD),10,40
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),0,0
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),1,0
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),2,0
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),3,0
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),4,40
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),5,40
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),6,40
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),7,40
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),8,40
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),9,40
+37,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Wet Well (<10 MGD),10,40
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),0,0
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),1,0
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),2,0
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),3,0
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),4,10
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),5,10
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),6,10
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),7,10
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),8,10
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),9,10
+38,WLSS,,Other_Cover,Hazus Dflt,Small Lift Station Submersible (<10 MGD),10,10
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),0,0
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),1,5
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),2,8
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),3,10
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),4,17
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),5,24
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),6,30
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),7,30
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),8,30
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),9,30
+39,WWTL,,Other_Cover,Hazus Dflt,Large Wastewater Treatment Plant (>200 MGD),10,40
+4,PDFLT,,Other_Cover,Hazus Dflt,,0,0
+4,PDFLT,,Other_Cover,Hazus Dflt,,1,1
+4,PDFLT,,Other_Cover,Hazus Dflt,,2,2
+4,PDFLT,,Other_Cover,Hazus Dflt,,3,5
+4,PDFLT,,Other_Cover,Hazus Dflt,,4,15
+4,PDFLT,,Other_Cover,Hazus Dflt,,5,30
+4,PDFLT,,Other_Cover,Hazus Dflt,,6,40
+4,PDFLT,,Other_Cover,Hazus Dflt,,7,40
+4,PDFLT,,Other_Cover,Hazus Dflt,,8,40
+4,PDFLT,,Other_Cover,Hazus Dflt,,9,40
+4,PDFLT,,Other_Cover,Hazus Dflt,,10,40
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),0,0
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),1,8
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),2,12
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),3,15
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),4,26
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),5,36
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),6,45
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),7,45
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),8,45
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),9,45
+40,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Greater than Average Damage (All),10,60
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),0,0
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),1,3
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),2,4
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),3,5
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),4,9
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),5,12
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),6,15
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),7,15
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),8,15
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),9,15
+41,WWTA,,Other_Cover,Hazus Dflt,Wastewater Treatment Plants Less than Average Damage (All),10,20
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),0,0
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),1,5
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),2,8
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),3,10
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),4,17
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),5,24
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),6,30
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),7,30
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),8,30
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),9,30
+42,WWTM,,Other_Cover,Hazus Dflt,Medium Wastewater Treatment Plant (50 - 200 MGD),10,40
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),0,0
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),1,5
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),2,8
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),3,10
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),4,17
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),5,24
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),6,30
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),7,30
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),8,30
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),9,30
+43,WWTS,,Other_Cover,Hazus Dflt,Small Wastewater Treatment Plant (<50 MGD),10,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,0,0
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,1,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,2,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,3,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,4,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,5,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,6,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,7,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,8,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,9,40
+44,WWCV,,Other_Cover,Hazus Dflt,Wastewater Control Vaults and Control Stations,10,40
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,0,0
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,1,5
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,2,8
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,3,10
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,4,17
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,5,24
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,6,30
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,7,30
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,8,30
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,9,30
+45,WDFLT,,Other_Cover,Hazus Dflt,Default Wastewater Facility,10,40
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,0,0
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,1,1
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,2,2
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,3,5
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,4,15
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,5,30
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,6,40
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,7,40
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,8,40
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,9,40
+48,ODFLT,,Other_Cover,Hazus Dflt,Default Oil Facility,10,40
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,0,0
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,1,1
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,2,2
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,3,5
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,4,15
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,5,30
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,6,40
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,7,40
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,8,40
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,9,40
+49,OPP,,Other_Cover,Hazus Dflt,Oil Pumping Plant,10,40
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",0,0
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",1,1
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",2,2
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",3,5
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",4,15
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",5,30
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",6,40
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",7,40
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",8,40
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",9,40
+50,ORFL,,Other_Cover,Hazus Dflt,"Large Oil Refinery (>500,000 lb/day)",10,40
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",0,0
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",1,1
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",2,2
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",3,5
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",4,15
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",5,30
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",6,40
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",7,40
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",8,40
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",9,40
+51,ORFM,,Other_Cover,Hazus Dflt,"Medium Oil Refinery (100,000 - 500,000 lb/day)",10,40
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",0,0
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",1,1
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",2,2
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",3,5
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",4,15
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",5,30
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",6,40
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",7,40
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",8,40
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",9,40
+52,ORFS,,Other_Cover,Hazus Dflt,"Small Oil Refinery (< 100,000 lb/day)",10,40
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,0,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,1,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,2,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,3,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,4,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,5,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,6,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,7,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,8,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,9,0
+53,OTF,,Other_Cover,Hazus Dflt,Oil Tank Farms,10,0
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,0,0
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,1,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,2,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,3,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,4,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,5,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,6,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,7,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,8,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,9,40
+54,OCV,,Other_Cover,Hazus Dflt,Oil Control Vault and Control Stations,10,40
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,0,0
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,1,1
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,2,2
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,3,5
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,4,15
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,5,30
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,6,40
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,7,40
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,8,40
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,9,40
+57,NGC,,Other_Cover,Hazus Dflt,Natural Gas Compressor Stations,10,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,0,0
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,1,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,2,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,3,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,4,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,5,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,6,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,7,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,8,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,9,40
+58,NGCV,,Other_Cover,Hazus Dflt,Natural Gas Control Valves and Control Stations,10,40
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,0,0
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,1,1
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,2,2
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,3,5
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,4,15
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,5,30
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,6,40
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,7,40
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,8,40
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,9,40
+59,GDFLT,,Other_Cover,Hazus Dflt,Natural Gas Default,10,40
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,0,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,1,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,2,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,3,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,4,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,5,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,6,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,7,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,8,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,9,0
+60,EDFLT,,Other_Cover,Hazus Dflt,Electric Power Default,10,0
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),0,0
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),1,2
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),2,5
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),3,7
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),4,10
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),5,12
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),6,15
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),7,17
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),8,20
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),9,25
+61,EPPL,,Other_Cover,Hazus Dflt,Electric Power Plant Large (>500 MW),10,30
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),0,0
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),1,2
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),2,5
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),3,7
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),4,10
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),5,12
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),6,15
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),7,17
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),8,20
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),9,25
+62,EPPM,,Other_Cover,Hazus Dflt,Electric Power Plant Large (100-500 MW),10,30
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),0,0
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),1,2
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),2,5
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),3,7
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),4,10
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),5,12
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),6,15
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),7,17
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),8,20
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),9,25
+63,EPPS,,Other_Cover,Hazus Dflt,Electric Power Plant Small (<100 MW),10,30
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),0,0
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),1,2
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),2,4
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),3,6
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),4,7
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),5,8
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),6,9
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),7,10
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),8,12
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),9,14
+64,ESSH,,Other_Cover,Hazus Dflt,Substation - High Voltage (500 KV),10,15
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),0,0
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),1,2
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),2,4
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),3,6
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),4,7
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),5,8
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),6,9
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),7,10
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),8,12
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),9,14
+65,ESSM,,Other_Cover,Hazus Dflt,Substation - Medium Voltage (230 KV),10,15
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),0,0
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),1,2
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),2,4
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),3,6
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),4,7
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),5,8
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),6,9
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),7,10
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),8,12
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),9,14
+66,ESSL,,Other_Cover,Hazus Dflt,Substation - Low Voltage (115 KV),10,15
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),0,0
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),1,5
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),2,8
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),3,10
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),4,17
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),5,24
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),6,30
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),7,30
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),8,30
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),9,30
+7,PWTL,,Other_Cover,Hazus Dflt,Large Gravity or Open Treatment Plant (> 200 MGD),10,40
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",-4,0
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",-3,0
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",-2,0
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",-1,0
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",0,3
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",1,27
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",2,49
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",3,64
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",4,70
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",5,76
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",6,78
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",7,79
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",8,81
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",9,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",10,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",11,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",12,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",13,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",14,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",15,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",16,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",17,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",18,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",19,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",20,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",21,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",22,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",23,83
+74,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, A-Zone",24,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",-4,0
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",-3,0
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",-2,0
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",-1,0
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",0,3
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",1,27
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",2,50
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",3,65
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",4,71
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",5,76
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",6,78
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",7,79
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",8,81
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",9,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",10,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",11,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",12,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",13,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",14,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",15,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",16,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",17,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",18,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",19,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",20,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",21,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",22,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",23,83
+75,RES2,Mobile Home,Cont,FIA,"Mobile Home, Contents, V-Zone",24,83
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),0,0
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),1,5
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),2,8
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),3,10
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),4,17
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),5,24
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),6,30
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),7,30
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),8,30
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),9,30
+8,PWTM,,Other_Cover,Hazus Dflt,Medium Gravity or Open Treatment Plant (50-200 MGD),10,40
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),0,0
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),1,5
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),2,8
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),3,10
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),4,17
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),5,24
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),6,30
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),7,30
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),8,30
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),9,30
+9,PWTS,,Other_Cover,Hazus Dflt,Small Gravity or Open Treatment Plant (<50 MGD),10,40

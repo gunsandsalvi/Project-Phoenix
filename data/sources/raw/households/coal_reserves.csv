@@ -1,0 +1,271 @@
+state,measure,million_short_tons
+Alabama,surface_at_producing_mines,6
+Alabama,surface_estimated_recoverable,2205
+Alabama,surface_reserve_base,3096
+Alabama,total_at_producing_mines,238
+Alabama,total_estimated_recoverable,2499
+Alabama,total_reserve_base,3679
+Alabama,underground_at_producing_mines,233
+Alabama,underground_estimated_recoverable,294
+Alabama,underground_reserve_base,583
+Alaska,surface_at_producing_mines,43
+Alaska,surface_estimated_recoverable,474
+Alaska,surface_reserve_base,655
+Alaska,total_at_producing_mines,43
+Alaska,total_estimated_recoverable,2808
+Alaska,total_reserve_base,6078
+Alaska,underground_estimated_recoverable,2335
+Alaska,underground_reserve_base,5423
+Arkansas,surface_estimated_recoverable,101
+Arkansas,surface_reserve_base,144
+Arkansas,total_estimated_recoverable,227
+Arkansas,total_reserve_base,415
+Arkansas,underground_estimated_recoverable,126
+Arkansas,underground_reserve_base,271
+Colorado,surface_at_producing_mines,18
+Colorado,surface_estimated_recoverable,3740
+Colorado,surface_reserve_base,4754
+Colorado,total_at_producing_mines,98
+Colorado,total_estimated_recoverable,9385
+Colorado,total_reserve_base,15510
+Colorado,underground_at_producing_mines,80
+Colorado,underground_estimated_recoverable,5645
+Colorado,underground_reserve_base,10756
+Georgia,surface_estimated_recoverable,1
+Georgia,surface_reserve_base,2
+Georgia,total_estimated_recoverable,2
+Georgia,total_reserve_base,4
+Georgia,underground_estimated_recoverable,1
+Georgia,underground_reserve_base,2
+Idaho,total_estimated_recoverable,2
+Idaho,total_reserve_base,4
+Idaho,underground_estimated_recoverable,2
+Idaho,underground_reserve_base,4
+Illinois,surface_at_producing_mines,3
+Illinois,surface_estimated_recoverable,10019
+Illinois,surface_reserve_base,16462
+Illinois,total_at_producing_mines,1759
+Illinois,total_estimated_recoverable,37495
+Illinois,total_reserve_base,102959
+Illinois,underground_at_producing_mines,1756
+Illinois,underground_estimated_recoverable,27476
+Illinois,underground_reserve_base,86497
+Indiana,surface_at_producing_mines,150
+Indiana,surface_estimated_recoverable,189
+Indiana,surface_reserve_base,323
+Indiana,total_at_producing_mines,231
+Indiana,total_estimated_recoverable,3592
+Indiana,total_reserve_base,8540
+Indiana,underground_at_producing_mines,81
+Indiana,underground_estimated_recoverable,3403
+Indiana,underground_reserve_base,8217
+Iowa,surface_estimated_recoverable,320
+Iowa,surface_reserve_base,457
+Iowa,total_estimated_recoverable,1127
+Iowa,total_reserve_base,2189
+Iowa,underground_estimated_recoverable,807
+Iowa,underground_reserve_base,1732
+Kansas,surface_estimated_recoverable,679
+Kansas,surface_reserve_base,970
+Kansas,total_estimated_recoverable,679
+Kansas,total_reserve_base,970
+Kentucky (East),surface_at_producing_mines,46
+Kentucky (East),surface_estimated_recoverable,4954
+Kentucky (East),surface_reserve_base,8871
+Kentucky (East),total_at_producing_mines,154
+Kentucky (East),total_estimated_recoverable,5186
+Kentucky (East),total_reserve_base,9287
+Kentucky (East),underground_at_producing_mines,108
+Kentucky (East),underground_estimated_recoverable,232
+Kentucky (East),underground_reserve_base,416
+Kentucky (West),surface_estimated_recoverable,2218
+Kentucky (West),surface_reserve_base,3546
+Kentucky (West),total_at_producing_mines,230
+Kentucky (West),total_estimated_recoverable,8580
+Kentucky (West),total_reserve_base,18503
+Kentucky (West),underground_at_producing_mines,230
+Kentucky (West),underground_estimated_recoverable,6362
+Kentucky (West),underground_reserve_base,14957
+Kentucky Total,surface_at_producing_mines,46
+Kentucky Total,surface_estimated_recoverable,7171
+Kentucky Total,surface_reserve_base,12417
+Kentucky Total,total_at_producing_mines,384
+Kentucky Total,total_estimated_recoverable,13766
+Kentucky Total,total_reserve_base,27790
+Kentucky Total,underground_at_producing_mines,338
+Kentucky Total,underground_estimated_recoverable,6594
+Kentucky Total,underground_reserve_base,15373
+Louisiana,surface_at_producing_mines,12
+Louisiana,surface_estimated_recoverable,271
+Louisiana,surface_reserve_base,365
+Louisiana,total_at_producing_mines,12
+Louisiana,total_estimated_recoverable,271
+Louisiana,total_reserve_base,365
+Maryland,surface_at_producing_mines,3
+Maryland,surface_estimated_recoverable,23
+Maryland,surface_reserve_base,33
+Maryland,total_at_producing_mines,7
+Maryland,total_estimated_recoverable,324
+Maryland,total_reserve_base,584
+Maryland,underground_at_producing_mines,4
+Maryland,underground_estimated_recoverable,302
+Maryland,underground_reserve_base,551
+Michigan,surface_estimated_recoverable,3
+Michigan,surface_reserve_base,5
+Michigan,total_estimated_recoverable,58
+Michigan,total_reserve_base,128
+Michigan,underground_estimated_recoverable,55
+Michigan,underground_reserve_base,123
+Mississippi,surface_at_producing_mines,97
+Mississippi,total_at_producing_mines,97
+Missouri,surface_estimated_recoverable,3153
+Missouri,surface_reserve_base,4504
+Missouri,total_estimated_recoverable,3842
+Missouri,total_reserve_base,5983
+Missouri,underground_estimated_recoverable,689
+Missouri,underground_reserve_base,1479
+Montana,surface_at_producing_mines,154
+Montana,surface_estimated_recoverable,38406
+Montana,surface_reserve_base,47521
+Montana,total_at_producing_mines,315
+Montana,total_estimated_recoverable,74226
+Montana,total_reserve_base,118277
+Montana,underground_at_producing_mines,161
+Montana,underground_estimated_recoverable,35820
+Montana,underground_reserve_base,70756
+New Mexico,surface_at_producing_mines,31
+New Mexico,surface_estimated_recoverable,3963
+New Mexico,surface_reserve_base,5668
+New Mexico,total_at_producing_mines,31
+New Mexico,total_estimated_recoverable,6688
+New Mexico,total_reserve_base,11659
+New Mexico,underground_estimated_recoverable,2725
+New Mexico,underground_reserve_base,5991
+North Carolina,total_estimated_recoverable,5
+North Carolina,total_reserve_base,11
+North Carolina,underground_estimated_recoverable,5
+North Carolina,underground_reserve_base,11
+North Dakota,surface_at_producing_mines,553
+North Dakota,surface_estimated_recoverable,6398
+North Dakota,surface_reserve_base,8387
+North Dakota,total_at_producing_mines,553
+North Dakota,total_estimated_recoverable,6398
+North Dakota,total_reserve_base,8387
+Ohio,surface_at_producing_mines,4
+Ohio,surface_estimated_recoverable,3689
+Ohio,surface_reserve_base,5635
+Ohio,total_at_producing_mines,34
+Ohio,total_estimated_recoverable,11231
+Ohio,total_reserve_base,22779
+Ohio,underground_at_producing_mines,30
+Ohio,underground_estimated_recoverable,7542
+Ohio,underground_reserve_base,17143
+Oklahoma,surface_estimated_recoverable,218
+Oklahoma,surface_reserve_base,312
+Oklahoma,total_estimated_recoverable,787
+Oklahoma,total_reserve_base,1533
+Oklahoma,underground_estimated_recoverable,569
+Oklahoma,underground_reserve_base,1221
+Oregon,surface_estimated_recoverable,2
+Oregon,surface_reserve_base,3
+Oregon,total_estimated_recoverable,9
+Oregon,total_reserve_base,17
+Oregon,underground_estimated_recoverable,6
+Oregon,underground_reserve_base,15
+Pennsylvania (Anthracite),surface_at_producing_mines,135
+Pennsylvania (Anthracite),surface_estimated_recoverable,414
+Pennsylvania (Anthracite),surface_reserve_base,3310
+Pennsylvania (Anthracite),total_at_producing_mines,135
+Pennsylvania (Anthracite),total_estimated_recoverable,754
+Pennsylvania (Anthracite),total_reserve_base,7149
+Pennsylvania (Anthracite),underground_estimated_recoverable,340
+Pennsylvania (Anthracite),underground_reserve_base,3839
+Pennsylvania (Bituminous),surface_at_producing_mines,14
+Pennsylvania (Bituminous),surface_estimated_recoverable,531
+Pennsylvania (Bituminous),surface_reserve_base,762
+Pennsylvania (Bituminous),total_at_producing_mines,806
+Pennsylvania (Bituminous),total_estimated_recoverable,9999
+Pennsylvania (Bituminous),total_reserve_base,18455
+Pennsylvania (Bituminous),underground_at_producing_mines,792
+Pennsylvania (Bituminous),underground_estimated_recoverable,9468
+Pennsylvania (Bituminous),underground_reserve_base,17693
+Pennsylvania Total,surface_at_producing_mines,149
+Pennsylvania Total,surface_estimated_recoverable,945
+Pennsylvania Total,surface_reserve_base,4072
+Pennsylvania Total,total_at_producing_mines,941
+Pennsylvania Total,total_estimated_recoverable,10753
+Pennsylvania Total,total_reserve_base,25604
+Pennsylvania Total,underground_at_producing_mines,792
+Pennsylvania Total,underground_estimated_recoverable,9808
+Pennsylvania Total,underground_reserve_base,21532
+South Dakota,surface_estimated_recoverable,277
+South Dakota,surface_reserve_base,366
+South Dakota,total_estimated_recoverable,277
+South Dakota,total_reserve_base,366
+Tennessee,surface_estimated_recoverable,170
+Tennessee,surface_reserve_base,251
+Tennessee,total_estimated_recoverable,441
+Tennessee,total_reserve_base,744
+Tennessee,underground_estimated_recoverable,270
+Tennessee,underground_reserve_base,494
+Texas,surface_at_producing_mines,224
+Texas,surface_estimated_recoverable,8944
+Texas,surface_reserve_base,11620
+Texas,total_at_producing_mines,224
+Texas,total_estimated_recoverable,8944
+Texas,total_reserve_base,11620
+U.S. Total,surface_at_producing_mines,5274
+U.S. Total,surface_estimated_recoverable,104630
+U.S. Total,surface_reserve_base,144867
+U.S. Total,total_at_producing_mines,10593
+U.S. Total,total_estimated_recoverable,249351
+U.S. Total,total_reserve_base,468350
+U.S. Total,underground_at_producing_mines,5319
+U.S. Total,underground_estimated_recoverable,144721
+U.S. Total,underground_reserve_base,323483
+Utah,surface_estimated_recoverable,206
+Utah,surface_reserve_base,260
+Utah,total_at_producing_mines,94
+Utah,total_estimated_recoverable,2423
+Utah,total_reserve_base,4783
+Utah,underground_at_producing_mines,94
+Utah,underground_estimated_recoverable,2217
+Utah,underground_reserve_base,4522
+Virginia,surface_at_producing_mines,12
+Virginia,surface_estimated_recoverable,280
+Virginia,surface_reserve_base,437
+Virginia,total_at_producing_mines,138
+Virginia,total_estimated_recoverable,676
+Virginia,total_reserve_base,1142
+Virginia,underground_at_producing_mines,126
+Virginia,underground_estimated_recoverable,396
+Virginia,underground_reserve_base,705
+Washington,surface_estimated_recoverable,6
+Washington,surface_reserve_base,8
+Washington,total_estimated_recoverable,681
+Washington,total_reserve_base,1340
+Washington,underground_estimated_recoverable,674
+Washington,underground_reserve_base,1332
+West Virginia (Northern),surface_at_producing_mines,3
+West Virginia (Northern),total_at_producing_mines,1236
+West Virginia (Northern),underground_at_producing_mines,1233
+West Virginia (Southern),surface_at_producing_mines,169
+West Virginia (Southern),total_at_producing_mines,561
+West Virginia (Southern),underground_at_producing_mines,391
+West Virginia Total,surface_at_producing_mines,173
+West Virginia Total,surface_estimated_recoverable,1874
+West Virginia Total,surface_reserve_base,2970
+West Virginia Total,total_at_producing_mines,1797
+West Virginia Total,total_estimated_recoverable,15932
+West Virginia Total,total_reserve_base,29311
+West Virginia Total,underground_at_producing_mines,1625
+West Virginia Total,underground_estimated_recoverable,14059
+West Virginia Total,underground_reserve_base,26342
+Wyoming,surface_at_producing_mines,3597
+Wyoming,surface_estimated_recoverable,10902
+Wyoming,surface_reserve_base,13169
+Wyoming,total_at_producing_mines,3597
+Wyoming,total_estimated_recoverable,33803
+Wyoming,total_reserve_base,55578
+Wyoming,underground_estimated_recoverable,22901
+Wyoming,underground_reserve_base,42409

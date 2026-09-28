@@ -30,3 +30,13 @@ miri = "nightly-2026-09-22"
 
 [ci]
 runner = "ubuntu-24.04"
+
+[python]
+# The data tools under tools/data/, each a pip package: the derivations read with pandas and numpy; the fetchers read
+# spreadsheets with openpyxl (xlsx) and xlrd (the older xls), PDFs with pymupdf and R data files with pyreadr.
+pandas = "3.0.6"
+numpy = "2.4.6"
+openpyxl = "3.1.5"
+xlrd = "2.0.2"
+pymupdf = "1.28.2"
+pyreadr = "0.5.6"

@@ -1,0 +1,935 @@
+msha_id,state,county,status,mine_type,supply_region,production_short_tons,employees,labour_hours
+100329,Alabama,Jefferson,Active,Underground,Appalachia Southern,0,58,152268
+100347,Alabama,Walker,Active,Surface,Appalachia Southern,196734,57,143315
+100627,Alabama,Jefferson,Active,Surface,Appalachia Southern,259730,40,112709
+100851,Alabama,Jefferson,Active,Underground,Appalachia Southern,1364382,456,1094695
+101247,Alabama,Tuscaloosa,Active,Underground,Appalachia Southern,2221242,391,1151338
+101401,Alabama,Jefferson,Active,Underground,Appalachia Southern,6247986,869,2244324
+102901,Alabama,Walker,Active,Surface,Appalachia Southern,0,1,545
+102901,Alabama,Walker,Active,Underground,Appalachia Southern,1868840,467,1077430
+102976,Alabama,Shelby,Temporarily closed,Surface,Appalachia Southern,0,11,16871
+102976,Alabama,Shelby,Temporarily closed,Underground,Appalachia Southern,0,1,2085
+103101,Alabama,Jefferson,Active,Surface,Appalachia Southern,0,10,19691
+103155,Alabama,Walker,Active,Surface,Appalachia Southern,0,1,1280
+103155,Alabama,Walker,Active,Underground,Appalachia Southern,0,17,41402
+103172,Alabama,Tuscaloosa,Active,Surface,Appalachia Southern,208028,70,164853
+103180,Alabama,Jefferson,"Active, men working, not producing",Surface,Appalachia Southern,37435,17,22711
+103285,Alabama,Jefferson,Active,Surface,Appalachia Southern,122603,18,49724
+103370,Alabama,Walker,Permanently abandoned,Surface,Appalachia Southern,31745,23,13424
+103380,Alabama,Shelby,Active,Surface,Appalachia Southern,0,8,14808
+103380,Alabama,Shelby,Active,Underground,Appalachia Southern,0,1,1645
+103381,West Virginia (Southern),Greenbrier,Active,Surface,Appalachia Central,73673,9,20978
+103389,Alabama,Walker,Active,Underground,Appalachia Southern,75008,22,51750
+103393,Alabama,Marion,"Active, men working, not producing",Surface,Appalachia Southern,77299,8,21852
+103419,Alabama,Jefferson,Active,Underground,Appalachia Southern,200197,41,96867
+103421,Alabama,Walker,Active,Surface,Appalachia Southern,149716,35,83257
+103426,Alabama,Walker,Active,Underground,Appalachia Southern,0,9,22338
+103432,Alabama,Jefferson,Active,Surface,Appalachia Southern,17985,3,4565
+103436,Alabama,Tuscaloosa,Active,Surface,Appalachia Southern,41281,39,23954
+103437,Alabama,Jefferson,Active,Surface,Appalachia Southern,276912,58,151212
+103444,Alabama,Walker,Temporarily closed,Surface,Appalachia Southern,106271,32,94345
+103455,Alabama,Jefferson,Active,Surface,Appalachia Southern,132105,27,69999
+103487,Alabama,Tuscaloosa,Active,Surface,Appalachia Southern,14037,10,5280
+103489,Alabama,De Kalb,Active,Surface,Appalachia Southern,2913,2,720
+103496,Alabama,Walker,Active,Surface,Appalachia Southern,112437,12,47659
+103500,Alabama,Shelby,"Active, men working, not producing",Surface,Appalachia Southern,10990,7,19510
+103503,Alabama,Shelby,"Active, men working, not producing",Underground,Appalachia Southern,2370,39,96852
+103516,Alabama,Walker,"Active, men working, not producing",Surface,Appalachia Southern,11869,4,6040
+103522,Alabama,Walker,"Active, men working, not producing",Surface,Appalachia Southern,7879,4,1974
+103523,Alabama,Jefferson,Active,Surface,Appalachia Southern,174831,24,50796
+103529,Alabama,Jefferson,Active,Surface,Appalachia Southern,65626,30,56667
+103533,Alabama,Walker,Active,Surface,Appalachia Southern,85738,8,6146
+1100726,Illinois,Macoupin,"Active, men working, not producing",Underground,Illinois Basin,1769822,151,309235
+1102546,Illinois,Randolph,Active,Underground,Illinois Basin,0,38,78816
+1102664,Illinois,Sangamon,Active,Underground,Illinois Basin,1608026,266,506334
+1103017,Illinois,Gallatin,"Active, men working, not producing",Surface,Illinois Basin,119407,17,38918
+1103045,Illinois,Perry,"Active, men working, not producing",Surface,Illinois Basin,56,6,12362
+1103064,Illinois,Wabash,Active,Surface,Illinois Basin,1256488,94,264071
+1103099,Illinois,Saline,"Active, men working, not producing",Surface,Illinois Basin,0,1,2022
+1103099,Illinois,Saline,"Active, men working, not producing",Underground,Illinois Basin,0,25,48535
+1103131,Refuse Recovery,Perry,Active,Refuse,Illinois Basin,67586,7,14502
+1103141,Illinois,Williamson,Active,Underground,Illinois Basin,5174361,231,518986
+1103143,Illinois,Perry,Active,Surface,Illinois Basin,0,0,792
+1103143,Illinois,Perry,Active,Underground,Illinois Basin,0,35,78404
+1103147,Illinois,Perry,Active,Underground,Illinois Basin,4095032,290,610148
+1103156,Illinois,Saline,Temporarily closed,Underground,Illinois Basin,1416697,225,504423
+1103182,Illinois,Montgomery,Active,Underground,Illinois Basin,190670,50,104935
+1103189,Illinois,Franklin,Active,Underground,Illinois Basin,12793896,457,1079931
+1103193,Illinois,Washington,Active,Underground,Illinois Basin,6439823,459,1127161
+1103203,Illinois,Hamilton,Active,Underground,Illinois Basin,5889105,278,764759
+1103212,Illinois,Saline,Active,Surface,Illinois Basin,1001657,116,281815
+1103225,Illinois,St Clair,Active,Surface,Illinois Basin,0,14,27146
+1103225,Illinois,St Clair,Active,Underground,Illinois Basin,0,13,27146
+1103226,Illinois,Randolph,Active,Surface,Illinois Basin,130077,15,31680
+1103235,Illinois,Randolph,Active,Underground,Illinois Basin,3033779,219,470252
+1103241,Illinois,Perry,"Active, men working, not producing",Surface,Illinois Basin,39239,5,9887
+1103242,Illinois,Hamilton,Active,Underground,Illinois Basin,0,39,92742
+1103248,Illinois,Randolph,"Active, men working, not producing",Surface,Illinois Basin,39190,10,17912
+1103274,Illinois,Perry,Active,Surface,Illinois Basin,333704,21,49236
+1201616,Indiana,Pike,Active,Surface,Illinois Basin,363469,29,62605
+1201732,Indiana,Daviess,Active,Surface,Illinois Basin,799702,76,229383
+1202147,Indiana,Gibson,Active,Underground,Illinois Basin,0,24,62239
+1202215,Indiana,Gibson,"Active, men working, not producing",Underground,Illinois Basin,1640113,182,514469
+1202258,Indiana,Gibson,Active,Surface,Illinois Basin,1143418,106,250067
+1202295,Indiana,Gibson,Active,Underground,Illinois Basin,1954097,238,538264
+1202349,Indiana,Sullivan,"Active, men working, not producing",Underground,Illinois Basin,1485000,161,389947
+1202372,Indiana,Daviess,Active,Surface,Illinois Basin,1263367,104,275228
+1202374,Indiana,Dubois,"Active, men working, not producing",Surface,Illinois Basin,1051960,85,235011
+1202388,Indiana,Gibson,Active,Underground,Illinois Basin,5412233,341,950743
+1202394,Indiana,Knox,Active,Underground,Illinois Basin,4166561,343,815601
+1202418,Indiana,Knox,Active,Underground,Illinois Basin,2297881,258,637091
+1202422,Indiana,Sullivan,Active,Surface,Illinois Basin,6817283,590,1333585
+1202425,Indiana,Dubois,"Active, men working, not producing",Surface,Illinois Basin,117172,15,31148
+1202428,Indiana,Warrick,"Active, men working, not producing",Surface,Illinois Basin,180081,26,66947
+1202441,Indiana,Warrick,Active,Surface,Illinois Basin,2468414,204,479350
+1202445,Illinois,Saline,Active,Surface,Illinois Basin,60849,10,26892
+1202460,Indiana,Clay,Active,Surface,Illinois Basin,271971,35,84608
+1202462,Indiana,Knox,Active,Underground,Illinois Basin,0,72,147655
+1202465,Indiana,Sullivan,"Active, men working, not producing",Surface,Illinois Basin,0,1,2132
+1202465,Indiana,Sullivan,"Active, men working, not producing",Underground,Illinois Basin,0,15,40508
+1202494,Indiana,Gibson,Active,Underground,Illinois Basin,0,12,29469
+1502132,Kentucky (West),Webster,Permanently abandoned,Underground,Illinois Basin,1273464,173,439601
+1502263,Kentucky (East),Harlan,"Active, men working, not producing",Underground,Appalachia Central,219742,72,86900
+1503178,Kentucky (West),Union,Active,Underground,Illinois Basin,0,67,149811
+1505215,Kentucky (East),Harlan,Active,Surface,Appalachia Central,0,18,59239
+1505215,Kentucky (East),Harlan,Active,Underground,Appalachia Central,0,30,96653
+1505485,Kentucky (East),Perry,"Active, men working, not producing",Surface,Appalachia Central,0,11,25830
+1505485,Kentucky (East),Perry,"Active, men working, not producing",Underground,Appalachia Central,0,66,158671
+1506268,Kentucky (East),Martin,"Active, men working, not producing",Surface,Appalachia Central,0,3,7692
+1506268,Kentucky (East),Martin,"Active, men working, not producing",Underground,Appalachia Central,0,3,7692
+1508166,Kentucky (East),Boyd,Active,Surface,Appalachia Central,0,3,3424
+1508166,Kentucky (East),Boyd,Active,Underground,Appalachia Central,0,2,3424
+1509636,Kentucky (East),Perry,"Active, men working, not producing",Underground,Appalachia Central,348538,54,131957
+1509876,Kentucky (East),Bell,"Active, men working, not producing",Surface,Appalachia Central,0,17,26406
+1509938,Kentucky (East),Whitley,Active,Surface,Appalachia Central,0,18,38122
+1509938,Kentucky (East),Whitley,Active,Underground,Appalachia Central,0,9,19639
+1510271,Kentucky (East),Floyd,Active,Surface,Appalachia Central,0,8,17943
+1510271,Kentucky (East),Floyd,Active,Underground,Appalachia Central,0,12,29276
+1510445,Kentucky (East),Pike,"Active, men working, not producing",Underground,Appalachia Central,0,21,56476
+1510657,Kentucky (East),Harlan,Active,Surface,Appalachia Central,0,0,603
+1510657,Kentucky (East),Harlan,Active,Underground,Appalachia Central,0,20,59744
+1511055,Kentucky (East),Bell,Active,Surface,Appalachia Central,0,8,12970
+1511055,Kentucky (East),Bell,Active,Underground,Appalachia Central,0,1,1441
+1511121,Kentucky (East),Letcher,"Active, men working, not producing",Surface,Appalachia Central,0,5,10191
+1511121,Kentucky (East),Letcher,"Active, men working, not producing",Underground,Appalachia Central,0,5,10191
+1511162,Kentucky (East),Pike,Active,Surface,Appalachia Central,0,6,11405
+1511162,Kentucky (East),Pike,Active,Underground,Appalachia Central,0,12,23155
+1512199,Kentucky (East),Boyd,Active,Surface,Appalachia Central,0,4,6861
+1512199,Kentucky (East),Boyd,Active,Underground,Appalachia Central,0,3,6861
+1512428,Kentucky (East),Harlan,"Active, men working, not producing",Surface,Appalachia Central,0,4,7330
+1512428,Kentucky (East),Harlan,"Active, men working, not producing",Underground,Appalachia Central,0,3,7329
+1512753,Kentucky (East),Leslie,"Active, men working, not producing",Underground,Appalachia Central,324018,112,287543
+1512896,Kentucky (East),Pike,Active,Surface,Appalachia Central,0,2,5924
+1512896,Kentucky (East),Pike,Active,Underground,Appalachia Central,0,2,5923
+1512914,Kentucky (East),Letcher,"Active, men working, not producing",Surface,Appalachia Central,0,1,1083
+1512914,Kentucky (East),Letcher,"Active, men working, not producing",Underground,Appalachia Central,0,2,4333
+1513254,Kentucky (East),Breathitt,"Active, men working, not producing",Surface,Appalachia Central,0,2,2680
+1513254,Kentucky (East),Breathitt,"Active, men working, not producing",Underground,Appalachia Central,0,2,2680
+1513258,Kentucky (East),Floyd,Active,Surface,Appalachia Central,0,13,26945
+1513258,Kentucky (East),Floyd,Active,Underground,Appalachia Central,0,13,26945
+1513418,Kentucky (East),Lawrence,"Active, men working, not producing",Surface,Appalachia Central,1735,4,7121
+1513495,Kentucky (East),Perry,Active,Surface,Appalachia Central,0,9,22556
+1513495,Kentucky (East),Perry,Active,Underground,Appalachia Central,0,0,460
+1514324,Kentucky (East),Martin,Active,Surface,Appalachia Central,0,18,41348
+1514335,Kentucky (West),Hopkins,Active,Underground,Illinois Basin,0,38,89207
+1514468,Kentucky (East),Pike,Active,Surface,Appalachia Central,0,6,15244
+1514468,Kentucky (East),Pike,Active,Underground,Appalachia Central,0,10,25956
+1515153,Kentucky (East),Clay,Active,Surface,Appalachia Central,0,15,37874
+1515215,Kentucky (East),Pike,Active,Underground,Appalachia Central,108337,29,79050
+1515978,Kentucky (East),Floyd,"Active, men working, not producing",Underground,Appalachia Central,0,21,54208
+1515983,Kentucky (East),Lee,Active,Surface,Appalachia Central,14280,1,614
+1516054,Kentucky (East),Harlan,Temporarily closed,Surface,Appalachia Central,0,2,2179
+1516054,Kentucky (East),Harlan,Temporarily closed,Underground,Appalachia Central,0,11,15981
+1516098,Kentucky (East),Leslie,"Active, men working, not producing",Underground,Appalachia Central,0,9,5449
+1516520,Kentucky (East),Perry,Active,Underground,Appalachia Central,0,38,85063
+1516577,Kentucky (East),Letcher,"Active, men working, not producing",Surface,Appalachia Central,0,5,10865
+1516577,Kentucky (East),Letcher,"Active, men working, not producing",Underground,Appalachia Central,0,11,23089
+1516734,Kentucky (East),Pike,Active,Surface,Appalachia Central,0,1,3889
+1516734,Kentucky (East),Pike,Active,Underground,Appalachia Central,0,26,73896
+1516749,Kentucky (East),Boyd,Active,Surface,Appalachia Central,0,9,18639
+1516749,Kentucky (East),Boyd,Active,Underground,Appalachia Central,0,2,4660
+1516858,Kentucky (East),Knott,Active,Surface,Appalachia Central,0,10,24929
+1516883,Kentucky (East),Perry,"Active, men working, not producing",Surface,Appalachia Central,23737,9,21453
+1517059,Kentucky (East),Johnson,"Active, men working, not producing",Surface,Appalachia Central,0,1,4762
+1517059,Kentucky (East),Johnson,"Active, men working, not producing",Underground,Appalachia Central,0,2,4763
+1517216,Kentucky (West),Hopkins,Active,Underground,Illinois Basin,3664567,436,1046693
+1517234,Kentucky (East),Harlan,"Active, men working, not producing",Underground,Appalachia Central,30013,37,51539
+1517733,Kentucky (East),Pike,Active,Underground,Appalachia Central,0,24,49653
+1517741,Kentucky (West),Muhlenberg,"Active, men working, not producing",Underground,Illinois Basin,190375,59,131756
+1517871,Kentucky (East),Knox,Active,Surface,Appalachia Central,16108,2,1780
+1517979,Kentucky (East),Pike,"Active, men working, not producing",Underground,Appalachia Central,1193,5,7769
+1518001,Kentucky (East),Pike,Active,Underground,Appalachia Central,31482,12,16084
+1518015,Kentucky (East),Pike,"Active, men working, not producing",Surface,Appalachia Central,37945,21,41730
+1518029,Kentucky (East),Pike,Temporarily closed,Surface,Appalachia Central,18594,4,10518
+1518040,Kentucky (East),Pike,Active,Surface,Appalachia Central,99205,36,89826
+1518050,Kentucky (East),Pike,Active,Underground,Appalachia Central,13021,16,6229
+1518198,Kentucky (East),Harlan,"Active, men working, not producing",Underground,Appalachia Central,86511,26,45965
+1518234,Kentucky (East),Livingston,Permanently abandoned,Surface,Appalachia Central,0,7,6230
+1518234,Kentucky (East),Livingston,Permanently abandoned,Underground,Appalachia Central,0,6,6230
+1518257,Kentucky (East),Bell,"Active, men working, not producing",Surface,Appalachia Central,12047,10,29855
+1518361,Kentucky (East),Harlan,"Active, men working, not producing",Underground,Appalachia Central,69908,31,54212
+1518376,Kentucky (East),Leslie,"Active, men working, not producing",Underground,Appalachia Central,57601,39,19951
+1518418,Kentucky (West),Daviess,Active,Surface,Illinois Basin,272068,23,62817
+1518423,Kentucky (East),Harlan,Active,Surface,Appalachia Central,313830,69,186556
+1518426,Kentucky (East),Knox,Active,Underground,Appalachia Central,78370,22,49120
+1518442,Kentucky (East),Magoffin,Temporarily closed,Surface,Appalachia Central,2076,2,330
+1518454,Kentucky (East),Knox,Temporarily closed,Surface,Appalachia Central,10588,3,791
+1518538,Kentucky (East),Pike,Permanently abandoned,Surface,Appalachia Central,4794,2,834
+1518565,Kentucky (East),Perry,Active,Underground,Appalachia Central,120122,92,188338
+1518647,Kentucky (East),Harlan,"Active, men working, not producing",Underground,Appalachia Central,22647,22,31552
+1518713,Virginia,Buchanan,Temporarily closed,Surface,Appalachia Central,17211,4,10042
+1518716,Kentucky (East),Whitley,Permanently abandoned,Surface,Appalachia Central,34155,16,15408
+1518730,Kentucky (East),Knox,Temporarily closed,Surface,Appalachia Central,49219,10,11896
+1518737,Kentucky (East),Pike,Active,Surface,Appalachia Central,10925,2,2303
+1518765,Kentucky (East),Pike,Temporarily closed,Surface,Appalachia Central,33732,5,4831
+1518769,Kentucky (East),Letcher,Temporarily closed,Surface,Appalachia Central,35743,24,21618
+1518775,Kentucky (East),Pike,Temporarily closed,Underground,Appalachia Central,130176,90,217730
+1518793,Kentucky (East),Knott,Active,Underground,Appalachia Central,77401,16,39874
+1518837,Kentucky (East),Perry,Active,Surface,Appalachia Central,9942,3,3365
+1518869,Kentucky (East),Harlan,"Active, men working, not producing",Underground,Appalachia Central,340614,76,221501
+1518890,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Surface,Appalachia Central,1988,2,208
+1518911,Kentucky (East),Pike,Active,Underground,Appalachia Central,266372,48,133010
+1518914,Kentucky (East),Knott,Temporarily closed,Surface,Appalachia Central,27210,4,8227
+1518943,Kentucky (East),Pike,Active,Underground,Appalachia Central,99429,17,43781
+1518946,Kentucky (East),Pike,Active,Surface,Appalachia Central,74041,24,65178
+1518950,Illinois,Saline,Active,Surface,Illinois Basin,339321,12,26591
+1518966,Kentucky (East),Perry,Active,Surface,Appalachia Central,1365879,130,346609
+1518973,Kentucky (East),Pike,"Active, men working, not producing",Underground,Appalachia Central,14381,10,10572
+1518977,Kentucky (East),Pike,"Active, men working, not producing",Surface,Appalachia Central,121810,24,75529
+1518978,West Virginia (Southern),Wyoming,"Active, men working, not producing",Surface,Appalachia Central,85543,10,39381
+1518982,Kentucky (East),Breathitt,Active,Surface,Appalachia Central,27358,6,15774
+1518986,Kentucky (East),Bell,Active,Surface,Appalachia Central,0,10,21616
+1518986,Kentucky (East),Bell,Active,Underground,Appalachia Central,0,32,68449
+1518988,Kentucky (East),Knott,"Active, men working, not producing",Surface,Appalachia Central,21407,13,21347
+1519002,Kentucky (East),Whitley,Temporarily closed,Surface,Appalachia Central,725,7,9271
+1519015,Kentucky (East),Perry,"Active, men working, not producing",Underground,Appalachia Central,179266,105,252498
+1519068,Kentucky (East),Perry,Active,Surface,Appalachia Central,59441,7,15888
+1519087,Kentucky (East),Floyd,Temporarily closed,Underground,Appalachia Central,76735,26,50345
+1519094,Kentucky (East),Pike,Active,Underground,Appalachia Central,80450,17,44828
+1519116,Kentucky (East),Knott,"Active, men working, not producing",Underground,Appalachia Central,191425,51,83088
+1519126,West Virginia (Southern),Boone,"Active, men working, not producing",Surface,Appalachia Central,65,2,100
+1519140,Kentucky (East),Pike,Permanently abandoned,Surface,Appalachia Central,4106,2,3180
+1519165,Kentucky (West),Ohio,Active,Surface,Illinois Basin,0,5,11978
+1519187,Kentucky (East),Knox,"Active, men working, not producing",Surface,Appalachia Central,125552,11,15878
+1519189,Kentucky (East),Knott,"Active, men working, not producing",Surface,Appalachia Central,116741,10,23766
+1519205,Kentucky (West),Muhlenberg,"Active, men working, not producing",Surface,Illinois Basin,0,6,7520
+1519217,Kentucky (West),Ohio,Active,Surface,Illinois Basin,249037,16,42747
+1519242,Kentucky (East),Floyd,"Active, men working, not producing",Underground,Appalachia Central,515918,104,263809
+1519268,Kentucky (East),Bell,"Active, men working, not producing",Surface,Appalachia Central,3710,4,4355
+1519272,Kentucky (East),Bell,"Active, men working, not producing",Surface,Appalachia Central,45179,14,28596
+1519280,Kentucky (East),Pike,Active,Underground,Appalachia Central,55935,19,34198
+1519313,Kentucky (East),Pike,"Active, men working, not producing",Underground,Appalachia Central,10652,16,33875
+1519324,Kentucky (East),Knox,"Active, men working, not producing",Surface,Appalachia Central,0,7,16802
+1519325,Kentucky (East),Pike,"Active, men working, not producing",Underground,Appalachia Central,67418,35,63755
+1519345,Kentucky (West),Ohio,Active,Underground,Illinois Basin,0,50,133750
+1519356,Kentucky (West),Muhlenberg,Active,Underground,Illinois Basin,0,33,88227
+1519371,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,53853,9,5093
+1519374,Kentucky (West),Union,Active,Underground,Illinois Basin,11342348,845,2082613
+1519396,Kentucky (East),Pike,Active,Surface,Appalachia Central,144797,29,74486
+1519402,Refuse Recovery,Floyd,Temporarily closed,Refuse,Appalachia Central,53921,7,10948
+1519405,Kentucky (East),Perry,"Active, men working, not producing",Underground,Appalachia Central,532988,76,200996
+1519419,Kentucky (East),Perry,Active,Surface,Appalachia Central,45993,17,22774
+1519424,Kentucky (West),Mclean,Permanently abandoned,Underground,Illinois Basin,876778,128,330072
+1519432,Kentucky (East),Bell,Active,Surface,Appalachia Central,207911,30,94678
+1519441,Kentucky (East),Leslie,Active,Surface,Appalachia Central,276726,29,67148
+1519450,Refuse Recovery,Pike,"Active, men working, not producing",Refuse,Appalachia Central,26483,11,21466
+1519455,Kentucky (East),Harlan,Active,Surface,Appalachia Central,104884,10,27017
+1519459,Kentucky (East),Magoffin,Temporarily closed,Surface,Appalachia Central,70316,36,20745
+1519475,Kentucky (East),Pike,Active,Surface,Appalachia Central,18281,9,12760
+1519511,Kentucky (West),Ohio,"Active, men working, not producing",Surface,Illinois Basin,13659,4,4535
+1519515,Kentucky (East),Pike,"Active, men working, not producing",Underground,Appalachia Central,1050832,181,446403
+1519532,Kentucky (East),Letcher,Temporarily closed,Underground,Appalachia Central,78811,40,87353
+1519535,Kentucky (West),Ohio,"Active, men working, not producing",Underground,Illinois Basin,2007644,232,676136
+1519536,Kentucky (West),Daviess,Active,Surface,Illinois Basin,11658,4,11590
+1519538,Kentucky (East),Johnson,Active,Surface,Appalachia Central,378127,28,72986
+1519548,Kentucky (East),Johnson,Active,Surface,Appalachia Central,69672,12,30409
+1519604,Kentucky (East),Pike,Permanently abandoned,Surface,Appalachia Central,3575,8,10285
+1519609,Kentucky (East),Lawrence,"Active, men working, not producing",Surface,Appalachia Central,23397,10,27896
+1519622,Kentucky (East),Pike,"Active, men working, not producing",Surface,Appalachia Central,49771,18,33869
+1519644,Kentucky (East),Knott,Active,Surface,Appalachia Central,172173,6,13425
+1519658,Kentucky (East),Pike,Temporarily closed,Surface,Appalachia Central,778,2,796
+1519667,Kentucky (West),Daviess,Active,Surface,Illinois Basin,0,4,11179
+1519684,Kentucky (East),Pike,Active,Underground,Appalachia Central,28474,17,29993
+1519689,West Virginia (Southern),Mcdowell,Temporarily closed,Surface,Appalachia Central,14145,6,16230
+1519702,Kentucky (East),Bell,"Active, men working, not producing",Underground,Appalachia Central,157072,147,172324
+1519712,Kentucky (East),Pike,Temporarily closed,Underground,Appalachia Central,13194,8,16429
+1519721,Kentucky (East),Pike,Temporarily closed,Surface,Appalachia Central,11888,11,20286
+1519724,Kentucky (East),Floyd,Active,Underground,Appalachia Central,51940,15,14658
+1519726,Kentucky (East),Floyd,Active,Underground,Appalachia Central,70123,16,32554
+1519744,Kentucky (West),Muhlenberg,Active,Underground,Illinois Basin,1982671,200,567520
+1519748,Kentucky (East),Johnson,Active,Surface,Appalachia Central,97358,16,28627
+1519749,Kentucky (West),Mclean,Permanently abandoned,Underground,Illinois Basin,0,25,53030
+1519757,Kentucky (East),Harlan,Permanently abandoned,Surface,Appalachia Central,117846,31,81136
+1519758,West Virginia (Southern),Mcdowell,Temporarily closed,Surface,Appalachia Central,2448,7,1832
+1519766,Kentucky (East),Knott,Active,Surface,Appalachia Central,164247,20,54102
+1519776,Kentucky (East),Pike,"Active, men working, not producing",Underground,Appalachia Central,77912,23,43336
+1519778,Kentucky (East),Perry,Temporarily closed,Surface,Appalachia Central,58587,12,24219
+1519783,West Virginia (Southern),Mcdowell,Temporarily closed,Surface,Appalachia Central,1229,1,200
+1519784,Kentucky (East),Pike,Active,Underground,Appalachia Central,60987,13,35667
+1519787,Kentucky (East),Morgan,Temporarily closed,Surface,Appalachia Central,63126,8,12156
+1519799,Kentucky (East),Pike,Active,Surface,Appalachia Central,54440,5,12150
+1519802,Kentucky (East),Pike,"Active, men working, not producing",Surface,Appalachia Central,1802,11,11614
+1519806,Kentucky (West),Mclean,Active,Underground,Illinois Basin,355868,93,214352
+1519807,West Virginia (Southern),Boone,Temporarily closed,Surface,Appalachia Central,2300,2,1100
+1519808,Kentucky (East),Leslie,Active,Surface,Appalachia Central,187401,20,48358
+1519809,Illinois,Saline,Active,Surface,Illinois Basin,121716,8,13167
+1519811,Kentucky (East),Lawrence,"Active, men working, not producing",Surface,Appalachia Central,7735,9,4364
+1519814,Kentucky (East),Whitley,Permanently abandoned,Surface,Appalachia Central,6489,18,11222
+1519815,Kentucky (East),Harlan,Active,Surface,Appalachia Central,13420,10,12934
+1519817,Kentucky (East),Whitley,Permanently abandoned,Surface,Appalachia Central,35373,3,7200
+1519818,Kentucky (East),Whitley,Permanently abandoned,Surface,Appalachia Central,59950,21,45446
+1519819,Kentucky (East),Whitley,Active,Surface,Appalachia Central,168761,10,20825
+1519820,Kentucky (East),Magoffin,Temporarily closed,Surface,Appalachia Central,229604,26,59335
+1519823,Kentucky (East),Martin,"Active, men working, not producing",Surface,Appalachia Central,276693,35,92406
+1519824,Kentucky (East),Martin,Active,Surface,Appalachia Central,198885,25,68206
+1519825,Kentucky (East),Leslie,Active,Surface,Appalachia Central,331948,32,103500
+1519827,Kentucky (East),Harlan,Active,Underground,Appalachia Central,553818,72,187614
+1519828,Kentucky (West),Mclean,Active,Underground,Illinois Basin,0,16,36265
+1519829,Kentucky (East),Letcher,Temporarily closed,Surface,Appalachia Central,20030,9,15116
+1519831,Kentucky (East),Whitley,Temporarily closed,Surface,Appalachia Central,795,5,4061
+1519834,Kentucky (East),Floyd,Permanently abandoned,Underground,Appalachia Central,172823,54,77051
+1519835,Kentucky (East),Floyd,Temporarily closed,Underground,Appalachia Central,88039,25,43654
+1519837,Kentucky (East),Floyd,Active,Underground,Appalachia Central,51205,12,21761
+1519839,Kentucky (East),Martin,Temporarily closed,Surface,Appalachia Central,16172,2,3060
+1519842,Kentucky (East),Pike,Active,Underground,Appalachia Central,71226,42,68887
+1519844,Kentucky (East),Bell,Active,Underground,Appalachia Central,97672,29,77904
+1519845,Refuse Recovery,Harlan,"Active, men working, not producing",Refuse,Appalachia Central,25318,21,22310
+1519846,Kentucky (East),Morgan,"Active, men working, not producing",Surface,Appalachia Central,27138,5,9602
+1519847,Kentucky (East),Pike,"Active, men working, not producing",Underground,Appalachia Central,23846,12,28800
+1519848,Kentucky (East),Bell,"Active, men working, not producing",Underground,Appalachia Central,182278,24,56358
+1519852,West Virginia (Southern),Nicholas,Temporarily closed,Surface,Appalachia Central,224528,9,20812
+1519854,Kentucky (East),Whitley,Active,Surface,Appalachia Central,60723,16,34735
+1519857,Kentucky (East),Bell,Active,Surface,Appalachia Central,5103,10,9379
+1519858,Kentucky (East),Harlan,"Active, men working, not producing",Surface,Appalachia Central,89697,14,36196
+1519859,Kentucky (East),Harlan,Active,Underground,Appalachia Central,72540,29,33383
+1519864,Kentucky (East),Knox,Active,Surface,Appalachia Central,1885,6,1569
+1519868,Virginia,Buchanan,"Active, men working, not producing",Surface,Appalachia Central,1029,2,360
+1519871,Kentucky (East),Knott,Active,Surface,Appalachia Central,8837,6,3158
+1519872,Kentucky (East),Letcher,Active,Surface,Appalachia Central,1811,4,2863
+1519873,Kentucky (East),Harlan,Active,Surface,Appalachia Central,6219,10,6307
+1601031,Louisiana,De Soto,Active,Surface,Interior,1354194,212,400632
+1601499,Louisiana,Natchitoches,Active,Surface,Interior,183475,30,66655
+1800133,Maryland,Allegany,Active,Surface,Appalachia Northern,219339,14,33772
+1800372,Maryland,Garrett,Temporarily closed,Surface,Appalachia Northern,11994,14,24238
+1800391,Maryland,Allegany,Active,Surface,Appalachia Northern,48363,8,18681
+1800529,Maryland,Allegany,Active,Surface,Appalachia Northern,28698,9,17738
+1800630,Maryland,Garrett,Active,Surface,Appalachia Northern,2728,5,8682
+1800671,Maryland,Garrett,Active,Underground,Appalachia Northern,0,37,85578
+1800713,Maryland,Allegany,Active,Surface,Appalachia Northern,283035,39,96158
+1800752,Maryland,Allegany,Permanently abandoned,Surface,Appalachia Northern,35763,2,3815
+1800765,Maryland,Garrett,Active,Surface,Appalachia Northern,36843,11,22970
+1800769,Maryland,Allegany,Active,Surface,Appalachia Northern,143121,14,34005
+1800776,Maryland,Allegany,Active,Surface,Appalachia Northern,23319,2,4356
+1800777,Maryland,Allegany,Temporarily closed,Surface,Appalachia Northern,2721,4,2111
+1800780,Maryland,Garrett,Active,Underground,Appalachia Northern,635107,101,242535
+201195,Arizona,Navajo,"Active, men working, not producing",Surface,Western,3842508,243,489130
+2200690,Mississippi,Choctaw,Active,Surface,Interior,2697331,194,404690
+2302262,Missouri,Bates,Active,Surface,Interior,189273,14,29527
+2400106,Montana,Richland,Active,Surface,Western,291820,13,24889
+2400839,Montana,Big Horn,Active,Surface,Powder River Basin,3642029,189,391132
+2400910,Montana,Big Horn,Active,Surface,Powder River Basin,3129242,154,285178
+2401457,Montana,Big Horn,Active,Surface,Powder River Basin,11928834,271,540672
+2401747,Montana,Rosebud,Active,Surface,Powder River Basin,8456480,391,720607
+2401950,Montana,Musselshell,Active,Underground,Western,7019129,274,614479
+2402703,Montana,Big Horn,Active,Surface,Powder River Basin,0,10,16086
+2900097,New Mexico,San Juan,Active,Surface,Western,5264177,379,835749
+2902170,New Mexico,San Juan,Active,Underground,Western,3775959,271,524926
+2902257,New Mexico,Mckinley,Active,Surface,Western,5495524,276,561496
+3200043,North Dakota,Mercer,Active,Surface,Western,391480,29,51596
+3200218,North Dakota,Oliver,Active,Surface,Western,3958707,175,331575
+3200491,North Dakota,Mclean,Active,Surface,Western,7421114,470,920782
+3200595,North Dakota,Mercer,Active,Surface,Western,13514792,455,899411
+3201028,North Dakota,Mercer,Active,Surface,Western,1710767,112,216355
+3300965,Ohio,Belmont,Active,Surface,Appalachia Northern,317168,78,140238
+3300968,Ohio,Harrison,Active,Underground,Appalachia Northern,503572,124,275935
+3301070,Ohio,Monroe,Active,Underground,Appalachia Northern,4735046,367,851221
+3301358,Ohio,Vinton,Temporarily closed,Surface,Appalachia Northern,2245,13,30066
+3301925,Ohio,Noble,Active,Surface,Appalachia Northern,425260,45,116066
+3302937,Ohio,Belmont,Active,Surface,Appalachia Northern,0,8,14690
+3303288,Ohio,Coshocton,Temporarily closed,Surface,Appalachia Northern,0,7,13548
+3303288,Ohio,Coshocton,Temporarily closed,Underground,Appalachia Northern,0,1,1178
+3303336,Ohio,Jackson,Temporarily closed,Surface,Appalachia Northern,829,1,208
+3303793,Ohio,Tuscarawas,Active,Surface,Appalachia Northern,0,7,17519
+3304179,Ohio,Tuscarawas,Active,Surface,Appalachia Northern,486,15,27066
+3304181,Ohio,Stark,"Active, men working, not producing",Surface,Appalachia Northern,20353,8,15406
+3304187,Ohio,Harrison,Active,Underground,Appalachia Northern,0,13,31499
+3304336,Ohio,Perry,Permanently abandoned,Surface,Appalachia Northern,64594,20,37531
+3304414,Ohio,Harrison,Active,Surface,Appalachia Northern,238997,42,75606
+3304484,Ohio,Harrison,Temporarily closed,Surface,Appalachia Northern,5475,3,3062
+3304509,Ohio,Tuscarawas,Active,Underground,Appalachia Northern,229175,24,53323
+3304520,Ohio,Perry,Active,Surface,Appalachia Northern,0,1,2443
+3304520,Ohio,Perry,Active,Underground,Appalachia Northern,0,13,32464
+3304526,Ohio,Perry,Active,Underground,Appalachia Northern,577507,117,229155
+3304577,Ohio,Harrison,Active,Surface,Appalachia Northern,371330,47,101401
+3304609,Ohio,Tuscarawas,Active,Underground,Appalachia Northern,0,5,7077
+3304642,West Virginia (Southern),Greenbrier,Permanently abandoned,Surface,Appalachia Central,40891,10,15557
+3304645,Ohio,Harrison,Active,Underground,Appalachia Northern,287065,24,56944
+3304709,West Virginia (Southern),Mercer,Active,Surface,Appalachia Central,78527,8,15851
+3401062,Oklahoma,Okmulgee,Active,Surface,Interior,628,1,572
+3402164,Oklahoma,Latimer,Temporarily closed,Surface,Interior,48673,11,24071
+3402168,Oklahoma,Craig,"Active, men working, not producing",Surface,Interior,178040,44,94359
+3600884,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,19911,14,30555
+3601241,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,12358,11,26175
+3601262,Pennsylvania (Bituminous),Elk,Active,Surface,Appalachia Northern,294,2,897
+3601734,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,749,12,12195
+3601760,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,47,107621
+3601761,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,262599,56,126960
+3601770,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,5,11153
+3601818,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,25626,7,12240
+3601877,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,15524,4,6383
+3601919,Pennsylvania (Anthracite),Dauphin,Active,Surface,Appalachia Northern,0,4,6662
+3601919,Pennsylvania (Anthracite),Dauphin,Active,Underground,Appalachia Northern,0,3,6662
+3601965,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,163619,22,42508
+3601966,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,26,58384
+3601977,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,209045,31,53050
+3602014,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,3,4766
+3602014,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,0,3,4766
+3602073,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,62,127284
+3602203,Pennsylvania (Anthracite),Northumberland,"Active, men working, not producing",Underground,Appalachia Northern,4018,3,3558
+3602703,Pennsylvania (Bituminous),Lycoming,Active,Surface,Appalachia Northern,120058,28,74001
+3602733,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,3880,2,3670
+3602945,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,0,30,57342
+3603287,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,6,11011
+3603328,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,157927,59,141961
+3603329,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,0,2,5982
+3603329,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,0,23,53840
+3603330,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,0,5,10865
+3603330,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,0,19,43462
+3603561,Pennsylvania (Bituminous),Jefferson,Active,Surface,Appalachia Northern,67183,29,67240
+3604186,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,496,1,567
+3604383,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,49667,25,53166
+3604782,Pennsylvania (Bituminous),Jefferson,"Active, men working, not producing",Surface,Appalachia Northern,1022,6,12681
+3605018,Pennsylvania (Bituminous),Greene,Active,Underground,Appalachia Northern,6595204,711,1517179
+3605023,Pennsylvania (Anthracite),Columbia,Active,Surface,Appalachia Northern,0,15,29113
+3605208,Pennsylvania (Bituminous),Clarion,Active,Surface,Appalachia Northern,6131,2,3846
+3605493,Pennsylvania (Bituminous),Clearfield,"Active, men working, not producing",Surface,Appalachia Northern,4155,3,2476
+3605518,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,10827,2,5857
+3605828,Pennsylvania (Bituminous),Jefferson,"Active, men working, not producing",Surface,Appalachia Northern,22946,2,3304
+3605855,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,0,6,12243
+3606393,Pennsylvania (Bituminous),Fayette,Active,Surface,Appalachia Northern,1301,3,3592
+3606428,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,5,5605
+3606432,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,0,2,5075
+3606562,Pennsylvania (Bituminous),Jefferson,Temporarily closed,Surface,Appalachia Northern,34501,8,19105
+3606586,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,9400,8,12887
+3606954,Pennsylvania (Anthracite),Berks,Active,Surface,Appalachia Northern,0,2,3233
+3606954,Pennsylvania (Anthracite),Berks,Active,Underground,Appalachia Northern,0,2,3233
+3607230,Pennsylvania (Bituminous),Greene,Active,Underground,Appalachia Northern,12218072,684,1608497
+3607240,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,21895,3,6853
+3607276,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,6,15479
+3607276,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,0,1,1720
+3607416,Pennsylvania (Bituminous),Washington,"Active, men working, not producing",Underground,Appalachia Northern,10043384,643,1571527
+3607437,Pennsylvania (Bituminous),Indiana,Active,Surface,Appalachia Northern,8582,1,95
+3607514,Pennsylvania (Bituminous),Jefferson,Temporarily closed,Surface,Appalachia Northern,1374,4,2413
+3607550,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,10893,5,5160
+3607576,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,7160,1,2256
+3607636,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,16994,3,5516
+3607670,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,24449,9,18841
+3607688,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,0,11,23888
+3607730,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,20040,5,11085
+3607746,Pennsylvania (Bituminous),Clearfield,Active,Underground,Appalachia Northern,0,9,18434
+3607772,Pennsylvania (Anthracite),Schuylkill,Temporarily closed,Surface,Appalachia Northern,1314,2,860
+3607805,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,43,85441
+3607880,Pennsylvania (Bituminous),Indiana,Active,Surface,Appalachia Northern,10579,2,3472
+3607892,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,2,4691
+3607892,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,0,2,4692
+3607928,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,94911,16,33066
+3608034,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,1735,2,4160
+3608071,Pennsylvania (Bituminous),Clearfield,Temporarily closed,Surface,Appalachia Northern,539,3,1393
+3608135,Pennsylvania (Bituminous),Armstrong,Active,Underground,Appalachia Northern,148366,21,49615
+3608138,Pennsylvania (Bituminous),Armstrong,Active,Underground,Appalachia Northern,0,19,44495
+3608163,Pennsylvania (Bituminous),Clearfield,Temporarily closed,Surface,Appalachia Northern,49524,26,61134
+3608248,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,15894,7,11433
+3608273,Pennsylvania (Anthracite),Lackawanna,Active,Surface,Appalachia Northern,360,6,10124
+3608316,Pennsylvania (Bituminous),Indiana,Active,Surface,Appalachia Northern,0,7,14123
+3608322,Pennsylvania (Anthracite),Montgomery,Active,Surface,Appalachia Northern,0,2,4299
+3608322,Pennsylvania (Anthracite),Montgomery,Active,Underground,Appalachia Northern,0,2,4300
+3608391,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,2143,14,27990
+3608398,Pennsylvania (Bituminous),Cambria,"Active, men working, not producing",Surface,Appalachia Northern,103615,24,50630
+3608488,Pennsylvania (Anthracite),Carbon,Active,Surface,Appalachia Northern,0,9,17516
+3608489,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,149649,16,33514
+3608494,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,52236,10,2430
+3608501,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,49080,8,16040
+3608504,Pennsylvania (Bituminous),Clearfield,"Active, men working, not producing",Surface,Appalachia Northern,6796,2,2274
+3608517,Pennsylvania (Bituminous),Westmoreland,Active,Surface,Appalachia Northern,7722,2,2534
+3608541,Pennsylvania (Bituminous),Mercer,Permanently abandoned,Surface,Appalachia Northern,9700,4,1440
+3608550,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,322314,33,73705
+3608567,Pennsylvania (Bituminous),Venango,"Active, men working, not producing",Surface,Appalachia Northern,0,5,18449
+3608581,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,16,35747
+3608590,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,64155,17,41831
+3608649,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,0,6,15961
+3608672,Pennsylvania (Bituminous),Somerset,Permanently abandoned,Surface,Appalachia Northern,2576,3,3801
+3608679,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,6864,7,9100
+3608684,Pennsylvania (Anthracite),Schuylkill,Temporarily closed,Surface,Appalachia Northern,2954,3,1560
+3608701,Pennsylvania (Bituminous),Armstrong,Active,Underground,Appalachia Northern,318013,31,79196
+3608728,Pennsylvania (Bituminous),Indiana,Temporarily closed,Surface,Appalachia Northern,2471,2,3008
+3608750,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,51074,12,22043
+3608766,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,0,57,109442
+3608780,Pennsylvania (Anthracite),Columbia,Active,Surface,Appalachia Northern,57670,28,67471
+3608785,Pennsylvania (Bituminous),Armstrong,Active,Underground,Appalachia Northern,107242,24,51438
+3608841,Pennsylvania (Bituminous),Armstrong,"Active, men working, not producing",Underground,Appalachia Northern,701,9,3020
+3608857,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,4,6917
+3608857,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,0,4,6917
+3608860,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,246501,17,35479
+3608871,Refuse Recovery,Columbia,Active,Refuse,Appalachia Northern,13972,2,2280
+3608893,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,2043,3,2370
+3608896,Pennsylvania (Bituminous),Somerset,Temporarily closed,Surface,Appalachia Northern,31079,3,3368
+3609059,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,4781,3,4236
+3609068,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,0,4,9526
+3609068,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,0,5,9526
+3609122,Pennsylvania (Bituminous),Cambria,Active,Surface,Appalachia Northern,154516,19,49478
+3609127,Pennsylvania (Bituminous),Cambria,Active,Underground,Appalachia Northern,530115,65,166828
+3609150,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,1291,1,1116
+3609178,Refuse Recovery,Schuylkill,Temporarily closed,Refuse,Appalachia Northern,11171,12,9245
+3609183,West Virginia (Southern),Nicholas,Active,Surface,Appalachia Central,5676,3,1936
+3609185,Pennsylvania (Bituminous),Indiana,"Active, men working, not producing",Surface,Appalachia Northern,7183,3,1268
+3609187,Pennsylvania (Bituminous),Cambria,Permanently abandoned,Surface,Appalachia Northern,6660,3,960
+3609189,Pennsylvania (Bituminous),Indiana,Active,Surface,Appalachia Northern,3705,3,592
+3609198,Virginia,Wise,Temporarily closed,Surface,Appalachia Central,2051,3,640
+3609203,Pennsylvania (Bituminous),Somerset,Permanently abandoned,Surface,Appalachia Northern,8083,3,1680
+3609210,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,0,17,39540
+3609231,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,2613,3,530
+3609246,Pennsylvania (Bituminous),Cambria,Active,Underground,Appalachia Northern,0,18,45429
+3609259,Pennsylvania (Anthracite),Schuylkill,Permanently abandoned,Surface,Appalachia Northern,2827,2,1740
+3609287,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,75872,10,24005
+3609304,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,35104,2,4063
+3609305,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,3651,3,1026
+3609306,Pennsylvania (Bituminous),Cambria,Active,Surface,Appalachia Northern,4436,3,1091
+3609308,Pennsylvania (Bituminous),Cambria,Active,Underground,Appalachia Northern,157277,33,82921
+3609322,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,25916,12,23856
+3609342,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,321911,37,90087
+3609348,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,11922,2,1585
+3609355,Pennsylvania (Bituminous),Clearfield,Active,Underground,Appalachia Northern,46638,10,14921
+3609371,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,732542,65,157758
+3609383,West Virginia (Northern),Monongalia,Permanently abandoned,Surface,Appalachia Northern,4333,3,1080
+3609394,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,88554,29,69481
+3609401,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,109174,25,52782
+3609407,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,238398,24,57374
+3609435,Pennsylvania (Anthracite),Dauphin,Active,Underground,Appalachia Northern,8011,9,18720
+3609436,Pennsylvania (Bituminous),Jefferson,"Active, men working, not producing",Underground,Appalachia Northern,203584,25,58635
+3609437,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,742090,57,158414
+3609444,Pennsylvania (Anthracite),Schuylkill,Temporarily closed,Surface,Appalachia Northern,2370,2,1199
+3609445,Pennsylvania (Anthracite),Luzerne,Active,Surface,Appalachia Northern,0,4,7498
+3609475,Pennsylvania (Anthracite),Northumberland,Active,Underground,Appalachia Northern,5649,3,3910
+3609477,Pennsylvania (Bituminous),Clearfield,Active,Underground,Appalachia Northern,243286,31,74998
+3609501,Pennsylvania (Anthracite),Luzerne,"Active, men working, not producing",Surface,Appalachia Northern,499,3,1697
+3609511,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,6067,2,710
+3609525,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,0,24,49941
+3609545,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,20392,12,11203
+3609547,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,58532,12,32900
+3609548,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,48331,4,12607
+3609558,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,20194,8,15915
+3609595,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,84726,11,25481
+3609603,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,163624,30,78873
+3609604,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,88399,16,37115
+3609605,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,298442,46,111815
+3609628,Pennsylvania (Bituminous),Armstrong,Active,Surface,Appalachia Northern,0,3,5817
+3609632,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,6630,3,1600
+3609651,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,675,3,224
+3609654,Pennsylvania (Bituminous),Butler,Permanently abandoned,Surface,Appalachia Northern,52739,21,23400
+3609666,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,181107,52,121435
+3609679,Pennsylvania (Bituminous),Clearfield,"Active, men working, not producing",Surface,Appalachia Northern,2550,1,489
+3609826,Pennsylvania (Bituminous),Fayette,Active,Surface,Appalachia Northern,7291,4,2861
+3609843,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,0,10,13210
+3609843,Refuse Recovery,Northumberland,Active,Refuse,Appalachia Northern,443,2,3835
+3609881,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,74150,13,30960
+3609885,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,1111,2,924
+3609886,Pennsylvania (Bituminous),Cambria,Active,Surface,Appalachia Northern,6859,3,4280
+3609888,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,131,6,4165
+3609893,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,401848,98,229834
+3609923,Pennsylvania (Bituminous),Bedford,Active,Surface,Appalachia Northern,181424,18,43384
+3609956,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,11860,3,1596
+3609963,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,7498,5,9411
+3609965,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,36065,8,7302
+3609972,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,633775,56,134790
+3609973,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,353550,79,184446
+3609974,Pennsylvania (Bituminous),Somerset,"Active, men working, not producing",Underground,Appalachia Northern,81771,43,97190
+3609975,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,0,0,189
+3609975,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,0,8,18674
+3610021,West Virginia (Northern),Monongalia,Active,Surface,Appalachia Northern,13991,3,2880
+3610034,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,0,3,8045
+3610036,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,0,12,31450
+3610041,Pennsylvania (Bituminous),Somerset,Active,Underground,Appalachia Northern,363971,104,239521
+3610045,Pennsylvania (Bituminous),Greene,Active,Underground,Appalachia Northern,5023781,266,661878
+3610089,Pennsylvania (Bituminous),Westmoreland,Active,Underground,Appalachia Northern,120133,52,112265
+3610110,Pennsylvania (Anthracite),Northumberland,Active,Underground,Appalachia Northern,499,3,143
+3610127,Pennsylvania (Anthracite),Northumberland,Active,Surface,Appalachia Northern,4613,1,1820
+3610150,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,314312,45,82651
+3610164,Virginia,Wise,Temporarily closed,Surface,Appalachia Central,3167,2,430
+3610165,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,190886,12,25603
+3610185,Pennsylvania (Bituminous),Somerset,Temporarily closed,Surface,Appalachia Northern,7508,3,541
+3610210,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,30006,13,24768
+3610219,Pennsylvania (Bituminous),Indiana,Active,Surface,Appalachia Northern,0,4,8792
+3610219,Pennsylvania (Bituminous),Indiana,Active,Underground,Appalachia Northern,0,3,8791
+3610225,Pennsylvania (Anthracite),Carbon,Active,Surface,Appalachia Northern,442358,30,66141
+3610233,Pennsylvania (Anthracite),Schuylkill,Active,Underground,Appalachia Northern,2906,6,12480
+3610246,Pennsylvania (Bituminous),Bedford,Temporarily closed,Surface,Appalachia Northern,27405,2,3235
+3610253,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,16574,2,4781
+3610256,Pennsylvania (Bituminous),Jefferson,Active,Surface,Appalachia Northern,8928,4,9353
+3610257,Pennsylvania (Bituminous),Westmoreland,Active,Surface,Appalachia Northern,98646,8,19500
+3610258,Pennsylvania (Bituminous),Cambria,Active,Surface,Appalachia Northern,45036,3,6471
+3610263,Pennsylvania (Bituminous),Washington,Permanently abandoned,Surface,Appalachia Northern,32283,8,7090
+3610272,Pennsylvania (Bituminous),Somerset,"Active, men working, not producing",Surface,Appalachia Northern,35183,6,7128
+3610275,Pennsylvania (Anthracite),Schuylkill,Active,Surface,Appalachia Northern,8356,3,4680
+3610277,Pennsylvania (Bituminous),Clarion,Permanently abandoned,Surface,Appalachia Northern,34768,5,6220
+3610279,Pennsylvania (Bituminous),Clearfield,Temporarily closed,Surface,Appalachia Northern,17613,3,2828
+3610286,Pennsylvania (Bituminous),Fayette,Permanently abandoned,Surface,Appalachia Northern,3579,12,12122
+3610291,Pennsylvania (Bituminous),Clearfield,Active,Surface,Appalachia Northern,13769,6,7511
+3610294,Pennsylvania (Bituminous),Cambria,"Active, men working, not producing",Surface,Appalachia Northern,34541,14,10709
+3610306,Pennsylvania (Bituminous),Somerset,Active,Surface,Appalachia Northern,6333,2,290
+4001038,Tennessee,Claiborne,Active,Surface,Appalachia Central,0,8,20179
+4001038,Tennessee,Claiborne,Active,Underground,Appalachia Central,0,15,39171
+4002467,Tennessee,Anderson,"Active, men working, not producing",Surface,Appalachia Central,0,2,4500
+4002467,Tennessee,Anderson,"Active, men working, not producing",Underground,Appalachia Central,0,2,4500
+4003274,West Virginia (Southern),Fayette,Temporarily closed,Surface,Appalachia Central,3200,2,1750
+4003353,Tennessee,Claiborne,Temporarily closed,Surface,Appalachia Central,29037,2,2213
+4003376,West Virginia (Southern),Logan,Temporarily closed,Surface,Appalachia Central,596082,13,27054
+4003398,West Virginia (Southern),Wyoming,"Active, men working, not producing",Surface,Appalachia Central,18860,9,13222
+4003441,Tennessee,Claiborne,"Active, men working, not producing",Underground,Appalachia Central,313583,69,164376
+4003515,Tennessee,Claiborne,"Active, men working, not producing",Surface,Appalachia Central,93303,15,37417
+4102840,Texas,Atascosa,Active,Surface,Interior,3003780,326,748274
+4103101,Texas,Harrison,Active,Surface,Interior,3138892,313,667936
+4103428,Texas,Robertson,Active,Surface,Interior,2156794,99,224815
+4103659,Texas,Panola,"Active, men working, not producing",Surface,Interior,924947,59,95915
+4103739,Texas,Maverick,Active,Surface,Interior,1638483,194,448572
+4104586,Texas,Limestone,Active,Surface,Interior,9594365,340,792632
+4104864,Texas,Harrison,Active,Surface,Interior,185718,27,51869
+4104964,Texas,Rusk,Active,Surface,Interior,2663711,173,353908
+4200079,Utah,Emery,Active,Underground,Uinta Region,693464,96,220811
+4200089,Utah,Sevier,Active,Underground,Uinta Region,4373942,430,931846
+4201444,Utah,Carbon,Active,Surface,Uinta Region,0,12,28837
+4201444,Utah,Carbon,Active,Underground,Uinta Region,0,11,28836
+4201566,Utah,Carbon,Active,Underground,Uinta Region,3916179,357,763952
+4201890,Utah,Carbon,"Active, men working, not producing",Underground,Uinta Region,416421,93,202735
+4202052,Utah,Emery,Active,Underground,Uinta Region,0,15,28652
+4202093,Utah,Carbon,Active,Surface,Uinta Region,0,11,23042
+4202241,Utah,Carbon,Active,Underground,Uinta Region,3713971,260,625493
+4202263,Utah,Emery,Active,Underground,Uinta Region,634325,53,119760
+4202335,Utah,Emery,Active,Underground,Uinta Region,417048,39,94389
+4202395,Utah,Emery,Active,Underground,Uinta Region,0,33,59765
+4202455,Utah,Carbon,Active,Underground,Uinta Region,0,10,17977
+4202519,Utah,Kane,Active,Surface,Western,240010,26,86285
+4401486,Virginia,Buchanan,"Active, men working, not producing",Underground,Appalachia Central,51975,38,53716
+4402277,Virginia,Russell,Active,Surface,Appalachia Central,23502,20,46460
+4403010,Virginia,Buchanan,Active,Surface,Appalachia Central,0,14,33663
+4403088,Virginia,Wise,"Active, men working, not producing",Underground,Appalachia Central,0,19,24186
+4403472,Virginia,Wise,Active,Surface,Appalachia Central,0,2,4666
+4403472,Virginia,Wise,Active,Underground,Appalachia Central,0,2,4666
+4404212,Virginia,Buchanan,Active,Surface,Appalachia Central,0,1,4490
+4404212,Virginia,Buchanan,Active,Underground,Appalachia Central,0,6,17959
+4404856,Virginia,Buchanan,Active,Underground,Appalachia Central,4940159,580,1386313
+4404982,Virginia,Buchanan,Active,Surface,Appalachia Central,0,21,56151
+4404982,Virginia,Buchanan,Active,Underground,Appalachia Central,0,32,84226
+4405236,Virginia,Tazewell,Active,Underground,Appalachia Central,0,19,39751
+4405270,Virginia,Wise,Active,Surface,Appalachia Central,0,22,53390
+4405270,Virginia,Wise,Active,Underground,Appalachia Central,0,16,38661
+4405311,Virginia,Dickenson,Active,Surface,Appalachia Central,0,4,10622
+4405311,Virginia,Dickenson,Active,Underground,Appalachia Central,0,58,141126
+4405898,Virginia,Lee,"Active, men working, not producing",Underground,Appalachia Central,0,15,20040
+4406199,Virginia,Wise,Active,Surface,Appalachia Central,0,9,16846
+4406199,Virginia,Wise,Active,Underground,Appalachia Central,0,17,29949
+4406499,Virginia,Buchanan,"Active, men working, not producing",Underground,Appalachia Central,20178,20,27638
+4406544,Virginia,Wise,"Active, men working, not producing",Surface,Appalachia Central,208491,23,53565
+4406748,Virginia,Buchanan,Active,Underground,Appalachia Central,34374,33,43006
+4406804,Virginia,Tazewell,"Active, men working, not producing",Underground,Appalachia Central,1479,7,14583
+4406868,Virginia,Buchanan,"Active, men working, not producing",Underground,Appalachia Central,43582,17,47274
+4406943,Virginia,Wise,Active,Surface,Appalachia Central,0,2,4152
+4406943,Virginia,Wise,Active,Underground,Appalachia Central,0,2,4152
+4407041,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,62620,4,7677
+4407087,Virginia,Wise,"Active, men working, not producing",Underground,Appalachia Central,76787,48,61993
+4407115,Virginia,Dickenson,Active,Surface,Appalachia Central,35907,24,60500
+4407124,Virginia,Wise,Active,Surface,Appalachia Central,69209,18,45467
+4407133,Virginia,Wise,Active,Surface,Appalachia Central,219761,41,79549
+4407137,Virginia,Wise,Active,Underground,Appalachia Central,227755,53,122564
+4407142,Virginia,Russell,"Active, men working, not producing",Surface,Appalachia Central,0,0,230
+4407142,Virginia,Russell,"Active, men working, not producing",Underground,Appalachia Central,0,25,11274
+4407150,Virginia,Wise,"Active, men working, not producing",Underground,Appalachia Central,94984,59,71514
+4407156,Virginia,Wise,Temporarily closed,Surface,Appalachia Central,4156,5,6876
+4407163,Virginia,Dickenson,Active,Surface,Appalachia Central,721888,126,316310
+4407172,Virginia,Tazewell,"Active, men working, not producing",Surface,Appalachia Central,173545,43,101897
+4407199,Virginia,Buchanan,Active,Surface,Appalachia Central,279471,48,117728
+4407217,Virginia,Dickenson,"Active, men working, not producing",Underground,Appalachia Central,40136,13,21522
+4407220,Virginia,Buchanan,Active,Underground,Appalachia Central,36958,38,55760
+4407223,Virginia,Dickenson,Active,Underground,Appalachia Central,1633695,345,798032
+4407225,Virginia,Buchanan,Active,Surface,Appalachia Central,34495,33,69771
+4407260,Virginia,Dickenson,"Active, men working, not producing",Underground,Appalachia Central,15580,12,18871
+4407268,Virginia,Buchanan,"Active, men working, not producing",Underground,Appalachia Central,43193,15,37842
+4407284,Virginia,Wise,Temporarily closed,Surface,Appalachia Central,27164,15,19724
+4407285,Virginia,Buchanan,Active,Surface,Appalachia Central,17336,10,21319
+4407303,Virginia,Wise,Active,Surface,Appalachia Central,0,6,10539
+4407303,Virginia,Wise,Active,Underground,Appalachia Central,0,5,10538
+4407306,Virginia,Dickenson,Permanently abandoned,Underground,Appalachia Central,68687,15,15206
+4407308,Virginia,Dickenson,Active,Underground,Appalachia Central,482850,94,212977
+4407313,Kentucky (East),Boyd,Temporarily closed,Surface,Appalachia Central,96731,10,10610
+4407318,Virginia,Buchanan,"Active, men working, not producing",Underground,Appalachia Central,429121,136,337366
+4407320,Virginia,Tazewell,"Active, men working, not producing",Surface,Appalachia Central,1236,2,1528
+4407327,Virginia,Buchanan,Temporarily closed,Surface,Appalachia Central,162048,14,45039
+4407355,Virginia,Buchanan,Active,Surface,Appalachia Central,324944,62,166122
+4407366,Virginia,Dickenson,Active,Underground,Appalachia Central,214263,72,171417
+4407367,Virginia,Wise,"Active, men working, not producing",Underground,Appalachia Central,112228,34,71736
+4407370,Virginia,Wise,"Active, men working, not producing",Surface,Appalachia Central,6837,3,5240
+4407381,Virginia,Dickenson,Active,Surface,Appalachia Central,300116,55,128582
+4407384,Virginia,Wise,Active,Surface,Appalachia Central,283335,32,84726
+4407385,Refuse Recovery,Wise,Permanently abandoned,Refuse,Appalachia Central,22939,8,3413
+4407386,Virginia,Wise,Temporarily closed,Surface,Appalachia Central,18709,18,11204
+4407388,Virginia,Wise,"Active, men working, not producing",Underground,Appalachia Central,147659,38,72611
+4407389,Virginia,Russell,Temporarily closed,Surface,Appalachia Central,16974,24,9024
+4407391,Virginia,Wise,Active,Surface,Appalachia Central,103954,17,45687
+4407392,Virginia,Buchanan,Active,Surface,Appalachia Central,134063,34,68896
+4407394,Virginia,Wise,Active,Surface,Appalachia Central,159343,24,56970
+4407395,Refuse Recovery,Dickenson,Active,Refuse,Appalachia Central,148578,10,12070
+4407396,Virginia,Wise,Temporarily closed,Surface,Appalachia Central,28663,15,21280
+4407402,Virginia,Buchanan,Temporarily closed,Surface,Appalachia Central,9632,37,10335
+4601318,West Virginia (Northern),Marion,Active,Underground,Appalachia Northern,6808868,459,1102694
+4601368,West Virginia (Southern),Logan,"Active, men working, not producing",Underground,Appalachia Central,0,36,87692
+4601433,West Virginia (Northern),Marion,Active,Underground,Appalachia Northern,5962845,563,1269373
+4601436,West Virginia (Northern),Marshall,Active,Underground,Appalachia Northern,6600582,487,1162480
+4601437,West Virginia (Northern),Marshall,Active,Underground,Appalachia Northern,11718744,833,1988391
+4601438,West Virginia (Northern),Marshall,Active,Surface,Appalachia Northern,0,16,37736
+4601438,West Virginia (Northern),Marshall,Active,Underground,Appalachia Northern,0,15,37736
+4601544,West Virginia (Southern),Wyoming,"Active, men working, not producing",Underground,Appalachia Central,502065,123,306878
+4601968,Pennsylvania (Bituminous),Greene,Active,Underground,Appalachia Northern,4469056,414,968086
+4602140,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,0,54,115051
+4602380,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,11536,15,33515
+4602444,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,0,7,16721
+4602444,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,0,63,150492
+4602489,West Virginia (Northern),Mineral,Active,Surface,Appalachia Northern,2999,4,3699
+4602515,West Virginia (Southern),Logan,"Active, men working, not producing",Surface,Appalachia Central,0,2,5160
+4603085,West Virginia (Southern),Kanawha,Active,Underground,Appalachia Central,0,44,105554
+4603135,West Virginia (Southern),Boone,Active,Underground,Appalachia Central,0,4,9218
+4603202,West Virginia (Southern),Nicholas,Active,Surface,Appalachia Central,0,11,31299
+4603303,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,0,1,1564
+4603303,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,0,17,37538
+4603317,West Virginia (Southern),Kanawha,Active,Surface,Appalachia Central,0,17,41412
+4603317,West Virginia (Southern),Kanawha,Active,Underground,Appalachia Central,0,33,76909
+4604168,West Virginia (Northern),Barbour,Active,Underground,Appalachia Northern,1106710,404,965021
+4604236,West Virginia (Southern),Fayette,"Active, men working, not producing",Underground,Appalachia Central,395126,131,344557
+4604315,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,0,7,16132
+4604315,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,0,16,35907
+4604343,West Virginia (Southern),Fayette,Active,Surface,Appalachia Central,0,1,2420
+4604343,West Virginia (Southern),Fayette,Active,Underground,Appalachia Central,0,35,78233
+4604637,West Virginia (Southern),Wyoming,Active,Underground,Appalachia Central,0,6,11689
+4604734,West Virginia (Southern),Raleigh,Temporarily closed,Surface,Appalachia Central,0,2,3652
+4604734,West Virginia (Southern),Raleigh,Temporarily closed,Underground,Appalachia Central,0,2,3652
+4605086,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,0,5,11730
+4605086,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,0,47,105570
+4605145,West Virginia (Southern),Fayette,Temporarily closed,Underground,Appalachia Central,0,21,44178
+4605252,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,1040517,274,614702
+4605295,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,0,6,14170
+4605398,West Virginia (Southern),Boone,"Active, men working, not producing",Surface,Appalachia Central,0,10,30281
+4605437,West Virginia (Southern),Kanawha,"Active, men working, not producing",Underground,Appalachia Central,1271954,334,832878
+4605649,West Virginia (Southern),Mingo,Active,Surface,Appalachia Central,0,2,4534
+4605649,West Virginia (Southern),Mingo,Active,Underground,Appalachia Central,0,41,86138
+4605741,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Surface,Appalachia Central,119172,17,35087
+4605868,West Virginia (Southern),Wyoming,Active,Surface,Appalachia Central,0,3,7315
+4605868,West Virginia (Southern),Wyoming,Active,Underground,Appalachia Central,0,8,17070
+4605872,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Underground,Appalachia Central,0,7,13401
+4605890,West Virginia (Southern),Mingo,"Active, men working, not producing",Surface,Appalachia Central,0,36,90377
+4605890,West Virginia (Southern),Mingo,"Active, men working, not producing",Underground,Appalachia Central,0,12,31754
+4605909,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,0,22,33163
+4605992,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,0,14,29769
+4605995,West Virginia (Northern),Monongalia,Permanently abandoned,Underground,Appalachia Northern,0,12,14062
+4606045,West Virginia (Northern),Webster,Active,Surface,Appalachia Northern,0,34,65667
+4606089,West Virginia (Southern),Mingo,"Active, men working, not producing",Surface,Appalachia Central,287220,20,54305
+4606188,West Virginia (Southern),Boone,"Active, men working, not producing",Underground,Appalachia Central,0,10,22369
+4606263,West Virginia (Southern),Wyoming,Active,Underground,Appalachia Central,222238,68,169440
+4606265,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,111843,34,72343
+4606448,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,0,5,12618
+4606448,West Virginia (Southern),Boone,Active,Underground,Appalachia Central,0,47,113562
+4606578,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,124485,27,57234
+4606609,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Surface,Appalachia Central,2500,3,1132
+4606618,West Virginia (Southern),Boone,Active,Underground,Appalachia Central,293512,72,182237
+4606736,West Virginia (Northern),Randolph,Active,Underground,Appalachia Northern,0,21,61346
+4606880,West Virginia (Southern),Nicholas,Active,Underground,Appalachia Central,0,26,54508
+4607165,West Virginia (Southern),Mingo,"Active, men working, not producing",Surface,Appalachia Central,47643,12,25320
+4607178,West Virginia (Southern),Kanawha,Active,Surface,Appalachia Central,1187906,121,319651
+4607366,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,39478,14,37268
+4607376,West Virginia (Southern),Greenbrier,"Active, men working, not producing",Surface,Appalachia Central,14814,30,9044
+4607406,West Virginia (Southern),Mingo,"Active, men working, not producing",Underground,Appalachia Central,0,8,19321
+4607491,West Virginia (Southern),Fayette,Active,Surface,Appalachia Central,67079,39,13544
+4607537,West Virginia (Southern),Fayette,Active,Surface,Appalachia Central,157761,22,46144
+4607852,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,0,13,30032
+4607938,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,644471,70,183075
+4607985,West Virginia (Southern),Mingo,"Active, men working, not producing",Surface,Appalachia Central,0,3,5417
+4608249,West Virginia (Southern),Logan,"Active, men working, not producing",Surface,Appalachia Central,164420,32,87323
+4608264,West Virginia (Northern),Marion,Active,Surface,Appalachia Northern,0,14,16073
+4608315,West Virginia (Southern),Raleigh,Permanently abandoned,Underground,Appalachia Central,127536,68,145915
+4608374,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,0,107,229359
+4608465,West Virginia (Southern),Kanawha,Active,Surface,Appalachia Central,0,12,29439
+4608465,West Virginia (Southern),Kanawha,Active,Underground,Appalachia Central,0,22,57145
+4608563,West Virginia (Southern),Mingo,Active,Surface,Appalachia Central,0,28,38633
+4608571,West Virginia (Southern),Kanawha,"Active, men working, not producing",Underground,Appalachia Central,0,53,129919
+4608625,West Virginia (Southern),Fayette,Permanently abandoned,Underground,Appalachia Central,186528,70,164984
+4608626,West Virginia (Southern),Mingo,Active,Surface,Appalachia Central,0,12,36145
+4608632,West Virginia (Southern),Mingo,"Active, men working, not producing",Surface,Appalachia Central,181164,20,52366
+4608645,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,270619,44,98149
+4608647,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,476879,103,248953
+4608656,West Virginia (Northern),Randolph,Active,Underground,Appalachia Northern,418264,146,358411
+4608659,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,156983,43,60853
+4608663,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,553577,71,154616
+4608752,West Virginia (Southern),Lincoln,Active,Surface,Appalachia Central,0,9,16949
+4608759,West Virginia (Southern),Boone,Active,Underground,Appalachia Central,944176,126,310891
+4608777,West Virginia (Northern),Barbour,Active,Underground,Appalachia Northern,0,29,68908
+4608786,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Underground,Appalachia Central,100985,41,86020
+4608787,West Virginia (Southern),Nicholas,Active,Underground,Appalachia Central,559834,126,305838
+4608801,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,676296,136,345800
+4608802,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,338601,72,174040
+4608808,West Virginia (Southern),Mingo,Active,Underground,Appalachia Central,1015969,139,345895
+4608818,West Virginia (Southern),Boone,"Active, men working, not producing",Surface,Appalachia Central,56511,19,55331
+4608838,West Virginia (Southern),Logan,"Active, men working, not producing",Surface,Appalachia Central,474607,49,116966
+4608864,West Virginia (Northern),Ohio,Active,Underground,Appalachia Northern,7330458,447,995190
+4608878,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,940892,262,635271
+4608879,West Virginia (Southern),Raleigh,Active,Surface,Appalachia Central,0,6,15165
+4608879,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,0,24,57048
+4608884,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Underground,Appalachia Central,41390,18,50314
+4608917,West Virginia (Southern),Logan,"Active, men working, not producing",Surface,Appalachia Central,255543,26,61670
+4608921,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,22462,30,50307
+4608930,West Virginia (Southern),Mingo,Active,Surface,Appalachia Central,573324,74,178880
+4608932,West Virginia (Southern),Fayette,Active,Underground,Appalachia Central,433846,110,265211
+4608939,West Virginia (Southern),Logan,Temporarily closed,Surface,Appalachia Central,90,4,8888
+4608940,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,0,9,23350
+4608961,West Virginia (Southern),Kanawha,Active,Surface,Appalachia Central,0,11,22513
+4608961,West Virginia (Southern),Kanawha,Active,Underground,Appalachia Central,0,11,22512
+4608967,West Virginia (Southern),Boone,"Active, men working, not producing",Surface,Appalachia Central,108325,14,26261
+4608977,West Virginia (Southern),Raleigh,"Active, men working, not producing",Surface,Appalachia Central,15047,8,16950
+4608984,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,2177072,198,549020
+4609018,West Virginia (Southern),Mingo,Temporarily closed,Underground,Appalachia Central,104339,47,85095
+4609024,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Surface,Appalachia Central,23930,9,21467
+4609026,West Virginia (Southern),Raleigh,Active,Surface,Appalachia Central,797359,118,297291
+4609028,West Virginia (Northern),Tucker,Active,Underground,Appalachia Northern,2075291,225,503885
+4609029,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,1256784,305,763798
+4609036,West Virginia (Northern),Webster,"Active, men working, not producing",Surface,Appalachia Northern,449363,72,144888
+4609046,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,0,3,7119
+4609046,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,0,23,52206
+4609048,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,263578,127,289804
+4609050,West Virginia (Northern),Marion,Active,Surface,Appalachia Northern,234302,6,16965
+4609051,West Virginia (Southern),Wayne,Active,Surface,Appalachia Central,0,37,82058
+4609051,West Virginia (Southern),Wayne,Active,Underground,Appalachia Central,0,37,82057
+4609052,West Virginia (Southern),Fayette,Active,Surface,Appalachia Central,13478,3,2632
+4609054,West Virginia (Southern),Fayette,Active,Surface,Appalachia Central,1323553,147,355370
+4609062,West Virginia (Southern),Wyoming,Active,Surface,Appalachia Central,1487300,12,32783
+4609070,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,333115,53,135292
+4609075,West Virginia (Southern),Mingo,"Active, men working, not producing",Surface,Appalachia Central,1157747,91,241244
+4609091,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,539847,131,308357
+4609092,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,630209,129,307489
+4609093,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Underground,Appalachia Central,32334,23,39902
+4609096,West Virginia (Southern),Raleigh,"Active, men working, not producing",Surface,Appalachia Central,18884,15,42403
+4609101,West Virginia (Southern),Logan,"Active, men working, not producing",Surface,Appalachia Central,617756,70,179796
+4609105,West Virginia (Southern),Fayette,"Active, men working, not producing",Surface,Appalachia Central,53440,16,17517
+4609114,West Virginia (Southern),Fayette,Active,Surface,Appalachia Central,0,4,9383
+4609114,West Virginia (Southern),Fayette,Active,Underground,Appalachia Central,0,3,9382
+4609125,West Virginia (Southern),Greenbrier,"Active, men working, not producing",Surface,Appalachia Central,0,7,20229
+4609125,West Virginia (Southern),Greenbrier,"Active, men working, not producing",Underground,Appalachia Central,0,4,9964
+4609130,West Virginia (Northern),Webster,"Active, men working, not producing",Surface,Appalachia Northern,24212,6,3928
+4609151,West Virginia (Southern),Nicholas,Temporarily closed,Surface,Appalachia Central,54656,6,13815
+4609152,West Virginia (Southern),Boone,Active,Underground,Appalachia Central,330492,145,340551
+4609153,West Virginia (Southern),Kanawha,Active,Surface,Appalachia Central,31570,10,30314
+4609162,West Virginia (Southern),Fayette,"Active, men working, not producing",Surface,Appalachia Central,0,4,3421
+4609162,West Virginia (Southern),Fayette,"Active, men working, not producing",Underground,Appalachia Central,0,3,3420
+4609172,West Virginia (Southern),Greenbrier,"Active, men working, not producing",Underground,Appalachia Central,198361,68,172881
+4609182,Virginia,Tazewell,"Active, men working, not producing",Surface,Appalachia Central,46741,5,8792
+4609191,West Virginia (Northern),Taylor,Active,Underground,Appalachia Northern,0,43,104148
+4609192,West Virginia (Northern),Taylor,Active,Underground,Appalachia Northern,4274748,427,1122624
+4609198,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,94940,22,47483
+4609204,West Virginia (Southern),Logan,"Active, men working, not producing",Surface,Appalachia Central,466718,59,137737
+4609207,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Underground,Appalachia Central,112876,23,40184
+4609212,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,254286,79,167943
+4609216,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,0,30,63074
+4609217,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,1036842,221,556317
+4609219,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,207441,12,31719
+4609221,West Virginia (Southern),Kanawha,Active,Underground,Appalachia Central,1048552,113,276409
+4609222,West Virginia (Southern),Wyoming,Active,Underground,Appalachia Central,46283,38,31064
+4609226,West Virginia (Southern),Kanawha,Active,Underground,Appalachia Central,0,29,64991
+4609230,West Virginia (Southern),Kanawha,Permanently abandoned,Underground,Appalachia Central,407408,105,267169
+4609239,West Virginia (Southern),Wyoming,Active,Surface,Appalachia Central,236374,61,114898
+4609246,West Virginia (Southern),Greenbrier,Active,Surface,Appalachia Central,339689,75,214247
+4609258,West Virginia (Southern),Boone,Active,Underground,Appalachia Central,715708,104,244303
+4609261,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,459680,162,381774
+4609271,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,43361,12,23324
+4609277,West Virginia (Southern),Mingo,"Active, men working, not producing",Underground,Appalachia Central,493243,89,212286
+4609286,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,479735,54,109381
+4609294,West Virginia (Southern),Logan,Temporarily closed,Underground,Appalachia Central,259627,104,277844
+4609296,West Virginia (Southern),Kanawha,Permanently abandoned,Underground,Appalachia Central,338909,57,142975
+4609297,West Virginia (Southern),Kanawha,Active,Underground,Appalachia Central,999119,113,274539
+4609309,West Virginia (Southern),Boone,"Active, men working, not producing",Surface,Appalachia Central,72609,19,51665
+4609311,West Virginia (Southern),Mercer,Active,Surface,Appalachia Central,189123,30,62520
+4609316,West Virginia (Southern),Wyoming,Active,Surface,Appalachia Central,0,4,11299
+4609316,West Virginia (Southern),Wyoming,Active,Underground,Appalachia Central,0,11,27662
+4609319,West Virginia (Southern),Wyoming,Active,Underground,Appalachia Central,695862,186,461800
+4609340,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Underground,Appalachia Central,24390,8,7705
+4609341,West Virginia (Southern),Kanawha,Active,Surface,Appalachia Central,275000,44,99365
+4609345,West Virginia (Southern),Mingo,Active,Surface,Appalachia Central,478239,73,193503
+4609357,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,0,22,43283
+4609357,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,0,48,96338
+4609361,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,400440,70,163029
+4609362,West Virginia (Southern),Mingo,"Active, men working, not producing",Underground,Appalachia Central,250932,33,71957
+4609370,Virginia,Buchanan,Active,Surface,Appalachia Central,26367,9,25057
+4609374,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,123645,8,18301
+4609377,West Virginia (Southern),Wyoming,Active,Surface,Appalachia Central,912186,90,248996
+4609390,West Virginia (Southern),Logan,"Active, men working, not producing",Underground,Appalachia Central,74820,42,74979
+4609395,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,480629,107,270952
+4609414,Virginia,Wise,"Active, men working, not producing",Surface,Appalachia Central,115206,14,29959
+4609415,West Virginia (Southern),Fayette,Temporarily closed,Surface,Appalachia Central,40243,5,9939
+4609427,West Virginia (Southern),Wyoming,Active,Underground,Appalachia Central,331992,70,178777
+4609441,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,0,5,16636
+4609442,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Surface,Appalachia Central,197395,34,98353
+4609443,West Virginia (Southern),Wayne,Temporarily closed,Surface,Appalachia Central,3560,8,3013
+4609448,West Virginia (Southern),Greenbrier,Active,Surface,Appalachia Central,216950,44,108053
+4609455,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,82004,13,31909
+4609462,West Virginia (Southern),Greenbrier,Active,Surface,Appalachia Central,0,7,17980
+4609471,West Virginia (Southern),Wyoming,Active,Underground,Appalachia Central,307120,58,141448
+4609473,West Virginia (Southern),Greenbrier,Temporarily closed,Surface,Appalachia Central,62053,14,29588
+4609475,West Virginia (Southern),Raleigh,Active,Surface,Appalachia Central,1678025,253,612040
+4609478,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,148475,33,80893
+4609480,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Surface,Appalachia Central,34748,15,47832
+4609484,West Virginia (Southern),Mcdowell,Active,Surface,Appalachia Central,92166,11,22472
+4609485,West Virginia (Southern),Mcdowell,"Active, men working, not producing",Surface,Appalachia Central,10497,5,5173
+4609495,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,488334,56,129628
+4609496,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,362973,111,256727
+4609497,Refuse Recovery,Logan,"New, under construction",Refuse,Appalachia Central,77447,5,9600
+4609507,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,50465,24,51026
+4609514,West Virginia (Southern),Logan,"Active, men working, not producing",Underground,Appalachia Central,226098,58,153667
+4609519,West Virginia (Southern),Greenbrier,Temporarily closed,Surface,Appalachia Central,1533,5,7272
+4609524,West Virginia (Southern),Nicholas,Temporarily closed,Surface,Appalachia Central,5742,3,2710
+4609528,West Virginia (Southern),Logan,"Active, men working, not producing",Underground,Appalachia Central,178839,83,198500
+4609531,West Virginia (Southern),Raleigh,Active,Surface,Appalachia Central,190007,17,37267
+4609532,West Virginia (Southern),Boone,Active,Surface,Appalachia Central,4419,2,635
+4609533,West Virginia (Southern),Mcdowell,Active,Underground,Appalachia Central,188241,66,161031
+4609535,Kentucky (East),Knott,"Active, men working, not producing",Surface,Appalachia Central,3200,2,650
+4609537,West Virginia (Southern),Logan,Active,Surface,Appalachia Central,146204,25,70018
+4609538,West Virginia (Southern),Nicholas,"Active, men working, not producing",Surface,Appalachia Central,22658,8,19271
+4609540,West Virginia (Southern),Nicholas,Active,Surface,Appalachia Central,148328,18,38156
+4609541,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,273544,51,134367
+4609544,Refuse Recovery,Logan,"New, under construction",Refuse,Appalachia Central,43807,5,3150
+4609545,West Virginia (Southern),Mingo,Active,Surface,Appalachia Central,143051,7,17052
+4609546,West Virginia (Northern),Randolph,Active,Underground,Appalachia Northern,52695,19,41976
+4609548,Virginia,Russell,"Active, men working, not producing",Surface,Appalachia Central,5272,2,553
+4609550,West Virginia (Southern),Raleigh,Active,Underground,Appalachia Central,131043,50,134009
+4609556,West Virginia (Southern),Mercer,Active,Surface,Appalachia Central,0,9,14212
+4609558,West Virginia (Southern),Logan,Temporarily closed,Surface,Appalachia Central,8650,4,2051
+4609560,West Virginia (Southern),Logan,Temporarily closed,Surface,Appalachia Central,10157,3,1144
+4609563,West Virginia (Southern),Logan,Active,Underground,Appalachia Central,187562,47,66193
+4609564,West Virginia (Southern),Logan,"Active, men working, not producing",Surface,Appalachia Central,280613,28,61797
+4800083,Wyoming,Campbell,Active,Surface,Powder River Basin,3716480,64,108706
+4800086,Wyoming,Lincoln,Active,Surface,Western,3067446,272,473600
+4800677,Wyoming,Sweetwater,Active,Surface,Western,2326392,219,431217
+4800732,Wyoming,Campbell,Active,Surface,Powder River Basin,10219206,206,386599
+4800977,Wyoming,Campbell,Active,Surface,Powder River Basin,71976643,1224,2496061
+4800992,Wyoming,Campbell,Active,Surface,Powder River Basin,11906683,356,704333
+4800993,Wyoming,Campbell,Active,Surface,Powder River Basin,10090441,121,262898
+4801034,Wyoming,Campbell,Active,Surface,Powder River Basin,12595735,187,395242
+4801078,Wyoming,Campbell,Active,Surface,Powder River Basin,11642248,214,397551
+4801180,Wyoming,Sweetwater,Active,Surface,Western,2307947,162,299134
+4801200,Wyoming,Campbell,Active,Surface,Powder River Basin,17633296,237,547581
+4801215,Wyoming,Campbell,Active,Surface,Powder River Basin,2549671,59,140086
+4801337,Wyoming,Converse,Active,Surface,Powder River Basin,23243371,591,1200850
+4801353,Wyoming,Campbell,Active,Surface,Powder River Basin,85340711,1263,2677831
+4801429,Wyoming,Campbell,Active,Surface,Powder River Basin,6102072,91,168499
+4801645,Indiana,Warrick,"Active, men working, not producing",Surface,Illinois Basin,125930,14,29153
+4801646,Wyoming,Sweetwater,Active,Underground,Western,2193565,133,255308
+5000030,Alaska,Denali,Active,Surface,Western,974702,101,189814
+502838,Colorado,Moffat,Active,Surface,Uinta Region,1954282,191,381436
+502962,Colorado,Moffat,Active,Surface,Uinta Region,1597967,223,443440
+503505,Colorado,Rio Blanco,Active,Underground,Uinta Region,2034835,169,357594
+503672,Colorado,Gunnison,Active,Underground,Uinta Region,4079345,348,724430
+503836,Colorado,Routt,Active,Underground,Uinta Region,2543911,253,537034
+504864,Colorado,La Plata,Active,Underground,Western,657782,88,200683

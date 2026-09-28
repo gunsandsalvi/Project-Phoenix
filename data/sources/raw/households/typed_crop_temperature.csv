@@ -1,0 +1,7 @@
+crop,measure,value,unit
+corn,temperature above which yields fall,29,degrees C
+corn,yield change from replacing a full day at 29 C by a full day at 40 C,-0.07,share of yield
+corn,yield-maximising growing-season precipitation,25.0,inches
+cotton,temperature above which yields fall,32,degrees C
+soybeans,temperature above which yields fall,30,degrees C
+soybeans,yield-maximising growing-season precipitation,27.2,inches

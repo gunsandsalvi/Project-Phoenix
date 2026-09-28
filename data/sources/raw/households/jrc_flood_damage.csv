@@ -1,0 +1,271 @@
+class,region,depth_m,damage_share,sd
+Agriculture,africa,0,0,0
+Agriculture,africa,0.5,0.2428735632,0.09597384536
+Agriculture,africa,1,0.4718390805,0.1750856197
+Agriculture,africa,1.5,0.7413793103,0.2504455008
+Agriculture,africa,2,0.9166666667,0.1443375673
+Agriculture,africa,3,1,0
+Agriculture,africa,4,1,0
+Agriculture,africa,5,1,0
+Agriculture,africa,6,1,0
+Agriculture,asia,0,0,0
+Agriculture,asia,0.5,0.135,0.1889444363
+Agriculture,asia,1,0.37,0.3510697936
+Agriculture,asia,1.5,0.524,0.4763192207
+Agriculture,asia,2,0.558,0.4558727893
+Agriculture,asia,3,0.66,0.3577708764
+Agriculture,asia,4,0.834,0.1636459593
+Agriculture,asia,5,0.988,0.02683281573
+Agriculture,asia,6,1,0
+Agriculture,europe,0,0,
+Agriculture,europe,0.5,0.3,
+Agriculture,europe,1,0.55,
+Agriculture,europe,1.5,0.65,
+Agriculture,europe,2,0.75,
+Agriculture,europe,3,0.85,
+Agriculture,europe,4,0.95,
+Agriculture,europe,5,1,
+Agriculture,europe,6,1,
+Agriculture,global,0,0,
+Agriculture,global,0.5,0.2364178078,
+Agriculture,global,1,0.4663791145,
+Agriculture,global,1.5,0.6164850238,
+Agriculture,global,2,0.7067069924,
+Agriculture,global,3,0.8175142728,
+Agriculture,global,4,0.9145236506,
+Agriculture,global,5,0.985518893,
+Agriculture,global,6,1,
+Agriculture,north_america,0,0.01857538761,
+Agriculture,north_america,0.5,0.2677976681,
+Agriculture,north_america,1,0.4736773775,
+Agriculture,north_america,1.5,0.5505607847,
+Agriculture,north_america,2,0.6021613029,
+Agriculture,north_america,3,0.760057091,
+Agriculture,north_america,4,0.8740946024,
+Agriculture,north_america,5,0.9540755721,
+Agriculture,north_america,6,1,
+Commercial buildings,asia,0,0,0
+Commercial buildings,asia,0.5,0.3767896232,0.2404622851
+Commercial buildings,asia,1,0.5376816186,0.2405962794
+Commercial buildings,asia,1.5,0.659336684,0.2436051563
+Commercial buildings,asia,2,0.7628452325,0.2502535107
+Commercial buildings,asia,3,0.8833486558,0.1717036253
+Commercial buildings,asia,4,0.9418548949,0.11240992
+Commercial buildings,asia,5,0.9807593802,0.05278106366
+Commercial buildings,asia,6,1,0
+Commercial buildings,central_south_america,0,0,0
+Commercial buildings,central_south_america,0.5,0.6114775866,0.07702343524
+Commercial buildings,central_south_america,1,0.8395310945,0.0359240274
+Commercial buildings,central_south_america,1.5,0.9235884575,0.02687652519
+Commercial buildings,central_south_america,2,0.9919724771,0.01605504587
+Commercial buildings,central_south_america,3,1,0
+Commercial buildings,central_south_america,4,1,0
+Commercial buildings,central_south_america,5,1,0
+Commercial buildings,central_south_america,6,1,0
+Commercial buildings,europe,0,0,
+Commercial buildings,europe,0.5,0.15,
+Commercial buildings,europe,1,0.3,
+Commercial buildings,europe,1.5,0.45,
+Commercial buildings,europe,2,0.55,
+Commercial buildings,europe,3,0.75,
+Commercial buildings,europe,4,0.9,
+Commercial buildings,europe,5,1,
+Commercial buildings,europe,6,1,
+Commercial buildings,global,0,0,
+Commercial buildings,global,0.5,0.3232969176,
+Commercial buildings,global,1,0.5065291047,
+Commercial buildings,global,1.5,0.6345955803,
+Commercial buildings,global,2,0.7443096564,
+Commercial buildings,global,3,0.864093044,
+Commercial buildings,global,4,0.9327881569,
+Commercial buildings,global,5,0.9777469681,
+Commercial buildings,global,6,1,
+Commercial buildings,north_america,0,0.01840490798,
+Commercial buildings,north_america,0.5,0.2392638037,
+Commercial buildings,north_america,1,0.3742331288,
+Commercial buildings,north_america,1.5,0.4662576687,
+Commercial buildings,north_america,2,0.5521472393,
+Commercial buildings,north_america,3,0.6871165644,
+Commercial buildings,north_america,4,0.8220858896,
+Commercial buildings,north_america,5,0.9079754601,
+Commercial buildings,north_america,6,1,
+Commercial buildings,oceania,0,0,0
+Commercial buildings,oceania,0.5,0.2389535745,0.1428782041
+Commercial buildings,oceania,1,0.4811996817,0.2041132059
+Commercial buildings,oceania,1.5,0.6737950914,0.1909035942
+Commercial buildings,oceania,2,0.8645833333,0.178000078
+Commercial buildings,oceania,3,1,0
+Commercial buildings,oceania,4,1,0
+Commercial buildings,oceania,5,1,0
+Commercial buildings,oceania,6,1,0
+Industrial buildings,africa,0,0,
+Industrial buildings,africa,0.5,0.06268204283,
+Industrial buildings,africa,1,0.2471960461,
+Industrial buildings,africa,1.5,0.4033299835,
+Industrial buildings,africa,2,0.4944886326,
+Industrial buildings,africa,3,0.6846523888,
+Industrial buildings,africa,4,0.9185897858,
+Industrial buildings,africa,5,1,
+Industrial buildings,africa,6,1,
+Industrial buildings,asia,0,0,0
+Industrial buildings,asia,0.5,0.2831815239,0.2433223017
+Industrial buildings,asia,1,0.4816156531,0.2959870709
+Industrial buildings,asia,1.5,0.6292188938,0.3005833582
+Industrial buildings,asia,2,0.717240588,0.2685179075
+Industrial buildings,asia,3,0.8566750298,0.2344981364
+Industrial buildings,asia,4,0.908577004,0.1591978651
+Industrial buildings,asia,5,0.955327463,0.07945798777
+Industrial buildings,asia,6,1,0
+Industrial buildings,central_south_america,0,0,0
+Industrial buildings,central_south_america,0.5,0.6670194004,0.1744598846
+Industrial buildings,central_south_america,1,0.888712522,0.09819104203
+Industrial buildings,central_south_america,1.5,0.9467372134,0.04649265489
+Industrial buildings,central_south_america,2,1,0
+Industrial buildings,central_south_america,3,1,0
+Industrial buildings,central_south_america,4,1,0
+Industrial buildings,central_south_america,5,1,0
+Industrial buildings,central_south_america,6,1,0
+Industrial buildings,europe,0,0,
+Industrial buildings,europe,0.5,0.15,
+Industrial buildings,europe,1,0.27,
+Industrial buildings,europe,1.5,0.4,
+Industrial buildings,europe,2,0.52,
+Industrial buildings,europe,3,0.7,
+Industrial buildings,europe,4,0.85,
+Industrial buildings,europe,5,1,
+Industrial buildings,europe,6,1,
+Industrial buildings,global,0,0,
+Industrial buildings,global,0.5,0.297148022,
+Industrial buildings,global,1,0.4797905585,
+Industrial buildings,global,1.5,0.6032857896,
+Industrial buildings,global,2,0.6943458441,
+Industrial buildings,global,3,0.8202654837,
+Industrial buildings,global,4,0.9228619294,
+Industrial buildings,global,5,0.9870654926,
+Industrial buildings,global,6,1,
+Industrial buildings,north_america,0,0.02571428571,
+Industrial buildings,north_america,0.5,0.3228571429,
+Industrial buildings,north_america,1,0.5114285714,
+Industrial buildings,north_america,1.5,0.6371428571,
+Industrial buildings,north_america,2,0.74,
+Industrial buildings,north_america,3,0.86,
+Industrial buildings,north_america,4,0.9371428571,
+Industrial buildings,north_america,5,0.98,
+Industrial buildings,north_america,6,1,
+Infrastructure - roads,asia,0,0,0
+Infrastructure - roads,asia,0.5,0.2144369064,0.06941085738
+Infrastructure - roads,asia,1,0.3727544098,0.07394393656
+Infrastructure - roads,asia,1.5,0.6039348711,0.2058143234
+Infrastructure - roads,asia,2,0.7096590909,0.2705558443
+Infrastructure - roads,asia,3,0.8084090909,0.2212453794
+Infrastructure - roads,asia,4,0.8871590909,0.1335148773
+Infrastructure - roads,asia,5,0.96875,0.0625
+Infrastructure - roads,asia,6,1,0
+Infrastructure - roads,europe,0,0,
+Infrastructure - roads,europe,0.5,0.25,
+Infrastructure - roads,europe,1,0.42,
+Infrastructure - roads,europe,1.5,0.55,
+Infrastructure - roads,europe,2,0.65,
+Infrastructure - roads,europe,3,0.8,
+Infrastructure - roads,europe,4,0.9,
+Infrastructure - roads,europe,5,1,
+Infrastructure - roads,europe,6,1,
+Infrastructure - roads,global,0,0,
+Infrastructure - roads,global,0.5,0.2322184532,
+Infrastructure - roads,global,1,0.3963772049,
+Infrastructure - roads,global,1.5,0.5769674355,
+Infrastructure - roads,global,2,0.6798295455,
+Infrastructure - roads,global,3,0.8042045455,
+Infrastructure - roads,global,4,0.8935795455,
+Infrastructure - roads,global,5,0.984375,
+Infrastructure - roads,global,6,1,
+Residential buildings,africa,0,0,0
+Residential buildings,africa,0.5,0.2199254009,0.0420036782
+Residential buildings,africa,1,0.3782268461,0.1142963148
+Residential buildings,africa,1.5,0.5305890818,0.1983962241
+Residential buildings,africa,2,0.6356367329,0.2078215577
+Residential buildings,africa,3,0.8169397799,0.2052469318
+Residential buildings,africa,4,0.9034346884,0.1418564413
+Residential buildings,africa,5,0.957152173,0.07620879872
+Residential buildings,africa,6,1,0
+Residential buildings,asia,0,0,0
+Residential buildings,asia,0.5,0.326556502,0.2516226257
+Residential buildings,asia,1,0.4940503235,0.2154422158
+Residential buildings,asia,1.5,0.6165721245,0.2144689981
+Residential buildings,asia,2,0.7207117644,0.2073228979
+Residential buildings,asia,3,0.8695282126,0.1675366295
+Residential buildings,asia,4,0.9314870839,0.1245089939
+Residential buildings,asia,5,0.983604148,0.04780310265
+Residential buildings,asia,6,1,0
+Residential buildings,central_south_america,0,0,0
+Residential buildings,central_south_america,0.5,0.4908859508,0.2094278142
+Residential buildings,central_south_america,1,0.7112940666,0.1354098664
+Residential buildings,central_south_america,1.5,0.8420260107,0.08163024506
+Residential buildings,central_south_america,2,0.9493690958,0.06085345281
+Residential buildings,central_south_america,3,0.9836369771,0.02407025504
+Residential buildings,central_south_america,4,1,0
+Residential buildings,central_south_america,5,1,0
+Residential buildings,central_south_america,6,1,0
+Residential buildings,europe,0,0,
+Residential buildings,europe,0.5,0.25,
+Residential buildings,europe,1,0.4,
+Residential buildings,europe,1.5,0.5,
+Residential buildings,europe,2,0.6,
+Residential buildings,europe,3,0.75,
+Residential buildings,europe,4,0.85,
+Residential buildings,europe,5,0.95,
+Residential buildings,europe,6,1,
+Residential buildings,north_america,0,0.2018045435,0.1683576047
+Residential buildings,north_america,0.5,0.4432698566,0.1411214642
+Residential buildings,north_america,1,0.5827546932,0.1374523668
+Residential buildings,north_america,1.5,0.6825219116,0.1667251824
+Residential buildings,north_america,2,0.7839571482,0.1407208599
+Residential buildings,north_america,3,0.8543489223,0.1291316942
+Residential buildings,north_america,4,0.9236701009,0.1020734276
+Residential buildings,north_america,5,0.9585227726,0.05913469743
+Residential buildings,north_america,6,1,0
+Residential buildings,oceania,0,0,0.08803991828
+Residential buildings,oceania,0.5,0.4754181192,0.141050712
+Residential buildings,oceania,1,0.6403931244,0.1635281878
+Residential buildings,oceania,1.5,0.7146146615,0.1694842433
+Residential buildings,oceania,2,0.7877263476,0.1668558058
+Residential buildings,oceania,3,0.9287798843,0.1128774989
+Residential buildings,oceania,4,0.9673818525,0.05815340515
+Residential buildings,oceania,5,0.9827954438,0.03589274972
+Residential buildings,oceania,6,1,0
+Transport,asia,0,0,0
+Transport,asia,0.5,0.3575163399,0.3021538302
+Transport,asia,1,0.5718954248,0.2814824089
+Transport,asia,1.5,0.7333333333,0.2516611478
+Transport,asia,2,0.8472222222,0.1683938285
+Transport,asia,3,1,0
+Transport,asia,4,1,0
+Transport,asia,5,1,0
+Transport,asia,6,1,0
+Transport,central_south_america,0,0,
+Transport,central_south_america,0.5,0.08771929825,
+Transport,central_south_america,1,0.1754385965,
+Transport,central_south_america,1.5,0.5964912281,
+Transport,central_south_america,2,0.8421052632,
+Transport,central_south_america,3,1,
+Transport,central_south_america,4,1,
+Transport,central_south_america,5,1,
+Transport,central_south_america,6,1,
+Transport,europe,0,0,
+Transport,europe,0.5,0.3166666667,
+Transport,europe,1,0.5416666667,
+Transport,europe,1.5,0.7016666667,
+Transport,europe,2,0.8316666667,
+Transport,europe,3,1,
+Transport,europe,4,1,
+Transport,europe,5,1,
+Transport,europe,6,1,
+Transport,global,0,0,
+Transport,global,0.5,0.2539674349,
+Transport,global,1,0.429666896,
+Transport,global,1.5,0.6771637427,
+Transport,global,2,0.840331384,
+Transport,global,3,1,
+Transport,global,4,1,
+Transport,global,5,1,
+Transport,global,6,1,

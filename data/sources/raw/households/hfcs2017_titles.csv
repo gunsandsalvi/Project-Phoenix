@@ -1,0 +1,46 @@
+table,title
+A1,Table A1 Main aggregates - medians broken down by ownership of the household main residence
+A2,Table A2 Main aggregates - means broken down by ownership of the household main residence
+A3,Table A3 Net wealth medians - breakdowns
+A4,"Table A4 Net wealth, means - breakdowns"
+B1,Table B1 Percentage of households owning real assets
+B2,Table B2 Real assets - conditional medians
+B3,"Table B3 Real assets, ownership of HMR - breakdowns"
+B4,"Table B4 Real assets, value of HMR - distribution"
+B5,"Table B5 Real estate assets, conditional medians - breakdowns"
+C1,Table C1 Financial assets - participation rates
+C2,Table C2 Financial assets - conditional medians
+C3,"Table C3 Total financial assets, among household with financial assets - distribution"
+C4,"Table C4 Financial assets, conditional medians - breakdowns"
+C5,"Table C5 Financial assets, has shares - breakdowns"
+D1,Table D1 Shares of main asset types on total assets
+D2,Table D2 Shares of real assets types on total real assets
+D3,Table D3 Shares of financial assets types on total financial assets
+D4,Table D4 Share of financial assets on total assets - breakdowns
+E1,Table E1 Percentage of households holding debt
+E2,Table E2 Debt - conditional medians
+E3,Table E3 Shares of debt types on total liabilities
+E4,"Table E4 Total debt, among households holding debt - distribution"
+E5,Table E5 Percentage of households holding debt - breakdowns
+E6,"Table E6 Total debt, conditional medians - breakdowns"
+E7,Table E7 Payments for debt - conditional medians
+F1,"Table F1 Financial burden indicators, median ratios"
+F2,Table F2 Financial burden indicators - 90th percentile ratios
+F3,Table F3 Has negative net wealth - breakdowns
+F4,Table F4 Median debt to income ratio - breakdowns
+F5,"Table F5 Median debt service to income ratio, among households with debt payments - breakdowns"
+F6,Table F6 Median debt to assets ratio - breakdowns
+F7,"Table F7 Net value of household main residence, among all households - distribution"
+G1,"Table G1 Consumption - food, utilities - medians"
+G2,Table G2 Consumption and saving
+G3,Table G3 Regular expenses less than income - breakdowns
+H1,Table H1 Credit constraints
+I1,"Table I1 Annual gross income per household, medians - breakdowns"
+I2,Table I2 Annual gross income per household - means - breakdowns
+I3,Table I3 Annual gross income per household - distribution
+J1,Table J1 Shares of total assets held across the total assets distribution
+J2,Table J2 Total assets per household - distribution
+J3,Table J3 Net wealth per household - distribution
+J4,Table J4 Net wealth inequality indicators
+K1,Table K1 Middle quintile net wealth households - selected characteristics
+K2,Table K2 Middle quintile net wealth households - medians

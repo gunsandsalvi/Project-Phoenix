@@ -1,0 +1,141 @@
+year,nature,chapter,cases
+2016,all,Chapter 11,7292
+2016,all,Chapter 12,461
+2016,all,Chapter 13,296655
+2016,all,Chapter 7,490365
+2016,all,all,794960
+2016,business,Chapter 11,6174
+2016,business,Chapter 12,461
+2016,business,Chapter 13,2259
+2016,business,Chapter 7,15033
+2016,business,all,24114
+2016,nonbusiness,Chapter 11,1118
+2016,nonbusiness,Chapter 13,294396
+2016,nonbusiness,Chapter 7,475332
+2016,nonbusiness,all,770846
+2017,all,Chapter 11,7442
+2017,all,Chapter 12,501
+2017,all,Chapter 13,294637
+2017,all,Chapter 7,486347
+2017,all,all,789020
+2017,business,Chapter 11,6350
+2017,business,Chapter 12,501
+2017,business,Chapter 13,2056
+2017,business,Chapter 7,14157
+2017,business,all,23157
+2017,nonbusiness,Chapter 11,1092
+2017,nonbusiness,Chapter 13,292581
+2017,nonbusiness,Chapter 7,472190
+2017,nonbusiness,all,765863
+2018,all,Chapter 11,7095
+2018,all,Chapter 13,290146
+2018,all,Chapter 7,475575
+2018,all,all,773418
+2018,all,other,602
+2018,business,Chapter 11,6078
+2018,business,Chapter 13,1874
+2018,business,Chapter 7,13678
+2018,business,all,22232
+2018,business,other,602
+2018,nonbusiness,Chapter 11,1017
+2018,nonbusiness,Chapter 13,288272
+2018,nonbusiness,Chapter 7,461897
+2018,nonbusiness,all,751186
+2019,all,Chapter 11,7020
+2019,all,Chapter 13,286979
+2019,all,Chapter 7,480206
+2019,all,all,774940
+2019,all,other,735
+2019,business,Chapter 11,6052
+2019,business,Chapter 13,1778
+2019,business,Chapter 7,14215
+2019,business,all,22780
+2019,business,other,735
+2019,nonbusiness,Chapter 11,968
+2019,nonbusiness,Chapter 13,285201
+2019,nonbusiness,Chapter 7,465991
+2019,nonbusiness,all,752160
+2020,all,Chapter 11,8333
+2020,all,Chapter 13,156377
+2020,all,Chapter 7,378953
+2020,all,all,544463
+2020,all,other,800
+2020,business,Chapter 11,7786
+2020,business,Chapter 13,1150
+2020,business,Chapter 7,11919
+2020,business,all,21655
+2020,business,other,800
+2020,nonbusiness,Chapter 11,547
+2020,nonbusiness,Chapter 13,155227
+2020,nonbusiness,Chapter 7,367034
+2020,nonbusiness,all,522808
+2021,all,Chapter 11,4836
+2021,all,Chapter 13,120002
+2021,all,Chapter 7,288327
+2021,all,all,413616
+2021,all,other,451
+2021,business,Chapter 11,4366
+2021,business,Chapter 13,852
+2021,business,Chapter 7,8678
+2021,business,all,14347
+2021,business,other,451
+2021,nonbusiness,Chapter 11,470
+2021,nonbusiness,Chapter 13,119150
+2021,nonbusiness,Chapter 7,279649
+2021,nonbusiness,all,399269
+2022,all,Chapter 11,4918
+2022,all,Chapter 13,157087
+2022,all,Chapter 7,225455
+2022,all,all,387721
+2022,all,other,261
+2022,business,Chapter 11,4465
+2022,business,Chapter 13,1027
+2022,business,Chapter 7,7728
+2022,business,all,13481
+2022,business,other,261
+2022,nonbusiness,Chapter 11,453
+2022,nonbusiness,Chapter 13,156060
+2022,nonbusiness,Chapter 7,217727
+2022,nonbusiness,all,374240
+2023,all,Chapter 11,7456
+2023,all,Chapter 13,183956
+2023,all,Chapter 7,261277
+2023,all,all,452990
+2023,all,other,301
+2023,business,Chapter 11,7070
+2023,business,Chapter 13,1326
+2023,business,Chapter 7,10229
+2023,business,all,18926
+2023,business,other,301
+2023,nonbusiness,Chapter 11,386
+2023,nonbusiness,Chapter 13,182630
+2023,nonbusiness,Chapter 7,251048
+2023,nonbusiness,all,434064
+2024,all,Chapter 11,8884
+2024,all,Chapter 13,197244
+2024,all,Chapter 7,310631
+2024,all,all,517308
+2024,all,other,549
+2024,business,Chapter 11,8456
+2024,business,Chapter 13,1520
+2024,business,Chapter 7,12582
+2024,business,all,23107
+2024,business,other,549
+2024,nonbusiness,Chapter 11,428
+2024,nonbusiness,Chapter 13,195724
+2024,nonbusiness,Chapter 7,298049
+2024,nonbusiness,all,494201
+2025,all,Chapter 11,9201
+2025,all,Chapter 13,207889
+2025,all,Chapter 7,356724
+2025,all,all,574314
+2025,all,other,500
+2025,business,Chapter 11,8659
+2025,business,Chapter 13,1319
+2025,business,Chapter 7,14259
+2025,business,all,24737
+2025,business,other,500
+2025,nonbusiness,Chapter 11,542
+2025,nonbusiness,Chapter 13,206570
+2025,nonbusiness,Chapter 7,342465
+2025,nonbusiness,all,549577

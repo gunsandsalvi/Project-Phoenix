@@ -1,0 +1,361 @@
+region,year,kind,months
+Midwest,2015,multi_unit_total,10.7
+Midwest,2015,one_unit_built_for_sale,6.1
+Midwest,2015,one_unit_contractor_built,7.2
+Midwest,2015,one_unit_owner_built,10.5
+Midwest,2015,one_unit_total,7
+Midwest,2015,units_10_19,9.7
+Midwest,2015,units_20_plus,13
+Midwest,2015,units_2_4,7.5
+Midwest,2015,units_5_9,9.9
+Midwest,2016,multi_unit_total,11.3
+Midwest,2016,one_unit_built_for_sale,5.9
+Midwest,2016,one_unit_contractor_built,7.3
+Midwest,2016,one_unit_owner_built,10.9
+Midwest,2016,one_unit_total,6.9
+Midwest,2016,units_10_19,11.5
+Midwest,2016,units_20_plus,13.6
+Midwest,2016,units_2_4,8.9
+Midwest,2016,units_5_9,10.3
+Midwest,2017,multi_unit_total,12.6
+Midwest,2017,one_unit_built_for_sale,6.2
+Midwest,2017,one_unit_contractor_built,7.2
+Midwest,2017,one_unit_owner_built,11.5
+Midwest,2017,one_unit_total,7.2
+Midwest,2017,units_10_19,12.5
+Midwest,2017,units_20_plus,14.1
+Midwest,2017,units_2_4,9.5
+Midwest,2017,units_5_9,12.2
+Midwest,2018,multi_unit_total,11.6
+Midwest,2018,one_unit_built_for_sale,6.3
+Midwest,2018,one_unit_contractor_built,7.8
+Midwest,2018,one_unit_owner_built,11.8
+Midwest,2018,one_unit_total,7.5
+Midwest,2018,units_10_19,12.8
+Midwest,2018,units_20_plus,15.7
+Midwest,2018,units_2_4,8.7
+Midwest,2018,units_5_9,10.7
+Midwest,2019,multi_unit_total,12.1
+Midwest,2019,one_unit_built_for_sale,6.7
+Midwest,2019,one_unit_contractor_built,7.8
+Midwest,2019,one_unit_owner_built,11.6
+Midwest,2019,one_unit_total,7.7
+Midwest,2019,units_10_19,12.3
+Midwest,2019,units_20_plus,15.1
+Midwest,2019,units_2_4,9.1
+Midwest,2019,units_5_9,11.9
+Midwest,2020,multi_unit_total,14.8
+Midwest,2020,one_unit_built_for_sale,6.6
+Midwest,2020,one_unit_contractor_built,7.7
+Midwest,2020,one_unit_owner_built,11.1
+Midwest,2020,one_unit_total,7.4
+Midwest,2020,units_10_19,12.1
+Midwest,2020,units_20_plus,16.9
+Midwest,2020,units_2_4,13.6
+Midwest,2020,units_5_9,16.7
+Midwest,2021,multi_unit_total,13.6
+Midwest,2021,one_unit_built_for_sale,7.4
+Midwest,2021,one_unit_contractor_built,8.3
+Midwest,2021,one_unit_owner_built,10.8
+Midwest,2021,one_unit_total,8
+Midwest,2021,units_10_19,12.9
+Midwest,2021,units_20_plus,14.7
+Midwest,2021,units_2_4,10.3
+Midwest,2021,units_5_9,13.3
+Midwest,2022,multi_unit_total,16.8
+Midwest,2022,one_unit_built_for_sale,7.9
+Midwest,2022,one_unit_contractor_built,9
+Midwest,2022,one_unit_owner_built,13
+Midwest,2022,one_unit_total,8.7
+Midwest,2022,units_10_19,14.4
+Midwest,2022,units_20_plus,15.2
+Midwest,2022,units_2_4,35.1
+Midwest,2022,units_5_9,11.2
+Northeast,2015,multi_unit_total,13.9
+Northeast,2015,one_unit_built_for_sale,8.2
+Northeast,2015,one_unit_contractor_built,9.8
+Northeast,2015,one_unit_owner_built,10.8
+Northeast,2015,one_unit_total,8.9
+Northeast,2015,units_10_19,14.1
+Northeast,2015,units_20_plus,16
+Northeast,2015,units_2_4,13.7
+Northeast,2015,units_5_9,12.1
+Northeast,2016,multi_unit_total,15.5
+Northeast,2016,one_unit_built_for_sale,9.4
+Northeast,2016,one_unit_contractor_built,9.4
+Northeast,2016,one_unit_owner_built,12.3
+Northeast,2016,one_unit_total,9.6
+Northeast,2016,units_10_19,16.7
+Northeast,2016,units_20_plus,18.9
+Northeast,2016,units_2_4,13
+Northeast,2016,units_5_9,20.5
+Northeast,2017,multi_unit_total,16.6
+Northeast,2017,one_unit_built_for_sale,8.1
+Northeast,2017,one_unit_contractor_built,11.1
+Northeast,2017,one_unit_owner_built,12.9
+Northeast,2017,one_unit_total,9.5
+Northeast,2017,units_10_19,17.2
+Northeast,2017,units_20_plus,19.6
+Northeast,2017,units_2_4,14.7
+Northeast,2017,units_5_9,18.3
+Northeast,2018,multi_unit_total,18.3
+Northeast,2018,one_unit_built_for_sale,8.5
+Northeast,2018,one_unit_contractor_built,9.7
+Northeast,2018,one_unit_owner_built,10.9
+Northeast,2018,one_unit_total,9.3
+Northeast,2018,units_10_19,20.4
+Northeast,2018,units_20_plus,23.6
+Northeast,2018,units_2_4,13.5
+Northeast,2018,units_5_9,20.2
+Northeast,2019,multi_unit_total,19.5
+Northeast,2019,one_unit_built_for_sale,9.5
+Northeast,2019,one_unit_contractor_built,11.9
+Northeast,2019,one_unit_owner_built,15.5
+Northeast,2019,one_unit_total,11.1
+Northeast,2019,units_10_19,29.5
+Northeast,2019,units_20_plus,22.4
+Northeast,2019,units_2_4,15
+Northeast,2019,units_5_9,20.4
+Northeast,2020,multi_unit_total,17.5
+Northeast,2020,one_unit_built_for_sale,9.8
+Northeast,2020,one_unit_contractor_built,10.8
+Northeast,2020,one_unit_owner_built,12.9
+Northeast,2020,one_unit_total,10.7
+Northeast,2020,units_10_19,14.9
+Northeast,2020,units_20_plus,22.5
+Northeast,2020,units_2_4,14.9
+Northeast,2020,units_5_9,23.4
+Northeast,2021,multi_unit_total,18.5
+Northeast,2021,one_unit_built_for_sale,10
+Northeast,2021,one_unit_contractor_built,11.3
+Northeast,2021,one_unit_owner_built,13.6
+Northeast,2021,one_unit_total,10.7
+Northeast,2021,units_10_19,18.1
+Northeast,2021,units_20_plus,22.6
+Northeast,2021,units_2_4,16.2
+Northeast,2021,units_5_9,19.5
+Northeast,2022,multi_unit_total,20.4
+Northeast,2022,one_unit_built_for_sale,9.7
+Northeast,2022,one_unit_contractor_built,11.8
+Northeast,2022,one_unit_owner_built,13.3
+Northeast,2022,one_unit_total,10.7
+Northeast,2022,units_10_19,21.4
+Northeast,2022,units_20_plus,23
+Northeast,2022,units_2_4,17.2
+Northeast,2022,units_5_9,25.2
+South,2015,multi_unit_total,12.2
+South,2015,one_unit_built_for_sale,5.1
+South,2015,one_unit_contractor_built,7
+South,2015,one_unit_owner_built,11
+South,2015,one_unit_total,5.8
+South,2015,units_10_19,12.2
+South,2015,units_20_plus,14.1
+South,2015,units_2_4,8.6
+South,2015,units_5_9,12.8
+South,2016,multi_unit_total,12.4
+South,2016,one_unit_built_for_sale,5.4
+South,2016,one_unit_contractor_built,7.2
+South,2016,one_unit_owner_built,11
+South,2016,one_unit_total,6
+South,2016,units_10_19,11.8
+South,2016,units_20_plus,14.1
+South,2016,units_2_4,8.8
+South,2016,units_5_9,10.2
+South,2017,multi_unit_total,12.8
+South,2017,one_unit_built_for_sale,5.2
+South,2017,one_unit_contractor_built,7.3
+South,2017,one_unit_owner_built,10.5
+South,2017,one_unit_total,5.9
+South,2017,units_10_19,12.7
+South,2017,units_20_plus,14.7
+South,2017,units_2_4,9.3
+South,2017,units_5_9,10.8
+South,2018,multi_unit_total,13.3
+South,2018,one_unit_built_for_sale,5.3
+South,2018,one_unit_contractor_built,7.9
+South,2018,one_unit_owner_built,10.4
+South,2018,one_unit_total,6
+South,2018,units_10_19,13.6
+South,2018,units_20_plus,15.9
+South,2018,units_2_4,8.5
+South,2018,units_5_9,14.2
+South,2019,multi_unit_total,14.4
+South,2019,one_unit_built_for_sale,5.4
+South,2019,one_unit_contractor_built,7.7
+South,2019,one_unit_owner_built,10.1
+South,2019,one_unit_total,6.1
+South,2019,units_10_19,15.6
+South,2019,units_20_plus,15.3
+South,2019,units_2_4,10.2
+South,2019,units_5_9,12.3
+South,2020,multi_unit_total,14.7
+South,2020,one_unit_built_for_sale,5.2
+South,2020,one_unit_contractor_built,8.1
+South,2020,one_unit_owner_built,10.7
+South,2020,one_unit_total,5.9
+South,2020,units_10_19,14.1
+South,2020,units_20_plus,16.4
+South,2020,units_2_4,9.4
+South,2020,units_5_9,14.5
+South,2021,multi_unit_total,14.2
+South,2021,one_unit_built_for_sale,5.9
+South,2021,one_unit_contractor_built,8.5
+South,2021,one_unit_owner_built,11.4
+South,2021,one_unit_total,6.5
+South,2021,units_10_19,16.6
+South,2021,units_20_plus,16.3
+South,2021,units_2_4,6.7
+South,2021,units_5_9,12.2
+South,2022,multi_unit_total,15.6
+South,2022,one_unit_built_for_sale,7.2
+South,2022,one_unit_contractor_built,9.2
+South,2022,one_unit_owner_built,10.4
+South,2022,one_unit_total,7.6
+South,2022,units_10_19,19.2
+South,2022,units_20_plus,16.9
+South,2022,units_2_4,11.3
+South,2022,units_5_9,14.2
+United States,2015,multi_unit_total,12.2
+United States,2015,one_unit_built_for_sale,5.5
+United States,2015,one_unit_contractor_built,7.6
+United States,2015,one_unit_owner_built,11.1
+United States,2015,one_unit_total,6.3
+United States,2015,units_10_19,12.1
+United States,2015,units_20_plus,14.3
+United States,2015,units_2_4,10.5
+United States,2015,units_5_9,11.2
+United States,2016,multi_unit_total,12.9
+United States,2016,one_unit_built_for_sale,5.8
+United States,2016,one_unit_contractor_built,7.8
+United States,2016,one_unit_owner_built,11.5
+United States,2016,one_unit_total,6.6
+United States,2016,units_10_19,12.2
+United States,2016,units_20_plus,15
+United States,2016,units_2_4,10.9
+United States,2016,units_5_9,12.4
+United States,2017,multi_unit_total,13.9
+United States,2017,one_unit_built_for_sale,5.7
+United States,2017,one_unit_contractor_built,8.1
+United States,2017,one_unit_owner_built,11.2
+United States,2017,one_unit_total,6.5
+United States,2017,units_10_19,13.5
+United States,2017,units_20_plus,15.7
+United States,2017,units_2_4,11.6
+United States,2017,units_5_9,14
+United States,2018,multi_unit_total,14.4
+United States,2018,one_unit_built_for_sale,5.9
+United States,2018,one_unit_contractor_built,8.4
+United States,2018,one_unit_owner_built,11.4
+United States,2018,one_unit_total,6.7
+United States,2018,units_10_19,14.4
+United States,2018,units_20_plus,17.4
+United States,2018,units_2_4,10.5
+United States,2018,units_5_9,14.6
+United States,2019,multi_unit_total,15.4
+United States,2019,one_unit_built_for_sale,6.1
+United States,2019,one_unit_contractor_built,8.9
+United States,2019,one_unit_owner_built,12.3
+United States,2019,one_unit_total,7
+United States,2019,units_10_19,16.4
+United States,2019,units_20_plus,17.2
+United States,2019,units_2_4,12.6
+United States,2019,units_5_9,14.6
+United States,2020,multi_unit_total,15.4
+United States,2020,one_unit_built_for_sale,5.9
+United States,2020,one_unit_contractor_built,8.8
+United States,2020,one_unit_owner_built,11.8
+United States,2020,one_unit_total,6.8
+United States,2020,units_10_19,14.1
+United States,2020,units_20_plus,17.7
+United States,2020,units_2_4,12.9
+United States,2020,units_5_9,15.5
+United States,2021,multi_unit_total,15.4
+United States,2021,one_unit_built_for_sale,6.5
+United States,2021,one_unit_contractor_built,9.4
+United States,2021,one_unit_owner_built,12.1
+United States,2021,one_unit_total,7.2
+United States,2021,units_10_19,15.5
+United States,2021,units_20_plus,17.2
+United States,2021,units_2_4,11.9
+United States,2021,units_5_9,15.8
+United States,2022,multi_unit_total,17
+United States,2022,one_unit_built_for_sale,7.6
+United States,2022,one_unit_contractor_built,10.1
+United States,2022,one_unit_owner_built,12.1
+United States,2022,one_unit_total,8.3
+United States,2022,units_10_19,17.3
+United States,2022,units_20_plus,18.1
+United States,2022,units_2_4,15.7
+United States,2022,units_5_9,15.5
+West,2015,multi_unit_total,11.7
+West,2015,one_unit_built_for_sale,5.4
+West,2015,one_unit_contractor_built,8.7
+West,2015,one_unit_owner_built,12
+West,2015,one_unit_total,6.1
+West,2015,units_10_19,12.5
+West,2015,units_20_plus,14.6
+West,2015,units_2_4,9.3
+West,2015,units_5_9,9.6
+West,2016,multi_unit_total,12.6
+West,2016,one_unit_built_for_sale,5.9
+West,2016,one_unit_contractor_built,10
+West,2016,one_unit_owner_built,13.4
+West,2016,one_unit_total,6.7
+West,2016,units_10_19,11.9
+West,2016,units_20_plus,16.3
+West,2016,units_2_4,10.2
+West,2016,units_5_9,11.5
+West,2017,multi_unit_total,14
+West,2017,one_unit_built_for_sale,6
+West,2017,one_unit_contractor_built,9.9
+West,2017,one_unit_owner_built,11.1
+West,2017,one_unit_total,6.7
+West,2017,units_10_19,14
+West,2017,units_20_plus,17.2
+West,2017,units_2_4,10.4
+West,2017,units_5_9,14.6
+West,2018,multi_unit_total,15.2
+West,2018,one_unit_built_for_sale,6.2
+West,2018,one_unit_contractor_built,10.1
+West,2018,one_unit_owner_built,13.4
+West,2018,one_unit_total,7.1
+West,2018,units_10_19,14.3
+West,2018,units_20_plus,17.6
+West,2018,units_2_4,12.5
+West,2018,units_5_9,12.6
+West,2019,multi_unit_total,15.5
+West,2019,one_unit_built_for_sale,6.6
+West,2019,one_unit_contractor_built,11
+West,2019,one_unit_owner_built,15.9
+West,2019,one_unit_total,7.7
+West,2019,units_10_19,13.9
+West,2019,units_20_plus,18.4
+West,2019,units_2_4,13.2
+West,2019,units_5_9,14.4
+West,2020,multi_unit_total,15.3
+West,2020,one_unit_built_for_sale,6.5
+West,2020,one_unit_contractor_built,10.7
+West,2020,one_unit_owner_built,14.3
+West,2020,one_unit_total,7.5
+West,2020,units_10_19,14.8
+West,2020,units_20_plus,19.3
+West,2020,units_2_4,13.1
+West,2020,units_5_9,13
+West,2021,multi_unit_total,15.8
+West,2021,one_unit_built_for_sale,6.7
+West,2021,one_unit_contractor_built,12.6
+West,2021,one_unit_owner_built,14.3
+West,2021,one_unit_total,7.6
+West,2021,units_10_19,15.2
+West,2021,units_20_plus,19
+West,2021,units_2_4,11.7
+West,2021,units_5_9,14.8
+West,2022,multi_unit_total,17
+West,2022,one_unit_built_for_sale,8.1
+West,2022,one_unit_contractor_built,12.9
+West,2022,one_unit_owner_built,15.1
+West,2022,one_unit_total,9.2
+West,2022,units_10_19,15.5
+West,2022,units_20_plus,20.2
+West,2022,units_2_4,15.1
+West,2022,units_5_9,14.6
