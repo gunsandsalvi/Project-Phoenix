@@ -657,7 +657,8 @@ changes how the world is represented and traversed (N8.7's first remedy).
   - No holder is scanned on a day it owes nothing, and no run head is kept.
 - **Flows as the only way anything moves.**
   - Every mechanism appends typed flow records to its worker's buffer:
-    `{payer u32, payee u32, amount i64, reason u16, kinds u8, order u8, source u32}`, 24 bytes. Unit flows
+    `{payer, payee, amount i64, source u32, denomination u16, reason u8, order u8}`, 24 bytes, each side a
+    32-bit party key. Unit flows
     (goods, holdings) and transformations are the same with a unit in place of a currency and a named source.
   - A flow names both sides by construction (Law 5).
   - Buffers are sized at the heaviest day and kept, so a day allocates nothing.
@@ -730,93 +731,6 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ---
 
-### S1.19 — The core: party tables, edges, the due wheel, flows, handlers over columns, and the bench
-
-**Status**: planned
-
-**Clauses**: PTY.1, PTY.9 *(the directory)*; REP.12, REP.13; TIME.6 *(the day's order on the core)*; N5; N8.6;
-N8.8 *(part: the full-load bench at the design point)*.
-
-**Architecture**: §3.3, §4, §6, §7 (restated), §13, §14.6.
-
-**Depends on**: S1.17, S1.18 (done: the smoke; the spec's one representation).
-
-**Goal**: the core's data structures and traversals exist, each with its unit measured by a bench line at the design
-point. The full-load bench is rebuilt on them, so a hypothetical finished world at 5 million persons × 1.5 runs
-through the real kernels before any system is ported.
-
-**Files**
-
-| File | Purpose |
-| --- | --- |
-| `crates/kernel/phx-store/src/table.rs` | a kind's table: columns, slots with generations, region-major layout |
-| `crates/kernel/phx-store/src/edges.rs` | an edge table: columns, free slots, intrusive adjacency |
-| `crates/kernel/phx-core/src/wheel.rs` | the due wheel |
-| `crates/kernel/phx-core/src/flows.rs` | flow records and per-worker buffers kept across days |
-| `crates/kernel/phx-core/src/handler.rs` | the handler context over column slices |
-| `crates/kernel/phx-exec/src/ranges.rs` | traversals over party ranges; radix partitioning of buffers |
-| `crates/apps/phx-ffi/src/load.rs` | the bench on the core |
-| `perf/load/volumes.toml` | per-person counts at the design point |
-
-**Design**:
-- **A kind's table.**
-  - Columns are `phx-store` columns, each typed and declared by its writer (Law 4).
-  - Absent is the type's sentinel (`MaybeI64`).
-  - Slots are `u32`, and a party reference is `(kind u8, slot u32, generation u16)`.
-  - The permanent `PartyId` is a column. The directory maps it to the reference only for the paths that start from
-    an identity.
-- **An edge table.**
-  - Declared columns, including the two parties' references.
-  - `head` columns on each party kind that holds the family, and `next` and `prev` columns on the edge.
-  - Removal is constant time, and iteration of one party's edges follows the list.
-- **The wheel.**
-  - One bucket per day over the declared horizon, plus a far list re-bucketed monthly.
-  - An edge's next due is a column, and a bucket is a `Vec<u32>` of edge slots kept across days.
-- **Flows.**
-  - The 24-byte record above, appended to the running worker's buffer by `Ctx::flow`.
-  - Buffers are partitioned at the stage's apply by radix on the payer's and the payee's range.
-- **The handler context** keeps today's API (`read`, `write`, `emit`, `draws`, `rule`, `decide`). Its backing is
-  slices resolved per chunk, and views that allocate (`away`, `grades`) return borrowed slices.
-- **The bench.**
-  - `perf/load/volumes.toml` is restated per person at the design point:
-    - parties and edges of every kind and family through Stage 6, per person, from §13 restated;
-    - flows, dues, handler rows by sub-step and choices per person per business day;
-    - the heavy day's multiples.
-  - Each count is times 1.5 and cites the clause that makes the work. The builder derives the counts; the owner
-    reviews them (the `perf/load/` guard).
-  - The bench builds the tables and edges at those sizes with random data, then runs a month of days through the
-    core's kernels. Handlers of unbuilt systems run a synthetic body of the declared rule cost over their declared
-    columns.
-  - It reports each kernel's unit cost against its target, the day times, and peak bytes.
-
-**Unit tests**:
-- `slots_reuse_with_new_generation`: a stale reference is refused.
-- `adjacency_insert_remove_iterate`: a party's edges after adds and removes.
-- `wheel_moves_edge_to_next_due`: a due taken and requeued on its next date.
-- `flows_partition_is_order_free`: the same nets for any worker count.
-- `handler_context_reads_sentinel_as_absent`.
-
-**Live checks**: none (the world is not on the core yet).
-
-**Budget**: the unit targets above, read from the bench at the design point.
-- Peak bytes are at most 800 bytes a person.
-- On the build machine, the bench's median and worst day are within 1 s and 2 s at the probe ratio.
-
-**Guards**:
-- PC rule: no `BTreeMap`, `HashMap`, `Vec::push` without reserved capacity, or `dyn` in a sub-step's hot module; a
-  declared list names the modules.
-- No allocation during a day, counted by a global allocator in the bench.
-
-**Not allowed**: a unit target met by a smaller bench; a kernel measured without its reads and writes; a map on a day's
-path.
-
-**Done when**
-- [ ] The bench runs at the design point with every kernel line at or under its target and the day within budget at
-  the ratio, or the gap is stated as the next step's first work.
-- [ ] Two independent reviews are done (a major step).
-
----
-
 ### S1.20 — Money and settlement on the core
 
 **Status**: planned
@@ -827,7 +741,41 @@ families as identities)*, as now built and on the core.
 
 **Architecture**: §4.3, §4.4, §6.5 (restated), §9, §15.
 
-**Depends on**: S1.19.
+**Depends on**: S1.19 (done: the core and the bench, ARCHITECTURE §7.17).
+
+**First work: the gap S1.19 left.** The bench at the design point (build machine, 2026-09-28, 5 million persons,
+the day's work × 1.5, a month; phone time = CPU time over the phone's three sustained cores, never below the wall):
+
+| Measure | Measured | Target |
+| --- | --- | --- |
+| A flow grouped and applied | 31 core-ns | 25 |
+| A due taken, read and emitted | 158 core-ns | 20 |
+| A handler row beyond its rule | 72 core-ns | 40 |
+| A purchase drawn (S1.21) | 156 core-ns | 50 |
+| A hazard hit | 414 core-ns | 100 |
+| A contract or party opened or closed | 684 core-ns | 100 |
+| The audit's identities | 1 core-ms a million persons | 3 |
+| Resident memory | 1 011 bytes a person; peak 4 824 MiB | 800; 4.5 GB |
+| Median turn | 1 272 ms | 1 000 |
+| Worst turn (three closed days and the quarter's payday) | 3 816 ms | 2 000 |
+| Two full saves | 1 963 MiB, 2.8-4.6 s each | 4 GB, 5 s |
+
+A business day spends about 3.8 core-seconds: the rules' declared arithmetic 1.5, purchases 1.1, settlement 0.4,
+handler rows 0.2. A hazard hit and a contract opened or closed are each a few cache misses on random rows. They miss
+their targets but cost about 40 core-ms a day between them. This step brings the flow, the due and the handler row to
+their targets:
+- **Dues** as compiled programs over the family's columns (the design below): a due read in one pass over the day's
+  sorted contracts, with no second read of its columns.
+- **Settlement's buffers**: the payer and payee groups are the largest transient store, about 40 bytes a flow twice
+  over. Grouping by index into the chunk buffers, and netting the payee side by range as it is scattered, brings
+  memory under the budget.
+- **The handler context** (`Ctx::flow`, and the handler API over `RecordFacts`) is built here, where the first real
+  handlers move onto the core.
+
+Even at every unit's target, the worst turn at the design point costs about 2.4 s. Three closed days of retail,
+production and pending card payments come before a payday, and the rules' declared arithmetic on those days is itself
+about a second. Once S1.21's lines are measured, the design point is read against N8.2 and N8.5: the representation
+first, then the resolution.
 
 **Goal**: accounts, banknotes, reserves, loans and every dated contract settle by batch on the core, with the fixed
 point's semantics unchanged: the greatest set that can settle, rings, short banks, and fails to arrears. Accounts are
@@ -925,8 +873,11 @@ table's probabilities against the weights, exactly, and `rationing_by_lot_order_
 **Live checks**: none until S1.24.
 
 **Budget**: a choice at most 50 ns and a rationing round at most 30 ns per unserved buyer-product, on the bench.
+- The bench's purchase costs 156 core-ns (S1.20's table). The largest part is the buyer's own Philox block, about
+  25 ns of dependent multiplies, then two flows written. The posted-price meeting therefore draws four buyers'
+  blocks at once (`philox_x4`), each still from its own address, so the result does not change.
 
-**Guards**: none beyond S1.19's.
+**Guards**: PC-92 (no map or trait object in a hot module) extends to `phx-market`'s meeting.
 
 **Not allowed**: a buyer's choice from an average; a seller served beyond its capacity; a match without its flows.
 

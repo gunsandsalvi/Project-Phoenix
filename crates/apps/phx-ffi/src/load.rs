@@ -72,8 +72,6 @@ const CALIBRATION_ITERATIONS: u64 = 1 << 24;
 const PRICE_SPREAD: f64 = 0.2;
 /// A tenth of the day's contract turnover ends and begins parties.
 const PARTY_SHARE: u64 = 10;
-/// The kernel's `/proc` times are in hundredths of a second.
-const TICK_NS: u64 = 10_000_000;
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -251,14 +249,12 @@ fn proc_kib(file: &str, field: &str) -> Option<u64> {
     kib.checked_mul(KIB)
 }
 
-/// The process's CPU time in nanoseconds and its minor page faults so far.
-fn process_times() -> Option<(u64, u64)> {
+/// The process's minor page faults so far.
+fn process_times() -> Option<u64> {
     let stat = std::fs::read_to_string("/proc/self/stat").ok()?;
     let fields: Vec<&str> = stat.rsplit_once(')')?.1.split_whitespace().collect();
-    // After the name the fields run from the third: minor faults are the tenth, user and system time the fourteenth
-    // and fifteenth.
-    let field = |n: usize| -> Option<u64> { fields.get(n - 3)?.parse().ok() };
-    Some(((field(14)? + field(15)?) * TICK_NS, field(10)?))
+    // After the name the fields run from the third: minor faults are the tenth.
+    fields.get(10 - 3)?.parse().ok()
 }
 
 fn show(host: &dyn BenchHost, name: &str, value: String, target: String, verdict: &str) {
@@ -401,7 +397,16 @@ fn hazards(pool: &Pool, k: &mut Kind, count: u64, day: u32, rows_per_chunk: u32)
     hit.sort_unstable();
     let stride = k.stride;
     let rpc = to_usize(u64::from(rows_per_chunk));
-    let jobs: Vec<(usize, &mut [MaybeI64])> = k.records.slice_mut().chunks_mut(rpc * stride).enumerate().collect();
+    let jobs: Vec<(usize, &mut [MaybeI64])> = k
+        .records
+        .slice_mut()
+        .chunks_mut(rpc * stride)
+        .enumerate()
+        .filter(|(c, _)| {
+            let lo = to_u32(index_u64(c * rpc));
+            hit.get(hit.partition_point(|s| *s < lo)).is_some_and(|s| *s < lo + rows_per_chunk)
+        })
+        .collect();
     let hit = &hit;
     pool.for_each(jobs, |(c, rows)| {
         let lo = to_u32(index_u64(c * rpc));
@@ -637,49 +642,45 @@ fn dues(
                 jobs.push(((job, buf), (*a, *b)));
             }
         }
-        let emitted: u64 = pool
-            .map_items(jobs, |(((c, dues_col), buf), (a, b))| {
-                let lo = to_u32(index_u64(c * rows_a_chunk));
-                let mut n = 0_u64;
-                for (i, e) in list.get(a..b).unwrap_or(&[]).iter().enumerate() {
-                    let edge = Slot::new(*e);
-                    let Some(cell) = dues_col.get_mut(to_usize(u64::from(*e - lo))) else { continue };
-                    // A stale entry — a contract whose due moved, or a slot since reused — is not today's due.
-                    if *cell != d || !edges.is_open(edge) {
-                        continue;
-                    }
-                    let (Some(from), Some(to), Some(amt), Some(bal)) =
-                        (edges.end(edge, 0), edges.end(edge, 1), amount.get(edge), balance.get(edge))
-                    else {
-                        continue;
-                    };
-                    let flow = Flow {
-                        payer: from,
-                        payee: to,
-                        amount: amt + bal * RATE_PPM / i64::try_from(MILLION).unwrap_or(1),
-                        source: *e,
-                        denomination: Denom::money(0),
-                        reason: 4,
-                        order: 1,
-                    };
-                    buf.push(flow);
-                    let i = index_u64(a + i);
-                    let extra = (i + 1) * margin.0 / margin.1 - i * margin.0 / margin.1;
-                    for _ in 1..extra {
-                        buf.push(Flow { amount: amt / 2 + 1, reason: 5, ..flow });
-                    }
-                    *cell = next;
-                    n += 1;
+        let moved: Vec<Vec<u32>> = pool.map_items(jobs, |(((c, dues_col), buf), (a, b))| {
+            let lo = to_u32(index_u64(c * rows_a_chunk));
+            let mut moved = Vec::with_capacity(b - a);
+            for (i, e) in list.get(a..b).unwrap_or(&[]).iter().enumerate() {
+                let edge = Slot::new(*e);
+                let Some(cell) = dues_col.get_mut(to_usize(u64::from(*e - lo))) else { continue };
+                // A stale entry — a contract whose due moved, or a slot since reused — is not today's due.
+                if *cell != d || !edges.is_open(edge) {
+                    continue;
                 }
-                n
-            })
-            .into_iter()
-            .sum();
-        total += emitted;
-        for e in due.iter() {
-            if f.due.get(Slot::new(*e)) == Some(next) {
-                f.wheel.schedule(*e, Day::new(next));
+                let (Some(from), Some(to), Some(amt), Some(bal)) =
+                    (edges.end(edge, 0), edges.end(edge, 1), amount.get(edge), balance.get(edge))
+                else {
+                    continue;
+                };
+                let flow = Flow {
+                    payer: from,
+                    payee: to,
+                    amount: amt + bal * RATE_PPM / i64::try_from(MILLION).unwrap_or(1),
+                    source: *e,
+                    denomination: Denom::money(0),
+                    reason: 4,
+                    order: 1,
+                };
+                buf.push(flow);
+                let i = index_u64(a + i);
+                let extra = (i + 1) * margin.0 / margin.1 - i * margin.0 / margin.1;
+                for _ in 1..extra {
+                    buf.push(Flow { amount: amt / 2 + 1, reason: 5, ..flow });
+                }
+                *cell = next;
+                moved.push(*e);
             }
+            moved
+        });
+        // The chunks' moved contracts in chunk order are in slot order, so the bucket they join keeps them sorted.
+        for m in &moved {
+            total += index_u64(m.len());
+            f.wheel.schedule_all(m, Day::new(next));
         }
     }
     total
@@ -1076,6 +1077,8 @@ struct DayRecord {
     index: usize,
     kind: DayType,
     walls: Vec<(String, u64, u64)>,
+    /// Each work's CPU time across every thread, in the works' order: what it keeps the cores busy for.
+    cpus: Vec<u64>,
     total_ns: u64,
     cpu_ns: u64,
     faults: u64,
@@ -1241,12 +1244,18 @@ fn run_work(
         }
         Kernel::Turnover => {
             let contracts: u64 = load.families.iter().map(|f| index_u64(f.due.len())).sum();
-            let mut done = 0;
-            for (fi, f) in load.families.iter_mut().enumerate() {
-                let share = (count * index_u64(f.due.len())).checked_div(contracts).unwrap_or(0);
-                let sizes = f.kinds.map(|k| load.kinds.get(usize::from(k)).map_or(1, |x| x.n));
-                done += turnover(f, sizes, share, day, index_u64(fi));
-            }
+            let kinds = &load.kinds;
+            // Families hold their own contracts and lists, so each turns over on its own worker.
+            let jobs: Vec<(usize, &mut Family)> = load.families.iter_mut().enumerate().collect();
+            let mut done: u64 = load
+                .pool
+                .map_items(jobs, |(fi, f)| {
+                    let share = (count * index_u64(f.due.len())).checked_div(contracts).unwrap_or(0);
+                    let sizes = f.kinds.map(|k| kinds.get(usize::from(k)).map_or(1, |x| x.n));
+                    turnover(f, sizes, share, day, index_u64(fi))
+                })
+                .into_iter()
+                .sum();
             done += load.churn(count, day, [v.kind("household")?, v.kind("firm")?]);
             units.turnover += done;
             done
@@ -1271,13 +1280,16 @@ fn run_day(load: &mut Load, v: &Volumes, i: usize, kind: DayType, clock: &Mono) 
     let day = to_u32(index_u64(i));
     let mut units = Units::default();
     let mut walls = Vec::with_capacity(v.works.len());
+    let mut cpus = Vec::with_capacity(v.works.len());
     let day_start = clock.now_ns();
     let before = process_times();
+    let day_cpu = phx_exec::process_cpu_ns();
     for (wi, w) in v.works.iter().enumerate() {
         let per_million = w.per_million.get(kind.index()).copied().unwrap_or(0);
-        let t0 = clock.now_ns();
+        let (t0, c0) = (clock.now_ns(), phx_exec::process_cpu_ns());
         let done = if per_million > 0 { run_work(load, v, (w, wi), per_million, (day, kind), &mut units)? } else { 0 };
         walls.push((w.name.clone(), clock.now_ns() - t0, done));
+        cpus.push(c0.zip(phx_exec::process_cpu_ns()).map_or(0, |(a, b)| b - a));
     }
     for k in &mut load.kinds {
         k.parties.close_day();
@@ -1285,9 +1297,9 @@ fn run_day(load: &mut Load, v: &Volumes, i: usize, kind: DayType, clock: &Mono) 
     for f in &mut load.families {
         f.edges.close_day();
     }
-    let after = process_times();
-    let (cpu_ns, faults) = before.zip(after).map_or((0, 0), |((c0, f0), (c1, f1))| (c1 - c0, f1 - f0));
-    Ok(DayRecord { index: i, kind, walls, total_ns: clock.now_ns() - day_start, cpu_ns, faults, units })
+    let faults = before.zip(process_times()).map_or(0, |(f0, f1)| f1 - f0);
+    let cpu_ns = day_cpu.zip(phx_exec::process_cpu_ns()).map_or(0, |(a, b)| b - a);
+    Ok(DayRecord { index: i, kind, walls, cpus, total_ns: clock.now_ns() - day_start, cpu_ns, faults, units })
 }
 
 /// The full-load bench over the volumes at `volumes_path`, saves written to and removed from `save_dir`, its report
@@ -1317,7 +1329,6 @@ pub fn measure(host: &dyn BenchHost, volumes_path: &str, save_dir: &str) -> Resu
     let built_ms = (clock.now_ns() - started) / NS_PER_MS;
     let built_peak = proc_kib("status", "VmHWM:");
     show(host, "built", format!("{built_ms} ms, peak {} MiB", built_peak.unwrap_or(0) / MIB), String::new(), "");
-    let workers = index_u64(load.pool.workers());
     let mut records: Vec<DayRecord> = Vec::new();
     let mut saves: Vec<(usize, u64, u64)> = Vec::new();
     for (i, kind) in v.month.days.iter().enumerate() {
@@ -1356,13 +1367,14 @@ pub fn measure(host: &dyn BenchHost, volumes_path: &str, save_dir: &str) -> Resu
         }
     }
     let (peak, pss) = (proc_kib("status", "VmHWM:"), proc_kib("smaps_rollup", "Pss:"));
-    let mut unit_costs = unit_costs(&records, workers);
-    let audit_ms: u64 =
-        (records.iter().flat_map(|r| &r.walls).filter(|(n, _, _)| n == "audit").map(|(_, ns, _)| ns).sum::<u64>()
-            * workers
-            / NS_PER_MS)
-            .checked_div(index_u64(records.len()))
-            .unwrap_or(0);
+    let mut unit_costs = unit_costs(&records);
+    let audit_cpu: u64 = records
+        .iter()
+        .flat_map(|r| r.walls.iter().zip(&r.cpus))
+        .filter(|((n, _, _), _)| n == "audit")
+        .map(|(_, cpu)| cpu)
+        .sum();
+    let audit_ms = (audit_cpu / NS_PER_MS).checked_div(index_u64(records.len())).unwrap_or(0);
     unit_costs.push((
         "the audit a million persons, core-ms".to_owned(),
         audit_ms * MILLION / v.world.persons,
@@ -1405,9 +1417,9 @@ pub fn measure(host: &dyn BenchHost, volumes_path: &str, save_dir: &str) -> Resu
     Ok(report)
 }
 
-/// Each unit's cost over the month, in core-nanoseconds: the wall time its kinds of work took times the workers, over
-/// the units they did, a handler's rule's declared arithmetic taken off, with its target.
-fn unit_costs(records: &[DayRecord], workers: u64) -> Vec<(String, u64, u64)> {
+/// Each unit's cost over the month, in core-nanoseconds: the CPU time its kinds of work kept every thread busy for,
+/// spinning workers' included, over the units they did, a handler's rule's declared arithmetic taken off, with its target.
+fn unit_costs(records: &[DayRecord]) -> Vec<(String, u64, u64)> {
     let mut sums: Vec<(&str, u64, u64, u64)> = vec![
         ("a flow netted and applied, core-ns", 0, 0, FLOW_NS),
         ("a due taken, read and emitted, core-ns", 0, 0, DUE_NS),
@@ -1419,7 +1431,7 @@ fn unit_costs(records: &[DayRecord], workers: u64) -> Vec<(String, u64, u64)> {
     let mut rule_ns = 0_u64;
     for r in records {
         rule_ns += r.units.rule_ns;
-        for (name, ns, done) in &r.walls {
+        for ((name, _, done), ns) in r.walls.iter().zip(&r.cpus) {
             let which = match name.as_str() {
                 "settlement" => 0,
                 "dues" => 1,
@@ -1430,7 +1442,7 @@ fn unit_costs(records: &[DayRecord], workers: u64) -> Vec<(String, u64, u64)> {
                 _ => 2,
             };
             if let Some(s) = sums.get_mut(which) {
-                s.1 += ns * workers;
+                s.1 += ns;
                 s.2 += done;
             }
         }

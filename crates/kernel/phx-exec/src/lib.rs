@@ -22,6 +22,7 @@ pub use gather::{IntentBuf, gather};
 pub use hint::{NoHint, PerfHint};
 pub use keyed::KeyedReduce;
 pub use mix::mix64;
+pub use os::process_cpu_ns;
 pub use pool::{Pool, PoolError};
 pub use radix::{RadixKey, radix_sort};
 pub use site::Site;

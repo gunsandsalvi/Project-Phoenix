@@ -183,14 +183,18 @@ impl Grouped {
     }
 
     /// A range's net per party, credits less debits, added to `money`, one entry a slot of the range; returns the
-    /// payers the day's debits leave below nothing. A flow naming a party outside the range's slots stops the run: its
+    /// parties of the range left below nothing. A flow naming a party outside the range's slots stops the run: its
     /// other side would move alone.
     pub fn apply(&self, range: usize, ranges: &Ranges, money: &mut [i64]) -> u64 {
         let (_, first) = ranges.start(range);
         let at = |p: PartyKey| usize::try_from(p.slot().get() - first).unwrap_or(usize::MAX);
         let add = |p: PartyKey, v: i64, money: &mut [i64]| {
             let Some(m) = money.get_mut(at(p)) else {
-                violation!(clause = "Law 5", "a flow names a party its range's money does not hold", slot = p.slot().get());
+                violation!(
+                    clause = "Law 5",
+                    "a flow names a party its range's money does not hold",
+                    slot = p.slot().get()
+                );
             };
             *m += v;
         };
@@ -200,12 +204,8 @@ impl Grouped {
         for f in self.by_payer.bucket(range) {
             add(f.payer, -f.amount, money);
         }
-        // A payer counted once, however many flows it made and wherever they fall in the bucket.
-        let mut payers: Vec<u32> = self.by_payer.bucket(range).iter().map(|f| f.payer.slot().get()).collect();
-        payers.sort_unstable();
-        payers.dedup();
-        let short = payers.iter().filter(|s| money.get(usize::try_from(**s - first).unwrap_or(usize::MAX)).is_some_and(|m| *m < 0));
-        u64::try_from(short.count()).unwrap_or(u64::MAX)
+        // One pass over the range's money, which a worker holds in cache, counts each party once.
+        u64::try_from(money.iter().filter(|m| **m < 0).count()).unwrap_or(u64::MAX)
     }
 
     /// A range's net per party, credits less debits, into `out`, one entry a slot of the range.

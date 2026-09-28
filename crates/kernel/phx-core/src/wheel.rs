@@ -20,9 +20,10 @@ pub struct DueWheel {
     /// it at the next, before its day.
     far_in: u32,
     far_scratch: Vec<(Day, u32)>,
-    /// The sort's pairs and scratch, kept so a day's take allocates nothing once the heaviest has sized them.
+    /// The sort's pairs, scratch and merge, kept so a day's take allocates nothing once the heaviest has sized them.
     pairs: Vec<(u32, u32)>,
     scratch: Vec<(u32, u32)>,
+    merged: Vec<u32>,
 }
 
 impl DueWheel {
@@ -40,6 +41,7 @@ impl DueWheel {
             far_scratch: Vec::new(),
             pairs: Vec::new(),
             scratch: Vec::new(),
+            merged: Vec::new(),
         }
     }
 
@@ -77,22 +79,55 @@ impl DueWheel {
         }
     }
 
-    /// Takes the contracts due on the wheel's first day into `out`, sorted — by radix on the pool when one is given —
-    /// and turns the wheel to the next day.
+    /// Puts contracts, in slot order, in the bucket of their common due day: as a day's dues move on together, so
+    /// the bucket they join keeps them as a sorted run its take need not sort again.
+    pub fn schedule_all(&mut self, edges: &[u32], day: Day) {
+        if day < self.first {
+            violation!(
+                clause = "TIME.3",
+                "a due scheduled before the wheel's day",
+                day = day.get(),
+                first = self.first.get()
+            );
+        }
+        if day.get() - self.first.get() < self.horizon() {
+            self.bucket(day).extend_from_slice(edges);
+        } else {
+            self.far.extend(edges.iter().map(|e| (day, *e)));
+        }
+    }
+
+    /// Takes the contracts due on the wheel's first day into `out`, sorted, and turns the wheel to the next day. The
+    /// bucket's sorted first run is kept; only what follows it is sorted — by radix on the pool when one is given —
+    /// and merged in.
     pub fn take(&mut self, day: Day, out: &mut Vec<u32>, pool: Option<&phx_exec::Pool>) {
         if day != self.first {
             violation!(clause = "TIME.6", "a due wheel turned out of order", day = day.get(), first = self.first.get());
         }
         out.clear();
         std::mem::swap(out, self.bucket(day));
-        if pool.is_some() {
+        let run = out.iter().zip(out.iter().skip(1)).position(|(a, b)| a > b).map_or(out.len(), |p| p + 1);
+        if run < out.len() {
+            let (head, tail) = out.split_at(run);
             self.pairs.clear();
-            self.pairs.extend(out.iter().map(|e| (*e, 0)));
-            phx_exec::radix_sort(pool, &mut self.pairs, &mut self.scratch);
-            out.clear();
-            out.extend(self.pairs.iter().map(|(e, _)| *e));
-        } else {
-            out.sort_unstable();
+            self.pairs.extend(tail.iter().map(|e| (*e, 0)));
+            if pool.is_some() {
+                phx_exec::radix_sort(pool, &mut self.pairs, &mut self.scratch);
+            } else {
+                self.pairs.sort_unstable();
+            }
+            self.merged.clear();
+            let (mut h, mut t) = (head.iter().peekable(), self.pairs.iter().map(|(e, _)| e).peekable());
+            loop {
+                let next = match (h.peek(), t.peek()) {
+                    (Some(a), Some(b)) if a <= b => h.next(),
+                    (_, Some(_)) => t.next(),
+                    (Some(_), None) => h.next(),
+                    (None, None) => break,
+                };
+                self.merged.extend(next);
+            }
+            std::mem::swap(out, &mut self.merged);
         }
         out.dedup();
         self.first = day.succ();
@@ -145,5 +180,28 @@ mod tests {
         }
         w.take(Day::new(30), &mut out, None);
         assert_eq!(out, vec![9], "a due beyond the horizon enters when the wheel reaches it");
+    }
+
+    #[test]
+    fn a_sorted_run_and_a_tail_merge() {
+        let mut w = DueWheel::new(Day::new(0), 8);
+        w.schedule_all(&[2, 5, 9, 12], Day::new(3));
+        for e in [7, 1, 12, 20, 5] {
+            w.schedule(e, Day::new(3));
+        }
+        w.schedule_all(&[4, 6], Day::new(40));
+        let mut out = Vec::new();
+        for d in 0..3 {
+            w.take(Day::new(d), &mut out, None);
+        }
+        w.take(Day::new(3), &mut out, None);
+        assert_eq!(out, vec![1, 2, 5, 7, 9, 12, 20]);
+        let pool = phx_exec::Pool::new(&phx_exec::PoolSpec::unpinned(3)).unwrap();
+        let mut found = Vec::new();
+        for d in 4..=40 {
+            w.take(Day::new(d), &mut out, Some(&pool));
+            found.extend(out.iter().map(|e| (d, *e)));
+        }
+        assert_eq!(found, vec![(40, 4), (40, 6)], "a bulk schedule beyond the horizon waits in the far list");
     }
 }

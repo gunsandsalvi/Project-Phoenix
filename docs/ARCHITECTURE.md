@@ -1836,35 +1836,49 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   and each slot's generation, raised as the slot takes a new party; `resolve` refuses a stale reference.
 - **Contracts** (`phx_store::EdgeTable`): a family's contracts, each between two named parties, in columns; a side that
   keeps its parties' lists threads each party's contracts through `next` and `prev` columns from a head its kind keeps,
-  so opening, closing and moving a side (`move_end`) take the same time however many a party holds. A family's own
-  columns (amount, next due, terms) are its declarer's, one value a contract slot (`Column::put` grows a column with
-  zero rows to a slot).
+  so opening, closing and moving a side (`move_end`) take the same time however many a party holds; a broken link or a
+  head handed in for a side that keeps none stops the run. A family's own columns (amount, next due, terms) are its
+  declarer's, one value a contract slot, made by `EdgeTable::column` at the table's capacity; `Column::put` writes an
+  existing row or the next and refuses a gap. A contract closed today frees its slot only after the close, so a
+  family's capacity holds its contracts and a day's openings.
 - **The due wheel** (`phx_core::wheel::DueWheel`): a bucket a day over a horizon, reused round the wheel, and the dues
-  beyond it, which enter as the wheel comes within reach. A day's take is radix-sorted on the pool, so the contracts
-  due are read in slot order. A contract whose due moves or that closes is not taken out; its reader skips a stale
-  entry by the contract's own next due.
-- **Flows** (`phx_core::flows`): every movement names payer and payee, amount, source, reason, denomination and payment
-  order, 24 bytes, appended to the buffer of the chunk that makes it (`FlowBufs`). `Ranges` cuts each kind's slots into
+  beyond it, read every half horizon for those come within reach. A day's dues move on together (`schedule_all`), in
+  slot order, so a bucket is mostly one sorted run; a take sorts only what follows that run (radix on the pool) and
+  merges it in, and the contracts due are read in slot order. A contract whose due moves or that closes is not taken
+  out; its reader skips a stale entry by the contract's own next due.
+- **Flows** (`phx_core::flows`): every movement names payer and payee, amount, source, reason, denomination (money of a
+  currency or units of a declared unit, never netted together) and payment order, 24 bytes, appended to the buffer of the chunk that makes it (`FlowBufs`). `Ranges` cuts each kind's slots into
   ranges of `2^range_bits`; `Grouped` groups a day's flows by payer range, whole, since a payer's failures follow its
   flows' order, and by payee range as 16-byte credits, with `phx_exec::partition` (stable, pieces fixed by the inputs'
-  lengths, counted and scattered in parallel into disjoint places, the same for any worker count); `apply` adds a
-  range's credits and takes its debits on its parties' money in place. On a closed day card payments are held pending
+  lengths, counted and scattered in parallel into disjoint places, the same for any worker count; a key that answers
+  differently twice stops the run); `apply` adds a range's credits and takes its debits on its parties' money in
+  place, and a flow naming a party outside its range stops the run. On a closed day card payments are held pending
   on the parties' accounts (SET.2) and the next business day settles them, so no day's flows are carried.
 - **A handler's facts**: `RecordFacts` over its chunk's party records, row-major — each party one record of `stride`
   words, a fact at its declared offset — so a visit to a sparse row reads a line or two, not a line a fact; and
   `ColumnFacts` over column slices for a pass over dense rows. Both read and write by a fact's place in the handler's
-  declaration, an indexed load.
+  declaration, an indexed load, inlined across crates.
+- **Draws** (`phx_rand::Draws`) build an address's counter once, so a block is one Philox call and its words are read
+  inline; an address holds 2^24 blocks, so bulk work takes an address a chunk.
+- **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel or facts.
+- **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
+  its three sustained cores, never below the wall; page faults per day stand for allocation during the day.
 
 **The full-load bench** (`phx-ffi`'s `load`, `perf/load/volumes.toml`) builds the finished world at the design point
 — every kind's parties with records and money, twelve contract families with their list links and dues — and runs a
-month through these kernels: hazards, handlers spending their rules' declared arithmetic, purchases drawn from each
-(region, product)'s alias table of logit weights, the wheel's dues, every flow grouped and applied, the audit's
-identities, and full saves. Its day's work is three halves of the finished world's estimate (owner, 2026-09-28).
-Measured on the build machine's four cores (2026-09-28, 5 million persons): a median turn of 1 006 ms, the worst 3 478
-ms — three closed days of about 630 ms each, retail every day, before the heavy payday of 1 589 ms — a peak of
-4 717 MiB, full saves of 3.2-3.8 s and 863 MiB. Unit costs, in core-nanoseconds: a flow grouped and applied 46, a due
-305, a handler row with its rule 732, a purchase 161, a hazard hit 624. The old kernel's bench gave 7.7 s, 29 s and
-9 GB at a smaller world.
+month through these kernels:
+- hazards, and handlers over the day's agenda by phase, spending their rules' declared arithmetic;
+- purchases drawn by each buyer from its own stream over its (region, product)'s alias table of logit weights;
+- the wheel's dues, monthly and quarterly, the quarterly through the far list;
+- contracts closed and opened, family by family on the pool, and a tenth as many parties ended and begun;
+- every flow grouped and applied, card payments on closed days held pending and settled on the next business day;
+- the audit: money and pending conserved, and a rolling thirtieth of the contracts;
+- full saves.
+
+Its day's work is three halves of the finished world's estimate (owner, 2026-09-28). Unit costs are CPU time over
+units, the rules' declared arithmetic taken off handler rows. The numbers measured at the design point, and the gap
+S1.20 and S1.21 close first, are in the plan (S1.20's first work). The old kernel's bench gave 7.7 s, 29 s and 9 GB
+at a smaller world.
 
 ## 8. Markets, valuation and expectations
 

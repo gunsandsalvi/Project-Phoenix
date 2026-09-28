@@ -45,6 +45,7 @@ impl<'a> ColumnFacts<'a> {
     }
 
     /// The row's value of the fact at `place` in the declaration's list.
+    #[inline]
     pub fn read_at(&self, place: usize, slot: Slot) -> Missing<i64> {
         let row = self.row(slot);
         let rows: &[MaybeI64] = match self.facts.get(place) {
@@ -59,6 +60,7 @@ impl<'a> ColumnFacts<'a> {
     }
 
     /// Writes the row's value of the fact at `place`, which the handler writes.
+    #[inline]
     pub fn write_at(&mut self, place: usize, slot: Slot, value: i64) {
         let row = self.row(slot);
         let Some((_, FactSlice::Write(rows))) = self.facts.get_mut(place) else {
@@ -111,6 +113,7 @@ impl<'a> RecordFacts<'a> {
         RecordFacts { first: first.get(), stride, records, layout }
     }
 
+    #[inline]
     fn cell(&self, place: usize, slot: Slot) -> usize {
         let (Some(row), Some(off)) = (slot.get().checked_sub(self.first), self.layout.offsets.get(place)) else {
             violation!(clause = "TIME.6", "a handler read a row or fact outside its chunk", slot = slot.get());
@@ -119,6 +122,7 @@ impl<'a> RecordFacts<'a> {
     }
 
     /// The row's value of the fact declared at `place`.
+    #[inline]
     pub fn read_at(&self, place: usize, slot: Slot) -> Missing<i64> {
         match self.records.get(self.cell(place, slot)) {
             Some(v) => v.get(),
@@ -127,6 +131,7 @@ impl<'a> RecordFacts<'a> {
     }
 
     /// Writes the row's value of the fact declared at `place`, which the handler writes.
+    #[inline]
     pub fn write_at(&mut self, place: usize, slot: Slot, value: i64) {
         if !self.layout.writable.get(place).copied().unwrap_or(false) {
             violation!(clause = "TIME.6", "a handler wrote a fact it only reads", slot = slot.get());
@@ -201,7 +206,7 @@ mod tests {
             std::panic::catch_unwind(move || {
                 let mut r = [MaybeI64::ABSENT; 2];
                 let layout = super::Layout { names: &[INCOME, AFTER], offsets: &[1, 0], writable: &[false, true] };
-            let mut g = super::RecordFacts::new(Slot::new(0), 2, &mut r, layout);
+                let mut g = super::RecordFacts::new(Slot::new(0), 2, &mut r, layout);
                 g.write_at(0, Slot::new(0), 1);
             })
             .is_err()

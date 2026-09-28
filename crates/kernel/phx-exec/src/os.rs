@@ -55,6 +55,25 @@ pub fn current_tid() -> i32 {
     0
 }
 
+/// The CPU time every thread of the process has spent, in nanoseconds, for the counters that judge work by the cores it
+/// keeps busy; never read by the world.
+#[cfg(unix)]
+#[must_use]
+pub fn process_cpu_ns() -> Option<u64> {
+    let mut t = libc::timespec { tv_sec: 0, tv_nsec: 0 };
+    // SAFETY: the timespec is valid and writable; the clock id is a constant of the system.
+    let status = unsafe { libc::clock_gettime(libc::CLOCK_PROCESS_CPUTIME_ID, &raw mut t) };
+    let secs = u64::try_from(t.tv_sec).ok()?;
+    let nanos = u64::try_from(t.tv_nsec).ok()?;
+    (status == 0).then(|| secs * crate::consts::NS_PER_S + nanos)
+}
+
+#[cfg(not(unix))]
+#[must_use]
+pub fn process_cpu_ns() -> Option<u64> {
+    None
+}
+
 /// Asks the core to start loading a line it will read soon; a hint with no effect on any value.
 #[inline]
 pub fn prefetch<T>(ptr: *const T) {

@@ -317,10 +317,11 @@ pub mod phx_store::parties
 pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>
-pub fn phx_store::parties::Parties<B>::begin(&mut self) -> phx_id::ids::PartyRef
+pub fn phx_store::parties::Parties<B>::begin(&mut self, phx_id::ids::PartyId) -> phx_id::ids::PartyRef
 pub fn phx_store::parties::Parties<B>::close_day(&mut self)
 pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)
 pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32
+pub fn phx_store::parties::Parties<B>::id(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyId>
 pub fn phx_store::parties::Parties<B>::kind(&self) -> u8
 pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>
@@ -843,10 +844,11 @@ pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
 pub struct phx_store::Parties<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>
-pub fn phx_store::parties::Parties<B>::begin(&mut self) -> phx_id::ids::PartyRef
+pub fn phx_store::parties::Parties<B>::begin(&mut self, phx_id::ids::PartyId) -> phx_id::ids::PartyRef
 pub fn phx_store::parties::Parties<B>::close_day(&mut self)
 pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)
 pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32
+pub fn phx_store::parties::Parties<B>::id(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyId>
 pub fn phx_store::parties::Parties<B>::kind(&self) -> u8
 pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>

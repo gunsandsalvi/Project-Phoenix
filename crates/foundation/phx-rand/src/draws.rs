@@ -11,9 +11,8 @@ use crate::philox::philox;
 #[derive(Clone, Debug)]
 pub struct Draws {
     key: [u32; 2],
-    subject: Subject,
-    day: u32,
-    substep: u8,
+    /// The address's first block's counter, built once: a block's counter adds its index to the last word.
+    base: [u32; 4],
     next_block: u32,
     buf: [u32; BLOCK_WORDS],
     pos: usize,
@@ -22,18 +21,21 @@ pub struct Draws {
 impl Draws {
     #[must_use]
     pub fn new(key: StreamKey, subject: Subject, day: u32, substep: u8) -> Draws {
-        Draws { key: key.words(), subject, day, substep, next_block: 0, buf: [0; BLOCK_WORDS], pos: BLOCK_WORDS }
+        let base = counter(subject, day, substep, 0);
+        Draws { key: key.words(), base, next_block: 0, buf: [0; BLOCK_WORDS], pos: BLOCK_WORDS }
     }
 
     fn refill(&mut self) {
         if self.next_block >= BLOCKS_PER_ADDRESS {
             capacity_exceeded!("blocks per draw address", BLOCKS_PER_ADDRESS, self.next_block);
         }
-        self.buf = philox(counter(self.subject, self.day, self.substep, self.next_block), self.key);
+        let [c0, c1, c2, c3] = self.base;
+        self.buf = philox([c0, c1, c2, c3 | self.next_block], self.key);
         self.next_block += 1;
         self.pos = 0;
     }
 
+    #[inline]
     pub fn next_u32(&mut self) -> u32 {
         if self.pos >= BLOCK_WORDS {
             self.refill();
@@ -49,6 +51,7 @@ impl Draws {
         word
     }
 
+    #[inline]
     pub fn next_u64(&mut self) -> u64 {
         let low = self.next_u32();
         let high = self.next_u32();

@@ -228,6 +228,7 @@ pub fn phx_exec::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_ex
 pub fn phx_exec::for_chunks<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, u32, impl core::ops::function::Fn(u32) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::gather<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &phx_exec::gather::IntentBuf<T>, &mut alloc::vec::Vec<T>)
 pub fn phx_exec::mix64(u64) -> u64
+pub fn phx_exec::process_cpu_ns() -> core::option::Option<u64>
 pub fn phx_exec::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)
 pub fn phx_exec::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
 pub fn phx_exec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>

@@ -188,11 +188,18 @@ pub fn phx_core::column_facts::ColumnFacts<'a>::write_at(&mut self, usize, phx_i
 impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
 pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+pub struct phx_core::column_facts::Layout<'a>
+pub phx_core::column_facts::Layout::names: &'a [&'static str]
+pub phx_core::column_facts::Layout::offsets: &'a [usize]
+pub phx_core::column_facts::Layout::writable: &'a [bool]
 pub struct phx_core::column_facts::RecordFacts<'a>
 impl<'a> phx_core::column_facts::RecordFacts<'a>
-pub fn phx_core::column_facts::RecordFacts<'a>::new(phx_id::ids::Slot, usize, &'a mut [phx_num::missing::MaybeI64], &'a [usize], &'a [bool]) -> phx_core::column_facts::RecordFacts<'a>
+pub fn phx_core::column_facts::RecordFacts<'a>::new(phx_id::ids::Slot, usize, &'a mut [phx_num::missing::MaybeI64], phx_core::column_facts::Layout<'a>) -> phx_core::column_facts::RecordFacts<'a>
 pub fn phx_core::column_facts::RecordFacts<'a>::read_at(&self, usize, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::column_facts::RecordFacts<'a>::write_at(&mut self, usize, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::column_facts::RecordFacts<'_>
+pub fn phx_core::column_facts::RecordFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::column_facts::RecordFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 pub mod phx_core::columns
 pub struct phx_core::columns::ColumnTrace
 pub phx_core::columns::ColumnTrace::handler: u16
@@ -268,6 +275,7 @@ pub const phx_core::consts::PERCENT_F64: f64
 pub const phx_core::consts::PPM: u32
 pub const phx_core::consts::RATE_EXP: u8
 pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
+pub const phx_core::consts::UNITS_BIT: u16
 pub const phx_core::consts::WHEEL_BITS: u32
 pub const phx_core::consts::WHEEL_BUCKETS: usize
 pub mod phx_core::contribution
@@ -778,13 +786,18 @@ pub mod phx_core::flows
 pub struct phx_core::flows::Credit
 pub phx_core::flows::Credit::amount: i64
 pub phx_core::flows::Credit::payee: phx_id::ids::PartyKey
+pub struct phx_core::flows::Denom(_)
+impl phx_core::flows::Denom
+pub const fn phx_core::flows::Denom::is_money(self) -> bool
+pub fn phx_core::flows::Denom::money(u8) -> phx_core::flows::Denom
+pub fn phx_core::flows::Denom::units(u16) -> phx_core::flows::Denom
 pub struct phx_core::flows::Flow
 pub phx_core::flows::Flow::amount: i64
-pub phx_core::flows::Flow::denomination: u8
+pub phx_core::flows::Flow::denomination: phx_core::flows::Denom
 pub phx_core::flows::Flow::order: u8
 pub phx_core::flows::Flow::payee: phx_id::ids::PartyKey
 pub phx_core::flows::Flow::payer: phx_id::ids::PartyKey
-pub phx_core::flows::Flow::reason: u16
+pub phx_core::flows::Flow::reason: u8
 pub phx_core::flows::Flow::source: u32
 pub struct phx_core::flows::FlowBufs
 impl phx_core::flows::FlowBufs
@@ -798,7 +811,7 @@ pub phx_core::flows::Grouped::by_payee: phx_exec::partition::Partitioned<phx_cor
 pub phx_core::flows::Grouped::by_payer: phx_exec::partition::Partitioned<phx_core::flows::Flow>
 impl phx_core::flows::Grouped
 pub fn phx_core::flows::Grouped::apply(&self, usize, &phx_core::flows::Ranges, &mut [i64]) -> u64
-pub fn phx_core::flows::Grouped::group(&mut self, core::option::Option<&phx_exec::pool::Pool>, &[&phx_core::flows::FlowBufs], &phx_core::flows::Ranges)
+pub fn phx_core::flows::Grouped::group(&mut self, core::option::Option<&phx_exec::pool::Pool>, &[&phx_core::flows::FlowBufs], &phx_core::flows::Ranges, phx_core::flows::Denom)
 pub fn phx_core::flows::Grouped::net(&self, usize, &phx_core::flows::Ranges, &mut [i64])
 pub struct phx_core::flows::Ranges
 impl phx_core::flows::Ranges
@@ -920,6 +933,9 @@ pub fn phx_core::handler::FactStore::write(&mut self, &'static str, phx_id::ids:
 impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
 pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::column_facts::RecordFacts<'_>
+pub fn phx_core::column_facts::RecordFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::column_facts::RecordFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
@@ -2128,6 +2144,7 @@ impl phx_core::wheel::DueWheel
 pub fn phx_core::wheel::DueWheel::first(&self) -> phx_id::day::Day
 pub fn phx_core::wheel::DueWheel::new(phx_id::day::Day, u32) -> phx_core::wheel::DueWheel
 pub fn phx_core::wheel::DueWheel::schedule(&mut self, u32, phx_id::day::Day)
+pub fn phx_core::wheel::DueWheel::schedule_all(&mut self, &[u32], phx_id::day::Day)
 pub fn phx_core::wheel::DueWheel::take(&mut self, phx_id::day::Day, &mut alloc::vec::Vec<u32>, core::option::Option<&phx_exec::pool::Pool>)
 pub enum phx_core::ActsOn
 pub phx_core::ActsOn::Country
@@ -3772,6 +3789,9 @@ pub fn phx_core::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i6
 impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
 pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::column_facts::RecordFacts<'_>
+pub fn phx_core::column_facts::RecordFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::column_facts::RecordFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
