@@ -453,15 +453,18 @@ is a party with a permanent identity.
 - **PTY.1 STATE** — A **party** is anything that can hold, owe, decide or be paid: a **person**, a
   **household**, a **firm**, a **bank**, a **fund**, an **insurer**, a **pension scheme**, a **clearing
   house**, a **treasury**, a **central bank**, a **public agency**, a **parliament**, a **political party**,
-  an **estate**. Each has an identity that is never reused.
+  an **estate**. Each has an identity that is never reused. A person's is its own from its birth or arrival to its
+  death, kept whichever household it lives in, so its life can be followed whole.
 - **PTY.2 STATE** — **The world is a real economy at a declared scale**: a declared number of the hundreds of
   millions of people of its countries, with the firms they form (REP.40). Every household, firm and institution in it
   is one named, real party of its kind, the player's own household among them; parties of a kind differ only by their
   own state and their kind's declared data (Law 10), never by how they are carried (REP).
 - **PTY.3 STATE** — A **person** has an age, a household, a region of residence, skills, a health state and a
-  labour-market state. A **household** is one or more persons who share a budget and a dwelling; it is the
-  unit that owns, consumes, saves and borrows. Legal ownership sits with the household; labour, age and
-  mortality with the person. A household holds its persons, each with its role in it (REP.26).
+  labour-market state, and it is the party that owns: its accounts, holdings and debts are its own, and a thing owned
+  jointly — a dwelling, a joint account, a loan taken together — is held in shares by its co-owners. A **household**
+  is one or more persons who share a budget and a dwelling; it consumes, saves and borrows as one, deciding over its
+  persons' money, and what it holds is read as the sum of its persons' holdings and shares. Labour, age, mortality and
+  ownership are the person's. A household holds its persons, each with its role in it (REP.26).
 - **PTY.4 STATE** — Every party has a **legal form**, and the legal form is declared data (Law 10): what it
   may hold, whether it is a party separate from its owners, whether its owners have limited liability,
   whether it may take deposits, how it can end, and who its owners are.
@@ -474,12 +477,24 @@ is a party with a permanent identity.
   through those holdings.
 - **PTY.8 STATE** — A party's **private state** (positions, limits, intentions, outlooks) is its own; its
   **public state** is what it has published or what is visible by law (OBS).
+- **PTY.16 STATE** — **Every office is a person's.** Each office an institution decides through — an owner-managed
+  firm's owner, a firm's or a bank's board members and chief executive, a fund's managers, a political party's leader
+  and candidates, the members of parliament, the head of state and of government and the ministers, a central bank's
+  governor and board, a public agency's head — is held by one named person under a contract naming it (an
+  appointment, a mandate, an employment) and paid under it. An office is empty only while the process that fills it
+  runs.
 
 **Processes**
 
 - **PTY.9 PROCESS** — A party **begins** by a named event with a cause (a birth, a founding, a
   registration, a spin-off) and **ends** by a named event with a cause (a death, a dissolution, an
   insolvency, a merger, a resolution). Every ending opens an **estate** or names a **successor** (L3).
+- **PTY.17 PROCESS** — **Filling an office.** An office is filled by the process its institution's legal form or
+  constitution declares (POLICY, PTY.4): a board by its owners' votes (REG), a chief executive by its board, the
+  members of parliament and a directly elected head of state by election (POL.7), a government by the coalition that
+  forms it (POL.6), an appointed head by whom the law names. Whoever chooses decides among the persons eligible, from
+  their records — skills, experience, the jobs and offices they have held — by its own rule. An office falls vacant
+  by its holder's death, resignation or removal or by the end of its term, and is filled again the same way.
 
 **Invariants**
 
@@ -498,6 +513,8 @@ is a party with a permanent identity.
 
 - **PTY.13 FORBID** — No party without an identity, no identity reused, no party that exists only to absorb
   a residual, and no party that cannot end (Law 13) except a central bank in its own currency.
+- **PTY.18 FORBID** — No office held by no one beyond its filling, no decision-maker standing in for the persons who
+  hold an institution's offices, and no career, appointment or election result stated or drawn.
 - **PTY.14 FORBID** — No weight, share or scale factor applied to a party's decisions or holdings. A party holds
   what it holds.
 
@@ -740,7 +757,9 @@ The work of a day follows the number of parties something happens to, not the nu
 **State**
 
 - **REP.1 STATE** — A **household** or a **firm** is a named party held in its kind's population. It holds its own
-  attributes (REP.41), its own positions (REP.20), its persons (a household's, REP.26), its contracts and holdings.
+  attributes (REP.41), its own positions (REP.20), its persons (a household's, REP.26), its contracts and holdings; a
+  household's accounts, holdings and debts are its persons', each one's own or held in shares (PTY.3), and what the
+  household holds is read as their sum.
   - It is one real party, and nothing it holds is shared with another.
   - One that ends leaves one estate party (PTY.9).
   - A firm is of one kind whatever its size: its size — persons employed, turnover, net worth — is read from its
@@ -826,8 +845,9 @@ The work of a day follows the number of parties something happens to, not the nu
 - **REP.25 PROCESS** — **Age.** Every person holds its **birth date**. Its age on any day, and the day it reaches a
   statutory age or an entitlement, are read from it exactly.
 - **REP.26 PROCESS** — **Persons are held in their household.** A household holds each of its persons, with its
-  role (head, partner, another adult, a child), its birth date, sex, health, education and its own contracts, such
-  as employment. A person's event changes that person: a death, an illness, a job lost or taken, a new skill
+  lasting identity (PTY.1), its role (head, partner, another adult, a child), its birth date, sex, health, education,
+  its own accounts, holdings and debts (its wealth, PTY.3), the offices it holds (PTY.16) and its own contracts, such
+  as employment, each naming it by its identity. A person who moves to another household takes all of these with it. A person's event changes that person: a death, an illness, a job lost or taken, a new skill
   level, a child reaching adulthood.
 - **REP.9 PROCESS** — **Exact totals in whole units.** A party's money is a total in whole smallest units
   (MON.16), and every holding counted in whole units — shares, face, fund units, physical units — is held the same
@@ -1709,12 +1729,12 @@ population are outcomes.
   of: in education, employed, unemployed and searching, out of the labour force, retired), an
   employment history and its **kin** — its parents and children living in other households — which is whom
   inheritance law names as heirs (POP.9). A person is held in its household (REP.26): its birth date
-  (REP.25), role and the person attributes its kind declares, zone as its household's attribute, its jobs as
-  contracts naming it (REP.3), its labour state a read of its contracts and participation, its employment history in
+  (REP.25), role and the person attributes its kind declares, zone as its household's attribute, its own accounts,
+  holdings and debts (PTY.3), the offices it holds (PTY.16), its jobs as contracts naming it (REP.3), its labour state a read of its contracts and participation, its employment history in
   its jobs' start dates, the start of its search and its contribution records, kin as contracts between households
   (REP.3), and the clocks rules read as its household's attributes (REP.41).
 - **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or a room let by another household
-  under a tenancy), a budget, holdings and debts, and its own preferences drawn at its formation (NUM.4).
+  under a tenancy), a budget over its members' money, and holdings and debts that are its members' summed, and its own preferences drawn at its formation (NUM.4).
 
 **Decisions**
 
@@ -1734,8 +1754,9 @@ population are outcomes.
 **Processes**
 
 - **POP.3 PROCESS** — **Death**: each person faces a mortality hazard by age and health (CHN), from a declared
-  life table. A death is an event; the person's share of the household's claims passes by the household's
-  rules and by inheritance law (POP.9), and a household with no surviving member becomes an estate.
+  life table. A death is an event; what the person held — its accounts, holdings, debts and shares of joint ones —
+  passes to its estate and on by inheritance law (POP.9), the offices it held fall vacant (PTY.17), and a household
+  with no surviving member ends.
 - **POP.4 PROCESS** — **Illness and disability**: a health hazard by age can make a person unable to work for
   a spell or permanently, which is what sickness and disability insurance and benefits respond to.
 - **POP.5 PROCESS** — **Birth**: a household **decides** whether to try for a child (POP.10), and the
@@ -1749,8 +1770,8 @@ population are outcomes.
 - **POP.7 PROCESS** — **Household formation and dissolution**: an adult leaves its parents' household when it
   can afford a dwelling of its own (a decision, HH.8); two adults who meet in a search-and-meeting process
   within a region (CHN) form a household by their decision (POP.17); a household dissolves by separation
-  (POP.17) or by the death of its last member. Each is a dated event, and the household's holdings and debts
-  are divided by declared law.
+  (POP.17) or by the death of its last member. Each is a dated event; each person keeps its own holdings and
+  debts, and joint ones are divided by declared law.
 - **POP.8 PROCESS** — **Migration**: a household (or an adult leaving one) **decides** to move to another
   region or country when its own expected income, housing cost and prospects there, less the cost of
   moving, beat staying (HH.9); a move across a border needs the destination's admission (POLICY, XB).
@@ -1996,7 +2017,8 @@ to owners, can belong to a group, and can be born and die.
 
 **State**
 
-- **FRM.1 STATE** — A firm has owners (holders of its shares, or a sole owner household), sites, plant,
+- **FRM.1 STATE** — A firm has owners (holders of its shares, or a sole owner person), offices held by persons — its
+  board and chief executive, or its owner managing it (PTY.16) — sites, plant,
   stocks of inputs, work in progress and output, the ways it knows, its contracts (employment, supply,
   credit, leases), its accounts, and a management whose preferences (patience, risk aversion, growth
   appetite) are drawn at founding.
@@ -2011,7 +2033,7 @@ to owners, can belong to a group, and can be born and die.
   their parties (REP.3). What a listed firm does that another does not — publish reports, issue bonds, hold a rating
   — follows from its legal form and its instruments (PTY.4, Law 10). An
   **unincorporated** business (a sole trader or a partnership, PTY.4) is not a separate party: its stock, plant,
-  receivables and debts are its owners' household's, as the law of such businesses has it, and a household running
+  receivables and debts are its owners' own, as the law of such businesses has it, and a household running
   one is of a kind whose attributes and positions add the business's ways, posted price, plant, stock and sales.
 - **FRM.3 STATE** — A firm may be a **parent or subsidiary** in a group: it controls another through a
   majority of its votes; intra-group loans, sales and guarantees are real contracts; each member keeps
@@ -4159,7 +4181,7 @@ policy.
   rule** from votes to seats (all POLICY of the constitution, declared once).
 - **POL.2 STATE** — **Parties** are named parties with a **platform** (a position on each policy the parliament
   controls) and their own **ideology preference** (how far they are willing to move from their founding
-  positions).
+  positions). Their leaders and candidates are their member persons (PTY.16).
 - **POL.3 STATE** — The **mandate** is the set of policy values the governing coalition enacts; every POLICY
   primitive names its owner (the parliament, the central bank, a standard-setter), and those the parliament owns
   change only by the parliament's votes: a new mandate after an election, or legislation within one (POL.11).
@@ -4188,7 +4210,9 @@ policy.
 
 **Processes**
 
-- **POL.7 PROCESS** — An election is held on its date; seats are allotted; a government forms; the new mandate
+- **POL.7 PROCESS** — An election is held on its date; seats are allotted, each to a person its party put up, and a
+  directly elected office to the candidate the constitution's rule elects; a government forms, its head and
+  ministers persons the coalition names (PTY.17); the new mandate
   takes effect from a declared date and is announced before then, so parties can anticipate it (VAL.6).
 - **POL.8 PROCESS** — The mandate reaches the economy only through the systems that read policy: taxes,
   benefits, outlays, regulation, the central bank's target.
@@ -5242,6 +5266,13 @@ Decisions taken in writing this version, and decisions still open.
     2026-09-27): their decisions moved their parties in lock-step and their lumps broke whole-unit trades, while the
     variety a world holds is its number of distinct parties, the same in both.
 
+46. **Every person a party, every office a person's** (PTY.1, PTY.3, PTY.16, PTY.17, REP.26; owner, 2026-09-28).
+    Each person the world holds keeps one identity from birth to death, owns its own accounts, holdings and debts,
+    and a household is its persons, what it holds their sum; every office an institution decides through is held by
+    a named person, filled by the process its law declares. A person's life can be followed whole: what it earns and
+    owns, whom it lives with, the firm it founds, its rise to a board or a chief executive's office, its election.
+    What this costs is measured against the budget (N8) like any other state.
+
 **Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
 it.
 
@@ -5249,6 +5280,13 @@ it.
     inputs by product. Whether a richer grade yields more in use — more metal from a tonne of ore, more heat from a
     tonne of coal — and so what sets one grade's price against another's, the text does not say. Until it is decided,
     a way takes an input's units of any grade alike.
+47. **What an office holder brings to its office's decisions** (PTY.16, FRM.1, BNK, POL). An institution decides by
+    its own rule; whether the preferences and outlooks that rule reads are its office holders' own — a chief
+    executive's risk aversion, a governor's stance — or the institution's, drawn at its founding, the text does not
+    say. Until it is decided, the institution's are read, and its office holders are held and paid.
+48. **How a household's budget draws on its persons' accounts** (PTY.3, HH). A household decides as one over its
+    persons' money; which person's account a payment is made from, and how incomes pool, the text does not say. Until
+    it is decided, a household pays from its head's account and its persons' incomes are paid to their own.
 
 ---
 

@@ -767,6 +767,13 @@ world switches to the core.
     core; the core saved and loaded.
   - i. The switch: the committed world is the core's; the old kernel's crates and modules, its checks and the
     primitives the matrices replace are deleted; the smoke and the bench judged.
+- **Persons as parties** (PTY.1, PTY.3, REP.26, Appendix E 46, owner 2026-09-28): each person keeps one identity from
+  birth to death, the persons store holding it beside the person's word, and every contract naming a person names it
+  by that identity, never by its place in its household (c, with the employment contracts, the pensions moving to it);
+  each person owns its own accounts, holdings and debts, a household's read as their sum, the country sheet's
+  household sector apportioned over persons (i, with the native opening; until it is decided how a household's budget
+  draws on its persons' accounts, Appendix E 48, a household pays from its head's account and each person's income is
+  paid to its own). An owner-managed firm's owner is a person (i). The memory this adds is measured on the bench.
 - **Values the port takes from the data in hand**, in place of today's assumed ones:
   - whom an extended or non-relative household holds besides its head, assumed today (`DEM.household_members`: one
     relative of 65 and over, one unrelated adult), derived per group from the DHS household structure
@@ -2557,6 +2564,7 @@ capitalise, and set macroprudential limits from their own outlook.
 
 **Design**
 
+- **Their heads** (PTY.16, PTY.17): persons the law's appointing office names, each under a contract that pays them.
 - **The parties** (SUP.1–SUP.3): a supervisor, a deposit insurer and a resolution authority per country, opened by
   `sys-sup`'s opening contribution as individuals of the agency kind, each with its accounts.
 - **Tests** (SUP.4): at 9c on each bank's reporting dates, the supervisor reads S2.07's ratios. A breach issues its
@@ -3570,6 +3578,8 @@ ratio where required, the remittance dates, and the four lender-of-last-resort c
 
 **Design**
 
+- **The governor and the committee** (PTY.16, PTY.17, Appendix E 46): persons the law's appointing office names
+  from the eligible persons' records, each under a term and a contract that pays them.
 - **The rate decision** (CB.4), at 5c on the committee's meeting days:
   - **Inputs**: its outlook of inflation on the published consumer index with its lag (a public-series outlook by
     the central bank's own method, S1.01); its outlook of activity — the published unemployment rate and output —
@@ -4178,6 +4188,10 @@ record; groups are read from holdings and report consolidated statements; shareh
 
 **Design**
 
+- **Boards and chief executives** (PTY.16, PTY.17, FRM.1, Appendix E 46): each firm's and bank's board is persons
+  its owners elect by their votes, and its chief executive a person its board appoints from the eligible persons'
+  records (skills, experience, the jobs and offices held), each under a contract that pays them; an owner-managed
+  firm's office is its owner's. A vacancy by death, resignation, removal or term's end is filled the same way.
 - **Holdings of cells** (HH.7, architecture §4.5, §7.6, §7.7):
   - a cell's **participation** — whether its members hold shares, bonds or fund units directly, one bit per asset
     class — is a key attribute in the key record, as its banking arrangement is, so a cell's distinct keys grow at
@@ -7627,6 +7641,10 @@ political party's estate).
 
 **Design**
 
+- **Persons in office** (PTY.16, PTY.17, Appendix E 46): each party's leader and candidates are member persons it
+  chooses from their records; seats go to the persons its list puts up, a directly elected office to the candidate
+  the constitution's rule elects, and the head of government and the ministers are persons the coalition names, each
+  under a mandate that pays them. A vacancy by death or resignation is filled by the same process.
 - **Ownership** (POL.3, POL.8, architecture §4.6): every POLICY primitive names its owner in the register (S0.09);
   those the parliament owns — tax schedules, benefit and service rules, appropriations, border policies (tariffs,
   and the capital and admission rules S5.05 adds to platforms when it declares them), the exchange-rate regime where
@@ -10101,6 +10119,7 @@ S5.02 and S6.04, or deleted where the core's restructure retired what they measu
 | Stage 0 closed as it is (N8.8) | Stage 0 closes with the full load missing the budget (median turn 7.9 s, worst 17.5 s, peak 8.3 GiB, saves 4.1 GB each on the build machine at a3e7459b): S0.26 done, S0.26f's parts not built and the phone's run carried to Stage 1, to be met by S1.16; the representation's factor stays 170 | 2026-09-25 |
 | Data gathered once (GEN.15, NUM.3) | every published source the remaining steps read is fetched at S1.22, into `data/sources/raw/`, and every matrix the opening reads is derived then; what no source gives is derived from those that do or simulated by a declared procedure, and said so in its note; no later step searches for data. Downloads the derivations do not read are removed | 2026-09-28 |
 | No findings table (§0.5) | a finding is solved in its step or written into the step that will fix it; §11 is retired, its open rows moved into their steps or deleted where the core retired what they measured; every data point no source gives is closed by a derivation, a paper's table or a declared simulation, named in the step that reads it | 2026-09-28 |
+| Every person a party, every office a person's (PTY.1, PTY.3, PTY.16–18, Appendix E 46) | wealth is individual: each person owns its accounts, holdings and debts, a household is its persons and what it holds their sum; each person keeps one identity from birth to death, whichever household it lives in; every office (board member, chief executive, governor, member of parliament, head of state or government, minister, a party's leader and candidates) is held by a named person filled by its declared process, so a person's life can be followed; built in S1.24 (identity, accounts), S3.02, S2.08, S3.05 and S5.03 (offices) | 2026-09-28 |
 
 ---
 
@@ -10126,10 +10145,11 @@ and are not mapped.
 | PTY | S0.09 | 1, 4, 6, 8, 13, 14 |
 | PTY | S0.12 | 10 |
 | PTY | S0.25 | 9, 11, 15 |
-| PTY | S1.08 | 3 |
 | PTY | S1.13 | 2 |
+| PTY | S1.24 | 3 |
 | PTY | S2.05 | 5 |
 | PTY | S3.05 | 7 |
+| PTY | S5.03 | 16, 17, 18 |
 | NUM | S0.03 | 1, 6 |
 | NUM | S0.09 | 3, 4, 7, 8, 9 |
 | NUM | S0.15 | 5 |
