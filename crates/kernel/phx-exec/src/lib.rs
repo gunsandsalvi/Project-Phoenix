@@ -7,6 +7,7 @@ pub mod hint;
 pub mod keyed;
 pub mod mix;
 mod os;
+pub mod partition;
 pub mod pool;
 pub mod probe;
 pub mod radix;

@@ -3,14 +3,15 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Thirteen: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
+# Fourteen: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
 # files of phx-num, phx-rand, phx-store, phx-exec, phx-core, phx-ledger, phx-market and phx-pop, whose gungraun
 # harness prints, exits and passes setups by value; phx-store's three modules that hold its `unsafe` (the backing's
-# system calls, the region's typed views, the storable marker) and phx-exec's one (affinity, thread ids and the
-# prefetch hint), each lowering the lint for itself alone.
+# system calls, the region's typed views, the storable marker) and phx-exec's two (affinity, thread ids and the
+# prefetch hint; the partition's pieces writing their disjoint places of one output, S1.19), each lowering the lint
+# for itself alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 13
+value = 14
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by

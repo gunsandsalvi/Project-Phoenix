@@ -116,6 +116,18 @@ impl Pool {
         all
     }
 
+    /// `f` of every item, each result stored at its item's place whatever order they ran in, for work that owns what
+    /// each item hands it.
+    pub fn map_items<I: Send, T: Send>(&self, items: Vec<I>, f: impl Fn(I) -> T + Sync) -> Vec<T> {
+        let n = items.len();
+        let mut out: Vec<Option<T>> = std::iter::repeat_with(|| None).take(n).collect();
+        self.for_each(items.into_iter().zip(out.iter_mut()), |(item, slot)| *slot = Some(f(item)));
+        let Some(all) = out.into_iter().collect::<Option<Vec<T>>>() else {
+            violation!(clause = "TIME.6", "a dispatched task that never ran", n = n);
+        };
+        all
+    }
+
     /// `f` run once on every worker at the same time, results in worker order: for measuring the workers
     /// themselves, never for the world's work, whose results must not depend on which worker ran it.
     pub fn on_every_worker<T: Send>(&self, f: impl Fn() -> T + Sync) -> Vec<T> {

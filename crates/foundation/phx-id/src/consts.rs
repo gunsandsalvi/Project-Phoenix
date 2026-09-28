@@ -44,3 +44,14 @@ pub const SHORT_MONTH: u8 = 30;
 pub const DAYS_PER_WEEK: i64 = 7;
 /// 1970-01-01, serial zero, was a Thursday, day three of a week counted from Monday as day zero.
 pub const SERIAL_ZERO_WEEKDAY: i64 = 3;
+
+/// A party reference's generation takes the 24 bits between its kind's byte and its slot's word.
+pub const GENERATION_BITS: u32 = 24;
+/// The generation's place in a party reference, above the slot's 32 bits.
+pub const GENERATION_SHIFT: u32 = 32;
+/// The kind's place in a party reference, its top byte.
+pub const KIND_SHIFT: u32 = 56;
+/// A party key's kind takes its top five bits, room for 32 kinds of party.
+pub const KEY_KIND_BITS: u32 = 5;
+/// A party key's slot takes the other 27 bits: 134 million parties of one kind.
+pub const KEY_SLOT_BITS: u32 = 27;

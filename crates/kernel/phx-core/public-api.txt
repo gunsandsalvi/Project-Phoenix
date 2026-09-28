@@ -176,6 +176,23 @@ pub phx_core::calendar::CountryCalendar::country: phx_id::ids::CountryId
 pub fn phx_core::calendar::civil_date(i64) -> phx_id::day::Date
 pub fn phx_core::calendar::civil_serial(phx_id::day::Date) -> i64
 pub fn phx_core::calendar::days_after(phx_id::day::Date, i64) -> phx_id::day::Date
+pub mod phx_core::column_facts
+pub enum phx_core::column_facts::FactSlice<'a>
+pub phx_core::column_facts::FactSlice::Read(&'a [phx_num::missing::MaybeI64])
+pub phx_core::column_facts::FactSlice::Write(&'a mut [phx_num::missing::MaybeI64])
+pub struct phx_core::column_facts::ColumnFacts<'a>
+impl<'a> phx_core::column_facts::ColumnFacts<'a>
+pub fn phx_core::column_facts::ColumnFacts<'a>::new(phx_id::ids::Slot, alloc::vec::Vec<(&'static str, phx_core::column_facts::FactSlice<'a>)>) -> phx_core::column_facts::ColumnFacts<'a>
+pub fn phx_core::column_facts::ColumnFacts<'a>::read_at(&self, usize, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::column_facts::ColumnFacts<'a>::write_at(&mut self, usize, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
+pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+pub struct phx_core::column_facts::RecordFacts<'a>
+impl<'a> phx_core::column_facts::RecordFacts<'a>
+pub fn phx_core::column_facts::RecordFacts<'a>::new(phx_id::ids::Slot, usize, &'a mut [phx_num::missing::MaybeI64], &'a [usize], &'a [bool]) -> phx_core::column_facts::RecordFacts<'a>
+pub fn phx_core::column_facts::RecordFacts<'a>::read_at(&self, usize, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::column_facts::RecordFacts<'a>::write_at(&mut self, usize, phx_id::ids::Slot, i64)
 pub mod phx_core::columns
 pub struct phx_core::columns::ColumnTrace
 pub phx_core::columns::ColumnTrace::handler: u16
@@ -757,6 +774,39 @@ pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Findi
 impl phx_store::save::Saved for phx_core::findings::Findings where alloc::vec::Vec<phx_core::findings::Finding>: phx_store::save::Saved
 pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)
+pub mod phx_core::flows
+pub struct phx_core::flows::Credit
+pub phx_core::flows::Credit::amount: i64
+pub phx_core::flows::Credit::payee: phx_id::ids::PartyKey
+pub struct phx_core::flows::Flow
+pub phx_core::flows::Flow::amount: i64
+pub phx_core::flows::Flow::denomination: u8
+pub phx_core::flows::Flow::order: u8
+pub phx_core::flows::Flow::payee: phx_id::ids::PartyKey
+pub phx_core::flows::Flow::payer: phx_id::ids::PartyKey
+pub phx_core::flows::Flow::reason: u16
+pub phx_core::flows::Flow::source: u32
+pub struct phx_core::flows::FlowBufs
+impl phx_core::flows::FlowBufs
+pub fn phx_core::flows::FlowBufs::chunks_mut(&mut self) -> &mut [alloc::vec::Vec<phx_core::flows::Flow>]
+pub fn phx_core::flows::FlowBufs::is_empty(&self) -> bool
+pub fn phx_core::flows::FlowBufs::len(&self) -> usize
+pub fn phx_core::flows::FlowBufs::reset(&mut self, usize)
+pub fn phx_core::flows::FlowBufs::slices(&self) -> impl core::iter::traits::iterator::Iterator<Item = &[phx_core::flows::Flow]>
+pub struct phx_core::flows::Grouped
+pub phx_core::flows::Grouped::by_payee: phx_exec::partition::Partitioned<phx_core::flows::Credit>
+pub phx_core::flows::Grouped::by_payer: phx_exec::partition::Partitioned<phx_core::flows::Flow>
+impl phx_core::flows::Grouped
+pub fn phx_core::flows::Grouped::apply(&self, usize, &phx_core::flows::Ranges, &mut [i64]) -> u64
+pub fn phx_core::flows::Grouped::group(&mut self, core::option::Option<&phx_exec::pool::Pool>, &[&phx_core::flows::FlowBufs], &phx_core::flows::Ranges)
+pub fn phx_core::flows::Grouped::net(&self, usize, &phx_core::flows::Ranges, &mut [i64])
+pub struct phx_core::flows::Ranges
+impl phx_core::flows::Ranges
+pub fn phx_core::flows::Ranges::count(&self) -> usize
+pub fn phx_core::flows::Ranges::new(u32, &[u32]) -> phx_core::flows::Ranges
+pub fn phx_core::flows::Ranges::of(&self, phx_id::ids::PartyKey) -> usize
+pub fn phx_core::flows::Ranges::range_bits(&self) -> u32
+pub fn phx_core::flows::Ranges::start(&self, usize) -> (u8, u32)
 pub mod phx_core::handler
 pub struct phx_core::handler::Away
 pub phx_core::handler::Away::inbound: phx_num::missing::Missing<i64>
@@ -867,6 +917,9 @@ pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::id
 pub trait phx_core::handler::FactStore
 pub fn phx_core::handler::FactStore::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
+pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
@@ -2069,6 +2122,13 @@ pub phx_core::wear::WearSpec::tag: u32
 pub phx_core::wear::WearSpec::values: alloc::vec::Vec<f64>
 pub fn phx_core::wear::carried(i64, f64, f64) -> core::option::Option<i64>
 pub fn phx_core::wear::leaving(i64, i64, f64, i64) -> core::option::Option<i64>
+pub mod phx_core::wheel
+pub struct phx_core::wheel::DueWheel
+impl phx_core::wheel::DueWheel
+pub fn phx_core::wheel::DueWheel::first(&self) -> phx_id::day::Day
+pub fn phx_core::wheel::DueWheel::new(phx_id::day::Day, u32) -> phx_core::wheel::DueWheel
+pub fn phx_core::wheel::DueWheel::schedule(&mut self, u32, phx_id::day::Day)
+pub fn phx_core::wheel::DueWheel::take(&mut self, phx_id::day::Day, &mut alloc::vec::Vec<u32>, core::option::Option<&phx_exec::pool::Pool>)
 pub enum phx_core::ActsOn
 pub phx_core::ActsOn::Country
 pub phx_core::ActsOn::Holding
@@ -3709,6 +3769,9 @@ pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::id
 pub trait phx_core::FactStore
 pub fn phx_core::FactStore::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
+pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
+pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
 impl phx_core::handler::FactStore for phx_core::columns::FactColumns
 pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)

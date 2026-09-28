@@ -1,193 +1,318 @@
-# The finished world's volumes for the full-load bench (architecture §13, §14.6 item 7): the bytes of each store at the
-# design point through Stage 6, and each day type's counts of each kind of work, with the architecture's line each
-# comes from. The bench builds the stores whose kernels exist and holds the rest as random words it gathers from; it
-# runs every count through its kernel. Its numbers are costs, never the world's. The built stages' counts replace their
-# estimates at each gate (`phx measure`).
+# The full-load bench's volumes (spec N8.8): the finished world through Stage 6 at the design point, run through the
+# core's own kernels before the world is built on them. Every count is per million persons, so the design point is one
+# number. Parties, contracts and their bytes are the finished world's estimate; the day's work is that estimate times
+# `work_num / work_den`, the margin the owner asked for over what the end is expected to need (plan §12, 2026-09-28).
+# The builder derives each count from the clause that makes the work and cites it; the owner reviews changes here.
+# Its numbers are costs, never the world's.
 
-# The population the bench builds: household agents with their persons and their attachments to shared lines.
-[population]
-agents = 700000                 # §13.1: household agents at the design point
-persons_per_agent = 3           # §13.1: persons held in each household agent
-attachments_per_agent = 40      # §13.1: 40 rows per household agent, one attachment each
+[world]
+# The design point (owner, 2026-09-28): five million persons.
+persons = 5000000
+work_num = 3
+work_den = 2
+# Parties netted by one worker: 65 536 slots of a kind, half a megabyte of money, within a core's L2 cache, and few
+# enough ranges that a partition's scatter keeps its open streams few.
+range_bits = 16
+rows_per_chunk = 4096
+# Regions the world's parties stand in (the owner's map, plan §12) and the products they trade (TEC.products).
+regions = 25
+products = 19
 
-# The settlement the bench builds: holders each with dated rows, two falling due weekly on each business day and four
-# once a month on the heavy day, fourteen a holder, so an ordinary weekday reads 1.1 M run heads, scans their rows and
-# pays 2.2 M, and the heavy day pays 6.6 M (§13.2: 1.1 M heads, 6.2 M rows, 2 M payments on a business day; 4.4 M on
-# the heavy day).
-[settlement]
-holders = 1100000
-daily_rows = 2
-monthly_rows = 4
-banks = 100
-holders_per_line = 256
+# Parties by kind. `bytes` is what a party holds in its kind's columns beyond its money: attributes, positions,
+# outlooks, persons' words. A kind with `money` holds a current account the day's flows settle into.
+[[kind]]
+name = "person"
+per_million = 1000000
+bytes = 16
+money = false
+line = "REP.25, REP.26: birth date, household, role and attributes, next hazard day"
 
-# Stores held as random words: their bytes through Stage 6, less what the bench builds (§13.1 with each stage's additions).
+[[kind]]
+name = "household"
+per_million = 300000
+bytes = 208
+money = true
+line = "REP.41, REP.20, VAL.23: 0.30 households a person (221 515 at 750 000 persons, seed 1); attributes, twenty positions and outlooks, with Stage 2-6's balance sheet (HH.16)"
+
+[[kind]]
+name = "firm"
+per_million = 140000
+bytes = 640
+money = true
+line = "FRM.23, REP.41: 0.14 firms a person (102 579 at 750 000); prices and stocks by product, ways, plant by kind and class, headcount by family, accounts' lines (ACC)"
+
+[[kind]]
+name = "bank"
+per_million = 12
+bytes = 65536
+money = true
+line = "BNK, BFL, BCP: about 60 banks at five million persons, with their books' aggregates by class and stage"
+
+[[kind]]
+name = "institution"
+per_million = 80
+bytes = 16384
+money = true
+line = "the central bank, treasury, agencies, insurers, schemes, funds, dealers, clearing houses and publishers"
+
+# Contracts by family (REP.3), each between a named payer and payee kind. `bytes` is the family's own columns beyond
+# its two parties and list links. `dues`: none; payday (all due on the month's payday); spread (a due a month, on a
+# day drawn from the month); quarterly (a third due this month, spread). `mean` is a due's mean amount in smallest units.
+[[family]]
+name = "employment"
+per_million = 450000
+bytes = 24
+listed = [true, true]
+payer = "firm"
+payee = "household"
+dues = "payday"
+mean = 300000
+line = "LAB.1: a contract a job, about 0.45 employed a person; wage, hours, start, notice, pension terms"
+
+[[family]]
+name = "household deposit"
+per_million = 600000
+bytes = 24
+listed = [false, true]
+payer = "bank"
+payee = "household"
+dues = "spread"
+mean = 500
+line = "MON, BFL: two accounts a household, interest monthly"
+
+[[family]]
+name = "firm deposit"
+per_million = 210000
+bytes = 24
+listed = [false, true]
+payer = "bank"
+payee = "firm"
+dues = "spread"
+mean = 2000
+line = "MON, BFL: one and a half accounts a firm"
+
+[[family]]
+name = "household loan"
+per_million = 150000
+bytes = 40
+listed = [false, true]
+payer = "household"
+payee = "bank"
+dues = "spread"
+mean = 90000
+line = "BNK.17, HSG: mortgages and consumer loans, half the households"
+
+[[family]]
+name = "firm loan"
+per_million = 70000
+bytes = 40
+listed = [false, true]
+payer = "firm"
+payee = "bank"
+dues = "spread"
+mean = 400000
+line = "BNK.17, CRD: half the firms borrow"
+
+[[family]]
+name = "tenancy"
+per_million = 100000
+bytes = 24
+listed = [true, true]
+payer = "household"
+payee = "household"
+dues = "spread"
+mean = 90000
+line = "HSG.2: a third of households rent, from households and firms"
+
+[[family]]
+name = "invoice"
+per_million = 1400000
+bytes = 32
+listed = [true, true]
+payer = "firm"
+payee = "firm"
+dues = "spread"
+mean = 150000
+line = "TCR.1: about ten open invoices a firm on trade terms"
+
+[[family]]
+name = "policy"
+per_million = 1200000
+bytes = 24
+listed = [false, true]
+payer = "household"
+payee = "institution"
+dues = "spread"
+mean = 6000
+line = "INS: about three policies a household and two a firm, premiums monthly"
+
+[[family]]
+name = "pension"
+per_million = 650000
+bytes = 32
+listed = [false, true]
+payer = "institution"
+payee = "household"
+dues = "spread"
+mean = 40000
+line = "PEN, SOC: rights of the employed and pensions in payment"
+
+[[family]]
+name = "holding"
+per_million = 500000
+bytes = 32
+listed = [false, true]
+payer = "firm"
+payee = "household"
+dues = "quarterly"
+mean = 3000
+line = "REG.1, EQY, FND: shares, bonds and fund units; coupons and dividends quarterly"
+
+[[family]]
+name = "kin"
+per_million = 300000
+bytes = 8
+listed = [false, true]
+payer = "household"
+payee = "household"
+dues = "none"
+mean = 0
+line = "POP: kin between households, read at deaths and formations"
+
+[[family]]
+name = "supply and lease"
+per_million = 200000
+bytes = 24
+listed = [true, true]
+payer = "firm"
+payee = "firm"
+dues = "spread"
+mean = 200000
+line = "FRM, ENE, CAP: supply contracts, leases, energy tariffs"
+
+# Stores beyond the tables, per million persons: records and events with their horizons (SET.13), markets' books,
+# the map and its stock, the directory, views.
 [[store]]
-name = "household agents beyond the built record"
-line = "13.1 household agents (672 bytes through Stage 6)"
-bytes = 400000000
-saved = true
-[[store]]
-name = "relationship rows"
-line = "13.1 relationship rows, with Stages 2-6"
-bytes = 1200000000
-saved = true
-[[store]]
-name = "holdings, instruments, lots, liens and commitments"
-line = "13.1, with Stage 3's positions and Stage 4's pots"
-bytes = 452000000
-saved = true
-[[store]]
-name = "firm and business agents"
-line = "13.1, with Stage 6's records"
-bytes = 176000000
-saved = true
-[[store]]
-name = "lines and their stage totals"
-line = "13.1, with Stages 2-5"
-bytes = 166000000
-saved = true
-[[store]]
-name = "interned keys and terms"
-line = "13.1, with Stages 3-4"
-bytes = 151000000
-saved = true
-[[store]]
-name = "agenda"
-line = "13.1"
-bytes = 85000000
-saved = true
-[[store]]
-name = "kind tables of individuals"
-line = "13.1, with Stages 4-5"
-bytes = 241000000
-saved = true
-[[store]]
-name = "estates open"
-line = "13.1"
-bytes = 31000000
-saved = true
-[[store]]
-name = "markets, records and events"
-line = "13.1, with Stages 2-5"
-bytes = 246000000
-saved = true
-[[store]]
-name = "map, network, deposits and stock"
-line = "13.1"
-bytes = 80000000
-saved = true
-[[store]]
-name = "directory"
-line = "13.1"
-bytes = 50000000
-saved = true
-[[store]]
-name = "day buffers"
-line = "13.1, the worst day's"
-bytes = 600000000
-saved = false
-[[store]]
-name = "arena slack and page tails"
-line = "13.1, with each stage's slack"
-bytes = 295000000
-saved = false
-[[store]]
-name = "save buffers"
-line = "13.1"
-bytes = 94000000
-saved = false
-[[store]]
-name = "views"
-line = "13.1, with Stage 6"
-bytes = 70000000
-saved = true
+name = "records, events, books and views"
+per_million_bytes = 120000000
+line = "SET.13, OBS, MKT: the stores the old §13.1 held beside the population, per person at the old design point"
 
 # The month the bench runs: each day's type in order. Ordinary weekdays, a weekend and the Monday after it, a holiday
 # block of three closed days before a quarter-end payday (the heavy day), and weekdays again.
-# What the held stores' words carry: as many random low bits as the world's own saves compress to, so a save of the
-# held stores compresses as the world's does. The build run of 8b2a7185 saved 286 816 571 bytes of stores as
-# 110 054 463, 0.384 of each 64-bit word: 25 bits.
-[held]
-bits = 25
-
 [month]
 days = ["business", "business", "business", "business", "business", "closed", "closed", "business",
         "business", "business", "business", "business", "closed", "closed", "business", "business",
         "business", "business", "closed", "closed", "closed", "heavy", "business", "business", "business",
         "business", "closed", "closed", "business", "business"]
-# A full save after the heavy day and at the month's end, the declared interval's (SET.17), by the days' places from
-# nought.
+# A full save after the heavy day and at the month's end (SET.17), by the days' places from nought.
 saves = [21, 29]
 
-# Each kind of work: the kernel the bench runs it with, the rows each unit reads where it gathers, and its count on a
-# business, a closed and a heavy day (§13.2 through Stage 6; a closed day's and a heavy day's in the ratios of the
-# table's times where the table gives only the business day's count).
+# The day's work, per million persons on a business, a closed and a heavy day, before the margin. A handler's
+# `rule_ns` is its rule's own arithmetic, which the bench spends as such; `reads` and `writes` its declared facts;
+# `flows` the flows a row emits, in thousandths.
 [[work]]
-name = "hazard and need draws, drawn ahead"
+name = "hazards drawn ahead and their hits"
 kernel = "hazard"
-line = "13.2"
-counts = [1100000, 1100000, 1100000]
+table = "person"
+per_million = [3000, 3000, 4000]
+line = "REP.7, POP: deaths, illness, disability, accidents, births, redraws on rate changes"
+
 [[work]]
-name = "agenda redraws"
-kernel = "redraw"
-store = "agenda"
-line = "13.2"
-counts = [240000, 160000, 360000]
+name = "household spending"
+kernel = "handler"
+table = "household"
+reads = 6
+writes = 4
+rule_ns = 200
+flows = 0
+per_million = [43000, 43000, 43000]
+line = "HH.4: weekly on its own day, every day"
+
 [[work]]
-name = "agenda gather at 1b"
-kernel = "agenda"
-store = "agenda"
-line = "13.2"
-counts = [1500000, 1500000, 1500000]
+name = "household monthly decisions"
+kernel = "handler"
+table = "household"
+reads = 10
+writes = 4
+rule_ns = 400
+flows = 200
+per_million = [60000, 10000, 60000]
+line = "HH, HSG, INS, PEN, EQY, BFL: savings, holdings, cover, housing, bank; six a month each"
+
 [[work]]
-name = "row visits"
-kernel = "gather"
-reads = 40
-line = "13.2"
-counts = [280000, 101000, 327000]
+name = "firm production and stock"
+kernel = "handler"
+table = "firm"
+reads = 12
+writes = 6
+rule_ns = 800
+flows = 1000
+per_million = [140000, 70000, 140000]
+line = "FRM.4, TEC, GDS: daily by its ways within capacity; half open on closed days"
+
 [[work]]
-name = "occasion evaluations"
-kernel = "gather"
-reads = 4
-line = "13.2, with Stages 2 and 4"
-counts = [3060000, 610000, 3800000]
+name = "firm reviews"
+kernel = "handler"
+table = "firm"
+reads = 10
+writes = 4
+rule_ns = 500
+flows = 100
+per_million = [70000, 20000, 70000]
+line = "FRM.5, LAB.4, CAP.3, FRM.9: prices, wages, hiring, investment, funding at their attention"
+
 [[work]]
-name = "choices of acting members"
-kernel = "gather"
+name = "labour search"
+kernel = "handler"
+table = "person"
+reads = 15
+writes = 2
+rule_ns = 300
+flows = 0
+per_million = [60000, 0, 60000]
+line = "LAB.8: searchers and on-the-job seekers, about fifteen vacancies seen each"
+
+[[work]]
+name = "institutions"
+kernel = "handler"
+table = "institution"
 reads = 20
-line = "13.2, with Stage 4"
-counts = [270000, 76000, 334000]
+writes = 10
+rule_ns = 2000
+flows = 5000
+per_million = [80, 10, 120]
+line = "BNK, CB, TRS, SUP, STA and Stage 3-5's institutions: each once a business day"
+
 [[work]]
-name = "outcomes on agents, changed in place"
-kernel = "outcome"
-line = "13.2, the changes that were parts, with Stages 2-4"
-counts = [365000, 85000, 530000]
+name = "households' purchases"
+kernel = "choice"
+table = "household"
+flows = 1600
+per_million = [814000, 814000, 814000]
+line = "HH.5, SRV, GDS: nineteen products weekly a household, any day; a money flow each and goods for most"
+
 [[work]]
-name = "meetings, choice groups, seller spreads and labour matching"
-kernel = "gather"
-reads = 30
-line = "13.2"
-counts = [350000, 200000, 350000]
+name = "firms' input purchases"
+kernel = "choice"
+table = "firm"
+flows = 1600
+per_million = [120000, 0, 120000]
+line = "GDS.5, FRM.7: six inputs weekly a firm"
+
 [[work]]
-name = "physical flows"
-kernel = "gather"
-reads = 2
-line = "13.2"
-counts = [300000, 200000, 300000]
+name = "dues"
+kernel = "dues"
+per_million = [1, 0, 1]
+line = "SET, REG.5: every dated contract due today, from the families above"
+
 [[work]]
 name = "settlement"
 kernel = "settle"
-line = "13.2, with Stage 4"
-counts = [1, 0, 1]
+per_million = [1, 1, 1]
+line = "SET.4, MON.5, SET.2: every flow of the day netted and applied; on a closed day, card payments held pending on the parties' accounts until the next business day settles them"
+
 [[work]]
-name = "institutions, markets, the state, valuation and accounts"
-kernel = "gather"
-reads = 10
-line = "13.2 through Stage 6, at a microsecond of gathers a unit"
-counts = [900000, 120000, 1500000]
-[[work]]
-name = "audit, statistics, events and views"
+name = "audit"
 kernel = "audit"
-line = "13.2"
-counts = [1, 1, 1]
+per_million = [1, 1, 1]
+line = "N1, N8.6: the day's identities over every money column and flow, and a thirtieth of the contracts in full"

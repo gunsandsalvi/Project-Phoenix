@@ -3,7 +3,9 @@ use std::fmt::{self, Write};
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 
-use crate::consts::{PARTY_ID_BITS, SYSTEM_CODE_MAX};
+use crate::consts::{
+    GENERATION_BITS, GENERATION_SHIFT, KEY_KIND_BITS, KEY_SLOT_BITS, KIND_SHIFT, PARTY_ID_BITS, SYSTEM_CODE_MAX,
+};
 
 /// An identifier over one raw width: comparable and hashable, never defaulted, never converted into another kind.
 macro_rules! id {
@@ -83,6 +85,97 @@ impl PartyId {
     }
 }
 
+/// Where a party is held: its kind's table, its slot there, and the slot's generation when it took the party, so a
+/// reference kept past the party's end is known stale once the slot holds another.
+#[must_use]
+#[repr(transparent)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct PartyRef(u64);
+
+impl PartyRef {
+    /// A kind's table, a slot and a generation below 2^24; a larger generation is refused.
+    pub fn new(kind: u8, generation: u32, slot: Slot) -> PartyRef {
+        let limit = 1_u32 << GENERATION_BITS;
+        if generation >= limit {
+            capacity_exceeded!("slot generations", limit, generation);
+        }
+        PartyRef(u64::from(kind) << KIND_SHIFT | u64::from(generation) << GENERATION_SHIFT | u64::from(slot.get()))
+    }
+
+    /// The reference held as one word, as a column stores it.
+    pub const fn from_word(word: u64) -> PartyRef {
+        PartyRef(word)
+    }
+
+    #[must_use]
+    pub const fn word(self) -> u64 {
+        self.0
+    }
+
+    #[must_use]
+    pub const fn kind(self) -> u8 {
+        self.0.to_be_bytes()[0]
+    }
+
+    #[must_use]
+    pub fn generation(self) -> u32 {
+        let [_, a, b, c, ..] = self.0.to_be_bytes();
+        u32::from_be_bytes([0, a, b, c])
+    }
+
+    pub fn slot(self) -> Slot {
+        let [.., a, b, c, d] = self.0.to_be_bytes();
+        Slot::new(u32::from_be_bytes([a, b, c, d]))
+    }
+
+    /// The party's place within the day.
+    pub fn key(self) -> PartyKey {
+        PartyKey::new(self.kind(), self.slot())
+    }
+}
+
+/// A party's place within the day: its kind's table and its slot, in one word, as the day's flows and the contracts
+/// between parties name it. It carries no generation: a contract's side moves when its party ends and a slot is
+/// reused only after the day closes, so neither outlives the party it names.
+#[must_use]
+#[repr(transparent)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct PartyKey(u32);
+
+impl PartyKey {
+    /// A kind below 2^5 and a slot below 2^27; a larger one is refused.
+    pub fn new(kind: u8, slot: Slot) -> PartyKey {
+        let kinds = 1_u32 << KEY_KIND_BITS;
+        if u32::from(kind) >= kinds {
+            capacity_exceeded!("party kinds a key holds", kinds, kind);
+        }
+        let slots = 1_u32 << KEY_SLOT_BITS;
+        if slot.get() >= slots {
+            capacity_exceeded!("slots a party key holds", slots, slot.get());
+        }
+        PartyKey(u32::from(kind) << KEY_SLOT_BITS | slot.get())
+    }
+
+    /// The key held as one word, as a column stores it.
+    pub const fn from_word(word: u32) -> PartyKey {
+        PartyKey(word)
+    }
+
+    #[must_use]
+    pub const fn word(self) -> u32 {
+        self.0
+    }
+
+    #[must_use]
+    pub fn kind(self) -> u8 {
+        u8::try_from(self.0 >> KEY_SLOT_BITS).unwrap_or(u8::MAX)
+    }
+
+    pub fn slot(self) -> Slot {
+        Slot::new(self.0 & ((1 << KEY_SLOT_BITS) - 1))
+    }
+}
+
 /// A row: its table and its slot there.
 #[must_use]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -150,5 +243,24 @@ mod tests {
         for bad in ["", "D", "DEMOG", "dem", "DE1", "DÉ"] {
             assert!(SystemCode::new(bad).is_none(), "{bad}");
         }
+    }
+
+    #[test]
+    fn party_ref_packs_kind_generation_and_slot() {
+        let r = super::PartyRef::new(7, 0x00ab_cdef, crate::Slot::new(0xdead_beef));
+        assert_eq!((r.kind(), r.generation(), r.slot().get()), (7, 0x00ab_cdef, 0xdead_beef));
+        assert_eq!(super::PartyRef::from_word(r.word()), r);
+        let over = std::panic::catch_unwind(|| super::PartyRef::new(0, 1 << 24, crate::Slot::new(0)));
+        assert!(over.is_err(), "a generation past 24 bits is refused");
+    }
+
+    #[test]
+    fn party_key_packs_kind_and_slot() {
+        let k = super::PartyKey::new(21, crate::Slot::new(100_000_000));
+        assert_eq!((k.kind(), k.slot().get()), (21, 100_000_000));
+        assert!(std::panic::catch_unwind(|| super::PartyKey::new(32, crate::Slot::new(0))).is_err());
+        assert!(std::panic::catch_unwind(|| super::PartyKey::new(0, crate::Slot::new(1 << 27))).is_err());
+        let r = super::PartyRef::new(3, 9, crate::Slot::new(44));
+        assert_eq!(r.key(), super::PartyKey::new(3, crate::Slot::new(44)));
     }
 }

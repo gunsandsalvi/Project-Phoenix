@@ -112,6 +112,17 @@ impl<T: Pod, B: Backing> Column<T, B> {
         }
     }
 
+    /// Writes the row at a slot, growing the column with zero rows up to it, as a table whose slots are handed out
+    /// by an allocator fills its columns; zero is a value of every stored type.
+    pub fn put(&mut self, slot: Slot, value: T) {
+        let at = to_usize(slot.get());
+        if at >= self.len {
+            let n = at + 1 - self.len;
+            self.append_zeroed(n);
+        }
+        self.set(slot, value);
+    }
+
     /// The row at a slot, or none past the column's end.
     #[must_use]
     pub fn get(&self, slot: Slot) -> Option<T> {

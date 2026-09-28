@@ -6,7 +6,7 @@ use phx_core::{AttrDecl, Household, Person, PersonAttrDecl, PopEntry, PopItem, R
 use phx_id::{Date, Day, LineId, PartyId, Slot, TableId};
 use phx_ledger::algebra::Side;
 use phx_num::Missing;
-use phx_pop::explicit::{household, household_into, rewrite, write_back, write_rewrite};
+use phx_pop::explicit::{household, household_into, write_back};
 use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::person::{Attachment, Holder, pack};
@@ -180,48 +180,5 @@ pub(crate) fn outcome(a: &mut Agents, slot: Slot, date: Date, d: &mut Draws) {
     let mut h: Household = household(&a.decl, &a.table, slot);
     outcome_on(&mut h, date, d);
     let _ = write_back(&a.decl, &mut a.table, slot, &h);
-    let _ = a.table.take_changed();
-}
-
-/// A day's outcomes on the agents hit, each as often as it was hit: the households made explicit, changed and their
-/// words reckoned on the pool, each agent drawing from its own address so the work's order is no part of the result,
-/// and written back in slot order.
-pub(crate) fn outcomes(
-    a: &mut Agents,
-    (pool, pieces): (&phx_exec::Pool, usize),
-    hit: &mut [Slot],
-    (day, date, stream): (u32, Date, StreamKey),
-) {
-    hit.sort_unstable();
-    let mut runs: Vec<(Slot, u32)> = Vec::new();
-    for s in hit.iter() {
-        match runs.last_mut() {
-            Some((last, n)) if last == s => *n += 1,
-            _ => runs.push((*s, 1)),
-        }
-    }
-    let each = runs.len().div_ceil(pieces);
-    let (decl, table) = (&a.decl, &a.table);
-    let changed = pool.map(pieces, |p| {
-        let lesser = |x: usize, y: usize| if x < y { x } else { y };
-        let from = lesser(p * each, runs.len());
-        let to = lesser(from + each, runs.len());
-        let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
-        runs.get(from..to)
-            .unwrap_or(&[])
-            .iter()
-            .map(|&(slot, times)| {
-                household_into(decl, table, slot, &mut h);
-                let mut d = Draws::new(stream, Subject::new(SubjectTag::Party, u64::from(slot.get())), day, 0);
-                for _ in 0..times {
-                    outcome_on(&mut h, date, &mut d);
-                }
-                (slot, rewrite(decl, table, slot, &h))
-            })
-            .collect::<Vec<_>>()
-    });
-    for (slot, r) in changed.into_iter().flatten() {
-        let _ = write_rewrite(&mut a.table, slot, &r);
-    }
     let _ = a.table.take_changed();
 }

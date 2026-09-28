@@ -60,11 +60,22 @@ impl<K: phx_exec::radix::RadixKey, V: core::marker::Copy + core::marker::Send + 
 pub fn phx_exec::keyed::KeyedReduce<K, V>::run(core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<(K, V)>], impl core::ops::function::Fn(&mut V, V) + core::marker::Sync) -> phx_exec::keyed::KeyedReduce<K, V>
 pub mod phx_exec::mix
 pub fn phx_exec::mix::mix64(u64) -> u64
+pub mod phx_exec::partition
+pub struct phx_exec::partition::Partitioned<T>
+pub phx_exec::partition::Partitioned::items: alloc::vec::Vec<T>
+pub phx_exec::partition::Partitioned::starts: alloc::vec::Vec<usize>
+impl<T> phx_exec::partition::Partitioned<T>
+pub fn phx_exec::partition::Partitioned<T>::bucket(&self, usize) -> &[T]
+impl<T> core::default::Default for phx_exec::partition::Partitioned<T>
+pub fn phx_exec::partition::Partitioned<T>::default() -> phx_exec::partition::Partitioned<T>
+pub fn phx_exec::partition::partition_into<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &[&[T]], usize, impl core::ops::function::Fn(&T) -> usize + core::marker::Sync, &mut phx_exec::partition::Partitioned<T>)
+pub fn phx_exec::partition::partition_map_into<T: core::marker::Sync, U: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &[&[T]], usize, impl core::ops::function::Fn(&T) -> usize + core::marker::Sync, impl core::ops::function::Fn(&T) -> U + core::marker::Sync, &mut phx_exec::partition::Partitioned<U>)
 pub mod phx_exec::pool
 pub struct phx_exec::pool::Pool
 impl phx_exec::pool::Pool
 pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)
 pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>
 pub fn phx_exec::pool::Pool::on_every_worker<T: core::marker::Send>(&self, impl core::ops::function::Fn() -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::pool::Pool::spun(&self) -> u64
@@ -166,6 +177,7 @@ pub struct phx_exec::Pool
 impl phx_exec::pool::Pool
 pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)
 pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>
 pub fn phx_exec::pool::Pool::on_every_worker<T: core::marker::Send>(&self, impl core::ops::function::Fn() -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::pool::Pool::spun(&self) -> u64

@@ -13,6 +13,8 @@ impl phx_store::pod::__seal::Sealed for phx_id::ids::LineId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MarketId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MsgId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyKey
+impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyRef
 impl phx_store::pod::__seal::Sealed for phx_id::ids::RegionId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::SeriesId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::Slot
@@ -192,6 +194,7 @@ pub fn phx_store::column::Column<T, B>::is_empty(&self) -> bool
 pub fn phx_store::column::Column<T, B>::len(&self) -> usize
 pub fn phx_store::column::Column<T, B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::push(&mut self, T)
+pub fn phx_store::column::Column<T, B>::put(&mut self, phx_id::ids::Slot, T)
 pub fn phx_store::column::Column<T, B>::rows_per_chunk(&self) -> usize
 pub fn phx_store::column::Column<T, B>::set(&mut self, phx_id::ids::Slot, T)
 pub fn phx_store::column::Column<T, B>::slice(&self) -> &[T]
@@ -263,6 +266,22 @@ pub phx_store::descriptor::FieldDescriptor::offset: u16
 pub phx_store::descriptor::FieldDescriptor::tag: phx_store::descriptor::FieldTag
 pub phx_store::descriptor::FieldDescriptor::transform: phx_store::descriptor::Transform
 pub phx_store::descriptor::FieldDescriptor::width: u8
+pub mod phx_store::edges
+pub struct phx_store::edges::EdgeTable<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::edges::EdgeTable<B>
+pub fn phx_store::edges::EdgeTable<B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])
+pub fn phx_store::edges::EdgeTable<B>::close_day(&mut self)
+pub fn phx_store::edges::EdgeTable<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
+pub fn phx_store::edges::EdgeTable<B>::end(&self, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::ids::PartyKey>
+pub fn phx_store::edges::EdgeTable<B>::ends(&self, usize) -> &[phx_id::ids::PartyKey]
+pub fn phx_store::edges::EdgeTable<B>::high_water(&self) -> u32
+pub fn phx_store::edges::EdgeTable<B>::is_open(&self, phx_id::ids::Slot) -> bool
+pub fn phx_store::edges::EdgeTable<B>::list(&self, usize, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::edges::EdgeTable<B>::move_end(&mut self, phx_id::ids::Slot, usize, phx_id::ids::PartyKey, core::option::Option<&mut u32>, core::option::Option<&mut u32>)
+pub fn phx_store::edges::EdgeTable<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, [bool; 2]) -> phx_store::edges::EdgeTable<B>
+pub fn phx_store::edges::EdgeTable<B>::open(&mut self, [phx_id::ids::PartyKey; 2], [core::option::Option<&mut u32>; 2]) -> phx_id::ids::Slot
+pub fn phx_store::edges::EdgeTable<B>::open_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub const phx_store::edges::NONE: u32
 pub mod phx_store::encode
 pub enum phx_store::encode::DecodeError
 pub phx_store::encode::DecodeError::Frame
@@ -294,6 +313,18 @@ impl phx_store::hash::Sip128
 pub fn phx_store::hash::Sip128::finish(self) -> u128
 pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128
 pub fn phx_store::hash::Sip128::write(&mut self, &[u8])
+pub mod phx_store::parties
+pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
+pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>
+pub fn phx_store::parties::Parties<B>::begin(&mut self) -> phx_id::ids::PartyRef
+pub fn phx_store::parties::Parties<B>::close_day(&mut self)
+pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)
+pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32
+pub fn phx_store::parties::Parties<B>::kind(&self) -> u8
+pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>
+pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>
 pub mod phx_store::pod
 pub mod phx_store::pod::__seal
 pub trait phx_store::pod::__seal::Sealed
@@ -309,6 +340,8 @@ impl phx_store::pod::__seal::Sealed for phx_id::ids::LineId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MarketId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MsgId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyId
+impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyKey
+impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyRef
 impl phx_store::pod::__seal::Sealed for phx_id::ids::RegionId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::SeriesId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::Slot
@@ -360,6 +393,10 @@ impl phx_store::pod::Pod for phx_id::ids::MsgId
 pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::PartyId
 pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::Pod for phx_id::ids::PartyKey
+pub fn phx_id::ids::PartyKey::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::Pod for phx_id::ids::PartyRef
+pub fn phx_id::ids::PartyRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::RegionId
 pub fn phx_id::ids::RegionId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::SeriesId
@@ -722,6 +759,7 @@ pub fn phx_store::column::Column<T, B>::is_empty(&self) -> bool
 pub fn phx_store::column::Column<T, B>::len(&self) -> usize
 pub fn phx_store::column::Column<T, B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::push(&mut self, T)
+pub fn phx_store::column::Column<T, B>::put(&mut self, phx_id::ids::Slot, T)
 pub fn phx_store::column::Column<T, B>::rows_per_chunk(&self) -> usize
 pub fn phx_store::column::Column<T, B>::set(&mut self, phx_id::ids::Slot, T)
 pub fn phx_store::column::Column<T, B>::slice(&self) -> &[T]
@@ -739,6 +777,20 @@ pub phx_store::ColumnDescriptor::name: &'static str
 pub phx_store::ColumnDescriptor::rows_per_chunk: u32
 impl phx_store::descriptor::ColumnDescriptor
 pub fn phx_store::descriptor::ColumnDescriptor::checked<T: phx_store::pod::Pod>(&'static str, u32, &'static [phx_store::descriptor::FieldDescriptor]) -> core::option::Option<phx_store::descriptor::ColumnDescriptor>
+pub struct phx_store::EdgeTable<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::edges::EdgeTable<B>
+pub fn phx_store::edges::EdgeTable<B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])
+pub fn phx_store::edges::EdgeTable<B>::close_day(&mut self)
+pub fn phx_store::edges::EdgeTable<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
+pub fn phx_store::edges::EdgeTable<B>::end(&self, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::ids::PartyKey>
+pub fn phx_store::edges::EdgeTable<B>::ends(&self, usize) -> &[phx_id::ids::PartyKey]
+pub fn phx_store::edges::EdgeTable<B>::high_water(&self) -> u32
+pub fn phx_store::edges::EdgeTable<B>::is_open(&self, phx_id::ids::Slot) -> bool
+pub fn phx_store::edges::EdgeTable<B>::list(&self, usize, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::edges::EdgeTable<B>::move_end(&mut self, phx_id::ids::Slot, usize, phx_id::ids::PartyKey, core::option::Option<&mut u32>, core::option::Option<&mut u32>)
+pub fn phx_store::edges::EdgeTable<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, [bool; 2]) -> phx_store::edges::EdgeTable<B>
+pub fn phx_store::edges::EdgeTable<B>::open(&mut self, [phx_id::ids::PartyKey; 2], [core::option::Option<&mut u32>; 2]) -> phx_id::ids::Slot
+pub fn phx_store::edges::EdgeTable<B>::open_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub struct phx_store::FieldDescriptor
 pub phx_store::FieldDescriptor::name: &'static str
 pub phx_store::FieldDescriptor::offset: u16
@@ -788,6 +840,17 @@ pub fn phx_store::backing::MmapBacking::decommit(&mut self, core::ops::range::Ra
 pub fn phx_store::backing::MmapBacking::page(&self) -> usize
 pub fn phx_store::backing::MmapBacking::reserve(usize) -> phx_store::backing::MmapBacking
 pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
+pub struct phx_store::Parties<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
+pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>
+pub fn phx_store::parties::Parties<B>::begin(&mut self) -> phx_id::ids::PartyRef
+pub fn phx_store::parties::Parties<B>::close_day(&mut self)
+pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)
+pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32
+pub fn phx_store::parties::Parties<B>::kind(&self) -> u8
+pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>
+pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>
 pub struct phx_store::Reader<'a>
 impl<'a> phx_store::save::Reader<'a>
 pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>
@@ -914,6 +977,10 @@ impl phx_store::pod::Pod for phx_id::ids::MsgId
 pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::PartyId
 pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::Pod for phx_id::ids::PartyKey
+pub fn phx_id::ids::PartyKey::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::Pod for phx_id::ids::PartyRef
+pub fn phx_id::ids::PartyRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::RegionId
 pub fn phx_id::ids::RegionId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_id::ids::SeriesId
