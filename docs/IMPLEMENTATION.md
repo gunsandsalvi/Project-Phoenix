@@ -760,7 +760,8 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
     split over its parties by `split_total`. Government paper, loans and pensions in payment open as families at d;
     households' currency opens with the retail payments at d.
   - d. The day: hazards and outcomes over persons, dated flows by shape from the wheel, settlement over `Books`,
-    closed days committed, estates on edges.
+    closed days committed, estates on edges. *Done*: the day's frame — dated families from their wheels, each
+    currency settled or committed — with the state pensions in payment (LC-0-62).
   - e. The audit's money and contracts families, the Stage 0 checks on the inspector over the core, and the smoke.
 - **Values the opening now draws from the data in hand.** Whom an extended or non-relative household holds besides
   its head, assumed today (`DEM.household_members`: one relative of 65 and over, one unrelated adult), is derived per
@@ -784,7 +785,8 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 
 **Unit tests**: the ported systems' tests.
 
-**Live checks**: every Stage 0 live check on a smoke of the core world.
+**Live checks**: every Stage 0 live check on a smoke of the core world; `LC-0-62`: every flow the core's day makes is
+settled, failed or committed, and the core pays its dues.
 
 **Budget**: the smoke's Stage 0 world within its share of the unit targets.
 

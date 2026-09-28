@@ -577,8 +577,8 @@ fn central_of(
 fn core_of(
     p: &Prepared,
     geo: &phx_geo::GeoState,
-    books: &phx_ledger::books::Books,
-    population: &phx_pop::population::Population,
+    (books, population): (&phx_ledger::books::Books, &phx_pop::population::Population),
+    (state, calendar, today): (&crate::state::State, &phx_core::calendar::Calendar, phx_id::Day),
 ) -> Result<crate::core::Core, AssemblyErrors> {
     let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
     let sheets = opening
@@ -588,6 +588,9 @@ fn core_of(
         .map_err(|e| AssemblyErrors(vec![e]))?;
     let mut core = crate::core::Core::mirror(books, population);
     core.open_money(books, &opening, &sheets);
+    if let Some(pension) = state.pension {
+        core.open_pensions(books, pension.line, (calendar, today), opening.len());
+    }
     Ok(core)
 }
 
@@ -620,9 +623,9 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let central = central_of(&p, &geo, carried.central)?;
     let state = state_of(&p, &geo, carried.state)?;
     let val_rules = val_rules(&p)?;
-    let core = core_of(&p, &geo, &books, &population)?;
-    let mut calendar = p.c.calendar;
+    let mut calendar = p.c.calendar.clone();
     calendar.move_window(calendar.date(carried.today).year());
+    let core = core_of(&p, &geo, (&books, &population), (&state, &calendar, carried.today))?;
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
     let val_methods = crate::goods::methods(&p.kernel.val, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     p.market_kinds.check(&markets.made).map_err(|e| AssemblyErrors(vec![e]))?;

@@ -1,6 +1,7 @@
 pub mod accounts;
 pub mod births;
 pub mod central;
+pub mod core;
 pub mod credit;
 pub mod firms;
 pub mod freight;
@@ -150,6 +151,7 @@ pub const CHECKS: &[Check] = &[
     observer::LC_0_59,
     observer::LC_0_60,
     ledger::LC_0_61,
+    core::LC_0_62,
     outlooks::LC_1_01,
     outlooks::LC_1_02,
     outlooks::LC_1_03,

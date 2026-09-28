@@ -1987,6 +1987,15 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   each sector's total is its country's sheet's share of GDP made whole, split over the country's parties of that
   sector by `split_total` in proportion to the balance the books gave each (equal parts where they gave none), so the
   totals are the sheet's exactly; money with no party to hold it stops the run. It runs no day yet.
+- **The core's day** (`phx_world::core_day`), run after the books' day while the port runs beside them: each dated
+  family's contracts due today (`DatedFamily`, rows of payer, payee, amount, the date of its schedule that comes
+  next and the schedule, one of the family's, each with its currency and its payer's payment order) make their flows
+  into the day's `FlowBufs`, each rescheduled on its wheel at its schedule's next date; then each currency's flows are
+  grouped and settled over every kind's accounts with its central bank the issuer, on its country's business days,
+  the tie lot the declared stream `SET.order`, and committed to pending on its closed days. Each day's record keeps
+  the flows made, settled, failed and committed. The state pensions in payment are its first family: every pension
+  line a household's person holds on the books is a contract from its country's treasury to the household, at the
+  line's amount, currency, payment order and next date.
 - **A country's balance sheet** (`opening::sheet`): its group's matrices moved by its drawn profile. Households' and
   firms' debt, the government's, the banks' deposits, capital and reserves are the drawn levels; who holds each is
   the group's split; the dataset's closures balance the rest (the central bank holds government paper for its

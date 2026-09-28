@@ -11,6 +11,7 @@ use phx_core::store::{KindStore, Opening};
 use phx_id::consts::NATURE_KIND;
 use phx_id::{PartyId, PartyKey, Slot};
 use phx_ledger::books::Books;
+use phx_macros::clause;
 use phx_num::round::{Round, split_total};
 use phx_num::{Ccy, MaybeI64, Missing, violation};
 use phx_pop::persons::Persons;
@@ -18,7 +19,10 @@ use phx_pop::population::Population;
 use phx_store::{AddressSpace, SystemBacking};
 
 use crate::consts::sheet::ACCOUNTS;
-use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, KIND_ROWS, KIND_ROWS_PER_CHUNK};
+use crate::consts::{
+    AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_RANGE_BITS, CORE_WHEEL_DAYS, KIND_ROWS, KIND_ROWS_PER_CHUNK,
+};
+use crate::core_day::{DatedFamily, Due};
 use crate::opening::sheet::Sheet;
 
 /// A party's account as the books give it: its kind, slot, country, the bank that owes it and its balance there.
@@ -41,6 +45,13 @@ pub struct Core {
     pub kinds: Vec<KindStore<SystemBacking>>,
     pub persons: Vec<Option<Persons<SystemBacking>>>,
     pub keys: Vec<(PartyId, PartyKey)>,
+    /// Each country's central bank, the issuer of its currency, by the currency's index.
+    pub issuers: Vec<PartyKey>,
+    pub bank_kind: Option<u8>,
+    pub range_bits: u32,
+    pub families: Vec<crate::core_day::DatedFamily>,
+    pub work: crate::core_day::Work,
+    pub days: Vec<crate::core_day::CoreDay>,
 }
 
 fn kind_number(place: usize) -> u8 {
@@ -110,7 +121,21 @@ impl Core {
             persons.push(held);
         }
         keys.sort_unstable_by_key(|(id, _)| *id);
-        Core { space, first_agents: parties.first_cell_place(), names, kinds, persons, keys }
+        let bank_kind = names.iter().position(|n| *n == "bank").map(kind_number);
+        Core {
+            space,
+            first_agents: parties.first_cell_place(),
+            names,
+            kinds,
+            persons,
+            keys,
+            issuers: Vec::new(),
+            bank_kind,
+            range_bits: CORE_RANGE_BITS,
+            families: Vec::new(),
+            work: crate::core_day::Work::default(),
+            days: Vec::new(),
+        }
     }
 
     /// Every party's account on the core: each kind's sector's total in its country's sheet, a share of its GDP made
@@ -192,6 +217,106 @@ impl Core {
                 }
             }
         }
+    }
+
+    /// Each country's central bank found as the issuer of its currency, and each country's treasury.
+    fn institutions(&self, books: &Books, countries: usize) -> (Vec<PartyKey>, Vec<Option<PartyKey>>) {
+        let of_kind = |name: &str| -> Vec<PartyId> { books.parties.of_kind(name).collect() };
+        let ccy = |c: usize| Ccy::new(u8::try_from(c).unwrap_or(u8::MAX));
+        let issuers = (0..countries)
+            .map(|c| {
+                let found = of_kind("central_bank")
+                    .into_iter()
+                    .find(|id| books.holds_money(*id, ccy(c)) && matches!(books.account(*id, ccy(c)), Missing::Absent));
+                match found.and_then(|id| self.key(id)) {
+                    Some(k) => k,
+                    None => violation!(clause = "MON.1", "a currency with no issuer on the core", country = c),
+                }
+            })
+            .collect();
+        let treasuries = (0..countries)
+            .map(|c| {
+                of_kind("treasury")
+                    .into_iter()
+                    .find(|id| matches!(books.account(*id, ccy(c)), Missing::Present(_)))
+                    .and_then(|id| self.key(id))
+            })
+            .collect();
+        (issuers, treasuries)
+    }
+
+    /// The state pensions in payment as contracts from each country's treasury to each household whose person the
+    /// books pay one — every line of the pension's kind a household's person holds — a contract a person, at its
+    /// line's amount, currency, payment order and next date, on the line's schedule.
+    #[clause("SOC.3", "REP.3")]
+    pub fn open_pensions(
+        &mut self,
+        books: &Books,
+        line_kind: &str,
+        (calendar, today): (&phx_core::calendar::Calendar, phx_id::Day),
+        countries: usize,
+    ) {
+        let (issuers, treasuries) = self.institutions(books, countries);
+        self.issuers = issuers;
+        let Some(household) = self.names.iter().position(|n| *n == "household") else { return };
+        let Some(treasury) = self.names.iter().position(|n| *n == "treasury") else { return };
+        let Some(pop_at) = household.checked_sub(usize::from(self.first_agents)) else { return };
+        let kinds = [kind_number(treasury), kind_number(household)];
+        let mut family = DatedFamily {
+            name: "SOC.pension",
+            store: phx_core::store::Family::new(
+                &mut self.space,
+                (kinds, [KIND_ROWS, AGENT_ROWS]),
+                (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
+                [false, true],
+                (today.succ(), CORE_WHEEL_DAYS),
+            ),
+            reason: crate::core_day::PENSION,
+            schedules: Vec::new(),
+        };
+        // Each pension line read once: its amount, and where its schedule and next date are among the family's.
+        let mut lines: std::collections::BTreeMap<phx_id::LineId, Option<(i64, u32, u32)>> =
+            std::collections::BTreeMap::new();
+        let ledger = &books.ledger;
+        let table = Population::table::<SystemBacking>(books.parties.cells(), pop_at);
+        for slot in table.slots() {
+            let Some(pensioner) = self.key(table.party(slot)) else { continue };
+            for word in table.attachments(slot) {
+                let a = phx_pop::person::Attachment::unpack(*word);
+                if ledger.lines.kind_name(a.line) != line_kind {
+                    continue;
+                }
+                let read = *lines.entry(a.line).or_insert_with(|| {
+                    let terms = ledger.terms.get(ledger.lines.terms(a.line));
+                    let amount = terms.legs.iter().find_map(|l| match l {
+                        phx_ledger::algebra::Leg::FixedAmount(m) => Some(m.amt()),
+                        _ => None,
+                    })?;
+                    let (dates, next) = (terms.schedule.dates, ledger.lines.next_due(a.line));
+                    let mut nth = 0_u32;
+                    while dates.nth(calendar, nth) < next {
+                        nth += 1;
+                    }
+                    let schedule = u32::try_from(family.schedules.len())
+                        .unwrap_or_else(|_| violation!(clause = "TIME.4", "more schedules than a contract can name"));
+                    family.schedules.push((dates, terms.ccy.index(), terms.payment_order.0));
+                    Some((amount, schedule, nth))
+                });
+                let Some((amount, schedule, nth)) = read else {
+                    violation!(clause = "SOC.3", "a pension line with no fixed amount", line = a.line.get());
+                };
+                let country = family.schedules.get(usize::try_from(schedule).unwrap_or(usize::MAX)).map(|s| s.1);
+                let Some(Some(treasurer)) = country.and_then(|c| treasuries.get(usize::from(c))) else {
+                    violation!(clause = "SOC.3", "a pension with no treasury to pay it", line = a.line.get());
+                };
+                let first = family
+                    .schedules
+                    .get(usize::try_from(schedule).unwrap_or(usize::MAX))
+                    .map(|s| s.0.nth(calendar, nth));
+                let _ = family.store.open(Due { ends: [*treasurer, pensioner], amount, nth, schedule }, first);
+            }
+        }
+        self.families.push(family);
     }
 
     /// A party's key on the core, none for a party it does not hold.

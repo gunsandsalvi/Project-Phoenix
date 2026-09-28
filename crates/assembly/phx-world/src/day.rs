@@ -122,6 +122,7 @@ impl World {
         loop {
             let day = self.today.succ();
             self.run_day(day, clock);
+            let _ = self.core.run_day(day, &self.calendar, &self.streams, &crate::opening::prims::SETTLE_ORDER);
             self.today = day;
             if let Some(o) = observer.as_deref_mut() {
                 o.day_closed(crate::Inspector::new(self));

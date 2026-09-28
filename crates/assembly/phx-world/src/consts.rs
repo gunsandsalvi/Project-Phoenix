@@ -132,3 +132,7 @@ pub mod sheet {
 }
 /// A percentage's whole.
 pub const PERCENT: f64 = 100.0;
+/// The core's ranges of slots settlement nets by, 2^bits slots each.
+pub const CORE_RANGE_BITS: u32 = 12;
+/// The days the core's due wheels hold before their far list.
+pub const CORE_WHEEL_DAYS: u32 = 64;

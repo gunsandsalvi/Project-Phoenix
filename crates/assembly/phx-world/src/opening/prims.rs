@@ -119,6 +119,10 @@ declare_prim! {
     }
 }
 
+/// The stream a payer's ties among its flows of one payment order are drawn from at settlement.
+pub const SETTLE_ORDER: StreamDecl =
+    StreamDecl { name: "SET.order", purpose: Purpose::Lot, keyed: false, clause: "SET.6" };
+
 /// The stream a new game's open choices, the regions' lot and the derived values are drawn from.
 pub const SETUP_STREAM: StreamDecl =
     StreamDecl { name: "GEN.setup", purpose: Purpose::Opening, keyed: false, clause: "GEN.15" };
@@ -158,6 +162,7 @@ pub struct GenPrims {
 impl GenPrims {
     pub fn declare(d: &mut Declarations) -> GenPrims {
         d.stream(SETUP_STREAM);
+        d.stream(SETTLE_ORDER);
         d.stream(NAMES_STREAM);
         d.stream(PLAYER_STREAM);
         GenPrims {

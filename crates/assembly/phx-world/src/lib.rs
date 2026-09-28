@@ -3,6 +3,7 @@ pub mod central;
 pub mod compile;
 pub mod consts;
 pub mod core;
+pub mod core_day;
 pub mod credit;
 pub mod day;
 mod defaults;
