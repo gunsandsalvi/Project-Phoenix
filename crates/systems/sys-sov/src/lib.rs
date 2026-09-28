@@ -3,21 +3,16 @@
 //! arrive with their own steps.
 
 mod consts;
-mod opening;
 mod rules;
 
 use if_state::kinds::{BillKind, BillLaw};
-use phx_core::{
-    Contribution, DECLARATIONS, Declarations, HandlerTable, Opening, OpeningCountry, OpeningPhase, Register, System,
-    declare_prim,
-};
+use phx_core::{Declarations, HandlerTable, OpeningCountry, Register, System, declare_prim};
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_ledger::line::{LineKindDecl, SideDecl};
 use phx_ledger::rows::BALANCE;
 use phx_macros::clause;
 use phx_num::{Count, Fixed, Missing};
 
-pub use opening::{Bills, bills_held};
 pub use rules::{bid, clear, size};
 
 declare_prim! {
@@ -105,38 +100,6 @@ pub fn face(register: &Register, country: phx_id::CountryId) -> Result<i64, Stri
 pub const BILLS: BillKind =
     BillKind { line: BILL.name, sold: SOLD.name, law, size: rules::size, bid: rules::bid, clear: rules::clear };
 
-/// The bills' declarations in the books: their line kind and the reason their sales move under.
-#[derive(Debug)]
-pub struct Declared;
-
-impl Contribution for Declared {
-    fn name(&self) -> &'static str {
-        "bill declarations"
-    }
-    fn phase(&self) -> OpeningPhase {
-        DECLARATIONS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let ledger = &mut phx_ledger::books::of(opening).ledger;
-        ledger.lines.declare_money(BILL);
-        let _ = ledger.reasons.declare(SOLD);
-        let _ = ledger.reasons.declare(opening::OPENED);
-    }
-}
-
 /// The sovereign's debt.
 #[derive(Debug)]
 pub struct Sov;
@@ -149,8 +112,6 @@ impl System for Sov {
             let _: phx_core::Prim<Count> = d.prim(p);
         }
         let _: phx_core::Prim<Fixed<1>> = d.prim(&BUFFER_WEEKS);
-        d.contribution(Box::new(Declared));
-        d.contribution(Box::new(Bills));
         d.market(Box::new(BILLS));
     }
 

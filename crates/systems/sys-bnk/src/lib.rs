@@ -15,8 +15,6 @@ use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_kind, decl
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_num::{Count, Fixed};
 
-pub use opening::{Balances, Contracts, Declared, Parties};
-
 declare_kind! { pub BANK = "bank" { legal_form: "bank", table: Individuals, clause: "BNK.1" } }
 
 declare_stream! { pub OpeningStream = "BNK.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
@@ -170,19 +168,12 @@ impl System for Bnk {
     fn declare(d: &mut Declarations) {
         d.kind(BANK);
         d.stream(OpeningStream::DECL);
-        let years = (d.prim(&LOAN_YEARS_MIN), d.prim(&LOAN_YEARS_MAX));
-        let accounts: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&ACCOUNTS);
+        for p in [&LOAN_YEARS_MIN, &LOAN_YEARS_MAX, &HOUSEHOLD_LOAN_YEARS_MIN, &HOUSEHOLD_LOAN_YEARS_MAX] {
+            let _: phx_core::Prim<Count> = d.prim(p);
+        }
+        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&ACCOUNTS);
         d.stream(households::HouseholdsStream::DECL);
         d.pop_kind(if_pop::HOUSEHOLD).attr(households::BANK_ATTR);
-        d.pop_kind(opening::SMALL_FIRM).attr(households::BANK_ATTR);
-        let loan_years = (d.prim(&HOUSEHOLD_LOAN_YEARS_MIN), d.prim(&HOUSEHOLD_LOAN_YEARS_MAX));
-        let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> =
-            Box::new(households::HouseholdLines { accounts, loan_years });
-        d.attachment(Box::new(draw));
-        d.contribution(Box::new(Declared));
-        d.contribution(Box::new(Parties));
-        d.contribution(Box::new(Contracts { years }));
-        d.contribution(Box::new(Balances));
         d.stream(AskedStream::DECL);
         d.stream(TasteStream::DECL);
         for p in [&COVER_BOUNDS, &DEFAULT_RATES, &LENDERS_ASKED] {

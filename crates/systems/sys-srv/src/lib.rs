@@ -1,10 +1,7 @@
 //! SRV, services and distribution: the retail market every product meets its buyers in, sellers' posted prices
 //! against buyers' choices among the sellers in their reach, and the reason a purchase at the till settles under.
 
-use phx_core::{
-    Contribution, DECLARATIONS, Declarations, FactDef, HandlerTable, Opening, OpeningPhase, StreamDef, System,
-    declare_prim, declare_stream,
-};
+use phx_core::{Declarations, FactDef, HandlerTable, StreamDef, System, declare_prim, declare_stream};
 use phx_id::MarketId;
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_macros::clause;
@@ -77,36 +74,6 @@ pub const RETAIL: RetailKind = RetailKind {
     reason: SOLD.name,
 };
 
-/// The retail declarations in the books: the reason purchases settle under.
-#[clause("SRV.6")]
-#[derive(Debug)]
-pub struct Declared;
-
-impl Contribution for Declared {
-    fn name(&self) -> &'static str {
-        "retail declarations"
-    }
-    fn phase(&self) -> OpeningPhase {
-        DECLARATIONS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let _ = phx_ledger::books::of(opening).ledger.reasons.declare(SOLD);
-    }
-}
-
 /// Services and distribution.
 #[derive(Debug)]
 pub struct Srv;
@@ -120,7 +87,6 @@ impl System for Srv {
         let _ = d.prim::<Count>(&REACH);
         d.stream(TasteStream::DECL);
         d.stream(LotStream::DECL);
-        d.contribution(Box::new(Declared));
         d.market(Box::new(RETAIL));
     }
 

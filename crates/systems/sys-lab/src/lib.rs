@@ -12,8 +12,8 @@ pub mod wages;
 
 use if_labour::kind::LabourKind;
 use phx_core::{
-    Contribution, DECLARATIONS, Declarations, EventKindDecl, HandlerTable, Opening, OpeningPhase, PersonAttrDecl,
-    StreamDef, System, declare_hazard, declare_prim, declare_stream,
+    Declarations, EventKindDecl, HandlerTable, PersonAttrDecl, StreamDef, System, declare_hazard, declare_prim,
+    declare_stream,
 };
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_num::{Count, Fixed, Missing};
@@ -269,40 +269,6 @@ pub const LABOUR: LabourKind = LabourKind {
     owed: wages::severance,
 };
 
-/// Labour's declarations in the books: the employment line's kind and the reasons its hires, separations, severance
-/// and reviews move under.
-#[derive(Debug)]
-pub struct Declared;
-
-impl Contribution for Declared {
-    fn name(&self) -> &'static str {
-        "labour declarations"
-    }
-    fn phase(&self) -> OpeningPhase {
-        DECLARATIONS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let ledger = &mut phx_ledger::books::of(opening).ledger;
-        ledger.lines.declare_money(EMPLOYMENT);
-        for r in [HIRED, SEPARATED, SEVERANCE, RENEGOTIATED] {
-            let _ = ledger.reasons.declare(r);
-        }
-    }
-}
-
 /// Labour.
 #[derive(Debug)]
 pub struct Lab;
@@ -322,7 +288,7 @@ impl System for Lab {
         ] {
             d.stream(s);
         }
-        let jobs = Jobs {
+        let _ = Jobs {
             status: d.prim(&STATUS),
             occupation: d.prim(&OCCUPATION),
             by_age: d.prim(&EMPLOYMENT_BY_AGE),
@@ -352,9 +318,6 @@ impl System for Lab {
         d.event(EventKindDecl { name: "LAB.retired", size_unit: "persons", clause: "LAB.6" });
         d.hazard(RETIREMENT);
         d.pop_process(Box::new(retire::Retirement::default()));
-        d.contribution(Box::new(Declared));
-        let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> = Box::new(jobs);
-        d.attachment(Box::new(draw));
         d.market(Box::new(LABOUR));
     }
 

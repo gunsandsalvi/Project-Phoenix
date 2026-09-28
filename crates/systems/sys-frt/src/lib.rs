@@ -2,14 +2,11 @@
 //! vehicles by mode and of goods' weight, the reasons freight is paid and goods leave and arrive under, and the
 //! shipper's rule and visit, and each carrier's mode at the opening.
 
-mod carriers;
 mod consts;
-pub mod ship;
-
-use phx_core::register::values::Table1;
+pub use phx_core::register::values::Table1;
 use phx_core::{
-    Cadence, Contribution, DECLARATIONS, Declarations, FacetDecl, FactDef, HandlerDecl, HandlerTable, Opening,
-    OpeningPhase, PositionDecl, Register, RunsOn, StreamDef, System, VisitDecl, declare_prim, declare_stream,
+    Contribution, DECLARATIONS, Declarations, FactDef, HandlerTable, Opening, OpeningPhase, Register, StreamDef,
+    System, declare_prim, declare_stream,
 };
 use phx_id::MarketId;
 use phx_ledger::instruction::{Effect, ReasonDecl};
@@ -180,29 +177,6 @@ pub const CARRIAGE: FreightKind = FreightKind {
     arrived: ARRIVED.name,
 };
 
-/// The shipper's compiled reads: freight's technology and each product's lot.
-fn compile(register: &Register) -> Result<ship::Own, String> {
-    let lots = register
-        .products("TEC.products")?
-        .iter()
-        .map(|e| match register.units().named(&e.unit) {
-            Missing::Present(u) => {
-                let exp = register
-                    .units()
-                    .decl(u)
-                    .map(|d| d.price_exp)
-                    .ok_or_else(|| format!("unit `{}` undeclared", e.unit))?;
-                (0..exp)
-                    .try_fold(1_i64, |b, _| b.checked_mul(consts::DECADE))
-                    .ok_or_else(|| format!("product `{}`'s lot beyond a quantity", e.name))
-            }
-            Missing::Absent => Err(format!("product `{}` in an undeclared unit", e.name)),
-        })
-        .collect::<Result<Vec<i64>, String>>()?;
-    let kind = phx_ledger::instruction::name_code(CARRIAGE.market.key.kind);
-    Ok(ship::Own { tech: tech(register)?, lots, kind })
-}
-
 /// Whether a shipper books room: when what the goods fetch where they go, less what they fetch where they are,
 /// exceeds what carrying them costs.
 #[clause("FRT.5", "FRT.11")]
@@ -259,31 +233,15 @@ impl System for Frt {
         d.stream(LotStream::DECL);
         let mode = <if_firm::freight::Mode as FactDef>::ITEM;
         d.claim(mode.name);
-        d.facet(FacetDecl { fact: mode.name, kind: FIRM });
-        d.pop_kind(SMALL_FIRM).position(PositionDecl {
-            name: mode.name,
-            clause: mode.clause,
-            opening: phx_core::PositionOpening::Missing,
-        });
-        let share = d.prim::<Table1>(&MODE_SHARE);
-        let product = d.prim::<Count>(&CARRIAGE_PRODUCT);
+        let _ = d.prim::<Table1>(&MODE_SHARE);
+        let _ = d.prim::<Count>(&CARRIAGE_PRODUCT);
         let _ = d.prim::<Count>(&SHIPPING_DAYS);
         d.stream(OpeningStream::DECL);
         d.stream(VisitStream::DECL);
-        d.contribution(Box::new(Declared));
-        d.contribution(Box::new(carriers::Carriers { share, product }));
         d.market(Box::new(CARRIAGE));
-        d.compile(Box::new(|register, _| Ok(Box::new(compile(register)?))));
-        let cadence = Cadence::Schedule { days: SHIPPING_DAYS.id, runs_on: RunsOn::Business };
-        for (handler, kind) in [(ship::ShipSmall::NAME, SMALL_FIRM), (ship::ShipLarge::NAME, FIRM)] {
-            d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes: &[], clause: "FRT.5" });
-        }
     }
 
-    fn handlers(h: &mut HandlerTable) {
-        h.add::<ship::ShipSmall>();
-        h.add::<ship::ShipLarge>();
-    }
+    fn handlers(_: &mut HandlerTable) {}
 }
 
 #[cfg(test)]

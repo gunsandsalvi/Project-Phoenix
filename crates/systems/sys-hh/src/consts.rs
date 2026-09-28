@@ -22,9 +22,5 @@ pub const NORMAL_EDGE: f64 = 12.0;
 pub const HALF: f64 = 0.5;
 /// Days of a year, over which a year's income is spent between decisions.
 pub const DAYS_A_YEAR: f64 = 365.2425;
-/// Months of a year, to which a month's income is grossed.
-pub const MONTHS_A_YEAR: f64 = 12.0;
-/// See `MONTHS_A_YEAR`, for counting months.
-pub const MONTHS_A_YEAR_COUNT: i64 = 12;
 /// Parts of a whole a budget share is written in.
 pub const SHARE_PARTS: f64 = 1_000_000.0;

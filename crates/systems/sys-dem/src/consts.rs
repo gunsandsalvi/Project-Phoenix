@@ -19,11 +19,5 @@ pub const MEMBER_COLUMNS: usize = 4;
 /// The types the partner gap is cut into to give each whole year of it a chance: fine enough that no year's chance
 /// moves by more than a type's share.
 pub const GAP_TYPES: u16 = 10_000;
-/// The regions drawn at once, each on its own worker, before they are booked in order: enough for every worker the
-/// phone runs, and few enough that a wave's households are small beside the world.
-pub const REGION_WAVE: usize = 8;
-/// The first size of each bin of households by size that `DEM.household_sizes` reports: one, two or three, four or
-/// five, six or more.
-pub const SIZE_BINS: [u64; 4] = [1, 2, 4, 6];
 /// Parts in a million, for chances declared in millionths.
 pub const MILLION: f64 = 1_000_000.0;

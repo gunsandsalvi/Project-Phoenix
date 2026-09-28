@@ -1,74 +1,25 @@
 //! The opening's households: each region's persons drawn by age and sex from its country's declared distributions,
 //! formed into households, and each household made an agent, region by region.
 
-use if_pop::{EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEALTH, HOUSEHOLD, MALE, REGION, SEX};
+use if_pop::{EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEALTH, MALE, REGION, SEX};
 use phx_core::calendar::daycount::actual_days;
 use phx_core::register::values::{Distribution, Table2, TypeSet};
 use phx_core::{
-    CONTRACTS, Contribution, DECLARATIONS, Household, Opening, OpeningCountry, OpeningPhase, Person, PrimDecl,
-    Register, StreamDef, ValueType, apportion, opening_subject,
+    Household, OpeningCountry, Person, PrimDecl, Register, StreamDef, ValueType, apportion, opening_subject,
 };
 use phx_id::{CountryId, Date};
-use phx_ledger::books::Books;
-use phx_ledger::instruction::{Effect, ReasonDecl};
-use phx_ledger::opening::key;
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 use phx_pop::kind::PopKindDecl;
-use phx_pop::person::pack;
-use phx_pop::population::Population;
-use phx_rand::float::{floor_to_i64, from_i64, from_u64, len_u64};
+use phx_rand::float::{floor_to_i64, from_i64, len_u64};
 use phx_rand::{AliasTable, Draws, below_u64, open_unit};
-use phx_store::SystemBacking;
 
 use crate::compose::{self, Member, Pick, Place, Pool, Rules, Type};
 use crate::consts::{
-    BANDS, CHILDREN_COLUMN, GAP_TYPES, MEMBER_COLUMNS, OLD_AGE, OLDER, OTHER, PARTNER_COLUMN, PERCENT, REGION_WAVE,
-    SIZE_BINS, WORKING_AGE,
+    BANDS, CHILDREN_COLUMN, GAP_TYPES, MEMBER_COLUMNS, OLD_AGE, OLDER, OTHER, PARTNER_COLUMN, PERCENT, WORKING_AGE,
 };
 use crate::household::Role;
-use crate::lines::Drawer;
 use crate::{CompositionStream, EducationStream, HealthStream, MeansStream, PersonsStream, Prims, RegionsStream};
-
-const HOUSEHOLDS: &str = "DEM.households";
-
-/// What the households' opening instructions are for: capital on both sides, since they open the books.
-const REASON: ReasonDecl = ReasonDecl {
-    name: "DEM opening",
-    order: 0,
-    paid: Effect::Equity,
-    received: Effect::Equity,
-    held: phx_num::Missing::Absent,
-};
-
-/// The households' declarations in the books: their opening's reason.
-#[derive(Debug)]
-pub struct Declared;
-
-impl Contribution for Declared {
-    fn name(&self) -> &'static str {
-        "household declarations"
-    }
-    fn phase(&self) -> OpeningPhase {
-        DECLARATIONS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let _ = phx_ledger::books::of(opening).ledger.reasons.declare(REASON);
-    }
-}
 
 /// A declared table's value at a point, its decimals undone.
 pub(crate) fn value(table: &Table2, decl: &PrimDecl, row: i64, column: i64) -> f64 {
@@ -89,7 +40,7 @@ pub(crate) fn value(table: &Table2, decl: &PrimDecl, row: i64, column: i64) -> f
 
 /// A country's distributions as the draw reads them: its people by single age and sex, raked to its drawn shares
 /// under 15 and over 65; the rules households are formed by; the chance of lasting disability by age and sex;
-/// education by age band and sex; and the types' shares, for the report.
+/// education by age band and sex; and the means' distributions.
 struct Country {
     year: i32,
     year_days: u64,
@@ -99,9 +50,6 @@ struct Country {
     disabled: Vec<[f64; 2]>,
     education_rows: Vec<i64>,
     education: [Vec<AliasTable>; 2],
-    shares: Vec<f64>,
-    /// Each size bin's share of households at the country's fertility, which the drawn are read against.
-    sizes: Vec<f64>,
     wealth: Distribution,
     income: Distribution,
 }
@@ -278,7 +226,7 @@ fn types(p: &Prims, register: &Register, c: &OpeningCountry) -> Types {
         violation!(clause = "GEN.2", "household types without an intercept and a slope");
     };
     let (m, md) = (p.members.shared(register), p.members.decl(register));
-    let (mut all, mut with, mut without, mut shares) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    let (mut all, mut with, mut without) = (Vec::new(), Vec::new(), Vec::new());
     for (r, index) in table.rows().iter().zip(0_usize..) {
         let share = libm::exp(value(table, decl, *r, *intercept) + value(table, decl, *r, *slope) * ln_fertility);
         let holds = |col: usize| {
@@ -292,7 +240,6 @@ fn types(p: &Prims, register: &Register, c: &OpeningCountry) -> Types {
             without.push((t, share));
         }
         all.push((t, share));
-        shares.push(share);
     }
     if MEMBER_COLUMNS != m.columns().len() {
         violation!(clause = "GEN.2", "a members table of other columns than a type's members");
@@ -306,34 +253,7 @@ fn types(p: &Prims, register: &Register, c: &OpeningCountry) -> Types {
         t
     };
     let (alone, pair) = (only(false), only(true));
-    let total: f64 = shares.iter().sum();
-    Types {
-        all: Pick::new(all),
-        with: Pick::new(with),
-        without: Pick::new(without),
-        alone,
-        pair,
-        shares: shares.into_iter().map(|s| s / total).collect(),
-    }
-}
-
-/// Each size bin's share of households at the country's drawn fertility, as `DEM.household_sizes` gives it.
-fn sizes(p: &Prims, register: &Register, c: &OpeningCountry) -> Vec<f64> {
-    let (table, decl) = (p.sizes.get(register, c.id), p.sizes.decl(register));
-    let ln_fertility = libm::log(derived(c, "GEN.fertility"));
-    let (Some(intercept), Some(slope)) = (table.columns().first(), table.columns().get(1)) else {
-        violation!(clause = "GEN.2", "household sizes without an intercept and a slope");
-    };
-    if table.rows().len() != SIZE_BINS.len() {
-        violation!(clause = "GEN.2", "household sizes of other bins than the report's");
-    }
-    let parts: Vec<f64> = table
-        .rows()
-        .iter()
-        .map(|r| libm::exp(value(table, decl, *r, *intercept) + value(table, decl, *r, *slope) * ln_fertility))
-        .collect();
-    let total: f64 = parts.iter().sum();
-    parts.into_iter().map(|s| s / total).collect()
+    Types { all: Pick::new(all), with: Pick::new(with), without: Pick::new(without), alone, pair }
 }
 
 /// The household types as the composition draws them.
@@ -343,7 +263,6 @@ struct Types {
     without: Pick<Type>,
     alone: Type,
     pair: Type,
-    shares: Vec<f64>,
 }
 
 /// A mother's expected living children at each single age from majority to the oldest, by her age from the first
@@ -381,9 +300,8 @@ impl Country {
         };
         let (first_mother, chances) = chances(p, register, id, majority);
         let (first_gap, gaps) = gaps(p.partner_gap.get(register, id));
-        let Types { all, with: with_children, without, alone, pair, shares } = types(p, register, c);
+        let Types { all, with: with_children, without, alone, pair } = types(p, register, c);
         let grown = grown(p, register, id, (majority, age(oldest) + 1), first_mother, chances.len());
-        let size_shares = sizes(p, register, c);
         let (education_rows, education) = education(p, register, id);
         let rules = Rules {
             majority,
@@ -411,8 +329,6 @@ impl Country {
             disabled: disabled(p, register, id, oldest),
             education_rows,
             education,
-            shares,
-            sizes: size_shares,
             wealth: p.wealth.get(register, id).clone(),
             income: p.income.get(register, id).clone(),
         }
@@ -473,58 +389,6 @@ fn index(v: u32) -> usize {
     phx_rand::float::index(u64::from(v))
 }
 
-/// Each country's households, drawn region by region: the country's people apportioned among its regions by their
-/// land, each region's persons drawn by single age and sex, and households formed from them until none is left —
-/// families while a child is left, then households of adults — each person's health drawn by age and sex and each
-/// adult's education by age band and sex. Each household is an agent.
-#[clause("GEN.2", "GEN.3", "POP.1", "POP.2", "PTY.2", "REP.25", "REP.26", "REP.40")]
-#[derive(Debug)]
-pub struct Households {
-    pub prims: Prims,
-}
-
-/// What the draw made, for the report: households, persons, persons in each of the derived shares' age bands,
-/// persons disabled, households of each type drawn, and children raised by an adult who is not their mother.
-#[derive(Clone, Debug, Default)]
-struct Tally {
-    households: u64,
-    persons: u64,
-    bands: [u64; BANDS],
-    disabled: u64,
-    types: Vec<u64>,
-    sizes: [u64; SIZE_BINS.len()],
-    raised: u64,
-}
-
-impl Tally {
-    fn add(&mut self, other: &Tally) {
-        self.households += other.households;
-        self.persons += other.persons;
-        self.disabled += other.disabled;
-        self.raised += other.raised;
-        for (a, b) in self.bands.iter_mut().zip(other.bands) {
-            *a += b;
-        }
-        for (a, b) in self.sizes.iter_mut().zip(other.sizes) {
-            *a += b;
-        }
-        if self.types.len() < other.types.len() {
-            self.types.resize(other.types.len(), 0);
-        }
-        for (a, b) in self.types.iter_mut().zip(&other.types) {
-            *a += b;
-        }
-    }
-}
-
-/// Where a region's households go: the books they open in, the population's kind and table, and the day.
-struct Into<'a> {
-    books: &'a mut Books,
-    kind: &'a PopKindDecl,
-    at: usize,
-    day: phx_id::Day,
-}
-
 /// A drawn person as its household holds it.
 fn person(country: &Country, m: &Member, (d, health, school): (&mut Draws, &mut Draws, &mut Draws)) -> Person {
     let role = match m.place {
@@ -573,7 +437,7 @@ pub fn draw_country(
         .iter()
         .map(|(r, _)| *r)
         .zip(shares)
-        .map(|(region, people)| (region, draw_region(&country, opening_ctx, (region, people), kind).0))
+        .map(|(region, people)| (region, draw_region(&country, opening_ctx, (region, people), kind)))
         .collect()
 }
 
@@ -584,14 +448,13 @@ fn draw_region(
     opening_ctx: &phx_core::OpeningCtx<'_>,
     (region, people): (u32, u64),
     kind: &PopKindDecl,
-) -> (Vec<Formed>, Tally) {
+) -> Vec<Formed> {
     let mut lot = opening_ctx.draws(&PersonsStream::DECL, opening_subject(region, 0));
     let [women, men] = &country.people;
     let weights: Vec<f64> = women.iter().chain(men).copied().collect();
     let mut counts = compose::apportion(people, &weights, &mut lot);
     let men_counts = counts.split_off(women.len());
     let mut pool = Pool::of(counts, men_counts);
-    let mut tally = Tally { types: vec![0; country.shares.len()], ..Tally::default() };
     let region_at = kind.attr(REGION.name).unwrap_or_else(|| {
         violation!(clause = "REP.41", "a household kind without its region");
     });
@@ -605,10 +468,6 @@ fn draw_region(
         let mut persons = Vec::with_capacity(members.len());
         for m in &members {
             let p = person(country, m, (&mut d, &mut health, &mut school));
-            tally.disabled += u64::from(p.attr(HEALTH.name) == Some(if_pop::DISABLED));
-            if let Some(b) = tally.bands.get_mut(band(i64::from(m.age))) {
-                *b += 1;
-            }
             persons.push(p);
         }
         let mut attrs = vec![0_u32; kind.attrs.len()];
@@ -628,144 +487,5 @@ fn draw_region(
         };
         ordinal = next;
     }
-    (out, tally)
-}
-
-/// A region's drawn households made agents in their order, each with its lines drawn onto the books.
-fn book_region(
-    formed: Vec<Formed>,
-    opening_ctx: &phx_core::OpeningCtx<'_>,
-    into: &mut Into<'_>,
-    drawer: &mut Drawer,
-    tally: &mut Tally,
-) {
-    for Formed { subject, raised, kind, mut h, drawn } in formed {
-        let held = drawer.household(into.books, &mut h, ((opening_ctx, subject), drawn));
-        let attrs: Vec<u32> = into.kind.attrs.iter().map(|a| h.attr(a.item.name)).collect();
-        let words: Vec<u64> = h.persons.iter().map(|p| pack(into.kind, p)).collect();
-        let (tables, directory, space) = into.books.parties.cells_mut();
-        let table = Population::table_mut::<SystemBacking>(tables, into.at);
-        let (slot, party) = phx_pop::table::begin(table, directory, space, (into.day, &attrs));
-        table.set_persons(slot, &words);
-        table.set_attachments(slot, &held.attachments);
-        drawer.agent(party, held);
-        tally.persons += len_u64(h.persons.len());
-        tally.households += 1;
-        tally.raised += u64::from(raised);
-        if let Some(t) = tally.types.get_mut(kind) {
-            *t += 1;
-        }
-        let size = len_u64(h.persons.len());
-        if let Some(b) = SIZE_BINS.iter().rposition(|first| *first <= size).and_then(|at| tally.sizes.get_mut(at)) {
-            *b += 1;
-        }
-    }
-}
-
-/// The household kind's place among the population's kinds.
-fn household_kind(population: &Population) -> usize {
-    let Some(k) = population.kinds.iter().position(|k| k.decl.kind == HOUSEHOLD) else {
-        violation!(clause = "POP.2", "a world that keeps no household kind");
-    };
-    k
-}
-
-impl Contribution for Households {
-    fn name(&self) -> &'static str {
-        "households"
-    }
-    fn phase(&self) -> OpeningPhase {
-        CONTRACTS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[HOUSEHOLDS]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[HOUSEHOLDS]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let Opening { ctx, day, date, calendar, register, countries, report, books, population, attachments, .. } =
-            opening;
-        let Some(books) = books.downcast_mut::<Books>() else {
-            violation!(clause = "GEN.3", "an opening handed something other than the world's books");
-        };
-        let Some(population) = population.downcast_mut::<Population>() else {
-            violation!(clause = "GEN.3", "an opening handed something other than the world's population");
-        };
-        let at = household_kind(population);
-        let reason = books.ledger.reasons.named(REASON.name);
-        let Some(kind) = population.kinds.get(at).map(|k| k.decl.clone()) else {
-            violation!(clause = "POP.2", "a world that keeps no household kind");
-        };
-        for c in *countries {
-            let country = Country::of(&self.prims, register, c, *date);
-            let mut drawer = Drawer::new(attachments, books, register, (calendar, *day), c);
-            let tiles: Vec<u64> = c.regions.iter().map(|(_, tiles)| len_u64(tiles.len())).collect();
-            let mut lot = ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 0));
-            // The country's persons are apportioned over its regions by their land.
-            let shares = apportion(c.people, &tiles, &mut lot);
-            let mut tally = Tally::default();
-            let regions: Vec<(u32, u64)> = c.regions.iter().map(|(r, _)| *r).zip(shares).collect();
-            // A wave of regions drawn at once on the books' workers, then booked in the regions' order.
-            for wave in regions.chunks(REGION_WAVE) {
-                let drawn = books.on_pool(wave.len(), |i| wave.get(i).map(|r| draw_region(&country, ctx, *r, &kind)));
-                for (formed, counted) in drawn.into_iter().flatten() {
-                    tally.add(&counted);
-                    let mut into = Into { books, kind: &kind, at, day: *day };
-                    book_region(formed, ctx, &mut into, &mut drawer, &mut tally);
-                }
-            }
-            let mut lot = ctx.draws(&RegionsStream::DECL, opening_subject(u32::from(c.id.get()), 1));
-            drawer.close(books, (register, reason), &mut lot, report);
-            if tally.households == 0 {
-                violation!(clause = "GEN.3", "a country whose people make no household", country = c.id.get());
-            }
-            population.count(at, (tally.households, 0), (tally.persons, 0));
-            report.distributions.push((key(HOUSEHOLDS, c.id), describe(c, &country, &tally)));
-        }
-    }
-}
-
-fn describe(c: &OpeningCountry, country: &Country, t: &Tally) -> String {
-    let share = |n: u64| PERCENT * from_u64(n) / from_u64(t.persons);
-    let [under, _, over] = t.bands;
-    let against = |drawn: &[u64], shares: &[f64]| -> String {
-        let parts: Vec<String> = drawn
-            .iter()
-            .zip(shares)
-            .map(|(n, s)| format!("{:.1}% ({:.1}%)", PERCENT * from_u64(*n) / from_u64(t.households), PERCENT * s))
-            .collect();
-        parts.join(", ")
-    };
-    let types = against(&t.types, &country.shares);
-    let sizes = against(&t.sizes, &country.sizes);
-    format!(
-        "country {}: {} households of {} persons (people {}, {:.2} a household); {:.1}% \
-         under 15 (GEN.share_under_15 {:.1}%), {:.1}% 65 and over (GEN.share_65_plus {:.1}%), {:.1}% disabled; \
-         households by type as drawn (DEM.household_types at GEN.fertility) {}; by size (1, 2-3, 4-5, 6 or more) \
-         as drawn (DEM.household_sizes at GEN.fertility) {}; {} children raised by an adult not their mother. Persons by age and sex (DEM.age_standard raked to GEN.share_under_15 and GEN.share_65_plus), \
-         formed into families by mothers' chances of children (DEM.minor_children), partners (DEM.partner_age_gap), lone fathers (DEM.single_father_share) \
-         and whom each type holds (DEM.household_members); health (DEM.disability_prevalence, DEM.disability_onset) \
-         and education (DEM.education_female, DEM.education_male)",
-        c.id.get(),
-        t.households,
-        t.persons,
-        c.people,
-        from_u64(t.persons) / from_u64(t.households),
-        share(under),
-        derived(c, "GEN.share_under_15"),
-        share(over),
-        derived(c, "GEN.share_65_plus"),
-        share(t.disabled),
-        types,
-        sizes,
-        t.raised,
-    )
+    out
 }

@@ -3,21 +3,13 @@
 //! worker — paid monthly by the treasury, a person's row on the country's state pension line.
 
 use phx_core::register::values::Table1;
-use phx_core::{
-    Contribution, DECLARATIONS, Opening, OpeningCountry, OpeningCtx, OpeningPhase, Prim, Register, StreamDef,
-    declare_stream,
-};
-use phx_id::{Day, PartyId};
-use phx_ledger::algebra::{Leg, Schedule, Side};
-use phx_ledger::attachments::{AttachmentDraw, Balance, CountryAttachments, Drawing, DrawnRow, Holder, LineSpec};
-use phx_ledger::books::{self, Books};
+use phx_core::{OpeningCountry, Prim, Register, StreamDef, declare_stream};
 use phx_ledger::line::{LineKindDecl, SideDecl};
-use phx_ledger::opening::{currency, key, monthly, plain_terms, whole};
+use phx_ledger::opening::whole;
 use phx_ledger::rows::BALANCE;
-use phx_ledger::terms::TermsId;
 use phx_macros::clause;
-use phx_num::{Missing, Money, violation};
-use phx_rand::{Subject, open_unit};
+use phx_num::violation;
+use phx_rand::open_unit;
 
 use crate::consts::{AGE_PARTS, SHARE_PARTS};
 
@@ -76,40 +68,6 @@ pub const STATE_PENSION: LineKindDecl = LineKindDecl {
     transfer_requesters: &["SOC"],
 };
 
-const TREASURIES: &str = "CB.treasury";
-
-/// The state pension's and the benefit's line kinds in the books, and the reason a claim joins under.
-#[derive(Debug)]
-pub struct Declared;
-
-impl Contribution for Declared {
-    fn name(&self) -> &'static str {
-        "social protection declarations"
-    }
-    fn phase(&self) -> OpeningPhase {
-        DECLARATIONS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let ledger = &mut books::of(opening).ledger;
-        ledger.lines.declare_money(STATE_PENSION);
-        ledger.lines.declare_money(crate::benefit::BENEFIT);
-        let _ = ledger.reasons.declare(crate::benefit::CLAIMED);
-    }
-}
-
 /// Social protection's draw of the state pensions in payment.
 #[derive(Debug)]
 pub struct StatePension {
@@ -126,12 +84,6 @@ pub struct Pensions {
     age: [f64; 2],
     coverage: [f64; 2],
     pub amount: [i64; 2],
-}
-
-/// One country's state pension as the books' pensioners draw it, with the pension's line by sex.
-struct Country {
-    pensions: Pensions,
-    line: [LineSpec; 2],
 }
 
 impl StatePension {
@@ -195,71 +147,4 @@ fn by_sex(table: &Table1, parts: f64) -> [f64; 2] {
         let Ok(v) = table.at(i64::from(sex)) else { violation!(clause = "GEN.2", "no value for a sex", sex = sex) };
         phx_rand::float::from_i64(v) / parts
     })
-}
-
-impl AttachmentDraw for StatePension {
-    #[clause("GEN.2", "SOC.3")]
-    fn country(
-        &self,
-        books: &mut Books,
-        register: &Register,
-        (calendar, today): (&phx_core::Calendar, Day),
-        c: &OpeningCountry,
-    ) -> Box<dyn CountryAttachments> {
-        let Some(&[(treasury, _)]) = books.drawn.get(&key(TREASURIES, c.id)).map(Vec::as_slice) else {
-            violation!(clause = "GEN.3", "the state pension read before one treasury is drawn", country = c.id.get());
-        };
-        let ccy = currency(c.id);
-        let date = calendar.date(today);
-        let dates = monthly(date, c.id);
-        let kind = books.ledger.lines.kind_index(STATE_PENSION.name);
-        let pensions = self.pensions(register, date, c);
-        let line = pensions.amount.map(|amount| {
-            let terms: TermsId = books.ledger.terms.intern(plain_terms(
-                ccy,
-                vec![Leg::FixedAmount(Money::new(amount, ccy))],
-                Schedule { dates, count: Missing::Absent },
-            ));
-            LineSpec {
-                kind,
-                terms,
-                counterparty: Missing::Present(treasury),
-                first: Missing::Present((dates.nth(calendar, 1), 1)),
-            }
-        });
-        Box::new(Country { pensions, line })
-    }
-}
-
-impl CountryAttachments for Country {
-    #[clause("GEN.2", "SOC.3")]
-    fn draw(
-        &mut self,
-        _: &mut Books,
-        h: Drawing<'_>,
-        (ctx, subject): (&OpeningCtx<'_>, Subject),
-        rows: &mut Vec<DrawnRow>,
-        _: &mut phx_ledger::attachments::Keys,
-    ) {
-        let mut d = ctx.draws(&PensionStream::DECL, subject);
-        for (place, sex) in self.pensions.draw(h.household, &mut d) {
-            let Some(pension) = self.line.get(sex) else {
-                violation!(clause = "GEN.2", "a sex the state pension does not hold");
-            };
-            rows.push(DrawnRow {
-                line: *pension,
-                side: Side::Asset,
-                holder: Holder::Person(place),
-                balance: Balance::None,
-            });
-        }
-    }
-
-    fn pools(&self) -> Vec<(u32, i64)> {
-        Vec::new()
-    }
-
-    fn counterparties(&mut self, _: &Books, _: &LineSpec, _: &mut phx_rand::Draws) -> Vec<(PartyId, u64)> {
-        Vec::new()
-    }
 }

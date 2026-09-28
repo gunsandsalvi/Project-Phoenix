@@ -4,17 +4,13 @@
 
 mod consts;
 pub mod extract;
-pub mod families;
 pub mod markets;
-pub mod merchant;
-pub mod rights;
 pub mod rules;
 
-use phx_core::handler::HandlerDecl;
 use phx_core::register::values::{Table1, Table2};
 use phx_core::{
-    Cadence, Contribution, DECLARATIONS, Declarations, HandlerTable, Opening, OpeningPhase, Register, RunsOn,
-    SpoilageDecl, StreamDef, System, VisitDecl, declare_prim, declare_stream,
+    Contribution, DECLARATIONS, Declarations, HandlerTable, Opening, OpeningPhase, Register, StreamDef, System,
+    declare_prim, declare_stream,
 };
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_macros::clause;
@@ -204,38 +200,12 @@ impl System for Gds {
         d.stream(OpeningStream::DECL);
         let _ = d.prim::<Table1>(&OPENING_PRICE);
         let _ = d.prim::<Table1>(&PRICE_LEVEL);
-        d.contribution(Box::new(Declared));
-        d.contribution(Box::new(rights::Rights));
-        d.family(Box::new(families::Goods));
         d.market(Box::new(markets::COMMODITIES));
         d.market(Box::new(markets::BETWEEN_FIRMS));
         d.compile(Box::new(move |register, _| Ok(Box::new(extract::Own::compile(&prims, register)?))));
-        let extraction = Cadence::Schedule { days: EXTRACTION_DAYS.id, runs_on: RunsOn::Business };
-        let stock = Cadence::Schedule { days: SPOILAGE_DAYS.id, runs_on: RunsOn::Any };
-        let trade = Cadence::Schedule { days: MERCHANT_DAYS.id, runs_on: RunsOn::Business };
-        for (handler, kind, cadence) in [
-            (merchant::MerchantSmall::NAME, HOLDERS[1], trade),
-            (merchant::MerchantLarge::NAME, HOLDERS[0], trade),
-            (extract::ExtractSmall::NAME, HOLDERS[1], extraction),
-            (extract::ExtractLarge::NAME, HOLDERS[0], extraction),
-            (extract::StockSmall::NAME, HOLDERS[1], stock),
-            (extract::StockLarge::NAME, HOLDERS[0], stock),
-        ] {
-            d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes: &[], clause: "GDS.4" });
-        }
-        for visit in [extract::StockSmall::NAME, extract::StockLarge::NAME] {
-            d.spoilage(SpoilageDecl { visit, rates: spoilage_rates, clause: "GDS.8" });
-        }
     }
 
-    fn handlers(h: &mut HandlerTable) {
-        h.add::<extract::ExtractSmall>();
-        h.add::<extract::ExtractLarge>();
-        h.add::<extract::StockSmall>();
-        h.add::<extract::StockLarge>();
-        h.add::<merchant::MerchantSmall>();
-        h.add::<merchant::MerchantLarge>();
-    }
+    fn handlers(_: &mut HandlerTable) {}
 }
 
 /// The handles the table of two axes is read by, which is not one of a kind's own.

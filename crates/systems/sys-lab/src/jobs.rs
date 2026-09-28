@@ -9,23 +9,16 @@
 //! unemployed search, at the rate that makes their share of the labour force the country's; an adult past its
 //! pension's age not employed is retired.
 
-use std::collections::BTreeMap;
-
 use if_labour::class::{NO_OCCUPATION, NOT_SEARCHING, PLACES, RETIRED, SEARCHING};
 use if_labour::law::Law;
 use phx_core::register::values::{Table1, Table2};
-use phx_core::{OpeningCountry, OpeningCtx, Prim, Register, StreamDef, declare_stream};
-use phx_id::{Day, PartyId};
-use phx_ledger::algebra::{Leg, Schedule, Side};
-use phx_ledger::attachments::{AttachmentDraw, Balance, CountryAttachments, Drawing, DrawnRow, Holder, Keys, LineSpec};
-use phx_ledger::books::Books;
+use phx_core::{OpeningCountry, Prim, Register, declare_stream};
 use phx_ledger::line::{LineKindDecl, SideDecl};
-use phx_ledger::opening::{currency, key, whole};
+use phx_ledger::opening::whole;
 use phx_ledger::rows::BALANCE;
-use phx_ledger::terms::TermsId;
 use phx_macros::clause;
-use phx_num::{Count, Missing, Money, violation};
-use phx_rand::{Draws, Subject, open_unit};
+use phx_num::{Count, violation};
+use phx_rand::{Draws, open_unit};
 
 use crate::consts::{EMPLOYEES, SHARE_PARTS};
 
@@ -54,23 +47,6 @@ pub const EMPLOYMENT: LineKindDecl = LineKindDecl {
     dated: true,
     transfer_requesters: &["LAB"],
 };
-
-const FIRMS: &str = "FRM.firms";
-const SMALL_FIRMS: &str = "FRM.small_firms";
-const FIRM_REGIONS: &str = "FRM.firm_regions";
-const SMALL_REGIONS: &str = "FRM.small_regions";
-const FIRM_PRODUCTS: &str = "FRM.firm_products";
-/// The hours each occupation's work takes in each product's way, which weigh the occupations a firm employs.
-const HOURS_A_UNIT: &str = "TEC.labour";
-
-/// A firm as the jobs' deal reads it: its party, its headcount, its region and the product it makes.
-#[derive(Clone, Copy, Debug)]
-struct Employer {
-    party: PartyId,
-    headcount: u64,
-    region: u32,
-    product: i64,
-}
 
 /// Labour's draw of the households' jobs.
 #[derive(Debug)]
@@ -133,23 +109,6 @@ pub struct Drawn {
 pub struct DrawnJob {
     pub point: i64,
     pub class: Vec<u32>,
-}
-
-/// One country's labour as the books' households draw it.
-struct Country {
-    rule: Rule,
-    kind: u16,
-    schedule: Schedule,
-    first: Missing<(Day, u32)>,
-    ccy: phx_num::Ccy,
-    terms: BTreeMap<(i64, Vec<u32>), TermsId>,
-    firms: Vec<Employer>,
-    /// Each occupation's share of each product's hours, by (occupation, product), in parts of a whole.
-    shares: BTreeMap<(u32, i64), u64>,
-    /// Each line's region, occupation and the jobs drawn on it.
-    drawn: BTreeMap<TermsId, (u32, u32, u64)>,
-    /// Each line's employers and their jobs, dealt once every household is drawn.
-    dealt: Option<BTreeMap<TermsId, Vec<(PartyId, u64)>>>,
 }
 
 impl Jobs {
@@ -243,37 +202,6 @@ impl Jobs {
             mean_hours,
             date,
         }
-    }
-}
-
-impl AttachmentDraw for Jobs {
-    #[clause("GEN.2", "LAB.1", "PTY.3")]
-    fn country(
-        &self,
-        books: &mut Books,
-        register: &Register,
-        (calendar, today): (&phx_core::Calendar, Day),
-        c: &OpeningCountry,
-    ) -> Box<dyn CountryAttachments> {
-        let firms = employers(books, c.id);
-        let Ok(hours) = register.table2_in(HOURS_A_UNIT, c.id) else {
-            violation!(clause = "GEN.3", "labour's opening with no hours of work by occupation", country = c.id.get());
-        };
-        let shares = occupation_shares(hours);
-        let date = calendar.date(today);
-        let dates = phx_ledger::opening::monthly(date, c.id);
-        Box::new(Country {
-            rule: self.rule(register, date, c),
-            kind: books.ledger.lines.kind_index(EMPLOYMENT.name),
-            schedule: Schedule { dates, count: Missing::Absent },
-            first: Missing::Present((dates.nth(calendar, 1), 1)),
-            ccy: currency(c.id),
-            terms: BTreeMap::new(),
-            firms,
-            shares,
-            drawn: BTreeMap::new(),
-            dealt: None,
-        })
     }
 }
 
@@ -416,165 +344,4 @@ impl Rule {
         }
         out
     }
-}
-
-impl Country {
-    /// The terms of a wage point and a class: its amount paid on each monthly date.
-    fn terms(&mut self, books: &mut Books, point: i64, class: Vec<u32>) -> TermsId {
-        if let Some(t) = self.terms.get(&(point, class.clone())) {
-            return *t;
-        }
-        let amount = self.rule.wage_at(point);
-        let mut terms = phx_ledger::opening::plain_terms(
-            self.ccy,
-            vec![Leg::FixedAmount(Money::new(amount, self.ccy))],
-            self.schedule,
-        );
-        terms.class.clone_from(&class);
-        let t = books.ledger.terms.intern(terms);
-        self.terms.insert((point, class), t);
-        t
-    }
-}
-
-impl CountryAttachments for Country {
-    #[clause("GEN.2", "LAB.1", "REP.34", "PTY.3")]
-    fn draw(
-        &mut self,
-        books: &mut Books,
-        h: Drawing<'_>,
-        (ctx, subject): (&OpeningCtx<'_>, Subject),
-        rows: &mut Vec<DrawnRow>,
-        keys: &mut Keys,
-    ) {
-        let mut d = ctx.draws(&JobsStream::DECL, subject);
-        let region = h.household.attr(if_pop::REGION.name);
-        for drawn in self.rule.draw(h.household, h.income, &mut d) {
-            keys.persons.push((drawn.place, crate::LAST_POINT.name, drawn.last));
-            keys.persons.push((drawn.place, crate::STATE.name, drawn.state));
-            keys.persons.push((drawn.place, crate::OCCUPATION_ATTR.name, drawn.occupation));
-            let Some(job) = drawn.job else { continue };
-            let occupation = drawn.occupation;
-            let terms = self.terms(books, job.point, job.class);
-            self.drawn.entry(terms).or_insert((region, occupation, 0)).2 += 1;
-            rows.push(DrawnRow {
-                line: LineSpec { kind: self.kind, terms, counterparty: Missing::Absent, first: self.first },
-                side: Side::Asset,
-                holder: Holder::Person(drawn.place),
-                balance: Balance::None,
-            });
-        }
-    }
-
-    fn pools(&self) -> Vec<(u32, i64)> {
-        Vec::new()
-    }
-
-    fn counterparties(&mut self, _: &Books, line: &LineSpec, lot: &mut Draws) -> Vec<(PartyId, u64)> {
-        if line.kind != self.kind {
-            return Vec::new();
-        }
-        let dealt = self.dealt.get_or_insert_with(|| deal(&self.drawn, (&self.firms, &self.shares), lot));
-        dealt.get(&line.terms).cloned().unwrap_or_default()
-    }
-}
-
-/// Every firm of a country, large and small, with its headcount, region and product as the firms' opening drew them.
-fn employers(books: &Books, country: phx_id::CountryId) -> Vec<Employer> {
-    let list = |name: &str| {
-        let Some(l) = books.drawn.get(&key(name, country)) else {
-            violation!(clause = "GEN.3", "labour's opening reading firms not yet drawn", country = country.get());
-        };
-        l
-    };
-    let products: BTreeMap<PartyId, u64> = list(FIRM_PRODUCTS).iter().copied().collect();
-    let mut out = Vec::new();
-    for (heads, regions) in [(FIRMS, FIRM_REGIONS), (SMALL_FIRMS, SMALL_REGIONS)] {
-        for ((party, headcount), (_, region)) in list(heads).iter().zip(list(regions)) {
-            let product = products.get(party).and_then(|p| i64::try_from(*p).ok());
-            let (Ok(region), Some(product)) = (u32::try_from(*region), product) else {
-                violation!(clause = "GEN.3", "a firm drawn in no region or making no product", party = party.get());
-            };
-            out.push(Employer { party: *party, headcount: *headcount, region, product });
-        }
-    }
-    out
-}
-
-/// Each occupation's share of each product's hours of work, in parts of a whole.
-fn occupation_shares(hours: &Table2) -> BTreeMap<(u32, i64), u64> {
-    let mut out = BTreeMap::new();
-    for product in hours.columns() {
-        let each: Vec<(i64, i64)> =
-            hours.rows().iter().filter_map(|o| hours.at(*o, *product).ok().map(|h| (*o, h))).collect();
-        let total: i64 = each.iter().map(|(_, h)| h).sum();
-        if total <= 0 {
-            continue;
-        }
-        for (o, h) in each {
-            let part = phx_rand::float::from_i64(h) / phx_rand::float::from_i64(total) * SHARE_PARTS;
-            if let (Ok(o), Some(part)) = (u32::try_from(o), phx_rand::float::floor_to_u64(part)) {
-                out.insert((o, *product), part);
-            }
-        }
-    }
-    out
-}
-
-/// Each line's employers: each region and occupation's jobs apportioned over the region's firms by their headcounts
-/// times the occupation's share of their product's hours (over the region's firms by headcount where none employs
-/// the occupation, and the country's where the region holds no firm), the firms taken in an order drawn by lot and
-/// dealt to the lines in theirs, each line's jobs from the next firm with jobs left.
-#[clause("GEN.4", "LAB.1")]
-fn deal(
-    drawn: &BTreeMap<TermsId, (u32, u32, u64)>,
-    (firms, shares): (&[Employer], &BTreeMap<(u32, i64), u64>),
-    lot: &mut Draws,
-) -> BTreeMap<TermsId, Vec<(PartyId, u64)>> {
-    let mut cells: BTreeMap<(u32, u32), Vec<(TermsId, u64)>> = BTreeMap::new();
-    for (terms, (region, occupation, jobs)) in drawn {
-        cells.entry((*region, *occupation)).or_default().push((*terms, *jobs));
-    }
-    let mut out = BTreeMap::new();
-    for ((region, occupation), lines) in cells {
-        let jobs: u64 = lines.iter().map(|(_, n)| n).sum();
-        let weigh = |f: &Employer| f.headcount * shares.get(&(occupation, f.product)).copied().unwrap_or(0);
-        let mut weighed: Vec<(PartyId, u64)> =
-            firms.iter().filter(|f| f.region == region).map(|f| (f.party, weigh(f))).filter(|(_, w)| *w > 0).collect();
-        if weighed.is_empty() {
-            weighed = firms.iter().filter(|f| f.region == region).map(|f| (f.party, f.headcount)).collect();
-        }
-        if weighed.is_empty() {
-            weighed = firms.iter().map(|f| (f.party, f.headcount)).collect();
-        }
-        let weights: Vec<u64> = weighed.iter().map(|(_, w)| *w).collect();
-        let quotas = phx_core::contribution::apportion(jobs, &weights, lot);
-        let mut givers: Vec<(PartyId, u64)> =
-            weighed.iter().zip(quotas).filter(|(_, q)| *q > 0).map(|((p, _), q)| (*p, q)).collect();
-        for i in (1..givers.len()).rev() {
-            let n = phx_rand::float::len_u64(i + 1);
-            let Ok(j) = usize::try_from(phx_rand::below_u64(lot, n)) else {
-                violation!(clause = "CHN.1", "a lot beyond the firms drawn among");
-            };
-            givers.swap(i, j);
-        }
-        let mut at = 0_usize;
-        for (terms, mut need) in lines {
-            let mut employers = Vec::new();
-            while need > 0 {
-                let Some((party, left)) = givers.get_mut(at) else {
-                    violation!(clause = "GEN.4", "jobs dealt beyond the firms' apportioned shares", jobs = need);
-                };
-                let take = if *left < need { *left } else { need };
-                employers.push((*party, take));
-                *left -= take;
-                need -= take;
-                if *left == 0 {
-                    at += 1;
-                }
-            }
-            out.insert(terms, employers);
-        }
-    }
-    out
 }

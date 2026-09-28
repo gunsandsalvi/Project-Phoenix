@@ -5,25 +5,15 @@
 
 mod consts;
 pub mod decide;
-pub mod families;
-pub mod filed;
 pub mod industry;
-mod law;
-mod opening;
 pub mod produce;
 pub mod rules;
-pub mod small;
 
-use phx_core::handler::HandlerDecl;
 use phx_core::register::values::Table2;
 use phx_core::{
-    AttrDecl, Cadence, Declarations, FacetDecl, FactDef, HandlerTable, InsolvencyDecl, RunsOn, StreamDef, System,
-    VisitDecl, declare_kind, declare_prim, declare_stream,
+    AttrDecl, Declarations, FactDef, HandlerTable, StreamDef, System, declare_kind, declare_prim, declare_stream,
 };
 use phx_num::{Count, Fixed};
-
-pub use opening::Parties;
-pub use small::SmallFirms;
 
 declare_kind! { pub FIRM = "firm" { legal_form: "company", table: Individuals, clause: "FRM.1" } }
 declare_kind! { pub SMALL_FIRM = "small_firm" { legal_form: "company", table: Agents, clause: "FRM.23" } }
@@ -54,14 +44,6 @@ pub struct FilingPrims {
 }
 
 impl FilingPrims {
-    /// The methods a firm may forecast by: each heuristic with each memory type.
-    fn methods(register: &phx_core::Register) -> u64 {
-        let types = register.count("VAL.memory_types").unwrap_or_else(|_| {
-            phx_num::violation!(clause = "VAL.23", "the memory types unread");
-        });
-        phx_rand::float::len_u64(phx_val::heuristic::MENU.len()) * types
-    }
-
     /// A product's lot, the units its price is posted for: ten to its unit's price places.
     #[must_use]
     pub fn lot(register: &phx_core::Register, product: u16) -> f64 {
@@ -166,71 +148,32 @@ impl System for Frm {
     fn declare(d: &mut Declarations) {
         d.kind(FIRM);
         d.stream(OpeningStream::DECL);
-        let prims = opening::Prims {
-            firms_per_employed: d.prim(&FIRMS_PER_EMPLOYED),
-            size_exponent: d.prim(&SIZE_EXPONENT),
-            rank: d.prim(&RANK_PER_MILLION),
-            deposit_share: d.prim(&DEPOSIT_SHARE),
-            industries: d.prim(&INDUSTRY_BY_SIZE),
-        };
+        for p in [&FIRMS_PER_EMPLOYED, &SIZE_EXPONENT, &DEPOSIT_SHARE] {
+            let _: FixedPrim = d.prim(p);
+        }
+        let _: CountPrim = d.prim(&RANK_PER_MILLION);
+        let _: TablePrim = d.prim(&INDUSTRY_BY_SIZE);
         d.claim(<if_firm::known::Industry as FactDef>::ITEM.name);
-        d.facet(FacetDecl { fact: <if_firm::known::Industry as FactDef>::ITEM.name, kind: FIRM.name });
         d.claim(<if_firm::known::Product as FactDef>::ITEM.name);
-        d.facet(FacetDecl { fact: <if_firm::known::Product as FactDef>::ITEM.name, kind: FIRM.name });
-        d.kind(SMALL_FIRM);
-        d.stream(SmallStream::DECL);
-        let small = small::SmallPrims {
-            firms_per_employed: prims.firms_per_employed,
-            size_exponent: prims.size_exponent,
-            deposit_share: prims.deposit_share,
-            industries: prims.industries,
-        };
-        d.pop_kind(SMALL_FIRM.name)
-            .attr(REGION)
-            .attr(SIZE)
-            .attr(if_firm::known::INDUSTRY)
-            .attr(if_firm::known::PRODUCT)
-            .sited_by(REGION.name);
-        d.contribution(Box::new(Parties { prims }));
-        d.contribution(Box::new(SmallFirms { prims: small }));
-        let decide = declare_decisions(d);
-        let filing = FilingPrims { decide, required_return: d.prim(&REQUIRED_RETURN) };
-        d.contribution(Box::new(filed::Declared));
-        let shares = d.prim(&PRODUCT_SHARE);
-        d.contribution(Box::new(filed::Products { shares }));
-        d.contribution(Box::new(filed::Stocks { prims: filing }));
-        d.contribution(Box::new(filed::Filed { prims: filing }));
-        d.family(Box::new(families::Revenue));
+        declare_decisions(d);
+        let _: phx_core::Prim<phx_core::register::values::Distribution> = d.prim(&REQUIRED_RETURN);
+        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&PRODUCT_SHARE);
     }
 
-    fn handlers(h: &mut HandlerTable) {
-        h.add::<decide::ReviewSmall>();
-        h.add::<decide::ReviewLarge>();
-        h.add::<decide::AttendSmall>();
-        h.add::<decide::AttendLarge>();
-    }
+    fn handlers(_: &mut HandlerTable) {}
 }
 
 pub type FixedPrim = phx_core::Prim<Fixed<6>>;
 pub type CountPrim = phx_core::Prim<Count>;
 pub type TablePrim = phx_core::Prim<Table2>;
 
-/// The firms' state, a large firm's as facts of its row and a small firm's as positions of its agent, and their
-/// decisions on the agenda: the price's attention on each firm's production schedule, the price at its reviews.
-fn declare_decisions(d: &mut Declarations) -> decide::DecidePrims {
+/// The firms' management and plant, compiled for the core's rules.
+fn declare_decisions(d: &mut Declarations) {
     let _ = d.prim::<Count>(&INSOLVENCY_GRACE_DAYS);
-    for kind in [FIRM.name, SMALL_FIRM.name] {
-        d.insolvency(InsolvencyDecl { kind, grace_days: INSOLVENCY_GRACE_DAYS.id, clause: "FRM.15" });
-    }
     d.stream(VisitStream::DECL);
     d.stream(StanceStream::DECL);
     for fact in if_firm::facts::FACTS {
         d.claim(fact);
-        d.facet(FacetDecl { fact, kind: FIRM.name });
-    }
-    let mut small = d.pop_kind(SMALL_FIRM.name);
-    for p in if_firm::facts::POSITIONS {
-        small.position(p);
     }
     let prims = decide::DecidePrims::declare(d);
     d.compile(Box::new(move |register, countries| {
@@ -240,17 +183,4 @@ fn declare_decisions(d: &mut Declarations) -> decide::DecidePrims {
             plant: produce::Plant::compile(register, countries, adjustment)?,
         }))
     }));
-    let schedule = Cadence::Schedule { days: decide::PRODUCTION_DAYS.id, runs_on: RunsOn::Business };
-    let attention = Cadence::Attention { position: <if_firm::facts::PriceAttention as FactDef>::ITEM.name };
-    // A review is woken by a surprise in the public series its stance reads.
-    let surprise: &[phx_core::WakeKind] = &[phx_core::WakeKind::Surprise];
-    for (handler, kind, cadence, wakes) in [
-        (decide::AttendSmall::NAME, SMALL_FIRM.name, schedule, &[][..]),
-        (decide::AttendLarge::NAME, FIRM.name, schedule, &[][..]),
-        (decide::ReviewSmall::NAME, SMALL_FIRM.name, attention, surprise),
-        (decide::ReviewLarge::NAME, FIRM.name, attention, surprise),
-    ] {
-        d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes, clause: "REP.21" });
-    }
-    prims
 }

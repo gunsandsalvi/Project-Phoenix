@@ -7,7 +7,6 @@ mod consts;
 mod fertility;
 mod household;
 mod life;
-mod lines;
 mod opening;
 mod prims;
 mod processes;
@@ -22,7 +21,7 @@ use phx_core::{
 
 pub use births::{Conception, Fertility};
 pub use fertility::{ChildIn, Scale, tries, value};
-pub use opening::{Formed, Households, draw_country};
+pub use opening::{Formed, draw_country};
 pub use prims::Prims;
 pub use processes::{Mortality, Onset};
 pub use school::LeavingSchool;
@@ -125,8 +124,6 @@ impl System for Dem {
         }
         let prims = Prims::declare(d);
         d.setup_value(SetupValue { prim: &prims::LIFE_EXPECTANCY, derived: "GEN.life_expectancy" });
-        d.contribution(Box::new(opening::Declared));
-        d.contribution(Box::new(Households { prims }));
         d.pop_process(Box::new(Mortality::new(prims)));
         d.pop_process(Box::new(Onset { prims }));
         d.pop_process(Box::new(LeavingSchool::new(prims)));

@@ -33,10 +33,7 @@ impl System for Hsg {
 
     fn declare(d: &mut Declarations) {
         d.stream(TenancyStream::DECL);
-        let tenancies = Tenancies { tenure: d.prim(&TENURE), ratio: d.prim(&RENT_POINT_RATIO) };
-        d.contribution(Box::new(Declared));
-        let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> = Box::new(tenancies);
-        d.attachment(Box::new(draw));
+        let _ = Tenancies { tenure: d.prim(&TENURE), ratio: d.prim(&RENT_POINT_RATIO) };
     }
 
     fn handlers(_: &mut HandlerTable) {}

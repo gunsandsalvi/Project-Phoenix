@@ -4,20 +4,12 @@
 //! scrap.
 
 mod consts;
-pub mod families;
 pub mod kinds;
-mod opening;
-pub mod review;
 pub mod rules;
 
-use phx_core::handler::HandlerDecl;
 use phx_core::register::values::Table1;
-use phx_core::{
-    Cadence, Declarations, HandlerTable, RunsOn, StreamDef, System, VisitDecl, WearDecl, declare_prim, declare_stream,
-};
+use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_prim, declare_stream};
 use phx_num::Count;
-
-pub use opening::{BOUGHT, COMPLETED, Plant, STRUCTURES_HELD};
 
 declare_stream! { pub VisitStream = "CAP.visits" { purpose: Occasion, keyed: false, clause: "CAP.4" } }
 declare_stream! { pub OpeningStream = "CAP.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
@@ -166,7 +158,7 @@ impl System for Cap {
         let _ = d.prim::<Table1>(&LEAD_DAYS);
         let _ = d.prim::<Table1>(&BOUGHT_AS);
         let _ = d.prim::<Count>(&REVIEW_DAYS);
-        let stock = d.prim(&STOCK_PER_GDP);
+        let _ = d.prim::<Table1>(&STOCK_PER_GDP);
         d.stream(OpeningStream::DECL);
         d.stream(VisitStream::DECL);
         d.compile(Box::new(move |register, countries| Ok(Box::new(CapOwn::compile(&prims, register, countries)?))));
@@ -176,34 +168,8 @@ impl System for Cap {
             <if_firm::facts::SoldAtInvest as phx_core::FactDef>::ITEM,
         ] {
             d.claim(item.name);
-            d.facet(phx_core::FacetDecl { fact: item.name, kind: HOLDERS[0] });
-            d.pop_kind(HOLDERS[1]).position(phx_core::PositionDecl {
-                name: item.name,
-                clause: item.clause,
-                opening: phx_core::PositionOpening::Missing,
-            });
         }
-        d.contribution(Box::new(opening::Declared));
-        d.contribution(Box::new(Plant { prims, stock }));
-        let cadence = Cadence::Schedule { days: REVIEW_DAYS.id, runs_on: RunsOn::Any };
-        for (handler, kind) in [
-            (review::ReviewSmall::NAME, HOLDERS[1]),
-            (review::ReviewLarge::NAME, HOLDERS[0]),
-            (review::InvestSmall::NAME, HOLDERS[1]),
-            (review::InvestLarge::NAME, HOLDERS[0]),
-        ] {
-            d.visit(VisitDecl { handler, kind, cadence, stream: VisitStream::DECL.name, wakes: &[], clause: "CAP.4" });
-        }
-        for visit in [review::ReviewSmall::NAME, review::ReviewLarge::NAME] {
-            d.wear(WearDecl { visit, specs: kinds::wear_specs, clause: "CAP.6" });
-        }
-        d.family(Box::new(families::Stock));
     }
 
-    fn handlers(h: &mut HandlerTable) {
-        h.add::<review::ReviewSmall>();
-        h.add::<review::ReviewLarge>();
-        h.add::<review::InvestSmall>();
-        h.add::<review::InvestLarge>();
-    }
+    fn handlers(_: &mut HandlerTable) {}
 }

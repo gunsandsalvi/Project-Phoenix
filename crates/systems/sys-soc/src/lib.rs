@@ -9,7 +9,7 @@ mod state_pension;
 use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_prim};
 use phx_num::{Count, Fixed};
 
-pub use state_pension::{CoveredStream, Declared, PENSIONS, PensionStream, Pensions, STATE_PENSION, StatePension};
+pub use state_pension::{CoveredStream, PENSIONS, PensionStream, Pensions, STATE_PENSION, StatePension};
 
 declare_prim! {
     /// The normal pension age by sex, in years.
@@ -68,17 +68,14 @@ impl System for Soc {
     fn declare(d: &mut Declarations) {
         d.stream(PensionStream::DECL);
         d.stream(CoveredStream::DECL);
-        let pension =
+        let _ =
             StatePension { age: d.prim(&PENSION_AGE), replacement: d.prim(&REPLACEMENT), coverage: d.prim(&COVERAGE) };
         let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&DISABILITY_COVERAGE);
-        d.contribution(Box::new(Declared));
         let _: phx_core::Prim<Fixed<3>> = d.prim(&BENEFIT_REPLACEMENT);
         let _: phx_core::Prim<Count> = d.prim(&BENEFIT_MONTHS);
         let _: phx_core::Prim<Fixed<1>> = d.prim(&CLAIM_HOURS);
         d.market(Box::new(benefit::BENEFITS));
         d.market(Box::new(PENSIONS));
-        let draw: Box<dyn phx_ledger::attachments::AttachmentDraw> = Box::new(pension);
-        d.attachment(Box::new(draw));
     }
 
     fn handlers(_: &mut HandlerTable) {}
