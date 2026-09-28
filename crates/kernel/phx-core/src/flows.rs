@@ -43,6 +43,15 @@ impl Denom {
         }
         self.0 & !UNITS
     }
+
+    /// The currency a denomination of money names; units name none, and asking for one stops the run.
+    #[must_use]
+    pub fn ccy(self) -> u8 {
+        match u8::try_from(self.0) {
+            Ok(c) if self.is_money() => c,
+            _ => violation!(clause = "Law 5", "a currency read from units", denomination = self.0),
+        }
+    }
 }
 
 /// One movement: from the payer to the payee, an amount of a denomination, for a reason, at the payer's payment

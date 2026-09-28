@@ -615,6 +615,7 @@ fn core_of(
         streams: &p.c.streams,
         stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
         management: frm.management(),
+        today,
     })
     .map_err(|e| AssemblyErrors(vec![e]))?;
     let _ = core
@@ -628,6 +629,17 @@ fn core_of(
             stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
         })
         .map_err(|e| AssemblyErrors(vec![e]))?;
+    core.open_loans(&crate::core_credit::CreditOpening {
+        books,
+        register: &p.c.register,
+        countries: &opening,
+        sheets: &sheets,
+        calendar,
+        today,
+        streams: &p.c.streams,
+        stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
+    })
+    .map_err(|e| AssemblyErrors(vec![e]))?;
     if let Some(kind) = labour {
         let lctx = crate::core_labour::LabourCtx {
             register: &p.c.register,
@@ -638,6 +650,7 @@ fn core_of(
         };
         core.open_labour(&lctx, &opening, today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
+    core.open_state(state, today);
     if let Some(rule) = own
         .iter()
         .find(|(c, _)| *c == <sys_hh::Hh as phx_core::System>::CODE)
@@ -648,10 +661,19 @@ fn core_of(
             calendar,
             streams: &p.c.streams,
             rule,
+            management: frm.management(),
             regions: &regions,
             weights: retail_weights(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?,
         };
-        core.open_goods(&gctx, today).map_err(|e| AssemblyErrors(vec![e]))?;
+        let cover = own
+            .iter()
+            .find(|(c, _)| *c == <sys_frm::Frm as phx_core::System>::CODE)
+            .and_then(|(_, s)| s.downcast_ref::<sys_frm::Own>())
+            .map(|f| f.management().cover_days);
+        let Some(cover) = cover else {
+            return Err(AssemblyErrors(vec!["the firms' management not compiled for the goods' opening".to_owned()]));
+        };
+        core.open_goods(&gctx, (&opening, cover), today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
 
     let _ = population;

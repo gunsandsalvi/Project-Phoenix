@@ -81,6 +81,8 @@ pub struct CoreLabour {
     /// The employment contracts under notice, and each separation: the contract, its person, the day its notice has
     /// run by, and its country.
     pub noticed: BTreeSet<u32>,
+    /// The firms whose production schedule came today, whose price reviews follow.
+    pub due_today: Vec<u32>,
     pub separations: Vec<(u32, u64, Day, u8)>,
     pub days: Vec<LabourDay>,
 }
@@ -162,6 +164,14 @@ impl Core {
             price: read(PRICE)?,
             output: from_i64(read(OUTPUT)?),
         })
+    }
+
+    /// The sales a day a firm expects, as its record holds them.
+    fn expected_of(&self, firm: usize, slot: Slot) -> Option<f64> {
+        match self.kinds.get(firm)?.record(slot).get(crate::consts::firm::EXPECTED).map(|w| w.get()) {
+            Some(Missing::Present(v)) => Some(from_i64(v) / crate::consts::firm::PART_ONE),
+            _ => None,
+        }
     }
 
     /// A firm's staff not under notice: each job's occupation and weekly hours, and its monthly wage.
@@ -293,6 +303,7 @@ impl Core {
         if let Some(w) = self.labour.employers.as_mut() {
             w.take(day, &mut due, None);
         }
+        self.labour.due_today.clone_from(&due);
         let mut totals = (0, 0, 0, len_u64(due.len()));
         for s in due {
             let slot = Slot::new(s);
@@ -396,13 +407,8 @@ impl Core {
             Missing::Present(m) => m / (law.weeks_a_month * full),
             Missing::Absent => 0.0,
         };
-        let input = PostIn {
-            price: from_i64(f.price) / lot,
-            units_a_day: f.output / DAYS_A_YEAR,
-            financing,
-            minimum_hour,
-            needs,
-        };
+        let Some(units_a_day) = self.expected_of(firm, slot) else { return (0, 0, 0) };
+        let input = PostIn { price: from_i64(f.price) / lot, units_a_day, financing, minimum_hour, needs };
         let out = (ctx.kind.post)(&input);
         let mut posted = 0;
         for &(occupation, open) in &out.post {
@@ -669,6 +675,7 @@ impl Core {
             ps.set_word(&mut self.space, household.slot(), at, packed);
         }
         self.labour.searching.remove(&(household, hired.seeker.person));
+        self.end_benefit(household, hired.seeker.person);
         let stood = ctx.calendar.days_between(p.first, day).unwrap_or(0);
         self.labour.fills.insert((v.employer, v.occupation), (p.point, stood));
         true
@@ -763,6 +770,7 @@ impl Core {
                 });
             }
             self.searches_again(ctx, (row.ends[1], person), row.amount, &law);
+            self.claim_benefit(ctx, day, (row.ends[1], person), (row.amount, country), &law);
             n += 1;
         }
         n
@@ -785,6 +793,61 @@ impl Core {
         }
         ps.set_word(&mut self.space, household.slot(), at, pack(&decl, &p));
         self.labour.searching.insert((household, person));
+    }
+
+    /// A person who lost its job claims its country's benefit where what it pays over its months is worth the hours
+    /// claiming takes: a contract from the treasury paying the benefit's share of the wage it lost monthly from the
+    /// next month for the benefit's months.
+    #[clause("SOC.3", "SOC.7")]
+    fn claim_benefit(
+        &mut self,
+        ctx: &LabourCtx<'_>,
+        day: Day,
+        (household, person): (PartyKey, u64),
+        (wage, country): (i64, u8),
+        law: &Law,
+    ) {
+        let (Some(Some(benefit)), Some(claim)) =
+            (self.state.benefit.get(usize::from(country)).copied(), self.state.claim)
+        else {
+            return;
+        };
+        let Some(Some(treasury)) = self.treasuries.get(usize::from(country)).copied() else { return };
+        let Some(family) = self.families.iter().position(|f| f.name == "SOC.benefit") else { return };
+        let monthly = benefit.replacement * from_i64(wage);
+        let hour = from_i64(wage) / (law.weeks_a_month * f64::from(law.full_time_hours));
+        let input = if_state::kinds::ClaimIn {
+            monthly,
+            months: f64::from(benefit.months),
+            claiming_cost: benefit.claim_hours * hour,
+        };
+        if !claim(&input) {
+            return;
+        }
+        let date = ctx.calendar.date(day);
+        let Some(f) = self.families.get_mut(family) else { return };
+        let dates = phx_ledger::opening::monthly(date, CountryId::new(country));
+        f.schedules.push((dates, country, 0));
+        f.classes.push([0, 0, 0]);
+        f.terms.push(None);
+        f.ends_after.push(Some(benefit.months));
+        let schedule = u32::try_from(f.schedules.len() - 1).unwrap_or(u32::MAX);
+        let due =
+            Due { ends: [treasury, household], amount: phx_ledger::opening::whole(monthly), nth: 1, schedule, person };
+        let _ = f.store.open(due, Some(dates.nth(ctx.calendar, 1)));
+    }
+
+    /// A person hired leaves the benefit.
+    fn end_benefit(&mut self, household: PartyKey, person: u64) {
+        for family in self.families.iter_mut().filter(|f| f.name == "SOC.benefit") {
+            let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };
+            let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();
+            for e in mine {
+                if family.store.edges.row(e).is_some_and(|r| r.person == person) {
+                    family.store.close(e);
+                }
+            }
+        }
     }
 
     /// A person who retired leaves its jobs and the searchers.

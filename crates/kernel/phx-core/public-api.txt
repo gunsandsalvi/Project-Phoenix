@@ -791,6 +791,7 @@ pub phx_core::flows::Credit::payee: phx_id::ids::PartyKey
 pub phx_core::flows::Credit::reason: u8
 pub struct phx_core::flows::Denom(_)
 impl phx_core::flows::Denom
+pub fn phx_core::flows::Denom::ccy(self) -> u8
 pub const fn phx_core::flows::Denom::is_money(self) -> bool
 pub fn phx_core::flows::Denom::money(u8) -> phx_core::flows::Denom
 pub fn phx_core::flows::Denom::unit(self) -> u16

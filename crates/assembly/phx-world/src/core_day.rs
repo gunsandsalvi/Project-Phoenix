@@ -52,6 +52,22 @@ pub struct DatedFamily {
     pub reason: u8,
     pub schedules: Vec<(ScheduleDates, u8, u8)>,
     pub classes: Vec<[u32; 3]>,
+    /// For a family whose dues are reckoned from its terms — a loan's interest on its balance and its part repaid —
+    /// each schedule's terms; a contract's amount is then what it still owes.
+    pub terms: Vec<Option<phx_ledger::algebra::Terms>>,
+    /// Each schedule's last date by its place, where its contracts end: a benefit's months.
+    pub ends_after: Vec<Option<u32>>,
+}
+
+/// The state's laws on the core, by country: the income tax withheld from wages, the consumption tax's rate, the
+/// benefit for a job lost, and each country's treasury the taxes are paid to.
+#[derive(Debug, Default)]
+pub struct CoreState {
+    pub withholding: Vec<Option<phx_ledger::levy::Withholding>>,
+    pub consumption: Vec<Option<f64>>,
+    pub benefit: Vec<Option<if_state::kinds::BenefitLaw>>,
+    pub claim: Option<fn(&if_state::kinds::ClaimIn) -> bool>,
+    pub included: Option<fn(f64, f64) -> f64>,
 }
 
 /// What the core's day did: the flows made, settled, failed and committed.
@@ -79,6 +95,33 @@ pub struct Work {
     pub due: Vec<u32>,
 }
 
+/// A loan's due on its `k`th date, by its terms' shape: what it pays, and of that what repays its balance.
+#[clause("REG.5", "REG.11", "BNK.17")]
+fn reckoned(
+    terms: &phx_ledger::algebra::Terms,
+    (balance, ccy): (i64, u8),
+    k: u32,
+    (day, calendar): (Day, &Calendar),
+) -> (i64, i64) {
+    use phx_ledger::algebra::{Amount, DueBuf, Leg};
+    let (shape, own) = phx_ledger::algebra::shape_of(terms);
+    let plan = phx_ledger::algebra::shape_plan(&shape, Some(k), day, calendar);
+    if plan.general {
+        violation!(clause = "REG.5", "a loan whose dues wait on an event");
+    }
+    let mut buf = DueBuf::default();
+    phx_ledger::algebra::due_by_shape(&plan, &own, phx_num::Money::new(balance, phx_num::Ccy::new(ccy)), &mut buf);
+    let (mut paid, mut repaid) = (0, 0);
+    for d in buf.iter() {
+        let Amount::Money(m) = d.amount else { continue };
+        paid += m.amt();
+        if matches!(terms.legs.get(usize::from(d.leg)), Some(Leg::Amortising | Leg::Principal { .. })) {
+            repaid += m.amt();
+        }
+    }
+    (paid, repaid)
+}
+
 impl DatedFamily {
     /// The contracts due today made flows, each rescheduled at its next date.
     #[clause("SET.4", "TIME.4")]
@@ -93,21 +136,40 @@ impl DatedFamily {
             let Some(row) = self.store.edges.rows_mut().get_mut(usize::try_from(edge).unwrap_or(usize::MAX)) else {
                 continue;
             };
-            let Some((dates, ccy, order)) = self.schedules.get(usize::try_from(row.schedule).unwrap_or(usize::MAX))
-            else {
+            let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
+            let Some((dates, ccy, order)) = self.schedules.get(at) else {
                 violation!(clause = "TIME.4", "a contract with no schedule", edge = edge);
             };
-            out.push(Flow {
-                payer: row.ends[0],
-                payee: row.ends[1],
-                amount: row.amount,
-                source: edge,
-                denomination: Denom::money(*ccy),
-                reason: self.reason,
-                order: *order,
+            let amount = match self.terms.get(at).and_then(Option::as_ref) {
+                Some(terms) => {
+                    let (paid, repaid) = reckoned(terms, (row.amount, *ccy), row.nth, (day, calendar));
+                    row.amount -= repaid;
+                    paid
+                }
+                None => row.amount,
+            };
+            if amount > 0 {
+                out.push(Flow {
+                    payer: row.ends[0],
+                    payee: row.ends[1],
+                    amount,
+                    source: edge,
+                    denomination: Denom::money(*ccy),
+                    reason: self.reason,
+                    order: *order,
+                });
+                made += 1;
+            }
+            let last = self.ends_after.get(at).copied().flatten().or_else(|| {
+                self.terms.get(at).and_then(Option::as_ref).and_then(|t| match t.schedule.count {
+                    phx_num::Missing::Present(n) => Some(n),
+                    phx_num::Missing::Absent => None,
+                })
             });
-            made += 1;
             row.nth += 1;
+            if last.is_some_and(|n| row.nth > n) {
+                continue;
+            }
             let next = dates.nth(calendar, row.nth);
             if next <= day {
                 violation!(clause = "TIME.4", "a contract's next date not after today", edge = edge);
@@ -119,6 +181,32 @@ impl DatedFamily {
 }
 
 impl Core {
+    /// Income tax withheld from each wage the day's dues pay: the band's levy on its year taken from what the
+    /// household is paid and paid by the employer to its country's treasury.
+    #[clause("TAX.2", "TAX.7")]
+    fn withhold(&self, buf: &mut Vec<Flow>) {
+        let mut taxes = Vec::new();
+        for f in buf.iter_mut().filter(|f| f.reason == WAGE && f.denomination.is_money()) {
+            let ccy = f.denomination.ccy();
+            let Some(Some(w)) = self.state.withholding.get(usize::from(ccy)) else { continue };
+            let Some(Some(treasury)) = self.treasuries.get(usize::from(ccy)).copied() else { continue };
+            let tax = w.on_payment(f.amount);
+            if tax <= 0 || tax > f.amount {
+                continue;
+            }
+            f.amount -= tax;
+            taxes.push(Flow {
+                payer: f.payer,
+                payee: treasury,
+                amount: tax,
+                source: f.source,
+                reason: crate::consts::reason::TAXED,
+                ..*f
+            });
+        }
+        buf.append(&mut taxes);
+    }
+
     /// An estate begun with a household's money at its bank, to settle on its country's next business day.
     #[clause("PTY.9")]
     pub(crate) fn open_estate(&mut self, (bank, money): (u32, i64), (country, day): (CountryId, Day)) {
@@ -200,14 +288,26 @@ impl Core {
         (parties, at_issuer)
     }
 
-    /// The money family on the core after the day's settlement, reading only: each bank owes what its customers hold,
-    /// and neither total moved, the issuer making no flow on the core yet.
+    /// The money family on the core after the day's settlement, reading only: each bank owes what its customers hold;
+    /// the money the parties hold moved only by what they and the banks paid each other, the issuer making no flow on
+    /// the core yet; and the banks' reserves with the accounts at the issuer did not move.
     #[clause("MON.5", "N1")]
-    fn money_breaks(&self, before: (i128, i128), deposits: &mut [i64]) -> u64 {
+    fn money_breaks(&self, before: (i128, i128), bank_net: i128, deposits: &mut [i64]) -> u64 {
         let owed = deposits_of(self.kinds.iter(), deposits.len());
         let banks = u64::try_from(owed.iter().zip(deposits.iter()).filter(|(a, b)| a != b).count()).unwrap_or(u64::MAX);
         let (parties, at_issuer) = self.money_totals();
-        banks + u64::from(parties != before.0) + u64::from(at_issuer != before.1)
+        banks + u64::from(parties != before.0 + bank_net) + u64::from(at_issuer != before.1)
+    }
+
+    /// What a flow moves into the parties other than banks from the banks: a bank paying a party is money made, a
+    /// party paying a bank money gone; a flow between two banks or two parties moves none.
+    fn bank_net_of(&self, f: &Flow) -> i128 {
+        let bank = |k: PartyKey| self.bank_kind.is_some_and(|b| b == k.kind());
+        match (bank(f.payer), bank(f.payee)) {
+            (true, false) => i128::from(f.amount),
+            (false, true) => -i128::from(f.amount),
+            _ => 0,
+        }
     }
 
     /// Runs the core's day: every family's dues made flows, then each currency's flows settled on its country's
@@ -223,12 +323,15 @@ impl Core {
                 record.flows += family.dues(day, calendar, &mut work.due, buf);
             }
         }
+        if let Some(buf) = work.flows.chunks_mut().first_mut() {
+            self.withhold(buf);
+        }
         let mut settling = Vec::new();
         if let Some(buf) = work.flows.chunks_mut().first_mut() {
-            let before = buf.len();
             settling = self.estates_pay(day, calendar, buf);
             buf.append(&mut self.pending);
-            record.flows += phx_rand::float::len_u64(buf.len() - before);
+            // Every flow the day settles is one it made: its dues, the taxes withheld from them, estates and sales.
+            record.flows = phx_rand::float::len_u64(buf.len());
         }
         let high: Vec<u32> = self.kinds.iter().map(|k| k.parties.high_water()).collect();
         let ranges = Ranges::new(self.range_bits, &high);
@@ -237,6 +340,12 @@ impl Core {
         });
         let mut deposits = deposits_of(self.kinds.iter(), banks);
         let closed = vec![false; banks];
+        let mut bank_net: i128 = work
+            .flows
+            .chunks_mut()
+            .first_mut()
+            .map_or(0, |buf| buf.iter().filter(|f| f.denomination.is_money()).map(|f| self.bank_net_of(f)).sum());
+        let mut failed: Vec<Flow> = Vec::new();
         for (country, issuer) in self.issuers.iter().enumerate() {
             let Ok(ccy) = u8::try_from(country) else { continue };
             work.flows.group(None, &ranges, Denom::money(ccy));
@@ -254,13 +363,15 @@ impl Core {
                 let out = work.settle.settle(None, &grouped, &ranges, &mut b, &lot);
                 record.settled += out.settled;
                 record.failed += phx_rand::float::len_u64(out.failed.len());
+                failed.extend(out.failed.iter().map(|(f, _)| *f));
             } else {
                 work.settle.commit(None, &grouped, &ranges, &mut b);
                 record.committed += phx_rand::float::len_u64(grouped.end());
             }
         }
         self.work = work;
-        record.breaks += self.money_breaks(before, &mut deposits);
+        bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
+        record.breaks += self.money_breaks(before, bank_net, &mut deposits);
         for estate in settling {
             let empty = self.kinds.get(usize::from(estate.kind())).and_then(|k| k.accounts.as_ref()).is_some_and(|a| {
                 a.balance.get(estate.slot()).unwrap_or(0) == 0 && a.pending.get(estate.slot()).unwrap_or(0) == 0

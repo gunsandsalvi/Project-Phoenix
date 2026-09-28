@@ -66,6 +66,7 @@ pub struct Core {
     pub pop_days: Vec<(phx_id::Day, crate::core_pop::PopDay)>,
     pub labour: crate::core_labour::CoreLabour,
     pub goods: crate::core_goods::CoreGoods,
+    pub state: crate::core_day::CoreState,
     /// Flows owed today beside the families' dues: severance at a separation, and the day's retail sales.
     pub pending: Vec<phx_core::flows::Flow>,
 }
@@ -183,6 +184,7 @@ impl Core {
             pop_days: Vec::new(),
             labour: crate::core_labour::CoreLabour::default(),
             goods: crate::core_goods::CoreGoods::default(),
+            state: crate::core_day::CoreState::default(),
             pending: Vec::new(),
         }
     }
@@ -348,6 +350,8 @@ impl Core {
             reason: crate::core_day::PENSION,
             schedules: Vec::new(),
             classes: Vec::new(),
+            terms: Vec::new(),
+            ends_after: Vec::new(),
         };
         // Each pension line read once: its amount, and where its schedule and next date are among the family's.
         let mut lines: std::collections::BTreeMap<phx_id::LineId, Option<(i64, u32, u32)>> =

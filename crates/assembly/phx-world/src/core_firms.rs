@@ -41,7 +41,20 @@ pub struct Snapshot {
     pub units: Vec<f64>,
 }
 
+/// A share or a rate in millionths, as a record word holds it.
+fn parts(x: f64) -> i64 {
+    floor_to_i64((x * crate::consts::firm::PART_ONE).round())
+        .unwrap_or_else(|| violation!(clause = "REP.9", "a part beyond a word"))
+}
+
 impl Snapshot {
+    /// A product's markup in the opening's accounts: its price over its cost there.
+    #[must_use]
+    pub fn markup(&self, product: usize) -> f64 {
+        let at = |v: &[f64]| v.get(product).copied().unwrap_or(f64::NAN);
+        at(&self.price) / (at(&self.materials) + at(&self.labour)) - 1.0
+    }
+
     /// A unit's price at a productivity: the product's markup over its cost in the accounts, over the firm's own cost,
     /// its labour's hours fewer by its productivity's factor.
     #[clause("FRM.5", "FRM.14", "GEN.13")]
@@ -123,13 +136,8 @@ fn apportion(total: u64, weights: &[u64]) -> Vec<u64> {
         .collect()
 }
 
-/// A firm's opening stock: its output's days of cover, its management's.
-fn stock_of(output: i64, cover_days: f64) -> i64 {
-    floor_to_i64((from_i64(output) * cover_days / crate::consts::DAYS_A_YEAR).round()).unwrap_or(0)
-}
-
 /// An amount split over weights exactly, each part in proportion to its weight; nothing where no weight is.
-fn apportion_amount(total: i64, weights: &[u64]) -> Vec<i64> {
+pub(crate) fn apportion_amount(total: i64, weights: &[u64]) -> Vec<i64> {
     let (mut left, mut whole): (i64, u64) = (total, weights.iter().sum());
     weights
         .iter()
@@ -219,6 +227,7 @@ pub struct FirmsOpening<'a> {
     pub streams: &'a Streams,
     pub stream: &'a StreamDecl,
     pub management: &'a sys_frm::decide::Management,
+    pub today: phx_id::Day,
 }
 
 /// Each cell's output a year shared over its firms by the logit's chance its price wins: the product's units in the
@@ -271,7 +280,6 @@ impl Core {
             }
         }
         let price_weight = o.register.fixed("SRV.price_weight")?;
-        let cover_days = o.management.cover_days;
         let mut store: KindStore<SystemBacking> =
             KindStore::new(&mut self.space, crate::core::kind_number(firm), AGENT_ROWS, AGENT_ROWS_PER_CHUNK, RECORD)
                 .with_accounts(&mut self.space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK);
@@ -304,7 +312,10 @@ impl Core {
                     MaybeI64::present(d.productivity),
                     MaybeI64::present(d.price),
                     MaybeI64::present(output),
-                    MaybeI64::present(stock_of(output, cover_days)),
+                    MaybeI64::present(parts(snap.markup(phx_rand::float::index(u64::from(d.product))))),
+                    MaybeI64::present(parts(from_i64(output) / crate::consts::DAYS_A_YEAR)),
+                    MaybeI64::present(0),
+                    MaybeI64::present(i64::from(o.today.get())),
                 ];
                 let id = PartyId::new(self.next_id);
                 self.next_id += 1;

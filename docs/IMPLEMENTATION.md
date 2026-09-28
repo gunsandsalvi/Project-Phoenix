@@ -728,7 +728,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (a moved to i; b and c done; d and e begun: production within staff, households' spending and retail sales on the core)
+**Status**: building (b and c done; d–g on the core, their openings still read from the books; next: the native opening and the switch, then h)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
@@ -783,6 +783,17 @@ world switches to the core.
     core; the core saved and loaded.
   - i. The switch: the committed world is the core's; the old kernel's crates and modules, its checks and the
     primitives the matrices replace are deleted; the smoke and the bench judged.
+  - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening comes next —
+    households, persons, jobs, loans, pensions and deposits drawn on the core from the opening dataset and the
+    systems' draws — then the switch and the old kernel's deletion, then h on the core alone.
+  - Built on the core, their openings still read from the books until the native opening: goods as holdings (each
+    firm's stocks, making by the production rule within its staff and stored inputs, inputs bought at posted prices,
+    the goods' identity read daily); the treasury's collective consumption and firms' fixed investment from the
+    accounts' final uses, until public agencies and plant decide them; firms' price reviews by the pricing rule over
+    their own markup, expected sales and sales since their last review; loans as amortising dated contracts reckoned
+    by their terms' shape (households' from the books, firms' re-dealt from the sheet by turnover); income tax
+    withheld from wages by band, consumption tax at the till, the benefit claimed on a job lost and ended at a hire;
+    the money check counting what banks and parties pay each other.
 - **Persons as parties** (PTY.1, PTY.3, REP.26, Appendix E 46, owner 2026-09-28): each person keeps one identity from
   birth to death, the persons store holding it beside the person's word, and every contract naming a person names it
   by that identity, never by its place in its household (c, with the employment contracts, the pensions moving to it);

@@ -115,15 +115,16 @@ impl World {
             };
             let _ = self.core.labour_day(&lctx, day);
         }
-        let own_hh = self.own.iter().find(|(c, _)| *c == <sys_hh::Hh as phx_core::System>::CODE);
-        if let (Some(rule), Ok(weights)) =
-            (own_hh.and_then(|(_, s)| s.downcast_ref::<sys_hh::Own>()), crate::registry::retail_weights(&self.register))
-        {
+        let own_of = |code: &str| self.own.iter().find(|(c, _)| *c == code).map(|(_, s)| s);
+        let hh = own_of(<sys_hh::Hh as phx_core::System>::CODE).and_then(|s| s.downcast_ref::<sys_hh::Own>());
+        let frm = own_of(<sys_frm::Frm as phx_core::System>::CODE).and_then(|s| s.downcast_ref::<sys_frm::Own>());
+        if let (Some(rule), Some(frm), Ok(weights)) = (hh, frm, crate::registry::retail_weights(&self.register)) {
             let gctx = crate::core_goods::GoodsCtx {
                 register: &self.register,
                 calendar: &self.calendar,
                 streams: &self.streams,
                 rule,
+                management: frm.management(),
                 regions: &regions,
                 weights,
             };

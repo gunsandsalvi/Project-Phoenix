@@ -130,7 +130,8 @@ pub(crate) fn drawn(b: &Books, name: &str, country: CountryId) -> Vec<(PartyId, 
     v.clone()
 }
 
-pub(crate) fn rate(percent: f64) -> Rate {
+/// A yearly rate from a percentage.
+pub fn rate(percent: f64) -> Rate {
     Rate::new(whole(percent / PERCENT * RATE_ONE), RatePeriod::Year)
 }
 

@@ -138,22 +138,29 @@ pub const CORE_RANGE_BITS: u32 = 12;
 /// The days the core's due wheels hold before their far list.
 pub const CORE_WHEEL_DAYS: u32 = 64;
 /// A core firm's record: its product, its region, the tile it is sited on, its productivity, the log of its factor
-/// over its way's, in billionths, its posted price of a lot, its output a year and its stock in units; the purposes its opening
+/// over its way's, in billionths, its posted price of a lot, its output a year in units, its markup over its unit cost
+/// and the sales a day it expects in millionths, the units it sold since its last review and that review's day; the
+/// purposes its opening
 /// draws and its jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
 pub mod firm {
-    pub const RECORD: usize = 7;
+    pub const RECORD: usize = 10;
     pub const PRODUCT: usize = 0;
     pub const REGION: usize = 1;
     pub const SITE: usize = 2;
     pub const PRODUCTIVITY: usize = 3;
     pub const PRICE: usize = 4;
     pub const OUTPUT: usize = 5;
-    pub const STOCK: usize = 6;
+    pub const MARKUP: usize = 6;
+    pub const EXPECTED: usize = 7;
+    pub const SOLD: usize = 8;
+    pub const REVIEWED: usize = 9;
+    pub const PART_ONE: f64 = 1_000_000.0;
     pub const PRODUCTIVITY_ONE: f64 = 1_000_000_000.0;
-    pub const PURPOSES: u32 = 3;
+    pub const PURPOSES: u32 = 4;
     pub const PRODUCTIVITY_PURPOSE: u32 = 0;
     pub const SITE_PURPOSE: u32 = 1;
     pub const JOBS_PURPOSE: u32 = 2;
+    pub const LOANS_PURPOSE: u32 = 3;
     pub const COMPENSATION: usize = 0;
 }
 /// The reasons the core's flows are made for, by their code.
@@ -163,4 +170,15 @@ pub mod reason {
     pub const WAGE: u8 = 3;
     pub const SEVERANCE: u8 = 4;
     pub const SOLD: u8 = 5;
+    pub const MADE: u8 = 6;
+    pub const USED: u8 = 7;
+    pub const DELIVERED: u8 = 8;
+    pub const REPAID: u8 = 9;
+    pub const TAXED: u8 = 10;
+    pub const BENEFIT: u8 = 11;
+}
+/// The bits a draw's subject gives a region beside its buyer, and a meeting's round beside its seller.
+pub mod draws {
+    pub const REGION_BITS: u32 = 16;
+    pub const ROUND_BITS: u32 = 20;
 }

@@ -202,6 +202,8 @@ impl Core {
             reason: WAGE,
             schedules: Vec::new(),
             classes: Vec::new(),
+            terms: Vec::new(),
+            ends_after: Vec::new(),
         }
     }
 
