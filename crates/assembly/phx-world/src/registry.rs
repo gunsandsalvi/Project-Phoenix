@@ -64,7 +64,8 @@ fn data_files(root: &Path, countries: &[PathBuf]) -> Result<Vec<DataFile>, Strin
     }
     for (i, dir) in countries.iter().enumerate() {
         let id = CountryId::new(u8::try_from(i).map_err(|_| format!("{} countries", countries.len()))?);
-        for path in toml_files(dir)?.into_iter().chain(toml_files(&dir.join("gen"))?) {
+        let tables = toml_files(&dir.join("gen"))?.into_iter().chain(toml_files(&dir.join("economy"))?);
+        for path in toml_files(dir)?.into_iter().chain(tables) {
             files.push(read(&path, Missing::Present(id))?);
         }
     }

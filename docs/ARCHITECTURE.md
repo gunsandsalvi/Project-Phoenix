@@ -2278,6 +2278,38 @@ its level's templates, the level's opening tables of the systems the world keeps
 values (`derived.toml`) — which the register reads in place of the templates. Each row of `data/inventory.toml` names a
 derived value's, distribution's or present value's owner and source, never a value.
 
+### 10.0a The opening dataset
+
+Each country group's economy of 2019, in shares of its GDP, is one derivation (`tools/data/derive_economy.py`), which
+first reruns the ways and price levels (`derive_tec.py`), the budget shares (`derive_hh.py`) and the plant
+(`derive_cap.py`) and then writes `data/profiles/<level>/economy/`:
+- **The flows** (`flows.toml`): twenty-two activities, the nineteen products with finance, real estate and public
+  administration; households' own employment is no market activity. The economy is closed: what each economy used,
+  from wherever it came, is made at home. The products' inputs of products are their ways' (`TEC.inputs`) at the
+  group's opening prices (`GDS.opening_price` times `GDS.price_level`), so the matrix and the ways agree; what they
+  and the three services use of finance, rents and public services, and taxes on products, are ICIO medians
+  (`GEN.service_inputs`, `GEN.product_taxes`). Value added is each activity's residue, split into compensation,
+  surplus and other taxes on production by Table 6 (`GEN.value_added`). Final uses — households (their products
+  their budget shares), collective consumption, investment, inventories — are medians (`GEN.final_uses`), and each
+  activity's output is what they need, (I − A)⁻¹ f (`GEN.output`).
+- **The stocks** (`stocks.toml`): five sectors (households, firms, banks, the central bank, the government) holding
+  currency, deposits, loans, bonds, government paper, reserves, central bank loans and equity
+  (`GEN.balance_sheet`, assets positive, each row summing to nothing) and real assets (`GEN.real_assets`: firms'
+  plant, which is `CAP.stock_per_gdp`, inventories and land; households' dwellings and land; the government's fixed
+  assets). Levels are broad sources' group medians (IMF, World Bank), holdings the OECD's sector accounts, and the
+  declared closures balance them: the central bank holds government paper for its currency and reserves; banks
+  hold reserves at their ratio, equity at their capital ratio, and bonds that balance them; firms' equity is their
+  assets less their debts; households hold the rest.
+- A group with too few reporters of a sector table takes the developed group's figure scaled by a broad measure of
+  its own (the Penn World Table's structures per GDP, the labour share), and the note says so.
+
+Assembly checks every country's dataset (`opening::economy::check`, at compile) and refuses it with each break
+named, primitive and residue: each activity's supply is its uses, its output its inputs, taxes and value added, GDP
+by production and by expenditure one; each instrument's assets its liabilities; firms, banks and the central bank
+worth nothing beyond their equity; firms' plant `CAP.stock_per_gdp`; households' spending their budget shares. The
+tolerance is the rounding of the stored places over the terms summed (Law 7). A new game copies the level's
+`economy/` files into each country.
+
 ### 10.1 Phases
 
 After the setup's derivation (§10.0), declared phases — **parties, physical stock, contracts, present values,

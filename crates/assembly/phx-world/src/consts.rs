@@ -96,3 +96,6 @@ pub const MONTHS: i64 = 12;
 pub const WEEKS_A_YEAR: f64 = DAYS_A_YEAR / DAYS_A_WEEK;
 /// A rate of one in phx-num's rate scale, for a yearly rate as the ledger holds it.
 pub const RATE_ONE: f64 = 1_000_000_000_000.0;
+/// The opening balance sheet's sectors worth nothing beyond their equity, by their column: firms, banks and the central
+/// bank (households are 0, the government 4).
+pub const SECTORS_WORTH_NOTHING: [usize; 3] = [1, 2, 3];

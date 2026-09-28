@@ -804,7 +804,8 @@ residual with no holder (Law 2).
 
 **Done when**
 - [ ] Every group's dataset derives and balances, and assembly refuses an unbalanced one.
-- [ ] The retired primitives are gone from `data/`, and the inventory is regenerated.
+- [ ] The inventory is regenerated; the primitives the dataset replaces retire at S1.23, where the opening reads the
+  matrices (moved there, owner's plan, 2026-09-28).
 - [ ] Two reviews are done.
 
 ---
@@ -835,6 +836,10 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 **Design**:
 - The world holds both cores during the port. The old one serves the committed world until S1.24 switches it.
 - The opening apportions S1.22's balance sheet over parties by the shapes, exactly (`split_total`).
+- The primitives the dataset replaces retire here, where the opening on the core reads the matrices instead: CAP's
+  stock per GDP (`GEN.real_assets`), CB's currency and the profile's debt levels and bank capital
+  (`GEN.balance_sheet`); a drawn profile moves the matrices by a declared mapping that keeps their identities. They
+  were not retired at S1.22, which would have rewired the old opening only for this step to rewrite it.
 - Estates follow PTY.9 and the waterfall on edges.
 - Settlement runs over the world's `Books`: every money kind's accounts, the banks' reserves and deposits, the issuer.
   The tie lot is the declared stream `SET.order`, opened for the payer at 7b. Each reason is a `ReasonDef` with the
@@ -10181,6 +10186,7 @@ the final build within the budget on the phone.
 | Build runs from S1.09 (the owner's speed) | a step's build run is dropped: each step runs the fast checks (lint, format, tests, `phx-check`) and is done on them; the world is run only at each stage's gate (`tools/build-run.sh --gate`), whose findings are fixed there | 2026-09-26 |
 | Cost bounds (N8.6; architecture §6.6) | every operation a day performs costs at most O(log n) in the size of any store of the world — sublinear, never a walk over a world-sized collection to do one thing; a day's cost is the sum of its events', and a world-sized pass only a declared rolling slice | 2026-09-25 |
 | Stage 0 closed as it is (N8.8; F-087) | Stage 0 closes with the full load missing the budget (median turn 7.9 s, worst 17.5 s, peak 8.3 GiB, saves 4.1 GB each on the build machine at a3e7459b): S0.26 done, S0.26f's parts not built and the phone's run carried to Stage 1, to be met by S1.16; the representation's factor stays 170 | 2026-09-25 |
+| Data gathered once (GEN.15, NUM.3) | every published source the remaining steps read is fetched at S1.22, into `data/sources/raw/`, and every matrix the opening reads is derived then; what no source gives is derived from those that do or simulated by a declared procedure, and said so in its note; no later step searches for data. Downloads the derivations do not read are removed | 2026-09-28 |
 
 ---
 

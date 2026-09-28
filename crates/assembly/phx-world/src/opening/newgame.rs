@@ -293,6 +293,11 @@ pub fn instantiate(
                 write(&dir.join("gen").join(format!("{code}.toml")), &text(&table)?)?;
             }
         }
+        // The level's flows and stocks, which every world's assembly checks.
+        let economy = templates.join("economy");
+        for name in ["flows.toml", "stocks.toml"] {
+            write(&dir.join("economy").join(name), &text(&economy.join(name))?)?;
+        }
         write(&dir.join("derived.toml"), &setup_file(c, setup)?)?;
         let record = toml::to_string(c).map_err(|e| e.to_string())?;
         write(&run_dir.join("countries").join(format!("{id}.toml")), &record)?;

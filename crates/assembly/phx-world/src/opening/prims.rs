@@ -1,3 +1,4 @@
+use phx_core::register::values::{Table1, Table2};
 use phx_core::{Declarations, JointProfile, Prim, Purpose, StreamDecl};
 use phx_macros::declare_prim;
 use phx_num::{Count, Fixed};
@@ -56,6 +57,54 @@ declare_prim! {
     pub UNITS_PER_DOLLAR = "GEN.units_per_dollar" { kind: Endowment, value: Count, clause: "MON.16", scope: PerCountry }
 }
 
+declare_prim! {
+    /// Each activity's output over GDP: the nineteen products, finance, real estate and public administration.
+    pub OUTPUT = "GEN.output" { kind: Endowment, value: Table1 { axis_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry }
+}
+
+declare_prim! {
+    /// What each activity uses of finance, real estate and public administration per unit of its output, and what those
+    /// three use of every product, in value.
+    pub SERVICE_INPUTS = "GEN.service_inputs" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// Taxes less subsidies on products per unit of each activity's output and of each final use's spending.
+    pub PRODUCT_TAXES = "GEN.product_taxes" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// Each activity's value added over GDP by part: compensation, operating surplus, other taxes on production.
+    pub VALUE_ADDED = "GEN.value_added" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// What each final use takes of each activity over GDP, at basic prices.
+    pub FINAL_USES = "GEN.final_uses" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// Each sector's holdings of each financial instrument over GDP, assets positive and liabilities negative.
+    pub BALANCE_SHEET = "GEN.balance_sheet" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// Each sector's real assets over GDP.
+    pub REAL_ASSETS = "GEN.real_assets" {
+        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
 /// The stream a new game's open choices, the regions' lot and the derived values are drawn from.
 pub const SETUP_STREAM: StreamDecl =
     StreamDecl { name: "GEN.setup", purpose: Purpose::Opening, keyed: false, clause: "GEN.15" };
@@ -81,6 +130,13 @@ pub struct GenPrims {
     pub settling_years: Prim<Count>,
     pub profile: Prim<JointProfile>,
     pub units_per_dollar: Prim<Count>,
+    pub output: Prim<Table1>,
+    pub service_inputs: Prim<Table2>,
+    pub product_taxes: Prim<Table1>,
+    pub value_added: Prim<Table2>,
+    pub final_uses: Prim<Table2>,
+    pub balance_sheet: Prim<Table2>,
+    pub real_assets: Prim<Table2>,
 }
 
 impl GenPrims {
@@ -99,6 +155,13 @@ impl GenPrims {
             settling_years: d.prim(&SETTLING_YEARS),
             profile: d.prim(&PROFILE),
             units_per_dollar: d.prim(&UNITS_PER_DOLLAR),
+            output: d.prim(&OUTPUT),
+            service_inputs: d.prim(&SERVICE_INPUTS),
+            product_taxes: d.prim(&PRODUCT_TAXES),
+            value_added: d.prim(&VALUE_ADDED),
+            final_uses: d.prim(&FINAL_USES),
+            balance_sheet: d.prim(&BALANCE_SHEET),
+            real_assets: d.prim(&REAL_ASSETS),
         }
     }
 }

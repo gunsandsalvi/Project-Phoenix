@@ -74,6 +74,7 @@ pub fn compile(
 ) -> Result<Compiled, Vec<String>> {
     let register = std::mem::take(&mut d.prims).build(files, countries.len())?;
     kernel.val.check(&register).map_err(|e| vec![e])?;
+    crate::opening::economy::check(&register, countries.len())?;
     let epoch = kernel.epoch.shared(&register);
     let day_zero_date = kernel.day_zero.shared(&register);
     let mut rules = Vec::with_capacity(countries.len());

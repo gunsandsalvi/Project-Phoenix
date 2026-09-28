@@ -501,3 +501,21 @@ owner = "GDS"
 first_read = "S1.15"
 source = "World Bank ICP 2021 price level indices by expenditure heading"
 status = "sourced: energy carriers at world prices, the ICP publishing no heading for energy alone"
+
+# The opening dataset's matrices (spec GEN.15): each group's flows and stocks of 2019 in shares of its GDP.
+
+[[row]]
+id = "GEN.flows"
+what = "the social accounting matrix: each activity's output, inputs, taxes on products, value added by part and final uses"
+owner = "GEN"
+first_read = "S1.23"
+source = "OECD ICIO 2019 (origins summed), OECD Table 6 value added parts, TEC.inputs at GDS prices, HH.budget_shares"
+status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/flows.toml; checked at assembly"
+
+[[row]]
+id = "GEN.stocks"
+what = "the balance-sheet matrix: each sector's financial instruments and real assets"
+owner = "GEN"
+first_read = "S1.23"
+source = "IMF MFS currency, GDD and WEO debt; World Bank GFDD deposits, bank reserves and capital; OECD Tables 720 and 9B; CAP.stock_per_gdp"
+status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/stocks.toml; checked at assembly"
