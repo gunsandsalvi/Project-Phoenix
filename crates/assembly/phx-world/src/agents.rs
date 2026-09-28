@@ -206,16 +206,16 @@ impl AgentDay {
 }
 
 /// What reading a process's chances needs: the register, the calendar and the country of each region.
-struct Reading<'a> {
-    register: &'a Register,
-    calendar: &'a phx_core::Calendar,
-    country_of: &'a (dyn Fn(u32) -> Option<CountryId> + Sync),
+pub(crate) struct Reading<'a> {
+    pub register: &'a Register,
+    pub calendar: &'a phx_core::Calendar,
+    pub country_of: &'a (dyn Fn(u32) -> Option<CountryId> + Sync),
 }
 
 /// An agent's present persons as a process reads them on a day, written to `s`: their places and each one's daily
 /// chance of a hit; returned, the first day after it on which any of their chances may change.
 #[clause("REP.7", "REP.25")]
-fn chances(
+pub(crate) fn chances(
     reading: &Reading<'_>,
     (kind, party): (&'static str, PartyId),
     bound: &Bound,
@@ -259,9 +259,9 @@ struct Changed {
 /// The buffers reading chances fills, held by a pass over many agents and reused for each, so the pass allocates only
 /// for its largest household.
 #[derive(Debug, Default)]
-struct Buffers {
+pub(crate) struct Buffers {
     places: Vec<usize>,
-    qs: Vec<f64>,
+    pub qs: Vec<f64>,
     open_places: Vec<usize>,
     open_qs: Vec<f64>,
     out: Vec<usize>,
@@ -303,10 +303,10 @@ fn book(
 
 /// What following an agent's booking came to: the persons its hits reached, the redraws drawn, and its next booking
 /// after today, for the agenda.
-struct Followed {
-    reached: Vec<usize>,
-    redraws: u64,
-    next: Booking,
+pub(crate) struct Followed {
+    pub reached: Vec<usize>,
+    pub redraws: u64,
+    pub next: Booking,
 }
 
 /// An agent's booking for a process come due by `today`, from the day and kind the agenda holds for it, followed on:
@@ -314,7 +314,7 @@ struct Followed {
 /// today. Persons a hit reached are passed over by the later draws, as their outcomes have yet to change them. It
 /// reads only, so agents are followed on the pool; the next booking is written to the agenda after.
 #[clause("REP.7", "REP.12", "CHN.4")]
-fn follow(
+pub(crate) fn follow(
     r: &Reading<'_>,
     who: (&'static str, PartyId),
     b: &Bound,
@@ -392,7 +392,7 @@ struct Gathered {
 
 impl World {
     /// The country each region lies in.
-    fn regions(&self) -> Vec<CountryId> {
+    pub(crate) fn regions(&self) -> Vec<CountryId> {
         crate::world::geo_in(&self.own).map.regions.iter().map(|r| r.country).collect()
     }
 

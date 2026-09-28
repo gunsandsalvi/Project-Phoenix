@@ -152,6 +152,7 @@ pub const CHECKS: &[Check] = &[
     observer::LC_0_60,
     ledger::LC_0_61,
     core::LC_0_62,
+    core::LC_0_63,
     outlooks::LC_1_01,
     outlooks::LC_1_02,
     outlooks::LC_1_03,

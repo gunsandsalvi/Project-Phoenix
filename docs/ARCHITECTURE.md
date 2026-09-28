@@ -1996,6 +1996,14 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   the flows made, settled, failed and committed. The state pensions in payment are its first family: every pension
   line a household's person holds on the books is a contract from its country's treasury to the household, at the
   line's amount, currency, payment order and next date.
+- **Chance on the core's persons** (`phx_world::core_pop`): each process on the households' persons keeps a wheel of
+  each household's next booking, its day and whether it is a hit kept by slot, so an entry a household was booked
+  past is skipped. A household due is read into its explicit form (attributes by name from its record, persons
+  unpacked), its booking followed to today by the same rules the books' day reads (`agents::follow`), and its hits'
+  outcomes applied in process order. Its gone persons leave from the last place down, each one's contracts closing and
+  the contracts naming a later place moving up one; its newborns join it; one no one is left in ends, its contracts
+  closing; a household changed is booked again for every process from the next day. Contracts name the payee's
+  person by its place (`Due::person`).
 - **A country's balance sheet** (`opening::sheet`): its group's matrices moved by its drawn profile. Households' and
   firms' debt, the government's, the banks' deposits, capital and reserves are the drawn levels; who holds each is
   the group's split; the dataset's closures balance the rest (the central bank holds government paper for its

@@ -52,6 +52,11 @@ pub struct Core {
     pub families: Vec<crate::core_day::DatedFamily>,
     pub work: crate::core_day::Work,
     pub days: Vec<crate::core_day::CoreDay>,
+    pub hazards: Vec<crate::core_pop::Hazard>,
+    pub household_decl: Option<phx_pop::kind::PopKindDecl>,
+    /// The persons the households held when the core opened.
+    pub persons_opened: u64,
+    pub pop_days: Vec<(phx_id::Day, crate::core_pop::PopDay)>,
 }
 
 fn kind_number(place: usize) -> u8 {
@@ -122,6 +127,7 @@ impl Core {
         }
         keys.sort_unstable_by_key(|(id, _)| *id);
         let bank_kind = names.iter().position(|n| *n == "bank").map(kind_number);
+        let persons_opened = persons.iter().flatten().map(Persons::held).sum();
         Core {
             space,
             first_agents: parties.first_cell_place(),
@@ -135,6 +141,10 @@ impl Core {
             families: Vec::new(),
             work: crate::core_day::Work::default(),
             days: Vec::new(),
+            hazards: Vec::new(),
+            household_decl: None,
+            persons_opened,
+            pop_days: Vec::new(),
         }
     }
 
@@ -313,7 +323,13 @@ impl Core {
                     .schedules
                     .get(usize::try_from(schedule).unwrap_or(usize::MAX))
                     .map(|s| s.0.nth(calendar, nth));
-                let _ = family.store.open(Due { ends: [*treasurer, pensioner], amount, nth, schedule }, first);
+                let phx_pop::person::Holder::Person(place) = a.holder else {
+                    violation!(clause = "SOC.3", "a pension held by a household, not a person", line = a.line.get());
+                };
+                let person =
+                    u32::try_from(place).unwrap_or_else(|_| violation!(clause = "REP.26", "a person beyond a place"));
+                let due = Due { ends: [*treasurer, pensioner], amount, nth, schedule, person, pad: 0 };
+                let _ = family.store.open(due, first);
             }
         }
         self.families.push(family);

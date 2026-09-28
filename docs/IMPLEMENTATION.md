@@ -761,7 +761,9 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
     households' currency opens with the retail payments at d.
   - d. The day: hazards and outcomes over persons, dated flows by shape from the wheel, settlement over `Books`,
     closed days committed, estates on edges. *Done*: the day's frame — dated families from their wheels, each
-    currency settled or committed — with the state pensions in payment (LC-0-62).
+    currency settled or committed — with the state pensions in payment (LC-0-62); chance on the persons, their
+    outcomes written back, the gone persons' contracts closed and an empty household ended (LC-0-63). *Left*: an
+    ended household's estate (PTY.9) holding what it held instead of its contracts closing; the other families.
   - e. The audit's money and contracts families, the Stage 0 checks on the inspector over the core, and the smoke.
 - **Values the opening now draws from the data in hand.** Whom an extended or non-relative household holds besides
   its head, assumed today (`DEM.household_members`: one relative of 65 and over, one unrelated adult), is derived per
@@ -786,7 +788,8 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 **Unit tests**: the ported systems' tests.
 
 **Live checks**: every Stage 0 live check on a smoke of the core world; `LC-0-62`: every flow the core's day makes is
-settled, failed or committed, and the core pays its dues.
+settled, failed or committed, and the core pays its dues; `LC-0-63`: the core's households hold their opening persons
+plus those born less those gone, and chance reaches them.
 
 **Budget**: the smoke's Stage 0 world within its share of the unit targets.
 

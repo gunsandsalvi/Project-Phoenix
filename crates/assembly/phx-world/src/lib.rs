@@ -4,6 +4,7 @@ pub mod compile;
 pub mod consts;
 pub mod core;
 pub mod core_day;
+pub mod core_pop;
 pub mod credit;
 pub mod day;
 mod defaults;

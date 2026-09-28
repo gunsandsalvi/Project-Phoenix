@@ -591,6 +591,16 @@ fn core_of(
     if let Some(pension) = state.pension {
         core.open_pensions(books, pension.line, (calendar, today), opening.len());
     }
+    let regions: Vec<phx_id::CountryId> = geo.map.regions.iter().map(|r| r.country).collect();
+    let ctx = crate::core_pop::Ctx {
+        register: &p.c.register,
+        calendar,
+        streams: &p.c.streams,
+        processes: &p.processes,
+        regions: &regions,
+    };
+    core.open_hazards(&ctx, &p.pop, today.succ());
+    let _ = population;
     Ok(core)
 }
 
