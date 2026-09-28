@@ -5,7 +5,7 @@
 use phx_id::{PartyKey, Slot};
 use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
 
-use super::{Book, Books, Cause, Outcome, Settle};
+use super::{Book, Books, Cause, Lines, Outcome, Settle};
 use crate::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
 
 const FIRMS: u8 = 0;
@@ -56,6 +56,7 @@ impl Fixture {
             pending: &mut self.pending,
             held: &mut self.held,
             facility: &self.facility,
+            lines: None,
         };
         let banks = Book {
             bank: &[],
@@ -63,6 +64,7 @@ impl Fixture {
             pending: &mut self.bank_pending,
             held: &mut self.bank_held,
             facility: &self.bank_facility,
+            lines: None,
         };
         Books {
             kinds: vec![Some(firms), Some(banks), None],
@@ -304,4 +306,28 @@ fn a_closed_days_commitments_settle_first() {
     let out = s.settle(None, &g, &ranges, &mut w.books(), &lot);
     assert_eq!((w.balance.clone(), out.failed.len()), (vec![5, 5], 0));
     assert_eq!(w.reserves, vec![RICH - 5, RICH + 5]);
+}
+
+#[test]
+fn settled_flows_post_to_their_lines() {
+    // 0 pays 1 60 and 2 50 on reason 0 with 100: the 60 settles, the 50 fails and is taken back from both. The
+    // firms keep two lines, paid and received; reason 0 feeds both.
+    let mut w = Fixture::new(&[100, 0, 0], [RICH, RICH]);
+    let mut amounts = vec![0_i64; 6];
+    let (paid, received) = ([Some(0)], [Some(1)]);
+    let out = {
+        let mut books = w.books();
+        if let Some(Some(firms)) = books.kinds.get_mut(usize::from(FIRMS)) {
+            firms.lines = Some(Lines { amounts: &mut amounts, width: 2, paid: &paid, received: &received });
+        }
+        let ranges = Ranges::new(2, &[3, 2, 1]);
+        let mut bufs = FlowBufs::default();
+        bufs.reset(1);
+        bufs.chunks_mut()[0].extend(flows(&[(0, 1, 60), (0, 2, 50)]));
+        let mut g = Grouped::default();
+        g.group(None, &[&bufs], &ranges, Denom::money(0));
+        Settle::default().settle(None, &g, &ranges, &mut books, &lot)
+    };
+    assert_eq!(out.failed.len(), 1);
+    assert_eq!(amounts, vec![60, 0, 0, 60, 0, 0], "0 paid 60 and 1 received it; the failed 50 is on no line");
 }

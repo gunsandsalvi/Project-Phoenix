@@ -27,6 +27,30 @@ pub struct Book<'a> {
     pub held: &'a mut [i64],
     /// How far each account may fall below nothing, as its terms grant.
     pub facility: &'a [i64],
+    /// Where each party's settled flows are posted, if the kind keeps lines of them.
+    pub lines: Option<Lines<'a>>,
+}
+
+/// A kind's parties' lines of the cash their statements report: `width` lines a party, and the line a flow of each
+/// reason adds its amount to when the party pays it and when the party is paid it. A reason with no line on a side
+/// feeds none there.
+#[clause("ACC.9")]
+#[derive(Debug)]
+pub struct Lines<'a> {
+    pub amounts: &'a mut [i64],
+    pub width: usize,
+    pub paid: &'a [Option<usize>],
+    pub received: &'a [Option<usize>],
+}
+
+impl Lines<'_> {
+    fn post(amounts: &mut [i64], width: usize, at: usize, line: Option<usize>, amount: i64) {
+        let Some(l) = line else { return };
+        let Some(cell) = amounts.get_mut(at * width + l) else {
+            violation!(clause = "ACC.9", "a posting past its party's lines", line = l);
+        };
+        *cell += amount;
+    }
 }
 
 /// Every kind's accounts in one currency, the kind whose parties are the banks, the banks closed today, and the
@@ -139,6 +163,7 @@ fn cell(v: &mut [i64], i: usize) -> &mut i64 {
 struct RangeJob<'a> {
     range: usize,
     net: &'a mut [i64],
+    lines: Option<LineChunk<'a>>,
     bank: &'a [u32],
     balance: &'a mut [i64],
     pending: &'a mut [i64],
@@ -252,10 +277,7 @@ impl Settle {
             current.dedup();
         }
         self.apply(pool, ranges, books);
-        // What a flow held today holds back counts from the next day on: today its money never left the account.
-        for f in &out.held {
-            *cell(books.book_mut(f.payer.kind()).held, slot(f.payer)) += f.amount;
-        }
+        unsettled(books, &out);
         let removed: u64 = self.removed.iter().map(|w| u64::from(w.count_ones())).sum();
         out.settled = u64::try_from(end).unwrap_or(u64::MAX) - removed;
         out
@@ -298,6 +320,14 @@ impl Settle {
             let kind = u8::try_from(k).unwrap_or(u8::MAX);
             let first = ranges.of_kind(kind).start;
             let banks = b.bank.chunks(width).map(Some).chain(std::iter::repeat(None));
+            let mut lines: Vec<LineChunk<'_>> = match b.lines.as_mut() {
+                Some(l) => {
+                    let (w, paid, received) = (l.width, l.paid, l.received);
+                    l.amounts.chunks_mut(width * w).map(|a| (a, w, paid, received)).collect()
+                }
+                None => Vec::new(),
+            };
+            lines.reverse();
             let parts = net
                 .chunks_mut(width)
                 .zip(b.balance.chunks_mut(width))
@@ -309,6 +339,7 @@ impl Settle {
                 jobs.push(RangeJob {
                     range: first + i,
                     net,
+                    lines: lines.pop(),
                     bank: bank.unwrap_or(&[]),
                     balance,
                     pending,
@@ -523,6 +554,28 @@ impl Settle {
     }
 }
 
+/// What the flows that did not settle leave: a held flow holds back its amount from the next day on, since today its
+/// money never left the account; and every one is taken back from both sides' lines, posted as it was netted.
+fn unsettled(books: &mut Books<'_>, out: &Outcome) {
+    for f in &out.held {
+        *cell(books.book_mut(f.payer.kind()).held, slot(f.payer)) += f.amount;
+    }
+    for f in out.failed.iter().map(|(f, _)| f).chain(&out.held) {
+        for (p, paying) in [(f.payer, true), (f.payee, false)] {
+            if p == books.issuer {
+                continue;
+            }
+            let Some(l) = books.book_mut(p.kind()).lines.as_mut() else { continue };
+            let words = if paying { l.paid } else { l.received };
+            let line = words.get(usize::from(f.reason)).copied().flatten();
+            Lines::post(l.amounts, l.width, slot(p), line, -f.amount);
+        }
+    }
+}
+
+/// A range's lines: its parties' amounts, the lines a party, and the line each reason posts to on each side.
+type LineChunk<'a> = (&'a mut [i64], usize, &'a [Option<usize>], &'a [Option<usize>]);
+
 /// One range's pass: see `RangeJob`.
 fn range_pass(
     j: RangeJob<'_>,
@@ -531,7 +584,7 @@ fn range_pass(
     (issuer, banks, n_banks): (PartyKey, u8, usize),
     settle: bool,
 ) -> (Vec<i64>, Vec<PartyKey>) {
-    let RangeJob { range, net, bank, balance, pending, held, facility } = j;
+    let RangeJob { range, net, mut lines, bank, balance, pending, held, facility } = j;
     let (kind, first) = ranges.start(range);
     net.fill(0);
     if settle {
@@ -559,9 +612,17 @@ fn range_pass(
     };
     for c in grouped.by_payee.bucket(range) {
         moved(c.payee, c.amount, net, &mut cust);
+        if let Some((amounts, w, _, received)) = lines.as_mut().filter(|_| c.payee != issuer) {
+            let line = received.get(usize::from(c.reason)).copied().flatten();
+            Lines::post(amounts, *w, at(c.payee), line, c.amount);
+        }
     }
     for f in grouped.by_payer.bucket(range) {
         moved(f.payer, -f.amount, net, &mut cust);
+        if let Some((amounts, w, paid, _)) = lines.as_mut().filter(|_| f.payer != issuer) {
+            let line = paid.get(usize::from(f.reason)).copied().flatten();
+            Lines::post(amounts, *w, at(f.payer), line, f.amount);
+        }
     }
     let mut short = Vec::new();
     if settle && kind != banks {

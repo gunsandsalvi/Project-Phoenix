@@ -156,11 +156,13 @@ impl Ranges {
     }
 }
 
-/// What a payee's range needs of a flow: whom it credits and by how much.
+/// What a payee's range needs of a flow: whom it credits, by how much, and for what reason, which says where the
+/// credit is posted in the payee's accounts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Credit {
     pub payee: PartyKey,
     pub amount: i64,
+    pub reason: u8,
 }
 
 /// One denomination's flows of the day grouped by the range of their payer, whole, since a payer's failures follow
@@ -186,7 +188,7 @@ impl Grouped {
             &slices,
             n + 1,
             |f| at(f, f.payee),
-            |f| Credit { payee: f.payee, amount: f.amount },
+            |f| Credit { payee: f.payee, amount: f.amount, reason: f.reason },
             &mut self.by_payee,
         );
     }

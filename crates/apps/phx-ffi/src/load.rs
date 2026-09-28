@@ -11,7 +11,7 @@ use std::time::Instant;
 
 use phx_core::column_facts::{Layout, RecordFacts};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
-use phx_core::settle::{AT_ISSUER, Book, Books, Settle};
+use phx_core::settle::{AT_ISSUER, Book, Books, Lines, Settle};
 use phx_core::wheel::DueWheel;
 use phx_exec::{Clock, Pool, PoolSpec, mix64};
 use phx_id::{Day, PartyId, PartyKey, Slot};
@@ -345,7 +345,16 @@ struct Kind {
     money: Option<Column<i64, SystemBacking>>,
     pending: Option<Column<i64, SystemBacking>>,
     accounts: Option<Accounts>,
+    /// The kind's parties' cash lines, what each paid and received, and the line each reason posts to.
+    cash: Option<Cash>,
     n: u32,
+}
+
+/// A kind's cash lines: `CASH_LINES` a party, and the line each reason's payments and receipts post to.
+struct Cash {
+    amounts: Column<i64, SystemBacking>,
+    paid: Vec<Option<usize>>,
+    received: Vec<Option<usize>>,
 }
 
 /// Where a kind's accounts are held, what each holds through closed banks, and the facility each is granted.
@@ -360,12 +369,19 @@ impl Kind {
     fn book(&mut self) -> Option<Book<'_>> {
         let (money, pending, a) = (self.money.as_mut()?, self.pending.as_mut()?, self.accounts.as_mut()?);
         let Accounts { bank, held, facility } = a;
+        let lines = self.cash.as_mut().map(|c| Lines {
+            amounts: c.amounts.slice_mut(),
+            width: CASH_LINES,
+            paid: &c.paid,
+            received: &c.received,
+        });
         Some(Book {
             bank: bank.slice(),
             balance: money.slice_mut(),
             pending: pending.slice_mut(),
             held: held.slice_mut(),
             facility: facility.slice(),
+            lines,
         })
     }
 }
@@ -406,6 +422,11 @@ impl Row for Contract {
         }
     }
 }
+
+/// The reasons the bench's flows are made for: work, purchases, goods, dues, and a due's second legs; and the cash
+/// lines a party keeps of them, paid and received.
+const REASONS: usize = 6;
+const CASH_LINES: usize = 2;
 
 /// How many dues ahead a due's row is asked for, so its line has come by the time it is read.
 const PREFETCH_AHEAD: usize = 8;
@@ -1007,7 +1028,14 @@ fn build_kind(
         bank.extend(&at);
         Accounts { bank, held: column(space, 0), facility: column(space, 0) }
     });
-    Kind { parties, records, stride, money, pending, accounts, n }
+    // Every reason's flows post to two lines: what a party paid, and what it received.
+    let cash = k.money.then(|| {
+        let mut amounts: Column<i64, SystemBacking> =
+            Column::new(space, n * to_u32(index_u64(CASH_LINES)), rows_per_chunk);
+        amounts.extend(&vec![0; to_usize(u64::from(n)) * CASH_LINES]);
+        Cash { amounts, paid: vec![Some(0); REASONS], received: vec![Some(1); REASONS] }
+    });
+    Kind { parties, records, stride, money, pending, accounts, cash, n }
 }
 
 /// A family's shape of terms planned for its first date: a month's fixed sum, interest, an annuity's part or the
