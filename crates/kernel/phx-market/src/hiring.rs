@@ -4,7 +4,8 @@
 //! wage's log among those paying above its reservation. The next day each employer meets its applicants at the
 //! meeting's chance and selects among them up to its jobs open, and the day after each person answers its offers,
 //! taking the best-paid it accepts; the others' jobs return to their vacancies. The hires go on to become employment
-//! contracts where the world applies them.
+//! contracts where the world applies them. The world hands in only vacancies whose employer lives and seekers not
+//! already waiting on an offer or a hire.
 
 use phx_exec::Pool;
 use phx_id::PartyKey;

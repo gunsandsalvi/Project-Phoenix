@@ -1907,9 +1907,9 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
 - **Goods** (`phx_core::goods`):
   - A good is a product's grade at a zone (GDS.1). `GoodIds` issues each good the declared unit its flows carry the
     first time something names it, within `Denom::units`' 2^15.
-  - `Stocks` holds each party's holdings, a row a good (48 bytes), threaded per party from a head its kind keeps:
-    units, their cost at average cost (ACC.6), the day they came in averaged by units, and what is committed to sales
-    and pledged to carriers; the rest is free.
+  - `Stocks` holds each party's holdings, a row a good (40 bytes, and a link), threaded per party from a head its kind
+    keeps, so a row names no party: units, their cost at average cost (ACC.6), the day they came in averaged by units,
+    and what is committed to sales and pledged to carriers; the rest is free.
     - `receive` takes units in at a cost. `deliver` takes them from a bound (free, committed, pledged) at their share
       of the cost, rounded half to even, the last unit taking what is left; asking beyond the bound is `Short`, a
       fail (SET.3).
@@ -1918,14 +1918,14 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
       exceed, so a cover left beyond the units fails its sale.
     - A party ends holding nothing (PTY.9).
   - A transformation is a flow with `NATURE` on the side a counterparty would stand: making, use, spoilage, a loss,
-    a shipment's leaving and arriving. What accounts for it is its source, and no table is of nature's kind (the last
-    of the 32). `Stocks::apply` applies a flow of units: the payer delivers from a bound, and the payee receives at a
+    a shipment's leaving and arriving. What accounts for it is its source. Nature's kind is the last of the 32
+    (`phx_id::consts::NATURE_KIND`), and `Parties::new` refuses a table of it. `Stocks::apply` applies a flow of units: the payer delivers from a bound, and the payee receives at a
     price paid, a making's cost, or what the units carried out.
   - `Shipments` are goods on their way (FRT.3): owner, carrier, the good leaving and the good arriving, units, day of
     arrival. Each is on its owner's list and in a due wheel's bucket.
     - `depart` pledges the units.
     - `arrive` takes each day's in turn: the pledge is used up where it left and made where it arrives at the cost
-      it carried, a pair of transformation flows whose source is the shipment.
+      and the day in it carried, as goods age on the way, a pair of transformation flows whose source is the shipment.
     - `shrink` cuts an owner's shipments of a good by what its pledges lost, latest first.
   - `spoil` reckons a holder's spoilage over a period (`spoilage::lost` on the holding's mean day), each a flow to
     nature.
@@ -2003,8 +2003,16 @@ Its day's work is three halves of the finished world's estimate (owner, 2026-09-
 units, the rules' declared arithmetic taken off handler rows. On the build machine at S1.20's end (2026-09-28), a
 flow grouped, netted, posted and applied cost 86 core-ns, a due 179, a handler row 127, a purchase 159; a business day
 failed about 3% of its flows, since the bench's random economy drifts short over its month; the peak was 4 427 MiB,
-928 bytes a person. These numbers compare kernels with their targets; the budget is judged on the phone (N8.8). The
-old kernel's bench gave 7.7 s, 29 s and 9 GB at a smaller world.
+928 bytes a person. At S1.21's end (2026-09-28), with the markets, goods, plant and the labour round in the month:
+- a purchase cost 340 core-ns, with 1.75 choices a buyer, since the bench's service stalls hold even units and the
+  logit crowds the cheap and near. By itself one product's meeting at 370 000 buyers costs about 250 ns a buyer on one
+  core: draws and alias picks about 45 ns a choice, grouping by stall 40, service 25, the tables 12;
+- the goods about 250 ms a business day, the labour round about 130 ms;
+- a median turn of 2.4 s and a heavy day of 3.0 s here;
+- a peak of 5 186 MiB, 1 087 bytes a person.
+
+These numbers compare kernels with their targets; the budget is judged on the phone (N8.8, owner 2026-09-28: "the
+target is on phone benchmark"). The old kernel's bench gave 7.7 s, 29 s and 9 GB at a smaller world.
 
 ## 8. Markets, valuation and expectations
 

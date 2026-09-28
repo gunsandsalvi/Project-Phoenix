@@ -90,11 +90,10 @@ impl UnitIds {
 }
 
 /// A party's holding of one good: its units, what they cost, the day they came in averaged by units, and what of them
-/// is committed to sales or pledged to carriers; the rest is free.
+/// is committed to sales or pledged to carriers; the rest is free. Its party is the list it is on.
 #[clause("GDS.2", "ACC.6")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Holding {
-    pub holder: PartyKey,
     pub unit: u16,
     pub day: u32,
     pub units: i64,
@@ -102,6 +101,9 @@ pub struct Holding {
     pub committed: i64,
     pub pledged: i64,
 }
+
+/// The unit a row freed by its party's end carries, beyond every unit a flow names.
+const FREED: u16 = u16::MAX;
 
 impl Holding {
     /// Units neither committed nor pledged.
@@ -199,7 +201,7 @@ impl Stocks {
 
     /// Every holding open, in row order.
     pub fn all(&self) -> impl Iterator<Item = &Holding> + '_ {
-        self.rows.iter().filter(|h| h.holder != NATURE)
+        self.rows.iter().filter(|h| h.unit != FREED)
     }
 
     /// Takes in units at their cost on `day`: their cost adds to the holding's, and its day moves to the units' mean.
@@ -224,7 +226,7 @@ impl Stocks {
             h.cost += cost;
             return;
         }
-        let row = Holding { holder, unit, day: day.get(), units, cost, committed: 0, pledged: 0 };
+        let row = Holding { unit, day: day.get(), units, cost, committed: 0, pledged: 0 };
         let head = *self.head_mut(holder);
         let at = if let Some(r) = self.free_rows.pop() {
             let i = usize::try_from(r).unwrap_or(usize::MAX);
@@ -373,7 +375,7 @@ impl Stocks {
             if h.units != 0 || h.committed != 0 || h.pledged != 0 {
                 violation!(clause = "PTY.9", "a party ended holding goods", unit = h.unit, units = h.units);
             }
-            h.holder = NATURE;
+            h.unit = FREED;
             self.free_rows.push(u32::try_from(r).unwrap_or(NONE));
         }
         *self.head_mut(holder) = NONE;
@@ -628,7 +630,7 @@ impl Shipments {
     }
 
     /// The day's arrivals: each shipment due today leaves its pledge where it left, used up there, and is made where it
-    /// arrives at the cost it carried; each is a pair of transformation flows, the leaving and the arriving, whose
+    /// arrives at the cost and the day in it carried; each is a pair of transformation flows, the leaving and the arriving, whose
     /// source is the shipment. Every day is taken in turn.
     #[clause("FRT.6", "GDS.10")]
     pub fn arrive(&mut self, day: Day, stocks: &mut Stocks, reasons: Carriage, out: &mut Vec<Flow>) {
@@ -640,10 +642,14 @@ impl Shipments {
             if s.arrives != day.get() {
                 continue;
             }
+            // The goods keep the day they came in, as they aged on the way.
+            let Some(since) = stocks.holding(s.owner, s.from).map(|h| h.day) else {
+                violation!(clause = "FRT.6", "a shipment whose goods are held nowhere", units = s.units);
+            };
             let Ok(cost) = stocks.deliver(s.owner, s.from, s.units, Bound::Pledged) else {
                 violation!(clause = "FRT.6", "a shipment's pledge gone before it arrived", units = s.units);
             };
-            stocks.receive(s.owner, s.to, (s.units, cost), day);
+            stocks.receive(s.owner, s.to, (s.units, cost), Day::new(since));
             let flow = |payer, payee, unit, reason| Flow {
                 payer,
                 payee,

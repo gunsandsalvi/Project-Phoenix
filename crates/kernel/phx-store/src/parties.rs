@@ -24,6 +24,9 @@ pub struct Parties<B: Backing = SystemBacking> {
 impl<B: Backing> Parties<B> {
     /// A kind's table of at most `max` parties, chunked by `rows_per_chunk`.
     pub fn new(space: &mut AddressSpace, kind: u8, max: u32, rows_per_chunk: u32) -> Parties<B> {
+        if kind == phx_id::consts::NATURE_KIND {
+            violation!(clause = "Law 5", "a table of nature's kind, which holds no party", kind = kind);
+        }
         Parties {
             kind,
             slots: SlotAlloc::new(space, max),

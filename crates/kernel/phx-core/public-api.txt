@@ -852,7 +852,6 @@ pub struct phx_core::goods::Holding
 pub phx_core::goods::Holding::committed: i64
 pub phx_core::goods::Holding::cost: i64
 pub phx_core::goods::Holding::day: u32
-pub phx_core::goods::Holding::holder: phx_id::ids::PartyKey
 pub phx_core::goods::Holding::pledged: i64
 pub phx_core::goods::Holding::unit: u16
 pub phx_core::goods::Holding::units: i64

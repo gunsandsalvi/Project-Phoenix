@@ -53,5 +53,8 @@ pub const GENERATION_SHIFT: u32 = 32;
 pub const KIND_SHIFT: u32 = 56;
 /// A party key's kind takes its top five bits, room for 32 kinds of party.
 pub const KEY_KIND_BITS: u32 = 5;
+
+/// The last kind a key holds, no table's: the side a transformation's flow names in place of a counterparty.
+pub const NATURE_KIND: u8 = 31;
 /// A party key's slot takes the other 27 bits: 134 million parties of one kind.
 pub const KEY_SLOT_BITS: u32 = 27;

@@ -116,8 +116,8 @@ pub const DECIMAL_BASE: f64 = 10.0;
 /// The bit of a flow's denomination that marks units, not money: a `u16`'s top bit.
 pub const UNITS_BIT: u16 = 15;
 
-/// The key a transformation's flow names on the side a counterparty would stand: the last of the 32 kinds a key
-/// holds, at its first slot, a kind no table is of.
+/// The key a transformation's flow names on the side a counterparty would stand: nature's kind, the last of the 32 a key
+/// holds, at its first slot.
 pub const NATURE_WORD: u32 = 0xF800_0000;
 
 /// The flows a word of a bitset marks.

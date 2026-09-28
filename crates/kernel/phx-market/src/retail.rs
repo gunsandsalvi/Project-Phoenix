@@ -110,7 +110,10 @@ pub(crate) fn units_wanted(want: Want, lot: i64, price: i64) -> i64 {
         // A word's product divides in a word; only a larger one needs two.
         Want::Money(m) if price > 0 => match m.checked_mul(lot) {
             Some(p) => p / price,
-            None => i64::try_from(i128::from(m) * i128::from(lot) / i128::from(price)).unwrap_or(i64::MAX),
+            None => match i64::try_from(i128::from(m) * i128::from(lot) / i128::from(price)) {
+                Ok(q) => q,
+                Err(_) => capacity_exceeded!("units a buyer's money buys", i64::MAX, m),
+            },
         },
         Want::Money(_) => 0,
     }

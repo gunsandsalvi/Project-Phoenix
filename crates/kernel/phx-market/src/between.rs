@@ -81,13 +81,15 @@ pub fn between(offers: &[Offer], bids: &[Bid], price_lot: i64, lot: &mut Draws) 
         runs.swap(k, j);
     }
     let mut out = Between::default();
-    // The cheapest level with an offer left.
+    // The cheapest level with an offer left; a buyer's steps, kept from one buyer to the next.
     let mut low = 0;
+    let mut steps: Vec<Bid> = Vec::new();
     for (from, to) in runs {
-        let mut steps: Vec<Bid> = bids.get(from..to).unwrap_or(&[]).to_vec();
+        steps.clear();
+        steps.extend_from_slice(bids.get(from..to).unwrap_or(&[]));
         steps.sort_by_key(|s| core::cmp::Reverse(s.limit));
         let mut without = 0;
-        for step in steps {
+        for step in steps.iter().copied() {
             let mut wanted = step.units;
             for level in levels.iter_mut().skip(low) {
                 let (price, start, live_end) = *level;

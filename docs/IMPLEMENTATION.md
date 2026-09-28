@@ -731,66 +731,6 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ---
 
-### S1.21 — Markets, goods and named units on the core
-
-**Status**: planned
-
-**Clauses**: MKT *(the forms Stage 1 uses: posted price, call, auction, bilateral)*; REP.22; GDS, SRV, FRT *(stocks,
-spoilage, shipments, liens)*; CAP *(named units)*; LAB.2–LAB.6 *(matching)*, as now built and on the core.
-
-**Architecture**: §7.10–§7.12, §8.
-
-**Depends on**: S1.20 (done: settlement on the core, dues by shape, contract rows, ARCHITECTURE §7.17).
-
-**Goal**: every Stage 1 market meets over order buffers on the core, each match becoming flows. Goods are held as
-per-firm arrays and named units as tables.
-
-**Files**
-
-| File | Purpose |
-| --- | --- |
-| `crates/kernel/phx-market/` | posted-price meeting with alias tables and rationing by lot; calls and auctions over sorted buffers; labour matching |
-| `crates/kernel/phx-core/src/goods.rs` | stocks per firm, shipments and liens as edges, spoilage |
-| `crates/kernel/phx-core/src/units.rs` | named units: plant, dwellings, vehicles |
-
-**Design**:
-- **Posted price.**
-  - Per (product, buyer region), once a day after 5d:
-    - the sellers in reach;
-    - each seller's weight `exp(−(β·price + γ·distance))` from the declared weights;
-    - an alias table.
-  - A buyer-product draws a seller with its own taste stream. Demand is summed per seller in its range.
-  - A seller over capacity serves by lot; the unserved draw again from the table without the full sellers, in rounds.
-  - Matches emit money flows and unit flows.
-- **Calls and auctions** sort their buffers by price point and meet as now.
-- **Labour.** Vacancies per (region, occupation family) in buffers. Searchers draw among those in reach by the same
-  logit, and offers and acceptances are edges opened at the apply.
-- **Goods.**
-  - A firm's stocks are `[(product, grade) → qty]` in its row's small array, with overflow to a table.
-  - Goods away are shipment edges (owner, carrier, qty, arrives), and pledges are liens on those edges.
-  - Spoilage is a unit flow to nature at its rate.
-
-**Unit tests**: the markets' existing logic-level tests re-pointed. Also `alias_draw_matches_logit_shares`: the
-table's probabilities against the weights, exactly, and `rationing_by_lot_order_free`.
-
-**Live checks**: none until S1.24.
-
-**Budget**: a choice at most 50 ns and a rationing round at most 30 ns per unserved buyer-product, on the bench.
-- The posted-price meeting is built (ARCHITECTURE §7.17) and the bench's purchases run through it: 370 core-ns a
-  purchase on the build machine, with 1.75 choices a buyer, since the bench's stalls hold even units and the logit
-  crowds the cheap and near. By itself, one product at 370 000 buyers costs about 250 ns a buyer on one core: the
-  draws and alias picks about 45 ns a choice, grouping by stall 40, service 25, the tables 12.
-
-**Guards**: PC-92 (no map or trait object in a hot module) extends to `phx-market`'s meeting.
-
-**Not allowed**: a buyer's choice from an average; a seller served beyond its capacity; a match without its flows.
-
-**Done when**
-- [ ] The market tests pass on the core, and the bench's market lines meet their targets.
-- [ ] Two reviews are done.
-
----
-
 ### S1.22 — One opening dataset per profile
 
 **Status**: planned
@@ -928,7 +868,8 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 
 **Architecture**: §7.10–§7.15, §10.
 
-**Depends on**: S1.21, S1.23.
+**Depends on**: S1.21 (done: the posted-price and between-firms meetings, goods, capital and labour matching on the
+core, ARCHITECTURE §7.17), S1.23.
 
 **Goal**: the circular flow runs on the core, and every firm is of one kind with its size an outcome. The committed
 world switches to the core.
@@ -951,6 +892,12 @@ world switches to the core.
   - A firm with several establishments serves each one's reach.
 - **Merged handlers.** One body reads the firm's columns. What differed between the pairs is either declared kind data
   or was representation, and is gone.
+- Markets and goods on the core (S1.21): each retail and service market meets through `phx_market::meet` in a
+  `Meeting` the world keeps, a firm's goods between firms through `between`; each sale's goods leg is covered at the
+  sale and delivered after settlement, or released where its payment failed. Goods, plant, dwellings and vehicles are
+  holdings in `Stocks`, their units issued in `UnitIds`; production, use, spoilage, wear and shipments are flows with
+  nature; the audit's goods family reads `goods::breaks` each day. Labour's round is `phx_market::hiring`, each hire
+  opening an employment contract at the apply.
 - Settlement's hand-back: each failed flow's source contract takes it into arrears at the next 2d, as now, and a flow
   failed through a short bank is the bank's to answer for, never its payer's. Levies (§4.3) are flows made beside their
   base flow from the same fused kinks. Every dated family keeps its rows' shape of terms and is reckoned by

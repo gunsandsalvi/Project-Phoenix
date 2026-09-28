@@ -19,6 +19,11 @@ fn flow(from: PartyKey, to: PartyKey, unit: u16, amount: i64) -> Flow {
 }
 
 #[test]
+fn nature_is_the_kind_no_table_is_of() {
+    assert_eq!((NATURE.kind(), NATURE.slot().get()), (phx_id::consts::NATURE_KIND, 0));
+}
+
+#[test]
 fn goods_are_issued_their_units_once() {
     let mut ids = UnitIds::default();
     let wheat = Good { product: 3, grade: 1, zone: 40 };
@@ -98,7 +103,7 @@ fn a_shipment_arrives_as_its_good_at_its_cost() {
     let legs: Vec<(PartyKey, PartyKey, u16, i64, u8)> =
         out.iter().map(|f| (f.payer, f.payee, f.denomination.unit(), f.amount, f.reason)).collect();
     assert_eq!(legs, vec![(firm(1), NATURE, 0, 40, 5), (NATURE, firm(1), 1, 40, 6)], "used up there, made here");
-    assert_eq!(s.holding(firm(1), 1).map(|h| (h.units, h.cost, h.day)), Some((40, 800, 3)));
+    assert_eq!(s.holding(firm(1), 1).map(|h| (h.units, h.cost, h.day)), Some((40, 800, 1)), "the day in carried");
     assert_eq!(s.holding(firm(1), 0).map(|h| (h.units, h.pledged)), Some((60, 0)));
     assert_eq!(ships.on_the_way(), 0);
 }
