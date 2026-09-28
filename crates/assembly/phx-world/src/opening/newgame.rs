@@ -295,7 +295,7 @@ pub fn instantiate(
         }
         // The level's flows and stocks, which every world's assembly checks.
         let economy = templates.join("economy");
-        for name in ["flows.toml", "stocks.toml"] {
+        for name in ["flows.toml", "stocks.toml", "shapes.toml"] {
             write(&dir.join("economy").join(name), &text(&economy.join(name))?)?;
         }
         write(&dir.join("derived.toml"), &setup_file(c, setup)?)?;

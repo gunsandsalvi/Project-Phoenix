@@ -105,6 +105,20 @@ declare_prim! {
     }
 }
 
+declare_prim! {
+    /// The spread of firms' log physical productivity around their industry's mean.
+    pub PRODUCTIVITY_SPREAD = "GEN.productivity_spread" {
+        kind: Endowment, value: Fixed { exp: 2 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// Each occupation's mean earnings over all employees'.
+    pub OCCUPATION_PAY = "GEN.occupation_pay" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
 /// The stream a new game's open choices, the regions' lot and the derived values are drawn from.
 pub const SETUP_STREAM: StreamDecl =
     StreamDecl { name: "GEN.setup", purpose: Purpose::Opening, keyed: false, clause: "GEN.15" };
@@ -137,6 +151,8 @@ pub struct GenPrims {
     pub final_uses: Prim<Table2>,
     pub balance_sheet: Prim<Table2>,
     pub real_assets: Prim<Table2>,
+    pub productivity_spread: Prim<Fixed<2>>,
+    pub occupation_pay: Prim<Table1>,
 }
 
 impl GenPrims {
@@ -162,6 +178,8 @@ impl GenPrims {
             final_uses: d.prim(&FINAL_USES),
             balance_sheet: d.prim(&BALANCE_SHEET),
             real_assets: d.prim(&REAL_ASSETS),
+            productivity_spread: d.prim(&PRODUCTIVITY_SPREAD),
+            occupation_pay: d.prim(&OCCUPATION_PAY),
         }
     }
 }

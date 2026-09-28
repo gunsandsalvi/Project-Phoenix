@@ -27,6 +27,10 @@ closures make every instrument's assets its liabilities: the central bank holds 
 reserves; banks hold loans, reserves and government paper against deposits, their equity at their capital ratio and
 bonds that balance them, held by households; firms' equity is their assets less their debts; households hold the rest.
 
+The shapes. Only distributions come from outside the matrices, each scaled by the opening to their totals: the spread
+of firms' physical productivity within an industry (Hsieh and Klenow, typed), and each occupation's mean earnings over
+all employees' (ILOSTAT).
+
     python3 tools/data/derive_economy.py
 """
 import json
@@ -81,6 +85,8 @@ REAL = [f"plant: {a[0]}" for a in tec.ASSETS] + ["inventories", "firms' land", "
                                                   "government's fixed assets"]
 OECD_DWELLINGS, OECD_LAND, OECD_INVENTORIES = "N111N", "N211N", "N12N"
 OECD_FIXED = ["N111N", "N112N", "N11MN", "N115N", "N117N"]
+# ISCO-08 major groups, 0 the armed forces.
+OCCUPATIONS = [str(i) for i in range(10)]
 
 
 def fail(message: str) -> None:
@@ -477,6 +483,38 @@ def check_stocks(level: str, s: dict) -> None:
 # ---------------------------------------------------------------------------------------------------------------
 # Writing.
 
+# ---------------------------------------------------------------------------------------------------------------
+# The shapes.
+
+def productivity_spread() -> dict:
+    """Each level's spread of log physical productivity (TFPQ) around its industry's mean, its economy's latest year."""
+    d = pd.read_csv(RAW / "state" / "typed_tfp_dispersion.csv")
+    d = d[(d.measure == "TFPQ") & (d.statistic == "sd")].sort_values("year")
+    return {level: g.iloc[-1] for level, g in d.groupby("level")}
+
+
+def occupation_pay(levels: pd.Series) -> tuple:
+    """Each level's median over its economies of each occupation's mean monthly earnings over all employees', each
+    economy at its survey nearest the year that reports the total; and each level's economies."""
+    d = pd.read_csv(RAW / "ilo" / "earnings_by_occupation.csv", dtype={"occupation": str})
+    d = d[(d.year - YEAR).abs() <= NEAR_YEARS].copy()
+    d["distance"] = (d.year - YEAR).abs() * 2 - (d.year > YEAR)
+    total = d[d.occupation == "TOTAL"].sort_values("distance").groupby("iso3").first()[["year", "value"]]
+    d = d.merge(total.rename(columns={"year": "survey", "value": "total"}), left_on="iso3", right_index=True)
+    d = d[(d.year == d.survey) & d.occupation.isin(OCCUPATIONS)].copy()
+    d["relative"] = d.value / d.total
+    d["level"] = d.iso3.map(levels)
+    pay = d.pivot_table(index="occupation", columns="level", values="relative", aggfunc="median").reindex(OCCUPATIONS)
+    return pay, d.groupby("level").iso3.unique()
+
+
+def check_shapes(level: str, spread, pay: pd.Series) -> None:
+    if not spread.value > 0:
+        fail(f"{level}: no productivity spread")
+    if pay.isna().any() or not (pay > 0).all():
+        fail(f"{level}: an occupation with no pay: {list(pay[~(pay > 0)].index)}")
+
+
 def matrix(rows: int, cols: int, values: np.ndarray) -> str:
     grid = "[" + ", ".join("[" + ", ".join(num(v) for v in row) + "]" for row in values) + "]"
     return (f"{{ rows = [{', '.join(str(i) for i in range(rows))}], columns = [{', '.join(str(i) for i in range(cols))}],"
@@ -577,6 +615,29 @@ def write(level: str, members: dict, f: dict, s: dict, m: dict) -> None:
     (out / "stocks.toml").write_text("\n".join(lines) + "\n")
 
 
+def write_shapes(level: str, spread, pay: pd.Series, economies, m: dict) -> None:
+    ilo = m["sources"]["people_ilo"]
+    lines = [f"# The {level} group's shapes (spec GEN.15): distributions the opening scales to the matrices' totals,",
+             "# derived by tools/data/derive_economy.py; never edited by hand."]
+    lines += primitive(
+        "GEN.productivity_spread", "GEN", "ENDOWMENT", "measured",
+        f"The standard deviation of firms' log physical productivity (TFPQ) around their four-digit industry's mean, "
+        f"manufacturing plants of {spread.iso3} in {spread.year} ({int(spread.plants)} plants) standing for the group: "
+        f"{spread.source}.",
+        f'"{num(spread.value, 2)}"')
+    lines += primitive(
+        "GEN.occupation_pay", "GEN", "ENDOWMENT", "measured",
+        f"Each occupation's (axis: ISCO-08 major groups, 0 armed forces, 1 managers, 2 professionals, 3 technicians "
+        f"and associate professionals, 4 clerical support, 5 service and sales, 6 skilled agricultural, forestry and "
+        f"fishery, 7 craft and related trades, 8 plant and machine operators and assemblers, 9 elementary "
+        f"occupations) mean monthly earnings of employees over all employees': the median over the group's "
+        f"{len(economies)} economies ({', '.join(sorted(economies))}) at each one's survey nearest {YEAR} within "
+        f"{NEAR_YEARS} years that reports the total, an occupation an economy does not report left out of its median, "
+        f"from ILOSTAT (DF_EAR_EMTA_SEX_OCU_CUR_NB, both sexes, fetched {ilo['fetched']}).",
+        axis(pay.to_numpy()))
+    (PROFILES / level / "economy" / "shapes.toml").write_text("\n".join(lines) + "\n")
+
+
 def main() -> None:
     if "--matrices" not in sys.argv:
         tec.main()
@@ -586,6 +647,8 @@ def main() -> None:
     levels = level_of()
     developed = [c for c, lv in levels.items() if lv == "developed"]
     economies = flows_by_economy()
+    spread = productivity_spread()
+    pay, economies_paid = occupation_pay(levels)
     for level in sorted(set(LEVELS.values())):
         members = {c: e for c, e in economies.items() if levels.get(c) == level}
         f = group_flows(level, members, levels)
@@ -594,6 +657,8 @@ def main() -> None:
         s = group_stocks(level, [c for c, lv in levels.items() if lv == level], developed, plant)
         check_stocks(level, s)
         write(level, members, f, s, m)
+        check_shapes(level, spread[level], pay[level])
+        write_shapes(level, spread[level], pay[level], economies_paid[level], m)
         worth = s["financial"].sum(axis=0) + s["real"].sum(axis=0)
         print(f"{level}: output {f['output'].sum():.3f} GDP, compensation {f['split'][:, 0].sum():.3f}, "
               f"households' worth {worth[H]:.3f}, government's {worth[G]:.3f}")

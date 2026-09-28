@@ -73,6 +73,14 @@
    "rows": 6395,
    "title": "Population aged 15 and over with a disability and in total, thousands, by sex and age band (DF_POP_XWAP_SEX_AGE_DSB_NB), ILOSTAT"
   },
+  "ilo/earnings_by_occupation": {
+   "for": [
+    "S1.22",
+    "S6.02"
+   ],
+   "rows": 9503,
+   "title": "Mean monthly earnings of employees by ISCO-08 major group (0-9, X not elsewhere classified, TOTAL), local currency, both sexes, 2015-2025 (DF_EAR_EMTA_SEX_OCU_CUR_NB), ILOSTAT"
+  },
   "ilo/employment_by_activity": {
    "rows": 103454,
    "title": "Employment by economic activity and occupation, thousands (DF_EMP_TEMP_ECO_OCU_NB), ILOSTAT"
@@ -1223,6 +1231,11 @@
    "fetched": "2026-09-24",
    "title": "OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD",
    "url": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SPD,DSD_PAG@DF_PAG,/all?format=csvfile; https://sdmx.ilo.org/rest/data/ILO,DF_SDG_0131_SEX_SOC_RT,1.0/all?startPeriod=2010"
+  },
+  "people_ilo": {
+   "fetched": "2026-09-28",
+   "title": "ILOSTAT SDMX API",
+   "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/<key>?startPeriod=2015&endPeriod=2025"
   },
   "prices": {
    "fetched": "2026-09-27",

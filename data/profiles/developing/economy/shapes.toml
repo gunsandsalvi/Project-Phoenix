@@ -1,0 +1,18 @@
+# The developing group's shapes (spec GEN.15): distributions the opening scales to the matrices' totals,
+# derived by tools/data/derive_economy.py; never edited by hand.
+
+[[primitive]]
+id = "GEN.productivity_spread"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "measured"
+source_ref = "The standard deviation of firms' log physical productivity (TFPQ) around their four-digit industry's mean, manufacturing plants of IND in 1994 (41006 plants) standing for the group: Hsieh and Klenow, Misallocation and Manufacturing TFP in China and India, NBER Working Paper 13290 (August 2007), Table 1, p. 33."
+value = "1.23"
+
+[[primitive]]
+id = "GEN.occupation_pay"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "measured"
+source_ref = "Each occupation's (axis: ISCO-08 major groups, 0 armed forces, 1 managers, 2 professionals, 3 technicians and associate professionals, 4 clerical support, 5 service and sales, 6 skilled agricultural, forestry and fishery, 7 craft and related trades, 8 plant and machine operators and assemblers, 9 elementary occupations) mean monthly earnings of employees over all employees': the median over the group's 41 economies (AFG, AGO, BDI, BFA, BGD, BOL, BTN, CIV, COM, DJI, EGY, ETH, GHA, GIN, GMB, HND, KEN, KHM, KIR, LAO, LBN, LBR, LSO, MLI, MMR, NER, NPL, PAK, PSE, RWA, SEN, SLE, SWZ, TCD, TGO, TLS, TUN, TZA, UGA, UZB, ZMB) at each one's survey nearest 2019 within 2 years that reports the total, an occupation an economy does not report left out of its median, from ILOSTAT (DF_EAR_EMTA_SEX_OCU_CUR_NB, both sexes, fetched 2026-09-28)."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], values = [1.292446749, 1.888247389, 1.429183839, 1.333609332, 1.118788236, 0.785443821, 0.654978848, 0.855032359, 0.977661443, 0.579254413], outside = "refuse" }

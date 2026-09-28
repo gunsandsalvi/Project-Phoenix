@@ -520,3 +520,19 @@ owner = "GEN"
 first_read = "S1.23"
 source = "IMF MFS currency, GDD and WEO debt; World Bank GFDD deposits, bank reserves and capital; OECD Tables 720 and 9B; CAP.stock_per_gdp"
 status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/stocks.toml; checked at assembly"
+
+[[row]]
+id = "GEN.productivity_spread"
+what = "the spread of firms' log physical productivity within an industry"
+owner = "GEN"
+first_read = "S1.24"
+source = "Hsieh and Klenow (2007), NBER WP 13290, Table 1: the United States, China and India standing for the three groups"
+status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/shapes.toml"
+
+[[row]]
+id = "GEN.occupation_pay"
+what = "each occupation's mean earnings over all employees'"
+owner = "GEN"
+first_read = "S1.24"
+source = "ILOSTAT mean monthly earnings by ISCO-08 major group (DF_EAR_EMTA_SEX_OCU_CUR_NB)"
+status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/shapes.toml"
