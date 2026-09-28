@@ -710,19 +710,20 @@ device measures it:
 
 | Work | Target |
 | --- | --- |
-| A flow emitted, partitioned, netted, checked and applied, with its account lines | 40 ns |
-| A due taken from the wheel, requeued and emitted | 30 ns |
-| A handler row, beyond its rule's own arithmetic | 60 ns |
-| A posted-price choice | 80 ns |
-| A rationing round, per unserved buyer-product | 50 ns |
-| A hazard redraw | 150 ns |
-| The daily audit identities | 5 ms per million persons |
-| Resident memory | 1 kB per person at the heaviest day |
+| A flow emitted, partitioned, netted, checked and applied, with its account lines | 25 ns |
+| A due taken from the wheel, requeued and emitted | 20 ns |
+| A handler row, beyond its rule's own arithmetic | 40 ns |
+| A posted-price choice | 50 ns |
+| A rationing round, per unserved buyer-product | 30 ns |
+| A hazard redraw | 100 ns |
+| The daily audit identities | 3 ms per million persons |
+| Resident memory | 800 bytes per person at the heaviest day |
 
-**The design point.** 3 million persons, four times today's committed size, at the finished world's per-person
-counts × 1.5. At the targets above a business day is about 0.8 µs of core time a person, so 3 million persons fit
-the phone's sustained 3 core-seconds a second with headroom. The play resolution stays the valve, set on the device
-(N8.5).
+**The design point** (owner, 2026-09-28: aggressive, reviewed over time): **5 million persons**, nearly seven times
+today's committed size, at the finished world's per-person counts × 1.5. At the targets above a business day costs
+about 0.5 µs of core time a person, so 5 million persons fit the phone's sustained 3 core-seconds a second, and the
+heavy day its 2 s. The targets are tightened, never loosened, as the bench shows what the core does; the play
+resolution stays the valve, set on the device (N8.5).
 
 The later stages' designs (S2.01 onward) name the old layout (lines, rows, arenas, cells). Each is restated to the
 core when it becomes the next step, before its code (§0.1 rule 3).
@@ -855,7 +856,6 @@ reason from the laws, before any code follows it.
 meet the budget (N8.7).
 
 **Done when**
-- [ ] The owner has confirmed Appendix E 14, 31, 33, 35 and 44 as restated.
 - [ ] The spec, §12 and §13 are consistent, and `phx-check` is clean.
 - [ ] Two reviews are done.
 
@@ -873,7 +873,7 @@ N8.8 *(part: the full-load bench at the design point)*.
 **Depends on**: S1.18.
 
 **Goal**: the core's data structures and traversals exist, each with its unit measured by a bench line at the design
-point. The full-load bench is rebuilt on them, so a hypothetical finished world at 3 million persons × 1.5 runs
+point. The full-load bench is rebuilt on them, so a hypothetical finished world at 5 million persons × 1.5 runs
 through the real kernels before any system is ported.
 
 **Files**
@@ -930,7 +930,7 @@ through the real kernels before any system is ported.
 **Live checks**: none (the world is not on the core yet).
 
 **Budget**: the unit targets above, read from the bench at the design point.
-- Peak bytes are at most 1 kB a person.
+- Peak bytes are at most 800 bytes a person.
 - On the build machine, the bench's median and worst day are within 1 s and 2 s at the probe ratio.
 
 **Guards**:
@@ -997,7 +997,7 @@ at the new passes, with the same expectations: greatest set, rings, a prefix fai
 
 **Live checks**: none until S1.23.
 
-**Budget**: a flow at most 40 ns and a due at most 30 ns on the bench; the heavy day's settlement within the day's
+**Budget**: a flow at most 25 ns and a due at most 20 ns on the bench; the heavy day's settlement within the day's
 share.
 
 **Guards**: settlement reads no map; PC-27's batch rule restated for flow buffers.
@@ -1055,7 +1055,7 @@ table's probabilities against the weights, exactly, and `rationing_by_lot_order_
 
 **Live checks**: none until S1.24.
 
-**Budget**: a choice at most 80 ns and a rationing round at most 50 ns per unserved buyer-product, on the bench.
+**Budget**: a choice at most 50 ns and a rationing round at most 30 ns per unserved buyer-product, on the bench.
 
 **Guards**: none beyond S1.19's.
 
@@ -10475,6 +10475,8 @@ the final build within the budget on the phone.
 | Firms (spec REP.2, FRM.23) | one kind of firm whatever its size; size is derived from its contracts and books, never an input or a rank | 2026-09-28 |
 | A stage gate's long run | the settled two-year run is the device run, on the phone; the build machine runs the smoke and the full-load bench | 2026-09-28 |
 | The restructure (S1.17–S1.25) | the architecture is restated to fit the plan and a larger world; the budget is read at every step, never only at gates | 2026-09-28 |
+| The design point (S1.19) | aggressive: 5 million persons at the finished world's counts × 1.5, reviewed over time | 2026-09-28 |
+| One representation (spec Appendix E 14, 31, 33, 35, 44; S1.18) | every contract between named parties, pairings recorded; no many-party lines, no individuals by rank, one kind of firm; the restatement as S1.18 proposes | 2026-09-28 |
 | State pensions' rules (S0.25b) | each group's pension age and replacement rate from its members in OECD Pensions at a Glance, the developing group's from India pooled with the eight emerging members, recorded as an assumption; who receives one from the ILO's SDG 1.3.1 coverage for every group | 2026-09-24 |
 | Illness and disability onset (S0.25b) | derived from prevalence by age by a declared mapping: lasting disability's onset from the rise in prevalence between age bands, recorded with its assumptions; short spells wait for a source | 2026-09-24 |
 | Kin (S0.25b) | a parent's living children from WPP's cohort fertility and survival for its birth year, less those the UN data show co-resident; the rest live elsewhere, by age and region | 2026-09-24 |
