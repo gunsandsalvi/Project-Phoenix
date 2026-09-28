@@ -37,9 +37,9 @@ line = "REP.41, REP.20, VAL.23: 0.30 households a person (221 515 at 750 000 per
 [[kind]]
 name = "firm"
 per_million = 140000
-bytes = 336
+bytes = 272
 money = true
-line = "FRM.23, REP.41: 0.14 firms a person (102 579 at 750 000); prices by product, ways, plant by kind and class, headcount by family, accounts' lines (ACC); its stocks are the goods' holdings, built by the bench's goods (19 products' units and cost, 304 bytes, taken off)"
+line = "FRM.23, REP.41: 0.14 firms a person (102 579 at 750 000); prices by product, ways, headcount by family, accounts' lines (ACC); its stocks and plant are holdings, built by the bench's goods (19 products' units and cost, 304 bytes, and four conditions of plant, 64, taken off)"
 
 [[kind]]
 name = "bank"

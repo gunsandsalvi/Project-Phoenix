@@ -1,4 +1,5 @@
-//! Goods on the core. A good is a product's grade at a zone, carried by a flow as a declared unit. Each party's
+//! Goods on the core. A good is a product's grade at a zone, carried by a flow as a declared unit, as a class of
+//! capital units is. Each party's
 //! holdings are rows, one a good: its units, their cost at average cost and the mean day they came in, and what of them
 //! is committed to a sale or pledged to a carrier. Goods on their way between zones are shipments, pledged to their
 //! carrier until they arrive. Units change hands, and are made and used up, only by flows; a transformation's flow
@@ -10,6 +11,7 @@ use phx_num::{Round, capacity_exceeded, round::div_round, violation};
 
 use crate::consts::{NATURE_WORD, UNITS_BIT};
 use crate::flows::{Denom, Flow};
+use crate::units::Class;
 use crate::wheel::DueWheel;
 
 /// The side a transformation's flow names in place of a counterparty: making, extraction, use, spoilage, loss and a
@@ -28,57 +30,62 @@ pub struct Good {
     pub zone: u32,
 }
 
-/// The goods named so far, each issued the declared unit its flows carry the first time something names it, so only
-/// goods somewhere made or held exist.
-#[derive(Debug, Default)]
-pub struct GoodIds {
-    goods: Vec<Good>,
-    sorted: Vec<(Good, u16)>,
+/// What a declared unit names: a good, or a class of capital units.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Held {
+    Good(Good),
+    Capital(Class),
 }
 
-impl GoodIds {
-    /// The good's unit, issued now if it has none.
-    pub fn unit(&mut self, good: Good) -> u16 {
-        match self.sorted.binary_search_by_key(&good, |(g, _)| *g) {
+/// The goods and capital classes named so far, each issued the declared unit its flows carry the first time something
+/// names it, so only what is somewhere made or held exists.
+#[derive(Debug, Default)]
+pub struct UnitIds {
+    named: Vec<Held>,
+    sorted: Vec<(Held, u16)>,
+}
+
+impl UnitIds {
+    /// The unit of what is held, issued now if it has none.
+    pub fn unit(&mut self, held: Held) -> u16 {
+        match self.sorted.binary_search_by_key(&held, |(h, _)| *h) {
             Ok(at) => {
-                self.sorted.get(at).map_or_else(|| violation!(clause = "GDS.1", "a good found and gone"), |x| x.1)
+                self.sorted.get(at).map_or_else(|| violation!(clause = "GDS.1", "a unit found and gone"), |x| x.1)
             }
             Err(at) => {
                 let limit = 1_usize << UNITS_BIT;
-                let Ok(unit) = u16::try_from(self.goods.len())
-                    .map_err(drop)
-                    .and_then(|u| if usize::from(u) < limit { Ok(u) } else { Err(()) })
-                else {
-                    capacity_exceeded!("goods a flow's unit names", limit, self.goods.len());
+                let unit = match u16::try_from(self.named.len()) {
+                    Ok(u) if usize::from(u) < limit => u,
+                    _ => capacity_exceeded!("units a flow names", limit, self.named.len()),
                 };
-                self.goods.push(good);
-                self.sorted.insert(at, (good, unit));
+                self.named.push(held);
+                self.sorted.insert(at, (held, unit));
                 unit
             }
         }
     }
 
-    /// The good's unit, if it has been named.
+    /// The unit of what is held, if it has been named.
     #[must_use]
-    pub fn find(&self, good: Good) -> Option<u16> {
-        let at = self.sorted.binary_search_by_key(&good, |(g, _)| *g).ok()?;
+    pub fn find(&self, held: Held) -> Option<u16> {
+        let at = self.sorted.binary_search_by_key(&held, |(h, _)| *h).ok()?;
         self.sorted.get(at).map(|x| x.1)
     }
 
-    /// The good a unit names.
+    /// What a unit names.
     #[must_use]
-    pub fn good(&self, unit: u16) -> Option<Good> {
-        self.goods.get(usize::from(unit)).copied()
+    pub fn held(&self, unit: u16) -> Option<Held> {
+        self.named.get(usize::from(unit)).copied()
     }
 
     #[must_use]
     pub fn len(&self) -> usize {
-        self.goods.len()
+        self.named.len()
     }
 
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.goods.is_empty()
+        self.named.is_empty()
     }
 }
 

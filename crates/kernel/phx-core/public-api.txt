@@ -838,6 +838,9 @@ pub phx_core::goods::Bound::Pledged
 pub enum phx_core::goods::Cost
 pub phx_core::goods::Cost::At(i64)
 pub phx_core::goods::Cost::Carried
+pub enum phx_core::goods::Held
+pub phx_core::goods::Held::Capital(phx_core::units::Class)
+pub phx_core::goods::Held::Good(phx_core::goods::Good)
 pub struct phx_core::goods::Carriage
 pub phx_core::goods::Carriage::arrived: u8
 pub phx_core::goods::Carriage::shipped: u8
@@ -845,13 +848,6 @@ pub struct phx_core::goods::Good
 pub phx_core::goods::Good::grade: u8
 pub phx_core::goods::Good::product: u16
 pub phx_core::goods::Good::zone: u32
-pub struct phx_core::goods::GoodIds
-impl phx_core::goods::GoodIds
-pub fn phx_core::goods::GoodIds::find(&self, phx_core::goods::Good) -> core::option::Option<u16>
-pub fn phx_core::goods::GoodIds::good(&self, u16) -> core::option::Option<phx_core::goods::Good>
-pub fn phx_core::goods::GoodIds::is_empty(&self) -> bool
-pub fn phx_core::goods::GoodIds::len(&self) -> usize
-pub fn phx_core::goods::GoodIds::unit(&mut self, phx_core::goods::Good) -> u16
 pub struct phx_core::goods::Holding
 pub phx_core::goods::Holding::committed: i64
 pub phx_core::goods::Holding::cost: i64
@@ -893,6 +889,13 @@ pub fn phx_core::goods::Stocks::holdings(&self, phx_id::ids::PartyKey) -> impl c
 pub fn phx_core::goods::Stocks::lose(&mut self, phx_id::ids::PartyKey, u16, i64) -> (i64, i64)
 pub fn phx_core::goods::Stocks::receive(&mut self, phx_id::ids::PartyKey, u16, (i64, i64), phx_id::day::Day)
 pub fn phx_core::goods::Stocks::totals(&self) -> alloc::vec::Vec<i128>
+pub struct phx_core::goods::UnitIds
+impl phx_core::goods::UnitIds
+pub fn phx_core::goods::UnitIds::find(&self, phx_core::goods::Held) -> core::option::Option<u16>
+pub fn phx_core::goods::UnitIds::held(&self, u16) -> core::option::Option<phx_core::goods::Held>
+pub fn phx_core::goods::UnitIds::is_empty(&self) -> bool
+pub fn phx_core::goods::UnitIds::len(&self) -> usize
+pub fn phx_core::goods::UnitIds::unit(&mut self, phx_core::goods::Held) -> u16
 pub const phx_core::goods::NATURE: phx_id::ids::PartyKey
 pub fn phx_core::goods::breaks(&[i128], &[i128], &[i128]) -> alloc::vec::Vec<(u16, i128, i128)>
 pub fn phx_core::goods::nature_net<'a>(impl core::iter::traits::collect::IntoIterator<Item = &'a phx_core::flows::Flow>) -> alloc::vec::Vec<i128>
@@ -2232,6 +2235,19 @@ pub fn phx_core::touched::TouchedRows::count(&self) -> u64
 pub fn phx_core::touched::TouchedRows::mark(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
 pub fn phx_core::touched::TouchedRows::rows(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_core::touched::TouchedRows::tables(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::TableId> + '_
+pub mod phx_core::units
+pub struct phx_core::units::Chain
+pub phx_core::units::Chain::efficiency: alloc::vec::Vec<f64>
+pub phx_core::units::Chain::leaving_per_year: f64
+pub phx_core::units::Chain::value: alloc::vec::Vec<f64>
+pub struct phx_core::units::Class
+pub phx_core::units::Class::band: u8
+pub phx_core::units::Class::condition: u8
+pub phx_core::units::Class::kind: u16
+pub phx_core::units::Class::zone: u32
+pub fn phx_core::units::capacity(&phx_core::goods::Stocks, &phx_core::goods::UnitIds, phx_id::ids::PartyKey, (u16, core::option::Option<u32>), &phx_core::units::Chain) -> f64
+pub fn phx_core::units::issue_chain(&mut phx_core::goods::UnitIds, phx_core::units::Class, u8) -> alloc::vec::Vec<u16>
+pub fn phx_core::units::wear<'a>((&mut phx_core::goods::Stocks, &phx_core::goods::UnitIds), phx_id::ids::PartyKey, impl core::ops::function::Fn(u16) -> core::option::Option<&'a phx_core::units::Chain>, (i64, i64), u8, &mut alloc::vec::Vec<phx_core::flows::Flow>)
 pub mod phx_core::visit
 pub enum phx_core::visit::Cadence
 pub phx_core::visit::Cadence::Attention

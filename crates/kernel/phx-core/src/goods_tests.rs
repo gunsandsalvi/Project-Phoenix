@@ -5,9 +5,10 @@
 use phx_id::{Day, PartyKey, Slot};
 
 use super::{
-    Bound, Carriage, Cost, Good, GoodIds, NATURE, Shipment, Shipments, Short, Stocks, breaks, nature_net, spoil,
+    Bound, Carriage, Cost, Good, Held, NATURE, Shipment, Shipments, Short, Stocks, UnitIds, breaks, nature_net, spoil,
 };
 use crate::flows::{Denom, Flow};
+use crate::units::Class;
 
 fn firm(i: u32) -> PartyKey {
     PartyKey::new(2, Slot::new(i))
@@ -19,15 +20,14 @@ fn flow(from: PartyKey, to: PartyKey, unit: u16, amount: i64) -> Flow {
 
 #[test]
 fn goods_are_issued_their_units_once() {
-    let mut ids = GoodIds::default();
+    let mut ids = UnitIds::default();
     let wheat = Good { product: 3, grade: 1, zone: 40 };
     let there = Good { zone: 41, ..wheat };
-    assert_eq!(
-        (ids.unit(wheat), ids.unit(there), ids.unit(wheat)),
-        (0, 1, 0),
-        "the same grade at two zones is two goods"
-    );
-    assert_eq!((ids.find(there), ids.good(1), ids.find(Good { grade: 2, ..wheat })), (Some(1), Some(there), None));
+    let (a, b) = (Held::Good(wheat), Held::Good(there));
+    assert_eq!((ids.unit(a), ids.unit(b), ids.unit(a)), (0, 1, 0), "the same grade at two zones is two goods");
+    let lorry = Held::Capital(Class { kind: 3, band: 0, condition: 1, zone: 40 });
+    assert_eq!((ids.unit(lorry), ids.held(2)), (2, Some(lorry)), "capital and goods share the units");
+    assert_eq!((ids.find(b), ids.held(1), ids.find(Held::Good(Good { grade: 2, ..wheat }))), (Some(1), Some(b), None));
 }
 
 #[test]

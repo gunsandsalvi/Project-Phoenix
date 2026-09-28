@@ -1933,8 +1933,20 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
     less what it took (`nature_net`, `breaks`); flows between parties move units without changing how many there are.
   - A sale's goods leg (`GoodsLeg`) goes to the buyer, who holds it as a firm holds its inputs, or to nature with the
     buyer as its source, as a household's purchase uses it up.
+- **Capital** (`phx_core::units`): plant, dwellings and vehicles are held by zone and class (REP.24) — kind, band of
+  size or quality, condition — as counts in their owners' holdings in `Stocks`, each class a declared unit of the same
+  registry as goods (`UnitIds` over `Held`), at average cost, the holding's mean day their service day. So a unit of
+  plant is bought, pledged, lost and moved as goods are, and the goods' identity covers capital.
+  - A kind's `Chain` declares its yearly rate of leaving a condition and each condition's efficiency and value;
+    `issue_chain` issues a kind's conditions at a zone together.
+  - `wear` takes from each class, on what the holder held before any moved, the units a constant hazard takes over
+    the days (`wear::leaving`), moves them to the next condition at their cost times its value over their own
+    (`wear::carried`) with their service day kept, and the last condition's leave: a pair of flows with nature a move,
+    the leaving alone for a unit leaving the chain.
+  - `capacity` is a holder's units of a kind, each at its condition's efficiency, at a zone or wherever they stand;
+    a way's capacity is the least over its kinds of that over what it needs a unit (CAP.9).
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel, settlement,
-  facts, goods or posted-price meeting.
+  facts, goods, capital or posted-price meeting.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
   its three sustained cores, never below the wall; page faults per day stand for allocation during the day.
 
@@ -1949,7 +1961,8 @@ month through these kernels:
   - each goods firm holds its product and two inputs at the opening;
   - after settlement each covered sale is delivered, used up by a household or held by a firm at what it paid, or
     released where its payment failed;
-  - each goods firm uses up a unit of each input it holds and makes a day's sales;
+  - every firm holds four conditions of its product's plant, worn at its monthly review;
+  - each goods firm uses up a unit of each input it holds and makes a day's sales, no more than its plant can;
   - a third of the products spoil, weekly, and a hundredth of the goods firms ship a quarter of their stock to the next
     region, arriving three days on;
   - the goods' identity is read every day;

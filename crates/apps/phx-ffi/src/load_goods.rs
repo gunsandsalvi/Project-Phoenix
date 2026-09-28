@@ -6,8 +6,9 @@
 
 use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{
-    Bound, Carriage, Cost, Good, GoodIds, NATURE, Shipment, Shipments, Stocks, breaks, nature_net, spoil,
+    Bound, Carriage, Cost, Good, Held, NATURE, Shipment, Shipments, Stocks, UnitIds, breaks, nature_net, spoil,
 };
+use phx_core::units::{Chain, Class, capacity, issue_chain, wear};
 use phx_exec::Pool;
 use phx_id::{Day, PartyKey, Slot};
 
@@ -32,12 +33,24 @@ const SPOIL_RATE: f64 = 0.2;
 const SHIP_EVERY: u32 = 100;
 const SHIP_PART: i64 = 4;
 const SHIP_DAYS: u32 = 3;
+/// Every firm's plant: its kind's conditions, the units it holds of each at the opening and what a unit costs new;
+/// the chain's yearly rate of leaving a condition, a life of twenty years over four; each condition's efficiency and
+/// value; the days between a firm's plant reviews, when it wears; and what a new unit makes a day.
+const PLANT_CONDITIONS: u8 = 4;
+const PLANT_UNITS: i64 = 10;
+const PLANT_PRICE: i64 = 50_000;
+const PLANT_LEAVING: f64 = 0.2;
+const PLANT_EFFICIENCY: [f64; 4] = [1.0, 0.95, 0.85, 0.7];
+const PLANT_VALUE: [f64; 4] = [1.0, 0.7, 0.45, 0.2];
+const WEAR_DAYS: u32 = 30;
+const MADE_A_UNIT: f64 = 1.0;
 /// Days ahead the shipments' wheel reaches.
 const SHIP_HORIZON: u32 = 16;
 /// The goods flows' reasons: made, used, spoiled, shipped, arrived; a sale's goods leg is the purchases' own.
 const MADE: u8 = 7;
 const USED: u8 = 8;
 const SPOILED: u8 = 9;
+const WORN: u8 = 12;
 const CARRIAGE: Carriage = Carriage { shipped: 10, arrived: 11 };
 
 /// A sale's goods leg, covered at the sale and delivered after its payment settles, with what the buyer paid.
@@ -71,6 +84,8 @@ pub(super) struct GoodsLoad {
     regions: u32,
     range_bits: u32,
     unit_of: Vec<u16>,
+    ids: UnitIds,
+    chain: Chain,
     shards: Vec<Shard>,
     make: i64,
     open: Vec<i128>,
@@ -86,13 +101,23 @@ impl GoodsLoad {
         (products, regions, range_bits): (u32, u32, u32),
         make: i64,
     ) -> GoodsLoad {
-        let mut ids = GoodIds::default();
+        let mut ids = UnitIds::default();
         let mut unit_of = Vec::new();
         for zone in 0..regions {
             for product in 0..products {
-                unit_of.push(ids.unit(Good { product: to_u16(product), grade: 0, zone }));
+                unit_of.push(ids.unit(Held::Good(Good { product: to_u16(product), grade: 0, zone })));
             }
         }
+        // Each product's plant is a kind, its chain issued at every region.
+        let plant: Vec<Vec<u16>> = (0..regions)
+            .flat_map(|zone| (0..products).map(move |p| Class { kind: to_u16(p), band: 0, condition: 0, zone }))
+            .map(|newest| issue_chain(&mut ids, newest, PLANT_CONDITIONS))
+            .collect();
+        let chain = Chain {
+            leaving_per_year: PLANT_LEAVING,
+            efficiency: PLANT_EFFICIENCY.to_vec(),
+            value: PLANT_VALUE.to_vec(),
+        };
         let n_shards = to_usize(u64::from(firms.div_ceil(1 << range_bits)));
         let mut g = GoodsLoad {
             firm,
@@ -101,15 +126,25 @@ impl GoodsLoad {
             regions,
             range_bits,
             unit_of,
+            ids,
+            chain,
             shards: Vec::new(),
             make,
             open: Vec::new(),
             failed: Vec::new(),
         };
         let this = &g;
+        let plant = &plant;
         g.shards = pool.map(n_shards, |r| {
             let mut stocks = Stocks::default();
             for s in this.slots(r) {
+                let groups = this.regions * this.products;
+                let chain = plant.get(to_usize(u64::from(s % groups))).map_or(&[][..], Vec::as_slice);
+                for (unit, value) in chain.iter().zip(PLANT_VALUE) {
+                    let cost =
+                        phx_rand::float::floor_to_i64(value * phx_rand::float::from_i64(PLANT_UNITS * PLANT_PRICE));
+                    stocks.receive(this.key(s), *unit, (PLANT_UNITS, cost.unwrap_or(0)), Day::new(0));
+                }
                 let Some((region, product)) = this.goods_seller(s) else { continue };
                 let key = this.key(s);
                 let units = make * OPENING_DAYS;
@@ -264,6 +299,8 @@ impl GoodsLoad {
             products: self.products,
             regions: self.regions,
             units: &self.unit_of,
+            ids: &self.ids,
+            chain: &self.chain,
         };
         let this = &*self;
         let ranges: Vec<std::ops::Range<u32>> = (0..self.shards.len()).map(|r| this.slots(r)).collect();
@@ -316,11 +353,14 @@ struct Making<'a> {
     products: u32,
     regions: u32,
     units: &'a [u16],
+    ids: &'a UnitIds,
+    chain: &'a Chain,
 }
 
-/// A goods firm's day: it uses up some of each input it holds free and makes its product at their cost and the
-/// making's own; on a spoilage day its goods spoil, cutting its pledges where goods on their way are lost; and one in
-/// `SHIP_EVERY` ships a quarter of its free product to the next region. A firm selling a service holds no goods.
+/// A firm's day: on its plant review its plant wears. A goods firm then uses up some of each input it holds free and
+/// makes its product, no more than its plant can, at their cost and the making's own; on a spoilage day its goods
+/// spoil, cutting its pledges where goods on their way are lost; and one in `SHIP_EVERY` ships a quarter of its free
+/// product to the next region. A firm selling a service holds no goods.
 fn firm_day(
     (stocks, ships, flows, inputs): (&mut Stocks, &mut Shipments, &mut Vec<Flow>, &mut Vec<(u16, i64)>),
     s: u32,
@@ -328,14 +368,23 @@ fn firm_day(
 ) {
     let groups = m.regions * m.products;
     let (region, product) = ((s % groups) / m.products, (s % groups) % m.products);
+    let key = PartyKey::new(m.firm, Slot::new(s));
+    let day = m.today.get();
+    let kind = to_u16(product);
+    if (s + day).is_multiple_of(WEAR_DAYS) {
+        let own = |k: u16| (k == kind).then_some(m.chain);
+        wear((stocks, m.ids), key, own, (i64::from(WEAR_DAYS), YEAR_DAYS), WORN, flows);
+    }
     if u64::from(product) * THOUSAND >= u64::from(m.products) * GOODS_SHARE {
         return;
     }
     let unit = |r: u32| m.units.get(to_usize(u64::from(r * m.products + product))).copied();
     let (Some(own), Some(there)) = (unit(region), unit((region + 1) % m.regions)) else { return };
-    let key = PartyKey::new(m.firm, Slot::new(s));
-    let day = m.today.get();
-    let mut cost = m.make * MAKING_COST;
+    // A firm makes no more than its plant here can.
+    let can = capacity(stocks, m.ids, key, (kind, Some(region)), m.chain) * MADE_A_UNIT;
+    let most = phx_rand::float::floor_to_i64(can).unwrap_or(0);
+    let make = if most < m.make { most } else { m.make };
+    let mut cost = make * MAKING_COST;
     inputs.clear();
     inputs.extend(
         stocks
@@ -350,7 +399,7 @@ fn firm_day(
             flows.push(f);
         }
     }
-    let making = transformation(NATURE, key, own, m.make, MADE);
+    let making = transformation(NATURE, key, own, make, MADE);
     if stocks.apply(&making, Bound::Free, Cost::At(cost), m.today).is_ok() {
         flows.push(making);
     }
