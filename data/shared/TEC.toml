@@ -34,7 +34,7 @@ id = "TEC.deposit_draw"
 kind = "TECHNOLOGY"
 owner = "TEC"
 source = "measured"
-source_ref = "Tonnes an extracted product takes from its deposit per unit made: its unit is the tonne, so one; the others take none."
+source_ref = "Kilograms an extracted product takes from its deposit per unit made: its unit is the kilogram, so one; the others take none."
 value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], outside = "refuse" }
 
 [[primitive]]
@@ -58,5 +58,5 @@ id = "TEC.batch"
 kind = "TECHNOLOGY"
 owner = "TEC"
 source = "measured"
-source_ref = "The least quantity started at once, in units: one, since each product is an aggregate measured in continuous volume or tonnes, with no lot size the tables distinguish."
+source_ref = "The least quantity started at once, in units: one, since each product is an aggregate measured in continuous volume or kilograms, with no lot size the tables distinguish."
 value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], outside = "refuse" }

@@ -16,6 +16,7 @@ and gas's deposit sizes and ore's grades are measured; the rest of the deposits 
 import argparse
 import csv
 import json
+import math
 import statistics
 import tomllib
 import urllib.request
@@ -160,10 +161,12 @@ def main():
         parts.append(prim(f"GEO.{name}_severity_b", "TECHNOLOGY", measured,
             f"Second shape of the share a {name} destroys, by exposure class, giving its mean share: {why}.",
             table1(b, 2)))
+    # A deposit holds its resource in kilograms, the unit its product is counted in; the sources give tonnes.
+    LOG_KG_PER_TONNE = math.log(1000)
     deposits = [
-        ("metal ore", [0.0, 0.002, 0.006, 0.012], 0.0, 0.31, 18.95, 2.10, 0),
-        ("coal", [0.004, 0.006, 0.003, 0.0], 0.0, 0.5, 17.7, 1.5, 0),
-        ("oil and gas", [0.004, 0.002, 0.0005, 0.0], 0.0, 0.6, 16.63, 1.82, 0),
+        ("metal ore", [0.0, 0.002, 0.006, 0.012], 0.0, 0.31, 18.95 + LOG_KG_PER_TONNE, 2.10, 0),
+        ("coal", [0.004, 0.006, 0.003, 0.0], 0.0, 0.5, 17.7 + LOG_KG_PER_TONNE, 1.5, 0),
+        ("oil and gas", [0.004, 0.002, 0.0005, 0.0], 0.0, 0.6, 16.63 + LOG_KG_PER_TONNE, 1.82, 0),
         ("building stone", [0.0, 0.03, 0.05, 0.08], 0.0, 0.3, 0.0, 0.0, 1),
     ]
     names = ", ".join(f"{i} {d[0]}" for i, d in enumerate(deposits))
@@ -180,7 +183,7 @@ def main():
     for key, i, doc, exp, measured in [
             ("grade_mu", 2, "Mean of a deposit's log grade, a quality index around one: nought, the index centred on the median deposit", 3, "the grade index's own centre"),
             ("grade_sigma", 3, "Standard deviation of a deposit's log grade", 3, ore),
-            ("quantity_mu", 4, "Mean of a finite deposit's log opening quantity in tonnes", 3, f"{ore}; {oil}"),
+            ("quantity_mu", 4, "Mean of a finite deposit's log opening quantity in kilograms, the tonnes' log and ln 1000", 3, f"{ore}; {oil}"),
             ("quantity_sigma", 5, "Standard deviation of a finite deposit's log opening quantity", 3, f"{ore}; {oil}")]:
         parts.append(prim(f"GEO.deposit_{key}", "ENDOWMENT", "estimated",
             f"{doc}, by resource ({names}): {measured}; the others assumed.",

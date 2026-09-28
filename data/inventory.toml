@@ -468,7 +468,7 @@ what = "the products, each with its unit, industry, and how it is held and deliv
 owner = "TEC"
 first_read = "S1.02"
 source = "OECD inter-country input-output tables (2023 edition), 2019, ISIC Rev. 4 industries aggregated to nineteen products"
-status = "sourced: extracted products in tonnes, the rest in volumes at world-average 2022 prices"
+status = "sourced: extracted products in kilograms, the rest in volumes at world-average 2022 prices"
 
 [[row]]
 id = "TEC.ways"

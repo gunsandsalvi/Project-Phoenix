@@ -3,7 +3,7 @@
 
 A product is an aggregate of the input-output tables' industries' outputs (ISIC Rev. 4, the OECD's inter-country
 tables of 2019). Its unit is physical where the product has one the world measures it in (the extracted products, in
-tonnes, as deposits hold them) and otherwise the volume the national accounts measure an aggregate in: what one US
+kilograms, as deposits hold them, fine enough that what a way uses of one by the unit is whole) and otherwise the volume the national accounts measure an aggregate in: what one US
 cent bought at the world's average prices in 2022, the tables' dollars of 2019 carried to 2022 by the United States'
 GDP deflator and turned into quantities by the ICP's price level of the product's heading. A way states, per unit of
 output, what it uses of each product, the hours of each occupation group, the stock of each kind of plant per unit of
@@ -33,6 +33,8 @@ MIN_COUNTRIES = 10
 EXP = 9
 WEEKS = 52
 CENTS = 100
+# Kilograms in a tonne, the extracted products' world prices being quoted by the tonne.
+KG_PER_TONNE = 1000
 # The tables report millions of dollars.
 MILLION = 1e6
 HECTARES_PER_KM2 = 100
@@ -135,13 +137,13 @@ def product_level(pl: pd.Series, headings: list) -> float:
 
 
 def per_unit(prices: dict, deflator: float) -> np.ndarray:
-    """Each product's dollars of the unit's year per unit: a cent, or the price of a tonne of what is extracted in the
-    tables' year carried to the unit's."""
+    """Each product's dollars of the unit's year per unit: a cent, or the price of a kilogram of what is extracted in
+    the tables' year carried to the unit's."""
     out = np.full(len(PRODUCTS), 1.0 / CENTS)
     for i, p in enumerate(PRODUCTS):
         if p[6] is not None:
             price = prices[RESOURCE_PRICE[p[6]]]
-            out[i] = (price / TONNES_PER_BARREL if p[6] == 2 else price) * deflator
+            out[i] = (price / TONNES_PER_BARREL if p[6] == 2 else price) * deflator / KG_PER_TONNE
     return out
 
 
@@ -324,8 +326,8 @@ def write_shared(prices: dict, src: dict) -> None:
         'owner = "TEC"',
         'source = "measured"',
         "source_ref = " + json.dumps(
-            "Tonnes an extracted product takes from its deposit per unit made: its unit is the tonne, so one; the "
-            "others take none."),
+            "Kilograms an extracted product takes from its deposit per unit made: its unit is the kilogram, so one; "
+            "the others take none."),
         f"value = {{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], "
         f"values = [{', '.join(num(v, 0) for v in draws)}], outside = \"refuse\" }}",
     ]
@@ -362,7 +364,7 @@ def write_shared(prices: dict, src: dict) -> None:
         'source = "measured"',
         "source_ref = " + json.dumps(
             "The least quantity started at once, in units: one, since each product is an aggregate measured in "
-            "continuous volume or tonnes, with no lot size the tables distinguish."),
+            "continuous volume or kilograms, with no lot size the tables distinguish."),
         f"value = {{ axis = [{axis}], values = [{', '.join('1' for _ in PRODUCTS)}], outside = \"refuse\" }}",
     ]
     (SHARED / "TEC.toml").write_text("\n".join(lines) + "\n")
@@ -387,7 +389,7 @@ def primitive(pid: str, source: str, ref: str, value: str) -> list:
 def write_level(level: str, members: dict, m: dict) -> None:
     """The group's ways: each quantity the median over the group's economies that report it."""
     tables, ilo, oecd = (m["sources"][k] for k in ("icio", "ilo_activity", "oecd_nad"))
-    unit_note = (f"per unit of output: a unit is a tonne of an extracted product and otherwise what one US cent bought "
+    unit_note = (f"per unit of output: a unit is a kilogram of an extracted product and otherwise what one US cent bought "
                  f"at world-average prices in {UNIT_YEAR}, each product's dollars of {YEAR} carried to {UNIT_YEAR} by "
                  f"the United States' GDP deflator and turned into quantities by its ICP 2021 price level")
     names = lambda cs: ", ".join(sorted(cs))

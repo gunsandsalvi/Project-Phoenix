@@ -285,7 +285,7 @@ sources report, a group reporting too few taking the developed group's, marked a
   ore (to basic metals) and stone, hours by ISCO-08 major group from ILOSTAT's employment and hours by ISIC section
   shared among a section's industries by value added, plant by kind per unit of output a year from the OECD's
   net fixed assets (Table 9A) per unit of value added (Table 6), agricultural land (World Bank) for crops and
-  livestock, a tonne of deposit per tonne extracted; a growing season's lead time for crops and livestock, a day for
+  livestock, a kilogram of deposit per kilogram extracted; a growing season's lead time for crops and livestock, a day for
   other goods, none for services; every unit started finished; a batch of one.
 - **FRM** (`data/profiles/<level>/FRM_industries.toml`, `FRM.industry_by_size`): each size class's firms (rows the
   OECD's classes by their smallest persons employed) over the industries — the group's business owners (ILOSTAT's
@@ -1494,8 +1494,10 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   system's reading of its deposit's or its land's grade; a made good has one class.
 - **Products and ways** (TEC.1–TEC.4, TEC.9, TEC.12): products and ways are data (`if-base`), compiled at assembly
   into `sys-tec`'s `Technology`: each country's one opening way per product and its public way-set per industry. An
-  extracted product is counted in tonnes, as deposits hold it; every other in what one US cent bought at world-average
-  prices in 2022, so a way's quantities are physical and no price moves a draw. A way states per unit made its
+  extracted product is counted in kilograms, as deposits hold it, fine enough that what a way takes of one for a
+  start, rounded up, is near what it uses (in tonnes, a trace input's start took a whole tonne, some sixty times its
+  use); every other in what one US cent bought at world-average prices in 2022, so a way's quantities are physical and
+  no price moves a draw. A way states per unit made its
   inputs, hours by occupation family, plant by kind per unit a year, land and deposit, with lead time, batch and yield
   in parts per million; for a start it takes inputs rounded up and finishes output rounded down, and a making's start
   is the least that finishes its output (`ways::started_for`). Way-sets are interned

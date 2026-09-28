@@ -109,25 +109,25 @@ name = "metal ore"
 kind = "physical"
 price_exp = 2
 source = "measured"
-source_ref = "A tonne of metal ore, the unit deposits hold it in and its world price is quoted in; a tonne's price to a hundredth of a currency's smallest unit."
+source_ref = "A kilogram of metal ore, the unit deposits hold it in, its world price quoted by the tonne a thousandth of it; fine enough that what a way uses of it by the unit is whole. A kilogram's price to a hundredth of a currency's smallest unit."
 [[unit]]
 name = "coal"
 kind = "physical"
 price_exp = 2
 source = "measured"
-source_ref = "A tonne of coal, the unit deposits hold it in and its world price is quoted in; a tonne's price to a hundredth of a currency's smallest unit."
+source_ref = "A kilogram of coal, the unit deposits hold it in, its world price quoted by the tonne a thousandth of it; fine enough that what a way uses of it by the unit is whole. A kilogram's price to a hundredth of a currency's smallest unit."
 [[unit]]
 name = "oil and gas"
 kind = "physical"
 price_exp = 2
 source = "measured"
-source_ref = "A tonne of oil and gas, the unit deposits hold it in and its world price is quoted in; a tonne's price to a hundredth of a currency's smallest unit."
+source_ref = "A kilogram of oil and gas, the unit deposits hold it in, its world price quoted by the tonne a thousandth of it; fine enough that what a way uses of it by the unit is whole. A kilogram's price to a hundredth of a currency's smallest unit."
 [[unit]]
 name = "building stone"
 kind = "physical"
 price_exp = 2
 source = "measured"
-source_ref = "A tonne of building stone, the unit deposits hold it in and its world price is quoted in; a tonne's price to a hundredth of a currency's smallest unit."
+source_ref = "A kilogram of building stone, the unit deposits hold it in, its world price quoted by the tonne a thousandth of it; fine enough that what a way uses of it by the unit is whole. A kilogram's price to a hundredth of a currency's smallest unit."
 [[unit]]
 name = "food"
 kind = "physical"
