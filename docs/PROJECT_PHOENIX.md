@@ -216,8 +216,8 @@ type or a fund type is a declaration, never a new special case in a mechanism.
 Parties differ — in endowment, preference, history, information and position — and those differences are
 what give a market two sides, make a distribution have tails, and let a shock transmit. Every decision is
 taken **by a party from its own state**; an aggregate is always `Σ f(xᵢ)`, never `f(Σ xᵢ)`. There is no
-representative agent anywhere a decision has a threshold. Every household and small firm is an **agent** of one
-real party (REP), deciding from its own state. No state is ever averaged across parties.
+representative party anywhere a decision has a threshold. Every household and every firm the world holds is one real
+party (REP), deciding from its own state, whatever its size. No state is ever averaged across parties.
 
 ### Law 12 — Causality runs forward, and nobody knows more than they could
 
@@ -244,9 +244,9 @@ switching, issuing, borrowing and failing each have a real cost borne by a named
 Randomness enters only through **declared processes of chance** (CHN.3): hazards — a death, an illness, an accident,
 a catastrophe, a breakdown, a discovery, a meeting between a searcher and an opportunity — each with a declared
 rate; a party's own taste on a choice, from a declared distribution; and the lots, samples and draws of which
-parties an event concerns that the representation needs. Every rate and distribution is a primitive, and every draw
+places an event concerns that the representation needs. Every rate and distribution is a primitive, and every draw
 comes from a single seeded source, so that the same seed reproduces the same world. Every hazard occurrence is an
-**event with a date and named subjects**; tastes, lots, samples and pairing draws are reproducible from the seed and
+**event with a date and named subjects**; tastes, lots, samples and place draws are reproducible from the seed and
 are not kept. **Outcomes are never drawn**: a default, a price, a vote, a merger or an unemployment rate is always a
 consequence of what parties decided, never a draw.
 
@@ -455,10 +455,9 @@ is a party with a permanent identity.
   house**, a **treasury**, a **central bank**, a **public agency**, a **parliament**, a **political party**,
   an **estate**. Each has an identity that is never reused.
 - **PTY.2 STATE** — **The world is a real economy at a declared scale**: a declared number of the hundreds of
-  millions of people of its countries, with the small firms they form (REP.40). Every party is either an **individual** or an **agent**
-  of its kind's population (REP). Institutions, issuers and every firm or household within its rank at the opening
-  are individuals; the rest of the households and small firms, the player's own among them, are agents. An agent is a
-  named party, one real household or small firm.
+  millions of people of its countries, with the firms they form (REP.40). Every household, firm and institution in it
+  is one named, real party of its kind, the player's own household among them; parties of a kind differ only by their
+  own state and their kind's declared data (Law 10), never by how they are carried (REP).
 - **PTY.3 STATE** — A **person** has an age, a household, a region of residence, skills, a health state and a
   labour-market state. A **household** is one or more persons who share a budget and a dwelling; it is the
   unit that owns, consumes, saves and borrows. Legal ownership sits with the household; labour, age and
@@ -467,8 +466,8 @@ is a party with a permanent identity.
   may hold, whether it is a party separate from its owners, whether its owners have limited liability,
   whether it may take deposits, how it can end, and who its owners are.
 - **PTY.5 STATE** — Every party has a **site** on the map (GEO), from which its region and country are read;
-  a party with several establishments has a site for each. An agent has a **zone** among its attributes, and its
-  site is the tile of what it holds there, drawn when something depends on it (REP.24).
+  a party with several establishments has a site for each. A household or firm has a **zone** for each site among
+  its attributes, and its site is the tile of what it holds there, drawn when something depends on it (REP.24).
 - **PTY.6 STATE** — Every party has a **home currency** — its country's — and keeps its books in it.
 - **PTY.7 STATE** — **Ownership and control are relations between parties**, recorded as holdings of the
   owned party's equity (REG), never as attributes. A **group** is a parent and the subsidiaries it controls
@@ -601,14 +600,14 @@ is a party with a permanent identity.
   job seeker and a vacancy, a buyer and a dwelling for sale, two adults forming a household); **weather** — wind,
   sunshine, temperature and rainfall per region per day, drawn from each region's declared climate — which drives
   renewable power, heating and cooling demand, crop yields and river levels; **heterogeneity at birth** (drawing a new
-  party's type from its declared set of types); **occasions** — the reviews and needs on which an agent reconsiders a
+  party's type from its declared set of types); **occasions** — the reviews and needs on which a party reconsiders a
   lumpy decision (REP.21); and **tastes** — a party's idiosyncratic taste for each alternative on a choice occasion
-  (REP.22); **pairing draws** — which parties on a line an event concerns (REP.23); **samples** — the records a
+  (REP.22); **place draws** — the tile a held unit stands on when something depends on it (REP.23); **samples** — the records a
   statistics agency's survey or a polling firm's poll reads (STA.2, POL.4); the **opening draws** of the world and its
   map (GEN.3, GEO.10); **schedule phases** — where in its period a new party's decision schedule falls (TIME.5); and
   **lots** — any order or choice that matters and that no rule fixes (CHN.6): the order in which buyers reach a
-  seller whose capacity runs out and orders reach a book (MKT.4), and the choice among applicants or bidders a rule
-  leaves equal.
+  seller whose capacity runs out and orders reach a book (MKT.4), the order among a payer's payments of one payment
+  order when it cannot pay them all (MON.5), and the choice among applicants or bidders a rule leaves equal.
 - **CHN.4 PROCESS** — Each occurrence is an **event** with a day, named subjects and a size, recorded before
   any party reacts to it.
 
@@ -664,7 +663,7 @@ exposure; it never writes an economic outcome.
   A country's land and its number of regions follow its population share (GEN.14): the regions, a world constant in
   number, are allotted by largest remainder with at least three per country, and each country's land is its share of
   the map, so regions are of like size. A **zone** is a declared set of neighbouring tiles within one region
-  (RESOLUTION), the place at which agents are carried (REP.24). A **site** is the exact tile on which a
+  (RESOLUTION), the place at which households and firms are carried (REP.24). A **site** is the exact tile on which a
   party, plant, dwelling, warehouse, port or piece of infrastructure stands; country, region and zone are read through
   the site.
 - **GEO.4 STATE** — **Infrastructure** — roads, rail, bridges, tunnels, ports, pipelines, power lines — is
@@ -722,62 +721,52 @@ exposure; it never writes an economic outcome.
 
 ## A6. REP — How populations are represented
 
-**Purpose.** How a world of hundreds of millions of people and millions of small firms is carried exactly
-enough to be true and compactly enough to run on a phone. This section says what any representation must make
-true — what is exact, what is approximated, and how the approximation is measured — and chooses no method.
+**Purpose.** How a world of hundreds of millions of people and the firms they form is carried exactly enough to be
+true and compactly enough to run on a phone. This section says what any representation must make true — what is
+exact, what is declared coarse, and how it is measured — and chooses no method.
 
-1. Every household and small firm is an **agent** with its own state, its own persons and its own contracts. No
-   agent is ever split, joined or averaged with another.
-2. Every agent is one real party.
-3. The world holds a declared number of the persons the setup's population gives (decision 44), the representation's
+1. Every household and every firm is one real party with its own state, its own persons and its own contracts. No
+   party is ever split, joined or averaged with another, and no party is carried differently for its size.
+2. The world holds a declared number of the persons the setup's population gives (decision 44), the representation's
    size.
-4. Chance, choice and the **occasions** to act reach agents, each by its own state.
-5. A relationship between many parties is **one record**, and who in it is paired with whom is drawn only when
-   something depends on it. That rests on **one declared assumption**: inside a line, nothing matters beyond what
-   is counted.
-6. **Looking changes nothing.**
+3. Chance, choice and the **occasions** to act reach parties, each by its own state.
+4. Every contract names its parties. Who is paired with whom is recorded, never drawn.
+5. **Looking changes nothing.**
 
-The work of a day follows the number of agents something happens to, not the number of people.
+The work of a day follows the number of parties something happens to, not the number of people.
 
 **Depends on:** PTY, NUM, CHN, GEO.
 
 **State**
 
-- **REP.1 STATE** — An **agent** is a named household or small firm held in its kind's population. It holds its
-  own attributes (REP.41), its own positions (REP.20), its persons (REP.26), its contracts and holdings.
+- **REP.1 STATE** — A **household** or a **firm** is a named party held in its kind's population. It holds its own
+  attributes (REP.41), its own positions (REP.20), its persons (a household's, REP.26), its contracts and holdings.
   - It is one real party, and nothing it holds is shared with another.
-  - An agent that ends leaves one estate party (PTY.9).
-- **REP.2 STATE** — An **individual** is a party never held in a population:
-  - every institution and issuer, and every party with a public instrument (a listed share, a bond, a rating);
-  - the **top-ranked** parties of each kind by size (employees, turnover, net worth) at the opening, down to a
-    declared **rank**. The largest parties move aggregates on their own. A rank, unlike a size in money, keeps the
-    number of individuals bounded and does not drift with the price level.
+  - One that ends leaves one estate party (PTY.9).
+  - A firm is of one kind whatever its size: its size — persons employed, turnover, net worth — is read from its
+    contracts and books, never declared, ranked or carried apart.
 - **REP.40 STATE** — **The representation.** The world holds a declared number of persons, its **size**
-  (RESOLUTION), of the population the setup gives (GEN.14), and every household and small firm they form is one agent
-  of one real party. Everything the opening derives from the population — the employed, the firms, the lines, the
-  individuals by their rank per million people — follows from the persons the world holds. The size is set by
-  measuring the budget (N8.5).
-- **REP.41 STATE** — **An agent's attributes** are what it holds exactly and is never averaged on: for a household
+  (RESOLUTION), of the population the setup gives (GEN.14), and every household and firm they form is one real party.
+  Everything the opening derives from the population — the employed, the firms, the contracts — follows from the
+  persons the world holds. The size is set by measuring the budget (N8.5).
+- **REP.41 STATE** — **A party's attributes** are what it holds exactly and is never averaged on: for a household
   its region and zone, its bank, its tenure, its credit-record stage, its preference type (NUM.4) and heuristic
   stance (VAL.7), and every **clock a rule reads** (months unemployed toward a benefit's end, months in arrears
-  toward default); for a small firm its zone, its ways, legal form, productivity and management types, its
-  **posted price and wage offers** (REP.34), its headcount by occupation family and its plant. Each kind declares
+  toward default); for a firm the zone of each of its sites, its ways, legal form, productivity and management types,
+  its **posted prices and wage offers** (REP.34), its headcount by occupation family and its plant. Each kind declares
   its attributes (Law 10).
-- **REP.20 STATE** — **Positions** are an agent's continuous amounts. A position is **read** where a fact already
+- **REP.20 STATE** — **Positions** are a party's continuous amounts. A position is **read** where a fact already
   lives — cash from its accounts, wealth from its holdings at their marks — and only a record that lives nowhere
-  else (recent income, accrued rights, own outlooks) is held by the agent as its own.
+  else (recent income, accrued rights, own outlooks) is held by the party as its own.
   Examples: recent income, debt service, the mark of illiquid wealth, the risky share of savings, accrued pension
   rights and contribution records, inventory, cumulative output, and its outlooks of its own variables (VAL.23).
-- **REP.3 STATE** — A **line** is one record of identical contracts, with the same terms, between the parties on
-  its two sides.
-  - Each side is one or more named parties, individuals or agents, each with an exact **count** of contracts.
-  - A line with one party per side is an ordinary contract line. A line with many is how a relationship between many
-    parties is recorded: employment in one occupation family and skill at one wage offer and start band in one region;
-    tenancies of one class at one rent in one zone; deposits of one kind at one bank; invoices on one market's terms
-    that fall due together (TCR.1); kinship between parents and the households their children formed.
-  - An agent's count on a line is the contracts it holds there.
-  - **Terms belong to the line**, and nothing but the parties' own decisions and the contract's own events changes
-    them. An amount that differs by holder, such as a deposit's balance or an accrued pension, is the holder's own.
+- **REP.3 STATE** — A **contract** is one record between its named parties, with its terms.
+  - Each side is one named party: an employer and its employee (a person of a household), a landlord and its tenant,
+    a bank and its depositor, a seller and its buyer on an invoice, a parent's household and a child's.
+  - Contracts with identical terms share them, which is storage, never a pooling of their parties.
+  - **Terms belong to the contract**, and nothing but the parties' own decisions and the contract's own events changes
+    them. An amount that differs by contract, such as a deposit's balance or an accrued pension, is the contract's
+    own.
 - **REP.34 STATE** — **Price points.** Posted prices, wage offers and lenders' rates lie on the poster's **price
   points**: the round and conventional numbers of its trade. The set of points is a convention of the trade, a
   primitive like a market's tick size; which point is posted is the poster's own decision (FRM.5, LAB.4, BNK.4), and
@@ -786,106 +775,98 @@ The work of a day follows the number of agents something happens to, not the num
 
 **Decisions**
 
-- **REP.5 DECISION** — **An agent decides as itself.** Every decision is taken from the agent's own state.
+- **REP.5 DECISION** — **A party decides as itself.** Every decision is taken from the party's own state.
   - A **continuous** decision is taken on its schedule. Examples: this week's spending, the level of a buffer,
     where savings go. Hours and wages are contract terms, changed only on occasions.
   - A **lumpy** decision is taken only on an **occasion** (REP.21). Examples: to quit, move, buy a dwelling or a
     vehicle, borrow, found or close a business, switch bank, reconsider a heuristic, **change a posted price or
     wage**.
-- **REP.38 DECISION** — **Attention.** How often an agent reviews each kind of lumpy decision is its own choice, a
+- **REP.38 DECISION** — **Attention.** How often a party reviews each kind of lumpy decision is its own choice, a
   continuous decision, from what reviewing and changing that decision costs it (REP.18) and what is at stake: the
   loss it expects from leaving the decision as it stands, which a surprise raises (REP.35). Attention is therefore
   an outcome, never a review rate.
 
 **Processes**
 
-- **REP.21 PROCESS** — **Occasions reach agents.** Every lumpy decision is triggered by an occasion:
-  - a **review**, at the agent's **attention** rate (REP.38). Reviewing and changing a decision costs its decider
+- **REP.21 PROCESS** — **Occasions reach parties.** Every lumpy decision is triggered by an occasion:
+  - a **review**, at the party's **attention** rate (REP.38). Reviewing and changing a decision costs its decider
     something real (Law 14) — time, a fee, a menu cost paid to a named party — and the cost is the primitive;
   - a **need**: a breakdown, a birth, a notice to leave, a contract ending;
   - a **meeting**: an offer, a listing, a vacancy, an opportunity (CHN);
   - a **notice** addressed to it: a layoff, a margin call, a demand.
 - **REP.35 PROCESS** — **A surprise raises attention.** A surprise (VAL.4) raises what is at stake in the decisions
-  it bears on, and so the rate at which agents choose to review them (REP.38). A shock therefore reaches agents over
-  days as their reviews arrive: fast when it is large, and never all at once by construction.
-- **REP.7 PROCESS** — **Chance acts on persons and agents.** A hazard acts on each person or agent at its own
-  rate, read from its own state on the day, from the agent's own stream for that process (CHN).
-  - The **draw scheme** is declared: the day of an agent's next hit is drawn ahead, and drawn again when anything
+  it bears on, and so the rate at which parties choose to review them (REP.38). A shock therefore reaches parties
+  over days as their reviews arrive: fast when it is large, and never all at once by construction.
+- **REP.7 PROCESS** — **Chance acts on persons and parties.** A hazard acts on each person or party at its own
+  rate, read from its own state on the day, from the party's own stream for that process (CHN).
+  - The **draw scheme** is declared: the day of a party's next hit is drawn ahead, and drawn again when anything
     its rate reads changes or on the next day its rate may change. Which of its persons the hit reaches is drawn
     on that day, each as its own rate gives, at least one. The world is exactly reproducible under the scheme.
-  - An agent nothing hits is not visited, and no result depends on the order anything else runs in.
-- **REP.22 PROCESS** — **A choice among alternatives.** When an agent chooses among sellers, vacancies, dwellings,
+  - A party nothing hits is not visited, and no result depends on the order anything else runs in.
+- **REP.22 PROCESS** — **A choice among alternatives.** When a party chooses among sellers, vacancies, dwellings,
   lenders or heuristics, it has its own **taste** for each alternative on that occasion. For a job offer, that
-  taste is the match's quality. It is drawn from its type's declared distribution (random utility), and the agent
+  taste is the match's quality. It is drawn from its type's declared distribution (random utility), and the party
   chooses the alternative its tastes and state make best.
-  - Because tastes are drawn, identical agents spread over alternatives as independent choosers would, and every
+  - Because tastes are drawn, identical parties spread over alternatives as independent choosers would, and every
     discrete choice is a **smooth** function of the shared state, not a kink.
   - An alternative with limited capacity serves those who reach it in an order drawn by lot, and the rest choose
     again.
-- **REP.23 PROCESS** — **Pairings are drawn when they matter.** Within a line, which party on one side is paired
-  with which on the other is **not recorded**. The pairing is taken to be a uniform matching consistent with the
-  counts: nothing about who is paired with whom matters beyond the line's terms and the counts. So **whatever a
-  counterparty chose on is in the line's terms**: an employer that selects by skill hires onto a line whose terms
-  include the skill it hired.
-  - When an event concerns some contracts on one side, the parties on the other side it reaches are drawn from
-    the counts at that moment. Examples: a firm on one side closes, a worker on the other side quits, a flood
-    reaches one tile, a parent dies and its heirs must be found.
-  - Under that uniform matching, drawing at the moment is exactly what a pairing recorded from the start would have
-    given (the principle of deferred decisions). Nothing drawn is contradicted afterwards.
-  - Contracts leaving are drawn one at a time from the other side's holders by what each holds; what the other side
-    cannot give passes to another holder of the leaving party's side, drawn the same way.
-  - A line whose payments settle through the issuer of their money, each against the line (MON.5), draws as many
-    losers as members failed. That issuer is owed the failed payers' dues and owes the losers theirs, each recorded as
-    failed, so no amount has one side (Law 5).
-- **REP.24 PROCESS** — **Where agents are.**
-  - A household's zone is an attribute. Its dwelling, plant and vehicles are held by zone and **class** (kind,
-    size, quality band, condition band). Wear, damage and repair move units between condition classes.
-  - The tile each unit stands on is drawn when something depends on it (REP.23) from the zone's stock of that
-    class counted per tile.
-  - Distance for agents is measured between zones. The zone is the spatial resolution at which they are carried.
+- **REP.23 PROCESS** — **Places are drawn when they matter.** The tile a held unit stands on within its zone is not
+  recorded (REP.24): it is drawn when something depends on it — a flood reaching one tile, a sale naming the unit —
+  from the zone's stock of that class counted per tile, taken to be uniform over it. Under that uniform placing,
+  drawing at the moment is what a place recorded from the start would have given (the principle of deferred
+  decisions), and nothing drawn is contradicted afterwards. Who is party to a contract is never drawn (REP.3).
+- **REP.24 PROCESS** — **Where households and firms are.**
+  - A household's zone, and the zone of each of a firm's sites, are attributes. Their dwellings, plant and vehicles
+    are held by zone and **class** (kind, size, quality band, condition band). Wear, damage and repair move units
+    between condition classes.
+  - The tile each unit stands on is drawn when something depends on it (REP.23).
+  - Distance for households and firms is measured between zones. The zone is the spatial resolution at which they
+    are carried.
 - **REP.25 PROCESS** — **Age.** Every person holds its **birth date**. Its age on any day, and the day it reaches a
   statutory age or an entitlement, are read from it exactly.
 - **REP.26 PROCESS** — **Persons are held in their household.** A household holds each of its persons, with its
   role (head, partner, another adult, a child), its birth date, sex, health, education and its own contracts, such
   as employment. A person's event changes that person: a death, an illness, a job lost or taken, a new skill
   level, a child reaching adulthood.
-- **REP.9 PROCESS** — **Exact totals in whole units.** An agent's money is a total in whole smallest units
+- **REP.9 PROCESS** — **Exact totals in whole units.** A party's money is a total in whole smallest units
   (MON.16), and every holding counted in whole units — shares, face, fund units, physical units — is held the same
-  way; a rule's amount for an agent is rounded once, by its convention.
-- **REP.12 PROCESS** — **Only what is active is touched.** An agent is visited on a day only if it has an
+  way; a rule's amount for a party is rounded once, by its convention.
+- **REP.12 PROCESS** — **Only what is active is touched.** A party is visited on a day only if it has an
   occasion, a hazard hit, a scheduled payment or a flow that day. Accruals post on the dates that need them.
 
 **Invariants**
 
-- **REP.13 INVARIANT** — Every population's agents are its population, exactly, every day: households and small
-  firms, and their persons. Every household and small firm is exactly one agent or one individual.
-- **REP.14 INVARIANT** — No event, pairing draw or ending changes any total of money or units.
-- **REP.31 INVARIANT** — On every line, the two sides hold equal counts. An agent's count on a line is the contracts
-  it holds, and never more than its persons in the role that holds them.
+- **REP.13 INVARIANT** — Every population is its parties, exactly, every day: households and firms, and the
+  households' persons.
+- **REP.14 INVARIANT** — No event, place draw or ending changes any total of money or units.
+- **REP.31 INVARIANT** — Every contract names one existing party on each side (PTY.10), and a household holds no more
+  contracts in a role than its persons in the role that holds them.
 
 **Measures**
 
-- **REP.15 MEASURE** — **What the representation is, reported every day**, per kind: its size, its agents,
-  individuals and lines, the persons they hold, the agents something happened to that day and the events per agent.
-  These are what every distributional number the world shows is drawn from.
+- **REP.15 MEASURE** — **What the representation is, reported every day**, per kind: its size, its parties and
+  contracts, the persons they hold, the parties something happened to that day and the events per party. These are
+  what every distributional number the world shows is drawn from.
 
 **Forbids**
 
 - **REP.16 FORBID** — The representation must never:
-  - average an attribute, a position, a posted price, a line's terms or a person;
-  - split an agent or join two;
+  - average an attribute, a position, a posted price, a contract's terms or a person;
+  - split a party or join two;
+  - carry a party differently for its size;
   - create or destroy a unit;
-  - apply an event to an agent that did not reach it;
-  - let an agent read an experience it did not have;
-  - record a pairing, or contradict one that was drawn;
+  - apply an event to a party that did not reach it;
+  - let a party read an experience it did not have;
+  - draw who is party to a contract, or contradict a place that was drawn;
   - observe with a world stream, or act on the observer's.
+
 **Primitives**
 
 - **REP.18 PRIMITIVE** — RESOLUTION:
   - the representation's size (REP.40);
   - each kind's attribute classes;
   - zones;
-  - the individuals' ranks;
   - the declared payment order and the draw scheme (REP.7).
 
   PREFERENCE: taste distributions per type. TECHNOLOGY: what reviewing and changing each kind of decision
@@ -897,44 +878,46 @@ The work of a day follows the number of agents something happens to, not the num
 
 **Retired**
 
-- **REP.17** — _Retired_: a multiplicity counted the identical twins an agent stood for; every agent is one real
+- **REP.2** — _Retired_: individuals were the parties never held in a population — institutions, issuers and the
+  top-ranked households and firms by size down to a declared rank — carried apart from the agents. With every party
+  one real party (decision 44) and one kind of firm (decision 14), no party is carried differently for its size, and a
+  rank would make size an input where it is an outcome (Law 2, Law 10). Institutions are parties of their own kinds.
+- **REP.17** — _Retired_: a multiplicity counted the identical twins an agent stood for; every party is one real
   party (decision 44), so there is no multiplicity to bound.
 - **REP.4** — _Retired_: cell budgets, tolerances and steps belonged to cells joining members within a tolerance;
-  agents are never joined. The size (REP.40) is the representation's one valve.
+  parties are never joined. The size (REP.40) is the representation's one valve.
 - **REP.6** — _Retired_: splitting a member out when something happens to it alone, or when it is watched,
-  changed the world by looking at it. Replaced by occasions (REP.21) and drawn pairings (REP.23).
+  changed the world by looking at it. Replaced by occasions (REP.21).
 - **REP.8** — _Retired_: landing joined parts of cells into cells of the same key within a tolerance, and pooled a
-  flow reaching some of a cell's members into its total. An agent is never split, so nothing lands and no flow is
+  flow reaching some of a cell's members into its total. A party is never split, so nothing lands and no flow is
   pooled across parties (decision 44).
-- **REP.10** — _Retired_: tails were carried finely by narrowing tolerances; every agent is exact.
+- **REP.10** — _Retired_: tails were carried finely by narrowing tolerances; every party is exact.
 - **REP.11** — _Retired_: a shadow sample either diverges by its own chance or double-counts.
-- **REP.19** — _Retired_: the key was what every member of a cell shared exactly. Replaced by the agent's own
+- **REP.19** — _Retired_: the key was what every member of a cell shared exactly. Replaced by the party's own
   attributes (REP.41).
 - **REP.27** — _Retired_: outlooks held by experience group let a member read experience it did not have.
   Replaced by public outlooks computed once per method, and own outlooks as positions (VAL.23).
 - **REP.28** — _Retired_: tolerance control widened and narrowed cells' tolerances; there are none.
-- **REP.29** — _Retired_: promotion and demotion moved parties between cells and individuals by rank. The
-  individuals are those ranked at the opening (REP.2); an agent stays an agent, and a small firm sold whole is
-  named as the agent it is (decision 35).
+- **REP.29** — _Retired_: promotion and demotion moved parties between cells and individuals by rank. No party is
+  carried apart for its size (REP.1), so none is promoted, and a firm sold whole is named as the party it is.
 - **REP.30** — _Retired_: tracers followed members of cells through their splits. Every person is held in its
-  household (REP.26), and the observer reads agents themselves (OBS.8).
+  household (REP.26), and the observer reads parties themselves (OBS.8).
 - **REP.32** — _Retired_: profiles counted the attributes members of a cell did not share. Persons are held in
   their households (REP.26).
-- **REP.33** — _Retired_: which way an attribute was carried followed from cells' four ways; an agent holds
+- **REP.33** — _Retired_: which way an attribute was carried followed from cells' four ways; a party holds
   everything as its own.
 - **REP.36** — _Retired_: exactness at a landing; nothing lands.
-- **REP.37** — _Retired_: choice groups let cells within a tolerance meet a market as one; every agent meets it as
+- **REP.37** — _Retired_: choice groups let cells within a tolerance meet a market as one; every party meets it as
   itself.
 - **REP.39** — _Retired_: the decision gap of a landing; nothing lands.
 
 **Done when**
 
-- A world of a declared share of hundreds of millions of people and millions of small firms carries its population
-  exactly, one party an agent, within the budget, on the target device.
-- A firm closing releases workers drawn from its lines, and a flood destroys dwellings of owners drawn from the
-  zone's counts.
-- Identical agents spread across sellers, vacancies and occasions by their own tastes and chances.
-- No attribute, posted price or contract term was ever averaged.
+- A world of a declared share of hundreds of millions of people and the firms they form carries its population
+  exactly, one real party each, within the budget, on the target device.
+- A firm closing ends the jobs it is party to, and a flood destroys dwellings of owners drawn from the zone's counts.
+- Identical parties spread across sellers, vacancies and occasions by their own tastes and chances.
+- No attribute, posted price or contract term was ever averaged, and no party carried apart for its size.
 - The representation and its counts are reported every day.
 
 ---
@@ -980,8 +963,10 @@ takes on day zero.
     skills by age, region and occupation family;
   - incomes (a log-normal body with a Pareto top), drawn as the contracts and holdings that pay them (Law 4), and
     wealth, by preference type;
-  - firms by industry and size (with a power-law top), their plant, stocks, debts and owners, the ways they know
-    and the patents they hold;
+  - firms by industry, productivity and sites, their debts and owners, the ways they know and the patents they
+    hold. A firm's size is not drawn: its output is its share of its industry's output, by the demand its day-zero
+    prices win in its reach (GEN.13), and its staff, plant and stocks follow from that output and its way, so the
+    size distribution is an outcome, read against its stylised fact (N3);
   - the housing stock, its tenure and its mortgages;
   - banks' balance sheets; the sovereign's debt and its maturities; holdings of funds, pensions and insurance;
   - the start dates of each kind of contract (its vintages), from which GEN.5 computes what each has paid;
@@ -1002,7 +987,7 @@ takes on day zero.
     party reads it as an observation.
   - **Carrying values** are the snapshot's prints, or a valuer's published method applied to them (MKT.20), so every
     position has one on the first day.
-  - **Each firm's latest filed accounts** are derived from its drawn books and lines (ACC), as its last report.
+  - **Each firm's latest filed accounts** are derived from its drawn books and contracts (ACC), as its last report.
   - **Outlooks** start from the snapshot (VAL.10): each at the latest present value it reads, households' at their
     surveyed expectations, each width at the dispersion observed; records of heuristics' performance and of
     surprises start empty.
@@ -1032,7 +1017,10 @@ takes on day zero.
   policy rate, household debt to income, firm debt to value added, public debt to GDP, banks' capital ratio, home
   ownership, tax revenue and social spending to GDP, sector shares and trade to GDP, the banks' concentration, assets,
   deposits and liquid reserves, the central bank's assets, the lending and deposit rates, fixed investment to GDP, GDP
-  growth, and enterprises per person employed. The development level draws one
+  growth, and enterprises per person employed. Every derived value comes from one year's published sources in one
+  unit system, and the flows (production, incomes, uses) and the stocks (who holds what against whom) meet the
+  national accounts' identities exactly, so the opening is consistent before anything is drawn. The development
+  level draws one
   joint profile from a declared table of country groups' published profiles, perturbed within the group's declared
   dispersion from the seed, so values that go together stay together; each other choice sets its values within the
   profile's declared range for its level; risk appetite sets the distribution of risk aversion (a PREFERENCE). From
@@ -1140,8 +1128,9 @@ created and destroyed only by its issuers.
   - **Batched payments** — payrolls, card and retail payments, direct debits, a market's settlement between many
     parties — clear through the country's **net settlement system**, a named operator under its POLICY. Each payment
     is a leg of a batch instruction, and at the batch's settlement each bank's reserves move by its net across the
-    batch. A payer that cannot pay fails with its own payments, and the payees it was paying lose them, drawn as
-    REP.23 draws them where the pairing was not recorded. A bank that cannot cover its net, after the central bank's
+    batch. A payer that cannot pay fails with its own payments, in its declared payment order, the order among
+    payments of one order drawn by lot (CHN.3), and the payees it was paying lose them. A bank that cannot cover its
+    net, after the central bank's
     intraday credit (MON.3), has its customers' legs removed and the rest resettles, as the operator's rules
     (POLICY) state; each removed payment fails visibly.
   - A payment in cash moves banknotes between the two parties.
@@ -1295,8 +1284,8 @@ instruction, settled atomically or failed visibly.
 **State**
 
 - **REG.1 STATE** — A **holding** is (holder, instrument or asset, quantity in its own unit), and the holding
-  is a chain of **lots**, each with the date and price at which those units were acquired (its basis). An agent's
-  holding is one lot at average cost (ACC.6).
+  is a chain of **lots**, each with the date and price at which those units were acquired (its basis). A household's
+  holding is one lot at average cost (ACC.6); a firm's lots follow the cost flow it chose.
 - **REG.2 STATE** — A **lien** marks units of a holding as pledged to a named party; **free units** are held
   units minus pledged units, and only free units can move or be pledged again. A re-pledge is a traceable
   chain.
@@ -1324,8 +1313,8 @@ instruction, settled atomically or failed visibly.
   with both parties, its terms and its schedule, an asset to one side and a liability to the other.
 - **REG.9 STATE** — **Real assets** — goods, plant, vehicles, dwellings, land, infrastructure, extraction
   rights — are holdings in physical units with no issuer. Plant and dwellings keep their site and condition
-  through every sale: an individual's are named units; an agent's are counted by zone and class, with each unit's
-  tile a pairing drawn when needed (REP.24).
+  through every sale: a household's and a firm's are counted by zone and class, with each unit's tile drawn when
+  needed (REP.24); an institution's are named units.
 - **REG.10 STATE** — **Commitments** — unsettled trades, undrawn credit lines, uncalled capital, pending
   orders — are recorded on both parties' books as what they are.
 
@@ -1341,8 +1330,8 @@ instruction, settled atomically or failed visibly.
 **Invariants**
 
 - **REG.13 INVARIANT** — For every issued instrument, holdings sum to the issued amount exactly.
-- **REG.14 INVARIANT** — For every contract, and every line of identical contracts (REP.3), the asset on one
-  side and the liability on the other are one record, read from its sides.
+- **REG.14 INVARIANT** — For every contract (REP.3), the asset on one side and the liability on the other are one
+  record, read from its sides.
 - **REG.15 INVARIANT** — No holding of physical units is negative; free units are never negative.
 
 **Forbids**
@@ -1397,8 +1386,8 @@ under stated rules — never a separate set of numbers.
   intra-group claims and trades eliminated, and minority holders shown. Each member still keeps its own
   books, and limited liability stays with each legal entity.
 - **ACC.6 STATE** — **Inventory cost flows** first-in-first-out or by weighted average, chosen by the firm,
-  disclosed and applied consistently; last-in-first-out is not permitted. A small firm's agent uses weighted average,
-  as its holdings do (REG.1).
+  disclosed and applied consistently; last-in-first-out is not permitted. A household, which keeps no inventory
+  accounts, holds its holdings at weighted average (REG.1).
 
 **Processes**
 
@@ -1587,24 +1576,24 @@ personal, fallible and heterogeneous — and able to value things that have neve
   declared menu (VAL.6), with a record of how well each has recently performed for that party.
 - **VAL.4 STATE** — A **surprise** is observed minus expected, per party, variable and date, and it is
   recorded. **Confidence** is a read of the width of a party's recent surprises.
-- **VAL.23 STATE** — For agents (REP.1), outlooks are of two kinds:
+- **VAL.23 STATE** — For households and firms (REP.1), outlooks are of two kinds:
   - An outlook of a **public** variable (a price index, a rate, a house price, a return) is formed by a method — a
     heuristic, a memory, and the window of lived experience its age class weights (older people weight a longer
     history, and no window reaches back before the snapshot, GEN.5) — from the public series as published. Everyone
     using the same method observed the same series in the same way and holds the same outlook, so it is computed once
     for that method and read by each of them.
-  - An outlook of the agent's **own** variables (its income, its job, its sales) is its own position (REP.20),
+  - An outlook of the party's **own** variables (its income, its job, its sales) is its own position (REP.20),
     formed from its own receipts and events.
 
-  No agent reads an experience it did not have.
+  No party reads an experience it did not have.
 
 **Decisions**
 
 - **VAL.7 DECISION** — **Heuristic switching.** A party weights its heuristics by their recent forecasting
   performance **for that party**, updating on its own schedule; the intensity with which it switches is a
-  PREFERENCE. An agent relies on one heuristic at a time — its **stance** — and reconsiders it on its review
+  PREFERENCE. A household or firm relies on one heuristic at a time — its **stance** — and reconsiders it on its review
   occasions, choosing among the heuristics by their recent performance on the public series under its own method,
-  with its own taste draw (REP.22); so alike agents split across stances, and the shares move with what has
+  with its own taste draw (REP.22); so alike parties split across stances, and the shares move with what has
   worked, as in the discrete-choice switching literature. Parties that have seen different histories therefore hold
   different outlooks, and the mix of heuristics across a market shifts with what has recently worked — which is a
   known source of boom, bust, fat tails and volatility clustering.
@@ -1719,10 +1708,10 @@ population are outcomes.
   profile (per occupation family), an education record, a labour-market state (A person is in exactly one
   of: in education, employed, unemployed and searching, out of the labour force, retired), an
   employment history and its **kin** — its parents and children living in other households — which is whom
-  inheritance law names as heirs (POP.9). A person of an agent is held in its household (REP.26): its birth date
-  (REP.25), role and the person attributes its kind declares, zone as its household's attribute, employment in its
-  attachments, its labour state a read of its attachments and participation, its employment history in its
-  employment's start band, the start of its search and its contribution records, kin as lines between households
+  inheritance law names as heirs (POP.9). A person is held in its household (REP.26): its birth date
+  (REP.25), role and the person attributes its kind declares, zone as its household's attribute, its jobs as
+  contracts naming it (REP.3), its labour state a read of its contracts and participation, its employment history in
+  its jobs' start dates, the start of its search and its contribution records, kin as contracts between households
   (REP.3), and the clocks rules read as its household's attributes (REP.41).
 - **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or a room let by another household
   under a tenancy), a budget, holdings and debts, and its own preferences drawn at its formation (NUM.4).
@@ -1961,7 +1950,7 @@ and growth are outcomes.
   (a contract with a price, MKT.7) or by imitation effort facing its own hazard, which rises with how close
   and how visible the other firm is. Patents are a declared POLICY that sets how long imitation is barred.
 - **TEC.7 PROCESS** — **Learning by doing**: the labour a way needs per unit falls with the firm's
-  cumulative output on it, by a declared curve; for a small firm's agent, cumulative output is a position (REP.20).
+  cumulative output on it, by a declared curve; a firm's cumulative output on each way is a position (REP.20).
 - **TEC.8 PROCESS** — **Obsolescence**: a way stays usable, but a firm stuck with an old way loses sales to
   firms with better ones through prices, not through a rule.
 
@@ -2011,13 +2000,16 @@ to owners, can belong to a group, and can be born and die.
   stocks of inputs, work in progress and output, the ways it knows, its contracts (employment, supply,
   credit, leases), its accounts, and a management whose preferences (patience, risk aversion, growth
   appetite) are drawn at founding.
-- **FRM.2 STATE** — Firms differ in size, productivity, cost, leverage, age and location, and the
-  differences are the reason they compete.
-- **FRM.23 STATE** — **Small firms are agents** (REP.1): each holds its zone, ways, form, productivity and
-  management types, posted price and wage offers, headcount by occupation family and plant units as attributes
-  (REP.41); cash, debt, inventory and cumulative output as positions (REP.20); employment, ownership, loans and
-  invoices as lines. A firm ranked among its kind's individuals at the opening, or with a public instrument, is an
-  individual (REP.2). An
+- **FRM.2 STATE** — Firms differ in productivity, cost, leverage, age and location, and the differences are
+  the reason they compete. **Size** — persons employed, turnover, net worth — is an outcome of those differences
+  and of the demand each firm wins, read from its contracts and books; it is never an input, a rank or a class of
+  firm.
+- **FRM.23 STATE** — **Every firm is one party of one kind** (REP.1), whatever its size or whether it has a public
+  instrument: each holds the zone of each of its sites, its ways, form, productivity and management types, posted
+  prices and wage offers, headcount by occupation family and plant units as attributes (REP.41); cash, debt,
+  inventory and cumulative output as positions (REP.20); its jobs, ownership, loans and invoices as contracts naming
+  their parties (REP.3). What a listed firm does that another does not — publish reports, issue bonds, hold a rating
+  — follows from its legal form and its instruments (PTY.4, Law 10). An
   **unincorporated** business (a sole trader or a partnership, PTY.4) is not a separate party: its stock, plant,
   receivables and debts are its owners' household's, as the law of such businesses has it, and a household running
   one is of a kind whose attributes and positions add the business's ways, posted price, plant, stock and sales.
@@ -2109,7 +2101,7 @@ worn, maintained, repaired, sold and scrapped, so that investment is where finan
 **State**
 
 - **CAP.1 STATE** — A **capital good** is a unit with a kind, a site, a service date, a capacity, a condition
-  and a remaining life; an agent's plant is counted by zone and class (REP.24). Kinds differ, and a use needing
+  and a remaining life; a household's or firm's plant is counted by zone and class (REP.24). Kinds differ, and a use needing
   several kinds is limited by the scarcest.
 - **CAP.2 STATE** — A **construction project** has an owner, a site, a builder, a budget, a schedule, and
   work done to date; while under construction it is an asset of its owner at cost.
@@ -2308,7 +2300,7 @@ this is what makes location matter.
 **State**
 
 - **FRT.1 STATE** — A **vehicle** is a capital unit with a site, a capacity, a speed, a running cost per voyage and
-  a keeping cost per day; vehicles held by agents are counted by zone and class (REP.24). Its room is available only
+  a keeping cost per day; vehicles held by households and firms are counted by zone and class (REP.24). Its room is available only
   on routes starting where it is.
 - **FRT.2 STATE** — A **route** is a path over real network segments between two sites, with a mode
   (road, rail, sea, pipeline) and every transfer between modes.
@@ -2377,11 +2369,10 @@ wages are outcomes.
 
 - **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation family, hours,
   wage, start date, notice and severance terms, and the pension it earns (PEN): its kind and contribution rates
-  are terms of the contract, and the scheme the employee belongs to is part of its attachment (REP.23). Contracts
-  of one occupation family, skill level, wage offer, hours, notice and severance terms, pension kind and rates,
-  begun in one start band, in one region, form a line (REP.3) whose sides are the
-  employers and the households' adult roles, each with its count; who works for whom is drawn when it matters
-  (REP.23). The wage bill, headcount, unemployment and flows between states are reads of these rows.
+  are terms of the contract, and the scheme the employee belongs to is part of its attachment (REP.26). Each job is
+  one contract between its employer and its employee (REP.3): who works for whom is recorded, and a firm closing ends
+  exactly its own jobs. The wage bill, headcount, unemployment and flows between states are reads of these
+  contracts.
 - **LAB.2 STATE** — A **vacancy** is an employer's posted offer: occupation family, skill required, hours, wage,
   notice and severance terms, region; it is open until filled or withdrawn.
 - **LAB.3 STATE** — Labour is **heterogeneous** by occupation, skill and region, and a job in one is not a
@@ -2469,9 +2460,9 @@ liability and a main channel of monetary policy.
 
 - **HSG.1 STATE** — A **dwelling** is a unit on a site with a size, a quality and a condition, owned by a named
   party, occupied by one household, which may let rooms to lodger households under tenancies. Dwellings held by
-  agents are counted by zone and class, and each unit's tile is a pairing drawn when needed (REP.24).
-- **HSG.2 STATE** — A **tenancy** is a contract between an owner and a household: rent, term, notice, deposit.
-  Tenancies of one class, rent and term in one zone form a line between landlords and tenants (REP.3).
+  households and firms are counted by zone and class, and each unit's tile is drawn when needed (REP.24).
+- **HSG.2 STATE** — A **tenancy** is a contract between an owner and a household: rent, term, notice, deposit,
+  naming both (REP.3).
 - **HSG.3 STATE** — **Land** is owned, zoned (POLICY: what may be built on it) and traded; its price is formed
   in its own market.
 - **HSG.19 STATE** — A **land lease** is a contract: owner, tenant, parcel, rent, term; agricultural, commercial and
@@ -2550,10 +2541,9 @@ contagion path that runs along the supply chain rather than through banks.
 **State**
 
 - **TCR.1 STATE** — An **invoice** is a contract: seller, buyer, amount, due date, early-payment discount. It is
-  the seller's receivable and the buyer's payable, one record. Invoices on one market's terms that fall due together
-  form a line between its sellers and buyers (REP.3) — one day's, or, where the trade's customary terms bill by
-  statement (TCR.8), one statement period's, due at its end plus the term; a buyer's default lands on sellers drawn
-  from it (REP.23).
+  the seller's receivable and the buyer's payable, one record naming both (REP.3). Where the trade's customary terms
+  bill by statement (TCR.8), a seller's invoices to one buyer in one statement period are one invoice, due at its end
+  plus the term; a buyer's default lands on the sellers it owes.
 
 **Decisions**
 
@@ -2706,13 +2696,13 @@ written off as events.
   **balloon** (partly amortising, the rest at maturity), with any grace period on principal. Its terms state
   whether it may be **prepaid** and at what fee, its rate reset dates if floating, and its covenants. Term loans
   are written to firms of every size (investment, acquisitions, refinancing), to households (vehicles and other
-  consumer purposes) and, as mortgages, against dwellings; to an agent they are a line (REP.3).
+  consumer purposes) and, as mortgages, against dwellings; each is a contract naming its lender and borrower (REP.3).
 - **BNK.18 STATE** — A **revolving facility** or **credit line** (to a firm, or a household's credit card or
   overdraft) is drawn and repaid at the borrower's choice up to a limit; the lender can cut the undrawn limit
   where the contract allows, which is how credit tightens for borrowers who already have lines.
 - **BNK.21 STATE** — A **credit bureau** is a named party to which lenders report each borrower's contracts,
   payments and defaults, as its law requires (POLICY); a lender to whom a borrower applies buys its record, and
-  its assessment (BNK.4) reads it. For an agent, the record is its credit-record stage (REP.41).
+  its assessment (BNK.4) reads it. For a household or firm, the record is its credit-record stage (REP.41).
 - **BNK.22 STATE** — **Non-bank lenders** — finance companies funded by bonds, paper and bank lines, and private
   credit funds (FND) — write loans under the same contracts and decisions (BNK.4–BNK.7) without taking deposits, and
   fail when their funding does.
@@ -2726,8 +2716,8 @@ written off as events.
 - **BNK.5 DECISION** — A bank **declines** when the loan is not worth it, when the borrower fails its
   standards (loan-to-value, income multiple, coverage), or when its own capital or liquidity will not carry
   it; it **tightens** its standards when its own losses, funding or outlook worsen.
-- **BNK.20 DECISION** — A bank assesses an applicant from what it can observe of it. For an agent, that is what it
-  can observe of the agent's own state (REP.5).
+- **BNK.20 DECISION** — A bank assesses an applicant from what it can observe of it: what the applicant's own state
+  shows a lender — its accounts with the bank, its filed accounts, its credit record (REP.5).
 - **BNK.6 DECISION** — A **borrower shops**: it asks the lenders it can reach, takes the best quote its own
   value of the loan accepts, or goes without.
 - **BNK.7 DECISION** — On arrears or a covenant breach, the bank decides to **wait, restructure, extend,
@@ -2924,8 +2914,8 @@ investors and banks can lend again — and so correlated losses can reach senior
   attachment points and seniority; a **servicer** collects and passes cash through a stated waterfall.
 - **SEC.7 STATE** — **Pool kinds** are declared data (Law 10): residential **mortgage-backed** securities;
   **consumer** asset-backed securities (vehicle loans, credit cards); **small-business** loan securities; and
-  **collateralised loan obligations** of corporate term loans. A pool's loans may be lines to agents
-  (REP.3), each standing for its count of identical loans to named agents.
+  **collateralised loan obligations** of corporate term loans. A pool's loans are named contracts (REP.3), each
+  with its borrower.
 - **SEC.8 STATE** — The **waterfall** states the order of interest and principal to each tranche, the
   **overcollateralisation and interest-coverage tests** that divert cash from junior to senior tranches when they
   fail, the **reserve account**, and the servicer's fee. Pass-through pools pay principal as it arrives,
@@ -2944,9 +2934,8 @@ investors and banks can lend again — and so correlated losses can reach senior
 
 - **SEC.2 PROCESS** — A bank sells loans into a vehicle at a price the vehicle's funding supports, freeing its
   capital; it keeps what the retention rule and its own choice leave it.
-- **SEC.3 PROCESS** — Losses on the underlying loans — each a borrower's own default after its own cash failure,
-  an agent's counted by its count on the line — are allocated bottom-up; when defaults are more correlated than the
-  tranches assumed, senior holders lose.
+- **SEC.3 PROCESS** — Losses on the underlying loans — each a borrower's own default after its own cash failure —
+  are allocated bottom-up; when defaults are more correlated than the tranches assumed, senior holders lose.
 - **SEC.4 PROCESS** — Tranches trade and are pledged, so their prices matter to the funding system; a downgrade
   across a mandate boundary forces sales (L7).
 - **SEC.12 PROCESS** — **Prepayment** reaches tranche holders as early principal, rising when rates fall and
@@ -3606,7 +3595,7 @@ between the two sides is collateralised, cleared and closed out.
 **Out of scope**
 
 - Compression services that tear up offsetting contracts.
-- Derivatives held by households and small firms: only individuals hold derivatives (Appendix E 33).
+- Derivatives held by households: households carry their risks through their contracts' terms (Appendix E 33).
 
 **Done when**
 
@@ -3673,7 +3662,7 @@ Each class is declared data over DRV (Law 10), with its state and its processes:
 **Out of scope**
 
 - Exotic derivatives (Appendix D).
-- Positions of households and small firms: every user is an individual (Appendix E 33).
+- Positions of households: households carry their risks through their contracts' terms (Appendix E 33).
 
 **Done when**
 
@@ -3900,7 +3889,7 @@ on a calendar, so that the state's receipts follow the economy and taxes change 
   remitting what it charged less what it paid on its own purchases, with exports zero-rated and imports taxed at the
   border, or a **retail sales tax** charged on final sales only; **corporate tax** on reported profit with loss
   carry-forward and interest deductible as the law states; **capital-gains tax** on realised gains (on average cost
-  for agents' holdings, REG.1); **property tax** on dwellings and land; **tariffs** on imports at the
+  for households' holdings, REG.1); **property tax** on dwellings and land; **tariffs** on imports at the
   border; **inheritance tax** on estates.
 
 **Processes**
@@ -4588,10 +4577,10 @@ age, and a stream of news generated from real events.
 **Processes**
 
 - **OBS.4 PROCESS** — A human **player** acts as a named party in the world, with its own means, through the same
-  markets and contracts as everybody else, and appears in every check. The player's party is an agent (REP.1): its
-  household, drawn at the opening from the households of the country the setup names, each equally likely.
-- **OBS.8 PROCESS** — **Looking at a household or small firm** shows its **agent** itself: its attributes, persons,
-  positions and contracts, and the recorded events that name it. Looking at one agent, or at a million, leaves the
+  markets and contracts as everybody else, and appears in every check. The player's party is a household (REP.1):
+  its household, drawn at the opening from the households of the country the setup names, each equally likely.
+- **OBS.8 PROCESS** — **Looking at a household or firm** shows the party itself: its attributes, persons,
+  positions and contracts, and the recorded events that name it. Looking at one party, or at a million, leaves the
   world exactly as it would have been.
 
 **Forbids**
@@ -4689,7 +4678,7 @@ names the family, the requirement, the owner, the size in its unit and the day; 
 | **Prices**        | every mark came from a print or a declared valuation (MKT.20); no print without a match                   |
 | **Names**         | every referenced party exists or has a successor                                                          |
 | **Cross-border**  | exports equal imports party to party; each country's accounts balance                                     |
-| **Representation** | people and small firms reconcile by entry, death and migration, and agents are them; the sides of every line are equal; attachments reconcile with persons |
+| **Representation** | people and firms reconcile by entry, death and migration, and the populations' parties are them; every contract names an existing party on each side; attachments reconcile with persons |
 
 **Independence is measured**: for every family there is a single discrepancy that lights it and no other, injected
 into values handed to the audit alone — never into the world that runs, and discarded unrun after the audit reads
@@ -4787,7 +4776,7 @@ not made. L1 and L3 say where losses and endings land, not how macro variables r
 - The same seed and primitives reproduce the same world on the same build and device, so a saved world restores
   and continues exactly (SET.15).
 - **One run.** The world is judged on the one run it has: there is no second run at another resolution, seed or
-  setting to compare it with. Its distributional numbers are read from its agents and individuals, with the
+  setting to compare it with. Its distributional numbers are read from its parties, with the
   representation they are held in reported beside them (REP.15).
 
 ## N6. Interventions and experiments
@@ -4822,7 +4811,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   run, is what the population and the declared horizons (SET.13) explain.
 - **N8.5** — **The play resolution** is the setting of every RESOLUTION primitive but the map's grid, which the owner
   fixed (decision 29) — among them the representation's size (REP.40), the number of types (NUM.4), each kind's
-  attribute classes, zones and age classes, the individuals' ranks, history horizons and snapshot intervals (SET.13,
+  attribute classes, zones and age classes, history horizons and snapshot intervals (SET.13,
   SET.17) — that is finest while meeting N8.2–N8.4 on the target device, in the representation the build holds
   (decision 44). Where refining one setting costs another,
   the order in which they are refined is the owner's (decision 41). The resolution is a valve: it is set and reset by
@@ -4859,12 +4848,12 @@ reads (N2) pass. A stage is not a delivery date and says nothing about how to bu
 **Stage 0 — Foundations.** TIME, PTY, NUM, CHN, GEO, REP, GEN for what exists, MON, SET, REG, ACC, MKT, POP's
 mortality and illness, the household estates they need (L3), the firms, banks and central banks of the opening world as
 parties with their opening balance sheets (FRM, BNK and CB brought forward without behaviour), and the opening world's
-employment, tenancy, deposit and loan lines and its pensions in payment — the state pension and defined-benefit pensions
+employment, tenancy, deposit and loan contracts and its pensions in payment — the state pension and defined-benefit pensions
 already being paid — paying as their terms say (LAB, HSG, BNK, SOC and PEN brought forward as contracts that execute,
 with no decision), so that paydays and dues are measured before behaviour is built. *Exit:* a world of parties on a map
 can pay each other and hold and transfer instruments and physical units, every market form is built and forms its prices
 whenever its participants post, with every family of the audit that applies running clean — **and the opening population
-and its small firms, carried as agents in the build's representation (REP.40) with their persons, holdings and the lines
+and its firms, carried in the build's representation (REP.40) with their persons, holdings and the contracts
 of Stage 0's systems, live a simulated year of deaths, illness, ageing and catastrophes within the memory budget (N8.4)
 and the time budget (N8.2) on the target device.** No order is placed for a party by anything but its own decision
 (MKT.9), so each form forms live prices from the stage whose systems post in it. This bounds what the representation
@@ -4940,14 +4929,13 @@ the build continues by adding mechanisms, never by tuning.
 | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | **Party**                   | anything that can hold, owe, decide or be paid (PTY.1)                                                       |
 | **Person / household**      | an individual human / the people who share a budget and dwelling and own jointly (PTY.3)                    |
-| **Agent**                   | a household or small firm with its own state, persons and contracts, one real party (REP.1) |
-| **Individual**              | a party never held in a population: institutions, issuers, public names, the top-ranked by size at the opening (REP.2) |
-| **Representation**          | the persons the world holds of the setup's population, its size, every agent one real party (REP.40) |
-| **Attribute / position**    | what an agent holds exactly as a declared class / a continuous amount it holds or reads (REP.41, REP.20) |
-| **Line**                    | one record of identical contracts whose sides are named parties with exact counts (REP.3)                |
+| **Firm**                    | a party that makes and sells, of one kind whatever its size; its size an outcome read from its books (REP.1, FRM.2) |
+| **Representation**          | the persons the world holds of the setup's population, its size, every household and firm one real party (REP.40) |
+| **Attribute / position**    | what a party holds exactly as a declared class / a continuous amount it holds or reads (REP.41, REP.20) |
+| **Contract**                | one record between its named parties, with its terms; identical terms shared as storage (REP.3)          |
 | **Kink**                    | a point where a rule, contract or constraint changes slope: a due payment, a limit, a tax band (REP.22)  |
-| **Drawn pairing**           | who in a line is paired with whom, drawn only when something depends on it (REP.23)                       |
-| **Occasion / attention**    | a review, need, meeting or notice on which an agent takes a lumpy decision / how often it reviews (REP.21, REP.38) |
+| **Drawn place**             | the tile a held unit stands on within its zone, drawn only when something depends on it (REP.23)          |
+| **Occasion / attention**    | a review, need, meeting or notice on which a party takes a lumpy decision / how often it reviews (REP.21, REP.38) |
 | **Price point**             | a round or conventional number a seller posts at (REP.34)                                                 |
 | **Setup**                   | the world constants and a new game's choices from which the opening is derived (GEN.14, GEN.15) |
 | **Opening world / settling** | the first day's state, drawn and balanced (GEN) / the period the world runs by its own mechanisms before play (GEN.6) |
@@ -5018,9 +5006,10 @@ silently. Each line cites the requirements that state it.
 
 **Structure and representation**
 
-17. No representative agent; no averaged attribute, position, posted price, contract term or person; no agent split
-    or joined; no lumpy decision without an occasion; no experience read by an agent that did not have it; no recorded
-    pairing; no event that creates or loses a unit (PTY.14, HH.18, REP.16, Law 11).
+17. No representative party; no averaged attribute, position, posted price, contract term or person; no party split
+    or joined, or carried apart for its size; no lumpy decision without an occasion; no experience read by a party that
+    did not have it; no party to a contract drawn; no event that creates or loses a unit (PTY.14, HH.18, REP.16,
+    Law 11).
 18. No global expectation; no model forecast; no peeking; no sentiment parameter; no common value; no value
     printed as a price (VAL.16–VAL.21).
 19. No aggregate matching function; no birth, migration, participation or investment rate (LAB.15, POP.14,
@@ -5049,7 +5038,7 @@ source.
 | **PREFERENCE** | distributions, carried as finite type sets (with shares, NUM.4), of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; banks' buffer appetites; decision schedules; party ideology preferences; the cost of voting |
 | **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the treasury's payment priority; the central bank's implementation regime and any reserve requirement; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent law; the net settlement system's rules; pension law; education and family law; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
-| **RESOLUTION** | the representation and its size; each kind's attribute classes, zones, age classes, the individuals' ranks, payment order, draw scheme; number of preference types; map grid; history horizons and snapshot intervals |
+| **RESOLUTION** | the representation and its size; each kind's attribute classes, zones, age classes, payment order, draw scheme; number of preference types; map grid; history horizons and snapshot intervals |
 | **SHAPE**      | the heuristic menu and how many heuristics a party tracks per outlook (VAL.22); the **form of every decision rule** — how a household, firm, bank, fund, agency or party turns the inputs its DECISION clause lists into a choice — each listed with its reason (no mechanism in scope derives how people decide) and its source in the literature; terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
 
 The opening world is made by GEN: one date's snapshot of the present, drawn from declared, data-shaped
@@ -5109,50 +5098,52 @@ Decisions taken in writing this version, and decisions still open.
     interdependent systems in one stage and brings a system forward where an earlier stage needs it.
 12. **Real limits are declared, invented bounds are forbidden**, and negative prices are possible.
 13. **The polity stays, and parties adapt their platforms.**
-14. **A real economy at a declared scale, carried as agents** (REP). The economy is one of hundreds of millions of
-    people and millions of small firms. No phone can hold them one by one, and no exact record can hold every pairing
-    between them, because a household's employer, landlord, bank and shops are independent of one another. So the
-    world holds a declared number of their persons (decision 44), and every household and small firm it holds is an agent with its own
-    state, persons and contracts, one real party, never split, joined or averaged; lines record relationships between
-    many parties as counts.
+14. **A real economy at a declared scale, one real party each** (REP). The economy is one of hundreds of millions of
+    people and millions of firms. No phone can hold them one by one, so the world holds a declared number of their
+    persons (decision 44), and every household and firm it holds is one real party with its own state, persons and
+    contracts, never split, joined or averaged, and never carried apart for its size. Every contract names its
+    parties, so who works for whom, rents from whom and banks where is recorded (owner, 2026-09-28): with every party
+    one real party, leaving the pairing unrecorded saved nothing, since each holder held its own row anyway, and it
+    cost a pooled settlement through the money's issuer and losers drawn at every failure. A firm is one kind whatever
+    its size, its size read from its books (owner, 2026-09-28).
 
     It is a **hypothesis**, and it is tested on its macro results: from Stage 1 on, the world's run is judged by the
     relationships between its macro variables against those real economies show (N3, N4), while meeting the budget
     (decision 36).
 
     Its parts come from established work:
-    - **An agent per real party** follows Poledna, Miess, Hommes and Rabitsch (2023); **a population sampled to a
+    - **A party per real party** follows Poledna, Miess, Hommes and Rabitsch (2023); **a population sampled to a
       declared size**, every sampled party whole, is dynamic microsimulation's scaled sample (Li and O'Donoghue, 2013), and avoids
       the lock-step of super-individuals, whose members share one fate (Scheffer, Baveco, DeAngelis, Rose and van Nes,
       1995; Parry and Evans, 2008).
-    - **Next hits drawn ahead per agent** are the next-reaction method of stochastic kinetics (Gibson and Bruck).
+    - **Next hits drawn ahead per party** are the next-reaction method of stochastic kinetics (Gibson and Bruck).
     - **Occasions chosen against a real cost of reviewing** follow costly observation and staggered adjustment
       (Calvo; Reis; Alvarez, Guiso and Lippi, 2012), and **attention that rises with what is at stake** follows
       Sicherman, Loewenstein, Seppi and Utkus (2016).
     - **Tastes drawn per occasion** follow random utility (McFadden).
     - **Price points** follow the bunching of prices and wages at round numbers (Levy, Lee, Chen, Kauffman and
       Bergen, 2011; Dube, Manning and Naidu, 2018).
-    - **Many-party lines with pairings drawn when needed** apply the principle of deferred decisions (Motwani and
-      Raghavan) to the uniform matching of the configuration model (Bollobás).
+    - **Places drawn when needed** apply the principle of deferred decisions (Motwani and Raghavan) to a unit's tile
+      within its zone.
     - **Batch settlement** is how real payrolls and card payments settle (deferred net settlement).
     - **Heuristic switching by discrete choice** follows Brock and Hommes, and **experience weighted by age**
       follows Malmendier and Nagel (2016).
-    - **The largest firms kept individual** follows granular fluctuations (Gabaix, 2011).
+    - **Granular fluctuations** (Gabaix, 2011) come from the firm-size distribution as an outcome: the largest firms
+      move aggregates because they are large, not because they are carried apart.
 
     What it gives up, and says so:
-    - persistence of who is paired with whom inside a line beyond its terms;
-    - where within a region an agent works; the exact tile of what it holds until something depends on it;
+    - the exact tile of what a household or firm holds until something depends on it;
     - the scale of the real economy: a share of the parties in every market, so a market's depth and a
       distribution's far tail are those of the smaller world;
     - final salary's back-loading of pension rights (decision 32);
-    - derivatives held by households and small firms (decision 33).
+    - derivatives held by households (decision 33).
 
 15. **Three generated countries.** Enough for cross rates, triangular arbitrage, trade and migration, and for a
     large and a small open economy. Their primitives may come from data (tax law, life tables, technology), but no
     country copies a real one, so results are never read as forecasts of a real economy; a real name labels a
     country and pre-fills its setup, never its data (decision 43).
 16. _Retired_: the full population carried in cells was never scaled down, but cells joined their members within
-    tolerances, and a phone cannot hold the full population as agents. Decision 44 fits the population to the phone
+    tolerances, and a phone cannot hold the full population one party at a time. Decision 44 fits the population to the phone
     by its representation, and says which of the two a build holds.
 17. **Both observer views exist**, clearly labelled: an inspector's full view for building and research, and a
     participant's view for playing (OBS.2).
@@ -5190,20 +5181,22 @@ Decisions taken in writing this version, and decisions still open.
 30. _Retired_: there is no accuracy for play to set. The play resolution is set by the budget alone (N8.5), and
     whether the world makes sense is judged by its one run (decision 36).
 31. **The representation is coarsened for the phone.** Independent estimates put the fully exact representation at
-    several times the budget (N8), driven by what agents do rather than by how many there are. So: employment lines
-    are by occupation family and region, with a start band (LAB.1, REP.3); and reviews reach an agent on its own
-    review days (REP.21). What each loses is listed under decision 14.
+    several times the budget (N8), driven by what parties do rather than by how many there are. So reviews reach a
+    party on its own review days (REP.21), and its dwellings, plant and vehicles are held by zone and class
+    (REP.24). Employment is a contract per job (LAB.1, REP.3), its occupation family and start date among its terms.
+    What each loses is listed under decision 14.
 32. **Defined-benefit rights accrue as career-average amounts** (PEN.2). A final-salary right needs each member's pay
     history, a record per person that the budget does not carry; career-average revalued slices are one exact total
     per right. Final-salary schemes of
     the opening world are carried as their career-average equivalents.
-33. **Derivatives are held by individuals only** (DRX, DRV): banks, funds, insurers, pension schemes, dealers and the
-    largest firms. Households and small firms carry their rate and price risks through the terms of their loans,
-    deposits and supply contracts, as most do; daily margin per agent would cost the budget for few real users.
+33. **Households hold no derivatives** (DRX, DRV): they carry their rate and price risks through the terms of their
+    loans, deposits and supply contracts, as almost all do. Banks, funds, insurers, pension schemes, dealers and firms
+    may hold them: a firm hedges when its own value of the hedge beats what dealing costs it — an account with a
+    dealer, collateral and margin (Law 14) — so which firms hedge is an outcome, not a size class.
 34. **Liability cover has its hazard**: harm to third parties is one of CHN.3's processes, so liability claims come
     from events like every other claim (INS.6).
-35. **A small firm is sold whole as the agent it is**: when its owners seek a buyer, the agent itself is named as
-    the target (REP.1).
+35. **A firm is sold whole as the party it is**: when its owners seek a buyer, the firm itself is named as the
+    target (REP.1); no firm is promoted or carried apart for a sale.
 36. **One run.** The world runs once, on the phone: no reference run of the full population one party at a time, no
     second run at another resolution or seed, no copy for an experiment. A new build starts its run anew from day zero,
     since a save from another build is refused. Runs off the phone that test the code are never read as the world's.
@@ -5227,8 +5220,7 @@ Decisions taken in writing this version, and decisions still open.
 40. **The resolution is measured only at the play resolution.** The representation's counts and costs are read in the
     one run at the resolution in force; when the valve moves, its effect is measured in the running world.
 41. **The order of refinement** (N8.5): when the budget allows a finer resolution, the representation's size is
-    raised first, then the number of preference types, then attribute classes and zones, and individuals' ranks last;
-    when the budget calls for a coarser one, the same order runs backwards. If representation and traversal and this
+    raised first, then the number of preference types, then attribute classes and zones; when the budget calls for a coarser one, the same order runs backwards. If representation and traversal and this
     valve cannot meet the worst turn (N8.2), the answer is decided on the measured numbers at the first gates
     (N8.7, N8.8), under the standing rule that the specification is coarsened before the budget is relaxed.
 42. **Public ways** (TEC.4): every firm knows its industry's ways that no patent covers and no firm keeps to itself,
@@ -5244,11 +5236,11 @@ Decisions taken in writing this version, and decisions still open.
     and pre-fills its choices with that country's levels; its economy is always generated. Because the total
     population is a constant, no split can break the budget (N8).
 44. **One representation: a world of a declared size** (REP.40). The phone cannot hold the full population one party
-    at a time, so the world holds a declared number of its persons, every household and small firm they form one real
+    at a time, so the world holds a declared number of its persons, every household and firm they form one real
     party, and the number is set by the budget (N8.5) as high as it allows. The size is a world constant recorded with
     the run, and a save of another is refused. Identical twins standing for many parties each were retired (owner,
     2026-09-27): their decisions moved their parties in lock-step and their lumps broke whole-unit trades, while the
-    variety a world holds is its number of distinct agents, the same in both.
+    variety a world holds is its number of distinct parties, the same in both.
 
 **Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
 it.

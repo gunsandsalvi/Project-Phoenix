@@ -1,6 +1,6 @@
 # Project Phoenix — standing rules
 
-A bottom-up economic and financial world — hundreds of millions of people, millions of small firms, three
+A bottom-up economic and financial world — hundreds of millions of people, millions of firms, three
 countries — in which every outcome is caused, played turn by turn on a phone.
 
 ## The one document

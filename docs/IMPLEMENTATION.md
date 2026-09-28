@@ -730,83 +730,6 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ---
 
-### S1.18 — The spec follows one representation
-
-**Status**: planned
-
-**Clauses**: Law 11; REP (the section's preface, REP.1, REP.2, REP.3, REP.13, REP.18, REP.23, REP.31, REP.40,
-REP.41); FRM.2, FRM.23; LAB.1 *(its line)*; GEN.2 *(firm sizes)*; SET *(the implicit batch's wording)*; Appendix E
-14, 31, 33, 35 and 44; every clause that names an agent, an individual, a small firm or a many-party line.
-
-**Architecture**: §7.
-
-**Depends on**: none (S1.17, the smoke and `perf/budget.toml`, is done).
-
-**Goal**: the spec states one representation: every party of a kind is the same kind of thing, every contract is
-between named parties, and a firm's size is an outcome. The spec is fixed in its own commit, with each change's
-reason from the laws, before any code follows it.
-
-**Files**
-
-| File | Purpose |
-| --- | --- |
-| `docs/PROJECT_PHOENIX.md` | the clauses above |
-| `docs/IMPLEMENTATION.md` | §12 and §13 follow |
-| `CLAUDE.md` | its wording follows |
-
-**Design**:
-- **One kind of firm** (owner, 2026-09-28).
-  - A firm is a firm, whatever its size. Size (persons employed, turnover, net worth) is derived from its contracts
-    and books, never an input or a rank.
-  - REP.2's individuals by rank and FRM.rank_per_million are retired. The largest firms' weight in aggregates
-    (Gabaix) is then an outcome of the size distribution, not a separate class.
-  - FRM.23 states the firm's attributes and positions for every firm.
-  - The unincorporated business stays as it is: a household's kind that adds the business.
-- **Parties, not agents and individuals.**
-  - Every party belongs to a kind, and the kinds differ only by declared data (Law 10).
-  - What varied by representation now varies by declared kind data. For example, a holder's lot convention (lots or
-    average cost) is its legal form's accounting rule, not a matter of whether it is an agent.
-  - The word "agent" leaves the spec. Law 11's last sentence says every household and firm is one real party deciding
-    from its own state.
-- **Contracts between named parties.**
-  - A line of many holders, counts and REP.23's unrecorded pairings are retired. Every contract names its parties;
-    identical terms are shared by interning, which is storage.
-  - Law 1 reads a job as a contract between a named employer and a named employee, and Law 4 wants one record of it.
-    With twins gone, the unrecorded pairing no longer saves memory: each holder already holds a row. It only costs
-    cleared lines, drawn losers and a top-issuer counterparty.
-  - REP.23 is kept only for where a unit stands (REP.24).
-  - A payer's failure among flows of equal payment order is drawn by lot (REP.22's order by lot), from a declared
-    stream.
-- **Appendix E.**
-  - 14 is restated: no many-party lines, no individuals by rank.
-  - 31: employment is a contract per job, and its occupation family and start band remain its terms' classes.
-  - 33: derivatives are held by the kinds whose legal form declares them.
-  - 35: retired, since no promotion exists.
-  - 44 keeps the size.
-- **GEN.2 firm sizes.**
-  - The size law (`FRM.size_exponent`, Axtell) leaves the opening's inputs. Law 2 forbids importing an outcome as a
-    rule, and GEN's snapshot is served by drawing what firms are, not how big they are.
-  - A firm's opening size follows from its drawn productivity (ENDOWMENT), its sites and the demand it wins at the
-    opening's prices (S1.22, S1.24).
-  - The size distribution is read against Axtell in N3.
-
-**Unit tests**: none.
-
-**Live checks**: none.
-
-**Budget**: none.
-
-**Guards**: `phx-check clauses` passes over the rewritten clauses; the coverage table is regenerated.
-
-**Not allowed**: a clause changed without its law's reason; a retired identifier reused; a mechanism weakened to
-meet the budget (N8.7).
-
-**Done when**
-- [ ] The spec, §12 and §13 are consistent, and `phx-check` is clean.
-- [ ] Two reviews are done.
-
----
-
 ### S1.19 — The core: party tables, edges, the due wheel, flows, handlers over columns, and the bench
 
 **Status**: planned
@@ -816,7 +739,7 @@ N8.8 *(part: the full-load bench at the design point)*.
 
 **Architecture**: §3.3, §4, §6, §7 (restated), §13, §14.6.
 
-**Depends on**: S1.18.
+**Depends on**: S1.17, S1.18 (done: the smoke; the spec's one representation).
 
 **Goal**: the core's data structures and traversals exist, each with its unit measured by a bench line at the design
 point. The full-load bench is rebuilt on them, so a hypothetical finished world at 5 million persons × 1.5 runs
@@ -1021,7 +944,7 @@ table's probabilities against the weights, exactly, and `rationing_by_lot_order_
 
 **Architecture**: §3.7, §10.
 
-**Depends on**: S1.18.
+**Depends on**: S1.18 (done).
 
 **Goal**: every number the opening reads about a country group's economy comes from one derivation of one year's
 sources in one unit system, with the national accounts' and balance sheets' identities checked across primitives.
@@ -10376,7 +10299,7 @@ the final build within the budget on the phone.
 | Memory budget (N8.4) | 4.5 GB resident | 2026-09-23 |
 | Map (spec Appendix E 29) | about 40,000 tiles of 10 km; 25 regions, allotted by the population split with at least three per country | 2026-09-23 |
 | Accuracy for play (N8.5, Appendix E 30) | superseded below (macro reads, no reference run) | 2026-09-23 |
-| Coarsening for the phone (Appendix E 31) | pooled flows; employment lines by occupation family and region with a five-year start band; reviews on a cell's review days; sellers spread on review days | 2026-09-23 |
+| Coarsening for the phone (Appendix E 31) | superseded 2026-09-28 by one representation (below): pooled flows; employment lines by occupation family and region with a five-year start band; reviews on a cell's review days; sellers spread on review days | 2026-09-23 |
 | Budget stance (N8) | keep 1 s / 2 s and 4.5 GB; coarsen the spec rather than relax the budget | 2026-09-23 |
 | Save duration (N8.10) | a full save within 5 s on the phone, the world paused | 2026-09-23 |
 | Saves (SET.12, spec Appendix E 22) | every save full; increments dropped, since a full save, its increment and the next full save exceeded 4 GB and an increment could not meet 1 s | 2026-09-23 |
@@ -10389,9 +10312,9 @@ the final build within the budget on the phone.
 | Country-group data (GEN.12) | fetched from the published datasets (World Bank, IMF, OECD, WID, ILO), never typed from memory; the network opened for them | 2026-09-23 |
 | Save interval (SET.12) | every simulated quarter by default | 2026-09-23 |
 | Pension accrual (PEN.2, spec Appendix E 32) | career-average revalued amounts; final-salary schemes carried as their equivalents | 2026-09-23 |
-| Derivative holders (spec Appendix E 33) | individuals only: households and small firms carry risk through their contracts' terms | 2026-09-23 |
+| Derivative holders (spec Appendix E 33) | superseded 2026-09-28 by one representation (below): individuals only: households and small firms carry risk through their contracts' terms | 2026-09-23 |
 | Liability cover (CHN.3, spec Appendix E 34) | harm to third parties is a hazard, so liability claims come from events | 2026-09-23 |
-| Selling a small firm (REP.29, spec Appendix E 35) | promoted to an individual when its owners seek a buyer | 2026-09-23 |
+| Selling a small firm (REP.29, spec Appendix E 35) | superseded 2026-09-28 by one representation (below): promoted to an individual when its owners seek a buyer | 2026-09-23 |
 | Validating the world (PTY.12 and N6 retired, N4, N8.5, spec Appendix E 36) | one run: the normal world run, on the phone; no reference run, no re-run at another resolution or seed, no copy for an experiment. Its macro outcomes are tested against the relationships real economies show between macro variables (N3, N4) | 2026-09-23 |
 | Accuracy for play (spec Appendix E 30, restated) | superseded by the row above: judged by the run's own macro relationships, with no second run as a yardstick | 2026-09-23 |
 | Resolution | a valve, adjusted by measurement of the budget whenever it calls for it; cut only as far as needed | 2026-09-23 |
@@ -10404,7 +10327,7 @@ the final build within the budget on the phone.
 | What the run has not produced (spec Appendix E 39) | never blocks a gate: listed as not yet seen with the run's length, its mechanism shown at logic level; only the budget blocks | 2026-09-23 |
 | Measuring the representation (spec Appendix E 40) | only at the play resolution, in the one run; the valve's effect measured in the running world | 2026-09-23 |
 | The world's shape and its latitude cycle (GEO.18) | a closed world of the same size (2,590 km each way), wrapping east to west and north to south, with no edge and no pole; a row's climate is read at a latitude that climbs evenly from 35°N at the first row to 58.3°N half the world away and falls evenly back, keeping the climates of the first placement, a temperate continent like Europe's (replaces the placement of the map by its south edge at 35°N) | 2026-09-24 |
-| Firm sizes at the opening (GEN.2, FRM) | Zipf's law: each country's largest firms are the top of a size law of exponent 1.059 (Axtell 2001) over its employment, the firm density from the OECD's business statistics for the developed group and, for the others, the source found since: ILOSTAT's employers and own-account workers over everyone employed | 2026-09-24 |
+| Firm sizes at the opening (GEN.2, FRM) | superseded 2026-09-28 by one representation (below): Zipf's law: each country's largest firms are the top of a size law of exponent 1.059 (Axtell 2001) over its employment, the firm density from the OECD's business statistics for the developed group and, for the others, the source found since: ILOSTAT's employers and own-account workers over everyone employed | 2026-09-24 |
 | LC-0-26 at S0.16 (N2) | staged: at S0.16 payments fall due and are processed every business day, each fail with a cause; that payments settle every business day is S1.03's to show, when firms earn  | 2026-09-24 |
 | Home ownership and tenure | the best published sources with a declared proxy where none covers a group: the OECD Affordable Housing Database for the developed group and the emerging economies it and Eurostat cover; for the developing group, the DHS surveys' share of adults owning a house, a person-level proxy for household ownership, each mapping recorded with its definition gap | 2026-09-24 |
 | The part ratchets after S0.24 | accepted as committed in 196d00a: the lone part 181 991 and the ten-member part 263 968 instructions (the real landing index's lookup), the batch of eight 524 975 and the widening sweep 42 375 363 (CI's counts) | 2026-09-24 |
@@ -10488,7 +10411,7 @@ and are not mapped.
 | GEO | S1.07 | 13, 18 |
 | GEO | S2.05 | 5 |
 | GEO | S5.02 | 4 |
-| REP | S0.28 | 1, 2, 3, 7, 9, 12, 13, 14, 16, 23, 25, 26, 31, 40, 41 |
+| REP | S0.28 | 1, 3, 7, 9, 12, 13, 14, 16, 23, 25, 26, 31, 40, 41 |
 | REP | S1.05 | 35 |
 | REP | S1.08 | 15 |
 | REP | S1.09 | 34 |
