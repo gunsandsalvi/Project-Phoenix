@@ -1973,10 +1973,12 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   one a party of its kind's capacity, and its `DueWheel`: `open` threads a contract on its sides' lists and on the wheel
   at its first due and refuses a side of another kind; `close` takes it off its lists and leaves its wheel entry for
   its reader to skip. The world and the full-load bench build on them.
-- **Persons** (`phx_pop::persons::Persons`): each household's persons on the core, one word each as its kind packs
-  them, a list per household in its chunk's arena and found by its slot; `set`, `push`, `remove` (the rest keep their
-  order) and `clear` keep the count held, and `compact_due` closes a chunk's gaps in slot order once its dead words
-  pass their share.
+- **Persons** (`phx_pop::persons::Persons`): each household's persons on the core, two words each — its word as its
+  kind packs it (birth date, role, attributes: the word is full) and its identity (`Held`) — a list per household in
+  its chunk's arena and found by its slot; `set`, `push`, `remove` (the rest keep their order) and `clear` keep the
+  count held, `place_of` finds a person by its identity, and `compact_due` closes a chunk's gaps in slot order once
+  its dead words pass their share. A person's identity is drawn from the same counter as the parties' (a person is a
+  party, PTY.1): the mirrored persons take theirs after the books' last party, a newborn the next.
 - **The world on the core, during the port** (`phx_world::core::Core`): at assembly and at load, every party the
   books hold is begun again on the core under its identity, a `KindStore` for each of the books' tables in their place
   order (so a kind's number is its place): an individual's record is the tile it is sited on; an agent's, its
@@ -2000,10 +2002,10 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   each household's next booking, its day and whether it is a hit kept by slot, so an entry a household was booked
   past is skipped. A household due is read into its explicit form (attributes by name from its record, persons
   unpacked), its booking followed to today by the same rules the books' day reads (`agents::follow`), and its hits'
-  outcomes applied in process order. Its gone persons leave from the last place down, each one's contracts closing and
-  the contracts naming a later place moving up one; its newborns join it; one no one is left in ends, its contracts
-  closing; a household changed is booked again for every process from the next day. Contracts name the payee's
-  person by its place (`Due::person`). A household that ends holding money passes it to an estate the core begins
+  outcomes applied in process order. Its gone persons leave from the last place down, each one's contracts closing;
+  its newborns join it; one no one is left in ends, its contracts closing; a household changed is booked again for
+  every process from the next day. Contracts name the payee's person by its identity (`Due::person`), so a person's
+  contracts follow it whatever its place. A household that ends holding money passes it to an estate the core begins
   (under an identity the core hands out after the books' last) at the same bank, a succession, not a payment; on its
   country's next business day the estate pays what it holds to its country's treasury, the destination the law names
   where no heir is drawn, and ends after that day's settlement.

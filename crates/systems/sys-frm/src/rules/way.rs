@@ -14,6 +14,13 @@ pub struct Costed {
     pub finished_share: f64,
 }
 
+/// The hours a unit takes a firm: its way's, fewer by the factor the log of its productivity gives.
+#[clause("FRM.2", "TEC.1")]
+#[must_use]
+pub fn own_hours(hours: f64, productivity: f64) -> f64 {
+    hours * libm::exp(-productivity)
+}
+
 /// A way's unit cost, or none while any price it needs is missing.
 #[clause("FRM.14", "FRM.6")]
 pub fn unit_cost(way: &Costed) -> Missing<f64> {
@@ -59,6 +66,12 @@ mod tests {
             plant_charge: 1.0,
             finished_share: finished,
         }
+    }
+
+    #[test]
+    fn productivity_saves_hours() {
+        assert!((super::own_hours(10.0, 0.0) - 10.0).abs() < 1e-12);
+        assert!((super::own_hours(10.0, core::f64::consts::LN_2) - 5.0).abs() < 1e-12);
     }
 
     #[test]

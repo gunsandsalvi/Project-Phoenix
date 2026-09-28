@@ -392,7 +392,7 @@ impl Core {
                 continue;
             };
             if let Some((_, n)) = out.iter_mut().find(|(x, _)| *x == r) {
-                *n += len_u64(persons.of(slot).len());
+                *n += len_u64(persons.count(slot));
             }
         }
         out

@@ -86,6 +86,9 @@ impl Core {
         let parties = &books.parties;
         let first_agents = usize::from(parties.first_cell_place());
         let (mut names, mut kinds, mut persons, mut keys) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+        // Each household's place, its slot on the core and in the books, its persons given their identities once
+        // every party's is known, after the last.
+        let mut households: Vec<(usize, Slot, Slot)> = Vec::new();
         for (place, holder) in parties.holders().enumerate() {
             let kind = kind_number(place);
             names.push(holder.kind());
@@ -110,7 +113,7 @@ impl Core {
             let stride = decl.attrs.len() + positions.len();
             let mut store: KindStore<SystemBacking> =
                 KindStore::new(&mut space, kind, AGENT_ROWS, AGENT_ROWS_PER_CHUNK, stride);
-            let mut held = decl.has_persons().then(|| Persons::new(&mut space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK));
+            let held = decl.has_persons().then(|| Persons::new(&mut space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK));
             let mut record = Vec::with_capacity(stride);
             for slot in table.slots() {
                 record.clear();
@@ -120,22 +123,39 @@ impl Core {
                     _ => MaybeI64::ABSENT,
                 }));
                 let party = store.begin(table.party(slot), &record, None);
-                if let Some(p) = held.as_mut() {
-                    p.set(&mut space, party.slot(), table.persons(slot));
+                if held.is_some() {
+                    households.push((place, party.slot(), slot));
                 }
                 keys.push((table.party(slot), PartyKey::new(kind, party.slot())));
-            }
-            let copied = held.as_ref().map_or(0, Persons::held);
-            if copied != table.persons_held() {
-                violation!(clause = "REP.13", "the core's households hold other persons than the books'", kind = place);
             }
             kinds.push(store);
             persons.push(held);
         }
         keys.sort_unstable_by_key(|(id, _)| *id);
         let bank_kind = names.iter().position(|n| *n == "bank").map(kind_number);
+        let mut next_id = keys.last().map_or(1, |(id, _)| id.get() + 1);
+        for (place, at, slot) in households {
+            let table = Population::table::<SystemBacking>(parties.cells(), place - first_agents);
+            let held: Vec<phx_pop::persons::Held> = table
+                .persons(slot)
+                .iter()
+                .map(|w| {
+                    next_id += 1;
+                    phx_pop::persons::Held { word: *w, id: next_id - 1 }
+                })
+                .collect();
+            if let Some(Some(p)) = persons.get_mut(place) {
+                p.set(&mut space, at, &held);
+            }
+        }
+        for (place, held) in persons.iter().enumerate() {
+            let Some(p) = held else { continue };
+            let table = Population::table::<SystemBacking>(parties.cells(), place - first_agents);
+            if p.held() != table.persons_held() {
+                violation!(clause = "REP.13", "the core's households hold other persons than the books'", kind = place);
+            }
+        }
         let persons_opened = persons.iter().flatten().map(Persons::held).sum();
-        let next_id = keys.last().map_or(1, |(id, _)| id.get() + 1);
         Core {
             space,
             first_agents: parties.first_cell_place(),
@@ -363,13 +383,21 @@ impl Core {
                 let phx_pop::person::Holder::Person(place) = a.holder else {
                     violation!(clause = "SOC.3", "a pension held by a household, not a person", line = a.line.get());
                 };
-                let person =
-                    u32::try_from(place).unwrap_or_else(|_| violation!(clause = "REP.26", "a person beyond a place"));
-                let due = Due { ends: [*treasurer, pensioner], amount, nth, schedule, person, pad: 0 };
+                let Some(person) = self.person_at(pensioner, place) else {
+                    violation!(clause = "REP.26", "a pension held by a person its household does not hold");
+                };
+                let due = Due { ends: [*treasurer, pensioner], amount, nth, schedule, person };
                 let _ = family.store.open(due, first);
             }
         }
         self.families.push(family);
+    }
+
+    /// The identity of a household's person at a place, none where it holds no one there.
+    #[must_use]
+    pub fn person_at(&self, household: PartyKey, place: usize) -> Option<u64> {
+        let persons = self.persons.get(usize::from(household.kind()))?.as_ref()?;
+        persons.of(household.slot()).nth(place).map(|p| p.id)
     }
 
     /// A party's key on the core, none for a party it does not hold.

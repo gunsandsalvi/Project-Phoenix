@@ -1,5 +1,6 @@
-//! Each household's persons on the core, one word each as the household kind packs them, a list per household in its
-//! chunk's arena and found by the household's slot, so a person's event reads and writes its own household alone.
+//! Each household's persons on the core, each its word as the household kind packs it and its identity, a list per
+//! household in its chunk's arena and found by the household's slot, so a person's event reads and writes its own
+//! household alone.
 
 use phx_id::Slot;
 use phx_macros::clause;
@@ -9,6 +10,17 @@ use phx_store::backing::{AddressSpace, Backing};
 use phx_store::consts::ARENA_RESERVED_WORDS;
 use phx_store::region::Region;
 use phx_store::{Column, SystemBacking};
+
+/// A person as its household holds it: its word, as its kind packs it, and its identity, its own from its birth to its
+/// death whichever household it lives in.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Held {
+    pub word: u64,
+    pub id: u64,
+}
+
+/// The words a person takes in its household's list.
+const WORDS: usize = 2;
 
 /// The persons of a kind's parties: each party's list reference by slot, and its chunk's arena.
 #[clause("REP.26")]
@@ -57,13 +69,28 @@ impl<B: Backing> Persons<B> {
         Some((chunk, self.arenas.get(chunk)?.resolve(slot.get(), r)))
     }
 
-    /// A party's persons, none for a party that holds none.
-    #[must_use]
-    pub fn of(&self, slot: Slot) -> &[u64] {
+    fn raw(&self, slot: Slot) -> &[u64] {
         match self.list(slot) {
             Some((chunk, list)) => self.arenas.get(chunk).map_or(&[], |a| a.read(list)),
             None => &[],
         }
+    }
+
+    /// A party's persons in their places, none for a party that holds none.
+    pub fn of(&self, slot: Slot) -> impl ExactSizeIterator<Item = Held> + '_ {
+        self.raw(slot).as_chunks::<WORDS>().0.iter().map(|[word, id]| Held { word: *word, id: *id })
+    }
+
+    /// The persons a party holds.
+    #[must_use]
+    pub fn count(&self, slot: Slot) -> usize {
+        self.raw(slot).len() / WORDS
+    }
+
+    /// A person's place in its household, by its identity; none where the household does not hold it.
+    #[must_use]
+    pub fn place_of(&self, slot: Slot, id: u64) -> Option<usize> {
+        self.of(slot).position(|p| p.id == id)
     }
 
     /// Edits a party's list in its arena and writes its reference back.
@@ -82,34 +109,37 @@ impl<B: Backing> Persons<B> {
     }
 
     /// A party's persons written anew: its household formed, or begun again in a released slot.
-    pub fn set(&mut self, space: &mut AddressSpace, slot: Slot, persons: &[u64]) {
-        let before = count(self.of(slot).len());
+    pub fn set(&mut self, space: &mut AddressSpace, slot: Slot, persons: &[Held]) {
+        let before = count(self.count(slot));
+        let words: Vec<u64> = persons.iter().flat_map(|p| [p.word, p.id]).collect();
         self.edit(space, slot, |arena, list| {
             arena.clear(list);
-            arena.append(list, persons);
+            arena.append(list, &words);
         });
         self.held = self.held - before + count(persons.len());
     }
 
     /// A person joins a party: born into it, or moving in.
-    pub fn push(&mut self, space: &mut AddressSpace, slot: Slot, person: u64) {
-        self.edit(space, slot, |arena, list| arena.append(list, &[person]));
+    pub fn push(&mut self, space: &mut AddressSpace, slot: Slot, person: Held) {
+        self.edit(space, slot, |arena, list| arena.append(list, &[person.word, person.id]));
         self.held += 1;
     }
 
     /// The person at `at` leaves its party: it died or moved out; those after it move up one place.
     pub fn remove(&mut self, space: &mut AddressSpace, slot: Slot, at: usize) {
-        if at >= self.of(slot).len() {
+        if at >= self.count(slot) {
             violation!(clause = "REP.26", "a person removed that its household does not hold", at = at);
         }
-        let place = u32::try_from(at).unwrap_or_else(|_| capacity_exceeded!("a household's persons", u32::MAX, at));
-        self.edit(space, slot, |arena, list| arena.remove(list, place, 1));
+        let first =
+            u32::try_from(at * WORDS).unwrap_or_else(|_| capacity_exceeded!("a household's persons", u32::MAX, at));
+        let words = u32::try_from(WORDS).unwrap_or_else(|_| capacity_exceeded!("a person's words", u32::MAX, WORDS));
+        self.edit(space, slot, |arena, list| arena.remove(list, first, words));
         self.held -= 1;
     }
 
     /// A party's persons let go, as it ends.
     pub fn clear(&mut self, space: &mut AddressSpace, slot: Slot) {
-        let before = count(self.of(slot).len());
+        let before = count(self.count(slot));
         self.edit(space, slot, ChunkArena::clear);
         self.held -= before;
     }

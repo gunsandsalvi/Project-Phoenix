@@ -76,7 +76,7 @@ impl Core {
             h.attrs.push((a.item.name, v));
         }
         if let Some(Some(p)) = self.persons.get(place) {
-            h.persons.extend(p.of(slot).iter().map(|w| unpack(decl, *w)));
+            h.persons.extend(p.of(slot).map(|x| unpack(decl, x.word)));
         }
     }
 
@@ -222,19 +222,23 @@ impl Core {
             );
         }
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), slot);
-        // The gone leave from the last, so each earlier place stays where the contracts name it.
+        // The gone leave from the last, so each earlier place still reads the person the outcome marked.
         for at in (0..before).rev() {
             if h.persons.get(at).is_some_and(|p| p.gone) {
-                self.person_left(key, at);
-                if let Some(Some(p)) = self.persons.get_mut(place) {
-                    p.remove(&mut self.space, slot, at);
-                }
+                let Some(Some(persons)) = self.persons.get_mut(place) else { continue };
+                let Some(person) = persons.of(slot).nth(at).map(|x| x.id) else {
+                    violation!(clause = "REP.26", "a person gone that its household does not hold", party = id.get());
+                };
+                persons.remove(&mut self.space, slot, at);
+                self.person_left(key, person);
                 record.gone += 1;
             }
         }
         for p in h.persons.iter().skip(before).filter(|p| !p.gone) {
+            let person = self.next_id;
+            self.next_id += 1;
             if let Some(Some(persons)) = self.persons.get_mut(place) {
-                persons.push(&mut self.space, slot, pack(decl, p));
+                persons.push(&mut self.space, slot, phx_pop::persons::Held { word: pack(decl, p), id: person });
             }
             record.born += 1;
         }
@@ -258,21 +262,15 @@ impl Core {
         self.book_all(ctx, (place, decl), slot, (&rest, &mut buffers), day.succ());
     }
 
-    /// A person gone from its household: every contract naming it closes, and those naming a later place move up.
+    /// A person gone from its household: every contract naming it closes.
     #[clause("REP.3", "REP.26")]
-    fn person_left(&mut self, household: PartyKey, at: usize) {
-        let Ok(at) = u32::try_from(at) else { return };
+    fn person_left(&mut self, household: PartyKey, person: u64) {
         for family in &mut self.families {
             let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();
             for edge in mine {
-                let Some(row) = family.store.edges.row(edge) else { continue };
-                if row.person == at {
+                if family.store.edges.row(edge).is_some_and(|r| r.person == person) {
                     family.store.close(edge);
-                } else if row.person > at
-                    && let Some(r) = family.store.edges.rows_mut().get_mut(index(edge))
-                {
-                    r.person -= 1;
                 }
             }
         }

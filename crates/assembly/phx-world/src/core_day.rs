@@ -17,7 +17,7 @@ use phx_store::{Row, SystemBacking};
 use crate::core::Core;
 
 /// A dated contract on the core: its payer and payee, the amount each date pays, which date of its schedule comes
-/// next, its schedule among its family's, and the payee's person it is.
+/// next, its schedule among its family's, and the payee's person it is, by the person's identity.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Pod)]
 pub struct Due {
@@ -25,9 +25,7 @@ pub struct Due {
     pub amount: i64,
     pub nth: u32,
     pub schedule: u32,
-    /// The person of the payee's household the contract is its, by its place there.
-    pub person: u32,
-    pub pad: u32,
+    pub person: u64,
 }
 
 impl Row for Due {

@@ -6,7 +6,7 @@
 //! elasticity is (1 + μ) ÷ μ, and a price off its best by a log gap x then loses it R·x² ÷ (2μ) of its revenue R; a firm
 //! whose markup is at or below nothing holds no such belief, and any gap loses it without bound.
 
-use libm::{exp, log, pow};
+use libm::{log, pow};
 use phx_macros::clause;
 use phx_num::Missing;
 
@@ -49,7 +49,7 @@ pub fn desired(markup: f64, unit_cost: f64, pressure: f64, curvature: f64) -> f6
 #[clause("FRM.5", "GEN.13")]
 #[must_use]
 pub fn day_zero(price: f64, materials: f64, labour: f64, productivity: f64) -> f64 {
-    price * (materials + labour * exp(-productivity)) / (materials + labour)
+    price * (materials + super::way::own_hours(labour, productivity)) / (materials + labour)
 }
 
 /// The point of the trade's table nearest a price, the lower on a tie; none in an empty table.
