@@ -18,7 +18,8 @@ use phx_store::{Row, SystemBacking};
 use crate::core::Core;
 
 /// A dated contract on the core: its payer and payee, the amount each date pays, which date of its schedule comes
-/// next, its schedule among its family's, and the payee's person it is, by the person's identity.
+/// next, its schedule among its family's, the payee's person it is, by the person's identity, and what it owes
+/// from dates it failed to pay, asked again with its next.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Pod)]
 pub struct Due {
@@ -27,6 +28,7 @@ pub struct Due {
     pub nth: u32,
     pub schedule: u32,
     pub person: u64,
+    pub arrears: i64,
 }
 
 impl Row for Due {
@@ -56,6 +58,8 @@ pub struct DatedFamily {
     /// For a family whose dues are reckoned from its terms — a loan's interest on its balance and its part repaid —
     /// each schedule's terms; a contract's amount is then what it still owes.
     pub terms: Vec<Option<phx_ledger::algebra::Terms>>,
+    /// The contracts past their last date whose last due is out today, ended once it settles.
+    pub finishing: Vec<u32>,
     /// Each schedule's last date by its place, where its contracts end: a benefit's months.
     pub ends_after: Vec<Option<u32>>,
 }
@@ -79,6 +83,8 @@ pub struct CoreDay {
     pub settled: u64,
     pub failed: u64,
     pub committed: u64,
+    /// The contracts that failed a due and hold it in arrears.
+    pub arrears: u64,
     /// The failed flows by their reason.
     pub failed_by: [u64; crate::consts::reason::REASONS],
     /// The money the day's flows move, whatever came of them.
@@ -128,6 +134,52 @@ fn reckoned(
 }
 
 impl Core {
+    /// Each failed flow a dated contract made held on it in arrears, asked again with its next due: a contract past
+    /// its last date is kept, due again on its schedule's next date, until it is paid; one whose last due settled
+    /// ends. Returns the contracts in arrears.
+    #[clause("HH.13", "BNK.17")]
+    fn hold_arrears(&mut self, day: Day, calendar: &Calendar, failed: &[Flow]) -> u64 {
+        let mut n = 0;
+        for f in failed {
+            let Some(family) = self
+                .families
+                .iter_mut()
+                .find(|x| x.reason == f.reason && x.store.kinds.first() == Some(&f.payer.kind()))
+            else {
+                continue;
+            };
+            let slot = Slot::new(f.source);
+            if !family.store.edges.is_open(slot) {
+                continue;
+            }
+            let Some(row) = family.store.edges.rows_mut().get_mut(usize::try_from(f.source).unwrap_or(usize::MAX))
+            else {
+                continue;
+            };
+            if row.ends != [f.payer, f.payee] {
+                continue;
+            }
+            row.arrears += f.amount;
+            n += 1;
+            if let Some(i) = family.finishing.iter().position(|e| *e == f.source) {
+                family.finishing.swap_remove(i);
+                let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
+                if let Some((dates, _, _)) = family.schedules.get(at) {
+                    let next = dates.nth(calendar, row.nth);
+                    if next > day {
+                        family.store.wheel.schedule(f.source, next);
+                    }
+                }
+            }
+        }
+        for family in &mut self.families {
+            for edge in std::mem::take(&mut family.finishing) {
+                family.store.close(Slot::new(edge));
+            }
+        }
+        n
+    }
+
     /// What a party's contracts take from it from today until `until`, each contract's next due where it falls by
     /// then: its amount, or what its terms reckon it pays.
     pub(crate) fn owed_until(&self, party: PartyKey, (day, until): (Day, Day), calendar: &Calendar) -> i64 {
@@ -143,6 +195,7 @@ impl Core {
                 if row.ends.first() != Some(&party) {
                     continue;
                 }
+                owed += row.arrears;
                 let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
                 let Some((dates, ccy, _)) = family.schedules.get(at) else { continue };
                 let date = dates.nth(calendar, row.nth);
@@ -184,7 +237,9 @@ impl DatedFamily {
                     paid
                 }
                 None => row.amount,
-            };
+            } + row.arrears;
+            // What it owed is asked again now; a failure puts it back.
+            row.arrears = 0;
             if amount > 0 {
                 out.push(Flow {
                     payer: row.ends[0],
@@ -205,6 +260,12 @@ impl DatedFamily {
             });
             row.nth += 1;
             if last.is_some_and(|n| row.nth > n) {
+                // A contract past its last date ends once nothing it owes is left to fail.
+                if amount == 0 {
+                    self.store.close(slot);
+                } else {
+                    self.finishing.push(edge);
+                }
                 continue;
             }
             let next = dates.nth(calendar, row.nth);
@@ -382,6 +443,7 @@ impl Core {
             failed: 0,
             committed: 0,
             failed_by: [0; crate::consts::reason::REASONS],
+            arrears: 0,
             gross: 0,
             estates: 0,
             breaks: 0,
@@ -447,6 +509,7 @@ impl Core {
                 *n += 1;
             }
         }
+        record.arrears = self.hold_arrears(day, calendar, &failed);
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
         record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
         for estate in settling {

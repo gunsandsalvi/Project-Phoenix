@@ -357,13 +357,6 @@ pub const LC_0_54: Check = live_check! {
     check: |_| Outcome::NotYet(AWAITING),
 };
 
-pub const LC_0_55: Check = live_check! {
-    id: "LC-0-55",
-    title: "Paydays, dues and pensions in payment settle through pooled flows; every fail has a cause and a waiting owner",
-    from_step: "S0.25",
-    check: |_| Outcome::NotYet(AWAITING),
-};
-
 pub const LC_0_56: Check = live_check! {
     id: "LC-0-56",
     title: "The GEN report lists every apportionment difference and every unmatched stratum",

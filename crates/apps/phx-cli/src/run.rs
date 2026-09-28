@@ -228,10 +228,11 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
     let Some(turn) = w.turns().last() else { return "no turn run".to_owned() };
     let in_turn = |d: phx_id::Day| d >= turn.first && d <= turn.last;
     let core = w.core();
-    let (mut flows, mut settled, mut failed, mut committed, mut breaks) = (0, 0, 0, 0, 0);
+    let (mut flows, mut settled, mut failed, mut committed, mut breaks, mut arrears) = (0, 0, 0, 0, 0, 0);
     for d in core.days.iter().filter(|d| in_turn(d.day)) {
         (flows, settled, failed, committed, breaks) =
             (flows + d.flows, settled + d.settled, failed + d.failed, committed + d.committed, breaks + d.breaks);
+        arrears += d.arrears;
     }
     let (mut born, mut gone, mut ended) = (0, 0, 0);
     for (_, p) in core.pop_days.iter().filter(|(d, _)| in_turn(*d)) {
@@ -241,8 +242,8 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
     let phase = if turn.last < settle_end { "settling" } else { "running" };
     let wall = turn.wall_ns.map_or_else(|| "untimed".to_owned(), |ns| format!("{} ms", ns / 1_000_000));
     format!(
-        "{phase} {} to {}: {} days in {wall}; flows {flows}, settled {settled}, failed {failed}, committed \
-         {committed}, money breaks {breaks}; born {born}, gone {gone}, households ended {ended}; persons {}",
+        "{phase} {} to {}: {} days in {wall}; flows {flows}, settled {settled}, failed {failed} ({arrears} into \
+         arrears), committed {committed}, money breaks {breaks}; born {born}, gone {gone}, households ended {ended}; persons {}",
         date(turn.first),
         date(turn.last),
         turn.days,
@@ -273,6 +274,7 @@ fn days_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
                 "settled": d.settled,
                 "failed": d.failed,
                 "failed_by": d.failed_by,
+                "arrears": d.arrears,
                 "committed": d.committed,
                 "gross": d.gross.to_string(),
                 "breaks": d.breaks,

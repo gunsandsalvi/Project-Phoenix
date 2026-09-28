@@ -307,7 +307,8 @@ impl Core {
         for (place, sex) in &pensioners {
             let (Some(person), Some(amount)) = (ids.get(*place), draw.paid.amount.get(*sex)) else { continue };
             let schedule = draw.schedule;
-            let due = Due { ends: [draw.treasury, key], amount: *amount, nth: 1, schedule, person: *person };
+            let due =
+                Due { ends: [draw.treasury, key], amount: *amount, nth: 1, schedule, person: *person, arrears: 0 };
             let first = pensions.first(calendar, schedule);
             let _ = pensions.store.open(due, first);
         }
@@ -430,6 +431,7 @@ impl Core {
             classes: Vec::new(),
             terms: Vec::new(),
             ends_after: Vec::new(),
+            finishing: Vec::new(),
         }
     }
 }

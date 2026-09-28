@@ -664,6 +664,7 @@ impl Core {
             schedule: u32::try_from(schedule)
                 .unwrap_or_else(|_| violation!(clause = "TIME.4", "more schedules than a contract can name")),
             person: hired.seeker.person,
+            arrears: 0,
         };
         let _ = f.store.open(due, Some(dates.nth(ctx.calendar, nth)));
         let mut person = unpack(&decl, word);
@@ -832,8 +833,14 @@ impl Core {
         f.terms.push(None);
         f.ends_after.push(Some(benefit.months));
         let schedule = u32::try_from(f.schedules.len() - 1).unwrap_or(u32::MAX);
-        let due =
-            Due { ends: [treasury, household], amount: phx_ledger::opening::whole(monthly), nth: 1, schedule, person };
+        let due = Due {
+            ends: [treasury, household],
+            amount: phx_ledger::opening::whole(monthly),
+            nth: 1,
+            schedule,
+            person,
+            arrears: 0,
+        };
         let _ = f.store.open(due, Some(dates.nth(ctx.calendar, 1)));
     }
 

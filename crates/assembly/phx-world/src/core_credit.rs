@@ -95,6 +95,7 @@ impl Core {
             classes: Vec::new(),
             terms: Vec::new(),
             ends_after: Vec::new(),
+            finishing: Vec::new(),
         };
         self.families.push(family);
     }
@@ -114,6 +115,7 @@ impl Core {
             classes: Vec::new(),
             terms: Vec::new(),
             ends_after: Vec::new(),
+            finishing: Vec::new(),
         }
     }
 
@@ -166,7 +168,7 @@ impl Core {
             }
             let terms = loan_terms(c, date, l.years)?;
             let schedule = family.schedule_of((c, date), [0, 0, 0], Some(terms));
-            let due = Due { ends: [l.household, l.bank], amount, nth: 1, schedule, person: l.person };
+            let due = Due { ends: [l.household, l.bank], amount, nth: 1, schedule, person: l.person, arrears: 0 };
             let first = family.first(o.calendar, schedule);
             let _ = family.store.open(due, first);
         }
@@ -242,7 +244,7 @@ impl Core {
                 else {
                     continue;
                 };
-                let due = Due { ends: [*key, lender], amount: principal, nth: 1, schedule, person: 0 };
+                let due = Due { ends: [*key, lender], amount: principal, nth: 1, schedule, person: 0, arrears: 0 };
                 let _ = family.store.open(due, Some(dates.nth(o.calendar, 1)));
             }
         }
@@ -317,7 +319,7 @@ impl Core {
             );
             let Some(f) = self.families.get_mut(family) else { continue };
             let schedule = f.schedule_in(ccy, [0, 0, 0], terms);
-            let due = Due { ends: [key, lender], amount, nth: 1, schedule, person: 0 };
+            let due = Due { ends: [key, lender], amount, nth: 1, schedule, person: 0, arrears: 0 };
             let first = f.first(calendar, schedule);
             let _ = f.store.open(due, first);
             buf.push(phx_core::flows::Flow {

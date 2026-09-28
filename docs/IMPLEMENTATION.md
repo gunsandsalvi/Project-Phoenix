@@ -796,8 +796,11 @@ world switches to the core.
     the fewest years a loan runs, until S2.03's credit round retires it); a household spends from what it holds less
     what its contracts take before its next spending day (HH.4, HH.13); and the opening shares the households' debt by
     income times the years a loan has left, as its balance is what its payments repay. What still fails is real: 198
-    households whose drawn income is not earned miss a repayment (47 of 245 million due), and a failed flow has as
-    yet no consequence — arrears at 2d and default (HH.13, f) are next. Births come at the opening's transient: no
+    households whose drawn income is not earned miss a repayment (47 of 245 million due). A failed due of a dated
+    contract is now held in its arrears and asked again with its next due, the payer reserving it before it spends;
+    a contract past its last date ends only once paid (HH.13; LC-0-55 reads it): 198 contracts in arrears after the
+    first payday, 324 after the second (65 days). Default after a grace, by each kind's insolvency law (HH.21,
+    FRM.15), is next in f. Births come at the opening's transient: no
     household is trying at day zero and each decides at its head's birthday (38 births in 35 days), which the
     settling years absorb.
   - h begun: the core's audit — money (a bank owing other than its customers hold, money made or lost among the

@@ -42,6 +42,7 @@ impl Job {
             nth: self.nth,
             schedule: self.schedule,
             person: self.person,
+            arrears: 0,
         }
     }
 }
@@ -163,6 +164,7 @@ impl Core {
             classes: Vec::new(),
             terms: Vec::new(),
             ends_after: Vec::new(),
+            finishing: Vec::new(),
         }
     }
 

@@ -229,3 +229,27 @@ pub const LC_0_51: Check = live_check! {
     from_step: "S0.25",
     check: day_one_clean,
 };
+
+/// Every failed due of a dated contract — a wage, a pension, a benefit or a repayment — has a cause and is held in its
+/// contract's arrears, owed by its payer; and the run paid dues.
+fn fails_have_owners(w: Inspector<'_>) -> Outcome {
+    use phx_world::consts::reason::{BENEFIT, PENSION, REPAID, WAGE};
+    let at = |d: &phx_world::core_day::CoreDay, r: u8| d.failed_by.get(usize::from(r)).copied().unwrap_or(0);
+    for d in &w.core().days {
+        let dues = at(d, WAGE) + at(d, PENSION) + at(d, BENEFIT) + at(d, REPAID);
+        if dues != d.arrears {
+            return Outcome::Fail(format!("day {}: {dues} dues failed, {} held in arrears", d.day.get(), d.arrears));
+        }
+    }
+    if w.core().days.iter().all(|d| d.flows == 0) {
+        return Outcome::Fail("no due was paid".to_owned());
+    }
+    Outcome::Pass
+}
+
+pub const LC_0_55: Check = live_check! {
+    id: "LC-0-55",
+    title: "Paydays, dues and pensions in payment settle through pooled flows; every fail has a cause and a waiting owner",
+    from_step: "S0.25",
+    check: fails_have_owners,
+};
