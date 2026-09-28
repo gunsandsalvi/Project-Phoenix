@@ -262,6 +262,7 @@ pub const phx_core::consts::MAX_REASONS: usize
 pub const phx_core::consts::MONTHS: i32
 pub const phx_core::consts::MONTHS_PER_QUARTER: u16
 pub const phx_core::consts::MONTHS_PER_YEAR: u16
+pub const phx_core::consts::NATURE_WORD: u32
 pub const phx_core::consts::NUMERIC_STEPS: u32
 pub const phx_core::consts::OPENING_BALANCES: u8
 pub const phx_core::consts::OPENING_CONTRACTS: u8
@@ -792,6 +793,7 @@ pub struct phx_core::flows::Denom(_)
 impl phx_core::flows::Denom
 pub const fn phx_core::flows::Denom::is_money(self) -> bool
 pub fn phx_core::flows::Denom::money(u8) -> phx_core::flows::Denom
+pub fn phx_core::flows::Denom::unit(self) -> u16
 pub fn phx_core::flows::Denom::units(u16) -> phx_core::flows::Denom
 pub struct phx_core::flows::Flow
 pub phx_core::flows::Flow::amount: i64
@@ -828,6 +830,73 @@ pub fn phx_core::flows::Ranges::of(&self, phx_id::ids::PartyKey) -> usize
 pub fn phx_core::flows::Ranges::of_kind(&self, u8) -> core::ops::range::Range<usize>
 pub fn phx_core::flows::Ranges::range_bits(&self) -> u32
 pub fn phx_core::flows::Ranges::start(&self, usize) -> (u8, u32)
+pub mod phx_core::goods
+pub enum phx_core::goods::Bound
+pub phx_core::goods::Bound::Committed
+pub phx_core::goods::Bound::Free
+pub phx_core::goods::Bound::Pledged
+pub enum phx_core::goods::Cost
+pub phx_core::goods::Cost::At(i64)
+pub phx_core::goods::Cost::Carried
+pub struct phx_core::goods::Carriage
+pub phx_core::goods::Carriage::arrived: u8
+pub phx_core::goods::Carriage::shipped: u8
+pub struct phx_core::goods::Good
+pub phx_core::goods::Good::grade: u8
+pub phx_core::goods::Good::product: u16
+pub phx_core::goods::Good::zone: u32
+pub struct phx_core::goods::GoodIds
+impl phx_core::goods::GoodIds
+pub fn phx_core::goods::GoodIds::find(&self, phx_core::goods::Good) -> core::option::Option<u16>
+pub fn phx_core::goods::GoodIds::good(&self, u16) -> core::option::Option<phx_core::goods::Good>
+pub fn phx_core::goods::GoodIds::is_empty(&self) -> bool
+pub fn phx_core::goods::GoodIds::len(&self) -> usize
+pub fn phx_core::goods::GoodIds::unit(&mut self, phx_core::goods::Good) -> u16
+pub struct phx_core::goods::Holding
+pub phx_core::goods::Holding::committed: i64
+pub phx_core::goods::Holding::cost: i64
+pub phx_core::goods::Holding::day: u32
+pub phx_core::goods::Holding::holder: phx_id::ids::PartyKey
+pub phx_core::goods::Holding::pledged: i64
+pub phx_core::goods::Holding::unit: u16
+pub phx_core::goods::Holding::units: i64
+impl phx_core::goods::Holding
+pub fn phx_core::goods::Holding::free(&self) -> i64
+pub struct phx_core::goods::Shipment
+pub phx_core::goods::Shipment::arrives: u32
+pub phx_core::goods::Shipment::carrier: phx_id::ids::PartyKey
+pub phx_core::goods::Shipment::from: u16
+pub phx_core::goods::Shipment::owner: phx_id::ids::PartyKey
+pub phx_core::goods::Shipment::to: u16
+pub phx_core::goods::Shipment::units: i64
+pub struct phx_core::goods::Shipments
+impl phx_core::goods::Shipments
+pub fn phx_core::goods::Shipments::arrive(&mut self, phx_id::day::Day, &mut phx_core::goods::Stocks, phx_core::goods::Carriage, &mut alloc::vec::Vec<phx_core::flows::Flow>)
+pub fn phx_core::goods::Shipments::close_day(&mut self)
+pub fn phx_core::goods::Shipments::depart(&mut self, &mut phx_core::goods::Stocks, phx_core::goods::Shipment, (phx_core::goods::Bound, phx_id::day::Day)) -> core::result::Result<phx_id::ids::Slot, phx_core::goods::Short>
+pub fn phx_core::goods::Shipments::new(phx_id::day::Day, u32) -> phx_core::goods::Shipments
+pub fn phx_core::goods::Shipments::of(&self, phx_id::ids::PartyKey) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::Slot, &phx_core::goods::Shipment)> + '_
+pub fn phx_core::goods::Shipments::on_the_way(&self) -> usize
+pub fn phx_core::goods::Shipments::shrink(&mut self, phx_id::ids::PartyKey, u16, i64)
+pub struct phx_core::goods::Short
+pub phx_core::goods::Short::asked: i64
+pub phx_core::goods::Short::held: i64
+pub struct phx_core::goods::Stocks
+impl phx_core::goods::Stocks
+pub fn phx_core::goods::Stocks::all(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::goods::Holding> + '_
+pub fn phx_core::goods::Stocks::apply(&mut self, &phx_core::flows::Flow, phx_core::goods::Bound, phx_core::goods::Cost, phx_id::day::Day) -> core::result::Result<core::option::Option<i64>, phx_core::goods::Short>
+pub fn phx_core::goods::Stocks::bind(&mut self, phx_id::ids::PartyKey, u16, i64, (phx_core::goods::Bound, phx_core::goods::Bound)) -> core::result::Result<(), phx_core::goods::Short>
+pub fn phx_core::goods::Stocks::deliver(&mut self, phx_id::ids::PartyKey, u16, i64, phx_core::goods::Bound) -> core::result::Result<i64, phx_core::goods::Short>
+pub fn phx_core::goods::Stocks::end(&mut self, phx_id::ids::PartyKey)
+pub fn phx_core::goods::Stocks::holding(&self, phx_id::ids::PartyKey, u16) -> core::option::Option<&phx_core::goods::Holding>
+pub fn phx_core::goods::Stocks::holdings(&self, phx_id::ids::PartyKey) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::goods::Holding> + '_
+pub fn phx_core::goods::Stocks::lose(&mut self, phx_id::ids::PartyKey, u16, i64) -> (i64, i64)
+pub fn phx_core::goods::Stocks::receive(&mut self, phx_id::ids::PartyKey, u16, (i64, i64), phx_id::day::Day)
+pub fn phx_core::goods::Stocks::totals(&self) -> alloc::vec::Vec<i128>
+pub const phx_core::goods::NATURE: phx_id::ids::PartyKey
+pub fn phx_core::goods::breaks(&[i128], &[i128], &[i128]) -> alloc::vec::Vec<(u16, i128, i128)>
+pub fn phx_core::goods::nature_net<'a>(impl core::iter::traits::collect::IntoIterator<Item = &'a phx_core::flows::Flow>) -> alloc::vec::Vec<i128>
+pub fn phx_core::goods::spoil(&phx_core::goods::Stocks, phx_id::ids::PartyKey, impl core::ops::function::Fn(u16) -> core::option::Option<f64>, (i64, phx_id::day::Day, i64), u8, &mut alloc::vec::Vec<phx_core::flows::Flow>)
 pub mod phx_core::handler
 pub struct phx_core::handler::Away
 pub phx_core::handler::Away::inbound: phx_num::missing::Missing<i64>

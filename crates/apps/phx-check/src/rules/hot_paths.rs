@@ -16,6 +16,7 @@ const HOT: &[(&str, &str)] = &[
     ("phx-core", "src/wheel.rs"),
     ("phx-core", "src/settle.rs"),
     ("phx-core", "src/column_facts.rs"),
+    ("phx-core", "src/goods.rs"),
     ("phx-market", "src/meet.rs"),
 ];
 

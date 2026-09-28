@@ -1904,8 +1904,37 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
     those served short choose again;
   - the caller keeps a `Meeting` from day to day, whose outcome (sales by chunk of stalls, the unserved, the rounds)
     and working space a day's meeting writes into, so it allocates nothing once the heaviest day has sized it.
+- **Goods** (`phx_core::goods`):
+  - A good is a product's grade at a zone (GDS.1). `GoodIds` issues each good the declared unit its flows carry the
+    first time something names it, within `Denom::units`' 2^15.
+  - `Stocks` holds each party's holdings, a row a good (48 bytes), threaded per party from a head its kind keeps:
+    units, their cost at average cost (ACC.6), the day they came in averaged by units, and what is committed to sales
+    and pledged to carriers; the rest is free.
+    - `receive` takes units in at a cost. `deliver` takes them from a bound (free, committed, pledged) at their share
+      of the cost, rounded half to even, the last unit taking what is left; asking beyond the bound is `Short`, a
+      fail (SET.3).
+    - `bind` moves units between bounds: a sale's cover, a pledge.
+    - `lose` is a loss to nature: it takes units whatever binds them, then cuts the pledges by what the bound units now
+      exceed, so a cover left beyond the units fails its sale.
+    - A party ends holding nothing (PTY.9).
+  - A transformation is a flow with `NATURE` on the side a counterparty would stand: making, use, spoilage, a loss,
+    a shipment's leaving and arriving. What accounts for it is its source, and no table is of nature's kind (the last
+    of the 32). `Stocks::apply` applies a flow of units: the payer delivers from a bound, and the payee receives at a
+    price paid, a making's cost, or what the units carried out.
+  - `Shipments` are goods on their way (FRT.3): owner, carrier, the good leaving and the good arriving, units, day of
+    arrival. Each is on its owner's list and in a due wheel's bucket.
+    - `depart` pledges the units.
+    - `arrive` takes each day's in turn: the pledge is used up where it left and made where it arrives at the cost
+      it carried, a pair of transformation flows whose source is the shipment.
+    - `shrink` cuts an owner's shipments of a good by what its pledges lost, latest first.
+  - `spoil` reckons a holder's spoilage over a period (`spoilage::lost` on the holding's mean day), each a flow to
+    nature.
+  - The goods' identity (GDS.10): each good's units at the close are its units at the open plus what nature gave
+    less what it took (`nature_net`, `breaks`); flows between parties move units without changing how many there are.
+  - A sale's goods leg (`GoodsLeg`) goes to the buyer, who holds it as a firm holds its inputs, or to nature with the
+    buyer as its source, as a household's purchase uses it up.
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel, settlement,
-  facts or posted-price meeting.
+  facts, goods or posted-price meeting.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
   its three sustained cores, never below the wall; page faults per day stand for allocation during the day.
 
@@ -1913,9 +1942,17 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
 — every kind's parties with records and money, twelve contract families with their list links and dues — and runs a
 month through these kernels:
 - hazards, and handlers over the day's agenda by phase, spending their rules' declared arithmetic;
-- purchases at the posted-price meeting, a product's buyers against its sellers' stalls (price, units at 1.3 times the
-  product's demand spread evenly, a few km from their region's buyers), products side by side, one kept `Meeting` a
-  worker, each sale a money flow and, for a good, a unit flow;
+- purchases at the posted-price meeting, a product's buyers against its sellers' stalls (price, a good's free stock or
+  a service's 1.3 times the product's demand spread evenly, a few km from their region's buyers), products side by
+  side, one kept `Meeting` a worker, each sale a money flow and, for a good, a goods leg covering the seller's units;
+- goods (`load_goods.rs`), in stocks sharded by the firms' netting ranges, each range's worker writing its own:
+  - each goods firm holds its product and two inputs at the opening;
+  - after settlement each covered sale is delivered, used up by a household or held by a firm at what it paid, or
+    released where its payment failed;
+  - each goods firm uses up a unit of each input it holds and makes a day's sales;
+  - a third of the products spoil, weekly, and a hundredth of the goods firms ship a quarter of their stock to the next
+    region, arriving three days on;
+  - the goods' identity is read every day;
 - the wheel's dues, monthly and quarterly, the quarterly through the far list, each reckoned through its family's shape
   of terms (a fixed sum, interest, an annuity, a principal once) from its contract's row, a row a few dues ahead asked
   for early;

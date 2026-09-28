@@ -37,9 +37,9 @@ line = "REP.41, REP.20, VAL.23: 0.30 households a person (221 515 at 750 000 per
 [[kind]]
 name = "firm"
 per_million = 140000
-bytes = 640
+bytes = 336
 money = true
-line = "FRM.23, REP.41: 0.14 firms a person (102 579 at 750 000); prices and stocks by product, ways, plant by kind and class, headcount by family, accounts' lines (ACC)"
+line = "FRM.23, REP.41: 0.14 firms a person (102 579 at 750 000); prices by product, ways, plant by kind and class, headcount by family, accounts' lines (ACC); its stocks are the goods' holdings, built by the bench's goods (19 products' units and cost, 304 bytes, taken off)"
 
 [[kind]]
 name = "bank"
@@ -332,6 +332,12 @@ name = "settlement"
 kernel = "settle"
 per_million = [1, 1, 1]
 line = "SET.4, MON.5, SET.2: every flow of the day netted and applied; on a closed day, card payments held pending on the parties' accounts until the next business day settles them"
+
+[[work]]
+name = "goods"
+kernel = "goods"
+per_million = [1, 1, 1]
+line = "GDS.2, GDS.8, GDS.10, FRT.6: after settlement, each sale's covered units delivered — used up by a household, held by a firm at what it paid — or released where its payment failed; each goods firm using up its inputs and making its product, a weekly spoilage, a hundredth of the goods firms shipping to the next region; and the goods' identity per good"
 
 [[work]]
 name = "audit"

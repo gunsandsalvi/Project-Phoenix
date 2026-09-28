@@ -4,6 +4,7 @@
 //! A place's sellers are weighed once a round for every buyer standing there, so a choice is one draw.
 
 use phx_core::flows::{Denom, Flow};
+use phx_core::goods::NATURE;
 use phx_exec::Pool;
 use phx_exec::partition::Partitioned;
 use phx_id::PartyKey;
@@ -102,10 +103,21 @@ struct Choosing {
     bought: bool,
 }
 
+/// A sale's goods leg: the unit it moves, the reason and payment order its declarations give, and whether the buyer
+/// uses the goods up as it buys them, as a household does, or holds them, as a firm does its inputs.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GoodsLeg {
+    pub unit: Denom,
+    pub reason: u8,
+    pub order: u8,
+    pub used: bool,
+}
+
 impl Sale {
-    /// The sale's flows: the money from buyer to seller, and, where the good is held, its units from seller to buyer;
-    /// each with the reason and payment order the caller's declarations give.
-    pub fn flows(&self, money: (Denom, u8, u8), goods: Option<(Denom, u8, u8)>, source: u32, out: &mut Vec<Flow>) {
+    /// The sale's flows: the money from buyer to seller with its reason and payment order, from `source`; and, where
+    /// the good is held, its units from the seller, to the buyer who holds them, or to nature as the purchase uses them
+    /// up, the buyer then being what accounts for it.
+    pub fn flows(&self, money: (Denom, u8, u8), goods: Option<GoodsLeg>, source: u32, out: &mut Vec<Flow>) {
         let (denomination, reason, order) = money;
         out.push(Flow {
             payer: self.buyer,
@@ -116,15 +128,16 @@ impl Sale {
             reason,
             order,
         });
-        if let Some((denomination, reason, order)) = goods {
+        if let Some(g) = goods {
+            let (payee, source) = if g.used { (NATURE, self.buyer.word()) } else { (self.buyer, source) };
             out.push(Flow {
                 payer: self.seller,
-                payee: self.buyer,
+                payee,
                 amount: self.units,
                 source,
-                denomination,
-                reason,
-                order,
+                denomination: g.unit,
+                reason: g.reason,
+                order: g.order,
             });
         }
     }

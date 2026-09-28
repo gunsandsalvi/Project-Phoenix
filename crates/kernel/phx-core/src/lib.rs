@@ -17,6 +17,7 @@ pub mod facts;
 pub mod family;
 pub mod findings;
 pub mod flows;
+pub mod goods;
 pub mod handler;
 pub mod hazards;
 pub mod insolvency;

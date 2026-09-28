@@ -34,6 +34,15 @@ impl Denom {
     pub const fn is_money(self) -> bool {
         self.0 & UNITS == 0
     }
+
+    /// The declared unit a denomination of units names; money names none, and asking for one stops the run.
+    #[must_use]
+    pub fn unit(self) -> u16 {
+        if self.is_money() {
+            violation!(clause = "Law 5", "a unit read from money", denomination = self.0);
+        }
+        self.0 & !UNITS
+    }
 }
 
 /// One movement: from the payer to the payee, an amount of a denomination, for a reason, at the payer's payment

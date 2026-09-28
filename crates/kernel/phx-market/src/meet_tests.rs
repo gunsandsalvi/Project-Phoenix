@@ -4,11 +4,12 @@
 #![cfg(test)]
 
 use phx_core::flows::Denom;
+use phx_core::goods::NATURE;
 use phx_id::{PartyKey, Slot};
 use phx_rand::float::from_i64;
 use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
 
-use super::{Buyer, Meeting, Place, Sale, Stall, Tastes, meet};
+use super::{Buyer, GoodsLeg, Meeting, Place, Sale, Stall, Tastes, meet};
 use crate::retail::{Want, Weights};
 
 const W: Weights = Weights { price: 2.0, distance: 0.05 };
@@ -148,10 +149,23 @@ fn the_same_for_any_workers() {
 #[test]
 fn a_sale_makes_its_flows() {
     let sale = Sale { buyer: buyer(1), seller: seller(2), units: 3, paid: 30 };
-    let mut out = Vec::new();
-    sale.flows((Denom::money(0), 2, 0), Some((Denom::units(7), 3, 0)), 11, &mut out);
-    let got: Vec<(PartyKey, PartyKey, i64)> = out.iter().map(|f| (f.payer, f.payee, f.amount)).collect();
-    assert_eq!(got, vec![(buyer(1), seller(2), 30), (seller(2), buyer(1), 3)], "money one way, the goods the other");
+    let leg = |used| Some(GoodsLeg { unit: Denom::units(7), reason: 3, order: 0, used });
+    let made = |goods| {
+        let mut out = Vec::new();
+        sale.flows((Denom::money(0), 2, 0), goods, 11, &mut out);
+        out.iter().map(|f| (f.payer, f.payee, f.amount, f.source)).collect::<Vec<_>>()
+    };
+    assert_eq!(
+        made(leg(false)),
+        vec![(buyer(1), seller(2), 30, 11), (seller(2), buyer(1), 3, 11)],
+        "held by the buyer"
+    );
+    assert_eq!(
+        made(leg(true)),
+        vec![(buyer(1), seller(2), 30, 11), (seller(2), NATURE, 3, buyer(1).word())],
+        "used up by the purchase, which names the buyer"
+    );
+    assert_eq!(made(None).len(), 1, "a service moves money alone");
 }
 
 #[test]

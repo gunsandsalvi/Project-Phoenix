@@ -360,6 +360,11 @@ pub phx_market::meet::Buyer::party: phx_id::ids::PartyKey
 pub phx_market::meet::Buyer::place: u32
 pub phx_market::meet::Buyer::subject: u64
 pub phx_market::meet::Buyer::want: phx_market::retail::Want
+pub struct phx_market::meet::GoodsLeg
+pub phx_market::meet::GoodsLeg::order: u8
+pub phx_market::meet::GoodsLeg::reason: u8
+pub phx_market::meet::GoodsLeg::unit: phx_core::flows::Denom
+pub phx_market::meet::GoodsLeg::used: bool
 pub struct phx_market::meet::Meeting
 pub phx_market::meet::Meeting::rounds: u64
 pub phx_market::meet::Meeting::unserved: alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>
@@ -373,7 +378,7 @@ pub phx_market::meet::Sale::paid: i64
 pub phx_market::meet::Sale::seller: phx_id::ids::PartyKey
 pub phx_market::meet::Sale::units: i64
 impl phx_market::meet::Sale
-pub fn phx_market::meet::Sale::flows(&self, (phx_core::flows::Denom, u8, u8), core::option::Option<(phx_core::flows::Denom, u8, u8)>, u32, &mut alloc::vec::Vec<phx_core::flows::Flow>)
+pub fn phx_market::meet::Sale::flows(&self, (phx_core::flows::Denom, u8, u8), core::option::Option<phx_market::meet::GoodsLeg>, u32, &mut alloc::vec::Vec<phx_core::flows::Flow>)
 pub struct phx_market::meet::Stall
 pub phx_market::meet::Stall::price: i64
 pub phx_market::meet::Stall::seller: phx_id::ids::PartyKey
