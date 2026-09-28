@@ -579,6 +579,7 @@ fn core_of(
     geo: &phx_geo::GeoState,
     (books, population): (&phx_ledger::books::Books, &phx_pop::population::Population),
     (state, calendar, today): (&crate::state::State, &phx_core::calendar::Calendar, phx_id::Day),
+    own: &[(&'static str, OwnState)],
 ) -> Result<crate::core::Core, AssemblyErrors> {
     let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
     let sheets = opening
@@ -600,11 +601,21 @@ fn core_of(
         regions: &regions,
     };
     core.open_hazards(&ctx, &p.pop, today.succ());
-    core.open_firms(
-        &p.c.register,
-        (&opening, &sheets),
-        (&p.c.streams, &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL),
-    )
+    let Some(frm) = own
+        .iter()
+        .find(|(c, _)| *c == <sys_frm::Frm as phx_core::System>::CODE)
+        .and_then(|(_, s)| s.downcast_ref::<sys_frm::Own>())
+    else {
+        return Err(AssemblyErrors(vec!["the firms' management not compiled for their opening".to_owned()]));
+    };
+    core.open_firms(&crate::core_firms::FirmsOpening {
+        register: &p.c.register,
+        countries: &opening,
+        sheets: &sheets,
+        streams: &p.c.streams,
+        stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
+        management: frm.management(),
+    })
     .map_err(|e| AssemblyErrors(vec![e]))?;
     let _ = population;
     Ok(core)
@@ -641,7 +652,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let val_rules = val_rules(&p)?;
     let mut calendar = p.c.calendar.clone();
     calendar.move_window(calendar.date(carried.today).year());
-    let core = core_of(&p, &geo, (&books, &population), (&state, &calendar, carried.today))?;
+    let core = core_of(&p, &geo, (&books, &population), (&state, &calendar, carried.today), &own)?;
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
     let val_methods = crate::goods::methods(&p.kernel.val, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     p.market_kinds.check(&markets.made).map_err(|e| AssemblyErrors(vec![e]))?;

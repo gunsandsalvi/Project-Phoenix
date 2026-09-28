@@ -727,7 +727,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (b1 done: firms of one kind counted, placed, banked and funded on the core)
+**Status**: building (b1–b2 done: firms of one kind counted, placed, banked, priced from their own cost and given the output their prices win)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
@@ -808,9 +808,11 @@ world switches to the core.
     included, and the developing group's ways measured on economies whose GDP per head is the group's.
   - Each firm draws its productivity from the industry's dispersion, its sites (PTY: a site per establishment), and
     its management types.
-  - Its day-zero price is its own decision from its cost (GEN.13).
-  - The industry's output in the SAM is shared by the demand each firm wins at those prices in its reach, and its
-    staff, plant and stocks follow from its output, its way and the balance sheet's apportionment.
+  - Its day-zero price is its own decision from its cost (GEN.13) (b2).
+  - The industry's output in the SAM is shared by the demand each firm wins at those prices in its reach (b2, by the
+    retail logit's price term; d adds its distance term with the meetings' places), and its staff, plant and stocks
+    follow from its output, its way and the balance sheet's apportionment (b3); the plant's capital charge joins the
+    unit cost a firm prices from with its plant (FRM.14).
   - A firm with several establishments serves each one's reach.
 - **Merged handlers.** One body reads the firm's columns. What differed between the pairs is either declared kind data
   or was representation, and is gone.

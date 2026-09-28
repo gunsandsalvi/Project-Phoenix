@@ -2022,10 +2022,17 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   begun anew (the small firms' kept empty, so the kinds keep their numbers). A country's firms are its employed — its
   people from 15 at its employment rate — times its firms per employed, shared over the products by the persons each
   product's opening output employs by its way over a full-time year, and over the regions by the persons the core's
-  households hold there. A firm's record is its product, region, site tile and productivity (billionths of a log
-  point, drawn from the group's spread); its bank is drawn by the banks' deposits, and the country's firms' deposits
-  on the sheet are split evenly over them until their output is known. Its productivity and site each draw from their
-  own subject under the firms' opening stream.
+  households hold there. A firm's record is its product, region, site tile, productivity (billionths of a log point,
+  drawn from the group's spread), its posted price of a lot and its output a year in units. Its productivity and site
+  each draw from their own subject under the firms' opening stream; its bank is drawn by the banks' deposits.
+- **Day zero's prices and output** (`core_firms::Snapshot`): a product's unit at the opening costs its way's inputs at
+  the opening prices plus its labour at the accounts' compensation over output; its markup is the opening price over
+  that cost. A firm's price is that markup over its own cost, its labour fewer hours by its productivity's factor,
+  posted at the nearest of its management's price points. The accounts' units a year of each product are shared over
+  the regions its firms are in by their persons, and within a region over its firms by the retail logit's price term
+  (`SRV.price_weight`); the distance term joins when the meetings' places are on the core. The sheet's firm deposits
+  are shared over the firms by their turnover at those prices; the turnover is 0.93–0.96 of the accounts' output
+  value, the cheaper firms selling more of the units (seed 1, 150,000 persons).
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, stores, partition, flows, wheel, settlement,
   facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over

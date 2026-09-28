@@ -63,7 +63,8 @@ impl FilingPrims {
     }
 
     /// A product's lot, the units its price is posted for: ten to its unit's price places.
-    fn lot(register: &phx_core::Register, product: u16) -> f64 {
+    #[must_use]
+    pub fn lot(register: &phx_core::Register, product: u16) -> f64 {
         let entry = register.products("TEC.products").ok().and_then(|p| p.get(usize::from(product)).cloned());
         let exp = entry
             .and_then(|e| match register.units().named(&e.unit) {

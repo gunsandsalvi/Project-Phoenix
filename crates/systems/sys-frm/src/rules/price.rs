@@ -6,7 +6,7 @@
 //! elasticity is (1 + μ) ÷ μ, and a price off its best by a log gap x then loses it R·x² ÷ (2μ) of its revenue R; a firm
 //! whose markup is at or below nothing holds no such belief, and any gap loses it without bound.
 
-use libm::{log, pow};
+use libm::{exp, log, pow};
 use phx_macros::clause;
 use phx_num::Missing;
 
@@ -42,6 +42,14 @@ pub fn pressure_service(demand: f64, expected: f64, target_fill: f64, fill: f64)
 #[must_use]
 pub fn desired(markup: f64, unit_cost: f64, pressure: f64, curvature: f64) -> f64 {
     (1.0 + markup) * unit_cost * pow(pressure, curvature)
+}
+
+/// A firm's price of a unit on day zero: its product's markup over its cost in the opening's accounts, over the firm's
+/// own cost, whose labour takes fewer hours by the factor the log of its productivity gives.
+#[clause("FRM.5", "GEN.13")]
+#[must_use]
+pub fn day_zero(price: f64, materials: f64, labour: f64, productivity: f64) -> f64 {
+    price * (materials + labour * exp(-productivity)) / (materials + labour)
 }
 
 /// The point of the trade's table nearest a price, the lower on a tie; none in an empty table.
@@ -114,6 +122,13 @@ mod tests {
         assert_eq!(nearest_point(&points, 174.0), Some(149), "a tie posts the lower");
         assert_eq!(nearest_point(&[], 10.0), None);
         assert!((desired(0.25, 100.0, 1.0, 0.5) - 125.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn day_zero_price_follows_own_cost() {
+        assert!((day_zero(150.0, 50.0, 50.0, 0.0) - 150.0).abs() < 1e-12, "the way's own productivity: the price");
+        assert!((day_zero(150.0, 50.0, 50.0, core::f64::consts::LN_2) - 112.5).abs() < 1e-12, "half the hours");
+        assert!((day_zero(150.0, 100.0, 0.0, 1.0) - 150.0).abs() < 1e-12, "no labour, no gain");
     }
 
     #[test]

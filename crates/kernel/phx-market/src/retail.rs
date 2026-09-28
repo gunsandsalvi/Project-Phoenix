@@ -127,6 +127,21 @@ pub(crate) fn less(want: Want, lot: i64, units: i64, price: i64) -> Want {
     }
 }
 
+/// Each seller's chance of a buyer's choice where every seller stands equally far from it: the logit's over the
+/// price term, `exp(−w·ln price) ÷ Σ`, a seller with no price weighing nothing.
+#[clause("SRV.4")]
+#[must_use]
+pub fn price_chances(prices: &[i64], weight: f64) -> Vec<f64> {
+    let v: Vec<Option<f64>> =
+        prices.iter().map(|p| (*p > 0).then(|| -weight * libm::log(phx_rand::float::from_i64(*p)))).collect();
+    let Some(best) = v.iter().flatten().copied().reduce(|a, b| if b > a { b } else { a }) else {
+        return vec![0.0; prices.len()];
+    };
+    let e: Vec<f64> = v.iter().map(|x| x.map_or(0.0, |x| libm::exp(x - best))).collect();
+    let whole: f64 = e.iter().sum();
+    e.iter().map(|x| x / whole).collect()
+}
+
 /// The retail meeting over the day's stalls of one product, traded in lots of `lot` units. Each buyer goes to
 /// the open seller in its reach it values most, at `−w.price·ln(price) − w.distance·km + taste`, its taste for each a
 /// standard Gumbel draw: so it goes to each with the logit's chance, `exp(v) ÷ Σ exp(v)` over the open sellers it has
@@ -358,6 +373,14 @@ mod tests {
     fn shopper(b: u64, want: Want) -> Shopper {
         let d = Draws::new(stream_key(Seed::new(7), "SRV.taste"), Subject::new(SubjectTag::Party, b), 0, 0);
         Shopper { buyer: PartyId::new(b), want, reach: 0, draws: d }
+    }
+
+    #[test]
+    fn price_chances_follow_the_logit() {
+        let c = super::price_chances(&[100, 200, 0], 1.0);
+        assert!((c[0] - 2.0 / 3.0).abs() < 1e-12 && (c[1] - 1.0 / 3.0).abs() < 1e-12, "{c:?}");
+        assert!(c[2] == 0.0, "no price weighs nothing");
+        assert_eq!(super::price_chances(&[0], 1.0), vec![0.0]);
     }
 
     #[test]
