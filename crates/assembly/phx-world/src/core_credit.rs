@@ -139,6 +139,12 @@ impl Core {
         };
         let households = self.household_loans(o, household, bank)?;
         let firms = self.firm_loans(o, firm, bank)?;
+        let least = o.register.count("BNK.loan_years_min")?;
+        self.lending = o
+            .countries
+            .iter()
+            .map(|c| Ok((sys_bnk::rate(c.derived("GEN.lending_rate").ok_or("no lending rate")?), least)))
+            .collect::<Result<Vec<_>, String>>()?;
         self.families.push(households);
         self.families.push(firms);
         Ok(())
@@ -256,4 +262,73 @@ fn loan_terms(c: &OpeningCountry, date: phx_id::Date, years: u64) -> Result<Term
         vec![Leg::RateOnNotional { reference: Reference::Fixed(rate), day_count: DayCount::Act365F }, Leg::Amortising],
         Schedule { dates: phx_ledger::opening::monthly(date, c.id), count: Missing::Present(months) },
     ))
+}
+
+impl Core {
+    /// Each firm whose money today, with what it is paid today, falls short of what it pays today borrows the
+    /// shortfall from its own bank, on a business day of its currency: a term loan at its country's lending rate over
+    /// the fewest years a loan runs, repaid monthly in equal parts from the next month's date, its money lent in the
+    /// day's settlement.
+    #[clause("BNK.17", "FRM.15")]
+    pub(crate) fn lend_shortfalls(&mut self, day: Day, calendar: &Calendar, buf: &mut Vec<phx_core::flows::Flow>) {
+        let Some(firm) = self.names.iter().position(|n| *n == "firm").map(kind_number) else { return };
+        let mut net: std::collections::BTreeMap<PartyKey, (i128, u8)> = std::collections::BTreeMap::new();
+        for f in buf.iter().filter(|f| f.denomination.is_money()) {
+            let ccy = f.denomination.ccy();
+            if f.payer.kind() == firm {
+                net.entry(f.payer).or_insert((0, ccy)).0 -= i128::from(f.amount);
+            }
+            if f.payee.kind() == firm {
+                net.entry(f.payee).or_insert((0, ccy)).0 += i128::from(f.amount);
+            }
+        }
+        let date = calendar.date(day);
+        let Some(family) = self.families.iter().position(|f| f.name == "BNK.firm_loans") else { return };
+        for (key, (flow, ccy)) in net {
+            if !calendar.is_business(phx_id::CountryId::new(ccy), day) {
+                continue;
+            }
+            let held =
+                self.kinds.get(usize::from(key.kind())).and_then(|k| k.accounts.as_ref()).and_then(|a| {
+                    Some(i128::from(a.balance.get(key.slot())?) + i128::from(a.pending.get(key.slot())?))
+                });
+            let Some(held) = held else { continue };
+            let short = -(held + flow);
+            let Ok(amount) = i64::try_from(short) else { continue };
+            if amount <= 0 {
+                continue;
+            }
+            let (Some(lender), Some((rate, years))) = (self.bank_of(key), self.lending.get(usize::from(ccy)).copied())
+            else {
+                continue;
+            };
+            let Some(months) = u32::try_from(years).ok().and_then(|y| y.checked_mul(u32::try_from(MONTHS).ok()?))
+            else {
+                violation!(clause = "GEN.2", "a loan's term beyond a schedule's count", years = years);
+            };
+            let country = phx_id::CountryId::new(ccy);
+            let terms = phx_ledger::opening::plain_terms(
+                phx_ledger::opening::currency(country),
+                vec![
+                    Leg::RateOnNotional { reference: Reference::Fixed(rate), day_count: DayCount::Act365F },
+                    Leg::Amortising,
+                ],
+                Schedule { dates: phx_ledger::opening::monthly(date, country), count: Missing::Present(months) },
+            );
+            let Some(f) = self.families.get_mut(family) else { continue };
+            let schedule = f.schedule_in(ccy, [0, 0, 0], terms);
+            let due = Due { ends: [key, lender], amount, nth: 1, schedule, person: 0 };
+            let first = f.first(calendar, schedule);
+            let _ = f.store.open(due, first);
+            buf.push(phx_core::flows::Flow {
+                payer: lender,
+                payee: key,
+                amount,
+                source: 0,
+                denomination: phx_core::flows::Denom::money(ccy),
+                reason: crate::consts::reason::LENT,
+                order: 0,
+            });
+        }
+    }
 }

@@ -381,7 +381,19 @@ impl Core {
         (record.sales, record.spent) = (sales, spent);
         (record.reviews, record.repriced) = self.review_prices(ctx, day);
         let close = self.goods.stocks.totals();
-        record.breaks = len_u64(breaks(&open, &nature_net(&moved), &close).len());
+        let broken = breaks(&open, &nature_net(&moved), &close);
+        record.breaks = len_u64(broken.len());
+        for (good, expected, held) in broken {
+            self.found.push(phx_core::findings::Finding {
+                family: "goods",
+                clause: "GDS.10",
+                owner: phx_core::findings::FindingOwner::Run,
+                size: held - expected,
+                unit: phx_core::findings::Unit::Count,
+                day,
+                detail: format!("good {good}: {held} units held where the day leaves {expected}"),
+            });
+        }
         self.goods.days.push(record);
         record
     }
@@ -604,9 +616,16 @@ impl Core {
                 self.set_record_word(place, slot, after_at, money);
                 continue;
             };
-            let cash = from_i64(money) / income + 1.0;
+            // What its contracts will take before its next spending day is not its to spend.
+            let party = PartyKey::new(kind_number(place), slot);
+            let free = money - self.owed_until(party, (day, next), ctx.calendar);
+            if free <= 0 {
+                self.set_record_word(place, slot, after_at, money);
+                continue;
+            }
+            let cash = from_i64(free) / income + 1.0;
             let wanted = sys_hh::buffer::spend(&ctx.rule.rule, cash) * income * ctx.rule.period;
-            let held = from_i64(money);
+            let held = from_i64(free);
             let spent = if wanted < held { wanted } else { held };
             let Some(Missing::Present(region)) =
                 self.kinds.get(place).and_then(|k| k.record(slot).get(region_at).map(|w| w.get()))
@@ -622,7 +641,6 @@ impl Core {
             for (product, share) in (0_u16..).zip(shares) {
                 let amount = floor_to_i64(spent * share).unwrap_or(0);
                 if amount > 0 {
-                    let party = PartyKey::new(kind_number(place), slot);
                     wants.push((product, Buyer { party, subject: id.get(), want: Want::Money(amount), place: region }));
                     total += amount;
                 }

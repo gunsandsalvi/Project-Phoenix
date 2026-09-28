@@ -176,8 +176,9 @@ pub mod reason {
     pub const REPAID: u8 = 9;
     pub const TAXED: u8 = 10;
     pub const BENEFIT: u8 = 11;
+    pub const LENT: u8 = 12;
     /// The reasons a day's record counts failed flows by: every reason above.
-    pub const REASONS: usize = 12;
+    pub const REASONS: usize = 13;
 }
 /// The bits a draw's subject gives a region beside its buyer, and a meeting's round beside its seller.
 pub mod draws {

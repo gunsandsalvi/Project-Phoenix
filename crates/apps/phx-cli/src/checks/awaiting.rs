@@ -63,13 +63,6 @@ pub const LC_0_08: Check = live_check! {
     retired: "it compared the world with a second run of it; a stream's key comes from its own name alone",
 };
 
-pub const LC_0_09: Check = live_check! {
-    id: "LC-0-09",
-    title: "Every close ran every declared audit family, and they found nothing",
-    from_step: "S0.12",
-    check: |_| Outcome::NotYet(AWAITING),
-};
-
 pub const LC_0_10: Check = live_check! {
     id: "LC-0-10",
     title: "Each family's injection into the day-30 save lights that family alone",
@@ -161,13 +154,6 @@ pub const LC_0_22: Check = live_check! {
     check: |_| Outcome::NotYet(AWAITING),
 };
 
-pub const LC_0_23: Check = live_check! {
-    id: "LC-0-23",
-    title: "Day one passes every family",
-    from_step: "S0.16",
-    check: |_| Outcome::NotYet(AWAITING),
-};
-
 pub const LC_0_24: Check = live_check! {
     id: "LC-0-24",
     title: "The GEN report lists every opening write with party, amount and identity, and each distribution with its source",
@@ -178,13 +164,6 @@ pub const LC_0_24: Check = live_check! {
 pub const LC_0_25: Check = live_check! {
     id: "LC-0-25",
     title: "Every opening contract's payments fall on business days by its convention",
-    from_step: "S0.16",
-    check: |_| Outcome::NotYet(AWAITING),
-};
-
-pub const LC_0_26: Check = live_check! {
-    id: "LC-0-26",
-    title: "Payments fall due and some settle every business day, and every fail has a cause",
     from_step: "S0.16",
     check: |_| Outcome::NotYet(AWAITING),
 };
@@ -355,13 +334,6 @@ pub const LC_0_50: Check = live_check! {
     title: "The identity hash is equal immediately before and after each renumbering slice",
     from_step: "S0.24",
     retired: "agents are never renumbered (S0.28)",
-};
-
-pub const LC_0_51: Check = live_check! {
-    id: "LC-0-51",
-    title: "Day one passes every audit family with the full population",
-    from_step: "S0.25",
-    check: |_| Outcome::NotYet(AWAITING),
 };
 
 pub const LC_0_52: Check = live_check! {

@@ -211,8 +211,13 @@ impl Observing {
 fn play(world: &mut World, settle_end: phx_id::Day, end: phx_id::Day, clock: &WallClock, obs: &mut Observing) {
     obs.settling(Inspector::new(world), settle_end);
     while world.today() < end {
+        let seen = Inspector::new(world).findings().len();
         world.run_turn_observed(&[], clock, Some(&mut obs.watch));
         println!("{}", progress(Inspector::new(world), settle_end));
+        // Each finding as the turn found it, so a run that stops later still shows what the audit saw.
+        for f in Inspector::new(world).findings().iter().skip(seen) {
+            println!("finding {} {} day {}: {:?} {}: {}", f.family, f.clause, f.day.get(), f.owner, f.size, f.detail);
+        }
         obs.settling(Inspector::new(world), settle_end);
     }
 }

@@ -790,13 +790,19 @@ world switches to the core.
     cores busy stays broken until the day is sharded on the pool, the next budget work. Left: the old kernel's crates
     and the systems' handlers, which nothing runs now (the books, the agents' tables, the markets' old instances, the
     accounts, the old audit), deleted with the primitives only they read.
-  - Measured at the first 35-day run on the core (150,000 persons, seed 1), to settle in this step: at the month's end
-    payday 4,326 of 354,198 flows failed — 1,468 wages, 1,056 sales, 877 loan repayments, 925 taxes; the wages that
-    fail are those of firms whose sales do not reach the payday's bill (the same 1,467 failed before firms sold on the
-    core, so the firms that fail are not the ones sales reach), and a failed flow has as yet no consequence: arrears
-    at 2d (f) and the firms' refinancing (the lending placeholder) settle it. Births come at the opening's transient:
-    no household is trying at day zero and each decides at its head's birthday (38 births in 35 days), which the
+  - Measured at the first 35-day run on the core (150,000 persons, seed 1): at the month's end payday 4,326 of
+    354,198 flows failed — 1,468 wages, 1,056 sales, 877 loan repayments, 925 taxes. Settled since: a firm short of its
+    day's dues borrows the shortfall from its own bank (the lending placeholder, a term loan at the lending rate over
+    the fewest years a loan runs, until S2.03's credit round retires it); a household spends from what it holds less
+    what its contracts take before its next spending day (HH.4, HH.13); and the opening shares the households' debt by
+    income times the years a loan has left, as its balance is what its payments repay. What still fails is real: 198
+    households whose drawn income is not earned miss a repayment (47 of 245 million due), and a failed flow has as
+    yet no consequence — arrears at 2d and default (HH.13, f) are next. Births come at the opening's transient: no
+    household is trying at day zero and each decides at its head's birthday (38 births in 35 days), which the
     settling years absorb.
+  - h begun: the core's audit — money (a bank owing other than its customers hold, money made or lost among the
+    parties, the issuer's accounts moving), goods (GDS.10), contracts naming ended parties (REP.3) and persons
+    reconciled (REP.26) — records findings at each close; LC-0-09, LC-0-23, LC-0-26 and LC-0-51 read it, and pass.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
     are done; next the old kernel's crates are deleted, then h on the core alone.
   - The native opening is built (a): the core reads nothing of the books. Built on the core: goods as holdings (each

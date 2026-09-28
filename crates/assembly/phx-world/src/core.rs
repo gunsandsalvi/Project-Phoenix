@@ -46,6 +46,10 @@ pub struct Core {
     pub state: crate::core_day::CoreState,
     /// Flows owed today beside the families' dues: severance at a separation, and the day's retail sales.
     pub pending: Vec<phx_core::flows::Flow>,
+    /// Each country's lending rate and the fewest years a loan runs, at which a firm borrows its day's shortfall.
+    pub(crate) lending: Vec<(phx_num::Rate, u64)>,
+    /// The day's findings, which the world moves to the run's findings at the day's end.
+    pub(crate) found: Vec<phx_core::findings::Finding>,
     /// The jobs and households' loans the opening drew, until the openings after the firms' take them.
     pub(crate) drawn: crate::core_open::Drawn,
 }

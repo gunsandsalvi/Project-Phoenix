@@ -1,6 +1,7 @@
 pub mod compile;
 pub mod consts;
 pub mod core;
+pub mod core_audit;
 pub mod core_credit;
 pub mod core_day;
 pub mod core_firms;

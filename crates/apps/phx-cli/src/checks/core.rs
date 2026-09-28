@@ -162,3 +162,70 @@ pub const LC_0_60: Check = live_check! {
     from_step: "S0.26",
     observed: drift_read,
 };
+
+/// The core's audit families — money, goods, contracts and persons — ran at every close and found nothing.
+fn audit_clean(w: Inspector<'_>) -> Outcome {
+    match w.findings().first() {
+        Some(f) => Outcome::Fail(format!(
+            "{} findings; the first, {} {} on day {}: {}",
+            w.findings().len(),
+            f.family,
+            f.clause,
+            f.day.get(),
+            f.detail
+        )),
+        None if w.core().days.is_empty() => Outcome::NotYet("the run closed no day"),
+        None => Outcome::Pass,
+    }
+}
+
+/// The first day passes every family.
+fn day_one_clean(w: Inspector<'_>) -> Outcome {
+    let Some(first) = w.core().days.first().map(|d| d.day) else { return Outcome::NotYet("the run closed no day") };
+    match w.findings().iter().find(|f| f.day == first) {
+        Some(f) => Outcome::Fail(format!("day one: {} {}: {}", f.family, f.clause, f.detail)),
+        None => Outcome::Pass,
+    }
+}
+
+/// On every business day some country keeps, flows fall due and some settle; every failed flow is counted by its
+/// reason.
+fn payments_settle(w: Inspector<'_>) -> Outcome {
+    for d in &w.core().days {
+        if w.any_business(d.day) && (d.flows == 0 || d.settled == 0) {
+            return Outcome::Fail(format!("business day {}: {} flows, {} settled", d.day.get(), d.flows, d.settled));
+        }
+        if d.failed_by.iter().sum::<u64>() != d.failed {
+            return Outcome::Fail(format!("day {}: {} failed, not all by a reason", d.day.get(), d.failed));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_0_09: Check = live_check! {
+    id: "LC-0-09",
+    title: "Every close ran every declared audit family, and they found nothing",
+    from_step: "S0.12",
+    check: audit_clean,
+};
+
+pub const LC_0_23: Check = live_check! {
+    id: "LC-0-23",
+    title: "Day one passes every family",
+    from_step: "S0.16",
+    check: day_one_clean,
+};
+
+pub const LC_0_26: Check = live_check! {
+    id: "LC-0-26",
+    title: "Payments fall due and some settle every business day, and every fail has a cause",
+    from_step: "S0.16",
+    check: payments_settle,
+};
+
+pub const LC_0_51: Check = live_check! {
+    id: "LC-0-51",
+    title: "Day one passes every audit family with the full population",
+    from_step: "S0.25",
+    check: day_one_clean,
+};

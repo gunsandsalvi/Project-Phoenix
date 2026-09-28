@@ -166,6 +166,8 @@ impl Core {
             goods: crate::core_goods::CoreGoods::default(),
             state: crate::core_day::CoreState::default(),
             pending: Vec::new(),
+            found: Vec::new(),
+            lending: Vec::new(),
             drawn: Drawn::default(),
         }
     }
@@ -234,8 +236,17 @@ impl Core {
             }
             let CountryDraw { money, mut loans, banks, .. } = draw;
             core.open_deposits(c, &money, (at(DEPOSITS, HOUSEHOLDS), at(CURRENCY, HOUSEHOLDS)), &banks)?;
+            // A loan's balance is what its payments repay over the years it has left, so each household's share of
+            // the debt is its income's weight times those years, its payment then in proportion to its income.
             let debt = at(LOANS_TO_HOUSEHOLDS, BANKS);
-            let weights: Vec<u64> = loans.iter().map(|l| l.weight).collect();
+            let weights: Vec<u64> = loans
+                .iter()
+                .map(|l| {
+                    l.weight.checked_mul(l.years).unwrap_or_else(|| {
+                        phx_num::capacity_exceeded!("a household loan's weight", u64::MAX, l.weight);
+                    })
+                })
+                .collect();
             for (l, amount) in loans.iter_mut().zip(apportion_amount(debt, &weights)) {
                 l.weight = u64::try_from(amount).unwrap_or(0);
             }
@@ -467,6 +478,24 @@ impl DatedFamily {
         self.schedules.push((dates, ccy.index(), order));
         self.classes.push(class);
         self.terms.push(terms);
+        u32::try_from(self.schedules.len() - 1).unwrap_or(u32::MAX)
+    }
+
+    /// A schedule in the family for terms of their own dates in a currency, with a class, added where the family holds
+    /// none alike.
+    pub(crate) fn schedule_in(&mut self, ccy: u8, class: [u32; 3], terms: phx_ledger::algebra::Terms) -> u32 {
+        let found = self
+            .schedules
+            .iter()
+            .zip(&self.classes)
+            .zip(&self.terms)
+            .position(|(((_, cc, _), k), t)| *cc == ccy && *k == class && t.as_ref() == Some(&terms));
+        if let Some(at) = found {
+            return u32::try_from(at).unwrap_or(u32::MAX);
+        }
+        self.schedules.push((terms.schedule.dates, ccy, terms.payment_order.0));
+        self.classes.push(class);
+        self.terms.push(Some(terms));
         u32::try_from(self.schedules.len() - 1).unwrap_or(u32::MAX)
     }
 

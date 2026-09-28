@@ -94,6 +94,10 @@ impl World {
             let _ = self.core.goods_day(&gctx, day);
         }
         let _ = self.core.run_day(day, &self.calendar, &self.streams, &crate::opening::prims::SETTLE_ORDER);
+        self.core.audit(day);
+        for f in self.core.found.drain(..) {
+            self.findings.record(f);
+        }
         if let (Some(ns), Some(last)) = (clock.now_ns().checked_sub(start), self.core.days.last_mut()) {
             last.ns = ns;
         }

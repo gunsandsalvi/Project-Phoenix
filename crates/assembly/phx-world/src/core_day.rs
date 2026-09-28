@@ -4,6 +4,7 @@
 
 use phx_core::calendar::Calendar;
 use phx_core::calendar::period::ScheduleDates;
+use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
 use phx_core::settle::Settle;
 use phx_core::store::{Family, books, deposits_of};
@@ -124,6 +125,38 @@ fn reckoned(
         }
     }
     (paid, repaid)
+}
+
+impl Core {
+    /// What a party's contracts take from it from today until `until`, each contract's next due where it falls by
+    /// then: its amount, or what its terms reckon it pays.
+    pub(crate) fn owed_until(&self, party: PartyKey, (day, until): (Day, Day), calendar: &Calendar) -> i64 {
+        let mut owed = 0;
+        for family in &self.families {
+            if family.store.kinds.first() != Some(&party.kind())
+                || family.store.heads.first().is_none_or(Option::is_none)
+            {
+                continue;
+            }
+            for edge in family.store.of(0, party.slot()) {
+                let Some(row) = family.store.edges.row(edge) else { continue };
+                if row.ends.first() != Some(&party) {
+                    continue;
+                }
+                let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
+                let Some((dates, ccy, _)) = family.schedules.get(at) else { continue };
+                let date = dates.nth(calendar, row.nth);
+                if date < day || date > until {
+                    continue;
+                }
+                owed += match family.terms.get(at).and_then(Option::as_ref) {
+                    Some(terms) => reckoned(terms, (row.amount, *ccy), row.nth, (date, calendar)).0,
+                    None => row.amount,
+                };
+            }
+        }
+        owed
+    }
 }
 
 impl DatedFamily {
@@ -296,11 +329,33 @@ impl Core {
     /// the money the parties hold moved only by what they and the banks paid each other, the issuer making no flow on
     /// the core yet; and the banks' reserves with the accounts at the issuer did not move.
     #[clause("MON.5", "N1")]
-    fn money_breaks(&self, before: (i128, i128), bank_net: i128, deposits: &mut [i64]) -> u64 {
+    fn money_breaks(&mut self, (day, before): (Day, (i128, i128)), bank_net: i128, deposits: &mut [i64]) -> u64 {
         let owed = deposits_of(self.kinds.iter(), deposits.len());
-        let banks = u64::try_from(owed.iter().zip(deposits.iter()).filter(|(a, b)| a != b).count()).unwrap_or(u64::MAX);
+        let mut found = Vec::new();
+        for (slot, (a, b)) in (0_u32..).zip(owed.iter().zip(deposits.iter())) {
+            if a == b {
+                continue;
+            }
+            let party = self.bank_kind.and_then(|k| self.kinds.get(usize::from(k))?.parties.id(Slot::new(slot)));
+            found.push(finding(
+                (day, "Law 2"),
+                party.map_or(FindingOwner::Run, FindingOwner::Party),
+                i128::from(*a) - i128::from(*b),
+                format!("a bank owes {a} where its customers hold {b}"),
+            ));
+        }
         let (parties, at_issuer) = self.money_totals();
-        banks + u64::from(parties != before.0 + bank_net) + u64::from(at_issuer != before.1)
+        if parties != before.0 + bank_net {
+            let detail = format!("the parties hold {parties} where the day's flows leave {}", before.0 + bank_net);
+            found.push(finding((day, "Law 2"), FindingOwner::Run, parties - before.0 - bank_net, detail));
+        }
+        if at_issuer != before.1 {
+            let detail = format!("the issuer's accounts hold {at_issuer} where they held {}", before.1);
+            found.push(finding((day, "MON.5"), FindingOwner::Run, at_issuer - before.1, detail));
+        }
+        let n = phx_rand::float::len_u64(found.len());
+        self.found.extend(found);
+        n
     }
 
     /// What a flow moves into the parties other than banks from the banks: a bank paying a party is money made, a
@@ -345,6 +400,7 @@ impl Core {
         if let Some(buf) = work.flows.chunks_mut().first_mut() {
             settling = self.estates_pay(day, calendar, buf);
             buf.append(&mut self.pending);
+            self.lend_shortfalls(day, calendar, buf);
             // Every flow the day settles is one it made: its dues, the taxes withheld from them, estates and sales.
             record.flows = phx_rand::float::len_u64(buf.len());
             record.gross = buf.iter().filter(|f| f.denomination.is_money()).map(|f| i128::from(f.amount)).sum();
@@ -392,7 +448,7 @@ impl Core {
             }
         }
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
-        record.breaks += self.money_breaks(before, bank_net, &mut deposits);
+        record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
         for estate in settling {
             let empty = self.kinds.get(usize::from(estate.kind())).and_then(|k| k.accounts.as_ref()).is_some_and(|a| {
                 a.balance.get(estate.slot()).unwrap_or(0) == 0 && a.pending.get(estate.slot()).unwrap_or(0) == 0
@@ -416,4 +472,9 @@ impl Core {
         self.days.push(record);
         record
     }
+}
+
+/// A finding of the money family.
+fn finding((day, clause): (Day, &'static str), owner: FindingOwner, size: i128, detail: String) -> Finding {
+    Finding { family: "money", clause, owner, size, unit: Unit::Count, day, detail }
 }
