@@ -186,7 +186,7 @@ settled live world, and from Stage 1 its macro reads are reported against real e
 | Stage | Steps |
 | --- | --- |
 | **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.27 the setup and its derivation · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save check · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem` and estates · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
-| **1 The circular flow** | S1.01 `phx-val` · S1.02 `sys-tec` · S1.03 `sys-frm` · S1.04 `sys-cap` · S1.05 `sys-gds` · S1.06 `sys-srv` · S1.07 `sys-frt` · S1.08 `sys-lab` · S1.09 `sys-bnk` · S1.10 `sys-cb` · S1.11 `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov` · S1.12 `sys-hh` · S1.13 `sys-dem` births · S1.14 `sys-idx` and `sys-sta` · S1.15 GEN III · S1.16 the Stage 1 gate |
+| **1 The circular flow** | S1.01 `phx-val` · S1.02 `sys-tec` · S1.03 `sys-frm` · S1.04 `sys-cap` · S1.05 `sys-gds` · S1.06 `sys-srv` · S1.07 `sys-frt` · S1.08 `sys-lab` · S1.09 `sys-bnk` · S1.10 `sys-cb` · S1.11 `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov` · S1.12 `sys-hh` · S1.13 `sys-dem` births · S1.14 `sys-idx` and `sys-sta` · S1.17 the meter · S1.18 the spec follows one representation · S1.19 the core and the bench · S1.20 money and settlement on the core · S1.21 markets, goods and named units on the core · S1.22 one opening dataset per profile · S1.23 Stage 0's world on the core · S1.24 Stage 1's world on the core, one kind of firm · S1.25 the architecture restated · S1.15 GEN III · S1.16 the Stage 1 gate |
 | **2 Credit and failure** | S2.01 losses and provisions · S2.02 `sys-tcr` · S2.03 the firm lifecycle · S2.04 estates and inheritance in kind · S2.05 `sys-hsg` · S2.06 `sys-bfl` · S2.07 `sys-bcp` · S2.08 `sys-sup` · S2.09 `sys-ene` · S2.10 the credit bureau and filed accounts · S2.11 personal insolvency · S2.12 the Stage 2 gate |
 | **3 Money and capital markets** | S3.01 `sys-mmk` · S3.02 `sys-cb` in full · S3.03 `sys-trs` and `sys-sov` in full · S3.04 `sys-crd` · S3.05 `sys-eqy` · S3.06 `sys-dlr` · S3.07 `sys-fnd` · S3.08 non-bank lenders · S3.09 `sys-idx` in full · S3.10 `sys-rat` · S3.11 the Stage 3 gate |
 | **4 Risk transfer** | S4.01 `sys-drv` · S4.02 `sys-drx` · S4.03 `sys-ins` · S4.04 `sys-pen` · S4.05 `sys-sec` · S4.06 `sys-mna` · S4.07 the Stage 4 gate |
@@ -595,9 +595,697 @@ treasury that never borrows from the central bank (naming CB), retired by S3.02.
 
 ---
 
+### The restructure (S1.17–S1.25)
+
+**Why.** Measured on 2026-09-28 (build machine, four cores, seed 1, 40 days at 750 000 persons, the committed
+resolution): a median business day of about **7 s** (7c 3.3 s, 6d 1.0 s, 10d 1.0 s, 6a 0.5 s, 10a 0.4 s, 5c 0.4 s), a
+payday of about **21 s** (7c 10.7 s, 6d 10.2 s), a peak of **5.4 GB**, about 7.3 kB a person, with about 1.25 of
+the four cores busy. Of the CPU time, the systems' own rules take **under 1%**. The rest is the kernel's
+bookkeeping:
+- the ledger, 30%;
+- the world's plumbing (goods views, retail meetings, the day's trades, statistics), 20%;
+- page faults from buffers that grow during the day, 15%;
+- the per-leg audit, 8%;
+- allocation, 7%.
+
+The full-load bench at 1.5 times the finished world's counts gave a median of 7.7 s, a worst day of 29 s and 9 GB.
+Its measured unit costs are 5 to 50 times the §13.2 estimates:
+
+| Work | Estimated | Measured |
+| --- | --- | --- |
+| A payment settled | 30 ns | about 1.5 µs |
+| A visit | 0.5 µs | about 3 µs |
+| An evaluation | 80 ns | about 400 ns |
+| A meeting | 0.65 µs | about 4 µs |
+
+The economics is cheap and the representation is expensive. No step read the budget between gates, so the miss
+grew unseen. Several recurring kinds of finding share the same roots:
+- **Unit and scale fixes** come from priors of different sources, years and definitions that nothing forces to agree.
+- **Duplicated firm code**: nine pairs of `_small` and `_large` handlers.
+- **Many-party lines**: cleared lines, drawn losers and a top-issuer counterparty exist only because pairings are not
+  recorded.
+
+The restructure removes the causes. It keeps every mechanism, every clause's meaning and the rules as written, and
+changes how the world is represented and traversed (N8.7's first remedy).
+
+**The target core.** The same concepts as now, laid out for the finished world at a larger size:
+
+- **Parties in tables by kind.**
+  - Kinds: persons, households, firms, banks, the central bank, the treasury and each later institution kind.
+  - Each kind is one table of columns (struct of arrays), indexed by a dense `u32` slot with a generation.
+  - A party's permanent identity (PTY.1) is a column, resolved through the directory only on rare paths: records,
+    saves and events naming an ended party.
+  - There is no agent–individual split, and no second store for large parties.
+  - Slots are laid out region-major, so a region's parties are contiguous and a worker owns a range of them.
+- **Money as columns.**
+  - A party's accounts are rows of a per-kind account table: bank slot, kind, balance and pending. Most parties hold
+    one account, so the first is in the party's own columns and the rest in an overflow table.
+  - Banknotes are a column, reserves are a column of banks, and "can it pay" is a read of two words.
+- **Contracts as typed edge tables.** One table per contract family, each row a contract between named parties:
+  - the families: employment, deposit, loan, tenancy, invoice, policy, pension right, derivative, licence and kin;
+  - each row holds the parties' slots, its interned terms, and its state (balance, arrears, next due, the index of
+    the schedule date last fallen).
+  - The contract algebra stays the language terms are declared in (REG.5). Each terms entry is compiled once at
+    interning into its schedule and per-date amount program, so a due is an indexed read and a multiply, not an
+    evaluation of legs.
+  - Pairings are recorded: a job is an edge between its employer and its person.
+  - Adjacency (a party's contracts of a family) is an intrusive list: a head column on the party and next and prev
+    columns on the edge, so opening and closing a contract is constant time.
+- **Dues from a calendar wheel.**
+  - Every dated edge sits in the bucket of its next due day.
+  - 1b takes today's bucket, emits each due as a flow, and moves the edge to the bucket of its next date.
+  - No holder is scanned on a day it owes nothing, and no run head is kept.
+- **Flows as the only way anything moves.**
+  - Every mechanism appends typed flow records to its worker's buffer:
+    `{payer u32, payee u32, amount i64, reason u16, kinds u8, order u8, source u32}`, 24 bytes. Unit flows
+    (goods, holdings) and transformations are the same with a unit in place of a currency and a named source.
+  - A flow names both sides by construction (Law 5).
+  - Buffers are sized at the heaviest day and kept, so a day allocates nothing.
+- **Settlement by batch** (SET, MON), in five passes, all parallel over party ranges, with the semantics of the
+  existing 7a to 7c kept:
+  1. The day's flows are partitioned by payer range and by payee range (radix by slot).
+  2. Each party's debits and credits are summed.
+  3. The parties whose debits exceed their funds, credits and facility form the **short set**, few on any day.
+  4. The fixed point runs on the short set alone: a short payer fails a suffix of its flows in payment order, its
+     payees' credits fall, and new short payers join (REP.18, TIME.6). Banks' nets are a small matrix, and a short
+     bank fails its customers' flows (MON.3).
+  5. Each worker adds its parties' nets to their balances. Each settled flow adds its amount to the declared account
+     lines of both parties (ACC) and to the day's tallies.
+
+  Payment records (arrears, missed counts) are the edges' own words. Levies are extra flows fused at emission (§4.3).
+- **Decisions over columns.**
+  - A handler keeps today's shape: a declared sub-step, the facts it reads and writes, the intents it emits, and a
+    body over the rows due today.
+  - Its context holds the declared columns' slices, resolved once per chunk. A read is an indexed load with the
+    absent sentinel, and an emit appends to a typed buffer.
+  - There are no trait objects, maps or allocations on the path. Systems' bodies and rules port nearly unchanged.
+- **Markets over order buffers.**
+  - A posted-price market (retail, services, inputs) builds, once a day per (product, buyer region), the logit
+    weights of the sellers in reach over their posted prices, distance and capacity: an alias table.
+  - Each buyer-product's choice is one draw, taken with its taste from its own stream (REP.22). Demand is summed per
+    seller, rationed by lot, and the unserved choose again in rounds.
+  - Calls, auctions and books keep their forms over sorted order buffers.
+  - Every match becomes flows, and no instruction object is built per match.
+- **Goods and named units.**
+  - A firm's stocks are a small per-firm array by (product, grade), with places and liens as edges only where goods
+    are away or pledged.
+  - Plant, dwellings and vehicles are rows of named-unit tables: owner, site, class, condition.
+- **Records and events.** Append-only logs with horizons (SET.13), in columns.
+- **The audit by identities** (N1, N8.6).
+  - Every day checks the conservation identities over column sums: money per currency, deposits per bank against its
+    liability, units per product against production, use and spoilage, and edge sides.
+  - Each batch's flows are checked to net to nothing per unit.
+  - The per-party families run on a rolling cycle over a declared share of the slots each day.
+  - The audit reads and never repairs (Law 17).
+- **Parallelism.** Every pass is over party ranges or buffer partitions. Results are joined in range order, draws
+  keyed by subject (CHN.6), and integer sums are order-free, so the result does not depend on the worker count.
+- **Kept as they are**:
+  - `phx-num`, `phx-rand`, `phx-id` and `phx-macros`;
+  - the calendar, the register, streams, schedules and the agenda's hazards drawn ahead;
+  - `phx-geo`, `phx-val`, every rule function and every system's decision logic;
+  - the saves' column encoding.
+
+**Unit targets**, in phone core-nanoseconds. The build machine reads them through S0.26's probe ratio, 1:1 until the
+device measures it:
+
+| Work | Target |
+| --- | --- |
+| A flow emitted, partitioned, netted, checked and applied, with its account lines | 40 ns |
+| A due taken from the wheel, requeued and emitted | 30 ns |
+| A handler row, beyond its rule's own arithmetic | 60 ns |
+| A posted-price choice | 80 ns |
+| A rationing round, per unserved buyer-product | 50 ns |
+| A hazard redraw | 150 ns |
+| The daily audit identities | 5 ms per million persons |
+| Resident memory | 1 kB per person at the heaviest day |
+
+**The design point.** 3 million persons, four times today's committed size, at the finished world's per-person
+counts × 1.5. At the targets above a business day is about 0.8 µs of core time a person, so 3 million persons fit
+the phone's sustained 3 core-seconds a second with headroom. The play resolution stays the valve, set on the device
+(N8.5).
+
+The later stages' designs (S2.01 onward) name the old layout (lines, rows, arenas, cells). Each is restated to the
+core when it becomes the next step, before its code (§0.1 rule 3).
+
+---
+
+### S1.17 — The meter: the budget read at every step
+
+**Status**: planned
+
+**Clauses**: N8.2, N8.4 *(part: read on the build machine between the device's gates)*; N8.8 *(part)*.
+
+**Architecture**: §13, §14.6, §14.7.
+
+**Depends on**: none.
+
+**Goal**: no step can end with the budget missed without its checks saying so, by how much and where. Every step
+that touches the kernel or a system runs a timed smoke of the world at the committed resolution and the full-load
+bench as part of its fast checks, against ratchets.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `tools/smoke.sh` | 20 days from the opening at the committed resolution; prints the median and worst business day by sub-step, peak bytes a person, cores busy, minor page faults a business day |
+| `crates/apps/phx-cli/src/run.rs` | the report's `budget` block: `business_day_ms` (median, worst), `bytes_per_person`, `busy_cores`, `faults_per_day` |
+| `perf/ratchets.toml` | the budget ratchets |
+| `docs/ARCHITECTURE.md` | §7.6 and §13.2 state the measured numbers |
+
+**Design**:
+- The smoke is not a build run and judges no world. It reads cost only, as the bench does.
+- Ratchets:
+  - `phx_budget.business_day_ms_median`, `phx_budget.business_day_ms_worst`, `phx_budget.bytes_per_person` and
+    `phx_budget.faults_per_business_day`, which may only fall;
+  - `phx_budget.busy_cores`, which may only rise.
+- A step that must raise one states the rise and the work that causes it in its text, and the owner sees it in the
+  ratchet's diff (the `perf/` guard).
+- The budget line on the build machine is 1 s median and 2 s worst wall time at the committed resolution, and 4.5 GB,
+  until the probe ratio replaces it.
+- The smoke's verdict is printed beside the ratchets. A miss does not stop a step of the restructure, whose purpose
+  is to remove it, but it stops every other step.
+
+**Unit tests**: `budget_block_reads_median_and_worst`: the report's arithmetic over a hand-built list of day times.
+
+**Live checks**: none.
+
+**Budget**: the smoke's own cost, about 3 minutes at the committed resolution.
+
+**Guards**: the pre-step script runs the smoke and the bench.
+
+**Not allowed**: a ratchet raised without its reason; timing read from a debug build; the smoke's numbers read as the
+world's.
+
+**Done when**
+- [ ] The smoke and the ratchets run in the fast checks, and today's numbers are committed as their first values.
+- [ ] Architecture §7.6 and §13.2 state the measured numbers above.
+- [ ] Two reviews are done.
+
+---
+
+### S1.18 — The spec follows one representation
+
+**Status**: planned
+
+**Clauses**: Law 11; REP (the section's preface, REP.1, REP.2, REP.3, REP.13, REP.18, REP.23, REP.31, REP.40,
+REP.41); FRM.2, FRM.23; LAB.1 *(its line)*; GEN.2 *(firm sizes)*; SET *(the implicit batch's wording)*; Appendix E
+14, 31, 33, 35 and 44; every clause that names an agent, an individual, a small firm or a many-party line.
+
+**Architecture**: §7.
+
+**Depends on**: S1.17.
+
+**Goal**: the spec states one representation: every party of a kind is the same kind of thing, every contract is
+between named parties, and a firm's size is an outcome. The spec is fixed in its own commit, with each change's
+reason from the laws, before any code follows it.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `docs/PROJECT_PHOENIX.md` | the clauses above |
+| `docs/IMPLEMENTATION.md` | §12 and §13 follow |
+| `CLAUDE.md` | its wording follows |
+
+**Design**:
+- **One kind of firm** (owner, 2026-09-28).
+  - A firm is a firm, whatever its size. Size (persons employed, turnover, net worth) is derived from its contracts
+    and books, never an input or a rank.
+  - REP.2's individuals by rank and FRM.rank_per_million are retired. The largest firms' weight in aggregates
+    (Gabaix) is then an outcome of the size distribution, not a separate class.
+  - FRM.23 states the firm's attributes and positions for every firm.
+  - The unincorporated business stays as it is: a household's kind that adds the business.
+- **Parties, not agents and individuals.**
+  - Every party belongs to a kind, and the kinds differ only by declared data (Law 10).
+  - What varied by representation now varies by declared kind data. For example, a holder's lot convention (lots or
+    average cost) is its legal form's accounting rule, not a matter of whether it is an agent.
+  - The word "agent" leaves the spec. Law 11's last sentence says every household and firm is one real party deciding
+    from its own state.
+- **Contracts between named parties.**
+  - A line of many holders, counts and REP.23's unrecorded pairings are retired. Every contract names its parties;
+    identical terms are shared by interning, which is storage.
+  - Law 1 reads a job as a contract between a named employer and a named employee, and Law 4 wants one record of it.
+    With twins gone, the unrecorded pairing no longer saves memory: each holder already holds a row. It only costs
+    cleared lines, drawn losers and a top-issuer counterparty.
+  - REP.23 is kept only for where a unit stands (REP.24).
+  - A payer's failure among flows of equal payment order is drawn by lot (REP.22's order by lot), from a declared
+    stream.
+- **Appendix E.**
+  - 14 is restated: no many-party lines, no individuals by rank.
+  - 31: employment is a contract per job, and its occupation family and start band remain its terms' classes.
+  - 33: derivatives are held by the kinds whose legal form declares them.
+  - 35: retired, since no promotion exists.
+  - 44 keeps the size.
+- **GEN.2 firm sizes.**
+  - The size law (`FRM.size_exponent`, Axtell) leaves the opening's inputs. Law 2 forbids importing an outcome as a
+    rule, and GEN's snapshot is served by drawing what firms are, not how big they are.
+  - A firm's opening size follows from its drawn productivity (ENDOWMENT), its sites and the demand it wins at the
+    opening's prices (S1.22, S1.24).
+  - The size distribution is read against Axtell in N3.
+
+**Unit tests**: none.
+
+**Live checks**: none.
+
+**Budget**: none.
+
+**Guards**: `phx-check clauses` passes over the rewritten clauses; the coverage table is regenerated.
+
+**Not allowed**: a clause changed without its law's reason; a retired identifier reused; a mechanism weakened to
+meet the budget (N8.7).
+
+**Done when**
+- [ ] The owner has confirmed Appendix E 14, 31, 33, 35 and 44 as restated.
+- [ ] The spec, §12 and §13 are consistent, and `phx-check` is clean.
+- [ ] Two reviews are done.
+
+---
+
+### S1.19 — The core: party tables, edges, the due wheel, flows, handlers over columns, and the bench
+
+**Status**: planned
+
+**Clauses**: PTY.1, PTY.9 *(the directory)*; REP.12, REP.13; TIME.6 *(the day's order on the core)*; N5; N8.6;
+N8.8 *(part: the full-load bench at the design point)*.
+
+**Architecture**: §3.3, §4, §6, §7 (restated), §13, §14.6.
+
+**Depends on**: S1.18.
+
+**Goal**: the core's data structures and traversals exist, each with its unit measured by a bench line at the design
+point. The full-load bench is rebuilt on them, so a hypothetical finished world at 3 million persons × 1.5 runs
+through the real kernels before any system is ported.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-store/src/table.rs` | a kind's table: columns, slots with generations, region-major layout |
+| `crates/kernel/phx-store/src/edges.rs` | an edge table: columns, free slots, intrusive adjacency |
+| `crates/kernel/phx-core/src/wheel.rs` | the due wheel |
+| `crates/kernel/phx-core/src/flows.rs` | flow records and per-worker buffers kept across days |
+| `crates/kernel/phx-core/src/handler.rs` | the handler context over column slices |
+| `crates/kernel/phx-exec/src/ranges.rs` | traversals over party ranges; radix partitioning of buffers |
+| `crates/apps/phx-ffi/src/load.rs` | the bench on the core |
+| `perf/load/volumes.toml` | per-person counts at the design point |
+
+**Design**:
+- **A kind's table.**
+  - Columns are `phx-store` columns, each typed and declared by its writer (Law 4).
+  - Absent is the type's sentinel (`MaybeI64`).
+  - Slots are `u32`, and a party reference is `(kind u8, slot u32, generation u16)`.
+  - The permanent `PartyId` is a column. The directory maps it to the reference only for the paths that start from
+    an identity.
+- **An edge table.**
+  - Declared columns, including the two parties' references.
+  - `head` columns on each party kind that holds the family, and `next` and `prev` columns on the edge.
+  - Removal is constant time, and iteration of one party's edges follows the list.
+- **The wheel.**
+  - One bucket per day over the declared horizon, plus a far list re-bucketed monthly.
+  - An edge's next due is a column, and a bucket is a `Vec<u32>` of edge slots kept across days.
+- **Flows.**
+  - The 24-byte record above, appended to the running worker's buffer by `Ctx::flow`.
+  - Buffers are partitioned at the stage's apply by radix on the payer's and the payee's range.
+- **The handler context** keeps today's API (`read`, `write`, `emit`, `draws`, `rule`, `decide`). Its backing is
+  slices resolved per chunk, and views that allocate (`away`, `grades`) return borrowed slices.
+- **The bench.**
+  - `perf/load/volumes.toml` is restated per person at the design point:
+    - parties and edges of every kind and family through Stage 6, per person, from §13 restated;
+    - flows, dues, handler rows by sub-step and choices per person per business day;
+    - the heavy day's multiples.
+  - Each count is times 1.5 and cites the clause that makes the work. The builder derives the counts; the owner
+    reviews them (the `perf/load/` guard).
+  - The bench builds the tables and edges at those sizes with random data, then runs a month of days through the
+    core's kernels. Handlers of unbuilt systems run a synthetic body of the declared rule cost over their declared
+    columns.
+  - It reports each kernel's unit cost against its target, the day times, and peak bytes.
+
+**Unit tests**:
+- `slots_reuse_with_new_generation`: a stale reference is refused.
+- `adjacency_insert_remove_iterate`: a party's edges after adds and removes.
+- `wheel_moves_edge_to_next_due`: a due taken and requeued on its next date.
+- `flows_partition_is_order_free`: the same nets for any worker count.
+- `handler_context_reads_sentinel_as_absent`.
+
+**Live checks**: none (the world is not on the core yet).
+
+**Budget**: the unit targets above, read from the bench at the design point.
+- Peak bytes are at most 1 kB a person.
+- On the build machine, the bench's median and worst day are within 1 s and 2 s at the probe ratio.
+
+**Guards**:
+- PC rule: no `BTreeMap`, `HashMap`, `Vec::push` without reserved capacity, or `dyn` in a sub-step's hot module; a
+  declared list names the modules.
+- No allocation during a day, counted by a global allocator in the bench.
+
+**Not allowed**: a unit target met by a smaller bench; a kernel measured without its reads and writes; a map on a day's
+path.
+
+**Done when**
+- [ ] The bench runs at the design point with every kernel line at or under its target and the day within budget at
+  the ratio, or the gap is stated as the next step's first work.
+- [ ] Two independent reviews are done (a major step).
+
+---
+
+### S1.20 — Money and settlement on the core
+
+**Status**: planned
+
+**Clauses**: MON.1–MON.16, SET.1–SET.16, REG.5–REG.10, ACC *(the account lines fed by settled flows)*, BNK.8,
+BNK.19, CB.7 *(as S1.09–S1.10 built them)*, TAX *(withholding, as S1.11 built it)*, N1 *(the money and contract
+families as identities)*, as now built and on the core.
+
+**Architecture**: §4.3, §4.4, §6.5 (restated), §9, §15.
+
+**Depends on**: S1.19.
+
+**Goal**: accounts, banknotes, reserves, loans and every dated contract settle by batch on the core, with the fixed
+point's semantics unchanged: the greatest set that can settle, rings, short banks, and fails to arrears. Accounts are
+fed and the money and contract families run as identities.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-ledger/` | rewritten: accounts, edge families' compiled schedules, flows' settlement, fails, arrears, levies, line transfers as edge transfers, the estate waterfall |
+| `crates/kernel/phx-acct/` | per-party account lines as accumulator columns fed by reason |
+| `crates/kernel/phx-audit/` | the identity families, the rolling per-party cycle |
+
+**Design**:
+- The contract algebra stays. `terms::compile` turns interned terms into a schedule and a per-date program: a fixed
+  amount, a rate on the balance, an annuity's instalment and principal split, an indexed amount read at its fixing.
+- A due is the program run on the edge's words.
+- Settlement runs as the five passes above.
+- Payment order is declared per reason, as now, and ties among one payer's flows of one order are drawn by lot from
+  `SET.order` keyed by (payer, day).
+- A short bank fails every flow through it, and its customers answer again (MON.3). A pending leg on a closed bank
+  keeps SET.2's state.
+- Fails go to their edges' arrears at the next 2d, as now.
+- Levies (§4.3) are flows emitted with their base flow, from the same fused kinks.
+- Accounts: each reason declares the account lines it feeds on each side. Settled flows add to accumulator columns
+  of their parties, and 9b reads those columns.
+- The audit's families:
+  - **money**: Σ balances per bank against the bank's deposit liability, and Σ reserves against the central bank's;
+  - **flows**: each batch nets to nothing per currency and unit;
+  - **contracts**: each edge's balance against its schedule's arithmetic, on the rolling cycle;
+  - a share of the slots checked in full each day (N8.6).
+
+**Unit tests**: the fixed point's existing logic-level tests (`fixed_point_tests.rs`, `settle_tests.rs`) re-pointed
+at the new passes, with the same expectations: greatest set, rings, a prefix failure, a short bank. Also
+`compiled_program_matches_algebra`: every leg shape's due equals the algebra's `due_on` for hand-built terms.
+
+**Live checks**: none until S1.23.
+
+**Budget**: a flow at most 40 ns and a due at most 30 ns on the bench; the heavy day's settlement within the day's
+share.
+
+**Guards**: settlement reads no map; PC-27's batch rule restated for flow buffers.
+
+**Not allowed**: a flow with one side; netting across currencies; a failure outside payment order; an audit that
+repairs.
+
+**Done when**
+- [ ] Every settlement test passes on the core, and the bench's settlement lines meet their targets.
+- [ ] Two reviews are done.
+
+---
+
+### S1.21 — Markets, goods and named units on the core
+
+**Status**: planned
+
+**Clauses**: MKT *(the forms Stage 1 uses: posted price, call, auction, bilateral)*; REP.22; GDS, SRV, FRT *(stocks,
+spoilage, shipments, liens)*; CAP *(named units)*; LAB.2–LAB.6 *(matching)*, as now built and on the core.
+
+**Architecture**: §7.10–§7.12, §8.
+
+**Depends on**: S1.20.
+
+**Goal**: every Stage 1 market meets over order buffers on the core, each match becoming flows. Goods are held as
+per-firm arrays and named units as tables.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-market/` | posted-price meeting with alias tables and rationing by lot; calls and auctions over sorted buffers; labour matching |
+| `crates/kernel/phx-core/src/goods.rs` | stocks per firm, shipments and liens as edges, spoilage |
+| `crates/kernel/phx-core/src/units.rs` | named units: plant, dwellings, vehicles |
+
+**Design**:
+- **Posted price.**
+  - Per (product, buyer region), once a day after 5d:
+    - the sellers in reach;
+    - each seller's weight `exp(−(β·price + γ·distance))` from the declared weights;
+    - an alias table.
+  - A buyer-product draws a seller with its own taste stream. Demand is summed per seller in its range.
+  - A seller over capacity serves by lot; the unserved draw again from the table without the full sellers, in rounds.
+  - Matches emit money flows and unit flows.
+- **Calls and auctions** sort their buffers by price point and meet as now.
+- **Labour.** Vacancies per (region, occupation family) in buffers. Searchers draw among those in reach by the same
+  logit, and offers and acceptances are edges opened at the apply.
+- **Goods.**
+  - A firm's stocks are `[(product, grade) → qty]` in its row's small array, with overflow to a table.
+  - Goods away are shipment edges (owner, carrier, qty, arrives), and pledges are liens on those edges.
+  - Spoilage is a unit flow to nature at its rate.
+
+**Unit tests**: the markets' existing logic-level tests re-pointed. Also `alias_draw_matches_logit_shares`: the
+table's probabilities against the weights, exactly, and `rationing_by_lot_order_free`.
+
+**Live checks**: none until S1.24.
+
+**Budget**: a choice at most 80 ns and a rationing round at most 50 ns per unserved buyer-product, on the bench.
+
+**Guards**: none beyond S1.19's.
+
+**Not allowed**: a buyer's choice from an average; a seller served beyond its capacity; a match without its flows.
+
+**Done when**
+- [ ] The market tests pass on the core, and the bench's market lines meet their targets.
+- [ ] Two reviews are done.
+
+---
+
+### S1.22 — One opening dataset per profile
+
+**Status**: planned
+
+**Clauses**: GEN.2, GEN.3, GEN.5, GEN.12; NUM.3; Law 2, Law 7, Law 8.
+
+**Architecture**: §3.7, §10.
+
+**Depends on**: S1.18.
+
+**Goal**: every number the opening reads about a country group's economy comes from one derivation of one year's
+sources in one unit system, with the national accounts' and balance sheets' identities checked across primitives.
+The opening world therefore starts stock-flow consistent, and the unit and scale corrections stop recurring.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `tools/data/derive_economy.py` | the one derivation; replaces the economic parts of `derive_*.py` |
+| `tools/data/fetch_economy.py` | the sources it lacks: OECD sectoral financial balance sheets, the BIS's and the IMF's debt by sector, bank capital |
+| `data/profiles/<level>/economy/*.toml` | the derived primitives, each keeping its owner |
+| `crates/assembly/phx-world/src/compile.rs` | the dataset's identities checked at assembly, as a refusal |
+
+**Design**:
+- **One year and one unit.**
+  - The base year is 2019, before the pandemic.
+  - Every money figure is in that year's international dollars (PPP), as a share of GDP, and GDP per head is the one
+    scale.
+  - A product's unit is one international dollar's worth of it at world prices, so quantities and prices agree by
+    construction. A country's price of a product is its ICP price level against GDP's.
+- **The flows (a social accounting matrix).** From the OECD inter-country tables and national accounts:
+  - industries × products make and use;
+  - value added by industry split into compensation, operating surplus and taxes on production;
+  - final uses: households' consumption by product, government consumption, fixed investment by capital kind,
+    inventories.
+  - The countries are closed at Stage 1, so exports and imports are folded into domestic uses by product. This is a
+    declared simplification, retired by XB at S5.05.
+  - The ways (TEC), the budget shares (HH) and the government's purchases read it.
+- **The stocks (a balance-sheet matrix).** Sectors × instruments as shares of GDP:
+  - the sectors: households, firms, banks, the central bank, the government;
+  - the instruments: currency, deposits, loans to households and to firms, government bills and bonds, reserves,
+    equity, and fixed capital by kind.
+  - It replaces `CAP.stock_per_gdp`, `CB.currency`, the debt primitives and bank capital's.
+- **Shapes only for distributions.** Income and wealth (WID), household types (DEM), firms' productivity dispersion
+  (ENDOWMENT), and wages by occupation (ILO). Each is scaled by the opening to the matrices' totals.
+- **One definition each.** Firms per person employed are the ILO's employers and own-account workers over the
+  employed, for every group. `FRM.size_exponent` and `FRM.rank_per_million` are retired (S1.18).
+- **Identities, checked by the derivation and again at assembly** (a refusal naming the primitive and the residue):
+  - each product's supply equals its uses;
+  - each industry's output equals its inputs plus value added;
+  - GDP by production equals expenditure and income;
+  - each instrument's assets equal its liabilities across the sectors;
+  - each sector's net worth equals its assets less liabilities.
+
+  The tolerance is the rounding of the published figures' declared decimals (Law 7), and a residue lands on a named
+  sector's declared account.
+- **Primitives keep their owners** (NUM.3): TEC's ways, HH's shares, GEN's balance sheet and CAP's stock, each an
+  entry with its source, all written by the one derivation.
+
+**Unit tests**: `derive_economy.py`'s own checks (the identities over the derived files), run in the fast checks.
+`register_refuses_unbalanced_dataset`: assembly's refusal on a hand-built unbalanced pair of tables.
+
+**Live checks**: LC-1-40 and LC-1-41 at S1.24.
+
+**Budget**: none.
+
+**Guards**: PC-91's trailers on every changed primitive.
+
+**Not allowed**: a figure typed by hand; two sources' definitions mixed in one primitive; an identity closed by a
+residual with no holder (Law 2).
+
+**Done when**
+- [ ] Every group's dataset derives and balances, and assembly refuses an unbalanced one.
+- [ ] The retired primitives are gone from `data/`, and the inventory is regenerated.
+- [ ] Two reviews are done.
+
+---
+
+### S1.23 — Stage 0's world on the core
+
+**Status**: planned
+
+**Clauses**: Stage 0's exit, as built, on the core: the population (POP, DEM, REP), the institutions, banks, the
+treasury and the central bank, deposits, pensions in payment, the opening's balance sheet from S1.22 (GEN); N1, N2.
+
+**Architecture**: §7, §10.
+
+**Depends on**: S1.20, S1.22.
+
+**Goal**: the world assembles on the core and runs Stage 0's world: persons, households, hazards, deposits, pensions
+and the state's payments. The Stage 0 live checks and audit families run on it.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/assembly/phx-world/` | assembly, the day and the opening on the core |
+| `crates/kernel/phx-pop/` | persons and households as kind tables; hazards and outcomes |
+| `crates/systems/sys-dem/`, `sys-soc/`, `sys-sta/`, `sys-cb/`, `sys-trs/`, `sys-tax/`, `sys-sov/` | ported handlers and openings |
+| `crates/apps/phx-cli/src/checks/` | the Stage 0 checks re-pointed at the inspector over the core |
+
+**Design**:
+- The world holds both cores during the port. The old one serves the committed world until S1.24 switches it.
+- The opening apportions S1.22's balance sheet over parties by the shapes, exactly (`split_total`).
+- Estates follow PTY.9 and the waterfall on edges.
+
+**Unit tests**: the ported systems' tests.
+
+**Live checks**: every Stage 0 live check on a smoke of the core world.
+
+**Budget**: the smoke's Stage 0 world within its share of the unit targets.
+
+**Guards**: none new.
+
+**Not allowed**: a check weakened to pass on the core; an opening figure changed to make a check pass.
+
+**Done when**
+- [ ] The Stage 0 checks pass on the core world, and its smoke is within budget.
+- [ ] Two reviews are done.
+
+---
+
+### S1.24 — Stage 1's world on the core, with one kind of firm
+
+**Status**: planned
+
+**Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
+(FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
+
+**Architecture**: §7.10–§7.15, §10.
+
+**Depends on**: S1.21, S1.23.
+
+**Goal**: the circular flow runs on the core, and every firm is of one kind with its size an outcome. The committed
+world switches to the core.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/systems/sys-frm/`, `sys-tec/`, `sys-cap/`, `sys-gds/`, `sys-srv/`, `sys-frt/`, `sys-lab/`, `sys-bnk/`, `sys-hh/`, `sys-idx/` | ported; each `_small` and `_large` handler pair merged into one |
+| `crates/systems/sys-frm/src/opening.rs` | firms drawn by count, productivity and sites; sizes derived |
+
+**Design**:
+- **Firms at the opening.**
+  - Per region and industry, the count comes from S1.22's firms per employed.
+  - Each firm draws its productivity from the industry's dispersion, its sites (PTY: a site per establishment), and
+    its management types.
+  - Its day-zero price is its own decision from its cost (GEN.13).
+  - The industry's output in the SAM is shared by the demand each firm wins at those prices in its reach, and its
+    staff, plant and stocks follow from its output, its way and the balance sheet's apportionment.
+  - A firm with several establishments serves each one's reach.
+- **Merged handlers.** One body reads the firm's columns. What differed between the pairs is either declared kind data
+  or was representation, and is gone.
+- The lending placeholder begun in S1.15 (a firm borrowing its month's shortfall against its dues, naming FRM,
+  retired by S2.03) is rebuilt on the core. A borrower meeting dues takes the best quote whatever its required
+  return: failing the dues costs it the firm.
+- Old kernel crates and modules no longer used are deleted, and the architecture's crate lists follow.
+
+**Unit tests**: the ported systems' tests; `size_is_derived`: a firm's persons employed equal its jobs' edges.
+
+**Live checks**: every Stage 0 and Stage 1 live check on the core world.
+
+**Budget**: the smoke at the committed resolution meets the build machine's budget line, and the bench at the design
+point meets its targets.
+
+**Guards**: `phx-check` refuses a handler name ending `_small` or `_large`.
+
+**Not allowed**: a size, rank or class read as an input to a firm's decision where the spec names a state; a kind
+branch on size.
+
+**Done when**
+- [ ] The committed world runs on the core; every live check passes, or is a finding naming its step.
+- [ ] The smoke and the bench are within budget.
+- [ ] Two independent reviews are done (a major step).
+
+---
+
+### S1.25 — The architecture restated
+
+**Status**: planned
+
+**Clauses**: none new.
+
+**Architecture**: §1–§16.
+
+**Depends on**: S1.24.
+
+**Goal**: `docs/ARCHITECTURE.md` describes the core as built, with the measured unit costs and bytes; nothing
+describes what was retired.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `docs/ARCHITECTURE.md` | restated |
+| `docs/IMPLEMENTATION.md` | the restructure's steps removed once done; §13 regenerated |
+
+**Design**: none beyond the documents.
+
+**Unit tests**: none.
+
+**Live checks**: none.
+
+**Budget**: §13 restated with the bench's and the smoke's numbers.
+
+**Guards**: `phx-check docs`.
+
+**Not allowed**: a description of retired machinery kept as history.
+
+**Done when**
+- [ ] The documents describe the code; `phx-check` is clean.
+- [ ] Two reviews are done.
+
+---
+
 ### S1.15 — GEN III: the Stage 1 opening
 
-**Status**: building
+**Status**: held (the restructure, S1.17–S1.25, comes first; what remains of it is rebuilt on the core at S1.24)
 
 **Clauses**: GEN.2 *(part)*, GEN.3 *(part)*, GEN.4 *(part)*, GEN.5 *(part)* and GEN.13 *(part: day zero for Stage 1's
 decisions)*: every Stage 1 system's opening contribution.
@@ -9784,6 +10472,9 @@ the final build within the budget on the phone.
 | The opening's landlords and the wage and rent points | Tenancies at the opening pay landlords that stand in the country's firms by their plant, until the dwelling stock and its owners are drawn (S2.05); wages and rents lie on points a quarter apart (`LAB.wage_point_ratio`, `HSG.rent_point_ratio`, 1.25) until firms and landlords post their own (placeholders LAB and HSG); taken by the builder under its autonomy | 2026-09-25 |
 | S0.25's size | split into sub-steps, each with its own reviews and build run | 2026-09-24 |
 | The build run's length | an ordinary step's 120 days from day zero; a stage gate's settled and run two years, since the full population's opening and settling on the build machine take about an hour | 2026-09-24 |
+| Firms (spec REP.2, FRM.23) | one kind of firm whatever its size; size is derived from its contracts and books, never an input or a rank | 2026-09-28 |
+| A stage gate's long run | the settled two-year run is the device run, on the phone; the build machine runs the smoke and the full-load bench | 2026-09-28 |
+| The restructure (S1.17–S1.25) | the architecture is restated to fit the plan and a larger world; the budget is read at every step, never only at gates | 2026-09-28 |
 | State pensions' rules (S0.25b) | each group's pension age and replacement rate from its members in OECD Pensions at a Glance, the developing group's from India pooled with the eight emerging members, recorded as an assumption; who receives one from the ILO's SDG 1.3.1 coverage for every group | 2026-09-24 |
 | Illness and disability onset (S0.25b) | derived from prevalence by age by a declared mapping: lasting disability's onset from the rise in prevalence between age bands, recorded with its assumptions; short spells wait for a source | 2026-09-24 |
 | Kin (S0.25b) | a parent's living children from WPP's cohort fertility and survival for its birth year, less those the UN data show co-resident; the rest live elsewhere, by age and region | 2026-09-24 |
