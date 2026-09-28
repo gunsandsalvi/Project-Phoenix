@@ -115,3 +115,6 @@ pub const DECIMAL_BASE: f64 = 10.0;
 
 /// The bit of a flow's denomination that marks units, not money: a `u16`'s top bit.
 pub const UNITS_BIT: u16 = 15;
+
+/// The flows a word of a bitset marks.
+pub const BIT_WORD: usize = 64;

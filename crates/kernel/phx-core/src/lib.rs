@@ -35,6 +35,7 @@ pub mod register;
 pub mod rules;
 pub mod schedule;
 pub mod schema;
+pub mod settle;
 pub mod spoilage;
 pub mod streams;
 pub mod substep;

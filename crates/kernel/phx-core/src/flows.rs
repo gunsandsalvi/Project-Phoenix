@@ -133,6 +133,15 @@ impl Ranges {
         self.total
     }
 
+    /// The ranges a kind's slots fall in, in slot order.
+    #[must_use]
+    pub fn of_kind(&self, kind: u8) -> std::ops::Range<usize> {
+        let k = usize::from(kind);
+        let from = self.first.get(k).copied().unwrap_or(self.total);
+        let to = self.first.get(k + 1).copied().unwrap_or(self.total);
+        from..to
+    }
+
     /// The kind and first slot of a range.
     #[must_use]
     pub fn start(&self, range: usize) -> (u8, u32) {

@@ -11,6 +11,7 @@ use std::time::Instant;
 
 use phx_core::column_facts::{Layout, RecordFacts};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
+use phx_core::settle::{AT_ISSUER, Book, Books, Settle};
 use phx_core::wheel::DueWheel;
 use phx_exec::{Clock, Pool, PoolSpec, mix64};
 use phx_id::{Day, PartyId, PartyKey, Slot};
@@ -320,7 +321,30 @@ struct Kind {
     stride: usize,
     money: Option<Column<i64, SystemBacking>>,
     pending: Option<Column<i64, SystemBacking>>,
+    accounts: Option<Accounts>,
     n: u32,
+}
+
+/// Where a kind's accounts are held, what each holds through closed banks, and the facility each is granted.
+struct Accounts {
+    bank: Column<u32, SystemBacking>,
+    held: Column<i64, SystemBacking>,
+    facility: Column<i64, SystemBacking>,
+}
+
+impl Kind {
+    /// The kind's accounts as the settlement reads them, if it holds money.
+    fn book(&mut self) -> Option<Book<'_>> {
+        let (money, pending, a) = (self.money.as_mut()?, self.pending.as_mut()?, self.accounts.as_mut()?);
+        let Accounts { bank, held, facility } = a;
+        Some(Book {
+            bank: bank.slice(),
+            balance: money.slice_mut(),
+            pending: pending.slice_mut(),
+            held: held.slice_mut(),
+            facility: facility.slice(),
+        })
+    }
 }
 
 /// One family's contracts: the table, each contract's amount, balance and next due day, its other columns, the list
@@ -357,6 +381,12 @@ struct Load {
     bufs: Vec<FlowBufs>,
     filled: Vec<bool>,
     grouped: Grouped,
+    settlement: Settle,
+    /// The banks' kind, the banks closed, the currency's issuer and the stream payment orders' lots are drawn from.
+    bank_kind: u8,
+    closed: Vec<bool>,
+    issuer: PartyKey,
+    lot: StreamKey,
     due_today: Vec<u32>,
     /// The next day the wheels hand out.
     wheel_day: u32,
@@ -365,8 +395,10 @@ struct Load {
     tables_day: Option<u32>,
     agendas: Vec<Option<Agenda>>,
     taste: StreamKey,
-    /// The money every account and its pending hold together, which no settlement may change.
-    money_total: i128,
+    /// The banks' reserves and what they have pending together, which only the issuer changes; and what each bank
+    /// owes its customers.
+    reserves_total: i128,
+    deposits: Vec<i64>,
     /// Parties ended today, begun again after the close, and the next identity handed out.
     ended: Vec<u8>,
     next_id: u64,
@@ -383,6 +415,7 @@ struct Units {
     hits: u64,
     turnover: u64,
     shorts: u64,
+    rounds: u64,
 }
 
 /// A chunk's job: its index and rows of a column, and the flow buffer it fills.
@@ -734,54 +767,41 @@ impl Load {
     /// Nets every buffer filled since the last netting by range and applies each range's nets to its parties' money,
     /// or, on a closed day, to what they have pending, which the next business day settles; returns the flows and the
     /// payers the debits leave below nothing.
-    fn settle(&mut self, business: bool) -> (u64, u64) {
+    fn settle(&mut self, business: bool, day: u32) -> (u64, u64, u64) {
         let refs: Vec<&FlowBufs> = self.bufs.iter().zip(&self.filled).filter(|(_, f)| **f).map(|(b, _)| b).collect();
         self.grouped.group(Some(&self.pool), &refs, &self.ranges, Denom::money(0));
         let flows = index_u64(self.grouped.by_payer.items.len());
-        let range = 1_usize << self.ranges.range_bits();
-        let mut jobs: Vec<(usize, &mut [i64], &mut [i64])> = Vec::new();
-        let mut at = 0_usize;
-        for k in &mut self.kinds {
-            let count = to_usize(u64::from(k.n)).div_ceil(range);
-            if let (Some(m), Some(p)) = (k.money.as_mut(), k.pending.as_mut()) {
-                for (i, (mc, pc)) in m.slice_mut().chunks_mut(range).zip(p.slice_mut().chunks_mut(range)).enumerate() {
-                    jobs.push((at + i, mc, pc));
-                }
-            }
-            at += count;
-        }
-        let (grouped, ranges) = (&self.grouped, &self.ranges);
-        let shorts: u64 = self
-            .pool
-            .map_items(jobs, |(r, money, pending)| {
-                if business {
-                    for (m, p) in money.iter_mut().zip(pending.iter_mut()) {
-                        *m += *p;
-                        *p = 0;
-                    }
-                    grouped.apply(r, ranges, money)
-                } else {
-                    let _ = grouped.apply(r, ranges, pending);
-                    0
-                }
-            })
-            .into_iter()
-            .sum();
+        let mut books = Books {
+            kinds: self.kinds.iter_mut().map(Kind::book).collect(),
+            banks: self.bank_kind,
+            deposits: &mut self.deposits,
+            closed: &self.closed,
+            issuer: self.issuer,
+        };
+        let pool: &Pool = &self.pool;
+        let failed = if business {
+            let key = self.lot;
+            let lot = |p: PartyKey| Draws::new(key, Subject::new(SubjectTag::Party, u64::from(p.word())), day, 0);
+            let out = self.settlement.settle(Some(pool), &self.grouped, &self.ranges, &mut books, &lot);
+            (index_u64(out.failed.len()), out.rounds)
+        } else {
+            self.settlement.commit(Some(pool), &self.grouped, &self.ranges, &mut books);
+            (0, 0)
+        };
         self.filled.fill(false);
-        (flows, shorts)
+        (flows, failed.0, failed.1)
     }
 
     /// The day's identities: the money every account and its pending hold together is what it was, since every flow
     /// moves it between two of them; and a thirtieth of the contracts read in full.
     fn audit(&mut self, day: u32) -> Result<i64, String> {
-        let total: i128 = self
-            .kinds
-            .iter()
-            .filter_map(|k| k.money.as_ref().zip(k.pending.as_ref()))
-            .map(|(m, p)| m.slice().iter().chain(p.slice()).map(|x| i128::from(*x)).sum::<i128>())
-            .sum();
-        if total != self.money_total {
-            return Err(format!("money held changed from {} to {total} on day {day}", self.money_total));
+        let reserves = reserves_of(&self.kinds, self.bank_kind);
+        if reserves != self.reserves_total {
+            return Err(format!("reserves changed from {} to {reserves} on day {day}", self.reserves_total));
+        }
+        let owed = deposits_of(&self.kinds, self.deposits.len());
+        if let Some(b) = owed.iter().zip(&self.deposits).position(|(o, d)| o != d) {
+            return Err(format!("bank {b}'s customers hold other than it owes them on day {day}"));
         }
         let slice = u64::from(day) % AUDIT_SLICES;
         let contracts: i64 = self
@@ -871,7 +891,13 @@ impl Load {
 }
 
 /// A kind's parties at the design point, with random records and money.
-fn build_kind(space: &mut AddressSpace, pool: &Pool, k: &KindSpec, index: u8, n: u32, rows_per_chunk: u32) -> Kind {
+fn build_kind(
+    space: &mut AddressSpace,
+    pool: &Pool,
+    k: &KindSpec,
+    (index, n, banks): (u8, u32, Option<u32>),
+    rows_per_chunk: u32,
+) -> Kind {
     let mut parties = Parties::new(space, index, n, rows_per_chunk);
     for i in 0..n {
         let _ = parties.begin(PartyId::new((u64::from(index) << 32) | (u64::from(i) + 1)));
@@ -897,9 +923,52 @@ fn build_kind(space: &mut AddressSpace, pool: &Pool, k: &KindSpec, index: u8, n:
         m.extend(&vec![v; to_usize(u64::from(n))]);
         m
     };
-    let money = k.money.then(|| column(space, 1_000_000));
+    // Balances spread over four orders of magnitude, as accounts' are, so few are short on a day.
+    let money = k.money.then(|| {
+        let mut d = draws(15, u64::from(index), 0);
+        let spread: Vec<i64> = (0..n)
+            .map(|_| {
+                let scale = (0..4 + below_u64(&mut d, 5)).fold(1_i64, |a, _| a * 10);
+                scale * (1 + i64::try_from(below_u64(&mut d, 9)).unwrap_or(0))
+            })
+            .collect();
+        let mut m: Column<i64, SystemBacking> = Column::new(space, n, rows_per_chunk);
+        m.extend(&spread);
+        m
+    });
     let pending = k.money.then(|| column(space, 0));
-    Kind { parties, records, stride, money, pending, n }
+    // Each account at a bank drawn for it; the banks' own money is their reserves, held at the issuer.
+    let accounts = k.money.then(|| {
+        let mut bank: Column<u32, SystemBacking> = Column::new(space, n, rows_per_chunk);
+        let at: Vec<u32> = (0..n)
+            .map(|s| banks.map_or(AT_ISSUER, |b| to_u32(mix64(u64::from(s) ^ u64::from(index)) % u64::from(b))))
+            .collect();
+        bank.extend(&at);
+        Accounts { bank, held: column(space, 0), facility: column(space, 0) }
+    });
+    Kind { parties, records, stride, money, pending, accounts, n }
+}
+
+/// The banks' reserves and what they have pending, summed.
+fn reserves_of(kinds: &[Kind], banks: u8) -> i128 {
+    kinds
+        .get(usize::from(banks))
+        .and_then(|k| k.money.as_ref().zip(k.pending.as_ref()))
+        .map_or(0, |(m, p)| m.slice().iter().chain(p.slice()).map(|x| i128::from(*x)).sum())
+}
+
+/// What the customers of each bank hold, their pending included, summed by bank.
+fn deposits_of(kinds: &[Kind], banks: usize) -> Vec<i64> {
+    let mut owed = vec![0_i64; banks];
+    for k in kinds {
+        let (Some(m), Some(p), Some(a)) = (k.money.as_ref(), k.pending.as_ref(), k.accounts.as_ref()) else { continue };
+        for ((b, m), p) in a.bank.slice().iter().zip(m.slice()).zip(p.slice()) {
+            if let Some(o) = owed.get_mut(to_usize(u64::from(*b))) {
+                *o += m + p;
+            }
+        }
+    }
+    owed
 }
 
 /// A family's contracts between random parties of its two kinds, each first due by its family's dues.
@@ -990,10 +1059,13 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
     let mut space = AddressSpace::empty();
     let rpc = v.world.rows_per_chunk;
     let mut kinds = Vec::with_capacity(v.kinds.len());
+    let bank_kind = v.kind("bank")?;
+    let n_banks = to_u32(v.at(v.kinds.get(usize::from(bank_kind)).map_or(0, |k| k.per_million)));
     for (i, k) in v.kinds.iter().enumerate() {
         let n = to_u32(v.at(k.per_million));
         show(host, "building", format!("{} {}", n, k.name), String::new(), "");
-        kinds.push(build_kind(&mut space, &pool, k, u8::try_from(i).unwrap_or(u8::MAX), n, rpc));
+        let index = u8::try_from(i).unwrap_or(u8::MAX);
+        kinds.push(build_kind(&mut space, &pool, k, (index, n, (index != bank_kind).then_some(n_banks)), rpc));
     }
     let days = u32::try_from(v.month.days.len()).unwrap_or(0);
     let heavy = v.month.days.iter().position(|d| *d == DayType::Heavy).map_or(0, |p| to_u32(index_u64(p)));
@@ -1043,13 +1115,20 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
     let heavy_flows = v.heavy_flows(families.iter().map(|f| index_u64(f.due.len())).sum());
     grouped.by_payer.items.reserve(to_usize(heavy_flows));
     grouped.by_payee.items.reserve(to_usize(heavy_flows));
-    let money_total: i128 = kinds
-        .iter()
-        .filter_map(|k| k.money.as_ref().zip(k.pending.as_ref()))
-        .map(|(m, p)| m.slice().iter().chain(p.slice()).map(|x| i128::from(*x)).sum::<i128>())
-        .sum();
+    // Each bank holds a tenth of what its customers hold in reserves.
+    let deposits = deposits_of(&kinds, to_usize(u64::from(n_banks)));
+    if let Some(m) = kinds.get_mut(usize::from(bank_kind)).and_then(|k| k.money.as_mut()) {
+        for (r, d) in m.slice_mut().iter_mut().zip(&deposits) {
+            *r = d / 10;
+        }
+    }
+    let reserves_total = reserves_of(&kinds, bank_kind);
     let sources = v.works.len() + families.len();
     let persons = v.world.persons;
+    // The central bank: a party past every institution's slot, so no flow of the bench names it and money is made by
+    // no one.
+    let institution = v.kind("institution")?;
+    let issuer = PartyKey::new(institution, Slot::new(kinds.get(usize::from(institution)).map_or(0, |k| k.n)));
     Ok(Load {
         pool,
         kinds,
@@ -1059,6 +1138,11 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
         bufs: (0..sources).map(|_| FlowBufs::default()).collect(),
         filled: vec![false; sources],
         grouped,
+        settlement: Settle::default(),
+        bank_kind,
+        closed: vec![false; to_usize(u64::from(n_banks))],
+        issuer,
+        lot: stream_key(Seed::new(14), "SET.order"),
         due_today: Vec::new(),
         wheel_day: 0,
         ns_per_iteration: calibrate(clock),
@@ -1066,7 +1150,8 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
         tables_day: None,
         agendas,
         taste: stream_key(Seed::new(13), "LOAD.taste"),
-        money_total,
+        reserves_total,
+        deposits,
         ended: Vec::new(),
         next_id: persons << 8,
     })
@@ -1261,7 +1346,8 @@ fn run_work(
             done
         }
         Kernel::Settle => {
-            let (flows, shorts) = load.settle(kind != DayType::Closed);
+            let (flows, shorts, rounds) = load.settle(kind != DayType::Closed, day);
+            units.rounds += rounds;
             units.flows += flows;
             units.shorts += shorts;
             flows
@@ -1486,7 +1572,8 @@ fn report_json(
             ("choices", Json::UInt(r.units.choices)),
             ("hits", Json::UInt(r.units.hits)),
             ("turnover", Json::UInt(r.units.turnover)),
-            ("short_payers", Json::UInt(r.units.shorts)),
+            ("failed_flows", Json::UInt(r.units.shorts)),
+            ("settlement_rounds", Json::UInt(r.units.rounds)),
             ("works", Json::Array(works.collect())),
         ])
     });
