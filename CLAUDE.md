@@ -57,6 +57,9 @@ about how to build.
   zero, a stage gate's (`--gate`) settled and run two years (the owner's decision, plan §12); from S1.09 the owner
   dropped the per-step build run (plan §12): a step is `done` on its fast checks, and the world runs at each gate. Its numbers test the code and are never read as the world's. CI builds and
   tests and never runs the world; nothing runs the world twice, not even to prove determinism.
+- **The smoke at every step** (`tools/smoke.sh`, owner 2026-09-28): the budget is read at the committed resolution
+  against `perf/budget.toml`, whose ratchets only tighten; a step does not end with one broken, unless the step says
+  why. The stage gate's two-year run is on the phone.
 - **One change, one commit**, saying what and why.
 
 ## Findings

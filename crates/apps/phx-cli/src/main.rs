@@ -1,3 +1,4 @@
+mod budget;
 mod checks;
 mod clock;
 mod inject;
@@ -86,6 +87,9 @@ pub struct RunArgs {
     /// The counters' ratchets.
     #[arg(long)]
     ratchets: PathBuf,
+    /// The budget's ratchets: turn times, memory a person, cores busy and page faults, held apart from the counters'.
+    #[arg(long)]
+    budget: Option<PathBuf>,
     /// The build's wall time, for the report.
     #[arg(long)]
     build_seconds: Option<u64>,

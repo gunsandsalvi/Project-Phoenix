@@ -1,0 +1,31 @@
+# The budget's ratchets (N8.2, N8.4), read by tools/smoke.sh at every step: twenty days from day zero at the committed
+# resolution on the build machine. A time or a size may only fall and the cores busy only rise; a step that must raise
+# one says so and why. The first values are the measure of 2026-09-28, before the restructure (S1.17–S1.25), with the
+# noise of this shared machine: two smokes of one commit differed by 13% in time, 4% in bytes and 30% in faults, so the
+# times stand a quarter above the lower measure, the bytes and faults a tenth above the higher, the cores below both. The
+# budget itself is 1 000 and 2 000 ms and 4.5 GB; these hold the ground gained on the way to it.
+
+[[ratchet]]
+counter = "phx_budget.turn_ms_median"
+value = 10000
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.turn_ms_worst"
+value = 32700
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.bytes_per_person"
+value = 7800
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.faults_per_day"
+value = 152000
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.busy_core_hundredths"
+value = 100
+direction = "up"

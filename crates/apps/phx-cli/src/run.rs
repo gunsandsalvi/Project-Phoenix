@@ -77,7 +77,7 @@ fn peak_resident_bytes() -> Option<u64> {
 }
 
 /// Each counter against its ratchet: a counter with no entry is refused, and one that moved the wrong way fails.
-fn check_ratchets(path: &Path, counters: &[(&str, u64)]) -> Result<Vec<String>, String> {
+pub(crate) fn check_ratchets(path: &Path, counters: &[(&str, u64)]) -> Result<Vec<String>, String> {
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let ratchets: Ratchets = toml::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
     let mut failures = Vec::new();
@@ -775,9 +775,9 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let definitions = phx_obs::Definitions::read(&args.data)?;
     let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;
     println!("opened in {} ms", assembly_ns.map_or(0, |n| n / 1_000_000));
-    let started = clock.now_ns();
+    let meter = crate::budget::Meter::start(clock.now_ns());
     let injection_save = play(&mut world, args, settle_end, end, &clock, &mut obs)?;
-    let run_ns = clock.now_ns().checked_sub(started);
+    let span = meter.stop(clock.now_ns());
     let injecting = clock.now_ns();
     if let Some(dir) = &injection_save {
         for r in inject_apart(args, dir)? {
@@ -799,6 +799,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     }
     let peak = peak_resident_bytes();
     let memory_ok = peak.is_some_and(|p| p <= WORLD_BYTES);
+    let (budget_block, budget_kept) = crate::budget::judge(w, peak, &span, args.budget.as_deref())?;
     let turns = w.turn_records();
     let report = json!({
         "seed": args.seed,
@@ -814,7 +815,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "days_run": turns.iter().map(|t| u64::from(t.days)).sum::<u64>(),
         "longest_turn_days": greatest(turns.iter().map(|t| u64::from(t.days))),
         "build_seconds": args.build_seconds,
-        "run_ms": run_ns.map(|n| n / 1_000_000),
+        "run_ms": span.run_ns.map(|n| n / 1_000_000),
         "assembly_ms": assembly_ns.map(|n| n / 1_000_000),
         "inject_ms": inject_ns.map(|n| n / 1_000_000),
         "geo": geo_report(w),
@@ -830,6 +831,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "representation": w.population().representation.name(),
         "injections": crate::inject::report(w.injections()),
         "peak_resident_bytes": peak,
+        "budget": budget_block,
         "memory_budget_bytes": WORLD_BYTES,
         "reserved_bytes": w.bytes_reserved(),
         "counters": counters.iter().map(|(n, v)| ((*n).to_owned(), json!(v))).collect::<serde_json::Map<_, _>>(),
@@ -855,13 +857,14 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         std::fs::write(path, text + "\n").map_err(|e| format!("{}: {e}", path.display()))?;
     }
     println!(
-        "{} turns, {} days, peak {} MiB; {}",
+        "{} turns, {} days, peak {} MiB; {}; budget {}",
         turns.len(),
         turns.iter().map(|t| u64::from(t.days)).sum::<u64>(),
         peak.map_or(0, |p| p >> 20),
-        if all_pass && ratchet_failures.is_empty() && memory_ok { "clean" } else { "not clean" }
+        if all_pass && ratchet_failures.is_empty() && memory_ok { "clean" } else { "not clean" },
+        if budget_kept { "kept" } else { "missed" }
     );
-    Ok(all_pass && ratchet_failures.is_empty() && memory_ok)
+    Ok(all_pass && ratchet_failures.is_empty() && memory_ok && budget_kept)
 }
 
 /// Assembles the world and writes its calendar's measurement.

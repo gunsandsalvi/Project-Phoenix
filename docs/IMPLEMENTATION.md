@@ -730,60 +730,6 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ---
 
-### S1.17 — The meter: the budget read at every step
-
-**Status**: planned
-
-**Clauses**: N8.2, N8.4 *(part: read on the build machine between the device's gates)*; N8.8 *(part)*.
-
-**Architecture**: §13, §14.6, §14.7.
-
-**Depends on**: none.
-
-**Goal**: no step can end with the budget missed without its checks saying so, by how much and where. Every step
-that touches the kernel or a system runs a timed smoke of the world at the committed resolution and the full-load
-bench as part of its fast checks, against ratchets.
-
-**Files**
-
-| File | Purpose |
-| --- | --- |
-| `tools/smoke.sh` | 20 days from the opening at the committed resolution; prints the median and worst business day by sub-step, peak bytes a person, cores busy, minor page faults a business day |
-| `crates/apps/phx-cli/src/run.rs` | the report's `budget` block: `business_day_ms` (median, worst), `bytes_per_person`, `busy_cores`, `faults_per_day` |
-| `perf/ratchets.toml` | the budget ratchets |
-| `docs/ARCHITECTURE.md` | §7.6 and §13.2 state the measured numbers |
-
-**Design**:
-- The smoke is not a build run and judges no world. It reads cost only, as the bench does.
-- Ratchets:
-  - `phx_budget.business_day_ms_median`, `phx_budget.business_day_ms_worst`, `phx_budget.bytes_per_person` and
-    `phx_budget.faults_per_business_day`, which may only fall;
-  - `phx_budget.busy_cores`, which may only rise.
-- A step that must raise one states the rise and the work that causes it in its text, and the owner sees it in the
-  ratchet's diff (the `perf/` guard).
-- The budget line on the build machine is 1 s median and 2 s worst wall time at the committed resolution, and 4.5 GB,
-  until the probe ratio replaces it.
-- The smoke's verdict is printed beside the ratchets. A miss does not stop a step of the restructure, whose purpose
-  is to remove it, but it stops every other step.
-
-**Unit tests**: `budget_block_reads_median_and_worst`: the report's arithmetic over a hand-built list of day times.
-
-**Live checks**: none.
-
-**Budget**: the smoke's own cost, about 3 minutes at the committed resolution.
-
-**Guards**: the pre-step script runs the smoke and the bench.
-
-**Not allowed**: a ratchet raised without its reason; timing read from a debug build; the smoke's numbers read as the
-world's.
-
-**Done when**
-- [ ] The smoke and the ratchets run in the fast checks, and today's numbers are committed as their first values.
-- [ ] Architecture §7.6 and §13.2 state the measured numbers above.
-- [ ] Two reviews are done.
-
----
-
 ### S1.18 — The spec follows one representation
 
 **Status**: planned
@@ -794,7 +740,7 @@ REP.41); FRM.2, FRM.23; LAB.1 *(its line)*; GEN.2 *(firm sizes)*; SET *(the impl
 
 **Architecture**: §7.
 
-**Depends on**: S1.17.
+**Depends on**: none (S1.17, the smoke and `perf/budget.toml`, is done).
 
 **Goal**: the spec states one representation: every party of a kind is the same kind of thing, every contract is
 between named parties, and a firm's size is an outcome. The spec is fixed in its own commit, with each change's

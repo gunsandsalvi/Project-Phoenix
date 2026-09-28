@@ -2584,6 +2584,12 @@ The firm table's agenda has about eight reasons: two hazards, reviews, wakes, sc
 
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
+**Measured** (2026-09-28, build machine, 750 000 persons): a median turn of about 8 s and a worst of 26 s (the smoke,
+§14.7), eight to thirteen times the budget, with Stage 1's systems only; the full-load bench at 1.5 times the finished
+world's counts gave 7.7 s and 29 s, its unit costs 5 to 50 times the estimates below (settlement about 1.5 µs a payment
+against 30 ns). The estimates below were never met; the restructure (the plan's S1.17–S1.25) replaces the layout they
+cost and sets unit targets for a finished world of 5 million persons, and this section is restated with its bench.
+
 Unit costs are **phone core-nanoseconds**; wall time is core time over the phone's **sustained** parallel speed,
 taken as **3 core-seconds per second** (one fast and five medium cores, sustained) until Stage 0 measures
 it per core class (§14.6). A turn's time is the sum of its days: an ordinary business day; a **non-business day**
@@ -2897,18 +2903,20 @@ Every job runs on push and pull request on a pinned runner image with a 30-minut
 from `tools/versions.toml`, caches on `Cargo.lock` and the toolchains, and may not fail. CODEOWNERS gives the owner
 `/perf/` (but `perf/build-run/`), `docs/PROJECT_PHOENIX.md` and `data/**/gen/`.
 
-**The build run** (`tools/build-run.sh`, on the build machine — the development VM, 4 cores and 15 GB — after each
-step's build: a `--release` build (thin LTO; only
-the `device` profile is fat, §17); the world at the play resolution (§10.5), with `read-trace` on, the audit and every
-live check — an ordinary step's for 120 days from day zero, a stage gate's (`--gate`) settled at the owner's length and
-run two years after it; the engine's counter ratchets, whose moves fail the build run, not CI — as built, the barriers
-per empty day, the map's bytes and seven stage-7 counters (§16.8); peak memory; wall time, build and run apart. It is
-the only run of the world off the phone, and it uses no other resolution or seed. It is **clean** when the audit reports
-nothing, every failing live check is recorded as a finding in the plan's §11, and no ratchet moves the wrong way. A
-step's last commit adds the report of the build run on the commit before it, as `perf/build-run/<that commit>.json`, and
-marks the step `done`; these reports are append-only and, being the code's numbers and never the world's, need no owner
-review. The play resolution needs about 5 GB. At 300 million persons the opening takes about ten minutes and each
-business day about 13 s on the build machine's one thread (F-056, F-062).
+**The build run** (`tools/build-run.sh`, on the build machine — the development VM, 4 cores and 15 GB): a `--release`
+build (thin LTO; only the `device` profile is fat, §17); the world at the play resolution (§10.5), with `read-trace` on,
+the audit and every live check, 120 days from day zero; the engine's counter ratchets, whose moves fail the build run,
+not CI (§16.8); peak memory; wall time, build and run apart. It uses no other resolution or seed, and its numbers are the
+code's, never the world's. It is **clean** when the audit reports nothing, every failing live check is recorded as a
+finding in the plan's §11, and no ratchet moves the wrong way. Since S1.09 a step is done on its fast checks and the
+world runs at the gates; a stage gate's settled two-year run is the device run, on the phone (owner, 2026-09-28).
+
+**The smoke** (`tools/smoke.sh`) reads the budget at every step: twenty days from day zero at the committed resolution,
+no live checks, the report's `budget` block — the turns' median and worst wall time, peak bytes a person, cores busy
+(the process's CPU time over the days' wall time) and minor page faults a day — against `perf/budget.toml`'s ratchets,
+which may only fall (the cores only rise). A step that must raise one says so and why. `--bench` adds the full-load
+bench. The first measure, 2026-09-28 at 750 000 persons: a median turn of 8.0 s, the worst 26.2 s, 6 748 bytes a person,
+1.13 cores busy and 138 057 faults a day; 7c 3.4 s, 10d 1.2 s and 6d 1.1 s of the median day.
 
 ### 14.8 The realism reads
 
