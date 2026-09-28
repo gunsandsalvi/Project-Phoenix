@@ -30,7 +30,6 @@ exec target/release/phx run \
     --seed 1 \
     "${span[@]}" \
     --checks all \
-    --read-trace \
     --data data \
     --setup data/setup/default.toml \
     --run-dir target/run \

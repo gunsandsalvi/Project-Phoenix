@@ -1,60 +1,22 @@
+//! A run on the build machine: the world assembled, settled and run, the observer reading each day, the live checks
+//! at the end, and the budget judged against its ratchets.
+
 use std::path::{Path, PathBuf};
 
 use phx_core::Period;
 use phx_exec::Clock;
 use phx_world::systems::{INTERFACES, SYSTEMS};
-use phx_world::{Inspector, SaveMeasure, World, WorldConfig, assemble};
+use phx_world::{Inspector, World, WorldConfig, assemble};
 use serde::Deserialize;
 use serde_json::json;
-
-use phx_core::handler::HandlerDecl;
 
 use crate::RunArgs;
 use crate::checks::{CHECKS, Observed, Outcome, Run};
 use crate::clock::WallClock;
 
-/// Resident memory the empty world may take.
-const EMPTY_WORLD_BYTES: u64 = 50 << 20;
-
-/// Resident memory the map may take on top of it, its generation included.
-const MAP_BYTES: u64 = 80 << 20;
-
-/// Resident memory the individuals may take: their kind tables and facets, which hold the institutions' rows.
-const INDIVIDUALS_BYTES: u64 = 225 << 20;
-
-/// Resident memory the population may take: its agents, their persons and attachments at the run's factor.
-const POPULATION_BYTES: u64 = 275 << 20;
-
-/// Resident memory the firms' records may take: the small firms' positions and the large firms' facts.
-const FIRMS_BYTES: u64 = 125 << 20;
-
-/// Resident memory the lines the population holds may take: the relationship rows, the lines' holder lists with their
-/// slack, the lines themselves, and the interned keys and terms.
-const LINES_BYTES: u64 = (849 + 216 + 96 + 108) << 20;
-
-/// Resident memory the population's indexes may take: the agenda.
-const INDEXES_BYTES: u64 = 85 << 20;
-
-/// Resident memory the worst day's buffers and the arenas' slack may take.
-const DAY_BYTES: u64 = (600 + 214) << 20;
-
-/// Resident memory the world may take at its peak: the budgets of the stores it holds.
-const WORLD_BYTES: u64 = EMPTY_WORLD_BYTES
-    + MAP_BYTES
-    + INDIVIDUALS_BYTES
-    + POPULATION_BYTES
-    + FIRMS_BYTES
-    + LINES_BYTES
-    + INDEXES_BYTES
-    + DAY_BYTES;
+/// Resident memory the world may take at its peak: the budget's.
+const WORLD_BYTES: u64 = 4608 << 20;
 const MONTHS_PER_YEAR: u16 = 12;
-/// Days after settling at whose close the save the injections load is taken.
-const INJECTION_SAVE_DAY: u16 = 30;
-
-/// The live check that reads each family's injection into the day-30 save.
-const INJECTION_CHECK: &str = "LC-0-10";
-/// The key of a build's identity hash: any fixed value.
-const BUILD_KEY: [u64; 2] = [0x5048_5820_4255_494c, 0x4420_4944_2031_3131];
 
 #[derive(Debug, Deserialize)]
 struct Ratchet {
@@ -120,331 +82,6 @@ fn span(w: Inspector<'_>, days: u16, total: Option<u16>) -> Result<(phx_id::Day,
     Ok((settled, end))
 }
 
-/// The running binary's identity, which a save names so that another build refuses it: the hash of its bytes.
-pub fn build_id() -> Result<String, String> {
-    let exe = std::env::current_exe().map_err(|e| format!("the running binary: {e}"))?;
-    let bytes = std::fs::read(&exe).map_err(|e| format!("{}: {e}", exe.display()))?;
-    let mut h = phx_store::Sip128::new(BUILD_KEY);
-    h.write(&bytes);
-    Ok(format!("{:032x}", h.finish()))
-}
-
-/// The save interval a day falls in: its months since the calendar's year nought, over the months between saves.
-fn save_period(w: Inspector<'_>, day: phx_id::Day) -> Result<u64, String> {
-    let date = w.date(day);
-    let year = u64::try_from(date.year()).map_err(|_| "a day before the calendar's year nought")?;
-    let months = year * u64::from(MONTHS_PER_YEAR) + u64::from(date.month());
-    months.checked_div(w.save_every_months()).ok_or_else(|| "a save interval of no months".to_owned())
-}
-
-/// A save of the world at this close, checked by reading its files back; its sizes and times join the run's
-/// measures.
-fn save_and_check(world: &mut World, root: &Path, build: &str, clock: &WallClock) -> Result<(), String> {
-    let t0 = clock.now_ns();
-    let rec = world.save(root, build)?;
-    let t1 = clock.now_ns();
-    let checked = world.check_save(&rec.dir);
-    let t2 = clock.now_ns();
-    world.record_save(SaveMeasure {
-        day: rec.day,
-        stores: rec.stores.iter().map(|s| (s.name.to_owned(), s.bytes, s.raw_bytes)).collect(),
-        run_bytes: rec.run_bytes,
-        write_ns: t1.checked_sub(t0),
-        check_ns: t2.checked_sub(t1),
-        mismatch: checked.err(),
-    });
-    Ok(())
-}
-
-/// Every family's injection into the injections' save, each loaded apart in a process of its own so the run's
-/// memory is the world's alone.
-fn inject_apart(args: &RunArgs, save: &Path) -> Result<Vec<phx_world::InjectionRecord>, String> {
-    let exe = std::env::current_exe().map_err(|e| format!("the running binary: {e}"))?;
-    let report = args.run_dir.join("inject.json");
-    if report.exists() {
-        std::fs::remove_file(&report).map_err(|e| format!("{}: {e}", report.display()))?;
-    }
-    let status = std::process::Command::new(exe)
-        .arg("inject")
-        .arg("--from")
-        .arg(save)
-        .arg("--data")
-        .arg(&args.data)
-        .arg("--setup")
-        .arg(&args.setup)
-        .arg("--run-dir")
-        .arg(args.run_dir.join("inject"))
-        .arg("--report")
-        .arg(&report)
-        .status()
-        .map_err(|e| format!("phx inject: {e}"))?;
-    let text = std::fs::read_to_string(&report).map_err(|e| format!("phx inject ({status}) left no report: {e}"))?;
-    crate::inject::parse(&text)
-}
-
-/// The most barriers any empty day crossed, a day being empty when its sub-steps visited no row.
-fn empty_day_barriers(w: Inspector<'_>) -> u64 {
-    let mut per_day: Vec<(phx_id::Day, u64, u64)> = Vec::new();
-    for r in w.substep_records() {
-        match per_day.last_mut() {
-            Some((day, barriers, rows)) if *day == r.day => {
-                *barriers += r.barriers;
-                *rows += r.rows;
-            }
-            _ => per_day.push((r.day, r.barriers, r.rows)),
-        }
-    }
-    greatest(per_day.iter().filter(|(_, _, rows)| *rows == 0).map(|(_, b, _)| *b))
-}
-
-/// What the map's generation and GEO's day left: its attempts and rejections, its places and deposits, and the events
-/// its handlers recorded.
-fn geo_report(w: Inspector<'_>) -> serde_json::Value {
-    let geo = w.geo();
-    let land: Vec<bool> = geo.map.tiles.iter().map(phx_geo::tile::Tile::is_land).collect();
-    let sea: Vec<bool> = land.iter().map(|l| !l).collect();
-    let (sea_across, sea_down) = phx_geo::partition::winds(&geo.map.grid, &sea);
-    let (land_across, land_down) = phx_geo::partition::winds(&geo.map.grid, &land);
-    json!({
-        "sea_goes_round": { "east_west": sea_across, "north_south": sea_down },
-        "land_goes_round": { "east_west": land_across, "north_south": land_down },
-        "phx_geo.generation_attempts": geo.map.attempt + 1,
-        "rejections": geo.map.rejections.iter().map(|r| r.condition.clone()).collect::<Vec<_>>(),
-        "land_tiles": geo.map.tiles.iter().filter(|t| t.is_land()).count(),
-        "regions": geo.map.regions.len(),
-        "zones": geo.map.zones.len(),
-        "deposits": geo.deposits.len(),
-        "events": w.events().len(),
-    })
-}
-
-/// What the opening left: for each kind, its parties and their equity summed; for each line kind, the balances on
-/// each side; the opening's writes, its adjustments and the distributions it read.
-fn opening_report(w: Inspector<'_>) -> serde_json::Value {
-    let books = w.books();
-    let opening = w.opening();
-    let mut kinds = serde_json::Map::new();
-    let mut lines: std::collections::BTreeMap<&str, [i128; 2]> = std::collections::BTreeMap::new();
-    for kind in books.parties.kinds() {
-        let parties: Vec<_> = books.parties.of_kind(kind).collect();
-        let equity: i128 = parties.iter().map(|p| books.equity(*p)).sum();
-        kinds.insert(kind.to_owned(), json!({ "parties": parties.len(), "equity": equity.to_string() }));
-        for p in &parties {
-            let (place, slot) = books.parties.row(*p);
-            for r in phx_ledger::rows::rows(books.parties.table(place), slot) {
-                if let phx_num::Missing::Present(b) = r.optional.balance {
-                    let side = usize::from(r.side() == phx_ledger::algebra::Side::Liability);
-                    let entry = lines.entry(books.ledger.lines.kind_name(r.row.line)).or_default();
-                    if let Some(t) = entry.get_mut(side) {
-                        *t += i128::from(b);
-                    }
-                }
-            }
-        }
-    }
-    json!({
-        "kinds": kinds,
-        "lines": lines.iter().map(|(k, [a, l])| ((*k).to_owned(), json!({ "asset": a.to_string(), "liability": l.to_string() }))).collect::<serde_json::Map<_, _>>(),
-        "writes": opening.writes,
-        "apportioned": opening.apportioned,
-        "adjustments": opening.adjustments.iter().map(|a| json!({ "what": a.what, "drawn": a.drawn.to_string(), "set": a.set.to_string() })).collect::<Vec<_>>(),
-        "distributions": opening.distributions.iter().map(|(n, s)| json!({ "name": n, "source": s })).collect::<Vec<_>>(),
-    })
-}
-
-/// What the days settled: the dated flows' lines, instructions and those settled, the value paid gross per
-/// currency, and the fails by cause, summed over the run.
-fn settlement_report(w: Inspector<'_>) -> serde_json::Value {
-    let days = w.settlements();
-    let sum = |f: fn(&phx_world::Settled) -> u64| days.iter().map(f).sum::<u64>();
-    let mut gross: std::collections::BTreeMap<u8, i128> = std::collections::BTreeMap::new();
-    let mut fails: std::collections::BTreeMap<String, u64> = std::collections::BTreeMap::new();
-    for d in days {
-        for (c, v) in &d.measure.gross {
-            *gross.entry(*c).or_default() += v;
-        }
-        for (cause, n) in &d.measure.fails {
-            *fails.entry(format!("{cause:?}")).or_default() += n;
-        }
-    }
-    json!({
-        "days": days.len(),
-        "lines_due": sum(|d| d.dues.lines),
-        "payments": sum(|d| d.dues.payments),
-        "failed": sum(|d| d.dues.failed),
-        "lost": sum(|d| d.dues.lost),
-        "heads_read": sum(|d| d.dues.heads_read),
-        "rows_scanned": sum(|d| d.dues.rows_scanned),
-        "rows_due": sum(|d| d.dues.rows_due),
-        "fixed_point_iterations": sum(|d| d.dues.iterations),
-        "ring_parties": sum(|d| d.dues.ring_parties),
-        "largest_ring": greatest(days.iter().map(|d| d.dues.ring_parties)),
-        "ring_value": days.iter().map(|d| d.dues.ring_value).sum::<i128>().to_string(),
-        "runs_read": sum(|d| d.dues.runs_read),
-        "gross_paid": days.iter().map(|d| d.dues.gross).sum::<i128>().to_string(),
-        "settled": sum(|d| d.dues.settled),
-        "days_with_payments": days.iter().filter(|d| d.dues.settled > 0).count(),
-        "gross": gross.iter().map(|(c, v)| (c.to_string(), json!(v.to_string()))).collect::<serde_json::Map<_, _>>(),
-        "fails": fails,
-    })
-}
-
-/// The ratcheted counters the run reads: the empty day's barriers, the map's bytes, the most on any day of the
-/// settlement's rows, heads, payments, iterations, buffers and losers drawn, and of the agents' gathered, read, drawn
-/// again, hit and drawn afresh.
-/// The distinct sets of ways the technology keeps: none when the world keeps no technology.
-fn way_sets(w: Inspector<'_>) -> u64 {
-    w.own::<sys_tec::Technology>("TEC").map_or(0, |t| u64::try_from(t.sets.len()).unwrap_or(u64::MAX))
-}
-
-/// The rows a small firm's agent takes in its table's columns, none when the world keeps no small firms.
-fn bytes_per_firm_agent(w: Inspector<'_>) -> u64 {
-    let kinds = &w.population().kinds;
-    kinds
-        .iter()
-        .position(|k| k.decl.kind == sys_frm::SMALL_FIRM.name)
-        .map_or(0, |k| u64::try_from(w.agent_table(k).bytes_per_row()).unwrap_or(u64::MAX))
-}
-
-/// The estates open at a day's close, at the most: those opened so far less those settled.
-fn estates_open(w: Inspector<'_>) -> u64 {
-    let (mut open, mut most) = (0_i128, 0_i128);
-    for d in w.agent_days() {
-        open += i128::from(d.estates) - i128::from(d.estates_settled);
-        if open > most {
-            most = open;
-        }
-    }
-    u64::try_from(most).unwrap_or(0)
-}
-
-fn counters(w: Inspector<'_>) -> [(&'static str, u64); 53] {
-    let most =
-        |f: fn(&phx_ledger::apply_batch::DaySettlement) -> u64| greatest(w.settlements().iter().map(|s| f(&s.dues)));
-    let agents = |f: fn(&phx_world::agents::AgentDay) -> u64| greatest(w.agent_days().iter().map(f));
-    [
-        ("phx_exec.barriers_per_empty_day", empty_day_barriers(w)),
-        ("phx_geo.map_bytes", u64::try_from(w.geo().bytes()).unwrap_or(u64::MAX)),
-        ("phx_tec.way_sets", way_sets(w)),
-        ("phx_ledger.rows_streamed", most(|d| d.rows_due)),
-        ("phx_ledger.run_heads_read", most(|d| d.heads_read)),
-        ("phx_ledger.run_rows_scanned", most(|d| d.rows_scanned)),
-        ("phx_ledger.run_rows_not_due", most(|d| d.rows_scanned - d.rows_due)),
-        ("phx_ledger.payments", most(|d| d.payments)),
-        ("phx_ledger.fixed_point_iterations", most(|d| d.iterations)),
-        ("phx_ledger.day_buffer_peak_bytes", most(|d| d.buffer_bytes)),
-        ("phx_ledger.losers_drawn", most(|d| d.lost)),
-        ("phx_pop.agents_gathered", agents(|d| d.gathered)),
-        ("phx_pop.bookings_read", agents(|d| d.read)),
-        ("phx_pop.redraws", agents(|d| d.redraws)),
-        ("phx_pop.hits", agents(|d| d.hits)),
-        ("phx_pop.agents_booked", agents(|d| d.booked)),
-        ("phx_frm.defaults", agents(|d| d.defaults)),
-        ("phx_frm.estates_open", estates_open(w)),
-        ("phx_frm.estates_settled", agents(|d| d.estates_settled)),
-        ("phx_frm.estates_waiting", agents(|d| d.estates_waiting)),
-        ("phx_frm.estates_unsold", agents(|d| d.estates_unsold)),
-        ("phx_ledger.unlisted_sweeps", agents(|d| d.unlisted_sweeps)),
-        ("phx_cap.wear_realisations", agents(|d| d.worn)),
-        ("phx_cap.retired", agents(|d| u64::try_from(d.retired).unwrap_or(u64::MAX))),
-        ("phx_cap.depreciation", agents(|d| u64::try_from(d.depreciation).unwrap_or(u64::MAX))),
-        (
-            "phx_frm.price_reviews",
-            greatest(w.visit_days().iter().map(|v| {
-                v.visits_of(<sys_frm::decide::ReviewSmall as HandlerDecl>::NAME)
-                    + v.visits_of(<sys_frm::decide::ReviewLarge as HandlerDecl>::NAME)
-            })),
-        ),
-        (
-            "phx_frm.price_changes",
-            greatest(
-                w.visit_days().iter().map(|v| v.moved_of(<if_firm::facts::Price as phx_core::FactDef>::ITEM.name)),
-            ),
-        ),
-        (
-            "phx_frm.attention_visits",
-            greatest(w.visit_days().iter().map(|v| {
-                v.visits_of(<sys_frm::decide::AttendSmall as HandlerDecl>::NAME)
-                    + v.visits_of(<sys_frm::decide::AttendLarge as HandlerDecl>::NAME)
-            })),
-        ),
-        ("phx_pop.bytes_per_firm_cell", bytes_per_firm_agent(w)),
-        ("phx_gds.auctions", greatest(w.goods_days().iter().map(|(_, g)| g.auctions))),
-        ("phx_gds.extraction_orders", greatest(w.goods_days().iter().map(|(_, g)| g.extractions))),
-        ("phx_market.sellers_in_reach", greatest(w.goods_days().iter().map(|(_, g)| g.in_reach))),
-        ("phx_market.rechoice_rounds", greatest(w.goods_days().iter().map(|(_, g)| g.rounds))),
-        ("phx_srv.unused_capacity", greatest(w.goods_days().iter().map(|(_, g)| g.unused))),
-        ("phx_frt.shipments", greatest(w.goods_days().iter().map(|(_, g)| g.shipments))),
-        ("phx_frt.refused_bookings", greatest(w.goods_days().iter().map(|(_, g)| g.refused_bookings))),
-        ("phx_lab.searching_groups", greatest(w.labour_days().iter().map(|(_, d)| d.searching_groups))),
-        ("phx_lab.vacancies_visible", greatest(w.labour_days().iter().map(|(_, d)| d.vacancies_visible))),
-        ("phx_lab.applications", greatest(w.labour_days().iter().map(|(_, d)| d.applications))),
-        (
-            "phx_lab.rounds_to_match",
-            greatest(w.labour_days().iter().filter(|(_, d)| d.matches > 0).map(|(_, d)| d.match_days / d.matches)),
-        ),
-        ("phx_bnk.applications", greatest(w.credit_days().iter().map(|(_, d)| d.applications))),
-        ("phx_bnk.declines", greatest(w.credit_days().iter().map(|(_, d)| d.declines))),
-        (
-            "phx_bnk.loans_written",
-            greatest(w.credit_days().iter().map(|(_, d)| u64::try_from(d.written.len()).unwrap_or(u64::MAX))),
-        ),
-        ("phx_cb.facility_uses", greatest(w.central_days().iter().map(|(_, d)| d.uses))),
-        ("phx_soc.claims", greatest(w.state_days().iter().map(|(_, d)| d.claims))),
-        ("phx_dem.births", agents(|d| d.born)),
-        ("phx_sta.records_sampled", greatest(w.state_days().iter().map(|(_, d)| d.stats.sampled))),
-        ("phx_sta.publications", greatest(w.state_days().iter().map(|(_, d)| d.stats.published))),
-        ("phx_dem.school_leavers", greatest(crate::checks::births::leavers(w).into_iter())),
-        ("phx_val.methods_in_use", greatest(w.stance_days().iter().map(|d| d.methods))),
-        ("phx_val.surprise_wakes", greatest(w.stance_days().iter().map(|d| d.woken))),
-        ("phx_val.public_surprise_records", greatest(w.stance_days().iter().map(|d| d.surprises))),
-        (
-            "phx_sov.auctions",
-            greatest(w.state_days().iter().map(|(_, d)| u64::try_from(d.auctions.len()).unwrap_or(u64::MAX))),
-        ),
-    ]
-}
-
-/// What the markets did over the run: matches, failures, re-choice rounds and commitments drawn, and the prints.
-fn markets_report(w: Inspector<'_>) -> serde_json::Value {
-    let m = w.markets();
-    let matches: usize = m.tape.sets().iter().map(|s| s.matches.len()).sum();
-    let drawn = m
-        .tape
-        .sets()
-        .iter()
-        .flat_map(|s| &s.matches)
-        .filter(|x| matches!(x.draws, phx_num::Missing::Present(_)))
-        .count();
-    json!({
-        "phx_market.matches": matches,
-        "phx_market.failures": m.tape.failures().len(),
-        "phx_market.rechoice_rounds": m.days.iter().map(|d| d.rechoice_rounds).sum::<u64>(),
-        "phx_market.commitments_drawn": drawn,
-        "prints": m.tape.prints().len(),
-        "market_days": m.days.len(),
-    })
-}
-
-/// What the accounts hold at the run's end: the equity accounts, the unpaid claims, and the periods closed on its
-/// last posting.
-fn accounts_report(w: Inspector<'_>) -> serde_json::Value {
-    let a = w.accounts();
-    let (receivable, payable) = a.claims.totals();
-    json!({
-        "equity_accounts": a.equity.len(),
-        "equity_total": a.equity.parties().filter_map(|p| match a.equity.of(p) {
-            phx_num::Missing::Present(x) => Some(i128::from(x.balance())),
-            phx_num::Missing::Absent => None,
-        }).sum::<i128>().to_string(),
-        "receivable": receivable.to_string(),
-        "payable": payable.to_string(),
-        "claim_entries": a.claims.lines(),
-    })
-}
-
-/// The saves the run took: each one's day, its stores' sizes, its write and check times, and whether it read back to
-/// its close's hash.
 /// The world's configuration from the run's arguments.
 fn config(args: &RunArgs) -> Result<WorldConfig, String> {
     Ok(WorldConfig {
@@ -452,12 +89,10 @@ fn config(args: &RunArgs) -> Result<WorldConfig, String> {
         data: args.data.clone(),
         setup: args.setup.clone(),
         run_dir: args.run_dir.clone(),
-        read_trace: args.read_trace,
         representation: match args.persons {
             Some(n) => phx_num::Missing::Present(representation(n)?),
             None => phx_num::Missing::Absent,
         },
-        pool: Some(pool(args.workers)?),
     })
 }
 
@@ -518,26 +153,6 @@ fn drift_report(settled: &[phx_obs::Drift], ended: &[phx_obs::Drift]) -> serde_j
     json!({ "settled": at(settled), "ended": at(ended) })
 }
 
-fn saves_report(w: Inspector<'_>) -> serde_json::Value {
-    let saves: Vec<serde_json::Value> = w
-        .saves()
-        .iter()
-        .map(|s| {
-            json!({
-                "day": crate::measure::calendar::date_text(w.date(s.day)),
-                "bytes": s.stores.iter().map(|(_, b, _)| *b).sum::<u64>() + s.run_bytes,
-                "raw_bytes": s.stores.iter().map(|(_, _, r)| *r).sum::<u64>(),
-                "stores": s.stores.iter().map(|(n, b, r)| json!({ "name": n, "bytes": b, "raw_bytes": r })).collect::<Vec<_>>(),
-                "write_ms": s.write_ns.map(|n| n / 1_000_000),
-                "check_ms": s.check_ns.map(|n| n / 1_000_000),
-                "hash_matched": s.mismatch.is_none(),
-            })
-        })
-        .collect();
-    json!(saves)
-}
-
-/// The live checks selected, each printed as it runs: their outcomes for the report, and whether none failed.
 fn live_checks(w: Inspector<'_>, observed: &Observed<'_>, checks: &str) -> (Vec<serde_json::Value>, bool) {
     let mut results = Vec::new();
     let mut all_pass = true;
@@ -578,7 +193,7 @@ impl Observing {
         w: Inspector<'_>,
         definitions: &phx_obs::Definitions,
     ) -> Result<(Observing, std::sync::Arc<phx_obs::View>), String> {
-        let watch = phx_obs::Watch { recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
+        let watch = phx_obs::Watch { recorder: phx_obs::Recorder::new(&definitions.reads)? };
         let mut views = phx_obs::Views::new(&definitions.histograms, w)?;
         let opening = views.close(w, &watch.recorder);
         Ok((Observing { watch, views, settled: None }, opening))
@@ -592,174 +207,73 @@ impl Observing {
     }
 }
 
-/// Runs the world to its last day, saving it at each save interval and taking the injections' save, whose directory
-/// it returns.
-fn play(
-    world: &mut World,
-    args: &RunArgs,
-    settle_end: phx_id::Day,
-    end: phx_id::Day,
-    clock: &WallClock,
-    obs: &mut Observing,
-) -> Result<Option<PathBuf>, String> {
-    let saves = args.saves.clone().unwrap_or_else(|| args.run_dir.join("saves"));
-    let build = build_id()?;
-    let mut period = save_period(Inspector::new(world), world.today())?;
-    let w = Inspector::new(world);
-    let injection_day = Period::days(INJECTION_SAVE_DAY).map_or(settle_end, |p| w.calendar().plus(settle_end, p));
-    let mut injection_save = None;
-    obs.settling(w, settle_end);
+/// Runs the world to its last day, the observer reading each day.
+fn play(world: &mut World, settle_end: phx_id::Day, end: phx_id::Day, clock: &WallClock, obs: &mut Observing) {
+    obs.settling(Inspector::new(world), settle_end);
     while world.today() < end {
-        let seen = Inspector::new(world).findings().len();
         world.run_turn_observed(&[], clock, Some(&mut obs.watch));
         println!("{}", progress(Inspector::new(world), settle_end));
-        // Each finding as the turn found it, so a run that stops later still shows what the audit saw.
-        for f in Inspector::new(world).findings().iter().skip(seen) {
-            println!(
-                "finding {} {} day {}: {:?} {} {:?}: {}",
-                f.family,
-                f.clause,
-                f.day.get(),
-                f.owner,
-                f.size,
-                f.unit,
-                f.detail
-            );
-        }
         obs.settling(Inspector::new(world), settle_end);
-        let now = save_period(Inspector::new(world), world.today())?;
-        if now != period {
-            save_and_check(world, &saves, &build, clock)?;
-            period = now;
-        }
-        // The injections' save serves the check that reads them alone, so a run that does not ask for it takes none.
-        if injection_save.is_none() && world.today() >= injection_day && selected(&args.checks, INJECTION_CHECK) {
-            injection_save = Some(world.save(&args.run_dir.join("inject-save"), &build)?.dir);
-        }
     }
-    Ok(injection_save)
 }
 
-/// The turn just run, so a run can be followed as it goes: its dates and days, its wall time, the payments due and
-/// failed in it, and the audit's findings so far.
+/// The turn just run, so a run can be followed as it goes: its dates and days, its wall time, and what the core's
+/// days did in it.
 fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
-    let Some(turn) = w.turn_records().last() else { return "no turn run".to_owned() };
-    let (mut due, mut failed) = (0_u64, 0_u64);
-    for s in w.settlements().iter().filter(|s| s.day >= turn.first && s.day <= turn.last) {
-        due += s.dues.payments;
-        failed += s.dues.failed;
+    let Some(turn) = w.turns().last() else { return "no turn run".to_owned() };
+    let in_turn = |d: phx_id::Day| d >= turn.first && d <= turn.last;
+    let core = w.core();
+    let (mut flows, mut settled, mut failed, mut committed, mut breaks) = (0, 0, 0, 0, 0);
+    for d in core.days.iter().filter(|d| in_turn(d.day)) {
+        (flows, settled, failed, committed, breaks) =
+            (flows + d.flows, settled + d.settled, failed + d.failed, committed + d.committed, breaks + d.breaks);
+    }
+    let (mut born, mut gone, mut ended) = (0, 0, 0);
+    for (_, p) in core.pop_days.iter().filter(|(d, _)| in_turn(*d)) {
+        (born, gone, ended) = (born + p.born, gone + p.gone, ended + p.ended);
     }
     let date = |d| crate::measure::calendar::date_text(w.date(d));
     let phase = if turn.last < settle_end { "settling" } else { "running" };
     let wall = turn.wall_ns.map_or_else(|| "untimed".to_owned(), |ns| format!("{} ms", ns / 1_000_000));
-    // The turn's heaviest sub-steps, so a turn that runs over its budget shows where it went.
-    let mut by_step: Vec<(&'static str, u64)> = phx_core::SUB_STEPS
-        .iter()
-        .map(|info| {
-            let ns: u64 = w
-                .substep_records()
-                .iter()
-                .filter(|r| r.substep == info.step.ordinal() && r.day >= turn.first && r.day <= turn.last)
-                .filter_map(|r| r.wall_ns)
-                .sum();
-            (info.label, ns)
-        })
-        .collect();
-    by_step.sort_by_key(|(_, ns)| std::cmp::Reverse(*ns));
-    let heaviest: Vec<String> =
-        by_step.iter().take(HEAVIEST).map(|(label, ns)| format!("{label} {} ms", ns / 1_000_000)).collect();
-    let in_turn = |d: phx_id::Day| d >= turn.first && d <= turn.last;
-    let agents = w.agent_days().iter().filter(|a| in_turn(a.day));
-    let (mut defaults, mut closures, mut estates, mut born, mut gone) = (0, 0, 0, 0, 0);
-    for a in agents {
-        (defaults, closures, estates, born, gone) =
-            (defaults + a.defaults, closures + a.closures, estates + a.estates, born + a.born, gone + a.gone);
-    }
-    let goods = w.goods_days().iter().filter(|(d, _)| in_turn(*d)).map(|(_, g)| g);
-    let (mut made, mut orders, mut refused, mut failed_goods, mut projects) = (0, 0, 0, 0, 0);
-    let (mut short_funds, mut short_units, mut perished) = (0, 0, 0);
-    for g in goods {
-        (made, orders, refused, failed_goods, projects) =
-            (made + g.made, orders + g.orders, refused + g.refused, failed_goods + g.failed, projects + g.projects);
-        (short_funds, short_units, perished) =
-            (short_funds + g.failed_funds, short_units + g.failed_units, perished + g.perished);
-    }
-    let (mut claims, mut pensions) = (0, 0);
-    for (_, s) in w.state_days().iter().filter(|(d, _)| in_turn(*d)) {
-        (claims, pensions) = (claims + s.claims, pensions + s.pensions);
-    }
-    let (mut posted, mut hires, mut layoffs) = (0, 0, 0);
-    for (_, l) in w.labour_days().iter().filter(|(d, _)| in_turn(*d)) {
-        (posted, hires, layoffs) = (posted + l.posted, hires + l.hires, layoffs + l.layoffs);
-    }
-    let mut visits: std::collections::BTreeMap<&str, u64> = std::collections::BTreeMap::new();
-    for v in w.visit_days().iter().filter(|v| in_turn(v.day)) {
-        for (h, n) in &v.visits {
-            *visits.entry(h).or_insert(0) += n;
-        }
-    }
-    let mut visits: Vec<(&str, u64)> = visits.into_iter().collect();
-    visits.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
-    let busiest: Vec<String> = visits.iter().take(HEAVIEST).map(|(h, n)| format!("{h} {n}")).collect();
-    let families: std::collections::BTreeMap<&str, usize> =
-        w.findings().iter().fold(std::collections::BTreeMap::new(), |mut m, f| {
-            *m.entry(f.family).or_insert(0) += 1;
-            m
-        });
     format!(
-        "{phase} {} to {}: {} days in {wall}; payments {due} due, {failed} failed; {} findings {families:?}; \
-         defaults {defaults}, closures {closures}, estates {estates}, born {born}, gone {gone}; made {made}, orders \
-         {orders}, refused {refused}, failed {failed_goods} ({short_funds} money, {short_units} units), perished \
-         {perished}, projects {projects}; jobs posted {posted}, hired {hires}, laid off {layoffs}; benefit claims {claims}, \
-         pensions {pensions}; heaviest {}; visits {}",
+        "{phase} {} to {}: {} days in {wall}; flows {flows}, settled {settled}, failed {failed}, committed \
+         {committed}, money breaks {breaks}; born {born}, gone {gone}, households ended {ended}; persons {}",
         date(turn.first),
         date(turn.last),
         turn.days,
-        w.findings().len(),
-        heaviest.join(", "),
-        busiest.join(", ")
+        core.persons_held(),
     )
 }
 
-/// The sub-steps a turn's line names as its heaviest.
-const HEAVIEST: usize = 6;
-
-/// Each sub-step's wall time over the days it ran, in the day's order: its total, median and greatest, so a run shows
-/// where its days go.
-fn substeps_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
-    phx_core::SUB_STEPS
-        .iter()
-        .filter_map(|info| {
-            let mut times: Vec<u64> = w
-                .substep_records()
-                .iter()
-                .filter(|r| r.substep == info.step.ordinal())
-                .filter_map(|r| r.wall_ns)
-                .collect();
-            if times.is_empty() {
-                return None;
-            }
-            times.sort_unstable();
-            let total: u64 = times.iter().sum();
-            let median = times.get((times.len() - 1) / 2).copied();
-            Some(json!({
-                "substep": info.label,
-                "days": times.len(),
-                "total_ms": total / 1_000_000,
-                "median_ns": median,
-                "greatest_ns": times.last().copied(),
-            }))
-        })
-        .collect()
+/// The counters the ratchets hold: each the greatest a day of the run came to.
+fn counters(w: Inspector<'_>) -> [(&'static str, u64); 3] {
+    let core = w.core();
+    [
+        ("phx_geo.map_bytes", u64::try_from(w.geo().bytes()).unwrap_or(u64::MAX)),
+        ("phx_core.flows_a_day", greatest(core.days.iter().map(|d| d.flows))),
+        ("phx_pop.hits", greatest(core.pop_days.iter().map(|(_, d)| d.hits))),
+    ]
 }
 
-/// The pool the world's sharded work runs on: the cores the system allows, or the first `workers` of them.
-pub(crate) fn pool(workers: Option<usize>) -> Result<std::sync::Arc<phx_exec::Pool>, String> {
-    let mut spec = phx_exec::spec::PoolSpec::detect();
-    if let Some(n) = workers {
-        spec.cores.truncate(n);
-    }
-    phx_exec::Pool::new(&spec).map(std::sync::Arc::new).map_err(|e| e.0)
+/// The core's days: each one's time, flows and what came of them.
+fn days_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .days
+        .iter()
+        .map(|d| {
+            json!({
+                "day": d.day.get(),
+                "ms": d.ns / 1_000_000,
+                "flows": d.flows,
+                "settled": d.settled,
+                "failed": d.failed,
+                "failed_by": d.failed_by,
+                "committed": d.committed,
+                "gross": d.gross.to_string(),
+                "breaks": d.breaks,
+            })
+        })
+        .collect()
 }
 
 /// Assembles, settles and runs the world, then checks it and writes its report; true when every check passes, every
@@ -776,15 +290,8 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;
     println!("opened in {} ms", assembly_ns.map_or(0, |n| n / 1_000_000));
     let meter = crate::budget::Meter::start(clock.now_ns());
-    let injection_save = play(&mut world, args, settle_end, end, &clock, &mut obs)?;
+    play(&mut world, settle_end, end, &clock, &mut obs);
     let span = meter.stop(clock.now_ns());
-    let injecting = clock.now_ns();
-    if let Some(dir) = &injection_save {
-        for r in inject_apart(args, dir)? {
-            world.record_injection(r);
-        }
-    }
-    let inject_ns = clock.now_ns().checked_sub(injecting);
     let w = Inspector::new(&world);
     let view = obs.views.close(w, &obs.watch.recorder);
     let settled = obs.settled.as_ref().map(|v| phx_obs::drift(&opening, v)).unwrap_or_default();
@@ -800,13 +307,12 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let peak = peak_resident_bytes();
     let memory_ok = peak.is_some_and(|p| p <= WORLD_BYTES);
     let (budget_block, budget_kept) = crate::budget::judge(w, peak, &span, args.budget.as_deref())?;
-    let turns = w.turn_records();
+    let turns = w.turns();
     let report = json!({
         "seed": args.seed,
         "settle_years": w.settling_years(),
         "days": args.days,
         "total_days": args.total_days,
-        "read_trace": args.read_trace,
         "workers": args.workers,
         "first_day": crate::measure::calendar::date_text(w.date(w.day_zero().succ())),
         "last_day": crate::measure::calendar::date_text(w.date(w.today())),
@@ -817,36 +323,17 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "build_seconds": args.build_seconds,
         "run_ms": span.run_ns.map(|n| n / 1_000_000),
         "assembly_ms": assembly_ns.map(|n| n / 1_000_000),
-        "inject_ms": inject_ns.map(|n| n / 1_000_000),
-        "geo": geo_report(w),
-        "opening": opening_report(w),
-        "settlement": settlement_report(w),
-        "substeps": substeps_report(w),
-        "markets": markets_report(w),
-        "population": crate::checks::births::report(w),
-        "accounts": accounts_report(w),
-        "saves": saves_report(w),
+        "persons_opened": w.core().persons_opened,
+        "persons": w.core().persons_held(),
+        "core_days": days_report(w),
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
-        "representation": w.population().representation.name(),
-        "injections": crate::inject::report(w.injections()),
         "peak_resident_bytes": peak,
         "budget": budget_block,
         "memory_budget_bytes": WORLD_BYTES,
-        "reserved_bytes": w.bytes_reserved(),
         "counters": counters.iter().map(|(n, v)| ((*n).to_owned(), json!(v))).collect::<serde_json::Map<_, _>>(),
         "ratchet_failures": ratchet_failures,
         "findings": w.findings().len(),
-        "findings_by": findings_by(w.findings()),
-        "audit": {
-            "families": w.families().iter().map(|f| f.name).collect::<Vec<_>>(),
-            "closes": w.closes().len(),
-            "phx_audit.rows_checked": w.closes().iter().map(|c| c.rows_checked).sum::<u64>(),
-            "most_rows_checked_in_a_close": greatest(w.closes().iter().map(|c| c.rows_checked)),
-        },
-        "placeholders": w.placeholders().len(),
-        "standing_shapes": w.standing_shapes().len(),
-        "world_hash": format!("{:032x}", w.world_hash()),
         "checks": results,
     });
     if let Some(path) = &args.report {
@@ -874,9 +361,7 @@ pub fn measure_calendar(data: &Path, setup: &Path, run_dir: &Path, out: &Path) -
         data: data.to_path_buf(),
         setup: setup.to_path_buf(),
         run_dir: run_dir.to_path_buf(),
-        read_trace: false,
         representation: phx_num::Missing::Absent,
-        pool: None,
     };
     let world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let report = crate::measure::calendar::measure(Inspector::new(&world));
@@ -904,36 +389,6 @@ pub fn measure_budget(build_run: &Path, device: &Path, out: &Path) -> Result<boo
     std::fs::write(out, text + "\n").map_err(|e| format!("{}: {e}", out.display()))?;
     println!("{}", out.display());
     Ok(true)
-}
-
-/// The run's findings counted by family and clause, each with its first day and detail, so a report says what fired.
-/// The examples of a family the report lists, enough to see its shapes without its every finding.
-const EXAMPLES: usize = 20;
-
-fn findings_by(findings: &[phx_core::Finding]) -> Vec<serde_json::Value> {
-    let mut by: std::collections::BTreeMap<(&str, &str), Vec<&phx_core::Finding>> = std::collections::BTreeMap::new();
-    for f in findings {
-        by.entry((f.family, f.clause)).or_default().push(f);
-    }
-    by.into_iter()
-        .map(|((family, clause), list)| {
-            let mut days: std::collections::BTreeMap<u32, usize> = std::collections::BTreeMap::new();
-            for f in &list {
-                *days.entry(f.day.get()).or_insert(0) += 1;
-            }
-            let size: i128 = list.iter().map(|f| f.size).sum();
-            json!({
-                "family": family,
-                "clause": clause,
-                "count": list.len(),
-                "size": size.to_string(),
-                "first_day": list.first().map(|f| f.day.get()),
-                "first": list.first().map(|f| f.detail.clone()),
-                "examples": list.iter().take(EXAMPLES).map(|f| json!({"day": f.day.get(), "owner": format!("{:?}", f.owner), "size": f.size, "detail": f.detail})).collect::<Vec<_>>(),
-                "by_day": days.into_iter().map(|(d, n)| json!([d, n])).collect::<Vec<_>>(),
-            })
-        })
-        .collect()
 }
 
 #[cfg(test)]

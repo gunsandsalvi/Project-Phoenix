@@ -728,7 +728,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (a, b and c done: the core draws its own opening; d–g on the core; next: the switch, then h)
+**Status**: building (a, b and c done; the committed world is the core's; d–g on the core; next: h, the old kernel's crates, the core's day on the pool)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
@@ -782,10 +782,23 @@ world switches to the core.
   - h. Statistics, indices and accounts on the core; the audit's families; the Stage 0 and Stage 1 checks on the
     core; the core saved and loaded.
   - i. The switch: the committed world is the core's; the old kernel's crates and modules, its checks and the
-    primitives the matrices replace are deleted; the smoke and the bench judged.
-  - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening comes next —
-    households, persons, jobs, loans, pensions and deposits drawn on the core from the opening dataset and the
-    systems' draws — then the switch and the old kernel's deletion, then h on the core alone.
+    primitives the matrices replace are deleted; the smoke and the bench judged. Done in the world: `phx_world` holds
+    the core alone (its opening, day, observer and checks); the old world's modules and checks are deleted, each
+    check kept by its identity and reporting "not yet" until h rebuilds it on the core. The first smoke on the core
+    (750,000 persons, 20 days): a median turn of 2,502 ms and a worst of 7,522 ms (the old world's ratchets stood at
+    10,000 and 32,700), 2,403 bytes a person, one core busy — the core's day runs on one thread, so the ratchet of
+    cores busy stays broken until the day is sharded on the pool, the next budget work. Left: the old kernel's crates
+    and the systems' handlers, which nothing runs now (the books, the agents' tables, the markets' old instances, the
+    accounts, the old audit), deleted with the primitives only they read.
+  - Measured at the first 35-day run on the core (150,000 persons, seed 1), to settle in this step: at the month's end
+    payday 4,326 of 354,198 flows failed — 1,468 wages, 1,056 sales, 877 loan repayments, 925 taxes; the wages that
+    fail are those of firms whose sales do not reach the payday's bill (the same 1,467 failed before firms sold on the
+    core, so the firms that fail are not the ones sales reach), and a failed flow has as yet no consequence: arrears
+    at 2d (f) and the firms' refinancing (the lending placeholder) settle it. Births come at the opening's transient:
+    no household is trying at day zero and each decides at its head's birthday (38 births in 35 days), which the
+    settling years absorb.
+  - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
+    are done; next the old kernel's crates are deleted, then h on the core alone.
   - The native opening is built (a): the core reads nothing of the books. Built on the core: goods as holdings (each
     firm's stocks, making by the production rule within its staff and stored inputs, inputs bought at posted prices,
     the goods' identity read daily); the treasury's collective consumption and firms' fixed investment from the
@@ -10599,14 +10612,15 @@ and are not mapped.
 | CHN | S6.02 | 3 |
 | GEO | S0.13 | 1, 2, 3, 6, 7, 10, 11, 14, 15, 16, 17 |
 | GEO | S0.25 | 8 |
-| GEO | S1.05 | 9, 12 |
+| GEO | S1.05 | 12 |
+| GEO | S1.24 | 9 |
 | GEO | S1.07 | 13, 18 |
 | GEO | S2.05 | 5 |
 | GEO | S2.13 | 19, 20 |
 | GEO | S5.02 | 4 |
 | REP | S0.28 | 1, 3, 7, 9, 12, 13, 14, 16, 23, 25, 26, 31, 40, 41 |
 | REP | S1.05 | 35 |
-| REP | S1.08 | 15 |
+| REP | S1.24 | 15 |
 | REP | S1.09 | 34 |
 | REP | S1.12 | 5, 20 |
 | REP | S1.15 | 21, 38 |
@@ -10624,7 +10638,7 @@ and are not mapped.
 | MON | S0.17 | 5 |
 | MON | S1.10 | 15 |
 | MON | S1.12 | 4 |
-| MON | S1.14 | 10 |
+| MON | S1.24 | 10 |
 | SET | S0.15 | 1, 2, 3, 4, 5, 7, 8, 9, 11, 16 |
 | SET | S0.17 | 6, 10 |
 | SET | S0.20 | 12, 13, 15, 17 |
@@ -10652,7 +10666,8 @@ and are not mapped.
 | POP | S2.05 | 10 |
 | POP | S2.04 | 9, 15 |
 | POP | S6.02 | 1, 2, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 |
-| HH | S1.12 | 1, 2, 4, 5, 15, 18, 19, 20 |
+| HH | S1.12 | 1, 2, 4, 5, 18, 19, 20 |
+| HH | S1.24 | 15 |
 | HH | S2.05 | 3, 6, 8, 10 |
 | HH | S2.11 | 13, 14, 21 |
 | HH | S4.03 | 11 |
@@ -10668,7 +10683,7 @@ and are not mapped.
 | FRM | S1.03 | 17, 20, 22 |
 | FRM | S1.05 | 13 |
 | FRM | S1.08 | 7, 14 |
-| FRM | S1.12 | 21 |
+| FRM | S1.24 | 21 |
 | FRM | S1.15 | 1, 2, 4, 5, 6, 8, 11 |
 | FRM | S2.02 | 18 |
 | FRM | S2.03 | 15, 19 |
@@ -10692,7 +10707,8 @@ and are not mapped.
 | FRT | S1.07 | 1, 2, 3, 6, 7, 9, 11, 12 |
 | FRT | S1.15 | 4, 5, 10 |
 | FRT | S2.03 | 8 |
-| LAB | S1.08 | 1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17 |
+| LAB | S1.08 | 1, 3, 4, 6, 7, 8, 11, 12, 16, 17 |
+| LAB | S1.24 | 2, 9, 13, 14, 15 |
 | LAB | S2.10 | 10 |
 | LAB | S6.02 | 5 |
 | HSG | S2.05 | 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20 |
@@ -10700,7 +10716,8 @@ and are not mapped.
 | TCR | S2.02 | 1, 2, 3, 4, 5, 6, 7, 8 |
 | ENE | S2.09 | 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14 |
 | ENE | S4.02 | 5, 6 |
-| BNK | S1.09 | 1, 2, 6, 8, 11, 14, 16, 17, 19, 20 |
+| BNK | S1.09 | 1, 2, 6, 8, 16, 17, 19, 20 |
+| BNK | S1.24 | 11, 14 |
 | BNK | S2.03 | 18 |
 | BNK | S2.01 | 7, 9, 12, 15 |
 | BNK | S2.07 | 4, 5 |
@@ -10746,10 +10763,12 @@ and are not mapped.
 | INS | S4.07 | 7 |
 | PEN | S4.04 | 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
 | PEN | S5.02 | 1 |
-| TRS | S1.11 | 1, 4, 6, 9 |
+| TRS | S1.11 | 4, 9 |
+| TRS | S1.24 | 1, 6 |
 | TRS | S3.03 | 2, 3, 7, 8, 10 |
 | TRS | S5.04 | 5 |
-| TAX | S1.11 | 5, 7 |
+| TAX | S1.11 | 7 |
+| TAX | S1.24 | 5 |
 | TAX | S5.01 | 3, 4, 6, 8 |
 | TAX | S5.05 | 1, 2 |
 | SOC | S1.11 | 7 |

@@ -1,6 +1,8 @@
 use phx_world::Inspector;
 
-use super::{Check, Outcome};
+use phx_num::Missing;
+
+use super::{Check, Observed, Outcome};
 use crate::live_check;
 
 /// Business days a month holds at least; a run shorter than a month may pay no monthly due.
@@ -109,4 +111,54 @@ pub const LC_0_65: Check = live_check! {
     title: "On the core each bank owes what its customers hold, and settlement makes and loses no money",
     from_step: "S1.23",
     check: core_money_holds,
+};
+
+/// Money moves on every business day of some country; no read rises on every day of the run unless its declaration
+/// names why; and the reads never all stand still to the end.
+fn alive(w: Inspector<'_>, o: &Observed<'_>) -> Outcome {
+    for d in w.core().days.iter().filter(|d| w.any_business(d.day)) {
+        if d.settled == 0 || d.gross == 0 {
+            return Outcome::Fail(format!("no money moved on business day {}", d.day.get()));
+        }
+    }
+    for (decl, series) in o.reads.iter().zip(o.series) {
+        if decl.grows.is_none() && phx_obs::rises_throughout(&series.values) {
+            return Outcome::Fail(format!("read `{}` rose on every day, for no named cause", decl.id));
+        }
+    }
+    if let Missing::Present(day) = phx_obs::still_from(o.series) {
+        return Outcome::Fail(format!("every read stood still from day {} to the end", day.get()));
+    }
+    Outcome::Pass
+}
+
+/// Each opening distribution has its distance from the world's own, and the share of its members that moved within
+/// it, read at settling's end and at the run's end.
+fn drift_read(_: Inspector<'_>, o: &Observed<'_>) -> Outcome {
+    for (when, drifts) in [("settling's end", o.settled), ("the run's end", o.ended)] {
+        if drifts.is_empty() {
+            return Outcome::Fail(format!("no opening distribution was read at {when}"));
+        }
+        if let Some(d) = drifts.iter().find(|d| d.distance == Missing::Absent) {
+            return Outcome::Fail(format!("`{}` has no distance at {when}: a histogram empty or rebinned", d.id));
+        }
+        if let Some(d) = drifts.iter().find(|d| d.moved == Missing::Absent) {
+            return Outcome::Fail(format!("`{}` has no member sampled in both views at {when}", d.id));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_0_59: Check = live_check! {
+    id: "LC-0-59",
+    title: "liveness: money circulates, fails are counted by cause, no quantity grows without a named cause",
+    from_step: "S0.26",
+    observed: alive,
+};
+
+pub const LC_0_60: Check = live_check! {
+    id: "LC-0-60",
+    title: "each opening distribution's distance from the world's own and its members' moves, at settling's end and the year's",
+    from_step: "S0.26",
+    observed: drift_read,
 };

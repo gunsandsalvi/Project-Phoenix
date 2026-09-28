@@ -38,8 +38,9 @@ b = r["budget"]
 print(f"smoke: {b['persons']} persons; turn median {b['turn_ms_median']} ms, worst {b['turn_ms_worst']} ms "
       f"(budget 1000 and 2000); {b['bytes_per_person']} bytes a person; {b['busy_core_hundredths'] / 100} cores busy; "
       f"{b['faults_per_day']} page faults a day")
-heavy = sorted(r["substeps"], key=lambda s: -s["median_ns"])[:6]
-print("smoke: median by sub-step: " + ", ".join(f"{s['substep']} {s['median_ns'] // 1_000_000} ms" for s in heavy))
+days = sorted(d["ms"] for d in r["core_days"])
+if days:
+    print(f"smoke: the core's days: median {days[(len(days) - 1) // 2]} ms, worst {days[-1]} ms")
 if b["failures"]:
     sys.exit(1)
 PY

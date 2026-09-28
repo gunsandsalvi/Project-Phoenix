@@ -31,6 +31,8 @@ enum Of {
     Persons,
     /// The value of the attribute at this place among its kind's.
     Attr(usize),
+    /// Its contracts in the family at this place among the core's, on the side its kind is.
+    Contracts { family: usize, side: usize },
 }
 
 /// The declared histograms resolved against the world's population kinds.
@@ -55,22 +57,38 @@ impl Views {
     /// # Errors
     /// A histogram of a kind the world does not keep, or edges a histogram cannot have.
     pub fn new(decls: &[HistogramDecl], w: Inspector<'_>) -> Result<Views, String> {
-        let kinds = &w.population().kinds;
+        let core = w.core();
         let mut histograms = Vec::with_capacity(decls.len());
         for d in decls {
-            let Some(kind) = kinds.iter().position(|k| k.decl.kind == d.kind) else {
+            let Some(kind) = core.names.iter().position(|n| *n == d.kind) else {
                 return Err(format!("histogram `{}` is of `{}`, a kind the world does not keep", d.id, d.kind));
             };
+            let decl = core.household_decl.as_ref().filter(|h| h.kind == d.kind);
             let of = match (d.of.as_str(), d.of.strip_prefix("attr.")) {
                 ("persons", _) => Of::Persons,
+                (of, None) if of.starts_with("contracts.") => {
+                    let name = of.trim_start_matches("contracts.");
+                    let number = u8::try_from(kind).ok();
+                    let found = core.families.iter().enumerate().find_map(|(i, f)| {
+                        let side = f.store.kinds.iter().position(|k| Some(*k) == number)?;
+                        (f.name == name && f.store.heads.get(side).is_some_and(Option::is_some)).then_some((i, side))
+                    });
+                    let Some((family, side)) = found else {
+                        return Err(format!("histogram `{}` counts `{name}`, no family listing `{}`", d.id, d.kind));
+                    };
+                    Of::Contracts { family, side }
+                }
                 (_, Some(attr)) => {
-                    let Some(i) = kinds.get(kind).and_then(|k| k.decl.attr(attr)) else {
+                    let Some(i) = decl.and_then(|k| k.attr(attr)) else {
                         return Err(format!("histogram `{}` reads `{attr}`, no attribute of `{}`", d.id, d.kind));
                     };
                     Of::Attr(i)
                 }
                 (other, None) => {
-                    return Err(format!("histogram `{}` is of `{other}`, neither persons nor an attribute", d.id));
+                    return Err(format!(
+                        "histogram `{}` is of `{other}`, not persons, an attribute or contracts",
+                        d.id
+                    ));
                 }
             };
             Histogram::new(d.edges.clone()).map_err(|e| format!("histogram `{}`: {e}", d.id))?;
@@ -90,15 +108,26 @@ impl Views {
         let mut sampled = Vec::with_capacity(self.histograms.len());
         for r in &self.histograms {
             let Ok(mut h) = Histogram::new(r.edges.clone()) else { continue };
-            let table = w.agent_table(r.kind);
+            let core = w.core();
+            let (Some(store), persons) = (core.kinds.get(r.kind), core.persons.get(r.kind).and_then(Option::as_ref))
+            else {
+                continue;
+            };
             let mut sample = Vec::new();
-            for slot in table.slots() {
+            for slot in store.parties.live_slots() {
                 let value = match r.of {
-                    Of::Persons => i64::try_from(table.persons(slot).len()).unwrap_or(i64::MAX),
-                    Of::Attr(attr) => i64::from(table.attr(slot, attr)),
+                    Of::Persons => i64::try_from(persons.map_or(0, |p| p.count(slot))).unwrap_or(i64::MAX),
+                    Of::Attr(attr) => match store.record(slot).get(attr).map(|w| w.get()) {
+                        Some(Missing::Present(v)) => v,
+                        _ => continue,
+                    },
+                    Of::Contracts { family, side } => core
+                        .families
+                        .get(family)
+                        .map_or(0, |f| i64::try_from(f.store.of(side, slot).count()).unwrap_or(i64::MAX)),
                 };
                 h.add(value, 1);
-                let party = table.party(slot);
+                let Some(party) = store.parties.id(slot) else { continue };
                 if party.get() % MOBILITY_SAMPLE == 0 {
                     sample.push((party, h.bin_of(value)));
                 }

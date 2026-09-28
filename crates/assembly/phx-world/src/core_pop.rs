@@ -15,9 +15,9 @@ use phx_pop::kind::PopKindDecl;
 use phx_pop::person::{pack, unpack};
 use phx_rand::{Subject, SubjectTag};
 
-use crate::agents::{Bound, Buffers, Reading, chances, follow};
 use crate::consts::CORE_WHEEL_DAYS;
 use crate::core::Core;
+use crate::pop_rules::{Bound, Buffers, Reading, chances, follow};
 
 /// One process's bookings on the core: its place among the world's processes, and each household's next booking on
 /// a wheel, with its day and whether it is a hit by slot, so an entry the household was booked past is skipped.
@@ -57,7 +57,8 @@ impl Core {
         Some((place, self.household_pop))
     }
 
-    /// A household read into its explicit form: its attributes by name from its record, its persons unpacked.
+    /// A household read into its explicit form: its attributes and positions by name from its record, its persons
+    /// unpacked.
     fn read_household(&self, (place, decl): (usize, &PopKindDecl), slot: Slot, h: &mut Household) {
         h.attrs.clear();
         h.persons.clear();
@@ -74,6 +75,10 @@ impl Core {
                 }
             };
             h.attrs.push((a.item.name, v));
+        }
+        for (i, p) in decl.positions.iter().enumerate() {
+            let v = record.get(decl.attrs.len() + i).map_or(phx_num::Missing::Absent, |w| w.get());
+            h.positions.push((p.item.name, v));
         }
         if let Some(Some(p)) = self.persons.get(place) {
             h.persons.extend(p.of(slot).map(|x| unpack(decl, x.word)));
@@ -225,6 +230,15 @@ impl Core {
         }
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), slot);
         self.write_changed((place, decl), key, &h.persons, &held);
+        // The household's own attributes an outcome changed, as its decision to try for a child, are its record's.
+        if h.attrs != attrs
+            && let Some(store) = self.kinds.get_mut(place)
+        {
+            let record = store.record_mut(slot);
+            for ((_, v), w) in h.attrs.iter().zip(record.iter_mut()) {
+                *w = phx_num::MaybeI64::present(i64::from(*v));
+            }
+        }
         // The gone leave from the last, so each earlier place still reads the person the outcome marked.
         for at in (0..before).rev() {
             if h.persons.get(at).is_some_and(|p| p.gone) {
@@ -260,7 +274,7 @@ impl Core {
             record.ended += 1;
             return;
         }
-        let rest = Household { attrs, persons: left, positions: Vec::new() };
+        let rest = Household { attrs: h.attrs, persons: left, positions: h.positions };
         let mut buffers = Buffers::default();
         self.book_all(ctx, (place, decl), slot, (&rest, &mut buffers), day.succ());
     }

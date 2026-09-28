@@ -217,8 +217,8 @@ of = "attr.BNK.bank"
 edges = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50]
 
 [[histogram]]
-id = "small_firms_by_size"
-title = "small firms by the persons they employ"
-kind = "small_firm"
-of = "attr.FRM.size"
-edges = [1, 2, 3, 5, 10, 20, 50, 100, 250, 500, 1000]
+id = "firms_by_size"
+title = "firms by the persons they employ"
+kind = "firm"
+of = "contracts.LAB.employment"
+edges = [0, 1, 2, 3, 5, 10, 20, 50, 100, 250, 500, 1000]

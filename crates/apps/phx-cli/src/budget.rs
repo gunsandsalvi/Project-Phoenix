@@ -73,9 +73,9 @@ pub struct Cost {
 #[must_use]
 pub fn cost(w: Inspector<'_>, peak: Option<u64>, span: &Span) -> Cost {
     let Span { run_ns, before, after } = *span;
-    let turn_ns: Vec<u64> = w.turn_records().iter().filter_map(|t| t.wall_ns).collect();
-    let days: u64 = w.turn_records().iter().map(|t| u64::from(t.days)).sum();
-    let persons = w.population().representation.persons;
+    let turn_ns: Vec<u64> = w.turns().iter().filter_map(|t| t.wall_ns).collect();
+    let days: u64 = w.turns().iter().map(|t| u64::from(t.days)).sum();
+    let persons = w.core().persons_opened;
     let mut counters = Vec::new();
     let turns = median_and_worst(&turn_ns);
     if let Some((median, worst)) = turns {

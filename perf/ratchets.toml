@@ -28,17 +28,7 @@ direction = "down"
 
 # The distinct sets of ways the technology keeps: each country's public set per industry, three countries of sixteen
 # industries. It rises with the ways firms discover, license and imitate from Stage 6, each rise stated.
-[[ratchet]]
-counter = "phx_tec.way_sets"
-value = 48
-direction = "down"
-
 # Barriers the day runner crosses on a day no handler runs, read by the build run.
-[[ratchet]]
-counter = "phx_exec.barriers_per_empty_day"
-value = 0
-direction = "down"
-
 # The map's bytes on the build run's seed: tiles with their relief and rivers, exposure columns, zone distances,
 # deposits and the transport network's segments; the plan's budget is 80 MB.
 [[ratchet]]
@@ -58,81 +48,21 @@ direction = "down"
 # payments rise by 8 778, 8 900 and 8 778 (ac0f57ed). Firms in default end into estates from S1.03, which hold their
 # rows until they settle, so the busiest day reads 45 rows not due more (81 841); estates that hold plant wait to sell it
 # from the S1.03 review, holding their rows longer, and 4 more (81 845).
-[[ratchet]]
-counter = "phx_ledger.rows_streamed"
-value = 2848010
-direction = "down"
-
-[[ratchet]]
-counter = "phx_ledger.run_heads_read"
-value = 991630
-direction = "down"
-
 # The rows the dues' runs scanned and the payments on the heaviest day: restated at S1.08, whose employment lines are
 # each region's and occupation's, and whose lines held by one agent of many twins are cleared.
-[[ratchet]]
-counter = "phx_ledger.run_rows_scanned"
-value = 2928452
-direction = "down"
-
-[[ratchet]]
-counter = "phx_ledger.run_rows_not_due"
-value = 81845
-direction = "down"
-
-[[ratchet]]
-counter = "phx_ledger.payments"
-value = 2821888
-direction = "down"
-
 # The fixed point's visits restated from the twins gate run (aa48779e, two years): payers short of money multiply as
 # the world runs, since nothing at Stage 0 decides, and the last paydays are the heaviest.
-[[ratchet]]
-counter = "phx_ledger.fixed_point_iterations"
-value = 715218
-direction = "down"
-
 # The day buffers restated from the twins gate run (aa48779e): counted by their room, with the payments 7a hands 7c,
 # the day book's due and fail records and the day's look-ups (ab9e4578); over architecture §13.1's line.
-[[ratchet]]
-counter = "phx_ledger.day_buffer_peak_bytes"
-value = 888941584
-direction = "down"
-
 # The members drawn on cleared lines on the heaviest day, and the agents' day at its most: rows gathered, bookings
 # read and drawn again, hits, and agents drawn afresh at 10b; first set at S0.28 from the twins gate run (aa48779e),
 # the higher of the two representations on each (the small world 8bb7cd39).
-[[ratchet]]
-counter = "phx_ledger.losers_drawn"
-value = 105362770
-direction = "down"
-
-[[ratchet]]
-counter = "phx_pop.agents_gathered"
-value = 30207
-direction = "down"
-
 # The most agents a day's screening read and redrew: restated at S1.08, when a day's mass of failed firms
 # releases its staff to search and each changed person's hazards are drawn again, and retirement is a hazard at
 # birthdays from the pension's age.
 [[ratchet]]
-counter = "phx_pop.bookings_read"
-value = 38608
-direction = "down"
-
-[[ratchet]]
-counter = "phx_pop.redraws"
-value = 19248
-direction = "down"
-
-[[ratchet]]
 counter = "phx_pop.hits"
-value = 26375
-direction = "down"
-
-[[ratchet]]
-counter = "phx_pop.agents_booked"
-value = 131242
+value = 21627
 direction = "down"
 
 # The firms that default on the heaviest day, whose estates settle the next business day: first set at S1.03 on the
@@ -142,11 +72,6 @@ direction = "down"
 # deposits and loans are drawn otherwise; 10 553 at S1.08, whose jobs are dealt by region and occupation, so
 # a firm's wage bill no longer averages the country's and those whose bill passes their money fail after the first
 # payday's grace.
-[[ratchet]]
-counter = "phx_frm.defaults"
-value = 10553
-direction = "down"
-
 # The estates open at a day's close at the most, the firms' and the households' together; the firms' price reviews and
 # the prices they moved, which are none until the firms' latest filed accounts are drawn (S1.15); their attention's
 # visits on their production schedules; and the bytes a small firm's agent takes in its table: first set at S1.03.
@@ -155,117 +80,22 @@ direction = "down"
 # small firm's agent keeps the day of its last review (180 bytes). From S1.04 the small firms hold plant too, so their
 # estates wait to sell it as the large firms' do (9 965); 26 285 at S1.08, whose earlier mass of failed firms
 # leaves more estates waiting to sell.
-[[ratchet]]
-counter = "phx_frm.estates_open"
-value = 26285
-direction = "down"
-
-[[ratchet]]
-counter = "phx_frm.price_reviews"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_frm.price_changes"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_frm.attention_visits"
-value = 124891
-direction = "down"
-
 # A small firm's row: restated at S1.05 by two positions more. The return its management requires and the method it
 # forecasts by are added, and the day's deliveries are counted twice, at its review and its schedule. Its stock and
 # its sales since its review go, now the ledger's holding and the goods it delivered. Restated at S1.07 by the mode a
 # carrier runs.
-[[ratchet]]
-counter = "phx_pop.bytes_per_firm_cell"
-value = 204
-direction = "down"
-
 # The estates settled and ended on the heaviest day, those left waiting on a failed payment, and those waiting to sell
 # the units they hold; and the sweeps of holder tables for sides that keep no holder list, none since every side a
 # firm's end reaches keeps one: first set at the S1.03 review's build run, and moved by one and five once agents
 # losing contracts are no longer drawn again (8d3ca63b).
-[[ratchet]]
-counter = "phx_frm.estates_settled"
-value = 4151
-direction = "down"
-
-[[ratchet]]
-counter = "phx_frm.estates_waiting"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_frm.estates_unsold"
-value = 26258
-direction = "down"
-
-[[ratchet]]
-counter = "phx_ledger.unlisted_sweeps"
-value = 0
-direction = "down"
-
 # The plant's wear on the heaviest day: the rows the plant review wore, the units their last classes retired, and the
 # cost the worn units lost: first set at S1.04, a thirtieth of the firms reviewed a day.
-[[ratchet]]
-counter = "phx_cap.wear_realisations"
-value = 7643
-direction = "down"
-
-[[ratchet]]
-counter = "phx_cap.retired"
-value = 1451447961468
-direction = "down"
-
-[[ratchet]]
-counter = "phx_cap.depreciation"
-value = 1362729367556
-direction = "down"
-
 # The goods' heaviest day: the calls met and the transformations that took units from a deposit. First set at S1.05,
 # at nothing until firms hold stocks and the rights to deposits (S1.15), which restates them.
-[[ratchet]]
-counter = "phx_gds.auctions"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_gds.extraction_orders"
-value = 0
-direction = "down"
-
 # Retail's heaviest day: the sellers every buyer had in reach, the rounds buyers chose again, and the units of
 # services no buyer took. First set at S1.06, at nothing until households buy (S1.12), which restates them.
-[[ratchet]]
-counter = "phx_market.sellers_in_reach"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_market.rechoice_rounds"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_srv.unused_capacity"
-value = 0
-direction = "down"
-
 # Freight's heaviest day: the shipments set on their way and the bookings refused. First set at S1.07, at nothing
 # until goods are shipped (S1.15), which restates them.
-[[ratchet]]
-counter = "phx_frt.shipments"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_frt.refused_bookings"
-value = 0
-direction = "down"
-
 # Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
 [[ratchet]]
 counter = "phx_num.ir_value_of"
@@ -509,22 +339,9 @@ direction = "down"
 # applications sent, and the mean rounds a match took. No firm posts before it holds a price and a planned output
 # (S1.15), so only searchers are counted until then; the budget (architecture §13.2) holds 0.1 M searching groups,
 # which the failed firms' released staff pass while no firm posts.
-[[ratchet]]
-counter = "phx_lab.searching_groups"
-value = 203528
-direction = "down"
 
+# The core's flows a day (S1.24): the greatest a day of the smoke came to, at the committed resolution.
 [[ratchet]]
-counter = "phx_lab.vacancies_visible"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_lab.applications"
-value = 0
-direction = "down"
-
-[[ratchet]]
-counter = "phx_lab.rounds_to_match"
-value = 0
+counter = "phx_core.flows_a_day"
+value = 1337370
 direction = "down"

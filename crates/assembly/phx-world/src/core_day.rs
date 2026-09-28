@@ -78,6 +78,10 @@ pub struct CoreDay {
     pub settled: u64,
     pub failed: u64,
     pub committed: u64,
+    /// The failed flows by their reason.
+    pub failed_by: [u64; crate::consts::reason::REASONS],
+    /// The money the day's flows move, whatever came of them.
+    pub gross: i128,
     /// The estates settled and ended.
     pub estates: u64,
     /// The money family's breaks found after settlement: a bank owing other than its customers hold, money made or
@@ -316,7 +320,18 @@ impl Core {
     pub fn run_day(&mut self, day: Day, calendar: &Calendar, streams: &Streams, order: &StreamDecl) -> CoreDay {
         let mut work = std::mem::take(&mut self.work);
         work.flows.reset(1);
-        let mut record = CoreDay { day, flows: 0, settled: 0, failed: 0, committed: 0, estates: 0, breaks: 0, ns: 0 };
+        let mut record = CoreDay {
+            day,
+            flows: 0,
+            settled: 0,
+            failed: 0,
+            committed: 0,
+            failed_by: [0; crate::consts::reason::REASONS],
+            gross: 0,
+            estates: 0,
+            breaks: 0,
+            ns: 0,
+        };
         let before = self.money_totals();
         for family in &mut self.families {
             if let Some(buf) = work.flows.chunks_mut().first_mut() {
@@ -332,6 +347,7 @@ impl Core {
             buf.append(&mut self.pending);
             // Every flow the day settles is one it made: its dues, the taxes withheld from them, estates and sales.
             record.flows = phx_rand::float::len_u64(buf.len());
+            record.gross = buf.iter().filter(|f| f.denomination.is_money()).map(|f| i128::from(f.amount)).sum();
         }
         let high: Vec<u32> = self.kinds.iter().map(|k| k.parties.high_water()).collect();
         let ranges = Ranges::new(self.range_bits, &high);
@@ -370,6 +386,11 @@ impl Core {
             }
         }
         self.work = work;
+        for f in &failed {
+            if let Some(n) = record.failed_by.get_mut(usize::from(f.reason)) {
+                *n += 1;
+            }
+        }
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
         record.breaks += self.money_breaks(before, bank_net, &mut deposits);
         for estate in settling {

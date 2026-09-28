@@ -1,101 +1,64 @@
-use phx_audit::CloseInputs;
-use phx_core::StreamDef;
-use phx_core::{
-    AUDIT_SUBSTEP, ColumnTrace, CtxParts, EventIntent, FactStore, IntentDef, Intents, NewEvent, QueuedIntent,
-    ReadTrace, SUB_STEPS, SubStep, SubStepInfo, SubStepKind,
-};
+//! The world's day on the core: chance on the households' persons, labour's round, goods and money, then the day's
+//! dues and settlement; a turn runs every day up to the next business day of some country.
+
+use phx_core::QueuedIntent;
 use phx_exec::Clock;
-use phx_exec::site::{self, Site};
 use phx_id::Day;
-use phx_ledger::apply_batch::DaySettlement;
 use phx_macros::clause;
-use phx_num::{Missing, violation};
-use phx_pop::prims::ClearedStream;
-use phx_rand::{Subject, SubjectTag};
-use phx_store::consts::DEFAULT_ROWS_PER_CHUNK;
 
-use crate::metrics::{SubStepRecord, TurnRecord};
-use crate::trace::{Open, traced};
-use crate::world::{Settled, World};
-
-/// The stage a sub-step belongs to: the number its label begins with.
-fn stage(info: &SubStepInfo) -> &str {
-    info.label.trim_end_matches(|c: char| c.is_ascii_lowercase())
-}
-
-/// Whether a stage runs on a day: every day if any of its sub-steps does, otherwise only when some country has a
-/// business day.
-fn stage_runs(info: &SubStepInfo, any_business: bool) -> bool {
-    any_business || SUB_STEPS.iter().any(|i| stage(i) == stage(info) && !i.business_only)
-}
-
-/// Where gathered intents are applied: each stage's kernel apply, the end of 3e for stage 3, and the end of their own
-/// sub-step for stages 1 and 8, for 7d and 7e, and for 10c to 10f.
-const APPLY_POINTS: [SubStep; 23] = [
-    SubStep::S1a,
-    SubStep::S1b,
-    SubStep::S1c,
-    SubStep::S2f,
-    SubStep::S3e,
-    SubStep::S4b,
-    SubStep::S5d,
-    SubStep::S6d,
-    SubStep::S7c,
-    SubStep::S7d,
-    SubStep::S7e,
-    SubStep::S8a,
-    SubStep::S8b,
-    SubStep::S8c,
-    SubStep::S8d,
-    SubStep::S8e,
-    SubStep::S8f,
-    SubStep::S9e,
-    SubStep::S10b,
-    SubStep::S10c,
-    SubStep::S10d,
-    SubStep::S10e,
-    SubStep::S10f,
-];
-
-/// Sub-steps where the kernel works though no handler runs there: 1b's marking of the lines due today, stage 2's
-/// contract process at 2d, over the fails of the days since it last ran, and 2e's defaults of parties whose grace has
-/// ended, 3b's gathering of the population's agents due and 3e's outcomes of their hits, 5a's public outlooks over
-/// the markets' prints, 6a's meetings, 9b's accounts, posting the day's settled money, and 10a's public events; 4a's
-/// start of work and 5c's rounds of labour and credit; and 8d's fund stage at the central bank.
-pub const KERNEL_WORK: [SubStep; 12] = [
-    SubStep::S1b,
-    SubStep::S2d,
-    SubStep::S2e,
-    SubStep::S3b,
-    SubStep::S3e,
-    SubStep::S4a,
-    SubStep::S5a,
-    SubStep::S5c,
-    SubStep::S6a,
-    SubStep::S8d,
-    SubStep::S9b,
-    SubStep::S10a,
-];
-
-/// The audit's sub-step, which runs every day.
-pub const AUDIT_AT: SubStep = AUDIT_SUBSTEP;
-
-/// A chunk's rows: a whole chunk, or what is left of the table in its last.
-fn chunk_rows(chunk: u32, rows: u32) -> core::ops::Range<u32> {
-    let start = chunk * DEFAULT_ROWS_PER_CHUNK;
-    let full = start + DEFAULT_ROWS_PER_CHUNK;
-    start..if full > rows { rows } else { full }
-}
-
-fn is_apply_point(info: &SubStepInfo) -> bool {
-    APPLY_POINTS.contains(&info.step)
-}
+use crate::metrics::TurnRecord;
+use crate::world::World;
 
 impl World {
-    /// The core's day beside the books': chance on its persons, then its dues and settlement.
+    /// The last day run.
+    pub fn today(&self) -> Day {
+        self.today
+    }
+
+    /// Runs a turn with no observer.
+    pub fn run_turn(&mut self, intents: &[QueuedIntent], clock: &dyn Clock) -> TurnRecord {
+        self.run_turn_observed(intents, clock, None)
+    }
+
+    /// Runs a turn: every day from the day after the last turn up to the next day that is a business day in some
+    /// country, each as its own day, the observer reading each once it has ended; its reading is inside the turn's
+    /// time, as the phone's views are. The player's intents wait for the player's party on the core.
+    #[clause("TIME.6", "N8.2", "Law 17")]
+    pub fn run_turn_observed(
+        &mut self,
+        _intents: &[QueuedIntent],
+        clock: &dyn Clock,
+        mut observer: Option<&mut dyn crate::observe::Observer>,
+    ) -> TurnRecord {
+        let start = clock.now_ns();
+        let first = self.today.succ();
+        let last = self.calendar.next_turn_day(self.today);
+        let mut days = 0_u32;
+        loop {
+            let day = self.today.succ();
+            self.core_day(day, clock);
+            self.today = day;
+            let date = self.calendar.date(day);
+            if date.month() == 1 && date.day() == 1 {
+                self.calendar.move_window(date.year());
+            }
+            if let Some(o) = observer.as_deref_mut() {
+                o.day_closed(crate::Inspector::new(self));
+            }
+            days += 1;
+            if day == last {
+                break;
+            }
+        }
+        let record = TurnRecord { first, last, days, wall_ns: clock.now_ns().checked_sub(start) };
+        self.metrics.turns.push(record);
+        record
+    }
+
+    /// The core's day: chance on its persons, labour's round, goods, then its dues and settlement.
     fn core_day(&mut self, day: Day, clock: &dyn Clock) {
         let start = clock.now_ns();
-        let regions = self.regions();
+        let regions = self.regions.clone();
         let ctx = crate::core_pop::Ctx {
             register: &self.register,
             calendar: &self.calendar,
@@ -105,7 +68,7 @@ impl World {
         };
         let pop_day = self.core.run_hazards(&ctx, day);
         self.core.pop_days.push((day, pop_day));
-        if let Some(kind) = self.labour.kind.as_ref() {
+        if let Some(kind) = self.labour.as_ref() {
             let lctx = crate::core_labour::LabourCtx {
                 register: &self.register,
                 calendar: &self.calendar,
@@ -134,513 +97,5 @@ impl World {
         if let (Some(ns), Some(last)) = (clock.now_ns().checked_sub(start), self.core.days.last_mut()) {
             last.ns = ns;
         }
-    }
-
-    /// The last day run.
-    pub fn today(&self) -> Day {
-        self.today
-    }
-
-    /// Runs a turn with no observer.
-    pub fn run_turn(&mut self, intents: &[QueuedIntent], clock: &dyn Clock) -> TurnRecord {
-        self.run_turn_observed(intents, clock, None)
-    }
-
-    /// Runs a turn: the player's intents are queued for 1c, and every day from the day after the last turn up to the
-    /// next day that is a business day in some country runs, each as its own day, the observer reading each once it
-    /// has ended; its reading is inside the turn's time, as the phone's views are.
-    #[clause("TIME.6", "N8.2", "Law 17")]
-    pub fn run_turn_observed(
-        &mut self,
-        intents: &[QueuedIntent],
-        clock: &dyn Clock,
-        mut observer: Option<&mut dyn crate::observe::Observer>,
-    ) -> TurnRecord {
-        let start = clock.now_ns();
-        for intent in intents {
-            self.queue.push(intent.clone());
-        }
-        let first = self.today.succ();
-        let last = self.calendar.next_turn_day(self.today);
-        let mut days = 0_u32;
-        loop {
-            let day = self.today.succ();
-            self.run_day(day, clock);
-            self.core_day(day, clock);
-            self.today = day;
-            if let Some(o) = observer.as_deref_mut() {
-                o.day_closed(crate::Inspector::new(self));
-            }
-            // The parties ended today were held for the day's legs and the observer's reading; the day is over.
-            self.books.parties.cells_mut().1.close_day();
-            days += 1;
-            if day == last {
-                break;
-            }
-        }
-        let wall_ns = clock.now_ns().checked_sub(start);
-        let record = TurnRecord { first, last, days, wall_ns };
-        self.metrics.turns.push(record);
-        record
-    }
-
-    /// Runs one day: each sub-step in the table's order, skipping one with no handlers unless it is a kernel apply of
-    /// a stage that runs, and one that runs only on business days when no country has one.
-    #[clause("TIME.6", "TIME.8")]
-    fn run_day(&mut self, day: Day, clock: &dyn Clock) {
-        let any_business = self.calendar.any_business(day);
-        self.day_messages.lapse();
-        // The agents' day counts from its first sub-step, as parties end in default at 2e before the agents at 3b.
-        self.agent_day = crate::agents::AgentDay::of(day);
-        self.visit_today = crate::visits::VisitDay::of(day);
-        let mut pending: Vec<crate::goods::Gathered> = Vec::new();
-        let mut dues = DaySettlement::default();
-        for info in &SUB_STEPS {
-            let has_handlers = self.graph.at(info.step).next().is_some();
-            let runs = if info.step == AUDIT_AT {
-                true
-            } else if info.kind == SubStepKind::KernelApply {
-                stage_runs(info, any_business)
-            } else if KERNEL_WORK.contains(&info.step) {
-                any_business || !info.business_only
-            } else {
-                has_handlers && (any_business || !info.business_only)
-            };
-            if !runs {
-                continue;
-            }
-            let started = clock.now_ns();
-            let rows = self.dispatch(day, info.step, &mut pending);
-            self.makings_decided(info.step, &pending);
-            site::enter(Site { day: day.get(), substep: info.step.ordinal(), handler: 0, chunk: 0 });
-            if info.step == SubStep::S1b {
-                self.due = self.books.ledger.mark_due(day, &self.calendar);
-            }
-            if info.step == SubStep::S3b {
-                self.catastrophe_losses(day);
-                self.agents_gather(day);
-            }
-            if info.step == SubStep::S3e {
-                self.agents_outcomes(day);
-            }
-            if info.step == SubStep::S10a {
-                self.publish_day(day);
-            }
-            if info.step == SubStep::S10b {
-                self.agents_settle(day);
-            }
-            if info.step == SubStep::S2d {
-                self.process_fails(day);
-            }
-            if info.step == SubStep::S2e {
-                self.defaults_end(day);
-            }
-            if is_apply_point(info) {
-                self.apply(day, info.step, &mut pending);
-            }
-            self.start_and_decide(day, info.step);
-            if info.step == SubStep::S6a {
-                self.meet(day);
-            }
-            if info.step == SubStep::S6d {
-                self.trade_day(day);
-            }
-            if info.step == SubStep::S7c {
-                let streams = &self.streams;
-                let draws_of = |line: phx_id::LineId| {
-                    let subject = Subject::new(SubjectTag::Line, u64::from(line.get()));
-                    streams.open(&ClearedStream::DECL, subject, day, SubStep::S7b.ordinal())
-                };
-                dues =
-                    self.books.settle_day(&self.due, day, &self.calendar, &self.closed, &draws_of, self.audit.stream());
-                self.bills_redeemed();
-                self.estates_settle(day);
-                self.markets_settle(day, SubStep::S7c);
-                self.freight_settle(day, SubStep::S7c);
-                self.labour_settle(day, SubStep::S7c);
-                self.credit_settle(day);
-            }
-            if info.step == SubStep::S8d {
-                self.bill_auctions(day);
-                self.central_fund(day);
-            }
-            if info.step == SubStep::S9b {
-                let period = crate::registry::period_of(&self.calendar, day);
-                self.accounts.post_day(self.books.ledger.day_book(), period);
-            }
-            if info.step == AUDIT_AT {
-                // A day with no 9b still moves net assets, as a hazard destroying plant does, which the accounts
-                // follow before the close reads them.
-                if !any_business {
-                    let period = crate::registry::period_of(&self.calendar, day);
-                    self.accounts.post_day(self.books.ledger.day_book(), period);
-                }
-                self.close(day, dues);
-            }
-            site::leave();
-            self.metrics.substeps.push(SubStepRecord {
-                day,
-                substep: info.step.ordinal(),
-                rows,
-                bytes: 0,
-                barriers: 0,
-                wall_ns: clock.now_ns().checked_sub(started),
-            });
-        }
-        let date = self.calendar.date(day);
-        if date.month() == 1 && date.day() == 1 {
-            self.calendar.move_window(date.year());
-        }
-    }
-
-    /// Stages 4 and 5's kernel work: the start of work at 4a; the day's arrivals and public outlooks at 5a; and the
-    /// round of labour at 5c, after the visits.
-    fn start_and_decide(&mut self, day: Day, step: SubStep) {
-        match step {
-            SubStep::S4a => self.labour_start(day),
-            SubStep::S5a => {
-                self.arrivals(day);
-                self.goods_outlooks(day);
-                self.stance_wakes(day);
-            }
-            SubStep::S5c => {
-                self.labour_round(day);
-                self.credit_round(day);
-            }
-            _ => {}
-        }
-    }
-
-    /// Runs a sub-step: one traversal per table, in the order the world keeps its tables, over the table's chunks in
-    /// order, running every handler of the sub-step on the table on each chunk, in canonical order, with a context
-    /// built for the chunk. Intents join the pending list in (table, chunk, handler) order. A traced chunk records its
-    /// reads, its writes and the streams it opens. Returns the rows visited.
-    #[clause("TIME.6", "TIME.10")]
-    fn dispatch(&mut self, day: Day, step: SubStep, pending: &mut Vec<crate::goods::Gathered>) -> u64 {
-        let mut visited = 0_u64;
-        if matches!(step, SubStep::S5b | SubStep::S5c) {
-            visited += self.visits_run(day, step, pending);
-        }
-        let date = self.calendar.date(day);
-        for table in &mut self.tables {
-            let handlers: Vec<_> = self.graph.at(step).filter(|(_, h)| h.table == table.name).collect();
-            if handlers.is_empty() {
-                continue;
-            }
-            let rows = table.columns.rows();
-            for chunk in 0..rows.div_ceil(DEFAULT_ROWS_PER_CHUNK) {
-                let span = chunk_rows(chunk, rows);
-                visited += u64::from(span.end - span.start);
-                for (id, h) in &handlers {
-                    let Missing::Present(run) = h.run else {
-                        violation!(clause = "TIME.6", "a handler with no body", handler = id.0);
-                    };
-                    let Some((_, own)) = self.own.iter().find(|(system, _)| *system == h.system) else {
-                        violation!(clause = "TIME.6", "a handler whose system compiled no state", handler = id.0);
-                    };
-                    let first = !self.traced_first.contains(id);
-                    if first {
-                        self.traced_first.push(*id);
-                    }
-                    let is_traced = self.read_trace && traced(chunk, first, day);
-                    site::enter(Site { day: day.get(), substep: step.ordinal(), handler: id.0, chunk });
-                    table.columns.trace(is_traced.then_some(ColumnTrace {
-                        substep: step.ordinal(),
-                        handler: id.0,
-                        reads: h.reads,
-                        writes: h.writes,
-                    }));
-                    let (mut intents, mut opens) = (Intents::default(), Vec::new());
-                    run(
-                        CtxParts {
-                            day,
-                            date,
-                            streams: &self.streams,
-                            register: &self.register,
-                            own: own.as_ref(),
-                            facts: {
-                                let facts: &mut dyn FactStore = &mut table.columns;
-                                facts
-                            },
-                            goods: &phx_core::NoGoods,
-                            intents: &mut intents,
-                            bindings: &mut self.bindings,
-                            rules: &self.rules,
-                            queue: &mut self.queue,
-                            opens: is_traced.then_some(&mut opens),
-                            flows: None,
-                        },
-                        span.clone(),
-                    );
-                    table.columns.trace(None);
-                    for (stream, subject) in opens {
-                        self.trace.opened(Open { stream, subject, substep: step.ordinal() });
-                    }
-                    pending.push(crate::goods::Gathered { step, rows: Missing::Absent, intents });
-                    site::leave();
-                }
-            }
-        }
-        visited
-    }
-
-    /// The contract process over the fails waiting since the last business day, each read against the party that
-    /// holds its row now: an ended party's successor, if it has one.
-    #[clause("SET.3", "PTY.10")]
-    fn process_fails(&mut self, day: Day) {
-        let fails = std::mem::take(&mut self.unprocessed);
-        let directory = self.books.parties.directory();
-        let now: Vec<phx_ledger::fails::Fail> = fails
-            .iter()
-            .map(|f| match directory.resolve(f.party) {
-                phx_core::Resolved::Live(party, _) => phx_ledger::fails::Fail { party, ..*f },
-                phx_core::Resolved::Ended(_) | phx_core::Resolved::Unknown => *f,
-            })
-            .collect();
-        self.books.contract_process(&now, day);
-        self.defaults_queue(&now);
-        self.fails_recorded(day);
-        let directory = self.books.parties.cells_mut().1;
-        for f in &fails {
-            directory.release(f.party);
-        }
-    }
-
-    /// Each earlier day's fails as the contract process just left them: those on a row their party, followed to its
-    /// successor, still holds and that is not in arrears.
-    fn fails_recorded(&mut self, day: Day) {
-        let books = &self.books;
-        let arrears = books.ledger.arrears();
-        for s in self.settlements.iter_mut().filter(|s| s.day < day && s.unrecorded == phx_num::Missing::Absent) {
-            let unrecorded = s.fails.iter().filter(|f| {
-                let phx_num::Missing::Present(row) = f.row else { return false };
-                let phx_core::Resolved::Live(party, _) = books.parties.directory().resolve(f.party) else {
-                    return false;
-                };
-                books.rows_of(party).contains(&(row.line, row.side)) && arrears.of(row.line, row.side, party).is_none()
-            });
-            s.unrecorded = phx_num::Missing::Present(phx_rand::float::len_u64(unrecorded.count()));
-            s.fails = Vec::new();
-        }
-    }
-
-    /// The day's close: the read trace sums the day, and every audit family reads what the day left behind.
-    #[clause("N1")]
-    /// 10a: the day's public events and statistics published.
-    fn publish_day(&mut self, day: Day) {
-        // Yesterday's events recorded after its 10a are judged today; the rest are judged again the same way.
-        let from = day.get().checked_sub(1).map_or(day, Day::new);
-        self.events.publish(from, &self.news);
-        self.stats_close(day);
-    }
-
-    fn close(&mut self, day: Day, dues: DaySettlement) {
-        self.books.parties.compact_arenas();
-        let book = self.books.close();
-        self.accounts.close_day(&book);
-        let lines = &self.books.ledger.lines;
-        let mut by_kind: std::collections::BTreeMap<u16, u64> = std::collections::BTreeMap::new();
-        for f in &book.fails {
-            if let phx_num::Missing::Present(row) = f.row {
-                *by_kind.entry(lines.kind_of(row.line)).or_insert(0) += 1;
-            }
-        }
-        let recorded = phx_rand::float::len_u64(book.fails.len());
-        let rowless = recorded - by_kind.values().sum::<u64>();
-        self.settlements.push(Settled {
-            day,
-            measure: book.measure(),
-            dues,
-            recorded,
-            rowless,
-            by_kind: by_kind.into_iter().collect(),
-            fails: book.fails.clone(),
-            unrecorded: phx_num::Missing::Absent,
-        });
-        // A fail waits for the next business day's contract process, and its party may end before then.
-        let directory = self.books.parties.cells_mut().1;
-        for f in &book.fails {
-            directory.retain(f.party);
-        }
-        self.unprocessed.extend(book.fails.iter().copied());
-        self.books.recycle(book);
-        let mut reads = self.take_visit_reads();
-        for t in &mut self.tables {
-            let found = t.columns.take_trace();
-            reads.undeclared_reads += found.undeclared_reads;
-            reads.later_writes += found.later_writes;
-        }
-        let trace = self.read_trace.then(|| self.trace.close_day(reads));
-        let record = self.audit_close(day, trace);
-        self.metrics.closes.0.push(record);
-    }
-
-    /// Every audit family over what the world holds at a day's close, and the day's accounts then done.
-    pub(crate) fn audit_close(&mut self, day: Day, trace: Option<ReadTrace>) -> phx_audit::CloseRecord {
-        let inputs = CloseInputs {
-            day,
-            register: &self.register,
-            directory: self.books.parties.directory(),
-            calendar: &self.calendar,
-            records: &self.records,
-            events: &self.events,
-            messages: &self.day_messages,
-            tables: &self.tables,
-            trace,
-            books: &self.books,
-            markets: &self.markets,
-            accounts: &phx_acct::audit::AccountsView::new(&self.books, &self.accounts),
-            agents: &phx_pop::audit::AgentsView::<phx_store::SystemBacking>::new(
-                self.books.parties.cells(),
-                &self.population,
-            ),
-            own: &self.own,
-            pool: self.books.pool(),
-        };
-        let record = self.audit.close(inputs, &mut self.findings);
-        self.accounts.end_day();
-        record
-    }
-}
-
-impl World {
-    /// The one apply routine, in the order the intents were gathered: an event is recorded, dated by the sub-step that
-    /// drew it; a transformation of a row's goods is applied to the books; an order is admitted into the day's book.
-    #[clause("TIME.6", "CHN.4", "SET.9", "MKT.17")]
-    fn apply(&mut self, day: Day, at: SubStep, pending: &mut Vec<crate::goods::Gathered>) {
-        for g in std::mem::take(pending) {
-            for (name, words) in g.intents.iter() {
-                match name {
-                    EventIntent::NAME => self.record_event(day, g.step, words),
-                    phx_ledger::intents::Transform::NAME => {
-                        let Some(t) = phx_ledger::intents::Transform::decode(words) else {
-                            violation!(
-                                clause = "CHN.4",
-                                "a transformation its words do not encode",
-                                words = words.len()
-                            );
-                        };
-                        self.apply_transform(day, at, rows_of(g.rows), &t);
-                    }
-                    phx_market::intents::OrderIntent::NAME => {
-                        let Some(o) = phx_market::intents::OrderIntent::decode(words) else {
-                            violation!(clause = "CHN.4", "an order its words do not encode", words = words.len());
-                        };
-                        self.admit_order(day, g.step, rows_of(g.rows), &o);
-                    }
-                    phx_market::intents::ShopIntent::NAME => {
-                        let Some(o) = phx_market::intents::ShopIntent::decode(words) else {
-                            violation!(clause = "CHN.4", "a want its words do not encode", words = words.len());
-                        };
-                        self.admit_shop(g.step, rows_of(g.rows), &o);
-                    }
-                    phx_market::intents::ShipIntent::NAME => {
-                        let Some(o) = phx_market::intents::ShipIntent::decode(words) else {
-                            violation!(clause = "CHN.4", "a consignment its words do not encode", words = words.len());
-                        };
-                        self.admit_ship(g.step, rows_of(g.rows), &o);
-                    }
-                    phx_ledger::intents::CloseIntent::NAME => {
-                        let Some(o) = phx_ledger::intents::CloseIntent::decode(words) else {
-                            violation!(clause = "CHN.4", "a closure its words do not encode", words = words.len());
-                        };
-                        self.close_firm(day, rows_of(g.rows), o.row);
-                    }
-                    phx_market::intents::InvestIntent::NAME => {
-                        let Some(o) = phx_market::intents::InvestIntent::decode(words) else {
-                            violation!(
-                                clause = "CHN.4",
-                                "an order for plant its words do not encode",
-                                words = words.len()
-                            );
-                        };
-                        self.admit_invest(g.step, rows_of(g.rows), &o);
-                    }
-                    _ => {
-                        violation!(clause = "TIME.6", "an intent the apply routine does not know", words = words.len())
-                    }
-                }
-            }
-        }
-    }
-
-    /// 6a: goods between firms, retail and carriage meet, and the goods' marks follow the day's prints.
-    fn meet(&mut self, day: Day) {
-        self.markets_meet(day);
-        self.goods_marks();
-        self.retail_meet(day);
-        self.freight_meet(day);
-    }
-
-    /// 6d: the day's matches, sales and bookings become what settles in stage 7.
-    fn trade_day(&mut self, day: Day) {
-        self.markets_trade(day);
-        self.invest_trade(day);
-        self.retail_trade(day);
-        self.freight_trade(day);
-    }
-
-    fn record_event(&mut self, day: Day, step: SubStep, words: &[u64]) {
-        let Some(e) = EventIntent::decode(words) else {
-            violation!(clause = "CHN.4", "an event intent its words do not encode", words = words.len());
-        };
-        if usize::from(e.kind) >= self.event_kinds.len() {
-            violation!(clause = "CHN.4", "an event of a kind never declared", kind = e.kind);
-        }
-        self.events.record(NewEvent {
-            day,
-            substep: step,
-            kind: e.kind,
-            subjects: &e.subjects,
-            details: &e.details,
-            develops_from: Missing::Absent,
-        });
-    }
-}
-
-/// The rows an intent acting on a party came from; a kernel table's rows are no parties.
-fn rows_of(rows: Missing<crate::goods::Rows>) -> crate::goods::Rows {
-    let Missing::Present(r) = rows else {
-        violation!(clause = "TIME.6", "an intent on a party from a table of no parties");
-    };
-    r
-}
-
-#[cfg(test)]
-mod tests {
-    use phx_core::{SUB_STEPS, SubStepKind};
-
-    use phx_store::consts::DEFAULT_ROWS_PER_CHUNK;
-
-    use super::{chunk_rows, is_apply_point, stage_runs};
-
-    #[test]
-    fn chunks_cover_the_table_once() {
-        let rows = DEFAULT_ROWS_PER_CHUNK * 2 + 5;
-        let spans: Vec<_> = (0..rows.div_ceil(DEFAULT_ROWS_PER_CHUNK)).map(|c| chunk_rows(c, rows)).collect();
-        assert_eq!(spans.len(), 3);
-        assert_eq!(spans[2], DEFAULT_ROWS_PER_CHUNK * 2..rows);
-        assert!(spans.windows(2).all(|w| w[0].end == w[1].start) && spans[0].start == 0);
-    }
-
-    #[test]
-    fn substep_table_matches_architecture() {
-        let business: Vec<&str> = SUB_STEPS.iter().filter(|i| i.business_only).map(|i| i.label).collect();
-        let expected = [
-            "2b", "2c", "2d", "2e", "6c", "7a", "7b", "7c", "7d", "7e", "8a", "8b", "8c", "8d", "8e", "8f", "9a", "9b",
-            "9c", "9d", "9e", "10c",
-        ];
-        assert_eq!(business, expected);
-        let applies: Vec<&str> =
-            SUB_STEPS.iter().filter(|i| i.kind == SubStepKind::KernelApply).map(|i| i.label).collect();
-        assert_eq!(applies, ["2f", "4b", "5d", "6d", "7c", "9e", "10b"]);
-        let seven_c = SUB_STEPS.iter().find(|i| i.label == "7c").unwrap();
-        let two_f = SUB_STEPS.iter().find(|i| i.label == "2f").unwrap();
-        assert!(!stage_runs(seven_c, false) && stage_runs(two_f, false), "stage 7 rests on a day no market opens");
-        let points: Vec<&str> = SUB_STEPS.iter().filter(|i| is_apply_point(i)).map(|i| i.label).collect();
-        assert!(applies.iter().all(|a| points.contains(a)), "every kernel apply is an apply point");
-        let others =
-            ["1a", "1b", "1c", "3e", "7d", "7e", "8a", "8b", "8c", "8d", "8e", "8f", "10c", "10d", "10e", "10f"];
-        assert!(others.iter().all(|a| points.contains(a)) && points.len() == applies.len() + others.len());
     }
 }

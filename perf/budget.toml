@@ -3,26 +3,29 @@
 # one says so and why. The first values are the measure of 2026-09-28, before the restructure (S1.17–S1.25), with the
 # noise of this shared machine: two smokes of one commit differed by 13% in time, 4% in bytes and 30% in faults, so the
 # times stand a quarter above the lower measure, the bytes and faults a tenth above the higher, the cores below both. The
-# budget itself is 1 000 and 2 000 ms and 4.5 GB; these hold the ground gained on the way to it.
+# budget itself is 1 000 and 2 000 ms and 4.5 GB; these hold the ground gained on the way to it. The world on the core
+# (S1.24, 2026-09-28): the smoke measured a median turn of 2 502 ms, a worst of 7 522 ms, 2 403 bytes a person and
+# 20 089 faults a day; the times stand a quarter above, the bytes and faults a tenth. Its day runs on one thread, so
+# its cores busy (0.99) stand below the ratchet until the core's day is sharded on the pool (S1.24).
 
 [[ratchet]]
 counter = "phx_budget.turn_ms_median"
-value = 10000
+value = 3128
 direction = "down"
 
 [[ratchet]]
 counter = "phx_budget.turn_ms_worst"
-value = 32700
+value = 9403
 direction = "down"
 
 [[ratchet]]
 counter = "phx_budget.bytes_per_person"
-value = 7800
+value = 2643
 direction = "down"
 
 [[ratchet]]
 counter = "phx_budget.faults_per_day"
-value = 152000
+value = 22098
 direction = "down"
 
 [[ratchet]]

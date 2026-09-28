@@ -1,7 +1,6 @@
 mod budget;
 mod checks;
 mod clock;
-mod inject;
 mod measure;
 mod panic_hook;
 mod run;
@@ -26,30 +25,6 @@ enum Command {
     /// Measures what the budget reads.
     #[command(subcommand)]
     Measure(Measure),
-    /// Injects a family's discrepancy into a save loaded apart, audits it and discards it.
-    Inject(InjectArgs),
-}
-
-#[derive(Debug, Args)]
-pub struct InjectArgs {
-    /// The save's directory.
-    #[arg(long)]
-    from: PathBuf,
-    /// The one family to inject; every family, each into its own load, when absent.
-    #[arg(long)]
-    family: Option<String>,
-    /// The world's data the save was written over.
-    #[arg(long)]
-    data: PathBuf,
-    /// The new game's setup.
-    #[arg(long)]
-    setup: PathBuf,
-    /// The load's own directory, where the countries are instantiated.
-    #[arg(long)]
-    run_dir: PathBuf,
-    /// Where to write the injections' report.
-    #[arg(long)]
-    report: Option<PathBuf>,
 }
 
 #[derive(Debug, Args)]
@@ -72,9 +47,6 @@ pub struct RunArgs {
     /// Where to write the run's report.
     #[arg(long)]
     report: Option<PathBuf>,
-    /// Traces reads and stream opens as they run.
-    #[arg(long)]
-    read_trace: bool,
     /// The world's data.
     #[arg(long)]
     data: PathBuf,
@@ -93,9 +65,6 @@ pub struct RunArgs {
     /// The build's wall time, for the report.
     #[arg(long)]
     build_seconds: Option<u64>,
-    /// Where the world's saves are kept; by default `saves` in the run's directory.
-    #[arg(long)]
-    saves: Option<PathBuf>,
     /// The persons the world holds in place of the data's, of the setup's population.
     #[arg(long)]
     persons: Option<u64>,
@@ -135,9 +104,6 @@ fn main() -> ExitCode {
             run::measure_calendar(&data, &setup, &run_dir, &out)
         }
         Command::Measure(Measure::Budget { build_run, device, out }) => run::measure_budget(&build_run, &device, &out),
-        Command::Inject(a) => {
-            inject::run(&a.from, &a.data, &a.setup, &a.run_dir, a.family.as_deref(), a.report.as_deref())
-        }
     };
     match outcome {
         Ok(true) => ExitCode::SUCCESS,

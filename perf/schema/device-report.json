@@ -293,18 +293,17 @@
         "median_turn_ms",
         "worst_turn_ms",
         "vm_hwm_bytes",
-        "world_hash",
         "findings",
         "reads",
-        "drift",
-        "save"
+        "drift"
       ],
       "additionalProperties": false,
       "properties": {
         "report_version": {
           "type": "integer",
           "enum": [
-            2
+            2,
+            3
           ]
         },
         "commit": {
@@ -373,9 +372,6 @@
               "days",
               "business",
               "wall_ms",
-              "payments",
-              "rows_scanned",
-              "substeps",
               "vm_hwm_bytes",
               "pss_bytes",
               "thermal_status"
@@ -451,6 +447,10 @@
               },
               "thermal_status": {
                 "type": "integer"
+              },
+              "flows": {
+                "type": "integer",
+                "minimum": 0
               }
             }
           }

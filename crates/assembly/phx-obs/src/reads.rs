@@ -1,7 +1,6 @@
-//! The macro reads: series the declarations name, each read day by day from what the run records — the day's work on
-//! the agents, the day's settlement and the day's events — and never from a number made for the reading.
+//! The macro reads: series the declarations name, each read day by day from what the core records — its households
+//! and persons, its day of chance and its day's settlement — and never from a number made for the reading.
 
-use std::collections::BTreeMap;
 use std::path::Path;
 
 use phx_id::Day;
@@ -9,7 +8,7 @@ use phx_macros::clause;
 use phx_world::Inspector;
 use serde::Deserialize;
 
-/// A count of the day's work on the population's agents.
+/// A count of the households and persons at the day's close, or of the day's chance on them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AgentCount {
     Persons,
@@ -34,8 +33,6 @@ pub enum SettlementCount {
 pub enum Measure {
     Agents(AgentCount),
     Settlement(SettlementCount),
-    /// The sizes of the day's events of one declared kind, summed in the kind's unit.
-    Events(u16),
     /// A measure of a system not yet built, read from the step named on; until then the read records nothing.
     NotYet(&'static str),
 }
@@ -81,7 +78,8 @@ pub struct ReadDecl {
     pub fact: Option<String>,
 }
 
-/// One declared histogram over a population kind's agents, over fixed lower edges: of their persons (`of = "persons"`), or of an attribute's values (`of = "attr.<attribute>"`). Each is
+/// One declared histogram over a kind's parties, over fixed lower edges: of their persons (`of = "persons"`), of an
+/// attribute's values (`of = "attr.<attribute>"`), or of their contracts in a family (`of = "contracts.<family>"`). Each is
 /// an opening distribution whose distance from the world's own is read.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -115,11 +113,14 @@ impl Definitions {
     }
 }
 
-/// A measure named in the declarations, with the event kinds the world declares.
+/// The event measures, read again once the core records its events.
+const EVENTS_STEP: &str = "S1.24";
+
+/// A measure named in the declarations.
 ///
 /// # Errors
-/// A name that is no measure, or an event kind the world does not declare.
-pub fn measure(name: &str, event_kinds: &[&str]) -> Result<Measure, String> {
+/// A name that is no measure.
+pub fn measure(name: &str) -> Result<Measure, String> {
     use AgentCount as A;
     use SettlementCount as S;
     let m = match name {
@@ -137,13 +138,10 @@ pub fn measure(name: &str, event_kinds: &[&str]) -> Result<Measure, String> {
             if let Some((_, step)) = PLANNED.iter().find(|(m, _)| *m == other) {
                 return Ok(Measure::NotYet(step));
             }
-            let Some(kind) = other.strip_prefix("events.") else {
+            if other.strip_prefix("events.").is_none() {
                 return Err(format!("`{other}` is no measure"));
-            };
-            let Some(i) = event_kinds.iter().position(|k| *k == kind) else {
-                return Err(format!("`{kind}` is no event kind the world declares"));
-            };
-            Measure::Events(u16::try_from(i).map_err(|e| e.to_string())?)
+            }
+            Measure::NotYet(EVENTS_STEP)
         }
     };
     Ok(m)
@@ -157,23 +155,21 @@ pub struct Series {
     pub values: Vec<(Day, i128)>,
 }
 
-/// The reads taken so far: each series, the last day read, and the events already summed.
+/// The reads taken so far: each series and the last day read.
 #[clause("OBS.1", "OBS.6")]
 #[derive(Clone, Debug)]
 pub struct Recorder {
     measures: Vec<Measure>,
     series: Vec<Series>,
     read_to: Option<Day>,
-    events_read: usize,
 }
 
 impl Recorder {
-    /// A recorder of the declared reads, resolved against the world's event kinds.
+    /// A recorder of the declared reads.
     ///
     /// # Errors
     /// Every read whose measure the world cannot give, and a read declared twice.
-    pub fn new(decls: &[ReadDecl], w: Inspector<'_>) -> Result<Recorder, String> {
-        let kinds: Vec<&str> = w.event_kinds().iter().map(|k| k.name).collect();
+    pub fn new(decls: &[ReadDecl]) -> Result<Recorder, String> {
         let mut errors = Vec::new();
         let mut measures = Vec::with_capacity(decls.len());
         for (i, d) in decls.iter().enumerate() {
@@ -184,7 +180,7 @@ impl Recorder {
                 errors
                     .push(format!("read `{}` names a relationship without its source, or a source without one", d.id));
             }
-            match measure(&d.measure, &kinds) {
+            match measure(&d.measure) {
                 Ok(m) => measures.push(m),
                 Err(e) => errors.push(format!("read `{}`: {e}", d.id)),
             }
@@ -194,45 +190,30 @@ impl Recorder {
         }
         let series =
             decls.iter().map(|d| Series { id: d.id.clone(), unit: d.unit.clone(), values: Vec::new() }).collect();
-        Ok(Recorder { measures, series, read_to: None, events_read: 0 })
+        Ok(Recorder { measures, series, read_to: None })
     }
 
-    /// Reads every day the run closed since the last reading.
+    /// Reads the day the core closed last, where it is past the last reading: the households and persons as it
+    /// closed, its day of chance and its day's settlement.
     pub fn read(&mut self, w: Inspector<'_>) {
-        let after = |d: Day| self.read_to.is_none_or(|r| d > r);
-        let agents: BTreeMap<Day, &phx_world::agents::AgentDay> =
-            w.agent_days().iter().filter(|c| after(c.day)).map(|c| (c.day, c)).collect();
-        let settled: BTreeMap<Day, &phx_world::world::Settled> =
-            w.settlements().iter().filter(|s| after(s.day)).map(|s| (s.day, s)).collect();
-        let mut events: BTreeMap<(Day, u16), i128> = BTreeMap::new();
-        let store = w.events();
-        for id in (self.events_read + 1)..=store.len() {
-            let Ok(id) = u64::try_from(id) else { break };
-            let e = store.get(id);
-            let size: i128 = e.details.iter().map(|(_, s)| i128::from(*s)).sum();
-            *events.entry((e.day, e.kind)).or_insert(0) += size;
+        let core = w.core();
+        let Some(settled) = core.days.last() else { return };
+        if self.read_to.is_some_and(|r| settled.day <= r) {
+            return;
         }
-        self.events_read = store.len();
-        let mut days: Vec<Day> = agents.keys().chain(settled.keys()).copied().collect();
-        days.sort_unstable();
-        days.dedup();
-        for day in &days {
-            for (m, s) in self.measures.iter().zip(&mut self.series) {
-                let value = match m {
-                    Measure::Agents(c) => agents.get(day).map(|d| agent_count(d, *c)),
-                    Measure::Settlement(c) => settled.get(day).map(|d| settlement_count(d, *c)),
-                    // A day the run closed with no event of the kind had none: its sum is nought, not unknown.
-                    Measure::Events(k) => Some(events.get(&(*day, *k)).copied().unwrap_or(0)),
-                    Measure::NotYet(_) => None,
-                };
-                if let Some(v) = value {
-                    s.values.push((*day, v));
-                }
+        let day = settled.day;
+        let chance = core.pop_days.iter().rev().find(|(d, _)| *d == day).map(|(_, p)| p);
+        for (m, s) in self.measures.iter().zip(&mut self.series) {
+            let value = match m {
+                Measure::Agents(c) => chance.map(|p| agent_count(core, p, *c)),
+                Measure::Settlement(c) => Some(settlement_count(settled, *c)),
+                Measure::NotYet(_) => None,
+            };
+            if let Some(v) = value {
+                s.values.push((day, v));
             }
         }
-        if let Some(last) = days.last() {
-            self.read_to = Some(*last);
-        }
+        self.read_to = Some(day);
     }
 
     #[must_use]
@@ -241,14 +222,14 @@ impl Recorder {
     }
 }
 
-fn agent_count(d: &phx_world::agents::AgentDay, c: AgentCount) -> i128 {
+fn agent_count(core: &phx_world::core::Core, d: &phx_world::core_pop::PopDay, c: AgentCount) -> i128 {
     let n = match c {
-        AgentCount::Persons => d.persons,
-        AgentCount::Agents => d.agents,
+        AgentCount::Persons => core.persons_held(),
+        AgentCount::Agents => core.count("household"),
         AgentCount::Gone => d.gone,
-        AgentCount::Ended => d.ended,
-        AgentCount::EstatesOpened => d.estates,
-        AgentCount::EstatesSettled => d.estates_settled,
+        // A household ended leaves an estate.
+        AgentCount::Ended | AgentCount::EstatesOpened => d.ended,
+        AgentCount::EstatesSettled => core.days.last().map_or(0, |s| s.estates),
     };
     i128::from(n)
 }
@@ -265,12 +246,12 @@ impl phx_world::Observer for Watch {
     }
 }
 
-fn settlement_count(s: &phx_world::world::Settled, c: SettlementCount) -> i128 {
+fn settlement_count(s: &phx_world::core_day::CoreDay, c: SettlementCount) -> i128 {
     match c {
-        SettlementCount::Payments => i128::from(s.dues.payments),
-        SettlementCount::Settled => i128::from(s.dues.settled),
-        SettlementCount::Failed => i128::from(s.dues.failed),
-        SettlementCount::Gross => s.dues.gross,
+        SettlementCount::Payments => i128::from(s.flows),
+        SettlementCount::Settled => i128::from(s.settled),
+        SettlementCount::Failed => i128::from(s.failed),
+        SettlementCount::Gross => s.gross,
     }
 }
 
@@ -280,11 +261,9 @@ mod tests {
 
     #[test]
     fn measures_are_named_or_refused() {
-        let kinds = ["GEO.rain", "DEM.died"];
-        assert_eq!(measure("agents.persons", &kinds), Ok(Measure::Agents(AgentCount::Persons)));
-        assert_eq!(measure("events.DEM.died", &kinds), Ok(Measure::Events(1)));
-        assert!(measure("events.DEM.born", &kinds).is_err());
-        assert!(measure("agents.happiness", &kinds).is_err());
-        assert_eq!(measure("sta.output", &kinds), Ok(Measure::NotYet("S1.14")));
+        assert_eq!(measure("agents.persons"), Ok(Measure::Agents(AgentCount::Persons)));
+        assert_eq!(measure("events.DEM.died"), Ok(Measure::NotYet("S1.24")));
+        assert!(measure("agents.happiness").is_err());
+        assert_eq!(measure("sta.output"), Ok(Measure::NotYet("S1.14")));
     }
 }
