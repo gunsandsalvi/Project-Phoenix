@@ -1,0 +1,547 @@
+iso3,country,kind,year
+AGO,Angola,currency,1991
+AGO,Angola,currency,1996
+AGO,Angola,currency,2015
+AGO,Angola,sovereign_debt,1988
+AGO,Angola,sovereign_restructuring,1992
+ALB,Albania,banking,1994
+ALB,Albania,currency,1997
+ALB,Albania,sovereign_debt,1990
+ALB,Albania,sovereign_restructuring,1992
+ARG,Argentina,banking,1980
+ARG,Argentina,banking,1989
+ARG,Argentina,banking,1995
+ARG,Argentina,banking,2001
+ARG,Argentina,currency,1975
+ARG,Argentina,currency,1981
+ARG,Argentina,currency,1987
+ARG,Argentina,currency,2002
+ARG,Argentina,currency,2013
+ARG,Argentina,sovereign_debt,1982
+ARG,Argentina,sovereign_debt,1989
+ARG,Argentina,sovereign_debt,2001
+ARG,Argentina,sovereign_debt,2014
+ARG,Argentina,sovereign_restructuring,1993
+ARG,Argentina,sovereign_restructuring,2005
+ARG,Argentina,sovereign_restructuring,2016
+ARM,Armenia,banking,1994
+AUT,Austria,banking,2008
+AZE,Azerbaijan,banking,1995
+AZE,Azerbaijan,currency,2015
+BDI,Burundi,banking,1994
+BEL,Belgium,banking,2008
+BEN,Benin,banking,1988
+BEN,Benin,currency,1994
+BFA,Burkina Faso,banking,1990
+BFA,Burkina Faso,currency,1994
+BGD,Bangladesh,banking,1987
+BGD,Bangladesh,currency,1976
+BGR,Bulgaria,banking,1996
+BGR,Bulgaria,currency,1996
+BGR,Bulgaria,sovereign_debt,1990
+BGR,Bulgaria,sovereign_restructuring,1994
+BIH,Bosnia and Herzegovina,banking,1992
+BLR,Belarus,banking,1995
+BLR,Belarus,currency,1997
+BLR,Belarus,currency,2009
+BLR,Belarus,currency,2015
+BLZ,Belize,sovereign_debt,2007
+BLZ,Belize,sovereign_debt,2012
+BLZ,Belize,sovereign_debt,2017
+BLZ,Belize,sovereign_restructuring,2007
+BLZ,Belize,sovereign_restructuring,2013
+BLZ,Belize,sovereign_restructuring,2017
+BOL,Bolivia,banking,1986
+BOL,Bolivia,banking,1994
+BOL,Bolivia,currency,1973
+BOL,Bolivia,currency,1981
+BOL,Bolivia,sovereign_debt,1980
+BOL,Bolivia,sovereign_restructuring,1992
+BRA,Brazil,banking,1990
+BRA,Brazil,banking,1994
+BRA,Brazil,currency,1976
+BRA,Brazil,currency,1982
+BRA,Brazil,currency,1987
+BRA,Brazil,currency,1992
+BRA,Brazil,currency,1999
+BRA,Brazil,currency,2015
+BRA,Brazil,sovereign_debt,1983
+BRA,Brazil,sovereign_restructuring,1994
+BWA,Botswana,currency,1984
+CAF,Central African Rep.,banking,1976
+CAF,Central African Rep.,banking,1995
+CAF,Central African Rep.,currency,1994
+CHE,Switzerland,banking,2008
+CHL,Chile,banking,1976
+CHL,Chile,banking,1981
+CHL,Chile,currency,1972
+CHL,Chile,currency,1982
+CHL,Chile,sovereign_debt,1983
+CHL,Chile,sovereign_restructuring,1990
+CHN,"China, P.R.",banking,1998
+CIV,Côte d’Ivoire,banking,1988
+CIV,Côte d’Ivoire,currency,1994
+CIV,Côte d’Ivoire,sovereign_debt,1984
+CIV,Côte d’Ivoire,sovereign_debt,2001
+CIV,Côte d’Ivoire,sovereign_debt,2010
+CIV,Côte d’Ivoire,sovereign_restructuring,1997
+CIV,Côte d’Ivoire,sovereign_restructuring,2010
+CMR,Cameroon,banking,1987
+CMR,Cameroon,banking,1995
+CMR,Cameroon,currency,1994
+CMR,Cameroon,sovereign_debt,1989
+CMR,Cameroon,sovereign_restructuring,1992
+COD,"Congo, Dem. Rep. of",banking,1983
+COD,"Congo, Dem. Rep. of",banking,1991
+COD,"Congo, Dem. Rep. of",banking,1994
+COD,"Congo, Dem. Rep. of",currency,1976
+COD,"Congo, Dem. Rep. of",currency,1983
+COD,"Congo, Dem. Rep. of",currency,1989
+COD,"Congo, Dem. Rep. of",currency,1994
+COD,"Congo, Dem. Rep. of",currency,1999
+COD,"Congo, Dem. Rep. of",currency,2009
+COD,"Congo, Dem. Rep. of",currency,2016
+COD,"Congo, Dem. Rep. of",sovereign_debt,1976
+COD,"Congo, Dem. Rep. of",sovereign_restructuring,1989
+COG,"Congo, Rep. of",banking,1992
+COG,"Congo, Rep. of",currency,1994
+COG,"Congo, Rep. of",sovereign_debt,1986
+COG,"Congo, Rep. of",sovereign_restructuring,1992
+COL,Colombia,banking,1982
+COL,Colombia,banking,1998
+COL,Colombia,currency,1985
+COM,Comoros,currency,1994
+CPV,Cape Verde,banking,1993
+CRI,Costa Rica,banking,1987
+CRI,Costa Rica,banking,1994
+CRI,Costa Rica,currency,1981
+CRI,Costa Rica,currency,1991
+CRI,Costa Rica,sovereign_debt,1981
+CRI,Costa Rica,sovereign_restructuring,1990
+CYP,Cyprus,banking,2011
+CYP,Cyprus,sovereign_debt,2013
+CYP,Cyprus,sovereign_restructuring,2013
+CZE,Czech Republic,banking,1996
+DEU,Germany,banking,2008
+DJI,Djibouti,banking,1991
+DMA,Dominica,sovereign_debt,2002
+DMA,Dominica,sovereign_restructuring,2004
+DNK,Denmark,banking,2008
+DOM,Dominican Republic,banking,2003
+DOM,Dominican Republic,currency,1985
+DOM,Dominican Republic,currency,1990
+DOM,Dominican Republic,currency,2003
+DOM,Dominican Republic,sovereign_debt,1982
+DOM,Dominican Republic,sovereign_debt,2003
+DOM,Dominican Republic,sovereign_restructuring,1994
+DOM,Dominican Republic,sovereign_restructuring,2005
+DZA,Algeria,banking,1990
+DZA,Algeria,currency,1988
+DZA,Algeria,currency,1994
+ECU,Ecuador,banking,1982
+ECU,Ecuador,banking,1998
+ECU,Ecuador,currency,1982
+ECU,Ecuador,currency,1999
+ECU,Ecuador,sovereign_debt,1982
+ECU,Ecuador,sovereign_debt,1999
+ECU,Ecuador,sovereign_debt,2008
+ECU,Ecuador,sovereign_restructuring,1995
+ECU,Ecuador,sovereign_restructuring,2000
+ECU,Ecuador,sovereign_restructuring,2009
+EGY,Egypt,banking,1980
+EGY,Egypt,currency,1979
+EGY,Egypt,currency,1990
+EGY,Egypt,currency,2016
+EGY,Egypt,sovereign_debt,1984
+EGY,Egypt,sovereign_restructuring,1992
+ERI,Eritrea,banking,1993
+ESP,Spain,banking,1977
+ESP,Spain,banking,2008
+ESP,Spain,currency,1983
+EST,Estonia,banking,1992
+EST,Estonia,currency,1992
+ETH,Ethiopia,currency,1993
+FIN,Finland,banking,1991
+FIN,Finland,currency,1993
+FJI,Fiji,currency,1998
+FRA,France,banking,2008
+GAB,Gabon,currency,1994
+GAB,Gabon,sovereign_debt,1986
+GAB,Gabon,sovereign_debt,2002
+GAB,Gabon,sovereign_restructuring,1994
+GBR,United Kingdom,banking,2007
+GEO,Georgia,banking,1991
+GEO,Georgia,currency,1992
+GEO,Georgia,currency,1999
+GHA,Ghana,banking,1982
+GHA,Ghana,currency,1978
+GHA,Ghana,currency,1983
+GHA,Ghana,currency,1993
+GHA,Ghana,currency,2000
+GHA,Ghana,currency,2009
+GHA,Ghana,currency,2014
+GIN,Guinea,banking,1985
+GIN,Guinea,banking,1993
+GIN,Guinea,currency,1982
+GIN,Guinea,currency,2005
+GIN,Guinea,sovereign_debt,1985
+GIN,Guinea,sovereign_restructuring,1992
+GMB,"Gambia, The",currency,1985
+GMB,"Gambia, The",currency,2003
+GMB,"Gambia, The",sovereign_debt,1986
+GMB,"Gambia, The",sovereign_restructuring,1988
+GNB,Guinea-Bissau,banking,1995
+GNB,Guinea-Bissau,banking,2014
+GNB,Guinea-Bissau,currency,1980
+GNB,Guinea-Bissau,currency,1994
+GNQ,Equatorial Guinea,banking,1983
+GNQ,Equatorial Guinea,currency,1980
+GNQ,Equatorial Guinea,currency,1994
+GRC,Greece,banking,2008
+GRC,Greece,currency,1983
+GRC,Greece,sovereign_debt,2012
+GRC,Greece,sovereign_restructuring,2012
+GRD,Grenada,sovereign_debt,2004
+GRD,Grenada,sovereign_restructuring,2005
+GRD,Grenada,sovereign_restructuring,2015
+GTM,Guatemala,currency,1986
+GUY,Guyana,banking,1993
+GUY,Guyana,currency,1987
+GUY,Guyana,sovereign_debt,1982
+GUY,Guyana,sovereign_restructuring,1992
+HND,Honduras,currency,1990
+HND,Honduras,sovereign_debt,1981
+HND,Honduras,sovereign_restructuring,1992
+HRV,Croatia,banking,1998
+HTI,Haiti,banking,1994
+HTI,Haiti,currency,1992
+HTI,Haiti,currency,2003
+HUN,Hungary,banking,1991
+HUN,Hungary,banking,2008
+IDN,Indonesia,banking,1997
+IDN,Indonesia,currency,1979
+IDN,Indonesia,currency,1998
+IDN,Indonesia,sovereign_debt,1999
+IDN,Indonesia,sovereign_restructuring,2002
+IND,India,banking,1993
+IRL,Ireland,banking,2008
+IRN,"Iran, I.R. of",currency,1985
+IRN,"Iran, I.R. of",currency,1993
+IRN,"Iran, I.R. of",currency,2000
+IRN,"Iran, I.R. of",currency,2013
+IRN,"Iran, I.R. of",sovereign_debt,1992
+IRN,"Iran, I.R. of",sovereign_restructuring,1994
+ISL,Iceland,banking,2008
+ISL,Iceland,currency,1975
+ISL,Iceland,currency,1981
+ISL,Iceland,currency,1989
+ISL,Iceland,currency,2008
+ISR,Israel,banking,1983
+ISR,Israel,currency,1975
+ISR,Israel,currency,1980
+ISR,Israel,currency,1985
+ITA,Italy,banking,2008
+ITA,Italy,currency,1981
+JAM,Jamaica,banking,1996
+JAM,Jamaica,currency,1978
+JAM,Jamaica,currency,1983
+JAM,Jamaica,currency,1991
+JAM,Jamaica,sovereign_debt,1978
+JAM,Jamaica,sovereign_debt,2010
+JAM,Jamaica,sovereign_restructuring,1990
+JAM,Jamaica,sovereign_restructuring,2010
+JAM,Jamaica,sovereign_restructuring,2013
+JOR,Jordan,banking,1989
+JOR,Jordan,currency,1989
+JOR,Jordan,sovereign_debt,1989
+JOR,Jordan,sovereign_restructuring,1993
+JPN,Japan,banking,1997
+KAZ,Kazakhstan,banking,2008
+KAZ,Kazakhstan,currency,1999
+KAZ,Kazakhstan,currency,2015
+KEN,Kenya,banking,1985
+KEN,Kenya,banking,1992
+KEN,Kenya,currency,1993
+KGZ,Kyrgyz Republic,banking,1995
+KGZ,Kyrgyz Republic,currency,1997
+KHM,Cambodia,currency,1971
+KHM,Cambodia,currency,1992
+KNA,St. Kitts and Nevis,sovereign_restructuring,2012
+KOR,Korea,banking,1997
+KOR,Korea,currency,1998
+KWT,Kuwait,banking,1982
+LAO,Lao People’s Dem. Rep.,currency,1972
+LAO,Lao People’s Dem. Rep.,currency,1978
+LAO,Lao People’s Dem. Rep.,currency,1986
+LAO,Lao People’s Dem. Rep.,currency,1997
+LBN,Lebanon,banking,1990
+LBN,Lebanon,currency,1984
+LBN,Lebanon,currency,1990
+LBR,Liberia,banking,1991
+LBR,Liberia,sovereign_debt,1980
+LBY,Libya,currency,2002
+LKA,Sri Lanka,banking,1989
+LKA,Sri Lanka,currency,1978
+LKA,Sri Lanka,currency,2012
+LSO,Lesotho,currency,1985
+LSO,Lesotho,currency,2015
+LTU,Lithuania,banking,1995
+LTU,Lithuania,currency,1992
+LUX,Luxembourg,banking,2008
+LVA,Latvia,banking,1995
+LVA,Latvia,banking,2008
+LVA,Latvia,currency,1992
+MAR,Morocco,banking,1980
+MAR,Morocco,currency,1981
+MAR,Morocco,sovereign_debt,1983
+MAR,Morocco,sovereign_restructuring,1990
+MDA,Moldova,banking,2014
+MDA,Moldova,currency,1999
+MDA,Moldova,sovereign_debt,2002
+MDA,Moldova,sovereign_restructuring,2002
+MDG,Madagascar,banking,1988
+MDG,Madagascar,currency,1984
+MDG,Madagascar,currency,1994
+MDG,Madagascar,currency,2004
+MDG,Madagascar,sovereign_debt,1981
+MDG,Madagascar,sovereign_restructuring,1992
+MDV,Maldives,currency,1975
+MEX,Mexico,banking,1981
+MEX,Mexico,banking,1994
+MEX,Mexico,currency,1977
+MEX,Mexico,currency,1982
+MEX,Mexico,currency,1995
+MEX,Mexico,sovereign_debt,1982
+MEX,Mexico,sovereign_restructuring,1990
+MKD,Macedonia,banking,1993
+MLI,Mali,banking,1987
+MLI,Mali,currency,1994
+MMR,Myanmar,currency,1975
+MMR,Myanmar,currency,1990
+MMR,Myanmar,currency,1996
+MMR,Myanmar,currency,2001
+MMR,Myanmar,currency,2007
+MMR,Myanmar,currency,2012
+MNG,Mongolia,banking,2008
+MNG,Mongolia,currency,1990
+MNG,Mongolia,currency,1997
+MOZ,Mozambique,banking,1987
+MOZ,Mozambique,currency,1987
+MOZ,Mozambique,currency,2015
+MOZ,Mozambique,sovereign_debt,1984
+MOZ,Mozambique,sovereign_restructuring,1991
+MRT,Mauritania,banking,1984
+MRT,Mauritania,currency,1993
+MWI,Malawi,currency,1994
+MWI,Malawi,currency,2012
+MWI,Malawi,sovereign_debt,1982
+MWI,Malawi,sovereign_restructuring,1988
+MYS,Malaysia,banking,1997
+MYS,Malaysia,currency,1998
+NAM,Namibia,currency,1984
+NAM,Namibia,currency,2015
+NCL,New Caledonia,currency,1981
+NER,Niger,banking,1983
+NER,Niger,currency,1994
+NER,Niger,sovereign_debt,1983
+NER,Niger,sovereign_restructuring,1991
+NGA,Nigeria,banking,1991
+NGA,Nigeria,banking,2009
+NGA,Nigeria,currency,1983
+NGA,Nigeria,currency,1989
+NGA,Nigeria,currency,1997
+NGA,Nigeria,currency,2016
+NGA,Nigeria,sovereign_debt,1983
+NGA,Nigeria,sovereign_restructuring,1992
+NIC,Nicaragua,banking,1990
+NIC,Nicaragua,banking,2000
+NIC,Nicaragua,currency,1979
+NIC,Nicaragua,currency,1985
+NIC,Nicaragua,currency,1990
+NIC,Nicaragua,sovereign_debt,1980
+NIC,Nicaragua,sovereign_debt,2003
+NIC,Nicaragua,sovereign_debt,2008
+NIC,Nicaragua,sovereign_restructuring,1995
+NLD,Netherlands,banking,2008
+NOR,Norway,banking,1991
+NPL,Nepal,banking,1988
+NPL,Nepal,currency,1984
+NPL,Nepal,currency,1992
+NZL,New Zealand,currency,1984
+PAK,Pakistan,currency,1972
+PAK,Pakistan,sovereign_debt,1999
+PAN,Panama,banking,1988
+PAN,Panama,sovereign_debt,1983
+PAN,Panama,sovereign_restructuring,1996
+PER,Peru,banking,1983
+PER,Peru,currency,1976
+PER,Peru,currency,1981
+PER,Peru,currency,1988
+PER,Peru,sovereign_debt,1978
+PER,Peru,sovereign_restructuring,1996
+PHL,Philippines,banking,1983
+PHL,Philippines,banking,1997
+PHL,Philippines,currency,1983
+PHL,Philippines,currency,1998
+PHL,Philippines,sovereign_debt,1983
+PHL,Philippines,sovereign_restructuring,1992
+PNG,Papua New Guinea,currency,1995
+POL,Poland,banking,1992
+POL,Poland,sovereign_debt,1981
+POL,Poland,sovereign_restructuring,1994
+PRT,Portugal,banking,2008
+PRT,Portugal,currency,1983
+PRY,Paraguay,banking,1995
+PRY,Paraguay,currency,1984
+PRY,Paraguay,currency,1989
+PRY,Paraguay,currency,2002
+PRY,Paraguay,sovereign_debt,1982
+PRY,Paraguay,sovereign_restructuring,1992
+ROU,Romania,banking,1998
+ROU,Romania,currency,1996
+ROU,Romania,sovereign_debt,1982
+ROU,Romania,sovereign_restructuring,1987
+RUS,Russia,banking,1998
+RUS,Russia,banking,2008
+RUS,Russia,currency,1998
+RUS,Russia,currency,2014
+RUS,Russia,sovereign_debt,1998
+RUS,Russia,sovereign_restructuring,2000
+RWA,Rwanda,currency,1991
+SDN,Sudan,currency,1981
+SDN,Sudan,currency,1988
+SDN,Sudan,currency,1993
+SDN,Sudan,currency,2012
+SDN,Sudan,sovereign_debt,1979
+SDN,Sudan,sovereign_restructuring,1985
+SEN,Senegal,banking,1988
+SEN,Senegal,currency,1994
+SEN,Senegal,sovereign_debt,1981
+SEN,Senegal,sovereign_restructuring,1996
+SLE,Sierra Leone,banking,1990
+SLE,Sierra Leone,currency,1983
+SLE,Sierra Leone,currency,1989
+SLE,Sierra Leone,currency,1998
+SLE,Sierra Leone,sovereign_debt,1977
+SLE,Sierra Leone,sovereign_restructuring,1995
+SLV,El Salvador,banking,1989
+SLV,El Salvador,currency,1986
+SRB,"Serbia, Republic of",currency,2000
+SRB,"Yugoslavia, SFR",sovereign_debt,1983
+SRB,"Yugoslavia, SFR",sovereign_restructuring,1988
+SSD,South Sudan,currency,2015
+STP,São Tomé and Principe,banking,1992
+STP,São Tomé and Principe,currency,1987
+STP,São Tomé and Principe,currency,1992
+STP,São Tomé and Principe,currency,1997
+SUR,Suriname,currency,1990
+SUR,Suriname,currency,1995
+SUR,Suriname,currency,2001
+SUR,Suriname,currency,2016
+SVK,Slovak Republic,banking,1998
+SVN,Slovenia,banking,1992
+SVN,Slovenia,banking,2008
+SWE,Sweden,banking,1991
+SWE,Sweden,banking,2008
+SWE,Sweden,currency,1993
+SWZ,Swaziland,banking,1995
+SWZ,Swaziland,currency,1985
+SWZ,Swaziland,currency,2015
+SYC,Seychelles,currency,2008
+SYC,Seychelles,sovereign_debt,2008
+SYC,Seychelles,sovereign_restructuring,2009
+SYR,Syrian Arab Republic,currency,1988
+TCD,Chad,banking,1983
+TCD,Chad,banking,1992
+TCD,Chad,currency,1994
+TGO,Togo,banking,1993
+TGO,Togo,currency,1994
+TGO,Togo,sovereign_debt,1979
+TGO,Togo,sovereign_restructuring,1997
+THA,Thailand,banking,1983
+THA,Thailand,banking,1997
+THA,Thailand,currency,1998
+TJK,Tajikistan,currency,1999
+TJK,Tajikistan,currency,2015
+TKM,Turkmenistan,currency,2008
+TTO,Trinidad and Tobago,currency,1986
+TTO,Trinidad and Tobago,sovereign_debt,1989
+TTO,Trinidad and Tobago,sovereign_restructuring,1989
+TUN,Tunisia,banking,1991
+TUR,Turkey,banking,1982
+TUR,Turkey,banking,2000
+TUR,Turkey,currency,1978
+TUR,Turkey,currency,1984
+TUR,Turkey,currency,1991
+TUR,Turkey,currency,1996
+TUR,Turkey,currency,2001
+TUR,Turkey,sovereign_debt,1978
+TUR,Turkey,sovereign_restructuring,1982
+TZA,Tanzania,banking,1987
+TZA,Tanzania,currency,1985
+TZA,Tanzania,currency,1990
+TZA,Tanzania,sovereign_debt,1984
+TZA,Tanzania,sovereign_restructuring,1992
+UGA,Uganda,banking,1994
+UGA,Uganda,currency,1980
+UGA,Uganda,currency,1988
+UGA,Uganda,sovereign_debt,1981
+UGA,Uganda,sovereign_restructuring,1993
+UKR,Ukraine,banking,1998
+UKR,Ukraine,banking,2008
+UKR,Ukraine,banking,2014
+UKR,Ukraine,currency,1998
+UKR,Ukraine,currency,2009
+UKR,Ukraine,currency,2014
+UKR,Ukraine,sovereign_debt,1998
+UKR,Ukraine,sovereign_debt,2015
+UKR,Ukraine,sovereign_restructuring,1999
+UKR,Ukraine,sovereign_restructuring,2015
+URY,Uruguay,banking,1981
+URY,Uruguay,banking,2002
+URY,Uruguay,currency,1972
+URY,Uruguay,currency,1983
+URY,Uruguay,currency,1990
+URY,Uruguay,currency,2002
+URY,Uruguay,sovereign_debt,1983
+URY,Uruguay,sovereign_debt,2002
+URY,Uruguay,sovereign_restructuring,1991
+URY,Uruguay,sovereign_restructuring,2003
+USA,United States,banking,1988
+USA,United States,banking,2007
+UZB,Uzbekistan,currency,2000
+VEN,Venezuela,banking,1994
+VEN,Venezuela,currency,1984
+VEN,Venezuela,currency,1989
+VEN,Venezuela,currency,1994
+VEN,Venezuela,currency,2002
+VEN,Venezuela,currency,2010
+VEN,Venezuela,sovereign_debt,1982
+VEN,Venezuela,sovereign_debt,2017
+VEN,Venezuela,sovereign_restructuring,1990
+VNM,Vietnam,banking,1997
+VNM,Vietnam,currency,1972
+VNM,Vietnam,currency,1981
+VNM,Vietnam,currency,1987
+VNM,Vietnam,sovereign_debt,1985
+VNM,Vietnam,sovereign_restructuring,1997
+YEM,Yemen,banking,1996
+YEM,Yemen,currency,1985
+YEM,Yemen,currency,1995
+ZAF,South Africa,currency,1984
+ZAF,South Africa,currency,2015
+ZAF,South Africa,sovereign_debt,1985
+ZAF,South Africa,sovereign_restructuring,1993
+ZMB,Zambia,banking,1995
+ZMB,Zambia,currency,1983
+ZMB,Zambia,currency,1989
+ZMB,Zambia,currency,1996
+ZMB,Zambia,currency,2009
+ZMB,Zambia,currency,2015
+ZMB,Zambia,sovereign_debt,1983
+ZMB,Zambia,sovereign_restructuring,1994
+ZWE,Zimbabwe,banking,1995
+ZWE,Zimbabwe,currency,1983
+ZWE,Zimbabwe,currency,1991
+ZWE,Zimbabwe,currency,1998
+ZWE,Zimbabwe,currency,2003

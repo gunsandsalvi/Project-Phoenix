@@ -1,0 +1,499 @@
+question,section,text
+Q11_10_1_1_2016,11,11.10.1.1 How many were successful?
+Q11_10_1_2016,11,11.10.1 How many appeals were made in the past 6 years (2011-2016)?
+Q11_10_2016,11,11.10 Can the bank shareholders appeal to the court against a resolution decision of the banking supervisor?
+Q11_11_2016,11,"11.11 Can a resolution action against a bank continue if a court action is filed, or does the court appeal lead to the suspension of such action until a ruling is made?"
+Q11_12a_2016,11,11.12 Which mechanisms are provided in existing legislation to resolve a problem bank prior to its closure and liquidation? | a. Open bank assistance
+Q11_12b_2016,11,11.12 Which mechanisms are provided in existing legislation to resolve a problem bank prior to its closure and liquidation? | b. Purchase and assumption transaction (with or without government support)
+Q11_12c_2016,11,11.12 Which mechanisms are provided in existing legislation to resolve a problem bank prior to its closure and liquidation? | c. Government intervention (e.g. via conservatorship or nationalization)
+Q11_12d_2016,11,11.12 Which mechanisms are provided in existing legislation to resolve a problem bank prior to its closure and liquidation? | d. Bridge bank
+Q11_12e_2016,11,11.12 Which mechanisms are provided in existing legislation to resolve a problem bank prior to its closure and liquidation? | e. Other (please specify)
+Q11_13_2015,11,11.13 How many banks were resolved in ...? | 2015
+Q11_13_2016,11,11.13 How many banks were resolved in ...? | 2016
+Q11_14_2015,11,11.14 How many banks were liquidated in ...? | 2015
+Q11_14_2016,11,11.14 How many banks were liquidated in ...? | 2016
+Q11_15_2015,11,11.15 What proportion of banking system assets were resolved in ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q11_15_2016,11,11.15 What proportion of banking system assets were resolved in ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q11_16_2015,11,11.16 What proportion of banking system assets were liquidated in ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q11_16_2016,11,11.16 What proportion of banking system assets were liquidated in ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q11_17a_2016,11,11.17 Have you introduced significant changes to the bank resolution framework in your country as a result of the 2007-2009 global financial crisis? | a. Introduce a separate bank insolvency framework
+Q11_17b_2016,11,11.17 Have you introduced significant changes to the bank resolution framework in your country as a result of the 2007-2009 global financial crisis? | b. Implement coordination arrangements among domestic authorities
+Q11_18_2016,11,"11.18 Is there a framework in place to enable the bail-in of creditors (i.e., distressed banks' creditors bear some of the burden of the rescue)?"
+Q11_19_1_2016,11,11.19.1 What is the required bail-in funding as a percentage of total assets? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q11_19_2016,11,"11.19 Are banks required to have sufficient bail-in funding (e.g., bail-in debt, contingent-convertible bonds, etc.) to be able to resolve them as a going concern?"
+Q11_1a_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | a. Cease and desist-type orders for imprudent bank practices
+Q11_1b_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | b. Forbearance (i.e. to waive regulatory and supervisory requirements)
+Q11_1c_2016,11,"11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | c. Require a bank to meet supervisory requirements (e.g. capital, liquidity etc.) that are stricter than the legal or regulatory minimum"
+Q11_1d_2016,11,"11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | d. Require bank to enhance governance, internal controls and risk management systems"
+Q11_1e_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | e. Require bank to apply specific provisioning and/or write-off policies
+Q11_1f_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | f. Require banks to constitute provisions to cover actual or potential losses
+Q11_1g_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | g. Restrict or place conditions on the types of business conducted by bank
+Q11_1h_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | h. Withdraw the bank's license
+Q11_1i_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | i. Require banks to reduce/restructure their operations (e.g. via asset sales and branch closures) and adjust their risk profile
+Q11_1j_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | j. Require banks to reduce or suspend dividends to shareholders
+Q11_1k_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | k. Require banks to reduce or suspend bonuses and other remuneration to bank directors and managers
+Q11_1l_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | l. Suspend or remove bank directors
+Q11_1m_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | m. Suspend or remove managers
+Q11_1n_2016,11,11.1 Please indicate whether the following enforcement powers are available to the supervisory agency ... | n. Require commitment/action from controlling shareholder(s) to support the bank with new equity (e.g. capital restoration plan)
+Q11_20_1_2016,11,"11.20.1 Do these resolution plans apply to selected banks (e.g., systemically important banks)?"
+Q11_20_2016,11,"11.20 Are banks required to file resolution plans (i.e., strategy for rapid and orderly resolution in case of financial distress or failure)?"
+Q11_21_1_2016,11,"11.21.1 Do these resolution plans apply to selected banks (e.g., systemically important banks)?"
+Q11_21_2016,11,11.21 Is the bank supervisory agency / resolution authority required to prepare resolution plans for banks?
+Q11_22_2016,11,11.22 Is there a formal supervisory and regulatory framework to deal with the resolution of international banks apart from the general framework for resolution of banks?
+Q11_23_2016,11,11.23 Are there clear and workable rules on burden sharing in case of an international bank resolution?
+Q11_24_2016,11,"11.24 Can the supervisory agency take unilateral actions to ring-fence domestic assets (e.g., segregate specific assets in a separate entity) in case of an international bank failure?"
+Q11_2_2016,11,"11.2 Are bank regulators/supervisors required to make public formal enforcement actions, which include cease and desist orders and written agreements between a bank regulatory/supervisory body and a banking organization?"
+Q11_3a_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | a. 	Cease and desist-type orders for imprudent bank practices - Contested in court
+Q11_3a_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | a. 	Cease and desist-type orders for imprudent bank practices - Overall
+Q11_3a_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | a. 	Cease and desist-type orders for imprudent bank practices - Overturned by the court
+Q11_3b_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | b. 	Forbearance (i.e. to waive regulatory and supervisory requirements) - Contested in court
+Q11_3b_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | b. 	Forbearance (i.e. to waive regulatory and supervisory requirements) - Overall
+Q11_3b_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | b. 	Forbearance (i.e. to waive regulatory and supervisory requirements) - Overturned by the court
+Q11_3c_ContesCourt_2016,11,"11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | c. Require a bank to meet supervisory requirements (e.g. capital, liquidity etc.) that are stricter than the legal or regulatory minimum - Contested in court"
+Q11_3c_Overall_2016,11,"11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | c. Require a bank to meet supervisory requirements (e.g. capital, liquidity etc.) that are stricter than the legal or regulatory minimum - Overall"
+Q11_3c_OvertCourt_2016,11,"11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | c. Require a bank to meet supervisory requirements (e.g. capital, liquidity etc.) that are stricter than the legal or regulatory minimum - Overturned by the court"
+Q11_3d_ContesCourt_2016,11,"11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | d. 	Require bank to enhance governance, internal controls and risk management systems - Contested in court"
+Q11_3d_Overall_2016,11,"11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | d. 	Require bank to enhance governance, internal controls and risk management systems - Overall"
+Q11_3d_OvertCourt_2016,11,"11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | d. 	Require bank to enhance governance, internal controls and risk management systems - Overturned by the court"
+Q11_3e_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | e. 	Require bank to apply specific provisioning and/or write-off policies - Contested in court
+Q11_3e_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | e. 	Require bank to apply specific provisioning and/or write-off policies - Overall
+Q11_3e_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | e. 	Require bank to apply specific provisioning and/or write-off policies - Overturned by the court
+Q11_3f_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | f. 	Require banks to constitute provisions to cover actual or potential losses - Contested in court
+Q11_3f_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | f. 	Require banks to constitute provisions to cover actual or potential losses - Overall
+Q11_3f_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | f. 	Require banks to constitute provisions to cover actual or potential losses - Overturned by the court
+Q11_3g_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | g. 	Restrict or place conditions on the types of business conducted by bank - Contested in court
+Q11_3g_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | g. 	Restrict or place conditions on the types of business conducted by bank - Overall
+Q11_3g_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | g. 	Restrict or place conditions on the types of business conducted by bank - Overturned by the court
+Q11_3h_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | h. Require banks to reduce/restructure their operations (e.g. via asset sales and branch closures) and adjust their risk profile - Contested in court
+Q11_3h_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | h. Require banks to reduce/restructure their operations (e.g. via asset sales and branch closures) and adjust their risk profile - Overall
+Q11_3h_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | h. Require banks to reduce/restructure their operations (e.g. via asset sales and branch closures) and adjust their risk profile - Overturned by the court
+Q11_3i_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | i. Require banks to reduce or suspend dividends to shareholders - Contested in court
+Q11_3i_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | i. Require banks to reduce or suspend dividends to shareholders - Overall
+Q11_3i_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | i. Require banks to reduce or suspend dividends to shareholders - Overturned by the court
+Q11_3j_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | j. Require banks to reduce or suspend bonuses and other remuneration to bank directors and managers - Contested in court
+Q11_3j_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | j. Require banks to reduce or suspend bonuses and other remuneration to bank directors and managers - Overall
+Q11_3j_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | j. Require banks to reduce or suspend bonuses and other remuneration to bank directors and managers - Overturned by the court
+Q11_3k_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | k. Suspend or remove bank directors - Contested in court
+Q11_3k_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | k. Suspend or remove bank directors - Overall
+Q11_3k_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | k. Suspend or remove bank directors - Overturned by the court
+Q11_3l_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | l. Suspend or remove managers - Contested in court
+Q11_3l_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | l. Suspend or remove managers - Overall
+Q11_3l_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | l. Suspend or remove managers - Overturned by the court
+Q11_3m_ContesCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | m. Require commitment/action from controlling shareholder(s) to support the bank with new equity (e.g. capital restoration plan) - Contested in court
+Q11_3m_Overall_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | m. Require commitment/action from controlling shareholder(s) to support the bank with new equity (e.g. capital restoration plan) - Overall
+Q11_3m_OvertCourt_2016,11,11.3 Please indicate how many times any of the below enforcement actions were undertaken in the last 6 years (2011-2016) - Have been taken overall | m. Require commitment/action from controlling shareholder(s) to support the bank with new equity (e.g. capital restoration plan) - Overturned by the court
+Q11_4_1a_2016,11,11.4.1 What triggers/thresholds are used for initiating automatic actions? | a. Breach of minimum regulatory capital adequacy ratio
+Q11_4_1b_2016,11,"11.4.1 What triggers/thresholds are used for initiating automatic actions? | b. Breach of other regulatory requirements (e.g. liquidity ratio, fit and proper criteria)"
+Q11_4_1c_2016,11,11.4.1 What triggers/thresholds are used for initiating automatic actions? | c. Evaluation of likely non-viability given trends and risk factors
+Q11_4_1d_2016,11,11.4.1 What triggers/thresholds are used for initiating automatic actions? | d. Supervisory ratings
+Q11_4_2016,11,11.4 Does the supervisory agency operate an early intervention framework (e.g. prompt corrective action) that forces automatic action when certain regulatory triggers/thresholds are breached?
+Q11_5_2016,11,11.5 Is there a separate bank insolvency framework that is distinct from that of non-financial firms?
+Q11_6_2016,11,11.6 Is the insolvency framework the same for bank holding companies and banks?
+Q11_7_2016,11,"11.7 Is the insolvency framework supra-national (i.e., transcends national boundaries or governments)?"
+Q11_8a_2016,11,11.8 Which authority has the powers to perform the following problem bank resolution activities?... - Response | a. Declare insolvency
+Q11_8b_2016,11,11.8 Which authority has the powers to perform the following problem bank resolution activities?... - Response | b. Supersede shareholders' rights
+Q11_8c_2016,11,11.8 Which authority has the powers to perform the following problem bank resolution activities?... - Response | c. Remove and replace bank senior management and directors
+Q11_8d_2016,11,11.8 Which authority has the powers to perform the following problem bank resolution activities?... - Response | d. Undertake bank resolution mechanisms
+Q11_8e_2016,11,11.8 Which authority has the powers to perform the following problem bank resolution activities?... - Response | e. Appoint and oversee a bank liquidator/receiver
+Q11_8f_2016,11,11.8 Which authority has the powers to perform the following problem bank resolution activities?... - Response | f. Declare non-viability
+Q11_9a_2016,11,11.9 Is court approval required for the following bank resolution activities? | a. Declare insolvency
+Q11_9b_2016,11,11.9 Is court approval required for the following bank resolution activities? | b. Supersede shareholders' rights
+Q11_9c_2016,11,11.9 Is court approval required for the following bank resolution activities? | c. Remove and replace bank senior management and directors
+Q11_9d_2016,11,11.9 Is court approval required for the following bank resolution activities? | d. Undertake bank resolution mechanisms
+Q11_9e_2016,11,11.9 Is court approval required for the following bank resolution activities? | e. Appoint and oversee a bank liquidator/receiver
+Q12_23_1_2016,12,12.23.1 What was the average man days per inspection?
+Q12_23_2016,12,12.23 How many onsite examinations per bank were performed in the last 6 years (2011-2016)?
+Q12_23_2a_2016,12,12.23.2 How frequently are onsite inspections conducted in a year in the 10 largest banks by asset size? | a. More than 4 times a year
+Q12_23_2b_2016,12,12.23.2 How frequently are onsite inspections conducted in a year in the 10 largest banks by asset size? | b. 4 times a year
+Q12_23_2c_2016,12,12.23.2 How frequently are onsite inspections conducted in a year in the 10 largest banks by asset size? | c. 3 times a year
+Q12_23_2d_2016,12,12.23.2 How frequently are onsite inspections conducted in a year in the 10 largest banks by asset size? | d. 2 times a year
+Q12_23_2e_2016,12,12.23.2 How frequently are onsite inspections conducted in a year in the 10 largest banks by asset size? | e. Once a year
+Q12_23_2f_2016,12,12.23.2 How frequently are onsite inspections conducted in a year in the 10 largest banks by asset size? | f. Less than once a year
+Q12_28a_Date_2016,12,12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | a. Counter-cyclical capital requirements
+Q12_28b_Date_2016,12,12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | b. Counter-cyclical loan to value ratios
+Q12_28c_Date_2016,12,12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | c. Granular capital requirements based on loan to value ratios
+Q12_28d_Date_2016,12,12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | d. Counter-cyclical provisioning requirements
+Q12_28e_Date_2016,12,12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | e. Temporary restrictions on dividend and bonuses distribution
+Q12_28f_Date_2016,12,12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | f. Leverage ratio requirements for new mortgages
+Q12_28g_Date_2016,12,"12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | g. Restrictions to borrower (e.g., caps on debt to income), instrument (e.g., margins, hair-cuts) or activity (e.g., lending to sectors)"
+Q12_28h_Date_2016,12,"12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | h. Restrictions on financial sector balance sheets (e.g., reserve requirements)"
+Q12_28i_Date_2016,12,12.28 Does the banking supervisor have any counter-cyclical regulations or tools to manage boom/bust cycles in credit flows including (select all options that apply and specify the date - dd/mm/yyyy - of introduction) … | i. Restrictions on foreign currency denominated lending
+Q12_29_1_2016,12,12.29.1 What is this limit as a percentage of the value of the mortgaged property? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q12_29_2016,12,12.29 Are there maximum Loan-to-Value (LTV) ratios for mortgage loans?
+Q12_30_1_2016,12,12.30.1 What is this limit as a percentage of the borrower(s) gross monthly income? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q12_30_2016,12,"12.30 Are there maximum Debt-to-Income ratios (DTI) for mortgage loans (i.e., total monthly obligations divided by borrower(s) gross monthly income)?"
+Q12_31_2016,12,12.31 Are there minimum down payments (as a % of the value of the mortgaged property) for mortgage loans?
+Q12_33_1_2016,12,12.33.1 What is the maximum limit as a percentage of the value of the mortgaged property? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q12_33_2016,12,12.33 Are there maximum Debt-to-Value (DTV) ratios for mortgage loans?
+Q12_34_1a_Date_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | a. Additional capital requirements
+Q12_34_1b_Date_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | b. Additional liquidity requirements
+Q12_34_1c_Date_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | c. Asset/risk diversification requirements
+Q12_34_1d_Date_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | d. Restrictions/limits on activities
+Q12_34_1e_Date_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | e. Restrictions/limits on size of institution
+Q12_34_1f_Date_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | f. Additional corporate taxes for large institutions
+Q12_34_1g_Date_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | g. Closer or more frequent supervision
+Q12_34_1h_Date_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | h. Restrictions on the group's legal structure
+Q12_34_1i_2016,12,12.34.1 Does the banking supervisor have any tools to oversee more closely and/or limit the activities of large/interconnected institutions (select all options that apply and specify the date - dd/mm/yyyy - of introduction)? | i. Other (Please explain)
+Q12_34_2016,12,12.34 Does the banking supervisor supervise systemic institutions in a different way than non-systemic ones?
+Q12_39_2016,12,12.39 How many professional bank supervisors are there in total (excluding all support functions and management)?
+Q12_45_2016,12,12.45 What was the total annual budget for banking supervision during 2016? (in [Currency Unit] of [Currency])
+Q13_10_2015,13,13.10 What was the after-tax return on equity for the banking system at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_10_2016,13,13.10 What was the after-tax return on equity for the banking system at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_11_2015,13,13.11 What was the net interest margin as a share of average interest-bearing (total earning) assets for the banking system at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_11_2016,13,13.11 What was the net interest margin as a share of average interest-bearing (total earning) assets for the banking system at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_12_2015,13,13.12 What percent of the banking system's total gross income was in the form of non-interest income in at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_12_2016,13,13.12 What percent of the banking system's total gross income was in the form of non-interest income in at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_13_2015,13,13.13 What was the aggregate operating costs to assets ratio for the banking system at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_13_2016,13,13.13 What was the aggregate operating costs to assets ratio for the banking system at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_14_2015,13,13.14 What was the ratio of banking system’s non-performing loans (gross of provisions) to total gross loans at the end of …? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_14_2016,13,13.14 What was the ratio of banking system’s non-performing loans (gross of provisions) to total gross loans at the end of …? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_15_2015,13,13.15 What was the ratio of banking system’s specific provisions to gross non-performing loans at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_15_2016,13,13.15 What was the ratio of banking system’s specific provisions to gross non-performing loans at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_16_2015,13,13.16 What was the ratio of banking system’s general provisions to total gross loans at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_16_2016,13,13.16 What was the ratio of banking system’s general provisions to total gross loans at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_17_2015,13,13.17 What percent of the banking system’s assets was foreign-currency denominated at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_17_2016,13,13.17 What percent of the banking system’s assets was foreign-currency denominated at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_18_2015,13,13.18 What percent of the banking system’s liabilities was foreign-currency denominated at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_18_2016,13,13.18 What percent of the banking system’s liabilities was foreign-currency denominated at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_19_2015,13,13.19 What percent of the banking system’s assets was in public sector claims at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_19_2016,13,13.19 What percent of the banking system’s assets was in public sector claims at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_1_1_2015,13,13.1.1 What fraction of the banking system’s assets is held by just commercial banks at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_1_1_2016,13,13.1.1 What fraction of the banking system’s assets is held by just commercial banks at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_1_2015,13,13.1 How many banks were there at the end of ...? | 2015
+Q13_1_2016,13,13.1 How many banks were there at the end of ...? | 2016
+Q13_20_2015,13,13.20 What was the ratio of deposits at banks to banking system’s assets at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_20_2016,13,13.20 What was the ratio of deposits at banks to banking system’s assets at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_21_2015,13,13.21 What percentage of banking system’s assets were residential real estate loans at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_21_2016,13,13.21 What percentage of banking system’s assets were residential real estate loans at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_22_2015,13,13.22 What percentage of the banking system’s assets were commercial real estate loans at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_22_2016,13,13.22 What percentage of the banking system’s assets were commercial real estate loans at the end of...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_23_2015,13,13.23 What percentage of the banking system’s residential real estate loans were securitized at the end of….? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_23_2016,13,13.23 What percentage of the banking system’s residential real estate loans were securitized at the end of….? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_24_2016,13,13.24 What is the statutory corporate tax rate on domestic bank income as of end of 2016? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q13_25_2016,13,13.25 What was the effective tax rate on the aggregate banking system's pre-tax income at the end of 2016? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q13_2_2015,13,13.2 What were the total assets of the banking system (expressed in [Currency Unit] of [Currency]) at the end of …? | 2015
+Q13_2_2016,13,13.2 What were the total assets of the banking system (expressed in [Currency Unit] of [Currency]) at the end of …? | 2016
+Q13_3_2015,13,13.3 What was the total equity of the banking system (expressed in [Currency Unit] of [Currency]) at the end of …? | 2015
+Q13_3_2016,13,13.3 What was the total equity of the banking system (expressed in [Currency Unit] of [Currency]) at the end of …? | 2016
+Q13_4_2015,13,13.4 What were the total deposits of the banking system (expressed in [Currency Unit] of [Currency]) at the end of …? | 2015
+Q13_4_2016,13,13.4 What were the total deposits of the banking system (expressed in [Currency Unit] of [Currency]) at the end of …? | 2016
+Q13_5_2015,13,13.5 What were the total loans of the banking system (expressed in [Currency Unit] of [Currency]) at the end of …? | 2015
+Q13_5_2016,13,13.5 What were the total loans of the banking system (expressed in [Currency Unit] of [Currency]) at the end of …? | 2016
+Q13_6_1_2015,13,13.6.1 What fraction of the banking system’s total deposits was held by the five largest banks at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_6_1_2016,13,13.6.1 What fraction of the banking system’s total deposits was held by the five largest banks at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_6_2015,13,13.6 What fraction of the banking system’s total assets was held by the five largest banks at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_6_2016,13,13.6 What fraction of the banking system’s total assets was held by the five largest banks at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_6_2_2015,13,13.6.2 What fraction of the banking system’s total loans was held by the five largest banks at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_6_2_2016,13,13.6.2 What fraction of the banking system’s total loans was held by the five largest banks at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_7_1_2015,13,"13.7.1 What percent of the banking system's assets was in banks that were government-controlled (i.e., where government owned 50% or more equity) at the end of…? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015"
+Q13_7_1_2016,13,"13.7.1 What percent of the banking system's assets was in banks that were government-controlled (i.e., where government owned 50% or more equity) at the end of…? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016"
+Q13_7_2_2015,13,"13.7.2 What percent of the banking system's assets was in banks that were foreign-controlled (i.e., where foreigners owned 50% or more equity) at the end of …? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015"
+Q13_7_2_2016,13,"13.7.2 What percent of the banking system's assets was in banks that were foreign-controlled (i.e., where foreigners owned 50% or more equity) at the end of …? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016"
+Q13_8_2015,13,13.8 What percent of the total foreign-owned bank assets in your domestic banking system was held in branches as opposed to other juridical forms (e.g. subsidiaries) at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q13_8_2016,13,13.8 What percent of the total foreign-owned bank assets in your domestic banking system was held in branches as opposed to other juridical forms (e.g. subsidiaries) at the end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q13_9_2015,13,13.9 How many bank mergers were completed in …? | 2015
+Q13_9_2016,13,13.9 How many bank mergers were completed in …? | 2016
+Q1_12_2016,01,"1.12 In general, how long (in number of months) does it take for a new banking license to be issued, from receipt of the application to final disposition?"
+Q1_4_1_2016,01,1.4.1 Does the minimum capital entry requirement vary depending on the nature of the banking businesses that are licensed?
+Q1_4_1_YesText_2016,01,1.4 What is the minimum capital entry requirement for bank operations of the following types? (in [Currency Unit] of [Currency]) | Yes - Explanation
+Q1_4_2_2016,01,1.4.2 Are the sources of funds to be used as capital verified by the regulatory/supervisory authorities?
+Q1_4_3_2016,01,1.4.3 Can the initial disbursement or subsequent injections of capital be done with assets other than cash or government securities?
+Q1_4a_Num_2016,01,1.4 What is the minimum capital entry requirement for bank operations of the following types? (in [Currency Unit] of [Currency]) | a. Domestic bank
+Q1_4b_Num_2016,01,1.4 What is the minimum capital entry requirement for bank operations of the following types? (in [Currency Unit] of [Currency]) | b. For a subsidiary of a foreign bank
+Q1_4c_Num_2016,01,1.4 What is the minimum capital entry requirement for bank operations of the following types? (in [Currency Unit] of [Currency]) | c. For a branch of a foreign bank
+Q1_7_1a_2016,01,1.7.1 What were the primary reasons for denial of the applications for banking licenses? | a. Capital amount or quality
+Q1_7_1b_2016,01,1.7.1 What were the primary reasons for denial of the applications for banking licenses? | b. Banking skills
+Q1_7_1c_2016,01,1.7.1 What were the primary reasons for denial of the applications for banking licenses? | c. Reputation
+Q1_7_1d_2016,01,1.7.1 What were the primary reasons for denial of the applications for banking licenses? | d. Incomplete application
+Q1_7_1e_2016,01,"1.7.1 What were the primary reasons for denial of the applications for banking licenses? | e. Non-compliance with fit & proper criteria for potential shareholders, board members, senior management"
+Q1_7_1f_2016,01,1.7.1 What were the primary reasons for denial of the applications for banking licenses? | f. Absence of reciprocity
+Q1_7_1g_2016,01,1.7.1 What were the primary reasons for denial of the applications for banking licenses? | g. Potential home-host issues that could affect effective supervision
+Q1_7a_Num_2016,01,"1.7 In the past 6 years (2011-2016), how many applications for banking licenses from domestic entities (i.e. those 50% or more domestically owned) have been: | a. Received"
+Q1_7b_Num_2016,01,"1.7 In the past 6 years (2011-2016), how many applications for banking licenses from domestic entities (i.e. those 50% or more domestically owned) have been: | b. Denied"
+Q1_7c_Num_2016,01,"1.7 In the past 6 years (2011-2016), how many applications for banking licenses from domestic entities (i.e. those 50% or more domestically owned) have been: | c. Withdrawn"
+Q1_7d_Num_2016,01,"1.7 In the past 6 years (2011-2016), how many applications for banking licenses from domestic entities (i.e. those 50% or more domestically owned) have been: | d. Accepted"
+Q3_10_Num_2016,03,"3.10 In case you plan to move to the Basel II framework, what is the target calendar year of adoption?"
+Q3_11a_2016,03,3.11 What variants are offered to banks in calculating capital requirements for credit risk? | a. Simplified standardized approach (SSA)
+Q3_11b_2016,03,3.11 What variants are offered to banks in calculating capital requirements for credit risk? | b. Standardized approach (SA)
+Q3_11c_2016,03,3.11 What variants are offered to banks in calculating capital requirements for credit risk? | c. Foundation internal ratings-based approach (F-IRB)
+Q3_11d_2016,03,3.11 What variants are offered to banks in calculating capital requirements for credit risk? | d. Advanced internal ratings-based approach (A-IRB)
+Q3_12a_2016,03,3.12 What was the impact of moving to Basel II on the overall regulatory capital level of the banking system in the first five years (or since implementation if lower than 5 years)? Please select the option that best characterizes the situation in your jurisdiction. | a. Increased more than 10%
+Q3_12b_2016,03,3.12 What was the impact of moving to Basel II on the overall regulatory capital level of the banking system in the first five years (or since implementation if lower than 5 years)? Please select the option that best characterizes the situation in your jurisdiction. | b. Increased up to 10%
+Q3_12c_2016,03,3.12 What was the impact of moving to Basel II on the overall regulatory capital level of the banking system in the first five years (or since implementation if lower than 5 years)? Please select the option that best characterizes the situation in your jurisdiction. | c. Little change / increased up to or decreased up to 1%
+Q3_12d_2016,03,3.12 What was the impact of moving to Basel II on the overall regulatory capital level of the banking system in the first five years (or since implementation if lower than 5 years)? Please select the option that best characterizes the situation in your jurisdiction. | d. Decreased up to 10%
+Q3_12e_2016,03,3.12 What was the impact of moving to Basel II on the overall regulatory capital level of the banking system in the first five years (or since implementation if lower than 5 years)? Please select the option that best characterizes the situation in your jurisdiction. | e. Decreased more than 10%
+Q3_13_1_2016,03,3.13.1 How much is the capital conservation buffer (as a % of risk-weighted assets) as of end of 2016? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q3_13_2016,03,3.13 Do you have in place capital conservation buffers?
+Q3_14_1_2016,03,3.14.1 How much is the countercyclical capital buffer (as a % of risk weighted assets) as of end of 2016? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q3_14_2016,03,3.14 Do you have in place a countercyclical capital buffer?
+Q3_15a_2016,03,"3.15 What is the regulatory leverage ratio that you are using based on…(choose the most appropriate option)? | a. Minimum capital to asset multiples (i.e., total assets may be no more than (x) times capital)"
+Q3_15b_2016,03,"3.15 What is the regulatory leverage ratio that you are using based on…(choose the most appropriate option)? | b. Maximum assets to capital multiples (i.e., capital must be no lower than (x) percent of assets)"
+Q3_16a_2016,03,3.16 The leverage ratio is applied … | a. On a solo basis at the individual bank level
+Q3_16b_2016,03,3.16 The leverage ratio is applied … | b. On a consolidated basis at every banking group or subgroup levels
+Q3_16c_2016,03,3.16 The leverage ratio is applied … | c. On a consolidated basis for the nonbank holding company (if it exists) that is the parent entity of a bank
+Q3_17a_2016,03,"3.17 Which concept of capital is used in calculating the leverage ratio (choose the most appropriate option)? | a. Total equity capital (i.e., Tier 1 plus Tier 2 capital)"
+Q3_17b_2016,03,3.17 Which concept of capital is used in calculating the leverage ratio (choose the most appropriate option)? | b. Total regulatory capital
+Q3_17c_2016,03,3.17 Which concept of capital is used in calculating the leverage ratio (choose the most appropriate option)? | c. Only Tier 1 capital
+Q3_18_2016,03,3.18 Are off-balance sheet items included (in notional amounts using credit conversion factors) in assets when calculating the leverage ratio?
+Q3_19a_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | a. Common equity"
+Q3_19a_Max_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Maximum"
+Q3_19a_Min_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Minimum"
+Q3_19b_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | b. Tier 1"
+Q3_19b_Max_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Maximum"
+Q3_19b_Min_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Minimum"
+Q3_19c_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | c. Tier 2"
+Q3_19c_Max_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Maximum"
+Q3_19c_Min_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Minimum"
+Q3_19d_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | d. Tier 3"
+Q3_19d_Max_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Maximum"
+Q3_19d_Min_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Minimum"
+Q3_19e_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | e. Other (please explain)"
+Q3_19e_Max_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Maximum"
+Q3_19e_Min_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Minimum"
+Q3_19e_TextChoice_2016,03,"3.19 Which of the following are legally allowed in regulatory capital and which are the minimum (or maximum) percentages? Enter Yes or No. If the response is Yes, include corresponding minimum (or maximum) percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Option explanation"
+Q3_1a_2016,03,"3.1 Which regulatory capital adequacy regimes did you use as of end of 2016 and for which banks does each regime apply to (if using more than one regime, select all regimes currently in use)? In the space provided below each option please specify which bank types - commercial banks, state-owned commercial banks, state-owned development banks, mutual banks, foreign banks, bank-holding companies - fall under which regime. | a. Basel I (please specify for which bank type)"
+Q3_1b_2016,03,"3.1 Which regulatory capital adequacy regimes did you use as of end of 2016 and for which banks does each regime apply to (if using more than one regime, select all regimes currently in use)? In the space provided below each option please specify which bank types - commercial banks, state-owned commercial banks, state-owned development banks, mutual banks, foreign banks, bank-holding companies - fall under which regime. | b. Basel II (please specify for which bank type)"
+Q3_1c_2016,03,"3.1 Which regulatory capital adequacy regimes did you use as of end of 2016 and for which banks does each regime apply to (if using more than one regime, select all regimes currently in use)? In the space provided below each option please specify which bank types - commercial banks, state-owned commercial banks, state-owned development banks, mutual banks, foreign banks, bank-holding companies - fall under which regime. | c. Basel III (please specify for which bank type)"
+Q3_1d_2016,03,"3.1 Which regulatory capital adequacy regimes did you use as of end of 2016 and for which banks does each regime apply to (if using more than one regime, select all regimes currently in use)? In the space provided below each option please specify which bank types - commercial banks, state-owned commercial banks, state-owned development banks, mutual banks, foreign banks, bank-holding companies - fall under which regime. | d. Leverage ratio (please specify for which bank type)"
+Q3_1e_2016,03,"3.1 Which regulatory capital adequacy regimes did you use as of end of 2016 and for which banks does each regime apply to (if using more than one regime, select all regimes currently in use)? In the space provided below each option please specify which bank types - commercial banks, state-owned commercial banks, state-owned development banks, mutual banks, foreign banks, bank-holding companies - fall under which regime. | e. Other (please explain and for which bank type)"
+Q3_20_1a_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | a. Hybrid debt capital instruments"
+Q3_20_1a_Num_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_20_1b_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | b. General provisions"
+Q3_20_1b_Num_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_20_1c_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | c. Asset revaluation gains (or revaluation reserves)"
+Q3_20_1c_Num_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_20_1d_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | d. Subordinated debt"
+Q3_20_1d_Num_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_20_1e_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | e. Provisions or loan-loss reserves held against future, presently unidentified losses"
+Q3_20_1e_Num_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_20_1f_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | f. Difference between total eligible provisions and total expected loss"
+Q3_20_1f_Num_2016,03,"3.20.1 Which of the following items are allowed as part of Tier 2 capital and in what percentages (mark all options that apply)? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_20_2_2016,03,3.20.2 What fraction of revaluation gains is allowed as part of capital? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q3_20_3a_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | a. Goodwill"
+Q3_20_3b_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | b. Deferred tax assets"
+Q3_20_3c_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | c. Intangibles"
+Q3_20_3d_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | d. Unrealized losses in fair valued exposures"
+Q3_20_3e_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | e. Investment in the capital of certain banking, financial and insurance entities which are outside the scope of consolidation"
+Q3_20_3f_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | f. Cash flow hedge reserve"
+Q3_20_3g_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | g. Shortfall of the stock of provisions to expected losses"
+Q3_20_3h_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | h. Gain on sale related to securitisation transactions"
+Q3_20_3i_2016,03,"3.20.3 Are the following items deducted from Tier 1 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | i. Investments in own shares (treasury stock)"
+Q3_20_4a_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | a. Goodwill"
+Q3_20_4b_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | b. Deferred tax assets"
+Q3_20_4c_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | c. Intangibles"
+Q3_20_4d_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | d. Unrealized losses in fair valued exposures"
+Q3_20_4e_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | e. Investment in the capital of certain banking, financial and insurance entities which are outside the scope of consolidation"
+Q3_20_4f_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | f. Cash flow hedge reserve"
+Q3_20_4g_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | g. Shortfall of the stock of provisions to expected losses"
+Q3_20_4h_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | h. Gain on sale related to securitisation transactions"
+Q3_20_4i_2016,03,"3.20.4 Are the following items deducted from Tier 2 regulatory capital? Enter Yes or No for each option that applies below. If the response is No, please explain its treatment. | i. Investments in own shares (treasury stock)"
+Q3_20a_2016,03,"3.20 Which of the following items are allowed as part of Tier 1 capital and in what percentages? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | a. Hybrid debt capital instruments"
+Q3_20a_Num_2016,03,"3.20 Which of the following items are allowed as part of Tier 1 capital and in what percentages? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_20b_2016,03,"3.20 Which of the following items are allowed as part of Tier 1 capital and in what percentages? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | b. Asset revaluation gains (or revaluation reserves)"
+Q3_20b_Num_2016,03,"3.20 Which of the following items are allowed as part of Tier 1 capital and in what percentages? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_20c_2016,03,"3.20 Which of the following items are allowed as part of Tier 1 capital and in what percentages? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | c. Subordinated debt"
+Q3_20c_Num_2016,03,"3.20 Which of the following items are allowed as part of Tier 1 capital and in what percentages? Enter Yes or No. If the response is Yes, include corresponding percentages (e.g. 50 means 50%) for each option that apply below. If the response is No, please explain its treatment. | Yes - Percentage allowed"
+Q3_2a_2016,03,3.2 Which risks are covered by the current regulatory minimum capital requirements in your jurisdiction? Please select each risk that applies. | a. Credit risk
+Q3_2b_2016,03,3.2 Which risks are covered by the current regulatory minimum capital requirements in your jurisdiction? Please select each risk that applies. | b. Market risk
+Q3_2c_2016,03,3.2 Which risks are covered by the current regulatory minimum capital requirements in your jurisdiction? Please select each risk that applies. | c. Operational risk
+Q3_2d_2016,03,3.2 Which risks are covered by the current regulatory minimum capital requirements in your jurisdiction? Please select each risk that applies. | d. Other risks (please explain)
+Q3_3_1_2015,03,"3.3.1 What was the minimum required risk-based regulatory capital ratio (i.e., as percent of risk-weighted assets) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015"
+Q3_3_1_2016,03,"3.3.1 What was the minimum required risk-based regulatory capital ratio (i.e., as percent of risk-weighted assets) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016"
+Q3_3_2_2015,03,3.3.2 What was the minimum required leverage (“gearing”) ratio as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q3_3_2_2016,03,3.3.2 What was the minimum required leverage (“gearing”) ratio as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q3_3_3_2015,03,"3.3.3 What was the minimum regulatory Tier 1 capital ratio (i.e., as percent of risk-weighted assets) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015"
+Q3_3_3_2016,03,"3.3.3 What was the minimum regulatory Tier 1 capital ratio (i.e., as percent of risk-weighted assets) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016"
+Q3_4_1_2015,03,"3.4.1 What was the actual risk based capital ratio of the banking system (i.e., as percent of the banking system risk-weighted assets) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015"
+Q3_4_1_2016,03,"3.4.1 What was the actual risk based capital ratio of the banking system (i.e., as percent of the banking system risk-weighted assets) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016"
+Q3_4_2_2015,03,"3.4.2 What was the actual required leverage (“gearing”) ratio of the banking system (i.e., as percent of the banking system assets) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015"
+Q3_4_2_2016,03,"3.4.2 What was the actual required leverage (“gearing”) ratio of the banking system (i.e., as percent of the banking system assets) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016"
+Q3_5_2015,03,3.5 What was the actual Tier 1 capital ratio of the banking system as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q3_5_2016,03,3.5 What was the actual Tier 1 capital ratio of the banking system as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q3_6_1_2016,03,"3.6.1 Do you require banks to perform an internal assessment of their capital adequacy against their economic capital (i.e., the economic capital is computed by banks according their own internal assessment of the true amount of capital needed to cover overall risk exposures)?"
+Q3_6_2_2016,03,3.6.2 Do you review the internal assessments performed by banks?
+Q3_6a_2016,03,3.6 The regulatory minimum capital requirements are applied | a. On a solo basis at the individual bank level
+Q3_6b_2016,03,3.6 The regulatory minimum capital requirements are applied | b. On a consolidated basis at every banking group or subgroup level
+Q3_6c_2016,03,3.6 The regulatory minimum capital requirements are applied | c. On a consolidated basis for the nonbank holding company (if it exists) that is the parent entity of a bank
+Q3_6d_2016,03,3.6 The regulatory minimum capital requirements are applied | d. On a solo basis at the holding company level
+Q3_6e_2016,03,3.6 The regulatory minimum capital requirements are applied | e. None of the above
+Q3_7_2016,03,3.7 Does the banking supervisor have the legal authority to require banks to hold “higher capital levels” than the minimum required if deemed necessary?
+Q3_8_1_2016,03,3.8.1 How many banks have been required to increase capital for Pillar 2 risks in the last six years (2011-2016)?
+Q3_8_2016,03,"3.8 Does the banking supervisor have the legal authority to require additional capital for Pillar 2 risks (e.g., interest rate risk in the banking book, business and strategic risk)?"
+Q3_8_2_2016,03,3.8.2 Please list the Pillar 2 risks for which banks were required to maintain additional capital.
+Q3_9_1_2016,03,3.9.1 Please describe these differences along with the specific risk weights that are being applied.
+Q3_9_2016,03,"3.9 Do you apply distinct risk weights than those in the Basel Committee's Basel I framework for any material exposures (e.g. corporate lending, mortgage loans, consumer loans, loans to government etc)?"
+Q6_7_1_2016,06,6.7.1 What is the limit as a percentage of a bank's regulatory capital? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q7_1_1_2016,07,7.1.1 What is the limit as a percentage of a bank's regulatory capital? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q7_1_2016,07,7.1 Are banks limited in their lending to a single borrower or a group of interconnected counterparties?
+Q7_1_2_2016,07,"7.1.2 Are there any exempted items (e.g. cash secured lending, government or government guaranteed lending etc.) in applying the limits?"
+Q7_2a_2016,07,7.2 Which of the following items are included in the computation of single exposures … | a. Off-balance sheet exposures at nominal value
+Q7_2b_2016,07,7.2 Which of the following items are included in the computation of single exposures … | b. Off-balance sheet exposures at credit equivalent value by applying conversion factors
+Q7_2c_2016,07,7.2 Which of the following items are included in the computation of single exposures … | c. Exposures arising from guarantees issued in bank’s favor
+Q7_3_1a_2016,07,7.3.1 Are there limits in place for … | a. Product concentration
+Q7_3_1b_2016,07,7.3.1 Are there limits in place for … | b. Portfolio concentration
+Q7_3_1c_2016,07,7.3.1 Are there limits in place for … | c. Economic sector concentration
+Q7_3_1d_2016,07,7.3.1 Are there limits in place for … | d. Geographic concentration
+Q7_3_1e_2016,07,7.3.1 Are there limits in place for … | e. Liability side concentration
+Q7_3_1f_2016,07,7.3.1 Are there limits in place for … | f. Concentration arising through collateral
+Q7_3_2016,07,7.3 Are there any regulatory rules or supervisory guidelines regarding asset diversification?
+Q7_4_2016,07,7.4 Are banks prohibited from making loans abroad?
+Q7_5_1a_2016,07,7.5.1 Do the regulatory rules apply for domestic branches and subsidiaries of foreign banks? | a. Diversification of funding sources
+Q7_5_1b_2016,07,7.5.1 Do the regulatory rules apply for domestic branches and subsidiaries of foreign banks? | b. Contingency funding plans
+Q7_5_1c_2016,07,7.5.1 Do the regulatory rules apply for domestic branches and subsidiaries of foreign banks? | c. Stress testing
+Q7_5a_2016,07,7.5 Are there regulatory rules or supervisory guidelines regarding the following aspects of banks' liquidity management? | a. Diversification of funding sources
+Q7_5b_2016,07,7.5 Are there regulatory rules or supervisory guidelines regarding the following aspects of banks' liquidity management? | b. Contingency funding plans
+Q7_5c_2016,07,7.5 Are there regulatory rules or supervisory guidelines regarding the following aspects of banks' liquidity management? | c. Stress testing
+Q7_6_1_2016,07,7.6.1 Are banks required to hold reserves in foreign currencies or other foreign-denominated instruments in order to fulfill the requirements listed in question 7.6?
+Q7_6a_2016,07,"7.6 Are the following requirements in place in your jurisdiction? | a. Separate liquidity requirements (liquidity ratios, reserve requirement, etc.) in domestic currency and foreign currency"
+Q7_6b_2016,07,7.6 Are the following requirements in place in your jurisdiction? | b. Central Bank reserve and/or deposit requirements
+Q7_6c_2016,07,7.6 Are the following requirements in place in your jurisdiction? | c. Regulatory minimum ratio on liquid assets (e.g. as a percentage of total balance sheet or deposit base)
+Q7_6d_2016,07,7.6 Are the following requirements in place in your jurisdiction? | d. Maturity mismatch/'gap' limits
+Q7_7_1_2015,07,7.7.1 What was the minimum required liquidity coverage ratio (the ratio of high-quality liquid asset amount to bank projected cash outflows over a 30-day period) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q7_7_1_2016,07,7.7.1 What was the minimum required liquidity coverage ratio (the ratio of high-quality liquid asset amount to bank projected cash outflows over a 30-day period) as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q7_7_2016,07,7.7 Have you introduced the liquidity coverage ratio in your jurisdiction?
+Q7_7_2_2015,07,7.7.2 What was the actual liquidity coverage ratio of the banking system as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q7_7_2_2016,07,7.7.2 What was the actual liquidity coverage ratio of the banking system as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q7_7_3_2015,07,"7.7.3 What was the ratio of high-quality liquid assets (HQLA, i.e. assets that can be easily and immediately converted into cash at little or no loss of value) to total assets for the banking system as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015"
+Q7_7_3_2016,07,"7.7.3 What was the ratio of high-quality liquid assets (HQLA, i.e. assets that can be easily and immediately converted into cash at little or no loss of value) to total assets for the banking system as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016"
+Q7_8_1_2016,07,7.8.1 What was the minimum required net stable funding ratio (amount of available stable funding relative to the amount of required stable funding over one year) as of end of 2016? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q7_8_2016,07,7.8 Have you introduced the net stable funding ratio in your jurisdiction?
+Q7_8_2_2016,07,7.8.2 What was the actual net stable funding ratio of the banking system as of end of 2016? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q8_10a_2016,08,8.10 The deposit insurance coverage type is (choose the most appropriate option): | a. Per depositor account
+Q8_10b_2016,08,8.10 The deposit insurance coverage type is (choose the most appropriate option): | b. Per depositor
+Q8_10c_2016,08,8.10 The deposit insurance coverage type is (choose the most appropriate option): | c. Per depositor per institution
+Q8_11a_Num_2016,08,"8.11 What is the basic deposit insurance limit per category of insured deposits as of end of 2016 (in [Currency Unit] of [Currency])? | a. Retail depositors (e.g., households and unincorporated businesses)"
+Q8_11b_Num_2016,08,8.11 What is the basic deposit insurance limit per category of insured deposits as of end of 2016 (in [Currency Unit] of [Currency])? | b. Corporate depositors
+Q8_11c_Num_2016,08,8.11 What is the basic deposit insurance limit per category of insured deposits as of end of 2016 (in [Currency Unit] of [Currency])? | c. Other (please specify)
+Q8_12a_2016,08,8.12 Is the coverage amount indexed to (choose the most appropriate option) ... | a. Prices
+Q8_12b_2016,08,8.12 Is the coverage amount indexed to (choose the most appropriate option) ... | b. Gross domestic product
+Q8_12c_2016,08,8.12 Is the coverage amount indexed to (choose the most appropriate option) ... | c. Per capita income
+Q8_12e_2016,08,8.12 Is the coverage amount indexed to (choose the most appropriate option) ... | e. None
+Q8_13_2016,08,"8.13 Is there formal coinsurance, i.e. are ALL depositors explicitly insured for less than 100% of their deposits?"
+Q8_14_1_2015,08,"8.14.1 As a share of total assets, what is the value of large denominated debt liabilities of banks (e.g. subordinated debt, bonds, etc.) that are definitely not covered by any explicit or implicit savings protection scheme as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015"
+Q8_14_1_2016,08,"8.14.1 As a share of total assets, what is the value of large denominated debt liabilities of banks (e.g. subordinated debt, bonds, etc.) that are definitely not covered by any explicit or implicit savings protection scheme as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016"
+Q8_14_2015,08,8.14 What percentage of the total deposits of participating banks was actually covered by the scheme as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q8_14_2016,08,8.14 What percentage of the total deposits of participating banks was actually covered by the scheme as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q8_14_2_2015,08,8.14.2 What percentage of the total number of depositors of participating banks was actually covered by the scheme as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2015
+Q8_14_2_2016,08,8.14.2 What percentage of the total number of depositors of participating banks was actually covered by the scheme as of end of ...? Note: please provide answer in percentage (e.g. 50 means 50%). | 2016
+Q8_15_1a_2016,08,8.15.1 Is funding provided by ...: | a. Government
+Q8_15_1b_2016,08,8.15.1 Is funding provided by ...: | b. Banks
+Q8_15_2016,08,8.15 Is there an ex ante fund/reserve to cover deposit insurance claims in the event of the failure of a member bank?
+Q8_15_2_2016,08,8.15.2 What is the ratio of accumulated funds to total insured deposits as of end of 2016? Note: please provide answer in percentage (e.g. 50 means 50%).
+Q8_16_2016,08,8.16 Do deposit insurance fees/premiums charged to banks vary based on some assessment of risk?
+Q8_17a_2016,08,8.17 Is the premium assessed on a participating bank's (choose the most appropriate option)….? | a. Insured deposits
+Q8_17b_2016,08,8.17 Is the premium assessed on a participating bank's (choose the most appropriate option)….? | b. Total deposits
+Q8_17c_2016,08,8.17 Is the premium assessed on a participating bank's (choose the most appropriate option)….? | c. Total assets
+Q8_18a_2016,08,8.18 What event triggers a claim for payment by the deposit insurance system? | a. Court-declared bank bankruptcy
+Q8_18b_2016,08,8.18 What event triggers a claim for payment by the deposit insurance system? | b. Banking supervisor decision
+Q8_18c_2016,08,8.18 What event triggers a claim for payment by the deposit insurance system? | c. Deposit insurance agency/fund administrator decision
+Q8_19_2016,08,"8.19 From the time of the event's trigger, within how many days is the deposit insurance scheme legally obligated to fully reimburse insured depositors?"
+Q8_1_2016,08,8.1 Is there an explicit deposit insurance protection system for banks?
+Q8_20_2016,08,"8.20 In general, how many days does it take in practice to pay depositors in full?"
+Q8_21_2016,08,8.21 Were insured depositors wholly compensated (to the extent of legal protection) the last time a bank failed?
+Q8_22_2016,08,8.22 Were any deposits not explicitly covered by the deposit insurance scheme at the time of failure compensated the last time a bank failed (excluding funds later paid out in liquidation procedures)?
+Q8_23_1_2016,08,8.23.1 Has such a situation occurred in the last 6 years (2011-2016)?
+Q8_23a_2016,08,8.23 What happens when the deposit insurance fund is insufficiently large to be able to fully refund depositors? | a. Call on banks for the shortfall
+Q8_23b_2016,08,8.23 What happens when the deposit insurance fund is insufficiently large to be able to fully refund depositors? | b. Call on the Ministry of Finance for the shortfall
+Q8_23c_2016,08,8.23 What happens when the deposit insurance fund is insufficiently large to be able to fully refund depositors? | c. Borrow money
+Q8_23d_2016,08,8.23 What happens when the deposit insurance fund is insufficiently large to be able to fully refund depositors? | d. Limit payouts
+Q8_24_1_2016,08,8.24.1 Please specify the year when these changes were introduced or the time period they were in place if they have subsequently been withdrawn.
+Q8_24a_2016,08,"8.24 Have you introduced changes to your deposit protection system as a result of the 2007-2009 global financial crisis? | a. Expansion of coverage (types of exposures, nature of depositors etc.)"
+Q8_24b_2016,08,8.24 Have you introduced changes to your deposit protection system as a result of the 2007-2009 global financial crisis? | b. Increase in amount covered
+Q8_24c_2016,08,8.24 Have you introduced changes to your deposit protection system as a result of the 2007-2009 global financial crisis? | c. Temporary inclusion of guarantees on bank debt
+Q8_24d_2016,08,8.24 Have you introduced changes to your deposit protection system as a result of the 2007-2009 global financial crisis? | d. Government guarantee of deposits and bank debts
+Q8_2_1a_2016,08,8.2.1 The insurance fund is managed by (select the most appropriate option) … | a. The private sector alone
+Q8_2_1b_2016,08,8.2.1 The insurance fund is managed by (select the most appropriate option) … | b. Jointly by private/public officials
+Q8_2_1c_2016,08,8.2.1 The insurance fund is managed by (select the most appropriate option) … | c. The public sector alone
+Q8_2_2016,08,8.2 Is there a deposit insurance fund used for depositor protection?
+Q8_2_2_2016,08,8.2.2 Is the deposit insurance fund used for purposes other than depositor protection?
+Q8_2_3a_2016,08,8.2.3 Is the deposit insurance fund also used for … | a. Providing liquidity support
+Q8_2_3b_2016,08,8.2.3 Is the deposit insurance fund also used for … | b. Funding bank resolution
+Q8_2_3c_2016,08,8.2.3 Is the deposit insurance fund also used for … | c. Recapitalizing weak banks
+Q8_3a_2016,08,"8.3 Is there a legally separate deposit insurance agency (select the most appropriate option)? | a. Yes, separate agency"
+Q8_3b_2016,08,"8.3 Is there a legally separate deposit insurance agency (select the most appropriate option)? | b. No, within central bank"
+Q8_3c_2016,08,"8.3 Is there a legally separate deposit insurance agency (select the most appropriate option)? | c. No, within banking supervision agency"
+Q8_3d_2016,08,"8.3 Is there a legally separate deposit insurance agency (select the most appropriate option)? | d. No, within Ministry of Finance"
+Q8_4a_2016,08,8.4 Does the deposit insurance agency/fund administrator have the following powers as part of its mandate? | a. Bank examination
+Q8_4b_2016,08,8.4 Does the deposit insurance agency/fund administrator have the following powers as part of its mandate? | b. Access to information collected by banking supervisors
+Q8_4c_2016,08,8.4 Does the deposit insurance agency/fund administrator have the following powers as part of its mandate? | c. Bank intervention
+Q8_4d_2016,08,8.4 Does the deposit insurance agency/fund administrator have the following powers as part of its mandate? | d. Method of failure resolution
+Q8_4e_2016,08,8.4 Does the deposit insurance agency/fund administrator have the following powers as part of its mandate? | e. Paybox
+Q8_5_1a_Num_2016,08,8.5.1 How many times has the deposit insurance been revoked or canceled … | a. Between 2007-2011
+Q8_5_1b_Num_2016,08,8.5.1 How many times has the deposit insurance been revoked or canceled … | b. Between 2012-2016
+Q8_5_2016,08,8.5 Does the deposit insurance authority by itself have the legal power to cancel or revoke deposit insurance for any participating bank?
+Q8_6_2016,08,"8.6 Can the deposit insurance agency/fund take legal action for violations against laws, regulations, and bylaws (of the deposit insurance agency) against bank directors or other bank officials?"
+Q8_7_1a_Num_2016,08,8.7.1 How many actions have been taken ... | a. Between 2007-2011
+Q8_7_1b_Num_2016,08,8.7.1 How many actions have been taken ... | b. Between 2012-2016
+Q8_7a_2016,08,"8.7 Has the deposit insurance agency/fund taken legal action for violations against laws, regulations, and bylaws (of the deposit insurance agency) against bank directors or other bank officials ... | a. Between 2007-2011"
+Q8_7b_2016,08,"8.7 Has the deposit insurance agency/fund taken legal action for violations against laws, regulations, and bylaws (of the deposit insurance agency) against bank directors or other bank officials ... | b. Between 2012-2016"
+Q8_8a_2016,08,8.8 Is participation in the deposit insurance system compulsory for the following banking entities? | a. Domestic banks
+Q8_8b_2016,08,8.8 Is participation in the deposit insurance system compulsory for the following banking entities? | b. Foreign bank subsidiaries
+Q8_8c_2016,08,8.8 Is participation in the deposit insurance system compulsory for the following banking entities? | c. Foreign bank branches
+Q8_8d_2016,08,8.8 Is participation in the deposit insurance system compulsory for the following banking entities? | d. Bank-holding companies
+Q8_9a_2016,08,8.9 Are the following types of deposits excluded from deposit insurance coverage? | a. Foreign currency deposits
+Q8_9b_2016,08,8.9 Are the following types of deposits excluded from deposit insurance coverage? | b. Interbank deposits
+Q8_9c_2016,08,8.9 Are the following types of deposits excluded from deposit insurance coverage? | c. Deposits of the foreign branches of domestic banks
+Q8_9d_2016,08,8.9 Are the following types of deposits excluded from deposit insurance coverage? | d. Deposits of the foreign subsidiaries of domestic banks
+Q9_10a_Num_2016,09,9.10 What is the minimum provisioning required (as % loan face value) as loans become … Note: please provide answer in percentage (e.g. 50 means 50%). | a. Sub-standard
+Q9_10b_Num_2016,09,9.10 What is the minimum provisioning required (as % loan face value) as loans become … Note: please provide answer in percentage (e.g. 50 means 50%). | b. Doubtful
+Q9_10c_Num_2016,09,9.10 What is the minimum provisioning required (as % loan face value) as loans become … Note: please provide answer in percentage (e.g. 50 means 50%). | c. Loss
+Q9_11_1a_2016,09,9.11.1 What are general provisions based on? | a. Percentage of gross loans
+Q9_11_1b_2016,09,9.11.1 What are general provisions based on? | b. Statistical/counter-cyclical system of provisioning
+Q9_11_2016,09,9.11 Is there a regulatory requirement for general provisions on loans and advances?
+Q9_12_1_2016,09,9.12.1 What is the maximum time (in months) that a loan or advance can be non-performing before it has to be written off?
+Q9_12_2016,09,9.12 Do you require banks to write off non-performing loans after a specific time period?
+Q9_13a_Num_2016,09,9.13 Up to what level (as percent of net income or of total outstanding loans – please specify) are the following types of provisions tax deductible ... Note: please provide answer in percentage (e.g. 50 means 50%). | a. Specific provisions
+Q9_13b_Num_2016,09,9.13 Up to what level (as percent of net income or of total outstanding loans – please specify) are the following types of provisions tax deductible ... Note: please provide answer in percentage (e.g. 50 means 50%). | b. General provisions
+Q9_1_1a_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 1 - Number"
+Q9_1_1a_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 1 - Type"
+Q9_1_1b_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 2 - Number"
+Q9_1_1b_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 2 - Type"
+Q9_1_1c_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 3 - Number"
+Q9_1_1c_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 3 - Type"
+Q9_1_1d_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 4 - Number"
+Q9_1_1d_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 4 - Type"
+Q9_1_1e_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 5 - Number"
+Q9_1_1e_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 5 - Type"
+Q9_1_1f_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 6 - Number"
+Q9_1_1f_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 6 - Type"
+Q9_1_1g_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 7 - Number"
+Q9_1_1g_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 7 - Type"
+Q9_1_1h_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 8 - Number"
+Q9_1_1h_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 8 - Type"
+Q9_1_1i_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 9 - Number"
+Q9_1_1i_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 9 - Type"
+Q9_1_1j_Num_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 10 - Number"
+Q9_1_1j_Type_2016,09,"9.1.1 Please provide the type and number of different asset classification categories (e.g. 1-5, AAA-CCC etc.) that you are using in this system. | 10 - Type"
+Q9_1_2016,09,9.1 Do you have an asset classification system under which banks have to report the quality of their loans and advances using a common regulatory scale?
+Q9_1_2a_2016,09,9.1.2 Please specify whether the asset classification system … | a. Applies to all banks
+Q9_1_2b_2016,09,9.1.2 Please specify whether the asset classification system … | b. Covers all types of borrowers (e.g. including government)
+Q9_1_2c_2016,09,9.1.2 Please specify whether the asset classification system … | c. Covers all loans and advances to a borrower
+Q9_1_2d_2016,09,9.1.2 Please specify whether the asset classification system … | d. Imposes a uniform classification requirement for specific borrowers (e.g. government and/or state-owned enterprises can only be graded at or above a certain category)
+Q9_1_2e_2016,09,9.1.2 Please specify whether the asset classification system … | e. Covers off-balance sheet exposures
+Q9_2a_Num_2016,09,"9.2 After how many days is a loan in arrears classified as
+… ? Please, provide numbers for each of the three loan categories listed. | a. Sub-standard"
+Q9_2b_Num_2016,09,"9.2 After how many days is a loan in arrears classified as
+… ? Please, provide numbers for each of the three loan categories listed. | b. Doubtful"
+Q9_2c_Num_2016,09,"9.2 After how many days is a loan in arrears classified as
+… ? Please, provide numbers for each of the three loan categories listed. | c. Loss"
+Q9_3a_2016,09,9.3 Which criteria are taken into account to classify loans and advances as non-performing … | a. Significant financial difficulty of the borrower and deterioration in its creditworthiness
+Q9_3b_2016,09,9.3 Which criteria are taken into account to classify loans and advances as non-performing … | b. Breach of contract (e.g. default or delinquency in interest or principal payments)
+Q9_3c_2016,09,"9.3 Which criteria are taken into account to classify loans and advances as non-performing … | c. Restructuring (i.e. concession granted, for economic or legal reasons relating to the borrower's financial difficulty, that the lender would not otherwise consider)"
+Q9_3d_2016,09,9.3 Which criteria are taken into account to classify loans and advances as non-performing … | d. Borrower bankruptcy or other financial reorganization
+Q9_3e_Num_2016,09,9.3 Which criteria are taken into account to classify loans and advances as non-performing … | e. Days past due status (please specify number of days)
+Q9_3f_2016,09,"9.3 Which criteria are taken into account to classify loans and advances as non-performing … | f. Existence of collateral, guarantees and/or other credit mitigants"
+Q9_3g_2016,09,9.3 Which criteria are taken into account to classify loans and advances as non-performing … | g. Low likelihood of recovering without recourse to collateral
+Q9_4a_2016,09,9.4 Does the availability of collateral allow banks to (mark all options that apply) … | a. Classify a loan in a better category
+Q9_4b_2016,09,9.4 Does the availability of collateral allow banks to (mark all options that apply) … | b. Avoid classifying a loan as non-performing
+Q9_5_2016,09,"9.5 Does accrued, though unpaid, interest/principal enter the bank's income statement while the loan is classified as non-performing?"
+Q9_6_2016,09,9.6 Are banks allowed to upgrade the classification of a loan or advance immediately after it has been restructured?
+Q9_7_2016,09,"9.7 If a customer has multiple loans and advances and one of them is classified as non-performing, are all the other exposures automatically classified as non-performing as well?"
+Q9_8_2016,09,9.8 Are there clear norms when a non-performing loan can be upgraded as performing?
+Q9_9_1_2016,09,9.9.1 Are these minimum levels linked to the regulatory asset classification system mentioned in question 9.1 above?
+Q9_9_2016,09,9.9 Are there minimum levels of specific provisions for loans and advances that are set by the regulator?
+Q9_9_2a_2016,09,9.9.2 Please specify whether these minimum specific provisioning rules ... | a. Allow for the value of the collateral to be deducted from the amount of a loan or advance before provisioning is applied
+Q9_9_2b_2016,09,9.9.2 Please specify whether these minimum specific provisioning rules ... | b. Apply to all banks
+Q9_9_2c_2016,09,9.9.2 Please specify whether these minimum specific provisioning rules ... | c. Cover all types of borrowers (e.g. including government)
+Q9_9_2d_2016,09,9.9.2 Please specify whether these minimum specific provisioning rules ... | d. Cover all loans and advances to a borrower
+Q9_9_2e_2016,09,9.9.2 Please specify whether these minimum specific provisioning rules ... | e. Impose uniform provisioning requirements for specific borrowers (e.g. loans to government and/or state-owned enterprises do not require provisions)
+Q9_9_2f_2016,09,9.9.2 Please specify whether these minimum specific provisioning rules ... | f. Cover off- balance sheet exposures

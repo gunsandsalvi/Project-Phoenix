@@ -1,0 +1,89 @@
+iso3,country,funded,base,annual_premium,risk_adjusted
+ALB,Albania,1,insured deposits,0.50%,0
+ARG,Argentina,1,insured deposits,"risk-based, 0.36% to 0.72%",1
+AUT,Austria,0,insured deposits,"pro rata, ex post",0
+BEL,Belgium,1,insured liabilities,0.02% + 0.04%,0
+BGD,Bangladesh,1,deposits,0.50%,0
+BGR,Bulgaria,1,insured deposits,risk based to 0.5%,1
+BHR,Bahrain,0,deposits,ex post,0
+BHS,Bahamas,1,insured deposits,0.05%,0
+BIH,Bosnia-Herzegovina,1,deposits,"0.5% until July 2001, then changed to 0.3%",0
+BLR,Belarus,1,household deposits,"risk based: 0 for two state banks. 0.1% to 0.3% of household deposits for other banks, depending on the bank's household deposits to capital ratio",1
+BOL,Bolivia,1,deposits,,1
+BRA,Brazil,1,insured deposits,0.30%,0
+CAN,Canada,1,insured deposits,0.33% max,0
+CHE,Switzerland,0,balance sheet items on demand,,0
+CHL,Chile,0,not applicable,none,0
+COL,Colombia,1,insured deposits,0.5% from January 2002 to December 2006,0
+CYP,Cyprus,1,n.a.,n.a.,0
+CZE,Czech Rep.,1,insured deposits,0.10%,0
+DEU,Germany,1,"insured deposits in commercial banks DIS, risk-assets in other DIS",official is 0.03% but can be doubled,0
+DNK,Denmark,1,insured deposits,0.2% (maximum),0
+DOM,Dominican Republic,1,deposits,0.1875%,0
+DZA,Algeria,1,,,0
+ECU,Ecuador,1,deposits,0.65%,0
+ESP,Spain,1,insured deposits,maximum of 0.2%,0
+EST,Estonia,1,deposits,until 2002 0.5% (maximum) (0.28% at present),0
+FIN,Finland,1,insured deposits,risk based: 0.05% to 0.3%,1
+FRA,France,0,n.a.,on demand but limited,0
+FSM,Micronesia,1,deposits,"risk-based, 0% to 0.27%",1
+GBR,United Kingdom,0,EEA deposits i.e. insured deposits,on demand,0
+GIB,Gibraltar,0,insured deposits,administrative expenses and expost contributions,0
+GRC,Greece,1,deposits,decreasing by size: 1.25% to 0.025%,0
+GTM,Guatemala,1,insured deposits,1.0% plus 0.5% when the fund falls below its target,0
+HND,Honduras,1,deposits,not more than 0.25%,0
+HRV,Croatia,1,insured deposits,0.80%,0
+HUN,Hungary,1,insured deposits,risk based to 0.3%,1
+IDN,Indonesia,,,,
+IMN,Isle of Man,0,deposits,"the greater of 25,000 pounds and 0.0125% of deposit base subject to a maximum annual contribution of 250,000 pounds",0
+IND,India,1,deposits,0.05%,0
+IRL,Ireland,1,"EU and EEA, i.e insured deposits",0.20%,0
+ISL,Iceland,1,insured deposits,0.15%,0
+ITA,Italy,0,protected funds adjusted for size and risk,risk adjusted ex post 0.4% to 0.8%,1
+JAM,Jamaica,1,insured deposits,0.10%,0
+JOR,Jordan,1,deposits,0.20%,0
+JPN,Japan,1,insured deposits,0.0048% + 0.036%,0
+KAZ,Kazakhstan,1,insured deposits,1.00%,1
+KEN,Kenya,1,deposits,0.15%,0
+KOR,Korea,1,deposits,0.05%,0
+LBN,Lebanon,1,credit accounts,0.05%,0
+LIE,Liechtenstein,0,n.a.,,0
+LKA,Sri Lanka,1,deposits,0.15%,0
+LTU,Lithuania,1,insured deposits,0.45%,0
+LUX,Luxembourg,0,insured deposits,ex post,0
+LVA,Latvia,1,insured deposits,0.3% until year 2000; 0.2% thereafter,0
+MEX,Mexico,1,all obligations,minimum 0.4% on a proxy of total bank liabilities,0
+MHL,Marshall Islands,1,deposits,"risk-based, 0% to 0.27%",1
+MKD,Macedonia,1,insured deposits,"1.5%, risk-based 1% to 5%",1
+MLT,Malta,1,deposits,0.10%,0
+MYS,Malaysia,,,,
+NGA,Nigeria,1,deposits,0.94%,0
+NIC,Nicaragua,1,,,0
+NLD,Netherlands,0,case by case,Ex post,0
+NOR,Norway,1,risk-weighted assets and total deposits,0.005% of assets and 0.01% of total deposits,0
+OMN,Oman,1,deposits,0.02%,0
+PER,Peru,1,insured deposits,risk-based from 0.45% to 1.45%,1
+PHL,Philippines,1,deposits,0.20%,0
+POL,Poland,1,"deposits, also risk- adjusted assets",not more than 0.4%,0
+PRT,Portugal,1,insured deposits,"risk-based, 0.1% to 0.2% + more in emergencies",1
+PRY,Paraguay,n.a.,n.a.,,n.a.
+ROU,Romania,1,insured deposits,risk-based: 0.3% to 0.6%,1
+RUS,Russia,1,deposits,"no more than 0.15%, in emergency up to 0.3%, once fund formed 0.05%",0
+SLV,El Salvador,1,insured deposits,"risk-based, 0.1% to 0.3%",1
+SRB,Serbia & Montenegro,1,,,0
+SVK,Slovak Republic,1,insured deposits,0.1% to 0.3% for banks,0
+SVN,Slovenia,0,insured deposits,3.2% of guaranteed deposits,0
+SWE,Sweden,1,insured deposits,"risk-based, 0.5% now, 0.1% later (future date is not available)",1
+THA,Thailand,0,,,
+TKM,Turkmenistan,1,,,0
+TTO,Trinidad & Tobago,1,deposits,0.20%,0
+TUR,Turkey,1,insured savings deposits,risk-based 1.0% to 1.2%,1
+TWN,Taiwan,1,insured deposits,"based on three levels of risk: 0.05%, 0.055%, and 0.06%",1
+TZA,Tanzania,1,deposits,0.10%,0
+UGA,Uganda,1,deposits,0.20%,0
+UKR,Ukraine,1,total deposits,0.5 plus special charges,0
+URY,Uruguay,1,,,1
+USA,United States,1,domestic deposits,"risk-based, 0% to 0.27%",1
+VEN,Venezuela,1,insured deposits,2.00%,0
+VNM,Vietnam,n.a.,,,
+ZWE,Zimbabwe,,,,

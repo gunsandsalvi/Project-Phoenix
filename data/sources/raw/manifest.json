@@ -1,6 +1,210 @@
 {
  "fetched": "2026-09-23",
  "series": {
+  "bank/bis_cb_assets": {
+   "for": [
+    "S1.22",
+    "S3.02"
+   ],
+   "rows": 572,
+   "title": "Central bank total assets, end of year, billions of domestic currency (bn_xdc) and % of GDP (pct_gdp), BIS-spliced, break-adjusted where the BIS adjusts, BIS central bank total assets (WS_CBTA)"
+  },
+  "bank/bis_credit_gap": {
+   "for": [
+    "S2.08",
+    "S7.01"
+   ],
+   "rows": 473,
+   "title": "Credit to the private non-financial sector from all sectors, % of GDP, end of year (Q4): the ratio, its one-sided HP-filter trend and the gap (ratio less trend), BIS credit-to-GDP gaps (WS_CREDIT_GAP)"
+  },
+  "bank/bis_debt_securities": {
+   "for": [
+    "S1.22",
+    "S3.03",
+    "S3.04"
+   ],
+   "rows": 42684,
+   "title": "Debt securities outstanding, end of year (Q4), billions of the unit named (national currency where reported, else US dollars), BIS debt securities statistics from national sources (WS_NA_SEC_DSS): entry L issued by sector (S1 all, S11 non-financial corporations, S12 financial corporations, S121 central bank, S122 deposit takers, S13 general government, S1311 central government, S1M households), entry A held by sector with counterpart sector the issuer; market XW all, 1E residents/local, 5Z non-residents/cross-border; instrument F3, and fixed (F3FR) and variable (F3VR, F3VRA inflation-linked, F3VRB rate-linked, F3VRC asset-price-linked) rate for government; maturity T all, S short-term original, L long-term original, LS long-term original due within a year, Y12/Y25/Y5A/YA_ original 1-2/2-5/5-10/over 10 years; currency _T all, XDC domestic, X1 foreign; valuation N nominal, F face, M market (nominal preferred)"
+  },
+  "bank/bis_international_debt": {
+   "for": [
+    "S3.03",
+    "S3.04",
+    "S5.04"
+   ],
+   "rows": 1441,
+   "title": "International debt securities outstanding by residence of issuer, end of year (Q4), millions of US dollars, BIS international debt securities (WS_DEBT_SEC2_PUB): column <issuer>_<cut>, issuer all, gov general government, fin financial corporations, privbank and pubbank private and public banks, nfc non-financial corporations; cut all, fx foreign currencies, dc domestic currency, short and long original maturity, due1y remaining maturity up to one year"
+  },
+  "bank/bis_total_credit": {
+   "for": [
+    "S1.22",
+    "S6.05",
+    "S7.01"
+   ],
+   "rows": 473,
+   "title": "Total credit to the non-financial sectors, end of year (Q4), adjusted for breaks, BIS total credit statistics (WS_TC): column <borrower>_<lender>_<valuation>_<unit>, borrower C non-financial sector, P private non-financial, H households and NPISH, N non-financial corporations, G general government; lender A all sectors, B domestic banks; valuation M market, N nominal; unit pct_gdp (% of GDP) or bn_xdc (billions of domestic currency)"
+  },
+  "bank/brss_2019": {
+   "for": [
+    "S2.01",
+    "S2.06",
+    "S2.07",
+    "S2.08",
+    "S3.02"
+   ],
+   "rows": 41595,
+   "title": "Bank Regulation and Supervision Survey, 2019 release (answers as of end 2016, some questions by year, of which 2015 and 2016 are kept), one row per economy and question: minimum entry capital and licensing, capital requirements and actual ratios, buffers, large exposures and liquidity requirements, deposit protection (coverage limit, coinsurance, share of deposits and depositors covered, fund ratio, premium basis, payout days, backstops), asset classification, provisioning and write-offs, problem bank powers and resolutions, macroprudential limits (LTV, DTI), supervisory staff and budget, and number and structure of banks; 'X' marks a ticked option; money answers are in the unit of brss_2019_currency; free-text answers and the 'not applicable', 'do not know' and 'none of the above' boxes are left out. World Bank"
+  },
+  "bank/brss_2019_currency": {
+   "for": [
+    "S2.08"
+   ],
+   "rows": 153,
+   "title": "The currency and currency unit each economy answered bank/brss_2019's money questions in"
+  },
+  "bank/brss_2019_questions": {
+   "for": [
+    "S2.01",
+    "S2.06",
+    "S2.07",
+    "S2.08",
+    "S3.02"
+   ],
+   "rows": 495,
+   "title": "The questions of bank/brss_2019: identifier, survey section and text (parent question | option)"
+  },
+  "bank/crisis_details": {
+   "for": [
+    "S2.08",
+    "S3.02",
+    "S7.01"
+   ],
+   "rows": 68,
+   "title": "Policy responses and outcomes per systemic banking crisis (one row per crisis): deposit insurance and its coverage, deposit freezes and bank holidays, guarantees, liquidity support, restructuring, nationalisation, asset purchases, recapitalisation and its cost, losses imposed on depositors, IMF programme, peak NPLs and fiscal cost (shares as fractions), Laeven and Valencia (2020), sheet 'Additional Details-Bk Crises'"
+  },
+  "bank/crisis_outcomes": {
+   "for": [
+    "S2.08",
+    "S3.02",
+    "S7.01"
+   ],
+   "rows": 151,
+   "title": "Systemic banking crises 1970-2017: start and end year, output loss (% of trend GDP, cumulative over T..T+3), fiscal cost gross and net (% of GDP) and gross (% of financial system assets), peak liquidity support and liquidity support (% of deposits and foreign liabilities), peak NPLs (% of loans), increase in public debt (% of GDP); flags are the sheet's footnotes (6/ end dated from GDP only, 7/ duration truncated at 5 years, 8/ borderline case), Laeven and Valencia (2020), sheet 'Crisis Resolution and Outcomes'"
+  },
+  "bank/crisis_years": {
+   "for": [
+    "S7.01"
+   ],
+   "rows": 546,
+   "title": "Start years of systemic banking, currency and sovereign debt crises and of sovereign debt restructurings, 1970-2017, Laeven and Valencia (2020), Systemic Banking Crises Database II, IMF Economic Review 68, 307-361, sheet 'Crisis Years'"
+  },
+  "bank/deposit_insurance_2013": {
+   "for": [
+    "S2.06",
+    "S2.08"
+   ],
+   "rows": 185,
+   "title": "Deposit insurance design as of end 2013 (explicit scheme, inception, administration, membership, coverage of foreign-currency and interbank deposits, statutory coverage limits 2003/2010/2013 in reported currency and US dollars and over GDP per head, coinsurance, ex-ante fund, funding source, government backstop, risk-adjusted premiums, assessment base, payout basis, losses imposed, crisis-time guarantees), World Bank Deposit Insurance Database (Demirguc-Kunt, Kane and Laeven, 2014, Policy Research Working Paper 6934), sheet 'Data as of end 2013'"
+  },
+  "bank/gfdd": {
+   "for": [
+    "S1.15",
+    "S1.22",
+    "S2.01",
+    "S2.07",
+    "S3.02",
+    "S7.01"
+   ],
+   "rows": 1873,
+   "title": "Bank stability and depth, % unless stated, annual, World Bank Global Financial Development Database (source 32): bank_z_score = GFDD.SI.01, npl_to_gross_loans = GFDD.SI.02, capital_to_assets = GFDD.SI.03, credit_to_deposits = GFDD.SI.04, reg_capital_to_rwa = GFDD.SI.05, liquid_to_deposits_short_funding = GFDD.SI.06, provisions_to_npl = GFDD.SI.07, private_credit_by_banks_to_gdp = GFDD.DI.01, nonbank_assets_to_gdp = GFDD.DI.03, bank_to_bank_plus_cb_assets = GFDD.DI.04, liquid_liabilities_to_gdp = GFDD.DI.05, banking_crisis = GFDD.OI.19 (1 = systemic banking crisis, Laeven-Valencia dating); npl_wdi = bank non-performing loans to total gross loans, WDI FB.AST.NPER.ZS"
+  },
+  "bank/imf_fsi": {
+   "for": [
+    "S1.15",
+    "S2.01",
+    "S2.06",
+    "S2.07",
+    "S3.01",
+    "S5.04"
+   ],
+   "note": "Three columns are derived from the FSI reporting's own levels in domestic currency: interbank_to_loans = 100 x (1 - noninterbank loans (FSI55_TNINTBKF4_XDC) / total gross loans (FSI303_TGF4_XDC)); interbank_to_assets = 100 x (gross loans - noninterbank loans) / total assets (T1KTA_TA_XDC); rwa_to_assets = 100 x risk-weighted assets (FSI688_RWA_XDC) / total assets. The interbank share stands for the supervisory exposure data no public source gives.",
+   "rows": 1520,
+   "title": "Financial soundness indicators of deposit takers (and real estate loans), %, end of year (Q4, else December, else annual; flow ratios such as returns cover the year to that quarter), IMF Financial Soundness Indicators (FSIC): reg_capital_to_rwa = FSI688_CFSI_PT, tier1_to_rwa = FSI626_CFSI_PT, cet1_to_rwa = FSI15_CFSI_PT, tier1_to_assets = T1KTA_CFSI_PT, npl_to_loans = AQ12_CFSI_PT, provisions_to_npl = AQ14_CFSI_PT, npl_net_to_capital = FSI17_CFSI_PT, return_on_assets = ROA_CFSI_PT, return_on_equity = ROE_CFSI_PT, interest_margin_to_income = FSI99_CFSI_PT, noninterest_expense_to_income = FSI107_CFSI_PT, personnel_to_noninterest_expense = FSI354_AFSI_PT, trading_income_to_income = FSI690_AFSI_PT, liquid_to_assets = FSI283_LIQATTA_PT, liquid_to_short_liabilities = FSI765_CFSI_PT, liquidity_coverage_ratio = FSI288_CFSI_PT, net_stable_funding_ratio = FSI289_CFSI_PT, customer_deposits_to_loans = FSI55_AFSI_PT, fx_loans_to_loans = FSI131_AFSI_PT, fx_liabilities_to_liabilities = FSI680_AFSI_PT, net_open_fx_to_capital = FSI555_CFSI_PT, large_exposures_to_capital = FSI214_AFSI_PT, residential_re_to_loans = FSI524_CFSI_PT, commercial_re_to_loans = FSI520_AFSI_PT"
+  },
+  "bank/imf_icsd": {
+   "for": [
+    "S1.22"
+   ],
+   "rows": 960,
+   "title": "Capital stock and gross fixed capital formation by general government, private sector and public-private partnerships, current prices, domestic currency (billions as published, _xdc), and capital stock at constant prices as % of GDP (_pct_gdp), 2015-2019 (the dataset ends in 2019), IMF Investment and Capital Stock Dataset (ICSD, 2025 release)"
+  },
+  "bank/imf_mfs_cbs": {
+   "for": [
+    "S1.22",
+    "S2.06",
+    "S3.01",
+    "S3.02"
+   ],
+   "rows": 1725,
+   "title": "Central bank survey, end of year, millions of the currency named (the economy's own; EUR for euro area members; USD where the dollar is the currency), IMF Monetary and Financial Statistics (MFS_CBS); columns are the survey's lines: total_assets = S121_A_TA_ASEC_CB1SR, claims_nonresidents = S121_A_ACO_NRES_CBS, claims_banks = S121_A_ACO_ODCORP_CBS, claims_other_financial = S121_A_ACO_S12R_CBS, claims_central_gov = S121_A_ACO_S1311MIXED_CBS, claims_local_gov = S121_A_ACO_S13M1_CBS, claims_public_firms = S121_A_ACO_S11001_CBS, claims_private = S121_A_ACO_PS_CBS, claims_other_sectors = S121_A_ACO_S1_Z_CBS, monetary_base = S121_L_MB_CBS, currency_in_circulation = S121_L_CIC_IMB_CBS, base_liab_banks = S121_L_IMB_LT_ODCORP_CBS, other_liab_banks = S121_L_OLT_ODCORP_CBS, base_liab_other_sectors = S121_L_IMB_LT_S1_Z_CBS, deposits_broad_money = S121_L_F2M_XMBIBM_CBS, securities_broad_money = S121_L_F3_XMBIBM_CBS, deposits_excluded = S121_L_F2M_XMBXBM_CBS, securities_excluded = S121_L_F3_XMBXBM_CBS, loans = S121_L_F4_CBS, derivatives = S121_L_F71_CBS, shares_equity = S121_L_F51KOE_CBS, liab_central_gov = S121_L_LT_S1311MIXED_CBS, liab_nonresidents = S121_L_LT_NRES_CBS, net_foreign_assets = S121_N_NFRA_CBS, net_claims_central_gov = S121_N_NCO_S1311MIXED_CBS, other_items_net = S121_N_OIN_CBS"
+  },
+  "bank/imf_mfs_ir": {
+   "for": [
+    "S2.06",
+    "S3.01",
+    "S3.02",
+    "S3.03"
+   ],
+   "rows": 1395,
+   "title": "Interest rates, % a year, annual (the IMF's annual figure, an average over the year), IMF Monetary and Financial Statistics (MFS_IR): money market, repurchase agreement, discount, treasury bill yield, government bond yield, deposit, savings and lending rates, and deposit and lending rates in foreign currency"
+  },
+  "bank/imf_mfs_odc": {
+   "for": [
+    "S1.22",
+    "S2.06",
+    "S3.01",
+    "S3.02"
+   ],
+   "rows": 1719,
+   "title": "Other depository corporations survey, end of year, millions of the currency named (the economy's own; EUR for euro area members; USD where the dollar is the currency), IMF Monetary and Financial Statistics (MFS_ODC); columns are the survey's lines: total_assets = ODCORP_A_T_ASEC_ODC2SR, claims_nonresidents = ODCORP_A_ACO_NRES_ODCS, claims_central_bank = ODCORP_A_ACO_S121_ODCS, currency_held = ODCORP_A_F21_ACO_S121_ODCS, reserve_deposits = ODCORP_A_F2MSOTS_RR_ACO_S121_ODCS, other_claims_central_bank = ODCORP_A_OCO_S121_ODCS, claims_central_gov = ODCORP_A_ACO_S1311MIXED_ODCS, claims_local_gov = ODCORP_A_ACO_S13M1_ODCS, claims_public_firms = ODCORP_A_ACO_S11001_ODCS, claims_private = ODCORP_A_ACO_PS_ODCS, claims_other_financial = ODCORP_A_ACO_S12R_ODCS, claims_other_sectors = ODCORP_A_ACO_S1_Z_ODCS, transferable_deposits = ODCORP_L_F22_IBM_ODCS, other_deposits = ODCORP_L_F29_IBM_ODCS, deposits_excluded = ODCORP_L_F2M_XBM_ODCS, securities_broad_money = ODCORP_L_F3_IBM_ODCS, securities_excluded = ODCORP_L_F3_XBM_ODCS, loans = ODCORP_L_F4_ODCS, insurance_reserves = ODCORP_L_F6_ODCS, derivatives = ODCORP_L_F71_ODCS, shares_equity = ODCORP_L_F51KOE_ODCS, liab_central_bank = ODCORP_L_LT_S121_ODCS, liab_central_gov = ODCORP_L_LT_S1311MIXED_ODCS, liab_nonresidents = ODCORP_L_LT_NRES_ODCS, net_foreign_assets = ODCORP_NETAL_NFRA_ODCS, other_items_net = ODCORP_NETAL_OIN_ASEC_ODCS"
+  },
+  "bank/oecd_counterparts": {
+   "for": [
+    "S1.22",
+    "S2.06",
+    "S3.01",
+    "S3.03"
+   ],
+   "note": "Deposit takers are not reported apart from other financial corporations here, so interbank positions appear only inside S12 on S12; the interbank share by economy is derived in bank/imf_fsi.",
+   "rows": 15334,
+   "title": "Financial assets held by each sector on each counterpart sector (from whom to whom), closing stocks, national currency (x 10^unit_mult), OECD financial balance sheets, counterpart information (Table 725): holder and counterpart S11 non-financial corporations, S12 financial corporations, S13 general government, S1M households and NPISH, S2 rest of the world; instruments F2 deposits (F22 transferable, F29 other), F3 debt securities, F4 loans, F5 equity (F51); maturity T all, S short-term, L long-term, _Z not applicable. 13 economies report it"
+  },
+  "bank/qpsd": {
+   "for": [
+    "S1.15",
+    "S3.03",
+    "S3.04",
+    "S5.04"
+   ],
+   "rows": 829,
+   "title": "Gross public sector debt of central (cg_) and general (gg_) government, % of GDP, nominal value unless stated, end of year (Q4), World Bank Quarterly Public Sector Debt (source 20): total, by creditor residence, by currency, by instrument (securities, loans, currency and deposits), short-term original maturity, long-term, long-term with payment due within one year and after one year, and securities at market value"
+  },
+  "bank/sovereign_investor_base": {
+   "for": [
+    "S3.03",
+    "S5.04"
+   ],
+   "rows": 1200,
+   "title": "Holders of general government gross debt (block debt), of its securities (securities) and of central government local-currency securities (lc_cg_securities, emerging only), billions of national currency, quarterly 2014Q1-2016Q2: total, foreign (official, banks, nonbanks), domestic (central bank, banks, nonbanks), IMF Sovereign Investor Base datasets for 24 advanced and 24 emerging economies (Arslanalp and Tsuda, 2014a,b; October 2016 vintages, the latest the IMF publishes openly)"
+  },
+  "bank/typed_deposit_insurance_premiums_2003": {
+   "for": [
+    "S2.08"
+   ],
+   "note": "Typed from Demirguc-Kunt, A., B. Karacaovali and L. Laeven (2005), 'Deposit Insurance around the World: A Comprehensive Database', World Bank Policy Research Working Paper 3628, Table A.1.4 'Type of fund and premium information', pp. 36-38 of the PDF downloaded from documents1.worldbank.org; read from the PDF's text by column position, the printed text kept verbatim. No later public source gives premium rates by country (the IADI survey is for members only).",
+   "rows": 88,
+   "title": "Deposit insurance funding and premiums as of 2003: permanent fund (1 funded, 0 unfunded), premium or assessment base, annual premium as % of the base (as printed), risk-adjusted premiums (1 yes)"
+  },
   "bis/CBPOL": {
    "rows": 425,
    "title": "Central bank policy rate (%, end of year), BIS"
@@ -1561,6 +1765,99 @@
   }
  },
  "sources": {
+  "bank/bis_cbta": {
+   "fetched": "2026-09-28",
+   "title": "BIS central bank total assets, bulk CSV",
+   "url": "https://data.bis.org/static/bulk/WS_CBTA_csv_flat.zip"
+  },
+  "bank/bis_credit_gap": {
+   "fetched": "2026-09-28",
+   "title": "BIS credit-to-GDP gaps, bulk CSV",
+   "url": "https://data.bis.org/static/bulk/WS_CREDIT_GAP_csv_flat.zip"
+  },
+  "bank/bis_dss": {
+   "fetched": "2026-09-28",
+   "title": "BIS debt securities statistics, bulk CSV",
+   "url": "https://data.bis.org/static/bulk/WS_NA_SEC_DSS_csv_flat.zip"
+  },
+  "bank/bis_ids": {
+   "fetched": "2026-09-28",
+   "title": "BIS international debt securities, bulk CSV",
+   "url": "https://data.bis.org/static/bulk/WS_DEBT_SEC2_PUB_csv_flat.zip"
+  },
+  "bank/bis_tc": {
+   "fetched": "2026-09-28",
+   "title": "BIS total credit statistics, bulk CSV",
+   "url": "https://data.bis.org/static/bulk/WS_TC_csv_flat.zip"
+  },
+  "bank/brss_2019": {
+   "fetched": "2026-09-28",
+   "release": "2019-11-04",
+   "title": "World Bank Data Catalog, Bank Regulation and Supervision Survey (0038632), 2019 database",
+   "url": "https://datacatalogfiles.worldbank.org/ddh-published/0038632/DR0047735/survey-20191104-brss-public-release.xlsx"
+  },
+  "bank/deposit_insurance": {
+   "fetched": "2026-09-28",
+   "release": "2015-07",
+   "title": "World Bank Data Catalog, Deposit Insurance Database (0040209)",
+   "url": "https://datacatalogfiles.worldbank.org/ddh-published/0040209/1/DR0050060/deposit_insurance_database_july2015.xlsx"
+  },
+  "bank/dkkl_2005": {
+   "fetched": "2026-09-28",
+   "title": "Demirguc-Kunt, Karacaovali and Laeven (2005), World Bank PRWP 3628",
+   "url": "https://documents1.worldbank.org/curated/en/593131468330040612/pdf/wps36280rev.pdf"
+  },
+  "bank/imf_fsi": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API, FSIC",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,FSIC/*.S12CFSI+REM.<indicators>.Q+M+A?startPeriod=2015&endPeriod=2025"
+  },
+  "bank/imf_icsd": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API, IMF.FAD ICSD",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.FAD,ICSD/<indicators>.A?startPeriod=2015&endPeriod=2025"
+  },
+  "bank/imf_mfs_cbs": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API, MFS_CBS",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,MFS_CBS/<lines>.XDC+EUR+USD.A?startPeriod=2015&endPeriod=2025"
+  },
+  "bank/imf_mfs_ir": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API, MFS_IR",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,MFS_IR/<rates>.A?startPeriod=2015&endPeriod=2025"
+  },
+  "bank/imf_mfs_odc": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API, MFS_ODC",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,MFS_ODC/<lines>.XDC+EUR+USD.A?startPeriod=2015&endPeriod=2025"
+  },
+  "bank/laeven_valencia": {
+   "fetched": "2026-09-28",
+   "title": "Laeven and Valencia (2020), Systemic Banking Crises Database II, electronic supplementary material of IMF Economic Review 68",
+   "url": "https://static-content.springer.com/esm/art%3A10.1057%2Fs41308-020-00107-3/MediaObjects/41308_2020_107_MOESM1_ESM.xlsx"
+  },
+  "bank/oecd_t725": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, financial balance sheets with counterpart information (DF_T725R_A)",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NASEC20@DF_T725R_A,/A.................?startPeriod=2015&format=csvfile"
+  },
+  "bank/sovereign_investor_base": {
+   "fetched": "2026-09-28",
+   "release": "2016-10",
+   "title": "IMF Sovereign Investor Base datasets (WP/12/284, WP/14/39)",
+   "url": "https://www.imf.org/external/pubs/ft/wp/2012/Data/wp12284.zip https://www.imf.org/external/pubs/ft/wp/2014/Data/wp1439.zip"
+  },
+  "bank/wb_gfdd": {
+   "fetched": "2026-09-28",
+   "title": "World Bank API, GFDD (source 32) and WDI (source 2)",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2015:2025&per_page=20000&source=32"
+  },
+  "bank/wb_qpsd": {
+   "fetched": "2026-09-28",
+   "title": "World Bank API, Quarterly Public Sector Debt (source 20)",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/DP.DOD.<series>.Z1?format=json&date=2015Q4:2025Q4&per_page=20000&source=20"
+  },
   "bea_fixed_assets": {
    "fetched": "2026-09-26",
    "title": "U.S. Bureau of Economic Analysis, Fixed Assets Accounts, detailed estimates by industry and asset",
