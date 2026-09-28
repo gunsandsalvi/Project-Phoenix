@@ -748,6 +748,23 @@ world switches to the core.
 | `crates/systems/sys-frm/src/opening.rs` | firms drawn by count, productivity and sites; sizes derived |
 
 **Design**:
+- **Parts**, each committed on its fast checks and the core's live checks, the old world running beside until i:
+  - a. The opening drawn on the core: households and their persons drawn into the core's stores by DEM's draws, the
+    institutions' kinds with their roles declared, every account from the country's sheet, the pensions in payment
+    from SOC's rule; no copy of the books.
+  - b. Firms of one kind on the core: counts per region and industry, productivity, sites, management types, the
+    day-zero price, output shared from the SAM, staff, plant and stocks derived; the `_small`/`_large` pairs merged.
+  - c. Labour on the core: employment contracts, wages by shape, the hiring round, layoffs and retirement.
+  - d. Goods and services on the core: production within plant, the retail and between-firms meetings with their
+    goods legs, stocks, spoilage, wear and shipments, the goods family.
+  - e. Households' spending, firms' price reviews and the outlooks (HH, FRM.5, VAL).
+  - f. Credit and the central bank on the core: loans by shape, the lending placeholder, deposit and lending rates,
+    reserves and the fund stage; arrears from failed flows at 2d.
+  - g. The state on the core: taxes withheld and at the till, benefits, bills and the payment order.
+  - h. Statistics, indices and accounts on the core; the audit's families; the Stage 0 and Stage 1 checks on the
+    core; the core saved and loaded.
+  - i. The switch: the committed world is the core's; the old kernel's crates and modules, its checks and the
+    primitives the matrices replace are deleted; the smoke and the bench judged.
 - **Values the port takes from the data in hand**, in place of today's assumed ones:
   - whom an extended or non-relative household holds besides its head, assumed today (`DEM.household_members`: one
     relative of 65 and over, one unrelated adult), derived per group from the DHS household structure
