@@ -410,6 +410,7 @@ impl World {
                             rules,
                             queue,
                             opens: None,
+                            flows: None,
                         },
                         range,
                     );
@@ -480,6 +481,7 @@ impl World {
                             rules,
                             queue: &mut *queue,
                             opens: None,
+                            flows: None,
                         },
                         range,
                     );

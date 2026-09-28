@@ -804,17 +804,22 @@ pub phx_core::flows::Flow::source: u32
 pub struct phx_core::flows::FlowBufs
 impl phx_core::flows::FlowBufs
 pub fn phx_core::flows::FlowBufs::chunks_mut(&mut self) -> &mut [alloc::vec::Vec<phx_core::flows::Flow>]
+pub fn phx_core::flows::FlowBufs::group(&mut self, core::option::Option<&phx_exec::pool::Pool>, &phx_core::flows::Ranges, phx_core::flows::Denom)
 pub fn phx_core::flows::FlowBufs::is_empty(&self) -> bool
 pub fn phx_core::flows::FlowBufs::len(&self) -> usize
 pub fn phx_core::flows::FlowBufs::reset(&mut self, usize)
 pub fn phx_core::flows::FlowBufs::slices(&self) -> impl core::iter::traits::iterator::Iterator<Item = &[phx_core::flows::Flow]>
-pub struct phx_core::flows::Grouped
-pub phx_core::flows::Grouped::by_payee: phx_exec::partition::Partitioned<phx_core::flows::Credit>
-pub phx_core::flows::Grouped::by_payer: phx_exec::partition::Partitioned<phx_core::flows::Flow>
-impl phx_core::flows::Grouped
-pub fn phx_core::flows::Grouped::apply(&self, usize, &phx_core::flows::Ranges, &mut [i64]) -> u64
-pub fn phx_core::flows::Grouped::group(&mut self, core::option::Option<&phx_exec::pool::Pool>, &[&phx_core::flows::FlowBufs], &phx_core::flows::Ranges, phx_core::flows::Denom)
-pub fn phx_core::flows::Grouped::net(&self, usize, &phx_core::flows::Ranges, &mut [i64])
+pub struct phx_core::flows::Grouped<'a>
+impl<'a> phx_core::flows::Grouped<'a>
+pub fn phx_core::flows::Grouped<'a>::credit_slices(&self, usize) -> impl core::iter::traits::iterator::Iterator<Item = &'a [phx_core::flows::Credit]> + '_
+pub fn phx_core::flows::Grouped<'a>::credits(&self, usize) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::flows::Credit> + '_
+pub fn phx_core::flows::Grouped<'a>::end(&self) -> usize
+pub fn phx_core::flows::Grouped<'a>::first(&self, usize) -> usize
+pub fn phx_core::flows::Grouped<'a>::flow(&self, usize) -> core::option::Option<&'a phx_core::flows::Flow>
+pub fn phx_core::flows::Grouped<'a>::net(&self, usize, &phx_core::flows::Ranges, &mut [i64])
+pub fn phx_core::flows::Grouped<'a>::new(&[&'a phx_core::flows::FlowBufs], &phx_core::flows::Ranges) -> phx_core::flows::Grouped<'a>
+pub fn phx_core::flows::Grouped<'a>::payer_slices(&self, usize) -> impl core::iter::traits::iterator::Iterator<Item = &'a [phx_core::flows::Flow]> + '_
+pub fn phx_core::flows::Grouped<'a>::payers(&self, usize) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::flows::Flow> + '_
 pub struct phx_core::flows::Ranges
 impl phx_core::flows::Ranges
 pub fn phx_core::flows::Ranges::count(&self) -> usize
@@ -843,6 +848,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
+pub fn phx_core::handler::Ctx<'a, H, S>::flow<R: phx_core::handler::ReasonDef>(&mut self, [phx_id::ids::PartyKey; 2], i64, phx_core::flows::Denom, u32) where H: phx_core::handler::Pays<R>
 pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::Ctx<'a, H, S>::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
@@ -869,6 +875,7 @@ pub phx_core::handler::CtxParts::bindings: &'a mut phx_core::register::limit::Bi
 pub phx_core::handler::CtxParts::date: phx_id::day::Date
 pub phx_core::handler::CtxParts::day: phx_id::day::Day
 pub phx_core::handler::CtxParts::facts: &'a mut S
+pub phx_core::handler::CtxParts::flows: core::option::Option<&'a mut alloc::vec::Vec<phx_core::flows::Flow>>
 pub phx_core::handler::CtxParts::goods: &'a dyn phx_core::handler::GoodsView
 pub phx_core::handler::CtxParts::intents: &'a mut phx_core::handler::Intents
 pub phx_core::handler::CtxParts::opens: core::option::Option<&'a mut alloc::vec::Vec<phx_core::handler::Opened>>
@@ -1004,7 +1011,11 @@ pub fn phx_core::handler::IntentDef::encode(&self, &mut alloc::vec::Vec<u64>)
 impl phx_core::handler::IntentDef for phx_core::events::EventIntent
 pub const phx_core::events::EventIntent::NAME: &'static str
 pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
+pub trait phx_core::handler::Pays<R: phx_core::handler::ReasonDef>
 pub trait phx_core::handler::Reads<F: phx_core::facts::FactDef>
+pub trait phx_core::handler::ReasonDef: 'static
+pub const phx_core::handler::ReasonDef::CODE: u8
+pub const phx_core::handler::ReasonDef::ORDER: u8
 pub trait phx_core::handler::Writes<F: phx_core::facts::FactDef>
 pub type phx_core::handler::HeldGood = (u16, u8, i64)
 pub type phx_core::handler::HeldPlant = (u8, u8, i64)
@@ -1928,8 +1939,8 @@ pub phx_core::settle::Outcome::settled: u64
 pub phx_core::settle::Outcome::visits: u64
 pub struct phx_core::settle::Settle
 impl phx_core::settle::Settle
-pub fn phx_core::settle::Settle::commit(&mut self, core::option::Option<&phx_exec::pool::Pool>, &phx_core::flows::Grouped, &phx_core::flows::Ranges, &mut phx_core::settle::Books<'_>)
-pub fn phx_core::settle::Settle::settle(&mut self, core::option::Option<&phx_exec::pool::Pool>, &phx_core::flows::Grouped, &phx_core::flows::Ranges, &mut phx_core::settle::Books<'_>, &impl core::ops::function::Fn(phx_id::ids::PartyKey) -> phx_rand::draws::Draws + core::marker::Sync) -> phx_core::settle::Outcome
+pub fn phx_core::settle::Settle::commit(&mut self, core::option::Option<&phx_exec::pool::Pool>, &phx_core::flows::Grouped<'_>, &phx_core::flows::Ranges, &mut phx_core::settle::Books<'_>)
+pub fn phx_core::settle::Settle::settle(&mut self, core::option::Option<&phx_exec::pool::Pool>, &phx_core::flows::Grouped<'_>, &phx_core::flows::Ranges, &mut phx_core::settle::Books<'_>, &impl core::ops::function::Fn(phx_id::ids::PartyKey) -> phx_rand::draws::Draws + core::marker::Sync) -> phx_core::settle::Outcome
 pub const phx_core::settle::AT_ISSUER: u32
 pub mod phx_core::spoilage
 pub struct phx_core::spoilage::SpoilageDecl
@@ -2782,6 +2793,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
 pub fn phx_core::handler::Ctx<'a, H, S>::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
+pub fn phx_core::handler::Ctx<'a, H, S>::flow<R: phx_core::handler::ReasonDef>(&mut self, [phx_id::ids::PartyKey; 2], i64, phx_core::flows::Denom, u32) where H: phx_core::handler::Pays<R>
 pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
 pub fn phx_core::handler::Ctx<'a, H, S>::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
@@ -2808,6 +2820,7 @@ pub phx_core::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
 pub phx_core::CtxParts::date: phx_id::day::Date
 pub phx_core::CtxParts::day: phx_id::day::Day
 pub phx_core::CtxParts::facts: &'a mut S
+pub phx_core::CtxParts::flows: core::option::Option<&'a mut alloc::vec::Vec<phx_core::flows::Flow>>
 pub phx_core::CtxParts::goods: &'a dyn phx_core::handler::GoodsView
 pub phx_core::CtxParts::intents: &'a mut phx_core::handler::Intents
 pub phx_core::CtxParts::opens: core::option::Option<&'a mut alloc::vec::Vec<phx_core::handler::Opened>>

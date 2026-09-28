@@ -230,6 +230,7 @@ mod tests {
             rules: &rules,
             queue: &mut queue,
             opens: None,
+            flows: None,
         };
         run(parts, 1..3);
         let rain: Vec<Missing<i64>> = (0..4).map(|r| t.value("GEO.rain", Slot::new(r))).collect();

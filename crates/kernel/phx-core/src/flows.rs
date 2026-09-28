@@ -51,11 +51,22 @@ pub struct Flow {
 }
 
 /// The day's flows of one sub-step, a buffer per chunk that made any, kept across days so a day appends without
-/// allocating once the heaviest day has sized each buffer.
+/// allocating once the heaviest day has sized each buffer. Grouped, each chunk's flows are put in the order of their
+/// payers' ranges, in place, and their credits in the order of their payees'.
 #[derive(Debug, Default)]
 pub struct FlowBufs {
     chunks: Vec<Vec<Flow>>,
     used: usize,
+    groups: Vec<ChunkGroups>,
+}
+
+/// A chunk's flows as grouped: where each payer range's flows begin among them, the last range holding the flows of
+/// other denominations; and its credits by payee range and where each range's begin.
+#[derive(Debug, Default)]
+struct ChunkGroups {
+    starts: Vec<usize>,
+    credits: Vec<Credit>,
+    credit_starts: Vec<usize>,
 }
 
 impl FlowBufs {
@@ -90,6 +101,90 @@ impl FlowBufs {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Groups each chunk's flows of `denom` by their payers' ranges, in place, and makes their credits by their payees'
+    /// ranges; a flow of another denomination goes to a last range of its own, which no range reads. Chunks are grouped
+    /// on the pool, each by itself, so the result is the same whatever the workers; within a range a chunk's flows are
+    /// in an order its own made, since a payer's ties are drawn by lot.
+    #[clause("SET.4")]
+    pub fn group(&mut self, pool: Option<&phx_exec::Pool>, ranges: &Ranges, denom: Denom) {
+        let used = self.used;
+        self.groups.resize_with(used, ChunkGroups::default);
+        let n = ranges.count();
+        let jobs: Vec<(&mut Vec<Flow>, &mut ChunkGroups)> =
+            self.chunks.iter_mut().take(used).zip(self.groups.iter_mut()).collect();
+        phx_exec::pool::each(pool, jobs, |(flows, g)| {
+            let paying = |f: &Flow| if f.denomination == denom { ranges.of(f.payer) } else { n };
+            counting_places(flows.iter().map(paying), n + 1, &mut g.starts);
+            // In place, each flow swapped into its range's next free place until every place holds its range's.
+            let mut next = g.starts.clone();
+            for b in 0..=n {
+                let end = g.starts.get(b + 1).copied().unwrap_or(0);
+                while let Some(at) = next.get(b).copied().filter(|at| *at < end) {
+                    let Some(to) = flows.get(at).map(&paying) else { break };
+                    if to == b {
+                        if let Some(x) = next.get_mut(b) {
+                            *x += 1;
+                        }
+                    } else if let Some(there) = next.get_mut(to) {
+                        flows.swap(at, *there);
+                        *there += 1;
+                    }
+                }
+            }
+            // Credits only of the denomination's flows, which lead the chunk: no range reads another's.
+            let settled = g.starts.get(n).copied().unwrap_or(0);
+            let ours = flows.get(..settled).unwrap_or(&[]);
+            let paid = |f: &Flow| ranges.of(f.payee);
+            counting_places(ours.iter().map(paid), n, &mut g.credit_starts);
+            g.credits.clear();
+            g.credits.resize(ours.len(), Credit { payee: PartyKey::from_word(0), amount: 0, reason: 0 });
+            let mut next = g.credit_starts.clone();
+            for f in ours {
+                if let Some(at) = next.get_mut(paid(f))
+                    && let Some(cell) = g.credits.get_mut(*at)
+                {
+                    *cell = Credit { payee: f.payee, amount: f.amount, reason: f.reason };
+                    *at += 1;
+                }
+            }
+        });
+    }
+
+    /// A grouped chunk's flows of a payer range.
+    fn payers(&self, chunk: usize, range: usize) -> &[Flow] {
+        let (Some(flows), Some(g)) = (self.chunks.get(chunk), self.groups.get(chunk)) else { return &[] };
+        match (g.starts.get(range), g.starts.get(range + 1)) {
+            (Some(a), Some(b)) => flows.get(*a..*b).unwrap_or(&[]),
+            _ => &[],
+        }
+    }
+
+    /// A grouped chunk's credits of a payee range.
+    fn credits(&self, chunk: usize, range: usize) -> &[Credit] {
+        let Some(g) = self.groups.get(chunk) else { return &[] };
+        match (g.credit_starts.get(range), g.credit_starts.get(range + 1)) {
+            (Some(a), Some(b)) => g.credits.get(*a..*b).unwrap_or(&[]),
+            _ => &[],
+        }
+    }
+}
+
+/// Where each of `buckets` begins when items fall in the buckets `keys` gives, with the end after the last.
+fn counting_places(keys: impl Iterator<Item = usize>, buckets: usize, starts: &mut Vec<usize>) {
+    starts.clear();
+    starts.resize(buckets + 1, 0);
+    for k in keys {
+        let Some(c) = starts.get_mut(k + 1) else {
+            violation!(clause = "SET.4", "a flow in a range beyond the day's", range = k);
+        };
+        *c += 1;
+    }
+    let mut sum = 0;
+    for c in starts.iter_mut() {
+        sum += *c;
+        *c = sum;
     }
 }
 
@@ -165,64 +260,126 @@ pub struct Credit {
     pub reason: u8,
 }
 
-/// One denomination's flows of the day grouped by the range of their payer, whole, since a payer's failures follow
-/// its flows' order, and by the range of their payee as credits; kept across days, so each range's parties are netted
-/// by one worker reading only its own.
-#[clause("SET.4", "SET.6")]
-#[derive(Debug, Default)]
-pub struct Grouped {
-    pub by_payer: phx_exec::partition::Partitioned<Flow>,
-    pub by_payee: phx_exec::partition::Partitioned<Credit>,
+/// A range's piece of one chunk's grouped flows: its buffer, its chunk, and where its first flow falls in the
+/// range's order.
+#[derive(Clone, Copy, Debug)]
+struct Piece {
+    buf: usize,
+    chunk: usize,
+    at: usize,
 }
 
-impl Grouped {
-    /// Groups every flow of `denom` in the buffers given, in their order, by payer range and by payee range; flows of
-    /// any other denomination fall in a last bucket of their own, which no range reads.
-    pub fn group(&mut self, pool: Option<&phx_exec::Pool>, bufs: &[&FlowBufs], ranges: &Ranges, denom: Denom) {
-        let slices: Vec<&[Flow]> = bufs.iter().flat_map(|b| b.slices()).collect();
+/// One denomination's flows of the day as grouped in their buffers, read by range: each range's flows, whole, in the
+/// order of the buffers and their chunks, since a payer's failures follow its flows' order; and its credits. Every
+/// flow has a place in the day's order, range after range, which the settlement marks it by. Nothing is copied.
+#[clause("SET.4", "SET.6")]
+#[derive(Debug)]
+pub struct Grouped<'a> {
+    bufs: Vec<&'a FlowBufs>,
+    /// Each range's pieces of flows and of credits, in order.
+    payers: Vec<Vec<Piece>>,
+    credits: Vec<Vec<(usize, usize)>>,
+    /// Where each range's flows begin in the day's order, and the day's end after the last.
+    first: Vec<usize>,
+}
+
+impl<'a> Grouped<'a> {
+    /// The day's grouped buffers read by range; each buffer must have been grouped over the same ranges.
+    #[must_use]
+    pub fn new(bufs: &[&'a FlowBufs], ranges: &Ranges) -> Grouped<'a> {
         let n = ranges.count();
-        let at = |f: &Flow, p: PartyKey| if f.denomination == denom { ranges.of(p) } else { n };
-        phx_exec::partition::partition_into(pool, &slices, n + 1, |f| at(f, f.payer), &mut self.by_payer);
-        phx_exec::partition::partition_map_into(
-            pool,
-            &slices,
-            n + 1,
-            |f| at(f, f.payee),
-            |f| Credit { payee: f.payee, amount: f.amount, reason: f.reason },
-            &mut self.by_payee,
-        );
+        let mut payers: Vec<Vec<Piece>> = (0..n).map(|_| Vec::new()).collect();
+        let mut credits: Vec<Vec<(usize, usize)>> = (0..n).map(|_| Vec::new()).collect();
+        let mut first = Vec::with_capacity(n + 1);
+        let mut total = 0;
+        for (r, (pieces, cpieces)) in payers.iter_mut().zip(credits.iter_mut()).enumerate() {
+            first.push(total);
+            let mut at = 0;
+            for (b, buf) in bufs.iter().enumerate() {
+                for chunk in 0..buf.used {
+                    let len = buf.payers(chunk, r).len();
+                    if len > 0 {
+                        pieces.push(Piece { buf: b, chunk, at });
+                        at += len;
+                    }
+                    if !buf.credits(chunk, r).is_empty() {
+                        cpieces.push((b, chunk));
+                    }
+                }
+            }
+            total += at;
+        }
+        first.push(total);
+        Grouped { bufs: bufs.to_vec(), payers, credits, first }
     }
 
-    /// A range's net per party, credits less debits, added to `money`, one entry a slot of the range; returns the
-    /// parties of the range left below nothing. A flow naming a party outside the range's slots stops the run: its
-    /// other side would move alone.
-    pub fn apply(&self, range: usize, ranges: &Ranges, money: &mut [i64]) -> u64 {
-        let (_, first) = ranges.start(range);
-        let at = |p: PartyKey| usize::try_from(p.slot().get() - first).unwrap_or(usize::MAX);
-        let add = |p: PartyKey, v: i64, money: &mut [i64]| {
-            let Some(m) = money.get_mut(at(p)) else {
-                violation!(
-                    clause = "Law 5",
-                    "a flow names a party its range's money does not hold",
-                    slot = p.slot().get()
-                );
-            };
-            *m += v;
-        };
-        for c in self.by_payee.bucket(range) {
-            add(c.payee, c.amount, money);
-        }
-        for f in self.by_payer.bucket(range) {
-            add(f.payer, -f.amount, money);
-        }
-        // One pass over the range's money, which a worker holds in cache, counts each party once.
-        u64::try_from(money.iter().filter(|m| **m < 0).count()).unwrap_or(u64::MAX)
+    /// A range's flows, in order, a slice a chunk that made any.
+    pub fn payer_slices(&self, range: usize) -> impl Iterator<Item = &'a [Flow]> + '_ {
+        self.payers
+            .get(range)
+            .into_iter()
+            .flatten()
+            .map(move |p| self.bufs.get(p.buf).map_or(&[][..], |b| b.payers(p.chunk, range)))
+    }
+
+    /// A range's flows, in order.
+    pub fn payers(&self, range: usize) -> impl Iterator<Item = &'a Flow> + '_ {
+        self.payer_slices(range).flatten()
+    }
+
+    /// A range's credits, a slice a chunk that made any.
+    pub fn credit_slices(&self, range: usize) -> impl Iterator<Item = &'a [Credit]> + '_ {
+        self.credits
+            .get(range)
+            .into_iter()
+            .flatten()
+            .map(move |(b, c)| self.bufs.get(*b).map_or(&[][..], |buf| buf.credits(*c, range)))
+    }
+
+    /// A range's credits.
+    pub fn credits(&self, range: usize) -> impl Iterator<Item = &'a Credit> + '_ {
+        self.credit_slices(range).flatten()
+    }
+
+    /// Where a range's flows begin in the day's order.
+    #[must_use]
+    pub fn first(&self, range: usize) -> usize {
+        self.first.get(range).copied().unwrap_or(0)
+    }
+
+    /// The day's flows of the denomination.
+    #[must_use]
+    pub fn end(&self) -> usize {
+        self.first.last().copied().unwrap_or(0)
+    }
+
+    /// The flow at a place in the day's order.
+    #[must_use]
+    pub fn flow(&self, place: usize) -> Option<&'a Flow> {
+        let r = self.first.partition_point(|f| *f <= place).checked_sub(1)?;
+        let within = place - self.first(r);
+        let pieces = self.payers.get(r)?;
+        let p = pieces.get(pieces.partition_point(|p| p.at <= within).checked_sub(1)?)?;
+        self.bufs.get(p.buf)?.payers(p.chunk, r).get(within - p.at)
     }
 
     /// A range's net per party, credits less debits, into `out`, one entry a slot of the range.
     pub fn net(&self, range: usize, ranges: &Ranges, out: &mut [i64]) {
         out.fill(0);
-        let _ = self.apply(range, ranges, out);
+        let (_, first) = ranges.start(range);
+        let mut add = |p: PartyKey, v: i64| {
+            let at = usize::try_from(p.slot().get() - first).unwrap_or(usize::MAX);
+            let Some(m) = out.get_mut(at) else {
+                violation!(clause = "Law 5", "a flow names a party its range does not hold", slot = p.slot().get());
+            };
+            *m += v;
+        };
+        for c in self.credits(range) {
+            add(c.payee, c.amount);
+        }
+        for f in self.payers(range) {
+            add(f.payer, -f.amount);
+        }
     }
 }
 
@@ -246,8 +403,10 @@ mod tests {
         bufs.reset(2);
         bufs.chunks_mut()[0].extend([flow((0, 1), (1, 2), 50), flow((0, 9), (0, 1), 7)]);
         bufs.chunks_mut()[1].push(flow((1, 2), (0, 9), 20));
-        let mut g = Grouped::default();
-        g.group(None, &[&bufs], &ranges, Denom::money(0));
+        bufs.group(None, &ranges, Denom::money(0));
+        let g = Grouped::new(&[&bufs], &ranges);
+        assert_eq!(g.end(), 3);
+        assert_eq!(g.flow(2).map(|f| f.amount), Some(20), "the third range's flow is the day's last");
         let mut out = [0_i64; 4];
         g.net(0, &ranges, &mut out);
         assert_eq!(out, [0, -43, 0, 0]);
@@ -260,25 +419,29 @@ mod tests {
     #[test]
     fn nets_are_the_same_for_any_workers_and_units_apart() {
         let ranges = Ranges::new(3, &[40, 20]);
-        let mut bufs = FlowBufs::default();
-        bufs.reset(7);
-        let mut i = 0_u32;
-        for c in bufs.chunks_mut() {
-            for _ in 0..500 {
-                i += 1;
-                let from = (u8::from(i.is_multiple_of(3)), (i * 7) % 20);
-                let to = (u8::from(i.is_multiple_of(5)), (i * 13) % 20);
-                let mut f = flow(from, to, i64::from(i % 97));
-                if i.is_multiple_of(11) {
-                    f.denomination = Denom::units(3);
+        let made = || {
+            let mut bufs = FlowBufs::default();
+            bufs.reset(7);
+            let mut i = 0_u32;
+            for c in bufs.chunks_mut() {
+                for _ in 0..500 {
+                    i += 1;
+                    let from = (u8::from(i.is_multiple_of(3)), (i * 7) % 20);
+                    let to = (u8::from(i.is_multiple_of(5)), (i * 13) % 20);
+                    let mut f = flow(from, to, i64::from(i % 97));
+                    if i.is_multiple_of(11) {
+                        f.denomination = Denom::units(3);
+                    }
+                    c.push(f);
                 }
-                c.push(f);
             }
-        }
+            bufs
+        };
         let nets = |workers: Option<usize>| {
             let pool = workers.map(|w| phx_exec::Pool::new(&phx_exec::PoolSpec::unpinned(w)).unwrap());
-            let mut g = Grouped::default();
-            g.group(pool.as_ref(), &[&bufs], &ranges, Denom::money(0));
+            let mut bufs = made();
+            bufs.group(pool.as_ref(), &ranges, Denom::money(0));
+            let g = Grouped::new(&[&bufs], &ranges);
             (0..ranges.count())
                 .map(|r| {
                     let mut out = [0_i64; 8];

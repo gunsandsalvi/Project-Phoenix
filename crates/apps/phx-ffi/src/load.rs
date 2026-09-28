@@ -237,17 +237,6 @@ impl Volumes {
         self.at(per_million) * self.world.work_num / self.world.work_den
     }
 
-    /// The flows of the heaviest day: every contract's due with its margin, and every kind of work's flows at its
-    /// heavy count; a bound to reserve by, never a count of work.
-    fn heavy_flows(&self, contracts: u64) -> u64 {
-        let work: u64 = self
-            .works
-            .iter()
-            .map(|w| self.work(w.per_million.get(2).copied().unwrap_or(0)) * w.flows.unwrap_or(0) / THOUSAND)
-            .sum();
-        contracts * self.world.work_num / self.world.work_den + work
-    }
-
     fn kind(&self, name: &str) -> Result<u8, String> {
         self.kinds
             .iter()
@@ -453,7 +442,6 @@ struct Load {
     /// sized; whether each holds flows not yet settled.
     bufs: Vec<FlowBufs>,
     filled: Vec<bool>,
-    grouped: Grouped,
     settlement: Settle,
     /// The banks' kind, the banks closed, the currency's issuer and the stream payment orders' lots are drawn from.
     bank_kind: u8,
@@ -856,9 +844,13 @@ impl Load {
     /// or, on a closed day, to what they have pending, which the next business day settles; returns the flows and the
     /// payers the debits leave below nothing.
     fn settle(&mut self, business: bool, day: u32) -> (u64, u64, u64) {
+        let pool: &Pool = &self.pool;
+        for (b, _) in self.bufs.iter_mut().zip(&self.filled).filter(|(_, f)| **f) {
+            b.group(Some(pool), &self.ranges, Denom::money(0));
+        }
         let refs: Vec<&FlowBufs> = self.bufs.iter().zip(&self.filled).filter(|(_, f)| **f).map(|(b, _)| b).collect();
-        self.grouped.group(Some(&self.pool), &refs, &self.ranges, Denom::money(0));
-        let flows = index_u64(self.grouped.by_payer.items.len());
+        let grouped = Grouped::new(&refs, &self.ranges);
+        let flows = index_u64(refs.iter().map(|b| b.len()).sum());
         let mut books = Books {
             kinds: self.kinds.iter_mut().map(Kind::book).collect(),
             banks: self.bank_kind,
@@ -866,14 +858,13 @@ impl Load {
             closed: &self.closed,
             issuer: self.issuer,
         };
-        let pool: &Pool = &self.pool;
         let failed = if business {
             let key = self.lot;
             let lot = |p: PartyKey| Draws::new(key, Subject::new(SubjectTag::Party, u64::from(p.word())), day, 0);
-            let out = self.settlement.settle(Some(pool), &self.grouped, &self.ranges, &mut books, &lot);
+            let out = self.settlement.settle(Some(pool), &grouped, &self.ranges, &mut books, &lot);
             (index_u64(out.failed.len()), out.rounds)
         } else {
-            self.settlement.commit(Some(pool), &self.grouped, &self.ranges, &mut books);
+            self.settlement.commit(Some(pool), &grouped, &self.ranges, &mut books);
             (0, 0)
         };
         self.filled.fill(false);
@@ -1249,11 +1240,6 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
     }
     let high: Vec<u32> = kinds.iter().map(|k| k.n).collect();
     let ranges = Ranges::new(v.world.range_bits, &high);
-    // The day's grouped flows are reserved at the heaviest day's declared count: address space, touched only as used.
-    let mut grouped = Grouped::default();
-    let heavy_flows = v.heavy_flows(families.iter().map(|f| index_u64(f.edges.rows().len())).sum());
-    grouped.by_payer.items.reserve(to_usize(heavy_flows));
-    grouped.by_payee.items.reserve(to_usize(heavy_flows));
     // Each bank holds a tenth of what its customers hold in reserves.
     let deposits = deposits_of(&kinds, to_usize(u64::from(n_banks)));
     if let Some(m) = kinds.get_mut(usize::from(bank_kind)).and_then(|k| k.money.as_mut()) {
@@ -1276,7 +1262,6 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
         ranges,
         bufs: (0..sources).map(|_| FlowBufs::default()).collect(),
         filled: vec![false; sources],
-        grouped,
         settlement: Settle::default(),
         bank_kind,
         closed: vec![false; to_usize(u64::from(n_banks))],

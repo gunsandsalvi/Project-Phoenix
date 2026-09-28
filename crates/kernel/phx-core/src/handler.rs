@@ -1,13 +1,14 @@
 use std::any::Any;
 use std::marker::PhantomData;
 
-use phx_id::{Date, Day, PartyId, Slot};
+use phx_id::{Date, Day, PartyId, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_rand::{Draws, Subject};
 
 use crate::decisions::{Decider, DecisionPointDecl, PlayerQueue, QueuedPayload, dispatch};
 use crate::facts::FactDef;
+use crate::flows::{Denom, Flow};
 use crate::register::Register;
 use crate::register::limit::{Bindings, Bound, Limited};
 use crate::rules::{RuleSig, RuleTable};
@@ -39,6 +40,17 @@ pub trait Writes<F: FactDef> {}
 pub trait Emits<I: IntentDef> {}
 /// The handler draws from the stream.
 pub trait DrawsFrom<S: StreamDef> {}
+
+/// A reason money or units move for, declared once: the code its flows carry, which says the lines they post to, and
+/// the payment order a payer's flows of it keep among its others.
+#[clause("MON.5", "SET.4")]
+pub trait ReasonDef: 'static {
+    const CODE: u8;
+    const ORDER: u8;
+}
+
+/// A handler that pays for a reason: its context makes flows of that reason and of no other.
+pub trait Pays<R: ReasonDef> {}
 
 /// An effect on anything but the handler's own directly written columns, gathered and applied at the apply point.
 pub trait IntentDef {
@@ -315,6 +327,8 @@ pub struct CtxParts<'a, S: FactStore + ?Sized> {
     pub rules: &'a RuleTable,
     pub queue: &'a mut PlayerQueue,
     pub opens: Option<&'a mut Vec<Opened>>,
+    /// The chunk's flow buffer, in a sub-step whose flows the day settles.
+    pub flows: Option<&'a mut Vec<Flow>>,
 }
 
 /// A handler's context, granting exactly what its declaration lists: reading an undeclared fact, writing an undeclared
@@ -469,6 +483,23 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
         self.parts.intents.push(intent);
     }
 
+    /// A flow for a reason the handler declares: from the payer to the payee, an amount of a denomination, from a
+    /// source the reason names, in the reason's payment order. A flow runs from its payer, so a negative amount is
+    /// refused.
+    pub fn flow<R: ReasonDef>(&mut self, sides: [PartyKey; 2], amount: i64, denomination: Denom, source: u32)
+    where
+        H: Pays<R>,
+    {
+        if amount < 0 {
+            violation!(clause = "Law 5", "a flow of a negative amount", amount = amount);
+        }
+        let Some(buf) = self.parts.flows.as_deref_mut() else {
+            violation!(clause = "TIME.6", "a flow made in a sub-step that settles none");
+        };
+        let [from, to] = sides;
+        buf.push(Flow { payer: from, payee: to, amount, source, denomination, reason: R::CODE, order: R::ORDER });
+    }
+
     /// The register, whose primitives a handler reads through the handles its system keeps.
     #[must_use]
     pub fn register(&self) -> &'a Register {
@@ -618,6 +649,13 @@ mod tests {
     impl Emits<Offer> for Hire {}
     impl DrawsFrom<Tracer> for Hire {}
 
+    struct Wages;
+    impl super::ReasonDef for Wages {
+        const CODE: u8 = 3;
+        const ORDER: u8 = 1;
+    }
+    impl super::Pays<Wages> for Hire {}
+
     #[test]
     fn ctx_passes_through_what_the_handler_declares() {
         let streams = Streams::new(Seed::new(1), &[Tracer::DECL]).unwrap();
@@ -626,6 +664,7 @@ mod tests {
         let rules = RuleTable::default();
         let register = crate::register::RegisterBuilder::default().build(&[], 1).unwrap();
         let mut opens = Vec::new();
+        let mut flows = Vec::new();
         let parts = CtxParts {
             day: Day::new(4),
             date: phx_id::Date::new(2025, 1, 5).unwrap(),
@@ -639,8 +678,15 @@ mod tests {
             rules: &rules,
             queue: &mut queue,
             opens: Some(&mut opens),
+            flows: Some(&mut flows),
         };
         let mut ctx: Ctx<'_, Hire, ListFacts> = Ctx::new(parts);
+        let (firm, worker) = (phx_id::PartyKey::new(2, Slot::new(8)), phx_id::PartyKey::new(1, Slot::new(2)));
+        ctx.flow::<Wages>([firm, worker], 3_000, crate::flows::Denom::money(0), 44);
+        let negative = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            ctx.flow::<Wages>([firm, worker], -1, crate::flows::Denom::money(0), 44);
+        }));
+        assert!(negative.is_err(), "a flow runs from its payer");
         let row = Slot::new(2);
         assert_eq!(ctx.read::<Income>(row), Missing::Absent);
         ctx.write::<Income>(row, 900);
@@ -656,5 +702,7 @@ mod tests {
         assert!(wrong.is_err(), "a handler reads only its own system's state, by its type");
         assert_eq!(intents.iter().collect::<Vec<_>>(), vec![("LAB.offer", &[5_u64][..])]);
         assert_eq!(bindings.drain().count(), 1);
+        let made: Vec<(u8, u8, i64)> = flows.iter().map(|f| (f.reason, f.order, f.amount)).collect();
+        assert_eq!(made, vec![(3, 1, 3_000)], "the reason's code and payment order ride on its flows");
     }
 }

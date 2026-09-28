@@ -1,0 +1,21 @@
+error[E0277]: the trait bound `Hire: Pays<Wages>` is not satisfied
+  --> tests/ui/ctx_pays_undeclared.rs:18:9
+   |
+18 |     ctx.flow::<Wages>([side, side], 1, Denom::money(0), 0);
+   |         ^^^^ unsatisfied trait bound
+   |
+help: the trait `Pays<Wages>` is not implemented for `Hire`
+  --> tests/ui/ctx_pays_undeclared.rs:12:1
+   |
+12 | / declare_handler! {
+13 | |     pub Hire = "LAB.hire" { substep: S5c, table: "household", clause: "LAB.9" }
+   | |____________^
+note: required by a bound in `Ctx::<'a, H, S>::flow`
+  --> src/handler.rs
+   |
+   |     pub fn flow<R: ReasonDef>(&mut self, sides: [PartyKey; 2], amount: i64, denomination: Denom, source: u32)
+   |            ---- required by a bound in this associated function
+   |     where
+   |         H: Pays<R>,
+   |            ^^^^^^^ required by this bound in `Ctx::<'a, H, S>::flow`
+   = note: this error originates in the macro `declare_handler` (in Nightly builds, run with -Z macro-backtrace for more info)

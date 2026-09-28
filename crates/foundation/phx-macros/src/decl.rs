@@ -771,7 +771,7 @@ fn family(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
 
 fn handler(d: &Decl) -> syn::Result<TokenStream> {
     let span = d.name.span();
-    let fields = d.fields(&["substep", "table", "reads", "writes", "intents", "streams", "clause", "body"])?;
+    let fields = d.fields(&["substep", "table", "reads", "writes", "intents", "streams", "pays", "clause", "body"])?;
     qualified(&d.id)?;
     let substep = variant(required(&fields, "substep", span)?, &SUB_STEPS)?;
     let table = string(required(&fields, "table", span)?)?;
@@ -779,6 +779,7 @@ fn handler(d: &Decl) -> syn::Result<TokenStream> {
     let writes = types(get(&fields, "writes"))?;
     let intents = types(get(&fields, "intents"))?;
     let streams = types(get(&fields, "streams"))?;
+    let pays = types(get(&fields, "pays"))?;
     let clause = clause_of(&fields, span)?;
     let (attrs, vis, name, id) = (&d.attrs, &d.vis, &d.name, &d.id);
     let run = if let Some(body) = get(&fields, "body") {
@@ -819,6 +820,7 @@ fn handler(d: &Decl) -> syn::Result<TokenStream> {
         #(impl ::phx_core::handler::Writes<#writes> for #name {})*
         #(impl ::phx_core::handler::Emits<#intents> for #name {})*
         #(impl ::phx_core::handler::DrawsFrom<#streams> for #name {})*
+        #(impl ::phx_core::handler::Pays<#pays> for #name {})*
     })
 }
 

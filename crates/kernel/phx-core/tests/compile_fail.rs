@@ -22,3 +22,8 @@ fn purposes_closed() {
 fn family_ctx_has_no_writes() {
     trybuild::TestCases::new().compile_fail("tests/ui/family_ctx_has_no_writes.rs");
 }
+
+#[test]
+fn ctx_refuses_undeclared_payment() {
+    trybuild::TestCases::new().compile_fail("tests/ui/ctx_pays_undeclared.rs");
+}

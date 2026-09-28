@@ -323,6 +323,7 @@ impl World {
                             rules: &self.rules,
                             queue: &mut self.queue,
                             opens: is_traced.then_some(&mut opens),
+                            flows: None,
                         },
                         span.clone(),
                     );

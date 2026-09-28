@@ -112,8 +112,8 @@ fn settle_flows(w: &mut Fixture, made: &[Flow], workers: Option<usize>) -> Outco
     bufs.chunks_mut()[0].extend_from_slice(&made[..half]);
     bufs.chunks_mut()[1].extend_from_slice(&made[half..]);
     let pool = workers.map(|n| phx_exec::Pool::new(&phx_exec::PoolSpec::unpinned(n)).unwrap());
-    let mut g = Grouped::default();
-    g.group(pool.as_ref(), &[&bufs], &ranges, Denom::money(0));
+    bufs.group(pool.as_ref(), &ranges, Denom::money(0));
+    let g = Grouped::new(&[&bufs], &ranges);
     let mut books = w.books();
     Settle::default().settle(pool.as_ref(), &g, &ranges, &mut books, &lot)
 }
@@ -293,17 +293,16 @@ fn a_closed_days_commitments_settle_first() {
     let mut bufs = FlowBufs::default();
     bufs.reset(1);
     bufs.chunks_mut()[0].extend(flows(&[(1, 0, 30)]));
-    let mut g = Grouped::default();
-    g.group(None, &[&bufs], &ranges, Denom::money(0));
+    bufs.group(None, &ranges, Denom::money(0));
     let mut s = Settle::default();
-    s.commit(None, &g, &ranges, &mut w.books());
+    s.commit(None, &Grouped::new(&[&bufs], &ranges), &ranges, &mut w.books());
     assert_eq!((w.pending.clone(), w.balance.clone()), (vec![30, -30], vec![10, 0]), "committed, not yet settled");
     assert_eq!((w.bank_pending[0], w.bank_pending[1]), (30, -30), "the reserves' move is committed too");
     // The next business day 0 pays 35 it could pay only with what it was committed.
     bufs.reset(1);
     bufs.chunks_mut()[0].extend(flows(&[(0, 1, 35)]));
-    g.group(None, &[&bufs], &ranges, Denom::money(0));
-    let out = s.settle(None, &g, &ranges, &mut w.books(), &lot);
+    bufs.group(None, &ranges, Denom::money(0));
+    let out = s.settle(None, &Grouped::new(&[&bufs], &ranges), &ranges, &mut w.books(), &lot);
     assert_eq!((w.balance.clone(), out.failed.len()), (vec![5, 5], 0));
     assert_eq!(w.reserves, vec![RICH - 5, RICH + 5]);
 }
@@ -324,9 +323,8 @@ fn settled_flows_post_to_their_lines() {
         let mut bufs = FlowBufs::default();
         bufs.reset(1);
         bufs.chunks_mut()[0].extend(flows(&[(0, 1, 60), (0, 2, 50)]));
-        let mut g = Grouped::default();
-        g.group(None, &[&bufs], &ranges, Denom::money(0));
-        Settle::default().settle(None, &g, &ranges, &mut books, &lot)
+        bufs.group(None, &ranges, Denom::money(0));
+        Settle::default().settle(None, &Grouped::new(&[&bufs], &ranges), &ranges, &mut books, &lot)
     };
     assert_eq!(out.failed.len(), 1);
     assert_eq!(amounts, vec![60, 0, 0, 60, 0, 0], "0 paid 60 and 1 received it; the failed 50 is on no line");

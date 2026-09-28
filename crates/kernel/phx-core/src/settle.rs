@@ -91,8 +91,9 @@ pub struct Outcome {
 #[derive(Debug, Default)]
 struct ByPayer {
     built: bool,
-    flows: Vec<usize>,
-    starts: Vec<usize>,
+    /// Each flow's place within the range, by payer.
+    flows: Vec<u32>,
+    starts: Vec<u32>,
 }
 
 /// The settlement's working state, kept across days so a day allocates nothing once the heaviest has sized it.
@@ -181,14 +182,14 @@ impl Settle {
     pub fn settle(
         &mut self,
         pool: Option<&Pool>,
-        grouped: &Grouped,
+        grouped: &Grouped<'_>,
         ranges: &Ranges,
         books: &mut Books<'_>,
         lot: &(impl Fn(PartyKey) -> Draws + Sync),
     ) -> Outcome {
         let mut out = Outcome::default();
         let shorts = self.net_all(pool, grouped, ranges, books, true);
-        let end = grouped.by_payer.starts.get(ranges.count()).copied().unwrap_or(0);
+        let end = grouped.end();
         self.removed.clear();
         self.removed.resize(end.div_ceil(BIT_WORD), 0);
         self.by_payer.iter_mut().for_each(|b| b.built = false);
@@ -200,7 +201,7 @@ impl Settle {
             });
             for idx in held {
                 if self.remove(books, grouped, idx, &mut next)
-                    && let Some(f) = grouped.by_payer.items.get(idx)
+                    && let Some(f) = grouped.flow(idx)
                 {
                     out.held.push(*f);
                 }
@@ -231,16 +232,17 @@ impl Settle {
                 let this: &Settle = self;
                 let decided = phx_exec::pool::map(pool, groups.len(), |i| {
                     groups.get(i).map_or_else(Vec::new, |g| {
-                        g.iter().flat_map(|p| this.decide(*p, books, grouped, ranges, lot)).collect::<Vec<usize>>()
+                        g.iter().flat_map(|p| this.decide(*p, books, grouped, ranges, lot)).collect::<Vec<_>>()
                     })
                 });
-                for idx in decided.into_iter().flatten() {
-                    if self.remove(books, grouped, idx, &mut next)
-                        && let Some(f) = grouped.by_payer.items.get(idx)
-                    {
-                        out.failed.push((*f, Cause::Payer));
+                let mut fails = Vec::new();
+                for (idx, f) in decided.into_iter().flatten() {
+                    if self.mark(idx) {
+                        fails.push(f);
+                        out.failed.push((f, Cause::Payer));
                     }
                 }
+                next.extend(self.take_off(pool, books, ranges, &fails));
                 still_short.extend(
                     groups
                         .iter()
@@ -267,7 +269,7 @@ impl Settle {
             let through = |p: PartyKey| books.bank_of(p).is_some_and(|b| banks.contains(&b));
             for idx in matching(pool, grouped, ranges, |f| through(f.payer) || through(f.payee)) {
                 if self.remove(books, grouped, idx, &mut next)
-                    && let Some(f) = grouped.by_payer.items.get(idx)
+                    && let Some(f) = grouped.flow(idx)
                 {
                     out.failed.push((*f, Cause::Bank));
                 }
@@ -286,7 +288,7 @@ impl Settle {
     /// A closed day's flows, commitments until the next business day: their nets added to what each account has
     /// pending, and each bank's customers' moves to its own, with nothing failed.
     #[clause("SET.2", "TIME.8")]
-    pub fn commit(&mut self, pool: Option<&Pool>, grouped: &Grouped, ranges: &Ranges, books: &mut Books<'_>) {
+    pub fn commit(&mut self, pool: Option<&Pool>, grouped: &Grouped<'_>, ranges: &Ranges, books: &mut Books<'_>) {
         let _ = self.net_all(pool, grouped, ranges, books, false);
         for (d, c) in books.deposits.iter_mut().zip(&self.cust) {
             *d += c;
@@ -305,7 +307,7 @@ impl Settle {
     fn net_all(
         &mut self,
         pool: Option<&Pool>,
-        grouped: &Grouped,
+        grouped: &Grouped<'_>,
         ranges: &Ranges,
         books: &mut Books<'_>,
         settle: bool,
@@ -405,15 +407,85 @@ impl Settle {
         }
     }
 
-    /// Removes a flow once; its payee, and the bank the payee is paid through, may be short for it.
-    fn remove(&mut self, books: &Books<'_>, grouped: &Grouped, idx: usize, next: &mut Vec<PartyKey>) -> bool {
+    /// Marks a flow removed; false if it already was.
+    fn mark(&mut self, idx: usize) -> bool {
         let (word, bit) = (idx / BIT_WORD, 1_u64 << (idx % BIT_WORD));
         let Some(w) = self.removed.get_mut(word) else { return false };
         if *w & bit != 0 {
             return false;
         }
         *w |= bit;
-        let Some(f) = grouped.by_payer.items.get(idx).copied() else { return false };
+        true
+    }
+
+    /// Takes a round's failed flows off their payers' and payees' nets, range by range on the pool, and each
+    /// customer's bank's moves with them; returns the parties the failures leave short, banks included.
+    fn take_off(&mut self, pool: Option<&Pool>, books: &Books<'_>, ranges: &Ranges, fails: &[Flow]) -> Vec<PartyKey> {
+        let n = ranges.count();
+        let mut sides: Vec<Vec<(PartyKey, i64)>> = (0..n).map(|_| Vec::new()).collect();
+        for f in fails {
+            for (p, v) in [(f.payer, f.amount), (f.payee, -f.amount)] {
+                if p != books.issuer
+                    && let Some(side) = sides.get_mut(ranges.of(p))
+                {
+                    side.push((p, v));
+                }
+            }
+        }
+        let width = 1_usize << ranges.range_bits();
+        let mut chunks: Vec<Option<&mut [i64]>> = (0..n).map(|_| None).collect();
+        for (k, net) in self.net.iter_mut().enumerate() {
+            let first = ranges.of_kind(u8::try_from(k).unwrap_or(u8::MAX)).start;
+            for (i, c) in net.chunks_mut(width).enumerate() {
+                if let Some(slot) = chunks.get_mut(first + i) {
+                    *slot = Some(c);
+                }
+            }
+        }
+        let jobs: Vec<TakeOff<'_>> = chunks
+            .into_iter()
+            .zip(sides)
+            .enumerate()
+            .filter(|(_, (_, side))| !side.is_empty())
+            .filter_map(|(r, (c, side))| c.map(|c| (r, c, side)))
+            .collect();
+        let n_banks = self.cust.len();
+        let done = map_items(pool, jobs, |(r, net, side)| {
+            let (_, first) = ranges.start(r);
+            let mut cust = vec![0_i64; n_banks];
+            let mut short = Vec::new();
+            for (p, v) in side {
+                let at = to_usize(p.slot().get() - first);
+                *cell(net, at) += v;
+                if let Some(b) = books.bank_of(p) {
+                    *cell(&mut cust, to_usize(b)) += v;
+                    if v < 0 {
+                        short.push(PartyKey::new(books.banks, Slot::new(b)));
+                    }
+                }
+                if v < 0 && p.kind() != books.banks && funds(books, p) + net.get(at).copied().unwrap_or(0) < 0 {
+                    short.push(p);
+                }
+            }
+            (cust, short)
+        });
+        let mut short = Vec::new();
+        for (cust, s) in done {
+            for (c, v) in self.cust.iter_mut().zip(cust) {
+                *c += v;
+            }
+            short.extend(s);
+        }
+        // A bank a customer was paid less through is only a candidate; the round's caller keeps those still short.
+        short
+    }
+
+    /// Removes a flow once; its payee, and the bank the payee is paid through, may be short for it.
+    fn remove(&mut self, books: &Books<'_>, grouped: &Grouped<'_>, idx: usize, next: &mut Vec<PartyKey>) -> bool {
+        if !self.mark(idx) {
+            return false;
+        }
+        let Some(f) = grouped.flow(idx).copied() else { return false };
         self.effect(books, &f, -1);
         next.push(f.payee);
         if let Some(b) = books.bank_of(f.payee) {
@@ -433,42 +505,38 @@ impl Settle {
         &self,
         p: PartyKey,
         books: &Books<'_>,
-        grouped: &Grouped,
+        grouped: &Grouped<'_>,
         ranges: &Ranges,
         lot: &(impl Fn(PartyKey) -> Draws + Sync),
-    ) -> Vec<usize> {
+    ) -> Vec<(usize, Flow)> {
         if !self.is_short(books, p) {
             return Vec::new();
         }
-        let standing: Vec<(usize, i64)> = self
-            .own(grouped, ranges, p, lot)
-            .into_iter()
-            .filter(|i| !self.is_removed(*i))
-            .filter_map(|i| grouped.by_payer.items.get(i).map(|f| (i, f.amount)))
-            .collect();
-        let mut left = self.standing(books, p) + standing.iter().map(|(_, a)| a).sum::<i64>();
+        let standing: Vec<(usize, Flow)> =
+            self.own(grouped, ranges, p, lot).into_iter().filter(|(i, _)| !self.is_removed(*i)).collect();
+        let mut left = self.standing(books, p) + standing.iter().map(|(_, f)| f.amount).sum::<i64>();
         let mut failing = false;
         let mut fails = Vec::new();
-        for (i, a) in standing {
-            failing = failing || (a > 0 && left < a);
+        for (i, f) in standing {
+            failing = failing || (f.amount > 0 && left < f.amount);
             if failing {
-                fails.push(i);
+                fails.push((i, f));
             } else {
-                left -= a;
+                left -= f.amount;
             }
         }
         fails
     }
 
-    /// A payer's flows in payment order: by order, then by the lot drawn for the payer, one draw a flow in the order
-    /// the flows were made, so the same whenever it is read.
+    /// A payer's flows in payment order, each with its place: by order, then by the lot drawn for the payer, one draw
+    /// a flow in the order the flows were made, so the same whenever it is read.
     fn own(
         &self,
-        grouped: &Grouped,
+        grouped: &Grouped<'_>,
         ranges: &Ranges,
         p: PartyKey,
         lot: &(impl Fn(PartyKey) -> Draws + Sync),
-    ) -> Vec<usize> {
+    ) -> Vec<(usize, Flow)> {
         let r = ranges.of(p);
         let (_, first) = ranges.start(r);
         let Some(by) = self.by_payer.get(r).filter(|b| b.built) else {
@@ -476,20 +544,22 @@ impl Settle {
         };
         let at = to_usize(p.slot().get() - first);
         let (Some(from), Some(to)) = (by.starts.get(at), by.starts.get(at + 1)) else { return Vec::new() };
+        let start = grouped.first(r);
         let mut draws = lot(p);
-        let mut keyed: Vec<(u8, u64, usize)> = by
+        let mut keyed: Vec<(u8, u64, usize, Flow)> = by
             .flows
-            .get(*from..*to)
+            .get(to_usize(*from)..to_usize(*to))
             .unwrap_or(&[])
             .iter()
-            .map(|i| (grouped.by_payer.items.get(*i).map_or(0, |f| f.order), draws.next_u64(), *i))
+            .map(|i| start + to_usize(*i))
+            .filter_map(|i| grouped.flow(i).map(|f| (f.order, draws.next_u64(), i, *f)))
             .collect();
-        keyed.sort_unstable();
-        keyed.into_iter().map(|(_, _, i)| i).collect()
+        keyed.sort_unstable_by_key(|(o, l, i, _)| (*o, *l, *i));
+        keyed.into_iter().map(|(_, _, i, f)| (i, f)).collect()
     }
 
     /// Indexes by payer every range the round's short parties fall in and no earlier round indexed, on the pool.
-    fn index(&mut self, pool: Option<&Pool>, grouped: &Grouped, ranges: &Ranges, want: &[PartyKey]) {
+    fn index(&mut self, pool: Option<&Pool>, grouped: &Grouped<'_>, ranges: &Ranges, want: &[PartyKey]) {
         let mut todo: Vec<usize> = want.iter().map(|p| ranges.of(*p)).collect();
         todo.dedup();
         let width = 1_usize << ranges.range_bits();
@@ -498,13 +568,16 @@ impl Settle {
         jobs.sort_unstable_by_key(|(r, _)| *r);
         phx_exec::pool::each(pool, jobs, |(r, by)| {
             let (_, first) = ranges.start(r);
-            let start = grouped.by_payer.starts.get(r).copied().unwrap_or(0);
-            let bucket = grouped.by_payer.bucket(r);
+            let start = grouped.first(r);
+            let count = grouped.first(r + 1) - start;
+            if u32::try_from(count).is_err() {
+                phx_num::capacity_exceeded!("a range's flows of a day", u32::MAX, count);
+            }
             let at = |f: &Flow| to_usize(f.payer.slot().get() - first);
             // A counting sort over the range's slots: each slot's count, its run's start, then each flow placed.
             by.starts.clear();
             by.starts.resize(width + 1, 0);
-            for f in bucket {
+            for f in grouped.payers(r) {
                 let Some(c) = by.starts.get_mut(at(f) + 1) else {
                     violation!(clause = "SET.4", "a flow grouped in a range its payer is not in", range = r);
                 };
@@ -515,14 +588,14 @@ impl Settle {
                 sum += *c;
                 *c = sum;
             }
-            let mut next: Vec<usize> = by.starts.clone();
+            let mut next: Vec<u32> = by.starts.clone();
             by.flows.clear();
-            by.flows.resize(bucket.len(), 0);
-            for (i, f) in bucket.iter().enumerate() {
+            by.flows.resize(count, 0);
+            for (i, f) in (0_u32..).zip(grouped.payers(r)) {
                 if let Some(n) = next.get_mut(at(f))
-                    && let Some(slot) = by.flows.get_mut(*n)
+                    && let Some(slot) = by.flows.get_mut(to_usize(*n))
                 {
-                    *slot = start + i;
+                    *slot = i;
                     *n += 1;
                 }
             }
@@ -573,13 +646,34 @@ fn unsettled(books: &mut Books<'_>, out: &Outcome) {
     }
 }
 
+/// `f` of every item, on the pool when one is given and on the calling thread otherwise, results in the items' order.
+fn map_items<I: Send, T: Send>(pool: Option<&Pool>, items: Vec<I>, f: impl Fn(I) -> T + Sync) -> Vec<T> {
+    match pool {
+        Some(p) => p.map_items(items, f),
+        None => items.into_iter().map(f).collect(),
+    }
+}
+
+/// A range's part in taking a round's failures off: the range, its parties' nets, and each failed flow's side there.
+type TakeOff<'a> = (usize, &'a mut [i64], Vec<(PartyKey, i64)>);
+
+/// What an account may draw on before the day's flows: its balance less what it holds, and its facility.
+fn funds(books: &Books<'_>, p: PartyKey) -> i64 {
+    let b = books.book(p.kind());
+    let i = slot(p);
+    match (b.balance.get(i), b.held.get(i), b.facility.get(i)) {
+        (Some(balance), Some(held), Some(facility)) => balance - held + facility,
+        _ => violation!(clause = "Law 5", "a party its kind's accounts do not hold", slot = i),
+    }
+}
+
 /// A range's lines: its parties' amounts, the lines a party, and the line each reason posts to on each side.
 type LineChunk<'a> = (&'a mut [i64], usize, &'a [Option<usize>], &'a [Option<usize>]);
 
 /// One range's pass: see `RangeJob`.
 fn range_pass(
     j: RangeJob<'_>,
-    grouped: &Grouped,
+    grouped: &Grouped<'_>,
     ranges: &Ranges,
     (issuer, banks, n_banks): (PartyKey, u8, usize),
     settle: bool,
@@ -610,18 +704,22 @@ fn range_pass(
             *cell(cust, to_usize(*b)) += v;
         }
     };
-    for c in grouped.by_payee.bucket(range) {
-        moved(c.payee, c.amount, net, &mut cust);
-        if let Some((amounts, w, _, received)) = lines.as_mut().filter(|_| c.payee != issuer) {
-            let line = received.get(usize::from(c.reason)).copied().flatten();
-            Lines::post(amounts, *w, at(c.payee), line, c.amount);
+    for credits in grouped.credit_slices(range) {
+        for c in credits {
+            moved(c.payee, c.amount, net, &mut cust);
+            if let Some((amounts, w, _, received)) = lines.as_mut().filter(|_| c.payee != issuer) {
+                let line = received.get(usize::from(c.reason)).copied().flatten();
+                Lines::post(amounts, *w, at(c.payee), line, c.amount);
+            }
         }
     }
-    for f in grouped.by_payer.bucket(range) {
-        moved(f.payer, -f.amount, net, &mut cust);
-        if let Some((amounts, w, paid, _)) = lines.as_mut().filter(|_| f.payer != issuer) {
-            let line = paid.get(usize::from(f.reason)).copied().flatten();
-            Lines::post(amounts, *w, at(f.payer), line, f.amount);
+    for flows in grouped.payer_slices(range) {
+        for f in flows {
+            moved(f.payer, -f.amount, net, &mut cust);
+            if let Some((amounts, w, paid, _)) = lines.as_mut().filter(|_| f.payer != issuer) {
+                let line = paid.get(usize::from(f.reason)).copied().flatten();
+                Lines::post(amounts, *w, at(f.payer), line, f.amount);
+            }
         }
     }
     let mut short = Vec::new();
@@ -640,11 +738,15 @@ fn range_pass(
 }
 
 /// Every flow `hit` picks, by its place among the grouped payers, in order: one pass over each range on the pool.
-fn matching(pool: Option<&Pool>, grouped: &Grouped, ranges: &Ranges, hit: impl Fn(&Flow) -> bool + Sync) -> Vec<usize> {
+fn matching(
+    pool: Option<&Pool>,
+    grouped: &Grouped<'_>,
+    ranges: &Ranges,
+    hit: impl Fn(&Flow) -> bool + Sync,
+) -> Vec<usize> {
     let found = phx_exec::pool::map(pool, ranges.count(), |r| {
-        let start = grouped.by_payer.starts.get(r).copied().unwrap_or(0);
-        let bucket = grouped.by_payer.bucket(r);
-        bucket.iter().enumerate().filter(|(_, f)| hit(f)).map(|(i, _)| start + i).collect::<Vec<usize>>()
+        let start = grouped.first(r);
+        grouped.payers(r).enumerate().filter(|(_, f)| hit(f)).map(|(i, _)| start + i).collect::<Vec<usize>>()
     });
     found.concat()
 }
