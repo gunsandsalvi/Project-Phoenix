@@ -40,9 +40,7 @@ impl Row for Due {
     }
 }
 
-/// The reasons the core's flows are made for, by their code.
-pub const PENSION: u8 = 1;
-pub const ESTATE: u8 = 2;
+pub use crate::consts::reason::{ESTATE, PENSION, WAGE};
 
 /// A family of dated contracts: its store, the reason its flows carry, and the schedules its contracts' dates are
 /// read from, each with its currency and the payment order its payer gives the family's flows.

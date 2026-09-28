@@ -617,6 +617,18 @@ fn core_of(
         management: frm.management(),
     })
     .map_err(|e| AssemblyErrors(vec![e]))?;
+    let _ = core
+        .open_jobs(&crate::core_jobs::JobsOpening {
+            books,
+            register: &p.c.register,
+            countries: &opening,
+            calendar,
+            today,
+            streams: &p.c.streams,
+            stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
+        })
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+
     let _ = population;
     Ok(core)
 }

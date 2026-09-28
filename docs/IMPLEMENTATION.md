@@ -727,7 +727,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (a moved to i; b done: firms of one kind counted, placed, banked, priced from their own cost and given the output their prices win)
+**Status**: building (a moved to i; b done; c1 done: persons' lasting identity, the opening's jobs as contracts)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
@@ -754,15 +754,22 @@ world switches to the core.
     from SOC's rule; no copy of the books.
   - b. Firms of one kind on the core (done): counts per region and industry, productivity, sites, the day-zero price
     and the output its price wins.
-  - c. Labour on the core: the opening's staff derived and hired as employment contracts, wages by shape, the hiring
-    round, layoffs and retirement.
+  - c. Labour on the core: the opening's staff derived and hired as employment contracts (c1, done), wages by shape,
+    the hiring round, layoffs and retirement (c2, c3). The self-employed hold no employment contract: the employees
+    the books draw (49,453 at 150,000 persons, seed 1) are fewer than the employed firms are counted from (70,861);
+    the rest are own-account workers, whose businesses are their own (FRM.23, PTY.3), opened in c3 as persons running
+    unincorporated firms of the firm kind, with the firms' count.
   - d. Goods and services on the core: plant and stocks derived and held, production within plant, the retail and
-    between-firms meetings with their goods legs, spoilage, wear and shipments, the goods family.
+    between-firms meetings with their goods legs, spoilage, wear and shipments, the goods family. Until firms sell on
+    the core they pay wages from their opening deposits alone: at the first payday 1,467 of 67,478 flows failed
+    (150,000 persons, seed 1); d's revenue settles it.
   - e. Households' spending, firms' price reviews and the outlooks (HH, FRM.5, VAL), the firms' management types
     drawn. Each `_small`/`_large` handler pair is merged as its system ports, in c to e.
   - f. Credit and the central bank on the core: loans by shape, the lending placeholder, deposit and lending rates,
     reserves and the fund stage; arrears from failed flows at 2d.
-  - g. The state on the core: taxes withheld and at the till, benefits, bills and the payment order.
+  - g. The state on the core: taxes withheld and at the till, benefits, bills and the payment order; the public
+    agencies with their staff (SOC.2, SOC.8), taking the jobs the treasury holds in their place since c1 (the armed
+    forces', no firm's way taking them) and public administration's employees, now dealt to firms.
   - h. Statistics, indices and accounts on the core; the audit's families; the Stage 0 and Stage 1 checks on the
     core; the core saved and loaded.
   - i. The switch: the committed world is the core's; the old kernel's crates and modules, its checks and the

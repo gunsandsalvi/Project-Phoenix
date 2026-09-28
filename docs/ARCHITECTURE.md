@@ -2035,6 +2035,14 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   (`SRV.price_weight`); the distance term joins when the meetings' places are on the core. The sheet's firm deposits
   are shared over the firms by their turnover at those prices; the turnover is 0.93–0.96 of the accounts' output
   value, the cheaper firms selling more of the units (seed 1, 150,000 persons).
+- **Jobs on the core** (`core_jobs`): each job the books hold on an employment line is read once a line (its wage,
+  schedule and next date, region and occupation) and dealt to a firm in its region: a region's jobs of an occupation
+  are shared over its firms by largest remainder (`deal`) on the hours their output takes of the occupation (their
+  way's hours a unit, fewer by their productivity, `sys_frm::rules::way::own_hours`, times their output), in an order
+  drawn by lot under the firms' opening stream. Each is a contract in the family `LAB.employment` from firm to
+  household, naming the person by its identity and paying the wage on the job's dates. Jobs no firm's way in their
+  region takes (the armed forces') are the state's, contracts from their country's treasury in `LAB.public_employment`,
+  until the public agencies hold their staff.
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, stores, partition, flows, wheel, settlement,
   facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over

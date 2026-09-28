@@ -139,7 +139,7 @@ pub const CORE_RANGE_BITS: u32 = 12;
 pub const CORE_WHEEL_DAYS: u32 = 64;
 /// A core firm's record: its product, its region, the tile it is sited on, its productivity, the log of its factor
 /// over its way's, in billionths, its posted price of a lot and its output a year in units; the purposes its opening
-/// draws are keyed by; and the column of the value added's parts that is labour's.
+/// draws and its jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
 pub mod firm {
     pub const RECORD: usize = 6;
     pub const PRODUCT: usize = 0;
@@ -149,8 +149,15 @@ pub mod firm {
     pub const PRICE: usize = 4;
     pub const OUTPUT: usize = 5;
     pub const PRODUCTIVITY_ONE: f64 = 1_000_000_000.0;
-    pub const PURPOSES: u32 = 2;
+    pub const PURPOSES: u32 = 3;
     pub const PRODUCTIVITY_PURPOSE: u32 = 0;
     pub const SITE_PURPOSE: u32 = 1;
+    pub const JOBS_PURPOSE: u32 = 2;
     pub const COMPENSATION: usize = 0;
+}
+/// The reasons the core's flows are made for, by their code.
+pub mod reason {
+    pub const PENSION: u8 = 1;
+    pub const ESTATE: u8 = 2;
+    pub const WAGE: u8 = 3;
 }
