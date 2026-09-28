@@ -8,3 +8,5 @@ pub const PERCENT: f64 = 100.0;
 pub const DAYS_A_YEAR: f64 = 365.25;
 /// A fact held at six places, as the required return is.
 pub const FIXED_SCALE: f64 = 1_000_000.0;
+/// Days in a week, over which a staff's weekly hours are spread.
+pub const DAYS_A_WEEK: f64 = 7.0;

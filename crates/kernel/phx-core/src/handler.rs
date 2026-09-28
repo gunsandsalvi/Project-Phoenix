@@ -210,6 +210,8 @@ pub trait GoodsView: core::fmt::Debug {
     fn outlook(&self, slot: Slot, product: u16, grade: u8, method: u16) -> Missing<i64>;
     /// The money the row's party holds on its account; none without an account.
     fn money(&self, slot: Slot) -> Missing<i64>;
+    /// The hours a week the row's party's employees work for it, as its employment lines hold them.
+    fn staff_hours(&self, slot: Slot) -> Missing<i64>;
     /// The country the row stands in.
     fn country(&self, slot: Slot) -> Missing<phx_id::CountryId>;
     /// Whether the good's market where the row stands last met with no seller.
@@ -262,6 +264,9 @@ impl GoodsView for NoGoods {
         Missing::Absent
     }
     fn money(&self, _: Slot) -> Missing<i64> {
+        Missing::Absent
+    }
+    fn staff_hours(&self, _: Slot) -> Missing<i64> {
         Missing::Absent
     }
     fn country(&self, _: Slot) -> Missing<phx_id::CountryId> {
@@ -404,6 +409,11 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     /// The money the row's party holds on its account.
     pub fn money(&self, slot: Slot) -> Missing<i64> {
         self.parts.goods.money(slot)
+    }
+
+    /// The hours a week the row's party's employees work for it.
+    pub fn staff_hours(&self, slot: Slot) -> Missing<i64> {
+        self.parts.goods.staff_hours(slot)
     }
 
     /// The country the row stands in.

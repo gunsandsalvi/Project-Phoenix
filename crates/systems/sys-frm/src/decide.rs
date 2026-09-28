@@ -3,8 +3,8 @@
 //! outlook, price or unit cost yet takes no decision, which waits for its opening accounts.
 
 use if_firm::facts::{
-    Capacity, DeliveredAtReview, DeliveredSeen, ExpectedSales, LastReview, Markup, Method, OutputRate, Price,
-    PriceAttention, RequiredReturn, SalesWidth, Switching, UnitCost, WagePerHour,
+    Capacity, DeliveredAtReview, DeliveredSeen, ExpectedSales, HoursAUnit, LastReview, Markup, Method, OutputRate,
+    Price, PriceAttention, RequiredReturn, SalesWidth, Switching, UnitCost, WagePerHour,
 };
 use if_firm::known::{Product, WayUsed};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
@@ -237,8 +237,8 @@ declare_handler! {
     pub AttendSmall = "FRM.attend_small" {
         substep: S5b,
         table: "small_firm",
-        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Switching, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
-        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen, Method],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Switching, Markup, Price, WagePerHour, WayUsed, HoursAUnit, UnitCost, RequiredReturn, Capacity],
+        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen, Method, OutputRate],
         intents: [Transform, OrderIntent, ShopIntent, ShipIntent, CloseIntent],
         clause: "REP.38",
         body: attend,
@@ -250,8 +250,8 @@ declare_handler! {
     pub AttendLarge = "FRM.attend_large" {
         substep: S5b,
         table: "firm",
-        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Switching, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
-        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen, Method],
+        reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Switching, Markup, Price, WagePerHour, WayUsed, HoursAUnit, UnitCost, RequiredReturn, Capacity],
+        writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen, Method, OutputRate],
         intents: [Transform, OrderIntent, ShopIntent, ShipIntent, CloseIntent],
         clause: "REP.38",
         body: attend,
@@ -449,11 +449,12 @@ where
         + Reads<Price>
         + Reads<WagePerHour>
         + Reads<WayUsed>
-        + Reads<OutputRate>
+        + Reads<HoursAUnit>
         + Reads<UnitCost>
         + Reads<RequiredReturn>
         + Reads<Capacity>
         + Reads<Switching>
+        + Writes<OutputRate>
         + Writes<PriceAttention>
         + Writes<ExpectedSales>
         + Writes<SalesWidth>

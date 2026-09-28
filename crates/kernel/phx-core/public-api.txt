@@ -793,6 +793,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::record(&self, phx_id::ids::Slot, u16, u
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
+pub fn phx_core::handler::Ctx<'a, H, S>::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
 pub fn phx_core::handler::Ctx<'a, H, S>::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
@@ -854,6 +855,7 @@ pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::NoGoods::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
@@ -891,6 +893,7 @@ pub fn phx_core::handler::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_co
 pub fn phx_core::handler::GoodsView::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::GoodsView::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::GoodsView::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
@@ -910,6 +913,7 @@ pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::NoGoods::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub trait phx_core::handler::HandlerDecl: 'static
@@ -2681,6 +2685,7 @@ pub fn phx_core::handler::Ctx<'a, H, S>::record(&self, phx_id::ids::Slot, u16, u
 pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
 pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
+pub fn phx_core::handler::Ctx<'a, H, S>::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
 pub fn phx_core::handler::Ctx<'a, H, S>::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
@@ -3231,6 +3236,7 @@ pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::NoGoods::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub struct phx_core::NotObserver
@@ -3729,6 +3735,7 @@ pub fn phx_core::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handl
 pub fn phx_core::GoodsView::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::GoodsView::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::GoodsView::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
@@ -3748,6 +3755,7 @@ pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::NoGoods::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub trait phx_core::HandlerDecl: 'static

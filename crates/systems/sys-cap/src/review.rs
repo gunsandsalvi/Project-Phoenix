@@ -4,7 +4,7 @@
 //! its last and, where its plant keeps it from making what its staff could and its sales call for, weighs buying more
 //! of the scarcest kind.
 
-use if_firm::facts::{Capacity, DeliveredAtInvest, OutputRate, Price, RequiredReturn, SoldAtInvest, UnitCost};
+use if_firm::facts::{Capacity, DeliveredAtInvest, HoursAUnit, Price, RequiredReturn, SoldAtInvest, UnitCost};
 use if_firm::known::{Product, WayUsed};
 use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
 use phx_core::{Emits, declare_handler};
@@ -14,7 +14,7 @@ use phx_market::intents::InvestIntent;
 use phx_num::Missing;
 use phx_rand::float::{floor_to_i64, from_i64};
 
-use crate::consts::{DAYS_A_YEAR, FIXED_SCALE};
+use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, FIXED_SCALE};
 use crate::rules::capacity::{capacity, efficient_units};
 use crate::rules::invest::{invests, waiting_multiple};
 
@@ -47,7 +47,7 @@ declare_handler! {
     pub InvestSmall = "CAP.invest_small" {
         substep: S5b,
         table: "small_firm",
-        reads: [WayUsed, Product, OutputRate, Price, UnitCost, RequiredReturn, DeliveredAtInvest, SoldAtInvest],
+        reads: [WayUsed, Product, HoursAUnit, Price, UnitCost, RequiredReturn, DeliveredAtInvest, SoldAtInvest],
         writes: [DeliveredAtInvest, SoldAtInvest],
         intents: [InvestIntent],
         clause: "CAP.3",
@@ -60,7 +60,7 @@ declare_handler! {
     pub InvestLarge = "CAP.invest_large" {
         substep: S5b,
         table: "firm",
-        reads: [WayUsed, Product, OutputRate, Price, UnitCost, RequiredReturn, DeliveredAtInvest, SoldAtInvest],
+        reads: [WayUsed, Product, HoursAUnit, Price, UnitCost, RequiredReturn, DeliveredAtInvest, SoldAtInvest],
         writes: [DeliveredAtInvest, SoldAtInvest],
         intents: [InvestIntent],
         clause: "CAP.3",
@@ -123,6 +123,19 @@ where
     }
 }
 
+/// What the firm's staff make a day: the hours a week they work over its hours a unit.
+fn staff_rate<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot) -> Option<f64>
+where
+    H: HandlerDecl + Reads<HoursAUnit>,
+    S: FactStore + ?Sized,
+{
+    let hours_a_unit = read::<HoursAUnit, H, S>(ctx, row).filter(|h| *h > 0.0)? / FIXED_SCALE;
+    match ctx.staff_hours(row) {
+        Missing::Present(h) => Some(from_i64(h) / DAYS_A_WEEK / hours_a_unit),
+        Missing::Absent => None,
+    }
+}
+
 /// The investment review: what the firm sold since its last, a day's worth of it, and how much that moved from the
 /// period before, its uncertainty about its sales. Where the plant makes less a day than its staff could and its
 /// sales call for, it weighs buying the plant of the scarcest kind that closes the gap: the margin the extra output
@@ -135,7 +148,7 @@ where
     H: HandlerDecl
         + Reads<WayUsed>
         + Reads<Product>
-        + Reads<OutputRate>
+        + Reads<HoursAUnit>
         + Reads<Price>
         + Reads<UnitCost>
         + Reads<RequiredReturn>
@@ -160,7 +173,7 @@ where
     let (Some(before), Missing::Present(way), Some(staff), Some(price), Some(cost), Some(required)) = (
         before,
         ctx.read::<WayUsed>(row),
-        read::<OutputRate, H, S>(ctx, row).map(|r| r / phx_core::fact_scale(<OutputRate as phx_core::FactDef>::ITEM)),
+        staff_rate(ctx, row),
         read::<Price, H, S>(ctx, row),
         read::<UnitCost, H, S>(ctx, row),
         read::<RequiredReturn, H, S>(ctx, row),

@@ -300,6 +300,7 @@ struct RowGoods {
     elsewhere: (usize, usize),
     money: Missing<i64>,
     net_assets: Missing<i64>,
+    staff_hours: Missing<i64>,
 }
 
 impl RowGoods {
@@ -315,6 +316,7 @@ impl RowGoods {
             elsewhere: (0, 0),
             money: Missing::Absent,
             net_assets: Missing::Absent,
+            staff_hours: Missing::Absent,
         }
     }
 }
@@ -444,6 +446,9 @@ impl GoodsView for RunGoods {
     }
     fn money(&self, slot: Slot) -> Missing<i64> {
         self.row(slot).map_or(Missing::Absent, |r| r.money)
+    }
+    fn staff_hours(&self, slot: Slot) -> Missing<i64> {
+        self.row(slot).map_or(Missing::Absent, |r| r.staff_hours)
     }
 }
 
@@ -1392,7 +1397,7 @@ impl World {
                 let ccy = phx_ledger::opening::currency(country);
                 goods.money = self.books.money_held(row.party, ccy);
             }
-            goods.net_assets = self.book_worth(place, at, goods_cost);
+            (goods.net_assets, goods.staff_hours) = self.book_worth(place, at, goods_cost);
             let delivered = out.delivered.len();
             for (good, q) in ledger.goods.delivered(row.party) {
                 if let Missing::Present(key) = ledger.goods.key(good) {
@@ -1406,18 +1411,33 @@ impl World {
 
     /// What winding a row down would return beyond the money it keeps either way: the goods it holds at
     /// their cost, as the row's holdings were read, less what it owes, a liability's balance being negative; its plant
-    /// returns nothing, since no market buys used plant yet. None where a debt carries no balance to read.
-    fn book_worth(&self, place: u16, slot: Slot, goods_cost: i128) -> Missing<i64> {
+    /// returns nothing, since no market buys used plant yet. None where a debt carries no balance to read. And the
+    /// hours a week its employees work for it.
+    fn book_worth(&self, place: u16, slot: Slot, goods_cost: i128) -> (Missing<i64>, Missing<i64>) {
         let arenas = self.books.parties.holder(place);
-        let mut total = goods_cost;
+        let lines = &self.books.ledger.lines;
+        let employment = self.labour.kind.map(|k| lines.kind_index(k.line));
+        let (mut total, mut balanced, mut hours) = (goods_cost, true, 0_i64);
         for r in phx_ledger::rows::iter(arenas, slot) {
             if r.side() != phx_ledger::algebra::Side::Liability {
                 continue;
             }
-            let Missing::Present(balance) = r.optional.balance else { return Missing::Absent };
-            total += i128::from(balance);
+            // Employment owes wages as they fall due, never a balance, and its members' hours are the staff's.
+            if employment.is_some_and(|k| lines.kind_of(r.row.line) == k) {
+                let terms = self.books.ledger.terms.get(lines.terms(r.row.line));
+                if let Some(h) = terms.class.get(if_labour::class::HOURS) {
+                    hours += i64::from(r.row.count) * i64::from(*h);
+                }
+                continue;
+            }
+            match r.optional.balance {
+                Missing::Present(balance) => total += i128::from(balance),
+                Missing::Absent => balanced = false,
+            }
         }
-        i64::try_from(total).map_or(Missing::Absent, Missing::Present)
+        let worth =
+            if balanced { i64::try_from(total).map_or(Missing::Absent, Missing::Present) } else { Missing::Absent };
+        (worth, Missing::Present(hours))
     }
 
     /// A deposit as its right's holder sees it.

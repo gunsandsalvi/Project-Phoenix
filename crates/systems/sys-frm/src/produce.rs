@@ -2,9 +2,9 @@
 //! make and its stocks of inputs allow; what it offers other firms of what it then holds; and what it buys of the
 //! inputs it will need, goods at the goods markets and services at retail, where a service is made as it is sold.
 
-use if_firm::facts::{Capacity, ExpectedSales, OutputRate, Price, RequiredReturn, UnitCost};
+use if_firm::facts::{Capacity, ExpectedSales, HoursAUnit, OutputRate, Price, RequiredReturn, UnitCost};
 use if_firm::known::{Product, WayUsed};
-use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads};
+use phx_core::handler::{Ctx, FactStore, HandlerDecl, Reads, Writes};
 use phx_core::{Emits, Register};
 use phx_id::Slot;
 use phx_ledger::instruction::{Source, name_code};
@@ -16,7 +16,7 @@ use phx_market::retail::Want;
 use phx_num::{Missing, PriceRaw};
 use phx_rand::float::{floor_to_i64, from_i64, from_u64};
 
-use crate::consts::{DAYS_A_YEAR, FIXED_SCALE, PER_UNIT_SCALE, PPM};
+use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, FIXED_SCALE, PER_UNIT_SCALE, PPM};
 use crate::rules::inputs;
 use crate::rules::produce::{Produce, ProduceIn, target};
 
@@ -138,25 +138,27 @@ where
 }
 
 /// A production period: the output the production rule sets from the sales the firm expects, the stock it aims to
-/// cover them with and what it holds, its staff's or its plant's output over the period, whichever is less, and its
+/// cover them with and what it holds, its staff's output over the period — the hours a week its employment lines hold
+/// at its hours a unit, written as its output rate — or its plant's, whichever is less, and its
 /// price against its cost carried
 /// over the days a unit takes at the return it requires; made, when its stocks of inputs allow, by its way, whose
 /// inputs the kernel takes. Then its stock of its product offered to other firms at its posted price, less what that
 /// price leaves it after financing its stock; and for the next period, each storable input it will be short of
 /// bought at the goods market when its use is worth its price there, and the services its way uses bought at retail.
-/// A firm without its product, way, rate, outlook, cost or price decides nothing.
+/// A firm without its product, way, hours a unit, outlook, cost or price decides nothing.
 #[clause("FRM.4", "FRM.7", "GDS.5", "GDS.6", "TEC.9", "CAP.9")]
 pub(crate) fn produce<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
     H: HandlerDecl
         + Reads<Product>
         + Reads<WayUsed>
-        + Reads<OutputRate>
+        + Reads<HoursAUnit>
         + Reads<ExpectedSales>
         + Reads<UnitCost>
         + Reads<Price>
         + Reads<RequiredReturn>
         + Reads<Capacity>
+        + Writes<OutputRate>
         + Emits<Transform>
         + Emits<OrderIntent>
         + Emits<ShopIntent>
@@ -165,10 +167,10 @@ where
 {
     let own: &crate::Own = ctx.own::<crate::Own>();
     let (m, plant) = (own.management(), own.plant());
-    let (Some(p), Some(w), Some(rate), Some(expected), Some(cost), Some(price), Some(required)) = (
+    let (Some(p), Some(w), Some(hours_a_unit), Some(expected), Some(cost), Some(price), Some(required)) = (
         read::<Product, H, S>(ctx, row).and_then(|p| u16::try_from(p).ok()),
         read::<WayUsed, H, S>(ctx, row).and_then(|w| usize::try_from(w).ok()),
-        read::<OutputRate, H, S>(ctx, row),
+        read::<HoursAUnit, H, S>(ctx, row).filter(|h| *h > 0),
         read::<ExpectedSales, H, S>(ctx, row),
         read::<UnitCost, H, S>(ctx, row),
         read::<Price, H, S>(ctx, row),
@@ -177,7 +179,13 @@ where
         return;
     };
     let (Some(way), Some(traded)) = (plant.ways.get(w), plant.products.get(usize::from(p))) else { return };
-    let staff = from_i64(rate) / phx_core::fact_scale(<OutputRate as phx_core::FactDef>::ITEM);
+    let Missing::Present(hours) = ctx.staff_hours(row) else { return };
+    // What its staff make a day at its hours a unit, its standing flow as the other decisions read it.
+    let staff = from_i64(hours) / DAYS_A_WEEK / (from_i64(hours_a_unit) / FIXED_SCALE);
+    if let Some(rate) = floor_to_i64(f64::round(staff * phx_core::fact_scale(<OutputRate as phx_core::FactDef>::ITEM)))
+    {
+        ctx.write::<OutputRate>(row, rate);
+    }
     let days = m.production_days;
     let financing = from_i64(required) / FIXED_SCALE * days / DAYS_A_YEAR;
     let storable = |q: u16| plant.products.get(usize::from(q)).is_some_and(|t| t.storable);

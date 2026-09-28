@@ -41,7 +41,10 @@ struct Firm {
 /// The fact names an employer's decision reads.
 const PRODUCT: &str = "FRM.product";
 const PRICE: &str = "FRM.price";
-const OUTPUT: &str = "FRM.output_rate";
+const EXPECTED: &str = "FRM.expected_sales";
+const PLANT: &str = "CAP.capacity";
+/// The days a firm's production period runs, over which its expected sales are counted.
+const PRODUCTION_DAYS: &str = "FRM.production_days";
 const HURDLE: &str = "FRM.required_return";
 const FIRM_HOURS: &str = "FRM.hours_a_unit";
 /// The attribute an employer agent's persons employed are kept in.
@@ -71,7 +74,8 @@ impl World {
     }
 
     /// An employer's facts its decision reads, none when any is missing: it decides nothing before its opening
-    /// accounts give it a price and a planned output.
+    /// accounts give it a price and expected sales. Its planned output a day is its expected sales over its production
+    /// period, within what its plant can make.
     fn firm_facts(&mut self, rows: Rows, slot: Slot) -> Option<Firm> {
         let first = self.books.parties.first_cell_place();
         let store: &mut dyn FactStore = if rows.individuals {
@@ -84,16 +88,23 @@ impl World {
             Missing::Present(v) => Some(v),
             Missing::Absent => None,
         };
-        let (product, price, output, hurdle) = (read(PRODUCT)?, read(PRICE)?, read(OUTPUT)?, read(HURDLE)?);
+        let (product, price, expected, hurdle) = (read(PRODUCT)?, read(PRICE)?, read(EXPECTED)?, read(HURDLE)?);
         let hours = read(FIRM_HOURS)?;
+        let plant = read(PLANT);
+        let days = phx_rand::float::from_u64(self.register.count(PRODUCTION_DAYS).ok()?);
+        // It plans for the sales it expects, within what its plant can make.
+        let wanted = phx_rand::float::from_i64(expected) / days;
+        let units_a_day = match plant.map(phx_rand::float::from_i64) {
+            Some(p) if p < wanted => p,
+            _ => wanted,
+        };
         let scale = |exp: u8| (0..exp).fold(1.0, |s, _| s * phx_core::consts::DECIMAL_BASE);
         let lot = phx_rand::float::from_i64(self.goods_frame.base(u16::try_from(product).ok()?));
         // A posted price is for a lot of the product; the work is weighed by what a unit fetches.
         Some(Firm {
             product,
             price: phx_rand::float::from_i64(price) / lot,
-            units_a_day: phx_rand::float::from_i64(output)
-                / phx_core::fact_scale(<if_firm::facts::OutputRate as phx_core::FactDef>::ITEM),
+            units_a_day,
             hurdle: phx_rand::float::from_i64(hurdle) / scale(crate::consts::HURDLE_EXP),
             hours_a_unit: phx_rand::float::from_i64(hours) / scale(crate::consts::HOURS_EXP),
         })

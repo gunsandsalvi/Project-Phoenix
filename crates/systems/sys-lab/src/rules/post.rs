@@ -14,46 +14,69 @@ fn jobs(hours: f64, job: f64) -> u32 {
     n
 }
 
-/// An employer's decision in one occupation family, from the hours its planned output needs.
-fn one(i: &PostIn, n: &Need, out: &mut PostOut) {
-    let wanted = i.units_a_day * n.hours_a_unit;
-    // An hour's output at the price outlook against the hour's wage and what financing it until the sale costs.
-    let worth = if n.hours_a_unit > 0.0 { i.price / n.hours_a_unit } else { 0.0 };
-    let cost = n.wage_hour * (1.0 + i.financing);
-    let open = jobs(n.open_hours, n.job_hours);
-    let surplus = n.staff_hours - wanted;
-    if surplus >= n.job_hours {
-        out.layoff.push((n.occupation, jobs(surplus, n.job_hours)));
-        if open > 0 {
-            out.withdraw.push((n.occupation, open));
-        }
-        return;
-    }
-    if worth <= cost || worth < i.minimum_hour {
-        if open > 0 {
-            out.withdraw.push((n.occupation, open));
-        }
-        return;
-    }
-    let short = wanted - n.staff_hours - n.open_hours;
-    if short >= n.job_hours {
-        out.post.push((n.occupation, jobs(short, n.job_hours)));
-    } else if -short >= n.job_hours {
-        out.withdraw.push((n.occupation, jobs(-short, n.job_hours)));
-    }
+/// An occupation's hours short of its part of what the planned output needs: negative when it holds more.
+fn short(i: &PostIn, n: &Need) -> f64 {
+    i.units_a_day * n.hours_a_unit - n.staff_hours
 }
 
-/// An employer's vacancies and layoffs on its production schedule: in each occupation family it posts the whole jobs
-/// its planned output still needs beyond its staff and its open vacancies, when an hour's output is worth more than
-/// its wage and the cost of financing that wage until the output sells, and than the least the law lets an hour pay;
-/// it withdraws the vacancies it no longer needs; and it lays off the whole jobs by which its staff's hours exceed
-/// what its planned output needs, since it cannot use that work.
+/// The occupations in the order `key` ranks them, the largest first.
+fn ranked(i: &PostIn, key: impl Fn(&Need) -> f64) -> Vec<&Need> {
+    let mut order: Vec<&Need> = i.needs.iter().collect();
+    order.sort_by(|a, b| key(b).total_cmp(&key(a)));
+    order
+}
+
+/// An employer's vacancies and layoffs on its production schedule. Its staff's hours make its output together, so it
+/// weighs them together: when they exceed what its planned output needs by a whole job it lays off that surplus, from
+/// the occupations furthest over their part of its way's mix, and withdraws its vacancies, since it cannot use the work;
+/// otherwise it posts the whole jobs its planned output still needs beyond its staff and its open vacancies, in the
+/// occupations furthest short of their part, when an hour's output is worth more than the hour's wage and the cost of
+/// financing it until the output sells, and than the least the law lets an hour pay; and it withdraws the vacancies
+/// an occupation no longer needs.
 #[clause("LAB.4", "LAB.11", "FRM.7")]
 #[must_use]
 pub fn post(i: &PostIn) -> PostOut {
     let mut out = PostOut::default();
-    for n in &i.needs {
-        one(i, n, &mut out);
+    let way_hours: f64 = i.needs.iter().map(|n| n.hours_a_unit).sum();
+    let staff: f64 = i.needs.iter().map(|n| n.staff_hours).sum();
+    let open: f64 = i.needs.iter().map(|n| n.open_hours).sum();
+    let wanted = i.units_a_day * way_hours;
+    let least_job = i.needs.iter().map(|n| n.job_hours).reduce(|a, b| if b < a { b } else { a }).unwrap_or(0.0);
+    if least_job > 0.0 && staff - wanted >= least_job {
+        let mut surplus = staff - wanted;
+        for n in ranked(i, |n| -short(i, n)) {
+            let over = -short(i, n);
+            let take = jobs(if over < surplus { over } else { surplus }, n.job_hours);
+            if take > 0 {
+                out.layoff.push((n.occupation, take));
+                surplus -= f64::from(take) * n.job_hours;
+            }
+        }
+        out.withdraw
+            .extend(i.needs.iter().map(|n| (n.occupation, jobs(n.open_hours, n.job_hours))).filter(|w| w.1 > 0));
+        return out;
+    }
+    // An hour of any occupation adds its share of a unit, the way's hours making one together.
+    let worth = if way_hours > 0.0 { i.price / way_hours } else { 0.0 };
+    let mut left = wanted - staff - open;
+    for n in ranked(i, |n| short(i, n) - n.open_hours) {
+        let open_jobs = jobs(n.open_hours, n.job_hours);
+        if worth <= n.wage_hour * (1.0 + i.financing) || worth < i.minimum_hour {
+            if open_jobs > 0 {
+                out.withdraw.push((n.occupation, open_jobs));
+            }
+            continue;
+        }
+        let gap = short(i, n) - n.open_hours;
+        let wanted_here = if gap < left { gap } else { left };
+        if wanted_here >= n.job_hours {
+            let k = jobs(wanted_here, n.job_hours);
+            out.post.push((n.occupation, k));
+            left -= f64::from(k) * n.job_hours;
+        } else if -gap >= n.job_hours && open_jobs > 0 {
+            let beyond = jobs(-gap, n.job_hours);
+            out.withdraw.push((n.occupation, if beyond < open_jobs { beyond } else { open_jobs }));
+        }
     }
     out
 }
@@ -85,5 +108,22 @@ mod tests {
         let out = post(&idle);
         assert_eq!(out.layoff, vec![(7, 1)], "10 hours needed of 24: one whole job laid off");
         assert!(out.post.is_empty());
+    }
+
+    #[test]
+    fn staff_hours_are_weighed_together() {
+        let two = |a: f64, b: f64| {
+            let mut other = need(b, 0.0);
+            other.occupation = 3;
+            vec![need(a, 0.0), other]
+        };
+        // Each occupation takes half an hour a unit: 50 units need 25 hours of each, 50 in all.
+        let base = PostIn { price: 30.0, units_a_day: 50.0, financing: 0.1, minimum_hour: 0.0, needs: two(42.0, 8.0) };
+        let out = post(&base);
+        assert!(out.layoff.is_empty() && out.post.is_empty(), "50 hours held of 50 needed: none laid off, none posted");
+        let short = PostIn { needs: two(34.0, 0.0), ..base.clone() };
+        assert_eq!(post(&short).post, vec![(3, 2)], "16 hours short, posted where the mix is furthest short");
+        let long = PostIn { units_a_day: 30.0, needs: two(42.0, 8.0), ..base };
+        assert_eq!(post(&long).layoff, vec![(7, 2)], "20 hours beyond the 30 needed: two whole jobs from the fullest");
     }
 }
