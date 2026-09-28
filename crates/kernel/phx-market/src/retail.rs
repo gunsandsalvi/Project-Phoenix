@@ -104,18 +104,20 @@ pub fn paid(units: i64, price: i64, lot: i64) -> i64 {
 }
 
 /// Whole units a buyer wants at a price posted for a lot: its units, or the units its money buys.
-fn units_wanted(want: Want, lot: i64, price: i64) -> i64 {
+pub(crate) fn units_wanted(want: Want, lot: i64, price: i64) -> i64 {
     match want {
         Want::Units(q) => q,
-        Want::Money(m) if price > 0 => {
-            i64::try_from(i128::from(m) * i128::from(lot) / i128::from(price)).unwrap_or(i64::MAX)
-        }
+        // A word's product divides in a word; only a larger one needs two.
+        Want::Money(m) if price > 0 => match m.checked_mul(lot) {
+            Some(p) => p / price,
+            None => i64::try_from(i128::from(m) * i128::from(lot) / i128::from(price)).unwrap_or(i64::MAX),
+        },
         Want::Money(_) => 0,
     }
 }
 
 /// What a buyer still wants after buying `units` at `price` a lot.
-fn less(want: Want, lot: i64, units: i64, price: i64) -> Want {
+pub(crate) fn less(want: Want, lot: i64, units: i64, price: i64) -> Want {
     match want {
         Want::Units(q) => Want::Units(q - units),
         Want::Money(m) => Want::Money(m - paid(units, price, lot)),

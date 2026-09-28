@@ -776,9 +776,10 @@ table's probabilities against the weights, exactly, and `rationing_by_lot_order_
 **Live checks**: none until S1.24.
 
 **Budget**: a choice at most 50 ns and a rationing round at most 30 ns per unserved buyer-product, on the bench.
-- The bench's purchase costs about 159 core-ns (ARCHITECTURE §7.17). The largest part is the buyer's own Philox block, about
-  25 ns of dependent multiplies, then two flows written. The posted-price meeting therefore draws four buyers'
-  blocks at once (`philox_x4`), each still from its own address, so the result does not change.
+- The posted-price meeting is built (ARCHITECTURE §7.17) and the bench's purchases run through it: 370 core-ns a
+  purchase on the build machine, with 1.75 choices a buyer, since the bench's stalls hold even units and the logit
+  crowds the cheap and near. By itself, one product at 370 000 buyers costs about 250 ns a buyer on one core: the
+  draws and alias picks about 45 ns a choice, grouping by stall 40, service 25, the tables 12.
 
 **Guards**: PC-92 (no map or trait object in a hot module) extends to `phx-market`'s meeting.
 

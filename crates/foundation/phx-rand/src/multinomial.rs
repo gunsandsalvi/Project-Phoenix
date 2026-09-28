@@ -86,7 +86,24 @@ impl AliasTable {
         self.prob.is_empty()
     }
 
+    /// Each category's chance of a draw, as the table holds it: its own column's share and what the columns aliasing it
+    /// pass on, over the columns.
+    #[must_use]
+    pub fn shares(&self) -> Vec<f64> {
+        let k = from_u64(len_u64(self.prob.len()));
+        let mut shares: Vec<f64> = self.prob.iter().map(|p| p / k).collect();
+        for (i, (p, a)) in self.prob.iter().zip(self.alias.iter()).enumerate() {
+            if *a != i
+                && let Some(s) = shares.get_mut(*a)
+            {
+                *s += (1.0 - p) / k;
+            }
+        }
+        shares
+    }
+
     /// One category, drawn with probability proportional to its weight.
+    #[inline]
     pub fn draw(&self, d: &mut Draws) -> usize {
         let i = index(below_u64(d, len_u64(self.prob.len())));
         match (self.prob.get(i), self.alias.get(i)) {
@@ -122,6 +139,17 @@ mod tests {
     use super::{AliasTable, multinomial, multinomial_alias};
     use crate::float::from_u64;
     use crate::testing::{Z, chi_square_counts, draws};
+
+    #[test]
+    fn alias_shares_are_the_weights_shares() {
+        for weights in [vec![1.0, 2.0, 3.0, 4.0], vec![0.001, 5.0, 0.0, 17.5, 3.25, 1e-9], vec![1.0; 7]] {
+            let total: f64 = weights.iter().sum();
+            let shares = AliasTable::new(&weights).shares();
+            for (s, w) in shares.iter().zip(&weights) {
+                assert!((s - w / total).abs() < 1e-12, "{s} against {}", w / total);
+            }
+        }
+    }
 
     #[test]
     fn multinomial_sums_and_marginals() {

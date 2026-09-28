@@ -1889,9 +1889,23 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   `ColumnFacts` over column slices for a pass over dense rows. Both read and write by a fact's place in the handler's
   declaration, an indexed load, inlined across crates.
 - **Draws** (`phx_rand::Draws`) build an address's counter once, so a block is one Philox call and its words are read
-  inline; an address holds 2^24 blocks, so bulk work takes an address a chunk.
-- **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel, settlement or
-  facts.
+  inline; an address holds 2^24 blocks, so bulk work takes an address a chunk. `Draws::x4` makes four addresses' first
+  blocks at once from one block index (`philox_x4`, the four chains' rounds side by side), each as `from_block` would.
+- **The posted-price meeting** (`phx_market::meet`), one product's stalls and buyers, round by round:
+  - each place weighs its sellers with units left once a round, an alias table for buyers of units and the same
+    sellers by price with running sums for buyers with money, whose affordable sellers are a prefix;
+  - each buyer still choosing draws its seller from its own stream at the round's block (`ROUND_BLOCKS` a round), four
+    buyers at a time;
+  - buyers are grouped by the stall they chose, a stable radix of 8 bits a pass (`partition_into`), each record
+    carrying what its service reads (48 bytes), since reading it from the buyer list at random cost more than moving
+    it;
+  - stalls are served a chunk a job, each its buyers in place: all of them when its units reach, otherwise one at a
+    time drawn by lot from their order by who they are, so who is served does not depend on the order buyers came in;
+    those served short choose again;
+  - the caller keeps a `Meeting` from day to day, whose outcome (sales by chunk of stalls, the unserved, the rounds)
+    and working space a day's meeting writes into, so it allocates nothing once the heaviest day has sized it.
+- **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel, settlement,
+  facts or posted-price meeting.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
   its three sustained cores, never below the wall; page faults per day stand for allocation during the day.
 
@@ -1899,7 +1913,9 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
 — every kind's parties with records and money, twelve contract families with their list links and dues — and runs a
 month through these kernels:
 - hazards, and handlers over the day's agenda by phase, spending their rules' declared arithmetic;
-- purchases drawn by each buyer from its own stream over its (region, product)'s alias table of logit weights;
+- purchases at the posted-price meeting, a product's buyers against its sellers' stalls (price, units at 1.3 times the
+  product's demand spread evenly, a few km from their region's buyers), products side by side, one kept `Meeting` a
+  worker, each sale a money flow and, for a good, a unit flow;
 - the wheel's dues, monthly and quarterly, the quarterly through the far list, each reckoned through its family's shape
   of terms (a fixed sum, interest, an annuity, a principal once) from its contract's row, a row a few dues ahead asked
   for early;

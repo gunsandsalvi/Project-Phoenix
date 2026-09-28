@@ -18,6 +18,7 @@ pub mod intents;
 pub mod linked_call;
 pub mod market;
 pub mod markets;
+pub mod meet;
 pub mod order;
 pub mod posted;
 pub mod print;

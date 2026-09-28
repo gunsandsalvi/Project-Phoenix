@@ -1,6 +1,6 @@
 use phx_macros::clause;
 
-use crate::consts::{BLOCK_WORDS, PHILOX_M0, PHILOX_M1, PHILOX_ROUNDS, PHILOX_W0, PHILOX_W1};
+use crate::consts::{LANES, PHILOX_M0, PHILOX_M1, PHILOX_ROUNDS, PHILOX_W0, PHILOX_W1};
 
 /// The high and low words of a 32×32-bit product, split from its bytes so neither half can be truncated.
 #[inline]
@@ -40,10 +40,19 @@ pub fn philox(ctr: [u32; 4], key: [u32; 2]) -> [u32; 4] {
     c
 }
 
-/// Four Philox blocks, each the scalar function's, so the batch cannot differ from it.
+/// Four Philox blocks, each the scalar function's, so the batch cannot differ from it; the four run round by round
+/// side by side, so each round's multiplies of one block wait on nothing of the others'.
 #[must_use]
-pub fn philox_x4(ctrs: [[u32; 4]; BLOCK_WORDS], key: [u32; 2]) -> [[u32; 4]; BLOCK_WORDS] {
-    ctrs.map(|ctr| philox(ctr, key))
+pub fn philox_x4(ctrs: [[u32; 4]; LANES], key: [u32; 2]) -> [[u32; 4]; LANES] {
+    let mut c = ctrs;
+    let mut k = key;
+    for r in 0..PHILOX_ROUNDS {
+        if r > 0 {
+            k = bump(k);
+        }
+        c = c.map(|block| round(block, k));
+    }
+    c
 }
 
 #[cfg(test)]

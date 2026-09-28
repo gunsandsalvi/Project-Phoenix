@@ -72,6 +72,7 @@ const TAGS: [SubjectTag; 12] = [
 pub struct Subject(u64);
 
 impl Subject {
+    #[inline]
     pub fn new(tag: SubjectTag, id: u64) -> Subject {
         let limit = 1_u64 << SUBJECT_TAG_SHIFT;
         if id >= limit {
@@ -114,6 +115,7 @@ pub fn fnv1a64(bytes: &[u8]) -> u64 {
     bytes.iter().fold(FNV_OFFSET, |h, b| (h ^ u64::from(*b)).wrapping_mul(FNV_PRIME))
 }
 
+#[inline]
 fn halves(v: u64) -> [u32; 2] {
     let [b0, b1, b2, b3, b4, b5, b6, b7] = v.to_le_bytes();
     [u32::from_le_bytes([b0, b1, b2, b3]), u32::from_le_bytes([b4, b5, b6, b7])]
@@ -130,6 +132,7 @@ pub fn stream_key(seed: Seed, name: &str) -> StreamKey {
 
 /// The counter of one block of one address: the subject, the day, and the sub-step above the block index.
 #[must_use]
+#[inline]
 pub fn counter(subject: Subject, day: u32, substep: u8, block: u32) -> [u32; 4] {
     let [lo, hi] = halves(subject.0);
     [lo, hi, day, (u32::from(substep) << SUBSTEP_SHIFT) | block]

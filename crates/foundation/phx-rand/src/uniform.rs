@@ -6,6 +6,7 @@ use crate::draws::Draws;
 use crate::float::from_u64;
 
 /// A 64-bit word as (k + 1/2)·2^-52 for its top 52 bits: never 0 and never 1, so every logarithm is finite.
+#[inline]
 #[must_use]
 pub fn unit_from_bits(word: u64) -> f64 {
     (from_u64(word >> (u64::BITS - UNIT_BITS)) + HALF) * UNIT_SCALE
@@ -13,11 +14,13 @@ pub fn unit_from_bits(word: u64) -> f64 {
 
 /// A uniform on the open interval (0, 1).
 #[clause("CHN.7")]
+#[inline]
 pub fn open_unit(d: &mut Draws) -> f64 {
     unit_from_bits(d.next_u64())
 }
 
 /// The high and low words of a 128-bit product, from its bytes.
+#[inline]
 fn split_u128(v: u128) -> (u64, u64) {
     let [l0, l1, l2, l3, l4, l5, l6, l7, h0, h1, h2, h3, h4, h5, h6, h7] = v.to_le_bytes();
     (u64::from_le_bytes([h0, h1, h2, h3, h4, h5, h6, h7]), u64::from_le_bytes([l0, l1, l2, l3, l4, l5, l6, l7]))
@@ -26,6 +29,7 @@ fn split_u128(v: u128) -> (u64, u64) {
 /// A uniform integer in [0, n) by Lemire's multiply-shift, rejecting the low products that would bias it; the
 /// threshold is 2^64 mod n, computed without wrapping.
 #[clause("CHN.7")]
+#[inline]
 pub fn below_u64(d: &mut Draws, n: u64) -> u64 {
     if n == 0 {
         violation!(clause = "CHN.2", "a uniform draw from an empty range");

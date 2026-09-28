@@ -19,9 +19,11 @@ use phx_ledger::algebra::{
     Amount as DueAmount, DefaultDefinition, DueBuf, Leg, PaymentOrder, Reference, Repayment, Schedule, Seniority,
     ShapePlan, Termination, Terms, due_by_shape, shape_of, shape_plan,
 };
+use phx_market::meet::{Buyer, Meeting, Place, Stall, Tastes, meet};
+use phx_market::retail::{Want, Weights};
 use phx_num::MaybeI64;
 use phx_num::Money;
-use phx_rand::{AliasTable, Draws, Seed, StreamKey, Subject, SubjectTag, below_u64, stream_key};
+use phx_rand::{Draws, Seed, StreamKey, Subject, SubjectTag, below_u64, stream_key};
 use phx_store::edges::NONE;
 use phx_store::{AddressSpace, Column, EdgeTable, Parties, Row, SystemBacking};
 use serde::Deserialize;
@@ -79,8 +81,21 @@ const BALANCE_SPAN: u64 = 1 << 30;
 const SAVE_WORDS: usize = 1 << 16;
 /// Iterations timed to find what one iteration of a rule's stand-in arithmetic costs.
 const CALIBRATION_ITERATIONS: u64 = 1 << 24;
-/// A price's spread around its level, as a share, for the logit weights.
-const PRICE_SPREAD: f64 = 0.2;
+/// A stall's units over its share of the day's demand for its product, as a ratio.
+const STALL_SLACK_NUM: u64 = 13;
+const STALL_SLACK_DEN: u64 = 10;
+/// Posted prices, in money a unit: the least, and the span above it a firm's record draws from.
+const PRICE_FLOOR: i64 = 200;
+const PRICE_RANGE: i64 = 1_000;
+/// The farthest a seller stands from its region's buyers, in km.
+const MAX_KM: u64 = 20;
+/// One buyer in so many spends money rather than buying a unit, and what it spends.
+const MONEY_EVERY: u64 = 5;
+const BUDGET: i64 = 3_000;
+/// The share of products, in thousandths, that are goods taking units with a sale; the rest are services.
+const GOODS_SHARE: u64 = 600;
+/// How the bench's buyers weigh a seller: its log price and its distance in km.
+const MEETING_WEIGHTS: Weights = Weights { price: 2.0, distance: 0.05 };
 /// A tenth of the day's contract turnover ends and begins parties.
 const PARTY_SHARE: u64 = 10;
 
@@ -452,8 +467,6 @@ struct Load {
     /// The next day the wheels hand out.
     wheel_day: u32,
     ns_per_iteration: f64,
-    tables: Vec<Option<(Vec<u32>, AliasTable)>>,
-    tables_day: Option<u32>,
     agendas: Vec<Option<Agenda>>,
     taste: StreamKey,
     /// The banks' reserves and what they have pending together, which only the issuer changes; and what each bank
@@ -463,6 +476,9 @@ struct Load {
     /// Parties ended today, begun again after the close, and the next identity handed out.
     ended: Vec<u8>,
     next_id: u64,
+    /// The posted-price meetings' working spaces and buyers, one a worker, kept so a day's meetings write into what the
+    /// heaviest sized.
+    meetings: Vec<(Meeting, Vec<Buyer>)>,
 }
 
 /// A day's count of each unit of work, for the costs a unit.
@@ -611,91 +627,90 @@ fn handler(
     visited
 }
 
-/// The day's sellers of each (region, product) and the alias table of their logit weights over posted prices: built
-/// once a day, as sellers post, and read by every buyer of the group.
-fn seller_tables(pool: &Pool, sellers: &Kind, v: &WorldSpec) -> Vec<Option<(Vec<u32>, AliasTable)>> {
-    let groups = to_usize(u64::from(v.regions * v.products));
-    let (prices, stride) = (sellers.records.slice(), sellers.stride);
-    let mut members: Vec<Vec<u32>> = vec![Vec::new(); groups];
+/// The day's markets, one a product: every firm selling it with its posted price and the units it can serve, the
+/// day's demand for the product spread over its sellers with a slack, so the favoured run out and buyers choose again;
+/// and each region's reach, its own sellers of the product and how far each is.
+fn markets(sellers: &Kind, kind: u8, v: &WorldSpec, demand: u64) -> Vec<(Vec<Stall>, Vec<Place>)> {
+    let (records, stride) = (sellers.records.slice(), sellers.stride);
+    let groups = v.regions * v.products;
+    let per_group = u64::from(sellers.n.div_ceil(groups));
+    let wanted = demand.div_ceil(u64::from(groups)) * STALL_SLACK_NUM / STALL_SLACK_DEN;
+    let units = i64::try_from(wanted.div_ceil(per_group)).unwrap_or(i64::MAX);
+    let mut out: Vec<(Vec<Stall>, Vec<Place>)> =
+        (0..v.products).map(|_| (Vec::new(), (0..v.regions).map(|_| Place::default()).collect())).collect();
     for s in 0..sellers.n {
-        if let Some(g) = members.get_mut(to_usize(u64::from(s % (v.regions * v.products)))) {
-            g.push(s);
+        let (region, product) = ((s % groups) / v.products, (s % groups) % v.products);
+        let Some((stalls, places)) = out.get_mut(to_usize(u64::from(product))) else { continue };
+        let price = match records.get(to_usize(u64::from(s)) * stride).map(|x| x.get()) {
+            Some(phx_num::Missing::Present(p)) => PRICE_FLOOR + p % PRICE_RANGE,
+            _ => continue,
+        };
+        let at = to_u32(index_u64(stalls.len()));
+        stalls.push(Stall { seller: PartyKey::new(kind, Slot::new(s)), price, units });
+        if let Some(place) = places.get_mut(to_usize(u64::from(region))) {
+            // A seller stands a few km from its region's buyers, the farther ones costing them more.
+            place.near.push((at, phx_rand::float::from_u64(mix64(u64::from(s)) % MAX_KM)));
         }
     }
-    let members = &members;
-    pool.map(groups, |g| {
-        let list = members.get(g)?;
-        if list.is_empty() {
-            return None;
-        }
-        let weights: Vec<f64> = list
-            .iter()
-            .map(|s| {
-                let p = match prices.get(to_usize(u64::from(*s)) * stride).map(|x| x.get()) {
-                    Some(phx_num::Missing::Present(p)) => phx_rand::float::from_i64(p % 1000),
-                    _ => 0.0,
-                };
-                (-(p / 1000.0) / PRICE_SPREAD).exp()
-            })
-            .collect();
-        Some((list.clone(), AliasTable::new(&weights)))
-    })
+    out
 }
 
-/// Purchases: each buyer-product draws a seller among its region's sellers of the product by their logit weights,
-/// with the buyer's own taste from its own stream, and pays it; most also take goods. Buyers are taken group by group,
-/// so each group's table stays in cache while its buyers draw.
+/// Purchases: the day's buyers of each product meet its sellers at the posted-price meeting, product by product,
+/// each choosing among its region's sellers with its own taste; a sale pays its seller and, for a good, takes its
+/// units.
 fn choices(
     pool: &Pool,
-    tables: &[Option<(Vec<u32>, AliasTable)>],
-    (buyer, n_buyers, seller): (u8, u32, u8),
-    (count, flows_per_thousand): (u64, u64),
-    (v, taste, day): (&WorldSpec, StreamKey, u32),
-    bufs: &mut FlowBufs,
-) {
-    let groups = tables.len();
-    let per_region = u64::from(n_buyers.div_ceil(v.regions));
-    bufs.reset(groups);
-    let jobs: Vec<(usize, &mut Vec<Flow>)> = bufs.chunks_mut().iter_mut().enumerate().collect();
-    let (regions, products) = (u64::from(v.regions), u64::from(v.products));
-    pool.for_each(jobs, |(g, buf)| {
-        let Some(Some((list, table))) = tables.get(g) else { return };
-        let (first, units) = piece(count, groups, g);
-        let (region, product) = (index_u64(g) / products, index_u64(g) % products);
-        buf.reserve(to_usize(units * flows_per_thousand / THOUSAND + 1));
-        for u in 0..units {
-            // The buyers come from the day's spending decisions in slot order; the group's are taken in turn.
-            let b = region + regions * ((first + u) % per_region);
-            if b >= u64::from(n_buyers) {
-                continue;
+    markets: &[(Vec<Stall>, Vec<Place>)],
+    (buyer, n_buyers): (u8, u32),
+    (count, taste, day): (u64, StreamKey, u32),
+    (bufs, meetings): (&mut FlowBufs, &mut Vec<(Meeting, Vec<Buyer>)>),
+) -> u64 {
+    let products = markets.len();
+    bufs.reset(products);
+    let regions = markets.first().map_or(1, |(_, p)| index_u64(p.len()));
+    let per_region = u64::from(n_buyers).div_ceil(regions);
+    let lot_key = stream_key(Seed::new(16), "LOAD.capacity_lot");
+    let lots = |s: PartyKey, round: u32| {
+        Draws::new(
+            lot_key,
+            Subject::new(SubjectTag::Party, u64::from(s.word())),
+            day,
+            to_u32(u64::from(round)).to_le_bytes()[0],
+        )
+    };
+    // Markets meet side by side, a worker's at a time each in its own kept working space, as the world's do.
+    meetings.resize_with(pool.workers(), <(Meeting, Vec<Buyer>)>::default);
+    let (mut rounds, w) = (0, meetings.len());
+    let bufs = bufs.chunks_mut();
+    for (b, (batch, bufs)) in markets.chunks(w).zip(bufs.chunks_mut(w)).enumerate() {
+        let jobs: Vec<_> = batch.iter().zip(bufs).zip(meetings.iter_mut()).enumerate().collect();
+        let done: Vec<u64> = pool.map_items(jobs, |(k, (((stalls, places), buf), (meeting, buyers)))| {
+            let p = b * w + k;
+            let (first, n) = piece(count, products, p);
+            buyers.clear();
+            buyers.extend((first..first + n).filter_map(|u| {
+                // The buyers come from the day's spending decisions in slot order; the product's are taken in turn.
+                let b = (u % regions) + regions * ((u / regions) % per_region);
+                (b < u64::from(n_buyers)).then(|| Buyer {
+                    party: PartyKey::new(buyer, Slot::new(to_u32(b))),
+                    subject: b,
+                    want: if u % MONEY_EVERY == 0 { Want::Money(BUDGET) } else { Want::Units(1) },
+                    place: to_u32(b % regions),
+                })
+            }));
+            let tastes = Tastes { key: taste, day, substep: to_u32(index_u64(p)).to_le_bytes()[0] };
+            meet(meeting, None, (stalls, places, buyers), (1, MEETING_WEIGHTS), tastes, &lots);
+            // Goods take their units with the sale; services are used as they are bought.
+            let goods = (index_u64(p) * THOUSAND < index_u64(products) * GOODS_SHARE)
+                .then(|| (Denom::units(u16::try_from(p).unwrap_or(u16::MAX)), 3, 0));
+            for sale in meeting.sales() {
+                sale.flows((Denom::money(0), 2, 0), goods, sale.seller.slot().get(), buf);
             }
-            let mut d = Draws::new(taste, Subject::new(SubjectTag::Party, b), day, to_u32(product).to_le_bytes()[0]);
-            let Some(s) = list.get(table.draw(&mut d)) else { continue };
-            let buyer_key = PartyKey::new(buyer, Slot::new(to_u32(b)));
-            let seller_key = PartyKey::new(seller, Slot::new(*s));
-            let amount = i64::try_from(mix64(b ^ u) % 5000).unwrap_or(0) + 1;
-            let money = Flow {
-                payer: buyer_key,
-                payee: seller_key,
-                amount,
-                source: *s,
-                denomination: Denom::money(0),
-                reason: 2,
-                order: 0,
-            };
-            buf.push(money);
-            let made = (first + u + 1) * flows_per_thousand / THOUSAND - (first + u) * flows_per_thousand / THOUSAND;
-            for _ in 1..made {
-                buf.push(Flow {
-                    payer: seller_key,
-                    payee: buyer_key,
-                    denomination: Denom::units(1),
-                    reason: 3,
-                    ..money
-                });
-            }
-        }
-    });
+            meeting.rounds
+        });
+        rounds += done.iter().sum::<u64>();
+    }
+    rounds
 }
 
 /// Takes a family's dues from the last day handed out through `day`: each due read from its contract — its amount
@@ -1276,14 +1291,13 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
         due_today: Vec::new(),
         wheel_day: 0,
         ns_per_iteration: calibrate(clock),
-        tables: Vec::new(),
-        tables_day: None,
         agendas,
         taste: stream_key(Seed::new(13), "LOAD.taste"),
         reserves_total,
         deposits,
         ended: Vec::new(),
         next_id: persons << 8,
+        meetings: Vec::new(),
     })
 }
 
@@ -1414,23 +1428,13 @@ fn run_work(
         Kernel::Handler => run_handler(load, v, (w, wi), (day, count), table, units)?,
         Kernel::Choice => {
             let sellers = v.kind("firm")?;
-            if load.tables_day != Some(day) {
-                let Some(s) = load.kinds.get(usize::from(sellers)) else { return Ok(0) };
-                load.tables = seller_tables(&load.pool, s, &v.world);
-                load.tables_day = Some(day);
-            }
+            let Some(s) = load.kinds.get(usize::from(sellers)) else { return Ok(0) };
+            let markets = markets(s, sellers, &v.world, count);
             let buyer = table.unwrap_or(0);
             let n_buyers = load.kinds.get(usize::from(buyer)).map_or(1, |k| k.n);
             let Some(bufs) = load.bufs.get_mut(wi) else { return Ok(0) };
-            let spec = (&v.world, load.taste, day);
-            choices(
-                &load.pool,
-                &load.tables,
-                (buyer, n_buyers, sellers),
-                (count, w.flows.unwrap_or(THOUSAND)),
-                spec,
-                bufs,
-            );
+            let _ =
+                choices(&load.pool, &markets, (buyer, n_buyers), (count, load.taste, day), (bufs, &mut load.meetings));
             if let Some(f) = load.filled.get_mut(wi) {
                 *f = true;
             }

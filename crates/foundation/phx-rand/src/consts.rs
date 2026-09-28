@@ -163,3 +163,6 @@ pub const SPECIAL_EPSILON: f64 = 1e-15;
 pub const SPECIAL_TINY: f64 = 1e-300;
 /// Halvings a quantile's bisection makes: past 2^-1074 of its bracket, so the bracket closes to adjacent doubles.
 pub const QUANTILE_HALVINGS: u32 = 1_100;
+
+/// The addresses whose blocks are made together, their Philox chains side by side.
+pub const LANES: usize = 4;
