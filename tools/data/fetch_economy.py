@@ -22,7 +22,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from fetch import RAW, get, log
+from fetch import RAW, get, log, merge_manifest
 from fetch_pop import countries, table
 
 YEAR = 2019
@@ -43,9 +43,10 @@ VA_PARTS = ["B1G", "D1", "B2A3G", "D29X39"]
 # with the institutions serving them, non-financial corporations, the central bank, deposit-taking corporations, all
 # financial corporations, and general government; and the whole economy.
 SECTORS = ["S1", "S1M", "S11", "S12", "S121", "S122", "S13"]
-# Currency, transferable and other deposits, debt securities, loans, equity and investment fund shares, and all
-# financial assets or liabilities.
-INSTRUMENTS = ["F", "F21", "F22", "F29", "F3", "F4", "F5", "F51", "F52", "F6"]
+# Currency, transferable and other deposits, debt securities, loans, equity and investment fund shares, insurance and
+# pension entitlements, other accounts receivable or payable and their trade credit, and all financial assets or
+# liabilities.
+INSTRUMENTS = ["F", "F21", "F22", "F29", "F3", "F4", "F5", "F51", "F52", "F6", "F8", "F81"]
 # Dwellings, other buildings and structures, machinery and equipment with weapons systems, cultivated biological
 # resources, intellectual property products, inventories, and land.
 NONFIN = ["N111", "N112", "N11M", "N115", "N117", "N12", "N211"]
@@ -148,13 +149,14 @@ def main() -> None:
     args = parser.parse_args()
     cache = args.cache or Path(tempfile.mkdtemp())
     cache.mkdir(parents=True, exist_ok=True)
-    manifest = json.loads((RAW / "manifest.json").read_text())
+    old = json.loads((RAW / "manifest.json").read_text())
+    manifest = {"sources": {k: v for k, v in old["sources"].items() if k in SOURCE_KEY.values()}, "series": {}}
     iso3 = countries()
     for name in args.only or sorted(SOURCES):
         SOURCES[name](cache, manifest, iso3)
         manifest["sources"].setdefault(SOURCE_KEY[name], {})["fetched"] = datetime.date.today().isoformat()
         log(f"{name} done")
-    (RAW / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    merge_manifest(manifest["sources"], manifest["series"])
 
 
 if __name__ == "__main__":

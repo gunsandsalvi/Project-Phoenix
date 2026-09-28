@@ -1,3 +1,4 @@
 target/
 /violations
 __pycache__/
+data/sources/raw/.manifest.lock

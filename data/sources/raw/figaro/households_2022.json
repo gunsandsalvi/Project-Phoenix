@@ -1,6 +1,0 @@
-{
-  "title": "Households' final consumption expenditure (P3_S14) at basic prices by product, 2022, millions of euros, summed over the origins of what was bought (naio_10_fcp_ip4), Eurostat FIGARO",
-  "source": "Eurostat FIGARO, SDMX 2.1 API",
-  "url": "https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/naio_10_fcp_ip4/A.P3_S14...MIO_EUR.?startPeriod=2022&endPeriod=2022&format=SDMX-CSV&compressed=true",
-  "fetched": "2026-09-26"
-}

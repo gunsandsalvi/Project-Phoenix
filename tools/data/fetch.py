@@ -35,7 +35,7 @@ IMF_SDMX_URL = "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?
 OWID_URL = "https://ourworldindata.org/grapher/{slug}.csv?v=1&csvType=full&useColumnShortNames=true"
 WB_API_URL = "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}"
 SDBS_URL = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,/"
-            "A..ENTR+EMPN.BTN_95XK._T+S_GE250.?startPeriod={first}&format=csvfile")
+            "A..ENTR+EMPN.BTN_95XK._T.?startPeriod={first}&format=csvfile")
 
 WDI = [
     "SP.DYN.LE00.IN",
@@ -77,12 +77,10 @@ WB_API = {
 }
 
 # OECD Structural and Demographic Business Statistics: enterprises and persons employed in the business economy
-# (ISIC Rev. 4 sections B to N and S95, except K), all sizes and 250 or more persons employed.
+# (ISIC Rev. 4 sections B to N and S95, except K), all sizes.
 SDBS = {
     ("ENTR", "_T"): "Enterprises, business economy except financial, all sizes, OECD SDBS",
     ("EMPN", "_T"): "Persons employed, business economy except financial, all sizes, OECD SDBS",
-    ("ENTR", "S_GE250"): "Enterprises of 250 or more persons employed, business economy except financial, OECD SDBS",
-    ("EMPN", "S_GE250"): "Persons employed in enterprises of 250 or more, business economy except financial, OECD SDBS",
 }
 
 # WID series by (variable, percentile): the top tenth's share of net personal wealth (adults, equal split), and net
@@ -120,6 +118,17 @@ def get(url: str, tries: int = 4, timeout: int = 60, accept: str = "*/*") -> byt
             log(f"retry {attempt + 1} of {url}: {e}")
             time.sleep(2 ** (attempt + 1))
     raise SystemExit(f"could not fetch {url}")
+
+
+def merge_manifest(sources: dict, series: dict) -> None:
+    """Merges one fetcher's sources and series into the manifest under a lock, so fetchers may run side by side."""
+    import fcntl
+    with (RAW / ".manifest.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        manifest = json.loads((RAW / "manifest.json").read_text())
+        manifest["sources"].update(sources)
+        manifest["series"].update(series)
+        (RAW / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n")
 
 
 def cached(cache: Path, name: str, url: str) -> Path:

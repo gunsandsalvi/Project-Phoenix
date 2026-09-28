@@ -41,10 +41,6 @@
    "rows": 2646,
    "title": "Persons by tenure status of their household (OWN, OWN_L with a mortgage or loan, OWN_NL, RENT, RENT_MKT, RENT_FR reduced or free), share of persons, Eurostat EU-SILC ilc_lvho02"
   },
-  "figaro/io": {
-   "rows": 201600,
-   "title": "Input-output table at basic prices, product by product, 2022, millions of euros, each use summed over the origins of what was used (naio_10_fcp_ip4), Eurostat FIGARO"
-  },
   "findex/account.t.d": {
    "rows": 705,
    "title": "Account (% age 15+), World Bank Global Findex"
@@ -142,7 +138,7 @@
    "title": "Households by tenure (own outright, owner with mortgage, rent private, rent subsidised, other), share of households, by year, OECD Affordable Housing Database HM1.3.A1"
   },
   "oecd/financial_balance_sheets": {
-   "rows": 5035,
+   "rows": 6092,
    "title": "Financial balance sheets, non-consolidated, closing stocks 2019, by sector, counterpart the whole economy, assets (A) and liabilities (L), by instrument, national currency (Table 720), OECD"
   },
   "oecd/fixed_assets": {
@@ -177,17 +173,9 @@
    "rows": 1620,
    "title": "Net capital stock by asset (structures, machinery, transport equipment, other) and GDP, current national prices, Penn World Table 11.0"
   },
-  "sdbs/EMPN_S_GE250": {
-   "rows": 256,
-   "title": "Persons employed in enterprises of 250 or more, business economy except financial, OECD SDBS"
-  },
   "sdbs/EMPN_T": {
    "rows": 334,
    "title": "Persons employed, business economy except financial, all sizes, OECD SDBS"
-  },
-  "sdbs/ENTR_S_GE250": {
-   "rows": 278,
-   "title": "Enterprises of 250 or more persons employed, business economy except financial, OECD SDBS"
   },
   "sdbs/ENTR_T": {
    "rows": 336,
@@ -378,11 +366,6 @@
    "fetched": "2026-09-27",
    "title": "IMF SDMX 2.1 API; World Bank API",
    "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,MFS_CBS/*.S121_L_CIC_IMB_CBS.XDC.A?startPeriod=2015&endPeriod=2019; https://api.worldbank.org/v2/country/all/indicator/NY.GDP.MKTP.CN?format=json&date=2015:2019&per_page=20000"
-  },
-  "figaro": {
-   "fetched": "2026-09-26",
-   "title": "Eurostat FIGARO, SDMX 2.1 API",
-   "url": "https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/naio_10_fcp_ip4/A...{dest}..?startPeriod=2022&endPeriod=2022&format=SDMX-CSV&compressed=true"
   },
   "findex": {
    "fetched": "2026-09-24",
