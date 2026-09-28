@@ -1,0 +1,11 @@
+country,iso3,group,sd_y,sd_pc_over_sd_y,sd_tc_over_sd_y,sd_i_over_sd_y,sd_emp_over_sd_y,sd_hrs_over_sd_y,corr_pc_y,corr_tc_y,corr_i_y,corr_emp_y,corr_hrs_y
+Argentina,ARG,emerging,4.22,1.08,1.17,2.95,0.39,0.57,0.94,0.97,0.94,0.36,0.52
+Australia,AUS,developed,1.19,0.84,1.20,4.13,1.13,1.40,0.63,0.79,0.87,0.77,0.76
+Brazil,BRA,emerging,1.76,1.93,1.24,3.05,0.89,1.95,0.48,0.58,0.80,0.62,0.75
+Canada,CAN,developed,1.39,0.74,0.84,2.91,0.75,0.82,0.83,0.86,0.73,0.93,0.93
+Korea,KOR,emerging,3.54,1.34,2.05,2.20,0.59,0.71,0.96,0.92,0.94,0.91,0.96
+Mexico,MEX,emerging,2.98,1.21,1.29,3.83,0.43,0.33,0.93,0.96,0.96,0.56,0.37
+Netherlands,NLD,developed,0.93,1.17,1.44,2.66,1.27,,0.64,0.77,0.58,0.81,
+New Zealand,NZL,developed,1.99,0.82,0.86,3.32,1.15,1.28,0.72,0.59,0.66,0.73,0.73
+Philippines,PHL,emerging,1.44,0.93,2.78,4.44,1.34,,0.69,0.51,0.76,0.26,
+Sweden,SWE,developed,1.35,1.01,1.67,4.18,1.24,2.94,0.55,0.38,0.81,0.81,0.93

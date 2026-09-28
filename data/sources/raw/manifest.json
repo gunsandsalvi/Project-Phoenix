@@ -129,6 +129,98 @@
    "rows": 780,
    "title": "Monetary policy-related interest rate (% a year, end of year), IMF Monetary and Financial Statistics"
   },
+  "macro/annual": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "rows": 12076,
+   "title": "Annual series, 1960-2024: GDP, household consumption and gross fixed capital formation in constant 2015 dollars, CPI inflation (per cent), net financial account and current account (BoP, current dollars), GDP in current dollars (World Bank WDI); the unemployment rate from national labour force surveys (ILO, national estimates, ages 15+); average annual wages (constant 2025 US dollars at PPP) and average annual hours actually worked per worker (OECD)"
+  },
+  "macro/jst": {
+   "for": [
+    "S7.01"
+   ],
+   "rows": 2718,
+   "title": "Jord\u00e0-Schularick-Taylor Macrohistory Database R6, 18 developed economies, 1870-2020: population, real GDP per capita (Maddison; Barro index), real consumption per capita (index), nominal GDP, investment to GDP, CPI, current account, money, short and long rates, unemployment, wages, dollar exchange rate, total loans to the non-financial private sector and their mortgage, household and business parts (national currency), public debt to GDP, nominal house prices, systemic crisis dummy (crisisJST), peg dummy"
+  },
+  "macro/labour_q": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "rows": 34169,
+   "title": "Quarterly labour series: unemployment rate (per cent of the labour force, ages 15+) and employment (thousands, ages 15+) from national labour force surveys (ILO, national estimates, not modelled, unadjusted); the OECD's harmonised unemployment rate (per cent, ages 15+), unfilled job vacancies (persons) and an hourly earnings index (private sector, or manufacturing where the private sector's is not published), seasonally adjusted where published"
+  },
+  "macro/level_ranges": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "note": "Derived by fetch_macro.py (ranges) from the macro/ files and wid/shares; each row's method column states the computation. Quarterly statistics end at 2019Q4. Rows naming a paper group the per-economy values typed from it by current World Bank level.",
+   "rows": 139,
+   "title": "Each measurable N3 fact's statistic (and S1.16's macro reads), per development level (World Bank income groups: developed High; emerging Upper-middle; developing Lower-middle and Low): median and interquartile range across the level's economies, with the method, sample and member economies"
+  },
+  "macro/prices_rates_q": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "rows": 70160,
+   "title": "Quarterly, 1970 on: consumer price index, all items (IMF CPI, index), and interest rates in per cent a year, quarterly averages: the monetary-policy rate, banks' lending rate and the Treasury-bill yield (IMF Monetary and Financial Statistics, MFS_IR), and the three-month and long-term (ten-year government) rates (OECD Financial market statistics)"
+  },
+  "macro/pwt": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "rows": 11020,
+   "title": "Penn World Table 11.0, every economy, 1950-2023: real GDP (rgdpe at chained PPPs; rgdpna at constant national prices, for growth), population and persons engaged (millions), average annual hours (avh), human capital (hc), labour share (labsh), household, investment and government shares of GDP at current PPPs (csh_c, csh_i, csh_g)"
+  },
+  "macro/qna": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "note": "One source per economy and series: seasonally adjusted (SA) before unadjusted (NSA), then the longer run of consecutive quarters to 2019Q4, the OECD's on ties.",
+   "rows": 54874,
+   "title": "Quarterly national accounts in volumes (national currency; chain-linked volumes for the OECD, constant prices for the IMF): GDP, private (households and NPISH) final consumption, gross fixed capital formation, household consumption of durable, semi-durable and non-durable goods and services (OECD), and total employment in persons (OECD, national concept); OECD Quarterly National Accounts and IMF Quarterly National Accounts (QNEA)"
+  },
+  "macro/typed_aguiar_gopinath": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "note": "Typed by hand from the paper's table in the PDF downloaded on 2026-09-28 from https://www.nber.org/system/files/working_papers/w10734/w10734.pdf; the group is the paper's own classification.",
+   "rows": 26,
+   "title": "Business-cycle moments per economy, typed: Aguiar and Gopinath, 'Emerging Market Business Cycles: The Cycle is the Trend', NBER Working Paper 10734 (August 2004; published JPE 115(1), 2007), Tables 2A-2C, pp. 32-34 of the PDF: quarterly, deseasonalised, log, HP 1600; sd in per cent"
+  },
+  "macro/typed_calderon_fuentes": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "note": "Typed by hand from the paper's table in the PDF downloaded on 2026-09-28 from https://documents.worldbank.org/curated/en/524811468325165721/pdf/WPS5343.pdf; the group is the paper's own classification.",
+   "rows": 23,
+   "title": "Business-cycle moments per economy, typed: Calder\u00f3n and Fuentes, 'Characterizing the Business Cycles of Emerging Economies', World Bank Policy Research Working Paper 5343 (June 2010), Table 1, p. 11: classical cycles by Harding and Pagan's quarterly algorithm, GDP 1980Q1-2006Q2; mean durations in quarters, amplitudes in per cent; '.' left empty"
+  },
+  "macro/typed_neumeyer_perri": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "note": "Typed by hand from the paper's table in the PDF downloaded on 2026-09-28 from https://www.nber.org/system/files/working_papers/w10387/w10387.pdf; the group is the paper's own classification.",
+   "rows": 10,
+   "title": "Business-cycle moments per economy, typed: Neumeyer and Perri, 'Business Cycles in Emerging Economies: the Role of Interest Rates', NBER Working Paper 10387 (March 2004; published JME 52(2), 2005), Tables 1A and 1B, pp. 43-44 of the PDF: quarterly, log, HP; EMP and HRS on semiannual data; relative sd are per cent of GDP's sd over 100; NA left empty"
+  },
+  "macro/xru_monthly": {
+   "for": [
+    "S5.04",
+    "S7.01"
+   ],
+   "rows": 57984,
+   "title": "US-dollar exchange rates, national currency per dollar, monthly, end of period, 2000 on (BIS WS_XRU); the economy's currency as the BIS publishes it (euro-area members in euro)"
+  },
   "oecd/ahd_cost": {
    "rows": 996,
    "title": "Median mortgage burden (principal and interest) of owners with a mortgage and rent burden of tenants, share of disposable income, by year, OECD Affordable Housing Database HC1.2.A1"
@@ -420,6 +512,79 @@
    "fetched": "2026-09-27",
    "title": "IMF SDMX 2.1 API",
    "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}"
+  },
+  "macro/aguiar_gopinath": {
+   "fetched": "2026-09-28",
+   "title": "Aguiar and Gopinath, 'Emerging Market Business Cycles: The Cycle is the Trend', NBER Working Paper 10734 (August 2004; published JPE 115(1), 2007), Tables 2A-2C, pp. 32-34 of the PDF: quarterly, deseasonalised, log, HP 1600; sd in per cent",
+   "url": "https://www.nber.org/system/files/working_papers/w10734/w10734.pdf"
+  },
+  "macro/bis_xru": {
+   "fetched": "2026-09-28",
+   "release": "2026-09-23",
+   "title": "BIS, US dollar exchange rates (WS_XRU), bulk CSV",
+   "url": "https://data.bis.org/static/bulk/WS_XRU_csv_flat.zip"
+  },
+  "macro/calderon_fuentes": {
+   "fetched": "2026-09-28",
+   "title": "Calder\u00f3n and Fuentes, 'Characterizing the Business Cycles of Emerging Economies', World Bank Policy Research Working Paper 5343 (June 2010), Table 1, p. 11: classical cycles by Harding and Pagan's quarterly algorithm, GDP 1980Q1-2006Q2; mean durations in quarters, amplitudes in per cent; '.' left empty",
+   "url": "https://documents.worldbank.org/curated/en/524811468325165721/pdf/WPS5343.pdf"
+  },
+  "macro/ilo_sdmx": {
+   "fetched": "2026-09-28",
+   "title": "ILO SDMX API (ILOSTAT), DF_UNE_DEAP_SEX_AGE_RT and DF_EMP_TEMP_SEX_AGE_NB",
+   "url": "https://sdmx.ilo.org/rest/data/ILO,<flow>,1.0/<key>?detail=dataonly"
+  },
+  "macro/imf_cpi_ir": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API, CPI and MFS_IR dataflows",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,<CPI|MFS_IR>/<key>?detail=dataonly"
+  },
+  "macro/imf_qnea": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API, Quarterly National Accounts (QNEA)",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,QNEA/.B1GQ+P3_PS+P51G.Q.SA+NSA.XDC.Q?detail=dataonly"
+  },
+  "macro/jst": {
+   "fetched": "2026-09-28",
+   "release": "R6",
+   "title": "Jord\u00e0, Schularick and Taylor, Macrohistory Database, release 6",
+   "url": "https://www.macrohistory.net/app/download/9834512569/JSTdatasetR6.xlsx"
+  },
+  "macro/neumeyer_perri": {
+   "fetched": "2026-09-28",
+   "title": "Neumeyer and Perri, 'Business Cycles in Emerging Economies: the Role of Interest Rates', NBER Working Paper 10387 (March 2004; published JME 52(2), 2005), Tables 1A and 1B, pp. 43-44 of the PDF: quarterly, log, HP; EMP and HRS on semiannual data; relative sd are per cent of GDP's sd over 100; NA left empty",
+   "url": "https://www.nber.org/system/files/working_papers/w10387/w10387.pdf"
+  },
+  "macro/oecd_finmark": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, financial market statistics (DF_FINMARK)",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.STES,DSD_STES@DF_FINMARK/.Q.IR3TIB+IRLT.......?format=csvfile"
+  },
+  "macro/oecd_labour": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, infra-annual labour statistics, job vacancies, hourly earnings",
+   "url": "https://sdmx.oecd.org/public/rest/data/<flow>/<key>?format=csvfile"
+  },
+  "macro/oecd_qna": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, SDMX API, Quarterly National Accounts",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN1@<table>/<key>?format=csvfile"
+  },
+  "macro/oecd_wages_hours": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer, average annual wages (AV_AN_WAGE) and average annual hours worked",
+   "url": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_HW@DF_AVG_ANN_HRS_WKD/all?format=csvfile"
+  },
+  "macro/pwt": {
+   "fetched": "2026-09-28",
+   "release": "11.0",
+   "title": "Penn World Table 11.0 (Feenstra, Inklaar and Timmer), DataverseNL, doi:10.34894/FABVLR, pwt110.xlsx",
+   "url": "https://dataverse.nl/api/access/datafile/554105"
+  },
+  "macro/wb_api": {
+   "fetched": "2026-09-28",
+   "title": "World Bank API, WDI series, full history",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date=1960:2024&per_page=20000&page={page}"
   },
   "oecd_nad": {
    "fetched": "2026-09-28",

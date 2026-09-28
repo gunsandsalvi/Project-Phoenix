@@ -1,0 +1,24 @@
+country,iso3,group,contraction_quarters,expansion_quarters,contraction_amplitude,expansion_amplitude,contractions
+Argentina,ARG,LAC,4.5,7.1,-9.4,12.1,8
+Bolivia,BOL,LAC,3.0,,-2.0,,1
+Brazil,BRA,LAC,2.8,6.9,-4.3,9.6,10
+Chile,CHL,LAC,3.3,30.0,-10.1,55.6,3
+Colombia,COL,LAC,3.0,62.0,-4.1,59.9,2
+Costa Rica,CRI,LAC,2.5,9.0,-0.6,13.1,2
+Ecuador,ECU,LAC,3.2,10.0,-5.2,11.6,6
+Hong Kong,HKG,Asia,3.0,13.6,-4.2,24.7,6
+India,IND,other emerging,3.0,30.0,-2.0,57.1,2
+Indonesia,IDN,Asia,3.3,29.0,-7.5,62.6,3
+Korea,KOR,Asia,3.0,,-9.3,,1
+Malaysia,MYS,Asia,4.5,44.0,-8.0,91.3,2
+Mexico,MEX,LAC,3.7,12.6,-4.4,13.9,6
+Paraguay,PRY,LAC,3.5,5.3,-6.1,7.2,4
+Peru,PER,LAC,3.7,8.2,-12.6,18.0,7
+Philippines,PHL,Asia,5.0,17.0,-6.3,20.3,4
+Singapore,SGP,Asia,3.8,19.3,-4.6,43.1,4
+South Africa,ZAF,other emerging,8.3,9.5,-4.6,8.7,3
+Taiwan,TWN,Asia,3.0,5.0,-3.2,7.7,2
+Thailand,THA,Asia,8.0,,-16.1,,1
+Turkey,TUR,other emerging,3.0,11.8,-7.8,20.9,5
+Uruguay,URY,LAC,5.5,8.5,-9.8,12.4,4
+Venezuela,VEN,LAC,4.6,6.3,-9.0,8.5,8
