@@ -543,6 +543,7 @@ pub phx_market::retail::Stall::units: i64
 pub struct phx_market::retail::Weights
 pub phx_market::retail::Weights::distance: f64
 pub phx_market::retail::Weights::price: f64
+pub fn phx_market::retail::paid(i64, i64, i64) -> i64
 pub fn phx_market::retail::retail(&[phx_market::retail::Stall], &mut [phx_market::retail::Shopper], &[alloc::vec::Vec<phx_market::retail::Near>], i64, phx_market::retail::Weights, &mut phx_rand::draws::Draws) -> phx_market::retail::RetailDay
 pub type phx_market::retail::Near = (usize, f64)
 pub mod phx_market::simplex

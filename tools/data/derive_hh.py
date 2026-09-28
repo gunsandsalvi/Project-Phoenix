@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Derives each country group's households' budget shares over the products' industries from the input-output tables
-the opening ways are derived from.
+"""Derives each country group's households' budget shares over the products from the input-output tables the opening
+ways are derived from.
 
 A share is the part of households' final consumption expenditure (the OECD's inter-country tables' HFCE column, at
-basic prices, summed over where what was bought came from) spent on an industry's products, the median over the
+basic prices, summed over where what was bought came from) spent on a product: its industries' part, and of a mining
+industry the resource households take, as the ways split each mining industry by its users; the median over the
 group's economies and renormalised to sum to one. Finance, real estate, public administration and households as
 employers are left out, as the ways leave them out: they are paid for by fees, rents and taxes, or are not firms'
 products. The group's economies are the ones its ways are the median over.
@@ -19,21 +20,20 @@ import numpy as np
 import pandas as pd
 
 from derive import RAW
-from derive_tec import LEFT_OUT, MIN_COUNTRIES, PRODUCTS, PROFILES, YEAR, groups, io_tables, price_levels
+from derive_tec import LEFT_OUT, MIN_COUNTRIES, PRODUCTS, PROFILES, YEAR, groups, io_tables, price_levels, taken_share
 
 RAW_FILE = RAW / "icio" / f"households_{YEAR}.csv"
 PLACES = 6
 
 
-def industries() -> list:
-    """The products' industries in the order the products first name them, each with the ICIO industries it spans."""
-    out = []
-    for p in PRODUCTS:
-        if out and out[-1][0] == p[1]:
-            out[-1][1].extend(c for c in p[2] if c not in out[-1][1])
-        else:
-            out.append((p[1], list(p[2])))
-    return out
+# Households as a user of a mining industry's output: none of the industries that transform a resource, so they take
+# the resource other users take.
+HOUSEHOLDS = "HFCE"
+
+
+def products() -> list:
+    """Each product with the ICIO industries it spans and the part of their output households take as it."""
+    return [(p[0], p[2], taken_share(HOUSEHOLDS, p[6]) if p[6] is not None else 1.0) for p in PRODUCTS]
 
 
 def members() -> dict:
@@ -47,13 +47,14 @@ def members() -> dict:
     return out
 
 
-def shares(spent: pd.Series, inds: list):
-    """One economy's spending share of each industry and of what is left out, over all its purchases at basic
+def shares(spent: pd.Series, prods: list):
+    """One economy's spending share of each product and of what is left out, over all its purchases at basic
     prices."""
-    total = float(spent.reindex([c for _, codes in inds for c in codes] + LEFT_OUT).dropna().sum())
-    by_industry = np.array([float(spent.reindex(codes).dropna().sum()) for _, codes in inds]) / total
+    codes = sorted({c for _, cs, _ in prods for c in cs})
+    total = float(spent.reindex(codes + LEFT_OUT).dropna().sum())
+    by_product = np.array([float(spent.reindex(cs).dropna().sum()) * part for _, cs, part in prods]) / total
     left = float(spent.reindex(LEFT_OUT).dropna().sum()) / total
-    return by_industry, left
+    return by_product, left
 
 
 def apportion(values: np.ndarray) -> list:
@@ -68,16 +69,17 @@ def apportion(values: np.ndarray) -> list:
 
 
 def write_level(level: str, economies: list, spent: dict, note: dict) -> tuple:
-    inds = industries()
-    stack, left = zip(*(shares(spent[c], inds) for c in economies))
+    prods = products()
+    stack, left = zip(*(shares(spent[c], prods) for c in economies))
     median = np.median(np.stack(stack), axis=0)
     values = apportion(median)
     left_median = float(np.median(left))
     source = "measured" if len(economies) >= MIN_COUNTRIES else "estimated"
-    axis = ", ".join(str(i) for i in range(len(inds)))
+    axis = ", ".join(str(i) for i in range(len(prods)))
     ref = (f"The share of households' final consumption expenditure (the inter-country tables' HFCE column, at "
-           f"basic prices, each purchase summed over where it came from) spent on each industry's products ("
-           + ", ".join(i[0] for i in inds) + f"): the median over the {len(economies)} economies of the World Bank's "
+           f"basic prices, each purchase summed over where it came from) spent on each product ("
+           + ", ".join(p[0] for p in prods) + "; of a mining industry's output the resource other users than the "
+           f"industry transforming one take, as the ways split it): the median over the {len(economies)} economies of the World Bank's "
            f"{level} income groups whose tables the group's ways are derived from ({', '.join(sorted(economies))}), "
            f"renormalised to sum to one after leaving out finance, real estate, public administration and households "
            f"as employers ({', '.join(LEFT_OUT)}; a median {left_median:.1%} of the spending), paid for by fees, "

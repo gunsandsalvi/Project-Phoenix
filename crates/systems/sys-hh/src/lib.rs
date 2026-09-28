@@ -237,6 +237,14 @@ impl System for Hh {
                 .map(|i| {
                     let id = phx_id::CountryId::new(u8::try_from(i).map_err(|e| e.to_string())?);
                     let t = register.table1_in(BUDGET_SHARES.id, id)?;
+                    let products = register.products("TEC.products")?.len();
+                    if t.values().len() != products {
+                        return Err(format!(
+                            "`{}` holds {} shares for {products} products; a share is a product's",
+                            BUDGET_SHARES.id,
+                            t.values().len()
+                        ));
+                    }
                     Ok(t.values().iter().map(|v| phx_rand::float::from_i64(*v) / crate::consts::SHARE_PARTS).collect())
                 })
                 .collect::<Result<Vec<Vec<f64>>, String>>()?;

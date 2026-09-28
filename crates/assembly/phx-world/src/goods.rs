@@ -18,7 +18,7 @@ use phx_market::intents::OrderIntent;
 use phx_market::market::Form;
 use phx_market::order::{Asked, Order, Poster, Side, Timing};
 use phx_market::print::Match;
-use phx_num::{Missing, Qty, UnitId, capacity_exceeded, violation};
+use phx_num::{Missing, Qty, UnitId, violation};
 use phx_pop::population::Population;
 use phx_rand::{Subject, SubjectTag};
 use phx_store::SystemBacking;
@@ -457,14 +457,9 @@ impl GoodsView for RunGoods {
 }
 
 impl World {
-    /// What `qty` of a good costs at `price` a lot of `base` units, rounded once.
+    /// What `qty` of a good costs at `price` a lot of `base` units, rounded once, as the retail meeting reckons it.
     pub(crate) fn trade_amount(qty: i64, (price, base): (i64, i64)) -> i64 {
-        let per = i128::from(qty) * i128::from(price);
-        let amount = phx_num::round::div_round(per, i128::from(base), phx_num::Round::HalfEven);
-        let Ok(amount) = i64::try_from(amount) else {
-            capacity_exceeded!("a trade's money", i64::MAX, qty);
-        };
-        amount
+        phx_market::retail::paid(qty, price, base)
     }
 
     /// A row's party and the zone its goods stand in; none when the row is no longer live.

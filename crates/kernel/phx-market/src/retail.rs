@@ -73,7 +73,7 @@ pub struct Weights {
     pub distance: f64,
 }
 
-/// The meeting's outcome: each sale, a buyer buying whole lots from a seller at its posted price; what
+/// The meeting's outcome: each sale, a buyer buying whole units from a seller at its posted price; what
 /// each buyer that found no seller still wanted; the rounds capacity forced; and the sellers every buyer had in reach.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RetailDay {
@@ -92,20 +92,33 @@ struct Choosing {
     closed: Vec<usize>,
 }
 
-/// Whole lots a buyer wants at a price: its units' lots, or the lots its money buys.
-fn lots_wanted(want: Want, lot: i64, price: i64) -> i64 {
+/// What `units` of a good cost at `price` a lot of `lot` units, rounded once, as the sale settles.
+#[must_use]
+pub fn paid(units: i64, price: i64, lot: i64) -> i64 {
+    let amount =
+        phx_num::round::div_round(i128::from(units) * i128::from(price), i128::from(lot), phx_num::Round::HalfEven);
+    let Ok(amount) = i64::try_from(amount) else {
+        capacity_exceeded!("a trade's money", i64::MAX, units);
+    };
+    amount
+}
+
+/// Whole units a buyer wants at a price posted for a lot: its units, or the units its money buys.
+fn units_wanted(want: Want, lot: i64, price: i64) -> i64 {
     match want {
-        Want::Units(q) => q / lot,
-        Want::Money(m) if price > 0 => m / price,
+        Want::Units(q) => q,
+        Want::Money(m) if price > 0 => {
+            i64::try_from(i128::from(m) * i128::from(lot) / i128::from(price)).unwrap_or(i64::MAX)
+        }
         Want::Money(_) => 0,
     }
 }
 
-/// What a buyer still wants after buying `lots` at `price`.
-fn less(want: Want, lot: i64, lots: i64, price: i64) -> Want {
+/// What a buyer still wants after buying `units` at `price` a lot.
+fn less(want: Want, lot: i64, units: i64, price: i64) -> Want {
     match want {
-        Want::Units(q) => Want::Units(q - lots * lot),
-        Want::Money(m) => Want::Money(m - lots * price),
+        Want::Units(q) => Want::Units(q - units),
+        Want::Money(m) => Want::Money(m - paid(units, price, lot)),
     }
 }
 
@@ -115,8 +128,8 @@ fn less(want: Want, lot: i64, lots: i64, price: i64) -> Want {
 /// not been turned away from, and that chance is what it draws from, one uniform draw of its own stream a choice,
 /// never its tastes, which nothing else reads; a buyer choosing again chooses among the rest by the same chance, as the
 /// order its tastes rank the sellers in is. A seller serves its buyers in an order drawn by lot, each as many whole
-/// lots as it wants and the seller's units allow; a buyer served short, or that its money cannot buy a lot from there,
-/// chooses again. A buyer with no seller left goes without.
+/// units as it wants and the seller's units allow, at its price for a lot of `lot` units pro rata; a buyer served
+/// short, or that its money cannot buy a unit from there, chooses again. A buyer with no seller left goes without.
 #[clause("SRV.4", "SRV.5", "MKT.6", "REP.22")]
 #[must_use]
 pub fn retail(
@@ -164,14 +177,14 @@ pub fn retail(
             let near = reaches.get(s.reach).map_or(&[][..], Vec::as_slice);
             let (by_money, brings) = match ch.want {
                 Want::Money(m) => (true, m),
-                Want::Units(q) => (false, q / lot),
+                Want::Units(q) => (false, q),
             };
-            let r = ranked.entry((s.reach, by_money)).or_insert_with(|| Ranked::new(near, stalls, by_money));
+            let r = ranked.entry((s.reach, by_money)).or_insert_with(|| Ranked::new(near, stalls, (by_money, lot)));
             if r.round != round {
-                r.open(near, &left, lot, weights.get(s.reach).map_or(&[][..], Vec::as_slice));
+                r.open(near, &left, weights.get(s.reach).map_or(&[][..], Vec::as_slice));
                 r.round = round;
             }
-            // The sellers it can buy a lot at are the first of the order.
+            // The sellers it can buy a unit at are the first of the order.
             let can = r.bound.partition_point(|b| *b <= brings);
             match choose(r, can, &ch.closed, &mut s.draws) {
                 Some(k) => {
@@ -202,24 +215,24 @@ pub fn retail(
             for &(_, c, k) in group.iter() {
                 let Some(ch) = choosing.get_mut(c) else { continue };
                 let Some(s) = shoppers.get(ch.at) else { continue };
-                let wanted = lots_wanted(ch.want, lot, price);
-                let fit = *units / lot;
-                let lots = if wanted < fit { wanted } else { fit };
-                if lots > 0 {
-                    *units -= lots * lot;
+                let wanted = units_wanted(ch.want, lot, price);
+                let fit = *units;
+                let bought = if wanted < fit { wanted } else { fit };
+                if bought > 0 {
+                    *units -= bought;
                     day.sales.push(Match {
                         buyer: s.buyer,
                         seller: st.seller,
-                        qty: lots * lot,
+                        qty: bought,
                         price: st.price,
                         draws: phx_num::Missing::Absent,
                     });
-                    ch.want = less(ch.want, lot, lots, price);
+                    ch.want = less(ch.want, lot, bought, price);
                     ch.bought = true;
                 }
-                // Served short, it chooses again; one whose money buys no lot here tries another if it has bought
+                // Served short, it chooses again; one whose money buys no unit here tries another if it has bought
                 // nothing, since what is left of a budget after buying is change, not want.
-                let short = lots < wanted;
+                let short = bought < wanted;
                 let priced_out = wanted == 0 && !ch.bought && matches!(ch.want, Want::Money(m) if m > 0);
                 if short || priced_out {
                     ch.closed.push(k);
@@ -234,9 +247,10 @@ pub fn retail(
     day
 }
 
-/// A place's sellers ordered by what a buyer must bring to buy a lot at each — money, the price, for a buyer with a
-/// budget; for one that needs units, one lot at any — so what a buyer can buy at is a prefix of the order; with each seller's place in the reach, its place in the order, and the
-/// running sums of the open sellers' weights in the order as of the round they were summed in.
+/// A place's sellers ordered by what a buyer must bring to buy a unit at each — money, a unit's price, for a buyer with
+/// a budget; for one that needs units, one unit at any — so what a buyer can buy at is a prefix of the order; with each
+/// seller's place in the reach, its place in the order, and the running sums of the open sellers' weights in the order
+/// as of the round they were summed in.
 struct Ranked {
     places: Vec<usize>,
     at: Vec<usize>,
@@ -246,13 +260,15 @@ struct Ranked {
 }
 
 impl Ranked {
-    fn new(near: &[Near], stalls: &[Stall], by_money: bool) -> Ranked {
+    fn new(near: &[Near], stalls: &[Stall], (by_money, lot): (bool, i64)) -> Ranked {
         let mut order: Vec<(i64, usize)> = near
             .iter()
             .enumerate()
             .map(|(k, (stall, _))| {
                 let Some(st) = stalls.get(*stall) else { return (i64::MAX, k) };
-                (if by_money { st.price.raw() } else { 1 }, k)
+                // A unit's price rounded up, the least money that buys one there.
+                let unit = st.price.raw() / lot + i64::from(st.price.raw() % lot > 0);
+                (if by_money { unit } else { 1 }, k)
             })
             .collect();
         order.sort_unstable();
@@ -266,12 +282,12 @@ impl Ranked {
         Ranked { bound: order.iter().map(|(b, _)| *b).collect(), places, at, sums: Vec::new(), round: 0 }
     }
 
-    /// The running sums summed again over the sellers whose units still hold a lot.
-    fn open(&mut self, near: &[Near], left: &[i64], lot: i64, weights: &[f64]) {
+    /// The running sums summed again over the sellers with a unit left.
+    fn open(&mut self, near: &[Near], left: &[i64], weights: &[f64]) {
         let mut total = 0.0;
         self.sums.clear();
         for k in &self.places {
-            let fits = near.get(*k).is_some_and(|(stall, _)| left.get(*stall).is_some_and(|u| *u >= lot));
+            let fits = near.get(*k).is_some_and(|(stall, _)| left.get(*stall).is_some_and(|u| *u > 0));
             if fits {
                 total += weights.get(*k).copied().unwrap_or(0.0);
             }
@@ -384,7 +400,7 @@ mod tests {
         let mut budget = [shopper(99, Want::Money(25))];
         let one = [stall(1, 10, 10)];
         let day = retail(&one, &mut budget, &[vec![(0, 0.0)]], 1, w, &mut draws(4));
-        assert_eq!(day.sales.first().map(|m| m.qty), Some(2), "the lots its money buys, its change kept");
+        assert_eq!(day.sales.first().map(|m| m.qty), Some(2), "the units its money buys, its change kept");
     }
 
     #[test]
@@ -398,14 +414,16 @@ mod tests {
     }
 
     #[test]
-    fn a_sale_is_whole_lots() {
-        let stalls = [stall(1, 10, 1_000)];
+    fn a_sale_is_whole_units_at_a_price_for_a_lot() {
+        let stalls = [stall(1, 4_990, 1_000_000)];
         let w = Weights { price: 1.0, distance: 0.0 };
         let reach = [vec![(0, 0.0)]];
-        let day = retail(&stalls, &mut [shopper(10, Want::Units(7))], &reach, 3, w, &mut draws(5));
+        let day = retail(&stalls, &mut [shopper(10, Want::Units(7))], &reach, 10_000, w, &mut draws(5));
         let [m] = day.sales.as_slice() else { panic!("one sale") };
-        assert_eq!(m.qty, 6, "seven units wanted buy two lots of three");
-        let small = retail(&stalls, &mut [shopper(11, Want::Units(2))], &reach, 3, w, &mut draws(6));
-        assert!(small.sales.is_empty(), "less than a lot buys nothing");
+        assert_eq!(m.qty, 7, "seven units wanted buy seven, however large the lot a price is posted for");
+        let budget = retail(&stalls, &mut [shopper(11, Want::Money(100))], &reach, 10_000, w, &mut draws(6));
+        let [b] = budget.sales.as_slice() else { panic!("one sale") };
+        assert_eq!(b.qty, 200, "a hundred buys what it covers at 4 990 a lot of 10 000");
+        assert_eq!(super::paid(b.qty, 4_990, 10_000), 100, "and costs no more than it holds");
     }
 }

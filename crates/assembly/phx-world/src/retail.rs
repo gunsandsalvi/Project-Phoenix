@@ -151,8 +151,8 @@ pub(crate) fn place_of(d: &Declarations, kind: &str) -> Option<(u16, bool)> {
 }
 
 impl World {
-    /// A buyer's want of a product admitted into the product's retail market: a want of units in whole lots of the
-    /// product's least quantity, or of money; one of neither is refused and counted.
+    /// A buyer's want of a product admitted into the product's retail market: a want of whole units, or of money; one of
+    /// neither is refused and counted.
     #[clause("SRV.4", "HH.5")]
     pub(crate) fn admit_shop(&mut self, step: SubStep, rows: Rows, s: &ShopIntent) {
         if step.ordinal() > SubStep::S5d.ordinal() {
@@ -165,12 +165,11 @@ impl World {
         if !self.trade.retail.iter().any(|r| r.kind == kind) {
             violation!(clause = "SRV.4", "a want in a market that is no retail market", party = row.party.get());
         }
-        let base = self.goods_frame.base(s.product);
-        let whole = match s.want {
-            Want::Units(q) => q > 0 && q % base == 0,
+        let asked = match s.want {
+            Want::Units(q) => q > 0,
             Want::Money(m) => m > 0,
         };
-        if !whole {
+        if !asked {
             self.market_day.tally.refused += 1;
             return;
         }
@@ -264,14 +263,13 @@ impl World {
     /// A seller's stall as read: its product and zone, its offer, and the way it makes it by where it is made to
     /// order. What cannot be stored is made as it is sold, so its stall is what its maker can make today; a stocked
     /// stall offers its free units, less what the day's matches between firms already take. None where it offers
-    /// less than a lot.
+    /// nothing.
     fn stall_of(
         &self,
         &(seller, product, [price, capacity, way, plant], zone): &SellerRow,
         pending: &BTreeMap<(PartyId, InstrumentId), i64>,
     ) -> Option<(u16, ZoneId, Stall, Missing<u32>)> {
         let Missing::Present(price) = price else { return None };
-        let base = self.goods_frame.base(product);
         if price <= 0 {
             return None;
         }
@@ -286,8 +284,8 @@ impl World {
                 Missing::Present(m) if m < rate => m,
                 _ => rate,
             };
-            let stall = Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: units - units % base };
-            return (units >= base).then_some((product, zone, stall, Missing::Present(way)));
+            let stall = Stall { seller, price: phx_num::PriceRaw::from_raw(price), units };
+            return (units > 0).then_some((product, zone, stall, Missing::Present(way)));
         }
         let Missing::Present(good) = self.books.ledger.goods.of(GoodKey { product, grade: 0, zone }) else {
             return None;
@@ -299,7 +297,7 @@ impl World {
         };
         let free = held - self.books.ledger.bound(seller, good) - pending.get(&(seller, good)).copied().unwrap_or(0);
         let stall = Stall { seller, price: phx_num::PriceRaw::from_raw(price), units: free };
-        (free >= base).then_some((product, zone, stall, Missing::Absent))
+        (free > 0).then_some((product, zone, stall, Missing::Absent))
     }
 
     /// 6a: every retail market with buyers today met: the stalls of its product, each owner's builder named among

@@ -292,10 +292,9 @@ fn buy_inputs<H, S>(
                 ctx.emit(&OrderIntent { row, kind: t.market, product: *q, grade, at, side: Side::Buy, steps });
             }
         } else {
-            let Some(units) = floor_to_i64(use_per_period) else { continue };
-            let lots = units - units % t.lot + if units % t.lot > 0 { t.lot } else { 0 };
-            if lots > 0 {
-                ctx.emit(&ShopIntent { row, kind: name_code(RETAIL), product: *q, want: Want::Units(lots) });
+            let Some(units) = floor_to_i64(use_per_period.ceil()) else { continue };
+            if units > 0 {
+                ctx.emit(&ShopIntent { row, kind: name_code(RETAIL), product: *q, want: Want::Units(units) });
             }
         }
     }
