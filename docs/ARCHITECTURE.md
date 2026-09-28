@@ -1227,7 +1227,9 @@ markup, posted price, output rate, price attention, the cost of its staff's hour
   relative variance a day, and a review's cost, `FRM.review_hours` at the staff's wage: none while it expects no
   revenue, every day at or below cost. A surprise beyond `VAL.attention_sensitivity` widths sets the chance to one, so
   the review is drawn for the next day, as a surprise in the public series its stance reads wakes it (`stance_wakes`);
-  then its stance is reconsidered (VAL.7). Production follows.
+  then its stance is reconsidered (VAL.7). Production follows; for the next period each storable input it will be
+  short of is bid for at its market when the input is worth its price there financed: its price, and the margin a unit
+  made earns over its unit cost spread over what the unit takes of it (FRM.4, GDS.5).
 - `FRM.review_*` (5c, at that attention): the markup moves by `rules::markup::update` over the sales since the last
   review against those expected over its days and by what competitors charge — its product's last price between
   firms where it stands, or else its country's retail mark for it (`Ctx::posted`), absent while neither is marked —

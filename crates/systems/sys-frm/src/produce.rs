@@ -224,17 +224,19 @@ where
             ctx.emit(&OrderIntent { row, kind: traded.market, product: p, grade: 0, side: Side::Sell, steps });
         }
     }
-    buy_inputs(ctx, row, (way, plant), (planned, from_i64(price) / from_i64(traded.lot), financing));
+    let lot = from_i64(traded.lot);
+    buy_inputs(ctx, row, (way, plant), (planned, (from_i64(price) - from_i64(cost)) / lot, financing));
 }
 
 /// The inputs a period's output will use: each storable one the firm will be short of over the days a unit takes
-/// and its stock's cover, bought at its market when an input's share of a unit's price is worth its price there
-/// financed; each service bought at retail as it will be used, whole lots of it.
+/// and its stock's cover, bought at its market when it is worth its price there financed — its price, and the margin a
+/// unit made earns over its cost, over what the unit takes of it; each service bought at retail as it will be used,
+/// whole lots of it.
 fn buy_inputs<H, S>(
     ctx: &mut Ctx<'_, H, S>,
     row: Slot,
     (way, plant): (&WayRow, &Plant),
-    (planned, unit_price, financing): (f64, f64, f64),
+    (planned, unit_margin, financing): (f64, f64, f64),
 ) where
     H: HandlerDecl + Emits<OrderIntent> + Emits<ShopIntent>,
     S: FactStore + ?Sized,
@@ -252,9 +254,11 @@ fn buy_inputs<H, S>(
         let use_per_period = from_i64(takes(way, finished, *per));
         if t.storable {
             let Missing::Present(mark) = ctx.mark(row, *q, 0) else { continue };
-            // An input's worth in use: its share, by what the way takes of it, of what a unit made fetches.
-            let worth = unit_price * from_i64(PER_UNIT_SCALE) / from_i64(total);
-            let carried = inputs::carried_cost(from_i64(mark) / from_i64(t.lot), financing, lead + cover);
+            // An input's worth in use: what it costs at its market, and what a unit made earns beyond its cost, over what
+            // the unit takes of it.
+            let price_per_unit = from_i64(mark) / from_i64(t.lot);
+            let worth = price_per_unit + unit_margin * from_i64(PER_UNIT_SCALE) / from_i64(*per);
+            let carried = inputs::carried_cost(price_per_unit, financing, lead + cover);
             let short = inputs::order(use_per_period, (lead, cover), from_i64(ctx.held(row, *q, 0)), worth, carried);
             let Some(units) = floor_to_i64(short) else { continue };
             let lots = units - units % t.lot + if units % t.lot > 0 { t.lot } else { 0 };
