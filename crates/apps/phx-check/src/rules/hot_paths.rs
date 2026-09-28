@@ -19,6 +19,7 @@ const HOT: &[(&str, &str)] = &[
     ("phx-core", "src/goods.rs"),
     ("phx-core", "src/units.rs"),
     ("phx-market", "src/meet.rs"),
+    ("phx-market", "src/hiring.rs"),
 ];
 
 /// The maps a hot module may not name.

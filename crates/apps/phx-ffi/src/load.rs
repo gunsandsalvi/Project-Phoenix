@@ -31,6 +31,7 @@ use serde::Deserialize;
 use crate::bench::{BenchHost, BenchLine};
 use crate::json::Json;
 use goods::{GoodsLoad, Sold};
+use labour::LabourLoad;
 
 /// The report section's layout.
 const LOAD_VERSION: u64 = 5;
@@ -136,6 +137,7 @@ enum Kernel {
     Turnover,
     Settle,
     Goods,
+    Labour,
     Audit,
 }
 
@@ -432,6 +434,8 @@ impl Row for Contract {
 /// The reasons the bench's flows are made for: work, purchases, goods, dues, and a due's second legs; and the cash
 /// lines a party keeps of them, paid and received.
 const REASONS: usize = 6;
+/// A business day's searchers a vacancy of the labour book stands for.
+const SEEKERS_A_VACANCY: u64 = 3;
 /// The purchases' money reason and their goods legs' reason.
 const PURCHASE: u8 = 2;
 const PURCHASED_GOODS: u8 = 3;
@@ -488,6 +492,7 @@ struct Load {
     /// into what the heaviest sized.
     meetings: Vec<Kept>,
     goods: GoodsLoad,
+    labour: LabourLoad,
 }
 
 /// A day's count of each unit of work, for the costs a unit.
@@ -1315,6 +1320,7 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
     let institution = v.kind("institution")?;
     let issuer = PartyKey::new(institution, Slot::new(kinds.get(usize::from(institution)).map_or(0, |k| k.n)));
     let goods = goods_of(v, &kinds, &pool, host)?;
+    let labour = labour_of(v, &kinds)?;
     Ok(Load {
         pool,
         kinds,
@@ -1339,6 +1345,7 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
         next_id: persons << 8,
         meetings: Vec::new(),
         goods,
+        labour,
     })
 }
 
@@ -1356,6 +1363,19 @@ fn goods_of(v: &Volumes, kinds: &[Kind], pool: &Pool, host: &dyn BenchHost) -> R
     let make = i64::try_from(bought.div_ceil(groups).div_ceil(u64::from(firms).div_ceil(groups))).unwrap_or(i64::MAX);
     show(host, "building", format!("{firms} firms' goods, {make} units a day each"), String::new(), "");
     Ok(GoodsLoad::new(pool, (firm, firms), (v.world.products, v.world.regions, v.world.range_bits), make))
+}
+
+/// The labour book: a vacancy for every three of a business day's searchers, over the firms.
+fn labour_of(v: &Volumes, kinds: &[Kind]) -> Result<LabourLoad, String> {
+    let (firm, household) = (v.kind("firm")?, v.kind("household")?);
+    let n = |k: u8| kinds.get(usize::from(k)).map_or(0, |x| x.n);
+    let searchers: u64 = v
+        .works
+        .iter()
+        .filter(|w| w.kernel == Kernel::Labour)
+        .map(|w| v.work(w.per_million.first().copied().unwrap_or(0)))
+        .sum();
+    Ok(LabourLoad::new((firm, n(firm)), (household, n(household)), v.world.regions, searchers / SEEKERS_A_VACANCY))
 }
 
 /// What one day's work took, kind by kind, and its units.
@@ -1550,6 +1570,11 @@ fn run_work(
             units.shorts += shorts;
             flows
         }
+        Kernel::Labour => {
+            let done = load.labour.day(&load.pool, day, count);
+            units.choices += done;
+            done
+        }
         Kernel::Goods => {
             let applied = load.goods.day(&load.pool, day)?;
             units.flows += applied;
@@ -1726,7 +1751,7 @@ fn unit_costs(records: &[DayRecord]) -> Vec<(String, u64, u64)> {
                 "dues" => 1,
                 "audit" => continue,
                 "turnover" => 5,
-                n if n.contains("purchases") => 3,
+                n if n.contains("purchases") || n.starts_with("labour") => 3,
                 n if n.starts_with("hazards") => 4,
                 _ => 2,
             };
@@ -1844,6 +1869,8 @@ pub fn run_load(
 
 #[path = "load_goods.rs"]
 mod goods;
+#[path = "load_labour.rs"]
+mod labour;
 
 #[cfg(test)]
 mod tests {

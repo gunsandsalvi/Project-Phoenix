@@ -29,3 +29,5 @@ pub const ROUND_BLOCKS: u32 = 4;
 pub const STALL_CHUNK: usize = 1_024;
 /// Bits of a stall's place the meeting groups buyers by in one pass: 256 streams to write keep a pass sequential.
 pub const STALL_DIGIT_BITS: u32 = 8;
+/// Seekers whose applications one job of the labour round draws.
+pub const SEARCH_CHUNK: usize = 4_096;

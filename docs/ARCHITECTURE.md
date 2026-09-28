@@ -1945,8 +1945,21 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
     the leaving alone for a unit leaving the chain.
   - `capacity` is a holder's units of a kind, each at its condition's efficiency, at a zone or wherever they stand;
     a way's capacity is the least over its kinds of that over what it needs a unit (CAP.9).
+- **Labour matching** (`phx_market::hiring`), a step a day:
+  - `Standing` groups the open vacancies by region and occupation, each group by the skill it asks, least first, so a
+    seeker's reach is a prefix of its group.
+  - `search`: each seeker sends a round's share of a week's applications (the whole part, one more at the chance of
+    the rest). It draws them one by one without replacement from its own stream, among the vacancies in reach paying
+    above its reservation, with chances in proportion to wage^w. That is the logit over w·ln(wage) with a Gumbel taste
+    per vacancy (Plackett–Luce), the distribution the old rule's taste per vacancy ranked, without a draw per vacancy.
+    Seekers are drawn in chunks on the pool, joined in their order.
+  - `select`: yesterday's applications are met at a chance, grouped by vacancy in the order sent, and handed with their
+    lots to the employer's rule, which offers no more than the jobs open.
+  - `answer`: each person answers its offers together; the best-paid it accepts is its hire, ties to the vacancy
+    listed first, and every other offer's job returns.
+  - The hires go on to become employment contracts where the world applies them.
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel, settlement,
-  facts, goods, capital or posted-price meeting.
+  facts, goods, capital, posted-price meeting or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
   its three sustained cores, never below the wall; page faults per day stand for allocation during the day.
 
@@ -1966,6 +1979,9 @@ month through these kernels:
   - a third of the products spoil, weekly, and a hundredth of the goods firms ship a quarter of their stock to the next
     region, arriving three days on;
   - the goods' identity is read every day;
+- a labour round (`load_labour.rs`) on business days: a book of a vacancy for every three of the day's searchers, about
+  3% of persons searching, each day's offers answered, applications met and selected, and applications drawn, a
+  filled vacancy posted again;
 - the wheel's dues, monthly and quarterly, the quarterly through the far list, each reckoned through its family's shape
   of terms (a fixed sum, interest, an annuity, a principal once) from its contract's row, a row a few dues ahead asked
   for early;

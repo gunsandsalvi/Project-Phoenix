@@ -115,6 +115,7 @@ pub const phx_market::consts::KEY_SHIFT: u32
 pub const phx_market::consts::METRES_A_KM: f64
 pub const phx_market::consts::NODE_BITS: u32
 pub const phx_market::consts::ROUND_BLOCKS: u32
+pub const phx_market::consts::SEARCH_CHUNK: usize
 pub const phx_market::consts::STALL_CHUNK: usize
 pub const phx_market::consts::STALL_DIGIT_BITS: u32
 pub const phx_market::consts::TAG_BID: u128
@@ -190,6 +191,37 @@ pub struct phx_market::grant::Drawn
 pub phx_market::grant::Drawn::in_money: i64
 pub phx_market::grant::Drawn::on_terms: i64
 pub fn phx_market::grant::draw(i64, i64) -> phx_market::grant::Drawn
+pub mod phx_market::hiring
+pub struct phx_market::hiring::Applicant
+pub phx_market::hiring::Applicant::experience: u32
+pub phx_market::hiring::Applicant::lot: u64
+pub phx_market::hiring::Applicant::skill: u32
+pub struct phx_market::hiring::Application
+pub phx_market::hiring::Application::seeker: phx_market::hiring::Seeker
+pub phx_market::hiring::Application::vacancy: u32
+pub struct phx_market::hiring::Seeker
+pub phx_market::hiring::Seeker::experience: u32
+pub phx_market::hiring::Seeker::household: phx_id::ids::PartyKey
+pub phx_market::hiring::Seeker::occupation: u32
+pub phx_market::hiring::Seeker::person: u32
+pub phx_market::hiring::Seeker::region: u32
+pub phx_market::hiring::Seeker::reservation: f64
+pub phx_market::hiring::Seeker::skill: u32
+pub phx_market::hiring::Seeker::subject: u64
+pub struct phx_market::hiring::Standing
+impl phx_market::hiring::Standing
+pub fn phx_market::hiring::Standing::in_reach<'a>(&'a self, &[phx_market::hiring::Vacancy], &phx_market::hiring::Seeker) -> &'a [u32]
+pub fn phx_market::hiring::Standing::new(&[phx_market::hiring::Vacancy]) -> phx_market::hiring::Standing
+pub struct phx_market::hiring::Vacancy
+pub phx_market::hiring::Vacancy::employer: phx_id::ids::PartyKey
+pub phx_market::hiring::Vacancy::occupation: u32
+pub phx_market::hiring::Vacancy::open: u32
+pub phx_market::hiring::Vacancy::region: u32
+pub phx_market::hiring::Vacancy::skill: u32
+pub phx_market::hiring::Vacancy::wage: f64
+pub fn phx_market::hiring::answer(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application, &phx_market::hiring::Vacancy) -> bool) -> alloc::vec::Vec<phx_market::hiring::Application>
+pub fn phx_market::hiring::search(core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::hiring::Vacancy], &phx_market::hiring::Standing), &[phx_market::hiring::Seeker], (f64, f64), &impl core::ops::function::Fn(u64) -> phx_rand::draws::Draws + core::marker::Sync) -> alloc::vec::Vec<phx_market::hiring::Application>
+pub fn phx_market::hiring::select(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application) -> bool, (impl core::ops::function::Fn(u32) -> phx_rand::draws::Draws, impl core::ops::function::Fn(&[phx_market::hiring::Applicant], u32) -> alloc::vec::Vec<u32>)) -> alloc::vec::Vec<phx_market::hiring::Application>
 pub mod phx_market::instances
 pub struct phx_market::instances::Kinds
 impl phx_market::instances::Kinds

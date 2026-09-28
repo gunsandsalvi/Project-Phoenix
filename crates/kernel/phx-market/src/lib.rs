@@ -13,6 +13,7 @@ pub mod coupled_call;
 pub mod dealer;
 pub mod failure;
 pub mod grant;
+pub mod hiring;
 pub mod instances;
 pub mod intents;
 pub mod linked_call;
