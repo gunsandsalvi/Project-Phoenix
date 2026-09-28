@@ -1965,7 +1965,15 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   - `answer`: each person answers its offers together; the best-paid it accepts is its hire, ties to the vacancy
     listed first, and every other offer's job returns.
   - The hires go on to become employment contracts where the world applies them.
-- **Hot modules** (PC-92): no map or trait object in the core's parties, edges, partition, flows, wheel, settlement,
+- **The world's stores** (`phx_core::store`): a kind (`KindStore`) keeps its `Parties`, each party's record of `stride`
+  words in one column, and, if it holds money, its accounts (bank, balance, pending, held, facility) and cash lines,
+  each a column indexed by slot, so a party begun in a released slot writes its own words over the ended one's; a
+  kind of money requires an account at `begin` and any other refuses one. `books` makes settlement's `Books` from the
+  kinds, and `deposits_of` sums what each bank owes. A family (`Family`) keeps its `EdgeTable`, each listed side's heads,
+  one a party of its kind's capacity, and its `DueWheel`: `open` threads a contract on its sides' lists and on the wheel
+  at its first due and refuses a side of another kind; `close` takes it off its lists and leaves its wheel entry for
+  its reader to skip. The world and the full-load bench build on them.
+- **Hot modules** (PC-92): no map or trait object in the core's parties, edges, stores, partition, flows, wheel, settlement,
   facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
   its three sustained cores, never below the wall; page faults per day stand for allocation during the day.

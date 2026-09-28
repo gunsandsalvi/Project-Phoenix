@@ -11,8 +11,8 @@ use std::time::Instant;
 
 use phx_core::column_facts::{Layout, RecordFacts};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
-use phx_core::settle::{AT_ISSUER, Book, Books, Lines, Settle};
-use phx_core::wheel::DueWheel;
+use phx_core::settle::{AT_ISSUER, Books, Settle};
+use phx_core::store::{Family as StoreFamily, KindStore, deposits_of};
 use phx_exec::{Clock, Pool, PoolSpec, mix64};
 use phx_id::{Day, PartyId, PartyKey, Slot};
 use phx_ledger::algebra::{
@@ -25,8 +25,7 @@ use phx_market::retail::{Want, Weights};
 use phx_num::MaybeI64;
 use phx_num::Money;
 use phx_rand::{Draws, Seed, StreamKey, Subject, SubjectTag, below_u64, stream_key};
-use phx_store::edges::NONE;
-use phx_store::{AddressSpace, Column, EdgeTable, Parties, Row, SystemBacking};
+use phx_store::{AddressSpace, Column, Row, SystemBacking};
 use serde::Deserialize;
 
 use crate::bench::{BenchHost, BenchLine};
@@ -350,63 +349,29 @@ fn calibrate(clock: &Mono) -> f64 {
 /// One kind's parties: their slots, their records of facts, row-major at `stride` words a party, and their money and
 /// what is pending on it, in columns, where the kind holds money.
 struct Kind {
-    parties: Parties<SystemBacking>,
-    records: Column<MaybeI64, SystemBacking>,
-    stride: usize,
-    money: Option<Column<i64, SystemBacking>>,
-    pending: Option<Column<i64, SystemBacking>>,
-    accounts: Option<Accounts>,
-    /// The kind's parties' cash lines, what each paid and received, and the line each reason posts to.
-    cash: Option<Cash>,
+    store: KindStore<SystemBacking>,
     n: u32,
 }
 
-/// A kind's cash lines: `CASH_LINES` a party, and the line each reason's payments and receipts post to.
-struct Cash {
-    amounts: Column<i64, SystemBacking>,
-    paid: Vec<Option<usize>>,
-    received: Vec<Option<usize>>,
-}
-
-/// Where a kind's accounts are held, what each holds through closed banks, and the facility each is granted.
-struct Accounts {
-    bank: Column<u32, SystemBacking>,
-    held: Column<i64, SystemBacking>,
-    facility: Column<i64, SystemBacking>,
-}
-
-impl Kind {
-    /// The kind's accounts as the settlement reads them, if it holds money.
-    fn book(&mut self) -> Option<Book<'_>> {
-        let (money, pending, a) = (self.money.as_mut()?, self.pending.as_mut()?, self.accounts.as_mut()?);
-        let Accounts { bank, held, facility } = a;
-        let lines = self.cash.as_mut().map(|c| Lines {
-            amounts: c.amounts.slice_mut(),
-            width: CASH_LINES,
-            paid: &c.paid,
-            received: &c.received,
-        });
-        Some(Book {
-            bank: bank.slice(),
-            balance: money.slice_mut(),
-            pending: pending.slice_mut(),
-            held: held.slice_mut(),
-            facility: facility.slice(),
-            lines,
-        })
+impl std::ops::Deref for Kind {
+    type Target = KindStore<SystemBacking>;
+    fn deref(&self) -> &KindStore<SystemBacking> {
+        &self.store
     }
 }
 
-/// One family's contracts: the table, each contract's amount, balance and next due day, its other columns, the list
-/// heads on its parties' kinds, its wheel and its parties' kinds.
+impl std::ops::DerefMut for Kind {
+    fn deref_mut(&mut self) -> &mut KindStore<SystemBacking> {
+        &mut self.store
+    }
+}
+
+/// One family's contracts on the kernel's store, its other columns, the mean of its contracts' amounts and its shape of
+/// terms planned for a date: every due is its contract's amount and balance through it.
 struct Family {
-    edges: EdgeTable<Contract, SystemBacking>,
+    store: StoreFamily<Contract, SystemBacking>,
     others: Vec<Column<u64, SystemBacking>>,
-    heads: [Option<Column<u32, SystemBacking>>; 2],
-    wheel: DueWheel,
-    kinds: [u8; 2],
     mean: i64,
-    /// The family's shape of terms planned for a date: every due is its contract's amount and balance through it.
     plan: ShapePlan,
 }
 
@@ -800,9 +765,9 @@ fn dues(
 ) -> u64 {
     let mut total = 0_u64;
     let rows_a_chunk = to_usize(u64::from(rpc));
-    bufs.reset(f.edges.rows().len().div_ceil(rows_a_chunk));
+    bufs.reset(f.store.edges.rows().len().div_ceil(rows_a_chunk));
     for d in days.0..=days.1 {
-        f.wheel.take(Day::new(d), due, Some(pool));
+        f.store.wheel.take(Day::new(d), due, Some(pool));
         if due.is_empty() {
             continue;
         }
@@ -817,7 +782,7 @@ fn dues(
             spans.push((to_usize(u64::from(chunk)), from, to));
             from = to;
         }
-        let mut chunks = f.edges.rows_mut().chunks_mut(rows_a_chunk).enumerate();
+        let mut chunks = f.store.edges.rows_mut().chunks_mut(rows_a_chunk).enumerate();
         let mut buffers = bufs.chunks_mut().iter_mut().enumerate();
         let mut jobs: Vec<(ChunkJob<'_, Contract>, (usize, usize))> = Vec::with_capacity(spans.len());
         for (chunk, a, b) in &spans {
@@ -878,7 +843,7 @@ fn dues(
         // The chunks' moved contracts in chunk order are in slot order, so the bucket they join keeps them sorted.
         for m in &moved {
             total += index_u64(m.len());
-            f.wheel.schedule_all(m, Day::new(next));
+            f.store.wheel.schedule_all(m, Day::new(next));
         }
     }
     total
@@ -888,42 +853,30 @@ fn dues(
 /// and as many opened between parties drawn afresh, each put on the wheel for its first due.
 fn turnover(f: &mut Family, sizes: [u32; 2], count: u64, day: u32, seed: u64) -> u64 {
     let mut d = draws(11, seed, day);
-    let high = u64::from(f.edges.high_water());
+    let high = u64::from(f.store.edges.high_water());
     let mut done = 0_u64;
     for _ in 0..count {
         let edge = Slot::new(to_u32(below_u64(&mut d, high)));
-        if !f.edges.is_open(edge) {
+        if !f.store.edges.is_open(edge) {
             continue;
         }
-        let Some(row) = f.edges.rows_mut().get_mut(to_usize(u64::from(edge.get()))) else { continue };
+        let Some(row) = f.store.edges.rows_mut().get_mut(to_usize(u64::from(edge.get()))) else { continue };
         row.due = NEVER;
-        let [a, b] = row.ends;
-        let [h0, h1] = &mut f.heads;
-        let hs = [
-            h0.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(a.slot().get())))),
-            h1.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(b.slot().get())))),
-        ];
-        f.edges.close(edge, hs);
+        f.store.close(edge);
         done += 1;
     }
     for _ in 0..done {
         let ends: [PartyKey; 2] = [0, 1].map(|side| {
-            let (kind, size) = (f.kinds.get(side).copied().unwrap_or(0), sizes.get(side).copied().unwrap_or(1));
+            let (kind, size) = (f.store.kinds.get(side).copied().unwrap_or(0), sizes.get(side).copied().unwrap_or(1));
             PartyKey::new(kind, Slot::new(to_u32(below_u64(&mut d, u64::from(size)))))
         });
-        let [h0, h1] = &mut f.heads;
-        let hs = [
-            h0.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(ends[0].slot().get())))),
-            h1.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(ends[1].slot().get())))),
-        ];
         let amount = f.mean / 2 + i64::try_from(below_u64(&mut d, u64::try_from(f.mean).unwrap_or(0) + 1)).unwrap_or(0);
         let balance = i64::try_from(below_u64(&mut d, BALANCE_SPAN)).unwrap_or(0);
         let first = day + 1 + to_u32(below_u64(&mut d, u64::from(MONTH_DAYS)));
-        let edge = f.edges.open(Contract { ends, amount, balance, due: first, terms: 0 }, hs);
+        let edge = f.store.open(Contract { ends, amount, balance, due: first, terms: 0 }, Some(Day::new(first)));
         for c in &mut f.others {
             c.put(edge, 0);
         }
-        f.wheel.schedule(edge.get(), Day::new(first));
     }
     done * 2
 }
@@ -941,7 +894,7 @@ impl Load {
         let grouped = Grouped::new(&refs, &self.ranges);
         let flows = index_u64(refs.iter().map(|b| b.len()).sum());
         let mut books = Books {
-            kinds: self.kinds.iter_mut().map(Kind::book).collect(),
+            kinds: self.kinds.iter_mut().map(|k| k.store.book()).collect(),
             banks: self.bank_kind,
             deposits: &mut self.deposits,
             closed: &self.closed,
@@ -973,7 +926,7 @@ impl Load {
             return Err(format!("reserves changed from {} to {reserves} on day {day}", self.reserves_total));
         }
         let books = Books {
-            kinds: self.kinds.iter_mut().map(Kind::book).collect(),
+            kinds: self.kinds.iter_mut().map(|k| k.store.book()).collect(),
             banks: self.bank_kind,
             deposits: &mut self.deposits,
             closed: &self.closed,
@@ -987,7 +940,7 @@ impl Load {
             .families
             .iter()
             .map(|f| {
-                let a = f.edges.rows();
+                let a = f.store.edges.rows();
                 let each = a.len().div_ceil(to_usize(AUDIT_SLICES));
                 a.iter().skip(to_usize(slice) * each).take(each).map(|r| r.amount).sum::<i64>()
             })
@@ -1027,13 +980,15 @@ impl Load {
         let mut sources: Vec<Vec<&[u8]>> = Vec::new();
         for k in &self.kinds {
             let mut cols: Vec<&[u8]> = vec![phx_store::as_bytes(k.records.slice())];
-            cols.extend(k.money.iter().chain(&k.pending).map(|m| phx_store::as_bytes(m.slice())));
+            cols.extend(
+                k.accounts.iter().flat_map(|a| [&a.balance, &a.pending]).map(|m| phx_store::as_bytes(m.slice())),
+            );
             sources.push(cols);
         }
         for f in &self.families {
-            let mut cols: Vec<&[u8]> = vec![phx_store::as_bytes(f.edges.rows())];
+            let mut cols: Vec<&[u8]> = vec![phx_store::as_bytes(f.store.edges.rows())];
             cols.extend(f.others.iter().map(|c| phx_store::as_bytes(c.slice())));
-            cols.extend(f.heads.iter().flatten().map(|c| phx_store::as_bytes(c.slice())));
+            cols.extend(f.store.heads.iter().flatten().map(|c| phx_store::as_bytes(c.slice())));
             sources.push(cols);
         }
         for h in &self.held {
@@ -1071,15 +1026,22 @@ fn build_kind(
     (index, n, banks): (u8, u32, Option<u32>),
     rows_per_chunk: u32,
 ) -> Kind {
-    let mut parties = Parties::new(space, index, n, rows_per_chunk);
-    for i in 0..n {
-        let _ = parties.begin(PartyId::new((u64::from(index) << 32) | (u64::from(i) + 1)));
-    }
     let words_a_party = to_usize(k.bytes.div_ceil(index_u64(size_of::<i64>())));
     // A record holds at least a fact read and one written.
     let stride = if words_a_party < 2 { 2 } else { words_a_party };
+    let mut store: KindStore<SystemBacking> = KindStore::new(space, index, n, rows_per_chunk, stride);
+    if k.money {
+        store = store.with_accounts(space, n, rows_per_chunk).with_cash(
+            space,
+            (n, rows_per_chunk),
+            CASH_LINES,
+            (vec![Some(0); REASONS], vec![Some(1); REASONS]),
+        );
+    }
+    for i in 0..n {
+        let _ = store.parties.begin(PartyId::new((u64::from(index) << 32) | (u64::from(i) + 1)));
+    }
     let words = u64::from(n) * index_u64(stride);
-    let mut records: Column<MaybeI64, SystemBacking> = Column::new(space, to_u32(words), rows_per_chunk);
     let np = pool.workers();
     let values: Vec<MaybeI64> = pool
         .map(np, |p| {
@@ -1090,14 +1052,10 @@ fn build_kind(
                 .collect::<Vec<_>>()
         })
         .concat();
-    records.extend(&values);
-    let column = |space: &mut AddressSpace, v: i64| {
-        let mut m: Column<i64, SystemBacking> = Column::new(space, n, rows_per_chunk);
-        m.extend(&vec![v; to_usize(u64::from(n))]);
-        m
-    };
-    // Balances spread over four orders of magnitude, as accounts' are, so few are short on a day.
-    let money = k.money.then(|| {
+    store.records.extend(&values);
+    let size = to_usize(u64::from(n));
+    if let Some(a) = store.accounts.as_mut() {
+        // Balances spread over four orders of magnitude, as accounts' are, so few are short on a day.
         let mut d = draws(15, u64::from(index), 0);
         let spread: Vec<i64> = (0..n)
             .map(|_| {
@@ -1105,28 +1063,21 @@ fn build_kind(
                 scale * (1 + i64::try_from(below_u64(&mut d, 9)).unwrap_or(0))
             })
             .collect();
-        let mut m: Column<i64, SystemBacking> = Column::new(space, n, rows_per_chunk);
-        m.extend(&spread);
-        m
-    });
-    let pending = k.money.then(|| column(space, 0));
-    // Each account at a bank drawn for it; the banks' own money is their reserves, held at the issuer.
-    let accounts = k.money.then(|| {
-        let mut bank: Column<u32, SystemBacking> = Column::new(space, n, rows_per_chunk);
+        a.balance.extend(&spread);
+        // Each account at a bank drawn for it; the banks' own money is their reserves, held at the issuer.
         let at: Vec<u32> = (0..n)
             .map(|s| banks.map_or(AT_ISSUER, |b| to_u32(mix64(u64::from(s) ^ u64::from(index)) % u64::from(b))))
             .collect();
-        bank.extend(&at);
-        Accounts { bank, held: column(space, 0), facility: column(space, 0) }
-    });
+        a.bank.extend(&at);
+        for c in [&mut a.pending, &mut a.held, &mut a.facility] {
+            c.extend(&vec![0; size]);
+        }
+    }
     // Every reason's flows post to two lines: what a party paid, and what it received.
-    let cash = k.money.then(|| {
-        let mut amounts: Column<i64, SystemBacking> =
-            Column::new(space, n * to_u32(index_u64(CASH_LINES)), rows_per_chunk);
-        amounts.extend(&vec![0; to_usize(u64::from(n)) * CASH_LINES]);
-        Cash { amounts, paid: vec![Some(0); REASONS], received: vec![Some(1); REASONS] }
-    });
-    Kind { parties, records, stride, money, pending, accounts, cash, n }
+    if let Some(c) = store.cash.as_mut() {
+        c.amounts.extend(&vec![0; size * CASH_LINES]);
+    }
+    Kind { store, n }
 }
 
 /// A family's shape of terms planned for its first date: a month's fixed sum, interest, an annuity's part or the
@@ -1184,24 +1135,7 @@ fn plan_of(shape: TermsShape) -> ShapePlan {
 
 /// The banks' reserves and what they have pending, summed.
 fn reserves_of(kinds: &[Kind], banks: u8) -> i128 {
-    kinds
-        .get(usize::from(banks))
-        .and_then(|k| k.money.as_ref().zip(k.pending.as_ref()))
-        .map_or(0, |(m, p)| m.slice().iter().chain(p.slice()).map(|x| i128::from(*x)).sum())
-}
-
-/// What the customers of each bank hold, their pending included, summed by bank.
-fn deposits_of(kinds: &[Kind], banks: usize) -> Vec<i64> {
-    let mut owed = vec![0_i64; banks];
-    for k in kinds {
-        let (Some(m), Some(p), Some(a)) = (k.money.as_ref(), k.pending.as_ref(), k.accounts.as_ref()) else { continue };
-        for ((b, m), p) in a.bank.slice().iter().zip(m.slice()).zip(p.slice()) {
-            if let Some(o) = owed.get_mut(to_usize(u64::from(*b))) {
-                *o += m + p;
-            }
-        }
-    }
-    owed
+    kinds.get(usize::from(banks)).map_or(0, |k| k.money())
 }
 
 /// A family's contracts between random parties of its two kinds, each first due by its family's dues.
@@ -1215,16 +1149,8 @@ fn build_family(
 ) -> Family {
     // A contract closed today frees its slot only after the day closes, so the day's openings need room of their own.
     let capacity = n + headroom;
-    let mut edges = EdgeTable::new(space, capacity, rows_per_chunk, f.listed);
-    let mut heads: [Option<Column<u32, SystemBacking>>; 2] = [0, 1].map(|side| {
-        f.listed.get(side).copied().unwrap_or(false).then(|| {
-            let size = sizes.get(side).copied().unwrap_or(1);
-            let mut h: Column<u32, SystemBacking> = Column::new(space, size, rows_per_chunk);
-            h.extend(&vec![NONE; to_usize(u64::from(size))]);
-            h
-        })
-    });
-    let mut wheel = DueWheel::new(Day::new(0), WHEEL_DAYS);
+    let mut store: StoreFamily<Contract, SystemBacking> =
+        StoreFamily::new(space, (kinds, sizes), (capacity, rows_per_chunk), f.listed, (Day::new(0), WHEEL_DAYS));
     let mut d = draws(10, seed, 0);
     for i in 0..n {
         // A chunk of contracts an address, since one address holds fewer draws than the largest family needs.
@@ -1235,11 +1161,6 @@ fn build_family(
             let (kind, size) = (kinds.get(side).copied().unwrap_or(0), sizes.get(side).copied().unwrap_or(1));
             PartyKey::new(kind, Slot::new(to_u32(below_u64(&mut d, u64::from(size)))))
         });
-        let [h0, h1] = &mut heads;
-        let hs = [
-            h0.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(ends[0].slot().get())))),
-            h1.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(ends[1].slot().get())))),
-        ];
         let amount = f.mean / 2 + i64::try_from(below_u64(&mut d, u64::try_from(f.mean).unwrap_or(0) + 1)).unwrap_or(0);
         let balance = i64::try_from(below_u64(&mut d, BALANCE_SPAN)).unwrap_or(0);
         let first = match f.dues {
@@ -1249,21 +1170,18 @@ fn build_family(
             Dues::Quarterly => Some(to_u32(below_u64(&mut d, QUARTER_DAYS))),
         };
         let row = Contract { ends, amount, balance, due: first.unwrap_or(NEVER), terms: 0 };
-        let edge = edges.open(row, hs);
-        if let Some(day) = first {
-            wheel.schedule(edge.get(), Day::new(day));
-        }
+        let _ = store.open(row, first.map(Day::new));
     }
     // The row holds amount, balance, next due and terms, 24 bytes; the family's other words are columns apart.
     let words = to_usize(if f.bytes > 24 { (f.bytes - 24).div_ceil(8) } else { 0 });
     let others = (0..words)
         .map(|_| {
-            let mut c: Column<u64, SystemBacking> = edges.column(space);
+            let mut c: Column<u64, SystemBacking> = store.edges.column(space);
             c.extend(&vec![0_u64; to_usize(u64::from(n))]);
             c
         })
         .collect();
-    Family { edges, others, heads, wheel, kinds, mean: f.mean, plan: plan_of(f.terms) }
+    Family { store, others, mean: f.mean, plan: plan_of(f.terms) }
 }
 
 /// A handler's agenda: its kind's rows by the phase of their schedule, the period the kind's rows over the day's
@@ -1341,8 +1259,8 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
     let high: Vec<u32> = kinds.iter().map(|k| k.n).collect();
     let ranges = Ranges::new(v.world.range_bits, &high);
     // Each bank holds a tenth of what its customers hold in reserves.
-    let deposits = deposits_of(&kinds, to_usize(u64::from(n_banks)));
-    if let Some(m) = kinds.get_mut(usize::from(bank_kind)).and_then(|k| k.money.as_mut()) {
+    let deposits = deposits_of(kinds.iter().map(|k| &k.store), to_usize(u64::from(n_banks)));
+    if let Some(m) = kinds.get_mut(usize::from(bank_kind)).and_then(|k| k.accounts.as_mut()).map(|a| &mut a.balance) {
         for (r, d) in m.slice_mut().iter_mut().zip(&deposits) {
             *r = d / 10;
         }
@@ -1581,15 +1499,15 @@ fn run_work(
             total
         }
         Kernel::Turnover => {
-            let contracts: u64 = load.families.iter().map(|f| index_u64(f.edges.rows().len())).sum();
+            let contracts: u64 = load.families.iter().map(|f| index_u64(f.store.edges.rows().len())).sum();
             let kinds = &load.kinds;
             // Families hold their own contracts and lists, so each turns over on its own worker.
             let jobs: Vec<(usize, &mut Family)> = load.families.iter_mut().enumerate().collect();
             let mut done: u64 = load
                 .pool
                 .map_items(jobs, |(fi, f)| {
-                    let share = (count * index_u64(f.edges.rows().len())).checked_div(contracts).unwrap_or(0);
-                    let sizes = f.kinds.map(|k| kinds.get(usize::from(k)).map_or(1, |x| x.n));
+                    let share = (count * index_u64(f.store.edges.rows().len())).checked_div(contracts).unwrap_or(0);
+                    let sizes = f.store.kinds.map(|k| kinds.get(usize::from(k)).map_or(1, |x| x.n));
                     turnover(f, sizes, share, day, index_u64(fi))
                 })
                 .into_iter()
@@ -1644,7 +1562,7 @@ fn run_day(load: &mut Load, v: &Volumes, i: usize, kind: DayType, clock: &Mono) 
         k.parties.close_day();
     }
     for f in &mut load.families {
-        f.edges.close_day();
+        f.store.edges.close_day();
     }
     let faults = before.zip(process_times()).map_or(0, |(f0, f1)| f1 - f0);
     let cpu_ns = day_cpu.zip(phx_exec::process_cpu_ns()).map_or(0, |(a, b)| b - a);

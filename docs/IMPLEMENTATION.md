@@ -749,6 +749,17 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 | `crates/apps/phx-cli/src/checks/` | the Stage 0 checks re-pointed at the inspector over the core |
 
 **Design**:
+- **Parts**, each committed on its fast checks:
+  - a. The kernel's party and contract stores (`phx_core::store`): a kind's parties with their record words,
+    accounts and cash lines, and a family's contracts with their list heads, due wheel and shape plan, as the
+    full-load bench built them; the bench builds on them.
+  - b. Households and their persons on the core: the household kind's records and each household's persons in its
+    chunk's arena (`phx-pop`), and the institutions' kinds, drawn by the opening beside the old world's.
+  - c. The balance sheet apportioned: accounts, deposits, reserves, government paper and pensions in payment from
+    `GEN.balance_sheet` by `split_total`, and the primitives it replaces retired.
+  - d. The day: hazards and outcomes over persons, dated flows by shape from the wheel, settlement over `Books`,
+    closed days committed, estates on edges.
+  - e. The audit's money and contracts families, the Stage 0 checks on the inspector over the core, and the smoke.
 - **Values the opening now draws from the data in hand.** Whom an extended or non-relative household holds besides
   its head, assumed today (`DEM.household_members`: one relative of 65 and over, one unrelated adult), is derived per
   group from the DHS household structure (`people/dhs_indicators`: members of 65 and over, three generations,

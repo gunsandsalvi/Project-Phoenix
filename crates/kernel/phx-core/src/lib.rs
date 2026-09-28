@@ -38,6 +38,7 @@ pub mod schedule;
 pub mod schema;
 pub mod settle;
 pub mod spoilage;
+pub mod store;
 pub mod streams;
 pub mod substep;
 pub mod system;

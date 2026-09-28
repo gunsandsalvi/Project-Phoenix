@@ -2022,6 +2022,48 @@ pub phx_core::spoilage::SpoilageDecl::clause: &'static str
 pub phx_core::spoilage::SpoilageDecl::rates: fn(&phx_core::register::Register) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>
 pub phx_core::spoilage::SpoilageDecl::visit: &'static str
 pub fn phx_core::spoilage::lost(&[(i64, i64)], i64, f64, i64) -> core::option::Option<i64>
+pub mod phx_core::store
+pub struct phx_core::store::Accounts<B: phx_store::backing::Backing>
+pub phx_core::store::Accounts::balance: phx_store::column::Column<i64, B>
+pub phx_core::store::Accounts::bank: phx_store::column::Column<u32, B>
+pub phx_core::store::Accounts::facility: phx_store::column::Column<i64, B>
+pub phx_core::store::Accounts::held: phx_store::column::Column<i64, B>
+pub phx_core::store::Accounts::pending: phx_store::column::Column<i64, B>
+pub struct phx_core::store::CashLines<B: phx_store::backing::Backing>
+pub phx_core::store::CashLines::amounts: phx_store::column::Column<i64, B>
+pub phx_core::store::CashLines::paid: alloc::vec::Vec<core::option::Option<usize>>
+pub phx_core::store::CashLines::received: alloc::vec::Vec<core::option::Option<usize>>
+pub phx_core::store::CashLines::width: usize
+pub struct phx_core::store::Family<R: phx_store::edges::Row, B: phx_store::backing::Backing>
+pub phx_core::store::Family::edges: phx_store::edges::EdgeTable<R, B>
+pub phx_core::store::Family::heads: [core::option::Option<phx_store::column::Column<u32, B>>; 2]
+pub phx_core::store::Family::kinds: [u8; 2]
+pub phx_core::store::Family::wheel: phx_core::wheel::DueWheel
+impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_core::store::Family<R, B>
+pub fn phx_core::store::Family<R, B>::close(&mut self, phx_id::ids::Slot)
+pub fn phx_core::store::Family<R, B>::new(&mut phx_store::backing::AddressSpace, ([u8; 2], [u32; 2]), (u32, u32), [bool; 2], (phx_id::day::Day, u32)) -> phx_core::store::Family<R, B>
+pub fn phx_core::store::Family<R, B>::of(&self, usize, phx_id::ids::Slot) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_core::store::Family<R, B>::open(&mut self, R, core::option::Option<phx_id::day::Day>) -> phx_id::ids::Slot
+pub struct phx_core::store::KindStore<B: phx_store::backing::Backing>
+pub phx_core::store::KindStore::accounts: core::option::Option<phx_core::store::Accounts<B>>
+pub phx_core::store::KindStore::cash: core::option::Option<phx_core::store::CashLines<B>>
+pub phx_core::store::KindStore::parties: phx_store::parties::Parties<B>
+pub phx_core::store::KindStore::records: phx_store::column::Column<phx_num::missing::MaybeI64, B>
+pub phx_core::store::KindStore::stride: usize
+impl<B: phx_store::backing::Backing> phx_core::store::KindStore<B>
+pub fn phx_core::store::KindStore<B>::begin(&mut self, phx_id::ids::PartyId, &[phx_num::missing::MaybeI64], core::option::Option<phx_core::store::Opening>) -> phx_id::ids::PartyRef
+pub fn phx_core::store::KindStore<B>::book(&mut self) -> core::option::Option<phx_core::settle::Book<'_>>
+pub fn phx_core::store::KindStore<B>::money(&self) -> i128
+pub fn phx_core::store::KindStore<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32, usize) -> phx_core::store::KindStore<B>
+pub fn phx_core::store::KindStore<B>::record(&self, phx_id::ids::Slot) -> &[phx_num::missing::MaybeI64]
+pub fn phx_core::store::KindStore<B>::record_mut(&mut self, phx_id::ids::Slot) -> &mut [phx_num::missing::MaybeI64]
+pub fn phx_core::store::KindStore<B>::with_accounts(self, &mut phx_store::backing::AddressSpace, u32, u32) -> phx_core::store::KindStore<B>
+pub fn phx_core::store::KindStore<B>::with_cash(self, &mut phx_store::backing::AddressSpace, (u32, u32), usize, (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<core::option::Option<usize>>)) -> phx_core::store::KindStore<B>
+pub struct phx_core::store::Opening
+pub phx_core::store::Opening::balance: i64
+pub phx_core::store::Opening::bank: u32
+pub fn phx_core::store::books<'a, B: phx_store::backing::Backing>(&'a mut [phx_core::store::KindStore<B>], u8, (&'a mut [i64], &'a [bool]), phx_id::ids::PartyKey) -> phx_core::settle::Books<'a>
+pub fn phx_core::store::deposits_of<'a, B: phx_store::backing::Backing + 'a>(impl core::iter::traits::collect::IntoIterator<Item = &'a phx_core::store::KindStore<B>>, usize) -> alloc::vec::Vec<i64>
 pub mod phx_core::streams
 pub enum phx_core::streams::Purpose
 pub phx_core::streams::Purpose::Accident
