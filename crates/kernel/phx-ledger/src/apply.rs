@@ -341,6 +341,11 @@ fn find(arenas: &dyn HolderArenas, slot: Slot, line: LineId, side: Side) -> RowV
     view
 }
 
+/// Whether a leg's units are lost to nature, which takes them whatever binds them.
+fn lost_to_nature(kind: LegKind) -> bool {
+    matches!(kind, LegKind::Transformation { source, .. } if source.physical_loss())
+}
+
 fn balance(view: &RowView, line: LineId) -> i64 {
     let Missing::Present(b) = view.optional.balance else {
         violation!(clause = "SET.11", "a leg moving a balance on a row that keeps none", line = line.get());
@@ -753,9 +758,10 @@ impl<B: Backing> Ledger<B> {
                     Missing::Present(h) => h.quantity.raw(),
                     Missing::Absent => 0,
                 };
-                // The units the instruction's own covers hold back are the ones it delivers, so they are free to it.
+                // The units the instruction's own covers hold back are the ones it delivers, so they are free to it; a loss
+                // to nature takes what is there, and a sale its units covered then fails for want of them.
                 let mine: i64 = own.iter().filter(|c| self.covers_for(c, party, id)).map(|c| c.qty().raw().raw()).sum();
-                let free = held - self.bound(party, id) + mine;
+                let free = if lost_to_nature(leg.kind) { held } else { held - self.bound(party, id) + mine };
                 Some((
                     Position { now: free, floor: Missing::Present(0), short: FailCause::FreeUnits },
                     leg.qty,
@@ -1057,7 +1063,7 @@ impl<B: Backing> Ledger<B> {
                 self.instruments.change_issued(id, Qty::new(-leg.qty, self.instruments.get(id).unit), why);
             }
             (LegKind::Units { cost }, AccountRef::Instrument(id)) => {
-                cost_moved = self.move_units(arenas, at, id, leg.qty, cost, day);
+                cost_moved = self.move_units(arenas, at, id, (leg.qty, cost, lost_to_nature(leg.kind)), day);
             }
             (LegKind::Transformation { .. } | LegKind::OpeningWrite { .. }, AccountRef::Instrument(id)) => {
                 let why = if leg.qty > 0 { IssueChange::Issuance } else { IssueChange::Buyback };
@@ -1069,7 +1075,7 @@ impl<B: Backing> Ledger<B> {
                 if leg.qty < 0 && cost != 0 {
                     violation!(clause = "ACC.6", "units used up that carry a cost of their own", id = id.get());
                 }
-                cost_moved = self.move_units(arenas, at, id, leg.qty, cost, day);
+                cost_moved = self.move_units(arenas, at, id, (leg.qty, cost, lost_to_nature(leg.kind)), day);
             }
             (LegKind::Units { .. }, AccountRef::Unit(unit)) => {
                 if leg.qty < 0 {
@@ -1121,8 +1127,7 @@ impl<B: Backing> Ledger<B> {
         arenas: &mut dyn HolderArenas,
         at: At,
         id: InstrumentId,
-        qty: i64,
-        cost: i64,
+        (qty, cost, nature): (i64, i64, bool),
         day: Day,
     ) -> i64 {
         match qty.cmp(&0) {
@@ -1134,7 +1139,8 @@ impl<B: Backing> Ledger<B> {
                 cost
             }
             core::cmp::Ordering::Less => {
-                let disposal = Disposal { units: -qty, bound: self.bound(at.party, id), order: LotOrder::FirstIn };
+                let bound = if nature { 0 } else { self.bound(at.party, id) };
+                let disposal = Disposal { units: -qty, bound, order: LotOrder::FirstIn };
                 let gone = self.instruments.dispose(arenas, at.table, at.slot, id, disposal);
                 let rec = DisposedRec { party: at.party, instrument: id, units: -qty, cost: gone.cost, day };
                 self.day.disposed.push(rec);

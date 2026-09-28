@@ -1604,7 +1604,9 @@ is what its maker can make that day: the lesser of its staff's output rate and i
   (`SpoilageDecl`; `sys-gds`'s stock visit at 5b every `GDS.spoilage_days` calendar days, deciding nothing). After it
   the kernel (`phx-world`'s `spoil`) takes from each lot 1 − e^(−rate·t) of its units, t the days it was held within
   the period, summed and rounded half to even: one instruction a row of transformation legs under
-  `spoiled`. Storage, the room goods are kept in, is a service bought, never the same number.
+  `spoiled`. A loss to nature — spoiled, struck by a hazard or worn — takes the units held whatever an offer or a
+  pledge binds of them (`Source::physical_loss`), and a sale its units covered then fails for want of them. Storage,
+  the room goods are kept in, is a service bought, never the same number.
 
 A route is the shortest path of one mode over the segments (`Network::route`); a trip over two modes is two bookings.
 An arrival does not wait on its carrier: goods aboard a carrier that failed meanwhile still arrive, their owner's.

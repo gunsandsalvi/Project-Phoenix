@@ -221,6 +221,13 @@ pub enum Source {
 }
 
 impl Source {
+    /// Whether the units are lost to nature — spoiled, struck or worn — which takes what is held, whatever an offer
+    /// or a pledge binds of it.
+    #[must_use]
+    pub fn physical_loss(self) -> bool {
+        matches!(self, Source::Spoilage(_) | Source::Hazard(_) | Source::Wear(_))
+    }
+
     /// What accounts for the units, as the audit keeps it.
     #[must_use]
     pub fn transformed(self) -> phx_core::Transformed {
