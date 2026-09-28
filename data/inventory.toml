@@ -305,7 +305,7 @@ what = "the sovereign's debt and its maturities"
 owner = "SOV"
 first_read = "S1.11"
 source = "IMF World Economic Outlook (level); OECD Sovereign Borrowing Outlook and World Bank Quarterly Public Sector Debt (maturities)"
-status = "to source"
+status = "in hand: imf/GGXWDG_NGDP (level); bank/qpsd (maturity, currency and creditors), bank/bis_debt_securities (original maturity and holders), bank/sovereign_investor_base (holders); mapped at S1.15"
 
 [[row]]
 id = "GEN.dist.funds_pensions_insurance"
@@ -321,7 +321,7 @@ what = "the start dates of each kind of contract"
 owner = "GEN"
 first_read = "S0.16"
 source = "each contract kind's own source, at the step that opens it (loan and mortgage origination by year, employment tenure, bond issuance)"
-status = "placeholder for the opening's term loans: terms drawn between BNK.loan_years_min and _max, starts uniform over the term, until origination by year is sourced (S1.09); every other contract kind at the step that opens it"
+status = "placeholder for the opening's term loans: terms drawn between BNK.loan_years_min and _max, starts uniform over the term; in hand for its retirement: households/scf2019 (mortgages' years left), macro/annual (private credit's growth by year, for loans' origination), bank/bis_debt_securities and bank/bis_international_debt (bonds by maturity), people/tenure_dls (job tenure); each kind mapped at the step that opens it"
 
 # The banks' and the economy's values the opening's institutions read (S0.16).
 
