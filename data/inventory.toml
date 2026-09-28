@@ -196,9 +196,9 @@ status = "profiled"
 id = "GEN.risk_aversion_location"
 what = "where risk appetite places the distribution of risk aversion (a PREFERENCE)"
 owner = "HH"
-first_read = "S1.12"
-source = "to choose: a published cross-country measure of risk taking, such as the Global Preferences Survey (Falk et al. 2018)"
-status = "to source"
+first_read = "S2.05"
+source = "the Global Preferences Survey (Falk et al. 2018), country means of risk taking and patience"
+status = "in hand: people/gps_country (76 economies, 30/26/20 by level); mapped at S2.05 with the preference types"
 
 # The declared distributions (spec GEN.2), their shapes from published work and their parameters from the derived
 # values by declared mappings.
@@ -460,8 +460,8 @@ id = "GEN.present.expectations"
 what = "households' expectations of the variables they forecast, by age and income, with their dispersion"
 owner = "VAL"
 first_read = "S1.01"
-source = "household expectation surveys: University of Michigan Surveys of Consumers; ECB Consumer Expectations Survey"
-status = "to source"
+source = "University of Michigan Surveys of Consumers; NY Fed Survey of Consumer Expectations (microdata); ECB Consumer Expectations Survey"
+status = "in hand: people/sca_expectations, sce_expectations, sce_microdata, ces_expectations, and people/expectations_by_level (the US pattern by age and income shifted to each level's inflation); mapped at S1.15"
 
 [[row]]
 id = "TEC.products"
