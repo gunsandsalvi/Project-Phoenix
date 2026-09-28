@@ -499,6 +499,10 @@ def income_wealth(level: str, members: set, m: dict) -> list:
 # ---- Education, occupation, status -------------------------------------------------------------------------------
 
 EDUCATION_AGES = list(range(15, 101, 5))
+# The attainment levels up to upper secondary, post-secondary's three and its total.
+SCHOOL = [0, 1, 2, 3, 4]
+TERTIARY = [5, 6, 7]
+POST_SECONDARY = 8
 
 
 def education(level: str, members: set, m: dict) -> list:
@@ -508,14 +512,26 @@ def education(level: str, members: set, m: dict) -> list:
     out = []
     for sex, name in [("F", "female"), ("M", "male")]:
         x = e[e.sex == sex].pivot_table(index=["iso3", "age"], columns="level", values="percent")
-        x = x.div(x.sum(axis=1), axis=0)
-        standard = x.groupby("age").median()
+        # Post-secondary's total is reported by every economy, its three levels apart by some.
+        levels = x[SCHOOL + [POST_SECONDARY]]
+        levels = levels.div(levels.sum(axis=1), axis=0)
+        tertiary = x[TERTIARY]
+        apart = tertiary[tertiary.sum(axis=1) > 0]
+        apart = apart.div(apart.sum(axis=1), axis=0)
+        n_apart = apart.index.get_level_values("iso3").nunique()
+        standard = levels.groupby("age").median()
+        split = apart.groupby("age").median()
+        split = split.div(split.sum(axis=1), axis=0).reindex(standard.index)
+        for level in TERTIARY:
+            standard[level] = standard[POST_SECONDARY] * split[level]
+        standard = standard[SCHOOL + TERTIARY]
         standard = standard.div(standard.sum(axis=1), axis=0).reindex(EDUCATION_AGES)
         ref = (f"Share of {name}s in each five-year age group from its first age (rows; 100: 100 and over) by highest "
                f"level of education (columns: none, incomplete primary, primary, lower secondary, upper secondary, "
                f"short post-secondary, bachelor, master and higher): the median over the group's {n} economies of "
-               f"each share in 2020, rescaled to sum to one, from {fetched(m, 'wcde')}. The group's standard at every "
-               f"drawn value.")
+               f"each share in 2020 up to upper secondary and of post-secondary's, shared among its three levels by "
+               f"the median of their parts over the {n_apart} economies that report them apart, rescaled to sum to "
+               f"one, from {fetched(m, 'wcde')}. The group's standard at every drawn value.")
         out.append(entry(f"DEM.education_{name}", "ENDOWMENT", "DEM", "measured", ref,
                          table2(EDUCATION_AGES, range(8), standard.to_numpy(), "edge")))
     return out

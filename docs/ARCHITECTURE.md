@@ -2140,7 +2140,10 @@ what those persons make:
 The elder of a couple heads it, else the mother, else the one person or the first drawn. Each household is formed as
 an explicit household, its persons held with their roles (§7.1), each person's health and each adult's education
 drawn by its age and sex from the household's own streams, and each household is placed as one agent (§7.6), so the
-agents are the population (REP.13). The
+agents are the population (REP.13). Education is drawn from `DEM.education_female` and `_male`, the Wittgenstein
+Centre's attainment: the group's median share of each level up to upper secondary and of post-secondary's total,
+which most emerging and developing economies report alone, shared among short post-secondary, bachelor and master by
+the median of their parts over the economies that report them apart (`tools/data/derive_pop.py`). The
 report gives each country's households by type and persons by age band against the drawn shares.
 
 A person's birth date follows from its age at the snapshot. Its birthday falls on a day drawn evenly over the year, and

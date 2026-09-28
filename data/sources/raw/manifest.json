@@ -234,8 +234,8 @@
    "title": "GDP growth (annual %), World Bank WDI"
   },
   "wcde/attainment": {
-   "rows": 55320,
-   "title": "Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher), % of each five-year age group from 15 and sex, 2020, Wittgenstein Centre Human Capital Data Explorer v3, SSP2"
+   "rows": 62235,
+   "title": "Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher, 8 post-secondary where the three are not reported apart), % of each five-year age group from 15 and sex, 2020, Wittgenstein Centre Human Capital Data Explorer v3, SSP2"
   },
   "wdi/FB.BNK.CAPA.ZS": {
    "rows": 1469,
@@ -482,7 +482,7 @@
    "url": "https://api.worldbank.org/v2/country/all/indicator/AG.LND.AGRI.K2?format=json&date=2015:2019&per_page=20000"
   },
   "wcde": {
-   "fetched": "2026-09-24",
+   "fetched": "2026-09-28",
    "title": "Wittgenstein Centre for Demography and Global Human Capital, Human Capital Data Explorer v3 (2023), batch file",
    "url": "https://wicshiny2023.iiasa.ac.at/wcde-data/wcde-v3-batch/2/prop.rds"
   },

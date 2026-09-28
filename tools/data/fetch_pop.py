@@ -314,8 +314,9 @@ def ilo_employment_rate(cache: Path, manifest: dict, iso3: set) -> None:
 
 WCDE_URL = "https://wicshiny2023.iiasa.ac.at/wcde-data/wcde-v3-batch/2/prop.rds"
 WCDE_YEAR = 2020
+# The levels by their codes; an economy without the three tertiary levels reports their sum as post-secondary alone.
 WCDE_LEVELS = ["No Education", "Incomplete Primary", "Primary", "Lower Secondary", "Upper Secondary",
-               "Short Post Secondary", "Bachelor", "Master and higher"]
+               "Short Post Secondary", "Bachelor", "Master and higher", "Post Secondary"]
 
 
 def wcde(cache: Path, manifest: dict, iso3: set) -> None:
@@ -336,7 +337,8 @@ def wcde(cache: Path, manifest: dict, iso3: set) -> None:
                          f"{r.prop:.2f}"))
     manifest["series"]["wcde/attainment"] = {
         "title": f"Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower "
-                 f"secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher), % of each "
+                 f"secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher, 8 post-secondary "
+                 f"where the three are not reported apart), % of each "
                  f"five-year age group from 15 and sex, {WCDE_YEAR}, Wittgenstein Centre Human Capital Data Explorer "
                  f"v3, SSP2",
         "rows": table(RAW / "wcde" / "attainment.csv", ["iso3", "sex", "age", "level", "percent"], rows),
