@@ -824,6 +824,12 @@ world switches to the core.
     they reprice by the pressure's power, so buyers move to dearer sellers. To settle in e: each firm's expected
     sales at the opening read only the uses the world has buyers for, and the price reviews read against the
     management types' spread.
+  - The live checks on the core (65 days, 150,000 persons, seed 1): 22 pass — the turns (LC-0-02), the map (LC-0-11,
+    LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
+    records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
+    drift (LC-0-59, LC-0-60), persons (LC-0-63), the accounts (LC-1-37); 28 are retired, each with the old kernel's
+    concept it read and the core's check that holds instead; 62 report "not yet", each naming the part of this step
+    that brings what it reads (d, e, f, g or h). None fails.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
     are done; next the old kernel's crates are deleted, then h on the core alone.
   - The native opening is built (a): the core reads nothing of the books. Built on the core: goods as holdings (each

@@ -1,5 +1,6 @@
 pub mod awaiting;
 pub mod core;
+pub mod geo;
 
 use phx_world::Inspector;
 
@@ -69,7 +70,7 @@ macro_rules! live_check {
 /// Every live check, by identity; an identity once listed stays, retired with its reason.
 pub const CHECKS: &[Check] = &[
     awaiting::LC_0_01,
-    awaiting::LC_0_02,
+    core::LC_0_02,
     awaiting::LC_0_03,
     awaiting::LC_0_04,
     awaiting::LC_0_05,
@@ -78,23 +79,23 @@ pub const CHECKS: &[Check] = &[
     awaiting::LC_0_08,
     core::LC_0_09,
     awaiting::LC_0_10,
-    awaiting::LC_0_11,
-    awaiting::LC_0_12,
+    geo::LC_0_11,
+    geo::LC_0_12,
     awaiting::LC_0_13,
     awaiting::LC_0_14,
     awaiting::LC_0_15,
     awaiting::LC_0_16,
     awaiting::LC_0_17,
-    awaiting::LC_0_18,
+    core::LC_0_18,
     awaiting::LC_0_19,
-    awaiting::LC_0_20,
+    core::LC_0_20,
     awaiting::LC_0_21,
-    awaiting::LC_0_22,
+    core::LC_0_22,
     core::LC_0_23,
     awaiting::LC_0_24,
     awaiting::LC_0_25,
     core::LC_0_26,
-    awaiting::LC_0_27,
+    core::LC_0_27,
     awaiting::LC_0_28,
     awaiting::LC_0_29,
     awaiting::LC_0_30,
@@ -119,7 +120,7 @@ pub const CHECKS: &[Check] = &[
     awaiting::LC_0_49,
     awaiting::LC_0_50,
     core::LC_0_51,
-    awaiting::LC_0_52,
+    core::LC_0_52,
     awaiting::LC_0_53,
     awaiting::LC_0_54,
     core::LC_0_55,
@@ -146,7 +147,7 @@ pub const CHECKS: &[Check] = &[
     awaiting::LC_1_10,
     awaiting::LC_1_11,
     awaiting::LC_1_12,
-    awaiting::LC_1_13,
+    core::LC_1_13,
     awaiting::LC_1_14,
     awaiting::LC_1_15,
     awaiting::LC_1_16,
@@ -168,7 +169,7 @@ pub const CHECKS: &[Check] = &[
     awaiting::LC_1_32,
     awaiting::LC_1_33,
     awaiting::LC_1_34,
-    awaiting::LC_1_35,
+    core::LC_1_35,
     awaiting::LC_1_36,
     core::LC_1_37,
     awaiting::LC_1_38,

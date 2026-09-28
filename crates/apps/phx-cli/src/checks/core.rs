@@ -295,3 +295,121 @@ pub const LC_1_40: Check = live_check! {
     from_step: "S1.15",
     check: day_one_clean,
 };
+
+/// Every turn ends on a day that is a business day somewhere, and each covers every day since the last.
+fn turns_whole(w: Inspector<'_>) -> Outcome {
+    let mut next = w.day_zero().succ();
+    for t in w.turns() {
+        if t.first != next {
+            return Outcome::Fail(format!(
+                "a turn begins on day {} where the last left day {}",
+                t.first.get(),
+                next.get()
+            ));
+        }
+        if !w.any_business(t.last) {
+            return Outcome::Fail(format!("a turn ends on day {}, a business day nowhere", t.last.get()));
+        }
+        next = t.last.succ();
+    }
+    Outcome::Pass
+}
+
+/// The money family found nothing: each bank owes what its customers hold, the parties' money moves only by what
+/// they and the banks paid each other, and the issuer's accounts do not move.
+fn money_clean(w: Inspector<'_>) -> Outcome {
+    family_clean(w, "money")
+}
+
+/// The goods family found nothing: each good's units at the close are its units at the open and what the day made
+/// less what it used.
+fn goods_clean(w: Inspector<'_>) -> Outcome {
+    family_clean(w, "goods")
+}
+
+/// The persons family found nothing: the households hold the persons opened, born and not gone.
+fn persons_clean(w: Inspector<'_>) -> Outcome {
+    family_clean(w, "persons")
+}
+
+fn family_clean(w: Inspector<'_>, family: &str) -> Outcome {
+    if w.core().days.is_empty() {
+        return Outcome::NotYet("the run closed no day");
+    }
+    match w.findings().iter().find(|f| f.family == family) {
+        Some(f) => Outcome::Fail(format!("day {}: {} {}", f.day.get(), f.clause, f.detail)),
+        None => Outcome::Pass,
+    }
+}
+
+/// Every day the core ran records its gross flows, its settled and failed flows, and its failures by reason.
+fn settlement_published(w: Inspector<'_>) -> Outcome {
+    let days = &w.core().days;
+    let Some(first) = days.first() else { return Outcome::NotYet("the run closed no day") };
+    for (i, d) in days.iter().enumerate() {
+        if d.day.get() != first.day.get() + u32::try_from(i).unwrap_or(u32::MAX) {
+            return Outcome::Fail(format!("the core's days skip before day {}", d.day.get()));
+        }
+        if d.flows > 0 && d.gross <= 0 {
+            return Outcome::Fail(format!("day {}: {} flows moving nothing", d.day.get(), d.flows));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_0_02: Check = live_check! {
+    id: "LC-0-02",
+    title: "Every turn ends on a day that is a business day somewhere and covers every day since the last turn",
+    from_step: "S0.11",
+    check: turns_whole,
+};
+
+pub const LC_0_18: Check = live_check! {
+    id: "LC-0-18",
+    title: "Per issuer and currency, the balances held equal its money liability; the notes held equal the notes issued",
+    from_step: "S0.15",
+    check: money_clean,
+};
+
+pub const LC_0_20: Check = live_check! {
+    id: "LC-0-20",
+    title: "Per holder and asset per day, what it held plus what came in less what went out is what it holds",
+    from_step: "S0.15",
+    check: goods_clean,
+};
+
+pub const LC_0_22: Check = live_check! {
+    id: "LC-0-22",
+    title: "Gross and net settlement, fails by cause and the closing ring are published every day",
+    from_step: "S0.15",
+    check: settlement_published,
+};
+
+pub const LC_0_27: Check = live_check! {
+    id: "LC-0-27",
+    title: "Every bank's reserve movement equals the net of its customers' applied payments",
+    from_step: "S0.17",
+    check: money_clean,
+};
+
+pub const LC_0_52: Check = live_check! {
+    id: "LC-0-52",
+    title: "The populations reconcile: births, deaths and entries; every person in one household; every household held",
+    from_step: "S0.25",
+    check: persons_clean,
+};
+
+pub const LC_1_13: Check = live_check! {
+    id: "LC-1-13",
+    title: "per good and place, opening stock plus produced plus arrived equals consumed plus shipped plus spoiled \
+            plus destroyed plus closing stock: the family of goods (GDS.10) is clean every close",
+    from_step: "S1.05",
+    check: goods_clean,
+};
+
+pub const LC_1_35: Check = live_check! {
+    id: "LC-1-35",
+    title: "POP.11: the population equals births and arrivals minus deaths and departures",
+    from_step: "S1.13",
+    check: persons_clean,
+};
