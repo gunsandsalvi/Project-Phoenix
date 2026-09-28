@@ -772,10 +772,8 @@ their targets:
 - **The handler context** (`Ctx::flow`, and the handler API over `RecordFacts`) is built here, where the first real
   handlers move onto the core.
 
-Even at every unit's target, the worst turn at the design point costs about 2.4 s. Three closed days of retail,
-production and pending card payments come before a payday, and the rules' declared arithmetic on those days is itself
-about a second. Once S1.21's lines are measured, the design point is read against N8.2 and N8.5: the representation
-first, then the resolution.
+These are the build machine's numbers, read to compare kernels with their targets. The budget itself is judged on the
+phone, at the stage's end (N8.8).
 
 **Goal**: accounts, banknotes, reserves, loans and every dated contract settle by batch on the core, with the fixed
 point's semantics unchanged: the greatest set that can settle, rings, short banks, and fails to arrears. Accounts are
