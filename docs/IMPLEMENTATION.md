@@ -727,7 +727,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (b1–b2 done: firms of one kind counted, placed, banked, priced from their own cost and given the output their prices win)
+**Status**: building (a moved to i; b done: firms of one kind counted, placed, banked, priced from their own cost and given the output their prices win)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
@@ -752,12 +752,14 @@ world switches to the core.
   - a. The opening drawn on the core: households and their persons drawn into the core's stores by DEM's draws, the
     institutions' kinds with their roles declared, every account from the country's sheet, the pensions in payment
     from SOC's rule; no copy of the books.
-  - b. Firms of one kind on the core: counts per region and industry, productivity, sites, management types, the
-    day-zero price, output shared from the SAM, staff, plant and stocks derived; the `_small`/`_large` pairs merged.
-  - c. Labour on the core: employment contracts, wages by shape, the hiring round, layoffs and retirement.
-  - d. Goods and services on the core: production within plant, the retail and between-firms meetings with their
-    goods legs, stocks, spoilage, wear and shipments, the goods family.
-  - e. Households' spending, firms' price reviews and the outlooks (HH, FRM.5, VAL).
+  - b. Firms of one kind on the core (done): counts per region and industry, productivity, sites, the day-zero price
+    and the output its price wins.
+  - c. Labour on the core: the opening's staff derived and hired as employment contracts, wages by shape, the hiring
+    round, layoffs and retirement.
+  - d. Goods and services on the core: plant and stocks derived and held, production within plant, the retail and
+    between-firms meetings with their goods legs, spoilage, wear and shipments, the goods family.
+  - e. Households' spending, firms' price reviews and the outlooks (HH, FRM.5, VAL), the firms' management types
+    drawn. Each `_small`/`_large` handler pair is merged as its system ports, in c to e.
   - f. Credit and the central bank on the core: loans by shape, the lending placeholder, deposit and lending rates,
     reserves and the fund stage; arrears from failed flows at 2d.
   - g. The state on the core: taxes withheld and at the till, benefits, bills and the payment order.
@@ -801,13 +803,17 @@ world switches to the core.
   searchers their staff become and the banks' declined refinancing are read at S1.16 as the world's.
 - **Firms at the opening.**
   - Per region and industry, the count comes from S1.22's firms per employed (b1, `phx_world::core_firms`).
-  - Staff follow from the output and the way, and the persons the world employs are its people from 15 at the
-    employment rate (REP.40): at the opening's output the ways' hours employ, over a full-time year, 1.20 times the
-    employed in the developed country, 0.97 times in the emerging and 0.33 times in the developing (seed 1, 150,000
-    persons). b3 settles it where staff are derived: the hours a person works, part time and the self-employed's
-    included, and the developing group's ways measured on economies whose GDP per head is the group's.
-  - Each firm draws its productivity from the industry's dispersion, its sites (PTY: a site per establishment), and
-    its management types.
+  - The opening's staff (c): the country's employed — its people from 15 at its employment rate (REP.40) — shared
+    over its firms by the hours their output takes (their way's hours a unit, fewer by their productivity's factor,
+    times their output), and a firm's over the occupations by its way's hours of each. The staff is exactly the
+    employed, and the hours a person works follow from the jobs (part time or full time, LAB). The ways' hours at the
+    opening output employ, over a full-time year, 1.20 times the employed in the developed country, 0.97 times in the
+    emerging and 0.33 times in the developing (seed 1, 150,000 persons): the ways are the median of their sample's
+    economies, and a drawn country's GDP per head differs from the sample's (the developed $66,600 against about
+    $55,000; the developing $3,400 against about $5,500, PPP), so its hours a unit differ by the same factor, which
+    the sharing carries.
+  - Each firm draws its productivity from the industry's dispersion, its sites (PTY: a site per establishment) (b), and
+    its management types (e).
   - Its day-zero price is its own decision from its cost (GEN.13) (b2).
   - The industry's output in the SAM is shared by the demand each firm wins at those prices in its reach (b2, by the
     retail logit's price term; d adds its distance term with the meetings' places), and its staff, plant and stocks
