@@ -92,7 +92,8 @@ impl World {
         Some(Firm {
             product,
             price: phx_rand::float::from_i64(price) / lot,
-            units_a_day: phx_rand::float::from_i64(output),
+            units_a_day: phx_rand::float::from_i64(output)
+                / phx_core::fact_scale(<if_firm::facts::OutputRate as phx_core::FactDef>::ITEM),
             hurdle: phx_rand::float::from_i64(hurdle) / scale(crate::consts::HURDLE_EXP),
             hours_a_unit: phx_rand::float::from_i64(hours) / scale(crate::consts::HOURS_EXP),
         })

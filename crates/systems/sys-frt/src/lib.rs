@@ -148,6 +148,7 @@ pub fn tech(register: &Register) -> Result<FreightTech, String> {
         loading_days: whole(register, LOADING_DAYS.id)?,
         carriage_a_tonne_km: places(register, &CARRIAGE_A_TONNE_KM)?,
         units_a_tonne: places(register, &UNITS_A_TONNE)?,
+        carriage_product: u16::try_from(register.count(CARRIAGE_PRODUCT.id)?).map_err(|e| e.to_string())?,
     })
 }
 
@@ -179,7 +180,7 @@ pub const CARRIAGE: FreightKind = FreightKind {
     arrived: ARRIVED.name,
 };
 
-/// The shipper's compiled reads: freight's technology, each product's lot and the carriage product's.
+/// The shipper's compiled reads: freight's technology and each product's lot.
 fn compile(register: &Register) -> Result<ship::Own, String> {
     let lots = register
         .products("TEC.products")?
@@ -198,12 +199,8 @@ fn compile(register: &Register) -> Result<ship::Own, String> {
             Missing::Absent => Err(format!("product `{}` in an undeclared unit", e.name)),
         })
         .collect::<Result<Vec<i64>, String>>()?;
-    let carriage = usize::try_from(register.count(CARRIAGE_PRODUCT.id)?).map_err(|e| e.to_string())?;
-    let Some(carriage_lot) = lots.get(carriage).map(|l| phx_rand::float::from_i64(*l)) else {
-        return Err(format!("carriage sold as product {carriage}, which is none"));
-    };
     let kind = phx_ledger::instruction::name_code(CARRIAGE.market.key.kind);
-    Ok(ship::Own { tech: tech(register)?, lots, carriage_lot, kind })
+    Ok(ship::Own { tech: tech(register)?, lots, kind })
 }
 
 /// Whether a shipper books room: when what the goods fetch where they go, less what they fetch where they are,

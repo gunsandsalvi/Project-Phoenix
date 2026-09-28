@@ -148,12 +148,13 @@ impl FactStore for FactOverlay {
 }
 
 /// A deposit whose right a row's party holds, as the holder sees it: the deposit's place in the map's list, the
-/// product extracted from it, its grade in thousandths, and what it held at the opening and holds still, none for a
-/// deposit without end.
+/// product extracted from it, the zone its goods stand at once taken, its grade in thousandths, and what it held at the
+/// opening and holds still, none for a deposit without end.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HeldRight {
     pub deposit: u32,
     pub product: u16,
+    pub zone: u32,
     pub grade: i64,
     pub opening: Missing<i64>,
     pub remaining: Missing<i64>,
@@ -165,16 +166,29 @@ pub type HeldGood = (u16, u8, i64);
 /// Plant a row holds: its kind, its condition class and its units.
 pub type HeldPlant = (u8, u8, i64);
 
-/// A place a good could be carried to from where a row stands, as the public prices show it: the zone, the mode,
-/// the metres between, the good's mark there for a lot, and the carriage market's mark at the row's place and mode
-/// for a lot of carriage.
+/// A good a row holds at another place than its own: its product, its grade class, the zone, its units there, and
+/// those free of other claims, as goods on their way are not.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HeldAway {
+    pub product: u16,
+    pub grade: u8,
+    pub zone: u32,
+    pub units: i64,
+    pub free: i64,
+}
+
+/// A place a good could be carried to or bought at from where a row stands, as the public prices show it: the zone,
+/// the mode, the metres between, the good's mark there for a lot, and the freight of a lot of the good by the mode
+/// from the row's place to there at the lowest price carriage is posted at here, and from there to the row's place at
+/// the lowest posted there; each none where the mode's carriage is posted at neither end.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Away {
     pub zone: u32,
     pub mode: u16,
     pub metres: u64,
     pub there: i64,
-    pub carriage: i64,
+    pub outbound: Missing<i64>,
+    pub inbound: Missing<i64>,
 }
 
 /// What a row's party may read of goods beyond its facts: its units of each good at its place, and the list of them; the deposits whose rights it holds; the units of a product, of every grade, it has
@@ -198,6 +212,14 @@ pub trait GoodsView: core::fmt::Debug {
     fn money(&self, slot: Slot) -> Missing<i64>;
     /// The country the row stands in.
     fn country(&self, slot: Slot) -> Missing<phx_id::CountryId>;
+    /// Whether the good's market where the row stands last met with no seller.
+    fn unsold(&self, slot: Slot, product: u16, grade: u8) -> bool;
+    /// The grade classes a product is marked in at some place, in their order.
+    fn grades(&self, product: u16) -> Vec<u8>;
+    /// The zone the row stands in.
+    fn zone(&self, slot: Slot) -> Missing<u32>;
+    /// The goods the row holds at other places than its own.
+    fn elsewhere(&self, slot: Slot) -> &[HeldAway];
     /// The plant the row holds.
     fn plant(&self, slot: Slot) -> &[HeldPlant];
     /// The other places in the row's country a good is marked at, by each mode carriage is marked in where it stands.
@@ -244,6 +266,18 @@ impl GoodsView for NoGoods {
     }
     fn country(&self, _: Slot) -> Missing<phx_id::CountryId> {
         Missing::Absent
+    }
+    fn unsold(&self, _: Slot, _: u16, _: u8) -> bool {
+        false
+    }
+    fn grades(&self, _: u16) -> Vec<u8> {
+        Vec::new()
+    }
+    fn zone(&self, _: Slot) -> Missing<u32> {
+        Missing::Absent
+    }
+    fn elsewhere(&self, _: Slot) -> &[HeldAway] {
+        &[]
     }
     fn plant(&self, _: Slot) -> &[HeldPlant] {
         &[]
@@ -375,6 +409,29 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
     /// The country the row stands in.
     pub fn country(&self, slot: Slot) -> Missing<phx_id::CountryId> {
         self.parts.goods.country(slot)
+    }
+
+    /// Whether the good's market where the row stands last met with no seller.
+    #[must_use]
+    pub fn unsold(&self, slot: Slot, product: u16, grade: u8) -> bool {
+        self.parts.goods.unsold(slot, product, grade)
+    }
+
+    /// The grade classes a product is marked in at some place, in their order.
+    #[must_use]
+    pub fn grades(&self, product: u16) -> Vec<u8> {
+        self.parts.goods.grades(product)
+    }
+
+    /// The zone the row stands in.
+    pub fn zone(&self, slot: Slot) -> Missing<u32> {
+        self.parts.goods.zone(slot)
+    }
+
+    /// The goods the row holds at other places than its own.
+    #[must_use]
+    pub fn elsewhere(&self, slot: Slot) -> &[HeldAway] {
+        self.parts.goods.elsewhere(slot)
     }
 
     /// A good's latest mark at the row's place, in its market's raw price.

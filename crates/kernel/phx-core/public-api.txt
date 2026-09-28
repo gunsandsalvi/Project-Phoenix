@@ -539,6 +539,7 @@ pub phx_core::facts::ItemDecl::writer: phx_core::facts::Writer
 pub trait phx_core::facts::FactDef
 pub const phx_core::facts::FactDef::ITEM: phx_core::facts::ItemDecl
 pub fn phx_core::facts::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
+pub fn phx_core::facts::fact_scale(phx_core::facts::ItemDecl) -> f64
 pub mod phx_core::family
 pub enum phx_core::family::FamilyMode
 pub phx_core::family::FamilyMode::Incremental
@@ -758,9 +759,10 @@ pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> c
 pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::handler
 pub struct phx_core::handler::Away
-pub phx_core::handler::Away::carriage: i64
+pub phx_core::handler::Away::inbound: phx_num::missing::Missing<i64>
 pub phx_core::handler::Away::metres: u64
 pub phx_core::handler::Away::mode: u16
+pub phx_core::handler::Away::outbound: phx_num::missing::Missing<i64>
 pub phx_core::handler::Away::there: i64
 pub phx_core::handler::Away::zone: u32
 pub struct phx_core::handler::Ctx<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized>
@@ -773,8 +775,10 @@ pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
 pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
+pub fn phx_core::handler::Ctx<'a, H, S>::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
 pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
+pub fn phx_core::handler::Ctx<'a, H, S>::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
@@ -790,7 +794,9 @@ pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::regist
 pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
+pub fn phx_core::handler::Ctx<'a, H, S>::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
+pub fn phx_core::handler::Ctx<'a, H, S>::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub struct phx_core::handler::CtxParts<'a, S: phx_core::handler::FactStore + ?core::marker::Sized>
 pub phx_core::handler::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
 pub phx_core::handler::CtxParts::date: phx_id::day::Date
@@ -811,12 +817,19 @@ pub fn phx_core::handler::FactOverlay::read_from(&dyn phx_core::handler::FactRea
 impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
 pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
+pub struct phx_core::handler::HeldAway
+pub phx_core::handler::HeldAway::free: i64
+pub phx_core::handler::HeldAway::grade: u8
+pub phx_core::handler::HeldAway::product: u16
+pub phx_core::handler::HeldAway::units: i64
+pub phx_core::handler::HeldAway::zone: u32
 pub struct phx_core::handler::HeldRight
 pub phx_core::handler::HeldRight::deposit: u32
 pub phx_core::handler::HeldRight::grade: i64
 pub phx_core::handler::HeldRight::opening: phx_num::missing::Missing<i64>
 pub phx_core::handler::HeldRight::product: u16
 pub phx_core::handler::HeldRight::remaining: phx_num::missing::Missing<i64>
+pub phx_core::handler::HeldRight::zone: u32
 pub struct phx_core::handler::Intents
 impl phx_core::handler::Intents
 pub fn phx_core::handler::Intents::append(&mut self, phx_core::handler::Intents)
@@ -828,7 +841,9 @@ impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
 pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::NoGoods::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
+pub fn phx_core::handler::NoGoods::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
+pub fn phx_core::handler::NoGoods::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
@@ -839,6 +854,8 @@ pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
+pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
 pub trait phx_core::handler::Emits<I: phx_core::handler::IntentDef>
 pub trait phx_core::handler::FactRead: core::marker::Sync
@@ -861,7 +878,9 @@ pub trait phx_core::handler::GoodsView: core::fmt::Debug
 pub fn phx_core::handler::GoodsView::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::GoodsView::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_core::handler::GoodsView::delivered(&self, phx_id::ids::Slot, u16) -> i64
+pub fn phx_core::handler::GoodsView::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
+pub fn phx_core::handler::GoodsView::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
@@ -872,11 +891,15 @@ pub fn phx_core::handler::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_co
 pub fn phx_core::handler::GoodsView::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::GoodsView::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
+pub fn phx_core::handler::GoodsView::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
 pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::NoGoods::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
+pub fn phx_core::handler::NoGoods::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
+pub fn phx_core::handler::NoGoods::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
@@ -887,6 +910,8 @@ pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
+pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub trait phx_core::handler::HandlerDecl: 'static
 pub const phx_core::handler::HandlerDecl::CLAUSE: &'static str
 pub const phx_core::handler::HandlerDecl::INTENTS: &'static [&'static str]
@@ -2562,9 +2587,10 @@ pub phx_core::AuditInputs::tables: &'a [phx_core::columns::KernelTable]
 pub phx_core::AuditInputs::touched: &'a phx_core::touched::TouchedRows
 pub phx_core::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
 pub struct phx_core::Away
-pub phx_core::Away::carriage: i64
+pub phx_core::Away::inbound: phx_num::missing::Missing<i64>
 pub phx_core::Away::metres: u64
 pub phx_core::Away::mode: u16
+pub phx_core::Away::outbound: phx_num::missing::Missing<i64>
 pub phx_core::Away::there: i64
 pub phx_core::Away::zone: u32
 pub struct phx_core::Binding
@@ -2637,8 +2663,10 @@ pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
 pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
 pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
+pub fn phx_core::handler::Ctx<'a, H, S>::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
 pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
+pub fn phx_core::handler::Ctx<'a, H, S>::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
@@ -2654,7 +2682,9 @@ pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::regist
 pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
 pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
 pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
+pub fn phx_core::handler::Ctx<'a, H, S>::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
 pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
+pub fn phx_core::handler::Ctx<'a, H, S>::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub struct phx_core::CtxParts<'a, S: phx_core::handler::FactStore + ?core::marker::Sized>
 pub phx_core::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
 pub phx_core::CtxParts::date: phx_id::day::Date
@@ -2966,12 +2996,19 @@ pub phx_core::HazardDecl::source: &'static str
 pub phx_core::HazardDecl::stream: &'static str
 impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
+pub struct phx_core::HeldAway
+pub phx_core::HeldAway::free: i64
+pub phx_core::HeldAway::grade: u8
+pub phx_core::HeldAway::product: u16
+pub phx_core::HeldAway::units: i64
+pub phx_core::HeldAway::zone: u32
 pub struct phx_core::HeldRight
 pub phx_core::HeldRight::deposit: u32
 pub phx_core::HeldRight::grade: i64
 pub phx_core::HeldRight::opening: phx_num::missing::Missing<i64>
 pub phx_core::HeldRight::product: u16
 pub phx_core::HeldRight::remaining: phx_num::missing::Missing<i64>
+pub phx_core::HeldRight::zone: u32
 pub struct phx_core::Household
 pub phx_core::Household::attrs: alloc::vec::Vec<(&'static str, u32)>
 pub phx_core::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
@@ -3181,7 +3218,9 @@ impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
 pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::NoGoods::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
+pub fn phx_core::handler::NoGoods::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
+pub fn phx_core::handler::NoGoods::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
@@ -3192,6 +3231,8 @@ pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
+pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub struct phx_core::NotObserver
 pub struct phx_core::ObserverDraws<'a>
 impl<'a> phx_core::streams::ObserverDraws<'a>
@@ -3675,7 +3716,9 @@ pub trait phx_core::GoodsView: core::fmt::Debug
 pub fn phx_core::GoodsView::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::GoodsView::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_core::GoodsView::delivered(&self, phx_id::ids::Slot, u16) -> i64
+pub fn phx_core::GoodsView::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
+pub fn phx_core::GoodsView::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
@@ -3686,11 +3729,15 @@ pub fn phx_core::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handl
 pub fn phx_core::GoodsView::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::GoodsView::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
+pub fn phx_core::GoodsView::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
 pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
 pub fn phx_core::handler::NoGoods::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
 pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
+pub fn phx_core::handler::NoGoods::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
 pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
+pub fn phx_core::handler::NoGoods::grades(&self, u16) -> alloc::vec::Vec<u8>
 pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
 pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
@@ -3701,6 +3748,8 @@ pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core
 pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
 pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
+pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
+pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub trait phx_core::HandlerDecl: 'static
 pub const phx_core::HandlerDecl::CLAUSE: &'static str
 pub const phx_core::HandlerDecl::INTENTS: &'static [&'static str]
@@ -3898,6 +3947,7 @@ pub fn phx_core::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::d
 pub fn phx_core::draw_profile(&phx_core::register::profile::JointProfile, &[phx_core::register::profile::Pinned], u8, &mut phx_rand::draws::Draws) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>
 pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
+pub fn phx_core::fact_scale(phx_core::facts::ItemDecl) -> f64
 pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::opening_subject(u32, u32) -> phx_rand::key::Subject

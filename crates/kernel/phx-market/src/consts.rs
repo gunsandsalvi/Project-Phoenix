@@ -16,3 +16,5 @@ pub const TAG_RETURN: u128 = 4;
 pub const TAG_SHIFT: u32 = 64;
 /// Where the node's or edge's key sits in an arc's key, above the kind's three bits.
 pub const KEY_SHIFT: u32 = 67;
+/// Metres in a kilometre, freight being priced by the tonne-km.
+pub const METRES_A_KM: f64 = 1_000.0;

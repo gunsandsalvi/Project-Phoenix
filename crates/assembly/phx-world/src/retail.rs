@@ -215,16 +215,23 @@ impl World {
                     violation!(clause = "TEC.4", "a seller's product beyond the products' places", value = sells);
                 };
                 if products.contains(&product) {
-                    let facts = [bound.decl.price, bound.decl.capacity, bound.decl.way, bound.decl.plant]
+                    let facts = [bound.decl.price, bound.decl.capacity.name, bound.decl.way, bound.decl.plant]
                         .map(|f| store.read(f, slot));
                     read.push((Rows { place, individuals }, slot, product, facts));
                 }
             }
         }
+        // A seller's units a day are kept at a fixed point; a stall serves whole units of them.
+        let scale = phx_core::fact_scale(bound.decl.capacity);
         let rows: Vec<SellerRow> = read
             .into_iter()
-            .filter_map(|(rows, slot, product, facts)| {
-                self.goods_row(rows, slot).map(|r| (r.party, product, facts, r.zone))
+            .filter_map(|(rows, slot, product, [price, capacity, way, plant])| {
+                let capacity = match capacity {
+                    Missing::Present(c) => phx_rand::float::floor_to_i64(phx_rand::float::from_i64(c) / scale)
+                        .map_or(Missing::Absent, Missing::Present),
+                    Missing::Absent => Missing::Absent,
+                };
+                self.goods_row(rows, slot).map(|r| (r.party, product, [price, capacity, way, plant], r.zone))
             })
             .collect();
         let mut pending: BTreeMap<(PartyId, InstrumentId), i64> = BTreeMap::new();

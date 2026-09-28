@@ -67,7 +67,7 @@ pub const RETAIL: RetailKind = RetailKind {
     sellers: SELLERS,
     sells: <if_firm::known::Product as FactDef>::ITEM.name,
     price: <if_firm::facts::Price as FactDef>::ITEM.name,
-    capacity: <if_firm::facts::OutputRate as FactDef>::ITEM.name,
+    capacity: <if_firm::facts::OutputRate as FactDef>::ITEM,
     way: <if_firm::known::WayUsed as FactDef>::ITEM.name,
     plant: <if_firm::facts::Capacity as FactDef>::ITEM.name,
     price_weight: PRICE_WEIGHT.id,

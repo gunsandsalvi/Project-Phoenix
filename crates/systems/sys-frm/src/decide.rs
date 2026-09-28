@@ -12,7 +12,7 @@ use phx_core::{Declarations, Prim, declare_handler, declare_prim};
 use phx_id::Slot;
 use phx_ledger::intents::{CloseIntent, Transform};
 use phx_macros::clause;
-use phx_market::intents::{OrderIntent, ShopIntent};
+use phx_market::intents::{OrderIntent, ShipIntent, ShopIntent};
 use phx_num::{Count, Fixed, Missing, PointTable};
 use phx_rand::float::from_i64;
 
@@ -239,7 +239,7 @@ declare_handler! {
         table: "small_firm",
         reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Switching, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
         writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen, Method],
-        intents: [Transform, OrderIntent, ShopIntent, CloseIntent],
+        intents: [Transform, OrderIntent, ShopIntent, ShipIntent, CloseIntent],
         clause: "REP.38",
         body: attend,
     }
@@ -252,7 +252,7 @@ declare_handler! {
         table: "firm",
         reads: [Product, ExpectedSales, SalesWidth, DeliveredSeen, Method, Switching, Markup, Price, WagePerHour, WayUsed, OutputRate, UnitCost, RequiredReturn, Capacity],
         writes: [PriceAttention, ExpectedSales, SalesWidth, DeliveredSeen, Method],
-        intents: [Transform, OrderIntent, ShopIntent, CloseIntent],
+        intents: [Transform, OrderIntent, ShopIntent, ShipIntent, CloseIntent],
         clause: "REP.38",
         body: attend,
     }
@@ -272,17 +272,6 @@ where
     match ctx.read::<F>(row) {
         Missing::Present(v) => Some(from_i64(v)),
         Missing::Absent => None,
-    }
-}
-
-/// A value's scale in its fact: the powers of ten its fixed-point holding carries.
-fn scale_of(item: phx_core::ItemDecl) -> f64 {
-    match item.kind {
-        phx_core::ItemKind::Fact(f) => match f.value {
-            phx_core::FactType::Fixed { exp } => libm::pow(crate::consts::DECADE, f64::from(exp)),
-            _ => phx_num::violation!(clause = "NUM.3", "a scaled read of a fact that holds no fixed point"),
-        },
-        _ => phx_num::violation!(clause = "NUM.3", "a scaled read of an item that is no fact"),
     }
 }
 
@@ -329,7 +318,7 @@ where
     let Some(wage) = read::<WagePerHour, H, S>(ctx, row) else { return };
     let today = from_i64(i64::from(ctx.day().get()));
     let days = today - last;
-    let chance = chance / scale_of(<PriceAttention as phx_core::FactDef>::ITEM);
+    let chance = chance / phx_core::fact_scale(<PriceAttention as phx_core::FactDef>::ITEM);
     if days <= 0.0 || chance <= 0.0 {
         return;
     }
@@ -343,7 +332,7 @@ where
             Missing::Absent => Missing::Absent,
         },
     };
-    let markup_scale = scale_of(<Markup as phx_core::FactDef>::ITEM);
+    let markup_scale = phx_core::fact_scale(<Markup as phx_core::FactDef>::ITEM);
     let Missing::Present(next) = rules::markup::update(
         markup / markup_scale,
         (m.sales_speed, m.seen_speed),
@@ -474,6 +463,7 @@ where
         + phx_core::Emits<Transform>
         + phx_core::Emits<OrderIntent>
         + phx_core::Emits<ShopIntent>
+        + phx_core::Emits<ShipIntent>
         + phx_core::Emits<CloseIntent>,
     S: FactStore + ?Sized,
 {
@@ -576,7 +566,7 @@ where
         return;
     }
     let revenue_per_day = expected * price / m.production_days;
-    let markup = markup / scale_of(<Markup as phx_core::FactDef>::ITEM);
+    let markup = markup / phx_core::fact_scale(<Markup as phx_core::FactDef>::ITEM);
     let chance = if woke {
         1.0
     } else if expected > 0.0 {
@@ -587,7 +577,7 @@ where
         // A firm that expects to sell nothing loses nothing by a price left standing.
         0.0
     };
-    if let Some(chance) = whole(chance * scale_of(<PriceAttention as phx_core::FactDef>::ITEM)) {
+    if let Some(chance) = whole(chance * phx_core::fact_scale(<PriceAttention as phx_core::FactDef>::ITEM)) {
         ctx.write::<PriceAttention>(row, chance);
     }
 }

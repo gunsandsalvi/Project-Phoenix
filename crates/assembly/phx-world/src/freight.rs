@@ -105,8 +105,9 @@ fn of<T: Copy>(table: &[T], at: usize) -> T {
 }
 
 impl World {
-    /// A shipper's want of carriage admitted: goods it holds where it stands, free of other claims and covered until
-    /// booked, to another zone its mode's segments reach. A want that fails any of these is refused and counted.
+    /// A shipper's want of carriage admitted: goods it holds where it stands or at the place it names, free of other
+    /// claims and covered until booked, to another zone its mode's segments reach. A want that fails any of these is
+    /// refused and counted.
     #[clause("FRT.5", "FRT.2", "FRT.11")]
     pub(crate) fn admit_ship(&mut self, step: SubStep, rows: Rows, s: &ShipIntent) {
         if step.ordinal() > SubStep::S5d.ordinal() {
@@ -124,13 +125,17 @@ impl World {
             );
         };
         let to = ZoneId::new(s.to);
-        let route = self.geo().network.route(s.mode, row.zone, to);
-        let good = self.books.ledger.goods.of(GoodKey { product: s.product, grade: s.grade, zone: row.zone });
+        let from = match s.from {
+            Missing::Present(z) => ZoneId::new(z),
+            Missing::Absent => row.zone,
+        };
+        let route = self.geo().network.route(s.mode, from, to);
+        let good = self.books.ledger.goods.of(GoodKey { product: s.product, grade: s.grade, zone: from });
         let (Some(route), Missing::Present(good)) = (route, good) else {
             self.market_day.tally.refused += 1;
             return;
         };
-        if s.qty <= 0 || to == row.zone {
+        if s.qty <= 0 || to == from {
             self.market_day.tally.refused += 1;
             return;
         }
@@ -144,7 +149,7 @@ impl World {
         let market = self.market_kinds.instance(
             &mut self.markets.made,
             kind,
-            (u64::from(row.zone.get()) << u16::BITS) | u64::from(s.mode),
+            (u64::from(from.get()) << u16::BITS) | u64::from(s.mode),
         );
         let (place, slot) = self.books.parties.row(row.party);
         let held = match phx_ledger::holding::holding(self.books.parties.holder(place), slot, good) {
@@ -160,13 +165,13 @@ impl World {
         self.market_day.tally.orders += 1;
     }
 
-    /// The carriers of a kind standing at the origins and modes the day's shippers leave by, in one pass over them:
-    /// each with its posted price for a lot of carriage, the product it sells, and the room its vehicles have a day
-    /// in kilogram-km.
-    fn carriers(
+    /// The carriers of a kind standing at the origins and modes the day's shippers leave by, or at every one, in one
+    /// pass over them: each with its posted price for a lot of carriage, the product it sells, and the room its
+    /// vehicles have a day in kilogram-km.
+    pub(crate) fn carriers(
         &mut self,
         bound: &FreightBound,
-        wanted: &BTreeSet<(ZoneId, u16)>,
+        wanted: Option<&BTreeSet<(ZoneId, u16)>>,
     ) -> BTreeMap<(ZoneId, u16), Vec<(Carrier, u16)>> {
         let first = self.books.parties.first_cell_place();
         let mut read: Vec<CarrierRead> = Vec::new();
@@ -203,7 +208,7 @@ impl World {
         let mut out: BTreeMap<(ZoneId, u16), Vec<(Carrier, u16)>> = BTreeMap::new();
         for (rows, slot, mode, sells, price) in read {
             let Some(row) = self.goods_row(rows, slot) else { continue };
-            if !wanted.contains(&(row.zone, mode)) {
+            if wanted.is_some_and(|w| !w.contains(&(row.zone, mode))) {
                 continue;
             }
             let (Missing::Present(sells), Missing::Present(price)) = (sells, price) else { continue };
@@ -293,7 +298,7 @@ impl World {
                 .filter(|s| self.market_kinds.decl(&self.markets.made, s.market).key.kind == bound.decl.market.key.kind)
                 .filter_map(|s| s.route.segments.first().map(|_| (self.ship_origin(s), s.mode)))
                 .collect();
-            let mut carriers = self.carriers(&bound, &wanted);
+            let mut carriers = self.carriers(&bound, Some(&wanted));
             let markets: Vec<MarketId> = by_market
                 .keys()
                 .copied()
@@ -463,9 +468,9 @@ impl World {
         }
     }
 
-    /// 5a: the day's arrivals, in the order they arrive and were numbered: each lien released and the goods moved,
-    /// the owner's units used up where they left under the kind's `shipped` and made where they arrive under its
-    /// `arrived`, at the cost the units leaving carried.
+    /// 5a: the day's arrivals, in the order they arrive and were numbered: each lien released and the goods moved —
+    /// what is left of them, as goods on their way spoil — the owner's units used up where they left under the kind's
+    /// `shipped` and made where they arrive under its `arrived`, at the cost the units leaving carried.
     #[clause("FRT.3", "FRT.6", "FRT.8", "GDS.10")]
     pub(crate) fn arrivals(&mut self, day: Day) {
         let due = self.books.ledger.goods.arriving(day);
@@ -483,17 +488,29 @@ impl World {
         let (shipped, arrived) = (reason(self, bound.decl.shipped), reason(self, bound.decl.arrived));
         for (n, s) in due {
             let _ = self.books.ledger.liens.release(s.lien);
-            let (place, slot) = self.books.parties.row(s.owner);
+            // An owner that ended on the way is its successor, which took its goods; one that left none took them
+            // with it.
+            let phx_core::Resolved::Live(owner, _) = self.books.parties.directory().resolve(s.owner) else { continue };
+            let (place, slot) = self.books.parties.row(owner);
             let basis = |w: &World| match phx_ledger::holding::basis(w.books.parties.holder(place), slot, s.from) {
                 Missing::Present(b) => b,
                 Missing::Absent => 0,
             };
             let before = basis(self);
             let unit = self.books.ledger.instruments.get(s.from).unit;
+            // Goods on their way spoil as goods at rest do; what arrives is what is left of them.
+            let held = match phx_ledger::holding::holding(self.books.parties.holder(place), slot, s.from) {
+                Missing::Present(h) => h.quantity.raw(),
+                Missing::Absent => 0,
+            };
+            let qty = if held < s.qty { held } else { s.qty };
+            if qty <= 0 {
+                continue;
+            }
             let leaving = LegRec {
-                party: s.owner,
+                party: owner,
                 account: AccountRef::Instrument(s.from),
-                qty: -s.qty,
+                qty: -qty,
                 denom: Denom::Unit(unit),
                 kind: LegKind::Transformation { source: Source::Carried(n), cost: 0 },
             };
@@ -501,9 +518,9 @@ impl World {
             let cost = before - basis(self);
             let to = self.good(s.to);
             let arriving = LegRec {
-                party: s.owner,
+                party: owner,
                 account: AccountRef::Instrument(to),
-                qty: s.qty,
+                qty,
                 denom: Denom::Unit(unit),
                 kind: LegKind::Transformation { source: Source::Carried(n), cost },
             };

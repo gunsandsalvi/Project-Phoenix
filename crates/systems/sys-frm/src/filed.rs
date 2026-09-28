@@ -369,7 +369,7 @@ impl Contribution for Stocks {
                 let Missing::Present(per_day) = read_fact(books, f, <OutputRate as FactDef>::ITEM.name) else {
                     continue;
                 };
-                let per_day = from_i64(per_day);
+                let per_day = from_i64(per_day) / phx_core::fact_scale(<OutputRate as FactDef>::ITEM);
                 let zone = zone_of(books, population, geo, f);
                 let mut wanted: Vec<(u16, f64)> = Vec::new();
                 if storable(&products, p) {
@@ -536,7 +536,8 @@ impl Contribution for Filed {
                     });
                     facts.push((<WagePerHour as FactDef>::ITEM.name, whole(wage)));
                     facts.push((<HoursAUnit as FactDef>::ITEM.name, whole(hours_a_unit * crate::consts::FIXED_SCALE)));
-                    facts.push((<OutputRate as FactDef>::ITEM.name, whole(per_day)));
+                    let rate = per_day * phx_core::fact_scale(<OutputRate as FactDef>::ITEM);
+                    facts.push((<OutputRate as FactDef>::ITEM.name, whole(rate)));
                     facts.push((<ExpectedSales as FactDef>::ITEM.name, whole(per_day * m.production_days)));
                     facts.push((<UnitCost as FactDef>::ITEM.name, whole(cost)));
                     if let Some(posted) = posted {

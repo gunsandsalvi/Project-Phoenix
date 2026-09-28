@@ -77,9 +77,11 @@ declare_fact! {
 }
 
 declare_fact! {
-    /// Units the firm starts a day, its standing production flow.
+    /// Units the firm starts a day, its standing production flow, in millionths so a firm making less than a unit a day
+    /// is counted.
     pub OutputRate = "FRM.output_rate" {
-        value: Qty, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position, clause: "FRM.4",
+        value: Fixed { exp: 6 }, kinds: ["firm", "small_firm"], writer: "FRM", audience: Party, repr: Position,
+        clause: "FRM.4",
     }
 }
 

@@ -93,8 +93,8 @@ where
         .zip(&own.products)
         .filter(|(_, p)| p.standardised)
         .filter_map(|(i, p)| {
-            // A product with no bounds is one class.
-            let classes = if p.bounds.is_empty() { 1 } else { u8::try_from(p.bounds.len()).ok()? };
+            // A product's classes lie between its bounds: one more than its bounds, one where it has none.
+            let classes = u8::try_from(p.bounds.len() + 1).ok()?;
             let spoil = own.spoilage.get(usize::from(i)).copied()?;
             Some((0..classes).map(move |g| (i, g, p.lot, spoil)))
         })
@@ -114,14 +114,14 @@ where
             let Some(qty) = lots.checked_mul(lot) else { continue };
             free -= from_i64(lots) * from_i64(price);
             let steps = vec![Step { limit: PriceRaw::from_raw(limit), qty }];
-            ctx.emit(&OrderIntent { row, kind, product, grade, side: Side::Buy, steps });
+            ctx.emit(&OrderIntent { row, kind, product, grade, at: Missing::Absent, side: Side::Buy, steps });
         } else {
             let held = ctx.held(row, product, grade);
             let offered = held - held % lot;
             let Some(limit) = floor_to_i64(-worth).map(|f| -f) else { continue };
             if offered > 0 {
                 let steps = vec![Step { limit: PriceRaw::from_raw(limit), qty: offered }];
-                ctx.emit(&OrderIntent { row, kind, product, grade, side: Side::Sell, steps });
+                ctx.emit(&OrderIntent { row, kind, product, grade, at: Missing::Absent, side: Side::Sell, steps });
             }
         }
     }

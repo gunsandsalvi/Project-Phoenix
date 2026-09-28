@@ -10,7 +10,7 @@ use phx_id::Slot;
 use phx_ledger::instruction::{Source, name_code};
 use phx_ledger::intents::{Made, Transform};
 use phx_macros::clause;
-use phx_market::intents::OrderIntent;
+use phx_market::intents::{OrderIntent, ShipIntent};
 use phx_market::order::{Side, Step};
 use phx_num::{Count, Missing, PriceRaw};
 use phx_rand::float::from_i64;
@@ -111,7 +111,7 @@ declare_handler! {
         table: "small_firm",
         reads: [UnitCost, OutputRate, RequiredReturn, Method],
         writes: [],
-        intents: [Transform, OrderIntent],
+        intents: [Transform, OrderIntent, ShipIntent],
         clause: "GDS.4",
         body: extract,
     }
@@ -124,7 +124,7 @@ declare_handler! {
         table: "firm",
         reads: [UnitCost, OutputRate, RequiredReturn, Method],
         writes: [],
-        intents: [Transform, OrderIntent],
+        intents: [Transform, OrderIntent, ShipIntent],
         clause: "GDS.4",
         body: extract,
     }
@@ -178,8 +178,11 @@ where
 /// price there, net of the firm's unit cost, beats the net price it expects discounted at the return it requires,
 /// the units its plant runs over the days to its next decision, no more than the deposit holds; and an offer of what
 /// it then holds of the good, at the least it would take rather than hold, the better of its cost and the price it
-/// expects by its method, discounted. A firm without its cost, its run, its required return or its method, or a good
-/// with no price or outlook there yet, decides nothing.
+/// expects by its method, discounted. Where the good has no price or outlook where it stands, it sells delivered: its
+/// price is the best mark it can carry the good to less the freight, it expects that to hold, and what it holds is
+/// carried there. A deposit in another region yields its goods where it lies, priced by the mark there, which
+/// the firm expects to hold. Goods it holds elsewhere are offered where they are. A firm without its cost, its run, its
+/// required return or its method decides nothing.
 #[clause("GDS.4", "GDS.13", "MKT.16")]
 fn extract<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
 where
@@ -189,10 +192,12 @@ where
         + Reads<RequiredReturn>
         + Reads<Method>
         + Emits<Transform>
-        + Emits<OrderIntent>,
+        + Emits<OrderIntent>
+        + Emits<ShipIntent>,
     S: FactStore + ?Sized,
 {
     let own: &Own = ctx.own::<Own>();
+    offer_away(ctx, row);
     let (Some(cost), Some(per_day), Some(required), Some(method)) = (
         read::<UnitCost, H, S>(ctx, row),
         read::<OutputRate, H, S>(ctx, row),
@@ -202,6 +207,7 @@ where
         return;
     };
     let rate = from_i64(required) / crate::consts::RATE_SCALE;
+    let per_day = from_i64(per_day) / phx_core::fact_scale(<OutputRate as phx_core::FactDef>::ITEM);
     let horizon = from_i64(own.days) / DAYS_A_YEAR;
     let rights = ctx.rights(row).to_vec();
     for right in rights {
@@ -212,12 +218,37 @@ where
         };
         let grade = rules::grade::now(from_i64(right.grade) / crate::consts::GRADE_SCALE, product.fall, taken);
         let class = rules::grade::class(grade, &product.bounds);
-        let (Missing::Present(price), Missing::Present(outlook)) =
-            (ctx.mark(row, right.product, class), ctx.outlook(row, right.product, class, method))
-        else {
+        // A deposit away from where the firm stands yields goods where it lies: they are priced and offered there.
+        let home = ctx.zone(row) == Missing::Present(right.zone);
+        if !home {
+            let there = ctx.away(row, right.product, class).into_iter().find(|a| a.zone == right.zone).map(|a| a.there);
+            let Some(price) = there.map(from_i64) else { continue };
+            let finite = matches!(right.remaining, Missing::Present(_));
+            if rules::extract::works(price, from_i64(cost), price, (rate, horizon), finite) {
+                let remaining = match right.remaining {
+                    Missing::Present(r) => Some(r),
+                    Missing::Absent => None,
+                };
+                let made = rules::extract::quantity(per_day, own.days, remaining);
+                if made > 0 {
+                    let (product, grade) = (right.product, class);
+                    let leg = Made { product, grade, qty: made, source: Source::Deposit(right.deposit), cost: 0 };
+                    let Ok(days) = u32::try_from(own.days) else { return };
+                    ctx.emit(&Transform { row, reason: name_code(crate::EXTRACTED.name), days, legs: vec![leg] });
+                }
+            }
             continue;
+        }
+        let local = (ctx.mark(row, right.product, class), ctx.outlook(row, right.product, class, method));
+        let (price, outlook, delivered) = if let (Missing::Present(p), Missing::Present(o)) = local {
+            (from_i64(p), from_i64(o), None)
+        } else {
+            // With no price where it stands, its goods fetch what they fetch at the best place it can carry them to,
+            // less the freight there, and it expects that to hold.
+            let Some((netback, to, mode)) = best_delivered(ctx, row, right.product, class) else { continue };
+            (from_i64(netback), from_i64(netback), Some((to, mode)))
         };
-        let (price, outlook, unit_cost) = (from_i64(price), from_i64(outlook), from_i64(cost));
+        let unit_cost = from_i64(cost);
         let finite = matches!(right.remaining, Missing::Present(_));
         let mut made = 0;
         if rules::extract::works(price, unit_cost, outlook, (rate, horizon), finite) {
@@ -225,7 +256,7 @@ where
                 Missing::Present(r) => Some(r),
                 Missing::Absent => None,
             };
-            made = rules::extract::quantity(per_day, own.days, remaining, product.lot);
+            made = rules::extract::quantity(per_day, own.days, remaining);
         }
         if made > 0 {
             let leg = Made {
@@ -238,6 +269,17 @@ where
             let Ok(days) = u32::try_from(own.days) else { return };
             ctx.emit(&Transform { row, reason: name_code(crate::EXTRACTED.name), days, legs: vec![leg] });
         }
+        if let Some((to, mode)) = delivered {
+            // It sells delivered: what it holds here is carried to where it fetches most and offered there.
+            let held = ctx.held(row, right.product, class);
+            let qty = held - held % product.lot;
+            if qty > 0 {
+                let kind = name_code(CARRIAGE);
+                let (from, product) = (Missing::Absent, right.product);
+                ctx.emit(&ShipIntent { row, kind, product, grade: class, from, qty, to, mode });
+            }
+            continue;
+        }
         let held = ctx.held(row, right.product, class) + made;
         let offered = held - held % product.lot;
         let reservation = rules::stockist::carry_value(outlook, (0.0, 0.0), (rate, horizon));
@@ -246,7 +288,60 @@ where
         if offered > 0 {
             let steps = vec![Step { limit: PriceRaw::from_raw(limit), qty: offered }];
             let kind = own.market(right.product);
-            ctx.emit(&OrderIntent { row, kind, product: right.product, grade: class, side: Side::Sell, steps });
+            ctx.emit(&OrderIntent {
+                row,
+                kind,
+                product: right.product,
+                grade: class,
+                at: Missing::Absent,
+                side: Side::Sell,
+                steps,
+            });
         }
     }
 }
+
+/// The place a good fetches most carried from where the row stands: each place that marks it, by each mode carriage
+/// is posted in here, its mark less the freight there; with the zone and the mode. None where it can be carried to
+/// none.
+fn best_delivered<H, S>(ctx: &Ctx<'_, H, S>, row: Slot, product: u16, grade: u8) -> Option<(i64, u32, u16)>
+where
+    H: HandlerDecl,
+    S: FactStore + ?Sized,
+{
+    ctx.away(row, product, grade)
+        .into_iter()
+        .filter_map(|a| match a.outbound {
+            Missing::Present(f) => Some((a.there.checked_sub(f)?, a.zone, a.mode)),
+            Missing::Absent => None,
+        })
+        // Equal netbacks go to the lower zone, then the lower mode.
+        .reduce(|a, b| if (b.0, a.1, a.2) > (a.0, b.1, b.2) { b } else { a })
+}
+
+/// What the row holds of the goods it extracts at other places, offered at each place's market at its mark there, as
+/// a merchant that carried them there sells them.
+fn offer_away<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot)
+where
+    H: HandlerDecl + Emits<OrderIntent>,
+    S: FactStore + ?Sized,
+{
+    let own: &Own = ctx.own::<Own>();
+    let extracted: Vec<u16> = ctx.rights(row).iter().map(|r| r.product).collect();
+    let away: Vec<phx_core::HeldAway> = ctx.elsewhere(row).to_vec();
+    for h in away.iter().filter(|h| extracted.contains(&h.product)) {
+        let Some(product) = own.products.get(usize::from(h.product)) else { continue };
+        let qty = h.free - h.free % product.lot;
+        let mark = ctx.away(row, h.product, h.grade).into_iter().find(|a| a.zone == h.zone).map(|a| a.there);
+        let Some(limit) = mark else { continue };
+        if qty > 0 {
+            let steps = vec![Step { limit: PriceRaw::from_raw(limit), qty }];
+            let kind = own.market(h.product);
+            let (at, product) = (Missing::Present(h.zone), h.product);
+            ctx.emit(&OrderIntent { row, kind, product, grade: h.grade, at, side: Side::Sell, steps });
+        }
+    }
+}
+
+/// The carriage kind an extractor books room in to carry its goods where they fetch more.
+const CARRIAGE: &str = "FRT.carriage";

@@ -161,9 +161,10 @@ pub struct Tape {
     failures: Vec<MarketFailure>,
     marks: BTreeMap<MarketId, Mark>,
     last: BTreeMap<MarketId, PrintId>,
+    last_failed: BTreeMap<MarketId, usize>,
 }
 
-/// The tape saved as it was published, and its last print per market rebuilt from the prints on load.
+/// The tape saved as it was published, and its last print and last failure per market rebuilt on load.
 impl phx_store::Saved for Tape {
     fn save(&self, w: &mut phx_store::Writer<'_>) {
         self.sets.save(w);
@@ -181,9 +182,13 @@ impl phx_store::Saved for Tape {
             failures: phx_store::Saved::load(r)?,
             marks: phx_store::Saved::load(r)?,
             last: BTreeMap::new(),
+            last_failed: BTreeMap::new(),
         };
         for (i, p) in tape.prints.iter().enumerate() {
             tape.last.insert(p.market, PrintId(phx_store::narrow(i, "a print's place on the tape")?));
+        }
+        for (i, f) in tape.failures.iter().enumerate() {
+            tape.last_failed.insert(f.market, i);
         }
         Ok(tape)
     }
@@ -255,7 +260,19 @@ impl Tape {
     }
 
     pub fn fail(&mut self, failure: MarketFailure) {
+        self.last_failed.insert(failure.market, self.failures.len());
         self.failures.push(failure);
+    }
+
+    /// Whether a market's last meeting found no seller: it failed so after its last print, or with none printed.
+    #[must_use]
+    pub fn unsold(&self, market: MarketId) -> bool {
+        let Some(f) = self.last_failed.get(&market).and_then(|i| self.failures.get(*i)) else { return false };
+        let after = match self.last_print(market) {
+            Missing::Present(p) => f.day > p.day,
+            Missing::Absent => true,
+        };
+        after && f.kind == crate::failure::FailureKind::NoSeller
     }
 
     #[must_use]

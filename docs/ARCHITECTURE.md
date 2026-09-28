@@ -1231,8 +1231,12 @@ markup, posted price, output rate, price attention, the cost of its staff's hour
   revenue, every day at or below cost. A surprise beyond `VAL.attention_sensitivity` widths sets the chance to one, so
   the review is drawn for the next day, as a surprise in the public series its stance reads wakes it (`stance_wakes`);
   then its stance is reconsidered (VAL.7). Production follows; for the next period each storable input it will be
-  short of is bid for at its market when the input is worth its price there financed: its price, and the margin a unit
-  made earns over its unit cost spread over what the unit takes of it (FRM.4, GDS.5).
+  short of, counting what it holds at other places, is bid for where it lands for least — its own place's market, or
+  another's with the freight home by the cheapest mode carriage is posted in there, each where its market last met a
+  seller, in the grade class landing cheapest — when the input is worth its landed price financed: that price, and the
+  margin a unit made earns over its unit cost spread over what the unit takes of it (FRM.4, GDS.5); bought elsewhere,
+  it is shipped home at its next visit. A firm's output rate (`FRM.output_rate`) is kept in millionths of a unit a day,
+  so a firm making less than a unit a day is counted (`phx_core::fact_scale` reads a fixed-point fact).
 - `FRM.review_*` (5c, at that attention): the markup moves by `rules::markup::update` over the sales since the last
   review against those expected over its days and by what competitors charge — its product's last price between
   firms where it stands, or else its country's retail mark for it (`Ctx::posted`), absent while neither is marked —
@@ -1485,13 +1489,17 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   no issuer, counted in its product's unit and priced in its zone's country's currency. The ledger's goods table
   (`phx_ledger::goods::Goods`, saved with the ledger) keys them and issues each the first time something names it, so
   only goods somewhere made or held exist. A stock is its holder's holding of the good, its lots its cost (ACC.6): no
-  system keeps a second count of it. An individual's goods stand at its site's zone; an agent, which has no tile, holds
-  its goods at its region's **market zone**, the region's largest zone (`GeoState::market_zones`). A good moves between
-  zones only by a shipment (FRT).
+  system keeps a second count of it. Every good stands at a region's **market zone**, the region's largest zone
+  (`GeoState::market_zones`), where its market meets and the freight network's segments end: an individual's at its
+  site's region's, an agent's at its region's, what a deposit yields at the deposit's region's (`World::market_zone`). A
+  good moves between zones only by a shipment (FRT); a holder reads its goods at other places (`Ctx::elsewhere`), each
+  with what is free of pledges, as goods on their way are not.
 - **Rights to extract** (GDS.3): each deposit's right is an instrument of one unit (`extraction right`) over its tile,
   in the same table; who holds it is drawn at the Stage 1 opening (S1.15).
-- **Grades** (GDS.13): each storable product declares its grade classes (TECHNOLOGY). A commodity's grade class is its
-  system's reading of its deposit's or its land's grade; a made good has one class.
+- **Grades** (GDS.13): each storable product declares its grade classes (TECHNOLOGY), one more than its bounds. A
+  commodity's grade class is its system's reading of its deposit's or its land's grade; a made good has one class. A
+  way takes an input's units of any class alike, its lowest class held first, and a buyer bids in the class landing
+  cheapest — a placeholder until the spec decides how a grade enters use (Appendix E 45).
 - **Products and ways** (TEC.1–TEC.4, TEC.9, TEC.12): products and ways are data (`if-base`), compiled at assembly
   into `sys-tec`'s `Technology`: each country's one opening way per product and its public way-set per industry. An
   extracted product is counted in kilograms, as deposits hold it, fine enough that what a way takes of one for a
@@ -1599,14 +1607,19 @@ is what its maker can make that day: the lesser of its staff's output rate and i
   GDS's family counts them shipped and arrived. A segment with an end in a zone a catastrophe struck carries nothing
   that day.
 - **The goods' markets** (GDS.7): `sys-gds` declares two kinds, `GDS.commodities` — a call at each place each business
-  day, for the products `GDS.standardised` names — and `GDS.between_firms`, posted prices, for the rest.
+  day, for the products `GDS.standardised` names — and `GDS.between_firms`, posted prices, for the rest. The opening
+  marks every good its places trade at `GDS.opening_price` (`World::snapshot_markets`): each good held at the opening,
+  and each grade class of what each deposit yields where its goods stand.
 - **Extraction** (GDS.4, GEO.9, GEO.12): the holder of a deposit's right visits on its own schedule
   (`GDS.extraction_days`, 5c). A deposit's grade is its opening grade times e^(−κ·share taken) (`GDS.grade_fall`), the
   richest part first, classed by `GDS.grade_bounds`. It works the deposit when today's mark less its unit cost is at
   least its method's outlook less that cost discounted at its required return over the days to its next decision
-  (Hotelling; a deposit without end whenever the mark covers the cost), its output rate for those days, in whole lots
-  and no more than the deposit holds, as a transformation from the deposit; and offers what it then holds at no less
-  than the better of its cost and its discounted outlook.
+  (Hotelling; a deposit without end whenever the mark covers the cost), its output rate for those days in whole units,
+  no more than the deposit holds, as a transformation from the deposit, what it takes gathering until it holds a lot;
+  and offers what it then holds at no less than the better of its cost and its discounted outlook. Where its goods'
+  place has no mark or outlook it sells delivered (FRT.5): its price is the best mark it can carry them to less the
+  freight out, it expects that to hold, and what it holds is shipped there. A deposit in another region is priced by
+  the mark where its goods stand and its goods are offered there, as are all goods it holds at other places.
 - **Spoilage** (GDS.8): a system declares each product's yearly loss in stock and the visit it follows
   (`SpoilageDecl`; `sys-gds`'s stock visit at 5b every `GDS.spoilage_days` calendar days, deciding nothing). After it
   the kernel (`phx-world`'s `spoil`) takes from each lot 1 − e^(−rate·t) of its units, t the days it was held within
@@ -1621,12 +1634,18 @@ Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the mee
 `FRT.capacity_lot`, equal prices by lot.
 - **Carriers and shippers** (FRT.4, FRT.5): at the opening each firm selling the carriage product is given a mode,
   drawn by the modes' shares of carriage employment (`FRT.mode_share`, stream `FRT.opening`). With the marks at 6a the
-  world rebuilds an `AwayTable`: each good's mark at each region's market zone and the carriage market's mark at each
-  origin and mode. A handler reads it through `Ctx::away` (`phx_core::Away`): for its row's zone, each other place in
-  its country that marks the good, with the metres between (`ZoneDistances`) and each mode carriage is marked in
-  where the row stands. The shipper's visit (`FRT.ship_*`, every `FRT.shipping_days` at 5c) carries the whole lots it
-  holds beyond its planning days' expected sales to the place whose price less its own and the freight — its tonnes
-  times the metres, in units of carriage at the carriage mark — is widest, when that is positive.
+  world rebuilds an `AwayTable`: each good's mark at each region's market zone, leaving out a place whose market last
+  met with no seller (`Tape::unsold`, from the failures on the tape, which shows none to buy from); and at each origin
+  and mode the lowest price carriage is posted at by a carrier with room — a posted-price market's buyer compares the
+  posted prices it can see (MKT.6), which carriage needs before its first sale can print. A handler reads it through
+  `Ctx::away` (`phx_core::Away`): for its row's zone, each other place in its country that marks the good, with the
+  metres between (`ZoneDistances`), by each mode carriage is posted in at either end, the freight of a lot out from here
+  and in from there (`phx_market::carriage::freight`: its tonnes times the km, in units of carriage at the lowest posted
+  price where it leaves). The shipper's visit (`FRT.ship_*`, every `FRT.shipping_days` at 5c) carries the whole lots it
+  holds beyond its planning days' expected sales to the place whose price less its own and the freight out is widest,
+  when that is positive. A buyer who bought at another place ships it home (FRT.5): an order or a shipment may name its
+  place (`OrderIntent::at`, `ShipIntent::from`). What arrives is what is left of the goods, as goods on their way
+  spoil, and an owner that ended on the way is its successor.
 - **Merchants** (GDS.6): the firms making `GDS.merchant_product` visit every `GDS.merchant_days` at 5c and, for each
   standardised good their place marks, weigh the price their method expects over the visit's days, less what spoils
   and discounted at their required return, against today's: they bid, at no more than that, with the money they hold

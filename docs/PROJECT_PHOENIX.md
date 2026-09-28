@@ -5250,8 +5250,13 @@ Decisions taken in writing this version, and decisions still open.
     2026-09-27): their decisions moved their parties in lock-step and their lumps broke whole-unit trades, while the
     variety a world holds is its number of distinct agents, the same in both.
 
-**Open** — none. A question the text does not settle and the laws do not settle is added here before the stage that
-needs it.
+**Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
+it.
+
+45. **How a commodity's grade enters use** (GDS.1, GDS.13, TEC.9). A good is keyed by grade, and a way states its
+    inputs by product. Whether a richer grade yields more in use — more metal from a tonne of ore, more heat from a
+    tonne of coal — and so what sets one grade's price against another's, the text does not say. Until it is decided,
+    a way takes an input's units of any grade alike.
 
 ---
 

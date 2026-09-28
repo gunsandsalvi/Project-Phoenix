@@ -12,7 +12,7 @@ use crate::market::MarketDecl;
 
 /// Freight's technology as its system compiles it from the register: the chain its vehicles are held in; by mode,
 /// the tonne-km a unit of vehicles carries a day, the metres it runs a day, the days loading takes at each end and the
-/// units of carriage a tonne-km takes; and by product, the units of a good in a tonne.
+/// units of carriage a tonne-km takes; by product, the units of a good in a tonne; and the product carriage is sold as.
 #[clause("FRT.1", "FRT.12")]
 #[derive(Clone, Debug, PartialEq)]
 pub struct FreightTech {
@@ -22,6 +22,24 @@ pub struct FreightTech {
     pub loading_days: Vec<u32>,
     pub carriage_a_tonne_km: Vec<f64>,
     pub units_a_tonne: Vec<f64>,
+    pub carriage_product: u16,
+}
+
+/// The freight of a lot of a good carried `metres` by a mode: its tonnes times the km, in units of carriage, at the
+/// carriage market's price for a lot of it.
+#[clause("FRT.5", "FRT.12")]
+#[must_use]
+pub fn freight(
+    tech: &FreightTech,
+    (product, lot): (u16, i64),
+    (mode, metres): (u16, u64),
+    (price, carriage_lot): (i64, f64),
+) -> Option<f64> {
+    let units_a_tonne = tech.units_a_tonne.get(usize::from(product)).copied()?;
+    let per_tonne_km = tech.carriage_a_tonne_km.get(usize::from(mode)).copied()?;
+    let tonne_km =
+        phx_rand::float::from_i64(lot) / units_a_tonne * phx_rand::float::from_u64(metres) / crate::consts::METRES_A_KM;
+    Some(tonne_km * per_tonne_km / carriage_lot * phx_rand::float::from_i64(price))
 }
 
 /// A carriage market kind as its system declares it: its market, an instance per origin zone and mode; the kinds that

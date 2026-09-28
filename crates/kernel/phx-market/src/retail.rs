@@ -24,8 +24,9 @@ pub struct RetailKind {
     pub sellers: &'static [&'static str],
     pub sells: &'static str,
     pub price: &'static str,
-    /// A seller's units made a day, what it can serve of a product delivered as it is made.
-    pub capacity: &'static str,
+    /// A seller's units made a day, what it can serve of a product delivered as it is made: its fact, read at its
+    /// fixed point.
+    pub capacity: phx_core::ItemDecl,
     /// The way a seller makes its product by.
     pub way: &'static str,
     /// A seller's units a day its plant allows, where its plant limits it.

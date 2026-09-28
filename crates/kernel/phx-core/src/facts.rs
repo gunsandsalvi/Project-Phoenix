@@ -70,6 +70,18 @@ impl FactType {
     }
 }
 
+/// What a fact's stored whole numbers are divided by to read its value: ten to its fixed point's places.
+#[must_use]
+pub fn fact_scale(item: crate::ItemDecl) -> f64 {
+    match item.kind {
+        crate::ItemKind::Fact(f) => match f.value {
+            FactType::Fixed { exp } => libm::pow(crate::consts::DECIMAL_BASE, f64::from(exp)),
+            _ => phx_num::violation!(clause = "NUM.3", "a scaled read of a fact that holds no fixed point"),
+        },
+        _ => phx_num::violation!(clause = "NUM.3", "a scaled read of an item that is no fact"),
+    }
+}
+
 /// A fact: a named, typed attribute of parties of declared kinds, with one writer and an audience.
 #[clause("PTY.8")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

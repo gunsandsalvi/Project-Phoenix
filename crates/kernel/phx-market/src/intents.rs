@@ -1,27 +1,48 @@
 //! What a handler asks of a market: an order for its own row's party, in a declared market kind over a good at the
-//! row's place, admitted into the day's book at 5d.
+//! row's place or another it buys at, admitted into the day's book at 5d.
 
 use phx_core::IntentDef;
 use phx_id::Slot;
 use phx_macros::clause;
-use phx_num::{PriceRaw, capacity_exceeded};
+use phx_num::{Missing, PriceRaw, capacity_exceeded};
 
 use crate::order::{Side, Step};
 
-/// An order as a handler asks it: its row, its market kind's code, the product and grade class it is over, its side
-/// and its steps.
-#[clause("MKT.16", "MKT.17")]
+/// An order as a handler asks it: its row, its market kind's code, the product and grade class it is over, the place
+/// whose market it is posted at where that is not the row's own, its side and its steps.
+#[clause("MKT.16", "MKT.17", "FRT.5")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OrderIntent {
     pub row: Slot,
     pub kind: u64,
     pub product: u16,
     pub grade: u8,
+    pub at: Missing<u32>,
     pub side: Side,
     pub steps: Vec<Step>,
 }
 
 const SELL: u64 = 1;
+
+/// A place as an intent's word carries it: none, or the zone with the bit above a zone's set.
+fn place_word(at: Missing<u32>) -> u64 {
+    match at {
+        Missing::Present(z) => PLACED | u64::from(z),
+        Missing::Absent => 0,
+    }
+}
+
+/// The place an intent's word carries, or none when the word is no place's.
+fn word_place(word: u64) -> Option<Missing<u32>> {
+    match word {
+        0 => Some(Missing::Absent),
+        w if w & PLACED != 0 => u32::try_from(w & !PLACED).ok().map(Missing::Present),
+        _ => None,
+    }
+}
+
+/// The bit a word sets when it carries a place.
+const PLACED: u64 = 1 << u32::BITS;
 
 impl IntentDef for OrderIntent {
     const NAME: &'static str = "MKT.order";
@@ -38,6 +59,7 @@ impl IntentDef for OrderIntent {
             u64::from(self.row.get()),
             self.kind,
             (u64::from(self.product) << u8::BITS) | u64::from(self.grade),
+            place_word(self.at),
             side,
             n,
         ]);
@@ -49,7 +71,7 @@ impl OrderIntent {
     /// The intent its words encode, or none when they are not an order's.
     #[must_use]
     pub fn decode(words: &[u64]) -> Option<OrderIntent> {
-        let [row, kind, good, side, n, rest @ ..] = words else { return None };
+        let [row, kind, good, at, side, n, rest @ ..] = words else { return None };
         let n = usize::try_from(*n).ok()?;
         if rest.len() != n.checked_mul(2)? {
             return None;
@@ -70,6 +92,7 @@ impl OrderIntent {
             kind: *kind,
             product: u16::try_from(good >> u8::BITS).ok()?,
             grade: u8::try_from(good & u64::from(u8::MAX)).ok()?,
+            at: word_place(*at)?,
             side,
             steps,
         })
@@ -121,7 +144,8 @@ impl ShopIntent {
 }
 
 /// A shipper's want to carry goods as a handler asks it: its row, the carriage kind's code, the product and grade
-/// class of the goods where the row stands, the units, the zone they go to, and the mode.
+/// class of the goods, the place they are at where that is not the row's own, the units, the zone they go to, and the
+/// mode.
 #[clause("FRT.5", "FRT.3")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ShipIntent {
@@ -129,6 +153,7 @@ pub struct ShipIntent {
     pub kind: u64,
     pub product: u16,
     pub grade: u8,
+    pub from: Missing<u32>,
     pub qty: i64,
     pub to: u32,
     pub mode: u16,
@@ -142,6 +167,7 @@ impl IntentDef for ShipIntent {
             u64::from(self.row.get()),
             self.kind,
             (u64::from(self.product) << u8::BITS) | u64::from(self.grade),
+            place_word(self.from),
             self.qty.cast_unsigned(),
             (u64::from(self.to) << u16::BITS) | u64::from(self.mode),
         ]);
@@ -152,12 +178,13 @@ impl ShipIntent {
     /// The intent its words encode, or none when they are not a shipper's want.
     #[must_use]
     pub fn decode(words: &[u64]) -> Option<ShipIntent> {
-        let [row, kind, good, qty, route] = words else { return None };
+        let [row, kind, good, from, qty, route] = words else { return None };
         Some(ShipIntent {
             row: Slot::new(u32::try_from(*row).ok()?),
             kind: *kind,
             product: u16::try_from(good >> u8::BITS).ok()?,
             grade: u8::try_from(good & u64::from(u8::MAX)).ok()?,
+            from: word_place(*from)?,
             qty: qty.cast_signed(),
             to: u32::try_from(route >> u16::BITS).ok()?,
             mode: u16::try_from(route & u64::from(u16::MAX)).ok()?,
@@ -222,6 +249,7 @@ mod tests {
             kind: phx_ledger::instruction::name_code("GDS.commodities"),
             product: 2,
             grade: 1,
+            at: phx_num::Missing::Present(12),
             side: Side::Sell,
             steps: vec![
                 Step { limit: PriceRaw::from_raw(-5), qty: 40 },
@@ -230,16 +258,31 @@ mod tests {
         };
         let mut words = Vec::new();
         o.encode(&mut words);
-        assert_eq!(OrderIntent::decode(&words), Some(o));
+        assert_eq!(OrderIntent::decode(&words), Some(o.clone()));
         assert_eq!(OrderIntent::decode(words.get(..4).unwrap_or(&[])), None);
+        let home = OrderIntent { at: phx_num::Missing::Absent, ..o };
+        let mut words = Vec::new();
+        home.encode(&mut words);
+        assert_eq!(OrderIntent::decode(&words), Some(home));
     }
 
     #[test]
     fn a_consignment_survives_its_words() {
-        let s = super::ShipIntent { row: Slot::new(9), kind: 5, product: 2, grade: 1, qty: 400, to: 77_000, mode: 1 };
-        let mut words = Vec::new();
-        s.encode(&mut words);
-        assert_eq!(super::ShipIntent::decode(&words), Some(s));
+        for from in [phx_num::Missing::Absent, phx_num::Missing::Present(0), phx_num::Missing::Present(u32::MAX)] {
+            let s = super::ShipIntent {
+                row: Slot::new(9),
+                kind: 5,
+                product: 2,
+                grade: 1,
+                from,
+                qty: 400,
+                to: 77_000,
+                mode: 1,
+            };
+            let mut words = Vec::new();
+            s.encode(&mut words);
+            assert_eq!(super::ShipIntent::decode(&words), Some(s));
+        }
     }
 
     #[test]

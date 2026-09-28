@@ -10,7 +10,7 @@ use phx_id::Slot;
 use phx_ledger::instruction::{Source, name_code};
 use phx_ledger::intents::{Made, Transform};
 use phx_macros::clause;
-use phx_market::intents::{OrderIntent, ShopIntent};
+use phx_market::intents::{OrderIntent, ShipIntent, ShopIntent};
 use phx_market::order::{Side, Step};
 use phx_market::retail::Want;
 use phx_num::{Missing, PriceRaw};
@@ -159,7 +159,8 @@ where
         + Reads<Capacity>
         + Emits<Transform>
         + Emits<OrderIntent>
-        + Emits<ShopIntent>,
+        + Emits<ShopIntent>
+        + Emits<ShipIntent>,
     S: FactStore + ?Sized,
 {
     let own: &crate::Own = ctx.own::<crate::Own>();
@@ -176,6 +177,7 @@ where
         return;
     };
     let (Some(way), Some(traded)) = (plant.ways.get(w), plant.products.get(usize::from(p))) else { return };
+    let staff = from_i64(rate) / phx_core::fact_scale(<OutputRate as phx_core::FactDef>::ITEM);
     let days = m.production_days;
     let financing = from_i64(required) / FIXED_SCALE * days / DAYS_A_YEAR;
     let storable = |q: u16| plant.products.get(usize::from(q)).is_some_and(|t| t.storable);
@@ -189,8 +191,8 @@ where
             adjustment: plant.adjustment_days / days,
             // The staff's output, and the plant's where its last review found one, whichever is less.
             capacity: match read::<Capacity, H, S>(ctx, row) {
-                Some(plant) if plant < rate => from_i64(plant) * days,
-                _ => from_i64(rate) * days,
+                Some(plant) if from_i64(plant) < staff => from_i64(plant) * days,
+                _ => staff * days,
             },
             expected_price: from_i64(price),
             unit_cost: from_i64(cost),
@@ -201,8 +203,8 @@ where
             Produce::Make(q) => q,
             Produce::StockCovers | Produce::NoMargin | Produce::NoCapacity => 0.0,
         };
-        let goods: Vec<(u16, i64)> =
-            ctx.goods(row).iter().filter(|(_, g, _)| *g == 0).map(|(q, _, n)| (*q, *n)).collect();
+        // Every grade class of an input serves alike.
+        let goods: Vec<(u16, i64)> = ctx.goods(row).iter().map(|(q, _, n)| (*q, *n)).collect();
         let held = |q: u16| goods.iter().filter(|(x, _)| *x == q).map(|(_, n)| n).sum::<i64>();
         let feasible = most_from(way, &held, &storable);
         let make = floor_to_i64(planned).map_or(0, |q| feasible.map_or(q, |f| if f < q { f } else { q }));
@@ -221,17 +223,27 @@ where
         let lots = offered - offered % traded.lot;
         if lots > 0 {
             let steps = vec![Step { limit: PriceRaw::from_raw(price), qty: lots }];
-            ctx.emit(&OrderIntent { row, kind: traded.market, product: p, grade: 0, side: Side::Sell, steps });
+            ctx.emit(&OrderIntent {
+                row,
+                kind: traded.market,
+                product: p,
+                grade: 0,
+                at: Missing::Absent,
+                side: Side::Sell,
+                steps,
+            });
         }
     }
     let lot = from_i64(traded.lot);
+    ship_home(ctx, row, (way, plant));
     buy_inputs(ctx, row, (way, plant), (planned, (from_i64(price) - from_i64(cost)) / lot, financing));
 }
 
 /// The inputs a period's output will use: each storable one the firm will be short of over the days a unit takes
-/// and its stock's cover, bought at its market when it is worth its price there financed — its price, and the margin a
-/// unit made earns over its cost, over what the unit takes of it; each service bought at retail as it will be used,
-/// whole lots of it.
+/// and its stock's cover, counting what it holds elsewhere, bought where it lands for least — at its own place's
+/// market, or at another place's with the freight home — when it is worth that there financed: its landed price, and
+/// the margin a unit made earns over its cost, over what the unit takes of it; each service bought at retail as it
+/// will be used, whole lots of it.
 fn buy_inputs<H, S>(
     ctx: &mut Ctx<'_, H, S>,
     row: Slot,
@@ -253,19 +265,23 @@ fn buy_inputs<H, S>(
         let Some(t) = plant.products.get(usize::from(*q)) else { continue };
         let use_per_period = from_i64(takes(way, finished, *per));
         if t.storable {
-            let Missing::Present(mark) = ctx.mark(row, *q, 0) else { continue };
-            // An input's worth in use: what it costs at its market, and what a unit made earns beyond its cost, over what
-            // the unit takes of it.
-            let price_per_unit = from_i64(mark) / from_i64(t.lot);
+            let Some(((landed, at, freight), grade)) = cheapest(ctx, row, *q) else { continue };
+            // An input's worth in use: what it costs landed, and what a unit made earns beyond its cost, over what the
+            // unit takes of it.
+            let price_per_unit = from_i64(landed) / from_i64(t.lot);
             let worth = price_per_unit + unit_margin * from_i64(PER_UNIT_SCALE) / from_i64(*per);
             let carried = inputs::carried_cost(price_per_unit, financing, lead + cover);
-            let short = inputs::order(use_per_period, (lead, cover), from_i64(ctx.held(row, *q, 0)), worth, carried);
+            let away: i64 = ctx.elsewhere(row).iter().filter(|h| h.product == *q).map(|h| h.units).sum();
+            let here: i64 = ctx.goods(row).iter().filter(|(p, _, _)| p == q).map(|(_, _, n)| n).sum();
+            let held = from_i64(here + away);
+            let short = inputs::order(use_per_period, (lead, cover), held, worth, carried);
             let Some(units) = floor_to_i64(short) else { continue };
             let lots = units - units % t.lot + if units % t.lot > 0 { t.lot } else { 0 };
-            let Some(limit) = floor_to_i64(worth * from_i64(t.lot)) else { continue };
+            // Where it buys at another place, the freight home is paid beside the price there.
+            let Some(limit) = floor_to_i64(worth * from_i64(t.lot)).map(|l| l - freight) else { continue };
             if lots > 0 && limit > 0 {
                 let steps = vec![Step { limit: PriceRaw::from_raw(limit), qty: lots }];
-                ctx.emit(&OrderIntent { row, kind: t.market, product: *q, grade: 0, side: Side::Buy, steps });
+                ctx.emit(&OrderIntent { row, kind: t.market, product: *q, grade, at, side: Side::Buy, steps });
             }
         } else {
             let Some(units) = floor_to_i64(use_per_period) else { continue };
@@ -276,6 +292,91 @@ fn buy_inputs<H, S>(
         }
     }
 }
+
+/// Where a good lands at the row's place for least, a lot of it, over the grade classes it is marked in, which serve
+/// alike: its own place's mark, or another place's mark with the freight home by the cheapest mode carriage is posted
+/// in there, each where its market last met a seller; with the place, none for its own, and the freight; and the
+/// class. None where no such place marks it.
+fn cheapest<H, S>(ctx: &Ctx<'_, H, S>, row: Slot, product: u16) -> Option<(Landed, u8)>
+where
+    H: HandlerDecl,
+    S: FactStore + ?Sized,
+{
+    ctx.grades(product)
+        .into_iter()
+        .filter_map(|grade| {
+            // Its own place's market is no place to buy while it last met with no seller.
+            let here = match ctx.mark(row, product, grade) {
+                Missing::Present(m) if !ctx.unsold(row, product, grade) => Some((m, Missing::Absent, 0)),
+                _ => None,
+            };
+            ctx.away(row, product, grade)
+                .into_iter()
+                .filter_map(|a| match a.inbound {
+                    Missing::Present(f) => Some((a.there.checked_add(f)?, Missing::Present(a.zone), f)),
+                    Missing::Absent => None,
+                })
+                .chain(here)
+                // Equal landed prices go to its own place, then to the lower zone.
+                .reduce(|a, b| if (b.0, rank(b.1)) < (a.0, rank(a.1)) { b } else { a })
+                .map(|l| (l, grade))
+        })
+        // Equal landed prices go to the lower class.
+        .reduce(|a, b| if b.0.0 < a.0.0 { b } else { a })
+}
+
+/// A lot's price landed at the row's place, the place it is bought at, none for its own, and the freight home.
+type Landed = (i64, Missing<u32>, i64);
+
+/// A place's rank among equal landed prices: its own first, then others by their zone.
+fn rank(at: Missing<u32>) -> (bool, u32) {
+    match at {
+        Missing::Absent => (false, 0),
+        Missing::Present(z) => (true, z),
+    }
+}
+
+/// The inputs the firm holds at other places, free to leave, carried home in whole lots by the cheapest mode
+/// carriage is posted in there, as the buyer who bought them at their origin ships them.
+fn ship_home<H, S>(ctx: &mut Ctx<'_, H, S>, row: Slot, (way, plant): (&WayRow, &Plant))
+where
+    H: HandlerDecl + Emits<ShipIntent>,
+    S: FactStore + ?Sized,
+{
+    let Missing::Present(home) = ctx.zone(row) else { return };
+    let away: Vec<phx_core::HeldAway> = ctx.elsewhere(row).to_vec();
+    for h in away.iter().filter(|h| way.inputs.iter().any(|(q, _)| *q == h.product)) {
+        let Some(t) = plant.products.get(usize::from(h.product)) else { continue };
+        let qty = h.free - h.free % t.lot;
+        if qty <= 0 {
+            continue;
+        }
+        let mode = ctx
+            .away(row, h.product, h.grade)
+            .into_iter()
+            .filter(|a| a.zone == h.zone)
+            .filter_map(|a| match a.inbound {
+                Missing::Present(f) => Some((f, a.mode)),
+                Missing::Absent => None,
+            })
+            .reduce(|a, b| if b < a { b } else { a });
+        let Some((_, mode)) = mode else { continue };
+        let kind = name_code(CARRIAGE);
+        ctx.emit(&ShipIntent {
+            row,
+            kind,
+            product: h.product,
+            grade: h.grade,
+            from: Missing::Present(h.zone),
+            qty,
+            to: home,
+            mode,
+        });
+    }
+}
+
+/// The carriage kind a firm books room in to carry what it bought elsewhere home.
+const CARRIAGE: &str = "FRT.carriage";
 
 /// The retail kind a firm buys the services its way uses in.
 const RETAIL: &str = "SRV.retail";

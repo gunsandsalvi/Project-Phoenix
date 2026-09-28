@@ -160,7 +160,7 @@ where
     let (Some(before), Missing::Present(way), Some(staff), Some(price), Some(cost), Some(required)) = (
         before,
         ctx.read::<WayUsed>(row),
-        read::<OutputRate, H, S>(ctx, row),
+        read::<OutputRate, H, S>(ctx, row).map(|r| r / phx_core::fact_scale(<OutputRate as phx_core::FactDef>::ITEM)),
         read::<Price, H, S>(ctx, row),
         read::<UnitCost, H, S>(ctx, row),
         read::<RequiredReturn, H, S>(ctx, row),

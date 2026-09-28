@@ -19,17 +19,17 @@ pub fn works(price: f64, cost: f64, outlook: f64, (rate, horizon_years): (f64, f
     now >= later
 }
 
-/// The units to take over a period: what the extractor's plant runs a day for the period's days, no more than the
-/// deposit holds, in whole lots of the product's least quantity; none beyond an integer's reach.
+/// The units to take over a period: what the extractor's plant runs a day for the period's days, in whole units, no
+/// more than the deposit holds; none beyond an integer's reach. What it takes gathers until it holds a lot to sell.
 #[clause("GDS.4", "GDS.12")]
 #[must_use]
-pub fn quantity(per_day: i64, days: i64, remaining: Option<i64>, lot: i64) -> i64 {
-    let Some(wanted) = per_day.checked_mul(days) else { return 0 };
+pub fn quantity(per_day: f64, days: i64, remaining: Option<i64>) -> i64 {
+    let Some(wanted) = phx_rand::float::floor_to_i64(per_day * phx_rand::float::from_i64(days)) else { return 0 };
     let can = match remaining {
         Some(r) if r < wanted => r,
         _ => wanted,
     };
-    if lot <= 0 || can <= 0 { 0 } else { can - can % lot }
+    if can <= 0 { 0 } else { can }
 }
 
 #[cfg(test)]
@@ -48,9 +48,11 @@ mod tests {
     }
 
     #[test]
-    fn a_deposit_gives_no_more_than_it_holds_in_whole_lots() {
-        assert_eq!(quantity(250, 7, None, 100), 1700);
-        assert_eq!(quantity(250, 7, Some(1234), 100), 1200);
-        assert_eq!(quantity(250, 7, Some(0), 100), 0);
+    fn a_deposit_gives_no_more_than_it_holds_in_whole_units() {
+        assert_eq!(quantity(250.0, 7, None), 1750);
+        assert_eq!(quantity(250.0, 7, Some(1234)), 1234);
+        assert_eq!(quantity(250.0, 7, Some(0)), 0);
+        assert_eq!(quantity(0.13, 7, None), 0, "less than a unit over the period takes none");
+        assert_eq!(quantity(0.2, 7, None), 1);
     }
 }

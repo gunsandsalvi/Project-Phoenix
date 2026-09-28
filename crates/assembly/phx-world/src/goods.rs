@@ -3,7 +3,7 @@
 //! settled in stage 7 after the dues; and what a row's party may read of its goods, built for each run of rows a
 //! handler is given.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use phx_core::{FactDef, GoodsView, HeldGood, HeldRight, SubStep};
@@ -218,13 +218,42 @@ pub struct GoodsDay {
 
 /// Each good's latest mark where it stands, as the markets' marks give it, rebuilt after the day's marks.
 pub(crate) type Marks = Arc<BTreeMap<GoodKey, i64>>;
-/// What a shipper reads of other places, rebuilt with the marks: each good's mark at each region's market zone, and
-/// the carriage market's mark at each origin and mode.
+/// What a trader reads of other places, rebuilt with the marks: each good's mark at each region's market zone where
+/// its market last met a seller, the lowest price carriage is posted at by each origin and mode, freight's technology
+/// with each product's lot, and the goods whose market last met with no seller.
 #[derive(Debug, Default)]
 pub(crate) struct AwayTable {
     market: BTreeMap<(u16, u8), Vec<(ZoneId, i64)>>,
     carriage: BTreeMap<(ZoneId, u16), i64>,
+    freight: Option<(phx_market::carriage::FreightTech, Vec<Missing<i64>>)>,
+    /// The goods whose market where they stand last met with no seller, which shows none to buy from.
+    unsold: BTreeSet<GoodKey>,
 }
+impl AwayTable {
+    /// The freight of a lot of a product from a place to another `metres` off by a mode, at the lowest price carriage
+    /// is posted at where it leaves, rounded up to whole money; none where carriage is posted at none there.
+    fn freight_of(&self, (product, from): (u16, ZoneId), (mode, metres): (u16, u64)) -> Missing<i64> {
+        let Some((tech, bases)) = &self.freight else { return Missing::Absent };
+        let (Some(Missing::Present(lot)), Some(Missing::Present(carriage_lot)), Some(price)) = (
+            bases.get(usize::from(product)),
+            bases.get(usize::from(tech.carriage_product)),
+            self.carriage.get(&(from, mode)),
+        ) else {
+            return Missing::Absent;
+        };
+        let cost = phx_market::carriage::freight(
+            tech,
+            (product, *lot),
+            (mode, metres),
+            (*price, phx_rand::float::from_i64(*carriage_lot)),
+        );
+        match cost.and_then(|c| phx_rand::float::floor_to_i64(c.ceil())) {
+            Some(c) => Missing::Present(c),
+            None => Missing::Absent,
+        }
+    }
+}
+
 /// Each product's retail mark in each country, rebuilt with the marks.
 pub(crate) type RetailMarks = Arc<BTreeMap<(u16, u8), i64>>;
 /// Each method's record on each series a stance reads: a good's market where it stands, or a product's retail market
@@ -250,6 +279,7 @@ pub(crate) struct RunGoods {
     plant: Vec<phx_core::HeldPlant>,
     rights: Vec<HeldRight>,
     delivered: Vec<Units>,
+    elsewhere: Vec<phx_core::HeldAway>,
     marks: Marks,
     retail: RetailMarks,
     records: Arc<Records>,
@@ -267,6 +297,7 @@ struct RowGoods {
     plant: (usize, usize),
     rights: (usize, usize),
     delivered: (usize, usize),
+    elsewhere: (usize, usize),
     money: Missing<i64>,
     net_assets: Missing<i64>,
 }
@@ -281,6 +312,7 @@ impl RowGoods {
             plant: (0, 0),
             rights: (0, 0),
             delivered: (0, 0),
+            elsewhere: (0, 0),
             money: Missing::Absent,
             net_assets: Missing::Absent,
         }
@@ -300,6 +332,7 @@ impl RunGoods {
         self.plant.clear();
         self.rights.clear();
         self.delivered.clear();
+        self.elsewhere.clear();
     }
 }
 
@@ -341,6 +374,23 @@ impl GoodsView for RunGoods {
     fn party(&self, slot: Slot) -> Missing<PartyId> {
         self.row(slot).map_or(Missing::Absent, |r| r.party)
     }
+    fn grades(&self, product: u16) -> Vec<u8> {
+        let marked = self.marks.keys().filter(|k| k.product == product).map(|k| k.grade);
+        marked.collect::<BTreeSet<u8>>().into_iter().collect()
+    }
+    fn unsold(&self, slot: Slot, product: u16, grade: u8) -> bool {
+        let Some(Missing::Present(zone)) = self.row(slot).map(|r| r.zone) else { return false };
+        self.away.unsold.contains(&GoodKey { product, grade, zone })
+    }
+    fn zone(&self, slot: Slot) -> Missing<u32> {
+        match self.row(slot).map(|r| r.zone) {
+            Some(Missing::Present(z)) => Missing::Present(z.get()),
+            _ => Missing::Absent,
+        }
+    }
+    fn elsewhere(&self, slot: Slot) -> &[phx_core::HeldAway] {
+        self.row(slot).map_or(&[], |r| part(&self.elsewhere, r.elsewhere))
+    }
     fn country(&self, slot: Slot) -> Missing<phx_id::CountryId> {
         let (Some(Missing::Present(zone)), Some(geo)) = (self.row(slot).map(|r| r.zone), self.geo.as_ref()) else {
             return Missing::Absent;
@@ -373,18 +423,21 @@ impl GoodsView for RunGoods {
         let (Some(Missing::Present(here)), Some(geo)) = (self.row(slot).map(|r| r.zone), self.geo.as_ref()) else {
             return Vec::new();
         };
-        let modes: Vec<(u16, i64)> =
-            self.away.carriage.range((here, 0)..=(here, u16::MAX)).map(|((_, m), p)| (*m, *p)).collect();
+        let posted = |z: ZoneId| self.away.carriage.range((z, 0)..=(z, u16::MAX)).map(|((_, m), p)| (*m, *p));
+        let outbound: BTreeSet<u16> = posted(here).map(|(m, _)| m).collect();
         let Some(places) = self.away.market.get(&(product, grade)) else { return Vec::new() };
         let mut out = Vec::new();
         for (zone, there) in places.iter().filter(|(z, _)| *z != here) {
             let Some(metres) = geo.distances.between(here, *zone) else { continue };
-            out.extend(modes.iter().map(|(mode, carriage)| phx_core::Away {
+            // Each mode carriage is sold in at either end: out from here, or in from there.
+            let modes: BTreeSet<u16> = outbound.iter().copied().chain(posted(*zone).map(|(m, _)| m)).collect();
+            out.extend(modes.into_iter().map(|mode| phx_core::Away {
                 zone: zone.get(),
-                mode: *mode,
+                mode,
                 metres,
                 there: *there,
-                carriage: *carriage,
+                outbound: self.away.freight_of((product, here), (mode, metres)),
+                inbound: self.away.freight_of((product, *zone), (mode, metres)),
             }));
         }
         out
@@ -407,13 +460,12 @@ impl World {
 
     /// A row's party and the zone its goods stand in; none when the row is no longer live.
     pub(crate) fn goods_row(&self, rows: Rows, slot: Slot) -> Option<Row> {
-        let geo = self.geo();
         if rows.individuals {
             let t = self.books.parties.table(rows.place);
             if !t.is_live(slot) {
                 return None;
             }
-            let Missing::Present(zone) = geo.zone_of(t.site(slot)) else {
+            let Missing::Present(zone) = self.market_zone(t.site(slot)) else {
                 violation!(clause = "GDS.2", "a party sited where no zone is", party = t.party(slot).get());
             };
             return Some(Row { party: t.party(slot), zone });
@@ -508,15 +560,34 @@ impl World {
             });
             if let Source::Way(w) = leg.source {
                 for (product, took) in self.way_inputs(w, leg.product, leg.qty) {
-                    let good = self.good(GoodKey { product, grade: 0, zone });
                     let unit = self.goods_frame.traded(product).unit;
-                    legs.push(LegRec {
-                        party: row.party,
-                        account: AccountRef::Instrument(good),
-                        qty: -took,
-                        denom: Denom::Unit(unit),
-                        kind: LegKind::Transformation { source: leg.source, cost: 0 },
-                    });
+                    // A way takes an input's units of any grade class alike, from its lowest class held upward.
+                    let mut left = took;
+                    for (good, held) in self.held_classes(row.party, product, zone) {
+                        if left == 0 {
+                            break;
+                        }
+                        let take = if held < left { held } else { left };
+                        left -= take;
+                        legs.push(LegRec {
+                            party: row.party,
+                            account: AccountRef::Instrument(good),
+                            qty: -take,
+                            denom: Denom::Unit(unit),
+                            kind: LegKind::Transformation { source: leg.source, cost: 0 },
+                        });
+                    }
+                    // What its holdings cannot give is asked of the lowest class, where the ledger refuses it.
+                    if left > 0 {
+                        let good = self.good(GoodKey { product, grade: 0, zone });
+                        legs.push(LegRec {
+                            party: row.party,
+                            account: AccountRef::Instrument(good),
+                            qty: -left,
+                            denom: Denom::Unit(unit),
+                            kind: LegKind::Transformation { source: leg.source, cost: 0 },
+                        });
+                    }
                 }
             }
         }
@@ -554,6 +625,33 @@ impl World {
     /// statement for what is started, rounded as the technology declares. A way that makes another product than the
     /// leg's is a contract broken.
     #[clause("TEC.9", "GDS.2")]
+    /// The market zone of the region a tile lies in, where goods standing there are held and traded, as the freight
+    /// network joins market zones.
+    pub(crate) fn market_zone(&self, tile: phx_id::TileId) -> Missing<ZoneId> {
+        let geo = self.geo();
+        let Missing::Present(zone) = geo.zone_of(tile) else { return Missing::Absent };
+        let Missing::Present(region) = geo.zone_region(zone) else { return Missing::Absent };
+        match usize::try_from(region).ok().and_then(|r| self.goods_frame.market_zones.get(r)) {
+            Some(z) => *z,
+            None => Missing::Absent,
+        }
+    }
+
+    /// A party's free units of each grade class of a product at a zone, lowest class first.
+    fn held_classes(&self, party: PartyId, product: u16, zone: ZoneId) -> Vec<(phx_id::InstrumentId, i64)> {
+        let (place, slot) = self.books.parties.row(party);
+        let arenas = self.books.parties.holder(place);
+        let mut out: Vec<(u8, phx_id::InstrumentId, i64)> = phx_ledger::holding::held(arenas, slot)
+            .filter_map(|(instrument, units, _)| {
+                let Missing::Present(key) = self.books.ledger.goods.key(instrument) else { return None };
+                let free = units - self.books.ledger.bound(party, instrument);
+                (key.product == product && key.zone == zone && free > 0).then_some((key.grade, instrument, free))
+            })
+            .collect();
+        out.sort_unstable_by_key(|(grade, _, _)| *grade);
+        out.into_iter().map(|(_, i, q)| (i, q)).collect()
+    }
+
     pub(crate) fn way_inputs(&self, way: u32, product: u16, finished: i64) -> Vec<(u16, i64)> {
         let tech =
             self.own.iter().find(|(code, _)| *code == "TEC").and_then(|(_, s)| s.downcast_ref::<sys_tec::Technology>());
@@ -636,20 +734,12 @@ impl World {
         let Some((t, w)) = tech.and_then(|t| t.way(if_base::WayId::new(way)).map(|w| (t, w))) else {
             return Missing::Absent;
         };
-        let (place, slot) = self.books.parties.row(party);
-        let arenas = self.books.parties.holder(place);
         let mut most: Missing<i64> = Missing::Absent;
         for (p, per) in
             w.inputs.iter().filter(|(p, _)| sys_tec::products::get(&t.products, *p).is_some_and(|d| d.storable))
         {
-            let key = GoodKey { product: p.index(), grade: 0, zone };
-            let held = match self.books.ledger.goods.of(key) {
-                Missing::Present(g) => match phx_ledger::holding::holding(arenas, slot, g) {
-                    Missing::Present(h) => h.quantity.raw(),
-                    Missing::Absent => 0,
-                },
-                Missing::Absent => 0,
-            };
+            // Every grade class of an input serves alike.
+            let held: i64 = self.held_classes(party, p.index(), zone).iter().map(|(_, q)| q).sum();
             let takes =
                 |f: i64| sys_tec::ways::takes(sys_tec::ways::started_for(w, phx_num::QtyRaw::from_raw(f)), *per).raw();
             // A take rounds up, so the most the holding covers is found by halving below a bound it cannot pass.
@@ -691,15 +781,15 @@ impl World {
         if !matches!(held, Missing::Present(h) if h.quantity.raw() > 0) {
             violation!(clause = "GDS.3", "units taken from a deposit without its right", party = row.party.get());
         }
-        let Missing::Present(zone) = geo.zone_of(d.tile) else {
+        let Missing::Present(zone) = self.market_zone(d.tile) else {
             violation!(clause = "GEO.6", "a deposit on a tile of no zone", deposit = deposit);
         };
         (zone, phx_geo::deposits::row_of(&geo.deposits, deposit))
     }
 
     /// An order a handler asked for its row, admitted into the day's book: in its kind's instance over the good at
-    /// the row's zone, traded in lots of the product's least quantity; an offer covered by the row's free units of the
-    /// good. One refused is counted and never meets.
+    /// the row's zone, or the place it buys at, traded in lots of the product's least quantity; an offer covered by the
+    /// row's free units of the good. One refused is counted and never meets.
     #[clause("MKT.16", "MKT.17", "GDS.7", "REP.9")]
     pub(crate) fn admit_order(&mut self, day: Day, step: SubStep, rows: Rows, o: &OrderIntent) {
         if step.ordinal() > SubStep::S5d.ordinal() {
@@ -710,7 +800,11 @@ impl World {
             violation!(clause = "MKT.1", "an order in a market kind never declared", party = row.party.get());
         };
         let traded = self.goods_frame.traded(o.product);
-        let key = GoodKey { product: o.product, grade: o.grade, zone: row.zone };
+        let zone = match o.at {
+            Missing::Present(z) => ZoneId::new(z),
+            Missing::Absent => row.zone,
+        };
+        let key = GoodKey { product: o.product, grade: o.grade, zone };
         let market = self.market_kinds.instance(&mut self.markets.made, kind, key.code());
         let decl = self.market_kinds.kind_decl(kind);
         let poster = Poster {
@@ -966,7 +1060,24 @@ impl World {
             .map_err(|e| e.to_string())?,
         );
         let standardised = self.register.table1("GDS.standardised")?.clone();
-        let keys: Vec<GoodKey> = self.books.ledger.goods.iter().map(|(k, _)| k).collect();
+        // The opening's prices stand for every good its places trade: those held, and each grade class of what each
+        // deposit yields where its goods stand.
+        let bounds = self.register.table2_in("GDS.grade_bounds", phx_id::CountryId::new(0))?.clone();
+        let mut keys: BTreeSet<GoodKey> = self.books.ledger.goods.iter().map(|(k, _)| k).collect();
+        let geo = crate::world::geo_arc(&self.own).clone();
+        for d in &geo.deposits {
+            let (Some(Missing::Present(product)), Missing::Present(zone)) =
+                (self.goods_frame.resources.get(usize::from(d.resource)).copied(), self.market_zone(d.tile))
+            else {
+                continue;
+            };
+            // A product's classes lie between its bounds: one more than its bounds.
+            let classes = if bounds.rows().contains(&i64::from(product)) { bounds.columns().len() + 1 } else { 1 };
+            for grade in 0..classes {
+                let Ok(grade) = u8::try_from(grade) else { continue };
+                keys.insert(GoodKey { product, grade, zone });
+            }
+        }
         let methods = self.val_methods.len();
         for key in keys {
             let common = standardised.at(i64::from(key.product)).is_ok_and(|v| v == 1);
@@ -1021,7 +1132,6 @@ impl World {
     /// the handlers' reads.
     pub(crate) fn goods_marks(&mut self) {
         let goods = self.goods_kinds();
-        let carriage: Vec<u16> = self.trade.freight.iter().map(|f| f.kind).collect();
         let market_zones: std::collections::BTreeSet<ZoneId> = self
             .goods_frame
             .market_zones
@@ -1040,24 +1150,45 @@ impl World {
             if goods.contains(&kind) {
                 let key = GoodKey::from_code(subject);
                 marks.insert(key, price);
+                // A place whose market last met with no seller shows none to buy from.
+                if self.markets.tape.unsold(market) {
+                    away.unsold.insert(key);
+                    continue;
+                }
                 if market_zones.contains(&key.zone) {
                     away.market.entry((key.product, key.grade)).or_default().push((key.zone, price));
                 }
-            } else if retail.contains(&kind) {
-                if let Some((product, country)) = crate::retail::retail_of(subject) {
-                    posted.insert((product, country.get()), price);
-                }
-            } else if carriage.contains(&kind) {
-                let (Ok(zone), Ok(mode)) =
-                    (u32::try_from(subject >> u16::BITS), u16::try_from(subject & u64::from(u16::MAX)))
-                else {
-                    continue;
-                };
-                away.carriage.insert((ZoneId::new(zone), mode), price);
+            } else if retail.contains(&kind)
+                && let Some((product, country)) = crate::retail::retail_of(subject)
+            {
+                posted.insert((product, country.get()), price);
             }
         }
         self.marks = Arc::new(marks);
         self.retail_marks = Arc::new(posted);
+        // Carriage is sold at posted prices, which a shipper compares before any sale has printed: the cheapest posted
+        // at each place and mode by a carrier with room.
+        if let Some(bound) = self.trade.freight.first().cloned() {
+            for (at, carriers) in self.carriers(&bound, None) {
+                if let Some(price) =
+                    carriers.iter().map(|(c, _)| c.price.raw()).reduce(|a, b| if b < a { b } else { a })
+                {
+                    away.carriage.insert(at, price);
+                }
+            }
+        }
+        away.freight = self.trade.freight.first().map(|f| {
+            let bases = self
+                .goods_frame
+                .products
+                .iter()
+                .map(|t| match t {
+                    Missing::Present(t) => Missing::Present(t.base),
+                    Missing::Absent => Missing::Absent,
+                })
+                .collect();
+            (f.tech.clone(), bases)
+        });
         self.away = Arc::new(away);
     }
 
@@ -1179,19 +1310,22 @@ impl World {
         });
         for part in read {
             let shift = |(from, to): (usize, usize), by: usize| (from + by, to + by);
-            let (h, p, r, d) = (out.held.len(), out.plant.len(), out.rights.len(), out.delivered.len());
+            let (held, plant, rights, delivered, away) =
+                (out.held.len(), out.plant.len(), out.rights.len(), out.delivered.len(), out.elsewhere.len());
             out.slots.extend(part.slots);
             out.rows.extend(part.rows.into_iter().map(|g| RowGoods {
-                held: shift(g.held, h),
-                plant: shift(g.plant, p),
-                rights: shift(g.rights, r),
-                delivered: shift(g.delivered, d),
+                held: shift(g.held, held),
+                plant: shift(g.plant, plant),
+                rights: shift(g.rights, rights),
+                delivered: shift(g.delivered, delivered),
+                elsewhere: shift(g.elsewhere, away),
                 ..g
             }));
             out.held.extend(part.held);
             out.plant.extend(part.plant);
             out.rights.extend(part.rights);
             out.delivered.extend(part.delivered);
+            out.elsewhere.extend(part.elsewhere);
         }
         out
     }
@@ -1210,13 +1344,22 @@ impl World {
             let (place, at) = self.books.parties.row(row.party);
             let arenas = self.books.parties.holder(place);
             let mut goods_cost = 0_i128;
-            let (held, plant, rights) = (out.held.len(), out.plant.len(), out.rights.len());
+            let (held, plant, rights, elsewhere) =
+                (out.held.len(), out.plant.len(), out.rights.len(), out.elsewhere.len());
             for (instrument, quantity, cost) in phx_ledger::holding::held(arenas, at) {
                 let units = quantity;
                 if let Missing::Present(key) = ledger.goods.key(instrument) {
                     goods_cost += i128::from(cost);
                     if key.zone == row.zone {
                         out.held.push((key.product, key.grade, units));
+                    } else {
+                        out.elsewhere.push(phx_core::HeldAway {
+                            product: key.product,
+                            grade: key.grade,
+                            zone: key.zone.get(),
+                            units,
+                            free: units - ledger.bound(row.party, instrument),
+                        });
                     }
                 }
                 if let Missing::Present(deposit) = ledger.goods.deposit(instrument)
@@ -1234,6 +1377,7 @@ impl World {
             goods.held = (held, out.held.len());
             goods.plant = (plant, out.plant.len());
             goods.rights = (rights, out.rights.len());
+            goods.elsewhere = (elsewhere, out.elsewhere.len());
             if let Missing::Present(country) = self.geo().zone_country(row.zone) {
                 let ccy = phx_ledger::opening::currency(country);
                 goods.money = self.books.money_held(row.party, ccy);
@@ -1283,7 +1427,10 @@ impl World {
             }
             Missing::Absent => (Missing::Absent, Missing::Absent),
         };
-        HeldRight { deposit, product, grade: d.grade.raw(), opening, remaining }
+        let Missing::Present(zone) = self.market_zone(d.tile) else {
+            violation!(clause = "GEO.6", "a deposit on a tile of no zone", deposit = deposit);
+        };
+        HeldRight { deposit, product, zone: zone.get(), grade: d.grade.raw(), opening, remaining }
     }
 }
 
