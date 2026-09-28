@@ -94,3 +94,19 @@ pub const LC_0_64: Check = live_check! {
     from_step: "S1.23",
     check: core_estates_settle,
 };
+
+/// The core's money family found no break on any day.
+fn core_money_holds(w: Inspector<'_>) -> Outcome {
+    match w.core().days.iter().find(|d| d.breaks > 0) {
+        Some(d) => Outcome::Fail(format!("day {}: {} breaks of the core's money", d.day.get(), d.breaks)),
+        None if w.core().days.is_empty() => Outcome::NotYet("the core ran no day"),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_0_65: Check = live_check! {
+    id: "LC-0-65",
+    title: "On the core each bank owes what its customers hold, and settlement makes and loses no money",
+    from_step: "S1.23",
+    check: core_money_holds,
+};

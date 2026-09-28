@@ -66,6 +66,11 @@ pub struct CoreDay {
     pub committed: u64,
     /// The estates settled and ended.
     pub estates: u64,
+    /// The money family's breaks found after settlement: a bank owing other than its customers hold, money made or
+    /// lost among the parties, or reserves moving other than by what customers paid those held at the issuer.
+    pub breaks: u64,
+    /// The core's day's time, its chance and settlement together, by the run's clock.
+    pub ns: u64,
 }
 
 /// The day's working state, kept across days so a day allocates nothing once the heaviest has sized it.
@@ -176,13 +181,45 @@ impl Core {
         settling
     }
 
+    /// The money every party but the banks holds, and the banks' reserves with every account held at the issuer:
+    /// the first changes only by the issuer's own flows, the second only by what the issuer pays or is paid.
+    #[must_use]
+    pub fn money_totals(&self) -> (i128, i128) {
+        let (mut parties, mut at_issuer) = (0_i128, 0_i128);
+        for (k, store) in self.kinds.iter().enumerate() {
+            let Some(a) = store.accounts.as_ref() else { continue };
+            let bank = self.bank_kind.is_some_and(|b| usize::from(b) == k);
+            for ((b, m), p) in a.bank.slice().iter().zip(a.balance.slice()).zip(a.pending.slice()) {
+                let held = i128::from(*m) + i128::from(*p);
+                if !bank {
+                    parties += held;
+                }
+                if bank || *b == phx_core::settle::AT_ISSUER {
+                    at_issuer += held;
+                }
+            }
+        }
+        (parties, at_issuer)
+    }
+
+    /// The money family on the core after the day's settlement, reading only: each bank owes what its customers hold,
+    /// and neither total moved, the issuer making no flow on the core yet.
+    #[clause("MON.5", "N1")]
+    fn money_breaks(&self, before: (i128, i128), deposits: &mut [i64]) -> u64 {
+        let owed = deposits_of(self.kinds.iter(), deposits.len());
+        let banks = u64::try_from(owed.iter().zip(deposits.iter()).filter(|(a, b)| a != b).count()).unwrap_or(u64::MAX);
+        let (parties, at_issuer) = self.money_totals();
+        banks + u64::from(parties != before.0) + u64::from(at_issuer != before.1)
+    }
+
     /// Runs the core's day: every family's dues made flows, then each currency's flows settled on its country's
     /// business day or committed on its closed day.
     #[clause("SET.4", "SET.6", "MON.5")]
     pub fn run_day(&mut self, day: Day, calendar: &Calendar, streams: &Streams, order: &StreamDecl) -> CoreDay {
         let mut work = std::mem::take(&mut self.work);
         work.flows.reset(1);
-        let mut record = CoreDay { day, flows: 0, settled: 0, failed: 0, committed: 0, estates: 0 };
+        let mut record = CoreDay { day, flows: 0, settled: 0, failed: 0, committed: 0, estates: 0, breaks: 0, ns: 0 };
+        let before = self.money_totals();
         for family in &mut self.families {
             if let Some(buf) = work.flows.chunks_mut().first_mut() {
                 record.flows += family.dues(day, calendar, &mut work.due, buf);
@@ -224,6 +261,7 @@ impl Core {
             }
         }
         self.work = work;
+        record.breaks += self.money_breaks(before, &mut deposits);
         for estate in settling {
             let empty = self.kinds.get(usize::from(estate.kind())).and_then(|k| k.accounts.as_ref()).is_some_and(|a| {
                 a.balance.get(estate.slot()).unwrap_or(0) == 0 && a.pending.get(estate.slot()).unwrap_or(0) == 0

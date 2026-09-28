@@ -93,7 +93,8 @@ fn is_apply_point(info: &SubStepInfo) -> bool {
 
 impl World {
     /// The core's day beside the books': chance on its persons, then its dues and settlement.
-    fn core_day(&mut self, day: Day) {
+    fn core_day(&mut self, day: Day, clock: &dyn Clock) {
+        let start = clock.now_ns();
         let regions = self.regions();
         let ctx = crate::core_pop::Ctx {
             register: &self.register,
@@ -105,6 +106,9 @@ impl World {
         let pop_day = self.core.run_hazards(&ctx, day);
         self.core.pop_days.push((day, pop_day));
         let _ = self.core.run_day(day, &self.calendar, &self.streams, &crate::opening::prims::SETTLE_ORDER);
+        if let (Some(ns), Some(last)) = (clock.now_ns().checked_sub(start), self.core.days.last_mut()) {
+            last.ns = ns;
+        }
     }
 
     /// The last day run.
@@ -137,7 +141,7 @@ impl World {
         loop {
             let day = self.today.succ();
             self.run_day(day, clock);
-            self.core_day(day);
+            self.core_day(day, clock);
             self.today = day;
             if let Some(o) = observer.as_deref_mut() {
                 o.day_closed(crate::Inspector::new(self));

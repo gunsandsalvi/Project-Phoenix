@@ -2007,6 +2007,11 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   (under an identity the core hands out after the books' last) at the same bank, a succession, not a payment; on its
   country's next business day the estate pays what it holds to its country's treasury, the destination the law names
   where no heir is drawn, and ends after that day's settlement.
+- **The core's money family**, read each day after settlement and never repairing: each bank owes what its customers
+  hold; the money every party but the banks holds does not move, nor the banks' reserves with every account held at
+  the issuer, since the issuer makes no flow on the core yet. Each day's record keeps its breaks and its time; at
+  750 000 persons the core's day, chance and settlement on one thread, took 32 ms at the median and 169 ms at worst
+  over 40 days on the build machine.
 - **A country's balance sheet** (`opening::sheet`): its group's matrices moved by its drawn profile. Households' and
   firms' debt, the government's, the banks' deposits, capital and reserves are the drawn levels; who holds each is
   the group's split; the dataset's closures balance the rest (the central bank holds government paper for its

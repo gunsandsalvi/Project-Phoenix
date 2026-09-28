@@ -766,6 +766,7 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
     estate settled to the treasury on the next business day (LC-0-64). *Left*: the other families the Stage 0
     checks read.
   - e. The audit's money and contracts families, the Stage 0 checks on the inspector over the core, and the smoke.
+    *Done*: the money family's identities each day (LC-0-65) and the core's day timed.
 - **Values the opening now draws from the data in hand.** Whom an extended or non-relative household holds besides
   its head, assumed today (`DEM.household_members`: one relative of 65 and over, one unrelated adult), is derived per
   group from the DHS household structure (`people/dhs_indicators`: members of 65 and over, three generations,
@@ -791,7 +792,8 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 **Live checks**: every Stage 0 live check on a smoke of the core world; `LC-0-62`: every flow the core's day makes is
 settled, failed or committed, and the core pays its dues; `LC-0-63`: the core's households hold their opening persons
 plus those born less those gone, and chance reaches them; `LC-0-64`: every estate on the core settles on its
-country's next business day and ends.
+country's next business day and ends; `LC-0-65`: on the core each bank owes what its customers hold, and settlement
+makes and loses no money.
 
 **Budget**: the smoke's Stage 0 world within its share of the unit targets.
 
