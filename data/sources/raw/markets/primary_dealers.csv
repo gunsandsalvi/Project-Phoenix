@@ -1,0 +1,30 @@
+iso3,market,count,as_of,source
+AUT,bonds and bills,21,2024-06,AFME handbook section 1.2
+BEL,bonds,14,2024-05,AFME handbook section 2.2
+BGR,government securities,8,2024-01,AFME handbook section 3.2
+CZE,bonds,9,2023-06,AFME handbook section 4.2
+DEU,Bund Issues Auction Group,32,2023-12,AFME handbook section 8.2-8.3
+DNK,bills,4,2024-05,AFME handbook section 5.2
+DNK,bonds,8,2024-05,AFME handbook section 5.2
+ESP,bills,19,2024-04,AFME handbook section 18.2
+ESP,bonds,18,2024-04,AFME handbook section 18.2
+FIN,bonds,13,2024-02,AFME handbook section 6.2
+FRA,bonds,15,2024-05,AFME handbook section 7.2
+GBR,bills,23,2024-05,AFME handbook section 20.3
+GBR,gilts (GEMMs),18,2024-05,AFME handbook section 20.2
+GRC,bonds,17,2024-01,AFME handbook section 9.2
+HUN,bonds,13,2023-12,AFME handbook section 10.2
+IRL,bonds,14,2024-03,AFME handbook section 11.2
+ITA,bonds,21,2024-06,AFME handbook section 12.2
+NLD,bonds,13,2024-04,AFME handbook section 13.2
+POL,bonds,11,2024-04,AFME handbook section 14.2
+PRT,bills,19,2024-04,AFME handbook section 15.3
+PRT,bonds,17,2024-04,AFME handbook section 15.2
+SVK,bonds,9,2024-03,AFME handbook section 16.2
+SVN,bills,5,2024,AFME handbook section 17.2
+SVN,bonds,14,2024,AFME handbook section 17.2
+SWE,bills,5,2024-03,AFME handbook section 19.2
+SWE,inflation-linked bonds,5,2024-03,AFME handbook section 19.2
+SWE,nominal bonds,6,2024-03,AFME handbook section 19.2
+USA,Treasury securities,24,2019-12,NY Fed list less later changes
+USA,Treasury securities (current),26,2026-09,NY Fed list

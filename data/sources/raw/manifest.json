@@ -734,6 +734,537 @@
    "rows": 57984,
    "title": "US-dollar exchange rates, national currency per dollar, monthly, end of period, 2000 on (BIS WS_XRU); the economy's currency as the BIS publishes it (euro-area members in euro)"
   },
+  "markets/CM.MKT.LCAP.CD": {
+   "for": [
+    "S3.05"
+   ],
+   "rows": 805,
+   "title": "Market capitalization of listed domestic companies (current US$) (CM.MKT.LCAP.CD), World Bank API source 2, 2015-2025"
+  },
+  "markets/CM.MKT.LCAP.GD.ZS": {
+   "for": [
+    "S3.05"
+   ],
+   "rows": 803,
+   "title": "Market capitalization of listed domestic companies (% of GDP) (CM.MKT.LCAP.GD.ZS), World Bank API source 2, 2015-2025"
+  },
+  "markets/CM.MKT.LDOM.NO": {
+   "for": [
+    "S3.05"
+   ],
+   "rows": 802,
+   "title": "Listed domestic companies, total (CM.MKT.LDOM.NO), World Bank API source 2, 2015-2025"
+  },
+  "markets/CM.MKT.TRAD.GD.ZS": {
+   "for": [
+    "S3.05"
+   ],
+   "rows": 774,
+   "title": "Stocks traded, total value (% of GDP) (CM.MKT.TRAD.GD.ZS), World Bank API source 2, 2015-2025"
+  },
+  "markets/CM.MKT.TRNR": {
+   "for": [
+    "S3.05"
+   ],
+   "rows": 684,
+   "title": "Stocks traded, turnover ratio of domestic shares (%) (CM.MKT.TRNR), World Bank API source 2, 2015-2025"
+  },
+  "markets/DT.CUR.EURO.ZS": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1196,
+   "title": "Currency composition of PPG debt, Euro (%) (DT.CUR.EURO.ZS), public and publicly guaranteed external debt, World Bank International Debt Statistics (low- and middle-income borrowers), 2015-2025"
+  },
+  "markets/DT.CUR.JYEN.ZS": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1196,
+   "title": "Currency composition of PPG debt, Japanese yen (%) (DT.CUR.JYEN.ZS), public and publicly guaranteed external debt, World Bank International Debt Statistics (low- and middle-income borrowers), 2015-2025"
+  },
+  "markets/DT.CUR.MULC.ZS": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1196,
+   "title": "Currency composition of PPG debt, Multiple currencies (%) (DT.CUR.MULC.ZS), public and publicly guaranteed external debt, World Bank International Debt Statistics (low- and middle-income borrowers), 2015-2025"
+  },
+  "markets/DT.CUR.OTHC.ZS": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1196,
+   "title": "Currency composition of PPG debt, all other currencies (%) (DT.CUR.OTHC.ZS), public and publicly guaranteed external debt, World Bank International Debt Statistics (low- and middle-income borrowers), 2015-2025"
+  },
+  "markets/DT.CUR.SDRW.ZS": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1196,
+   "title": "Currency composition of PPG debt, SDR (%) (DT.CUR.SDRW.ZS), public and publicly guaranteed external debt, World Bank International Debt Statistics (low- and middle-income borrowers), 2015-2025"
+  },
+  "markets/DT.CUR.SWFR.ZS": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1196,
+   "title": "Currency composition of PPG debt, Swiss franc (%) (DT.CUR.SWFR.ZS), public and publicly guaranteed external debt, World Bank International Debt Statistics (low- and middle-income borrowers), 2015-2025"
+  },
+  "markets/DT.CUR.UKPS.ZS": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1196,
+   "title": "Currency composition of PPG debt, Pound sterling (%) (DT.CUR.UKPS.ZS), public and publicly guaranteed external debt, World Bank International Debt Statistics (low- and middle-income borrowers), 2015-2025"
+  },
+  "markets/DT.CUR.USDL.ZS": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1196,
+   "title": "Currency composition of PPG debt, U.S. dollars (%) (DT.CUR.USDL.ZS), public and publicly guaranteed external debt, World Bank International Debt Statistics (low- and middle-income borrowers), 2015-2025"
+  },
+  "markets/DT.DOD.DECT.CD": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1205,
+   "title": "External debt stocks, total (DOD, current US$) (DT.DOD.DECT.CD), World Bank API source 2, 2015-2025"
+  },
+  "markets/DT.DOD.DPNG.CD": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 911,
+   "title": "External debt stocks, private nonguaranteed (PNG) (DOD, current US$) (DT.DOD.DPNG.CD), World Bank API source 2, 2015-2025"
+  },
+  "markets/DT.DOD.DPPG.CD": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1205,
+   "title": "External debt stocks, public and publicly guaranteed (PPG) (DOD, current US$) (DT.DOD.DPPG.CD), World Bank API source 2, 2015-2025"
+  },
+  "markets/DT.DOD.DSTC.CD": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1205,
+   "title": "External debt stocks, short-term (DOD, current US$) (DT.DOD.DSTC.CD), World Bank API source 2, 2015-2025"
+  },
+  "markets/FI.RES.TOTL.CD": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1846,
+   "title": "Total reserves (includes gold, current US$) (FI.RES.TOTL.CD), World Bank API source 2, 2015-2025"
+  },
+  "markets/FI.RES.TOTL.MO": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 1716,
+   "title": "Total reserves in months of imports (FI.RES.TOTL.MO), World Bank API source 2, 2015-2025"
+  },
+  "markets/GFDD.AM.03": {
+   "for": [
+    "S3.04"
+   ],
+   "rows": 161,
+   "title": "Nonfinancial corporate bonds to total bonds and notes outstanding (%) (GFDD.AM.03), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DI.03": {
+   "for": [
+    "S3.08"
+   ],
+   "rows": 416,
+   "title": "Nonbank financial institutions\u2019 assets to GDP (%) (GFDD.DI.03), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DI.07": {
+   "for": [
+    "S3.07"
+   ],
+   "rows": 432,
+   "title": "Mutual fund assets to GDP (%) (GFDD.DI.07), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DI.09": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 805,
+   "title": "Life insurance premium volume to GDP (%) (GFDD.DI.09), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DI.10": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 846,
+   "title": "Non-life insurance premium volume to GDP (%) (GFDD.DI.10), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DI.11": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 712,
+   "title": "Insurance company assets to GDP (%) (GFDD.DI.11), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.01": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 418,
+   "title": "Stock market capitalization to GDP (%) (GFDD.DM.01), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.02": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 382,
+   "title": "Stock market total value traded to GDP (%) (GFDD.DM.02), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.03": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 150,
+   "title": "Outstanding domestic private debt securities to GDP (%) (GFDD.DM.03), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.04": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 186,
+   "title": "Outstanding domestic public debt securities to GDP (%) (GFDD.DM.04), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.05": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 507,
+   "title": "Outstanding international private debt securities to GDP (%) (GFDD.DM.05), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.06": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 648,
+   "title": "Outstanding international public debt securities to GDP (%) (GFDD.DM.06), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.07": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 648,
+   "title": "International debt issues to GDP (%) (GFDD.DM.07), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.08": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 671,
+   "title": "Gross portfolio equity liabilities to GDP (%) (GFDD.DM.08), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.09": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 715,
+   "title": "Gross portfolio equity assets to GDP (%) (GFDD.DM.09), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.10": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 723,
+   "title": "Gross portfolio debt liabilities to GDP (%) (GFDD.DM.10), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.11": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 714,
+   "title": "Gross portfolio debt assets to GDP (%) (GFDD.DM.11), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.12": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 740,
+   "title": "Syndicated loan issuance volume to GDP (%) (GFDD.DM.12), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.13": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 484,
+   "title": "Corporate bond issuance volume to GDP (%) (GFDD.DM.13), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.14": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 455,
+   "title": "Syndicated loan average maturity (years) (GFDD.DM.14), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.DM.15": {
+   "for": [
+    "S3.04",
+    "S3.05",
+    "S5.04"
+   ],
+   "rows": 447,
+   "title": "Corporate bond average maturity (years) (GFDD.DM.15), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.EM.01": {
+   "for": [
+    "S3.05"
+   ],
+   "rows": 374,
+   "title": "Stock market turnover ratio (%) (GFDD.EM.01), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.OM.01": {
+   "for": [
+    "S3.05"
+   ],
+   "rows": 425,
+   "title": "Number of listed companies per 1,000,000 people (GFDD.OM.01), World Bank API source 32, 2015-2025"
+  },
+  "markets/GFDD.OM.02": {
+   "for": [
+    "S3.05"
+   ],
+   "rows": 599,
+   "title": "Stock market return (%, year-on-year) (GFDD.OM.02), World Bank API source 32, 2015-2025"
+  },
+  "markets/PA.NUS.FCRF": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 2257,
+   "title": "Official exchange rate (LCU per US$, period average) (PA.NUS.FCRF), World Bank API source 2, 2015-2025"
+  },
+  "markets/PA.NUS.PPP": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 2181,
+   "title": "PPP conversion factor, GDP (LCU per international $) (PA.NUS.PPP), World Bank API source 2, 2015-2025"
+  },
+  "markets/afme_securitisation": {
+   "for": [
+    "S4.05"
+   ],
+   "note": "SIFMA's own US statistics are behind a registration form; the US outstanding by collateral is taken from AFME's table 3.3 (SIFMA-sourced) and the Fed's Z.1. European CLO/CDO outstanding is unavailable from 2019Q4 to 2022Q1 per AFME's footnote; AFME changed its European source in 2020 and the US non-agency CMBS series jumps in 2022 (a change of coverage, not of market). Year-end values: the fourth quarter where printed, else the bare year column.",
+   "rows": 1228,
+   "title": "Securitisation outstanding at the end of each year by collateral (Europe: auto, cards, SME ABS, CMBS, consumer, leases, RMBS, other, CLO/CDO; US: ABS, agency MBS, non-agency RMBS and CMBS) and, for Europe, by country of collateral (iso3, or Pan Europe, Other Europe, Eurozone, EU Total, European Total), billions (the sheets state euro billions; the US table is sourced from SIFMA), AFME Securitisation Data Report Q1 2026, tables 3.1, 3.3, 3.4 and 3.5"
+  },
+  "markets/cpis_bilateral_2019": {
+   "for": [
+    "S5.04",
+    "S5.05"
+   ],
+   "rows": 33210,
+   "title": "Portfolio investment assets by counterpart economy (G001 world), all resident sectors, end 2019, millions of US dollars: total, equity (P_F51) and debt securities (P_F3), IMF CPIS (PIP)"
+  },
+  "markets/cpis_currency": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 8021,
+   "title": "Portfolio investment assets with the world by currency of denomination, all resident sectors, end of year, millions of US dollars: debt securities (P_F3_DIC_<cur>) and equity (P_F51_DIC_<cur>), IMF CPIS (PIP)"
+  },
+  "markets/cpis_holders": {
+   "for": [
+    "S5.04",
+    "S3.07"
+   ],
+   "rows": 20374,
+   "title": "Portfolio investment positions with the world, end of year, millions of US dollars: assets (A) by resident holder sector (S1 total, S121 central bank, S122 deposit-taking corporations, S123 money market funds, S12P insurance and pension funds, S12QU other financial, S12R other financial corporations, S13 government, S11 non-financial corporations, S14 households, S15 non-profits, S1V other than deposit-taking and government) and derived liabilities (L), total (P_TOTINV), equity and fund shares (P_F51) and debt securities (P_F3), IMF CPIS (PIP)"
+  },
+  "markets/ecb_fvc": {
+   "for": [
+    "S4.05"
+   ],
+   "rows": 14045,
+   "title": "Financial vehicle corporations (securitisation vehicles), euro area countries and the euro area (EA), outstanding at the end of each year, millions of euros: reporting sector (F all, T traditional, S synthetic securitisation), item (A10 deposits and loan claims, A20 securitised loans, A30 debt securities held, A40 other securitised assets, A50 equity, AT1 other assets, L20 loans received, L40 debt securities issued, L60 capital, LT1 other liabilities, T00 total), counterpart area (A1 world, U2 euro area, U4 extra-euro area, U5 other euro members, U6 domestic), counterpart (borrower) sector (0000 all, 1000 MFIs, 2000 non-MFIs, 2100 government, 2200 non-MFIs excluding government, 2210 OFIs, 2220 insurers and pension funds, 2240 non-financial corporations, 2250 households and NPISH, 2260 non-MMF funds, 2270 OFIs incl. auxiliaries and captives, 2271 FVCs) and originator (00 all, E0 euro area, E1 euro area MFIs, E2 government, E3 OFIs/funds/ICPFs, E4 NFCs, R0 non-euro area, ZZ not applicable), ECB FVC statistics"
+  },
+  "markets/fsb_nbfi": {
+   "for": [
+    "S3.08",
+    "S3.07"
+   ],
+   "rows": 4213,
+   "title": "Financial assets by sector (banks, central bank, public financial institutions, insurance corporations, pension funds, other financial intermediaries OFIs, financial auxiliaries, NBFI, total) and the narrow measure of NBFI by economic function (EF1 collective investment vehicles with run features, EF2 lending dependent on short-term funding, EF3 market intermediation dependent on short-term funding, EF4 facilitation of credit creation, EF5 securitisation-based credit), USD trillions, % of GDP and % of the topic's total, 29 jurisdictions (iso3; EA euro area, AEs, EMEs, FSB, G21, G29 aggregates), FSB Global Monitoring Report on NBFI 2024, monitoring dataset"
+  },
+  "markets/fsb_ofi": {
+   "for": [
+    "S3.08",
+    "S3.07"
+   ],
+   "rows": 216,
+   "title": "Other financial intermediaries by entity type (MMFs, hedge funds HFs, other investment funds OIFs, REITs, trust companies TCs, finance companies FinCos, broker-dealers BDs, structured finance vehicles SFVs, CCPs, captive financial institutions and money lenders CFIMLs, others), USD trillions, group aggregate, FSB Global Monitoring Report on NBFI 2024"
+  },
+  "markets/gz_ebp": {
+   "for": [
+    "S7.01",
+    "S3.04"
+   ],
+   "note": "Kept whole from 1973: the realism reads relate it to the cycle over long spans.",
+   "rows": 643,
+   "title": "Gilchrist-Zakrajsek credit spread and excess bond premium, percentage points, and the estimated probability of a recession in the next 12 months, monthly 1973 on, US, Federal Reserve Board (FEDS Notes update)"
+  },
+  "markets/hfcs_2021": {
+   "for": [
+    "S3.05",
+    "S3.07",
+    "S6.03"
+   ],
+   "note": "Cells marked M (missing), N (too few observations) or given as a bound ('< 0.1') are left out.",
+   "rows": 2733,
+   "title": "Household Finance and Consumption Survey, wave 2021 (reference 2020-2021), statistical tables C (financial assets: participation by asset type, conditional values, distributions, participation in publicly traded shares by income and net wealth quantile, household size, housing status and age of the reference person) and D (portfolio shares of asset types, financial over total assets by the same breakdowns): euro area (EA) and each country, value and standard error, ECB (June 2026 release, version 4.1)"
+  },
+  "markets/imf_cofer": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 252,
+   "title": "Currency composition of official foreign exchange reserves, end of year, by currency: allocated (AFXRA), unallocated (UFXRA) and total (TFXRA) reserves, in US dollars (NV_USD) or share of allocated (SHRO_PT); area G001 is the world (per-country COFER is confidential), IMF COFER"
+  },
+  "markets/imf_iip": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 45444,
+   "title": "International investment position, end of year, millions of US dollars: assets (A_P), liabilities (L_P) and net (NETAL_P) by functional category and instrument (D direct investment, P portfolio: F3 debt securities, F5 equity; O other investment: F4 loans, F2 currency and deposits, F81 trade credit; F_F7 derivatives; R reserves) and by resident sector (S121 central bank, S122 deposit-taking corporations, S13 general government, S12R other financial corporations, S1Z other sectors; sector splits for 2019 only), IMF IIP (BPM6)"
+  },
+  "markets/imf_iipcc": {
+   "for": [
+    "S5.04"
+   ],
+   "rows": 16786,
+   "title": "Currency composition of the international investment position, end of year, millions of US dollars: debt liabilities to (DLNRES) and claims on (DCNRES) non-residents by resident sector suffix (none total, S121 central bank, S122 deposit-taking corporations, S12R other financial corporations, S13 general government, S1Z other sectors, S1ZOTH other sectors excluding corporations) and currency (XDC domestic, FC foreign, USD, EUR, JPY, OTHC, UALLC unallocated), IMF IIPCC; about 20 reporting economies"
+  },
+  "markets/institutional_investors": {
+   "for": [
+    "S3.07",
+    "S4.03",
+    "S4.04"
+   ],
+   "rows": 11237,
+   "title": "Institutional investors' indicators, annual: financial assets and liabilities of pension funds (S129), insurers (S128) and investment funds (S12L: MMF S123, non-MMF S124, open-end S12LO, closed-end S124B, equity S12L2, bond S12L3, mixed S12L4, hedge S12L5, real estate S12L1, other S12L9) as % of GDP, instrument shares of their assets (PT_FAS: F2 deposits, F3 debt securities, F4 loans, F5 equity and fund shares, F6 insurance and pension, F7 derivatives, F8 other) and fund types' shares of all funds' assets (PT_FAS_S12L), OECD (DSD_FIN_DASH@DF_7II_INDIC)"
+  },
+  "markets/insurance_assets": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 9405,
+   "title": "Insurers' investment by asset (INV total; CASH, BOND with PUBB public and PRIB private, LOAN, SHARE with PUBS listed and UNLISTED, REST land and buildings, CIS mutual funds by kind, PEQUF, HEDGE, STRPRDT, UNITLINK, INV_O other), all undertakings, domestic and foreign destination, by type (_T, LIFE, NLIFE, COMP) and insurer (DIR direct, REI reinsurer), millions of US dollars, 2018-2020 around the opening year, OECD Global Insurance Statistics (DSD_INS@DF_ASSET_ALLOC)"
+  },
+  "markets/insurance_classes": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 18014,
+   "title": "Gross written premiums by class of insurance (LI life: ANN annuities, UL unit linked, OL other, PC pension contracts; NLI non-life: MV motor, MAOT marine-aviation-transport, FRT freight, FOPD fire and property, PL pecuniary loss, GL general liability, AH accident and health, HLTH health, ONL other; TREINS treaty reinsurance) and business (_T, DINS direct, RINS reinsurance accepted), millions of US dollars, OECD Global Insurance Statistics (DSD_INS@DF_CLASSES)"
+  },
+  "markets/insurance_companies": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 8668,
+   "title": "Insurance undertakings (UND, number) by ownership (UND_T all, DOM domestic, FOR foreign-controlled, BRN branches) and type (_T, LIFE, NLIFE, COMP composite, REINS), and insurance employees (EMP, persons) by employer (INS insurers, INT intermediaries), OECD Global Insurance Statistics (DSD_INS@DF_NB_COMP)"
+  },
+  "markets/insurance_indicators": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 11138,
+   "title": "Insurance indicators by year and type (LIFE, NLIFE, _T): penetration (PEN, % of GDP), density (DST, US dollars per person), gross premiums (TGP, US dollars, unit_mult 6), retention ratio (RET), reinsurance share (REINS), life/non-life shares (LIS/NLIS), shares of domestic premiums by foreign-controlled undertakings and branches (FN_BRA/FNC/BRA), OECD Global Insurance Statistics (DSD_INS@DF_IND)"
+  },
+  "markets/irr_regimes": {
+   "for": [
+    "S5.04"
+   ],
+   "note": "The coarse code is derived from the fine one by the authors' Table 1 grouping (the coarse sheet ends in 2016); country names are matched to iso3 through the anchor file's ISO codes.",
+   "rows": 941,
+   "title": "De facto exchange-rate arrangement at December of each year: fine code 1-15 (1 no separate legal tender, 2 currency board or pre-announced peg, 3 narrow pre-announced band, 4 de facto peg, 5-8 crawling pegs and narrow crawling bands, 9-11 wider or moving bands, 12 managed floating, 13 freely floating, 14 freely falling, 15 dual market without parallel data), coarse code 1-6, and the anchor currency, Ilzetzki, Reinhart and Rogoff (2019, 2021), data to 2019"
+  },
+  "markets/pension_main_2019": {
+   "for": [
+    "S4.04"
+   ],
+   "rows": 14153,
+   "title": "Asset-backed pensions, 2019: investment (1000) and its allocation (1110-1290: cash and deposits, bills and bonds public and private, loans, equity listed and unlisted, land and buildings, mutual funds by kind, unallocated insurance contracts, hedge and private equity funds, structured products, other; 1121/1122 abroad and in foreign currency), liabilities (2000-2300), income and contributions (3000-3400), benefits (4000-4500) and members (5000 total, 5100 active, 5200 deferred, 5300 passive, 5400 other beneficiaries, 5010/5020 by sex), in US dollars (unit_mult 6: millions), % of GDP or persons (PS, unit_mult 3: thousands), by plan type and definition, and by vehicle for investment, liabilities and members, OECD Global Pension Statistics (DSD_FP@DF_FPS)"
+  },
+  "markets/pension_participation": {
+   "for": [
+    "S4.04"
+   ],
+   "note": "Private pension coverage by age is not published in a downloadable table (Pensions at a Glance 2023 has participation by plan type only); coverage is by type of plan, working-age population.",
+   "rows": 459,
+   "title": "Participation rate in pension plans by type (mandatory or quasi-mandatory, auto-enrolment, voluntary occupational, voluntary personal, voluntary total), % of the working-age population 15-64, OECD Pensions at a Glance 2023, Table 9.1 (StatLink https://stat.link/64gd3b)"
+  },
+  "markets/pension_structure": {
+   "for": [
+    "S4.04",
+    "S3.07"
+   ],
+   "rows": 6978,
+   "title": "Structure of asset-backed pensions: assets by plan type (OCC occupational, PER personal), definition (DB defined benefit, DBH hybrid, DCP protected and DCU unprotected defined contribution) and financing vehicle (PF autonomous pension fund, BR book reserve, PIC pension insurance contract, INV/BANK managed funds, OTH), as % of total pension assets (PT_AS), of occupational assets (PT_AS_PENS_OCC) or of GDP (PT_B1GQ); measures DBA/DCA/OA/PA/AFV, OECD Global Pension Statistics (DSD_FP@DF_SPS)"
+  },
+  "markets/primary_dealers": {
+   "for": [
+    "S3.06"
+   ],
+   "note": "Typed: AFME, European Primary Dealers Handbook, updated 2024 (afmeprimarydealers202403012updated111.pdf), each country's section 'A. List of Primary Dealers' (section numbers in the source column), the count its printed total; as_of is the list's date as the handbook states it. No obtainable table was found for emerging or developing economies' debt offices.",
+   "rows": 29,
+   "title": "Primary dealers (government securities dealers with the debt office's agreement) by country and market: the US from the New York Fed's list (current, and at end-2019 by reversing later additions and removals), European sovereigns typed from the AFME European Primary Dealers Handbook (updated 2024)"
+  },
+  "markets/typed_ccp12_pqd": {
+   "for": [
+    "S4.01"
+   ],
+   "note": "Typed from CCP12, Public Quantitative Disclosure Newsflash Q4 2019 (April 2020), pages 2-3 (CCP12-PQD-Newsflash-Q4-2019-April.pdf); the disclosure column gives the CPMI-IOSCO PQD reference. Per-house default funds are not typed: the houses' own disclosures are separate files per house.",
+   "rows": 28,
+   "title": "Central counterparties' aggregates, end-2019: initial margin and default fund required, total collateral, average daily variation margin, house/client split of initial margin, and composition of collateral held for initial margin (im_) and default funds (df_), 42 CCPs of CCP12 members (13 Americas, 16 APAC, 13 EMEA)"
+  },
+  "markets/us_abs_issuers": {
+   "for": [
+    "S4.05"
+   ],
+   "note": "The agency pools sector holds only the pools off the GSEs' balance sheets (Fannie Mae and Freddie Mac pools are on them since 2010); agency MBS outstanding in total is in markets/afme_securitisation.",
+   "rows": 297,
+   "title": "Issuers of asset-backed securities (S125s1.3) and agency- and GSE-backed mortgage pools (S125s1.2), levels at the end of each year by asset (consumer credit, one-to-four-family, multifamily and commercial mortgages, home equity, trade receivables, private credit and other loans, consumer leases, agency securities, Treasuries) and liability (debt securities, commercial paper, bonds, repo), millions of US dollars, Federal Reserve Financial Accounts of the US (Z.1)"
+  },
   "oecd/ahd_cost": {
    "rows": 996,
    "title": "Median mortgage burden (principal and interest) of owners with a mortgage and rent burden of tenants, share of disposable income, by year, OECD Affordable Housing Database HC1.2.A1"
@@ -2064,6 +2595,62 @@
    "fetched": "2026-09-28",
    "title": "World Bank API, WDI series, full history",
    "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date=1960:2024&per_page=20000&page={page}"
+  },
+  "markets/afme_pd": {
+   "fetched": "2026-09-28",
+   "title": "AFME, European Primary Dealers Handbook, updated 2024 (pdf)",
+   "url": "https://www.afme.eu/media/1kbfvxb5/afmeprimarydealers202403012updated111.pdf"
+  },
+  "markets/ccp12": {
+   "fetched": "2026-09-28",
+   "title": "CCP12, Public Quantitative Disclosure Newsflash Q4 2019 (pdf)",
+   "url": "https://ccp12.org/sites/default/files/2025-02/CCP12-PQD-Newsflash-Q4-2019-April.pdf"
+  },
+  "markets/fsb": {
+   "fetched": "2026-09-28",
+   "release": "2024-12-16",
+   "title": "FSB Global Monitoring Report on Non-Bank Financial Intermediation 2024, monitoring dataset (data to end-2023)",
+   "url": "https://www.fsb.org/uploads/Monitoring-Dataset-2024.xlsx"
+  },
+  "markets/gz": {
+   "fetched": "2026-09-28",
+   "title": "Federal Reserve Board, updated Gilchrist-Zakrajsek excess bond premium",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/ebp_csv.csv"
+  },
+  "markets/hfcs": {
+   "fetched": "2026-09-28",
+   "title": "ECB, HFCS statistical tables, wave 2021 (June 2026)",
+   "url": "https://www.ecb.europa.eu/home/pdf/research/hfcn/HFCS_Statistical_Tables_Wave_2021_June_2026.zip"
+  },
+  "markets/imf": {
+   "fetched": "2026-09-28",
+   "title": "IMF SDMX 2.1 API: COFER, IIP, IIPCC, PIP (CPIS)",
+   "url": "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}&endPeriod={last}"
+  },
+  "markets/irr": {
+   "fetched": "2026-09-28",
+   "title": "Ilzetzki-Reinhart-Rogoff exchange rate arrangement classification (monthly, 1940-2019) and anchor currencies (1946-2019)",
+   "url": "https://www.ilzetzki.com/_files/ugd/b3763a_242513d0fba24aa1a64be41c8f73d887.xlsx?dn=ERA_Classification_Monthly_1940-2019.xlsx; https://www.ilzetzki.com/_files/ugd/b3763a_7b72377cfe184f72ba0ad77dabbabae0.xlsx?dn=Anchor_monthly_1946-2019.xlsx"
+  },
+  "markets/nyfed_pd": {
+   "fetched": "2026-09-28",
+   "title": "Federal Reserve Bank of New York, primary dealers list and changes",
+   "url": "https://www.newyorkfed.org/markets/primarydealers"
+  },
+  "markets/oecd": {
+   "fetched": "2026-09-28",
+   "title": "OECD SDMX API (Global Pension Statistics, Global Insurance Statistics, institutional investors) and Pensions at a Glance 2023 StatLink",
+   "url": "https://sdmx.oecd.org/public/rest/data/{agency},{flow},/{key}?startPeriod={first}&endPeriod={last}&format=csvfile"
+  },
+  "markets/securitisation": {
+   "fetched": "2026-09-28",
+   "title": "Federal Reserve Z.1 CSV release; AFME Securitisation Data Report Q1 2026 (xlsx); ECB Data Portal FVC dataset",
+   "url": "https://www.federalreserve.gov/releases/z1/current/z1_csv_files.zip; https://www.afme.eu/media/ncxi2sq3/afme-securitisation-data-report-q1-2026.xlsx; https://data-api.ecb.europa.eu/service/data/FVC/Q..N.F+T+S..A.1.....?startPeriod=2015&format=csvdata"
+  },
+  "markets/wb": {
+   "fetched": "2026-09-28",
+   "title": "World Bank API: GFDD (source 32), WDI (source 2), International Debt Statistics (source 6)",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date={first}:{last}&per_page=20000&source={source}; https://api.worldbank.org/v2/sources/6/country/all/series/{code}/counterpart-area/WLD/time/all?format=json&per_page=20000"
   },
   "oecd_nad": {
    "fetched": "2026-09-28",

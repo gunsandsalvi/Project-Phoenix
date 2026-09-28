@@ -1,0 +1,1229 @@
+region,area,collateral,year,value
+Europe,BEL,Auto,2020,0.0
+Europe,BEL,Auto,2021,0.675
+Europe,BEL,Auto,2022,0.635
+Europe,BEL,Auto,2023,0.4
+Europe,BEL,Auto,2024,0.2
+Europe,BEL,Auto,2025,0.142
+Europe,BEL,CMBS,2020,0.053
+Europe,BEL,CMBS,2021,0.047
+Europe,BEL,CMBS,2022,0.04
+Europe,BEL,CMBS,2023,0.035
+Europe,BEL,CMBS,2024,0.0
+Europe,BEL,CMBS,2025,0.024
+Europe,BEL,Cards,2020,0.214
+Europe,BEL,Cards,2021,0.0
+Europe,BEL,Cards,2022,0.0
+Europe,BEL,Cards,2023,0.0
+Europe,BEL,Cards,2024,0.0
+Europe,BEL,Cards,2025,0.0
+Europe,BEL,Consumer,2020,0.0
+Europe,BEL,Consumer,2021,0.293
+Europe,BEL,Consumer,2022,0.293
+Europe,BEL,Consumer,2023,0.293
+Europe,BEL,Consumer,2024,0.3
+Europe,BEL,Consumer,2025,0.338
+Europe,BEL,Leases,2020,0.0
+Europe,BEL,Leases,2021,0.0
+Europe,BEL,Leases,2022,0.0
+Europe,BEL,Leases,2023,0.0
+Europe,BEL,Leases,2024,0.0
+Europe,BEL,Leases,2025,0.0
+Europe,BEL,Other,2020,0.0
+Europe,BEL,Other,2021,0.0
+Europe,BEL,Other,2022,0.0
+Europe,BEL,Other,2023,0.0
+Europe,BEL,Other,2024,0.0
+Europe,BEL,Other,2025,0.0
+Europe,BEL,RMBS,2020,25.014
+Europe,BEL,RMBS,2021,23.221
+Europe,BEL,RMBS,2022,19.847
+Europe,BEL,RMBS,2023,25.2
+Europe,BEL,RMBS,2024,24.5
+Europe,BEL,RMBS,2025,27.507
+Europe,BEL,SME ABS,2020,26.005
+Europe,BEL,SME ABS,2021,25.109
+Europe,BEL,SME ABS,2022,25.467
+Europe,BEL,SME ABS,2023,24.6
+Europe,BEL,SME ABS,2024,32.0
+Europe,BEL,SME ABS,2025,40.04
+Europe,BEL,TOTAL,2020,51.287
+Europe,BEL,TOTAL,2021,49.345
+Europe,BEL,Total,2022,46.281
+Europe,BEL,Total,2023,50.527
+Europe,BEL,Total,2024,57.1
+Europe,BEL,Total,2025,68.052
+Europe,BEL,Total ex-CLO,2015,54.937
+Europe,BEL,Total ex-CLO,2016,53.113
+Europe,BEL,Total ex-CLO,2017,55.035
+Europe,BEL,Total ex-CLO,2018,51.96
+Europe,BEL,Total ex-CLO,2019,52.515
+Europe,BEL,Total ex-CLO,2020,51.287
+Europe,BEL,Total ex-CLO,2021,49.345
+Europe,BEL,Total ex-CLO,2022,46.281
+Europe,BEL,Total ex-CLO,2023,50.5
+Europe,BEL,Total ex-CLO,2024,57.1
+Europe,BEL,Total ex-CLO,2025,68.1
+Europe,CHE,Auto,2020,3.428
+Europe,CHE,Auto,2021,3.169
+Europe,CHE,Auto,2022,1.617
+Europe,CHE,Auto,2023,1.5
+Europe,CHE,Auto,2024,1.0
+Europe,CHE,Auto,2025,1.139
+Europe,CHE,CMBS,2020,0.0
+Europe,CHE,CMBS,2021,0.0
+Europe,CHE,CMBS,2022,0.0
+Europe,CHE,CMBS,2023,0.0
+Europe,CHE,CMBS,2024,0.0
+Europe,CHE,CMBS,2025,0.0
+Europe,CHE,Cards,2020,1.102
+Europe,CHE,Cards,2021,1.11
+Europe,CHE,Cards,2022,0.563
+Europe,CHE,Cards,2023,0.583
+Europe,CHE,Cards,2024,0.4
+Europe,CHE,Cards,2025,0.206
+Europe,CHE,Consumer,2020,0.0
+Europe,CHE,Consumer,2021,0.0
+Europe,CHE,Consumer,2022,0.0
+Europe,CHE,Consumer,2023,0.0
+Europe,CHE,Consumer,2024,0.0
+Europe,CHE,Consumer,2025,0.0
+Europe,CHE,Leases,2020,0.0
+Europe,CHE,Leases,2021,0.0
+Europe,CHE,Leases,2022,0.0
+Europe,CHE,Leases,2023,0.0
+Europe,CHE,Leases,2024,0.0
+Europe,CHE,Leases,2025,0.0
+Europe,CHE,Other,2020,0.0
+Europe,CHE,Other,2021,0.0
+Europe,CHE,Other,2022,0.0
+Europe,CHE,Other,2023,0.0
+Europe,CHE,Other,2024,0.0
+Europe,CHE,Other,2025,0.0
+Europe,CHE,RMBS,2020,0.139
+Europe,CHE,RMBS,2021,0.0
+Europe,CHE,RMBS,2022,0.0
+Europe,CHE,RMBS,2023,0.0
+Europe,CHE,RMBS,2024,0.0
+Europe,CHE,RMBS,2025,0.0
+Europe,CHE,SME ABS,2020,0.0
+Europe,CHE,SME ABS,2021,0.0
+Europe,CHE,SME ABS,2022,0.0
+Europe,CHE,SME ABS,2023,0.0
+Europe,CHE,SME ABS,2024,0.0
+Europe,CHE,SME ABS,2025,0.0
+Europe,CHE,TOTAL,2020,4.67
+Europe,CHE,TOTAL,2021,4.28
+Europe,CHE,Total,2022,2.18
+Europe,CHE,Total,2023,2.083
+Europe,CHE,Total,2024,1.4
+Europe,CHE,Total,2025,1.345
+Europe,CHE,Total ex-CLO,2015,1.391
+Europe,CHE,Total ex-CLO,2016,1.838
+Europe,CHE,Total ex-CLO,2017,2.562
+Europe,CHE,Total ex-CLO,2018,3.362
+Europe,CHE,Total ex-CLO,2019,3.813
+Europe,CHE,Total ex-CLO,2020,4.67
+Europe,CHE,Total ex-CLO,2021,4.28
+Europe,CHE,Total ex-CLO,2022,2.18
+Europe,CHE,Total ex-CLO,2023,2.1
+Europe,CHE,Total ex-CLO,2024,1.4
+Europe,CHE,Total ex-CLO,2025,1.4
+Europe,CLO / CDO,Total ex-CLO,2015,99.903
+Europe,CLO / CDO,Total ex-CLO,2016,105.56
+Europe,CLO / CDO,Total ex-CLO,2017,107.31
+Europe,CLO / CDO,Total ex-CLO,2018,120.108
+Europe,CLO / CDO,Total ex-CLO,2019,146.099
+Europe,CLO / CDO,Total ex-CLO,2022,207.3
+Europe,CLO / CDO,Total ex-CLO,2023,228.8
+Europe,CLO / CDO,Total ex-CLO,2024,260.9
+Europe,CLO / CDO,Total ex-CLO,2025,303.1
+Europe,DEU,Auto,2020,35.069
+Europe,DEU,Auto,2021,38.237
+Europe,DEU,Auto,2022,30.378
+Europe,DEU,Auto,2023,29.2
+Europe,DEU,Auto,2024,27.4
+Europe,DEU,Auto,2025,29.378
+Europe,DEU,CMBS,2020,1.492
+Europe,DEU,CMBS,2021,2.106
+Europe,DEU,CMBS,2022,2.082
+Europe,DEU,CMBS,2023,2.013
+Europe,DEU,CMBS,2024,1.2
+Europe,DEU,CMBS,2025,1.725
+Europe,DEU,Cards,2020,0.0
+Europe,DEU,Cards,2021,0.0
+Europe,DEU,Cards,2022,0.0
+Europe,DEU,Cards,2023,0.0
+Europe,DEU,Cards,2024,0.0
+Europe,DEU,Cards,2025,0.0
+Europe,DEU,Consumer,2020,3.602
+Europe,DEU,Consumer,2021,5.956
+Europe,DEU,Consumer,2022,6.122
+Europe,DEU,Consumer,2023,5.8
+Europe,DEU,Consumer,2024,14.0
+Europe,DEU,Consumer,2025,14.993
+Europe,DEU,Leases,2020,1.781
+Europe,DEU,Leases,2021,2.254
+Europe,DEU,Leases,2022,2.004
+Europe,DEU,Leases,2023,1.7
+Europe,DEU,Leases,2024,1.3
+Europe,DEU,Leases,2025,1.102
+Europe,DEU,Other,2020,3.121
+Europe,DEU,Other,2021,1.603
+Europe,DEU,Other,2022,0.085
+Europe,DEU,Other,2023,0.0
+Europe,DEU,Other,2024,0.0
+Europe,DEU,Other,2025,0.0
+Europe,DEU,RMBS,2020,2.815
+Europe,DEU,RMBS,2021,11.768
+Europe,DEU,RMBS,2022,24.791
+Europe,DEU,RMBS,2023,31.334
+Europe,DEU,RMBS,2024,41.3
+Europe,DEU,RMBS,2025,69.645
+Europe,DEU,SME ABS,2020,3.237
+Europe,DEU,SME ABS,2021,3.392
+Europe,DEU,SME ABS,2022,6.391
+Europe,DEU,SME ABS,2023,5.3
+Europe,DEU,SME ABS,2024,3.4
+Europe,DEU,SME ABS,2025,3.003
+Europe,DEU,TOTAL,2020,51.116
+Europe,DEU,TOTAL,2021,65.316
+Europe,DEU,Total,2022,71.852
+Europe,DEU,Total,2023,75.347
+Europe,DEU,Total,2024,88.6
+Europe,DEU,Total,2025,119.847
+Europe,DEU,Total ex-CLO,2015,76.466
+Europe,DEU,Total ex-CLO,2016,78.451
+Europe,DEU,Total ex-CLO,2017,71.139
+Europe,DEU,Total ex-CLO,2018,53.222
+Europe,DEU,Total ex-CLO,2019,49.119
+Europe,DEU,Total ex-CLO,2020,51.116
+Europe,DEU,Total ex-CLO,2021,65.316
+Europe,DEU,Total ex-CLO,2022,71.852
+Europe,DEU,Total ex-CLO,2023,75.3
+Europe,DEU,Total ex-CLO,2024,88.6
+Europe,DEU,Total ex-CLO,2025,119.9
+Europe,ESP,Auto,2020,9.481
+Europe,ESP,Auto,2021,8.673
+Europe,ESP,Auto,2022,10.549
+Europe,ESP,Auto,2023,10.4
+Europe,ESP,Auto,2024,9.4
+Europe,ESP,Auto,2025,10.203
+Europe,ESP,CMBS,2020,0.0
+Europe,ESP,CMBS,2021,0.133
+Europe,ESP,CMBS,2022,0.103
+Europe,ESP,CMBS,2023,0.102
+Europe,ESP,CMBS,2024,0.1
+Europe,ESP,CMBS,2025,0.453
+Europe,ESP,Cards,2020,1.787
+Europe,ESP,Cards,2021,1.211
+Europe,ESP,Cards,2022,0.856
+Europe,ESP,Cards,2023,0.881
+Europe,ESP,Cards,2024,0.9
+Europe,ESP,Cards,2025,0.28
+Europe,ESP,Consumer,2020,12.149
+Europe,ESP,Consumer,2021,10.531
+Europe,ESP,Consumer,2022,7.677
+Europe,ESP,Consumer,2023,9.9
+Europe,ESP,Consumer,2024,12.5
+Europe,ESP,Consumer,2025,16.359
+Europe,ESP,Leases,2020,3.225
+Europe,ESP,Leases,2021,1.975
+Europe,ESP,Leases,2022,1.228
+Europe,ESP,Leases,2023,3.1
+Europe,ESP,Leases,2024,1.4
+Europe,ESP,Leases,2025,0.676
+Europe,ESP,Other,2020,0.743
+Europe,ESP,Other,2021,1.229
+Europe,ESP,Other,2022,1.068
+Europe,ESP,Other,2023,1.0
+Europe,ESP,Other,2024,0.8
+Europe,ESP,Other,2025,0.732
+Europe,ESP,RMBS,2020,113.477
+Europe,ESP,RMBS,2021,108.858
+Europe,ESP,RMBS,2022,92.48
+Europe,ESP,RMBS,2023,81.1
+Europe,ESP,RMBS,2024,74.4
+Europe,ESP,RMBS,2025,68.053
+Europe,ESP,SME ABS,2020,17.534
+Europe,ESP,SME ABS,2021,14.5
+Europe,ESP,SME ABS,2022,9.613
+Europe,ESP,SME ABS,2023,9.5
+Europe,ESP,SME ABS,2024,7.9
+Europe,ESP,SME ABS,2025,4.553
+Europe,ESP,TOTAL,2020,158.397
+Europe,ESP,TOTAL,2021,147.11
+Europe,ESP,Total,2022,123.574
+Europe,ESP,Total,2023,115.983
+Europe,ESP,Total,2024,107.3
+Europe,ESP,Total,2025,101.31
+Europe,ESP,Total ex-CLO,2015,159.196
+Europe,ESP,Total ex-CLO,2016,159.237
+Europe,ESP,Total ex-CLO,2017,159.09
+Europe,ESP,Total ex-CLO,2018,155.528
+Europe,ESP,Total ex-CLO,2019,142.347
+Europe,ESP,Total ex-CLO,2020,158.397
+Europe,ESP,Total ex-CLO,2021,147.11
+Europe,ESP,Total ex-CLO,2022,123.574
+Europe,ESP,Total ex-CLO,2023,116.0
+Europe,ESP,Total ex-CLO,2024,107.3
+Europe,ESP,Total ex-CLO,2025,101.3
+Europe,EU Total,Auto,2020,66.13
+Europe,EU Total,Auto,2021,74.5
+Europe,EU Total,Auto,2022,98.519
+Europe,EU Total,Auto,2023,65.7
+Europe,EU Total,Auto,2024,66.3
+Europe,EU Total,Auto,2025,69.854
+Europe,EU Total,CMBS,2020,6.857
+Europe,EU Total,CMBS,2021,8.68
+Europe,EU Total,CMBS,2022,14.19
+Europe,EU Total,CMBS,2023,7.247
+Europe,EU Total,CMBS,2024,5.7
+Europe,EU Total,CMBS,2025,6.69
+Europe,EU Total,Cards,2020,4.593
+Europe,EU Total,Cards,2021,3.72
+Europe,EU Total,Cards,2022,2.881
+Europe,EU Total,Cards,2023,3.1
+Europe,EU Total,Cards,2024,3.1
+Europe,EU Total,Cards,2025,1.824
+Europe,EU Total,Consumer,2020,72.883
+Europe,EU Total,Consumer,2021,78.071
+Europe,EU Total,Consumer,2022,83.887
+Europe,EU Total,Consumer,2023,78.536
+Europe,EU Total,Consumer,2024,90.4
+Europe,EU Total,Consumer,2025,97.221
+Europe,EU Total,Leases,2020,16.003
+Europe,EU Total,Leases,2021,16.73
+Europe,EU Total,Leases,2022,9.733
+Europe,EU Total,Leases,2023,11.375
+Europe,EU Total,Leases,2024,8.1
+Europe,EU Total,Leases,2025,8.265
+Europe,EU Total,Other,2020,26.55
+Europe,EU Total,Other,2021,24.135
+Europe,EU Total,Other,2022,28.938
+Europe,EU Total,Other,2023,20.035
+Europe,EU Total,Other,2024,14.8
+Europe,EU Total,Other,2025,13.604
+Europe,EU Total,RMBS,2020,460.646
+Europe,EU Total,RMBS,2021,449.149
+Europe,EU Total,RMBS,2022,398.433
+Europe,EU Total,RMBS,2023,422.5
+Europe,EU Total,RMBS,2024,432.9
+Europe,EU Total,RMBS,2025,447.891
+Europe,EU Total,SME ABS,2020,91.473
+Europe,EU Total,SME ABS,2021,110.345
+Europe,EU Total,SME ABS,2022,119.482
+Europe,EU Total,SME ABS,2023,117.2
+Europe,EU Total,SME ABS,2024,107.7
+Europe,EU Total,SME ABS,2025,114.637
+Europe,EU Total,TOTAL,2020,745.135
+Europe,EU Total,TOTAL,2021,765.331
+Europe,EU Total,Total,2022,756.062
+Europe,EU Total,Total,2023,725.648
+Europe,EU Total,Total,2024,989.8
+Europe,EU Total,Total,2025,759.9
+Europe,EU Total (ex. CLOs),Total ex-CLO,2015,848.424
+Europe,EU Total (ex. CLOs),Total ex-CLO,2016,816.217
+Europe,EU Total (ex. CLOs),Total ex-CLO,2017,796.13
+Europe,EU Total (ex. CLOs),Total ex-CLO,2018,774.157
+Europe,EU Total (ex. CLOs),Total ex-CLO,2019,748.818
+Europe,EU Total (ex. CLOs),Total ex-CLO,2020,745.135
+Europe,EU Total (ex. CLOs),Total ex-CLO,2021,765.331
+Europe,EU Total (ex. CLOs),Total ex-CLO,2022,696.614
+Europe,EU Total (ex. CLOs),Total ex-CLO,2023,725.3
+Europe,EU Total (ex. CLOs),Total ex-CLO,2024,728.9
+Europe,EU Total (ex. CLOs),Total ex-CLO,2025,759.96
+Europe,European Total,Auto,2020,90.837
+Europe,European Total,Auto,2021,94.715
+Europe,European Total,Auto,2022,78.597
+Europe,European Total,Auto,2023,74.3
+Europe,European Total,Auto,2024,76.7
+Europe,European Total,Auto,2025,79.526
+Europe,European Total,CLO / CDO,2023,228.8
+Europe,European Total,CLO / CDO,2024,260.9
+Europe,European Total,CLO / CDO,2025,303.1
+Europe,European Total,CMBS,2020,31.276
+Europe,European Total,CMBS,2021,35.187
+Europe,European Total,CMBS,2022,38.025
+Europe,European Total,CMBS,2023,33.048
+Europe,European Total,CMBS,2024,28.4
+Europe,European Total,CMBS,2025,31.836
+Europe,European Total,Cards,2020,21.587
+Europe,European Total,Cards,2021,26.204
+Europe,European Total,Cards,2022,24.516
+Europe,European Total,Cards,2023,25.677
+Europe,European Total,Cards,2024,25.7
+Europe,European Total,Cards,2025,24.655
+Europe,European Total,Consumer,2020,78.176
+Europe,European Total,Consumer,2021,83.193
+Europe,European Total,Consumer,2022,81.086
+Europe,European Total,Consumer,2023,87.636
+Europe,European Total,Consumer,2024,97.2
+Europe,European Total,Consumer,2025,107.6
+Europe,European Total,Leases,2020,16.498
+Europe,European Total,Leases,2021,17.035
+Europe,European Total,Leases,2022,9.937
+Europe,European Total,Leases,2023,11.975
+Europe,European Total,Leases,2024,8.9
+Europe,European Total,Leases,2025,9.193
+Europe,European Total,Other,2020,57.416
+Europe,European Total,Other,2021,53.411
+Europe,European Total,Other,2022,48.934
+Europe,European Total,Other,2023,47.835
+Europe,European Total,Other,2024,41.6
+Europe,European Total,Other,2025,40.158
+Europe,European Total,RMBS,2020,605.155
+Europe,European Total,RMBS,2021,588.932
+Europe,European Total,RMBS,2022,529.449
+Europe,European Total,RMBS,2023,554.3
+Europe,European Total,RMBS,2024,570.1
+Europe,European Total,RMBS,2025,582.943
+Europe,European Total,SME ABS,2020,91.862
+Europe,European Total,SME ABS,2021,110.781
+Europe,European Total,SME ABS,2022,119.623
+Europe,European Total,SME ABS,2023,117.526
+Europe,European Total,SME ABS,2024,108.1
+Europe,European Total,SME ABS,2025,115.231
+Europe,European Total,TOTAL,2020,992.806
+Europe,European Total,TOTAL,2021,1009.459
+Europe,European Total,Total,2022,930.166
+Europe,European Total,Total,2023,1180.6
+Europe,European Total,Total,2024,1217.6
+Europe,European Total,Total,2025,991.141
+Europe,European Total (ex. CLOs),Total ex-CLO,2015,1126.607
+Europe,European Total (ex. CLOs),Total ex-CLO,2016,1068.509
+Europe,European Total (ex. CLOs),Total ex-CLO,2017,1039.708
+Europe,European Total (ex. CLOs),Total ex-CLO,2018,1024.772
+Europe,European Total (ex. CLOs),Total ex-CLO,2019,1008.599
+Europe,European Total (ex. CLOs),Total ex-CLO,2020,992.806
+Europe,European Total (ex. CLOs),Total ex-CLO,2021,1009.459
+Europe,European Total (ex. CLOs),Total ex-CLO,2022,930.166
+Europe,European Total (ex. CLOs),Total ex-CLO,2023,951.7
+Europe,European Total (ex. CLOs),Total ex-CLO,2024,956.7
+Europe,European Total (ex. CLOs),Total ex-CLO,2025,991.16
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2015,1226.511
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2016,1174.069
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2017,1147.018
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2018,1144.88
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2019,1154.698
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2022,1134.641
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2023,1180.6
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2024,1217.6
+Europe,European Total (incl. CLO / CDO),Total ex-CLO,2025,1294.2
+Europe,Eurozone,Auto,2020,65.073
+Europe,Eurozone,Auto,2021,73.443
+Europe,Eurozone,Auto,2022,63.708
+Europe,Eurozone,Auto,2023,65.6
+Europe,Eurozone,Auto,2024,66.3
+Europe,Eurozone,Auto,2025,69.854
+Europe,Eurozone,CMBS,2020,6.718
+Europe,Eurozone,CMBS,2021,8.543
+Europe,Eurozone,CMBS,2022,8.311
+Europe,Eurozone,CMBS,2023,7.1
+Europe,Eurozone,CMBS,2024,5.7
+Europe,Eurozone,CMBS,2025,6.69
+Europe,Eurozone,Cards,2020,4.593
+Europe,Eurozone,Cards,2021,3.72
+Europe,Eurozone,Cards,2022,2.881
+Europe,Eurozone,Cards,2023,3.127
+Europe,Eurozone,Cards,2024,3.1
+Europe,Eurozone,Cards,2025,1.824
+Europe,Eurozone,Consumer,2020,72.818
+Europe,Eurozone,Consumer,2021,78.006
+Europe,Eurozone,Consumer,2022,75.34
+Europe,Eurozone,Consumer,2023,78.5
+Europe,Eurozone,Consumer,2024,90.4
+Europe,Eurozone,Consumer,2025,97.166
+Europe,Eurozone,Leases,2020,16.003
+Europe,Eurozone,Leases,2021,16.73
+Europe,Eurozone,Leases,2022,9.633
+Europe,Eurozone,Leases,2023,11.3
+Europe,Eurozone,Leases,2024,8.1
+Europe,Eurozone,Leases,2025,8.265
+Europe,Eurozone,Other,2020,26.55
+Europe,Eurozone,Other,2021,24.135
+Europe,Eurozone,Other,2022,20.472
+Europe,Eurozone,Other,2023,20.0
+Europe,Eurozone,Other,2024,14.8
+Europe,Eurozone,Other,2025,13.604
+Europe,Eurozone,RMBS,2020,460.308
+Europe,Eurozone,RMBS,2021,448.838
+Europe,Eurozone,RMBS,2022,396.271
+Europe,Eurozone,RMBS,2023,422.3
+Europe,Eurozone,RMBS,2024,432.9
+Europe,Eurozone,RMBS,2025,447.891
+Europe,Eurozone,SME ABS,2020,91.473
+Europe,Eurozone,SME ABS,2021,110.345
+Europe,Eurozone,SME ABS,2022,119.482
+Europe,Eurozone,SME ABS,2023,117.1
+Europe,Eurozone,SME ABS,2024,107.7
+Europe,Eurozone,SME ABS,2025,114.637
+Europe,Eurozone,TOTAL,2020,743.537
+Europe,Eurozone,TOTAL,2021,763.761
+Europe,Eurozone,Total,2022,696.097
+Europe,Eurozone,Total,2023,725.027
+Europe,Eurozone,Total,2024,729.0
+Europe,Eurozone,Total,2025,991.086
+Europe,FRA,Auto,2020,5.444
+Europe,FRA,Auto,2021,5.802
+Europe,FRA,Auto,2022,5.851
+Europe,FRA,Auto,2023,6.5
+Europe,FRA,Auto,2024,6.7
+Europe,FRA,Auto,2025,6.729
+Europe,FRA,CMBS,2020,0.416
+Europe,FRA,CMBS,2021,0.365
+Europe,FRA,CMBS,2022,0.358
+Europe,FRA,CMBS,2023,0.224
+Europe,FRA,CMBS,2024,0.2
+Europe,FRA,CMBS,2025,0.208
+Europe,FRA,Cards,2020,1.462
+Europe,FRA,Cards,2021,1.383
+Europe,FRA,Cards,2022,1.037
+Europe,FRA,Cards,2023,1.1
+Europe,FRA,Cards,2024,1.0
+Europe,FRA,Cards,2025,0.439
+Europe,FRA,Consumer,2020,18.427
+Europe,FRA,Consumer,2021,20.981
+Europe,FRA,Consumer,2022,21.027
+Europe,FRA,Consumer,2023,21.1
+Europe,FRA,Consumer,2024,22.7
+Europe,FRA,Consumer,2025,25.089
+Europe,FRA,Leases,2020,0.0
+Europe,FRA,Leases,2021,0.5
+Europe,FRA,Leases,2022,0.5
+Europe,FRA,Leases,2023,0.8
+Europe,FRA,Leases,2024,0.4
+Europe,FRA,Leases,2025,1.081
+Europe,FRA,Other,2020,0.0
+Europe,FRA,Other,2021,0.0
+Europe,FRA,Other,2022,0.0
+Europe,FRA,Other,2023,0.0
+Europe,FRA,Other,2024,0.0
+Europe,FRA,Other,2025,0.0
+Europe,FRA,RMBS,2020,81.311
+Europe,FRA,RMBS,2021,86.167
+Europe,FRA,RMBS,2022,87.178
+Europe,FRA,RMBS,2023,140.6
+Europe,FRA,RMBS,2024,146.3
+Europe,FRA,RMBS,2025,139.131
+Europe,FRA,SME ABS,2020,4.003
+Europe,FRA,SME ABS,2021,6.003
+Europe,FRA,SME ABS,2022,6.003
+Europe,FRA,SME ABS,2023,6.0
+Europe,FRA,SME ABS,2024,7.8
+Europe,FRA,SME ABS,2025,6.35
+Europe,FRA,TOTAL,2020,111.064
+Europe,FRA,TOTAL,2021,121.202
+Europe,FRA,Total,2022,121.953
+Europe,FRA,Total,2023,176.324
+Europe,FRA,Total,2024,185.2
+Europe,FRA,Total,2025,179.027
+Europe,FRA,Total ex-CLO,2015,73.102
+Europe,FRA,Total ex-CLO,2016,86.594
+Europe,FRA,Total ex-CLO,2017,102.58
+Europe,FRA,Total ex-CLO,2018,108.959
+Europe,FRA,Total ex-CLO,2019,122.277
+Europe,FRA,Total ex-CLO,2020,111.064
+Europe,FRA,Total ex-CLO,2021,121.202
+Europe,FRA,Total ex-CLO,2022,121.953
+Europe,FRA,Total ex-CLO,2023,176.2
+Europe,FRA,Total ex-CLO,2024,185.2
+Europe,FRA,Total ex-CLO,2025,179.0
+Europe,GBR,Auto,2020,21.278
+Europe,GBR,Auto,2021,17.045
+Europe,GBR,Auto,2022,13.105
+Europe,GBR,Auto,2023,7.2
+Europe,GBR,Auto,2024,9.5
+Europe,GBR,Auto,2025,8.533
+Europe,GBR,CMBS,2020,24.419
+Europe,GBR,CMBS,2021,26.507
+Europe,GBR,CMBS,2022,29.579
+Europe,GBR,CMBS,2023,25.8
+Europe,GBR,CMBS,2024,22.7
+Europe,GBR,CMBS,2025,25.146
+Europe,GBR,Cards,2020,15.892
+Europe,GBR,Cards,2021,21.374
+Europe,GBR,Cards,2022,21.072
+Europe,GBR,Cards,2023,21.9
+Europe,GBR,Cards,2024,22.2
+Europe,GBR,Cards,2025,22.625
+Europe,GBR,Consumer,2020,5.293
+Europe,GBR,Consumer,2021,5.123
+Europe,GBR,Consumer,2022,5.746
+Europe,GBR,Consumer,2023,9.1
+Europe,GBR,Consumer,2024,6.8
+Europe,GBR,Consumer,2025,10.379
+Europe,GBR,Leases,2020,0.495
+Europe,GBR,Leases,2021,0.304
+Europe,GBR,Leases,2022,0.304
+Europe,GBR,Leases,2023,0.6
+Europe,GBR,Leases,2024,0.8
+Europe,GBR,Leases,2025,0.928
+Europe,GBR,Other,2020,30.866
+Europe,GBR,Other,2021,29.277
+Europe,GBR,Other,2022,28.462
+Europe,GBR,Other,2023,27.8
+Europe,GBR,Other,2024,26.8
+Europe,GBR,Other,2025,26.554
+Europe,GBR,RMBS,2020,144.37
+Europe,GBR,RMBS,2021,139.783
+Europe,GBR,RMBS,2022,132.962
+Europe,GBR,RMBS,2023,131.8
+Europe,GBR,RMBS,2024,137.2
+Europe,GBR,RMBS,2025,135.052
+Europe,GBR,SME ABS,2020,0.388
+Europe,GBR,SME ABS,2021,0.436
+Europe,GBR,SME ABS,2022,0.141
+Europe,GBR,SME ABS,2023,0.326
+Europe,GBR,SME ABS,2024,0.4
+Europe,GBR,SME ABS,2025,0.594
+Europe,GBR,TOTAL,2020,243.0
+Europe,GBR,TOTAL,2021,239.848
+Europe,GBR,Total,2022,231.372
+Europe,GBR,Total,2023,224.526
+Europe,GBR,Total,2024,226.4
+Europe,GBR,Total,2025,229.811
+Europe,GBR,Total ex-CLO,2015,276.792
+Europe,GBR,Total ex-CLO,2016,250.454
+Europe,GBR,Total ex-CLO,2017,241.016
+Europe,GBR,Total ex-CLO,2018,247.253
+Europe,GBR,Total ex-CLO,2019,255.968
+Europe,GBR,Total ex-CLO,2020,243.0
+Europe,GBR,Total ex-CLO,2021,239.848
+Europe,GBR,Total ex-CLO,2022,231.372
+Europe,GBR,Total ex-CLO,2023,224.4
+Europe,GBR,Total ex-CLO,2024,226.4
+Europe,GBR,Total ex-CLO,2025,229.8
+Europe,GRC,Auto,2020,0.288
+Europe,GRC,Auto,2021,0.288
+Europe,GRC,Auto,2022,0.156
+Europe,GRC,Auto,2023,0.1
+Europe,GRC,Auto,2024,0.1
+Europe,GRC,Auto,2025,0.0
+Europe,GRC,CMBS,2020,0.0
+Europe,GRC,CMBS,2021,0.0
+Europe,GRC,CMBS,2022,0.0
+Europe,GRC,CMBS,2023,0.0
+Europe,GRC,CMBS,2024,0.0
+Europe,GRC,CMBS,2025,0.0
+Europe,GRC,Cards,2020,0.602
+Europe,GRC,Cards,2021,0.602
+Europe,GRC,Cards,2022,0.48
+Europe,GRC,Cards,2023,0.5
+Europe,GRC,Cards,2024,0.5
+Europe,GRC,Cards,2025,0.48
+Europe,GRC,Consumer,2020,0.511
+Europe,GRC,Consumer,2021,0.511
+Europe,GRC,Consumer,2022,0.0
+Europe,GRC,Consumer,2023,0.0
+Europe,GRC,Consumer,2024,0.0
+Europe,GRC,Consumer,2025,0.0
+Europe,GRC,Leases,2020,0.475
+Europe,GRC,Leases,2021,0.475
+Europe,GRC,Leases,2022,0.475
+Europe,GRC,Leases,2023,0.475
+Europe,GRC,Leases,2024,0.5
+Europe,GRC,Leases,2025,0.475
+Europe,GRC,Other,2020,4.164
+Europe,GRC,Other,2021,4.164
+Europe,GRC,Other,2022,4.164
+Europe,GRC,Other,2023,4.164
+Europe,GRC,Other,2024,4.2
+Europe,GRC,Other,2025,4.164
+Europe,GRC,RMBS,2020,0.321
+Europe,GRC,RMBS,2021,0.284
+Europe,GRC,RMBS,2022,0.247
+Europe,GRC,RMBS,2023,0.211
+Europe,GRC,RMBS,2024,0.2
+Europe,GRC,RMBS,2025,0.144
+Europe,GRC,SME ABS,2020,3.972
+Europe,GRC,SME ABS,2021,3.972
+Europe,GRC,SME ABS,2022,3.972
+Europe,GRC,SME ABS,2023,4.0
+Europe,GRC,SME ABS,2024,0.7
+Europe,GRC,SME ABS,2025,0.68
+Europe,GRC,TOTAL,2020,10.332
+Europe,GRC,TOTAL,2021,10.295
+Europe,GRC,Total,2022,9.494
+Europe,GRC,Total,2023,9.449
+Europe,GRC,Total,2024,6.0
+Europe,GRC,Total,2025,5.943
+Europe,GRC,Total ex-CLO,2015,19.527
+Europe,GRC,Total ex-CLO,2016,17.272
+Europe,GRC,Total ex-CLO,2017,16.582
+Europe,GRC,Total ex-CLO,2018,16.409
+Europe,GRC,Total ex-CLO,2019,14.589
+Europe,GRC,Total ex-CLO,2020,10.332
+Europe,GRC,Total ex-CLO,2021,10.295
+Europe,GRC,Total ex-CLO,2022,9.494
+Europe,GRC,Total ex-CLO,2023,9.4
+Europe,GRC,Total ex-CLO,2024,6.0
+Europe,GRC,Total ex-CLO,2025,5.9
+Europe,IRL,Auto,2020,0.303
+Europe,IRL,Auto,2021,0.242
+Europe,IRL,Auto,2022,0.13
+Europe,IRL,Auto,2023,0.5
+Europe,IRL,Auto,2024,0.3
+Europe,IRL,Auto,2025,0.675
+Europe,IRL,CMBS,2020,0.188
+Europe,IRL,CMBS,2021,0.131
+Europe,IRL,CMBS,2022,0.289
+Europe,IRL,CMBS,2023,0.2
+Europe,IRL,CMBS,2024,0.1
+Europe,IRL,CMBS,2025,0.323
+Europe,IRL,Cards,2020,0.0
+Europe,IRL,Cards,2021,0.0
+Europe,IRL,Cards,2022,0.0
+Europe,IRL,Cards,2023,0.0
+Europe,IRL,Cards,2024,0.0
+Europe,IRL,Cards,2025,0.0
+Europe,IRL,Consumer,2020,0.0
+Europe,IRL,Consumer,2021,0.0
+Europe,IRL,Consumer,2022,0.0
+Europe,IRL,Consumer,2023,0.0
+Europe,IRL,Consumer,2024,0.0
+Europe,IRL,Consumer,2025,0.0
+Europe,IRL,Leases,2020,0.0
+Europe,IRL,Leases,2021,0.0
+Europe,IRL,Leases,2022,0.0
+Europe,IRL,Leases,2023,0.0
+Europe,IRL,Leases,2024,0.0
+Europe,IRL,Leases,2025,0.0
+Europe,IRL,Other,2020,2.646
+Europe,IRL,Other,2021,3.537
+Europe,IRL,Other,2022,3.289
+Europe,IRL,Other,2023,2.846
+Europe,IRL,Other,2024,1.8
+Europe,IRL,Other,2025,1.268
+Europe,IRL,RMBS,2020,23.181
+Europe,IRL,RMBS,2021,28.813
+Europe,IRL,RMBS,2022,27.357
+Europe,IRL,RMBS,2023,19.5
+Europe,IRL,RMBS,2024,30.7
+Europe,IRL,RMBS,2025,27.974
+Europe,IRL,SME ABS,2020,0.0
+Europe,IRL,SME ABS,2021,0.0
+Europe,IRL,SME ABS,2022,0.0
+Europe,IRL,SME ABS,2023,0.0
+Europe,IRL,SME ABS,2024,0.0
+Europe,IRL,SME ABS,2025,0.0
+Europe,IRL,TOTAL,2020,26.318
+Europe,IRL,TOTAL,2021,32.724
+Europe,IRL,Total,2022,31.065
+Europe,IRL,Total,2023,23.046
+Europe,IRL,Total,2024,32.9
+Europe,IRL,Total,2025,30.24
+Europe,IRL,Total ex-CLO,2015,35.581
+Europe,IRL,Total ex-CLO,2016,31.967
+Europe,IRL,Total ex-CLO,2017,27.613
+Europe,IRL,Total ex-CLO,2018,26.503
+Europe,IRL,Total ex-CLO,2019,24.588
+Europe,IRL,Total ex-CLO,2020,26.318
+Europe,IRL,Total ex-CLO,2021,32.724
+Europe,IRL,Total ex-CLO,2022,31.065
+Europe,IRL,Total ex-CLO,2023,23.0
+Europe,IRL,Total ex-CLO,2024,32.9
+Europe,IRL,Total ex-CLO,2025,30.2
+Europe,ITA,Auto,2020,9.203
+Europe,ITA,Auto,2021,11.378
+Europe,ITA,Auto,2022,8.894
+Europe,ITA,Auto,2023,11.2
+Europe,ITA,Auto,2024,13.8
+Europe,ITA,Auto,2025,14.797
+Europe,ITA,CMBS,2020,1.382
+Europe,ITA,CMBS,2021,1.243
+Europe,ITA,CMBS,2022,1.277
+Europe,ITA,CMBS,2023,1.214
+Europe,ITA,CMBS,2024,0.9
+Europe,ITA,CMBS,2025,0.479
+Europe,ITA,Cards,2020,0.0
+Europe,ITA,Cards,2021,0.0
+Europe,ITA,Cards,2022,0.0
+Europe,ITA,Cards,2023,0.0
+Europe,ITA,Cards,2024,0.0
+Europe,ITA,Cards,2025,0.0
+Europe,ITA,Consumer,2020,36.962
+Europe,ITA,Consumer,2021,38.758
+Europe,ITA,Consumer,2022,38.001
+Europe,ITA,Consumer,2023,39.3
+Europe,ITA,Consumer,2024,38.6
+Europe,ITA,Consumer,2025,37.2
+Europe,ITA,Leases,2020,10.433
+Europe,ITA,Leases,2021,11.489
+Europe,ITA,Leases,2022,5.415
+Europe,ITA,Leases,2023,5.3
+Europe,ITA,Leases,2024,4.5
+Europe,ITA,Leases,2025,4.442
+Europe,ITA,Other,2020,13.681
+Europe,ITA,Other,2021,12.087
+Europe,ITA,Other,2022,10.726
+Europe,ITA,Other,2023,10.119
+Europe,ITA,Other,2024,6.3
+Europe,ITA,Other,2025,5.984
+Europe,ITA,RMBS,2020,47.987
+Europe,ITA,RMBS,2021,42.857
+Europe,ITA,RMBS,2022,39.106
+Europe,ITA,RMBS,2023,33.6
+Europe,ITA,RMBS,2024,31.3
+Europe,ITA,RMBS,2025,33.822
+Europe,ITA,SME ABS,2020,34.604
+Europe,ITA,SME ABS,2021,30.003
+Europe,ITA,SME ABS,2022,42.712
+Europe,ITA,SME ABS,2023,42.4
+Europe,ITA,SME ABS,2024,30.5
+Europe,ITA,SME ABS,2025,34.686
+Europe,ITA,TOTAL,2020,154.253
+Europe,ITA,TOTAL,2021,147.816
+Europe,ITA,Total,2022,146.13
+Europe,ITA,Total,2023,143.132
+Europe,ITA,Total,2024,126.0
+Europe,ITA,Total,2025,131.411
+Europe,ITA,Total ex-CLO,2015,146.57
+Europe,ITA,Total ex-CLO,2016,136.383
+Europe,ITA,Total ex-CLO,2017,135.431
+Europe,ITA,Total ex-CLO,2018,139.263
+Europe,ITA,Total ex-CLO,2019,149.943
+Europe,ITA,Total ex-CLO,2020,154.253
+Europe,ITA,Total ex-CLO,2021,147.816
+Europe,ITA,Total ex-CLO,2022,146.13
+Europe,ITA,Total ex-CLO,2023,143.2
+Europe,ITA,Total ex-CLO,2024,126.0
+Europe,ITA,Total ex-CLO,2025,131.4
+Europe,NLD,Auto,2020,1.117
+Europe,NLD,Auto,2021,1.63
+Europe,NLD,Auto,2022,1.382
+Europe,NLD,Auto,2023,1.9
+Europe,NLD,Auto,2024,2.9
+Europe,NLD,Auto,2025,2.936
+Europe,NLD,CMBS,2020,1.155
+Europe,NLD,CMBS,2021,1.002
+Europe,NLD,CMBS,2022,0.945
+Europe,NLD,CMBS,2023,0.733
+Europe,NLD,CMBS,2024,0.5
+Europe,NLD,CMBS,2025,0.453
+Europe,NLD,Cards,2020,0.0
+Europe,NLD,Cards,2021,0.0
+Europe,NLD,Cards,2022,0.0
+Europe,NLD,Cards,2023,0.0
+Europe,NLD,Cards,2024,0.0
+Europe,NLD,Cards,2025,0.0
+Europe,NLD,Consumer,2020,0.956
+Europe,NLD,Consumer,2021,0.713
+Europe,NLD,Consumer,2022,0.475
+Europe,NLD,Consumer,2023,0.443
+Europe,NLD,Consumer,2024,0.6
+Europe,NLD,Consumer,2025,0.707
+Europe,NLD,Leases,2020,0.0
+Europe,NLD,Leases,2021,0.0
+Europe,NLD,Leases,2022,0.0
+Europe,NLD,Leases,2023,0.0
+Europe,NLD,Leases,2024,0.0
+Europe,NLD,Leases,2025,0.489
+Europe,NLD,Other,2020,0.0
+Europe,NLD,Other,2021,0.0
+Europe,NLD,Other,2022,0.0
+Europe,NLD,Other,2023,0.0
+Europe,NLD,Other,2024,0.0
+Europe,NLD,Other,2025,0.0
+Europe,NLD,RMBS,2020,150.368
+Europe,NLD,RMBS,2021,132.188
+Europe,NLD,RMBS,2022,95.364
+Europe,NLD,RMBS,2023,82.1
+Europe,NLD,RMBS,2024,77.6
+Europe,NLD,RMBS,2025,73.826
+Europe,NLD,SME ABS,2020,0.0
+Europe,NLD,SME ABS,2021,25.248
+Europe,NLD,SME ABS,2022,25.248
+Europe,NLD,SME ABS,2023,25.3
+Europe,NLD,SME ABS,2024,25.3
+Europe,NLD,SME ABS,2025,25.248
+Europe,NLD,TOTAL,2020,153.596
+Europe,NLD,TOTAL,2021,160.78
+Europe,NLD,Total,2022,123.414
+Europe,NLD,Total,2023,110.476
+Europe,NLD,Total,2024,106.9
+Europe,NLD,Total,2025,103.659
+Europe,NLD,Total ex-CLO,2015,233.148
+Europe,NLD,Total ex-CLO,2016,208.305
+Europe,NLD,Total ex-CLO,2017,187.523
+Europe,NLD,Total ex-CLO,2018,181.378
+Europe,NLD,Total ex-CLO,2019,161.046
+Europe,NLD,Total ex-CLO,2020,153.596
+Europe,NLD,Total ex-CLO,2021,160.78
+Europe,NLD,Total ex-CLO,2022,123.414
+Europe,NLD,Total ex-CLO,2023,110.3
+Europe,NLD,Total ex-CLO,2024,106.9
+Europe,NLD,Total ex-CLO,2025,103.7
+Europe,Other Europe,Auto,2020,3.621
+Europe,Other Europe,Auto,2021,4.816
+Europe,Other Europe,Auto,2022,3.849
+Europe,Other Europe,Auto,2023,3.3
+Europe,Other Europe,Auto,2024,3.8
+Europe,Other Europe,Auto,2025,3.157
+Europe,Other Europe,CMBS,2020,0.679
+Europe,Other Europe,CMBS,2021,0.675
+Europe,Other Europe,CMBS,2022,0.638
+Europe,Other Europe,CMBS,2023,0.627
+Europe,Other Europe,CMBS,2024,0.6
+Europe,Other Europe,CMBS,2025,0.422
+Europe,Other Europe,Cards,2020,0.0
+Europe,Other Europe,Cards,2021,0.0
+Europe,Other Europe,Cards,2022,0.0
+Europe,Other Europe,Cards,2023,0.0
+Europe,Other Europe,Cards,2024,0.0
+Europe,Other Europe,Cards,2025,0.0
+Europe,Other Europe,Consumer,2020,0.065
+Europe,Other Europe,Consumer,2021,0.065
+Europe,Other Europe,Consumer,2022,0.95
+Europe,Other Europe,Consumer,2023,1.0
+Europe,Other Europe,Consumer,2024,1.0
+Europe,Other Europe,Consumer,2025,1.522
+Europe,Other Europe,Leases,2020,0.089
+Europe,Other Europe,Leases,2021,0.037
+Europe,Other Europe,Leases,2022,0.011
+Europe,Other Europe,Leases,2023,0.0
+Europe,Other Europe,Leases,2024,0.0
+Europe,Other Europe,Leases,2025,0.0
+Europe,Other Europe,Other,2020,1.005
+Europe,Other Europe,Other,2021,0.974
+Europe,Other Europe,Other,2022,0.941
+Europe,Other Europe,Other,2023,0.906
+Europe,Other Europe,Other,2024,0.9
+Europe,Other Europe,Other,2025,0.831
+Europe,Other Europe,RMBS,2020,0.338
+Europe,Other Europe,RMBS,2021,0.312
+Europe,Other Europe,RMBS,2022,0.216
+Europe,Other Europe,RMBS,2023,0.216
+Europe,Other Europe,RMBS,2024,0.0
+Europe,Other Europe,RMBS,2025,0.002
+Europe,Other Europe,SME ABS,2020,0.0
+Europe,Other Europe,SME ABS,2021,0.0
+Europe,Other Europe,SME ABS,2022,0.0
+Europe,Other Europe,SME ABS,2023,0.0
+Europe,Other Europe,SME ABS,2024,0.0
+Europe,Other Europe,SME ABS,2025,0.0
+Europe,Other Europe,TOTAL,2020,5.797
+Europe,Other Europe,TOTAL,2021,6.879
+Europe,Other Europe,Total,2022,6.605
+Europe,Other Europe,Total,2023,6.049
+Europe,Other Europe,Total,2024,6.2
+Europe,Other Europe,Total,2025,5.934
+Europe,Other Europe,Total ex-CLO,2015,7.225
+Europe,Other Europe,Total ex-CLO,2016,6.087
+Europe,Other Europe,Total ex-CLO,2017,6.347
+Europe,Other Europe,Total ex-CLO,2018,6.53
+Europe,Other Europe,Total ex-CLO,2019,6.815
+Europe,Other Europe,Total ex-CLO,2020,5.797
+Europe,Other Europe,Total ex-CLO,2021,6.879
+Europe,Other Europe,Total ex-CLO,2022,6.605
+Europe,Other Europe,Total ex-CLO,2023,6.0
+Europe,Other Europe,Total ex-CLO,2024,6.2
+Europe,Other Europe,Total ex-CLO,2025,5.9
+Europe,PRT,Auto,2020,1.606
+Europe,PRT,Auto,2021,2.759
+Europe,PRT,Auto,2022,2.049
+Europe,PRT,Auto,2023,2.0
+Europe,PRT,Auto,2024,1.6
+Europe,PRT,Auto,2025,1.642
+Europe,PRT,CMBS,2020,0.0
+Europe,PRT,CMBS,2021,0.0
+Europe,PRT,CMBS,2022,0.0
+Europe,PRT,CMBS,2023,0.0
+Europe,PRT,CMBS,2024,0.0
+Europe,PRT,CMBS,2025,0.0
+Europe,PRT,Cards,2020,0.527
+Europe,PRT,Cards,2021,0.524
+Europe,PRT,Cards,2022,0.508
+Europe,PRT,Cards,2023,0.714
+Europe,PRT,Cards,2024,0.7
+Europe,PRT,Cards,2025,0.624
+Europe,PRT,Consumer,2020,0.211
+Europe,PRT,Consumer,2021,0.265
+Europe,PRT,Consumer,2022,0.795
+Europe,PRT,Consumer,2023,0.7
+Europe,PRT,Consumer,2024,0.8
+Europe,PRT,Consumer,2025,0.957
+Europe,PRT,Leases,2020,0.0
+Europe,PRT,Leases,2021,0.0
+Europe,PRT,Leases,2022,0.0
+Europe,PRT,Leases,2023,0.0
+Europe,PRT,Leases,2024,0.0
+Europe,PRT,Leases,2025,0.0
+Europe,PRT,Other,2020,1.032
+Europe,PRT,Other,2021,0.541
+Europe,PRT,Other,2022,0.2
+Europe,PRT,Other,2023,1.0
+Europe,PRT,Other,2024,0.8
+Europe,PRT,Other,2025,0.626
+Europe,PRT,RMBS,2020,12.634
+Europe,PRT,RMBS,2021,11.481
+Europe,PRT,RMBS,2022,6.702
+Europe,PRT,RMBS,2023,5.5
+Europe,PRT,RMBS,2024,3.7
+Europe,PRT,RMBS,2025,4.6
+Europe,PRT,SME ABS,2020,2.041
+Europe,PRT,SME ABS,2021,2.041
+Europe,PRT,SME ABS,2022,0.0
+Europe,PRT,SME ABS,2023,0.0
+Europe,PRT,SME ABS,2024,0.0
+Europe,PRT,SME ABS,2025,0.0
+Europe,PRT,TOTAL,2020,18.051
+Europe,PRT,TOTAL,2021,17.61
+Europe,PRT,Total,2022,10.255
+Europe,PRT,Total,2023,9.914
+Europe,PRT,Total,2024,7.7
+Europe,PRT,Total,2025,8.449
+Europe,PRT,Total ex-CLO,2015,34.076
+Europe,PRT,Total ex-CLO,2016,31.525
+Europe,PRT,Total ex-CLO,2017,28.733
+Europe,PRT,Total ex-CLO,2018,28.896
+Europe,PRT,Total ex-CLO,2019,20.778
+Europe,PRT,Total ex-CLO,2020,18.051
+Europe,PRT,Total ex-CLO,2021,17.61
+Europe,PRT,Total ex-CLO,2022,10.255
+Europe,PRT,Total ex-CLO,2023,9.9
+Europe,PRT,Total ex-CLO,2024,7.7
+Europe,PRT,Total ex-CLO,2025,8.5
+Europe,Pan Europe,Auto,2020,0.0
+Europe,Pan Europe,Auto,2021,0.0
+Europe,Pan Europe,Auto,2022,0.0
+Europe,Pan Europe,Auto,2023,0.0
+Europe,Pan Europe,Auto,2024,0.0
+Europe,Pan Europe,Auto,2025,0.194
+Europe,Pan Europe,CMBS,2020,1.492
+Europe,Pan Europe,CMBS,2021,2.979
+Europe,Pan Europe,CMBS,2022,2.715
+Europe,Pan Europe,CMBS,2023,2.1
+Europe,Pan Europe,CMBS,2024,2.0
+Europe,Pan Europe,CMBS,2025,2.603
+Europe,Pan Europe,Cards,2020,0.0
+Europe,Pan Europe,Cards,2021,0.0
+Europe,Pan Europe,Cards,2022,0.0
+Europe,Pan Europe,Cards,2023,0.0
+Europe,Pan Europe,Cards,2024,0.0
+Europe,Pan Europe,Cards,2025,0.0
+Europe,Pan Europe,Consumer,2020,0.0
+Europe,Pan Europe,Consumer,2021,0.0
+Europe,Pan Europe,Consumer,2022,0.0
+Europe,Pan Europe,Consumer,2023,0.0
+Europe,Pan Europe,Consumer,2024,0.0
+Europe,Pan Europe,Consumer,2025,0.0
+Europe,Pan Europe,Leases,2020,0.0
+Europe,Pan Europe,Leases,2021,0.0
+Europe,Pan Europe,Leases,2022,0.0
+Europe,Pan Europe,Leases,2023,0.0
+Europe,Pan Europe,Leases,2024,0.0
+Europe,Pan Europe,Leases,2025,0.0
+Europe,Pan Europe,Other,2020,0.157
+Europe,Pan Europe,Other,2021,0.0
+Europe,Pan Europe,Other,2022,0.0
+Europe,Pan Europe,Other,2023,0.0
+Europe,Pan Europe,Other,2024,0.0
+Europe,Pan Europe,Other,2025,0.0
+Europe,Pan Europe,RMBS,2020,3.2
+Europe,Pan Europe,RMBS,2021,3.2
+Europe,Pan Europe,RMBS,2022,3.2
+Europe,Pan Europe,RMBS,2023,3.2
+Europe,Pan Europe,RMBS,2024,3.2
+Europe,Pan Europe,RMBS,2025,3.186
+Europe,Pan Europe,SME ABS,2020,0.076
+Europe,Pan Europe,SME ABS,2021,0.076
+Europe,Pan Europe,SME ABS,2022,0.076
+Europe,Pan Europe,SME ABS,2023,0.1
+Europe,Pan Europe,SME ABS,2024,0.1
+Europe,Pan Europe,SME ABS,2025,0.076
+Europe,Pan Europe,TOTAL,2020,4.925
+Europe,Pan Europe,TOTAL,2021,6.254
+Europe,Pan Europe,Total,2022,5.99
+Europe,Pan Europe,Total,2023,5.4
+Europe,Pan Europe,Total,2024,5.3
+Europe,Pan Europe,Total,2025,6.059
+Europe,Pan Europe,Total ex-CLO,2015,8.597
+Europe,Pan Europe,Total ex-CLO,2016,7.284
+Europe,Pan Europe,Total ex-CLO,2017,6.057
+Europe,Pan Europe,Total ex-CLO,2018,5.508
+Europe,Pan Europe,Total ex-CLO,2019,4.801
+Europe,Pan Europe,Total ex-CLO,2020,4.925
+Europe,Pan Europe,Total ex-CLO,2021,6.254
+Europe,Pan Europe,Total ex-CLO,2022,5.99
+Europe,Pan Europe,Total ex-CLO,2023,5.4
+Europe,Pan Europe,Total ex-CLO,2024,5.2
+Europe,Pan Europe,Total ex-CLO,2025,6.06
+Europe,Total,Auto,2015,61.968
+Europe,Total,Auto,2016,68.641
+Europe,Total,Auto,2017,71.871
+Europe,Total,Auto,2018,75.054
+Europe,Total,Auto,2019,82.519
+Europe,Total,Auto,2020,90.837
+Europe,Total,Auto,2021,94.715
+Europe,Total,Auto,2022,78.597
+Europe,Total,Auto,2023,74.3
+Europe,Total,Auto,2024,76.7
+Europe,Total,Auto,2025,79.5
+Europe,Total,CLO / CDO,2015,99.903
+Europe,Total,CLO / CDO,2016,105.56
+Europe,Total,CLO / CDO,2017,107.31
+Europe,Total,CLO / CDO,2018,120.108
+Europe,Total,CLO / CDO,2019,146.099
+Europe,Total,CLO / CDO,2020,162.63
+Europe,Total,CLO / CDO,2021,179.161
+Europe,Total,CLO / CDO,2022,207.3
+Europe,Total,CLO / CDO,2023,228.8
+Europe,Total,CLO / CDO,2024,260.9
+Europe,Total,CLO / CDO,2025,303.1
+Europe,Total,CMBS,2015,53.405
+Europe,Total,CMBS,2016,46.773
+Europe,Total,CMBS,2017,37.88
+Europe,Total,CMBS,2018,33.324
+Europe,Total,CMBS,2019,32.532
+Europe,Total,CMBS,2020,31.276
+Europe,Total,CMBS,2021,35.187
+Europe,Total,CMBS,2022,35.2
+Europe,Total,CMBS,2023,33.1
+Europe,Total,CMBS,2024,28.4
+Europe,Total,CMBS,2025,31.8
+Europe,Total,Cards,2015,28.047
+Europe,Total,Cards,2016,28.184
+Europe,Total,Cards,2017,25.881
+Europe,Total,Cards,2018,26.731
+Europe,Total,Cards,2019,27.307
+Europe,Total,Cards,2020,21.587
+Europe,Total,Cards,2021,26.204
+Europe,Total,Cards,2022,24.516
+Europe,Total,Cards,2023,25.6
+Europe,Total,Cards,2024,25.7
+Europe,Total,Cards,2025,24.7
+Europe,Total,Consumer,2015,40.707
+Europe,Total,Consumer,2016,53.265
+Europe,Total,Consumer,2017,64.399
+Europe,Total,Consumer,2018,68.888
+Europe,Total,Consumer,2019,63.575
+Europe,Total,Consumer,2020,78.176
+Europe,Total,Consumer,2021,83.193
+Europe,Total,Consumer,2022,81.086
+Europe,Total,Consumer,2023,87.5
+Europe,Total,Consumer,2024,97.2
+Europe,Total,Consumer,2025,107.6
+Europe,Total,Leases,2015,12.582
+Europe,Total,Leases,2016,14.768
+Europe,Total,Leases,2017,17.689
+Europe,Total,Leases,2018,18.6
+Europe,Total,Leases,2019,18.084
+Europe,Total,Leases,2020,16.498
+Europe,Total,Leases,2021,17.035
+Europe,Total,Leases,2022,9.937
+Europe,Total,Leases,2023,11.9
+Europe,Total,Leases,2024,8.9
+Europe,Total,Leases,2025,9.2
+Europe,Total,Other,2015,65.023
+Europe,Total,Other,2016,58.428
+Europe,Total,Other,2017,53.426
+Europe,Total,Other,2018,55.29
+Europe,Total,Other,2019,59.677
+Europe,Total,Other,2020,57.416
+Europe,Total,Other,2021,53.411
+Europe,Total,Other,2022,48.934
+Europe,Total,Other,2023,47.7
+Europe,Total,Other,2024,41.6
+Europe,Total,Other,2025,40.2
+Europe,Total,RMBS,2015,767.163
+Europe,Total,RMBS,2016,717.729
+Europe,Total,RMBS,2017,691.053
+Europe,Total,RMBS,2018,666.951
+Europe,Total,RMBS,2019,640.365
+Europe,Total,RMBS,2020,605.155
+Europe,Total,RMBS,2021,588.932
+Europe,Total,RMBS,2022,529.449
+Europe,Total,RMBS,2023,554.3
+Europe,Total,RMBS,2024,570.1
+Europe,Total,RMBS,2025,582.9
+Europe,Total,SME ABS,2015,97.712
+Europe,Total,SME ABS,2016,80.721
+Europe,Total,SME ABS,2017,77.509
+Europe,Total,SME ABS,2018,69.585
+Europe,Total,SME ABS,2019,84.54
+Europe,Total,SME ABS,2020,91.862
+Europe,Total,SME ABS,2021,110.781
+Europe,Total,SME ABS,2022,119.623
+Europe,Total,SME ABS,2023,117.4
+Europe,Total,SME ABS,2024,108.1
+Europe,Total,SME ABS,2025,115.2
+Europe,Total,Total (incl. CLO / CDO),2015,1226.511
+Europe,Total,Total (incl. CLO / CDO),2016,1174.069
+Europe,Total,Total (incl. CLO / CDO),2017,1147.018
+Europe,Total,Total (incl. CLO / CDO),2018,1134.531
+Europe,Total,Total (incl. CLO / CDO),2019,1154.698
+Europe,Total,Total (incl. CLO / CDO),2020,1155.436
+Europe,Total,Total (incl. CLO / CDO),2021,1188.62
+Europe,Total,Total (incl. CLO / CDO),2022,1134.641
+Europe,Total,Total (incl. CLO / CDO),2023,1180.6
+Europe,Total,Total (incl. CLO / CDO),2024,1217.6
+Europe,Total,Total (incl. CLO / CDO),2025,1294.2
+Europe,Total,Total*,2015,1126.607
+Europe,Total,Total*,2016,1068.509
+Europe,Total,Total*,2017,1039.708
+Europe,Total,Total*,2018,1014.423
+Europe,Total,Total*,2019,1008.599
+Europe,Total,Total*,2020,992.806
+Europe,Total,Total*,2021,1009.459
+Europe,Total,Total*,2022,927.341
+Europe,Total,Total*,2023,951.8
+Europe,Total,Total*,2024,956.7
+Europe,Total,Total*,2025,991.1
+US,Total,ABS,2015,1273.833
+US,Total,ABS,2016,1327.648
+US,Total,ABS,2017,1226.537
+US,Total,ABS,2018,1338.991
+US,Total,ABS,2019,1502.365
+US,Total,ABS,2020,1287.806
+US,Total,ABS,2021,1386.461
+US,Total,ABS,2022,1667.673
+US,Total,ABS,2023,1581.408
+US,Total,ABS,2024,1729.541
+US,Total,Agency MBS,2015,5725.914
+US,Total,Agency MBS,2016,6207.288
+US,Total,Agency MBS,2017,5767.961
+US,Total,Agency MBS,2018,6059.463
+US,Total,Agency MBS,2019,6964.895
+US,Total,Agency MBS,2020,7075.766
+US,Total,Agency MBS,2021,8134.802
+US,Total,Agency MBS,2022,8079.098
+US,Total,Agency MBS,2023,8079.978
+US,Total,Agency MBS,2024,8275.372
+US,Total,Non-Agency CMBS,2015,555.539
+US,Total,Non-Agency CMBS,2016,505.32
+US,Total,Non-Agency CMBS,2017,423.573
+US,Total,Non-Agency CMBS,2018,448.337
+US,Total,Non-Agency CMBS,2019,538.593
+US,Total,Non-Agency CMBS,2020,500.081
+US,Total,Non-Agency CMBS,2021,588.414
+US,Total,Non-Agency CMBS,2022,1542.313
+US,Total,Non-Agency CMBS,2023,1522.221
+US,Total,Non-Agency CMBS,2024,1586.336
+US,Total,Non-Agency RMBS,2015,851.623
+US,Total,Non-Agency RMBS,2016,811.246
+US,Total,Non-Agency RMBS,2017,659.106
+US,Total,Non-Agency RMBS,2018,679.426
+US,Total,Non-Agency RMBS,2019,727.412
+US,Total,Non-Agency RMBS,2020,657.174
+US,Total,Non-Agency RMBS,2021,734.445
+US,Total,Non-Agency RMBS,2022,585.015
+US,Total,Non-Agency RMBS,2023,574.301
+US,Total,Non-Agency RMBS,2024,624.556
+US,Total,Total,2015,8406.91
+US,Total,Total,2016,8851.502
+US,Total,Total,2017,8077.177
+US,Total,Total,2018,8526.217
+US,Total,Total,2019,9733.265
+US,Total,Total,2020,9520.827
+US,Total,Total,2021,10844.122
+US,Total,Total,2022,11874.099
+US,Total,Total,2023,11757.907
+US,Total,Total,2024,12215.806
+US,US Total,Total ex-CLO,2015,8406.91
+US,US Total,Total ex-CLO,2016,8851.502
+US,US Total,Total ex-CLO,2017,8077.177
+US,US Total,Total ex-CLO,2018,8526.217
+US,US Total,Total ex-CLO,2019,9733.265
+US,US Total,Total ex-CLO,2020,9520.827
+US,US Total,Total ex-CLO,2021,10844.122

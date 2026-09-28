@@ -1,0 +1,2734 @@
+table,unit,breakdown,category,area,value,se
+C1,% of households,DA2100i Has financial assets,,AUT,99.9,0.1
+C1,% of households,DA2100i Has financial assets,,BEL,98.1,0.3
+C1,% of households,DA2100i Has financial assets,,CYP,77.4,1.7
+C1,% of households,DA2100i Has financial assets,,CZE,97.5,0.3
+C1,% of households,DA2100i Has financial assets,,DEU,99.7,0.1
+C1,% of households,DA2100i Has financial assets,,EA,98.7,0.2
+C1,% of households,DA2100i Has financial assets,,ESP,99.6,0.3
+C1,% of households,DA2100i Has financial assets,,EST,99.6,0.2
+C1,% of households,DA2100i Has financial assets,,FIN,100.0,0.1
+C1,% of households,DA2100i Has financial assets,,FRA,99.8,0.1
+C1,% of households,DA2100i Has financial assets,,GRC,98.9,0.3
+C1,% of households,DA2100i Has financial assets,,HRV,86.8,1.5
+C1,% of households,DA2100i Has financial assets,,HUN,89.2,0.4
+C1,% of households,DA2100i Has financial assets,,IRL,97.5,0.4
+C1,% of households,DA2100i Has financial assets,,ITA,95.8,0.9
+C1,% of households,DA2100i Has financial assets,,LTU,92.7,1.5
+C1,% of households,DA2100i Has financial assets,,LUX,97.2,0.6
+C1,% of households,DA2100i Has financial assets,,LVA,97.4,0.8
+C1,% of households,DA2100i Has financial assets,,MLT,96.0,0.1
+C1,% of households,DA2100i Has financial assets,,NLD,100.0,0.1
+C1,% of households,DA2100i Has financial assets,,PRT,98.2,0.3
+C1,% of households,DA2100i Has financial assets,,SVK,94.3,0.6
+C1,% of households,DA2100i Has financial assets,,SVN,95.6,0.7
+C1,% of households,DA2101i Has deposits,,AUT,99.9,0.1
+C1,% of households,DA2101i Has deposits,,BEL,97.8,0.3
+C1,% of households,DA2101i Has deposits,,CYP,75.4,1.7
+C1,% of households,DA2101i Has deposits,,CZE,94.4,0.4
+C1,% of households,DA2101i Has deposits,,DEU,99.5,0.2
+C1,% of households,DA2101i Has deposits,,EA,98.6,0.2
+C1,% of households,DA2101i Has deposits,,ESP,99.6,0.3
+C1,% of households,DA2101i Has deposits,,EST,99.6,0.2
+C1,% of households,DA2101i Has deposits,,FIN,100.0,0.1
+C1,% of households,DA2101i Has deposits,,FRA,99.8,0.1
+C1,% of households,DA2101i Has deposits,,GRC,98.9,0.3
+C1,% of households,DA2101i Has deposits,,HRV,86.2,1.5
+C1,% of households,DA2101i Has deposits,,HUN,88.8,0.4
+C1,% of households,DA2101i Has deposits,,IRL,97.1,0.6
+C1,% of households,DA2101i Has deposits,,ITA,95.8,0.9
+C1,% of households,DA2101i Has deposits,,LTU,92.2,1.6
+C1,% of households,DA2101i Has deposits,,LUX,91.5,0.9
+C1,% of households,DA2101i Has deposits,,LVA,97.1,0.7
+C1,% of households,DA2101i Has deposits,,MLT,96.0,0.1
+C1,% of households,DA2101i Has deposits,,NLD,100.0,0.1
+C1,% of households,DA2101i Has deposits,,PRT,98.1,0.3
+C1,% of households,DA2101i Has deposits,,SVK,93.9,0.7
+C1,% of households,DA2101i Has deposits,,SVN,95.1,0.7
+C1,% of households,DA2102i Has mutual funds,,AUT,12.3,0.9
+C1,% of households,DA2102i Has mutual funds,,BEL,22.8,1.1
+C1,% of households,DA2102i Has mutual funds,,CYP,0.5,0.2
+C1,% of households,DA2102i Has mutual funds,,CZE,8.0,0.5
+C1,% of households,DA2102i Has mutual funds,,DEU,20.6,0.8
+C1,% of households,DA2102i Has mutual funds,,EA,12.5,0.3
+C1,% of households,DA2102i Has mutual funds,,ESP,8.5,0.5
+C1,% of households,DA2102i Has mutual funds,,EST,7.9,0.7
+C1,% of households,DA2102i Has mutual funds,,FIN,34.2,0.3
+C1,% of households,DA2102i Has mutual funds,,FRA,8.7,0.4
+C1,% of households,DA2102i Has mutual funds,,GRC,0.8,0.2
+C1,% of households,DA2102i Has mutual funds,,HRV,0.5,0.2
+C1,% of households,DA2102i Has mutual funds,,HUN,3.5,0.3
+C1,% of households,DA2102i Has mutual funds,,IRL,3.6,0.3
+C1,% of households,DA2102i Has mutual funds,,ITA,7.4,0.9
+C1,% of households,DA2102i Has mutual funds,,LTU,2.8,0.7
+C1,% of households,DA2102i Has mutual funds,,LUX,24.4,1.3
+C1,% of households,DA2102i Has mutual funds,,LVA,0.8,0.2
+C1,% of households,DA2102i Has mutual funds,,MLT,4.9,0.1
+C1,% of households,DA2102i Has mutual funds,,NLD,15.6,0.7
+C1,% of households,DA2102i Has mutual funds,,PRT,3.5,0.3
+C1,% of households,DA2102i Has mutual funds,,SVK,4.4,0.7
+C1,% of households,DA2102i Has mutual funds,,SVN,9.1,0.7
+C1,% of households,DA2103i Has bonds,,AUT,2.5,0.4
+C1,% of households,DA2103i Has bonds,,BEL,2.2,0.4
+C1,% of households,DA2103i Has bonds,,CYP,0.6,0.3
+C1,% of households,DA2103i Has bonds,,CZE,1.7,0.3
+C1,% of households,DA2103i Has bonds,,DEU,3.1,0.3
+C1,% of households,DA2103i Has bonds,,EA,3.0,0.2
+C1,% of households,DA2103i Has bonds,,ESP,0.5,0.1
+C1,% of households,DA2103i Has bonds,,EST,1.9,0.3
+C1,% of households,DA2103i Has bonds,,FIN,0.7,0.1
+C1,% of households,DA2103i Has bonds,,FRA,0.6,0.1
+C1,% of households,DA2103i Has bonds,,GRC,0.4,0.2
+C1,% of households,DA2103i Has bonds,,HRV,0.2,0.2
+C1,% of households,DA2103i Has bonds,,HUN,9.0,0.5
+C1,% of households,DA2103i Has bonds,,IRL,11.0,0.5
+C1,% of households,DA2103i Has bonds,,ITA,9.6,1.2
+C1,% of households,DA2103i Has bonds,,LTU,0.9,0.4
+C1,% of households,DA2103i Has bonds,,LUX,2.1,0.4
+C1,% of households,DA2103i Has bonds,,LVA,1.2,0.6
+C1,% of households,DA2103i Has bonds,,MLT,19.1,0.1
+C1,% of households,DA2103i Has bonds,,NLD,0.5,0.1
+C1,% of households,DA2103i Has bonds,,PRT,0.8,0.1
+C1,% of households,DA2103i Has bonds,,SVK,0.7,0.3
+C1,% of households,DA2103i Has bonds,,SVN,0.5,0.1
+C1,% of households,DA2105i Has shares (publicly traded),,AUT,6.1,0.6
+C1,% of households,DA2105i Has shares (publicly traded),,BEL,11.1,0.8
+C1,% of households,DA2105i Has shares (publicly traded),,CYP,5.9,0.9
+C1,% of households,DA2105i Has shares (publicly traded),,CZE,3.9,0.4
+C1,% of households,DA2105i Has shares (publicly traded),,DEU,15.4,0.7
+C1,% of households,DA2105i Has shares (publicly traded),,EA,10.8,0.3
+C1,% of households,DA2105i Has shares (publicly traded),,ESP,12.4,0.6
+C1,% of households,DA2105i Has shares (publicly traded),,EST,8.9,0.6
+C1,% of households,DA2105i Has shares (publicly traded),,FIN,20.3,0.2
+C1,% of households,DA2105i Has shares (publicly traded),,FRA,12.1,0.4
+C1,% of households,DA2105i Has shares (publicly traded),,GRC,1.2,0.3
+C1,% of households,DA2105i Has shares (publicly traded),,HRV,3.5,0.7
+C1,% of households,DA2105i Has shares (publicly traded),,HUN,2.1,0.2
+C1,% of households,DA2105i Has shares (publicly traded),,IRL,10.7,0.6
+C1,% of households,DA2105i Has shares (publicly traded),,ITA,5.7,0.8
+C1,% of households,DA2105i Has shares (publicly traded),,LTU,1.2,0.3
+C1,% of households,DA2105i Has shares (publicly traded),,LUX,18.0,1.1
+C1,% of households,DA2105i Has shares (publicly traded),,LVA,1.8,0.7
+C1,% of households,DA2105i Has shares (publicly traded),,MLT,8.0,0.1
+C1,% of households,DA2105i Has shares (publicly traded),,NLD,6.1,0.5
+C1,% of households,DA2105i Has shares (publicly traded),,PRT,4.7,0.3
+C1,% of households,DA2105i Has shares (publicly traded),,SVK,1.8,0.5
+C1,% of households,DA2105i Has shares (publicly traded),,SVN,5.2,0.5
+C1,% of households,DA2107i Has money owed to household,,AUT,7.6,0.7
+C1,% of households,DA2107i Has money owed to household,,BEL,6.5,0.6
+C1,% of households,DA2107i Has money owed to household,,CYP,3.2,0.6
+C1,% of households,DA2107i Has money owed to household,,CZE,9.1,0.6
+C1,% of households,DA2107i Has money owed to household,,DEU,10.5,0.8
+C1,% of households,DA2107i Has money owed to household,,EA,6.4,0.3
+C1,% of households,DA2107i Has money owed to household,,ESP,12.0,0.6
+C1,% of households,DA2107i Has money owed to household,,EST,6.5,0.6
+C1,% of households,DA2107i Has money owed to household,,FIN,0.0,0.1
+C1,% of households,DA2107i Has money owed to household,,FRA,3.7,0.3
+C1,% of households,DA2107i Has money owed to household,,GRC,2.3,0.3
+C1,% of households,DA2107i Has money owed to household,,HRV,2.3,0.5
+C1,% of households,DA2107i Has money owed to household,,HUN,4.0,0.3
+C1,% of households,DA2107i Has money owed to household,,IRL,3.1,0.4
+C1,% of households,DA2107i Has money owed to household,,ITA,0.9,0.3
+C1,% of households,DA2107i Has money owed to household,,LTU,7.3,1.1
+C1,% of households,DA2107i Has money owed to household,,LUX,8.2,0.9
+C1,% of households,DA2107i Has money owed to household,,LVA,5.1,1.0
+C1,% of households,DA2107i Has money owed to household,,MLT,2.5,0.1
+C1,% of households,DA2107i Has money owed to household,,NLD,5.2,0.5
+C1,% of households,DA2107i Has money owed to household,,PRT,6.3,0.5
+C1,% of households,DA2107i Has money owed to household,,SVK,3.4,0.6
+C1,% of households,DA2107i Has money owed to household,,SVN,3.2,0.4
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,AUT,6.7,0.7
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,BEL,41.3,1.2
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,CYP,12.4,1.4
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,CZE,64.4,0.9
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,DEU,41.9,1.1
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,EA,28.3,0.4
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,ESP,23.5,0.7
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,EST,22.4,0.9
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,FIN,27.3,0.5
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,FRA,39.8,0.8
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,GRC,0.6,0.2
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,HRV,2.8,0.6
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,HUN,17.4,0.6
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,IRL,19.0,0.7
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,ITA,11.2,1.1
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,LTU,13.8,1.5
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,LUX,61.0,1.6
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,LVA,25.1,2.4
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,MLT,10.2,0.1
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,NLD,12.6,0.8
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,PRT,18.7,0.7
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,SVK,16.1,1.4
+C1,% of households,DA2109i Has voluntary pensions/whole life insurance,,SVN,19.7,1.0
+C1,% of households,DA2199i Has other types of financial assets,,AUT,3.1,0.5
+C1,% of households,DA2199i Has other types of financial assets,,BEL,4.7,0.5
+C1,% of households,DA2199i Has other types of financial assets,,CYP,0.6,0.2
+C1,% of households,DA2199i Has other types of financial assets,,CZE,16.6,0.9
+C1,% of households,DA2199i Has other types of financial assets,,DEU,18.0,0.9
+C1,% of households,DA2199i Has other types of financial assets,,EA,9.6,0.3
+C1,% of households,DA2199i Has other types of financial assets,,ESP,5.8,0.4
+C1,% of households,DA2199i Has other types of financial assets,,EST,7.6,0.6
+C1,% of households,DA2199i Has other types of financial assets,,FIN,16.4,0.4
+C1,% of households,DA2199i Has other types of financial assets,,FRA,9.5,0.4
+C1,% of households,DA2199i Has other types of financial assets,,GRC,0.5,0.1
+C1,% of households,DA2199i Has other types of financial assets,,HRV,0.5,0.3
+C1,% of households,DA2199i Has other types of financial assets,,HUN,4.8,0.4
+C1,% of households,DA2199i Has other types of financial assets,,IRL,4.2,0.5
+C1,% of households,DA2199i Has other types of financial assets,,ITA,7.2,0.9
+C1,% of households,DA2199i Has other types of financial assets,,LTU,2.0,0.6
+C1,% of households,DA2199i Has other types of financial assets,,LUX,7.9,0.9
+C1,% of households,DA2199i Has other types of financial assets,,LVA,1.1,0.7
+C1,% of households,DA2199i Has other types of financial assets,,MLT,1.5,0.1
+C1,% of households,DA2199i Has other types of financial assets,,NLD,2.9,0.4
+C1,% of households,DA2199i Has other types of financial assets,,PRT,1.4,0.2
+C1,% of households,DA2199i Has other types of financial assets,,SVK,1.1,0.3
+C1,% of households,DA2199i Has other types of financial assets,,SVN,3.4,0.4
+C2,EUR thousands,DA2100 Total financial assets,,AUT,18.7,0.8
+C2,EUR thousands,DA2100 Total financial assets,,BEL,28.5,1.6
+C2,EUR thousands,DA2100 Total financial assets,,CYP,5.5,1.1
+C2,EUR thousands,DA2100 Total financial assets,,CZE,9.5,0.3
+C2,EUR thousands,DA2100 Total financial assets,,DEU,25.9,1.5
+C2,EUR thousands,DA2100 Total financial assets,,EA,14.7,0.5
+C2,EUR thousands,DA2100 Total financial assets,,ESP,12.0,0.6
+C2,EUR thousands,DA2100 Total financial assets,,EST,5.1,0.3
+C2,EUR thousands,DA2100 Total financial assets,,FIN,12.6,0.5
+C2,EUR thousands,DA2100 Total financial assets,,FRA,15.2,0.7
+C2,EUR thousands,DA2100 Total financial assets,,GRC,2.2,0.3
+C2,EUR thousands,DA2100 Total financial assets,,HRV,0.5,0.1
+C2,EUR thousands,DA2100 Total financial assets,,HUN,3.5,0.2
+C2,EUR thousands,DA2100 Total financial assets,,IRL,15.4,0.9
+C2,EUR thousands,DA2100 Total financial assets,,ITA,9.9,1.2
+C2,EUR thousands,DA2100 Total financial assets,,LTU,1.5,0.2
+C2,EUR thousands,DA2100 Total financial assets,,LUX,80.4,6.0
+C2,EUR thousands,DA2100 Total financial assets,,LVA,1.6,0.3
+C2,EUR thousands,DA2100 Total financial assets,,MLT,16.8,0.1
+C2,EUR thousands,DA2100 Total financial assets,,NLD,20.7,0.7
+C2,EUR thousands,DA2100 Total financial assets,,PRT,6.3,0.5
+C2,EUR thousands,DA2100 Total financial assets,,SVK,5.0,0.5
+C2,EUR thousands,DA2100 Total financial assets,,SVN,2.7,0.3
+C2,EUR thousands,DA2101 Deposits,,AUT,16.0,0.6
+C2,EUR thousands,DA2101 Deposits,,BEL,14.2,1.0
+C2,EUR thousands,DA2101 Deposits,,CYP,4.2,0.9
+C2,EUR thousands,DA2101 Deposits,,CZE,4.9,0.2
+C2,EUR thousands,DA2101 Deposits,,DEU,12.5,0.7
+C2,EUR thousands,DA2101 Deposits,,EA,9.0,0.3
+C2,EUR thousands,DA2101 Deposits,,ESP,7.0,0.5
+C2,EUR thousands,DA2101 Deposits,,EST,4.3,0.3
+C2,EUR thousands,DA2101 Deposits,,FIN,6.1,0.3
+C2,EUR thousands,DA2101 Deposits,,FRA,9.5,0.5
+C2,EUR thousands,DA2101 Deposits,,GRC,2.0,0.2
+C2,EUR thousands,DA2101 Deposits,,HRV,0.4,0.1
+C2,EUR thousands,DA2101 Deposits,,HUN,2.1,0.1
+C2,EUR thousands,DA2101 Deposits,,IRL,9.7,0.6
+C2,EUR thousands,DA2101 Deposits,,ITA,7.0,0.7
+C2,EUR thousands,DA2101 Deposits,,LTU,1.0,0.1
+C2,EUR thousands,DA2101 Deposits,,LUX,35.7,3.4
+C2,EUR thousands,DA2101 Deposits,,LVA,1.2,0.2
+C2,EUR thousands,DA2101 Deposits,,MLT,11.8,0.1
+C2,EUR thousands,DA2101 Deposits,,NLD,16.1,0.6
+C2,EUR thousands,DA2101 Deposits,,PRT,5.0,0.2
+C2,EUR thousands,DA2101 Deposits,,SVK,3.8,0.1
+C2,EUR thousands,DA2101 Deposits,,SVN,1.3,0.2
+C2,EUR thousands,"DA2102 Mutual funds, total",,AUT,22.0,2.4
+C2,EUR thousands,"DA2102 Mutual funds, total",,BEL,36.5,8.8
+C2,EUR thousands,"DA2102 Mutual funds, total",,CZE,3.9,0.7
+C2,EUR thousands,"DA2102 Mutual funds, total",,DEU,16.0,2.0
+C2,EUR thousands,"DA2102 Mutual funds, total",,EA,17.3,1.5
+C2,EUR thousands,"DA2102 Mutual funds, total",,ESP,25.0,2.9
+C2,EUR thousands,"DA2102 Mutual funds, total",,EST,1.4,0.2
+C2,EUR thousands,"DA2102 Mutual funds, total",,FIN,6.2,0.3
+C2,EUR thousands,"DA2102 Mutual funds, total",,FRA,10.0,1.5
+C2,EUR thousands,"DA2102 Mutual funds, total",,GRC,20.6,11.3
+C2,EUR thousands,"DA2102 Mutual funds, total",,HUN,13.7,2.1
+C2,EUR thousands,"DA2102 Mutual funds, total",,IRL,68.3,10.8
+C2,EUR thousands,"DA2102 Mutual funds, total",,ITA,20.0,4.8
+C2,EUR thousands,"DA2102 Mutual funds, total",,LTU,2.3,1.5
+C2,EUR thousands,"DA2102 Mutual funds, total",,LUX,70.5,9.4
+C2,EUR thousands,"DA2102 Mutual funds, total",,MLT,22.0,0.2
+C2,EUR thousands,"DA2102 Mutual funds, total",,NLD,14.9,1.9
+C2,EUR thousands,"DA2102 Mutual funds, total",,PRT,9.6,1.7
+C2,EUR thousands,"DA2102 Mutual funds, total",,SVK,6.9,2.2
+C2,EUR thousands,"DA2102 Mutual funds, total",,SVN,6.4,1.2
+C2,EUR thousands,DA2103 Bonds,,AUT,17.6,5.9
+C2,EUR thousands,DA2103 Bonds,,BEL,12.0,4.7
+C2,EUR thousands,DA2103 Bonds,,CZE,7.8,2.0
+C2,EUR thousands,DA2103 Bonds,,DEU,10.0,2.9
+C2,EUR thousands,DA2103 Bonds,,EA,15.9,3.0
+C2,EUR thousands,DA2103 Bonds,,ESP,10.0,10.0
+C2,EUR thousands,DA2103 Bonds,,EST,0.6,0.7
+C2,EUR thousands,DA2103 Bonds,,FIN,12.0,3.5
+C2,EUR thousands,DA2103 Bonds,,FRA,11.5,2.6
+C2,EUR thousands,DA2103 Bonds,,HUN,11.7,1.2
+C2,EUR thousands,DA2103 Bonds,,IRL,1.0,0.3
+C2,EUR thousands,DA2103 Bonds,,ITA,20.0,4.9
+C2,EUR thousands,DA2103 Bonds,,LUX,58.6,20.6
+C2,EUR thousands,DA2103 Bonds,,MLT,10.1,0.4
+C2,EUR thousands,DA2103 Bonds,,PRT,17.2,5.5
+C2,EUR thousands,"DA2105 Shares, publicly traded",,AUT,14.8,3.0
+C2,EUR thousands,"DA2105 Shares, publicly traded",,BEL,14.4,3.5
+C2,EUR thousands,"DA2105 Shares, publicly traded",,CYP,0.5,0.3
+C2,EUR thousands,"DA2105 Shares, publicly traded",,CZE,3.9,0.6
+C2,EUR thousands,"DA2105 Shares, publicly traded",,DEU,15.0,1.9
+C2,EUR thousands,"DA2105 Shares, publicly traded",,EA,10.0,0.5
+C2,EUR thousands,"DA2105 Shares, publicly traded",,ESP,6.0,1.0
+C2,EUR thousands,"DA2105 Shares, publicly traded",,EST,2.3,0.7
+C2,EUR thousands,"DA2105 Shares, publicly traded",,FIN,7.4,0.1
+C2,EUR thousands,"DA2105 Shares, publicly traded",,FRA,6.0,0.6
+C2,EUR thousands,"DA2105 Shares, publicly traded",,HRV,1.3,0.4
+C2,EUR thousands,"DA2105 Shares, publicly traded",,HUN,5.8,1.2
+C2,EUR thousands,"DA2105 Shares, publicly traded",,IRL,5.0,0.8
+C2,EUR thousands,"DA2105 Shares, publicly traded",,ITA,11.8,3.3
+C2,EUR thousands,"DA2105 Shares, publicly traded",,LTU,7.0,3.3
+C2,EUR thousands,"DA2105 Shares, publicly traded",,LUX,39.0,7.2
+C2,EUR thousands,"DA2105 Shares, publicly traded",,MLT,13.5,0.3
+C2,EUR thousands,"DA2105 Shares, publicly traded",,NLD,11.9,2.1
+C2,EUR thousands,"DA2105 Shares, publicly traded",,PRT,2.1,0.6
+C2,EUR thousands,"DA2105 Shares, publicly traded",,SVK,6.9,5.2
+C2,EUR thousands,"DA2105 Shares, publicly traded",,SVN,5.2,1.1
+C2,EUR thousands,DA2107 Money owed to households,,AUT,3.5,0.5
+C2,EUR thousands,DA2107 Money owed to households,,BEL,5.0,1.3
+C2,EUR thousands,DA2107 Money owed to households,,CYP,5.9,3.0
+C2,EUR thousands,DA2107 Money owed to households,,CZE,2.0,0.2
+C2,EUR thousands,DA2107 Money owed to households,,DEU,2.0,0.5
+C2,EUR thousands,DA2107 Money owed to households,,EA,3.0,0.2
+C2,EUR thousands,DA2107 Money owed to households,,ESP,5.0,0.6
+C2,EUR thousands,DA2107 Money owed to households,,EST,1.3,0.3
+C2,EUR thousands,DA2107 Money owed to households,,FRA,2.9,0.5
+C2,EUR thousands,DA2107 Money owed to households,,GRC,1.8,0.6
+C2,EUR thousands,DA2107 Money owed to households,,HRV,0.7,0.5
+C2,EUR thousands,DA2107 Money owed to households,,HUN,1.5,0.4
+C2,EUR thousands,DA2107 Money owed to households,,IRL,5.0,2.2
+C2,EUR thousands,DA2107 Money owed to households,,LTU,0.2,0.1
+C2,EUR thousands,DA2107 Money owed to households,,LUX,8.7,3.1
+C2,EUR thousands,DA2107 Money owed to households,,LVA,1.4,0.9
+C2,EUR thousands,DA2107 Money owed to households,,MLT,3.5,0.7
+C2,EUR thousands,DA2107 Money owed to households,,NLD,7.1,2.2
+C2,EUR thousands,DA2107 Money owed to households,,PRT,5.0,0.7
+C2,EUR thousands,DA2107 Money owed to households,,SVK,1.5,0.4
+C2,EUR thousands,DA2107 Money owed to households,,SVN,5.0,2.3
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,AUT,10.8,3.1
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,BEL,14.1,0.9
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,CYP,9.1,1.7
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,CZE,4.7,0.2
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,DEU,20.1,1.5
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,EA,15.8,0.6
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,ESP,10.0,0.6
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,EST,2.2,0.4
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,FIN,10.8,0.5
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,FRA,15.3,0.7
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,HRV,9.1,1.1
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,HUN,8.6,0.4
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,IRL,29.3,2.6
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,ITA,13.0,2.7
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,LTU,8.5,0.6
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,LUX,21.5,2.1
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,LVA,1.3,0.1
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,MLT,29.0,0.1
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,NLD,22.9,4.8
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,PRT,5.0,0.3
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,SVK,4.9,0.6
+C2,EUR thousands,DA2109 Voluntary pension/whole life insurance,,SVN,5.1,0.4
+C2,EUR thousands,DA2199 Other types of financial assets,,AUT,16.6,6.2
+C2,EUR thousands,DA2199 Other types of financial assets,,BEL,15.2,8.6
+C2,EUR thousands,DA2199 Other types of financial assets,,CZE,1.0,0.1
+C2,EUR thousands,DA2199 Other types of financial assets,,DEU,2.5,0.4
+C2,EUR thousands,DA2199 Other types of financial assets,,EA,4.5,0.5
+C2,EUR thousands,DA2199 Other types of financial assets,,ESP,16.9,4.1
+C2,EUR thousands,DA2199 Other types of financial assets,,EST,2.5,0.4
+C2,EUR thousands,DA2199 Other types of financial assets,,FIN,4.0,0.4
+C2,EUR thousands,DA2199 Other types of financial assets,,FRA,2.9,0.7
+C2,EUR thousands,DA2199 Other types of financial assets,,HUN,45.2,3.1
+C2,EUR thousands,DA2199 Other types of financial assets,,IRL,11.8,7.0
+C2,EUR thousands,DA2199 Other types of financial assets,,ITA,32.2,8.3
+C2,EUR thousands,DA2199 Other types of financial assets,,LUX,19.5,8.5
+C2,EUR thousands,DA2199 Other types of financial assets,,NLD,13.0,3.5
+C2,EUR thousands,DA2199 Other types of financial assets,,PRT,4.7,3.7
+C2,EUR thousands,DA2199 Other types of financial assets,,SVN,3.1,1.2
+C3,EUR thousands,Mean,,AUT,47.8,3.9
+C3,EUR thousands,Mean,,BEL,106.2,5.5
+C3,EUR thousands,Mean,,CYP,31.7,2.8
+C3,EUR thousands,Mean,,CZE,18.2,0.7
+C3,EUR thousands,Mean,,DEU,77.9,3.7
+C3,EUR thousands,Mean,,EA,63.1,2.2
+C3,EUR thousands,Mean,,ESP,64.5,5.0
+C3,EUR thousands,Mean,,EST,25.4,2.1
+C3,EUR thousands,Mean,,FIN,61.0,1.6
+C3,EUR thousands,Mean,,FRA,63.8,1.9
+C3,EUR thousands,Mean,,GRC,13.8,1.8
+C3,EUR thousands,Mean,,HRV,4.4,0.9
+C3,EUR thousands,Mean,,HUN,17.9,1.2
+C3,EUR thousands,Mean,,IRL,72.3,4.1
+C3,EUR thousands,Mean,,ITA,51.6,11.3
+C3,EUR thousands,Mean,,LTU,5.6,0.7
+C3,EUR thousands,Mean,,LUX,330.8,36.6
+C3,EUR thousands,Mean,,LVA,9.9,1.2
+C3,EUR thousands,Mean,,MLT,47.5,0.1
+C3,EUR thousands,Mean,,NLD,62.7,3.5
+C3,EUR thousands,Mean,,PRT,31.9,1.5
+C3,EUR thousands,Mean,,SVK,11.7,0.8
+C3,EUR thousands,Mean,,SVN,16.2,1.0
+C3,EUR thousands,p10,,AUT,1.0,0.1
+C3,EUR thousands,p10,,BEL,0.7,0.1
+C3,EUR thousands,p10,,CZE,1.1,0.1
+C3,EUR thousands,p10,,DEU,0.9,0.2
+C3,EUR thousands,p10,,EA,0.5,0.1
+C3,EUR thousands,p10,,ESP,0.3,0.1
+C3,EUR thousands,p10,,EST,0.1,0.1
+C3,EUR thousands,p10,,FIN,0.4,0.1
+C3,EUR thousands,p10,,FRA,0.5,0.1
+C3,EUR thousands,p10,,GRC,0.1,0.1
+C3,EUR thousands,p10,,HRV,0.0,0.1
+C3,EUR thousands,p10,,HUN,0.2,0.1
+C3,EUR thousands,p10,,IRL,1.1,0.1
+C3,EUR thousands,p10,,ITA,0.5,0.1
+C3,EUR thousands,p10,,LTU,0.1,0.1
+C3,EUR thousands,p10,,LUX,4.0,0.9
+C3,EUR thousands,p10,,MLT,0.3,0.1
+C3,EUR thousands,p10,,NLD,0.9,0.1
+C3,EUR thousands,p10,,PRT,0.2,0.1
+C3,EUR thousands,p10,,SVK,0.3,0.1
+C3,EUR thousands,p20,,AUT,3.7,0.4
+C3,EUR thousands,p20,,BEL,2.5,0.5
+C3,EUR thousands,p20,,CYP,0.5,0.1
+C3,EUR thousands,p20,,CZE,2.4,0.1
+C3,EUR thousands,p20,,DEU,3.8,0.4
+C3,EUR thousands,p20,,EA,1.7,0.1
+C3,EUR thousands,p20,,ESP,1.0,0.1
+C3,EUR thousands,p20,,EST,0.5,0.1
+C3,EUR thousands,p20,,FIN,1.5,0.1
+C3,EUR thousands,p20,,FRA,1.5,0.1
+C3,EUR thousands,p20,,GRC,0.3,0.1
+C3,EUR thousands,p20,,HUN,0.4,0.1
+C3,EUR thousands,p20,,IRL,2.8,0.2
+C3,EUR thousands,p20,,ITA,1.6,0.3
+C3,EUR thousands,p20,,LTU,0.3,0.1
+C3,EUR thousands,p20,,LUX,14.1,1.7
+C3,EUR thousands,p20,,LVA,0.1,0.1
+C3,EUR thousands,p20,,MLT,3.0,0.1
+C3,EUR thousands,p20,,NLD,3.2,0.3
+C3,EUR thousands,p20,,PRT,0.7,0.1
+C3,EUR thousands,p20,,SVK,0.8,0.1
+C3,EUR thousands,p20,,SVN,0.1,0.1
+C3,EUR thousands,p30,,AUT,7.5,0.5
+C3,EUR thousands,p30,,BEL,7.9,1.1
+C3,EUR thousands,p30,,CYP,1.0,0.2
+C3,EUR thousands,p30,,CZE,4.3,0.2
+C3,EUR thousands,p30,,DEU,8.8,0.8
+C3,EUR thousands,p30,,EA,4.0,0.2
+C3,EUR thousands,p30,,ESP,3.0,0.2
+C3,EUR thousands,p30,,EST,1.3,0.1
+C3,EUR thousands,p30,,FIN,3.6,0.2
+C3,EUR thousands,p30,,FRA,3.7,0.3
+C3,EUR thousands,p30,,GRC,0.6,0.1
+C3,EUR thousands,p30,,HRV,0.1,0.1
+C3,EUR thousands,p30,,HUN,1.0,0.1
+C3,EUR thousands,p30,,IRL,5.2,0.3
+C3,EUR thousands,p30,,ITA,3.2,0.5
+C3,EUR thousands,p30,,LTU,0.5,0.1
+C3,EUR thousands,p30,,LUX,28.6,2.7
+C3,EUR thousands,p30,,LVA,0.4,0.1
+C3,EUR thousands,p30,,MLT,6.3,0.1
+C3,EUR thousands,p30,,NLD,7.5,0.4
+C3,EUR thousands,p30,,PRT,1.5,0.1
+C3,EUR thousands,p30,,SVK,1.8,0.1
+C3,EUR thousands,p30,,SVN,0.5,0.1
+C3,EUR thousands,p40,,AUT,12.4,0.7
+C3,EUR thousands,p40,,BEL,17.0,1.3
+C3,EUR thousands,p40,,CYP,2.6,0.5
+C3,EUR thousands,p40,,CZE,6.5,0.2
+C3,EUR thousands,p40,,DEU,16.0,1.1
+C3,EUR thousands,p40,,EA,8.1,0.3
+C3,EUR thousands,p40,,ESP,6.0,0.4
+C3,EUR thousands,p40,,EST,3.0,0.2
+C3,EUR thousands,p40,,FIN,7.0,0.3
+C3,EUR thousands,p40,,FRA,8.0,0.5
+C3,EUR thousands,p40,,GRC,1.3,0.2
+C3,EUR thousands,p40,,HRV,0.3,0.1
+C3,EUR thousands,p40,,HUN,1.9,0.2
+C3,EUR thousands,p40,,IRL,9.4,0.7
+C3,EUR thousands,p40,,ITA,5.2,0.7
+C3,EUR thousands,p40,,LTU,1.0,0.1
+C3,EUR thousands,p40,,LUX,50.2,4.0
+C3,EUR thousands,p40,,LVA,0.9,0.2
+C3,EUR thousands,p40,,MLT,10.0,0.1
+C3,EUR thousands,p40,,NLD,13.5,0.7
+C3,EUR thousands,p40,,PRT,3.3,0.3
+C3,EUR thousands,p40,,SVK,3.6,0.4
+C3,EUR thousands,p40,,SVN,1.0,0.1
+C3,EUR thousands,p50,,AUT,18.7,0.8
+C3,EUR thousands,p50,,BEL,28.5,1.6
+C3,EUR thousands,p50,,CYP,5.5,1.1
+C3,EUR thousands,p50,,CZE,9.5,0.3
+C3,EUR thousands,p50,,DEU,25.9,1.5
+C3,EUR thousands,p50,,EA,14.7,0.5
+C3,EUR thousands,p50,,ESP,12.0,0.6
+C3,EUR thousands,p50,,EST,5.1,0.3
+C3,EUR thousands,p50,,FIN,12.6,0.5
+C3,EUR thousands,p50,,FRA,15.2,0.7
+C3,EUR thousands,p50,,GRC,2.2,0.3
+C3,EUR thousands,p50,,HRV,0.5,0.1
+C3,EUR thousands,p50,,HUN,3.5,0.2
+C3,EUR thousands,p50,,IRL,15.4,0.9
+C3,EUR thousands,p50,,ITA,9.9,1.2
+C3,EUR thousands,p50,,LTU,1.5,0.2
+C3,EUR thousands,p50,,LUX,80.4,6.0
+C3,EUR thousands,p50,,LVA,1.6,0.3
+C3,EUR thousands,p50,,MLT,16.8,0.1
+C3,EUR thousands,p50,,NLD,20.7,0.7
+C3,EUR thousands,p50,,PRT,6.3,0.5
+C3,EUR thousands,p50,,SVK,5.0,0.5
+C3,EUR thousands,p50,,SVN,2.7,0.3
+C3,EUR thousands,p60,,AUT,24.4,0.9
+C3,EUR thousands,p60,,BEL,46.7,3.0
+C3,EUR thousands,p60,,CYP,10.7,1.6
+C3,EUR thousands,p60,,CZE,12.9,0.3
+C3,EUR thousands,p60,,DEU,42.2,2.1
+C3,EUR thousands,p60,,EA,24.4,0.6
+C3,EUR thousands,p60,,ESP,20.0,0.7
+C3,EUR thousands,p60,,EST,8.9,0.6
+C3,EUR thousands,p60,,FIN,21.5,0.6
+C3,EUR thousands,p60,,FRA,25.2,1.0
+C3,EUR thousands,p60,,GRC,4.0,0.4
+C3,EUR thousands,p60,,HRV,0.8,0.1
+C3,EUR thousands,p60,,HUN,5.8,0.2
+C3,EUR thousands,p60,,IRL,24.4,1.2
+C3,EUR thousands,p60,,ITA,15.0,1.3
+C3,EUR thousands,p60,,LTU,2.0,0.2
+C3,EUR thousands,p60,,LUX,120.2,7.8
+C3,EUR thousands,p60,,LVA,2.6,0.3
+C3,EUR thousands,p60,,MLT,30.0,0.1
+C3,EUR thousands,p60,,NLD,30.7,1.2
+C3,EUR thousands,p60,,PRT,11.5,0.8
+C3,EUR thousands,p60,,SVK,7.3,0.6
+C3,EUR thousands,p60,,SVN,5.3,0.5
+C3,EUR thousands,p70,,AUT,35.4,1.8
+C3,EUR thousands,p70,,BEL,73.5,5.1
+C3,EUR thousands,p70,,CYP,20.7,2.7
+C3,EUR thousands,p70,,CZE,17.5,0.5
+C3,EUR thousands,p70,,DEU,67.2,3.5
+C3,EUR thousands,p70,,EA,41.4,0.9
+C3,EUR thousands,p70,,ESP,33.7,1.5
+C3,EUR thousands,p70,,EST,15.2,0.8
+C3,EUR thousands,p70,,FIN,35.4,1.1
+C3,EUR thousands,p70,,FRA,43.4,1.3
+C3,EUR thousands,p70,,GRC,7.0,0.6
+C3,EUR thousands,p70,,HRV,1.3,0.2
+C3,EUR thousands,p70,,HUN,9.4,0.6
+C3,EUR thousands,p70,,IRL,39.3,2.1
+C3,EUR thousands,p70,,ITA,27.0,2.3
+C3,EUR thousands,p70,,LTU,3.6,0.7
+C3,EUR thousands,p70,,LUX,179.1,13.3
+C3,EUR thousands,p70,,LVA,4.1,0.6
+C3,EUR thousands,p70,,MLT,41.3,0.1
+C3,EUR thousands,p70,,NLD,47.7,2.1
+C3,EUR thousands,p70,,PRT,20.4,0.8
+C3,EUR thousands,p70,,SVK,10.0,0.5
+C3,EUR thousands,p70,,SVN,10.0,0.5
+C3,EUR thousands,p80,,AUT,57.7,3.6
+C3,EUR thousands,p80,,BEL,129.8,7.1
+C3,EUR thousands,p80,,CYP,39.3,5.7
+C3,EUR thousands,p80,,CZE,25.5,1.0
+C3,EUR thousands,p80,,DEU,111.3,4.0
+C3,EUR thousands,p80,,EA,72.0,1.7
+C3,EUR thousands,p80,,ESP,60.0,2.0
+C3,EUR thousands,p80,,EST,26.3,1.5
+C3,EUR thousands,p80,,FIN,62.0,1.5
+C3,EUR thousands,p80,,FRA,71.7,2.8
+C3,EUR thousands,p80,,GRC,12.0,1.2
+C3,EUR thousands,p80,,HRV,3.2,0.8
+C3,EUR thousands,p80,,HUN,18.6,1.0
+C3,EUR thousands,p80,,IRL,70.8,3.4
+C3,EUR thousands,p80,,ITA,50.0,4.2
+C3,EUR thousands,p80,,LTU,6.5,1.0
+C3,EUR thousands,p80,,LUX,294.8,16.7
+C3,EUR thousands,p80,,LVA,8.7,0.8
+C3,EUR thousands,p80,,MLT,66.3,0.1
+C3,EUR thousands,p80,,NLD,76.2,3.8
+C3,EUR thousands,p80,,PRT,34.7,1.3
+C3,EUR thousands,p80,,SVK,15.2,1.0
+C3,EUR thousands,p80,,SVN,20.0,1.1
+C3,EUR thousands,p90,,AUT,110.7,8.4
+C3,EUR thousands,p90,,BEL,262.2,18.2
+C3,EUR thousands,p90,,CYP,82.3,9.4
+C3,EUR thousands,p90,,CZE,42.9,1.6
+C3,EUR thousands,p90,,DEU,194.5,7.8
+C3,EUR thousands,p90,,EA,144.6,3.5
+C3,EUR thousands,p90,,ESP,122.0,7.7
+C3,EUR thousands,p90,,EST,52.8,3.9
+C3,EUR thousands,p90,,FIN,125.9,3.0
+C3,EUR thousands,p90,,FRA,146.9,5.2
+C3,EUR thousands,p90,,GRC,25.0,2.4
+C3,EUR thousands,p90,,HRV,11.2,1.3
+C3,EUR thousands,p90,,HUN,44.8,2.3
+C3,EUR thousands,p90,,IRL,149.9,8.3
+C3,EUR thousands,p90,,ITA,100.0,8.4
+C3,EUR thousands,p90,,LTU,12.9,1.5
+C3,EUR thousands,p90,,LUX,559.5,45.3
+C3,EUR thousands,p90,,LVA,18.7,1.9
+C3,EUR thousands,p90,,MLT,107.0,0.2
+C3,EUR thousands,p90,,NLD,141.6,12.7
+C3,EUR thousands,p90,,PRT,70.6,3.5
+C3,EUR thousands,p90,,SVK,27.8,2.3
+C3,EUR thousands,p90,,SVN,37.9,2.8
+C4,EUR thousands,Age of RP,16-34,AUT,5.2,0.7
+C4,EUR thousands,Age of RP,16-34,BEL,12.7,3.1
+C4,EUR thousands,Age of RP,16-34,CYP,2.6,1.6
+C4,EUR thousands,Age of RP,16-34,CZE,6.8,0.9
+C4,EUR thousands,Age of RP,16-34,DEU,10.8,1.6
+C4,EUR thousands,Age of RP,16-34,EA,7.3,0.7
+C4,EUR thousands,Age of RP,16-34,ESP,5.1,1.0
+C4,EUR thousands,Age of RP,16-34,EST,2.7,0.5
+C4,EUR thousands,Age of RP,16-34,FIN,5.6,0.4
+C4,EUR thousands,Age of RP,16-34,FRA,6.0,0.8
+C4,EUR thousands,Age of RP,16-34,GRC,1.0,0.1
+C4,EUR thousands,Age of RP,16-34,HRV,0.4,0.2
+C4,EUR thousands,Age of RP,16-34,HUN,3.0,0.3
+C4,EUR thousands,Age of RP,16-34,IRL,10.8,2.4
+C4,EUR thousands,Age of RP,16-34,ITA,4.2,2.0
+C4,EUR thousands,Age of RP,16-34,LTU,1.4,0.5
+C4,EUR thousands,Age of RP,16-34,LUX,37.6,7.3
+C4,EUR thousands,Age of RP,16-34,LVA,1.8,0.3
+C4,EUR thousands,Age of RP,16-34,MLT,10.0,0.1
+C4,EUR thousands,Age of RP,16-34,NLD,17.0,1.9
+C4,EUR thousands,Age of RP,16-34,PRT,3.6,1.8
+C4,EUR thousands,Age of RP,16-34,SVK,5.0,1.1
+C4,EUR thousands,Age of RP,16-34,SVN,1.0,0.5
+C4,EUR thousands,Age of RP,35-44,AUT,15.8,1.4
+C4,EUR thousands,Age of RP,35-44,BEL,25.8,3.2
+C4,EUR thousands,Age of RP,35-44,CYP,8.0,2.3
+C4,EUR thousands,Age of RP,35-44,CZE,11.7,0.7
+C4,EUR thousands,Age of RP,35-44,DEU,22.3,2.2
+C4,EUR thousands,Age of RP,35-44,EA,12.0,0.9
+C4,EUR thousands,Age of RP,35-44,ESP,8.7,1.0
+C4,EUR thousands,Age of RP,35-44,EST,5.6,0.9
+C4,EUR thousands,Age of RP,35-44,FIN,9.0,0.9
+C4,EUR thousands,Age of RP,35-44,FRA,12.4,1.2
+C4,EUR thousands,Age of RP,35-44,GRC,2.8,0.4
+C4,EUR thousands,Age of RP,35-44,HRV,0.5,0.2
+C4,EUR thousands,Age of RP,35-44,HUN,4.0,0.5
+C4,EUR thousands,Age of RP,35-44,IRL,11.8,1.4
+C4,EUR thousands,Age of RP,35-44,ITA,8.0,2.1
+C4,EUR thousands,Age of RP,35-44,LTU,1.8,0.6
+C4,EUR thousands,Age of RP,35-44,LUX,49.5,8.9
+C4,EUR thousands,Age of RP,35-44,LVA,2.2,0.7
+C4,EUR thousands,Age of RP,35-44,MLT,15.7,0.2
+C4,EUR thousands,Age of RP,35-44,NLD,16.7,1.6
+C4,EUR thousands,Age of RP,35-44,PRT,5.7,0.9
+C4,EUR thousands,Age of RP,35-44,SVK,3.8,0.4
+C4,EUR thousands,Age of RP,35-44,SVN,3.8,1.1
+C4,EUR thousands,Age of RP,45-54,AUT,22.1,1.6
+C4,EUR thousands,Age of RP,45-54,BEL,27.1,3.5
+C4,EUR thousands,Age of RP,45-54,CYP,7.0,3.4
+C4,EUR thousands,Age of RP,45-54,CZE,10.7,0.8
+C4,EUR thousands,Age of RP,45-54,DEU,35.8,5.4
+C4,EUR thousands,Age of RP,45-54,EA,14.9,1.4
+C4,EUR thousands,Age of RP,45-54,ESP,10.4,1.3
+C4,EUR thousands,Age of RP,45-54,EST,4.3,0.6
+C4,EUR thousands,Age of RP,45-54,FIN,18.3,1.7
+C4,EUR thousands,Age of RP,45-54,FRA,15.0,1.3
+C4,EUR thousands,Age of RP,45-54,GRC,2.0,0.3
+C4,EUR thousands,Age of RP,45-54,HRV,0.4,0.1
+C4,EUR thousands,Age of RP,45-54,HUN,4.5,0.5
+C4,EUR thousands,Age of RP,45-54,IRL,14.9,2.2
+C4,EUR thousands,Age of RP,45-54,ITA,9.3,3.0
+C4,EUR thousands,Age of RP,45-54,LTU,2.0,0.5
+C4,EUR thousands,Age of RP,45-54,LUX,93.8,12.0
+C4,EUR thousands,Age of RP,45-54,LVA,1.6,0.5
+C4,EUR thousands,Age of RP,45-54,MLT,17.5,0.2
+C4,EUR thousands,Age of RP,45-54,NLD,26.0,3.9
+C4,EUR thousands,Age of RP,45-54,PRT,8.8,1.2
+C4,EUR thousands,Age of RP,45-54,SVK,6.0,0.8
+C4,EUR thousands,Age of RP,45-54,SVN,3.3,0.7
+C4,EUR thousands,Age of RP,55-64,AUT,21.7,2.1
+C4,EUR thousands,Age of RP,55-64,BEL,54.3,6.4
+C4,EUR thousands,Age of RP,55-64,CYP,9.2,3.1
+C4,EUR thousands,Age of RP,55-64,CZE,12.9,0.9
+C4,EUR thousands,Age of RP,55-64,DEU,41.9,4.9
+C4,EUR thousands,Age of RP,55-64,EA,20.1,1.1
+C4,EUR thousands,Age of RP,55-64,ESP,18.0,1.7
+C4,EUR thousands,Age of RP,55-64,EST,6.2,1.2
+C4,EUR thousands,Age of RP,55-64,FIN,20.0,1.3
+C4,EUR thousands,Age of RP,55-64,FRA,19.7,1.9
+C4,EUR thousands,Age of RP,55-64,GRC,3.0,0.5
+C4,EUR thousands,Age of RP,55-64,HRV,0.7,0.1
+C4,EUR thousands,Age of RP,55-64,HUN,3.6,0.6
+C4,EUR thousands,Age of RP,55-64,IRL,20.1,2.5
+C4,EUR thousands,Age of RP,55-64,ITA,10.0,2.7
+C4,EUR thousands,Age of RP,55-64,LTU,1.3,0.4
+C4,EUR thousands,Age of RP,55-64,LUX,115.7,20.2
+C4,EUR thousands,Age of RP,55-64,LVA,1.9,0.8
+C4,EUR thousands,Age of RP,55-64,MLT,26.3,0.2
+C4,EUR thousands,Age of RP,55-64,NLD,34.0,5.1
+C4,EUR thousands,Age of RP,55-64,PRT,6.3,1.0
+C4,EUR thousands,Age of RP,55-64,SVK,6.6,0.6
+C4,EUR thousands,Age of RP,55-64,SVN,2.8,0.6
+C4,EUR thousands,Age of RP,65-74,AUT,22.3,1.2
+C4,EUR thousands,Age of RP,65-74,BEL,34.9,5.6
+C4,EUR thousands,Age of RP,65-74,CYP,5.4,1.7
+C4,EUR thousands,Age of RP,65-74,CZE,7.9,0.5
+C4,EUR thousands,Age of RP,65-74,DEU,35.4,4.4
+C4,EUR thousands,Age of RP,65-74,EA,18.7,1.3
+C4,EUR thousands,Age of RP,65-74,ESP,17.3,2.5
+C4,EUR thousands,Age of RP,65-74,EST,6.4,1.3
+C4,EUR thousands,Age of RP,65-74,FIN,20.1,1.7
+C4,EUR thousands,Age of RP,65-74,FRA,24.5,2.8
+C4,EUR thousands,Age of RP,65-74,GRC,2.9,0.7
+C4,EUR thousands,Age of RP,65-74,HRV,0.6,0.1
+C4,EUR thousands,Age of RP,65-74,HUN,2.6,0.4
+C4,EUR thousands,Age of RP,65-74,IRL,20.6,2.9
+C4,EUR thousands,Age of RP,65-74,ITA,10.0,2.0
+C4,EUR thousands,Age of RP,65-74,LTU,1.0,0.2
+C4,EUR thousands,Age of RP,65-74,LUX,143.4,24.1
+C4,EUR thousands,Age of RP,65-74,LVA,2.1,1.2
+C4,EUR thousands,Age of RP,65-74,MLT,16.8,0.1
+C4,EUR thousands,Age of RP,65-74,NLD,19.6,1.8
+C4,EUR thousands,Age of RP,65-74,PRT,5.2,1.0
+C4,EUR thousands,Age of RP,65-74,SVK,3.8,0.7
+C4,EUR thousands,Age of RP,65-74,SVN,2.1,0.6
+C4,EUR thousands,Age of RP,75+,AUT,19.3,1.8
+C4,EUR thousands,Age of RP,75+,BEL,33.2,10.0
+C4,EUR thousands,Age of RP,75+,CYP,5.8,2.4
+C4,EUR thousands,Age of RP,75+,CZE,4.9,0.5
+C4,EUR thousands,Age of RP,75+,DEU,29.4,4.5
+C4,EUR thousands,Age of RP,75+,EA,17.0,1.0
+C4,EUR thousands,Age of RP,75+,ESP,13.5,1.5
+C4,EUR thousands,Age of RP,75+,EST,7.1,1.4
+C4,EUR thousands,Age of RP,75+,FIN,20.0,1.4
+C4,EUR thousands,Age of RP,75+,FRA,22.2,2.5
+C4,EUR thousands,Age of RP,75+,GRC,2.5,0.6
+C4,EUR thousands,Age of RP,75+,HRV,0.7,0.2
+C4,EUR thousands,Age of RP,75+,HUN,2.8,0.5
+C4,EUR thousands,Age of RP,75+,IRL,20.6,2.8
+C4,EUR thousands,Age of RP,75+,ITA,10.0,1.6
+C4,EUR thousands,Age of RP,75+,LTU,1.0,0.3
+C4,EUR thousands,Age of RP,75+,LUX,172.9,55.2
+C4,EUR thousands,Age of RP,75+,LVA,0.3,0.2
+C4,EUR thousands,Age of RP,75+,MLT,27.2,0.3
+C4,EUR thousands,Age of RP,75+,NLD,20.1,1.9
+C4,EUR thousands,Age of RP,75+,PRT,7.2,0.9
+C4,EUR thousands,Age of RP,75+,SVK,3.8,0.8
+C4,EUR thousands,Age of RP,75+,SVN,2.3,0.7
+C4,EUR thousands,Household size,1,AUT,9.4,0.6
+C4,EUR thousands,Household size,1,BEL,18.8,2.5
+C4,EUR thousands,Household size,1,CYP,2.4,1.1
+C4,EUR thousands,Household size,1,CZE,5.3,0.3
+C4,EUR thousands,Household size,1,DEU,17.4,1.3
+C4,EUR thousands,Household size,1,EA,10.2,0.3
+C4,EUR thousands,Household size,1,ESP,7.9,1.3
+C4,EUR thousands,Household size,1,EST,3.1,0.4
+C4,EUR thousands,Household size,1,FIN,7.0,0.6
+C4,EUR thousands,Household size,1,FRA,10.0,0.8
+C4,EUR thousands,Household size,1,GRC,1.3,0.2
+C4,EUR thousands,Household size,1,HRV,0.4,0.1
+C4,EUR thousands,Household size,1,HUN,2.2,0.2
+C4,EUR thousands,Household size,1,IRL,9.8,1.5
+C4,EUR thousands,Household size,1,ITA,7.2,1.1
+C4,EUR thousands,Household size,1,LTU,1.1,0.2
+C4,EUR thousands,Household size,1,LUX,68.5,10.5
+C4,EUR thousands,Household size,1,LVA,0.7,0.2
+C4,EUR thousands,Household size,1,MLT,13.3,0.3
+C4,EUR thousands,Household size,1,NLD,12.3,0.8
+C4,EUR thousands,Household size,1,PRT,4.8,0.6
+C4,EUR thousands,Household size,1,SVK,3.0,0.5
+C4,EUR thousands,Household size,1,SVN,1.0,0.3
+C4,EUR thousands,Household size,2,AUT,23.0,1.2
+C4,EUR thousands,Household size,2,BEL,44.1,5.7
+C4,EUR thousands,Household size,2,CYP,5.8,1.8
+C4,EUR thousands,Household size,2,CZE,10.5,0.7
+C4,EUR thousands,Household size,2,DEU,38.0,2.8
+C4,EUR thousands,Household size,2,EA,21.8,1.0
+C4,EUR thousands,Household size,2,ESP,18.6,1.6
+C4,EUR thousands,Household size,2,EST,7.7,0.7
+C4,EUR thousands,Household size,2,FIN,23.8,1.2
+C4,EUR thousands,Household size,2,FRA,22.3,1.6
+C4,EUR thousands,Household size,2,GRC,3.0,0.3
+C4,EUR thousands,Household size,2,HRV,0.4,0.1
+C4,EUR thousands,Household size,2,HUN,4.4,0.4
+C4,EUR thousands,Household size,2,IRL,20.3,1.6
+C4,EUR thousands,Household size,2,ITA,12.6,3.2
+C4,EUR thousands,Household size,2,LTU,2.0,0.3
+C4,EUR thousands,Household size,2,LUX,85.3,10.9
+C4,EUR thousands,Household size,2,LVA,2.2,0.4
+C4,EUR thousands,Household size,2,MLT,17.5,0.1
+C4,EUR thousands,Household size,2,NLD,30.3,1.7
+C4,EUR thousands,Household size,2,PRT,6.3,0.7
+C4,EUR thousands,Household size,2,SVK,5.3,0.6
+C4,EUR thousands,Household size,2,SVN,3.2,0.7
+C4,EUR thousands,Household size,3,AUT,21.9,1.7
+C4,EUR thousands,Household size,3,BEL,29.0,3.9
+C4,EUR thousands,Household size,3,CYP,3.2,1.8
+C4,EUR thousands,Household size,3,CZE,10.7,0.7
+C4,EUR thousands,Household size,3,DEU,41.1,6.4
+C4,EUR thousands,Household size,3,EA,14.5,1.1
+C4,EUR thousands,Household size,3,ESP,11.9,1.5
+C4,EUR thousands,Household size,3,EST,6.5,1.0
+C4,EUR thousands,Household size,3,FIN,14.8,1.2
+C4,EUR thousands,Household size,3,FRA,15.1,1.4
+C4,EUR thousands,Household size,3,GRC,3.0,0.4
+C4,EUR thousands,Household size,3,HRV,0.5,0.2
+C4,EUR thousands,Household size,3,HUN,4.0,0.5
+C4,EUR thousands,Household size,3,IRL,13.6,1.9
+C4,EUR thousands,Household size,3,ITA,8.0,1.3
+C4,EUR thousands,Household size,3,LTU,1.2,0.5
+C4,EUR thousands,Household size,3,LUX,89.1,16.5
+C4,EUR thousands,Household size,3,LVA,1.7,0.6
+C4,EUR thousands,Household size,3,MLT,24.0,0.1
+C4,EUR thousands,Household size,3,NLD,28.3,4.3
+C4,EUR thousands,Household size,3,PRT,6.8,1.1
+C4,EUR thousands,Household size,3,SVK,6.3,1.0
+C4,EUR thousands,Household size,3,SVN,4.9,0.8
+C4,EUR thousands,Household size,4,AUT,24.2,1.3
+C4,EUR thousands,Household size,4,BEL,31.5,7.2
+C4,EUR thousands,Household size,4,CYP,19.5,5.2
+C4,EUR thousands,Household size,4,CZE,13.6,0.9
+C4,EUR thousands,Household size,4,DEU,25.4,6.6
+C4,EUR thousands,Household size,4,EA,15.4,1.3
+C4,EUR thousands,Household size,4,ESP,12.6,1.4
+C4,EUR thousands,Household size,4,EST,6.1,1.4
+C4,EUR thousands,Household size,4,FIN,18.3,1.4
+C4,EUR thousands,Household size,4,FRA,18.7,1.5
+C4,EUR thousands,Household size,4,GRC,2.9,0.5
+C4,EUR thousands,Household size,4,HRV,0.5,0.1
+C4,EUR thousands,Household size,4,HUN,4.9,0.6
+C4,EUR thousands,Household size,4,IRL,17.7,2.5
+C4,EUR thousands,Household size,4,ITA,12.0,3.1
+C4,EUR thousands,Household size,4,LTU,2.0,0.5
+C4,EUR thousands,Household size,4,LUX,87.8,15.3
+C4,EUR thousands,Household size,4,LVA,4.3,1.6
+C4,EUR thousands,Household size,4,MLT,20.1,0.2
+C4,EUR thousands,Household size,4,NLD,28.9,3.5
+C4,EUR thousands,Household size,4,PRT,8.9,1.3
+C4,EUR thousands,Household size,4,SVK,5.8,1.1
+C4,EUR thousands,Household size,4,SVN,4.9,1.3
+C4,EUR thousands,Household size,5+,AUT,22.2,5.6
+C4,EUR thousands,Household size,5+,BEL,21.5,6.6
+C4,EUR thousands,Household size,5+,CYP,10.0,4.0
+C4,EUR thousands,Household size,5+,CZE,13.6,2.1
+C4,EUR thousands,Household size,5+,DEU,10.1,4.5
+C4,EUR thousands,Household size,5+,EA,8.6,2.2
+C4,EUR thousands,Household size,5+,ESP,5.8,1.6
+C4,EUR thousands,Household size,5+,EST,9.2,2.0
+C4,EUR thousands,Household size,5+,FIN,10.0,1.1
+C4,EUR thousands,Household size,5+,FRA,7.8,1.6
+C4,EUR thousands,Household size,5+,GRC,1.1,0.5
+C4,EUR thousands,Household size,5+,HRV,0.7,0.1
+C4,EUR thousands,Household size,5+,HUN,3.4,0.7
+C4,EUR thousands,Household size,5+,IRL,18.1,2.8
+C4,EUR thousands,Household size,5+,ITA,5.0,2.1
+C4,EUR thousands,Household size,5+,LUX,84.2,27.0
+C4,EUR thousands,Household size,5+,LVA,1.8,1.0
+C4,EUR thousands,Household size,5+,MLT,8.8,0.5
+C4,EUR thousands,Household size,5+,NLD,31.6,9.3
+C4,EUR thousands,Household size,5+,PRT,9.0,2.7
+C4,EUR thousands,Household size,5+,SVK,3.8,1.0
+C4,EUR thousands,Household size,5+,SVN,4.1,1.1
+C4,EUR thousands,Housing status,Owners - outright,AUT,28.2,2.4
+C4,EUR thousands,Housing status,Owners - outright,BEL,56.7,5.5
+C4,EUR thousands,Housing status,Owners - outright,CYP,10.0,1.8
+C4,EUR thousands,Housing status,Owners - outright,CZE,11.4,0.4
+C4,EUR thousands,Housing status,Owners - outright,DEU,70.9,5.3
+C4,EUR thousands,Housing status,Owners - outright,EA,24.9,0.9
+C4,EUR thousands,Housing status,Owners - outright,ESP,20.8,1.1
+C4,EUR thousands,Housing status,Owners - outright,EST,7.0,0.6
+C4,EUR thousands,Housing status,Owners - outright,FIN,38.8,2.1
+C4,EUR thousands,Housing status,Owners - outright,FRA,42.3,1.7
+C4,EUR thousands,Housing status,Owners - outright,GRC,3.2,0.4
+C4,EUR thousands,Housing status,Owners - outright,HRV,0.7,0.1
+C4,EUR thousands,Housing status,Owners - outright,HUN,4.0,0.3
+C4,EUR thousands,Housing status,Owners - outright,IRL,28.1,2.2
+C4,EUR thousands,Housing status,Owners - outright,ITA,13.0,1.1
+C4,EUR thousands,Housing status,Owners - outright,LTU,1.4,0.3
+C4,EUR thousands,Housing status,Owners - outright,LUX,123.1,12.6
+C4,EUR thousands,Housing status,Owners - outright,LVA,2.0,0.2
+C4,EUR thousands,Housing status,Owners - outright,MLT,27.5,0.2
+C4,EUR thousands,Housing status,Owners - outright,NLD,59.9,12.4
+C4,EUR thousands,Housing status,Owners - outright,PRT,11.0,1.0
+C4,EUR thousands,Housing status,Owners - outright,SVK,5.1,0.5
+C4,EUR thousands,Housing status,Owners - outright,SVN,3.1,0.3
+C4,EUR thousands,Housing status,Owners - with mortgage,AUT,26.5,1.6
+C4,EUR thousands,Housing status,Owners - with mortgage,BEL,31.7,2.8
+C4,EUR thousands,Housing status,Owners - with mortgage,CYP,4.6,1.6
+C4,EUR thousands,Housing status,Owners - with mortgage,CZE,10.7,0.9
+C4,EUR thousands,Housing status,Owners - with mortgage,DEU,45.4,6.0
+C4,EUR thousands,Housing status,Owners - with mortgage,EA,21.2,1.0
+C4,EUR thousands,Housing status,Owners - with mortgage,ESP,11.7,1.1
+C4,EUR thousands,Housing status,Owners - with mortgage,EST,5.8,0.7
+C4,EUR thousands,Housing status,Owners - with mortgage,FIN,15.4,0.6
+C4,EUR thousands,Housing status,Owners - with mortgage,FRA,19.6,1.0
+C4,EUR thousands,Housing status,Owners - with mortgage,GRC,1.8,0.6
+C4,EUR thousands,Housing status,Owners - with mortgage,HRV,0.7,0.2
+C4,EUR thousands,Housing status,Owners - with mortgage,HUN,3.6,0.5
+C4,EUR thousands,Housing status,Owners - with mortgage,IRL,22.2,1.4
+C4,EUR thousands,Housing status,Owners - with mortgage,ITA,9.8,5.4
+C4,EUR thousands,Housing status,Owners - with mortgage,LTU,2.7,1.3
+C4,EUR thousands,Housing status,Owners - with mortgage,LUX,86.1,9.0
+C4,EUR thousands,Housing status,Owners - with mortgage,LVA,3.0,0.9
+C4,EUR thousands,Housing status,Owners - with mortgage,MLT,12.3,0.1
+C4,EUR thousands,Housing status,Owners - with mortgage,NLD,32.9,1.9
+C4,EUR thousands,Housing status,Owners - with mortgage,PRT,6.0,0.7
+C4,EUR thousands,Housing status,Owners - with mortgage,SVK,6.3,1.0
+C4,EUR thousands,Housing status,Owners - with mortgage,SVN,4.7,1.4
+C4,EUR thousands,Housing status,Renters / other,AUT,10.5,0.8
+C4,EUR thousands,Housing status,Renters / other,BEL,4.8,1.3
+C4,EUR thousands,Housing status,Renters / other,CYP,2.0,1.0
+C4,EUR thousands,Housing status,Renters / other,CZE,4.6,0.4
+C4,EUR thousands,Housing status,Renters / other,DEU,11.8,1.1
+C4,EUR thousands,Housing status,Renters / other,EA,6.2,0.5
+C4,EUR thousands,Housing status,Renters / other,ESP,2.5,0.4
+C4,EUR thousands,Housing status,Renters / other,EST,1.5,0.3
+C4,EUR thousands,Housing status,Renters / other,FIN,2.7,0.3
+C4,EUR thousands,Housing status,Renters / other,FRA,3.6,0.3
+C4,EUR thousands,Housing status,Renters / other,GRC,1.0,0.1
+C4,EUR thousands,Housing status,Renters / other,HRV,0.3,0.1
+C4,EUR thousands,Housing status,Renters / other,HUN,2.2,0.3
+C4,EUR thousands,Housing status,Renters / other,IRL,5.1,0.5
+C4,EUR thousands,Housing status,Renters / other,ITA,3.3,1.0
+C4,EUR thousands,Housing status,Renters / other,LTU,1.4,0.3
+C4,EUR thousands,Housing status,Renters / other,LUX,39.6,7.4
+C4,EUR thousands,Housing status,Renters / other,LVA,0.5,0.4
+C4,EUR thousands,Housing status,Renters / other,MLT,6.3,0.1
+C4,EUR thousands,Housing status,Renters / other,NLD,8.7,0.9
+C4,EUR thousands,Housing status,Renters / other,PRT,2.6,0.6
+C4,EUR thousands,Housing status,Renters / other,SVK,2.0,0.7
+C4,EUR thousands,Housing status,Renters / other,SVN,1.0,0.2
+C4,EUR thousands,Income,20-40%,AUT,11.2,1.4
+C4,EUR thousands,Income,20-40%,BEL,14.8,3.2
+C4,EUR thousands,Income,20-40%,CYP,1.9,1.0
+C4,EUR thousands,Income,20-40%,CZE,6.0,0.4
+C4,EUR thousands,Income,20-40%,DEU,13.8,1.7
+C4,EUR thousands,Income,20-40%,EA,6.7,0.4
+C4,EUR thousands,Income,20-40%,ESP,5.0,0.8
+C4,EUR thousands,Income,20-40%,EST,3.2,0.6
+C4,EUR thousands,Income,20-40%,FIN,7.5,0.8
+C4,EUR thousands,Income,20-40%,FRA,6.8,0.8
+C4,EUR thousands,Income,20-40%,GRC,1.1,0.3
+C4,EUR thousands,Income,20-40%,HRV,0.3,0.1
+C4,EUR thousands,Income,20-40%,HUN,1.7,0.3
+C4,EUR thousands,Income,20-40%,IRL,8.4,1.1
+C4,EUR thousands,Income,20-40%,ITA,5.0,1.3
+C4,EUR thousands,Income,20-40%,LTU,0.7,0.3
+C4,EUR thousands,Income,20-40%,LUX,46.9,8.4
+C4,EUR thousands,Income,20-40%,LVA,0.7,0.4
+C4,EUR thousands,Income,20-40%,MLT,16.1,0.1
+C4,EUR thousands,Income,20-40%,NLD,13.0,1.8
+C4,EUR thousands,Income,20-40%,PRT,3.0,0.6
+C4,EUR thousands,Income,20-40%,SVK,3.7,0.4
+C4,EUR thousands,Income,20-40%,SVN,1.1,0.3
+C4,EUR thousands,Income,40-60%,AUT,18.7,1.8
+C4,EUR thousands,Income,40-60%,BEL,33.1,4.8
+C4,EUR thousands,Income,40-60%,CYP,4.8,3.3
+C4,EUR thousands,Income,40-60%,CZE,8.8,0.8
+C4,EUR thousands,Income,40-60%,DEU,24.8,3.3
+C4,EUR thousands,Income,40-60%,EA,12.9,1.1
+C4,EUR thousands,Income,40-60%,ESP,10.4,1.3
+C4,EUR thousands,Income,40-60%,EST,3.4,0.5
+C4,EUR thousands,Income,40-60%,FIN,12.5,1.2
+C4,EUR thousands,Income,40-60%,FRA,12.8,1.1
+C4,EUR thousands,Income,40-60%,GRC,2.1,0.4
+C4,EUR thousands,Income,40-60%,HRV,0.7,0.1
+C4,EUR thousands,Income,40-60%,HUN,2.9,0.3
+C4,EUR thousands,Income,40-60%,IRL,13.8,2.0
+C4,EUR thousands,Income,40-60%,ITA,10.0,2.3
+C4,EUR thousands,Income,40-60%,LTU,1.7,0.4
+C4,EUR thousands,Income,40-60%,LUX,82.5,13.4
+C4,EUR thousands,Income,40-60%,LVA,1.2,0.6
+C4,EUR thousands,Income,40-60%,MLT,12.0,0.1
+C4,EUR thousands,Income,40-60%,NLD,20.7,1.9
+C4,EUR thousands,Income,40-60%,PRT,4.7,0.8
+C4,EUR thousands,Income,40-60%,SVK,3.9,0.7
+C4,EUR thousands,Income,40-60%,SVN,2.8,0.6
+C4,EUR thousands,Income,60-80%,AUT,22.9,1.4
+C4,EUR thousands,Income,60-80%,BEL,33.4,5.1
+C4,EUR thousands,Income,60-80%,CYP,6.5,3.0
+C4,EUR thousands,Income,60-80%,CZE,13.6,0.6
+C4,EUR thousands,Income,60-80%,DEU,43.0,4.9
+C4,EUR thousands,Income,60-80%,EA,26.1,1.6
+C4,EUR thousands,Income,60-80%,ESP,21.6,2.2
+C4,EUR thousands,Income,60-80%,EST,7.2,1.0
+C4,EUR thousands,Income,60-80%,FIN,18.2,1.1
+C4,EUR thousands,Income,60-80%,FRA,26.5,1.6
+C4,EUR thousands,Income,60-80%,GRC,3.4,0.6
+C4,EUR thousands,Income,60-80%,HRV,0.5,0.1
+C4,EUR thousands,Income,60-80%,HUN,4.4,0.4
+C4,EUR thousands,Income,60-80%,IRL,20.2,2.2
+C4,EUR thousands,Income,60-80%,ITA,13.3,3.7
+C4,EUR thousands,Income,60-80%,LTU,1.9,0.4
+C4,EUR thousands,Income,60-80%,LUX,114.9,15.9
+C4,EUR thousands,Income,60-80%,LVA,2.9,0.5
+C4,EUR thousands,Income,60-80%,MLT,23.8,0.8
+C4,EUR thousands,Income,60-80%,NLD,32.4,3.1
+C4,EUR thousands,Income,60-80%,PRT,10.0,0.9
+C4,EUR thousands,Income,60-80%,SVK,7.0,1.2
+C4,EUR thousands,Income,60-80%,SVN,3.4,0.8
+C4,EUR thousands,Income,80-90%,AUT,28.3,2.3
+C4,EUR thousands,Income,80-90%,BEL,54.7,13.1
+C4,EUR thousands,Income,80-90%,CYP,19.7,6.1
+C4,EUR thousands,Income,80-90%,CZE,15.6,1.5
+C4,EUR thousands,Income,80-90%,DEU,82.0,9.6
+C4,EUR thousands,Income,80-90%,EA,49.0,3.7
+C4,EUR thousands,Income,80-90%,ESP,36.1,3.5
+C4,EUR thousands,Income,80-90%,EST,10.7,1.4
+C4,EUR thousands,Income,80-90%,FIN,27.1,1.8
+C4,EUR thousands,Income,80-90%,FRA,42.0,2.9
+C4,EUR thousands,Income,80-90%,GRC,5.0,0.6
+C4,EUR thousands,Income,80-90%,HRV,0.7,0.3
+C4,EUR thousands,Income,80-90%,HUN,8.0,1.4
+C4,EUR thousands,Income,80-90%,IRL,34.9,4.1
+C4,EUR thousands,Income,80-90%,ITA,28.5,11.6
+C4,EUR thousands,Income,80-90%,LTU,2.5,1.0
+C4,EUR thousands,Income,80-90%,LUX,160.5,29.4
+C4,EUR thousands,Income,80-90%,LVA,3.0,1.0
+C4,EUR thousands,Income,80-90%,MLT,37.5,0.2
+C4,EUR thousands,Income,80-90%,NLD,49.8,6.6
+C4,EUR thousands,Income,80-90%,PRT,19.7,3.3
+C4,EUR thousands,Income,80-90%,SVK,8.1,1.6
+C4,EUR thousands,Income,80-90%,SVN,6.3,1.3
+C4,EUR thousands,Income,90-100%,AUT,65.7,11.2
+C4,EUR thousands,Income,90-100%,BEL,158.0,19.1
+C4,EUR thousands,Income,90-100%,CYP,29.7,9.7
+C4,EUR thousands,Income,90-100%,CZE,29.2,2.5
+C4,EUR thousands,Income,90-100%,DEU,136.7,13.8
+C4,EUR thousands,Income,90-100%,EA,101.2,5.3
+C4,EUR thousands,Income,90-100%,ESP,84.7,8.8
+C4,EUR thousands,Income,90-100%,EST,29.0,5.0
+C4,EUR thousands,Income,90-100%,FIN,68.9,3.8
+C4,EUR thousands,Income,90-100%,FRA,102.8,5.8
+C4,EUR thousands,Income,90-100%,GRC,13.6,4.0
+C4,EUR thousands,Income,90-100%,HRV,0.8,0.3
+C4,EUR thousands,Income,90-100%,HUN,23.2,2.7
+C4,EUR thousands,Income,90-100%,IRL,72.5,12.4
+C4,EUR thousands,Income,90-100%,ITA,70.0,9.6
+C4,EUR thousands,Income,90-100%,LTU,5.1,0.9
+C4,EUR thousands,Income,90-100%,LUX,318.3,47.0
+C4,EUR thousands,Income,90-100%,LVA,14.5,2.7
+C4,EUR thousands,Income,90-100%,MLT,37.5,0.7
+C4,EUR thousands,Income,90-100%,NLD,59.0,7.4
+C4,EUR thousands,Income,90-100%,PRT,48.4,5.9
+C4,EUR thousands,Income,90-100%,SVK,10.1,1.9
+C4,EUR thousands,Income,90-100%,SVN,20.1,3.7
+C4,EUR thousands,Income,Bottom 20%,AUT,4.2,0.5
+C4,EUR thousands,Income,Bottom 20%,BEL,4.2,1.6
+C4,EUR thousands,Income,Bottom 20%,CYP,1.0,0.5
+C4,EUR thousands,Income,Bottom 20%,CZE,3.1,0.2
+C4,EUR thousands,Income,Bottom 20%,DEU,5.8,1.1
+C4,EUR thousands,Income,Bottom 20%,EA,2.2,0.2
+C4,EUR thousands,Income,Bottom 20%,ESP,1.5,0.3
+C4,EUR thousands,Income,Bottom 20%,EST,1.6,0.6
+C4,EUR thousands,Income,Bottom 20%,FIN,2.3,0.4
+C4,EUR thousands,Income,Bottom 20%,FRA,2.2,0.3
+C4,EUR thousands,Income,Bottom 20%,GRC,0.6,0.1
+C4,EUR thousands,Income,Bottom 20%,HRV,0.3,0.1
+C4,EUR thousands,Income,Bottom 20%,HUN,1.1,0.1
+C4,EUR thousands,Income,Bottom 20%,IRL,5.3,0.7
+C4,EUR thousands,Income,Bottom 20%,ITA,2.0,0.6
+C4,EUR thousands,Income,Bottom 20%,LTU,0.8,0.2
+C4,EUR thousands,Income,Bottom 20%,LUX,20.2,5.1
+C4,EUR thousands,Income,Bottom 20%,LVA,0.1,0.1
+C4,EUR thousands,Income,Bottom 20%,MLT,10.0,0.4
+C4,EUR thousands,Income,Bottom 20%,NLD,5.1,0.8
+C4,EUR thousands,Income,Bottom 20%,PRT,1.5,0.3
+C4,EUR thousands,Income,Bottom 20%,SVK,1.9,0.4
+C4,EUR thousands,Income,Bottom 20%,SVN,0.5,0.1
+C4,EUR thousands,Net wealth,20-40%,AUT,15.4,1.0
+C4,EUR thousands,Net wealth,20-40%,BEL,21.4,2.3
+C4,EUR thousands,Net wealth,20-40%,CYP,3.0,0.7
+C4,EUR thousands,Net wealth,20-40%,CZE,6.0,0.4
+C4,EUR thousands,Net wealth,20-40%,DEU,13.9,1.3
+C4,EUR thousands,Net wealth,20-40%,EA,11.8,0.7
+C4,EUR thousands,Net wealth,20-40%,ESP,6.0,0.8
+C4,EUR thousands,Net wealth,20-40%,EST,2.9,0.5
+C4,EUR thousands,Net wealth,20-40%,FIN,7.5,0.6
+C4,EUR thousands,Net wealth,20-40%,FRA,9.5,0.9
+C4,EUR thousands,Net wealth,20-40%,GRC,1.3,0.2
+C4,EUR thousands,Net wealth,20-40%,HRV,0.4,0.1
+C4,EUR thousands,Net wealth,20-40%,HUN,1.5,0.2
+C4,EUR thousands,Net wealth,20-40%,IRL,13.4,1.5
+C4,EUR thousands,Net wealth,20-40%,ITA,5.0,0.9
+C4,EUR thousands,Net wealth,20-40%,LTU,0.7,0.3
+C4,EUR thousands,Net wealth,20-40%,LUX,58.3,9.9
+C4,EUR thousands,Net wealth,20-40%,LVA,0.9,0.3
+C4,EUR thousands,Net wealth,20-40%,MLT,6.3,0.1
+C4,EUR thousands,Net wealth,20-40%,NLD,14.0,1.2
+C4,EUR thousands,Net wealth,20-40%,PRT,4.1,0.8
+C4,EUR thousands,Net wealth,20-40%,SVK,3.8,0.5
+C4,EUR thousands,Net wealth,20-40%,SVN,0.8,0.2
+C4,EUR thousands,Net wealth,40-60%,AUT,23.1,1.3
+C4,EUR thousands,Net wealth,40-60%,BEL,24.2,2.9
+C4,EUR thousands,Net wealth,40-60%,CYP,4.6,2.5
+C4,EUR thousands,Net wealth,40-60%,CZE,9.2,0.7
+C4,EUR thousands,Net wealth,40-60%,DEU,45.8,3.7
+C4,EUR thousands,Net wealth,40-60%,EA,12.5,0.7
+C4,EUR thousands,Net wealth,40-60%,ESP,11.4,1.5
+C4,EUR thousands,Net wealth,40-60%,EST,5.6,0.7
+C4,EUR thousands,Net wealth,40-60%,FIN,13.6,1.0
+C4,EUR thousands,Net wealth,40-60%,FRA,16.6,1.0
+C4,EUR thousands,Net wealth,40-60%,GRC,2.4,0.4
+C4,EUR thousands,Net wealth,40-60%,HRV,0.4,0.1
+C4,EUR thousands,Net wealth,40-60%,HUN,2.8,0.4
+C4,EUR thousands,Net wealth,40-60%,IRL,14.4,1.7
+C4,EUR thousands,Net wealth,40-60%,ITA,8.2,1.6
+C4,EUR thousands,Net wealth,40-60%,LTU,1.6,0.4
+C4,EUR thousands,Net wealth,40-60%,LUX,75.0,12.3
+C4,EUR thousands,Net wealth,40-60%,LVA,1.1,0.4
+C4,EUR thousands,Net wealth,40-60%,MLT,20.0,0.1
+C4,EUR thousands,Net wealth,40-60%,NLD,29.0,2.3
+C4,EUR thousands,Net wealth,40-60%,PRT,5.4,1.0
+C4,EUR thousands,Net wealth,40-60%,SVK,5.0,0.7
+C4,EUR thousands,Net wealth,40-60%,SVN,2.1,0.6
+C4,EUR thousands,Net wealth,60-80%,AUT,25.6,1.2
+C4,EUR thousands,Net wealth,60-80%,BEL,70.6,7.7
+C4,EUR thousands,Net wealth,60-80%,CYP,15.5,4.0
+C4,EUR thousands,Net wealth,60-80%,CZE,12.9,0.7
+C4,EUR thousands,Net wealth,60-80%,DEU,55.9,5.5
+C4,EUR thousands,Net wealth,60-80%,EA,29.9,1.2
+C4,EUR thousands,Net wealth,60-80%,ESP,24.4,2.6
+C4,EUR thousands,Net wealth,60-80%,EST,12.9,1.6
+C4,EUR thousands,Net wealth,60-80%,FIN,29.2,1.3
+C4,EUR thousands,Net wealth,60-80%,FRA,33.0,1.9
+C4,EUR thousands,Net wealth,60-80%,GRC,5.0,0.6
+C4,EUR thousands,Net wealth,60-80%,HRV,0.7,0.2
+C4,EUR thousands,Net wealth,60-80%,HUN,6.0,0.4
+C4,EUR thousands,Net wealth,60-80%,IRL,34.6,3.6
+C4,EUR thousands,Net wealth,60-80%,ITA,19.2,2.9
+C4,EUR thousands,Net wealth,60-80%,LTU,1.8,0.5
+C4,EUR thousands,Net wealth,60-80%,LUX,131.3,14.5
+C4,EUR thousands,Net wealth,60-80%,LVA,3.3,1.1
+C4,EUR thousands,Net wealth,60-80%,MLT,27.5,0.2
+C4,EUR thousands,Net wealth,60-80%,NLD,37.2,3.0
+C4,EUR thousands,Net wealth,60-80%,PRT,14.2,1.5
+C4,EUR thousands,Net wealth,60-80%,SVK,7.1,0.9
+C4,EUR thousands,Net wealth,60-80%,SVN,5.9,1.0
+C4,EUR thousands,Net wealth,80-90%,AUT,54.8,5.3
+C4,EUR thousands,Net wealth,80-90%,BEL,181.9,19.2
+C4,EUR thousands,Net wealth,80-90%,CYP,20.6,6.5
+C4,EUR thousands,Net wealth,80-90%,CZE,19.5,1.9
+C4,EUR thousands,Net wealth,80-90%,DEU,111.5,12.4
+C4,EUR thousands,Net wealth,80-90%,EA,72.7,3.7
+C4,EUR thousands,Net wealth,80-90%,ESP,60.3,4.6
+C4,EUR thousands,Net wealth,80-90%,EST,20.0,3.7
+C4,EUR thousands,Net wealth,80-90%,FIN,65.5,3.8
+C4,EUR thousands,Net wealth,80-90%,FRA,74.0,6.4
+C4,EUR thousands,Net wealth,80-90%,GRC,6.6,1.8
+C4,EUR thousands,Net wealth,80-90%,HRV,1.3,0.7
+C4,EUR thousands,Net wealth,80-90%,HUN,14.8,1.6
+C4,EUR thousands,Net wealth,80-90%,IRL,62.9,11.7
+C4,EUR thousands,Net wealth,80-90%,ITA,45.0,11.7
+C4,EUR thousands,Net wealth,80-90%,LTU,3.1,1.1
+C4,EUR thousands,Net wealth,80-90%,LUX,298.9,55.0
+C4,EUR thousands,Net wealth,80-90%,LVA,8.9,2.5
+C4,EUR thousands,Net wealth,80-90%,MLT,55.0,0.9
+C4,EUR thousands,Net wealth,80-90%,NLD,69.9,9.0
+C4,EUR thousands,Net wealth,80-90%,PRT,28.7,4.1
+C4,EUR thousands,Net wealth,80-90%,SVK,10.1,1.2
+C4,EUR thousands,Net wealth,80-90%,SVN,13.0,2.5
+C4,EUR thousands,Net wealth,90-100%,AUT,96.9,20.4
+C4,EUR thousands,Net wealth,90-100%,BEL,395.6,44.1
+C4,EUR thousands,Net wealth,90-100%,CYP,75.6,29.9
+C4,EUR thousands,Net wealth,90-100%,CZE,38.2,3.2
+C4,EUR thousands,Net wealth,90-100%,DEU,219.6,16.0
+C4,EUR thousands,Net wealth,90-100%,EA,174.2,7.8
+C4,EUR thousands,Net wealth,90-100%,ESP,161.3,18.5
+C4,EUR thousands,Net wealth,90-100%,EST,44.9,8.8
+C4,EUR thousands,Net wealth,90-100%,FIN,180.6,11.4
+C4,EUR thousands,Net wealth,90-100%,FRA,192.1,14.4
+C4,EUR thousands,Net wealth,90-100%,GRC,27.3,8.5
+C4,EUR thousands,Net wealth,90-100%,HRV,0.9,0.7
+C4,EUR thousands,Net wealth,90-100%,HUN,30.3,4.7
+C4,EUR thousands,Net wealth,90-100%,IRL,154.9,22.8
+C4,EUR thousands,Net wealth,90-100%,ITA,105.0,11.7
+C4,EUR thousands,Net wealth,90-100%,LTU,5.2,1.8
+C4,EUR thousands,Net wealth,90-100%,LUX,650.5,198.9
+C4,EUR thousands,Net wealth,90-100%,LVA,14.5,7.3
+C4,EUR thousands,Net wealth,90-100%,MLT,89.3,2.3
+C4,EUR thousands,Net wealth,90-100%,NLD,193.6,23.8
+C4,EUR thousands,Net wealth,90-100%,PRT,61.5,6.2
+C4,EUR thousands,Net wealth,90-100%,SVK,17.5,3.9
+C4,EUR thousands,Net wealth,90-100%,SVN,27.4,5.4
+C4,EUR thousands,Net wealth,Bottom 20%,AUT,1.9,0.2
+C4,EUR thousands,Net wealth,Bottom 20%,BEL,1.6,0.3
+C4,EUR thousands,Net wealth,Bottom 20%,CYP,0.6,0.2
+C4,EUR thousands,Net wealth,Bottom 20%,CZE,2.5,0.2
+C4,EUR thousands,Net wealth,Bottom 20%,DEU,1.5,0.2
+C4,EUR thousands,Net wealth,Bottom 20%,EA,1.2,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,ESP,0.7,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,EST,0.6,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,FIN,0.7,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,FRA,0.8,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,GRC,0.5,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,HRV,0.2,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,HUN,0.9,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,IRL,1.9,0.3
+C4,EUR thousands,Net wealth,Bottom 20%,ITA,2.0,0.7
+C4,EUR thousands,Net wealth,Bottom 20%,LTU,0.8,0.2
+C4,EUR thousands,Net wealth,Bottom 20%,LUX,11.1,3.0
+C4,EUR thousands,Net wealth,Bottom 20%,LVA,0.2,0.2
+C4,EUR thousands,Net wealth,Bottom 20%,MLT,6.0,0.1
+C4,EUR thousands,Net wealth,Bottom 20%,NLD,1.5,0.2
+C4,EUR thousands,Net wealth,Bottom 20%,PRT,0.8,0.2
+C4,EUR thousands,Net wealth,Bottom 20%,SVK,1.2,0.4
+C4,EUR thousands,Net wealth,Bottom 20%,SVN,0.5,0.1
+C4,EUR thousands,Total population,ALL,AUT,18.7,0.8
+C4,EUR thousands,Total population,ALL,BEL,28.5,1.6
+C4,EUR thousands,Total population,ALL,CYP,5.5,1.1
+C4,EUR thousands,Total population,ALL,CZE,9.5,0.3
+C4,EUR thousands,Total population,ALL,DEU,25.9,1.5
+C4,EUR thousands,Total population,ALL,EA,14.7,0.5
+C4,EUR thousands,Total population,ALL,ESP,12.0,0.6
+C4,EUR thousands,Total population,ALL,EST,5.1,0.3
+C4,EUR thousands,Total population,ALL,FIN,12.6,0.5
+C4,EUR thousands,Total population,ALL,FRA,15.2,0.7
+C4,EUR thousands,Total population,ALL,GRC,2.2,0.3
+C4,EUR thousands,Total population,ALL,HRV,0.5,0.1
+C4,EUR thousands,Total population,ALL,HUN,3.5,0.2
+C4,EUR thousands,Total population,ALL,IRL,15.4,0.9
+C4,EUR thousands,Total population,ALL,ITA,9.9,1.2
+C4,EUR thousands,Total population,ALL,LTU,1.5,0.2
+C4,EUR thousands,Total population,ALL,LUX,80.4,6.0
+C4,EUR thousands,Total population,ALL,LVA,1.6,0.3
+C4,EUR thousands,Total population,ALL,MLT,16.8,0.1
+C4,EUR thousands,Total population,ALL,NLD,20.7,0.7
+C4,EUR thousands,Total population,ALL,PRT,6.3,0.5
+C4,EUR thousands,Total population,ALL,SVK,5.0,0.5
+C4,EUR thousands,Total population,ALL,SVN,2.7,0.3
+C5,% of households,Age of RP,16-34,AUT,3.6,1.4
+C5,% of households,Age of RP,16-34,BEL,5.2,1.7
+C5,% of households,Age of RP,16-34,CYP,3.9,3.3
+C5,% of households,Age of RP,16-34,CZE,3.7,1.3
+C5,% of households,Age of RP,16-34,DEU,14.5,2.0
+C5,% of households,Age of RP,16-34,EA,9.9,0.8
+C5,% of households,Age of RP,16-34,ESP,6.4,1.6
+C5,% of households,Age of RP,16-34,EST,13.3,2.0
+C5,% of households,Age of RP,16-34,FIN,13.9,0.9
+C5,% of households,Age of RP,16-34,FRA,8.5,1.0
+C5,% of households,Age of RP,16-34,GRC,0.3,0.3
+C5,% of households,Age of RP,16-34,HRV,2.0,1.6
+C5,% of households,Age of RP,16-34,HUN,2.7,0.8
+C5,% of households,Age of RP,16-34,IRL,12.1,2.1
+C5,% of households,Age of RP,16-34,ITA,3.4,1.5
+C5,% of households,Age of RP,16-34,LTU,3.1,1.5
+C5,% of households,Age of RP,16-34,LUX,15.8,2.5
+C5,% of households,Age of RP,16-34,LVA,0.7,0.4
+C5,% of households,Age of RP,16-34,MLT,5.6,0.1
+C5,% of households,Age of RP,16-34,NLD,11.4,1.7
+C5,% of households,Age of RP,16-34,PRT,5.5,2.4
+C5,% of households,Age of RP,16-34,SVK,0.2,0.2
+C5,% of households,Age of RP,16-34,SVN,3.5,1.9
+C5,% of households,Age of RP,35-44,AUT,6.1,1.8
+C5,% of households,Age of RP,35-44,BEL,10.0,1.9
+C5,% of households,Age of RP,35-44,CYP,2.9,1.5
+C5,% of households,Age of RP,35-44,CZE,4.7,0.9
+C5,% of households,Age of RP,35-44,DEU,15.7,1.7
+C5,% of households,Age of RP,35-44,EA,9.8,0.6
+C5,% of households,Age of RP,35-44,ESP,8.7,1.3
+C5,% of households,Age of RP,35-44,EST,14.3,1.8
+C5,% of households,Age of RP,35-44,FIN,19.9,1.1
+C5,% of households,Age of RP,35-44,FRA,11.6,1.0
+C5,% of households,Age of RP,35-44,GRC,0.4,0.4
+C5,% of households,Age of RP,35-44,HRV,1.9,1.9
+C5,% of households,Age of RP,35-44,HUN,2.6,0.5
+C5,% of households,Age of RP,35-44,IRL,7.0,0.9
+C5,% of households,Age of RP,35-44,ITA,4.8,2.2
+C5,% of households,Age of RP,35-44,LTU,1.7,1.1
+C5,% of households,Age of RP,35-44,LUX,16.0,2.2
+C5,% of households,Age of RP,35-44,LVA,0.9,0.6
+C5,% of households,Age of RP,35-44,MLT,5.9,0.1
+C5,% of households,Age of RP,35-44,NLD,4.6,1.2
+C5,% of households,Age of RP,35-44,PRT,3.1,0.8
+C5,% of households,Age of RP,35-44,SVK,3.2,1.4
+C5,% of households,Age of RP,35-44,SVN,4.9,1.3
+C5,% of households,Age of RP,45-54,AUT,7.5,1.7
+C5,% of households,Age of RP,45-54,BEL,13.6,2.0
+C5,% of households,Age of RP,45-54,CYP,7.4,2.3
+C5,% of households,Age of RP,45-54,CZE,3.2,0.9
+C5,% of households,Age of RP,45-54,DEU,18.2,2.1
+C5,% of households,Age of RP,45-54,EA,12.4,0.8
+C5,% of households,Age of RP,45-54,ESP,12.0,1.2
+C5,% of households,Age of RP,45-54,EST,10.1,1.5
+C5,% of households,Age of RP,45-54,FIN,24.2,1.2
+C5,% of households,Age of RP,45-54,FRA,15.7,1.0
+C5,% of households,Age of RP,45-54,GRC,1.2,0.5
+C5,% of households,Age of RP,45-54,HRV,4.2,1.7
+C5,% of households,Age of RP,45-54,HUN,2.5,0.6
+C5,% of households,Age of RP,45-54,IRL,12.6,1.2
+C5,% of households,Age of RP,45-54,ITA,7.3,2.4
+C5,% of households,Age of RP,45-54,LTU,1.4,0.7
+C5,% of households,Age of RP,45-54,LUX,12.5,1.8
+C5,% of households,Age of RP,45-54,LVA,1.3,0.7
+C5,% of households,Age of RP,45-54,MLT,10.0,0.1
+C5,% of households,Age of RP,45-54,NLD,5.7,1.3
+C5,% of households,Age of RP,45-54,PRT,6.5,0.8
+C5,% of households,Age of RP,45-54,SVK,1.9,0.8
+C5,% of households,Age of RP,45-54,SVN,5.6,1.1
+C5,% of households,Age of RP,55-64,AUT,7.8,1.4
+C5,% of households,Age of RP,55-64,BEL,16.6,2.0
+C5,% of households,Age of RP,55-64,CYP,7.3,1.7
+C5,% of households,Age of RP,55-64,CZE,3.6,0.9
+C5,% of households,Age of RP,55-64,DEU,14.4,1.5
+C5,% of households,Age of RP,55-64,EA,11.1,0.5
+C5,% of households,Age of RP,55-64,ESP,13.9,1.4
+C5,% of households,Age of RP,55-64,EST,5.8,1.3
+C5,% of households,Age of RP,55-64,FIN,20.9,1.0
+C5,% of households,Age of RP,55-64,FRA,12.5,1.0
+C5,% of households,Age of RP,55-64,GRC,2.7,1.0
+C5,% of households,Age of RP,55-64,HRV,5.4,1.7
+C5,% of households,Age of RP,55-64,HUN,1.8,0.4
+C5,% of households,Age of RP,55-64,IRL,12.5,1.3
+C5,% of households,Age of RP,55-64,ITA,6.7,1.6
+C5,% of households,Age of RP,55-64,LTU,0.2,0.2
+C5,% of households,Age of RP,55-64,LUX,20.2,2.6
+C5,% of households,Age of RP,55-64,LVA,4.5,2.7
+C5,% of households,Age of RP,55-64,MLT,5.7,0.1
+C5,% of households,Age of RP,55-64,NLD,5.9,1.1
+C5,% of households,Age of RP,55-64,PRT,4.9,0.7
+C5,% of households,Age of RP,55-64,SVK,2.2,1.0
+C5,% of households,Age of RP,55-64,SVN,5.7,1.3
+C5,% of households,Age of RP,65-74,AUT,3.7,0.9
+C5,% of households,Age of RP,65-74,BEL,9.1,1.4
+C5,% of households,Age of RP,65-74,CYP,10.6,2.3
+C5,% of households,Age of RP,65-74,CZE,5.2,1.0
+C5,% of households,Age of RP,65-74,DEU,15.2,1.7
+C5,% of households,Age of RP,65-74,EA,10.7,0.5
+C5,% of households,Age of RP,65-74,ESP,16.0,1.5
+C5,% of households,Age of RP,65-74,EST,4.2,1.2
+C5,% of households,Age of RP,65-74,FIN,25.1,1.2
+C5,% of households,Age of RP,65-74,FRA,13.2,1.0
+C5,% of households,Age of RP,65-74,GRC,1.2,0.5
+C5,% of households,Age of RP,65-74,HRV,5.1,1.9
+C5,% of households,Age of RP,65-74,HUN,1.9,0.4
+C5,% of households,Age of RP,65-74,IRL,10.6,1.4
+C5,% of households,Age of RP,65-74,ITA,5.3,1.2
+C5,% of households,Age of RP,65-74,LTU,0.0,0.1
+C5,% of households,Age of RP,65-74,LUX,27.5,4.2
+C5,% of households,Age of RP,65-74,LVA,1.7,0.8
+C5,% of households,Age of RP,65-74,MLT,12.3,0.1
+C5,% of households,Age of RP,65-74,NLD,4.4,0.8
+C5,% of households,Age of RP,65-74,PRT,4.6,0.7
+C5,% of households,Age of RP,65-74,SVK,0.9,0.7
+C5,% of households,Age of RP,65-74,SVN,6.6,1.4
+C5,% of households,Age of RP,75+,AUT,6.6,1.4
+C5,% of households,Age of RP,75+,BEL,10.0,2.1
+C5,% of households,Age of RP,75+,CYP,3.9,1.5
+C5,% of households,Age of RP,75+,CZE,3.0,0.8
+C5,% of households,Age of RP,75+,DEU,14.5,2.0
+C5,% of households,Age of RP,75+,EA,10.1,0.7
+C5,% of households,Age of RP,75+,ESP,14.7,1.6
+C5,% of households,Age of RP,75+,EST,4.3,1.3
+C5,% of households,Age of RP,75+,FIN,19.9,1.3
+C5,% of households,Age of RP,75+,FRA,10.7,1.2
+C5,% of households,Age of RP,75+,GRC,0.5,0.5
+C5,% of households,Age of RP,75+,HRV,1.4,0.8
+C5,% of households,Age of RP,75+,HUN,0.6,0.2
+C5,% of households,Age of RP,75+,IRL,10.0,1.3
+C5,% of households,Age of RP,75+,ITA,4.7,1.4
+C5,% of households,Age of RP,75+,LTU,1.4,1.1
+C5,% of households,Age of RP,75+,LUX,21.5,5.2
+C5,% of households,Age of RP,75+,LVA,0.6,0.6
+C5,% of households,Age of RP,75+,MLT,10.4,0.1
+C5,% of households,Age of RP,75+,NLD,3.5,0.9
+C5,% of households,Age of RP,75+,PRT,3.9,0.7
+C5,% of households,Age of RP,75+,SVK,0.8,0.5
+C5,% of households,Age of RP,75+,SVN,3.5,0.9
+C5,% of households,Household size,1,AUT,3.8,0.8
+C5,% of households,Household size,1,BEL,7.7,1.2
+C5,% of households,Household size,1,CYP,2.5,1.3
+C5,% of households,Household size,1,CZE,3.1,0.6
+C5,% of households,Household size,1,DEU,13.4,1.2
+C5,% of households,Household size,1,EA,8.5,0.4
+C5,% of households,Household size,1,ESP,8.4,1.0
+C5,% of households,Household size,1,EST,6.8,1.1
+C5,% of households,Household size,1,FIN,13.4,0.6
+C5,% of households,Household size,1,FRA,7.9,0.6
+C5,% of households,Household size,1,GRC,1.0,0.5
+C5,% of households,Household size,1,HRV,0.7,0.5
+C5,% of households,Household size,1,HUN,1.1,0.2
+C5,% of households,Household size,1,IRL,7.6,0.9
+C5,% of households,Household size,1,ITA,3.6,0.9
+C5,% of households,Household size,1,LTU,0.8,0.5
+C5,% of households,Household size,1,LUX,15.6,2.1
+C5,% of households,Household size,1,LVA,0.7,0.3
+C5,% of households,Household size,1,MLT,5.8,0.1
+C5,% of households,Household size,1,NLD,5.9,0.8
+C5,% of households,Household size,1,PRT,2.8,0.6
+C5,% of households,Household size,1,SVK,2.8,1.5
+C5,% of households,Household size,1,SVN,3.9,1.1
+C5,% of households,Household size,2,AUT,6.9,1.0
+C5,% of households,Household size,2,BEL,16.0,1.6
+C5,% of households,Household size,2,CYP,7.0,1.4
+C5,% of households,Household size,2,CZE,4.2,0.7
+C5,% of households,Household size,2,DEU,18.7,1.5
+C5,% of households,Household size,2,EA,13.7,0.5
+C5,% of households,Household size,2,ESP,16.4,1.2
+C5,% of households,Household size,2,EST,7.3,1.0
+C5,% of households,Household size,2,FIN,26.4,0.7
+C5,% of households,Household size,2,FRA,15.5,0.8
+C5,% of households,Household size,2,GRC,1.4,0.6
+C5,% of households,Household size,2,HRV,3.6,1.4
+C5,% of households,Household size,2,HUN,2.8,0.4
+C5,% of households,Household size,2,IRL,11.3,1.1
+C5,% of households,Household size,2,ITA,7.1,1.5
+C5,% of households,Household size,2,LTU,0.9,0.4
+C5,% of households,Household size,2,LUX,22.0,2.1
+C5,% of households,Household size,2,LVA,0.8,0.4
+C5,% of households,Household size,2,MLT,8.6,0.1
+C5,% of households,Household size,2,NLD,7.3,0.9
+C5,% of households,Household size,2,PRT,4.8,0.6
+C5,% of households,Household size,2,SVK,0.6,0.2
+C5,% of households,Household size,2,SVN,5.7,0.8
+C5,% of households,Household size,3,AUT,7.5,2.2
+C5,% of households,Household size,3,BEL,8.2,2.0
+C5,% of households,Household size,3,CYP,8.1,2.6
+C5,% of households,Household size,3,CZE,4.3,1.0
+C5,% of households,Household size,3,DEU,17.5,2.1
+C5,% of households,Household size,3,EA,10.4,0.6
+C5,% of households,Household size,3,ESP,11.0,1.1
+C5,% of households,Household size,3,EST,8.7,1.7
+C5,% of households,Household size,3,FIN,24.7,1.4
+C5,% of households,Household size,3,FRA,12.5,1.1
+C5,% of households,Household size,3,GRC,1.4,0.5
+C5,% of households,Household size,3,HRV,6.1,2.3
+C5,% of households,Household size,3,HUN,2.0,0.6
+C5,% of households,Household size,3,IRL,10.1,1.3
+C5,% of households,Household size,3,ITA,6.3,1.6
+C5,% of households,Household size,3,LTU,2.2,1.2
+C5,% of households,Household size,3,LUX,17.3,2.7
+C5,% of households,Household size,3,LVA,1.8,0.8
+C5,% of households,Household size,3,MLT,11.1,0.1
+C5,% of households,Household size,3,NLD,3.2,1.3
+C5,% of households,Household size,3,PRT,5.0,0.8
+C5,% of households,Household size,3,SVK,2.9,1.1
+C5,% of households,Household size,3,SVN,5.2,1.1
+C5,% of households,Household size,4,AUT,7.7,2.3
+C5,% of households,Household size,4,BEL,12.1,2.2
+C5,% of households,Household size,4,CYP,6.6,2.6
+C5,% of households,Household size,4,CZE,3.1,0.9
+C5,% of households,Household size,4,DEU,13.1,2.0
+C5,% of households,Household size,4,EA,11.5,0.9
+C5,% of households,Household size,4,ESP,13.4,1.6
+C5,% of households,Household size,4,EST,19.2,2.5
+C5,% of households,Household size,4,FIN,27.8,1.4
+C5,% of households,Household size,4,FRA,16.2,1.3
+C5,% of households,Household size,4,GRC,1.4,0.9
+C5,% of households,Household size,4,HRV,5.7,2.1
+C5,% of households,Household size,4,HUN,3.3,0.7
+C5,% of households,Household size,4,IRL,12.9,1.4
+C5,% of households,Household size,4,ITA,8.4,3.2
+C5,% of households,Household size,4,LTU,2.3,1.4
+C5,% of households,Household size,4,LUX,18.7,2.8
+C5,% of households,Household size,4,LVA,9.8,6.3
+C5,% of households,Household size,4,MLT,8.8,0.1
+C5,% of households,Household size,4,NLD,5.6,1.5
+C5,% of households,Household size,4,PRT,6.7,1.0
+C5,% of households,Household size,4,SVK,3.1,1.3
+C5,% of households,Household size,4,SVN,5.3,1.6
+C5,% of households,Household size,5+,AUT,12.7,4.2
+C5,% of households,Household size,5+,BEL,10.2,2.5
+C5,% of households,Household size,5+,CYP,4.8,2.5
+C5,% of households,Household size,5+,CZE,9.3,3.1
+C5,% of households,Household size,5+,DEU,7.0,1.8
+C5,% of households,Household size,5+,EA,7.7,1.1
+C5,% of households,Household size,5+,ESP,10.8,2.1
+C5,% of households,Household size,5+,EST,12.8,2.6
+C5,% of households,Household size,5+,FIN,22.6,1.9
+C5,% of households,Household size,5+,FRA,10.4,1.3
+C5,% of households,Household size,5+,GRC,0.0,0.1
+C5,% of households,Household size,5+,HRV,3.4,2.0
+C5,% of households,Household size,5+,HUN,1.5,0.7
+C5,% of households,Household size,5+,IRL,12.9,1.5
+C5,% of households,Household size,5+,ITA,2.2,3.6
+C5,% of households,Household size,5+,LUX,14.2,3.8
+C5,% of households,Household size,5+,LVA,1.9,1.3
+C5,% of households,Household size,5+,MLT,4.6,0.1
+C5,% of households,Household size,5+,NLD,7.2,2.5
+C5,% of households,Household size,5+,PRT,6.8,1.9
+C5,% of households,Household size,5+,SVK,0.0,0.1
+C5,% of households,Household size,5+,SVN,7.3,1.8
+C5,% of households,Housing status,Owners - outright,AUT,10.0,1.3
+C5,% of households,Housing status,Owners - outright,BEL,14.0,1.4
+C5,% of households,Housing status,Owners - outright,CYP,8.9,1.5
+C5,% of households,Housing status,Owners - outright,CZE,4.2,0.5
+C5,% of households,Housing status,Owners - outright,DEU,23.8,1.7
+C5,% of households,Housing status,Owners - outright,EA,13.5,0.5
+C5,% of households,Housing status,Owners - outright,ESP,16.1,0.9
+C5,% of households,Housing status,Owners - outright,EST,6.1,0.7
+C5,% of households,Housing status,Owners - outright,FIN,28.9,0.7
+C5,% of households,Housing status,Owners - outright,FRA,16.9,0.8
+C5,% of households,Housing status,Owners - outright,GRC,1.6,0.5
+C5,% of households,Housing status,Owners - outright,HRV,4.6,1.0
+C5,% of households,Housing status,Owners - outright,HUN,2.2,0.3
+C5,% of households,Housing status,Owners - outright,IRL,13.0,0.9
+C5,% of households,Housing status,Owners - outright,ITA,7.0,1.1
+C5,% of households,Housing status,Owners - outright,LTU,0.8,0.3
+C5,% of households,Housing status,Owners - outright,LUX,22.6,2.2
+C5,% of households,Housing status,Owners - outright,LVA,2.3,0.9
+C5,% of households,Housing status,Owners - outright,MLT,9.2,0.1
+C5,% of households,Housing status,Owners - outright,NLD,7.4,1.4
+C5,% of households,Housing status,Owners - outright,PRT,5.8,0.5
+C5,% of households,Housing status,Owners - outright,SVK,2.3,0.6
+C5,% of households,Housing status,Owners - outright,SVN,6.0,0.6
+C5,% of households,Housing status,Owners - with mortgage,AUT,7.1,1.9
+C5,% of households,Housing status,Owners - with mortgage,BEL,13.8,1.6
+C5,% of households,Housing status,Owners - with mortgage,CYP,2.3,0.7
+C5,% of households,Housing status,Owners - with mortgage,CZE,4.0,1.1
+C5,% of households,Housing status,Owners - with mortgage,DEU,18.5,1.9
+C5,% of households,Housing status,Owners - with mortgage,EA,13.7,0.6
+C5,% of households,Housing status,Owners - with mortgage,ESP,12.2,1.2
+C5,% of households,Housing status,Owners - with mortgage,EST,18.7,1.8
+C5,% of households,Housing status,Owners - with mortgage,FIN,24.5,0.8
+C5,% of households,Housing status,Owners - with mortgage,FRA,18.7,1.0
+C5,% of households,Housing status,Owners - with mortgage,GRC,1.5,1.0
+C5,% of households,Housing status,Owners - with mortgage,HRV,1.6,1.8
+C5,% of households,Housing status,Owners - with mortgage,HUN,2.0,0.5
+C5,% of households,Housing status,Owners - with mortgage,IRL,14.0,1.1
+C5,% of households,Housing status,Owners - with mortgage,ITA,8.0,4.2
+C5,% of households,Housing status,Owners - with mortgage,LTU,2.4,1.3
+C5,% of households,Housing status,Owners - with mortgage,LUX,16.1,1.9
+C5,% of households,Housing status,Owners - with mortgage,LVA,1.7,0.8
+C5,% of households,Housing status,Owners - with mortgage,MLT,5.3,0.1
+C5,% of households,Housing status,Owners - with mortgage,NLD,6.9,0.8
+C5,% of households,Housing status,Owners - with mortgage,PRT,5.6,0.7
+C5,% of households,Housing status,Owners - with mortgage,SVK,1.3,0.9
+C5,% of households,Housing status,Owners - with mortgage,SVN,5.7,2.1
+C5,% of households,Housing status,Renters / other,AUT,3.4,0.6
+C5,% of households,Housing status,Renters / other,BEL,3.8,0.8
+C5,% of households,Housing status,Renters / other,CYP,4.8,1.9
+C5,% of households,Housing status,Renters / other,CZE,3.1,0.8
+C5,% of households,Housing status,Renters / other,DEU,10.2,0.9
+C5,% of households,Housing status,Renters / other,EA,6.4,0.4
+C5,% of households,Housing status,Renters / other,ESP,6.0,0.9
+C5,% of households,Housing status,Renters / other,EST,5.8,1.5
+C5,% of households,Housing status,Renters / other,FIN,8.0,0.6
+C5,% of households,Housing status,Renters / other,FRA,4.7,0.5
+C5,% of households,Housing status,Renters / other,GRC,0.3,0.1
+C5,% of households,Housing status,Renters / other,HRV,0.5,0.4
+C5,% of households,Housing status,Renters / other,HUN,1.6,0.5
+C5,% of households,Housing status,Renters / other,IRL,4.7,0.9
+C5,% of households,Housing status,Renters / other,ITA,1.8,0.5
+C5,% of households,Housing status,Renters / other,LTU,5.1,3.0
+C5,% of households,Housing status,Renters / other,LUX,14.3,1.7
+C5,% of households,Housing status,Renters / other,LVA,0.4,0.3
+C5,% of households,Housing status,Renters / other,MLT,7.0,0.1
+C5,% of households,Housing status,Renters / other,NLD,4.9,0.8
+C5,% of households,Housing status,Renters / other,PRT,2.5,0.6
+C5,% of households,Housing status,Renters / other,SVK,0.1,0.2
+C5,% of households,Housing status,Renters / other,SVN,2.6,1.1
+C5,% of households,Income,20-40%,AUT,2.6,0.8
+C5,% of households,Income,20-40%,BEL,7.2,1.6
+C5,% of households,Income,20-40%,CYP,6.7,1.8
+C5,% of households,Income,20-40%,CZE,2.2,0.7
+C5,% of households,Income,20-40%,DEU,4.4,1.0
+C5,% of households,Income,20-40%,EA,4.4,0.4
+C5,% of households,Income,20-40%,ESP,6.3,1.0
+C5,% of households,Income,20-40%,EST,7.1,1.5
+C5,% of households,Income,20-40%,FIN,12.9,1.0
+C5,% of households,Income,20-40%,FRA,4.8,0.8
+C5,% of households,Income,20-40%,GRC,0.6,0.3
+C5,% of households,Income,20-40%,HRV,1.6,1.0
+C5,% of households,Income,20-40%,HUN,0.4,0.1
+C5,% of households,Income,20-40%,IRL,6.2,1.1
+C5,% of households,Income,20-40%,ITA,0.6,0.4
+C5,% of households,Income,20-40%,LTU,0.4,0.6
+C5,% of households,Income,20-40%,LUX,10.6,2.4
+C5,% of households,Income,20-40%,LVA,0.0,0.1
+C5,% of households,Income,20-40%,MLT,14.9,0.1
+C5,% of households,Income,20-40%,NLD,3.2,1.0
+C5,% of households,Income,20-40%,PRT,2.3,0.7
+C5,% of households,Income,20-40%,SVK,0.5,0.3
+C5,% of households,Income,20-40%,SVN,3.3,1.5
+C5,% of households,Income,40-60%,AUT,4.4,1.2
+C5,% of households,Income,40-60%,BEL,13.2,2.2
+C5,% of households,Income,40-60%,CYP,5.0,2.4
+C5,% of households,Income,40-60%,CZE,3.5,0.8
+C5,% of households,Income,40-60%,DEU,13.3,1.6
+C5,% of households,Income,40-60%,EA,7.9,0.6
+C5,% of households,Income,40-60%,ESP,10.2,1.4
+C5,% of households,Income,40-60%,EST,3.3,1.1
+C5,% of households,Income,40-60%,FIN,16.2,1.0
+C5,% of households,Income,40-60%,FRA,8.2,1.0
+C5,% of households,Income,40-60%,GRC,0.6,0.4
+C5,% of households,Income,40-60%,HRV,5.0,1.9
+C5,% of households,Income,40-60%,HUN,0.9,0.2
+C5,% of households,Income,40-60%,IRL,9.4,1.3
+C5,% of households,Income,40-60%,ITA,3.5,0.9
+C5,% of households,Income,40-60%,LTU,1.1,0.7
+C5,% of households,Income,40-60%,LUX,20.9,3.3
+C5,% of households,Income,40-60%,LVA,0.5,0.5
+C5,% of households,Income,40-60%,MLT,5.8,0.1
+C5,% of households,Income,40-60%,NLD,6.1,1.2
+C5,% of households,Income,40-60%,PRT,2.0,0.5
+C5,% of households,Income,40-60%,SVK,2.6,1.4
+C5,% of households,Income,40-60%,SVN,4.8,1.4
+C5,% of households,Income,60-80%,AUT,6.9,1.5
+C5,% of households,Income,60-80%,BEL,8.2,1.5
+C5,% of households,Income,60-80%,CYP,5.2,2.0
+C5,% of households,Income,60-80%,CZE,3.5,0.9
+C5,% of households,Income,60-80%,DEU,16.8,1.9
+C5,% of households,Income,60-80%,EA,13.5,0.7
+C5,% of households,Income,60-80%,ESP,15.6,1.4
+C5,% of households,Income,60-80%,EST,10.3,1.7
+C5,% of households,Income,60-80%,FIN,24.8,1.0
+C5,% of households,Income,60-80%,FRA,15.3,1.2
+C5,% of households,Income,60-80%,GRC,1.3,0.8
+C5,% of households,Income,60-80%,HRV,4.7,1.7
+C5,% of households,Income,60-80%,HUN,2.6,0.6
+C5,% of households,Income,60-80%,IRL,11.5,1.4
+C5,% of households,Income,60-80%,ITA,6.8,2.6
+C5,% of households,Income,60-80%,LTU,0.3,0.5
+C5,% of households,Income,60-80%,LUX,20.2,3.0
+C5,% of households,Income,60-80%,LVA,5.3,3.0
+C5,% of households,Income,60-80%,MLT,9.1,0.1
+C5,% of households,Income,60-80%,NLD,7.4,1.3
+C5,% of households,Income,60-80%,PRT,4.6,0.8
+C5,% of households,Income,60-80%,SVK,3.4,1.3
+C5,% of households,Income,60-80%,SVN,6.8,1.3
+C5,% of households,Income,80-90%,AUT,10.2,3.0
+C5,% of households,Income,80-90%,BEL,18.3,4.1
+C5,% of households,Income,80-90%,CYP,9.4,3.9
+C5,% of households,Income,80-90%,CZE,3.6,1.4
+C5,% of households,Income,80-90%,DEU,29.9,3.2
+C5,% of households,Income,80-90%,EA,18.6,1.0
+C5,% of households,Income,80-90%,ESP,20.0,2.3
+C5,% of households,Income,80-90%,EST,17.6,3.0
+C5,% of households,Income,80-90%,FIN,29.6,1.4
+C5,% of households,Income,80-90%,FRA,24.4,1.7
+C5,% of households,Income,80-90%,GRC,0.4,0.6
+C5,% of households,Income,80-90%,HRV,2.9,2.1
+C5,% of households,Income,80-90%,HUN,4.1,1.0
+C5,% of households,Income,80-90%,IRL,17.8,2.2
+C5,% of households,Income,80-90%,ITA,12.2,3.3
+C5,% of households,Income,80-90%,LTU,3.9,1.6
+C5,% of households,Income,80-90%,LUX,26.4,4.1
+C5,% of households,Income,80-90%,LVA,1.2,0.9
+C5,% of households,Income,80-90%,MLT,6.8,0.1
+C5,% of households,Income,80-90%,NLD,8.6,2.4
+C5,% of households,Income,80-90%,PRT,9.2,1.9
+C5,% of households,Income,80-90%,SVK,0.6,1.1
+C5,% of households,Income,80-90%,SVN,6.2,1.7
+C5,% of households,Income,90-100%,AUT,18.5,3.3
+C5,% of households,Income,90-100%,BEL,30.8,3.8
+C5,% of households,Income,90-100%,CYP,9.7,2.5
+C5,% of households,Income,90-100%,CZE,12.6,2.2
+C5,% of households,Income,90-100%,DEU,39.2,3.4
+C5,% of households,Income,90-100%,EA,31.5,1.3
+C5,% of households,Income,90-100%,ESP,34.0,2.8
+C5,% of households,Income,90-100%,EST,28.4,3.0
+C5,% of households,Income,90-100%,FIN,51.4,1.4
+C5,% of households,Income,90-100%,FRA,35.6,1.6
+C5,% of households,Income,90-100%,GRC,5.8,2.5
+C5,% of households,Income,90-100%,HRV,9.0,4.4
+C5,% of households,Income,90-100%,HUN,8.7,1.4
+C5,% of households,Income,90-100%,IRL,27.8,2.6
+C5,% of households,Income,90-100%,ITA,22.3,4.4
+C5,% of households,Income,90-100%,LTU,2.9,1.5
+C5,% of households,Income,90-100%,LUX,40.7,4.5
+C5,% of households,Income,90-100%,LVA,5.3,1.5
+C5,% of households,Income,90-100%,MLT,7.0,0.1
+C5,% of households,Income,90-100%,NLD,11.4,2.5
+C5,% of households,Income,90-100%,PRT,19.4,2.1
+C5,% of households,Income,90-100%,SVK,4.3,2.2
+C5,% of households,Income,90-100%,SVN,12.0,3.3
+C5,% of households,Income,Bottom 20%,AUT,2.6,1.1
+C5,% of households,Income,Bottom 20%,BEL,2.4,0.9
+C5,% of households,Income,Bottom 20%,CYP,3.1,1.6
+C5,% of households,Income,Bottom 20%,CZE,2.4,0.6
+C5,% of households,Income,Bottom 20%,DEU,8.1,1.7
+C5,% of households,Income,Bottom 20%,EA,2.9,0.4
+C5,% of households,Income,Bottom 20%,ESP,2.7,0.6
+C5,% of households,Income,Bottom 20%,EST,1.0,0.7
+C5,% of households,Income,Bottom 20%,FIN,6.9,0.9
+C5,% of households,Income,Bottom 20%,FRA,2.1,0.4
+C5,% of households,Income,Bottom 20%,GRC,0.6,0.5
+C5,% of households,Income,Bottom 20%,HRV,0.6,0.5
+C5,% of households,Income,Bottom 20%,HUN,0.1,0.1
+C5,% of households,Income,Bottom 20%,IRL,3.6,0.7
+C5,% of households,Income,Bottom 20%,ITA,0.5,0.2
+C5,% of households,Income,Bottom 20%,LTU,0.9,0.8
+C5,% of households,Income,Bottom 20%,LUX,5.0,2.0
+C5,% of households,Income,Bottom 20%,LVA,0.0,0.1
+C5,% of households,Income,Bottom 20%,MLT,3.5,0.1
+C5,% of households,Income,Bottom 20%,NLD,3.8,1.0
+C5,% of households,Income,Bottom 20%,PRT,0.6,0.2
+C5,% of households,Income,Bottom 20%,SVK,0.2,0.2
+C5,% of households,Income,Bottom 20%,SVN,2.1,1.1
+C5,% of households,Net wealth,20-40%,AUT,3.0,0.9
+C5,% of households,Net wealth,20-40%,BEL,5.6,1.4
+C5,% of households,Net wealth,20-40%,CYP,4.5,2.1
+C5,% of households,Net wealth,20-40%,CZE,1.0,0.4
+C5,% of households,Net wealth,20-40%,DEU,7.3,1.3
+C5,% of households,Net wealth,20-40%,EA,5.2,0.5
+C5,% of households,Net wealth,20-40%,ESP,5.2,1.1
+C5,% of households,Net wealth,20-40%,EST,4.1,1.3
+C5,% of households,Net wealth,20-40%,FIN,8.9,0.8
+C5,% of households,Net wealth,20-40%,FRA,4.7,0.8
+C5,% of households,Net wealth,20-40%,GRC,0.2,0.2
+C5,% of households,Net wealth,20-40%,HRV,2.1,1.1
+C5,% of households,Net wealth,20-40%,HUN,0.3,0.1
+C5,% of households,Net wealth,20-40%,IRL,5.6,1.2
+C5,% of households,Net wealth,20-40%,ITA,2.3,0.6
+C5,% of households,Net wealth,20-40%,LTU,1.0,0.7
+C5,% of households,Net wealth,20-40%,LUX,17.1,2.7
+C5,% of households,Net wealth,20-40%,LVA,0.0,0.3
+C5,% of households,Net wealth,20-40%,MLT,5.0,0.2
+C5,% of households,Net wealth,20-40%,NLD,4.0,1.1
+C5,% of households,Net wealth,20-40%,PRT,1.8,0.8
+C5,% of households,Net wealth,20-40%,SVK,0.2,0.3
+C5,% of households,Net wealth,20-40%,SVN,1.6,0.7
+C5,% of households,Net wealth,40-60%,AUT,2.8,0.9
+C5,% of households,Net wealth,40-60%,BEL,7.4,1.8
+C5,% of households,Net wealth,40-60%,CYP,9.3,3.8
+C5,% of households,Net wealth,40-60%,CZE,3.5,0.8
+C5,% of households,Net wealth,40-60%,DEU,12.1,1.7
+C5,% of households,Net wealth,40-60%,EA,6.9,0.5
+C5,% of households,Net wealth,40-60%,ESP,8.6,1.1
+C5,% of households,Net wealth,40-60%,EST,5.4,1.3
+C5,% of households,Net wealth,40-60%,FIN,14.2,0.9
+C5,% of households,Net wealth,40-60%,FRA,9.6,0.9
+C5,% of households,Net wealth,40-60%,GRC,0.6,0.5
+C5,% of households,Net wealth,40-60%,HRV,2.1,1.2
+C5,% of households,Net wealth,40-60%,HUN,0.5,0.2
+C5,% of households,Net wealth,40-60%,IRL,7.1,1.2
+C5,% of households,Net wealth,40-60%,ITA,2.4,1.4
+C5,% of households,Net wealth,40-60%,LTU,1.0,1.0
+C5,% of households,Net wealth,40-60%,LUX,11.7,2.3
+C5,% of households,Net wealth,40-60%,LVA,0.9,0.5
+C5,% of households,Net wealth,40-60%,MLT,6.0,0.1
+C5,% of households,Net wealth,40-60%,NLD,6.0,1.4
+C5,% of households,Net wealth,40-60%,PRT,4.1,0.9
+C5,% of households,Net wealth,40-60%,SVK,2.1,1.4
+C5,% of households,Net wealth,40-60%,SVN,3.3,1.0
+C5,% of households,Net wealth,60-80%,AUT,4.5,1.3
+C5,% of households,Net wealth,60-80%,BEL,15.4,2.2
+C5,% of households,Net wealth,60-80%,CYP,6.2,2.7
+C5,% of households,Net wealth,60-80%,CZE,2.9,0.7
+C5,% of households,Net wealth,60-80%,DEU,18.0,2.0
+C5,% of households,Net wealth,60-80%,EA,11.2,0.7
+C5,% of households,Net wealth,60-80%,ESP,14.7,1.5
+C5,% of households,Net wealth,60-80%,EST,10.0,1.6
+C5,% of households,Net wealth,60-80%,FIN,24.5,1.1
+C5,% of households,Net wealth,60-80%,FRA,12.6,1.0
+C5,% of households,Net wealth,60-80%,GRC,0.9,0.6
+C5,% of households,Net wealth,60-80%,HRV,3.8,2.1
+C5,% of households,Net wealth,60-80%,HUN,2.2,0.5
+C5,% of households,Net wealth,60-80%,IRL,12.5,1.5
+C5,% of households,Net wealth,60-80%,ITA,6.3,2.4
+C5,% of households,Net wealth,60-80%,LTU,0.4,0.3
+C5,% of households,Net wealth,60-80%,LUX,17.8,3.1
+C5,% of households,Net wealth,60-80%,LVA,0.5,0.5
+C5,% of households,Net wealth,60-80%,MLT,9.1,0.1
+C5,% of households,Net wealth,60-80%,NLD,5.2,1.3
+C5,% of households,Net wealth,60-80%,PRT,2.8,0.6
+C5,% of households,Net wealth,60-80%,SVK,1.2,1.3
+C5,% of households,Net wealth,60-80%,SVN,9.3,1.8
+C5,% of households,Net wealth,80-90%,AUT,12.5,2.8
+C5,% of households,Net wealth,80-90%,BEL,25.2,3.8
+C5,% of households,Net wealth,80-90%,CYP,7.7,3.3
+C5,% of households,Net wealth,80-90%,CZE,6.3,1.7
+C5,% of households,Net wealth,80-90%,DEU,30.7,3.7
+C5,% of households,Net wealth,80-90%,EA,21.7,1.2
+C5,% of households,Net wealth,80-90%,ESP,22.2,2.3
+C5,% of households,Net wealth,80-90%,EST,15.2,2.9
+C5,% of households,Net wealth,80-90%,FIN,38.5,1.7
+C5,% of households,Net wealth,80-90%,FRA,22.6,1.7
+C5,% of households,Net wealth,80-90%,GRC,1.8,1.5
+C5,% of households,Net wealth,80-90%,HRV,9.1,3.9
+C5,% of households,Net wealth,80-90%,HUN,4.3,0.9
+C5,% of households,Net wealth,80-90%,IRL,19.2,2.3
+C5,% of households,Net wealth,80-90%,ITA,12.9,3.3
+C5,% of households,Net wealth,80-90%,LTU,1.0,0.8
+C5,% of households,Net wealth,80-90%,LUX,30.0,5.0
+C5,% of households,Net wealth,80-90%,LVA,3.2,1.4
+C5,% of households,Net wealth,80-90%,MLT,19.4,0.3
+C5,% of households,Net wealth,80-90%,NLD,9.4,1.8
+C5,% of households,Net wealth,80-90%,PRT,8.6,1.6
+C5,% of households,Net wealth,80-90%,SVK,1.7,1.3
+C5,% of households,Net wealth,80-90%,SVN,12.0,2.5
+C5,% of households,Net wealth,90-100%,AUT,27.6,4.6
+C5,% of households,Net wealth,90-100%,BEL,29.1,3.6
+C5,% of households,Net wealth,90-100%,CYP,10.2,3.1
+C5,% of households,Net wealth,90-100%,CZE,13.6,2.2
+C5,% of households,Net wealth,90-100%,DEU,45.2,3.1
+C5,% of households,Net wealth,90-100%,EA,36.4,1.3
+C5,% of households,Net wealth,90-100%,ESP,42.1,2.9
+C5,% of households,Net wealth,90-100%,EST,28.9,3.0
+C5,% of households,Net wealth,90-100%,FIN,60.9,1.4
+C5,% of households,Net wealth,90-100%,FRA,41.2,1.8
+C5,% of households,Net wealth,90-100%,GRC,7.3,2.6
+C5,% of households,Net wealth,90-100%,HRV,9.6,3.4
+C5,% of households,Net wealth,90-100%,HUN,9.6,1.4
+C5,% of households,Net wealth,90-100%,IRL,33.3,2.5
+C5,% of households,Net wealth,90-100%,ITA,22.0,4.1
+C5,% of households,Net wealth,90-100%,LTU,3.5,1.3
+C5,% of households,Net wealth,90-100%,LUX,47.6,5.2
+C5,% of households,Net wealth,90-100%,LVA,12.1,6.1
+C5,% of households,Net wealth,90-100%,MLT,14.1,0.2
+C5,% of households,Net wealth,90-100%,NLD,15.2,2.3
+C5,% of households,Net wealth,90-100%,PRT,20.3,1.9
+C5,% of households,Net wealth,90-100%,SVK,9.5,3.1
+C5,% of households,Net wealth,90-100%,SVN,10.3,2.8
+C5,% of households,Net wealth,Bottom 20%,AUT,0.3,0.3
+C5,% of households,Net wealth,Bottom 20%,CYP,0.6,0.5
+C5,% of households,Net wealth,Bottom 20%,CZE,2.3,0.7
+C5,% of households,Net wealth,Bottom 20%,DEU,1.9,0.6
+C5,% of households,Net wealth,Bottom 20%,EA,1.4,0.2
+C5,% of households,Net wealth,Bottom 20%,ESP,1.2,0.5
+C5,% of households,Net wealth,Bottom 20%,EST,3.1,1.1
+C5,% of households,Net wealth,Bottom 20%,FIN,4.0,0.6
+C5,% of households,Net wealth,Bottom 20%,FRA,1.6,0.5
+C5,% of households,Net wealth,Bottom 20%,GRC,0.0,0.1
+C5,% of households,Net wealth,Bottom 20%,HRV,0.3,0.5
+C5,% of households,Net wealth,Bottom 20%,HUN,0.5,0.3
+C5,% of households,Net wealth,Bottom 20%,IRL,2.1,0.9
+C5,% of households,Net wealth,Bottom 20%,ITA,0.1,0.1
+C5,% of households,Net wealth,Bottom 20%,LTU,1.3,0.8
+C5,% of households,Net wealth,Bottom 20%,LUX,4.7,1.6
+C5,% of households,Net wealth,Bottom 20%,LVA,0.0,0.1
+C5,% of households,Net wealth,Bottom 20%,MLT,3.3,0.2
+C5,% of households,Net wealth,Bottom 20%,NLD,3.0,1.0
+C5,% of households,Net wealth,Bottom 20%,PRT,0.5,0.6
+C5,% of households,Net wealth,Bottom 20%,SVK,0.0,0.1
+C5,% of households,Net wealth,Bottom 20%,SVN,0.8,0.8
+C5,% of households,Total population,ALL,AUT,6.1,0.6
+C5,% of households,Total population,ALL,BEL,11.1,0.8
+C5,% of households,Total population,ALL,CYP,5.9,0.9
+C5,% of households,Total population,ALL,CZE,3.9,0.4
+C5,% of households,Total population,ALL,DEU,15.4,0.7
+C5,% of households,Total population,ALL,EA,10.8,0.3
+C5,% of households,Total population,ALL,ESP,12.4,0.6
+C5,% of households,Total population,ALL,EST,8.9,0.6
+C5,% of households,Total population,ALL,FIN,20.3,0.2
+C5,% of households,Total population,ALL,FRA,12.1,0.4
+C5,% of households,Total population,ALL,GRC,1.2,0.3
+C5,% of households,Total population,ALL,HRV,3.5,0.7
+C5,% of households,Total population,ALL,HUN,2.1,0.2
+C5,% of households,Total population,ALL,IRL,10.7,0.6
+C5,% of households,Total population,ALL,ITA,5.7,0.8
+C5,% of households,Total population,ALL,LTU,1.2,0.3
+C5,% of households,Total population,ALL,LUX,18.0,1.1
+C5,% of households,Total population,ALL,LVA,1.8,0.7
+C5,% of households,Total population,ALL,MLT,8.0,0.1
+C5,% of households,Total population,ALL,NLD,6.1,0.5
+C5,% of households,Total population,ALL,PRT,4.7,0.3
+C5,% of households,Total population,ALL,SVK,1.8,0.5
+C5,% of households,Total population,ALL,SVN,5.2,0.5
+D1,% of total assets,DA1000 Total real assets,,AUT,84.5,1.3
+D1,% of total assets,DA1000 Total real assets,,BEL,77.1,1.2
+D1,% of total assets,DA1000 Total real assets,,CYP,93.7,0.5
+D1,% of total assets,DA1000 Total real assets,,CZE,88.1,0.4
+D1,% of total assets,DA1000 Total real assets,,DEU,77.5,1.0
+D1,% of total assets,DA1000 Total real assets,,EA,80.0,0.5
+D1,% of total assets,DA1000 Total real assets,,ESP,79.5,1.4
+D1,% of total assets,DA1000 Total real assets,,EST,85.3,1.6
+D1,% of total assets,DA1000 Total real assets,,FIN,76.7,0.6
+D1,% of total assets,DA1000 Total real assets,,FRA,79.8,0.5
+D1,% of total assets,DA1000 Total real assets,,GRC,90.2,0.8
+D1,% of total assets,DA1000 Total real assets,,HRV,96.8,0.7
+D1,% of total assets,DA1000 Total real assets,,HUN,85.4,0.9
+D1,% of total assets,DA1000 Total real assets,,IRL,84.4,0.7
+D1,% of total assets,DA1000 Total real assets,,ITA,83.0,3.0
+D1,% of total assets,DA1000 Total real assets,,LTU,94.6,0.7
+D1,% of total assets,DA1000 Total real assets,,LUX,77.5,1.9
+D1,% of total assets,DA1000 Total real assets,,LVA,87.7,1.1
+D1,% of total assets,DA1000 Total real assets,,MLT,89.5,0.1
+D1,% of total assets,DA1000 Total real assets,,NLD,79.5,1.0
+D1,% of total assets,DA1000 Total real assets,,PRT,85.8,0.6
+D1,% of total assets,DA1000 Total real assets,,SVK,92.1,0.5
+D1,% of total assets,DA1000 Total real assets,,SVN,92.3,0.5
+D1,% of total assets,DA2100 Total financial assets,,AUT,15.5,1.3
+D1,% of total assets,DA2100 Total financial assets,,BEL,22.9,1.2
+D1,% of total assets,DA2100 Total financial assets,,CYP,6.3,0.5
+D1,% of total assets,DA2100 Total financial assets,,CZE,11.9,0.4
+D1,% of total assets,DA2100 Total financial assets,,DEU,22.5,1.0
+D1,% of total assets,DA2100 Total financial assets,,EA,20.0,0.5
+D1,% of total assets,DA2100 Total financial assets,,ESP,20.5,1.4
+D1,% of total assets,DA2100 Total financial assets,,EST,14.7,1.6
+D1,% of total assets,DA2100 Total financial assets,,FIN,23.3,0.6
+D1,% of total assets,DA2100 Total financial assets,,FRA,20.2,0.5
+D1,% of total assets,DA2100 Total financial assets,,GRC,9.8,0.8
+D1,% of total assets,DA2100 Total financial assets,,HRV,3.2,0.7
+D1,% of total assets,DA2100 Total financial assets,,HUN,14.6,0.9
+D1,% of total assets,DA2100 Total financial assets,,IRL,15.6,0.7
+D1,% of total assets,DA2100 Total financial assets,,ITA,17.0,3.0
+D1,% of total assets,DA2100 Total financial assets,,LTU,5.4,0.7
+D1,% of total assets,DA2100 Total financial assets,,LUX,22.5,1.9
+D1,% of total assets,DA2100 Total financial assets,,LVA,12.3,1.1
+D1,% of total assets,DA2100 Total financial assets,,MLT,10.5,0.1
+D1,% of total assets,DA2100 Total financial assets,,NLD,20.5,1.0
+D1,% of total assets,DA2100 Total financial assets,,PRT,14.2,0.6
+D1,% of total assets,DA2100 Total financial assets,,SVK,7.9,0.5
+D1,% of total assets,DA2100 Total financial assets,,SVN,7.7,0.5
+D2,% of total real assets,DA1110 Value of household's main residence,,AUT,67.9,3.9
+D2,% of total real assets,DA1110 Value of household's main residence,,BEL,65.6,2.6
+D2,% of total real assets,DA1110 Value of household's main residence,,CYP,52.6,2.0
+D2,% of total real assets,DA1110 Value of household's main residence,,CZE,75.5,1.6
+D2,% of total real assets,DA1110 Value of household's main residence,,DEU,56.7,1.8
+D2,% of total real assets,DA1110 Value of household's main residence,,EA,59.5,0.9
+D2,% of total real assets,DA1110 Value of household's main residence,,ESP,51.4,1.7
+D2,% of total real assets,DA1110 Value of household's main residence,,EST,50.4,5.4
+D2,% of total real assets,DA1110 Value of household's main residence,,FIN,62.4,0.7
+D2,% of total real assets,DA1110 Value of household's main residence,,FRA,58.8,0.9
+D2,% of total real assets,DA1110 Value of household's main residence,,GRC,57.1,1.6
+D2,% of total real assets,DA1110 Value of household's main residence,,HRV,69.1,3.6
+D2,% of total real assets,DA1110 Value of household's main residence,,HUN,61.9,1.6
+D2,% of total real assets,DA1110 Value of household's main residence,,IRL,56.6,1.5
+D2,% of total real assets,DA1110 Value of household's main residence,,ITA,60.4,3.9
+D2,% of total real assets,DA1110 Value of household's main residence,,LTU,79.3,4.2
+D2,% of total real assets,DA1110 Value of household's main residence,,LUX,57.3,2.0
+D2,% of total real assets,DA1110 Value of household's main residence,,LVA,51.9,2.8
+D2,% of total real assets,DA1110 Value of household's main residence,,MLT,69.6,0.1
+D2,% of total real assets,DA1110 Value of household's main residence,,NLD,85.5,1.5
+D2,% of total real assets,DA1110 Value of household's main residence,,PRT,54.7,2.0
+D2,% of total real assets,DA1110 Value of household's main residence,,SVK,74.4,2.1
+D2,% of total real assets,DA1110 Value of household's main residence,,SVN,64.9,1.9
+D2,% of total real assets,DA1120 Value of other real estate property,,AUT,14.6,2.2
+D2,% of total real assets,DA1120 Value of other real estate property,,BEL,15.7,1.0
+D2,% of total real assets,DA1120 Value of other real estate property,,CYP,31.3,2.1
+D2,% of total real assets,DA1120 Value of other real estate property,,CZE,13.7,1.0
+D2,% of total real assets,DA1120 Value of other real estate property,,DEU,24.5,1.5
+D2,% of total real assets,DA1120 Value of other real estate property,,EA,22.8,0.6
+D2,% of total real assets,DA1120 Value of other real estate property,,ESP,34.4,1.4
+D2,% of total real assets,DA1120 Value of other real estate property,,EST,17.3,2.0
+D2,% of total real assets,DA1120 Value of other real estate property,,FIN,26.2,0.5
+D2,% of total real assets,DA1120 Value of other real estate property,,FRA,21.6,0.6
+D2,% of total real assets,DA1120 Value of other real estate property,,GRC,28.6,1.4
+D2,% of total real assets,DA1120 Value of other real estate property,,HRV,15.8,2.4
+D2,% of total real assets,DA1120 Value of other real estate property,,HUN,14.1,0.6
+D2,% of total real assets,DA1120 Value of other real estate property,,IRL,25.8,1.0
+D2,% of total real assets,DA1120 Value of other real estate property,,ITA,20.0,2.4
+D2,% of total real assets,DA1120 Value of other real estate property,,LTU,13.0,3.6
+D2,% of total real assets,DA1120 Value of other real estate property,,LUX,34.1,1.9
+D2,% of total real assets,DA1120 Value of other real estate property,,LVA,31.2,2.2
+D2,% of total real assets,DA1120 Value of other real estate property,,MLT,22.1,0.1
+D2,% of total real assets,DA1120 Value of other real estate property,,NLD,6.9,0.8
+D2,% of total real assets,DA1120 Value of other real estate property,,PRT,22.5,1.1
+D2,% of total real assets,DA1120 Value of other real estate property,,SVK,13.4,1.2
+D2,% of total real assets,DA1120 Value of other real estate property,,SVN,17.0,1.2
+D2,% of total real assets,DA1130 Value of household's vehicles,,AUT,4.9,0.3
+D2,% of total real assets,DA1130 Value of household's vehicles,,BEL,2.9,0.2
+D2,% of total real assets,DA1130 Value of household's vehicles,,CYP,3.0,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,CZE,4.6,0.2
+D2,% of total real assets,DA1130 Value of household's vehicles,,DEU,3.7,0.2
+D2,% of total real assets,DA1130 Value of household's vehicles,,EA,3.6,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,ESP,3.2,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,EST,3.0,0.3
+D2,% of total real assets,DA1130 Value of household's vehicles,,FIN,5.2,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,FRA,3.5,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,GRC,5.4,0.2
+D2,% of total real assets,DA1130 Value of household's vehicles,,HRV,4.1,0.4
+D2,% of total real assets,DA1130 Value of household's vehicles,,HUN,4.0,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,IRL,2.9,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,ITA,3.6,0.4
+D2,% of total real assets,DA1130 Value of household's vehicles,,LTU,5.4,0.7
+D2,% of total real assets,DA1130 Value of household's vehicles,,LUX,2.4,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,LVA,5.7,0.5
+D2,% of total real assets,DA1130 Value of household's vehicles,,MLT,2.7,0.1
+D2,% of total real assets,DA1130 Value of household's vehicles,,NLD,3.9,0.2
+D2,% of total real assets,DA1130 Value of household's vehicles,,PRT,4.7,0.2
+D2,% of total real assets,DA1130 Value of household's vehicles,,SVK,5.7,0.3
+D2,% of total real assets,DA1130 Value of household's vehicles,,SVN,4.6,0.2
+D2,% of total real assets,DA1131 Valuables,,AUT,0.8,0.1
+D2,% of total real assets,DA1131 Valuables,,BEL,1.3,0.3
+D2,% of total real assets,DA1131 Valuables,,CYP,0.3,0.1
+D2,% of total real assets,DA1131 Valuables,,CZE,1.0,0.1
+D2,% of total real assets,DA1131 Valuables,,DEU,0.8,0.1
+D2,% of total real assets,DA1131 Valuables,,EA,1.8,0.1
+D2,% of total real assets,DA1131 Valuables,,ESP,1.4,0.2
+D2,% of total real assets,DA1131 Valuables,,EST,0.6,0.2
+D2,% of total real assets,DA1131 Valuables,,FRA,4.7,0.2
+D2,% of total real assets,DA1131 Valuables,,GRC,0.9,0.3
+D2,% of total real assets,DA1131 Valuables,,HRV,0.2,0.1
+D2,% of total real assets,DA1131 Valuables,,HUN,0.5,0.2
+D2,% of total real assets,DA1131 Valuables,,IRL,2.0,0.1
+D2,% of total real assets,DA1131 Valuables,,ITA,1.7,0.2
+D2,% of total real assets,DA1131 Valuables,,LTU,0.1,0.1
+D2,% of total real assets,DA1131 Valuables,,LUX,0.8,0.1
+D2,% of total real assets,DA1131 Valuables,,LVA,0.1,0.1
+D2,% of total real assets,DA1131 Valuables,,MLT,0.2,0.1
+D2,% of total real assets,DA1131 Valuables,,NLD,0.5,0.1
+D2,% of total real assets,DA1131 Valuables,,PRT,0.7,0.1
+D2,% of total real assets,DA1131 Valuables,,SVK,0.7,0.2
+D2,% of total real assets,DA1131 Valuables,,SVN,0.2,0.1
+D2,% of total real assets,DA1140 Value of self-employment businesses,,AUT,11.9,4.3
+D2,% of total real assets,DA1140 Value of self-employment businesses,,BEL,14.4,3.1
+D2,% of total real assets,DA1140 Value of self-employment businesses,,CYP,12.8,1.9
+D2,% of total real assets,DA1140 Value of self-employment businesses,,CZE,5.1,1.3
+D2,% of total real assets,DA1140 Value of self-employment businesses,,DEU,14.3,1.9
+D2,% of total real assets,DA1140 Value of self-employment businesses,,EA,12.2,0.9
+D2,% of total real assets,DA1140 Value of self-employment businesses,,ESP,9.6,1.2
+D2,% of total real assets,DA1140 Value of self-employment businesses,,EST,28.7,7.4
+D2,% of total real assets,DA1140 Value of self-employment businesses,,FIN,6.2,0.8
+D2,% of total real assets,DA1140 Value of self-employment businesses,,FRA,11.4,1.1
+D2,% of total real assets,DA1140 Value of self-employment businesses,,GRC,8.0,1.5
+D2,% of total real assets,DA1140 Value of self-employment businesses,,HRV,10.7,3.6
+D2,% of total real assets,DA1140 Value of self-employment businesses,,HUN,19.5,1.8
+D2,% of total real assets,DA1140 Value of self-employment businesses,,IRL,12.8,1.8
+D2,% of total real assets,DA1140 Value of self-employment businesses,,ITA,14.3,4.1
+D2,% of total real assets,DA1140 Value of self-employment businesses,,LTU,2.2,1.2
+D2,% of total real assets,DA1140 Value of self-employment businesses,,LUX,5.4,1.1
+D2,% of total real assets,DA1140 Value of self-employment businesses,,LVA,11.1,2.2
+D2,% of total real assets,DA1140 Value of self-employment businesses,,MLT,5.3,0.1
+D2,% of total real assets,DA1140 Value of self-employment businesses,,NLD,3.2,1.5
+D2,% of total real assets,DA1140 Value of self-employment businesses,,PRT,17.4,2.6
+D2,% of total real assets,DA1140 Value of self-employment businesses,,SVK,5.9,1.4
+D2,% of total real assets,DA1140 Value of self-employment businesses,,SVN,13.2,2.3
+D3,% of total financial assets,DA2101 Deposits,,AUT,65.5,4.7
+D3,% of total financial assets,DA2101 Deposits,,BEL,45.9,2.0
+D3,% of total financial assets,DA2101 Deposits,,CYP,72.7,4.3
+D3,% of total financial assets,DA2101 Deposits,,CZE,60.4,1.5
+D3,% of total financial assets,DA2101 Deposits,,DEU,44.5,1.9
+D3,% of total financial assets,DA2101 Deposits,,EA,46.6,1.2
+D3,% of total financial assets,DA2101 Deposits,,ESP,41.2,2.9
+D3,% of total financial assets,DA2101 Deposits,,EST,69.5,4.0
+D3,% of total financial assets,DA2101 Deposits,,FIN,40.0,1.1
+D3,% of total financial assets,DA2101 Deposits,,FRA,42.0,1.0
+D3,% of total financial assets,DA2101 Deposits,,GRC,90.8,1.9
+D3,% of total financial assets,DA2101 Deposits,,HRV,66.2,11.5
+D3,% of total financial assets,DA2101 Deposits,,HUN,35.6,2.3
+D3,% of total financial assets,DA2101 Deposits,,IRL,40.9,1.9
+D3,% of total financial assets,DA2101 Deposits,,ITA,51.6,4.6
+D3,% of total financial assets,DA2101 Deposits,,LTU,48.7,5.6
+D3,% of total financial assets,DA2101 Deposits,,LUX,36.0,4.8
+D3,% of total financial assets,DA2101 Deposits,,LVA,76.4,3.2
+D3,% of total financial assets,DA2101 Deposits,,MLT,59.1,0.1
+D3,% of total financial assets,DA2101 Deposits,,NLD,62.8,2.7
+D3,% of total financial assets,DA2101 Deposits,,PRT,73.8,2.2
+D3,% of total financial assets,DA2101 Deposits,,SVK,76.0,3.6
+D3,% of total financial assets,DA2101 Deposits,,SVN,62.3,2.6
+D3,% of total financial assets,"DA2102 Mutual funds, total",,AUT,14.6,3.9
+D3,% of total financial assets,"DA2102 Mutual funds, total",,BEL,29.7,2.1
+D3,% of total financial assets,"DA2102 Mutual funds, total",,CZE,4.8,0.8
+D3,% of total financial assets,"DA2102 Mutual funds, total",,DEU,11.8,0.9
+D3,% of total financial assets,"DA2102 Mutual funds, total",,EA,11.3,0.5
+D3,% of total financial assets,"DA2102 Mutual funds, total",,ESP,11.8,1.4
+D3,% of total financial assets,"DA2102 Mutual funds, total",,EST,5.4,1.5
+D3,% of total financial assets,"DA2102 Mutual funds, total",,FIN,15.8,0.5
+D3,% of total financial assets,"DA2102 Mutual funds, total",,FRA,5.3,0.4
+D3,% of total financial assets,"DA2102 Mutual funds, total",,GRC,2.9,1.0
+D3,% of total financial assets,"DA2102 Mutual funds, total",,HUN,6.8,0.9
+D3,% of total financial assets,"DA2102 Mutual funds, total",,IRL,8.1,1.2
+D3,% of total financial assets,"DA2102 Mutual funds, total",,ITA,7.9,1.2
+D3,% of total financial assets,"DA2102 Mutual funds, total",,LTU,4.2,1.4
+D3,% of total financial assets,"DA2102 Mutual funds, total",,LUX,29.9,3.8
+D3,% of total financial assets,"DA2102 Mutual funds, total",,MLT,4.0,0.1
+D3,% of total financial assets,"DA2102 Mutual funds, total",,NLD,17.4,2.5
+D3,% of total financial assets,"DA2102 Mutual funds, total",,PRT,4.9,1.0
+D3,% of total financial assets,"DA2102 Mutual funds, total",,SVK,8.0,2.7
+D3,% of total financial assets,"DA2102 Mutual funds, total",,SVN,8.7,1.3
+D3,% of total financial assets,DA2103 Bonds,,AUT,4.8,5.4
+D3,% of total financial assets,DA2103 Bonds,,BEL,1.0,0.3
+D3,% of total financial assets,DA2103 Bonds,,CZE,1.5,0.4
+D3,% of total financial assets,DA2103 Bonds,,DEU,2.2,0.8
+D3,% of total financial assets,DA2103 Bonds,,EA,2.6,0.4
+D3,% of total financial assets,DA2103 Bonds,,ESP,0.3,0.1
+D3,% of total financial assets,DA2103 Bonds,,EST,0.6,0.2
+D3,% of total financial assets,DA2103 Bonds,,FIN,0.5,0.2
+D3,% of total financial assets,DA2103 Bonds,,FRA,0.6,0.3
+D3,% of total financial assets,DA2103 Bonds,,HUN,12.9,1.0
+D3,% of total financial assets,DA2103 Bonds,,IRL,4.1,0.8
+D3,% of total financial assets,DA2103 Bonds,,ITA,10.5,0.9
+D3,% of total financial assets,DA2103 Bonds,,LUX,0.8,0.4
+D3,% of total financial assets,DA2103 Bonds,,MLT,17.4,0.1
+D3,% of total financial assets,DA2103 Bonds,,PRT,1.0,0.3
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,AUT,5.2,3.9
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,BEL,7.2,0.9
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,CYP,1.6,1.2
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,CZE,3.0,0.8
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,DEU,12.9,1.9
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,EA,9.5,0.8
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,ESP,10.1,2.0
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,EST,10.2,4.0
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,FIN,20.9,0.7
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,FRA,8.4,0.6
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,GRC,1.8,0.8
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,HRV,2.3,0.9
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,HUN,4.5,1.3
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,IRL,8.8,1.1
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,ITA,5.3,1.5
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,LTU,10.5,7.7
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,LUX,13.4,2.7
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,LVA,0.2,0.1
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,MLT,5.2,0.1
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,NLD,4.5,0.9
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,PRT,3.0,1.1
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,SVK,2.4,0.9
+D3,% of total financial assets,"DA2105 Shares, publicly traded",,SVN,5.3,1.4
+D3,% of total financial assets,DA2107 Money owed to households,,AUT,1.8,0.5
+D3,% of total financial assets,DA2107 Money owed to households,,BEL,1.1,0.3
+D3,% of total financial assets,DA2107 Money owed to households,,CYP,2.5,0.7
+D3,% of total financial assets,DA2107 Money owed to households,,CZE,4.0,1.6
+D3,% of total financial assets,DA2107 Money owed to households,,DEU,1.9,0.7
+D3,% of total financial assets,DA2107 Money owed to households,,EA,1.9,0.3
+D3,% of total financial assets,DA2107 Money owed to households,,ESP,5.9,1.1
+D3,% of total financial assets,DA2107 Money owed to households,,EST,1.4,0.5
+D3,% of total financial assets,DA2107 Money owed to households,,FRA,0.7,0.2
+D3,% of total financial assets,DA2107 Money owed to households,,GRC,1.0,0.4
+D3,% of total financial assets,DA2107 Money owed to households,,HRV,16.7,12.3
+D3,% of total financial assets,DA2107 Money owed to households,,HUN,1.4,0.3
+D3,% of total financial assets,DA2107 Money owed to households,,IRL,0.8,0.2
+D3,% of total financial assets,DA2107 Money owed to households,,ITA,0.4,0.5
+D3,% of total financial assets,DA2107 Money owed to households,,LTU,1.6,0.5
+D3,% of total financial assets,DA2107 Money owed to households,,LUX,2.2,1.2
+D3,% of total financial assets,DA2107 Money owed to households,,LVA,3.0,1.4
+D3,% of total financial assets,DA2107 Money owed to households,,MLT,0.7,0.1
+D3,% of total financial assets,DA2107 Money owed to households,,NLD,2.3,0.4
+D3,% of total financial assets,DA2107 Money owed to households,,PRT,4.8,1.0
+D3,% of total financial assets,DA2107 Money owed to households,,SVK,1.8,0.8
+D3,% of total financial assets,DA2107 Money owed to households,,SVN,3.5,1.0
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,AUT,4.9,1.2
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,BEL,11.6,1.2
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,CYP,14.0,2.6
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,CZE,24.0,0.9
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,DEU,22.7,1.4
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,EA,20.0,0.8
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,ESP,10.7,1.0
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,EST,6.0,0.9
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,FIN,13.0,0.5
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,FRA,38.3,0.9
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,HRV,6.0,1.8
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,HUN,14.6,1.2
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,IRL,27.4,1.8
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,ITA,7.8,1.7
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,LTU,29.1,3.9
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,LUX,11.1,1.4
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,LVA,9.6,1.1
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,MLT,9.6,0.1
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,NLD,9.5,1.3
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,PRT,7.5,0.5
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,SVK,11.0,1.5
+D3,% of total financial assets,DA2109 Voluntary pension/whole life insurance,,SVN,13.0,1.0
+D3,% of total financial assets,DA2199 Other types of financial assets,,AUT,3.2,0.9
+D3,% of total financial assets,DA2199 Other types of financial assets,,BEL,3.5,0.6
+D3,% of total financial assets,DA2199 Other types of financial assets,,CZE,2.3,0.2
+D3,% of total financial assets,DA2199 Other types of financial assets,,DEU,4.0,0.7
+D3,% of total financial assets,DA2199 Other types of financial assets,,EA,8.0,0.9
+D3,% of total financial assets,DA2199 Other types of financial assets,,ESP,20.0,4.9
+D3,% of total financial assets,DA2199 Other types of financial assets,,EST,6.8,2.2
+D3,% of total financial assets,DA2199 Other types of financial assets,,FIN,9.7,1.7
+D3,% of total financial assets,DA2199 Other types of financial assets,,FRA,4.7,0.6
+D3,% of total financial assets,DA2199 Other types of financial assets,,HUN,24.1,3.6
+D3,% of total financial assets,DA2199 Other types of financial assets,,IRL,9.9,2.1
+D3,% of total financial assets,DA2199 Other types of financial assets,,ITA,16.5,2.5
+D3,% of total financial assets,DA2199 Other types of financial assets,,LTU,4.7,2.1
+D3,% of total financial assets,DA2199 Other types of financial assets,,LUX,6.7,3.2
+D3,% of total financial assets,DA2199 Other types of financial assets,,NLD,3.3,1.0
+D3,% of total financial assets,DA2199 Other types of financial assets,,PRT,4.9,1.7
+D3,% of total financial assets,DA2199 Other types of financial assets,,SVN,6.9,1.9
+D4,% of total assets,Age of RP,16-34,AUT,15.9,5.1
+D4,% of total assets,Age of RP,16-34,BEL,13.8,2.3
+D4,% of total assets,Age of RP,16-34,CYP,3.1,1.6
+D4,% of total assets,Age of RP,16-34,CZE,14.1,2.7
+D4,% of total assets,Age of RP,16-34,DEU,26.3,4.4
+D4,% of total assets,Age of RP,16-34,EA,18.4,1.4
+D4,% of total assets,Age of RP,16-34,ESP,11.2,2.1
+D4,% of total assets,Age of RP,16-34,EST,10.1,2.6
+D4,% of total assets,Age of RP,16-34,FIN,18.6,0.9
+D4,% of total assets,Age of RP,16-34,FRA,14.6,1.3
+D4,% of total assets,Age of RP,16-34,GRC,13.7,4.3
+D4,% of total assets,Age of RP,16-34,HRV,5.5,3.3
+D4,% of total assets,Age of RP,16-34,HUN,17.5,1.6
+D4,% of total assets,Age of RP,16-34,IRL,15.7,2.7
+D4,% of total assets,Age of RP,16-34,ITA,14.7,3.9
+D4,% of total assets,Age of RP,16-34,LTU,7.9,1.7
+D4,% of total assets,Age of RP,16-34,LUX,13.3,2.0
+D4,% of total assets,Age of RP,16-34,LVA,8.0,1.1
+D4,% of total assets,Age of RP,16-34,MLT,10.4,0.1
+D4,% of total assets,Age of RP,16-34,NLD,19.3,2.2
+D4,% of total assets,Age of RP,16-34,PRT,12.5,2.2
+D4,% of total assets,Age of RP,16-34,SVK,7.8,1.7
+D4,% of total assets,Age of RP,16-34,SVN,8.9,2.0
+D4,% of total assets,Age of RP,35-44,AUT,12.3,3.5
+D4,% of total assets,Age of RP,35-44,BEL,14.2,1.9
+D4,% of total assets,Age of RP,35-44,CYP,5.6,1.0
+D4,% of total assets,Age of RP,35-44,CZE,12.4,0.8
+D4,% of total assets,Age of RP,35-44,DEU,20.3,2.5
+D4,% of total assets,Age of RP,35-44,EA,15.0,0.8
+D4,% of total assets,Age of RP,35-44,ESP,14.4,1.0
+D4,% of total assets,Age of RP,35-44,EST,15.0,2.6
+D4,% of total assets,Age of RP,35-44,FIN,16.4,2.7
+D4,% of total assets,Age of RP,35-44,FRA,13.8,0.9
+D4,% of total assets,Age of RP,35-44,GRC,10.8,1.9
+D4,% of total assets,Age of RP,35-44,HRV,6.1,3.6
+D4,% of total assets,Age of RP,35-44,HUN,14.9,1.0
+D4,% of total assets,Age of RP,35-44,IRL,10.7,1.0
+D4,% of total assets,Age of RP,35-44,ITA,11.7,2.5
+D4,% of total assets,Age of RP,35-44,LTU,4.7,1.9
+D4,% of total assets,Age of RP,35-44,LUX,15.5,2.6
+D4,% of total assets,Age of RP,35-44,LVA,9.6,2.0
+D4,% of total assets,Age of RP,35-44,MLT,8.8,0.1
+D4,% of total assets,Age of RP,35-44,NLD,13.5,1.6
+D4,% of total assets,Age of RP,35-44,PRT,10.4,0.8
+D4,% of total assets,Age of RP,35-44,SVK,8.7,1.3
+D4,% of total assets,Age of RP,35-44,SVN,7.2,1.0
+D4,% of total assets,Age of RP,45-54,AUT,16.4,3.7
+D4,% of total assets,Age of RP,45-54,BEL,18.3,1.9
+D4,% of total assets,Age of RP,45-54,CYP,6.3,1.1
+D4,% of total assets,Age of RP,45-54,CZE,12.6,0.8
+D4,% of total assets,Age of RP,45-54,DEU,19.7,1.5
+D4,% of total assets,Age of RP,45-54,EA,17.6,1.7
+D4,% of total assets,Age of RP,45-54,ESP,17.6,3.5
+D4,% of total assets,Age of RP,45-54,EST,13.2,1.2
+D4,% of total assets,Age of RP,45-54,FIN,20.9,1.6
+D4,% of total assets,Age of RP,45-54,FRA,15.7,0.8
+D4,% of total assets,Age of RP,45-54,GRC,10.3,1.4
+D4,% of total assets,Age of RP,45-54,HRV,2.3,0.6
+D4,% of total assets,Age of RP,45-54,HUN,13.1,1.3
+D4,% of total assets,Age of RP,45-54,IRL,17.1,1.7
+D4,% of total assets,Age of RP,45-54,ITA,17.3,8.2
+D4,% of total assets,Age of RP,45-54,LTU,6.8,1.0
+D4,% of total assets,Age of RP,45-54,LUX,14.6,2.0
+D4,% of total assets,Age of RP,45-54,LVA,8.3,1.6
+D4,% of total assets,Age of RP,45-54,MLT,9.8,0.1
+D4,% of total assets,Age of RP,45-54,NLD,19.8,2.6
+D4,% of total assets,Age of RP,45-54,PRT,11.3,1.1
+D4,% of total assets,Age of RP,45-54,SVK,8.2,1.0
+D4,% of total assets,Age of RP,45-54,SVN,6.9,0.8
+D4,% of total assets,Age of RP,55-64,AUT,14.9,2.4
+D4,% of total assets,Age of RP,55-64,BEL,24.5,2.7
+D4,% of total assets,Age of RP,55-64,CYP,6.0,1.0
+D4,% of total assets,Age of RP,55-64,CZE,12.1,0.9
+D4,% of total assets,Age of RP,55-64,DEU,22.7,1.8
+D4,% of total assets,Age of RP,55-64,EA,20.2,0.7
+D4,% of total assets,Age of RP,55-64,ESP,21.5,1.7
+D4,% of total assets,Age of RP,55-64,EST,12.0,4.9
+D4,% of total assets,Age of RP,55-64,FIN,24.1,1.1
+D4,% of total assets,Age of RP,55-64,FRA,20.3,0.9
+D4,% of total assets,Age of RP,55-64,GRC,10.0,1.4
+D4,% of total assets,Age of RP,55-64,HRV,1.7,0.4
+D4,% of total assets,Age of RP,55-64,HUN,17.9,3.2
+D4,% of total assets,Age of RP,55-64,IRL,17.3,1.2
+D4,% of total assets,Age of RP,55-64,ITA,15.9,2.2
+D4,% of total assets,Age of RP,55-64,LTU,5.6,0.9
+D4,% of total assets,Age of RP,55-64,LUX,23.4,6.0
+D4,% of total assets,Age of RP,55-64,LVA,17.0,2.3
+D4,% of total assets,Age of RP,55-64,MLT,8.7,0.1
+D4,% of total assets,Age of RP,55-64,NLD,23.8,1.8
+D4,% of total assets,Age of RP,55-64,PRT,13.8,1.2
+D4,% of total assets,Age of RP,55-64,SVK,7.9,0.7
+D4,% of total assets,Age of RP,55-64,SVN,8.8,0.9
+D4,% of total assets,Age of RP,65-74,AUT,17.9,1.6
+D4,% of total assets,Age of RP,65-74,BEL,31.7,2.8
+D4,% of total assets,Age of RP,65-74,CYP,8.6,1.4
+D4,% of total assets,Age of RP,65-74,CZE,11.2,0.8
+D4,% of total assets,Age of RP,65-74,DEU,22.7,1.7
+D4,% of total assets,Age of RP,65-74,EA,22.5,0.6
+D4,% of total assets,Age of RP,65-74,ESP,23.2,1.2
+D4,% of total assets,Age of RP,65-74,EST,21.9,2.4
+D4,% of total assets,Age of RP,65-74,FIN,28.9,1.4
+D4,% of total assets,Age of RP,65-74,FRA,24.5,0.9
+D4,% of total assets,Age of RP,65-74,GRC,8.2,0.9
+D4,% of total assets,Age of RP,65-74,HRV,3.4,1.3
+D4,% of total assets,Age of RP,65-74,HUN,12.6,1.2
+D4,% of total assets,Age of RP,65-74,IRL,17.2,1.4
+D4,% of total assets,Age of RP,65-74,ITA,18.5,2.3
+D4,% of total assets,Age of RP,65-74,LTU,4.0,0.6
+D4,% of total assets,Age of RP,65-74,LUX,35.0,6.0
+D4,% of total assets,Age of RP,65-74,LVA,18.9,3.3
+D4,% of total assets,Age of RP,65-74,MLT,13.3,0.1
+D4,% of total assets,Age of RP,65-74,NLD,24.0,1.7
+D4,% of total assets,Age of RP,65-74,PRT,19.1,1.6
+D4,% of total assets,Age of RP,65-74,SVK,6.3,0.9
+D4,% of total assets,Age of RP,65-74,SVN,7.9,1.0
+D4,% of total assets,Age of RP,75+,AUT,15.6,4.2
+D4,% of total assets,Age of RP,75+,BEL,29.4,3.3
+D4,% of total assets,Age of RP,75+,CYP,9.9,1.8
+D4,% of total assets,Age of RP,75+,CZE,9.1,0.9
+D4,% of total assets,Age of RP,75+,DEU,26.5,3.7
+D4,% of total assets,Age of RP,75+,EA,25.3,1.5
+D4,% of total assets,Age of RP,75+,ESP,26.1,5.2
+D4,% of total assets,Age of RP,75+,EST,27.6,2.9
+D4,% of total assets,Age of RP,75+,FIN,29.4,1.8
+D4,% of total assets,Age of RP,75+,FRA,28.8,1.5
+D4,% of total assets,Age of RP,75+,GRC,7.3,1.1
+D4,% of total assets,Age of RP,75+,HRV,3.2,0.5
+D4,% of total assets,Age of RP,75+,HUN,13.0,1.9
+D4,% of total assets,Age of RP,75+,IRL,14.3,1.3
+D4,% of total assets,Age of RP,75+,ITA,21.6,2.5
+D4,% of total assets,Age of RP,75+,LTU,4.4,1.2
+D4,% of total assets,Age of RP,75+,LUX,24.1,3.7
+D4,% of total assets,Age of RP,75+,LVA,8.2,1.6
+D4,% of total assets,Age of RP,75+,MLT,13.9,0.1
+D4,% of total assets,Age of RP,75+,NLD,20.8,2.3
+D4,% of total assets,Age of RP,75+,PRT,19.3,2.4
+D4,% of total assets,Age of RP,75+,SVK,8.0,1.5
+D4,% of total assets,Age of RP,75+,SVN,6.9,1.3
+D4,% of total assets,Household size,1,AUT,16.0,1.3
+D4,% of total assets,Household size,1,BEL,26.3,1.8
+D4,% of total assets,Household size,1,CYP,3.9,1.2
+D4,% of total assets,Household size,1,CZE,11.8,0.8
+D4,% of total assets,Household size,1,DEU,29.1,2.6
+D4,% of total assets,Household size,1,EA,24.1,1.1
+D4,% of total assets,Household size,1,ESP,22.0,5.1
+D4,% of total assets,Household size,1,EST,18.0,2.2
+D4,% of total assets,Household size,1,FIN,27.2,1.2
+D4,% of total assets,Household size,1,FRA,25.4,1.1
+D4,% of total assets,Household size,1,GRC,9.1,1.4
+D4,% of total assets,Household size,1,HRV,6.0,2.2
+D4,% of total assets,Household size,1,HUN,12.7,1.1
+D4,% of total assets,Household size,1,IRL,13.9,1.0
+D4,% of total assets,Household size,1,ITA,16.1,2.0
+D4,% of total assets,Household size,1,LTU,5.7,0.6
+D4,% of total assets,Household size,1,LUX,32.2,4.5
+D4,% of total assets,Household size,1,LVA,14.7,1.7
+D4,% of total assets,Household size,1,MLT,8.6,0.1
+D4,% of total assets,Household size,1,NLD,23.4,1.6
+D4,% of total assets,Household size,1,PRT,18.9,1.6
+D4,% of total assets,Household size,1,SVK,7.9,0.7
+D4,% of total assets,Household size,1,SVN,6.8,0.9
+D4,% of total assets,Household size,2,AUT,17.2,2.2
+D4,% of total assets,Household size,2,BEL,27.7,1.8
+D4,% of total assets,Household size,2,CYP,8.0,1.0
+D4,% of total assets,Household size,2,CZE,11.4,0.7
+D4,% of total assets,Household size,2,DEU,22.3,1.2
+D4,% of total assets,Household size,2,EA,21.7,0.6
+D4,% of total assets,Household size,2,ESP,22.3,2.1
+D4,% of total assets,Household size,2,EST,14.3,3.9
+D4,% of total assets,Household size,2,FIN,27.1,1.2
+D4,% of total assets,Household size,2,FRA,22.6,0.7
+D4,% of total assets,Household size,2,GRC,8.8,0.7
+D4,% of total assets,Household size,2,HRV,2.3,0.4
+D4,% of total assets,Household size,2,HUN,14.8,0.8
+D4,% of total assets,Household size,2,IRL,17.0,1.0
+D4,% of total assets,Household size,2,ITA,19.6,2.4
+D4,% of total assets,Household size,2,LTU,5.0,0.9
+D4,% of total assets,Household size,2,LUX,23.3,4.0
+D4,% of total assets,Household size,2,LVA,12.2,1.7
+D4,% of total assets,Household size,2,MLT,13.1,0.1
+D4,% of total assets,Household size,2,NLD,22.1,1.6
+D4,% of total assets,Household size,2,PRT,16.8,1.1
+D4,% of total assets,Household size,2,SVK,7.8,0.6
+D4,% of total assets,Household size,2,SVN,8.6,0.8
+D4,% of total assets,Household size,3,AUT,13.7,2.1
+D4,% of total assets,Household size,3,BEL,16.9,3.1
+D4,% of total assets,Household size,3,CYP,5.7,1.2
+D4,% of total assets,Household size,3,CZE,11.8,0.6
+D4,% of total assets,Household size,3,DEU,21.0,1.9
+D4,% of total assets,Household size,3,EA,17.7,0.7
+D4,% of total assets,Household size,3,ESP,18.1,1.2
+D4,% of total assets,Household size,3,EST,14.0,2.8
+D4,% of total assets,Household size,3,FIN,17.1,1.2
+D4,% of total assets,Household size,3,FRA,16.5,1.0
+D4,% of total assets,Household size,3,GRC,9.2,1.2
+D4,% of total assets,Household size,3,HRV,2.7,0.6
+D4,% of total assets,Household size,3,HUN,16.3,2.9
+D4,% of total assets,Household size,3,IRL,13.9,1.3
+D4,% of total assets,Household size,3,ITA,17.4,2.0
+D4,% of total assets,Household size,3,LTU,7.4,3.2
+D4,% of total assets,Household size,3,LUX,14.5,1.3
+D4,% of total assets,Household size,3,LVA,10.0,1.7
+D4,% of total assets,Household size,3,MLT,12.0,0.1
+D4,% of total assets,Household size,3,NLD,16.5,1.6
+D4,% of total assets,Household size,3,PRT,12.6,0.9
+D4,% of total assets,Household size,3,SVK,8.9,1.4
+D4,% of total assets,Household size,3,SVN,8.8,1.0
+D4,% of total assets,Household size,4,AUT,14.4,4.7
+D4,% of total assets,Household size,4,BEL,18.5,2.6
+D4,% of total assets,Household size,4,CYP,6.9,1.1
+D4,% of total assets,Household size,4,CZE,12.6,1.1
+D4,% of total assets,Household size,4,DEU,15.1,2.4
+D4,% of total assets,Household size,4,EA,15.0,1.0
+D4,% of total assets,Household size,4,ESP,19.3,3.8
+D4,% of total assets,Household size,4,EST,13.8,2.3
+D4,% of total assets,Household size,4,FIN,13.8,0.9
+D4,% of total assets,Household size,4,FRA,13.2,1.0
+D4,% of total assets,Household size,4,GRC,12.4,2.0
+D4,% of total assets,Household size,4,HRV,2.0,0.6
+D4,% of total assets,Household size,4,HUN,13.4,1.6
+D4,% of total assets,Household size,4,IRL,14.8,1.4
+D4,% of total assets,Household size,4,ITA,13.8,1.6
+D4,% of total assets,Household size,4,LTU,4.5,1.0
+D4,% of total assets,Household size,4,LUX,11.7,1.2
+D4,% of total assets,Household size,4,LVA,16.8,3.2
+D4,% of total assets,Household size,4,MLT,8.4,0.1
+D4,% of total assets,Household size,4,NLD,17.4,2.8
+D4,% of total assets,Household size,4,PRT,10.6,1.3
+D4,% of total assets,Household size,4,SVK,7.7,1.1
+D4,% of total assets,Household size,4,SVN,8.9,1.4
+D4,% of total assets,Household size,5+,AUT,12.2,6.1
+D4,% of total assets,Household size,5+,BEL,14.7,2.7
+D4,% of total assets,Household size,5+,CYP,5.8,1.1
+D4,% of total assets,Household size,5+,CZE,12.7,1.8
+D4,% of total assets,Household size,5+,DEU,14.5,2.3
+D4,% of total assets,Household size,5+,EA,14.9,4.9
+D4,% of total assets,Household size,5+,ESP,16.4,2.6
+D4,% of total assets,Household size,5+,EST,12.7,2.0
+D4,% of total assets,Household size,5+,FIN,16.2,3.2
+D4,% of total assets,Household size,5+,FRA,14.0,1.1
+D4,% of total assets,Household size,5+,GRC,7.9,4.2
+D4,% of total assets,Household size,5+,HRV,4.1,2.8
+D4,% of total assets,Household size,5+,HUN,16.8,2.3
+D4,% of total assets,Household size,5+,IRL,18.2,2.6
+D4,% of total assets,Household size,5+,ITA,16.8,15.1
+D4,% of total assets,Household size,5+,LTU,4.1,1.3
+D4,% of total assets,Household size,5+,LUX,23.5,13.0
+D4,% of total assets,Household size,5+,LVA,6.6,1.8
+D4,% of total assets,Household size,5+,MLT,5.3,0.1
+D4,% of total assets,Household size,5+,NLD,16.4,2.0
+D4,% of total assets,Household size,5+,PRT,10.1,1.7
+D4,% of total assets,Household size,5+,SVK,6.7,1.0
+D4,% of total assets,Household size,5+,SVN,5.8,1.0
+D4,% of total assets,Housing status,Owners - outright,AUT,11.3,1.4
+D4,% of total assets,Housing status,Owners - outright,BEL,25.1,1.8
+D4,% of total assets,Housing status,Owners - outright,CYP,7.0,0.7
+D4,% of total assets,Housing status,Owners - outright,CZE,10.8,0.4
+D4,% of total assets,Housing status,Owners - outright,DEU,20.4,1.4
+D4,% of total assets,Housing status,Owners - outright,EA,20.0,0.8
+D4,% of total assets,Housing status,Owners - outright,ESP,22.1,1.9
+D4,% of total assets,Housing status,Owners - outright,EST,18.3,2.1
+D4,% of total assets,Housing status,Owners - outright,FIN,29.4,1.0
+D4,% of total assets,Housing status,Owners - outright,FRA,22.5,0.6
+D4,% of total assets,Housing status,Owners - outright,GRC,9.8,0.9
+D4,% of total assets,Housing status,Owners - outright,HRV,2.7,0.5
+D4,% of total assets,Housing status,Owners - outright,HUN,14.2,1.0
+D4,% of total assets,Housing status,Owners - outright,IRL,17.5,1.1
+D4,% of total assets,Housing status,Owners - outright,ITA,17.6,3.6
+D4,% of total assets,Housing status,Owners - outright,LTU,4.7,0.5
+D4,% of total assets,Housing status,Owners - outright,LUX,23.4,3.7
+D4,% of total assets,Housing status,Owners - outright,LVA,12.8,1.2
+D4,% of total assets,Housing status,Owners - outright,MLT,10.5,0.1
+D4,% of total assets,Housing status,Owners - outright,NLD,26.3,2.5
+D4,% of total assets,Housing status,Owners - outright,PRT,14.9,1.1
+D4,% of total assets,Housing status,Owners - outright,SVK,7.9,0.6
+D4,% of total assets,Housing status,Owners - outright,SVN,7.1,0.5
+D4,% of total assets,Housing status,Owners - with mortgage,AUT,11.3,2.6
+D4,% of total assets,Housing status,Owners - with mortgage,BEL,16.7,1.2
+D4,% of total assets,Housing status,Owners - with mortgage,CYP,3.8,0.8
+D4,% of total assets,Housing status,Owners - with mortgage,CZE,8.8,0.7
+D4,% of total assets,Housing status,Owners - with mortgage,DEU,13.8,1.0
+D4,% of total assets,Housing status,Owners - with mortgage,EA,12.6,0.4
+D4,% of total assets,Housing status,Owners - with mortgage,ESP,12.9,1.5
+D4,% of total assets,Housing status,Owners - with mortgage,EST,9.0,1.9
+D4,% of total assets,Housing status,Owners - with mortgage,FIN,13.2,0.6
+D4,% of total assets,Housing status,Owners - with mortgage,FRA,10.5,0.5
+D4,% of total assets,Housing status,Owners - with mortgage,GRC,5.0,1.2
+D4,% of total assets,Housing status,Owners - with mortgage,HRV,6.5,5.5
+D4,% of total assets,Housing status,Owners - with mortgage,HUN,11.9,1.7
+D4,% of total assets,Housing status,Owners - with mortgage,IRL,11.7,0.8
+D4,% of total assets,Housing status,Owners - with mortgage,ITA,10.1,1.2
+D4,% of total assets,Housing status,Owners - with mortgage,LTU,7.6,3.2
+D4,% of total assets,Housing status,Owners - with mortgage,LUX,10.6,0.9
+D4,% of total assets,Housing status,Owners - with mortgage,LVA,6.3,0.9
+D4,% of total assets,Housing status,Owners - with mortgage,MLT,7.6,0.1
+D4,% of total assets,Housing status,Owners - with mortgage,NLD,14.8,1.0
+D4,% of total assets,Housing status,Owners - with mortgage,PRT,8.8,0.5
+D4,% of total assets,Housing status,Owners - with mortgage,SVK,7.0,0.8
+D4,% of total assets,Housing status,Owners - with mortgage,SVN,6.1,1.1
+D4,% of total assets,Housing status,Renters / other,AUT,49.1,4.8
+D4,% of total assets,Housing status,Renters / other,BEL,41.6,7.9
+D4,% of total assets,Housing status,Renters / other,CYP,14.1,2.5
+D4,% of total assets,Housing status,Renters / other,CZE,39.0,5.4
+D4,% of total assets,Housing status,Renters / other,DEU,50.4,4.4
+D4,% of total assets,Housing status,Renters / other,EA,45.0,3.0
+D4,% of total assets,Housing status,Renters / other,ESP,35.5,3.9
+D4,% of total assets,Housing status,Renters / other,EST,25.3,6.5
+D4,% of total assets,Housing status,Renters / other,FIN,50.5,2.6
+D4,% of total assets,Housing status,Renters / other,FRA,43.0,2.4
+D4,% of total assets,Housing status,Renters / other,GRC,18.1,1.9
+D4,% of total assets,Housing status,Renters / other,HRV,13.6,4.6
+D4,% of total assets,Housing status,Renters / other,HUN,35.7,4.1
+D4,% of total assets,Housing status,Renters / other,IRL,31.2,3.8
+D4,% of total assets,Housing status,Renters / other,ITA,26.0,13.4
+D4,% of total assets,Housing status,Renters / other,LTU,46.3,9.7
+D4,% of total assets,Housing status,Renters / other,LUX,52.0,7.3
+D4,% of total assets,Housing status,Renters / other,LVA,27.2,5.0
+D4,% of total assets,Housing status,Renters / other,MLT,35.2,0.3
+D4,% of total assets,Housing status,Renters / other,NLD,67.8,5.2
+D4,% of total assets,Housing status,Renters / other,PRT,33.2,3.9
+D4,% of total assets,Housing status,Renters / other,SVK,27.4,5.7
+D4,% of total assets,Housing status,Renters / other,SVN,28.0,4.8
+D4,% of total assets,Income,20-40%,AUT,15.4,2.6
+D4,% of total assets,Income,20-40%,BEL,26.2,3.3
+D4,% of total assets,Income,20-40%,CYP,5.1,1.3
+D4,% of total assets,Income,20-40%,CZE,11.1,0.8
+D4,% of total assets,Income,20-40%,DEU,22.5,2.1
+D4,% of total assets,Income,20-40%,EA,15.8,0.7
+D4,% of total assets,Income,20-40%,ESP,13.6,1.0
+D4,% of total assets,Income,20-40%,EST,17.9,1.9
+D4,% of total assets,Income,20-40%,FIN,22.7,1.4
+D4,% of total assets,Income,20-40%,FRA,17.5,1.7
+D4,% of total assets,Income,20-40%,GRC,7.2,0.8
+D4,% of total assets,Income,20-40%,HRV,3.0,0.6
+D4,% of total assets,Income,20-40%,HUN,9.8,0.8
+D4,% of total assets,Income,20-40%,IRL,13.6,1.5
+D4,% of total assets,Income,20-40%,ITA,10.6,1.6
+D4,% of total assets,Income,20-40%,LTU,3.0,0.7
+D4,% of total assets,Income,20-40%,LUX,22.4,5.1
+D4,% of total assets,Income,20-40%,LVA,7.7,1.5
+D4,% of total assets,Income,20-40%,MLT,9.9,0.1
+D4,% of total assets,Income,20-40%,NLD,22.6,2.1
+D4,% of total assets,Income,20-40%,PRT,12.4,1.3
+D4,% of total assets,Income,20-40%,SVK,6.6,0.6
+D4,% of total assets,Income,20-40%,SVN,6.8,1.2
+D4,% of total assets,Income,40-60%,AUT,13.1,1.4
+D4,% of total assets,Income,40-60%,BEL,20.5,3.1
+D4,% of total assets,Income,40-60%,CYP,5.0,1.6
+D4,% of total assets,Income,40-60%,CZE,11.7,0.7
+D4,% of total assets,Income,40-60%,DEU,24.1,2.0
+D4,% of total assets,Income,40-60%,EA,18.2,0.8
+D4,% of total assets,Income,40-60%,ESP,15.4,0.9
+D4,% of total assets,Income,40-60%,EST,12.3,3.2
+D4,% of total assets,Income,40-60%,FIN,19.8,0.9
+D4,% of total assets,Income,40-60%,FRA,17.2,0.8
+D4,% of total assets,Income,40-60%,GRC,7.7,1.5
+D4,% of total assets,Income,40-60%,HRV,4.4,1.4
+D4,% of total assets,Income,40-60%,HUN,12.2,0.8
+D4,% of total assets,Income,40-60%,IRL,16.4,1.2
+D4,% of total assets,Income,40-60%,ITA,14.2,2.9
+D4,% of total assets,Income,40-60%,LTU,6.1,1.6
+D4,% of total assets,Income,40-60%,LUX,18.3,2.8
+D4,% of total assets,Income,40-60%,LVA,10.1,2.0
+D4,% of total assets,Income,40-60%,MLT,9.7,0.1
+D4,% of total assets,Income,40-60%,NLD,19.5,1.7
+D4,% of total assets,Income,40-60%,PRT,11.3,1.1
+D4,% of total assets,Income,40-60%,SVK,7.3,1.0
+D4,% of total assets,Income,40-60%,SVN,6.1,0.7
+D4,% of total assets,Income,60-80%,AUT,16.5,3.0
+D4,% of total assets,Income,60-80%,BEL,17.3,2.5
+D4,% of total assets,Income,60-80%,CYP,5.2,1.0
+D4,% of total assets,Income,60-80%,CZE,11.6,0.9
+D4,% of total assets,Income,60-80%,DEU,20.6,1.8
+D4,% of total assets,Income,60-80%,EA,18.7,0.6
+D4,% of total assets,Income,60-80%,ESP,17.8,1.1
+D4,% of total assets,Income,60-80%,EST,14.5,4.0
+D4,% of total assets,Income,60-80%,FIN,20.2,0.8
+D4,% of total assets,Income,60-80%,FRA,19.5,1.0
+D4,% of total assets,Income,60-80%,GRC,7.3,0.7
+D4,% of total assets,Income,60-80%,HRV,1.9,0.5
+D4,% of total assets,Income,60-80%,HUN,14.0,1.4
+D4,% of total assets,Income,60-80%,IRL,12.5,1.0
+D4,% of total assets,Income,60-80%,ITA,13.7,1.8
+D4,% of total assets,Income,60-80%,LTU,6.4,1.4
+D4,% of total assets,Income,60-80%,LUX,19.5,3.5
+D4,% of total assets,Income,60-80%,LVA,15.5,2.6
+D4,% of total assets,Income,60-80%,MLT,11.8,0.1
+D4,% of total assets,Income,60-80%,NLD,19.3,1.3
+D4,% of total assets,Income,60-80%,PRT,12.8,1.4
+D4,% of total assets,Income,60-80%,SVK,10.1,1.2
+D4,% of total assets,Income,60-80%,SVN,8.4,1.1
+D4,% of total assets,Income,80-90%,AUT,17.4,5.2
+D4,% of total assets,Income,80-90%,BEL,21.5,3.2
+D4,% of total assets,Income,80-90%,CYP,7.9,1.6
+D4,% of total assets,Income,80-90%,CZE,10.8,0.8
+D4,% of total assets,Income,80-90%,DEU,23.4,2.1
+D4,% of total assets,Income,80-90%,EA,19.3,0.9
+D4,% of total assets,Income,80-90%,ESP,16.9,1.1
+D4,% of total assets,Income,80-90%,EST,13.4,1.4
+D4,% of total assets,Income,80-90%,FIN,21.7,1.3
+D4,% of total assets,Income,80-90%,FRA,18.6,1.0
+D4,% of total assets,Income,80-90%,GRC,7.9,1.1
+D4,% of total assets,Income,80-90%,HRV,1.9,0.8
+D4,% of total assets,Income,80-90%,HUN,13.9,1.8
+D4,% of total assets,Income,80-90%,IRL,13.0,1.3
+D4,% of total assets,Income,80-90%,ITA,17.1,2.9
+D4,% of total assets,Income,80-90%,LTU,7.0,1.4
+D4,% of total assets,Income,80-90%,LUX,16.6,2.9
+D4,% of total assets,Income,80-90%,LVA,11.6,2.1
+D4,% of total assets,Income,80-90%,MLT,11.1,0.1
+D4,% of total assets,Income,80-90%,NLD,21.1,1.7
+D4,% of total assets,Income,80-90%,PRT,15.6,1.7
+D4,% of total assets,Income,80-90%,SVK,7.1,1.2
+D4,% of total assets,Income,80-90%,SVN,6.6,1.0
+D4,% of total assets,Income,90-100%,AUT,17.7,3.3
+D4,% of total assets,Income,90-100%,BEL,30.8,2.0
+D4,% of total assets,Income,90-100%,CYP,7.9,1.1
+D4,% of total assets,Income,90-100%,CZE,15.5,1.2
+D4,% of total assets,Income,90-100%,DEU,22.0,2.4
+D4,% of total assets,Income,90-100%,EA,24.2,1.3
+D4,% of total assets,Income,90-100%,ESP,29.0,3.8
+D4,% of total assets,Income,90-100%,EST,15.5,3.4
+D4,% of total assets,Income,90-100%,FIN,27.3,1.6
+D4,% of total assets,Income,90-100%,FRA,23.7,0.9
+D4,% of total assets,Income,90-100%,GRC,16.0,1.8
+D4,% of total assets,Income,90-100%,HRV,4.2,2.7
+D4,% of total assets,Income,90-100%,HUN,20.4,2.5
+D4,% of total assets,Income,90-100%,IRL,21.3,1.9
+D4,% of total assets,Income,90-100%,ITA,23.7,5.8
+D4,% of total assets,Income,90-100%,LTU,5.9,2.5
+D4,% of total assets,Income,90-100%,LUX,31.6,4.8
+D4,% of total assets,Income,90-100%,LVA,13.8,1.8
+D4,% of total assets,Income,90-100%,MLT,9.6,0.1
+D4,% of total assets,Income,90-100%,NLD,22.0,2.9
+D4,% of total assets,Income,90-100%,PRT,17.0,1.8
+D4,% of total assets,Income,90-100%,SVK,9.1,1.9
+D4,% of total assets,Income,90-100%,SVN,10.9,1.4
+D4,% of total assets,Income,Bottom 20%,AUT,10.6,4.3
+D4,% of total assets,Income,Bottom 20%,BEL,21.3,4.0
+D4,% of total assets,Income,Bottom 20%,CYP,4.8,1.4
+D4,% of total assets,Income,Bottom 20%,CZE,7.9,0.6
+D4,% of total assets,Income,Bottom 20%,DEU,26.2,3.3
+D4,% of total assets,Income,Bottom 20%,EA,14.9,0.9
+D4,% of total assets,Income,Bottom 20%,ESP,13.2,1.5
+D4,% of total assets,Income,Bottom 20%,EST,13.6,3.1
+D4,% of total assets,Income,Bottom 20%,FIN,25.6,2.3
+D4,% of total assets,Income,Bottom 20%,FRA,16.6,1.2
+D4,% of total assets,Income,Bottom 20%,GRC,6.5,1.9
+D4,% of total assets,Income,Bottom 20%,HRV,4.9,2.5
+D4,% of total assets,Income,Bottom 20%,HUN,6.6,0.9
+D4,% of total assets,Income,Bottom 20%,IRL,10.4,1.3
+D4,% of total assets,Income,Bottom 20%,ITA,8.7,1.8
+D4,% of total assets,Income,Bottom 20%,LTU,3.2,0.5
+D4,% of total assets,Income,Bottom 20%,LUX,15.2,2.9
+D4,% of total assets,Income,Bottom 20%,LVA,3.9,1.2
+D4,% of total assets,Income,Bottom 20%,MLT,10.7,0.1
+D4,% of total assets,Income,Bottom 20%,NLD,18.8,2.8
+D4,% of total assets,Income,Bottom 20%,PRT,11.4,1.3
+D4,% of total assets,Income,Bottom 20%,SVK,5.3,0.7
+D4,% of total assets,Income,Bottom 20%,SVN,5.8,0.9
+D4,% of total assets,Net wealth,20-40%,AUT,58.7,3.4
+D4,% of total assets,Net wealth,20-40%,BEL,16.3,1.5
+D4,% of total assets,Net wealth,20-40%,CYP,6.2,1.5
+D4,% of total assets,Net wealth,20-40%,CZE,17.5,1.0
+D4,% of total assets,Net wealth,20-40%,DEU,54.0,5.5
+D4,% of total assets,Net wealth,20-40%,EA,30.1,1.0
+D4,% of total assets,Net wealth,20-40%,ESP,15.0,1.1
+D4,% of total assets,Net wealth,20-40%,EST,15.5,1.6
+D4,% of total assets,Net wealth,20-40%,FIN,21.0,1.0
+D4,% of total assets,Net wealth,20-40%,FRA,24.9,1.4
+D4,% of total assets,Net wealth,20-40%,GRC,8.7,0.7
+D4,% of total assets,Net wealth,20-40%,HRV,4.9,1.1
+D4,% of total assets,Net wealth,20-40%,HUN,10.9,0.9
+D4,% of total assets,Net wealth,20-40%,IRL,16.2,1.2
+D4,% of total assets,Net wealth,20-40%,ITA,14.4,5.1
+D4,% of total assets,Net wealth,20-40%,LTU,6.5,1.4
+D4,% of total assets,Net wealth,20-40%,LUX,20.8,2.7
+D4,% of total assets,Net wealth,20-40%,LVA,9.5,1.7
+D4,% of total assets,Net wealth,20-40%,MLT,9.5,0.1
+D4,% of total assets,Net wealth,20-40%,NLD,33.9,2.8
+D4,% of total assets,Net wealth,20-40%,PRT,13.3,1.0
+D4,% of total assets,Net wealth,20-40%,SVK,6.7,0.8
+D4,% of total assets,Net wealth,20-40%,SVN,6.8,0.9
+D4,% of total assets,Net wealth,40-60%,AUT,27.2,1.8
+D4,% of total assets,Net wealth,40-60%,BEL,11.7,1.0
+D4,% of total assets,Net wealth,40-60%,CYP,4.7,1.0
+D4,% of total assets,Net wealth,40-60%,CZE,12.1,0.7
+D4,% of total assets,Net wealth,40-60%,DEU,40.3,2.1
+D4,% of total assets,Net wealth,40-60%,EA,17.1,0.6
+D4,% of total assets,Net wealth,40-60%,ESP,13.2,0.8
+D4,% of total assets,Net wealth,40-60%,EST,13.2,0.9
+D4,% of total assets,Net wealth,40-60%,FIN,14.7,0.6
+D4,% of total assets,Net wealth,40-60%,FRA,16.2,0.9
+D4,% of total assets,Net wealth,40-60%,GRC,6.2,0.6
+D4,% of total assets,Net wealth,40-60%,HRV,2.6,0.5
+D4,% of total assets,Net wealth,40-60%,HUN,10.7,0.9
+D4,% of total assets,Net wealth,40-60%,IRL,9.7,0.6
+D4,% of total assets,Net wealth,40-60%,ITA,8.9,1.6
+D4,% of total assets,Net wealth,40-60%,LTU,5.1,1.0
+D4,% of total assets,Net wealth,40-60%,LUX,13.8,1.4
+D4,% of total assets,Net wealth,40-60%,LVA,9.6,1.2
+D4,% of total assets,Net wealth,40-60%,MLT,10.0,0.1
+D4,% of total assets,Net wealth,40-60%,NLD,16.8,0.9
+D4,% of total assets,Net wealth,40-60%,PRT,10.9,0.8
+D4,% of total assets,Net wealth,40-60%,SVK,7.4,0.7
+D4,% of total assets,Net wealth,40-60%,SVN,6.1,0.6
+D4,% of total assets,Net wealth,60-80%,AUT,12.9,0.9
+D4,% of total assets,Net wealth,60-80%,BEL,19.4,1.1
+D4,% of total assets,Net wealth,60-80%,CYP,6.1,0.9
+D4,% of total assets,Net wealth,60-80%,CZE,11.4,0.6
+D4,% of total assets,Net wealth,60-80%,DEU,24.1,1.2
+D4,% of total assets,Net wealth,60-80%,EA,16.6,0.4
+D4,% of total assets,Net wealth,60-80%,ESP,15.1,0.8
+D4,% of total assets,Net wealth,60-80%,EST,16.1,1.2
+D4,% of total assets,Net wealth,60-80%,FIN,16.2,0.5
+D4,% of total assets,Net wealth,60-80%,FRA,15.9,0.5
+D4,% of total assets,Net wealth,60-80%,GRC,6.9,0.6
+D4,% of total assets,Net wealth,60-80%,HRV,3.3,0.6
+D4,% of total assets,Net wealth,60-80%,HUN,13.8,0.9
+D4,% of total assets,Net wealth,60-80%,IRL,12.7,0.7
+D4,% of total assets,Net wealth,60-80%,ITA,13.0,1.2
+D4,% of total assets,Net wealth,60-80%,LTU,5.7,1.0
+D4,% of total assets,Net wealth,60-80%,LUX,13.7,1.1
+D4,% of total assets,Net wealth,60-80%,LVA,10.4,1.1
+D4,% of total assets,Net wealth,60-80%,MLT,9.6,0.1
+D4,% of total assets,Net wealth,60-80%,NLD,14.4,1.0
+D4,% of total assets,Net wealth,60-80%,PRT,13.4,0.8
+D4,% of total assets,Net wealth,60-80%,SVK,7.1,0.8
+D4,% of total assets,Net wealth,60-80%,SVN,7.1,0.7
+D4,% of total assets,Net wealth,80-90%,AUT,14.2,1.5
+D4,% of total assets,Net wealth,80-90%,BEL,27.0,1.8
+D4,% of total assets,Net wealth,80-90%,CYP,5.7,1.2
+D4,% of total assets,Net wealth,80-90%,CZE,11.1,0.7
+D4,% of total assets,Net wealth,80-90%,DEU,22.9,1.3
+D4,% of total assets,Net wealth,80-90%,EA,19.4,0.5
+D4,% of total assets,Net wealth,80-90%,ESP,17.6,1.0
+D4,% of total assets,Net wealth,80-90%,EST,15.1,1.6
+D4,% of total assets,Net wealth,80-90%,FIN,20.4,0.8
+D4,% of total assets,Net wealth,80-90%,FRA,19.6,0.9
+D4,% of total assets,Net wealth,80-90%,GRC,7.4,1.1
+D4,% of total assets,Net wealth,80-90%,HRV,2.6,0.6
+D4,% of total assets,Net wealth,80-90%,HUN,13.8,0.9
+D4,% of total assets,Net wealth,80-90%,IRL,15.0,1.1
+D4,% of total assets,Net wealth,80-90%,ITA,15.3,1.9
+D4,% of total assets,Net wealth,80-90%,LTU,6.8,1.1
+D4,% of total assets,Net wealth,80-90%,LUX,17.7,1.8
+D4,% of total assets,Net wealth,80-90%,LVA,13.6,1.7
+D4,% of total assets,Net wealth,80-90%,MLT,11.8,0.3
+D4,% of total assets,Net wealth,80-90%,NLD,18.5,1.6
+D4,% of total assets,Net wealth,80-90%,PRT,13.6,0.9
+D4,% of total assets,Net wealth,80-90%,SVK,7.8,0.9
+D4,% of total assets,Net wealth,80-90%,SVN,8.8,1.1
+D4,% of total assets,Net wealth,90-100%,AUT,12.8,2.3
+D4,% of total assets,Net wealth,90-100%,BEL,27.4,2.9
+D4,% of total assets,Net wealth,90-100%,CYP,7.0,1.1
+D4,% of total assets,Net wealth,90-100%,CZE,10.3,0.8
+D4,% of total assets,Net wealth,90-100%,DEU,18.1,1.7
+D4,% of total assets,Net wealth,90-100%,EA,21.3,1.0
+D4,% of total assets,Net wealth,90-100%,ESP,26.0,2.7
+D4,% of total assets,Net wealth,90-100%,EST,14.1,2.7
+D4,% of total assets,Net wealth,90-100%,FIN,30.7,1.3
+D4,% of total assets,Net wealth,90-100%,FRA,22.9,0.9
+D4,% of total assets,Net wealth,90-100%,GRC,13.5,1.5
+D4,% of total assets,Net wealth,90-100%,HRV,3.1,1.4
+D4,% of total assets,Net wealth,90-100%,HUN,16.5,1.8
+D4,% of total assets,Net wealth,90-100%,IRL,18.6,1.4
+D4,% of total assets,Net wealth,90-100%,ITA,21.1,5.3
+D4,% of total assets,Net wealth,90-100%,LTU,4.4,1.6
+D4,% of total assets,Net wealth,90-100%,LUX,30.3,3.8
+D4,% of total assets,Net wealth,90-100%,LVA,13.0,1.9
+D4,% of total assets,Net wealth,90-100%,MLT,9.8,0.2
+D4,% of total assets,Net wealth,90-100%,NLD,26.1,2.3
+D4,% of total assets,Net wealth,90-100%,PRT,15.5,1.3
+D4,% of total assets,Net wealth,90-100%,SVK,9.0,1.5
+D4,% of total assets,Net wealth,90-100%,SVN,7.9,0.9
+D4,% of total assets,Net wealth,Bottom 20%,AUT,57.9,9.9
+D4,% of total assets,Net wealth,Bottom 20%,BEL,32.0,5.3
+D4,% of total assets,Net wealth,Bottom 20%,CYP,6.7,2.7
+D4,% of total assets,Net wealth,Bottom 20%,CZE,43.9,3.4
+D4,% of total assets,Net wealth,Bottom 20%,DEU,27.8,5.7
+D4,% of total assets,Net wealth,Bottom 20%,EA,21.4,1.3
+D4,% of total assets,Net wealth,Bottom 20%,ESP,9.4,1.1
+D4,% of total assets,Net wealth,Bottom 20%,EST,24.2,3.0
+D4,% of total assets,Net wealth,Bottom 20%,FIN,19.2,1.4
+D4,% of total assets,Net wealth,Bottom 20%,FRA,19.4,1.7
+D4,% of total assets,Net wealth,Bottom 20%,GRC,14.3,2.2
+D4,% of total assets,Net wealth,Bottom 20%,HRV,17.0,4.3
+D4,% of total assets,Net wealth,Bottom 20%,HUN,21.3,1.6
+D4,% of total assets,Net wealth,Bottom 20%,IRL,15.2,2.2
+D4,% of total assets,Net wealth,Bottom 20%,ITA,29.5,7.2
+D4,% of total assets,Net wealth,Bottom 20%,LTU,12.6,2.2
+D4,% of total assets,Net wealth,Bottom 20%,LUX,28.6,6.3
+D4,% of total assets,Net wealth,Bottom 20%,LVA,20.2,4.0
+D4,% of total assets,Net wealth,Bottom 20%,MLT,46.0,0.5
+D4,% of total assets,Net wealth,Bottom 20%,NLD,19.2,2.8
+D4,% of total assets,Net wealth,Bottom 20%,PRT,22.5,3.0
+D4,% of total assets,Net wealth,Bottom 20%,SVK,9.7,1.4
+D4,% of total assets,Net wealth,Bottom 20%,SVN,22.6,3.0
+D4,% of total assets,Total population,ALL,AUT,15.5,1.3
+D4,% of total assets,Total population,ALL,BEL,22.9,1.2
+D4,% of total assets,Total population,ALL,CYP,6.3,0.5
+D4,% of total assets,Total population,ALL,CZE,11.9,0.4
+D4,% of total assets,Total population,ALL,DEU,22.5,1.0
+D4,% of total assets,Total population,ALL,EA,20.0,0.5
+D4,% of total assets,Total population,ALL,ESP,20.5,1.4
+D4,% of total assets,Total population,ALL,EST,14.7,1.6
+D4,% of total assets,Total population,ALL,FIN,23.3,0.6
+D4,% of total assets,Total population,ALL,FRA,20.2,0.5
+D4,% of total assets,Total population,ALL,GRC,9.8,0.8
+D4,% of total assets,Total population,ALL,HRV,3.2,0.7
+D4,% of total assets,Total population,ALL,HUN,14.6,0.9
+D4,% of total assets,Total population,ALL,IRL,15.6,0.7
+D4,% of total assets,Total population,ALL,ITA,17.0,3.0
+D4,% of total assets,Total population,ALL,LTU,5.4,0.7
+D4,% of total assets,Total population,ALL,LUX,22.5,1.9
+D4,% of total assets,Total population,ALL,LVA,12.3,1.1
+D4,% of total assets,Total population,ALL,MLT,10.5,0.1
+D4,% of total assets,Total population,ALL,NLD,20.5,1.0
+D4,% of total assets,Total population,ALL,PRT,14.2,0.6
+D4,% of total assets,Total population,ALL,SVK,7.9,0.5
+D4,% of total assets,Total population,ALL,SVN,7.7,0.5
