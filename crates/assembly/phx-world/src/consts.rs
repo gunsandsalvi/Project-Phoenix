@@ -111,6 +111,12 @@ pub mod kinds {
     pub const ESTATE: usize = 4;
     pub const HOUSEHOLD: usize = 5;
 }
+/// The statistics' numbers: the base the published places are powers of, and the money stock's classes — the banks'
+/// reserves, then deposits held by households, by firms and by everyone else.
+pub mod stats {
+    pub const TEN: u64 = 10;
+    pub const MONEY_CLASSES: usize = 4;
+}
 pub mod sheet {
     pub const HOUSEHOLDS: usize = 0;
     pub const FIRMS: usize = 1;

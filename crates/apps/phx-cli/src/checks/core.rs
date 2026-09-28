@@ -253,3 +253,45 @@ pub const LC_0_55: Check = live_check! {
     from_step: "S0.25",
     check: fails_have_owners,
 };
+
+/// Every national accounts release: output by production equals it by expenditure, every sale being a firm's and its
+/// inputs netted out, and the published discrepancy is expenditure less income.
+fn accounts_agree(w: Inspector<'_>) -> Outcome {
+    let accounts = u8::try_from(if_state::stats::ACCOUNTS).unwrap_or(u8::MAX);
+    let releases: Vec<_> = w.core().stats.published.iter().filter(|r| r.series == accounts).collect();
+    if releases.is_empty() {
+        return Outcome::NotYet("no national accounts published yet: the first comes after its month and lag");
+    }
+    for r in releases {
+        let [production, expenditure, income, discrepancy] = r.values.as_slice() else {
+            return Outcome::Fail(format!(
+                "country {} period {}: accounts of {} values",
+                r.country,
+                r.period,
+                r.values.len()
+            ));
+        };
+        if production != expenditure || *discrepancy != expenditure - income {
+            return Outcome::Fail(format!(
+                "country {} period {}: production {production}, expenditure {expenditure}, income {income}, \
+                 discrepancy {discrepancy}",
+                r.country, r.period
+            ));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_37: Check = live_check! {
+    id: "LC-1-37",
+    title: "STA.3: output by expenditure, income and production agree up to the published discrepancy",
+    from_step: "S1.14",
+    check: accounts_agree,
+};
+
+pub const LC_1_40: Check = live_check! {
+    id: "LC-1-40",
+    title: "The Stage 1 opening: day one passes every family (GEN.7)",
+    from_step: "S1.15",
+    check: day_one_clean,
+};

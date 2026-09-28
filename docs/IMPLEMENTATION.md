@@ -806,6 +806,15 @@ world switches to the core.
   - h begun: the core's audit — money (a bank owing other than its customers hold, money made or lost among the
     parties, the issuer's accounts moving), goods (GDS.10), contracts naming ended parties (REP.3) and persons
     reconciled (REP.26) — records findings at each close; LC-0-09, LC-0-23, LC-0-26 and LC-0-51 read it, and pass.
+  - h: the statistics agencies on the core (STA.1–STA.4, IDX.3, IDX.4): each sale at the meetings is recorded by what
+    it was for (retail to households or the state, a firm's inputs, its investment), wages from the settled flows;
+    at each month's end each country's consumer and producer indices are chained over the products sold in both
+    months at their unit values, the labour force read from the persons' states and jobs, the money stock from the
+    accounts, the national accounts by production, expenditure and income; each released on its law's day and lag
+    (vintage nought; the samples and revisions of STA.2 remain). LC-1-37 and LC-1-40 read them and pass. Measured
+    (150,000 persons, 95 days, seed 1): the developed country 2.9% unemployed in January, 4.5% by March; the
+    developing country's consumer index up 13% in February while the others fell 1% to 3% — the price reviews'
+    response to the opening's demand, to be read with e's outlooks and management types.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
     are done; next the old kernel's crates are deleted, then h on the core alone.
   - The native opening is built (a): the core reads nothing of the books. Built on the core: goods as holdings (each

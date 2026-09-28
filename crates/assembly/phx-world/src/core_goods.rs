@@ -374,10 +374,10 @@ impl Core {
         let mut wants = std::mem::take(&mut self.goods.wants);
         wants.extend(self.public_wants(ctx.regions));
         let leg = |unit: u16| GoodsLeg { unit: Denom::units(unit), reason: SOLD, order: 0, used: true };
-        let (sales, spent) = self.meet_all(ctx, day, &wants, &leg, &mut moved);
+        let (sales, spent) = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Final), &leg, &mut moved);
         let invest = self.investment_wants(ctx);
         let held = |unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
-        let _ = self.meet_all(ctx, day, &invest, &held, &mut moved);
+        let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held, &mut moved);
         (record.sales, record.spent) = (sales, spent);
         (record.reviews, record.repriced) = self.review_prices(ctx, day);
         let close = self.goods.stocks.totals();
@@ -550,7 +550,7 @@ impl Core {
         }
         let n = len_u64(wants.len());
         let leg = |unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
-        let _ = self.meet_all(ctx, day, &wants, &leg, moved);
+        let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg, moved);
         n
     }
 
@@ -723,7 +723,7 @@ impl Core {
         &mut self,
         ctx: &GoodsCtx<'_>,
         day: Day,
-        wants: &[(u16, Buyer)],
+        (wants, purpose): (&[(u16, Buyer)], crate::core_stats::Purchase),
         leg: &dyn Fn(u16) -> GoodsLeg,
         moved: &mut Vec<Flow>,
     ) -> (u64, i64) {
@@ -816,6 +816,7 @@ impl Core {
                 }
                 sales += 1;
                 spent += sale.paid;
+                self.record_sale(ccy, (sale.buyer.kind(), purpose), (product, sale.paid, sale.units));
             }
         }
         self.pending.append(&mut money);

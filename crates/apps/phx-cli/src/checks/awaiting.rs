@@ -656,13 +656,6 @@ pub const LC_1_36: Check = live_check! {
     check: |_| Outcome::NotYet(AWAITING),
 };
 
-pub const LC_1_37: Check = live_check! {
-    id: "LC-1-37",
-    title: "STA.3: output by expenditure, income and production agree up to the published discrepancy",
-    from_step: "S1.14",
-    check: |_| Outcome::NotYet(AWAITING),
-};
-
 pub const LC_1_38: Check = live_check! {
     id: "LC-1-38",
     title: "STA.4: no party read a statistic before its publication day",
@@ -675,13 +668,6 @@ pub const LC_1_39: Check = live_check! {
     title: "IDX.5: an index's return equals the weighted return of its constituents",
     from_step: "S1.14",
     retired: "market indices, whose returns it read, are built with S3.09",
-};
-
-pub const LC_1_40: Check = live_check! {
-    id: "LC-1-40",
-    title: "The Stage 1 opening: day one passes every family (GEN.7)",
-    from_step: "S1.15",
-    check: |_| Outcome::NotYet(AWAITING),
 };
 
 pub const LC_1_41: Check = live_check! {

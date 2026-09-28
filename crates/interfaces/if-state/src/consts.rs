@@ -19,9 +19,9 @@ pub const SERIES: usize = 6;
 /// Each series' name, in its order.
 pub const NAMES: [&str; SERIES] =
     ["STA.cpi", "STA.ppi", "STA.labour_force", "STA.money", "STA.life_table", "STA.accounts"];
-/// The decimal places each series' values are published to: the indices' levels, counts of persons, money in its
+/// The decimal places each series' values are published to: the two indices' levels, counts of persons, money in its
 /// smallest unit, rates a year, and money again.
-pub const PLACES: [u8; SERIES] = [6, 0, 0, 0, 9, 0];
+pub const PLACES: [u8; SERIES] = [6, 6, 0, 0, 9, 0];
 /// A life table's entry: its age class, health and event (nought a death, one an onset), the events, the person-days
 /// exposed, and the rate a year at the series' places.
 pub const LIFE_ENTRY: usize = 6;

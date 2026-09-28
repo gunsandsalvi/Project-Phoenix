@@ -10,6 +10,7 @@ pub mod core_jobs;
 pub mod core_labour;
 pub mod core_open;
 pub mod core_pop;
+pub mod core_stats;
 pub mod day;
 pub mod graph;
 pub mod inspector;

@@ -44,6 +44,8 @@ pub struct Core {
     pub labour: crate::core_labour::CoreLabour,
     pub goods: crate::core_goods::CoreGoods,
     pub state: crate::core_day::CoreState,
+    /// Each country's statistics agency: its month's records and its releases.
+    pub stats: crate::core_stats::CoreStats,
     /// Flows owed today beside the families' dues: severance at a separation, and the day's retail sales.
     pub pending: Vec<phx_core::flows::Flow>,
     /// Each country's lending rate and the fewest years a loan runs, at which a firm borrows its day's shortfall.

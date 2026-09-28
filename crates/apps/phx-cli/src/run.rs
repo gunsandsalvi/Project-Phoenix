@@ -261,6 +261,24 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 3] {
     ]
 }
 
+/// Each release the agencies published: its series, country, period, day and values.
+fn statistics_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .stats
+        .published
+        .iter()
+        .map(|r| {
+            json!({
+                "series": if_state::stats::NAMES.get(usize::from(r.series)),
+                "country": r.country,
+                "period": r.period,
+                "published": r.published.get(),
+                "values": r.values,
+            })
+        })
+        .collect()
+}
+
 /// The core's days: each one's time, flows and what came of them.
 fn days_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
     w.core()
@@ -333,6 +351,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "persons_opened": w.core().persons_opened,
         "persons": w.core().persons_held(),
         "core_days": days_report(w),
+        "statistics": statistics_report(w),
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
         "peak_resident_bytes": peak,

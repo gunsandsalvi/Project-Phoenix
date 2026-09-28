@@ -4,6 +4,8 @@
 
 use phx_core::calendar::Calendar;
 use phx_core::calendar::period::ScheduleDates;
+use std::collections::BTreeMap;
+
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
 use phx_core::settle::Settle;
@@ -134,6 +136,23 @@ fn reckoned(
 }
 
 impl Core {
+    /// The wages the day's dues made and did not fail, recorded in their countries' months.
+    fn record_wages_settled(&mut self, failed: &[Flow]) {
+        let wage = crate::consts::reason::WAGE;
+        let mut by: BTreeMap<u8, i64> = BTreeMap::new();
+        if let Some(buf) = self.work.flows.chunks_mut().first_mut() {
+            for f in buf.iter().filter(|f| f.reason == wage && f.denomination.is_money()) {
+                *by.entry(f.denomination.ccy()).or_insert(0) += f.amount;
+            }
+        }
+        for f in failed.iter().filter(|f| f.reason == wage && f.denomination.is_money()) {
+            *by.entry(f.denomination.ccy()).or_insert(0) -= f.amount;
+        }
+        for (ccy, amount) in by {
+            self.record_wages(ccy, amount);
+        }
+    }
+
     /// Each failed flow a dated contract made held on it in arrears, asked again with its next due: a contract past
     /// its last date is kept, due again on its schedule's next date, until it is paid; one whose last due settled
     /// ends. Returns the contracts in arrears.
@@ -510,6 +529,7 @@ impl Core {
             }
         }
         record.arrears = self.hold_arrears(day, calendar, &failed);
+        self.record_wages_settled(&failed);
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
         record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
         for estate in settling {

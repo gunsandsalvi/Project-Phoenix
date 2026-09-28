@@ -262,6 +262,29 @@ fn state_of(p: &Prepared, geo: &phx_geo::GeoState) -> Result<crate::state::State
     crate::state::bind(&p.d, &p.c.register, &opening).map_err(AssemblyErrors)
 }
 
+/// Each country's statistics agency opened on the core: its law, and its indices' base, from the kinds the systems
+/// declare.
+fn open_stats(
+    p: &Prepared,
+    countries: &[phx_core::OpeningCountry],
+    core: &mut crate::core::Core,
+) -> Result<(), AssemblyErrors> {
+    let sta = p.d.markets.iter().find_map(|(_, k)| k.downcast_ref::<if_state::stats::StaKind>()).copied();
+    let index = p.d.markets.iter().find_map(|(_, k)| k.downcast_ref::<if_state::stats::IndexKind>()).copied();
+    let Some(sta) = sta else { return Ok(()) };
+    let one = |e: String| AssemblyErrors(vec![e]);
+    let laws =
+        countries.iter().map(|c| (sta.law)(&p.c.register, c)).collect::<Result<Vec<_>, String>>().map_err(one)?;
+    let bases = match index {
+        Some(i) => {
+            countries.iter().map(|c| (i.base)(&p.c.register, c)).collect::<Result<Vec<_>, String>>().map_err(one)?
+        }
+        None => Vec::new(),
+    };
+    core.open_stats(laws, (index, bases));
+    Ok(())
+}
+
 /// The core's own opening over the population's household kind.
 fn open_core(
     p: &Prepared,
@@ -381,6 +404,7 @@ fn core_of(
         };
         core.open_goods(&gctx, (&opening, cover), today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
+    open_stats(p, &opening, &mut core)?;
 
     Ok(core)
 }

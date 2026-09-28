@@ -165,6 +165,7 @@ impl Core {
             labour: crate::core_labour::CoreLabour::default(),
             goods: crate::core_goods::CoreGoods::default(),
             state: crate::core_day::CoreState::default(),
+            stats: crate::core_stats::CoreStats::default(),
             pending: Vec::new(),
             found: Vec::new(),
             lending: Vec::new(),

@@ -36,6 +36,17 @@ pub fn from_i64(n: i64) -> f64 {
     f64::from(high) * libm::ldexp(1.0, u32::BITS.cast_signed()) + f64::from(low)
 }
 
+/// An `i128` as an `f64`: its magnitude's high half times 2^64 plus its low half, then its sign, so a small value
+/// loses nothing to cancellation.
+#[must_use]
+pub fn from_i128(n: i128) -> f64 {
+    let [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15] = n.unsigned_abs().to_le_bytes();
+    let low = u64::from_le_bytes([b0, b1, b2, b3, b4, b5, b6, b7]);
+    let high = u64::from_le_bytes([b8, b9, b10, b11, b12, b13, b14, b15]);
+    let magnitude = from_u64(high) * libm::ldexp(1.0, u64::BITS.cast_signed()) + from_u64(low);
+    if n < 0 { -magnitude } else { magnitude }
+}
+
 /// `floor(x)` as an integer, read from the float's bits so no cast can wrap or saturate; `None` when `x` is not
 /// finite or its floor lies beyond ±2^126.
 fn floor_to_i128(x: f64) -> Option<i128> {
@@ -69,7 +80,7 @@ pub fn floor_to_i64(x: f64) -> Option<i64> {
 
 #[cfg(test)]
 mod tests {
-    use super::{floor_to_i64, floor_to_u64, from_i64, from_u64};
+    use super::{floor_to_i64, floor_to_u64, from_i64, from_i128, from_u64};
 
     #[test]
     fn conversions_are_exact_where_representable() {
@@ -84,5 +95,13 @@ mod tests {
         assert_eq!(floor_to_u64(1.9e19), None);
         assert_eq!(floor_to_u64(f64::NAN), None);
         assert_eq!(floor_to_u64(0.999), Some(0));
+    }
+
+    #[test]
+    fn wide_integers_convert_by_their_halves() {
+        assert_eq!(floor_to_i64(from_i128(-3)), Some(-3));
+        assert_eq!(floor_to_i64(from_i128(1 << 40)), Some(1 << 40));
+        assert_eq!(from_i128(1 << 70).to_bits(), libm::ldexp(1.0, 70).to_bits());
+        assert_eq!(from_i128(-(1 << 70)).to_bits(), (-libm::ldexp(1.0, 70)).to_bits());
     }
 }
