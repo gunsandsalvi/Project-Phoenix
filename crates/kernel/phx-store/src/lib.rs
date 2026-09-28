@@ -23,7 +23,7 @@ pub use backing::{AddressSpace, Backing, HeapBacking, MmapBacking, SystemBacking
 pub use block_list::{BlockBag, BlockList, BlockPool};
 pub use column::{ChunkMut, Column};
 pub use descriptor::{ColumnDescriptor, FieldDescriptor, FieldTag, Transform};
-pub use edges::EdgeTable;
+pub use edges::{EdgeTable, Pair, Row};
 pub use encode::{DecodeError, decode_column, decode_rows, encode_column, encode_rows, rows_in};
 pub use hash::{LogicalHasher, Sip128};
 pub use parties::Parties;

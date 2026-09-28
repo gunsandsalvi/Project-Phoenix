@@ -15,10 +15,15 @@ use phx_core::settle::{AT_ISSUER, Book, Books, Settle};
 use phx_core::wheel::DueWheel;
 use phx_exec::{Clock, Pool, PoolSpec, mix64};
 use phx_id::{Day, PartyId, PartyKey, Slot};
+use phx_ledger::algebra::{
+    Amount as DueAmount, DefaultDefinition, DueBuf, Leg, PaymentOrder, Reference, Repayment, Schedule, Seniority,
+    ShapePlan, Termination, Terms, due_by_shape, shape_of, shape_plan,
+};
 use phx_num::MaybeI64;
+use phx_num::Money;
 use phx_rand::{AliasTable, Draws, Seed, StreamKey, Subject, SubjectTag, below_u64, stream_key};
 use phx_store::edges::NONE;
-use phx_store::{AddressSpace, Column, EdgeTable, Parties, SystemBacking};
+use phx_store::{AddressSpace, Column, EdgeTable, Parties, Row, SystemBacking};
 use serde::Deserialize;
 
 use crate::bench::{BenchHost, BenchLine};
@@ -61,8 +66,13 @@ const WHEEL_DAYS: u32 = 64;
 /// A contract's next due after the one paid: a month on; a quarterly one's first due falls within a quarter.
 const MONTH_DAYS: u32 = 30;
 const QUARTER_DAYS: u64 = 91;
-/// Parts per million of a contract's balance its due adds, as a rate on it would.
-const RATE_PPM: i64 = 4_000;
+/// The bench's currency, the dues' calendar's first and anchor years, a loan's months, and the rate its contracts'
+/// interest runs at: 4.8% a year in parts of 10^12.
+const BENCH_CCY: phx_num::Ccy = phx_num::Ccy::new(0);
+const EPOCH_YEAR: i32 = 1950;
+const ANCHOR_YEAR: i32 = 2026;
+const LOAN_MONTHS: u32 = 360;
+const RATE_A_YEAR: i64 = 48_000_000_000;
 /// A contract's balance stand-in, at most this many smallest units.
 const BALANCE_SPAN: u64 = 1 << 30;
 /// Words a save writes at a time.
@@ -153,8 +163,21 @@ struct FamilySpec {
     payer: String,
     payee: String,
     dues: Dues,
+    terms: TermsShape,
     mean: i64,
     line: String,
+}
+
+/// The kind of terms a family's contracts are on: a fixed sum a date (a wage, a rent, a premium), interest on the
+/// balance (a deposit, a coupon), an annuity's part of the balance and its interest (a loan), or the principal once (an
+/// invoice).
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum TermsShape {
+    Fixed,
+    Rate,
+    Amortising,
+    Bullet,
 }
 
 #[derive(Debug, Deserialize)]
@@ -350,16 +373,45 @@ impl Kind {
 /// One family's contracts: the table, each contract's amount, balance and next due day, its other columns, the list
 /// heads on its parties' kinds, its wheel and its parties' kinds.
 struct Family {
-    edges: EdgeTable<SystemBacking>,
-    amount: Column<i64, SystemBacking>,
-    balance: Column<i64, SystemBacking>,
-    due: Column<u32, SystemBacking>,
+    edges: EdgeTable<Contract, SystemBacking>,
     others: Vec<Column<u64, SystemBacking>>,
     heads: [Option<Column<u32, SystemBacking>>; 2],
     wheel: DueWheel,
     kinds: [u8; 2],
     mean: i64,
+    /// The family's shape of terms planned for a date: every due is its contract's amount and balance through it.
+    plan: ShapePlan,
 }
+
+/// A contract's row: its two parties, its own amount, its balance, its next due day and its shape of terms, in one
+/// line with its neighbour, so a due reads one.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, phx_macros::Pod)]
+struct Contract {
+    ends: [PartyKey; 2],
+    amount: i64,
+    balance: i64,
+    due: u32,
+    terms: u32,
+}
+
+impl Row for Contract {
+    fn ends(&self) -> [PartyKey; 2] {
+        self.ends
+    }
+
+    fn set_end(&mut self, side: usize, party: PartyKey) {
+        if let Some(e) = self.ends.get_mut(side) {
+            *e = party;
+        }
+    }
+}
+
+/// How many dues ahead a due's row is asked for, so its line has come by the time it is read.
+const PREFETCH_AHEAD: usize = 8;
+
+/// A contract's next due when it has none: closed, or on terms with no dates.
+const NEVER: u32 = u32::MAX;
 
 /// A handler's agenda: its kind's rows by the phase of their schedule, each bucket in slot order; a day's rows are its
 /// bucket's, as the schedule hands them.
@@ -650,14 +702,14 @@ fn dues(
 ) -> u64 {
     let mut total = 0_u64;
     let rows_a_chunk = to_usize(u64::from(rpc));
-    bufs.reset(f.due.len().div_ceil(rows_a_chunk));
+    bufs.reset(f.edges.rows().len().div_ceil(rows_a_chunk));
     for d in days.0..=days.1 {
         f.wheel.take(Day::new(d), due, Some(pool));
         if due.is_empty() {
             continue;
         }
         let next = d + MONTH_DAYS;
-        let (edges, amount, balance) = (&f.edges, &f.amount, &f.balance);
+        let plan = &f.plan;
         let list: &[u32] = due;
         let mut spans: Vec<(usize, usize, usize)> = Vec::new();
         let mut from = 0;
@@ -667,45 +719,60 @@ fn dues(
             spans.push((to_usize(u64::from(chunk)), from, to));
             from = to;
         }
-        let mut chunks = f.due.slice_mut().chunks_mut(rows_a_chunk).enumerate();
+        let mut chunks = f.edges.rows_mut().chunks_mut(rows_a_chunk).enumerate();
         let mut buffers = bufs.chunks_mut().iter_mut().enumerate();
-        let mut jobs: Vec<(ChunkJob<'_, u32>, (usize, usize))> = Vec::with_capacity(spans.len());
+        let mut jobs: Vec<(ChunkJob<'_, Contract>, (usize, usize))> = Vec::with_capacity(spans.len());
         for (chunk, a, b) in &spans {
             if let (Some(job), Some((_, buf))) = (chunks.find(|(c, _)| c == chunk), buffers.find(|(c, _)| c == chunk)) {
                 jobs.push(((job, buf), (*a, *b)));
             }
         }
-        let moved: Vec<Vec<u32>> = pool.map_items(jobs, |(((c, dues_col), buf), (a, b))| {
+        let moved: Vec<Vec<u32>> = pool.map_items(jobs, |(((c, rows), buf), (a, b))| {
             let lo = to_u32(index_u64(c * rows_a_chunk));
             let mut moved = Vec::with_capacity(b - a);
-            for (i, e) in list.get(a..b).unwrap_or(&[]).iter().enumerate() {
-                let edge = Slot::new(*e);
-                let Some(cell) = dues_col.get_mut(to_usize(u64::from(*e - lo))) else { continue };
-                // A stale entry — a contract whose due moved, or a slot since reused — is not today's due.
-                if *cell != d || !edges.is_open(edge) {
+            let mut owed = DueBuf::default();
+            let span = list.get(a..b).unwrap_or(&[]);
+            // The margin's second legs, a running count of its share rather than a division a due.
+            let mut share = index_u64(a) * margin.0 % margin.1;
+            for (i, e) in span.iter().enumerate() {
+                // A day's dues skip through the rows, so the row a few dues on is asked for now.
+                if let Some(ahead) = span.get(i + PREFETCH_AHEAD).and_then(|x| rows.get(to_usize(u64::from(*x - lo)))) {
+                    phx_exec::prefetch(ahead);
+                }
+                let Some(row) = rows.get_mut(to_usize(u64::from(*e - lo))) else { continue };
+                // A stale entry — a contract whose due moved, or one closed — is not today's due.
+                if row.due != d {
                     continue;
                 }
-                let (Some(from), Some(to), Some(amt), Some(bal)) =
-                    (edges.end(edge, 0), edges.end(edge, 1), amount.get(edge), balance.get(edge))
-                else {
-                    continue;
-                };
+                let [from, to] = row.ends;
+                let amt = row.amount;
+                due_by_shape(plan, &[Money::new(amt, BENCH_CCY)], Money::new(row.balance, BENCH_CCY), &mut owed);
                 let flow = Flow {
                     payer: from,
                     payee: to,
-                    amount: amt + bal * RATE_PPM / i64::try_from(MILLION).unwrap_or(1),
+                    amount: 0,
                     source: *e,
                     denomination: Denom::money(0),
                     reason: 4,
                     order: 1,
                 };
-                buf.push(flow);
-                let i = index_u64(a + i);
-                let extra = (i + 1) * margin.0 / margin.1 - i * margin.0 / margin.1;
-                for _ in 1..extra {
+                for d in owed.iter() {
+                    if let DueAmount::Money(m) = d.amount
+                        && m.amt() > 0
+                    {
+                        buf.push(Flow { amount: m.amt(), ..flow });
+                    }
+                }
+                share += margin.0;
+                let mut legs = 0;
+                while share >= margin.1 {
+                    share -= margin.1;
+                    legs += 1;
+                }
+                for _ in 1..legs {
                     buf.push(Flow { amount: amt / 2 + 1, reason: 5, ..flow });
                 }
-                *cell = next;
+                row.due = next;
                 moved.push(*e);
             }
             moved
@@ -730,7 +797,9 @@ fn turnover(f: &mut Family, sizes: [u32; 2], count: u64, day: u32, seed: u64) ->
         if !f.edges.is_open(edge) {
             continue;
         }
-        let (Some(a), Some(b)) = (f.edges.end(edge, 0), f.edges.end(edge, 1)) else { continue };
+        let Some(row) = f.edges.rows_mut().get_mut(to_usize(u64::from(edge.get()))) else { continue };
+        row.due = NEVER;
+        let [a, b] = row.ends;
         let [h0, h1] = &mut f.heads;
         let hs = [
             h0.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(a.slot().get())))),
@@ -749,12 +818,10 @@ fn turnover(f: &mut Family, sizes: [u32; 2], count: u64, day: u32, seed: u64) ->
             h0.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(ends[0].slot().get())))),
             h1.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(ends[1].slot().get())))),
         ];
-        let edge = f.edges.open(ends, hs);
-        let a = f.mean / 2 + i64::try_from(below_u64(&mut d, u64::try_from(f.mean).unwrap_or(0) + 1)).unwrap_or(0);
-        f.amount.put(edge, a);
-        f.balance.put(edge, i64::try_from(below_u64(&mut d, BALANCE_SPAN)).unwrap_or(0));
+        let amount = f.mean / 2 + i64::try_from(below_u64(&mut d, u64::try_from(f.mean).unwrap_or(0) + 1)).unwrap_or(0);
+        let balance = i64::try_from(below_u64(&mut d, BALANCE_SPAN)).unwrap_or(0);
         let first = day + 1 + to_u32(below_u64(&mut d, u64::from(MONTH_DAYS)));
-        f.due.put(edge, first);
+        let edge = f.edges.open(Contract { ends, amount, balance, due: first, terms: 0 }, hs);
         for c in &mut f.others {
             c.put(edge, 0);
         }
@@ -808,9 +875,9 @@ impl Load {
             .families
             .iter()
             .map(|f| {
-                let a = f.amount.slice();
+                let a = f.edges.rows();
                 let each = a.len().div_ceil(to_usize(AUDIT_SLICES));
-                a.iter().skip(to_usize(slice) * each).take(each).sum::<i64>()
+                a.iter().skip(to_usize(slice) * each).take(each).map(|r| r.amount).sum::<i64>()
             })
             .sum();
         Ok(contracts)
@@ -852,13 +919,7 @@ impl Load {
             sources.push(cols);
         }
         for f in &self.families {
-            let mut cols: Vec<&[u8]> = vec![
-                phx_store::as_bytes(f.edges.ends(0)),
-                phx_store::as_bytes(f.edges.ends(1)),
-                phx_store::as_bytes(f.amount.slice()),
-                phx_store::as_bytes(f.balance.slice()),
-                phx_store::as_bytes(f.due.slice()),
-            ];
+            let mut cols: Vec<&[u8]> = vec![phx_store::as_bytes(f.edges.rows())];
             cols.extend(f.others.iter().map(|c| phx_store::as_bytes(c.slice())));
             cols.extend(f.heads.iter().flatten().map(|c| phx_store::as_bytes(c.slice())));
             sources.push(cols);
@@ -949,6 +1010,59 @@ fn build_kind(
     Kind { parties, records, stride, money, pending, accounts, n }
 }
 
+/// A family's shape of terms planned for its first date: a month's fixed sum, interest, an annuity's part or the
+/// principal, over a working calendar.
+fn plan_of(shape: TermsShape) -> ShapePlan {
+    use phx_core::calendar::bizday::BusinessDayConvention;
+    use phx_core::calendar::daycount::DayCount;
+    use phx_core::calendar::period::{EndOfMonth, Period, ScheduleDates};
+    use phx_core::calendar::rules::{CountryRules, WeekendRule};
+    use phx_id::{CountryId, Date, Weekday};
+    let rules =
+        CountryRules { weekend: WeekendRule { days: vec![Weekday::Saturday, Weekday::Sunday] }, holidays: vec![] };
+    let (Some(epoch), Some(anchor), Some(month)) =
+        (Date::new(EPOCH_YEAR, 1, 1), Date::new(ANCHOR_YEAR, 1, 31), Period::months(1))
+    else {
+        return ShapePlan::default();
+    };
+    let Ok(calendar) = phx_core::calendar::Calendar::new(epoch, vec![(CountryId::new(0), rules)], ANCHOR_YEAR) else {
+        return ShapePlan::default();
+    };
+    let rate = Reference::Fixed(phx_num::Rate::new(RATE_A_YEAR, phx_num::RatePeriod::Year));
+    let interest = Leg::RateOnNotional { reference: rate, day_count: DayCount::Act365F };
+    let own = Money::new(1, BENCH_CCY);
+    let (legs, count) = match shape {
+        TermsShape::Fixed => (vec![Leg::FixedAmount(own)], LOAN_MONTHS),
+        TermsShape::Rate => (vec![interest], LOAN_MONTHS),
+        TermsShape::Amortising => (vec![Leg::Amortising, interest], LOAN_MONTHS),
+        TermsShape::Bullet => (vec![Leg::Principal { amount: own, repayment: Repayment::Bullet }], 1),
+    };
+    let dates = ScheduleDates {
+        anchor,
+        period: month,
+        eom: EndOfMonth::Plain,
+        convention: BusinessDayConvention::Following,
+        country: CountryId::new(0),
+    };
+    let terms = Terms {
+        ccy: BENCH_CCY,
+        legs,
+        schedule: Schedule { dates, count: phx_num::Missing::Present(count) },
+        seniority: Seniority(0),
+        collateral: phx_num::Missing::Absent,
+        payment_order: PaymentOrder(0),
+        termination: Termination::None,
+        conversion: phx_num::Missing::Absent,
+        default: DefaultDefinition { missed_payments: 1, grace_days: 0 },
+        underlying: phx_num::Missing::Absent,
+        facility: phx_num::Missing::Absent,
+        stay: phx_num::Missing::Absent,
+        class: Vec::new(),
+    };
+    let (shape, _) = shape_of(&terms);
+    shape_plan(&shape, Some(1), shape.schedule.day(&calendar, 1), &calendar)
+}
+
 /// The banks' reserves and what they have pending, summed.
 fn reserves_of(kinds: &[Kind], banks: u8) -> i128 {
     kinds
@@ -991,9 +1105,6 @@ fn build_family(
             h
         })
     });
-    let mut amount: Column<i64, SystemBacking> = edges.column(space);
-    let mut balance: Column<i64, SystemBacking> = edges.column(space);
-    let mut due: Column<u32, SystemBacking> = edges.column(space);
     let mut wheel = DueWheel::new(Day::new(0), WHEEL_DAYS);
     let mut d = draws(10, seed, 0);
     for i in 0..n {
@@ -1010,22 +1121,22 @@ fn build_family(
             h0.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(ends[0].slot().get())))),
             h1.as_mut().and_then(|h| h.slice_mut().get_mut(to_usize(u64::from(ends[1].slot().get())))),
         ];
-        let edge = edges.open(ends, hs);
-        let a = f.mean / 2 + i64::try_from(below_u64(&mut d, u64::try_from(f.mean).unwrap_or(0) + 1)).unwrap_or(0);
-        amount.put(edge, a);
-        balance.put(edge, i64::try_from(below_u64(&mut d, BALANCE_SPAN)).unwrap_or(0));
+        let amount = f.mean / 2 + i64::try_from(below_u64(&mut d, u64::try_from(f.mean).unwrap_or(0) + 1)).unwrap_or(0);
+        let balance = i64::try_from(below_u64(&mut d, BALANCE_SPAN)).unwrap_or(0);
         let first = match f.dues {
             Dues::None => None,
             Dues::Payday => Some(heavy),
             Dues::Spread => Some(to_u32(below_u64(&mut d, u64::from(month)))),
             Dues::Quarterly => Some(to_u32(below_u64(&mut d, QUARTER_DAYS))),
         };
-        due.put(edge, first.unwrap_or(u32::MAX));
+        let row = Contract { ends, amount, balance, due: first.unwrap_or(NEVER), terms: 0 };
+        let edge = edges.open(row, hs);
         if let Some(day) = first {
             wheel.schedule(edge.get(), Day::new(day));
         }
     }
-    let words = to_usize(if f.bytes > 20 { (f.bytes - 20).div_ceil(8) } else { 0 });
+    // The row holds amount, balance, next due and terms, 24 bytes; the family's other words are columns apart.
+    let words = to_usize(if f.bytes > 24 { (f.bytes - 24).div_ceil(8) } else { 0 });
     let others = (0..words)
         .map(|_| {
             let mut c: Column<u64, SystemBacking> = edges.column(space);
@@ -1033,7 +1144,7 @@ fn build_family(
             c
         })
         .collect();
-    Family { edges, amount, balance, due, others, heads, wheel, kinds, mean: f.mean }
+    Family { edges, others, heads, wheel, kinds, mean: f.mean, plan: plan_of(f.terms) }
 }
 
 /// A handler's agenda: its kind's rows by the phase of their schedule, the period the kind's rows over the day's
@@ -1112,7 +1223,7 @@ fn build(v: &Volumes, host: &dyn BenchHost, clock: &Mono) -> Result<Load, String
     let ranges = Ranges::new(v.world.range_bits, &high);
     // The day's grouped flows are reserved at the heaviest day's declared count: address space, touched only as used.
     let mut grouped = Grouped::default();
-    let heavy_flows = v.heavy_flows(families.iter().map(|f| index_u64(f.due.len())).sum());
+    let heavy_flows = v.heavy_flows(families.iter().map(|f| index_u64(f.edges.rows().len())).sum());
     grouped.by_payer.items.reserve(to_usize(heavy_flows));
     grouped.by_payee.items.reserve(to_usize(heavy_flows));
     // Each bank holds a tenth of what its customers hold in reserves.
@@ -1328,14 +1439,14 @@ fn run_work(
             total
         }
         Kernel::Turnover => {
-            let contracts: u64 = load.families.iter().map(|f| index_u64(f.due.len())).sum();
+            let contracts: u64 = load.families.iter().map(|f| index_u64(f.edges.rows().len())).sum();
             let kinds = &load.kinds;
             // Families hold their own contracts and lists, so each turns over on its own worker.
             let jobs: Vec<(usize, &mut Family)> = load.families.iter_mut().enumerate().collect();
             let mut done: u64 = load
                 .pool
                 .map_items(jobs, |(fi, f)| {
-                    let share = (count * index_u64(f.due.len())).checked_div(contracts).unwrap_or(0);
+                    let share = (count * index_u64(f.edges.rows().len())).checked_div(contracts).unwrap_or(0);
                     let sizes = f.kinds.map(|k| kinds.get(usize::from(k)).map_or(1, |x| x.n));
                     turnover(f, sizes, share, day, index_u64(fi))
                 })

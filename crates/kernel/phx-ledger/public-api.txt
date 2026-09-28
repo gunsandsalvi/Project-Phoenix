@@ -186,6 +186,8 @@ pub struct phx_ledger::algebra::Seniority(pub u8)
 impl phx_store::save::Saved for phx_ledger::algebra::Seniority where u8: phx_store::save::Saved
 pub fn phx_ledger::algebra::Seniority::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::algebra::Seniority::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_ledger::algebra::ShapePlan
+pub phx_ledger::algebra::ShapePlan::general: bool
 pub struct phx_ledger::algebra::Terms
 pub phx_ledger::algebra::Terms::ccy: phx_num::money::Ccy
 pub phx_ledger::algebra::Terms::class: alloc::vec::Vec<u32>
@@ -207,8 +209,12 @@ pub fn phx_ledger::algebra::Terms::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_ledger::algebra::Terms::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::algebra::due_at(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::due_by_plan(&phx_ledger::algebra::DuePlan, phx_num::money::Money, &mut phx_ledger::algebra::DueBuf)
+pub fn phx_ledger::algebra::due_by_shape(&phx_ledger::algebra::ShapePlan, &[phx_num::money::Money], phx_num::money::Money, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::due_on(&phx_ledger::algebra::Terms, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::due_plan(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_core::calendar::Calendar) -> phx_ledger::algebra::DuePlan
+pub fn phx_ledger::algebra::shape_of(&phx_ledger::algebra::Terms) -> (phx_ledger::algebra::Terms, alloc::vec::Vec<phx_num::money::Money>)
+pub fn phx_ledger::algebra::shape_plan(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_core::calendar::Calendar) -> phx_ledger::algebra::ShapePlan
+pub fn phx_ledger::algebra::terms_of(&phx_ledger::algebra::Terms, &[phx_num::money::Money]) -> phx_ledger::algebra::Terms
 pub fn phx_ledger::algebra::unprinted_series(&phx_ledger::algebra::Terms, &dyn core::ops::function::Fn(phx_id::ids::SeriesId) -> bool) -> alloc::vec::Vec<phx_id::ids::SeriesId>
 pub mod phx_ledger::apply
 pub enum phx_ledger::apply::ApplyAt

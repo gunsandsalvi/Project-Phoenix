@@ -478,13 +478,22 @@ fn index(amount: Money, current: i64, base: i64) -> Money {
     Money::new(amt, amount.ccy())
 }
 
-/// A per-time amount over an accrual period, by the time that period spans in the amount's own unit of time.
-fn per_time(amount: Money, per: RatePeriod, period: Accrual) -> Money {
-    let elapsed = match per {
+/// The time an accrual period spans in an amount's own unit of time.
+fn per_time_fraction(per: RatePeriod, period: Accrual) -> DayFraction {
+    match per {
         RatePeriod::Day => DayFraction::new(actual_days(period.from, period.to), 1, RatePeriod::Day),
         RatePeriod::Month => DayFraction::new(months_between(period.from, period.to), 1, RatePeriod::Month),
         RatePeriod::Year => day_fraction(period.from, period.to, DayCount::Act365F),
-    };
+    }
+}
+
+/// A per-time amount over an accrual period, by the time that period spans in the amount's own unit of time.
+fn per_time(amount: Money, per: RatePeriod, period: Accrual) -> Money {
+    per_time_by(amount, per_time_fraction(per, period))
+}
+
+/// An amount over a fraction of its unit of time, rounded once.
+fn per_time_by(amount: Money, elapsed: DayFraction) -> Money {
     let paid = phx_num::div_round(
         i128::from(amount.amt()) * i128::from(elapsed.num()),
         i128::from(elapsed.den()),
@@ -777,19 +786,23 @@ fn remaining(k: u32, n: u32) -> u32 {
 pub fn due_by_plan(plan: &DuePlan, outstanding: Money, out: &mut DueBuf) {
     out.clear();
     for (leg, planned) in &plan.legs {
-        let amount = match *planned {
-            Planned::Fixed(a) => a,
-            Planned::Share { parts } => Amount::Money(share_of(outstanding, parts)),
-            Planned::Accrue { rate, fraction, scale, in_kind } => {
-                let accrued = accrue(outstanding, rate, fraction, Round::HalfEven);
-                let m = scale.map_or(accrued, |(current, base)| index(accrued, current, base));
-                match in_kind {
-                    Some(instrument) => Amount::InKind { instrument, units: m.amt() },
-                    None => Amount::Money(m),
-                }
+        out.push(Due { leg: *leg, amount: planned_amount(*planned, outstanding) });
+    }
+}
+
+/// What a planned leg comes to on what a row owes.
+fn planned_amount(planned: Planned, outstanding: Money) -> Amount {
+    match planned {
+        Planned::Fixed(a) => a,
+        Planned::Share { parts } => Amount::Money(share_of(outstanding, parts)),
+        Planned::Accrue { rate, fraction, scale, in_kind } => {
+            let accrued = accrue(outstanding, rate, fraction, Round::HalfEven);
+            let m = scale.map_or(accrued, |(current, base)| index(accrued, current, base));
+            match in_kind {
+                Some(instrument) => Amount::InKind { instrument, units: m.amt() },
+                None => Amount::Money(m),
             }
-        };
-        out.push(Due { leg: *leg, amount });
+        }
     }
 }
 
@@ -814,6 +827,10 @@ pub fn due_at(terms: &Terms, k: Option<u32>, day: Day, state: &DueState<'_>, out
         leg_due(leg, at, terms, When { date, day }, state, out, None);
     }
 }
+
+#[path = "shape.rs"]
+mod shape;
+pub use shape::{ShapePlan, due_by_shape, shape_of, shape_plan, terms_of};
 
 /// Whether every floating or indexed leg reads a series some market prints, as a floating reference must.
 #[must_use]

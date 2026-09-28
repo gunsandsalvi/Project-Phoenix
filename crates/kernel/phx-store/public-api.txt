@@ -34,6 +34,7 @@ impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
+impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
 impl phx_store::pod::__seal::Sealed for u16
 impl phx_store::pod::__seal::Sealed for u32
 impl phx_store::pod::__seal::Sealed for u64
@@ -267,21 +268,37 @@ pub phx_store::descriptor::FieldDescriptor::tag: phx_store::descriptor::FieldTag
 pub phx_store::descriptor::FieldDescriptor::transform: phx_store::descriptor::Transform
 pub phx_store::descriptor::FieldDescriptor::width: u8
 pub mod phx_store::edges
-pub struct phx_store::edges::EdgeTable<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_store::edges::EdgeTable<B>
-pub fn phx_store::edges::EdgeTable<B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])
-pub fn phx_store::edges::EdgeTable<B>::close_day(&mut self)
-pub fn phx_store::edges::EdgeTable<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
-pub fn phx_store::edges::EdgeTable<B>::end(&self, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::ids::PartyKey>
-pub fn phx_store::edges::EdgeTable<B>::ends(&self, usize) -> &[phx_id::ids::PartyKey]
-pub fn phx_store::edges::EdgeTable<B>::high_water(&self) -> u32
-pub fn phx_store::edges::EdgeTable<B>::is_open(&self, phx_id::ids::Slot) -> bool
-pub fn phx_store::edges::EdgeTable<B>::list(&self, usize, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_store::edges::EdgeTable<B>::move_end(&mut self, phx_id::ids::Slot, usize, phx_id::ids::PartyKey, core::option::Option<&mut u32>, core::option::Option<&mut u32>)
-pub fn phx_store::edges::EdgeTable<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, [bool; 2]) -> phx_store::edges::EdgeTable<B>
-pub fn phx_store::edges::EdgeTable<B>::open(&mut self, [phx_id::ids::PartyKey; 2], [core::option::Option<&mut u32>; 2]) -> phx_id::ids::Slot
-pub fn phx_store::edges::EdgeTable<B>::open_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub struct phx_store::edges::EdgeTable<R: phx_store::edges::Row, B: phx_store::backing::Backing>
+impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::edges::EdgeTable<R, B>
+pub fn phx_store::edges::EdgeTable<R, B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])
+pub fn phx_store::edges::EdgeTable<R, B>::close_day(&mut self)
+pub fn phx_store::edges::EdgeTable<R, B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
+pub fn phx_store::edges::EdgeTable<R, B>::end(&self, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::ids::PartyKey>
+pub fn phx_store::edges::EdgeTable<R, B>::high_water(&self) -> u32
+pub fn phx_store::edges::EdgeTable<R, B>::is_open(&self, phx_id::ids::Slot) -> bool
+pub fn phx_store::edges::EdgeTable<R, B>::list(&self, usize, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::edges::EdgeTable<R, B>::move_end(&mut self, phx_id::ids::Slot, usize, phx_id::ids::PartyKey, core::option::Option<&mut u32>, core::option::Option<&mut u32>)
+pub fn phx_store::edges::EdgeTable<R, B>::new(&mut phx_store::backing::AddressSpace, u32, u32, [bool; 2]) -> phx_store::edges::EdgeTable<R, B>
+pub fn phx_store::edges::EdgeTable<R, B>::open(&mut self, R, [core::option::Option<&mut u32>; 2]) -> phx_id::ids::Slot
+pub fn phx_store::edges::EdgeTable<R, B>::open_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::edges::EdgeTable<R, B>::row(&self, phx_id::ids::Slot) -> core::option::Option<R>
+pub fn phx_store::edges::EdgeTable<R, B>::rows(&self) -> &[R]
+pub fn phx_store::edges::EdgeTable<R, B>::rows_mut(&mut self) -> &mut [R]
+#[repr(C)] pub struct phx_store::edges::Pair
+pub phx_store::edges::Pair::ends: [phx_id::ids::PartyKey; 2]
+impl phx_store::edges::Row for phx_store::edges::Pair
+pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]
+pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)
+impl phx_store::pod::Pod for phx_store::edges::Pair
+pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
 pub const phx_store::edges::NONE: u32
+pub trait phx_store::edges::Row: phx_store::pod::Pod
+pub fn phx_store::edges::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]
+pub fn phx_store::edges::Row::set_end(&mut self, usize, phx_id::ids::PartyKey)
+impl phx_store::edges::Row for phx_store::edges::Pair
+pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]
+pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)
 pub mod phx_store::encode
 pub enum phx_store::encode::DecodeError
 pub phx_store::encode::DecodeError::Frame
@@ -362,6 +379,7 @@ impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
+impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
 impl phx_store::pod::__seal::Sealed for u16
 impl phx_store::pod::__seal::Sealed for u32
 impl phx_store::pod::__seal::Sealed for u64
@@ -436,6 +454,8 @@ impl phx_store::pod::Pod for phx_store::block_list::BlockBag
 pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
 pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::Pod for phx_store::edges::Pair
+pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u16
 pub fn u16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u32
@@ -778,20 +798,22 @@ pub phx_store::ColumnDescriptor::name: &'static str
 pub phx_store::ColumnDescriptor::rows_per_chunk: u32
 impl phx_store::descriptor::ColumnDescriptor
 pub fn phx_store::descriptor::ColumnDescriptor::checked<T: phx_store::pod::Pod>(&'static str, u32, &'static [phx_store::descriptor::FieldDescriptor]) -> core::option::Option<phx_store::descriptor::ColumnDescriptor>
-pub struct phx_store::EdgeTable<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_store::edges::EdgeTable<B>
-pub fn phx_store::edges::EdgeTable<B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])
-pub fn phx_store::edges::EdgeTable<B>::close_day(&mut self)
-pub fn phx_store::edges::EdgeTable<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
-pub fn phx_store::edges::EdgeTable<B>::end(&self, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::ids::PartyKey>
-pub fn phx_store::edges::EdgeTable<B>::ends(&self, usize) -> &[phx_id::ids::PartyKey]
-pub fn phx_store::edges::EdgeTable<B>::high_water(&self) -> u32
-pub fn phx_store::edges::EdgeTable<B>::is_open(&self, phx_id::ids::Slot) -> bool
-pub fn phx_store::edges::EdgeTable<B>::list(&self, usize, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_store::edges::EdgeTable<B>::move_end(&mut self, phx_id::ids::Slot, usize, phx_id::ids::PartyKey, core::option::Option<&mut u32>, core::option::Option<&mut u32>)
-pub fn phx_store::edges::EdgeTable<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, [bool; 2]) -> phx_store::edges::EdgeTable<B>
-pub fn phx_store::edges::EdgeTable<B>::open(&mut self, [phx_id::ids::PartyKey; 2], [core::option::Option<&mut u32>; 2]) -> phx_id::ids::Slot
-pub fn phx_store::edges::EdgeTable<B>::open_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub struct phx_store::EdgeTable<R: phx_store::edges::Row, B: phx_store::backing::Backing>
+impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::edges::EdgeTable<R, B>
+pub fn phx_store::edges::EdgeTable<R, B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])
+pub fn phx_store::edges::EdgeTable<R, B>::close_day(&mut self)
+pub fn phx_store::edges::EdgeTable<R, B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>
+pub fn phx_store::edges::EdgeTable<R, B>::end(&self, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::ids::PartyKey>
+pub fn phx_store::edges::EdgeTable<R, B>::high_water(&self) -> u32
+pub fn phx_store::edges::EdgeTable<R, B>::is_open(&self, phx_id::ids::Slot) -> bool
+pub fn phx_store::edges::EdgeTable<R, B>::list(&self, usize, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::edges::EdgeTable<R, B>::move_end(&mut self, phx_id::ids::Slot, usize, phx_id::ids::PartyKey, core::option::Option<&mut u32>, core::option::Option<&mut u32>)
+pub fn phx_store::edges::EdgeTable<R, B>::new(&mut phx_store::backing::AddressSpace, u32, u32, [bool; 2]) -> phx_store::edges::EdgeTable<R, B>
+pub fn phx_store::edges::EdgeTable<R, B>::open(&mut self, R, [core::option::Option<&mut u32>; 2]) -> phx_id::ids::Slot
+pub fn phx_store::edges::EdgeTable<R, B>::open_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
+pub fn phx_store::edges::EdgeTable<R, B>::row(&self, phx_id::ids::Slot) -> core::option::Option<R>
+pub fn phx_store::edges::EdgeTable<R, B>::rows(&self) -> &[R]
+pub fn phx_store::edges::EdgeTable<R, B>::rows_mut(&mut self) -> &mut [R]
 pub struct phx_store::FieldDescriptor
 pub phx_store::FieldDescriptor::name: &'static str
 pub phx_store::FieldDescriptor::offset: u16
@@ -841,6 +863,14 @@ pub fn phx_store::backing::MmapBacking::decommit(&mut self, core::ops::range::Ra
 pub fn phx_store::backing::MmapBacking::page(&self) -> usize
 pub fn phx_store::backing::MmapBacking::reserve(usize) -> phx_store::backing::MmapBacking
 pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
+#[repr(C)] pub struct phx_store::Pair
+pub phx_store::Pair::ends: [phx_id::ids::PartyKey; 2]
+impl phx_store::edges::Row for phx_store::edges::Pair
+pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]
+pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)
+impl phx_store::pod::Pod for phx_store::edges::Pair
+pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
 pub struct phx_store::Parties<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>
@@ -1021,6 +1051,8 @@ impl phx_store::pod::Pod for phx_store::block_list::BlockBag
 pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
 pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+impl phx_store::pod::Pod for phx_store::edges::Pair
+pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u16
 pub fn u16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl phx_store::pod::Pod for u32
@@ -1033,6 +1065,12 @@ impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
 pub fn [T; N]::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl<const E: u8> phx_store::pod::Pod for phx_num::fixed::Fixed<E>
 pub fn phx_num::fixed::Fixed<E>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
+pub trait phx_store::Row: phx_store::pod::Pod
+pub fn phx_store::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]
+pub fn phx_store::Row::set_end(&mut self, usize, phx_id::ids::PartyKey)
+impl phx_store::edges::Row for phx_store::edges::Pair
+pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]
+pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)
 pub trait phx_store::Saved: core::marker::Sized
 pub fn phx_store::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_store::Saved::save(&self, &mut phx_store::save::Writer<'_>)

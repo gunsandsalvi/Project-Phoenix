@@ -57,7 +57,9 @@ line = "the central bank, treasury, agencies, insurers, schemes, funds, dealers,
 
 # Contracts by family (REP.3), each between a named payer and payee kind. `bytes` is the family's own columns beyond
 # its two parties and list links. `dues`: none; payday (all due on the month's payday); spread (a due a month, on a
-# day drawn from the month); quarterly (a third due this month, spread). `mean` is a due's mean amount in smallest units.
+# day drawn from the month); quarterly (a third due this month, spread). `terms`: the kind of terms a due is reckoned
+# on — fixed (the contract's amount), rate (interest on its balance), amortising (a loan's part and interest) or bullet
+# (the principal once). `mean` is a contract's mean amount in smallest units.
 [[family]]
 name = "employment"
 per_million = 450000
@@ -66,6 +68,7 @@ listed = [true, true]
 payer = "firm"
 payee = "household"
 dues = "payday"
+terms = "fixed"
 mean = 300000
 line = "LAB.1: a contract a job, about 0.45 employed a person; wage, hours, start, notice, pension terms"
 
@@ -77,6 +80,7 @@ listed = [false, true]
 payer = "bank"
 payee = "household"
 dues = "spread"
+terms = "rate"
 mean = 500
 line = "MON, BFL: two accounts a household, interest monthly"
 
@@ -88,6 +92,7 @@ listed = [false, true]
 payer = "bank"
 payee = "firm"
 dues = "spread"
+terms = "rate"
 mean = 2000
 line = "MON, BFL: one and a half accounts a firm"
 
@@ -99,6 +104,7 @@ listed = [false, true]
 payer = "household"
 payee = "bank"
 dues = "spread"
+terms = "amortising"
 mean = 90000
 line = "BNK.17, HSG: mortgages and consumer loans, half the households"
 
@@ -110,6 +116,7 @@ listed = [false, true]
 payer = "firm"
 payee = "bank"
 dues = "spread"
+terms = "amortising"
 mean = 400000
 line = "BNK.17, CRD: half the firms borrow"
 
@@ -121,6 +128,7 @@ listed = [true, true]
 payer = "household"
 payee = "household"
 dues = "spread"
+terms = "fixed"
 mean = 90000
 line = "HSG.2: a third of households rent, from households and firms"
 
@@ -132,6 +140,7 @@ listed = [true, true]
 payer = "firm"
 payee = "firm"
 dues = "spread"
+terms = "bullet"
 mean = 150000
 line = "TCR.1: about ten open invoices a firm on trade terms"
 
@@ -143,6 +152,7 @@ listed = [false, true]
 payer = "household"
 payee = "institution"
 dues = "spread"
+terms = "fixed"
 mean = 6000
 line = "INS: about three policies a household and two a firm, premiums monthly"
 
@@ -154,6 +164,7 @@ listed = [false, true]
 payer = "institution"
 payee = "household"
 dues = "spread"
+terms = "fixed"
 mean = 40000
 line = "PEN, SOC: rights of the employed and pensions in payment"
 
@@ -165,6 +176,7 @@ listed = [false, true]
 payer = "firm"
 payee = "household"
 dues = "quarterly"
+terms = "rate"
 mean = 3000
 line = "REG.1, EQY, FND: shares, bonds and fund units; coupons and dividends quarterly"
 
@@ -176,6 +188,7 @@ listed = [false, true]
 payer = "household"
 payee = "household"
 dues = "none"
+terms = "fixed"
 mean = 0
 line = "POP: kin between households, read at deaths and formations"
 
@@ -187,6 +200,7 @@ listed = [true, true]
 payer = "firm"
 payee = "firm"
 dues = "spread"
+terms = "fixed"
 mean = 200000
 line = "FRM, ENE, CAP: supply contracts, leases, energy tariffs"
 

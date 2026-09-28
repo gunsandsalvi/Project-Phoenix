@@ -1,14 +1,41 @@
-//! A family of contracts: each one a row between its two named parties, with the columns its family declares. A side
-//! that keeps its parties' lists threads each party's contracts of the family through the rows, from a head the
-//! party's kind keeps, so opening and closing a contract takes the same time however many a party holds.
+//! A family of contracts: each one a row between its two named parties, holding the words its family reads on the
+//! day's paths beside them, so a contract is read in one line. A side that keeps its parties' lists threads each
+//! party's contracts of the family through the rows, from a head the party's kind keeps, so opening and closing a
+//! contract takes the same time however many a party holds.
 
 use phx_id::{PartyKey, Slot};
-use phx_macros::clause;
+use phx_macros::{Pod, clause};
 use phx_num::violation;
 
 use crate::backing::{AddressSpace, Backing, SystemBacking};
 use crate::column::Column;
+use crate::pod::Pod;
 use crate::table::SlotAlloc;
+
+/// A family's contract row: its two parties, side by side with the words the family keeps.
+pub trait Row: Pod {
+    fn ends(&self) -> [PartyKey; 2];
+    fn set_end(&mut self, side: usize, party: PartyKey);
+}
+
+/// A contract with no words of its own beyond its two parties.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Pod)]
+pub struct Pair {
+    pub ends: [PartyKey; 2],
+}
+
+impl Row for Pair {
+    fn ends(&self) -> [PartyKey; 2] {
+        self.ends
+    }
+
+    fn set_end(&mut self, side: usize, party: PartyKey) {
+        if let Some(e) = self.ends.get_mut(side) {
+            *e = party;
+        }
+    }
+}
 
 /// No contract: the end of a party's list, or an empty head.
 pub const NONE: u32 = u32::MAX;
@@ -20,20 +47,20 @@ struct Links<B: Backing> {
     prev: Column<u32, B>,
 }
 
-/// A family's contracts: slots, each contract's two parties, and the list links of each side that keeps lists.
+/// A family's contracts: slots, each contract's row, and the list links of each side that keeps lists.
 #[clause("REP.3", "REG.8")]
 #[derive(Debug)]
-pub struct EdgeTable<B: Backing = SystemBacking> {
+pub struct EdgeTable<R: Row = Pair, B: Backing = SystemBacking> {
     slots: SlotAlloc<B>,
-    ends: [Column<PartyKey, B>; 2],
+    rows: Column<R, B>,
     links: [Option<Links<B>>; 2],
     max: u32,
     rows_per_chunk: u32,
 }
 
-impl<B: Backing> EdgeTable<B> {
+impl<R: Row, B: Backing> EdgeTable<R, B> {
     /// A family of at most `max` contracts, whose sides keep their parties' lists where `listed` says.
-    pub fn new(space: &mut AddressSpace, max: u32, rows_per_chunk: u32, listed: [bool; 2]) -> EdgeTable<B> {
+    pub fn new(space: &mut AddressSpace, max: u32, rows_per_chunk: u32, listed: [bool; 2]) -> EdgeTable<R, B> {
         let links = listed.map(|l| {
             l.then(|| Links {
                 next: Column::new(space, max, rows_per_chunk),
@@ -42,7 +69,7 @@ impl<B: Backing> EdgeTable<B> {
         });
         EdgeTable {
             slots: SlotAlloc::new(space, max),
-            ends: [Column::new(space, max, rows_per_chunk), Column::new(space, max, rows_per_chunk)],
+            rows: Column::new(space, max, rows_per_chunk),
             links,
             max,
             rows_per_chunk,
@@ -54,12 +81,12 @@ impl<B: Backing> EdgeTable<B> {
         Column::new(space, self.max, self.rows_per_chunk)
     }
 
-    /// Opens a contract between two parties, putting it first on the lists of the sides that keep them, whose heads
-    /// the caller hands in.
-    pub fn open(&mut self, ends: [PartyKey; 2], heads: [Option<&mut u32>; 2]) -> Slot {
+    /// Opens a contract between its row's two parties, putting it first on the lists of the sides that keep them,
+    /// whose heads the caller hands in.
+    pub fn open(&mut self, row: R, heads: [Option<&mut u32>; 2]) -> Slot {
         let edge = self.slots.alloc();
-        for ((col, end), (links, head)) in self.ends.iter_mut().zip(ends).zip(self.links.iter_mut().zip(heads)) {
-            col.put(edge, end);
+        self.rows.put(edge, row);
+        for (links, head) in self.links.iter_mut().zip(heads) {
             match (links, head) {
                 (Some(l), Some(h)) => {
                     l.next.put(edge, *h);
@@ -97,10 +124,11 @@ impl<B: Backing> EdgeTable<B> {
         from_head: Option<&mut u32>,
         to_head: Option<&mut u32>,
     ) {
-        let (Some(col), Some(links)) = (self.ends.get_mut(side), self.links.get_mut(side)) else {
+        let (Some(mut row), Some(links)) = (self.rows.get(edge), self.links.get_mut(side)) else {
             violation!(clause = "REP.3", "a contract has two sides", side = side);
         };
-        col.set(edge, to);
+        row.set_end(side, to);
+        self.rows.set(edge, row);
         unlink(links.as_mut(), from_head, edge);
         match (links.as_mut(), to_head) {
             (Some(l), Some(h)) => {
@@ -119,12 +147,24 @@ impl<B: Backing> EdgeTable<B> {
     /// The party on a contract's side.
     #[must_use]
     pub fn end(&self, edge: Slot, side: usize) -> Option<PartyKey> {
-        self.ends.get(side).and_then(|c| c.get(edge))
+        self.rows.get(edge).and_then(|r| r.ends().get(side).copied())
     }
 
-    /// Both sides' parties of every slot below the high water, open or not, to read in slot order.
-    pub fn ends(&self, side: usize) -> &[PartyKey] {
-        self.ends.get(side).map_or(&[], Column::slice)
+    /// A contract's row.
+    #[must_use]
+    pub fn row(&self, edge: Slot) -> Option<R> {
+        self.rows.get(edge)
+    }
+
+    /// Every slot's row below the high water, open or not, to read in slot order.
+    pub fn rows(&self) -> &[R] {
+        self.rows.slice()
+    }
+
+    /// Every slot's row, for the family to write its own words; a party is moved by `move_end`, which keeps the
+    /// lists.
+    pub fn rows_mut(&mut self) -> &mut [R] {
+        self.rows.slice_mut()
     }
 
     #[must_use]
@@ -196,7 +236,7 @@ fn unlink<B: Backing>(links: Option<&mut Links<B>>, head: Option<&mut u32>, edge
 mod tests {
     use phx_id::{PartyKey, Slot};
 
-    use super::{EdgeTable, NONE};
+    use super::{EdgeTable, NONE, Pair};
     use crate::backing::{AddressSpace, HeapBacking};
 
     fn party(slot: u32) -> PartyKey {
@@ -206,9 +246,10 @@ mod tests {
     #[test]
     fn adjacency_insert_remove_iterate() {
         let mut space = AddressSpace::empty();
-        let mut t: EdgeTable<HeapBacking> = EdgeTable::new(&mut space, 64, 16, [true, false]);
+        let mut t: EdgeTable<Pair, HeapBacking> = EdgeTable::new(&mut space, 64, 16, [true, false]);
         let mut employer = NONE;
-        let jobs: Vec<Slot> = (0..4).map(|w| t.open([party(0), party(10 + w)], [Some(&mut employer), None])).collect();
+        let jobs: Vec<Slot> =
+            (0..4).map(|w| t.open(Pair { ends: [party(0), party(10 + w)] }, [Some(&mut employer), None])).collect();
         let listed: Vec<Slot> = t.list(0, employer).collect();
         assert_eq!(listed, jobs.iter().rev().copied().collect::<Vec<_>>(), "most recent first");
         t.close(jobs[1], [Some(&mut employer), None]);
