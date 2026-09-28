@@ -1,0 +1,32 @@
+measure,sheet,meaning
+earn.1,Earnings growth,Median expected earnings growth
+earn.2,Earnings growth,25th Percentile expected earnings growth
+earn.3,Earnings growth,75th Percentile expected earnings growth
+earn.4,Earnings growth,Median point prediction
+earn_demo.1,Earnings growth Demo,"median expected earnings growth one year ahead, %"
+find.1,Job finding expectations,Mean probability of finding a job in the next three months if one loses a job today
+find_demo.1,Job finding expectations Demo,"mean probability of finding a job within 3 months if one lost it today, %"
+inc.1,HH Income Change,Median point prediction
+inc.2,HH Income Change,25th Percentile point prediction
+inc.3,HH Income Change,75th Percentile point prediction
+inc_demo.1,HH Income Change Demo,"median expected household income growth one year ahead, %"
+infl.1,Inflation expectations,Median one-year ahead expected inflation rate
+infl.2,Inflation expectations,Median three-year ahead expected inflation rate
+infl.3,Inflation expectations,25th Percentile one-year ahead expected inflation rate
+infl.4,Inflation expectations,25th Percentile three-year ahead expected inflation rate
+infl.5,Inflation expectations,75th Percentile one-year ahead expected inflation rate
+infl.6,Inflation expectations,75th Percentile three-year ahead expected inflation rate
+infl.7,Inflation expectations,Median point prediction one-year ahead inflation rate
+infl.8,Inflation expectations,Median point prediction three-year ahead inflation rate
+infl_demo.1,Inflation expectations Demo,"median one-year-ahead expected inflation, %"
+infl_demo.2,Inflation expectations Demo,"median three-year-ahead expected inflation, %"
+sep.1,Job separation expectation,Mean probability of losing a job
+sep.2,Job separation expectation,Mean probability of leaving a job voluntarily
+sep_demo.1,Job separation expectation Demo,"mean probability of losing one's job in 12 months, %"
+sep_demo.2,Job separation expectation Demo,"mean probability of leaving one's job voluntarily in 12 months, %"
+unc.1,Inflation uncertainty,Median one-year ahead uncertainty
+unc.2,Inflation uncertainty,Median three-year ahead uncertainty
+unc_demo.1,Inflation uncertainty Demo,"median one-year-ahead inflation uncertainty (interquartile range of the density), percentage points"
+unc_demo.2,Inflation uncertainty Demo,"median three-year-ahead inflation uncertainty, percentage points"
+unemp.1,Unemployment Expectations,Mean probability that the U.S. unemployment rate will be higher one year from now
+unemp_demo.1,Unemployment Expectations Demo,"mean probability that US unemployment will be higher in a year, %"

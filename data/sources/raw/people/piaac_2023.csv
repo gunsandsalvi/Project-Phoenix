@@ -1,0 +1,714 @@
+iso3,area,statistic,unit,value
+AUT,Austria,Adaptive Problem Solving,Mean Score,253
+AUT,Austria,Literacy skills,Mean Score,254
+AUT,Austria,Numeracy skills,Mean Score,267
+AUT,Austria,Proficiency in Adaptive Problem Solving - Below Level 1,%,7
+AUT,Austria,Proficiency in Adaptive Problem Solving - Level 1,%,20
+AUT,Austria,Proficiency in Adaptive Problem Solving - Level 2,%,39
+AUT,Austria,Proficiency in Adaptive Problem Solving - Level 3,%,29
+AUT,Austria,Proficiency in Adaptive Problem Solving - Level 4,%,5
+AUT,Austria,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,27
+AUT,Austria,Proficiency in Literacy skills - Below Level 1,%,11
+AUT,Austria,Proficiency in Literacy skills - Level 1,%,18
+AUT,Austria,Proficiency in Literacy skills - Level 2,%,32
+AUT,Austria,Proficiency in Literacy skills - Level 3,%,30
+AUT,Austria,Proficiency in Literacy skills - Level 4,%,9
+AUT,Austria,Proficiency in Literacy skills - Level 5,%,1
+AUT,Austria,Proficiency in Literacy skills - Low performer (<=Level 1),%,29
+AUT,Austria,Proficiency in Numeracy skills - Below Level 1,%,8
+AUT,Austria,Proficiency in Numeracy skills - Level 1,%,15
+AUT,Austria,Proficiency in Numeracy skills - Level 2,%,30
+AUT,Austria,Proficiency in Numeracy skills - Level 3,%,32
+AUT,Austria,Proficiency in Numeracy skills - Level 4,%,13
+AUT,Austria,Proficiency in Numeracy skills - Level 5,%,2
+AUT,Austria,Proficiency in Numeracy skills - Low performer (<=Level 1),%,23
+BEL,Flanders (Belgium),Adaptive Problem Solving,Mean Score,262
+BEL,Flanders (Belgium),Literacy skills,Mean Score,275
+BEL,Flanders (Belgium),Numeracy skills,Mean Score,279
+BEL,Flanders (Belgium),Proficiency in Adaptive Problem Solving - Below Level 1,%,6
+BEL,Flanders (Belgium),Proficiency in Adaptive Problem Solving - Level 1,%,15
+BEL,Flanders (Belgium),Proficiency in Adaptive Problem Solving - Level 2,%,36
+BEL,Flanders (Belgium),Proficiency in Adaptive Problem Solving - Level 3,%,35
+BEL,Flanders (Belgium),Proficiency in Adaptive Problem Solving - Level 4,%,8
+BEL,Flanders (Belgium),Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,21
+BEL,Flanders (Belgium),Proficiency in Literacy skills - Below Level 1,%,7
+BEL,Flanders (Belgium),Proficiency in Literacy skills - Level 1,%,11
+BEL,Flanders (Belgium),Proficiency in Literacy skills - Level 2,%,26
+BEL,Flanders (Belgium),Proficiency in Literacy skills - Level 3,%,38
+BEL,Flanders (Belgium),Proficiency in Literacy skills - Level 4,%,16
+BEL,Flanders (Belgium),Proficiency in Literacy skills - Level 5,%,2
+BEL,Flanders (Belgium),Proficiency in Literacy skills - Low performer (<=Level 1),%,19
+BEL,Flanders (Belgium),Proficiency in Numeracy skills - Below Level 1,%,6
+BEL,Flanders (Belgium),Proficiency in Numeracy skills - Level 1,%,11
+BEL,Flanders (Belgium),Proficiency in Numeracy skills - Level 2,%,25
+BEL,Flanders (Belgium),Proficiency in Numeracy skills - Level 3,%,36
+BEL,Flanders (Belgium),Proficiency in Numeracy skills - Level 4,%,19
+BEL,Flanders (Belgium),Proficiency in Numeracy skills - Level 5,%,3
+BEL,Flanders (Belgium),Proficiency in Numeracy skills - Low performer (<=Level 1),%,18
+CAN,Canada,Adaptive Problem Solving,Mean Score,259
+CAN,Canada,Literacy skills,Mean Score,271
+CAN,Canada,Numeracy skills,Mean Score,271
+CAN,Canada,Proficiency in Adaptive Problem Solving - Below Level 1,%,5
+CAN,Canada,Proficiency in Adaptive Problem Solving - Level 1,%,17
+CAN,Canada,Proficiency in Adaptive Problem Solving - Level 2,%,39
+CAN,Canada,Proficiency in Adaptive Problem Solving - Level 3,%,33
+CAN,Canada,Proficiency in Adaptive Problem Solving - Level 4,%,6
+CAN,Canada,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,22
+CAN,Canada,Proficiency in Literacy skills - Below Level 1,%,6
+CAN,Canada,Proficiency in Literacy skills - Level 1,%,13
+CAN,Canada,Proficiency in Literacy skills - Level 2,%,30
+CAN,Canada,Proficiency in Literacy skills - Level 3,%,37
+CAN,Canada,Proficiency in Literacy skills - Level 4,%,13
+CAN,Canada,Proficiency in Literacy skills - Level 5,%,1
+CAN,Canada,Proficiency in Literacy skills - Low performer (<=Level 1),%,19
+CAN,Canada,Proficiency in Numeracy skills - Below Level 1,%,6
+CAN,Canada,Proficiency in Numeracy skills - Level 1,%,15
+CAN,Canada,Proficiency in Numeracy skills - Level 2,%,30
+CAN,Canada,Proficiency in Numeracy skills - Level 3,%,34
+CAN,Canada,Proficiency in Numeracy skills - Level 4,%,13
+CAN,Canada,Proficiency in Numeracy skills - Level 5,%,2
+CAN,Canada,Proficiency in Numeracy skills - Low performer (<=Level 1),%,20
+CHE,Switzerland,Adaptive Problem Solving,Mean Score,257
+CHE,Switzerland,Literacy skills,Mean Score,266
+CHE,Switzerland,Numeracy skills,Mean Score,276
+CHE,Switzerland,Proficiency in Adaptive Problem Solving - Below Level 1,%,9
+CHE,Switzerland,Proficiency in Adaptive Problem Solving - Level 1,%,16
+CHE,Switzerland,Proficiency in Adaptive Problem Solving - Level 2,%,35
+CHE,Switzerland,Proficiency in Adaptive Problem Solving - Level 3,%,34
+CHE,Switzerland,Proficiency in Adaptive Problem Solving - Level 4,%,7
+CHE,Switzerland,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,25
+CHE,Switzerland,Proficiency in Literacy skills - Below Level 1,%,9
+CHE,Switzerland,Proficiency in Literacy skills - Level 1,%,13
+CHE,Switzerland,Proficiency in Literacy skills - Level 2,%,28
+CHE,Switzerland,Proficiency in Literacy skills - Level 3,%,36
+CHE,Switzerland,Proficiency in Literacy skills - Level 4,%,13
+CHE,Switzerland,Proficiency in Literacy skills - Level 5,%,1
+CHE,Switzerland,Proficiency in Literacy skills - Low performer (<=Level 1),%,22
+CHE,Switzerland,Proficiency in Numeracy skills - Below Level 1,%,7
+CHE,Switzerland,Proficiency in Numeracy skills - Level 1,%,12
+CHE,Switzerland,Proficiency in Numeracy skills - Level 2,%,25
+CHE,Switzerland,Proficiency in Numeracy skills - Level 3,%,35
+CHE,Switzerland,Proficiency in Numeracy skills - Level 4,%,18
+CHE,Switzerland,Proficiency in Numeracy skills - Level 5,%,3
+CHE,Switzerland,Proficiency in Numeracy skills - Low performer (<=Level 1),%,19
+CHL,Chile,Adaptive Problem Solving,Mean Score,218
+CHL,Chile,Literacy skills,Mean Score,218
+CHL,Chile,Numeracy skills,Mean Score,214
+CHL,Chile,Proficiency in Adaptive Problem Solving - Below Level 1,%,21
+CHL,Chile,Proficiency in Adaptive Problem Solving - Level 1,%,35
+CHL,Chile,Proficiency in Adaptive Problem Solving - Level 2,%,33
+CHL,Chile,Proficiency in Adaptive Problem Solving - Level 3,%,11
+CHL,Chile,Proficiency in Adaptive Problem Solving - Level 4,%,1
+CHL,Chile,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,56
+CHL,Chile,Proficiency in Literacy skills - Below Level 1,%,25
+CHL,Chile,Proficiency in Literacy skills - Level 1,%,28
+CHL,Chile,Proficiency in Literacy skills - Level 2,%,30
+CHL,Chile,Proficiency in Literacy skills - Level 3,%,14
+CHL,Chile,Proficiency in Literacy skills - Level 4,%,2
+CHL,Chile,Proficiency in Literacy skills - Level 5,%,0
+CHL,Chile,Proficiency in Literacy skills - Low performer (<=Level 1),%,53
+CHL,Chile,Proficiency in Numeracy skills - Below Level 1,%,27
+CHL,Chile,Proficiency in Numeracy skills - Level 1,%,29
+CHL,Chile,Proficiency in Numeracy skills - Level 2,%,29
+CHL,Chile,Proficiency in Numeracy skills - Level 3,%,14
+CHL,Chile,Proficiency in Numeracy skills - Level 4,%,2
+CHL,Chile,Proficiency in Numeracy skills - Level 5,%,0
+CHL,Chile,Proficiency in Numeracy skills - Low performer (<=Level 1),%,56
+CZE,Czechia,Adaptive Problem Solving,Mean Score,250
+CZE,Czechia,Literacy skills,Mean Score,260
+CZE,Czechia,Numeracy skills,Mean Score,267
+CZE,Czechia,Proficiency in Adaptive Problem Solving - Below Level 1,%,6
+CZE,Czechia,Proficiency in Adaptive Problem Solving - Level 1,%,23
+CZE,Czechia,Proficiency in Adaptive Problem Solving - Level 2,%,42
+CZE,Czechia,Proficiency in Adaptive Problem Solving - Level 3,%,26
+CZE,Czechia,Proficiency in Adaptive Problem Solving - Level 4,%,4
+CZE,Czechia,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,29
+CZE,Czechia,Proficiency in Literacy skills - Below Level 1,%,7
+CZE,Czechia,Proficiency in Literacy skills - Level 1,%,18
+CZE,Czechia,Proficiency in Literacy skills - Level 2,%,34
+CZE,Czechia,Proficiency in Literacy skills - Level 3,%,32
+CZE,Czechia,Proficiency in Literacy skills - Level 4,%,9
+CZE,Czechia,Proficiency in Literacy skills - Level 5,%,1
+CZE,Czechia,Proficiency in Literacy skills - Low performer (<=Level 1),%,25
+CZE,Czechia,Proficiency in Numeracy skills - Below Level 1,%,6
+CZE,Czechia,Proficiency in Numeracy skills - Level 1,%,15
+CZE,Czechia,Proficiency in Numeracy skills - Level 2,%,33
+CZE,Czechia,Proficiency in Numeracy skills - Level 3,%,32
+CZE,Czechia,Proficiency in Numeracy skills - Level 4,%,12
+CZE,Czechia,Proficiency in Numeracy skills - Level 5,%,2
+CZE,Czechia,Proficiency in Numeracy skills - Low performer (<=Level 1),%,21
+DEU,Germany,Adaptive Problem Solving,Mean Score,261
+DEU,Germany,Literacy skills,Mean Score,266
+DEU,Germany,Numeracy skills,Mean Score,273
+DEU,Germany,Proficiency in Adaptive Problem Solving - Below Level 1,%,7
+DEU,Germany,Proficiency in Adaptive Problem Solving - Level 1,%,15
+DEU,Germany,Proficiency in Adaptive Problem Solving - Level 2,%,35
+DEU,Germany,Proficiency in Adaptive Problem Solving - Level 3,%,35
+DEU,Germany,Proficiency in Adaptive Problem Solving - Level 4,%,8
+DEU,Germany,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,22
+DEU,Germany,Proficiency in Literacy skills - Below Level 1,%,9
+DEU,Germany,Proficiency in Literacy skills - Level 1,%,13
+DEU,Germany,Proficiency in Literacy skills - Level 2,%,28
+DEU,Germany,Proficiency in Literacy skills - Level 3,%,35
+DEU,Germany,Proficiency in Literacy skills - Level 4,%,13
+DEU,Germany,Proficiency in Literacy skills - Level 5,%,1
+DEU,Germany,Proficiency in Literacy skills - Low performer (<=Level 1),%,22
+DEU,Germany,Proficiency in Numeracy skills - Below Level 1,%,8
+DEU,Germany,Proficiency in Numeracy skills - Level 1,%,12
+DEU,Germany,Proficiency in Numeracy skills - Level 2,%,26
+DEU,Germany,Proficiency in Numeracy skills - Level 3,%,35
+DEU,Germany,Proficiency in Numeracy skills - Level 4,%,16
+DEU,Germany,Proficiency in Numeracy skills - Level 5,%,2
+DEU,Germany,Proficiency in Numeracy skills - Low performer (<=Level 1),%,20
+DNK,Denmark,Adaptive Problem Solving,Mean Score,264
+DNK,Denmark,Literacy skills,Mean Score,273
+DNK,Denmark,Numeracy skills,Mean Score,279
+DNK,Denmark,Proficiency in Adaptive Problem Solving - Below Level 1,%,7
+DNK,Denmark,Proficiency in Adaptive Problem Solving - Level 1,%,13
+DNK,Denmark,Proficiency in Adaptive Problem Solving - Level 2,%,34
+DNK,Denmark,Proficiency in Adaptive Problem Solving - Level 3,%,37
+DNK,Denmark,Proficiency in Adaptive Problem Solving - Level 4,%,9
+DNK,Denmark,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,20
+DNK,Denmark,Proficiency in Literacy skills - Below Level 1,%,7
+DNK,Denmark,Proficiency in Literacy skills - Level 1,%,10
+DNK,Denmark,Proficiency in Literacy skills - Level 2,%,27
+DNK,Denmark,Proficiency in Literacy skills - Level 3,%,40
+DNK,Denmark,Proficiency in Literacy skills - Level 4,%,14
+DNK,Denmark,Proficiency in Literacy skills - Level 5,%,1
+DNK,Denmark,Proficiency in Literacy skills - Low performer (<=Level 1),%,18
+DNK,Denmark,Proficiency in Numeracy skills - Below Level 1,%,7
+DNK,Denmark,Proficiency in Numeracy skills - Level 1,%,10
+DNK,Denmark,Proficiency in Numeracy skills - Level 2,%,25
+DNK,Denmark,Proficiency in Numeracy skills - Level 3,%,37
+DNK,Denmark,Proficiency in Numeracy skills - Level 4,%,19
+DNK,Denmark,Proficiency in Numeracy skills - Level 5,%,2
+DNK,Denmark,Proficiency in Numeracy skills - Low performer (<=Level 1),%,17
+ESP,Spain,Adaptive Problem Solving,Mean Score,241
+ESP,Spain,Literacy skills,Mean Score,247
+ESP,Spain,Numeracy skills,Mean Score,250
+ESP,Spain,Proficiency in Adaptive Problem Solving - Below Level 1,%,8
+ESP,Spain,Proficiency in Adaptive Problem Solving - Level 1,%,27
+ESP,Spain,Proficiency in Adaptive Problem Solving - Level 2,%,44
+ESP,Spain,Proficiency in Adaptive Problem Solving - Level 3,%,19
+ESP,Spain,Proficiency in Adaptive Problem Solving - Level 4,%,2
+ESP,Spain,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,35
+ESP,Spain,Proficiency in Literacy skills - Below Level 1,%,8
+ESP,Spain,Proficiency in Literacy skills - Level 1,%,23
+ESP,Spain,Proficiency in Literacy skills - Level 2,%,40
+ESP,Spain,Proficiency in Literacy skills - Level 3,%,24
+ESP,Spain,Proficiency in Literacy skills - Level 4,%,4
+ESP,Spain,Proficiency in Literacy skills - Level 5,%,0
+ESP,Spain,Proficiency in Literacy skills - Low performer (<=Level 1),%,31
+ESP,Spain,Proficiency in Numeracy skills - Below Level 1,%,9
+ESP,Spain,Proficiency in Numeracy skills - Level 1,%,22
+ESP,Spain,Proficiency in Numeracy skills - Level 2,%,38
+ESP,Spain,Proficiency in Numeracy skills - Level 3,%,26
+ESP,Spain,Proficiency in Numeracy skills - Level 4,%,6
+ESP,Spain,Proficiency in Numeracy skills - Level 5,%,0
+ESP,Spain,Proficiency in Numeracy skills - Low performer (<=Level 1),%,30
+EST,Estonia,Adaptive Problem Solving,Mean Score,263
+EST,Estonia,Literacy skills,Mean Score,276
+EST,Estonia,Numeracy skills,Mean Score,281
+EST,Estonia,Proficiency in Adaptive Problem Solving - Below Level 1,%,4
+EST,Estonia,Proficiency in Adaptive Problem Solving - Level 1,%,17
+EST,Estonia,Proficiency in Adaptive Problem Solving - Level 2,%,36
+EST,Estonia,Proficiency in Adaptive Problem Solving - Level 3,%,35
+EST,Estonia,Proficiency in Adaptive Problem Solving - Level 4,%,7
+EST,Estonia,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,21
+EST,Estonia,Proficiency in Literacy skills - Below Level 1,%,6
+EST,Estonia,Proficiency in Literacy skills - Level 1,%,15
+EST,Estonia,Proficiency in Literacy skills - Level 2,%,26
+EST,Estonia,Proficiency in Literacy skills - Level 3,%,35
+EST,Estonia,Proficiency in Literacy skills - Level 4,%,16
+EST,Estonia,Proficiency in Literacy skills - Level 5,%,2
+EST,Estonia,Proficiency in Literacy skills - Low performer (<=Level 1),%,20
+EST,Estonia,Proficiency in Numeracy skills - Below Level 1,%,4
+EST,Estonia,Proficiency in Numeracy skills - Level 1,%,12
+EST,Estonia,Proficiency in Numeracy skills - Level 2,%,27
+EST,Estonia,Proficiency in Numeracy skills - Level 3,%,37
+EST,Estonia,Proficiency in Numeracy skills - Level 4,%,18
+EST,Estonia,Proficiency in Numeracy skills - Level 5,%,3
+EST,Estonia,Proficiency in Numeracy skills - Low performer (<=Level 1),%,16
+FIN,Finland,Adaptive Problem Solving,Mean Score,276
+FIN,Finland,Literacy skills,Mean Score,296
+FIN,Finland,Numeracy skills,Mean Score,294
+FIN,Finland,Proficiency in Adaptive Problem Solving - Below Level 1,%,5
+FIN,Finland,Proficiency in Adaptive Problem Solving - Level 1,%,9
+FIN,Finland,Proficiency in Adaptive Problem Solving - Level 2,%,29
+FIN,Finland,Proficiency in Adaptive Problem Solving - Level 3,%,44
+FIN,Finland,Proficiency in Adaptive Problem Solving - Level 4,%,13
+FIN,Finland,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,14
+FIN,Finland,Proficiency in Literacy skills - Below Level 1,%,6
+FIN,Finland,Proficiency in Literacy skills - Level 1,%,6
+FIN,Finland,Proficiency in Literacy skills - Level 2,%,17
+FIN,Finland,Proficiency in Literacy skills - Level 3,%,36
+FIN,Finland,Proficiency in Literacy skills - Level 4,%,29
+FIN,Finland,Proficiency in Literacy skills - Level 5,%,6
+FIN,Finland,Proficiency in Literacy skills - Low performer (<=Level 1),%,12
+FIN,Finland,Proficiency in Numeracy skills - Below Level 1,%,5
+FIN,Finland,Proficiency in Numeracy skills - Level 1,%,7
+FIN,Finland,Proficiency in Numeracy skills - Level 2,%,20
+FIN,Finland,Proficiency in Numeracy skills - Level 3,%,37
+FIN,Finland,Proficiency in Numeracy skills - Level 4,%,26
+FIN,Finland,Proficiency in Numeracy skills - Level 5,%,5
+FIN,Finland,Proficiency in Numeracy skills - Low performer (<=Level 1),%,12
+FRA,France,Adaptive Problem Solving,Mean Score,248
+FRA,France,Literacy skills,Mean Score,255
+FRA,France,Numeracy skills,Mean Score,257
+FRA,France,Proficiency in Adaptive Problem Solving - Below Level 1,%,9
+FRA,France,Proficiency in Adaptive Problem Solving - Level 1,%,21
+FRA,France,Proficiency in Adaptive Problem Solving - Level 2,%,39
+FRA,France,Proficiency in Adaptive Problem Solving - Level 3,%,27
+FRA,France,Proficiency in Adaptive Problem Solving - Level 4,%,4
+FRA,France,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,30
+FRA,France,Proficiency in Literacy skills - Below Level 1,%,10
+FRA,France,Proficiency in Literacy skills - Level 1,%,18
+FRA,France,Proficiency in Literacy skills - Level 2,%,32
+FRA,France,Proficiency in Literacy skills - Level 3,%,31
+FRA,France,Proficiency in Literacy skills - Level 4,%,8
+FRA,France,Proficiency in Literacy skills - Level 5,%,1
+FRA,France,Proficiency in Literacy skills - Low performer (<=Level 1),%,28
+FRA,France,Proficiency in Numeracy skills - Below Level 1,%,10
+FRA,France,Proficiency in Numeracy skills - Level 1,%,17
+FRA,France,Proficiency in Numeracy skills - Level 2,%,30
+FRA,France,Proficiency in Numeracy skills - Level 3,%,30
+FRA,France,Proficiency in Numeracy skills - Level 4,%,10
+FRA,France,Proficiency in Numeracy skills - Level 5,%,1
+FRA,France,Proficiency in Numeracy skills - Low performer (<=Level 1),%,28
+GBR,England (UK),Adaptive Problem Solving,Mean Score,259
+GBR,England (UK),Literacy skills,Mean Score,272
+GBR,England (UK),Numeracy skills,Mean Score,268
+GBR,England (UK),Proficiency in Adaptive Problem Solving - Below Level 1,%,6
+GBR,England (UK),Proficiency in Adaptive Problem Solving - Level 1,%,15
+GBR,England (UK),Proficiency in Adaptive Problem Solving - Level 2,%,40
+GBR,England (UK),Proficiency in Adaptive Problem Solving - Level 3,%,34
+GBR,England (UK),Proficiency in Adaptive Problem Solving - Level 4,%,6
+GBR,England (UK),Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,21
+GBR,England (UK),Proficiency in Literacy skills - Below Level 1,%,6
+GBR,England (UK),Proficiency in Literacy skills - Level 1,%,12
+GBR,England (UK),Proficiency in Literacy skills - Level 2,%,32
+GBR,England (UK),Proficiency in Literacy skills - Level 3,%,37
+GBR,England (UK),Proficiency in Literacy skills - Level 4,%,13
+GBR,England (UK),Proficiency in Literacy skills - Level 5,%,1
+GBR,England (UK),Proficiency in Literacy skills - Low performer (<=Level 1),%,18
+GBR,England (UK),Proficiency in Numeracy skills - Below Level 1,%,7
+GBR,England (UK),Proficiency in Numeracy skills - Level 1,%,14
+GBR,England (UK),Proficiency in Numeracy skills - Level 2,%,31
+GBR,England (UK),Proficiency in Numeracy skills - Level 3,%,33
+GBR,England (UK),Proficiency in Numeracy skills - Level 4,%,14
+GBR,England (UK),Proficiency in Numeracy skills - Level 5,%,2
+GBR,England (UK),Proficiency in Numeracy skills - Low performer (<=Level 1),%,21
+HRV,Croatia,Adaptive Problem Solving,Mean Score,235
+HRV,Croatia,Literacy skills,Mean Score,254
+HRV,Croatia,Numeracy skills,Mean Score,254
+HRV,Croatia,Proficiency in Adaptive Problem Solving - Below Level 1,%,11
+HRV,Croatia,Proficiency in Adaptive Problem Solving - Level 1,%,28
+HRV,Croatia,Proficiency in Adaptive Problem Solving - Level 2,%,44
+HRV,Croatia,Proficiency in Adaptive Problem Solving - Level 3,%,16
+HRV,Croatia,Proficiency in Adaptive Problem Solving - Level 4,%,1
+HRV,Croatia,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,39
+HRV,Croatia,Proficiency in Literacy skills - Below Level 1,%,8
+HRV,Croatia,Proficiency in Literacy skills - Level 1,%,19
+HRV,Croatia,Proficiency in Literacy skills - Level 2,%,37
+HRV,Croatia,Proficiency in Literacy skills - Level 3,%,28
+HRV,Croatia,Proficiency in Literacy skills - Level 4,%,7
+HRV,Croatia,Proficiency in Literacy skills - Level 5,%,1
+HRV,Croatia,Proficiency in Literacy skills - Low performer (<=Level 1),%,28
+HRV,Croatia,Proficiency in Numeracy skills - Below Level 1,%,8
+HRV,Croatia,Proficiency in Numeracy skills - Level 1,%,19
+HRV,Croatia,Proficiency in Numeracy skills - Level 2,%,38
+HRV,Croatia,Proficiency in Numeracy skills - Level 3,%,29
+HRV,Croatia,Proficiency in Numeracy skills - Level 4,%,6
+HRV,Croatia,Proficiency in Numeracy skills - Level 5,%,0
+HRV,Croatia,Proficiency in Numeracy skills - Low performer (<=Level 1),%,27
+HUN,Hungary,Adaptive Problem Solving,Mean Score,241
+HUN,Hungary,Literacy skills,Mean Score,248
+HUN,Hungary,Numeracy skills,Mean Score,254
+HUN,Hungary,Proficiency in Adaptive Problem Solving - Below Level 1,%,8
+HUN,Hungary,Proficiency in Adaptive Problem Solving - Level 1,%,29
+HUN,Hungary,Proficiency in Adaptive Problem Solving - Level 2,%,40
+HUN,Hungary,Proficiency in Adaptive Problem Solving - Level 3,%,20
+HUN,Hungary,Proficiency in Adaptive Problem Solving - Level 4,%,3
+HUN,Hungary,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,37
+HUN,Hungary,Proficiency in Literacy skills - Below Level 1,%,9
+HUN,Hungary,Proficiency in Literacy skills - Level 1,%,23
+HUN,Hungary,Proficiency in Literacy skills - Level 2,%,36
+HUN,Hungary,Proficiency in Literacy skills - Level 3,%,26
+HUN,Hungary,Proficiency in Literacy skills - Level 4,%,6
+HUN,Hungary,Proficiency in Literacy skills - Level 5,%,0
+HUN,Hungary,Proficiency in Literacy skills - Low performer (<=Level 1),%,32
+HUN,Hungary,Proficiency in Numeracy skills - Below Level 1,%,9
+HUN,Hungary,Proficiency in Numeracy skills - Level 1,%,20
+HUN,Hungary,Proficiency in Numeracy skills - Level 2,%,35
+HUN,Hungary,Proficiency in Numeracy skills - Level 3,%,27
+HUN,Hungary,Proficiency in Numeracy skills - Level 4,%,8
+HUN,Hungary,Proficiency in Numeracy skills - Level 5,%,1
+HUN,Hungary,Proficiency in Numeracy skills - Low performer (<=Level 1),%,29
+IRL,Ireland,Adaptive Problem Solving,Mean Score,249
+IRL,Ireland,Literacy skills,Mean Score,263
+IRL,Ireland,Numeracy skills,Mean Score,260
+IRL,Ireland,Proficiency in Adaptive Problem Solving - Below Level 1,%,6
+IRL,Ireland,Proficiency in Adaptive Problem Solving - Level 1,%,23
+IRL,Ireland,Proficiency in Adaptive Problem Solving - Level 2,%,45
+IRL,Ireland,Proficiency in Adaptive Problem Solving - Level 3,%,24
+IRL,Ireland,Proficiency in Adaptive Problem Solving - Level 4,%,3
+IRL,Ireland,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,28
+IRL,Ireland,Proficiency in Literacy skills - Below Level 1,%,5
+IRL,Ireland,Proficiency in Literacy skills - Level 1,%,16
+IRL,Ireland,Proficiency in Literacy skills - Level 2,%,38
+IRL,Ireland,Proficiency in Literacy skills - Level 3,%,32
+IRL,Ireland,Proficiency in Literacy skills - Level 4,%,8
+IRL,Ireland,Proficiency in Literacy skills - Level 5,%,1
+IRL,Ireland,Proficiency in Literacy skills - Low performer (<=Level 1),%,21
+IRL,Ireland,Proficiency in Numeracy skills - Below Level 1,%,7
+IRL,Ireland,Proficiency in Numeracy skills - Level 1,%,18
+IRL,Ireland,Proficiency in Numeracy skills - Level 2,%,36
+IRL,Ireland,Proficiency in Numeracy skills - Level 3,%,29
+IRL,Ireland,Proficiency in Numeracy skills - Level 4,%,9
+IRL,Ireland,Proficiency in Numeracy skills - Level 5,%,1
+IRL,Ireland,Proficiency in Numeracy skills - Low performer (<=Level 1),%,25
+ISR,Israel,Adaptive Problem Solving,Mean Score,236
+ISR,Israel,Literacy skills,Mean Score,244
+ISR,Israel,Numeracy skills,Mean Score,246
+ISR,Israel,Proficiency in Adaptive Problem Solving - Below Level 1,%,13
+ISR,Israel,Proficiency in Adaptive Problem Solving - Level 1,%,27
+ISR,Israel,Proficiency in Adaptive Problem Solving - Level 2,%,37
+ISR,Israel,Proficiency in Adaptive Problem Solving - Level 3,%,20
+ISR,Israel,Proficiency in Adaptive Problem Solving - Level 4,%,3
+ISR,Israel,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,40
+ISR,Israel,Proficiency in Literacy skills - Below Level 1,%,14
+ISR,Israel,Proficiency in Literacy skills - Level 1,%,22
+ISR,Israel,Proficiency in Literacy skills - Level 2,%,32
+ISR,Israel,Proficiency in Literacy skills - Level 3,%,25
+ISR,Israel,Proficiency in Literacy skills - Level 4,%,7
+ISR,Israel,Proficiency in Literacy skills - Level 5,%,0
+ISR,Israel,Proficiency in Literacy skills - Low performer (<=Level 1),%,36
+ISR,Israel,Proficiency in Numeracy skills - Below Level 1,%,13
+ISR,Israel,Proficiency in Numeracy skills - Level 1,%,21
+ISR,Israel,Proficiency in Numeracy skills - Level 2,%,34
+ISR,Israel,Proficiency in Numeracy skills - Level 3,%,24
+ISR,Israel,Proficiency in Numeracy skills - Level 4,%,7
+ISR,Israel,Proficiency in Numeracy skills - Level 5,%,1
+ISR,Israel,Proficiency in Numeracy skills - Low performer (<=Level 1),%,34
+ITA,Italy,Adaptive Problem Solving,Mean Score,231
+ITA,Italy,Literacy skills,Mean Score,245
+ITA,Italy,Numeracy skills,Mean Score,244
+ITA,Italy,Proficiency in Adaptive Problem Solving - Below Level 1,%,10
+ITA,Italy,Proficiency in Adaptive Problem Solving - Level 1,%,36
+ITA,Italy,Proficiency in Adaptive Problem Solving - Level 2,%,40
+ITA,Italy,Proficiency in Adaptive Problem Solving - Level 3,%,14
+ITA,Italy,Proficiency in Adaptive Problem Solving - Level 4,%,1
+ITA,Italy,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,46
+ITA,Italy,Proficiency in Literacy skills - Below Level 1,%,10
+ITA,Italy,Proficiency in Literacy skills - Level 1,%,25
+ITA,Italy,Proficiency in Literacy skills - Level 2,%,35
+ITA,Italy,Proficiency in Literacy skills - Level 3,%,24
+ITA,Italy,Proficiency in Literacy skills - Level 4,%,5
+ITA,Italy,Proficiency in Literacy skills - Level 5,%,0
+ITA,Italy,Proficiency in Literacy skills - Low performer (<=Level 1),%,35
+ITA,Italy,Proficiency in Numeracy skills - Below Level 1,%,11
+ITA,Italy,Proficiency in Numeracy skills - Level 1,%,24
+ITA,Italy,Proficiency in Numeracy skills - Level 2,%,35
+ITA,Italy,Proficiency in Numeracy skills - Level 3,%,23
+ITA,Italy,Proficiency in Numeracy skills - Level 4,%,6
+ITA,Italy,Proficiency in Numeracy skills - Level 5,%,0
+ITA,Italy,Proficiency in Numeracy skills - Low performer (<=Level 1),%,35
+JPN,Japan,Adaptive Problem Solving,Mean Score,276
+JPN,Japan,Literacy skills,Mean Score,289
+JPN,Japan,Numeracy skills,Mean Score,291
+JPN,Japan,Proficiency in Adaptive Problem Solving - Below Level 1,%,3
+JPN,Japan,Proficiency in Adaptive Problem Solving - Level 1,%,9
+JPN,Japan,Proficiency in Adaptive Problem Solving - Level 2,%,34
+JPN,Japan,Proficiency in Adaptive Problem Solving - Level 3,%,45
+JPN,Japan,Proficiency in Adaptive Problem Solving - Level 4,%,10
+JPN,Japan,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,11
+JPN,Japan,Proficiency in Literacy skills - Below Level 1,%,4
+JPN,Japan,Proficiency in Literacy skills - Level 1,%,7
+JPN,Japan,Proficiency in Literacy skills - Level 2,%,24
+JPN,Japan,Proficiency in Literacy skills - Level 3,%,42
+JPN,Japan,Proficiency in Literacy skills - Level 4,%,21
+JPN,Japan,Proficiency in Literacy skills - Level 5,%,3
+JPN,Japan,Proficiency in Literacy skills - Low performer (<=Level 1),%,10
+JPN,Japan,Proficiency in Numeracy skills - Below Level 1,%,3
+JPN,Japan,Proficiency in Numeracy skills - Level 1,%,7
+JPN,Japan,Proficiency in Numeracy skills - Level 2,%,24
+JPN,Japan,Proficiency in Numeracy skills - Level 3,%,41
+JPN,Japan,Proficiency in Numeracy skills - Level 4,%,21
+JPN,Japan,Proficiency in Numeracy skills - Level 5,%,3
+JPN,Japan,Proficiency in Numeracy skills - Low performer (<=Level 1),%,10
+KOR,Korea (the Republic of)South Korea,Adaptive Problem Solving,Mean Score,238
+KOR,Korea (the Republic of)South Korea,Literacy skills,Mean Score,249
+KOR,Korea (the Republic of)South Korea,Numeracy skills,Mean Score,253
+KOR,Korea (the Republic of)South Korea,Proficiency in Adaptive Problem Solving - Below Level 1,%,8
+KOR,Korea (the Republic of)South Korea,Proficiency in Adaptive Problem Solving - Level 1,%,30
+KOR,Korea (the Republic of)South Korea,Proficiency in Adaptive Problem Solving - Level 2,%,45
+KOR,Korea (the Republic of)South Korea,Proficiency in Adaptive Problem Solving - Level 3,%,17
+KOR,Korea (the Republic of)South Korea,Proficiency in Adaptive Problem Solving - Level 4,%,1
+KOR,Korea (the Republic of)South Korea,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,37
+KOR,Korea (the Republic of)South Korea,Proficiency in Literacy skills - Below Level 1,%,9
+KOR,Korea (the Republic of)South Korea,Proficiency in Literacy skills - Level 1,%,22
+KOR,Korea (the Republic of)South Korea,Proficiency in Literacy skills - Level 2,%,37
+KOR,Korea (the Republic of)South Korea,Proficiency in Literacy skills - Level 3,%,27
+KOR,Korea (the Republic of)South Korea,Proficiency in Literacy skills - Level 4,%,5
+KOR,Korea (the Republic of)South Korea,Proficiency in Literacy skills - Level 5,%,0
+KOR,Korea (the Republic of)South Korea,Proficiency in Literacy skills - Low performer (<=Level 1),%,31
+KOR,Korea (the Republic of)South Korea,Proficiency in Numeracy skills - Below Level 1,%,8
+KOR,Korea (the Republic of)South Korea,Proficiency in Numeracy skills - Level 1,%,20
+KOR,Korea (the Republic of)South Korea,Proficiency in Numeracy skills - Level 2,%,38
+KOR,Korea (the Republic of)South Korea,Proficiency in Numeracy skills - Level 3,%,28
+KOR,Korea (the Republic of)South Korea,Proficiency in Numeracy skills - Level 4,%,6
+KOR,Korea (the Republic of)South Korea,Proficiency in Numeracy skills - Level 5,%,0
+KOR,Korea (the Republic of)South Korea,Proficiency in Numeracy skills - Low performer (<=Level 1),%,28
+LTU,Lithuania,Adaptive Problem Solving,Mean Score,230
+LTU,Lithuania,Literacy skills,Mean Score,238
+LTU,Lithuania,Numeracy skills,Mean Score,246
+LTU,Lithuania,Proficiency in Adaptive Problem Solving - Below Level 1,%,8
+LTU,Lithuania,Proficiency in Adaptive Problem Solving - Level 1,%,38
+LTU,Lithuania,Proficiency in Adaptive Problem Solving - Level 2,%,43
+LTU,Lithuania,Proficiency in Adaptive Problem Solving - Level 3,%,11
+LTU,Lithuania,Proficiency in Adaptive Problem Solving - Level 4,%,1
+LTU,Lithuania,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,46
+LTU,Lithuania,Proficiency in Literacy skills - Below Level 1,%,8
+LTU,Lithuania,Proficiency in Literacy skills - Level 1,%,29
+LTU,Lithuania,Proficiency in Literacy skills - Level 2,%,43
+LTU,Lithuania,Proficiency in Literacy skills - Level 3,%,18
+LTU,Lithuania,Proficiency in Literacy skills - Level 4,%,2
+LTU,Lithuania,Proficiency in Literacy skills - Level 5,%,0
+LTU,Lithuania,Proficiency in Literacy skills - Low performer (<=Level 1),%,38
+LTU,Lithuania,Proficiency in Numeracy skills - Below Level 1,%,7
+LTU,Lithuania,Proficiency in Numeracy skills - Level 1,%,25
+LTU,Lithuania,Proficiency in Numeracy skills - Level 2,%,42
+LTU,Lithuania,Proficiency in Numeracy skills - Level 3,%,21
+LTU,Lithuania,Proficiency in Numeracy skills - Level 4,%,4
+LTU,Lithuania,Proficiency in Numeracy skills - Level 5,%,0
+LTU,Lithuania,Proficiency in Numeracy skills - Low performer (<=Level 1),%,32
+LVA,Latvia,Adaptive Problem Solving,Mean Score,244
+LVA,Latvia,Literacy skills,Mean Score,248
+LVA,Latvia,Numeracy skills,Mean Score,263
+LVA,Latvia,Proficiency in Adaptive Problem Solving - Below Level 1,%,7
+LVA,Latvia,Proficiency in Adaptive Problem Solving - Level 1,%,27
+LVA,Latvia,Proficiency in Adaptive Problem Solving - Level 2,%,40
+LVA,Latvia,Proficiency in Adaptive Problem Solving - Level 3,%,22
+LVA,Latvia,Proficiency in Adaptive Problem Solving - Level 4,%,3
+LVA,Latvia,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,35
+LVA,Latvia,Proficiency in Literacy skills - Below Level 1,%,9
+LVA,Latvia,Proficiency in Literacy skills - Level 1,%,24
+LVA,Latvia,Proficiency in Literacy skills - Level 2,%,35
+LVA,Latvia,Proficiency in Literacy skills - Level 3,%,25
+LVA,Latvia,Proficiency in Literacy skills - Level 4,%,6
+LVA,Latvia,Proficiency in Literacy skills - Level 5,%,0
+LVA,Latvia,Proficiency in Literacy skills - Low performer (<=Level 1),%,34
+LVA,Latvia,Proficiency in Numeracy skills - Below Level 1,%,6
+LVA,Latvia,Proficiency in Numeracy skills - Level 1,%,17
+LVA,Latvia,Proficiency in Numeracy skills - Level 2,%,34
+LVA,Latvia,Proficiency in Numeracy skills - Level 3,%,30
+LVA,Latvia,Proficiency in Numeracy skills - Level 4,%,10
+LVA,Latvia,Proficiency in Numeracy skills - Level 5,%,1
+LVA,Latvia,Proficiency in Numeracy skills - Low performer (<=Level 1),%,24
+NLD,Netherlands (the),Adaptive Problem Solving,Mean Score,265
+NLD,Netherlands (the),Literacy skills,Mean Score,279
+NLD,Netherlands (the),Numeracy skills,Mean Score,284
+NLD,Netherlands (the),Proficiency in Adaptive Problem Solving - Below Level 1,%,6
+NLD,Netherlands (the),Proficiency in Adaptive Problem Solving - Level 1,%,13
+NLD,Netherlands (the),Proficiency in Adaptive Problem Solving - Level 2,%,36
+NLD,Netherlands (the),Proficiency in Adaptive Problem Solving - Level 3,%,37
+NLD,Netherlands (the),Proficiency in Adaptive Problem Solving - Level 4,%,8
+NLD,Netherlands (the),Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,19
+NLD,Netherlands (the),Proficiency in Literacy skills - Below Level 1,%,6
+NLD,Netherlands (the),Proficiency in Literacy skills - Level 1,%,10
+NLD,Netherlands (the),Proficiency in Literacy skills - Level 2,%,25
+NLD,Netherlands (the),Proficiency in Literacy skills - Level 3,%,40
+NLD,Netherlands (the),Proficiency in Literacy skills - Level 4,%,17
+NLD,Netherlands (the),Proficiency in Literacy skills - Level 5,%,2
+NLD,Netherlands (the),Proficiency in Literacy skills - Low performer (<=Level 1),%,16
+NLD,Netherlands (the),Proficiency in Numeracy skills - Below Level 1,%,6
+NLD,Netherlands (the),Proficiency in Numeracy skills - Level 1,%,10
+NLD,Netherlands (the),Proficiency in Numeracy skills - Level 2,%,24
+NLD,Netherlands (the),Proficiency in Numeracy skills - Level 3,%,36
+NLD,Netherlands (the),Proficiency in Numeracy skills - Level 4,%,20
+NLD,Netherlands (the),Proficiency in Numeracy skills - Level 5,%,4
+NLD,Netherlands (the),Proficiency in Numeracy skills - Low performer (<=Level 1),%,15
+NOR,Norway,Adaptive Problem Solving,Mean Score,271
+NOR,Norway,Literacy skills,Mean Score,281
+NOR,Norway,Numeracy skills,Mean Score,285
+NOR,Norway,Proficiency in Adaptive Problem Solving - Below Level 1,%,4
+NOR,Norway,Proficiency in Adaptive Problem Solving - Level 1,%,11
+NOR,Norway,Proficiency in Adaptive Problem Solving - Level 2,%,35
+NOR,Norway,Proficiency in Adaptive Problem Solving - Level 3,%,41
+NOR,Norway,Proficiency in Adaptive Problem Solving - Level 4,%,9
+NOR,Norway,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,15
+NOR,Norway,Proficiency in Literacy skills - Below Level 1,%,6
+NOR,Norway,Proficiency in Literacy skills - Level 1,%,8
+NOR,Norway,Proficiency in Literacy skills - Level 2,%,24
+NOR,Norway,Proficiency in Literacy skills - Level 3,%,41
+NOR,Norway,Proficiency in Literacy skills - Level 4,%,18
+NOR,Norway,Proficiency in Literacy skills - Level 5,%,2
+NOR,Norway,Proficiency in Literacy skills - Low performer (<=Level 1),%,15
+NOR,Norway,Proficiency in Numeracy skills - Below Level 1,%,4
+NOR,Norway,Proficiency in Numeracy skills - Level 1,%,9
+NOR,Norway,Proficiency in Numeracy skills - Level 2,%,25
+NOR,Norway,Proficiency in Numeracy skills - Level 3,%,39
+NOR,Norway,Proficiency in Numeracy skills - Level 4,%,20
+NOR,Norway,Proficiency in Numeracy skills - Level 5,%,2
+NOR,Norway,Proficiency in Numeracy skills - Low performer (<=Level 1),%,13
+NZL,New Zealand,Adaptive Problem Solving,Mean Score,249
+NZL,New Zealand,Literacy skills,Mean Score,260
+NZL,New Zealand,Numeracy skills,Mean Score,256
+NZL,New Zealand,Proficiency in Adaptive Problem Solving - Below Level 1,%,11
+NZL,New Zealand,Proficiency in Adaptive Problem Solving - Level 1,%,18
+NZL,New Zealand,Proficiency in Adaptive Problem Solving - Level 2,%,36
+NZL,New Zealand,Proficiency in Adaptive Problem Solving - Level 3,%,27
+NZL,New Zealand,Proficiency in Adaptive Problem Solving - Level 4,%,7
+NZL,New Zealand,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,29
+NZL,New Zealand,Proficiency in Literacy skills - Below Level 1,%,10
+NZL,New Zealand,Proficiency in Literacy skills - Level 1,%,15
+NZL,New Zealand,Proficiency in Literacy skills - Level 2,%,31
+NZL,New Zealand,Proficiency in Literacy skills - Level 3,%,31
+NZL,New Zealand,Proficiency in Literacy skills - Level 4,%,12
+NZL,New Zealand,Proficiency in Literacy skills - Level 5,%,1
+NZL,New Zealand,Proficiency in Literacy skills - Low performer (<=Level 1),%,26
+NZL,New Zealand,Proficiency in Numeracy skills - Below Level 1,%,11
+NZL,New Zealand,Proficiency in Numeracy skills - Level 1,%,17
+NZL,New Zealand,Proficiency in Numeracy skills - Level 2,%,32
+NZL,New Zealand,Proficiency in Numeracy skills - Level 3,%,29
+NZL,New Zealand,Proficiency in Numeracy skills - Level 4,%,10
+NZL,New Zealand,Proficiency in Numeracy skills - Level 5,%,1
+NZL,New Zealand,Proficiency in Numeracy skills - Low performer (<=Level 1),%,28
+POL,Poland,Adaptive Problem Solving,Mean Score,226
+POL,Poland,Literacy skills,Mean Score,236
+POL,Poland,Numeracy skills,Mean Score,239
+POL,Poland,Proficiency in Adaptive Problem Solving - Below Level 1,%,12
+POL,Poland,Proficiency in Adaptive Problem Solving - Level 1,%,36
+POL,Poland,Proficiency in Adaptive Problem Solving - Level 2,%,39
+POL,Poland,Proficiency in Adaptive Problem Solving - Level 3,%,11
+POL,Poland,Proficiency in Adaptive Problem Solving - Level 4,%,1
+POL,Poland,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,48
+POL,Poland,Proficiency in Literacy skills - Below Level 1,%,12
+POL,Poland,Proficiency in Literacy skills - Level 1,%,27
+POL,Poland,Proficiency in Literacy skills - Level 2,%,40
+POL,Poland,Proficiency in Literacy skills - Level 3,%,18
+POL,Poland,Proficiency in Literacy skills - Level 4,%,3
+POL,Poland,Proficiency in Literacy skills - Level 5,%,0
+POL,Poland,Proficiency in Literacy skills - Low performer (<=Level 1),%,39
+POL,Poland,Proficiency in Numeracy skills - Below Level 1,%,12
+POL,Poland,Proficiency in Numeracy skills - Level 1,%,26
+POL,Poland,Proficiency in Numeracy skills - Level 2,%,37
+POL,Poland,Proficiency in Numeracy skills - Level 3,%,21
+POL,Poland,Proficiency in Numeracy skills - Level 4,%,4
+POL,Poland,Proficiency in Numeracy skills - Level 5,%,0
+POL,Poland,Proficiency in Numeracy skills - Low performer (<=Level 1),%,38
+PRT,Portugal,Adaptive Problem Solving,Mean Score,233
+PRT,Portugal,Literacy skills,Mean Score,235
+PRT,Portugal,Numeracy skills,Mean Score,238
+PRT,Portugal,Proficiency in Adaptive Problem Solving - Below Level 1,%,12
+PRT,Portugal,Proficiency in Adaptive Problem Solving - Level 1,%,30
+PRT,Portugal,Proficiency in Adaptive Problem Solving - Level 2,%,41
+PRT,Portugal,Proficiency in Adaptive Problem Solving - Level 3,%,16
+PRT,Portugal,Proficiency in Adaptive Problem Solving - Level 4,%,2
+PRT,Portugal,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,42
+PRT,Portugal,Proficiency in Literacy skills - Below Level 1,%,15
+PRT,Portugal,Proficiency in Literacy skills - Level 1,%,27
+PRT,Portugal,Proficiency in Literacy skills - Level 2,%,34
+PRT,Portugal,Proficiency in Literacy skills - Level 3,%,20
+PRT,Portugal,Proficiency in Literacy skills - Level 4,%,4
+PRT,Portugal,Proficiency in Literacy skills - Level 5,%,0
+PRT,Portugal,Proficiency in Literacy skills - Low performer (<=Level 1),%,42
+PRT,Portugal,Proficiency in Numeracy skills - Below Level 1,%,16
+PRT,Portugal,Proficiency in Numeracy skills - Level 1,%,23
+PRT,Portugal,Proficiency in Numeracy skills - Level 2,%,32
+PRT,Portugal,Proficiency in Numeracy skills - Level 3,%,22
+PRT,Portugal,Proficiency in Numeracy skills - Level 4,%,6
+PRT,Portugal,Proficiency in Numeracy skills - Level 5,%,1
+PRT,Portugal,Proficiency in Numeracy skills - Low performer (<=Level 1),%,40
+SGP,Singapore,Adaptive Problem Solving,Mean Score,252
+SGP,Singapore,Literacy skills,Mean Score,255
+SGP,Singapore,Numeracy skills,Mean Score,274
+SGP,Singapore,Proficiency in Adaptive Problem Solving - Below Level 1,%,9
+SGP,Singapore,Proficiency in Adaptive Problem Solving - Level 1,%,21
+SGP,Singapore,Proficiency in Adaptive Problem Solving - Level 2,%,36
+SGP,Singapore,Proficiency in Adaptive Problem Solving - Level 3,%,29
+SGP,Singapore,Proficiency in Adaptive Problem Solving - Level 4,%,6
+SGP,Singapore,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,29
+SGP,Singapore,Proficiency in Literacy skills - Below Level 1,%,12
+SGP,Singapore,Proficiency in Literacy skills - Level 1,%,17
+SGP,Singapore,Proficiency in Literacy skills - Level 2,%,30
+SGP,Singapore,Proficiency in Literacy skills - Level 3,%,30
+SGP,Singapore,Proficiency in Literacy skills - Level 4,%,10
+SGP,Singapore,Proficiency in Literacy skills - Level 5,%,1
+SGP,Singapore,Proficiency in Literacy skills - Low performer (<=Level 1),%,30
+SGP,Singapore,Proficiency in Numeracy skills - Below Level 1,%,9
+SGP,Singapore,Proficiency in Numeracy skills - Level 1,%,13
+SGP,Singapore,Proficiency in Numeracy skills - Level 2,%,24
+SGP,Singapore,Proficiency in Numeracy skills - Level 3,%,32
+SGP,Singapore,Proficiency in Numeracy skills - Level 4,%,19
+SGP,Singapore,Proficiency in Numeracy skills - Level 5,%,3
+SGP,Singapore,Proficiency in Numeracy skills - Low performer (<=Level 1),%,22
+SVK,Slovak Republic,Adaptive Problem Solving,Mean Score,247
+SVK,Slovak Republic,Literacy skills,Mean Score,254
+SVK,Slovak Republic,Numeracy skills,Mean Score,261
+SVK,Slovak Republic,Proficiency in Adaptive Problem Solving - Below Level 1,%,3
+SVK,Slovak Republic,Proficiency in Adaptive Problem Solving - Level 1,%,23
+SVK,Slovak Republic,Proficiency in Adaptive Problem Solving - Level 2,%,53
+SVK,Slovak Republic,Proficiency in Adaptive Problem Solving - Level 3,%,20
+SVK,Slovak Republic,Proficiency in Adaptive Problem Solving - Level 4,%,1
+SVK,Slovak Republic,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,27
+SVK,Slovak Republic,Proficiency in Literacy skills - Below Level 1,%,5
+SVK,Slovak Republic,Proficiency in Literacy skills - Level 1,%,19
+SVK,Slovak Republic,Proficiency in Literacy skills - Level 2,%,44
+SVK,Slovak Republic,Proficiency in Literacy skills - Level 3,%,29
+SVK,Slovak Republic,Proficiency in Literacy skills - Level 4,%,3
+SVK,Slovak Republic,Proficiency in Literacy skills - Level 5,%,0
+SVK,Slovak Republic,Proficiency in Literacy skills - Low performer (<=Level 1),%,24
+SVK,Slovak Republic,Proficiency in Numeracy skills - Below Level 1,%,5
+SVK,Slovak Republic,Proficiency in Numeracy skills - Level 1,%,17
+SVK,Slovak Republic,Proficiency in Numeracy skills - Level 2,%,39
+SVK,Slovak Republic,Proficiency in Numeracy skills - Level 3,%,32
+SVK,Slovak Republic,Proficiency in Numeracy skills - Level 4,%,7
+SVK,Slovak Republic,Proficiency in Numeracy skills - Level 5,%,0
+SVK,Slovak Republic,Proficiency in Numeracy skills - Low performer (<=Level 1),%,22
+SWE,Sweden,Adaptive Problem Solving,Mean Score,273
+SWE,Sweden,Literacy skills,Mean Score,284
+SWE,Sweden,Numeracy skills,Mean Score,285
+SWE,Sweden,Proficiency in Adaptive Problem Solving - Below Level 1,%,3
+SWE,Sweden,Proficiency in Adaptive Problem Solving - Level 1,%,11
+SWE,Sweden,Proficiency in Adaptive Problem Solving - Level 2,%,35
+SWE,Sweden,Proficiency in Adaptive Problem Solving - Level 3,%,42
+SWE,Sweden,Proficiency in Adaptive Problem Solving - Level 4,%,9
+SWE,Sweden,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,14
+SWE,Sweden,Proficiency in Literacy skills - Below Level 1,%,4
+SWE,Sweden,Proficiency in Literacy skills - Level 1,%,8
+SWE,Sweden,Proficiency in Literacy skills - Level 2,%,25
+SWE,Sweden,Proficiency in Literacy skills - Level 3,%,43
+SWE,Sweden,Proficiency in Literacy skills - Level 4,%,18
+SWE,Sweden,Proficiency in Literacy skills - Level 5,%,2
+SWE,Sweden,Proficiency in Literacy skills - Low performer (<=Level 1),%,12
+SWE,Sweden,Proficiency in Numeracy skills - Below Level 1,%,4
+SWE,Sweden,Proficiency in Numeracy skills - Level 1,%,8
+SWE,Sweden,Proficiency in Numeracy skills - Level 2,%,26
+SWE,Sweden,Proficiency in Numeracy skills - Level 3,%,40
+SWE,Sweden,Proficiency in Numeracy skills - Level 4,%,20
+SWE,Sweden,Proficiency in Numeracy skills - Level 5,%,3
+SWE,Sweden,Proficiency in Numeracy skills - Low performer (<=Level 1),%,12
+USA,United States,Adaptive Problem Solving,Mean Score,247
+USA,United States,Literacy skills,Mean Score,258
+USA,United States,Numeracy skills,Mean Score,249
+USA,United States,Proficiency in Adaptive Problem Solving - Below Level 1,%,11
+USA,United States,Proficiency in Adaptive Problem Solving - Level 1,%,21
+USA,United States,Proficiency in Adaptive Problem Solving - Level 2,%,35
+USA,United States,Proficiency in Adaptive Problem Solving - Level 3,%,26
+USA,United States,Proficiency in Adaptive Problem Solving - Level 4,%,6
+USA,United States,Proficiency in Adaptive Problem Solving - Low performer (<=Level 1),%,32
+USA,United States,Proficiency in Literacy skills - Below Level 1,%,12
+USA,United States,Proficiency in Literacy skills - Level 1,%,16
+USA,United States,Proficiency in Literacy skills - Level 2,%,29
+USA,United States,Proficiency in Literacy skills - Level 3,%,31
+USA,United States,Proficiency in Literacy skills - Level 4,%,12
+USA,United States,Proficiency in Literacy skills - Level 5,%,1
+USA,United States,Proficiency in Literacy skills - Low performer (<=Level 1),%,28
+USA,United States,Proficiency in Numeracy skills - Below Level 1,%,15
+USA,United States,Proficiency in Numeracy skills - Level 1,%,19
+USA,United States,Proficiency in Numeracy skills - Level 2,%,28
+USA,United States,Proficiency in Numeracy skills - Level 3,%,26
+USA,United States,Proficiency in Numeracy skills - Level 4,%,10
+USA,United States,Proficiency in Numeracy skills - Level 5,%,2
+USA,United States,Proficiency in Numeracy skills - Low performer (<=Level 1),%,34

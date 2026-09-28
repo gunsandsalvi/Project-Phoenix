@@ -1,0 +1,2956 @@
+iso3,year,sector,employed,source
+AFG,2017,PRI,5747.701,HIES - Households Living Conditions Survey
+AFG,2017,PUB,648.833,HIES - Households Living Conditions Survey
+AFG,2017,TOTAL,6396.534,HIES - Households Living Conditions Survey
+AFG,2020,PRI,5546.523,LFS - Labour Force Survey
+AFG,2020,PUB,531.986,LFS - Labour Force Survey
+AFG,2020,TOTAL,6078.509,LFS - Labour Force Survey
+AFG,2021,PRI,7036.641,LFS - Labour Force Survey
+AFG,2021,PUB,642.833,LFS - Labour Force Survey
+AFG,2021,TOTAL,7679.474,LFS - Labour Force Survey
+AGO,2019,PRI,9269.945,LFS - Employment Survey
+AGO,2019,PUB,980.726,LFS - Employment Survey
+AGO,2019,TOTAL,10250.671,LFS - Employment Survey
+AGO,2020,PRI,9674.075,LFS - Employment Survey
+AGO,2020,PUB,928.944,LFS - Employment Survey
+AGO,2020,TOTAL,10603.018,LFS - Employment Survey
+AGO,2021,PRI,10194.975,LFS - Employment Survey
+AGO,2021,PUB,920.471,LFS - Employment Survey
+AGO,2021,TOTAL,11115.446,LFS - Employment Survey
+AGO,2022,PRI,10783.312,LFS - Employment Survey
+AGO,2022,PUB,1021.105,LFS - Employment Survey
+AGO,2022,TOTAL,11804.417,LFS - Employment Survey
+AGO,2023,PRI,11071.125,LFS - Employment Survey
+AGO,2023,PUB,1055.279,LFS - Employment Survey
+AGO,2023,TOTAL,12126.404,LFS - Employment Survey
+AGO,2024,PRI,11655.929,LFS - Employment Survey
+AGO,2024,PUB,1041.525,LFS - Employment Survey
+AGO,2024,TOTAL,12697.454,LFS - Employment Survey
+AGO,2025,PRI,12939.883,LFS - Employment Survey
+AGO,2025,PUB,1045.101,LFS - Employment Survey
+AGO,2025,TOTAL,13984.984,LFS - Employment Survey
+ALB,2015,PRI,907.502,LFS - Labour Force Survey
+ALB,2015,PUB,174.46,LFS - Labour Force Survey
+ALB,2015,TOTAL,1081.962,LFS - Labour Force Survey
+ALB,2016,PRI,977.823,LFS - Labour Force Survey
+ALB,2016,PUB,173.13,LFS - Labour Force Survey
+ALB,2016,TOTAL,1150.953,LFS - Labour Force Survey
+ALB,2017,PRI,1004.698,LFS - Labour Force Survey
+ALB,2017,PUB,187.036,LFS - Labour Force Survey
+ALB,2017,TOTAL,1191.733,LFS - Labour Force Survey
+ALB,2018,PRI,1043.644,LFS - Labour Force Survey
+ALB,2018,PUB,185.313,LFS - Labour Force Survey
+ALB,2018,TOTAL,1228.957,LFS - Labour Force Survey
+ALB,2019,PRI,1082.062,LFS - Labour Force Survey
+ALB,2019,PUB,182.608,LFS - Labour Force Survey
+ALB,2019,TOTAL,1264.67,LFS - Labour Force Survey
+ALB,2020,PRI,1050.733,LFS - Labour Force Survey
+ALB,2020,PUB,190.824,LFS - Labour Force Survey
+ALB,2020,TOTAL,1241.557,LFS - Labour Force Survey
+ALB,2021,PRI,1048.734,LFS - Labour Force Survey
+ALB,2021,PUB,199.213,LFS - Labour Force Survey
+ALB,2021,TOTAL,1247.947,LFS - Labour Force Survey
+ALB,2022,PRI,1101.452,LFS - Labour Force Survey
+ALB,2022,PUB,196.448,LFS - Labour Force Survey
+ALB,2022,TOTAL,1297.899,LFS - Labour Force Survey
+ALB,2023,PRI,982.687,LFS - Labour Force Survey
+ALB,2023,PUB,170.542,LFS - Labour Force Survey
+ALB,2023,TOTAL,1153.229,LFS - Labour Force Survey
+ALB,2024,PRI,997.819,LFS - Labour Force Survey
+ALB,2024,PUB,177.93,LFS - Labour Force Survey
+ALB,2024,TOTAL,1175.749,LFS - Labour Force Survey
+ARE,2017,PRI,6472.666,LFS - Labour Force Survey
+ARE,2017,PUB,768.288,LFS - Labour Force Survey
+ARE,2017,TOTAL,7240.954,LFS - Labour Force Survey
+ARE,2018,PRI,6611.795,LFS - Labour Force Survey
+ARE,2018,PUB,613.511,LFS - Labour Force Survey
+ARE,2018,TOTAL,7225.305,LFS - Labour Force Survey
+ARE,2019,PRI,6625.668,LFS - Labour Force Survey
+ARE,2019,PUB,762.647,LFS - Labour Force Survey
+ARE,2019,TOTAL,7388.315,LFS - Labour Force Survey
+ARE,2020,PRI,6138.758,LFS - Labour Force Survey
+ARE,2020,PUB,747.694,LFS - Labour Force Survey
+ARE,2020,TOTAL,6886.451,LFS - Labour Force Survey
+ARE,2021,PRI,6434.481,LFS - Labour Force Survey
+ARE,2021,PUB,730.647,LFS - Labour Force Survey
+ARE,2021,TOTAL,7165.128,LFS - Labour Force Survey
+ARE,2023,PRI,7898.665,LFS - Labour Force Survey
+ARE,2023,PUB,661.773,LFS - Labour Force Survey
+ARE,2023,TOTAL,8560.438,LFS - Labour Force Survey
+ARE,2024,PRI,8587.971,LFS - Labour Force Survey
+ARE,2024,PUB,658.333,LFS - Labour Force Survey
+ARE,2024,TOTAL,9246.304,LFS - Labour Force Survey
+ARE,2025,PRI,9722.296,LFS - Labour Force Survey
+ARE,2025,PUB,710.189,LFS - Labour Force Survey
+ARE,2025,TOTAL,10432.485,LFS - Labour Force Survey
+ARG,2017,PRI,9536.84,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2017,PUB,2031.377,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2017,TOTAL,11568.217,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2018,PRI,9721.529,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2018,PUB,2023.171,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2018,TOTAL,11744.699,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2019,PRI,10008.493,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2019,PUB,2032.643,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2019,TOTAL,12041.135,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2020,PRI,8815.931,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2020,PUB,2120.608,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2020,TOTAL,10936.539,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2021,PRI,9878.223,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2021,PUB,2363.398,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2021,TOTAL,12241.621,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2022,PRI,10587.07,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2022,PUB,2294.158,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2022,TOTAL,12881.228,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2023,PRI,10881.088,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2023,PUB,2412.41,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2023,TOTAL,13293.498,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2024,PRI,11040.553,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2024,PUB,2294.831,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2024,TOTAL,13335.384,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2025,PRI,11282.634,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2025,PUB,2123.267,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARG,2025,TOTAL,13405.902,"LFS - Encuesta Permanente de Hogares, Urbano"
+ARM,2015,PRI,812.36,LFS - Household Labour Force Survey
+ARM,2015,PUB,260.283,LFS - Household Labour Force Survey
+ARM,2015,TOTAL,1072.642,LFS - Household Labour Force Survey
+ARM,2016,PRI,762.093,LFS - Household Labour Force Survey
+ARM,2016,PUB,244.061,LFS - Household Labour Force Survey
+ARM,2016,TOTAL,1006.153,LFS - Household Labour Force Survey
+ARM,2017,PRI,764.17,LFS - Household Labour Force Survey
+ARM,2017,PUB,247.555,LFS - Household Labour Force Survey
+ARM,2017,TOTAL,1011.725,LFS - Household Labour Force Survey
+ARM,2018,PRI,965.072,HIES - Households Living Conditions Survey
+ARM,2018,PUB,226.257,HIES - Households Living Conditions Survey
+ARM,2018,TOTAL,1192.04,HIES - Households Living Conditions Survey
+ARM,2019,PRI,901.022,HIES - Households Living Conditions Survey
+ARM,2019,PUB,235.973,HIES - Households Living Conditions Survey
+ARM,2019,TOTAL,1151.749,HIES - Households Living Conditions Survey
+ARM,2019,X,14.755,HIES - Households Living Conditions Survey
+ARM,2020,PRI,950.148,HIES - Households Living Conditions Survey
+ARM,2020,PUB,276.27,HIES - Households Living Conditions Survey
+ARM,2020,TOTAL,1236.519,HIES - Households Living Conditions Survey
+ARM,2020,X,10.102,HIES - Households Living Conditions Survey
+ARM,2021,PRI,895.02,HIES - Households Living Conditions Survey
+ARM,2021,PUB,272.551,HIES - Households Living Conditions Survey
+ARM,2021,TOTAL,1178.565,HIES - Households Living Conditions Survey
+ARM,2021,X,10.995,HIES - Households Living Conditions Survey
+ARM,2022,PRI,934.078,HIES - Households Living Conditions Survey
+ARM,2022,PUB,230.162,HIES - Households Living Conditions Survey
+ARM,2022,TOTAL,1174.786,HIES - Households Living Conditions Survey
+ARM,2022,X,10.546,HIES - Households Living Conditions Survey
+ARM,2023,PRI,979.007,HIES - Households Living Conditions Survey
+ARM,2023,PUB,230.789,HIES - Households Living Conditions Survey
+ARM,2023,TOTAL,1220.141,HIES - Households Living Conditions Survey
+ARM,2023,X,10.345,HIES - Households Living Conditions Survey
+ATG,2018,PRI,33.573,LFS - Labour Force Survey
+ATG,2018,PUB,14.131,LFS - Labour Force Survey
+ATG,2018,TOTAL,47.704,LFS - Labour Force Survey
+ATG,2023,PRI,56.003,LFS - Labour Force Survey
+ATG,2023,TOTAL,56.003,LFS - Labour Force Survey
+AUS,2015,PRI,10323.019,LFS - Labour Force Survey
+AUS,2015,PUB,1484.626,LFS - Labour Force Survey
+AUS,2015,TOTAL,11807.645,LFS - Labour Force Survey
+AUS,2016,PRI,10466.928,LFS - Labour Force Survey
+AUS,2016,PUB,1532.197,LFS - Labour Force Survey
+AUS,2016,TOTAL,11999.125,LFS - Labour Force Survey
+AUS,2017,PRI,10588.557,LFS - Labour Force Survey
+AUS,2017,PUB,1687.754,LFS - Labour Force Survey
+AUS,2017,TOTAL,12276.311,LFS - Labour Force Survey
+AUS,2018,PRI,9105.908,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2018,PUB,3468.726,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2018,TOTAL,12574.635,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2019,PRI,9116.271,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2019,PUB,3672.132,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2019,TOTAL,12788.403,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2020,PRI,8808.656,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2020,PUB,3580.748,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2020,TOTAL,12389.404,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2021,PRI,9037.673,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2021,PUB,3677.57,"HIES - Household, Income and Labour Dynamics Survey"
+AUS,2021,TOTAL,12715.243,"HIES - Household, Income and Labour Dynamics Survey"
+AUT,2015,PRI,3761.794,LFS - Labour Force Survey
+AUT,2015,PUB,388.709,LFS - Labour Force Survey
+AUT,2015,TOTAL,4150.503,LFS - Labour Force Survey
+AUT,2016,PRI,3844.386,LFS - Labour Force Survey
+AUT,2016,PUB,378.381,LFS - Labour Force Survey
+AUT,2016,TOTAL,4222.768,LFS - Labour Force Survey
+AUT,2017,PRI,3882.324,LFS - Labour Force Survey
+AUT,2017,PUB,380.384,LFS - Labour Force Survey
+AUT,2017,TOTAL,4262.707,LFS - Labour Force Survey
+AUT,2018,PRI,3954.089,LFS - Labour Force Survey
+AUT,2018,PUB,368.572,LFS - Labour Force Survey
+AUT,2018,TOTAL,4322.661,LFS - Labour Force Survey
+AUT,2019,PRI,3991.789,LFS - Labour Force Survey
+AUT,2019,PUB,367.108,LFS - Labour Force Survey
+AUT,2019,TOTAL,4358.896,LFS - Labour Force Survey
+AUT,2020,PRI,4002.953,LFS - Labour Force Survey
+AUT,2020,PUB,315.417,LFS - Labour Force Survey
+AUT,2020,TOTAL,4318.37,LFS - Labour Force Survey
+AUT,2021,PRI,3936.404,LFS - Labour Force Survey
+AUT,2021,PUB,369.625,LFS - Labour Force Survey
+AUT,2021,TOTAL,4306.029,LFS - Labour Force Survey
+AUT,2022,PRI,4087.739,LFS - Labour Force Survey
+AUT,2022,PUB,354.848,LFS - Labour Force Survey
+AUT,2022,TOTAL,4442.587,LFS - Labour Force Survey
+AUT,2023,PRI,4123.951,LFS - Labour Force Survey
+AUT,2023,PUB,359.058,LFS - Labour Force Survey
+AUT,2023,TOTAL,4483.009,LFS - Labour Force Survey
+AUT,2024,PRI,4131.855,LFS - Labour Force Survey
+AUT,2024,PUB,356.992,LFS - Labour Force Survey
+AUT,2024,TOTAL,4488.847,LFS - Labour Force Survey
+AUT,2025,PRI,4122.365,LFS - Labour Force Survey
+AUT,2025,PUB,377.791,LFS - Labour Force Survey
+AUT,2025,TOTAL,4500.156,LFS - Labour Force Survey
+AZE,2015,PRI,3495.488,LFS - Labour Force Survey
+AZE,2015,PUB,1176.112,LFS - Labour Force Survey
+AZE,2015,TOTAL,4671.6,LFS - Labour Force Survey
+AZE,2016,PRI,3588.5,LFS - Labour Force Survey
+AZE,2016,PUB,1171.4,LFS - Labour Force Survey
+AZE,2016,TOTAL,4759.9,LFS - Labour Force Survey
+AZE,2017,PRI,3663.7,LFS - Labour Force Survey
+AZE,2017,PUB,1158.4,LFS - Labour Force Survey
+AZE,2017,TOTAL,4822.1,LFS - Labour Force Survey
+AZE,2018,PRI,3724.403,LFS - Labour Force Survey
+AZE,2018,PUB,1154.906,LFS - Labour Force Survey
+AZE,2018,TOTAL,4879.309,LFS - Labour Force Survey
+AZE,2019,PRI,3639.515,LFS - Labour Force Survey
+AZE,2019,PUB,1146.068,LFS - Labour Force Survey
+AZE,2019,TOTAL,4785.583,LFS - Labour Force Survey
+AZE,2020,PRI,3604.827,LFS - Labour Force Survey
+AZE,2020,PUB,1116.356,LFS - Labour Force Survey
+AZE,2020,TOTAL,4721.183,LFS - Labour Force Survey
+AZE,2021,PRI,3741.916,LFS - Labour Force Survey
+AZE,2021,PUB,1089.163,LFS - Labour Force Survey
+AZE,2021,TOTAL,4831.079,LFS - Labour Force Survey
+AZE,2022,PRI,3825.365,LFS - Labour Force Survey
+AZE,2022,PUB,1075.711,LFS - Labour Force Survey
+AZE,2022,TOTAL,4901.076,LFS - Labour Force Survey
+BDI,2020,PRI,4807.663,HIES - Living Standards Measurement Survey
+BDI,2020,PUB,145.997,HIES - Living Standards Measurement Survey
+BDI,2020,TOTAL,4953.66,HIES - Living Standards Measurement Survey
+BEL,2015,PRI,3589.477,LFS - EU Labour Force Survey
+BEL,2015,PUB,962.141,LFS - EU Labour Force Survey
+BEL,2015,TOTAL,4551.619,LFS - EU Labour Force Survey
+BEL,2016,PRI,3617.962,LFS - EU Labour Force Survey
+BEL,2016,PUB,968.727,LFS - EU Labour Force Survey
+BEL,2016,TOTAL,4586.689,LFS - EU Labour Force Survey
+BEL,2017,PRI,3623.688,LFS - EU Labour Force Survey
+BEL,2017,PUB,1014.098,LFS - EU Labour Force Survey
+BEL,2017,TOTAL,4637.786,LFS - EU Labour Force Survey
+BEL,2018,PRI,3746.894,LFS - EU Labour Force Survey
+BEL,2018,PUB,1008.285,LFS - EU Labour Force Survey
+BEL,2018,TOTAL,4755.179,LFS - EU Labour Force Survey
+BEL,2019,PRI,3781.596,LFS - EU Labour Force Survey
+BEL,2019,PUB,1013.484,LFS - EU Labour Force Survey
+BEL,2019,TOTAL,4795.08,LFS - EU Labour Force Survey
+BEN,2019,PRI,4313.536,HIES - Enquête de Suivi de l'Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+BEN,2019,PUB,125.277,HIES - Enquête de Suivi de l'Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+BEN,2019,TOTAL,4438.813,HIES - Enquête de Suivi de l'Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+BEN,2022,PRI,5315.902,HIES - Enquête de Suivi de l'Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+BEN,2022,PUB,127.488,HIES - Enquête de Suivi de l'Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+BEN,2022,TOTAL,5445.039,HIES - Enquête de Suivi de l'Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+BEN,2022,X,1.649,HIES - Enquête de Suivi de l'Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+BFA,2018,PRI,3987.05,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+BFA,2018,PUB,319.447,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+BFA,2018,TOTAL,4306.498,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+BFA,2019,PRI,7897.039,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+BFA,2019,PUB,240.409,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+BFA,2019,TOTAL,8137.448,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+BFA,2022,PRI,6094.126,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+BFA,2022,PUB,207.584,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+BFA,2022,TOTAL,8045.982,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+BFA,2022,X,1744.272,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+BFA,2023,PRI,4964.693,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+BFA,2023,PUB,327.033,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+BFA,2023,TOTAL,5291.726,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+BFA,2024,PRI,7607.489,LFS - Enquête sur la Population Active
+BFA,2024,PUB,270.057,LFS - Enquête sur la Population Active
+BFA,2024,TOTAL,7877.546,LFS - Enquête sur la Population Active
+BFA,2025,PRI,7309.388,LFS - Enquête sur la Population Active
+BFA,2025,PUB,294.438,LFS - Enquête sur la Population Active
+BFA,2025,TOTAL,7607.365,LFS - Enquête sur la Population Active
+BFA,2025,X,3.539,LFS - Enquête sur la Population Active
+BGD,2017,PRI,58893.491,LFS - Labour Force Survey
+BGD,2017,PUB,1934.12,LFS - Labour Force Survey
+BGD,2017,TOTAL,60827.611,LFS - Labour Force Survey
+BGD,2022,PRI,50058.502,LFS - Labour Force Survey
+BGD,2022,PUB,3185.183,LFS - Labour Force Survey
+BGD,2022,TOTAL,70461.023,LFS - Labour Force Survey
+BGD,2022,X,17217.338,LFS - Labour Force Survey
+BGD,2023,PRI,38687.579,LFS - Labour Force Survey
+BGD,2023,PUB,3006.881,LFS - Labour Force Survey
+BGD,2023,TOTAL,70981.963,LFS - Labour Force Survey
+BGD,2023,X,29287.502,LFS - Labour Force Survey
+BGD,2024,PRI,38030.194,LFS - Labour Force Survey
+BGD,2024,PUB,2766.558,LFS - Labour Force Survey
+BGD,2024,TOTAL,69071.56,LFS - Labour Force Survey
+BGD,2024,X,28274.807,LFS - Labour Force Survey
+BGR,2015,PRI,2332.9,LFS - EU Labour Force Survey
+BGR,2015,PUB,699,LFS - EU Labour Force Survey
+BGR,2015,TOTAL,3031.9,LFS - EU Labour Force Survey
+BGR,2016,PRI,2335.7,LFS - EU Labour Force Survey
+BGR,2016,PUB,681.1,LFS - EU Labour Force Survey
+BGR,2016,TOTAL,3016.8,LFS - EU Labour Force Survey
+BGR,2017,PRI,2476.6,LFS - EU Labour Force Survey
+BGR,2017,PUB,673.6,LFS - EU Labour Force Survey
+BGR,2017,TOTAL,3150.3,LFS - EU Labour Force Survey
+BGR,2018,PRI,2480.8,LFS - EU Labour Force Survey
+BGR,2018,PUB,671.9,LFS - EU Labour Force Survey
+BGR,2018,TOTAL,3152.7,LFS - EU Labour Force Survey
+BGR,2019,PRI,2548.9,LFS - EU Labour Force Survey
+BGR,2019,PUB,684.2,LFS - EU Labour Force Survey
+BGR,2019,TOTAL,3233.1,LFS - EU Labour Force Survey
+BGR,2020,PRI,2436.4,LFS - EU Labour Force Survey
+BGR,2020,PUB,685.3,LFS - EU Labour Force Survey
+BGR,2020,TOTAL,3121.7,LFS - EU Labour Force Survey
+BHS,2019,PRI,166.723,LFS - Labour Force & Household Survey
+BHS,2019,PUB,44.094,LFS - Labour Force & Household Survey
+BHS,2019,TOTAL,211.325,LFS - Labour Force & Household Survey
+BHS,2019,X,0.508,LFS - Labour Force & Household Survey
+BHS,2023,PRI,166.514,LFS - Labour Force & Household Survey
+BHS,2023,PUB,41.475,LFS - Labour Force & Household Survey
+BHS,2023,TOTAL,208.199,LFS - Labour Force & Household Survey
+BHS,2023,X,0.209,LFS - Labour Force & Household Survey
+BHS,2024,PRI,110.67,LFS - Labour Force & Household Survey
+BHS,2024,PUB,39.698,LFS - Labour Force & Household Survey
+BHS,2024,TOTAL,178.33,LFS - Labour Force & Household Survey
+BHS,2024,X,27.962,LFS - Labour Force & Household Survey
+BIH,2015,PRI,572.963,LFS - Labour Force Survey
+BIH,2015,PUB,248.549,LFS - Labour Force Survey
+BIH,2015,TOTAL,821.512,LFS - Labour Force Survey
+BIH,2016,PRI,574.758,LFS - Labour Force Survey
+BIH,2016,PUB,226.326,LFS - Labour Force Survey
+BIH,2016,TOTAL,801.084,LFS - Labour Force Survey
+BIH,2017,PRI,582.654,LFS - Labour Force Survey
+BIH,2017,PUB,233.005,LFS - Labour Force Survey
+BIH,2017,TOTAL,815.659,LFS - Labour Force Survey
+BIH,2018,PRI,582.768,LFS - Labour Force Survey
+BIH,2018,PUB,239.678,LFS - Labour Force Survey
+BIH,2018,TOTAL,822.446,LFS - Labour Force Survey
+BIH,2019,PRI,587.122,LFS - Labour Force Survey
+BIH,2019,PUB,215.734,LFS - Labour Force Survey
+BIH,2019,TOTAL,802.856,LFS - Labour Force Survey
+BIH,2020,PRI,843.918,LFS - Labour Force Survey
+BIH,2020,PUB,329.157,LFS - Labour Force Survey
+BIH,2020,TOTAL,1173.075,LFS - Labour Force Survey
+BIH,2021,PRI,941.679,LFS - Labour Force Survey
+BIH,2021,PUB,321.13,LFS - Labour Force Survey
+BIH,2021,TOTAL,1262.809,LFS - Labour Force Survey
+BIH,2022,PRI,978.642,LFS - Labour Force Survey
+BIH,2022,PUB,317.824,LFS - Labour Force Survey
+BIH,2022,TOTAL,1296.466,LFS - Labour Force Survey
+BIH,2023,PRI,1014.073,LFS - Labour Force Survey
+BIH,2023,PUB,326.245,LFS - Labour Force Survey
+BIH,2023,TOTAL,1340.318,LFS - Labour Force Survey
+BIH,2024,PRI,1015.46,LFS - Labour Force Survey
+BIH,2024,PUB,338.611,LFS - Labour Force Survey
+BIH,2024,TOTAL,1354.071,LFS - Labour Force Survey
+BIH,2025,PRI,991.989,LFS - Labour Force Survey
+BIH,2025,PUB,347.794,LFS - Labour Force Survey
+BIH,2025,TOTAL,1339.784,LFS - Labour Force Survey
+BLR,2015,PRI,2730.7,OE - Labour Sources Estimates
+BLR,2015,PUB,1765.3,OE - Labour Sources Estimates
+BLR,2015,TOTAL,4496,OE - Labour Sources Estimates
+BLZ,2015,PRI,122.501,LFS - Labour Force Survey
+BLZ,2015,PUB,16.185,LFS - Labour Force Survey
+BLZ,2015,TOTAL,138.686,LFS - Labour Force Survey
+BLZ,2016,PRI,129.682,LFS - Labour Force Survey
+BLZ,2016,PUB,15.392,LFS - Labour Force Survey
+BLZ,2016,TOTAL,145.074,LFS - Labour Force Survey
+BLZ,2017,PRI,132.401,LFS - Labour Force Survey
+BLZ,2017,PUB,16.756,LFS - Labour Force Survey
+BLZ,2017,TOTAL,149.157,LFS - Labour Force Survey
+BLZ,2018,PRI,138.412,LFS - Labour Force Survey
+BLZ,2018,PUB,17.18,LFS - Labour Force Survey
+BLZ,2018,TOTAL,155.592,LFS - Labour Force Survey
+BLZ,2019,PRI,151.836,LFS - Labour Force Survey
+BLZ,2019,PUB,14.42,LFS - Labour Force Survey
+BLZ,2019,TOTAL,166.257,LFS - Labour Force Survey
+BOL,2015,PRI,4455.408,HIES - Household Survey
+BOL,2015,PUB,443.38,HIES - Household Survey
+BOL,2015,TOTAL,4898.788,HIES - Household Survey
+BOL,2016,PRI,4390.223,LFS - Encuesta Continua de Empleo
+BOL,2016,PUB,461.25,LFS - Encuesta Continua de Empleo
+BOL,2016,TOTAL,4851.473,LFS - Encuesta Continua de Empleo
+BOL,2017,PRI,4600.448,LFS - Encuesta Continua de Empleo
+BOL,2017,PUB,438.461,LFS - Encuesta Continua de Empleo
+BOL,2017,TOTAL,5038.909,LFS - Encuesta Continua de Empleo
+BOL,2018,PRI,4929.762,LFS - Encuesta Continua de Empleo
+BOL,2018,PUB,436.222,LFS - Encuesta Continua de Empleo
+BOL,2018,TOTAL,5365.984,LFS - Encuesta Continua de Empleo
+BOL,2019,PRI,5143.784,LFS - Encuesta Continua de Empleo
+BOL,2019,PUB,478.321,LFS - Encuesta Continua de Empleo
+BOL,2019,TOTAL,5622.105,LFS - Encuesta Continua de Empleo
+BOL,2020,PRI,4980.822,HIES - Household Survey
+BOL,2020,PUB,457.04,HIES - Household Survey
+BOL,2020,TOTAL,5437.862,HIES - Household Survey
+BOL,2021,PRI,5632.01,LFS - Encuesta Continua de Empleo
+BOL,2021,PUB,517.046,LFS - Encuesta Continua de Empleo
+BOL,2021,TOTAL,6149.056,LFS - Encuesta Continua de Empleo
+BOL,2022,PRI,5869.552,LFS - Encuesta Continua de Empleo
+BOL,2022,PUB,539.562,LFS - Encuesta Continua de Empleo
+BOL,2022,TOTAL,6409.114,LFS - Encuesta Continua de Empleo
+BOL,2023,PRI,5990.598,LFS - Encuesta Continua de Empleo
+BOL,2023,PUB,590.396,LFS - Encuesta Continua de Empleo
+BOL,2023,TOTAL,6580.994,LFS - Encuesta Continua de Empleo
+BOL,2024,PRI,6238.061,LFS - Encuesta Continua de Empleo
+BOL,2024,PUB,584.538,LFS - Encuesta Continua de Empleo
+BOL,2024,TOTAL,6822.598,LFS - Encuesta Continua de Empleo
+BOL,2025,PRI,4796.382,LFS - Encuesta Continua de Empleo
+BOL,2025,PUB,442.307,LFS - Encuesta Continua de Empleo
+BOL,2025,TOTAL,5238.689,LFS - Encuesta Continua de Empleo
+BRA,2015,PRI,80838.38,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2015,PUB,11123.55,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2015,TOTAL,91961.93,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2016,PRI,79280.001,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2016,PUB,10932.797,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2016,TOTAL,90212.798,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2017,PRI,79500.74,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2017,PUB,11002.889,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2017,TOTAL,90503.629,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2018,PRI,80795.082,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2018,PUB,11281.222,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2018,TOTAL,92076.304,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2019,PRI,82762.847,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2019,PUB,11366.22,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2019,TOTAL,94129.067,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2020,PRI,75265.552,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2020,PUB,11609.122,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2020,TOTAL,86874.675,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2021,PRI,79835.48,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2021,PUB,11352.215,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2021,TOTAL,91187.695,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2022,PRI,86066.276,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2022,PUB,11852.687,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2022,TOTAL,97918.963,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2023,PRI,87173.48,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2023,PUB,12108.285,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2023,TOTAL,99281.765,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2024,PRI,89559.165,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2024,PUB,12552.362,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2024,TOTAL,102111.527,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2025,PRI,89667.74,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2025,PUB,12786.146,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRA,2025,TOTAL,102453.886,HS - Pesquisa Nacional por Amostra de Domicílios Contínua
+BRB,2015,PRI,102.992,LFS - Labour Force Survey
+BRB,2015,PUB,25.183,LFS - Labour Force Survey
+BRB,2015,TOTAL,128.175,LFS - Labour Force Survey
+BRB,2016,PRI,107.08,LFS - Labour Force Survey
+BRB,2016,PUB,25.874,LFS - Labour Force Survey
+BRB,2016,TOTAL,132.954,LFS - Labour Force Survey
+BRB,2017,PRI,104.26,LFS - Labour Force Survey
+BRB,2017,PUB,25.55,LFS - Labour Force Survey
+BRB,2017,TOTAL,129.809,LFS - Labour Force Survey
+BRB,2018,PRI,104.589,LFS - Labour Force Survey
+BRB,2018,PUB,23.54,LFS - Labour Force Survey
+BRB,2018,TOTAL,128.129,LFS - Labour Force Survey
+BRB,2019,PRI,103.581,LFS - Labour Force Survey
+BRB,2019,PUB,21.418,LFS - Labour Force Survey
+BRB,2019,TOTAL,124.999,LFS - Labour Force Survey
+BRB,2021,PRI,91.284,LFS - Labour Force Survey
+BRB,2021,PUB,24.036,LFS - Labour Force Survey
+BRB,2021,TOTAL,115.319,LFS - Labour Force Survey
+BRB,2022,PRI,99.787,LFS - Labour Force Survey
+BRB,2022,PUB,25.19,LFS - Labour Force Survey
+BRB,2022,TOTAL,124.978,LFS - Labour Force Survey
+BRB,2023,PRI,100.211,LFS - Labour Force Survey
+BRB,2023,PUB,23.632,LFS - Labour Force Survey
+BRB,2023,TOTAL,123.843,LFS - Labour Force Survey
+BRB,2024,PRI,100.924,LFS - Labour Force Survey
+BRB,2024,PUB,25.61,LFS - Labour Force Survey
+BRB,2024,TOTAL,126.534,LFS - Labour Force Survey
+BRN,2017,PRI,111.308,LFS - Labour Force Survey
+BRN,2017,PUB,75.578,LFS - Labour Force Survey
+BRN,2017,TOTAL,186.886,LFS - Labour Force Survey
+BRN,2018,PRI,125.625,LFS - Labour Force Survey
+BRN,2018,PUB,76.118,LFS - Labour Force Survey
+BRN,2018,TOTAL,201.743,LFS - Labour Force Survey
+BRN,2019,PRI,146.053,LFS - Labour Force Survey
+BRN,2019,PUB,75.658,LFS - Labour Force Survey
+BRN,2019,TOTAL,221.711,LFS - Labour Force Survey
+BRN,2020,PRI,137.6,LFS - Labour Force Survey
+BRN,2020,PUB,79.286,LFS - Labour Force Survey
+BRN,2020,TOTAL,216.886,LFS - Labour Force Survey
+BRN,2021,PRI,140.219,LFS - Labour Force Survey
+BRN,2021,PUB,72.164,LFS - Labour Force Survey
+BRN,2021,TOTAL,212.382,LFS - Labour Force Survey
+BRN,2022,PRI,145.058,LFS - Labour Force Survey
+BRN,2022,PUB,65.672,LFS - Labour Force Survey
+BRN,2022,TOTAL,210.73,LFS - Labour Force Survey
+BRN,2023,PRI,150.183,LFS - Labour Force Survey
+BRN,2023,PUB,67.14,LFS - Labour Force Survey
+BRN,2023,TOTAL,217.323,LFS - Labour Force Survey
+BRN,2024,PRI,155.545,LFS - Labour Force Survey
+BRN,2024,PUB,67.431,LFS - Labour Force Survey
+BRN,2024,TOTAL,222.976,LFS - Labour Force Survey
+BRN,2025,PRI,154.754,LFS - Labour Force Survey
+BRN,2025,PUB,66.661,LFS - Labour Force Survey
+BRN,2025,TOTAL,221.414,LFS - Labour Force Survey
+BTN,2018,PRI,246.354,LFS - Labour Force Survey Report
+BTN,2018,PUB,54.088,LFS - Labour Force Survey Report
+BTN,2018,TOTAL,300.442,LFS - Labour Force Survey Report
+BTN,2019,PRI,252.016,LFS - Labour Force Survey Report
+BTN,2019,PUB,59.043,LFS - Labour Force Survey Report
+BTN,2019,TOTAL,311.059,LFS - Labour Force Survey Report
+BTN,2020,PRI,249.794,LFS - Labour Force Survey Report
+BTN,2020,PUB,64.768,LFS - Labour Force Survey Report
+BTN,2020,TOTAL,314.562,LFS - Labour Force Survey Report
+BTN,2021,PRI,254.711,LFS - Labour Force Survey Report
+BTN,2021,PUB,67.411,LFS - Labour Force Survey Report
+BTN,2021,TOTAL,322.122,LFS - Labour Force Survey Report
+BTN,2022,PRI,215.914,LFS - Labour Force Survey Report
+BTN,2022,PUB,71.871,LFS - Labour Force Survey Report
+BTN,2022,TOTAL,287.785,LFS - Labour Force Survey Report
+BTN,2023,PRI,292.172,LFS - Labour Force Survey Report
+BTN,2023,PUB,72.391,LFS - Labour Force Survey Report
+BTN,2023,TOTAL,364.563,LFS - Labour Force Survey Report
+BTN,2024,PRI,285.701,LFS - Labour Force Survey Report
+BTN,2024,PUB,84.575,LFS - Labour Force Survey Report
+BTN,2024,TOTAL,370.275,LFS - Labour Force Survey Report
+BTN,2025,PRI,379.379,LFS - Labour Force Survey Report
+BTN,2025,TOTAL,379.379,LFS - Labour Force Survey Report
+BWA,2019,PRI,652.962,HS - Multi-Topic Household Survey
+BWA,2019,PUB,161.594,HS - Multi-Topic Household Survey
+BWA,2019,TOTAL,814.555,HS - Multi-Topic Household Survey
+BWA,2020,PRI,699.004,HS - Multi-Topic Household Survey
+BWA,2020,PUB,154.23,HS - Multi-Topic Household Survey
+BWA,2020,TOTAL,853.235,HS - Multi-Topic Household Survey
+BWA,2021,PRI,656.048,HS - Multi-Topic Household Survey
+BWA,2021,PUB,152.225,HS - Multi-Topic Household Survey
+BWA,2021,TOTAL,808.273,HS - Multi-Topic Household Survey
+BWA,2022,PRI,652.24,HS - Multi-Topic Household Survey
+BWA,2022,PUB,143.186,HS - Multi-Topic Household Survey
+BWA,2022,TOTAL,795.425,HS - Multi-Topic Household Survey
+BWA,2023,PRI,718.902,HS - Multi-Topic Household Survey
+BWA,2023,PUB,150.872,HS - Multi-Topic Household Survey
+BWA,2023,TOTAL,869.774,HS - Multi-Topic Household Survey
+BWA,2024,PRI,707.846,HS - Multi-Topic Household Survey
+BWA,2024,PUB,154.128,HS - Multi-Topic Household Survey
+BWA,2024,TOTAL,861.973,HS - Multi-Topic Household Survey
+CAN,2015,PRI,14342.571,LFS - Labour Force Survey
+CAN,2015,PUB,3514.64,LFS - Labour Force Survey
+CAN,2015,TOTAL,17857.21,LFS - Labour Force Survey
+CAN,2016,PRI,14453.349,LFS - Labour Force Survey
+CAN,2016,PUB,3513.593,LFS - Labour Force Survey
+CAN,2016,TOTAL,17966.941,LFS - Labour Force Survey
+CAN,2017,PRI,14790.698,LFS - Labour Force Survey
+CAN,2017,PUB,3581.464,LFS - Labour Force Survey
+CAN,2017,TOTAL,18372.162,LFS - Labour Force Survey
+CAN,2018,PRI,15051.412,LFS - Labour Force Survey
+CAN,2018,PUB,3655.209,LFS - Labour Force Survey
+CAN,2018,TOTAL,18706.621,LFS - Labour Force Survey
+CAN,2019,PRI,15336.852,LFS - Labour Force Survey
+CAN,2019,PUB,3733.966,LFS - Labour Force Survey
+CAN,2019,TOTAL,19070.817,LFS - Labour Force Survey
+CAN,2020,PRI,14338.658,LFS - Labour Force Survey
+CAN,2020,PUB,3729.823,LFS - Labour Force Survey
+CAN,2020,TOTAL,18068.481,LFS - Labour Force Survey
+CAN,2021,PRI,14934.641,LFS - Labour Force Survey
+CAN,2021,PUB,4029.484,LFS - Labour Force Survey
+CAN,2021,TOTAL,18964.125,LFS - Labour Force Survey
+CAN,2022,PRI,15535.508,LFS - Labour Force Survey
+CAN,2022,PUB,4204.026,LFS - Labour Force Survey
+CAN,2022,TOTAL,19739.534,LFS - Labour Force Survey
+CAN,2023,PRI,16031.448,LFS - Labour Force Survey
+CAN,2023,PUB,4303.332,LFS - Labour Force Survey
+CAN,2023,TOTAL,20334.78,LFS - Labour Force Survey
+CAN,2024,PRI,16265.766,LFS - Labour Force Survey
+CAN,2024,PUB,4464.775,LFS - Labour Force Survey
+CAN,2024,TOTAL,20730.541,LFS - Labour Force Survey
+CAN,2025,PRI,16479.852,LFS - Labour Force Survey
+CAN,2025,PUB,4548.794,LFS - Labour Force Survey
+CAN,2025,TOTAL,21028.647,LFS - Labour Force Survey
+CHE,2015,PRI,3833.044,LFS - Enquête sur la Population Active
+CHE,2015,PUB,705.354,LFS - Enquête sur la Population Active
+CHE,2015,TOTAL,4538.398,LFS - Enquête sur la Population Active
+CHE,2016,PRI,3856.828,LFS - Enquête sur la Population Active
+CHE,2016,PUB,747.582,LFS - Enquête sur la Population Active
+CHE,2016,TOTAL,4604.41,LFS - Enquête sur la Population Active
+CHE,2017,PRI,3875.006,LFS - Enquête sur la Population Active
+CHE,2017,PUB,761.734,LFS - Enquête sur la Population Active
+CHE,2017,TOTAL,4636.74,LFS - Enquête sur la Population Active
+CHE,2018,PRI,3905.763,LFS - Enquête sur la Population Active
+CHE,2018,PUB,769.563,LFS - Enquête sur la Population Active
+CHE,2018,TOTAL,4675.326,LFS - Enquête sur la Population Active
+CHE,2019,PRI,3920.516,LFS - Enquête sur la Population Active
+CHE,2019,PUB,785.268,LFS - Enquête sur la Population Active
+CHE,2019,TOTAL,4705.783,LFS - Enquête sur la Population Active
+CHE,2020,PRI,3904.038,LFS - Enquête sur la Population Active
+CHE,2020,PUB,792.095,LFS - Enquête sur la Population Active
+CHE,2020,TOTAL,4696.134,LFS - Enquête sur la Population Active
+CHE,2021,PRI,3956.222,LFS - Enquête sur la Population Active
+CHE,2021,PUB,750.786,LFS - Enquête sur la Population Active
+CHE,2021,TOTAL,4707.009,LFS - Enquête sur la Population Active
+CHE,2022,PRI,4026.318,LFS - Enquête sur la Population Active
+CHE,2022,PUB,725.893,LFS - Enquête sur la Population Active
+CHE,2022,TOTAL,4752.211,LFS - Enquête sur la Population Active
+CHE,2023,PRI,4083.452,LFS - Enquête sur la Population Active
+CHE,2023,PUB,764.728,LFS - Enquête sur la Population Active
+CHE,2023,TOTAL,4848.18,LFS - Enquête sur la Population Active
+CHE,2024,PRI,4095.73,LFS - Enquête sur la Population Active
+CHE,2024,PUB,779.752,LFS - Enquête sur la Population Active
+CHE,2024,TOTAL,4875.483,LFS - Enquête sur la Population Active
+CHE,2025,PRI,4082.846,LFS - Enquête sur la Population Active
+CHE,2025,PUB,803.007,LFS - Enquête sur la Population Active
+CHE,2025,TOTAL,4885.853,LFS - Enquête sur la Population Active
+CHL,2015,PRI,7360.588,LFS - Encuesta Nacional de Empleo
+CHL,2015,PUB,941.428,LFS - Encuesta Nacional de Empleo
+CHL,2015,TOTAL,8302.016,LFS - Encuesta Nacional de Empleo
+CHL,2016,PRI,7484.227,LFS - Encuesta Nacional de Empleo
+CHL,2016,PUB,916.078,LFS - Encuesta Nacional de Empleo
+CHL,2016,TOTAL,8400.305,LFS - Encuesta Nacional de Empleo
+CHL,2017,PRI,7627.74,LFS - Encuesta Nacional de Empleo
+CHL,2017,PUB,976.906,LFS - Encuesta Nacional de Empleo
+CHL,2017,TOTAL,8604.646,LFS - Encuesta Nacional de Empleo
+CHL,2018,PRI,7751.459,LFS - Encuesta Nacional de Empleo
+CHL,2018,PUB,1040.052,LFS - Encuesta Nacional de Empleo
+CHL,2018,TOTAL,8791.511,LFS - Encuesta Nacional de Empleo
+CHL,2019,PRI,7881.084,LFS - Encuesta Nacional de Empleo
+CHL,2019,PUB,1099.382,LFS - Encuesta Nacional de Empleo
+CHL,2019,TOTAL,8980.466,LFS - Encuesta Nacional de Empleo
+CHL,2020,PRI,6767.869,LFS - Encuesta Nacional de Empleo
+CHL,2020,PUB,1115.877,LFS - Encuesta Nacional de Empleo
+CHL,2020,TOTAL,7883.746,LFS - Encuesta Nacional de Empleo
+CHL,2021,PRI,7225.243,LFS - Encuesta Nacional de Empleo
+CHL,2021,PUB,1089.662,LFS - Encuesta Nacional de Empleo
+CHL,2021,TOTAL,8314.905,LFS - Encuesta Nacional de Empleo
+CHL,2022,PRI,7766.198,LFS - Encuesta Nacional de Empleo
+CHL,2022,PUB,1110.753,LFS - Encuesta Nacional de Empleo
+CHL,2022,TOTAL,8876.952,LFS - Encuesta Nacional de Empleo
+CHL,2023,PRI,7905.03,LFS - Encuesta Nacional de Empleo
+CHL,2023,PUB,1184.522,LFS - Encuesta Nacional de Empleo
+CHL,2023,TOTAL,9089.552,LFS - Encuesta Nacional de Empleo
+CHL,2024,PRI,9017.497,LFS - Encuesta Nacional de Empleo
+CHL,2024,PUB,301.57,LFS - Encuesta Nacional de Empleo
+CHL,2024,TOTAL,9319.067,LFS - Encuesta Nacional de Empleo
+CHL,2025,PRI,8510.43,LFS - Encuesta Nacional de Empleo
+CHL,2025,PUB,904.423,LFS - Encuesta Nacional de Empleo
+CHL,2025,TOTAL,9414.853,LFS - Encuesta Nacional de Empleo
+CIV,2016,PRI,9075.506,LFS - Enquête Nationale sur la Situacion de l'Emploi
+CIV,2016,PUB,400.821,LFS - Enquête Nationale sur la Situacion de l'Emploi
+CIV,2016,TOTAL,9476.327,LFS - Enquête Nationale sur la Situacion de l'Emploi
+CIV,2017,PRI,7319.457,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+CIV,2017,PUB,384.824,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+CIV,2017,TOTAL,7704.281,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+CIV,2019,PRI,8802.915,LFS - Enquête Nationale sur la Situacion de l'Emploi
+CIV,2019,PUB,339.156,LFS - Enquête Nationale sur la Situacion de l'Emploi
+CIV,2019,TOTAL,9142.071,LFS - Enquête Nationale sur la Situacion de l'Emploi
+CIV,2022,PRI,11187.326,HIES - Living Standards Measurement Survey
+CIV,2022,PUB,398.398,HIES - Living Standards Measurement Survey
+CIV,2022,TOTAL,11585.724,HIES - Living Standards Measurement Survey
+CMR,2021,PRI,9272.479,HS - Household Survey
+CMR,2021,PUB,14.55,HS - Household Survey
+CMR,2021,TOTAL,9287.029,HS - Household Survey
+COD,2016,PRI,11522.533,HS - Questionnaire sur les Indicateurs de Base du Bien-être
+COD,2016,PUB,27749.189,HS - Questionnaire sur les Indicateurs de Base du Bien-être
+COD,2016,TOTAL,39271.723,HS - Questionnaire sur les Indicateurs de Base du Bien-être
+COD,2020,PRI,28693.293,HIES - Enquête par Grappes à Indicateurs
+COD,2020,PUB,2391.475,HIES - Enquête par Grappes à Indicateurs
+COD,2020,TOTAL,31084.768,HIES - Enquête par Grappes à Indicateurs
+COL,2015,PRI,20019.276,LFS - Gran Encuesta Integrada de Hogares
+COL,2015,PUB,840.708,LFS - Gran Encuesta Integrada de Hogares
+COL,2015,TOTAL,20859.984,LFS - Gran Encuesta Integrada de Hogares
+COL,2016,PRI,20065.152,LFS - Gran Encuesta Integrada de Hogares
+COL,2016,PUB,865.71,LFS - Gran Encuesta Integrada de Hogares
+COL,2016,TOTAL,20930.863,LFS - Gran Encuesta Integrada de Hogares
+COL,2017,PRI,20294.646,LFS - Gran Encuesta Integrada de Hogares
+COL,2017,PUB,830.509,LFS - Gran Encuesta Integrada de Hogares
+COL,2017,TOTAL,21125.155,LFS - Gran Encuesta Integrada de Hogares
+COL,2018,PRI,20424.611,LFS - Gran Encuesta Integrada de Hogares
+COL,2018,PUB,847.094,LFS - Gran Encuesta Integrada de Hogares
+COL,2018,TOTAL,21271.706,LFS - Gran Encuesta Integrada de Hogares
+COL,2019,PRI,20461.178,LFS - Gran Encuesta Integrada de Hogares
+COL,2019,PUB,848.635,LFS - Gran Encuesta Integrada de Hogares
+COL,2019,TOTAL,21309.813,LFS - Gran Encuesta Integrada de Hogares
+COL,2020,PRI,18205.131,LFS - Gran Encuesta Integrada de Hogares
+COL,2020,PUB,844.066,LFS - Gran Encuesta Integrada de Hogares
+COL,2020,TOTAL,19049.197,LFS - Gran Encuesta Integrada de Hogares
+COL,2021,PRI,19926.173,LFS - Gran Encuesta Integrada de Hogares
+COL,2021,PUB,815.035,LFS - Gran Encuesta Integrada de Hogares
+COL,2021,TOTAL,20741.208,LFS - Gran Encuesta Integrada de Hogares
+COL,2022,PRI,21114.503,LFS - Gran Encuesta Integrada de Hogares
+COL,2022,PUB,917.678,LFS - Gran Encuesta Integrada de Hogares
+COL,2022,TOTAL,22032.18,LFS - Gran Encuesta Integrada de Hogares
+COL,2023,PRI,21873.915,LFS - Gran Encuesta Integrada de Hogares
+COL,2023,PUB,914.478,LFS - Gran Encuesta Integrada de Hogares
+COL,2023,TOTAL,22788.394,LFS - Gran Encuesta Integrada de Hogares
+COL,2024,PRI,22142.876,LFS - Gran Encuesta Integrada de Hogares
+COL,2024,PUB,893.167,LFS - Gran Encuesta Integrada de Hogares
+COL,2024,TOTAL,23036.043,LFS - Gran Encuesta Integrada de Hogares
+COL,2025,PRI,22954.048,LFS - Gran Encuesta Integrada de Hogares
+COL,2025,PUB,873.386,LFS - Gran Encuesta Integrada de Hogares
+COL,2025,TOTAL,23827.434,LFS - Gran Encuesta Integrada de Hogares
+COM,2021,PRI,216.069,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+COM,2021,PUB,44.078,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+COM,2021,TOTAL,260.147,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+CPV,2015,PRI,92.412,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2015,PUB,27.834,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2015,TOTAL,120.247,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2017,PRI,164.846,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2017,PUB,38.887,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2017,TOTAL,203.733,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2018,PRI,154.099,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2018,PUB,40.553,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2018,TOTAL,194.652,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2019,PRI,163.674,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2019,PUB,42.547,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CPV,2019,TOTAL,206.221,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CRI,2015,PRI,1841.672,LFS - Encuesta Continua de Empleo
+CRI,2015,PUB,296.12,LFS - Encuesta Continua de Empleo
+CRI,2015,TOTAL,2137.792,LFS - Encuesta Continua de Empleo
+CRI,2016,PRI,1778.169,LFS - Encuesta Continua de Empleo
+CRI,2016,PUB,294.713,LFS - Encuesta Continua de Empleo
+CRI,2016,TOTAL,2072.883,LFS - Encuesta Continua de Empleo
+CRI,2017,PRI,1825.708,LFS - Encuesta Continua de Empleo
+CRI,2017,PUB,292.624,LFS - Encuesta Continua de Empleo
+CRI,2017,TOTAL,2118.331,LFS - Encuesta Continua de Empleo
+CRI,2018,PRI,1933.336,LFS - Encuesta Continua de Empleo
+CRI,2018,PUB,268.442,LFS - Encuesta Continua de Empleo
+CRI,2018,TOTAL,2201.777,LFS - Encuesta Continua de Empleo
+CRI,2019,PRI,1958.398,LFS - Encuesta Continua de Empleo
+CRI,2019,PUB,302.015,LFS - Encuesta Continua de Empleo
+CRI,2019,TOTAL,2260.413,LFS - Encuesta Continua de Empleo
+CRI,2020,PRI,1736.205,LFS - Encuesta Continua de Empleo
+CRI,2020,PUB,288.381,LFS - Encuesta Continua de Empleo
+CRI,2020,TOTAL,2024.586,LFS - Encuesta Continua de Empleo
+CRI,2021,PRI,1843.024,LFS - Encuesta Continua de Empleo
+CRI,2021,PUB,279.211,LFS - Encuesta Continua de Empleo
+CRI,2021,TOTAL,2122.235,LFS - Encuesta Continua de Empleo
+CRI,2022,PRI,1958.426,LFS - Encuesta Continua de Empleo
+CRI,2022,PUB,277.429,LFS - Encuesta Continua de Empleo
+CRI,2022,TOTAL,2235.855,LFS - Encuesta Continua de Empleo
+CRI,2023,PRI,1875.348,LFS - Encuesta Continua de Empleo
+CRI,2023,PUB,288.605,LFS - Encuesta Continua de Empleo
+CRI,2023,TOTAL,2163.953,LFS - Encuesta Continua de Empleo
+CRI,2024,PRI,1943.491,LFS - Encuesta Continua de Empleo
+CRI,2024,PUB,314.759,LFS - Encuesta Continua de Empleo
+CRI,2024,TOTAL,2258.25,LFS - Encuesta Continua de Empleo
+CRI,2025,PRI,1900.294,LFS - Encuesta Continua de Empleo
+CRI,2025,PUB,330.063,LFS - Encuesta Continua de Empleo
+CRI,2025,TOTAL,2230.357,LFS - Encuesta Continua de Empleo
+CYP,2017,PRI,342.367,ES - Employment-related Establishment Survey
+CYP,2017,PUB,66.163,ES - Employment-related Establishment Survey
+CYP,2017,TOTAL,408.53,ES - Employment-related Establishment Survey
+CYP,2018,PRI,362.716,ES - Employment-related Establishment Survey
+CYP,2018,PUB,67.49,ES - Employment-related Establishment Survey
+CYP,2018,TOTAL,430.206,ES - Employment-related Establishment Survey
+CYP,2019,PRI,375.334,ES - Employment-related Establishment Survey
+CYP,2019,PUB,68.179,ES - Employment-related Establishment Survey
+CYP,2019,TOTAL,443.513,ES - Employment-related Establishment Survey
+CYP,2020,PRI,371.725,ES - Employment-related Establishment Survey
+CYP,2020,PUB,69.301,ES - Employment-related Establishment Survey
+CYP,2020,TOTAL,441.026,ES - Employment-related Establishment Survey
+DEU,2015,PUB,6089.815,ADM - Administrative records and related sources
+DEU,2016,PUB,6160.13,ADM - Administrative records and related sources
+DEU,2017,PUB,6264.89,ADM - Administrative records and related sources
+DEU,2018,PUB,6373.885,ADM - Administrative records and related sources
+DEU,2019,PUB,6502.475,ADM - Administrative records and related sources
+DJI,2017,PRI,39.052,HS - Enquête auprès des Ménages
+DJI,2017,PUB,43.683,HS - Enquête auprès des Ménages
+DJI,2017,TOTAL,82.735,HS - Enquête auprès des Ménages
+DJI,2025,PRI,155.421,LFS - Enquête sur les statistiques du travail
+DJI,2025,PUB,28.493,LFS - Enquête sur les statistiques du travail
+DJI,2025,TOTAL,183.914,LFS - Enquête sur les statistiques du travail
+DNK,2015,PRI,1882,LFS - EU Labour Force Survey
+DNK,2015,PUB,816,LFS - EU Labour Force Survey
+DNK,2015,TOTAL,2709,LFS - EU Labour Force Survey
+DNK,2016,PRI,1807,LFS - EU Labour Force Survey
+DNK,2016,PUB,795,LFS - EU Labour Force Survey
+DNK,2016,TOTAL,2613,LFS - EU Labour Force Survey
+DNK,2017,PRI,1928,LFS - EU Labour Force Survey
+DNK,2017,PUB,829,LFS - EU Labour Force Survey
+DNK,2017,TOTAL,2767,LFS - EU Labour Force Survey
+DNK,2018,PRI,1995,LFS - EU Labour Force Survey
+DNK,2018,PUB,837,LFS - EU Labour Force Survey
+DNK,2018,TOTAL,2832,LFS - EU Labour Force Survey
+DNK,2019,PRI,2014,LFS - EU Labour Force Survey
+DNK,2019,PUB,852,LFS - EU Labour Force Survey
+DNK,2019,TOTAL,2878,LFS - EU Labour Force Survey
+DNK,2020,PRI,1981,LFS - EU Labour Force Survey
+DNK,2020,PUB,862,LFS - EU Labour Force Survey
+DNK,2020,TOTAL,2852,LFS - EU Labour Force Survey
+DOM,2015,PRI,3564.88,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2015,PUB,549.009,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2015,TOTAL,4113.889,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2016,PRI,3681.436,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2016,PUB,580.984,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2016,TOTAL,4262.42,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2017,PRI,3785.443,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2017,PUB,597.214,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2017,TOTAL,4382.658,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2018,PRI,3897.966,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2018,PUB,641.29,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2018,TOTAL,4539.256,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2019,PRI,4027.403,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2019,PUB,635.865,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2019,TOTAL,4663.268,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2020,PRI,3755.474,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2020,PUB,635.181,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2020,TOTAL,4390.655,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2021,PRI,3917.135,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2021,PUB,639.51,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2021,TOTAL,4556.645,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2022,PRI,4038.915,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2022,PUB,648.464,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2022,TOTAL,4687.379,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2023,PRI,4171.338,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2023,PUB,663.98,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2023,TOTAL,4835.318,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2024,PRI,4328.032,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2024,PUB,678.004,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2024,TOTAL,5006.036,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2025,PRI,4408.754,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2025,PUB,731.197,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DOM,2025,TOTAL,5139.951,LFS - Encuesta Nacional Continua de Fuerza de Trabajo
+DZA,2017,PRI,6856.812,LFS - Enquête Emploi auprès des Ménages
+DZA,2017,PUB,4001.463,LFS - Enquête Emploi auprès des Ménages
+DZA,2017,TOTAL,10858.275,LFS - Enquête Emploi auprès des Ménages
+ECU,2015,PRI,6480.098,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2015,PUB,670.915,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2015,TOTAL,7151.013,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2016,PRI,6795.451,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2016,PUB,686.685,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2016,TOTAL,7482.136,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2017,PRI,7068.277,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2017,PUB,698.018,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2017,TOTAL,7766.294,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2018,PRI,7156.047,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2018,PUB,622.862,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2018,TOTAL,7778.909,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2019,PRI,7252.27,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2019,PUB,600.905,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2019,TOTAL,7853.175,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2020,PRI,6480.499,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2020,PUB,582.593,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2020,TOTAL,7063.092,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2021,PRI,7386.511,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2021,PUB,562.144,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2021,TOTAL,7948.655,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2022,PRI,7589.42,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2022,PUB,561.259,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2022,TOTAL,8150.68,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2023,PRI,7577.41,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2023,PUB,532.237,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2023,TOTAL,8109.647,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2024,PRI,7684.804,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2024,PUB,556.872,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2024,TOTAL,8241.676,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2025,PRI,7759.675,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2025,PUB,569.878,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+ECU,2025,TOTAL,8329.553,"LFS - Encuesta Nacional de Empleo, Desempleo y SubEmpleo"
+EGY,2015,PRI,18892.614,LFS - Labour Force Sample Survey
+EGY,2015,PUB,5886.154,LFS - Labour Force Sample Survey
+EGY,2015,TOTAL,24778.768,LFS - Labour Force Sample Survey
+EGY,2016,PRI,19738.021,LFS - Labour Force Sample Survey
+EGY,2016,PUB,5593.16,LFS - Labour Force Sample Survey
+EGY,2016,TOTAL,25331.181,LFS - Labour Force Sample Survey
+EGY,2017,PRI,20494.151,LFS - Labour Force Sample Survey
+EGY,2017,PUB,5512.03,LFS - Labour Force Sample Survey
+EGY,2017,TOTAL,26006.18,LFS - Labour Force Sample Survey
+EGY,2018,PRI,19950.302,LFS - Labour Force Sample Survey
+EGY,2018,PUB,6070.72,LFS - Labour Force Sample Survey
+EGY,2018,TOTAL,26021.022,LFS - Labour Force Sample Survey
+EGY,2019,PRI,20447.138,LFS - Labour Force Sample Survey
+EGY,2019,PUB,5675.472,LFS - Labour Force Sample Survey
+EGY,2019,TOTAL,26122.61,LFS - Labour Force Sample Survey
+EGY,2020,PRI,20675.862,LFS - Labour Force Sample Survey
+EGY,2020,PUB,5563.096,LFS - Labour Force Sample Survey
+EGY,2020,TOTAL,26238.958,LFS - Labour Force Sample Survey
+EGY,2021,PRI,21649.894,LFS - Labour Force Sample Survey
+EGY,2021,PUB,5591.104,LFS - Labour Force Sample Survey
+EGY,2021,TOTAL,27240.999,LFS - Labour Force Sample Survey
+EGY,2022,PRI,22377.676,LFS - Labour Force Sample Survey
+EGY,2022,PUB,5598.714,LFS - Labour Force Sample Survey
+EGY,2022,TOTAL,27976.39,LFS - Labour Force Sample Survey
+EGY,2023,PRI,24546.525,LFS - Labour Force Sample Survey
+EGY,2023,PUB,5339.549,LFS - Labour Force Sample Survey
+EGY,2023,TOTAL,29886.074,LFS - Labour Force Sample Survey
+EGY,2024,PRI,24614.245,LFS - Labour Force Sample Survey
+EGY,2024,PUB,5263.812,LFS - Labour Force Sample Survey
+EGY,2024,TOTAL,32677.758,LFS - Labour Force Sample Survey
+EGY,2024,X,2799.701,LFS - Labour Force Sample Survey
+ESP,2015,PRI,14891.013,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2015,PUB,2975.034,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2015,TOTAL,17866.048,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2016,PRI,15340.724,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2016,PUB,3000.825,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2016,TOTAL,18341.55,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2017,PRI,15796.186,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2017,PUB,3028.599,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2017,TOTAL,18824.786,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2018,PRI,16177.173,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2018,PUB,3150.529,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2018,TOTAL,19327.701,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2019,PRI,16556.789,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2019,PUB,3222.523,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2019,TOTAL,19779.312,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2020,PRI,15904.875,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2020,PUB,3297.535,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2020,TOTAL,19202.41,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2021,PRI,16409.704,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2021,PUB,3423.772,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2021,TOTAL,19833.476,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2022,PRI,17080.7,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2022,PUB,3466.786,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2022,TOTAL,20547.487,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2023,PRI,17659.277,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2023,PUB,3522.928,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2023,TOTAL,21182.205,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2024,PRI,18093.648,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2024,PUB,3560.244,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2024,TOTAL,21653.892,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2025,PRI,18672.342,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2025,PUB,3548.77,LFS - Encuesta de la Fuerza de Trabajo
+ESP,2025,TOTAL,22221.112,LFS - Encuesta de la Fuerza de Trabajo
+EST,2015,PRI,477.8,LFS - Labour Force Survey
+EST,2015,PUB,163.1,LFS - Labour Force Survey
+EST,2015,TOTAL,640.9,LFS - Labour Force Survey
+EST,2016,PRI,483.2,LFS - Labour Force Survey
+EST,2016,PUB,161.5,LFS - Labour Force Survey
+EST,2016,TOTAL,644.6,LFS - Labour Force Survey
+EST,2017,PRI,503.3,LFS - Labour Force Survey
+EST,2017,PUB,155.3,LFS - Labour Force Survey
+EST,2017,TOTAL,658.6,LFS - Labour Force Survey
+EST,2018,PRI,509.3,LFS - Labour Force Survey
+EST,2018,PUB,155.5,LFS - Labour Force Survey
+EST,2018,TOTAL,664.7,LFS - Labour Force Survey
+EST,2019,PRI,511.5,LFS - Labour Force Survey
+EST,2019,PUB,159.8,LFS - Labour Force Survey
+EST,2019,TOTAL,671.3,LFS - Labour Force Survey
+EST,2020,PRI,494.7,LFS - Labour Force Survey
+EST,2020,PUB,161.9,LFS - Labour Force Survey
+EST,2020,TOTAL,656.6,LFS - Labour Force Survey
+ETH,2021,PRI,34615.428,LFS - National Labor Force Survey
+ETH,2021,PUB,2429.009,LFS - National Labor Force Survey
+ETH,2021,TOTAL,37044.437,LFS - National Labor Force Survey
+FIN,2015,PRI,1759,LFS - EU Labour Force Survey
+FIN,2015,PUB,668,LFS - EU Labour Force Survey
+FIN,2015,TOTAL,2437,LFS - EU Labour Force Survey
+FIN,2016,PRI,1783,LFS - EU Labour Force Survey
+FIN,2016,PUB,657,LFS - EU Labour Force Survey
+FIN,2016,TOTAL,2448,LFS - EU Labour Force Survey
+FIN,2017,PRI,1794,LFS - EU Labour Force Survey
+FIN,2017,PUB,674,LFS - EU Labour Force Survey
+FIN,2017,TOTAL,2473,LFS - EU Labour Force Survey
+FIN,2018,PRI,1852,LFS - EU Labour Force Survey
+FIN,2018,PUB,649,LFS - EU Labour Force Survey
+FIN,2018,TOTAL,2507,LFS - EU Labour Force Survey
+FIN,2019,PRI,1885,LFS - EU Labour Force Survey
+FIN,2019,PUB,644,LFS - EU Labour Force Survey
+FIN,2019,TOTAL,2533,LFS - EU Labour Force Survey
+FIN,2020,PRI,1866,LFS - EU Labour Force Survey
+FIN,2020,PUB,622,LFS - EU Labour Force Survey
+FIN,2020,TOTAL,2495,LFS - EU Labour Force Survey
+FJI,2016,PRI,279.766,"LFS - Employment, Unemployment Survey"
+FJI,2016,PUB,47.298,"LFS - Employment, Unemployment Survey"
+FJI,2016,TOTAL,327.065,"LFS - Employment, Unemployment Survey"
+FJI,2024,PRI,266.008,"LFS - Employment, Unemployment Survey"
+FJI,2024,PUB,53.032,"LFS - Employment, Unemployment Survey"
+FJI,2024,TOTAL,319.04,"LFS - Employment, Unemployment Survey"
+FRA,2015,PRI,20970.888,LFS - Enquête sur l'emploi
+FRA,2015,PUB,5452.851,LFS - Enquête sur l'emploi
+FRA,2015,TOTAL,26423.739,LFS - Enquête sur l'emploi
+FRA,2016,PRI,21170.886,LFS - Enquête sur l'emploi
+FRA,2016,PUB,5412.953,LFS - Enquête sur l'emploi
+FRA,2016,TOTAL,26583.839,LFS - Enquête sur l'emploi
+FRA,2017,PRI,21423.091,LFS - Enquête sur l'emploi
+FRA,2017,PUB,5380.022,LFS - Enquête sur l'emploi
+FRA,2017,TOTAL,26803.114,LFS - Enquête sur l'emploi
+FRA,2018,PRI,21605.893,LFS - Enquête sur l'emploi
+FRA,2018,PUB,5416.18,LFS - Enquête sur l'emploi
+FRA,2018,TOTAL,27022.074,LFS - Enquête sur l'emploi
+FRA,2019,PRI,21576.108,LFS - Enquête sur l'emploi
+FRA,2019,PUB,5556.624,LFS - Enquête sur l'emploi
+FRA,2019,TOTAL,27132.732,LFS - Enquête sur l'emploi
+FRA,2020,PRI,21378.454,LFS - Enquête sur l'emploi
+FRA,2020,PUB,5616.867,LFS - Enquête sur l'emploi
+FRA,2020,TOTAL,26995.321,LFS - Enquête sur l'emploi
+FRA,2021,PRI,22271.467,LFS - Enquête sur l'emploi
+FRA,2021,PUB,5658.166,LFS - Enquête sur l'emploi
+FRA,2021,TOTAL,27929.633,LFS - Enquête sur l'emploi
+FRA,2022,PRI,22719.717,LFS - Enquête sur l'emploi
+FRA,2022,PUB,5675.75,LFS - Enquête sur l'emploi
+FRA,2022,TOTAL,28395.467,LFS - Enquête sur l'emploi
+FRA,2023,PRI,22836.7,LFS - Enquête sur l'emploi
+FRA,2023,PUB,5751.884,LFS - Enquête sur l'emploi
+FRA,2023,TOTAL,28588.583,LFS - Enquête sur l'emploi
+FRA,2024,PRI,23169.618,LFS - Enquête sur l'emploi
+FRA,2024,PUB,5852.336,LFS - Enquête sur l'emploi
+FRA,2024,TOTAL,29021.954,LFS - Enquête sur l'emploi
+GAB,2024,PRI,402.66,LFS - Enquête Nationale sur l'Emploi et le Chômage
+GAB,2024,PUB,108.489,LFS - Enquête Nationale sur l'Emploi et le Chômage
+GAB,2024,TOTAL,515.902,LFS - Enquête Nationale sur l'Emploi et le Chômage
+GAB,2024,X,4.754,LFS - Enquête Nationale sur l'Emploi et le Chômage
+GBR,2015,PRI,24262.296,LFS - Labour Force Survey
+GBR,2015,PUB,6907.455,LFS - Labour Force Survey
+GBR,2015,TOTAL,31169.751,LFS - Labour Force Survey
+GBR,2016,PRI,24870.169,LFS - Labour Force Survey
+GBR,2016,PUB,6825.956,LFS - Labour Force Survey
+GBR,2016,TOTAL,31696.125,LFS - Labour Force Survey
+GBR,2017,PRI,25167.741,LFS - Labour Force Survey
+GBR,2017,PUB,6839.814,LFS - Labour Force Survey
+GBR,2017,TOTAL,32007.554,LFS - Labour Force Survey
+GBR,2018,PRI,25430.348,LFS - Labour Force Survey
+GBR,2018,PUB,6977.644,LFS - Labour Force Survey
+GBR,2018,TOTAL,32407.991,LFS - Labour Force Survey
+GBR,2019,PRI,25943.004,LFS - Labour Force Survey
+GBR,2019,PUB,6830.452,LFS - Labour Force Survey
+GBR,2019,TOTAL,32773.456,LFS - Labour Force Survey
+GBR,2020,PRI,25181.761,LFS - Labour Force Survey
+GBR,2020,PUB,7433.095,LFS - Labour Force Survey
+GBR,2020,TOTAL,32614.856,LFS - Labour Force Survey
+GBR,2021,PRI,24517.655,LFS - Labour Force Survey
+GBR,2021,PUB,7646.883,LFS - Labour Force Survey
+GBR,2021,TOTAL,32164.538,LFS - Labour Force Survey
+GBR,2022,PRI,25002.745,LFS - Labour Force Survey
+GBR,2022,PUB,7706.076,LFS - Labour Force Survey
+GBR,2022,TOTAL,32708.821,LFS - Labour Force Survey
+GBR,2023,PRI,25236.072,LFS - Labour Force Survey
+GBR,2023,PUB,7777.868,LFS - Labour Force Survey
+GBR,2023,TOTAL,33013.939,LFS - Labour Force Survey
+GBR,2024,PRI,25553.05,LFS - Labour Force Survey
+GBR,2024,PUB,7835.028,LFS - Labour Force Survey
+GBR,2024,TOTAL,33388.077,LFS - Labour Force Survey
+GBR,2025,PRI,25952.531,LFS - Labour Force Survey
+GBR,2025,PUB,8167.897,LFS - Labour Force Survey
+GBR,2025,TOTAL,34120.428,LFS - Labour Force Survey
+GEO,2015,PRI,1447.241,HS - Integrated Household Survey
+GEO,2015,PUB,286.565,HS - Integrated Household Survey
+GEO,2015,TOTAL,1733.806,HS - Integrated Household Survey
+GEO,2016,PRI,1445.382,HS - Integrated Household Survey
+GEO,2016,PUB,271.904,HS - Integrated Household Survey
+GEO,2016,TOTAL,1717.286,HS - Integrated Household Survey
+GEO,2017,PRI,1422.832,LFS - Labour Force Survey
+GEO,2017,PUB,283.809,LFS - Labour Force Survey
+GEO,2017,TOTAL,1706.641,LFS - Labour Force Survey
+GEO,2018,PRI,1394.375,LFS - Labour Force Survey
+GEO,2018,PUB,299.827,LFS - Labour Force Survey
+GEO,2018,TOTAL,1694.202,LFS - Labour Force Survey
+GEO,2019,PRI,1390.503,LFS - Labour Force Survey
+GEO,2019,PUB,299.667,LFS - Labour Force Survey
+GEO,2019,TOTAL,1690.17,LFS - Labour Force Survey
+GEO,2020,PRI,1392.247,LFS - Labour Force Survey
+GEO,2020,PUB,296.913,LFS - Labour Force Survey
+GEO,2020,TOTAL,1689.16,LFS - Labour Force Survey
+GEO,2021,PRI,1406.541,LFS - Labour Force Survey
+GEO,2021,PUB,304.185,LFS - Labour Force Survey
+GEO,2021,TOTAL,1710.726,LFS - Labour Force Survey
+GEO,2022,PRI,1427.898,LFS - Labour Force Survey
+GEO,2022,PUB,309.45,LFS - Labour Force Survey
+GEO,2022,TOTAL,1737.348,LFS - Labour Force Survey
+GEO,2023,PRI,1453.526,LFS - Labour Force Survey
+GEO,2023,PUB,322.758,LFS - Labour Force Survey
+GEO,2023,TOTAL,1776.284,LFS - Labour Force Survey
+GEO,2024,PRI,1496.589,LFS - Labour Force Survey
+GEO,2024,PUB,324.719,LFS - Labour Force Survey
+GEO,2024,TOTAL,1821.308,LFS - Labour Force Survey
+GEO,2025,PRI,1451.118,LFS - Labour Force Survey
+GEO,2025,PUB,336.929,LFS - Labour Force Survey
+GEO,2025,TOTAL,1788.047,LFS - Labour Force Survey
+GHA,2015,PRI,8154.94,LFS - Labour Force Survey
+GHA,2015,PUB,695.105,LFS - Labour Force Survey
+GHA,2015,TOTAL,8850.045,LFS - Labour Force Survey
+GHA,2017,PRI,11327.625,HIES - Living Standards Measurement Survey
+GHA,2017,PUB,778.681,HIES - Living Standards Measurement Survey
+GHA,2017,TOTAL,12106.306,HIES - Living Standards Measurement Survey
+GHA,2021,PRI,10141.53,PC - Population Census
+GHA,2021,PUB,943.79,PC - Population Census
+GHA,2021,TOTAL,11085.32,PC - Population Census
+GHA,2022,PRI,10549.679,HIES - Household Income and Expenditure Survey
+GHA,2022,PUB,721.295,HIES - Household Income and Expenditure Survey
+GHA,2022,TOTAL,11676.139,HIES - Household Income and Expenditure Survey
+GHA,2022,X,405.165,HIES - Household Income and Expenditure Survey
+GHA,2023,PRI,10936.669,HIES - Household Income and Expenditure Survey
+GHA,2023,PUB,730.099,HIES - Household Income and Expenditure Survey
+GHA,2023,TOTAL,12428.596,HIES - Household Income and Expenditure Survey
+GHA,2023,X,761.828,HIES - Household Income and Expenditure Survey
+GHA,2024,PRI,11381.627,HIES - Household Income and Expenditure Survey
+GHA,2024,PUB,702.995,HIES - Household Income and Expenditure Survey
+GHA,2024,TOTAL,12631.297,HIES - Household Income and Expenditure Survey
+GHA,2024,X,546.676,HIES - Household Income and Expenditure Survey
+GHA,2025,PRI,13236.445,LFS - Labour Force Survey
+GHA,2025,PUB,702.687,LFS - Labour Force Survey
+GHA,2025,TOTAL,13939.132,LFS - Labour Force Survey
+GIB,2015,PRI,20.07,ES - Employment Survey
+GIB,2015,PUB,6.074,ES - Employment Survey
+GIB,2015,TOTAL,26.144,ES - Employment Survey
+GIB,2017,PRI,22.029,ES - Employment Survey
+GIB,2017,PUB,6,ES - Employment Survey
+GIB,2017,TOTAL,28.029,ES - Employment Survey
+GIB,2018,PRI,23.969,ES - Employment Survey
+GIB,2018,PUB,6.026,ES - Employment Survey
+GIB,2018,TOTAL,29.995,ES - Employment Survey
+GMB,2018,PRI,706.391,LFS - Labour Force Survey
+GMB,2018,PUB,84.571,LFS - Labour Force Survey
+GMB,2018,TOTAL,790.962,LFS - Labour Force Survey
+GMB,2023,PRI,573.49,LFS - Labour Force Survey
+GMB,2023,PUB,49.705,LFS - Labour Force Survey
+GMB,2023,TOTAL,623.194,LFS - Labour Force Survey
+GMB,2025,PRI,622.693,LFS - Labour Force Survey
+GMB,2025,PUB,60.875,LFS - Labour Force Survey
+GMB,2025,TOTAL,683.567,LFS - Labour Force Survey
+GNB,2018,PRI,498.193,LFS - Enquête régionale Intégrée sur l'emploi et le secteur informel
+GNB,2018,PUB,29.286,LFS - Enquête régionale Intégrée sur l'emploi et le secteur informel
+GNB,2018,TOTAL,527.479,LFS - Enquête régionale Intégrée sur l'emploi et le secteur informel
+GNB,2019,PRI,278.367,HIES - Enquête harmonisée sur les conditions de vie des ménages
+GNB,2019,PUB,16.89,HIES - Enquête harmonisée sur les conditions de vie des ménages
+GNB,2019,TOTAL,295.257,HIES - Enquête harmonisée sur les conditions de vie des ménages
+GNB,2022,PRI,665.22,HIES - Enquête harmonisée sur les conditions de vie des ménages
+GNB,2022,PUB,46.303,HIES - Enquête harmonisée sur les conditions de vie des ménages
+GNB,2022,TOTAL,711.523,HIES - Enquête harmonisée sur les conditions de vie des ménages
+GNQ,2023,PRI,122.53,HIES - Encuesta Nacional de Hogares
+GNQ,2023,PUB,61.881,HIES - Encuesta Nacional de Hogares
+GNQ,2023,TOTAL,546.41,HIES - Encuesta Nacional de Hogares
+GNQ,2023,X,361.999,HIES - Encuesta Nacional de Hogares
+GRC,2015,PRI,2806.361,LFS - Labour Force Survey
+GRC,2015,PUB,774.496,LFS - Labour Force Survey
+GRC,2015,TOTAL,3580.857,LFS - Labour Force Survey
+GRC,2016,PRI,2855.651,LFS - Labour Force Survey
+GRC,2016,PUB,784.899,LFS - Labour Force Survey
+GRC,2016,TOTAL,3640.55,LFS - Labour Force Survey
+GRC,2017,PRI,2921.474,LFS - Labour Force Survey
+GRC,2017,PUB,800.359,LFS - Labour Force Survey
+GRC,2017,TOTAL,3721.833,LFS - Labour Force Survey
+GRC,2018,PRI,2715.682,LFS - Labour Force Survey
+GRC,2018,PUB,745.056,LFS - Labour Force Survey
+GRC,2018,TOTAL,3460.737,LFS - Labour Force Survey
+GRC,2019,PRI,2762.921,LFS - Labour Force Survey
+GRC,2019,PUB,777.812,LFS - Labour Force Survey
+GRC,2019,TOTAL,3540.733,LFS - Labour Force Survey
+GRC,2020,PRI,2781.948,LFS - Labour Force Survey
+GRC,2020,PUB,795.841,LFS - Labour Force Survey
+GRC,2020,TOTAL,3577.789,LFS - Labour Force Survey
+GRD,2018,PRI,33.572,LFS - Labour Force Survey
+GRD,2018,PUB,11.652,LFS - Labour Force Survey
+GRD,2018,TOTAL,45.715,LFS - Labour Force Survey
+GRD,2018,X,0.491,LFS - Labour Force Survey
+GRD,2019,PRI,32.983,LFS - Labour Force Survey
+GRD,2019,PUB,9.698,LFS - Labour Force Survey
+GRD,2019,TOTAL,49.365,LFS - Labour Force Survey
+GRD,2019,X,6.684,LFS - Labour Force Survey
+GRD,2020,PRI,30.78,LFS - Labour Force Survey
+GRD,2020,PUB,10.372,LFS - Labour Force Survey
+GRD,2020,TOTAL,41.56,LFS - Labour Force Survey
+GRD,2020,X,0.408,LFS - Labour Force Survey
+GRD,2021,PRI,36.735,LFS - Labour Force Survey
+GRD,2021,PUB,11.475,LFS - Labour Force Survey
+GRD,2021,TOTAL,48.568,LFS - Labour Force Survey
+GRD,2021,X,0.358,LFS - Labour Force Survey
+GRD,2023,PRI,40.37,LFS - Labour Force Survey
+GRD,2023,PUB,10.664,LFS - Labour Force Survey
+GRD,2023,TOTAL,52.315,LFS - Labour Force Survey
+GRD,2023,X,1.281,LFS - Labour Force Survey
+GRL,2015,PRI,15.313,ADM - Employment and Unemployment for permanent residents
+GRL,2015,PUB,10.307,ADM - Employment and Unemployment for permanent residents
+GRL,2015,TOTAL,25.62,ADM - Employment and Unemployment for permanent residents
+GTM,2015,PRI,5855.13,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2015,PUB,385.755,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2015,TOTAL,6240.885,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2016,PRI,6069.479,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2016,PUB,405.105,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2016,TOTAL,6474.584,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2017,PRI,6260.747,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2017,PUB,427.219,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2017,TOTAL,6687.966,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2018,PRI,6489.401,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2018,PUB,426.142,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2018,TOTAL,6915.543,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2019,PRI,6629.272,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2019,PUB,475.717,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2019,TOTAL,7104.989,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2021,PRI,6809.923,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2021,PUB,432.899,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2021,TOTAL,7242.822,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2022,PRI,6530.791,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2022,PUB,421.626,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2022,TOTAL,6952.417,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2023,PRI,7245.364,HIES - Encuesta nacional de Ingresos y Gastos de los hogares
+GTM,2023,PUB,403.618,HIES - Encuesta nacional de Ingresos y Gastos de los hogares
+GTM,2023,TOTAL,7793.895,HIES - Encuesta nacional de Ingresos y Gastos de los hogares
+GTM,2023,X,144.913,HIES - Encuesta nacional de Ingresos y Gastos de los hogares
+GTM,2024,PRI,7077.179,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2024,PUB,505.434,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2024,TOTAL,7582.613,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2025,PRI,7331.381,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2025,PUB,548.232,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2025,TOTAL,7879.613,LFS - Encuesta Nacional de Empleo e Ingresos
+GUY,2018,PRI,203.206,LFS - Labour Force Survey
+GUY,2018,PUB,53.698,LFS - Labour Force Survey
+GUY,2018,TOTAL,256.905,LFS - Labour Force Survey
+GUY,2019,PRI,193.55,LFS - Labour Force Survey
+GUY,2019,PUB,52.378,LFS - Labour Force Survey
+GUY,2019,TOTAL,245.928,LFS - Labour Force Survey
+GUY,2020,PRI,213.058,LFS - Labour Force Survey
+GUY,2020,PUB,53.436,LFS - Labour Force Survey
+GUY,2020,TOTAL,266.494,LFS - Labour Force Survey
+GUY,2021,PRI,194.921,LFS - Labour Force Survey
+GUY,2021,PUB,59.205,LFS - Labour Force Survey
+GUY,2021,TOTAL,254.126,LFS - Labour Force Survey
+GUY,2024,PRI,274.671,LFS - Labour Force Survey
+GUY,2024,PUB,97.807,LFS - Labour Force Survey
+GUY,2024,TOTAL,372.478,LFS - Labour Force Survey
+HND,2015,PRI,3244.613,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2015,PUB,231.671,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2015,TOTAL,3476.283,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2016,PRI,3277.209,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2016,PUB,236.67,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2016,TOTAL,3513.879,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2017,PRI,3460.044,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2017,PUB,207.241,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2017,TOTAL,3667.285,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2018,PRI,3682.775,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2018,PUB,236,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2018,TOTAL,3918.775,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2019,PRI,3581.093,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2019,PUB,252.312,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2019,TOTAL,3833.404,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2020,PRI,3450.054,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2020,PUB,208.821,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2020,TOTAL,3658.875,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2021,PRI,3482.843,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2021,PUB,236.683,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2021,TOTAL,3719.525,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2022,PRI,3396.003,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2022,PUB,230.993,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2022,TOTAL,3635.077,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2022,X,8.081,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2023,PRI,3393.541,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2023,PUB,245.451,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2023,TOTAL,3690.514,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2023,X,51.521,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2024,PRI,3439.109,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2024,PUB,286.805,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2024,TOTAL,3790.889,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2024,X,64.975,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2025,PRI,3810.359,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2025,PUB,264.48,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2025,TOTAL,4074.839,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HRV,2015,PRI,1113.784,LFS - EU Labour Force Survey
+HRV,2015,PUB,471.483,LFS - EU Labour Force Survey
+HRV,2015,TOTAL,1585.267,LFS - EU Labour Force Survey
+HRV,2016,PRI,1129.324,LFS - EU Labour Force Survey
+HRV,2016,PUB,460.619,LFS - EU Labour Force Survey
+HRV,2016,TOTAL,1589.943,LFS - EU Labour Force Survey
+HRV,2017,PRI,1146.735,LFS - EU Labour Force Survey
+HRV,2017,PUB,478.334,LFS - EU Labour Force Survey
+HRV,2017,TOTAL,1625.069,LFS - EU Labour Force Survey
+HRV,2018,PRI,1163.658,LFS - EU Labour Force Survey
+HRV,2018,PUB,491.379,LFS - EU Labour Force Survey
+HRV,2018,TOTAL,1655.037,LFS - EU Labour Force Survey
+HRV,2019,PRI,1174.608,LFS - EU Labour Force Survey
+HRV,2019,PUB,504.867,LFS - EU Labour Force Survey
+HRV,2019,TOTAL,1679.475,LFS - EU Labour Force Survey
+HRV,2020,PRI,1162.92,LFS - EU Labour Force Survey
+HRV,2020,PUB,494.45,LFS - EU Labour Force Survey
+HRV,2020,TOTAL,1657.37,LFS - EU Labour Force Survey
+HUN,2015,PRI,2862.258,LFS - Labour Force Survey
+HUN,2015,PUB,1341.476,LFS - Labour Force Survey
+HUN,2015,TOTAL,4210.497,LFS - Labour Force Survey
+HUN,2016,PRI,3055.157,LFS - Labour Force Survey
+HUN,2016,PUB,1366.225,LFS - Labour Force Survey
+HUN,2016,TOTAL,4421.382,LFS - Labour Force Survey
+HUN,2017,PRI,3055.157,LFS - Labour Force Survey
+HUN,2017,PUB,1366.225,LFS - Labour Force Survey
+HUN,2017,TOTAL,4421.382,LFS - Labour Force Survey
+HUN,2018,PRI,3107.053,LFS - Labour Force Survey
+HUN,2018,PUB,1362.415,LFS - Labour Force Survey
+HUN,2018,TOTAL,4469.468,LFS - Labour Force Survey
+IDN,2016,PRI,109422.705,LFS - National Labour Force Survey
+IDN,2016,PUB,10107.131,LFS - National Labour Force Survey
+IDN,2016,TOTAL,119529.835,LFS - National Labour Force Survey
+IDN,2019,PRI,121386.72,LFS - National Labour Force Survey
+IDN,2019,PUB,10509.228,LFS - National Labour Force Survey
+IDN,2019,TOTAL,131895.948,LFS - National Labour Force Survey
+IDN,2022,PRI,123444.211,LFS - National Labour Force Survey
+IDN,2022,PUB,11764.163,LFS - National Labour Force Survey
+IDN,2022,TOTAL,135208.374,LFS - National Labour Force Survey
+IDN,2023,PRI,125566.819,LFS - National Labour Force Survey
+IDN,2023,PUB,12383.081,LFS - National Labour Force Survey
+IDN,2023,TOTAL,137949.9,LFS - National Labour Force Survey
+IMN,2016,PRI,32.492,PC - Population Census
+IMN,2016,PUB,9.144,PC - Population Census
+IMN,2016,TOTAL,41.636,PC - Population Census
+IRL,2015,PRI,1244.6,LFS - EU Labour Force Survey
+IRL,2015,PUB,376.2,LFS - EU Labour Force Survey
+IRL,2015,TOTAL,1620.7,LFS - EU Labour Force Survey
+IRL,2016,PRI,1302.1,LFS - EU Labour Force Survey
+IRL,2016,PUB,389.8,LFS - EU Labour Force Survey
+IRL,2016,TOTAL,1691.9,LFS - EU Labour Force Survey
+IRL,2017,PRI,1362.3,LFS - EU Labour Force Survey
+IRL,2017,PUB,393.7,LFS - EU Labour Force Survey
+IRL,2017,TOTAL,1756,LFS - EU Labour Force Survey
+IRL,2018,PRI,1425.5,LFS - EU Labour Force Survey
+IRL,2018,PUB,400.9,LFS - EU Labour Force Survey
+IRL,2018,TOTAL,1826.4,LFS - EU Labour Force Survey
+IRN,2015,PRI,18024.917,LFS - Labour Force Survey
+IRN,2015,PUB,3655.635,LFS - Labour Force Survey
+IRN,2015,TOTAL,21680.552,LFS - Labour Force Survey
+IRN,2016,PRI,18429.058,LFS - Labour Force Survey
+IRN,2016,PUB,3720.14,LFS - Labour Force Survey
+IRN,2016,TOTAL,22149.198,LFS - Labour Force Survey
+IRN,2017,PRI,19281.619,LFS - Labour Force Survey
+IRN,2017,PUB,3730.036,LFS - Labour Force Survey
+IRN,2017,TOTAL,23011.655,LFS - Labour Force Survey
+IRN,2018,PRI,19739.214,LFS - Labour Force Survey
+IRN,2018,PUB,3696.598,LFS - Labour Force Survey
+IRN,2018,TOTAL,23435.812,LFS - Labour Force Survey
+IRN,2019,PRI,20459.837,LFS - Labour Force Survey
+IRN,2019,PUB,3587.008,LFS - Labour Force Survey
+IRN,2019,TOTAL,24046.846,LFS - Labour Force Survey
+IRN,2020,PRI,19610.289,LFS - Labour Force Survey
+IRN,2020,PUB,3455.584,LFS - Labour Force Survey
+IRN,2020,TOTAL,23065.873,LFS - Labour Force Survey
+IRN,2021,PRI,19599.356,LFS - Labour Force Survey
+IRN,2021,PUB,3611.386,LFS - Labour Force Survey
+IRN,2021,TOTAL,23210.743,LFS - Labour Force Survey
+IRN,2022,PRI,20034.681,LFS - Labour Force Survey
+IRN,2022,PUB,3472.935,LFS - Labour Force Survey
+IRN,2022,TOTAL,23507.615,LFS - Labour Force Survey
+IRN,2023,PRI,20754.036,LFS - Labour Force Survey
+IRN,2023,PUB,3522.891,LFS - Labour Force Survey
+IRN,2023,TOTAL,24276.926,LFS - Labour Force Survey
+IRN,2024,PRI,21074.744,LFS - Labour Force Survey
+IRN,2024,PUB,3493.055,LFS - Labour Force Survey
+IRN,2024,TOTAL,24567.799,LFS - Labour Force Survey
+IRQ,2021,PRI,5427.593,LFS - Labour Force Survey
+IRQ,2021,PUB,3247.308,LFS - Labour Force Survey
+IRQ,2021,TOTAL,8674.901,LFS - Labour Force Survey
+ISR,2018,PRI,2562.766,LFS - Labour Force Survey
+ISR,2018,PUB,1235.955,LFS - Labour Force Survey
+ISR,2018,TOTAL,3894.463,LFS - Labour Force Survey
+ISR,2018,X,95.742,LFS - Labour Force Survey
+ISR,2023,PRI,2926.469,LFS - Labour Force Survey
+ISR,2023,PUB,1310.531,LFS - Labour Force Survey
+ISR,2023,TOTAL,4309.32,LFS - Labour Force Survey
+ISR,2023,X,72.32,LFS - Labour Force Survey
+JAM,2016,PRI,1029.1,LFS - Labour Force Survey
+JAM,2016,PUB,144.215,LFS - Labour Force Survey
+JAM,2016,TOTAL,1173.314,LFS - Labour Force Survey
+JAM,2017,PRI,1057.349,LFS - Labour Force Survey
+JAM,2017,PUB,145.6,LFS - Labour Force Survey
+JAM,2017,TOTAL,1202.949,LFS - Labour Force Survey
+JAM,2018,PRI,1067.42,LFS - Labour Force Survey
+JAM,2018,PUB,147.634,LFS - Labour Force Survey
+JAM,2018,TOTAL,1215.054,LFS - Labour Force Survey
+JAM,2019,PRI,1086.302,LFS - Labour Force Survey
+JAM,2019,PUB,158.458,LFS - Labour Force Survey
+JAM,2019,TOTAL,1244.76,LFS - Labour Force Survey
+JAM,2020,PRI,1027.308,LFS - Labour Force Survey
+JAM,2020,PUB,153.222,LFS - Labour Force Survey
+JAM,2020,TOTAL,1180.53,LFS - Labour Force Survey
+JAM,2021,PRI,1060.087,LFS - Labour Force Survey
+JAM,2021,PUB,153.654,LFS - Labour Force Survey
+JAM,2021,TOTAL,1213.741,LFS - Labour Force Survey
+JAM,2022,PRI,1110.576,LFS - Labour Force Survey
+JAM,2022,PUB,154.86,LFS - Labour Force Survey
+JAM,2022,TOTAL,1265.436,LFS - Labour Force Survey
+JAM,2023,PRI,1156.158,LFS - Labour Force Survey
+JAM,2023,PUB,159.374,LFS - Labour Force Survey
+JAM,2023,TOTAL,1315.532,LFS - Labour Force Survey
+JOR,2017,PRI,1499.752,LFS - Employment and Unemployment Survey
+JOR,2017,PUB,619.897,LFS - Employment and Unemployment Survey
+JOR,2017,TOTAL,2119.649,LFS - Employment and Unemployment Survey
+JOR,2018,PRI,1546.99,LFS - Employment and Unemployment Survey
+JOR,2018,PUB,602.76,LFS - Employment and Unemployment Survey
+JOR,2018,TOTAL,2149.75,LFS - Employment and Unemployment Survey
+JOR,2019,PRI,1706.133,LFS - Employment and Unemployment Survey
+JOR,2019,PUB,588.932,LFS - Employment and Unemployment Survey
+JOR,2019,TOTAL,2295.065,LFS - Employment and Unemployment Survey
+JOR,2020,PRI,1796.329,LFS - Employment and Unemployment Survey
+JOR,2020,PUB,578.2,LFS - Employment and Unemployment Survey
+JOR,2020,TOTAL,2374.528,LFS - Employment and Unemployment Survey
+JOR,2021,PRI,1748.192,LFS - Employment and Unemployment Survey
+JOR,2021,PUB,593.377,LFS - Employment and Unemployment Survey
+JOR,2021,TOTAL,2341.569,LFS - Employment and Unemployment Survey
+JOR,2022,PRI,1881.924,LFS - Employment and Unemployment Survey
+JOR,2022,PUB,598.495,LFS - Employment and Unemployment Survey
+JOR,2022,TOTAL,2480.419,LFS - Employment and Unemployment Survey
+JOR,2023,PRI,2148.225,LFS - Employment and Unemployment Survey
+JOR,2023,PUB,605.781,LFS - Employment and Unemployment Survey
+JOR,2023,TOTAL,2754.006,LFS - Employment and Unemployment Survey
+JOR,2024,PRI,2218.497,LFS - Employment and Unemployment Survey
+JOR,2024,PUB,640.374,LFS - Employment and Unemployment Survey
+JOR,2024,TOTAL,2858.871,LFS - Employment and Unemployment Survey
+JPN,2015,PRI,58313.518,LFS - Labour Force Survey
+JPN,2015,PUB,4887.474,LFS - Labour Force Survey
+JPN,2015,TOTAL,63200.991,LFS - Labour Force Survey
+JPN,2016,PRI,59089.982,LFS - Labour Force Survey
+JPN,2016,PUB,4867.644,LFS - Labour Force Survey
+JPN,2016,TOTAL,63957.626,LFS - Labour Force Survey
+JPN,2017,PRI,59929.09,LFS - Labour Force Survey
+JPN,2017,PUB,4886.008,LFS - Labour Force Survey
+JPN,2017,TOTAL,64815.098,LFS - Labour Force Survey
+JPN,2018,PRI,61202.137,LFS - Labour Force Survey
+JPN,2018,PUB,4927.818,LFS - Labour Force Survey
+JPN,2018,TOTAL,66129.955,LFS - Labour Force Survey
+JPN,2019,PRI,61701.634,LFS - Labour Force Survey
+JPN,2019,PUB,5067.771,LFS - Labour Force Survey
+JPN,2019,TOTAL,66769.405,LFS - Labour Force Survey
+JPN,2020,PRI,61195.914,LFS - Labour Force Survey
+JPN,2020,PUB,5133.95,LFS - Labour Force Survey
+JPN,2020,TOTAL,66329.864,LFS - Labour Force Survey
+JPN,2021,PRI,61042.863,LFS - Labour Force Survey
+JPN,2021,PUB,5223.542,LFS - Labour Force Survey
+JPN,2021,TOTAL,66266.405,LFS - Labour Force Survey
+JPN,2022,PRI,61614.358,LFS - Labour Force Survey
+JPN,2022,PUB,5239.096,LFS - Labour Force Survey
+JPN,2022,TOTAL,66853.454,LFS - Labour Force Survey
+JPN,2023,PRI,61878.103,LFS - Labour Force Survey
+JPN,2023,PUB,5262.875,LFS - Labour Force Survey
+JPN,2023,TOTAL,67140.978,LFS - Labour Force Survey
+KEN,2016,PRI,17884.628,HIES - Household Budget Survey
+KEN,2016,PUB,1428.832,HIES - Household Budget Survey
+KEN,2016,TOTAL,19313.46,HIES - Household Budget Survey
+KEN,2019,PRI,17747.583,HS - Continuous household survey
+KEN,2019,PUB,976.957,HS - Continuous household survey
+KEN,2019,TOTAL,18724.541,HS - Continuous household survey
+KEN,2021,PRI,17551.898,HS - Continuous household survey
+KEN,2021,PUB,2023.37,HS - Continuous household survey
+KEN,2021,TOTAL,19575.268,HS - Continuous household survey
+KGZ,2015,PRI,1864.139,LFS - Employment and Unemployment Survey
+KGZ,2015,PUB,461.17,LFS - Employment and Unemployment Survey
+KGZ,2015,TOTAL,2325.309,LFS - Employment and Unemployment Survey
+KGZ,2017,PRI,1823.94,LFS - Employment and Unemployment Survey
+KGZ,2017,PUB,487,LFS - Employment and Unemployment Survey
+KGZ,2017,TOTAL,2310.94,LFS - Employment and Unemployment Survey
+KGZ,2018,PRI,1879.539,LFS - Employment and Unemployment Survey
+KGZ,2018,PUB,490.28,LFS - Employment and Unemployment Survey
+KGZ,2018,TOTAL,2369.818,LFS - Employment and Unemployment Survey
+KGZ,2019,PRI,1919.199,LFS - Employment and Unemployment Survey
+KGZ,2019,PUB,467.785,LFS - Employment and Unemployment Survey
+KGZ,2019,TOTAL,2386.984,LFS - Employment and Unemployment Survey
+KGZ,2020,PRI,1847.511,LFS - Employment and Unemployment Survey
+KGZ,2020,PUB,480.999,LFS - Employment and Unemployment Survey
+KGZ,2020,TOTAL,2328.509,LFS - Employment and Unemployment Survey
+KGZ,2021,PRI,2016.172,LFS - Employment and Unemployment Survey
+KGZ,2021,PUB,472.132,LFS - Employment and Unemployment Survey
+KGZ,2021,TOTAL,2488.305,LFS - Employment and Unemployment Survey
+KGZ,2022,PRI,2055.044,LFS - Employment and Unemployment Survey
+KGZ,2022,PUB,490.463,LFS - Employment and Unemployment Survey
+KGZ,2022,TOTAL,2545.507,LFS - Employment and Unemployment Survey
+KGZ,2023,PRI,2090.595,LFS - Employment and Unemployment Survey
+KGZ,2023,PUB,501.216,LFS - Employment and Unemployment Survey
+KGZ,2023,TOTAL,2591.812,LFS - Employment and Unemployment Survey
+KHM,2015,PRI,8185.448,HIES - Household Socio-Economic Survey
+KHM,2015,PUB,440.067,HIES - Household Socio-Economic Survey
+KHM,2015,TOTAL,8625.515,HIES - Household Socio-Economic Survey
+KHM,2016,PRI,8482.705,HIES - Household Socio-Economic Survey
+KHM,2016,PUB,472.186,HIES - Household Socio-Economic Survey
+KHM,2016,TOTAL,8954.891,HIES - Household Socio-Economic Survey
+KHM,2017,PRI,8574.605,HIES - Household Socio-Economic Survey
+KHM,2017,PUB,527.181,HIES - Household Socio-Economic Survey
+KHM,2017,TOTAL,9101.786,HIES - Household Socio-Economic Survey
+KHM,2019,PRI,8141.984,LFS - Labour Force Survey
+KHM,2019,PUB,569.921,LFS - Labour Force Survey
+KHM,2019,TOTAL,8711.905,LFS - Labour Force Survey
+KHM,2020,PRI,8709.444,HIES - Household Socio-Economic Survey
+KHM,2020,PUB,519.266,HIES - Household Socio-Economic Survey
+KHM,2020,TOTAL,9228.709,HIES - Household Socio-Economic Survey
+KHM,2021,PRI,8899.661,HIES - Household Socio-Economic Survey
+KHM,2021,PUB,481.624,HIES - Household Socio-Economic Survey
+KHM,2021,TOTAL,9381.285,HIES - Household Socio-Economic Survey
+KHM,2023,PRI,9295.407,HIES - Household Socio-Economic Survey
+KHM,2023,PUB,460.882,HIES - Household Socio-Economic Survey
+KHM,2023,TOTAL,9756.289,HIES - Household Socio-Economic Survey
+KHM,2025,PRI,9396.337,LFS - Labour Force Survey
+KHM,2025,PUB,704.198,LFS - Labour Force Survey
+KHM,2025,TOTAL,10100.534,LFS - Labour Force Survey
+KIR,2019,PRI,13.183,HIES - Household Income and Expenditure Survey
+KIR,2019,PUB,12.065,HIES - Household Income and Expenditure Survey
+KIR,2019,TOTAL,25.247,HIES - Household Income and Expenditure Survey
+KIR,2020,PRI,21.329,PC - Population Census
+KIR,2020,PUB,9.663,PC - Population Census
+KIR,2020,TOTAL,30.992,PC - Population Census
+KIR,2023,PRI,29.708,HIES - Household Income and Expenditure Survey
+KIR,2023,PUB,11.576,HIES - Household Income and Expenditure Survey
+KIR,2023,TOTAL,41.283,HIES - Household Income and Expenditure Survey
+KOR,2019,PRI,23394.035,HIES - Labour and Income Panel Survey
+KOR,2019,PUB,2823.333,HIES - Labour and Income Panel Survey
+KOR,2019,TOTAL,26217.368,HIES - Labour and Income Panel Survey
+KWT,2016,PRI,2031.655,LFS - Labour Force Sample Survey
+KWT,2016,PUB,465.455,LFS - Labour Force Sample Survey
+KWT,2016,TOTAL,2497.11,LFS - Labour Force Sample Survey
+KWT,2018,PRI,1698.549,OE - Official Estimates
+KWT,2018,PUB,405.823,OE - Official Estimates
+KWT,2018,TOTAL,2104.372,OE - Official Estimates
+KWT,2018,X,0,OE - Official Estimates
+KWT,2019,PRI,1714.063,OE - Official Estimates
+KWT,2019,PUB,419.257,OE - Official Estimates
+KWT,2019,TOTAL,2133.32,OE - Official Estimates
+KWT,2019,X,0,OE - Official Estimates
+KWT,2020,PRI,1567.114,OE - Official Estimates
+KWT,2020,PUB,426.055,OE - Official Estimates
+KWT,2020,TOTAL,1993.169,OE - Official Estimates
+KWT,2020,X,0,OE - Official Estimates
+KWT,2021,PRI,1434.824,OE - Official Estimates
+KWT,2021,PUB,447.636,OE - Official Estimates
+KWT,2021,TOTAL,1882.46,OE - Official Estimates
+KWT,2021,X,0,OE - Official Estimates
+KWT,2022,PRI,1572.384,OE - Official Estimates
+KWT,2022,PUB,464.606,OE - Official Estimates
+KWT,2022,TOTAL,2036.99,OE - Official Estimates
+KWT,2022,X,0,OE - Official Estimates
+LAO,2015,PRI,2983.59,PC - Population Census
+LAO,2015,PUB,306.15,PC - Population Census
+LAO,2015,TOTAL,3289.74,PC - Population Census
+LAO,2017,PRI,2435.97,LFS - Labour Force Survey
+LAO,2017,PUB,315.517,LFS - Labour Force Survey
+LAO,2017,TOTAL,2751.486,LFS - Labour Force Survey
+LAO,2022,PRI,3141.753,LFS - Labour Force Survey
+LAO,2022,PUB,367.508,LFS - Labour Force Survey
+LAO,2022,TOTAL,3509.261,LFS - Labour Force Survey
+LBN,2019,PRI,1370.374,LFS - Labour Force Survey
+LBN,2019,PUB,224.33,LFS - Labour Force Survey
+LBN,2019,TOTAL,1594.705,LFS - Labour Force Survey
+LBR,2016,PRI,1658.983,HIES - Household Income and Expenditure Survey
+LBR,2016,PUB,97.115,HIES - Household Income and Expenditure Survey
+LBR,2016,TOTAL,1756.099,HIES - Household Income and Expenditure Survey
+LBR,2017,PRI,617.792,LFS - Labour Force Survey
+LBR,2017,PUB,417.112,LFS - Labour Force Survey
+LBR,2017,TOTAL,1034.904,LFS - Labour Force Survey
+LCA,2017,PRI,68.31,LFS - Labour Force Survey
+LCA,2017,PUB,13.311,LFS - Labour Force Survey
+LCA,2017,TOTAL,81.62,LFS - Labour Force Survey
+LCA,2018,PRI,67.316,LFS - Labour Force Survey
+LCA,2018,PUB,14.171,LFS - Labour Force Survey
+LCA,2018,TOTAL,81.487,LFS - Labour Force Survey
+LCA,2019,PRI,69.284,LFS - Labour Force Survey
+LCA,2019,PUB,14.364,LFS - Labour Force Survey
+LCA,2019,TOTAL,83.648,LFS - Labour Force Survey
+LCA,2020,PRI,59.486,LFS - Labour Force Survey
+LCA,2020,PUB,14.93,LFS - Labour Force Survey
+LCA,2020,TOTAL,74.416,LFS - Labour Force Survey
+LCA,2021,PRI,65.009,LFS - Labour Force Survey
+LCA,2021,PUB,14.252,LFS - Labour Force Survey
+LCA,2021,TOTAL,79.261,LFS - Labour Force Survey
+LCA,2022,PRI,74.384,LFS - Labour Force Survey
+LCA,2022,PUB,15.938,LFS - Labour Force Survey
+LCA,2022,TOTAL,90.323,LFS - Labour Force Survey
+LCA,2023,PRI,77.112,LFS - Labour Force Survey
+LCA,2023,PUB,17.886,LFS - Labour Force Survey
+LCA,2023,TOTAL,94.998,LFS - Labour Force Survey
+LCA,2024,PRI,80.429,LFS - Labour Force Survey
+LCA,2024,PUB,17.023,LFS - Labour Force Survey
+LCA,2024,TOTAL,97.452,LFS - Labour Force Survey
+LCA,2025,PRI,81.973,LFS - Labour Force Survey
+LCA,2025,PUB,18.658,LFS - Labour Force Survey
+LCA,2025,TOTAL,100.63,LFS - Labour Force Survey
+LKA,2015,PRI,6648.062,LFS - Labour Force Survey
+LKA,2015,PUB,1182.914,LFS - Labour Force Survey
+LKA,2015,TOTAL,7830.976,LFS - Labour Force Survey
+LKA,2016,PRI,6790.025,LFS - Labour Force Survey
+LKA,2016,PUB,1157.658,LFS - Labour Force Survey
+LKA,2016,TOTAL,7947.683,LFS - Labour Force Survey
+LKA,2017,PRI,7029.471,LFS - Labour Force Survey
+LKA,2017,PUB,1178.708,LFS - Labour Force Survey
+LKA,2017,TOTAL,8208.179,LFS - Labour Force Survey
+LKA,2018,PRI,6856.692,LFS - Labour Force Survey
+LKA,2018,PUB,1158.474,LFS - Labour Force Survey
+LKA,2018,TOTAL,8015.166,LFS - Labour Force Survey
+LKA,2019,PRI,6964.144,LFS - Labour Force Survey
+LKA,2019,PUB,1216.549,LFS - Labour Force Survey
+LKA,2019,TOTAL,8180.693,LFS - Labour Force Survey
+LKA,2020,PRI,6815.377,LFS - Labour Force Survey
+LKA,2020,PUB,1183.716,LFS - Labour Force Survey
+LKA,2020,TOTAL,7999.093,LFS - Labour Force Survey
+LKA,2021,PRI,6878.343,LFS - Labour Force Survey
+LKA,2021,PUB,1235.164,LFS - Labour Force Survey
+LKA,2021,TOTAL,8113.507,LFS - Labour Force Survey
+LKA,2022,PRI,6915.943,LFS - Labour Force Survey
+LKA,2022,PUB,1231.788,LFS - Labour Force Survey
+LKA,2022,TOTAL,8147.731,LFS - Labour Force Survey
+LKA,2023,PRI,6841.861,LFS - Labour Force Survey
+LKA,2023,PUB,1168.055,LFS - Labour Force Survey
+LKA,2023,TOTAL,8009.916,LFS - Labour Force Survey
+LKA,2024,PRI,6801.176,LFS - Labour Force Survey
+LKA,2024,PUB,1148.575,LFS - Labour Force Survey
+LKA,2024,TOTAL,7949.751,LFS - Labour Force Survey
+LSO,2019,PRI,560.033,LFS - Integrated Labour Force Survey
+LSO,2019,PUB,85.408,LFS - Integrated Labour Force Survey
+LSO,2019,TOTAL,645.442,LFS - Integrated Labour Force Survey
+LSO,2024,PRI,731.399,LFS - Integrated Labour Force Survey
+LSO,2024,PUB,71.92,LFS - Integrated Labour Force Survey
+LSO,2024,TOTAL,803.319,LFS - Integrated Labour Force Survey
+LTU,2015,PRI,955.28,LFS - EU Labour Force Survey
+LTU,2015,PUB,379.652,LFS - EU Labour Force Survey
+LTU,2015,TOTAL,1334.933,LFS - EU Labour Force Survey
+LTU,2016,PRI,977.489,LFS - EU Labour Force Survey
+LTU,2016,PUB,383.876,LFS - EU Labour Force Survey
+LTU,2016,TOTAL,1361.364,LFS - EU Labour Force Survey
+LTU,2017,PRI,971.011,LFS - EU Labour Force Survey
+LTU,2017,PUB,383.784,LFS - EU Labour Force Survey
+LTU,2017,TOTAL,1354.795,LFS - EU Labour Force Survey
+LTU,2018,PRI,1001.207,LFS - EU Labour Force Survey
+LTU,2018,PUB,373.506,LFS - EU Labour Force Survey
+LTU,2018,TOTAL,1374.713,LFS - EU Labour Force Survey
+LTU,2019,PRI,1007.862,LFS - EU Labour Force Survey
+LTU,2019,PUB,370.557,LFS - EU Labour Force Survey
+LTU,2019,TOTAL,1378.419,LFS - EU Labour Force Survey
+LTU,2020,PRI,980.815,LFS - EU Labour Force Survey
+LTU,2020,PUB,377.329,LFS - EU Labour Force Survey
+LTU,2020,TOTAL,1358.144,LFS - EU Labour Force Survey
+LUX,2018,PRI,205.4,LFS - EU Labour Force Survey
+LUX,2018,PUB,27.3,LFS - EU Labour Force Survey
+LUX,2018,TOTAL,232.7,LFS - EU Labour Force Survey
+LVA,2015,PRI,640.4,LFS - EU Labour Force Survey
+LVA,2015,PUB,255.7,LFS - EU Labour Force Survey
+LVA,2015,TOTAL,896.1,LFS - EU Labour Force Survey
+LVA,2016,PRI,628.001,LFS - EU Labour Force Survey
+LVA,2016,PUB,264.903,LFS - EU Labour Force Survey
+LVA,2016,TOTAL,892.904,LFS - EU Labour Force Survey
+LVA,2017,PRI,630.1,LFS - EU Labour Force Survey
+LVA,2017,PUB,264.8,LFS - EU Labour Force Survey
+LVA,2017,TOTAL,894.8,LFS - EU Labour Force Survey
+LVA,2018,PRI,645.4,LFS - EU Labour Force Survey
+LVA,2018,PUB,264,LFS - EU Labour Force Survey
+LVA,2018,TOTAL,909.4,LFS - EU Labour Force Survey
+LVA,2019,PRI,641.2,LFS - EU Labour Force Survey
+LVA,2019,PUB,268.8,LFS - EU Labour Force Survey
+LVA,2019,TOTAL,910,LFS - EU Labour Force Survey
+LVA,2020,PRI,634.4,LFS - EU Labour Force Survey
+LVA,2020,PUB,258.6,LFS - EU Labour Force Survey
+LVA,2020,TOTAL,893,LFS - EU Labour Force Survey
+MAR,2021,PRI,9832.363,LFS - Enquête Nationale sur l'Emploi
+MAR,2021,PUB,936.99,LFS - Enquête Nationale sur l'Emploi
+MAR,2021,TOTAL,10772.437,LFS - Enquête Nationale sur l'Emploi
+MAR,2021,X,3.084,LFS - Enquête Nationale sur l'Emploi
+MAR,2022,PRI,9846.689,LFS - Enquête Nationale sur l'Emploi
+MAR,2022,PUB,898.717,LFS - Enquête Nationale sur l'Emploi
+MAR,2022,TOTAL,10748.622,LFS - Enquête Nationale sur l'Emploi
+MAR,2022,X,3.216,LFS - Enquête Nationale sur l'Emploi
+MCO,2018,PRI,51.609,ADM - Caisses Sociales de Monaco
+MCO,2018,PUB,4.702,ADM - Caisses Sociales de Monaco
+MCO,2018,TOTAL,61.193,ADM - Caisses Sociales de Monaco
+MCO,2018,X,4.882,ADM - Caisses Sociales de Monaco
+MCO,2019,PRI,53.094,ADM - Caisses Sociales de Monaco
+MCO,2019,PUB,4.776,ADM - Caisses Sociales de Monaco
+MCO,2019,TOTAL,62.996,ADM - Caisses Sociales de Monaco
+MCO,2019,X,5.126,ADM - Caisses Sociales de Monaco
+MCO,2020,PRI,50.472,ADM - Caisses Sociales de Monaco
+MCO,2020,PUB,4.911,ADM - Caisses Sociales de Monaco
+MCO,2020,TOTAL,60.68,ADM - Caisses Sociales de Monaco
+MCO,2020,X,5.297,ADM - Caisses Sociales de Monaco
+MCO,2021,PRI,53.149,ADM - Caisses Sociales de Monaco
+MCO,2021,PUB,5.008,ADM - Caisses Sociales de Monaco
+MCO,2021,TOTAL,63.701,ADM - Caisses Sociales de Monaco
+MCO,2021,X,5.544,ADM - Caisses Sociales de Monaco
+MCO,2022,PRI,55.472,ADM - Caisses Sociales de Monaco
+MCO,2022,PUB,5.047,ADM - Caisses Sociales de Monaco
+MCO,2022,TOTAL,66.286,ADM - Caisses Sociales de Monaco
+MCO,2022,X,5.767,ADM - Caisses Sociales de Monaco
+MDA,2015,PRI,1350.761,LFS - Labour Force Survey
+MDA,2015,PUB,258.571,LFS - Labour Force Survey
+MDA,2015,TOTAL,1609.332,LFS - Labour Force Survey
+MDA,2016,PRI,1354.796,LFS - Labour Force Survey
+MDA,2016,PUB,236.547,LFS - Labour Force Survey
+MDA,2016,TOTAL,1591.343,LFS - Labour Force Survey
+MDA,2017,PRI,1282.302,LFS - Labour Force Survey
+MDA,2017,PUB,241.817,LFS - Labour Force Survey
+MDA,2017,TOTAL,1524.12,LFS - Labour Force Survey
+MDA,2018,PRI,1244.516,LFS - Labour Force Survey
+MDA,2018,PUB,225.735,LFS - Labour Force Survey
+MDA,2018,TOTAL,1470.251,LFS - Labour Force Survey
+MDA,2019,PRI,1229.585,LFS - Labour Force Survey
+MDA,2019,PUB,255.862,LFS - Labour Force Survey
+MDA,2019,TOTAL,1485.447,LFS - Labour Force Survey
+MDA,2020,PRI,1233.126,LFS - Labour Force Survey
+MDA,2020,PUB,247.565,LFS - Labour Force Survey
+MDA,2020,TOTAL,1480.691,LFS - Labour Force Survey
+MDA,2021,PRI,1283.017,LFS - Labour Force Survey
+MDA,2021,PUB,242.401,LFS - Labour Force Survey
+MDA,2021,TOTAL,1525.418,LFS - Labour Force Survey
+MDA,2022,PRI,1282.702,LFS - Labour Force Survey
+MDA,2022,PUB,248.268,LFS - Labour Force Survey
+MDA,2022,TOTAL,1530.97,LFS - Labour Force Survey
+MDA,2023,PRI,1180.854,LFS - Labour Force Survey
+MDA,2023,PUB,254.064,LFS - Labour Force Survey
+MDA,2023,TOTAL,1434.918,LFS - Labour Force Survey
+MDA,2024,PRI,1157.767,LFS - Labour Force Survey
+MDA,2024,PUB,264.355,LFS - Labour Force Survey
+MDA,2024,TOTAL,1422.122,LFS - Labour Force Survey
+MDA,2025,PRI,1172.008,LFS - Labour Force Survey
+MDA,2025,PUB,237.933,LFS - Labour Force Survey
+MDA,2025,TOTAL,1409.942,LFS - Labour Force Survey
+MDG,2015,PRI,10601.168,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+MDG,2015,PUB,450.629,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+MDG,2015,TOTAL,11051.797,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+MDG,2022,PRI,11493.754,HS - Enquête périodique auprès des Ménages
+MDG,2022,PUB,386.32,HS - Enquête périodique auprès des Ménages
+MDG,2022,TOTAL,11880.074,HS - Enquête périodique auprès des Ménages
+MDV,2016,PRI,89.503,HIES - Household Income and Expenditure Survey
+MDV,2016,PUB,55.744,HIES - Household Income and Expenditure Survey
+MDV,2016,TOTAL,145.247,HIES - Household Income and Expenditure Survey
+MDV,2019,PRI,125.132,HIES - Household Income and Expenditure Survey
+MDV,2019,PUB,67.673,HIES - Household Income and Expenditure Survey
+MDV,2019,TOTAL,192.805,HIES - Household Income and Expenditure Survey
+MEX,2015,PRI,43685.036,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2015,PUB,6143.469,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2015,TOTAL,49828.505,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2016,PRI,44781.341,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2016,PUB,6082.294,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2016,TOTAL,50863.635,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2017,PRI,45532.117,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2017,PUB,6148.162,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2017,TOTAL,51680.279,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2018,PRI,46897.752,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2018,PUB,6264.039,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2018,TOTAL,53161.791,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2019,PRI,48333.108,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2019,PUB,6281.441,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2019,TOTAL,54614.549,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2020,PRI,45263.609,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2020,PUB,6156.572,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2020,TOTAL,51420.181,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2021,PRI,48491.387,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2021,PUB,5681.424,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2021,TOTAL,54172.811,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2022,PRI,52418.355,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2022,PUB,5895.79,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2022,TOTAL,58314.144,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2023,PRI,53875.706,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2023,PUB,5934.346,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2023,TOTAL,59810.052,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2024,PRI,54305.516,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2024,PUB,6030.931,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2024,TOTAL,60336.446,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2025,PRI,54651.022,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2025,PUB,5827.019,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2025,TOTAL,60478.041,LFS - Encuesta Nacional de Ocupación y Empleo
+MHL,2019,PRI,8.244,HIES - Household Income and Expenditure Survey
+MHL,2019,PUB,8.145,HIES - Household Income and Expenditure Survey
+MHL,2019,TOTAL,16.389,HIES - Household Income and Expenditure Survey
+MHL,2021,PRI,3.25,PC - Population Census
+MHL,2021,PUB,5.977,PC - Population Census
+MHL,2021,TOTAL,12.485,PC - Population Census
+MHL,2021,X,3.258,PC - Population Census
+MKD,2015,PRI,545.901,LFS - Labour Force Survey
+MKD,2015,PUB,157.791,LFS - Labour Force Survey
+MKD,2015,TOTAL,703.692,LFS - Labour Force Survey
+MKD,2016,PRI,553.202,LFS - Labour Force Survey
+MKD,2016,PUB,167.657,LFS - Labour Force Survey
+MKD,2016,TOTAL,720.859,LFS - Labour Force Survey
+MKD,2017,PRI,564.714,LFS - Labour Force Survey
+MKD,2017,PUB,169.884,LFS - Labour Force Survey
+MKD,2017,TOTAL,734.598,LFS - Labour Force Survey
+MKD,2018,PRI,576.304,LFS - Labour Force Survey
+MKD,2018,PUB,172.69,LFS - Labour Force Survey
+MKD,2018,TOTAL,748.994,LFS - Labour Force Survey
+MKD,2019,PRI,609.546,LFS - Labour Force Survey
+MKD,2019,PUB,182.993,LFS - Labour Force Survey
+MKD,2019,TOTAL,792.539,LFS - Labour Force Survey
+MKD,2020,PRI,598.467,LFS - Labour Force Survey
+MKD,2020,PUB,190.963,LFS - Labour Force Survey
+MKD,2020,TOTAL,789.429,LFS - Labour Force Survey
+MKD,2021,PRI,589.482,LFS - Labour Force Survey
+MKD,2021,PUB,200.844,LFS - Labour Force Survey
+MKD,2021,TOTAL,790.327,LFS - Labour Force Survey
+MKD,2022,PRI,510.438,LFS - Labour Force Survey
+MKD,2022,PUB,176.609,LFS - Labour Force Survey
+MKD,2022,TOTAL,687.047,LFS - Labour Force Survey
+MKD,2023,PRI,509.934,LFS - Labour Force Survey
+MKD,2023,PUB,174.167,LFS - Labour Force Survey
+MKD,2023,TOTAL,684.102,LFS - Labour Force Survey
+MKD,2024,PRI,524.984,LFS - Labour Force Survey
+MKD,2024,PUB,169.031,LFS - Labour Force Survey
+MKD,2024,TOTAL,694.015,LFS - Labour Force Survey
+MKD,2025,PRI,536.136,LFS - Labour Force Survey
+MKD,2025,PUB,163.809,LFS - Labour Force Survey
+MKD,2025,TOTAL,699.945,LFS - Labour Force Survey
+MLI,2015,PRI,5646.009,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2015,PUB,177.87,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2015,TOTAL,5823.879,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2016,PRI,5284.146,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2016,PUB,173.633,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2016,TOTAL,5457.779,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2017,PRI,5833.978,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2017,PUB,177.663,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2017,TOTAL,6011.641,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2018,PRI,5759.634,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2018,PUB,189.303,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2018,TOTAL,5948.937,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2019,PRI,5562.913,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+MLI,2019,PUB,249.975,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+MLI,2019,TOTAL,5812.888,HIES - Enquête Harmonisée sur les Conditions de Vie des Ménages
+MLI,2020,PRI,6087.456,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2020,PUB,148.767,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2020,TOTAL,6236.222,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2022,PRI,6279.595,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2022,PUB,222.189,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2022,TOTAL,6501.785,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2023,PRI,6496.267,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2023,PUB,184.722,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2023,TOTAL,6680.989,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2024,PRI,6746.482,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2024,PUB,225.891,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2024,TOTAL,6972.374,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLT,2016,TOTAL,191.418,ADM - Other Administrative records and related sources
+MLT,2018,TOTAL,238.513,ADM - Other Administrative records and related sources
+MLT,2019,TOTAL,254.756,LFS - Labour Force Survey
+MLT,2020,TOTAL,261.427,LFS - Labour Force Survey
+MMR,2015,PRI,20416.184,LFS - Labour Force Survey
+MMR,2015,PUB,1375.151,LFS - Labour Force Survey
+MMR,2015,TOTAL,21791.335,LFS - Labour Force Survey
+MMR,2017,PRI,20835.948,LFS - Labour Force Survey
+MMR,2017,PUB,1430.455,LFS - Labour Force Survey
+MMR,2017,TOTAL,22266.404,LFS - Labour Force Survey
+MMR,2018,PRI,21709.136,LFS - Labour Force Survey
+MMR,2018,PUB,1174.157,LFS - Labour Force Survey
+MMR,2018,TOTAL,22883.293,LFS - Labour Force Survey
+MMR,2019,PRI,21339.051,LFS - Labour Force Survey
+MMR,2019,PUB,1097.254,LFS - Labour Force Survey
+MMR,2019,TOTAL,22436.305,LFS - Labour Force Survey
+MMR,2020,PRI,21034.818,LFS - Labour Force Survey
+MMR,2020,PUB,1239.913,LFS - Labour Force Survey
+MMR,2020,TOTAL,22274.731,LFS - Labour Force Survey
+MNE,2015,PRI,149.311,LFS - Labour Force Survey
+MNE,2015,PUB,72.391,LFS - Labour Force Survey
+MNE,2015,TOTAL,221.701,LFS - Labour Force Survey
+MNE,2016,PRI,153.29,LFS - Labour Force Survey
+MNE,2016,PUB,70.916,LFS - Labour Force Survey
+MNE,2016,TOTAL,224.206,LFS - Labour Force Survey
+MNE,2017,PRI,154.086,LFS - Labour Force Survey
+MNE,2017,PUB,75.202,LFS - Labour Force Survey
+MNE,2017,TOTAL,229.288,LFS - Labour Force Survey
+MNE,2018,PRI,162.316,LFS - Labour Force Survey
+MNE,2018,PUB,75.112,LFS - Labour Force Survey
+MNE,2018,TOTAL,237.427,LFS - Labour Force Survey
+MNE,2019,PRI,172.291,LFS - Labour Force Survey
+MNE,2019,PUB,71.501,LFS - Labour Force Survey
+MNE,2019,TOTAL,243.792,LFS - Labour Force Survey
+MNE,2020,PRI,151.041,LFS - Labour Force Survey
+MNE,2020,PUB,68.308,LFS - Labour Force Survey
+MNE,2020,TOTAL,219.349,LFS - Labour Force Survey
+MNE,2022,PRI,47.411,LFS - Labour Force Survey
+MNE,2022,PUB,203.833,LFS - Labour Force Survey
+MNE,2022,TOTAL,251.243,LFS - Labour Force Survey
+MNE,2023,PRI,50.133,LFS - Labour Force Survey
+MNE,2023,PUB,228.153,LFS - Labour Force Survey
+MNE,2023,TOTAL,278.286,LFS - Labour Force Survey
+MNE,2024,PRI,50.138,LFS - Labour Force Survey
+MNE,2024,PUB,232.443,LFS - Labour Force Survey
+MNE,2024,TOTAL,282.58,LFS - Labour Force Survey
+MNG,2015,PRI,904.016,LFS - Labour Force Survey
+MNG,2015,PUB,247.208,LFS - Labour Force Survey
+MNG,2015,TOTAL,1151.223,LFS - Labour Force Survey
+MNG,2016,PRI,891.253,LFS - Labour Force Survey
+MNG,2016,PUB,256.591,LFS - Labour Force Survey
+MNG,2016,TOTAL,1147.843,LFS - Labour Force Survey
+MNG,2017,PRI,970.459,LFS - Labour Force Survey
+MNG,2017,PUB,267.875,LFS - Labour Force Survey
+MNG,2017,TOTAL,1238.333,LFS - Labour Force Survey
+MNG,2018,PRI,988.143,LFS - Labour Force Survey
+MNG,2018,PUB,264.88,LFS - Labour Force Survey
+MNG,2018,TOTAL,1253.023,LFS - Labour Force Survey
+MNG,2019,PRI,999.283,LFS - Labour Force Survey
+MNG,2019,PUB,291.314,LFS - Labour Force Survey
+MNG,2019,TOTAL,1290.597,LFS - Labour Force Survey
+MNG,2020,PRI,995.845,LFS - Labour Force Survey
+MNG,2020,PUB,301.672,LFS - Labour Force Survey
+MNG,2020,TOTAL,1297.517,LFS - Labour Force Survey
+MNG,2021,PRI,958.354,LFS - Labour Force Survey
+MNG,2021,PUB,293.466,LFS - Labour Force Survey
+MNG,2021,TOTAL,1251.82,LFS - Labour Force Survey
+MNG,2022,PRI,1038.974,LFS - Labour Force Survey
+MNG,2022,PUB,291.837,LFS - Labour Force Survey
+MNG,2022,TOTAL,1330.811,LFS - Labour Force Survey
+MNG,2023,PRI,1025.092,LFS - Labour Force Survey
+MNG,2023,PUB,292.128,LFS - Labour Force Survey
+MNG,2023,TOTAL,1317.22,LFS - Labour Force Survey
+MNG,2024,PRI,1051.233,LFS - Labour Force Survey
+MNG,2024,PUB,304.166,LFS - Labour Force Survey
+MNG,2024,TOTAL,1370.272,LFS - Labour Force Survey
+MNG,2024,X,14.873,LFS - Labour Force Survey
+MNG,2025,PRI,1076.502,LFS - Labour Force Survey
+MNG,2025,PUB,282.352,LFS - Labour Force Survey
+MNG,2025,TOTAL,1367.92,LFS - Labour Force Survey
+MNG,2025,X,9.066,LFS - Labour Force Survey
+MOZ,2015,PRI,9398.537,HIES - Household Budget Survey
+MOZ,2015,PUB,432.079,HIES - Household Budget Survey
+MOZ,2015,TOTAL,9830.616,HIES - Household Budget Survey
+MOZ,2022,PRI,11637.74,HIES - Household Budget Survey
+MOZ,2022,PUB,556.585,HIES - Household Budget Survey
+MOZ,2022,TOTAL,12194.325,HIES - Household Budget Survey
+MRT,2017,PRI,671.263,LFS - Enquête Nationale de Référence sur l'Emploi et le Secteur Informel
+MRT,2017,PUB,93.375,LFS - Enquête Nationale de Référence sur l'Emploi et le Secteur Informel
+MRT,2017,TOTAL,764.637,LFS - Enquête Nationale de Référence sur l'Emploi et le Secteur Informel
+MRT,2019,PRI,854.406,HIES - Living Standards Measurement Survey
+MRT,2019,PUB,93.947,HIES - Living Standards Measurement Survey
+MRT,2019,TOTAL,948.352,HIES - Living Standards Measurement Survey
+MUS,2015,PRI,444.973,LFS - Continuous Multi-Purpose Household Survey
+MUS,2015,PUB,93.438,LFS - Continuous Multi-Purpose Household Survey
+MUS,2015,TOTAL,538.411,LFS - Continuous Multi-Purpose Household Survey
+MUS,2016,PRI,451.241,LFS - Continuous Multi-Purpose Household Survey
+MUS,2016,PUB,87.379,LFS - Continuous Multi-Purpose Household Survey
+MUS,2016,TOTAL,538.62,LFS - Continuous Multi-Purpose Household Survey
+MUS,2017,PRI,450.722,LFS - Continuous Multi-Purpose Household Survey
+MUS,2017,PUB,94.412,LFS - Continuous Multi-Purpose Household Survey
+MUS,2017,TOTAL,545.134,LFS - Continuous Multi-Purpose Household Survey
+MUS,2018,PRI,445.886,LFS - Continuous Multi-Purpose Household Survey
+MUS,2018,PUB,98.101,LFS - Continuous Multi-Purpose Household Survey
+MUS,2018,TOTAL,543.986,LFS - Continuous Multi-Purpose Household Survey
+MUS,2019,PRI,451.186,LFS - Continuous Multi-Purpose Household Survey
+MUS,2019,PUB,100.193,LFS - Continuous Multi-Purpose Household Survey
+MUS,2019,TOTAL,551.379,LFS - Continuous Multi-Purpose Household Survey
+MUS,2021,PRI,374.578,LFS - Continuous Multi-Purpose Household Survey
+MUS,2021,PUB,109.028,LFS - Continuous Multi-Purpose Household Survey
+MUS,2021,TOTAL,483.607,LFS - Continuous Multi-Purpose Household Survey
+MUS,2022,PRI,415.186,LFS - Continuous Multi-Purpose Household Survey
+MUS,2022,PUB,104.425,LFS - Continuous Multi-Purpose Household Survey
+MUS,2022,TOTAL,519.611,LFS - Continuous Multi-Purpose Household Survey
+MUS,2023,PRI,442.717,LFS - Continuous Multi-Purpose Household Survey
+MUS,2023,PUB,100.502,LFS - Continuous Multi-Purpose Household Survey
+MUS,2023,TOTAL,555.3,LFS - Continuous Multi-Purpose Household Survey
+MUS,2023,X,12.081,LFS - Continuous Multi-Purpose Household Survey
+MUS,2024,PRI,436.32,LFS - Continuous Multi-Purpose Household Survey
+MUS,2024,PUB,106.003,LFS - Continuous Multi-Purpose Household Survey
+MUS,2024,TOTAL,547.105,LFS - Continuous Multi-Purpose Household Survey
+MUS,2024,X,4.782,LFS - Continuous Multi-Purpose Household Survey
+MWI,2024,PRI,4763.467,LFS - Labour Force Survey
+MWI,2024,PUB,235.981,LFS - Labour Force Survey
+MWI,2024,TOTAL,4999.447,LFS - Labour Force Survey
+MYS,2015,PRI,8700.1,LFS - Labour Force Survey
+MYS,2015,PUB,1695.3,LFS - Labour Force Survey
+MYS,2015,TOTAL,10395.5,LFS - Labour Force Survey
+MYS,2016,PRI,8818.9,LFS - Labour Force Survey
+MYS,2016,PUB,1715.3,LFS - Labour Force Survey
+MYS,2016,TOTAL,10534.2,LFS - Labour Force Survey
+MYS,2017,PRI,9059.2,LFS - Labour Force Survey
+MYS,2017,PUB,1650.9,LFS - Labour Force Survey
+MYS,2017,TOTAL,10710.1,LFS - Labour Force Survey
+MYS,2018,PRI,9054,LFS - Labour Force Survey
+MYS,2018,PUB,1646.4,LFS - Labour Force Survey
+MYS,2018,TOTAL,10700.4,LFS - Labour Force Survey
+MYS,2019,PRI,9526.9,LFS - Labour Force Survey
+MYS,2019,PUB,1691.3,LFS - Labour Force Survey
+MYS,2019,TOTAL,11218.3,LFS - Labour Force Survey
+MYS,2020,PRI,9876.8,LFS - Labour Force Survey
+MYS,2020,PUB,1677.4,LFS - Labour Force Survey
+MYS,2020,TOTAL,11554.2,LFS - Labour Force Survey
+MYS,2021,PRI,10219.8,LFS - Labour Force Survey
+MYS,2021,PUB,1601.5,LFS - Labour Force Survey
+MYS,2021,TOTAL,11821.4,LFS - Labour Force Survey
+MYS,2022,PRI,10328.3,LFS - Labour Force Survey
+MYS,2022,PUB,1718.5,LFS - Labour Force Survey
+MYS,2022,TOTAL,12046.8,LFS - Labour Force Survey
+NAM,2016,PRI,549.533,LFS - Labour Force Survey
+NAM,2016,PUB,112.257,LFS - Labour Force Survey
+NAM,2016,TOTAL,661.79,LFS - Labour Force Survey
+NAM,2018,PRI,604.951,LFS - Labour Force Survey
+NAM,2018,PUB,117.762,LFS - Labour Force Survey
+NAM,2018,TOTAL,722.712,LFS - Labour Force Survey
+NCL,2017,PRI,80.891,LFS - Labour Force Survey
+NCL,2017,PUB,29.832,LFS - Labour Force Survey
+NCL,2017,TOTAL,110.723,LFS - Labour Force Survey
+NCL,2018,PRI,92.566,LFS - Labour Force Survey
+NCL,2018,PUB,14.404,LFS - Labour Force Survey
+NCL,2018,TOTAL,106.97,LFS - Labour Force Survey
+NCL,2019,PRI,96.332,LFS - Labour Force Survey
+NCL,2019,PUB,12.077,LFS - Labour Force Survey
+NCL,2019,TOTAL,108.409,LFS - Labour Force Survey
+NCL,2020,PRI,90.214,LFS - Labour Force Survey
+NCL,2020,PUB,15.508,LFS - Labour Force Survey
+NCL,2020,TOTAL,105.721,LFS - Labour Force Survey
+NCL,2022,PRI,86.536,LFS - Labour Force Survey
+NCL,2022,PUB,22.796,LFS - Labour Force Survey
+NCL,2022,TOTAL,109.332,LFS - Labour Force Survey
+NCL,2023,PRI,87.267,LFS - Labour Force Survey
+NCL,2023,PUB,25.696,LFS - Labour Force Survey
+NCL,2023,TOTAL,112.962,LFS - Labour Force Survey
+NER,2017,PRI,1936.369,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+NER,2017,PUB,189.316,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+NER,2017,TOTAL,2125.685,LFS - Enquête Nationale sur l'Emploi et le Secteur Informel
+NER,2019,PRI,7297.727,HIES - Enquête Nationale sur les Conditions de Vie de Ménages
+NER,2019,PUB,199.141,HIES - Enquête Nationale sur les Conditions de Vie de Ménages
+NER,2019,TOTAL,7496.868,HIES - Enquête Nationale sur les Conditions de Vie de Ménages
+NER,2022,PRI,9136.898,HIES - Enquête Nationale sur les Conditions de Vie de Ménages
+NER,2022,PUB,166.122,HIES - Enquête Nationale sur les Conditions de Vie de Ménages
+NER,2022,TOTAL,9303.02,HIES - Enquête Nationale sur les Conditions de Vie de Ménages
+NGA,2016,PRI,4438.853,HS - General Household Survey
+NGA,2016,PUB,4584.758,HS - General Household Survey
+NGA,2016,TOTAL,55617.974,HS - General Household Survey
+NGA,2016,X,46594.364,HS - General Household Survey
+NGA,2019,PRI,74776.786,HIES - Living Standards Survey
+NGA,2019,PUB,2994.056,HIES - Living Standards Survey
+NGA,2019,TOTAL,81835.563,HIES - Living Standards Survey
+NGA,2019,X,4064.721,HIES - Living Standards Survey
+NGA,2022,PRI,70336.195,"LFS - Unemployment, Under-employment Watch"
+NGA,2022,PUB,2646.071,"LFS - Unemployment, Under-employment Watch"
+NGA,2022,TOTAL,72982.266,"LFS - Unemployment, Under-employment Watch"
+NGA,2023,PRI,68564.231,"LFS - Unemployment, Under-employment Watch"
+NGA,2023,PUB,2552.38,"LFS - Unemployment, Under-employment Watch"
+NGA,2023,TOTAL,71116.611,"LFS - Unemployment, Under-employment Watch"
+NGA,2024,PRI,89727.627,"LFS - Unemployment, Under-employment Watch"
+NGA,2024,PUB,3373.037,"LFS - Unemployment, Under-employment Watch"
+NGA,2024,TOTAL,93100.664,"LFS - Unemployment, Under-employment Watch"
+NLD,2016,PRI,2337,LFS - EU Labour Force Survey
+NLD,2016,PUB,5048,LFS - EU Labour Force Survey
+NLD,2016,TOTAL,8427,LFS - EU Labour Force Survey
+NLD,2017,PRI,6908,LFS - EU Labour Force Survey
+NLD,2017,PUB,496,LFS - EU Labour Force Survey
+NLD,2017,TOTAL,7404,LFS - EU Labour Force Survey
+NLD,2018,PRI,7087,LFS - EU Labour Force Survey
+NLD,2018,PUB,501,LFS - EU Labour Force Survey
+NLD,2018,TOTAL,8798,LFS - EU Labour Force Survey
+NLD,2019,PRI,7192,LFS - EU Labour Force Survey
+NLD,2019,PUB,1791,LFS - EU Labour Force Survey
+NLD,2019,TOTAL,8982,LFS - EU Labour Force Survey
+NLD,2020,PRI,8036,LFS - EU Labour Force Survey
+NLD,2020,PUB,1246,LFS - EU Labour Force Survey
+NLD,2020,TOTAL,9282,LFS - EU Labour Force Survey
+NOR,2015,PRI,1792,LFS - EU Labour Force Survey
+NOR,2015,PUB,833,LFS - EU Labour Force Survey
+NOR,2015,TOTAL,2639,LFS - EU Labour Force Survey
+NOR,2016,PRI,1786,LFS - EU Labour Force Survey
+NOR,2016,PUB,840,LFS - EU Labour Force Survey
+NOR,2016,TOTAL,2638,LFS - EU Labour Force Survey
+NOR,2017,PRI,1784,LFS - EU Labour Force Survey
+NOR,2017,PUB,853,LFS - EU Labour Force Survey
+NOR,2017,TOTAL,2652,LFS - EU Labour Force Survey
+NOR,2018,PRI,1801,LFS - EU Labour Force Survey
+NOR,2018,PUB,873,LFS - EU Labour Force Survey
+NOR,2018,TOTAL,2694,LFS - EU Labour Force Survey
+NOR,2019,PRI,1822,LFS - EU Labour Force Survey
+NOR,2019,PUB,882,LFS - EU Labour Force Survey
+NOR,2019,TOTAL,2724,LFS - EU Labour Force Survey
+NOR,2020,PRI,1816,LFS - EU Labour Force Survey
+NOR,2020,PUB,873,LFS - EU Labour Force Survey
+NOR,2020,TOTAL,2710,LFS - EU Labour Force Survey
+NPL,2017,PRI,6696.221,LFS - Labour Force Survey
+NPL,2017,PUB,701.236,LFS - Labour Force Survey
+NPL,2017,TOTAL,7397.457,LFS - Labour Force Survey
+NRU,2021,PRI,1.494,PC - Population Census
+NRU,2021,PUB,2.957,PC - Population Census
+NRU,2021,TOTAL,4.451,PC - Population Census
+NRU,2024,PRI,0.387,HIES - Household Income and Expenditure Survey
+NRU,2024,PUB,2.149,HIES - Household Income and Expenditure Survey
+NRU,2024,TOTAL,2.544,HIES - Household Income and Expenditure Survey
+OMN,2016,PRI,1742.987,OE - Official Estimates
+OMN,2016,PUB,411.948,OE - Official Estimates
+OMN,2016,TOTAL,2154.935,OE - Official Estimates
+OMN,2018,PRI,1981.845,OE - Official Estimates
+OMN,2018,PUB,231.593,OE - Official Estimates
+OMN,2018,TOTAL,2213.438,OE - Official Estimates
+OMN,2020,PRI,393.042,OE - Official Estimates
+OMN,2020,PUB,1457.029,OE - Official Estimates
+OMN,2020,TOTAL,1850.071,OE - Official Estimates
+OMN,2022,PRI,1742.955,ADM - Records of the Directorate General of Civil Status
+OMN,2022,PUB,407.494,ADM - Records of the Directorate General of Civil Status
+OMN,2022,TOTAL,2509.123,ADM - Records of the Directorate General of Civil Status
+OMN,2022,X,358.674,ADM - Records of the Directorate General of Civil Status
+PAK,2015,PRI,51153.198,LFS - Labour Force Survey
+PAK,2015,PUB,4124.396,LFS - Labour Force Survey
+PAK,2015,TOTAL,55277.594,LFS - Labour Force Survey
+PAK,2016,PRI,29959.111,LFS - Labour Force Survey
+PAK,2016,PUB,4182.442,LFS - Labour Force Survey
+PAK,2016,TOTAL,34141.553,LFS - Labour Force Survey
+PAK,2018,PRI,55320.478,LFS - Labour Force Survey
+PAK,2018,PUB,4473.315,LFS - Labour Force Survey
+PAK,2018,TOTAL,59793.793,LFS - Labour Force Survey
+PAK,2019,PRI,54623.18,LFS - Labour Force Survey
+PAK,2019,PUB,4411.125,LFS - Labour Force Survey
+PAK,2019,TOTAL,59034.305,LFS - Labour Force Survey
+PAK,2021,PRI,57152.144,LFS - Labour Force Survey
+PAK,2021,PUB,4500.32,LFS - Labour Force Survey
+PAK,2021,TOTAL,61652.464,LFS - Labour Force Survey
+PAK,2025,PRI,70057.736,LFS - Labour Force Survey
+PAK,2025,PUB,5340.468,LFS - Labour Force Survey
+PAK,2025,TOTAL,77641.546,LFS - Labour Force Survey
+PAK,2025,X,2243.342,LFS - Labour Force Survey
+PAN,2015,PRI,1460.388,LFS - Encuesta de Mercado Laboral
+PAN,2015,PUB,273.141,LFS - Encuesta de Mercado Laboral
+PAN,2015,TOTAL,1733.529,LFS - Encuesta de Mercado Laboral
+PAN,2016,PRI,1491.768,LFS - Encuesta de Mercado Laboral
+PAN,2016,PUB,279.016,LFS - Encuesta de Mercado Laboral
+PAN,2016,TOTAL,1770.784,LFS - Encuesta de Mercado Laboral
+PAN,2017,PRI,1492.125,LFS - Encuesta de Mercado Laboral
+PAN,2017,PUB,293.625,LFS - Encuesta de Mercado Laboral
+PAN,2017,TOTAL,1785.75,LFS - Encuesta de Mercado Laboral
+PAN,2018,PRI,1573.835,LFS - Encuesta de Mercado Laboral
+PAN,2018,PUB,293.648,LFS - Encuesta de Mercado Laboral
+PAN,2018,TOTAL,1867.483,LFS - Encuesta de Mercado Laboral
+PAN,2019,PRI,1626.479,LFS - Encuesta de Mercado Laboral
+PAN,2019,PUB,293.398,LFS - Encuesta de Mercado Laboral
+PAN,2019,TOTAL,1919.877,LFS - Encuesta de Mercado Laboral
+PAN,2020,PRI,1314.361,LFS - Encuesta de Mercado Laboral
+PAN,2020,PUB,317.33,LFS - Encuesta de Mercado Laboral
+PAN,2020,TOTAL,1631.691,LFS - Encuesta de Mercado Laboral
+PAN,2021,PRI,1442.725,LFS - Encuesta de Mercado Laboral
+PAN,2021,PUB,300.547,LFS - Encuesta de Mercado Laboral
+PAN,2021,TOTAL,1743.272,LFS - Encuesta de Mercado Laboral
+PAN,2022,PRI,1649.412,HS - Encuesta de Hogares de Propósitos Múltiples
+PAN,2022,PUB,317.146,HS - Encuesta de Hogares de Propósitos Múltiples
+PAN,2022,TOTAL,1966.558,HS - Encuesta de Hogares de Propósitos Múltiples
+PAN,2023,PRI,1607.617,LFS - Encuesta de Mercado Laboral
+PAN,2023,PUB,329.75,LFS - Encuesta de Mercado Laboral
+PAN,2023,TOTAL,1937.367,LFS - Encuesta de Mercado Laboral
+PAN,2024,PRI,1610.739,LFS - Encuesta de Mercado Laboral
+PAN,2024,PUB,312.807,LFS - Encuesta de Mercado Laboral
+PAN,2024,TOTAL,1923.546,LFS - Encuesta de Mercado Laboral
+PAN,2025,PRI,1645.104,LFS - Encuesta de Mercado Laboral
+PAN,2025,PUB,323.462,LFS - Encuesta de Mercado Laboral
+PAN,2025,TOTAL,1968.566,LFS - Encuesta de Mercado Laboral
+PER,2015,PRI,15456.888,HS - Encuesta Nacional de Hogares
+PER,2015,PUB,1470.968,HS - Encuesta Nacional de Hogares
+PER,2015,TOTAL,16927.856,HS - Encuesta Nacional de Hogares
+PER,2016,PRI,15802.169,HS - Encuesta Nacional de Hogares
+PER,2016,PUB,1502.165,HS - Encuesta Nacional de Hogares
+PER,2016,TOTAL,17304.333,HS - Encuesta Nacional de Hogares
+PER,2017,PRI,16006.761,HS - Encuesta Nacional de Hogares
+PER,2017,PUB,1473.056,HS - Encuesta Nacional de Hogares
+PER,2017,TOTAL,17479.817,HS - Encuesta Nacional de Hogares
+PER,2018,PRI,16316.967,HS - Encuesta Nacional de Hogares
+PER,2018,PUB,1475.132,HS - Encuesta Nacional de Hogares
+PER,2018,TOTAL,17792.099,HS - Encuesta Nacional de Hogares
+PER,2019,PRI,16540.723,HS - Encuesta Nacional de Hogares
+PER,2019,PUB,1508.351,HS - Encuesta Nacional de Hogares
+PER,2019,TOTAL,18049.074,HS - Encuesta Nacional de Hogares
+PER,2020,PRI,14394.374,HS - Encuesta Nacional de Hogares
+PER,2020,PUB,1342.496,HS - Encuesta Nacional de Hogares
+PER,2020,TOTAL,15736.87,HS - Encuesta Nacional de Hogares
+PER,2021,PRI,16312.106,HS - Encuesta Nacional de Hogares
+PER,2021,PUB,1446.617,HS - Encuesta Nacional de Hogares
+PER,2021,TOTAL,17758.723,HS - Encuesta Nacional de Hogares
+PER,2022,PRI,6486.968,"LFS - Permanent Employment Survey, National"
+PER,2022,PUB,1509.295,"LFS - Permanent Employment Survey, National"
+PER,2022,TOTAL,17716.658,"LFS - Permanent Employment Survey, National"
+PER,2022,X,9720.395,"LFS - Permanent Employment Survey, National"
+PER,2023,PRI,6408.157,"LFS - Permanent Employment Survey, National"
+PER,2023,PUB,1565.816,"LFS - Permanent Employment Survey, National"
+PER,2023,TOTAL,17604.655,"LFS - Permanent Employment Survey, National"
+PER,2023,X,9630.683,"LFS - Permanent Employment Survey, National"
+PER,2024,PRI,6599.56,"LFS - Permanent Employment Survey, National"
+PER,2024,PUB,1567.006,"LFS - Permanent Employment Survey, National"
+PER,2024,TOTAL,17695.545,"LFS - Permanent Employment Survey, National"
+PER,2024,X,9528.979,"LFS - Permanent Employment Survey, National"
+PER,2025,PRI,6836.555,"LFS - Permanent Employment Survey, National"
+PER,2025,PUB,1624.901,"LFS - Permanent Employment Survey, National"
+PER,2025,TOTAL,17836.155,"LFS - Permanent Employment Survey, National"
+PER,2025,X,9374.7,"LFS - Permanent Employment Survey, National"
+PHL,2015,PRI,35903.81,LFS - Labour Force Survey
+PHL,2015,PUB,3239.245,LFS - Labour Force Survey
+PHL,2015,TOTAL,39143.055,LFS - Labour Force Survey
+PHL,2016,PRI,37680.701,LFS - Labour Force Survey
+PHL,2016,PUB,3317.267,LFS - Labour Force Survey
+PHL,2016,TOTAL,40997.968,LFS - Labour Force Survey
+PHL,2017,PRI,36945.63,LFS - Labour Force Survey
+PHL,2017,PUB,3388.362,LFS - Labour Force Survey
+PHL,2017,TOTAL,40333.992,LFS - Labour Force Survey
+PHL,2018,PRI,37582.375,LFS - Labour Force Survey
+PHL,2018,PUB,3574.16,LFS - Labour Force Survey
+PHL,2018,TOTAL,41156.535,LFS - Labour Force Survey
+PHL,2019,PRI,38559.34,LFS - Labour Force Survey
+PHL,2019,PUB,3869.027,LFS - Labour Force Survey
+PHL,2019,TOTAL,42428.367,LFS - Labour Force Survey
+PHL,2020,PRI,35640.717,LFS - Labour Force Survey
+PHL,2020,PUB,3737.124,LFS - Labour Force Survey
+PHL,2020,TOTAL,39377.842,LFS - Labour Force Survey
+PHL,2021,PRI,37188.404,LFS - Labour Force Survey
+PHL,2021,PUB,3871.745,LFS - Labour Force Survey
+PHL,2021,TOTAL,41060.149,LFS - Labour Force Survey
+PHL,2022,PRI,41660.806,LFS - Labour Force Survey
+PHL,2022,PUB,4176.714,LFS - Labour Force Survey
+PHL,2022,TOTAL,45837.52,LFS - Labour Force Survey
+PHL,2023,PRI,42649.308,LFS - Labour Force Survey
+PHL,2023,PUB,4289.211,LFS - Labour Force Survey
+PHL,2023,TOTAL,46938.519,LFS - Labour Force Survey
+PHL,2024,PRI,43223.491,LFS - Labour Force Survey
+PHL,2024,PUB,4300.827,LFS - Labour Force Survey
+PHL,2024,TOTAL,47524.318,LFS - Labour Force Survey
+PLW,2020,PRI,5.703,PC - Population Census
+PLW,2020,PUB,3.763,PC - Population Census
+PLW,2020,TOTAL,9.466,PC - Population Census
+PLW,2023,PRI,5.995,HIES - Household Income and Expenditure Survey
+PLW,2023,PUB,3.3,HIES - Household Income and Expenditure Survey
+PLW,2023,TOTAL,9.57,HIES - Household Income and Expenditure Survey
+PLW,2023,X,0.276,HIES - Household Income and Expenditure Survey
+POL,2015,PRI,12311.011,LFS - SWITCH TO EULFS
+POL,2015,PUB,3844.232,LFS - SWITCH TO EULFS
+POL,2015,TOTAL,16155.243,LFS - SWITCH TO EULFS
+POL,2016,PRI,12444.955,LFS - SWITCH TO EULFS
+POL,2016,PUB,3832.352,LFS - SWITCH TO EULFS
+POL,2016,TOTAL,16277.306,LFS - SWITCH TO EULFS
+POL,2017,PRI,12606.765,LFS - SWITCH TO EULFS
+POL,2017,PUB,3894.206,LFS - SWITCH TO EULFS
+POL,2017,TOTAL,16500.971,LFS - SWITCH TO EULFS
+POL,2018,PRI,12651.345,LFS - SWITCH TO EULFS
+POL,2018,PUB,3906.233,LFS - SWITCH TO EULFS
+POL,2018,TOTAL,16557.578,LFS - SWITCH TO EULFS
+POL,2019,PRI,12651.799,LFS - SWITCH TO EULFS
+POL,2019,PUB,3883.873,LFS - SWITCH TO EULFS
+POL,2019,TOTAL,16535.672,LFS - SWITCH TO EULFS
+POL,2020,PRI,12375.859,LFS - SWITCH TO EULFS
+POL,2020,PUB,3886.1,LFS - SWITCH TO EULFS
+POL,2020,TOTAL,16261.959,LFS - SWITCH TO EULFS
+POL,2021,PRI,12710.094,LFS - SWITCH TO EULFS
+POL,2021,PUB,4073.1,LFS - SWITCH TO EULFS
+POL,2021,TOTAL,16783.194,LFS - SWITCH TO EULFS
+POL,2022,PRI,12831.687,LFS - SWITCH TO EULFS
+POL,2022,PUB,4034.587,LFS - SWITCH TO EULFS
+POL,2022,TOTAL,16866.275,LFS - SWITCH TO EULFS
+POL,2023,PRI,12956.481,LFS - SWITCH TO EULFS
+POL,2023,PUB,4143.463,LFS - SWITCH TO EULFS
+POL,2023,TOTAL,17099.943,LFS - SWITCH TO EULFS
+POL,2024,PRI,13076.099,LFS - SWITCH TO EULFS
+POL,2024,PUB,4256.858,LFS - SWITCH TO EULFS
+POL,2024,TOTAL,17332.958,LFS - SWITCH TO EULFS
+POL,2025,PRI,13093.473,LFS - SWITCH TO EULFS
+POL,2025,PUB,4197.944,LFS - SWITCH TO EULFS
+POL,2025,TOTAL,17291.417,LFS - SWITCH TO EULFS
+PRT,2015,TOTAL,4548.7,LFS - Encuesta de Empleo
+PRT,2016,TOTAL,4605.2,LFS - Encuesta de Empleo
+PRT,2017,TOTAL,4756.6,LFS - Encuesta de Empleo
+PRT,2018,TOTAL,4866.7,LFS - Encuesta de Empleo
+PRY,2015,PRI,2890.376,HS - Encuesta Continua de Hogares
+PRY,2015,PUB,362.809,HS - Encuesta Continua de Hogares
+PRY,2015,TOTAL,3253.185,HS - Encuesta Continua de Hogares
+PRY,2016,PRI,2808.692,HS - Encuesta Continua de Hogares
+PRY,2016,PUB,314.055,HS - Encuesta Continua de Hogares
+PRY,2016,TOTAL,3122.747,HS - Encuesta Continua de Hogares
+PRY,2017,PRI,2563.434,HS - Encuesta Permanente de Hogares Continua
+PRY,2017,PUB,279.155,HS - Encuesta Permanente de Hogares Continua
+PRY,2017,TOTAL,2842.589,HS - Encuesta Permanente de Hogares Continua
+PRY,2018,PRI,2605.925,HS - Encuesta Permanente de Hogares Continua
+PRY,2018,PUB,313.243,HS - Encuesta Permanente de Hogares Continua
+PRY,2018,TOTAL,2919.168,HS - Encuesta Permanente de Hogares Continua
+PRY,2019,PRI,2670.419,HS - Encuesta Permanente de Hogares Continua
+PRY,2019,PUB,318.489,HS - Encuesta Permanente de Hogares Continua
+PRY,2019,TOTAL,2988.908,HS - Encuesta Permanente de Hogares Continua
+PRY,2020,PRI,2654.783,HS - Encuesta Permanente de Hogares Continua
+PRY,2020,PUB,309.398,HS - Encuesta Permanente de Hogares Continua
+PRY,2020,TOTAL,2964.181,HS - Encuesta Permanente de Hogares Continua
+PRY,2021,PRI,2668.262,HS - Encuesta Permanente de Hogares Continua
+PRY,2021,PUB,293.376,HS - Encuesta Permanente de Hogares Continua
+PRY,2021,TOTAL,2961.638,HS - Encuesta Permanente de Hogares Continua
+PRY,2022,PRI,2624.05,HS - Encuesta Permanente de Hogares Continua
+PRY,2022,PUB,312.307,HS - Encuesta Permanente de Hogares Continua
+PRY,2022,TOTAL,2936.357,HS - Encuesta Permanente de Hogares Continua
+PRY,2023,PRI,2698.032,HS - Encuesta Permanente de Hogares Continua
+PRY,2023,PUB,323.504,HS - Encuesta Permanente de Hogares Continua
+PRY,2023,TOTAL,3021.536,HS - Encuesta Permanente de Hogares Continua
+PRY,2024,PRI,2758.447,HS - Encuesta Permanente de Hogares Continua
+PRY,2024,PUB,316.031,HS - Encuesta Permanente de Hogares Continua
+PRY,2024,TOTAL,3074.478,HS - Encuesta Permanente de Hogares Continua
+PRY,2025,PRI,2862.047,HS - Encuesta Permanente de Hogares Continua
+PRY,2025,PUB,322.25,HS - Encuesta Permanente de Hogares Continua
+PRY,2025,TOTAL,3184.297,HS - Encuesta Permanente de Hogares Continua
+PSE,2015,PRI,700.77,LFS - Labour Force Survey
+PSE,2015,PUB,228.096,LFS - Labour Force Survey
+PSE,2015,TOTAL,928.865,LFS - Labour Force Survey
+PSE,2016,PRI,715.382,LFS - Labour Force Survey
+PSE,2016,PUB,224.246,LFS - Labour Force Survey
+PSE,2016,TOTAL,939.628,LFS - Labour Force Survey
+PSE,2017,PRI,725.874,LFS - Labour Force Survey
+PSE,2017,PUB,222.858,LFS - Labour Force Survey
+PSE,2017,TOTAL,948.732,LFS - Labour Force Survey
+PSE,2018,PRI,732.168,LFS - Labour Force Survey
+PSE,2018,PUB,223.592,LFS - Labour Force Survey
+PSE,2018,TOTAL,955.76,LFS - Labour Force Survey
+PSE,2019,PRI,774.625,LFS - Labour Force Survey
+PSE,2019,PUB,238.875,LFS - Labour Force Survey
+PSE,2019,TOTAL,1013.5,LFS - Labour Force Survey
+PSE,2020,PRI,730.986,LFS - Labour Force Survey
+PSE,2020,PUB,225.788,LFS - Labour Force Survey
+PSE,2020,TOTAL,956.774,LFS - Labour Force Survey
+PSE,2021,PRI,799.985,LFS - Labour Force Survey
+PSE,2021,PUB,236.23,LFS - Labour Force Survey
+PSE,2021,TOTAL,1036.214,LFS - Labour Force Survey
+PSE,2022,PRI,898.06,LFS - Labour Force Survey
+PSE,2022,PUB,237.898,LFS - Labour Force Survey
+PSE,2022,TOTAL,1135.958,LFS - Labour Force Survey
+PSE,2024,PRI,542.819,LFS - Labour Force Survey
+PSE,2024,PUB,140.143,LFS - Labour Force Survey
+PSE,2024,TOTAL,682.961,LFS - Labour Force Survey
+PSE,2025,PRI,578.635,LFS - Labour Force Survey
+PSE,2025,PUB,141.257,LFS - Labour Force Survey
+PSE,2025,TOTAL,719.891,LFS - Labour Force Survey
+QAT,2015,PRI,1735.263,LFS - Labor Force Sample Survey
+QAT,2015,PUB,211.715,LFS - Labor Force Sample Survey
+QAT,2015,TOTAL,1946.978,LFS - Labor Force Sample Survey
+QAT,2016,PRI,1841.971,LFS - Labor Force Sample Survey
+QAT,2016,PUB,207.303,LFS - Labor Force Sample Survey
+QAT,2016,TOTAL,2049.274,LFS - Labor Force Sample Survey
+QAT,2017,PRI,1844.241,LFS - Labor Force Sample Survey
+QAT,2017,PUB,204.452,LFS - Labor Force Sample Survey
+QAT,2017,TOTAL,2048.693,LFS - Labor Force Sample Survey
+QAT,2018,PRI,1891.398,LFS - Labor Force Sample Survey
+QAT,2018,PUB,198.374,LFS - Labor Force Sample Survey
+QAT,2018,TOTAL,2089.772,LFS - Labor Force Sample Survey
+QAT,2019,PRI,1906.863,LFS - Labor Force Sample Survey
+QAT,2019,PUB,195.804,LFS - Labor Force Sample Survey
+QAT,2019,TOTAL,2102.667,LFS - Labor Force Sample Survey
+QAT,2020,PRI,1882.528,LFS - Labor Force Sample Survey
+QAT,2020,PUB,208.868,LFS - Labor Force Sample Survey
+QAT,2020,TOTAL,2091.396,LFS - Labor Force Sample Survey
+QAT,2022,PRI,1861.602,LFS - Labor Force Sample Survey
+QAT,2022,PUB,236.131,LFS - Labor Force Sample Survey
+QAT,2022,TOTAL,2097.733,LFS - Labor Force Sample Survey
+ROU,2015,PRI,7131.878,LFS - Household Labour Force Survey
+ROU,2015,PUB,1403.507,LFS - Household Labour Force Survey
+ROU,2015,TOTAL,8535.386,LFS - Household Labour Force Survey
+ROU,2016,PRI,6969.767,LFS - Household Labour Force Survey
+ROU,2016,PUB,1376.355,LFS - Household Labour Force Survey
+ROU,2016,TOTAL,8448.777,LFS - Household Labour Force Survey
+ROU,2017,PRI,7288.418,LFS - Household Labour Force Survey
+ROU,2017,PUB,1382.138,LFS - Household Labour Force Survey
+ROU,2017,TOTAL,8670.556,LFS - Household Labour Force Survey
+ROU,2018,PRI,7336.731,LFS - Household Labour Force Survey
+ROU,2018,PUB,1351.808,LFS - Household Labour Force Survey
+ROU,2018,TOTAL,8688.539,LFS - Household Labour Force Survey
+ROU,2019,PRI,7288.281,LFS - Household Labour Force Survey
+ROU,2019,PUB,1392.044,LFS - Household Labour Force Survey
+ROU,2019,TOTAL,8680.325,LFS - Household Labour Force Survey
+ROU,2020,PRI,7131.9,LFS - Household Labour Force Survey
+ROU,2020,PUB,1389.156,LFS - Household Labour Force Survey
+ROU,2020,TOTAL,8521.057,LFS - Household Labour Force Survey
+RWA,2017,PRI,3492.102,LFS - Enquête sur la Population Active
+RWA,2017,PUB,246.237,LFS - Enquête sur la Population Active
+RWA,2017,TOTAL,3738.339,LFS - Enquête sur la Population Active
+RWA,2018,PRI,3669.688,LFS - Enquête sur la Population Active
+RWA,2018,PUB,241.174,LFS - Enquête sur la Population Active
+RWA,2018,TOTAL,3910.862,LFS - Enquête sur la Population Active
+RWA,2019,PRI,3678.626,LFS - Enquête sur la Population Active
+RWA,2019,PUB,229.571,LFS - Enquête sur la Population Active
+RWA,2019,TOTAL,3908.197,LFS - Enquête sur la Population Active
+RWA,2020,PRI,4087.293,LFS - Enquête sur la Population Active
+RWA,2020,PUB,225.934,LFS - Enquête sur la Population Active
+RWA,2020,TOTAL,4313.226,LFS - Enquête sur la Population Active
+RWA,2021,PRI,3706.982,LFS - Enquête sur la Population Active
+RWA,2021,PUB,233.103,LFS - Enquête sur la Population Active
+RWA,2021,TOTAL,3940.085,LFS - Enquête sur la Population Active
+RWA,2022,PRI,4001.015,LFS - Enquête sur la Population Active
+RWA,2022,PUB,237.33,LFS - Enquête sur la Population Active
+RWA,2022,TOTAL,4238.345,LFS - Enquête sur la Population Active
+RWA,2023,PRI,4427.627,LFS - Enquête sur la Population Active
+RWA,2023,PUB,246.771,LFS - Enquête sur la Population Active
+RWA,2023,TOTAL,4674.398,LFS - Enquête sur la Population Active
+RWA,2024,PRI,4549.469,LFS - Enquête sur la Population Active
+RWA,2024,PUB,303.027,LFS - Enquête sur la Population Active
+RWA,2024,TOTAL,4852.496,LFS - Enquête sur la Population Active
+RWA,2025,PRI,4494.386,LFS - Enquête sur la Population Active
+RWA,2025,PUB,320.443,LFS - Enquête sur la Population Active
+RWA,2025,TOTAL,6416.811,LFS - Enquête sur la Population Active
+RWA,2025,X,1601.982,LFS - Enquête sur la Population Active
+SDN,2022,PRI,7199.022,LFS - Labor Market Panel Survey
+SDN,2022,PUB,1098.451,LFS - Labor Market Panel Survey
+SDN,2022,TOTAL,9058.062,LFS - Labor Market Panel Survey
+SDN,2022,X,760.589,LFS - Labor Market Panel Survey
+SEN,2015,PRI,3144.759,LFS - Enquête Nationale sur l'Emploi
+SEN,2015,PUB,273.135,LFS - Enquête Nationale sur l'Emploi
+SEN,2015,TOTAL,3417.893,LFS - Enquête Nationale sur l'Emploi
+SEN,2016,PRI,3453.851,LFS - Enquête Nationale sur l'Emploi
+SEN,2016,PUB,268.799,LFS - Enquête Nationale sur l'Emploi
+SEN,2016,TOTAL,3722.649,LFS - Enquête Nationale sur l'Emploi
+SEN,2017,PRI,3391.728,LFS - Enquête Nationale sur l'Emploi
+SEN,2017,PUB,273.998,LFS - Enquête Nationale sur l'Emploi
+SEN,2017,TOTAL,3665.726,LFS - Enquête Nationale sur l'Emploi
+SEN,2019,PRI,4326.753,LFS - Enquête Nationale sur l'Emploi
+SEN,2019,PUB,293.782,LFS - Enquête Nationale sur l'Emploi
+SEN,2019,TOTAL,4620.535,LFS - Enquête Nationale sur l'Emploi
+SEN,2022,PRI,4222.758,LFS - Enquête Nationale sur l'Emploi
+SEN,2022,PUB,322.15,LFS - Enquête Nationale sur l'Emploi
+SEN,2022,TOTAL,4544.908,LFS - Enquête Nationale sur l'Emploi
+SEN,2023,PRI,4682.19,LFS - Enquête Nationale sur l'Emploi
+SEN,2023,PUB,351.052,LFS - Enquête Nationale sur l'Emploi
+SEN,2023,TOTAL,5033.242,LFS - Enquête Nationale sur l'Emploi
+SEN,2024,PRI,4338.506,LFS - Enquête Nationale sur l'Emploi
+SEN,2024,PUB,329.167,LFS - Enquête Nationale sur l'Emploi
+SEN,2024,TOTAL,4667.673,LFS - Enquête Nationale sur l'Emploi
+SEN,2025,PRI,4646.484,LFS - Enquête Nationale sur l'Emploi
+SEN,2025,PUB,374.377,LFS - Enquête Nationale sur l'Emploi
+SEN,2025,TOTAL,5020.861,LFS - Enquête Nationale sur l'Emploi
+SGP,2021,PRI,2046.623,LFS - Labour Force Survey
+SGP,2021,PUB,239.907,LFS - Labour Force Survey
+SGP,2021,TOTAL,2286.531,LFS - Labour Force Survey
+SGP,2022,PRI,2117.111,LFS - Labour Force Survey
+SGP,2022,PUB,233.31,LFS - Labour Force Survey
+SGP,2022,TOTAL,2350.421,LFS - Labour Force Survey
+SGP,2023,PRI,2128.075,LFS - Labour Force Survey
+SGP,2023,PUB,224.248,LFS - Labour Force Survey
+SGP,2023,TOTAL,2352.323,LFS - Labour Force Survey
+SGP,2024,PRI,2139.351,LFS - Labour Force Survey
+SGP,2024,PUB,226.211,LFS - Labour Force Survey
+SGP,2024,TOTAL,2365.563,LFS - Labour Force Survey
+SGP,2025,PRI,2151.404,LFS - Labour Force Survey
+SGP,2025,PUB,225.041,LFS - Labour Force Survey
+SGP,2025,TOTAL,2376.445,LFS - Labour Force Survey
+SLE,2018,PRI,3069.63,HS - Integrated Household Survey
+SLE,2018,PUB,138.48,HS - Integrated Household Survey
+SLE,2018,TOTAL,3208.11,HS - Integrated Household Survey
+SLV,2015,PRI,2463.261,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2015,PUB,203.771,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2015,TOTAL,2667.032,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2016,PRI,2532.632,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2016,PUB,194.385,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2016,TOTAL,2727.017,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2017,PRI,2554.265,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2017,PUB,197.829,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2017,TOTAL,2752.094,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2018,PRI,2597.027,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2018,PUB,217.239,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2018,TOTAL,2814.266,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2019,PRI,2685.852,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2019,PUB,222.268,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2019,TOTAL,2908.12,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2020,PRI,1338.383,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2020,PUB,215.415,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2020,TOTAL,2735.955,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2020,X,1182.157,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2021,PRI,1404.861,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2021,PUB,222.145,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2021,TOTAL,2765.217,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2021,X,1138.21,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2022,PRI,1450.743,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2022,PUB,230.253,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2022,TOTAL,2860.461,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2022,X,1179.465,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2023,PRI,1475.362,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2023,PUB,259.919,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2023,TOTAL,2946.7,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2023,X,1211.419,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2024,PRI,1485.018,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2024,PUB,269.733,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2024,TOTAL,2892.584,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2024,X,1137.833,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2025,PRI,1529.433,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2025,PUB,266.244,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2025,TOTAL,2990.937,HS - Encuesta de Hogares de Propósitos Múltiples
+SLV,2025,X,1195.26,HS - Encuesta de Hogares de Propósitos Múltiples
+SMR,2015,PRI,16.478,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2015,PUB,3.731,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2015,TOTAL,20.209,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2016,PRI,16.701,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2016,PUB,3.606,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2016,TOTAL,20.307,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2019,PRI,17.991,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2019,PUB,3.643,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2019,TOTAL,21.634,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2020,PRI,17.674,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2020,PUB,3.564,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2020,TOTAL,21.238,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2021,PRI,18.627,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2021,PUB,3.554,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2021,TOTAL,22.181,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2021,X,0,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2022,PRI,11.832,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2022,PUB,3.587,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2022,TOTAL,15.419,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SMR,2022,X,0,"OE - Estimates of the Office of economic planning, data processing and statistics"
+SOM,2019,PRI,877.59,LFS - Labour Force Survey
+SOM,2019,PUB,158.614,LFS - Labour Force Survey
+SOM,2019,TOTAL,1036.203,LFS - Labour Force Survey
+SOM,2022,PRI,1305.537,HIES - Integrated Household Budget Survey
+SOM,2022,PUB,207.042,HIES - Integrated Household Budget Survey
+SOM,2022,TOTAL,1943.728,HIES - Integrated Household Budget Survey
+SOM,2022,X,431.149,HIES - Integrated Household Budget Survey
+SRB,2015,PRI,1844.331,LFS - Labour Force Survey
+SRB,2015,PUB,729.828,LFS - Labour Force Survey
+SRB,2015,TOTAL,2574.159,LFS - Labour Force Survey
+SRB,2016,PRI,1993.123,LFS - Labour Force Survey
+SRB,2016,PUB,726.28,LFS - Labour Force Survey
+SRB,2016,TOTAL,2719.403,LFS - Labour Force Survey
+SRB,2017,PRI,2059.235,LFS - Labour Force Survey
+SRB,2017,PUB,735.424,LFS - Labour Force Survey
+SRB,2017,TOTAL,2794.659,LFS - Labour Force Survey
+SRB,2018,PRI,2099.689,LFS - Labour Force Survey
+SRB,2018,PUB,732.147,LFS - Labour Force Survey
+SRB,2018,TOTAL,2831.836,LFS - Labour Force Survey
+SRB,2019,PRI,2172.504,LFS - Labour Force Survey
+SRB,2019,PUB,727.461,LFS - Labour Force Survey
+SRB,2019,TOTAL,2899.964,LFS - Labour Force Survey
+SRB,2020,PRI,2174.509,LFS - Labour Force Survey
+SRB,2020,PUB,719.181,LFS - Labour Force Survey
+SRB,2020,TOTAL,2893.69,LFS - Labour Force Survey
+STP,2017,PRI,43.021,HIES - Household Budget Survey
+STP,2017,PUB,9.865,HIES - Household Budget Survey
+STP,2017,TOTAL,52.886,HIES - Household Budget Survey
+SUR,2016,PRI,138.938,HIES - Survey on Living Conditions
+SUR,2016,PUB,50.743,HIES - Survey on Living Conditions
+SUR,2016,TOTAL,189.681,HIES - Survey on Living Conditions
+SVK,2015,PRI,1769.574,LFS - Labour Force Survey
+SVK,2015,PUB,655.316,LFS - Labour Force Survey
+SVK,2015,TOTAL,2424.891,LFS - Labour Force Survey
+SVK,2016,PRI,1829.617,LFS - Labour Force Survey
+SVK,2016,PUB,663.239,LFS - Labour Force Survey
+SVK,2016,TOTAL,2492.856,LFS - Labour Force Survey
+SVK,2017,PRI,1856.63,LFS - Labour Force Survey
+SVK,2017,PUB,674.653,LFS - Labour Force Survey
+SVK,2017,TOTAL,2531.284,LFS - Labour Force Survey
+SVK,2018,PRI,1885.954,LFS - Labour Force Survey
+SVK,2018,PUB,681.765,LFS - Labour Force Survey
+SVK,2018,TOTAL,2567.719,LFS - Labour Force Survey
+SVK,2019,PRI,1888.244,LFS - Labour Force Survey
+SVK,2019,PUB,695.252,LFS - Labour Force Survey
+SVK,2019,TOTAL,2583.496,LFS - Labour Force Survey
+SVK,2020,PRI,1859.201,LFS - Labour Force Survey
+SVK,2020,PUB,670.737,LFS - Labour Force Survey
+SVK,2020,TOTAL,2529.938,LFS - Labour Force Survey
+SVK,2021,PRI,1856.768,LFS - Labour Force Survey
+SVK,2021,PUB,698.07,LFS - Labour Force Survey
+SVK,2021,TOTAL,2554.838,LFS - Labour Force Survey
+SVK,2022,PRI,1875.401,LFS - Labour Force Survey
+SVK,2022,PUB,728.169,LFS - Labour Force Survey
+SVK,2022,TOTAL,2603.57,LFS - Labour Force Survey
+SVK,2023,PRI,1853.655,LFS - Labour Force Survey
+SVK,2023,PUB,755.499,LFS - Labour Force Survey
+SVK,2023,TOTAL,2609.154,LFS - Labour Force Survey
+SVN,2015,PRI,709.751,LFS - Labour Force Survey
+SVN,2015,PUB,234.111,LFS - Labour Force Survey
+SVN,2015,TOTAL,943.862,LFS - Labour Force Survey
+SVN,2016,PRI,725.578,LFS - Labour Force Survey
+SVN,2016,PUB,235.613,LFS - Labour Force Survey
+SVN,2016,TOTAL,961.191,LFS - Labour Force Survey
+SVN,2017,PRI,753.69,LFS - Labour Force Survey
+SVN,2017,PUB,235.93,LFS - Labour Force Survey
+SVN,2017,TOTAL,989.62,LFS - Labour Force Survey
+SVN,2018,PRI,781.9,LFS - Labour Force Survey
+SVN,2018,PUB,239.42,LFS - Labour Force Survey
+SVN,2018,TOTAL,1021.319,LFS - Labour Force Survey
+SVN,2019,PRI,805.425,LFS - Labour Force Survey
+SVN,2019,PUB,241.266,LFS - Labour Force Survey
+SVN,2019,TOTAL,1046.691,LFS - Labour Force Survey
+SVN,2020,TOTAL,1036.642,LFS - Labour Force Survey
+SWE,2015,PRI,3399,LFS - EU Labour Force Survey
+SWE,2015,PUB,1385,LFS - EU Labour Force Survey
+SWE,2015,TOTAL,4837,LFS - EU Labour Force Survey
+SWE,2016,PRI,3444,LFS - EU Labour Force Survey
+SWE,2016,PUB,1419,LFS - EU Labour Force Survey
+SWE,2016,TOTAL,4910,LFS - EU Labour Force Survey
+SWE,2017,PRI,3509,LFS - EU Labour Force Survey
+SWE,2017,PUB,1467,LFS - EU Labour Force Survey
+SWE,2017,TOTAL,5022,LFS - EU Labour Force Survey
+SWE,2019,PRI,3580,LFS - EU Labour Force Survey
+SWE,2019,PUB,1501,LFS - EU Labour Force Survey
+SWE,2019,TOTAL,5132,LFS - EU Labour Force Survey
+SWE,2020,PRI,3530.759,LFS - EU Labour Force Survey
+SWE,2020,PUB,1482.947,LFS - EU Labour Force Survey
+SWE,2020,TOTAL,5064.29,LFS - EU Labour Force Survey
+SWZ,2016,PRI,229.609,LFS - Labour Force Survey
+SWZ,2016,PUB,62.355,LFS - Labour Force Survey
+SWZ,2016,TOTAL,291.964,LFS - Labour Force Survey
+SWZ,2021,PRI,202.99,LFS - Labour Force Survey
+SWZ,2021,PUB,55.753,LFS - Labour Force Survey
+SWZ,2021,TOTAL,258.743,LFS - Labour Force Survey
+SWZ,2023,PRI,182.168,LFS - Labour Force Survey
+SWZ,2023,PUB,42.171,LFS - Labour Force Survey
+SWZ,2023,TOTAL,224.339,LFS - Labour Force Survey
+SYC,2015,PRI,29.765,LFS - Labour Force Survey
+SYC,2015,PUB,16.462,LFS - Labour Force Survey
+SYC,2015,TOTAL,46.227,LFS - Labour Force Survey
+SYC,2016,PRI,28.274,LFS - Labour Force Survey
+SYC,2016,PUB,15.709,LFS - Labour Force Survey
+SYC,2016,TOTAL,43.982,LFS - Labour Force Survey
+SYC,2017,PRI,28.913,LFS - Labour Force Survey
+SYC,2017,PUB,17.984,LFS - Labour Force Survey
+SYC,2017,TOTAL,46.897,LFS - Labour Force Survey
+SYC,2018,PRI,29.394,LFS - Labour Force Survey
+SYC,2018,PUB,18.662,LFS - Labour Force Survey
+SYC,2018,TOTAL,48.056,LFS - Labour Force Survey
+SYC,2019,PRI,28.338,LFS - Labour Force Survey
+SYC,2019,PUB,20.155,LFS - Labour Force Survey
+SYC,2019,TOTAL,48.493,LFS - Labour Force Survey
+SYC,2020,PRI,27.069,LFS - Labour Force Survey
+SYC,2020,PUB,21.468,LFS - Labour Force Survey
+SYC,2020,TOTAL,48.537,LFS - Labour Force Survey
+SYC,2023,PRI,21.484,LFS - Labour Force Survey
+SYC,2023,PUB,20.369,LFS - Labour Force Survey
+SYC,2023,TOTAL,50.719,LFS - Labour Force Survey
+SYC,2023,X,8.866,LFS - Labour Force Survey
+SYC,2024,PRI,23.721,LFS - Labour Force Survey
+SYC,2024,PUB,22.475,LFS - Labour Force Survey
+SYC,2024,TOTAL,54.992,LFS - Labour Force Survey
+SYC,2024,X,8.796,LFS - Labour Force Survey
+SYC,2025,PRI,30.351,LFS - Labour Force Survey
+SYC,2025,PUB,20.004,LFS - Labour Force Survey
+SYC,2025,TOTAL,50.392,LFS - Labour Force Survey
+SYC,2025,X,0.037,LFS - Labour Force Survey
+TCD,2018,PRI,4149.601,HIES - Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+TCD,2018,PUB,147.335,HIES - Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+TCD,2018,TOTAL,4296.936,HIES - Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+TCD,2022,PRI,4013.749,HIES - Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+TCD,2022,PUB,151.512,HIES - Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+TCD,2022,TOTAL,4165.261,HIES - Enquête Modulaire et Intégrée sur les Conditions de Vie des Ménages
+TGO,2015,PRI,2721.053,HS - Questionnaire des Indicateurs de Base du Bien-être
+TGO,2015,PUB,116.535,HS - Questionnaire des Indicateurs de Base du Bien-être
+TGO,2015,TOTAL,2837.587,HS - Questionnaire des Indicateurs de Base du Bien-être
+TGO,2017,PRI,1981.769,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+TGO,2017,PUB,132.858,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+TGO,2017,TOTAL,2114.627,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+TGO,2019,PRI,3128.484,HIES - Living Standards Measurement Survey
+TGO,2019,PUB,105.224,HIES - Living Standards Measurement Survey
+TGO,2019,TOTAL,3233.708,HIES - Living Standards Measurement Survey
+TGO,2022,PRI,3241.494,HIES - Living Standards Measurement Survey
+TGO,2022,PUB,122.707,HIES - Living Standards Measurement Survey
+TGO,2022,TOTAL,3364.201,HIES - Living Standards Measurement Survey
+THA,2015,PRI,34439.509,LFS - Labour Force Survey
+THA,2015,PUB,3576.66,LFS - Labour Force Survey
+THA,2015,TOTAL,38016.169,LFS - Labour Force Survey
+THA,2016,PRI,34130.885,LFS - Labour Force Survey
+THA,2016,PUB,3561.766,LFS - Labour Force Survey
+THA,2016,TOTAL,37692.651,LFS - Labour Force Survey
+THA,2017,PRI,33870.128,LFS - Labour Force Survey
+THA,2017,PUB,3588.126,LFS - Labour Force Survey
+THA,2017,TOTAL,37458.253,LFS - Labour Force Survey
+THA,2018,PRI,34350.42,LFS - Labour Force Survey
+THA,2018,PUB,3514.13,LFS - Labour Force Survey
+THA,2018,TOTAL,37864.55,LFS - Labour Force Survey
+THA,2019,PRI,34130.548,LFS - Labour Force Survey
+THA,2019,PUB,3482.89,LFS - Labour Force Survey
+THA,2019,TOTAL,37613.439,LFS - Labour Force Survey
+THA,2020,PRI,34105.263,LFS - Labour Force Survey
+THA,2020,PUB,3574.715,LFS - Labour Force Survey
+THA,2020,TOTAL,37679.978,LFS - Labour Force Survey
+THA,2021,PRI,34144.895,LFS - Labour Force Survey
+THA,2021,PUB,3606.889,LFS - Labour Force Survey
+THA,2021,TOTAL,37751.783,LFS - Labour Force Survey
+THA,2022,PRI,35465.709,LFS - Labour Force Survey
+THA,2022,PUB,3755.343,LFS - Labour Force Survey
+THA,2022,TOTAL,39221.052,LFS - Labour Force Survey
+THA,2023,PRI,36233.645,LFS - Labour Force Survey
+THA,2023,PUB,3678.385,LFS - Labour Force Survey
+THA,2023,TOTAL,39912.031,LFS - Labour Force Survey
+THA,2024,PRI,36205.781,LFS - Labour Force Survey
+THA,2024,PUB,3600.577,LFS - Labour Force Survey
+THA,2024,TOTAL,39806.358,LFS - Labour Force Survey
+THA,2025,PRI,35949.958,LFS - Labour Force Survey
+THA,2025,PUB,3674.596,LFS - Labour Force Survey
+THA,2025,TOTAL,39624.554,LFS - Labour Force Survey
+TJK,2016,PRI,1270.667,LFS - Labour Force Survey
+TJK,2016,PUB,500.419,LFS - Labour Force Survey
+TJK,2016,TOTAL,2266.743,LFS - Labour Force Survey
+TJK,2016,X,495.658,LFS - Labour Force Survey
+TLS,2015,PRI,315.58,PC - Population Census
+TLS,2015,PUB,66.537,PC - Population Census
+TLS,2015,TOTAL,382.117,PC - Population Census
+TLS,2021,PRI,184.063,LFS - Labour Force Survey
+TLS,2021,PUB,89.606,LFS - Labour Force Survey
+TLS,2021,TOTAL,273.669,LFS - Labour Force Survey
+TON,2016,PRI,30.578,HIES - Household Income and Expenditure Survey
+TON,2016,PUB,5.405,HIES - Household Income and Expenditure Survey
+TON,2016,TOTAL,35.982,HIES - Household Income and Expenditure Survey
+TON,2018,PRI,23.496,LFS - Labour Force Survey
+TON,2018,PUB,9.716,LFS - Labour Force Survey
+TON,2018,TOTAL,33.212,LFS - Labour Force Survey
+TON,2021,PRI,23.11,HIES - Household Income and Expenditure Survey
+TON,2021,PUB,9.874,HIES - Household Income and Expenditure Survey
+TON,2021,TOTAL,37.834,HIES - Household Income and Expenditure Survey
+TON,2021,X,4.85,HIES - Household Income and Expenditure Survey
+TON,2023,PRI,21.706,LFS - Labour Force Survey
+TON,2023,PUB,11.401,LFS - Labour Force Survey
+TON,2023,TOTAL,33.106,LFS - Labour Force Survey
+TTO,2015,PRI,456.503,LFS - Continuous Sample Survey of the Population
+TTO,2015,PUB,166.794,LFS - Continuous Sample Survey of the Population
+TTO,2015,TOTAL,623.298,LFS - Continuous Sample Survey of the Population
+TTO,2016,PRI,454.356,LFS - Continuous Sample Survey of the Population
+TTO,2016,PUB,158.9,LFS - Continuous Sample Survey of the Population
+TTO,2016,TOTAL,613.256,LFS - Continuous Sample Survey of the Population
+TTO,2019,PRI,470.7,LFS - Continuous Sample Survey of the Population
+TTO,2019,PUB,120.338,LFS - Continuous Sample Survey of the Population
+TTO,2019,TOTAL,591.038,LFS - Continuous Sample Survey of the Population
+TTO,2020,PRI,443.342,LFS - Continuous Sample Survey of the Population
+TTO,2020,PUB,126.409,LFS - Continuous Sample Survey of the Population
+TTO,2020,TOTAL,569.751,LFS - Continuous Sample Survey of the Population
+TTO,2021,PRI,432.318,LFS - Continuous Sample Survey of the Population
+TTO,2021,PUB,128.112,LFS - Continuous Sample Survey of the Population
+TTO,2021,TOTAL,560.43,LFS - Continuous Sample Survey of the Population
+TTO,2022,PRI,437.872,LFS - Continuous Sample Survey of the Population
+TTO,2022,PUB,127.854,LFS - Continuous Sample Survey of the Population
+TTO,2022,TOTAL,565.726,LFS - Continuous Sample Survey of the Population
+TTO,2023,PRI,454.656,LFS - Continuous Sample Survey of the Population
+TTO,2023,PUB,123.387,LFS - Continuous Sample Survey of the Population
+TTO,2023,TOTAL,578.043,LFS - Continuous Sample Survey of the Population
+TTO,2024,PRI,433.239,LFS - Continuous Sample Survey of the Population
+TTO,2024,PUB,132.211,LFS - Continuous Sample Survey of the Population
+TTO,2024,TOTAL,565.45,LFS - Continuous Sample Survey of the Population
+TUN,2015,PRI,2619.171,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2015,PUB,767.166,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2015,TOTAL,3386.337,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2016,PRI,2635.458,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2016,PUB,782.123,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2016,TOTAL,3417.581,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2017,PRI,2706.413,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2017,PUB,751.691,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2017,TOTAL,3458.104,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2019,PRI,2780.11,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2019,PUB,753.299,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2019,TOTAL,3533.409,LFS - Enquête Nationale sur la Population et l'Emploi
+TUN,2021,PRI,4320.68,HIES - National Survey on Household Budget and Consumption
+TUN,2021,PUB,1120.003,HIES - National Survey on Household Budget and Consumption
+TUN,2021,TOTAL,5440.683,HIES - National Survey on Household Budget and Consumption
+TUR,2015,PRI,23288.091,LFS - Household Labour Force Survey
+TUR,2015,PUB,3332.46,LFS - Household Labour Force Survey
+TUR,2015,TOTAL,26620.551,LFS - Household Labour Force Survey
+TUR,2016,PRI,23694.343,LFS - Household Labour Force Survey
+TUR,2016,PUB,3510.818,LFS - Household Labour Force Survey
+TUR,2016,TOTAL,27205.161,LFS - Household Labour Force Survey
+TUR,2017,PRI,24672.689,LFS - Household Labour Force Survey
+TUR,2017,PUB,3516.205,LFS - Household Labour Force Survey
+TUR,2017,TOTAL,28188.894,LFS - Household Labour Force Survey
+TUR,2018,PRI,24591.751,LFS - Household Labour Force Survey
+TUR,2018,PUB,4145.81,LFS - Household Labour Force Survey
+TUR,2018,TOTAL,28737.561,LFS - Household Labour Force Survey
+TUR,2019,PRI,23652.782,LFS - Household Labour Force Survey
+TUR,2019,PUB,4426.912,LFS - Household Labour Force Survey
+TUR,2019,TOTAL,28079.693,LFS - Household Labour Force Survey
+TUR,2020,PRI,22333.741,LFS - Household Labour Force Survey
+TUR,2020,PUB,4478.442,LFS - Household Labour Force Survey
+TUR,2020,TOTAL,26812.183,LFS - Household Labour Force Survey
+TUR,2021,PRI,24252.21,LFS - Household Labour Force Survey
+TUR,2021,PUB,4544.603,LFS - Household Labour Force Survey
+TUR,2021,TOTAL,28796.813,LFS - Household Labour Force Survey
+TUR,2022,PRI,26132.5,LFS - Household Labour Force Survey
+TUR,2022,PUB,4619.983,LFS - Household Labour Force Survey
+TUR,2022,TOTAL,30752.483,LFS - Household Labour Force Survey
+TUR,2023,PRI,26786.668,LFS - Household Labour Force Survey
+TUR,2023,PUB,4845.652,LFS - Household Labour Force Survey
+TUR,2023,TOTAL,31632.32,LFS - Household Labour Force Survey
+TUR,2024,PRI,27652.243,LFS - Household Labour Force Survey
+TUR,2024,PUB,4968.092,LFS - Household Labour Force Survey
+TUR,2024,TOTAL,32620.335,LFS - Household Labour Force Survey
+TUR,2025,PRI,27410.809,LFS - Household Labour Force Survey
+TUR,2025,PUB,5155.529,LFS - Household Labour Force Survey
+TUR,2025,TOTAL,32566.338,LFS - Household Labour Force Survey
+TUV,2016,PRI,2.333,HIES - Household Income and Expenditure Survey
+TUV,2016,PUB,1.737,HIES - Household Income and Expenditure Survey
+TUV,2016,TOTAL,4.069,HIES - Household Income and Expenditure Survey
+TUV,2017,PRI,0.826,PC - Population Census
+TUV,2017,PUB,1.763,PC - Population Census
+TUV,2017,TOTAL,2.589,PC - Population Census
+TUV,2022,PRI,0.798,PC - Population Census
+TUV,2022,PUB,2.106,PC - Population Census
+TUV,2022,TOTAL,2.951,PC - Population Census
+TUV,2022,X,0.047,PC - Population Census
+TZA,2020,PRI,24888.755,LFS - Labour Force Survey
+TZA,2020,PUB,1156.992,LFS - Labour Force Survey
+TZA,2020,TOTAL,26045.746,LFS - Labour Force Survey
+TZA,2024,PRI,29656.837,LFS - Labour Force Survey
+TZA,2024,PUB,1378.056,LFS - Labour Force Survey
+TZA,2024,TOTAL,31034.893,LFS - Labour Force Survey
+TZA,2025,PRI,31373.744,LFS - Labour Force Survey
+TZA,2025,PUB,1206.744,LFS - Labour Force Survey
+TZA,2025,TOTAL,32580.487,LFS - Labour Force Survey
+UGA,2017,PRI,13665.863,LFS - National Labour Force Survey
+UGA,2017,PUB,572.652,LFS - National Labour Force Survey
+UGA,2017,TOTAL,14238.514,LFS - National Labour Force Survey
+UGA,2019,PRI,6896.674,HIES - National Household Survey
+UGA,2019,PUB,706.418,HIES - National Household Survey
+UGA,2019,TOTAL,17091.271,HIES - National Household Survey
+UGA,2019,X,9488.179,HIES - National Household Survey
+UGA,2021,PRI,3296.909,LFS - National Labour Force Survey
+UGA,2021,PUB,607.088,LFS - National Labour Force Survey
+UGA,2021,TOTAL,17969.578,LFS - National Labour Force Survey
+UGA,2021,X,14065.58,LFS - National Labour Force Survey
+URY,2015,PRI,1406.657,LFS - Encuesta Continua de Hogares
+URY,2015,PUB,241.672,LFS - Encuesta Continua de Hogares
+URY,2015,TOTAL,1648.329,LFS - Encuesta Continua de Hogares
+URY,2016,PRI,1398.174,LFS - Encuesta Continua de Hogares
+URY,2016,PUB,246.974,LFS - Encuesta Continua de Hogares
+URY,2016,TOTAL,1645.148,LFS - Encuesta Continua de Hogares
+URY,2017,PRI,1401.06,LFS - Encuesta Continua de Hogares
+URY,2017,PUB,242.58,LFS - Encuesta Continua de Hogares
+URY,2017,TOTAL,1643.64,LFS - Encuesta Continua de Hogares
+URY,2018,PRI,1390.832,LFS - Encuesta Continua de Hogares
+URY,2018,PUB,244.891,LFS - Encuesta Continua de Hogares
+URY,2018,TOTAL,1635.723,LFS - Encuesta Continua de Hogares
+URY,2019,PRI,1380.856,LFS - Encuesta Continua de Hogares
+URY,2019,PUB,250.834,LFS - Encuesta Continua de Hogares
+URY,2019,TOTAL,1631.69,LFS - Encuesta Continua de Hogares
+URY,2020,PRI,1286.996,LFS - Encuesta Continua de Hogares
+URY,2020,PUB,266.186,LFS - Encuesta Continua de Hogares
+URY,2020,TOTAL,1553.181,LFS - Encuesta Continua de Hogares
+URY,2021,PRI,1350.304,LFS - Encuesta Continua de Hogares
+URY,2021,PUB,275.635,LFS - Encuesta Continua de Hogares
+URY,2021,TOTAL,1625.939,LFS - Encuesta Continua de Hogares
+URY,2022,PRI,1401.403,LFS - Encuesta Continua de Hogares
+URY,2022,PUB,261.708,LFS - Encuesta Continua de Hogares
+URY,2022,TOTAL,1663.11,LFS - Encuesta Continua de Hogares
+URY,2023,PRI,1441.707,LFS - Encuesta Continua de Hogares
+URY,2023,PUB,261.124,LFS - Encuesta Continua de Hogares
+URY,2023,TOTAL,1702.831,LFS - Encuesta Continua de Hogares
+URY,2024,PRI,1471.046,LFS - Encuesta Continua de Hogares
+URY,2024,PUB,266.47,LFS - Encuesta Continua de Hogares
+URY,2024,TOTAL,1737.516,LFS - Encuesta Continua de Hogares
+URY,2025,PRI,1492.914,LFS - Encuesta Continua de Hogares
+URY,2025,PUB,272.309,LFS - Encuesta Continua de Hogares
+URY,2025,TOTAL,1765.222,LFS - Encuesta Continua de Hogares
+USA,2015,PRI,128196.907,LFS - Current Population Survey
+USA,2015,PUB,20636.622,LFS - Current Population Survey
+USA,2015,TOTAL,148833.528,LFS - Current Population Survey
+USA,2016,PRI,130763.732,LFS - Current Population Survey
+USA,2016,PUB,20672.182,LFS - Current Population Survey
+USA,2016,TOTAL,151435.913,LFS - Current Population Survey
+USA,2017,PRI,132451.217,LFS - Current Population Survey
+USA,2017,PUB,20886.221,LFS - Current Population Survey
+USA,2017,TOTAL,153337.437,LFS - Current Population Survey
+USA,2018,PRI,134784.457,LFS - Current Population Survey
+USA,2018,PUB,20976.592,LFS - Current Population Survey
+USA,2018,TOTAL,155761.05,LFS - Current Population Survey
+USA,2019,PRI,136525.069,LFS - Current Population Survey
+USA,2019,PUB,21013,LFS - Current Population Survey
+USA,2019,TOTAL,157538.068,LFS - Current Population Survey
+USA,2020,PRI,127161.427,LFS - Current Population Survey
+USA,2020,PUB,20633.432,LFS - Current Population Survey
+USA,2020,TOTAL,147794.858,LFS - Current Population Survey
+USA,2021,PRI,131887.47,LFS - Current Population Survey
+USA,2021,PUB,20693.202,LFS - Current Population Survey
+USA,2021,TOTAL,152580.672,LFS - Current Population Survey
+USA,2022,PRI,137099.266,LFS - Current Population Survey
+USA,2022,PUB,21191.87,LFS - Current Population Survey
+USA,2022,TOTAL,158291.136,LFS - Current Population Survey
+USA,2023,PRI,139445.674,LFS - Current Population Survey
+USA,2023,PUB,21590.847,LFS - Current Population Survey
+USA,2023,TOTAL,161036.522,LFS - Current Population Survey
+USA,2024,PRI,139569.857,LFS - Current Population Survey
+USA,2024,PUB,21775.673,LFS - Current Population Survey
+USA,2024,TOTAL,161345.53,LFS - Current Population Survey
+USA,2025,PRI,141552.247,LFS - Current Population Survey
+USA,2025,PUB,21940.614,LFS - Current Population Survey
+USA,2025,TOTAL,163492.861,LFS - Current Population Survey
+UZB,2015,PRI,10717,HS - General Household Survey
+UZB,2015,PUB,2341.3,HS - General Household Survey
+UZB,2015,TOTAL,13058.3,HS - General Household Survey
+UZB,2016,PRI,10968,HS - General Household Survey
+UZB,2016,PUB,2330.4,HS - General Household Survey
+UZB,2016,TOTAL,13298.4,HS - General Household Survey
+UZB,2017,PRI,11182,HS - General Household Survey
+UZB,2017,PUB,2338.3,HS - General Household Survey
+UZB,2017,TOTAL,13520.3,HS - General Household Survey
+UZB,2018,PRI,10846.1,HS - General Household Survey
+UZB,2018,PUB,2427,HS - General Household Survey
+UZB,2018,TOTAL,13273.1,HS - General Household Survey
+UZB,2019,PRI,11077.8,HS - General Household Survey
+UZB,2019,PUB,2463.287,HS - General Household Survey
+UZB,2019,TOTAL,13541.087,HS - General Household Survey
+UZB,2020,TOTAL,13236.354,HS - General Household Survey
+VEN,2016,PRI,10212.975,LFS - Encuesta de Hogares por Muestreo
+VEN,2016,PUB,2822.516,LFS - Encuesta de Hogares por Muestreo
+VEN,2016,TOTAL,13035.491,LFS - Encuesta de Hogares por Muestreo
+VEN,2017,PRI,11465.851,LFS - Encuesta de Hogares por Muestreo
+VEN,2017,PUB,3114.434,LFS - Encuesta de Hogares por Muestreo
+VEN,2017,TOTAL,14580.285,LFS - Encuesta de Hogares por Muestreo
+VEN,2020,PRI,10258.641,LFS - Encuesta de Hogares por Muestreo
+VEN,2020,PUB,3292.764,LFS - Encuesta de Hogares por Muestreo
+VEN,2020,TOTAL,13551.405,LFS - Encuesta de Hogares por Muestreo
+VNM,2015,PRI,47654.274,LFS - Labour Force Survey
+VNM,2015,PUB,5185.153,LFS - Labour Force Survey
+VNM,2015,TOTAL,52839.427,LFS - Labour Force Survey
+VNM,2016,PRI,48069.068,LFS - Labour Force Survey
+VNM,2016,PUB,5233.687,LFS - Labour Force Survey
+VNM,2016,TOTAL,53302.755,LFS - Labour Force Survey
+VNM,2017,PRI,48435.154,LFS - Labour Force Survey
+VNM,2017,PUB,5268.209,LFS - Labour Force Survey
+VNM,2017,TOTAL,53703.362,LFS - Labour Force Survey
+VNM,2018,PRI,49027.083,LFS - Labour Force Survey
+VNM,2018,PUB,5222.654,LFS - Labour Force Survey
+VNM,2018,TOTAL,54249.737,LFS - Labour Force Survey
+VNM,2019,PRI,46140.175,LFS - Labour Force Survey
+VNM,2019,PUB,8434.133,LFS - Labour Force Survey
+VNM,2019,TOTAL,54574.308,LFS - Labour Force Survey
+VNM,2020,PRI,44825.725,LFS - Labour Force Survey
+VNM,2020,PUB,8500.367,LFS - Labour Force Survey
+VNM,2020,TOTAL,53326.092,LFS - Labour Force Survey
+VNM,2021,PRI,45305.012,LFS - Labour Force Survey
+VNM,2021,PUB,8130.431,LFS - Labour Force Survey
+VNM,2021,TOTAL,53435.443,LFS - Labour Force Survey
+VNM,2022,PRI,50785.317,LFS - Labour Force Survey
+VNM,2022,PUB,4232.779,LFS - Labour Force Survey
+VNM,2022,TOTAL,55018.096,LFS - Labour Force Survey
+VNM,2023,PRI,50630.739,LFS - Labour Force Survey
+VNM,2023,PUB,4324.714,LFS - Labour Force Survey
+VNM,2023,TOTAL,54956.134,LFS - Labour Force Survey
+VNM,2023,X,0.68,LFS - Labour Force Survey
+VNM,2024,PRI,50971.618,LFS - Labour Force Survey
+VNM,2024,PUB,4308.539,LFS - Labour Force Survey
+VNM,2024,TOTAL,55280.158,LFS - Labour Force Survey
+VUT,2019,PRI,81.155,HIES - Household Income and Expenditure Survey
+VUT,2019,PUB,20.492,HIES - Household Income and Expenditure Survey
+VUT,2019,TOTAL,101.647,HIES - Household Income and Expenditure Survey
+VUT,2025,PRI,129.621,LFS - Labour Force Survey
+VUT,2025,PUB,15.852,LFS - Labour Force Survey
+VUT,2025,TOTAL,145.472,LFS - Labour Force Survey
+WSM,2017,PRI,46.018,LFS - Labour Force Survey
+WSM,2017,PUB,8.298,LFS - Labour Force Survey
+WSM,2017,TOTAL,54.316,LFS - Labour Force Survey
+WSM,2022,PRI,42.973,LFS - Labour Force Survey
+WSM,2022,PUB,10.162,LFS - Labour Force Survey
+WSM,2022,TOTAL,53.135,LFS - Labour Force Survey
+ZAF,2015,PRI,13125.816,LFS - Quarterly Labour Force Survey
+ZAF,2015,PUB,2802.537,LFS - Quarterly Labour Force Survey
+ZAF,2015,TOTAL,15928.353,LFS - Quarterly Labour Force Survey
+ZAF,2016,PRI,13233.71,LFS - Quarterly Labour Force Survey
+ZAF,2016,PUB,2733.868,LFS - Quarterly Labour Force Survey
+ZAF,2016,TOTAL,15967.578,LFS - Quarterly Labour Force Survey
+ZAF,2017,PRI,13514.837,LFS - Quarterly Labour Force Survey
+ZAF,2017,PUB,2848.96,LFS - Quarterly Labour Force Survey
+ZAF,2017,TOTAL,16363.797,LFS - Quarterly Labour Force Survey
+ZAF,2018,PRI,13698.558,LFS - Quarterly Labour Force Survey
+ZAF,2018,PUB,2911.206,LFS - Quarterly Labour Force Survey
+ZAF,2018,TOTAL,16609.765,LFS - Quarterly Labour Force Survey
+ZAF,2019,PRI,13717.376,LFS - Quarterly Labour Force Survey
+ZAF,2019,PUB,2853.604,LFS - Quarterly Labour Force Survey
+ZAF,2019,TOTAL,16570.981,LFS - Quarterly Labour Force Survey
+ZAF,2020,PRI,12462.079,LFS - Quarterly Labour Force Survey
+ZAF,2020,PUB,2791.791,LFS - Quarterly Labour Force Survey
+ZAF,2020,TOTAL,15253.87,LFS - Quarterly Labour Force Survey
+ZAF,2021,PRI,12202.356,LFS - Quarterly Labour Force Survey
+ZAF,2021,PUB,2681.211,LFS - Quarterly Labour Force Survey
+ZAF,2021,TOTAL,14883.567,LFS - Quarterly Labour Force Survey
+ZAF,2022,PRI,12924.653,LFS - Quarterly Labour Force Survey
+ZAF,2022,PUB,2811.42,LFS - Quarterly Labour Force Survey
+ZAF,2022,TOTAL,15736.073,LFS - Quarterly Labour Force Survey
+ZAF,2023,PRI,13772.251,LFS - Quarterly Labour Force Survey
+ZAF,2023,PUB,2965.198,LFS - Quarterly Labour Force Survey
+ZAF,2023,TOTAL,16737.449,LFS - Quarterly Labour Force Survey
+ZAF,2024,PRI,14337.419,LFS - Quarterly Labour Force Survey
+ZAF,2024,PUB,2790.222,LFS - Quarterly Labour Force Survey
+ZAF,2024,TOTAL,17127.641,LFS - Quarterly Labour Force Survey
+ZMB,2015,PRI,3317.692,HIES - Living Conditions Monitoring Survey
+ZMB,2015,PUB,376.193,HIES - Living Conditions Monitoring Survey
+ZMB,2015,TOTAL,4465.546,HIES - Living Conditions Monitoring Survey
+ZMB,2015,X,771.661,HIES - Living Conditions Monitoring Survey
+ZMB,2017,PRI,5077.036,LFS - Labour Force Survey
+ZMB,2017,PUB,341.92,LFS - Labour Force Survey
+ZMB,2017,TOTAL,5418.956,LFS - Labour Force Survey
+ZMB,2018,PRI,4903.486,LFS - Labour Force Survey
+ZMB,2018,PUB,362.931,LFS - Labour Force Survey
+ZMB,2018,TOTAL,5266.417,LFS - Labour Force Survey
+ZMB,2019,PRI,5101.625,LFS - Labour Force Survey
+ZMB,2019,PUB,357.721,LFS - Labour Force Survey
+ZMB,2019,TOTAL,5459.346,LFS - Labour Force Survey
+ZMB,2020,PRI,5248.619,LFS - Labour Force Survey
+ZMB,2020,PUB,417.107,LFS - Labour Force Survey
+ZMB,2020,TOTAL,5665.726,LFS - Labour Force Survey
+ZMB,2021,PRI,5312.071,LFS - Labour Force Survey
+ZMB,2021,PUB,413.503,LFS - Labour Force Survey
+ZMB,2021,TOTAL,5725.574,LFS - Labour Force Survey
+ZMB,2022,PRI,5436.511,LFS - Labour Force Survey
+ZMB,2022,PUB,371.111,LFS - Labour Force Survey
+ZMB,2022,TOTAL,5807.622,LFS - Labour Force Survey
+ZMB,2023,PRI,6307.581,LFS - Labour Force Survey
+ZMB,2023,PUB,453.069,LFS - Labour Force Survey
+ZMB,2023,TOTAL,6760.649,LFS - Labour Force Survey
+ZMB,2024,PRI,6550.854,LFS - Labour Force Survey
+ZMB,2024,PUB,605.393,LFS - Labour Force Survey
+ZMB,2024,TOTAL,7156.247,LFS - Labour Force Survey
+ZWE,2019,PRI,4587.498,LFS - Labour Force Survey
+ZWE,2019,PUB,349.849,LFS - Labour Force Survey
+ZWE,2019,TOTAL,4937.347,LFS - Labour Force Survey
+ZWE,2021,PRI,2728.019,LFS - Labour Force Survey
+ZWE,2021,PUB,379.314,LFS - Labour Force Survey
+ZWE,2021,TOTAL,5309.184,LFS - Labour Force Survey
+ZWE,2021,X,2201.851,LFS - Labour Force Survey
+ZWE,2022,PRI,2580.834,LFS - Labour Force Survey
+ZWE,2022,PUB,460.616,LFS - Labour Force Survey
+ZWE,2022,TOTAL,5399.49,LFS - Labour Force Survey
+ZWE,2022,X,2358.041,LFS - Labour Force Survey
+ZWE,2023,PRI,2676.67,LFS - Labour Force Survey
+ZWE,2023,PUB,412.817,LFS - Labour Force Survey
+ZWE,2023,TOTAL,5525.267,LFS - Labour Force Survey
+ZWE,2023,X,2435.78,LFS - Labour Force Survey
+ZWE,2024,PRI,1944.76,LFS - Labour Force Survey
+ZWE,2024,PUB,439.743,LFS - Labour Force Survey
+ZWE,2024,TOTAL,4983.004,LFS - Labour Force Survey
+ZWE,2024,X,2598.501,LFS - Labour Force Survey
+ZWE,2025,PRI,2731.429,LFS - Labour Force Survey
+ZWE,2025,PUB,413.827,LFS - Labour Force Survey
+ZWE,2025,TOTAL,5820.335,LFS - Labour Force Survey
+ZWE,2025,X,2675.079,LFS - Labour Force Survey

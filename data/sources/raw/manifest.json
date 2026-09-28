@@ -73,6 +73,13 @@
    "rows": 6395,
    "title": "Population aged 15 and over with a disability and in total, thousands, by sex and age band (DF_POP_XWAP_SEX_AGE_DSB_NB), ILOSTAT"
   },
+  "ilo/earnings_by_education": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 4393,
+   "title": "Mean monthly earnings of employees by education (aggregate levels: less than basic, basic, intermediate, advanced, not stated, total), local currency, both sexes, 2015-2025 (DF_EAR_EMTA_SEX_EDU_NB), ILOSTAT"
+  },
   "ilo/earnings_by_occupation": {
    "for": [
     "S1.22",
@@ -85,6 +92,30 @@
    "rows": 103454,
    "title": "Employment by economic activity and occupation, thousands (DF_EMP_TEMP_ECO_OCU_NB), ILOSTAT"
   },
+  "ilo/employment_by_activity_sector": {
+   "for": [
+    "S1.15",
+    "S5.02"
+   ],
+   "rows": 7391,
+   "title": "Employment by ISIC Rev. 4 section and institutional sector (PUB, PRI, TOTAL), thousands, both sexes, one survey per economy nearest 2019 (DF_EMP_TEMP_SEX_ECO_INS_NB), ILOSTAT"
+  },
+  "ilo/employment_by_division": {
+   "for": [
+    "S1.22",
+    "S2.05"
+   ],
+   "rows": 10256,
+   "title": "Employment by ISIC Rev. 4 division (two digits; transport 49-53 among them), thousands, both sexes, one survey per economy nearest 2019 (DF_EMP_TEMP_SEX_EC2_NB), ILOSTAT"
+  },
+  "ilo/employment_by_sector": {
+   "for": [
+    "S1.15",
+    "S5.02"
+   ],
+   "rows": 2955,
+   "title": "Employment by institutional sector (PUB public, PRI private, TOTAL), thousands, both sexes, 2015-2025 (DF_EMP_TEMP_SEX_INS_NB), ILOSTAT"
+  },
   "ilo/employment_rate": {
    "rows": 37918,
    "title": "Employment-to-population ratio by sex and ten-year age band, % (DF_EMP_DWAP_SEX_AGE_RT), ILOSTAT"
@@ -92,6 +123,20 @@
   "ilo/hours_by_activity": {
    "rows": 91977,
    "title": "Average weekly hours actually worked per employed person by economic activity and occupation (DF_HOW_TEMP_ECO_OCU_NB), ILOSTAT"
+  },
+  "ilo/injuries": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 16016,
+   "title": "Occupational injuries per 100 000 workers in the reference group, fatal and non-fatal, by ISIC Rev. 4 section (TOTAL all activities), 2015-2025, one source per economy-year (DF_INJ_FATL_ECO_RT, DF_INJ_NFTL_ECO_RT), ILOSTAT"
+  },
+  "ilo/injury_days": {
+   "for": [
+    "S4.03"
+   ],
+   "rows": 410,
+   "title": "Cases of non-fatal occupational injury and days lost to those with temporary incapacity, all activities, 2015-2025 (DF_INJ_NFTL_ECO_NB, DF_INJ_DAYS_ECO_NB), ILOSTAT"
   },
   "ilo/mean_earnings": {
    "rows": 1535,
@@ -112,6 +157,22 @@
   "ilo/status_by_activity": {
    "rows": 51515,
    "title": "Employment by status in employment (ICSE-93) and economic activity (ISIC Rev. 4 sections), thousands, both sexes (DF_EMP_TEMP_SEX_STE_ECO_NB), ILOSTAT"
+  },
+  "ilo/unemployment_by_duration": {
+   "for": [
+    "S1.16",
+    "S7.01"
+   ],
+   "rows": 11876,
+   "title": "Unemployed persons aged 15 and over by duration of unemployment (DETAILS_*: bands in months, MLT1 under 1, MGE1LT3 1 to 3, ... MGE24 24 or more; AGGREGATE_*: under 6, 6-12, 12 or more; X not stated; TOTAL), thousands, both sexes, 2015-2025, one source per economy-year (DF_UNE_TUNE_SEX_AGE_DUR_NB), ILOSTAT"
+  },
+  "ilo/unions": {
+   "for": [
+    "S1.15",
+    "S2.10"
+   ],
+   "rows": 674,
+   "title": "Collective bargaining coverage rate and trade union density rate, % of employees, 2015-2025 (DF_ILR_CBCT_NOC_RT, DF_ILR_TUMT_NOC_RT), ILOSTAT"
   },
   "imf/GGXWDG_NGDP": {
    "rows": 2083,
@@ -259,6 +320,14 @@
    "rows": 75568,
    "title": "Net fixed assets at current prices by activity and asset, closing stocks, national currency, millions (Table 9A), OECD"
   },
+  "oecd/government_employment": {
+   "for": [
+    "S1.15",
+    "S5.02"
+   ],
+   "rows": 589,
+   "title": "Employment in general government, % of total employment, all years published, Government at a Glance 2025 (DSD_GOV@DF_GOV_EMPPS_REP_2025, EMPG), OECD"
+  },
   "oecd/nonfinancial_balance_sheets": {
    "rows": 1926,
    "title": "Balance sheets for non-financial assets, closing stocks 2019, by sector and asset, net, current prices, national currency (Table 9B), OECD"
@@ -266,6 +335,20 @@
   "oecd/pensions": {
    "rows": 566,
    "title": "Current normal pension age for a worker entering at 22 (years, by sex), gross replacement rate of mandatory schemes at average earnings (% of pre-retirement earnings, by sex), and public and occupational transfers' shares of the disposable income of people over 65 (%), OECD Pensions at a Glance (DF_PAG)"
+  },
+  "oecd/sick_leave": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 346,
+   "title": "Sick leave of full-time dependent employees, weeks a year per person, 2015-2025 (DSD_HEALTH_STAT@DF_HEALTH_STATUS, WKAB), OECD"
+  },
+  "oecd/unions": {
+   "for": [
+    "S1.15"
+   ],
+   "rows": 565,
+   "title": "Trade union density (TUD) and collective bargaining coverage (measures of DF_CBC), % of employees, 2015-2025, OECD/AIAS ICTWSS (DSD_TUD_CBC), OECD"
   },
   "oecd/value_added": {
    "rows": 31964,
@@ -410,6 +493,120 @@
   "owid/labor-share-of-gdp": {
    "rows": 1023,
    "title": "Labour share of GDP (%), ILO, SDG indicator 10.4.1, via Our World in Data"
+  },
+  "people/ces_expectations": {
+   "for": [
+    "S1.15"
+   ],
+   "rows": 17388,
+   "title": "ECB Consumer Expectations Survey, monthly from 2020-04: inflation expectations 12 months (C1120) and 3 years ahead (C1220), probabilistic 12-month mean and uncertainty (C1150_EXP, C1150_UNCERT), household income growth expected (C3220), expected unemployment rate (C4031); weighted mean (WA), median (WM), p25, p75; euro area (Z17, Z18: 17 and 18 members) and 11 countries (iso3), all and by age band and income quintile"
+  },
+  "people/dhs_indicators": {
+   "for": [
+    "S6.02",
+    "F-036"
+   ],
+   "rows": 7455,
+   "title": "DHS survey aggregates, national, surveys from 2005: household size distribution and composition (members 65+, three generations, non-nuclear families, female head, children's living arrangements), current marital status of women and men 15-49, ideal number of children; indicators: HC_MEMB_H_MNM mean household members; HC_MEMB_H_1MM households of 1 member, %; HC_MEMB_H_2MM households of 2, %; HC_MEMB_H_3MM households of 3, %; HC_MEMB_H_4MM households of 4, %; HC_MEMB_H_5MM households of 5, %; HC_MEMB_H_6MM households of 6, %; HC_MEMB_H_7MM households of 7, %; HC_MEMB_H_8MM households of 8, %; HC_MEMB_H_9MM households of 9+, %; HC_OLDR_H_W65 households with members 65+, %; HC_OLDR_H_O65 households of members 65+ only, %; HC_OLDR_H_3GN households of 3 generations, %; HC_OLDR_P_NNC population in non-nuclear families, %; HC_HHHD_H_FEM female-headed households, %; HC_LVAR_C_BTH children under 18 living with both parents, %; HC_LVAR_C_NBP children under 18 living with no biological parent, %; HC_ORPH_H_FOS households with children not living with a biological parent, %; MA_MSTA_W_NMA women 15-49 never married, %; MA_MSTA_W_MAR women 15-49 married, %; MA_MSTA_W_LTG women 15-49 living together, %; MA_MSTA_W_DIV women 15-49 divorced, %; MA_MSTA_W_SEP women 15-49 separated, %; MA_MSTA_W_WID women 15-49 widowed, %; MA_MSTA_M_NMA men 15-49 never married, %; MA_MSTA_M_MAR men 15-49 married, %; MA_MSTA_M_LTG men 15-49 living together, %; MA_MSTA_M_DIV men 15-49 divorced, %; MA_MSTA_M_SEP men 15-49 separated, %; MA_MSTA_M_WID men 15-49 widowed, %; PR_IDLC_W_MNA mean ideal number of children, all women; PR_IDLC_M_MNA mean ideal number of children, all men; PR_IDLC_W_ID0 women whose ideal number of children is 0, %; PR_IDLC_W_ID1 women whose ideal number of children is 1, %; PR_IDLC_W_ID2 women whose ideal number of children is 2, %; PR_IDLC_W_ID3 women whose ideal number of children is 3, %; PR_IDLC_W_ID4 women whose ideal number of children is 4, %; PR_IDLC_W_ID5 women whose ideal number of children is 5, %; PR_IDLC_W_ID6 women whose ideal number of children is 6+, %; PR_IDLC_W_IDN women giving a non-numeric ideal number of children, %; DHS Program API"
+  },
+  "people/expectations_by_level": {
+   "for": [
+    "S1.15"
+   ],
+   "note": "Derived: the US pattern shifted to each level's inflation. For each Surveys of Consumers group (sca_expectations: px1, age 18-34..65+, income quintiles, all) the 2015-2019 mean of each yearly statistic is the US value; the level's shift is the median over its economies (World Bank income groups: High = developed, Upper middle = emerging, Lower middle and Low = developing) of each economy's 2015-2019 mean CPI inflation (wdi/FP.CPI.TOTL.ZG, economies with all five years) less the US's; mean, median, p25 and p75 are shifted by it, the standard deviation is kept",
+   "rows": 165,
+   "title": "Households' one-year-ahead expected inflation by age group and income quintile, per development level (mean, median, p25, p75 and standard deviation, % a year), derived"
+  },
+  "people/gps_country": {
+   "for": [
+    "S1.12",
+    "S2.05",
+    "VAL.22"
+   ],
+   "rows": 76,
+   "title": "Global Preferences Survey country means of patience, risk taking, positive and negative reciprocity, altruism and trust, in standard deviations of the world's individual-level distribution (mean 0), surveyed 2012, Falk et al. (2018, QJE 133(4)), from the survey site's rankings service"
+  },
+  "people/marriage_divorce": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 642,
+   "title": "Crude marriage and divorce rates, per 1 000 people, 2015-2025, OECD Family Database (SF3.1), via Our World in Data's catalogue"
+  },
+  "people/migrant_stock_bilateral": {
+   "for": [
+    "S5.05",
+    "S6.02"
+   ],
+   "rows": 26339,
+   "title": "International migrant stock by country of destination and origin (WLD = all), persons, mid-2015, 2020 and 2024, UN DESA International Migrant Stock 2024, via Our World in Data's catalogue"
+  },
+  "people/piaac_2023": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 713,
+   "title": "Survey of Adult Skills (PIAAC Cycle 2, 2023), adults 16-65: mean literacy, numeracy and adaptive problem-solving scores (0-500) and shares at proficiency levels, by participating economy (Belgium is Flanders, the United Kingdom England), OECD results republished by the Irish CSO (PxStat PIAAC01, PIAAC02)"
+  },
+  "people/remittances_bilateral": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 6036,
+   "title": "Bilateral remittance flows, sending economy to receiving economy (WLD = all), current US$, 2021, World Bank/KNOMAD bilateral remittance matrix (estimated from migrant stocks and incomes), via Our World in Data's catalogue"
+  },
+  "people/sca_expectations": {
+   "for": [
+    "S1.15"
+   ],
+   "rows": 7260,
+   "title": "University of Michigan Surveys of Consumers, yearly 2015-2025, by group (all households; age 18-34, 35-44, 45-54, 55-64, 65+; income quintiles y15..y55): expected price change next year (px1) and in 5 years (px5), % \u2014 shares by band, mean, median, p25, p75, std, variance; expected unemployment change (umex); expected income change next year (inex); probability of losing a job in 5 years (pjob)"
+  },
+  "people/sce_expectations": {
+   "for": [
+    "S1.15"
+   ],
+   "rows": 22572,
+   "title": "New York Fed Survey of Consumer Expectations chart data, monthly 2015-2025: inflation expectations and uncertainty one and three years ahead, earnings and household income growth, probabilities of higher unemployment, losing, leaving and finding a job, all households (medians and percentiles) and by age, education, income, numeracy and region; measure codes in sce_measures.csv"
+  },
+  "people/sce_measures": {
+   "for": [
+    "S1.15"
+   ],
+   "rows": 31,
+   "title": "Legend of sce_expectations' measure codes: the chart-data sheet and what the code measures (a sheet by demographic group has one code per column block, its blocks in the order of the all-households sheet where the file leaves a block untitled)"
+  },
+  "people/sce_microdata": {
+   "for": [
+    "S1.15",
+    "F-071"
+   ],
+   "rows": 78136,
+   "title": "New York Fed Survey of Consumer Expectations public microdata, 2015-2019, one row per respondent and month (a rotating panel of up to 12 months, userid): point forecasts of inflation one and three years ahead, the one-year density's median and interquartile range, probabilities of higher US unemployment and of losing one's job (%), survey weight, age, household income and education groups (gzip CSV)"
+  },
+  "people/tenure_dls": {
+   "for": [
+    "S6.05",
+    "F-105"
+   ],
+   "rows": 5868,
+   "title": "Wage workers by job tenure band (1 under 6 months, 2 6-12 months, 3 1-5 years, 4 over 5 years): the band's share of wage workers (share) and the quarterly rate of moving to state to_state (W wage work in the same job, B and M the replication's other states), by economy and survey year, harmonised rotating-panel labour force surveys, Donovan, Lu and Schoellman (2023, QJE), replication data doi:10.7910/DVN/RXWKTV (Tenure_Transitions)"
+  },
+  "people/typed_internal_migration": {
+   "for": [
+    "S6.02"
+   ],
+   "note": "Typed from Bernard, A., M. Bell and J. Cooper (2018), 'Internal migration and education: a cross-national comparison', background paper for the 2019 Global Education Monitoring Report (UNESCO), arXiv:1812.08913, Tables A4.1 and A4.2 (pp. 53-54) with the census years of Table A1 (p. 49); the IMAGE repository and Bell et al. (2015) are unreachable",
+   "rows": 92,
+   "title": "Five-year crude internal migration intensity, % of the population aged 15 and over who changed major (or minor) administrative region over five years, in total and by education (less than primary, primary, secondary, university completed), census year"
+  },
+  "people/typed_returns_to_schooling": {
+   "for": [
+    "S6.02"
+   ],
+   "note": "Typed from Montenegro, C.E. and H.A. Patrinos (2014), 'Comparable Estimates of Returns to Schooling Around the World', World Bank Policy Research Working Paper 7020, Annex Table 1, pp. 20-36 (columns A, C, D, E); read from the downloaded PDF by column position, a blank cell left missing",
+   "rows": 819,
+   "title": "Private returns to schooling by economy and survey year, % per year: another year of schooling (A, educyT) and a year of primary, secondary and tertiary schooling (C, D, E: educyL_P_T, educyL_S_T, educyL_T_T), both sexes, Mincerian estimates on harmonised household surveys 1970-2013"
   },
   "prices/commodities": {
    "rows": 5,
@@ -810,6 +1007,27 @@
    "rows": 62235,
    "title": "Population by highest level of education (0 none, 1 incomplete primary, 2 primary, 3 lower secondary, 4 upper secondary, 5 short post-secondary, 6 bachelor, 7 master and higher, 8 post-secondary where the three are not reported apart), % of each five-year age group from 15 and sex, 2020, Wittgenstein Centre Human Capital Data Explorer v3, SSP2"
   },
+  "wdi/BM.TRF.PWKR.CD.DT": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1866,
+   "title": "Personal remittances, paid, current US$, 2015-2025 (BM.TRF.PWKR.CD.DT), World Bank WDI"
+  },
+  "wdi/BX.TRF.PWKR.CD.DT": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1849,
+   "title": "Personal remittances, received, current US$, 2015-2025 (BX.TRF.PWKR.CD.DT), World Bank WDI"
+  },
+  "wdi/BX.TRF.PWKR.DT.GD.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 1841,
+   "title": "Personal remittances, received, % of GDP, 2015-2025 (BX.TRF.PWKR.DT.GD.ZS), World Bank WDI"
+  },
   "wdi/FB.BNK.CAPA.ZS": {
    "rows": 1469,
    "title": "Bank capital to assets ratio (%)"
@@ -836,6 +1054,13 @@
   "wdi/GC.TAX.TOTL.GD.ZS": {
    "rows": 1294,
    "title": "Tax revenue (% of GDP)"
+  },
+  "wdi/HD.HCI.HLOS": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 494,
+   "title": "Harmonized test scores (Human Capital Index), 300 minimal to 625 advanced, 2015-2025 (HD.HCI.HLOS), World Bank WDI"
   },
   "wdi/IP.PAT.NRES": {
    "for": [
@@ -879,19 +1104,107 @@
    "rows": 2169,
    "title": "GDP per capita, PPP (constant 2021 international $)"
   },
+  "wdi/SE.COM.DURS": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 2152,
+   "title": "Compulsory education, duration, years, 2015-2025 (SE.COM.DURS), World Bank WDI"
+  },
+  "wdi/SE.PRE.DURS": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 2203,
+   "title": "Pre-primary education, duration, years, 2015-2025 (SE.PRE.DURS), World Bank WDI"
+  },
+  "wdi/SE.PRE.ENRL.TC.ZS": {
+   "for": [
+    "S5.02",
+    "S6.02"
+   ],
+   "rows": 404,
+   "title": "Pupil-teacher ratio, pre-primary, 2015-2025 (SE.PRE.ENRL.TC.ZS), World Bank WDI"
+  },
+  "wdi/SE.PRE.ENRR": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 997,
+   "title": "School enrolment, pre-primary, % gross, 2015-2025 (SE.PRE.ENRR), World Bank WDI"
+  },
+  "wdi/SE.PRM.AGES": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 2304,
+   "title": "Primary school starting age, years, 2015-2025 (SE.PRM.AGES), World Bank WDI"
+  },
+  "wdi/SE.PRM.DURS": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 2304,
+   "title": "Primary education, duration, years, 2015-2025 (SE.PRM.DURS), World Bank WDI"
+  },
   "wdi/SE.PRM.ENRL.TC.ZS": {
    "for": [
-    "S5.02"
+    "S5.02",
+    "S6.02"
    ],
    "rows": 513,
-   "title": "Pupil-teacher ratio, primary, World Bank WDI"
+   "title": "Pupil-teacher ratio, primary, 2015-2025 (SE.PRM.ENRL.TC.ZS), World Bank WDI"
+  },
+  "wdi/SE.PRM.ENRR": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 1635,
+   "title": "School enrolment, primary, % gross, 2015-2025 (SE.PRM.ENRR), World Bank WDI"
+  },
+  "wdi/SE.SEC.AGES": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 2289,
+   "title": "Lower secondary school starting age, years, 2015-2025 (SE.SEC.AGES), World Bank WDI"
+  },
+  "wdi/SE.SEC.DURS": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 2289,
+   "title": "Secondary education, duration, years, 2015-2025 (SE.SEC.DURS), World Bank WDI"
   },
   "wdi/SE.SEC.ENRL.TC.ZS": {
    "for": [
-    "S5.02"
+    "S5.02",
+    "S6.02"
    ],
    "rows": 420,
-   "title": "Pupil-teacher ratio, secondary, World Bank WDI"
+   "title": "Pupil-teacher ratio, secondary, 2015-2025 (SE.SEC.ENRL.TC.ZS), World Bank WDI"
+  },
+  "wdi/SE.SEC.ENRR": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 1421,
+   "title": "School enrolment, secondary, % gross, 2015-2025 (SE.SEC.ENRR), World Bank WDI"
+  },
+  "wdi/SE.TER.ENRL.TC.ZS": {
+   "for": [
+    "S5.02",
+    "S6.02"
+   ],
+   "rows": 348,
+   "title": "Pupil-teacher ratio, tertiary, 2015-2025 (SE.TER.ENRL.TC.ZS), World Bank WDI"
+  },
+  "wdi/SE.TER.ENRR": {
+   "for": [
+    "S6.02"
+   ],
+   "rows": 1301,
+   "title": "School enrolment, tertiary, % gross, 2015-2025 (SE.TER.ENRR), World Bank WDI"
   },
   "wdi/SE.XPD.TOTL.GD.ZS": {
    "for": [
@@ -946,6 +1259,21 @@
   "wdi/SL.UEM.TOTL.ZS": {
    "rows": 2043,
    "title": "Unemployment, total (% of total labor force) (modeled ILO estimate)"
+  },
+  "wdi/SM.POP.NETM": {
+   "for": [
+    "S5.05",
+    "S6.02"
+   ],
+   "rows": 2387,
+   "title": "Net migration, persons, 2015-2025 (SM.POP.NETM), World Bank WDI"
+  },
+  "wdi/SM.POP.TOTL.ZS": {
+   "for": [
+    "S5.05"
+   ],
+   "rows": 648,
+   "title": "International migrant stock, % of population, 2015-2025 (SM.POP.TOTL.ZS), World Bank WDI"
   },
   "wdi/SP.DYN.LE00.IN": {
    "rows": 2170,
@@ -1232,10 +1560,65 @@
    "title": "OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD",
    "url": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SPD,DSD_PAG@DF_PAG,/all?format=csvfile; https://sdmx.ilo.org/rest/data/ILO,DF_SDG_0131_SEX_SOC_RT,1.0/all?startPeriod=2010"
   },
+  "people_ces": {
+   "fetched": "2026-09-28",
+   "title": "ECB Data Portal API, Consumer Expectations Survey (CES)",
+   "url": "https://data-api.ecb.europa.eu/service/data/CES/M...T.C1120+C1220+C3220+C4031+C1150_EXP+C1150_UNCERT.NUM_VAR.WM+WA+WP25+WP75?format=csvdata"
+  },
+  "people_dhs": {
+   "fetched": "2026-09-28",
+   "title": "DHS Program API",
+   "url": "https://api.dhsprogram.com/rest/dhs/data?indicatorIds=<ids>"
+  },
+  "people_dls": {
+   "fetched": "2026-09-28",
+   "title": "Harvard Dataverse, Donovan, Lu and Schoellman (2023) replication package",
+   "url": "https://dataverse.harvard.edu/api/access/datafile/7102919"
+  },
+  "people_gps": {
+   "fetched": "2026-09-28",
+   "title": "Global Preferences Survey, University of Bonn (country rankings service)",
+   "url": "https://gps.econ.uni-bonn.de/rankings"
+  },
   "people_ilo": {
    "fetched": "2026-09-28",
    "title": "ILOSTAT SDMX API",
    "url": "https://sdmx.ilo.org/rest/data/ILO,<dataflow>,1.0/<key>?startPeriod=2015&endPeriod=2025"
+  },
+  "people_oecd": {
+   "fetched": "2026-09-28",
+   "title": "OECD Data Explorer SDMX API: Government at a Glance, ICTWSS, health status",
+   "url": "https://sdmx.oecd.org/public/rest/data/<dataflow>/<key>?startPeriod=2015&format=csvfile"
+  },
+  "people_owid": {
+   "fetched": "2026-09-28",
+   "title": "Our World in Data ETL catalogue (garden tables: UN DESA migrant stock 2024, KNOMAD bilateral remittances, OECD Family Database, regions)",
+   "url": "https://catalog.ourworldindata.org/<path>.parquet"
+  },
+  "people_piaac": {
+   "fetched": "2026-09-28",
+   "title": "CSO Ireland PxStat, PIAAC 2023 international comparison tables",
+   "url": "https://ws.cso.ie/public/api.restful/PxStat.Data.Cube_API.ReadDataset/<table>/CSV/1.0/en"
+  },
+  "people_sca": {
+   "fetched": "2026-09-28",
+   "title": "University of Michigan, Surveys of Consumers, demographic subgroups subset",
+   "url": "https://data.sca.isr.umich.edu/subset/output.php"
+  },
+  "people_sce": {
+   "fetched": "2026-09-28",
+   "title": "Federal Reserve Bank of New York, Survey of Consumer Expectations: chart data and public microdata",
+   "url": "https://www.newyorkfed.org/medialibrary/interactives/sce/sce/downloads/data/<file>"
+  },
+  "people_typed": {
+   "fetched": "2026-09-28",
+   "title": "World Bank Documents (WPS7020); arXiv (1812.08913)",
+   "url": "https://documents1.worldbank.org/curated/en/830831468147839247/pdf/WPS7020.pdf; https://arxiv.org/pdf/1812.08913"
+  },
+  "people_wdi": {
+   "fetched": "2026-09-28",
+   "title": "World Bank API, World Development Indicators",
+   "url": "https://api.worldbank.org/v2/country/all/indicator/<series>?format=json&date=2015:2025&per_page=20000"
   },
   "prices": {
    "fetched": "2026-09-27",

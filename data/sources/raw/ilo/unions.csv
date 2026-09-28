@@ -1,0 +1,675 @@
+iso3,year,measure,value,source
+AFG,2019,density,16.767,ADM-RWO - Records of Unions of Afghanistan
+ALB,2015,coverage,56.6,ADM - Administrative records and related sources
+ALB,2016,coverage,54.4,ADM - Administrative records and related sources
+ALB,2017,coverage,50.9,ADM - Administrative records and related sources
+ALB,2017,density,36.847,ADM - Administrative records and related sources
+ALB,2018,coverage,51.1,ADM - Administrative records and related sources
+ARG,2015,coverage,52.9,"ADM - Estimaciones basadas en Registros del Ministerio de Trabajo, Empleo y Seguridad Social"
+ARG,2016,coverage,51.8,"ADM - Estimaciones basadas en Registros del Ministerio de Trabajo, Empleo y Seguridad Social"
+ARG,2017,coverage,48.4,"ADM - Estimaciones basadas en Registros del Ministerio de Trabajo, Empleo y Seguridad Social"
+ARG,2018,coverage,49.4,"ADM - Estimaciones basadas en Registros del Ministerio de Trabajo, Empleo y Seguridad Social"
+ARM,2015,coverage,24.9,ADM-RWO - Records from branch republican Unions
+ARM,2015,density,24.805,LFS - Household Labour Force Survey
+ARM,2016,coverage,24.1,ADM-RWO - Records from branch republican Unions
+ARM,2016,density,23.194,LFS - Household Labour Force Survey
+ARM,2017,coverage,25.7,ADM-RWO - Records from branch republican Unions
+ARM,2017,density,22.676,LFS - Household Labour Force Survey
+ARM,2018,coverage,19.9,ADM-RWO - Records from branch republican Unions
+ARM,2018,density,23.396,LFS - Household Labour Force Survey
+ARM,2019,coverage,19.4,ADM-RWO - Records from branch republican Unions
+ARM,2019,density,20.55,LFS - Household Labour Force Survey
+AUS,2015,density,16.63,"LFS - Employee Earnings, Benefits and Trade Union Membership Survey"
+AUS,2016,coverage,61.3,ES - Survey of Employee Earnings
+AUS,2016,density,14.555,"LFS - Employee Earnings, Benefits and Trade Union Membership Survey"
+AUS,2018,coverage,61.2,ES - Survey of Employee Earnings
+AUS,2018,density,13.656,"LFS - Employee Earnings, Benefits and Trade Union Membership Survey"
+AUT,2015,coverage,98,OS - Estimations based on Records from the Economic Chambers
+AUT,2015,density,27.352,OS - Trade unions records
+AUT,2016,coverage,98,OS - Estimations based on Records from the Economic Chambers
+AUT,2016,density,26.897,OS - Trade unions records
+AUT,2017,coverage,98,OS - Estimations based on Records from the Economic Chambers
+AUT,2017,density,26.645,OS - Trade unions records
+AUT,2018,coverage,98,OS - Estimations based on Records from the Economic Chambers
+AUT,2018,density,26.298,OS - Trade unions records
+AUT,2019,coverage,98,OS - Estimations based on Records from the Economic Chambers
+AUT,2019,density,26.243,OS - Trade unions records
+BEL,2015,coverage,96,ADM - Records from the National Labour Council
+BEL,2015,density,52.269,OS - Estimations based on Records from the three main union confederations
+BEL,2016,coverage,96,ADM - Records from the National Labour Council
+BEL,2016,density,51.576,OS - Estimations based on Records from the three main union confederations
+BEL,2017,coverage,96,ADM - Records from the National Labour Council
+BEL,2017,density,50.717,OS - Estimations based on Records from the three main union confederations
+BEL,2018,coverage,96,ADM - Records from the National Labour Council
+BEL,2018,density,49.962,OS - Estimations based on Records from the three main union confederations
+BEL,2019,coverage,96,ADM - Records from the National Labour Council
+BEL,2019,density,49.082,OS - Estimations based on Records from the three main union confederations
+BFA,2018,density,9.814,LFS - Enquête Régionale Intégrée sur l'Emploi et le Secteur Informel
+BGD,2016,coverage,2.6,OS - Estimations based on administrative data
+BGD,2017,coverage,2.3,OS - Estimations based on administrative data
+BGD,2018,coverage,1.6,OS - Estimations based on administrative data
+BGD,2018,density,11.897,ADM - Administrative Records
+BGD,2019,coverage,1.6,OS - Estimations based on administrative data
+BGD,2020,coverage,1.6,OS - Estimations based on administrative data
+BGR,2015,coverage,11.6,ADM-CA - NICA's registry of collective labour agreements
+BGR,2015,density,13.6,ADM - Administrative Records
+BGR,2016,coverage,10.8,ADM-CA - NICA's registry of collective labour agreements
+BGR,2016,density,13.7,ADM - Administrative Records
+BLZ,2019,density,7.435,ADM - Trade unions records
+BMU,2018,density,21.896,ADM-RWO - Records of Workers' Organizations
+BOL,2015,density,11.406,HIES - Household Survey
+BOL,2016,density,13.328,HIES - Household Survey
+BOL,2017,density,11.324,HIES - Household Survey
+BOL,2018,density,11.831,HIES - Household Survey
+BOL,2019,density,12.045,HIES - Household Survey
+BRA,2015,coverage,65.8,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2015,density,17.924,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2016,coverage,61.9,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2016,density,16.897,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2017,coverage,59.9,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2017,density,16.808,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2018,coverage,58.5,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2018,density,14.584,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2019,coverage,57.7,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2019,density,13.033,HS - Pesquisa Nacional por Amostra de Domicílios
+BRA,2020,coverage,64.8,HS - Pesquisa Nacional por Amostra de Domicílios
+BWA,2016,coverage,36.1,OS - Estimations based on administrative data
+BWA,2016,density,29.003,OS - Estimations based on administrative data
+BWA,2017,coverage,36,OS - Estimations based on administrative data
+BWA,2017,density,28.061,OS - Estimations based on administrative data
+BWA,2018,coverage,37.9,OS - Estimations based on administrative data
+BWA,2018,density,29.106,OS - Estimations based on administrative data
+BWA,2019,coverage,33.8,OS - Estimations based on administrative data
+BWA,2019,density,29.359,OS - Estimations based on administrative data
+BWA,2020,coverage,34.5,OS - Estimations based on administrative data
+BWA,2020,density,29.963,OS - Estimations based on administrative data
+CAN,2015,coverage,30.6,LFS - Labour Force Survey
+CAN,2015,density,28.587,LFS - Labour Force Survey
+CAN,2016,coverage,30.3,LFS - Labour Force Survey
+CAN,2016,density,28.394,LFS - Labour Force Survey
+CAN,2017,coverage,30.4,LFS - Labour Force Survey
+CAN,2017,density,28.436,LFS - Labour Force Survey
+CAN,2018,coverage,30.1,LFS - Labour Force Survey
+CAN,2018,density,28.091,LFS - Labour Force Survey
+CAN,2019,coverage,30.2,LFS - Labour Force Survey
+CAN,2019,density,28.288,LFS - Labour Force Survey
+CAN,2020,coverage,31.3,LFS - Labour Force Survey
+CAN,2020,density,29.387,LFS - Labour Force Survey
+CHE,2015,density,15.656,ADM-RWO - Records of Affiliated and Independent Unions
+CHE,2016,coverage,48,OS - Estimations based on Administrative data
+CHE,2016,density,15.255,ADM-RWO - Records of Affiliated and Independent Unions
+CHE,2017,density,14.864,ADM-RWO - Records of Affiliated and Independent Unions
+CHE,2018,coverage,47.7,OS - Estimations based on Administrative data
+CHE,2018,density,14.427,ADM-RWO - Records of Affiliated and Independent Unions
+CHL,2015,coverage,17.6,ADM - Registros Administrativos de la Dirección del Trabajo
+CHL,2015,density,15.402,ADM - Registros Administrativos de la Dirección del Trabajo
+CHL,2016,coverage,17.9,ADM - Registros Administrativos de la Dirección del Trabajo
+CHL,2016,density,16.915,ADM - Registros Administrativos de la Dirección del Trabajo
+CHL,2017,coverage,20.5,ADM - Registros Administrativos de la Dirección del Trabajo
+CHL,2017,density,17.381,ADM - Registros Administrativos de la Dirección del Trabajo
+CHL,2018,coverage,21,ADM - Registros Administrativos de la Dirección del Trabajo
+CHL,2018,density,17.094,ADM - Registros Administrativos de la Dirección del Trabajo
+CHN,2015,density,43.861,ADM - Statistical Yearbook
+CHN,2016,coverage,44.9,ADM-RWO - Records of Workers' Organizations
+CHN,2016,density,44.562,ADM - Statistical Yearbook
+CHN,2017,coverage,45,ADM-RWO - Records of Workers' Organizations
+CHN,2017,density,44.249,ADM - Statistical Yearbook
+CIV,2016,density,9.351,LFS - Enquête Nationale sur la Situacion de l'Emploi
+CIV,2017,density,10.624,LFS - Enquête Nationale sur la Situacion de l'Emploi
+CMR,2016,coverage,16.5,OS - Estimations based on administrative data
+COL,2015,coverage,14.5,OE - Estimates based on various Administrative Records
+COL,2015,density,5.409,OE - Estimates based on various Administrative Records
+COL,2016,coverage,15.7,OE - Estimates based on various Administrative Records
+COL,2016,density,5.247,OE - Estimates based on various Administrative Records
+COL,2017,density,4.773,OE - Estimates based on various Administrative Records
+COL,2018,density,4.703,OE - Estimates based on various Administrative Records
+COL,2019,density,4.653,OE - Estimates based on various Administrative Records
+CPV,2015,density,20.9,LFS - Continuous Multi-Objective Survey Employment and Labor Market Statistics
+CRI,2015,coverage,9.3,ADM - Administrative Records of the Ministry of Labour and Social Security
+CRI,2015,density,18.581,HS - Encuesta Nacional de Hogares
+CRI,2016,coverage,10.6,ADM - Administrative Records of the Ministry of Labour and Social Security
+CRI,2016,density,19.336,HS - Encuesta Nacional de Hogares
+CRI,2017,coverage,10.8,ADM - Administrative Records of the Ministry of Labour and Social Security
+CRI,2017,density,19.33,HS - Encuesta Nacional de Hogares
+CRI,2018,coverage,10.2,ADM - Administrative Records of the Ministry of Labour and Social Security
+CRI,2018,density,19.449,HS - Encuesta Nacional de Hogares
+CRI,2019,coverage,10.3,ADM - Administrative Records of the Ministry of Labour and Social Security
+CRI,2019,density,20.538,HS - Encuesta Nacional de Hogares
+CRI,2020,coverage,11.8,ADM - Administrative Records of the Ministry of Labour and Social Security
+CUB,2018,coverage,76.8,ADM-RWO - Registros de la Central de Trabajadores de Cuba
+CUW,2018,density,23.491,LFS - Labour Force Survey
+CYP,2015,coverage,43.6,OS - Estimates based on legislation
+CYP,2015,density,43.582,OS - Estimates based on Trade Union Registrar
+CYP,2016,coverage,43.3,OS - Estimates based on legislation
+CYP,2016,density,43.285,OS - Estimates based on Trade Union Registrar
+CZE,2015,coverage,31.6,"ADM-CA - Collective agreements by ČMKOS, enterprise and higher-order agreements"
+CZE,2015,density,11.924,ADM-RWO - Estimations based on self-reported membership of the main union confederations
+CZE,2016,coverage,30.3,"ADM-CA - Collective agreements by ČMKOS, enterprise and higher-order agreements"
+CZE,2016,density,11.918,ADM-RWO - Estimations based on self-reported membership of the main union confederations
+CZE,2017,coverage,30.9,"ADM-CA - Collective agreements by ČMKOS, enterprise and higher-order agreements"
+CZE,2017,density,11.657,ADM-RWO - Estimations based on self-reported membership of the main union confederations
+CZE,2018,coverage,31.5,"ADM-CA - Collective agreements by ČMKOS, enterprise and higher-order agreements"
+CZE,2018,density,11.384,ADM-RWO - Estimations based on self-reported membership of the main union confederations
+CZE,2019,coverage,32.1,"ADM-CA - Collective agreements by ČMKOS, enterprise and higher-order agreements"
+DEU,2015,coverage,56.8,ES - Establishment Survey
+DEU,2015,density,17.527,ADM-RWO - Records of union federations and independent unions
+DEU,2016,coverage,56.4,ES - Establishment Survey
+DEU,2016,density,16.957,ADM-RWO - Records of union federations and independent unions
+DEU,2017,coverage,54.5,ES - Establishment Survey
+DEU,2017,density,16.68,ADM-RWO - Records of union federations and independent unions
+DEU,2018,coverage,54.3,ES - Establishment Survey
+DEU,2018,density,16.542,ADM-RWO - Records of union federations and independent unions
+DEU,2019,coverage,51.8,ES - Establishment Survey
+DEU,2019,density,16.255,ADM-RWO - Records of union federations and independent unions
+DNK,2015,coverage,84,ADM-REO - Records of Workers' Organizations
+DNK,2015,density,68.194,ADM-RWO - Membership of Workers' Organizations
+DNK,2016,density,67.356,ADM-RWO - Membership of Workers' Organizations
+DNK,2017,density,66.737,ADM-RWO - Membership of Workers' Organizations
+DNK,2018,coverage,80.3,ADM-REO - Records of Workers' Organizations
+DNK,2018,density,67.547,ADM-RWO - Membership of Workers' Organizations
+DNK,2019,density,66.976,ADM-RWO - Membership of Workers' Organizations
+DOM,2015,density,5.62,LFS - Encuesta Nacional de Fuerza de Trabajo
+DOM,2016,density,6.58,LFS - Encuesta Nacional de Fuerza de Trabajo
+DOM,2017,density,7.61,LFS - Encuesta Nacional de Fuerza de Trabajo
+DOM,2018,density,7.46,LFS - Encuesta Nacional de Fuerza de Trabajo
+DOM,2019,density,7.49,LFS - Encuesta Nacional de Fuerza de Trabajo
+ESP,2015,coverage,79.6,ADM-CA - Convenios Colectivos de Trabajo
+ESP,2015,density,14.448,ADM-RWO - Records of main union confederations and independent unions
+ESP,2016,coverage,80.8,ADM-CA - Convenios Colectivos de Trabajo
+ESP,2016,density,13.947,ADM-RWO - Records of main union confederations and independent unions
+ESP,2017,coverage,78.9,ADM-CA - Convenios Colectivos de Trabajo
+ESP,2017,density,13.403,ADM-RWO - Records of main union confederations and independent unions
+ESP,2018,coverage,80.1,ADM-CA - Convenios Colectivos de Trabajo
+ESP,2018,density,12.966,ADM-RWO - Records of main union confederations and independent unions
+ESP,2019,density,12.449,ADM-RWO - Records of main union confederations and independent unions
+EST,2015,coverage,18.6,OS - Estimations based on Working Life Survey and Administrative data for small firms
+EST,2015,density,4.487,LFS - Labour Force Survey
+EST,2016,coverage,14.4,OS - Estimations based on Working Life Survey and Administrative data for small firms
+EST,2016,density,5.048,LFS - Labour Force Survey
+EST,2017,coverage,14.7,OS - Estimations based on Working Life Survey and Administrative data for small firms
+EST,2017,density,4.666,LFS - Labour Force Survey
+EST,2018,coverage,15,OS - Estimations based on Working Life Survey and Administrative data for small firms
+EST,2018,density,5.892,LFS - Labour Force Survey
+EST,2019,density,6.017,LFS - Labour Force Survey
+ETH,2015,density,8.472,ADM - Administrative records and related sources
+ETH,2016,coverage,1.2,ADM - Administrative records and related sources
+ETH,2016,density,8.615,ADM - Administrative records and related sources
+ETH,2017,coverage,1.1,ADM - Administrative records and related sources
+ETH,2017,density,8.807,ADM - Administrative records and related sources
+ETH,2018,coverage,1.1,ADM - Administrative records and related sources
+ETH,2018,density,8.839,ADM - Administrative records and related sources
+ETH,2019,coverage,1,ADM - Administrative records and related sources
+ETH,2019,density,9.35,ADM - Administrative records and related sources
+FIN,2015,coverage,89.3,ADM - Records of the Ministry of Social Affairs and Health
+FIN,2015,density,67.551,ADM - Trade unions records
+FIN,2016,density,65.673,ADM - Trade unions records
+FIN,2017,coverage,88.8,ADM - Records of the Ministry of Social Affairs and Health
+FIN,2017,density,62.889,ADM - Trade unions records
+FIN,2018,coverage,89.2,ADM - Records of the Ministry of Social Affairs and Health
+FIN,2018,density,59.992,ADM - Trade unions records
+FIN,2019,density,58.825,ADM - Trade unions records
+FJI,2016,density,13.181,"LFS - Employment, Unemployment Survey"
+FRA,2015,coverage,98,"ADM - Fichiers de la Direction de l'animation de la recherche, des études et des statistiques"
+FRA,2015,density,9.032,OS - Estimations based on self-reported membership and financial statistics of confederations and independent unions
+FRA,2016,density,11.001,OS - Estimations based on self-reported membership and financial statistics of confederations and independent unions
+FRA,2017,density,8.996,OS - Estimations based on self-reported membership and financial statistics of confederations and independent unions
+FRA,2018,coverage,98,"ADM - Fichiers de la Direction de l'animation de la recherche, des études et des statistiques"
+FRA,2018,density,8.89,OS - Estimations based on self-reported membership and financial statistics of confederations and independent unions
+GBR,2015,coverage,27.9,LFS - Labour Force Survey
+GBR,2015,density,24.574,LFS - Labour Force Survey
+GBR,2016,coverage,26.3,LFS - Labour Force Survey
+GBR,2016,density,23.331,LFS - Labour Force Survey
+GBR,2017,coverage,26,LFS - Labour Force Survey
+GBR,2017,density,23.14,LFS - Labour Force Survey
+GBR,2018,coverage,26,LFS - Labour Force Survey
+GBR,2018,density,23.155,LFS - Labour Force Survey
+GBR,2019,coverage,26.9,LFS - Labour Force Survey
+GBR,2019,density,23.356,LFS - Labour Force Survey
+GEO,2016,density,19.588,ADM-RWO - Trade unions records
+GEO,2019,density,17.882,ADM-RWO - Trade unions records
+GEO,2020,coverage,14.4,ADM-RWO - Trade unions records
+GHA,2015,coverage,28.8,OE - Estimates based on various Sources
+GHA,2015,density,16.897,OS - Estimations based on administrative data
+GHA,2016,coverage,41.1,OE - Estimates based on various Sources
+GHA,2016,density,17.687,OS - Estimations based on administrative data
+GHA,2017,coverage,39.1,OE - Estimates based on various Sources
+GHA,2017,density,17.432,OS - Estimations based on administrative data
+GHA,2018,coverage,38,OE - Estimates based on various Sources
+GHA,2018,density,17.048,OS - Estimations based on administrative data
+GHA,2019,coverage,37.1,OE - Estimates based on various Sources
+GHA,2019,density,16.838,OS - Estimations based on administrative data
+GHA,2020,coverage,38.4,OE - Estimates based on various Sources
+GMB,2018,density,13.891,LFS - Labour Force Survey
+GRC,2015,coverage,16.7,Other - Special data collection
+GRC,2016,coverage,17.8,Other - Special data collection
+GRC,2016,density,18.967,Other - Special data collection
+GRC,2017,coverage,18.7,Other - Special data collection
+GRC,2018,coverage,25.8,Other - Special data collection
+GTM,2015,density,2.604,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2016,density,2.816,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2017,density,3.248,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2018,density,3.326,LFS - Encuesta Nacional de Empleo e Ingresos
+GTM,2019,density,3.149,LFS - Encuesta Nacional de Empleo e Ingresos
+GUY,2018,density,14.01,LFS - Labour Force Survey
+HKG,2015,density,25.3,ADM-RWO - Trade unions records
+HKG,2016,density,26.056,ADM-RWO - Trade unions records
+HND,2015,coverage,2.5,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2015,density,3.049,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2016,coverage,1.9,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2016,density,1.832,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HND,2017,density,2.568,HS - Encuesta Permanente de Hogares de Propósitos Múltiples
+HRV,2015,coverage,48.2,OE - Trade Union Records and collective bargaining coverage estimations
+HRV,2015,density,24.013,OE - Trade Union Records and collective bargaining coverage estimations
+HRV,2016,coverage,46.7,OE - Trade Union Records and collective bargaining coverage estimations
+HRV,2017,density,21.987,OE - Trade Union Records and collective bargaining coverage estimations
+HRV,2018,density,20.76,OE - Trade Union Records and collective bargaining coverage estimations
+HUN,2015,coverage,20,ADM - Records of the Ministry of Social Affairs and Labour
+HUN,2015,density,9.03,"OS - Estimations based on Administrative data, union confederations' self-reported membership and LFS data"
+HUN,2016,density,9.178,"OS - Estimations based on Administrative data, union confederations' self-reported membership and LFS data"
+HUN,2018,density,8.294,"OS - Estimations based on Administrative data, union confederations' self-reported membership and LFS data"
+HUN,2019,coverage,17.8,ADM - Records of the Ministry of Social Affairs and Labour
+HUN,2019,density,8.65,"OS - Estimations based on Administrative data, union confederations' self-reported membership and LFS data"
+IDN,2016,density,17.88,OS - Estimations based on Administrative data
+IDN,2017,density,14.37,OS - Estimations based on Administrative data
+IDN,2018,density,14.32,OS - Estimations based on Administrative data
+IDN,2019,density,12.99,OS - Estimations based on Administrative data
+IND,2017,density,19.801,OS - Estimations based on the Employment-Unemployment Surveys
+IRL,2015,density,25.201,LFS - EU Labour Force Survey
+IRL,2016,density,23.291,LFS - EU Labour Force Survey
+IRL,2017,density,24.148,LFS - EU Labour Force Survey
+IRL,2018,density,24.03,LFS - EU Labour Force Survey
+IRL,2019,density,24.849,LFS - EU Labour Force Survey
+IRL,2020,density,25.395,LFS - EU Labour Force Survey
+ISL,2015,coverage,90,OS - Estimations based on Administrative data
+ISL,2015,density,91.624,LFS - EU Labour Force Survey
+ISL,2016,coverage,90,OS - Estimations based on Administrative data
+ISL,2016,density,90.499,LFS - EU Labour Force Survey
+ISL,2017,coverage,90,OS - Estimations based on Administrative data
+ISL,2017,density,90.81,LFS - EU Labour Force Survey
+ISL,2018,coverage,90,OS - Estimations based on Administrative data
+ISL,2018,density,90.572,LFS - EU Labour Force Survey
+ISL,2019,coverage,90,OS - Estimations based on Administrative data
+ISL,2019,density,91.423,LFS - EU Labour Force Survey
+ISR,2016,coverage,28,HS - Social Survey
+ISR,2017,density,25.089,HS - Social Survey
+ITA,2015,coverage,99,OS - Estimations based on Administrative data and type of contracts
+ITA,2015,density,34.223,ADM - Administrative Records
+ITA,2016,coverage,99,OS - Estimations based on Administrative data and type of contracts
+ITA,2016,density,33.57,ADM - Administrative Records
+ITA,2017,coverage,99,OS - Estimations based on Administrative data and type of contracts
+ITA,2017,density,33.228,ADM - Administrative Records
+ITA,2018,coverage,99,OS - Estimations based on Administrative data and type of contracts
+ITA,2018,density,32.636,ADM - Administrative Records
+ITA,2019,coverage,99,OS - Estimations based on Administrative data and type of contracts
+ITA,2019,density,32.497,ADM - Administrative Records
+JPN,2015,coverage,17.5,OS - Estimations based on Administrative data on enterprise bargaining
+JPN,2015,density,17.521,ES - Basic Survey on Labour Unions
+JPN,2016,coverage,17.3,OS - Estimations based on Administrative data on enterprise bargaining
+JPN,2016,density,17.351,ES - Basic Survey on Labour Unions
+JPN,2017,coverage,17.1,OS - Estimations based on Administrative data on enterprise bargaining
+JPN,2017,density,17.153,ES - Basic Survey on Labour Unions
+JPN,2018,coverage,16.9,OS - Estimations based on Administrative data on enterprise bargaining
+JPN,2018,density,16.964,ES - Basic Survey on Labour Unions
+JPN,2019,coverage,16.8,OS - Estimations based on Administrative data on enterprise bargaining
+JPN,2019,density,16.802,ES - Basic Survey on Labour Unions
+KAZ,2017,density,46.923,LFS - Sample Survey of Employment
+KEN,2016,density,9.33,HIES - Household Budget Survey
+KEN,2019,coverage,9.7,OS - Estimations based on administrative data
+KEN,2019,density,9.7,HIES - Household Budget Survey
+KHM,2020,coverage,1.3,OS - Estimations based on administrative data
+KOR,2015,coverage,12.5,OS - Estimations based on Administrative data on enterprise bargaining
+KOR,2015,density,12.426,ADM-RWO - Annual Survey of unions and union members
+KOR,2016,coverage,12.5,OS - Estimations based on Administrative data on enterprise bargaining
+KOR,2016,density,12.024,ADM-RWO - Annual Survey of unions and union members
+KOR,2017,coverage,13.1,OS - Estimations based on Administrative data on enterprise bargaining
+KOR,2017,density,12.436,ADM-RWO - Annual Survey of unions and union members
+KOR,2018,coverage,14.5,OS - Estimations based on Administrative data on enterprise bargaining
+KOR,2018,density,12.478,ADM-RWO - Annual Survey of unions and union members
+KOR,2019,coverage,15.6,OS - Estimations based on Administrative data on enterprise bargaining
+KOR,2019,density,12.373,ADM-RWO - Annual Survey of unions and union members
+KOR,2020,density,12.37,ADM-RWO - Annual Survey of unions and union members
+LKA,2015,coverage,5.9,ADM - Labour Statistics
+LKA,2015,density,14.445,ADM - Labour Statistics
+LKA,2016,coverage,4.8,ADM - Labour Statistics
+LKA,2016,density,15.334,ADM - Labour Statistics
+LKA,2017,coverage,3.9,ADM - Labour Statistics
+LKA,2018,coverage,3.6,ADM - Labour Statistics
+LKA,2018,density,13.058,ADM - Labour Statistics
+LKA,2019,coverage,3.2,ADM - Labour Statistics
+LKA,2019,density,10.099,ADM - Labour Statistics
+LSO,2019,density,4.753,ADM-RWO - Trade unions records
+LTU,2015,coverage,7.9,OS - Estimations based on Administrative data on enterprise bargaining
+LTU,2015,density,7.856,ADM-RWO - Records of union confederations and independent unions
+LTU,2016,coverage,7.7,OS - Estimations based on Administrative data on enterprise bargaining
+LTU,2016,density,7.667,ADM-RWO - Records of union confederations and independent unions
+LTU,2017,coverage,7.7,OS - Estimations based on Administrative data on enterprise bargaining
+LTU,2017,density,7.726,ADM-RWO - Records of union confederations and independent unions
+LTU,2018,coverage,7.1,OS - Estimations based on Administrative data on enterprise bargaining
+LTU,2018,density,7.132,ADM-RWO - Records of union confederations and independent unions
+LTU,2019,coverage,7.4,OS - Estimations based on Administrative data on enterprise bargaining
+LTU,2019,density,7.358,ADM-RWO - Records of union confederations and independent unions
+LUX,2015,density,33.256,ADM-RWO - Records of affiliated and independent unions
+LUX,2016,density,32.251,ADM-RWO - Records of affiliated and independent unions
+LUX,2017,density,32.081,ADM-RWO - Records of affiliated and independent unions
+LUX,2018,density,30.361,ADM-RWO - Records of affiliated and independent unions
+LUX,2019,density,28.229,ADM-RWO - Records of affiliated and independent unions
+LVA,2015,coverage,18.7,ADM-RWO - Trade unions records
+LVA,2015,density,12.465,ADM-RWO - Trade unions records
+LVA,2016,coverage,18.7,ADM-RWO - Trade unions records
+LVA,2016,density,11.463,ADM-RWO - Trade unions records
+LVA,2017,coverage,20.5,ADM-RWO - Trade unions records
+LVA,2017,density,11.504,ADM-RWO - Trade unions records
+LVA,2018,coverage,17.3,ADM-RWO - Trade unions records
+LVA,2018,density,11.042,ADM-RWO - Trade unions records
+LVA,2019,coverage,27.3,ADM-RWO - Trade unions records
+LVA,2019,density,10.65,ADM-RWO - Trade unions records
+MAR,2016,coverage,2.8,"ADM - Autres fichiers administratifs et sources connexes, Relations professionnelles"
+MAR,2016,density,6.034,"ADM - Autres fichiers administratifs et sources connexes, Grèves et lock-out"
+MAR,2017,coverage,3.1,"ADM - Autres fichiers administratifs et sources connexes, Relations professionnelles"
+MAR,2017,density,6.371,"ADM - Autres fichiers administratifs et sources connexes, Grèves et lock-out"
+MAR,2018,coverage,3,"ADM - Autres fichiers administratifs et sources connexes, Relations professionnelles"
+MAR,2018,density,10.324,"ADM - Autres fichiers administratifs et sources connexes, Grèves et lock-out"
+MAR,2019,coverage,2.9,"ADM - Autres fichiers administratifs et sources connexes, Relations professionnelles"
+MAR,2019,density,10.897,"ADM - Autres fichiers administratifs et sources connexes, Grèves et lock-out"
+MAR,2020,coverage,3,"ADM - Autres fichiers administratifs et sources connexes, Relations professionnelles"
+MDA,2015,coverage,42.3,ADM-RWO - Trade unions records
+MDA,2015,density,24.05,LFS - Labour Force Survey
+MDA,2016,coverage,43,ADM-RWO - Trade unions records
+MDA,2016,density,23.9,LFS - Labour Force Survey
+MDA,2017,coverage,39.4,ADM-RWO - Trade unions records
+MDA,2017,density,22.44,LFS - Labour Force Survey
+MDA,2018,coverage,39.1,ADM-RWO - Trade unions records
+MDA,2018,density,20.02,LFS - Labour Force Survey
+MDA,2019,coverage,42.5,ADM-RWO - Trade unions records
+MDA,2019,density,18.58,LFS - Labour Force Survey
+MDA,2020,coverage,43,ADM-RWO - Trade unions records
+MDG,2015,density,7.225,LFS - Enquête sur la Population Active
+MEX,2015,coverage,9.8,ADM - Registros Administrativos de la Secretaría del Trabajo y Previsión Social
+MEX,2015,density,13.1,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2016,coverage,9.9,ADM - Registros Administrativos de la Secretaría del Trabajo y Previsión Social
+MEX,2016,density,12.7,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2017,coverage,10,ADM - Registros Administrativos de la Secretaría del Trabajo y Previsión Social
+MEX,2017,density,12.5,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2018,coverage,10,ADM - Registros Administrativos de la Secretaría del Trabajo y Previsión Social
+MEX,2018,density,12,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2019,coverage,10.4,ADM - Registros Administrativos de la Secretaría del Trabajo y Previsión Social
+MEX,2019,density,12.4,LFS - Encuesta Nacional de Ocupación y Empleo
+MEX,2020,density,12.4,LFS - Encuesta Nacional de Ocupación y Empleo
+MKD,2019,density,16.68,ADM - Administrative records and related sources
+MLI,2015,density,9.705,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2016,density,16.446,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2017,density,7.203,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLI,2018,density,7.523,LFS - Enquête Emploi Permanente Auprès des Ménages
+MLT,2015,density,48.566,ADM-RWO - Trade unions records
+MLT,2016,density,47.513,ADM-RWO - Trade unions records
+MLT,2017,density,46.883,ADM-RWO - Trade unions records
+MLT,2018,density,44.053,ADM-RWO - Trade unions records
+MLT,2019,density,42.87,ADM-RWO - Trade unions records
+MLT,2020,density,41.894,ADM-RWO - Trade unions records
+MMR,2015,density,1,LFS - Labour Force Survey
+MNG,2015,density,38.571,OE - Official Estimates
+MNG,2016,density,38.248,OE - Official Estimates
+MNG,2017,density,36.033,OE - Official Estimates
+MNG,2018,density,32.851,OE - Official Estimates
+MNG,2019,density,30.786,OE - Official Estimates
+MOZ,2016,density,12.487,OS - Estimations based on administrative data
+MUS,2015,density,28.071,"ADM-RWO - Ministry of Labour, Industrial Relations and Employment, Registrar of Associations"
+MUS,2016,density,28.167,"ADM-RWO - Ministry of Labour, Industrial Relations and Employment, Registrar of Associations"
+MUS,2017,coverage,45,ADM - Records of Employers and Workers' Organizations
+MUS,2017,density,27.86,"ADM-RWO - Ministry of Labour, Industrial Relations and Employment, Registrar of Associations"
+MUS,2018,coverage,40,ADM - Records of Employers and Workers' Organizations
+MUS,2018,density,27.684,"ADM-RWO - Ministry of Labour, Industrial Relations and Employment, Registrar of Associations"
+MYS,2015,coverage,1.2,OS - Estimations based on Administrative data
+MYS,2015,density,8.784,OS - Estimations based on Administrative data
+MYS,2016,coverage,1.3,OS - Estimations based on Administrative data
+MYS,2016,density,8.808,OS - Estimations based on Administrative data
+MYS,2017,coverage,0.6,OS - Estimations based on Administrative data
+MYS,2017,density,8.676,OS - Estimations based on Administrative data
+MYS,2018,coverage,0.4,OS - Estimations based on Administrative data
+MYS,2018,density,8.698,OS - Estimations based on Administrative data
+NAM,2016,coverage,39.1,OS - Estimations based on administrative data
+NAM,2016,density,17.606,LFS - Labour Force Survey
+NAM,2017,coverage,38.3,OS - Estimations based on administrative data
+NAM,2018,coverage,38.7,OS - Estimations based on administrative data
+NAM,2018,density,18.305,LFS - Labour Force Survey
+NAM,2019,coverage,40.2,OS - Estimations based on administrative data
+NAM,2020,coverage,40.9,OS - Estimations based on administrative data
+NIC,2020,coverage,6.7,ADM - Registros de la Dirección de Derechos Colectivos e Inspectorías departamentales
+NLD,2015,coverage,79.4,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2015,density,17.72,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2016,coverage,79.3,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2016,density,17.324,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2017,coverage,77.1,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2017,density,16.801,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2018,coverage,76.7,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2018,density,16.509,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2019,coverage,75.6,ADM - Records of the Ministry of Social Affairs and Employment
+NLD,2019,density,15.387,ADM - Records of the Ministry of Social Affairs and Employment
+NOR,2015,density,49.776,ADM - Records of associations of wage earners and employers' associations
+NOR,2016,coverage,70,ADM - Records of associations of wage earners and employers' associations
+NOR,2016,density,49.992,ADM - Records of associations of wage earners and employers' associations
+NOR,2017,coverage,69,ADM - Records of associations of wage earners and employers' associations
+NOR,2017,density,49.98,ADM - Records of associations of wage earners and employers' associations
+NOR,2018,density,49.877,ADM - Records of associations of wage earners and employers' associations
+NOR,2019,density,50.404,ADM - Records of associations of wage earners and employers' associations
+NPL,2016,density,38.877,OS - Estimations based on administrative data
+NPL,2018,density,30.165,OS - Estimations based on administrative data
+NZL,2015,density,17.788,ADM-RWO - Union Membership Return Report
+NZL,2016,coverage,15.9,"ADM - Records of the Department of Business, Innovation and Employment"
+NZL,2016,density,18.773,ADM-RWO - Union Membership Return Report
+NZL,2017,coverage,18.3,"ADM - Records of the Department of Business, Innovation and Employment"
+NZL,2017,density,18.46,ADM-RWO - Union Membership Return Report
+NZL,2018,coverage,19.2,"ADM - Records of the Department of Business, Innovation and Employment"
+NZL,2018,density,19.23,ADM-RWO - Union Membership Return Report
+NZL,2019,coverage,18.4,"ADM - Records of the Department of Business, Innovation and Employment"
+NZL,2019,density,18.788,ADM-RWO - Union Membership Return Report
+NZL,2020,coverage,18.6,"ADM - Records of the Department of Business, Innovation and Employment"
+NZL,2020,density,18.895,ADM-RWO - Union Membership Return Report
+PAK,2016,density,4.729,OE - Estimates based on Administrative data
+PAN,2015,coverage,1.3,OE - Estimates based on various Sources
+PAN,2015,density,17.488,OE - Estimates based on various Sources
+PAN,2016,coverage,1,OE - Estimates based on various Sources
+PAN,2016,density,19.576,OE - Estimates based on various Sources
+PAN,2017,coverage,2,OE - Estimates based on various Sources
+PAN,2017,density,24.502,OE - Estimates based on various Sources
+PAN,2018,density,26.331,OE - Estimates based on various Sources
+PAN,2019,density,26.32,OE - Estimates based on various Sources
+PER,2015,coverage,2.5,ADM - Planillas Electrónicas
+PER,2015,density,3.132,ADM - Planillas Electrónicas
+PER,2016,coverage,2.2,ADM - Planillas Electrónicas
+PER,2016,density,2.757,ADM - Planillas Electrónicas
+PER,2017,density,2.761,ADM - Planillas Electrónicas
+PER,2018,coverage,2.4,ADM - Planillas Electrónicas
+PER,2018,density,2.281,ADM - Planillas Electrónicas
+PER,2020,coverage,2.6,ADM - Planillas Electrónicas
+PHL,2015,density,8.507,ADM-RWO - Department of Labor and Employment-Bureau of Labor Relations
+PHL,2016,coverage,1.2,ES - Integrated Survey
+PHL,2016,density,8.034,ADM-RWO - Department of Labor and Employment-Bureau of Labor Relations
+PHL,2017,density,7.948,ADM-RWO - Department of Labor and Employment-Bureau of Labor Relations
+PHL,2018,coverage,1.4,ES - Integrated Survey
+PHL,2018,density,7.701,ADM-RWO - Department of Labor and Employment-Bureau of Labor Relations
+PHL,2019,density,7.593,ADM-RWO - Department of Labor and Employment-Bureau of Labor Relations
+PHL,2020,density,8.488,ADM-RWO - Department of Labor and Employment-Bureau of Labor Relations
+POL,2015,coverage,17.2,ADM-LIR - National Labour Inspectorate Administrative Records
+POL,2016,density,13.986,OS - Estimations based on self-declared membership of affiliated and independent unions
+POL,2017,density,13.378,OS - Estimations based on self-declared membership of affiliated and independent unions
+POL,2018,density,12.707,OS - Estimations based on self-declared membership of affiliated and independent unions
+PRT,2015,coverage,73.6,ADM-CA - Registros Administrativos de la Dirección de Trabajo y Relaciones Laborales
+PRT,2015,density,16.053,ADM - Records of main union confederations and independent unions
+PRT,2016,coverage,74.1,ADM-CA - Registros Administrativos de la Dirección de Trabajo y Relaciones Laborales
+PRT,2016,density,15.288,ADM - Records of main union confederations and independent unions
+PRT,2017,coverage,73.1,ADM-CA - Registros Administrativos de la Dirección de Trabajo y Relaciones Laborales
+PRT,2018,coverage,76.5,ADM-CA - Registros Administrativos de la Dirección de Trabajo y Relaciones Laborales
+PRY,2015,coverage,0.7,ADM - Otros registros administrativos y fuentes relacionadas
+PRY,2015,density,6.796,HS - Encuesta Continua de Hogares
+PRY,2016,coverage,0.7,ADM - Otros registros administrativos y fuentes relacionadas
+PRY,2016,density,7.034,HS - Encuesta Continua de Hogares
+PRY,2017,density,6.399,HS - Encuesta Continua de Hogares
+PRY,2018,density,6.91,HS - Encuesta Continua de Hogares
+PRY,2019,density,6.931,HS - Encuesta Continua de Hogares
+PSE,2015,density,30.14,LFS - Labour Force Survey
+PSE,2016,density,22.25,LFS - Labour Force Survey
+PSE,2017,density,19.8,LFS - Labour Force Survey
+PSE,2018,density,22.78,LFS - Labour Force Survey
+PSE,2019,density,21.28,LFS - Labour Force Survey
+ROU,2016,density,21.606,ADM-RWO - Trade unions records
+ROU,2017,coverage,15,OS - Estimations based on number and type of collective agreements in force
+ROU,2018,density,21.394,ADM-RWO - Trade unions records
+RUS,2015,density,28.279,ADM-RWO - Records of Workers' Organizations
+RUS,2016,coverage,28.9,OS - Estimations based on Administrative data
+RUS,2016,density,28.01,ADM-RWO - Records of Workers' Organizations
+RUS,2017,coverage,29.6,OS - Estimations based on Administrative data
+RUS,2017,density,27.454,ADM-RWO - Records of Workers' Organizations
+RUS,2018,coverage,28.1,OS - Estimations based on Administrative data
+RUS,2019,coverage,28.5,OS - Estimations based on Administrative data
+RWA,2017,coverage,5.2,OS - Estimations based on administrative data
+RWA,2017,density,5.406,LFS - Enquête sur la Population Active
+RWA,2018,coverage,4.9,OS - Estimations based on administrative data
+RWA,2018,density,4.965,LFS - Enquête sur la Population Active
+RWA,2019,coverage,5.7,OS - Estimations based on administrative data
+RWA,2019,density,5.855,LFS - Enquête sur la Population Active
+SEN,2016,coverage,11.3,OE - Estimates based on various Sources
+SEN,2016,density,8.275,OE - Estimates based on various Sources
+SEN,2017,coverage,10.7,OE - Estimates based on various Sources
+SEN,2017,density,7.961,OE - Estimates based on various Sources
+SEN,2018,coverage,10.2,OE - Estimates based on various Sources
+SEN,2018,density,9.693,OE - Estimates based on various Sources
+SEN,2019,coverage,10.1,OE - Estimates based on various Sources
+SEN,2019,density,7.356,OE - Estimates based on various Sources
+SGP,2015,density,21.211,OS - Estimations based on Administrative data
+SGP,2016,density,21.801,OS - Estimations based on Administrative data
+SGP,2017,density,22.164,OS - Estimations based on Administrative data
+SGP,2018,density,21.943,OS - Estimations based on Administrative data
+SGP,2019,density,22.181,OS - Estimations based on Administrative data
+SLV,2015,coverage,4.3,OE - Estimates based on various Sources
+SLV,2015,density,12.924,OE - Estimates based on various Sources
+SLV,2016,coverage,5,OE - Estimates based on various Sources
+SLV,2016,density,17.404,OE - Estimates based on various Sources
+SLV,2017,coverage,4.5,OE - Estimates based on various Sources
+SLV,2017,density,10.82,OE - Estimates based on various Sources
+SLV,2018,coverage,4.6,OE - Estimates based on various Sources
+SLV,2018,density,8.73,OE - Estimates based on various Sources
+SOM,2019,density,11.8,LFS - Labour Force Survey
+SVK,2015,coverage,24.4,ADM-LIR - Administrative data from the National Labour Inspectorate
+SVK,2015,density,10.94,ADM - Trade unions records
+SVK,2016,coverage,25.8,ADM-LIR - Administrative data from the National Labour Inspectorate
+SVK,2016,density,11.782,ADM - Trade unions records
+SVK,2017,coverage,25.1,ADM-LIR - Administrative data from the National Labour Inspectorate
+SVK,2017,density,11.413,ADM - Trade unions records
+SVK,2018,coverage,21,ADM-LIR - Administrative data from the National Labour Inspectorate
+SVK,2018,density,11.113,ADM - Trade unions records
+SVK,2019,coverage,22.4,ADM-LIR - Administrative data from the National Labour Inspectorate
+SVK,2019,density,11.084,ADM - Trade unions records
+SVN,2015,coverage,67.5,ADM - Administrative records and related sources
+SVN,2015,density,25.1,ADM - Administrative records and related sources
+SVN,2016,coverage,70.9,ADM - Administrative records and related sources
+SVN,2016,density,26.9,ADM - Administrative records and related sources
+SWE,2015,coverage,90,ADM - Records of the National Mediation Office
+SWE,2015,density,62.222,LFS - EU Labour Force Survey
+SWE,2016,coverage,90,ADM - Records of the National Mediation Office
+SWE,2016,density,61.713,LFS - EU Labour Force Survey
+SWE,2017,coverage,89,ADM - Records of the National Mediation Office
+SWE,2017,density,60.78,LFS - EU Labour Force Survey
+SWE,2018,coverage,90,ADM - Records of the National Mediation Office
+SWE,2018,density,60.066,LFS - EU Labour Force Survey
+SWE,2019,coverage,90,ADM - Records of the National Mediation Office
+SWE,2019,density,65.213,LFS - EU Labour Force Survey
+SWZ,2016,coverage,28.4,LFS - Labour Force Survey
+SWZ,2016,density,23.879,LFS - Labour Force Survey
+TGO,2016,coverage,28.7,OS - Estimations based on administrative data
+TGO,2016,density,28.66,OS - Estimations based on administrative data
+TGO,2017,coverage,24.2,OS - Estimations based on administrative data
+TGO,2017,density,24.166,OS - Estimations based on administrative data
+TGO,2018,coverage,23.8,OS - Estimations based on administrative data
+TGO,2018,density,23.802,OS - Estimations based on administrative data
+TGO,2019,coverage,23.8,OS - Estimations based on administrative data
+TGO,2019,density,23.81,OS - Estimations based on administrative data
+THA,2015,coverage,2.7,Other - Special data collection
+THA,2015,density,3.458,Other - Special data collection
+THA,2016,coverage,3.1,Other - Special data collection
+THA,2016,density,3.381,Other - Special data collection
+THA,2017,coverage,2.4,Other - Special data collection
+THA,2017,density,3.32,Other - Special data collection
+THA,2018,coverage,2.2,Other - Special data collection
+THA,2018,density,3.363,Other - Special data collection
+THA,2019,coverage,2.4,Other - Special data collection
+THA,2019,density,3.322,Other - Special data collection
+THA,2020,coverage,1.1,Other - Special data collection
+TTO,2016,coverage,19.957,OS - Estimations based on administrative data
+TTO,2017,coverage,19.47,OS - Estimations based on administrative data
+TTO,2019,coverage,19.39,OS - Estimations based on administrative data
+TTO,2020,coverage,19.873,OS - Estimations based on administrative data
+TUN,2016,coverage,64.3,ADM - Autres fichiers administratifs et sources connexes
+TUN,2016,density,27.224,ADM - Autres fichiers administratifs et sources connexes
+TUN,2017,coverage,61.5,ADM - Autres fichiers administratifs et sources connexes
+TUN,2017,density,36.848,ADM - Autres fichiers administratifs et sources connexes
+TUN,2018,coverage,62.4,ADM - Autres fichiers administratifs et sources connexes
+TUN,2018,density,36.594,ADM - Autres fichiers administratifs et sources connexes
+TUN,2019,coverage,62.9,ADM - Autres fichiers administratifs et sources connexes
+TUN,2019,density,38.106,ADM - Autres fichiers administratifs et sources connexes
+TUR,2015,coverage,5.6,ADM - Records from the Ministry of Labour and Social Security
+TUR,2015,density,7.996,ADM - Records from the Ministry of Labour and Social Security
+TUR,2016,coverage,5.9,ADM - Records from the Ministry of Labour and Social Security
+TUR,2016,density,8.158,ADM - Records from the Ministry of Labour and Social Security
+TUR,2017,coverage,7.7,ADM - Records from the Ministry of Labour and Social Security
+TUR,2017,density,8.561,ADM - Records from the Ministry of Labour and Social Security
+TUR,2018,coverage,6.1,ADM - Records from the Ministry of Labour and Social Security
+TUR,2018,density,9.225,ADM - Records from the Ministry of Labour and Social Security
+TUR,2019,coverage,7.4,ADM - Records from the Ministry of Labour and Social Security
+TUR,2019,density,9.853,ADM - Records from the Ministry of Labour and Social Security
+TZA,2015,density,24.3,ADM-RWO - Trade unions records
+UGA,2016,coverage,15.1,OS - Estimations based on administrative data
+UGA,2017,coverage,29.6,OS - Estimations based on administrative data
+UGA,2017,density,10.256,LFS - National Labour Force Survey
+UGA,2018,coverage,32.1,OS - Estimations based on administrative data
+UGA,2019,coverage,30.2,OS - Estimations based on administrative data
+UKR,2015,coverage,45.9,ES - Survey of enterprises on matters pertaining to labor statistics
+UKR,2015,density,43.8,ADM-RWO - Annual reports of trade unions
+UKR,2016,coverage,44.7,ES - Survey of enterprises on matters pertaining to labor statistics
+UKR,2016,density,41.2,ADM-RWO - Annual reports of trade unions
+UKR,2017,coverage,44.1,ES - Survey of enterprises on matters pertaining to labor statistics
+UKR,2017,density,39.1,ADM-RWO - Annual reports of trade unions
+UKR,2018,density,38.8,ADM-RWO - Annual reports of trade unions
+UKR,2019,coverage,39.7,ES - Survey of enterprises on matters pertaining to labor statistics
+UKR,2019,density,36.637,ADM-RWO - Annual reports of trade unions
+UKR,2020,coverage,40.2,ES - Survey of enterprises on matters pertaining to labor statistics
+URY,2015,coverage,94.7,LFS - Encuesta Continua de Hogares
+URY,2016,coverage,94.6,LFS - Encuesta Continua de Hogares
+URY,2017,coverage,94.9,LFS - Encuesta Continua de Hogares
+URY,2018,coverage,94.7,LFS - Encuesta Continua de Hogares
+USA,2015,coverage,11.8,LFS - Current Population Survey
+USA,2015,density,10.625,LFS - Current Population Survey
+USA,2016,coverage,11.5,LFS - Current Population Survey
+USA,2016,density,10.267,LFS - Current Population Survey
+USA,2017,coverage,11.9,LFS - Current Population Survey
+USA,2017,density,10.307,LFS - Current Population Survey
+USA,2018,coverage,11.7,LFS - Current Population Survey
+USA,2018,density,10.1,LFS - Current Population Survey
+USA,2019,coverage,11.6,LFS - Current Population Survey
+USA,2019,density,9.851,LFS - Current Population Survey
+USA,2020,coverage,12.1,LFS - Current Population Survey
+USA,2020,density,10.293,LFS - Current Population Survey
+VEN,2016,coverage,23.4,ADM-LIR - Registros del Ministerio del Poder Popular para el Trabajo y Seguridad Social
+VNM,2015,coverage,24.7,OS - Estimations based on administrative data
+VNM,2016,coverage,24.9,OS - Estimations based on administrative data
+VNM,2017,coverage,24.5,OS - Estimations based on administrative data
+VNM,2018,coverage,24.5,OS - Estimations based on administrative data
+VNM,2018,density,49.613,LFS - Labour Force Survey
+ZAF,2015,coverage,29.1,LFS - Quarterly Labour Force Survey
+ZAF,2015,density,27.265,LFS - Quarterly Labour Force Survey
+ZAF,2016,coverage,29.9,LFS - Quarterly Labour Force Survey
+ZAF,2016,density,27.969,LFS - Quarterly Labour Force Survey
+ZAF,2017,coverage,30,LFS - Quarterly Labour Force Survey
+ZAF,2017,density,28.738,LFS - Quarterly Labour Force Survey
+ZAF,2018,coverage,30.1,LFS - Quarterly Labour Force Survey
+ZAF,2018,density,29.324,LFS - Quarterly Labour Force Survey
+ZAF,2019,coverage,30.1,LFS - Quarterly Labour Force Survey
+ZAF,2019,density,29.057,LFS - Quarterly Labour Force Survey
+ZMB,2017,coverage,26,LFS - Labour Force Survey
+ZMB,2017,density,24.61,LFS - Labour Force Survey
+ZMB,2018,coverage,28.5,LFS - Labour Force Survey
+ZMB,2018,density,25.387,LFS - Labour Force Survey
+ZMB,2019,coverage,23.5,LFS - Labour Force Survey
+ZMB,2019,density,23.918,LFS - Labour Force Survey
+ZMB,2020,coverage,27.6,LFS - Labour Force Survey
+ZWE,2017,density,17.758,ADM-RWO - Records of the Ministry of Labour and Social Services
