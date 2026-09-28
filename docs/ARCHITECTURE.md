@@ -1973,6 +1973,16 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   one a party of its kind's capacity, and its `DueWheel`: `open` threads a contract on its sides' lists and on the wheel
   at its first due and refuses a side of another kind; `close` takes it off its lists and leaves its wheel entry for
   its reader to skip. The world and the full-load bench build on them.
+- **Persons** (`phx_pop::persons::Persons`): each household's persons on the core, one word each as its kind packs
+  them, a list per household in its chunk's arena and found by its slot; `set`, `push`, `remove` (the rest keep their
+  order) and `clear` keep the count held, and `compact_due` closes a chunk's gaps in slot order once its dead words
+  pass their share.
+- **The world on the core, during the port** (`phx_world::core::Core`): at assembly and at load, every party the
+  books hold is begun again on the core under its identity, a `KindStore` for each of the books' tables in their place
+  order (so a kind's number is its place): an individual's record is the tile it is sited on; an agent's, its
+  attributes then its positions, and a household's persons are copied into `Persons`, the copy refused if it holds
+  other persons than the books'. `Core::key` finds a party's key by its identity. The inspector reads it. It holds no
+  money yet and runs no day: those follow as the port moves them (the plan's S1.23 c–e).
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, stores, partition, flows, wheel, settlement,
   facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over

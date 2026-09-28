@@ -53,6 +53,8 @@ pub struct World {
     pub(crate) today: Day,
     pub(crate) settling_years: Count,
     pub(crate) books: phx_ledger::books::Books,
+    /// The world's parties on the core, mirrored from the books while the port runs beside them.
+    pub(crate) core: crate::core::Core,
     /// The population kinds, the representation, the parties counted and the agenda; their agents are the books'.
     pub(crate) population: phx_pop::population::Population,
     /// The processes acting on the agents' persons, in order of kind, then hazard.

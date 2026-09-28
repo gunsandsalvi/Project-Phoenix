@@ -573,6 +573,14 @@ fn central_of(
     crate::central::bind(&p.d, &p.c.register, &opening, book).map_err(AssemblyErrors)
 }
 
+/// The weight of a heuristic's last error in its record, and how many widths a surprise must pass to wake.
+fn val_rules(p: &Prepared) -> Result<(f64, f64), AssemblyErrors> {
+    Ok((
+        p.kernel.val.performance_memory.shared(&p.c.register).to_f64(),
+        p.c.register.fixed("VAL.attention_sensitivity").map_err(|e| AssemblyErrors(vec![e]))?,
+    ))
+}
+
 fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, AssemblyErrors> {
     let State { geo, tables, books, population, markets, accounts, records, events, carried, run, space } = s;
     let mut families = kernel_families();
@@ -593,15 +601,13 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
     let credit = credit_of(&p, &geo, carried.credit)?;
     let central = central_of(&p, &geo, carried.central)?;
     let state = state_of(&p, &geo, carried.state)?;
+    let val_rules = val_rules(&p)?;
     let mut calendar = p.c.calendar;
     calendar.move_window(calendar.date(carried.today).year());
     let goods_frame = crate::goods::Frame::compile(&p.c.register, &geo).map_err(|e| AssemblyErrors(vec![e]))?;
     let val_methods = crate::goods::methods(&p.kernel.val, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
-    let val_rules = (
-        p.kernel.val.performance_memory.shared(&p.c.register).to_f64(),
-        p.c.register.fixed("VAL.attention_sensitivity").map_err(|e| AssemblyErrors(vec![e]))?,
-    );
     p.market_kinds.check(&markets.made).map_err(|e| AssemblyErrors(vec![e]))?;
+    let core = crate::core::Core::mirror(&books, &population);
     Ok(World {
         records,
         events,
@@ -620,6 +626,7 @@ fn finish(mut p: Prepared, s: State, config: &WorldConfig) -> Result<World, Asse
         today: carried.today,
         settling_years,
         books,
+        core,
         population,
         processes: std::mem::take(&mut p.processes),
         agent_hits: Vec::new(),

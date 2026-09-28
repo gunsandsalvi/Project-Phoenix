@@ -296,6 +296,12 @@ impl<'a> Inspector<'a> {
         self.world.market_kinds.kind(phx_ledger::instruction::name_code(name))
     }
 
+    /// The world's parties on the core, mirrored from the books while the port runs beside them.
+    #[must_use]
+    pub fn core(&self) -> &crate::core::Core {
+        &self.world.core
+    }
+
     /// The world's books: the ledger and the parties whose rows it moves.
     #[must_use]
     pub fn books(&self) -> &phx_ledger::books::Books {

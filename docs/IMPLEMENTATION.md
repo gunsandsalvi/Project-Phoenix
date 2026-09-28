@@ -750,10 +750,10 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 
 **Design**:
 - **Parts**, each committed on its fast checks:
-  - a. The kernel's party and contract stores (`phx_core::store`): a kind's parties with their record words,
+  - a *(done)*. The kernel's party and contract stores (`phx_core::store`): a kind's parties with their record words,
     accounts and cash lines, and a family's contracts with their list heads, due wheel and shape plan, as the
     full-load bench built them; the bench builds on them.
-  - b. Households and their persons on the core: the household kind's records and each household's persons in its
+  - b *(done: mirrored from the old books at assembly and load)*. Households and their persons on the core: the household kind's records and each household's persons in its
     chunk's arena (`phx-pop`), and the institutions' kinds, drawn by the opening beside the old world's.
   - c. The balance sheet apportioned: accounts, deposits, reserves, government paper and pensions in payment from
     `GEN.balance_sheet` by `split_total`, and the primitives it replaces retired.
@@ -764,7 +764,9 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
   its head, assumed today (`DEM.household_members`: one relative of 65 and over, one unrelated adult), is derived per
   group from the DHS household structure (`people/dhs_indicators`: members of 65 and over, three generations,
   non-nuclear shares, household size); the partners' age gap's spread stays the measured US couples' gap.
-- The world holds both cores during the port. The old one serves the committed world until S1.24 switches it.
+- The world holds both cores during the port. The old one serves the committed world until S1.24 switches it. The
+  core's copies raise the smoke's memory by what they hold, and the smoke's memory reading is judged against that
+  until S1.24 deletes the old core.
 - The opening apportions S1.22's balance sheet over parties by the shapes, exactly (`split_total`).
 - The primitives the dataset replaces retire here, where the opening on the core reads the matrices instead: CAP's
   stock per GDP (`GEN.real_assets`), CB's currency and the profile's debt levels and bank capital

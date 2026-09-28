@@ -8,6 +8,7 @@ pub mod hazard;
 pub mod holder;
 pub mod kind;
 pub mod person;
+pub mod persons;
 pub mod population;
 pub mod prims;
 pub mod table;
