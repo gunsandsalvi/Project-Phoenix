@@ -92,13 +92,7 @@ impl<B: Backing> KindStore<B> {
     /// The kind with accounts, one a party.
     #[must_use]
     pub fn with_accounts(mut self, space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32) -> KindStore<B> {
-        self.accounts = Some(Accounts {
-            bank: Column::new(space, capacity, rows_per_chunk),
-            balance: Column::new(space, capacity, rows_per_chunk),
-            pending: Column::new(space, capacity, rows_per_chunk),
-            held: Column::new(space, capacity, rows_per_chunk),
-            facility: Column::new(space, capacity, rows_per_chunk),
-        });
+        self.add_accounts(space, capacity, rows_per_chunk);
         self
     }
 
@@ -133,12 +127,8 @@ impl<B: Backing> KindStore<B> {
             let v = record.get(i).copied().unwrap_or(MaybeI64::ABSENT);
             place(&mut self.records, word(slot, self.stride, i), v);
         }
-        if let (Some(a), Some(o)) = (self.accounts.as_mut(), account) {
-            place(&mut a.bank, slot, o.bank);
-            place(&mut a.balance, slot, o.balance);
-            place(&mut a.pending, slot, 0);
-            place(&mut a.held, slot, 0);
-            place(&mut a.facility, slot, 0);
+        if let Some(o) = account {
+            self.open_account(slot, o);
         }
         if let Some(c) = self.cash.as_mut() {
             for i in 0..c.width {
@@ -146,6 +136,32 @@ impl<B: Backing> KindStore<B> {
             }
         }
         party
+    }
+
+    /// A party's account opened at its bank with its opening balance, nothing pending, held or granted.
+    pub fn open_account(&mut self, slot: Slot, o: Opening) {
+        let Some(a) = self.accounts.as_mut() else {
+            violation!(clause = "Law 5", "an account for a kind that holds no money", slot = slot.get());
+        };
+        place(&mut a.bank, slot, o.bank);
+        place(&mut a.balance, slot, o.balance);
+        place(&mut a.pending, slot, 0);
+        place(&mut a.held, slot, 0);
+        place(&mut a.facility, slot, 0);
+    }
+
+    /// Accounts added to a kind whose parties have begun, each to be opened before settlement reads it.
+    pub fn add_accounts(&mut self, space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32) {
+        if self.accounts.is_some() {
+            violation!(clause = "Law 5", "a kind given accounts twice", kind = self.parties.kind());
+        }
+        self.accounts = Some(Accounts {
+            bank: Column::new(space, capacity, rows_per_chunk),
+            balance: Column::new(space, capacity, rows_per_chunk),
+            pending: Column::new(space, capacity, rows_per_chunk),
+            held: Column::new(space, capacity, rows_per_chunk),
+            facility: Column::new(space, capacity, rows_per_chunk),
+        });
     }
 
     /// A party's record.

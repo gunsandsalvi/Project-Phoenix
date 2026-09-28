@@ -2051,10 +2051,12 @@ pub phx_core::store::KindStore::parties: phx_store::parties::Parties<B>
 pub phx_core::store::KindStore::records: phx_store::column::Column<phx_num::missing::MaybeI64, B>
 pub phx_core::store::KindStore::stride: usize
 impl<B: phx_store::backing::Backing> phx_core::store::KindStore<B>
+pub fn phx_core::store::KindStore<B>::add_accounts(&mut self, &mut phx_store::backing::AddressSpace, u32, u32)
 pub fn phx_core::store::KindStore<B>::begin(&mut self, phx_id::ids::PartyId, &[phx_num::missing::MaybeI64], core::option::Option<phx_core::store::Opening>) -> phx_id::ids::PartyRef
 pub fn phx_core::store::KindStore<B>::book(&mut self) -> core::option::Option<phx_core::settle::Book<'_>>
 pub fn phx_core::store::KindStore<B>::money(&self) -> i128
 pub fn phx_core::store::KindStore<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32, usize) -> phx_core::store::KindStore<B>
+pub fn phx_core::store::KindStore<B>::open_account(&mut self, phx_id::ids::Slot, phx_core::store::Opening)
 pub fn phx_core::store::KindStore<B>::record(&self, phx_id::ids::Slot) -> &[phx_num::missing::MaybeI64]
 pub fn phx_core::store::KindStore<B>::record_mut(&mut self, phx_id::ids::Slot) -> &mut [phx_num::missing::MaybeI64]
 pub fn phx_core::store::KindStore<B>::with_accounts(self, &mut phx_store::backing::AddressSpace, u32, u32) -> phx_core::store::KindStore<B>

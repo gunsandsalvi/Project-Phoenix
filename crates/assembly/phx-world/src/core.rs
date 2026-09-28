@@ -1,24 +1,42 @@
 //! The world on the core during the port: every party the opening began, of every kind, begun again on the core's
 //! stores with its identity, in the old books' order of kinds and slots. A household keeps its attributes and then its
-//! positions as its record's words, and its persons; an individual keeps the tile it is sited on. The old books stay
-//! the committed world until the core takes over.
+//! positions as its record's words, and its persons; an individual keeps the tile it is sited on. Each party that
+//! holds an account holds one on the core at the bank the books give it, each sector's total its country's balance
+//! sheet's, apportioned over the sector's parties by what the books gave each. The old books stay the committed world
+//! until the core takes over.
 
-use phx_core::store::KindStore;
+use phx_core::OpeningCountry;
+use phx_core::settle::AT_ISSUER;
+use phx_core::store::{KindStore, Opening};
 use phx_id::consts::NATURE_KIND;
 use phx_id::{PartyId, PartyKey, Slot};
 use phx_ledger::books::Books;
-use phx_num::{MaybeI64, Missing, violation};
+use phx_num::round::{Round, split_total};
+use phx_num::{Ccy, MaybeI64, Missing, violation};
 use phx_pop::persons::Persons;
 use phx_pop::population::Population;
 use phx_store::{AddressSpace, SystemBacking};
 
+use crate::consts::sheet::ACCOUNTS;
 use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, KIND_ROWS, KIND_ROWS_PER_CHUNK};
+use crate::opening::sheet::Sheet;
+
+/// A party's account as the books give it: its kind, slot, country, the bank that owes it and its balance there.
+struct Held {
+    kind: usize,
+    slot: Slot,
+    country: usize,
+    bank: u32,
+    weight: u64,
+}
 
 /// Each kind's parties on the core by its place among the old books' tables, the persons of each kind that holds
 /// them, and every party's key by its identity, sorted.
 #[derive(Debug)]
 pub struct Core {
     pub space: AddressSpace,
+    /// The place of the first agent table: the kinds before it are individuals.
+    pub first_agents: u16,
     pub names: Vec<&'static str>,
     pub kinds: Vec<KindStore<SystemBacking>>,
     pub persons: Vec<Option<Persons<SystemBacking>>>,
@@ -92,7 +110,88 @@ impl Core {
             persons.push(held);
         }
         keys.sort_unstable_by_key(|(id, _)| *id);
-        Core { space, names, kinds, persons, keys }
+        Core { space, first_agents: parties.first_cell_place(), names, kinds, persons, keys }
+    }
+
+    /// Every party's account on the core: each kind's sector's total in its country's sheet, a share of its GDP made
+    /// whole, apportioned over the country's parties of that sector by the balance the books gave each (equal parts
+    /// where the books gave them none), each held at the bank the books hold it at, a bank's own at the issuer.
+    pub fn open_money(&mut self, books: &Books, countries: &[OpeningCountry], sheets: &[Sheet]) {
+        let bank_kind = self.names.iter().position(|n| *n == "bank");
+        let mut held: Vec<Held> = Vec::new();
+        for (kind, name) in self.names.iter().enumerate() {
+            if !ACCOUNTS.iter().any(|(n, _, _)| n == name) {
+                continue;
+            }
+            let store = self.kinds.get(kind);
+            for slot in store.map(|s| s.parties.live_slots().collect::<Vec<_>>()).unwrap_or_default() {
+                let Some(id) = store.and_then(|s| s.parties.id(slot)) else { continue };
+                let found =
+                    countries.iter().enumerate().find_map(|(i, c)| match books.account(id, Ccy::new(c.id.get())) {
+                        Missing::Present((owed_by, balance)) => Some((i, owed_by, balance)),
+                        Missing::Absent => None,
+                    });
+                let Some((country, owed_by, balance)) = found else { continue };
+                let bank = match self.key(owed_by) {
+                    Some(k) if Some(usize::from(k.kind())) == bank_kind && Some(kind) != bank_kind => k.slot().get(),
+                    _ => AT_ISSUER,
+                };
+                let Ok(weight) = u64::try_from(balance) else {
+                    violation!(clause = "GEN.4", "an opening account below nothing", party = id.get());
+                };
+                held.push(Held { kind, slot, country, bank, weight });
+            }
+        }
+        for (kind, name) in self.names.iter().enumerate() {
+            if ACCOUNTS.iter().any(|(n, _, _)| n == name)
+                && let Some(store) = self.kinds.get_mut(kind)
+            {
+                store.add_accounts(
+                    &mut self.space,
+                    if kind < usize::from(self.first_agents) { KIND_ROWS } else { AGENT_ROWS },
+                    if kind < usize::from(self.first_agents) { KIND_ROWS_PER_CHUNK } else { AGENT_ROWS_PER_CHUNK },
+                );
+            }
+        }
+        for ((country, c), sheet) in countries.iter().enumerate().zip(sheets) {
+            for (_, sector, instrument) in ACCOUNTS {
+                let parts: Vec<&Held> = held
+                    .iter()
+                    .filter(|h| h.country == country)
+                    .filter(|h| {
+                        self.names.get(h.kind).is_some_and(|n| ACCOUNTS.iter().any(|(k, s, _)| k == n && *s == sector))
+                    })
+                    .collect();
+                // Each sector is apportioned once, by the first kind that names it.
+                if ACCOUNTS.iter().position(|(_, s, _)| *s == sector)
+                    != ACCOUNTS.iter().position(|(_, s, i)| *s == sector && *i == instrument)
+                {
+                    continue;
+                }
+                let total = phx_ledger::opening::whole(sheet.at(instrument, sector) * c.gdp);
+                if parts.is_empty() && total != 0 {
+                    violation!(
+                        clause = "Law 2",
+                        "a sector's opening money with no party to hold it",
+                        country = country,
+                        sector = sector
+                    );
+                }
+                let weights: Vec<u64> = parts.iter().map(|h| h.weight).collect();
+                let equal = weights.iter().all(|w| *w == 0);
+                let mut whole: u64 = if equal { phx_rand::float::len_u64(parts.len()) } else { weights.iter().sum() };
+                let mut left = total;
+                for (h, w) in parts.iter().zip(weights) {
+                    let k = if equal { 1 } else { w };
+                    let (share, rest) = split_total(left, k, whole, Round::HalfEven);
+                    left = rest;
+                    whole -= k;
+                    if let Some(store) = self.kinds.get_mut(h.kind) {
+                        store.open_account(h.slot, Opening { bank: h.bank, balance: share });
+                    }
+                }
+            }
+        }
     }
 
     /// A party's key on the core, none for a party it does not hold.

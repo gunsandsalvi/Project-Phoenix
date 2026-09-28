@@ -109,7 +109,7 @@ pub fn stocks_breaks(s: &Stocks, unit: f64) -> Vec<String> {
 }
 
 /// A table's values as numbers, at its declaration's places, with the unit of its last place.
-fn table(register: &Register, id: &str, country: CountryId) -> Result<(Vec<Vec<f64>>, f64), String> {
+pub(crate) fn table(register: &Register, id: &str, country: CountryId) -> Result<(Vec<Vec<f64>>, f64), String> {
     let (ValueType::Table1 { exp, .. } | ValueType::Table2 { exp, .. }) = register.decl_by_id(id)?.value else {
         return Err(format!("`{id}` is no table"));
     };

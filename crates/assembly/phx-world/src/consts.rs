@@ -99,3 +99,36 @@ pub const RATE_ONE: f64 = 1_000_000_000_000.0;
 /// The opening balance sheet's sectors worth nothing beyond their equity, by their column: firms, banks and the central
 /// bank (households are 0, the government 4).
 pub const SECTORS_WORTH_NOTHING: [usize; 3] = [1, 2, 3];
+/// The balance sheet's sectors by their column, and its instruments and closing real assets by their row, as the
+/// dataset's derivation lays them out.
+pub mod sheet {
+    pub const HOUSEHOLDS: usize = 0;
+    pub const FIRMS: usize = 1;
+    pub const BANKS: usize = 2;
+    pub const CENTRAL_BANK: usize = 3;
+    pub const GOVERNMENT: usize = 4;
+    pub const CURRENCY: usize = 0;
+    pub const DEPOSITS: usize = 1;
+    pub const LOANS_TO_HOUSEHOLDS: usize = 2;
+    pub const LOANS_TO_FIRMS: usize = 3;
+    pub const FIRMS_BONDS: usize = 4;
+    pub const GOVERNMENT_PAPER: usize = 5;
+    pub const RESERVES: usize = 6;
+    pub const CENTRAL_BANK_LOANS: usize = 7;
+    pub const BANKS_BONDS: usize = 8;
+    pub const BANKS_EQUITY: usize = 9;
+    pub const FIRMS_EQUITY: usize = 10;
+    pub const INSTRUMENTS: usize = 11;
+    pub const SECTORS: usize = 5;
+    /// Each kind of party that holds an account: its sector in the balance sheet and the instrument its accounts hold
+    /// there. The central bank issues the money and holds none.
+    pub const ACCOUNTS: [(&str, usize, usize); 5] = [
+        ("household", HOUSEHOLDS, DEPOSITS),
+        ("small_firm", FIRMS, DEPOSITS),
+        ("firm", FIRMS, DEPOSITS),
+        ("bank", BANKS, RESERVES),
+        ("treasury", GOVERNMENT, DEPOSITS),
+    ];
+}
+/// A percentage's whole.
+pub const PERCENT: f64 = 100.0;

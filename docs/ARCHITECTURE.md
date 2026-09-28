@@ -1981,8 +1981,18 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   books hold is begun again on the core under its identity, a `KindStore` for each of the books' tables in their place
   order (so a kind's number is its place): an individual's record is the tile it is sited on; an agent's, its
   attributes then its positions, and a household's persons are copied into `Persons`, the copy refused if it holds
-  other persons than the books'. `Core::key` finds a party's key by its identity. The inspector reads it. It holds no
-  money yet and runs no day: those follow as the port moves them (the plan's S1.23 c–e).
+  other persons than the books'. `Core::key` finds a party's key by its identity. The inspector reads it. Each kind
+  that holds an account (households, firms of both tables, banks, the treasury; the central bank issues) is given
+  accounts, and each party's is opened at the bank the books hold it at (a bank's own, its reserves, at the issuer):
+  each sector's total is its country's sheet's share of GDP made whole, split over the country's parties of that
+  sector by `split_total` in proportion to the balance the books gave each (equal parts where they gave none), so the
+  totals are the sheet's exactly; money with no party to hold it stops the run. It runs no day yet.
+- **A country's balance sheet** (`opening::sheet`): its group's matrices moved by its drawn profile. Households' and
+  firms' debt, the government's, the banks' deposits, capital and reserves are the drawn levels; who holds each is
+  the group's split; the dataset's closures balance the rest (the central bank holds government paper for its
+  currency and reserves and lends banks the remainder, the banks' reserves and equity at their ratios and bonds held
+  by households balancing them, deposits beyond lending held as more paper, firms' equity their assets less debts).
+  A sheet the closures cannot balance, or one that breaks an identity, is refused at assembly.
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, stores, partition, flows, wheel, settlement,
   facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over

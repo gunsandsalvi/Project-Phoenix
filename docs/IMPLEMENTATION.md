@@ -755,8 +755,10 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
     full-load bench built them; the bench builds on them.
   - b *(done: mirrored from the old books at assembly and load)*. Households and their persons on the core: the household kind's records and each household's persons in its
     chunk's arena (`phx-pop`), and the institutions' kinds, drawn by the opening beside the old world's.
-  - c. The balance sheet apportioned: accounts, deposits, reserves, government paper and pensions in payment from
-    `GEN.balance_sheet` by `split_total`, and the primitives it replaces retired.
+  - c *(done for accounts)*. The balance sheet apportioned: each country's sheet (`opening::sheet`), its group's
+    moved by its drawn profile and closed as the dataset closes it, and every account on the core, each sector's total
+    split over its parties by `split_total`. Government paper, loans and pensions in payment open as families at d;
+    households' currency opens with the retail payments at d.
   - d. The day: hazards and outcomes over persons, dated flows by shape from the wheel, settlement over `Books`,
     closed days committed, estates on edges.
   - e. The audit's money and contracts families, the Stage 0 checks on the inspector over the core, and the smoke.
@@ -768,10 +770,10 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
   core's copies raise the smoke's memory by what they hold, and the smoke's memory reading is judged against that
   until S1.24 deletes the old core.
 - The opening apportions S1.22's balance sheet over parties by the shapes, exactly (`split_total`).
-- The primitives the dataset replaces retire here, where the opening on the core reads the matrices instead: CAP's
-  stock per GDP (`GEN.real_assets`), CB's currency and the profile's debt levels and bank capital
-  (`GEN.balance_sheet`); a drawn profile moves the matrices by a declared mapping that keeps their identities. They
-  were not retired at S1.22, which would have rewired the old opening only for this step to rewrite it.
+- A drawn profile moves the matrices by a declared mapping that keeps their identities (`opening::sheet::map`): the
+  levels it draws replace the group's, the group's splits stay, and the dataset's closures balance the rest. The
+  primitives the matrices replace — CAP's stock per GDP, CB's currency, and the openings' reads of the profile's debt
+  levels and bank capital — retire at S1.24 with the old openings that read them.
 - Estates follow PTY.9 and the waterfall on edges.
 - Settlement runs over the world's `Books`: every money kind's accounts, the banks' reserves and deposits, the issuer.
   The tie lot is the declared stream `SET.order`, opened for the payer at 7b. Each reason is a `ReasonDef` with the
