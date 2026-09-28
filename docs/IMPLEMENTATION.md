@@ -177,8 +177,9 @@ settled live world, and from Stage 1 its macro reads are reported against real e
 | --- | --- |
 | **0 Foundations** | S0.01 workspace, toolchain, CI and `phx-check` · S0.02 `phx-macros` · S0.03 `phx-num` · S0.04 `phx-rand` · S0.05 `phx-id` · S0.06 `phx-store` · S0.07 `phx-exec` · S0.08 `phx-core` I: calendar, conventions, schedules, the agenda · S0.09 `phx-core` II: the register, policy values, kinds, facts, the directory, findings · S0.10 `phx-core` III: streams, hazards, messages, decision points, rule handles, events, records · S0.11 `phx-world` I and the first live world · S0.12 `phx-audit` · S0.27 the setup and its derivation · S0.13 `phx-geo` and the map · S0.14 `phx-ledger` I: instruments, holdings, lines, rows, the contract algebra · S0.15 `phx-ledger` II: money, accounts, instructions, settlement · S0.16 GEN I and the institutions · S0.17 `phx-ledger` III: batches, the payer pass, the fixed point, levies, standing and pooled flows, transfers, the waterfall · S0.18 `phx-market` · S0.19 `phx-acct` · S0.20 persistence and the save check · S0.21 `phx-pop` I: tables, keys, steps, positions, profiles · S0.22 `phx-pop` II: screening, reviews and occasions · S0.23 `phx-pop` III: splits, parts, landing, re-keying, the seller spread · S0.24 `phx-pop` IV: tolerance control, promotion, renumbering · S0.25 GEN II and the population: households and small firms, the opening lines paying, `sys-dem` and estates · S0.26 `phx-obs`, `phx-ffi`, the Android bench, the measurement programme and the Stage 0 gate |
 | **1 The circular flow** | S1.01 `phx-val` · S1.02 `sys-tec` · S1.03 `sys-frm` · S1.04 `sys-cap` · S1.05 `sys-gds` · S1.06 `sys-srv` · S1.07 `sys-frt` · S1.08 `sys-lab` · S1.09 `sys-bnk` · S1.10 `sys-cb` · S1.11 `sys-trs`, `sys-tax`, `sys-soc`, `sys-sov` · S1.12 `sys-hh` · S1.13 `sys-dem` births · S1.14 `sys-idx` and `sys-sta` · S1.17 the meter · S1.18 the spec follows one representation · S1.19 the core and the bench · S1.20 money and settlement on the core · S1.21 markets, goods and named units on the core · S1.22 one opening dataset per profile · S1.23 Stage 0's world on the core · S1.24 Stage 1's world on the core, one kind of firm · S1.25 the architecture restated · S1.15 GEN III · S1.16 the Stage 1 gate |
-| **2 Credit and failure** | S2.01 losses and provisions · S2.02 `sys-tcr` · S2.03 the firm lifecycle · S2.04 estates and inheritance in kind · S2.05 `sys-hsg` · S2.06 `sys-bfl` · S2.07 `sys-bcp` · S2.08 `sys-sup` · S2.09 `sys-ene` · S2.10 the credit bureau and filed accounts · S2.11 personal insolvency · S2.12 the Stage 2 gate |
+| **2 Credit and failure** | S2.01 losses and provisions · S2.02 `sys-tcr` · S2.03 the firm lifecycle · S2.04 estates and inheritance in kind · S2.05 `sys-hsg` · S2.06 `sys-bfl` · S2.07 `sys-bcp` · S2.08 `sys-sup` · S2.09 `sys-ene` · S2.10 the credit bureau and filed accounts · S2.11 personal insolvency · S2.13 places: cells, buildings, commuting and settlements · S2.12 the Stage 2 gate |
 | **3 Money and capital markets** | S3.01 `sys-mmk` · S3.02 `sys-cb` in full · S3.03 `sys-trs` and `sys-sov` in full · S3.04 `sys-crd` · S3.05 `sys-eqy` · S3.06 `sys-dlr` · S3.07 `sys-fnd` · S3.08 non-bank lenders · S3.09 `sys-idx` in full · S3.10 `sys-rat` · S3.11 the Stage 3 gate |
+| **8 Minds** (built after Stage 3) | S8.01 `phx-mind`: the kernel, characters and their storage · S8.02 households decide with their minds · S8.03 offices: chief executives and boards · S8.04 experience, aspirations, goals, ageing and learning · S8.05 the life record and the biography · S8.06 the Stage 8 gate |
 | **4 Risk transfer** | S4.01 `sys-drv` · S4.02 `sys-drx` · S4.03 `sys-ins` · S4.04 `sys-pen` · S4.05 `sys-sec` · S4.06 `sys-mna` · S4.07 the Stage 4 gate |
 | **5 The full state and the open world** | S5.01 `sys-tax` in full · S5.02 `sys-soc` in full · S5.03 `sys-pol` · S5.04 `sys-fx` · S5.05 `sys-xb` and cross-border freight · S5.06 the Stage 5 gate |
 | **6 Growth and the full population** | S6.01 `sys-tec` in full · S6.02 `sys-dem` in full · S6.03 `sys-hh` in full · S6.04 `phx-obs` and the app in full · S6.05 the Stage 6 gate |
@@ -2195,6 +2196,104 @@ key-clock reason. Households use thirteen (S1.12's twelve and the key clock), fi
 - [ ] Housing, land and mortgages run from individual decisions; foreclosures add supply; households move and borrow.
 - [ ] LC-2-10 to LC-2-12, LC-2-31 to LC-2-33 and LC-2-35 pass; LC-2-34 is registered, not applicable until S3.02.
 - [ ] Two reviews are done.
+
+---
+
+### S2.13 — Places: cells, buildings, land by the parcel, commuting and settlements
+
+**Status**: planned
+
+**Clauses**:
+- STATE: GEO.19, HSG.21, TEC.16.
+- DECISION: HSG.8 *(completes it: the parcel and the floors)*.
+- PROCESS: GEO.20, HSG.22, HSG.23, STA.6, GEN.16; REP.24 *(completes it: units in buildings on recorded cells)*.
+- PRIMITIVE: HSG.17 *(completes it: cost by height, municipal zoning, buildings, the value of travel time)*; GEO.18
+  *(part: the cell size)*.
+- This step retires nothing and introduces none.
+
+**Architecture**: §7.17 (the core's stores), §10 (the budget); the cell layer and buildings are recorded there in this
+step's change.
+
+**Depends on**: S2.05.
+
+**Goal**: towns and cities that grow where building concentrates, from real mechanisms. Every dwelling, shop, office,
+plant and farm stands in a building on a cell; land is bid parcel by parcel; commutes cost time on roads that congest
+and on transit; firms gain by clustering. The statistics agency recognises settlements by the statistical definition,
+and the opening's largest cities are placed from data while smaller towns form during settling (owner, 2026-09-28,
+Appendix E 49).
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-geo/src/cells.rs` | a cell's identity, coordinates and terrain from its tile's; the sparse map of held cells |
+| `crates/kernel/phx-geo/src/travel.rs` | a path's time at its load against its capacity; transit lines, timetables and fares |
+| `crates/systems/sys-hsg/src/buildings.rs` | buildings, their units, footprints and positions; the builder's parcel and floors |
+| `crates/systems/sys-hsg/src/parcels.rs` | land by the parcel: bids, sales and leases |
+| `crates/systems/sys-sta/src/settlements.rs` | the Degree of Urbanisation over the held cells |
+| `crates/assembly/phx-world/src/opening/places.rs` | the opening's largest cities, their gradients and the buildings that house the opening |
+| `data/shared/GEO.toml`, `data/profiles/<level>/HSG.toml`, `data/shared/STA.toml` | the cell size, height cost, travel time's value, the settlement thresholds, urbanisation shares, city-size laws, density gradients, agglomeration elasticities, with sources |
+
+**Design**
+- **Cells** (GEO.19): a tile's cells are the same map subdivided; a cell's identity is its tile's and its place within
+  it, and its coordinates and terrain are arithmetic on the tile's, so empty land costs nothing. A cell is held, in a
+  sparse map keyed by identity, once a building stands on it, its land is owned or leased apart from its tile, or a
+  path crosses it. The cell size is a RESOLUTION set by the budget, from 1 km down (owner, 2026-09-28).
+- **Buildings** (HSG.21): a building holds its kind, floors, floor area, footprint and position within its cell,
+  condition and age, about 32 bytes; its units — dwellings, shops, offices, plant — are the holdings REP.24 counts,
+  now each with its building. Farm buildings, forests and mines stand on cells like any other.
+- **Builders** (HSG.8): each chooses among the parcels within its reach the one whose expected sale, less land,
+  construction and financing, is best by its own rule, and adds floors while an extra floor's expected price covers
+  what it adds to cost, which rises with height by the declared technology; zoning, national and municipal, bounds
+  both.
+- **Land by the parcel** (HSG.22): sales and leases of a region's land (HSG.20) are made per parcel; each bidder bids
+  its own value — a household the commute and services saved, a firm the customers and staff within reach, a builder
+  what it can build.
+- **Commuting and travel** (HSG.23, GEO.20): a trip's time is read from its path at the use each leg carries that day
+  against its capacity; transit lines, owned by a municipality, the state or a firm, have timetables, capacities and
+  fares. The commute enters the household's choice of home (HH.8) and its persons' choice of job (LAB) as time and
+  money, and is read only at the decisions that need it, never walked daily.
+- **Agglomeration** (TEC.16): a firm's way yields more with the jobs within commuting reach of its site, more with
+  those of its own industry, by the declared elasticities; labour pooling needs no declaration, being the hiring round
+  in a larger market.
+- **Settlements** (STA.6): each month the agency applies the Degree of Urbanisation to the held cells — urban centres
+  and urban clusters by their declared densities and populations — and publishes each settlement's bounds and
+  population. Nothing acts on the thresholds.
+- **The opening** (GEN.16): the largest cities are placed from the group's urbanisation share and its city-size law on
+  favourable land, with density falling from each centre by the measured gradients; buildings are opened to house
+  every household and firm the opening draws. Smaller towns form during settling.
+- **Data** (owner, 2026-09-28): a one-time fetch of the urbanisation shares (WDI `SP.URB.TOTL.IN.ZS`), city-size
+  distributions, the Degree of Urbanisation's thresholds, density gradients (Clark; Bertaud and Malpezzi),
+  agglomeration elasticities (Ciccone and Hall; Combes et al.), the height elasticity (Ahlfeldt and McMillen) and the
+  value of travel time (Small and Verhoef), into `data/sources/raw/`.
+- **Display**: zoomed out, regions and recognised settlements; zoomed in, cells with their buildings drawn from the
+  holdings (GEO.14: nothing kept for display alone).
+
+**Unit tests**: `cell_arithmetic` (identity, coordinates and distance from the tile's); `path_time_rises_with_load`;
+`floors_stop_where_cost_passes_price`; `degree_of_urbanisation_on_a_grid` (a hand-built grid of densities classified).
+
+**Live checks**
+- `LC-2-52`: GEO.19, HSG.21 — every unit in a building stands on a held cell; every held cell holds a building, a
+  parcel apart from its tile or a path; no building without an owner.
+- `LC-2-53`: HSG.22, HSG.23 — land prices by parcel are published; a region whose prices do not fall with distance
+  from its densest cells over a year is a finding.
+- `LC-2-54`: STA.6, GEN.16 — the settlements recognised each month, their populations and the rank–size slope; a
+  world whose settlements neither grow nor shrink over a year is a finding.
+
+**Budget**: buildings about 32 bytes each (about 20 MB at five million persons); held cells about 10⁵; the builder's
+and bidders' candidates a few parcels each at their monthly reviews; the settlement read monthly over the held cells;
+measured on the bench before the step closes.
+
+**Guards**: `phx-check` refuses a settlement written by anything but the agency's read.
+
+**Not allowed**: a town created by a threshold; a density gradient imposed; a building kept for display alone; a
+commute walked daily.
+
+**Done when**
+- [ ] Every unit of the world stands in a building on a cell, and land trades by the parcel.
+- [ ] Towns grow and shrink during settling from the mechanisms; the opening's largest cities stand from data.
+- [ ] The settlements are published by the agency, and the checks pass.
+- [ ] The bench and the smoke are within budget.
 
 ---
 
@@ -5182,6 +5281,319 @@ stage's macro reads from the run.
 
 ---
 
+## 6b. Stage 8 — Minds (built after Stage 3)
+
+Built after Stage 3 and before Stage 4 (spec Part O; numbered 8 because identifiers are permanent). Every decision
+built so far moves to the mind, rule by rule, each rule retired in the change that moves it; the stages after it build
+their decisions on the mind from the start (owner, 2026-09-28, spec Appendix E 47, 49).
+
+### S8.01 — `phx-mind`: the kernel, characters and their storage
+
+**Status**: planned
+
+**Clauses**:
+- STATE: MND.1, MND.2.
+- FORBID: MND.18.
+- PRIMITIVE: MND.19.
+- This step retires nothing and introduces none.
+
+**Architecture**: §3 (a new kernel crate), §7.17 (the persons store), §10 (the budget).
+
+**Depends on**: S3.11.
+
+**Goal**: the mind as one pure kernel — options with consequences by concern, weighed by a person's character,
+experience and aspirations, chosen by best choice with tastes or by satisficing — and every person's character drawn
+and held on the core, with the bench carrying a mind for every person and a choice for every decision.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-mind/src/lib.rs` | `Options`, `Mind`, `choose`, `satisfice`, `explain`: pure functions over `libm` |
+| `crates/kernel/phx-mind/src/character.rs` | the character types by country, from the declared simulation over the GPS profile |
+| `crates/kernel/phx-pop/src/persons.rs` | the character index in the identity word's spare bits; the adults' mind column |
+| `data/shared/MND.toml` | concerns, loss aversion, experience weights, aspiration speed, age profiles, attention, goal menu, household weights, with sources |
+
+**Design**
+- **The kernel**: an option is its consequences on the concerns its decision touches; `choose` weighs each against the
+  person's aspirations with loss aversion and its risk aversion as shaped, keeps the options its attention allows, and
+  takes the best by its weighing plus its tastes (REP.22); `satisfice` takes the first option meeting its aspiration.
+  Every function is pure, deterministic over `libm`, and costs about 0.2 µs for eight options on eight concerns.
+- **Characters** (MND.1): each country's types are simulated by a declared procedure from its GPS profile
+  (`people/gps_country.csv`: patience, risk taking, altruism, trust, reciprocity), the concern weights among them
+  (owner, 2026-09-28: simulated, the World Values Survey not fetched); a person draws its type at birth or arrival,
+  independently of its parents, and a migrant keeps its own.
+- **Storage**: the character index in the identity word's spare bits (an identity needs about 40 of its 64); the
+  adults' traces, aspirations and goals, 22 bytes, in a column keyed like the persons.
+- **Data** (owner, 2026-09-28): a one-time fetch of the GPS within-country dispersion, the Malmendier–Nagel experience
+  weights, loss aversion (Kahneman and Tversky), aspiration adaptation (Stutzer), household weights (Browning and
+  Chiappori), age profiles of risk aversion and patience, and the measures' sources (Bertrand and Schoar; Malmendier
+  and Tate; Jones and Olken).
+- **The bench** carries a mind for every person and a choice for every decision at the design point before any system
+  uses one; over budget, the minds' detail gives way first (fewer types, coarser traces, shorter attention), the
+  persons last (owner, 2026-09-28).
+
+**Unit tests**: `loss_counts_more_than_gain`; `attention_limits_the_considered`; `satisficing_takes_the_first_good_enough`;
+`choice_is_deterministic_over_its_draws`.
+
+**Live checks**
+- `LC-8-01`: MND.1 — every person holds a character type of its country's table; the types' shares by country against
+  their declared shares.
+
+**Budget**: about 80 MB at five million persons (2 bytes a person, 22 an adult); about 0.2 µs a choice; measured on
+the bench.
+
+**Guards**: `phx-check` refuses a decision rule that reads another party's mind, and a mind's primitive without a
+source.
+
+**Not allowed**: a trained or fitted decision function; a language model in the world; a common mind.
+
+**Done when**
+- [ ] Every person holds its character; the kernel's tests pass; the bench with minds is within budget.
+
+---
+
+### S8.02 — Households decide with their minds
+
+**Status**: planned
+
+**Clauses**:
+- DECISION: MND.7 *(part: households' decisions)*, MND.8.
+- This step retires each household rule it moves, in the change that moves it.
+
+**Architecture**: §7.10–§7.15 (the decisions ported).
+
+**Depends on**: S8.01.
+
+**Goal**: every household decision built so far — spending and saving, work and search, taking an offer, renting or
+buying, borrowing, moving — is a choice of its mind: the rule generates the options and states their consequences by
+concern, the adults' weighings are summed by their shares of income, and the choice is best-with-tastes or, for job
+and house search, satisficing (owner, 2026-09-28).
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/systems/sys-hh/src/rules/` | each rule an option generator with its consequences by concern |
+| `crates/systems/sys-lab/src/rules/` | search and acceptance as satisficing |
+| `crates/systems/sys-hsg/src/rules/` | the dwelling search as satisficing |
+
+**Design**
+- Each rule's options are the ones it already works on (price points, wage points, dwellings in reach); its
+  consequences by concern come from the household's own outlooks and values (VAL.8).
+- A long divergence between partners' weighings is recorded as an input to POP.17 (built at S6.02).
+- The player's household: its persons' minds advise — what each would do and why — and the player decides or leaves it
+  to them (OBS.4).
+
+**Unit tests**: `household_weights_by_income_share`; each ported rule's options and consequences on hand-built values.
+
+**Live checks**
+- `LC-8-02`: MND.7, MND.8 — every household decision records its tipping concern; two households alike in state but
+  not in character decide differently in the share the tastes alone would not give.
+
+**Budget**: about 70,000 household decisions a business day at the design point, about 15 ms.
+
+**Guards**: none beyond S8.01's.
+
+**Not allowed**: a household rule left beside its mind's version.
+
+**Done when**
+- [ ] Every household decision is its mind's; its checks pass; the smoke and the bench are within budget.
+
+---
+
+### S8.03 — Offices: chief executives and boards decide with their own minds
+
+**Status**: planned
+
+**Clauses**:
+- DECISION: MND.9; MND.7 *(part: firms' and banks' decisions)*.
+- INVARIANT: MND.16.
+- This step retires each firm and bank rule it moves, in the change that moves it.
+
+**Architecture**: §7.10–§7.15, the offices of S3.05.
+
+**Depends on**: S8.02.
+
+**Goal**: every firm's and bank's decision is taken by the person in its office — the chief executive under its pay
+contract and its board, an owner managing its own firm — so two firms alike but led by different persons decide
+differently, and a new chief executive changes the firm.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/systems/sys-frm/src/rules/`, `crates/systems/sys-bnk/src/rules/` | each rule an option generator read by its office holder's mind |
+| `crates/systems/sys-eqy/src/boards.rs` | boards choosing and removing chief executives by their members' minds |
+
+**Design**
+- The mandate enters only through contracts (owner, 2026-09-28): pay in shares and bonuses in the holder's means and
+  wealth, and removal by the board when results disappoint, as the board members' own minds judge them.
+- Self-interest within the law: a holder's own concerns (standing, means) may favour size, perks or the short term
+  where its contracts and oversight allow; boards and auditors find it out and remove it. Crime is out of scope.
+- Selection (PTY.17): candidates by their records, public reputation, whether the choosers know them, and the pay the
+  institution offers against others bidding for them.
+- An office no one holds yet reads the institution's founding preferences (MND.16).
+
+**Unit tests**: `pay_in_shares_weighs_the_share_price`; `removal_threat_enters_security`.
+
+**Live checks**
+- `LC-8-03`: MND.9, MND.16 — every firm's and bank's decision names its office holder; after each change of chief
+  executive, the firm's investment, leverage and payout over the next year against the year before are published.
+
+**Budget**: about 35,000 firm decisions a business day, about 7 ms; board reviews on their own schedule.
+
+**Guards**: `phx-check` refuses an institution's decision rule that reads no office holder.
+
+**Not allowed**: a fixed weight for a mandate; a decision in an office read from anything but its holder's mind.
+
+**Done when**
+- [ ] Every firm and bank decides by its office holder's mind; chief executives are chosen and removed by boards; its
+  checks pass.
+
+---
+
+### S8.04 — Experience, aspirations, goals, ageing and learning
+
+**Status**: planned
+
+**Clauses**:
+- STATE: MND.3, MND.4, MND.5, MND.6.
+- DECISION: MND.10, MND.11.
+- PROCESS: MND.12, MND.13, MND.14.
+- This step retires nothing and introduces none.
+
+**Architecture**: §7.17 (the adults' mind column), §8 (outlooks).
+
+**Depends on**: S8.03.
+
+**Goal**: minds that change with life: traces of what each person lived through, aspirations that adapt, goals formed
+at life events and reached or given up, character drifting with age, and strategies learnt from the person's own
+record and from those it knows.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/kernel/phx-mind/src/experience.rs` | the traces and their weights; aspirations; ageing |
+| `crates/kernel/phx-mind/src/goals.rs` | goals: formation at life events, their pull on the concerns, giving up |
+| `crates/kernel/phx-mind/src/learning.rs` | strategy switching by own record and by peers' seen outcomes |
+
+**Design**
+- Traces (owner, 2026-09-28): markets and prices; work (unemployment, layoffs, one's firm failing); home and debt
+  (foreclosure, arrears, default, eviction); crises and disasters. Each is written at the event, weighted by recency
+  and the person's age then, and read by the risk aversion and concern weights its decisions use.
+- Goals (owner, 2026-09-28): home and family; career and business; politics and public life; education, retirement
+  and moving.
+- Peers are the persons a person knows through its contracts and kin — colleagues at its employer, its kin, its
+  household's neighbours in its building — and it sees only their public or shared outcomes (Law 12).
+- Ageing drifts patience, risk aversion and concern weights by the measured age profiles.
+
+**Unit tests**: `recent_and_young_weigh_more`; `aspiration_adapts_toward_achievement`; `goal_given_up_below_aspiration`.
+
+**Live checks**
+- `LC-8-04`: MND.3, MND.12 — risk-taking and expected inflation by age and lived experience are published; no effect
+  over a year that holds a crisis is a finding.
+- `LC-8-05`: MND.5, MND.10 — goals formed, reached and given up are published by kind and age.
+
+**Budget**: traces and aspirations written at events only; learning at reviews; within S8.01's memory.
+
+**Guards**: none beyond S8.01's.
+
+**Not allowed**: an experience trace written for an event the person did not live.
+
+**Done when**
+- [ ] Minds change with life; the checks pass; within budget.
+
+---
+
+### S8.05 — The life record and the biography
+
+**Status**: planned
+
+**Clauses**:
+- PROCESS: MND.15; OBS.10, OBS.11.
+- This step retires nothing and introduces none.
+
+**Architecture**: §15 (the observer surface), §11 (saves).
+
+**Depends on**: S8.04.
+
+**Goal**: every person's life recorded compactly as it happens and deleted at its death, office holders' and founders'
+kept as the world's history; a biography written on the phone from a record, outside the world (owner, 2026-09-28).
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/lives.rs` | the compact life record: events, the tipping concern, deletion at death |
+| `crates/apps/phx-ffi/src/biography.rs` | the record handed to the on-device model; nothing returns to the world |
+
+**Design**
+- A record is a few bytes an event; at five million persons and the world's event rates, its size is measured before
+  the step closes and counts in the save budget.
+- The biography reads a record only; the model runs on the device beside the world, never inside a day's time.
+
+**Unit tests**: `record_deleted_at_death_unless_office`.
+
+**Live checks**
+- `LC-8-06`: OBS.10 — no record outlives its person unless the person held an office or founded a firm; the records'
+  size is published.
+
+**Budget**: the records' memory and save size measured; the biography outside the day's budget.
+
+**Guards**: `phx-check` refuses a write from the biography's crate into the world.
+
+**Not allowed**: a record kept past death for anyone but office holders and founders; anything the biography writes
+read by the world.
+
+**Done when**
+- [ ] Any living person's life can be read; history keeps office holders' and founders'; a biography can be written
+  on the device.
+
+---
+
+### S8.06 — The Stage 8 gate
+
+**Status**: planned
+
+**Clauses**:
+- MEASURE: MND.17.
+- This step retires nothing and introduces none.
+
+**Architecture**: §10.
+
+**Depends on**: S8.05.
+
+**Goal**: the world with minds settled and run two years on the phone; its measures read against the literature's.
+
+**Files**
+
+| File | Purpose |
+| --- | --- |
+| `perf/device/` | the phone's run |
+
+**Design**
+- The measures of MND.17 are read from the run: manager effects in firms' policies, policy after changes of chief
+  executive, experience effects by age, and satisfaction against income within and across years.
+
+**Unit tests**: none.
+
+**Live checks**
+- `LC-8-07`: MND.17 — each measure published against its source's range; a miss is a finding about a missing
+  mechanism, never a tuning.
+
+**Budget**: the phone's run within the budget (N8).
+
+**Guards**: none.
+
+**Not allowed**: a primitive changed after reading the run.
+
+**Done when**
+- [ ] The run holds and the budget is met on the phone; the measures are reported.
+
+---
+
 ## 7. Stage 4 — Risk transfer
 
 **Exit** (spec Part O):
@@ -7591,9 +8003,10 @@ appropriation (SOC.8).
 **Status**: planned
 
 **Clauses**:
-- STATE: POL.1, POL.2, POL.3.
+- STATE: POL.1, POL.2, POL.3, POL.13; PTY.16.
 - DECISION: POL.4, POL.5, POL.6, POL.11; HH.12.
-- PROCESS: POL.7, POL.8.
+- PROCESS: POL.7, POL.8, POL.14; PTY.17.
+- FORBID: PTY.18.
 - MEASURE: POL.9.
 - FORBID: POL.10.
 - PRIMITIVE: POL.12.
@@ -10127,7 +10540,7 @@ S5.02 and S6.04, or deleted where the core's restructure retired what they measu
 | No findings table (§0.5) | a finding is solved in its step or written into the step that will fix it; §11 is retired, its open rows moved into their steps or deleted where the core retired what they measured; every data point no source gives is closed by a derivation, a paper's table or a declared simulation, named in the step that reads it | 2026-09-28 |
 | Every person a party, every office a person's (PTY.1, PTY.3, PTY.16–18, Appendix E 46) | wealth is individual: each person owns its accounts, holdings and debts, a household is its persons and what it holds their sum; each person keeps one identity from birth to death, whichever household it lives in; every office (board member, chief executive, governor, member of parliament, head of state or government, minister, a party's leader and candidates) is held by a named person filled by its declared process, so a person's life can be followed; built in S1.24 (identity, accounts), S3.02, S2.08, S3.05 and S5.03 (offices) | 2026-09-28 |
 | Office holders and household budgets (Appendix E 47, 48) | an institution's rule reads its office holders' own preferences and outlooks, so a new chief executive, governor or minister changes how it decides; a household's shared payments are drawn from its members' accounts in proportion to what each holds, each income paid to its earner's own account and a person's own debts paid from its own first | 2026-09-28 |
-| Minds and places (`docs/PROPOSAL_MINDS_AND_PLACES.md`) | accepted with the answers of the proposal's Part 3: a mind for every person (eight concerns, weights simulated from the GPS, character by country, experience, aspirations, goals, learning from own record and peers) built in its own stage after Stage 3, replacing each decision's rule one by one; office holders under their contracts and removal, self-interest within the law; everyone's life recorded compactly and deleted at death except office holders'; a narrator on the phone; places (cells at a budget-set resolution, buildings with position, commuting with congestion and transit, agglomeration, municipalities, farms on cells) built with S2.05; a one-time fetch of the listed sources | 2026-09-28 |
+| Minds and places (spec MND, Appendix E 49; S2.13, Stage 8) | accepted with the owner's answers: a mind for every person (eight concerns, weights simulated from the GPS, character by country, experience, aspirations, goals, learning from own record and peers) built in its own stage after Stage 3 (Stage 8, numbered so because identifiers are permanent), replacing each decision's rule one by one; office holders under their contracts and removal, self-interest within the law; everyone's life recorded compactly and deleted at death except office holders'; a narrator on the phone; places (cells at a budget-set resolution, buildings with position, commuting with congestion and transit, agglomeration, municipalities, farms on cells) built right after housing, in S2.13; a one-time fetch of the sources S2.13 and S8.01 list | 2026-09-28 |
 
 ---
 
@@ -10170,6 +10583,7 @@ and are not mapped.
 | GEO | S1.05 | 9, 12 |
 | GEO | S1.07 | 13, 18 |
 | GEO | S2.05 | 5 |
+| GEO | S2.13 | 19, 20 |
 | GEO | S5.02 | 4 |
 | REP | S0.28 | 1, 3, 7, 9, 12, 13, 14, 16, 23, 25, 26, 31, 40, 41 |
 | REP | S1.05 | 35 |
@@ -10177,12 +10591,14 @@ and are not mapped.
 | REP | S1.09 | 34 |
 | REP | S1.12 | 5, 20 |
 | REP | S1.15 | 21, 38 |
-| REP | S2.05 | 22, 24 |
+| REP | S2.05 | 22 |
+| REP | S2.13 | 24 |
 | REP | S6.05 | 18 |
 | GEN | S1.01 | 11 |
 | GEN | S0.27 | 14 |
 | GEN | S0.25 | 6 |
 | GEN | S0.26 | 8 |
+| GEN | S2.13 | 16 |
 | GEN | S6.05 | 1, 2, 3, 4, 5, 7, 12, 13, 15 |
 | GEN | S7.01 | 10 |
 | MON | S0.15 | 1, 2, 3, 6, 7, 8, 9, 11, 12, 13, 14, 16 |
@@ -10206,6 +10622,12 @@ and are not mapped.
 | VAL | S1.01 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 22 |
 | VAL | S1.05 | 23 |
 | VAL | S1.15 | 12, 13, 14, 15 |
+| MND | S8.01 | 1, 2, 18, 19 |
+| MND | S8.02 | 8 |
+| MND | S8.03 | 7, 9, 16 |
+| MND | S8.04 | 3, 4, 5, 6, 10, 11, 12, 13, 14 |
+| MND | S8.05 | 15 |
+| MND | S8.06 | 17 |
 | POP | S0.25 | 3, 4 |
 | POP | S1.13 | 5 |
 | POP | S2.05 | 10 |
@@ -10222,6 +10644,7 @@ and are not mapped.
 | TEC | S1.03 | 4 |
 | TEC | S1.05 | 1 |
 | TEC | S1.15 | 9 |
+| TEC | S2.13 | 16 |
 | TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14, 15 |
 | FRM | S1.03 | 17, 20, 22 |
 | FRM | S1.05 | 13 |
@@ -10253,7 +10676,8 @@ and are not mapped.
 | LAB | S1.08 | 1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17 |
 | LAB | S2.10 | 10 |
 | LAB | S6.02 | 5 |
-| HSG | S2.05 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 |
+| HSG | S2.05 | 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20 |
+| HSG | S2.13 | 8, 17, 21, 22, 23 |
 | TCR | S2.02 | 1, 2, 3, 4, 5, 6, 7, 8 |
 | ENE | S2.09 | 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14 |
 | ENE | S4.02 | 5, 6 |
@@ -10318,15 +10742,17 @@ and are not mapped.
 | CB | S5.05 | 15 |
 | SUP | S2.08 | 1, 2, 3, 5, 6, 8, 10, 12 |
 | SUP | S4.07 | 4, 7, 9, 11, 13, 14 |
-| POL | S5.03 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
+| POL | S5.03 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 |
 | FX | S5.04 | 1, 2, 4, 5, 6, 7, 9, 10 |
 | FX | S5.05 | 3, 8 |
 | XB | S5.05 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
 | OBS | S0.10 | 1 |
 | OBS | S0.26 | 9 |
 | OBS | S6.04 | 2, 3, 4, 5, 6, 7, 8 |
+| OBS | S8.05 | 10, 11 |
 | STA | S1.14 | 2, 4, 5 |
 | STA | S1.15 | 3 |
+| STA | S2.13 | 6 |
 | STA | S5.05 | 1 |
 | L1–L12 | S7.02 | each chain held to its test (II.1), as N4 reads it from the run; L1's machinery is S2.01's, L3's S2.04's (the waterfall's S0.17's), L2's and L4's S3.11's |
 | N1 | S6.05 | the audit's families complete with the last system; the framework is S0.12 |

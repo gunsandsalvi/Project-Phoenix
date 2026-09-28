@@ -452,7 +452,8 @@ is a party with a permanent identity.
 
 - **PTY.1 STATE** — A **party** is anything that can hold, owe, decide or be paid: a **person**, a
   **household**, a **firm**, a **bank**, a **fund**, an **insurer**, a **pension scheme**, a **clearing
-  house**, a **treasury**, a **central bank**, a **public agency**, a **parliament**, a **political party**,
+  house**, a **treasury**, a **central bank**, a **public agency**, a **municipality**, a **parliament**, a
+  **political party**,
   an **estate**. Each has an identity that is never reused. A person's is its own from its birth or arrival to its
   death, kept whichever household it lives in, so its life can be followed whole.
 - **PTY.2 STATE** — **The world is a real economy at a declared scale**: a declared number of the hundreds of
@@ -492,8 +493,10 @@ is a party with a permanent identity.
 - **PTY.17 PROCESS** — **Filling an office.** An office is filled by the process its institution's legal form or
   constitution declares (POLICY, PTY.4): a board by its owners' votes (REG), a chief executive by its board, the
   members of parliament and a directly elected head of state by election (POL.7), a government by the coalition that
-  forms it (POL.6), an appointed head by whom the law names. Whoever chooses decides among the persons eligible, from
-  their records — skills, experience, the jobs and offices they have held — by its own rule. An office falls vacant
+  forms it (POL.6), an appointed head by whom the law names. Whoever chooses decides among the persons eligible, by its
+  own mind (MND.7), from their records — skills, experience, the jobs and offices they have held — their public
+  reputation, whether it knows them (a past colleague, kin, a fellow member), and the pay and terms it can offer
+  against other institutions bidding for them. An office falls vacant
   by its holder's death, resignation or removal or by the end of its term, and is filled again the same way.
 
 **Invariants**
@@ -686,6 +689,10 @@ exposure; it never writes an economic outcome.
 - **GEO.4 STATE** — **Infrastructure** — roads, rail, bridges, tunnels, ports, pipelines, power lines — is
   owned capital (CAP) with a site or a path, a capacity shared by everything using it in a day, a life, a
   maintenance need and a condition.
+- **GEO.19 STATE** — **Cells.** Each tile is divided into **cells**, the same map subdivided (a RESOLUTION set by the
+  budget, from a kilometre down): a cell's identity, coordinates, surface and terrain are read from its tile and its
+  place within it, and a cell is held only once something stands on it, it is owned or leased apart from its tile, or
+  a path crosses it. Buildings, parcels of land, farms, forests and mines stand on cells.
 - **GEO.5 STATE** — **Land** is a tile's area, owned by a named party as a holding, with what stands on it.
   A dwelling or a plant occupies land.
 - **GEO.6 STATE** — A tile may hold a **deposit**: a named resource at a grade, in a declared finite
@@ -695,6 +702,10 @@ exposure; it never writes an economic outcome.
 
 **Processes**
 
+- **GEO.20 PROCESS** — **Travel.** A trip along a path takes the time its legs take at the use each carries that day
+  against its capacity: a road congests as more travel on it. **Transit** — buses, trams, rail — is a line owned by a
+  municipality, the state or a firm, with a timetable, a capacity and a fare; a trip on it takes its times and pays
+  its fare.
 - **GEO.8 PROCESS** — A catastrophe on a tile damages or destroys what stands there — dwellings, plant,
   stock, infrastructure, crops — as real losses of units at their owners, and can close routes (FRT).
 - **GEO.9 PROCESS** — A finite deposit **depletes** by what is extracted and never refills; where its nature
@@ -721,7 +732,8 @@ exposure; it never writes an economic outcome.
 - **GEO.18 PRIMITIVE** — The world's size and its **latitude cycle** (ENDOWMENT, chosen by the owner): with no pole,
   the latitude a row's climate is read at runs evenly from a warm belt to a cool belt over half the world's height
   and back over the other half, so every latitude between them is present twice, and it changes along the way
-  faster than on the Earth; tile size (RESOLUTION: the same map subdivided); terrain generation parameters (SHAPE,
+  faster than on the Earth; tile size and cell size (RESOLUTION: the same map subdivided); terrain generation
+  parameters (SHAPE,
   declared as such, with the reason no mechanism replaces them); deposits and opening infrastructure
   (ENDOWMENT); hazard exposure by terrain (TECHNOLOGY).
 
@@ -839,9 +851,10 @@ The work of a day follows the number of parties something happens to, not the nu
   - A household's zone, and the zone of each of a firm's sites, are attributes. Their dwellings, plant and vehicles
     are held by zone and **class** (kind, size, quality band, condition band). Wear, damage and repair move units
     between condition classes.
-  - The tile each unit stands on is drawn when something depends on it (REP.23).
-  - Distance for households and firms is measured between zones. The zone is the spatial resolution at which they
-    are carried.
+  - A unit within a building stands on the building's cell, which is recorded (GEO.19, HSG.21); a unit counted by zone
+    and class and in no building has its tile drawn when something depends on it (REP.23).
+  - Distance for households and firms is measured between zones, and between cells where both ends are in buildings
+    (a commute, HSG.23). The zone is the spatial resolution at which markets meet.
 - **REP.25 PROCESS** — **Age.** Every person holds its **birth date**. Its age on any day, and the day it reaches a
   statutory age or an entitlement, are read from it exactly.
 - **REP.26 PROCESS** — **Persons are held in their household.** A household holds each of its persons, with its
@@ -1046,6 +1059,11 @@ takes on day zero.
   profile's declared range for its level; risk appetite sets the distribution of risk aversion (a PREFERENCE). From
   the derived values, GEN.2's distributions and present values follow by declared mappings and accounting identities
   only; nothing is solved for an equilibrium (GEN.4).
+- **GEN.16 PROCESS** — **Settlements at the opening.** The opening's largest cities are placed from the group's
+  urbanisation share and the measured law of city sizes, on the land the map favours (coasts, rivers, flat ground,
+  deposits), with density falling from each centre by the measured gradients; every household and firm the opening
+  draws is housed in buildings on cells. Smaller towns are not placed: they form during settling (GEN.6) from the
+  mechanisms alone.
 - **GEN.13 PROCESS** — **Day zero.** The calendar day before the first day runs only its decision stage: every party
   takes each decision kind declared as an opening decision once, by its own rule, from its own drawn state and the
   snapshot — sellers post prices, employers post wage offers, banks set rates and standards, the central bank
@@ -1706,6 +1724,115 @@ personal, fallible and heterogeneous — and able to value things that have neve
 
 ---
 
+## C3. MND — Minds
+
+**Purpose.** Every decision in this world is taken by a person — for itself, for its household, or in an office it
+holds — and people differ in what they care about, what they have lived through and what they aim for. A **mind** is
+what a person brings to every decision it takes: one declared form in which the options a decision offers are weighed
+on the concerns that matter to that person, against what it aspires to. Two persons in the same place decide
+differently, a person decides differently after what it has lived, and a new holder changes what an office does.
+
+**Depends on:** PTY, NUM, CHN, REP, VAL, POP.
+
+**State**
+
+- **MND.1 STATE** — **Character.** Each person's patience, risk aversion, altruism, trust, positive and negative
+  reciprocity, and the weights it gives the concerns (MND.2): a type drawn once, at its birth or arrival, from its
+  country's distribution (NUM.4), independently of its parents'. A migrant keeps its own; its children draw from the
+  country they are born in.
+- **MND.2 STATE** — **Concerns.** What an option is weighed on, a declared list:
+  - **means** — the money it brings or costs over the person's horizon;
+  - **security** — the chance and size of a loss of job, home, firm or savings;
+  - **wealth and legacy** — what the person holds, and what passes to its heirs;
+  - **standing** — rank, title, office, and pay against the person's peers;
+  - **family** — partner, children, time at home, kin nearby;
+  - **leisure and health** — hours worked, the commute, illness;
+  - **place** — staying near home and kin;
+  - **principle** — fairness and redistribution, economic freedom, an institution's mission.
+
+  Each kind of decision declares which concerns it touches (Law 10).
+- **MND.3 STATE** — **Experience.** What the person has lived through, carried as traces that fade, each weighted by
+  how recent it is and how young the person was: the returns and inflation it lived through; its spells of
+  unemployment, its layoffs and a firm of its own failing; its foreclosures, arrears, defaults and evictions; the
+  crises and catastrophes it lived through.
+- **MND.4 STATE** — **Aspirations.** A reference level on each concern that has one — income, wealth, standing —
+  against which the person judges an outcome.
+- **MND.5 STATE** — **Goals.** Discrete aims, each with its target and, where it has one, its date: to own a home, to
+  have children, to found a firm, to reach an office (a board, a chief executive's chair, parliament, a mayor's, a head
+  of state's or government's), to earn a degree or retrain, to retire by an age, to move to a place.
+- **MND.6 STATE** — **Strategies.** For a decision with a declared menu of strategies — a firm's pricing, growth or
+  cash style, a household's saving style — the person holds the record of how each has worked for it.
+
+**Decisions**
+
+- **MND.7 DECISION** — **Choosing.** Every decision a person takes is a choice among the options its mechanism
+  generates, each option's consequences stated on the concerns it touches from the person's own outlooks and values
+  (VAL.8). The person weighs each consequence by its concern weights against its aspiration, a shortfall counting more
+  than a gain of the same size (loss aversion), its risk aversion as its experience has shaped it; it considers as
+  many options as its attention allows; and it either takes the best by its weighing and its tastes (REP.22) or, where
+  options arrive one at a time, the first that meets its aspiration. Which of the two a decision uses is declared per
+  decision.
+- **MND.8 DECISION** — **A household decides as one**: its adults' weighings are summed, each by its share of the
+  household's income. A long divergence between partners is an input to their deciding to separate (POP.17).
+- **MND.9 DECISION** — **An office holder decides with its own mind** (Appendix E 47). The office's mandate enters only
+  through the holder's contracts — its pay, what it holds, the terms of its removal — and through those who can remove
+  it. Within the law, a holder may act for its own concerns against its mandate where its contracts and oversight
+  allow — building an empire, taking perks, favouring the short term or its allies — and be found out and removed for
+  it.
+- **MND.10 DECISION** — **Goals formed and given up.** At a life event — coming of age, partnering, a child, a
+  promotion, a loss — a person forms the goals its character and circumstances favour. A goal raises the weight of the
+  concerns it serves until it is reached, or until the person's aspiration has fallen below it and it is given up.
+- **MND.11 DECISION** — **Learning.** A person switches among its strategies by their record for it, and by the
+  outcomes it saw of persons it knows — colleagues, kin, neighbours — who use others, as VAL.7 does for forecasts; it
+  learns only from what it could have observed (Law 12).
+
+**Processes**
+
+- **MND.12 PROCESS** — **Experience accrues** from the person's own events and the published series it lived through,
+  by declared weights of recency and of its age at the time.
+- **MND.13 PROCESS** — **Aspirations adapt** toward what the person achieved and what its peers achieved, at a
+  declared speed: a rise pleases, then becomes the new normal.
+- **MND.14 PROCESS** — **Ageing.** Patience, risk aversion and concern weights drift with age along declared profiles,
+  on top of experience.
+- **MND.15 PROCESS** — **The reason recorded.** Each decision a person takes records the concern that tipped it, with
+  the person's life record (OBS.10).
+
+**Invariants**
+
+- **MND.16 INVARIANT** — Every decision a person takes reads its own mind; every decision taken in an office reads its
+  holder's, and one taken in an office no one holds yet reads the institution's preferences drawn at its founding.
+
+**Measures**
+
+- **MND.17 MEASURE** — The share of the variation in firms' investment, leverage and payouts explained by who leads
+  them; the change in policy after a leader changes; the effect of lived returns and inflation on risk-taking and on
+  expected inflation, by age; satisfaction rising with income within a year and not across years.
+
+**Forbids**
+
+- **MND.18 FORBID** — No opaque decider: no decision function trained or fitted to the world's outcomes, and no
+  language model deciding anything in the world. No common mind: no two persons share one. No career, success, failure
+  or election drawn. No mind reads another's private state.
+
+**Primitives**
+
+- **MND.19 PRIMITIVE** — The concern list and each decision's concerns (SHAPE, declared as the stand-in for what
+  people care about); the character types by country, simulated by a declared procedure from the country's Global
+  Preferences Survey profile (PREFERENCE); loss aversion, the experience weights, the aspiration speed, the age
+  profiles, attention by type, the goal menu and its formation hazards, and the household weights (PREFERENCE, each
+  with its source).
+
+**Out of scope**
+
+- Crime in office: fraud and corruption.
+
+**Done when**
+
+- Every decision a person takes reads its mind; two persons in the same position decide differently; a change of chief
+  executive or of head of government changes the institution's decisions; the measures of MND.17 are reported.
+
+---
+
 # PART D — PEOPLE
 
 The population and the decisions of the households it lives in. People are the source of labour, the end
@@ -1952,6 +2079,10 @@ and growth are outcomes.
   paid to the office, and publishes it in its register (OBS.1). Until it expires, no other firm may run the way
   except under licence (TEC.6).
 
+- **TEC.16 STATE** — **Agglomeration.** What a firm's way makes from its inputs rises with the jobs within commuting
+  reach of its site, and more with those of its own industry, by declared elasticities; a larger labour market also
+  matches workers to jobs better, through the hiring round itself (LAB).
+
 **Decisions**
 
 - **TEC.14 DECISION** — **Research, imitation and licensing.** A firm decides its research and imitation effort,
@@ -1995,7 +2126,8 @@ and growth are outcomes.
 
 - **TEC.13 PRIMITIVE** — The opening ways per product (TECHNOLOGY, from input–output and engineering data);
   the discovery and imitation hazards and the distribution of improvements (TECHNOLOGY); learning curves
-  (TECHNOLOGY); patent law: its life, fees and what it covers (POLICY).
+  (TECHNOLOGY); patent law: its life, fees and what it covers (POLICY); the agglomeration elasticities (TECHNOLOGY,
+  from their measurements).
 
 **Out of scope**
 
@@ -2075,7 +2207,7 @@ to owners, can belong to a group, and can be born and die.
   payment**; a firm whose liabilities exceed its assets is **balance-sheet insolvent**. Either can come
   without the other. What follows is the insolvency law of its country (POLICY): a **restructuring** in
   which creditors decide, or a **liquidation** into an estate (L3).
-- **FRM.16 PROCESS** — **Birth**: a firm is founded by a named founder (a household, a firm, a fund) with
+- **FRM.16 PROCESS** — **Birth**: a firm is founded by a named founder (a person, a firm founding a spin-off, a fund backing a venture) with
   money from named accounts, when the founder expects the venture to pay; it starts small, buys its plant
   from producers, and is fragile.
 
@@ -2489,6 +2621,11 @@ liability and a main channel of monetary policy.
   in its own market.
 - **HSG.19 STATE** — A **land lease** is a contract: owner, tenant, parcel, rent, term; agricultural, commercial and
   industrial land is often leased rather than owned.
+- **HSG.21 STATE** — A **building** is a unit of capital on a cell (GEO.19), owned by a named party, with a kind
+  (a house, an apartment block, a shop, an office, a factory, a warehouse, a farm building, a school, a clinic, a town
+  hall), floors, floor area, its footprint and position within its cell, a condition and an age. Dwellings, shops,
+  offices and plant are units within buildings; a parcel of land is a cell's land, or a declared part of it, held as a
+  holding (GEO.5).
 
 **Decisions**
 
@@ -2500,7 +2637,9 @@ liability and a main channel of monetary policy.
 - **HSG.7 DECISION** — A **landlord** sets rents from its costs, vacancies and outlook, and buys or sells
   dwellings as investments.
 - **HSG.8 DECISION** — A **builder** buys land, obtains permission and builds when the expected sale price
-  exceeds land, construction and financing cost; completion takes time.
+  exceeds land, construction and financing cost; completion takes time. It chooses the parcel, among those within its
+  reach, and how many floors to build, adding a floor while what the floor is expected to sell for covers what it adds
+  to the cost, which rises with height; zoning bounds both.
 - **HSG.9 DECISION** — A **lender** sets its mortgage standards (loan-to-value, income multiple, rate) from its
   own book, its funding and its outlook, and tightens when worried (BNK).
 - **HSG.18 DECISION** — A **landowner** sells, leases or holds its land from its own value of it — what it can
@@ -2519,6 +2658,14 @@ liability and a main channel of monetary policy.
   of those sales and, where none happened, is absent; a tax or a lender that needs a figure reads a valuation
   (MKT.20). Rezoning a parcel (POLICY) changes what it is worth to
   bidders, not its price directly.
+
+- **HSG.22 PROCESS** — **Land by the parcel.** Land is sold and leased parcel by parcel (HSG.18, HSG.20): each bidder
+  bids what the parcel is worth to it — a household for the commute and the services it saves, a firm for the
+  customers and staff within reach, a builder for what it can build there — so land is dearer where activity is,
+  because that is what the bids say.
+- **HSG.23 PROCESS** — **Commuting.** A trip between a dwelling's cell and a job's site, on the days the job is
+  worked, takes the time and costs the money its path gives (GEO.20); a household's choice of home and its persons'
+  choice of job read it (HH.8, LAB).
 
 **Invariants**
 
@@ -2539,8 +2686,9 @@ liability and a main channel of monetary policy.
 
 **Primitives**
 
-- **HSG.17 PRIMITIVE** — Construction technology and lead times (TECHNOLOGY); zoning and property law
-  (POLICY); the opening housing stock and land ownership (ENDOWMENT).
+- **HSG.17 PRIMITIVE** — Construction technology and lead times, and how cost rises with a building's height
+  (TECHNOLOGY); zoning and property law, national and municipal (POLICY); the opening housing stock, buildings and land
+  ownership (ENDOWMENT); the value of time a trip takes (PREFERENCE).
 
 **Out of scope**
 
@@ -4178,7 +4326,13 @@ policy.
 **State**
 
 - **POL.1 STATE** — A **parliament** with a fixed number of seats, an electoral **term**, and an **allotment
-  rule** from votes to seats (all POLICY of the constitution, declared once).
+  rule** from votes to seats (all POLICY of the constitution, declared once). Each country's constitution is
+  parliamentary — the coalition names the head of government beside a head of state — or presidential — a directly
+  elected president heads the government — by its setup, or drawn from its group's profile.
+- **POL.13 STATE** — A **municipality** is a public party of a settlement (STA.6) incorporated under its country's
+  law, with offices held by persons (PTY.16) — a mayor and a council, elected by its adult residents — and its own
+  accounts: it levies the local taxes the law allows, zones its land within the national law (HSG.3), and builds and
+  runs local roads, transit, schools and clinics.
 - **POL.2 STATE** — **Parties** are named parties with a **platform** (a position on each policy the parliament
   controls) and their own **ideology preference** (how far they are willing to move from their founding
   positions). Their leaders and candidates are their member persons (PTY.16).
@@ -4214,6 +4368,10 @@ policy.
   directly elected office to the candidate the constitution's rule elects; a government forms, its head and
   ministers persons the coalition names (PTY.17); the new mandate
   takes effect from a declared date and is announced before then, so parties can anticipate it (VAL.6).
+- **POL.14 PROCESS** — **Incorporation.** A settlement the statistics agency recognises (STA.6) incorporates as a
+  municipality where its country's law provides and its residents' vote carries, a dated event with its cause; a
+  municipality whose settlement is no longer recognised merges into its neighbour or dissolves by the same law. No
+  number of municipalities is declared.
 - **POL.8 PROCESS** — The mandate reaches the economy only through the systems that read policy: taxes,
   benefits, outlays, regulation, the central bank's target.
 
@@ -4236,7 +4394,9 @@ policy.
 
 - **POL.12 PRIMITIVE** — The constitution: seats, term, allotment rule, coalition procedure, budget calendar, the
   campaign period, and party funding — a payment per vote received and a registration deposit (POLICY, declared
-  once); parties' ideology preferences and the cost of voting (PREFERENCE).
+  once); whether each country's is parliamentary or presidential (the setup's, or drawn from its group's profile);
+  municipal law: incorporation, local taxes and zoning powers (POLICY); parties' ideology preferences and the cost of
+  voting (PREFERENCE).
 
 **Out of scope**
 
@@ -4602,10 +4762,18 @@ age, and a stream of news generated from real events.
 
 - **OBS.4 PROCESS** — A human **player** acts as a named party in the world, with its own means, through the same
   markets and contracts as everybody else, and appears in every check. The player's party is a household (REP.1):
-  its household, drawn at the opening from the households of the country the setup names, each equally likely.
+  its household, drawn at the opening from the households of the country the setup names, each equally likely. Its
+  persons have minds like everyone's (MND), which advise: each says what it would do and why, and the player decides
+  or leaves the decision to them.
 - **OBS.8 PROCESS** — **Looking at a household or firm** shows the party itself: its attributes, persons,
   positions and contracts, and the recorded events that name it. Looking at one party, or at a million, leaves the
   world exactly as it would have been.
+- **OBS.10 PROCESS** — **A life's record.** Every person's life is recorded compactly as it happens — birth,
+  schooling, jobs and pay, partnering, children, homes, firms founded, offices held, elections, illness, the concern
+  that tipped each of its decisions (MND.15) — and deleted at its death, except the records of those who held an office
+  (PTY.16) or founded a firm, which are kept as the world's history.
+- **OBS.11 PROCESS** — **A biography.** The observer surface may write a person's life as prose from its record, by a
+  language model on the device; it reads the record only, and nothing it writes enters the world (Law 17).
 
 **Forbids**
 
@@ -4653,6 +4821,11 @@ is how real deciders see the aggregate economy.
   after a declared lag, and **revised** as more records arrive. Inflation is always stated as the change in a
   named index over a named period.
 
+- **STA.6 PROCESS** — **Settlements recognised.** Each agency applies the Degree of Urbanisation to the cells: an
+  **urban centre** is contiguous cells of a declared density holding a declared population, an **urban cluster** (a
+  town) the same at lower ones. It publishes each settlement, its bounds and its population, and a settlement exists as
+  a fact about what stands where: it thins out and goes as that does. Nothing in the world acts on the thresholds.
+
 **Measures**
 
 - **STA.3 MEASURE** — Output measured by expenditure, by income and by production agree up to the
@@ -4666,7 +4839,8 @@ is how real deciders see the aggregate economy.
 **Primitives**
 
 - **STA.5 PRIMITIVE** — Survey designs, sample sizes, publication calendars and revision policies (POLICY of each
-  agency).
+  agency); the Degree of Urbanisation's densities and populations (POLICY, the statistical definition the UN
+  Statistical Commission adopted in 2020).
 
 **Out of scope**
 
@@ -4899,13 +5073,21 @@ revisited before anything is built on top of it.
 **Stage 2 — Credit and failure.** L1 (loss as event), L3 (estates), TCR, the full firm lifecycle, bank provisions
 and write-offs, BFL, BCP, SUP (supervision, deposit insurance, resolution, macroprudential limits), HSG with
 mortgages and land, ENE, the credit bureau and filed accounts, personal insolvency, inheritance in kind.
+Places: cells, buildings, land by the parcel, commuting with congestion and transit, agglomeration, settlements
+recognised, and the opening's cities (GEO.19–20, HSG.21–23, TEC.16, STA.6, GEN.16).
 *Exit:* a borrower's own cash failure produces a default, an estate, a loss on named holders and a housing
-foreclosure; a bank can fail for liquidity or solvency and is resolved.
+foreclosure; a bank can fail for liquidity or solvency and is resolved; towns grow where building concentrates.
 
 **Stage 3 — Money and capital markets.** MMK and repo, the full central bank (corridor, operations, lender of last
 resort, financing regime, liquidity operations), TRS with SOV auctions, CRD, EQY, DLR, FND, non-bank lenders, IDX,
 RAT, L2 (forced seller), L4 (cost of capital). *Exit:* the policy rate reaches loan rates, asset prices and
 investment through markets; a margin spiral and a fund run can happen.
+
+**Stage 8 — Minds** (built after Stage 3, numbered for its place in this document's history). MND: every person's
+character, experience, aspirations and goals, and every decision built so far moved to the mind, rule by rule; office
+holders deciding with their own minds under their contracts; the life record and the biography (OBS.10–11).
+*Exit:* two persons in the same position decide differently, and a change of chief executive changes the firm's
+decisions; the stages after it build their decisions on the mind.
 
 **Stage 4 — Risk transfer.** DRV with client clearing, DRX (swaps, credit, futures, options; currency derivatives with
 FX at Stage 5), INS, PEN with its trustees', sponsors' and members' decisions, SEC, MNA. *Exit:* every derivative
@@ -5281,6 +5463,14 @@ Decisions taken in writing this version, and decisions still open.
 48. **A household's budget pooled by rule** (PTY.3, HH; owner, 2026-09-28). Each person's income is paid to its own
     account; a payment the household makes as one is drawn from its members' accounts in proportion to what each
     holds; a person's own debts are paid from its own account first.
+
+49. **Minds and places** (MND, GEO.19–20, HSG.21–23, TEC.16, STA.6, GEN.16, POL.13–14, OBS.10–11; owner,
+    2026-09-28). Every person decides with a mind — its character drawn from its country's preferences, what it has
+    lived, what it aspires to and its goals — among the options each decision's mechanism generates, never by a
+    language model or a policy fitted to the world; an office holder decides with its own, under its contracts and
+    those who can remove it. Building concentrates by commuting, land bid by the parcel, agglomeration and migration;
+    a settlement is recognised by the statistical definition, never created by a threshold, and may incorporate as a
+    municipality with elected offices. The mind is built in its own stage after Stage 3; places with housing.
 
 **Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
 it.
