@@ -130,7 +130,46 @@ pub fn generate(map: &Map, distances: &ZoneDistances, market: &[Missing<ZoneId>]
     Network { segments }
 }
 
+/// Each mode's shortest route length between every two zones it joins, by (mode, from, to), in metres.
+pub type Lengths = BTreeMap<(u16, ZoneId, ZoneId), u64>;
+
 impl Network {
+    /// The length of each mode's shortest route between every two zones it joins, either way along each segment, as
+    /// `route` finds it; none between zones no path of one mode joins.
+    #[clause("FRT.2")]
+    #[must_use]
+    pub fn lengths(&self) -> Lengths {
+        let mut out = Lengths::new();
+        let modes: BTreeSet<u16> = self.segments.iter().map(|s| s.mode).collect();
+        for mode in modes {
+            let mut edges: BTreeMap<ZoneId, Vec<(ZoneId, u64)>> = BTreeMap::new();
+            for s in self.segments.iter().filter(|s| s.mode == mode) {
+                edges.entry(s.from).or_default().push((s.to, s.metres));
+                edges.entry(s.to).or_default().push((s.from, s.metres));
+            }
+            for &from in edges.keys() {
+                let mut best: BTreeMap<ZoneId, u64> = BTreeMap::new();
+                best.insert(from, 0);
+                let mut heap = BinaryHeap::new();
+                heap.push(core::cmp::Reverse((0_u64, from)));
+                while let Some(core::cmp::Reverse((d, z))) = heap.pop() {
+                    if best.get(&z).is_some_and(|b| *b < d) {
+                        continue;
+                    }
+                    for &(n, m) in edges.get(&z).map_or(&[][..], Vec::as_slice) {
+                        let next = d + m;
+                        if best.get(&n).is_none_or(|b| next < *b) {
+                            best.insert(n, next);
+                            heap.push(core::cmp::Reverse((next, n)));
+                        }
+                    }
+                }
+                out.extend(best.into_iter().filter(|(to, _)| *to != from).map(|(to, m)| ((mode, from, to), m)));
+            }
+        }
+        out
+    }
+
     /// The shortest route of one mode from one zone to another over the segments, either way along each, the lower
     /// zone first among equals; none where the mode joins them by no path.
     #[clause("FRT.2")]

@@ -1142,6 +1142,17 @@ impl<B: Backing> Ledger<B> {
                 let bound = if nature { 0 } else { self.bound(at.party, id) };
                 let disposal = Disposal { units: -qty, bound, order: LotOrder::FirstIn };
                 let gone = self.instruments.dispose(arenas, at.table, at.slot, id, disposal);
+                if nature {
+                    // What nature took of pledged units is gone from the pledges too.
+                    let left = match holding(arenas, at.slot, id) {
+                        Missing::Present(h) => h.quantity.raw(),
+                        Missing::Absent => 0,
+                    };
+                    let excess = self.liens.pledged(at.party, id) - left;
+                    if excess > 0 {
+                        self.liens.shrink(at.party, id, excess);
+                    }
+                }
                 let rec = DisposedRec { party: at.party, instrument: id, units: -qty, cost: gone.cost, day };
                 self.day.disposed.push(rec);
                 -gone.cost

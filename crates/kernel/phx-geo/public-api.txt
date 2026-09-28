@@ -240,6 +240,7 @@ pub struct phx_geo::network::Network
 pub phx_geo::network::Network::segments: alloc::vec::Vec<phx_geo::network::Segment>
 impl phx_geo::network::Network
 pub fn phx_geo::network::Network::bytes(&self) -> usize
+pub fn phx_geo::network::Network::lengths(&self) -> phx_geo::network::Lengths
 pub fn phx_geo::network::Network::route(&self, u16, phx_id::ids::ZoneId, phx_id::ids::ZoneId) -> core::option::Option<phx_geo::network::Route>
 impl phx_store::save::Saved for phx_geo::network::Network where alloc::vec::Vec<phx_geo::network::Segment>: phx_store::save::Saved
 pub fn phx_geo::network::Network::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
@@ -262,6 +263,7 @@ pub const phx_geo::network::RAIL: u16
 pub const phx_geo::network::ROAD: u16
 pub const phx_geo::network::SEA: u16
 pub fn phx_geo::network::generate(&phx_geo::generate::Map, &phx_geo::distance::ZoneDistances, &[phx_num::missing::Missing<phx_id::ids::ZoneId>], &[u64]) -> phx_geo::network::Network
+pub type phx_geo::network::Lengths = alloc::collections::btree::map::BTreeMap<(u16, phx_id::ids::ZoneId, phx_id::ids::ZoneId), u64>
 pub mod phx_geo::noise
 pub struct phx_geo::noise::Lattice
 impl phx_geo::noise::Lattice

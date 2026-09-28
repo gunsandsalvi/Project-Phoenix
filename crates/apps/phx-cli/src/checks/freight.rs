@@ -1,20 +1,20 @@
-//! Freight: every shipment in transit pledged to its one carrier for its units and none overdue; freight rates against
-//! the gaps between places, once goods are shipped.
+//! Freight: every shipment in transit pledged to its one carrier for what is left of its units and none overdue; freight
+//! rates against the gaps between places, once goods are shipped.
 
 use phx_world::Inspector;
 
 use super::Outcome;
 use crate::live_check;
 
-/// Every shipment in transit is its owner's goods pledged by a standing lien to its carrier for its units, and
-/// leaves after it left.
+/// Every shipment in transit is its owner's goods pledged by a standing lien to its carrier for its units, or what is
+/// left of them as goods on their way spoil, and leaves after it left.
 fn one_owner_one_carrier(w: Inspector<'_>) -> Outcome {
     let ledger = &w.books().ledger;
     for (n, s) in ledger.goods.in_transit() {
         let Some(lien) = ledger.liens.get(s.lien) else {
             return Outcome::Fail(format!("shipment {n} in transit with no lien standing"));
         };
-        if lien.to != s.carrier || lien.units != s.qty || lien.key.holder != s.owner {
+        if lien.to != s.carrier || lien.units > s.qty || lien.key.holder != s.owner {
             return Outcome::Fail(format!("shipment {n}'s lien is not its owner's to its carrier for its units"));
         }
         if s.arrives <= s.left {

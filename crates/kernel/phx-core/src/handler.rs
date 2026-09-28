@@ -191,7 +191,8 @@ pub struct Away {
     pub inbound: Missing<i64>,
 }
 
-/// What a row's party may read of goods beyond its facts: its units of each good at its place, and the list of them; the deposits whose rights it holds; the units of a product, of every grade, it has
+/// What a row's party may read of goods beyond its facts: its free units of each good at its place, those not pledged or
+/// committed, and the list of them; the deposits whose rights it holds; the units of a product, of every grade, it has
 /// delivered since the world opened; and each good's latest mark at its place and the public outlook of its price
 /// there by a method, which are public.
 pub trait GoodsView: core::fmt::Debug {
@@ -360,7 +361,7 @@ impl<'a, H: HandlerDecl, S: FactStore + ?Sized> Ctx<'a, H, S> {
         self.parts.facts.write(F::ITEM.name, slot, value);
     }
 
-    /// The row's party's units of a good at its place.
+    /// The row's party's free units of a good at its place: what it holds less what is pledged or committed.
     #[must_use]
     pub fn held(&self, slot: Slot, product: u16, grade: u8) -> i64 {
         self.parts.goods.held(slot, product, grade)

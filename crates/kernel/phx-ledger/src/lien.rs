@@ -112,6 +112,32 @@ impl Liens {
         lien
     }
 
+    /// A holding's liens cut by `excess` units its holder no longer has, the latest first, since what was set aside
+    /// last is what a loss finds gone: a lien pledges units that exist.
+    #[clause("REG.2")]
+    pub fn shrink(&mut self, holder: PartyId, instrument: InstrumentId, mut excess: i64) {
+        let keys: Vec<LienKey> = self
+            .liens
+            .range(range(holder, instrument))
+            .rev()
+            .filter(|(_, l)| l.chain == Missing::Absent)
+            .map(|(k, _)| *k)
+            .collect();
+        for key in keys {
+            if excess <= 0 {
+                break;
+            }
+            let onward: i64 = self.liens.values().filter(|l| l.chain == Missing::Present(key)).map(|l| l.units).sum();
+            let Some(lien) = self.liens.get_mut(&key) else { continue };
+            let spare = lien.units - onward;
+            let cut = if spare < excess { spare } else { excess };
+            if cut > 0 {
+                lien.units -= cut;
+                excess -= cut;
+            }
+        }
+    }
+
     /// Whether any lien stands on a holder's units.
     #[must_use]
     pub fn binds(&self, holder: PartyId) -> bool {
@@ -132,5 +158,24 @@ impl Liens {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.liens.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use phx_id::{InstrumentId, PartyId};
+
+    use super::Liens;
+
+    #[test]
+    fn a_loss_comes_off_the_latest_pledges() {
+        let (holder, good, carrier) = (PartyId::new(1), InstrumentId::new(7), PartyId::new(2));
+        let mut liens = Liens::default();
+        let first = liens.pledge(holder, good, 60, carrier, 100, 0);
+        let second = liens.pledge(holder, good, 30, carrier, 100, 0);
+        liens.shrink(holder, good, 40);
+        assert_eq!(liens.get(second).map(|l| l.units), Some(0), "the last set aside is the first gone");
+        assert_eq!(liens.get(first).map(|l| l.units), Some(50));
+        assert_eq!(liens.pledged(holder, good), 50);
     }
 }

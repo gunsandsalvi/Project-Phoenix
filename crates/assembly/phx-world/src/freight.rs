@@ -487,7 +487,8 @@ impl World {
             };
         let (shipped, arrived) = (reason(self, bound.decl.shipped), reason(self, bound.decl.arrived));
         for (n, s) in due {
-            let _ = self.books.ledger.liens.release(s.lien);
+            // The lien holds what is left of the goods, as what spoiled on the way came off it.
+            let pledged = self.books.ledger.liens.release(s.lien).units;
             // An owner that ended on the way is its successor, which took its goods; one that left none took them
             // with it.
             let phx_core::Resolved::Live(owner, _) = self.books.parties.directory().resolve(s.owner) else { continue };
@@ -503,7 +504,7 @@ impl World {
                 Missing::Present(h) => h.quantity.raw(),
                 Missing::Absent => 0,
             };
-            let qty = if held < s.qty { held } else { s.qty };
+            let qty = if held < pledged { held } else { pledged };
             if qty <= 0 {
                 continue;
             }

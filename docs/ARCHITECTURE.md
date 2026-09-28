@@ -1649,14 +1649,20 @@ Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the mee
   met with no seller (`Tape::unsold`, from the failures on the tape, which shows none to buy from); and at each origin
   and mode the lowest price carriage is posted at by a carrier with room — a posted-price market's buyer compares the
   posted prices it can see (MKT.6), which carriage needs before its first sale can print. A handler reads it through
-  `Ctx::away` (`phx_core::Away`): for its row's zone, each other place in its country that marks the good, with the
-  metres between (`ZoneDistances`), by each mode carriage is posted in at either end, the freight of a lot out from here
+  `Ctx::away` (`phx_core::Away`): for its row's zone, each other place in its country that marks the good, by each
+  mode carriage is posted in at either end that joins the two, with that mode's route length between them
+  (`Network::lengths`, every mode's shortest routes computed once at assembly, since a mode that joins no path between
+  two places carries nothing there), the freight of a lot out from here
   and in from there (`phx_market::carriage::freight`: its tonnes times the km, in units of carriage at the lowest posted
   price where it leaves). The shipper's visit (`FRT.ship_*`, every `FRT.shipping_days` at 5c) carries the whole lots it
   holds beyond its planning days' expected sales to the place whose price less its own and the freight out is widest,
   when that is positive. A buyer who bought at another place ships it home (FRT.5): an order or a shipment may name its
   place (`OrderIntent::at`, `ShipIntent::from`). What arrives is what is left of the goods, as goods on their way
-  spoil, and an owner that ended on the way is its successor.
+  spoil: a loss to nature that leaves a holding with fewer units than are pledged of it cuts the pledges by the excess,
+  the latest first (`Liens::shrink`), so a lien pledges units that exist, and an arrival moves what its lien still
+  holds. An owner that ended on the way is its successor. The goods a handler reads at its own place
+  (`Ctx::held`, `Ctx::goods`) are its free units — what it holds less what is pledged to a carrier or committed to an
+  order — so a firm never plans to use goods already on their way.
 - **Merchants** (GDS.6): the firms making `GDS.merchant_product` visit every `GDS.merchant_days` at 5c and, for each
   standardised good their place marks, weigh the price their method expects over the visit's days, less what spoils
   and discounted at their required return, against today's: they bid, at no more than that, with the money they hold

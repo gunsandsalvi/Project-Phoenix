@@ -37,7 +37,7 @@ pub(crate) struct Traded {
 }
 
 /// What the kernel reads to key goods, compiled at assembly: each product's unit and whether it is delivered as it is
-/// made, each deposit resource's product, and each region's market zone.
+/// made, each deposit resource's product, each region's market zone and each mode's route lengths.
 #[derive(Clone, Debug)]
 pub(crate) struct Frame {
     pub products: Vec<Missing<Traded>>,
@@ -45,6 +45,8 @@ pub(crate) struct Frame {
     pub stored: Vec<bool>,
     pub resources: Vec<Missing<u16>>,
     pub market_zones: Vec<Missing<ZoneId>>,
+    /// Each mode's route lengths between the zones it joins, which the away table quotes freight over.
+    pub lengths: Arc<phx_geo::network::Lengths>,
 }
 
 impl Frame {
@@ -81,7 +83,8 @@ impl Frame {
                 }
             }
         }
-        Ok(Frame { products, at_once, stored, resources, market_zones: geo.market_zones() })
+        let lengths = Arc::new(geo.network.lengths());
+        Ok(Frame { products, at_once, stored, resources, market_zones: geo.market_zones(), lengths })
     }
 
     /// Whether a product is made to order, as it is sold, holding no stock: every product that cannot be stored.
@@ -228,6 +231,7 @@ pub(crate) struct AwayTable {
     freight: Option<(phx_market::carriage::FreightTech, Vec<Missing<i64>>)>,
     /// The goods whose market where they stand last met with no seller, which shows none to buy from.
     unsold: BTreeSet<GoodKey>,
+    lengths: Arc<phx_geo::network::Lengths>,
 }
 impl AwayTable {
     /// The freight of a lot of a product from a place to another `metres` off by a mode, at the lowest price carriage
@@ -422,24 +426,24 @@ impl GoodsView for RunGoods {
     }
 
     fn away(&self, slot: Slot, product: u16, grade: u8) -> Vec<phx_core::Away> {
-        let (Some(Missing::Present(here)), Some(geo)) = (self.row(slot).map(|r| r.zone), self.geo.as_ref()) else {
-            return Vec::new();
-        };
+        let Some(Missing::Present(here)) = self.row(slot).map(|r| r.zone) else { return Vec::new() };
         let posted = |z: ZoneId| self.away.carriage.range((z, 0)..=(z, u16::MAX)).map(|((_, m), p)| (*m, *p));
         let outbound: BTreeSet<u16> = posted(here).map(|(m, _)| m).collect();
         let Some(places) = self.away.market.get(&(product, grade)) else { return Vec::new() };
         let mut out = Vec::new();
         for (zone, there) in places.iter().filter(|(z, _)| *z != here) {
-            let Some(metres) = geo.distances.between(here, *zone) else { continue };
-            // Each mode carriage is sold in at either end: out from here, or in from there.
+            // Each mode carriage is sold in at either end, out from here or in from there, that joins the two.
             let modes: BTreeSet<u16> = outbound.iter().copied().chain(posted(*zone).map(|(m, _)| m)).collect();
-            out.extend(modes.into_iter().map(|mode| phx_core::Away {
-                zone: zone.get(),
-                mode,
-                metres,
-                there: *there,
-                outbound: self.away.freight_of((product, here), (mode, metres)),
-                inbound: self.away.freight_of((product, *zone), (mode, metres)),
+            out.extend(modes.into_iter().filter_map(|mode| {
+                let metres = *self.away.lengths.get(&(mode, here, *zone))?;
+                Some(phx_core::Away {
+                    zone: zone.get(),
+                    mode,
+                    metres,
+                    there: *there,
+                    outbound: self.away.freight_of((product, here), (mode, metres)),
+                    inbound: self.away.freight_of((product, *zone), (mode, metres)),
+                })
             }));
         }
         out
@@ -1159,6 +1163,7 @@ impl World {
         let retail: Vec<u16> = self.trade.retail.iter().map(|r| r.kind).collect();
         let mut posted = BTreeMap::new();
         let (mut marks, mut away) = (BTreeMap::new(), AwayTable::default());
+        away.lengths = Arc::clone(&self.goods_frame.lengths);
         for (market, kind, subject) in self.markets.made.iter() {
             let Missing::Present(mark) = self.markets.tape.mark_of(market) else { continue };
             let price = mark.price.raw();
@@ -1366,7 +1371,9 @@ impl World {
                 if let Missing::Present(key) = ledger.goods.key(instrument) {
                     goods_cost += i128::from(cost);
                     if key.zone == row.zone {
-                        out.held.push((key.product, key.grade, units));
+                        // What is pledged to a carrier or committed to an order is not the holder's to use.
+                        let bound = ledger.bound(row.party, instrument);
+                        out.held.push((key.product, key.grade, if units > bound { units - bound } else { 0 }));
                     } else {
                         out.elsewhere.push(phx_core::HeldAway {
                             product: key.product,
