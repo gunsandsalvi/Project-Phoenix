@@ -27,7 +27,7 @@ about how to build.
   is laid out in memory, the day's sub-steps, the budgets — each decision taken against the spec and the budget
   (N8). A change of design is made there first, in the same change as the work that needs it.
 - **`docs/IMPLEMENTATION.md`** is the plan: every step still to build, its clauses, files, design, tests, live
-  checks, budget and **Done when**, the open findings (§11), the owner's decisions (§12) and the clause map (§13).
+  checks, budget and **Done when**, the owner's decisions (§12) and the clause map (§13).
   Work one step at a time, in its order, done well, with no deadline. **When a step is done its whole section is
   removed from the plan** (owner, 2026-09-27); whatever needs keeping about how it was built goes in
   `docs/ARCHITECTURE.md`.
@@ -65,10 +65,13 @@ about how to build.
 ## Findings
 
 - A number that looks wrong, an audit family that fires, a mechanism that never runs, a measure that misses: each
-  is a **finding** about a missing or wrong mechanism. **Solve it at once** (owner, 2026-09-27): no F-row for
-  anything that can be coded now, and nothing postponed because it is long or complicated. Only what truly cannot be
-  settled now — an owner decision, or a mechanism of a later stage — is written down, with what was measured and
-  where.
+  is a **finding** about a missing or wrong mechanism. **Solve it at once** (owner, 2026-09-27): nothing postponed
+  because it is long or complicated. There is **no findings table** (owner, 2026-09-28): what truly cannot be
+  settled now — an owner decision, or a mechanism of a later stage — is written into the step that will settle it,
+  with what was measured and where.
+- **The data are in hand** (owner, 2026-09-28): every source is in `data/sources/raw/`; a step maps it and never
+  searches for more. What no source gives is derived, taken from a paper's table or simulated by a declared
+  procedure.
 - **Never tune** a primitive, a rule or the opening world to make a result look right (N7, GEN.11). Never add a
   bound to stop a number exploding: build the mechanism that holds it (Law 6).
 - The exception is a state that cannot exist — a one-sided flow, a negative count of units, a fact with two

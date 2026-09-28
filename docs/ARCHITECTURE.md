@@ -50,7 +50,7 @@ The forces:
 | --- | --- | --- |
 | Engine | **Rust**, stable, pinned in `rust-toolchain.toml`, edition 2024 | Layout and allocation control, no GC pauses, data-race freedom, Android and Linux targets, crates as compiler-enforced boundaries. |
 | World mathematics | **`libm`** (pure Rust) for transcendental functions in world code | Platform-independent results. |
-| Parallelism | **Own pool** in `phx-exec` over **rayon-core**, pinned to fast and medium cores, with Android performance-hint sessions | Cost-sized fixed chunks, no little cores, few barriers. Only `phx-exec` depends on rayon. As built at Stage 0 the world runs on one thread: the pool serves only `phx-ffi`'s benches, and performance-hint sessions are not built (`PerfHint` has only `NoHint`, called by nothing); making the world's traversals parallel is the plan's F-056. |
+| Parallelism | **Own pool** in `phx-exec` over **rayon-core**, pinned to fast and medium cores, with Android performance-hint sessions | Cost-sized fixed chunks, no little cores, few barriers. Only `phx-exec` depends on rayon. As built at Stage 0 the world runs on one thread: the pool serves only `phx-ffi`'s benches, and performance-hint sessions are not built (`PerfHint` has only `NoHint`, called by nothing); the performance-hint session is built at the plan's S1.16. |
 | Hash maps | **hashbrown** + fixed-seed **foldhash**, behind a kernel map type iterated in key order where order matters (`sorted`) and in no set order only for order-free reads such as sums (`each`), sharded where written in parallel | Fast lookups; no outcome depends on hash order. |
 | Randomness | **Own Philox4x32-10** in `phx-rand`, batch-first, NEON-vectorised samplers | Draws addressable by (stream, identity, day, index): parallel, order-free, reproducible (CHN.1, CHN.6). |
 | Compression | **zstd** level 1 after per-column transforms (delta, zigzag, bit-packing) | Fast; transforms double the ratio on integer columns. |
@@ -788,7 +788,7 @@ row that day, and always declared: a surprise's wake pass (§7.3), the singles' 
 and the sweeps systems register (§6.1) — or a **kernel apply** (§6.2). A **sweep ledger** counts rows and bytes touched
 per sub-step, and a ratchet holds it (§16). As built at Stage 0 the ledger is partial: each sub-step's `SubStepRecord`
 keeps the rows its handlers visited and its wall time, its bytes and barriers are 0, the kernel's own work at a sub-step
-(hazard draws, outcomes, settlement) is not counted in it, and no ratchet reads it (F-060).
+(hazard draws, outcomes, settlement) is not counted in it, and no ratchet reads it.
 
 The kernel's own small tables (regions, countries) keep their facts as columns (`FactColumns`) and are traversed chunk
 by chunk on the day's thread, since each is one chunk. The pool's traversal arrives with the first handler on a kind
@@ -863,7 +863,7 @@ rounded split lands its residue on the payer, the payee with the largest share, 
   from the day's payments the stream keeps. The stream keeps the day's payments in its order (about 157 MB on a
   payday of 2.8 M payments, the only field PC-27 lets keep a batch's items), and 7c's gather reads them, reckoning again only a cleared line's claimant credit
   after its losers; both compute each payment's route, 7c nets it in the fixed-seed map and sorts the nets once, and
-  a due record is kept per payment for the accounts (F-057).
+  a due record is kept per payment for the accounts.
 - **Reckoning**: a due line's dues are reckoned on one side's rows, each row its own payment with one counterparty.
   A line of two holders is reckoned on its claimant's row; a line one party holds a side of (a bank's loans to many
   firms, a scheme's members) is reckoned on the other side's rows, each paying or paid by that party. A row's due is
@@ -973,7 +973,7 @@ most O(log n) (N8.6). A pass over a world-sized store is allowed only as a decla
 day (the audit's thirtieth), counted in §13.2. Nothing a day does grows with elapsed time. A kernel that cannot meet
 the rule is a finding, not an exception.
 
-Where the day breaks it is the plan's F-087. The representation that meets it, each part with the
+Where the day breaks, the representation that meets it, each part with the
 published technique it rests on:
 
 - **Dense identity.** A party id indexes a dense array of its location (ids are issued in order, and the ended keep a
@@ -1040,7 +1040,7 @@ reads; the audit's families, each into its own findings, kept in their order; th
 store to its own file at once, in fixed 1 MiB zstd frames compressed a wave at a time. Rows are found by reading their
 heads, not by an index; 7b runs on one thread; 7c's balance writes land by holder chunk on the pool, its
 checks and records in line order on one thread; the money and contract families
-still read an unlisted side whole. The rest is carried to the Stage 1 gate (the plan's S1.16, F-087).
+still read an unlisted side whole. The rest is carried to the Stage 1 gate (the plan's S1.16).
 
 ---
 
@@ -2302,13 +2302,23 @@ first reruns the ways and price levels (`derive_tec.py`), the budget shares (`de
   assets less their debts; households hold the rest.
 - A group with too few reporters of a sector table takes the developed group's figure scaled by a broad measure of
   its own (the Penn World Table's structures per GDP, the labour share), and the note says so.
+- **The shapes** (`shapes.toml`): distributions the opening scales to the matrices' totals — the spread of firms'
+  log physical productivity within an industry (`GEN.productivity_spread`, Hsieh and Klenow's TFPQ, the United States,
+  China and India standing for the three groups) and each occupation's mean earnings over all employees'
+  (`GEN.occupation_pay`, the median of each group's ILOSTAT reporters nearest 2019).
+- **The sources.** Every published series the build reads is in `data/sources/raw/`, one fetcher per family
+  (`tools/data/fetch*.py`, the families `bank`, `markets`, `people`, `households`, `state`, `open`, `macro` beside
+  the earlier ones), each CSV trimmed to the profiles' economies and the years read, and `manifest.json` names each
+  series' source, the steps that read it (`for`) and, for a derived, typed or simulated one, how (`note`). Fetchers
+  merge into the manifest under a lock. The per-level ranges the realism tests judge against are derived there too
+  (`macro/level_ranges.csv`). The data tools' Python packages are pinned in `tools/versions.toml`.
 
 Assembly checks every country's dataset (`opening::economy::check`, at compile) and refuses it with each break
 named, primitive and residue: each activity's supply is its uses, its output its inputs, taxes and value added, GDP
 by production and by expenditure one; each instrument's assets its liabilities; firms, banks and the central bank
 worth nothing beyond their equity; firms' plant `CAP.stock_per_gdp`; households' spending their budget shares. The
 tolerance is the rounding of the stored places over the terms summed (Law 7). A new game copies the level's
-`economy/` files into each country.
+`economy/` files (flows, stocks, shapes) into each country.
 
 ### 10.1 Phases
 
@@ -2574,7 +2584,7 @@ its day's moves still make what it holds. Every row placed, removed or recounted
 read, a party that has ended holds nothing of its own: what it held passed on when it ended. The money family reads its
 day's span of money lines together, a side of many small holders that keeps no list summed in one pass over the tables
 of the kinds that may hold it; as built this sweeps every live agent's rows whenever the span holds a retail deposit
-line, undeclared and uncounted (F-059). The representation family bounds a row by the persons the agent holds in the
+line, undeclared and uncounted. The representation family bounds a row by the persons the agent holds in the
 roles its side declares (REP.31), as a household's jobs count its adults; a side declared
 `many`, whose holder counts a contract for each counterpart (an employer, a bank), is bounded by no count per person.
 
@@ -2699,7 +2709,7 @@ of one content hash equal. Metrics, findings, the read trace and wall time stay 
   takes the reads through the inspector, inside the turn's time, and the world is the same
   world with it or without it. PC-20 refuses any `&mut` to the world's stores, and any naming of `World`, in
   `phx-obs`. On the phone the observer follows the measured turns, not settling, and the views are built twice, at
-  settling's end and at the run's end, not at each turn's close (F-064).
+  settling's end and at the run's end, not at each turn's close.
 - **Two builds**: the participant's reads only through `ParticipantScope`, its party's scoped read; the inspector's
   compiles only with the `inspector` feature, which the participant build refuses. As built at Stage 0 there is one
   build: no crate declares an `inspector` feature, `Inspector` and the `Recorder` are always compiled, and
@@ -2762,7 +2772,7 @@ headroom, this document's margin for the estimates' error.
 | Markets, marks and fixings history; public records (Stage 2's filed accounts over two years, 48 MB); events | — | — | 198 MB |
 | Map, network, deposits, stock per (tile, class) and its index | — | — | 80 MB |
 | Directory with bounded tombstones | — | — | 50 MB |
-| Day buffers at the worst day (payee reduction streamed shard by shard; intents; sort scratch), by their room; measured at 889 MB on Stage 0's payday of 2.8 M payments, over this line (the plan's F-082) | — | — | 600 MB |
+| Day buffers at the worst day (payee reduction streamed shard by shard; intents; sort scratch), by their room; measured at 889 MB on Stage 0's payday of 2.8 M payments, over this line | — | — | 600 MB |
 | Arena slack and page tails (15% of variable-length stores) | — | — | 214 MB |
 | Save buffers (the renumbering slice retired with cells) | — | — | 94 MB |
 | Views (tracers retired with cells) | — | — | 60 MB |
@@ -2772,25 +2782,25 @@ headroom, this document's margin for the estimates' error.
 Through Stage 1 the design point peaks at about 3.98 GB against 4.5 GB — the run head in every household record from
 Stage 0 adds 6 MB, Stage 0's pensions in payment 20 MB with slack, the persons and attachments as laid out 30 MB more
 than first budgeted, and the landing index (as measured) and group aggregates retired with cells 134 MB less — so 12%
-headroom, if the day buffers are brought under their line (F-082). Stage 2 adds about 251 MB — invoice rows with their
+headroom, if the day buffers are brought under their line. Stage 2 adds about 251 MB — invoice rows with their
 holder-list entries and slack 104 MB, filed accounts 48 MB, household agents 45 MB, estates 31 MB, listings 13 MB, loan
-lines' stage totals 10 MB — to about **4.23 GB**: 6% headroom, short of the required 10% (a peak of at most 4 050 MB),
-as the plan's F-005 records. Stage 3 adds about 240 MB — institutions' positions and their lots 104 MB, households'
+lines' stage totals 10 MB — to about **4.23 GB**: 6% headroom, short of the required 10% (a peak of at most 4 050 MB).
+Stage 3 adds about 240 MB — institutions' positions and their lots 104 MB, households'
 holding rows 30 MB, individuals' deviations from their methods' outlooks 19 MB, household attributes with participation
 18 MB, registered outlooks 12 MB, household agents 11 MB (592 bytes), money-market lines 10 MB, records and instruments
-10 MB, slack 26 MB — to about **4.47 GB**: 0.7% headroom, as the plan's F-003 records. Stage 4 adds about 387 MB (the
+10 MB, slack 26 MB — to about **4.47 GB**: 0.7% headroom. Stage 4 adds about 387 MB (the
 plan's S4.07): relationship rows 138 MB — policies 4.9 M and firms' 0.5 M at 16 bytes, DB active and deferred rights 1.3
 M at 24, derivatives 1 M at 16 with no `amount`, claim and compensation lines — household attachments 42 MB (policy
 attachments with their renewal bands, and the pension scheme joint with employment), DC pots with their `pending` word
 38 MB, lines 35 MB, interned terms 25 MB, household agents 22 MB (624 bytes), kind tables 15 MB, records and valuations
 30 MB, holder lists 8 MB (derivative lines and institutional sides only, §4.5), slack 34 MB — to about **4.86 GB**: 8%
-over the budget itself, as the plan's F-004 records. Stage 5 adds about 116 MB (the plan's Stage 5 ledger, after its
+over the budget itself. Stage 5 adds about 116 MB (the plan's Stage 5 ledger, after its
 reviews' remedies): relationship rows 42 MB — benefit claimants 0.65 M at 16 bytes, earnings-related state-pension
 rights 0.6 M at 24, tax payables and instalments 0.35 M at 24, payroll payables' balances per base, foreign-currency
 deposits and nostros at 38 — lines and terms 15 MB, attachments 13 MB (intentions during a campaign, waits and claims),
 household agents 11 MB (640 bytes), foreign holdings 9 MB (at 32 and 24 bytes), records 8 MB, the `vote` review's side
 column during a campaign 5 MB, messages 2 MB, kind tables 1 MB, slack 10 MB — to about **4.97 GB**: 10% over the budget
-itself, as the plan's F-006 records. Stage 6 adds (the plan's Stage 6 ledger): firm agents' known ways, about 50 k at
+itself. Stage 6 adds (the plan's Stage 6 ledger): firm agents' known ways, about 50 k at
 about 1 KB, 50 MB; household persons' records 28 MB (the education record, schooling, the search band, participation and
 retirement); household agents 22 MB (672 bytes); relationship rows 6 MB (kin rows, licences); firm agents 1 MB (504
 bytes, past this table's 500-byte line by 4) and their cumulative-output lists 7 MB; ways, known-way sets and patents 7
@@ -2847,7 +2857,7 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 | Work | Count, business day | Unit | Business | Non-business | Heavy |
 | --- | --- | --- | --- | --- | --- |
 | Parts: housing transactions, one part each (30 k); bank switches, made at settlement (9 k); credit — arrears and restructuring splits, record-stage re-keys, insolvency entries and discharges, heirs (19 k) (retired with cells: the agent changes in place) | 58 k | 2.5 µs | 48 ms | 5 ms | 72 ms |
-| The same parts at F-001's measured 9.9 µs (the risk case, outside the totals; retired with cells) | 58 k | 9.9 µs | 191 ms | 20 ms | 285 ms |
+| The same parts at the prototype's measured 9.9 µs (the risk case, outside the totals; retired with cells) | 58 k | 9.9 µs | 191 ms | 20 ms | 285 ms |
 | Housing search (about 20 listings in reach per searcher, about 50 ns each) | 50 k searching agents | 1 µs | 17 ms | — | 17 ms |
 | Occasion evaluations: workouts, terms, financing, distress, housing, vehicles, rents, bank choice, arrears | 0.41 M | 80 ns | 11 ms | 3 ms | 14 ms |
 | Institutions: funding, capital, supervision; the electricity auction and offers; provisions and ratios over per-(line, stage) totals | — | — | 10 ms | 5 ms | 15 ms |
@@ -2923,7 +2933,7 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 | Occasion evaluations and choices: `enrol`, `separate`, leaving; courses, acceptances, new households' housing | 20 k; 25 k | 80 ns; 400 ns | 4 ms | — | 4 ms |
 | Housing search for new households | 15 k agents | 1 µs | 5 ms | — | 5 ms |
 | Leaving, formations (two origins each), separations, known ways (`divide`, `combine`; budgeted as the retired parts) | 25 k | 2.5 µs | 21 ms | — | 21 ms |
-| The same at F-001's measured 9.9 µs a part (the risk case, outside the totals) | 25 k | 9.9 µs | 83 ms | — | 83 ms |
+| The same at the prototype's measured 9.9 µs a part (the risk case, outside the totals) | 25 k | 9.9 µs | 83 ms | — | 83 ms |
 | Research, imitation, licensing and learning: reviews, candidates, thresholds and powers, pools | 10 k; 5 k; 0.3 M | 300 ns; 180 ns; 5 ns | 4 ms | 1 ms | 5 ms |
 | Firm agents with known ways of their own: their candidates, visits and dated rows | about 50 k agents | 1.5 µs (0.5; 2) | 25 ms | 8 ms | 33 ms |
 | `choose_holdings` over the whole balance sheet | 30 k | 220 ns more | 2 ms | — | 2 ms |
@@ -2944,7 +2954,7 @@ or a **heavy business day** (a quarter-end payday after a holiday, with the carr
 The candidate, redraw and seller-spread units were raised after the population engine's review measured untuned
 prototypes on one x86 core (174 ns, 140 ns, 4.1 µs). The same prototype measured a part at 12.1 µs, of which 2.2 µs were
 redraws that this table budgets in their own line, so **9.9 µs** against the 2.5 µs above, which is recorded as a
-finding (F-001); parts are retired with cells, and what an agent's change in place costs is measured (§14.6). The Stage
+finding; parts are retired with cells, and what an agent's change in place costs is measured (§14.6). The Stage
 1 review added the physical flows' realisations and the publication-day wake. Due-day runs for every dated row kind
 (§6.5) take the ordinary day's settlement from 120 ms (30 M rows read at 10 ns and 2 M payments at 30 ns: 360 core-ms)
 to about 48 ms ((1.1 M × 2 + 6.2 M × 10 + 4 M × 5 + 2 M × 30) ns ≈ 144 core-ms), with a unit for the head's maintenance;
@@ -2952,18 +2962,18 @@ on a heavy payday almost every holder has a due, so they save little there, and 
 7 ms. At these estimates the **median fits with 7.6%**, short of the required 10%; **heavy Mondays and the longest
 closed runs miss**. Stage 2 adds about 86 ms to a business day, 13 ms to a non-business day and 126 ms to a heavy day,
 so through Stage 2 the **median misses the budget itself by 1%**, and at the measured part cost Stage 2's parts alone
-would have added about 143 ms more to it (the plan's F-005). Stage 3 adds about 53 ms to a business day, 1 ms to a
+would have added about 143 ms more to it. Stage 3 adds about 53 ms to a business day, 1 ms to a
 non-business day and 86 ms to a heavy day, with its representation choices already taken (§18 item 24): through Stage 3
-the median is about **1 063 ms, 6% over the budget**, and a heavy Monday about 2 303 ms (the plan's F-003). Stage 4 adds
+the median is about **1 063 ms, 6% over the budget**, and a heavy Monday about 2 303 ms. Stage 4 adds
 about 102 ms to a business day, 3 ms to a non-business day and 146 ms to a heavy day, with its own choices taken (§18
-item 25): through Stage 4 the median is about **1 165 ms, 16.5% over the budget**, and a heavy Monday about 2 455 ms
-(the plan's F-004). Stage 5 adds about 63 ms to a business day, 4 ms to a non-business day and 99 ms to a heavy day
+item 25): through Stage 4 the median is about **1 165 ms, 16.5% over the budget**, and a heavy Monday about 2 455 ms.
+Stage 5 adds about 63 ms to a business day, 4 ms to a non-business day and 99 ms to a heavy day
 after its reviews' remedies (77, 4 and 133 before them), with its choices taken (§18 item 26): through Stage 5 the
 median is about **1 228 ms, 23% over the budget**, a heavy Monday about 2 562 ms, and an election's eve adds about 60 ms
-in the largest country (the plan's F-006). Stage 6 adds about 74 ms to a business day, 14 ms to a non-business day and
+in the largest country. Stage 6 adds about 74 ms to a business day, 14 ms to a non-business day and
 86 ms to a heavy day after its reviews' remedies, with every known way kept (TEC.4) and its choices taken (§18 item 27):
 through Stage 6, the whole world, the median is about **1 302 ms, 30% over the budget**, a Monday after a weekend about
-2 034 ms, 2% over, and a heavy Monday about 2 676 ms (the plan's F-007). For the worst turn, three closed days before a
+2 034 ms, 2% over, and a heavy Monday about 2 676 ms. For the worst turn, three closed days before a
 quarter-end payday, to keep 10% headroom the non-business day must cost at most (1 800 − 1 401) ÷ 3 ≈ **133 ms** at
 Stage 1, two-fifths of the estimate, and through Stage 6 the business day must fall by about 400 ms for the median's
 headroom. The closed runs are read from the declared calendars (TIME.2) by `phx measure calendar`
@@ -3027,7 +3037,7 @@ is saved (§8), derived indexes are rebuilt in canonical order (§11), and the r
 register, which the manifest's hash covers, changed only between runs or at a save boundary, never from the run's own
 timing (§7.9). The build run checks that each save, decoded store by store without building a second world, hashes
 to the world hash of the close it was written at (SET.15); the check is not meant to run on the phone, and as built it
-runs only in `phx run` (F-060).
+runs only in `phx run`.
 
 ### 14.4 The measurement programme
 
@@ -3103,7 +3113,7 @@ on the build machine:
    ledger's day, draws agents' next hits through `phx_pop::hazard` on the pool, and applies hits' outcomes by making
    households explicit and writing them back (`phx_pop::explicit`); the audit is a sequential sweep of a slice of the
    random words and of the agents' parties, not the real families; the agenda, redraws and each visit's gathers
-   are reads and writes of random words; there are no views, members leaving, estates or 9b posting (F-064). The
+   are reads and writes of random words; there are no views, members leaving, estates or 9b posting. The
    device report measures an agent's next hit drawn and a hit's outcome applied on the fastest core.
 
 Stage 1's gate adds retail and labour: draws, sellers in reach, occasion evaluations and choices by decision,
@@ -3238,7 +3248,7 @@ it takes the world, a table or a handler's context.
    counters, each the most on any day — rows streamed, run heads read, run rows scanned and those not due, payments,
    the fixed point's iterations and the day buffers' peak bytes. The day's draws, redraws, outcomes and new agents are
    the world's day records (`AgentDay`), which the live checks read, neither reported nor
-   ratcheted; the other counters are not built (F-060).
+   ratcheted; the other counters are not built.
 9. **The markets' rules** (the plan's PC-50 to PC-57): no bank's loan or deposit pricing takes a central-bank rate as
    its cost of funds except through `marginal_cost_of_funds`, while public administered rates may be read; no system
    calls a matching, clearing or allocation function of `phx-market`, whose meeting handlers alone meet markets,
@@ -3329,7 +3339,7 @@ hashes read their bytes as little-endian.
 - Phone target features: `+lse,+rcpc,+dotprod,+fp16`; NEON by auto-vectorisation and in `phx-rand`'s samplers;
   64-byte aligned, padded columns; software prefetch on holder-list and index gathers.
 - Pool sized to fast and medium cores; performance-hint sessions per turn. As built at Stage 0 the world runs on one
-  thread and no performance-hint session is opened (§2, F-056).
+  thread and no performance-hint session is opened (§2).
 
 ---
 
@@ -3367,7 +3377,7 @@ hashes read their bytes as little-endian.
     behaviour is built (§14.6). The design point's estimate leaves the median 7.6% headroom at Stage 1, short of
     10%, and misses it through Stages 2 to 6; it misses heavy days, tolerance control on a heavy day and the worst
     closed runs, and misses memory by 1.4% through Stage 3, by 10% through Stage 4, by 13% through Stage 5 and by
-    16% through Stage 6 (§13; findings F-001 to F-007 of the plan).
+    16% through Stage 6 (§13).
 21. Memory budget 4.5 GB, the owner's choice after the design point was sized.
 22. **Owner decisions** (spec Appendix E 29–31): the map is about 40,000 tiles of 10 km with 25 regions allotted by
     the setup's population split (§10.0); the
@@ -3458,7 +3468,7 @@ hashes read their bytes as little-endian.
     - pensions in payment execute from Stage 0 (spec Part O), and the statistics agency publishes a period life table
       that insurers, households and actuaries read (§14.6).
 
-    Through Stage 4 the design point misses the median by 16.5% and memory by 10% (§13; the plan's F-004); the
+    Through Stage 4 the design point misses the median by 16.5% and memory by 10% (§13); the
     remedies are N8.7's, representation and traversal first, measured at each gate before the play resolution is
     touched.
 
@@ -3495,8 +3505,8 @@ hashes read their bytes as little-endian.
     - migration is the upper nest of the housing review's occasion, its inclusive values memoised per (outlook
       method, occupation-family set, destination) a day (§7.3).
 
-    Through Stage 5 the design point misses the median by 23%, a heavy Monday by 28% and memory by 13% (§13; the
-    plan's F-006); the remedies are N8.7's, representation and traversal first, then the play resolution, a valve set
+    Through Stage 5 the design point misses the median by 23%, a heavy Monday by 28% and memory by 13% (§13); the
+    remedies are N8.7's, representation and traversal first, then the play resolution, a valve set
     by measurement (spec Appendix E 36).
 
 27. **Stage 6's decisions**:
@@ -3527,7 +3537,7 @@ hashes read their bytes as little-endian.
       histories as change entries in one store beside the saves (§11, §12).
 
     Through Stage 6, the whole world, the design point misses the median by 30%, a heavy Monday by 34% and memory by
-    16%, and two full saves keep about 1% of storage headroom (§13; the plan's F-007); the remedies are
+    16%, and two full saves keep about 1% of storage headroom (§13); the remedies are
     N8.7's, representation and traversal first, then the play resolution, a valve set by measurement (spec Appendix
     E 36).
 

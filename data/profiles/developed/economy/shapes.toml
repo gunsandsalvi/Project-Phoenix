@@ -5,7 +5,7 @@
 id = "GEN.productivity_spread"
 kind = "ENDOWMENT"
 owner = "GEN"
-source = "measured"
+source = "estimated"
 source_ref = "The standard deviation of firms' log physical productivity (TFPQ) around their four-digit industry's mean, manufacturing plants of USA in 1997 (194669 plants) standing for the group: Hsieh and Klenow, Misallocation and Manufacturing TFP in China and India, NBER Working Paper 13290 (August 2007), Table 1, p. 33."
 value = "0.84"
 

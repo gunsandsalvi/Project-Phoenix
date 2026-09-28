@@ -620,7 +620,7 @@ def write_shapes(level: str, spread, pay: pd.Series, economies, m: dict) -> None
     lines = [f"# The {level} group's shapes (spec GEN.15): distributions the opening scales to the matrices' totals,",
              "# derived by tools/data/derive_economy.py; never edited by hand."]
     lines += primitive(
-        "GEN.productivity_spread", "GEN", "ENDOWMENT", "measured",
+        "GEN.productivity_spread", "GEN", "ENDOWMENT", "estimated",
         f"The standard deviation of firms' log physical productivity (TFPQ) around their four-digit industry's mean, "
         f"manufacturing plants of {spread.iso3} in {spread.year} ({int(spread.plants)} plants) standing for the group: "
         f"{spread.source}.",

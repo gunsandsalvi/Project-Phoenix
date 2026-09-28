@@ -7,7 +7,7 @@ use crate::live_check;
 
 /// What the outlooks' reads over time need: a record of each heuristic's share and of each decision's first change
 /// after a surprise, which the run does not yet keep.
-const NO_RECORD: &str = "the run keeps no record of heuristic shares or of decisions after surprises (F-120)";
+const NO_RECORD: &str = "the run keeps no record of heuristic shares or of decisions after surprises (S1.16)";
 
 fn not_yet(_: Inspector<'_>) -> Outcome {
     Outcome::NotYet(NO_RECORD)

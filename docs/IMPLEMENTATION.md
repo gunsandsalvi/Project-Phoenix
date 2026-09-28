@@ -30,22 +30,21 @@ follows. Where either disagrees with the spec, the spec wins.
      decision (§12): ask, and stop that step until it is answered.
 3. **Build exactly what the step says.**
    - Its files, types, layouts, algorithms and declarations are the design.
-   - A better idea is recorded as a finding (§0.5). If accepted, it becomes a change to this file in its own commit,
-     before any code follows it.
+   - A better idea becomes a change to this file in its own commit, before any code follows it.
    - Code never runs ahead of this file.
 4. **Never weaken an earlier step.**
    - A later step extends a kernel crate only through the extension points an earlier step declared.
    - A change to an earlier step's public surface is itself a step, inserted at its dependency position (§0.4).
 5. **The live world is the test.**
    - From S0.11 on, every step adds live checks (§0.3) and runs the live world with every earlier check.
-   - A step is not done while any live check fails, whether its own or an earlier one, unless the failure is recorded
-     as a finding naming the later step that will fix it.
+   - A step is not done while any live check fails, whether its own or an earlier one, unless the failure is written
+     into the later step that will fix it (§0.5).
 6. **Every step ends with two reviews** of its diff, with the prompts of §0.7. At a **major step** — a stage's gate
    step, or a step the owner names — they are independent: two fresh agents who did not write it. At any other step
    the builder makes both passes itself, one prompt at a time (§12).
    - One reads the diff against the spec clauses and this step's text.
    - The other reads it against the architecture, the budget and this step's **Not allowed**.
-   - Every finding is either fixed in the step, or recorded in §11 with the step that will fix it.
+   - Every finding is either fixed in the step, or written into the step that will fix it (§0.5).
    - Only then is the step `done`.
 7. **Commits.** A step has one or more commits, each saying what and why, with the step identifier as its first word
    (`S0.05: …`). The step's last commit:
@@ -115,20 +114,11 @@ the mechanism acting is a finding.
 
 ### 0.5 Findings
 
-Every finding is recorded in §11:
-- a failing live check;
-- a number that looks wrong;
-- a reviewer's finding not fixed in its step;
-- a measurement over budget.
-
-Each record has:
-- an identifier (`F-<nnn>`);
-- the step and day found;
-- what was measured, and where;
-- the mechanism suspected;
-- the step that will address it.
-
-A finding is closed only by a step. Nothing is tuned to make a finding go away (spec N7, GEN.11).
+A finding — a failing live check, a number that looks wrong, a reviewer's finding, a measurement over budget, a
+miss at a gate — is solved in the step where it is found. What only a later step can settle is written into that
+step's section: its design takes the work, with what was measured, where and when, and its **Done when** the check.
+There is no findings table and no finding identifier (owner, 2026-09-28). Nothing is tuned to make a finding go
+away (spec N7, GEN.11).
 
 ### 0.6 Owner decisions
 
@@ -273,7 +263,6 @@ declares.
 | Audit family | `<SYS>.<family>` | `MON.issuer_balance` |
 | Live check | `LC-<stage>-<nn>` | `LC-0-01` |
 | `phx-check` rule | `PC-<nn>` | `PC-06` |
-| Finding | `F-<nnn>` | `F-012` |
 | Counter | `<crate>.<snake_case>` | `phx_pop.parts_joined` |
 
 Types are nouns in the spec's words (`EmploymentLine`, not `EmpLn`). No abbreviation that the spec's glossary does
@@ -311,8 +300,9 @@ not use.
 - An **audit finding** is written to the findings store (S0.09): `Finding { family, clause, owner: PartyId, size:
   i128, unit: Unit, day: Day, detail }`, where `Unit` is `Money(Ccy)` or `Qty(UnitId)`. The audit never repairs (N1,
   Law 17).
-- A **run finding** — a live check that fails, or a measure outside its expected range — goes to §11 by hand. The
-  run's report lists every audit finding and every failing live check.
+- A **run finding** — a live check that fails, or a measure outside its expected range — is solved in its step or
+  written into the step that will fix it (§0.5). The run's report lists every audit finding and every failing live
+  check.
 
 ### 2.6 Numbers and data
 
@@ -406,7 +396,7 @@ live_check! {
   CI builds and runs unit tests and `phx-check`, never the world.
 - **The build run** (S0.11) is required from S0.11 on; S0.01 to S0.10 have no world to run. It judges the commit that
   last changed code; the step's last commit adds only the report, the status and the coverage table (§0.1 rule 7).
-  It is **clean** when the audit reports no finding and every failing live check is a row of §11 naming the step that
+  It is **clean** when the audit reports no finding and every failing live check is written into the step that
   fixes it (§0.1 rule 5). Its report records the build's and the run's wall times on the build machine, which are
   never ratcheted. An ordinary step's build run lasts 120 days from day zero (`phx run --total-days 120`), cutting
   settling short and holding one quarter's save, with the injections' save on its 30th day; a stage gate's
@@ -735,85 +725,6 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ---
 
-### S1.22 — One opening dataset per profile
-
-**Status**: planned
-
-**Clauses**: GEN.2, GEN.3, GEN.5, GEN.12; NUM.3; Law 2, Law 7, Law 8.
-
-**Architecture**: §3.7, §10.
-
-**Depends on**: S1.18 (done).
-
-**Goal**: every number the opening reads about a country group's economy comes from one derivation of one year's
-sources in one unit system, with the national accounts' and balance sheets' identities checked across primitives.
-The opening world therefore starts stock-flow consistent, and the unit and scale corrections stop recurring.
-
-**Files**
-
-| File | Purpose |
-| --- | --- |
-| `tools/data/derive_economy.py` | the one derivation; replaces the economic parts of `derive_*.py` |
-| `tools/data/fetch_economy.py` | the sources it lacks: OECD sectoral financial balance sheets, the BIS's and the IMF's debt by sector, bank capital |
-| `data/profiles/<level>/economy/*.toml` | the derived primitives, each keeping its owner |
-| `crates/assembly/phx-world/src/compile.rs` | the dataset's identities checked at assembly, as a refusal |
-
-**Design**:
-- **One year and one unit.**
-  - The base year is 2019, before the pandemic.
-  - Every money figure is in that year's international dollars (PPP), as a share of GDP, and GDP per head is the one
-    scale.
-  - A product's unit is one international dollar's worth of it at world prices, so quantities and prices agree by
-    construction. A country's price of a product is its ICP price level against GDP's.
-- **The flows (a social accounting matrix).** From the OECD inter-country tables and national accounts:
-  - industries × products make and use;
-  - value added by industry split into compensation, operating surplus and taxes on production;
-  - final uses: households' consumption by product, government consumption, fixed investment by capital kind,
-    inventories.
-  - The countries are closed at Stage 1, so exports and imports are folded into domestic uses by product. This is a
-    declared simplification, retired by XB at S5.05.
-  - The ways (TEC), the budget shares (HH) and the government's purchases read it.
-- **The stocks (a balance-sheet matrix).** Sectors × instruments as shares of GDP:
-  - the sectors: households, firms, banks, the central bank, the government;
-  - the instruments: currency, deposits, loans to households and to firms, government bills and bonds, reserves,
-    equity, and fixed capital by kind.
-  - It replaces `CAP.stock_per_gdp`, `CB.currency`, the debt primitives and bank capital's.
-- **Shapes only for distributions.** Income and wealth (WID), household types (DEM), firms' productivity dispersion
-  (ENDOWMENT), and wages by occupation (ILO). Each is scaled by the opening to the matrices' totals.
-- **One definition each.** Firms per person employed are the ILO's employers and own-account workers over the
-  employed, for every group. `FRM.size_exponent` and `FRM.rank_per_million` are retired (S1.18).
-- **Identities, checked by the derivation and again at assembly** (a refusal naming the primitive and the residue):
-  - each product's supply equals its uses;
-  - each industry's output equals its inputs plus value added;
-  - GDP by production equals expenditure and income;
-  - each instrument's assets equal its liabilities across the sectors;
-  - each sector's net worth equals its assets less liabilities.
-
-  The tolerance is the rounding of the published figures' declared decimals (Law 7), and a residue lands on a named
-  sector's declared account.
-- **Primitives keep their owners** (NUM.3): TEC's ways, HH's shares, GEN's balance sheet and CAP's stock, each an
-  entry with its source, all written by the one derivation.
-
-**Unit tests**: `derive_economy.py`'s own checks (the identities over the derived files), run in the fast checks.
-`register_refuses_unbalanced_dataset`: assembly's refusal on a hand-built unbalanced pair of tables.
-
-**Live checks**: LC-1-40 and LC-1-41 at S1.24.
-
-**Budget**: none.
-
-**Guards**: PC-91's trailers on every changed primitive.
-
-**Not allowed**: a figure typed by hand; two sources' definitions mixed in one primitive; an identity closed by a
-residual with no holder (Law 2).
-
-**Done when**
-- [ ] Every group's dataset derives and balances, and assembly refuses an unbalanced one.
-- [ ] The inventory is regenerated; the primitives the dataset replaces retire at S1.23, where the opening reads the
-  matrices (moved there, owner's plan, 2026-09-28).
-- [ ] Two reviews are done.
-
----
-
 ### S1.23 — Stage 0's world on the core
 
 **Status**: planned
@@ -823,7 +734,7 @@ treasury and the central bank, deposits, pensions in payment, the opening's bala
 
 **Architecture**: §7, §10.
 
-**Depends on**: S1.20 (done), S1.22.
+**Depends on**: S1.20 (done), S1.22 (done).
 
 **Goal**: the world assembles on the core and runs Stage 0's world: persons, households, hazards, deposits, pensions
 and the state's payments. The Stage 0 live checks and audit families run on it.
@@ -838,6 +749,10 @@ and the state's payments. The Stage 0 live checks and audit families run on it.
 | `crates/apps/phx-cli/src/checks/` | the Stage 0 checks re-pointed at the inspector over the core |
 
 **Design**:
+- **Values the opening now draws from the data in hand.** Whom an extended or non-relative household holds besides
+  its head, assumed today (`DEM.household_members`: one relative of 65 and over, one unrelated adult), is derived per
+  group from the DHS household structure (`people/dhs_indicators`: members of 65 and over, three generations,
+  non-nuclear shares, household size); the partners' age gap's spread stays the measured US couples' gap.
 - The world holds both cores during the port. The old one serves the committed world until S1.24 switches it.
 - The opening apportions S1.22's balance sheet over parties by the shapes, exactly (`split_total`).
 - The primitives the dataset replaces retire here, where the opening on the core reads the matrices instead: CAP's
@@ -891,6 +806,30 @@ world switches to the core.
 | `crates/systems/sys-frm/src/opening.rs` | firms drawn by count, productivity and sites; sizes derived |
 
 **Design**:
+- **Values the port takes from the data in hand**, in place of today's assumed ones:
+  - the developing group's job tenure from the developing economies of Donovan, Lu and Schoellman's surveys
+    (`people/tenure_dls`), no longer the emerging group's;
+  - coal and metal ore apart from oil and gas and stone: each mining division's output, value added and employment
+    from the OECD's 2025 tables (`open/mining_divisions`, B05 to B09), so each has its own way;
+  - farms over the size classes: persons per holding by economic size (`households/eurostat_farms_by_size`) and farms
+    by hired workers (`households/us_farms_hired_workers`), the classes of 50 and 250 continued along the size law the
+    other industries follow; the emerging and developing groups' tilt from the Enterprise Surveys' jobs by size
+    (`state/enterprise_surveys`);
+  - a coastal vessel's payload, days at sea and operating cost from the IMO's fleet table
+    (`open/typed_imo4ghg_fleet_2018`) and MARAD's daily costs (`open/typed_marad2011_opcosts`), its price from the
+    value of a gross ton built (`open/shipbuilding`);
+  - the spread of the switching intensity and the performance memory across members, fitted per respondent to the NY
+    Fed panel's forecast revisions (`people/sce_microdata`);
+  - each firm's stock cover its own, drawn from the Enterprise Surveys' days of inventory by size
+    (`state/enterprise_surveys`); the markup's speeds, the pressure's curvature and a review's and a price change's
+    hours stay one declared management type, no source measuring their spread across firms.
+- **What ends with the old kernel.** The per-payment settlement path, the agents' kernel, the cells' rows and their
+  measured costs describe code this step deletes; the core's costs are this step's budget and S1.16's.
+- **The checks and the bench.** The checks' instruments run in the build run only, never in the phone's day; every
+  counter the architecture names for the core is built or retired with its reason; the full-load bench runs the real
+  kernels, the audit's families, the posting and each turn's views included.
+- **Firms earn from the opening** (their share of the SAM's sales), so defaults at the first grace's end, the
+  searchers their staff become and the banks' declined refinancing are read at S1.16 as the world's.
 - **Firms at the opening.**
   - Per region and industry, the count comes from S1.22's firms per employed.
   - Each firm draws its productivity from the industry's dispersion, its sites (PTY: a site per establishment), and
@@ -929,8 +868,9 @@ point meets its targets.
 branch on size.
 
 **Done when**
-- [ ] The committed world runs on the core; every live check passes, or is a finding naming its step.
+- [ ] The committed world runs on the core; every live check passes, or is written into the step that will fix it.
 - [ ] The smoke and the bench are within budget.
+- [ ] The values listed above come from the data in hand; the bench runs the real kernels.
 - [ ] Two independent reviews are done (a major step).
 
 ---
@@ -992,7 +932,7 @@ decisions)*: every Stage 1 system's opening contribution.
   from S1.04: the rules built there run at the firms' investment and plant reviews; CAP.4's choice to maintain, repair,
   sell or scrap and CAP.13's hurdle and horizon distributions move to S2.03, with the plant's resale market)*.
 - PROCESS: CAP.5 *(purchases from named producers, paid in stages, delivered into the newest class)*; CAP.6 *(its
-  failures and repairs move to S2.03, which completes it, waiting for a measured failure rate, F-101)*.
+  failures and repairs move to S2.03, which completes it)*.
 - INVARIANT: CAP.9, TEC.9 *(complete them, from S1.04 and S1.02: every production is checked against its capacity and
   its way)*.
 - MEASURE: CAP.10. FORBID: CAP.11. PRIMITIVE: CAP.13 *(completes it: the managements' hurdle and horizon
@@ -1075,7 +1015,7 @@ goods markets and services at retail, services and other made-to-order products 
 and investment from named builders in stages (architecture §7.10); carriers' modes and shippers' visits, merchants'
 carry of commodities, catastrophes striking agents, owners' closure of solvent firms (§7.11); the national accounts
 (§7.15). LAB.10, CAP.4, CAP.6's failures, CAP.13 and SRV.3 moved to S2.03, S2.05 and S2.10; the shortcuts are
-S2.03, S2.05, S2.10 and F-120.
+S2.03, S2.05, S2.10 and S1.16.
 
 **Done when**
 - [ ] The Stage 1 world opens, balances and settles.
@@ -1108,6 +1048,9 @@ completed at S0.26)*; the Stage 1 exit.
 | `data/measure/N3/F<nn>.toml` | for each macro read that is one of N3's facts, its definition in S7.01's form, brought forward to this step (spec Part O), committed with `READS.toml` before the gate run |
 
 **Design**:
+- **The records the reads need**, kept by the observer's reads (N2): each day's first changed decision after each
+  surprise, each method's lag behind a series' turning points, the size of price moves and the retail margin, and
+  the sample of levies LC-0-29 reads, so LC-1-08, LC-1-16, LC-1-43 and LC-1-44 read all they name.
 - **The macro reads** (`READS.toml`, spec Appendix E 25): output, consumption, employment and unemployment by region
   and age class, the consumption and income distributions, firm sizes, prices by category, money and credit, default
   counts, and **per-person** reads from tracers: employment-spell lengths, income transitions between deciles over a
@@ -1160,7 +1103,7 @@ commit's build run; the same reads in the gate run's device report are the exit'
 seeing the run; a tuned primitive.
 
 **Done when**
-- [ ] The device report and the macro reads are committed, and every miss is a row of §11.
+- [ ] The device report and the macro reads are committed, and every miss is written into the step that will fix it.
 - [ ] Every pass criterion above holds, the full-load bench's with them, or the owner's decision under N8.7 is
   recorded in §12 and the budget then in force is met.
 - [ ] LC-1-42 and LC-1-50 pass.
@@ -1224,7 +1167,7 @@ S3.01, which extends S2.06's interbank loan line kind and declares no second one
 as its Stage 2 lines. Wall time is core time ÷ 3 (architecture §13.2). An ordinary business day gains about **86 ms**:
 - parts, about 58 k a day — housing sales, lettings and moves 30 k, bank switches 9 k, credit (arrears and
   restructuring splits, record-stage re-keys, insolvency entries and discharges, heirs) 19 k: 58 k × 2.5 µs ÷ 3 ≈
-  48 ms at the target unit cost, and 58 k × 9.9 µs ÷ 3 ≈ 191 ms at F-001's measured one (12.1 µs less the 2.2 µs of
+  48 ms at the target unit cost, and 58 k × 9.9 µs ÷ 3 ≈ 191 ms at the prototype's measured one (12.1 µs less the 2.2 µs of
   redraws S0.22's line now carries), the stage's largest risk;
 - housing search: 50 k groups × 20 listings × 50 ns ÷ 3 ≈ 17 ms;
 - occasion evaluations: about 0.4 M × 80 ns ÷ 3 ≈ 11 ms;
@@ -1249,7 +1192,7 @@ Memory at the worst day's peak gains about **251 MB**:
 Through Stage 2 the design point projects a median turn of 924 + 86 = **1 010 ms**, 1% over the 1 000 ms budget, and a
 peak of 4 071 + 251 = **4 322 MB**, 4% under 4.5 GB (Stage 1's figures with due-day runs for every dated row kind
 and Stage 0's pensions in payment, architecture §13). The required 10% headroom — a median of at most 900 ms and a
-peak of at most 4 050 MB — is **missed on both** (F-005). S1.16 rewrites §13 with measured numbers first; S2.12 judges
+peak of at most 4 050 MB — is **missed on both**. S1.16 rewrites §13 with measured numbers first; S2.12 judges
 the stage on the device, and a miss takes N8.7's remedies in order. Every increment below is a counter, ratcheted from
 the step that adds it; `phx_pop.distinct_keys`, per key attribute, counts the keys the stage's attributes make — the
 grant per buyer class (S2.02), the banking arrangement (S2.06), the credit-record stage (S2.10), the procedure clock
@@ -1658,8 +1601,8 @@ of their own: they are in the cell's row list and its due-day run):
 - PROCESS: FRM.15 *(completes it: the balance-sheet test, the law's procedures, restructuring)*; FRT.8 *(completes
   it, from S1.07: goods aboard a failed carrier recovered from its estate after the law's delay and at its cost)*.
 - DECISION: CAP.4 *(moved from S1.15: an owner maintains, repairs, sells or scraps a unit at its plant review, selling
-  through the plant's resale market)*. PROCESS: CAP.6 *(completes it, from S1.04: failures and repairs, at a measured
-  rate, F-101)*. PRIMITIVE: CAP.13 *(completes it, from S1.15: the managements' hurdle and horizon distributions)*.
+  through the plant's resale market)*. PROCESS: CAP.6 *(completes it, from S1.04: failures and repairs, at each kind's
+  failure hazard by age)*. PRIMITIVE: CAP.13 *(completes it, from S1.15: the managements' hurdle and horizon distributions)*.
 - MEASURE: FRM.19.
 - This step retires S1.03's placeholder naming FRM (every insolvency liquidates) and S2.01's placeholder answer to a
   restructuring offer for firms.
@@ -1698,6 +1641,11 @@ estate.
 
 **Design**
 
+- **Values from the data in hand.** Each plant kind's failure hazard by age from the BEA's modified Winfrey S-3
+  retirement pattern (`state/typed_winfrey_s3`) over the kind's service life (`cap/`); the managements' hurdle rates,
+  appraisal methods and horizons from Graham's surveys (`state/typed_hurdle_rates`,
+  `state/typed_capital_budgeting_methods`, `state/typed_planning_horizon`). A firm's refinancing lead and the months
+  it asks are its funding decision's, retiring the banks' assumed values.
 - **Funding** (FRM.9), a lumpy decision on the firm's financing review days (monthly) and when its cash outlook shows
   a shortfall. Inputs, as FRM.9 lists: what each source costs it now and how close it is to its management's leverage
   tolerance (PREFERENCE). The need is its outlook of outgoings, dues and planned investment over its horizon less its
@@ -2036,6 +1984,11 @@ A rate rise reaches house prices through what buyers can borrow.
 
 **Design**
 
+- **The hazards rederived from the data in hand.** GEO's exposure multipliers, storms' and droughts' shares
+  destroyed and a flood's depth from the damage functions (`households/jrc_flood_damage`, `jrc_max_damage`,
+  `hazus_flood_damage`, `typed_wind_damage`) over the footprints on the relief and climate classes; coal deposits'
+  sizes and grades from the mines' output, quality and reserves (`households/coal_mines`, `coal_mine_quality`,
+  `coal_reserves`); oil and gas of one grade each, as their benchmark prices are quoted.
 - **The rate sample**: an agent begun during the run — a household a move or a split forms — joins the world's
   rate sample where it begins (`World::rate_sample`, found once at the first day since S0.28), or the live rates
   (LC-0-39) count its hits and not its chances.
@@ -2225,7 +2178,7 @@ key-clock reason. Households use thirteen (S1.12's twelve and the key clock), fi
   listings as messages across days, about 0.2 M with counts at 64 bytes, 13 MB; commitments within their line.
 - Time (§13.2): housing search is a new share of "Meetings" — about 50 k searching groups a business day meeting about
   20 listings each at ≤ 50 core-ns, 50 k × 20 × 50 ns ÷ 3 ≈ 17 ms wall. Sales, lettings and moves make about 30 k
-  parts a day with one part per transaction: 30 k × 2.5 µs ÷ 3 ≈ 25 ms wall in "Parts" (≈ 99 ms at F-001's measured
+  parts a day with one part per transaction: 30 k × 2.5 µs ÷ 3 ≈ 25 ms wall in "Parts" (≈ 99 ms at the prototype's measured
   9.9 µs without redraws). Reviews and offers are "Occasion evaluations"; wear and construction are "Physical flows
   realised".
 - Counters, ratcheted: `phx_hsg.listings`, `phx_hsg.viewings`, `phx_hsg.sales`, `phx_hsg.lettings`,
@@ -3186,7 +3139,7 @@ measured)*; N8 *(judged again: the budget at Stage 2)*; N2 *(judged again)*; the
 the world.
 
 **Done when**
-- [ ] The device report and the macro reads are committed, and every miss is a row of §11.
+- [ ] The device report and the macro reads are committed, and every miss is written into the step that will fix it.
 - [ ] Every pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force
   is met.
 - [ ] LC-2-23 and LC-2-49 to LC-2-51 pass.
@@ -3281,7 +3234,7 @@ S1.11's deferral of discretionary purchases (naming SOC) stays until S5.02.
   read (S3.05).
 
 **The stage's budget ledger**, against architecture §13 as it stands through Stage 2 (a median weekday of 1 010 ms and
-a peak of 4 322 MB, F-005). Wall time is core time ÷ 3 (§13.2), except the linked call, which runs on one core per
+a peak of 4 322 MB). Wall time is core time ÷ 3 (§13.2), except the linked call, which runs on one core per
 country with the countries in parallel and so counts undivided. Each step's **Budget** names its counts and the
 counters that ratchet them.
 
@@ -3299,7 +3252,7 @@ counters that ratchet them.
 | Valuation, tests | 0.9 M positions at 10 ns (9 ms); margin, 2 k accounts at 4 µs (8 ms); repo margin, 30 k at 200 ns (6 ms); covenants | 8 ms | — | 16 ms |
 | Money funds' daily accruals | about 3 000 funds | — | 1 ms | — |
 | **Stage 3 total** | | **53 ms** | **1 ms** | **86 ms** |
-| S3.05's parts at F-001's measured 9.9 µs without redraws (the risk case, outside the totals) | 2 k parts | +5 ms | — | +5 ms |
+| S3.05's parts at the prototype's measured 9.9 µs without redraws (the risk case, outside the totals) | 2 k parts | +5 ms | — | +5 ms |
 | A fund-run day (an event line): wake pass, woken visits, parts | 0.95 M; 0.2 M; 30 k | +60 ms (+134 ms at 9.9 µs) | — | +60 ms |
 
 | Turn | Budget | Through Stage 2 | Through Stage 3 | Headroom |
@@ -3332,14 +3285,13 @@ Memory at the worst day's peak gains about **240 MB**:
 
 Through Stage 3 the design point projects a median turn of **1 063 ms**, 6% over the budget, a heavy Monday of
 **2 303 ms**, 15% over, and a peak of **4 562 MB**, 1.4% over 4.5 GB. The budget itself is missed on time and on
-memory, the required 10% headroom (at most 900 ms and 4 050 MB) by far, and nothing remains for Stage 4 (F-003,
-F-004). S1.16 and S2.12 measure first, and S3.11 judges on the device.
+memory, the required 10% headroom (at most 900 ms and 4 050 MB) by far, and nothing remains for Stage 4. S1.16 and S2.12 measure first, and S3.11 judges on the device.
 
 **The remedy planned first** for the projected miss is N8.7's first, how the world is represented and traversed.
 The stage's lines above already carry it: the linked call's warm start and pruned network, registered and shared
 instrument outlooks and values, closed-form claim values, and participation in the key with holdings as counted
 rows, and due-day runs for every dated row kind (S0.17) already spare settlement's stream the rows not due. What
-remains is taken from the largest lines as S1.16 and S2.12 measure them — parts (F-001) and settlement on the heavy
+remains is taken from the largest lines as S1.16 and S2.12 measure them — parts and settlement on the heavy
 day (§13.2) — before the play resolution (the cell budget, the tolerances and the zones) is touched; the
 population never is.
 
@@ -3841,6 +3793,7 @@ periods.
 
 **Design**
 
+- The treasury's order of payment is a POLICY each treasury declares (Law 16), in place of today's assumed order.
 - **The investor schedule** (`phx-val/src/schedule.rs`), used by every bidder here and by later steps:
   - `schedule(value, variance, risk_aversion, held, funds, free_units, ticks) -> Schedule`: at each tick `p` the
     target holding is `h*(p) = (value − p) ÷ (γ·variance)` and the order is `h*(p) − held`, a bid where positive and
@@ -4379,7 +4332,7 @@ is a ratchet move the owner reviews (§2.11).
 - The ledger's line: 11 ms on a business day (24 k orders at 300 ns, 1 500 closing calls at 3 µs, 30 k reviews at
   80 ns, 10 k choices at 1 µs, 2 k parts at 2.5 µs and 30 k institutional values at 100 ns: 32 core-ms ÷ 3), 16 ms
   on a heavy day (dividends over about 1 M holding rows and votes over 0.5 M holders, at 10 ns); the parts at
-  F-001's 9.9 µs without redraws add 5 ms.
+  the prototype's 9.9 µs without redraws add 5 ms.
 - Memory: about 1 M household holding rows (30 MB with holder lists); the household record at 592 bytes (+11 MB);
   household keys estimated a third more with participation (18 MB), at most 8× per base key.
 - Counters, ratcheted: `phx_pop.bytes_per_household_cell` (at 592), `phx_pop.distinct_keys` (participation),
@@ -5218,7 +5171,7 @@ stage's macro reads from the run.
 - a tuned primitive.
 
 **Done when**
-- [ ] The device report and the macro reads are committed, and every miss is a row of §11.
+- [ ] The device report and the macro reads are committed, and every miss is written into the step that will fix it.
 - [ ] Every pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force
   is met.
 - [ ] LC-3-14 and LC-3-44 to LC-3-47 pass.
@@ -5307,7 +5260,7 @@ S5.02.
     (32 ms), initial margin is budgeted at 3 µs an account (derivative marks and margin 25 ms), Stage 4's dated rows
     are scanned in their holders' runs (settlement 11 ms), actuaries project once per model point (valuation 2 ms);
   - through Stage 4: a median of 1 063 + 102 = **1 165 ms** (16.5% over), a heavy Monday of 2 × 348 + 1 759 =
-    **2 455 ms** (23% over) and a peak of 4 562 + 387 = **4 949 MB** (10% over): F-003, F-004.
+    **2 455 ms** (23% over) and a peak of 4 562 + 387 = **4 949 MB** (10% over).
 
   Each step's **Budget** names its §13 lines and counters.
 
@@ -6801,7 +6754,7 @@ a cash balance (PEN.7).
   counted.
 - **A takeover of a widely held firm**, an event line of §13.2 on the offer's first answer day: the offer reaches
   about 0.3 M holder cells as notice occasions (20 ns), their acceptance evaluations (0.3 M at 80 ns) and up to 50 k
-  tendering members' parts (2.5 µs): (6 + 24 + 125) core-ms ÷ 3 ≈ **50 ms** (≈ 175 ms at F-001's 9.9 µs without
+  tendering members' parts (2.5 µs): (6 + 24 + 125) core-ms ÷ 3 ≈ **50 ms** (≈ 175 ms at the prototype's 9.9 µs without
   redraws).
 - Counters, ratcheted: `phx_mna.offers`, `phx_mna.completions`, `phx_mna.lapses`, `phx_mna.acceptance_evaluations`,
   `phx_mna.pinned_members`, `phx_mna.buyouts`, `phx_mna.recaps`.
@@ -6902,7 +6855,7 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
     a budget miss is a finding, and N8.7's remedies apply in order.
 - **The stage's budget ledger**, against architecture §13 as it stands through Stage 3 — with due-day runs for every
   dated row kind (S0.17) and Stage 0's pensions in payment, a median weekday of about 1 063 ms, a heavy Monday of
-  about 2 303 ms and a peak of about 4 562 MB (F-003); wall time is core time ÷ 3. The gate's measurements replace
+  about 2 303 ms and a peak of about 4 562 MB; wall time is core time ÷ 3. The gate's measurements replace
   it:
 
   | Memory (§13.1 line) | Addition |
@@ -6953,8 +6906,7 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
   rows without `amount`, scheme membership as an attachment, actuaries per model point, due-day runs for every dated
   row kind). The remedies are N8.7's, in order: how the world is represented and traversed (the largest Stage 4 items
   are the policy and scheme rows with their attachments, pots and slack, about 230 MB, and the derivative lines,
-  57 ms), then the play resolution; if none suffices, the owner decides. Nothing is removed from the world. F-004 is
-  restated with these numbers.
+  57 ms), then the play resolution; if none suffices, the owner decides. Nothing is removed from the world.
 
 **Unit tests**
 - `breach_consequence_due_next_business_day`.
@@ -6994,7 +6946,7 @@ S4.03).
 **Done when**
 - [ ] Insurers and clearing houses are tested and licensed, and a breach of a minimum resolves them through named
   parties — in the run (LC-4-09, LC-4-30).
-- [ ] The device report and the macro reads are committed, every miss is a row of §11, and every pass criterion holds,
+- [ ] The device report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion holds,
   or the owner's decision under N8.7 is recorded in §12 and the budget then in force is met.
 - [ ] Architecture §13 carries Stage 4's measured lines.
 - [ ] No placeholder naming DRV, DRX, INS, PEN, SEC or MNA remains, and none names SUP for insurers or houses.
@@ -7128,7 +7080,7 @@ stands in for a border (S0.13 declares none across a border until S5.05 adds cro
 - the balance of payments is fed by declared per-reason tallies in the payer pass, not by a handler tagging legs.
 
 **The stage's budget ledger**, against architecture §13 through Stage 4 — a median weekday of 1 165 ms, a heavy Monday
-of 2 455 ms and a peak of 4 949 MB (F-004); wall time is core time ÷ 3. Each step's **Budget** names its lines and
+of 2 455 ms and a peak of 4 949 MB; wall time is core time ÷ 3. Each step's **Budget** names its lines and
 counters; S5.06's measurements replace these estimates. Before its remedies the stage costs about 77 ms a business
 day, 4 ms a non-business day and 133 ms a heavy one. With the remedies above (N8.7, representation first):
 - **time**: VAT at statements and in cash sales' instructions −3 ms business and −3 heavy; fused payroll levies −2
@@ -7191,8 +7143,7 @@ day, 4 ms a non-business day and 133 ms a heavy one. With the remedies above (N8
 
 The turns are 1 165 + 63, 2 × (348 + 4) + 1 228, 2 × 352 + (1 759 + 99), that plus 170, 4 × 352 + 1 228 and 3 × 352 + 1 858; the
 peak is 4 949 + 116. Through Stage 5 the design point misses the median by almost a quarter and memory by an eighth
-after the remedies above; an election's eve in the largest country adds about 60 ms to its turn. The finding is
-**F-006** (§11). The further remedies are N8.7's, in order, representation and traversal first, measured at S5.06:
+after the remedies above; an election's eve in the largest country adds about 60 ms to its turn. The further remedies are N8.7's, in order, representation and traversal first, measured at S5.06:
 - **the currency desks**: one quote evaluation per (pair, tenor bucket) serving spot and forwards from one inventory
   in one risk unit (about −5 ms);
 - **benefit rows**: lines of benefits with no end date (child benefit, the state pension) declared without a start
@@ -7259,6 +7210,8 @@ member and never on an aggregate:
 
 **Design**
 
+- Income tax bands are each group's statutory schedules read from `state/tax_pit_central` (rates and thresholds),
+  no longer built from medians of marginal rates.
 - **One levy per base, charged where the base arises** (TAX.1, TAX.2, TAX.7; architecture §4.3). Each is a
   declaration: the reasons it applies to, its base per member of the side entry (or the remitter's own figure for
   that line), its schedule (a policy value whose bands, ceilings and allowances register kinks), its payer, its
@@ -7489,6 +7442,10 @@ in a non-money unit), §4.5 (rows, no retail holder lists), §6.1 (3e, 4a, 5c, 6
 
 **Design**
 
+- **Values from the data in hand.** A benefit claim's hours are the agencies' staff hours over the claims they
+  handle: public employment in public administration and social work (`ilo/employment_by_activity_sector`) over the
+  claims the benefit rules produce at the opening; the emerging group's benefit months from the replacement-rate
+  tables' months (`state/net_replacement_rates`).
 - **Benefit kinds are data** (SOC.1, Law 10): eligibility events (a job lost at 4a, an illness onset or a disability
   as `sys-dem`'s hit at 3e, a birth, reaching an age drawn by REP.25), an amount rule handle (flat, a replacement
   rate of the line's wage point the job was on, means-tested over declared positions), a duration, a means test (a
@@ -8445,7 +8402,7 @@ placeholder naming TAX, SOC, POL, FX or XB remains.
   and N8.7's remedies apply in order: the preamble's further proposals first, then the play resolution, a valve set
   by measurement (§12); the stage ends only when the budget is met (N8.8).
 - **The ledger**: the preamble's stage ledger is replaced by the measurements, and architecture §13 carries Stage 5's
-  measured lines (F-006).
+  measured lines.
 - **Review costs** and **streams**: none new.
 
 **Unit tests**: none.
@@ -8476,7 +8433,7 @@ placeholder naming TAX, SOC, POL, FX or XB remains.
 - removing members, lines or a system to fit the budget.
 
 **Done when**
-- [ ] The device report and the macro reads are committed, every miss is a row of §11, and every pass criterion
+- [ ] The device report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion
   holds at the play resolution then set; any reset of it is recorded with its measurement.
 - [ ] Architecture §13 carries Stage 5's measured lines.
 - [ ] No placeholder naming TAX, SOC, POL, FX or XB remains.
@@ -8575,7 +8532,7 @@ The stage introduces no placeholder. After S6.05 no placeholder names any system
 - tracers' histories are change entries in one history store both save units reference, so it counts once.
 
 **The stage's budget ledger**, against architecture §13 through Stage 5 — a median weekday of 1 228 ms, a
-non-business day of 352 ms, a heavy day of 1 858 ms and a peak of 5 065 MB (F-006); wall time is core time ÷ 3. Each
+non-business day of 352 ms, a heavy day of 1 858 ms and a peak of 5 065 MB; wall time is core time ÷ 3. Each
 step's **Budget** names its lines and counters; S6.05's measurements replace these estimates. With the choices
 above, and with every known way kept (TEC.4) at about 25 ms a business day and 50 MB in the firm cells it keeps
 apart, the stage adds about **74 ms** to a business day, **14 ms** to a non-business day and **86 ms** to a heavy
@@ -8609,7 +8566,7 @@ one, and **151 MB** at peak:
 | Families and measures: POP.11 and POP.12 on the rolling cycle, a slice of regions a close; TEC.10; HH.16 | 2 ms | 1 ms | 3 ms |
 | Views and pages on a turn's last day; tracers every day (S6.04) | 8 ms | 1 ms | 10 ms |
 | **Stage 6** | **about 74 ms** | **about 14 ms** | **about 86 ms** |
-| The parts at F-001's 9.9 µs, the prototype's cost less the redraws S0.22's line carries (the risk case, outside the totals) | +62 ms | — | +62 ms |
+| The parts at the prototype's 9.9 µs, the prototype's cost less the redraws S0.22's line carries (the risk case, outside the totals) | +62 ms | — | +62 ms |
 | The school year's date in a country: roles at a stage's end, about 75 k at 100 + 80 + 400 ns (an event line, beside Stage 5's +13 ms first-day line) | +15 ms | — | +15 ms |
 
 | Turn | Budget | Through Stage 5 | Through Stage 6 |
@@ -8626,14 +8583,14 @@ one, and **151 MB** at peak:
 The turns are 1 228 + 74; 2 × (352 + 14) + 1 302; 2 × 366 + (1 858 + 86); that plus 170; 4 × 366 + 1 302; and 3 × 366 + 1 944; the peak
 is 5 065 + 151. A Monday that is a country's school year's date adds up to 28 ms with Stage 5's line. A full save
 grows to about 1.95 GB. Through Stage 6 — the whole world — the design point misses the median by almost a third,
-heavy days by a third and memory by a sixth, and the storage's headroom is about 1%. The finding is **F-007** (§11).
+heavy days by a third and memory by a sixth, and the storage's headroom is about 1%.
 The further remedies are N8.7's, in order, representation and traversal first, measured at S6.05:
 - **known ways not run carried as a firm profile**: only occasions read them (`choose_way`, `innovate`, licence
   requests), so REP.33 allows a profile of known-way sets with the ways run in the key; learning would change a
   profile in place, removing the firm cells above (about −25 ms, −50 MB). It changes S1.02's key, so it is its own
   step before S6.01's code, taken only on S6.05's measurement of `phx_pop.cells_by_known_ways`;
-- **the part's own cost** (F-001), the largest line of every stage: parts through Stage 6 are about 0.4 M a day,
-  about 330 ms at 2.5 µs and about 1.3 s at F-001's 9.9 µs without redraws, the join and holder-list maintenance
+- **the part's own cost**, the largest line of every stage: parts through Stage 6 are about 0.4 M a day,
+  about 330 ms at 2.5 µs and about 1.3 s at the prototype's 9.9 µs without redraws, the join and holder-list maintenance
   4.0 of it;
 - **the tracer count** (RESOLUTION, OBS.9), set against §13.3 with the history store;
 - then the play resolution, a valve set by measurement (§12). Nothing is removed from the world.
@@ -9302,6 +9259,8 @@ ratchet.
 
 **Design**
 
+- The run's records on the phone keep a bounded window, and events are retired once public and read, so nothing in
+  the phone's process grows with the run's length.
 - **Two views** (OBS.2, Appendix E 17): the participant reads only through `ParticipantScope` — its party's own rows,
   facts whose audience includes it, and records after their lags — the same scoped read its decisions have (Law 12),
   so a participant sees what its party could know and nothing else. The inspector reads the world's read-only
@@ -9463,7 +9422,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
   in order: the preamble's further proposals first, then the play resolution, a valve set by measurement (§12); the
   stage ends only when the budget is met (N8.8).
 - **The ledger**: the preamble's stage ledger is replaced by the measurements, and architecture §13 carries Stage 6's
-  measured lines (F-007).
+  measured lines.
 - **Review costs** and **streams**: none new.
 
 **Unit tests**
@@ -9503,9 +9462,9 @@ measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.co
 **Done when**
 - [ ] The whole world opens, balances, passes every family on day one and settles; the GEN report is committed.
 - [ ] The independence report is committed and every family lights alone.
-- [ ] The device report and the macro reads are committed, every miss is a row of §11, and every pass criterion
+- [ ] The device report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion
   holds at the play resolution then set; any reset of it is recorded with its measurement.
-- [ ] Architecture §13 carries Stage 6's measured lines; F-007 is restated with them.
+- [ ] Architecture §13 carries Stage 6's measured lines.
 - [ ] No placeholder remains.
 - [ ] LC-6-23 to LC-6-27 pass, with every earlier live check.
 - [ ] Two reviews are done.
@@ -9537,7 +9496,7 @@ definition — the twenty-eight fact files, the twelve chain files and `CREDIT.t
 is registered at S1.01, with PC-90 and PC-91, as that step's planned extension, before any Stage 1 read exists.
 This stage reuses them unchanged and adds the estimators (PC-92), each committed before any report that uses it.
 A definition found defective gets a new version beside the old, never an edit; both reports stay, and the first
-version's verdict stands in §11 until a step that adds a mechanism closes it.
+version's verdict stands in the step that adds the mechanism until that step closes it.
 
 **Conventions**, read by every Stage 7 step; a definition file may override one only in its first version.
 - **The setup**: every report names the setup its run started from (GEN.11, S0.27), and each fact's benchmark range
@@ -9557,7 +9516,7 @@ version's verdict stands in §11 until a step that adds a mechanism closes it.
 
 **From a miss to a finding.**
 1. Every *missed* or *inconclusive* verdict, every chain relationship that misses, every chain whose first link the
-   run never had, and every silent break nothing refuses becomes a row of §11: what was measured (statistic,
+   run never had, and every silent break nothing refuses is written into the step that will fix it: what was measured (statistic,
    estimate and interval, benchmark and source, years of the run) and the mechanisms suspected.
 2. The suspects come from the definition's own `suspects` list, written before the report, so attribution is not
    chosen after seeing the miss. A suspect whose chain misses in S7.02 is named first.
@@ -9766,7 +9725,7 @@ mechanisms its file named beforehand.
 - [ ] Every Stage 7 definition is an ancestor of its first report (PC-90 clean over the stage's history).
 - [ ] Every fact has a report with its per-country verdict, or *not yet credited* with the run's length and the
   years its `min_years` still needs.
-- [ ] Every miss and inconclusive verdict is a row of §11 with its suspects.
+- [ ] Every miss and inconclusive verdict is written into the step that will fix it, with its suspects.
 - [ ] LC-7-01 and LC-7-02 pass.
 - [ ] PC-92 and PC-90's extension to the series' stamps are registered; PC-90 and PC-91 are clean since S1.01.
 - [ ] Two reviews are done.
@@ -9900,7 +9859,7 @@ names what refuses it.
 
 **Guards**: PC-93 (every silent break mapped): every "Silently broken by" item of Part L is in `BREAKS.toml`, and each
 named refusal resolves: a registered PC, a live check not retired, a family of N1, or a step whose Not-allowed line or
-assembly refusal contains the quoted text. An item with no refusal names its §11 row.
+assembly refusal contains the quoted text. An item with no refusal names the step that will build it.
 
 **Not allowed**:
 - a chain claimed without its test, or a claim kept that its test missed;
@@ -9911,8 +9870,8 @@ assembly refusal contains the quoted text. An item with no refusal names its §1
 
 **Done when**
 - [ ] Every chain of Part L has its registered relationships read and reported, with each verdict.
-- [ ] Every relationship that misses, and every chain never tested, is a row of §11 against the chain's links.
-- [ ] Every "Silently broken by" item names what refuses it, or is a row of §11 (PC-93 clean).
+- [ ] Every relationship that misses, and every chain never tested, is written into the step that will fix it, against the chain's links.
+- [ ] Every "Silently broken by" item names what refuses it, or is written into the step that will build its refusal (PC-93 clean).
 - [ ] LC-7-03 and LC-7-04 pass, and LC-7-05 has reported.
 - [ ] PC-93 is registered.
 - [ ] Two reviews are done.
@@ -9966,7 +9925,7 @@ is tuned (PC-91, registered at S1.01).
   - an opening distribution that cites one real country only;
   - countries whose opening parameters are identical (GEN.2 varies them).
 
-  Each flag is resolved in the review, or is a row of §11.
+  Each flag is resolved in the review, or is written into the step that will fix it.
 - **No tuning** (N7, GEN.11): PC-91 has held since S1.01. The report lists every primitive or opening change since
   then, with its trailer and source.
 - **Comparisons with real data** are S7.01's and S7.02's benchmarks, published beside each fact and chain. No other
@@ -9999,8 +9958,8 @@ is tuned (PC-91, registered at S1.01).
 **Done when**
 - [ ] The register report is committed with the shares of assumed and estimated primitives.
 - [ ] No placeholder remains (re-checked), and its ratchet is zero.
-- [ ] Every flag is resolved or is a row of §11.
-- [ ] LC-7-06 passes, or every unread declaration is a row of §11.
+- [ ] Every flag is resolved or is written into the step that will fix it.
+- [ ] LC-7-06 passes, or every unread declaration is written into the step that will read it.
 - [ ] Two reviews are done.
 
 ---
@@ -10036,7 +9995,7 @@ the final build within the budget on the phone.
     `min_years` still needs, and every chain its relationships read or *not yet tested* (spec Appendix E 39);
   - every "Silently broken by" item has its refusal;
   - the register report is committed; PC-90 and PC-91 are clean since S1.01;
-  - every miss, inconclusive verdict, untested chain and unread declaration is a row of §11 naming its suspected
+  - every miss, inconclusive verdict, untested chain and unread declaration is written into the step that will fix it, naming its suspected
     mechanism;
   - the device run and the budget as S1.16's criteria, with the recorder running: the median turn ≤ 1 000 ms and the
     worst ≤ 2 000 ms over the settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s
@@ -10045,7 +10004,7 @@ the final build within the budget on the phone.
 - **What blocks.** Realism misses do not block the exit (Part O: the run has been measured and misses are recorded).
   The budget blocks: the stage does not end with it missed (N8.8), and N8.7's remedies apply in order, representation
   and traversal first, then the play resolution, a valve set by measurement (§12).
-- **After the gate**, the build continues by adding mechanisms: each §11 row names the step that will close it, as
+- **After the gate**, the build continues by adding mechanisms: each miss is written into the step that will close it, as
   set out in this stage's introduction. Nothing is tuned.
 - Architecture §13 is rewritten with the final build's measured numbers.
 
@@ -10064,7 +10023,7 @@ the final build within the budget on the phone.
 
 **Done when**
 - [ ] The realism report is committed, every part on the gate build.
-- [ ] Every miss is a row of §11 against a mechanism.
+- [ ] Every miss is written into the step that adds its mechanism.
 - [ ] The device report is committed; every budget criterion holds, and any reset of the valve is recorded with its
   measurement.
 - [ ] Every live check passes on the gate run.
@@ -10073,43 +10032,11 @@ the final build within the budget on the phone.
 
 ---
 
-## 11. Findings
+## 11. Findings — retired
 
-| Id | Step | Day | What was measured, where | Mechanism suspected | Addressed by | Status |
-| --- | --- | --- | --- | --- | --- | --- |
-| F-010 | S0.13 | data, 2026-09-27 | Part of GEO's hazards and deposits is assumed (data/shared/GEO_hazards.toml): the exposure classes and their rate multipliers (a quarter, one and four), how widely a struck tile's destroyed share varies, storms' and droughts' mean share destroyed, a flood's depth, and the densities of every resource's deposits, coal's sizes, coal's and oil and gas's grades and a deposit's fall in grade as it is worked | the footprints (GFD, IBTrACS, ShakeMap, drought clusters), floods' and earthquakes' damage and metal ore's and oil and gas's sizes are measured; no source in hand classes exposure by terrain and climate, or gives deposit-level data for coal or grades for oil and gas | the footprints overlaid on relief and climate classes for the exposure multipliers; USGS COALQUAL and the EIA's mine-level reserves for coal; the wind within a storm's swath for its damage | open for the owner: a source |
-| F-020 | S0.17 | build machine, 2026-09-24 | 1b and the whole of stage 7 over sixteen loans due on one day cost 350 502 instructions (`phx_ledger.ir_settle_day_16`), about 22 000 a payment, against a budget of about 10 ns a row read and 30 ns a payment applied. Each payment's dues, route and legs are derived three times (7a, 7b, 7c), its reckoning, its accounts and its lines' owers are looked up through ordered maps and holder lists, a bank's row is found by reading its run, and each scanned holder's due rows are collected into a vector | the per-payment path: nothing of a payment is kept between the passes, and rows and routes are found by search | before the Stage 0 gate (S0.26): a payment's route kept per (party, bank) in the day's records, accounts found by the run head's offsets, the dues computed once in 7a; measured on the phone | open; taken since: the apply found each leg's position by a linear search and summed each position's moves over every move, quadratic in an instruction's legs, and 7c's nets apply one instruction a line, a bank's deposit line carrying a leg per customer: on the twins payday (2.8 M payments, 920 813 nets) the apply took 34 s of 46; positions now found by key and summed in one pass, 1.1 s; then the day's lookups and records in the kernel's fixed-seed map instead of ordered maps, the nets summed there and sorted once, a holder's members left read directly in the losers' tally, and 7c's gather reading the stream's kept payments instead of reckoning each again: the twins payday's settlement 46 s → about 10 s on the build machine (stream 3.0, fixed point 2.9 of which the losers' draws 2.7, gather 2.5, apply 1.1) |
-| F-021 | S0.17 | build, 2026-09-24 | 7c applies the day's nets sequentially, one instruction per line, not in parallel by target chunk: the money legs of every payment sit on one deposit or reserves line per bank, so a line's instruction is the unit of apply and lines share their parties' accounts | a chunked apply needs the nets split by the account's chunk, not the line | S0.26: parallelised by target chunk if the phone's measure of 7c calls for it | open in part: 7c's routes and sums folded by key shard (16e75c26), its balances, heads and leg reads on the pool (e58aeeb5, 8b2a7185, efb2ffe0); its balance writes held back and landed by holder chunk on the pool, each line still checked and recorded in order as the unit of apply (SET.6); the checks and records on one thread, for S1.16 |
-| F-026 | S0.19 | build, 2026-09-24 | Equity accounts, claims and tallies are ordered maps keyed by party, about 40 bytes per equity account against the budget's 16 | the few owned parties of Stage 0 do not need a column | S0.21's population tables, where millions of firms keep one: the account a column of the party's table | open for S1.03 |
-| F-036 | S0.25c | opening, 2026-09-27 | Whom an extended or non-relative household holds besides its head is assumed (`DEM.household_members`: one relative of 65 and over in an extended family, one unrelated adult with a non-relative head), where the UN database gives only the types' shares (extended families 13, 29 and 36 per cent of households, three-generation 9.5, 16 and 17); a couple's head is the elder; the partner gap's spread is one economy's (the US couples' mean absolute gap) | the members of extended and non-relative households are in census rosters only | IPUMS International's household rosters (an API key) or DHS microdata (registration) | open for the owner: a source |
-| F-041 | S0.25c | build, 2026-09-25 | The build run's memory budget (`phx-cli`'s `WORLD_BYTES`: the empty world, the map and the individuals, 355 MiB) held no line for the population, so every run since S0.25c's opening peaked over it (447 MiB, b7930378e270 and 82340ece379b) and was not clean, though its checks all passed | the step that brought the cells added no budget line; the peak is the opening's, whose scratch for one region's parts the design puts at about 250 MB | the population's line is added to the run's budget (`phx-cli`'s `run.rs`: `POPULATION_BYTES`, 275 MiB, with the lines', indexes' and day buffers' lines after it); what remains is the opening's own peak measured on the phone at S0.26, and the parallel opening (F-038) held to the same scratch | open in part: dues folded by party (a589d976), the build run's peak back under its budget (2 764–2 793 MiB since); a compact handle per payment in place of the payment, for the phone's measure |
-| F-056 | S0.11 | gate review, 2026-09-25 | The world runs on one thread: 3b's screening, 3e's outcomes, stage 7, 10b's landing and the audit run serially, and `phx_exec`'s pool and `KeyedReduce` serve only `phx-ffi`'s benches; `--workers` is only reported. Architecture §13.2 budgets 3 core-seconds per second. The build run took 12.7 s a business day on the 4-core VM at 300 M persons (829547975b6a: `run_ms` 1 068 306 over 84 business days) | no traversal of the world's day is chunk-parallel; no performance-hint session is opened | chunk-parallel traversals of 3b, 3e, 7a, 10b and the audit on the pool; the first stage whose phone measurement misses the budget, S1.16 at the latest | open in part: 3b, 3e, 7a, 7c's gather and reads, the audit's families, the opening and the saves on the pool (40fae35e … 44c7a02a); 7b (F-088) and a performance-hint session for S1.16 |
-| F-057 | S0.17 | gate review, 2026-09-25 | Stage 7 works per payment: the stream and 7c's gather each compute every payment's route (two passes, a `Vec` per payment); a `DueRec` is kept per payment for the accounts (about 435 MB on a 6.8 M-payment day) and posted at 9b through `BTreeMap`s; 7a inserts per row into `BTreeMap`s (claimants, records); `day_buffer_peak_bytes` leaves out the dues, `Found`, the losers and the fails. With it, F-009's per-call allocation | nothing of a payment is kept between the passes, and the day's records are per payment and per row, in ordered maps | one pass per payment, dues aggregated per (line, payer, payee, outcome), flat buffers counted whole in the day buffers' peak; S1.03, when the firms' flows multiply the payments | open for S1.03 |
-| F-059 | S0.25d | gate review, 2026-09-25 | The money family sweeps every live cell's rows whenever its day's span of money lines holds a retail deposit line (`phx-ledger`'s `audit.rs`, `money_lines`), a sweep neither declared nor counted | a side with no holder list keeps no balance total the audit can read against its issuer | each line side's balance total kept on the line, checked against its holders on the rolling cycle; S1.09 | open for S1.09 |
-| F-060 | S0.06–S0.26 | gate review, 2026-09-25 | The checks' instruments run inside the world's day, on the phone too: the identity hashes around each renumbering slice, `measure_rates` over every slot each day, `measure::persons`, `Census::of` twice per kind, `runs_broken` and `fails_recorded`. The sweep ledger is blind: `SubStepRecord`'s bytes and barriers are 0, the kernel's own work at a sub-step is not counted, and the build run's report has no wall time per sub-step. Counters the plan names are not built: `phx_store.{bytes_committed, arena_dead_words, compactions}`, `phx_core.{agenda_entries, agenda_moved, agenda_stale}`, `phx_geo.astar_calls`, `phx_ledger.{rows, lines, terms_interned, payments_applied, fails}`, `phx_pop.{candidates, redraws, dense_evals, occasion_groups}` (S0.22), `phx_pop.{parts, new_cells, landings, rekeys}` and `spread_phases` (S0.23), `phx_pop.{bytes_per_household_cell, profile_entries_per_cell}` (S0.21), `phx_pop.{tolerance_runs, cells, individuals_per_kind}` (S0.24), `phx_soc.state_pension_rows`; the build run ratchets nine counters (architecture §16.8) | the checks' reads were added where the day runs, and the counters' steps left them to the reports | the checks' instruments gated on the build run; the kernel's loops counted per sub-step and ratcheted; the named counters built or retired with a reason; S1.01 | open for S1.01 |
-| F-061 | S0.11 | gate review, 2026-09-25 | The run's records grow without bound in the phone's process: the settlements keep each day's fails (1.18 M in 120 days, about 47 MB), the findings are `String`s, and `cell_days` and `substeps` keep every day; events are never retired (3.56 M, 176 MB raw in the day-60 save, 829547975b6a) | the run's records, built for the build run's report and checks, have no window | a day's fails are let go once the next business day's contract process has taken them, its counts kept (all, those of no contract's due, those per line kind), so the settlements no longer grow with the fails (S0.28: on the twins gate run aa48779e they had reached 14.7 M fails, about 560 MiB, and the peak 3 207 MiB against the run's 2 798 MiB budget); the rest — a bounded window on the phone for the run's records and a retirement of events once public and read — S6.04 | open for the rest |
-| F-062 | S0.25d | gate review, 2026-09-25 | `place_row` and `unplace_row` collect the holder's whole row list on every call (`line.rs`), quadratic for a firm with rows on every wage and rent line; the opening took 625 s on one thread of the VM (829547975b6a: `assembly_ms` 631 707), past S0.26's ten-minute line | a row's placing reads the holder's rows into a list to check and to find its run | one pass over the holder's run without collecting; the opening measured on the phone; S1.15 | open for S1.15 |
-| F-064 | S0.26e | gate review, 2026-09-25 | The full-load bench does not run the real kernels for the audit (a sequential sweep of random words and weights), 3e's outcomes, estates or 9b's posting, and builds no views; on the phone the world's views are built only after settling and at the end, not at each turn's close | the bench stands in random reads where the kernels' inputs are not built, and the phone's run builds views only for the drift | the real audit families and posting in the bench, views each turn on the phone; S1.16 | open for S1.16 |
-| F-071 | S1.01 | data, 2026-09-27 | Three of the outlooks' values are not measured across people: the switching intensity's spread (`VAL.switching_intensity`, a standard deviation of 0.2), and the heuristic-switching model's memory and intensity themselves, which Anufriev and Hommes chose by trial-and-error simulation (Hommes 2011, p. 29, note 13) | the experiments estimate the intensity on aggregate choices only; no survey panel estimates switching or a performance memory per person | a per-person estimate of switching from a panel's forecasts (the Survey of Consumer Expectations' microdata) | open for the owner: a source |
-| F-080 | S0.28 | gate build run, 2026-09-25 | Payments fail more as the world runs: on the twins gate run (2dfff358, settled then two years) 14.6 M of 100.8 M payments due failed, and the last day's payday failed 514 565 of 2 749 420, the most of any day; the heaviest day's fixed point took 713 437 iterations against the 498 793 of the 120-day runs | no household or firm decides at Stage 0: none cuts its spending, draws on credit or changes its work when its money runs short, so a payer that falls short stays short and more follow as balances drift under fixed dues | the decisions that answer it arrive with households' budgets and credit (S1.12, S1.09) and firms' (S1.03); the fixed point's ratchet is restated from the gate run with this cause; watched in every stage's gate run | open for S1.12 |
-| F-081 | S0.28 | step review B, 2026-09-25 | The agents' kernel allocates on the hot path and the bench measures a cheaper one: at 3b and 10b each agent gathered or booked builds a `Household` (a `Vec` of persons, each with a `Vec` of named attributes), `chances` and `follow` collect their places and rates per booking, `reached` allocates two `Vec`s, rates read attributes by name, 3e builds the regions per hit agent; in stage 7 `draw_to`, `book()`, `check_legs` and `apply` allocate per call. `phx-ffi`'s hazard bench skips `chances`, `follow`, `PopProcess::rate` and the register reads, which live in `phx-world` where the bench cannot call them, and no callgrind bench covers the agents' next hit or write-back | the agents' kernel was written for correctness first (R1, R2), in the assembly layer | read persons from their packed words with attributes resolved at bind, keep scratch the world owns, and move `follow`, `book` and `chances` into `phx-pop` as the one kernel the world and the bench call, with a `benches/pop.rs`, when the phone's measure (S0.26) says the day's 3b and 10b need it; the phone's device report times the world's own turns meanwhile; the phone's measure (F-087) finds the draws seven times and the outcomes 3.6 times slower than on the build machine against settlement's 1.8, so the day's 3b needs it | open in part: the households the day's 3b and 10b read, and the chances they fill, are read into scratch each pass holds and reuses, in the world and in the bench alike: on the build machine the bench's one-core draw from 515 to 420 ns and 1.1 M draws on the pool from about 340 to 225 ms; the outcomes read each household into scratch and reckon the words it is written back as on the pool, leaving only the writes in slot order on one thread (on the build machine the bench's day of 365 000 outcomes from 400 to 90 ms), and the bench draws its hazards in slot order, as the agenda hands the world its agents (a draw at the bench's volumes from about 900 to 500 ns); rates still read attributes by name, `reached` allocates, and `follow`, `book` and `chances` stay in the world, for the phone's next measure |
-| F-082 | S0.28 | gate build run, 2026-09-25 | The day buffers, counted by their room with the day book's records and the day's look-ups, peaked at 888 941 584 bytes on the twins gate run (aa48779e), a payday of 2.8 M payments, about 318 bytes a payment; architecture §13.1's line for the finished world's worst day, 4.4 M payments, is 600 MB, which at this rate would be about 1.4 GB | stage 7 keeps two records per payment across the day: the payment 7a hands 7c (56 bytes, F-020) and a due record for the accounts (56 bytes, F-057), besides the per-party records, nets and cleared lines' claimants | change how the day is represented, not the population: a compact handle per payment (its holder's slot and row) in place of the payment, and dues folded per (party, line kind) for the accounts, as F-057 proposes; measured on the phone at S0.26, whose memory reading decides when | open for the phone's measure |
-| F-087 | S0.26 | build machine, 2026-09-25, 70d35dd4 (4 cores) | The full-load bench misses every target: median turn 13.6 s (≤ 1 s), worst 26.5 s (≤ 2 s), peak resident 8 307 MiB (≤ 4.5 GB; 6 769 MiB once built, before a day ran), a save 20–23 s (≤ 5 s) and two saves 8 272 MiB (≤ 4 GiB). A business day's median by kind: settlement 10 611 ms, outcomes on agents 678, the gathers standing for later stages' mechanisms 1 772 together, hazard draws 210; the heavy day's settlement 20 407 ms; a closed day, with no settlement, about 0.9 s | settlement reckons each due row's payment again in each pass that reads it (7a, 7b's visits and removals, 7c, the not-maximal count, the pending pass), each with its legs built on the heap and its parties found through maps, on one thread (F-020, F-056, F-057); outcomes on agents on one thread; the saves write the held stores as random words, which do not compress, and write stores the world never saves (day buffers, arena slack, save buffers) | S0.26 reopened (§12): a review of the most-used algorithms, then how the world is represented and traversed. Measured after each part of S0.26f on the build machine (median turn, worst, a business day's settlement): the paged directory (48f8e19d) 11.0 s, 24.3 s; line and money facts kept and 7a reading only the heads due (6d4f60aa) 9.7 s, 22.0 s under the profiler; stage 7's buffers kept and rows found by their heads (c1ab2d6f) 9.3 s, 20.5 s, settlement 6.5 s (14.3 s heavy) against architecture §13.2's 48 ms (243 ms heavy) at 30 ns a payment: the per-payment path, not the look-ups, is what remains; the day's records and settled dues folded (a589d976) and 7a in waves on the pool (a3e7459b) 7.9 s, 17.5 s, settlement 5.5 s (12.0 s heavy), saves 8–11 s at 4 136 MiB each; 7a's bookings and 7c's sums folded on the pool (16e75c26) 5.4 s, 10.6 s, settlement 3.1 s; saves of the saved stores in frames on the pool (01c76305) 4.7 s, two saves 3 256 MiB, which meets its target; stores saved at once and 7c's leg reads on the pool (44c7a02a) 4.5 s, 10.5 s, settlement 2.43 s (5.39 s heavy), a save 7.0 s, peak 7 952 MiB (6 780 MiB built), a closed day 0.8 s. A business day's settlement at 44c7a02a is 7a 0.45 s, 7c's gather 0.5 s, 7c's apply 0.75 s, heads 0.46 s, 7b 0.07–0.28 s; the rest of the turn is the gathers standing for later stages' mechanisms (1.3 s), hazard draws (0.2 s), outcomes on agents (0.27 s) and the stages' institutions (0.3 s). (N8.7) The phone's first full run (Pixel 11 Pro XL, Tensor G6, seven cores pinned; `perf/device/S0.26-2026-09-26.json`, 4c79652a): median 8.4 s, worst 21.5 s (the heavy day's settlement 10.5 s), peak 7 830 MiB (7 221 MiB built), saves 5.4 s and 4.4 s of 1.7 GB each, two saves 3.4 GB, which meets its target. A business day's median by work: settlement 4.46 s, hazard draws 1.42 s, outcomes on agents 0.98 s, occasion evaluations 0.36 s, row visits 0.33 s, meetings 0.31 s, institutions 0.27 s; a closed day 2.2 s, of which hazard draws 1.45 s. Against the build machine the phone is 1.8 times slower on settlement but seven times on the hazard draws and 3.6 times on the outcomes, the works that build a household per agent (F-081); its one-core draw is 540 ns against a target of 180. The stage world on the phone: an opening of 60 s, a median turn of 391 ms, the worst 4.9 s (the month's payday, 7c 4.1 s), a save of 1.2 s and a load of 9.9 s. Settlement alone at the full load's volumes on the build machine (2.2 M payments a business day, 1.1 M holders): 2.93 s, of which 7a 0.60, 7b 0.19, 7c's gather 0.67, the not-maximal count 0.20 and 7c's apply 0.95, its serial part about 625 ns a leg; at a quarter of the volumes, 780 ms to about 600 once the day's records are no longer sorted where no order matters, the day's map of money moved starts with the room the last day took, 7c's apply finds each row where its read found it and merges positions by sorting, and 7c's gather takes each party's funds from 7a's records (the world's hash unchanged); to 530 ms (600 heavy, from 626 and 756) once 7c's balance writes and money moved by party land by chunk and key shard on the pool. The world's own day at the play resolution (a twelve-day run on the build machine) from 9.4 to 7.0 s once a holding is found by reading its holders' heads until it is met rather than by listing them all, the audit reads rows without collecting them, and the calendar's bits begin a year before day zero, where a schedule's next date is sought from (5b's median 459 to 314 ms, 10d's 101 to 56). | open, carried to S1.16: Stage 0 closed as it is by the owner (§12, 2026-09-25) |
-| F-091 | S1.02 | data, 2026-09-27 | The input-output tables report energy mining (ISIC B05-06) and other mining (B07-08) as one industry each, so coal shares oil and gas's structure per dollar and metal ore shares stone's, each taken by the users of its resource (electricity coal, the rest oil and gas; basic metals ore, the rest stone): the hours and plant a tonne needs differ between the pair only through its price | the 2023 tables' 45 industries do not split the divisions | the OECD's 2025 tables (B05 to B09 apart), whose files are behind a browser check this machine cannot pass, or the United States' detailed benchmark tables | open for the owner: a source |
-| F-093 | S1.03 | data, 2026-09-27 | The OECD's business statistics leave out agriculture, so its firms are taken as spread over the size classes as all firms are (`FRM.industry_by_size`), about a tenth of the developed group's largest firms being farms; and every industry's size tilt is the OECD's 46 reporting economies' for every group | farms are counted by area or by economic size, not by persons employed: Eurostat's farm structure survey gives persons per holding by economic size (1.7 to 3.8, 2020), the US census of agriculture hired workers in classes of one to four, five to nine and ten or more (2022, Table 7), none the classes of 50 and 250 | farms by persons employed in the size classes of the business statistics; the World Bank Enterprise Surveys by size for the other groups | open for the owner: a source |
-| F-094 | S1.03 | data, 2026-09-26 | The firms' management values — the production schedule, the markup's two speeds, the pressure's curvature, the staff hours of a review and of a price change — are one assumed type for every firm (`data/shared/FRM.toml`); only the stock cover (the United States' inventory-to-sales ratio) and the adjustment time (Blinder and Maccini's survey) are measured | no source gives the distribution of these across firms; the review and menu costs are case studies of one manufacturer and of supermarkets | management type sets drawn at the opening (S1.15) from the price-change frequency and size reads (FRM.19, SRV.7) once they can be compared with the micro price data (Nakamura and Steinsson 2008); the stock cover then each firm's own, since one economy's aggregate ratio is an outcome of its firms, not a preference any one holds (Law 2); and each trade's own point table (POLICY of each trade), where one table now serves every trade | open |
-| F-095 | S1.03 | build, 2026-09-26 | Firms default from the first grace's end: on the build machine's 120-day run, 5 430 on 21 April 2026 alone (`phx_frm.defaults`, the day's most), and 50 to 160 on other business days; their estates settle in 7c at about 0.35 ms each (1.95 s for the 5 435 of 22 April, 30–110 ms on other days, four workers), mostly the ledger's own instructions for the members that leave and pass | no firm earns before it produces and sells , so every firm whose loan falls due fails; each leaving is its own instruction | the firms' opening state and sales (S1.15, S1.05), after which defaults are the world's; the estates' leavings batched into one instruction per line if the gate's day misses the budget | open |
-| F-098 | S1.03 | review, 2026-09-26 | Visits run serially: each handler's rows due at 5b and 5c are visited on one thread, table by table | the kernel's visits were built without sharding (as F-056 once was for 3b and 3e), and at S1.03 only the attention's visits run, at 124 891 on the busiest day | shard the visits over the pool by slot range when the firms' reviews run (S1.15) if the day misses its budget there | open for S1.15 |
-| F-099 | S1.03 | review, 2026-09-26 | A handler's read or write at a visit finds its column by the fact's name, a linear search of the kind's columns on every read | the fact store's interface is by name, as the handlers declare | resolve each handler's declared facts to columns once, when the visit is bound, if the visits' cost is read as material (S1.15) | open for S1.15 |
-| F-100 | S1.03 | build, 2026-09-26 | The build run's memory budget gained the firms' line (`FIRMS_BYTES`, architecture §13.1's 125 MB) when its peak rose past the sum of the others; the rise is not measured part by part, so the line is taken from the architecture, not read | the run reports only the process's peak, not each table's resident bytes | the build run reports each part's resident bytes (tables, arenas, agenda, lines) and each budget line is checked against its own part; plant joined the firms' holdings, not their record, at S1.04, so the report waits for the Stage 1 opening's full firms (S1.15) | open for S1.15 |
-| F-101 | S1.04 | data, 2026-09-27 | No rate of plant failure is declared, so no plant fails but by a hazard's damage; and cultivated assets' lead time is dairy cows' months to first calving, livestock standing for plantings | no source found measures failures of plant by kind, nor orchards' years to bearing across economies | a failure rate by kind where a source measures it (equipment reliability surveys), declared with the maintenance decision | open for the owner: a source |
-| F-103 | S1.07 | data, 2026-09-27 | A coastal vessel's payload, cost and days at sea (20 000 t, $100 million, half its days) are assumed | UNCTAD's newbuilding prices sit behind a browser check this machine cannot pass, and no source in hand gives coastal vessels' days at sea | UNCTAD's Review of Maritime Transport tables, or MARAD's vessel operating costs | open for the owner: a source |
-| F-105 | S1.08 | data, 2026-09-27 | The developing group's job tenure is the emerging group's (`LAB.tenure_shares`) | the OECD's tenure tables hold no developing economy, and Donovan, Lu and Schoellman's harmonised surveys (Quarterly Journal of Economics 2023, replication data doi:10.7910/DVN/RXWKTV) hold one of the group today (Bolivia) | labour force surveys' tenure of developing economies' employees | open for the owner: a source |
-| F-107 | S1.08 | build, 2026-09-26 | Firms fail earlier and more at once: on the 120-day build run the most defaults on a day rose from 6 311 (21 April) to 10 553, the first mass on 24 February, the grace's end after the first payday; their released staff lift the searching agents to 203 528 (the budget's 0.1 M, architecture §13.2), the day's changed persons lift the screening counters (131 242 agents booked on a day), and that day's 7c takes about 7 s on the build machine (1.9 s releasing staff, 4.5 s paying 129 345 severances in one instruction per employer) | jobs are now dealt by region and occupation (LAB.1), so a firm's wage bill no longer averages its country's, while its opening money was drawn by its size; and no firm earns before it produces and sells (F-095) | the firms' opening state and sales (S1.15), after which defaults and searching are the world's; the budget re-measured at the gate, the severances settled through the day's batch if the day still misses it | open for S1.15 |
-| F-108 | S1.09 | build, 2026-09-26 | Banks lend to no firm yet: every refinancing applicant's cover is below the first class, so it is declined and the firm pays its maturing loan from its money or fails; four of the banks' values are assumed (the loan-years and recoveries a published statistic counts for, the days before maturity a firm seeks to refinance, and that a refinancing asks the loan's months again); a bank's review walks every firm loan monthly | firms earned nothing before they produced and sold (F-095); no source measures a lender's learning or a firm's refinancing lead; the review keeps no index by bank | measured once firms earn, at the Stage 1 gate; the firms' own funding decision (S2.03) sets what and when they borrow; the review as a rolling slice by bank if the gate's budget needs it | open for S1.16 |
-| F-110 | S1.11 | data, 2026-09-27 | Three of the state's values are assumed: the emerging group's benefit months (read from an ambiguous source), the hours a claim takes, and the treasury's payment order; and the developed and emerging groups' income tax bands are built from medians of marginal rates at points of the wage rather than read as schedules | no source measures the time an unemployment claim takes or states each parliament's payment order; the OECD's statutory schedules (`DSD_TAX_PIT@DF_PIT_CENT`) differ in their number of bands, so a group's median schedule is itself a construction | a claim's hours from a benefit agency's processing statistics; each country's own order of payment in its public finance law | open for the owner: a source |
-| F-120 | S1.15 | build, 2026-09-26 | The run keeps no record over time of each decision's first change after a surprise, of each method's lag behind a series' turning points, of the size of price moves or of the retail margin, so LC-1-43 and LC-1-44 cannot run and LC-1-08 and LC-1-16 read only part of what they name; LC-0-29's sample of levies is not kept either. The heuristics' shares, the surprises and the reviews they wake are kept each day (`StanceDay`), which LC-1-03 reads | the reads of how outlooks react are missing from the gate | a per-day record of the first changed decision after each surprise and of each method's turning-point lag, and of price moves' sizes and the retail margin, kept by the observer's reads (N2) with the gate's reads (S1.16) | open for S1.16 |
-| F-124 | S1.15 | build machine, 2026-09-27 | A business day of the finished Stage 1 world takes about 3.7 s on the build machine's one thread (seed 1, the default setup; the opening 39 s). Holding the day's buffers from one day to the next, reading each visit's goods into one view, building records' words on the stack, dividing in a word where the operands fit, and taking lots in place cut it from about 4.3 s. What is left is spread across the day, none of it above a twentieth: the audit's record of each leg's position (a random probe per leg), the visits' handlers, the retail meeting, the ledger's settlement and the statistics' close | the budget (N8) is missed about fourfold on one thread | the world's traversals run on the pool (F-056), the visits and the meetings by chunk and the settlement by holder shard, before the play resolution is touched (N8.7) | open |
+Retired by the owner (2026-09-28): a finding is solved in its step or written into the step that will fix it
+(§0.5); there is no findings table. Its open rows were moved into S1.16, S1.23, S1.24, S2.03, S2.05, S3.03, S5.01,
+S5.02 and S6.04, or deleted where the core's restructure retired what they measured.
 
 ---
 
@@ -10176,21 +10103,22 @@ the final build within the budget on the phone.
 | A mortgage's rate and remaining term | S0.16's placeholder for opening term loans: the rate from the drawn lending rate, the term drawn between declared years with starts uniform over it, naming BNK until origination by year is sourced (S1.09) | 2026-09-24 |
 | Reviews (§0.1 rule 6) | independent agents review only major steps — each stage's gate, and steps the owner names; other steps are reviewed by the builder with the same two prompts | 2026-09-23 |
 | The full-load bench's volumes (S0.26e) | `perf/load/volumes.toml` from architecture §13.1's and §13.2's lines at the finished world's sizes, each store and kind of work citing its line; the owner reviews its changes (the `perf/load/` guard), and each gate replaces the built stages' counts by measured ones | 2026-09-25 |
-| The unbanked households' dues (F-051) | a payment to or from a party with no money fails as `NoMoney` and stays in arrears until the households hold banknotes (S1.09, S1.12); no line is withheld from an unbanked household, since the data draw jobs, tenancies and pensions for every household | 2026-09-25 |
+| The unbanked households' dues | a payment to or from a party with no money fails as `NoMoney` and stays in arrears until the households hold banknotes (S1.09, S1.12); no line is withheld from an unbanked household, since the data draw jobs, tenancies and pensions for every household | 2026-09-25 |
 | The build run's stage-7 ratchets for Stage 0 | set to the counts measured after the households' lines began paying (`perf/ratchets.toml`): `phx_ledger.rows_streamed` 6 802 801, `run_heads_read` 274 774, `run_rows_scanned` 6 880 013, `run_rows_not_due` 320 775, `payments` 6 800 506, `fixed_point_iterations` 101 829, `day_buffer_peak_bytes` 58 555 872; the owner accepted the ratchets for Stage 0 | 2026-09-25 |
 | The population representation (spec Appendix E 14, 16, 44; REP) | cells retired: every household and small firm an agent of its own, never split or joined, in one of two representations built side by side — twins and a small world; superseded below | 2026-09-25 |
 | The representation's factor (spec REP.40, N8.5) | 170 under twins; superseded below | 2026-09-25 |
 | One representation (spec REP.40, Appendix E 44) | twins removed: the world holds a declared number of the setup's persons, every household and small firm they form one agent of one party, and every agent is then optimised to the fullest; the input is the persons, not a divisor (owner: "K is just confusing"); `REP.persons` set by measuring the day, 750 000 on the build machine (1.4–1.6 s a business day, 221 515 households and 102 579 small firms) until the device's measure resets it; `phx run --persons N` sets another for a run | 2026-09-27 |
-| S0.28's close and settlement's speed (R5; F-020, F-056, F-057) | S0.28 closes with the per-payment path and the parallel passes open and measured (the heaviest settlement day 11 s on the build machine); the phone's run at S0.26 decides whether they are needed, since no budget is judged on a desktop | 2026-09-25 |
-| The player's counterparties (REP.1, REP.23; F-074) | superseded by one representation (2026-09-27), in which the player's household is an agent as drawn: as the player's twin is taken from its donor at the opening, one agent on the other side of each line the player holds gives one twin too, of multiplicity one with a twin's share of its rows, and contracts leaving are drawn like with like (REP.23): among the other side's parties of the leaving party's multiplicity while they hold what is left, else among those that fit, as before; so the player's members find the counterpart's twin and the donor's the counterpart's other 169. A player's own lines were chosen first and dropped, since their other side would still need a party of the player's unit, and seating alone left the donor's leavings unmatched | 2026-09-25 |
+| S0.28's close and settlement's speed (R5) | S0.28 closes with the per-payment path and the parallel passes open and measured (the heaviest settlement day 11 s on the build machine); the phone's run at S0.26 decides whether they are needed, since no budget is judged on a desktop | 2026-09-25 |
+| The player's counterparties (REP.1, REP.23) | superseded by one representation (2026-09-27), in which the player's household is an agent as drawn: as the player's twin is taken from its donor at the opening, one agent on the other side of each line the player holds gives one twin too, of multiplicity one with a twin's share of its rows, and contracts leaving are drawn like with like (REP.23): among the other side's parties of the leaving party's multiplicity while they hold what is left, else among those that fit, as before; so the player's members find the counterpart's twin and the donor's the counterpart's other 169. A player's own lines were chosen first and dropped, since their other side would still need a party of the player's unit, and seating alone left the donor's leavings unmatched | 2026-09-25 |
 | What a resolution's change cites (PC-91) | a resolution changed by the owner's decision cites the decision's row in this section (`Resolution-Change: <id> — plan §12, <decision>`), as well as a budget report | 2026-09-25 |
 | A step waiting on the owner (PC-09) | a step whose remaining **Done when** items are the owner's alone takes the status `awaiting owner`, which is not `building`; S0.26 waits so for the phone's run | 2026-09-25 |
-| A kernel's books fixture in its tests (F-063) | a kernel's hand-built fixture of a few parties, lines and books, asserting its own arithmetic, is a logic-level test and not a world; CLAUDE.md says so | 2026-09-25 |
-| Stage 0 reopened (N8.8; F-087) | Stage 0 does not end while the full-load bench misses the budget: S0.26 building again, S1.01 `held` (a status for a step begun and set aside while an earlier one, reopened, is building); the work starts from a review of the most-used algorithms against current research | 2026-09-25 |
+| A kernel's books fixture in its tests | a kernel's hand-built fixture of a few parties, lines and books, asserting its own arithmetic, is a logic-level test and not a world; CLAUDE.md says so | 2026-09-25 |
+| Stage 0 reopened (N8.8) | Stage 0 does not end while the full-load bench misses the budget: S0.26 building again, S1.01 `held` (a status for a step begun and set aside while an earlier one, reopened, is building); the work starts from a review of the most-used algorithms against current research | 2026-09-25 |
 | Build runs from S1.09 (the owner's speed) | a step's build run is dropped: each step runs the fast checks (lint, format, tests, `phx-check`) and is done on them; the world is run only at each stage's gate (`tools/build-run.sh --gate`), whose findings are fixed there | 2026-09-26 |
 | Cost bounds (N8.6; architecture §6.6) | every operation a day performs costs at most O(log n) in the size of any store of the world — sublinear, never a walk over a world-sized collection to do one thing; a day's cost is the sum of its events', and a world-sized pass only a declared rolling slice | 2026-09-25 |
-| Stage 0 closed as it is (N8.8; F-087) | Stage 0 closes with the full load missing the budget (median turn 7.9 s, worst 17.5 s, peak 8.3 GiB, saves 4.1 GB each on the build machine at a3e7459b): S0.26 done, S0.26f's parts not built and the phone's run carried to Stage 1, to be met by S1.16; the representation's factor stays 170 | 2026-09-25 |
+| Stage 0 closed as it is (N8.8) | Stage 0 closes with the full load missing the budget (median turn 7.9 s, worst 17.5 s, peak 8.3 GiB, saves 4.1 GB each on the build machine at a3e7459b): S0.26 done, S0.26f's parts not built and the phone's run carried to Stage 1, to be met by S1.16; the representation's factor stays 170 | 2026-09-25 |
 | Data gathered once (GEN.15, NUM.3) | every published source the remaining steps read is fetched at S1.22, into `data/sources/raw/`, and every matrix the opening reads is derived then; what no source gives is derived from those that do or simulated by a declared procedure, and said so in its note; no later step searches for data. Downloads the derivations do not read are removed | 2026-09-28 |
+| No findings table (§0.5) | a finding is solved in its step or written into the step that will fix it; §11 is retired, its open rows moved into their steps or deleted where the core retired what they measured; every data point no source gives is closed by a derivation, a paper's table or a declared simulation, named in the step that reads it | 2026-09-28 |
 
 ---
 

@@ -280,7 +280,7 @@
   },
   "households/coal_mine_quality": {
    "for": [
-    "F-010",
+    "S2.05",
     "S0.13"
    ],
    "note": "summed from the plant-month receipts; each average is weighted by the tons of the receipts that report it, and is blank where none does",
@@ -289,7 +289,7 @@
   },
   "households/coal_mines": {
    "for": [
-    "F-010",
+    "S2.05",
     "S0.13"
    ],
    "rows": 934,
@@ -297,7 +297,7 @@
   },
   "households/coal_reserves": {
    "for": [
-    "F-010",
+    "S2.05",
     "S0.13"
    ],
    "rows": 270,
@@ -313,7 +313,7 @@
   },
   "households/eurostat_farms_by_size": {
    "for": [
-    "F-093",
+    "S1.24",
     "S1.03"
    ],
    "rows": 14130,
@@ -430,8 +430,7 @@
   "households/typed_wind_damage": {
    "for": [
     "S2.05",
-    "S4.03",
-    "F-010"
+    "S4.03"
    ],
    "note": "typed from Eberenz, L\u00fcthi and Bresch, Regional tropical cyclone impact functions for globally consistent risk assessments, Natural Hazards and Earth System Sciences 21, 393-415, 2021, Table A1 (regions) and Table A2 (Vhalf), section 2.2.3 (Vthresh 25.7 m/s, default Vhalf 74.7 m/s, Emanuel 2011's form); https://nhess.copernicus.org/articles/21/393/2021/nhess-21-393-2021.pdf",
    "rows": 10,
@@ -454,7 +453,7 @@
   },
   "households/us_farms_hired_workers": {
    "for": [
-    "F-093",
+    "S1.24",
     "S1.03"
    ],
    "note": "values withheld for disclosure ('(D)') are left out",
@@ -1465,7 +1464,7 @@
   "people/dhs_indicators": {
    "for": [
     "S6.02",
-    "F-036"
+    "S1.23"
    ],
    "rows": 7455,
    "title": "DHS survey aggregates, national, surveys from 2005: household size distribution and composition (members 65+, three generations, non-nuclear families, female head, children's living arrangements), current marital status of women and men 15-49, ideal number of children; indicators: HC_MEMB_H_MNM mean household members; HC_MEMB_H_1MM households of 1 member, %; HC_MEMB_H_2MM households of 2, %; HC_MEMB_H_3MM households of 3, %; HC_MEMB_H_4MM households of 4, %; HC_MEMB_H_5MM households of 5, %; HC_MEMB_H_6MM households of 6, %; HC_MEMB_H_7MM households of 7, %; HC_MEMB_H_8MM households of 8, %; HC_MEMB_H_9MM households of 9+, %; HC_OLDR_H_W65 households with members 65+, %; HC_OLDR_H_O65 households of members 65+ only, %; HC_OLDR_H_3GN households of 3 generations, %; HC_OLDR_P_NNC population in non-nuclear families, %; HC_HHHD_H_FEM female-headed households, %; HC_LVAR_C_BTH children under 18 living with both parents, %; HC_LVAR_C_NBP children under 18 living with no biological parent, %; HC_ORPH_H_FOS households with children not living with a biological parent, %; MA_MSTA_W_NMA women 15-49 never married, %; MA_MSTA_W_MAR women 15-49 married, %; MA_MSTA_W_LTG women 15-49 living together, %; MA_MSTA_W_DIV women 15-49 divorced, %; MA_MSTA_W_SEP women 15-49 separated, %; MA_MSTA_W_WID women 15-49 widowed, %; MA_MSTA_M_NMA men 15-49 never married, %; MA_MSTA_M_MAR men 15-49 married, %; MA_MSTA_M_LTG men 15-49 living together, %; MA_MSTA_M_DIV men 15-49 divorced, %; MA_MSTA_M_SEP men 15-49 separated, %; MA_MSTA_M_WID men 15-49 widowed, %; PR_IDLC_W_MNA mean ideal number of children, all women; PR_IDLC_M_MNA mean ideal number of children, all men; PR_IDLC_W_ID0 women whose ideal number of children is 0, %; PR_IDLC_W_ID1 women whose ideal number of children is 1, %; PR_IDLC_W_ID2 women whose ideal number of children is 2, %; PR_IDLC_W_ID3 women whose ideal number of children is 3, %; PR_IDLC_W_ID4 women whose ideal number of children is 4, %; PR_IDLC_W_ID5 women whose ideal number of children is 5, %; PR_IDLC_W_ID6 women whose ideal number of children is 6+, %; PR_IDLC_W_IDN women giving a non-numeric ideal number of children, %; DHS Program API"
@@ -1540,7 +1539,7 @@
   "people/sce_microdata": {
    "for": [
     "S1.15",
-    "F-071"
+    "S1.24"
    ],
    "rows": 78136,
    "title": "New York Fed Survey of Consumer Expectations public microdata, 2015-2019, one row per respondent and month (a rotating panel of up to 12 months, userid): point forecasts of inflation one and three years ahead, the one-year density's median and interquartile range, probabilities of higher US unemployment and of losing one's job (%), survey weight, age, household income and education groups (gzip CSV)"
@@ -1548,7 +1547,7 @@
   "people/tenure_dls": {
    "for": [
     "S6.05",
-    "F-105"
+    "S1.24"
    ],
    "rows": 5868,
    "title": "Wage workers by job tenure band (1 under 6 months, 2 6-12 months, 3 1-5 years, 4 over 5 years): the band's share of wage workers (share) and the quarterly rate of moving to state to_state (W wage work in the same job, B and M the replication's other states), by economy and survey year, harmonised rotating-panel labour force surveys, Donovan, Lu and Schoellman (2023, QJE), replication data doi:10.7910/DVN/RXWKTV (Tenure_Transitions)"

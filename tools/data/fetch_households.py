@@ -738,7 +738,7 @@ def hazards(cache: Path, manifest: dict, iso3: set) -> None:
         "rows": table(OUT / "typed_wind_damage.csv",
                       ["region", "events", "vthresh_ms", "vhalf_rmsf_ms", "vhalf_tdr_ms", "iso3s"],
                       [(r, n, WIND_THRESHOLD, a, b, c) for r, n, a, b, c in WIND]),
-        "for": ["S2.05", "S4.03", "F-010"],
+        "for": ["S2.05", "S4.03"],
         "note": "typed from " + EBERENZ,
     }
     manifest["series"]["households/typed_crop_temperature"] = {
@@ -929,7 +929,7 @@ def coal(cache: Path, manifest: dict, iso3: set) -> None:
         "rows": table(OUT / "coal_mines.csv",
                       ["msha_id", "state", "county", "status", "mine_type", "supply_region", "production_short_tons",
                        "employees", "labour_hours"], rows),
-        "for": ["F-010", "S0.13"],
+        "for": ["S2.05", "S0.13"],
     }
     z = zipfile.ZipFile(cached(cache, f"f923_{COAL_YEAR}.zip", EIA_923.format(year=COAL_YEAR)))
     name = next(n for n in z.namelist() if "Schedules_2_3_4_5" in n)
@@ -969,7 +969,7 @@ def coal(cache: Path, manifest: dict, iso3: set) -> None:
         "rows": table(OUT / "coal_mine_quality.csv",
                       ["msha_id", "state", "county", "mine_type", "rank", "tons", "mmbtu_per_ton", "sulfur_pct",
                        "ash_pct"], rows),
-        "for": ["F-010", "S0.13"],
+        "for": ["S2.05", "S0.13"],
         "note": "summed from the plant-month receipts; each average is weighted by the tons of the receipts that "
                 "report it, and is blank where none does",
     }
@@ -988,7 +988,7 @@ def coal(cache: Path, manifest: dict, iso3: set) -> None:
                  "producing mines, estimated recoverable reserves, demonstrated reserve base); US EIA Annual Coal "
                  "Report Table 15",
         "rows": table(OUT / "coal_reserves.csv", ["state", "measure", "million_short_tons"], rows),
-        "for": ["F-010", "S0.13"],
+        "for": ["S2.05", "S0.13"],
     }
     manifest["sources"]["households/coal"] = {
         "title": "US EIA: historical coal production data (mine level), EIA-923 fuel receipts, Annual Coal Report "
@@ -1017,7 +1017,7 @@ def farms(cache: Path, manifest: dict, iso3: set) -> None:
                  "year; Eurostat farm structure survey and integrated farm statistics (ef_m_farmleg, ef_lf_leg)",
         "rows": table(OUT / "eurostat_farms_by_size.csv",
                       ["iso3", "year", "so_class", "work_status", "unit", "value"], rows),
-        "for": ["F-093", "S1.03"],
+        "for": ["S1.24", "S1.03"],
     }
     rows = []
     with gzip.open(cached(cache, "qs.census2017.txt.gz", NASS), "rt", encoding="utf-8", errors="replace") as f:
@@ -1040,7 +1040,7 @@ def farms(cache: Path, manifest: dict, iso3: set) -> None:
                  "Stats bulk file)",
         "rows": table(OUT / "us_farms_hired_workers.csv", ["item", "domain", "class", "value"],
                       [r for r in rows if r[3]]),
-        "for": ["F-093", "S1.03"],
+        "for": ["S1.24", "S1.03"],
         "note": "values withheld for disclosure ('(D)') are left out",
     }
     manifest["sources"]["households/farms"] = {

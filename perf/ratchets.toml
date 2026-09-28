@@ -52,7 +52,7 @@ direction = "down"
 # of 170 (20afd3e4), the higher of the two representations on each: every household and small firm is an agent whose run
 # head is read on its lines' due days, so heads, visits and the day's records rise (heads 274 774 to 991 630, visits
 # 101 829 to 498 793, bytes 58.6 MB to 197.3 MB); a cell's dues were a row per cell, an agent's a row per agent of
-# whole twins, so rows streamed and scanned, rows not due and payments fall. The large firms' banks drawn (F-077) moved
+# whole twins, so rows streamed and scanned, rows not due and payments fall. The large firms' banks drawn moved
 # rows streamed, scanned and payments up by 6, 12 and 6 (092c0edb). The firms' industries, drawn under a new purpose of
 # each country's opening stratum, move every firm's size and site draw, and the busiest day's rows streamed, scanned and
 # payments rise by 8 778, 8 900 and 8 778 (ac0f57ed). Firms in default end into estates from S1.03, which hold their
@@ -86,14 +86,14 @@ value = 2821888
 direction = "down"
 
 # The fixed point's visits restated from the twins gate run (aa48779e, two years): payers short of money multiply as
-# the world runs, since nothing at Stage 0 decides (F-080), and the last paydays are the heaviest.
+# the world runs, since nothing at Stage 0 decides, and the last paydays are the heaviest.
 [[ratchet]]
 counter = "phx_ledger.fixed_point_iterations"
 value = 715218
 direction = "down"
 
 # The day buffers restated from the twins gate run (aa48779e): counted by their room, with the payments 7a hands 7c,
-# the day book's due and fail records and the day's look-ups (ab9e4578); over architecture §13.1's line (F-082).
+# the day book's due and fail records and the day's look-ups (ab9e4578); over architecture §13.1's line.
 [[ratchet]]
 counter = "phx_ledger.day_buffer_peak_bytes"
 value = 888941584
@@ -112,7 +112,7 @@ counter = "phx_pop.agents_gathered"
 value = 30207
 direction = "down"
 
-# The most agents a day's screening read and redrew: restated at S1.08 (F-107), when a day's mass of failed firms
+# The most agents a day's screening read and redrew: restated at S1.08, when a day's mass of failed firms
 # releases its staff to search and each changed person's hazards are drawn again, and retirement is a hazard at
 # birthdays from the pension's age.
 [[ratchet]]
@@ -136,10 +136,10 @@ value = 131242
 direction = "down"
 
 # The firms that default on the heaviest day, whose estates settle the next business day: first set at S1.03 on the
-# build run, where every firm whose loan falls due before it sells fails at the first grace's end (F-095); one more
+# build run, where every firm whose loan falls due before it sells fails at the first grace's end; one more
 # once the grace is each country's (5 431); 4 more once agents losing contracts are no longer drawn again (8d3ca63b);
 # 6 311 once CAP holds the plant (S1.04), whose opening no longer draws on the small firms' stream, so their banks,
-# deposits and loans are drawn otherwise; 10 553 at S1.08 (F-107), whose jobs are dealt by region and occupation, so
+# deposits and loans are drawn otherwise; 10 553 at S1.08, whose jobs are dealt by region and occupation, so
 # a firm's wage bill no longer averages the country's and those whose bill passes their money fail after the first
 # payday's grace.
 [[ratchet]]
@@ -153,7 +153,7 @@ direction = "down"
 # From the S1.03 review an estate that holds plant waits to sell it, which no market buys before S1.04 and S1.05, so
 # the firms' estates stay open (8 710; 8 714 once agents losing contracts are no longer drawn again, 8d3ca63b), and a
 # small firm's agent keeps the day of its last review (180 bytes). From S1.04 the small firms hold plant too, so their
-# estates wait to sell it as the large firms' do (9 965); 26 285 at S1.08, whose earlier mass of failed firms (F-107)
+# estates wait to sell it as the large firms' do (9 965); 26 285 at S1.08, whose earlier mass of failed firms
 # leaves more estates waiting to sell.
 [[ratchet]]
 counter = "phx_frm.estates_open"
@@ -353,7 +353,7 @@ counter = "phx_rand.ir_multivariate_hypergeometric"
 value = 6853
 direction = "down"
 
-# The pick with the tree's room kept by its caller, as a caller keeps it (F-009).
+# The pick with the tree's room kept by its caller, as a caller keeps it.
 [[ratchet]]
 counter = "phx_rand.ir_pick_without_replacement"
 value = 5798
@@ -458,7 +458,7 @@ value = 149145
 direction = "down"
 
 # phx-ledger: a ten-year annual bond's dues on its fifth coupon date (a fixed coupon and its principal, one due), and
-# on the day after, when only the search for a schedule date is paid; the search is most of the count (F-014). The
+# on the day after, when only the search for a schedule date is paid; the search is most of the count. The
 # settlement never pays that search, since 1b hands its dues the date's index; `due_on` is now that entry with no
 # index, two instructions more; four more again at S0.26f (8ae4fcd0), the ledger's code laid out anew around it, the
 # function itself unchanged.
@@ -472,7 +472,7 @@ counter = "phx_ledger.ir_due_on_between"
 value = 2295
 direction = "down"
 
-# phx-ledger's stage 7: sixty-four run heads read for whether they are due; and 1b with the whole of stage 7 over sixteen loans due on one day, far over its budget (F-020).
+# phx-ledger's stage 7: sixty-four run heads read for whether they are due; and 1b with the whole of stage 7 over sixteen loans due on one day, far over its budget.
 [[ratchet]]
 counter = "phx_ledger.ir_run_heads_64"
 value = 878
@@ -480,12 +480,12 @@ direction = "down"
 
 # A whole stage 7 over sixteen holders: from S0.19 it records each due that falls, with what became of it, for the
 # accounts. CI's runner holds the ratchet at its own measure, which is above the build machine's. Raised at S0.28 to
-# CI's 412 020 (e0030d0c): the day's look-ups in the fixed-seed sharded maps and the kept payments (F-020, which made
-# the payday four times faster at scale while a sixteen-holder day pays the maps' setup), contracts leaving like with
+# CI's 412 020 (e0030d0c): the day's look-ups in the fixed-seed sharded maps and the kept payments, which made
+# the payday four times faster at scale while a sixteen-holder day pays the maps' setup, contracts leaving like with
 # like, and the day buffers counted by their room; for the owner's review. Raised at S0.26f to 772 400 on the build
 # machine: stage 7's sums folded on the pool a key shard to a worker (the day's records in 64 shards, the nets and
 # the parties' income in the kernel map's 256), so a day of sixteen payments pays the shards' setup, about 0.1 ms,
-# which cut the full load's settlement from 5.5 s to 2.4 s a business day (F-087); waves past the last payment are
+# which cut the full load's settlement from 5.5 s to 2.4 s a business day; waves past the last payment are
 # skipped. For the owner's review.
 [[ratchet]]
 counter = "phx_ledger.ir_settle_day_16"
@@ -494,7 +494,7 @@ direction = "down"
 
 # phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
 # borrowers, twenty thousand reaches): met cold, and met the next day from the first day's basis when every bid has
-# moved; most of the warm count is the prices' ranges, not the pivots (F-023). A new bench's ratchet takes CI's
+# moved; most of the warm count is the prices' ranges, not the pivots. A new bench's ratchet takes CI's
 # measure, since the runner, not the build machine, holds it.
 [[ratchet]]
 counter = "phx_market.ir_linked_call_cold"
@@ -508,7 +508,7 @@ direction = "down"
 # Labour's matching, the most on any day: agents with a searching person, the vacancies they could see, the
 # applications sent, and the mean rounds a match took. No firm posts before it holds a price and a planned output
 # (S1.15), so only searchers are counted until then; the budget (architecture §13.2) holds 0.1 M searching groups,
-# which the failed firms' released staff pass while no firm posts (F-107).
+# which the failed firms' released staff pass while no firm posts.
 [[ratchet]]
 counter = "phx_lab.searching_groups"
 value = 203528

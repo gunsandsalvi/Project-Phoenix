@@ -476,7 +476,7 @@ def expectations(cache: Path, iso3: set) -> tuple:
                  "years ahead, the one-year density's median and interquartile range, probabilities of higher US "
                  "unemployment and of losing one's job (%), survey weight, age, household income and education "
                  "groups (gzip CSV)",
-        "rows": len(micro), "for": ["S1.15", "F-071"]}
+        "rows": len(micro), "for": ["S1.15", "S1.24"]}
     series["people/ces_expectations"] = {
         "title": "ECB Consumer Expectations Survey, monthly from 2020-04: inflation expectations 12 months (C1120) and "
                  "3 years ahead (C1220), probabilistic 12-month mean and uncertainty (C1150_EXP, C1150_UNCERT), "
@@ -640,7 +640,7 @@ def demography(cache: Path, iso3: set) -> tuple:
                  "arrangements), current marital status of women and men 15-49, ideal number of children; "
                  "indicators: " + "; ".join(f"{k} {v}" for k, v in DHS_INDICATORS.items()) + "; DHS Program API",
         "rows": table(RAW / "people" / "dhs_indicators.csv", ["iso3", "year", "survey", "indicator", "value"], rows),
-        "for": ["S6.02", "F-036"]}
+        "for": ["S6.02", "S1.23"]}
 
     piaac = []
     of2 = {**iso3_of_iso2(), "BE-VLG": "BEL", "GB-ENG": "GBR"}
@@ -670,7 +670,7 @@ def demography(cache: Path, iso3: set) -> tuple:
                  "rotating-panel labour force surveys, Donovan, Lu and Schoellman (2023, QJE), replication data "
                  "doi:10.7910/DVN/RXWKTV (Tenure_Transitions)",
         "rows": table(RAW / "people" / "tenure_dls.csv", ["iso3", "year", "tenure_band", "to_state", "share", "rate"],
-                      tenure), "for": ["S6.05", "F-105"]}
+                      tenure), "for": ["S6.05", "S1.24"]}
     sources = {
         "people_dhs": {"title": "DHS Program API", "url": DHS + "data?indicatorIds=<ids>", "fetched": TODAY},
         "people_piaac": {"title": "CSO Ireland PxStat, PIAAC 2023 international comparison tables",
