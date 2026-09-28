@@ -77,7 +77,7 @@ WB_SERIES = {
     "NY.GDP.MKTP.KD": "gdp_real", "NE.CON.PRVT.KD": "consumption_household_real", "NE.GDI.FTOT.KD": "investment_real",
     "FP.CPI.TOTL.ZG": "cpi_inflation", "BN.FIN.TOTL.CD": "financial_account_usd",
     "BN.CAB.XOKA.CD": "current_account_usd",
-    "NY.GDP.MKTP.CD": "gdp_usd",
+    "NY.GDP.MKTP.CD": "gdp_usd", "FS.AST.PRVT.GD.ZS": "private_credit_pct_gdp",
 }
 # Codes the sources use for economies whose ISO code differs.
 ALIAS = {"KOS": "XKX"}
@@ -296,7 +296,7 @@ def annual(cache: Path, manifest: dict, iso3: set) -> None:
     manifest["series"]["macro/annual"] = {
         "title": "Annual series, 1960-2024: GDP, household consumption and gross fixed capital formation in constant "
                  "2015 dollars, CPI inflation (per cent), net financial account and current account (BoP, "
-                 "current dollars), GDP in current dollars (World Bank WDI); the "
+                 "current dollars), GDP in current dollars, domestic credit to the private sector (per cent of GDP) (World Bank WDI); the "
                  "unemployment rate from national labour force surveys (ILO, national estimates, ages 15+); average "
                  "annual wages (constant 2025 US dollars at PPP) and average annual hours actually worked per worker "
                  "(OECD)",
@@ -1055,6 +1055,62 @@ class Ranges:
                               "on five lags of the log change of real private loans, no country effects",
                               "macro/jst", " ".join(sorted(self.d.jst))])
 
+    # F16, F18 by level: WDI private credit and Laeven-Valencia banking crises ------------------------------------
+    def f16_f18_levels(self):
+        onsets = {}
+        for r in csv.DictReader((RAW / "bank" / "crisis_years.csv").open()):
+            if r["kind"] == "banking":
+                onsets.setdefault(r["iso3"], set()).add(int(r["year"]))
+        conc, xs, ys, used = {}, {}, {}, {}
+        for iso, years in self.d.ann.items():
+            level = self.d.level.get(iso)
+            # Credit in constant prices: its share of GDP times real GDP, so credit is deflated as output is.
+            real = {y: math.log(float(v["private_credit_pct_gdp"]) * float(v["gdp_real"])) for y, v in years.items()
+                    if y <= LAST_YEAR and v["private_credit_pct_gdp"] and v["gdp_real"]
+                    and float(v["private_credit_pct_gdp"]) > 0}
+            gdp = {y: math.log(float(v["gdp_real"])) for y, v in years.items() if y <= LAST_YEAR and v["gdp_real"]}
+            span = runs({y: 0 for y in common(real, gdp)}, last=LAST_YEAR)
+            if len(span) >= 30:
+                phase = []
+                for series in (real, gdp):
+                    pts = turning_points([series[k] for k in span], 1, 1, 2)
+                    state = {}
+                    for (a, ta), (b, _) in zip(pts, pts[1:]):
+                        for t in range(a + 1, b + 1):
+                            state[t] = ta == "T"
+                    phase.append(state)
+                both = common(*phase)
+                if both:
+                    conc[iso] = sum(1 for t in both if phase[0][t] == phase[1][t]) / len(both)
+            if not level:
+                continue
+            crises = onsets.get(iso, set())
+            for y in span:
+                lags = [y - k for k in range(1, 6)]
+                if any(l not in real or l - 1 not in real for l in lags) or y - 1 in crises:
+                    continue
+                xs.setdefault(level, []).append([real[l] - real[l - 1] for l in lags])
+                ys.setdefault(level, []).append(1 if y in crises else 0)
+                used.setdefault(level, set()).add(iso)
+        self.add("F16", "concordance of credit and output cycles: the share of years both are in the same phase",
+                 conc, "annual", "1960-2019, 30 or more years",
+                 "Harding-Pagan dating (annual: window 1, phase 1, cycle 2) of log real private credit (WDI "
+                 "FS.AST.PRVT.GD.ZS times real GDP) and log real GDP; share of years in the same phase",
+                 "macro/annual")
+        for level in ("developed", "emerging", "developing"):
+            if level not in ys or sum(ys[level]) < 5:
+                continue
+            beta = binary_fit(xs[level], ys[level], "logit")
+            scores = [sum(b * v for b, v in zip(beta, [1.0, *x])) for x in xs[level]]
+            for stat, value in (("sum of the coefficients on lagged real credit growth", sum(beta[1:])),
+                                ("area under the ROC curve", auc(scores, ys[level]))):
+                self.rows.append(["F18", stat, level, len(used[level]), "", "", "", f"{value:.4g}", "annual",
+                                  f"1960-2019 pooled, {len(ys[level])} country-years, {sum(ys[level])} onsets",
+                                  "pooled logit of a systemic banking crisis onset (Laeven-Valencia, years after an "
+                                  "onset dropped) on five lags of the log change of real private credit (WDI "
+                                  "FS.AST.PRVT.GD.ZS times real GDP), no country effects",
+                                  "macro/annual, bank/crisis_years", " ".join(sorted(used[level]))])
+
     # F19 --------------------------------------------------------------------------------------------------------
     def f19(self):
         impact, long_run = {}, {}
@@ -1204,7 +1260,7 @@ class Ranges:
 
 def ranges(cache: Path, manifest: dict, iso3: set) -> None:
     r = Ranges(Data())
-    for step in (r.f01, r.f02_f03, r.f04, r.f05, r.f06, r.f07, r.f13, r.f16_f18, r.f19, r.f23, r.f27, r.reads):
+    for step in (r.f01, r.f02_f03, r.f04, r.f05, r.f06, r.f07, r.f13, r.f16_f18, r.f16_f18_levels, r.f19, r.f23, r.f27, r.reads):
         step()
         log(f"ranges: {step.__name__}")
     header = ["fact", "statistic", "level", "economies", "median", "p25", "p75", "pooled", "frequency", "sample",

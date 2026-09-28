@@ -647,8 +647,8 @@
     "S1.16",
     "S7.01"
    ],
-   "rows": 12076,
-   "title": "Annual series, 1960-2024: GDP, household consumption and gross fixed capital formation in constant 2015 dollars, CPI inflation (per cent), net financial account and current account (BoP, current dollars), GDP in current dollars (World Bank WDI); the unemployment rate from national labour force surveys (ILO, national estimates, ages 15+); average annual wages (constant 2025 US dollars at PPP) and average annual hours actually worked per worker (OECD)"
+   "rows": 12079,
+   "title": "Annual series, 1960-2024: GDP, household consumption and gross fixed capital formation in constant 2015 dollars, CPI inflation (per cent), net financial account and current account (BoP, current dollars), GDP in current dollars, domestic credit to the private sector (per cent of GDP) (World Bank WDI); the unemployment rate from national labour force surveys (ILO, national estimates, ages 15+); average annual wages (constant 2025 US dollars at PPP) and average annual hours actually worked per worker (OECD)"
   },
   "macro/jst": {
    "for": [
@@ -671,7 +671,7 @@
     "S7.01"
    ],
    "note": "Derived by fetch_macro.py (ranges) from the macro/ files and wid/shares; each row's method column states the computation. Quarterly statistics end at 2019Q4. Rows naming a paper group the per-economy values typed from it by current World Bank level.",
-   "rows": 139,
+   "rows": 148,
    "title": "Each measurable N3 fact's statistic (and S1.16's macro reads), per development level (World Bank income groups: developed High; emerging Upper-middle; developing Lower-middle and Low): median and interquartile range across the level's economies, with the method, sample and member economies"
   },
   "macro/prices_rates_q": {
